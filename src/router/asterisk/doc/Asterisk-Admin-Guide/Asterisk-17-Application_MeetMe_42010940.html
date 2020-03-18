@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_MeetMe</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_MeetMe
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_MeetMe-MeetMe()">MeetMe()</h1>
+
+<h3 id="Asterisk17Application_MeetMe-Synopsis">Synopsis</h3>
+
+<p>MeetMe conference bridge.</p>
+
+<h3 id="Asterisk17Application_MeetMe-Description">Description</h3>
+
+<p>Enters the user into a specified MeetMe conference. If the <em>confno</em> is omitted, the user will be prompted to enter one. User can exit the conference by hangup, or if the <code>p</code> option is specified, by pressing <code>#</code>.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The DAHDI kernel modules and a functional DAHDI timing source (see dahdi_test) must be present for conferencing to operate properly. In addition, the chan_dahdi channel driver must be loaded for the <code>i</code> and <code>r</code> options to operate at all.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17Application_MeetMe-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>MeetMe([confno,[options,[pin]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_MeetMe-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>confno</code> - The conference number</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>a</code> - Set admin mode.</li>
+		<li><code>A</code> - Set marked mode.</li>
+		<li><code>b</code> - Run AGI script specified in <code>MEETME_AGI_BACKGROUND</code> Default: <code>conf-background.agi</code>.</li>
+		<li><code>c</code> - Announce user(s) count on joining a conference.</li>
+		<li><code>C</code> - Continue in dialplan when kicked out of conference.</li>
+		<li><code>d</code> - Dynamically add conference.</li>
+		<li><code>D</code> - Dynamically add conference, prompting for a PIN.</li>
+		<li><code>e</code> - Select an empty conference.</li>
+		<li><code>E</code> - Select an empty pinless conference.</li>
+		<li><code>F</code> - Pass DTMF through the conference.</li>
+		<li><code>G</code><code>( <strong>x</strong> )</code> - Play an intro announcement in conference.
+		<ul>
+			<li><code><strong>x</strong></code> - The file to playback</li>
+		</ul>
+		</li>
+		<li><code>i</code> - Announce user join/leave with review.</li>
+		<li><code>I</code> - Announce user join/leave without review.</li>
+		<li><code>k</code> - Close the conference if there's only one active participant left at exit.</li>
+		<li><code>l</code> - Set listen only mode (Listen only, no talking).</li>
+		<li><code>m</code> - Set initially muted.</li>
+		<li><code>M</code><code>( <strong>class</strong> )</code> - Enable music on hold when the conference has a single caller. Optionally, specify a musiconhold class to use. If one is not provided, it will use the channel's currently set music class, or <code>default</code>.
+		<ul>
+			<li><code><strong>class</strong></code></li>
+		</ul>
+		</li>
+		<li><code>n</code> - Disable the denoiser. By default, if <code>func_speex</code> is loaded, Asterisk will apply a denoiser to channels in the MeetMe conference. However, channel drivers that present audio with a varying rate will experience degraded performance with a denoiser attached. This parameter allows a channel joining the conference to choose not to have a denoiser attached without having to unload <code>func_speex</code>.</li>
+		<li><code>o</code> - Set talker optimization - treats talkers who aren't speaking as being muted, meaning (a) No encode is done on transmission and (b) Received audio that is not registered as talking is omitted causing no buildup in background noise.</li>
+		<li><code>p</code><code>( <strong>keys</strong> )</code> - Allow user to exit the conference by pressing <code>#</code> (default) or any of the defined keys. Dial plan execution will continue at the next priority following MeetMe. The key used is set to channel variable <code>MEETME_EXIT_KEY</code>.
+		<ul>
+			<li><code><strong>keys</strong></code></li>
+		</ul>
+		</li>
+		<li><code>P</code> - Always prompt for the pin even if it is specified.</li>
+		<li><code>q</code> - Quiet mode (don't play enter/leave sounds).</li>
+		<li><code>r</code> - Record conference (records as <code>MEETME_RECORDINGFILE</code> using format <code>MEETME_RECORDINGFORMAT</code>. Default filename is <code>meetme-conf-rec-${CONFNO}-${UNIQUEID</code>} and the default format is wav.</li>
+		<li><code>s</code> - Present menu (user or admin) when <code>*</code> is received (send to menu).</li>
+		<li><code>t</code> - Set talk only mode. (Talk only, no listening).</li>
+		<li><code>T</code> - Set talker detection (sent to manager interface and meetme list).</li>
+		<li><code>v</code><code>( <strong>mailbox@<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=context&amp;linkCreation=true&amp;fromPageId=42010940">context</a></strong> )</code> - Announce when a user is joining or leaving the conference. Use the voicemail greeting as the announcement. If the i or I options are set, the application will fall back to them if no voicemail greeting can be found.
+		<ul>
+			<li><code><strong>mailbox@<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=context&amp;linkCreation=true&amp;fromPageId=42010940">context</a></strong></code> - The mailbox and voicemail context to play from. If no context provided, assumed context is default.</li>
+		</ul>
+		</li>
+		<li><code>w</code><code>( <strong>secs</strong> )</code> - Wait until the marked user enters the conference.
+		<ul>
+			<li><code><strong>secs</strong></code></li>
+		</ul>
+		</li>
+		<li><code>x</code> - Leave the conference when the last marked user leaves.</li>
+		<li><code>X</code> - Allow user to exit the conference by entering a valid single digit extension <code>MEETME_EXIT_CONTEXT</code> or the current context if that variable is not defined.</li>
+		<li><code>1</code> - Do not play message when first person enters</li>
+		<li><code>S</code><code>( <strong>x</strong> )</code> - Kick the user <em>x</em> seconds <strong>after</strong> he entered into the conference.
+		<ul>
+			<li><code><strong>x</strong></code></li>
+		</ul>
+		</li>
+		<li><code>L</code><code>( x:y:z )</code> - Limit the conference to <em>x</em> ms. Play a warning when <em>y</em> ms are left. Repeat the warning every <em>z</em> ms. The following special variables can be used with this option:
+		<ul>
+			<li><code>CONF_LIMIT_TIMEOUT_FILE</code> - File to play when time is up.</li>
+			<li><code>CONF_LIMIT_WARNING_FILE</code> - File to play as warning if <em>y</em> is defined. The default is to say the time remaining.</li>
+			<li><code>x</code></li>
+			<li><code>y</code></li>
+			<li><code>z</code></li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+	<li><code>pin</code></li>
+</ul>
+
+
+<h3 id="Asterisk17Application_MeetMe-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_MeetMeCount_42010941.html">Asterisk 17 Application_MeetMeCount</a></li>
+	<li><a href="Asterisk-17-Application_MeetMeAdmin_42010942.html">Asterisk 17 Application_MeetMeAdmin</a></li>
+	<li><a href="Asterisk-17-Application_MeetMeChannelAdmin_42010943.html">Asterisk 17 Application_MeetMeChannelAdmin</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_MeetMe-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

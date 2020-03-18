@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : The Call Completion Process</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="PSTN-Connectivity_4260105.html">PSTN Connectivity</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5243096.html">Call Completion Supplementary Services (CCSS)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : The Call Completion Process
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h3 id="TheCallCompletionProcess-TheInitialCall">The Initial Call</h3>
+
+<p>The only requirement for the use of CC is to configure an agent for the caller and a monitor for at least one recipient of the call. This is controlled using the cc_agent_policy for the caller and the cc_monitor_policy for the recipient. For more information about these configuration settings, see configs/samples/ccss.conf.sample. If the agent for the caller is set to something other than &quot;never&quot; and at least one recipient has his monitor set to something other than &quot;never,&quot; then CC will be offered to the caller at the end of the call. </p>
+
+<p>Once the initial call has been hung up, the configured cc_offer_timer for the caller will be started. If the caller wishes to request CC for the previous call, he must do so before the timer expires.</p>
+
+<h3 id="TheCallCompletionProcess-RequestingCC">Requesting CC</h3>
+
+<p>Requesting CC is done differently depending on the type of agent the caller is using. </p>
+
+<p>With generic agents, the CallCompletionRequest application must be called in order to request CC. There are two different ways in which this may be called. It may either be called before the caller hangs up during the initial call, or the caller may hang up from the initial call and dial an extension which calls the CallCompletionRequest application. If the second method is used, then the caller will have until the cc_offer_timer expires to request CC. </p>
+
+<p>With native agents, the method for requesting CC is dependent upon the technology being used, coupled with the make of equipment. It may be possible to request CC using a programmable key on a phone or by clicking a button on a console. If you are using equipment which can natively support CC but do not know the means by which to request it, then contact the equipment manufacturer for more information.</p>
+
+<h3 id="TheCallCompletionProcess-CancellingCC">Cancelling CC</h3>
+
+<p>CC may be canceled after it has been requested. The method by which this is accomplished differs based on the type of agent the calling party uses. </p>
+
+<p>When using a generic agent, the dialplan application CallRequestCancel is used to cancel CC. When using a native monitor, the method by which CC is cancelled depends on the protocol used. Likely, this will be done using a button on a phone. </p>
+
+<p>Keep in mind that if CC is cancelled, it cannot be un-cancelled.</p>
+
+<h3 id="TheCallCompletionProcess-MonitoringtheCalledParty">Monitoring the Called Party</h3>
+<p>Once the caller has requested CC, then Asterisk's job is to monitor the progress of the called parties. It is at this point that Asterisk allocates the necessary resources to monitor the called parties. </p>
+
+<p>A generic monitor uses Asterisk's device state subsystem in order to determine when the called party has become available. For both CCBS and CCNR, Asterisk simply waits for the phone's state to change to a &quot;not in use&quot; state from a different state. Once this happens, then Asterisk will consider the called party to be available and will alert the caller. </p>
+
+<p>A native monitor relies on the network to send a protocol-specific message when the called party has become available. When Asterisk receives such a message, it will consider the called party to be available and will alert the caller. </p>
+
+<p>Note that since a single caller may dial multiple parties, a monitor is used for each called party. It is within reason that different called parties will use different types of monitors for the same CC request.</p>
+
+<h3 id="TheCallCompletionProcess-AlertingtheCaller">Alerting the Caller</h3>
+
+<p>Once Asterisk has determined that the called party has become available the time comes for Asterisk to alert the caller that the called party has become available. The method by which this is done differs based on the type of agent in use. </p>
+
+<p>If a generic agent is used, then Asterisk will originate a call to the calling party. Upon answering the call, if a callback macro has been configured, then that macro will be executed on the calling party's channel. After the macro has completed, an outbound call will be issued to the parties involved in the original call. </p>
+
+<p>If a native agent is used, then Asterisk will send an appropriate notification message to the calling party to alert it that it may now attempt its recall. How this is presented to the caller is dependent upon the protocol and equipment that the caller is using. It is possible that the calling party's phone will ring and a recall will be triggered upon answering the phone, or it may be that the user has a specific button that he may press to initiate a recall.</p>
+
+<h3 id="TheCallCompletionProcess-IftheCallerisunavailable">If the Caller is unavailable</h3>
+
+<p>When the called party has become available, it is possible that when Asterisk attempts to alert the calling party of the called party's availability, the calling party itself will have become unavailable. If this is the case, then Asterisk will suspend monitoring of the called party and will instead monitor the availability of the calling party. The monitoring procedure for the calling party is the same as is used in the section &quot;Monitoring the Called Party.&quot; In other words, the method by which the calling party is monitored is dependent upon the type of agent used by the caller. </p>
+
+<p>Once Asterisk has determined that the calling party has become available again, Asterisk will then move back to the process used in the section &quot;Monitoring the Called Party.&quot;</p>
+
+<h3 id="TheCallCompletionProcess-TheCCrecall">The CC recall</h3>
+
+<p>The calling party will make its recall to the same extension that was dialed. Asterisk will provide a channel variable, CC_INTERFACES, to be used as an argument to the Dial application for CC recalls. It is strongly recommended that you use this channel variable during a CC recall. Listed are two reasons:</p>
+
+<ol>
+	<li>The dialplan may be written in such a way that the dialed destintations are dynamically generated. With such a dialplan, it cannot be guaranteed that the same interfaces will be recalled.</li>
+	<li>For calling destinations with native CC monitors, it may be necessary to dial a special string in order to notify the channel driver that the number being dialed is actually part of a CC recall.</li>
+</ol>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Even if your call gets routed through local channels, the CC_INTERFACES variable will be populated with the appropriate values for that specific extension. </p>
+                    </div>
+    </div>
+
+
+<p>When the called parties are dialed, it is expected that a called party will answer, since Asterisk had previously determined that the party was available. However, it is possible that the called party may choose not to respond to the call, or he could have become busy again. In such a situation, the calling party must re-request CC if he wishes to still be alerted when the calling party has become available.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

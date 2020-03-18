@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Getting Started with ARI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Getting Started with ARI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> David M. Lee</span>, last modified on Jan 26, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="GettingStartedwithARI-Overview">Overview</h1><p>Asterisk 12 introduces the <a class="unresolved" href="#">Asterisk REST Interface</a>, a set of RESTful APIs for building Asterisk based applications. This article will walk you though getting ARI up and running.</p><p>There are three main components to building an ARI application.</p><p>The first, obviously, is <strong>the RESTful API</strong> itself. The API is documented using <a href="https://developers.helloreverb.com/swagger/" class="external-link" rel="nofollow">Swagger</a>, a lightweight specification for documenting RESTful APIs. The Swagger API docs are used to generate validations and boilerplate in Asterisk itself, along with <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+ARI">static wiki documentation</a>, and interactive documentation using <a href="https://github.com/wordnik/swagger-ui" class="external-link" rel="nofollow">Swagger-UI</a>.</p><p>Then, Asterisk needs to send asynchronous events to the application (new channel, channel left a bridge, channel hung up, etc). This is done using a <strong>WebSocket on /ari/events</strong>. Events are sent as JSON messages, and are documented on the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models">REST Data Models page</a>. (See the list of subtypes for the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-Message"><code>Message</code> data model</a>.)</p><p>Finally, connecting the dialplan to your application is the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_Stasis"> <code>Stasis()</code> dialplan application</a>. From within the dialplan, you can send a channel to <code>Stasis()</code>, specifying the name of the external application, along with optional arguments to pass along to the application.</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303051428 {padding: 0px;}
+div.rbtoc1582303051428 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303051428 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303051428'>
+<ul class='toc-indentation'>
+<li><a href='#GettingStartedwithARI-Overview'>Overview</a></li>
+<li><a href='#GettingStartedwithARI-Example:ARIHelloWorld!'>Example: ARI Hello World!</a>
+<ul class='toc-indentation'>
+<li><a href='#GettingStartedwithARI-Gettingwscat'>Getting wscat</a></li>
+<li><a href='#GettingStartedwithARI-Gettingcurl'>Getting curl</a></li>
+<li><a href='#GettingStartedwithARI-ConfiguringAsterisk'>Configuring Asterisk</a></li>
+<li><a href='#GettingStartedwithARI-HelloWorld!'>Hello World!</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="GettingStartedwithARI-Example:ARIHelloWorld!">Example: ARI Hello World!</h1><p>In this example, we will:</p><ul><li>Configure Asterisk to enable ARI</li><li>Send a channel into Stasis</li><li>And playback &quot;Hello World&quot; to the channel</li></ul><p>This example will <strong>not</strong> cover:</p><ol><li>Installing Asterisk. We'll assume you have Asterisk 12 or later installed and running.</li><li>Configuring a SIP device in Asterisk. For the purposes of this example, we are going to assume you have a SIP softphone or hardphone registered to Asterisk, using either <code>chan_sip</code> or <code>chan_pjsip</code>.</li></ol><h2 id="GettingStartedwithARI-Gettingwscat">Getting wscat</h2><p>ARI needs a WebSocket connection to receive events. For the sake of this example, we're going to use <a href="http://einaros.github.io/ws/" class="external-link" rel="nofollow">wscat</a>, an incredibly handy command line utility similar to netcat but based on a node.js websocket library. If you don't have wscat:</p><ol><li><p>If you don't have it already, <strong>install</strong> npm</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ apt-get install npm</pre>
+</div></div></li><li><p><strong>Install</strong> the <code>ws</code> node package:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ npm install -g wscat</pre>
+</div></div></li></ol>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Some distributions repos (e.g. Ubuntu) may have older versions of nodejs and npm that will throw a wrench in your install of the ws package. You'll have to install a newer version from another repo or via source.</p><p><a href="https://github.com/joyent/node/wiki/Installing-Node.js-via-package-manager" class="external-link" rel="nofollow">Installing Nodejs via packages</a></p><p><a href="https://github.com/npm/npm" class="external-link" rel="nofollow">Installing npm in a variety of ways</a></p>
+                    </div>
+    </div>
+<p> </p><h2 id="GettingStartedwithARI-Gettingcurl">Getting curl</h2><p>In order to control a channel in the Stasis dialplan application through ARI, we also need an HTTP client. For the sake of this example, we'll use <a href="http://linux.about.com/od/commands/l/blcmdl1_curl.htm" class="external-link" rel="nofollow">curl</a>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ apt-get install curl</pre>
+</div></div><h2 id="GettingStartedwithARI-ConfiguringAsterisk">Configuring Asterisk</h2><ol><li><p>Enable the Asterisk HTTP service in <code>http.conf</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>http.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+enabled = yes
+bindaddr = 0.0.0.0</pre>
+</div></div></li><li><p>Configure an ARI user in <code>ari.conf</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>ari.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+enabled = yes           
+pretty = yes            
+
+[asterisk]
+type = user
+read_only = no
+password = asterisk</pre>
+</div></div>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">This is just a demo</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Please use a more secure account user and password for production applications. Outside of examples and demos, asterisk/asterisk is a terrible, horrible, no-good choice...</p>
+                    </div>
+    </div>
+</li><li><p>Create a dialplan extension for your Stasis application. Here, we're choosing extension <code>1000</code> in context <code>default</code> - if your SIP phone is configured for a different context, adjust accordingly.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[default]
+
+exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Answer()
+ same =&gt;      n,Stasis(hello-world)
+ same =&gt;      n,Hangup()</pre>
+</div></div></li></ol><h2 id="GettingStartedwithARI-HelloWorld!">Hello World!</h2><ol><li><p>Connect to Asterisk using <code>wscat</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ wscat -c &quot;ws://localhost:8088/ari/events?api_key=asterisk:asterisk&amp;app=hello-world&quot;
+connected (press CTRL+C to quit)
+&gt;</pre>
+</div></div><p>In Asterisk, we should see a new WebSocket connection and a message telling us that our Stasis application has been created:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">  == WebSocket connection from &#39;127.0.0.1:37872&#39; for protocol &#39;&#39; accepted using version &#39;13&#39;
+ Creating Stasis app &#39;hello-world&#39;</pre>
+</div></div></li><li><p>From your SIP device, dial extension 1000:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">    -- Executing [1000@default:1] NoOp(&quot;PJSIP/1000-00000001&quot;, &quot;&quot;) in new stack
+    -- Executing [1000@default:2] Answer(&quot;PJSIP/1000-00000001&quot;, &quot;&quot;) in new stack
+    -- PJSIP/1000-00000001 answered
+    -- Executing [1000@default:3] Stasis(&quot;PJSIP/1000-00000001&quot;, &quot;hello-world&quot;) in new stack</pre>
+</div></div><p>In wscat, we should see the <code>StasisStart</code> event, indicating that a channel has entered into our Stasis application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: false" style="font-size:12px;">&lt; {
+   &quot;application&quot;:&quot;hello-world&quot;,
+   &quot;type&quot;:&quot;StasisStart&quot;,
+   &quot;timestamp&quot;:&quot;2014-05-20T13:15:27.131-0500&quot;,
+   &quot;args&quot;:[],
+   &quot;channel&quot;:{
+      &quot;id&quot;:&quot;1400609726.3&quot;,
+      &quot;state&quot;:&quot;Up&quot;,
+      &quot;name&quot;:&quot;PJSIP/1000-00000001&quot;,
+      &quot;caller&quot;:{
+         &quot;name&quot;:&quot;&quot;,
+         &quot;number&quot;:&quot;&quot;},
+      &quot;connected&quot;:{
+         &quot;name&quot;:&quot;&quot;,
+         &quot;number&quot;:&quot;&quot;},
+      &quot;accountcode&quot;:&quot;&quot;,
+      &quot;dialplan&quot;:{
+         &quot;context&quot;:&quot;default&quot;,
+         &quot;exten&quot;:&quot;1000&quot;,
+         &quot;priority&quot;:3},
+      &quot;creationtime&quot;:&quot;2014-05-20T13:15:26.628-0500&quot;}
+   }
+&gt;  </pre>
+</div></div></li><li><p>Using <code>curl</code>, tell Asterisk to playback <code>hello-world</code>. Note that the identifier of the channel in the <code>channels</code> resource <strong>must</strong> match the channel <code>id</code> passed back in the <code>StasisStart</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ curl -v -u asterisk:asterisk -X POST &quot;http://localhost:8088/ari/channels/1400609726.3/play?media=sound:hello-world&quot;</pre>
+</div></div><p>The response to our HTTP request will tell us whether or not the request succeeded or failed (in our case, a success will queue the playback onto the channel), as well as return in JSON the Playback resource that was created for the operation:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">* About to connect() to localhost port 8088 (#0)
+*   Trying 127.0.0.1... connected
+* Server auth using Basic with user &#39;asterisk&#39;
+&gt; POST /ari/channels/1400609726.3/play?media=sound:hello-world HTTP/1.1
+&gt; Authorization: Basic YXN0ZXJpc2s6c2VjcmV0
+&gt; User-Agent: curl/7.22.0 (x86_64-pc-linux-gnu) libcurl/7.22.0 OpenSSL/1.0.1 zlib/1.2.3.4 libidn/1.23 librtmp/2.3
+&gt; Host: localhost:8088
+&gt; Accept: */*
+&gt; 
+&lt; HTTP/1.1 201 Created
+&lt; Server: Asterisk/SVN-branch-12-r414137M
+&lt; Date: Tue, 20 May 2014 18:25:15 GMT
+&lt; Connection: close
+&lt; Cache-Control: no-cache, no-store
+&lt; Content-Length: 146
+&lt; Location: /playback/9567ea46-440f-41be-a044-6ecc8100730a
+&lt; Content-type: application/json
+&lt; 
+* Closing connection #0
+{&quot;id&quot;:&quot;9567ea46-440f-41be-a044-6ecc8100730a&quot;,
+ &quot;media_uri&quot;:&quot;sound:hello-world&quot;,
+ &quot;target_uri&quot;:&quot;channel:1400609726.3&quot;,
+ &quot;language&quot;:&quot;en&quot;,
+ &quot;state&quot;:&quot;queued&quot;}
+
+$</pre>
+</div></div><p>In Asterisk, the sound file will be played back to the channel:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: false" style="font-size:12px;">   -- &lt;PJSIP/1000-00000001&gt; Playing &#39;hello-world.gsm&#39; (language &#39;en&#39;) </pre>
+</div></div><p>And in our <code>wscat</code> WebSocket connection, we'll be informed of the start of the playback, as well as it finishing:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: false" style="font-size:12px;">&lt; {&quot;application&quot;:&quot;hello-world&quot;,
+   &quot;type&quot;:&quot;PlaybackStarted&quot;,
+   &quot;playback&quot;:{
+      &quot;id&quot;:&quot;9567ea46-440f-41be-a044-6ecc8100730a&quot;,
+      &quot;media_uri&quot;:&quot;sound:hello-world&quot;,
+      &quot;target_uri&quot;:&quot;channel:1400609726.3&quot;,
+      &quot;language&quot;:&quot;en&quot;,
+      &quot;state&quot;:&quot;playing&quot;}
+   }
+
+&lt; {&quot;application&quot;:&quot;hello-world&quot;,
+   &quot;type&quot;:&quot;PlaybackFinished&quot;,
+   &quot;playback&quot;:{
+      &quot;id&quot;:&quot;9567ea46-440f-41be-a044-6ecc8100730a&quot;,
+      &quot;media_uri&quot;:&quot;sound:hello-world&quot;,
+      &quot;target_uri&quot;:&quot;channel:1400609726.3&quot;,
+      &quot;language&quot;:&quot;en&quot;,
+      &quot;state&quot;:&quot;done&quot;}
+   }</pre>
+</div></div></li><li><p>Hang up the phone! This will cause the channel in Asterisk to be hung up, and the channel will leave the Stasis application, notifying the client via a <code>StasisEnd</code> event:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: false" style="font-size:12px;"> &lt; {&quot;application&quot;:&quot;hello-world&quot;,
+    &quot;type&quot;:&quot;StasisEnd&quot;,
+    &quot;timestamp&quot;:&quot;2014-05-20T13:30:01.852-0500&quot;,
+    &quot;channel&quot;:{
+       &quot;id&quot;:&quot;1400609726.3&quot;,
+       &quot;state&quot;:&quot;Up&quot;,
+       &quot;name&quot;:&quot;PJSIP/1000-00000001&quot;,
+       &quot;caller&quot;:{
+          &quot;name&quot;:&quot;&quot;,
+          &quot;number&quot;:&quot;&quot;},
+       &quot;connected&quot;:{
+          &quot;name&quot;:&quot;&quot;,
+          &quot;number&quot;:&quot;&quot;},
+       &quot;accountcode&quot;:&quot;&quot;,
+       &quot;dialplan&quot;:{
+          &quot;context&quot;:&quot;default&quot;,
+          &quot;exten&quot;:&quot;1000&quot;,
+          &quot;priority&quot;:3},
+       &quot;creationtime&quot;:&quot;2014-05-20T13:15:26.628-0500&quot;}
+    }</pre>
+</div></div></li></ol><p> </p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/26478450/26902563.png">swagger-ui-screenshot.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

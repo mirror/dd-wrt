@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"
 #include "asterisk/linkedlists.h"
@@ -1413,7 +1411,7 @@ static int xmldoc_parse_example(struct ast_xml_node *fixnode, struct ast_str **b
 static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *tabs, const char *posttabs, struct ast_str **buffer)
 {
 	struct ast_xml_node *node = fixnode;
-	int ret = 0, i, count = 0;
+	int ret = 0, i;
 
 	if (!node || !ast_xml_node_get_children(node)) {
 		return ret;
@@ -1440,8 +1438,8 @@ static int xmldoc_parse_specialtags(struct ast_xml_node *fixnode, const char *ta
 		/* parse <para> elements inside special tags. */
 		for (node = ast_xml_node_get_children(node); node; node = ast_xml_node_get_next(node)) {
 			/* first <para> just print it without tabs at the begining. */
-			if ((xmldoc_parse_para(node, (!count ? "" : tabs), posttabs, buffer) == 2)
-				|| (xmldoc_parse_info(node, (!count ? "": tabs), posttabs, buffer) == 2)) {
+			if ((xmldoc_parse_para(node, "", posttabs, buffer) == 2)
+				|| (xmldoc_parse_info(node, "", posttabs, buffer) == 2)) {
 				ret = 2;
 			}
 		}
@@ -2292,7 +2290,9 @@ static struct ast_xml_doc_item *ast_xml_doc_item_alloc(const char *name, const c
 {
 	struct ast_xml_doc_item *item;
 
-	if (!(item = ao2_alloc(sizeof(*item), ast_xml_doc_item_destructor))) {
+	item = ao2_alloc_options(sizeof(*item), ast_xml_doc_item_destructor,
+		AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!item) {
 		ast_log(AST_LOG_ERROR, "Failed to allocate memory for ast_xml_doc_item instance\n");
 		return NULL;
 	}
@@ -2657,7 +2657,9 @@ struct ao2_container *ast_xmldoc_build_documentation(const char *type)
 	struct documentation_tree *doctree;
 	const char *name;
 
-	if (!(docs = ao2_container_alloc(127, ast_xml_doc_item_hash, ast_xml_doc_item_cmp))) {
+	docs = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, 127,
+		ast_xml_doc_item_hash, NULL, ast_xml_doc_item_cmp);
+	if (!docs) {
 		ast_log(AST_LOG_ERROR, "Failed to create container for xml document item instances\n");
 		return NULL;
 	}
@@ -2785,6 +2787,8 @@ static int xml_pathmatch(char *xmlpattern, int xmlpattern_maxlen, glob_t *globbu
 static char *handle_dump_docs(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	struct documentation_tree *doctree;
+	struct ast_xml_doc *dumpdoc;
+	struct ast_xml_node *dumproot;
 	FILE *f;
 
 	switch (cmd) {
@@ -2801,15 +2805,53 @@ static char *handle_dump_docs(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	if (a->argc != 3) {
 		return CLI_SHOWUSAGE;
 	}
+
+	dumpdoc = ast_xml_new();
+	if (!dumpdoc) {
+		ast_log(LOG_ERROR, "Could not create new XML document\n");
+		return CLI_FAILURE;
+	}
+
+	dumproot = ast_xml_new_node("docs");
+	if (!dumproot) {
+		ast_xml_close(dumpdoc);
+		ast_log(LOG_ERROR, "Could not create new XML root node\n");
+		return CLI_FAILURE;
+	}
+
+	ast_xml_set_root(dumpdoc, dumproot);
+
+	AST_RWLIST_RDLOCK(&xmldoc_tree);
+	AST_LIST_TRAVERSE(&xmldoc_tree, doctree, entry) {
+		struct ast_xml_node *root_node = ast_xml_get_root(doctree->doc);
+		struct ast_xml_node *kids = ast_xml_node_get_children(root_node);
+		struct ast_xml_node *kids_copy;
+
+		/* If there are no kids someone screwed up, but we check anyway. */
+		if (!kids) {
+			continue;
+		}
+
+		kids_copy = ast_xml_copy_node_list(kids);
+		if (!kids_copy) {
+			ast_xml_close(dumpdoc);
+			ast_log(LOG_ERROR, "Could not create copy of XML node list\n");
+			return CLI_FAILURE;
+		}
+
+		ast_xml_add_child_list(dumproot, kids_copy);
+	}
+	AST_RWLIST_UNLOCK(&xmldoc_tree);
+
 	if (!(f = fopen(a->argv[2], "w"))) {
+		ast_xml_close(dumpdoc);
 		ast_log(LOG_ERROR, "Could not open file '%s': %s\n", a->argv[2], strerror(errno));
 		return CLI_FAILURE;
 	}
-	AST_RWLIST_RDLOCK(&xmldoc_tree);
-	AST_LIST_TRAVERSE(&xmldoc_tree, doctree, entry) {
-		ast_xml_doc_dump_file(f, doctree->doc);
-	}
-	AST_RWLIST_UNLOCK(&xmldoc_tree);
+
+	ast_xml_doc_dump_file(f, dumpdoc);
+	ast_xml_close(dumpdoc);
+
 	fclose(f);
 	return CLI_SUCCESS;
 }
@@ -2950,5 +2992,3 @@ int ast_xmldoc_load_documentation(void)
 }
 
 #endif /* AST_XML_DOCS */
-
-

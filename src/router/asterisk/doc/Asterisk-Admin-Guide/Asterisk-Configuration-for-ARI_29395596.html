@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Configuration for ARI</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Configuration for ARI
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span> on Aug 21, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="AsteriskConfigurationforARI-Overview">Overview</h1><p>ARI has a number of parts to it - the HTTP server in Asterisk servicing requests, the dialplan application handing control of channels over to a connected client, and the websocket sharing state in Asterisk with the external application. This page provides the configuration files in Asterisk that can be altered to suit deployment considerations.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>This page does not include all of the configuration options available to a system administrator. It does cover some of the basics that you might be interested in when setting up your Asterisk system for ARI.</p>
+                    </div>
+    </div>
+<h1 id="AsteriskConfigurationforARI-AsteriskConfigurationOptionsforARI">Asterisk Configuration Options for ARI</h1><h2 id="AsteriskConfigurationforARI-HTTPServer">HTTP Server</h2><p>The HTTP server in Asterisk is configured via <code>http.conf</code>. Note that this does not describe all of the options available via <code>http.conf</code> - rather, it lists the most useful ones for ARI.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303052162 {padding: 0px;}
+div.rbtoc1582303052162 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303052162 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303052162'>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskConfigurationforARI-Overview'>Overview</a></li>
+<li><a href='#AsteriskConfigurationforARI-AsteriskConfigurationOptionsforARI'>Asterisk Configuration Options for ARI</a>
+<ul class='toc-indentation'>
+<li><a href='#AsteriskConfigurationforARI-HTTPServer'>HTTP Server</a></li>
+<li><a href='#AsteriskConfigurationforARI-ARIConfiguration'>ARI Configuration</a></li>
+</ul>
+</li>
+<li><a href='#AsteriskConfigurationforARI-ConfiguringtheDialplanforARI'>Configuring the Dialplan for ARI</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Section</th><th class="confluenceTh">Parameter</th><th class="confluenceTh">Type</th><th class="confluenceTh">Default</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd"><code>general</code></td><td class="confluenceTd"> </td><td class="confluenceTd"> </td><td class="confluenceTd"> </td><td class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>enabled</code></td><td colspan="1" class="confluenceTd">Boolean</td><td colspan="1" class="confluenceTd">False</td><td colspan="1" class="confluenceTd">Enable the HTTP server. <strong>The HTTP server in Asterisk is disabled by default</strong>. Unless it is enabled, ARI will not function!</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>bindaddr</code></td><td colspan="1" class="confluenceTd">IP Address</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">The IP address to bind the HTTP server to. This can either be an explicit local address, or <code>0.0.0.0</code> to bind to all available interfaces.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>bindport</code></td><td colspan="1" class="confluenceTd">Port</td><td colspan="1" class="confluenceTd">8088</td><td colspan="1" class="confluenceTd">The port to bind the HTTP server to. Client making HTTP requests should specify 8088 as the port to send the request to.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>prefix</code></td><td colspan="1" class="confluenceTd">String</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">A prefix to require for all requests. If specified, requests must begin with the specified prefix.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>tlsenable</code></td><td colspan="1" class="confluenceTd">Boolean</td><td colspan="1" class="confluenceTd">False</td><td colspan="1" class="confluenceTd">Enable HTTPS</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>tlsbindaddr</code></td><td colspan="1" class="confluenceTd">IP Address/Port</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">The IP address and port to bind the HTTPS server to. This should be an IP address and port, e.g., <code>0.0.0.0:8089</code></td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>tlscertfile</code></td><td colspan="1" class="confluenceTd">Path</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">The full path to the certificate file to use. Asterisk only supports the <code>.pem</code> format.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>tlsprivatekey</code></td><td colspan="1" class="confluenceTd">Path</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">The full path to the private key file. Asterisk only supports the <code>.pem</code> format. If this is not specified, the certificate specified in <code>tlscertfile</code> will be searched for the private key.</td></tr></tbody></table></div><h3 id="AsteriskConfigurationforARI-Examplehttp.conf">Example http.conf</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>http.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+enabled = yes
+bindaddr = 0.0.0.0
+bindport = 8088</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Use TLS!</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>It is <strong>highly</strong> recommended that you encrypt your HTTP signalling with TLS, and use secure WebSockets (WSS) for your events. This requires configuring the TLS information in <code>http.conf</code>, and establishing secure websocket/secure HTTP connections from your ARI application.</p>
+                    </div>
+    </div>
+<h2 id="AsteriskConfigurationforARI-ARIConfiguration">ARI Configuration</h2><p>ARI users and properties are configured via <code>ari.conf</code>. Note that all options may not be listed here; this listing includes the most useful ones for configuring users in ARI. For a full description, see the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_ari">ARI configuration</a> documentation.</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Section</th><th class="confluenceTh">Parameter</th><th class="confluenceTh">Type</th><th class="confluenceTh">Default</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd"><code>general</code></td><td class="confluenceTd"> </td><td class="confluenceTd"> </td><td class="confluenceTd"> </td><td class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>enabled</code></td><td colspan="1" class="confluenceTd">Boolean</td><td colspan="1" class="confluenceTd">Yes</td><td colspan="1" class="confluenceTd">Enable/disable ARI.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>pretty</code></td><td colspan="1" class="confluenceTd">Boolean</td><td colspan="1" class="confluenceTd">No</td><td colspan="1" class="confluenceTd">Format JSON responses and events in a human readable form. This makes the output easier to read, at the cost of some additional bytes.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>allowed_origins</code></td><td colspan="1" class="confluenceTd">String</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">A comma separated list of allowed origins for <a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing" class="external-link" rel="nofollow">Cross-Origin Resource Sharing</a>.</td></tr><tr><td colspan="1" class="confluenceTd">[user_name]</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"> </td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>type</code></td><td colspan="1" class="confluenceTd">String</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">Must be <code>user</code>. Specifies that this configuration section defines a user for ARI.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>read_only</code></td><td colspan="1" class="confluenceTd">Boolean</td><td colspan="1" class="confluenceTd">No</td><td colspan="1" class="confluenceTd">Whether or not the user can issue requests that alter the Asterisk system. If set to Yes, then only <code>GET</code> and <code>OPTIONS</code> HTTP requests will be serviced.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>password_format</code></td><td colspan="1" class="confluenceTd">String</td><td colspan="1" class="confluenceTd">plain</td><td colspan="1" class="confluenceTd">Can be either <code>plain</code> or <code>crypt</code>. When the password is plain, Asterisk will expect the user's password to be in plain text in the <code>password</code> field. When set to <code>crypt</code>, Asterisk will use <code>crypt(3)</code> to decrypt the password. A crypted password can be generated using <code>mkpasswd -m sha-512</code>.</td></tr><tr><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd"><code>password</code></td><td colspan="1" class="confluenceTd">String</td><td colspan="1" class="confluenceTd"> </td><td colspan="1" class="confluenceTd">The password for the user.</td></tr></tbody></table></div><h3 id="AsteriskConfigurationforARI-Exampleari.conf">Example ari.conf</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>ari.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+enabled = yes
+pretty = yes
+allowed_origins = localhost:8088,http://ari.asterisk.org
+
+[asterisk]
+type = user
+read_only = no
+password = asterisk
+
+; password_format may be set to plain (the default) or crypt. When set to crypt,
+; crypt(3) is used to validate the password. A crypted password can be generated
+; using mkpasswd -m sha-512.
+;
+[asterisk-supersecret]
+type = user
+read_only = no
+password = $6$nqvAB8Bvs1dJ4V$8zCUygFXuXXp8EU3t2M8i.N8iCsY4WRchxe2AYgGOzHAQrmjIPif3DYrvdj5U2CilLLMChtmFyvFa3XHSxBlB/
+password_format = crypt</pre>
+</div></div><p> </p><h1 id="AsteriskConfigurationforARI-ConfiguringtheDialplanforARI">Configuring the Dialplan for ARI</h1><p>By default, ARI cannot just manipulate any arbitrary channel in Asterisk. That channel may be in a long running dialplan application; it may be controlled by an AGI; it may be hung up! Many operations that ARI exposes would be fundamentally unsafe if Asterisk did not hand control of the channel over to ARI in a safe fashion.</p><p>To hand a channel over to ARI, Asterisk uses a dialplan application called <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_Stasis">Stasis</a>. Stasis acts as any other dialplan application in Asterisk, except that it does not do anything to the channel other than safely pass control over to an ARI application. The Stasis dialplan application takes in two parameters:</p><ol><li>The name of the ARI application to hand the channel over to. Multiple ARI applications can exist with a single instance of Asterisk, and each ARI application will only be able to manipulate the channels that it controls.</li><li>Optionally, arguments to pass to the ARI application when the channel is handed over.</li></ol><h3 id="AsteriskConfigurationforARI-Example:TwoARIApplications">Example: Two ARI Applications</h3><p>This snippet of dialplan, taken from <code>extensions.conf</code>, illustrates two ARI applications. The first hands a channel over to an ARI application &quot;Intro-IVR&quot; without any additional parameters; the second hands a channel over to an ARI application &quot;Super-Conference&quot; with a parameter that specifies a conference room to enter.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">[default]
+
+exten =&gt; ivr,1,NoOp()
+ same =&gt;     n,Stasis(Intro-IVR)
+ same =&gt;     n,Hangup()
+
+exten =&gt; conference,1,NoOp()
+ same =&gt;            n,Stasis(Super-Conference,100)
+ same =&gt;            n,Hangup()
+
+</pre>
+</div></div><p> </p><p>When a channel enters into a Stasis application, Asterisk will check to see if a WebSocket connection has been established for that application. If so, the channel is handed over to ARI for control, a subscription for the channel is made for the WebSocket, and a <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-StasisStart" rel="nofollow">StasisStart</a> event is sent to the WebSocket notifying it that a channel has entered into its application.</p>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">A WebSocket connection is necessary!</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If you have not connected a WebSocket to Asterisk for a particular application, when a channel enters into Stasis for that application, Asterisk will immediately eject the channel from the application and return back to the dialplan. This is to prevent channels from entering into an application before something is ready to handle them.</p><p>Note that if a connection is broken, Asterisk will know that a connection previously existed and will allow channels to enter (although you may got warned that events are about to get missed...)</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

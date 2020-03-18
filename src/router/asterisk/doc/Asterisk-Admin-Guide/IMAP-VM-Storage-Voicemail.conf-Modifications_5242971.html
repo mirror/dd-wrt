@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : IMAP VM Storage Voicemail.conf Modifications</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Voicemail_5242963.html">Voicemail</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="IMAP-Voicemail-Storage_5242967.html">IMAP Voicemail Storage</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : IMAP VM Storage Voicemail.conf Modifications
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The following directives have been added to voicemail.conf:</p>
+
+<ul>
+	<li>imapserver=&lt;name or IP address of IMAP mail server&gt;</li>
+	<li>imapport=&lt;IMAP port, defaults to 143&gt;</li>
+	<li>imapflags=&lt;IMAP flags, &quot;novalidate-cert&quot; for example&gt;</li>
+	<li>imapfolder=&lt;IMAP folder to store messages to&gt;</li>
+	<li>imapgreetings=&lt;yes or no&gt;</li>
+	<li>greetingsfolder=&lt;IMAP folder to store greetings in if imapgreetings is enabled&gt;</li>
+	<li>expungeonhangup=&lt;yes or no&gt;</li>
+	<li>authuser=&lt;username&gt;</li>
+	<li>authpassword=&lt;password&gt;</li>
+	<li>opentimeout=&lt;TCP open timeout in seconds&gt;</li>
+	<li>closetimeout=&lt;TCP close timeout in seconds&gt;</li>
+	<li>readtimeout=&lt;TCP read timeout in seconds&gt;</li>
+	<li>writetimeout=&lt;TCP write timeout in seconds&gt;</li>
+</ul>
+
+
+<p>The &quot;imapfolder&quot; can be used to specify an alternative folder on your IMAP server to store voicemails in. If not specified, the default folder 'INBOX' will be used. </p>
+
+<p>The &quot;imapgreetings&quot; parameter can be enabled in order to store voicemail greetings on the IMAP server. If disabled, then they will be stored on the local file system as normal. </p>
+
+<p>The &quot;greetingsfolder&quot; can be set to store greetings on the IMAP server when &quot;imapgreetings&quot; is enabled in an alternative folder than that set by &quot;imapfolder&quot; or the default folder for voicemails. </p>
+
+<p>The &quot;expungeonhangup&quot; flag is used to determine if the voicemail system should expunge all messages marked for deletion when the user hangs up the phone. </p>
+
+<p>Each mailbox definition should also have imapuser=imap username. For example:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+4123=&gt;4123,James Rothenberger,jar@onebiztone.com,,attach=yes|imapuser=jar
+</pre>
+</div></div>
+
+<p>The directives &quot;authuser&quot; and &quot;authpassword&quot; are not needed when using Kerberos. They are defined to allow Asterisk to authenticate as a single user that has access to all mailboxes as an alternative to Kerberos.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

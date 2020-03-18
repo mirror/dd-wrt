@@ -42,6 +42,11 @@ static int transport_type_wss;
 static int transport_type_wss_ipv6;
 
 /*!
+ * Used to ensure uniqueness among WS transport names
+ */
+static int ws_obj_name_serial;
+
+/*!
  * \brief Wrapper for pjsip_transport, for storing the WebSocket session
  */
 struct ws_transport {
@@ -145,6 +150,7 @@ static int transport_create(void *data)
 {
 	struct transport_create_data *create_data = data;
 	struct ws_transport *newtransport = NULL;
+	pjsip_tp_state_callback state_cb;
 
 	pjsip_endpoint *endpt = ast_sip_get_pjsip_endpoint();
 	struct pjsip_tpmgr *tpmgr = pjsip_endpt_get_tpmgr(endpt);
@@ -160,6 +166,10 @@ static int transport_create(void *data)
 		ast_log(LOG_ERROR, "Failed to allocate WebSocket transport.\n");
 		goto on_error;
 	}
+
+	/* Give websocket transport a unique name for its lifetime */
+	snprintf(newtransport->transport.obj_name, PJ_MAX_OBJ_NAME, "ws%p-%d",
+		&newtransport->transport, ast_atomic_fetchadd_int(&ws_obj_name_serial, 1));
 
 	newtransport->transport.endpt = endpt;
 
@@ -198,27 +208,26 @@ static int transport_create(void *data)
 	ast_debug(4, "Creating websocket transport for %s:%s\n",
 		newtransport->transport.type_name, ws_addr_str);
 
+	newtransport->transport.info = (char *) pj_pool_alloc(newtransport->transport.pool,
+		strlen(newtransport->transport.type_name) + strlen(ws_addr_str) + sizeof(" to "));
+	sprintf(newtransport->transport.info, "%s to %s", newtransport->transport.type_name, ws_addr_str);
+
 	pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&buf, ws_addr_str), &newtransport->transport.key.rem_addr);
 	if (newtransport->transport.key.rem_addr.addr.sa_family == pj_AF_INET6()) {
 		newtransport->transport.key.type = transport_type_wss_ipv6;
-		newtransport->transport.local_name.host.ptr = (char *)pj_pool_alloc(pool, PJ_INET6_ADDRSTRLEN);
-		pj_sockaddr_print(&newtransport->transport.key.rem_addr, newtransport->transport.local_name.host.ptr, PJ_INET6_ADDRSTRLEN, 0);
 	} else {
 		newtransport->transport.key.type = transport_type_wss;
-		newtransport->transport.local_name.host.ptr = (char *)pj_pool_alloc(pool, PJ_INET_ADDRSTRLEN);
-		pj_sockaddr_print(&newtransport->transport.key.rem_addr, newtransport->transport.local_name.host.ptr, PJ_INET_ADDRSTRLEN, 0);
 	}
 
 	newtransport->transport.addr_len = pj_sockaddr_get_len(&newtransport->transport.key.rem_addr);
 
-	pj_sockaddr_cp(&newtransport->transport.local_addr, &newtransport->transport.key.rem_addr);
-
-	newtransport->transport.local_name.host.slen = pj_ansi_strlen(newtransport->transport.local_name.host.ptr);
-	newtransport->transport.local_name.port = pj_sockaddr_get_port(&newtransport->transport.key.rem_addr);
+	ws_addr_str = ast_sockaddr_stringify(ast_websocket_local_address(newtransport->ws_session));
+	pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&buf, ws_addr_str), &newtransport->transport.local_addr);
+	pj_strdup2(pool, &newtransport->transport.local_name.host, ast_sockaddr_stringify_addr(ast_websocket_local_address(newtransport->ws_session)));
+	newtransport->transport.local_name.port = ast_sockaddr_port(ast_websocket_local_address(newtransport->ws_session));
 
 	newtransport->transport.flag = pjsip_transport_get_flag_from_type((pjsip_transport_type_e)newtransport->transport.key.type);
-	newtransport->transport.info = (char *)pj_pool_alloc(newtransport->transport.pool, 64);
-
+	newtransport->transport.dir = PJSIP_TP_DIR_INCOMING;
 	newtransport->transport.tpmgr = tpmgr;
 	newtransport->transport.send_msg = &ws_send_msg;
 	newtransport->transport.destroy = &ws_destroy;
@@ -242,6 +251,16 @@ static int transport_create(void *data)
 	}
 
 	create_data->transport = newtransport;
+
+	/* Notify application of transport state */
+	state_cb = pjsip_tpmgr_get_state_cb(newtransport->transport.tpmgr);
+	if (state_cb) {
+		pjsip_transport_state_info state_info;
+
+		memset(&state_info, 0, sizeof(state_info));
+		state_cb(&newtransport->transport, PJSIP_TP_STATE_CONNECTED, &state_info);
+	}
+
 	return 0;
 
 on_error:
@@ -279,7 +298,7 @@ static int transport_read(void *data)
 	pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&buf, ast_sockaddr_stringify(ast_websocket_remote_address(session))), &rdata->pkt_info.src_addr);
 	rdata->pkt_info.src_addr_len = sizeof(rdata->pkt_info.src_addr);
 
-	pj_ansi_strcpy(rdata->pkt_info.src_name, ast_sockaddr_stringify_host(ast_websocket_remote_address(session)));
+	pj_ansi_strcpy(rdata->pkt_info.src_name, ast_sockaddr_stringify_addr(ast_websocket_remote_address(session)));
 	rdata->pkt_info.src_port = ast_sockaddr_port(ast_websocket_remote_address(session));
 
 	recvd = pjsip_tpmgr_receive_packet(rdata->tp_info.transport->tpmgr, rdata);
@@ -334,7 +353,7 @@ static struct ast_taskprocessor *create_websocket_serializer(void)
 	/* Create name with seq number appended. */
 	ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/websocket");
 
-	return ast_sip_create_serializer_named(tps_name);
+	return ast_sip_create_serializer(tps_name);
 }
 
 /*! \brief WebSocket connection handler. */
@@ -363,8 +382,9 @@ static void websocket_cb(struct ast_websocket *session, struct ast_variable *par
 
 	create_data.ws_session = session;
 
-	if (ast_sip_push_task_synchronous(serializer, transport_create, &create_data)) {
+	if (ast_sip_push_task_wait_serializer(serializer, transport_create, &create_data)) {
 		ast_log(LOG_ERROR, "Could not create WebSocket transport.\n");
+		ast_taskprocessor_unreference(serializer);
 		ast_websocket_unref(session);
 		return;
 	}
@@ -372,7 +392,7 @@ static void websocket_cb(struct ast_websocket *session, struct ast_variable *par
 	transport = create_data.transport;
 	read_data.transport = transport;
 
-	while (ast_wait_for_input(ast_websocket_fd(session), -1) > 0) {
+	while (ast_websocket_wait_for_input(session, -1) > 0) {
 		enum ast_websocket_opcode opcode;
 		int fragmented;
 
@@ -381,13 +401,15 @@ static void websocket_cb(struct ast_websocket *session, struct ast_variable *par
 		}
 
 		if (opcode == AST_WEBSOCKET_OPCODE_TEXT || opcode == AST_WEBSOCKET_OPCODE_BINARY) {
-			ast_sip_push_task_synchronous(serializer, transport_read, &read_data);
+			if (read_data.payload_len) {
+				ast_sip_push_task_wait_serializer(serializer, transport_read, &read_data);
+			}
 		} else if (opcode == AST_WEBSOCKET_OPCODE_CLOSE) {
 			break;
 		}
 	}
 
-	ast_sip_push_task_synchronous(serializer, transport_shutdown, transport);
+	ast_sip_push_task_wait_serializer(serializer, transport_shutdown, transport);
 
 	ast_taskprocessor_unreference(serializer);
 	ast_websocket_unref(session);
@@ -414,12 +436,23 @@ static pj_bool_t websocket_on_rx_msg(pjsip_rx_data *rdata)
 		pjsip_sip_uri *uri = pjsip_uri_get_uri(contact->uri);
 		const pj_str_t *txp_str = &STR_WS;
 
-		ast_debug(4, "%s re-writing Contact URI from %.*s:%d%s%.*s to %s:%d;transport=%s\n",
-			pjsip_rx_data_get_info(rdata),
-			(int)pj_strlen(&uri->host), pj_strbuf(&uri->host), uri->port,
-			pj_strlen(&uri->transport_param) ? ";transport=" : "",
-			(int)pj_strlen(&uri->transport_param), pj_strbuf(&uri->transport_param),
-			rdata->pkt_info.src_name ?: "", rdata->pkt_info.src_port, pj_strbuf(txp_str));
+		if (DEBUG_ATLEAST(4)) {
+			char src_addr_buffer[AST_SOCKADDR_BUFLEN];
+			const char *ipv6_s = "", *ipv6_e = "";
+
+			if (pj_strchr(&uri->host, ':')) {
+				ipv6_s = "[";
+				ipv6_e = "]";
+			}
+
+			ast_log(LOG_DEBUG, "%s re-writing Contact URI from %s%.*s%s:%d%s%.*s to %s;transport=%s\n",
+				pjsip_rx_data_get_info(rdata),
+				ipv6_s, (int) pj_strlen(&uri->host), pj_strbuf(&uri->host), ipv6_e, uri->port,
+				pj_strlen(&uri->transport_param) ? ";transport=" : "",
+				(int) pj_strlen(&uri->transport_param), pj_strbuf(&uri->transport_param),
+				pj_sockaddr_print(&rdata->pkt_info.src_addr, src_addr_buffer, sizeof(src_addr_buffer), 3),
+				pj_strbuf(txp_str));
+		}
 
 		pj_cstr(&uri->host, rdata->pkt_info.src_name);
 		uri->port = rdata->pkt_info.src_port;
@@ -456,8 +489,6 @@ static struct ast_sip_session_supplement websocket_supplement = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
 	/*
 	 * We only need one transport type name (ws) defined.  Firefox
 	 * and Chrome do not support anything other than secure websockets
@@ -475,10 +506,7 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	if (ast_sip_session_register_supplement(&websocket_supplement)) {
-		ast_sip_unregister_service(&websocket_module);
-		return AST_MODULE_LOAD_DECLINE;
-	}
+	ast_sip_session_register_supplement(&websocket_supplement);
 
 	if (ast_websocket_add_protocol("sip", websocket_cb)) {
 		ast_sip_session_unregister_supplement(&websocket_supplement);
@@ -499,8 +527,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP WebSocket Transport Support",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	   );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip,res_http_websocket",
+);

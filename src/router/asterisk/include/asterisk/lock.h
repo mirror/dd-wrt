@@ -51,10 +51,8 @@
 #include <pthread.h>
 #include <time.h>
 #include <sys/param.h>
-#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 #include <execinfo.h>
-#endif
 #endif
 
 #ifndef HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK
@@ -68,7 +66,7 @@
 #define AST_PTHREADT_NULL (pthread_t) -1
 #define AST_PTHREADT_STOP (pthread_t) -2
 
-#if (defined(SOLARIS) || defined(BSD))
+#if (defined(SOLARIS) || defined(BSD) || !defined(HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP))
 #define AST_MUTEX_INIT_W_CONSTRUCTORS
 #endif /* SOLARIS || BSD */
 
@@ -88,21 +86,17 @@
 #define __AST_RWLOCK_INIT_VALUE		{0}
 #endif /* HAVE_PTHREAD_RWLOCK_INITIALIZER */
 
-#if 0//ndef __UCLIBC__
 #ifdef HAVE_BKTR
 #define AST_LOCK_TRACK_INIT_VALUE { { NULL }, { 0 }, 0, { NULL }, { 0 }, {{{ 0 }}}, PTHREAD_MUTEX_INIT_VALUE }
 #else
 #define AST_LOCK_TRACK_INIT_VALUE { { NULL }, { 0 }, 0, { NULL }, { 0 }, PTHREAD_MUTEX_INIT_VALUE }
 #endif
-#else
-#define AST_LOCK_TRACK_INIT_VALUE { { NULL }, { 0 }, 0, { NULL }, { 0 }, PTHREAD_MUTEX_INIT_VALUE }
-#endif
 
-#define AST_MUTEX_INIT_VALUE { PTHREAD_MUTEX_INIT_VALUE, NULL, 1 }
-#define AST_MUTEX_INIT_VALUE_NOTRACKING { PTHREAD_MUTEX_INIT_VALUE, NULL, 0 }
+#define AST_MUTEX_INIT_VALUE { PTHREAD_MUTEX_INIT_VALUE, NULL, {1, 0} }
+#define AST_MUTEX_INIT_VALUE_NOTRACKING { PTHREAD_MUTEX_INIT_VALUE, NULL, {0, 0} }
 
-#define AST_RWLOCK_INIT_VALUE { __AST_RWLOCK_INIT_VALUE, NULL, 1 }
-#define AST_RWLOCK_INIT_VALUE_NOTRACKING { __AST_RWLOCK_INIT_VALUE, NULL, 0 }
+#define AST_RWLOCK_INIT_VALUE { __AST_RWLOCK_INIT_VALUE, NULL, {1, 0} }
+#define AST_RWLOCK_INIT_VALUE_NOTRACKING { __AST_RWLOCK_INIT_VALUE, NULL, {0, 0} }
 
 #define AST_MAX_REENTRANCY 10
 
@@ -120,12 +114,17 @@ struct ast_lock_track {
 	int reentrancy;
 	const char *func[AST_MAX_REENTRANCY];
 	pthread_t thread_id[AST_MAX_REENTRANCY];
-#if 0 //ndef __UCLIBC__
 #ifdef HAVE_BKTR
 	struct ast_bt backtrace[AST_MAX_REENTRANCY];
 #endif
-#endif
 	pthread_mutex_t reentr_mutex;
+};
+
+struct ast_lock_track_flags {
+	/*! non-zero if lock tracking is enabled */
+	unsigned int tracking:1;
+	/*! non-zero if track is setup */
+	volatile unsigned int setup:1;
 };
 
 /*! \brief Structure for mutex and tracking information.
@@ -135,9 +134,18 @@ struct ast_lock_track {
  */
 struct ast_mutex_info {
 	pthread_mutex_t mutex;
-	/*! Track which thread holds this mutex */
+#if !defined(DEBUG_THREADS) && !defined(DEBUG_THREADS_LOOSE_ABI)
+	/*!
+	 * These fields are renamed to ensure they are never used when
+	 * DEBUG_THREADS is not defined.
+	 */
+	struct ast_lock_track *_track;
+	struct ast_lock_track_flags _flags;
+#elif defined(DEBUG_THREADS)
+	/*! Track which thread holds this mutex. */
 	struct ast_lock_track *track;
-	unsigned int tracking:1;
+	struct ast_lock_track_flags flags;
+#endif
 };
 
 /*! \brief Structure for rwlock and tracking information.
@@ -147,9 +155,18 @@ struct ast_mutex_info {
  */
 struct ast_rwlock_info {
 	pthread_rwlock_t lock;
+#if !defined(DEBUG_THREADS) && !defined(DEBUG_THREADS_LOOSE_ABI)
+	/*!
+	 * These fields are renamed to ensure they are never used when
+	 * DEBUG_THREADS is not defined.
+	 */
+	struct ast_lock_track *_track;
+	struct ast_lock_track_flags _flags;
+#elif defined(DEBUG_THREADS)
 	/*! Track which thread holds this lock */
 	struct ast_lock_track *track;
-	unsigned int tracking:1;
+	struct ast_lock_track_flags flags;
+#endif
 };
 
 typedef struct ast_mutex_info ast_mutex_t;
@@ -224,8 +241,6 @@ int __ast_rwlock_trywrlock(const char *filename, int lineno, const char *func, a
 
 #ifdef DEBUG_THREADS
 
-#define __ast_mutex_logger(...)  do { if (canlog) ast_log(LOG_ERROR, __VA_ARGS__); else fprintf(stderr, __VA_ARGS__); } while (0)
-
 #ifdef THREAD_CRASH
 #define DO_THREAD_CRASH do { *((int *)(0)) = 1; } while(0)
 #else
@@ -248,50 +263,18 @@ enum ast_lock_type {
  * lock info struct.  The lock is marked as pending as the thread is waiting
  * on the lock.  ast_mark_lock_acquired() will mark it as held by this thread.
  */
-#if !defined(LOW_MEMORY)
-#ifndef HAVE_BKTR
-#ifdef HAVE_BKTR
 void ast_store_lock_info(enum ast_lock_type type, const char *filename,
 	int line_num, const char *func, const char *lock_name, void *lock_addr, struct ast_bt *bt);
-#else
-void ast_store_lock_info(enum ast_lock_type type, const char *filename,
-	int line_num, const char *func, const char *lock_name, void *lock_addr);
-#endif /* HAVE_BKTR */
-#else
-void ast_store_lock_info(enum ast_lock_type type, const char *filename,
-        int line_num, const char *func, const char *lock_name, void *lock_addr);
-#endif 
-
-#else
-
-#if 0//ndef __UCLIBC__
-#ifdef HAVE_BKTR
-#define ast_store_lock_info(I,DONT,CARE,ABOUT,THE,PARAMETERS,BUD)
-#else
-#define ast_store_lock_info(I,DONT,CARE,ABOUT,THE,PARAMETERS)
-#endif /* HAVE_BKTR */
-#else
-#define ast_store_lock_info(I,DONT,CARE,ABOUT,THE,PARAMETERS)
-#endif
-#endif /* !defined(LOW_MEMORY) */
 
 /*!
  * \brief Mark the last lock as acquired
  */
-#if !defined(LOW_MEMORY)
 void ast_mark_lock_acquired(void *lock_addr);
-#else
-#define ast_mark_lock_acquired(ignore)
-#endif
 
 /*!
  * \brief Mark the last lock as failed (trylock)
  */
-#if !defined(LOW_MEMORY)
 void ast_mark_lock_failed(void *lock_addr);
-#else
-#define ast_mark_lock_failed(ignore)
-#endif
 
 /*!
  * \brief remove lock info for the current thread
@@ -299,31 +282,9 @@ void ast_mark_lock_failed(void *lock_addr);
  * this gets called by ast_mutex_unlock so that information on the lock can
  * be removed from the current thread's lock info struct.
  */
-#if !defined(LOW_MEMORY)
-#if 0//ndef __UCLIBC__
-#ifdef HAVE_BKTR
 void ast_remove_lock_info(void *lock_addr, struct ast_bt *bt);
-#else
-void ast_remove_lock_info(void *lock_addr);
-#endif /* HAVE_BKTR */
-#else
-void ast_remove_lock_info(void *lock_addr);
-#endif 
 void ast_suspend_lock_info(void *lock_addr);
 void ast_restore_lock_info(void *lock_addr);
-#else
-#ifndef __UCLIBC
-#ifdef HAVE_BKTR
-#define ast_remove_lock_info(ignore,me)
-#else
-#define ast_remove_lock_info(ignore)
-#endif /* HAVE_BKTR */
-#else
-#define ast_remove_lock_info(ignore)
-#endif
-#define ast_suspend_lock_info(ignore);
-#define ast_restore_lock_info(ignore);
-#endif /* !defined(LOW_MEMORY) */
 
 /*!
  * \brief log info for the current lock with ast_log().
@@ -358,11 +319,7 @@ struct ast_str *ast_dump_locks(void);
  * this gets called during deadlock avoidance, so that the information may
  * be preserved as to what location originally acquired the lock.
  */
-#if !defined(LOW_MEMORY)
 int ast_find_lock_info(void *lock_addr, char *filename, size_t filename_size, int *lineno, char *func, size_t func_size, char *mutex_name, size_t mutex_name_size);
-#else
-#define ast_find_lock_info(a,b,c,d,e,f,g,h) -1
-#endif
 
 /*!
  * \brief Unlock a lock briefly
@@ -683,97 +640,130 @@ static void  __attribute__((destructor)) fini_##rwlock(void) \
 #define pthread_create __use_ast_pthread_create_instead__
 #endif
 
-/*
- * Support for atomic instructions.
- * For platforms that have it, use the native cpu instruction to
- * implement them. For other platforms, resort to a 'slow' version
- * (defined in utils.c) that protects the atomic instruction with
- * a single lock.
- * The slow versions is always available, for testing purposes,
- * as ast_atomic_fetchadd_int_slow()
+/*!
+ * \brief Support for atomic instructions.
+ *
+ * These macros implement a uniform interface to use built-in atomic functionality.
+ * If available __atomic built-ins are prefered.  Legacy __sync built-ins are used
+ * as a fallback for older compilers.
+ *
+ * Detailed documentation can be found in the GCC manual, all API's are modeled after
+ * the __atomic interfaces but using the namespace ast_atomic.
+ *
+ * The memorder argument is always ignored by legacy __sync functions.  Invalid
+ * memorder arguments do not produce errors unless __atomic functions are supported
+ * as the argument is erased by the preprocessor.
+ *
+ * \note ast_atomic_fetch_nand and ast_atomic_nand_fetch purposely do not exist.
+ *       It's implementation was broken prior to gcc-4.4.
+ *
+ * @{
  */
-
-int ast_atomic_fetchadd_int_slow(volatile int *p, int v);
 
 #include "asterisk/inline_api.h"
 
-#if defined(HAVE_OSX_ATOMICS)
-#include "libkern/OSAtomic.h"
+#if defined(HAVE_C_ATOMICS)
+/*! Atomic += */
+#define ast_atomic_fetch_add(ptr, val, memorder)  __atomic_fetch_add((ptr), (val), (memorder))
+#define ast_atomic_add_fetch(ptr, val, memorder)  __atomic_add_fetch((ptr), (val), (memorder))
+
+/*! Atomic -= */
+#define ast_atomic_fetch_sub(ptr, val, memorder)  __atomic_fetch_sub((ptr), (val), (memorder))
+#define ast_atomic_sub_fetch(ptr, val, memorder)  __atomic_sub_fetch((ptr), (val), (memorder))
+
+/*! Atomic &= */
+#define ast_atomic_fetch_and(ptr, val, memorder)  __atomic_fetch_and((ptr), (val), (memorder))
+#define ast_atomic_and_fetch(ptr, val, memorder)  __atomic_and_fetch((ptr), (val), (memorder))
+
+/*! Atomic |= */
+#define ast_atomic_fetch_or(ptr, val, memorder)   __atomic_fetch_or((ptr), (val), (memorder))
+#define ast_atomic_or_fetch(ptr, val, memorder)   __atomic_or_fetch((ptr), (val), (memorder))
+
+/*! Atomic xor = */
+#define ast_atomic_fetch_xor(ptr, val, memorder)  __atomic_fetch_xor((ptr), (val), (memorder))
+#define ast_atomic_xor_fetch(ptr, val, memorder)  __atomic_xor_fetch((ptr), (val), (memorder))
+
+#if 0
+/* Atomic compare and swap
+ *
+ * See comments near the __atomic implementation for why this is disabled.
+ */
+#define ast_atomic_compare_exchange_n(ptr, expected, desired, success_memorder, failure_memorder) \
+	__atomic_compare_exchange_n((ptr), (expected), (desired), 0, success_memorder, failure_memorder)
+
+#define ast_atomic_compare_exchange(ptr, expected, desired, success_memorder, failure_memorder) \
+	__atomic_compare_exchange((ptr), (expected), (desired), 0, success_memorder, failure_memorder)
 #endif
 
-/*! \brief Atomically add v to *p and return * the previous value of *p.
+#elif defined(HAVE_GCC_ATOMICS)
+/*! Atomic += */
+#define ast_atomic_fetch_add(ptr, val, memorder)  __sync_fetch_and_add((ptr), (val))
+#define ast_atomic_add_fetch(ptr, val, memorder)  __sync_add_and_fetch((ptr), (val))
+
+/*! Atomic -= */
+#define ast_atomic_fetch_sub(ptr, val, memorder)  __sync_fetch_and_sub((ptr), (val))
+#define ast_atomic_sub_fetch(ptr, val, memorder)  __sync_sub_and_fetch((ptr), (val))
+
+/*! Atomic &= */
+#define ast_atomic_fetch_and(ptr, val, memorder)  __sync_fetch_and_and((ptr), (val))
+#define ast_atomic_and_fetch(ptr, val, memorder)  __sync_and_and_fetch((ptr), (val))
+
+/*! Atomic |= */
+#define ast_atomic_fetch_or(ptr, val, memorder)  __sync_fetch_and_or((ptr), (val))
+#define ast_atomic_or_fetch(ptr, val, memorder)  __sync_or_and_fetch((ptr), (val))
+
+/*! Atomic xor = */
+#define ast_atomic_fetch_xor(ptr, val, memorder)  __sync_fetch_and_xor((ptr), (val))
+#define ast_atomic_xor_fetch(ptr, val, memorder)  __sync_xor_and_fetch((ptr), (val))
+
+#if 0
+/* Atomic compare and swap
+ *
+ * The \a expected argument is a pointer, I'm guessing __atomic built-ins
+ * perform all memory reads/writes in a single atomic operation.  I don't
+ * believe this is possible to exactly replicate using __sync built-ins.
+ * Will need to determine potential use cases of this feature and write a
+ * wrapper which provides consistant behavior between __sync and __atomic
+ * implementations.
+ */
+#define ast_atomic_compare_exchange_n(ptr, expected, desired, success_memorder, failure_memorder) \
+	__sync_bool_compare_and_swap((ptr), *(expected), (desired))
+
+#define ast_atomic_compare_exchange(ptr, expected, desired, success_memorder, failure_memorder) \
+	__sync_bool_compare_and_swap((ptr), *(expected), *(desired))
+#endif
+
+#else
+#error "Atomics not available."
+#endif
+
+/*! Atomic flag set */
+#define ast_atomic_flag_set(ptr, val, memorder)   ast_atomic_fetch_or((ptr), (val), (memorder))
+
+/*! Atomic flag clear */
+#define ast_atomic_flag_clear(ptr, val, memorder) ast_atomic_fetch_and((ptr), ~(val), (memorder))
+
+/*!
+ * \brief Atomically add v to *p and return the previous value of *p.
+ *
  * This can be used to handle reference counts, and the return value
  * can be used to generate unique identifiers.
  */
+AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
+{
+	return ast_atomic_fetch_add(p, v, __ATOMIC_RELAXED);
+})
 
-#if defined(HAVE_GCC_ATOMICS)
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	return __sync_fetch_and_add(p, v);
-})
-#elif defined(HAVE_OSX_ATOMICS) && (SIZEOF_INT == 4)
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	return OSAtomicAdd32(v, (int32_t *) p) - v;
-})
-#elif defined(HAVE_OSX_ATOMICS) && (SIZEOF_INT == 8)
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	return OSAtomicAdd64(v, (int64_t *) p) - v;
-})
-#elif defined (__i386__) || defined(__x86_64__)
-#ifdef sun
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	__asm __volatile (
-	"       lock;  xaddl   %0, %1 ;        "
-	: "+r" (v),                     /* 0 (result) */
-	  "=m" (*p)                     /* 1 */
-	: "m" (*p));                    /* 2 */
-	return (v);
-})
-#else /* ifndef sun */
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	__asm __volatile (
-	"       lock   xaddl   %0, %1 ;        "
-	: "+r" (v),                     /* 0 (result) */
-	  "=m" (*p)                     /* 1 */
-	: "m" (*p));                    /* 2 */
-	return (v);
-})
-#endif
-#else   /* low performance version in utils.c */
-AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
-{
-	return ast_atomic_fetchadd_int_slow(p, v);
-})
-#endif
-
-/*! \brief decrement *p by 1 and return true if the variable has reached 0.
+/*!
+ * \brief decrement *p by 1 and return true if the variable has reached 0.
+ *
  * Useful e.g. to check if a refcount has reached 0.
  */
-#if defined(HAVE_GCC_ATOMICS)
 AST_INLINE_API(int ast_atomic_dec_and_test(volatile int *p),
 {
-	return __sync_sub_and_fetch(p, 1) == 0;
+	return ast_atomic_sub_fetch(p, 1, __ATOMIC_RELAXED) == 0;
 })
-#elif defined(HAVE_OSX_ATOMICS) && (SIZEOF_INT == 4)
-AST_INLINE_API(int ast_atomic_dec_and_test(volatile int *p),
-{
-	return OSAtomicAdd32( -1, (int32_t *) p) == 0;
-})
-#elif defined(HAVE_OSX_ATOMICS) && (SIZEOF_INT == 8)
-AST_INLINE_API(int ast_atomic_dec_and_test(volatile int *p),
-{
-	return OSAtomicAdd64( -1, (int64_t *) p) == 0;
-})
-#else
-AST_INLINE_API(int ast_atomic_dec_and_test(volatile int *p),
-{
-	int a = ast_atomic_fetchadd_int(p, -1);
-	return a == 1; /* true if the value is 0 now (so it was 1 previously) */
-})
-#endif
+
+/*! @} */
 
 #endif /* _ASTERISK_LOCK_H */

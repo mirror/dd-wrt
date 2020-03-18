@@ -31,6 +31,8 @@
 #include "asterisk/logger.h"
 #include "asterisk/sorcery.h"
 #include "asterisk/acl.h"
+#include "asterisk/stasis.h"
+#include "asterisk/security_events.h"
 
 /*** DOCUMENTATION
 	<configInfo name="res_pjsip_acl" language="en_US">
@@ -113,6 +115,8 @@
 		</configFile>
 	</configInfo>
  ***/
+
+static struct stasis_subscription *acl_change_sub;
 
 static int apply_acl(pjsip_rx_data *rdata, struct ast_acl_list *acl)
 {
@@ -238,8 +242,21 @@ static int acl_handler(const struct aco_option *opt, struct ast_variable *var, v
 
 	if (!strncmp(var->name, "contact_", 8)) {
 		ast_append_acl(var->name + 8, var->value, &sip_acl->contact_acl, &error, &ignore);
+		if (error) {
+			ast_log(LOG_ERROR, "Bad contact ACL '%s' at line '%d' of pjsip.conf\n",
+					var->value, var->lineno);
+		}
 	} else {
 		ast_append_acl(var->name, var->value, &sip_acl->acl, &error, &ignore);
+		if (error) {
+			ast_log(LOG_ERROR, "Bad ACL '%s' at line '%d' of pjsip.conf\n",
+					var->value, var->lineno);
+		}
+	}
+
+	if (error) {
+		ast_log(LOG_ERROR, "There is an error in ACL configuration. Blocking ALL SIP traffic.\n");
+		ast_append_acl("deny", "0.0.0.0/0.0.0.0", &sip_acl->acl, NULL, &ignore);
 	}
 
 	return error;
@@ -267,10 +284,18 @@ static void *acl_alloc(const char *name)
 	return sip_acl;
 }
 
+static void acl_change_stasis_cb(void *data, struct stasis_subscription *sub,
+	struct stasis_message *message)
+{
+	if (stasis_message_type(message) != ast_named_acl_change_type()) {
+		return;
+	}
+
+	ast_sorcery_force_reload_object(ast_sip_get_sorcery(), SIP_SORCERY_ACL_TYPE);
+}
+
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
 	ast_sorcery_apply_config(ast_sip_get_sorcery(), SIP_SORCERY_ACL_TYPE);
 	ast_sorcery_apply_default(ast_sip_get_sorcery(), SIP_SORCERY_ACL_TYPE,
 				  "config", "pjsip.conf,criteria=type=acl");
@@ -293,19 +318,26 @@ static int load_module(void)
 
 	ast_sorcery_load_object(ast_sip_get_sorcery(), SIP_SORCERY_ACL_TYPE);
 
+	acl_change_sub = stasis_subscribe(ast_security_topic(), acl_change_stasis_cb, NULL);
+	stasis_subscription_accept_message_type(acl_change_sub, ast_named_acl_change_type());
+	stasis_subscription_set_filter(acl_change_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
+
 	ast_sip_register_service(&acl_module);
+
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int unload_module(void)
 {
+	acl_change_sub = stasis_unsubscribe_and_join(acl_change_sub);
 	ast_sip_unregister_service(&acl_module);
 	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP ACL Resource",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip",
+);

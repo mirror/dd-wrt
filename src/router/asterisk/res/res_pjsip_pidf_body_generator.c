@@ -75,7 +75,7 @@ static int pidf_generate_body_content(void *body, void *data)
 	pjpidf_tuple_set_contact(state_data->pool, tuple, pj_cstr(&contact, sanitized));
 	pjpidf_tuple_set_contact_prio(state_data->pool, tuple, pj_cstr(&priority, "1"));
 	pjpidf_status_set_basic_open(pjpidf_tuple_get_status(tuple),
-			local_state == NOTIFY_OPEN);
+			local_state == NOTIFY_OPEN || local_state == NOTIFY_INUSE);
 
 	return 0;
 }
@@ -116,8 +116,6 @@ static struct ast_sip_pubsub_body_generator pidf_body_generator = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_PUBSUB_MODULE_LOADED();
-
 	if (ast_sip_pubsub_register_body_generator(&pidf_body_generator)) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -131,8 +129,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Extension State PIDF Provider",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.requires = "res_pjsip,res_pjsip_pubsub",
 );

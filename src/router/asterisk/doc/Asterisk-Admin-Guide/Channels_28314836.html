@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Channels</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Channels
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Aug 06, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="Channels-AsteriskChannels">Asterisk Channels</h1><p>Almost nothing happens in Asterisk without a channel being involved. A channel is an entity inside Asterisk that acts as a channel of communication between Asterisk and another device. That is, a phone, a PBX, another Asterisk system, or even Asterisk itself (in the case of a <a href="Local-Channel_4817170.html">local channel</a>).</p><p>Our documentation and many Asterisk users speak about channels in terms of &quot;calls&quot;. A <strong>call</strong> can be one or more channels creating a path of communication or activity through the Asterisk system.</p><p>To give you an idea about what channels do, here are a few facts about them:</p><ul><li><a href="Channel-Drivers_4817130.html">Channel Drivers</a> provide channels in Asterisk.</li><li>Channels can interface with each other through <a href="Bridges_4817441.html">bridges</a>.</li><li><a href="Applications_4817408.html">Applications</a> and <a href="Functions_27200281.html">functions</a> can affect the state or attributes of a channel or its media stream.</li><li>Channels are commonly passing audio between communication endpoints, but can pass other data, such as video or text messages.</li><li>Channels execute instructions with <a href="Dialplan_4817412.html">dialplan</a>, but can be controlled by other APIs (AGI,AMI,ARI) or interfaces (CLI).<span> </span></li></ul><h2 id="Channels-CommonAsteriskChannels">Common Asterisk Channels</h2><p>One of the many benefits of Asterisk is the capability to interface with as many different technologies as you have channel drivers! However, most administrators will only make use of a few types at a time.</p><p>Here are a few commonly used <a href="Channel-Drivers_4817130.html">channel types</a>:</p><ul><li>A SIP channel driver such as <a href="Configuring-chan_sip_28934283.html">chan_sip</a> or <a href="Configuring-res_pjsip_25919621.html">chan_pjsip</a>.</li><li>DAHDI channels provided by <a href="DAHDI_28314858.html">chan_dahdi</a>.</li><li>Local channels provided by <a href="Local-Channel_4817170.html">chan_local</a>. (This was moved into the core in Asterisk 12)</li></ul><p><strong>SIP channels</strong> are used to interface with SIP capable VOIP devices, such as phones, channel banks, other PBXs or Internet Telephony Service Providers.</p><p><strong>DAHDI channels </strong>are used to interface with DAHDI drivers and PRI libraries. In this case chan_dahdi allows you to use any DAHDI capable devices, such as Digium's line of T1/E1/J1 interface cards.</p><p><strong>Local channels</strong> are used for dialing inward to the system itself, allowing any Asterisk component that can dial to call directly into dialplan. This provides a sort of &quot;fake&quot; call that still executes real instructions.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302916045 {padding: 0px;}
+div.rbtoc1582302916045 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302916045 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302916045'>
+<ul class='toc-indentation'>
+<li><a href='#Channels-AsteriskChannels'>Asterisk Channels</a></li>
+<li><a href='#Channels-ConfiguringChannels'>Configuring Channels</a></li>
+<li><a href='#Channels-Using,ControllingandRoutingChannels'>Using, Controlling and Routing Channels</a></li>
+<li><a href='#Channels-InboundandOutboundChannels'>Inbound and Outbound Channels</a></li>
+<li><a href='#Channels-ChannelVariableInheritance'>Channel Variable Inheritance</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="Channels-ConfiguringChannels">Configuring Channels</h1><h2 id="Channels-TextFileConfiguration">Text File Configuration</h2><p>Most channel drivers have an associated configuration file. Some channels may require the configuration of dependent resources for optimal operation. For example, SIP channels, configured in sip.conf or pjsip.conf use RTP resources which can be configured in rtp.conf.</p><p>The <a href="Channel-Drivers_4817130.html">Channel Drivers</a> configuration section contains information on configuring documented channel drivers. In other cases the configuration file itself contains configuration documentation.</p><h2 id="Channels-DatabaseConfiguration">Database Configuration</h2><p>Flat text configuration isn't the only option. A few channel drivers provide support for the ARA (<a href="Database-Support-Configuration_4620315.html">Asterisk Realtime Architecture</a>) and can therefore pull configuration from a local or remote database. Use of the ARA requires configuration of additional resources and dependencies outside the channel drivers themselves.</p><h1 id="Channels-Using,ControllingandRoutingChannels">Using, Controlling and Routing Channels</h1><p>Once you have a channel driver configured, how does it get used? When do channels get created?</p><p>Here are a few scenarios where a channel could get created:</p><ul><li>A device configured in the channel driver communicates to Asterisk (e.g. over a network) that it wants to make a call.</li><li>A user executes a command (such as Originate) to create a new channel.</li><li>An existing channel executes <a href="Dialplan_4817412.html">dialplan</a> that calls an application (such as Dial) to create a new channel.</li><li>Asterisk receives <a href="Interfaces_27200287.html">API</a> calls that create a new channel or channels.</li></ul><p>Once a channel is established, the events that occur are channel technology-dependent. That is, whether audio, video or other data communication begins over the channel will depend on signaling that occurs over SIP, ISDN, H.323 or other protocols implemented via the channel driver.</p><p>When Asterisk has established a channel, Asterisk will use a combination of channel driver configuration and dialplan instruction to determine how the channel behaves. On top of that Asterisk can communicate with external programs synchronously or asynchronously to receive API calls for channel inspection, direction or manipulation.</p><p>Once channels are established and communicating between devices and Asterisk; where that data flows to depends on the channel type itself, its overall configuration, device specific configuration, signaling sent by the originating mechanism (a device, a command, an API call) and associated <a href="Bridges_4817441.html">bridges</a>. One or more channels could be talking to one or more channels over various bridges. What specifically Asterisk talks to on each channel is limited only by the technology implemented by the channel driver.</p><h1 id="Channels-InboundandOutboundChannels">Inbound and Outbound Channels</h1><p>Often in our documentation, troubleshooting and development discussions you'll see mention of inbound or outbound channels. It'll be helpful to define what that means here.</p><p><strong>Inbound channels</strong> are channels created when things outside of Asterisk call <strong>into</strong> Asterisk. This is typically the channel executing <a href="Dialplan_4817412.html">Dialplan</a>.</p><p><strong>Outbound channels</strong> are channels created when Asterisk is calling <strong>out</strong> to something outside Asterisk.</p><p>The primary exception is with <a href="Local-Channel_4817170.html">Local Channels</a>. In the case of local channels, you'll typically have two local channel legs, one that is treated as outbound and the other as inbound. In this case both are really inside Asterisk, but one is executing dialplan and the other is not. The leg executing dialplan is the one treated as inbound.</p><p>Below we'll diagram a few examples for clarity.</p><p> </p><p>
+
+<map id="gliffy-map-29687874-9198" name="gliffy-map-29687874-9198"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 768px;" usemap="#gliffy-map-29687874-9198" src="attachments/28314836/29687875.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>The figures have been kept somewhat generic and should apply to most channel types. Each figure shows the final state of the call, rather than a sequence of events.</p><p>Below are explanations of the various figures.</p><h2 id="Channels-Fig1">Fig 1</h2><p>One phone dials another phone; about as simple as it gets.</p><p>The <strong>inbound</strong> channel is created from Alice's phone calling Asterisk. Asterisk then calls the extension dialed by Alice by creating an <strong>outbound</strong> channel to talk to Bob. Once the call is established the two channels are put into a bridge<a href="Bridges_4817441.html">Bridges</a>.</p><h2 id="Channels-Fig2">Fig 2</h2><p>A user runs the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Originate">originate</a> command from <a href="4817239.html">AMI</a>, or maybe something like &quot;channel originate SIP/Alice application playback demo-congrats&quot; from the <a href="Asterisk-Command-Line-Interface_4259982.html">CLI</a>. Asterisk creates an <strong>outbound</strong> channel to call the device specified (SIP/Alice). When answered, Asterisk begins treating the channel like an <strong>inbound</strong> channel and connects it to the specified dialplan application.</p><h2 id="Channels-Fig3">Fig 3</h2><p>Perhaps a user runs originate again - but this time &quot;channel originate SIP/Alice extension dialbob@internal&quot; from the <a href="Asterisk-Command-Line-Interface_4259982.html">CLI</a>. Where dialbob@internal contains dialplan telling Asterisk to dial outbound to SIP/Bob. At first, the created <strong>outbound</strong> channel would look like Fig 2 where it begins to be treated as <strong>inbound</strong> after the device answers the call. At that point, a number of things happen:</p><ul><li>Asterisk creates an outbound local channel into Asterisk and bridges it with the now inbound channel to Alice.</li><li>Asterisk creates another leg of local channel as &quot;inbound&quot; into Asterisk to execute the dialplan at the extension specified with the originate. This local channel is essentially bridged with some magic to the other local channel.</li><li>In our case the dialplan executes something like Dial(SIP/Bob), so the new SIP channel is created to communicate with SIP/Bob and is then bridged with the inbound local channel. Now communication flows across the whole path.</li></ul><p>For this example demonstrating relationships between channels and other elements we used non-optimized local channels. If the local channels are optimized, then they will optimize themselves out of this mix and Alice and Bob's channels would be bridged together directly.</p><h1 id="Channels-ChannelVariableInheritance">Channel Variable Inheritance</h1><p>When working with channels you'll almost certainly be touching channel variables. It is useful to note that upon setting a channel variable the level of inheritance between channels can be defined. This is discussed in the <a href="Channel-Variables_4620340.html">Channel Variables</a> sub-section <a href="Variable-Inheritance_4620353.html">Variable Inheritance</a>.</p><p> </p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687876">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687877.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687878">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687879.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687880">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687881.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687882">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687883.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687884">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687885.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687886">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687887.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687888">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687889.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687890">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687891.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687874">InboundOutboundChannels</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28314836/29687875.png">InboundOutboundChannels.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

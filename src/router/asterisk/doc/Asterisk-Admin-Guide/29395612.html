@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Channels: Handling DTMF</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Channels_29395597.html">Introduction to ARI and Channels</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Channels: Handling DTMF
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Samuel Galarneau</span> on Aug 27, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="ARIandChannels:HandlingDTMF-HandlingDTMFevents">Handling DTMF events</h1><p>DTMF events are conveyed via the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+REST+Data+Models#Asterisk12RESTDataModels-ChannelDtmfReceived" rel="nofollow"><code>ChannelDtmfReceived</code></a> event. The event contains the channel that pressed the DTMF key, the digit that was pressed, and the duration of the digit.</p><p>While this concept is relatively straight forward, handling DTMF is quite common in applications, as it is the primary mechanism that phones have to inform a server to perform some action. This includes manipulating media, initiating call features, performing transfers, dialling, and just about every thing in between. As such, the examples on this page focus less on simply handling the event and more on using the DTMF in a relatively realistic fashion.</p></div><div class="columnMacro" style="width:40%;min-width:40%;max-width:40%;"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303059916 {padding: 0px;}
+div.rbtoc1582303059916 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303059916 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303059916'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-HandlingDTMFevents'>Handling DTMF events</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-Example:Asimpleautomatedattendant'>Example: A simple automated attendant</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-Playingthemenu'>Playing the menu</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-Cancellingthemenu'>Cancelling the menu</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-Timingout'>Timing out</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:HandlingDTMF-HandlingtheDTMFoptions'>Handling the DTMF options</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-channel-aa.py'>channel-aa.py</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-channel-aa.pyinaction'>channel-aa.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:HandlingDTMF-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-Playingthemenu.1'>Playing the menu</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandChannels:HandlingDTMF-Cancellingthemenu.1'>Cancelling the menu</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-Timingout.1'>Timing out</a></li>
+</ul>
+</li>
+<li><a href='#ARIandChannels:HandlingDTMF-HandlingtheDTMFoptions.1'>Handling the DTMF options</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-channel-aa.js'>channel-aa.js</a></li>
+<li><a href='#ARIandChannels:HandlingDTMF-channel-aa.jsinaction'>channel-aa.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="ARIandChannels:HandlingDTMF-Example:Asimpleautomatedattendant">Example: A simple automated attendant</h1><p>This example mimics the <a href="https://wiki.asterisk.org/wiki/display/AST/Handling+Special+Extensions" rel="nofollow">automated attendant/IVR dialplan example</a>. It does the following:</p><ul><li>Plays a menu to the user which is cancelled when the user takes some action.</li><li>If the user presses 1 or 2, the digit is repeated to the user and the menu restarted.</li><li>If the user presses an invalid digit, a prompt informing the user that the digit was invalid is played to the user and the menu restarted.</li><li>If the user fails to press anything within some period of time, a prompt asking the user if they are still present is played to the user and the menu restarted.</li></ul><p> </p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>For this example, you will need the following:</p><ol><li>The <strong>extra</strong> sound package from Asterisk. You can install this using the <code>menuselect</code> tool.</li><li>If using the Python example, <code>ari-py</code> version 0.1.3 or later.</li><li>If using the JavaScript example, ari-client version 0.1.4 or later.</li></ol>
+                    </div>
+    </div>
+<h2 id="ARIandChannels:HandlingDTMF-Dialplan">Dialplan</h2><p>As usual, a very simple dialplan is sufficient for this example. The dialplan takes the channel and places it into the Stasis application <code>channel-aa</code>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(channel-aa)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="ARIandChannels:HandlingDTMF-Python">Python</h2><p>As this example is a bit larger, how the code is written and structured is broken up into two phases:</p><ol><li>Constructing the menu and handling its state as the user presses buttons.</li><li>Actually handling the button presses from the user.</li></ol><p>The full source code for this example immediately follows the walk through.</p><h3 id="ARIandChannels:HandlingDTMF-Playingthemenu">Playing the menu</h3><p>Unlike Playback, which can chain multiple sounds together and play them back in one continuous operation, ARI treats all sound files being played as separate operations. It will queue each sound file up to be played on the channel, and hand back the caller an object to control the operation of that single sound file. The menu announcement for the attendant has the following requirements:</p><ol><li>Playback the options for the user</li><li>If the user presses a DTMF key, cancel the playback of the options and handle the request</li><li>If the user presses an invalid DTMF key, let them know and restart the menu</li><li>If the user doesn't press anything, wait 10 seconds, ask them if they are still present, and restart the menu</li></ol><p>The second requirement makes this a bit more challenging: when the user presses a DTMF key, we want to cancel whatever sound file is currently being played back and immediately handle their request. We thus have to maintain some state in our application about what sound file is currently being played so that we can cancel the correct playback. We also don't want to queue up all of the sounds immediately - we'd have to walk through all of the queued up sounds and cancel each one - that'd be annoying! Instead, we only want to start the next sound in our prompt when the previous has completed.</p><p>To start, we'll define in a list at the top of our script the sounds that make up the initial menu prompt:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 12; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">sounds = [&#39;press-1&#39;, &#39;or&#39;, &#39;press-2&#39;]</pre>
+</div></div><p>Since we'll want to maintain some state, we'll create a small object to do that for us. In Python, tuples are immutable - and we'll want to mutate the state in callbacks when certain operations happen. As such, it makes sense to use a small class for this with two properties:</p><ol><li>The current sound being played</li><li>Whether or not we should consider the menu complete</li></ol><p>It's useful to have both pieces of data, as we may cancel the menu half-way through and want to take one set of actions, or we may complete the menu and all the sounds and start a different set of actions.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 16; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">class MenuState(object):
+    &quot;&quot;&quot;A small tracking object for the channel in the menu&quot;&quot;&quot;
+
+    def __init__(self, current_sound, complete):
+        self.current_sound = current_sound
+        self.complete = complete</pre>
+</div></div><p>To start, we'll write a function, <code>play_intro_menu</code>, that starts the menu on a channel. It will simply initialize the state of the menu, and get the ball rolling on the channel by calling <code>queue_up_sound</code>.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 24; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def play_intro_menu(channel):
+    &quot;&quot;&quot;Play our intro menu to the specified channel
+    Since we want to interrupt the playback of the menu when the user presses
+    a DTMF key, we maintain the state of the menu via the MenuState object.
+    A menu completes in one of two ways:
+    (1) The user hits a key
+    (2) The menu finishes to completion
+    In the case of (2), a timer is started for the channel. If the timer pops,
+    a prompt is played back and the menu restarted.
+    Keyword Arguments:
+    channel  The channel in the IVR
+    &quot;&quot;&quot;
+    menu_state = MenuState(0, False)
+
+    def queue_up_sound(channel, menu_state):
+        ...
+
+    queue_up_sound(channel, menu_state)</pre>
+</div></div><p><code>queue_up_sound</code> will be responsible for starting the next sound file on the channel and handling the manipulation of that sound file. Since there's a fair amount of checking that goes into this, we'll put the actual act of starting the sound in <code>play_next_sound</code>, which will return the <code>Playback</code> object from ARI. We'll prep the <code>menu_state</code> object for the next sound file playback, and pass it to the <code>PlaybackFinished</code> handler for the current sound being played back to the channel.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 70; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def queue_up_sound(channel, menu_state):
+        &quot;&quot;&quot;Start up the next sound and handle whatever happens
+
+        Keywords Arguments:
+        channel    The channel in the IVR
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+
+        current_playback = play_next_sound(menu_state)
+
+        if not current_playback:
+            return
+        menu_state.current_sound += 1
+        current_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished,
+                                  callback_args=[menu_state])
+</pre>
+</div></div><p><code>play_next_sound</code> will do two things:</p><ol><li>If we shouldn't play another sound - either because we've run out of sounds to play or because the menu is now &quot;complete&quot;, we bail and return None.</li><li>If we should play back a sound, start it up on the channel and return the <code>Playback</code> object.</li></ol><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 42; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def play_next_sound(menu_state):
+        &quot;&quot;&quot;Play the next sound, if we should
+
+        Keyword Arguments:
+        menu_state The current state of the IVR
+
+        Returns:
+        None if no playback should occur
+        A playback object if a playback was started
+        &quot;&quot;&quot;
+        if (menu_state.current_sound == len(sounds) or menu_state.complete):
+            return None
+        try:
+            current_playback = channel.play(media=&#39;sound:%s&#39; % sounds[menu_state.current_sound])
+        except:
+            current_playback = None
+        return current_playback</pre>
+</div></div><p>Our playback finished handler is very simple: since we've already incremented the state of the menu, we just call <code>queue_up_sound</code> again:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 60; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def on_playback_finished(playback, ev, menu_state):
+        &quot;&quot;&quot;Callback handler for when a playback is finished
+        Keyword Arguments:
+        playback   The playback object that finished
+        ev         The PlaybackFinished event
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+        queue_up_sound(channel, menu_state)</pre>
+</div></div><p>To recap, our <code>play_intro_menu</code> function has three nested functions:</p><ol><li><code>queue_up_sound</code> - starts a sound on a channel, increments the state of the menu, and subscribes for the <code>PlaybackFinished</code> event.</li><li><code>play_next_sound</code> - if possible, actually starts the sound. Called from <code>queue_up_sound</code>.</li><li><code>on_playback_finished</code> - called when <code>PlaybackFinished</code> is received for the current playback, and call <code>queue_up_sound</code> to start the next sound in the menu.</li></ol><p>This will play back the menu sounds, but it doesn't handle cancelling the menu, time-outs, or other conditions. To do that, we're going to need more information from Asterisk.</p><h4 id="ARIandChannels:HandlingDTMF-Cancellingthemenu">Cancelling the menu</h4><p>When the user presses a DTMF key, we want to stop the current playback and end the menu. To do that, we'll need to subscribe for DTMF events from the channel. We'll define a new handler function, <code>cancel_menu</code>, and tell <code>ari-py</code> to call it when a DTMF key is received via the <code>ChannelDtmfReceived</code> event. We don't really care about the digit here - we just want to cancel the menu. In the handler function, we'll set <code>menu_state.complete</code> to <code>True</code>, then tell the <code>current_playback</code> to stop.</p><p>We should also stop the menu when the channel is hung up. Since the <code>cancel_menu</code> , so we'll subscribe to the <code>StasisEnd</code> event here and call <code>cancel_menu</code> from it as well:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 70; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def queue_up_sound(channel, menu_state):
+        &quot;&quot;&quot;Start up the next sound and handle whatever happens
+
+        Keywords Arguments:
+        channel    The channel in the IVR
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+
+        current_playback = play_next_sound(menu_state)
+
+        def cancel_menu(channel, ev, current_playback, menu_state):
+            &quot;&quot;&quot;Cancel the menu, as the user did something&quot;&quot;&quot;
+            menu_state.complete = True
+            try:
+                current_playback.stop()
+            except:
+                pass
+            return
+
+        if not current_playback:
+            return
+        menu_state.current_sound += 1
+        current_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished,
+                                  callback_args=[menu_state])
+
+        # If the user hits a key or hangs up, cancel the menu operations
+        channel.on_event(&#39;ChannelDtmfReceived&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])
+        channel.on_event(&#39;StasisEnd&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])</pre>
+</div></div><h4 id="ARIandChannels:HandlingDTMF-Timingout">Timing out</h4><p>Now we can cancel the menu, but we also need to restart it if the user doesn't do anything. We can use a Python timer to start a timer if we're finished playing sounds <em>and</em> we got to the end of the sound prompt list. We don't want to start the timer if the user pressed a DTMF key - in that case, we would have stopped the menu early and we should be off handling their DTMF key press. The timer will call <code>menu_timeout</code>, which will play back a &quot;are you still there?&quot; prompt, then restart the menu.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 70; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    def queue_up_sound(channel, menu_state):
+        &quot;&quot;&quot;Start up the next sound and handle whatever happens
+        Keywords Arguments:
+        channel    The channel in the IVR
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+
+        def menu_timeout(channel):
+            &quot;&quot;&quot;Callback called by a timer when the menu times out&quot;&quot;&quot;
+            print &#39;Channel %s stopped paying attention...&#39; % channel.json.get(&#39;name&#39;)
+            channel.play(media=&#39;sound:are-you-still-there&#39;)
+            play_intro_menu(channel)
+
+        def cancel_menu(channel, ev, current_playback, menu_state):
+            &quot;&quot;&quot;Cancel the menu, as the user did something&quot;&quot;&quot;
+            menu_state.complete = True
+            try:
+                current_playback.stop()
+            except:
+                pass
+            return
+
+        current_playback = play_next_sound(menu_state)
+        if not current_playback:
+            if menu_state.current_sound == len(sounds):
+                # Menu played, start a timer!
+                timer = threading.Timer(10, menu_timeout, [channel])
+                channel_timers[channel.id] = timer
+                timer.start()
+            return
+
+        menu_state.current_sound += 1
+        current_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished,
+                                  callback_args=[menu_state])
+
+        # If the user hits a key or hangs up, cancel the menu operations
+        channel.on_event(&#39;ChannelDtmfReceived&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])
+        channel.on_event(&#39;StasisEnd&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])</pre>
+</div></div><p>Now that we've introduced timers, we know we're going to need to stop them if the user does something. We'll store the timers in a dictionary indexed by channel ID, so we can get them from various parts of the script:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 14; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">channel_timers = {}</pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-HandlingtheDTMFoptions">Handling the DTMF options</h3><p>While we now have code that plays back the menu to the user, we actually have to implement the attendant menu still. This is slightly easier than playing the menu. We can register for the <code>ChannelDtmfReceived</code> event in the <code>StasisStart</code> event handler. In that callback, we need to do the following:</p><ol><li>Cancel any timers associated with the channel. Note that we don't need to stop the playback of the menu, as the menu function <code>queue_up_sound</code> already registers a handler for that event and cancels the menu when it gets any digit.</li><li>Actually handle the digit, if the digit is a <code>1</code> or a <code>2</code>.</li><li>If the digit isn't supported, play a prompt informing the user that their option was invalid, and re-play the menu.</li></ol><p>The following implements these three items, deferring processing of the valid options to separate functions.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 150; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def on_dtmf_received(channel, ev):
+    &quot;&quot;&quot;Our main DTMF handler for a channel in the IVR
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    digit   The DTMF digit that was pressed
+    &quot;&quot;&quot;
+
+    # Since they pressed something, cancel the timeout timer
+    cancel_timeout(channel)
+    digit = int(ev.get(&#39;digit&#39;))
+
+    print &#39;Channel %s entered %d&#39; % (channel.json.get(&#39;name&#39;), digit)
+    if digit == 1:
+        handle_extension_one(channel)
+    elif digit == 2:
+        handle_extension_two(channel)
+    else:
+        print &#39;Channel %s entered an invalid option!&#39; % channel.json.get(&#39;name&#39;)
+        channel.play(media=&#39;sound:option-is-invalid&#39;)
+        play_intro_menu(channel)
+
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    channel.on_event(&#39;ChannelDtmfReceived&#39;, on_dtmf_received)
+    play_intro_menu(channel)</pre>
+</div></div><p>Cancelling the timer is done in a fashion similar to other examples. If the channel has a Python timer associated with it, we cancel the timer and remove it from the dictionary.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 138; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def cancel_timeout(channel):
+    &quot;&quot;&quot;Cancel the timeout timer for the channel
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    timer = channel_timers.get(channel.id)
+    if timer:
+        timer.cancel()
+        del channel_timers[channel.id]</pre>
+</div></div><p>Finally, we need to actually do <em>something</em> when the user presses a <code>1</code> or a <code>2</code>. We could do anything here - but in our case, we're merely going to play back the number that they pressed and restart the menu.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 114; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">def handle_extension_one(channel):
+    &quot;&quot;&quot;Handler for a channel pressing &#39;1&#39;
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    channel.play(media=&#39;sound:you-entered&#39;)
+    channel.play(media=&#39;digits:1&#39;)
+    play_intro_menu(channel)
+
+
+def handle_extension_two(channel):
+    &quot;&quot;&quot;Handler for a channel pressing &#39;2&#39;
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    channel.play(media=&#39;sound:you-entered&#39;)
+    channel.play(media=&#39;digits:2&#39;)
+    play_intro_menu(channel)</pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-channel-aa.py">channel-aa.py</h3><p>The full source for <code>channel-aa.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-aa.py</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import ari
+import logging
+import threading
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+# Note: this uses the &#39;extra&#39; sounds package
+sounds = [&#39;press-1&#39;, &#39;or&#39;, &#39;press-2&#39;]
+
+channel_timers = {}
+
+class MenuState(object):
+    &quot;&quot;&quot;A small tracking object for the channel in the menu&quot;&quot;&quot;
+
+    def __init__(self, current_sound, complete):
+        self.current_sound = current_sound
+        self.complete = complete
+
+
+def play_intro_menu(channel):
+    &quot;&quot;&quot;Play our intro menu to the specified channel
+
+    Since we want to interrupt the playback of the menu when the user presses
+    a DTMF key, we maintain the state of the menu via the MenuState object.
+    A menu completes in one of two ways:
+    (1) The user hits a key
+    (2) The menu finishes to completion
+
+    In the case of (2), a timer is started for the channel. If the timer pops,
+    a prompt is played back and the menu restarted.
+
+    Keyword Arguments:
+    channel  The channel in the IVR
+    &quot;&quot;&quot;
+
+    menu_state = MenuState(0, False)
+
+    def play_next_sound(menu_state):
+        &quot;&quot;&quot;Play the next sound, if we should
+
+        Keyword Arguments:
+        menu_state The current state of the IVR
+
+        Returns:
+        None if no playback should occur
+        A playback object if a playback was started
+        &quot;&quot;&quot;
+        if (menu_state.current_sound == len(sounds) or menu_state.complete):
+            return None
+        try:
+            current_playback = channel.play(media=&#39;sound:%s&#39; % sounds[menu_state.current_sound])
+        except:
+            current_playback = None
+        return current_playback
+
+    def on_playback_finished(playback, ev, menu_state):
+        &quot;&quot;&quot;Callback handler for when a playback is finished
+
+        Keyword Arguments:
+        playback   The playback object that finished
+        ev         The PlaybackFinished event
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+        queue_up_sound(channel, menu_state)
+
+    def queue_up_sound(channel, menu_state):
+        &quot;&quot;&quot;Start up the next sound and handle whatever happens
+
+        Keywords Arguments:
+        channel    The channel in the IVR
+        menu_state The current state of the menu
+        &quot;&quot;&quot;
+
+        def menu_timeout(channel):
+            &quot;&quot;&quot;Callback called by a timer when the menu times out&quot;&quot;&quot;
+            print &#39;Channel %s stopped paying attention...&#39; % channel.json.get(&#39;name&#39;)
+            channel.play(media=&#39;sound:are-you-still-there&#39;)
+            play_intro_menu(channel)
+
+        def cancel_menu(channel, ev, current_playback, menu_state):
+            &quot;&quot;&quot;Cancel the menu, as the user did something&quot;&quot;&quot;
+            menu_state.complete = True
+            try:
+                current_playback.stop()
+            except:
+                pass
+            return
+
+        current_playback = play_next_sound(menu_state)
+        if not current_playback:
+            if menu_state.current_sound == len(sounds):
+                # Menu played, start a timer!
+                timer = threading.Timer(10, menu_timeout, [channel])
+                channel_timers[channel.id] = timer
+                timer.start()
+            return
+
+        menu_state.current_sound += 1
+        current_playback.on_event(&#39;PlaybackFinished&#39;, on_playback_finished,
+                                  callback_args=[menu_state])
+
+        # If the user hits a key or hangs up, cancel the menu operations
+        channel.on_event(&#39;ChannelDtmfReceived&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])
+        channel.on_event(&#39;StasisEnd&#39;, cancel_menu,
+                         callback_args=[current_playback, menu_state])
+
+    queue_up_sound(channel, menu_state)
+
+
+def handle_extension_one(channel):
+    &quot;&quot;&quot;Handler for a channel pressing &#39;1&#39;
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    channel.play(media=&#39;sound:you-entered&#39;)
+    channel.play(media=&#39;digits:1&#39;)
+    play_intro_menu(channel)
+
+
+def handle_extension_two(channel):
+    &quot;&quot;&quot;Handler for a channel pressing &#39;2&#39;
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    channel.play(media=&#39;sound:you-entered&#39;)
+    channel.play(media=&#39;digits:2&#39;)
+    play_intro_menu(channel)
+
+
+def cancel_timeout(channel):
+    &quot;&quot;&quot;Cancel the timeout timer for the channel
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    &quot;&quot;&quot;
+    timer = channel_timers.get(channel.id)
+    if timer:
+        timer.cancel()
+        del channel_timers[channel.id]
+
+    
+def on_dtmf_received(channel, ev):
+    &quot;&quot;&quot;Our main DTMF handler for a channel in the IVR
+
+    Keyword Arguments:
+    channel The channel in the IVR
+    digit   The DTMF digit that was pressed
+    &quot;&quot;&quot;
+
+    # Since they pressed something, cancel the timeout timer
+    cancel_timeout(channel)
+    digit = int(ev.get(&#39;digit&#39;))
+
+    print &#39;Channel %s entered %d&#39; % (channel.json.get(&#39;name&#39;), digit)
+    if digit == 1:
+        handle_extension_one(channel)
+    elif digit == 2:
+        handle_extension_two(channel)
+    else:
+        print &#39;Channel %s entered an invalid option!&#39; % channel.json.get(&#39;name&#39;)
+        channel.play(media=&#39;sound:option-is-invalid&#39;)
+        play_intro_menu(channel)
+
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart event&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    print &quot;Channel %s has entered the application&quot; % channel.json.get(&#39;name&#39;)
+
+    channel.on_event(&#39;ChannelDtmfReceived&#39;, on_dtmf_received)
+    play_intro_menu(channel)
+
+
+def stasis_end_cb(channel, ev):
+    &quot;&quot;&quot;Handler for StasisEnd event&quot;&quot;&quot;
+
+    print &quot;%s has left the application&quot; % channel.json.get(&#39;name&#39;)
+    cancel_timeout(channel)
+
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+client.on_channel_event(&#39;StasisEnd&#39;, stasis_end_cb)
+
+client.run(apps=&#39;channel-aa&#39;)
+
+</pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-channel-aa.pyinaction">channel-aa.py in action</h3><p>The following shows the output of <code>channel-aa.py</code> when a PJSIP channel presses <code>1</code>, <code>2</code>, <code>8</code>, then times out. Finally they hang up.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered the application
+Channel PJSIP/alice-00000001 entered 1
+Channel PJSIP/alice-00000001 entered 2
+Channel PJSIP/alice-00000001 entered 8
+Channel PJSIP/alice-00000001 entered an invalid option!
+Channel PJSIP/alice-00000001 stopped paying attention...
+PJSIP/alice-00000001 has left the application</pre>
+</div></div><p> </p><h2 id="ARIandChannels:HandlingDTMF-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>As this example is a bit larger, how the code is written and structured is broken up into two phases:</p><ol><li>Constructing the menu and handling its state as the user presses buttons.</li><li>Actually handling the button presses from the user.</li></ol><p>The full source code for this example immediately follows the walk through.</p><h3 id="ARIandChannels:HandlingDTMF-Playingthemenu.1">Playing the menu</h3><p>Unlike Playback, which can chain multiple sounds together and play them back in one continuous operation, ARI treats all sound files being played as separate operations. It will queue each sound file up to be played on the channel, and hand back the caller an object to control the operation of that single sound file. The menu announcement for the attendant has the following requirements:</p><ol><li>Playback the options for the user</li><li>If the user presses a DTMF key, cancel the playback of the options and handle the request</li><li>If the user presses an invalid DTMF key, let them know and restart the menu</li><li>If the user doesn't press anything, wait 10 seconds, ask them if they are still present, and restart the menu</li></ol><p>The second requirement makes this a bit more challenging: when the user presses a DTMF key, we want to cancel whatever sound file is currently being played back and immediately handle their request. We thus have to maintain some state in our application about what sound file is currently being played so that we can cancel the correct playback. We also don't want to queue up all of the sounds immediately - we'd have to walk through all of the queued up sounds and cancel each one - that'd be annoying! Instead, we only want to start the next sound in our prompt when the previous has completed.</p><p>To start, we'll define an object to represent the menu at the top of our script that defines sounds that make up the initial menu prompt as well as valid DTMF options for the menu:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 9; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">var menu = {
+  // valid menu options
+  options: [1, 2],
+  // note: this uses the &#39;extra&#39; sounds package
+  sounds: [&#39;sound:press-1&#39;, &#39;sound:or&#39;, &#39;sound:press-2&#39;]
+};</pre>
+</div></div><p>To start with, well register a callback to handle a StasisStart and StasisEnd event on any channel that enters into our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 28; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function stasisStart(event, channel) {
+  console.log(&#39;Channel %s has entered the application&#39;, channel.name);
+
+  channel.on(&#39;ChannelDtmfReceived&#39;, dtmfReceived);
+
+  channel.answer(function(err) {
+    if (err) {
+      throw err;
+    }
+    playIntroMenu(channel);
+  });
+}
+
+// Handler for StasisEnd event
+function stasisEnd(event, channel) {
+  console.log(&#39;Channel %s has left the application&#39;, channel.name);
+
+  // clean up listeners
+  channel.removeListener(&#39;ChannelDtmfReceived&#39;, dtmfReceived);
+  cancelTimeout(channel);
+}</pre>
+</div></div><p>Note that we register a callback to handle ChannelDtmfReceived events on a channel entering our application in StasisStart and then unregister that callback on StasisEnd. For long running, non-trivial applications, this allows the JavaScript garbage collector to clean up our callback. This is important since every channel entering into our application will register its own copy of the callback which is not be garbage collected until it is unregistered.</p><p>We'll cover the DTMF callback handler shortly, but first we'll cover writting functions to handle playing the menu prompt</p><p>First we'll write a function to initialize a new instance of our menu; playIntroMenu.</p><p>Since we'll want to maintain some state, we'll create a small object to do that for us. This object will keep track of the following:</p><ol><li>The current sound being played</li><li>The current Playback object being played</li><li>Whether or not this menu instance is done</li></ol><p>It's useful to have this data, as we may cancel the menu half-way through and want to take one set of actions, or we may play all the sounds that make up the menu prompt and start a different set of actions.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 88; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">var state = {
+  currentSound: menu.sounds[0],
+  currentPlayback: undefined,
+  done: false
+};</pre>
+</div></div><p><code>playIntroMenu will</code> start the menu on a channel. It will simply initialize the state of the menu, and get the ball rolling on the channel by calling <code>queueUpSound</code> which is a nested function within playIntroMenu.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 87; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function playIntroMenu(channel) {
+  var state = {
+    currentSound: menu.sounds[0],
+    currentPlayback: undefined,
+    done: false
+  };
+
+  channel.on(&#39;ChannelDtmfReceived&#39;, cancelMenu);
+  channel.on(&#39;StasisEnd&#39;, cancelMenu);
+  queueUpSound();
+  ...</pre>
+</div></div><p>We'll cover cancelMenu shortly, but first let's discuss queueUpSound. <code>queueUpSound</code> will be responsible for starting the next sound file on the channel and handling the manipulation of that sound file. queueUpSound is also responsible for starting a timeout once all sounds for the menu prompt have completed to handle reminding the user that they must choose a menu option. We'll cover that part shortly but first, we'll cover handling progerssing through the sounds that make up the menu prompt. We first initiate playback on the current sound in the sequence. We then register a callback to handle that playback finishing, which will trigger queueUpSound to be called again, moving on to the next sound in the sequence. Finally, we update the state object to reflect the next sound to be played in the menu prompt sequence.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 113; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function queueUpSound() {
+  if (!state.done) {
+    // have we played all sounds in the menu?
+    if (!state.currentSound) {
+      var timer = setTimeout(stillThere, 10 * 1000);
+      timers[channel.id] = timer;
+    } else {
+      var playback = client.Playback();
+      state.currentPlayback = playback;
+
+      channel.play({media: state.currentSound}, playback, function(err) {
+        // ignore errors
+      });
+      playback.once(&#39;PlaybackFinished&#39;, function(event, playback) {
+        queueUpSound();
+      });
+
+      var nextSoundIndex = menu.sounds.indexOf(state.currentSound) + 1;
+      state.currentSound = menu.sounds[nextSoundIndex];
+    }
+  }
+}
+</pre>
+</div></div><p>Notice that when registering our PlaybackFinished callback handler, we use the once method on the resource instance instead of on. This ensures that the callback will be invoked once and then automatically be unregistered. Since a PlaybackFinished event will only be invoked once for a given Playback instance, it makes sense to use this method which will also enable the callback to be garbage collected once it has been invoked.</p><p>queueUpSound will play back the menu sounds, but it doesn't handle cancelling the menu, time-outs, or other conditions. To do that, we're going to need more information from Asterisk.</p><h4 id="ARIandChannels:HandlingDTMF-Cancellingthemenu.1">Cancelling the menu</h4><p>When the user presses a DTMF key, we want to stop the current playback and end the menu. To do that, we'll need to subscribe for DTMF events from the channel. We'll define a new handler function, <code>cancelMenu</code>, and tell <code>ari-client</code> to call it when a DTMF key is received via the <code>ChannelDtmfReceived</code> event. We don't really care about the digit here - we just want to cancel the menu. In the handler function, we'll set <code>state.done</code> to t<code>rue</code>, then tell the <code>currentPlayback</code> to stop.</p><p>We should also stop the menu when the channel is hung up. To do this we'll subscribe to the <code>StasisEnd</code> event as well and register cancelMenu as its callback handler:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 99; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function cancelMenu() {
+  state.done = true;
+  if (state.currentPlayback) {
+    state.currentPlayback.stop(function(err) {
+      // ignore errors
+    });
+  }
+
+  // remove listeners as future calls to playIntroMenu will create new ones
+  channel.removeListener(&#39;ChannelDtmfReceived&#39;, cancelMenu);
+  channel.removeListener(&#39;StasisEnd&#39;, cancelMenu);
+}</pre>
+</div></div><p>Note that once the cancelMenu callback is invoked, we unregister both the ChannelDtmfReceived and StasisEnd events. This is performed so that once this particular menu instance stops, we do not leave registered callbacks behind that will never be garbage collected.</p><h4 id="ARIandChannels:HandlingDTMF-Timingout.1">Timing out</h4><p>Now we can cancel the menu, but we also need to restart it if the user doesn't do anything. We can use a JavaScript timeout to start a timer if we're finished playing sounds <em>and</em> we got to the end of the sound prompt sequence. We don't want to start the timer if the user pressed a DTMF key - in that case, we would have stopped the menu early and we should be off handling their DTMF key press. The timer will call <code>stillThere</code>, which will play back a &quot;are you still there?&quot; prompt, then restart the menu.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 137; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function stillThere() {
+  console.log(&#39;Channel %s stopped paying attention...&#39;, channel.name);
+
+  channel.play({media: &#39;sound:are-you-still-there&#39;}, function(err) {
+    if (err) {
+      throw err;
+    }
+
+    playIntroMenu(channel);
+  });
+}</pre>
+</div></div><p>Now that we've introduced timers, we know we're going to need to stop them if the user does something. We'll store the timers in an object indexed by channel ID, so we can get them from various parts of the script:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 16; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">var timers = {};</pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-HandlingtheDTMFoptions.1">Handling the DTMF options</h3><p>While we now have code that plays back the menu to the user, we actually have to implement the attendant menu still. Earlier in our example we registered a callback handler for a ChannelDtmfReceived event on a channel that enters into our application. In that callback, we need to do the following:</p><ol><li>Cancel any timers associated with the channel. Note that we don't need to stop the playback of the menu, as the menu function <code>queueUpSound</code> already registers a handler for that event and cancels the menu when it gets any digit.</li><li>Actually handle the digit, if the digit is a <code>1</code> or a <code>2</code>.</li><li>If the digit isn't supported, play a prompt informing the user that their option was invalid, and re-play the menu.</li></ol><p>The following implements these three items, deferring processing of the valid options to a separate function.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 52; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function dtmfReceived(event, channel) {
+  cancelTimeout(channel);
+  var digit = parseInt(event.digit);
+
+  console.log(&#39;Channel %s entered %d&#39;, channel.name, digit);
+
+  // will be non-zero if valid
+  var valid = ~menu.options.indexOf(digit);
+  if (valid) {
+    handleDtmf(channel, digit);
+  } else {
+    console.log(&#39;Channel %s entered an invalid option!&#39;, channel.name);
+
+    channel.play({media: &#39;sound:option-is-invalid&#39;}, function(err, playback) {
+      if (err) {
+        throw err;
+      }
+
+      playIntroMenu(channel);
+    });
+  }
+}</pre>
+</div></div><p>Cancelling the timer is done in a fashion similar to other examples. If the channel has a JavaScript timeout associated with it, we cancel the timer and remove it from the object.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 151; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function cancelTimeout(channel) {
+  var timer = timers[channel.id];
+
+  if (timer) {
+    clearTimeout(timer);
+    delete timers[channel.id];
+  }
+}</pre>
+</div></div><p>Finally, we need to actually do <em>something</em> when the user presses a <code>1</code> or a <code>2</code>. We could do anything here - but in our case, we're merely going to play back the number that they pressed and restart the menu.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 161; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function handleDtmf(channel, digit) {
+  var parts = [&#39;sound:you-entered&#39;, util.format(&#39;digits:%s&#39;, digit)];
+  var done = 0;
+
+  var playback = client.Playback();
+  channel.play({media: &#39;sound:you-entered&#39;}, playback, function(err) {
+    // ignore errors
+    channel.play({media: util.format(&#39;digits:%s&#39;, digit)}, function(err) {
+      // ignore errors
+      playIntroMenu(channel);
+    });
+  });
+} </pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-channel-aa.js">channel-aa.js</h3><p>The full source for <code>channel-aa.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel-aa.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;">/*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+var menu = {
+  // valid menu options
+  options: [1, 2],
+  // note: this uses the &#39;extra&#39; sounds package
+  sounds: [&#39;sound:press-1&#39;, &#39;sound:or&#39;, &#39;sound:press-2&#39;]
+};
+
+var timers = {};
+
+// Handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+  client.on(&#39;StasisEnd&#39;, stasisEnd);
+
+  // Handler for StasisStart event
+  function stasisStart(event, channel) {
+    console.log(&#39;Channel %s has entered the application&#39;, channel.name);
+
+    channel.on(&#39;ChannelDtmfReceived&#39;, dtmfReceived);
+
+    channel.answer(function(err) {
+      if (err) {
+        throw err;
+      }
+
+      playIntroMenu(channel);
+    });
+  }
+
+  // Handler for StasisEnd event
+  function stasisEnd(event, channel) {
+    console.log(&#39;Channel %s has left the application&#39;, channel.name);
+
+    // clean up listeners
+    channel.removeListener(&#39;ChannelDtmfReceived&#39;, dtmfReceived);
+    cancelTimeout(channel);
+  }
+
+  // Main DTMF handler
+  function dtmfReceived(event, channel) {
+    cancelTimeout(channel);
+    var digit = parseInt(event.digit);
+
+    console.log(&#39;Channel %s entered %d&#39;, channel.name, digit);
+
+    // will be non-zero if valid
+    var valid = ~menu.options.indexOf(digit);
+    if (valid) {
+      handleDtmf(channel, digit);
+    } else {
+      console.log(&#39;Channel %s entered an invalid option!&#39;, channel.name);
+
+      channel.play({media: &#39;sound:option-is-invalid&#39;}, function(err, playback) {
+        if (err) {
+          throw err;
+        }
+
+        playIntroMenu(channel);
+      });
+    }
+  }
+
+  /**
+   * Play our intro menu to the specified channel
+   * 
+   * Since we want to interrupt the playback of the menu when the user presses
+   * a DTMF key, we maintain the state of the menu via the MenuState object.
+   * A menu completes in one of two ways:
+   * (1) The user hits a key
+   * (2) The menu finishes to completion
+   *
+   * In the case of (2), a timer is started for the channel. If the timer pops,
+   * a prompt is played back and the menu restarted.
+   **/
+  function playIntroMenu(channel) {
+    var state = {
+      currentSound: menu.sounds[0],
+      currentPlayback: undefined,
+      done: false
+    };
+
+    channel.on(&#39;ChannelDtmfReceived&#39;, cancelMenu);
+    channel.on(&#39;StasisEnd&#39;, cancelMenu);
+    queueUpSound();
+
+    // Cancel the menu, as the user did something
+    function cancelMenu() {
+      state.done = true;
+      if (state.currentPlayback) {
+        state.currentPlayback.stop(function(err) {
+          // ignore errors
+        });
+      }
+
+      // remove listeners as future calls to playIntroMenu will create new ones
+      channel.removeListener(&#39;ChannelDtmfReceived&#39;, cancelMenu);
+      channel.removeListener(&#39;StasisEnd&#39;, cancelMenu);
+    }
+
+    // Start up the next sound and handle whatever happens
+    function queueUpSound() {
+      if (!state.done) {
+        // have we played all sounds in the menu?
+        if (!state.currentSound) {
+          var timer = setTimeout(stillThere, 10 * 1000);
+          timers[channel.id] = timer;
+        } else {
+          var playback = client.Playback();
+          state.currentPlayback = playback;
+
+          channel.play({media: state.currentSound}, playback, function(err) {
+            // ignore errors
+          });
+          playback.once(&#39;PlaybackFinished&#39;, function(event, playback) {
+            queueUpSound();
+          });
+
+          var nextSoundIndex = menu.sounds.indexOf(state.currentSound) + 1;
+          state.currentSound = menu.sounds[nextSoundIndex];
+        }
+      }
+    }
+
+    // plays are-you-still-there and restarts the menu
+    function stillThere() {
+      console.log(&#39;Channel %s stopped paying attention...&#39;, channel.name);
+
+      channel.play({media: &#39;sound:are-you-still-there&#39;}, function(err) {
+        if (err) {
+          throw err;
+        }
+
+        playIntroMenu(channel);
+      });
+    }
+  }
+
+  // Cancel the timeout for the channel
+  function cancelTimeout(channel) {
+    var timer = timers[channel.id];
+
+    if (timer) {
+      clearTimeout(timer);
+      delete timers[channel.id];
+    }
+  }
+
+  // Handler for channel pressing valid option
+  function handleDtmf(channel, digit) {
+    var parts = [&#39;sound:you-entered&#39;, util.format(&#39;digits:%s&#39;, digit)];
+    var done = 0;
+
+    var playback = client.Playback();
+    channel.play({media: &#39;sound:you-entered&#39;}, playback, function(err) {
+      // ignore errors
+      channel.play({media: util.format(&#39;digits:%s&#39;, digit)}, function(err) {
+        // ignore errors
+        playIntroMenu(channel);
+      });
+    });
+  }
+
+  client.start(&#39;channel-aa&#39;);
+}</pre>
+</div></div><h3 id="ARIandChannels:HandlingDTMF-channel-aa.jsinaction">channel-aa.js in action</h3><p>The following shows the output of <code>channel-aa.js</code> when a PJSIP channel presses <code>1</code>, <code>2</code>, <code>8</code>, then times out. Finally they hang up.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered the application
+Channel PJSIP/alice-00000001 entered 1
+Channel PJSIP/alice-00000001 entered 2
+Channel PJSIP/alice-00000001 entered 8
+Channel PJSIP/alice-00000001 entered an invalid option!
+Channel PJSIP/alice-00000001 stopped paying attention...
+PJSIP/alice-00000001 has left the application</pre>
+</div></div><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

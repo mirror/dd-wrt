@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : SMS and extensions.conf</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242984.html">Short Message Service (SMS)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : SMS and extensions.conf
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The following contexts are recommended.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+; Mobile Terminated, RX. This is used when an incoming call from the SMS arrives
+; with the queue (called number and sub address) in ${EXTEN} 
+; Running an app after receipt of the text allows the app to find all messages 
+; in the queue and handle them, e.g. email them. 
+; The app may be something like smsq --process=somecommand --queue=${EXTEN} to
+; run a command for each received message 
+; See below for usage 
+[smsmtrx]
+exten = _X.,1,SMS(${EXTEN},a)
+exten = _X.,2,System(&quot;someapptohandleincomingsms ${EXTEN}&quot;)
+exten = _X.,3,Hangup
+;
+; Mobile originated, RX. This is receiving a message from a device, e.g. 
+; a Magic Messenger on a sip extension 
+; Running an app after receipt of the text allows the app to find all messages 
+; in the queue and handle then, e.g. sending them to the public SMSC 
+; The app may be something like smsq --process=somecommand --queue=${EXTEN} 
+; to run a command for each received message 
+; See below for example usage 
+[smsmorx]
+exten = _X.,1,SMS(${EXTEN},sa) 
+exten = _X.,2,System(&quot;someapptohandlelocalsms ${EXTEN}&quot;) 
+exten = _X.,3,Hangup
+</pre>
+</div></div>
+
+<p>smsmtrx is normally accessed by an incoming call from the SMSC. In the UK this call is from a CLI of 080058752X0 where X is the sub address. As such a typical usage in the extensions.conf at the point of handling an incoming call is:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten = _X./8005875290,1,Goto(smsmtrx,${EXTEN},1)
+exten = _X./_80058752[0-8]0,1,Goto(smsmtrx,${EXTEN}-${CALLERID(num):8:1},1)
+</pre>
+</div></div>
+
+<p>Alternatively, if you have the correct national prefix on incoming CLI, e.g. using dahdi_hfc, you might use:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten = _X./08005875290,1,Goto(smsmtrx,${EXTEN},1)
+exten = _X./_080058752[0-8]0,1,Goto(smsmtrx,${EXTEN}-${CALLERID(num):9:1},1)
+
+</pre>
+</div></div>
+<p>smsmorx is normally accessed by a call from a local sip device connected to a Magic Messenger. It could however by that you are operating Asterisk as a message centre for calls from outside. Either way, you look at the called number and goto smsmorx. In the UK, the SMSC number that would be dialed is 1709400X where X is the caller sub address. As such typical usage in extension.config at the point of handling a call from a sip phone is:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten = 17094009,1,Goto(smsmorx,${CALLERID(num)},1) 
+exten = _1709400[0-8],1,Goto(smsmorx,${CALLERID(num)}-{EXTEN:7:1},1)
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -2,7 +2,7 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.10.0",
+	"apiVersion": "2.0.0",
 	"swaggerVersion": "1.1",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/endpoints.{format}",
@@ -233,22 +233,6 @@
 				}
 			}
 		},
-		"TextMessageVariable": {
-			"id": "TextMessageVariable",
-			"description": "A key/value pair variable in a text message.",
-			"properties": {
-				"key": {
-					"type": "string",
-					"description": "A unique key identifying the variable.",
-					"required": true
-				},
-				"value": {
-					"type": "string",
-					"description": "The value of the variable.",
-					"required": true
-				}
-			}
-		},
 		"TextMessage": {
 			"id": "TextMessage",
 			"description": "A text message.",
@@ -269,8 +253,8 @@
 					"required": true
 				},
 				"variables": {
-					"type": "List[TextMessageVariable]",
-					"description": "Technology specific key/value pairs associated with the message.",
+					"type": "object",
+					"description": "Technology specific key/value pairs (JSON object) associated with the message.",
 					"required": false
 				}
 			}

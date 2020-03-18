@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using Templates</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration-Files_4817443.html">Asterisk Configuration Files</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Templates_4817463.html">Templates</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using Templates
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Jun 26, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>To use a template when creating another section, simply put the template name in parentheses after the section heading name, as shown in the example below. If you want to inherit from multiple templates, use commas to separate the template names).</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[template-name](!)
+setting=value
+
+[template-2](!)
+setting2=value2
+
+[not-a-template]
+setting4=value4
+
+[section-name](template-name,template-2,not-a-template)
+setting3=value3</pre>
+</div></div><p>This works even when the section name referenced in parentheses is <strong>not defined as a template</strong> as in the case of the &quot;not-a-template&quot; section.</p><p>The newly-created section will inherit all the values and objects defined in the template(s), as well as any new settings or objects defined in the newly-created section. The settings and objects defined in the newly-created section override settings or objects of the same name from the templates. Consider this example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[test-one](!)
+permit=192.168.0.2
+host=alpha.example.com
+deny=192.168.0.1
+
+[test-two](!)
+permit=192.168.1.2
+host=bravo.example.com
+deny=192.168.1.1
+
+[test-three](test-one,test-two)
+permit=192.168.3.1
+host=charlie.example.com</pre>
+</div></div><p>The [test-three] section will be processed as though it had been written in the following way:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[test-three]
+permit=192.168.0.2
+host=alpha.example.com
+deny=192.168.0.1
+permit=192.168.1.2
+host=bravo.example.com
+deny=192.168.1.1
+permit=192.168.3.1
+host=charlie.example.com</pre>
+</div></div><h1 id="UsingTemplates-chan_sipTemplateExample">chan_sip Template Example</h1><p>Here is a more extensive and realistic example from the chan_sip channel driver's sample configuration file.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[basic-options](!)                ; a template
+        dtmfmode=rfc2833
+        context=from-office
+        type=friend
+ 
+[natted-phone](!,basic-options)   ; another template inheriting basic-options
+        nat=yes
+        directmedia=no
+        host=dynamic
+ 
+[public-phone](!,basic-options)   ; another template inheriting basic-options
+        nat=no
+        directmedia=yes
+ 
+[my-codecs](!)                    ; a template for my preferred codecs
+        disallow=all
+        allow=ilbc
+        allow=g729
+        allow=gsm
+        allow=g723
+        allow=ulaw
+ 
+[ulaw-phone](!)                   ; and another one for ulaw-only
+        disallow=all
+        allow=ulaw
+ 
+; and finally instantiate a few phones
+;
+; [2133](natted-phone,my-codecs)
+;        secret = peekaboo
+; [2134](natted-phone,ulaw-phone)
+;        secret = not_very_secret
+; [2136](public-phone,ulaw-phone)
+;        secret = not_very_secret_either</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

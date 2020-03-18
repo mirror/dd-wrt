@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring the Asterisk Module Loader</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring the Asterisk Module Loader
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Oct 17, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="ConfiguringtheAsteriskModuleLoader-Overview">Overview</h1><p>As you may have learned from <a href="4817479.html">the Asterisk Architecture section</a>, the majority of Asterisk's features and functionality are separated outside of the core into various <strong>modules</strong>. Each module has distinct functionality, but sometimes relies on another module or modules.</p><p>Asterisk provides capability to automatically and manually load modules. Module load order can be configured before load-time, or modules may be loaded and unloaded during run-time.</p><h1 id="ConfiguringtheAsteriskModuleLoader-Configuration">Configuration</h1><p>The configuration file for Asterisk's module loader is <strong>modules.conf</strong>. It is read from the typical <a href="Directory-and-File-Structure_27200268.html">Asterisk configuration directory</a>. You can also view the sample of modules.conf file in your source directory at configs/modules.conf.sample or on <a href="http://svnview.digium.com/svn/asterisk/trunk/configs/samples/modules.conf.sample?view=markup" class="external-link" rel="nofollow">SVN at this link</a>.</p><p>The configuration consist of one large section called &quot;modules&quot; with possible directives configured within.</p><p>There are several directives that can be used.</p><ul><li>autoload - When enabled, Asterisk will automatically load any modules found in the <a href="Directory-and-File-Structure_27200268.html">Asterisk modules directory</a>.</li><li>preload - Used to specify individual modules to load before the Asterisk core has been initialized. Often used for <a href="Realtime-Database-Configuration_4620317.html">realtime</a> modules so that config files can be pushed to a backend before the dependent modules are loaded.</li><li>require - Set a required module. If a required module does not load, then Asterisk exits with status code 2.</li><li>preload-require - A combination of preload and require.</li><li>noload - Do not load the specified module.</li><li>load - Load the specified module. Typically used when autoload is set to 'no'.</li></ul><p>Let's show a few arbitrary examples below.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[modules]
+;autoload = yes
+;preload = res_odbc.so
+;preload = res_config_odbc.so
+;preload-require = res_odbc.so
+;require = res_pjsip.so
+;noload = pbx_gtkconsole.so
+;load = res_musiconhold.so</pre>
+</div></div><h1 id="ConfiguringtheAsteriskModuleLoader-CLICommands">CLI Commands</h1><p>Asterisk provides a few commands for managing modules at run-time. Be sure to check the current usage using the CLI help with &quot;core show help &lt;command&gt;&quot;.</p><ul><li><p>module show</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: module show [like keyword]
+       Shows Asterisk modules currently in use, and usage statistics.</pre>
+</div></div></li><li><p>module load</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: module load &lt;module name&gt;
+       Loads the specified module into Asterisk.</pre>
+</div></div></li><li><p>module unload</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: module unload [-f|-h] &lt;module_1&gt; [&lt;module_2&gt; ... ]
+       Unloads the specified module from Asterisk. The -f
+       option causes the module to be unloaded even if it is
+       in use (may cause a crash) and the -h module causes the
+       module to be unloaded even if the module says it cannot, 
+       which almost always will cause a crash.</pre>
+</div></div></li><li><p>module reload</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Usage: module reload [module ...]
+       Reloads configuration files for all listed modules which support
+       reloading, or for all supported modules if none are listed.</pre>
+</div></div></li></ul><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

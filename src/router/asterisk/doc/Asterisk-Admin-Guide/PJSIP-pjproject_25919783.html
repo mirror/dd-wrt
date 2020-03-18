@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : PJSIP-pjproject</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : PJSIP-pjproject
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Benjamin Keith Ford</span> on Oct 24, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="PJSIP-pjproject-Overview">Overview </h1><p>Asterisk currently contains two SIP stacks: the original <strong>chan_sip</strong> SIP channel driver which is a complete standalone implementation, has been present in all previous releases of Asterisk <em>and no longer receives core support</em>, and the newer <strong>chan_pjsip</strong> SIP stack that is based on Teluu's &quot;<a href="http://www.pjsip.org/" class="external-link" rel="nofollow">pjproject</a>&quot; SIP stack. While the pjproject stack allows us to move a significant amount of code out of Asterisk, it <em>is</em> a separate, actively maintained, library that we integrate very tightly to.  This presents challenges in making sure that the versions of Asterisk and pjproject currently installed on a system are compatible.  For this reason, we've elected to &quot;bundle&quot; a stable, tested version of pjproject with the Asterisk distribution and integrate it into the Asterisk build process. This does not prevent you from using an external pjproject installation but it will not be supported by the Asterisk team.  See <a href="PJSIP-pjproject_25919783.html">PJSIP-pjproject</a> below for more info.</p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302868530 {padding: 0px;}
+div.rbtoc1582302868530 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302868530 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302868530'>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-Overview'>Overview </a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-bundledUsingtheBundledVersionofpjproject'>Using the Bundled Version of pjproject</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-Whyusethebundledversion?'>Why use the bundled version?</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-Usage'>Usage</a></li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-externalBuildingandInstallingpjprojectfromSource'>Building and Installing pjproject from Source</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-Downloadingpjproject'>Downloading pjproject</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-Troubleshooting'>Troubleshooting</a></li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/PJSIP-pjproject#PJSIP-pjproject-UninstallingaPreviousVersionofpjproject'>Uninstalling a Previous Version of pjproject</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="PJSIP-pjproject-bundledUsingtheBundledVersionofpjproject"><span class="confluence-anchor-link" id="PJSIP-pjproject-bundled"></span>Using the Bundled Version of pjproject</h1><p>Beginning with Asterisk 13.8.0, a stable version of pjproject is included in Asterisk's ./third-party directory and is enabled with the <code>--with-pjproject-bundled</code> option to <code>./configure</code>.  Beginning with Asterisk 15.0.0, it is enabled by default but can be disabled with the <code>--without-pjproject-bundled</code> option to <code>./configure</code>.</p><p>The actual pjproject source code is NOT distributed with Asterisk.  Instead the Asterisk build process downloads the official pjproject tarball then patches, configures and builds pjproject when you build Asterisk. </p><h2 id="PJSIP-pjproject-Whyusethebundledversion?"><span style="color: rgb(34,34,34);">Why use the bundled version?</span></h2><ul><li><strong>Predictability</strong>:  When built with the bundled pjproject, you're always certain of the version you're running against, no matter where it's installed.</li><li><strong>Scalability</strong>:  The default pjproject configuration is optimized for client applications. The bundled version's configuration is optimized for server use.</li><li><strong>Usability</strong>:  Several feature patches, which have been submitted upstream to pjproject but not yet released, are usually included in the bundled version.</li><li><p class="gmail_default _mce_tagged_br"><strong>Safety</strong>:  If a security or critical issue is identified in pjproject, it can be patched and made available with a new release of Asterisk instead of having to waiting for a new release of pjproject.</p></li><li><p class="gmail_default _mce_tagged_br"><strong>Maintainability</strong>:  You don't need to build and install separate packages.</p></li><li><p class="gmail_default _mce_tagged_br"><strong>Supportability</strong>:  When asking others for help, there's no question about which version of pjproject you're using and what options it was compiled with.</p></li><li><strong>Debugability</strong>: The Asterisk <code>DONT_OPTIMIZE</code> and <code>MALLOC_DEBUG</code> compile flags,  which are essential for troubleshooting crashes and deadlocks, are automatically passed to the pjproject build process.</li><li><strong>Compatibility</strong>:  This is especially important from a development perspective because it means we can be sure that new pjproject APIs that have been introduced or old ones that have been deprecated, are handled and tested appropriately in Asterisk.</li><li><strong>Reliability</strong>:  You can be sure that Asterisk was tested against the bundled version.</li></ul><h2 id="PJSIP-pjproject-Usage"><span style="color: rgb(34,34,34);">Usage</span></h2><p style="margin-left: 30.0px;"><span style="color: rgb(34,34,34);">First, run <code>./contrib/scripts/install_prereq</code>.  Building the bundled pjproject requires the python development libraries which install_prereq installs.  All you have to do now is add the <code>--with-pjproject-bundled</code> option to your Asterisk <code>./configure</code> command line and remove any other <code>--with-pjproject</code> option you may have specified. </span></p><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>$ cd /path/asterisk-source-dir
+# For Asterisk 13 and 14...
+$ ./configure --with-pjproject-bundled
+# For Asterisk 15+...
+$ ./configure
+$ make &amp;&amp; make install</pre>
+</div></div><p style="margin-left: 30.0px;"><span style="color: rgb(34,34,34);">The configure and make processes will download the correct version of pjproject, patch it, configure it, build it, and finally link Asterisk to it statically.  No changes in runtime configuration are required.  You can leave your system-installed version of pjproject in place if needed.  Once compiled with the <code>--with-pjproject-bundled</code> option, Asterisk will ignore any other installed versions of pjproject. </span></p><p style="margin-left: 30.0px;">Using the bundled version of pjproject doesn't necessarily mean you need internet access to download the pjproject tarball every time you build. There are 2 ways to specify an alternate location from which to retrieve it.  First, assuming version 2.6 of pjproject is needed and <code>/tmp/downloads</code> is the directory you're going to save to, download the following files to the local directory:</p><p> </p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ mkdir /tmp/downloads
+$ wget -O /tmp/downloads/pjproject-2.6.tar.bz2 http://www.pjsip.org/release/2.6/pjproject-2.6.tar.bz2
+$ wget -O /tmp/downloads/pjproject-2.6.md5 http://www.pjsip.org/release/2.6/MD5SUM.txt</pre>
+</div></div><p style="margin-left: 30.0px;">It's important that both files be named <code>pjproject-&lt;version&gt;.tar.bz2</code> and <code>pjproject-&lt;version&gt;.md5</code> respectively.</p><p style="margin-left: 30.0px;">Now perform either of the following 2 steps:</p><ol><li style="list-style-type: none;background-image: none;"><ol><li>Run ./configure with the <code>--with-externals-cache=/tmp/downloads</code> option.  ./configure will check there first and only download if the files aren't already there or the tarball checksum doesn't match what's in the md5 file.  This is similar to the <code>--with-sounds-cache</code> option.  BTW, the <code>--with-externals-cache</code> mechanism works for the precompiled codecs and the Digium Phone Module for Asterisk as well.  As of Asterisk 13.18, 14.7 and 15.0, the <code>--with-download-cache</code>  option can be used to specify both the externals and sounds cache directory.<br /><br /></li><li>Set the <code>PJPROJECT_URL</code> environment variable to any valid URL (including file:// URLs) where <code>./configure</code> can find the tarball and checksum files.  The variable can be set in your environment and exported or specified directly on the <code>./configure</code> command line.  As of Asterisk 13.18, 14.7 and 15.0, the <code>AST_DOWNLOAD_CACHE</code> environment variable can be used to specify both the externals and sounds cache directory.<br /><br /></li></ol></li></ol></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p> </p></div>
+</div>
+</div>
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="PJSIP-pjproject-externalBuildingandInstallingpjprojectfromSource"><span class="confluence-anchor-link" id="PJSIP-pjproject-external"></span>Building and Installing pjproject from Source</h1>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p><strong>Installing pjproject from source or from packages is no longer a supported configuration for Asterisk versions that contain the <a href="#PJSIP-pjproject-bundled">bundled version of pjproject</a>.</strong> <span>Reports of pjproject-related Asterisk issues may only be made against the bundled version</span>. The bundled version inherits flags like DONT_OPTIMIZE and MALLOC_DEBUG from Asterisk which allows us to accurately diagnose issues across both Asterisk and pjproject.</p>
+                    </div>
+    </div>
+<p>Because earlier releases of pjproject cannot build shared object libraries, some changes were required in order to use it with Asterisk 12. As such, <strong>Asterisk requires pjproject version 2.4 or later (2.6 is current)</strong>. Alternatively, an Asterisk compatible version of pjproject is available on  <a href="https://github.com/asterisk/pjproject" class="external-link" rel="nofollow">github</a> , or - depending on your Linux distribution - available as a package.</p><p>Earlier versions of pjproject downloaded from <a href="http://www.pjsip.org/" class="external-link" rel="nofollow">www.pjsip.org</a> will <strong>not</strong> work with Asterisk 12 or greater. </p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>If you have previously installed a version of pjproject, you <strong>must</strong> remove that version of pjproject prior to building and installing the Asterisk 12+ compatible version of pjproject. See <a href="#PJSIP-pjproject-uninstalling_pjproject">Uninstalling pjproject</a> for more information.</p>
+                    </div>
+    </div>
+<h2 id="PJSIP-pjproject-Downloadingpjproject">Downloading pjproject</h2><h3 id="PJSIP-pjproject-ObtainingpjprojectfromTeluu:">Obtaining pjproject from Teluu:</h3><p style="margin-left: 30.0px;">Use <code>wget</code> to pull the latest version (currently 2.6) from <code>www.pjsip.org</code>. Note that the instructions assume that this is 2.6; for the latest version, refer to <code>www.pjsip.org</code>:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># wget http://www.pjsip.org/release/2.6/pjproject-2.6.tar.bz2
+
+# tar -xjvf pjproject-2.6.tar.bz2</pre>
+</div></div><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-Obtainingthelatestpjprojectfromthesvnrepo:"><span style="color: rgb(133,120,102);">Obtaining the latest pjproject from the svn repo:</span></h3><p><span>Use </span> <code>svn</code> to install the latest version from  <a href="http://www.pjsip.org" class="external-link" rel="nofollow">www.pjsip.org</a>.</p><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># svn co http://svn.pjsip.org/repos/pjproject/trunk/ pjproject-trunk</pre>
+</div></div><p> </p><h3 id="PJSIP-pjproject-Obtaining(oldasterisk)pjprojectfromthegithubrepo:">Obtaining (old asterisk) pjproject from the github repo:</h3><p style="margin-left: 30.0px;">If you do not have <a href="http://git-scm.com/" class="external-link" rel="nofollow">git</a>, install git on your local machine.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p style="margin-left: 30.0px;">Downloading and installing <code>git</code> is beyond the scope of these instructions, but for Debian/Ubuntu systems, it should be as simple as:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>apt-get install git</pre>
+</div></div><p style="margin-left: 30.0px;">And for RedHat/CentOS systems:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>yum install git</pre>
+</div></div>
+                    </div>
+    </div>
+<p> </p><p style="margin-left: 30.0px;">Checkout the Asterisk 12-compatible pjproject from the Asterisk <a href="https://github.com/asterisk/pjproject" class="external-link" rel="nofollow">github repo</a>:</p><p> </p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># git clone https://github.com/asterisk/pjproject pjproject</pre>
+</div></div><p style="margin-left: 30.0px;">And that's it!</p><h3 id="PJSIP-pjproject-BuildingandInstallingpjproject">Building and Installing pjproject</h3><p style="margin-left: 30.0px;">The first step in building and installing pjproject is configuring it using <strong>configure</strong>. For Asterisk, this is arguably the <strong>most</strong> important step in this process. pjproject embeds a number of third party libraries which can conflict with versions of those libraries that may already be installed on your system. Asterisk <strong>will not</strong> use the embedded third party libraries within pjproject. As an example, if you are going to build the res_srtp module in Asterisk, then you <strong>must</strong> specify &quot;--with-external-srtp&quot; when configuring pjproject to point to an external srtp library.</p><p style="margin-left: 30.0px;">Additionally, Asterisk <strong>REQUIRES</strong> two or three options to be passed to <strong>configure</strong>:</p><ul><li style="list-style-type: none;background-image: none;"><ul><li><code>--enable-shared</code> - Instruct pjproject to build shared object libraries. Asterisk will only use shared objects from pjproject.</li><li><code>--prefix</code> - Specify root install directory for pjproject. This will be dependent on your distribution of Linux; typically this is <code>/usr </code>for most systems. The default is <code>/usr/local</code></li><li><code>--libdir</code> - Specify the installation location for object code libraries. This may need to be set to <code>/usr/lib64</code> for some 64-bit systems such as CentOS.</li></ul></li></ul><p> </p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p style="margin-left: 30.0px;">Failure to build Asterisk with shared pjproject object libraries <strong>WILL</strong> result in seemingly random crashes. For Asterisk to work properly with pjproject, pjproject <strong>MUST</strong> be built with shared object libraries.</p>
+                    </div>
+    </div>
+<h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-CompilerDEFINEs">Compiler DEFINEs</h4><ul><li style="list-style-type: none;background-image: none;"><ul><li><p>Users who expect to deal with Contact URIs longer than 256 characters or hostnames longer than 128 characters should set <code>PJSIP_MAX_URL_SIZE</code> and <code>PJ_MAX_HOSTNAME</code> as appropriate.</p></li><li>IPv6 support in pjproject is, by default, disabled. To enable it, set <code>PJ_HAS_IPV6</code> to <code>1</code>.</li><li>The default configuration of pjproject enables &quot;assert&quot; functions which can cause Asterisk to crash unexpectedly. To disable the asserts, set <code>NDEBUG</code> to <code>1</code>.</li><li>The default number of TCP/TLS incoming connections allowed is 64. If you plan on having more than that you'll need to set <code>PJ_IOQUEUE_MAX_HANDLES</code> to the new limit.</li></ul></li></ul><p style="margin-left: 30.0px;">With the exception of <code>PJ_IOQUEUE_MAX_HANDLES</code>, the options can be set in <code>CFLAGS</code> and passed to configure as follows: '.<code>/configure CFLAGS=&quot;-DNDEBUG=1 -DPJ_HAS_IPV6=1</code>&quot;', etc. A better way is to create or edit the <code>pjlib/include/pj/config_site.h</code> file and set them all there. You should use the bundled version of the <code>config_site.h</code> file in <code>third-party/pjproject/patches</code> as a starting point.  Below is a copy of the file at the time of this writing.</p><p style="margin-left: 30.0px;"> </p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>pjlib/include/pj/config_site.h</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: cpp; gutter: true" style="font-size:12px;">/*
+ * Asterisk config_site.h
+ */
+
+#include &lt;sys/select.h&gt;
+
+/*
+ * Since both pjproject and asterisk source files will include config_site.h,
+ * we need to make sure that only pjproject source files include asterisk_malloc_debug.h.
+ */
+#if defined(MALLOC_DEBUG) &amp;&amp; !defined(_ASTERISK_ASTMM_H)
+#include &quot;asterisk_malloc_debug.h&quot;
+#endif
+
+/*
+ * Defining PJMEDIA_HAS_SRTP to 0 does NOT disable Asterisk&#39;s ability to use srtp.
+ * It only disables the pjmedia srtp transport which Asterisk doesn&#39;t use.
+ * The reason for the disable is that while Asterisk works fine with older libsrtp
+ * versions, newer versions of pjproject won&#39;t compile with them.
+ */
+#define PJMEDIA_HAS_SRTP 0
+
+#define PJ_HAS_IPV6 1
+#define NDEBUG 1
+#define PJ_MAX_HOSTNAME (256)
+#define PJSIP_MAX_URL_SIZE (512)
+#ifdef PJ_HAS_LINUX_EPOLL
+#define PJ_IOQUEUE_MAX_HANDLES    (5000)
+#else
+#define PJ_IOQUEUE_MAX_HANDLES    (FD_SETSIZE)
+#endif
+#define PJ_IOQUEUE_HAS_SAFE_UNREG 1
+#define PJ_IOQUEUE_MAX_EVENTS_IN_SINGLE_POLL (16)
+
+#define PJ_SCANNER_USE_BITWISE    0
+#define PJ_OS_HAS_CHECK_STACK    0
+
+#ifndef PJ_LOG_MAX_LEVEL
+#define PJ_LOG_MAX_LEVEL        6
+#endif
+
+#define PJ_ENABLE_EXTRA_CHECK    1
+#define PJSIP_MAX_TSX_COUNT        ((64*1024)-1)
+#define PJSIP_MAX_DIALOG_COUNT    ((64*1024)-1)
+#define PJSIP_UDP_SO_SNDBUF_SIZE    (512*1024)
+#define PJSIP_UDP_SO_RCVBUF_SIZE    (512*1024)
+#define PJ_DEBUG            0
+#define PJSIP_SAFE_MODULE        0
+#define PJ_HAS_STRICMP_ALNUM        0
+
+/*
+ * Do not ever enable PJ_HASH_USE_OWN_TOLOWER because the algorithm is
+ * inconsistently used when calculating the hash value and doesn&#39;t
+ * convert the same characters as pj_tolower()/tolower().  Thus you
+ * can get different hash values if the string hashed has certain
+ * characters in it.  (ASCII &#39;@&#39;, &#39;[&#39;, &#39;\\&#39;, &#39;]&#39;, &#39;^&#39;, and &#39;_&#39;)
+ */
+#undef PJ_HASH_USE_OWN_TOLOWER
+
+/*
+  It is imperative that PJSIP_UNESCAPE_IN_PLACE remain 0 or undefined.
+  Enabling it will result in SEGFAULTS when URIs containing escape sequences are encountered.
+*/
+#undef PJSIP_UNESCAPE_IN_PLACE
+#define PJSIP_MAX_PKT_LEN            32000
+
+#undef PJ_TODO
+#define PJ_TODO(x)
+
+/* Defaults too low for WebRTC */
+#define PJ_ICE_MAX_CAND 32
+#define PJ_ICE_MAX_CHECKS (PJ_ICE_MAX_CAND * PJ_ICE_MAX_CAND)
+
+/* Increase limits to allow more formats */
+#define    PJMEDIA_MAX_SDP_FMT   64
+#define    PJMEDIA_MAX_SDP_BANDW   4
+#define    PJMEDIA_MAX_SDP_ATTR   (PJMEDIA_MAX_SDP_FMT*2 + 4)
+#define    PJMEDIA_MAX_SDP_MEDIA   16
+
+/*
+ * Turn off the periodic sending of CRLNCRLN.  Default is on (90 seconds),
+ * which conflicts with the global section&#39;s keep_alive_interval option in
+ * pjsip.conf.
+ */
+#define PJSIP_TCP_KEEP_ALIVE_INTERVAL    0
+#define PJSIP_TLS_KEEP_ALIVE_INTERVAL    0</pre>
+</div></div><p> </p><p style="margin-left: 30.0px;">Other common <strong style="line-height: 1.42857;">configure</strong> options needed for pjproject are listed below:</p><div class="table-wrap"><table style="margin-left: 30.0px;" class="confluenceTable"><tbody style="margin-left: 30.0px;"><tr style="margin-left: 30.0px;"><th style="margin-left: 30.0px;" class="confluenceTh">Library</th><th style="margin-left: 30.0px;" class="confluenceTh">Configure option</th><th colspan="1" style="margin-left: 30.0px;" class="confluenceTh">Notes</th></tr><tr style="margin-left: 30.0px;"><td style="margin-left: 30.0px;" class="confluenceTd"><a href="http://www.speex.org/" class="external-link" rel="nofollow">libspeex</a> shared objects</td><td style="margin-left: 30.0px;" class="confluenceTd"><code>--with-external-speex</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Make sure that the library development headers are accessible from pjproject. The CFLAGS and LDFLAGS environment variables may be used to set the include/lib paths.</td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><a href="https://github.com/cisco/libsrtp" class="external-link" rel="nofollow">libsrtp</a> shared objects</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><code>--with-external-srtp</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Make sure that the library development headers are accessible from pjproject. The CFLAGS and LDFLAGS environment variables may be used to set the include/lib paths.</td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">GSM codec</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><code>--with-external-gsm</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Make sure that the library development headers are accessible from pjproject. The CFLAGS and LDFLAGS environment variables may be used to set the include/lib paths.</td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable sound</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><code>--disable-sound</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Let Asterisk perform sound manipulations.</td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable resampling</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><code>--disable-resample</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><p style="margin-left: 30.0px;">Let Asterisk perform resample operations.</p></td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable video</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd"><code>--disable-video</code></td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable video support in pjproject's media libraries. This is not used by Asterisk.</td></tr><tr style="margin-left: 30.0px;"><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable AMR</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">--disable-opencore-amr</td><td colspan="1" style="margin-left: 30.0px;" class="confluenceTd">Disable AMR codec support. This is not used by Asterisk</td></tr></tbody></table></div><p style="margin-left: 30.0px;">These are some of the more common options used to disable third party libraries in pjproject. However, other options may be needed depending on your system - see <strong> <code>
+      <code>configure --help</code>
+    </code> </strong> for a full list of configure options you can pass to pjproject.</p><ol><li style="list-style-type: none;background-image: none;"><ol><li><p><br />Now that you understand the pjproject configure options available, change directories to the pjproject source directory:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># cd pjproject</pre>
+</div></div></li><li><p>In the pjproject source directory, run the configure script with the options needed for your system:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ./configure --prefix=/usr --enable-shared --disable-sound --disable-resample --disable-video --disable-opencore-amr CFLAGS=&#39;-O2 -DNDEBUG&#39;</pre>
+</div></div><p>A few recommended options are shown. That includes setting a couple important CFLAGS, -O2 for common optimizations and -DNDEBUG to disable debugging code and assertions.</p></li><li><p>Build pjproject:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># make dep
+# make
+</pre>
+</div></div></li><li><p>Install pjproject<strong> <br /> </strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># make install</pre>
+</div></div></li><li><p>Update shared library links.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ldconfig</pre>
+</div></div></li><li><p>Verify that pjproject has been installed in the target location by looking for, and finding the various pjproject modules:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ldconfig -p | grep pj
+	libpjsua.so (libc6,x86-64) =&gt; /usr/lib/libpjsua.so
+	libpjsip.so (libc6,x86-64) =&gt; /usr/lib/libpjsip.so
+	libpjsip-ua.so (libc6,x86-64) =&gt; /usr/lib/libpjsip-ua.so
+	libpjsip-simple.so (libc6,x86-64) =&gt; /usr/lib/libpjsip-simple.so
+	libpjnath.so (libc6,x86-64) =&gt; /usr/lib/libpjnath.so
+	libpjmedia.so (libc6,x86-64) =&gt; /usr/lib/libpjmedia.so
+	libpjmedia-videodev.so (libc6,x86-64) =&gt; /usr/lib/libpjmedia-videodev.so
+	libpjmedia-codec.so (libc6,x86-64) =&gt; /usr/lib/libpjmedia-codec.so
+	libpjmedia-audiodev.so (libc6,x86-64) =&gt; /usr/lib/libpjmedia-audiodev.so
+	libpjlib-util.so (libc6,x86-64) =&gt; /usr/lib/libpjlib-util.so
+	libpj.so (libc6,x86-64) =&gt; /usr/lib/libpj.so</pre>
+</div></div></li><li><p><span style="line-height: 1.4285715;">Finally, verify that Asterisk detects the pjproject libraries. In your Asterisk source directory:</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ./configure
+# make menuselect</pre>
+</div></div></li><li>Browse to the <strong>Resource Modules</strong> category and verify that the <code>res_pjsip</code> modules are enabled:<br /> <img class="confluence-embedded-image" src="attachments/25919783/26902529.png" data-image-src="attachments/25919783/26902529.png"></li><li>You're all done!  Now, build and install Asterisk as your normally would.</li></ol></li></ol>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If you need pjsua (for the testsuite, for example), then you may also need to take a look at <a href="Installing-the-Asterisk-Test-Suite_20185282.html#InstallingtheAsteriskTestSuite-pjsua_installationPJSUAInstallation">Installing the Asterisk Test Suite#pjsua_installationPJSUAInstallation</a> to set that up externally as well.</p>
+                    </div>
+    </div>
+<h2 style="margin-left: 30.0px;" id="PJSIP-pjproject-Troubleshooting"><br />Troubleshooting</h2><p style="margin-left: 30.0px;">First, if you're using Asterisk 13.8.0 or greater, consider switching to the <a href="#PJSIP-pjproject-bundled">Bundled Version of pjproject</a></p><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-Asteriskfailstodetectpjprojectlibraries">Asterisk fails to detect pjproject libraries</h3><p style="margin-left: 30.0px;">After building and installing pjproject, Asterisk fails to detect any of the libraries - the various res_pjsip components cannot be selected in Asterisk's menuselect</p><h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-Solution">Solution</h4><p style="margin-left: 30.0px;">Verify that Asterisk's config.log shows the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>configure:23029: checking for PJPROJECT
+configure:23036: $PKG_CONFIG --exists --print-errors &quot;libpjproject&quot;
+Package libpjproject was not found in the pkg-config search path.
+Perhaps you should add the directory containing `libpjproject.pc&#39;
+to the PKG_CONFIG_PATH environment variable
+No package &#39;libpjproject&#39; found</pre>
+</div></div><ol><li style="list-style-type: none;background-image: none;"><ol><li>Make sure you have <code>pkg-config</code> installed on your system.</li><li><span>pjproject will install the package config file in </span> <code>/usr/lib/pkgconfig</code> <span>. Some distributions, notably Fedora, will instead look for the library in </span> <code>/usr/lib64</code> <span>. Update your </span> <code>PKG_CONFIG_PATH</code> <span> environment variable with </span> <code>/usr/lib/pkgconfig</code> <span> and re-run Asterisk's </span> <code>configure</code> <span> script.</span></li></ol></li></ol><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-pjprojectfailstobuild:errorsrelatedtoopencore_amr"><span>pjproject fails to build: errors related to opencore_amr<br /> </span></h3><p style="margin-left: 30.0px;"><span>When building pjproject, errors about opencore_amr are displayed, e.g.:</span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x60): multiple definition of `pjmedia_codec_amrnb_framelenbits&#39;
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x60): first defined here
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x80): multiple definition of `pjmedia_codec_amrnb_framelen&#39;
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x80): first defined here
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x20): multiple definition of `pjmedia_codec_amrwb_framelenbits&#39;
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x20): first defined here
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x40): multiple definition of `pjmedia_codec_amrwb_framelen&#39;
+output/pjmedia-codec-x86_64-unknown-linux-gnu/opencore_amr.o:(.rodata+0x40): first defined here
+...</pre>
+</div></div><h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-Solution.1">Solution</h4><p style="margin-left: 30.0px;"><span> <span>You already have the AMR codec installed. Run </span> <code>configure</code> <span> with the </span> <code>--disable-opencore-amr</code> <span> option specified.</span> </span></p><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-pjprojectfailstobuild:videolinkererrors"><span> <span>pjproject fails to build: video linker errors<br /> </span> </span></h3><p style="margin-left: 30.0px;"><span> <span> <span>When building pjproject, linker errors referring to various video methods are displayed, e.g.:</span> </span> </span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/home/mjordan/projects/pjproject/pjmedia/lib/libpjmedia-videodev.so: undefined reference to `pjmedia_format_init_video&#39;
+/home/mjordan/projects/pjproject/pjmedia/lib/libpjmedia.so: undefined reference to `pjmedia_video_format_mgr_instance&#39;
+/home/mjordan/projects/pjproject/pjmedia/lib/libpjmedia-videodev.so: undefined reference to `pjmedia_format_get_video_format_detail&#39;
+/home/mjordan/projects/pjproject/pjmedia/lib/libpjmedia-videodev.so: undefined reference to `pjmedia_get_video_format_info&#39;</pre>
+</div></div><h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-Solution.2">Solution</h4><p style="margin-left: 30.0px;"><span>Run </span> <code>configure</code> <span> with either or both </span> <code>--disable-video</code> <span> or </span> <code>--disable-v4l2</code></p><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-ldconfigfailstodisplaypjprojectlibraries">ldconfig fails to display pjproject libraries</h3><p style="margin-left: 30.0px;"><span>After building pjproject, the dump provided by </span> <code>ldconfig -p</code> <span> doesn't display any libraries.</span></p><h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-Solution.3"><span>Solution</span></h4><p style="margin-left: 30.0px;"><span> <span>Run </span> <code>ldconfig</code> <span> to re-configure dynamic linker run-time bindings. This will need to be run with super user permissions.<br /> </span> </span></p><h3 style="margin-left: 30.0px;" id="PJSIP-pjproject-pjprojectfailstobuildonRaspberryPi"><span> <span>pjproject fails to build on Raspberry Pi<br /> </span> </span></h3><p style="margin-left: 30.0px;"><span> <span>pjproject/Asterisk fails to compile on your Raspberry Pi (raspbian) due to pjproject configure scripts not detecting endianness:<br /> </span> </span></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>/usr/include/pj/config.h:243:6: error: #error Endianness must be declared for this processor
+In file included from /usr/include/pj/types.h:33:0,
+                 from /usr/include/pjsip/sip_config.h:27,
+                 from /usr/include/pjsip/sip_types.h:34,
+                 from /usr/include/pjsip.h:24,
+                 from conftest.c:290:
+/usr/include/pj/config.h:1161:4: error: #error &quot;PJ_IS_LITTLE_ENDIAN is not defined!&quot;
+/usr/include/pj/config.h:1165:4: error: #error &quot;PJ_IS_BIG_ENDIAN is not defined!&quot;</pre>
+</div></div><h4 style="margin-left: 30.0px;" id="PJSIP-pjproject-Solution.4"><span> <span>Solution</span> </span></h4><ol><li style="list-style-type: none;background-image: none;"><ol><li><span> <span>Edit <code>/usr/include/pj/config.h</code> (using the editor of your choice)</span> </span></li><li><span> <span>Replace this code:<br /> </span> </span></li></ol></li></ol><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">    /*
+     * ARM, bi-endian, so raise error if endianness is not configured
+     */
+#   undef PJ_M_ARMV4
+#   define PJ_M_ARMV4           1
+#   define PJ_M_NAME            &quot;armv4&quot;
+#   define PJ_HAS_PENTIUM       0
+#   if !PJ_IS_LITTLE_ENDIAN &amp;&amp; !PJ_IS_BIG_ENDIAN
+#       error Endianness must be declared for this processor
+#   endif</pre>
+</div></div><p style="margin-left: 30.0px;">With this:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">    /*
+     * ARM, bi-endian, so raise error if endianness is not configured
+     */
+#   undef PJ_M_ARMV4
+#   define PJ_M_ARMV4           1
+#   define PJ_M_NAME            &quot;armv4&quot;
+#   define PJ_HAS_PENTIUM       0
+#   define PJ_IS_LITTLE_ENDIAN  1
+#   define PJ_IS_BIG_ENDIAN     0</pre>
+</div></div><p style="margin-left: 30.0px;">Then recompile. This workaround was taken from issue <a href="https://issues.asterisk.org/jira/browse/ASTERISK-23315" class="external-link" rel="nofollow">ASTERISK-23315</a>.</p><p> </p><p style="margin-left: 30.0px;"><span class="confluence-anchor-link" id="PJSIP-pjproject-uninstalling_pjproject"></span></p><h1 style="margin-left: 30.0px;" id="PJSIP-pjproject-UninstallingaPreviousVersionofpjproject">Uninstalling a Previous Version of pjproject</h1><p style="margin-left: 30.0px;">Typically, other versions of pjproject will be installed as static libraries. These libraries are not compatible with Asterisk and can confuse the build process for Asterisk 12. As such, any static libraries must be removed prior to installing the compatible version of pjproject.</p><p style="margin-left: 30.0px;">pjproject provides an <code>uninstall</code> make target that will remove previous installations. It can be called from the pjproject source directory like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># make uninstall</pre>
+</div></div><p style="margin-left: 30.0px;">If you don't have an &quot;uninstall&quot; make target, you may need to fetch and merge the latest pjproject from <a href="https://github.com/asterisk/pjproject" class="external-link" rel="nofollow">https://github.com/asterisk/pjproject</a></p><p style="margin-left: 30.0px;">Alternatively, the following should also remove all previously installed static libraries:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># rm -f /usr/lib/libpj*.a /usr/lib/libmilenage*.a /usr/lib/pkgconfig/libpjproject.pc</pre>
+</div></div><p style="margin-left: 30.0px;">Finally, you will need to update shared library links:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ldconfig</pre>
+</div></div><p style="margin-left: 30.0px;">If you want to run a sanity check, you can verify that pjproject has been uninstalled by ensuring no pjproject modules remain on the system:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># ldconfig -p | grep pj</pre>
+</div></div><p style="margin-left: 30.0px;">If running the above command yields no results, that's it! You have successfully uninstalled pjproject from your system. If there are results, you may need to remove other pjproject-related items from /usr/lib as well.</p><p style="margin-left: 30.0px;"> </p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p> </p><p> </p><p> </p><p> </p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919783/26902533.png">image2993.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919783/26902530.png">make-menuselect-pjsip.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919783/26902534.png">make-menuselect-pjsip.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919783/26279959.png">image2993.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919783/26902529.png">make-menuselect-pjsip.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

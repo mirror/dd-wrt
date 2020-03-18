@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerEvent_AgentComplete</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Events_42010707.html">Asterisk 17 AMI Events</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerEvent_AgentComplete
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerEvent_AgentComplete-AgentComplete">AgentComplete</h1>
+
+<h3 id="Asterisk17ManagerEvent_AgentComplete-Synopsis">Synopsis</h3>
+
+<p>Raised when a queue member has finished servicing a caller in the queue.</p>
+
+<h3 id="Asterisk17ManagerEvent_AgentComplete-Description">Description</h3>
+
+<h3 id="Asterisk17ManagerEvent_AgentComplete-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Event: AgentComplete
+Channel: &lt;value&gt;
+ChannelState: &lt;value&gt;
+ChannelStateDesc: &lt;value&gt;
+CallerIDNum: &lt;value&gt;
+CallerIDName: &lt;value&gt;
+ConnectedLineNum: &lt;value&gt;
+ConnectedLineName: &lt;value&gt;
+Language: &lt;value&gt;
+AccountCode: &lt;value&gt;
+Context: &lt;value&gt;
+Exten: &lt;value&gt;
+Priority: &lt;value&gt;
+Uniqueid: &lt;value&gt;
+Linkedid: &lt;value&gt;
+DestChannel: &lt;value&gt;
+DestChannelState: &lt;value&gt;
+DestChannelStateDesc: &lt;value&gt;
+DestCallerIDNum: &lt;value&gt;
+DestCallerIDName: &lt;value&gt;
+DestConnectedLineNum: &lt;value&gt;
+DestConnectedLineName: &lt;value&gt;
+DestLanguage: &lt;value&gt;
+DestAccountCode: &lt;value&gt;
+DestContext: &lt;value&gt;
+DestExten: &lt;value&gt;
+DestPriority: &lt;value&gt;
+DestUniqueid: &lt;value&gt;
+DestLinkedid: &lt;value&gt;
+Queue: &lt;value&gt;
+MemberName: &lt;value&gt;
+Interface: &lt;value&gt;
+HoldTime: &lt;value&gt;
+TalkTime: &lt;value&gt;
+Reason: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerEvent_AgentComplete-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>Channel</code></li>
+	<li><code>ChannelState</code> - A numeric code for the channel's current state, related to ChannelStateDesc</li>
+	<li><code>ChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>CallerIDNum</code></li>
+	<li><code>CallerIDName</code></li>
+	<li><code>ConnectedLineNum</code></li>
+	<li><code>ConnectedLineName</code></li>
+	<li><code>Language</code></li>
+	<li><code>AccountCode</code></li>
+	<li><code>Context</code></li>
+	<li><code>Exten</code></li>
+	<li><code>Priority</code></li>
+	<li><code>Uniqueid</code></li>
+	<li><code>Linkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>DestChannel</code></li>
+	<li><code>DestChannelState</code> - A numeric code for the channel's current state, related to DestChannelStateDesc</li>
+	<li><code>DestChannelStateDesc</code>
+	<ul>
+		<li><code>Down</code></li>
+		<li><code>Rsrvd</code></li>
+		<li><code>OffHook</code></li>
+		<li><code>Dialing</code></li>
+		<li><code>Ring</code></li>
+		<li><code>Ringing</code></li>
+		<li><code>Up</code></li>
+		<li><code>Busy</code></li>
+		<li><code>Dialing Offhook</code></li>
+		<li><code>Pre-ring</code></li>
+		<li><code>Unknown</code></li>
+	</ul>
+	</li>
+	<li><code>DestCallerIDNum</code></li>
+	<li><code>DestCallerIDName</code></li>
+	<li><code>DestConnectedLineNum</code></li>
+	<li><code>DestConnectedLineName</code></li>
+	<li><code>DestLanguage</code></li>
+	<li><code>DestAccountCode</code></li>
+	<li><code>DestContext</code></li>
+	<li><code>DestExten</code></li>
+	<li><code>DestPriority</code></li>
+	<li><code>DestUniqueid</code></li>
+	<li><code>DestLinkedid</code> - Uniqueid of the oldest channel associated with this channel.</li>
+	<li><code>Queue</code> - The name of the queue.</li>
+	<li><code>MemberName</code> - The name of the queue member.</li>
+	<li><code>Interface</code> - The queue member's channel technology or location.</li>
+	<li><code>HoldTime</code> - The time the channel was in the queue, expressed in seconds since 00:00, Jan 1, 1970 UTC.</li>
+	<li><code>TalkTime</code> - The time the queue member talked with the caller in the queue, expressed in seconds since 00:00, Jan 1, 1970 UTC.</li>
+	<li><code>Reason</code>
+	<ul>
+		<li><code>caller</code></li>
+		<li><code>agent</code></li>
+		<li><code>transfer</code></li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerEvent_AgentComplete-Class">Class</h3>
+
+<p>AGENT</p>
+<h3 id="Asterisk17ManagerEvent_AgentComplete-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerEvent_AgentCalled_42010906.html">Asterisk 17 ManagerEvent_AgentCalled</a></li>
+	<li><a href="Asterisk-17-ManagerEvent_AgentConnect_42010910.html">Asterisk 17 ManagerEvent_AgentConnect</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerEvent_AgentComplete-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

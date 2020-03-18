@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Types of Asterisk Modules</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Architecture_4817475.html">Asterisk Architecture</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Types of Asterisk Modules
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Oct 17, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>There are many different types of modules, each providing their own functionality and capabilities to Asterisk. Configuration of loading is described in <a href="Configuring-the-Asterisk-Module-Loader_30278449.html">Configuring the Asterisk Module Loader</a>.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Use the <a href="Asterisk-Command-Line-Interface_4259982.html">CLI</a> command <strong>module show</strong> to see all the loaded modules in your Asterisk system. See the command usage for details on how to filter the results shown with a pattern.</p>
+<div id="expander-401152512" class="expand-container">
+<div id="expander-control-401152512" class="expand-control">
+    <span class="expand-control-icon"><img style="vertical-align:middle;" class="expand-control-image" src="images/icons/grey_arrow_down.png"></span><span class="expand-control-text">Click here for example &quot;module show&quot; output...</span>
+</div>
+<div id="expander-content-401152512" class="expand-content"><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mypbx*CLI&gt; module show 
+Module                         Description                              Use Count  Status      Support Level
+app_adsiprog.so                Asterisk ADSI Programming Application    0          Running          extended
+app_agent_pool.so              Call center agent pool applications      0          Running              core
+app_alarmreceiver.so           Alarm Receiver for Asterisk              0          Running          extended
+app_amd.so                     Answering Machine Detection Application  0          Running          extended
+app_authenticate.so            Authentication Application               0          Running              core</pre>
+</div></div></div>
+</div>
+
+                    </div>
+    </div>
+<h1 id="TypesofAsteriskModules-VariousModuleTypes">Various Module Types</h1><ul><li><strong>Channel Drivers</strong></li></ul><p>Channel drivers communicate with devices outside of Asterisk, and translate that particular signaling or protocol to the core.</p><ul><li><strong>Dialplan Applications</strong></li></ul><p>Applications provide call functionality to the system. An application might answer a call, play a sound prompt, hang up a call or provide more complex behavior such as queuing, voicemail or conferencing feature sets.</p><ul><li><strong>Dialplan Functions</strong></li></ul><p>Functions are used to retrieve, set or manipulate various settings on a call. A function might be used to set the Caller ID on an outbound call, for example.</p><ul><li><strong>Resources</strong></li></ul><p>As the name suggests, resources provide resources to Asterisk and its modules. Common examples of resources include music on hold and call parking.</p><ul><li><strong>CODECs</strong></li></ul><p>A CODEC (which is an acronym for COder/DECoder) is a module for encoding or decoding audio or video. Typically codecs are used to encode media so that it takes less bandwidth. These are essential to translating audio between the audio codecs and payload types used by different devices.</p><ul><li><strong>File Format Drivers</strong></li></ul><p>File format drivers are used to save media to disk in a particular file format, and to convert those files back to media streams on the network.</p><ul><li><strong>Call Detail Record (CDR) Drivers</strong></li></ul><p>CDR drivers write call logs to a disk or to a database.</p><ul><li><strong>Call Event Log (CEL) Drivers</strong></li></ul><p>Call event logs are similar to call detail records, but record more detail about what happened inside of Asterisk during a particular call.</p><ul><li><strong>Bridge Drivers</strong></li></ul><p>Bridge drivers are used by the bridging architecture in Asterisk, and provide various methods of bridging call media between participants in a call.</p><p> </p><p>The next sub-sections will include detail on each of the module types.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

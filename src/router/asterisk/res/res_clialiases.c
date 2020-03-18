@@ -21,7 +21,7 @@
  * \brief CLI Aliases
  *
  * \author\verbatim Joshua Colp <jcolp@digium.com> \endverbatim
- * 
+ *
  * This module provides the capability to create aliases to other
  * CLI commands.
  */
@@ -30,7 +30,7 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page cli_aliases.conf cli_aliases.conf
  * \verbinclude cli_aliases.conf.sample
  */
@@ -40,8 +40,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/config.h"
@@ -105,7 +103,7 @@ static char *cli_alias_passthrough(struct ast_cli_entry *e, int cmd, struct ast_
 	struct cli_alias tmp = {
 		.cli_entry.command = e->command,
 	};
-	char *generator;
+	char *generator = NULL;
 	const char *line;
 
 	/* Try to find the alias based on the CLI entry */
@@ -120,14 +118,10 @@ static char *cli_alias_passthrough(struct ast_cli_entry *e, int cmd, struct ast_
 	case CLI_GENERATE:
 		line = a->line;
 		line += (strlen(alias->alias));
-		if (!strncasecmp(alias->alias, alias->real_cmd, strlen(alias->alias))) {
-			generator = NULL;
-		} else if (!ast_strlen_zero(a->word)) {
+		if (strncasecmp(alias->alias, alias->real_cmd, strlen(alias->alias))) {
 			struct ast_str *real_cmd = ast_str_alloca(strlen(alias->real_cmd) + strlen(line) + 1);
 			ast_str_append(&real_cmd, 0, "%s%s", alias->real_cmd, line);
 			generator = ast_cli_generator(ast_str_buffer(real_cmd), a->word, a->n);
-		} else {
-			generator = ast_cli_generator(alias->real_cmd, a->word, a->n);
 		}
 		ao2_ref(alias, -1);
 		return generator;
@@ -282,13 +276,15 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
 {
-	if (!(cli_aliases = ao2_container_alloc(MAX_ALIAS_BUCKETS, alias_hash_cb, alias_cmp_cb))) {
+	cli_aliases = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		MAX_ALIAS_BUCKETS, alias_hash_cb, NULL, alias_cmp_cb);
+	if (!cli_aliases) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -300,8 +296,8 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "CLI Aliases",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload_module,
-		);
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload_module,
+);

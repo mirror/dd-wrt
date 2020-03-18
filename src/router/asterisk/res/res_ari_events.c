@@ -35,12 +35,11 @@
 	<depend type="module">res_ari</depend>
 	<depend type="module">res_ari_model</depend>
 	<depend type="module">res_stasis</depend>
+	<depend type="module">res_http_websocket</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
@@ -53,7 +52,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #define MAX_VALS 128
 
-static int ast_ari_events_event_websocket_ws_attempted_cb(struct ast_tcptls_session_instance *ser, struct ast_variable *get_params, struct ast_variable *headers)
+static int ast_ari_events_event_websocket_ws_attempted_cb(struct ast_tcptls_session_instance *ser,
+	struct ast_variable *get_params, struct ast_variable *headers, const char *session_id)
 {
 	struct ast_ari_events_event_websocket_args args = {};
 	int res = 0;
@@ -116,7 +116,7 @@ static int ast_ari_events_event_websocket_ws_attempted_cb(struct ast_tcptls_sess
 		{}
 	}
 
-	res = ast_ari_websocket_events_event_websocket_attempted(ser, headers, &args);
+	res = ast_ari_websocket_events_event_websocket_attempted(ser, headers, &args, session_id);
 
 fin: __attribute__((unused))
 	if (!response) {
@@ -149,6 +149,8 @@ static void ast_ari_events_event_websocket_ws_established_cb(struct ast_websocke
 	struct ast_variable *i;
 	RAII_VAR(struct ast_websocket *, s, ws_session, ast_websocket_unref);
 	RAII_VAR(struct ast_ari_websocket_session *, session, NULL, ao2_cleanup);
+
+	SCOPED_MODULE_USE(ast_module_info->self);
 
 	response = ast_calloc(1, sizeof(*response));
 	if (!response) {
@@ -423,7 +425,7 @@ static int unload_module(void)
 	ast_ari_remove_handler(&events);
 	ao2_cleanup(events.ws_server);
 	events.ws_server = NULL;
-	stasis_app_unref();
+	ast_ari_websocket_events_event_websocket_dtor();
 	return 0;
 }
 
@@ -431,29 +433,29 @@ static int load_module(void)
 {
 	int res = 0;
 
-	CHECK_ARI_MODULE_LOADED();
+	struct ast_websocket_protocol *protocol;
 
-	/* This is scoped to not conflict with CHECK_ARI_MODULE_LOADED */
-	{
-		struct ast_websocket_protocol *protocol;
-
-		events.ws_server = ast_websocket_server_create();
-		if (!events.ws_server) {
-			return AST_MODULE_LOAD_DECLINE;
-		}
-
-		protocol = ast_websocket_sub_protocol_alloc("ari");
-		if (!protocol) {
-			ao2_ref(events.ws_server, -1);
-			events.ws_server = NULL;
-			return AST_MODULE_LOAD_DECLINE;
-		}
-		protocol->session_attempted = ast_ari_events_event_websocket_ws_attempted_cb;
-		protocol->session_established = ast_ari_events_event_websocket_ws_established_cb;
-		res |= ast_websocket_server_add_protocol2(events.ws_server, protocol);
+	if (ast_ari_websocket_events_event_websocket_init() == -1) {
+		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	stasis_app_ref();
+	events.ws_server = ast_websocket_server_create();
+	if (!events.ws_server) {
+		ast_ari_websocket_events_event_websocket_dtor();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+
+	protocol = ast_websocket_sub_protocol_alloc("ari");
+	if (!protocol) {
+		ao2_ref(events.ws_server, -1);
+		events.ws_server = NULL;
+		ast_ari_websocket_events_event_websocket_dtor();
+		return AST_MODULE_LOAD_DECLINE;
+	}
+	protocol->session_attempted = ast_ari_events_event_websocket_ws_attempted_cb;
+	protocol->session_established = ast_ari_events_event_websocket_ws_established_cb;
+	res |= ast_websocket_server_add_protocol2(events.ws_server, protocol);
+
 	res |= ast_ari_add_handler(&events);
 	if (res) {
 		unload_module();
@@ -467,5 +469,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Web
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_ari,res_stasis",
-	);
+	.requires = "res_ari,res_ari_model,res_stasis,res_http_websocket",
+);

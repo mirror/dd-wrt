@@ -29,12 +29,11 @@
 
 /*** MODULEINFO
 	<depend>res_odbc</depend>
+	<depend>generic_odbc</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/file.h"
@@ -56,8 +55,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<parameter name="result-id" required="true" />
 		</syntax>
 		<description>
-			<para>For queries which are marked as mode=multirow, the original 
-			query returns a <replaceable>result-id</replaceable> from which results 
+			<para>For queries which are marked as mode=multirow, the original
+			query returns a <replaceable>result-id</replaceable> from which results
 			may be fetched.  This function implements the actual fetch of the results.</para>
 			<para>This also sets <variable>ODBC_FETCH_STATUS</variable>.</para>
 			<variablelist>
@@ -80,7 +79,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<parameter name="result-id" required="true" />
 		</syntax>
 		<description>
-			<para>For queries which are marked as mode=multirow, this will clear 
+			<para>For queries which are marked as mode=multirow, this will clear
 			any remaining rows of the specified resultset.</para>
 		</description>
 	</application>
@@ -92,7 +91,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<parameter name="string" required="true" />
 		</syntax>
 		<description>
-			<para>Used in SQL templates to escape data which may contain single ticks 
+			<para>Used in SQL templates to escape data which may contain single ticks
 			<literal>'</literal> which are otherwise used to delimit data.</para>
 			<para>Example: SELECT foo FROM bar WHERE baz='${SQL_ESC(${ARG1})}'</para>
 		</description>
@@ -101,7 +100,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 static char *config = "func_odbc.conf";
 
-#define DEFAULT_SINGLE_DB_CONNECTION 1
+#define DEFAULT_SINGLE_DB_CONNECTION 0
 
 static int single_db_connection;
 
@@ -463,7 +462,7 @@ static SQLHSTMT execute(struct odbc_obj *obj, void *data, int silent)
 		return NULL;
 	}
 
-	res = SQLExecDirect(stmt, (unsigned char *)sql, SQL_NTS);
+	res = ast_odbc_execute_sql(obj, stmt, sql);
 	if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO) && (res != SQL_NO_DATA)) {
 		if (res == SQL_ERROR && !silent) {
 			int i;
@@ -793,6 +792,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 		if (!(resultset = ast_calloc(1, sizeof(*resultset)))) {
 			pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 			pbx_builtin_setvar_helper(chan, "ODBCSTATUS", status);
+			AST_RWLIST_UNLOCK(&queries);
 			ast_autoservice_stop(chan);
 			return -1;
 		}
@@ -809,6 +809,7 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 			if (!(resultset = ast_calloc(1, sizeof(*resultset)))) {
 				pbx_builtin_setvar_helper(chan, "ODBCROWS", rowcount);
 				pbx_builtin_setvar_helper(chan, "ODBCSTATUS", status);
+				AST_RWLIST_UNLOCK(&queries);
 				ast_autoservice_stop(chan);
 				return -1;
 			}
@@ -854,6 +855,21 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 		}
 		odbc_datastore_free(resultset);
 		return -1;
+	}
+
+	if (colcount <= 0) {
+		ast_verb(4, "Returned %d columns [%s]\n", colcount, ast_str_buffer(sql));
+		buf[0] = '\0';
+		SQLCloseCursor(stmt);
+		SQLFreeHandle (SQL_HANDLE_STMT, stmt);
+		release_obj_or_dsn (&obj, &dsn);
+		if (!bogus_chan) {
+			pbx_builtin_setvar_helper(chan, "ODBCROWS", "0");
+			pbx_builtin_setvar_helper(chan, "ODBCSTATUS", "NODATA");
+			ast_autoservice_stop(chan);
+		}
+		odbc_datastore_free(resultset);
+		return 0;
 	}
 
 	res = SQLFetch(stmt);
@@ -904,15 +920,17 @@ static int acf_odbc_read(struct ast_channel *chan, const char *cmd, char *s, cha
 
 			if (y == 0) {
 				char colname[256];
-				SQLULEN maxcol = 0;
+				SQLLEN octetlength = 0;
 
-				res = SQLDescribeCol(stmt, x + 1, (unsigned char *)colname, sizeof(colname), &collength, NULL, &maxcol, NULL, NULL);
-				ast_debug(3, "Got collength of %d and maxcol of %d for column '%s' (offset %d)\n", (int)collength, (int)maxcol, colname, x);
+				res = SQLDescribeCol(stmt, x + 1, (unsigned char *)colname, sizeof(colname), &collength, NULL, NULL, NULL, NULL);
+				ast_debug(3, "Got collength of %d for column '%s' (offset %d)\n", (int)collength, colname, x);
 				if (((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) || collength == 0) {
 					snprintf(colname, sizeof(colname), "field%d", x);
 				}
 
-				ast_str_make_space(&coldata, maxcol + 1);
+				SQLColAttribute(stmt, x + 1, SQL_DESC_OCTET_LENGTH, NULL, 0, NULL, &octetlength);
+
+				ast_str_make_space(&coldata, octetlength + 1);
 
 				if (ast_str_strlen(colnames)) {
 					ast_str_append(&colnames, 0, ",");
@@ -1388,7 +1406,7 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 		AST_APP_ARG(field)[100];
 	);
 	struct ast_str *sql;
-	char *char_args, varname[10];
+	char *char_args, varname[15];
 	struct acf_odbc_query *query;
 	struct ast_channel *chan;
 	int i;
@@ -1482,10 +1500,9 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 		SQLHSTMT stmt;
 		int rows = 0, res, x;
 		SQLSMALLINT colcount = 0, collength;
-		SQLLEN indicator;
+		SQLLEN indicator, octetlength;
 		struct ast_str *coldata = ast_str_thread_get(&coldata_buf, 16);
 		char colname[256];
-		SQLULEN maxcol;
 
 		if (!coldata) {
 			AST_RWLIST_UNLOCK(&queries);
@@ -1519,6 +1536,15 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 				return CLI_SUCCESS;
 			}
 
+			if (colcount <= 0) {
+				SQLCloseCursor(stmt);
+				SQLFreeHandle (SQL_HANDLE_STMT, stmt);
+				release_obj_or_dsn (&obj, &dsn);
+				ast_cli(a->fd, "Returned %d columns.  Query executed on handle %d:%s [%s]\n", colcount, dsn_num, query->readhandle[dsn_num], ast_str_buffer(sql));
+				AST_RWLIST_UNLOCK(&queries);
+				return CLI_SUCCESS;
+			}
+
 			res = SQLFetch(stmt);
 			if ((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) {
 				SQLCloseCursor(stmt);
@@ -1535,14 +1561,15 @@ static char *cli_odbc_read(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 			}
 			for (;;) {
 				for (x = 0; x < colcount; x++) {
-					maxcol = 0;
-
-					res = SQLDescribeCol(stmt, x + 1, (unsigned char *)colname, sizeof(colname), &collength, NULL, &maxcol, NULL, NULL);
+					res = SQLDescribeCol(stmt, x + 1, (unsigned char *)colname, sizeof(colname), &collength, NULL, NULL, NULL, NULL);
 					if (((res != SQL_SUCCESS) && (res != SQL_SUCCESS_WITH_INFO)) || collength == 0) {
 						snprintf(colname, sizeof(colname), "field%d", x);
 					}
 
-					res = ast_odbc_ast_str_SQLGetData(&coldata, maxcol, stmt, x + 1, SQL_CHAR, &indicator);
+					octetlength = 0;
+					SQLColAttribute(stmt, x + 1, SQL_DESC_OCTET_LENGTH, NULL, 0, NULL, &octetlength);
+
+					res = ast_odbc_ast_str_SQLGetData(&coldata, octetlength + 1, stmt, x + 1, SQL_CHAR, &indicator);
 					if (indicator == SQL_NULL_DATA) {
 						ast_str_set(&coldata, 0, "(nil)");
 						res = SQL_SUCCESS;
@@ -1595,7 +1622,7 @@ static char *cli_odbc_write(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 		AST_APP_ARG(field)[100];
 	);
 	struct ast_str *sql;
-	char *char_args, *char_values, varname[10];
+	char *char_args, *char_values, varname[15];
 	struct acf_odbc_query *query;
 	struct ast_channel *chan;
 	int i;
@@ -1768,7 +1795,8 @@ static int load_module(void)
 	dsns = NULL;
 
 	if (single_db_connection) {
-		dsns = ao2_container_alloc(DSN_BUCKETS, dsn_hash, dsn_cmp);
+		dsns = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, DSN_BUCKETS,
+			dsn_hash, NULL, dsn_cmp);
 		if (!dsns) {
 			ast_log(LOG_ERROR, "Could not initialize DSN container\n");
 			ast_rwlock_unlock(&single_db_connection_lock);
@@ -1866,7 +1894,8 @@ static int reload(void)
 	}
 
 	if (single_db_connection) {
-		dsns = ao2_container_alloc(DSN_BUCKETS, dsn_hash, dsn_cmp);
+		dsns = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, DSN_BUCKETS,
+			dsn_hash, NULL, dsn_cmp);
 		if (!dsns) {
 			ast_log(LOG_ERROR, "Could not initialize DSN container\n");
 			ast_rwlock_unlock(&single_db_connection_lock);
@@ -1914,9 +1943,8 @@ reload_out:
 /* XXX need to revise usecount - set if query_lock is set */
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "ODBC lookups",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-	       );
-
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+);

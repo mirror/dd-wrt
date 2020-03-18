@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/module.h"
 #include "asterisk/stasis_app_impl.h"
 #include "asterisk/stasis_app_snoop.h"
@@ -74,6 +72,8 @@ struct stasis_app_snoop {
 	unsigned int whisper_active:1;
 	/*! \brief Uniqueid of the channel this snoop is snooping on */
 	char uniqueid[AST_MAX_UNIQUEID];
+	/*! \brief A frame of silence to use when the audiohook returns null */
+	struct ast_frame silence;
 };
 
 /*! \brief Destructor for snoop structure */
@@ -91,6 +91,11 @@ static void snoop_destroy(void *obj)
 
 	if (snoop->whisper_active) {
 		ast_audiohook_destroy(&snoop->whisper);
+	}
+
+	if (snoop->silence.data.ptr) {
+		ast_free(snoop->silence.data.ptr);
+		snoop->silence.data.ptr = NULL;
 	}
 
 	ast_free(snoop->app);
@@ -199,7 +204,7 @@ static struct ast_frame *snoop_read(struct ast_channel *chan)
 	frame = ast_audiohook_read_frame(&snoop->spy, snoop->spy_samples, snoop->spy_direction, snoop->spy_format);
 	ast_audiohook_unlock(&snoop->spy);
 
-	return frame ? frame : &ast_null_frame;
+	return frame ? frame : &snoop->silence;
 }
 
 /*! \brief Callback function for hanging up a Snoop channel */
@@ -385,6 +390,19 @@ struct ast_channel *stasis_app_control_snoop(struct ast_channel *chan,
 
 		snoop->spy_samples = ast_format_get_sample_rate(snoop->spy_format) / (1000 / SNOOP_INTERVAL);
 		snoop->spy_active = 1;
+
+		snoop->silence.frametype = AST_FRAME_VOICE,
+		snoop->silence.datalen = snoop->spy_samples * sizeof(uint16_t),
+		snoop->silence.samples = snoop->spy_samples,
+		snoop->silence.mallocd = 0,
+		snoop->silence.offset = 0,
+		snoop->silence.src = __PRETTY_FUNCTION__,
+		snoop->silence.subclass.format = snoop->spy_format,
+		snoop->silence.data.ptr = ast_calloc(snoop->spy_samples, sizeof(uint16_t));
+		if (!snoop->silence.data.ptr) {
+			ast_hangup(snoop->chan);
+			return NULL;
+		}
 	}
 
 	/* If whispering is enabled set up the audiohook */
@@ -427,4 +445,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS, "Stasis applicatio
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_stasis");
+	.requires = "res_stasis",
+);

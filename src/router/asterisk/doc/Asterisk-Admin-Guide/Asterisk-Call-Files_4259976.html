@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Call Files</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Call Files
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 09, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="AsteriskCallFiles-Overview">Overview</h1>
+
+<p>Asterisk has the ability to initiate a call from outside of the normal methods such as the dialplan, manager interface, or spooling interface.</p>
+
+<p>Using the call file method, you must give Asterisk the following information:</p>
+
+<ul>
+	<li>How to perform the call, similar to the Dial() application</li>
+	<li>What to do when the call is answered</li>
+</ul>
+
+
+<p>With call files you submit this information simply by creating a file with the required syntax and placing it in the <code>outgoing</code> spooling directory, located by default in <code>/var/spool/asterisk/outgoing/</code> (this is configurable in <code>asterisk.conf</code>).</p>
+
+<p>The <code>pbx_spool.so</code> module watches the spooling directly, either using an event notification system supplied by the operating system such as <code><a href="http://en.wikipedia.org/wiki/Inotify" class="external-link" rel="nofollow">inotify</a></code> or <code><a href="http://en.wikipedia.org/wiki/Kqueue" class="external-link" rel="nofollow">kqueue</a></code>, or by polling the directory each second when one of those notification systems is unavailable.  When a new file appears, Asterisk initiates a new call based on the file's contents.</p>
+
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Creating Files in the Spool Directory</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Do <strong>not</strong> write or create the call file directly in the <code>outgoing</code> directory, but always create the file in another directory of the same filesystem and then move the file to the <code>outgoing</code> directory, or Asterisk may read a partial file.</p>
+                    </div>
+    </div>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">NFS Considerations</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>By default, Asterisk will prefer to use <code>inotify</code> or <code>kqueue</code> where available.  When the spooling directory is on a remote server and is mounted via NFS, the <code>inotify</code> method will fail to work.  You can force Asterisk to use the older polling method by passing the <code>--without-inotify</code> flag to <code>configure</code> during compilation (e.g. <code>./configure --without-inotify</code>).</p>
+                    </div>
+    </div>
+
+
+<h1 id="AsteriskCallFiles-CallFileSyntax">Call File Syntax</h1>
+
+<p>The call file consists of &lt;Key&gt;: &lt;value&gt; pairs; one per line.</p>
+
+<p>Comments are indicated by a '#' character that begins a line, or follows a space or tab character.  To be consistent with the configuration files in Asterisk, comments can also be indicated by a semicolon.  However, the multiline comments (;----;) used in Asterisk configuration files are not supported. Semicolons can be escaped by a backslash.</p>
+
+<p>The following keys-value pairs are used to specify how setup a call:</p>
+
+<ul>
+	<li><code>Channel: &lt;channel&gt;</code> - The channel to use for the new call, in the form <strong>technology/resource</strong> as in the Dial application.  This value is required.</li>
+	<li><code>Callerid: &lt;callerid&gt;</code> - The caller id to use.</li>
+	<li><code>WaitTime: &lt;number&gt;</code> - How many seconds to wait for an answer before the call fails (ring cycle). Defaults to 45 seconds.</li>
+	<li><code>MaxRetries: &lt;number&gt;</code> - Number of retries before failing, not including the initial attempt. Default = 0 e.g. don't retry if fails.</li>
+	<li><code>RetryTime: &lt;number&gt;</code> - How many seconds to wait before retry. The default is 300 (5 minutes).</li>
+	<li><code>Account: &lt;account&gt;</code> - The account code for the call. This value will be assigned to CDR(accountcode)</li>
+</ul>
+
+
+<p>When the call answers there are two choices: </p>
+
+<ol>
+	<li>Execute a single application, or</li>
+	<li>Execute the dialplan at the specified context/extension/priority.</li>
+</ol>
+
+
+<h2 id="AsteriskCallFiles-Toexecuteanapplication:">To execute an application:</h2>
+
+<ul>
+	<li><code>Application: &lt;appname&gt;</code> - The application to execute</li>
+	<li><code>Data: &lt;args&gt;</code> - The application arguments</li>
+</ul>
+
+
+<h2 id="AsteriskCallFiles-Tostartexecutingapplicationsinthedialplan:">To start executing applications in the dialplan:</h2>
+
+<ul>
+	<li><code>Context: &lt;context&gt;</code> - The context in the dialplan</li>
+	<li><code>Extension: &lt;exten&gt;</code> - The extension in the specified context</li>
+	<li><code>Priority: &lt;priority&gt;</code> - The priority of the specified extension; (numeric or label)</li>
+	<li><code>Setvar: &lt;var=value&gt;</code> - You may also assign values to variables that will be available to the channel, as if you had performed a Set(var=value) in the dialplan. More than one Setvar: may be specified.</li>
+</ul>
+
+
+<p>The processing of the call file ends when the call is answered and terminated; when the call was not answered in the initial attempt and subsequent retries; or if the call file can't be successfully read and parsed.</p>
+
+<p>To specify what to do with the call file at the end of processing:</p>
+
+<ul>
+	<li><code>Archive: &lt;yes|no&gt;</code> - If &quot;no&quot; the call file is deleted. If set to &quot;yes&quot; the call file is moved to the &quot;outgoing_done&quot; subdirectory of the Asterisk spool directory. The default is to delete the call file.</li>
+</ul>
+
+
+<p>If the call file is archived, Asterisk will append to the call file:</p>
+
+<ul>
+	<li><code>Status: &lt;exitstatus&gt;</code> - Can be &quot;Expired&quot;, &quot;Completed&quot; or &quot;Failed&quot;</li>
+</ul>
+
+
+<p>Other lines generated by Asterisk:</p>
+
+<p>Asterisk keep track of how many retries the call has already attempted, appending to the call file the following key-pairs in the form:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+StartRetry: &lt;pid&gt; &lt;retrycount&gt; (&lt;time&gt;)
+EndRetry: &lt;pid&gt; &lt;retrycount&gt; (&lt;time&gt;)
+</pre>
+</div></div>
+
+<p>With the main process ID (pid) of the Asterisk process, the retry number, and the attempts start and end times in time_t format.</p>
+
+<h1 id="AsteriskCallFiles-Directorylocations">Directory locations</h1>
+
+<ul>
+	<li><code>&lt;astspooldir&gt;/outgoing</code> - The outgoing dir, where call files are put for processing</li>
+	<li><code>&lt;astspooldir&gt;/outgoing_done</code> - The archive dir</li>
+	<li><code>&lt;astspooldir&gt;</code> - Is specified in asterisk.conf, usually /var/spool/asterisk</li>
+</ul>
+
+
+<h1 id="AsteriskCallFiles-Howtoscheduleacall">How to schedule a call</h1>
+
+<p>Call files that have the time of the last modification in the future are ignored by Asterisk. This makes it possible to modify the time of a call file to the wanted time, move to the outgoing directory, and Asterisk will attempt to create the call at that time.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -28,12 +28,11 @@
  */
 
 /*** MODULEINFO
+	<depend>res_rtp_multicast</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_REGISTER_FILE()
 
 #include "asterisk/channel.h"
 #include "asterisk/module.h"
@@ -44,6 +43,7 @@ ASTERISK_REGISTER_FILE()
 #include "asterisk/causes.h"
 #include "asterisk/format_cache.h"
 #include "asterisk/multicast_rtp.h"
+#include "asterisk/dns_core.h"
 
 /* Forward declarations */
 static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause);
@@ -119,6 +119,22 @@ static int rtp_hangup(struct ast_channel *ast)
 	return 0;
 }
 
+static struct ast_format *derive_format_from_cap(struct ast_format_cap *cap)
+{
+	struct ast_format *fmt = ast_format_cap_get_format(cap, 0);
+
+	if (ast_format_cap_count(cap) == 1 && fmt == ast_format_slin) {
+		/*
+		 * Because we have no SDP, we must use one of the static RTP payload
+		 * assignments. Signed linear @ 8kHz does not map, so if that is our
+		 * only capability, we force μ-law instead.
+		 */
+		fmt = ast_format_ulaw;
+	}
+
+	return fmt;
+}
+
 /*! \brief Function called when we should prepare to call the multicast destination */
 static struct ast_channel *multicast_rtp_request(const char *type, struct ast_format_cap *cap, const struct ast_assigned_ids *assignedids, const struct ast_channel *requestor, const char *data, int *cause)
 {
@@ -173,7 +189,7 @@ static struct ast_channel *multicast_rtp_request(const char *type, struct ast_fo
 
 	fmt = ast_multicast_rtp_options_get_format(mcast_options);
 	if (!fmt) {
-		fmt = ast_format_cap_get_format(cap, 0);
+		fmt = derive_format_from_cap(cap);
 	}
 	if (!fmt) {
 		ast_log(LOG_ERROR, "No codec available for sending RTP to '%s'\n",
@@ -278,9 +294,23 @@ static struct ast_channel *unicast_rtp_request(const char *type, struct ast_form
 		ast_log(LOG_ERROR, "Destination is required for the 'UnicastRTP' channel\n");
 		goto failure;
 	}
+
 	if (!ast_sockaddr_parse(&address, args.destination, PARSE_PORT_REQUIRE)) {
-		ast_log(LOG_ERROR, "Destination '%s' could not be parsed\n", args.destination);
-		goto failure;
+	    int rc;
+	    char *host;
+	    char *port;
+
+	    rc = ast_sockaddr_split_hostport(args.destination, &host, &port, PARSE_PORT_REQUIRE);
+	    if (!rc) {
+	        ast_log(LOG_ERROR, "Unable to parse destination '%s' into host and port\n", args.destination);
+	        goto failure;
+	    }
+
+	    rc = ast_dns_resolve_ipv6_and_ipv4(&address, host, port);
+	    if (rc != 0) {
+	        ast_log(LOG_ERROR, "Unable to resolve host '%s'\n", host);
+	        goto failure;
+	    }
 	}
 
 	if (!ast_strlen_zero(args.options)
@@ -300,7 +330,7 @@ static struct ast_channel *unicast_rtp_request(const char *type, struct ast_form
 			goto failure;
 		}
 	} else {
-		fmt = ast_format_cap_get_format(cap, 0);
+		fmt = derive_format_from_cap(cap);
 		if (!fmt) {
 			ast_log(LOG_ERROR, "No codec available for sending RTP to '%s'\n",
 				args.destination);
@@ -417,4 +447,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "RTP Media Channel",
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DRIVER,
+	.requires = "res_rtp_multicast",
 );

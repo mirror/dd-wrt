@@ -35,12 +35,11 @@
 	<depend type="module">res_ari</depend>
 	<depend type="module">res_ari_model</depend>
 	<depend type="module">res_stasis</depend>
+	<depend type="module">res_stasis_recording</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
@@ -210,6 +209,65 @@ static void ast_ari_recordings_delete_stored_cb(
 
 	if (!is_valid) {
 		ast_log(LOG_ERROR, "Response validation failed for /recordings/stored/{recordingName}\n");
+		ast_ari_response_error(response, 500,
+			"Internal Server Error", "Response validation failed");
+	}
+#endif /* AST_DEVMODE */
+
+fin: __attribute__((unused))
+	return;
+}
+/*!
+ * \brief Parameter parsing callback for /recordings/stored/{recordingName}/file.
+ * \param get_params GET parameters in the HTTP request.
+ * \param path_vars Path variables extracted from the request.
+ * \param headers HTTP headers.
+ * \param[out] response Response to the HTTP request.
+ */
+static void ast_ari_recordings_get_stored_file_cb(
+	struct ast_tcptls_session_instance *ser,
+	struct ast_variable *get_params, struct ast_variable *path_vars,
+	struct ast_variable *headers, struct ast_json *body, struct ast_ari_response *response)
+{
+	struct ast_ari_recordings_get_stored_file_args args = {};
+	struct ast_variable *i;
+#if defined(AST_DEVMODE)
+	int is_valid;
+	int code;
+#endif /* AST_DEVMODE */
+
+	for (i = path_vars; i; i = i->next) {
+		if (strcmp(i->name, "recordingName") == 0) {
+			args.recording_name = (i->value);
+		} else
+		{}
+	}
+	ast_ari_recordings_get_stored_file(ser, headers, &args, response);
+#if defined(AST_DEVMODE)
+	code = response->response_code;
+
+	switch (code) {
+	case 0: /* Implementation is still a stub, or the code wasn't set */
+		is_valid = response->message == NULL;
+		break;
+	case 500: /* Internal Server Error */
+	case 501: /* Not Implemented */
+	case 403: /* The recording file could not be opened */
+	case 404: /* Recording not found */
+		is_valid = 1;
+		break;
+	default:
+		if (200 <= code && code <= 299) {
+			/* No validation on a raw binary response */
+			is_valid = 1;
+		} else {
+			ast_log(LOG_ERROR, "Invalid error response %d for /recordings/stored/{recordingName}/file\n", code);
+			is_valid = 0;
+		}
+	}
+
+	if (!is_valid) {
+		ast_log(LOG_ERROR, "Response validation failed for /recordings/stored/{recordingName}/file\n");
 		ast_ari_response_error(response, 500,
 			"Internal Server Error", "Response validation failed");
 	}
@@ -712,6 +770,15 @@ fin: __attribute__((unused))
 }
 
 /*! \brief REST handler for /api-docs/recordings.json */
+static struct stasis_rest_handlers recordings_stored_recordingName_file = {
+	.path_segment = "file",
+	.callbacks = {
+		[AST_HTTP_GET] = ast_ari_recordings_get_stored_file_cb,
+	},
+	.num_children = 0,
+	.children = {  }
+};
+/*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_stored_recordingName_copy = {
 	.path_segment = "copy",
 	.callbacks = {
@@ -728,8 +795,8 @@ static struct stasis_rest_handlers recordings_stored_recordingName = {
 		[AST_HTTP_GET] = ast_ari_recordings_get_stored_cb,
 		[AST_HTTP_DELETE] = ast_ari_recordings_delete_stored_cb,
 	},
-	.num_children = 1,
-	.children = { &recordings_stored_recordingName_copy, }
+	.num_children = 2,
+	.children = { &recordings_stored_recordingName_file,&recordings_stored_recordingName_copy, }
 };
 /*! \brief REST handler for /api-docs/recordings.json */
 static struct stasis_rest_handlers recordings_stored = {
@@ -800,7 +867,6 @@ static struct stasis_rest_handlers recordings = {
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&recordings);
-	stasis_app_unref();
 	return 0;
 }
 
@@ -808,10 +874,7 @@ static int load_module(void)
 {
 	int res = 0;
 
-	CHECK_ARI_MODULE_LOADED();
 
-
-	stasis_app_ref();
 	res |= ast_ari_add_handler(&recordings);
 	if (res) {
 		unload_module();
@@ -825,5 +888,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Rec
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_ari,res_stasis",
-	);
+	.requires = "res_ari,res_ari_model,res_stasis,res_stasis_recording",
+);

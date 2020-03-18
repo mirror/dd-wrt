@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : AEL goto, jump, and labels</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4620445.html">Asterisk Extension Language (AEL)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="AEL-Example-Usages_4620476.html">AEL Example Usages</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : AEL goto, jump, and labels
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>This is an example of how to do a goto in AEL.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+context gotoexample {
+    s =&gt; {
+        begin:
+            NoOp(Infinite Loop! yay!);
+            Wait(1);
+            goto begin; // go to label in same extension 
+    }
+    3 =&gt; {
+        goto s,
+        begin; // go to label in different extension 
+    } 
+    4 =&gt; {
+        goto gotoexample,s,begin; // overkill go to label in same context 
+    }
+} 
+
+context gotoexample2 {
+    s =&gt; {
+        end:
+            goto gotoexample,s,begin; // go to label in different context 
+    }
+}
+</pre>
+</div></div>
+
+<p>You can use the special label of &quot;1&quot; in the goto and jump statements. It means the &quot;first&quot; statement in the extension. I would not advise trying to use numeric labels other than &quot;1&quot; in goto's or jumps, nor would I advise declaring a &quot;1&quot; label anywhere! As a matter of fact, it would be bad form to declare a numeric label, and it might conflict with the priority numbers used internally by asterisk. </p>
+
+<p>The syntax of the jump statement is: jump extension[,priority][@context] If priority is absent, it defaults to &quot;1&quot;. If context is not present, it is assumed to be the same as that which contains the &quot;jump&quot;.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+context gotoexample {
+    s =&gt; {
+        begin:
+            NoOp(Infinite Loop! yay!);
+            Wait(1);
+            jump s; // go to first extension in same extension 
+    }
+    3 =&gt; {
+        jump s,begin; // go to label in different extension 
+    } 
+    4 =&gt; {
+        jump s,begin@gotoexample; // overkill go to label in same context } 
+    } 
+
+context gotoexample2 {
+    s =&gt; {
+        end: 
+            jump s@gotoexample; // go to label in different context } 
+}
+</pre>
+</div></div>
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Goto labels follow the same requirements as the Goto() application, except the last value has to be a label. If the label does not exist, you will have run-time errors. If the label exists, but in a different extension, you have to specify both the extension name and label in the goto, as in: goto s,z; if the label is in a different context, you specify context,extension,label. There is a note about using goto's in a switch statement below...</p>
+                    </div>
+    </div>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>AEL introduces the special label &quot;1&quot;, which is the beginning context number for most extensions.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

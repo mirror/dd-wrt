@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk on (Open)Solaris</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-on-Non-Linux-Operating-Systems_27820181.html">Installing Asterisk on Non-Linux Operating Systems</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk on (Open)Solaris
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Ben Klang</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Feb 24, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="Asteriskon(Open)Solaris-AsteriskonSolaris10andOpenSolaris">Asterisk on Solaris 10 and OpenSolaris</h2>
+
+<h6 id="Asteriskon(Open)Solaris-Onthispage">On this page</h6>
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302880343 {padding: 0px;}
+div.rbtoc1582302880343 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302880343 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302880343'>
+<ul class='toc-indentation'>
+<li><a href='#Asteriskon(Open)Solaris-AsteriskonSolaris10andOpenSolaris'>Asterisk on Solaris 10 and OpenSolaris</a>
+<ul class='toc-indentation'>
+<li><a href='#Asteriskon(Open)Solaris-Digium&#39;sSupportStatus'>Digium&#39;s Support Status</a></li>
+<li><a href='#Asteriskon(Open)Solaris-BuildNotes'>Build Notes</a>
+<ul class='toc-indentation'>
+<li><a href='#Asteriskon(Open)Solaris-Prerequisites'>Prerequisites</a></li>
+<li><a href='#Asteriskon(Open)Solaris-LDAPdependencies'>LDAP dependencies</a></li>
+<li><a href='#Asteriskon(Open)Solaris-Makefilelayouts'>Makefile layouts</a></li>
+<li><a href='#Asteriskon(Open)Solaris-FAXsupportwithSpanDSP'>FAX support with SpanDSP</a></li>
+</ul>
+</li>
+<li><a href='#Asteriskon(Open)Solaris-Gotchas'>Gotchas</a>
+<ul class='toc-indentation'>
+<li><a href='#Asteriskon(Open)Solaris-Runtimeissues'>Runtime issues</a></li>
+<li><a href='#Asteriskon(Open)Solaris-Buildissues'>Build issues</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+
+<h3 id="Asteriskon(Open)Solaris-Digium&#39;sSupportStatus">Digium's Support Status</h3>
+
+<p>According to the README file from 1.6.2: &quot;Asterisk has also been 'ported' and reportedly runs properly on other operating systems as well, including Sun Solaris, Apple's Mac OS X, Cygwin, and the BSD variants.&quot;  Digium's developers have also been doing a good job of addressing build and run-time issues encountered with Asterisk on Solaris.</p>
+
+<h3 id="Asteriskon(Open)Solaris-BuildNotes">Build Notes</h3>
+
+<h4 id="Asteriskon(Open)Solaris-Prerequisites">Prerequisites</h4>
+
+<p>The following packages are recommend for building Asterisk 1.6 and later on OpenSolaris:</p>
+<ul>
+	<li>SUNWlibm (math library)</li>
+	<li>gcc-dev (compiler and several dependencies)</li>
+	<li>SUNWflexlex (GNU flex)</li>
+	<li>SUNWggrp (GNU grep)</li>
+	<li>SUNWgsed (GNU sed)</li>
+	<li>SUNWdoxygen (optional; needed for &quot;make progdocs&quot;)</li>
+	<li>SUNWopenldap (optional; needed for res_config_ldap; see below)</li>
+	<li>SUNWgnu-coreutils (optional; provides GNU install; see below)</li>
+</ul>
+
+
+<p>Caution: installing SUNW gnu packages will change the default application run when the user types 'sed' and 'grep' from /usr/bin/sed to /usr/gnu/bin/sed.  Just be aware of this change, as there are differences between the Sun and GNU versions of these utilities.</p>
+
+<h4 id="Asteriskon(Open)Solaris-LDAPdependencies">LDAP dependencies</h4>
+
+<p>Because OpenSolaris ships by default with Sun's LDAP libraries, you must install the SUNWopenldap package to provide OpenLDAP libraries.  Because of namespace conflicts, the standard LDAP detection will not work.</p>
+
+<p>There are two possible solutions:</p>
+<ol>
+	<li>Port res_config_ldap to use only the RFC-specified API. This should allow it to link against Sun's LDAP libraries.
+	<ul>
+		<li>The problem is centered around the use of the OpenLDAP-specific ldap_initialize() call.</li>
+	</ul>
+	</li>
+	<li>Change the detection routines in configure to use OpenSolaris' layout of OpenLDAP.
+	<ul>
+		<li>This seems doubtful simply because the filesystem layout of SUNWopenldap is so non-standard.</li>
+	</ul>
+	</li>
+</ol>
+
+
+<p>Despite the above two possibilities, there is a workaround to make Asterisk compile with res_config_ldap.</p>
+
+<ul>
+	<li>Modify the &quot;configure&quot; script, changing all instances of &quot;-lldap&quot; to &quot;-lldap-2.4&quot;.
+	<ul>
+		<li>At the time of this writing there are only 4 instances.  This alone will make configure properly detect LDAP availability.  But it will not compile.</li>
+	</ul>
+	</li>
+	<li>When running make, specify the use of the OpenLDAP headers like this:
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>&quot;make LDAP_INCLUDE=-I/usr/include/openldap&quot;
+</pre>
+</div></div></li>
+</ul>
+
+
+<h4 id="Asteriskon(Open)Solaris-Makefilelayouts">Makefile layouts</h4>
+
+<p>This has been fixed in Asterisk 1.8 and is no longer an issue.</p>
+
+<p>In Asterisk 1.6 the Makefile overrides any usage of --prefix.  I suspect the assumptions are from back before configure provided the ability to set the installation prefix.  Regardless, if you are building on OpenSolaris, be aware of this behavior of the Makefile!</p>
+
+<p>If you want to alter the install locations you will need to hand-edit the Makefile.  Search for the string &quot;SunOS&quot; to find the following section:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># Define standard directories for various platforms
+# These apply if they are not redefined in asterisk.conf
+ifeq ($(OSARCH),SunOS)
+  ASTETCDIR=/etc/asterisk
+  ASTLIBDIR=/opt/asterisk/lib
+  ASTVARLIBDIR=/var/opt/asterisk
+  ASTDBDIR=$(ASTVARLIBDIR)
+  ASTKEYDIR=$(ASTVARLIBDIR)
+  ASTSPOOLDIR=/var/spool/asterisk
+  ASTLOGDIR=/var/log/asterisk
+  ASTHEADERDIR=/opt/asterisk/include/asterisk
+  ASTBINDIR=/opt/asterisk/bin
+  ASTSBINDIR=/opt/asterisk/sbin
+  ASTVARRUNDIR=/var/run/asterisk
+  ASTMANDIR=/opt/asterisk/man
+else
+</pre>
+</div></div>
+
+<p>Note that, despite the comment, these definitions have build-time and run-time implications.  Make sure you make these changes BEFORE you build!</p>
+
+<h4 id="Asteriskon(Open)Solaris-FAXsupportwithSpanDSP">FAX support with SpanDSP</h4>
+<p>I have been able to get this to work reliably, including T.38 FAX over SIP.  If you are running Asterisk 1.6 note <a href="https://issues.asterisk.org/view.php?id=16342" class="external-link" rel="nofollow">Ticket 16342</a> if you do not install SpanDSP to the default locations (/usr/include and /usr/lib).</p>
+
+<p>There is one build issue with SpanDSP that I need to document (FIXME)</p>
+
+<h3 id="Asteriskon(Open)Solaris-Gotchas">Gotchas</h3>
+
+<h4 id="Asteriskon(Open)Solaris-Runtimeissues">Runtime issues</h4>
+<ul>
+	<li>WAV and WAV49 files are not written correctly (see <a href="https://issues.asterisk.org/view.php?id=16610" class="external-link" rel="nofollow">Ticket 16610</a>)</li>
+	<li>32-bit binaries on Solaris are limited to 255 file descriptors by default.  (see <a href="http://developers.sun.com/solaris/articles/stdio_256.html" class="external-link" rel="nofollow">http://developers.sun.com/solaris/articles/stdio_256.html</a>)</li>
+</ul>
+
+
+<h4 id="Asteriskon(Open)Solaris-Buildissues">Build issues</h4>
+<ul>
+	<li>bootstrap.sh does not correctly detect OpenSolaris build tools (see <a href="https://issues.asterisk.org/view.php?id=16341" class="external-link" rel="nofollow">Ticket 16341</a>)</li>
+	<li>Console documentation is not properly loaded at startup (see <a href="https://issues.asterisk.org/view.php?id=16688" class="external-link" rel="nofollow">Ticket 16688</a>)</li>
+	<li>Solaris sed does not properly create AEL parser files (see <a href="https://issues.asterisk.org/view.php?id=16696" class="external-link" rel="nofollow">Ticket 16696</a>; workaround is to install GNU sed with SUNWgsed)</li>
+	<li>Asterisk's provided install script, install-sh, is not properly referenced in the makeopts file that is generated during the build.  One workaround is to install GNU install from the SUNWgnu-coreutils package. (See <a href="https://issues.asterisk.org/view.php?id=16781" class="external-link" rel="nofollow">Ticket 16781</a>)</li>
+</ul>
+
+
+<p>Finally, Solaris memory allocation seems far more sensitive than Linux.  This has resulted in the discovery of several previously unknown bugs related to uninitialized variables that Linux handled silently.  Note that this means, until these bugs are found and fixed, you may get segfaults.</p>
+
+<p>At the time of this writing I have had a server up and running reasonably stable.  However, there are large sections of Asterisk's codebase I do not use and likely contain more of these uninitialized variable problems and associated potential segfaults.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : AEL version 2 BNF</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4620445.html">Asterisk Extension Language (AEL)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="AEL-Procedural-Interface-and-Internals_4620471.html">AEL Procedural Interface and Internals</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : AEL version 2 BNF
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>(hopefully, something close to bnf). </p>
+
+<p>First, some basic objects</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>------------------------ 
+&lt;word&gt; a lexical token consisting of characters matching this pattern: [-a-zA-Z0-9&quot;_/.\&lt;\&gt;\*\+!$#\[\]][-a-zA-Z0-9&quot;_/.!\*\+\&lt;\&gt;\{\}$#\[\]]*
+   &lt;word3-list&gt; a concatenation of up to 3 &lt;word&gt;s.
+   &lt;collected-word&gt; all characters encountered until the character that follows the &lt;collected-word&gt; in the grammar.
+   -------------------------
+   &lt;file&gt; :== &lt;objects&gt;
+
+   &lt;objects&gt; :== &lt;object&gt;
+              | &lt;objects&gt; &lt;object&gt;
+   &lt;object&gt; :== &lt;context&gt;
+            | &lt;macro&gt;
+            | &lt;globals&gt;
+            | &#39;;&#39;
+
+   &lt;context&gt; :== &#39;context&#39; &lt;word&gt; &#39;{&#39; &lt;elements&gt; &#39;}&#39;
+               | &#39;context&#39; &lt;word&gt; &#39;{&#39; &#39;}&#39;
+               | &#39;context&#39; &#39;default&#39; &#39;{&#39; &lt;elements&gt; &#39;}&#39;
+               | &#39;context&#39; &#39;default&#39; &#39;{&#39; &#39;}&#39;
+               | &#39;abstract&#39; &#39;context&#39; &lt;word&gt; &#39;{&#39; &lt;elements&gt; &#39;}&#39;
+               | &#39;abstract&#39; &#39;context&#39; &lt;word&gt; &#39;{&#39; &#39;}&#39;
+               | &#39;abstract&#39; &#39;context&#39; &#39;default&#39; &#39;{&#39; &lt;elements&gt; &#39;}&#39;
+               | &#39;abstract&#39; &#39;context&#39; &#39;default&#39; &#39;{&#39; &#39;}&#39;
+
+&lt;macro&gt; :== &#39;macro&#39; &lt;word&gt; &#39;(&#39; &lt;arglist&gt; &#39;)&#39; &#39;{&#39; &lt;macro_statements&gt; &#39;}&#39;
+       | &#39;macro&#39; &lt;word&gt; &#39;(&#39; &lt;arglist&gt; &#39;)&#39; &#39;{&#39; &#39;}&#39;
+       | &#39;macro&#39; &lt;word&gt; &#39;(&#39; &#39;)&#39; &#39;{&#39; &lt;macro_statements&gt; &#39;}&#39;
+       | &#39;macro&#39; &lt;word&gt; &#39;(&#39; &#39;)&#39; &#39;{&#39; &#39;}&#39;
+
+&lt;globals&gt; :== &#39;globals&#39; &#39;{&#39; &lt;global_statements&gt; &#39;}&#39;
+         | &#39;globals&#39; &#39;{&#39; &#39;}&#39;
+
+&lt;global_statements&gt; :== &lt;global_statement&gt;
+                   | &lt;global_statements&gt; &lt;global_statement&gt;
+
+
+&lt;global_statement&gt; :== &lt;word&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+
+&lt;arglist&gt; :== &lt;word&gt;
+         | &lt;arglist&gt; &#39;,&#39; &lt;word&gt;
+
+&lt;elements&gt; :== &lt;element&gt;
+             | &lt;elements&gt; &lt;element&gt;
+
+&lt;element&gt; :== &lt;extension&gt;
+         | &lt;includes&gt;
+         | &lt;switches&gt;
+         | &lt;eswitches&gt;
+         | &lt;ignorepat&gt;
+         | &lt;word&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+         | &#39;local&#39; &lt;word&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+         | &#39;;&#39;
+
+
+&lt;ignorepat&gt; :== &#39;ignorepat&#39; &#39;=&gt;&#39; &lt;word&gt; &#39;;&#39;
+
+&lt;extension&gt; :== &lt;word&gt; &#39;=&gt;&#39; &lt;statement&gt;
+           | &#39;regexten&#39; &lt;word&gt; &#39;=&gt;&#39; &lt;statement&gt;
+           | &#39;hint&#39; &#39;(&#39; &lt;word3-list&gt; &#39;)&#39; &lt;word&gt; &#39;=&gt;&#39; &lt;statement&gt;
+           | &#39;regexten&#39; &#39;hint&#39; &#39;(&#39; &lt;word3-list&gt; &#39;)&#39; &lt;word&gt; &#39;=&gt;&#39; &lt;statement&gt;
+
+&lt;statements&gt; :== &lt;statement&gt;
+            | &lt;statements&gt; &lt;statement&gt;
+
+&lt;if_head&gt; :== &#39;if&#39; &#39;(&#39; &lt;collected-word&gt; &#39;)&#39;
+&lt;random_head&gt; :== &#39;random&#39; &#39;(&#39; &lt;collected-word&gt; &#39;)&#39;
+
+&lt;ifTime_head&gt; :== &#39;ifTime&#39; &#39;(&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;)&#39;
+                       | &#39;ifTime&#39; &#39;(&#39; &lt;word&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;)&#39;
+
+&lt;word3-list&gt; :== &lt;word&gt;
+       | &lt;word&gt; &lt;word&gt;
+       | &lt;word&gt; &lt;word&gt; &lt;word&gt;
+&lt;switch_head&gt; :== &#39;switch&#39; &#39;(&#39; &lt;collected-word&gt; &#39;)&#39; &#39;{&#39;
+
+&lt;statement&gt; :== &#39;{&#39; &lt;statements&gt; &#39;}&#39;
+       | &lt;word&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+       | &#39;local&#39; &lt;word&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+       | &#39;goto&#39; &lt;target&gt; &#39;;&#39;
+       | &#39;jump&#39; &lt;jumptarget&gt; &#39;;&#39;
+       | &lt;word&gt; &#39;:&#39;
+       | &#39;for&#39; &#39;(&#39; &lt;collected-word&gt; &#39;;&#39; &lt;collected-word&gt; &#39;;&#39; &lt;collected-word&gt; &#39;)&#39; &lt;statement&gt;
+       | &#39;while&#39; &#39;(&#39; &lt;collected-word&gt; &#39;)&#39; &lt;statement&gt;
+       | &lt;switch_head&gt; &#39;}&#39;
+       | &lt;switch_head&gt; &lt;case_statements&gt; &#39;}&#39;
+       | &#39;&amp;&#39; macro_call &#39;;&#39;
+       | &lt;application_call&gt; &#39;;&#39;
+       | &lt;application_call&gt; &#39;=&#39; &lt;collected-word&gt; &#39;;&#39;
+       | &#39;break&#39; &#39;;&#39;
+       | &#39;return&#39; &#39;;&#39;
+       | &#39;continue&#39; &#39;;&#39;
+       | &lt;random_head&gt; &lt;statement&gt;
+       | &lt;random_head&gt; &lt;statement&gt; &#39;else&#39; &lt;statement&gt;
+       | &lt;if_head&gt; &lt;statement&gt;
+       | &lt;if_head&gt; &lt;statement&gt; &#39;else&#39; &lt;statement&gt;
+       | &lt;ifTime_head&gt; &lt;statement&gt;
+       | &lt;ifTime_head&gt; &lt;statement&gt; &#39;else&#39; &lt;statement&gt;
+       | &#39;;&#39;
+&lt;target&gt; :== &lt;word&gt;
+       | &lt;word&gt; &#39;|&#39; &lt;word&gt;
+       | &lt;word&gt; &#39;|&#39; &lt;word&gt; &#39;|&#39; &lt;word&gt;
+       | &#39;default&#39; &#39;|&#39; &lt;word&gt; &#39;|&#39; &lt;word&gt;
+       | &lt;word&gt; &#39;,&#39; &lt;word&gt;
+       | &lt;word&gt; &#39;,&#39; &lt;word&gt; &#39;,&#39; &lt;word&gt;
+       | &#39;default&#39; &#39;,&#39; &lt;word&gt; &#39;,&#39; &lt;word&gt;
+
+&lt;jumptarget&gt; :== &lt;word&gt;
+               | &lt;word&gt; &#39;,&#39; &lt;word&gt;
+               | &lt;word&gt; &#39;,&#39; &lt;word&gt; &#39;@&#39; &lt;word&gt;
+               | &lt;word&gt; &#39;@&#39; &lt;word&gt;
+               | &lt;word&gt; &#39;,&#39; &lt;word&gt; &#39;@&#39; &#39;default&#39;
+               | &lt;word&gt; &#39;@&#39; &#39;default&#39;
+&lt;macro_call&gt; :== &lt;word&gt; &#39;(&#39; &lt;eval_arglist&gt; &#39;)&#39;
+       | &lt;word&gt; &#39;(&#39; &#39;)&#39;
+
+&lt;application_call_head&gt; :== &lt;word&gt; &#39;(&#39;
+&lt;application_call&gt; :== &lt;application_call_head&gt; &lt;eval_arglist&gt; &#39;)&#39;
+       | &lt;application_call_head&gt; &#39;)&#39;
+
+&lt;eval_arglist&gt; :== &lt;collected-word&gt;
+       | &lt;eval_arglist&gt; &#39;,&#39; &lt;collected-word&gt;
+       | /* nothing */
+       | &lt;eval_arglist&gt; &#39;,&#39; /* nothing */
+
+  &lt;case_statements&gt; :== &lt;case_statement&gt;
+         | &lt;case_statements&gt; &lt;case_statement&gt;
+
+  &lt;case_statement&gt; :== &#39;case&#39; &lt;word&gt; &#39;:&#39; &lt;statements&gt;
+         | &#39;default&#39; &#39;:&#39; &lt;statements&gt;
+         | &#39;pattern&#39; &lt;word&gt; &#39;:&#39; &lt;statements&gt;
+         | &#39;case&#39; &lt;word&gt; &#39;:&#39;
+         | &#39;default&#39; &#39;:&#39;
+         | &#39;pattern&#39; &lt;word&gt; &#39;:&#39;
+  &lt;macro_statements&gt; :== &lt;macro_statement&gt;
+         | &lt;macro_statements&gt; &lt;macro_statement&gt;
+
+  &lt;macro_statement&gt; :== &lt;statement&gt;
+         | &#39;catch&#39; &lt;word&gt; &#39;{&#39; &lt;statements&gt; &#39;}&#39;
+  &lt;switches&gt; :== &#39;switches&#39; &#39;{&#39; &lt;switchlist&gt; &#39;}&#39;
+         | &#39;switches&#39; &#39;{&#39; &#39;}&#39;
+  &lt;eswitches&gt; :== &#39;eswitches&#39; &#39;{&#39; &lt;switchlist&gt; &#39;}&#39;
+         | &#39;eswitches&#39; &#39;{&#39; &#39;}&#39;
+
+  &lt;switchlist&gt; :== &lt;word&gt; &#39;;&#39;
+         | &lt;switchlist&gt; &lt;word&gt; &#39;;&#39;
+  &lt;includeslist&gt; :== &lt;includedname&gt; &#39;;&#39;
+         | &lt;includedname&gt; &#39;|&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;;&#39;
+         | &lt;includedname&gt; &#39;|&#39; &lt;word&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;;&#39;
+         | &lt;includeslist&gt; &lt;includedname&gt; &#39;;&#39;
+         | &lt;includeslist&gt; &lt;includedname&gt; &#39;|&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;:&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;;&#39;
+         | &lt;includeslist&gt; &lt;includedname&gt; &#39;|&#39; &lt;word&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;|&#39; &lt;word3-list&gt; &#39;;&#39;
+  &lt;includedname&gt; :== &lt;word&gt;
+          | &#39;default&#39;
+
+  &lt;includes&gt; :== &#39;includes&#39; &#39;{&#39; &lt;includeslist&gt; &#39;}&#39;
+         | &#39;includes&#39; &#39;{&#39; &#39;}&#39;
+</pre>
+</div></div>
+
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

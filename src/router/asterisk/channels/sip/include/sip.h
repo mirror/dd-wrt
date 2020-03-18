@@ -211,7 +211,7 @@
 #define DEFAULT_ALLOW_EXT_DOM  TRUE    /*!< Allow external domains */
 #define DEFAULT_REALM          "asterisk" /*!< Realm for HTTP digest authentication */
 #define DEFAULT_DOMAINSASREALM FALSE    /*!< Use the domain option to guess the realm for registration and invite requests */
-#define DEFAULT_NOTIFYRINGING  TRUE     /*!< Notify devicestate system on ringing state */
+#define DEFAULT_NOTIFYRINGING  NOTIFYRINGING_ENABLED /*!< Notify devicestate system on ringing state */
 #define DEFAULT_NOTIFYCID      DISABLED	/*!< Include CID with ringing notifications */
 #define DEFAULT_PEDANTIC       TRUE     /*!< Follow SIP standards for dialog matching */
 #define DEFAULT_AUTOCREATEPEER AUTOPEERS_DISABLED    /*!< Don't create peers automagically */
@@ -622,6 +622,13 @@ enum sipmethod {
 	SIP_PING,       /*!< Not supported at all, no standard but still implemented out there */
 };
 
+/*! \brief Setting for the 'notifyringing' option, see sip.conf.sample for details. */
+enum notifyringing_setting {
+	NOTIFYRINGING_DISABLED = 0,
+	NOTIFYRINGING_ENABLED = 1,
+	NOTIFYRINGING_NOTINUSE = 2,
+};
+
 /*! \brief Settings for the 'notifycid' option, see sip.conf.sample for details. */
 enum notifycid_setting {
 	DISABLED       = 0,
@@ -991,7 +998,7 @@ struct sip_msg_hdr {
 struct sip_pvt {
 	struct sip_pvt *next;                   /*!< Next dialog in chain */
 	enum invitestates invitestate;          /*!< Track state of SIP_INVITEs */
-	struct ast_callid *logger_callid;		/*!< Identifier for call used in log messages */
+	ast_callid logger_callid;               /*!< Identifier for call used in log messages */
 	int method;                             /*!< SIP method that opened this dialog */
 	AST_DECLARE_STRING_FIELDS(
 		AST_STRING_FIELD(callid);       /*!< Global CallID */
@@ -1045,6 +1052,7 @@ struct sip_pvt {
 		AST_STRING_FIELD(last_presence_message);   /*!< The last presence message for a subscription */
 		AST_STRING_FIELD(msg_body);     /*!< Text for a MESSAGE body */
 		AST_STRING_FIELD(tel_phone_context);       /*!< The phone-context portion of a TEL URI */
+		AST_STRING_FIELD(sessionunique_remote);    /*!< Remote UA's SDP Session unique parts */
 	);
 	char via[128];                          /*!< Via: header */
 	int maxforwards;                        /*!< SIP Loop prevention */
@@ -1245,7 +1253,7 @@ enum sip_mailbox_status {
  */
 struct sip_mailbox {
 	/*! Associated MWI subscription */
-	struct stasis_subscription *event_sub;
+	struct ast_mwi_subscriber *event_sub;
 	AST_LIST_ENTRY(sip_mailbox) entry;
 	struct sip_peer *peer;
 	enum sip_mailbox_status status;

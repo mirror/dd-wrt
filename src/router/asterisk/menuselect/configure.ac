@@ -1,5 +1,3 @@
-# Process this file with autoconf to produce a configure script.
-
 AC_PREREQ(2.59)
 
 m4_define([MENUSELECT_VERSION],
@@ -15,56 +13,33 @@ AC_CONFIG_SRCDIR([menuselect.c])
 AC_CONFIG_HEADER(autoconfig.h)
 
 AC_COPYRIGHT("Menuselect")
-AC_REVISION($Revision$)
 
-AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 
 HOST_OS=${host_os}
 AC_SUBST(HOST_OS)
 
-PBX_WINARCH=0
 case "${host_os}" in
-     freebsd*)
-     OSARCH=FreeBSD
+     *dragonfly*)
+     CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+     LDFLAGS="${LDFLAGS} -L/usr/local/lib"
      ;;
-     netbsd*)
-     OSARCH=NetBSD
+     *netbsd*)
+     CPPFLAGS="${CPPFLAGS} -I/usr/pkg/include"
+     LDFLAGS="${LDFLAGS} -L/usr/pkg/lib"
      ;;
-     openbsd*)
-     OSARCH=OpenBSD
-     ;;
-     solaris*)
-     OSARCH=SunOS
-     ;;
-     mingw32)
-     OSARCH=mingw32
-     PBX_WINARCH=1
-     ;;
-     cygwin)
-     OSARCH=cygwin
-     PBX_WINARCH=1
-     ;;
-     linux-gnueabi)
-     OSARCH=linux-gnu
-     ;;
-     *)
-     OSARCH=${host_os}
+     *bsd*)
+     CPPFLAGS="${CPPFLAGS} -I/usr/local/include"
+     LDFLAGS="${LDFLAGS} -L/usr/local/lib"
      ;;
 esac
 
 AH_TOP(
 #ifndef MENUSELECT_AUTOCONFIG_H
 #define MENUSELECT_AUTOCONFIG_H
-
-#ifndef _REENTRANT
-#define _REENTRANT
-#endif
 )
 
-AH_BOTTOM(
-#endif
-)
+AH_BOTTOM([#endif])
 
 # Checks for programs.
 AC_PROG_CC
@@ -81,37 +56,6 @@ AC_ARG_ENABLE([debug],
     esac])
 AC_SUBST(MENUSELECT_DEBUG)
 
-# Support weak symbols on a platform specific basis.  The Mac OS X
-# (Darwin) support must be isolated from the other platforms because
-# it has caused other platforms to fail.
-#
-case "${OSARCH}" in
-	darwin*)
-	# Allow weak symbol support on Darwin platforms only because there
-	# is active community support for it.
-	# However, Darwin seems to break weak symbols for each new version.
-	#
-	AST_GCC_ATTRIBUTE(weak_import, [], [], PBX_WEAKREF)
-
-	# Several other platforms including Linux have GCC versions that
-	# define the weak attribute.  However, this attribute is only
-	# setup for use in the code by Darwin.
-	AST_GCC_ATTRIBUTE(weak, [], [], PBX_WEAKREF)
-	;;
-	linux-gnu)
-	# Primarily support weak symbols on Linux platforms.
-	#
-	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
-	;;
-	*)
-	# Allow weak symbols on other platforms.  However, any problems
-	# with this feature on other platforms must be fixed by the
-	# community.
-	#
-	AST_GCC_ATTRIBUTE(weakref, [weakref("foo")], static, PBX_WEAKREF)
-	;;
-esac
-
 AC_FUNC_ALLOCA
 AC_CHECK_FUNCS([asprintf getloadavg setenv strcasestr strndup strnlen strsep unsetenv vasprintf])
 
@@ -121,10 +65,31 @@ AST_EXT_LIB_SETUP([NEWT], [newt], [newt])
 AST_EXT_LIB_SETUP([CURSES], [curses], [curses])
 AST_EXT_LIB_SETUP([NCURSES], [ncurses], [ncurses])
 AST_EXT_LIB_SETUP([LIBXML2], [LibXML2], [libxml2])
+AST_EXT_LIB_SETUP([TINFO], [terminfo], [libtinfo])
 
 AST_EXT_LIB_CHECK([NEWT], [newt], [newtBell], [newt.h])
-AST_EXT_LIB_CHECK([CURSES], [curses], [initscr], [curses.h])
-AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [curses.h])
+AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [ncurses.h])
+if test "${PBX_NCURSES}" != 1; then
+  # some platforms have the header in a sub-directory, for example Solaris
+  AST_EXT_LIB_CHECK([NCURSES], [ncurses], [initscr], [ncurses/ncurses.h])
+  if test "${PBX_NCURSES}" != 1; then
+    AST_EXT_LIB_CHECK([CURSES], [curses], [initscr], [curses.h])
+  else
+    HAVE_NCURSES_SUBDIR=yes
+  fi
+fi
+AC_SUBST(HAVE_NCURSES_SUBDIR)
+
+if test "${PBX_NCURSES}" = 1; then
+  if test "${HAVE_NCURSES_SUBDIR}" = "yes"; then
+    AST_EXT_LIB_CHECK([TINFO], [tinfo], [keypad], [ncurses/ncurses.h])
+  else
+    AST_EXT_LIB_CHECK([TINFO], [tinfo], [keypad], [ncurses.h])
+  fi
+else
+  AST_EXT_LIB_CHECK([TINFO], [tinfo], [keypad], [curses.h])
+fi
+
 AST_EXT_TOOL_CHECK([LIBXML2], [xml2-config], , ,
         [#include <libxml/tree.h>
         #include <libxml/parser.h>],

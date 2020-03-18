@@ -1,15 +1,15 @@
 /*
  * Copyright (C) 2004-2005 by Objective Systems, Inc.
  *
- * This software is furnished under an open source license and may be 
- * used and copied only in accordance with the terms of this license. 
- * The text of the license may generally be found in the root 
- * directory of this installation in the COPYING file.  It 
+ * This software is furnished under an open source license and may be
+ * used and copied only in accordance with the terms of this license.
+ * The text of the license may generally be found in the root
+ * directory of this installation in the COPYING file.  It
  * can also be viewed online at the following URL:
  *
  *   http://www.obj-sys.com/open/license.html
  *
- * Any redistributions of this file including modified versions must 
+ * Any redistributions of this file including modified versions must
  * maintain this copyright notice.
  *
  *****************************************************************************/
@@ -57,14 +57,14 @@ int isRunning(char *callToken) {
   return 0;
 }
 
-OOStkCmdStat ooMakeCall 
+OOStkCmdStat ooMakeCall
    (const char* dest, char* callToken, size_t bufsiz, ooCallOptions *opts)
 {
    OOStackCommand cmd;
 
    if(!callToken)
       return OO_STKCMD_INVALIDPARAM;
-  
+
 
    /* Generate call token*/
    if (ooGenerateOutgoingCallToken (callToken, bufsiz) != OO_OK){
@@ -79,21 +79,21 @@ OOStkCmdStat ooMakeCall
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_MAKECALL;
-   cmd.param1 = (void*) malloc(strlen(dest)+1);
+   cmd.param1 = ast_malloc(strlen(dest)+1);
    if(!cmd.param1)
    {
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, dest);
 
-  
-   cmd.param2 = (void*) malloc(strlen(callToken)+1);
+
+   cmd.param2 = ast_malloc(strlen(callToken)+1);
    if(!cmd.param2)
    {
-      free(cmd.param1);
+      ast_free(cmd.param1);
       return OO_STKCMD_MEMERR;
    }
-   
+
    strcpy((char*)cmd.param2, callToken);
 
    if(!opts)
@@ -101,11 +101,11 @@ OOStkCmdStat ooMakeCall
       cmd.param3 = 0;
    }
    else {
-      cmd.param3 = (void*) malloc(sizeof(ooCallOptions));
+      cmd.param3 = ast_malloc(sizeof(ooCallOptions));
       if(!cmd.param3)
       {
-         free(cmd.param1);
-         free(cmd.param2);
+         ast_free(cmd.param1);
+         ast_free(cmd.param2);
          return OO_STKCMD_MEMERR;
       }
       memcpy((void*)cmd.param3, opts, sizeof(ooCallOptions));
@@ -113,16 +113,16 @@ OOStkCmdStat ooMakeCall
 
    if(ooWriteStackCommand(&cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
-      if(cmd.param3) free(cmd.param3);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
+      if(cmd.param3) ast_free(cmd.param3);
       return OO_STKCMD_WRITEERR;
    }
 
    return OO_STKCMD_SUCCESS;
 }
 
-OOStkCmdStat ooRunCall 
+OOStkCmdStat ooRunCall
    (const char* dest, char* callToken, size_t bufsiz, ooCallOptions *opts)
 {
    OOStackCommand cmd;
@@ -145,11 +145,11 @@ OOStkCmdStat ooRunCall
 
    if(!callToken)
       return OO_STKCMD_INVALIDPARAM;
-  
+
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_MAKECALL;
-   cmd.param1 = (void*) malloc(strlen(dest)+1);
+   cmd.param1 = ast_malloc(strlen(dest)+1);
    if(!cmd.param1)
    {
       return OO_STKCMD_MEMERR;
@@ -157,14 +157,14 @@ OOStkCmdStat ooRunCall
    strcpy((char*)cmd.param1, dest);
    cmd.plen1 = strlen(dest);
 
-  
-   cmd.param2 = (void*) malloc(strlen(callToken)+1);
+
+   cmd.param2 = ast_malloc(strlen(callToken)+1);
    if(!cmd.param2)
    {
-      free(cmd.param1);
+      ast_free(cmd.param1);
       return OO_STKCMD_MEMERR;
    }
-   
+
    strcpy((char*)cmd.param2, callToken);
    cmd.plen2 = strlen(callToken);
 
@@ -173,11 +173,11 @@ OOStkCmdStat ooRunCall
       cmd.param3 = 0;
    }
    else {
-      cmd.param3 = (void*) malloc(sizeof(ooCallOptions));
+      cmd.param3 = ast_malloc(sizeof(ooCallOptions));
       if(!cmd.param3)
       {
-         free(cmd.param1);
-         free(cmd.param2);
+         ast_free(cmd.param1);
+         ast_free(cmd.param2);
          return OO_STKCMD_MEMERR;
       }
       memcpy((void*)cmd.param3, opts, sizeof(ooCallOptions));
@@ -186,16 +186,16 @@ OOStkCmdStat ooRunCall
 
    if(ooWriteCallStackCommand(call, &cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
-      if(cmd.param3) free(cmd.param3);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
+      if(cmd.param3) ast_free(cmd.param3);
       return OO_STKCMD_WRITEERR;
    }
 
 
-   free(cmd.param1);
-   free(cmd.param2);
-   if(cmd.param3) free(cmd.param3);
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
+   if(cmd.param3) ast_free(cmd.param3);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -223,21 +223,21 @@ OOStkCmdStat ooManualRingback(const char *callToken)
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_MANUALRINGBACK;
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
    if(!cmd.param1)
    {
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
    cmd.plen1 = strlen(callToken);
-   
+
    if(ooWriteCallStackCommand(call,&cmd) != OO_OK)
    {
-      free(cmd.param1);
+      ast_free(cmd.param1);
       return OO_STKCMD_WRITEERR;
    }
 
-   free(cmd.param1);
+   ast_free(cmd.param1);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -267,21 +267,21 @@ OOStkCmdStat ooManualProgress(const char *callToken)
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_MANUALPROGRESS;
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
    if(!cmd.param1)
    {
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
    cmd.plen1 = strlen(callToken);
-   
+
    if(ooWriteCallStackCommand(call, &cmd) != OO_OK)
    {
-      free(cmd.param1);
+      ast_free(cmd.param1);
       return OO_STKCMD_WRITEERR;
    }
 
-   free(cmd.param1);
+   ast_free(cmd.param1);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -309,21 +309,21 @@ OOStkCmdStat ooAnswerCall(const char *callToken)
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_ANSCALL;
 
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
    if(!cmd.param1)
    {
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
-   cmd.plen1 = strlen(callToken);   
+   cmd.plen1 = strlen(callToken);
 
    if(ooWriteCallStackCommand(call, &cmd) != OO_OK)
    {
-      free(cmd.param1);
+      ast_free(cmd.param1);
       return OO_STKCMD_WRITEERR;
    }
 
-   free(cmd.param1);
+   ast_free(cmd.param1);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -350,12 +350,12 @@ OOStkCmdStat ooForwardCall(const char* callToken, char *dest)
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_FWDCALL;
 
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
-   cmd.param2 = (void*) malloc(strlen(dest)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
+   cmd.param2 = ast_malloc(strlen(dest)+1);
    if(!cmd.param1 || !cmd.param2)
    {
-      if(cmd.param1)   free(cmd.param1);  /* Release memory */
-      if(cmd.param2)   free(cmd.param2);
+      if(cmd.param1)   ast_free(cmd.param1);  /* Release memory */
+      if(cmd.param2)   ast_free(cmd.param2);
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
@@ -365,12 +365,12 @@ OOStkCmdStat ooForwardCall(const char* callToken, char *dest)
 
    if(ooWriteCallStackCommand(call, &cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
       return OO_STKCMD_WRITEERR;
    }
-   free(cmd.param1);
-   free(cmd.param2);
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -399,14 +399,14 @@ OOStkCmdStat ooHangCall(const char* callToken, OOCallClearReason reason, int q93
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_HANGCALL;
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
-   cmd.param2 = (void*) malloc(sizeof(OOCallClearReason));
-   cmd.param3 = (void*) malloc(sizeof(int));
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
+   cmd.param2 = ast_malloc(sizeof(OOCallClearReason));
+   cmd.param3 = ast_malloc(sizeof(int));
    if(!cmd.param1 || !cmd.param2 || !cmd.param3)
    {
-      if(cmd.param1)   free(cmd.param1); /* Release memory */
-      if(cmd.param2)   free(cmd.param2);
-      if(cmd.param3)   free(cmd.param3);
+      if(cmd.param1)   ast_free(cmd.param1); /* Release memory */
+      if(cmd.param2)   ast_free(cmd.param2);
+      if(cmd.param3)   ast_free(cmd.param3);
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
@@ -418,15 +418,15 @@ OOStkCmdStat ooHangCall(const char* callToken, OOCallClearReason reason, int q93
 
    if(ooWriteCallStackCommand(call, &cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
-      free(cmd.param3);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
+      ast_free(cmd.param3);
       return OO_STKCMD_WRITEERR;
    }
-   free(cmd.param1);
-   free(cmd.param2);
-   free(cmd.param3);
-   
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
+   ast_free(cmd.param3);
+
    return OO_STKCMD_SUCCESS;
 }
 
@@ -443,7 +443,7 @@ OOStkCmdStat ooStopMonitor()
 
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_STOPMONITOR;
-   
+
    if(ooWriteStackCommand(&cmd) != OO_OK)
       return OO_STKCMD_WRITEERR;
 
@@ -473,27 +473,27 @@ OOStkCmdStat ooSendDTMFDigit(const char *callToken, const char* dtmf)
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_SENDDIGIT;
 
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
-   cmd.param2 = (void*) malloc(strlen(dtmf)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
+   cmd.param2 = ast_malloc(strlen(dtmf)+1);
    if(!cmd.param1 || !cmd.param2)
    {
-      if(cmd.param1)   free(cmd.param1); /* Release memory */
-      if(cmd.param2)   free(cmd.param2);
+      if(cmd.param1)   ast_free(cmd.param1); /* Release memory */
+      if(cmd.param2)   ast_free(cmd.param2);
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
    cmd.plen1 = strlen(callToken);
    strcpy((char*)cmd.param2, dtmf);
    cmd.plen2 = strlen(dtmf);
-   
+
    if(ooWriteCallStackCommand(call,&cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
       return OO_STKCMD_WRITEERR;
    }
-   free(cmd.param1);
-   free(cmd.param2);
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -521,27 +521,27 @@ OOStkCmdStat ooSetANI(const char *callToken, const char* ani)
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_SETANI;
 
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
-   cmd.param2 = (void*) malloc(strlen(ani)+1);
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
+   cmd.param2 = ast_malloc(strlen(ani)+1);
    if(!cmd.param1 || !cmd.param2)
    {
-      if(cmd.param1)   free(cmd.param1); /* Release memory */
-      if(cmd.param2)   free(cmd.param2);
+      if(cmd.param1)   ast_free(cmd.param1); /* Release memory */
+      if(cmd.param2)   ast_free(cmd.param2);
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
    cmd.plen1 = strlen(callToken);
    strcpy((char*)cmd.param2, ani);
    cmd.plen2 = strlen(ani);
-   
+
    if(ooWriteCallStackCommand(call,&cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
       return OO_STKCMD_WRITEERR;
    }
-   free(cmd.param1);
-   free(cmd.param2);
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -631,27 +631,27 @@ OOStkCmdStat ooRequestChangeMode(const char *callToken, int isT38Mode)
    memset(&cmd, 0, sizeof(OOStackCommand));
    cmd.type = OO_CMD_REQMODE;
 
-   cmd.param1 = (void*) malloc(strlen(callToken)+1);
-   cmd.param2 = (void*) malloc(sizeof(int));
+   cmd.param1 = ast_malloc(strlen(callToken)+1);
+   cmd.param2 = ast_malloc(sizeof(int));
    if(!cmd.param1 || !cmd.param2)
    {
-      if(cmd.param1)   free(cmd.param1); /* Release memory */
-      if(cmd.param2)   free(cmd.param2);
+      ast_free(cmd.param1); /* Release memory */
+      ast_free(cmd.param2);
       return OO_STKCMD_MEMERR;
    }
    strcpy((char*)cmd.param1, callToken);
    cmd.plen1 = strlen(callToken);
    *((int *) cmd.param2) = isT38Mode;
    cmd.plen2 = sizeof(int);
-   
+
    if(ooWriteCallStackCommand(call,&cmd) != OO_OK)
    {
-      free(cmd.param1);
-      free(cmd.param2);
+      ast_free(cmd.param1);
+      ast_free(cmd.param2);
       return OO_STKCMD_WRITEERR;
    }
-   free(cmd.param1);
-   free(cmd.param2);
+   ast_free(cmd.param1);
+   ast_free(cmd.param2);
 
    return OO_STKCMD_SUCCESS;
 }
@@ -672,11 +672,10 @@ const char* ooGetStkCmdStatusCodeTxt(OOStkCmdStat stat)
       case OO_STKCMD_WRITEERR:
          return "Stack command - write error";
 
-      case OO_STKCMD_CONNECTIONERR: 
+      case OO_STKCMD_CONNECTIONERR:
          return "Stack command - Failed to create command channel";
 
       default:
          return "Invalid status code";
    }
 }
-

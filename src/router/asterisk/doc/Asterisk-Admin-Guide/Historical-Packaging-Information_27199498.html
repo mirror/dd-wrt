@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Historical Packaging Information</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Alternate-Install-Methods_4817566.html">Alternate Install Methods</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Packages_10650223.html">Asterisk Packages</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Historical Packaging Information
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Dec 29, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                        <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>At one time, Asterisk packages were also available for Ubuntu. Currently, packages are not being made by the Asterisk project for this distribution. Information detailing the Ubuntu build environment has been moved onto this page for historical purposes.</p>
+                    </div>
+    </div>
+<p> </p><h1 id="HistoricalPackagingInformation-Prerequisites">Prerequisites</h1><p>All of Ubuntu's Code, Translations, Packages, Bugs, access control lists, team information, etc. live in <a href="https://launchpad.net/" class="external-link" rel="nofollow">Launchpad</a>. So for you to be able to contribute to bug discussions, upload packages, contribute code and translations, it's important that you:</p><ul><li>Create an <a href="https://help.launchpad.net/YourAccount/NewAccount" class="external-link" rel="nofollow">account</a> on launchpad.</li><li>Create a <a href="https://help.launchpad.net/YourAccount/ImportingYourPGPKey" class="external-link" rel="nofollow">GPG key</a> and import it.</li><li>Create a<a href="https://help.launchpad.net/YourAccount/CreatingAnSSHKeyPair" class="external-link" rel="nofollow">SSH key</a> and import it.</li></ul><h1 id="HistoricalPackagingInformation-CreateaBuildEnvironment">Create a Build Environment</h1><h2 id="HistoricalPackagingInformation-InstallUbuntu10.04(Lucid)">Install Ubuntu 10.04 (Lucid)</h2><p><a href="https://wiki.asterisk.org/wiki/pages/viewpage.action?pageId=10650163">Installing Ubuntu 10.04 (Lucid)</a></p><h2 id="HistoricalPackagingInformation-EnableBackports">Enable Backports</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo apt-get install python-software-properties
+$ sudo add-apt-repository &quot;deb http://ca.archive.ubuntu.com/ubuntu/ $(lsb_release --short --codename)-backports main universe&quot;
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-UpgradeLucidtothelatestrelease:">Upgrade Lucid to the latest release:</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo apt-get update
+$ sudo apt-get dist-upgrade
+$ sudo apt-get autoremove
+$ sudo reboot
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-Installrequiredsoftware">Install required software</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo apt-get install build-essential pbuilder debian-archive-keyring ccache
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-pbuilder">pbuilder</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo mkdir -p /var/cache/pbuilder/ccache
+$ sudo mkdir -p /var/cache/pbuilder/hook.d
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo vi /etc/pbuilder/pbuilderrc
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/pbuilder/pbuilderrc</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">export CCACHE_DIR=&quot;/var/cache/pbuilder/ccache&quot;
+export PATH=&quot;/usr/lib/ccache:${PATH}&quot;
+EXTRAPACKAGES=&quot;ccache&quot;
+BINDMOUNTS=&quot;${CCACHE_DIR}&quot;
+
+# Codenames for Debian suites according to their alias. Update these when
+# needed.
+UNSTABLE_CODENAME=&quot;sid&quot;
+TESTING_CODENAME=&quot;wheezy&quot;
+STABLE_CODENAME=&quot;squeeze&quot;
+OLDSTABLE_CODENAME=&quot;lenny&quot;
+STABLE_BACKPORTS_SUITE=&quot;$STABLE_CODENAME-backports&quot;
+ 
+# List of Debian suites.
+DEBIAN_SUITES=($UNSTABLE_CODENAME $TESTING_CODENAME $STABLE_CODENAME $OLDSTABLE_CODENAME
+    &quot;unstable&quot; &quot;testing&quot; &quot;stable&quot; &quot;oldstable&quot;)
+ 
+# List of Ubuntu suites. Update these when needed.
+UBUNTU_SUITES=(&quot;oneiric&quot; &quot;natty&quot; &quot;maverick&quot; &quot;lucid&quot;)
+ 
+# Mirrors to use. Update these to your preferred mirror.
+DEBIAN_MIRROR=&quot;ftp.us.debian.org&quot;
+UBUNTU_MIRROR=&quot;mirrors.kernel.org&quot;
+ 
+# Optionally use the changelog of a package to determine the suite to use if
+# none set.
+if [ -z &quot;${DIST}&quot; ] &amp;&amp; [ -r &quot;debian/changelog&quot; ]; then
+    DIST=$(dpkg-parsechangelog | awk &#39;/^Distribution: / {print $2}&#39;)
+    # Use the unstable suite for certain suite values.
+    if $(echo &quot;experimental UNRELEASED&quot; | grep -q $DIST); then
+        DIST=&quot;$UNSTABLE_CODENAME&quot;
+    fi
+fi
+ 
+# Optionally set a default distribution if none is used. Note that you can set
+# your own default (i.e. ${DIST:=&quot;unstable&quot;}).
+: ${DIST:=&quot;$(lsb_release --short --codename)&quot;}
+ 
+# Optionally change Debian release states in $DIST to their names.
+case &quot;$DIST&quot; in
+    unstable)
+        DIST=&quot;$UNSTABLE_CODENAME&quot;
+        ;;
+    testing)
+        DIST=&quot;$TESTING_CODENAME&quot;
+        ;;
+    stable)
+        DIST=&quot;$STABLE_CODENAME&quot;
+        ;;
+    oldstable)
+        DIST=&quot;$OLDSTABLE_CODENAME&quot;
+        ;;
+esac
+ 
+# Optionally set the architecture to the host architecture if none set. Note
+# that you can set your own default (i.e. ${ARCH:=&quot;i386&quot;}).
+: ${ARCH:=&quot;$(dpkg --print-architecture)&quot;}
+ 
+NAME=&quot;$DIST&quot;
+if [ -n &quot;${ARCH}&quot; ]; then
+    NAME=&quot;$NAME-$ARCH&quot;
+    DEBOOTSTRAPOPTS=(&quot;--arch&quot; &quot;$ARCH&quot; &quot;${DEBOOTSTRAPOPTS[@]}&quot;)
+fi
+
+DEBBUILDOPTS=&quot;-b&quot;
+if [ &quot;${ARCH}&quot; == &quot;i386&quot; ]; then
+    DEBBUILDOPTS=&quot;-B&quot;
+fi
+
+BASETGZ=&quot;/var/cache/pbuilder/$NAME-base.tgz&quot;
+# Optionally, set BASEPATH (and not BASETGZ) if using cowbuilder
+# BASEPATH=&quot;/var/cache/pbuilder/$NAME/base.cow/&quot;
+DISTRIBUTION=&quot;$DIST&quot;
+BUILDRESULT=&quot;/var/cache/pbuilder/$NAME/result/&quot;
+APTCACHE=&quot;/var/cache/pbuilder/$NAME/aptcache/&quot;
+BUILDPLACE=&quot;/var/cache/pbuilder/build/&quot;
+ 
+if $(echo ${DEBIAN_SUITES[@]} | grep -q $DIST); then
+    # Debian configuration
+    MIRRORSITE=&quot;http://$DEBIAN_MIRROR/debian/&quot;
+    COMPONENTS=&quot;main contrib non-free&quot;
+    DEBOOTSTRAPOPTS=(&quot;${DEBOOTSTRAPOPTS[@]}&quot; &quot;--keyring=/usr/share/keyrings/debian-archive-keyring.gpg&quot;)
+elif $(echo ${UBUNTU_SUITES[@]} | grep -q $DIST); then
+    # Ubuntu configuration
+    MIRRORSITE=&quot;http://$UBUNTU_MIRROR/ubuntu/&quot;
+    COMPONENTS=&quot;main universe&quot;
+    DEBOOTSTRAPOPTS=(&quot;${DEBOOTSTRAPOPTS[@]}&quot; &quot;--keyring=/usr/share/keyrings/ubuntu-archive-keyring.gpg&quot;)
+else
+    echo &quot;Unknown distribution: $DIST&quot;
+    exit 1
+fi
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Debian">Debian</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ for x in unstable testing stable; do for y in i386 amd64; do sudo DIST=${x} ARCH=${y} pbuilder create; done; done
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Ubuntu">Ubuntu</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ for x in lucid maverick natty; do for y in i386 amd64; do sudo DIST=${x} ARCH=${y} pbuilder create; done; done
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-svn-buildpackage">svn-buildpackage</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/.svn-buildpackage.conf
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">svn-builder=debuild
+svn-noautodch
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-quilt">quilt</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/.quiltrc
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">QUILT_PATCHES=&quot;debian/patches&quot;
+
+QUILT_PATCH_OPTS=&quot;--unified-reject-files&quot;
+QUILT_REFRESH_ARGS=&quot;-p ab --no-timestamps --no-index&quot;
+QUILT_DIFF_OPTS=&quot;--show-c-function&quot;
+QUILT_DIFF_ARGS=&quot;-p ab --no-timestamps --no-index --color=auto&quot;
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-devscripts">devscripts</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/.devscripts
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">DEBCHANGE_RELEASE_HEURISTIC=changelog
+DEBCHANGE_MULTIMAINT_MERGE=yes
+DEBCHANGE_MAINTTRAILER=no
+DEBUILD_ROOTCMD=fakeroot
+DEBUILD_LINTIAN=yes
+DEBUILD_LINDA=yes
+DEFAULT_DEBRELEASE_DEBS_DIR=../build-area/
+USCAN_DESTDIR=../tarballs
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-CreateaGPGKey">Create a GPG Key</h2><p><a href="https://help.ubuntu.com/community/GnuPrivacyGuardHowto" class="external-link" rel="nofollow">https://help.ubuntu.com/community/GnuPrivacyGuardHowto</a></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/.bashrc
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">export DEBFULLNAME=&#39;Paul Belanger&#39;
+export DEBEMAIL=&#39;pabelanger@digium.com&#39;
+export GPGKEY=8C3B0FA6
+export EDITOR=vi
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-Seealso">See also</h2><ul><li><a href="https://wiki.ubuntu.com/PackagingGuide/Complete" class="external-link" rel="nofollow">Ubuntu Packaging Guide</a></li></ul><h1 id="HistoricalPackagingInformation-UpdatinganUbuntuPackage">Updating an Ubuntu Package</h1><h2 id="HistoricalPackagingInformation-Newupstreamrelease">New upstream release</h2><h3 id="HistoricalPackagingInformation-Checkoutsource">Checkout source</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ mkdir -p ~/digium
+$ cd ~/digium
+$ svn http://blah.org/svn/blah
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Upstreamtarball">Upstream tarball</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ uscan --verbose
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Updatethechangelogfile">Update the changelog file</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ dch -e
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Updatepatches">Update patches</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ while quilt push; do quilt refresh; done
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Releasepackage">Release package</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ dch -r
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Buildpackagesource">Build package source</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ svn-buildpackage -S
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-Compilepackage">Compile package</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ dput ppa:pabelanger/testing ../build-area/*.changes
+</pre>
+</div></div><h1 id="HistoricalPackagingInformation-rebuildd">rebuildd</h1><h2 id="HistoricalPackagingInformation-Introduction">Introduction</h2><h2 id="HistoricalPackagingInformation-Prerequisites.1">Prerequisites</h2><p><a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=Creating+a+Build+Environment&amp;linkCreation=true&amp;fromPageId=27199498">Creating a Build Environment</a></p><h2 id="HistoricalPackagingInformation-Gettingstarted">Getting started</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">sudo apt-get install rebuildd reprepro apache2
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-reprepro">reprepro</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo adduser --system --shell /bin/bash --gecos &#39;Reprepro Daemon&#39; --group --disabled-password reprepro
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo su reprepro
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ cd ~
+$ mkdir bin conf incoming
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/conf/distributions
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>distributions</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Suite: lucid-proposed
+Version: 10.04
+Codename: lucid-proposed
+Architectures: i386 amd64 source
+Components: main
+SignWith: yes
+Log: logfile
+  --changes ~/bin/build_sources
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/conf/incoming
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>incoming</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Name: incoming
+IncomingDir: incoming
+Allow: lucid-proposed
+Cleanup: on_deny on_error
+TempDir: tmp
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/conf/apache.conf
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>apache.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Alias /debian /home/reprepro/
+&lt;Directory /home/reprepro&gt;
+        Options +Indexes
+        AllowOverride None
+        order allow,deny
+        allow from all
+&lt;/Directory&gt;
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ vi ~/bin/build_sources
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">#!/bin/bash
+ 
+action=$1
+release=$2
+package=$3
+version=$4
+changes_file=$5
+ 
+# Only care about packages being added
+if [ &quot;$action&quot; != &quot;accepted&quot; ]
+then
+	exit 0
+fi
+ 
+# Only care about source packages
+echo $changes_file | grep -q _source.changes
+if [ $? = 1 ]
+then
+	exit 0
+fi
+ 
+# Kick off the job
+echo &quot;$package $version 1 $release&quot;  | sudo rebuildd-job add
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ reprepro -V -b . createsymlinks
+$ reprepro -V -b . processincoming incoming
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ exit
+</pre>
+</div></div><h3 id="HistoricalPackagingInformation-rebuildd.1">rebuildd</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo vi /etc/default/rebuildd
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">START_REBUILDD=1
+START_REBUILDD_HTTPD=1
+DISTS=&quot;lucid&quot;
+</pre>
+</div></div><h2 id="HistoricalPackagingInformation-Alsosee">Also see</h2><ul><li><a href="http://alioth.debian.org/scm/viewvc.php/*checkout*/mirrorer/docs/manual.html?revision=HEAD&amp;root=mirrorer" class="external-link" rel="nofollow">http://alioth.debian.org/scm/viewvc.php/*checkout*/mirrorer/docs/manual.html?revision=HEAD&amp;root=mirrorer</a></li><li><a href="http://inodes.org/2009/09/14/building-a-private-ppa-on-ubuntu/" class="external-link" rel="nofollow">http://inodes.org/2009/09/14/building-a-private-ppa-on-ubuntu/</a></li></ul><h1 id="HistoricalPackagingInformation-WorkingwithSourcePackages">Working with Source Packages</h1><p> </p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo apt-get build-dep asterisk
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ DEB_BUILD_OPTIONS=&quot;debug&quot; apt-get -b source asterisk
+</pre>
+</div></div><p> </p><p> </p><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

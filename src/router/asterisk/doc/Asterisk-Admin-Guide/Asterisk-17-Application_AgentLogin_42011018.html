@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_AgentLogin</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_AgentLogin
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 10, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_AgentLogin-AgentLogin()">AgentLogin()</h1>
+
+<h3 id="Asterisk17Application_AgentLogin-Synopsis">Synopsis</h3>
+
+<p>Login an agent.</p>
+
+<h3 id="Asterisk17Application_AgentLogin-Description">Description</h3>
+
+<p>Login an agent to the system. Any agent authentication is assumed to already be done by dialplan. While logged in, the agent can receive calls and will hear the sound file specified by the config option custom_beep when a new call comes in for the agent. Login failures will continue in the dialplan with <code>AGENT_STATUS</code> set.</p>
+
+<p>Before logging in, you can setup on the real agent channel the CHANNEL(dtmf_features) an agent will have when talking to a caller and you can setup on the channel running this application the CONNECTEDLINE() information the agent will see while waiting for a caller.</p>
+
+<p>AGENT_STATUS enumeration values:</p>
+
+<ul>
+	<li><code>INVALID</code> - The specified agent is invalid.</li>
+	<li><code>ALREADY_LOGGED_IN</code> - The agent is already logged in.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The Agent:<em>AgentId</em> device state is available to monitor the status of the agent.</p>
+
+                    </div>
+    </div>
+</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_AgentLogin-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>AgentLogin(AgentId,[options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_AgentLogin-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>AgentId</code></li>
+	<li><code>options</code>
+	<ul>
+		<li><code>s</code> - silent login - do not announce the login ok segment after agent logged on.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_AgentLogin-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_Authenticate_42011014.html">Asterisk 17 Application_Authenticate</a></li>
+	<li><a href="Asterisk-17-Application_Queue_42010870.html">Asterisk 17 Application_Queue</a></li>
+	<li><a href="Asterisk-17-Application_AddQueueMember_42010871.html">Asterisk 17 Application_AddQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_RemoveQueueMember_42010872.html">Asterisk 17 Application_RemoveQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_PauseQueueMember_42010873.html">Asterisk 17 Application_PauseQueueMember</a></li>
+	<li><a href="Asterisk-17-Application_UnpauseQueueMember_42010874.html">Asterisk 17 Application_UnpauseQueueMember</a></li>
+	<li><a href="Asterisk-17-Function_AGENT_42011020.html">Asterisk 17 Function_AGENT</a></li>
+	<li><a href="Asterisk-17-Function_CHANNEL_42011139.html">Asterisk 17 Function_CHANNEL</a></li>
+	<li><a href="Asterisk-17-Function_CONNECTEDLINE_42011143.html">Asterisk 17 Function_CONNECTEDLINE</a></li>
+	<li><code>agents.conf</code></li>
+	<li><code>queues.conf</code></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_AgentLogin-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-5dda6d4</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

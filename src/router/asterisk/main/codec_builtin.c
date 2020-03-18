@@ -29,8 +29,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
+#include "asterisk/ilbc.h"
 #include "asterisk/logger.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/codec.h"
@@ -106,6 +105,30 @@ static struct ast_codec g723 = {
 	.minimum_bytes = 20,
 	.samples_count = g723_samples,
 	.get_length = g723_length,
+};
+
+static int codec2_samples(struct ast_frame *frame)
+{
+	return 160 * (frame->datalen / 6);
+}
+
+static int codec2_length(unsigned int samples)
+{
+	return (samples / 160) * 6;
+}
+
+static struct ast_codec codec2 = {
+	.name = "codec2",
+	.description = "Codec 2",
+	.type = AST_MEDIA_TYPE_AUDIO,
+	.sample_rate = 8000,
+	.minimum_ms = 20,
+	.maximum_ms = 300,
+	.default_ms = 20,
+	.minimum_bytes = 6,
+	.samples_count = codec2_samples,
+	.get_length = codec2_length,
+	.smooth = 1,
 };
 
 static int none_samples(struct ast_frame *frame)
@@ -265,7 +288,8 @@ static struct ast_codec slin8 = {
 	.minimum_bytes = 160,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin12 = {
@@ -279,7 +303,8 @@ static struct ast_codec slin12 = {
 	.minimum_bytes = 240,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin16 = {
@@ -293,7 +318,8 @@ static struct ast_codec slin16 = {
 	.minimum_bytes = 320,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin24 = {
@@ -307,7 +333,8 @@ static struct ast_codec slin24 = {
 	.minimum_bytes = 480,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin32 = {
@@ -321,7 +348,8 @@ static struct ast_codec slin32 = {
 	.minimum_bytes = 640,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin44 = {
@@ -335,7 +363,8 @@ static struct ast_codec slin44 = {
 	.minimum_bytes = 882,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin48 = {
@@ -349,7 +378,8 @@ static struct ast_codec slin48 = {
 	.minimum_bytes = 960,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin96 = {
@@ -363,7 +393,8 @@ static struct ast_codec slin96 = {
 	.minimum_bytes = 1920,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static struct ast_codec slin192 = {
@@ -377,7 +408,8 @@ static struct ast_codec slin192 = {
 	.minimum_bytes = 3840,
 	.samples_count = slin_samples,
 	.get_length = slin_length,
-	.smooth = AST_SMOOTHER_FLAGS_PACK(AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED),
+	.smooth = 1,
+	.smoother_flags = AST_SMOOTHER_FLAG_BE | AST_SMOOTHER_FLAG_FORCED,
 };
 
 static int lpc10_samples(struct ast_frame *frame)
@@ -589,7 +621,12 @@ static struct ast_codec speex32 = {
 
 static int ilbc_samples(struct ast_frame *frame)
 {
-	return 240 * (frame->datalen / 50);
+	struct ilbc_attr *attr = ast_format_get_attribute_data(frame->subclass.format);
+	const unsigned int mode = attr ? attr->mode : 30;
+	const unsigned int samples_per_frame = mode * ast_format_get_sample_rate(frame->subclass.format) / 1000;
+	const unsigned int octets_per_frame = (mode == 20) ? 38 : 50;
+
+	return samples_per_frame * frame->datalen / octets_per_frame;
 }
 
 static struct ast_codec ilbc = {
@@ -597,12 +634,12 @@ static struct ast_codec ilbc = {
 	.description = "iLBC",
 	.type = AST_MEDIA_TYPE_AUDIO,
 	.sample_rate = 8000,
-	.minimum_ms = 30,
+	.minimum_ms = 20,
 	.maximum_ms = 300,
-	.default_ms = 30,
-	.minimum_bytes = 50,
+	.default_ms = 20,
+	.minimum_bytes = 38,
 	.samples_count = ilbc_samples,
-	.smooth = 1,
+	.smooth = 0,
 };
 
 static struct ast_codec g722 = {
@@ -769,6 +806,13 @@ static struct ast_codec h264 = {
 	.sample_rate = 1000,
 };
 
+static struct ast_codec h265 = {
+	.name = "h265",
+	.description = "H.265 video",
+	.type = AST_MEDIA_TYPE_VIDEO,
+	.sample_rate = 1000,
+};
+
 static struct ast_codec mpeg4 = {
 	.name = "mpeg4",
 	.description = "MPEG4 video",
@@ -783,6 +827,13 @@ static struct ast_codec vp8 = {
 	.sample_rate = 1000,
 };
 
+static struct ast_codec vp9 = {
+	.name = "vp9",
+	.description = "VP9 video",
+	.type = AST_MEDIA_TYPE_VIDEO,
+	.sample_rate = 1000,
+};
+
 static struct ast_codec t140red = {
 	.name = "red",
 	.description = "T.140 Realtime Text with redundancy",
@@ -793,6 +844,12 @@ static struct ast_codec t140 = {
 	.name = "t140",
 	.description = "Passthrough T.140 Realtime Text",
 	.type = AST_MEDIA_TYPE_TEXT,
+};
+
+static struct ast_codec t38 = {
+	.name = "t38",
+	.description = "T.38 UDPTL Fax",
+	.type = AST_MEDIA_TYPE_IMAGE,
 };
 
 static int silk_samples(struct ast_frame *frame)
@@ -886,6 +943,7 @@ int ast_codec_builtin_init(void)
 {
 	int res = 0;
 
+	res |= CODEC_REGISTER_AND_CACHE(codec2);
 	res |= CODEC_REGISTER_AND_CACHE(g723);
 	res |= CODEC_REGISTER_AND_CACHE(ulaw);
 	res |= CODEC_REGISTER_AND_CACHE(alaw);
@@ -920,10 +978,13 @@ int ast_codec_builtin_init(void)
 	res |= CODEC_REGISTER_AND_CACHE(h263);
 	res |= CODEC_REGISTER_AND_CACHE(h263p);
 	res |= CODEC_REGISTER_AND_CACHE(h264);
+	res |= CODEC_REGISTER_AND_CACHE(h265);
 	res |= CODEC_REGISTER_AND_CACHE(mpeg4);
 	res |= CODEC_REGISTER_AND_CACHE(vp8);
+	res |= CODEC_REGISTER_AND_CACHE(vp9);
 	res |= CODEC_REGISTER_AND_CACHE(t140red);
 	res |= CODEC_REGISTER_AND_CACHE(t140);
+	res |= CODEC_REGISTER_AND_CACHE(t38);
 	res |= CODEC_REGISTER_AND_CACHE(none);
 	res |= CODEC_REGISTER_AND_CACHE_NAMED("silk8", silk8);
 	res |= CODEC_REGISTER_AND_CACHE_NAMED("silk12", silk12);

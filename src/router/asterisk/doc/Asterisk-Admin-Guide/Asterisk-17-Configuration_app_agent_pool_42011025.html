@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_app_agent_pool</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_app_agent_pool
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_app_agent_pool-Agentpoolapplications">Agent pool applications</h1>
+
+<p>This configuration documentation is for functionality provided by <code>app_agent_pool</code>.</p>
+
+<h2 id="Asterisk17Configuration_app_agent_pool-Overview">Overview</h2>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<h2 id="Asterisk17Configuration_app_agent_pool-agents.conf">agents.conf</h2>
+
+<h3 id="Asterisk17Configuration_app_agent_pool-global">global</h3>
+
+<p>Unused, but reserved.</p>
+
+<h3 id="Asterisk17Configuration_app_agent_pool-agent-id">agent-id</h3>
+
+<p>Configure an agent for the pool.</p>
+
+<h4 id="Asterisk17Configuration_app_agent_pool-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_ackcall"><code>ackcall</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable to require the agent to acknowledge a call. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_acceptdtmf"><code>acceptdtmf</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>#</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> DTMF key sequence the agent uses to acknowledge a call. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_autologoff"><code>autologoff</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Time the agent has to acknowledge a call before being logged off. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_wrapuptime"><code>wrapuptime</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Minimum time the agent has between calls. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_musiconhold"><code>musiconhold</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>default</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Music on hold class the agent listens to between calls. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_recordagentcalls"><code>recordagentcalls</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable to automatically record calls the agent takes. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_custom_beep"><code>custom_beep</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>beep</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sound file played to alert the agent when a call is present. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_agent_pool-agent-id_fullname"><code>fullname</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> A friendly name for the agent used in log messages. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_app_agent_pool-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_ackcall"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-ackcall">ackcall</h5>
+
+<p>Enable to require the agent to give a DTMF acknowledgement when the agent receives a call.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is overridden by <code>AGENTACKCALL</code> on agent login.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_acceptdtmf"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-acceptdtmf">acceptdtmf</h5>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is overridden by <code>AGENTACCEPTDTMF</code> on agent login.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is ignored unless the ackcall option is enabled.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_autologoff"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-autologoff">autologoff</h5>
+
+<p>Set how many seconds a call for the agent has to wait for the agent to acknowledge the call before the agent is automatically logged off. If set to zero then the call will wait forever for the agent to acknowledge.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is overridden by <code>AGENTAUTOLOGOFF</code> on agent login.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is ignored unless the ackcall option is enabled.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_wrapuptime"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-wrapuptime">wrapuptime</h5>
+
+<p>Set the minimum amount of time in milliseconds after disconnecting a call before the agent can receive a new call.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The option is overridden by <code>AGENTWRAPUPTIME</code> on agent login.</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_musiconhold"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-musiconhold">musiconhold</h5>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_recordagentcalls"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-recordagentcalls">recordagentcalls</h5>
+
+<p>Enable recording calls the agent takes automatically by invoking the automixmon DTMF feature when the agent connects to a caller. See <code>features.conf.sample</code> for information about the automixmon feature.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_custom_beep"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-custom_beep">custom_beep</h5>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_agent_pool-agent-id_fullname"></span></p>
+<h5 id="Asterisk17Configuration_app_agent_pool-fullname">fullname</h5>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Option changes take effect on agent login or after an agent disconnects from a call.</p>
+
+                    </div>
+    </div>
+
+
+
+<h3 id="Asterisk17Configuration_app_agent_pool-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

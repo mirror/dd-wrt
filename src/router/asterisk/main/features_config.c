@@ -26,6 +26,8 @@
 #include "asterisk/app.h"
 #include "asterisk/cli.h"
 
+#include "features_config.h"
+
 /*** DOCUMENTATION
 	<configInfo name="features" language="en_US">
 		<synopsis>Features Configuration</synopsis>
@@ -219,7 +221,7 @@
 					The <replaceable>DYNAMIC_FEATURES</replaceable> is a <literal>#</literal> separated list of
 					either applicationmap item names or featuregroup names.</para>
 				</description>
-				<configOption name="^.*$" regex="true">
+				<configOption name="">
 					<synopsis>A custom feature to invoke during a bridged call</synopsis>
 					<description>
 						<para>Each item listed here is a comma-separated list of parameters that determine
@@ -272,7 +274,7 @@
 					DTMF sequence used to invoke an applicationmap item to be overridden with
 					a different sequence.</para>
 				</description>
-				<configOption name="^.*$" regex="true">
+				<configOption name="">
 					<synopsis>Applicationmap item to place in the feature group</synopsis>
 					<description>
 						<para>Each item here must be a name of an item in the applicationmap. The
@@ -378,9 +380,9 @@
 #define DEFAULT_ATXFER_COMPLETE                     "*2"
 #define DEFAULT_ATXFER_THREEWAY                     "*3"
 #define DEFAULT_ATXFER_SWAP                         "*4"
-#define DEFAULT_TRANSFER_DIAL_ATTEMPTS              1
+#define DEFAULT_TRANSFER_DIAL_ATTEMPTS              3
 #define DEFAULT_TRANSFER_RETRY_SOUND                "pbx-invalid"
-#define DEFAULT_TRANSFER_INVALID_SOUND              "pbx-invalid"
+#define DEFAULT_TRANSFER_INVALID_SOUND              "privacy-incorrect"
 
 /*! Default pickup options */
 #define DEFAULT_PICKUPEXTEN                         "*8"
@@ -578,24 +580,24 @@ struct features_config {
 static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
 	.name = "globals",
-	.category_match = ACO_WHITELIST,
-	.category = "^general$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "general",
 	.item_offset = offsetof(struct features_config, global),
 };
 
 static struct aco_type featuremap_option = {
 	.type = ACO_GLOBAL,
 	.name = "featuremap",
-	.category_match = ACO_WHITELIST,
-	.category = "^featuremap$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "featuremap",
 	.item_offset = offsetof(struct features_config, featuremap),
 };
 
 static struct aco_type applicationmap_option = {
 	.type = ACO_GLOBAL,
 	.name = "applicationmap",
-	.category_match = ACO_WHITELIST,
-	.category = "^applicationmap$",
+	.category_match = ACO_WHITELIST_EXACT,
+	.category = "applicationmap",
 	.item_offset = offsetof(struct features_config, applicationmap),
 };
 
@@ -757,8 +759,8 @@ static struct features_config *__features_config_alloc(int allocate_applicationm
 			return NULL;
 		}
 
-		cfg->featuregroups = ao2_container_alloc_options(AO2_ALLOC_OPT_LOCK_NOLOCK, 11, featuregroup_hash,
-			featuregroup_cmp);
+		cfg->featuregroups = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_NOLOCK, 0, 11,
+			featuregroup_hash, NULL, featuregroup_cmp);
 		if (!cfg->featuregroups) {
 			return NULL;
 		}
@@ -1168,6 +1170,21 @@ char *ast_get_chan_features_xferfailsound(struct ast_channel *chan)
 	}
 
 	res = ast_strdup(cfg->xferfailsound);
+	ao2_ref(cfg, -1);
+
+	return res;
+}
+
+char *ast_get_chan_features_atxferabort(struct ast_channel *chan)
+{
+	char *res;
+	struct ast_features_xfer_config *cfg = ast_get_chan_features_xfer_config(chan);
+
+	if (!cfg) {
+		return NULL;
+	}
+
+	res = ast_strdup(cfg->atxferabort);
 	ao2_ref(cfg, -1);
 
 	return res;
@@ -1836,13 +1853,13 @@ static int load_config(void)
 	aco_option_register_custom(&cfg_info, "automixmon", ACO_EXACT, featuremap_options,
 			DEFAULT_FEATUREMAP_AUTOMIXMON, featuremap_handler, 0);
 
-	aco_option_register_custom(&cfg_info, "^.*$", ACO_REGEX, applicationmap_options,
+	aco_option_register_custom(&cfg_info, "", ACO_PREFIX, applicationmap_options,
 			"", applicationmap_handler, 0);
 
-	aco_option_register_custom(&cfg_info, "^.*$", ACO_REGEX, featuregroup_options,
+	aco_option_register_custom(&cfg_info, "", ACO_PREFIX, featuregroup_options,
 			"", featuregroup_handler, 0);
 
-	aco_option_register_custom_nodoc(&cfg_info, "^.*$", ACO_REGEX, parkinglot_options,
+	aco_option_register_custom_nodoc(&cfg_info, "", ACO_PREFIX, parkinglot_options,
 			"", unsupported_handler, 0);
 
 	if (aco_process_config(&cfg_info, 0) == ACO_PROCESS_ERROR) {
@@ -1956,7 +1973,7 @@ static struct ast_cli_entry cli_features_config[] = {
 	AST_CLI_DEFINE(handle_feature_show, "Lists configured features"),
 };
 
-void ast_features_config_shutdown(void)
+void unload_features_config(void)
 {
 	ast_custom_function_unregister(&featuremap_function);
 	ast_custom_function_unregister(&feature_function);
@@ -1965,7 +1982,7 @@ void ast_features_config_shutdown(void)
 	ao2_global_obj_release(globals);
 }
 
-int ast_features_config_reload(void)
+int reload_features_config(void)
 {
 	/* Rearm the parking config options have moved warning. */
 	parking_warning = 0;
@@ -1976,7 +1993,7 @@ int ast_features_config_reload(void)
 	return 0;
 }
 
-int ast_features_config_init(void)
+int load_features_config(void)
 {
 	int res;
 
@@ -1984,10 +2001,6 @@ int ast_features_config_init(void)
 	res |= __ast_custom_function_register(&feature_function, NULL);
 	res |= __ast_custom_function_register(&featuremap_function, NULL);
 	res |= ast_cli_register_multiple(cli_features_config, ARRAY_LEN(cli_features_config));
-
-	if (res) {
-		ast_features_config_shutdown();
-	}
 
 	return res;
 }

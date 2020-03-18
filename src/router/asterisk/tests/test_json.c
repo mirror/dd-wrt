@@ -17,7 +17,8 @@
  */
 
 /*!
- * \file \brief Test JSON API.
+ * \file
+ * \brief Test JSON API.
  *
  * While some of these tests are actually testing our JSON library wrapper, the bulk of
  * them are exploratory tests to determine what the behavior of the underlying JSON
@@ -36,7 +37,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/json.h"
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -1680,20 +1680,26 @@ AST_TEST_DEFINE(json_test_cep)
 		break;
 	}
 
-	expected = ast_json_pack("{s: o, s: o, s: o}",
+	expected = ast_json_pack("{s: o, s: o, s: o, s: o, s: o}",
 				 "context", ast_json_null(),
 				 "exten", ast_json_null(),
-				 "priority", ast_json_null());
-	uut = ast_json_dialplan_cep(NULL, NULL, -1);
+				 "priority", ast_json_null(),
+				 "app_name", ast_json_null(),
+				 "app_data", ast_json_null()
+				 );
+	uut = ast_json_dialplan_cep_app(NULL, NULL, -1, NULL, NULL);
 	ast_test_validate(test, ast_json_equal(expected, uut));
 
 	ast_json_unref(expected);
 	ast_json_unref(uut);
-	expected = ast_json_pack("{s: s, s: s, s: i}",
+	expected = ast_json_pack("{s: s, s: s, s: i, s: s, s: s}",
 				 "context", "main",
 				 "exten", "4321",
-				 "priority", 7);
-	uut = ast_json_dialplan_cep("main", "4321", 7);
+				 "priority", 7,
+				 "app_name", "",
+				 "app_data", ""
+				 );
+	uut = ast_json_dialplan_cep_app("main", "4321", 7, "", "");
 	ast_test_validate(test, ast_json_equal(expected, uut));
 
 	return AST_TEST_PASS;
@@ -1816,5 +1822,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, 0, "JSON testing",
-		.load = load_module,
-		.unload = unload_module);
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module
+);

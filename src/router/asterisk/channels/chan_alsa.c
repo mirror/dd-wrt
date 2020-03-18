@@ -16,8 +16,8 @@
  * at the top of the source tree.
  */
 
-/*! \file 
- * \brief ALSA sound card channel driver 
+/*! \file
+ * \brief ALSA sound card channel driver
  *
  * \author Matthew Fredrickson <creslin@digium.com>
  *
@@ -39,8 +39,10 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
+#include <errno.h>
+#ifndef ESTRPIPE
+#define ESTRPIPE EPIPE
+#endif
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
@@ -129,7 +131,7 @@ static struct chan_alsa_pvt {
 } alsa;
 
 /* Number of buffers...  Each is FRAMESIZE/8 ms long.  For example
-   with 160 sample frames, and a buffer size of 3, we have a 60ms buffer, 
+   with 160 sample frames, and a buffer size of 3, we have a 60ms buffer,
    usually plenty. */
 
 #define MAX_BUFFER_SIZE 100
@@ -297,7 +299,7 @@ static int soundcard_init(void)
 static int alsa_digit(struct ast_channel *c, char digit, unsigned int duration)
 {
 	ast_mutex_lock(&alsalock);
-	ast_verbose(" << Console Received digit %c of duration %u ms >> \n", 
+	ast_verbose(" << Console Received digit %c of duration %u ms >> \n",
 		digit, duration);
 	ast_mutex_unlock(&alsalock);
 
@@ -688,7 +690,7 @@ static char *console_answer(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 
 		return NULL;
 	case CLI_GENERATE:
-		return NULL; 
+		return NULL;
 	}
 
 	if (a->argc != 2)
@@ -734,7 +736,7 @@ static char *console_sendtext(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 			"       Sends a text message for display on the remote terminal.\n";
 		return NULL;
 	case CLI_GENERATE:
-		return NULL; 
+		return NULL;
 	}
 
 	if (a->argc < 3)
@@ -782,9 +784,9 @@ static char *console_hangup(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 			"       Hangs up any call currently placed on the console.\n";
 		return NULL;
 	case CLI_GENERATE:
-		return NULL; 
+		return NULL;
 	}
- 
+
 
 	if (a->argc != 2)
 		return CLI_SHOWUSAGE;
@@ -952,8 +954,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -1034,8 +1036,8 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "ALSA Console Channel Driver",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DRIVER,
-	);
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DRIVER,
+);

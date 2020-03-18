@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Video Telephony</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Video Telephony
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 10, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="VideoTelephony-AsteriskandVideotelephony">Asterisk and Video telephony</h1>
+
+<p>Asterisk supports video telephony in the core infrastructure. Internally, it's one audio stream and one video stream in the same call. Some channel drivers and applications has video support, but not all.</p>
+
+<h5 id="VideoTelephony-Codecsandformats">Codecs and formats</h5>
+
+<p>Asterisk supports the following video codecs and file formats. There's no video transcoding so you have to make sure that both ends support the same video format.</p>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p>Codec</p></th>
+<th class="confluenceTh"><p>Format</p></th>
+<th class="confluenceTh"><p>Notes</p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p>H.263</p></td>
+<td class="confluenceTd"><p>read/write</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>H.264</p></td>
+<td class="confluenceTd"><p>read/write</p></td>
+<td class="confluenceTd"><p> </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>H.261</p></td>
+<td class="confluenceTd"><p>-</p></td>
+<td class="confluenceTd"><p>Passthrough only</p></td>
+</tr>
+</tbody></table></div>
+
+
+<p>Note that the file produced by Asterisk video format drivers is in no generic video format. Gstreamer has support for producing these files and converting from various video files to Asterisk video+audio files.</p>
+
+<p>Note that H.264 is not enabled by default. You need to add that in the channel configuration file.</p>
+
+<h5 id="VideoTelephony-ChannelDriverSupport">Channel Driver Support</h5>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p>Channel Driver</p></th>
+<th class="confluenceTh"><p>Module</p></th>
+<th class="confluenceTh"><p>Notes</p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p>SIP</p></td>
+<td class="confluenceTd"><p><code>chan_sip.so</code></p></td>
+<td class="confluenceTd"><p>The SIP channel driver (chan_sip.so) has support for video</p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>IAX2</p></td>
+<td class="confluenceTd"><p><code>chan_iax2.so</code></p></td>
+<td class="confluenceTd"><p>Supports video calls (over trunks too)</p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>Local</p></td>
+<td class="confluenceTd"><p><code>chan_local.so</code></p></td>
+<td class="confluenceTd"><p>Forwards video calls as a proxy channel</p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>Agent</p></td>
+<td class="confluenceTd"><p><code>chan_agent.so</code></p></td>
+<td class="confluenceTd"><p>Forwards video calls as a proxy channel</p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p>oss</p></td>
+<td class="confluenceTd"><p><code>chan_oss.so</code></p></td>
+<td class="confluenceTd"><p>Has support for video display/decoding, see video_console.txt</p></td>
+</tr>
+</tbody></table></div>
+
+
+<h5 id="VideoTelephony-Applications">Applications</h5>
+
+<p>This is not yet a complete list. These dialplan applications are known to handle video:</p>
+
+<ul>
+	<li>Voicemail - Video voicemail storage (does not attach video to e-mail)</li>
+	<li>Record - Records audio and video files (give audio format as argument)</li>
+	<li>Playback - Plays a video while being instructed to play audio</li>
+	<li>Echo - Echos audio and video back to the user</li>
+</ul>
+
+
+<p>There is a development group working on enhancing video support for Asterisk. </p>
+
+<p>If you want to participate, join the asterisk-video mailing list on <a class="external-link" href="http://lists.digium.com" rel="nofollow">http://lists.digium.com</a></p>
+
+<p>Updates to this file are more than welcome!</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

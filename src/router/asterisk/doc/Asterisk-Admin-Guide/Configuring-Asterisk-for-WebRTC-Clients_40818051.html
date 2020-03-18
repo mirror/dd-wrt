@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring Asterisk for WebRTC Clients</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="WebRTC_40818093.html">WebRTC</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring Asterisk for WebRTC Clients
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> George Joseph</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jan 08, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfiguringAsteriskforWebRTCClients-Overview">Overview</h1><p>This tutorial will walk you through configuring Asterisk to service WebRTC clients.</p><p>You will...</p><ul><li>Modify or create an Asterisk HTTPS TLS server.</li><li>Create a PJSIP WebSocket transport.</li><li>Create PJSIP Endpoint, AOR and Authentication objects that represent a WebRTC client.</li></ul></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303100246 {padding: 0px;}
+div.rbtoc1582303100246 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303100246 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303100246'>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-Overview'>Overview</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-Prerequisites'>Prerequisites</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-Certificates:'>Certificates:</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-CreateCertificates'>Create Certificates</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-AsteriskConfiguration'>Asterisk Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-ConfigureAsterisk&#39;sbuilt-inHTTPdaemon'>Configure Asterisk&#39;s built-in HTTP daemon</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-ConfigurePJSIP'>Configure PJSIP</a>
+<ul class='toc-indentation'>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-PJSIPWSSTransport'>PJSIP WSS Transport</a></li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-PJSIPEndpoint,AORandAuth'>PJSIP Endpoint, AOR and Auth</a></li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-RestartAsterisk'>Restart Asterisk</a></li>
+</ul>
+</li>
+<li><a href='https://wiki.asterisk.org/wiki/display/AST/Configuring+Asterisk+for+WebRTC+Clients#ConfiguringAsteriskforWebRTCClients-Wrapup'>Wrapup</a></li>
+</ul>
+</div></p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ConfiguringAsteriskforWebRTCClients-Prerequisites">Prerequisites</h1><p><span style="color: rgb(133,120,102);font-family: MuseoSans500 , sans-serif;font-size: 20.0px;">Asterisk Installation:</span></p><p>You should have a working chan_pjsip based Asterisk installation to start with and for purposes of this tutorial, it must be version 15.5 or greater.  Either install Asterisk from your distribution's packages or preferably <a href="Installing-Asterisk-From-Source_4817561.html">install Asterisk from source</a>.  Either way, there are a few modules over and above the standard ones that must be present for websockets and WebRTC to work:</p><ul><li>res_crypto</li><li>res_http_websocket</li><li>res_pjsip_transport_websocket</li><li>codec_opus (optional but highly recommended for high quality audio)<br /><br /></li></ul><div>We recommend installing Asterisk from source because it's easy to make sure those modules are built and installed.</div><h2 id="ConfiguringAsteriskforWebRTCClients-Certificates:">Certificates:</h2><p>Technically, a client can use WebRTC over an unsecured websocket to connect to Asterisk.  In practice though, most browsers will require a TLS based websocket to be used.  You can use self-signed certificates to set up the Asterisk TLS server but getting browsers to accept them is tricky so if you're able, we highly recommend getting trusted certificates from an organization such as <a href="https://letsencrypt.org" class="external-link" rel="nofollow">LetsEncrypt</a>.</p><p>If you already have certificate files (certificate, key, CA certificate), whether self-signed or trusted,  you can skip the rest of this section.  If you need to generate a self-signed certificate, read on.</p><h3 id="ConfiguringAsteriskforWebRTCClients-CreateCertificates"><span style="color: rgb(133,120,102);">Create Certificates</span></h3><p>Asterisk provides a utility script, <strong>ast_tls_cert</strong> in its <strong>contrib/scripts</strong> source directory.  We will use it to make a self-signed certificate authority and a server certificate for Asterisk, signed by our new authority.</p><p>From the Asterisk source directory run the following commands.  You'll be prompted to set a a pass phrase for the CA key, then you'll be asked for that same pass phrase a few times.  Use anything you can easily remember.  The pass phrase is indicated below with &quot;********&quot;.  Replace &quot;pbx.example.com&quot; with your PBX's hostname or ip address.  Replace &quot;My Organization&quot; as appropriate.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">$ sudo mkdir /etc/asterisk/keys
+$ sudo contrib/scripts/ast_tls_cert -C pbx.example.com -O &quot;My Organization&quot; -d /etc/asterisk/keys
+ 
+No config file specified, creating &#39;/etc/asterisk/keys/tmp.cfg&#39;
+You can use this config file to create additional certs without
+re-entering the information for the fields in the certificate
+Creating CA key /etc/asterisk/keys/keys/ca.key
+Generating RSA private key, 4096 bit long modulus
+............................................................................++
+.....................++
+e is 65537 (0x010001)
+Enter pass phrase for /etc/asterisk/keys/ca.key:********
+Verifying - Enter pass phrase for /etc/asterisk/keys/ca.key:********
+Creating CA certificate /etc/asterisk/keys/ca.crt
+Enter pass phrase for /etc/asterisk/keys/ca.key:********
+Creating certificate /etc/asterisk/keys/asterisk.key
+Generating RSA private key, 1024 bit long modulus
+........++++++
+............++++++
+e is 65537 (0x010001)
+Creating signing request /etc/asterisk/keys/asterisk.csr
+Creating certificate /etc/asterisk/keys/asterisk.crt
+Signature ok
+subject=CN = pbx.example.com, O = My Organization
+Getting CA Private Key
+Enter pass phrase for /etc/asterisk/keys/ca.key:********
+Combining key and crt into /etc/asterisk/keys/asterisk.pem
+
+
+$ ls -l /etc/asterisk/keys
+total 32
+-rw------- 1 root root 1204 Mar  4  2019 asterisk.crt
+-rw------- 1 root root  574 Mar  4  2019 asterisk.csr
+-rw------- 1 root root  887 Mar  4  2019 asterisk.key
+-rw------- 1 root root 2091 Mar  4  2019 asterisk.pem
+-rw------- 1 root root  149 Mar  4  2019 ca.cfg
+-rw------- 1 root root 1736 Mar  4  2019 ca.crt
+-rw------- 1 root root 3311 Mar  4  2019 ca.key
+-rw------- 1 root root  123 Mar  4  2019 tmp.cfg
+
+</pre>
+</div></div><p> </p><pre>We'll use the asterisk.crt and asterisk.key files later to configure the HTTP server.</pre><h1 id="ConfiguringAsteriskforWebRTCClients-AsteriskConfiguration"><span style="color: rgb(133,120,102);">Asterisk Configuration</span></h1><h2 id="ConfiguringAsteriskforWebRTCClients-ConfigureAsterisk&#39;sbuilt-inHTTPdaemon">Configure Asterisk's built-in HTTP daemon</h2><p>To communicate with websocket clients, Asterisk uses its built-in HTTP daemon.  Configure <strong>/etc/asterisk/http.conf</strong> as follows:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+enabled=yes
+bindaddr=0.0.0.0
+bindport=8088
+tlsenable=yes
+tlsbindaddr=0.0.0.0:8089
+tlscertfile=/etc/asterisk/keys/asterisk.crt
+tlsprivatekey=/etc/asterisk/keys/asterisk.key</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If you have not used the generated self-signed certificates produced in the &quot;Create Certificates&quot; section then you will need to set the &quot;tlscertfile&quot; and &quot;tlsprivatekey&quot; to the path of your own certificates if they differ.</p>
+                    </div>
+    </div>
+<p> </p><p>Now start or restart Asterisk and make sure the TLS server is running by issuing the following CLI command:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt;  http show status
+
+HTTP Server Status:
+Prefix: 
+Server: Asterisk/GIT-16-a84c257cd6
+Server Enabled and Bound to [::]:8088
+
+HTTPS Server Enabled and Bound to [::]:8089
+
+Enabled URI&#39;s:
+/test_media_cache/... =&gt; HTTP Media Cache Test URI
+/guimohdir_rh =&gt; HTTP POST mapping
+/httpstatus =&gt; Asterisk HTTP General Status
+/phoneprov/... =&gt; Asterisk HTTP Phone Provisioning Tool
+/amanager =&gt; HTML Manager Event Interface w/Digest authentication
+/backups =&gt; HTTP POST mapping
+/arawman =&gt; Raw HTTP Manager Event Interface w/Digest authentication
+/manager =&gt; HTML Manager Event Interface
+/rawman =&gt; Raw HTTP Manager Event Interface
+/static/... =&gt; Asterisk HTTP Static Delivery
+/amxml =&gt; XML Manager Event Interface w/Digest authentication
+/mxml =&gt; XML Manager Event Interface
+/moh =&gt; HTTP POST mapping
+/ari/... =&gt; Asterisk RESTful API
+/ws =&gt; Asterisk HTTP WebSocket
+&lt;there may be more&gt;</pre>
+</div></div><p>Note that the HTTPS Server is enabled and bound to <code>[::]:8089</code> and that the <code>/ws</code> URI is enabled.</p><h2 id="ConfiguringAsteriskforWebRTCClients-ConfigurePJSIP"><span style="color: rgb(133,120,102);">Configure PJSIP</span></h2><p><span style="color: rgb(133,120,102);"> </span>If you're not already familiar with configuring Asterisk's chan_pjsip driver, visit the <a href="Configuring-res_pjsip_25919621.html">res_pjsip configuration page</a>.</p><h3 id="ConfiguringAsteriskforWebRTCClients-PJSIPWSSTransport"><span style="color: rgb(133,120,102);">PJSIP WSS Transport</span></h3><p>Although the HTTP daemon does the heavy lifting for websockets, we still need to define a basic PJSIP Transport for websockets.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[transport-wss]
+type=transport
+protocol=wss
+bind=0.0.0.0
+; All other transport parameters are ignored for wss transports.
+
+</pre>
+</div></div><h3 id="ConfiguringAsteriskforWebRTCClients-PJSIPEndpoint,AORandAuth"><span style="color: rgb(133,120,102);">PJSIP Endpoint, AOR and Auth</span></h3><p>We now need to create the basic PJSIP objects that represent the client.  In this example, we'll call the client <code>webrtc_client</code> but you can use any name you like, such as an extension number.  Only the minimum options needed for a working configuration are shown.  NOTE:  It's normal for multiple objects in pjsip.conf to have the same name as long as the types differ.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/pjsip.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[webrtc_client]
+type=aor
+max_contacts=5
+remove_existing=yes
+ 
+[webrtc_client]
+type=auth
+auth_type=userpass
+username=webrtc_client
+password=webrtc_client ; This is a completely insecure password!  Do NOT expose this 
+                       ; system to the Internet without utilizing a better password.
+
+[webrtc_client]
+type=endpoint
+aors=webrtc_client
+auth=webrtc_client
+dtls_auto_generate_cert=yes
+webrtc=yes
+; Setting webrtc=yes is a shortcut for setting the following options:
+; use_avpf=yes
+; media_encryption=dtls
+; dtls_verify=fingerprint
+; dtls_setup=actpass
+; ice_support=yes
+; media_use_received_transport=yes
+; rtcp_mux=yes
+context=default
+disallow=all
+allow=opus,ulaw
+
+</pre>
+</div></div><p>An explanation of each of these settings parameters can be found on the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+15+Configuration_res_pjsip">Asterisk 15 Configuration_res_pjsip</a> page.  Briefly:</p><ul><li>Declare an endpoint that references our previously-made aor and auth.  </li><li>Notify Asterisk to expect the AVPF profile (secure RTP)</li><li>Setup the DTLS method of media encryption.</li><li>Specify which certificate files to use for TLS negotiations with this endpoint and our verification and setup methods.</li><li>Enable ICE support</li><li>Tell Asterisk to send media across the same transport that we receive it from.</li><li>Enable mux-ing of RTP and RTCP events onto the same socket.</li><li>Place received calls from this endpoint into an Asterisk <a href="https://wiki.asterisk.org/wiki/display/AST/Dialplan" rel="nofollow">Dialplan</a> context called &quot;default&quot;</li><li>And setup codecs by first disabling all and then selectively enabling Opus (presuming that you installed the Opus codec for Asterisk as mentioned at the beginning of this tutorial), then G.711 u-law.</li></ul><h2 id="ConfiguringAsteriskforWebRTCClients-RestartAsterisk">Restart Asterisk</h2><p>Restart Asterisk to pick up the changes and if you have a firewall, don't forget to allow TCP port 8089 through so your client can connect.</p><h1 id="ConfiguringAsteriskforWebRTCClients-Wrapup"><span style="color: rgb(133,120,102);">Wrapup</span></h1><p>At this point, your WebRTC client should be able to register and make calls.  If you've used self-signed certificates however, your browser may not allow the connection and because the attempt is not from a normal URI supplied by the user, the user might not even be notified that there's an issue.  You <em>may</em> be able to get the browser to accept the certificate by visiting &quot;https://pbx.example.com:8089/ws&quot; directly.  This will usually result in a warning from the browser and may give you the opportunity to accept the self-signed certificate and/or create an exception.   If you generated your certificate from a pre-existing local Certificate Authority, you can also import that Certificate Authority's certificate into your trusted store but that procedure is beyond the scope of this document.</p><p> </p><p> </p><p> </p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

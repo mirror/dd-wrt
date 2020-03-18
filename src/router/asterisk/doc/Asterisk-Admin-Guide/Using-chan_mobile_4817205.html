@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Using chan_mobile</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Mobile-Channel_4817190.html">Mobile Channel</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Using chan_mobile
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 31, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>chan_mobile.so must be loaded either by loading it using the Asterisk CLI, or by adding it to /etc/asterisk/modules.conf <br />
+Search for your bluetooth devices using the CLI command 'mobile search'. Be patient with this command as it will take 8 - 10 seconds to do the discovery. This requires a free adapter. <br />
+Headsets will generally have to be put into 'pairing' mode before they will show up here. <br />
+This will return something like the following :- </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; mobile search
+Address Name Usable Type Port
+00:12:56:90:6E:00 LG TU500 Yes Phone 4
+00:80:C8:35:52:78 Toaster No Headset 0
+00:0B:9E:11:74:A5 Hello II Plus Yes Headset 1
+00:0F:86:0E:AE:42 Daves Blackberry Yes Phone 7 
+</pre>
+</div></div>
+
+<p>This is a list of all bluetooth devices seen and whether or not they are usable with chan_mobile. The Address field contains the 'bd address' of the device. This is like an ethernet mac address. The Name field is whatever is configured into the device as its name. The Usable field tells you whether or not the device supports the Bluetooth Handsfree Profile or Headset profile. The Type field tells you whether the device is usable as a Phone line (FXO) or a headset (FXS) The Port field is the number to put in the configuration file. </p>
+
+<p>Choose which device(s) you want to use and edit /etc/asterisk/mobile.conf. There is a sample included with the Asterisk-addons source under configs/mobile.conf.sample. </p>
+
+<p>Be sure to configure the right bd address and port number from the search. If you want inbound calls on a device to go to a specific context, add a context= line, otherwise the default will be used. The 'id' of the device [bitinbrackets] can be anything you like, just make it unique. </p>
+
+<p>If you are configuring a Headset be sure to include the type=headset line, if left out it defaults to phone. </p>
+
+<p>The CLI command 'mobile show devices' can be used at any time to show the status of configured devices, and whether or not the device is capable of sending / receiving SMS via bluetooth. </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; mobile show devices
+ID Address Group Adapter Connected State SMS
+headset 00:0B:9E:11:AE:C6 0 blue No Init No 
+LGTU550 00:E0:91:7F:46:44 1 dlink No Init No 
+</pre>
+</div></div>
+
+<p>As each phone is connected you will see a message on the Asterisk console :- </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Loaded chan_mobile.so =&gt; (Bluetooth Mobile Device Channel Driver)
+– Bluetooth Device blackberry has connected.
+– Bluetooth Device dave has connected. 
+</pre>
+</div></div>
+
+<p>To make outbound calls, add something to you Dialplan like the following :- (modify to suit) </p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+; Calls via LGTU5500 
+exten =&gt; _9X.,1,Dial(Mobile/LGTU550/${EXTEN:1},45)
+exten =&gt; _9X.,n,Hangup 
+</pre>
+</div></div>
+
+<p>To use channel groups, add an entry to each phones definition in mobile.conf like group=n where n is a number. </p>
+
+<p>Then if you do something like Dial(Mobile/g1/123456) Asterisk will dial 123456 on the first connected free phone in group 1. </p>
+
+<p>Phones which do not have a specific 'group=n' will be in group 0. </p>
+
+<p>To dial out on a headset, you need to use some other mechanism, because the headset is not likely to have all the needed buttons on it. res_clioriginate is good for this :- </p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; originate Mobile/headset extension NNNNN@context 
+</pre>
+</div></div>
+<p>This will call your headset, once you answer, Asterisk will call NNNNN at context context</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -117,6 +117,21 @@ struct ast_features_xfer_config *ast_get_chan_features_xfer_config(struct ast_ch
 char *ast_get_chan_features_xferfailsound(struct ast_channel *chan);
 
 /*!
+ * \brief Get the transfer configuration option atxferabort
+ *
+ * \note The channel should be locked before calling this function.
+ * \note The returned value has to be freed.
+ *
+ * If no channel is provided, then option is pulled from the global
+ * transfer configuration.
+ *
+ * \param chan The channel to get configuration options for
+ * \retval NULL Failed to get configuration
+ * \retval non-NULL The atxferabort
+ */
+char *ast_get_chan_features_atxferabort(struct ast_channel *chan);
+
+/*!
  * \brief Configuration relating to call pickup
  */
 struct ast_features_pickup_config {
@@ -249,11 +264,5 @@ struct ast_applicationmap_item {
  * \retval non-NULL A container of applicationmap_items pertaining to the channel.
  */
 struct ao2_container *ast_get_chan_applicationmap(struct ast_channel *chan);
-
-void ast_features_config_shutdown(void);
-
-int ast_features_config_reload(void);
-
-int ast_features_config_init(void);
 
 #endif /* _FEATURES_CONFIG_H */

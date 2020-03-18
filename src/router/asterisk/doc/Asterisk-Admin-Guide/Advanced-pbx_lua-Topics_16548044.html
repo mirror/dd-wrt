@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Advanced pbx_lua Topics</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Lua-Dialplan-Configuration_16548006.html">Lua Dialplan Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Advanced pbx_lua Topics
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified on Jul 21, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Behind the scenes, a number of things happen to make the integration of lua into Asterisk as seamless as possible. Some details of how this integration works can be found below.</p>
+
+<h2 id="Advancedpbx_luaTopics-extensions.luaLoadProcess"><code>extensions.lua</code> Load Process</h2>
+
+<p>The <code>extensions.lua</code> file is loaded into memory once when the pbx_lua module is loaded or reloaded. The file is then read from memory and executed once for each channel that looks up or executes a lua based extension. Since the file is executed once for each channel, it may not be wise to do things like connect to external services directly from the main script or build your extensions table from a webservice or database.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>This is probably a bad idea.</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+-- my fancy extensions.lua
+
+extensions = {}
+extensions.default = {}
+
+-- might be a bad idea, this will run each time a channel is created
+data = query_webservice_for_extensions_list(&quot;site1&quot;)
+
+for _, e in ipairs(data) do
+   extensions.default[e.exten] = function()
+      app.dial(&quot;SIP/&quot; .. e.sip_peer, e.dial_timeout)
+   end
+end
+</pre>
+</div></div>
+
+<h2 id="Advancedpbx_luaTopics-TheextensionsTable">The <code>extensions</code> Table</h2>
+
+<p>The <code>extensions</code> table is a standard lua table and can be defined however you like. The pbx_lua module loads and sorts the table when it is needed. The keys in the table are context names and each value is another lua table containing extensions. Each key in the context table is an extension name and each value is an extension function.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+extensions = {
+   context_table = {
+      extension1 = function()
+      end;
+      extension2 = function()
+      end;
+   };
+}
+</pre>
+</div></div>
+
+<h2 id="Advancedpbx_luaTopics-Wheredidtheprioritiesgo?">Where did the priorities go?</h2>
+
+<p>There are no priorities. Asterisk uses priorities to define the order in which dialplan operations occur. The pbx_lua module uses functions to define extensions and execution occurs within the lua interpreter, priorities don't make sense in this context. To Asterisk, each pbx_lua extension appears as an extension with one priority. Lua extensions can be referenced using the context name, extension, and priority 1, e.g. <code>Goto(default,1234,1)</code>. You would only reference extensions this way from outside of pbx_lua (i.e. from <code>extensions.conf</code> or <code>extensions.ael</code>). From with in pbx_lua you can just execute that extension's function. </p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">extensions.default[&quot;1234&quot;](&quot;default&quot;, &quot;1234&quot;)</pre>
+</div></div>
+
+<h2 id="Advancedpbx_luaTopics-LuaScriptLifetime">Lua Script Lifetime</h2>
+
+<p>The same lua state is used for the lifetime of the Asterisk channel it is running on, so effectively, the script has the lifetime of the channel. This means you can set global variables in the lua state and retrieve them later from a different extension if necessary.</p>
+
+<h2 id="Advancedpbx_luaTopics-Apps,Functions,andVariables">Apps, Functions, and Variables</h2>
+
+<p><em>Details on accessing dialplan applications and functions and channel variables can be found in the <a href="16548029.html">Interacting with Asterisk from Lua (apps, variables, and functions)</a> page.</em></p>
+
+<p> When accessing a dialplan application or function or a channel variable, a placeholder object is generated that provides the <code>:get()</code> and <code>:set()</code> methods.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>channel variable: var is the placeholder object</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+var = channel.my_variable
+var:set(&quot;my value&quot;)
+value = var:get(&quot;my value&quot;)
+</pre>
+</div></div>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>dialplan function: fax_modems is the placeholder object</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+fax_modems = channel.FAXOPT(&quot;module&quot;)
+
+-- the function arguments are stored in the placeholder
+
+fax_modems:set(&quot;v17&quot;)
+value = fax_modems:get()
+</pre>
+</div></div>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>dialplan application: dial is the placeholder object</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+dial = app.dial
+
+-- the only thing we can do with it is execute it
+dial(&quot;SIP/100&quot;)
+</pre>
+</div></div>
+
+<p>There is a small cost in creating the placeholder objects so storing frequently used placeholder objects can be used as a micro optimization. This should never be necessary though and only provides benefits if you are running micro benchmarks.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

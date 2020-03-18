@@ -32,8 +32,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "")
-
 #include "asterisk/test.h"
 #include "asterisk/module.h"
 #include "asterisk/astobj2.h"
@@ -54,6 +52,7 @@ AST_TEST_DEFINE(websocket_client_create_and_connect)
 	switch (cmd) {
 	case TEST_INIT:
 		info->name = __func__;
+		info->explicit_only = 1;
 		info->category = CATEGORY;
 		info->summary = "test creation and connection of a client websocket";
 		info->description = "test creation and connection of a client websocket";
@@ -158,4 +157,9 @@ static int unload_module(void)
 	return 0;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Websocket client test module");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Websocket client test module",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_http_websocket",
+);

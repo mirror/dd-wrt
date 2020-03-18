@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Querying and Manipulating State</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="States-and-Presence_28315969.html">States and Presence</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Querying and Manipulating State
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jun 06, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="QueryingandManipulatingState-Overview">Overview</h1><p>This section will enumerate and briefly describe the ways in which you can query or manipulate the various Asterisk state resources. <a href="Device-State_28934187.html">Device State</a>, <a href="Extension-State-and-Hints_28934189.html">Extension State</a> and <a href="Presence-State_21463121.html">Presence State</a>. Where mentioned, the various functions and commands will be linked to further available documentation.</p><h1 id="QueryingandManipulatingState-DeviceState">Device State</h1><p>The <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_DEVICE_STATE"><strong>DEVICE_STATE</strong></a><strong> function</strong> will return the Device State for a specified device state identifier and allow you to set Custom device states.</p><p>On the command line, the <strong>devstate</strong> command will allow you to list or modify Custom device states specifically.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>devstate change                -- Change a custom device state
+devstate list                  -- List currently known custom device states</pre>
+</div></div></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302946890 {padding: 0px;}
+div.rbtoc1582302946890 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302946890 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302946890'>
+<ul class='toc-indentation'>
+<li><a href='#QueryingandManipulatingState-Overview'>Overview</a></li>
+<li><a href='#QueryingandManipulatingState-DeviceState'>Device State</a></li>
+<li><a href='#QueryingandManipulatingState-ExtensionState'>Extension State</a></li>
+<li><a href='#QueryingandManipulatingState-PresenceState'>Presence State</a></li>
+<li><a href='#QueryingandManipulatingState-AsteriskManagerInterfaceactions'>Asterisk Manager Interface actions</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><h1 id="QueryingandManipulatingState-ExtensionState">Extension State</h1><p>The <strong><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_EXTENSION_STATE">EXTENSION_STATE</a></strong> <strong>function</strong> will return the <a href="Extension-State-and-Hints_28934189.html">Extension State</a> for any specified extension that has a defined hint.</p><p>The CLI command <strong>core show hints</strong> will show extension state for all defined hints, as well as display a truncated list of the mapped Device State or Presence State identifiers.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>myserver*CLI&gt; core show hints
+    -= Registered Asterisk Dial Plan Hints =-
+                   6002@from-internal       : SIP/6002              State:Unavailable     Watchers  0
+                   7777@from-internal       : SIP/6003,CustomPrese  State:Unavailable     Watchers  0
+----------------
+- 2 hints registered</pre>
+</div></div><h1 id="QueryingandManipulatingState-PresenceState">Presence State</h1><p>Added in Asterisk 11, the <strong><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Function_PRESENCE_STATE">PRESENCE_STATE</a> function</strong> will return <a href="Presence-State_21463121.html">Presence State</a> for any specified Presence State identifier, or set the Presence State for specifically for a <a href="Presence-State_21463121.html">CustomPresence identifier</a>.</p><p>The <strong>presencestate</strong> CLI command will list or modify any currently defined Presence State resources provided by the CustomPresence provider.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>myserver*CLI&gt; core show help presencestate 
+presencestate change           -- Change a custom presence state
+presencestate list             -- List currently know custom presence states</pre>
+</div></div><p> </p><h1 id="QueryingandManipulatingState-AsteriskManagerInterfaceactions">Asterisk Manager Interface actions</h1><p>Any of the previously mentioned functions could be called via <a href="4817239.html">AMI</a> with the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_Setvar">Setvar</a> and <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_Getvar">Getvar</a> actions.</p><p>Then there are two more specific actions called <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_ExtensionState">ExtensionState</a> and <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+ManagerAction_PresenceState">PresenceState</a>. See the linked documentation for more info.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

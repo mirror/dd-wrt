@@ -36,8 +36,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <osp/osp.h>
 #include <osp/osputils.h>
 #include <osp/ospb64.h>
@@ -52,7 +50,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/module.h"
 #include "asterisk/pbx.h"
 #include "asterisk/cli.h"
-#include "asterisk/astosp.h"
 
 /*** DOCUMENTATION
 	<application name="OSPAuth" language="en_US">
@@ -437,6 +434,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</see-also>
 	</application>
  ***/
+
+/* OSP Return statuses */
+#define AST_OSP_SUCCESS	((char*)"SUCCESS")	/* Return status, success */
+#define AST_OSP_FAILED	((char*)"FAILED")	/* Return status, failed */
+#define AST_OSP_ERROR	((char*)"ERROR")	/* Return status, error */
 
 /* OSP Buffer Sizes */
 #define OSP_SIZE_INTSTR		((unsigned int)16)			/* OSP signed/unsigned int string buffer size */
@@ -2348,7 +2350,7 @@ static int osplookup_exec(
 	struct osp_headers headers;
 	unsigned int i;
 	const char* cinfo[OSP_MAX_CUSTOMINFO] = { NULL };
-	char buffer[OSP_SIZE_TOKSTR];
+	char buffer[OSP_SIZE_TOKSTR + strlen(": ") + strlen(OSP_SIP_HEADER)];
 	struct osp_results results;
 	const char* status;
 	char* tmp;
@@ -2634,7 +2636,7 @@ static int ospnext_exec(
 	struct ast_var_t* current;
 	struct osp_results results;
 	OSPE_OPERATOR_NAME type;
-	char buffer[OSP_SIZE_TOKSTR];
+	char buffer[OSP_SIZE_TOKSTR + strlen(": ") + strlen(OSP_SIP_HEADER)];
 	unsigned int callidtypes = OSP_CALLID_UNDEF;
 	const char* status;
 	char* tmp;

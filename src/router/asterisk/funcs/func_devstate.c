@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2007, Digium, Inc.
  *
- * Russell Bryant <russell@digium.com> 
+ * Russell Bryant <russell@digium.com>
  *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
@@ -20,7 +20,7 @@
  *
  * \brief Manually controlled blinky lights
  *
- * \author Russell Bryant <russell@digium.com> 
+ * \author Russell Bryant <russell@digium.com>
  *
  * \ingroup functions
  *
@@ -35,8 +35,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/module.h"
 #include "asterisk/channel.h"

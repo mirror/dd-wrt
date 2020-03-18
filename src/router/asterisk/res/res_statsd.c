@@ -17,7 +17,7 @@
  */
 
 /*!
- * \brief Support for publishing to a statsd server.
+ * \brief Support for publishing to a StatsD server.
  *
  * \author David M. Lee, II <dlee@digium.com>
  * \since 12
@@ -29,21 +29,34 @@
 
 /*** DOCUMENTATION
 	<configInfo name="res_statsd" language="en_US">
-		<synopsis>Statsd client.</synopsis>
+		<synopsis>StatsD client</synopsis>
+		<description>
+			<para>The <literal>res_statsd</literal> module provides an API that
+			allows Asterisk and its modules to send statistics to a StatsD
+			server. It only provides a means to communicate with a StatsD server
+			and does not send any metrics of its own.</para>
+			<para>An example module, <literal>res_chan_stats</literal>, is
+			provided which uses the API exposed by this module to send channel
+			statistics to the configured StatsD server.</para>
+			<para>More information about StatsD can be found at
+			https://github.com/statsd/statsd</para>
+		</description>
 		<configFile name="statsd.conf">
 			<configObject name="global">
 				<synopsis>Global configuration settings</synopsis>
 				<configOption name="enabled">
-					<synopsis>Enable/disable the statsd module</synopsis>
+					<synopsis>Enable/disable the StatsD module</synopsis>
 				</configOption>
 				<configOption name="server">
-					<synopsis>Address of the statsd server</synopsis>
+					<synopsis>Address of the StatsD server</synopsis>
 				</configOption>
 				<configOption name="prefix">
 					<synopsis>Prefix to prepend to every metric</synopsis>
 				</configOption>
 				<configOption name="add_newline">
-					<synopsis>Append a newline to every event. This is useful if you want to fake out a server using netcat (nc -lu 8125)</synopsis>
+					<synopsis>Append a newline to every event. This is useful if
+					you want to fake out a server using netcat
+					(nc -lu 8125)</synopsis>
 				</configOption>
 			</configObject>
 		</configFile>
@@ -51,8 +64,6 @@
 ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/config_options.h"
 #include "asterisk/module.h"
@@ -233,8 +244,8 @@ static struct aco_type global_option = {
 	.type = ACO_GLOBAL,
 	.name = "global",
 	.item_offset = offsetof(struct conf, global),
-	.category = "^general$",
-	.category_match = ACO_WHITELIST
+	.category = "general",
+	.category_match = ACO_WHITELIST_EXACT,
 };
 
 static struct aco_type *global_options[] = ACO_TYPES(&global_option);
@@ -288,13 +299,13 @@ static int statsd_init(void)
 
 	ast_assert(is_enabled());
 
-	ast_debug(3, "Configuring statsd client.\n");
+	ast_debug(3, "Configuring StatsD client.\n");
 
 	if (socket_fd == -1) {
-		ast_debug(3, "Creating statsd socket.\n");
+		ast_debug(3, "Creating StatsD socket.\n");
 		socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 		if (socket_fd == -1) {
-			perror("Error creating statsd socket");
+			perror("Error creating StatsD socket");
 			return -1;
 		}
 	}
@@ -302,7 +313,7 @@ static int statsd_init(void)
 	conf_server(cfg, &statsd_server);
 	server = ast_sockaddr_stringify_fmt(&statsd_server,
 		AST_SOCKADDR_STR_DEFAULT);
-	ast_debug(3, "  statsd server = %s.\n", server);
+	ast_debug(3, "  StatsD server = %s.\n", server);
 	ast_debug(3, "  add newline = %s\n", AST_YESNO(cfg->global->add_newline));
 	ast_debug(3, "  prefix = %s\n", cfg->global->prefix);
 
@@ -311,11 +322,19 @@ static int statsd_init(void)
 
 static void statsd_shutdown(void)
 {
-	ast_debug(3, "Shutting down statsd client.\n");
+	ast_debug(3, "Shutting down StatsD client.\n");
 	if (socket_fd != -1) {
 		close(socket_fd);
 		socket_fd = -1;
 	}
+}
+
+static int unload_module(void)
+{
+	statsd_shutdown();
+	aco_info_destroy(&cfg_info);
+	ao2_global_obj_release(confs);
+	return 0;
 }
 
 static int load_module(void)
@@ -341,52 +360,68 @@ static int load_module(void)
 		"", OPT_CHAR_ARRAY_T, 0,
 		CHARFLDSET(struct conf_global_options, prefix));
 
-	if (aco_process_config(&cfg_info, 0)) {
-		aco_info_destroy(&cfg_info);
-		return AST_MODULE_LOAD_DECLINE;
+	if (aco_process_config(&cfg_info, 0) == ACO_PROCESS_ERROR) {
+		struct conf *cfg;
+
+		ast_log(LOG_NOTICE, "Could not load statsd config; using defaults\n");
+		cfg = conf_alloc();
+		if (!cfg) {
+			aco_info_destroy(&cfg_info);
+			return AST_MODULE_LOAD_DECLINE;
+		}
+
+		if (aco_set_defaults(&global_option, "general", cfg->global)) {
+			ast_log(LOG_ERROR, "Failed to initialize statsd defaults.\n");
+			ao2_ref(cfg, -1);
+			aco_info_destroy(&cfg_info);
+			return AST_MODULE_LOAD_DECLINE;
+		}
+
+		ao2_global_obj_replace_unref(confs, cfg);
+		ao2_ref(cfg, -1);
 	}
 
 	if (!is_enabled()) {
 		return AST_MODULE_LOAD_SUCCESS;
 	}
 
-	if (statsd_init() != 0) {
-		aco_info_destroy(&cfg_info);
+	if (statsd_init()) {
+		unload_module();
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
-static int unload_module(void)
-{
-	statsd_shutdown();
-	aco_info_destroy(&cfg_info);
-	ao2_global_obj_release(confs);
-	return 0;
-}
-
 static int reload_module(void)
 {
-	if (aco_process_config(&cfg_info, 1)) {
+	switch (aco_process_config(&cfg_info, 1)) {
+	case ACO_PROCESS_OK:
+		break;
+	case ACO_PROCESS_UNCHANGED:
+		return AST_MODULE_LOAD_SUCCESS;
+	case ACO_PROCESS_ERROR:
+	default:
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
 	if (is_enabled()) {
-		return statsd_init();
+		if (statsd_init()) {
+			return AST_MODULE_LOAD_DECLINE;
+		}
 	} else {
 		statsd_shutdown();
-		return AST_MODULE_LOAD_SUCCESS;
 	}
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
-/* The priority of this module is set to be as low as possible, since it could
- * be used by any other sort of module.
+/* The priority of this module is set just after realtime, since it loads
+ * configuration and could be used by any other sort of module.
  */
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Statsd client support",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "StatsD client support",
 	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
 	.reload = reload_module,
-	.load_pri = 0,
-	);
+	.load_pri = AST_MODPRI_REALTIME_DRIVER + 5,
+);

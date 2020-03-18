@@ -21,17 +21,15 @@
  * \brief App to transmit a URL
  *
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * \ingroup applications
  */
 
 /*** MODULEINFO
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -106,7 +104,7 @@ static int sendurl_exec(struct ast_channel *chan, const char *data)
 		AST_APP_ARG(url);
 		AST_APP_ARG(options);
 	);
-	
+
 	if (ast_strlen_zero(data)) {
 		ast_log(LOG_WARNING, "SendURL requires an argument (URL)\n");
 		pbx_builtin_setvar_helper(chan, "SENDURLSTATUS", status);
@@ -118,7 +116,7 @@ static int sendurl_exec(struct ast_channel *chan, const char *data)
 	AST_STANDARD_APP_ARGS(args, tmp);
 	if (args.argc == 2)
 		ast_app_parse_options(app_opts, &flags, opts, args.options);
-	
+
 	if (!ast_channel_supports_html(chan)) {
 		/* Does not support transport */
 		pbx_builtin_setvar_helper(chan, "SENDURLSTATUS", "UNSUPPORTED");
@@ -134,7 +132,7 @@ static int sendurl_exec(struct ast_channel *chan, const char *data)
 		for(;;) {
 			/* Wait for an event */
 			res = ast_waitfor(chan, -1);
-			if (res < 0) 
+			if (res < 0)
 				break;
 			f = ast_read(chan);
 			if (!f) {
@@ -163,8 +161,8 @@ static int sendurl_exec(struct ast_channel *chan, const char *data)
 			}
 			ast_frfree(f);
 		}
-	} 
-out:	
+	}
+out:
 	pbx_builtin_setvar_helper(chan, "SENDURLSTATUS", status);
 	return res;
 }
@@ -179,5 +177,4 @@ static int load_module(void)
 	return ast_register_application_xml(app, sendurl_exec);
 }
 
-AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Send URL Applications");
-
+AST_MODULE_INFO_STANDARD_DEPRECATED(ASTERISK_GPL_KEY, "Send URL Applications");

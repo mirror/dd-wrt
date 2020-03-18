@@ -29,19 +29,17 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page adsi.conf adsi.conf
  * \verbinclude adsi.conf.sample
  */
 
 /*** MODULEINFO
 	<depend>res_adsi</depend>
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <netinet/in.h>
 #include <ctype.h>
@@ -321,7 +319,7 @@ static int goto_line(char *buf, char *name, int id, char *args, struct adsi_scri
 	else if (!strcasecmp(page, "COMM"))
 		cmd = 0x80;
 	else {
-		ast_log(LOG_WARNING, "Expecting either 'INFO' or 'COMM' page, got got '%s' at line %d of %s\n", page, lineno, script);
+		ast_log(LOG_WARNING, "Expecting either 'INFO' or 'COMM' page, got '%s' at line %d of %s\n", page, lineno, script);
 		return 0;
 	}
 
@@ -590,7 +588,7 @@ static struct adsi_subscript *getsubbyname(struct adsi_script *state, char *name
 	}
 
 	if (state->numsubs > 127) {
-		ast_log(LOG_WARNING, "No more subscript space at line %d of %s\n", lineno, script);
+		ast_log(LOG_WARNING, "No more subscript space at line %d of %s\n", lineno, S_OR(script, "unknown"));
 		return NULL;
 	}
 
@@ -935,7 +933,7 @@ static const struct adsi_key_cmd kcmds[] = {
 };
 
 static const struct adsi_key_cmd opcmds[] = {
-	
+
 	/* 1 - Branch on event -- handled specially */
 	{ "SHOWKEYS", 2, showkeys },
 	/* Display Control */
@@ -1111,7 +1109,7 @@ static int adsi_process(struct adsi_script *state, char *buf, const char *script
 				tmp[7] = '\0';
 			}
 			/* Setup initial stuff */
-			state->key->retstr[0] = 128;
+			state->key->retstr[0] = 0x80;
 			/* 1 has the length */
 			state->key->retstr[2] = state->key->id;
 			/* Put the Full name in */
@@ -1147,7 +1145,7 @@ static int adsi_process(struct adsi_script *state, char *buf, const char *script
 				break;
 			}
 			/* Setup sub */
-			state->sub->data[0] = 130;
+			state->sub->data[0] = 0x82;
 			/* 1 is the length */
 			state->sub->data[2] = 0x0; /* Clear extensibility bit */
 			state->sub->datalen = 3;
@@ -1264,7 +1262,7 @@ static int adsi_process(struct adsi_script *state, char *buf, const char *script
 				/* Something bad happened */
 				break;
 			}
-			disp->data[0] = 129;
+			disp->data[0] = 0x81;
 			disp->data[1] = disp->datalen - 2;
 			disp->data[2] = ((lrci & 0x3) << 6) | disp->id;
 			disp->data[3] = wi;
@@ -1575,7 +1573,7 @@ static int adsi_prog(struct ast_channel *chan, const char *script)
 static int adsi_exec(struct ast_channel *chan, const char *data)
 {
 	int res = 0;
-	
+
 	if (ast_strlen_zero(data))
 		data = "asterisk.adsi";
 
@@ -1600,8 +1598,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -1612,8 +1610,8 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Asterisk ADSI Programming Application",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.nonoptreq = "res_adsi",
-		);
+	.support_level = AST_MODULE_SUPPORT_DEPRECATED,
+	.load = load_module,
+	.unload = unload_module,
+	.requires = "res_adsi",
+);

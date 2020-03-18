@@ -31,6 +31,20 @@ extern "C" {
 
 #include <netinet/in.h>
 
+#include "asterisk/logger.h"
+
+/*
+ * String buffer size that can accommodate a fully stringified representation of a
+ * supported IP address & port:
+ *
+ * - 45 bytes for an IPv6 address
+ * -  2 bytes for brackets around an IPv6 address
+ * -  1 byte for the port separator (a colon)
+ * -  5 bytes for the port
+ * -  1 byte for the zero-terminator
+ */
+#define AST_SOCKADDR_BUFLEN (45 + 2 + 1 + 5 + 1)
+
 /*!
  * Values for address families that we support. This is reproduced from socket.h
  * because we do not want users to include that file. Only netsock2.c should
@@ -126,6 +140,22 @@ static inline int ast_sockaddr_isnull(const struct ast_sockaddr *addr)
 static inline void ast_sockaddr_setnull(struct ast_sockaddr *addr)
 {
 	addr->len = 0;
+}
+
+/*!
+ * \brief
+ * Copies the data from a sockaddr to an ast_sockaddr
+ *
+ * \param dst The destination ast_sockaddr
+ * \param src The source sockaddr
+ * \param len Length of the value stored in sockaddr
+ * \retval void
+ */
+static inline void ast_sockaddr_copy_sockaddr(struct ast_sockaddr *dst,
+		struct sockaddr *src, socklen_t len)
+{
+	memcpy(dst, src, len);
+	dst->len = len;
 }
 
 /*!
@@ -373,7 +403,7 @@ int ast_sockaddr_split_hostport(char *str, char **host, char **port, int flags);
  *
  * Host names are NOT allowed.
  *
- * \param[out] addr The resulting ast_sockaddr. This MAY be NULL from 
+ * \param[out] addr The resulting ast_sockaddr. This MAY be NULL from
  * functions that are performing validity checks only, e.g. ast_parse_arg().
  * \param str The string to parse
  * \param flags If set to zero, a port MAY be present. If set to
@@ -420,6 +450,44 @@ int ast_sockaddr_parse(struct ast_sockaddr *addr, const char *str, int flags);
  */
 int ast_sockaddr_resolve(struct ast_sockaddr **addrs, const char *str,
 			 int flags, int family);
+
+/*!
+ * \since 16.0
+ *
+ * \brief
+ * Return the first entry from ast_sockaddr_resolve filtered by address family
+ *
+ * \details
+ * Parses a string containing a host name or an IPv4 or IPv6 address followed
+ * by an optional port (separated by a colon).  This function only returns the
+ * first address into the ast_sockaddr. Allowed formats for name are the following:
+ *
+ * hostname:port
+ * host.example.com:port
+ * a.b.c.d
+ * a.b.c.d:port
+ * a:b:c:...:d
+ * [a:b:c:...:d]
+ * [a:b:c:...:d]:port
+ *
+ * \param[out] addr The resulting ast_sockaddr
+ * \param name The string to parse
+ * \param flags If set to zero, a port MAY be present. If set to
+ * PARSE_PORT_IGNORE, a port MAY be present but will be ignored. If set to
+ * PARSE_PORT_REQUIRE, a port MUST be present. If set to PARSE_PORT_FORBID, a
+ * port MUST NOT be present.
+ *
+ * \param family Only addresses of the given family will be returned. Use 0 or
+ * AST_AF_UNSPEC to specify any address family.  Behavior is ultimately determined
+ * by getaddrinfo in how it orders return results.  First result is selected to
+ * be returned.
+ *
+ * \retval 0 Success
+ * \retval non-zero Failure
+ * \warning Using this function potentially means you have a faulty design.
+ */
+int ast_sockaddr_resolve_first_af(struct ast_sockaddr *addr,
+				      const char* name, int flag, int family);
 
 /*!
  * \brief
@@ -714,6 +782,46 @@ int _ast_sockaddr_to_sin(const struct ast_sockaddr *addr,
 #define ast_sockaddr_from_sin(addr,sin)	_ast_sockaddr_from_sin(addr,sin, __FILE__, __LINE__, __PRETTY_FUNCTION__)
 void _ast_sockaddr_from_sin(struct ast_sockaddr *addr, const struct sockaddr_in *sin,
 		const char *file, int line, const char *func);
+
+/*!
+ * \since 13.31.0, 16.8.0, 17.2.0
+ *
+ * \brief Takes an AF_XXX value as input and returns the size of the underlying
+ * sockaddr structure if known, or zero if not.
+ *
+ * \param family The AF_XXX value to determine the size of
+ * \return Size of the applicable struct sockaddr.
+ */
+#define ast_addressfamily_to_sockaddrsize(family) _ast_addressfamily_to_sockaddrsize(addr, __FILE__, __LINE__, __PRETTY_FUNCTION__)
+static inline int _ast_addressfamily_to_sockaddrsize(int af, const char *file, int line, const char *func)
+{
+	switch (af) {
+	case AF_INET:
+		return sizeof(struct sockaddr_in);
+	case AF_INET6:
+		return sizeof(struct sockaddr_in6);
+	default:
+		ast_log(__LOG_WARNING, file, line, func, "Unknown address family %d encountered.\n", af);
+		return 0;
+	}
+}
+
+/*!
+ * \since 13.31.0, 16.8.0, 17.2.0
+ *
+ * \brief Converts a struct sockaddr to a struct ast_sockaddr.
+ *
+ * Note that there is an underlying assumption that sockaddr data is valid, more specifically,
+ * if sa_family is set to AF_INET that it's actually a sockaddr_in, and in the case of AF_INET6
+ * a valid sockaddr_in6 structure.
+ *
+ * You can check for failure with ast_sockaddr_isnull.
+ *
+ * \param[out] addr The address of the ast_sockaddr to store into
+ * \param sockaddr The sockaddr structure (sockaddr_in or sockaddr_in6) to convert
+ * \return Nothing
+ */
+#define ast_sockaddr_from_sockaddr(addr,sockaddr)	ast_sockaddr_copy_sockaddr(addr, sockaddr, ast_addressfamily_to_sockaddrsize(((const struct sockaddr*)(sockaddr))->sa_family))
 
 /*@}*/
 

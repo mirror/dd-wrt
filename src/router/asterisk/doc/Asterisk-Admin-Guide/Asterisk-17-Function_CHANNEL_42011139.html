@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_CHANNEL</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_CHANNEL
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 10, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_CHANNEL-CHANNEL()">CHANNEL()</h1>
+
+<h3 id="Asterisk17Function_CHANNEL-Synopsis">Synopsis</h3>
+
+<p>Gets/sets various pieces of information about the channel.</p>
+
+<h3 id="Asterisk17Function_CHANNEL-Description">Description</h3>
+
+<p>Gets/sets various pieces of information about the channel, additional <em>item</em> may be available from the channel driver; see its documentation for details. Any <em>item</em> requested that is not available on the current channel will return an empty string.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: Standard CHANNEL item examples</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+; Push a hangup handler subroutine existing at dialplan
+; location default,s,1 onto the current channel
+same =&gt; n,Set(CHANNEL(hangup_handler_push)=default,s,1)
+
+; Set the current tonezone to Germany (de)
+same =&gt; n,Set(CHANNEL(tonezone)=de)
+
+; Set the allowed maximum number of forwarding attempts
+same =&gt; n,Set(CHANNEL(max_forwards)=10)
+
+; If this channel is ejected from its next bridge, and if
+; the channel is not hung up, begin executing dialplan at
+; location default,after-bridge,1
+same =&gt; n,Set(CHANNEL(after_bridge_goto)=default,after-bridge,1)
+
+; Log the current state of the channel
+same =&gt; n,Log(NOTICE, This channel is: ${CHANNEL(state)})
+
+</pre>
+</div></div>
+<p> <strong>Technology: PJSIP</strong></p>
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Example: PJSIP specific CHANNEL examples</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">
+
+; Log the current Call-ID
+same =&gt; n,Log(NOTICE, ${CHANNEL(pjsip,call-id)})
+
+; Log the destination address of the audio stream
+same =&gt; n,Log(NOTICE, ${CHANNEL(rtp,dest)})
+
+; Store the round-trip time associated with a
+; video stream in the CDR field video-rtt
+same =&gt; n,Set(CDR(video-rtt)=${CHANNEL(rtcp,rtt,video)})
+
+</pre>
+</div></div>
+<h3 id="Asterisk17Function_CHANNEL-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CHANNEL(item)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_CHANNEL-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>item</code> - Standard items (provided by all channel technologies) are:
+	<ul>
+		<li><code>amaflags</code> - R/W the Automatic Message Accounting (AMA) flags on the channel. When read from a channel, the integer value will always be returned. When written to a channel, both the string format or integer value is accepted.
+		<ul>
+			<li><code>1</code> - OMIT</li>
+			<li><code>2</code> - BILLING</li>
+			<li><code>3</code> - DOCUMENTATION</li>
+		</ul>
+		</li>
+		<li><code>accountcode</code> - R/W the channel's account code.</li>
+		<li><code>audioreadformat</code> - R/O format currently being read.</li>
+		<li><code>audionativeformat</code> - R/O format used natively for audio.</li>
+		<li><code>audiowriteformat</code> - R/O format currently being written.</li>
+		<li><code>dtmf_features</code> - R/W The channel's DTMF bridge features. May include one or more of 'T' 'K' 'H' 'W' and 'X' in a similar manner to options in the <code>Dial</code> application. When setting it, the features string must be all upper case.</li>
+		<li><code>callgroup</code> - R/W numeric call pickup groups that this channel is a member.</li>
+		<li><code>pickupgroup</code> - R/W numeric call pickup groups this channel can pickup.</li>
+		<li><code>namedcallgroup</code> - R/W named call pickup groups that this channel is a member.</li>
+		<li><code>namedpickupgroup</code> - R/W named call pickup groups this channel can pickup.</li>
+		<li><code>channeltype</code> - R/O technology used for channel.</li>
+		<li><code>checkhangup</code> - R/O Whether the channel is hanging up (1/0)</li>
+		<li><code>after_bridge_goto</code> - R/W the parseable goto string indicating where the channel is expected to return to in the PBX after exiting the next bridge it joins on the condition that it doesn't hang up. The parseable goto string uses the same syntax as the <code>Goto</code> application.</li>
+		<li><code>hangup_handler_pop</code> - W/O Replace the most recently added hangup handler with a new hangup handler on the channel if supplied. The assigned string is passed to the Gosub application when the channel is hung up. Any optionally omitted context and exten are supplied by the channel pushing the handler before it is pushed.</li>
+		<li><code>hangup_handler_push</code> - W/O Push a hangup handler onto the channel hangup handler stack. The assigned string is passed to the Gosub application when the channel is hung up. Any optionally omitted context and exten are supplied by the channel pushing the handler before it is pushed.</li>
+		<li><code>hangup_handler_wipe</code> - W/O Wipe the entire hangup handler stack and replace with a new hangup handler on the channel if supplied. The assigned string is passed to the Gosub application when the channel is hung up. Any optionally omitted context and exten are supplied by the channel pushing the handler before it is pushed.</li>
+		<li><code>onhold</code> - R/O Whether or not the channel is onhold. (1/0)</li>
+		<li><code>language</code> - R/W language for sounds played.</li>
+		<li><code>musicclass</code> - R/W class (from musiconhold.conf) for hold music.</li>
+		<li><code>name</code> - The name of the channel</li>
+		<li><code>parkinglot</code> - R/W parkinglot for parking.</li>
+		<li><code>rxgain</code> - R/W set rxgain level on channel drivers that support it.</li>
+		<li><code>secure_bridge_signaling</code> - Whether or not channels bridged to this channel require secure signaling (1/0)</li>
+		<li><code>secure_bridge_media</code> - Whether or not channels bridged to this channel require secure media (1/0)</li>
+		<li><code>state</code> - R/O state of the channel</li>
+		<li><code>tonezone</code> - R/W zone for indications played</li>
+		<li><code>transfercapability</code> - R/W ISDN Transfer Capability, one of:
+		<ul>
+			<li><code>SPEECH</code></li>
+			<li><code>DIGITAL</code></li>
+			<li><code>RESTRICTED_DIGITAL</code></li>
+			<li><code>3K1AUDIO</code></li>
+			<li><code>DIGITAL_W_TONES</code></li>
+			<li><code>VIDEO</code></li>
+		</ul>
+		</li>
+		<li><code>txgain</code> - R/W set txgain level on channel drivers that support it.</li>
+		<li><code>videonativeformat</code> - R/O format used natively for video</li>
+		<li><code>hangupsource</code> - R/W returns the channel responsible for hangup.</li>
+		<li><code>appname</code> - R/O returns the internal application name.</li>
+		<li><code>appdata</code> - R/O returns the application data if available.</li>
+		<li><code>exten</code> - R/O returns the extension for an outbound channel.</li>
+		<li><code>context</code> - R/O returns the context for an outbound channel.</li>
+		<li><code>channame</code> - R/O returns the channel name for an outbound channel.</li>
+		<li><code>uniqueid</code> - R/O returns the channel uniqueid.</li>
+		<li><code>linkedid</code> - R/O returns the linkedid if available, otherwise returns the uniqueid.</li>
+		<li><code>max_forwards</code> - R/W The maximum number of forwards allowed.</li>
+		<li><code>callid</code> - R/O Call identifier log tag associated with the channel e.g., <code>[C-00000000]</code>.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: DAHDI</strong>
+	<ul>
+		<li><code>dahdi_channel</code> - R/O DAHDI channel related to this channel.</li>
+		<li><code>dahdi_span</code> - R/O DAHDI span related to this channel.</li>
+		<li><code>dahdi_group</code> - R/O DAHDI logical group related to this channel.</li>
+		<li><code>dahdi_type</code> - R/O DAHDI channel type, one of:
+		<ul>
+			<li><code>analog</code></li>
+			<li><code>mfc/r2</code></li>
+			<li><code>pri</code></li>
+			<li><code>pseudo</code></li>
+			<li><code>ss7</code></li>
+		</ul>
+		</li>
+		<li><code>keypad_digits</code> - R/O PRI Keypad digits that came in with the SETUP message.</li>
+		<li><code>reversecharge</code> - R/O PRI Reverse Charging Indication, one of:
+		<ul>
+			<li><code>-1</code> - None</li>
+			<li>{{ 1}} - Reverse Charging Requested</li>
+		</ul>
+		</li>
+		<li><code>no_media_path</code> - R/O PRI Nonzero if the channel has no B channel. The channel is either on hold or a call waiting call.</li>
+		<li><code>buffers</code> - W/O Change the channel's buffer policy (for the current call only)<br />
+This option takes two arguments:<br />
+Number of buffers,<br />
+Buffer policy being one of:<br />
+<code>full</code><br />
+<code>immediate</code><br />
+<code>half</code></li>
+		<li><code>echocan_mode</code> - W/O Change the configuration of the active echo canceller on the channel (if any), for the current call only.<br />
+Possible values are:<br />
+{{on}}Normal mode (the echo canceller is actually reinitalized)<br />
+{{off}}Disabled<br />
+{{fax}}FAX/data mode (NLP disabled if possible, otherwise completely disabled)<br />
+{{voice}}Voice mode (returns from FAX mode, reverting the changes that were made)</li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: IAX</strong>
+	<ul>
+		<li><code>osptoken</code> - R/O Get the peer's osptoken.</li>
+		<li><code>peerip</code> - R/O Get the peer's ip address.</li>
+		<li><code>peername</code> - R/O Get the peer's username.</li>
+		<li><code>secure_signaling</code> - R/O Get the if the IAX channel is secured.</li>
+		<li><code>secure_media</code> - R/O Get the if the IAX channel is secured.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: OOH323</strong>
+	<ul>
+		<li><code>faxdetect</code> - R/W Fax Detect<br />
+Returns 0 or 1<br />
+Write yes or no</li>
+		<li><code>t38support</code> - R/W t38support<br />
+Returns 0 or 1<br />
+Write yes or no</li>
+		<li><code>h323id_url</code> - R/0 Returns caller URL</li>
+		<li><code>caller_h323id</code> - R/0 Returns caller h323id</li>
+		<li><code>caller_dialeddigits</code> - R/0 Returns caller dialed digits</li>
+		<li><code>caller_email</code> - R/0 Returns caller email</li>
+		<li><code>callee_email</code> - R/0 Returns callee email</li>
+		<li><code>callee_dialeddigits</code> - R/0 Returns callee dialed digits</li>
+		<li><code>caller_url</code> - R/0 Returns caller URL</li>
+		<li><code>max_forwards</code> - R/W Get or set the maximum number of call forwards for this channel. This number describes the number of times a call may be forwarded by this channel before the call fails. &quot;Forwards&quot; in this case refers to redirects by phones as well as calls to local channels. Note that this has no relation to the SIP Max-Forwards header.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: PJSIP</strong>
+	<ul>
+		<li><code>rtp</code> - R/O Retrieve media related information.
+		<ul>
+			<li><code>type</code> - When <em>rtp</em> is specified, the <code>type</code> parameter must be provided. It specifies which RTP parameter to read.
+			<ul>
+				<li><code>src</code> - Retrieve the local address for RTP.</li>
+				<li><code>dest</code> - Retrieve the remote address for RTP.</li>
+				<li><code>direct</code> - If direct media is enabled, this address is the remote address used for RTP.</li>
+				<li><code>secure</code> - Whether or not the media stream is encrypted.
+				<ul>
+					<li><code>0</code> - The media stream is not encrypted.</li>
+					<li><code>1</code> - The media stream is encrypted.</li>
+				</ul>
+				</li>
+				<li><code>hold</code> - Whether or not the media stream is currently restricted due to a call hold.
+				<ul>
+					<li><code>0</code> - The media stream is not held.</li>
+					<li><code>1</code> - The media stream is held.</li>
+				</ul>
+				</li>
+			</ul>
+			</li>
+			<li><code>media_type</code> - When <em>rtp</em> is specified, the <code>media_type</code> parameter may be provided. It specifies which media stream the chosen RTP parameter should be retrieved from.
+			<ul>
+				<li><code>audio</code> - Retrieve information from the audio media stream.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>If not specified, <code>audio</code> is used by default.</p>
+                    </div>
+    </div>
+</li>
+				<li><code>video</code> - Retrieve information from the video media stream.</li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>rtcp</code> - R/O Retrieve RTCP statistics.
+		<ul>
+			<li><code>statistic</code> - When <em>rtcp</em> is specified, the <code>statistic</code> parameter must be provided. It specifies which RTCP statistic parameter to read.
+			<ul>
+				<li><code>all</code> - Retrieve a summary of all RTCP statistics.<br />
+The following data items are returned in a semi-colon delineated list:
+				<ul>
+					<li><code>ssrc</code> - Our Synchronization Source identifier</li>
+					<li><code>themssrc</code> - Their Synchronization Source identifier</li>
+					<li><code>lp</code> - Our lost packet count</li>
+					<li><code>rxjitter</code> - Received packet jitter</li>
+					<li><code>rxcount</code> - Received packet count</li>
+					<li><code>txjitter</code> - Transmitted packet jitter</li>
+					<li><code>txcount</code> - Transmitted packet count</li>
+					<li><code>rlp</code> - Remote lost packet count</li>
+					<li><code>rtt</code> - Round trip time</li>
+				</ul>
+				</li>
+				<li><code>all_jitter</code> - Retrieve a summary of all RTCP Jitter statistics.<br />
+The following data items are returned in a semi-colon delineated list:
+				<ul>
+					<li><code>minrxjitter</code> - Our minimum jitter</li>
+					<li><code>maxrxjitter</code> - Our max jitter</li>
+					<li><code>avgrxjitter</code> - Our average jitter</li>
+					<li><code>stdevrxjitter</code> - Our jitter standard deviation</li>
+					<li><code>reported_minjitter</code> - Their minimum jitter</li>
+					<li><code>reported_maxjitter</code> - Their max jitter</li>
+					<li><code>reported_avgjitter</code> - Their average jitter</li>
+					<li><code>reported_stdevjitter</code> - Their jitter standard deviation</li>
+				</ul>
+				</li>
+				<li><code>all_loss</code> - Retrieve a summary of all RTCP packet loss statistics.<br />
+The following data items are returned in a semi-colon delineated list:
+				<ul>
+					<li><code>minrxlost</code> - Our minimum lost packets</li>
+					<li><code>maxrxlost</code> - Our max lost packets</li>
+					<li><code>avgrxlost</code> - Our average lost packets</li>
+					<li><code>stdevrxlost</code> - Our lost packets standard deviation</li>
+					<li><code>reported_minlost</code> - Their minimum lost packets</li>
+					<li><code>reported_maxlost</code> - Their max lost packets</li>
+					<li><code>reported_avglost</code> - Their average lost packets</li>
+					<li><code>reported_stdevlost</code> - Their lost packets standard deviation</li>
+				</ul>
+				</li>
+				<li><code>all_rtt</code> - Retrieve a summary of all RTCP round trip time information.<br />
+The following data items are returned in a semi-colon delineated list:
+				<ul>
+					<li><code>minrtt</code> - Minimum round trip time</li>
+					<li><code>maxrtt</code> - Maximum round trip time</li>
+					<li><code>avgrtt</code> - Average round trip time</li>
+					<li><code>stdevrtt</code> - Standard deviation round trip time</li>
+				</ul>
+				</li>
+				<li><code>txcount</code> - Transmitted packet count</li>
+				<li><code>rxcount</code> - Received packet count</li>
+				<li><code>txjitter</code> - Transmitted packet jitter</li>
+				<li><code>rxjitter</code> - Received packet jitter</li>
+				<li><code>remote_maxjitter</code> - Their max jitter</li>
+				<li><code>remote_minjitter</code> - Their minimum jitter</li>
+				<li><code>remote_normdevjitter</code> - Their average jitter</li>
+				<li><code>remote_stdevjitter</code> - Their jitter standard deviation</li>
+				<li><code>local_maxjitter</code> - Our max jitter</li>
+				<li><code>local_minjitter</code> - Our minimum jitter</li>
+				<li><code>local_normdevjitter</code> - Our average jitter</li>
+				<li><code>local_stdevjitter</code> - Our jitter standard deviation</li>
+				<li><code>txploss</code> - Transmitted packet loss</li>
+				<li><code>rxploss</code> - Received packet loss</li>
+				<li><code>remote_maxrxploss</code> - Their max lost packets</li>
+				<li><code>remote_minrxploss</code> - Their minimum lost packets</li>
+				<li><code>remote_normdevrxploss</code> - Their average lost packets</li>
+				<li><code>remote_stdevrxploss</code> - Their lost packets standard deviation</li>
+				<li><code>local_maxrxploss</code> - Our max lost packets</li>
+				<li><code>local_minrxploss</code> - Our minimum lost packets</li>
+				<li><code>local_normdevrxploss</code> - Our average lost packets</li>
+				<li><code>local_stdevrxploss</code> - Our lost packets standard deviation</li>
+				<li><code>rtt</code> - Round trip time</li>
+				<li><code>maxrtt</code> - Maximum round trip time</li>
+				<li><code>minrtt</code> - Minimum round trip time</li>
+				<li><code>normdevrtt</code> - Average round trip time</li>
+				<li><code>stdevrtt</code> - Standard deviation round trip time</li>
+				<li><code>local_ssrc</code> - Our Synchronization Source identifier</li>
+				<li><code>remote_ssrc</code> - Their Synchronization Source identifier</li>
+			</ul>
+			</li>
+			<li><code>media_type</code> - When <em>rtcp</em> is specified, the <code>media_type</code> parameter may be provided. It specifies which media stream the chosen RTCP parameter should be retrieved from.
+			<ul>
+				<li><code>audio</code> - Retrieve information from the audio media stream.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>If not specified, <code>audio</code> is used by default.</p>
+                    </div>
+    </div>
+</li>
+				<li><code>video</code> - Retrieve information from the video media stream.</li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+		<li><code>endpoint</code> - R/O The name of the endpoint associated with this channel. Use the <em>PJSIP_ENDPOINT</em> function to obtain further endpoint related information.</li>
+		<li><code>contact</code> - R/O The name of the contact associated with this channel. Use the <em>PJSIP_CONTACT</em> function to obtain further contact related information. Note this may not be present and if so is only available on outgoing legs.</li>
+		<li><code>aor</code> - R/O The name of the AOR associated with this channel. Use the <em>PJSIP_AOR</em> function to obtain further AOR related information. Note this may not be present and if so is only available on outgoing legs.</li>
+		<li><code>pjsip</code> - R/O Obtain information about the current PJSIP channel and its session.
+		<ul>
+			<li><code>type</code> - When <em>pjsip</em> is specified, the <code>type</code> parameter must be provided. It specifies which signalling parameter to read.
+			<ul>
+				<li><code>call-id</code> - The SIP call-id.</li>
+				<li><code>secure</code> - Whether or not the signalling uses a secure transport.
+				<ul>
+					<li><code>0</code> - The signalling uses a non-secure transport.</li>
+					<li><code>1</code> - The signalling uses a secure transport.</li>
+				</ul>
+				</li>
+				<li><code>target_uri</code> - The contact URI where requests are sent.</li>
+				<li><code>local_uri</code> - The local URI.</li>
+				<li><code>local_tag</code> - Tag in From header</li>
+				<li><code>remote_uri</code> - The remote URI.</li>
+				<li><code>remote_tag</code> - Tag in To header</li>
+				<li><code>request_uri</code> - The request URI of the incoming <code>INVITE</code> associated with the creation of this channel.</li>
+				<li><code>t38state</code> - The current state of any T.38 fax on this channel.
+				<ul>
+					<li><code>DISABLED</code> - T.38 faxing is disabled on this channel.</li>
+					<li><code>LOCAL_REINVITE</code> - Asterisk has sent a <code>re-INVITE</code> to the remote end to initiate a T.38 fax.</li>
+					<li><code>REMOTE_REINVITE</code> - The remote end has sent a <code>re-INVITE</code> to Asterisk to initiate a T.38 fax.</li>
+					<li><code>ENABLED</code> - A T.38 fax session has been enabled.</li>
+					<li><code>REJECTED</code> - A T.38 fax session was attempted but was rejected.</li>
+				</ul>
+				</li>
+				<li><code>local_addr</code> - On inbound calls, the full IP address and port number that the <code>INVITE</code> request was received on. On outbound calls, the full IP address and port number that the <code>INVITE</code> request was transmitted from.</li>
+				<li><code>remote_addr</code> - On inbound calls, the full IP address and port number that the <code>INVITE</code> request was received from. On outbound calls, the full IP address and port number that the <code>INVITE</code> request was transmitted to.</li>
+			</ul>
+			</li>
+		</ul>
+		</li>
+	</ul>
+	</li>
+</ul>
+
+
+<ul>
+	<li><strong>Technology: SIP</strong>
+	<ul>
+		<li><code>peerip</code> - R/O Get the IP address of the peer.</li>
+		<li><code>recvip</code> - R/O Get the source IP address of the peer.</li>
+		<li><code>recvport</code> - R/O Get the source port of the peer.</li>
+		<li><code>from</code> - R/O Get the URI from the From: header.</li>
+		<li><code>uri</code> - R/O Get the URI from the Contact: header.</li>
+		<li><code>ruri</code> - R/O Get the Request-URI from the INVITE header.</li>
+		<li><code>useragent</code> - R/O Get the useragent.</li>
+		<li><code>peername</code> - R/O Get the name of the peer.</li>
+		<li><code>t38passthrough</code> - R/O <code>1</code> if T38 is offered or enabled in this channel, otherwise <code>0</code></li>
+		<li><code>rtpqos</code> - R/O Get QOS information about the RTP stream<br />
+This option takes two additional arguments:<br />
+Argument 1:<br />
+<code>audio</code> Get data about the audio stream<br />
+<code>video</code> Get data about the video stream<br />
+<code>text</code> Get data about the text stream<br />
+Argument 2:<br />
+<code>local_ssrc</code> Local SSRC (stream ID)<br />
+<code>local_lostpackets</code> Local lost packets<br />
+<code>local_jitter</code> Local calculated jitter<br />
+<code>local_maxjitter</code> Local calculated jitter (maximum)<br />
+<code>local_minjitter</code> Local calculated jitter (minimum)<br />
+{{local_normdevjitter}}Local calculated jitter (normal deviation)<br />
+<code>local_stdevjitter</code> Local calculated jitter (standard deviation)<br />
+<code>local_count</code> Number of received packets<br />
+<code>remote_ssrc</code> Remote SSRC (stream ID)<br />
+{{remote_lostpackets}}Remote lost packets<br />
+<code>remote_jitter</code> Remote reported jitter<br />
+<code>remote_maxjitter</code> Remote calculated jitter (maximum)<br />
+<code>remote_minjitter</code> Remote calculated jitter (minimum)<br />
+{{remote_normdevjitter}}Remote calculated jitter (normal deviation)<br />
+{{remote_stdevjitter}}Remote calculated jitter (standard deviation)<br />
+<code>remote_count</code> Number of transmitted packets<br />
+<code>rtt</code> Round trip time<br />
+<code>maxrtt</code> Round trip time (maximum)<br />
+<code>minrtt</code> Round trip time (minimum)<br />
+<code>normdevrtt</code> Round trip time (normal deviation)<br />
+<code>stdevrtt</code> Round trip time (standard deviation)<br />
+<code>all</code> All statistics (in a form suited to logging, but not for parsing)</li>
+		<li><code>rtpdest</code> - R/O Get remote RTP destination information.<br />
+This option takes one additional argument:<br />
+Argument 1:<br />
+<code>audio</code> Get audio destination<br />
+<code>video</code> Get video destination<br />
+<code>text</code> Get text destination<br />
+Defaults to <code>audio</code> if unspecified.</li>
+		<li><code>rtpsource</code> - R/O Get source RTP destination information.<br />
+This option takes one additional argument:<br />
+Argument 1:<br />
+<code>audio</code> Get audio destination<br />
+<code>video</code> Get video destination<br />
+<code>text</code> Get text destination<br />
+Defaults to <code>audio</code> if unspecified.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_CHANNEL-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_CHANNEL-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-5dda6d4</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Allow Manager Access via HTTP</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4817239.html">Asterisk Manager Interface (AMI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4817256.html">Asynchronous Javascript Asterisk Manager (AJAM)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Allow Manager Access via HTTP
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Mar 26, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="AllowManagerAccessviaHTTP-Configuringmanager.conf">Configuring manager.conf</h2><ol><li>Make sure you have both &quot;enabled = yes&quot; and &quot;webenabled = yes&quot; setup in /etc/asterisk/manager.conf</li><li>You may also use &quot;httptimeout&quot; to set a default timeout for HTTP connections.</li><li>Make sure you have a manager username/secret</li></ol><h2 id="AllowManagerAccessviaHTTP-UsageofAMIoverHTTP">Usage of AMI over HTTP</h2><p>Once those configurations are complete you can reload or restart Asterisk and you should be able to point your web browser to specific URI's which will allow you to access various web functions. A complete list can be found by typing &quot;http show status&quot; at the Asterisk CLI.</p><h3 id="AllowManagerAccessviaHTTP-Examples:">Examples:</h3>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Be sure the syntax for the URLs below is followed precisely</p>
+                    </div>
+    </div>
+<ul><li><span class="external-link">http://localhost:8088/manager?action=login&amp;username=foo&amp;secret=bar</span></li></ul><p>This logs you into the manager interface's &quot;HTML&quot; view. Once you're logged in, Asterisk stores a cookie on your browser (valid for the length of httptimeout) which is used to connect to the same session.</p><ul><li><span class="external-link">http://localhost:8088/rawman?action=status</span></li></ul><p>Assuming you've already logged into manager, this URI will give you a &quot;raw&quot; manager output for the &quot;status&quot; command.</p><ul><li><span class="external-link">http://localhost:8088/mxml?action=status</span></li></ul><p>This will give you the same status view but represented as AJAX data, theoretically compatible with RICO (<a class="external-link" href="http://www.openrico.org" rel="nofollow">http://www.openrico.org</a>).</p><ul><li><span class="external-link">http://localhost:8088/static/ajamdemo.html</span></li></ul><p>If you have enabled static content support and have done a make install, Asterisk will serve up a demo page which presents a live, but very basic, &quot;astman&quot; like interface. You can login with your username/secret for manager and have a basic view of channels as well as transfer and hangup calls. It's only tested in Firefox, but could probably be made to run in other browsers as well.</p><p>A sample library (astman.js) is included to help ease the creation of manager HTML interfaces.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>For the demo, there is no need for <strong>any external web server.</strong></p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_AOCMessage</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_AOCMessage
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_AOCMessage-AOCMessage">AOCMessage</h1>
+
+<h3 id="Asterisk17ManagerAction_AOCMessage-Synopsis">Synopsis</h3>
+
+<p>Generate an Advice of Charge message on a channel.</p>
+
+<h3 id="Asterisk17ManagerAction_AOCMessage-Description">Description</h3>
+
+<p>Generates an AOC-D or AOC-E message on a channel.</p>
+
+
+<h3 id="Asterisk17ManagerAction_AOCMessage-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: AOCMessage
+ActionID: &lt;value&gt;
+Channel: &lt;value&gt;
+ChannelPrefix: &lt;value&gt;
+MsgType: &lt;value&gt;
+ChargeType: &lt;value&gt;
+UnitAmount(0): &lt;value&gt;
+UnitType(0): &lt;value&gt;
+CurrencyName: &lt;value&gt;
+CurrencyAmount: &lt;value&gt;
+CurrencyMultiplier: &lt;value&gt;
+TotalType: &lt;value&gt;
+AOCBillingId: &lt;value&gt;
+ChargingAssociationId: &lt;value&gt;
+ChargingAssociationNumber: &lt;value&gt;
+ChargingAssociationPlan: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_AOCMessage-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>Channel</code> - Channel name to generate the AOC message on.</li>
+	<li><code>ChannelPrefix</code> - Partial channel prefix. By using this option one can match the beginning part of a channel name without having to put the entire name in. For example if a channel name is SIP/snom-00000001 and this value is set to SIP/snom, then that channel matches and the message will be sent. Note however that only the first matched channel has the message sent on it.</li>
+	<li><code>MsgType</code> - Defines what type of AOC message to create, AOC-D or AOC-E
+	<ul>
+		<li><code>D</code></li>
+		<li><code>E</code></li>
+	</ul>
+	</li>
+	<li><code>ChargeType</code> - Defines what kind of charge this message represents.
+	<ul>
+		<li><code>NA</code></li>
+		<li><code>FREE</code></li>
+		<li><code>Currency</code></li>
+		<li><code>Unit</code></li>
+	</ul>
+	</li>
+	<li><code>UnitAmount(0)</code> - This represents the amount of units charged. The ETSI AOC standard specifies that this value along with the optional UnitType value are entries in a list. To accommodate this these values take an index value starting at 0 which can be used to generate this list of unit entries. For Example, If two unit entires were required this could be achieved by setting the paramter UnitAmount(0)=1234 and UnitAmount(1)=5678. Note that UnitAmount at index 0 is required when ChargeType=Unit, all other entries in the list are optional.</li>
+	<li><code>UnitType(0)</code> - Defines the type of unit. ETSI AOC standard specifies this as an integer value between 1 and 16, but this value is left open to accept any positive integer. Like the UnitAmount parameter, this value represents a list entry and has an index parameter that starts at 0.</li>
+	<li><code>CurrencyName</code> - Specifies the currency's name. Note that this value is truncated after 10 characters.</li>
+	<li><code>CurrencyAmount</code> - Specifies the charge unit amount as a positive integer. This value is required when ChargeType==Currency.</li>
+	<li><code>CurrencyMultiplier</code> - Specifies the currency multiplier. This value is required when ChargeType==Currency.
+	<ul>
+		<li><code>OneThousandth</code></li>
+		<li><code>OneHundredth</code></li>
+		<li><code>OneTenth</code></li>
+		<li><code>One</code></li>
+		<li><code>Ten</code></li>
+		<li><code>Hundred</code></li>
+		<li><code>Thousand</code></li>
+	</ul>
+	</li>
+	<li><code>TotalType</code> - Defines what kind of AOC-D total is represented.
+	<ul>
+		<li><code>Total</code></li>
+		<li><code>SubTotal</code></li>
+	</ul>
+	</li>
+	<li><code>AOCBillingId</code> - Represents a billing ID associated with an AOC-D or AOC-E message. Note that only the first 3 items of the enum are valid AOC-D billing IDs
+	<ul>
+		<li><code>Normal</code></li>
+		<li><code>ReverseCharge</code></li>
+		<li><code>CreditCard</code></li>
+		<li><code>CallFwdUnconditional</code></li>
+		<li><code>CallFwdBusy</code></li>
+		<li><code>CallFwdNoReply</code></li>
+		<li><code>CallDeflection</code></li>
+		<li><code>CallTransfer</code></li>
+	</ul>
+	</li>
+	<li><code>ChargingAssociationId</code> - Charging association identifier. This is optional for AOC-E and can be set to any value between -32768 and 32767</li>
+	<li><code>ChargingAssociationNumber</code> - Represents the charging association party number. This value is optional for AOC-E.</li>
+	<li><code>ChargingAssociationPlan</code> - Integer representing the charging plan associated with the ChargingAssociationNumber. The value is bits 7 through 1 of the Q.931 octet containing the type-of-number and numbering-plan-identification fields.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_AOCMessage-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerEvent_AOC-D_42011332.html">Asterisk 17 ManagerEvent_AOC-D</a></li>
+	<li><a href="Asterisk-17-ManagerEvent_AOC-E_42011333.html">Asterisk 17 ManagerEvent_AOC-E</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerAction_AOCMessage-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

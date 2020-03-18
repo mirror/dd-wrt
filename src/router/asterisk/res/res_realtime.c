@@ -23,7 +23,7 @@
  *
  * \author Anthony Minessale <anthmct@yahoo.com>
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * \ingroup applications
  */
 
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/file.h"
 #include "asterisk/channel.h"
@@ -44,7 +42,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/cli.h"
 
 
-static char *cli_realtime_load(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a) 
+static char *cli_realtime_load(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 #define CRL_HEADER_FORMAT "%30s  %-30s\n"
 	struct ast_variable *var = NULL, *orig_var = NULL;
@@ -62,7 +60,7 @@ static char *cli_realtime_load(struct ast_cli_entry *e, int cmd, struct ast_cli_
 	}
 
 
-	if (a->argc < 5) 
+	if (a->argc < 5)
 		return CLI_SHOWUSAGE;
 
 	var = ast_load_realtime_all(a->argv[2], a->argv[3], a->argv[4], SENTINEL);
@@ -100,7 +98,7 @@ static char *cli_realtime_update(struct ast_cli_entry *e, int cmd, struct ast_cl
 		return NULL;
 	}
 
-	if (a->argc < 7) 
+	if (a->argc < 7)
 		return CLI_SHOWUSAGE;
 
 	res = ast_update_realtime(a->argv[2], a->argv[3], a->argv[4], a->argv[5], a->argv[6], SENTINEL);
@@ -124,32 +122,50 @@ static char *cli_realtime_update2(struct ast_cli_entry *e, int cmd, struct ast_c
 		e->command = "realtime update2";
 		e->usage =
 			"Usage: realtime update2 <family> <colmatch> <valuematch> [... <colmatch5> <valuematch5>] NULL <colupdate> <newvalue>\n"
-			"   Update a single variable, requiring one or more fields to match using the\n"
-			"   RealTime driver.  You must supply a family name, a column to update, a new\n"
-			"   value, and at least one column and value to match.\n"
-			"   Ex: realtime update sippeers name bobsphone ipaddr 127.0.0.1 NULL port 4343\n"
-			"   will execute SQL as\n"
-			"   UPDATE sippeers SET port='4343' WHERE name='bobsphone' and ipaddr='127.0.0.1'\n";
+			"       Update a single variable, requiring one or more fields to match using the\n"
+			"       RealTime driver. You must supply a family name, a column to update, a new\n"
+			"       value, and at least one column and value to match.\n"
+			"       Ex: realtime update2 sippeers name bobsphone ipaddr 127.0.0.1 NULL port 4343\n"
+			"       will execute SQL as\n"
+			"       UPDATE sippeers SET port='4343' WHERE name='bobsphone' and ipaddr='127.0.0.1'\n";
 		return NULL;
 	case CLI_GENERATE:
 		return NULL;
 	}
 
-	if (a->argc < 7) 
+	/* Make sure we have the right number of arguments and that the required literal NULL
+	   is present */
+	if (a->argc < 8 || a->argc > 16 || a->argc % 2
+	   || strcmp(a->argv[a->argc - 3], "NULL")) {
 		return CLI_SHOWUSAGE;
+	}
 
-	if (a->argc == 7) {
-		res = ast_update2_realtime(a->argv[2], a->argv[3], a->argv[4], SENTINEL, a->argv[5], a->argv[6], SENTINEL);
-	} else if (a->argc == 9) {
-		res = ast_update2_realtime(a->argv[2], a->argv[3], a->argv[4], a->argv[5], a->argv[6], SENTINEL, a->argv[7], a->argv[8], SENTINEL);
-	} else if (a->argc == 11) {
-		res = ast_update2_realtime(a->argv[2], a->argv[3], a->argv[4], a->argv[5], a->argv[6], a->argv[7], a->argv[8], SENTINEL, a->argv[9], a->argv[10], SENTINEL);
-	} else if (a->argc == 13) {
-		res = ast_update2_realtime(a->argv[2], a->argv[3], a->argv[4], a->argv[5], a->argv[6], a->argv[7], a->argv[8], a->argv[9], a->argv[10], SENTINEL, a->argv[11], a->argv[12], SENTINEL);
-	} else if (a->argc == 15) {
-		res = ast_update2_realtime(a->argv[2], a->argv[3], a->argv[4], a->argv[5], a->argv[6], a->argv[7], a->argv[8], a->argv[9], a->argv[10], a->argv[11], a->argv[12], SENTINEL, a->argv[13], a->argv[14], SENTINEL);
-	} else {
-		return CLI_SHOWUSAGE;
+	if (a->argc == 8) {
+		res = ast_update2_realtime(
+			a->argv[2], a->argv[3], a->argv[4], SENTINEL,
+			a->argv[6], a->argv[7], SENTINEL);
+	} else if (a->argc == 10) {
+		res = ast_update2_realtime(
+			a->argv[2], a->argv[3], a->argv[4], a->argv[5],
+			a->argv[6], SENTINEL,
+			a->argv[8], a->argv[9], SENTINEL);
+	} else if (a->argc == 12) {
+		res = ast_update2_realtime(
+			a->argv[2], a->argv[3], a->argv[4], a->argv[5],
+			a->argv[6], a->argv[7], a->argv[8], SENTINEL,
+			a->argv[10], a->argv[11], SENTINEL);
+	} else if (a->argc == 14) {
+		res = ast_update2_realtime(
+			a->argv[2], a->argv[3], a->argv[4], a->argv[5],
+			a->argv[6], a->argv[7], a->argv[8], a->argv[9],
+			a->argv[10], SENTINEL,
+			a->argv[12], a->argv[13], SENTINEL);
+	} else if (a->argc == 16) {
+		res = ast_update2_realtime(
+			a->argv[2], a->argv[3], a->argv[4], a->argv[5],
+			a->argv[6], a->argv[7], a->argv[8], a->argv[9],
+			a->argv[10], a->argv[11], a->argv[12], SENTINEL,
+			a->argv[14], a->argv[15], SENTINEL);
 	}
 
 	if (res < 0) {

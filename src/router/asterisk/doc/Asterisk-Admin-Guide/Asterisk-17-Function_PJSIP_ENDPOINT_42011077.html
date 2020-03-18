@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_PJSIP_ENDPOINT</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_PJSIP_ENDPOINT
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_PJSIP_ENDPOINT-PJSIP_ENDPOINT()">PJSIP_ENDPOINT()</h1>
+
+<h3 id="Asterisk17Function_PJSIP_ENDPOINT-Synopsis">Synopsis</h3>
+
+<p>Get information about a PJSIP endpoint</p>
+
+<h3 id="Asterisk17Function_PJSIP_ENDPOINT-Description">Description</h3>
+
+<h3 id="Asterisk17Function_PJSIP_ENDPOINT-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PJSIP_ENDPOINT(name,field)</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_PJSIP_ENDPOINT-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>name</code> - The name of the endpoint to query.</li>
+	<li><code>field</code> - The configuration option for the endpoint to query for. Supported options are those fields on the <em>endpoint</em> object in <code>pjsip.conf</code>.
+	<ul>
+		<li><code>100rel</code> - Allow support for RFC3262 provisional ACK tags</li>
+		<li><code>aggregate_mwi</code> - Condense MWI notifications into a single NOTIFY.</li>
+		<li><code>allow</code> - Media Codec(s) to allow</li>
+		<li><code>allow_overlap</code> - Enable RFC3578 overlap dialing support.</li>
+		<li><code>aors</code> - AoR(s) to be used with the endpoint</li>
+		<li><code>auth</code> - Authentication Object(s) associated with the endpoint</li>
+		<li><code>callerid</code> - CallerID information for the endpoint</li>
+		<li><code>callerid_privacy</code> - Default privacy level</li>
+		<li><code>callerid_tag</code> - Internal id_tag for the endpoint</li>
+		<li><code>context</code> - Dialplan context for inbound sessions</li>
+		<li><code>direct_media_glare_mitigation</code> - Mitigation of direct media (re)INVITE glare</li>
+		<li><code>direct_media_method</code> - Direct Media method type</li>
+		<li><code>trust_connected_line</code> - Accept Connected Line updates from this endpoint</li>
+		<li><code>send_connected_line</code> - Send Connected Line updates to this endpoint</li>
+		<li><code>connected_line_method</code> - Connected line method type</li>
+		<li><code>direct_media</code> - Determines whether media may flow directly between endpoints.</li>
+		<li><code>disable_direct_media_on_nat</code> - Disable direct media session refreshes when NAT obstructs the media session</li>
+		<li><code>disallow</code> - Media Codec(s) to disallow</li>
+		<li><code>dtmf_mode</code> - DTMF mode</li>
+		<li><code>media_address</code> - IP address used in SDP for media handling</li>
+		<li><code>bind_rtp_to_media_address</code> - Bind the RTP instance to the media_address</li>
+		<li><code>force_rport</code> - Force use of return port</li>
+		<li><code>ice_support</code> - Enable the ICE mechanism to help traverse NAT</li>
+		<li><code>identify_by</code> - Way(s) for the endpoint to be identified</li>
+		<li><code>redirect_method</code> - How redirects received from an endpoint are handled</li>
+		<li><code>mailboxes</code> - NOTIFY the endpoint when state changes for any of the specified mailboxes</li>
+		<li><code>mwi_subscribe_replaces_unsolicited</code> - An MWI subscribe will replace sending unsolicited NOTIFYs</li>
+		<li><code>voicemail_extension</code> - The voicemail extension to send in the NOTIFY Message-Account header</li>
+		<li><code>moh_suggest</code> - Default Music On Hold class</li>
+		<li><code>outbound_auth</code> - Authentication object(s) used for outbound requests</li>
+		<li><code>outbound_proxy</code> - Full SIP URI of the outbound proxy used to send requests</li>
+		<li><code>rewrite_contact</code> - Allow Contact header to be rewritten with the source IP address-port</li>
+		<li><code>rtp_ipv6</code> - Allow use of IPv6 for RTP traffic</li>
+		<li><code>rtp_symmetric</code> - Enforce that RTP must be symmetric</li>
+		<li><code>send_diversion</code> - Send the Diversion header, conveying the diversion information to the called user agent</li>
+		<li><code>send_pai</code> - Send the P-Asserted-Identity header</li>
+		<li><code>send_rpid</code> - Send the Remote-Party-ID header</li>
+		<li><code>rpid_immediate</code> - Immediately send connected line updates on unanswered incoming calls.</li>
+		<li><code>timers_min_se</code> - Minimum session timers expiration period</li>
+		<li><code>timers</code> - Session timers for SIP packets</li>
+		<li><code>timers_sess_expires</code> - Maximum session timer expiration period</li>
+		<li><code>transport</code> - Explicit transport configuration to use</li>
+		<li><code>trust_id_inbound</code> - Accept identification information received from this endpoint</li>
+		<li><code>trust_id_outbound</code> - Send private identification details to the endpoint.</li>
+		<li><code>type</code> - Must be of type 'endpoint'.</li>
+		<li><code>use_ptime</code> - Use Endpoint's requested packetization interval</li>
+		<li><code>use_avpf</code> - Determines whether res_pjsip will use and enforce usage of AVPF for this endpoint.</li>
+		<li><code>force_avp</code> - Determines whether res_pjsip will use and enforce usage of AVP, regardless of the RTP profile in use for this endpoint.</li>
+		<li><code>media_use_received_transport</code> - Determines whether res_pjsip will use the media transport received in the offer SDP in the corresponding answer SDP.</li>
+		<li><code>media_encryption</code> - Determines whether res_pjsip will use and enforce usage of media encryption for this endpoint.</li>
+		<li><code>media_encryption_optimistic</code> - Determines whether encryption should be used if possible but does not terminate the session if not achieved.</li>
+		<li><code>g726_non_standard</code> - Force g.726 to use AAL2 packing order when negotiating g.726 audio</li>
+		<li><code>inband_progress</code> - Determines whether chan_pjsip will indicate ringing using inband progress.</li>
+		<li><code>call_group</code> - The numeric pickup groups for a channel.</li>
+		<li><code>pickup_group</code> - The numeric pickup groups that a channel can pickup.</li>
+		<li><code>named_call_group</code> - The named pickup groups for a channel.</li>
+		<li><code>named_pickup_group</code> - The named pickup groups that a channel can pickup.</li>
+		<li><code>device_state_busy_at</code> - The number of in-use channels which will cause busy to be returned as device state</li>
+		<li><code>t38_udptl</code> - Whether T.38 UDPTL support is enabled or not</li>
+		<li><code>t38_udptl_ec</code> - T.38 UDPTL error correction method</li>
+		<li><code>t38_udptl_maxdatagram</code> - T.38 UDPTL maximum datagram size</li>
+		<li><code>fax_detect</code> - Whether CNG tone detection is enabled</li>
+		<li><code>fax_detect_timeout</code> - How long into a call before fax_detect is disabled for the call</li>
+		<li><code>t38_udptl_nat</code> - Whether NAT support is enabled on UDPTL sessions</li>
+		<li><code>t38_udptl_ipv6</code> - Whether IPv6 is used for UDPTL Sessions</li>
+		<li><code>tone_zone</code> - Set which country's indications to use for channels created for this endpoint.</li>
+		<li><code>language</code> - Set the default language to use for channels created for this endpoint.</li>
+		<li><code>one_touch_recording</code> - Determines whether one-touch recording is allowed for this endpoint.</li>
+		<li><code>record_on_feature</code> - The feature to enact when one-touch recording is turned on.</li>
+		<li><code>record_off_feature</code> - The feature to enact when one-touch recording is turned off.</li>
+		<li><code>rtp_engine</code> - Name of the RTP engine to use for channels created for this endpoint</li>
+		<li><code>allow_transfer</code> - Determines whether SIP REFER transfers are allowed for this endpoint</li>
+		<li><code>user_eq_phone</code> - Determines whether a user=phone parameter is placed into the request URI if the user is determined to be a phone number</li>
+		<li><code>moh_passthrough</code> - Determines whether hold and unhold will be passed through using re-INVITEs with recvonly and sendrecv to the remote side</li>
+		<li><code>sdp_owner</code> - String placed as the username portion of an SDP origin (o=) line.</li>
+		<li><code>sdp_session</code> - String used for the SDP session (s=) line.</li>
+		<li><code>tos_audio</code> - DSCP TOS bits for audio streams</li>
+		<li><code>tos_video</code> - DSCP TOS bits for video streams</li>
+		<li><code>cos_audio</code> - Priority for audio streams</li>
+		<li><code>cos_video</code> - Priority for video streams</li>
+		<li><code>allow_subscribe</code> - Determines if endpoint is allowed to initiate subscriptions with Asterisk.</li>
+		<li><code>sub_min_expiry</code> - The minimum allowed expiry time for subscriptions initiated by the endpoint.</li>
+		<li><code>from_user</code> - Username to use in From header for requests to this endpoint.</li>
+		<li><code>mwi_from_user</code> - Username to use in From header for unsolicited MWI NOTIFYs to this endpoint.</li>
+		<li><code>from_domain</code> - Domain to user in From header for requests to this endpoint.</li>
+		<li><code>dtls_verify</code> - Verify that the provided peer certificate is valid</li>
+		<li><code>dtls_rekey</code> - Interval at which to renegotiate the TLS session and rekey the SRTP session</li>
+		<li><code>dtls_auto_generate_cert</code> - Whether or not to automatically generate an ephemeral X.509 certificate</li>
+		<li><code>dtls_cert_file</code> - Path to certificate file to present to peer</li>
+		<li><code>dtls_private_key</code> - Path to private key for certificate file</li>
+		<li><code>dtls_cipher</code> - Cipher to use for DTLS negotiation</li>
+		<li><code>dtls_ca_file</code> - Path to certificate authority certificate</li>
+		<li><code>dtls_ca_path</code> - Path to a directory containing certificate authority certificates</li>
+		<li><code>dtls_setup</code> - Whether we are willing to accept connections, connect to the other party, or both.</li>
+		<li><code>dtls_fingerprint</code> - Type of hash to use for the DTLS fingerprint in the SDP.</li>
+		<li><code>srtp_tag_32</code> - Determines whether 32 byte tags should be used instead of 80 byte tags.</li>
+		<li><code>set_var</code> - Variable set on a channel involving the endpoint.</li>
+		<li><code>message_context</code> - Context to route incoming MESSAGE requests to.</li>
+		<li><code>accountcode</code> - An accountcode to set automatically on any channels created for this endpoint.</li>
+		<li><code>preferred_codec_only</code> - Respond to a SIP invite with the single most preferred codec rather than advertising all joint codec capabilities. This limits the other side's codec choice to exactly what we prefer.</li>
+		<li><code>rtp_keepalive</code> - Number of seconds between RTP comfort noise keepalive packets.</li>
+		<li><code>rtp_timeout</code> - Maximum number of seconds without receiving RTP (while off hold) before terminating call.</li>
+		<li><code>rtp_timeout_hold</code> - Maximum number of seconds without receiving RTP (while on hold) before terminating call.</li>
+		<li><code>acl</code> - List of IP ACL section names in acl.conf</li>
+		<li><code>deny</code> - List of IP addresses to deny access from</li>
+		<li><code>permit</code> - List of IP addresses to permit access from</li>
+		<li><code>contact_acl</code> - List of Contact ACL section names in acl.conf</li>
+		<li><code>contact_deny</code> - List of Contact header addresses to deny</li>
+		<li><code>contact_permit</code> - List of Contact header addresses to permit</li>
+		<li><code>subscribe_context</code> - Context for incoming MESSAGE requests.</li>
+		<li><code>contact_user</code> - Force the user on the outgoing Contact header to this value.</li>
+		<li><code>asymmetric_rtp_codec</code> - Allow the sending and receiving RTP codec to differ</li>
+		<li><code>rtcp_mux</code> - Enable RFC 5761 RTCP multiplexing on the RTP port</li>
+		<li><code>refer_blind_progress</code> - Whether to notifies all the progress details on blind transfer</li>
+		<li><code>notify_early_inuse_ringing</code> - Whether to notifies dialog-info 'early' on InUse&amp;Ringing state</li>
+		<li><code>max_audio_streams</code> - The maximum number of allowed audio streams for the endpoint</li>
+		<li><code>max_video_streams</code> - The maximum number of allowed video streams for the endpoint</li>
+		<li><code>bundle</code> - Enable RTP bundling</li>
+		<li><code>webrtc</code> - Defaults and enables some options that are relevant to WebRTC</li>
+		<li><code>incoming_mwi_mailbox</code> - Mailbox name to use when incoming MWI NOTIFYs are received</li>
+		<li><code>follow_early_media_fork</code> - Follow SDP forked media when To tag is different</li>
+		<li><code>accept_multiple_sdp_answers</code> - Accept multiple SDP answers on non-100rel responses</li>
+		<li><code>suppress_q850_reason_headers</code> - Suppress Q.850 Reason headers for this endpoint</li>
+		<li><code>ignore_183_without_sdp</code> - Do not forward 183 when it doesn't contain SDP</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_PJSIP_ENDPOINT-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_PJSIP_ENDPOINT-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

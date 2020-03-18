@@ -3,7 +3,6 @@
 AWK=${AWK:-awk}
 GIT=${GIT:-git}
 GREP=${GREP:-grep}
-MAINLINE_BRANCH=13
 
 if [ -f ${1}/.version ]; then
     cat ${1}/.version
@@ -89,18 +88,19 @@ elif [ -d ${1}/.git ]; then
     if [ -z ${GIT} ]; then
         GIT="git"
     fi
-	
+
     if ! command -v ${GIT} >/dev/null 2>&1; then
         echo "UNKNOWN__and_probably_unsupported"
         exit 1
     fi
-	cd ${1} 
-    
+	cd ${1}
+
     # If the first log commit messages indicates that this is checked into
     # subversion, we'll just use the SVN- form of the revision.
     MODIFIED=""
     SVN_REV=`${GIT} log --pretty=full -1 | ${GREP} -F "git-svn-id:" | sed -e "s/.*\@\([^\s]*\)\s.*/\1/g"`
     if [ -z "$SVN_REV" ]; then
+        MAINLINE_BRANCH=$(git config -f .gitreview --get gerrit.defaultbranch)
         VERSION=`${GIT} describe --long --always --tags --dirty=M 2> /dev/null`
         if [ $? -ne 0 ]; then
             if [ "`${GIT} ls-files -m | wc -l`" != "0" ]; then

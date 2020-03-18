@@ -17,6 +17,11 @@ all: asterisk
 
 include $(ASTTOPDIR)/Makefile.moddir_rules
 
+MOD_SRC:=cdr.c cel.c config.c ccss.c dnsmgr.c dsp.c enum.c features.c http.c indications.c logger.c manager.c named_acl.c plc.c sounds.c udptl.c
+# Allow deletion of built-in modules without needing to modify this source.
+MOD_SRC:=$(wildcard $(MOD_SRC))
+MOD_OBJS:=$(sort $(MOD_SRC:.c=.o))
+
 # Must include the extra ast_expr2.c, ast_expr2f.c, in case they need to be regenerated (because to force regeneration, we delete them)
 SRC:=$(wildcard *.c) ast_expr2.c ast_expr2f.c
 ifeq ($(AST_ASTERISKSSL),yes)
@@ -25,7 +30,7 @@ endif
 ifeq ($(PJPROJECT_BUNDLED),yes)
 SRC:=$(filter-out libasteriskpj.c,$(SRC))
 endif
-OBJSFILTER=fskmodem_int.o fskmodem_float.o cygload.o buildinfo.o
+OBJSFILTER:=$(MOD_OBJS) fskmodem_int.o fskmodem_float.o cygload.o buildinfo.o
 OBJS=$(filter-out $(OBJSFILTER),$(SRC:.c=.o))
 
 # we need to link in the objects statically, not as a library, because
@@ -47,14 +52,14 @@ AST_LIBS+=$(AST_CLANG_BLOCKS_LIBS)
 AST_LIBS+=$(RT_LIB)
 AST_LIBS+=$(SYSTEMD_LIB)
 
-ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc kfreebsd-gnu),)
+ifneq ($(findstring $(OSARCH), linux-gnu uclinux linux-uclibc linux-musl kfreebsd-gnu),)
   AST_LIBS+=-ldl
   ifneq (x$(CAP_LIB),x)
     AST_LIBS+=$(CAP_LIB)
   endif
-  AST_LIBS+=-lpthread $(EDITLINE_LIB) -lm -lresolv
+  AST_LIBS+=-lpthread -lm -lresolv
 else
-  AST_LIBS+=$(EDITLINE_LIB) -lm
+  AST_LIBS+=-lm
 endif
 
 ifneq ($(findstring BETTER_BACKTRACES,$(MENUSELECT_CFLAGS)),)
@@ -85,11 +90,11 @@ ifneq ($(findstring $(OSARCH), mingw32 cygwin ),)
   ASTLINK+=-shared -Wl,--out-implib,libasterisk.a
 endif
 ifeq ($(OSARCH),NetBSD)
-  AST_LIBS+=-lpthread -lcrypto -lm -L/usr/pkg/lib $(EDITLINE_LIB)
+  AST_LIBS+=-lpthread -lcrypto -lm -L/usr/pkg/lib
 endif
 
 ifeq ($(OSARCH),OpenBSD)
-  AST_LIBS+=-lcrypto -lpthread -lm $(EDITLINE_LIB)
+  AST_LIBS+=-lcrypto -lpthread -lm
 endif
 
 ifeq ($(OSARCH),SunOS)
@@ -114,10 +119,6 @@ endif
 .PHONY: CHECK_SUBDIR
 CHECK_SUBDIR:	# do nothing, just make sure that we recurse in the subdir/
 
-editline/libedit.a: CHECK_SUBDIR
-	cd editline && test -f config.h || CFLAGS="$(PTHREAD_CFLAGS) $(subst $(ASTTOPDIR),../../,$(_ASTCFLAGS:-Werror=) $(ASTCFLAGS))" LDFLAGS="$(_ASTLDFLAGS) $(ASTLDFLAGS)" ./configure --build=$(BUILD_PLATFORM) --host=$(HOST_PLATFORM) --with-ncurses=$(NCURSES_DIR) --with-curses=$(CURSES_DIR) --without-termcap --with-tinfo=$(TINFO_DIR)
-	$(MAKE) -C editline libedit.a
-
 ifneq ($(findstring REBUILD_PARSERS,$(MENUSELECT_CFLAGS)),)
 ast_expr2.c ast_expr2.h: ast_expr2.y
 else
@@ -134,37 +135,40 @@ endif
 	$(ECHO_PREFIX) echo "   [FLEX] $< -> $@"
 	$(CMD_PREFIX) $(FLEX) -o $@ ast_expr2.fl
 	$(CMD_PREFIX) sed 's@#if __STDC_VERSION__ >= 199901L@#if !defined __STDC_VERSION__ || __STDC_VERSION__ >= 199901L@' $@ > $@.fix
-	$(CMD_PREFIX) echo "#include \"asterisk.h\"" > $@
+	$(CMD_PREFIX) echo "#define ASTMM_LIBC ASTMM_REDIRECT" > $@
+	$(CMD_PREFIX) echo "#include \"asterisk.h\"" >> $@
 	$(CMD_PREFIX) echo >> $@
 	$(CMD_PREFIX) cat $@.fix >> $@
 	$(CMD_PREFIX) rm $@.fix
 
-ast_expr2f.o: _ASTCFLAGS+=-Wno-unused
-
-testexpr2: ast_expr2f.c ast_expr2.c ast_expr2.h
-	$(CC) -g -c -Iinclude -DSTANDALONE ast_expr2f.c
-	$(CC) -g -c -Iinclude -DSTANDALONE ast_expr2.c
-	$(CC) -g -o testexpr2 ast_expr2f.o ast_expr2.o -lm
-	rm ast_expr2.o ast_expr2f.o
-
-ifneq ($(LIBEDIT_INTERNAL),no)
-LIBEDIT_OBJ=editline/libedit.a
-LIBEDIT_INCLUDE=-I. -Ieditline
-endif
-
-db.o: _ASTCFLAGS+=$(SQLITE3_INCLUDE)
-asterisk.o: _ASTCFLAGS+=$(LIBEDIT_INCLUDE)
-cli.o: _ASTCFLAGS+=$(LIBEDIT_INCLUDE)
-json.o: _ASTCFLAGS+=$(JANSSON_INCLUDE)
-bucket.o: _ASTCFLAGS+=$(URIPARSER_INCLUDE)
-crypt.o: _ASTCFLAGS+=$(CRYPT_INCLUDE)
-uuid.o: _ASTCFLAGS+=$(UUID_INCLUDE)
-
 ifneq ($(findstring ENABLE_UPLOADS,$(MENUSELECT_CFLAGS)),)
-http.o: _ASTCFLAGS+=$(GMIME_INCLUDE)
+GMIMELDFLAGS+=$(GMIME_LIB)
+GMIMECFLAGS+=$(GMIME_INCLUDE)
 endif
 
+# Alter CFLAGS for specific sources
 stdtime/localtime.o: _ASTCFLAGS+=$(AST_NO_STRICT_OVERFLOW) -Wno-format-nonliteral
+
+asterisk.o: _ASTCFLAGS+=$(LIBEDIT_INCLUDE)
+ast_expr2f.o: _ASTCFLAGS+=-Wno-unused
+astmm.o: _ASTCFLAGS+=$(call get_menuselect_cflags,MALLOC_DEBUG DEBUG_CHAOS)
+astobj2.o astobj2_container.o astobj2_hash.o astobj2_rbtree.o: _ASTCFLAGS+=$(call get_menuselect_cflags,AO2_DEBUG)
+backtrace.o: _ASTCFLAGS+=$(call get_menuselect_cflags,BETTER_BACKTRACES)
+bucket.o: _ASTCFLAGS+=$(URIPARSER_INCLUDE)
+cdr.o: _ASTCFLAGS+=$(AST_NO_FORMAT_TRUNCATION)
+crypt.o: _ASTCFLAGS+=$(CRYPT_INCLUDE)
+db.o: _ASTCFLAGS+=$(SQLITE3_INCLUDE)
+dsp.o: _ASTCFLAGS+=$(call get_menuselect_cflags,RADIO_RELAX)
+http.o: _ASTCFLAGS+=$(GMIMECFLAGS)
+iostream.o: _ASTCFLAGS+=$(OPENSSL_INCLUDE)
+json.o: _ASTCFLAGS+=$(JANSSON_INCLUDE)
+lock.o: _ASTCFLAGS+=$(call get_menuselect_cflags,DETECT_DEADLOCKS)
+options.o: _ASTCFLAGS+=$(call get_menuselect_cflags,REF_DEBUG)
+sched.o: _ASTCFLAGS+=$(call get_menuselect_cflags,DEBUG_SCHEDULER DUMP_SCHEDULER)
+tcptls.o: _ASTCFLAGS+=$(OPENSSL_INCLUDE) -Wno-deprecated-declarations
+uuid.o: _ASTCFLAGS+=$(UUID_INCLUDE)
+stasis.o: _ASTCFLAGS+=$(call get_menuselect_cflags,AO2_DEBUG)
+
 
 OBJS:=$(sort $(OBJS))
 
@@ -178,11 +182,8 @@ else
 MAIN_TGT:=asterisk
 endif
 
-ifneq ($(findstring ENABLE_UPLOADS,$(MENUSELECT_CFLAGS)),)
-GMIMELDFLAGS+=$(GMIME_LIB)
-endif
-
 $(OBJS): _ASTCFLAGS+=-DAST_MODULE=\"core\" -DAST_IN_CORE
+$(MOD_OBJS): _ASTCFLAGS+=$(call MOD_ASTCFLAGS,$*)
 
 libasteriskssl.o: _ASTCFLAGS+=$(OPENSSL_INCLUDE)
 
@@ -197,7 +198,7 @@ ifeq ($(findstring darwin,$(OSARCH)),) # not Darwin
 ASTSSL_LIB:=libasteriskssl.so
 
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): _ASTLDFLAGS+=-Wl,-soname=$(ASTSSL_LIB).$(ASTSSL_SO_VERSION)
-$(ASTSSL_LIB).$(ASTSSL_SO_VERSION): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskssl\"
+$(ASTSSL_LIB).$(ASTSSL_SO_VERSION): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskssl\" -DAST_NOT_MODULE
 $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): LIBS+=$(ASTSSL_LIBS)
 ifeq ($(GNU_LD),1)
     $(ASTSSL_LIB).$(ASTSSL_SO_VERSION): SO_SUPPRESS_SYMBOLS=-Wl,--version-script,libasteriskssl.exports,--warn-common
@@ -213,7 +214,7 @@ ifeq ($(GNU_LD),1)
 	$(CMD_PREFIX) $(ASTTOPDIR)/build_tools/make_linker_version_script libasteriskssl "$(LINKER_SYMBOL_PREFIX)" "$(ASTTOPDIR)"
 endif
 	$(ECHO_PREFIX) echo "   [LD] $^ -> $@"
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
+	$(CMD_PREFIX) $(CC) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
 
 $(ASTSSL_LIB): $(ASTSSL_LIB).$(ASTSSL_SO_VERSION)
 	$(ECHO_PREFIX) echo "   [LN] $< -> $@"
@@ -225,14 +226,14 @@ ASTSSL_LIB:=libasteriskssl.dylib
 # -install_name allows library to be found if installed somewhere other than
 # /lib or /usr/lib
 $(ASTSSL_LIB): _ASTLDFLAGS+=-dynamiclib -install_name $(ASTLIBDIR)/$(ASTSSL_LIB)
-$(ASTSSL_LIB): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskssl\"
+$(ASTSSL_LIB): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskssl\" -DAST_NOT_MODULE
 $(ASTSSL_LIB): LIBS+=$(ASTSSL_LIBS)
 $(ASTSSL_LIB): SOLINK=$(DYLINK)
 
 # Special rules for building a shared library (not a dynamically loadable module)
 $(ASTSSL_LIB): libasteriskssl.o
 	$(ECHO_PREFIX) echo "   [LD] $^ -> $@"
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
+	$(CMD_PREFIX) $(CC) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
 endif
 
 endif
@@ -277,8 +278,8 @@ ifeq ($(GNU_LD),1)
 endif
 
 $(ASTPJ_LIB).$(ASTPJ_SO_VERSION): _ASTLDFLAGS+=-Wl,-soname=$(ASTPJ_LIB).$(ASTPJ_SO_VERSION) $(PJ_LDFLAGS)
-$(ASTPJ_LIB).$(ASTPJ_SO_VERSION): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskpj\" $(PJ_CFLAGS)
-$(ASTPJ_LIB).$(ASTPJ_SO_VERSION): LIBS+=$(PJPROJECT_LDLIBS) -lssl -lcrypto -luuid -lm -lpthread $(RT_LIB)
+$(ASTPJ_LIB).$(ASTPJ_SO_VERSION): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskpj\" -DAST_NOT_MODULE $(PJ_CFLAGS)
+$(ASTPJ_LIB).$(ASTPJ_SO_VERSION): LIBS+=$(PJPROJECT_LDLIBS) $(OPENSSL_LIB) $(UUID_LIB) -lm -lpthread $(RT_LIB)
 ifeq ($(GNU_LD),1)
     $(ASTPJ_LIB).$(ASTPJ_SO_VERSION): SO_SUPPRESS_SYMBOLS=-Wl,--version-script,libasteriskpj.exports,--warn-common
 endif
@@ -290,7 +291,7 @@ $(ASTPJ_LIB).$(ASTPJ_SO_VERSION): SOLINK=$(DYLINK)
 # type that are built by the standard rules)
 $(ASTPJ_LIB).$(ASTPJ_SO_VERSION): libasteriskpj.o libasteriskpj.exports
 	$(ECHO_PREFIX) echo "   [LD] $< -> $@"
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(CC_LDFLAGS_SO) $< $(CC_LIBS)
+	$(CMD_PREFIX) $(CC) -o $@ $(CC_LDFLAGS_SO) $< $(CC_LIBS)
 
 $(ASTPJ_LIB): $(ASTPJ_LIB).$(ASTPJ_SO_VERSION)
 	$(ECHO_PREFIX) echo "   [LN] $< -> $@"
@@ -302,24 +303,22 @@ ASTPJ_LIB:=libasteriskpj.dylib
 # -install_name allows library to be found if installed somewhere other than
 # /lib or /usr/lib
 $(ASTPJ_LIB): _ASTLDFLAGS+=-dynamiclib -install_name $(ASTLIBDIR)/$(ASTPJ_LIB) $(PJ_LDFLAGS)
-$(ASTPJ_LIB): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskpj\" $(PJ_CFLAGS)
-$(ASTPJ_LIB): LIBS+=$(PJPROJECT_LIBS)  -lssl -lcrypto -luuid -lm -lpthread $(RT_LIB)
+$(ASTPJ_LIB): _ASTCFLAGS+=-fPIC -DAST_MODULE=\"asteriskpj\" $(PJ_CFLAGS) -DAST_NOT_MODULE
+$(ASTPJ_LIB): LIBS+=$(PJPROJECT_LIB) $(OPENSSL_LIB) $(UUID_LIB) -lm -lpthread $(RT_LIB)
 $(ASTPJ_LIB): SOLINK=$(DYLINK)
 
 # Special rules for building a shared library (not a dynamically loadable module)
 $(ASTPJ_LIB): libasteriskpj.o
 	$(ECHO_PREFIX) echo "   [LD] $^ -> $@"
-	$(CMD_PREFIX) $(CC) $(STATIC_BUILD) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
+	$(CMD_PREFIX) $(CC) -o $@ $(CC_LDFLAGS_SO) $^ $(CC_LIBS)
 endif
 
 endif
 
-tcptls.o: _ASTCFLAGS+=$(OPENSSL_INCLUDE)
-
-$(MAIN_TGT): $(OBJS) $(ASTSSL_LIB) $(ASTPJ_LIB) $(LIBEDIT_OBJ)
+$(MAIN_TGT): $(OBJS) $(MOD_OBJS) $(ASTSSL_LIB) $(ASTPJ_LIB)
 	@$(CC) -c -o buildinfo.o $(_ASTCFLAGS) buildinfo.c $(ASTCFLAGS)
-	$(ECHO_PREFIX) echo "   [LD] $(OBJS) $(LIBEDIT_OBJ) -> $@"
-	$(CMD_PREFIX) $(CXX) $(STATIC_BUILD) -o $@ $(ASTLINK) $(_ASTLDFLAGS) $(ASTLDFLAGS) $(OBJS) $(ASTSSL_LDLIBS) $(ASTPJ_LDLIBS) $(LIBEDIT_OBJ) buildinfo.o $(AST_LIBS) $(GMIMELDFLAGS) $(LIBEDIT_LIB)
+	$(ECHO_PREFIX) echo "   [LD] $(OBJS) $(MOD_OBJS) -> $@"
+	$(CMD_PREFIX) $(CXX) -o $@ $(ASTLINK) $(_ASTLDFLAGS) $(ASTLDFLAGS) $(OBJS) $(MOD_OBJS) $(ASTSSL_LDLIBS) $(ASTPJ_LDLIBS) buildinfo.o $(AST_LIBS) $(GMIMELDFLAGS) $(LIBEDIT_LIB)
 
 ifeq ($(GNU_LD),1)
 $(MAIN_TGT): asterisk.exports
@@ -363,7 +362,6 @@ endif
 	rm -f .libasteriskpj*
 
 	rm -f asterisk.exports libasteriskssl.exports libasteriskpj.exports
-	@if [ -f editline/Makefile ]; then $(MAKE) -C editline distclean ; fi
 	@$(MAKE) -C stdtime clean
 	rm -f libresample/src/*.o
 	rm -f *.tmp

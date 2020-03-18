@@ -21,7 +21,7 @@
  * \brief While Loop Implementation
  *
  * \author Anthony Minessale <anthmct@yahoo.com>
- * 
+ *
  * \ingroup applications
  */
 
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -117,8 +115,8 @@ static const char *get_index(struct ast_channel *chan, const char *prefix, int i
 static struct ast_exten *find_matching_priority(struct ast_context *c, const char *exten, int priority, const char *callerid)
 {
 	struct ast_exten *e;
-	struct ast_include *i;
 	struct ast_context *c2;
+	int idx;
 
 	for (e=ast_walk_context_extensions(c, NULL); e; e=ast_walk_context_extensions(c, e)) {
 		if (ast_extension_match(ast_get_extension_name(e), exten)) {
@@ -137,7 +135,9 @@ static struct ast_exten *find_matching_priority(struct ast_context *c, const cha
 	}
 
 	/* No match; run through includes */
-	for (i=ast_walk_context_includes(c, NULL); i; i=ast_walk_context_includes(c, i)) {
+	for (idx = 0; idx < ast_context_includes_count(c); idx++) {
+		const struct ast_include *i = ast_context_includes_get(c, idx);
+
 		for (c2=ast_walk_contexts(NULL); c2; c2=ast_walk_contexts(c2)) {
 			if (!strcmp(ast_get_context_name(c2), ast_get_include_name(i))) {
 				e = find_matching_priority(c2, exten, priority, callerid);
@@ -225,13 +225,13 @@ static int _while_exec(struct ast_channel *chan, const char *data, int end)
 	for (x=0;;x++) {
 		if (get_index(chan, prefix, x)) {
 			used_index_i = x;
-		} else 
+		} else
 			break;
 	}
-	
+
 	snprintf(used_index, VAR_SIZE, "%d", used_index_i);
 	snprintf(new_index, VAR_SIZE, "%d", used_index_i + 1);
-	
+
 	if (!end)
 		condition = ast_strdupa(data);
 
@@ -239,7 +239,7 @@ static int _while_exec(struct ast_channel *chan, const char *data, int end)
 	my_name = ast_alloca(size);
 	memset(my_name, 0, size);
 	snprintf(my_name, size, "%s_%s_%d", ast_channel_context(chan), ast_channel_exten(chan), ast_channel_priority(chan));
-	
+
 	ast_channel_lock(chan);
 	if (end) {
 		label = used_index;
@@ -253,7 +253,7 @@ static int _while_exec(struct ast_channel *chan, const char *data, int end)
 		snprintf(end_varname,VAR_SIZE,"END_%s",varname);
 	}
 	ast_channel_unlock(chan);
-	
+
 
 	if ((!end && !pbx_checkcondition(condition)) || (end == 2)) {
 		/* Condition Met (clean up helper vars) */
@@ -338,7 +338,7 @@ static int while_continue_exec(struct ast_channel *chan, const char *data)
 static int unload_module(void)
 {
 	int res;
-	
+
 	res = ast_unregister_application(start_app);
 	res |= ast_unregister_application(stop_app);
 	res |= ast_unregister_application(exit_app);

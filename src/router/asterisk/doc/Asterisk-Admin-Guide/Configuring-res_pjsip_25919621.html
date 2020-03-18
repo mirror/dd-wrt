@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring res_pjsip</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring res_pjsip
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Feb 26, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Configuringres_pjsip-Overview">Overview</h1><p>This page and its sub-pages are intended to help an administrator configure the new SIP resources and channel driver included with Asterisk 12. The channel driver itself being chan_pjsip which depends on res_pjsip and its many associated modules. The <strong>res_pjsip</strong> module handles configuration, so we'll mostly speak in terms of configuring res_pjsip.</p><p>A variety of reference content is provided in the following sub-pages.</p><ul><li>If you are moving from the old channel driver, then look at <a href="Migrating-from-chan_sip-to-res_pjsip_30278068.html">Migrating from chan_sip to res_pjsip</a>.</li><li>For basic config examples look at <a href="res_pjsip-Configuration-Examples_30278066.html">res_pjsip Configuration Examples</a>.</li><li>For detailed explanation of the res_pjsip config file go to <a href="PJSIP-Configuration-Sections-and-Relationships_30278064.html">PJSIP Configuration Sections and Relationships</a>.</li><li>You can also find info on <a href="Dialing-PJSIP-Channels_30278070.html">Dialing PJSIP Channels</a>.</li><li>Maybe you're migrating to IPv6 and need to learn about <a href="Configuring-res_pjsip-for-IPv6_34013468.html">Configuring res_pjsip for IPv6</a></li></ul><h1 id="Configuringres_pjsip-BeforeYouConfigure">Before You Configure</h1><p>This page assumes certain knowledge, or that you have completed a few prerequisites.</p><ul><li>You have <a href="PJSIP-pjproject_25919783.html">installed pjproject</a>, a dependency for res_pjsip.</li><li>You have Installed Asterisk including the <span class="confluence-link">res_pjsip and chan_pjsip </span><a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html"><span class="confluence-link">modules</span></a> and their dependencies.</li><li>You understand <a href="Getting-Started_5243710.html">basic Asterisk concepts</a>. Including the <a href="Dialplan_4817412.html">role of extensions.conf</a> (dialplan) in your overall Asterisk configuration.</li></ul><h1 id="Configuringres_pjsip-QuickStart">Quick Start</h1><p>If you like to figure out things as you go; here's a few quick steps to get you started.</p><ul><li>Understand that res_pjsip is configured through pjsip.conf. This is where you'll be configuring everything related to your inbound or outbound SIP accounts and endpoints.</li><li>Look at the <a href="res_pjsip-Configuration-Examples_30278066.html">res_pjsip Configuration Examples</a> section. Grab the example most appropriate to your goal and use that to replace your pjsip.conf.</li><li>Reference documentation for all configuration parameters is available on the wiki:<ul><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip">Core res_pjsip configuration options</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip_acl">Configuration options for ACLs in res_pjsip_acl</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip_outbound_registration">Configuration options for outbound registration, provided by res_pjsip_outbound_registration</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip_endpoint_identifier_ip">Configuration options for endpoint identification by IP address, provided by res_pjsip_endpoint_identifier_ip</a></li></ul></li><li>You'll need to tweak details in pjsip.conf and on your SIP device (for example IP addresses and authentication credentials) to get it working with Asterisk.<br />Refer back to <a href="PJSIP-Configuration-Sections-and-Relationships_30278064.html">the config documentation on the wiki</a> or the sample pjsip.conf if you get confused.</li></ul>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279946">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279947.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279948">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279949.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279950">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279951.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279952">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279953.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279954">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279955.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279944">res_sip_configrelationships</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/26279945.png">res_sip_configrelationships.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/25919621/32735290.png">ERD_key.PNG</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

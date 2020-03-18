@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_Authenticate</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_Authenticate
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_Authenticate-Authenticate()">Authenticate()</h1>
+
+<h3 id="Asterisk17Application_Authenticate-Synopsis">Synopsis</h3>
+
+<p>Authenticate a user</p>
+
+<h3 id="Asterisk17Application_Authenticate-Description">Description</h3>
+
+<p>This application asks the caller to enter a given password in order to continue dialplan execution.</p>
+
+<p>If the password begins with the <code>/</code> character, it is interpreted as a file which contains a list of valid passwords, listed 1 password per line in the file.</p>
+
+<p>When using a database key, the value associated with the key can be anything.</p>
+
+<p>Users have three attempts to authenticate before the channel is hung up.</p>
+
+
+<h3 id="Asterisk17Application_Authenticate-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Authenticate(password,[options,[maxdigits,[prompt]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_Authenticate-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>password</code> - Password the user should know</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>a</code> - Set the channels' account code to the password that is entered</li>
+		<li><code>d</code> - Interpret the given path as database key, not a literal file.</li>
+		<li><code>m</code> - Interpret the given path as a file which contains a list of account codes and password hashes delimited with <code>:</code>, listed one per line in the file. When one of the passwords is matched, the channel will have its account code set to the corresponding account code in the file.</li>
+		<li><code>r</code> - Remove the database key upon successful entry (valid with <code>d</code> only)</li>
+	</ul>
+	</li>
+	<li><code>maxdigits</code> - maximum acceptable number of digits. Stops reading after maxdigits have been entered (without requiring the user to press the <code>#</code> key). Defaults to 0 - no limit - wait for the user press the <code>#</code> key.</li>
+	<li><code>prompt</code> - Override the agent-pass prompt file.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_Authenticate-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_VMAuthenticate_42010811.html">Asterisk 17 Application_VMAuthenticate</a></li>
+	<li><a href="Asterisk-17-Application_DISA_42010978.html">Asterisk 17 Application_DISA</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_Authenticate-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Security Vulnerabilities</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Security Vulnerabilities
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jul 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The Asterisk project takes the issue of its users security seriously. If you believe you have found a security vulnerability in Asterisk, please follow the steps on this wiki page to report the security vulnerability to the Asterisk Development Team.</p>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">The Issue Tracker is Public!</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The <a href="https://issues.asterisk.org/jira" class="external-link" rel="nofollow">Asterisk Issue Tracker</a> is a public site, and all bug reports against Asterisk can be viewed openly by the public. While this results in a transparent, open process - which is good - reporting a security vulnerability on the issue tracker without properly selecting the &quot;Security&quot; issue type makes the entire Asterisk user community vulnerable.</p><p>The &quot;Security&quot; issue type will automatically lock down the issue so it can only be viewed by the reporter and bug marshals. If you have any difficulties with that we'll help; please follow the instructions here and e-mail the team at <a href="mailto:security@asterisk.org" class="external-link" rel="nofollow">security@asterisk.org.</a></p>
+                    </div>
+    </div>
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The <a href="https://gerrit.asterisk.org/" class="external-link" rel="nofollow">Gerrit Code Review tool</a> is a public site and security fixes should not be placed up on it by a reporter. Patches should be attached to the security issue instead.</p>
+                    </div>
+    </div>
+<h1 id="AsteriskSecurityVulnerabilities-ReportingaSecurityVulnerability">Reporting a Security Vulnerability</h1><ol><li>Send an e-mail to the Asterisk Development Team by e-mailing <a href="mailto:security@asterisk.org" class="external-link" rel="nofollow">security@asterisk.org.</a> Include the following:<ol><li>A summary of the suspected vulnerability, e.g., 'Remotely exploitable buffer overflow in the FOO channel driver'</li><li>A detailed explanation of how the vulnerability can be exploited and/or reproduced. Test drivers/cases that can be used to demonstrate the vulnerability are highly appreciated.</li></ol></li><li>A developer will respond to your inquiry. If you'd like, e-mails can be signed and/or encrypted.</li><li>Once the developer confirms the security vulnerability is discussed and confirmed you will be asked to create an issue on the Asterisk issue tracker of type &quot;Security&quot;. <strong>You must use a &quot;Security&quot; issue type or the information will be publicly disclosed.</strong></li></ol><p>Security vulnerabilities are treated seriously by the developer community, and the Asterisk Development Team always attempts to address vulnerabilities in a timely fashion. Sometimes, external influences may impact when a security release can be made; feel free to e-mail the developer assigned to the issue or <a href="mailto:security@asterisk.org" class="external-link" rel="nofollow">security@asterisk.org</a> to discuss the schedule for a security release for your issue.</p><h1 id="AsteriskSecurityVulnerabilities-PastSecurityVulnerabilities">Past Security Vulnerabilities</h1><p>Past security vulnerability reports are available on the <a href="http://www.asterisk.org/downloads/security-advisories" class="external-link" rel="nofollow">asterisk.org web site</a> and on the <a href="http://downloads.asterisk.org/pub/security/" class="external-link" rel="nofollow">Asterisk downloads</a> site.</p><p>All security vulnerabilities are also issued a CVE number and can be queried in the <a href="http://cve.mitre.org/" class="external-link" rel="nofollow">CVE</a> database.</p><h1 id="AsteriskSecurityVulnerabilities-ParticipatinginSecurityIssues">Participating in Security Issues</h1><p>All Asterisk Developers who have commit access are welcome to participate in the development of solutions to security issues. Security issues can be viewed in JIRA using the label <code>Security</code>:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">project=ASTERISK and labels=Security</pre>
+</div></div><p>When a new security issue is created, an e-mail will be sent to the asterisk-dev mailing list notifying the community of the issue. This e-mail will not contain any information about the vulnerability, and will merely contain a link to the new security issue.</p><p>When a patch is ready to be peer reviewed on Gerrit, a review will be created using the review project Security-asterisk. This project is not normally visible to Gerrit users, is invite only, and generates no e-mails to the asterisk-dev mailing list. Users who have the Bug Marshal permission in JIRA are invited to participate in the review process.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Please exercise caution when participating in security issues. It is far better to 'test' a reply or message on an issue, e-mail, or review than to leak information.</p>
+                    </div>
+    </div>
+<p>Once the patch has been peer reviewed, it should <strong>not</strong> be committed. Committing the patch must be coordinated as an overall security release. This is typically handled by the affected branch maintainers.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

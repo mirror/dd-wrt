@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Calendaring Dialplan Functions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Calendaring_5243066.html">Asterisk Calendaring</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Calendaring Dialplan Functions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 25, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="CalendaringDialplanFunctions-Readfunctions">Read functions</h1><p>The simplest dialplan query is the CALENDAR_BUSY query. It takes a single option, the name of the calendar defined, and returns &quot;1&quot; for busy (including tentatively busy) and &quot;0&quot; for not busy.</p><p>For more information about a calendar event, a combination of CALENDAR_QUERY and CALENDAR_QUERY_RESULT is used. CALENDAR_QUERY takes the calendar name and optionally a start and end time in &quot;unix time&quot; (seconds from unix epoch). It returns an id that can be passed to CALENDAR_QUERY_RESULT along with a field name to return the data in that field. If multiple events are returned in the query, the number of the event in the list can be specified as well. The available fields to return are:</p><ul><li><strong>summary</strong> - A short summary of the event</li><li><strong>description</strong> - The full description of the event</li><li><strong>organizer</strong> - Who organized the event</li><li><strong>location</strong> - Where the event is located</li><li><strong>calendar</strong> - The name of the calendar from calendar.conf</li><li><strong>uid</strong> - The unique identifier associated with the event</li><li><strong>start</strong> - The start of the event in seconds since Unix epoch</li><li><strong>end</strong> - The end of the event in seconds since Unix epoch</li><li><strong>busystate</strong> - The busy state 0=Free, 1=Tentative, 2=Busy</li><li><strong>attendees</strong> - A comma separated list of attendees as stored in the event and may include prefixes such as &quot;mailto:&quot;.</li></ul><p>When an event notification is sent to the dial plan, the CALENDAR_EVENT function may be used to return the information about the event that is causing the notification. The fields that can be returned are the same as those from CALENDAR_QUERY_RESULT.</p><h1 id="CalendaringDialplanFunctions-Writefunctions">Write functions</h1><p>To write an event to a calendar, the CALENDAR_WRITE function is used. This function takes a calendar name and also uses the same fields as CALENDAR_QUERY_RESULT. As a write function, it takes a set of comma-separated values that are in the same order as the specified fields. For example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CALENDAR_WRITE(mycalendar,summary,organizer,start,end,busystate)= &quot;My event&quot;,&quot;mailto:jdoe@example.com&quot;,228383580,228383640,1)
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

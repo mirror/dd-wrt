@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "res_parking.h"
 #include "asterisk/config.h"
 #include "asterisk/config_options.h"
@@ -688,17 +686,18 @@ static void parking_manager_enable_stasis(void)
 {
 	if (!parking_sub) {
 		parking_sub = stasis_subscribe(ast_parking_topic(), parking_event_cb, NULL);
+		stasis_subscription_accept_message_type(parking_sub, ast_parked_call_type());
+		stasis_subscription_set_filter(parking_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 	}
 }
 
 int load_parking_manager(void)
 {
 	int res;
-	const struct ast_module_info *module = parking_get_module_info();
 
-	res = ast_manager_register2("Parkinglots", EVENT_FLAG_CALL, manager_parking_lot_list, module->self, NULL, NULL);
-	res |= ast_manager_register2("ParkedCalls", EVENT_FLAG_CALL, manager_parking_status, module->self, NULL, NULL);
-	res |= ast_manager_register2("Park", EVENT_FLAG_CALL, manager_park, module->self, NULL, NULL);
+	res = ast_manager_register_xml("Parkinglots", EVENT_FLAG_CALL, manager_parking_lot_list);
+	res |= ast_manager_register_xml("ParkedCalls", EVENT_FLAG_CALL, manager_parking_status);
+	res |= ast_manager_register_xml("Park", EVENT_FLAG_CALL, manager_park);
 	parking_manager_enable_stasis();
 	return res ? -1 : 0;
 }

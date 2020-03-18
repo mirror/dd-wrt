@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Party ID Interception Macros and Routines</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Subroutines_28314892.html">Subroutines</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Party ID Interception Macros and Routines
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jan 12, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="PartyIDInterceptionMacrosandRoutines-Interceptionroutines">Interception routines</h1><p><span class="confluence-anchor-link" id="PartyIDInterceptionMacrosandRoutines-interception_routines"></span></p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>As Interception routines are implemented internally using the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Gosub">Gosub</a> application, all routines should end with an explicit call to the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Return">Return</a> application.</p>
+                    </div>
+    </div>
+<p>The interception routines give the administrator an opportunity to alter <a href="Manipulating-Party-ID-Information_5243183.html">connected line and redirecting information</a> before the channel driver is given the information. If the routine does not change a value then that is what is going to be passed to the channel driver.</p><p>The tag string available in CALLERID, CONNECTEDLINE, and REDIRECTING is useful for the interception routines to provide some information about where the information originally came from.</p><p>The 'i' option of the CONNECTEDLINE dialplan function should always be used in the CONNECTED_LINE interception routines. The interception routine always passes the connected line information on to the channel driver when the routine returns. Similarly, the 'i' option of the REDIRECTING dialplan function should always be used in the REDIRECTING interception routines.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Note that Interception routines do not attempt to draw a distinction between caller/callee. As it turned out, it was not a good thing to distinguish since transfers make a mockery of caller/callee.</p>
+                    </div>
+    </div>
+<ul><li>${REDIRECTING_SEND_SUB}<br /> Subroutine to call before sending a redirecting update to the party.</li></ul><ul><li>${REDIRECTING_SEND_SUB_ARGS}<br /> Arguments to pass to ${REDIRECTING_CALLEE_SEND_SUB}.</li></ul><ul><li>${CONNECTED_LINE_SEND_SUB}<br /> Subroutine to call before sending a connected line update to the party.</li></ul><ul><li>${CONNECTED_LINE_SEND_SUB_ARGS}<br /> Arguments to pass to ${CONNECTED_LINE_SEND_SUB}.</li></ul><h1 id="PartyIDInterceptionMacrosandRoutines-Interceptionmacros">Interception macros</h1>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">WARNING</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Interception macros have been deprecated in Asterisk 11 due to deprecation of <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+11+Application_Macro">Macro</a>. Users of the interception functionality should plan to migrate to <span class="confluence-link"><a href="#PartyIDInterceptionMacrosandRoutines-interception_routines">Interception routines</a></span>.</p>
+                    </div>
+    </div>
+<p>The interception macros give the administrator an opportunity to alter <a href="Manipulating-Party-ID-Information_5243183.html">connected line and redirecting information</a> before the channel driver is given the information. If the macro does not change a value then that is what is going to be passed to the channel driver.</p><p>The tag string available in CALLERID, CONNECTEDLINE, and REDIRECTING is useful for the interception macros to provide some information about where the information originally came from.</p><p>The 'i' option of the CONNECTEDLINE dialplan function should always be used in the CONNECTED_LINE interception macros. The interception macro always passes the connected line information on to the channel driver when the macro exits. Similarly, the 'i' option of the REDIRECTING dialplan function should always be used in the REDIRECTING interception macros.</p><ul><li>${REDIRECTING_CALLEE_SEND_MACRO}<br /> Macro to call before sending a redirecting update to the callee. This macro may never be needed since the redirecting updates should only go from the callee to the caller direction. It is available for completeness.</li></ul><ul><li>${REDIRECTING_CALLEE_SEND_MACRO_ARGS}<br /> Arguments to pass to ${REDIRECTING_CALLEE_SEND_MACRO}.</li></ul><ul><li>${REDIRECTING_CALLER_SEND_MACRO}<br /> Macro to call before sending a redirecting update to the caller.</li></ul><ul><li>${REDIRECTING_CALLER_SEND_MACRO_ARGS}<br /> Arguments to pass to ${REDIRECTING_CALLER_SEND_MACRO}.</li></ul><ul><li>${CONNECTED_LINE_CALLEE_SEND_MACRO}<br /> Macro to call before sending a connected line update to the callee.</li></ul><ul><li>${CONNECTED_LINE_CALLEE_SEND_MACRO_ARGS}<br /> Arguments to pass to ${CONNECTED_LINE_CALLEE_SEND_MACRO}.</li></ul><ul><li>${CONNECTED_LINE_CALLER_SEND_MACRO}<br /> Macro to call before sending a connected line update to the caller.</li></ul><ul><li>${CONNECTED_LINE_CALLER_SEND_MACRO_ARGS}<br /> Arguments to pass to ${CONNECTED_LINE_CALLER_SEND_MACRO}.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

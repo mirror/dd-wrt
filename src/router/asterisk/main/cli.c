@@ -38,17 +38,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/paths.h"	/* use ast_config_AST_MODULE_DIR */
-#include <sys/signal.h>
 #include <signal.h>
 #include <ctype.h>
 #include <regex.h>
 #include <pwd.h>
 #include <grp.h>
-#include <editline/readline.h>
 
 #include "asterisk/cli.h"
 #include "asterisk/linkedlists.h"
@@ -64,6 +60,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stasis_channels.h"
 #include "asterisk/stasis_bridges.h"
 #include "asterisk/vector.h"
+#include "asterisk/stream.h"
 
 /*!
  * \brief List of restrictions per user.
@@ -151,11 +148,6 @@ unsigned int ast_debug_get_by_module(const char *module)
 	return res;
 }
 
-unsigned int ast_verbose_get_by_module(const char *module)
-{
-	return 0;
-}
-
 /*! \internal
  *  \brief Check if the user with 'uid' and 'gid' is allow to execute 'command',
  *	   if command starts with '_' then not check permissions, just permit
@@ -226,28 +218,6 @@ static int cli_has_permissions(int uid, int gid, const char *command)
 
 static AST_RWLIST_HEAD_STATIC(helpers, ast_cli_entry);
 
-static char *complete_fn(const char *word, int state)
-{
-	char *c, *d;
-	char filename[PATH_MAX];
-
-	if (word[0] == '/')
-		ast_copy_string(filename, word, sizeof(filename));
-	else
-		snprintf(filename, sizeof(filename), "%s/%s", ast_config_AST_MODULE_DIR, word);
-
-	c = d = filename_completion_function(filename, state);
-
-	if (c && word[0] != '/')
-		c += (strlen(ast_config_AST_MODULE_DIR) + 1);
-	if (c)
-		c = ast_strdup(c);
-
-	ast_std_free(d);
-
-	return c;
-}
-
 static char *handle_load(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	/* "module load <mod>" */
@@ -260,12 +230,14 @@ static char *handle_load(struct ast_cli_entry *e, int cmd, struct ast_cli_args *
 		return NULL;
 
 	case CLI_GENERATE:
-		if (a->pos != e->args)
+		if (a->pos != e->args) {
 			return NULL;
-		return complete_fn(a->word, a->n);
+		}
+		return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, AST_MODULE_HELPER_LOAD);
 	}
-	if (a->argc != e->args + 1)
+	if (a->argc != e->args + 1) {
 		return CLI_SHOWUSAGE;
+	}
 	if (ast_load_resource(a->argv[e->args])) {
 		ast_cli(a->fd, "Unable to load module %s\n", a->argv[e->args]);
 		return CLI_FAILURE;
@@ -288,7 +260,7 @@ static char *handle_reload(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 		return NULL;
 
 	case CLI_GENERATE:
-		return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, 1);
+		return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, AST_MODULE_HELPER_RELOAD);
 	}
 	if (a->argc == e->args) {
 		ast_module_reload(NULL);
@@ -374,7 +346,7 @@ static char *complete_number(const char *partial, unsigned int min, unsigned int
 	int i, count = 0;
 	unsigned int prospective[2];
 	unsigned int part = strtoul(partial, NULL, 10);
-	char next[12];
+	char next[13];
 
 	if (part < min || part > max) {
 		return NULL;
@@ -484,7 +456,7 @@ static char *handle_debug(struct ast_cli_entry *e, int cmd, struct ast_cli_args 
 			}
 		} else if ((a->pos == 4 && !atleast && strcasecmp(argv3, "off") && strcasecmp(argv3, "channel"))
 			|| (a->pos == 5 && atleast)) {
-			return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, 0);
+			return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, AST_MODULE_HELPER_RUNNING);
 		}
 		return NULL;
 	}
@@ -735,7 +707,7 @@ static char *handle_unload(struct ast_cli_entry *e, int cmd, struct ast_cli_args
 		return NULL;
 
 	case CLI_GENERATE:
-		return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, 0);
+		return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, AST_MODULE_HELPER_UNLOAD);
 	}
 	if (a->argc < e->args + 1)
 		return CLI_SHOWUSAGE;
@@ -799,7 +771,7 @@ static void print_uptimestr(int fd, struct timeval timeval, const char *prefix, 
 		return;
 
 	if (printsec)  {	/* plain seconds output */
-		ast_cli(fd, "%s: %lu\n", prefix, (u_long)timeval.tv_sec);
+		ast_cli(fd, "%s%lu\n", prefix, (u_long)timeval.tv_sec);
 		return;
 	}
 	out = ast_str_alloca(256);
@@ -833,7 +805,7 @@ static void print_uptimestr(int fd, struct timeval timeval, const char *prefix, 
 		/* if there is nothing, print 0 seconds */
 		ast_str_append(&out, 0, "%d second%s", x, ESS(x));
 	}
-	ast_cli(fd, "%s: %s\n", prefix, ast_str_buffer(out));
+	ast_cli(fd, "%s%s\n", prefix, ast_str_buffer(out));
 }
 
 static struct ast_cli_entry *cli_next(struct ast_cli_entry *e)
@@ -869,10 +841,12 @@ static char * handle_showuptime(struct ast_cli_entry *e, int cmd, struct ast_cli
 		printsec = 0;
 	else
 		return CLI_SHOWUSAGE;
-	if (ast_startuptime.tv_sec)
-		print_uptimestr(a->fd, ast_tvsub(curtime, ast_startuptime), "System uptime", printsec);
-	if (ast_lastreloadtime.tv_sec)
-		print_uptimestr(a->fd, ast_tvsub(curtime, ast_lastreloadtime), "Last reload", printsec);
+	if (ast_startuptime.tv_sec) {
+		print_uptimestr(a->fd, ast_tvsub(curtime, ast_startuptime), "System uptime: ", printsec);
+	}
+	if (ast_lastreloadtime.tv_sec) {
+		print_uptimestr(a->fd, ast_tvsub(curtime, ast_lastreloadtime), "Last reload: ", printsec);
+	}
 	return CLI_SUCCESS;
 }
 
@@ -889,10 +863,11 @@ static char *handle_modlist(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 		return NULL;
 
 	case CLI_GENERATE:
-		if (a->pos == e->args)
-			return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, 0);
-		else
+		if (a->pos == e->args) {
+			return ast_module_helper(a->line, a->word, a->pos, a->n, a->pos, AST_MODULE_HELPER_LOADED);
+		} else {
 			return NULL;
+		}
 	}
 	/* all the above return, so we proceed with the handler.
 	 * we are guaranteed to have argc >= e->args
@@ -965,7 +940,7 @@ static char *handle_showcalls(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	ast_cli(a->fd, "%d call%s processed\n", ast_processed_calls(), ESS(ast_processed_calls()));
 
 	if (ast_startuptime.tv_sec && showuptime) {
-		print_uptimestr(a->fd, ast_tvsub(curtime, ast_startuptime), "System uptime", printsec);
+		print_uptimestr(a->fd, ast_tvsub(curtime, ast_startuptime), "System uptime: ", printsec);
 	}
 
 	return RESULT_SUCCESS;
@@ -979,9 +954,9 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 #define VERBOSE_FORMAT_STRING  "%-20.20s %-20.20s %-16.16s %4d %-7.7s %-12.12s %-25.25s %-15.15s %8.8s %-11.11s %-11.11s %-20.20s\n"
 #define VERBOSE_FORMAT_STRING2 "%-20.20s %-20.20s %-16.16s %-4.4s %-7.7s %-12.12s %-25.25s %-15.15s %8.8s %-11.11s %-11.11s %-20.20s\n"
 
-	RAII_VAR(struct ao2_container *, channels, NULL, ao2_cleanup);
+	struct ao2_container *channels;
 	struct ao2_iterator it_chans;
-	struct stasis_message *msg;
+	struct ast_channel_snapshot *cs;
 	int numchans = 0, concise = 0, verbose = 0, count = 0;
 
 	switch (cmd) {
@@ -1014,11 +989,7 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	} else if (a->argc != e->args - 1)
 		return CLI_SHOWUSAGE;
 
-
-	if (!(channels = stasis_cache_dump(ast_channel_cache_by_name(), ast_channel_snapshot_type()))) {
-		ast_cli(a->fd, "Failed to retrieve cached channels\n");
-		return CLI_SUCCESS;
-	}
+	channels = ast_channel_cache_by_name();
 
 	if (!count) {
 		if (!concise && !verbose)
@@ -1029,13 +1000,12 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	}
 
 	it_chans = ao2_iterator_init(channels, 0);
-	for (; (msg = ao2_iterator_next(&it_chans)); ao2_ref(msg, -1)) {
-		struct ast_channel_snapshot *cs = stasis_message_data(msg);
-		char durbuf[10] = "-";
+	for (; (cs = ao2_iterator_next(&it_chans)); ao2_ref(cs, -1)) {
+		char durbuf[16] = "-";
 
 		if (!count) {
-			if ((concise || verbose)  && !ast_tvzero(cs->creationtime)) {
-				int duration = (int)(ast_tvdiff_ms(ast_tvnow(), cs->creationtime) / 1000);
+			if ((concise || verbose)  && !ast_tvzero(cs->base->creationtime)) {
+				int duration = (int)(ast_tvdiff_ms(ast_tvnow(), cs->base->creationtime) / 1000);
 				if (verbose) {
 					int durh = duration / 3600;
 					int durm = (duration % 3600) / 60;
@@ -1046,36 +1016,36 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 				}
 			}
 			if (concise) {
-				ast_cli(a->fd, CONCISE_FORMAT_STRING, cs->name, cs->context, cs->exten, cs->priority, ast_state2str(cs->state),
-					S_OR(cs->appl, "(None)"),
-					cs->data,
-					cs->caller_number,
-					cs->accountcode,
-					cs->peeraccount,
+				ast_cli(a->fd, CONCISE_FORMAT_STRING, cs->base->name, cs->dialplan->context, cs->dialplan->exten, cs->dialplan->priority, ast_state2str(cs->state),
+					S_OR(cs->dialplan->appl, "(None)"),
+					cs->dialplan->data,
+					cs->caller->number,
+					cs->base->accountcode,
+					cs->peer->account,
 					cs->amaflags,
 					durbuf,
-					cs->bridgeid,
-					cs->uniqueid);
+					cs->bridge->id,
+					cs->base->uniqueid);
 			} else if (verbose) {
-				ast_cli(a->fd, VERBOSE_FORMAT_STRING, cs->name, cs->context, cs->exten, cs->priority, ast_state2str(cs->state),
-					S_OR(cs->appl, "(None)"),
-					S_OR(cs->data, "(Empty)"),
-					cs->caller_number,
+				ast_cli(a->fd, VERBOSE_FORMAT_STRING, cs->base->name, cs->dialplan->context, cs->dialplan->exten, cs->dialplan->priority, ast_state2str(cs->state),
+					S_OR(cs->dialplan->appl, "(None)"),
+					S_OR(cs->dialplan->data, "(Empty)"),
+					cs->caller->number,
 					durbuf,
-					cs->accountcode,
-					cs->peeraccount,
-					cs->bridgeid);
+					cs->base->accountcode,
+					cs->peer->account,
+					cs->bridge->id);
 			} else {
 				char locbuf[40] = "(None)";
 				char appdata[40] = "(None)";
 
-				if (!ast_strlen_zero(cs->context) && !ast_strlen_zero(cs->exten)) {
-					snprintf(locbuf, sizeof(locbuf), "%s@%s:%d", cs->exten, cs->context, cs->priority);
+				if (!ast_strlen_zero(cs->dialplan->context) && !ast_strlen_zero(cs->dialplan->exten)) {
+					snprintf(locbuf, sizeof(locbuf), "%s@%s:%d", cs->dialplan->exten, cs->dialplan->context, cs->dialplan->priority);
 				}
-				if (!ast_strlen_zero(cs->appl)) {
-					snprintf(appdata, sizeof(appdata), "%s(%s)", cs->appl, S_OR(cs->data, ""));
+				if (!ast_strlen_zero(cs->dialplan->appl)) {
+					snprintf(appdata, sizeof(appdata), "%s(%s)", cs->dialplan->appl, S_OR(cs->dialplan->data, ""));
 				}
-				ast_cli(a->fd, FORMAT_STRING, cs->name, locbuf, ast_state2str(cs->state), appdata);
+				ast_cli(a->fd, FORMAT_STRING, cs->base->name, locbuf, ast_state2str(cs->state), appdata);
 			}
 		}
 	}
@@ -1093,6 +1063,7 @@ static char *handle_chanlist(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 
 		ast_cli(a->fd, "%d call%s processed\n", ast_processed_calls(), ESS(ast_processed_calls()));
 	}
+	ao2_ref(channels, -1);
 
 	return CLI_SUCCESS;
 
@@ -1355,58 +1326,6 @@ static char *handle_commandmatchesarray(struct ast_cli_entry *e, int cmd, struct
 }
 
 
-
-static char *handle_commandnummatches(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
-{
-	int matches = 0;
-
-	switch (cmd) {
-	case CLI_INIT:
-		e->command = "_command nummatches";
-		e->usage =
-			"Usage: _command nummatches \"<line>\" text \n"
-			"       This function is used internally to help with command completion and should.\n"
-			"       never be called by the user directly.\n";
-		return NULL;
-	case CLI_GENERATE:
-		return NULL;
-	}
-
-	if (a->argc != 4)
-		return CLI_SHOWUSAGE;
-
-	matches = ast_cli_generatornummatches(a->argv[2], a->argv[3]);
-
-	ast_cli(a->fd, "%d", matches);
-
-	return CLI_SUCCESS;
-}
-
-static char *handle_commandcomplete(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
-{
-	char *buf;
-	switch (cmd) {
-	case CLI_INIT:
-		e->command = "_command complete";
-		e->usage =
-			"Usage: _command complete \"<line>\" text state\n"
-			"       This function is used internally to help with command completion and should.\n"
-			"       never be called by the user directly.\n";
-		return NULL;
-	case CLI_GENERATE:
-		return NULL;
-	}
-	if (a->argc != 5)
-		return CLI_SHOWUSAGE;
-	buf = __ast_cli_generator(a->argv[2], a->argv[3], atoi(a->argv[4]), 0);
-	if (buf) {
-		ast_cli(a->fd, "%s", buf);
-		ast_free(buf);
-	} else
-		ast_cli(a->fd, "NULL\n");
-	return CLI_SUCCESS;
-}
-
 struct channel_set_debug_args {
 	int fd;
 	int is_off;
@@ -1462,6 +1381,8 @@ static char *handle_core_set_debug_channel(struct ast_cli_entry *e, int cmd, str
 		} else if (a->pos == 5) {
 			return ast_cli_complete(a->word, completions_off, a->n);
 		}
+
+		return NULL;
 	}
 
 	if (cmd == (CLI_HANDLER + 1000)) {
@@ -1541,8 +1462,9 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	struct ast_str *read_transpath = ast_str_alloca(256);
 	struct ast_str *codec_buf = ast_str_alloca(AST_FORMAT_CAP_NAMES_LEN);
 	struct ast_bridge *bridge;
-	struct ast_callid *callid;
+	ast_callid callid;
 	char callid_buf[32];
+	int stream_num;
 
 	switch (cmd) {
 	case CLI_INIT:
@@ -1564,15 +1486,18 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		return CLI_FAILURE;
 	}
 
-	output = ast_str_create(8192);
-	if (!output) {
-		return CLI_FAILURE;
-	}
-
 	chan = ast_channel_get_by_name(a->argv[3]);
 	if (!chan) {
 		ast_cli(a->fd, "%s is not a known channel\n", a->argv[3]);
+
 		return CLI_SUCCESS;
+	}
+
+	output = ast_str_create(8192);
+	if (!output) {
+		ast_channel_unref(chan);
+
+		return CLI_FAILURE;
 	}
 
 	now = ast_tvnow();
@@ -1596,7 +1521,6 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	callid = ast_channel_callid(chan);
 	if (callid) {
 		ast_callid_strnprint(callid_buf, sizeof(callid_buf), callid);
-		ast_callid_unref(callid);
 	}
 
 	ast_str_append(&output, 0,
@@ -1670,6 +1594,7 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 		S_OR(ast_channel_data(chan), "(Empty)"),
 		S_OR(callid_buf, "(None)")
 		);
+
 	ast_str_append(&output, 0, "      Variables:\n");
 
 	AST_LIST_TRAVERSE(ast_channel_varshead(chan), var, entries) {
@@ -1679,6 +1604,34 @@ static char *handle_showchan(struct ast_cli_entry *e, int cmd, struct ast_cli_ar
 	if (!(ast_channel_tech(chan)->properties & AST_CHAN_TP_INTERNAL)
 		&& ast_cdr_serialize_variables(ast_channel_name(chan), &obuf, '=', '\n')) {
 		ast_str_append(&output, 0, "  CDR Variables:\n%s\n", ast_str_buffer(obuf));
+	}
+
+	ast_str_append(&output, 0, " -- Streams --\n");
+	for (stream_num = 0; stream_num < ast_stream_topology_get_count(ast_channel_get_stream_topology(chan)); stream_num++) {
+		struct ast_stream *stream = ast_stream_topology_get_stream(ast_channel_get_stream_topology(chan), stream_num);
+		struct ast_variable *metadata = ast_stream_get_metadata_list(stream);
+
+		ast_str_append(&output, 0,
+			"Name: %s\n"
+			"    Type: %s\n"
+			"    State: %s\n"
+			"    Group: %d\n"
+			"    Formats: %s\n"
+			"    Metadata:\n",
+			ast_stream_get_name(stream),
+			ast_codec_media_type2str(ast_stream_get_type(stream)),
+			ast_stream_state2str(ast_stream_get_state(stream)),
+			ast_stream_get_group(stream),
+			ast_format_cap_get_names(ast_stream_get_formats(stream), &codec_buf)
+			);
+
+		if (metadata) {
+			struct ast_variable *v;
+			for(v = metadata; v; v = v->next) {
+				ast_str_append(&output, 0, "        %s: %s\n", v->name, v->value);
+			}
+			ast_variables_destroy(metadata);
+		}
 	}
 
 	ast_channel_unlock(chan);
@@ -1702,8 +1655,15 @@ char *ast_cli_complete(const char *word, const char * const choices[], int state
 	len = ast_strlen_zero(word) ? 0 : strlen(word);
 
 	for (i = 0; choices[i]; i++) {
-		if ((!len || !strncasecmp(word, choices[i], len)) && ++which > state)
-			return ast_strdup(choices[i]);
+		if ((!len || !strncasecmp(word, choices[i], len)) && ++which > state) {
+			if (state != -1) {
+				return ast_strdup(choices[i]);
+			}
+
+			if (ast_cli_completion_add(ast_strdup(choices[i]))) {
+				return NULL;
+			}
+		}
 	}
 	return NULL;
 }
@@ -1711,30 +1671,34 @@ char *ast_cli_complete(const char *word, const char * const choices[], int state
 char *ast_complete_channels(const char *line, const char *word, int pos, int state, int rpos)
 {
 	int wordlen = strlen(word), which = 0;
-	RAII_VAR(struct ao2_container *, cached_channels, NULL, ao2_cleanup);
+	struct ao2_container *cached_channels;
 	char *ret = NULL;
 	struct ao2_iterator iter;
-	struct stasis_message *msg;
+	struct ast_channel_snapshot *snapshot;
 
 	if (pos != rpos) {
 		return NULL;
 	}
 
-	if (!(cached_channels = stasis_cache_dump(ast_channel_cache(), ast_channel_snapshot_type()))) {
-		return NULL;
-	}
+	cached_channels = ast_channel_cache_all();
 
 	iter = ao2_iterator_init(cached_channels, 0);
-	for (; (msg = ao2_iterator_next(&iter)); ao2_ref(msg, -1)) {
-		struct ast_channel_snapshot *snapshot = stasis_message_data(msg);
+	for (; (snapshot = ao2_iterator_next(&iter)); ao2_ref(snapshot, -1)) {
+		if (!strncasecmp(word, snapshot->base->name, wordlen) && (++which > state)) {
+			if (state != -1) {
+				ret = ast_strdup(snapshot->base->name);
+				ao2_ref(snapshot, -1);
+				break;
+			}
 
-		if (!strncasecmp(word, snapshot->name, wordlen) && (++which > state)) {
-			ret = ast_strdup(snapshot->name);
-			ao2_ref(msg, -1);
-			break;
+			if (ast_cli_completion_add(ast_strdup(snapshot->base->name))) {
+				ao2_ref(snapshot, -1);
+				break;
+			}
 		}
 	}
 	ao2_iterator_destroy(&iter);
+	ao2_ref(cached_channels, -1);
 
 	return ret;
 }
@@ -1815,12 +1779,50 @@ static char *handle_cli_wait_fullybooted(struct ast_cli_entry *e, int cmd, struc
 	return CLI_SUCCESS;
 }
 
+
+#ifdef HAVE_MALLOC_TRIM
+
+/*!
+ * \internal
+ * \brief Attempt to reclaim unused heap memory.
+ *
+ * Users have reported that asterisk will sometimes be killed because it can't allocate
+ * more than around 3G of memory on a 32 bit system.
+ *
+ * Using malloc_trim() will help us to determine if it's because there's a leak or because
+ * the heap is so fragmented that there isn't enough contiguous memory available.
+ *
+ * \note malloc_trim() is a GNU extension and is therefore not portable.
+ */
+static char *handle_cli_malloc_trim(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	extern int malloc_trim(size_t __pad) __THROW;
+
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "malloc trim";
+		e->usage =
+			"Usage: malloc trim\n"
+			"       Try to give excess memory back to the OS.\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (malloc_trim(0)) {
+		ast_cli(a->fd, "Returned some memory to the OS.\n");
+	} else {
+		ast_cli(a->fd, "No memory returned to the OS.\n");
+	}
+
+	return CLI_SUCCESS;
+}
+
+#endif
+
 static char *handle_help(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a);
 
 static struct ast_cli_entry cli_cli[] = {
-	/* Deprecated, but preferred command is now consolidated (and already has a deprecated command for it). */
-	AST_CLI_DEFINE(handle_commandcomplete, "Command complete"),
-	AST_CLI_DEFINE(handle_commandnummatches, "Returns number of command matches"),
 	AST_CLI_DEFINE(handle_commandmatchesarray, "Returns command matches array"),
 
 	AST_CLI_DEFINE(handle_nodebugchan_deprecated, "Disable debugging on channel(s)"),
@@ -1863,6 +1865,11 @@ static struct ast_cli_entry cli_cli[] = {
 	AST_CLI_DEFINE(handle_cli_check_permissions, "Try a permissions config for a user"),
 
 	AST_CLI_DEFINE(handle_cli_wait_fullybooted, "Wait for Asterisk to be fully booted"),
+
+#ifdef HAVE_MALLOC_TRIM
+	AST_CLI_DEFINE(handle_cli_malloc_trim, "Return excess memory to the OS"),
+#endif
+
 };
 
 /*!
@@ -2225,7 +2232,7 @@ static void remove_shutdown_command(struct ast_cli_entry *e)
 	ast_rwlock_unlock(&shutdown_commands_lock);
 }
 
-static int __ast_cli_unregister(struct ast_cli_entry *e, struct ast_cli_entry *ed)
+int ast_cli_unregister(struct ast_cli_entry *e)
 {
 	if (e->inuse) {
 		ast_log(LOG_WARNING, "Can't remove command that is in use\n");
@@ -2248,7 +2255,7 @@ static int __ast_cli_unregister(struct ast_cli_entry *e, struct ast_cli_entry *e
 	return 0;
 }
 
-static int __ast_cli_register(struct ast_cli_entry *e, struct ast_cli_entry *ed)
+int __ast_cli_register(struct ast_cli_entry *e, struct ast_module *module)
 {
 	struct ast_cli_entry *cur;
 	int i, lf, ret = -1;
@@ -2267,7 +2274,11 @@ static int __ast_cli_register(struct ast_cli_entry *e, struct ast_cli_entry *ed)
 	}
 
 	memset(&a, '\0', sizeof(a));
+
+	e->module = module;
+	/* No module reference needed here, the module called us. */
 	e->handler(e, CLI_INIT, &a);
+
 	/* XXX check that usage and command are filled up */
 	s = ast_skip_blanks(e->command);
 	s = e->command = ast_strdup(s);
@@ -2318,27 +2329,16 @@ done:
 	return ret;
 }
 
-/* wrapper function, so we can unregister deprecated commands recursively */
-int ast_cli_unregister(struct ast_cli_entry *e)
-{
-	return __ast_cli_unregister(e, NULL);
-}
-
-/* wrapper function, so we can register deprecated commands recursively */
-int ast_cli_register(struct ast_cli_entry *e)
-{
-	return __ast_cli_register(e, NULL);
-}
-
 /*
  * register/unregister an array of entries.
  */
-int ast_cli_register_multiple(struct ast_cli_entry *e, int len)
+int __ast_cli_register_multiple(struct ast_cli_entry *e, int len, struct ast_module *module)
 {
 	int i, res = 0;
 
-	for (i = 0; i < len; i++)
-		res |= ast_cli_register(e + i);
+	for (i = 0; i < len; i++) {
+		res |= __ast_cli_register(e + i, module);
+	}
 
 	return res;
 }
@@ -2505,94 +2505,149 @@ static char *parse_args(const char *s, int *argc, const char *argv[], int max, i
 	return duplicate;
 }
 
-/*! \brief Return the number of unique matches for the generator */
-int ast_cli_generatornummatches(const char *text, const char *word)
-{
-	int matches = 0, i = 0;
-	char *buf = NULL, *oldbuf = NULL;
-
-	while ((buf = ast_cli_generator(text, word, i++))) {
-		if (!oldbuf || strcmp(buf,oldbuf))
-			matches++;
-		if (oldbuf)
-			ast_free(oldbuf);
-		oldbuf = buf;
-	}
-	if (oldbuf)
-		ast_free(oldbuf);
-	return matches;
-}
-
-static void destroy_match_list(char **match_list, int matches)
-{
-	if (match_list) {
-		int idx;
-
-		for (idx = 1; idx < matches; ++idx) {
-			ast_free(match_list[idx]);
-		}
-		ast_free(match_list);
-	}
-}
-
 char **ast_cli_completion_matches(const char *text, const char *word)
 {
-	char **match_list = NULL, *retstr, *prevstr;
-	char **new_list;
-	size_t match_list_len, max_equal, which, i;
-	int matches = 0;
+	struct ast_vector_string *vec = ast_cli_completion_vector(text, word);
+	char **match_list;
 
-	/* leave entry 0 free for the longest common substring */
-	match_list_len = 1;
-	while ((retstr = ast_cli_generator(text, word, matches)) != NULL) {
-		if (matches + 1 >= match_list_len) {
-			match_list_len <<= 1;
-			new_list = ast_realloc(match_list, match_list_len * sizeof(*match_list));
-			if (!new_list) {
-				destroy_match_list(match_list, matches);
-				return NULL;
-			}
-			match_list = new_list;
+	if (!vec) {
+		return NULL;
+	}
+
+	if (AST_VECTOR_APPEND(vec, NULL)) {
+		/* We failed to NULL terminate the elements */
+		AST_VECTOR_CALLBACK_VOID(vec, ast_free);
+		AST_VECTOR_PTR_FREE(vec);
+
+		return NULL;
+	}
+
+	match_list = AST_VECTOR_STEAL_ELEMENTS(vec);
+	AST_VECTOR_PTR_FREE(vec);
+
+	return match_list;
+}
+
+AST_THREADSTORAGE_RAW(completion_storage);
+
+/*!
+ * \internal
+ * \brief Add a value to the vector.
+ *
+ * \param vec Vector to add \a value to. Must be from threadstorage.
+ * \param value The value to add.
+ *
+ * \retval 0 Success
+ * \retval -1 Failure
+ */
+static int cli_completion_vector_add(struct ast_vector_string *vec, char *value)
+{
+	if (!value) {
+		return 0;
+	}
+
+	if (!vec || AST_VECTOR_ADD_SORTED(vec, value, strcasecmp)) {
+		if (vec) {
+			ast_threadstorage_set_ptr(&completion_storage, NULL);
+
+			AST_VECTOR_CALLBACK_VOID(vec, ast_free);
+			AST_VECTOR_FREE(vec);
 		}
-		match_list[++matches] = retstr;
+		ast_free(value);
+
+		return -1;
 	}
 
-	if (!match_list) {
-		return match_list; /* NULL */
+	return 0;
+}
+
+int ast_cli_completion_add(char *value)
+{
+	return cli_completion_vector_add(ast_threadstorage_get_ptr(&completion_storage), value);
+}
+
+struct ast_vector_string *ast_cli_completion_vector(const char *text, const char *word)
+{
+	char *retstr, *prevstr;
+	size_t max_equal;
+	size_t which = 0;
+	struct ast_vector_string *vec = ast_calloc(1, sizeof(*vec));
+
+	/* Recursion into this function is a coding error. */
+	ast_assert(!ast_threadstorage_get_ptr(&completion_storage));
+
+	if (!vec) {
+		return NULL;
 	}
+
+	if (ast_threadstorage_set_ptr(&completion_storage, vec)) {
+		ast_log(LOG_ERROR, "Failed to initialize threadstorage for completion.\n");
+		ast_free(vec);
+
+		return NULL;
+	}
+
+	while ((retstr = ast_cli_generator(text, word, which)) != NULL) {
+		if (cli_completion_vector_add(vec, retstr)) {
+			ast_threadstorage_set_ptr(&completion_storage, NULL);
+
+			goto vector_cleanup;
+		}
+
+		++which;
+	}
+
+	ast_threadstorage_set_ptr(&completion_storage, NULL);
+
+	if (!AST_VECTOR_SIZE(vec)) {
+		AST_VECTOR_PTR_FREE(vec);
+
+		return NULL;
+	}
+
+	prevstr = AST_VECTOR_GET(vec, 0);
+	max_equal = strlen(prevstr);
+	which = 1;
 
 	/* Find the longest substring that is common to all results
 	 * (it is a candidate for completion), and store a copy in entry 0.
 	 */
-	prevstr = match_list[1];
-	max_equal = strlen(prevstr);
-	for (which = 2; which <= matches; which++) {
-		for (i = 0; i < max_equal && toupper(prevstr[i]) == toupper(match_list[which][i]); i++)
-			continue;
-		max_equal = i;
-	}
+	while (which < AST_VECTOR_SIZE(vec)) {
+		size_t i = 0;
 
-	retstr = ast_malloc(max_equal + 1);
-	if (!retstr) {
-		destroy_match_list(match_list, matches);
-		return NULL;
-	}
-	ast_copy_string(retstr, match_list[1], max_equal + 1);
-	match_list[0] = retstr;
-
-	/* ensure that the array is NULL terminated */
-	if (matches + 1 >= match_list_len) {
-		new_list = ast_realloc(match_list, (match_list_len + 1) * sizeof(*match_list));
-		if (!new_list) {
+		retstr = AST_VECTOR_GET(vec, which);
+		/* Check for and remove duplicate strings. */
+		if (!strcasecmp(prevstr, retstr)) {
+			AST_VECTOR_REMOVE(vec, which, 1);
 			ast_free(retstr);
-			destroy_match_list(match_list, matches);
-			return NULL;
-		}
-		match_list = new_list;
-	}
-	match_list[matches + 1] = NULL;
 
-	return match_list;
+			continue;
+		}
+
+		while (i < max_equal && toupper(prevstr[i]) == toupper(retstr[i])) {
+			i++;
+		}
+
+		max_equal = i;
+		prevstr = retstr;
+		++which;
+	}
+
+	/* Insert longest match to position 0. */
+	retstr = ast_strndup(AST_VECTOR_GET(vec, 0), max_equal);
+	if (!retstr || AST_VECTOR_INSERT_AT(vec, 0, retstr)) {
+		ast_free(retstr);
+
+		goto vector_cleanup;
+	}
+
+	return vec;
+
+vector_cleanup:
+	AST_VECTOR_CALLBACK_VOID(vec, ast_free);
+	AST_VECTOR_PTR_FREE(vec);
+
+	return NULL;
 }
 
 /*! \brief returns true if there are more words to match */
@@ -2680,7 +2735,12 @@ static char *__ast_cli_generator(const char *text, const char *word, int state, 
 					.n = state - matchnum,
 					.argv = argv,
 					.argc = x};
-				ret = e->handler(e, CLI_GENERATE, &a);
+
+				/* If the command is in a module it must be running. */
+				if (!e->module || ast_module_running_ref(e->module)) {
+					ret = e->handler(e, CLI_GENERATE, &a);
+					ast_module_unref(e->module);
+				}
 			}
 			if (ret)
 				break;
@@ -2721,12 +2781,12 @@ int ast_cli_command_full(int uid, int gid, int fd, const char *s)
 	int x;
 	char *duplicate = parse_args(s, &x, args + 1, AST_MAX_ARGS, NULL);
 	char tmp[AST_MAX_ARGS + 1];
-	char *retval = NULL;
+	char *retval = CLI_FAILURE;
 	struct ast_cli_args a = {
 		.fd = fd, .argc = x, .argv = args+1 };
 
 	if (duplicate == NULL)
-		return -1;
+		return RESULT_FAILURE;
 
 	if (x < 1)	/* We need at least one entry, otherwise ignore */
 		goto done;
@@ -2759,13 +2819,16 @@ int ast_cli_command_full(int uid, int gid, int fd, const char *s)
 	 */
 	args[0] = (char *)e;
 
-	retval = e->handler(e, CLI_HANDLER, &a);
+	/* If the command is in a module it must be running. */
+	if (!e->module || ast_module_running_ref(e->module)) {
+		retval = e->handler(e, CLI_HANDLER, &a);
+		ast_module_unref(e->module);
+	}
 
 	if (retval == CLI_SHOWUSAGE) {
 		ast_cli(fd, "%s", S_OR(e->usage, "Invalid usage, but no usage information available.\n"));
-	} else {
-		if (retval == CLI_FAILURE)
-			ast_cli(fd, "Command '%s' failed.\n", s);
+	} else if (retval == CLI_FAILURE) {
+		ast_cli(fd, "Command '%s' failed.\n", s);
 	}
 
 done:
@@ -2773,7 +2836,7 @@ done:
 		ast_atomic_fetchadd_int(&e->inuse, -1);
 	}
 	ast_free(duplicate);
-	return 0;
+	return retval == CLI_SUCCESS ? RESULT_SUCCESS : RESULT_FAILURE;
 }
 
 int ast_cli_command_multiple_full(int uid, int gid, int fd, size_t size, const char *s)
@@ -2791,6 +2854,11 @@ int ast_cli_command_multiple_full(int uid, int gid, int fd, size_t size, const c
 		}
 	}
 	return count;
+}
+
+void ast_cli_print_timestr_fromseconds(int fd, int seconds, const char *prefix)
+{
+	print_uptimestr(fd, ast_tv(seconds, 0), prefix, 0);
 }
 
 int ast_cli_allow_at_shutdown(struct ast_cli_entry *e)

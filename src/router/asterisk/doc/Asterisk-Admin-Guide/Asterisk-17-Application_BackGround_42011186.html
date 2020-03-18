@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_BackGround</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_BackGround
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_BackGround-BackGround()">BackGround()</h1>
+
+<h3 id="Asterisk17Application_BackGround-Synopsis">Synopsis</h3>
+
+<p>Play an audio file while waiting for digits of an extension to go to.</p>
+
+<h3 id="Asterisk17Application_BackGround-Description">Description</h3>
+
+<p>This application will play the given list of files <strong>(do not put extension)</strong> while waiting for an extension to be dialed by the calling channel. To continue waiting for digits after this application has finished playing files, the <code>WaitExten</code> application should be used.</p>
+
+<p>If one of the requested sound files does not exist, call processing will be terminated.</p>
+
+<p>This application sets the following channel variable upon completion:</p>
+
+<ul>
+	<li><code>BACKGROUNDSTATUS</code> - The status of the background attempt as a text string.
+	<ul>
+		<li>SUCCESS</li>
+		<li>FAILED</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_BackGround-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>BackGround(filename1&amp;[filename2[&amp;...]],[options,[langoverride,[context]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_BackGround-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>filenames</code>
+	<ul>
+		<li><code><strong>filename1</strong></code></li>
+		<li><code>filename2</code>[,<code>filename2</code>...]</li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>s</code> - Causes the playback of the message to be skipped if the channel is not in the <code>up</code> state (i.e. it hasn't been answered yet). If this happens, the application will return immediately.</li>
+		<li><code>n</code> - Don't answer the channel before playing the files.</li>
+		<li><code>m</code> - Only break if a digit hit matches a one digit extension in the destination context.</li>
+	</ul>
+	</li>
+	<li><code>langoverride</code> - Explicitly specifies which language to attempt to use for the requested sound files.</li>
+	<li><code>context</code> - This is the dialplan context that this application will use when exiting to a dialed extension.</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_BackGround-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_ControlPlayback_42010987.html">Asterisk 17 Application_ControlPlayback</a></li>
+	<li><a href="Asterisk-17-Application_WaitExten_42011209.html">Asterisk 17 Application_WaitExten</a></li>
+	<li><a href="Asterisk-17-Application_BackgroundDetect_42010826.html">Asterisk 17 Application_BackgroundDetect</a></li>
+	<li><a href="Asterisk-17-Function_TIMEOUT_42011034.html">Asterisk 17 Function_TIMEOUT</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_BackGround-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

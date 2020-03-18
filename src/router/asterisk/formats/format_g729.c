@@ -22,17 +22,15 @@
  * \note This is not an encoder/decoder. The codec for g729 is only
  * available with a commercial license from Digium, due to patent
  * restrictions. Check http://www.digium.com for information.
- * \arg Extensions: g729 
+ * \arg Extensions: g729
  * \ingroup formats
  */
 
 /*** MODULEINFO
 	<support_level>core</support_level>
  ***/
- 
-#include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include "asterisk.h"
 
 #include "asterisk/mod_format.h"
 #include "asterisk/module.h"
@@ -48,20 +46,16 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 static struct ast_frame *g729_read(struct ast_filestream *s, int *whennext)
 {
-	int res;
+	size_t res;
+
 	/* Send a frame from the file to the appropriate channel */
 	s->fr.samples = G729A_SAMPLES;
 	AST_FRAME_SET_BUFFER(&s->fr, s->buf, AST_FRIENDLY_OFFSET, BUF_SIZE);
 	if ((res = fread(s->fr.data.ptr, 1, s->fr.datalen, s->f)) != s->fr.datalen) {
-		if (feof(s->f)) {
-			if (res) {
-				ast_debug(3, "Incomplete frame data at end of %s file "
-						  "(expected %d bytes, read %d)\n",
-						  ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res);
-			}
-		} else {
-			ast_log(LOG_ERROR, "Error while reading %s file: %s\n",
-					ast_format_get_name(s->fr.subclass.format), strerror(errno));
+		if (res && res != 10) /* XXX what for ? */ {
+			ast_log(LOG_WARNING, "Short read of %s data (expected %d bytes, read %zu): %s\n",
+					ast_format_get_name(s->fr.subclass.format), s->fr.datalen, res,
+					strerror(errno));
 		}
 		return NULL;
 	}
@@ -92,7 +86,7 @@ static int g729_seek(struct ast_filestream *fs, off_t sample_offset, int whence)
 	cur = ftello(fs->f);
 	fseeko(fs->f, 0, SEEK_END);
 	max = ftello(fs->f);
-	
+
 	bytes = BUF_SIZE * (sample_offset / G729A_SAMPLES);
 	if (whence == SEEK_SET)
 		offset = bytes;

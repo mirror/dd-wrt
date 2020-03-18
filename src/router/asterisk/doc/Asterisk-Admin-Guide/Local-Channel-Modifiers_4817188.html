@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Local Channel Modifiers</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Local-Channel_4817170.html">Local Channel</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Local Channel Modifiers
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 19, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="LocalChannelModifiers-Usage">Usage</h1><p>Dial-string modifiers exist that allow changing the default behavior of a Local Channel.</p><p>The modifiers are added to a channel by adding a slash followed by a flag onto the end of the Local Channel dial-string.</p><p>For example below we are adding the &quot;n&quot; modifier to the dial-string.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Local/101@mycontext/n</pre>
+</div></div><p>You can add more than one modifier by adding them directly adjacent to the previous modifier.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Local/101@mycontext/nj</pre>
+</div></div><h1 id="LocalChannelModifiers-ListofModifiers">List of Modifiers</h1><ul><li>'n' - Instructs the Local channel to not do a native transfer (the &quot;n&quot; stands for <em>No release</em>) upon the remote end answering the line. This is an esoteric, but important feature if you expect the Local channel to handle calls exactly like a normal channel. If you do not have the &quot;no release&quot; feature set, then as soon as the destination (inside of the Local channel) answers the line and one audio frame passes, the variables and dial plan will revert back to that of the original call, and the Local channel will become a <a href="https://wiki.asterisk.org/wiki/download/attachments/22088024/Asterisk_12_Masquerades?version=3&amp;modificationDate=1360596453885&amp;api=v2">zombie</a> and be removed from the active channels list. This is desirable in some circumstances, but can result in unexpected dialplan behavior if you are doing fancy things with variables in your call handling. Read about <a href="Local-Channel-Optimization_4817186.html">Local Channel Optimization</a> to better understand when this option is necessary.</li></ul><ul><li>'j' - Allows you to use the generic jitterbuffer on incoming calls going to Asterisk applications. For example, this would allow you to use a jitterbuffer for an incoming SIP call to Voicemail by putting a Local channel in the middle. The 'j' option must be used in conjunction with the 'n' option to make sure that the Local channel does not get optimized out of the call.<br /> This option is available starting in the Asterisk 1.6.0 branch.</li></ul><ul><li>'m' - Will cause the Local channel to forward music on hold (MoH) start and stop requests. Normally the Local channel acts on them and it is started or stopped on the Local channel itself. This options allows those requests to be forwarded through the Local channel.<br /> This option is available starting in the Asterisk 1.4 branch.</li></ul><ul><li>'b' - This option causes the Local channel to return the actual channel that is behind it when queried. This is useful for transfer scenarios as the actual channel will be transferred, not the Local channel.<br />This option is available starting in the Asterisk 1.6.0 branch and was removed in Asterisk 12.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

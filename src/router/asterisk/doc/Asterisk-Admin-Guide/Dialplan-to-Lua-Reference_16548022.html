@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Dialplan to Lua Reference</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Lua-Dialplan-Configuration_16548006.html">Lua Dialplan Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Dialplan to Lua Reference
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Jul 21, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Below is a quick reference that can be used to translate traditional <code>extensions.conf</code> dialplan concepts to their analog in <code>extensions.lua</code>.</p>
+
+<style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303029815 {padding: 0px;}
+div.rbtoc1582303029815 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303029815 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303029815'>
+<ul class='toc-indentation'>
+<li><a href='#DialplantoLuaReference-ExtensionPatterns'>Extension Patterns</a></li>
+<li><a href='#DialplantoLuaReference-ContextIncludes'>Context Includes</a></li>
+<li><a href='#DialplantoLuaReference-Loops'>Loops</a></li>
+<li><a href='#DialplantoLuaReference-Variables'>Variables</a></li>
+<li><a href='#DialplantoLuaReference-Applications'>Applications</a></li>
+<li><a href='#DialplantoLuaReference-Macros/GoSub'>Macros/GoSub</a></li>
+<li><a href='#DialplantoLuaReference-Goto'>Goto</a></li>
+</ul>
+</div>
+
+<h2 id="DialplantoLuaReference-ExtensionPatterns">Extension Patterns</h2>
+
+<p>Extension pattern matching syntax on logic works the same for <code>extensions.conf</code> and <code>extensions.lua</code>.</p>
+
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[users]
+exten =&gt; _1XX,1,Dial(SIP/${EXTEN})
+
+exten =&gt; _2XX,1,Voicemail(${EXTEN:1})
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+extensions = {}
+extensions.users = {}
+
+extensions.users[&quot;_1XX&quot;] = function(c, e)
+   app.dial(&quot;SIP/&quot; .. e)
+end
+
+extensions.users[&quot;_2XX&quot;] = function(c, e)
+  app.voicemail(&quot;1&quot; .. e:sub(2))
+end
+
+</pre>
+</div></div>
+</div></div></div></div></div></div> 
+
+<h2 id="DialplantoLuaReference-ContextIncludes">Context Includes</h2>
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.1">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[users]
+exten =&gt; 100,1,Noop
+exten =&gt; 100,n,Dial(&quot;SIP/100&quot;)
+
+[demo]
+exten =&gt; s,1,Noop
+exten =&gt; s,n,Playback(demo-congrats)
+
+[default]
+include =&gt; demo
+include =&gt; users
+
+</pre>
+</div></div>
+</div></div></div>
+
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.1">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+extensions = {
+   users = {
+      [100] = function()
+         app.dial(&quot;SIP/100&quot;)
+      end;
+   };
+
+   demo = {
+      [&quot;s&quot;] = function()
+         app.playback(demo-congrats)
+      end;
+   };
+      
+   default = {
+      include = {&quot;demo&quot;, &quot;users&quot;};
+   };
+}
+</pre>
+</div></div>
+</div></div></div></div></div></div> 
+
+<h2 id="DialplantoLuaReference-Loops">Loops</h2>
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.2">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 100,1,Noop
+exten =&gt; 100,n,Set(i=0)
+exten =&gt; 100,n,While($[i &lt; 10])
+exten =&gt; 100,n,Verbose(i = ${i})
+exten =&gt; 100,n,EndWhile
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.2">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+i = 0
+while i &lt; 10 do
+  app.verbose(&quot;i = &quot; .. i)
+end
+</pre>
+</div></div>
+</div></div></div></div></div></div>
+
+<h2 id="DialplantoLuaReference-Variables">Variables</h2>
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.3">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 100,1,Set(my_variable=my_value)
+exten =&gt; 100,n,Verbose(my_variable = ${my_variable})
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.3">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+channel.my_variable = &quot;my_value&quot;
+app.verbose(&quot;my_variable = &quot; .. channel.my_variable:get())
+</pre>
+</div></div>
+</div></div></div></div></div></div>
+
+<h2 id="DialplantoLuaReference-Applications">Applications</h2>
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.4">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 100,1,Dial(&quot;SIP/100&quot;,,m)
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.4">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+app.dial(&quot;SIP/100&quot;, nil, &quot;m&quot;)
+</pre>
+</div></div>
+</div></div></div></div></div></div>
+
+<h2 id="DialplantoLuaReference-Macros/GoSub">Macros/GoSub</h2>
+
+<p><em>Macros can be defined in pbx_lua by naming a context 'macro-*' just as in <code>extensions.conf</code>, but generally where you would use macros or gosub in <code>extensions.conf</code> you would simply use a function in lua.</em></p>
+
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.5">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[macro-dial]
+exten =&gt; s,1,Noop
+exten =&gt; s,n,Dial(${ARG1})
+
+[default]
+exten =&gt; 100,1,Macro(dial,SIP/100)
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.5">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+extensions = {}
+extensions.default = {}
+
+function dial(resource)
+   app.dial(resource)
+end
+
+extensions.default[100] = function()
+   dial(&quot;SIP/100&quot;)
+end
+</pre>
+</div></div>
+</div></div></div></div></div></div>
+
+<h2 id="DialplantoLuaReference-Goto">Goto</h2>
+<p><em>While <code>Goto</code> is an extenstions.conf staple, it should generally be avoided in pbx_lua in favor of functions.</em></p>
+
+<div class="sectionColumnWrapper"><div class="sectionMacro">
+<div class="sectionMacroRow"><div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.conf.6">extensions.conf</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+[default]
+exten =&gt; 100,1,Goto(102,1)
+
+exten =&gt; 102,1,Playback(&quot;demo-thanks&quot;)
+exten =&gt; 102,n,Hangup
+</pre>
+</div></div>
+</div></div></div>
+
+<div class="columnMacro" style="width:50%;min-width:50%;max-width:50%;">
+<div class="panel" style="border-width: 1px;"><div class="panelContent">
+<h2 id="DialplantoLuaReference-extensions.lua.6">extensions.lua</h2>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+extensions = {}
+extensions.default = {}
+
+function do_hangup()
+   app.playback(&quot;demo-thanks&quot;)
+   app.hangup()
+end
+
+extensions.default[100] = function()
+   do_hangup()
+end
+
+</pre>
+</div></div>
+</div></div></div></div></div></div>
+
+    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The <code>app.goto()</code> function will not work as expected in pbx_lua in Asterisk 1.8. If you must use <code>app.goto()</code> you must manually return control back to asterisk using <code>return</code> from the dialplan extension function, otherwise execution will continue after the call to <code>app.goto()</code>. Calls to <code>app.goto()</code> should work as expected in Asterisk 10 but still should not be necessary in most cases.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>In Asterisk 1.8, use return</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+function extension_function(c, e)
+   return app.goto(&quot;default&quot;, &quot;100&quot;, 1)
+
+   -- without that &#39;return&#39; the rest of the function would execute normally
+   app.verbose(&quot;Did you forget to use &#39;return&#39;?&quot;)
+end
+</pre>
+</div></div>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

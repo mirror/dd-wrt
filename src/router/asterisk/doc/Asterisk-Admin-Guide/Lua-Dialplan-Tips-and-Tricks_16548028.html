@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Lua Dialplan Tips and Tricks</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Lua-Dialplan-Configuration_16548006.html">Lua Dialplan Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Lua Dialplan Tips and Tricks
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified by <span class='editor'> George Joseph</span> on Jun 18, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="LuaDialplanTipsandTricks-LongRunningOperations(Autoservcie)">Long Running Operations (Autoservcie)</h2><p>Before starting long running operations, an autoservice should be started using the <code>autoservice_start()</code> function. An autoservice will ensure that the user hears a continuous stream of audio while your lua code works in the background. This autoservice will automatically be stopped before executing applications and dialplan functions and will be restarted afterwards. The autoservice can be stopped using autoservice_stop() and the autoservice_status() function will return <code>true</code> if an autoservice is currently running.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">app.startmusiconhold()
+
+autoservice_start()
+do_expensive_db_query()
+autoservice_stop()
+
+app.stopmusiconhold()
+</pre>
+</div></div>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>In Asterisk 10 an autoservice is automatically started for you by default.</p>
+                    </div>
+    </div>
+<h2 id="LuaDialplanTipsandTricks-DefiningExtensionsDynamically">Defining Extensions Dynamically</h2><p>Since extensions are functions in pbx_lua, any function can be used, including closures. A function can be defined that returns extension functions and used to populate the extensions table.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">extensions = {}
+extensions.default = {}
+
+function sip_exten(e)
+   return function()
+      app.dial(&quot;SIP/&quot; .. e)
+   end
+end
+
+extensions.default[100] = sip_exten(100)
+extensions.default[101] = sip_exten(101)
+
+</pre>
+</div></div><h2 id="LuaDialplanTipsandTricks-CreatingCustomAliasesforBuilt-inConstructs">Creating Custom Aliases for Built-in Constructs</h2><p>If you don't like the <code>app</code> table being named 'app' or if you think typing 'channel' to access the <code>channel</code> table is too much work, you can rename them.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>I prefer less typing</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">function my_exten(context, extensions)
+   c = channel
+   a = app
+
+   c.my_variable = &quot;my new channel variable&quot;
+   a.dial(&quot;SIP/100&quot;)
+end
+</pre>
+</div></div><h2 id="LuaDialplanTipsandTricks-Re-purposingTheprintFunction">Re-purposing The <code>print</code> Function</h2><p>Lua has a built in &quot;print&quot; function that outputs things to stdout, but for Asterisk, we would rather have the output go in the verbose log. To do so, we could rewrite the <code>print</code> function as follows.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">function print(...)
+   local msg = &quot;&quot;
+   for i=1,select(&#39;#&#39;, ...) do
+      if i == 1 then
+         msg = msg .. tostring(select(i, ...))
+      else
+         msg = msg .. &quot;\t&quot; .. tostring(select(i, ...))
+      end
+   end
+
+   app.verbose(msg)
+end
+</pre>
+</div></div><h2 id="LuaDialplanTipsandTricks-SplittingConfigurationintoMultipleFiles">Splitting Configuration into Multiple Files</h2><p>The <code>require</code> method can be used to load lua modules located in LUA_PATH.  The <code>dofile</code> method can be used to include any file by path name.</p><h2 id="LuaDialplanTipsandTricks-UsingExternalModules">Using External Modules</h2><p>Lua modules can be loaded using the standard <code>require</code> lua method. Some of the functionality provided by various lua modules is already included in Asterisk (e.g. func_odbc provides what LuaSQL provides). It is generally better to use code built-in to Asterisk over external lua modules. Specifically, the func_odbc module uses a connection pool to provide database resources, where as with LuaSQL each channel would have to make a new connection to the database on its own.</p><h2 id="LuaDialplanTipsandTricks-Compileextensions.lua">Compile extensions.lua</h2><p>The <code>luac</code> program can be used to compile your <code>extensions.lua</code> file into lua bytecode. This will slightly increase performance as pbx_lua will no longer need to parse <code>extensions.lua</code> on load. The <code>luac</code> compiler will also detect and report any syntax errors. To use <code>luac</code>, rename your <code>extensions.lua</code> file and then run <code>luac</code> as follows.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Assume you name your extensions.lua file extensions.lua.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">luac -o extensions.lua extensions.lua.lua
+</pre>
+</div></div><p>The pbx_lua module automatically knows the difference between a lua text file and a lua bytecode file.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

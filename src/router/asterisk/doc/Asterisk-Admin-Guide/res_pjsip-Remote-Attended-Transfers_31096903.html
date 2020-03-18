@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : res_pjsip Remote Attended Transfers</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : res_pjsip Remote Attended Transfers
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Mark Michelson</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Mar 13, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="res_pjsipRemoteAttendedTransfers-WhatisaremoteSIPtransfer?">What is a remote SIP transfer?</h1><p>Let's imagine a scenario where Alice places a call to Bob, and then Bob performs an attended transfer to Carol. In this scenario, Alice is registered to Asterisk instance A (asterisk_a.com), and Bob is registered to Server B (server_b.com), a non-Asterisk PBX. The key to this scenario is that Asterisk A has been explicitly configured to be able to call Bob directly, despite the fact that Bob does not register to Asterisk A.</p><p>Initially, Alice places a call to Bob through Alice's Asterisk instance:</p><p>
+
+<map id="gliffy-map-31326209-5139" name="gliffy-map-31326209-5139"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 540px;" usemap="#gliffy-map-31326209-5139" src="attachments/31096903/31326210.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>The arrows indicate the direction of the initial call. The Call-ID, from-tag, and to-tag will become important later.</p><p>Now, Bob wants to perform an attended transfer to Carol, so he places a call to Carol:</p><p>
+
+<map id="gliffy-map-31326213-8445" name="gliffy-map-31326213-8445"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 973px;" usemap="#gliffy-map-31326213-8445" src="attachments/31096903/31326214.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>As you can see, Bob has simultaneous calls through two separate servers. Now when Bob performs the attended transfer, what happens? Bob will send a SIP REFER request to either Asterisk A or Server B to get the two SIP servers in contact with each other. Most phones will send the REFER to Asterisk A since it is the original leg of the call, so that is what we will do in our scenario. The REFER request has a Refer-To header that specifies details of the transfer. The Refer-To header for this particular transfer looks like the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Refer-To: &lt;sip:carol@server_b.com?Replaces=ABCDE%3Bto-tag%3DBtoBobfrom-tag%3DBobtoB&gt;</pre>
+</div></div><p>That's a bit verbose. So let's break it down a little bit. First, there is a SIP URI:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>sip:carol@server_b.com</pre>
+</div></div><p>Next, there is a Replaces URI header. There are some URL-escaped character sequences in there. If we decode them, we get the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Replaces: ABCDE;to-tag=BtoBob;from-tag=BobtoB</pre>
+</div></div><p>If we break down the parts of this, what the Replaces section tells us is that the REFER request is saying that the SIP dialog with Call-ID &quot;ABCDE&quot;, to-tag &quot;BtoBob&quot; and from-tag &quot;BobtoB&quot; needs to be replaced by the party (or parties) that Bob is talking to.</p><p>Asterisk has built into it a bit of an optimization to avoid unnecessary SIP traffic by looking up the dialog referred to by the Replaces header. If the dialog is found in the Asterisk system, then Asterisk simply performs a local attended transfer. This involves internal operations such as moving a channel from one bridge to another, or creating a local channel to link two bridges together.</p><p>However, in this case, the dialog referred to by Bob's Replaces header is not on Asterisk A. It is on Server B. So Asterisk A cannot perform a local attended transfer. This is where a remote attended transfer is required.</p><h1 id="res_pjsipRemoteAttendedTransfers-FromaSIPpointofview">From a SIP point of view</h1><p>Remote attended transfers are the type of attended transfers referred to in SIP specifications, such as <a href="https://tools.ietf.org/html/rfc5589#section-7" class="external-link" rel="nofollow">RFC 5589 section 7</a>. When a SIP user agent receives a REFER request, the user agent is supposed to send an INVITE to the URI in the Refer-To header to start a new call with the user agent at that URI. The INVITE should have a Replaces header that has the same contents as the Replaces URI header from the REFER request. This tells the user agent that receives the INVITE to replace the referenced dialog with this new call instead.</p><p>In the scenario above, when Asterisk A receives the REFER request from Bob, Asterisk A should respond by sending an INVITE to <code>sip:carol@server_b.com</code> and add</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Replaces: ABCDE;to-tag=BtoBob;from-tag=BobtoB</pre>
+</div></div><p>When Server B receives this INVITE, it will essentially swap this new call in for the call referenced by the Replaces header. By doing this, the final picture looks something like the following:</p><p>
+
+<map id="gliffy-map-31326215-7002" name="gliffy-map-31326215-7002"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 850px;" usemap="#gliffy-map-31326215-7002" src="attachments/31096903/31326216.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p><p>A new dialog with Call-ID ZYXWV has replaced the previous dialog with Call-ID ABCDE. The previously-illustrated dialog between Bob and Asterisk A with Call-ID 12345 is gone because Bob's phone ended that dialog once the transfer was completed.</p><h1 id="res_pjsipRemoteAttendedTransfers-HowAsteriskhandlesthis">How Asterisk handles this</h1><p>Asterisk will rarely ever directly place outbound calls without going through the dialplan. When Asterisk A receives the REFER request from Bob, Asterisk does not immediately send an INVITE with Replaces header to Server B. Instead, Asterisk A looks for a specifically-named extension called &quot;external_replaces&quot;. Asterisk searches for this extension in the context specified by the <code>TRANSFER_CONTEXT</code> channel variable on Bob's channel. If <code>TRANSFER_CONTEXT</code> is not specified, then Asterisk searches for the extension in Bob's endpoint's context setting. Once in the dialplan, it is the job of the dialplan writer to determine whether to complete the transfer or not.</p><p>In the external_replaces extension, you will have access to the following channel variables:</p><ul><li><code>SIPTRANSFER</code>: This variable is set to &quot;yes&quot; upon entering the <code>external_replaces</code> extension, and indicates that a SIP transfer is happening. This is only useful if, for whatever reason, you are using the <code>external_replaces</code> extension for additional purposes than a SIP remote attended transfer.</li><li><code>SIPREFERRINGCONTEXT</code>: This is the dialplan context in which the <code>external_replaces</code> extension was found. This may be useful if your <code>external_replaces</code> extension calls into subroutines or jumps to other contexts.</li><li><code>SIPREFERTOHDR</code>: This is the SIP URI in the Refer-To header in the REFER request sent by the transferring party.</li></ul><p>The big reason why Asterisk calls into the dialplan instead of automatically sending an INVITE to the Refer-To URI is for security purposes. If Asterisk automatically sent an INVITE out without going through the dialplan, there are chances that transfers could be used to place calls to unwanted destinations that could, for instance, charge you a lot of money for the call.</p><h1 id="res_pjsipRemoteAttendedTransfers-Writingyourexternal_replacesextension">Writing your <code>external_replaces</code> extension</h1><p>Now that the theory has been presented, you'll need to write your <code>external_replaces</code> extension. One option you have is to not write an <code>external_replaces</code> extension at all. This will prevent any remote attended transfers from succeeding.</p><p>If you do want to write an <code>external_replaces</code> extension, the first thing you want to do is determine if you want to perform the remote attended transfer.  <code>SIPREFERTOHDR</code>, and values provided by the <code>CHANNEL()</code> dialplan function can help you to decide if you want to allow the transfer. For instance, you might use <code>CHANNEL(endpoint)</code> to see which PJSIP endpoint is performing the transfer, and you can inspect <code>SIPREFERTOHDR</code> to determine if the transfer is destined for a trusted domain.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Asterisk dialplan contains functions for manipulating strings. A function <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Function_PJSIP_PARSE_URI" rel="nofollow">Asterisk 13 Function_PJSIP_PARSE_URI</a> exists for parsing a URI within the dialplan.</p>
+                    </div>
+    </div>
+<p>If you decide not to perform the transfer, the simplest thing to do is to call the <code>Hangup()</code> application.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Calling <code>Hangup()</code> in this situation can have different effects depending on what type of phone Bob is using. Asterisk updates the phone with a notification that the attended transfer failed. It is up to the phone to decide if it wants to try to reinvite itself back into the original conversation with Alice or simply hang up.</p>
+                    </div>
+    </div>
+<p>If you decide to perform the transfer, the most straightforward way to do this is with the <code>Dial()</code> application. Here is an example of how one might complete the transfer</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; external_replaces,1,NoOp()
+	same =&gt; n,Dial(PJSIP/default_outgoing/${SIPREFERTOHDR}</pre>
+</div></div><p>Let's examine that <code>Dial()</code> more closely. First, we're dialing using PJSIP, which is pretty obvious. Next, we have the endpoint name. The endpoint name could be any configured endpoint you want to use to make this call. Remember that endpoint settings are things such as what codecs to use, what user name to place in the from header, etc. By default, if you just dial <code>PJSIP/some_endpoint</code>, Asterisk looks at some_endpoint's configured <code>aors</code> to determine what location to send the outgoing call to. However, you can override this default behavior and specify a URI to send the call to instead. This is what is being done in this <code>Dial()</code> statement. We're dialing using settings for an endpoint called &quot;default_outgoing&quot;, presumably used as a default endpoint for outgoing calls. We're sending the call out to the URI specified by <code>SIPREFERTOHDR</code> though. Using the scenario on this page, the <code>Dial()</code> command would route the call to <code>sip:carol@server_b</code>.</p><h1 id="res_pjsipRemoteAttendedTransfers-AvoidingRemoteAttendedTransfers">Avoiding Remote Attended Transfers</h1><p>In Asterisk, remote attended transfers are sometimes necessary, but avoiding them is typically a good idea. The biggest reason is the security concerns of allowing users to make calls to untrusted domains.</p><p>The easiest but most severe way to prevent remote attended transfers is to set <code>allow_transfer = no</code> for all endpoints. The problem with doing this is that it also prevents local attended transfers and blind transfers.</p><p>A second way has been discussed already, and that is not to write an <code>external_replaces</code> extension. This prevents any attempted remote attended transfers from succeeding, but it does not help to prevent the remote attended transfer from happening in the first place.</p><p>Another way is to configure your Asterisk server to only call phones that are directly registered to it and trusted SIP servers. In the scenario we have been inspecting, the remote attended transfer could have been avoided by having Asterisk A call Bob through Server B instead of dialing Bob directly. By receiving the initial call through Server B, Bob will send his REFER request to Server B, who being aware of all necessary dialogs, may be able to perform a local attended transfer (assuming it can do the same optimization as Asterisk). Configuring Asterisk this way is not necessarily guaranteed to prevent all remote attended transfer attempts, but it will help to lessen them.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326211">Full-call</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326212.png">Full-call.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326221">Full-call</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326222.png">Full-call.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326217">Alice-to-Bob-to-Carol</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326218.png">Alice-to-Bob-to-Carol.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326219">Complete-transfer</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326220.png">Complete-transfer.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326223">Alice-to-Bob-to-Carol</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326224.png">Alice-to-Bob-to-Carol.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326225">Complete-transfer</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326226.png">Complete-transfer.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326209">Full-call</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326210.png">Full-call.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326213">Alice-to-Bob-to-Carol</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326214.png">Alice-to-Bob-to-Carol.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326215">Complete-transfer</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/31096903/31326216.png">Complete-transfer.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

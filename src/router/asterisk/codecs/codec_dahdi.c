@@ -34,8 +34,6 @@
 #include "asterisk.h"
 #include <stdbool.h>
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <poll.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -615,7 +613,6 @@ static int dahdi_translate(struct ast_trans_pvt *pvt, uint32_t dst_dahdi_fmt, ui
 	/* Request translation through zap if possible */
 	int fd;
 	struct codec_dahdi_pvt *dahdip = pvt->pvt;
-	int flags;
 	int tried_once = 0;
 	const char *dev_filename = "/dev/dahdi/transcode";
 
@@ -661,11 +658,7 @@ retry:
 		return -1;
 	}
 
-	flags = fcntl(fd, F_GETFL);
-	if (flags > - 1) {
-		if (fcntl(fd, F_SETFL, flags | O_NONBLOCK))
-			ast_log(LOG_WARNING, "Could not set non-block mode!\n");
-	}
+	ast_fd_set_flags(fd, O_NONBLOCK);
 
 	dahdip->fd = fd;
 
@@ -873,8 +866,8 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Generic DAHDI Transcoder Codec Translator",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+);

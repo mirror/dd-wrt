@@ -107,7 +107,7 @@ enum ast_trans_cost_table {
 };
 
 /*! \brief
- * Descriptor of a translator. 
+ * Descriptor of a translator.
  *
  * Name, callbacks, and various options
  * related to run-time operation (size of buffers, auxiliary
@@ -121,7 +121,7 @@ enum ast_trans_cost_table {
  *
  * As a minimum, a translator should supply name, srcfmt and dstfmt,
  * the required buf_size (in bytes) and buffer_samples (in samples),
- * and a few callbacks (framein, frameout, sample).
+ * and a few callbacks (framein, frameout, feedback, sample).
  * The outbuf is automatically prepended by AST_FRIENDLY_OFFSET
  * spare bytes so generic routines can place data in there.
  *
@@ -148,19 +148,23 @@ struct ast_translator {
 	                                        *   on computation time. This cost value is computed based
 											*   on the time required to translate sample data. */
 
-	int (*newpvt)(struct ast_trans_pvt *); /*!< initialize private data 
+	int (*newpvt)(struct ast_trans_pvt *); /*!< initialize private data
                                             *   associated with the translator */
 
 	int (*framein)(struct ast_trans_pvt *pvt, struct ast_frame *in);
-	                                       /*!< Input frame callback. Store 
+	                                       /*!< Input frame callback. Store
 	                                        *   (and possibly convert) input frame. */
 
 	struct ast_frame * (*frameout)(struct ast_trans_pvt *pvt);
-	                                       /*!< Output frame callback. Generate a frame 
+	                                       /*!< Output frame callback. Generate a frame
 	                                        *   with outbuf content. */
 
+	void (*feedback)(struct ast_trans_pvt *pvt, struct ast_frame *feedback);
+	                                       /*!< Feedback frame callback. Handle
+	                                        *   input frame. */
+
 	void (*destroy)(struct ast_trans_pvt *pvt);
-	                                       /*!< cleanup private data, if needed 
+	                                       /*!< cleanup private data, if needed
 	                                        *   (often unnecessary). */
 
 	struct ast_frame * (*sample)(void);    /*!< Generate an example frame */
@@ -231,6 +235,7 @@ struct ast_trans_pvt {
 	 * explicit_dst contains an attribute which describes whether both parties
 	 * want to do forward-error correction (FEC). */
 	struct ast_format *explicit_dst;
+	int interleaved_stereo;     /*!< indicates if samples are in interleaved order, for stereo lin */
 };
 
 /*! \brief generic frameout function */
@@ -249,7 +254,7 @@ struct ast_trans_pvt;
 int __ast_register_translator(struct ast_translator *t, struct ast_module *module);
 
 /*! \brief See \ref __ast_register_translator() */
-#define ast_register_translator(t) __ast_register_translator(t, ast_module_info->self)
+#define ast_register_translator(t) __ast_register_translator(t, AST_MODULE_SELF)
 
 /*!
  * \brief Unregister a translator
@@ -296,9 +301,9 @@ int ast_translator_best_choice(struct ast_format_cap *dst_cap,
 	struct ast_format **dst_fmt_out,
 	struct ast_format **src_fmt_out);
 
-/*! 
+/*!
  * \brief Builds a translator path
- * Build a path (possibly NULL) from source to dest 
+ * Build a path (possibly NULL) from source to dest
  * \param dst dest destination format
  * \param src source source format
  * \return ast_trans_pvt on success, NULL on failure
@@ -315,7 +320,9 @@ void ast_translator_free_path(struct ast_trans_pvt *tr);
 /*!
  * \brief translates one or more frames
  * Apply an input frame into the translator and receive zero or one output frames.  Consume
- * determines whether the original frame should be freed
+ * determines whether the original frame should be freed.  In case the frame type is
+ * AST_FRAME_RTCP, the frame is not translated but passed to the translator codecs
+ * via the feedback callback, and a pointer to ast_null_frame is returned after that.
  * \param path tr translator structure to use for translation
  * \param f frame to translate
  * \param consume Whether or not to free the original frame

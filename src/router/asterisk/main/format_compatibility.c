@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/logger.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/codec.h"
@@ -271,4 +269,3 @@ struct ast_format *ast_format_compatibility_bitfield2format(uint64_t bitfield)
 	}
 	return NULL;
 }
-

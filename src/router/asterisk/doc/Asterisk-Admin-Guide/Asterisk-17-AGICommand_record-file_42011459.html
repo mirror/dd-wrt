@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 AGICommand_record file</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AGI-Commands_42010703.html">Asterisk 17 AGI Commands</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 AGICommand_record file
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17AGICommand_recordfile-RECORDFILE">RECORD FILE</h1>
+
+<h3 id="Asterisk17AGICommand_recordfile-Synopsis">Synopsis</h3>
+
+<p>Records to a given file.</p>
+
+<h3 id="Asterisk17AGICommand_recordfile-Description">Description</h3>
+
+<p>Record to a file until a given dtmf digit in the sequence is received. Returns <code>-1</code> on hangup or error. The format will specify what kind of file will be recorded. The <em>timeout</em> is the maximum record time in milliseconds, or <code>-1</code> for no <em>timeout</em>. <em>offset samples</em> is optional, and, if provided, will seek to the offset without exceeding the end of the file. <em>beep</em> can take any value, and causes Asterisk to play a beep to the channel that is about to be recorded. <em>silence</em> is the number of seconds of silence allowed before the function returns despite the lack of dtmf digits or reaching <em>timeout</em>. <em>silence</em> value must be preceded by <code>s=</code> and is also optional.</p>
+
+
+<h3 id="Asterisk17AGICommand_recordfile-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>RECORD FILE FILENAME FORMAT ESCAPE_DIGITS TIMEOUT OFFSET_SAMPLES BEEP S=SILENCE </pre>
+</div></div>
+
+<h5 id="Asterisk17AGICommand_recordfile-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>filename</code> - The destination filename of the recorded audio.</li>
+	<li><code>format</code> - The audio format in which to save the resulting file.</li>
+	<li><code>escape_digits</code> - The DTMF digits that will terminate the recording process.</li>
+	<li><code>timeout</code> - The maximum recording time in milliseconds. Set to -1 for no limit.</li>
+	<li><code>offset_samples</code> - Causes the recording to first seek to the specified offset before recording begins.</li>
+	<li><code>beep</code> - Causes Asterisk to play a beep as recording begins. This argument can take any value.</li>
+	<li><code>s=silence</code> - The number of seconds of silence that are permitted before the recording is terminated, regardless of the <em>escape_digits</em> or <em>timeout</em> arguments. If specified, this parameter must be preceded by <code>s=</code>.</li>
+</ul>
+
+
+<h3 id="Asterisk17AGICommand_recordfile-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-Application_AGI_42011488.html">Asterisk 17 Application_AGI</a></li>
+</ul>
+
+
+
+
+<h3 id="Asterisk17AGICommand_recordfile-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

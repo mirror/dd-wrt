@@ -33,7 +33,7 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page phoneprov.conf phoneprov.conf
  * \verbinclude phoneprov.conf.sample
  */
@@ -52,7 +52,6 @@
 #ifdef SOLARIS
 #include <sys/sockio.h>
 #endif
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/channel.h"
 #include "asterisk/file.h"
@@ -393,7 +392,7 @@ static void provider_destructor(void *obj)
 static void delete_file(struct phoneprov_file *file)
 {
 	ast_string_field_free_memory(file);
-	free(file);
+	ast_free(file);
 }
 
 /*! \brief Read a TEXT file into a string and return the length */
@@ -417,7 +416,7 @@ static int load_file(const char *filename, char **ret)
 
 	if (len != fread(*ret, sizeof(char), len, f)) {
 		fclose(f);
-		free(*ret);
+		ast_free(*ret);
 		*ret = NULL;
 		return -3;
 	}
@@ -608,13 +607,14 @@ static void build_profile(const char *name, struct ast_variable *v)
 		if (!strcasecmp(v->name, "mime_type")) {
 			ast_string_field_set(profile, default_mime_type, v->value);
 		} else if (!strcasecmp(v->name, "setvar")) {
-			char *value_copy = ast_strdupa(v->value);
+			char value_copy[strlen(v->value) + 1];
 
 			AST_DECLARE_APP_ARGS(args,
 				AST_APP_ARG(varname);
 				AST_APP_ARG(varval);
 			);
 
+			strcpy(value_copy, v->value); /* safe */
 			AST_NONSTANDARD_APP_ARGS(args, value_copy, '=');
 			do {
 				if (ast_strlen_zero(args.varname) || ast_strlen_zero(args.varval))
@@ -630,7 +630,7 @@ static void build_profile(const char *name, struct ast_variable *v)
 		} else {
 			struct phoneprov_file *pp_file;
 			char *file_extension;
-			char *value_copy = ast_strdupa(v->value);
+			char value_copy[strlen(v->value) + 1];
 
 			AST_DECLARE_APP_ARGS(args,
 				AST_APP_ARG(filename);
@@ -645,6 +645,7 @@ static void build_profile(const char *name, struct ast_variable *v)
 			if ((file_extension = strrchr(pp_file->format, '.')))
 				file_extension++;
 
+			strcpy(value_copy, v->value); /* safe */
 			AST_STANDARD_APP_ARGS(args, value_copy);
 
 			/* Mime type order of preference
@@ -950,7 +951,7 @@ static int phoneprov_callback(struct ast_tcptls_session_instance *ser, const str
 			socklen_t namelen = sizeof(name.sa);
 			int res;
 
-			if ((res = getsockname(ser->fd, &name.sa, &namelen))) {
+			if ((res = getsockname(ast_iostream_get_fd(ser->stream), &name.sa, &namelen))) {
 				ast_log(LOG_WARNING, "Could not get server IP, breakage likely.\n");
 			} else {
 				struct extension *exten_iter;
@@ -1238,7 +1239,7 @@ static struct varshead *get_defaults(void)
 		}
 	}
 	var = ast_var_assign(variable_lookup[AST_PHONEPROV_STD_SERVER_PORT], S_OR(value, "5060"));
-	if(cfg && cfg != CONFIG_STATUS_FILEINVALID) {
+	if (cfg && cfg != CONFIG_STATUS_FILEINVALID) {
 		ast_config_destroy(cfg);
 	}
 	AST_VAR_LIST_INSERT_TAIL(defaults, var);
@@ -1414,13 +1415,15 @@ static int unload_module(void)
  */
 static int load_module(void)
 {
-	profiles = ao2_container_alloc(MAX_PROFILE_BUCKETS, phone_profile_hash_fn, phone_profile_cmp_fn);
+	profiles = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, MAX_PROFILE_BUCKETS,
+		phone_profile_hash_fn, NULL, phone_profile_cmp_fn);
 	if (!profiles) {
 		ast_log(LOG_ERROR, "Unable to allocate profiles container.\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	http_routes = ao2_container_alloc(MAX_ROUTE_BUCKETS, http_route_hash_fn, http_route_cmp_fn);
+	http_routes = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, MAX_ROUTE_BUCKETS,
+		http_route_hash_fn, NULL, http_route_cmp_fn);
 	if (!http_routes) {
 		ast_log(LOG_ERROR, "Unable to allocate routes container.\n");
 		goto error;
@@ -1431,13 +1434,15 @@ static int load_module(void)
 		goto error;
 	}
 
-	users = ao2_container_alloc(MAX_USER_BUCKETS, user_hash_fn, user_cmp_fn);
+	users = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, MAX_USER_BUCKETS,
+		user_hash_fn, NULL, user_cmp_fn);
 	if (!users) {
 		ast_log(LOG_ERROR, "Unable to allocate users container.\n");
 		goto error;
 	}
 
-	providers = ao2_container_alloc(MAX_PROVIDER_BUCKETS, phoneprov_provider_hash_fn, phoneprov_provider_cmp_fn);
+	providers = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		MAX_PROVIDER_BUCKETS, phoneprov_provider_hash_fn, NULL, phoneprov_provider_cmp_fn);
 	if (!providers) {
 		ast_log(LOG_ERROR, "Unable to allocate providers container.\n");
 		goto error;
@@ -1494,12 +1499,13 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "HTTP Phone Provisioning",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
-	);
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.requires = "http",
+);
 
 /****  Public API for register/unregister, set defaults, and add extension. ****/
 

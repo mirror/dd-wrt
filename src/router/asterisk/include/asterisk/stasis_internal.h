@@ -65,6 +65,9 @@ struct stasis_subscription *internal_stasis_subscribe(
 	stasis_subscription_cb callback,
 	void *data,
 	int needs_mailbox,
-	int use_thread_pool);
+	int use_thread_pool,
+	const char *file,
+	int lineno,
+	const char *func);
 
 #endif /* STASIS_INTERNAL_H_ */

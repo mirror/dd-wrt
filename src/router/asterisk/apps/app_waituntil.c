@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/logger.h"
 #include "asterisk/channel.h"
 #include "asterisk/pbx.h"

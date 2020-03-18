@@ -44,8 +44,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <libpq-fe.h>
 
 #include "asterisk/config.h"
@@ -60,6 +58,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #define PGSQL_BACKEND_NAME "CEL PGSQL backend"
 
+#define PGSQL_MIN_VERSION_SCHEMA 70300
+
 static char *config = "cel_pgsql.conf";
 
 static char *pghostname;
@@ -69,9 +69,12 @@ static char *pgpassword;
 static char *pgappname;
 static char *pgdbport;
 static char *table;
+static char *schema;
 
 static int connected = 0;
+/* Optimization to reduce number of memory allocations */
 static int maxsize = 512, maxsize2 = 512;
+static int usegmtime = 0;
 
 /*! \brief show_user_def is off by default */
 #define CEL_SHOW_USERDEF_DEFAULT	0
@@ -95,11 +98,11 @@ struct columns {
 
 static AST_RWLIST_HEAD_STATIC(psql_columns, columns);
 
-#define LENGTHEN_BUF1(size) \
+#define LENGTHEN_BUF(size, var_sql) \
 	do { \
 		/* Lengthen buffer, if necessary */ \
-		if (ast_str_strlen(sql) + size + 1 > ast_str_size(sql)) { \
-			if (ast_str_make_space(&sql, ((ast_str_size(sql) + size + 3) / 512 + 1) * 512) != 0) { \
+		if (ast_str_strlen(var_sql) + size + 1 > ast_str_size(var_sql)) { \
+			if (ast_str_make_space(&var_sql, ((ast_str_size(var_sql) + size + 3) / 512 + 1) * 512) != 0) { \
 				ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CEL '%s:%s' failed.\n", pghostname, table); \
 				ast_free(sql); \
 				ast_free(sql2); \
@@ -109,18 +112,10 @@ static AST_RWLIST_HEAD_STATIC(psql_columns, columns);
 		} \
 	} while (0)
 
+#define LENGTHEN_BUF1(size) \
+	LENGTHEN_BUF(size, sql);
 #define LENGTHEN_BUF2(size) \
-	do { \
-		if (ast_str_strlen(sql2) + size + 1 > ast_str_size(sql2)) { \
-			if (ast_str_make_space(&sql2, ((ast_str_size(sql2) + size + 3) / 512 + 1) * 512) != 0) { \
-				ast_log(LOG_ERROR, "Unable to allocate sufficient memory.  Insert CEL '%s:%s' failed.\n", pghostname, table); \
-				ast_free(sql); \
-				ast_free(sql2); \
-				AST_RWLIST_UNLOCK(&psql_columns); \
-				return; \
-			} \
-		} \
-	} while (0)
+	LENGTHEN_BUF(size, sql2);
 
 static void pgsql_reconnect(void)
 {
@@ -166,7 +161,7 @@ static void pgsql_log(struct ast_event *event)
 
 	ast_mutex_lock(&pgsql_lock);
 
-	ast_localtime(&record.event_time, &tm, NULL);
+	ast_localtime(&record.event_time, &tm, usegmtime ? "GMT" : NULL);
 	ast_strftime(timestr, sizeof(timestr), DATE_FORMAT, &tm);
 
 	if ((!connected) && pghostname && pgdbuser && pgpassword && pgdbname) {
@@ -203,7 +198,7 @@ static void pgsql_log(struct ast_event *event)
 		AST_RWLIST_RDLOCK(&psql_columns);
 		AST_RWLIST_TRAVERSE(&psql_columns, cur, list) {
 			LENGTHEN_BUF1(strlen(cur->name) + 2);
-			ast_str_append(&sql, 0, "%s\"%s\"", first ? "" : ",", cur->name);
+			ast_str_append(&sql, 0, "%s\"%s\"", SEP, cur->name);
 
 			if (strcmp(cur->name, "eventtime") == 0) {
 				if (strncmp(cur->type, "int", 3) == 0) {
@@ -218,7 +213,7 @@ static void pgsql_log(struct ast_event *event)
 				} else {
 					/* char, hopefully */
 					LENGTHEN_BUF2(31);
-					ast_localtime(&record.event_time, &tm, NULL);
+					ast_localtime(&record.event_time, &tm, usegmtime ? "GMT" : NULL);
 					ast_strftime(buf, sizeof(buf), DATE_FORMAT, &tm);
 					ast_str_append(&sql2, 0, "%s'%s'", SEP, buf);
 				}
@@ -389,6 +384,14 @@ static void pgsql_log(struct ast_event *event)
 		}
 		PQclear(result);
 
+		/* Next time, just allocate buffers that are that big to start with. */
+		if (ast_str_strlen(sql) > maxsize) {
+			maxsize = ast_str_strlen(sql);
+		}
+		if (ast_str_strlen(sql2) > maxsize2) {
+			maxsize2 = ast_str_strlen(sql2);
+		}
+
 ast_log_cleanup:
 		ast_free(sql);
 		ast_free(sql2);
@@ -435,6 +438,10 @@ static int my_unload_module(void)
 	if (table) {
 		ast_free(table);
 		table = NULL;
+	}
+	if (schema) {
+		ast_free(schema);
+		schema = NULL;
 	}
 	while ((current = AST_RWLIST_REMOVE_HEAD(&psql_columns, list))) {
 		ast_free(current);
@@ -534,40 +541,82 @@ static int process_my_load_module(struct ast_config *cfg)
 	if ((tmp = ast_variable_retrieve(cfg, "global", "show_user_defined"))) {
 		cel_show_user_def = ast_true(tmp) ? 1 : 0;
 	}
-	if (option_debug) {
+	if ((tmp = ast_variable_retrieve(cfg, "global", "usegmtime"))) {
+		usegmtime = ast_true(tmp);
+	} else {
+		usegmtime = 0;
+	}
+	if (!(tmp = ast_variable_retrieve(cfg, "global", "schema"))) {
+		tmp = "";
+	}
+	if (schema) {
+		ast_free(schema);
+	}
+	if (!(schema = ast_strdup(tmp))) {
+		ast_log(LOG_WARNING,"PostgreSQL Ran out of memory copying schema info\n");
+		return AST_MODULE_LOAD_DECLINE;
+	}
+	if (DEBUG_ATLEAST(3)) {
 		if (ast_strlen_zero(pghostname)) {
-			ast_debug(3, "cel_pgsql: using default unix socket\n");
+			ast_log(LOG_DEBUG, "cel_pgsql: using default unix socket\n");
 		} else {
-			ast_debug(3, "cel_pgsql: got hostname of %s\n", pghostname);
+			ast_log(LOG_DEBUG, "cel_pgsql: got hostname of %s\n", pghostname);
 		}
-		ast_debug(3, "cel_pgsql: got port of %s\n", pgdbport);
-		ast_debug(3, "cel_pgsql: got user of %s\n", pgdbuser);
-		ast_debug(3, "cel_pgsql: got dbname of %s\n", pgdbname);
-		ast_debug(3, "cel_pgsql: got password of %s\n", pgpassword);
-		ast_debug(3, "cel_pgsql: got sql table name of %s\n", table);
-		ast_debug(3, "cel_pgsql: got show_user_defined of %s\n",
+		ast_log(LOG_DEBUG, "cel_pgsql: got port of %s\n", pgdbport);
+		ast_log(LOG_DEBUG, "cel_pgsql: got user of %s\n", pgdbuser);
+		ast_log(LOG_DEBUG, "cel_pgsql: got dbname of %s\n", pgdbname);
+		ast_log(LOG_DEBUG, "cel_pgsql: got password of %s\n", pgpassword);
+		ast_log(LOG_DEBUG, "cel_pgsql: got sql table name of %s\n", table);
+		ast_log(LOG_DEBUG, "cel_pgsql: got show_user_defined of %s\n",
 			cel_show_user_def ? "Yes" : "No");
 	}
 
 	pgsql_reconnect();
 	if (PQstatus(conn) != CONNECTION_BAD) {
-		char sqlcmd[512];
-		char *fname, *ftype, *flen, *fnotnull, *fdef;
-		char *tableptr;
-		int i, rows;
+		char sqlcmd[768];
+		char *fname, *ftype, *flen, *fnotnull, *fdef, *tablename, *tmp_tablename;
+		int i, rows, version;
 
 		ast_debug(1, "Successfully connected to PostgreSQL database.\n");
 		connected = 1;
 
+		version = PQserverVersion(conn);
 		/* Remove any schema name from the table */
-		if ((tableptr = strrchr(table, '.'))) {
-			tableptr++;
+		if ((tmp_tablename = strrchr(table, '.'))) {
+			tmp_tablename++;
 		} else {
-			tableptr = table;
+			tmp_tablename = table;
 		}
+		tablename = ast_alloca(strlen(tmp_tablename) * 2 + 1);
+		PQescapeStringConn(conn, tablename, tmp_tablename, strlen(tmp_tablename), NULL);
+		if (version >= PGSQL_MIN_VERSION_SCHEMA) {
+			char *schemaname;
+			int lenschema;
+			lenschema = strlen(schema);
+			schemaname = ast_alloca(lenschema * 2 + 1);
+			PQescapeStringConn(conn, schemaname, schema, lenschema, NULL);
 
+			snprintf(sqlcmd, sizeof(sqlcmd),
+			"SELECT a.attname, t.typname, a.attlen, a.attnotnull, pg_catalog.pg_get_expr(d.adbin, d.adrelid) adsrc, a.atttypmod "
+			"FROM (((pg_catalog.pg_class c INNER JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace "
+			         "AND c.relname = '%s' AND n.nspname = %s%s%s) "
+			       "INNER JOIN pg_catalog.pg_attribute a ON ("
+			           "NOT a.attisdropped) AND a.attnum > 0 AND a.attrelid = c.oid) "
+			    "INNER JOIN pg_catalog.pg_type t ON t.oid = a.atttypid) "
+			"LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid "
+			  "AND d.adnum = a.attnum "
+			"ORDER BY n.nspname, c.relname, attnum",
+				tablename,
+				lenschema == 0 ? "" : "'", lenschema == 0 ? "current_schema()" : schemaname, lenschema == 0 ? "" : "'");
+		} else {
+			snprintf(sqlcmd, sizeof(sqlcmd),
+			"SELECT a.attname, t.typname, a.attlen, a.attnotnull, d.adsrc, a.atttypmod "
+			"FROM pg_class c, pg_type t, pg_attribute a "
+			"LEFT OUTER JOIN pg_attrdef d ON a.atthasdef AND d.adrelid = a.attrelid "
+			"AND d.adnum = a.attnum WHERE c.oid = a.attrelid AND a.atttypid = t.oid "
+			"AND (a.attnum > 0) AND c.relname = '%s' ORDER BY c.relname, attnum", tablename);
+		}
 		/* Query the columns */
-		snprintf(sqlcmd, sizeof(sqlcmd), "select a.attname, t.typname, a.attlen, a.attnotnull, d.adsrc from pg_class c, pg_type t, pg_attribute a left outer join pg_attrdef d on a.atthasdef and d.adrelid = a.attrelid and d.adnum = a.attnum where c.oid = a.attrelid and a.atttypid = t.oid and (a.attnum > 0) and c.relname = '%s' order by c.relname, attnum", tableptr);
 		result = PQexec(conn, sqlcmd);
 		if (PQresultStatus(result) != PGRES_TUPLES_OK) {
 			pgerror = PQresultErrorMessage(result);
@@ -660,4 +709,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PostgreSQL CEL Backen
 	.unload = unload_module,
 	.reload = reload,
 	.load_pri = AST_MODPRI_CDR_DRIVER,
+	.requires = "cel",
 );

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_AMD</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_AMD
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_AMD-AMD()">AMD()</h1>
+
+<h3 id="Asterisk17Application_AMD-Synopsis">Synopsis</h3>
+
+<p>Attempt to detect answering machines.</p>
+
+<h3 id="Asterisk17Application_AMD-Description">Description</h3>
+
+<p>This application attempts to detect answering machines at the beginning of outbound calls. Simply call this application after the call has been answered (outbound only, of course).</p>
+
+<p>When loaded, AMD reads amd.conf and uses the parameters specified as default values. Those default values get overwritten when the calling AMD with parameters.</p>
+
+<p>This application sets the following channel variables:</p>
+
+<ul>
+	<li><code>AMDSTATUS</code> - This is the status of the answering machine detection
+	<ul>
+		<li>MACHINE</li>
+		<li>HUMAN</li>
+		<li>NOTSURE</li>
+		<li>HANGUP</li>
+	</ul>
+	</li>
+	<li><code>AMDCAUSE</code> - Indicates the cause that led to the conclusion
+	<ul>
+		<li>TOOLONG - Total Time.</li>
+		<li>INITIALSILENCE - Silence Duration - Initial Silence.</li>
+		<li>HUMAN - Silence Duration - afterGreetingSilence.</li>
+		<li>LONGGREETING - Voice Duration - Greeting.</li>
+		<li>MAXWORDLENGTH - Word Length - max length of a single word.</li>
+		<li>MAXWORDS - Word Count - maximum number of words.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_AMD-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>AMD([initialSilence,[greeting,[afterGreetingSilence,[totalAnalysis Time,[miniumWordLength,[betweenWordSilence,[maximumNumberOfWords,[silenceThreshold,[maximumWordLength]]]]]]]]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_AMD-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>initialSilence</code> - Is maximum initial silence duration before greeting.<br />
+If this is exceeded, the result is detection as a MACHINE</li>
+	<li><code>greeting</code> - is the maximum length of a greeting.<br />
+If this is exceeded, the result is detection as a MACHINE</li>
+	<li><code>afterGreetingSilence</code> - Is the silence after detecting a greeting.<br />
+If this is exceeded, the result is detection as a HUMAN</li>
+	<li><code>totalAnalysis Time</code> - Is the maximum time allowed for the algorithm<br />
+to decide on whether the audio represents a HUMAN, or a MACHINE</li>
+	<li><code>miniumWordLength</code> - Is the minimum duration of Voice considered to be a word</li>
+	<li><code>betweenWordSilence</code> - Is the minimum duration of silence after a word to consider the audio that follows to be a new word</li>
+	<li><code>maximumNumberOfWords</code> - Is the maximum number of words in a greeting<br />
+If this is exceeded, then the result is detection as a MACHINE</li>
+	<li><code>silenceThreshold</code> - What is the average level of noise from 0 to 32767 which if not exceeded, should be considered silence?</li>
+	<li><code>maximumWordLength</code> - Is the maximum duration of a word to accept.<br />
+If exceeded, then the result is detection as a MACHINE</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_AMD-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_WaitForSilence_42010805.html">Asterisk 17 Application_WaitForSilence</a></li>
+	<li><a href="Asterisk-17-Application_WaitForNoise_42010806.html">Asterisk 17 Application_WaitForNoise</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_AMD-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

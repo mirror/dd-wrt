@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Lua Dialplan Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Lua Dialplan Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified by <span class='editor'> Rusty Newton</span> on May 02, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Asterisk supports the ability to write dialplan instructions in the <a href="http://lua.org" class="external-link" rel="nofollow">Lua</a> programming language. This method can be used as an alternative to or in combination with <a href="Dialplan_4817412.html">extensions.conf</a> and/or <a href="4620445.html">AEL</a>. PBX lua allows users to use the full power of lua to develop telephony applications using Asterisk. Lua dialplan configuration is done in the <code>extensions.lua</code> file.</p>    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Dependencies</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>To use pbx_lua, the lua development libraries must be installed before Asterisk is configured and built. You can get these libraries directly from <a class="external-link" href="http://lua.org" rel="nofollow">http://lua.org</a>, but it is easier to install them using your distribution's package management tool. The package is probably named liblua5.1-dev, liblua-dev, or lua-devel depending on your linux distribution.</p>
+                    </div>
+    </div>
+<h2 id="LuaDialplanConfiguration-PBXLuaBasics">PBX Lua Basics</h2><p>The <code>extensions.lua</code> file is used to configure PBX lua and is a lua script (as opposed to being a standard asterisk configuration file). Any thing that is proper lua code is allowed in this file. Asterisk expects to find a global table named '<code>extensions</code>' when the file is loaded. This table can be generated however you wish. The simplest way is to define all of the extensions in line, but for more complex dialplans alternative methods may be necessary.</p><p>Each extension is a lua function that is executed when a channel lands on that extension. The extension function is passed the current context and extension as the first two arguments. These can be safely ignored if desired. There are no priorities (each extension function is treated as priority 1 by the rest of Asterisk). Patterns are allowed just as in <code>extensions.conf</code> and the matching order is identical.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">extensions = {
+   default = {
+      [&quot;100&quot;] = function(context, extension)
+         app.playback(&quot;please-hold&quot;)
+         app.dial(&quot;SIP/100&quot;, 60)
+      end;
+
+      [&quot;101&quot;] = function(c, e)
+         app.dial(&quot;SIP/101&quot;, 60)
+      end;
+}
+</pre>
+</div></div><p>The <code>extensions.lua</code> file can be reloaded by reloading the pbx_lua module.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">*CLI&gt; module reload pbx_lua
+</pre>
+</div></div><p>If there are errors in the file, the errors will be reported and the existing extensions.lua file will remain in use. Channels that existed before the reload command was issued will also continue to use the existing extensions.lua file.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Runtime errors are logged and the channel on which the error occurred is hung up.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

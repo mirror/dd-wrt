@@ -17,7 +17,8 @@
  */
 
 /*!
- * \file \brief Test endpoints.
+ * \file
+ * \brief Test endpoints.
  *
  * \author\verbatim David M. Lee, II <dlee@digium.com> \endverbatim
  *
@@ -31,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/channel.h"
@@ -256,32 +255,18 @@ AST_TEST_DEFINE(channel_messages)
 	ast_hangup(chan);
 	chan = NULL;
 
-	actual_count = stasis_message_sink_wait_for_count(sink, 6,
+	actual_count = stasis_message_sink_wait_for_count(sink, 3,
 		STASIS_SINK_DEFAULT_WAIT);
-	ast_test_validate(test, 6 == actual_count);
+	ast_test_validate(test, 3 == actual_count);
 
 	msg = sink->messages[1];
 	type = stasis_message_type(msg);
-	ast_test_validate(test, stasis_cache_update_type() == type);
+	ast_test_validate(test, ast_channel_snapshot_type() == type);
 
 	msg = sink->messages[2];
 	type = stasis_message_type(msg);
-	ast_test_validate(test, ast_channel_snapshot_type() == type);
-
-	msg = sink->messages[3];
-	type = stasis_message_type(msg);
-	ast_test_validate(test, stasis_cache_update_type() == type);
-
-	/* The ordering of the cache clear and endpoint snapshot are
-	 * unspecified */
-	msg = sink->messages[4];
-	if (stasis_message_type(msg) == stasis_cache_clear_type()) {
-		/* Okay; the next message should be the endpoint snapshot */
-		msg = sink->messages[5];
-	}
-
-	type = stasis_message_type(msg);
 	ast_test_validate(test, ast_endpoint_snapshot_type() == type);
+
 	actual_snapshot = stasis_message_data(msg);
 	ast_test_validate(test, 0 == actual_snapshot->num_channels);
 
@@ -305,7 +290,8 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Endpoint stasis-related testing",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_stasis_test",
-	);
+	.requires = "res_stasis_test",
+);

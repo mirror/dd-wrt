@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Interacting with Asterisk from Lua (apps, variables, and functions)</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Lua-Dialplan-Configuration_16548006.html">Lua Dialplan Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Interacting with Asterisk from Lua (apps, variables, and functions)
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matthew Nicholson</span>, last modified by <span class='editor'> George Joseph</span> on Jun 18, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Interaction with is done through a series of predefined objects provided by pbx_lua. The <code>app</code> table is used to access dialplan applications. Any asterisk application can be accessed and executed as if it were a function attached to the <code>app</code> table. Dialplan variables and functions are accessed and executed via the <code>channel</code> table.</p>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Naming Conflicts Between Lua and Asterisk</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p><span>Asterisk applications, variables or functions whose names conflict with Lua reserved words or contain special characters must be referenced using the </span><code>[]</code><span> operator. For example, Lua 5.2 introduced the </span><code>goto </code><span>control statement which conflicts with the Asterisk </span><code>goto</code><span> dialplan application. So...</span></p><p> </p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The following will cause pbx_lua.so to fail to load with Lua 5.2 or later because <code>goto</code> is a reserved word.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">app.goto(&quot;default&quot;, 1000, 1)</pre>
+</div></div>
+                    </div>
+    </div>
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The following will work with all Lua versions...</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">app[&quot;goto&quot;](&quot;default&quot;, 1000, 1)</pre>
+</div></div>
+                    </div>
+    </div>
+
+                    </div>
+    </div>
+<p> </p><p><span style="color: rgb(133,120,102);font-family: MuseoSans500 , sans-serif;font-size: 20.0px;line-height: 1.5;">Dialplan Applications</span></p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.lua</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">app.playback(&quot;please-hold&quot;)
+app.dial(&quot;SIP/100&quot;, nil, &quot;m&quot;)
+</pre>
+</div></div><p>Any dialplan application can be executed using the <code>app</code> table. Application names are case insensitive. Arguments are passed to dialplan applications just as arguments are passed to functions in lua. String arguments must be quoted as they are lua strings. Empty arguments may be passed as <code>nil</code> or as empty strings.</p><h2 id="InteractingwithAsteriskfromLua(apps,variables,andfunctions)-ChannelVariables">Channel Variables</h2><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Set a Variable</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">channel.my_variable = &quot;my_value&quot;
+</pre>
+</div></div><p>After this the channel variable <code>${my_variable</code>} contains the value &quot;my_value&quot;.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Read a Variable</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">value = channel.my_variable:get()
+</pre>
+</div></div><p>Any channel variable can be read and set using the <code>channel</code> table. Local and global lua variables can be used as they normally would and are completely unrelated to channel variables.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The following construct will NOT work.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">value = channel.my_variable -- does not work as expected (value:get() could be used to get the value after this line)
+</pre>
+</div></div>
+                    </div>
+    </div>
+    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If the variable name is an Lua reserved word or contains characters that Lua considers special use the <code>[]</code> operator to access them.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">channel[&quot;my_variable&quot;] = &quot;my_value&quot;
+value = channel[&quot;my_variable&quot;]:get()
+</pre>
+</div></div>
+                    </div>
+    </div>
+<h3 id="InteractingwithAsteriskfromLua(apps,variables,andfunctions)-DialplanFunctions">Dialplan Functions</h3><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Write a Dialplan Function</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">channel.FAXOPT(&quot;modems&quot;):set(&quot;v17,v27,v29&quot;)
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Read a Dialplan Function</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">value = channel.FAXOPT(&quot;modems&quot;):get()
+</pre>
+</div></div><p>Note the use of the <code>:</code> operator with the <code>get()</code> and <code>set()</code> methods.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If the function name is an Lua reserved word or contains characters that Lua considers special use the <code>[]</code> operator to access them.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">channel[&quot;FAXOPT(modems)&quot;] = &quot;v17,v27,v29&quot;
+value = channel[&quot;FAXOPT(modems)&quot;]:get()
+</pre>
+</div></div>
+                    </div>
+    </div>
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The following constructs will NOT work.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">channel.FAXOPT(&quot;modems&quot;) = &quot;v17,v27,v29&quot; -- syntax error
+value = channel.FAXOPT(&quot;modems&quot;)         -- does not work as expected (value:get() could be used to get the value after this line)
+</pre>
+</div></div>
+                    </div>
+    </div>
+    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>Dialplan function names are case sensitive.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

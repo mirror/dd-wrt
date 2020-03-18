@@ -41,12 +41,10 @@
  */
 
 /*** MODULEINFO
-	<support_level>core</support_level>
+	<support_level>extended</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <termios.h>
 #include <sys/time.h>
@@ -63,6 +61,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stringfields.h"
 #include "asterisk/linkedlists.h"
 #include "asterisk/app.h"
+#include "asterisk/mwi.h"
 #include "asterisk/pbx.h"
 #include "asterisk/channel.h"
 
@@ -164,7 +163,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
  ***/
 
 static const char config_file[] = "smdi.conf";
-static int smdi_loaded;
 
 struct ast_smdi_interface {
 	char name[SMDI_MAX_FILENAME_LEN];
@@ -226,10 +224,12 @@ static struct {
 static void smdi_interface_destroy(void *obj)
 {
 	struct ast_smdi_interface *iface = obj;
+	int mod_unref_defer = 0;
 
 	if (iface->thread != AST_PTHREADT_NULL && iface->thread != AST_PTHREADT_STOP) {
 		pthread_cancel(iface->thread);
 		pthread_join(iface->thread, NULL);
+		mod_unref_defer = 1;
 	}
 
 	iface->thread = AST_PTHREADT_STOP;
@@ -246,12 +246,12 @@ static void smdi_interface_destroy(void *obj)
 	ast_mutex_destroy(&iface->mwi_q_lock);
 	ast_cond_destroy(&iface->mwi_q_cond);
 
-	free(iface);
-
-	ast_module_unref(ast_module_info->self);
+	if (mod_unref_defer) {
+		ast_module_unref(ast_module_info->self);
+	}
 }
 
-/*! 
+/*!
  * \internal
  * \brief Push an SMDI message to the back of an interface's message queue.
  * \param iface a pointer to the interface to use.
@@ -326,10 +326,10 @@ static inline int lock_msg_q(struct ast_smdi_interface *iface, enum smdi_message
 	switch (type) {
 	case SMDI_MWI:
 		return ast_mutex_lock(&iface->mwi_q_lock);
-	case SMDI_MD:	
+	case SMDI_MD:
 		return ast_mutex_lock(&iface->md_q_lock);
 	}
-	
+
 	return -1;
 }
 
@@ -377,7 +377,7 @@ static void purge_old_messages(struct ast_smdi_interface *iface, enum smdi_messa
 	struct timeval now = ast_tvnow();
 	long elapsed = 0;
 	void *msg;
-	
+
 	lock_msg_q(iface, type);
 	msg = unlink_from_msg_q(iface, type);
 	unlock_msg_q(iface, type);
@@ -391,7 +391,7 @@ static void purge_old_messages(struct ast_smdi_interface *iface, enum smdi_messa
 			ao2_ref(msg, -1);
 			ast_log(LOG_NOTICE, "Purged expired message from %s SMDI %s message queue.  "
 				"Message was %ld milliseconds too old.\n",
-				iface->name, (type == SMDI_MD) ? "MD" : "MWI", 
+				iface->name, (type == SMDI_MD) ? "MD" : "MWI",
 				elapsed - iface->msg_expiry);
 
 			lock_msg_q(iface, type);
@@ -475,7 +475,7 @@ static void *smdi_msg_find(struct ast_smdi_interface *iface,
 	return msg;
 }
 
-static void *smdi_message_wait(struct ast_smdi_interface *iface, int timeout, 
+static void *smdi_message_wait(struct ast_smdi_interface *iface, int timeout,
 	enum smdi_message_type type, const char *search_key, struct ast_flags options)
 {
 	struct timeval start;
@@ -574,7 +574,7 @@ struct ast_smdi_interface * AST_OPTIONAL_API_NAME(ast_smdi_interface_find)(const
 	return iface;
 }
 
-/*! 
+/*!
  * \internal
  * \brief Read an SMDI message.
  *
@@ -588,9 +588,8 @@ static void *smdi_read(void *iface_p)
 	struct ast_smdi_interface *iface = iface_p;
 	struct ast_smdi_md_message *md_msg;
 	struct ast_smdi_mwi_message *mwi_msg;
-	char c = '\0';
 	char *cp = NULL;
-	int i;
+	int i, c;
 	int start = 0;
 
 	/* read an smdi message */
@@ -610,16 +609,20 @@ static void *smdi_read(void *iface_p)
 
 			ast_debug(1, "Read a 'D' ... it's an MD message.\n");
 
-			if (!(md_msg = ast_calloc(1, sizeof(*md_msg)))) {
-				ao2_ref(iface, -1);
+			md_msg = ao2_alloc(sizeof(*md_msg), NULL);
+			if (!md_msg) {
 				return NULL;
 			}
 
-			md_msg = ao2_alloc(sizeof(*md_msg), NULL);
-
 			/* read the message desk number */
 			for (i = 0; i < sizeof(md_msg->mesg_desk_num) - 1; i++) {
-				md_msg->mesg_desk_num[i] = fgetc(iface->file);
+				c = fgetc(iface->file);
+				if (c == EOF) {
+					ast_log(LOG_ERROR, "Unexpected EOF while reading MD message\n");
+					ao2_ref(md_msg, -1);
+					return NULL;
+				}
+				md_msg->mesg_desk_num[i] = (char) c;
 				ast_debug(1, "Read a '%c'\n", md_msg->mesg_desk_num[i]);
 			}
 
@@ -629,7 +632,13 @@ static void *smdi_read(void *iface_p)
 
 			/* read the message desk terminal number */
 			for (i = 0; i < sizeof(md_msg->mesg_desk_term) - 1; i++) {
-				md_msg->mesg_desk_term[i] = fgetc(iface->file);
+				c = fgetc(iface->file);
+				if (c == EOF) {
+					ast_log(LOG_ERROR, "Unexpected EOF while reading SMDI message\n");
+					ao2_ref(md_msg, -1);
+					return NULL;
+				}
+				md_msg->mesg_desk_term[i] = (char) c;
 				ast_debug(1, "Read a '%c'\n", md_msg->mesg_desk_term[i]);
 			}
 
@@ -638,7 +647,13 @@ static void *smdi_read(void *iface_p)
 			ast_debug(1, "The message desk terminal is '%s'\n", md_msg->mesg_desk_term);
 
 			/* read the message type */
-			md_msg->type = fgetc(iface->file);
+			c = fgetc(iface->file);
+			if (c == EOF) {
+				ast_log(LOG_ERROR, "Unexpected EOF while reading SMDI message\n");
+				ao2_ref(md_msg, -1);
+				return NULL;
+			}
+			md_msg->type = (char) c;
 
 			ast_debug(1, "Message type is '%c'\n", md_msg->type);
 
@@ -712,16 +727,14 @@ static void *smdi_read(void *iface_p)
 
 			ast_debug(1, "Read a 'W', it's an MWI message. (No more debug coming for MWI messages)\n");
 
-			if (!(mwi_msg = ast_calloc(1, sizeof(*mwi_msg)))) {
-				ao2_ref(iface, -1);
+			mwi_msg = ao2_alloc(sizeof(*mwi_msg), NULL);
+			if (!mwi_msg) {
 				return NULL;
 			}
 
-			mwi_msg = ao2_alloc(sizeof(*mwi_msg), NULL);
-
 			/* discard the 'I' (from 'MWI') */
 			fgetc(iface->file);
-			
+
 			/* read the forwarding station number (may be blank) */
 			cp = &mwi_msg->fwd_st[0];
 			for (i = 0; i < sizeof(mwi_msg->fwd_st) - 1; i++) {
@@ -744,8 +757,15 @@ static void *smdi_read(void *iface_p)
 			ast_copy_string(mwi_msg->name, mwi_msg->fwd_st, sizeof(mwi_msg->name));
 
 			/* read the mwi failure cause */
-			for (i = 0; i < sizeof(mwi_msg->cause) - 1; i++)
-				mwi_msg->cause[i] = fgetc(iface->file);
+			for (i = 0; i < sizeof(mwi_msg->cause) - 1; i++) {
+				c = fgetc(iface->file);
+				if (c == EOF) {
+					ast_log(LOG_ERROR, "Unexpected EOF while reading MWI message\n");
+					ao2_ref(mwi_msg, -1);
+					return NULL;
+				}
+				mwi_msg->cause[i] = (char) c;
+			}
 
 			mwi_msg->cause[sizeof(mwi_msg->cause) - 1] = '\0';
 
@@ -762,7 +782,6 @@ static void *smdi_read(void *iface_p)
 	}
 
 	ast_log(LOG_ERROR, "Error reading from SMDI interface %s, stopping listener thread\n", iface->name);
-	ao2_ref(iface, -1);
 	return NULL;
 }
 
@@ -770,7 +789,7 @@ static void destroy_mailbox_mapping(struct mailbox_mapping *mm)
 {
 	ast_string_field_free_memory(mm);
 	ao2_ref(mm->iface, -1);
-	free(mm);
+	ast_free(mm);
 }
 
 static void destroy_all_mailbox_mappings(void)
@@ -945,7 +964,7 @@ static int smdi_load(int reload)
 	tcflag_t paritybit = PARENB;   /* even parity checking */
 	tcflag_t charsize = CS7;       /* seven bit characters */
 	int stopbits = 0;              /* One stop bit */
-	
+
 	int msdstrip = 0;              /* strip zero digits */
 	long msg_expiry = SMDI_MSG_EXPIRY_TIME;
 
@@ -959,6 +978,11 @@ static int smdi_load(int reload)
 		return 0;
 
 	new_ifaces = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, smdi_ifaces_cmp_fn);
+	if (!new_ifaces) {
+		ast_config_destroy(conf);
+		return -1;
+	}
+
 	for (v = ast_variable_browse(conf, "interfaces"); v; v = v->next) {
 		RAII_VAR(struct ast_smdi_interface *, iface, NULL, ao2_cleanup);
 
@@ -1011,7 +1035,7 @@ static int smdi_load(int reload)
 		} else if (!strcasecmp(v->name, "twostopbits")) {
 			stopbits = ast_true(v->name);
 		} else if (!strcasecmp(v->name, "smdiport")) {
-			if (reload) {
+			if (reload && old_ifaces) {
 				/* we are reloading, check if we are already
 				 * monitoring this interface, if we are we do
 				 * not want to start it again.  This also has
@@ -1028,7 +1052,7 @@ static int smdi_load(int reload)
 					continue;
 				}
 			}
-			
+
 			if (!(iface = alloc_smdi_interface()))
 				continue;
 
@@ -1056,19 +1080,19 @@ static int smdi_load(int reload)
 				ast_log(LOG_ERROR, "Error setting baud rate on %s (%s)\n", iface->name, strerror(errno));
 				continue;
 			}
-			
+
 			/* set the stop bits */
 			if (stopbits)
 				iface->mode.c_cflag = iface->mode.c_cflag | CSTOPB;   /* set two stop bits */
 			else
 				iface->mode.c_cflag = iface->mode.c_cflag & ~CSTOPB;  /* set one stop bit */
-			
+
 			/* set the parity */
 			iface->mode.c_cflag = (iface->mode.c_cflag & ~PARENB & ~PARODD) | paritybit;
-			
+
 			/* set the character size */
 			iface->mode.c_cflag = (iface->mode.c_cflag & ~CSIZE) | charsize;
-			
+
 			/* commit the desired attributes */
 			if (tcsetattr(iface->fd, TCSAFLUSH, &iface->mode)) {
 				ast_log(LOG_ERROR, "Error setting attributes on %s (%s)\n", iface->name, strerror(errno));
@@ -1081,7 +1105,13 @@ static int smdi_load(int reload)
 			/* set the message expiry time */
 			iface->msg_expiry = msg_expiry;
 
-			/* start the listener thread */
+			/*
+			 * start the listener thread
+			 *
+			 * The listener thread does not actually hold a ref to iface.  When all
+			 * external refs go away, the destructor will stop the listener thread
+			 * before actually destroying the iface object.
+			 */
 			ast_verb(3, "Starting SMDI monitor thread for %s\n", iface->name);
 			if (ast_pthread_create_background(&iface->thread, NULL, smdi_read, iface)) {
 				ast_log(LOG_ERROR, "Error starting SMDI monitor thread for %s\n", iface->name);
@@ -1131,10 +1161,10 @@ static int smdi_load(int reload)
 		return -1;
 	}
 
-	if (ao2_container_count(new_ifaces)) {
+	if (!ao2_container_count(new_ifaces)) {
 		res = 1;
 	}
-	
+
 	return res;
 }
 
@@ -1151,7 +1181,7 @@ static void smdi_msg_datastore_destroy(void *data)
 	ao2_cleanup(smd->iface);
 	ao2_cleanup(smd->md_msg);
 
-	free(smd);
+	ast_free(smd);
 }
 
 static const struct ast_datastore_info smdi_msg_datastore_info = {
@@ -1305,7 +1335,7 @@ static int smdi_msg_read(struct ast_channel *chan, const char *cmd, char *data, 
 	ast_channel_lock(chan);
 	datastore = ast_channel_datastore_find(chan, &smdi_msg_datastore_info, args.id);
 	ast_channel_unlock(chan);
-	
+
 	if (!datastore) {
 		ast_log(LOG_WARNING, "No SMDI message found for message ID '%s'\n", args.id);
 		goto return_error;
@@ -1347,49 +1377,8 @@ static struct ast_custom_function smdi_msg_function = {
 	.read = smdi_msg_read,
 };
 
-static int _unload_module(int fromload);
-
-/*!
- * \brief Load the module
- *
- * Module loading including tests for configuration or dependencies.
- * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
- * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
- * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
- */
-static int load_module(void)
+static int unload_module(void)
 {
-	int res;
-	smdi_loaded = 1;
-
-	ast_mutex_init(&mwi_monitor.lock);
-	ast_cond_init(&mwi_monitor.cond, NULL);
-
-	/* load the config and start the listener threads*/
-	res = smdi_load(0);
-	if (res < 0) {
-		_unload_module(1);
-		return AST_MODULE_LOAD_DECLINE;
-	} else if (res == 1) {
-		_unload_module(1);
-		ast_log(LOG_NOTICE, "No SMDI interfaces are available to listen on, not starting SMDI listener.\n");
-		return AST_MODULE_LOAD_DECLINE;
-	}
-
-	ast_custom_function_register(&smdi_msg_retrieve_function);
-	ast_custom_function_register(&smdi_msg_function);
-
-	return AST_MODULE_LOAD_SUCCESS;
-}
-
-static int _unload_module(int fromload)
-{
-	if (!smdi_loaded) {
-		return 0;
-	}
-
 	ao2_global_obj_release(smdi_ifaces);
 
 	destroy_all_mailbox_mappings();
@@ -1403,18 +1392,42 @@ static int _unload_module(int fromload)
 		pthread_join(mwi_monitor.thread, NULL);
 	}
 
-	if (!fromload) {
-		ast_custom_function_unregister(&smdi_msg_retrieve_function);
-		ast_custom_function_unregister(&smdi_msg_function);
-	}
+	ast_custom_function_unregister(&smdi_msg_retrieve_function);
+	ast_custom_function_unregister(&smdi_msg_function);
 
-	smdi_loaded = 0;
 	return 0;
 }
 
-static int unload_module(void)
+/*!
+ * \brief Load the module
+ *
+ * Module loading including tests for configuration or dependencies.
+ * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
+ * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
+ * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
+ */
+static int load_module(void)
 {
-	return _unload_module(0);
+	int res;
+
+	ast_mutex_init(&mwi_monitor.lock);
+	ast_cond_init(&mwi_monitor.cond, NULL);
+
+	/* load the config and start the listener threads*/
+	res = smdi_load(0);
+	if (res < 0) {
+		unload_module();
+		return AST_MODULE_LOAD_DECLINE;
+	} else if (res == 1) {
+		ast_log(LOG_NOTICE, "No SMDI interfaces are available to listen on, not starting SMDI listener.\n");
+	}
+
+	ast_custom_function_register(&smdi_msg_retrieve_function);
+	ast_custom_function_register(&smdi_msg_function);
+
+	return AST_MODULE_LOAD_SUCCESS;
 }
 
 static int reload(void)
@@ -1422,20 +1435,18 @@ static int reload(void)
 	int res;
 
 	res = smdi_load(1);
-
 	if (res < 0) {
 		return res;
 	} else if (res == 1) {
 		ast_log(LOG_WARNING, "No SMDI interfaces were specified to listen on, not starting SDMI listener.\n");
-		return 0;
-	} else
-		return 0;
+	}
+	return 0;
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Simplified Message Desk Interface (SMDI) Resource",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+);

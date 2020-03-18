@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : States and Presence</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : States and Presence
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jun 10, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<p>Asterisk includes the concepts of <a href="Device-State_28934187.html">Device State</a> , <a href="Extension-State-and-Hints_28934189.html">Extension State</a> and <a href="Presence-State_21463121.html">Presence State</a> which together allow Asterisk applications and interfaces to receive information about the state of devices, extensions and the users of the devices.</p><p>As an example, channel drivers like chan_sip or res_pjsip/chan_pjsip may both provide devices with device state, plus allow devices to <a href="Extension-State-and-Hints_28934189.html">subscribe to hints</a> to receive notifications of state change. Other examples would be app_queue which takes into consideration the device state of queue members to influence queue logic or the Asterisk Manager Interface which provides actions for <a href="Querying-and-Manipulating-State_28934227.html">querying extension state and presence state</a>.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>In This Section</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="Device-State_28934187.html">Device State</a></li><li><a href="Extension-State-and-Hints_28934189.html">Extension State and Hints</a></li><li><a href="Presence-State_21463121.html">Presence State</a></li><li><a href="Querying-and-Manipulating-State_28934227.html">Querying and Manipulating State</a></li></ul></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>See Also</b></div><div class="panelContent">
+<p><a href="Distributed-Device-State_19009167.html">Distributed Device State</a></p><p><a href="Publishing-Extension-State_35226132.html">Publishing Extension State</a></p><p><a href="Exchanging-Device-and-Mailbox-State-Using-PJSIP_29393398.html">Exchanging Device and Mailbox State Using PJSIP</a></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<p>Additionally, modules exist for <a href="Corosync_21463349.html">Corosync</a> and <a href="Distributed-Device-State-with-XMPP-PubSub_4259993.html">XMPP PubSub</a> support to allow device state to be <a href="Distributed-Device-State_19009167.html">shared and distributed</a> across multiple systems.</p><p>The sub-sections here describe these concepts, point to related module specific configuration sections and discuss <a href="Querying-and-Manipulating-State_28934227.html">Querying and Manipulating State</a> information.</p><p>The figure below may help you get an idea of the overall use of states and presence with the Asterisk system. It has been simplified to focus on the flow and usage of state and presence. In reality, the architecture can be a bit more confusing. For example a module could both provide subscription functionality for a subscriber and be the same module providing the devices and device state on the other end.</p><p>
+
+<map id="gliffy-map-29687815-7226" name="gliffy-map-29687815-7226"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 857px;" usemap="#gliffy-map-29687815-7226" src="attachments/28315969/29687816.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+</p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687817">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687818.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687819">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687820.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687821">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687822.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687823">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687824.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687825">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687826.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687827">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687828.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687815">StateAndPresenceOverview</a> (application/gliffy+json)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/28315969/29687816.png">StateAndPresenceOverview.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

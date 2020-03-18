@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/res_hep.h"
 #include "asterisk/module.h"
 #include "asterisk/netsock2.h"
@@ -159,8 +157,8 @@ static void rtp_topic_handler(void *data, struct stasis_subscription *sub, struc
 
 static int load_module(void)
 {
-	if (!ast_module_check("res_hep.so") || !hepv3_is_loaded()) {
-		ast_log(AST_LOG_WARNING, "res_hep is not loaded or running; declining module load\n");
+	if (!hepv3_is_loaded()) {
+		ast_log(AST_LOG_WARNING, "res_hep is disabled; declining module load\n");
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
@@ -169,6 +167,9 @@ static int load_module(void)
 	if (!stasis_rtp_subscription) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
+	stasis_subscription_accept_message_type(stasis_rtp_subscription, ast_rtp_rtcp_sent_type());
+	stasis_subscription_accept_message_type(stasis_rtp_subscription, ast_rtp_rtcp_received_type());
+	stasis_subscription_set_filter(stasis_rtp_subscription, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -182,9 +183,9 @@ static int unload_module(void)
 	return 0;
 }
 
-AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "RTCP HEPv3 Logger",
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RTCP HEPv3 Logger",
 	.support_level = AST_MODULE_SUPPORT_EXTENDED,
 	.load = load_module,
 	.unload = unload_module,
-	.load_pri = AST_MODPRI_DEFAULT,
-	);
+	.requires = "res_hep",
+);

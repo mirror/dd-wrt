@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring chan_sip for IPv6</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-chan_sip_28934283.html">Configuring chan_sip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring chan_sip for IPv6
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Feb 26, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Configuringchan_sipforIPv6-Configuringchan_sipforIPv6">Configuring chan_sip for IPv6</h1><p>Mostly you can use IPv6 addresses where you would have otherwise used IPv4 addresses within sip.conf. The sip.conf.sample provides several examples of how to use the various options with IPv6 addresses. We'll provide a few examples here as well.</p><h2 id="Configuringchan_sipforIPv6-Examples">Examples</h2><p>Binding to a specific IPv6 interface</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+bindaddr=2001:db8::1</pre>
+</div></div><p>Binding to all available IPv6 interfaces (wildcard)</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+bindaddr=::</pre>
+</div></div><p>You can specify a port number by wrapping the address in square brackets and using a colon delimiter.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+bindaddr=[::]:5062</pre>
+</div></div>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>You can choose independently for UDP, TCP, and TLS, by specifying different values for  &quot;udpbindaddr&quot;, &quot;tcpbindaddr&quot;, and &quot;tlsbindaddr&quot;.</p><p>Note that using bindaddr=:: will show only a single IPv6 socket in netstat. IPv4 is supported at the same time using IPv4-mapped IPv6 addresses.)</p>
+                    </div>
+    </div>
+<h1 id="Configuringchan_sipforIPv6-OtherOptions">Other Options</h1><p>Other options such as &quot;outboundproxy&quot; or &quot;permit&quot; can use IPv6 addresses the same as in the above examples.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">permit=2001:db8::/32</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Secure Calling Specifics</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Secure-Calling_11338110.html">Secure Calling</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Secure Calling Specifics
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Mar 15, 2011
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Asterisk supports a channel-agnostic method for handling secure call requirements. Since there is no single meaning of what constitutes a &quot;secure call,&quot; Asterisk allows the administrator the control to define &quot;secure&quot; for themselves via the dialplan and channel-specific configuration files.</p>
+
+<h3 id="SecureCallingSpecifics-Channel-specificconfiguration">Channel-specific configuration</h3>
+
+<p>Currently the IAX2 and SIP channels support the call security features in Asterisk. Both channel-specific configuration files (iax2.conf and sip.conf) support the encryption=yes setting. For IAX2, this setting causes Asterisk to offer encryption when placing or receiving a call. To force encryption with IAX2, the forceencrypt=yes option is required. Due to limitations of SDP, encryption=yes in sip.conf results in a call with only a secure media offer, therefor forceencrypt=yes would be redundant in sip.conf. </p>
+
+<p>If a peer is defined as requiring encryption but the endpoint does not support it, the call will fail with a HANGUPCAUSE of 58 (bearer capability does not exist).</p>
+
+<h3 id="SecureCallingSpecifics-Security-baseddialplanbranching">Security-based dialplan branching</h3>
+
+<p>Each channel that supports secure signaling or media can implement a CHANNEL read callback function that specifies whether or not that channel meets the specified criteria. Currently, chan_iax2 and chan_sip implement these callbacks. Channels that do not support secure media or signaling will return an empty string when queried. For example, to only allow an inbound call that has both secure signaling and media, see the following example.</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 123,1,GotoIf($[&quot;${CHANNEL(secure_signaling)}&quot; = &quot;1&quot;]?:fail) 
+exten =&gt; 123,n,GotoIf($[&quot;${CHANNEL(secure_media)}&quot; = &quot;1&quot;]?:fail) 
+exten =&gt; 123,n,Dial(SIP/123) 
+exten =&gt; 123,n,Hangup 
+exten =&gt; 123,n(fail),Playback(vm-goodbye) 
+exten =&gt; 123,n,Hangup
+</pre>
+</div></div>
+
+<h3 id="SecureCallingSpecifics-Forcingbridgedchannelstobesecure">Forcing bridged channels to be secure</h3>
+
+<p>Administrators can force outbound channels that are to be bridged to a calling channel to conform to secure media and signaling policies. For example, to first make a call attempt that has both secure signaling and media, but gracefully fall back to non-secure signaling and media see the following example:</p>
+
+<div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">
+exten =&gt; 123,1,NoOp(We got a call) 
+exten =&gt; 123,n,Set(CHANNEL(secure_bridge_signaling)=1) 
+exten =&gt; 123,n,Set(CHANNEL(secure_bridge_media)=1) 
+exten =&gt; 123,n,Dial(SIP/somebody) 
+exten =&gt; 123,n,NoOp(HANGUPCAUSE=${HANGUPCAUSE}) 
+exten =&gt; 123,n,GotoIf($[&quot;${HANGUPCAUSE}&quot;=&quot;58&quot;]?encrypt_fail) 
+exten =&gt; 123,n,Hangup ; notify user that retrying via insecure channel (user-provided prompt) 
+exten =&gt; 123,n(encrypt_fail),Playback(secure-call-fail-retry) 
+exten =&gt; 123,n,Set(CHANNEL(secure_bridge_signaling)=0) 
+exten =&gt; 123,n,Set(CHANNEL(secure_bridge_media)=0) 
+exten =&gt; 123,n,Dial(SIP/somebody) 
+exten =&gt; 123,n,Hangup
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

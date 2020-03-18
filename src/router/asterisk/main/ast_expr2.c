@@ -2,20 +2,20 @@
 /* A Bison parser, made by GNU Bison 2.4.1.  */
 
 /* Skeleton implementation for Bison's Yacc-like parsers in C
-   
+
       Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005, 2006
    Free Software Foundation, Inc.
-   
+
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
    the Free Software Foundation, either version 3 of the License, or
    (at your option) any later version.
-   
+
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
    GNU General Public License for more details.
-   
+
    You should have received a copy of the GNU General Public License
    along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
 
@@ -28,7 +28,7 @@
    special exception, which will cause the skeleton and the resulting
    Bison output files to be licensed under the GNU General Public
    License without this special exception.
-   
+
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
 
@@ -78,31 +78,27 @@
 /* Line 189 of yacc.c  */
 #line 1 "ast_expr2.y"
 
-/* Written by Pace Willisson (pace@blitz.com) 
+/* Written by Pace Willisson (pace@blitz.com)
  * and placed in the public domain.
  *
  * Largely rewritten by J.T. Conklin (jtc@wimsey.com)
  *
  * And then overhauled twice by Steve Murphy (murf@digium.com)
  * to add double-quoted strings, allow mult. spaces, improve
- * error messages, and then to fold in a flex scanner for the 
+ * error messages, and then to fold in a flex scanner for the
  * yylex operation.
  *
  * $FreeBSD: src/bin/expr/expr.y,v 1.16 2000/07/22 10:59:36 se Exp $
  */
 
+#define ASTMM_LIBC ASTMM_REDIRECT
 #include "asterisk.h"
 
 #include <sys/cdefs.h>
 #include <sys/types.h>
 #include <stdio.h>
 
-#define __P(a) a
-
-#if !defined(STANDALONE) && !defined(STANDALONE2)	\
-	
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-#else
+#if defined(STANDALONE) || defined(STANDALONE2)
 #ifndef __USE_ISOC99
 #define __USE_ISOC99 1
 #endif
@@ -339,7 +335,7 @@ enum node_type {
 	AST_EXPR_NODE_COMMA, AST_EXPR_NODE_STRING, AST_EXPR_NODE_VAL
 } ;
 
-struct expr_node 
+struct expr_node
 {
 	enum node_type type;
 	struct val *val;
@@ -357,7 +353,7 @@ struct parse_io
 	yyscan_t scanner;
 	struct ast_channel *chan;
 };
- 
+
 static int		chk_div __P((FP___TYPE, FP___TYPE));
 static int		chk_minus __P((FP___TYPE, FP___TYPE, FP___TYPE));
 static int		chk_plus __P((FP___TYPE, FP___TYPE, FP___TYPE));
@@ -409,7 +405,7 @@ typedef struct yyltype
    define it here, we have no definition yet for YYSTYPE. */
 
 int		ast_yyerror(const char *,YYLTYPE *, struct parse_io *);
- 
+
 /* I wanted to add args to the yyerror routine, so I could print out
    some useful info about the error. Not as easy as it looks, but it
    is possible. */
@@ -1231,7 +1227,7 @@ int yydebug;
 # define YYMAXDEPTH 10000
 #endif
 
-
+
 
 #if YYERROR_VERBOSE
 
@@ -1442,7 +1438,7 @@ yysyntax_error (char *yyresult, int yystate, int yychar)
     }
 }
 #endif /* YYERROR_VERBOSE */
-
+
 
 /*-----------------------------------------------.
 | Release the memory associated to this symbol.  |
@@ -2013,7 +2009,7 @@ yyreduce:
               if( (yyvsp[(1) - (1)].val)->type == AST_EXPR_number )
 				  ((struct parse_io *)parseio)->val->u.i = (yyvsp[(1) - (1)].val)->u.i;
               else
-				  ((struct parse_io *)parseio)->val->u.s = (yyvsp[(1) - (1)].val)->u.s; 
+				  ((struct parse_io *)parseio)->val->u.s = (yyvsp[(1) - (1)].val)->u.s;
 			  free((yyvsp[(1) - (1)].val));
 			;}
     break;
@@ -2024,7 +2020,7 @@ yyreduce:
 #line 382 "ast_expr2.y"
     {/* nothing */ ((struct parse_io *)parseio)->val = (struct val *)calloc(sizeof(struct val),1);
               ((struct parse_io *)parseio)->val->type = AST_EXPR_string;
-			  ((struct parse_io *)parseio)->val->u.s = strdup(""); 
+			  ((struct parse_io *)parseio)->val->u.s = strdup("");
 			;}
     break;
 
@@ -2083,7 +2079,7 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 412 "ast_expr2.y"
     { (yyval.val) = (yyvsp[(2) - (3)].val);
-	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						   (yyloc).first_line=0; (yyloc).last_line=0;
 							DESTROY((yyvsp[(1) - (3)].val)); DESTROY((yyvsp[(3) - (3)].val)); ;}
     break;
@@ -2093,8 +2089,8 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 416 "ast_expr2.y"
     { (yyval.val) = op_or ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
-						DESTROY((yyvsp[(2) - (3)].val));	
-                         (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+						DESTROY((yyvsp[(2) - (3)].val));
+                         (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						 (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2102,9 +2098,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 420 "ast_expr2.y"
-    { (yyval.val) = op_and ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_and ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
                           (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2113,7 +2109,7 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 424 "ast_expr2.y"
     { (yyval.val) = op_eq ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
-						DESTROY((yyvsp[(2) - (3)].val));	
+						DESTROY((yyvsp[(2) - (3)].val));
 	                     (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						 (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
@@ -2123,7 +2119,7 @@ yyreduce:
 /* Line 1455 of yacc.c  */
 #line 428 "ast_expr2.y"
     { (yyval.val) = op_gt ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
-						DESTROY((yyvsp[(2) - (3)].val));	
+						DESTROY((yyvsp[(2) - (3)].val));
                          (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						 (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
@@ -2132,9 +2128,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 432 "ast_expr2.y"
-    { (yyval.val) = op_lt ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                     (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_lt ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                     (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						 (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2142,9 +2138,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 436 "ast_expr2.y"
-    { (yyval.val) = op_ge ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_ge ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						  (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2152,9 +2148,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 440 "ast_expr2.y"
-    { (yyval.val) = op_le ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_le ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						  (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2162,9 +2158,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 444 "ast_expr2.y"
-    { (yyval.val) = op_ne ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_ne ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						  (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2172,9 +2168,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 448 "ast_expr2.y"
-    { (yyval.val) = op_plus ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_plus ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						   (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2182,9 +2178,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 452 "ast_expr2.y"
-    { (yyval.val) = op_minus ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_minus ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2192,9 +2188,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 456 "ast_expr2.y"
-    { (yyval.val) = op_negate ((yyvsp[(2) - (2)].val)); 
-						DESTROY((yyvsp[(1) - (2)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (2)]).first_column; (yyloc).last_column = (yylsp[(2) - (2)]).last_column; 
+    { (yyval.val) = op_negate ((yyvsp[(2) - (2)].val));
+						DESTROY((yyvsp[(1) - (2)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (2)]).first_column; (yyloc).last_column = (yylsp[(2) - (2)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2202,9 +2198,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 460 "ast_expr2.y"
-    { (yyval.val) = op_compl ((yyvsp[(2) - (2)].val)); 
-						DESTROY((yyvsp[(1) - (2)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (2)]).first_column; (yyloc).last_column = (yylsp[(2) - (2)]).last_column; 
+    { (yyval.val) = op_compl ((yyvsp[(2) - (2)].val));
+						DESTROY((yyvsp[(1) - (2)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (2)]).first_column; (yyloc).last_column = (yylsp[(2) - (2)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2212,9 +2208,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 464 "ast_expr2.y"
-    { (yyval.val) = op_times ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_times ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                       (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						   (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2222,9 +2218,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 468 "ast_expr2.y"
-    { (yyval.val) = op_div ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_div ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						  (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2232,9 +2228,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 472 "ast_expr2.y"
-    { (yyval.val) = op_rem ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_rem ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                      (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 						  (yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2242,9 +2238,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 476 "ast_expr2.y"
-    { (yyval.val) = op_colon ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_colon ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2252,9 +2248,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 480 "ast_expr2.y"
-    { (yyval.val) = op_eqtilde ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_eqtilde ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2262,10 +2258,10 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 484 "ast_expr2.y"
-    { (yyval.val) = op_cond ((yyvsp[(1) - (5)].val), (yyvsp[(3) - (5)].val), (yyvsp[(5) - (5)].val)); 
-						DESTROY((yyvsp[(2) - (5)].val));	
-						DESTROY((yyvsp[(4) - (5)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (5)]).first_column; (yyloc).last_column = (yylsp[(3) - (5)]).last_column; 
+    { (yyval.val) = op_cond ((yyvsp[(1) - (5)].val), (yyvsp[(3) - (5)].val), (yyvsp[(5) - (5)].val));
+						DESTROY((yyvsp[(2) - (5)].val));
+						DESTROY((yyvsp[(4) - (5)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (5)]).first_column; (yyloc).last_column = (yylsp[(3) - (5)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2273,9 +2269,9 @@ yyreduce:
 
 /* Line 1455 of yacc.c  */
 #line 489 "ast_expr2.y"
-    { (yyval.val) = op_tildetilde ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val)); 
-						DESTROY((yyvsp[(2) - (3)].val));	
-	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column; 
+    { (yyval.val) = op_tildetilde ((yyvsp[(1) - (3)].val), (yyvsp[(3) - (3)].val));
+						DESTROY((yyvsp[(2) - (3)].val));
+	                        (yyloc).first_column = (yylsp[(1) - (3)]).first_column; (yyloc).last_column = (yylsp[(3) - (3)]).last_column;
 							(yyloc).first_line=0; (yyloc).last_line=0;;}
     break;
 
@@ -2530,7 +2526,7 @@ make_number (FP___TYPE i)
 
 	vp->type = AST_EXPR_number;
 	vp->u.i  = i;
-	return vp; 
+	return vp;
 }
 
 static struct val *
@@ -2558,7 +2554,7 @@ make_str (const char *s)
 	}
 	if (isint)
 		vp->type = AST_EXPR_numeric_string;
-	else	
+	else
 		vp->type = AST_EXPR_string;
 
 	return vp;
@@ -2567,12 +2563,12 @@ make_str (const char *s)
 
 static void
 free_value (struct val *vp)
-{	
+{
 	if (vp==NULL) {
 		return;
 	}
 	if (vp->type == AST_EXPR_string || vp->type == AST_EXPR_numeric_string)
-		free (vp->u.s);	
+		free (vp->u.s);
 	free(vp);
 }
 
@@ -2581,7 +2577,7 @@ static int
 to_number (struct val *vp)
 {
 	FP___TYPE i;
-	
+
 	if (vp == NULL) {
 		ast_log(LOG_WARNING,"vp==NULL in to_number()\n");
 		return(0);
@@ -2613,13 +2609,13 @@ strip_quotes(struct val *vp)
 {
 	if (vp->type != AST_EXPR_string && vp->type != AST_EXPR_numeric_string)
 		return;
-	
+
 	if( vp->u.s[0] == '"' && vp->u.s[strlen(vp->u.s)-1] == '"' )
 	{
 		char *f, *t;
 		f = vp->u.s;
 		t = vp->u.s;
-		
+
 		while( *f )
 		{
 			if( *f  && *f != '"' )
@@ -2639,13 +2635,11 @@ to_string (struct val *vp)
 	if (vp->type == AST_EXPR_string || vp->type == AST_EXPR_numeric_string)
 		return;
 
-	tmp = malloc ((size_t)25);
-	if (tmp == NULL) {
-		ast_log(LOG_WARNING,"malloc() failed\n");
+	if (asprintf(&tmp, FP___PRINTF, vp->u.i) == -1) {
+		ast_log(LOG_WARNING, "asprintf() failed\n");
 		return;
 	}
 
-	sprintf(tmp, FP___PRINTF, vp->u.i);
 	vp->type = AST_EXPR_string;
 	vp->u.s  = tmp;
 }
@@ -2676,7 +2670,7 @@ void ast_log(int level, const char *file, int line, const char *function, const 
 {
 	va_list vars;
 	va_start(vars,fmt);
-	
+
         printf("LOG: lev:%d file:%s  line:%d func: %s  ",
                    level, file, line, function);
 	vprintf(fmt, vars);
@@ -2689,14 +2683,14 @@ int main(int argc,char **argv) {
 	char s[4096];
 	char out[4096];
 	FILE *infile;
-	
+
 	if( !argv[1] )
 		exit(20);
-	
+
 	if( access(argv[1],F_OK)== 0 )
 	{
 		int ret;
-		
+
 		infile = fopen(argv[1],"r");
 		if( !infile )
 		{
@@ -2707,7 +2701,7 @@ int main(int argc,char **argv) {
 		{
 			if( s[strlen(s)-1] == '\n' )
 				s[strlen(s)-1] = 0;
-			
+
 			ret = ast_expr(s, out, sizeof(out), NULL);
 			printf("Expression: %s    Result: [%d] '%s'\n",
 				   s, ret, out);
@@ -2737,7 +2731,7 @@ int main(int argc,char **argv) {
 static void destroy_arglist(struct expr_node *arglist)
 {
 	struct expr_node *arglist_next;
-	
+
 	while (arglist)
 	{
 		arglist_next = arglist->right;
@@ -2756,7 +2750,7 @@ static char *compose_func_args(struct expr_node *arglist)
 	struct expr_node *t = arglist;
 	char *argbuf;
 	int total_len = 0;
-	
+
 	while (t) {
 		if (t != arglist)
 			total_len += 1; /* for the sep */
@@ -2766,7 +2760,7 @@ static char *compose_func_args(struct expr_node *arglist)
 			else
 				total_len += strlen(t->val->u.s);
 		}
-		
+
 		t = t->right;
 	}
 	total_len++; /* for the null */
@@ -2776,10 +2770,10 @@ static char *compose_func_args(struct expr_node *arglist)
 	t = arglist;
 	while (t) {
 		char numbuf[30];
-		
+
 		if (t != arglist)
 			strcat(argbuf,",");
-		
+
 		if (t->val) {
 			if (t->val->type == AST_EXPR_number) {
 				sprintf(numbuf,FP___PRINTF,t->val->u.i);
@@ -3059,7 +3053,7 @@ static struct val *op_func(struct val *funcname, struct expr_node *arglist, stru
 				ast_log(LOG_WARNING,"Hey! chan is NULL.\n");
 			if (!f)
 				ast_log(LOG_WARNING,"Hey! could not find func %s.\n", funcname->u.s);
-			
+
 			if (f && chan) {
 				if (f->read) {
 					char workspace[512];
@@ -3074,7 +3068,7 @@ static struct val *op_func(struct val *funcname, struct expr_node *arglist, stru
 					ast_log(LOG_ERROR,"Error! Function '%s' cannot be read!\n", funcname->u.s);
 					return (make_number ((FP___TYPE)0.0));
 				}
-				
+
 			} else {
 				ast_log(LOG_ERROR, "Error! '%s' doesn't appear to be an available function!\n", funcname->u.s);
 				return (make_number ((FP___TYPE)0.0));
@@ -3105,7 +3099,7 @@ op_or (struct val *a, struct val *b)
 		return (a);
 	}
 }
-		
+
 static struct val *
 op_and (struct val *a, struct val *b)
 {
@@ -3122,11 +3116,11 @@ op_and (struct val *a, struct val *b)
 static struct val *
 op_eq (struct val *a, struct val *b)
 {
-	struct val *r; 
+	struct val *r;
 
 	if (isstring (a) || isstring (b)) {
 		to_string (a);
-		to_string (b);	
+		to_string (b);
 		r = make_number ((FP___TYPE)(strcoll (a->u.s, b->u.s) == 0));
 	} else {
 #ifdef DEBUG_FOR_CONVERSIONS
@@ -3401,7 +3395,7 @@ op_compl (struct val *a)
 {
 	int v1 = 1;
 	struct val *r;
-	
+
 	if( !a )
 	{
 		v1 = 0;
@@ -3414,7 +3408,7 @@ op_compl (struct val *a)
 			if( a->u.i == 0 )
 				v1 = 0;
 			break;
-			
+
 		case AST_EXPR_string:
 			if( a->u.s == 0 )
 				v1 = 0;
@@ -3428,7 +3422,7 @@ op_compl (struct val *a)
 					v1 = atoi(a->u.s);
 			}
 			break;
-			
+
 		case AST_EXPR_numeric_string:
 			if( a->u.s == 0 )
 				v1 = 0;
@@ -3444,7 +3438,7 @@ op_compl (struct val *a)
 			break;
 		}
 	}
-	
+
 	r = make_number (!v1);
 	free_value (a);
 	return r;
@@ -3515,7 +3509,7 @@ op_div (struct val *a, struct val *b)
 	}
 
 	if (b->u.i == 0) {
-		ast_log(LOG_WARNING, "division by zero\n");		
+		ast_log(LOG_WARNING, "division by zero\n");
 		free_value(a);
 		free_value(b);
 		return make_number(INT_MAX);
@@ -3529,7 +3523,7 @@ op_div (struct val *a, struct val *b)
 	free_value (b);
 	return r;
 }
-	
+
 static struct val *
 op_rem (struct val *a, struct val *b)
 {
@@ -3555,7 +3549,7 @@ op_rem (struct val *a, struct val *b)
 	free_value (b);
 	return r;
 }
-	
+
 
 static struct val *
 op_colon (struct val *a, struct val *b)
@@ -3578,7 +3572,7 @@ op_colon (struct val *a, struct val *b)
 		ast_log(LOG_WARNING, "regcomp() error : %s\n", errbuf);
 		free_value(a);
 		free_value(b);
-		return make_str("");		
+		return make_str("");
 	}
 
 	/* compare string against pattern */
@@ -3606,7 +3600,7 @@ op_colon (struct val *a, struct val *b)
 
 	return v;
 }
-	
+
 
 static struct val *
 op_eqtilde (struct val *a, struct val *b)
@@ -3629,7 +3623,7 @@ op_eqtilde (struct val *a, struct val *b)
 		ast_log(LOG_WARNING, "regcomp() error : %s\n", errbuf);
 		free_value(a);
 		free_value(b);
-		return make_str("");		
+		return make_str("");
 	}
 
 	/* compare string against pattern */
@@ -3692,4 +3686,3 @@ op_tildetilde (struct val *a, struct val *b)
 
 	return v;
 }
-

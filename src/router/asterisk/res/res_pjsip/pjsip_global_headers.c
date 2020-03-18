@@ -55,7 +55,7 @@ struct header {
 static struct header *alloc_header(const char *name, const char *value)
 {
 	struct header *alloc;
-	
+
 	alloc = ast_calloc_with_stringfields(1, struct header, 32);
 
 	if (!alloc) {
@@ -139,7 +139,7 @@ static int add_header(struct header_list *headers, const char *name, const char 
 	}
 
 	AST_RWLIST_WRLOCK(headers);
-	if (replace) { 
+	if (replace) {
 		remove_header(headers, name);
 	}
 	if (to_add) {
@@ -165,7 +165,7 @@ void ast_sip_initialize_global_headers(void)
 	AST_RWLIST_HEAD_INIT(&request_headers);
 	AST_RWLIST_HEAD_INIT(&response_headers);
 
-	internal_sip_register_service(&global_header_mod);
+	ast_sip_register_service(&global_header_mod);
 }
 
 static void destroy_headers(struct header_list *headers)
@@ -183,5 +183,5 @@ void ast_sip_destroy_global_headers(void)
 	destroy_headers(&request_headers);
 	destroy_headers(&response_headers);
 
-	internal_sip_unregister_service(&global_header_mod);
+	ast_sip_unregister_service(&global_header_mod);
 }

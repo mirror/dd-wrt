@@ -33,29 +33,13 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
+#include <math.h>
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h>
-#include <signal.h>
-#include <errno.h>
-#include <unistd.h>
-
-#include "asterisk/module.h"
-#include "asterisk/channel.h"
-#include "asterisk/bridge.h"
-#include "asterisk/bridge_technology.h"
-#include "asterisk/frame.h"
-#include "asterisk/options.h"
-#include "asterisk/logger.h"
-#include "asterisk/slinfactory.h"
-#include "asterisk/astobj2.h"
-#include "asterisk/timing.h"
-#include "asterisk/translate.h"
-
-#define MAX_DATALEN 8096
+#include "asterisk/stream.h"
+#include "asterisk/test.h"
+#include "asterisk/vector.h"
+#include "asterisk/message.h"
+#include "bridge_softmix/include/bridge_softmix_internal.h"
 
 /*! The minimum sample rate of the bridge. */
 #define SOFTMIX_MIN_SAMPLE_RATE 8000	/* 8 kHz sample rate */
@@ -72,74 +56,29 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 /*! \brief Number of mixing iterations to perform between gathering statistics. */
 #define SOFTMIX_STAT_INTERVAL 100
 
-/* This is the threshold in ms at which a channel's own audio will stop getting
- * mixed out its own write audio stream because it is not talking. */
+/*!
+ * \brief Default time in ms of silence necessary to declare talking stopped by the bridge.
+ *
+ * \details
+ * This is the time at which a channel's own audio will stop getting
+ * mixed out of its own write audio stream because it is no longer talking.
+ */
 #define DEFAULT_SOFTMIX_SILENCE_THRESHOLD 2500
+
+/*! Default minimum average magnitude threshold to determine talking by the DSP. */
 #define DEFAULT_SOFTMIX_TALKING_THRESHOLD 160
 
-#define DEFAULT_ENERGY_HISTORY_LEN 150
+#define SOFTBRIDGE_VIDEO_DEST_PREFIX "softbridge_dest"
+#define SOFTBRIDGE_VIDEO_DEST_LEN strlen(SOFTBRIDGE_VIDEO_DEST_PREFIX)
+#define SOFTBRIDGE_VIDEO_DEST_SEPARATOR '_'
 
-struct video_follow_talker_data {
-	/*! audio energy history */
-	int energy_history[DEFAULT_ENERGY_HISTORY_LEN];
-	/*! The current slot being used in the history buffer, this
-	 *  increments and wraps around */
-	int energy_history_cur_slot;
-	/*! The current energy sum used for averages. */
-	int energy_accum;
-	/*! The current energy average */
-	int energy_average;
-};
-
-/*! \brief Structure which contains per-channel mixing information */
-struct softmix_channel {
-	/*! Lock to protect this structure */
-	ast_mutex_t lock;
-	/*! Factory which contains audio read in from the channel */
-	struct ast_slinfactory factory;
-	/*! Frame that contains mixed audio to be written out to the channel */
-	struct ast_frame write_frame;
-	/*! Current expected read slinear format. */
-	struct ast_format *read_slin_format;
-	/*! DSP for detecting silence */
-	struct ast_dsp *dsp;
-	/*!
-	 * \brief TRUE if a channel is talking.
-	 *
-	 * \note This affects how the channel's audio is mixed back to
-	 * it.
-	 */
-	unsigned int talking:1;
-	/*! TRUE if the channel provided audio for this mixing interval */
-	unsigned int have_audio:1;
-	/*! Buffer containing final mixed audio from all sources */
-	short final_buf[MAX_DATALEN];
-	/*! Buffer containing only the audio from the channel */
-	short our_buf[MAX_DATALEN];
-	/*! Data pertaining to talker mode for video conferencing */
-	struct video_follow_talker_data video_talker;
-};
-
-struct softmix_bridge_data {
-	struct ast_timer *timer;
-	/*!
-	 * \brief Bridge pointer passed to the softmix mixing thread.
-	 *
-	 * \note Does not need a reference because the bridge will
-	 * always exist while the mixing thread exists even if the
-	 * bridge is no longer actively using the softmix technology.
-	 */
-	struct ast_bridge *bridge;
-	/*! Lock for signaling the mixing thread. */
-	ast_mutex_t lock;
-	/*! Condition, used if we need to wake up the mixing thread. */
-	ast_cond_t cond;
-	/*! Thread handling the mixing */
-	pthread_t thread;
-	unsigned int internal_rate;
-	unsigned int internal_mixing_interval;
-	/*! TRUE if the mixing thread should stop */
-	unsigned int stop:1;
+struct softmix_remb_collector {
+	/*! The frame which will be given to each source stream */
+	struct ast_frame frame;
+	/*! The REMB to send to the source which is collecting REMB reports */
+	struct ast_rtp_rtcp_feedback feedback;
+	/*! The maximum bitrate (A single precision floating point is big enough) */
+	float bitrate;
 };
 
 struct softmix_stats {
@@ -149,23 +88,21 @@ struct softmix_stats {
 	unsigned int num_channels[16];
 	/*! The number of channels above the internal sample rate */
 	unsigned int num_above_internal_rate;
+	/*! The number of channels above the maximum sample rate */
+	unsigned int num_above_maximum_rate;
 	/*! The number of channels at the internal sample rate */
 	unsigned int num_at_internal_rate;
 	/*! The absolute highest sample rate preferred by any channel in the bridge */
 	unsigned int highest_supported_rate;
 	/*! Is the sample rate locked by the bridge, if so what is that rate.*/
 	unsigned int locked_rate;
-};
-
-struct softmix_mixing_array {
-	unsigned int max_num_entries;
-	unsigned int used_entries;
-	int16_t **buffers;
+	/*! The maximum sample rate the bridge may use */
+	unsigned int maximum_rate;
 };
 
 struct softmix_translate_helper_entry {
 	int num_times_requested; /*!< Once this entry is no longer requested, free the trans_pvt
-	                              and re-init if it was usable. */
+								  and re-init if it was usable. */
 	struct ast_format *dst_format; /*!< The destination format for this helper */
 	struct ast_trans_pvt *trans_pvt; /*!< the translator for this slot. */
 	struct ast_frame *out_frame; /*!< The output frame from the last translation */
@@ -265,14 +202,14 @@ static int16_t *softmix_process_read_audio(struct softmix_channel *sc, unsigned 
  */
 static void softmix_process_write_audio(struct softmix_translate_helper *trans_helper,
 	struct ast_format *raw_write_fmt,
-	struct softmix_channel *sc)
+	struct softmix_channel *sc, unsigned int default_sample_size)
 {
 	struct softmix_translate_helper_entry *entry = NULL;
 	int i;
 
 	/* If we provided audio that was not determined to be silence,
 	 * then take it out while in slinear format. */
-	if (sc->have_audio && sc->talking) {
+	if (sc->have_audio && sc->talking && !sc->binaural) {
 		for (i = 0; i < sc->write_frame.samples; i++) {
 			ast_slinear_saturated_subtract(&sc->final_buf[i], &sc->our_buf[i]);
 		}
@@ -287,6 +224,13 @@ static void softmix_process_write_audio(struct softmix_translate_helper *trans_h
 		/* do not do any special write translate optimization if we had to make
 		 * a special mix for them to remove their own audio. */
 		return;
+	} else if (sc->have_audio && sc->talking && sc->binaural > 0) {
+		/*
+		 * Binaural audio requires special saturated substract since we have two
+		 * audio signals per channel now.
+		 */
+		softmix_process_write_binaural_audio(sc, default_sample_size);
+		return;
 	}
 
 	/* Attempt to optimize channels using the same translation path/codec. Build a list of entries
@@ -295,6 +239,9 @@ static void softmix_process_write_audio(struct softmix_translate_helper *trans_h
 	   multiple channels (>=2) using the same codec make sure resources are allocated only when
 	   needed and released when not (see also softmix_translate_helper_cleanup */
 	AST_LIST_TRAVERSE(&trans_helper->entries, entry, entry) {
+		if (sc->binaural != 0) {
+			continue;
+		}
 		if (ast_format_cmp(entry->dst_format, raw_write_fmt) == AST_FORMAT_CMP_EQUAL) {
 			entry->num_times_requested++;
 		} else {
@@ -354,11 +301,17 @@ static void softmix_translate_helper_cleanup(struct softmix_translate_helper *tr
 	AST_LIST_TRAVERSE_SAFE_END;
 }
 
-static void set_softmix_bridge_data(int rate, int interval, struct ast_bridge_channel *bridge_channel, int reset)
+static void set_softmix_bridge_data(int rate, int interval, struct ast_bridge_channel *bridge_channel, int reset, int set_binaural, int binaural_pos_id, int is_announcement)
 {
 	struct softmix_channel *sc = bridge_channel->tech_pvt;
 	struct ast_format *slin_format;
 	int setup_fail;
+
+#ifdef BINAURAL_RENDERING
+	if (interval != BINAURAL_MIXING_INTERVAL) {
+		interval = BINAURAL_MIXING_INTERVAL;
+	}
+#endif
 
 	/* The callers have already ensured that sc is never NULL. */
 	ast_assert(sc != NULL);
@@ -384,6 +337,26 @@ static void set_softmix_bridge_data(int rate, int interval, struct ast_bridge_ch
 	sc->write_frame.datalen = SOFTMIX_DATALEN(rate, interval);
 	sc->write_frame.samples = SOFTMIX_SAMPLES(rate, interval);
 
+	/* We will store the rate here cause we need to set the data again when a channel is unsuspended */
+	sc->rate = rate;
+
+	/* If the channel will contain binaural data we will set a identifier in the channel
+	 * if set_binaural == -1 this is just a sample rate update, will ignore it. */
+	if (set_binaural == 1) {
+		sc->binaural = 1;
+	} else if (set_binaural == 0) {
+		sc->binaural = 0;
+	}
+
+	/* Setting the binaural position. This doesn't require a change of the overlaying channel infos
+	 * and doesn't have to be done if we just updating sample rates. */
+	if (binaural_pos_id != -1) {
+		sc->binaural_pos = binaural_pos_id;
+	}
+	if (is_announcement != -1) {
+		sc->is_announcement = is_announcement;
+	}
+
 	/*
 	 * NOTE: The read_slin_format does not hold a reference because it
 	 * will always be a signed linear format.
@@ -398,7 +371,13 @@ static void set_softmix_bridge_data(int rate, int interval, struct ast_bridge_ch
 	setup_fail |= ast_set_read_format_path(bridge_channel->chan,
 		ast_channel_rawreadformat(bridge_channel->chan), slin_format);
 	ast_channel_unlock(bridge_channel->chan);
-	setup_fail |= ast_set_write_format(bridge_channel->chan, slin_format);
+
+	/* If channel contains binaural data we will set it here for the trans_pvt. */
+	if (set_binaural == 1 || (set_binaural == -1 && sc->binaural == 1)) {
+		setup_fail |= ast_set_write_format_interleaved_stereo(bridge_channel->chan, slin_format);
+	} else if (set_binaural == 0) {
+		setup_fail |= ast_set_write_format(bridge_channel->chan, slin_format);
+	}
 
 	/* set up new DSP.  This is on the read side only right before the read frame enters the smoother.  */
 	sc->dsp = ast_dsp_new_with_rate(rate);
@@ -438,9 +417,265 @@ static void softmix_poke_thread(struct softmix_bridge_data *softmix_data)
 /*! \brief Function called when a channel is unsuspended from the bridge */
 static void softmix_bridge_unsuspend(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
 {
+#ifdef BINAURAL_RENDERING
+	struct softmix_channel *sc = bridge_channel->tech_pvt;
+	if (sc->binaural) {
+		/* Restore some usefull data if it was a binaural channel */
+		struct ast_format *slin_format;
+
+		slin_format = ast_format_cache_get_slin_by_rate(sc->rate);
+		ast_set_write_format_interleaved_stereo(bridge_channel->chan, slin_format);
+	}
+#endif
 	if (bridge->tech_pvt) {
 		softmix_poke_thread(bridge->tech_pvt);
 	}
+}
+
+/*!
+ * \brief Determine if a stream is a video source stream.
+ *
+ * \param stream The stream to test
+ * \retval 1 The stream is a video source
+ * \retval 0 The stream is not a video source
+ */
+static int is_video_source(const struct ast_stream *stream)
+{
+	if (ast_stream_get_state(stream) != AST_STREAM_STATE_REMOVED
+		&& ast_stream_get_type(stream) == AST_MEDIA_TYPE_VIDEO
+		&& strncmp(ast_stream_get_name(stream), SOFTBRIDGE_VIDEO_DEST_PREFIX,
+			SOFTBRIDGE_VIDEO_DEST_LEN)) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/*!
+ * \brief Determine if a stream is a video destination stream.
+ *
+ * A source channel name can be provided to narrow this to a destination stream
+ * for a particular source channel. Further, a source stream name can be provided
+ * to narrow this to a particular source stream's destination. However, empty strings
+ * can be provided to match any destination video stream, regardless of source channel
+ * or source stream.
+ *
+ * \param stream The stream to test
+ * \param source_channel_name The name of a source video channel to match
+ * \param source_channel_stream_position The position of the video on the source channel
+ * \retval 1 The stream is a video destination stream
+ * \retval 0 The stream is not a video destination stream
+ */
+static int is_video_dest(const struct ast_stream *stream, const char *source_channel_name,
+	int source_channel_stream_position)
+{
+	char *dest_video_name;
+	size_t dest_video_name_len;
+
+	if (ast_stream_get_state(stream) == AST_STREAM_STATE_REMOVED
+		|| ast_stream_get_type(stream) != AST_MEDIA_TYPE_VIDEO) {
+		return 0;
+	}
+
+	dest_video_name_len = SOFTBRIDGE_VIDEO_DEST_LEN + 1;
+	if (!ast_strlen_zero(source_channel_name)) {
+		dest_video_name_len += strlen(source_channel_name) + 1;
+		if (source_channel_stream_position != -1) {
+			dest_video_name_len += 11;
+		}
+
+		dest_video_name = ast_alloca(dest_video_name_len);
+		if (source_channel_stream_position != -1) {
+			/* We are looking for an exact stream position */
+			snprintf(dest_video_name, dest_video_name_len, "%s%c%s%c%d",
+				SOFTBRIDGE_VIDEO_DEST_PREFIX, SOFTBRIDGE_VIDEO_DEST_SEPARATOR,
+				source_channel_name, SOFTBRIDGE_VIDEO_DEST_SEPARATOR,
+				source_channel_stream_position);
+			return !strcmp(ast_stream_get_name(stream), dest_video_name);
+		}
+		snprintf(dest_video_name, dest_video_name_len, "%s%c%s",
+			SOFTBRIDGE_VIDEO_DEST_PREFIX, SOFTBRIDGE_VIDEO_DEST_SEPARATOR,
+			source_channel_name);
+	} else {
+		dest_video_name = SOFTBRIDGE_VIDEO_DEST_PREFIX;
+	}
+
+	return !strncmp(ast_stream_get_name(stream), dest_video_name, dest_video_name_len - 1);
+}
+
+static int append_source_stream(struct ast_stream_topology *dest,
+	const char *channel_name, const char *sdp_label,
+	struct ast_stream *stream, int index)
+{
+	char *stream_clone_name = NULL;
+	struct ast_stream *stream_clone;
+
+	/* We use the stream topology index for the stream to uniquely identify and recognize it.
+	 * This is guaranteed to remain the same across renegotiation of the source channel and
+	 * ensures that the stream name is unique.
+	 */
+	if (ast_asprintf(&stream_clone_name, "%s%c%s%c%d", SOFTBRIDGE_VIDEO_DEST_PREFIX,
+		SOFTBRIDGE_VIDEO_DEST_SEPARATOR, channel_name, SOFTBRIDGE_VIDEO_DEST_SEPARATOR,
+		index) < 0) {
+		return -1;
+	}
+
+	stream_clone = ast_stream_clone(stream, stream_clone_name);
+	ast_free(stream_clone_name);
+	if (!stream_clone) {
+		return -1;
+	}
+
+	/* Sends an "a:label" attribute in the SDP for participant event correlation */
+	if (!ast_strlen_zero(sdp_label)) {
+		ast_stream_set_metadata(stream_clone, "SDP:LABEL", sdp_label);
+	}
+
+	/* We will be sending them a stream and not expecting anything in return */
+	ast_stream_set_state(stream_clone, AST_STREAM_STATE_SENDONLY);
+
+	if (ast_stream_topology_append_stream(dest, stream_clone) < 0) {
+		ast_stream_free(stream_clone);
+		return -1;
+	}
+
+	return 0;
+}
+
+
+static int append_source_streams(struct ast_stream_topology *dest,
+	const char *channel_name, const char *sdp_label,
+	const struct ast_stream_topology *source)
+{
+	int i;
+
+	for (i = 0; i < ast_stream_topology_get_count(source); ++i) {
+		struct ast_stream *stream;
+
+		stream = ast_stream_topology_get_stream(source, i);
+
+		if (!is_video_source(stream)) {
+			continue;
+		}
+
+		if (append_source_stream(dest, channel_name, sdp_label, stream, i)) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+static int append_all_streams(struct ast_stream_topology *dest,
+	const struct ast_stream_topology *source)
+{
+	int i;
+	int dest_index = 0;
+
+	for (i = 0; i < ast_stream_topology_get_count(source); ++i) {
+		struct ast_stream *clone;
+		int added = 0;
+
+		clone = ast_stream_clone(ast_stream_topology_get_stream(source, i), NULL);
+		if (!clone) {
+			return -1;
+		}
+
+		/* If we can reuse an existing removed stream then do so */
+		while (dest_index < ast_stream_topology_get_count(dest)) {
+			struct ast_stream *stream = ast_stream_topology_get_stream(dest, dest_index);
+
+			dest_index++;
+
+			if (ast_stream_get_state(stream) == AST_STREAM_STATE_REMOVED) {
+				/* This cannot fail because dest_index - 1 is less than the
+				 * current count in dest. */
+				ast_stream_topology_set_stream(dest, dest_index - 1, clone);
+				added = 1;
+				break;
+			}
+		}
+
+		/* If no removed stream exists that we took the place of append the stream */
+		if (!added && ast_stream_topology_append_stream(dest, clone) < 0) {
+			ast_stream_free(clone);
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+/*!
+ * \brief Issue channel stream topology change requests.
+ *
+ * When in SFU mode, each participant needs to be able to
+ * send video directly to other participants in the bridge.
+ * This means that all participants need to have their topologies
+ * updated. The joiner needs to have destination streams for
+ * all current participants, and the current participants need
+ * to have destinations streams added for the joiner's sources.
+ *
+ * \param joiner The channel that is joining the softmix bridge
+ * \param participants The current participants in the softmix bridge
+ */
+static void sfu_topologies_on_join(struct ast_bridge *bridge,
+	struct ast_bridge_channel *joiner)
+{
+	struct ast_stream_topology *joiner_video = NULL;
+	struct ast_bridge_channels_list *participants = &bridge->channels;
+	struct ast_bridge_channel *participant;
+	int res;
+	struct softmix_channel *sc;
+
+	joiner_video = ast_stream_topology_alloc();
+	if (!joiner_video) {
+		return;
+	}
+
+	sc = joiner->tech_pvt;
+
+	ast_channel_lock(joiner->chan);
+	res = append_source_streams(joiner_video, ast_channel_name(joiner->chan),
+		bridge->softmix.send_sdp_label ? ast_channel_uniqueid(joiner->chan) : NULL,
+		ast_channel_get_stream_topology(joiner->chan));
+	sc->topology = ast_stream_topology_clone(ast_channel_get_stream_topology(joiner->chan));
+	ast_channel_unlock(joiner->chan);
+
+	if (res || !sc->topology) {
+		goto cleanup;
+	}
+
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		if (participant == joiner) {
+			continue;
+		}
+		ast_channel_lock(participant->chan);
+		res = append_source_streams(sc->topology, ast_channel_name(participant->chan),
+			bridge->softmix.send_sdp_label ? ast_channel_uniqueid(participant->chan) : NULL,
+			ast_channel_get_stream_topology(participant->chan));
+		ast_channel_unlock(participant->chan);
+		if (res) {
+			goto cleanup;
+		}
+	}
+
+	ast_channel_request_stream_topology_change(joiner->chan, sc->topology, NULL);
+
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		if (participant == joiner) {
+			continue;
+		}
+
+		sc = participant->tech_pvt;
+		if (append_all_streams(sc->topology, joiner_video)) {
+			goto cleanup;
+		}
+		ast_channel_request_stream_topology_change(participant->chan, sc->topology, NULL);
+	}
+
+cleanup:
+	ast_stream_topology_free(joiner_video);
 }
 
 /*! \brief Function called when a channel is joined into the bridge */
@@ -448,6 +683,15 @@ static int softmix_bridge_join(struct ast_bridge *bridge, struct ast_bridge_chan
 {
 	struct softmix_channel *sc;
 	struct softmix_bridge_data *softmix_data;
+	int set_binaural = 0;
+	/*
+	 * If false, the channel will be convolved, but since it is a non stereo channel, output
+	 * will be mono.
+	 */
+	int skip_binaural_output = 1;
+	int pos_id;
+	int is_announcement = 0;
+	int samplerate_change;
 
 	softmix_data = bridge->tech_pvt;
 	if (!softmix_data) {
@@ -457,6 +701,33 @@ static int softmix_bridge_join(struct ast_bridge *bridge, struct ast_bridge_chan
 	/* Create a new softmix_channel structure and allocate various things on it */
 	if (!(sc = ast_calloc(1, sizeof(*sc)))) {
 		return -1;
+	}
+
+	samplerate_change = softmix_data->internal_rate;
+	pos_id = -1;
+	if (bridge->softmix.binaural_active) {
+		if (strncmp(ast_channel_name(bridge_channel->chan), "CBAnn", 5) != 0) {
+			set_binaural = ast_format_get_channel_count(bridge_channel->write_format) > 1 ? 1 : 0;
+			if (set_binaural) {
+				softmix_data->internal_rate = samplerate_change;
+			}
+			skip_binaural_output = 0;
+		} else {
+			is_announcement = 1;
+		}
+		if (set_binaural) {
+			softmix_data->convolve.binaural_active = 1;
+		}
+		if (!skip_binaural_output)	{
+			pos_id = set_binaural_data_join(&softmix_data->convolve, softmix_data->default_sample_size);
+			if (pos_id == -1) {
+				ast_log(LOG_ERROR, "Bridge %s: Failed to join channel %s. "
+						"Could not allocate enough memory.\n", bridge->uniqueid,
+						ast_channel_name(bridge_channel->chan));
+				ast_free(sc);
+				return -1;
+			}
+		}
 	}
 
 	/* Can't forget the lock */
@@ -469,21 +740,93 @@ static int softmix_bridge_join(struct ast_bridge *bridge, struct ast_bridge_chan
 		softmix_data->internal_mixing_interval
 			? softmix_data->internal_mixing_interval
 			: DEFAULT_SOFTMIX_INTERVAL,
-		bridge_channel, 0);
+		bridge_channel, 0, set_binaural, pos_id, is_announcement);
+
+	if (bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_SFU) {
+		sfu_topologies_on_join(bridge, bridge_channel);
+	}
+
+	/* Complete any active hold before entering, or transitioning to softmix. */
+	if (ast_channel_hold_state(bridge_channel->chan) == AST_CONTROL_HOLD) {
+		ast_debug(1, "Channel %s simulating UNHOLD for bridge softmix join.\n",
+			ast_channel_name(bridge_channel->chan));
+		ast_indicate(bridge_channel->chan, AST_CONTROL_UNHOLD);
+	}
 
 	softmix_poke_thread(softmix_data);
+	return 0;
+}
+
+static int remove_destination_streams(struct ast_stream_topology *topology,
+	const char *channel_name)
+{
+	int i;
+	int stream_removed = 0;
+
+	for (i = 0; i < ast_stream_topology_get_count(topology); ++i) {
+		struct ast_stream *stream;
+
+		stream = ast_stream_topology_get_stream(topology, i);
+
+		if (is_video_dest(stream, channel_name, -1)) {
+			ast_stream_set_state(stream, AST_STREAM_STATE_REMOVED);
+			stream_removed = 1;
+		}
+	}
+	return stream_removed;
+}
+
+static int sfu_topologies_on_leave(struct ast_bridge_channel *leaver, struct ast_bridge_channels_list *participants)
+{
+	struct ast_bridge_channel *participant;
+	struct softmix_channel *sc;
+
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		sc = participant->tech_pvt;
+		if (!remove_destination_streams(sc->topology, ast_channel_name(leaver->chan))) {
+			continue;
+		}
+		ast_channel_request_stream_topology_change(participant->chan, sc->topology, NULL);
+	}
+
+	sc = leaver->tech_pvt;
+	if (remove_destination_streams(sc->topology, "")) {
+		ast_channel_request_stream_topology_change(leaver->chan, sc->topology, NULL);
+	}
+
 	return 0;
 }
 
 /*! \brief Function called when a channel leaves the bridge */
 static void softmix_bridge_leave(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
 {
-	struct softmix_channel *sc = bridge_channel->tech_pvt;
+	struct softmix_channel *sc;
+	struct softmix_bridge_data *softmix_data;
 
+	softmix_data = bridge->tech_pvt;
+	sc = bridge_channel->tech_pvt;
 	if (!sc) {
 		return;
 	}
+
+	if (bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_SFU) {
+		sfu_topologies_on_leave(bridge_channel, &bridge->channels);
+	}
+
+	if (bridge->softmix.binaural_active) {
+		if (sc->binaural) {
+			set_binaural_data_leave(&softmix_data->convolve, sc->binaural_pos,
+					softmix_data->default_sample_size);
+		}
+	}
+
 	bridge_channel->tech_pvt = NULL;
+
+	ast_stream_topology_free(sc->topology);
+
+	ao2_cleanup(sc->remb_collector);
+
+	AST_VECTOR_FREE(&sc->video_sources);
 
 	/* Drop mutex lock */
 	ast_mutex_destroy(&sc->lock);
@@ -560,6 +903,12 @@ static void softmix_bridge_write_video(struct ast_bridge *bridge, struct ast_bri
 			softmix_pass_video_top_priority(bridge, frame);
 		}
 		break;
+	case AST_BRIDGE_VIDEO_MODE_SFU:
+		/* Nothing special to do here, the bridge channel stream map will ensure the
+		 * video goes everywhere it needs to
+		 */
+		ast_bridge_queue_everyone_else(bridge, bridge_channel, frame);
+		break;
 	}
 }
 
@@ -578,12 +927,17 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
 {
 	struct softmix_channel *sc = bridge_channel->tech_pvt;
 	struct softmix_bridge_data *softmix_data = bridge->tech_pvt;
+	int silent = 0;
 	int totalsilence = 0;
 	int cur_energy = 0;
 	int silence_threshold = bridge_channel->tech_args.silence_threshold ?
 		bridge_channel->tech_args.silence_threshold :
 		DEFAULT_SOFTMIX_SILENCE_THRESHOLD;
-	char update_talking = -1;  /* if this is set to 0 or 1, tell the bridge that the channel has started or stopped talking. */
+	/*
+	 * If update_talking is set to 0 or 1, tell the bridge that the channel
+	 * has started or stopped talking.
+	 */
+	char update_talking = -1;
 
 	/* Write the frame into the conference */
 	ast_mutex_lock(&sc->lock);
@@ -611,7 +965,7 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
 
 	/* The channel will be leaving soon if there is no dsp. */
 	if (sc->dsp) {
-		ast_dsp_silence_with_energy(sc->dsp, frame, &totalsilence, &cur_energy);
+		silent = ast_dsp_silence_with_energy(sc->dsp, frame, &totalsilence, &cur_energy);
 	}
 
 	if (bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_TALKER_SRC) {
@@ -628,15 +982,16 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
 	}
 
 	if (totalsilence < silence_threshold) {
-		if (!sc->talking) {
+		if (!sc->talking && !silent) {
+			/* Tell the write process we have audio to be mixed out */
+			sc->talking = 1;
 			update_talking = 1;
 		}
-		sc->talking = 1; /* tell the write process we have audio to be mixed out */
 	} else {
 		if (sc->talking) {
+			sc->talking = 0;
 			update_talking = 0;
 		}
-		sc->talking = 0;
 	}
 
 	/* Before adding audio in, make sure we haven't fallen behind. If audio has fallen
@@ -646,9 +1001,8 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
 		ast_slinfactory_flush(&sc->factory);
 	}
 
-	/* If a frame was provided add it to the smoother, unless drop silence is enabled and this frame
-	 * is not determined to be talking. */
-	if (!(bridge_channel->tech_args.drop_silence && !sc->talking)) {
+	if (sc->talking || !bridge_channel->tech_args.drop_silence) {
+		/* Add frame to the smoother for mixing with other channels. */
 		ast_slinfactory_feed(&sc->factory, frame);
 	}
 
@@ -658,6 +1012,198 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
 	if (update_talking != -1) {
 		ast_bridge_channel_notify_talking(bridge_channel, update_talking);
 	}
+}
+
+/*!
+ * \internal
+ * \brief Clear talking flag, stop contributing to mixing and notify handlers.
+ * \since 13.21.0, 15.4.0
+ *
+ * \param bridge_channel Which channel's talking to clear
+ *
+ * \return Nothing
+ */
+static void clear_talking(struct ast_bridge_channel *bridge_channel)
+{
+	struct softmix_channel *sc = bridge_channel->tech_pvt;
+
+	if (sc->talking) {
+		ast_mutex_lock(&sc->lock);
+		ast_slinfactory_flush(&sc->factory);
+		sc->talking = 0;
+		ast_mutex_unlock(&sc->lock);
+
+		/* Notify that we are no longer talking. */
+		ast_bridge_channel_notify_talking(bridge_channel, 0);
+	}
+}
+
+/*!
+ * \internal
+ * \brief Check for voice status updates.
+ * \since 13.20.0
+ *
+ * \param bridge Which bridge we are in
+ * \param bridge_channel Which channel we are checking
+ *
+ * \return Nothing
+ */
+static void softmix_bridge_check_voice(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
+{
+	if (bridge_channel->features->mute) {
+		/*
+		 * We were muted while we were talking.
+		 *
+		 * Immediately stop contributing to mixing
+		 * and report no longer talking.
+		 */
+		clear_talking(bridge_channel);
+	}
+}
+
+static int remove_all_original_streams(struct ast_stream_topology *dest,
+	const struct ast_stream_topology *source,
+	const struct ast_stream_topology *original)
+{
+	int i;
+
+	for (i = 0; i < ast_stream_topology_get_count(source); ++i) {
+		struct ast_stream *stream;
+		int original_index;
+
+		stream = ast_stream_topology_get_stream(source, i);
+
+		/* Mark the existing stream as removed so we get a new one, this will get
+		 * reused on a subsequent renegotiation.
+		 */
+		for (original_index = 0; original_index < ast_stream_topology_get_count(original); ++original_index) {
+			struct ast_stream *original_stream = ast_stream_topology_get_stream(original, original_index);
+
+			if (!strcmp(ast_stream_get_name(stream), ast_stream_get_name(original_stream))) {
+				struct ast_stream *removed;
+
+				/* Since the participant is still going to be in the bridge we
+				 * change the name so that routing does not attempt to route video
+				 * to this stream.
+				 */
+				removed = ast_stream_clone(stream, "removed");
+				if (!removed) {
+					return -1;
+				}
+
+				ast_stream_set_state(removed, AST_STREAM_STATE_REMOVED);
+
+				/* The destination topology can only ever contain the same, or more,
+				 * streams than the original so this is safe.
+				 */
+				if (ast_stream_topology_set_stream(dest, original_index, removed)) {
+					ast_stream_free(removed);
+					return -1;
+				}
+
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void sfu_topologies_on_source_change(struct ast_bridge *bridge,
+	struct ast_bridge_channel *source)
+{
+	struct ast_stream_topology *source_video = NULL;
+	struct ast_bridge_channels_list *participants = &bridge->channels;
+	struct ast_bridge_channel *participant;
+	int res;
+
+	source_video = ast_stream_topology_alloc();
+	if (!source_video) {
+		return;
+	}
+
+	ast_channel_lock(source->chan);
+	res = append_source_streams(source_video, ast_channel_name(source->chan),
+		bridge->softmix.send_sdp_label ? ast_channel_uniqueid(source->chan) : NULL,
+		ast_channel_get_stream_topology(source->chan));
+	ast_channel_unlock(source->chan);
+	if (res) {
+		goto cleanup;
+	}
+
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		struct ast_stream_topology *original_topology;
+		struct softmix_channel *sc;
+
+		if (participant == source) {
+			continue;
+		}
+
+		sc = participant->tech_pvt;
+
+		original_topology = ast_stream_topology_clone(sc->topology);
+		if (!original_topology) {
+			goto cleanup;
+		}
+
+		/* We add all the source streams back in, if any removed streams are already present they will
+		 * get used first followed by appending new ones.
+		 */
+		if (append_all_streams(sc->topology, source_video)) {
+			ast_stream_topology_free(original_topology);
+			goto cleanup;
+		}
+
+		/* And the original existing streams get marked as removed. This causes the remote side to see
+		 * a new stream for the source streams.
+		 */
+		if (remove_all_original_streams(sc->topology, source_video, original_topology)) {
+			ast_stream_topology_free(original_topology);
+			goto cleanup;
+		}
+
+		ast_channel_request_stream_topology_change(participant->chan, sc->topology, NULL);
+		ast_stream_topology_free(original_topology);
+	}
+
+cleanup:
+	ast_stream_topology_free(source_video);
+}
+
+/*!
+ * \internal
+ * \brief Determine what to do with a text frame.
+ * \since 13.22.0
+ * \since 15.5.0
+ *
+ * \param bridge Which bridge is getting the frame
+ * \param bridge_channel Which channel is writing the frame.
+ * \param frame What is being written.
+ *
+ * \return Nothing
+ */
+static void softmix_bridge_write_text(struct ast_bridge *bridge,
+	struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
+{
+	if (DEBUG_ATLEAST(1)) {
+		struct ast_msg_data *msg = frame->data.ptr;
+		char frame_type[64];
+
+		ast_frame_type2str(frame->frametype, frame_type, sizeof(frame_type));
+
+		if (frame->frametype == AST_FRAME_TEXT_DATA) {
+			ast_log(LOG_DEBUG, "Received %s frame from '%s:%s': %s\n", frame_type,
+				ast_msg_data_get_attribute(msg, AST_MSG_DATA_ATTR_FROM),
+				ast_channel_name(bridge_channel->chan),
+				ast_msg_data_get_attribute(msg, AST_MSG_DATA_ATTR_BODY));
+		} else {
+			ast_log(LOG_DEBUG, "Received %s frame from '%s': %.*s\n", frame_type,
+				ast_channel_name(bridge_channel->chan), frame->datalen,
+				(char *)frame->data.ptr);
+		}
+	}
+
+	ast_bridge_queue_everyone_else(bridge, bridge_channel, frame);
 }
 
 /*!
@@ -674,20 +1220,75 @@ static void softmix_bridge_write_voice(struct ast_bridge *bridge, struct ast_bri
  */
 static int softmix_bridge_write_control(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
 {
+	struct softmix_bridge_data *softmix_data = bridge->tech_pvt;
+
 	/*
 	 * XXX Softmix needs to use channel roles to determine what to
 	 * do with control frames.
 	 */
 
 	switch (frame->subclass.integer) {
+	case AST_CONTROL_HOLD:
+		/*
+		 * Doing anything for holds in a conference bridge could be considered a bit
+		 * odd. That being said, in most cases one would probably want the talking
+		 * flag cleared when 'hold' is pressed by the remote endpoint, so go ahead
+		 * and do that here. However, that is all we'll do. Meaning if for some reason
+		 * the endpoint continues to send audio frames despite pressing 'hold' talking
+		 * will once again be detected for that channel.
+		 */
+		clear_talking(bridge_channel);
+		break;
 	case AST_CONTROL_VIDUPDATE:
-		ast_bridge_queue_everyone_else(bridge, NULL, frame);
+		if (!bridge->softmix.video_mode.video_update_discard ||
+			ast_tvdiff_ms(ast_tvnow(), softmix_data->last_video_update) > bridge->softmix.video_mode.video_update_discard) {
+			ast_bridge_queue_everyone_else(bridge, NULL, frame);
+			softmix_data->last_video_update = ast_tvnow();
+		}
+		break;
+	case AST_CONTROL_STREAM_TOPOLOGY_SOURCE_CHANGED:
+		if (bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_SFU) {
+			sfu_topologies_on_source_change(bridge, bridge_channel);
+		}
 		break;
 	default:
 		break;
 	}
 
 	return 0;
+}
+
+/*!
+ * \internal
+ * \brief Determine what to do with an RTCP frame.
+ * \since 15.4.0
+ *
+ * \param bridge Which bridge is getting the frame
+ * \param bridge_channel Which channel is writing the frame.
+ * \param frame What is being written.
+ */
+static void softmix_bridge_write_rtcp(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel, struct ast_frame *frame)
+{
+	struct ast_rtp_rtcp_feedback *feedback = frame->data.ptr;
+	struct softmix_channel *sc = bridge_channel->tech_pvt;
+
+	/* We only care about REMB reports right now. In the future we may be able to use sender or
+	 * receiver reports to further tweak things, but not yet.
+	 */
+	if (frame->subclass.integer != AST_RTP_RTCP_PSFB || feedback->fmt != AST_RTP_RTCP_FMT_REMB ||
+		bridge->softmix.video_mode.mode != AST_BRIDGE_VIDEO_MODE_SFU ||
+		!bridge->softmix.video_mode.mode_data.sfu_data.remb_send_interval) {
+		return;
+	}
+
+	/* REMB is the total estimated maximum bitrate across all streams within the session, so we store
+	 * only the latest report and use it everywhere.
+	 */
+	ast_mutex_lock(&sc->lock);
+	sc->remb = feedback->remb;
+	ast_mutex_unlock(&sc->lock);
+
+	return;
 }
 
 /*!
@@ -721,23 +1322,27 @@ static int softmix_bridge_write(struct ast_bridge *bridge, struct ast_bridge_cha
 	switch (frame->frametype) {
 	case AST_FRAME_NULL:
 		/* "Accept" the frame and discard it. */
+		softmix_bridge_check_voice(bridge, bridge_channel);
 		break;
 	case AST_FRAME_DTMF_BEGIN:
 	case AST_FRAME_DTMF_END:
 		res = ast_bridge_queue_everyone_else(bridge, bridge_channel, frame);
 		break;
 	case AST_FRAME_VOICE:
-		if (bridge_channel) {
-			softmix_bridge_write_voice(bridge, bridge_channel, frame);
-		}
+		softmix_bridge_write_voice(bridge, bridge_channel, frame);
 		break;
 	case AST_FRAME_VIDEO:
-		if (bridge_channel) {
-			softmix_bridge_write_video(bridge, bridge_channel, frame);
-		}
+		softmix_bridge_write_video(bridge, bridge_channel, frame);
+		break;
+	case AST_FRAME_TEXT:
+	case AST_FRAME_TEXT_DATA:
+		softmix_bridge_write_text(bridge, bridge_channel, frame);
 		break;
 	case AST_FRAME_CONTROL:
 		res = softmix_bridge_write_control(bridge, bridge_channel, frame);
+		break;
+	case AST_FRAME_RTCP:
+		softmix_bridge_write_rtcp(bridge, bridge_channel, frame);
 		break;
 	case AST_FRAME_BRIDGE_ACTION:
 		res = ast_bridge_queue_everyone_else(bridge, bridge_channel, frame);
@@ -752,6 +1357,193 @@ static int softmix_bridge_write(struct ast_bridge *bridge, struct ast_bridge_cha
 	}
 
 	return res;
+}
+
+static void remb_collect_report_all(struct ast_bridge *bridge, struct softmix_bridge_data *softmix_data,
+	float bitrate)
+{
+	if (!softmix_data->bitrate) {
+		softmix_data->bitrate = bitrate;
+		return;
+	}
+
+	switch (bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior) {
+	case AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE_ALL:
+		softmix_data->bitrate = (softmix_data->bitrate + bitrate) / 2;
+		break;
+	case AST_BRIDGE_VIDEO_SFU_REMB_LOWEST_ALL:
+		if (bitrate < softmix_data->bitrate) {
+			softmix_data->bitrate = bitrate;
+		}
+		break;
+	case AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST_ALL:
+		if (bitrate > softmix_data->bitrate) {
+			softmix_data->bitrate = bitrate;
+		}
+		break;
+	case AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE:
+	case AST_BRIDGE_VIDEO_SFU_REMB_LOWEST:
+	case AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST:
+		/* These will never actually get hit due to being handled by remb_collect_report below */
+		break;
+	}
+}
+
+static void remb_collect_report(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel,
+	struct softmix_bridge_data *softmix_data, struct softmix_channel *sc)
+{
+	int i;
+	float bitrate;
+
+	/* If there are no video sources that we are a receiver of then we have noone to
+	 * report REMB to.
+	 */
+	if (!AST_VECTOR_SIZE(&sc->video_sources)) {
+		return;
+	}
+
+	/* We evenly divide the available maximum bitrate across the video sources
+	 * to this receiver so each source gets an equal slice.
+	 */
+	bitrate = (sc->remb.br_mantissa << sc->remb.br_exp) / AST_VECTOR_SIZE(&sc->video_sources);
+
+	/* If this receiver has no bitrate yet ignore it */
+	if (!bitrate) {
+		return;
+	}
+
+	/* If we are using the "all" variants then we should use the bridge bitrate to store information */
+	if (bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior == AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE_ALL ||
+		bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior == AST_BRIDGE_VIDEO_SFU_REMB_LOWEST_ALL ||
+		bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior == AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST_ALL) {
+		remb_collect_report_all(bridge, softmix_data, bitrate);
+		return;
+	}
+
+	for (i = 0; i < AST_VECTOR_SIZE(&sc->video_sources); ++i) {
+		struct softmix_remb_collector *collector;
+
+		/* The collector will always exist if a video source is in our list */
+		collector = AST_VECTOR_GET(&softmix_data->remb_collectors, AST_VECTOR_GET(&sc->video_sources, i));
+
+		if (!collector->bitrate) {
+			collector->bitrate = bitrate;
+			continue;
+		}
+
+		switch (bridge->softmix.video_mode.mode_data.sfu_data.remb_behavior) {
+		case AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE:
+			collector->bitrate = (collector->bitrate + bitrate) / 2;
+			break;
+		case AST_BRIDGE_VIDEO_SFU_REMB_LOWEST:
+			if (bitrate < collector->bitrate) {
+				collector->bitrate = bitrate;
+			}
+			break;
+		case AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST:
+			if (bitrate > collector->bitrate) {
+				collector->bitrate = bitrate;
+			}
+			break;
+		case AST_BRIDGE_VIDEO_SFU_REMB_AVERAGE_ALL:
+		case AST_BRIDGE_VIDEO_SFU_REMB_LOWEST_ALL:
+		case AST_BRIDGE_VIDEO_SFU_REMB_HIGHEST_ALL:
+			/* These will never actually get hit due to being handled by remb_collect_report_all above */
+			break;
+		}
+	}
+
+	/* After the report is integrated we reset this to 0 in case they stop producing
+	 * REMB reports.
+	 */
+	sc->remb.br_mantissa = 0;
+	sc->remb.br_exp = 0;
+}
+
+static void remb_send_report(struct ast_bridge_channel *bridge_channel, struct softmix_bridge_data *softmix_data,
+	struct softmix_channel *sc)
+{
+	float bitrate = softmix_data->bitrate;
+	int i;
+	int exp;
+
+	if (!sc->remb_collector) {
+		return;
+	}
+
+	/* If there is no bridge level bitrate fall back to collector level */
+	if (!bitrate) {
+		bitrate = sc->remb_collector->bitrate;
+		sc->remb_collector->bitrate = 0;
+	}
+
+	/* We always do this calculation as even when the bitrate is zero the browser
+	 * still prefers it to be accurate instead of lying.
+	 *
+	 * The mantissa only has 18 bits available, so make sure it fits. Adjust the
+	 * value and exponent for those values that don't.
+	 *
+	 * For example given the following:
+	 *
+	 * bitrate = 123456789.0
+	 * frexp(bitrate, &exp);
+	 *
+	 * 'exp' should now equal 27 (number of bits needed to represent the value). Since
+	 * the mantissa must fit into an 18-bit unsigned integer, and the given bitrate is
+	 * too large to fit, we must subtract 18 from the exponent in order to get the
+	 * number of times the bitrate will fit into that size integer.
+	 *
+	 * exp -= 18;
+	 *
+	 * 'exp' is now equal to 9. Now we can get the mantissa that fits into an 18-bit
+	 * unsigned integer by dividing the bitrate by 2^exp:
+	 *
+	 * mantissa = 123456789.0 / 2^9
+	 *
+	 * This makes the final mantissa equal to 241126 (implicitly cast), which is less
+	 * than 262143 (the max value that can be put into an unsigned 18-bit integer).
+	 * So now we have the following:
+	 *
+	 * exp = 9;
+	 * mantissa = 241126;
+	 *
+	 * If we multiply that back we should come up with something close to the original
+	 * bit rate:
+	 *
+	 * 241126 * 2^9 = 123456512
+	 *
+	 * Precision is lost due to the nature of floating point values. Easier to why from
+	 * the binary:
+	 *
+	 * 241126 * 2^9 = 241126 << 9 = 111010110111100110 << 9 = 111010110111100110000000000
+	 *
+	 * Precision on the "lower" end is lost due to zeros being shifted in. This loss is
+	 * both expected and acceptable.
+	 */
+	frexp(bitrate, &exp);
+	exp = exp > 18 ? exp - 18 : 0;
+
+	sc->remb_collector->feedback.remb.br_mantissa = bitrate / (1 << exp);
+	sc->remb_collector->feedback.remb.br_exp = exp;
+
+	for (i = 0; i < AST_VECTOR_SIZE(&bridge_channel->stream_map.to_bridge); ++i) {
+		int bridge_num = AST_VECTOR_GET(&bridge_channel->stream_map.to_bridge, i);
+
+		/* If this stream is not being provided to the bridge there can be no receivers of it
+		 * so therefore no REMB reports.
+		 */
+		if (bridge_num == -1) {
+			continue;
+		}
+
+		/* We need to update the frame with this stream, or else it won't be
+		 * properly routed. We don't use the actual channel stream identifier as
+		 * the bridging core will do the translation from bridge stream identifier to
+		 * channel stream identifier.
+		 */
+		sc->remb_collector->frame.stream_num = bridge_num;
+		ast_bridge_channel_queue_frame(bridge_channel, &sc->remb_collector->frame);
+	}
 }
 
 static void gather_softmix_stats(struct softmix_stats *stats,
@@ -769,7 +1561,9 @@ static void gather_softmix_stats(struct softmix_stats *stats,
 	if (stats->highest_supported_rate < channel_native_rate) {
 		stats->highest_supported_rate = channel_native_rate;
 	}
-	if (softmix_data->internal_rate < channel_native_rate) {
+	if (stats->maximum_rate && stats->maximum_rate < channel_native_rate) {
+		stats->num_above_maximum_rate++;
+	} else if (softmix_data->internal_rate < channel_native_rate) {
 		int i;
 
 		for (i = 0; i < ARRAY_LEN(stats->sample_rates); i++) {
@@ -796,9 +1590,14 @@ static void gather_softmix_stats(struct softmix_stats *stats,
  * \retval 0, no changes to internal rate
  * \retval 1, internal rate was changed, update all the channels on the next mixing iteration.
  */
-static unsigned int analyse_softmix_stats(struct softmix_stats *stats, struct softmix_bridge_data *softmix_data)
+static unsigned int analyse_softmix_stats(struct softmix_stats *stats,
+		struct softmix_bridge_data *softmix_data, int binaural_active)
 {
 	int i;
+
+	if (binaural_active) {
+		stats->locked_rate = SOFTMIX_BINAURAL_SAMPLE_RATE;
+	}
 
 	/*
 	 * Re-adjust the internal bridge sample rate if
@@ -814,6 +1613,15 @@ static unsigned int analyse_softmix_stats(struct softmix_stats *stats, struct so
 			ast_debug(1, "Locking at new rate.  Bridge changed from %u to %u.\n",
 				softmix_data->internal_rate, stats->locked_rate);
 			softmix_data->internal_rate = stats->locked_rate;
+			return 1;
+		}
+	} else if (stats->num_above_maximum_rate) {
+		/* if the bridge has a maximum rate set and channels are above it only
+		 * update if it differs from the current rate we are using. */
+		if (softmix_data->internal_rate != stats->maximum_rate) {
+			ast_debug(1, "Locking at new maximum rate.  Bridge changed from %u to %u.\n",
+				softmix_data->internal_rate, stats->maximum_rate);
+			softmix_data->internal_rate = stats->maximum_rate;
 			return 1;
 		}
 	} else if (stats->num_above_internal_rate >= 2) {
@@ -871,7 +1679,8 @@ static unsigned int analyse_softmix_stats(struct softmix_stats *stats, struct so
 	return 0;
 }
 
-static int softmix_mixing_array_init(struct softmix_mixing_array *mixing_array, unsigned int starting_num_entries)
+static int softmix_mixing_array_init(struct softmix_mixing_array *mixing_array,
+		unsigned int starting_num_entries, unsigned int binaural_active)
 {
 	memset(mixing_array, 0, sizeof(*mixing_array));
 	mixing_array->max_num_entries = starting_num_entries;
@@ -879,17 +1688,30 @@ static int softmix_mixing_array_init(struct softmix_mixing_array *mixing_array, 
 		ast_log(LOG_NOTICE, "Failed to allocate softmix mixing structure.\n");
 		return -1;
 	}
+	if (binaural_active) {
+		if (!(mixing_array->chan_pairs = ast_calloc(mixing_array->max_num_entries,
+				sizeof(struct convolve_channel_pair *)))) {
+			ast_log(LOG_NOTICE, "Failed to allocate softmix mixing structure.\n");
+			return -1;
+		}
+	}
 	return 0;
 }
 
-static void softmix_mixing_array_destroy(struct softmix_mixing_array *mixing_array)
+static void softmix_mixing_array_destroy(struct softmix_mixing_array *mixing_array,
+		unsigned int binaural_active)
 {
 	ast_free(mixing_array->buffers);
+	if (binaural_active) {
+		ast_free(mixing_array->chan_pairs);
+	}
 }
 
-static int softmix_mixing_array_grow(struct softmix_mixing_array *mixing_array, unsigned int num_entries)
+static int softmix_mixing_array_grow(struct softmix_mixing_array *mixing_array,
+		unsigned int num_entries, unsigned int binaural_active)
 {
 	int16_t **tmp;
+
 	/* give it some room to grow since memory is cheap but allocations can be expensive */
 	mixing_array->max_num_entries = num_entries;
 	if (!(tmp = ast_realloc(mixing_array->buffers, (mixing_array->max_num_entries * sizeof(int16_t *))))) {
@@ -897,6 +1719,16 @@ static int softmix_mixing_array_grow(struct softmix_mixing_array *mixing_array, 
 		return -1;
 	}
 	mixing_array->buffers = tmp;
+
+	if (binaural_active) {
+		struct convolve_channel_pair **tmp2;
+		if (!(tmp2 = ast_realloc(mixing_array->chan_pairs,
+				(mixing_array->max_num_entries * sizeof(struct convolve_channel_pair *))))) {
+			ast_log(LOG_NOTICE, "Failed to re-allocate softmix mixing structure.\n");
+			return -1;
+		}
+		mixing_array->chan_pairs = tmp2;
+	}
 	return 0;
 }
 
@@ -914,6 +1746,10 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 	struct ast_timer *timer;
 	struct softmix_translate_helper trans_helper;
 	int16_t buf[MAX_DATALEN];
+#ifdef BINAURAL_RENDERING
+	int16_t bin_buf[MAX_DATALEN];
+	int16_t ann_buf[MAX_DATALEN];
+#endif
 	unsigned int stat_iteration_counter = 0; /* counts down, gather stats at zero and reset. */
 	int timingfd;
 	int update_all_rates = 0; /* set this when the internal sample rate has changed */
@@ -927,7 +1763,8 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 	ast_timer_set_rate(timer, (1000 / softmix_data->internal_mixing_interval));
 
 	/* Give the mixing array room to grow, memory is cheap but allocations are expensive. */
-	if (softmix_mixing_array_init(&mixing_array, bridge->num_channels + 10)) {
+	if (softmix_mixing_array_init(&mixing_array, bridge->num_channels + 10,
+			bridge->softmix.binaural_active)) {
 		goto softmix_cleanup;
 	}
 
@@ -941,6 +1778,7 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 		struct ast_format *cur_slin = ast_format_cache_get_slin_by_rate(softmix_data->internal_rate);
 		unsigned int softmix_samples = SOFTMIX_SAMPLES(softmix_data->internal_rate, softmix_data->internal_mixing_interval);
 		unsigned int softmix_datalen = SOFTMIX_DATALEN(softmix_data->internal_rate, softmix_data->internal_mixing_interval);
+		int remb_update = 0;
 
 		if (softmix_datalen > MAX_DATALEN) {
 			/* This should NEVER happen, but if it does we need to know about it. Almost
@@ -955,7 +1793,8 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 
 		/* Grow the mixing array buffer as participants are added. */
 		if (mixing_array.max_num_entries < bridge->num_channels
-			&& softmix_mixing_array_grow(&mixing_array, bridge->num_channels + 5)) {
+			&& softmix_mixing_array_grow(&mixing_array, bridge->num_channels + 5,
+					bridge->softmix.binaural_active)) {
 			goto softmix_cleanup;
 		}
 
@@ -967,11 +1806,24 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 		if (!stat_iteration_counter) {
 			memset(&stats, 0, sizeof(stats));
 			stats.locked_rate = bridge->softmix.internal_sample_rate;
+			stats.maximum_rate = bridge->softmix.maximum_sample_rate;
 		}
 
 		/* If the sample rate has changed, update the translator helper */
 		if (update_all_rates) {
 			softmix_translate_helper_change_rate(&trans_helper, softmix_data->internal_rate);
+		}
+
+#ifdef BINAURAL_RENDERING
+		check_binaural_position_change(bridge, softmix_data);
+#endif
+
+		/* If we need to do a REMB update to all video sources then do so */
+		if (bridge->softmix.video_mode.mode == AST_BRIDGE_VIDEO_MODE_SFU &&
+			bridge->softmix.video_mode.mode_data.sfu_data.remb_send_interval &&
+			ast_tvdiff_ms(ast_tvnow(), softmix_data->last_remb_update) > bridge->softmix.video_mode.mode_data.sfu_data.remb_send_interval) {
+			remb_update = 1;
+			softmix_data->last_remb_update = ast_tvnow();
 		}
 
 		/* Go through pulling audio from each factory that has it available */
@@ -985,7 +1837,8 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 
 			/* Update the sample rate to match the bridge's native sample rate if necessary. */
 			if (update_all_rates) {
-				set_softmix_bridge_data(softmix_data->internal_rate, softmix_data->internal_mixing_interval, bridge_channel, 1);
+				set_softmix_bridge_data(softmix_data->internal_rate,
+						softmix_data->internal_mixing_interval, bridge_channel, 1, -1, -1, -1);
 			}
 
 			/* If stat_iteration_counter is 0, then collect statistics during this mixing interation */
@@ -1001,18 +1854,29 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 			/* Try to get audio from the factory if available */
 			ast_mutex_lock(&sc->lock);
 			if ((mixing_array.buffers[mixing_array.used_entries] = softmix_process_read_audio(sc, softmix_samples))) {
+#ifdef BINAURAL_RENDERING
+				add_binaural_mixing(bridge, softmix_data, softmix_samples, &mixing_array, sc,
+						ast_channel_name(bridge_channel->chan));
+#endif
 				mixing_array.used_entries++;
+			}
+			if (remb_update) {
+				remb_collect_report(bridge, bridge_channel, softmix_data, sc);
 			}
 			ast_mutex_unlock(&sc->lock);
 		}
 
-		/* mix it like crazy */
+		/* mix it like crazy (non binaural channels)*/
 		memset(buf, 0, softmix_datalen);
 		for (idx = 0; idx < mixing_array.used_entries; ++idx) {
 			for (x = 0; x < softmix_samples; ++x) {
 				ast_slinear_saturated_add(buf + x, mixing_array.buffers[idx] + x);
 			}
 		}
+
+#ifdef BINAURAL_RENDERING
+		binaural_mixing(bridge, softmix_data, &mixing_array, bin_buf, ann_buf);
+#endif
 
 		/* Next step go through removing the channel's own audio and creating a good frame... */
 		AST_LIST_TRAVERSE(&bridge->channels, bridge_channel, entry) {
@@ -1028,22 +1892,42 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 			/* Make SLINEAR write frame from local buffer */
 			ao2_t_replace(sc->write_frame.subclass.format, cur_slin,
 				"Replace softmix channel slin format");
-			sc->write_frame.datalen = softmix_datalen;
-			sc->write_frame.samples = softmix_samples;
-			memcpy(sc->final_buf, buf, softmix_datalen);
-
+#ifdef BINAURAL_RENDERING
+			if (bridge->softmix.binaural_active && softmix_data->convolve.binaural_active
+					&& sc->binaural) {
+				create_binaural_frame(bridge_channel, sc, bin_buf, ann_buf, softmix_datalen,
+						softmix_samples, buf);
+			} else
+#endif
+			{
+				sc->write_frame.datalen = softmix_datalen;
+				sc->write_frame.samples = softmix_samples;
+				memcpy(sc->final_buf, buf, softmix_datalen);
+			}
 			/* process the softmix channel's new write audio */
-			softmix_process_write_audio(&trans_helper, ast_channel_rawwriteformat(bridge_channel->chan), sc);
+			softmix_process_write_audio(&trans_helper,
+					ast_channel_rawwriteformat(bridge_channel->chan), sc,
+					softmix_data->default_sample_size);
 
 			ast_mutex_unlock(&sc->lock);
 
 			/* A frame is now ready for the channel. */
 			ast_bridge_channel_queue_frame(bridge_channel, &sc->write_frame);
+
+			if (remb_update) {
+				remb_send_report(bridge_channel, softmix_data, sc);
+			}
+		}
+
+		if (remb_update) {
+			/* In case we are doing bridge level REMB reset the bitrate so we start fresh */
+			softmix_data->bitrate = 0;
 		}
 
 		update_all_rates = 0;
 		if (!stat_iteration_counter) {
-			update_all_rates = analyse_softmix_stats(&stats, softmix_data);
+			update_all_rates = analyse_softmix_stats(&stats, softmix_data,
+					bridge->softmix.binaural_active);
 			stat_iteration_counter = SOFTMIX_STAT_INTERVAL;
 		}
 		stat_iteration_counter--;
@@ -1074,7 +1958,7 @@ static int softmix_mixing_loop(struct ast_bridge *bridge)
 
 softmix_cleanup:
 	softmix_translate_helper_destroy(&trans_helper);
-	softmix_mixing_array_destroy(&mixing_array);
+	softmix_mixing_array_destroy(&mixing_array, bridge->softmix.binaural_active);
 	return res;
 }
 
@@ -1112,6 +1996,32 @@ static void *softmix_mixing_thread(void *data)
 			continue;
 		}
 
+		if (bridge->softmix.binaural_active && !softmix_data->binaural_init) {
+#ifndef BINAURAL_RENDERING
+			ast_bridge_lock(bridge);
+			bridge->softmix.binaural_active = 0;
+			ast_bridge_unlock(bridge);
+			ast_log(LOG_WARNING, "Bridge: %s: Binaural rendering active by config but not "
+					"compiled.\n", bridge->uniqueid);
+#else
+			/* Set and init binaural data if binaural is activated in the configuration. */
+			softmix_data->internal_rate = SOFTMIX_BINAURAL_SAMPLE_RATE;
+			softmix_data->default_sample_size = SOFTMIX_SAMPLES(softmix_data->internal_rate,
+					softmix_data->internal_mixing_interval);
+			/* If init for binaural processing fails we will fall back to mono audio processing. */
+			if (init_convolve_data(&softmix_data->convolve, softmix_data->default_sample_size)
+					== -1) {
+				ast_bridge_lock(bridge);
+				bridge->softmix.binaural_active = 0;
+				ast_bridge_unlock(bridge);
+				ast_log(LOG_ERROR, "Bridge: %s: Unable to allocate memory for "
+						"binaural processing,  Will only process mono audio.\n",
+						bridge->uniqueid);
+			}
+			softmix_data->binaural_init = 1;
+#endif
+		}
+
 		if (softmix_mixing_loop(bridge)) {
 			/*
 			 * A mixing error occurred.  Sleep and try again later so we
@@ -1138,6 +2048,8 @@ static void softmix_bridge_data_destroy(struct softmix_bridge_data *softmix_data
 	}
 	ast_mutex_destroy(&softmix_data->lock);
 	ast_cond_destroy(&softmix_data->cond);
+	AST_VECTOR_RESET(&softmix_data->remb_collectors, ao2_cleanup);
+	AST_VECTOR_FREE(&softmix_data->remb_collectors);
 	ast_free(softmix_data);
 }
 
@@ -1162,6 +2074,13 @@ static int softmix_bridge_create(struct ast_bridge *bridge)
 	/* start at minimum rate, let it grow from there */
 	softmix_data->internal_rate = SOFTMIX_MIN_SAMPLE_RATE;
 	softmix_data->internal_mixing_interval = DEFAULT_SOFTMIX_INTERVAL;
+
+#ifdef BINAURAL_RENDERING
+	softmix_data->default_sample_size = SOFTMIX_SAMPLES(softmix_data->internal_rate,
+			softmix_data->internal_mixing_interval);
+#endif
+
+	AST_VECTOR_INIT(&softmix_data->remb_collectors, 0);
 
 	bridge->tech_pvt = softmix_data;
 
@@ -1222,9 +2141,375 @@ static void softmix_bridge_destroy(struct ast_bridge *bridge)
 		ast_debug(1, "Bridge %s: Waiting for mixing thread to die.\n", bridge->uniqueid);
 		pthread_join(thread, NULL);
 	}
-
+#ifdef BINAURAL_RENDERING
+	free_convolve_data(&softmix_data->convolve);
+#endif
 	softmix_bridge_data_destroy(softmix_data);
 	bridge->tech_pvt = NULL;
+}
+
+/*!
+ * \brief Map a source stream to all of its destination streams.
+ *
+ * \param source_channel_name Name of channel where the source stream originates
+ * \param bridge_stream_position The slot in the bridge where source video will come from
+ * \param participants The bridge_channels in the bridge
+ * \param source_channel_stream_position The position of the stream on the source channel
+ */
+static void map_source_to_destinations(const char *source_channel_name,
+	size_t bridge_stream_position, struct ast_bridge_channels_list *participants, int source_channel_stream_position)
+{
+	struct ast_bridge_channel *participant;
+
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		int i;
+		struct ast_stream_topology *topology;
+
+		if (!strcmp(source_channel_name, ast_channel_name(participant->chan))) {
+			continue;
+		}
+
+		ast_bridge_channel_lock(participant);
+		ast_channel_lock(participant->chan);
+		topology = ast_channel_get_stream_topology(participant->chan);
+
+		for (i = 0; i < ast_stream_topology_get_count(topology); ++i) {
+			struct ast_stream *stream;
+
+			stream = ast_stream_topology_get_stream(topology, i);
+			if (is_video_dest(stream, source_channel_name, source_channel_stream_position)) {
+				struct softmix_channel *sc = participant->tech_pvt;
+
+				AST_VECTOR_REPLACE(&participant->stream_map.to_channel, bridge_stream_position, i);
+				AST_VECTOR_APPEND(&sc->video_sources, bridge_stream_position);
+				break;
+			}
+		}
+		ast_channel_unlock(participant->chan);
+		ast_bridge_channel_unlock(participant);
+	}
+}
+
+/*!
+ * \brief Allocate a REMB collector
+ *
+ * \retval non-NULL success
+ * \retval NULL failure
+ */
+static struct softmix_remb_collector *remb_collector_alloc(void)
+{
+	struct softmix_remb_collector *collector;
+
+	collector = ao2_alloc_options(sizeof(*collector), NULL, AO2_ALLOC_OPT_LOCK_NOLOCK);
+	if (!collector) {
+		return NULL;
+	}
+
+	collector->frame.frametype = AST_FRAME_RTCP;
+	collector->frame.subclass.integer = AST_RTP_RTCP_PSFB;
+	collector->feedback.fmt = AST_RTP_RTCP_FMT_REMB;
+	collector->frame.data.ptr = &collector->feedback;
+	collector->frame.datalen = sizeof(collector->feedback);
+
+	return collector;
+}
+
+/*!
+ * \brief Setup REMB collection for a particular bridge stream and channel.
+ *
+ * \param bridge The bridge
+ * \param bridge_channel Channel that is collecting REMB information
+ * \param bridge_stream_position The slot in the bridge where source video comes from
+ */
+static void remb_enable_collection(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel,
+	size_t bridge_stream_position)
+{
+	struct softmix_channel *sc = bridge_channel->tech_pvt;
+	struct softmix_bridge_data *softmix_data = bridge->tech_pvt;
+
+	if (!sc->remb_collector) {
+		sc->remb_collector = remb_collector_alloc();
+		if (!sc->remb_collector) {
+			/* This is not fatal. Things will still continue to work but we won't
+			 * produce a REMB report to the sender.
+			 */
+			return;
+		}
+	}
+
+	ao2_ref(sc->remb_collector, +1);
+	if (AST_VECTOR_REPLACE(&softmix_data->remb_collectors, bridge_stream_position,
+		sc->remb_collector)) {
+		ao2_ref(sc->remb_collector, -1);
+	}
+}
+
+static void softmix_bridge_stream_sources_update(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel,
+	struct softmix_channel *sc)
+{
+	int index;
+	struct ast_stream_topology *old_topology = sc->topology;
+	struct ast_stream_topology *new_topology = ast_channel_get_stream_topology(bridge_channel->chan);
+	int removed_streams[MAX(ast_stream_topology_get_count(sc->topology), ast_stream_topology_get_count(new_topology))];
+	size_t removed_streams_count = 0;
+	struct ast_stream_topology *added_streams;
+	struct ast_bridge_channels_list *participants = &bridge->channels;
+	struct ast_bridge_channel *participant;
+
+	added_streams = ast_stream_topology_alloc();
+	if (!added_streams) {
+		return;
+	}
+
+	/* We go through the old topology comparing it to the new topology to determine what streams
+	 * changed state. A state transition can result in the stream being considered a new source
+	 * (for example it was removed and is now present) or being removed (a stream became inactive).
+	 * Added streams are copied into a topology and added to each other participant while for
+	 * removed streams we merely store their position and mark them as removed later.
+	 */
+	for (index = 0; index < ast_stream_topology_get_count(sc->topology) && index < ast_stream_topology_get_count(new_topology); ++index) {
+		struct ast_stream *old_stream = ast_stream_topology_get_stream(sc->topology, index);
+		struct ast_stream *new_stream = ast_stream_topology_get_stream(new_topology, index);
+
+		/* Ignore all streams that don't carry video and streams that are strictly outgoing destination streams */
+		if ((ast_stream_get_type(old_stream) != AST_MEDIA_TYPE_VIDEO && ast_stream_get_type(new_stream) != AST_MEDIA_TYPE_VIDEO) ||
+			!strncmp(ast_stream_get_name(old_stream), SOFTBRIDGE_VIDEO_DEST_PREFIX,
+				SOFTBRIDGE_VIDEO_DEST_LEN)) {
+			continue;
+		}
+
+		if (ast_stream_get_type(old_stream) == AST_MEDIA_TYPE_VIDEO && ast_stream_get_type(new_stream) != AST_MEDIA_TYPE_VIDEO) {
+			/* If a stream renegotiates from video to non-video then we need to remove it as a source */
+			removed_streams[removed_streams_count++] = index;
+		} else if (ast_stream_get_type(old_stream) != AST_MEDIA_TYPE_VIDEO && ast_stream_get_type(new_stream) == AST_MEDIA_TYPE_VIDEO) {
+			if (ast_stream_get_state(new_stream) != AST_STREAM_STATE_REMOVED) {
+				/* If a stream renegotiates from non-video to video in a non-removed state we need to add it as a source */
+				if (append_source_stream(added_streams, ast_channel_name(bridge_channel->chan),
+							bridge->softmix.send_sdp_label ? ast_channel_uniqueid(bridge_channel->chan) : NULL,
+							new_stream, index)) {
+					goto cleanup;
+				}
+			}
+		} else if (ast_stream_get_state(old_stream) != AST_STREAM_STATE_REMOVED &&
+				ast_stream_get_state(new_stream) != AST_STREAM_STATE_SENDRECV && ast_stream_get_state(new_stream) != AST_STREAM_STATE_RECVONLY) {
+			/* If a stream renegotiates and is removed then we remove it */
+			removed_streams[removed_streams_count++] = index;
+		} else if (ast_stream_get_state(old_stream) == AST_STREAM_STATE_REMOVED &&
+				ast_stream_get_state(new_stream) != AST_STREAM_STATE_INACTIVE && ast_stream_get_state(new_stream) != AST_STREAM_STATE_SENDONLY &&
+				ast_stream_get_state(new_stream) != AST_STREAM_STATE_REMOVED) {
+			/* If a stream renegotiates and is added then we add it */
+			if (append_source_stream(added_streams, ast_channel_name(bridge_channel->chan),
+						bridge->softmix.send_sdp_label ? ast_channel_uniqueid(bridge_channel->chan) : NULL,
+						new_stream, index)) {
+				goto cleanup;
+			}
+		}
+	}
+
+	/* Any newly added streams that did not take the position of a removed stream
+	 * will be present at the end of the new topology. Since streams are never
+	 * removed from the topology but merely marked as removed we can pick up where we
+	 * left off when comparing the old and new topologies.
+	 */
+	for (; index < ast_stream_topology_get_count(new_topology); ++index) {
+		struct ast_stream *stream = ast_stream_topology_get_stream(new_topology, index);
+
+		if (!is_video_source(stream)) {
+			continue;
+		}
+
+		if (append_source_stream(added_streams, ast_channel_name(bridge_channel->chan),
+					bridge->softmix.send_sdp_label ? ast_channel_uniqueid(bridge_channel->chan) : NULL,
+					stream, index)) {
+			goto cleanup;
+		}
+	}
+
+	/*  We always update the stored topology if we can to reflect what is currently negotiated */
+	sc->topology = ast_stream_topology_clone(new_topology);
+	if (!sc->topology) {
+		sc->topology = old_topology;
+	} else {
+		ast_stream_topology_free(old_topology);
+	}
+
+	/* If there are no removed sources and no added sources we don't need to renegotiate the
+	 * other participants.
+	 */
+	if (!removed_streams_count && !ast_stream_topology_get_count(added_streams)) {
+		goto cleanup;
+	}
+
+	/* Go through each participant adding in the new streams and removing the old ones */
+	AST_LIST_TRAVERSE(participants, participant, entry) {
+		if (participant == bridge_channel) {
+			continue;
+		}
+
+		sc = participant->tech_pvt;
+
+		/* We add in all the new streams first so that they do not take the place
+		 * of any of our removed streams, allowing the remote side to reset the state
+		 * for each removed stream. */
+                if (append_all_streams(sc->topology, added_streams)) {
+                        goto cleanup;
+                }
+
+		/* Then we go through and remove any ones that were removed */
+		for (index = 0; removed_streams_count && index < ast_stream_topology_get_count(sc->topology); ++index) {
+			struct ast_stream *stream = ast_stream_topology_get_stream(sc->topology, index);
+			int removed_stream;
+
+			for (removed_stream = 0; removed_stream < removed_streams_count; ++removed_stream) {
+				if (is_video_dest(stream, ast_channel_name(bridge_channel->chan), removed_streams[removed_stream])) {
+					ast_stream_set_state(stream, AST_STREAM_STATE_REMOVED);
+				}
+			}
+		}
+
+                ast_channel_request_stream_topology_change(participant->chan, sc->topology, NULL);
+        }
+
+
+cleanup:
+	ast_stream_topology_free(added_streams);
+}
+
+/*!
+ * \brief stream_topology_changed callback
+ *
+ * For most video modes, nothing beyond the ordinary is required.
+ * For the SFU case, though, we need to completely remap the streams
+ * in order to ensure video gets directed where it is expected to go.
+ *
+ * \param bridge The bridge
+ * \param bridge_channel Channel whose topology has changed
+ */
+static void softmix_bridge_stream_topology_changed(struct ast_bridge *bridge, struct ast_bridge_channel *bridge_channel)
+{
+	struct softmix_bridge_data *softmix_data = bridge->tech_pvt;
+	struct softmix_channel *sc = bridge_channel->tech_pvt;
+	struct ast_bridge_channel *participant;
+	struct ast_vector_int media_types;
+	int nths[AST_MEDIA_TYPE_END] = {0};
+	int idx;
+
+	switch (bridge->softmix.video_mode.mode) {
+	case AST_BRIDGE_VIDEO_MODE_NONE:
+	case AST_BRIDGE_VIDEO_MODE_SINGLE_SRC:
+	case AST_BRIDGE_VIDEO_MODE_TALKER_SRC:
+	default:
+		ast_bridge_channel_stream_map(bridge_channel);
+		return;
+	case AST_BRIDGE_VIDEO_MODE_SFU:
+		break;
+	}
+
+	ast_channel_lock(bridge_channel->chan);
+	softmix_bridge_stream_sources_update(bridge, bridge_channel, sc);
+	ast_channel_unlock(bridge_channel->chan);
+
+	AST_VECTOR_INIT(&media_types, AST_MEDIA_TYPE_END);
+
+	/* The bridge stream identifiers may change, so reset the mapping for them.
+	 * When channels end up getting added back in they'll reuse their existing
+	 * collector and won't need to allocate a new one (unless they were just added).
+	 */
+	for (idx = 0; idx < AST_VECTOR_SIZE(&softmix_data->remb_collectors); ++idx) {
+		ao2_cleanup(AST_VECTOR_GET(&softmix_data->remb_collectors, idx));
+		AST_VECTOR_REPLACE(&softmix_data->remb_collectors, idx, NULL);
+	}
+
+	/* First traversal: re-initialize all of the participants' stream maps */
+	AST_LIST_TRAVERSE(&bridge->channels, participant, entry) {
+		ast_bridge_channel_lock(participant);
+
+		AST_VECTOR_RESET(&participant->stream_map.to_channel, AST_VECTOR_ELEM_CLEANUP_NOOP);
+		AST_VECTOR_RESET(&participant->stream_map.to_bridge, AST_VECTOR_ELEM_CLEANUP_NOOP);
+
+		sc = participant->tech_pvt;
+		AST_VECTOR_RESET(&sc->video_sources, AST_VECTOR_ELEM_CLEANUP_NOOP);
+
+		ast_bridge_channel_unlock(participant);
+	}
+
+	/* Second traversal: Map specific video channels from their source to their destinations.
+	 *
+	 * This is similar to what is done in ast_stream_topology_map(),
+	 * except that video channels are handled differently.  Each video
+	 * source has it's own unique index on the bridge.  This way, a
+	 * particular channel's source video can be distributed to the
+	 * appropriate destination streams on the other channels.
+	 */
+	AST_LIST_TRAVERSE(&bridge->channels, participant, entry) {
+		int i;
+		struct ast_stream_topology *topology;
+
+		ast_bridge_channel_lock(participant);
+		ast_channel_lock(participant->chan);
+
+		topology = ao2_bump(ast_channel_get_stream_topology(participant->chan));
+		if (!topology) {
+			/* Oh, my, we are in trouble. */
+			ast_channel_unlock(participant->chan);
+			ast_bridge_channel_unlock(participant);
+			continue;
+		}
+
+		for (i = 0; i < ast_stream_topology_get_count(topology); ++i) {
+			struct ast_stream *stream = ast_stream_topology_get_stream(topology, i);
+
+			if (is_video_source(stream)) {
+				AST_VECTOR_APPEND(&media_types, AST_MEDIA_TYPE_VIDEO);
+				AST_VECTOR_REPLACE(&participant->stream_map.to_bridge, i, AST_VECTOR_SIZE(&media_types) - 1);
+				/*
+				 * There are cases where we need to bidirectionally send frames, such as for REMB reports
+				 * so we also map back to the channel.
+				 */
+				AST_VECTOR_REPLACE(&participant->stream_map.to_channel, AST_VECTOR_SIZE(&media_types) - 1, i);
+				remb_enable_collection(bridge, participant, AST_VECTOR_SIZE(&media_types) - 1);
+				/*
+				 * Unlock the channel and participant to prevent
+				 * potential deadlock in map_source_to_destinations().
+				 */
+				ast_channel_unlock(participant->chan);
+				ast_bridge_channel_unlock(participant);
+
+				map_source_to_destinations(ast_channel_name(participant->chan),
+					AST_VECTOR_SIZE(&media_types) - 1, &bridge->channels, i);
+				ast_bridge_channel_lock(participant);
+				ast_channel_lock(participant->chan);
+			} else if (ast_stream_get_type(stream) == AST_MEDIA_TYPE_VIDEO) {
+				/* Video stream mapping occurs directly when a video source stream
+				 * is found on a channel. Video streams should otherwise remain
+				 * unmapped.
+				 */
+				AST_VECTOR_REPLACE(&participant->stream_map.to_bridge, i, -1);
+			} else if (ast_stream_get_state(stream) != AST_STREAM_STATE_REMOVED) {
+				/* XXX This is copied from ast_stream_topology_map(). This likely could
+				 * be factored out in some way
+				 */
+				enum ast_media_type type = ast_stream_get_type(stream);
+				int index = AST_VECTOR_GET_INDEX_NTH(&media_types, ++nths[type],
+					type, AST_VECTOR_ELEM_DEFAULT_CMP);
+
+				if (index == -1) {
+					AST_VECTOR_APPEND(&media_types, type);
+					index = AST_VECTOR_SIZE(&media_types) - 1;
+				}
+
+				AST_VECTOR_REPLACE(&participant->stream_map.to_bridge, i, index);
+				AST_VECTOR_REPLACE(&participant->stream_map.to_channel, index, i);
+			}
+		}
+
+		ast_stream_topology_free(topology);
+
+		ast_channel_unlock(participant->chan);
+		ast_bridge_channel_unlock(participant);
+	}
+
+	AST_VECTOR_FREE(&media_types);
 }
 
 static struct ast_bridge_technology softmix_bridge = {
@@ -1238,11 +2523,296 @@ static struct ast_bridge_technology softmix_bridge = {
 	.leave = softmix_bridge_leave,
 	.unsuspend = softmix_bridge_unsuspend,
 	.write = softmix_bridge_write,
+	.stream_topology_changed = softmix_bridge_stream_topology_changed,
 };
+
+#ifdef TEST_FRAMEWORK
+struct stream_parameters {
+	const char *name;
+	const char *formats;
+	enum ast_media_type type;
+};
+
+static struct ast_stream_topology *build_topology(const struct stream_parameters *params, size_t num_streams)
+{
+	struct ast_stream_topology *topology;
+	size_t i;
+
+	topology = ast_stream_topology_alloc();
+	if (!topology) {
+		return NULL;
+	}
+
+	for (i = 0; i < num_streams; ++i) {
+		RAII_VAR(struct ast_format_cap *, caps, NULL, ao2_cleanup);
+		struct ast_stream *stream;
+
+		caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+		if (!caps) {
+			goto fail;
+		}
+		if (ast_format_cap_update_by_allow_disallow(caps, params[i].formats, 1) < 0) {
+			goto fail;
+		}
+		stream = ast_stream_alloc(params[i].name, params[i].type);
+		if (!stream) {
+			goto fail;
+		}
+		ast_stream_set_formats(stream, caps);
+		if (ast_stream_topology_append_stream(topology, stream) < 0) {
+			ast_stream_free(stream);
+			goto fail;
+		}
+	}
+
+	return topology;
+
+fail:
+	ast_stream_topology_free(topology);
+	return NULL;
+}
+
+static int validate_stream(struct ast_test *test, struct ast_stream *stream,
+	const struct stream_parameters *params)
+{
+	struct ast_format_cap *stream_caps;
+	struct ast_format_cap *params_caps;
+
+	if (ast_stream_get_type(stream) != params->type) {
+		ast_test_status_update(test, "Expected stream type '%s' but got type '%s'\n",
+			ast_codec_media_type2str(params->type),
+			ast_codec_media_type2str(ast_stream_get_type(stream)));
+		return -1;
+	}
+	if (strcmp(ast_stream_get_name(stream), params->name)) {
+		ast_test_status_update(test, "Expected stream name '%s' but got type '%s'\n",
+			params->name, ast_stream_get_name(stream));
+		return -1;
+	}
+
+	stream_caps = ast_stream_get_formats(stream);
+	params_caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!params_caps) {
+		ast_test_status_update(test, "Allocation error on capabilities\n");
+		return -1;
+	}
+	ast_format_cap_update_by_allow_disallow(params_caps, params->formats, 1);
+
+	if (!ast_format_cap_identical(stream_caps, params_caps)) {
+		ast_test_status_update(test, "Formats are not as expected on stream '%s'\n",
+			ast_stream_get_name(stream));
+		ao2_cleanup(params_caps);
+		return -1;
+	}
+
+	ao2_cleanup(params_caps);
+	return 0;
+}
+
+static int validate_original_streams(struct ast_test *test, struct ast_stream_topology *topology,
+	const struct stream_parameters *params, size_t num_streams)
+{
+	int i;
+
+	if (ast_stream_topology_get_count(topology) < num_streams) {
+		ast_test_status_update(test, "Topology only has %d streams. Needs to have at least %zu\n",
+			ast_stream_topology_get_count(topology), num_streams);
+		return -1;
+	}
+
+	for (i = 0; i < num_streams; ++i) {
+		if (validate_stream(test, ast_stream_topology_get_stream(topology, i), &params[i])) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+AST_TEST_DEFINE(sfu_append_source_streams)
+{
+	enum ast_test_result_state res = AST_TEST_FAIL;
+	static const struct stream_parameters bob_streams[] = {
+		{ "bob_audio", "ulaw,alaw,g722,opus", AST_MEDIA_TYPE_AUDIO, },
+		{ "bob_video", "h264,vp8", AST_MEDIA_TYPE_VIDEO, },
+	};
+	static const struct stream_parameters alice_streams[] = {
+		{ "alice_audio", "ulaw,opus", AST_MEDIA_TYPE_AUDIO, },
+		{ "alice_video", "vp8", AST_MEDIA_TYPE_VIDEO, },
+	};
+	static const struct stream_parameters alice_dest_stream = {
+		"softbridge_dest_PJSIP/Bob-00000001_1", "h264,vp8", AST_MEDIA_TYPE_VIDEO,
+	};
+	static const struct stream_parameters bob_dest_stream = {
+		"softbridge_dest_PJSIP/Alice-00000000_1", "vp8", AST_MEDIA_TYPE_VIDEO,
+	};
+	struct ast_stream_topology *topology_alice = NULL;
+	struct ast_stream_topology *topology_bob = NULL;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "sfu_append_source_streams";
+		info->category = "/bridges/bridge_softmix/";
+		info->summary = "Test appending of video streams";
+		info->description =
+			"This tests does stuff.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	topology_alice = build_topology(alice_streams, ARRAY_LEN(alice_streams));
+	if (!topology_alice) {
+		goto end;
+	}
+
+	topology_bob = build_topology(bob_streams, ARRAY_LEN(bob_streams));
+	if (!topology_bob) {
+		goto end;
+	}
+
+	if (append_source_streams(topology_alice, "PJSIP/Bob-00000001", NULL, topology_bob)) {
+		ast_test_status_update(test, "Failed to append Bob's streams to Alice\n");
+		goto end;
+	}
+
+	if (ast_stream_topology_get_count(topology_alice) != 3) {
+		ast_test_status_update(test, "Alice's topology isn't large enough! It's %d but needs to be %d\n",
+			ast_stream_topology_get_count(topology_alice), 3);
+		goto end;
+	}
+
+	if (validate_original_streams(test, topology_alice, alice_streams, ARRAY_LEN(alice_streams))) {
+		goto end;
+	}
+
+	if (validate_stream(test, ast_stream_topology_get_stream(topology_alice, 2), &alice_dest_stream)) {
+		goto end;
+	}
+
+	if (append_source_streams(topology_bob, "PJSIP/Alice-00000000", NULL, topology_alice)) {
+		ast_test_status_update(test, "Failed to append Alice's streams to Bob\n");
+		goto end;
+	}
+
+	if (ast_stream_topology_get_count(topology_bob) != 3) {
+		ast_test_status_update(test, "Bob's topology isn't large enough! It's %d but needs to be %d\n",
+			ast_stream_topology_get_count(topology_bob), 3);
+		goto end;
+	}
+
+	if (validate_original_streams(test, topology_bob, bob_streams, ARRAY_LEN(bob_streams))) {
+		goto end;
+	}
+
+	if (validate_stream(test, ast_stream_topology_get_stream(topology_bob, 2), &bob_dest_stream)) {
+		goto end;
+	}
+
+	res = AST_TEST_PASS;
+
+end:
+	ast_stream_topology_free(topology_alice);
+	ast_stream_topology_free(topology_bob);
+	return res;
+}
+
+AST_TEST_DEFINE(sfu_remove_destination_streams)
+{
+	enum ast_test_result_state res = AST_TEST_FAIL;
+	static const struct stream_parameters params[] = {
+		{ "alice_audio", "ulaw,alaw,g722,opus", AST_MEDIA_TYPE_AUDIO, },
+		{ "alice_video", "h264,vp8", AST_MEDIA_TYPE_VIDEO, },
+		{ "softbridge_dest_PJSIP/Bob-00000001_video", "vp8", AST_MEDIA_TYPE_VIDEO, },
+		{ "softbridge_dest_PJSIP/Carol-00000002_video", "h264", AST_MEDIA_TYPE_VIDEO, },
+	};
+	static const struct {
+		const char *channel_name;
+		int num_streams;
+		int params_index[4];
+	} removal_results[] = {
+		{ "PJSIP/Bob-00000001", 4, { 0, 1, 2, 3 }, },
+		{ "PJSIP/Edward-00000004", 4, { 0, 1, 2, 3 }, },
+		{ "", 4, { 0, 1, 2, 3 }, },
+	};
+	struct ast_stream_topology *orig = NULL;
+	int i;
+
+	switch (cmd) {
+	case TEST_INIT:
+		info->name = "sfu_remove_destination_streams";
+		info->category = "/bridges/bridge_softmix/";
+		info->summary = "Test removal of destination video streams";
+		info->description =
+			"This tests does stuff.";
+		return AST_TEST_NOT_RUN;
+	case TEST_EXECUTE:
+		break;
+	}
+
+	orig = build_topology(params, ARRAY_LEN(params));
+	if (!orig) {
+		ast_test_status_update(test, "Unable to build initial stream topology\n");
+		goto end;
+	}
+
+	for (i = 0; i < ARRAY_LEN(removal_results); ++i) {
+		int j;
+
+		remove_destination_streams(orig, removal_results[i].channel_name);
+
+		if (ast_stream_topology_get_count(orig) != removal_results[i].num_streams) {
+			ast_test_status_update(test, "Resulting topology has %d streams, when %d are expected\n",
+				ast_stream_topology_get_count(orig), removal_results[i].num_streams);
+			goto end;
+		}
+
+		for (j = 0; j < removal_results[i].num_streams; ++j) {
+			struct ast_stream *actual;
+			struct ast_stream *expected;
+			int orig_index;
+
+			actual = ast_stream_topology_get_stream(orig, j);
+
+			orig_index = removal_results[i].params_index[j];
+			expected = ast_stream_topology_get_stream(orig, orig_index);
+
+			if (!ast_format_cap_identical(ast_stream_get_formats(actual),
+				ast_stream_get_formats(expected))) {
+				struct ast_str *expected_str;
+				struct ast_str *actual_str;
+
+				expected_str = ast_str_alloca(64);
+				actual_str = ast_str_alloca(64);
+
+				ast_test_status_update(test, "Mismatch between expected (%s) and actual (%s) stream formats\n",
+					ast_format_cap_get_names(ast_stream_get_formats(expected), &expected_str),
+					ast_format_cap_get_names(ast_stream_get_formats(actual), &actual_str));
+				goto end;
+			}
+
+			if (is_video_dest(actual, removal_results[i].channel_name, -1) &&
+				ast_stream_get_state(actual) != AST_STREAM_STATE_REMOVED) {
+				ast_test_status_update(test, "Removed stream %s does not have a state of removed\n", ast_stream_get_name(actual));
+				goto end;
+			}
+		}
+	}
+
+	res = AST_TEST_PASS;
+
+end:
+	ast_stream_topology_free(orig);
+	return res;
+}
+
+#endif
 
 static int unload_module(void)
 {
 	ast_bridge_technology_unregister(&softmix_bridge);
+	AST_TEST_UNREGISTER(sfu_append_source_streams);
+	AST_TEST_UNREGISTER(sfu_remove_destination_streams);
 	return 0;
 }
 
@@ -1252,6 +2822,8 @@ static int load_module(void)
 		unload_module();
 		return AST_MODULE_LOAD_DECLINE;
 	}
+	AST_TEST_REGISTER(sfu_append_source_streams);
+	AST_TEST_REGISTER(sfu_remove_destination_streams);
 	return AST_MODULE_LOAD_SUCCESS;
 }
 

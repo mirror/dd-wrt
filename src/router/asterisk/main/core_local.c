@@ -33,8 +33,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 /* ------------------------------------------------------------------- */
 
 #include "asterisk/channel.h"
@@ -235,7 +233,7 @@ struct local_pvt {
 	char exten[AST_MAX_EXTENSION];
 };
 
-void ast_local_lock_all2(struct ast_channel *chan, void **tech_pvt,
+void ast_local_lock_all(struct ast_channel *chan, void **tech_pvt,
 	struct ast_channel **base_chan, struct ast_channel **base_owner)
 {
 	struct local_pvt *p = ast_channel_tech_pvt(chan);
@@ -250,14 +248,7 @@ void ast_local_lock_all2(struct ast_channel *chan, void **tech_pvt,
 	}
 }
 
-void ast_local_lock_all(struct ast_channel *chan, struct ast_channel **outchan,
-			struct ast_channel **outowner)
-{
-	void *tech_pvt;
-	ast_local_lock_all2(chan, &tech_pvt, outchan, outowner);
-}
-
-void ast_local_unlock_all2(void *tech_pvt, struct ast_channel *base_chan,
+void ast_local_unlock_all(void *tech_pvt, struct ast_channel *base_chan,
 	struct ast_channel *base_owner)
 {
 	if (base_chan) {
@@ -275,19 +266,6 @@ void ast_local_unlock_all2(void *tech_pvt, struct ast_channel *base_chan,
 		ao2_unlock(&p->base);
 		ao2_ref(tech_pvt, -1);
 	}
-}
-
-void ast_local_unlock_all(struct ast_channel *chan)
-{
-	struct local_pvt *p = ast_channel_tech_pvt(chan);
-	struct ast_unreal_pvt *base;
-
-	if (!p) {
-		return;
-	}
-
-	base = &p->base;
-	ast_local_unlock_all2(p, base->chan, base->owner);
 }
 
 struct ast_channel *ast_local_get_peer(struct ast_channel *ast)
@@ -416,8 +394,8 @@ static void local_optimization_started_cb(struct ast_unreal_pvt *base, struct as
 		return;
 	}
 
-	json_object = ast_json_pack("{s: i, s: i}",
-			"dest", dest, "id", id);
+	json_object = ast_json_pack("{s: i, s: I}",
+			"dest", dest, "id", (ast_json_int_t)id);
 
 	if (!json_object) {
 		return;
@@ -458,7 +436,7 @@ static void local_optimization_finished_cb(struct ast_unreal_pvt *base, int succ
 		return;
 	}
 
-	json_object = ast_json_pack("{s: i, s: i}", "success", success, "id", id);
+	json_object = ast_json_pack("{s: i, s: I}", "success", success, "id", (ast_json_int_t)id);
 
 	if (!json_object) {
 		return;
@@ -515,7 +493,7 @@ static struct ast_manager_event_blob *local_message_to_ami(struct stasis_message
 		}
 
 		dest_uniqueid = ast_json_object_get(blob, "dest") == AST_UNREAL_OWNER ?
-				local_snapshot_one->uniqueid : local_snapshot_two->uniqueid;
+				local_snapshot_one->base->uniqueid : local_snapshot_two->base->uniqueid;
 
 		event = "LocalOptimizationBegin";
 		if (source_str) {
@@ -940,7 +918,7 @@ static struct ast_channel *local_request(const char *type, struct ast_format_cap
 {
 	struct local_pvt *p;
 	struct ast_channel *chan;
-	struct ast_callid *callid;
+	ast_callid callid;
 
 	/* Allocate a new private structure and then Asterisk channels */
 	p = local_alloc(data, cap);
@@ -952,9 +930,6 @@ static struct ast_channel *local_request(const char *type, struct ast_format_cap
 		p->exten, p->context, assignedids, requestor, callid);
 	if (chan) {
 		ao2_link(locals, p);
-	}
-	if (callid) {
-		ast_callid_unref(callid);
 	}
 	ao2_ref(p, -1); /* kill the ref from the alloc */
 
@@ -1074,7 +1049,6 @@ static void local_shutdown(void)
 
 int ast_local_init(void)
 {
-
 	if (STASIS_MESSAGE_TYPE_INIT(ast_local_optimization_begin_type)) {
 		return -1;
 	}
@@ -1094,17 +1068,13 @@ int ast_local_init(void)
 
 	locals = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, locals_cmp_cb);
 	if (!locals) {
-		ao2_cleanup(local_tech.capabilities);
-		local_tech.capabilities = NULL;
 		return -1;
 	}
 
 	/* Make sure we can register our channel type */
 	if (ast_channel_register(&local_tech)) {
 		ast_log(LOG_ERROR, "Unable to register channel class 'Local'\n");
-		ao2_ref(locals, -1);
-		ao2_cleanup(local_tech.capabilities);
-		local_tech.capabilities = NULL;
+
 		return -1;
 	}
 	ast_cli_register_multiple(cli_local, ARRAY_LEN(cli_local));

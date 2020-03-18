@@ -1,0 +1,235 @@
+/*
+ * This pipeline is the "template" for the Asterisk Unit Tests multi-branch
+ * parent job.  Jenkins will automatically scan the branches in the "asterisk"
+ * or "Security-asterisk" projects in Gerrit and automatically create a branch-
+ * specific job for each branch it finds this file in.
+ *
+ * This file starts as a declarative pipeline because with a declarative
+ * pipeline, you can define the trigger in the pipeline file.  This keeps
+ * everything in one place.  We transition to scripted pipeline later on because
+ * we need to dynamically determine which docker image we're going to use and
+ * you can't do that in a delcarative pipeline.
+ */
+def timeoutTime = 30
+def timeoutUnits = 'MINUTES'
+if (env.TIMEOUT_UNITTESTS) {
+	def _timeout = env.TIMEOUT_UNITTESTS.split()
+	timeoutTime = _timeout[0].toInteger()
+	timeoutUnits = _timeout[1]
+}
+
+pipeline {
+	options {
+		ansiColor('gnome-terminal')
+		throttle(['asterisk-check'])
+		timestamps()
+		timeout(time: timeoutTime, unit: timeoutUnits)
+	}
+	triggers {
+		/*
+		 * This trigger will match either the "asterisk" or "Security-asterisk"
+		 * projects.  The branch is taken from the branch this job was created
+		 * for.
+		 */
+		gerrit customUrl: '',
+			commentTextParameterMode: 'PLAIN',
+			commitMessageParameterMode: 'PLAIN',
+			gerritBuildSuccessfulVerifiedValue: 1,
+			gerritBuildFailedVerifiedValue: -1,
+			gerritBuildUnstableVerifiedValue: -1,
+			gerritProjects: [
+				[branches: [[compareType: 'PLAIN', pattern: "${BRANCH_NAME}"]],
+					compareType: 'REG_EXP',
+					disableStrictForbiddenFileVerification: false,
+					pattern: '^(Security-)?asterisk.*'
+				]
+			],
+			silentMode: false,
+			triggerOnEvents: [
+				commentAddedContains('^recheck$'),
+				patchsetCreated(excludeDrafts: false,
+								excludeNoCodeChange: false,
+								excludeTrivialRebase: false),
+				draftPublished()
+			],
+			skipVote: [
+				onFailed: false,
+				onNotBuilt: true,
+				onSuccessful: false,
+				onUnstable: false
+			]
+	}
+	agent {
+		/* All of the stages need to be performed on a docker host */
+		label "asterisk-check"
+	}
+
+	stages {
+		stage ("->") {
+			/*
+			 * Jenkins will try to automatically rebuild this job when
+			 * the jenkinsfile changes but since this job is dependent on
+			 * Gerrit, we really don't want to do anything in that case.
+			 */
+			when {
+				not { environment name: 'GERRIT_CHANGE_NUMBER', value: '' }
+				not { environment name: 'GERRIT_EVENT_ACCOUNT_NAME', value: 'Jenkins2' }
+			}
+			steps {
+				script {
+					manager.build.displayName = "${env.GERRIT_CHANGE_NUMBER}"
+					manager.createSummary("/plugin/workflow-job/images/48x48/pipelinejob.png").appendText("Docker Host: ${NODE_NAME}", false)
+
+					stage ("Checkout") {
+						sh "sudo chown -R jenkins:users ."
+						env.GERRIT_PROJECT_URL = env.GIT_URL.replaceAll(/[^\/]+$/, env.GERRIT_PROJECT)
+
+						/*
+						 * Jenkins has already automatically checked out the base branch
+						 * for this change but we now need to check out the change itself
+						 * and rebase it on the current base branch.  If the rebase fails,
+						 * that's an indication to the user that they'll need to sort their
+						 * change out.
+						 *
+						 * The Gerrit Trigger provides all the URLs and refspecs to
+						 * check out the change.
+						 *
+						 * We need to retrieve the jenkins2 gerrit https credentials
+						 * in case this review is in a restricted project.
+						 */
+						withCredentials([usernamePassword(credentialsId: "${JENKINS_GERRIT_CREDS}",
+							passwordVariable: 'GERRIT_USER_PW', usernameVariable: 'GERRIT_USER_NAME')]) {
+
+							sh "printenv -0 | sort -z | tr '\\0' '\\n'"
+
+							checkout scm: [$class: 'GitSCM',
+								branches: [[name: env.GERRIT_BRANCH ]],
+								extensions: [
+									[$class: 'ScmName', name: env.GERRIT_NAME],
+									[$class: 'CleanBeforeCheckout'],
+									[$class: 'PreBuildMerge', options: [
+										mergeRemote: env.GERRIT_NAME,
+										fastForwardMode: 'NO_FF',
+										mergeStrategy: 'RECURSIVE',
+										mergeTarget: env.GERRIT_BRANCH]],
+									[$class: 'CloneOption',
+										honorRefspec: true,
+										noTags: true,
+										shallow: false
+									],
+									[$class: 'PruneStaleBranch'],
+									[$class: 'BuildChooserSetting',
+										buildChooser: [$class: 'GerritTriggerBuildChooser']
+									]
+								],
+								userRemoteConfigs: [
+									[
+									credentialsId: env.JENKINS_GERRIT_CREDS,
+									name: env.GERRIT_NAME,
+									refspec: env.GERRIT_REFSPEC,
+									url: env.GERRIT_PROJECT_URL.replaceAll("http(s)?://", "http\$1://${GERRIT_USER_NAME}@")
+									]
+								]
+							]
+						}
+
+						sh "sudo tests/CI/setupJenkinsEnvironment.sh"
+					}
+
+					def images = env.DOCKER_IMAGES.split(' ')
+					def r = currentBuild.startTimeInMillis % images.length
+					def ri = images[(int)r]
+					def randomImage = env.DOCKER_REGISTRY + "/" + ri;
+					def bt = env.BUILD_TAG.replaceAll(/[^a-zA-Z0-9_.-]/, '-')
+					def dockerOptions = "--privileged --ulimit core=0 --ulimit nofile=10240 " +
+						" --tmpfs /tmp:exec,size=1G -v /srv/jenkins:/srv/jenkins:rw -v /srv/cache:/srv/cache:rw " +
+						" --entrypoint='' --name ${bt}-build"
+					def outputdir = "tests/CI/output/UnitTests"
+
+					manager.createSummary("/plugin/workflow-job/images/48x48/pipelinejob.png").appendText("Docker Image: ${randomImage}", false)
+					def img = docker.image(randomImage)
+					img.pull()
+					img.inside(dockerOptions) {
+
+						stage ('Build') {
+							echo 'Building..'
+
+							sh "./tests/CI/buildAsterisk.sh --branch-name=${BRANCH_NAME} --output-dir=${outputdir} --cache-dir=/srv/cache"
+
+							archiveArtifacts allowEmptyArchive: true, defaultExcludes: false, fingerprint: false,
+								artifacts: "${outputdir}/*"
+						}
+
+						stage ('Test') {
+							def outputfile = "${outputdir}/unittests-results.xml"
+							def testcmd = "test execute all"
+
+							sh "sudo ./tests/CI/installAsterisk.sh --uninstall-all --branch-name=${BRANCH_NAME} --user-group=jenkins:users"
+
+							sh "tests/CI/runUnittests.sh --user-group=jenkins:users --output-dir='${outputdir}' --output-xml='${outputfile}' --unittest-command='${testcmd}'"
+
+							archiveArtifacts allowEmptyArchive: true, defaultExcludes: false, fingerprint: true,
+								artifacts: "${outputdir}/**"
+
+							junit testResults: outputfile,
+								healthScaleFactor: 1.0,
+								keepLongStdio: true
+						}
+					}
+				}
+			}
+		}
+	}
+	post {
+		cleanup {
+			script {
+				if (env.CLEANUP_WS_UNITTESTS.toBoolean()) {
+					cleanWs deleteDirs: true, notFailBuild: false
+				}
+			}
+		}
+		/*
+		 * The Gerrit Trigger will automatically post the "Verified" results back
+		 * to Gerrit but the verification publisher publishes extra stuff in the
+		 * "Code Review" section of the review.
+		 */
+		always {
+			script {
+				def cat
+				def comment
+				def rvalue
+				switch (currentBuild.currentResult) {
+					case ~/^SUCCESS$/:
+						cat = "Passed"
+						comment = ""
+						rvalue = 1
+						break
+					case ~/^FAILURE$/:
+						cat = "Failed"
+						comment = "Fatal Error"
+						rvalue = -1
+						break
+					case ~/^UNSTABLE$/:
+						cat = "Failed"
+						comment = "Tests Failed"
+						rvalue = -1
+						break
+				}
+
+				gerritverificationpublisher verifyStatusValue: rvalue,
+					verifyStatusCategory: cat, verifyStatusURL: '',
+					verifyStatusComment: comment, verifyStatusName: '',
+					verifyStatusReporter: 'Jenkins2', verifyStatusRerun: 'regate'
+			}
+		}
+		success {
+			echo "Reporting ${currentBuild.currentResult} Passed"
+		}
+		failure {
+			echo "Reporting ${currentBuild.currentResult}: Failed: Fatal Error"
+		}
+		unstable {
+			echo "Reporting ${currentBuild.currentResult}: Failed: Tests Failed"
+		}
+	}
+}

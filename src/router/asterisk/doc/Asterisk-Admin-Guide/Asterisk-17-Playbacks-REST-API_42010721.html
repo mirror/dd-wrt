@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Playbacks REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Playbacks REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17PlaybacksRESTAPI-Playbacks">Playbacks</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17PlaybacksRESTAPI-get">/playbacks/{playbackId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Playback">Playback</a> </p></td>
+<td class="confluenceTd"><p> Get a playback's details. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17PlaybacksRESTAPI-stop">/playbacks/{playbackId}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop a playback. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17PlaybacksRESTAPI-control">/playbacks/{playbackId}/control</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Control a playback. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17PlaybacksRESTAPI-get"></span></p>
+<h2 id="Asterisk17PlaybacksRESTAPI-get:GET/playbacks/{playbackId}">get: GET /playbacks/{playbackId}</h2>
+
+<p>Get a playback's details.</p>
+
+<h3 id="Asterisk17PlaybacksRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>playbackId: <em>string</em> - Playback's id</li>
+</ul>
+
+
+<h3 id="Asterisk17PlaybacksRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>404 - The playback cannot be found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17PlaybacksRESTAPI-stop"></span></p>
+<h2 id="Asterisk17PlaybacksRESTAPI-stop:DELETE/playbacks/{playbackId}">stop: DELETE /playbacks/{playbackId}</h2>
+
+<p>Stop a playback.</p>
+
+<h3 id="Asterisk17PlaybacksRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>playbackId: <em>string</em> - Playback's id</li>
+</ul>
+
+
+<h3 id="Asterisk17PlaybacksRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>404 - The playback cannot be found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17PlaybacksRESTAPI-control"></span></p>
+<h2 id="Asterisk17PlaybacksRESTAPI-control:POST/playbacks/{playbackId}/control">control: POST /playbacks/{playbackId}/control</h2>
+
+<p>Control a playback.</p>
+
+<h3 id="Asterisk17PlaybacksRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>playbackId: <em>string</em> - Playback's id</li>
+</ul>
+
+
+<h3 id="Asterisk17PlaybacksRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>operation: <em>string</em> - <strong>(required)</strong> Operation to perform on the playback.
+	<ul>
+		<li>Allowed values: restart, pause, unpause, reverse, forward</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17PlaybacksRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>400 - The provided operation parameter was invalid</li>
+	<li>404 - The playback cannot be found</li>
+	<li>409 - The operation cannot be performed in the playback's current state</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

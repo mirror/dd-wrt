@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Creating Dialplan Extensions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Creating Dialplan Extensions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Dec 17, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The last things we need to do to enable Alice and Bob to call each other is to configure a couple of extensions in the dialplan.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <h5 id="CreatingDialplanExtensions-WhatisanExtension?">What is an Extension?</h5><p>When dealing with Asterisk, the term extension does not represent a physical device such as a phone. An extension is simply a set of actions in the dialplan which may or may not write a physical device. In addition to writing a phone, an extensions might be used for such things auto-attendant menus and conference bridges. In this guide we will be careful to use the words phone or device when referring to the physical phone, and extension when referencing the set of instructions in the Asterisk dialplan.</p>
+                    </div>
+    </div>
+<p>Let's take a quick look at the dialplan, and then add two extensions.</p><p>Open <strong>extensions.conf</strong>, and take a quick look at the file. Near the top of the file, you'll see some general-purpose sections named [general] and [globals]. Any sections in the dialplan beneath those two sections is known as a <a href="4817410.html"><strong>context</strong></a>. The sample <strong>extensions.conf</strong> file has a number of other contexts, with names like [demo] and [default].</p><p>We cover the concept of contexts more in <a href="Dialplan_4817412.html">Dialplan</a>, but for now you should know that each phone or outside connection in Asterisk points at a single context. If the dialed extension does not exist in the specified context, Asterisk will reject the call. That means it is important to understand that the <strong>context</strong> option in your sip.conf or pjsip.conf configuration is what tells Asterisk to direct the call from the endpoint to the context we build in the next step.</p><p>Go to the bottom of your <strong>extensions.conf</strong> file, and add a new context named <strong>[from-internal]</strong> since from-internal is what we configured for the context option in the <a href="Creating-SIP-Accounts_4817421.html">Creating SIP Accounts</a> page.</p><h5 id="CreatingDialplanExtensions-NamingYourDialplanContexts">Naming Your Dialplan Contexts</h5><p>There's nothing special about the name <strong>from-internal</strong> for this context. It could have been named <strong>strawberry_milkshake</strong>, and it would have behaved exactly the same way. It is considered best practice, however, to name your contexts for the types of extensions that are contained in that context. Since this context contains extensions that will be dialing from inside the network, we'll call it from-internal.</p><p>Underneath that context name, we'll create an extesion numbered <strong>6001</strong> which attempts to ring Alice's phone for twenty seconds, and an extension <strong>6002</strong> which attempts to rings Bob's phone for twenty seconds.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[from-internal]
+exten=&gt;6001,1,Dial(SIP/demo-alice,20)
+exten=&gt;6002,1,Dial(SIP/demo-bob,20)</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Each channel driver can have its own way of dialling it. The above example is for use when dialing chan_sip extensions. If you are using PJSIP then you would dial &quot;PJSIP/demo-alice&quot; and &quot;PJSIP/demo-bob&quot; respectively.</p>
+                    </div>
+    </div>
+<p> </p><p>After adding that section to <strong>extensions.conf</strong>, go to the Asterisk command-line interface and tell Asterisk to reload the dialplan by typing the command <strong>dialplan reload</strong>. You can verify that Asterisk successfully read the configuration file by typing <strong>dialplan show from-internal</strong> at the CLI.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; dialplan show from-internal
+[ Context &#39;from-internal&#39; created by &#39;pbx_config&#39; ]
+  &#39;6001&#39; =&gt;         1. Dial(SIP/demo-alice,20)                    [pbx_config]
+  &#39;6002&#39; =&gt;         1. Dial(SIP/demo-bob,20)                      [pbx_config]
+
+-= 2 extensions (2 priorities) in 1 context. =-  
+</pre>
+</div></div><p>Now we're ready to make a test call!</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Learn more about dialplan format in the <a href="4817410.html">Contexts, Extensions, and Priorities</a> section.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

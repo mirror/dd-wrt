@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : chan_sip State and Presence Options</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-chan_sip_28934283.html">Configuring chan_sip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : chan_sip State and Presence Options
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jun 06, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="chan_sipStateandPresenceOptions-DeviceState">Device State</h1><p>There are a few configuration options for chan_sip that affect <a href="Device-State_28934187.html">Device State</a> behavior.</p><h2 id="chan_sipStateandPresenceOptions-callcounter">callcounter</h2><p>The <strong>callcounter</strong> option in sip.conf <strong>must be enabled</strong> for SIP devices (e.g. SIP/Alice) to provide advanced <a href="Device-State_28934187.html">device state</a>. Without it you may see some state, such as unavailable or idle, but not much more.</p><p>The option can be set in the general context, or on a per-peer basis.</p><p>Default: no</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+callcounter=yes</pre>
+</div></div><h2 id="chan_sipStateandPresenceOptions-busylevel">busylevel</h2><p>The <strong>busylevel</strong> option only works if call counters are enabled via the above option. If call counters are enabled, then busylevel allows you to set a threshold for when to consider this device busy. If busylevel is set to 2, then only at 2 or more calls will the device state report BUSY. The busylevel option can only be set for peers.</p><p>Default: 0</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[6001]
+type=friend
+busylevel=2</pre>
+</div></div><h2 id="chan_sipStateandPresenceOptions-notifyhold">notifyhold</h2><p>The <strong>notifyhold</strong> option, when enabled, adds the ONHOLD device state to the range of possible device states that chan_sip will use.</p><p>This option can only be set in the general section.</p><p>Default: yes</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+notifyhold=no</pre>
+</div></div><p> </p><h1 id="chan_sipStateandPresenceOptions-ExtensionState,Hints,Subscriptions">Extension State, Hints, Subscriptions</h1><p>Extension State and subscriptions tend to go hand in hand. That is, if you are using Extension State, you probably have SIP user agents subscribing to those extensions/hints. These options all affect that behavior.</p><h2 id="chan_sipStateandPresenceOptions-allowsubscribe">allowsubscribe</h2><p>The <strong>allowsubscribe</strong> option enables or disables support for any kind of subscriptions. You can set allowsubscribe per-peer or in the general section.</p><p>Default: yes</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[6001]
+type=friend
+allowsubscribe=no</pre>
+</div></div><h2 id="chan_sipStateandPresenceOptions-subscribecontext">subscribecontext</h2><p><strong>subscribecontext</strong> sets a specific context to be used for subscriptions. That means, if SIP user agent subscribes to this peer, Asterisk will search for an associated hint mapping in the context specified.</p><p>This option can be set per-peer or in the general section.</p><p>Default: null (by default Asterisk will use the context specified with the &quot;context&quot; option)</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[6001]
+type=friend
+context=internal
+subscribecontext=myhints</pre>
+</div></div><h2 id="chan_sipStateandPresenceOptions-notifyringing">notifyringing</h2><p><strong>notifyringing</strong> enables or disables notifications for the RINGING state when an extension is already INUSE. Only affects subscriptions using the <strong>dialog-info</strong> event package. Option can be configured in the general section only. It cannot be set per-peer.</p><p>Default: yes</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+notifyringing=no</pre>
+</div></div><h2 id="chan_sipStateandPresenceOptions-notifycid">notifycid</h2><p><strong>notifycid</strong> some nuance and may only be relevant to SNOM phones or others that support dialog-info+xml notifications. Below are the notes from the sample sip.conf.</p><p>Default: no</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>;notifycid = yes                ; Control whether caller ID information is sent along with
+                                ; dialog-info+xml notifications (supported by snom phones).
+                                ; Note that this feature will only work properly when the
+                                ; incoming call is using the same extension and context that
+                                ; is being used as the hint for the called extension.  This means
+                                ; that it won&#39;t work when using subscribecontext for your sip
+                                ; user or peer (if subscribecontext is different than context).
+                                ; This is also limited to a single caller, meaning that if an
+                                ; extension is ringing because multiple calls are incoming,
+                                ; only one will be used as the source of caller ID.  Specify
+                                ; &#39;ignore-context&#39; to ignore the called context when looking
+                                ; for the caller&#39;s channel.  The default value is &#39;no.&#39; Setting
+                                ; notifycid to &#39;ignore-context&#39; also causes call-pickups attempted
+                                ; via SNOM&#39;s NOTIFY mechanism to set the context for the call pickup
+                                ; to PICKUPMARK.</pre>
+</div></div><p> </p><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

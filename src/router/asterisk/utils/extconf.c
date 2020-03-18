@@ -1,4 +1,4 @@
-/*  
+/*
  * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (C) 2006, Digium, Inc.
@@ -18,7 +18,7 @@
 
 
 /*!
- * \file extconf
+ * \file
  * A condensation of the pbx_config stuff, to read into exensions.conf, and provide an interface to the data there,
  * for operations outside of asterisk. A huge, awful hack.
  *
@@ -43,6 +43,7 @@
 	<support_level>extended</support_level>
  ***/
 
+#define ASTMM_LIBC ASTMM_IGNORE
 #include "asterisk.h"
 
 #undef DEBUG_THREADS
@@ -74,18 +75,8 @@
 static void ast_log(int level, const char *file, int line, const char *function, const char *fmt, ...) __attribute__((format(printf, 5, 6)));
 void ast_verbose(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
 
-#define ASINCLUDE_GLOB 1
-#ifdef AST_INCLUDE_GLOB
-
-#if !defined(GLOB_ABORTED)
-#define GLOB_ABORTED GLOB_ABEND
-#endif
-
-# include <glob.h>
-#endif
-
 #define AST_API_MODULE  1 /* gimme the inline defs! */
-struct ast_channel 
+struct ast_channel
 {
 	char x; /* basically empty! */
 };
@@ -118,9 +109,6 @@ void ast_queue_log(const char *queuename, const char *callid, const char *agent,
 
 /* IN CONFLICT: void ast_verbose(const char *fmt, ...)
    __attribute__((format(printf, 1, 2))); */
-
-int ast_register_verbose(void (*verboser)(const char *string));
-int ast_unregister_verbose(void (*verboser)(const char *string));
 
 void ast_console_puts(const char *string);
 
@@ -208,7 +196,7 @@ int mtx_prof = -1;
 
 #ifdef DEBUG_THREADS
 
-#define __ast_mutex_logger(...)  do { if (canlog) ast_log(LOG_ERROR, __VA_ARGS__); else fprintf(stderr, __VA_ARGS__); } while (0)
+#define log_mutex_error(canlog, ...)  do { if (canlog) ast_log(LOG_ERROR, __VA_ARGS__); else fprintf(stderr, __VA_ARGS__); } while (0)
 
 #ifdef THREAD_CRASH
 #define DO_THREAD_CRASH do { *((int *)(0)) = 1; } while(0)
@@ -244,16 +232,16 @@ static void __attribute__((constructor)) init_empty_mutex(void)
 
 static inline int __ast_pthread_mutex_init_attr(const char *filename, int lineno, const char *func,
 						const char *mutex_name, ast_mutex_t *t,
-						pthread_mutexattr_t *attr) 
+						pthread_mutexattr_t *attr)
 {
 #ifdef AST_MUTEX_INIT_W_CONSTRUCTORS
 	int canlog = strcmp(filename, "logger.c");
 
 	if ((t->mutex) != ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
 		if ((t->mutex) != (empty_mutex)) {
-			__ast_mutex_logger("%s line %d (%s): Error: mutex '%s' is already initialized.\n",
+			log_mutex_error(canlog, "%s line %d (%s): Error: mutex '%s' is already initialized.\n",
 					   filename, lineno, func, mutex_name);
-			__ast_mutex_logger("%s line %d (%s): Error: previously initialization of mutex '%s'.\n",
+			log_mutex_error(canlog, "%s line %d (%s): Error: previously initialization of mutex '%s'.\n",
 					   t->file[0], t->lineno[0], t->func[0], mutex_name);
 			DO_THREAD_CRASH;
 			return 0;
@@ -290,7 +278,7 @@ static inline int __ast_pthread_mutex_destroy(const char *filename, int lineno, 
 
 #ifdef AST_MUTEX_INIT_W_CONSTRUCTORS
 	if ((t->mutex) == ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
-		__ast_mutex_logger("%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
 				   filename, lineno, func, mutex_name);
 	}
 #endif
@@ -301,19 +289,19 @@ static inline int __ast_pthread_mutex_destroy(const char *filename, int lineno, 
 		pthread_mutex_unlock(&t->mutex);
 		break;
 	case EINVAL:
-		__ast_mutex_logger("%s line %d (%s): Error: attempt to destroy invalid mutex '%s'.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: attempt to destroy invalid mutex '%s'.\n",
 				  filename, lineno, func, mutex_name);
 		break;
 	case EBUSY:
-		__ast_mutex_logger("%s line %d (%s): Error: attempt to destroy locked mutex '%s'.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: attempt to destroy locked mutex '%s'.\n",
 				   filename, lineno, func, mutex_name);
-		__ast_mutex_logger("%s line %d (%s): Error: '%s' was locked here.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: '%s' was locked here.\n",
 				   t->file[t->reentrancy-1], t->lineno[t->reentrancy-1], t->func[t->reentrancy-1], mutex_name);
 		break;
 	}
 
 	if ((res = pthread_mutex_destroy(&t->mutex)))
-		__ast_mutex_logger("%s line %d (%s): Error destroying mutex: %s\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error destroying mutex: %s\n",
 				   filename, lineno, func, strerror(res));
 #ifndef PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP
 	else
@@ -334,7 +322,7 @@ static inline int __ast_pthread_mutex_lock(const char *filename, int lineno, con
 
 #if defined(AST_MUTEX_INIT_W_CONSTRUCTORS)
 	if ((t->mutex) == ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
-		__ast_mutex_logger("%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
 				 filename, lineno, func, mutex_name);
 		ast_mutex_init(t);
 	}
@@ -355,9 +343,9 @@ static inline int __ast_pthread_mutex_lock(const char *filename, int lineno, con
 			if (res == EBUSY) {
 				current = time(NULL);
 				if ((current - seconds) && (!((current - seconds) % 5))) {
-					__ast_mutex_logger("%s line %d (%s): Deadlock? waited %d sec for mutex '%s'?\n",
+					log_mutex_error(canlog, "%s line %d (%s): Deadlock? waited %d sec for mutex '%s'?\n",
 							   filename, lineno, func, (int)(current - seconds), mutex_name);
-					__ast_mutex_logger("%s line %d (%s): '%s' was locked here.\n",
+					log_mutex_error(canlog, "%s line %d (%s): '%s' was locked here.\n",
 							   t->file[t->reentrancy-1], t->lineno[t->reentrancy-1],
 							   t->func[t->reentrancy-1], mutex_name);
 				}
@@ -383,11 +371,11 @@ static inline int __ast_pthread_mutex_lock(const char *filename, int lineno, con
 			t->thread[t->reentrancy] = pthread_self();
 			t->reentrancy++;
 		} else {
-			__ast_mutex_logger("%s line %d (%s): '%s' really deep reentrancy!\n",
+			log_mutex_error(canlog, "%s line %d (%s): '%s' really deep reentrancy!\n",
 							   filename, lineno, func, mutex_name);
 		}
 	} else {
-		__ast_mutex_logger("%s line %d (%s): Error obtaining mutex: %s\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error obtaining mutex: %s\n",
 				   filename, lineno, func, strerror(errno));
 		DO_THREAD_CRASH;
 	}
@@ -403,7 +391,7 @@ static inline int __ast_pthread_mutex_trylock(const char *filename, int lineno, 
 
 #if defined(AST_MUTEX_INIT_W_CONSTRUCTORS)
 	if ((t->mutex) == ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
-		__ast_mutex_logger("%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
 				   filename, lineno, func, mutex_name);
 		ast_mutex_init(t);
 	}
@@ -417,11 +405,11 @@ static inline int __ast_pthread_mutex_trylock(const char *filename, int lineno, 
 			t->thread[t->reentrancy] = pthread_self();
 			t->reentrancy++;
 		} else {
-			__ast_mutex_logger("%s line %d (%s): '%s' really deep reentrancy!\n",
+			log_mutex_error(canlog, "%s line %d (%s): '%s' really deep reentrancy!\n",
 					   filename, lineno, func, mutex_name);
 		}
 	} else {
-		__ast_mutex_logger("%s line %d (%s): Warning: '%s' was locked here.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Warning: '%s' was locked here.\n",
                                    t->file[t->reentrancy-1], t->lineno[t->reentrancy-1], t->func[t->reentrancy-1], mutex_name);
 	}
 
@@ -436,21 +424,21 @@ static inline int __ast_pthread_mutex_unlock(const char *filename, int lineno, c
 
 #ifdef AST_MUTEX_INIT_W_CONSTRUCTORS
 	if ((t->mutex) == ((pthread_mutex_t) PTHREAD_MUTEX_INITIALIZER)) {
-		__ast_mutex_logger("%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
+		log_mutex_error(canlog, "%s line %d (%s): Error: mutex '%s' is uninitialized.\n",
 				   filename, lineno, func, mutex_name);
 	}
 #endif
 
 	if (t->reentrancy && (t->thread[t->reentrancy-1] != pthread_self())) {
-		__ast_mutex_logger("%s line %d (%s): attempted unlock mutex '%s' without owning it!\n",
+		log_mutex_error(canlog, "%s line %d (%s): attempted unlock mutex '%s' without owning it!\n",
 				   filename, lineno, func, mutex_name);
-		__ast_mutex_logger("%s line %d (%s): '%s' was locked here.\n",
+		log_mutex_error(canlog, "%s line %d (%s): '%s' was locked here.\n",
 				   t->file[t->reentrancy-1], t->lineno[t->reentrancy-1], t->func[t->reentrancy-1], mutex_name);
 		DO_THREAD_CRASH;
 	}
 
 	if (--t->reentrancy < 0) {
-		__ast_mutex_logger("%s line %d (%s): mutex '%s' freed more times than we've locked!\n",
+		log_mutex_error(canlog, "%s line %d (%s): mutex '%s' freed more times than we've locked!\n",
 				   filename, lineno, func, mutex_name);
 		t->reentrancy = 0;
 	}
@@ -463,7 +451,7 @@ static inline int __ast_pthread_mutex_unlock(const char *filename, int lineno, c
 	}
 
 	if ((res = pthread_mutex_unlock(&t->mutex))) {
-		__ast_mutex_logger("%s line %d (%s): Error releasing mutex: %s\n", 
+		log_mutex_error(canlog, "%s line %d (%s): Error releasing mutex: %s\n",
 				   filename, lineno, func, strerror(res));
 		DO_THREAD_CRASH;
 	}
@@ -504,7 +492,7 @@ static void  __attribute__((constructor)) init_##mutex(void) \
 	ast_mutex_init(&mutex); \
 }
 #else /* !AST_MUTEX_INIT_W_CONSTRUCTORS */
-/* By default, use static initialization of mutexes. */ 
+/* By default, use static initialization of mutexes. */
 #define __AST_MUTEX_DEFINE(scope, mutex) \
 	scope ast_mutex_t mutex = AST_MUTEX_INIT_VALUE
 #endif /* AST_MUTEX_INIT_W_CONSTRUCTORS */
@@ -617,7 +605,7 @@ AST_INLINE_API(int ast_atomic_fetchadd_int(volatile int *p, int v),
 {
 	__asm __volatile (
 	"       lock   xaddl   %0, %1 ;        "
-	: "+r" (v),                     /* 0 (result) */   
+	: "+r" (v),                     /* 0 (result) */
 	  "=m" (*p)                     /* 1 */
 	: "m" (*p));                    /* 2 */
 	return (v);
@@ -683,44 +671,6 @@ int ast_channel_trylock(struct ast_channel *chan);
 
 /* from utils.h */
 
-#define ast_free free
-#define ast_free_ptr free
-
-#define MALLOC_FAILURE_MSG \
-	ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file);
-
-/*!
- * \brief A wrapper for malloc()
- *
- * ast_malloc() is a wrapper for malloc() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The argument and return value are the same as malloc()
- */
-#define ast_malloc(len) \
-	_ast_malloc((len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_calloc(num, len) \
-	_ast_calloc((num), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_calloc_cache(num, len) \
-	_ast_calloc((num), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_realloc(p, len) \
-	_ast_realloc((p), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_strdup(str) \
-	_ast_strdup((str), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_strndup(str, len) \
-	_ast_strndup((str), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-#define ast_asprintf(ret, fmt, ...) \
-	_ast_asprintf((ret), __FILE__, __LINE__, __PRETTY_FUNCTION__, fmt, __VA_ARGS__)
-
-#define ast_vasprintf(ret, fmt, ap) \
-	_ast_vasprintf((ret), __FILE__, __LINE__, __PRETTY_FUNCTION__, (fmt), (ap))
-
 struct ast_flags {  /* stolen from utils.h */
 	unsigned int flags;
 };
@@ -740,221 +690,6 @@ struct ast_flags {  /* stolen from utils.h */
 					else \
 						(p)->flags &= ~(flag); \
 					} while (0)
-
-
-
-#define MALLOC_FAILURE_MSG \
-	ast_log(LOG_ERROR, "Memory Allocation Failure in function %s at line %d of %s\n", func, lineno, file);
-/*!
- * \brief A wrapper for malloc()
- *
- * ast_malloc() is a wrapper for malloc() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The argument and return value are the same as malloc()
- */
-#define ast_malloc(len) \
-	_ast_malloc((len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-AST_INLINE_API(
-void * attribute_malloc _ast_malloc(size_t len, const char *file, int lineno, const char *func),
-{
-	void *p;
-
-	if (!(p = malloc(len)))
-		MALLOC_FAILURE_MSG;
-
-	return p;
-}
-)
-
-/*!
- * \brief A wrapper for calloc()
- *
- * ast_calloc() is a wrapper for calloc() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The arguments and return value are the same as calloc()
- */
-#define ast_calloc(num, len) \
-	_ast_calloc((num), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-AST_INLINE_API(
-void * attribute_malloc _ast_calloc(size_t num, size_t len, const char *file, int lineno, const char *func),
-{
-	void *p;
-
-	if (!(p = calloc(num, len)))
-		MALLOC_FAILURE_MSG;
-
-	return p;
-}
-)
-
-/*!
- * \brief A wrapper for calloc() for use in cache pools
- *
- * ast_calloc_cache() is a wrapper for calloc() that will generate an Asterisk log
- * message in the case that the allocation fails. When memory debugging is in use,
- * the memory allocated by this function will be marked as 'cache' so it can be
- * distinguished from normal memory allocations.
- *
- * The arguments and return value are the same as calloc()
- */
-#define ast_calloc_cache(num, len) \
-	_ast_calloc((num), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-/*!
- * \brief A wrapper for realloc()
- *
- * ast_realloc() is a wrapper for realloc() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The arguments and return value are the same as realloc()
- */
-#define ast_realloc(p, len) \
-	_ast_realloc((p), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-AST_INLINE_API(
-void * attribute_malloc _ast_realloc(void *p, size_t len, const char *file, int lineno, const char *func),
-{
-	void *newp;
-
-	if (!(newp = realloc(p, len)))
-		MALLOC_FAILURE_MSG;
-
-	return newp;
-}
-)
-
-/*!
- * \brief A wrapper for strdup()
- *
- * ast_strdup() is a wrapper for strdup() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * ast_strdup(), unlike strdup(), can safely accept a NULL argument. If a NULL
- * argument is provided, ast_strdup will return NULL without generating any
- * kind of error log message.
- *
- * The argument and return value are the same as strdup()
- */
-#define ast_strdup(str) \
-	_ast_strdup((str), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-AST_INLINE_API(
-char * attribute_malloc _ast_strdup(const char *str, const char *file, int lineno, const char *func),
-{
-	char *newstr = NULL;
-
-	if (str) {
-		if (!(newstr = strdup(str)))
-			MALLOC_FAILURE_MSG;
-	}
-
-	return newstr;
-}
-)
-
-/*!
- * \brief A wrapper for strndup()
- *
- * ast_strndup() is a wrapper for strndup() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * ast_strndup(), unlike strndup(), can safely accept a NULL argument for the
- * string to duplicate. If a NULL argument is provided, ast_strdup will return  
- * NULL without generating any kind of error log message.
- *
- * The arguments and return value are the same as strndup()
- */
-#define ast_strndup(str, len) \
-	_ast_strndup((str), (len), __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
-AST_INLINE_API(
-char * attribute_malloc _ast_strndup(const char *str, size_t len, const char *file, int lineno, const char *func),
-{
-	char *newstr = NULL;
-
-	if (str) {
-		if (!(newstr = strndup(str, len)))
-			MALLOC_FAILURE_MSG;
-	}
-
-	return newstr;
-}
-)
-
-/*!
- * \brief A wrapper for asprintf()
- *
- * ast_asprintf() is a wrapper for asprintf() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The arguments and return value are the same as asprintf()
- */
-#define ast_asprintf(ret, fmt, ...) \
-	_ast_asprintf((ret), __FILE__, __LINE__, __PRETTY_FUNCTION__, fmt, __VA_ARGS__)
-
-AST_INLINE_API(
-__attribute__((format(printf, 5, 6)))
-int _ast_asprintf(char **ret, const char *file, int lineno, const char *func, const char *fmt, ...),
-{
-	int res;
-	va_list ap;
-
-	va_start(ap, fmt);
-	if ((res = vasprintf(ret, fmt, ap)) == -1)
-		MALLOC_FAILURE_MSG;
-	va_end(ap);
-
-	return res;
-}
-)
-
-/*!
- * \brief A wrapper for vasprintf()
- *
- * ast_vasprintf() is a wrapper for vasprintf() that will generate an Asterisk log
- * message in the case that the allocation fails.
- *
- * The arguments and return value are the same as vasprintf()
- */
-#define ast_vasprintf(ret, fmt, ap) \
-	_ast_vasprintf((ret), __FILE__, __LINE__, __PRETTY_FUNCTION__, (fmt), (ap))
-
-AST_INLINE_API(
-__attribute__((format(printf, 5, 0)))
-int _ast_vasprintf(char **ret, const char *file, int lineno, const char *func, const char *fmt, va_list ap),
-{
-	int res;
-
-	if ((res = vasprintf(ret, fmt, ap)) == -1)
-		MALLOC_FAILURE_MSG;
-
-	return res;
-}
-)
-
-#if !defined(ast_strdupa) && defined(__GNUC__)
-/*!
-  \brief duplicate a string in memory from the stack
-  \param s The string to duplicate
-
-  This macro will duplicate the given string.  It returns a pointer to the stack
-  allocatted memory for the new string.
-*/
-#define ast_strdupa(s)                                                    \
-	(__extension__                                                    \
-	({                                                                \
-		const char *__old = (s);                                  \
-		size_t __len = strlen(__old) + 1;                         \
-		char *__new = __builtin_alloca(__len);                    \
-		memcpy (__new, __old, __len);                             \
-		__new;                                                    \
-	}))
-#endif
-
 
 /* from config.c */
 
@@ -1032,19 +767,19 @@ static void  LLB_ADD(char *str)
 	int siz = strlen(str);
 	if (rem < siz+1) {
 		lline_buffer = ast_realloc(lline_buffer, lline_buffer_size + CB_INCR + siz + 1);
-		if (!lline_buffer) 
+		if (!lline_buffer)
 			return;
 		lline_buffer_size += CB_INCR + siz + 1;
 	}
 	strcat(lline_buffer,str);
 }
 
-static void CB_RESET(void )  
-{ 
-	comment_buffer[0] = 0; 
+static void CB_RESET(void )
+{
+	comment_buffer[0] = 0;
 	lline_buffer[0] = 0;
 }
-		
+
 /*! \brief Keep track of how many threads are currently trying to wait*() on
  *  a child process */
 static unsigned int safe_system_level = 0;
@@ -1107,7 +842,7 @@ int ast_safe_system(const char *s)
 	pid = fork();
 #else
 	pid = vfork();
-#endif	
+#endif
 
 	if (pid == 0) {
 #ifdef HAVE_WORKING_FORK
@@ -1123,7 +858,7 @@ int ast_safe_system(const char *s)
 			if (res > -1) {
 				res = WIFEXITED(status) ? WEXITSTATUS(status) : -1;
 				break;
-			} else if (errno != EINTR) 
+			} else if (errno != EINTR)
 				break;
 		}
 	} else {
@@ -1140,7 +875,7 @@ int ast_safe_system(const char *s)
 }
 
 static struct ast_comment *ALLOC_COMMENT(const char *buffer)
-{ 
+{
 	struct ast_comment *x = ast_calloc(1,sizeof(struct ast_comment)+strlen(buffer)+1);
 	strcpy(x->cmt, buffer);
 	return x;
@@ -1163,7 +898,7 @@ static struct ast_config_engine *config_engine_list;
 struct ast_category {
 	char name[80];
 	int ignored;			/*!< do not let user of the config see this category */
-	int include_level;	
+	int include_level;
     char *file;                /*!< the file name from whence this declaration was read */
     int lineno;
 	struct ast_comment *precomments;
@@ -1256,7 +991,7 @@ char *ast_trim_blanks(char *str),
 
 	if (work) {
 		work += strlen(work) - 1;
-		/* It's tempting to only want to erase after we exit this loop, 
+		/* It's tempting to only want to erase after we exit this loop,
 		   but since ast_trim_blanks *could* receive a constant string
 		   (which we presumably wouldn't have to touch), we shouldn't
 		   actually set anything unless we must, and it's easier just
@@ -1285,7 +1020,7 @@ char *ast_strip(char *s),
 	if (s)
 		ast_trim_blanks(s);
 	return s;
-} 
+}
 )
 
 
@@ -1318,15 +1053,15 @@ void localized_ast_include_rename(struct ast_config *conf, const char *from_file
 
 static struct ast_variable *ast_variable_new(const char *name, const char *value, const char *filename);
 
-static struct ast_variable *ast_variable_new(const char *name, const char *value, const char *filename) 
+static struct ast_variable *ast_variable_new(const char *name, const char *value, const char *filename)
 {
 	struct ast_variable *variable;
-	int name_len = strlen(name) + 1;	
+	int name_len = strlen(name) + 1;
 
 	if ((variable = ast_calloc(1, name_len + strlen(value) + 1 + strlen(filename) + 1 + sizeof(*variable)))) {
 		variable->name = variable->stuff;
-		variable->value = variable->stuff + name_len;		
-		variable->file = variable->value + strlen(value) + 1;		
+		variable->value = variable->stuff + name_len;
+		variable->file = variable->value + strlen(value) + 1;
 		strcpy(variable->name,name);
 		strcpy(variable->value,value);
 		strcpy(variable->file,filename);
@@ -1338,11 +1073,11 @@ static struct ast_variable *ast_variable_new(const char *name, const char *value
 static struct ast_config_include *ast_include_new(struct ast_config *conf, const char *from_file, const char *included_file, int is_exec, const char *exec_file, int from_lineno, char *real_included_file_name, int real_included_file_name_size)
 {
 	/* a file should be included ONCE. Otherwise, if one of the instances is changed,
-       then all be changed. -- how do we know to include it? -- Handling modified 
+       then all be changed. -- how do we know to include it? -- Handling modified
        instances is possible, I'd have
        to create a new master for each instance. */
 	struct ast_config_include *inc;
-    
+
 	inc = ast_include_find(conf, included_file);
 	if (inc)
 	{
@@ -1351,7 +1086,7 @@ static struct ast_config_include *ast_include_new(struct ast_config *conf, const
 		ast_log(LOG_WARNING,"'%s', line %d:  Same File included more than once! This data will be saved in %s if saved back to disk.\n", from_file, from_lineno, real_included_file_name);
 	} else
 		*real_included_file_name = 0;
-	
+
 	inc = ast_calloc(1,sizeof(struct ast_config_include));
 	inc->include_location_file = ast_strdup(from_file);
 	inc->include_location_lineno = from_lineno;
@@ -1359,15 +1094,15 @@ static struct ast_config_include *ast_include_new(struct ast_config *conf, const
 		inc->included_file = ast_strdup(real_included_file_name);
 	else
 		inc->included_file = ast_strdup(included_file);
-	
+
 	inc->exec = is_exec;
 	if (is_exec)
 		inc->exec_file = ast_strdup(exec_file);
-	
+
 	/* attach this new struct to the conf struct */
 	inc->next = conf->includes;
 	conf->includes = inc;
-    
+
 	return inc;
 }
 
@@ -1376,13 +1111,13 @@ void localized_ast_include_rename(struct ast_config *conf, const char *from_file
 	struct ast_config_include *incl;
 	struct ast_category *cat;
 	struct ast_variable *v;
-    
+
 	int from_len = strlen(from_file);
 	int to_len = strlen(to_file);
-    
+
 	if (strcmp(from_file, to_file) == 0) /* no use wasting time if the name is the same */
 		return;
-	
+
 	/* the manager code allows you to read in one config file, then
        write it back out under a different name. But, the new arrangement
 	   ties output lines to the file name. So, before you try to write
@@ -1391,7 +1126,7 @@ void localized_ast_include_rename(struct ast_config *conf, const char *from_file
 	*/
 	/* file names are on categories, includes (of course), and on variables. So,
 	   traverse all this and swap names */
-	
+
 	for (incl = conf->includes; incl; incl=incl->next) {
 		if (strcmp(incl->include_location_file,from_file) == 0) {
 			if (from_len >= to_len)
@@ -1522,7 +1257,7 @@ static struct ast_variable *variable_clone(const struct ast_variable *old)
 
 	return new;
 }
- 
+
 static void ast_variables_destroy(struct ast_variable *v)
 {
 	struct ast_variable *vn;
@@ -1537,7 +1272,7 @@ static void ast_variables_destroy(struct ast_variable *v)
 static void ast_includes_destroy(struct ast_config_include *incls)
 {
 	struct ast_config_include *incl,*inclnext;
-    
+
 	for (incl=incls; incl; incl = inclnext) {
 		inclnext = incl->next;
 		if (incl->include_location_file)
@@ -1558,7 +1293,7 @@ static void ast_config_destroy(struct ast_config *cfg)
 		return;
 
 	ast_includes_destroy(cfg->includes);
-	
+
 	cat = cfg->root;
 	while (cat) {
 		ast_variables_destroy(cat->root);
@@ -1606,20 +1341,14 @@ enum ast_option_flags {
 	AST_OPT_FLAG_TRANSMIT_SILENCE = (1 << 17),
 	/*! Suppress some warnings */
 	AST_OPT_FLAG_DONT_WARN = (1 << 18),
-	/*! End CDRs before the 'h' extension */
-	AST_OPT_FLAG_END_CDR_BEFORE_H_EXTEN = (1 << 19),
 	/*! Always fork, even if verbose or debug settings are non-zero */
 	AST_OPT_FLAG_ALWAYS_FORK = (1 << 21),
 	/*! Disable log/verbose output to remote consoles */
 	AST_OPT_FLAG_MUTE = (1 << 22),
 	/*! There is a per-file debug setting */
 	AST_OPT_FLAG_DEBUG_FILE = (1 << 23),
-	/*! There is a per-file verbose setting */
-	AST_OPT_FLAG_VERBOSE_FILE = (1 << 24),
 	/*! Terminal colors should be adjusted for a light-colored background */
 	AST_OPT_FLAG_LIGHT_BACKGROUND = (1 << 25),
-	/*! Count Initiated seconds in CDR's */
-	AST_OPT_FLAG_INITIATED_SECONDS = (1 << 26),
 	/*! Force black background */
 	AST_OPT_FLAG_FORCE_BLACK_BACKGROUND = (1 << 27),
 };
@@ -1652,7 +1381,6 @@ struct ast_flags ast_options = { AST_DEFAULT_OPTIONS };
 #define ast_opt_reconnect		ast_test_flag(&ast_options, AST_OPT_FLAG_RECONNECT)
 #define ast_opt_transmit_silence	ast_test_flag(&ast_options, AST_OPT_FLAG_TRANSMIT_SILENCE)
 #define ast_opt_dont_warn		ast_test_flag(&ast_options, AST_OPT_FLAG_DONT_WARN)
-#define ast_opt_end_cdr_before_h_exten	ast_test_flag(&ast_options, AST_OPT_FLAG_END_CDR_BEFORE_H_EXTEN)
 #define ast_opt_always_fork		ast_test_flag(&ast_options, AST_OPT_FLAG_ALWAYS_FORK)
 #define ast_opt_mute			ast_test_flag(&ast_options, AST_OPT_FLAG_MUTE)
 
@@ -1694,7 +1422,7 @@ extern int ast_language_is_prefix;
 */
 #define AST_RWLIST_RDLOCK(head)                                         \
         ast_rwlock_rdlock(&(head)->lock)
-	
+
 /*!
   \brief Attempts to unlock a read/write based list.
   \param head This is a pointer to the list head structure
@@ -1968,7 +1696,7 @@ struct {								\
 }
 
 #define AST_RWLIST_ENTRY AST_LIST_ENTRY
- 
+
 /*!
   \brief Returns the first entry contained in a list.
   \param head This is a pointer to the list head structure
@@ -2380,7 +2108,7 @@ struct ast_switch {
 	AST_LIST_ENTRY(ast_switch) list;
 	const char *name;			/*!< Name of the switch */
 	const char *description;		/*!< Description of the switch */
-	
+
 	ast_switch_f *exists;
 	ast_switch_f *canmatch;
 	ast_switch_f *exec;
@@ -2454,7 +2182,7 @@ static const char *ast_var_name(const struct ast_var_t *var)
 }
 
 /* experiment 1: see if it's easier just to use existing config code
- *               to read in the extensions.conf file. In this scenario, 
+ *               to read in the extensions.conf file. In this scenario,
                  I have to rip/copy code from other modules, because they
                  are staticly declared as-is. A solution would be to move
                  the ripped code to another location and make them available
@@ -2466,7 +2194,7 @@ static void ast_log(int level, const char *file, int line, const char *function,
 {
 	va_list vars;
 	va_start(vars,fmt);
-	
+
 	printf("LOG: lev:%d file:%s  line:%d func: %s  ",
 		   level, file, line, function);
 	vprintf(fmt, vars);
@@ -2478,7 +2206,7 @@ void __attribute__((format(printf, 1, 2))) ast_verbose(const char *fmt, ...)
 {
 	va_list vars;
 	va_start(vars,fmt);
-	
+
 	printf("VERBOSE: ");
 	vprintf(fmt, vars);
 	fflush(stdout);
@@ -2696,7 +2424,7 @@ struct ast_state_cb {
 /*! \brief Structure for dial plan hints
 
   \note Hints are pointers from an extension in the dialplan to one or
-  more devices (tech/name) 
+  more devices (tech/name)
 	- See \ref AstExtState
 */
 struct ast_hint {
@@ -2724,7 +2452,7 @@ AST_LIST_HEAD(store_hints, store_hint);
 #define STATUS_SUCCESS		5
 
 static struct ast_var_t *ast_var_assign(const char *name, const char *value)
-{	
+{
 	struct ast_var_t *var;
 	int name_len = strlen(name) + 1;
 	int value_len = strlen(value) + 1;
@@ -2736,10 +2464,10 @@ static struct ast_var_t *ast_var_assign(const char *name, const char *value)
 	ast_copy_string(var->name, name, name_len);
 	var->value = var->name + name_len;
 	ast_copy_string(var->value, value, value_len);
-	
+
 	return var;
-}	
-	
+}
+
 static void ast_var_delete(struct ast_var_t *var)
 {
 	free(var);
@@ -3016,7 +2744,7 @@ static void null_datad(void *foo)
 }
 
 /*! \brief Find realtime engine for realtime family */
-static struct ast_config_engine *find_engine(const char *family, char *database, int dbsiz, char *table, int tabsiz) 
+static struct ast_config_engine *find_engine(const char *family, char *database, int dbsiz, char *table, int tabsiz)
 {
 	struct ast_config_engine *eng, *ret = NULL;
 	struct ast_config_map *map;
@@ -3039,12 +2767,12 @@ static struct ast_config_engine *find_engine(const char *family, char *database,
 				ret = eng;
 		}
 	}
-	
-	
+
+
 	/* if we found a mapping, but the engine is not available, then issue a warning */
 	if (map && !ret)
 		ast_log(LOG_WARNING, "Realtime mapping for '%s' found to engine '%s', but the engine is not available\n", map->name, map->driver);
-	
+
 	return ret;
 }
 
@@ -3119,7 +2847,7 @@ static void ast_category_destroy(struct ast_category *cat)
 	ast_variables_destroy(cat->root);
 	if (cat->file)
 		free(cat->file);
-	
+
 	free(cat);
 }
 
@@ -3136,7 +2864,7 @@ static struct ast_config *ast_config_internal_load(const char *filename, struct 
 	char db[256];
 	char table[256];
 	struct ast_config_engine *loader = &text_file_engine;
-	struct ast_config *result; 
+	struct ast_config *result;
 
 	if (cfg->include_level == cfg->max_include_level) {
 		ast_log(LOG_WARNING, "Maximum Include level (%d) exceeded\n", cfg->max_include_level);
@@ -3164,7 +2892,7 @@ static struct ast_config *ast_config_internal_load(const char *filename, struct 
 	}
 
 	result = loader->load_func(db, table, filename, cfg, withcomments, suggested_incl_file);
-	/* silence is golden 
+	/* silence is golden
 	   ast_log(LOG_WARNING, "finished internal loading file %s level=%d\n", filename, cfg->include_level);
 	*/
 
@@ -3180,7 +2908,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 	char *c;
 	char *cur = buf;
 	struct ast_variable *v;
-	char cmd[512], exec_file[512];
+	char exec_file[512];
 	int object, do_exec, do_include;
 
 	/* Actually parse the entry */
@@ -3203,7 +2931,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 			return -1;
 		}
 		(*cat)->lineno = lineno;
-        
+
 		/* add comments */
 		if (withcomments && comment_buffer && comment_buffer[0] ) {
 			newcat->precomments = ALLOC_COMMENT(comment_buffer);
@@ -3213,7 +2941,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 		}
 		if( withcomments )
 			CB_RESET();
-		
+
  		/* If there are options or categories to inherit from, process them now */
  		if (c) {
  			if (!(cur = strchr(c, ')'))) {
@@ -3240,7 +2968,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 					}
 				} else {
 					struct ast_category *base;
- 				
+
 					base = category_get(cfg, cur, 1);
 					if (!base) {
 						ast_log(LOG_WARNING, "Inheritance requested, but category '%s' does not exist, line %d of %s\n", cur, lineno, configfile);
@@ -3263,7 +2991,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 			c = ast_skip_blanks(c + 1);
 			if (!*c)
 				c = NULL;
-		} else 
+		} else
 			c = NULL;
 		do_include = !strcasecmp(cur, "include");
 		if(!do_include)
@@ -3277,8 +3005,8 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 		if (do_include || do_exec) {
 			if (c) {
 				char *cur2;
-				char real_inclusion_name[256];
-                
+				char real_inclusion_name[525];
+
 				/* Strip off leading and trailing "'s and <>'s */
 				while((*c == '<') || (*c == '>') || (*c == '\"')) c++;
 				/* Get rid of leading mess */
@@ -3293,35 +3021,41 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 				}
 				/* #exec </path/to/executable>
 				   We create a tmp file, then we #include it, then we delete it. */
-				if (do_exec) { 
+				if (do_exec) {
+					char cmd[1024];
+
 					snprintf(exec_file, sizeof(exec_file), "/var/tmp/exec.%d.%ld", (int)time(NULL), (long)pthread_self());
-					snprintf(cmd, sizeof(cmd), "%s > %s 2>&1", cur, exec_file);
+					if (snprintf(cmd, sizeof(cmd), "%s > %s 2>&1", cur, exec_file) >= sizeof(cmd)) {
+						ast_log(LOG_ERROR, "Failed to construct command string to execute %s.\n", cur);
+
+						return -1;
+					}
 					ast_safe_system(cmd);
 					cur = exec_file;
 				} else
 					exec_file[0] = '\0';
 				/* A #include */
 				/* ast_log(LOG_WARNING, "Reading in included file %s withcomments=%d\n", cur, withcomments); */
-				
+
 				/* record this inclusion */
 				ast_include_new(cfg, configfile, cur, do_exec, cur2, lineno, real_inclusion_name, sizeof(real_inclusion_name));
-				
+
 				do_include = ast_config_internal_load(cur, cfg, withcomments, real_inclusion_name) ? 1 : 0;
 				if(!ast_strlen_zero(exec_file))
 					unlink(exec_file);
 				if(!do_include)
 					return 0;
 				/* ast_log(LOG_WARNING, "Done reading in included file %s withcomments=%d\n", cur, withcomments); */
-				
+
 			} else {
-				ast_log(LOG_WARNING, "Directive '#%s' needs an argument (%s) at line %d of %s\n", 
+				ast_log(LOG_WARNING, "Directive '#%s' needs an argument (%s) at line %d of %s\n",
 						do_exec ? "exec" : "include",
 						do_exec ? "/path/to/executable" : "filename",
 						lineno,
 						configfile);
 			}
 		}
-		else 
+		else
 			ast_log(LOG_WARNING, "Unknown directive '%s' at line %d of %s\n", cur, lineno, configfile);
 	} else {
 		/* Just a line (variable = value) */
@@ -3355,7 +3089,7 @@ static int process_text_line(struct ast_config *cfg, struct ast_category **cat, 
 				}
 				if( withcomments )
 					CB_RESET();
-				
+
 			} else {
 				return -1;
 			}
@@ -3393,7 +3127,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 	struct ast_category *cat = NULL;
 	int count = 0;
 	struct stat statbuf;
-	
+
 	cat = ast_config_get_current_category(cfg);
 
 	if (filename[0] == '/') {
@@ -3408,26 +3142,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 	if (withcomments && cfg && cfg->include_level < 2 ) {
 		CB_INIT();
 	}
-	
-#ifdef AST_INCLUDE_GLOB
-	{
-		int glob_ret;
-		glob_t globbuf;
 
-		globbuf.gl_offs = 0;	/* initialize it to silence gcc */
-		glob_ret = glob(fn, GLOB_NOCHECK, NULL, &globbuf);
-		if (glob_ret == GLOB_NOSPACE)
-			ast_log(LOG_WARNING,
-				"Glob Expansion of pattern '%s' failed: Not enough memory\n", fn);
-		else if (glob_ret  == GLOB_ABORTED)
-			ast_log(LOG_WARNING,
-				"Glob Expansion of pattern '%s' failed: Read error\n", fn);
-		else  {
-			/* loop over expanded files */
-			int i;
-			for (i=0; i<globbuf.gl_pathc; i++) {
-				ast_copy_string(fn, globbuf.gl_pathv[i], sizeof(fn));
-#endif
 	do {
 		if (stat(fn, &statbuf))
 			continue;
@@ -3455,17 +3170,17 @@ static struct ast_config *config_text_file_load(const char *database, const char
 		while(!feof(f)) {
 			lineno++;
 			if (fgets(buf, sizeof(buf), f)) {
-				if ( withcomments ) {    
+				if ( withcomments ) {
 					CB_ADD(lline_buffer);       /* add the current lline buffer to the comment buffer */
 					lline_buffer[0] = 0;        /* erase the lline buffer */
 				}
-				
+
 				new_buf = buf;
-				if (comment) 
+				if (comment)
 					process_buf = NULL;
 				else
 					process_buf = buf;
-				
+
 				while ((comment_p = strchr(new_buf, COMMENT_META))) {
 					if ((comment_p > new_buf) && (*(comment_p-1) == '\\')) {
 						/* Yuck, gotta memmove */
@@ -3497,7 +3212,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 									CB_ADD(";");
 									CB_ADD_LEN(oldptr+1,new_buf-oldptr-1);
 								}
-								
+
 								memmove(oldptr, new_buf, strlen(new_buf) + 1);
 								new_buf = oldptr;
 							} else
@@ -3505,12 +3220,12 @@ static struct ast_config *config_text_file_load(const char *database, const char
 						}
 					} else {
 						if (!comment) {
-							/* If ; is found, and we are not nested in a comment, 
+							/* If ; is found, and we are not nested in a comment,
 							   we immediately stop all comment processing */
 							if ( withcomments ) {
 								LLB_ADD(comment_p);
 							}
-							*comment_p = '\0'; 
+							*comment_p = '\0';
 							new_buf = comment_p;
 						} else
 							new_buf = comment_p + 1;
@@ -3520,7 +3235,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 				{
 					CB_ADD(buf);  /* the whole line is a comment, store it */
 				}
-				
+
 				if (process_buf) {
 					char *stripped_process_buf = ast_strip(process_buf);
 					if (!ast_strlen_zero(stripped_process_buf)) {
@@ -3532,26 +3247,18 @@ static struct ast_config *config_text_file_load(const char *database, const char
 				}
 			}
 		}
-		fclose(f);		
+		fclose(f);
 	} while(0);
 	if (comment) {
 		ast_log(LOG_WARNING,"Unterminated comment detected beginning on line %d\n", nest[comment]);
 	}
-#ifdef AST_INCLUDE_GLOB
-					if (!cfg)
-						break;
-				}
-				globfree(&globbuf);
-			}
-		}
-#endif
 	if (cfg && cfg->include_level == 1 && withcomments && comment_buffer) {
-		if (comment_buffer) { 
+		if (comment_buffer) {
 			free(comment_buffer);
 			free(lline_buffer);
-			comment_buffer=0; 
-			lline_buffer=0; 
-			comment_buffer_size=0; 
+			comment_buffer=0;
+			lline_buffer=0;
+			comment_buffer_size=0;
 			lline_buffer_size=0;
 		}
 	}
@@ -3564,7 +3271,7 @@ static struct ast_config *config_text_file_load(const char *database, const char
 
 static struct ast_config *ast_config_new(void) ;
 
-static struct ast_config *ast_config_new(void) 
+static struct ast_config *ast_config_new(void)
 {
 	struct ast_config *config;
 
@@ -3617,7 +3324,7 @@ static struct ast_category *next_available_category(struct ast_category *cat)
 }
 
 static char *ast_category_browse(struct ast_config *config, const char *prev)
-{	
+{
 	struct ast_category *cat = NULL;
 
 	if (prev && config->last_browse && (config->last_browse->name == prev))
@@ -3640,7 +3347,7 @@ static char *ast_category_browse(struct ast_config *config, const char *prev)
 			}
 		}
 	}
-	
+
 	if (cat)
 		cat = next_available_category(cat);
 
@@ -3661,21 +3368,21 @@ void ast_config_set_current_category(struct ast_config *cfg, const struct ast_ca
 /* NOTE: categories and variables each have a file and lineno attribute. On a save operation, these are used to determine
    which file and line number to write out to. Thus, an entire hierarchy of config files (via #include statements) can be
    recreated. BUT, care must be taken to make sure that every cat and var has the proper file name stored, or you may
-   be shocked and mystified as to why things are not showing up in the files! 
-   
+   be shocked and mystified as to why things are not showing up in the files!
+
    Also, All #include/#exec statements are recorded in the "includes" LL in the ast_config structure. The file name
    and line number are stored for each include, plus the name of the file included, so that these statements may be
-   included in the output files on a file_save operation. 
-   
+   included in the output files on a file_save operation.
+
    The lineno's are really just for relative placement in the file. There is no attempt to make sure that blank lines
    are included to keep the lineno's the same between input and output. The lineno fields are used mainly to determine
    the position of the #include and #exec directives. So, blank lines tend to disappear from a read/rewrite operation,
    and a header gets added.
-   
+
    vars and category heads are output in the order they are stored in the config file. So, if the software
    shuffles these at all, then the placement of #include directives might get a little mixed up, because the
    file/lineno data probably won't get changed.
-   
+
 */
 
 static void gen_header(FILE *f1, const char *configfile, const char *fn, const char *generator)
@@ -3684,7 +3391,7 @@ static void gen_header(FILE *f1, const char *configfile, const char *fn, const c
 	time_t t;
 	time(&t);
 	ast_copy_string(date, ctime(&t), sizeof(date));
-	
+
 	fprintf(f1, ";!\n");
 	fprintf(f1, ";! Automatically generated configuration file\n");
 	if (strcmp(configfile, fn))
@@ -3703,7 +3410,7 @@ static void set_fn(char *fn, int fn_size, const char *file, const char *configfi
 			ast_copy_string(fn, configfile, fn_size);
 		else
 			snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, configfile);
-	} else if (file[0] == '/') 
+	} else if (file[0] == '/')
 		ast_copy_string(fn, file, fn_size);
 	else
 		snprintf(fn, fn_size, "%s/%s", ast_config_AST_CONFIG_DIR, file);
@@ -3720,20 +3427,20 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 	struct ast_comment *cmt;
 	struct ast_config_include *incl;
 	int blanklines = 0;
-	
+
 	/* reset all the output flags, in case this isn't our first time saving this data */
-	
+
 	for (incl=cfg->includes; incl; incl = incl->next)
 		incl->output = 0;
-	
+
 	/* go thru all the inclusions and make sure all the files involved (configfile plus all its inclusions)
 	   are all truncated to zero bytes and have that nice header*/
-	
+
 	for (incl=cfg->includes; incl; incl = incl->next)
 	{
 		if (!incl->exec) { /* leave the execs alone -- we'll write out the #exec directives, but won't zero out the include files or exec files*/
 			FILE *f1;
-			
+
 			set_fn(fn, sizeof(fn), incl->included_file, configfile); /* normally, fn is just set to incl->included_file, prepended with config dir if relative */
 			f1 = fopen(fn,"w");
 			if (f1) {
@@ -3744,24 +3451,24 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 			}
 		}
 	}
-	
+
 	set_fn(fn, sizeof(fn), 0, configfile); /* just set fn to absolute ver of configfile */
-#ifdef __CYGWIN__	
+#ifdef __CYGWIN__
 	if ((f = fopen(fn, "w+"))) {
 #else
 	if ((f = fopen(fn, "w"))) {
-#endif	    
+#endif
 		if (option_verbose > 1)
 			ast_verbose(VERBOSE_PREFIX_2 "Saving '%s': ", fn);
 
 		gen_header(f, configfile, fn, generator);
 		cat = cfg->root;
 		fclose(f);
-        
+
 		/* from here out, we open each involved file and concat the stuff we need to add to the end and immediately close... */
-		/* since each var, cat, and associated comments can come from any file, we have to be 
+		/* since each var, cat, and associated comments can come from any file, we have to be
 		   mobile, and open each file, print, and close it on an entry-by-entry basis */
-		
+
 		while(cat) {
 			set_fn(fn, sizeof(fn), cat->file, configfile);
 			f = fopen(fn, "a");
@@ -3770,7 +3477,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 				ast_verbose(VERBOSE_PREFIX_2 "Unable to write %s (%s)", fn, strerror(errno));
 				return -1;
 			}
-			
+
 			/* dump any includes that happen before this category header */
 			for (incl=cfg->includes; incl; incl = incl->next) {
 				if (strcmp(incl->include_location_file, cat->file) == 0){
@@ -3783,7 +3490,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 					}
 				}
 			}
-            
+
 			/* Dump section with any appropriate comment */
 			for (cmt = cat->precomments; cmt; cmt=cmt->next) {
 				if (cmt->cmt[0] != ';' || cmt->cmt[1] != '!')
@@ -3798,7 +3505,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 			if (!cat->sameline)
 				fprintf(f,"\n");
 			fclose(f);
-            
+
 			var = cat->root;
 			while(var) {
 				set_fn(fn, sizeof(fn), var->file, configfile);
@@ -3808,7 +3515,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 					ast_verbose(VERBOSE_PREFIX_2 "Unable to write %s (%s)", fn, strerror(errno));
 					return -1;
 				}
-                
+
 				/* dump any includes that happen before this category header */
 				for (incl=cfg->includes; incl; incl = incl->next) {
 					if (strcmp(incl->include_location_file, var->file) == 0){
@@ -3821,24 +3528,24 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 						}
 					}
 				}
-                
+
 				for (cmt = var->precomments; cmt; cmt=cmt->next) {
 					if (cmt->cmt[0] != ';' || cmt->cmt[1] != '!')
 						fprintf(f,"%s", cmt->cmt);
 				}
-				if (var->sameline) 
+				if (var->sameline)
 					fprintf(f, "%s %s %s  %s", var->name, (var->object ? "=>" : "="), var->value, var->sameline->cmt);
-				else	
+				else
 					fprintf(f, "%s %s %s\n", var->name, (var->object ? "=>" : "="), var->value);
 				if (var->blanklines) {
 					blanklines = var->blanklines;
 					while (blanklines--)
 						fprintf(f, "\n");
 				}
-				
+
 				fclose(f);
-                
-				
+
+
 				var = var->next;
 			}
 			cat = cat->next;
@@ -3855,7 +3562,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 
 	/* Now, for files with trailing #include/#exec statements,
 	   we have to make sure every entry is output */
-	
+
 	for (incl=cfg->includes; incl; incl = incl->next) {
 		if (!incl->output) {
 			/* open the respective file */
@@ -3866,7 +3573,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 				ast_verbose(VERBOSE_PREFIX_2 "Unable to write %s (%s)", fn, strerror(errno));
 				return -1;
 			}
-            
+
 			/* output the respective include */
 			if (incl->exec)
 				fprintf(f,"#exec \"%s\"\n", incl->exec_file);
@@ -3876,7 +3583,7 @@ int localized_config_text_file_save(const char *configfile, const struct ast_con
 			incl->output = 1;
 		}
 	}
-	
+
 	return 0;
 }
 
@@ -4202,7 +3909,7 @@ static int ext_cmp1(const char **p)
 		break;
 	}
 	/* locate end of set */
-	end = strchr(*p, ']');	
+	end = strchr(*p, ']');
 
 	if (end == NULL) {
 		ast_log(LOG_WARNING, "Wrong usage of [] in the extension\n");
@@ -4379,12 +4086,50 @@ static struct ast_include *ast_walk_context_includes(struct ast_context *con,
 		return inc->next;
 }
 
+int ast_context_includes_count(struct ast_context *con);
+int ast_context_includes_count(struct ast_context *con)
+{
+	int c = 0;
+	struct ast_include *inc = NULL;
+
+	while ((inc = ast_walk_context_includes(con, inc))) {
+		c++;
+	}
+
+	return c;
+}
+
 struct ast_include *localized_walk_context_includes(struct ast_context *con,
 													struct ast_include *inc);
 struct ast_include *localized_walk_context_includes(struct ast_context *con,
 													struct ast_include *inc)
 {
 	return ast_walk_context_includes(con, inc);
+}
+
+static struct ast_ignorepat *ast_walk_context_ignorepats(struct ast_context *con,
+	struct ast_ignorepat *ip);
+
+static struct ast_ignorepat *ast_walk_context_ignorepats(struct ast_context *con,
+	struct ast_ignorepat *ip)
+{
+	if (!ip)
+		return con ? con->ignorepats : NULL;
+	else
+		return ip->next;
+}
+
+int ast_context_ignorepats_count(struct ast_context *con);
+int ast_context_ignorepats_count(struct ast_context *con)
+{
+	int c = 0;
+	struct ast_ignorepat *ip = NULL;
+
+	while ((ip = ast_walk_context_ignorepats(con, ip))) {
+		c++;
+	}
+
+	return c;
 }
 
 
@@ -4406,6 +4151,19 @@ struct ast_sw *localized_walk_context_switches(struct ast_context *con,
 													struct ast_sw *sw)
 {
 	return ast_walk_context_switches(con, sw);
+}
+
+int ast_context_switches_count(struct ast_context *con);
+int ast_context_switches_count(struct ast_context *con)
+{
+	int c = 0;
+	struct ast_sw *sw = NULL;
+
+	while ((sw = ast_walk_context_switches(con, sw))) {
+		c++;
+	}
+
+	return c;
 }
 
 
@@ -4561,30 +4319,34 @@ static inline int include_valid(struct ast_include *i)
 
 
 static struct ast_exten *pbx_find_extension(struct ast_channel *chan,
-											struct ast_context *bypass, 
+											struct ast_context *bypass,
 											struct pbx_find_info *q,
-											const char *context, 
-											const char *exten, 
+											const char *context,
+											const char *exten,
 											int priority,
-											const char *label, 
-											const char *callerid, 
+											const char *label,
+											const char *callerid,
 											enum ext_match_t action);
 
 
 static struct ast_exten *pbx_find_extension(struct ast_channel *chan,
-											struct ast_context *bypass, 
+											struct ast_context *bypass,
 											struct pbx_find_info *q,
-											const char *context, 
-											const char *exten, 
+											const char *context,
+											const char *exten,
 											int priority,
-											const char *label, 
-											const char *callerid, 
+											const char *label,
+											const char *callerid,
 											enum ext_match_t action)
 {
 	int x;
 	struct ast_context *tmp;
 	struct ast_exten *e, *eroot;
 	struct ast_include *i;
+
+	if (!context) {
+		return NULL;
+	}
 
 	/* Initialize status if appropriate */
 	if (q->stacklen == 0) {
@@ -4662,7 +4424,7 @@ static struct ast_exten *pbx_find_extension(struct ast_channel *chan,
 			continue;
 		}
 		/* No need to Substitute variables now; we shouldn't be here if there's any  */
-		
+
 		/* equivalent of extension_match_core() at the switch level */
 		if (action == E_CANMATCH)
 			aswf = asw->canmatch;
@@ -4696,20 +4458,20 @@ static struct ast_exten *pbx_find_extension(struct ast_channel *chan,
 
 struct ast_exten *localized_find_extension(struct ast_context *bypass,
 										  struct pbx_find_info *q,
-										  const char *context, 
-										  const char *exten, 
+										  const char *context,
+										  const char *exten,
 										  int priority,
-										  const char *label, 
-										  const char *callerid, 
+										  const char *label,
+										  const char *callerid,
 										  enum ext_match_t action);
 
 struct ast_exten *localized_find_extension(struct ast_context *bypass,
 										  struct pbx_find_info *q,
-										  const char *context, 
-										  const char *exten, 
+										  const char *context,
+										  const char *exten,
 										  int priority,
-										  const char *label, 
-										  const char *callerid, 
+										  const char *label,
+										  const char *callerid,
 										   enum ext_match_t action)
 {
 	return pbx_find_extension(NULL, bypass, q, context, exten, priority, label, callerid, action);
@@ -5323,7 +5085,7 @@ static void pbx_retrieve_variable(struct ast_channel *c, const char *var, char *
 	int offset, length;
 	int i, need_substring;
 	struct varshead *places[2] = { headp, &globals };	/* list of places where we may look */
-	
+
 	/*
 	 * Make a copy of var because parse_variable_name() modifies the string.
 	 * Then if called directly, we might need to run substring() on the result;
@@ -5331,7 +5093,7 @@ static void pbx_retrieve_variable(struct ast_channel *c, const char *var, char *
 	 */
 	tmpvar = ast_strdupa(var);	/* parse_variable_name modifies the string */
 	need_substring = parse_variable_name(tmpvar, &offset, &length, &i /* ignored */);
-	
+
 	/*
 	 * Look first into predefined variables, then into variable lists.
 	 * Variable 's' points to the result, according to the following rules:
@@ -5352,7 +5114,7 @@ static void pbx_retrieve_variable(struct ast_channel *c, const char *var, char *
 		if (!strcmp(var, "EPOCH")) {
 			snprintf(workspace, workspacelen, "%u",(int)time(NULL));
 		}
-		
+
 		s = workspace;
 	}
 	/* if not found, look into chanvars or global vars */
@@ -5595,11 +5357,11 @@ static int pbx_load_config(const char *config_file)
 		autofallthrough_config = ast_true(aft);
 	clearglobalvars_config = ast_true(ast_variable_retrieve(cfg, "general", "clearglobalvars"));
 
-	if ((cxt = ast_variable_retrieve(cfg, "general", "userscontext"))) 
+	if ((cxt = ast_variable_retrieve(cfg, "general", "userscontext")))
 		ast_copy_string(userscontext, cxt, sizeof(userscontext));
 	else
 		ast_copy_string(userscontext, "default", sizeof(userscontext));
-								    
+
 	for (v = ast_variable_browse(cfg, "globals"); v; v = v->next) {
 		memset(realvalue, 0, sizeof(realvalue));
 		pbx_substitute_variables_helper(NULL, v->value, realvalue, sizeof(realvalue) - 1);
@@ -5900,7 +5662,7 @@ int localized_pbx_load_module(void)
 		printf("Context: %s\n", con->name);
 	}
 	printf("=========\n");
-	
+
 	return 0;
 }
 
@@ -5913,4 +5675,3 @@ struct timeval ast_tvnow(void)
 	gettimeofday(&t, NULL);
 	return t;
 }
-

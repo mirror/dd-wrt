@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : WebRTC tutorial using SIPML5</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="WebRTC_40818093.html">WebRTC</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : WebRTC tutorial using SIPML5
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Matthew Fredrickson</span> on Sep 11, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="WebRTCtutorialusingSIPML5-TutorialOverview">Tutorial Overview</h1><p>This tutorial demonstrates basic WebRTC support and functionality within Asterisk.  Asterisk will be configured to support a remote WebRTC client, the <a href="https://www.doubango.org/sipml5/" class="external-link" rel="nofollow">sipml5</a> client, for the purposes of making calls to/from Asterisk within a web browser.  You must be running a recent (as of September 2018) version of a Mozilla or Chromium based web browser.</p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303100366 {padding: 0px;}
+div.rbtoc1582303100366 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303100366 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303100366'>
+<ul class='toc-indentation'>
+<li><a href='#WebRTCtutorialusingSIPML5-TutorialOverview'>Tutorial Overview</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-SetupAsterisk'>Setup Asterisk</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-BrowsersandWSS'>Browsers and WSS</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-ConfigureSIPML5'>Configure SIPML5</a>
+<ul class='toc-indentation'>
+<li><a href='#WebRTCtutorialusingSIPML5-Makeatestcall'>Make a test call</a></li>
+</ul>
+</li>
+</ul>
+</div></p></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="WebRTCtutorialusingSIPML5-SetupAsterisk">Setup Asterisk</h1><p>Follow the instructions at <a href="Configuring-Asterisk-for-WebRTC-Clients_40818051.html">Configuring Asterisk for WebRTC Clients</a> before proceeding,  The rest of this tutorial assumes that your PBX is reachable at <code>pbx.example.com</code> and that the client is known as <code>webrtc_client</code>.</p><p><span style="color: rgb(133,120,102);font-family: MuseoSans500 , sans-serif;font-size: 20.0px;">Configure Asterisk Dialplan</span></p><p>We'll make a simple dialplan for receiving a test call from the sipml5 client.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>/etc/asterisk/extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[default]
+exten =&gt; 200,1,Answer()
+same =&gt; n,Playback(demo-congrats)
+same =&gt; n,Hangup()</pre>
+</div></div><p> </p><p>This instructs Asterisk to Answer a call to &quot;200,&quot; to play a file named &quot;demo-congrats&quot; (included in Asterisk's core sound file packages), and to hang up.  To make the extension active, either restart Asterisk or issue a &quot;dialplan reload&quot; command from the Asterisk CLI.</p><h1 id="WebRTCtutorialusingSIPML5-BrowsersandWSS">Browsers and WSS</h1><p><span>When using WSS as a transport, Chrome and Firefox will not allow you, by default, to connect using WSS to a server with a self-signed certificate.  Rather, you'll have to install a publicly-signed certificate into Asterisk.  Or, you'll have to import the the self-signed certificate we made earlier into your browser's keychain, which is outside the scope of this Wiki.  </span></p><p><span>Or, for Firefox and Chrome, you can open a separate browser tab and point it to Asterisk's HTTPs server's TLS port and WS path, e.g. <code>https://pbx.example.com:8089/ws</code>, and you can manually confirm the security exception.</span></p><p><span><br /></span></p><h1 id="WebRTCtutorialusingSIPML5-ConfigureSIPML5">Configure SIPML5</h1><p> </p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>SIPML5 is a useful client for testing Asterisk. Many real-world users explore other options that may include rolling your own client.</p>
+                    </div>
+    </div>
+<p>Next, visit <a href="https://sipml5.org" class="external-link" rel="nofollow">https://sipml5.org</a> - you'll be redirected to <a href="https://www.doubango.org/sipml5/" class="external-link" rel="nofollow">https://www.doubango.org/sipml5/</a></p><p>Once there, click the &quot;Enjoy our live demo&quot; link to be directed to the sipml5 client.</p><p>In the Registration box, use configuration similar to the following:</p><p><img class="confluence-embedded-image" src="attachments/27200129/41156632.png" data-image-src="attachments/27200129/41156632.png"></p><p>Here, we have input the following:</p><ul><li>Display Name is a free-form string</li><li>Private Identity is our username from our PJSIP auth object</li><li>Public Identity is in the format: <ul><li>sip : (name of our PJSIP aor object) @ (IP Address of the Asterisk system)</li></ul></li><li>Password is our password from our PJSIP auth object</li><li>Realm is &quot;asterisk.org&quot;</li></ul><p>Next, click the &quot;Expert mode?&quot; form button.  It will open a new browser tab.  In the Expert settings box, use a configuration similar to the following:</p><p><img class="confluence-embedded-image" width="500" src="attachments/27200129/41156633.png" data-image-src="attachments/27200129/41156633.png"></p><p> </p><p>Here, we have made the following changes:</p><ul><li>Checked the &quot;Disable Video&quot; box</li><li>Filled in the WebSocket Server URL using the format:<br /><ul><li>wss : // (ip address of asterisk) : 8089 / ws</li></ul></li><li>Checked the &quot;Disable 3GPP Early IMS&quot; box</li></ul><p>Click &quot;Save&quot; and return to the other demo tab with the Registration box.</p><p>Next, click &quot;Login&quot; and you should see <em>Connected</em> as such:</p><p><img class="confluence-embedded-image" src="attachments/27200129/41156634.png" data-image-src="attachments/27200129/41156634.png"></p><p> </p><p>You should see a corresponding connection happen on the Asterisk CLI.  You can log into the Asterisk CLI by performing:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre># asterisk -vvvr</pre>
+</div></div><p> </p><p>Then, you can LogOut and Login and see something like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>== WebSocket connection from &#39;192.168.147.245:49976&#39; for protocol &#39;sip&#39; accepted using version &#39;13&#39;
+-- Added contact &#39;sips:webrtc_client@192.168.147.245:49976;transport=ws;rtcweb-breaker=no&#39; to AOR &#39;webrtc_client&#39; with expiration of 200 seconds
+== Endpoint webrtc_client is now Reachable
+
+</pre>
+</div></div><h2 id="WebRTCtutorialusingSIPML5-Makeatestcall">Make a test call</h2><p>In the sipml5 Call control box input <strong>200</strong>.  Then press the Call button.  You'll see a drop-down:</p><p><img class="confluence-embedded-image" width="500" src="attachments/27200129/37159045.png" data-image-src="attachments/27200129/37159045.png"></p><p>Select &quot;Audio&quot; to continue.  Once you do this, Firefox will display a popup asking permission to use your microphone:</p><p><img class="confluence-embedded-image" src="attachments/27200129/37159046.png" data-image-src="attachments/27200129/37159046.png"></p><p>Click &quot;Allow.&quot;</p><p>Next, the Call control box will indicate that the call is proceeding:</p><p><img class="confluence-embedded-image" width="500" src="attachments/27200129/37159047.png" data-image-src="attachments/27200129/37159047.png"></p><p>Finally, when the call is connected, you will see <em>In Call</em>:</p><p><img class="confluence-embedded-image" width="500" src="attachments/27200129/37159048.png" data-image-src="attachments/27200129/37159048.png"></p><p>and you will hear &quot;Congratulations, you have successfully installed and executed the Asterisk open source PBX...&quot;</p><p>You've just made your first call via WebRTC using Asterisk!</p><p> </p><p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303100442 {padding: 0px;}
+div.rbtoc1582303100442 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303100442 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303100442'>
+<ul class='toc-indentation'>
+<li><a href='#WebRTCtutorialusingSIPML5-TutorialOverview'>Tutorial Overview</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-SetupAsterisk'>Setup Asterisk</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-BrowsersandWSS'>Browsers and WSS</a></li>
+<li><a href='#WebRTCtutorialusingSIPML5-ConfigureSIPML5'>Configure SIPML5</a>
+<ul class='toc-indentation'>
+<li><a href='#WebRTCtutorialusingSIPML5-Makeatestcall'>Make a test call</a></li>
+</ul>
+</li>
+</ul>
+</div></p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/27328530.png">Selection_008.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/27328531.png">Selection_009.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/27328532.png">Selection_010.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159041.png">Screen Shot 2017-06-28 at 2.00.31 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159042.png">Screen Shot 2017-06-28 at 2.04.37 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159043.png">Screen Shot 2017-06-28 at 2.09.25 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159044.png">Screen Shot 2017-06-28 at 2.12.28 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159045.png">Screen Shot 2017-06-28 at 2.25.55 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159046.png">Screen Shot 2017-06-28 at 2.26.48 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159047.png">Screen Shot 2017-06-28 at 2.27.40 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/37159048.png">Screen Shot 2017-06-28 at 2.28.37 PM.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/41156632.png">Screenshot_2018-09-07_06-51-14.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/41156633.png">Screenshot_2018-09-07_06-57-13.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/27200129/41156634.png">Screenshot_2018-09-07_06-58-43.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

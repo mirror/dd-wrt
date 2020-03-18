@@ -97,8 +97,6 @@ static struct ast_sip_pubsub_body_generator mwi_generator = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_PUBSUB_MODULE_LOADED();
-
 	if (ast_sip_pubsub_register_body_generator(&mwi_generator)) {
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -112,8 +110,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP MWI resource",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.requires = "res_pjsip,res_pjsip_pubsub",
 );

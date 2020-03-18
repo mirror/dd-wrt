@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Sorcery</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Sorcery
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Sean Bright</span> on Feb 12, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Under Construction</p>
+                    </div>
+    </div>
+<h1 id="Sorcery-SorceryOverview">Sorcery Overview</h1><p>Added in Asterisk 12, Asterisk has a data abstraction and object persistence CRUD API called Sorcery. Sorcery provides Asterisk modules with a useful abstraction on top of the many storage mechanisms in Asterisk. Such as the:</p><ul><li>Asterisk Database</li><li>Static Configuration Files</li><li>Asterisk Realtime Architecture</li><li>In-Memory</li></ul><p>Sorcery also provides a caching service as well as the capability for push configuration through the Asterisk REST Interface. See the section <a href="ARI-Push-Configuration_32375922.html">ARI Push Configuration</a> for more information on that topic.</p></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302900017 {padding: 0px;}
+div.rbtoc1582302900017 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302900017 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302900017'>
+<ul class='toc-indentation'>
+<li><a href='#Sorcery-SorceryOverview'>Sorcery Overview</a></li>
+<li><a href='#Sorcery-ModulesSupportingSorcery'>Modules Supporting Sorcery</a></li>
+<li><a href='#Sorcery-SorceryAPIActions'>Sorcery API Actions</a></li>
+<li><a href='#Sorcery-SorceryFunctions'>Sorcery Functions</a></li>
+<li><a href='#Sorcery-SorceryMappingConfiguration'>Sorcery Mapping Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#Sorcery-ConstructingaMapping'>Constructing a Mapping</a>
+<ul class='toc-indentation'>
+<li><a href='#Sorcery-Format'>Format</a></li>
+<li><a href='#Sorcery-Modulename'>Module name</a></li>
+<li><a href='#Sorcery-Objecttypes'>Object types</a></li>
+<li><a href='#Sorcery-Wizards'>Wizards</a></li>
+</ul>
+</li>
+<li><a href='#Sorcery-ExampleMappingConfigurations'>Example Mapping Configurations</a></li>
+<li><a href='#Sorcery-PJSIPDefaultWizardConfigurations'>PJSIP Default Wizard Configurations</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>In This Section</b></div><div class="panelContent">
+<p> <ul class='childpages-macro'><li><a href="Sorcery-Caching_32375620.html">Sorcery Caching</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="Sorcery-ModulesSupportingSorcery">Modules Supporting Sorcery</h1><p>The PJSIP modules and resources were the first to use the Sorcery DAL. All future modules which utilize Sorcery for object persistence must have a column named id within their schema when using the Sorcery realtime module. This column must be able to contain a string of up to 128 characters in length.</p><h1 id="Sorcery-SorceryAPIActions">Sorcery API Actions</h1><p>AMI actions existing at the time of Asterisk 14.2.1</p><ul><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+ManagerAction_SorceryMemoryCacheExpire">SorceryMemoryCacheExpire</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+ManagerAction_SorceryMemoryCacheExpireObject">SorceryMemoryCacheExpireObject</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+ManagerAction_SorceryMemoryCachePopulate">SorceryMemoryCachePopulate</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+ManagerAction_SorceryMemoryCacheStale">SorceryMemoryCacheStale</a></li><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+ManagerAction_SorceryMemoryCacheStaleObject">SorceryMemoryCacheStaleObject</a></li></ul><h1 id="Sorcery-SorceryFunctions">Sorcery Functions</h1><p>Sorcery functions existing at the time of Asterisk 14.2.1</p><ul><li><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+14+Function_AST_SORCERY">AST_SORCERY()</a></li></ul><h1 id="Sorcery-SorceryMappingConfiguration">Sorcery Mapping Configuration</h1><p>Users can configure a hierarchy of data storage layers for specific modules in sorcery.conf.</p><p>You can view the sorcery.conf sample in your configs/samples/ Asterisk source subdirectory. Or you can check it out on github: <a href="https://github.com/asterisk/asterisk/blob/master/configs/samples/sorcery.conf.sample" class="external-link" rel="nofollow">https://github.com/asterisk/asterisk/blob/master/configs/samples/sorcery.conf.sample</a></p><p>We've included roughly the same instructions below while taking advantage of wiki formatting.</p><h2 id="Sorcery-ConstructingaMapping">Constructing a Mapping</h2><p>To allow configuration of where and how an object is persisted, object mappings can be defined within sorcery.conf on a per-module basis. The mapping consists of the <strong>object type</strong>, <strong>options</strong>, <strong>wizard name</strong>, and <strong>wizard configuration data</strong>.</p><h3 id="Sorcery-Format">Format</h3><p>The basic format follows:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[module_name]    ;The brackets around the module name are literal, just as in most other Asterisk configuration files.
+object_type[/options] = wizard_name[,wizard_configuration_data]   ;Bracketed items here are optional</pre>
+</div></div><h3 id="Sorcery-Modulename"><span style="color: rgb(133,120,102);">Module name</span></h3><p>Object/Wizard mappings are defined within sections denoted by the module name in brackets. The section name must match the module.</p><h3 id="Sorcery-Objecttypes">Object types</h3><p>Note that an object type can have multiple mappings defined. Each mapping will be consulted in the order in which it appears within the configuration file. This means that if you are configuring a wizard as a cache it should appear as the first mapping so the cache is consulted before all other mappings.</p><p>Object types available depend on the modules loaded and what objects they provide. There are PJSIP types for all the configuration objects in PJSIP, such as endpoint, auth,aor, etc. You can find a more exhaustive list of PJSIP objects in the <a href="Sorcery-Caching_32375620.html">Sorcery Caching</a> page.</p><h3 id="Sorcery-Wizards">Wizards</h3><p>Wizards are the persistence mechanism for objects. They are loaded as Asterisk modules and register themselves with the sorcery core. All implementation specific details of how objects are persisted is isolated within wizards.</p><p>A wizard can optionally be marked as an <a href="Sorcery-Caching_32375620.html">object cache</a> by adding &quot;/cache&quot; to the object type within the mapping. If an object is returned from a non-object cache it is immediately given to the cache to be created. Multiple object caches can be configured for a single object type.</p><p>Wizards available at the time of writing:</p><ul><li>astdb</li><li>config</li><li>memory</li><li>realtime</li><li>memory_cache (For further details on this wizard type see the documentation <a href="https://wiki.asterisk.org/wiki/display/AST/Sorcery+Caching" rel="nofollow">here</a>)</li></ul><h2 id="Sorcery-ExampleMappingConfigurations">Example Mapping Configurations</h2><p>The following object mappings are used by the unit test to test certain functionality of sorcery.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[test_sorcery_section]
+test=memory
+[test_sorcery_cache]
+test/cache=test
+test=memory</pre>
+</div></div><p>The following object mapping is the default mapping of external MWI mailbox objects to give persistence to the message counts.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[res_mwi_external]
+mailboxes=astdb,mwi_external</pre>
+</div></div><p>The following object mappings set PJSIP objects to use realtime database mappings from extconfig with the table names used when automatically generating configuration from the alembic script.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[res_pjsip]
+endpoint=realtime,ps_endpoints
+auth=realtime,ps_auths
+aor=realtime,ps_aors
+domain_alias=realtime,ps_domain_aliases
+contact=realtime,ps_contacts
+ 
+[res_pjsip_endpoint_identifier_ip]
+identify=realtime,ps_endpoint_id_ips</pre>
+</div></div><h2 id="Sorcery-PJSIPDefaultWizardConfigurations">PJSIP Default Wizard Configurations</h2><p>When configuring PJSIP sorcery mappings it can be useful to allow both the configuration file and other wizards to be used. The below configuration matches the default configuration for the PJSIP sorcery usage.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[res_pjsip]
+auth=config,pjsip.conf,criteria=type=auth
+domain_alias=config,pjsip.conf,criteria=type=domain_alias
+global=config,pjsip.conf,criteria=type=global
+system=config,pjsip.conf,criteria=type=system
+transport=config,pjsip.conf,criteria=type=transport
+aor=config,pjsip.conf,criteria=type=aor
+endpoint=config,pjsip.conf,criteria=type=endpoint
+contact=astdb,registrator
+ 
+[res_pjsip_endpoint_identifier_ip]
+identify=config,pjsip.conf,criteria=type=identify
+ 
+[res_pjsip_outbound_publish]
+outbound-publish=config,pjsip.conf,criteria=type=outbound-publish
+ 
+[res_pjsip_outbound_registration]
+registration=config,pjsip.conf,criteria=type=registration</pre>
+</div></div><p> </p><p><br /><br /></p></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

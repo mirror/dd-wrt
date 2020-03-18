@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <dirent.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
@@ -54,6 +52,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stasis.h"
 #include "asterisk/json.h"
 #include "asterisk/stasis_system.h"
+#include "asterisk/media_cache.h"
 
 /*! \brief
  * The following variable controls the layout of localized sound files.
@@ -316,6 +315,8 @@ static char *build_filename(const char *filename, const char *ext)
 {
 	char *fn = NULL;
 
+	/* The wav49 -> WAV translation is duplicated in apps/app_mixmonitor.c, so
+	   if you change it here you need to change it there as well */
 	if (!strcmp(ext, "wav49"))
 		ext = "WAV";
 
@@ -334,19 +335,20 @@ static char *build_filename(const char *filename, const char *ext)
 
 /* compare type against the list 'exts' */
 /* XXX need a better algorithm */
-static int exts_compare(const char *exts, const char *type)
+static int type_in_list(const char *list, const char *type, int (*cmp)(const char *s1, const char *s2))
 {
-	char tmp[256];
-	char *stringp = tmp, *ext;
+	char *stringp = ast_strdupa(list), *item;
 
-	ast_copy_string(tmp, exts, sizeof(tmp));
-	while ((ext = strsep(&stringp, "|"))) {
-		if (!strcmp(ext, type))
+	while ((item = strsep(&stringp, "|"))) {
+		if (!cmp(item, type)) {
 			return 1;
+		}
 	}
 
 	return 0;
 }
+
+#define exts_compare(list, type) (type_in_list((list), (type), strcmp))
 
 /*!
  * \internal
@@ -412,17 +414,12 @@ static void filestream_destructor(void *arg)
 		}
 	}
 
-	if (f->filename)
-		free(f->filename);
-	if (f->realfilename)
-		free(f->realfilename);
+	ast_free(f->filename);
+	ast_free(f->realfilename);
 	if (f->vfs)
 		ast_closestream(f->vfs);
-	if (f->write_buffer) {
-		ast_free(f->write_buffer);
-	}
-	if (f->orig_chan_name)
-		free((void *) f->orig_chan_name);
+	ast_free(f->write_buffer);
+	ast_free((void *)f->orig_chan_name);
 	ao2_cleanup(f->lastwriteformat);
 	ao2_cleanup(f->fr.subclass.format);
 	ast_module_unref(f->fmt->module);
@@ -431,11 +428,17 @@ static void filestream_destructor(void *arg)
 static struct ast_filestream *get_filestream(struct ast_format_def *fmt, FILE *bfile)
 {
 	struct ast_filestream *s;
-
 	int l = sizeof(*s) + fmt->buf_size + fmt->desc_size;	/* total allocation size */
-	if ( (s = ao2_alloc(l, filestream_destructor)) == NULL)
+
+	if (!ast_module_running_ref(fmt->module)) {
 		return NULL;
-	ast_module_ref(fmt->module);
+	}
+
+	s = ao2_alloc(l, filestream_destructor);
+	if (!s) {
+		ast_module_unref(fmt->module);
+		return NULL;
+	}
 	s->fmt = fmt;
 	s->f = bfile;
 
@@ -516,7 +519,9 @@ static int filehelper(const char *filename, const void *arg2, const char *fmt, c
 	AST_RWLIST_RDLOCK(&formats);
 	/* Check for a specific format */
 	AST_RWLIST_TRAVERSE(&formats, f, list) {
-		char *stringp, *ext = NULL;
+		char *ext = NULL;
+		char storage[strlen(f->exts) + 1];
+		char *stringp;
 
 		if (fmt && !exts_compare(f->exts, fmt))
 			continue;
@@ -525,7 +530,8 @@ static int filehelper(const char *filename, const void *arg2, const char *fmt, c
 		 * The file must exist, and for OPEN, must match
 		 * one of the formats supported by the channel.
 		 */
-		stringp = ast_strdupa(f->exts);	/* this is in the stack so does not need to be freed */
+		strcpy(storage, f->exts); /* safe - this is in the stack so does not need to be freed */
+		stringp = storage;
 		while ( (ext = strsep(&stringp, "|")) ) {
 			struct stat st;
 			char *fn = build_filename(filename, ext);
@@ -636,6 +642,11 @@ static int is_absolute_path(const char *filename)
 	return filename[0] == '/';
 }
 
+static int is_remote_path(const char *filename)
+{
+	return strstr(filename, "://") ? 1 : 0;
+}
+
 /*!
  * \brief test if a file exists for a given format.
  * \note result_cap is OPTIONAL
@@ -647,6 +658,10 @@ static int fileexists_test(const char *filename, const char *fmt, const char *la
 {
 	if (buf == NULL) {
 		return 0;
+	}
+
+	if (is_remote_path(filename) && !ast_media_cache_retrieve(filename, NULL, buf, buflen)) {
+		return filehelper(buf, result_cap, NULL, ACTION_EXISTS);
 	}
 
 	if (ast_language_is_prefix && !is_absolute_path(filename)) { /* new layout */
@@ -1402,13 +1417,13 @@ struct ast_filestream *ast_writefile(const char *filename, const char *type, con
 			  We touch orig_fn just as a place-holder so other things (like vmail) see the file is there.
 			  What we are really doing is writing to record_cache_dir until we are done then we will mv the file into place.
 			*/
-			orig_fn = ast_strdupa(fn);
+			orig_fn = ast_strdup(fn);
 			for (c = fn; *c; c++)
 				if (*c == '/')
 					*c = '_';
 
 			size = strlen(fn) + strlen(record_cache_dir) + 2;
-			buf = ast_alloca(size);
+			buf = ast_malloc(size);
 			strcpy(buf, record_cache_dir);
 			strcat(buf, "/");
 			strcat(buf, fn);
@@ -1439,14 +1454,18 @@ struct ast_filestream *ast_writefile(const char *filename, const char *type, con
 				if (orig_fn) {
 					unlink(fn);
 					unlink(orig_fn);
+					ast_free(orig_fn);
 				}
 				if (fs) {
 					ast_closestream(fs);
 					fs = NULL;
 				}
-				if (!buf) {
-					ast_free(fn);
-				}
+				/*
+				 * 'fn' was has either been allocated from build_filename, or that was freed
+				 * and now 'fn' points to memory allocated for 'buf'. Either way the memory
+				 * now needs to be released.
+				 */
+				ast_free(fn);
 				continue;
 			}
 			fs->trans = NULL;
@@ -1454,8 +1473,14 @@ struct ast_filestream *ast_writefile(const char *filename, const char *type, con
 			fs->flags = flags;
 			fs->mode = mode;
 			if (orig_fn) {
-				fs->realfilename = ast_strdup(orig_fn);
-				fs->filename = ast_strdup(fn);
+				fs->realfilename = orig_fn;
+				fs->filename = fn;
+				/*
+				 * The above now manages the memory allocated for 'orig_fn' and 'fn', so
+				 * set them to NULL, so they don't get released at the end of the loop.
+				 */
+				orig_fn = NULL;
+				fn = NULL;
 			} else {
 				fs->realfilename = NULL;
 				fs->filename = ast_strdup(filename);
@@ -1468,9 +1493,9 @@ struct ast_filestream *ast_writefile(const char *filename, const char *type, con
 			if (orig_fn)
 				unlink(orig_fn);
 		}
-		/* if buf != NULL then fn is already free and pointing to it */
-		if (!buf)
-			ast_free(fn);
+		/* Free 'fn', or if 'fn' points to 'buf' then free 'buf' */
+		ast_free(fn);
+		ast_free(orig_fn);
 	}
 
 	AST_RWLIST_UNLOCK(&formats);
@@ -1920,6 +1945,27 @@ struct ast_format *ast_get_format_for_file_ext(const char *file_ext)
 	}
 
 	return NULL;
+}
+
+int ast_get_extension_for_mime_type(const char *mime_type, char *buffer, size_t capacity)
+{
+	struct ast_format_def *f;
+	SCOPED_RDLOCK(lock, &formats.lock);
+
+	ast_assert(buffer && capacity);
+
+	AST_RWLIST_TRAVERSE(&formats, f, list) {
+		if (type_in_list(f->mime_types, mime_type, strcasecmp)) {
+			size_t item_len = strcspn(f->exts, "|");
+			size_t bytes_written = snprintf(buffer, capacity, ".%.*s", (int) item_len, f->exts);
+			if (bytes_written < capacity) {
+				/* Only return success if we didn't truncate */
+				return 1;
+			}
+		}
+	}
+
+	return 0;
 }
 
 static struct ast_cli_entry cli_file[] = {

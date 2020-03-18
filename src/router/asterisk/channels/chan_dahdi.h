@@ -39,6 +39,7 @@
 #include "asterisk/channel.h"
 #include "asterisk/dsp.h"
 #include "asterisk/app.h"
+#include "asterisk/mwi.h"
 
 #if defined(__cplusplus) || defined(c_plusplus)
 extern "C" {
@@ -617,6 +618,21 @@ struct dahdi_pvt {
 	 * \note Set from the "faxdetect_timeout" value read in from chan_dahdi.conf
 	 */
 	unsigned int faxdetect_timeout;
+	/*!
+	 * \brief Time (ms) to detect first digit (in an analog phone)
+	 * \note Set from the "firstdigit_timeout" value read in from chan_dahdi.conf
+	 */
+	int firstdigit_timeout;
+	/*!
+	 * \brief Time (ms) to detect following digits (in an analog phone)
+	 * \note Set from the "interdigit_timeout" value read in from chan_dahdi.conf
+	 */
+	int interdigit_timeout;
+	/*!
+	 * \brief Time (ms) to wait, in case of ambiguous match (in an analog phone)
+	 * \note Set from the "matchdigit_timeout" value read in from chan_dahdi.conf
+	 */
+	int matchdigit_timeout;
 	struct timeval waitingfordt;			/*!< Time we started waiting for dialtone */
 	struct timeval flashtime;			/*!< Last flash-hook time */
 	/*! \brief Opaque DSP configuration structure. */
@@ -637,7 +653,7 @@ struct dahdi_pvt {
 	 */
 	char mailbox[AST_MAX_MAILBOX_UNIQUEID];
 	/*! \brief Opaque event subscription parameters for message waiting indication support. */
-	struct stasis_subscription *mwi_event_sub;
+	struct ast_mwi_subscriber *mwi_event_sub;
 	/*! \brief Delayed dialing for E911.  Overlap digits for ISDN. */
 	char dialdest[256];
 #ifdef HAVE_DAHDI_LINEREVERSE_VMWI
@@ -676,15 +692,15 @@ struct dahdi_pvt {
 	openr2_calling_party_category_t mfcr2_category;
 	int mfcr2_dnis_index;
 	int mfcr2_ani_index;
-	int mfcr2call:1;
-	int mfcr2_answer_pending:1;
-	int mfcr2_charge_calls:1;
-	int mfcr2_allow_collect_calls:1;
-	int mfcr2_forced_release:1;
-	int mfcr2_dnis_matched:1;
-	int mfcr2_call_accepted:1;
-	int mfcr2_accept_on_offer:1;
-	int mfcr2_progress_sent:1;
+	unsigned int mfcr2call:1;
+	unsigned int mfcr2_answer_pending:1;
+	unsigned int mfcr2_charge_calls:1;
+	unsigned int mfcr2_allow_collect_calls:1;
+	unsigned int mfcr2_forced_release:1;
+	unsigned int mfcr2_dnis_matched:1;
+	unsigned int mfcr2_call_accepted:1;
+	unsigned int mfcr2_accept_on_offer:1;
+	unsigned int mfcr2_progress_sent:1;
 #endif	/* defined(HAVE_OPENR2) */
 	/*! \brief DTMF digit in progress.  0 when no digit in progress. */
 	char begindigit;

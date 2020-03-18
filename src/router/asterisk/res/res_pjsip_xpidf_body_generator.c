@@ -20,7 +20,6 @@
 	<depend>pjproject</depend>
 	<depend>res_pjsip</depend>
 	<depend>res_pjsip_pubsub</depend>
-	<depend>res_pjsip_exten_state</depend>
 	<support_level>core</support_level>
  ***/
 
@@ -149,8 +148,6 @@ static void unregister_all(void)
 
 static int load_module(void)
 {
-	CHECK_PJSIP_PUBSUB_MODULE_LOADED();
-
 	if (ast_sip_pubsub_register_body_generator(&xpidf_body_generator)) {
 		goto fail;
 	}
@@ -173,8 +170,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Extension State PIDF Provider",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CHANNEL_DEPEND,
+	.requires = "res_pjsip,res_pjsip_pubsub",
 );

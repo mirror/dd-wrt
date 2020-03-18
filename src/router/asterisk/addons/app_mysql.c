@@ -27,7 +27,7 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page app_mysql.conf app_mysql.conf
  * \verbinclude app_mysql.conf.sample
  */
@@ -218,7 +218,7 @@ static int add_identifier(struct ast_channel *chan, int identifier_type, void *d
 		ast_log(LOG_WARNING, "Unable to lock identifiers list\n");
 		return -1;
 	} else {
-		i = malloc(sizeof(*i));
+		i = ast_malloc(sizeof(*i));
 		AST_LIST_TRAVERSE(headp, j, entries) {
 			if (j->identifier > maxidentifier) {
 				maxidentifier = j->identifier;
@@ -247,7 +247,7 @@ static int del_identifier(int identifier, int identifier_type)
 			if ((i->identifier == identifier) &&
 			    (i->identifier_type == identifier_type)) {
 				AST_LIST_REMOVE(headp, i, entries);
-				free(i);
+				ast_free(i);
 				found = 1;
 				break;
 			}
@@ -335,7 +335,7 @@ static int aMYSQL_connect(struct ast_channel *chan, const char *data)
 	unsigned int port = 0;
 	char *port_str;
 	char *parse = ast_strdupa(data);
- 
+
 	AST_NONSTANDARD_APP_ARGS(args, parse, ' ');
 
 	if (args.argc < 6) {
@@ -626,8 +626,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -665,4 +665,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_DEPRECATED(ASTERISK_GPL_KEY, "Simple Mysql Interface");
-

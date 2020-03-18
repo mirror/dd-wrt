@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Manipulating Party ID Information</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Functions_27200281.html">Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Manipulating Party ID Information
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Russell Bryant</span>, last modified by <span class='editor'> Richard Mudgett</span> on May 16, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303038812 {padding: 0px;}
+div.rbtoc1582303038812 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303038812 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303038812'>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>1</span> <a href='#ManipulatingPartyIDInformation-Introduction'>Introduction</a></li>
+<li><span class='TOCOutline'>2</span> <a href='#ManipulatingPartyIDInformation-Toolsavailable'>Tools available</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.1</span> <a href='#ManipulatingPartyIDInformation-CALLERIDdialplanfunction'>CALLERID dialplan function</a></li>
+<li><span class='TOCOutline'>2.2</span> <a href='#ManipulatingPartyIDInformation-CONNECTEDLINEdialplanfunction'>CONNECTEDLINE dialplan function</a></li>
+<li><span class='TOCOutline'>2.3</span> <a href='#ManipulatingPartyIDInformation-REDIRECTINGdialplanfunction'>REDIRECTING dialplan function</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>2.3.1</span> <a href='#ManipulatingPartyIDInformation-SpecialREDIRECTINGconsiderationsforISDN'>Special REDIRECTING considerations for ISDN</a></li>
+</ul>
+</li>
+<li><span class='TOCOutline'>2.4</span> <a href='#ManipulatingPartyIDInformation-Dial()andQueue()dialplanapplication&#39;I&#39;option'>Dial() and Queue() dialplan application &#39;I&#39; option</a></li>
+<li><span class='TOCOutline'>2.5</span> <a href='#ManipulatingPartyIDInformation-PartyIDInterceptionMacrosandRoutines'>Party ID Interception Macros and Routines</a></li>
+</ul>
+</li>
+<li><span class='TOCOutline'>3</span> <a href='#ManipulatingPartyIDInformation-Manipulationexamples'>Manipulation examples</a>
+<ul class='toc-indentation'>
+<li><span class='TOCOutline'>3.1</span> <a href='#ManipulatingPartyIDInformation-Simplerecordingplayback'>Simple recording playback</a></li>
+<li><span class='TOCOutline'>3.2</span> <a href='#ManipulatingPartyIDInformation-Straightforwarddialthrough'>Straightforward dial through</a></li>
+<li><span class='TOCOutline'>3.3</span> <a href='#ManipulatingPartyIDInformation-Useofinterceptionmacro'>Use of interception macro</a></li>
+<li><span class='TOCOutline'>3.4</span> <a href='#ManipulatingPartyIDInformation-Simpleredirection'>Simple redirection</a></li>
+</ul>
+</li>
+<li><span class='TOCOutline'>4</span> <a href='#ManipulatingPartyIDInformation-PartyIDpropagation'>Party ID propagation</a></li>
+<li><span class='TOCOutline'>5</span> <a href='#ManipulatingPartyIDInformation-Ideasforusage'>Ideas for usage</a></li>
+<li><span class='TOCOutline'>6</span> <a href='#ManipulatingPartyIDInformation-Troubleshootingtips'>Troubleshooting tips</a></li>
+<li><span class='TOCOutline'>7</span> <a href='#ManipulatingPartyIDInformation-Forfurtherreading...'>For further reading...</a></li>
+</ul>
+</div></p><h1 id="ManipulatingPartyIDInformation-Introduction">Introduction</h1><p>This chapter aims to explain how to use some of the features available to manipulate party ID information. It will not delve into specific channel configuration options described in the respective sample configuration files. The party ID information can consist of Caller ID, Connected Line ID, redirecting to party ID information, and redirecting from party ID information. Meticulous control is needed particularly when interoperating between different channel technologies.</p><ul><li>Caller ID: The Caller ID information describes who is originating a call.</li><li>Connected Line ID: The Connected Line ID information describes who is connected to the other end of a call while a call is established. Unlike Caller ID, the connected line information can change over the life of a call when call transfers are performed. The connected line information can also change in either direction because either end could transfer the call. For ISDN it is known as Connected Line Identification Presentation (COLP), Connected Line Identification Restriction (COLR), and Explicit Call Transfer (ECT). For SIP it is known either as P-Asserted-Identity or Remote-Party-Id.</li><li>Redirecting information: When a call is forwarded, the call originator is informed that the call is redirecting-to a new destination. The new destination is also informed that the incoming call is redirecting-from the forwarding party. A call can be forwarded repeatedly until a new destination answers it or a forwarding limit is reached.</li></ul><h1 id="ManipulatingPartyIDInformation-Toolsavailable">Tools available</h1><p>Asterisk contains several tools for manipulating the party ID information for a call. Additional information can be found by using the 'core show function' or 'core show application' console commands at the Asterisk CLI. The following list identifies some of the more common tools for manipulating the party ID information:</p><ul><li><code>CALLERID(datatype<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=%2Ccaller-id&amp;linkCreation=true&amp;fromPageId=5243183">,caller-id</a>)</code></li><li><code>CONNECTEDLINE(datatype<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=%2Ci&amp;linkCreation=true&amp;fromPageId=5243183">,i</a>)</code></li><li><code>REDIRECTING(datatype<a class="createlink" href="/wiki/pages/createpage.action?spaceKey=AST&amp;title=%2Ci&amp;linkCreation=true&amp;fromPageId=5243183">,i</a>)</code></li><li><code>Dial()</code> and <code>Queue()</code> dialplan application 'I' option</li><li>Interception macros</li><li>Channel driver specific configuration options.</li></ul><h3 id="ManipulatingPartyIDInformation-CALLERIDdialplanfunction">CALLERID dialplan function</h3><p>The CALLERID function has been around for quite a while and its use is straightforward. It is used to examine and alter the caller information that came into the dialplan with the call. Then the call with it's caller information passes on to the destination using the Dial() or Queue() application.</p><p>The CALLERID information is passed during the initial call setup. However, depending on the channel technology, the caller name may be delayed. Q.SIG is an example where the caller name may be delayed so your dialplan may need to wait for it.</p><h3 id="ManipulatingPartyIDInformation-CONNECTEDLINEdialplanfunction">CONNECTEDLINE dialplan function</h3><p>The CONNECTEDLINE function does the opposite of the CALLERID function. CONNECTEDLINE can be used to setup connected line information to be sent when the call is answered. You can use it to send new connected line information to the remote party on the channel when a call is transferred. The CONNECTEDLINE information is passed when the call is answered and when the call is transferred.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>It is up to the channel technology to determine when to act upon connected line updates before the call is answered. ISDN will just store the updated information until the call is answered. SIP could immediately update the caller with a provisional response or wait for some other event to notify the caller.</p>
+                    </div>
+    </div>
+<p>Since the connected line information can be sent while a call is connected, you may need to prevent the channel driver from acting on a <strong>partial</strong> update. The 'i' option is used to inhibit the channel driver from sending the changed information immediately.</p><h3 id="ManipulatingPartyIDInformation-REDIRECTINGdialplanfunction">REDIRECTING dialplan function</h3><p>The REDIRECTING function allows you to report information about forwarded/deflected calls to the caller and to the new destination. The use of the REDIRECTING function is the most complicated of the party information functions.</p><p>The REDIRECTING information is passed during the initial call setup and while the call is being routed through the network. Since the redirecting information is sent before a call is answered, you need to prevent the channel driver from acting on a partial update. The 'i' option is used to inhibit the channel driver from sending the changed information immediately.</p><p>The incoming call may have already been redirected. An incoming call has already been redirected if the REDIRECTING(count) is not zero. (Alternate indications are if the REDIRECTING(from-num-valid) is non-zero or if the REDIRECTING(from-num) is not empty.)</p><p>There are several things to do when a call is forwarded by the dialplan:</p><ul><li>Setup the REDIRECTING(to-xxx) values to be sent to the caller.</li><li>Setup the REDIRECTING(from-xxx) values to be sent to the new destination.</li><li>Increment the REDIRECTING(count).</li><li>Set the REDIRECTING(reason).</li><li>Dial() the new destination.</li></ul><h5 id="ManipulatingPartyIDInformation-SpecialREDIRECTINGconsiderationsforISDN">Special REDIRECTING considerations for ISDN</h5><p>Special considerations for Q.SIG and ISDN point-to-point links are needed to make the DivertingLegInformation1, DivertingLegInformation2, and DivertingLegInformation3 messages operate properly.</p><p>You should manually send the COLR of the redirected-to party for an incoming redirected call if the incoming call could experience further redirects. For chan_misdn, just set the REDIRECTING(to-num,i) = ${EXTEN} and set the REDIRECTING(to-num-pres) to the COLR. For chan_dahdi, just set the REDIRECTING(to-num,i) = CALLERID(dnid) and set the REDIRECTING(to-num-pres) to the COLR. (Setting the REDIRECTING(to-num,i) value may not be necessary since the channel driver has already attempted to preset that value for automatic generation of the needed DivertingLegInformation3 message.)</p><p>For redirected calls out a trunk line, you need to use the 'i' option on all of the REDIRECTING statements before dialing the redirected-to party. The call will update the redirecting-to presentation (COLR) when it becomes available.</p><h3 id="ManipulatingPartyIDInformation-Dial()andQueue()dialplanapplication&#39;I&#39;option">Dial() and Queue() dialplan application 'I' option</h3><p>In the dialplan applications Dial() and Queue(), the 'I' option is a brute force option to block connected line and redirecting information updates while the application is running. Blocking the updates prevents the update from overwriting any CONNECTEDLINE or REDIRECTING values you may have setup before running the application.</p><p>The option blocks all redirecting updates since they should only happen before a call is answered. The option only blocks the connected line update from the initial answer. Connected line updates resulting from call transfers happen after the application has completed. Better control of connected line and redirecting information is obtained using the interception macros.</p><h3 id="ManipulatingPartyIDInformation-PartyIDInterceptionMacrosandRoutines">Party ID Interception Macros and Routines</h3><p>You can find detailed information in the <a href="Party-ID-Interception-Macros-and-Routines_31097220.html">Party ID Interception Macros and Routines</a> section.</p><h1 id="ManipulatingPartyIDInformation-Manipulationexamples">Manipulation examples</h1><p>The following examples show several common scenarios in which you may need to manipulate party ID information from the dialplan.</p><h3 id="ManipulatingPartyIDInformation-Simplerecordingplayback">Simple recording playback</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,1,NoOp
+; The CONNECTEDLINE information is sent when the call is answered.
+exten =&gt; 1000,n,Set(CONNECTEDLINE(name,i)=Company Name)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(name-pres,i)=allowed)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(num,i)=5551212)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(num-pres)=allowed)
+exten =&gt; 1000,n,Answer
+exten =&gt; 1000,n,Playback(tt-weasels)
+exten =&gt; 1000,n,Hangup
+</pre>
+</div></div><h3 id="ManipulatingPartyIDInformation-Straightforwarddialthrough">Straightforward dial through</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,1,NoOp
+; The CONNECTEDLINE information is sent when the call is answered.
+exten =&gt; 1000,n,Set(CONNECTEDLINE(name,i)=Company Name)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(name-pres,i)=allowed)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(num,i)=5551212)
+exten =&gt; 1000,n,Set(CONNECTEDLINE(num-pres)=allowed)
+; The I option prevents overwriting the CONNECTEDLINE information
+; set above when the call is answered.
+exten =&gt; 1000,n,Dial(SIP/1000,20,I)
+exten =&gt; 1000,n,Hangup
+</pre>
+</div></div><h3 id="ManipulatingPartyIDInformation-Useofinterceptionmacro">Use of interception macro</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[macro-add_pfx]
+; ARG1 is the prefix to add.
+; ARG2 is the number of digits at the end to add the prefix to.
+; When the macro ends the CONNECTEDLINE data is passed to the
+; channel driver.
+exten =&gt; s,1,NoOp(Add prefix to connected line)
+exten =&gt; s,n,Set(NOPREFIX=${CONNECTEDLINE(number):-${ARG2}})
+exten =&gt; s,n,Set(CONNECTEDLINE(num,i)=${ARG1}${NOPREFIX})
+exten =&gt; s,n,MacroExit
+
+exten =&gt; 1000,1,NoOp
+exten =&gt; 1000,n,Set(__CONNECTED_LINE_CALLER_SEND_MACRO=add_pfx)
+exten =&gt; 1000,n,Set(__CONNECTED_LINE_CALLER_SEND_MACRO_ARGS=45,4)
+exten =&gt; 1000,n,Dial(SIP/1000,20)
+exten =&gt; 1000,n,Hangup
+</pre>
+</div></div><h3 id="ManipulatingPartyIDInformation-Simpleredirection">Simple redirection</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 1000,1,NoOp
+; For Q.SIG or ISDN point-to-point we should determine the COLR for this
+; extension and send it if the call was redirected here.
+exten =&gt; 1000,n,GotoIf($[${REDIRECTING(count)}&gt;0]?redirected:notredirected)
+exten =&gt; 1000,n(redirected),Set(REDIRECTING(to-num,i)=${CALLERID(dnid)})
+exten =&gt; 1000,n,Set(REDIRECTING(to-num-pres)=allowed)
+exten =&gt; 1000,n(notredirected),NoOp
+; Determine that the destination has forwarded the call.
+; ...
+exten =&gt; 1000,n,Set(REDIRECTING(from-num,i)=1000)
+exten =&gt; 1000,n,Set(REDIRECTING(from-num-pres,i)=allowed)
+exten =&gt; 1000,n,Set(REDIRECTING(to-num,i)=2000)
+; The DivertingLegInformation3 message is needed because at this point
+; we do not know the presentation (COLR) setting of the redirecting-to
+; party.
+exten =&gt; 1000,n,Set(REDIRECTING(count,i)=$[${REDIRECTING(count)} + 1])
+exten =&gt; 1000,n,Set(REDIRECTING(reason,i)=cfu)
+; The call will update the redirecting-to presentation (COLR) when it
+; becomes available with a redirecting update.
+exten =&gt; 1000,n,Dial(DAHDI/g1/2000,20)
+exten =&gt; 1000,n,Hangup
+</pre>
+</div></div><h1 id="ManipulatingPartyIDInformation-PartyIDpropagation">Party ID propagation</h1><p>For normal operations where Party A calls Party B this is what the relationship between CALLERID/CONNECTEDLINE information looks like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>            Channel A                       Channel B
+            Incoming channel --- bridge --- Outgoing channel
+Party A ___ CALLERID() -------------------&gt; CONNECTEDLINE() ___ Party B
+            CONNECTEDLINE() &lt;-------------- CALLERID()
+</pre>
+</div></div><p>The CALLERID() information is the party identification of the remote party. For Channel A that is Party A. For Channel B that is Party B.</p><p>The CONNECTEDLINE() information is the party identification of the party connected across the bridge. For Channel A that is Party B. For Channel B that is Party A.</p><p>Local channels behave in a similar way because there is an implicit two party bridge between the channels. For normal call setups, Local;1 is an outgoing channel and Local;2 is an incoming channel.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Local;1              Local;2
+Outgoing channel --- Incoming channel
+CONNECTEDLINE() ---&gt; CALLERID()
+CALLERID() &lt;-------- CONNECTEDLINE()
+</pre>
+</div></div><p>A normal call where Party A calls Party B with a local channel in the chain.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>            Channel A                       Local;1              Local;2                         Channel B
+            Incoming channel --- bridge --- Outgoing channel --- Incoming channel --- bridge --- Outgoing channel
+Party A ___ CALLERID() -------------------&gt; CONNECTEDLINE() ---&gt; CALLERID() -------------------&gt; CONNECTEDLINE() ___ Party B
+            CONNECTEDLINE() &lt;-------------- CALLERID() &lt;-------- CONNECTEDLINE() &lt;-------------- CALLERID()
+</pre>
+</div></div><p>Originated calls make the incoming and outgoing labels a bit confusing because both channels start off as outgoing. Once the originated channel answers it becomes an &quot;incoming&quot; channel to run dialplan. A better way is to just distinguish which channel is running dialplan. For consistency, I'll continue using the incoming and outgoing labels.</p><p>An example of originating a normal channel (Channel A) to a dialplan exten.<br /> 1) Channel A dials Party A<br /> 2) Party A answers<br /> 3) The CONNECTEDLINE update from Channel A triggered by the answer is discarded because it has nowhere to go.<br /> 4) Channel A becomes an incoming channel to run dialplan to dial Party B.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>            Channel A                       Channel B
+            Incoming channel --- bridge --- Outgoing channel
+Party A ___ CALLERID() -------------------&gt; CONNECTEDLINE() ___ Party B
+            CONNECTEDLINE() &lt;-------------- CALLERID()
+</pre>
+</div></div><p>An example of originating a local channel (which will always be a Local;1) to a dialplan exten.<br /> 1) Local;1 makes Local;2 run dialplan to call Party A<br /> 2) Party A answers<br /> 3) The CONNECTEDLINE update from Channel A triggered by the answer propagates to Local;1 if not blocked by the Dial 'I' option on Local;2.<br /> 4) Local;1 becomes an incoming channel to run dialplan to dial Party B.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>            Channel A                       Local;2              Local;1                         Channel B
+            Outgoing channel --- bridge --- Incoming channel --- Incoming channel --- bridge --- Outgoing channel
+Party A ___ CALLERID() -------------------&gt; CONNECTEDLINE() ---&gt; CALLERID() -------------------&gt; CONNECTEDLINE() ___ Party B
+            CONNECTEDLINE() &lt;-------------- CALLERID() &lt;-------- CONNECTEDLINE() &lt;-------------- CALLERID()
+</pre>
+</div></div><h1 id="ManipulatingPartyIDInformation-Ideasforusage">Ideas for usage</h1><p>The following is a list of ideas in which the manipulation of party ID information would be beneficial.</p><ul><li>IVR that updates connected name on each selection made.</li><li>Disguise the true number of an individual with a generic company number.</li><li>Use interception macros to make outbound connected number E.164 formatted.</li><li>You can do a lot more in an interception macro than just manipulate party information...</li></ul><h1 id="ManipulatingPartyIDInformation-Troubleshootingtips">Troubleshooting tips</h1><ul><li>For CONNECTEDLINE and REDIRECTING, check the usage of the 'i' option.</li><li>Check channel configuration settings. The default settings may not be what you want or expect.</li><li>Check packet captures. Your equipment may not support what Asterisk sends.</li></ul><h1 id="ManipulatingPartyIDInformation-Forfurtherreading...">For further reading...</h1><ul><li>Relevant ETSI ISDN redirecting specification: EN 300 207-1</li><li>Relevant ETSI ISDN COLP specification: EN 300 097-1</li><li>Relevant ETSI ISDN ECT specification: EN 300 369-1</li><li>Relevant Q.SIG ISDN redirecting specification: ECMA-174</li><li>Relevant Q.SIG ISDN COLP specification: ECMA-148</li><li>Relevant Q.SIG ISDN ECT specification: ECMA-178</li><li>Relevant SIP RFC for P-Asserted-Id: RFC3325</li><li>The expired draft (draft-ietf-sip-privacy-04.txt) defines Remote-Party-Id. Since Remote-Party-Id has not made it into an RFC at this time, its use is non-standard by definition.</li></ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

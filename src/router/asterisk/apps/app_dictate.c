@@ -33,8 +33,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/stat.h>
 
 #include "asterisk/paths.h" /* use ast_config_AST_SPOOL_DIR */
@@ -151,7 +149,8 @@ static int dictate_exec(struct ast_channel *chan, const char *data)
 		ast_mkdir(base, 0755);
 		len = strlen(base) + strlen(filein) + 2;
 		if (!path || len > maxlen) {
-			path = ast_alloca(len);
+			ast_free(path);
+			path = ast_malloc(len);
 			memset(path, 0, len);
 			maxlen = len;
 		} else {
@@ -202,7 +201,7 @@ static int dictate_exec(struct ast_channel *chan, const char *data)
 						samples += ffactor;
 						ast_seekstream(fs, samples, SEEK_SET);
 						break;
-						
+
 					default:
 						got = 0;
 					}
@@ -258,7 +257,7 @@ static int dictate_exec(struct ast_channel *chan, const char *data)
 						break;
 					}
 				}
-				
+
 			} else if (f->frametype == AST_FRAME_VOICE) {
 				switch(mode) {
 					struct ast_frame *fr;
@@ -330,12 +329,13 @@ static int dictate_exec(struct ast_channel *chan, const char *data)
 					}
 					break;
 				}
-				
+
 			}
 
 			ast_frfree(f);
 		}
 	}
+	ast_free(path);
 	if (oldr) {
 		ast_set_read_format(chan, oldr);
 		ao2_ref(oldr, -1);
@@ -356,4 +356,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Virtual Dictation Machine");
-

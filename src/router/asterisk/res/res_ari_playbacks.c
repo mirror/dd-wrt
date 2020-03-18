@@ -35,12 +35,11 @@
 	<depend type="module">res_ari</depend>
 	<depend type="module">res_ari_model</depend>
 	<depend type="module">res_stasis</depend>
+	<depend type="module">res_stasis_playback</depend>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/app.h"
 #include "asterisk/module.h"
@@ -284,7 +283,6 @@ static struct stasis_rest_handlers playbacks = {
 static int unload_module(void)
 {
 	ast_ari_remove_handler(&playbacks);
-	stasis_app_unref();
 	return 0;
 }
 
@@ -292,10 +290,7 @@ static int load_module(void)
 {
 	int res = 0;
 
-	CHECK_ARI_MODULE_LOADED();
 
-
-	stasis_app_ref();
 	res |= ast_ari_add_handler(&playbacks);
 	if (res) {
 		unload_module();
@@ -309,5 +304,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "RESTful API module - Pla
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_ari,res_stasis",
-	);
+	.requires = "res_ari,res_ari_model,res_stasis,res_stasis_playback",
+);

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Application_OSPLookup</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Applications_42010711.html">Asterisk 17 Dialplan Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Application_OSPLookup
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Application_OSPLookup-OSPLookup()">OSPLookup()</h1>
+
+<h3 id="Asterisk17Application_OSPLookup-Synopsis">Synopsis</h3>
+
+<p>Lookup destination by OSP.</p>
+
+<h3 id="Asterisk17Application_OSPLookup-Description">Description</h3>
+
+<p>Looks up destination via OSP.</p>
+
+<p>Input variables:</p>
+
+<ul>
+	<li><code>OSPINACTUALSRC</code> - The actual source device IP address in indirect mode.</li>
+	<li><code>OSPINPEERIP</code> - The last hop IP address.</li>
+	<li><code>OSPINTECH</code> - The inbound channel technology for the call.</li>
+	<li><code>OSPINHANDLE</code> - The inbound call OSP transaction handle.</li>
+	<li><code>OSPINTIMELIMIT</code> - The inbound call duration limit in seconds.</li>
+	<li><code>OSPINNETWORKID</code> - The inbound source network ID.</li>
+	<li><code>OSPINNPRN</code> - The inbound routing number.</li>
+	<li><code>OSPINNPCIC</code> - The inbound carrier identification code.</li>
+	<li><code>OSPINNPDI</code> - The inbound number portability database dip indicator.</li>
+	<li><code>OSPINSPID</code> - The inbound service provider identity.</li>
+	<li><code>OSPINOCN</code> - The inbound operator company number.</li>
+	<li><code>OSPINSPN</code> - The inbound service provider name.</li>
+	<li><code>OSPINALTSPN</code> - The inbound alternate service provider name.</li>
+	<li><code>OSPINMCC</code> - The inbound mobile country code.</li>
+	<li><code>OSPINMNC</code> - The inbound mobile network code.</li>
+	<li><code>OSPINTOHOST</code> - The inbound To header host part.</li>
+	<li><code>OSPINRPIDUSER</code> - The inbound Remote-Party-ID header user part.</li>
+	<li><code>OSPINPAIUSER</code> - The inbound P-Asserted-Identify header user part.</li>
+	<li><code>OSPINDIVUSER</code> - The inbound Diversion header user part.</li>
+	<li><code>OSPINDIVHOST</code> - The inbound Diversion header host part.</li>
+	<li><code>OSPINPCIUSER</code> - The inbound P-Charge-Info header user part.</li>
+	<li><code>OSPINCUSTOMINFON</code> - The inbound custom information, where <code>n</code> is the index beginning with <code>1</code> upto <code>8</code>.<br />
+Output variables:</li>
+</ul>
+
+
+<ul>
+	<li><code>OSPOUTHANDLE</code> - The outbound call OSP transaction handle.</li>
+	<li><code>OSPOUTTECH</code> - The outbound channel technology for the call.</li>
+	<li><code>OSPDESTINATION</code> - The outbound destination IP address.</li>
+	<li><code>OSPOUTCALLING</code> - The outbound calling number.</li>
+	<li><code>OSPOUTCALLED</code> - The outbound called number.</li>
+	<li><code>OSPOUTNETWORKID</code> - The outbound destination network ID.</li>
+	<li><code>OSPOUTNPRN</code> - The outbound routing number.</li>
+	<li><code>OSPOUTNPCIC</code> - The outbound carrier identification code.</li>
+	<li><code>OSPOUTNPDI</code> - The outbound number portability database dip indicator.</li>
+	<li><code>OSPOUTSPID</code> - The outbound service provider identity.</li>
+	<li><code>OSPOUTOCN</code> - The outbound operator company number.</li>
+	<li><code>OSPOUTSPN</code> - The outbound service provider name.</li>
+	<li><code>OSPOUTALTSPN</code> - The outbound alternate service provider name.</li>
+	<li><code>OSPOUTMCC</code> - The outbound mobile country code.</li>
+	<li><code>OSPOUTMNC</code> - The outbound mobile network code.</li>
+	<li><code>OSPOUTTOKEN</code> - The outbound OSP token.</li>
+	<li><code>OSPDESTREMAILS</code> - The number of remained destinations.</li>
+	<li><code>OSPOUTTIMELIMIT</code> - The outbound call duration limit in seconds.</li>
+	<li><code>OSPOUTCALLIDTYPES</code> - The outbound Call-ID types.</li>
+	<li><code>OSPOUTCALLID</code> - The outbound Call-ID. Only for H.323.</li>
+	<li><code>OSPDIALSTR</code> - The outbound Dial command string.<br />
+This application sets the following channel variable upon completion:</li>
+</ul>
+
+
+<ul>
+	<li><code>OSPLOOKUPSTATUS</code> - The status of OSPLookup attempt as a text string, one of
+	<ul>
+		<li>SUCCESS</li>
+		<li>FAILED</li>
+		<li>ERROR</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_OSPLookup-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>OSPLookup(exten,[provider,[options]])</pre>
+</div></div>
+
+<h5 id="Asterisk17Application_OSPLookup-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>exten</code> - The exten of the call.</li>
+	<li><code>provider</code> - The name of the provider that is used to route the call.</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>h</code> - generate H323 call id for the outbound call</li>
+		<li><code>s</code> - generate SIP call id for the outbound call. Have not been implemented</li>
+		<li><code>i</code> - generate IAX call id for the outbound call. Have not been implemented</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Application_OSPLookup-SeeAlso">See Also</h3>
+
+<ul>
+	<li><a href="Asterisk-17-Application_OSPAuth_42010916.html">Asterisk 17 Application_OSPAuth</a></li>
+	<li><a href="Asterisk-17-Application_OSPNext_42010918.html">Asterisk 17 Application_OSPNext</a></li>
+	<li><a href="Asterisk-17-Application_OSPFinish_42010919.html">Asterisk 17 Application_OSPFinish</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Application_OSPLookup-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

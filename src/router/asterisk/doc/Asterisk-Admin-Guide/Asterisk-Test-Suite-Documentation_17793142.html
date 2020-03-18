@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk Test Suite Documentation</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk Test Suite Documentation
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Paul Belanger</span>, last modified by <span class='editor'> Matt Jordan</span> on Jun 21, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="AsteriskTestSuiteDocumentation-AsteriskTesting">Asterisk Testing</h1>
+
+<p>Testing of Asterisk takes primarily three forms:</p>
+<ul>
+	<li>Unit testing through the Asterisk Unit Test Framework</li>
+	<li>Functional testing through the Asterisk Test Suite</li>
+	<li>Formally defined system tests</li>
+</ul>
+
+
+<p>The Asterisk Unit Test framework exercises individual units within Asterisk in a 'white-box', 'bottom-up' approach, verifying that an individual unit maintains its interface contract with the rest of the codebase.  The Asterisk Test Suite operates at the next higher level by exercising the functionality of entire modules within Asterisk and how they interact with the core of Asterisk.  This is typically more of a 'black-box', 'top-down' approach, although since the typical writer of tests within the Asterisk Test Suite are developers, some knowledge of the modules under test typically occurs.  Both of these tests are automated, and are executed on a frequent basis.  Contrasting both of these approaches are System tests, which are typically manual and exercise the interaction of many modules in Asterisk together.  System tests often occur in conjunction with initial releases of major branches and on a less frequent, periodic basis.  The diagram below illustrates where each of these forms of testing fall within the larger context of a testing philosophy.</p>
+
+
+
+<map id="gliffy-map-19398799-406" name="gliffy-map-19398799-406"></map>
+<table width="100%" class="gliffy-macro-table">
+    <tr>
+        <td >
+            <table class="gliffy-macro-inner-table">
+                <caption align="bottom">
+                                    </caption>
+                <tr>
+                    <td>
+                        <img style="border: none; width: 790px;" usemap="#gliffy-map-19398799-406" src="attachments/17793142/19398800.png" alt="" class="gliffy-macro-image"/>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+
+
+
+<p>Combined, the Asterisk Unit Test Framework and the Asterisk Test Suite allow the Asterisk development team to perform continuous integration, wherein changes are continually merged into the various supported branches and verified to not introduce major regressions.  The unit tests and integration tests performed by these two frameworks guarantee that a basic level of functionality is not broken at any time by the introduction of a new feature or the fixing of a bug.  Note that this does not mean that regressions do not occur between Asterisk versions, but that the risk associated with each check-in is reduced, and, as new tests are added, further minimized.</p>
+
+<p>The Asterisk development team uses <a href="http://bamboo.asterisk.org/" class="external-link" rel="nofollow">Atlassian Bamboo</a> to perform the continuous integration tests.</p>
+
+<h1 id="AsteriskTestSuiteDocumentation-TheAsteriskTestSuite">The Asterisk Test Suite</h1>
+
+<p>The Asterisk Test Suite is an open source project that manages functional testing of Asterisk.  It orchestrates instances of Asterisk along with various third party protocol injection applications, allowing a developer to write tests that exercise a wide variety of the functionality within Asterisk.  While the Asterisk Test Suite is language agnostic, a set of libraries have been developed in Python and Lua to aid in test development.  Currently, the Python libraries receive the majority of development attention, and most tests are written in Python.</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/17793142/19398809">Test Philosophy</a> (text/xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/17793142/19398810.png">Test Philosophy.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/17793142/19398799">Test Philosophy</a> (application/gliffy+xml)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/17793142/19398800.png">Test Philosophy.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

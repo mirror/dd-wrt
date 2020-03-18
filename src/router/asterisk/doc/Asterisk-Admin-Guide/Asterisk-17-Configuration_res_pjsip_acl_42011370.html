@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_acl</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_acl
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_acl-SIPACLmodule">SIP ACL module</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_acl</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_acl-Overview">Overview</h2>
+
+<p><strong>ACL</strong></p>
+
+<p>The ACL module used by <code>res_pjsip</code>. This module is independent of <code>endpoints</code> and operates on all inbound SIP communication using res_pjsip.</p>
+
+<p>There are two main ways of defining your ACL with the options provided. You can use the <code>permit</code> and <code>deny</code> options which act on <strong>IP</strong> addresses, or the <code>contactpermit</code> and <code>contactdeny</code> options which act on <strong>Contact header</strong> addresses in incoming REGISTER requests. You can combine the various options to create a mixed ACL.</p>
+
+<p>Additionally, instead of defining an ACL with options, you can reference IP or Contact header ACLs from the file <code>acl.conf</code> by using the <code>acl</code> or <code>contactacl</code> options.</p>
+
+
+<h2 id="Asterisk17Configuration_res_pjsip_acl-pjsip.conf">pjsip.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_acl-acl">acl</h3>
+
+<p>Access Control List</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_acl-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_acl"><code>acl</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of IP ACL section names in acl.conf </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_contact_acl"><code>contact_acl</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of Contact ACL section names in acl.conf </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_contact_deny"><code>contact_deny</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of Contact header addresses to deny </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_contact_permit"><code>contact_permit</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of Contact header addresses to permit </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_deny"><code>deny</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of IP addresses to deny access from </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_acl-acl_permit"><code>permit</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> List of IP addresses to permit access from </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'acl'. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_pjsip_acl-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_acl"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-acl.1">acl</h5>
+
+<p>This matches sections configured in <code>acl.conf</code>. The value is defined as a list of comma-delimited section names.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_contact_acl"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-contact_acl">contact_acl</h5>
+
+<p>This matches sections configured in <code>acl.conf</code>. The value is defined as a list of comma-delimited section names.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_contact_deny"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-contact_deny">contact_deny</h5>
+
+<p>The value is a comma-delimited list of IP addresses. IP addresses may have a subnet mask appended. The subnet mask may be written in either CIDR or dotted-decimal notation. Separate the IP address and subnet mask with a slash ('/')</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_contact_permit"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-contact_permit">contact_permit</h5>
+
+<p>The value is a comma-delimited list of IP addresses. IP addresses may have a subnet mask appended. The subnet mask may be written in either CIDR or dotted-decimal notation. Separate the IP address and subnet mask with a slash ('/')</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_deny"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-deny">deny</h5>
+
+<p>The value is a comma-delimited list of IP addresses. IP addresses may have a subnet mask appended. The subnet mask may be written in either CIDR or dotted-decimal notation. Separate the IP address and subnet mask with a slash ('/')</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_acl-acl_permit"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_acl-permit">permit</h5>
+
+<p>The value is a comma-delimited list of IP addresses. IP addresses may have a subnet mask appended. The subnet mask may be written in either CIDR or dotted-decimal notation. Separate the IP address and subnet mask with a slash ('/')</p>
+
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_acl-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -143,8 +143,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/channel.h"
 #include "asterisk/utils.h"
@@ -237,12 +235,6 @@ static int getproviderstate(const char *provider, const char *address);
 
 /*! \brief Find devicestate as text message for output */
 const char *ast_devstate2str(enum ast_device_state devstate)
-{
-	return devstatestring[devstate][0];
-}
-
-/* Deprecated interface (not prefixed with ast_) */
-const char *devstate2str(enum ast_device_state devstate)
 {
 	return devstatestring[devstate][0];
 }
@@ -515,11 +507,6 @@ int ast_devstate_changed_literal(enum ast_device_state state, enum ast_devstate_
 	return 0;
 }
 
-int ast_device_state_changed_literal(const char *dev)
-{
-	return ast_devstate_changed_literal(AST_DEVICE_UNKNOWN, AST_DEVSTATE_CACHABLE, dev);
-}
-
 int ast_devstate_changed(enum ast_device_state state, enum ast_devstate_cache cachable, const char *fmt, ...)
 {
 	char buf[AST_MAX_EXTENSION];
@@ -530,18 +517,6 @@ int ast_devstate_changed(enum ast_device_state state, enum ast_devstate_cache ca
 	va_end(ap);
 
 	return ast_devstate_changed_literal(state, cachable, buf);
-}
-
-int ast_device_state_changed(const char *fmt, ...)
-{
-	char buf[AST_MAX_EXTENSION];
-	va_list ap;
-
-	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
-
-	return ast_devstate_changed_literal(AST_DEVICE_UNKNOWN, AST_DEVSTATE_CACHABLE, buf);
 }
 
 /*! \brief Go through the dev state change queue and update changes in the dev state thread */
@@ -739,7 +714,7 @@ int ast_publish_device_state_full(
 {
 	RAII_VAR(struct ast_device_state_message *, device_state, NULL, ao2_cleanup);
 	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
-	struct stasis_topic *device_specific_topic;
+	struct stasis_topic *topic;
 
 	ast_assert(!ast_strlen_zero(device));
 
@@ -758,12 +733,28 @@ int ast_publish_device_state_full(
 		return -1;
 	}
 
-	device_specific_topic = ast_device_state_topic(device);
-	if (!device_specific_topic) {
+	/* When a device state is to be cached it is likely that something
+	 * external will either be monitoring it or will want to pull the
+	 * information from the cache, so we always publish to the device
+	 * specific topic. Cachable updates traditionally come from such things
+	 * as a SIP or PJSIP device.
+	 * When a device state is not to be cached we only publish to its
+	 * specific topic if something has already created the topic. Publishing
+	 * to its topic otherwise would create the topic, which may not be
+	 * necessary as it could be an ephemeral device. Uncachable updates
+	 * traditionally come from such things as Local channels.
+	 */
+	if (cachable || stasis_topic_pool_topic_exists(device_state_topic_pool, device)) {
+		topic = ast_device_state_topic(device);
+	} else {
+		topic = ast_device_state_topic_all();
+	}
+
+	if (!topic) {
 		return -1;
 	}
 
-	stasis_publish(device_specific_topic, message);
+	stasis_publish(topic, message);
 	return 0;
 }
 
@@ -911,36 +902,35 @@ int devstate_init(void)
 	if (STASIS_MESSAGE_TYPE_INIT(ast_device_state_message_type) != 0) {
 		return -1;
 	}
-	device_state_topic_all = stasis_topic_create("ast_device_state_topic");
+	device_state_topic_all = stasis_topic_create("devicestate:all");
 	if (!device_state_topic_all) {
-		devstate_cleanup();
 		return -1;
 	}
 	device_state_topic_pool = stasis_topic_pool_create(ast_device_state_topic_all());
 	if (!device_state_topic_pool) {
-		devstate_cleanup();
 		return -1;
 	}
 	device_state_cache = stasis_cache_create_full(device_state_get_id,
 		device_state_aggregate_calc, device_state_aggregate_publish);
 	if (!device_state_cache) {
-		devstate_cleanup();
 		return -1;
 	}
 	device_state_topic_cached = stasis_caching_topic_create(ast_device_state_topic_all(),
 		device_state_cache);
 	if (!device_state_topic_cached) {
-		devstate_cleanup();
 		return -1;
 	}
+	stasis_caching_accept_message_type(device_state_topic_cached, ast_device_state_message_type());
+	stasis_caching_set_filter(device_state_topic_cached, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	devstate_message_sub = stasis_subscribe(ast_device_state_topic_all(),
 		devstate_change_cb, NULL);
 	if (!devstate_message_sub) {
 		ast_log(LOG_ERROR, "Failed to create subscription creating uncached device state aggregate events.\n");
-		devstate_cleanup();
 		return -1;
 	}
+	stasis_subscription_accept_message_type(devstate_message_sub, ast_device_state_message_type());
+	stasis_subscription_set_filter(devstate_message_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	return 0;
 }

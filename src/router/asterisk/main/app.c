@@ -35,8 +35,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #ifdef HAVE_SYS_STAT_H
 #include <sys/stat.h>
 #endif
@@ -72,8 +70,6 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/json.h"
 #include "asterisk/format_cache.h"
 
-#define MWI_TOPIC_BUCKETS 57
-
 AST_THREADSTORAGE_PUBLIC(ast_str_thread_global_buf);
 
 static pthread_t shaun_of_the_dead_thread = AST_PTHREADT_NULL;
@@ -88,56 +84,9 @@ static AST_LIST_HEAD_STATIC(zombies, zombie);
 /*
  * @{ \brief Define \ref stasis topic objects
  */
-static struct stasis_topic *mwi_topic_all;
-static struct stasis_cache *mwi_state_cache;
-static struct stasis_caching_topic *mwi_topic_cached;
-static struct stasis_topic_pool *mwi_topic_pool;
-
 static struct stasis_topic *queue_topic_all;
 static struct stasis_topic_pool *queue_topic_pool;
 /* @} */
-
-/*! \brief Convert a MWI \ref stasis_message to a \ref ast_event */
-static struct ast_event *mwi_to_event(struct stasis_message *message)
-{
-	struct ast_event *event;
-	struct ast_mwi_state *mwi_state;
-	char *mailbox;
-	char *context;
-
-	if (!message) {
-		return NULL;
-	}
-
-	mwi_state = stasis_message_data(message);
-
-	/* Strip off @context */
-	context = mailbox = ast_strdupa(mwi_state->uniqueid);
-	strsep(&context, "@");
-	if (ast_strlen_zero(context)) {
-		context = "default";
-	}
-
-	event = ast_event_new(AST_EVENT_MWI,
-				AST_EVENT_IE_MAILBOX, AST_EVENT_IE_PLTYPE_STR, mailbox,
-				AST_EVENT_IE_CONTEXT, AST_EVENT_IE_PLTYPE_STR, context,
-				AST_EVENT_IE_NEWMSGS, AST_EVENT_IE_PLTYPE_UINT, mwi_state->new_msgs,
-				AST_EVENT_IE_OLDMSGS, AST_EVENT_IE_PLTYPE_UINT, mwi_state->old_msgs,
-				AST_EVENT_IE_EID, AST_EVENT_IE_PLTYPE_RAW, &mwi_state->eid, sizeof(mwi_state->eid),
-				AST_EVENT_IE_END);
-
-	return event;
-}
-
-/*
- * @{ \brief Define \ref stasis message types for MWI
- */
-STASIS_MESSAGE_TYPE_DEFN(ast_mwi_state_type,
-	.to_event = mwi_to_event, );
-STASIS_MESSAGE_TYPE_DEFN(ast_mwi_vm_app_type);
-/* @} */
-
-
 
 static void *shaun_of_the_dead(void *data)
 {
@@ -388,6 +337,7 @@ int ast_app_run_macro(struct ast_channel *autoservice_chan, struct ast_channel *
 	return res;
 }
 
+/* BUGBUG this is not thread safe. */
 static const struct ast_app_stack_funcs *app_stack_callbacks;
 
 void ast_install_stack_functions(const struct ast_app_stack_funcs *funcs)
@@ -401,16 +351,16 @@ const char *ast_app_expand_sub_args(struct ast_channel *chan, const char *args)
 	const char *new_args;
 
 	funcs = app_stack_callbacks;
-	if (!funcs || !funcs->expand_sub_args) {
+	if (!funcs || !funcs->expand_sub_args || !ast_module_running_ref(funcs->module)) {
 		ast_log(LOG_WARNING,
 			"Cannot expand 'Gosub(%s)' arguments.  The app_stack module is not available.\n",
 			args);
 		return NULL;
 	}
-	ast_module_ref(funcs->module);
 
 	new_args = funcs->expand_sub_args(chan, args);
 	ast_module_unref(funcs->module);
+
 	return new_args;
 }
 
@@ -420,13 +370,12 @@ int ast_app_exec_sub(struct ast_channel *autoservice_chan, struct ast_channel *s
 	int res;
 
 	funcs = app_stack_callbacks;
-	if (!funcs || !funcs->run_sub) {
+	if (!funcs || !funcs->run_sub || !ast_module_running_ref(funcs->module)) {
 		ast_log(LOG_WARNING,
 			"Cannot run 'Gosub(%s)'.  The app_stack module is not available.\n",
 			sub_args);
 		return -1;
 	}
-	ast_module_ref(funcs->module);
 
 	if (autoservice_chan) {
 		ast_autoservice_start(autoservice_chan);
@@ -875,25 +824,37 @@ int ast_vm_test_destroy_user(const char *context, const char *mailbox)
 }
 #endif
 
-int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const char *digits, int between, unsigned int duration)
+static int external_sleep(struct ast_channel *chan, int ms)
+{
+	usleep(ms * 1000);
+	return 0;
+}
+
+static int dtmf_stream(struct ast_channel *chan, const char *digits, int between, unsigned int duration, int is_external)
 {
 	const char *ptr;
 	int res;
 	struct ast_silence_generator *silgen = NULL;
+	int (*my_sleep)(struct ast_channel *chan, int ms);
+	int (*my_senddigit)(struct ast_channel *chan, char digit, unsigned int duration);
+
+	if (is_external) {
+		my_sleep = external_sleep;
+		my_senddigit = ast_senddigit_external;
+	} else {
+		my_sleep = ast_safe_sleep;
+		my_senddigit = ast_senddigit;
+	}
 
 	if (!between) {
 		between = 100;
-	}
-
-	if (peer && ast_autoservice_start(peer)) {
-		return -1;
 	}
 
 	/* Need a quiet time before sending digits. */
 	if (ast_opt_transmit_silence) {
 		silgen = ast_channel_start_silence_generator(chan);
 	}
-	res = ast_safe_sleep(chan, 100);
+	res = my_sleep(chan, 100);
 	if (res) {
 		goto dtmf_stream_cleanup;
 	}
@@ -901,12 +862,14 @@ int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const ch
 	for (ptr = digits; *ptr; ptr++) {
 		if (*ptr == 'w') {
 			/* 'w' -- wait half a second */
-			if ((res = ast_safe_sleep(chan, 500))) {
+			res = my_sleep(chan, 500);
+			if (res) {
 				break;
 			}
 		} else if (*ptr == 'W') {
 			/* 'W' -- wait a second */
-			if ((res = ast_safe_sleep(chan, 1000))) {
+			res = my_sleep(chan, 1000);
+			if (res) {
 				break;
 			}
 		} else if (strchr("0123456789*#abcdfABCDF", *ptr)) {
@@ -915,10 +878,11 @@ int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const ch
 				ast_indicate(chan, AST_CONTROL_FLASH);
 			} else {
 				/* Character represents valid DTMF */
-				ast_senddigit(chan, *ptr, duration);
+				my_senddigit(chan, *ptr, duration);
 			}
 			/* pause between digits */
-			if ((res = ast_safe_sleep(chan, between))) {
+			res = my_sleep(chan, between);
+			if (res) {
 				break;
 			}
 		} else {
@@ -930,11 +894,28 @@ dtmf_stream_cleanup:
 	if (silgen) {
 		ast_channel_stop_silence_generator(chan, silgen);
 	}
+
+	return res;
+}
+
+int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const char *digits, int between, unsigned int duration)
+{
+	int res;
+
+	if (peer && ast_autoservice_start(peer)) {
+		return -1;
+	}
+	res = dtmf_stream(chan, digits, between, duration, 0);
 	if (peer && ast_autoservice_stop(peer)) {
 		res = -1;
 	}
 
 	return res;
+}
+
+void ast_dtmf_stream_external(struct ast_channel *chan, const char *digits, int between, unsigned int duration)
+{
+	dtmf_stream(chan, digits, between, duration, 1);
 }
 
 struct linear_state {
@@ -1029,30 +1010,42 @@ int ast_linear_stream(struct ast_channel *chan, const char *filename, int fd, in
 {
 	struct linear_state *lin;
 	char tmpf[256];
-	int res = -1;
 	int autoclose = 0;
+
 	if (fd < 0) {
 		if (ast_strlen_zero(filename)) {
 			return -1;
 		}
+
 		autoclose = 1;
+
 		if (filename[0] == '/') {
 			ast_copy_string(tmpf, filename, sizeof(tmpf));
 		} else {
 			snprintf(tmpf, sizeof(tmpf), "%s/%s/%s", ast_config_AST_DATA_DIR, "sounds", filename);
 		}
-		if ((fd = open(tmpf, O_RDONLY)) < 0) {
+
+		fd = open(tmpf, O_RDONLY);
+		if (fd < 0) {
 			ast_log(LOG_WARNING, "Unable to open file '%s': %s\n", tmpf, strerror(errno));
 			return -1;
 		}
 	}
-	if ((lin = ast_calloc(1, sizeof(*lin)))) {
-		lin->fd = fd;
-		lin->allowoverride = allowoverride;
-		lin->autoclose = autoclose;
-		res = ast_activate_generator(chan, &linearstream, lin);
+
+	lin = ast_calloc(1, sizeof(*lin));
+	if (!lin) {
+		if (autoclose) {
+			close(fd);
+		}
+
+		return -1;
 	}
-	return res;
+
+	lin->fd = fd;
+	lin->allowoverride = allowoverride;
+	lin->autoclose = autoclose;
+
+	return ast_activate_generator(chan, &linearstream, lin);
 }
 
 static int control_streamfile(struct ast_channel *chan,
@@ -1113,6 +1106,8 @@ static int control_streamfile(struct ast_channel *chan,
 		if (!strcasecmp(end, ":end")) {
 			*end = '\0';
 			end++;
+		} else {
+			end = NULL;
 		}
 	}
 
@@ -1349,10 +1344,10 @@ int ast_control_tone(struct ast_channel *chan, const char *tone)
 	ts = ast_get_indication_tone(zone ? zone : ast_channel_zone(chan), tone_indication);
 
 	if (ast_playtones_start(chan, 0, ts ? ts->data : tone_indication, 0)) {
-		return -1;
+		res = -1;
 	}
 
-	for (;;) {
+	while (!res) {
 		struct ast_frame *fr;
 
 		if (ast_waitfor(chan, -1) < 0) {
@@ -1509,7 +1504,7 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 	char comment[256];
 	int x, fmtcnt = 1, res = -1, outmsg = 0;
 	struct ast_filestream *others[AST_MAX_FORMATS];
-	char *sfmt[AST_MAX_FORMATS];
+	const char *sfmt[AST_MAX_FORMATS];
 	char *stringp = NULL;
 	time_t start, end;
 	struct ast_dsp *sildet = NULL;   /* silence detector dsp */
@@ -1584,7 +1579,12 @@ static int __ast_play_and_record(struct ast_channel *chan, const char *playfile,
 			ast_log(LOG_WARNING, "Please increase AST_MAX_FORMATS in file.h\n");
 			break;
 		}
-		sfmt[fmtcnt++] = ast_strdupa(fmt);
+		/*
+		 * Storage for 'fmt' is on the stack and held by 'fmts', which is maintained for
+		 * the rest of this function. So okay to not duplicate 'fmt' here, but only keep
+		 * a pointer to it.
+		 */
+		sfmt[fmtcnt++] = fmt;
 	}
 
 	end = start = time(NULL);  /* pre-initialize end to be same as start in case we never get into loop */
@@ -1974,7 +1974,7 @@ int ast_app_group_set_channel(struct ast_channel *chan, const char *data)
 	AST_RWLIST_TRAVERSE_SAFE_BEGIN(&groups, gi, group_list) {
 		if ((gi->chan == chan) && ((ast_strlen_zero(category) && ast_strlen_zero(gi->category)) || (!ast_strlen_zero(gi->category) && !strcasecmp(gi->category, category)))) {
 			AST_RWLIST_REMOVE_CURRENT(group_list);
-			free(gi);
+			ast_free(gi);
 			break;
 		}
 	}
@@ -1982,7 +1982,7 @@ int ast_app_group_set_channel(struct ast_channel *chan, const char *data)
 
 	if (ast_strlen_zero(group)) {
 		/* Enable unsetting the group */
-	} else if ((gi = calloc(1, len))) {
+	} else if ((gi = ast_calloc(1, len))) {
 		gi->chan = chan;
 		gi->group = (char *) gi + sizeof(*gi);
 		strcpy(gi->group, group);
@@ -2116,9 +2116,6 @@ int ast_app_group_list_unlock(void)
 	return AST_RWLIST_UNLOCK(&groups);
 }
 
-#undef ast_app_separate_args
-unsigned int ast_app_separate_args(char *buf, char delim, char **array, int arraylen);
-
 unsigned int __ast_app_separate_args(char *buf, char delim, int remove_chars, char **array, int arraylen)
 {
 	int argc;
@@ -2181,12 +2178,6 @@ unsigned int __ast_app_separate_args(char *buf, char delim, int remove_chars, ch
 	}
 
 	return argc;
-}
-
-/* ABI compatible function */
-unsigned int ast_app_separate_args(char *buf, char delim, char **array, int arraylen)
-{
-	return __ast_app_separate_args(buf, delim, 1, array, arraylen);
 }
 
 static enum AST_LOCK_RESULT ast_lock_path_lockfile(const char *path)
@@ -2258,9 +2249,9 @@ static void path_lock_destroy(struct path_lock *obj)
 		close(obj->fd);
 	}
 	if (obj->path) {
-		free(obj->path);
+		ast_free(obj->path);
 	}
-	free(obj);
+	ast_free(obj);
 }
 
 static enum AST_LOCK_RESULT ast_lock_path_flock(const char *path)
@@ -2304,7 +2295,7 @@ static enum AST_LOCK_RESULT ast_lock_path_flock(const char *path)
 		return AST_LOCK_FAILURE;
 	}
 	pl->fd = fd;
-	pl->path = strdup(path);
+	pl->path = ast_strdup(path);
 
 	time(&start);
 	while (
@@ -3069,19 +3060,32 @@ int ast_app_parse_timelen(const char *timestr, int *result, enum ast_timelen uni
 		case 'h':
 		case 'H':
 			unit = TIMELEN_HOURS;
+			if (u[1] != '\0') {
+				return -1;
+			}
 			break;
 		case 's':
 		case 'S':
 			unit = TIMELEN_SECONDS;
+			if (u[1] != '\0') {
+				return -1;
+			}
 			break;
 		case 'm':
 		case 'M':
 			if (toupper(u[1]) == 'S') {
 				unit = TIMELEN_MILLISECONDS;
+				if (u[2] != '\0') {
+					return -1;
+				}
 			} else if (u[1] == '\0') {
 				unit = TIMELEN_MINUTES;
+			} else {
+				return -1;
 			}
 			break;
+		default:
+			return -1;
 		}
 	}
 
@@ -3102,257 +3106,6 @@ int ast_app_parse_timelen(const char *timestr, int *result, enum ast_timelen uni
 	return 0;
 }
 
-
-
-static void mwi_state_dtor(void *obj)
-{
-	struct ast_mwi_state *mwi_state = obj;
-	ast_string_field_free_memory(mwi_state);
-	ao2_cleanup(mwi_state->snapshot);
-	mwi_state->snapshot = NULL;
-}
-
-struct stasis_topic *ast_mwi_topic_all(void)
-{
-	return mwi_topic_all;
-}
-
-struct stasis_cache *ast_mwi_state_cache(void)
-{
-	return mwi_state_cache;
-}
-
-struct stasis_topic *ast_mwi_topic_cached(void)
-{
-	return stasis_caching_get_topic(mwi_topic_cached);
-}
-
-struct stasis_topic *ast_mwi_topic(const char *uniqueid)
-{
-	return stasis_topic_pool_get_topic(mwi_topic_pool, uniqueid);
-}
-
-struct ast_mwi_state *ast_mwi_create(const char *mailbox, const char *context)
-{
-	RAII_VAR(struct ast_mwi_state *, mwi_state, NULL, ao2_cleanup);
-
-	ast_assert(!ast_strlen_zero(mailbox));
-
-	mwi_state = ao2_alloc(sizeof(*mwi_state), mwi_state_dtor);
-	if (!mwi_state) {
-		return NULL;
-	}
-
-	if (ast_string_field_init(mwi_state, 256)) {
-		return NULL;
-	}
-	if (!ast_strlen_zero(context)) {
-		ast_string_field_build(mwi_state, uniqueid, "%s@%s", mailbox, context);
-	} else {
-		ast_string_field_set(mwi_state, uniqueid, mailbox);
-	}
-
-	ao2_ref(mwi_state, +1);
-	return mwi_state;
-}
-
-/*!
- * \internal
- * \brief Create a MWI state snapshot message.
- * \since 12.2.0
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- * \param[in] new_msgs The number of new messages in this mailbox
- * \param[in] old_msgs The number of old messages in this mailbox
- * \param[in] channel_id A unique identifier for a channel associated with this
- * change in mailbox state
- * \param[in] eid The EID of the server that originally published the message
- *
- * \retval message on success.  Use ao2_cleanup() when done with it.
- * \retval NULL on error.
- */
-static struct stasis_message *mwi_state_create_message(
-	const char *mailbox,
-	const char *context,
-	int new_msgs,
-	int old_msgs,
-	const char *channel_id,
-	struct ast_eid *eid)
-{
-	struct ast_mwi_state *mwi_state;
-	struct stasis_message *message;
-
-	if (!ast_mwi_state_type()) {
-		return NULL;
-	}
-
-	mwi_state = ast_mwi_create(mailbox, context);
-	if (!mwi_state) {
-		return NULL;
-	}
-
-	mwi_state->new_msgs = new_msgs;
-	mwi_state->old_msgs = old_msgs;
-
-	if (!ast_strlen_zero(channel_id)) {
-		struct stasis_message *chan_message;
-
-		chan_message = stasis_cache_get(ast_channel_cache(), ast_channel_snapshot_type(),
-			channel_id);
-		if (chan_message) {
-			mwi_state->snapshot = stasis_message_data(chan_message);
-			ao2_ref(mwi_state->snapshot, +1);
-		}
-		ao2_cleanup(chan_message);
-	}
-
-	if (eid) {
-		mwi_state->eid = *eid;
-	} else {
-		mwi_state->eid = ast_eid_default;
-	}
-
-	/*
-	 * XXX As far as stasis is concerned, all MWI events are local.
-	 *
-	 * We may in the future want to make MWI aggregate local/remote
-	 * message counts similar to how device state aggregates state.
-	 */
-	message = stasis_message_create_full(ast_mwi_state_type(), mwi_state, &ast_eid_default);
-	ao2_cleanup(mwi_state);
-	return message;
-}
-
-int ast_publish_mwi_state_full(
-	const char *mailbox,
-	const char *context,
-	int new_msgs,
-	int old_msgs,
-	const char *channel_id,
-	struct ast_eid *eid)
-{
-	struct ast_mwi_state *mwi_state;
-	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
-	struct stasis_topic *mailbox_specific_topic;
-
-	message = mwi_state_create_message(mailbox, context, new_msgs, old_msgs, channel_id, eid);
-	if (!message) {
-		return -1;
-	}
-
-	mwi_state = stasis_message_data(message);
-	mailbox_specific_topic = ast_mwi_topic(mwi_state->uniqueid);
-	if (!mailbox_specific_topic) {
-		return -1;
-	}
-
-	stasis_publish(mailbox_specific_topic, message);
-
-	return 0;
-}
-
-int ast_delete_mwi_state_full(const char *mailbox, const char *context, struct ast_eid *eid)
-{
-	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
-	struct stasis_message *cached_msg;
-	struct stasis_message *clear_msg;
-	struct ast_mwi_state *mwi_state;
-	struct stasis_topic *mailbox_specific_topic;
-
-	msg = mwi_state_create_message(mailbox, context, 0, 0, NULL, eid);
-	if (!msg) {
-		return -1;
-	}
-
-	mwi_state = stasis_message_data(msg);
-
-	/*
-	 * XXX As far as stasis is concerned, all MWI events are local.
-	 *
-	 * For now, it is assumed that there is only one entity
-	 * maintaining the state of a particular mailbox.
-	 *
-	 * If we ever have multiple MWI event entities maintaining
-	 * the same mailbox that wish to delete their cached entry
-	 * we will need to do something about the race condition
-	 * potential between checking the cache and removing the
-	 * cache entry.
-	 */
-	cached_msg = stasis_cache_get_by_eid(ast_mwi_state_cache(),
-		ast_mwi_state_type(), mwi_state->uniqueid, &ast_eid_default);
-	if (!cached_msg) {
-		/* Nothing to clear */
-		return -1;
-	}
-	ao2_cleanup(cached_msg);
-
-	mailbox_specific_topic = ast_mwi_topic(mwi_state->uniqueid);
-	if (!mailbox_specific_topic) {
-		return -1;
-	}
-
-	clear_msg = stasis_cache_clear_create(msg);
-	if (clear_msg) {
-		stasis_publish(mailbox_specific_topic, clear_msg);
-	}
-	ao2_cleanup(clear_msg);
-	return 0;
-}
-
-static const char *mwi_state_get_id(struct stasis_message *message)
-{
-	if (ast_mwi_state_type() == stasis_message_type(message)) {
-		struct ast_mwi_state *mwi_state = stasis_message_data(message);
-		return mwi_state->uniqueid;
-	} else if (stasis_subscription_change_type() == stasis_message_type(message)) {
-		struct stasis_subscription_change *change = stasis_message_data(message);
-		return change->uniqueid;
-	}
-
-	return NULL;
-}
-
-static void mwi_blob_dtor(void *obj)
-{
-	struct ast_mwi_blob *mwi_blob = obj;
-
-	ao2_cleanup(mwi_blob->mwi_state);
-	ast_json_unref(mwi_blob->blob);
-}
-
-struct stasis_message *ast_mwi_blob_create(struct ast_mwi_state *mwi_state,
-					       struct stasis_message_type *message_type,
-					       struct ast_json *blob)
-{
-	RAII_VAR(struct ast_mwi_blob *, obj, NULL, ao2_cleanup);
-	RAII_VAR(struct stasis_message *, msg, NULL, ao2_cleanup);
-
-	ast_assert(blob != NULL);
-
-	if (!message_type) {
-		return NULL;
-	}
-
-	obj = ao2_alloc(sizeof(*obj), mwi_blob_dtor);
-	if (!obj) {
-		return NULL;
-	}
-
-	obj->mwi_state = mwi_state;
-	ao2_ref(obj->mwi_state, +1);
-	obj->blob = ast_json_ref(blob);
-
-	/* This is not a normal MWI event.  Only used by the MinivmNotify app. */
-	msg = stasis_message_create(message_type, obj);
-	if (!msg) {
-		return NULL;
-	}
-
-	ao2_ref(msg, +1);
-	return msg;
-}
-
 struct stasis_topic *ast_queue_topic_all(void)
 {
 	return queue_topic_all;
@@ -3369,44 +3122,13 @@ static void app_cleanup(void)
 	queue_topic_pool = NULL;
 	ao2_cleanup(queue_topic_all);
 	queue_topic_all = NULL;
-	ao2_cleanup(mwi_topic_pool);
-	mwi_topic_pool = NULL;
-	ao2_cleanup(mwi_topic_all);
-	mwi_topic_all = NULL;
-	ao2_cleanup(mwi_state_cache);
-	mwi_state_cache = NULL;
-	mwi_topic_cached = stasis_caching_unsubscribe_and_join(mwi_topic_cached);
-	STASIS_MESSAGE_TYPE_CLEANUP(ast_mwi_state_type);
-	STASIS_MESSAGE_TYPE_CLEANUP(ast_mwi_vm_app_type);
 }
 
 int app_init(void)
 {
 	ast_register_cleanup(app_cleanup);
 
-	if (STASIS_MESSAGE_TYPE_INIT(ast_mwi_state_type) != 0) {
-		return -1;
-	}
-	if (STASIS_MESSAGE_TYPE_INIT(ast_mwi_vm_app_type) != 0) {
-		return -1;
-	}
-	mwi_topic_all = stasis_topic_create("stasis_mwi_topic");
-	if (!mwi_topic_all) {
-		return -1;
-	}
-	mwi_state_cache = stasis_cache_create(mwi_state_get_id);
-	if (!mwi_state_cache) {
-		return -1;
-	}
-	mwi_topic_cached = stasis_caching_topic_create(mwi_topic_all, mwi_state_cache);
-	if (!mwi_topic_cached) {
-		return -1;
-	}
-	mwi_topic_pool = stasis_topic_pool_create(mwi_topic_all);
-	if (!mwi_topic_pool) {
-		return -1;
-	}
-	queue_topic_all = stasis_topic_create("stasis_queue_topic");
+	queue_topic_all = stasis_topic_create("queue:all");
 	if (!queue_topic_all) {
 		return -1;
 	}
@@ -3416,4 +3138,3 @@ int app_init(void)
 	}
 	return 0;
 }
-

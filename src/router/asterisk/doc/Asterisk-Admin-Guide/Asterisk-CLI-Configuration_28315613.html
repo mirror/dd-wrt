@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk CLI Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk CLI Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on May 02, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>With the exception of the functionality provided by the res_clialiases.so module, <a href="Asterisk-Command-Line-Interface_4259982.html">Asterisk's Command Line Interface</a> is provided by the core. There are a few configuration files relevant to the CLI that you'll see in a default Asterisk installation. All of these should be found in the typical /etc/asterisk/ directory in a default install. The configuration of these files is trivial and examples exist in the sample files included in the source and tarballs.</p><h1 id="AsteriskCLIConfiguration-cli.conf">cli.conf</h1><p>This file allows a listing of CLI commands to be automatically executed upon startup of Asterisk.</p><h1 id="AsteriskCLIConfiguration-cli_permissions.conf">cli_permissions.conf</h1><p>Allows you to configure specific restrictions or allowances on commands for users connecting to an Asterisk console. Read through the sample file carefully before making use of it, as you could create security issues.</p><h1 id="AsteriskCLIConfiguration-cli_aliases.conf">cli_aliases.conf</h1><p>This file allows configuration of aliases for existing commands. For example, the 'help' command is really an alias to 'core show help'. This functionality is provided by the res_clialiases.so module.</p><h1 id="AsteriskCLIConfiguration-CLIrelatedcommands">CLI related commands</h1><p>There are a few commands relevant to the CLI configuration itself.</p><ul><li><strong>cli check permissions</strong> - allows you to try running a command through the permissions of a specified user</li><li><strong>cli reload permissions</strong> - reloads the cli_permissions.conf file</li><li><strong>cli show permissions</strong> - shows configured CLI permissions</li><li><strong>cli show aliases</strong> - shows configured CLI command aliases</li></ul><p> </p><div class="wiki-content"><h1 id="AsteriskCLIConfiguration-ChangingtheCLIPrompt">Changing the CLI Prompt</h1><p>The CLI prompt is set with the ASTERISK_PROMPT UNIX environment variable that you set from the Unix shell before starting Asterisk</p><p>You may include the following variables, that will be replaced by the current value by Asterisk:</p><ul><li>%d - Date (year-month-date)</li><li>%s - Asterisk system name (from asterisk.conf)</li><li>%h - Full hostname</li><li>%H - Short hostname</li></ul><ul><li>%t - Time</li><li>%u - Username</li><li>%g - Groupname</li><li>%% - Percent sign</li></ul><ul><li>%# - '#' if Asterisk is run in console mode, '' if running as remote console</li><li>%Cn[;n] - Change terminal foreground (and optional background) color to specified A full list of colors may be found in include/asterisk/term.h</li></ul><p>On systems which implement getloadavg(3), you may also use:</p><ul><li>%l1 - Load average over past minute</li><li>%l2 - Load average over past 5 minutes</li><li>%l3 - Load average over past 15 minutes</li></ul></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

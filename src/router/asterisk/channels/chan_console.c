@@ -16,9 +16,9 @@
  * at the top of the source tree.
  */
 
-/*! 
- * \file 
- * \brief Cross-platform console channel driver 
+/*!
+ * \file
+ * \brief Cross-platform console channel driver
  *
  * \author Russell Bryant <russell@digium.com>
  *
@@ -26,7 +26,7 @@
  *       chan_oss,  Mark Spencer <markster@digium.com>
  *       chan_oss,  Luigi Rizzo
  *       chan_alsa, Matthew Fredrickson <creslin@digium.com>
- * 
+ *
  * \ingroup channel_drivers
  *
  * Portaudio http://www.portaudio.com/
@@ -62,9 +62,7 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
-#include <sys/signal.h>  /* SIGURG */
+#include <signal.h>  /* SIGURG */
 
 #include <portaudio.h>
 
@@ -79,15 +77,15 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/stasis_channels.h"
 #include "asterisk/format_cache.h"
 
-/*! 
- * \brief The sample rate to request from PortAudio 
+/*!
+ * \brief The sample rate to request from PortAudio
  *
  * \todo Make this optional.  If this is only going to talk to 8 kHz endpoints,
  *       then it makes sense to use 8 kHz natively.
  */
 #define SAMPLE_RATE      16000
 
-/*! 
+/*!
  * \brief The number of samples to configure the portaudio stream for
  *
  * 320 samples (20 ms) is the most common frame size in Asterisk.  So, the code
@@ -105,7 +103,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 /*! \brief Mono Output */
 #define OUTPUT_CHANNELS  1
 
-/*! 
+/*!
  * \brief Maximum text message length
  * \note This should be changed if there is a common definition somewhere
  *       that defines the maximum length of a text message.
@@ -179,8 +177,8 @@ static struct ao2_container *pvts;
 static struct console_pvt *active_pvt;
 AST_RWLOCK_DEFINE_STATIC(active_lock);
 
-/*! 
- * \brief Global jitterbuffer configuration 
+/*!
+ * \brief Global jitterbuffer configuration
  *
  * \note Disabled by default.
  * \note Values shown here match the defaults shown in console.conf.sample
@@ -205,7 +203,7 @@ static int console_answer(struct ast_channel *c);
 static struct ast_frame *console_read(struct ast_channel *chan);
 static int console_call(struct ast_channel *c, const char *dest, int timeout);
 static int console_write(struct ast_channel *chan, struct ast_frame *f);
-static int console_indicate(struct ast_channel *chan, int cond, 
+static int console_indicate(struct ast_channel *chan, int cond,
 	const void *data, size_t datalen);
 static int console_fixup(struct ast_channel *oldchan, struct ast_channel *newchan);
 /*! @} */
@@ -255,7 +253,7 @@ static struct console_pvt *find_pvt(const char *name)
 }
 
 /*!
- * \brief Stream monitor thread 
+ * \brief Stream monitor thread
  *
  * \arg data A pointer to the console_pvt structure that contains the portaudio
  *      stream that needs to be monitored.
@@ -280,7 +278,9 @@ static void *stream_monitor(void *data)
 
 	for (;;) {
 		pthread_testcancel();
+		console_pvt_lock(pvt);
 		res = Pa_ReadStream(pvt->stream, buf, sizeof(buf) / sizeof(int16_t));
+		console_pvt_unlock(pvt);
 		pthread_testcancel();
 
 		if (!pvt->owner) {
@@ -298,19 +298,19 @@ static int open_stream(struct console_pvt *pvt)
 {
 	int res = paInternalError;
 
-	if (!strcasecmp(pvt->input_device, "default") && 
+	if (!strcasecmp(pvt->input_device, "default") &&
 		!strcasecmp(pvt->output_device, "default")) {
-		res = Pa_OpenDefaultStream(&pvt->stream, INPUT_CHANNELS, OUTPUT_CHANNELS, 
+		res = Pa_OpenDefaultStream(&pvt->stream, INPUT_CHANNELS, OUTPUT_CHANNELS,
 			paInt16, SAMPLE_RATE, NUM_SAMPLES, NULL, NULL);
 	} else {
-		PaStreamParameters input_params = { 
+		PaStreamParameters input_params = {
 			.channelCount = 1,
 			.sampleFormat = paInt16,
 			.suggestedLatency = (1.0 / 50.0), /* 20 ms */
 			.device = paNoDevice,
 		};
-		PaStreamParameters output_params = { 
-			.channelCount = 1, 
+		PaStreamParameters output_params = {
+			.channelCount = 1,
 			.sampleFormat = paInt16,
 			.suggestedLatency = (1.0 / 50.0), /* 20 ms */
 			.device = paNoDevice,
@@ -323,10 +323,10 @@ static int open_stream(struct console_pvt *pvt)
 		def_input = Pa_GetDefaultInputDevice();
 		def_output = Pa_GetDefaultOutputDevice();
 
-		for (idx = 0; 
-			idx < num_devices && (input_params.device == paNoDevice 
-				|| output_params.device == paNoDevice); 
-			idx++) 
+		for (idx = 0;
+			idx < num_devices && (input_params.device == paNoDevice
+				|| output_params.device == paNoDevice);
+			idx++)
 		{
 			const PaDeviceInfo *dev = Pa_GetDeviceInfo(idx);
 
@@ -430,7 +430,7 @@ static struct ast_channel *console_new(struct console_pvt *pvt, const char *ext,
 		return NULL;
 	}
 
-	if (!(chan = ast_channel_alloc(1, state, pvt->cid_num, pvt->cid_name, NULL, 
+	if (!(chan = ast_channel_alloc(1, state, pvt->cid_num, pvt->cid_name, NULL,
 		ext, ctx, assignedids, requestor, 0, "Console/%s", pvt->name))) {
 		ao2_ref(caps, -1);
 		return NULL;
@@ -513,7 +513,7 @@ static int console_digit_begin(struct ast_channel *c, char digit)
 
 static int console_digit_end(struct ast_channel *c, char digit, unsigned int duration)
 {
-	ast_verb(1, V_BEGIN "Console Received End of Digit %c (duration %u)" V_END, 
+	ast_verb(1, V_BEGIN "Console Received End of Digit %c (duration %u)" V_END,
 		digit, duration);
 
 	return -1; /* non-zero to request inband audio */
@@ -558,7 +558,7 @@ static int console_answer(struct ast_channel *c)
  * Calling this function is harmless.  However, if it does get called, it
  * is an indication that something weird happened that really shouldn't
  * have and is worth looking into.
- * 
+ *
  * Why should this function not get called?  Well, let me explain.  There are
  * a couple of ways to pass on audio that has come from this channel.  The way
  * that this channel driver uses is that once the audio is available, it is
@@ -613,7 +613,9 @@ static int console_write(struct ast_channel *chan, struct ast_frame *f)
 {
 	struct console_pvt *pvt = ast_channel_tech_pvt(chan);
 
+	console_pvt_lock(pvt);
 	Pa_WriteStream(pvt->stream, f->data.ptr, f->samples);
+	console_pvt_unlock(pvt);
 
 	return 0;
 }
@@ -646,7 +648,7 @@ static int console_indicate(struct ast_channel *chan, int cond, const void *data
 		ast_moh_stop(chan);
 		break;
 	default:
-		ast_log(LOG_WARNING, "Don't know how to display condition %d on %s\n", 
+		ast_log(LOG_WARNING, "Don't know how to display condition %d on %s\n",
 			cond, ast_channel_name(chan));
 		/* The core will play inband indications for us if appropriate */
 		res = -1;
@@ -703,13 +705,13 @@ static struct console_pvt *get_active_pvt(void)
 	struct console_pvt *pvt;
 
 	ast_rwlock_rdlock(&active_lock);
-	pvt = ref_pvt(active_pvt);	
+	pvt = ref_pvt(active_pvt);
 	ast_rwlock_unlock(&active_lock);
 
 	return pvt;
 }
 
-static char *cli_console_autoanswer(struct ast_cli_entry *e, int cmd, 
+static char *cli_console_autoanswer(struct ast_cli_entry *e, int cmd,
 	struct ast_cli_args *a)
 {
 	struct console_pvt *pvt;
@@ -800,7 +802,7 @@ static char *cli_console_flash(struct ast_cli_entry *e, int cmd, struct ast_cli_
 static char *cli_console_dial(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	char *s = NULL;
-	const char *mye = NULL, *myc = NULL; 
+	const char *mye = NULL, *myc = NULL;
 	struct console_pvt *pvt;
 
 	if (cmd == CLI_INIT) {
@@ -847,10 +849,10 @@ static char *cli_console_dial(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	if (a->argc == e->args + 1) {
 		char *ext = NULL, *con = NULL;
 		s = ast_ext_ctx(pvt, a->argv[e->args], &ext, &con);
-		ast_debug(1, "provided '%s', exten '%s' context '%s'\n", 
-			a->argv[e->args], mye, myc);
 		mye = ext;
 		myc = con;
+		ast_debug(1, "provided '%s', exten '%s' context '%s'\n",
+			a->argv[e->args], mye, myc);
 	}
 
 	/* supply default values if needed */
@@ -867,7 +869,7 @@ static char *cli_console_dial(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	} else
 		ast_cli(a->fd, "No such extension '%s' in context '%s'\n", mye, myc);
 
-	free(s);
+	ast_free(s);
 
 	unref_pvt(pvt);
 
@@ -947,7 +949,7 @@ static char *cli_console_mute(struct ast_cli_entry *e, int cmd, struct ast_cli_a
 	else
 		res = CLI_SHOWUSAGE;
 
-	ast_verb(1, V_BEGIN "The Console is now %s" V_END, 
+	ast_verb(1, V_BEGIN "The Console is now %s" V_END,
 		pvt->muted ? "Muted" : "Unmuted");
 
 	unref_pvt(pvt);
@@ -1235,7 +1237,7 @@ static char *cli_console_active(struct ast_cli_entry *e, int cmd, struct ast_cli
 		return CLI_SUCCESS;
 	}
 
-	if (!(pvt = find_pvt(a->argv[e->args - 1]))) {
+	if (!(pvt = find_pvt(a->argv[e->args]))) {
 		ast_cli(a->fd, "Could not find a device called '%s'.\n", a->argv[e->args]);
 		return CLI_FAILURE;
 	}
@@ -1279,7 +1281,7 @@ static void set_pvt_defaults(struct console_pvt *pvt)
 		ast_string_field_set(pvt, cid_num, "");
 		ast_string_field_set(pvt, cid_name, "");
 		ast_string_field_set(pvt, parkinglot, "");
-	
+
 		pvt->overridecontext = 0;
 		pvt->autoanswer = 0;
 	} else {
@@ -1305,7 +1307,7 @@ static void store_callerid(struct console_pvt *pvt, const char *value)
 	char cid_name[256];
 	char cid_num[256];
 
-	ast_callerid_split(value, cid_name, sizeof(cid_name), 
+	ast_callerid_split(value, cid_name, sizeof(cid_name),
 		cid_num, sizeof(cid_num));
 
 	ast_string_field_set(pvt, cid_name, cid_name);
@@ -1388,7 +1390,7 @@ static void build_device(struct ast_config *cfg, const char *name)
 		ao2_link(pvts, pvt);
 	else
 		console_pvt_unlock(pvt);
-	
+
 	unref_pvt(pvt);
 }
 
@@ -1444,7 +1446,7 @@ static int load_config(int reload)
 		ast_log(LOG_NOTICE, "Config file %s has an invalid format\n", config_file);
 		return -1;
 	}
-	
+
 	ao2_callback(pvts, OBJ_NODATA, pvt_mark_destroy_cb, NULL);
 
 	ast_mutex_lock(&globals_lock);
@@ -1517,8 +1519,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -1532,7 +1534,9 @@ static int load_module(void)
 
 	init_pvt(&globals, NULL);
 
-	if (!(pvts = ao2_container_alloc(NUM_PVT_BUCKETS, pvt_hash_cb, pvt_cmp_cb)))
+	pvts = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NUM_PVT_BUCKETS,
+		pvt_hash_cb, NULL, pvt_cmp_cb);
+	if (!pvts)
 		goto return_error;
 
 	if (load_config(0))
@@ -1578,9 +1582,9 @@ static int reload(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Console Channel Driver",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.reload = reload,
-		.load_pri = AST_MODPRI_CHANNEL_DRIVER,
+	.support_level = AST_MODULE_SUPPORT_EXTENDED,
+	.load = load_module,
+	.unload = unload_module,
+	.reload = reload,
+	.load_pri = AST_MODPRI_CHANNEL_DRIVER,
 );

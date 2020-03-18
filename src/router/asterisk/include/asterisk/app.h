@@ -585,7 +585,7 @@ int ast_vm_is_registered(void);
 int __ast_vm_register(const struct ast_vm_functions *vm_table, struct ast_module *module);
 
 /*! \brief See \ref __ast_vm_register() */
-#define ast_vm_register(vm_table) __ast_vm_register(vm_table, ast_module_info ? ast_module_info->self : NULL)
+#define ast_vm_register(vm_table) __ast_vm_register(vm_table, AST_MODULE_SELF)
 
 /*!
  * \brief Unregister the specified voicemail provider
@@ -654,7 +654,7 @@ int ast_vm_greeter_is_registered(void);
 int __ast_vm_greeter_register(const struct ast_vm_greeter_functions *vm_table, struct ast_module *module);
 
 /*! \brief See \ref __ast_vm_greeter_register() */
-#define ast_vm_greeter_register(vm_table) __ast_vm_greeter_register(vm_table, ast_module_info ? ast_module_info->self : NULL)
+#define ast_vm_greeter_register(vm_table) __ast_vm_greeter_register(vm_table, AST_MODULE_SELF)
 
 /*!
  * \brief Unregister the specified voicemail greeter provider
@@ -871,9 +871,34 @@ int ast_vm_test_destroy_user(const char *context, const char *mailbox);
 int ast_vm_test_create_user(const char *context, const char *mailbox);
 #endif
 
-/*! \brief Safely spawn an external program while closing file descriptors
-	\note This replaces the \b system call in all Asterisk modules
-*/
+/*!
+ * \brief Safely spawn an external program while closing file descriptors
+ *
+ * \note This replaces the \b execvp call in all Asterisk modules
+ *
+ * \param dualfork Non-zero to simulate running the program in the
+ * background by forking twice.  The option provides similar
+ * functionality to the '&' in the OS shell command "cmd &".  The
+ * option allows Asterisk to run a reaper loop to watch the first fork
+ * which immediately exits after spaning the second fork.  The actual
+ * program is run in the second fork.
+ * \param file execvp(file, argv) file parameter
+ * \param argv execvp(file, argv) argv parameter
+ */
+int ast_safe_execvp(int dualfork, const char *file, char *const argv[]);
+
+/*!
+ * \brief Safely spawn an OS shell command while closing file descriptors
+ *
+ * \note This replaces the \b system call in all Asterisk modules
+ *
+ * \param s - OS shell command string to execute.
+ *
+ * \warning Command injection can happen using this call if the passed
+ * in string is created using untrusted data from an external source.
+ * It is best not to use untrusted data.  However, the caller could
+ * filter out dangerous characters to avoid command injection.
+ */
 int ast_safe_system(const char *s);
 
 /*!
@@ -898,23 +923,50 @@ void ast_replace_sigchld(void);
 void ast_unreplace_sigchld(void);
 
 /*!
-  \brief Send DTMF to a channel
-
-  \param chan    The channel that will receive the DTMF frames
-  \param peer    (optional) Peer channel that will be autoserviced while the
-                 primary channel is receiving DTMF
-  \param digits  This is a string of characters representing the DTMF digits
-                 to be sent to the channel.  Valid characters are
-                 "0123456789*#abcdABCD".  Note: You can pass arguments 'f' or
-                 'F', if you want to Flash the channel (if supported by the
-                 channel), or 'w' to add a 500 millisecond pause to the DTMF
-                 sequence.
-  \param between This is the number of milliseconds to wait in between each
-                 DTMF digit.  If zero milliseconds is specified, then the
-                 default value of 100 will be used.
-  \param duration This is the duration that each DTMF digit should have.
-*/
+ * \brief Send a string of DTMF digits to a channel
+ *
+ * \param chan    The channel that will receive the DTMF frames
+ * \param peer    (optional) Peer channel that will be autoserviced while the
+ *                primary channel is receiving DTMF
+ * \param digits  This is a string of characters representing the DTMF digits
+ *                to be sent to the channel.  Valid characters are
+ *                "0123456789*#abcdABCD".  Note: You can pass arguments 'f' or
+ *                'F', if you want to Flash the channel (if supported by the
+ *                channel), or 'w' to add a 500 millisecond pause to the DTMF
+ *                sequence.
+ * \param between This is the number of milliseconds to wait in between each
+ *                DTMF digit.  If zero milliseconds is specified, then the
+ *                default value of 100 will be used.
+ * \param duration This is the duration that each DTMF digit should have.
+ *
+ * \pre This must only be called by the channel's media handler thread.
+ *
+ * \retval 0 on success.
+ * \retval -1 on failure or a channel hung up.
+ */
 int ast_dtmf_stream(struct ast_channel *chan, struct ast_channel *peer, const char *digits, int between, unsigned int duration);
+
+/*!
+ * \brief Send a string of DTMF digits to a channel from an external thread.
+ *
+ * \param chan    The channel that will receive the DTMF frames
+ * \param digits  This is a string of characters representing the DTMF digits
+ *                to be sent to the channel.  Valid characters are
+ *                "0123456789*#abcdABCD".  Note: You can pass arguments 'f' or
+ *                'F', if you want to Flash the channel (if supported by the
+ *                channel), or 'w' to add a 500 millisecond pause to the DTMF
+ *                sequence.
+ * \param between This is the number of milliseconds to wait in between each
+ *                DTMF digit.  If zero milliseconds is specified, then the
+ *                default value of 100 will be used.
+ * \param duration This is the duration that each DTMF digit should have.
+ *
+ * \pre This must only be called by threads that are not the channel's
+ * media handler thread.
+ *
+ * \return Nothing
+ */
+void ast_dtmf_stream_external(struct ast_channel *chan, const char *digits, int between, unsigned int duration);
 
 /*! \brief Stream a filename (or file descriptor) as a generator. */
 int ast_linear_stream(struct ast_channel *chan, const char *filename, int fd, int allowoverride);
@@ -1418,200 +1470,6 @@ void ast_safe_fork_cleanup(void);
 int ast_app_parse_timelen(const char *timestr, int *result, enum ast_timelen defunit);
 
 /*!
- * \since 12
- * \brief Publish a MWI state update via stasis
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- * \param[in] new_msgs The number of new messages in this mailbox
- * \param[in] old_msgs The number of old messages in this mailbox
- *
- * \retval 0 Success
- * \retval -1 Failure
- */
-#define ast_publish_mwi_state(mailbox, context, new_msgs, old_msgs) \
-	ast_publish_mwi_state_full(mailbox, context, new_msgs, old_msgs, NULL, NULL)
-
-/*!
- * \since 12
- * \brief Publish a MWI state update associated with some channel
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- * \param[in] new_msgs The number of new messages in this mailbox
- * \param[in] old_msgs The number of old messages in this mailbox
- * \param[in] channel_id A unique identifier for a channel associated with this
- * change in mailbox state
- *
- * \retval 0 Success
- * \retval -1 Failure
- */
-#define ast_publish_mwi_state_channel(mailbox, context, new_msgs, old_msgs, channel_id) \
-	ast_publish_mwi_state_full(mailbox, context, new_msgs, old_msgs, channel_id, NULL)
-
-/*!
- * \since 12
- * \brief Publish a MWI state update via stasis with all parameters
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- * \param[in] new_msgs The number of new messages in this mailbox
- * \param[in] old_msgs The number of old messages in this mailbox
- * \param[in] channel_id A unique identifier for a channel associated with this
- * change in mailbox state
- * \param[in] eid The EID of the server that originally published the message
- *
- * \retval 0 Success
- * \retval -1 Failure
- */
-int ast_publish_mwi_state_full(
-	const char *mailbox,
-	const char *context,
-	int new_msgs,
-	int old_msgs,
-	const char *channel_id,
-	struct ast_eid *eid);
-
-/*!
- * \since 12.2.0
- * \brief Delete MWI state cached by stasis
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- *
- * \retval 0 Success
- * \retval -1 Failure
- */
-#define ast_delete_mwi_state(mailbox, context) \
-	ast_delete_mwi_state_full(mailbox, context, NULL)
-
-/*!
- * \since 12.2.0
- * \brief Delete MWI state cached by stasis with all parameters
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- * \param[in] eid The EID of the server that originally published the message
- *
- * \retval 0 Success
- * \retval -1 Failure
- */
-int ast_delete_mwi_state_full(const char *mailbox, const char *context, struct ast_eid *eid);
-
-/*! \addtogroup StasisTopicsAndMessages
- * @{
- */
-
-/*!
- * \brief The structure that contains MWI state
- * \since 12
- */
-struct ast_mwi_state {
-	AST_DECLARE_STRING_FIELDS(
-		AST_STRING_FIELD(uniqueid);  /*!< Unique identifier for this mailbox */
-	);
-	int new_msgs;                    /*!< The current number of new messages for this mailbox */
-	int old_msgs;                    /*!< The current number of old messages for this mailbox */
-	/*! If applicable, a snapshot of the channel that caused this MWI change */
-	struct ast_channel_snapshot *snapshot;
-	struct ast_eid eid;              /*!< The EID of the server where this message originated */
-};
-
-/*!
- * \brief Object that represents an MWI update with some additional application
- * defined data
- */
-struct ast_mwi_blob {
-	struct ast_mwi_state *mwi_state;    /*!< MWI state */
-	struct ast_json *blob;              /*!< JSON blob of data */
-};
-
-/*!
- * \since 12
- * \brief Create a \ref ast_mwi_state object
- *
- * \param[in] mailbox The mailbox identifier string.
- * \param[in] context The context this mailbox resides in (NULL or "" if only using mailbox)
- *
- * \retval \ref ast_mwi_state object on success
- * \retval NULL on error
- */
-struct ast_mwi_state *ast_mwi_create(const char *mailbox, const char *context);
-
-/*!
- * \since 12
- * \brief Creates a \ref ast_mwi_blob message.
- *
- * The \a blob JSON object requires a \c "type" field describing the blob. It
- * should also be treated as immutable and not modified after it is put into the
- * message.
- *
- * \param mwi_state MWI state associated with the update
- * \param message_type The type of message to create
- * \param blob JSON object representing the data.
- * \return \ref ast_mwi_blob message.
- * \return \c NULL on error
- */
-struct stasis_message *ast_mwi_blob_create(struct ast_mwi_state *mwi_state,
-					   struct stasis_message_type *message_type,
-					   struct ast_json *blob);
-
-/*!
- * \brief Get the \ref stasis topic for MWI messages
- * \retval The topic structure for MWI messages
- * \retval NULL if it has not been allocated
- * \since 12
- */
-struct stasis_topic *ast_mwi_topic_all(void);
-
-/*!
- * \brief Get the \ref stasis topic for MWI messages on a unique ID
- * \param uniqueid The unique id for which to get the topic
- * \retval The topic structure for MWI messages for a given uniqueid
- * \retval NULL if it failed to be found or allocated
- * \since 12
- */
-struct stasis_topic *ast_mwi_topic(const char *uniqueid);
-
-/*!
- * \brief Get the \ref stasis caching topic for MWI messages
- * \retval The caching topic structure for MWI messages
- * \retval NULL if it has not been allocated
- * \since 12
- */
-struct stasis_topic *ast_mwi_topic_cached(void);
-
-/*!
- * \brief Backend cache for ast_mwi_topic_cached().
- * \retval Cache of \ref ast_mwi_state.
- */
-struct stasis_cache *ast_mwi_state_cache(void);
-
-/*!
- * \brief Get the \ref stasis message type for MWI messages
- * \retval The message type structure for MWI messages
- * \retval NULL on error
- * \since 12
- */
-struct stasis_message_type *ast_mwi_state_type(void);
-
-/*!
- * \brief Get the \ref stasis message type for voicemail application specific messages
- *
- * This message type exists for those messages a voicemail application may wish to send
- * that have no logical relationship with other voicemail applications. Voicemail apps
- * that use this message type must pass a \ref ast_mwi_blob. Any extraneous information
- * in the JSON blob must be packed as key/value pair tuples of strings.
- *
- * At least one key/value tuple must have a key value of "Event".
- *
- * \retval The \ref stasis_message_type for voicemail application specific messages
- * \retval NULL on error
- * \since 12
- */
-struct stasis_message_type *ast_mwi_vm_app_type(void);
-
-/*!
  * \brief Get the \ref stasis topic for queue messages
  * \retval The topic structure for queue messages
  * \retval NULL if it has not been allocated
@@ -1637,7 +1495,6 @@ struct stasis_topic *ast_queue_topic(const char *queuename);
  */
 int app_init(void);
 
-#define AST_MAX_MAILBOX_UNIQUEID (AST_MAX_EXTENSION + AST_MAX_CONTEXT + 2)
 #if defined(__cplusplus) || defined(c_plusplus)
 }
 #endif

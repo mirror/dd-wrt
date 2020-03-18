@@ -36,8 +36,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/astobj2.h"
 #include "asterisk/strings.h"
 #include "asterisk/ccss.h"
@@ -682,11 +680,7 @@ void ast_cc_default_config_params(struct ast_cc_config_params *params)
 
 struct ast_cc_config_params *__ast_cc_config_params_init(const char *file, int line, const char *function)
 {
-#if defined(__AST_DEBUG_MALLOC)
 	struct ast_cc_config_params *params = __ast_malloc(sizeof(*params), file, line, function);
-#else
-	struct ast_cc_config_params *params = ast_malloc(sizeof(*params));
-#endif
 
 	if (!params) {
 		return NULL;
@@ -1028,9 +1022,9 @@ void ast_set_cc_callback_sub(struct ast_cc_config_params *config, const char * c
 
 static int cc_publish(struct stasis_message_type *message_type, int core_id, struct ast_json *extras)
 {
-	RAII_VAR(struct ast_json *, blob, NULL, ast_json_unref);
-	RAII_VAR(struct ast_json_payload *, payload, NULL, ao2_cleanup);
-	RAII_VAR(struct stasis_message *, message, NULL, ao2_cleanup);
+	struct ast_json *blob;
+	struct ast_json_payload *payload;
+	struct stasis_message *message;
 
 	if (!message_type) {
 		return -1;
@@ -1046,121 +1040,138 @@ static int cc_publish(struct stasis_message_type *message_type, int core_id, str
 		ast_json_object_update(blob, extras);
 	}
 
-	if (!(payload = ast_json_payload_create(blob))) {
+	payload = ast_json_payload_create(blob);
+	ast_json_unref(blob);
+
+	if (!payload) {
 		return -1;
 	}
 
-	if (!(message = stasis_message_create(message_type, payload))) {
+	message = stasis_message_create(message_type, payload);
+	ao2_ref(payload, -1);
+
+	if (!message) {
 		return -1;
 	}
 
 	stasis_publish(ast_system_topic(), message);
+	ao2_ref(message, -1);
 
 	return 0;
 }
 
 static void cc_publish_available(int core_id, const char *callee, const char *service)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s, s: s}",
 		"callee", callee,
 		"service", service);
 
 	cc_publish(ast_cc_available_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_offertimerstart(int core_id, const char *caller, unsigned int expires)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
-	extras = ast_json_pack("{s: s, s: i}",
+	extras = ast_json_pack("{s: s, s: I}",
 		"caller", caller,
-		"expires", expires);
+		"expires", (ast_json_int_t)expires);
 
 	cc_publish(ast_cc_offertimerstart_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_requested(int core_id, const char *caller, const char *callee)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s, s: s}",
 		"caller", caller,
 		"callee", callee);
 
 	cc_publish(ast_cc_requested_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_requestacknowledged(int core_id, const char *caller)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"caller", caller);
 
 	cc_publish(ast_cc_requestacknowledged_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_callerstopmonitoring(int core_id, const char *caller)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"caller", caller);
 
 	cc_publish(ast_cc_callerstopmonitoring_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_callerstartmonitoring(int core_id, const char *caller)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"caller", caller);
 
 	cc_publish(ast_cc_callerstartmonitoring_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_callerrecalling(int core_id, const char *caller)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"caller", caller);
 
 	cc_publish(ast_cc_callerrecalling_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_recallcomplete(int core_id, const char *caller)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"caller", caller);
 
 	cc_publish(ast_cc_recallcomplete_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_failure(int core_id, const char *caller, const char *reason)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s, s: s}",
 		"caller", caller,
 		"reason", reason);
 
 	cc_publish(ast_cc_failure_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 static void cc_publish_monitorfailed(int core_id, const char *callee)
 {
-	RAII_VAR(struct ast_json *, extras, NULL, ast_json_unref);
+	struct ast_json *extras;
 
 	extras = ast_json_pack("{s: s}",
 		"callee", callee);
 
 	cc_publish(ast_cc_monitorfailed_type(), core_id, extras);
+	ast_json_unref(extras);
 }
 
 struct cc_monitor_backend {
@@ -1369,19 +1380,8 @@ struct generic_monitor_pvt {
 	int core_id;
 };
 
-static int generic_monitor_hash_fn(const void *obj, const int flags)
-{
-	const struct generic_monitor_instance_list *generic_list = obj;
-	return ast_str_hash(generic_list->device_name);
-}
-
-static int generic_monitor_cmp_fn(void *obj, void *arg, int flags)
-{
-	const struct generic_monitor_instance_list *generic_list1 = obj;
-	const struct generic_monitor_instance_list *generic_list2 = arg;
-
-	return !strcmp(generic_list1->device_name, generic_list2->device_name) ? CMP_MATCH | CMP_STOP : 0;
-}
+AO2_STRING_FIELD_HASH_FN(generic_monitor_instance_list, device_name)
+AO2_STRING_FIELD_CMP_FN(generic_monitor_instance_list, device_name)
 
 static struct generic_monitor_instance_list *find_generic_monitor_instance_list(const char * const device_name)
 {
@@ -1433,6 +1433,8 @@ static struct generic_monitor_instance_list *create_new_generic_list(struct ast_
 		cc_unref(generic_list, "Failed to subscribe to device state");
 		return NULL;
 	}
+	stasis_subscription_accept_message_type(generic_list->sub, ast_device_state_message_type());
+	stasis_subscription_set_filter(generic_list->sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 	generic_list->current_state = ast_device_state(monitor->interface->device_name);
 	ao2_t_link(generic_monitors, generic_list, "linking new generic monitor instance list");
 	return generic_list;
@@ -2804,6 +2806,9 @@ static int cc_generic_agent_start_monitoring(struct ast_cc_agent *agent)
 	if (!(generic_pvt->sub = stasis_subscribe(device_specific_topic, generic_agent_devstate_cb, agent))) {
 		return -1;
 	}
+	stasis_subscription_accept_message_type(generic_pvt->sub, ast_device_state_message_type());
+	stasis_subscription_accept_message_type(generic_pvt->sub, stasis_subscription_change_type());
+	stasis_subscription_set_filter(generic_pvt->sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 	cc_ref(agent, "Ref agent for subscription");
 	return 0;
 }
@@ -2842,7 +2847,7 @@ static void *generic_recall(void *data)
 		return NULL;
 	}
 	ao2_ref(tmp_cap, -1);
-	
+
 	/* We have a channel. It's time now to set up the datastore of recalled CC interfaces.
 	 * This will be a common task for all recall functions. If it were possible, I'd have
 	 * the core do it automatically, but alas I cannot. Instead, I will provide a public
@@ -3552,7 +3557,7 @@ struct ast_cc_monitor *ast_cc_get_monitor_by_recall_core_id(const int core_id, c
  */
 static void cc_unique_append(struct ast_str **str, const char *dialstring)
 {
-	char dialstring_search[AST_CHANNEL_NAME];
+	char dialstring_search[AST_CHANNEL_NAME + 1];
 
 	if (ast_strlen_zero(dialstring)) {
 		/* No dialstring to append. */
@@ -4547,11 +4552,9 @@ static int kill_cores(void *obj, void *arg, int flags)
 	return 0;
 }
 
-static char *complete_core_id(const char *line, const char *word, int pos, int state)
+static char *complete_core_id(const char *word)
 {
-	int which = 0;
 	int wordlen = strlen(word);
-	char *ret = NULL;
 	struct ao2_iterator core_iter = ao2_iterator_init(cc_core_instances, 0);
 	struct cc_core_instance *core_instance;
 
@@ -4559,15 +4562,16 @@ static char *complete_core_id(const char *line, const char *word, int pos, int s
 			cc_unref(core_instance, "CLI tab completion iteration")) {
 		char core_id_str[20];
 		snprintf(core_id_str, sizeof(core_id_str), "%d", core_instance->core_id);
-		if (!strncmp(word, core_id_str, wordlen) && ++which > state) {
-			ret = ast_strdup(core_id_str);
-			cc_unref(core_instance, "Found a matching core ID for CLI tab-completion");
-			break;
+		if (!strncmp(word, core_id_str, wordlen)) {
+			if (ast_cli_completion_add(ast_strdup(core_id_str))) {
+				cc_unref(core_instance, "Found a matching core ID for CLI tab-completion");
+				break;
+			}
 		}
 	}
 	ao2_iterator_destroy(&core_iter);
 
-	return ret;
+	return NULL;
 }
 
 static char *handle_cc_kill(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
@@ -4583,7 +4587,7 @@ static char *handle_cc_kill(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 		return NULL;
 	case CLI_GENERATE:
 		if (a->pos == 3 && !strcasecmp(a->argv[2], "core")) {
-			return complete_core_id(a->line, a->word, a->pos, a->n);
+			return complete_core_id(a->word);
 		}
 		return NULL;
 	}
@@ -4616,7 +4620,7 @@ static struct ast_cli_entry cc_cli[] = {
 	AST_CLI_DEFINE(handle_cc_kill, "Kill a CC transaction"),
 };
 
-static void cc_shutdown(void)
+static int unload_module(void)
 {
 	ast_devstate_prov_del("ccss");
 	ast_cc_agent_unregister(&generic_agent_callbacks);
@@ -4642,30 +4646,37 @@ static void cc_shutdown(void)
 		ao2_t_ref(generic_monitors, -1, "Unref generic_monitor container in cc_shutdown");
 		generic_monitors = NULL;
 	}
+
+	return 0;
 }
 
-int ast_cc_init(void)
+static int load_module(void)
 {
 	int res;
 
-	if (!(cc_core_instances = ao2_t_container_alloc(CC_CORE_INSTANCES_BUCKETS,
-					cc_core_instance_hash_fn, cc_core_instance_cmp_fn,
-					"Create core instance container"))) {
-		return -1;
+	cc_core_instances = ao2_t_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		CC_CORE_INSTANCES_BUCKETS,
+		cc_core_instance_hash_fn, NULL, cc_core_instance_cmp_fn,
+		"Create core instance container");
+	if (!cc_core_instances) {
+		return AST_MODULE_LOAD_FAILURE;
 	}
-	if (!(generic_monitors = ao2_t_container_alloc(CC_CORE_INSTANCES_BUCKETS,
-					generic_monitor_hash_fn, generic_monitor_cmp_fn,
-					"Create generic monitor container"))) {
-		return -1;
+
+	generic_monitors = ao2_t_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		CC_CORE_INSTANCES_BUCKETS,
+		generic_monitor_instance_list_hash_fn, NULL, generic_monitor_instance_list_cmp_fn,
+		"Create generic monitor container");
+	if (!generic_monitors) {
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	if (!(cc_core_taskprocessor = ast_taskprocessor_get("CCSS_core", TPS_REF_DEFAULT))) {
-		return -1;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	if (!(cc_sched_context = ast_sched_context_create())) {
-		return -1;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	if (ast_sched_start_thread(cc_sched_context)) {
-		return -1;
+		return AST_MODULE_LOAD_FAILURE;
 	}
 	res = ast_register_application2(ccreq_app, ccreq_exec, NULL, NULL, NULL);
 	res |= ast_register_application2(cccancel_app, cccancel_exec, NULL, NULL, NULL);
@@ -4681,7 +4692,12 @@ int ast_cc_init(void)
 	initialize_cc_devstate_map();
 	res |= ast_devstate_prov_add("ccss", ccss_device_state);
 
-	ast_register_cleanup(cc_shutdown);
-
-	return res;
+	return res ? AST_MODULE_LOAD_FAILURE : AST_MODULE_LOAD_SUCCESS;
 }
+
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "Call Completion Supplementary Services",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_CORE,
+);

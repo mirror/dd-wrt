@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 """Process a ref debug log
 
- This file will process a log file created by the REF_DEBUG
- build option in Asterisk.
+ This file will process a log file created by enabling
+ the refdebug config option in asterisk.conf.
 
  See http://www.asterisk.org for more information about
  the Asterisk project. Please do not directly contact
@@ -18,6 +18,7 @@
  Matt Jordan <mjordan@digium.com>
 """
 
+from __future__ import print_function
 import sys
 import os
 
@@ -35,8 +36,8 @@ def parse_line(line):
     """
     tokens = line.strip().split(',', 7)
     if len(tokens) < 8:
-        print "ERROR: ref debug line '%s' contains fewer tokens than " \
-              "expected: %d" % (line.strip(), len(tokens))
+        print("ERROR: ref debug line '%s' contains fewer tokens than "
+              "expected: %d" % (line.strip(), len(tokens)))
         return None
 
     processed_line = {'addr': tokens[0],
@@ -107,6 +108,12 @@ def process_file(options):
             else:
                 current_objects[obj]['curcount'] += int(parsed_line['delta'])
 
+            # Suppress object sizes and lock-state from output logs.
+            if 'constructor' in parsed_line['state']:
+                parsed_line['state'] = '**constructor**'
+            elif 'destructor' in parsed_line['state']:
+                parsed_line['state'] = '**destructor**'
+
             current_objects[obj]['log'].append(
                 "[%s] %s:%s %s: %s %s - [%s]" % (
                     parsed_line['thread_id'],
@@ -142,7 +149,7 @@ def process_file(options):
                 del current_objects[obj]
 
     if options.leaks:
-        for key, lines in current_objects.iteritems():
+        for (key, lines) in current_objects.items():
             leaked_objects.append((key, lines))
     return (finished_objects, invalid_objects, leaked_objects, skewed_objects)
 
@@ -156,13 +163,13 @@ def print_objects(objects, prefix=""):
             this object
     """
 
-    print "======== %s Objects ========" % prefix
-    print "\n"
+    print("======== %s Objects ========" % prefix)
+    print("\n")
     for obj in objects:
-        print "==== %s Object %s history ====" % (prefix, obj[0])
+        print("==== %s Object %s history ====" % (prefix, obj[0]))
         for line in obj[1]['log']:
-            print line
-        print "\n"
+            print(line)
+        print("\n")
 
 
 def main(argv=None):
@@ -198,11 +205,11 @@ def main(argv=None):
 
     if not options.invalid and not options.leaks and not options.normal \
             and not options.skewed:
-        print >>sys.stderr, "All options disabled"
+        print("All options disabled", file=sys.stderr)
         return -1
 
     if not os.path.isfile(options.filepath):
-        print >>sys.stderr, "File not found: %s" % options.filepath
+        print("File not found: %s" % options.filepath, file=sys.stderr)
         return -1
 
     try:
@@ -227,7 +234,7 @@ def main(argv=None):
             print_objects(finished_objects, "Finalized")
 
     except (KeyboardInterrupt, SystemExit, IOError):
-        print >>sys.stderr, "File processing cancelled"
+        print("File processing cancelled", file=sys.stderr)
         return -1
 
     return ret_code

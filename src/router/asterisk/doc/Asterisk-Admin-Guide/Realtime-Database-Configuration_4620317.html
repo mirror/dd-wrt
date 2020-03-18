@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Realtime Database Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Database-Support-Configuration_4620315.html">Database Support Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Realtime Database Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on May 23, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h3 id="RealtimeDatabaseConfiguration-/*&lt;![CDATA[*/div.rbtoc1582302899913{padding:0px;}div.rbtoc1582302899913ul{list-style:disc;margin-left:0px;}div.rbtoc1582302899913li{margin-left:0px;padding-left:0px;}/*]]&gt;*/Introduction#RealtimeDatabaseConfiguration-Introduct"><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302899913 {padding: 0px;}
+div.rbtoc1582302899913 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302899913 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302899913'>
+<ul class='toc-indentation'>
+<li><a href='#RealtimeDatabaseConfiguration-Introduction'>Introduction</a>
+<ul class='toc-indentation'>
+<li><a href='#RealtimeDatabaseConfiguration-Twomodes:StaticandRealtime'>Two modes: Static and Realtime</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-RealtimeSIPfriends'>Realtime SIP friends</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-RealtimeH.323friends'>Realtime H.323 friends</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-Newfunctioninthedialplan:TheRealtimeSwitch'>New function in the dial plan: The Realtime Switch</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-Capabilities'>Capabilities</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-Configurationinextconfig.conf'>Configuration in extconfig.conf</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-Limitations'>Limitations</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-FreeTDSsupportedwithconnectionpooling'>FreeTDS supported with connection pooling</a></li>
+<li><a href='#RealtimeDatabaseConfiguration-Notesonuseofthesipregsfamily'>Notes on use of the sipregs family</a></li>
+</ul>
+</li>
+</ul>
+</div></h3><h3 id="RealtimeDatabaseConfiguration-Introduction">Introduction</h3><p>The Asterisk Realtime Architecture is a new set of drivers and functions implemented in Asterisk.<br /> The benefits of this architecture are many, both from a code management standpoint and from an installation perspective.<br /> The ARA is designed to be independent of storage. Currently, most drivers are based on SQL, but the architecture should be able to handle other storage methods in the future, like LDAP.</p><p>The main benefit comes in the database support. In Asterisk v1.0 some functions supported MySQL database, some PostgreSQL and other ODBC. With the ARA, we have a unified database interface internally in Asterisk, so if one function supports database integration, all databases that has a realtime driver will be supported in that function.<br /> Currently there are three realtime database drivers:</p><ol><li>ODBC: Support for UnixODBC, integrated into Asterisk The UnixODBC subsystem supports many different databases, please check www.unixodbc.org for more information.</li><li>MySQL: Native support for MySQL, integrated into Asterisk</li><li>PostgreSQL: Native support for Postgres, integrated into Asterisk</li></ol><h5 id="RealtimeDatabaseConfiguration-Twomodes:StaticandRealtime">Two modes: Static and Realtime</h5><p>The ARA realtime mode is used to dynamically load and update objects. This mode is used in the SIP and IAX2 channels, as well as in the voicemail system. For SIP and IAX2 this is similar to the v1.0 MYSQL_FRIENDS functionality. With the ARA, we now support many more databases for dynamic configuration of phones.</p><p>The ARA static mode is used to load configuration files. For the Asterisk modules that read configurations, there's no difference between a static file in the file system, like extensions.conf, and a configuration loaded from a database.<br /> You just have to always make sure the var_metric values are properly set and ordered as you expect in your database server if you're using the static mode with ARA (either sequentially or with the same var_metric value for everybody).</p><p>If you have an option that depends on another one in a given configuration file (i.e, 'musiconhold' depending on 'agent' from agents.conf) but their var_metric are not sequential you'll probably get default values being assigned for those options instead of the desired ones. You can still use the same var_metric for all entries in your DB, just make sure the entries are recorded in an order that does not break the option dependency.</p><p>That doesn't happen when you use a static file in the file system. Although this might be interpreted as a bug or limitation, it is not.</p>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>To use static realtime with certain core configuration files (e.g. <code>features.conf</code>, <code>cdr.conf</code>, <code>cel.conf</code>, <code>indications.conf</code>, etc.) the realtime backend you wish to use must be preloaded in <code>modules.conf</code>.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[modules]
+preload =&gt; res_odbc.so
+preload =&gt; res_config_odbc.so
+</pre>
+</div></div>
+                    </div>
+    </div>
+<h5 id="RealtimeDatabaseConfiguration-RealtimeSIPfriends">Realtime SIP friends</h5><p>The SIP realtime objects are users and peers that are loaded in memory when needed, then deleted. This means that Asterisk currently can't handle voicemail notification and NAT keepalives for these peers. Other than that, most of the functionality works the same way for realtime friends as for the ones in static configuration.</p><p>With caching, the device stays in memory for a specified time. More information about this is to be found in the sip.conf sample file.</p><p>If you specify a separate family called &quot;sipregs&quot; SIP registration data will be stored in that table and not in the &quot;sippeers&quot; table.</p><h5 id="RealtimeDatabaseConfiguration-RealtimeH.323friends">Realtime H.323 friends</h5><p>Like SIP realtime friends, H.323 friends also can be configured using dynamic realtime objects.</p><h5 id="RealtimeDatabaseConfiguration-Newfunctioninthedialplan:TheRealtimeSwitch">New function in the dial plan: The Realtime Switch</h5><p>The realtime switch is more than a port of functionality in v1.0 to the new architecture, this is a new feature of Asterisk based on the ARA. The realtime switch lets your Asterisk server do database lookups of extensions in realtime from your dial plan. You can have many Asterisk servers sharing a dynamically updated dial plan in real time with this solution.<br /> Note that this switch does NOT support Caller ID matching, only extension name or pattern matching.</p><h5 id="RealtimeDatabaseConfiguration-Capabilities">Capabilities</h5><p>The realtime Architecture lets you store all of your configuration in databases and reload it whenever you want. You can force a reload over the AMI, Asterisk Manager Interface or by calling Asterisk from a shell script with</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">asterisk -rx &quot;reload&quot;
+</pre>
+</div></div><p>You may also dynamically add SIP and IAX devices and extensions and making them available without a reload, by using the realtime objects and the realtime switch.</p><h5 id="RealtimeDatabaseConfiguration-Configurationinextconfig.conf">Configuration in extconfig.conf</h5><p>You configure the ARA in extconfig.conf (yes, it's a strange name, but is was defined in the early days of the realtime architecture and kind of stuck).</p><p>The part of Asterisk that connects to the ARA use a well defined family name to find the proper database driver. The syntax is easy:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">&lt;family&gt; =&gt; &lt;realtime driver&gt;,&lt;res_&lt;driver&gt;.conf class name&gt;[,&lt;table&gt;]
+</pre>
+</div></div><p>The options following the realtime driver identified depends on the driver.</p><p>Defined well-known family names are:</p><ul><li>sippeers, sipusers - SIP peers and users</li><li>sipregs - SIP registrations</li><li>iaxpeers, iaxusers - IAX2 peers and users</li><li>voicemail - Voicemail accounts</li><li>extensions - Realtime extensions (switch)</li><li>meetme - MeetMe conference rooms</li><li>queues - Queues</li><li>queue_members - Queue members</li><li>musiconhold - Music On Hold classes</li><li>queue_log - Queue logging</li></ul><p>Voicemail storage with the support of ODBC described in <a href="ODBC-Voicemail-Storage_5242965.html">ODBC Voicemail Storage</a>.</p><h5 id="RealtimeDatabaseConfiguration-Limitations">Limitations</h5><p>Currently, realtime extensions do not support realtime hints. There is a workaround available by using func_odbc. See the sample func_odbc.conf for more information.</p><h5 id="RealtimeDatabaseConfiguration-FreeTDSsupportedwithconnectionpooling">FreeTDS supported with connection pooling</h5><p>In order to use a FreeTDS-based database with realtime, you need to turn connection pooling on in res_odbc.conf. This is due to a limitation within the FreeTDS protocol itself. Please note that this includes databases such as MS SQL Server and Sybase. This support is new in the current release.</p><p>You may notice a performance issue under high load using UnixODBC. The UnixODBC driver supports threading but you must specifically enable threading within the UnixODBC configuration file like below for each engine:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Threading = 2
+</pre>
+</div></div><p>This will enable the driver to service many requests at a time, rather than serially.</p><h5 id="RealtimeDatabaseConfiguration-Notesonuseofthesipregsfamily">Notes on use of the sipregs family</h5><div class="action-body flooded"><p>The community provided some additional recommendations on the JIRA issue <a href="https://issues.asterisk.org/jira/browse/ASTERISK-21315" class="external-link" rel="nofollow">ASTERISK-21315</a>:</p><ul><li>It is a good idea to avoid using sipregs altogether by NOT enabling it in extconfig. Using a writable sipusers table should be enough. If you cannot write to your base sipusers table because it is readonly, you could consider making a separate sipusers view that joins the readonly table with a writable sipregs table. </li></ul></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

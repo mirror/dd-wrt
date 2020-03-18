@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Extension State and Hints</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Key-Concepts_27200276.html">Key Concepts</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="States-and-Presence_28315969.html">States and Presence</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Extension State and Hints
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified on Jun 06, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="ExtensionStateandHints-Overview">Overview</h1><p>Extension state is the state of an Asterisk extension, as opposed to the direct state of a device or a user. It is the aggregate of <a href="Device-State_28934187.html">Device state</a> from devices mapped to the extension through a <strong>hint</strong> directive. See the <a href="States-and-Presence_28315969.html">States and Presence</a> section for a diagram showing the relationship of all the various states.</p><p>Asterisk's SIP channel drivers provide facilities to allow SIP presence subscriptions (<a href="http://www.ietf.org/rfc/rfc3856.txt" class="external-link" rel="nofollow">RFC3856</a>) to extensions with a defined hint. With an active subscription, devices can receive notification of state changes for the subscribed to extension. That notification will take the form of a SIP NOTIFY with PIDF content (<a href="http://www.ietf.org/rfc/rfc3863.txt" class="external-link" rel="nofollow">RFC3863</a>) containing the presence/state information.</p><h1 id="ExtensionStateandHints-DefiningHints">Defining Hints</h1><p>For Asterisk to store and provide state for an extension, you must first define a <strong>hint</strong> for that extension. Hints are defined in the <a href="Dialplan_4817412.html">Asterisk dialplan</a>, i.e. extensions.conf.</p><p>When Asterisk loads the configuration file it will create hints in memory for each hint defined in the dialplan. Those hints can then be <a href="Querying-and-Manipulating-State_28934227.html">queried or manipulated</a> by functions and CLI commands. The state of each hint will regularly be updated based on state changes for any devices mapped to a hint.</p><p>The full syntax for a hint is</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten = &lt;extension&gt;,hint,&lt;device state id&gt;[&amp; &lt;more dev state id],&lt;presence state id&gt;</pre>
+</div></div><p>Here is what you might see for a few configured hints.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[internal]
+
+exten = 6001,hint,SIP/Alice&amp;SIP/Alice-mobile
+exten = 6002,hint,SIP/Bob
+exten = 6003,hint,SIP/Charlie&amp;DAHDI/3
+exten = 6004,hint,SIP/Diane,CustomPresence:Diane
+exten = 6005,hint,,CustomPresence:Ellen</pre>
+</div></div><p>Things of note:</p><ul><li>You may notice that the syntax for a hint is similar to a regular extension, except you use the <strong>hint</strong> keyword in place of the priority. Remember these special hint directives are used at load-time and not during run-time, so there is no need for a priority.</li><li>Multiple devices can be mapped to an extension by providing an ampersand delimited list. </li><li>A presence state ID is set after the device state IDs. If set with only a presence state provider you must be sure to include a blank field after the hint as in the example for extension 6005.</li><li>Hints can be anywhere in the dialplan. Though, remember that dialplan referencing the extension and devices subscribing to it will need use the extension number/name and context. The hints shown above would be 6001@internal, 6002@internal, etc, just like regular extensions.</li></ul><h1 id="ExtensionStateandHints-QueryingExtensionState">Querying Extension State</h1><p>The <a href="Querying-and-Manipulating-State_28934227.html">Querying and Manipulating State</a> section covers accessing and affecting the various types of state.</p><p>For a quick CLI example, once you have defined some hints, you can easily check from the CLI to verify they get loaded correctly.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>*CLI&gt; core show hints
+    -= Registered Asterisk Dial Plan Hints =-
+                   6003@internal            : SIP/Charlie&amp;DAHDI/3   State:Unavailable     Watchers  0
+                   6002@internal            : SIP/Bob               State:Unavailable     Watchers  0
+                   6001@internal            : SIP/Alice&amp;SIP/Alice-  State:Unavailable     Watchers  0
+                   6005@internal            : ,CustomPresence:Elle  State:Unavailable     Watchers  0
+                   6004@internal            : SIP/Diane,CustomPres  State:Unavailable     Watchers  0
+----------------
+- 5 hints registered</pre>
+</div></div><p>In this example I was lazy, so they don't have real providers mapped otherwise you would see various states represented.</p><h1 id="ExtensionStateandHints-SIPSubscriptiontoAsteriskhints">SIP Subscription to Asterisk hints</h1><p>Once a hint is configured, Asterisk's SIP drivers can be configured to allow SIP User Agents to subscribe to the hints. A subscription will result in state change notifications being sent to the subscriber.</p><p>Configuration for <strong>chan_sip</strong> is discussed in <a href="Configuring-chan_sip-for-Presence-Subscriptions_29392926.html">Configuring chan_sip for Presence Subscriptions</a></p><p>Configuration for <strong>res_pjsip</strong> is discussed in <a href="Configuring-res_pjsip-for-Presence-Subscriptions_29392974.html">Configuring res_pjsip for Presence Subscriptions</a></p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

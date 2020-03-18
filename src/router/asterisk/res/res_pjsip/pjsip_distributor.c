@@ -29,11 +29,12 @@
 
 static int distribute(void *data);
 static pj_bool_t distributor(pjsip_rx_data *rdata);
+static pj_status_t record_serializer(pjsip_tx_data *tdata);
 
 static pjsip_module distributor_mod = {
 	.name = {"Request Distributor", 19},
 	.priority = PJSIP_MOD_PRIORITY_TSX_LAYER - 6,
-	.on_tx_request = ast_sip_record_request_serializer,
+	.on_tx_request = record_serializer,
 	.on_rx_request = distributor,
 	.on_rx_response = distributor,
 };
@@ -50,6 +51,7 @@ static unsigned int unidentified_count;
 static unsigned int unidentified_period;
 static unsigned int unidentified_prune_interval;
 static int using_auth_username;
+static enum ast_sip_taskprocessor_overload_trigger overload_trigger;
 
 struct unidentified_request{
 	struct timeval first_seen;
@@ -63,7 +65,16 @@ struct unidentified_request{
 /*! Pool of serializers to use if not supplied. */
 static struct ast_taskprocessor *distributor_pool[DISTRIBUTOR_POOL_SIZE];
 
-pj_status_t ast_sip_record_request_serializer(pjsip_tx_data *tdata)
+/*!
+ * \internal
+ * \brief Record the task's serializer name on the tdata structure.
+ * \since 14.0.0
+ *
+ * \param tdata The outgoing message.
+ *
+ * \retval PJ_SUCCESS.
+ */
+static pj_status_t record_serializer(pjsip_tx_data *tdata)
 {
 	struct ast_taskprocessor *serializer;
 
@@ -524,18 +535,31 @@ static pj_bool_t distributor(pjsip_rx_data *rdata)
 		ao2_cleanup(dist);
 		return PJ_TRUE;
 	} else {
-		if (ast_taskprocessor_alert_get()) {
+		if ((overload_trigger == TASKPROCESSOR_OVERLOAD_TRIGGER_GLOBAL &&
+			ast_taskprocessor_alert_get())
+			|| (overload_trigger == TASKPROCESSOR_OVERLOAD_TRIGGER_PJSIP_ONLY &&
+			ast_taskprocessor_get_subsystem_alert("pjsip"))) {
 			/*
 			 * When taskprocessors get backed up, there is a good chance that
 			 * we are being overloaded and need to defer adding new work to
 			 * the system.  To defer the work we will ignore the request and
 			 * rely on the peer's transport layer to retransmit the message.
-			 * We usually work off the overload within a few seconds.  The
-			 * alternative is to send back a 503 response to these requests
-			 * and be done with it.
+			 * We usually work off the overload within a few seconds.
+			 * If transport is non-UDP we send a 503 response instead.
 			 */
-			ast_debug(3, "Taskprocessor overload alert: Ignoring '%s'.\n",
-				pjsip_rx_data_get_info(rdata));
+			switch (rdata->tp_info.transport->key.type) {
+			case PJSIP_TRANSPORT_UDP6:
+			case PJSIP_TRANSPORT_UDP:
+				ast_debug(3, "Taskprocessor overload alert: Ignoring '%s'.\n",
+					pjsip_rx_data_get_info(rdata));
+				break;
+			default:
+				ast_debug(3, "Taskprocessor overload on non-udp transport. Received:'%s'. "
+					"Responding with a 503.\n", pjsip_rx_data_get_info(rdata));
+				pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata,
+					PJSIP_SC_SERVICE_UNAVAILABLE, NULL, NULL, NULL);
+				break;
+			}
 			ao2_cleanup(dist);
 			return PJ_TRUE;
 		}
@@ -638,16 +662,21 @@ static void log_failed_request(pjsip_rx_data *rdata, char *msg, unsigned int cou
 	char from_buf[PJSIP_MAX_URL_SIZE];
 	char callid_buf[PJSIP_MAX_URL_SIZE];
 	char method_buf[PJSIP_MAX_URL_SIZE];
+	char src_addr_buf[AST_SOCKADDR_BUFLEN];
 	pjsip_uri_print(PJSIP_URI_IN_FROMTO_HDR, rdata->msg_info.from->uri, from_buf, PJSIP_MAX_URL_SIZE);
 	ast_copy_pj_str(callid_buf, &rdata->msg_info.cid->id, PJSIP_MAX_URL_SIZE);
 	ast_copy_pj_str(method_buf, &rdata->msg_info.msg->line.req.method.name, PJSIP_MAX_URL_SIZE);
 	if (count) {
-		ast_log(LOG_NOTICE, "Request '%s' from '%s' failed for '%s:%d' (callid: %s) - %s"
+		ast_log(LOG_NOTICE, "Request '%s' from '%s' failed for '%s' (callid: %s) - %s"
 			" after %u tries in %.3f ms\n",
-			method_buf, from_buf, rdata->pkt_info.src_name, rdata->pkt_info.src_port, callid_buf, msg, count, period / 1000.0);
+			method_buf, from_buf,
+			pj_sockaddr_print(&rdata->pkt_info.src_addr, src_addr_buf, sizeof(src_addr_buf), 3),
+			callid_buf, msg, count, period / 1000.0);
 	} else {
-		ast_log(LOG_NOTICE, "Request '%s' from '%s' failed for '%s:%d' (callid: %s) - %s\n",
-			method_buf, from_buf, rdata->pkt_info.src_name, rdata->pkt_info.src_port, callid_buf, msg);
+		ast_log(LOG_NOTICE, "Request '%s' from '%s' failed for '%s' (callid: %s) - %s\n",
+			method_buf, from_buf,
+			pj_sockaddr_print(&rdata->pkt_info.src_addr, src_addr_buf, sizeof(src_addr_buf), 3),
+			callid_buf, msg);
 	}
 }
 
@@ -666,6 +695,26 @@ static void check_endpoint(pjsip_rx_data *rdata, struct unidentified_request *un
 	ao2_unlock(unid);
 }
 
+static int apply_endpoint_acl(pjsip_rx_data *rdata, struct ast_sip_endpoint *endpoint);
+static int apply_endpoint_contact_acl(pjsip_rx_data *rdata, struct ast_sip_endpoint *endpoint);
+
+static void apply_acls(pjsip_rx_data *rdata)
+{
+	struct ast_sip_endpoint *endpoint;
+
+	/* Is the endpoint allowed with the source or contact address? */
+	endpoint = rdata->endpt_info.mod_data[endpoint_mod.id];
+	if (endpoint != artificial_endpoint
+		&& (apply_endpoint_acl(rdata, endpoint)
+			|| apply_endpoint_contact_acl(rdata, endpoint))) {
+		ast_debug(1, "Endpoint '%s' not allowed by ACL\n",
+			ast_sorcery_object_get_id(endpoint));
+
+		/* Replace the rdata endpoint with the artificial endpoint. */
+		ao2_replace(rdata->endpt_info.mod_data[endpoint_mod.id], artificial_endpoint);
+	}
+}
+
 static pj_bool_t endpoint_lookup(pjsip_rx_data *rdata)
 {
 	struct ast_sip_endpoint *endpoint;
@@ -680,23 +729,25 @@ static pj_bool_t endpoint_lookup(pjsip_rx_data *rdata)
 		 * the find without OBJ_UNLINK to prevent the unnecessary write lock, then unlink
 		 * if needed.
 		 */
-		if ((unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY))) {
+		unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY);
+		if (unid) {
 			ao2_unlink(unidentified_requests, unid);
 			ao2_ref(unid, -1);
 		}
+		apply_acls(rdata);
 		return PJ_FALSE;
 	}
 
 	endpoint = ast_sip_identify_endpoint(rdata);
 	if (endpoint) {
-		if ((unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY))) {
+		unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY);
+		if (unid) {
 			ao2_unlink(unidentified_requests, unid);
 			ao2_ref(unid, -1);
 		}
 	}
 
 	if (!endpoint) {
-
 		/* always use an artificial endpoint - per discussion no reason
 		   to have "alwaysauthreject" as an option.  It is felt using it
 		   was a bug fix and it is not needed since we are not worried about
@@ -705,9 +756,10 @@ static pj_bool_t endpoint_lookup(pjsip_rx_data *rdata)
 		endpoint = ast_sip_get_artificial_endpoint();
 	}
 
+	/* endpoint ref held by mod_data[] */
 	rdata->endpt_info.mod_data[endpoint_mod.id] = endpoint;
 
-	if ((endpoint == artificial_endpoint) && !is_ack) {
+	if (endpoint == artificial_endpoint && !is_ack) {
 		char name[AST_UUID_STR_LEN] = "";
 		pjsip_uri *from = rdata->msg_info.from->uri;
 
@@ -716,19 +768,23 @@ static pj_bool_t endpoint_lookup(pjsip_rx_data *rdata)
 			ast_copy_pj_str(name, &sip_from->user, sizeof(name));
 		}
 
-		if ((unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY))) {
+		unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY);
+		if (unid) {
 			check_endpoint(rdata, unid, name);
 			ao2_ref(unid, -1);
 		} else if (using_auth_username) {
 			ao2_wrlock(unidentified_requests);
-			/* The check again with the write lock held allows us to eliminate the DUPS_REPLACE and sort_fn */
-			if ((unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY | OBJ_NOLOCK))) {
+			/* Checking again with the write lock held allows us to eliminate the DUPS_REPLACE and sort_fn */
+			unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name,
+				OBJ_SEARCH_KEY | OBJ_NOLOCK);
+			if (unid) {
 				check_endpoint(rdata, unid, name);
 			} else {
-				unid = ao2_alloc_options(sizeof(*unid) + strlen(rdata->pkt_info.src_name) + 1, NULL,
-					AO2_ALLOC_OPT_LOCK_RWLOCK);
+				unid = ao2_alloc_options(sizeof(*unid) + strlen(rdata->pkt_info.src_name) + 1,
+					NULL, AO2_ALLOC_OPT_LOCK_RWLOCK);
 				if (!unid) {
 					ao2_unlock(unidentified_requests);
+					pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 500, NULL, NULL, NULL);
 					return PJ_TRUE;
 				}
 				strcpy(unid->src_name, rdata->pkt_info.src_name); /* Safe */
@@ -743,6 +799,8 @@ static pj_bool_t endpoint_lookup(pjsip_rx_data *rdata)
 			ast_sip_report_invalid_endpoint(name, rdata);
 		}
 	}
+
+	apply_acls(rdata);
 	return PJ_FALSE;
 }
 
@@ -826,16 +884,11 @@ static pj_bool_t authenticate(pjsip_rx_data *rdata)
 
 	ast_assert(endpoint != NULL);
 
-	if (endpoint!=artificial_endpoint) {
-		if (apply_endpoint_acl(rdata, endpoint) || apply_endpoint_contact_acl(rdata, endpoint)) {
-			if (!is_ack) {
-				pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 403, NULL, NULL, NULL);
-			}
-			return PJ_TRUE;
-		}
+	if (is_ack) {
+		return PJ_FALSE;
 	}
 
-	if (!is_ack && ast_sip_requires_authentication(endpoint, rdata)) {
+	if (ast_sip_requires_authentication(endpoint, rdata)) {
 		pjsip_tx_data *tdata;
 		struct unidentified_request *unid;
 
@@ -844,11 +897,14 @@ static pj_bool_t authenticate(pjsip_rx_data *rdata)
 		case AST_SIP_AUTHENTICATION_CHALLENGE:
 			/* Send the 401 we created for them */
 			ast_sip_report_auth_challenge_sent(endpoint, rdata, tdata);
-			pjsip_endpt_send_response2(ast_sip_get_pjsip_endpoint(), rdata, tdata, NULL, NULL);
+			if (pjsip_endpt_send_response2(ast_sip_get_pjsip_endpoint(), rdata, tdata, NULL, NULL) != PJ_SUCCESS) {
+				pjsip_tx_data_dec_ref(tdata);
+			}
 			return PJ_TRUE;
 		case AST_SIP_AUTHENTICATION_SUCCESS:
 			/* See note in endpoint_lookup about not holding an unnecessary write lock */
-			if ((unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY))) {
+			unid = ao2_find(unidentified_requests, rdata->pkt_info.src_name, OBJ_SEARCH_KEY);
+			if (unid) {
 				ao2_unlink(unidentified_requests, unid);
 				ao2_ref(unid, -1);
 			}
@@ -857,7 +913,9 @@ static pj_bool_t authenticate(pjsip_rx_data *rdata)
 		case AST_SIP_AUTHENTICATION_FAILED:
 			log_failed_request(rdata, "Failed to authenticate", 0, 0);
 			ast_sip_report_auth_failed_challenge_response(endpoint, rdata);
-			pjsip_endpt_send_response2(ast_sip_get_pjsip_endpoint(), rdata, tdata, NULL, NULL);
+			if (pjsip_endpt_send_response2(ast_sip_get_pjsip_endpoint(), rdata, tdata, NULL, NULL) != PJ_SUCCESS) {
+				pjsip_tx_data_dec_ref(tdata);
+			}
 			return PJ_TRUE;
 		case AST_SIP_AUTHENTICATION_ERROR:
 			log_failed_request(rdata, "Error to authenticate", 0, 0);
@@ -867,6 +925,10 @@ static pj_bool_t authenticate(pjsip_rx_data *rdata)
 			return PJ_TRUE;
 		}
 		pjsip_tx_data_dec_ref(tdata);
+	} else if (endpoint == artificial_endpoint) {
+		/* Uh. Oh.  The artificial endpoint couldn't challenge so block the request. */
+		pjsip_endpt_respond_stateless(ast_sip_get_pjsip_endpoint(), rdata, 500, NULL, NULL, NULL);
+		return PJ_TRUE;
 	}
 
 	return PJ_FALSE;
@@ -1132,11 +1194,13 @@ static void global_loaded(const char *object_type)
 		fake_auth = alloc_artificial_auth(default_realm);
 		if (fake_auth) {
 			ao2_global_obj_replace_unref(artificial_auth, fake_auth);
-			ao2_ref(fake_auth, -1);
 		}
 	}
+	ao2_cleanup(fake_auth);
 
 	ast_sip_get_unidentified_request_thresholds(&unidentified_count, &unidentified_period, &unidentified_prune_interval);
+
+	overload_trigger = ast_sip_get_taskprocessor_overload_trigger();
 
 	/* Clean out the old task, if any */
 	ast_sched_clean_by_callback(prune_context, prune_task, clean_task);
@@ -1185,7 +1249,7 @@ static int distributor_pool_setup(void)
 		/* Create name with seq number appended. */
 		ast_taskprocessor_build_name(tps_name, sizeof(tps_name), "pjsip/distributor");
 
-		distributor_pool[idx] = ast_sip_create_serializer_named(tps_name);
+		distributor_pool[idx] = ast_sip_create_serializer(tps_name);
 		if (!distributor_pool[idx]) {
 			return -1;
 		}
@@ -1233,15 +1297,15 @@ int ast_sip_initialize_distributor(void)
 		return -1;
 	}
 
-	if (internal_sip_register_service(&distributor_mod)) {
+	if (ast_sip_register_service(&distributor_mod)) {
 		ast_sip_destroy_distributor();
 		return -1;
 	}
-	if (internal_sip_register_service(&endpoint_mod)) {
+	if (ast_sip_register_service(&endpoint_mod)) {
 		ast_sip_destroy_distributor();
 		return -1;
 	}
-	if (internal_sip_register_service(&auth_mod)) {
+	if (ast_sip_register_service(&auth_mod)) {
 		ast_sip_destroy_distributor();
 		return -1;
 	}
@@ -1272,9 +1336,9 @@ void ast_sip_destroy_distributor(void)
 	ast_cli_unregister_multiple(cli_commands, ARRAY_LEN(cli_commands));
 	ast_sip_unregister_cli_formatter(unid_formatter);
 
-	internal_sip_unregister_service(&auth_mod);
-	internal_sip_unregister_service(&endpoint_mod);
-	internal_sip_unregister_service(&distributor_mod);
+	ast_sip_unregister_service(&auth_mod);
+	ast_sip_unregister_service(&endpoint_mod);
+	ast_sip_unregister_service(&distributor_mod);
 
 	ao2_global_obj_release(artificial_auth);
 	ao2_cleanup(artificial_endpoint);

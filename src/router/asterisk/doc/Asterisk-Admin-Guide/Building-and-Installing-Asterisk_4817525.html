@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Building and Installing Asterisk</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Getting-Started_5243710.html">Getting Started</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk_4817553.html">Installing Asterisk</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Installing-Asterisk-From-Source_4817561.html">Installing Asterisk From Source</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Building and Installing Asterisk
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Kevin Harwell</span> on Jan 19, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="BuildingandInstallingAsterisk-BuildandInstallInstructions">Build and Install Instructions</h1><p>Now we can compile and install Asterisk. To compile Asterisk, simply type make at the Linux command line.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make
+</pre>
+</div></div><p>The compiling step will take several minutes, and you'll see the various file names scroll by as they are being compiled. Once Asterisk has finished compiling, you'll see a message that looks like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>+--------- Asterisk Build Complete ---------+
++ Asterisk has successfully been built, and +
++ can be installed by running:              +
++                                           +
++                make install               +
++-------------------------------------------+
++--------- Asterisk Build Complete ---------+
+</pre>
+</div></div></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On this Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582302877716 {padding: 0px;}
+div.rbtoc1582302877716 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582302877716 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582302877716'>
+<ul class='toc-indentation'>
+<li><a href='#BuildingandInstallingAsterisk-BuildandInstallInstructions'>Build and Install Instructions</a></li>
+<li><a href='#BuildingandInstallingAsterisk-AdvancedBuildandInstallOptions'>Advanced Build and Install Options</a>
+<ul class='toc-indentation'>
+<li><a href='#BuildingandInstallingAsterisk-CustomizingtheBuild/Installation'>Customizing the Build/Installation</a>
+<ul class='toc-indentation'>
+<li><a href='#BuildingandInstallingAsterisk-Passingcompilationandlinkageflagstogcc'>Passing compilation and linkage flags to gcc</a></li>
+<li><a href='#BuildingandInstallingAsterisk-Debuggingcompilation'>Debugging compilation</a></li>
+<li><a href='#BuildingandInstallingAsterisk-Buildingfornon-nativearchitectures'>Building for non-native architectures</a></li>
+<li><a href='#BuildingandInstallingAsterisk-Installingtoacustomdirectory'>Installing to a custom directory</a></li>
+</ul>
+</li>
+<li><a href='#BuildingandInstallingAsterisk-OtherMakeTargets'>Other Make Targets</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p>As the message above suggests, our next step is to install the compiled Asterisk program and modules. To do this, use the <strong>make</strong> <strong>install</strong> command.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make install
+</pre>
+</div></div><p>When finished, Asterisk will display the following warning:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>+---- Asterisk Installation Complete -------+
++                                           +
++    YOU MUST READ THE SECURITY DOCUMENT    +
++                                           +
++ Asterisk has successfully been installed. +
++ If you would like to install the sample   +
++ configuration files (overwriting any      +
++ existing config files), run:              +
++                                           +
++                make samples               +
++                                           +
++-------------------------------------------+
++---- Asterisk Installation Complete -------+
+</pre>
+</div></div>    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Security Precautions</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>As the message above suggests, we very strongly recommend that you read the security documentation before continuing with your Asterisk installation. Failure to read and follow the security documentation can leave your system vulnerable to a number of security issues, including toll fraud.</p>
+                    </div>
+    </div>
+<h1 id="BuildingandInstallingAsterisk-AdvancedBuildandInstallOptions">Advanced Build and Install Options</h1><h2 id="BuildingandInstallingAsterisk-CustomizingtheBuild/Installation">Customizing the Build/Installation</h2><p>In some environments, it may be necessary or useful to modify parts of the build or installation process. Some common scenarios are listed here</p><h3 id="BuildingandInstallingAsterisk-Passingcompilationandlinkageflagstogcc">Passing compilation and linkage flags to gcc</h3><p>Specific flags can be passed to <code>gcc</code> when Asterisk is configured, using the <code>CFLAGS</code> and <code>LDFLAGS</code> environment variables:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# ./configure CFLAGS=-pg LDFLAGS=-pg</pre>
+</div></div><h3 id="BuildingandInstallingAsterisk-Debuggingcompilation">Debugging compilation</h3><p>To see all of the flags passed to gcc, build using the <code>NOISY_BUILD</code> setting set to <code>YES</code>:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# make NOISY_BUILD=yes</pre>
+</div></div><h3 id="BuildingandInstallingAsterisk-Buildingfornon-nativearchitectures">Building for non-native architectures</h3><p>Generally, Asterisk attempts to optimize itself for the machine on which it is built on. On some virtual machines with virtual CPU architectures, the defaults chosen by Asterisk's compilation options will cause Asterisk to build but fail to run. To disable native architecture support, disable the <code>BUILD_NATIVE</code> option in menuselect:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# menuselect/menuselect --disable BUILD_NATIVE menuselect.makeopts
+
+[root@server asterisk-14.X.Y]# make</pre>
+</div></div><h3 id="BuildingandInstallingAsterisk-Installingtoacustomdirectory">Installing to a custom directory</h3><p>While there are multiple ways to sandbox an instance of Asterisk, the preferred mechanism is to use the <code>--prefix</code> option with the <code>configure</code> script:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[root@server asterisk-14.X.Y]# ./configure --prefix=/usr/local/my_special_folder</pre>
+</div></div><p>Note that the default value for <code>prefix</code> is <code>/usr/local</code>.</p><h2 id="BuildingandInstallingAsterisk-OtherMakeTargets">Other Make Targets</h2><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Target</th><th class="confluenceTh">Description</th></tr><tr><td class="confluenceTd"> </td><td class="confluenceTd"><p>Executing <code>make</code> with no target is equivalent to the <code>all</code> target.</p></td></tr><tr><td class="confluenceTd"><strong>all</strong></td><td class="confluenceTd"><p>Compiles everything everything selected through the <code>configure</code> and <code>menuselect</code> scripts.</p></td></tr><tr><td colspan="1" class="confluenceTd"><strong>full</strong></td><td colspan="1" class="confluenceTd"><p>This is equivalent to <code>make</code> or <code>make all</code>, save that it will perform a more thorough investigation of the source code for documentation. This is needed to generate <a href="https://wiki.asterisk.org/wiki/display/AST/AMI+Event+Documentation">AMI event documentation</a>. Note that your system must have Python in order for this make target to succeed.</p>    <div class="aui-message warning shadowed information-macro">
+                    <p class="title">Version Notice</p>
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This build target is only available in Asterisk 11 and later versions.</p>
+                    </div>
+    </div>
+</td></tr><tr><td colspan="1" class="confluenceTd"><strong>install</strong></td><td colspan="1" class="confluenceTd">Installs Asterisk, building Asterisk if it has not already been built. In general, this should be executed after Asterisk has successfully compiled.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>uninstall</strong></td><td colspan="1" class="confluenceTd">Removes Asterisk binaries, sounds, man pages, headers, modules and firmware builds from the system.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>uninstall-all</strong></td><td colspan="1" class="confluenceTd"><p>Same as the <code>uninstall</code> target, but additionally removes configuration, spool directories and logs. All traces of Asterisk.</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>As just noted, this will remove all Asterisk configuration from your system. Do not execute <code>uninstall-all</code> unless you are sure that is what you want to do.</p>
+                    </div>
+    </div>
+</td></tr><tr><td colspan="1" class="confluenceTd"><strong>clean</strong></td><td colspan="1" class="confluenceTd">Remove all files generated by make.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>dist-clean</strong></td><td colspan="1" class="confluenceTd">Remove pretty much all files generated by make and configure.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>samples</strong></td><td colspan="1" class="confluenceTd">Install all sample configuration files (.conf files) to <code>/etc/asterisk/</code>. Overwrites existing config files.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>config</strong></td><td colspan="1" class="confluenceTd">Install init scripts (startup scripts) on your system.</td></tr><tr><td colspan="1" class="confluenceTd"><strong>progdocs</strong></td><td colspan="1" class="confluenceTd">Uses doxygen to locally generate HTML development documentation from the source code.  Generated in the <code>doc/</code> subdirectory of the source; see <code>doc/index.html</code>.</td></tr></tbody></table></div><p> </p><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

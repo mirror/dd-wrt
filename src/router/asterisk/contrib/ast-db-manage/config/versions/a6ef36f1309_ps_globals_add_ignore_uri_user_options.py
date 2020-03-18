@@ -1,14 +1,14 @@
 """ps_globals add ignore_uri_user_options
 
 Revision ID: a6ef36f1309
-Revises: 4e2493ef32e6
+Revises: 7f3e21abe318
 Create Date: 2016-08-31 12:24:22.368956
 
 """
 
 # revision identifiers, used by Alembic.
 revision = 'a6ef36f1309'
-down_revision = '4e2493ef32e6'
+down_revision = '7f3e21abe318'
 
 from alembic import op
 import sqlalchemy as sa
@@ -28,5 +28,6 @@ def upgrade():
 
 
 def downgrade():
+    if op.get_context().bind.dialect.name == 'mssql':
+        op.drop_constraint('ck_ps_globals_ignore_uri_user_options_yesno_values','ps_globals')
     op.drop_column('ps_globals', 'ignore_uri_user_options')
-

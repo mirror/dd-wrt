@@ -31,8 +31,6 @@
 
 #ifdef DEBUG_FD_LEAKS
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <stdio.h>
 #include <string.h>
 #include <stddef.h>
@@ -46,6 +44,8 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 #include "asterisk/lock.h"
 #include "asterisk/strings.h"
 #include "asterisk/unaligned.h"
+#include "asterisk/localtime.h"
+#include "asterisk/time.h"
 
 static struct fdleaks {
 	const char *callname;
@@ -53,7 +53,8 @@ static struct fdleaks {
 	unsigned int isopen:1;
 	char file[40];
 	char function[25];
-	char callargs[60];
+	char callargs[100];
+	struct timeval now;
 } fdleaks[1024] = { { "", }, };
 
 /* COPY does ast_copy_string(dst, src, sizeof(dst)), except:
@@ -79,6 +80,7 @@ static struct fdleaks {
 #define STORE_COMMON(offset, name, ...)     \
 	do { \
 		struct fdleaks *tmp = &fdleaks[offset]; \
+		tmp->now = ast_tvnow(); \
 		COPY(tmp->file, file);      \
 		tmp->line = line;           \
 		COPY(tmp->function, func);  \
@@ -130,6 +132,19 @@ int __ast_fdleak_open(const char *file, int line, const char *func, const char *
 	return res;
 }
 
+#undef accept
+int __ast_fdleak_accept(int socket, struct sockaddr *address, socklen_t *address_len,
+	const char *file, int line, const char *func)
+{
+	int res = accept(socket, address, address_len);
+
+	if (res >= 0) {
+		STORE_COMMON(res, "accept", "{%d}", socket);
+	}
+
+	return res;
+}
+
 #undef pipe
 int __ast_fdleak_pipe(int *fds, const char *file, int line, const char *func)
 {
@@ -144,6 +159,52 @@ int __ast_fdleak_pipe(int *fds, const char *file, int line, const char *func)
 	}
 	return 0;
 }
+
+#undef socketpair
+int __ast_fdleak_socketpair(int domain, int type, int protocol, int sv[2],
+	const char *file, int line, const char *func)
+{
+	int i, res = socketpair(domain, type, protocol, sv);
+	if (res) {
+		return res;
+	}
+	for (i = 0; i < 2; i++) {
+		if (sv[i] > -1 && sv[i] < ARRAY_LEN(fdleaks)) {
+			STORE_COMMON(sv[i], "socketpair", "{%d,%d}", sv[0], sv[1]);
+		}
+	}
+	return 0;
+}
+
+#if defined(HAVE_EVENTFD)
+#undef eventfd
+#include <sys/eventfd.h>
+int __ast_fdleak_eventfd(unsigned int initval, int flags, const char *file, int line, const char *func)
+{
+	int res = eventfd(initval, flags);
+
+	if (res >= 0) {
+		STORE_COMMON(res, "eventfd", "{%d}", res);
+	}
+
+	return res;
+}
+#endif
+
+#if defined(HAVE_TIMERFD)
+#undef timerfd_create
+#include <sys/timerfd.h>
+int __ast_fdleak_timerfd_create(int clockid, int flags, const char *file, int line, const char *func)
+{
+	int res = timerfd_create(clockid, flags);
+
+	if (res >= 0) {
+		STORE_COMMON(res, "timerfd_create", "{%d}", res);
+	}
+
+	return res;
+}
+#endif
 
 #undef socket
 int __ast_fdleak_socket(int domain, int type, int protocol, const char *file, int line, const char *func)
@@ -272,16 +333,21 @@ static char *handle_show_fd(struct ast_cli_entry *e, int cmd, struct ast_cli_arg
 		return NULL;
 	}
 	getrlimit(RLIMIT_NOFILE, &rl);
-	if (rl.rlim_cur == RLIM_INFINITY || rl.rlim_max == RLIM_INFINITY) {
+	if (rl.rlim_cur == RLIM_INFINITY) {
 		ast_copy_string(line, "unlimited", sizeof(line));
 	} else {
-		snprintf(line, sizeof(line), "%d/%d", (int) rl.rlim_cur, (int) rl.rlim_max);
+		snprintf(line, sizeof(line), "%d", (int) rl.rlim_cur);
 	}
 	ast_cli(a->fd, "Current maxfiles: %s\n", line);
 	for (i = 0; i < ARRAY_LEN(fdleaks); i++) {
 		if (fdleaks[i].isopen) {
+			struct ast_tm tm = {0};
+			char datestring[256];
+
+			ast_localtime(&fdleaks[i].now, &tm, NULL);
+			ast_strftime(datestring, sizeof(datestring), "%F %T", &tm);
 			snprintf(line, sizeof(line), "%d", fdleaks[i].line);
-			ast_cli(a->fd, "%5d %15s:%-7.7s (%-25s): %s(%s)\n", i, fdleaks[i].file, line, fdleaks[i].function, fdleaks[i].callname, fdleaks[i].callargs);
+			ast_cli(a->fd, "%5d [%s] %22s:%-7.7s (%-25s): %s(%s)\n", i, datestring, fdleaks[i].file, line, fdleaks[i].function, fdleaks[i].callname, fdleaks[i].callargs);
 		}
 	}
 	return CLI_SUCCESS;
@@ -306,4 +372,3 @@ int ast_fd_init(void)
 	return 0;
 }
 #endif /* defined(DEBUG_FD_LEAKS) */
-

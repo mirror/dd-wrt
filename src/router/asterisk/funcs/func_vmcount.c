@@ -2,7 +2,7 @@
  * Asterisk -- An open source telephony toolkit.
  *
  * Copyright (c) 2006 Tilghman Lesher.  All rights reserved.
- * 
+ *
  * Tilghman Lesher <asterisk-vmcount-func@the-tilghman.com>
  *
  * See http://www.asterisk.org for more information about
@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <dirent.h>
 
 #include "asterisk/file.h"
@@ -55,7 +53,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			</parameter>
 		</syntax>
 		<description>
-			<para>Count the number of voicemails in a specified mailbox, you could also specify 
+			<para>Count the number of voicemails in a specified mailbox, you could also specify
 			the mailbox <replaceable>folder</replaceable>.</para>
 			<para>Example: <literal>exten => s,1,Set(foo=${VMCOUNT(125@default)})</literal></para>
 		</description>
@@ -85,7 +83,7 @@ static int acf_vmcount_exec(struct ast_channel *chan, const char *cmd, char *arg
 	}
 
 	snprintf(buf, len, "%d", ast_app_messagecount(args.vmbox, args.folder));
-	
+
 	return 0;
 }
 

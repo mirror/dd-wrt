@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Answer, Playback, and Hangup Applications</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Answer, Playback, and Hangup Applications
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Malcolm Davenport</span> on Dec 19, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>As its name suggests, the <strong>Answer()</strong> application answers an incoming call. The <strong>Answer()</strong> application takes a delay (in milliseconds) as its first parameter. Adding a short delay is often useful for ensuring that the remote endpoing has time to begin processing audio before you play a sound prompt. Otherwise, you may not hear the very beginning of the prompt.</p><p><strong>Knowing When to Answer a Call</strong></p><p>When you're first learning your way around the Asterisk dialplan, it may be a bit confusing knowing when to use the <strong>Answer()</strong> application, and when not to.</p><p>If Asterisk is simply going to pass the call off to another device using the <strong>Dial()</strong> application, you probably don't want to call the answer the call first. If, on the other hand, you want Asterisk to play sound prompts or gather input from the caller, it's probably a good idea to call the <strong>Answer()</strong> application before doing anything else.</p><p>The <strong>Playback()</strong> application loads a sound prompt from disk and plays it to the caller, ignoring any touch tone input from the caller. The first parameter to the dialplan application is the filename of the sound prompt you wish to play, without a file extension. If the channel has not already been answered, <strong>Playback()</strong> will answer the call before playing back the sound prompt, unless you pass <strong>noanswer</strong> as the second parameter.</p><p>To avoid the first few milliseconds of a prompt from being cut off you can play a second of silence. For example, if the prompt you wanted to play was hello-world which would look like this in the dialplan:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 1234,1,Playback(hello-world)</pre>
+</div></div><p>You could avoid the first few seconds of the prompt from being cut off by playing the silence/1 file:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 1234,1,Playback(silence/1)
+exten =&gt; 1234,n,Playback(hello-world)</pre>
+</div></div><p>Alternatively this could all be done on the same line by separating the filenames with an ampersand (&amp;):</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 1234,1,Playback(silence/1&amp;hello-world)</pre>
+</div></div><p>The <strong>Hangup()</strong> application hangs up the current call. While not strictly necessary due to auto-fallthrough (see the note on Priority numbers above), in general we recommend you add the <strong>Hangup()</strong> application as the last priority in any extension.</p><p>Now let's put <strong>Answer()</strong>, <strong>Playback()</strong>, and <strong>Hangup()</strong> together to play a sample sound file.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6000,1,Answer(500)
+exten =&gt; 6000,n,Playback(hello-world)
+exten =&gt; 6000,n,Hangup()</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

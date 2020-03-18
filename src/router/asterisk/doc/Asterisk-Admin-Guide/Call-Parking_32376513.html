@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Call Parking</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Features_4260053.html">Features</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Call Parking
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Ashley Sanders</span>, last modified by <span class='editor'> Rusty Newton</span> on Nov 18, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="CallParking-Overview">Overview</h1><p>Some organizations have the need to facilitate calls to employees who move around the office a lot or who don't necessarily sit at a desk all day. In Asterisk, it is possible to allow a call to be put on hold at one location and then picked up from a different location such that the conversation can be continued from a device other than the one from which call was originally answered. This concept is known as <span>call parking</span>.</p><p>Call parking is a feature that allows a participant in a call to put the other participants on hold while they themselves hang up. When parking, the party that initiates the park will be told a parking space, which under standard configuration doubles as an extension. This extension, or parking space, serves as the conduit for accessing the parked call. At this point, as long as the parking space is known, the parked call can be retrieved from a different location/device from where it was originally answered.</p><h1 id="CallParking-CallParkingConfigurationFilesandModule">Call Parking Configuration Files and Module</h1><p>In versions of Asterisk prior to Asterisk 12, call parking was considered an Asterisk core feature and was configured using <code>
+    <span>features.conf</span>
+  </code>. However, Asterisk 12 underwent vast architectural changes, several of which were directed at call parking support. Because the amount of changes introduced in Asterisk 12 was quite extensive, they have been omitted from this document. For reference, you can find a comprehensive list of these changes here: <span> <a href="https://wiki.asterisk.org/wiki/display/AST/New+in+12">New in 12</a> </span>.</p><p>In a nutshell, Asterisk 12 relocated its support for call parking from the Asterisk core into a separate, loadable module, <code>
+    <span>res_parking</span>
+  </code>. As a result, configuration for call parking was also moved to <code>
+    <span> <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_parking" rel="nofollow">res_parking.conf</a> </span>
+  </code>. Configuration for call parking through <code>
+    <span> <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_features" rel="nofollow">features.conf</a> </span>
+  </code> for versions of Asterisk 12 and beyond, <span>is no longer supported</span>. Additionally, support for the <code>
+    <span> <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Application_ParkAndAnnounce" rel="nofollow">ParkAndAnnounce</a> </span>
+  </code> application was relocated to the <code>
+    <span>res_parking</span>
+  </code> module and the <code>
+    <span>app_parkandannounce</span>
+  </code> module was removed.</p><p>Before we move any further, there is one more rather important detail to address regarding configuration for <code>
+    <span>res_parking</span>
+  </code>:</p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p><span> <code>res_parking</code> uses the configuration framework. If an invalid configuration is </span> <span>supplied, <code>res_parking</code> will fail to load or fail to reload. Previously, </span> <span>invalid configurations would generally be accepted, with certain errors </span> <span>resulting in individually disabled parking lots.</span></p>
+                    </div>
+    </div>
+<p>Now that we've covered all of that, let's look at some examples of how all this works.</p></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303030927 {padding: 0px;}
+div.rbtoc1582303030927 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303030927 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303030927'>
+<ul class='toc-indentation'>
+<li><a href='#CallParking-Overview'>Overview</a></li>
+<li><a href='#CallParking-CallParkingConfigurationFilesandModule'>Call Parking Configuration Files and Module</a></li>
+<li><a href='#CallParking-ExampleConfigurations'>Example Configurations</a>
+<ul class='toc-indentation'>
+<li><a href='#CallParking-BasicCallParking/RetrievalScenario'>Basic Call Parking/Retrieval Scenario</a></li>
+<li><a href='#CallParking-BasicHandlingforCallParkingTimeouts'>Basic Handling for Call Parking Timeouts</a></li>
+<li><a href='#CallParking-CustomHandlingforCallParkingTimeouts'>Custom Handling for Call Parking Timeouts</a></li>
+</ul>
+</li>
+</ul>
+</div> </p>
+</div></div></div></div></div></div><p> </p><h1 id="CallParking-ExampleConfigurations">Example Configurations</h1><h2 id="CallParking-BasicCallParking/RetrievalScenario">Basic Call Parking/Retrieval Scenario</h2><p style="color: rgb(35,31,32);">This is a basic scenario that only requires minimal adjustments to the following configuration files: <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>, <code>
+    <span style="font-weight: bold;">features.conf</span>
+  </code>, and <code>
+    <span style="font-weight: bold;">extensions.conf</span>
+  </code>.</p><p style="color: rgb(35,31,32);">In this scenario, our dialplan contains an extension to accept calls from the outside. Let's assume that the extension the caller dialed was: <code>
+    <span style="font-weight: bold;">5555001</span>
+  </code>. The handler will then attempt to dial the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension, using the <code>
+    <span style="font-weight: bold;">k</span>
+  </code> option.</p><p style="color: rgb(35,31,32);">Sadly for our caller, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension answers the call and immediately after saying, &quot;Hello world!&quot;, sends the DTMF digits to invoke the call parking feature without giving the caller a chance to speak. The <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension quickly redeems itself by using the <code>
+    <span style="font-weight: bold;">GoTo</span>
+  </code> application to navigate to the <code>
+    <span style="font-weight: bold;">701</span>
+  </code> extension in the <code>
+    <span style="font-weight: bold;">parkedcalls</span>
+  </code> context to retrieve the parked call. But, since the next thing the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension does is hangup on our caller, I am beginning to think the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension doesn't want to be bothered.</p><p style="color: rgb(35,31,32);"><span style="font-weight: bold;">In summary:</span></p><ul><li>Outside caller dials <code>
+      <span style="font-weight: bold;">5555001</span>
+    </code></li><li>Alice picks up the device and says &quot;Hello World!&quot;</li><li>Alice presses the one touch parking DTMF combination</li><li>Alice then dials the extension that the call was parked to (<code>
+      <span style="font-weight: bold;">701</span>
+    </code>) to retrieve the call</li><li>Alice says, &quot;Goodbye&quot;, and disconnects the caller</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>res_parking.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+parkext =&gt; 700                           ; Sets the default extension used to park calls. Note: This option
+                                         ; can take any alphanumeric string.
+
+parkpos =&gt; 701-709                       ; Sets the range of extensions used as the parking lot. Parked calls
+                                         ; may be retrieved by dialing the numbers in this range. Note: These
+                                         ; need to be numeric, as Asterisk starts from the start position and
+                                         ; increments with one for the next parked call.
+
+context =&gt; parkedcalls                   ; Sets the default dialplan context where the parking extension and
+                                         ; the parking lot extensions are created. These will be automatically
+                                         ; generated since we have specified a value for the &#39;parkext&#39; option
+                                         ; above. If you need to use this in your dialplan (extensions.conf),
+                                         ; just include it like: include =&gt; parkedcalls.
+
+parkingtime =&gt; 300                       ; Specifies the number of seconds a call will wait in the parking
+                                         ; lot before timing out. In this example, a parked call will time out
+                                         ; if it is not un-parked before 300 seconds (5 minutes) elapses.
+
+findslot =&gt; next                         ; Configures the parking slot selection behavior. For this example,
+                                         ; the next free slot will be selected when a call is parked.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[featuremap]
+parkcall =&gt; #72                          ; Parks the call (one-step parking). For this example, a call will be
+                                         ; automatically parked when an allowed party presses the DTMF digits,
+                                         ; #·7·2. A party is able to make use of this when the the K/k options
+                                         ; are used when invoking the Dial() application. For convenience, the
+                                         ; values of this option are defined below:
+                                         ; K - Allow the calling party to enable parking of the call.
+                                         ; k - Allow the called party to enable parking of the call.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[globals]
+; Extension Maps
+5001=alice                               ; Maps 5001 to a local extension that will emulate
+                                         ; a party pressing DTMF digits from a device.
+;5001=PJSIP/sip:alice@127.0.0.1:5060     ; What a realistc mapping for the alice device would look like.
+
+; Realistically, &#39;alice&#39; would map to a channel for a local device that would receive the call, therefore
+; rendering this extension unnecessary. However, for the purposes of this demonstration, the extension is
+; presented to you to show that sending the sequence of DTMF digits defined in the &#39;parkcall&#39; option in
+; &#39;features.conf&#39; is the trigger that invokes the one-step parking feature.
+
+[parking-example]
+include =&gt; parkedcalls
+
+exten =&gt; alice,1,NoOp(Handles calls to alice.)
+  same =&gt; n,Answer()
+  same =&gt; n,Playback(hello-world)
+  same =&gt; n,SendDTMF(#72w)
+  same =&gt; n,Goto(parkedcalls,701,1)
+  same =&gt; n,Playback(vm-goodbye)
+  same =&gt; n,Hangup()
+
+[from-outside]
+exten =&gt; 5555001,1,NoOp(Route to a local extension.)
+  ; Dials the device that is mapped to the local resource, alice, giving the recipient of the call the ability
+  ; to park it. Assuming the value of LocalExtension is 5001, the Dial() command will look like: Dial(alice,,k)
+  same =&gt; n,Dial(PJSIP/alice)
+  same =&gt; n,Hangup()
+</pre>
+</div></div><h2 id="CallParking-BasicHandlingforCallParkingTimeouts">Basic Handling for Call Parking Timeouts</h2><p style="color: rgb(35,31,32);">Next we will move on to explain how to handle situations where a call is parked but is not retrieved before the value specified as the <code>
+    <span style="font-weight: bold;">parkingtime</span>
+  </code> option elapses. Just like the scenario above, this is a basic scenario that only requires minimal adjustments to the following configuration files: <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>, <code>
+    <span style="font-weight: bold;">features.conf</span>
+  </code>, and <code>
+    <span style="font-weight: bold;">extensions.conf</span>
+  </code>.</p><p style="color: rgb(35,31,32);">Like before, our dialplan contains an extension to accept calls from the outside. Again, let's assume that the extension the caller dialed was: <code>
+    <span style="font-weight: bold;">5555001</span>
+  </code>. The handler will then attempt to dial the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension, using the <code>
+    <span style="font-weight: bold;">k</span>
+  </code> option.</p><p style="color: rgb(35,31,32);">Sadly for our caller, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension answers the call and immediately sends the DTMF digits to invoke the call parking feature without giving the caller a chance to speak. Unlike in the previous scenario, however, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension does not retrieve the parked call. Our sad caller is now even more sad.</p><p style="color: rgb(35,31,32);">After a period of <code>
+    <span style="font-weight: bold;">300 seconds</span>
+  </code>, or <code>
+    <span style="font-weight: bold;">5 minutes</span>
+  </code> (as defined in the <code>
+    <span style="font-weight: bold;">parkingtime</span>
+  </code> option in <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>), the call will time out. Because we told Asterisk to return a timed-out parked call to the party that originally parked the call (<code>
+    <span style="font-weight: bold;">comebacktoorigin=yes</span>
+  </code>), Asterisk will attempt to call <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> using an extension automagically created in the special context, <code>
+    <span style="font-weight: bold;">park-dial</span>
+  </code>.</p><p style="color: rgb(35,31,32);">Unfortunately, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension has no time to be bothered with us at this moment, so the call is not answered. After a period of <code>
+    <span style="font-weight: bold;">20 seconds</span>
+  </code> elapses (the value specified for the <code>
+    <span style="font-weight: bold;">comebackdialtime</span>
+  </code> option in <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>), Asterisk finally gives up and the <code>
+    <span style="font-weight: bold;">t</span>
+  </code> extension in the <code>
+    <span style="font-weight: bold;">park-dial</span>
+  </code> context is executed. Our caller is then told &quot;Goodbye&quot; before being disconnected.</p><p style="color: rgb(35,31,32);"><span style="font-weight: bold;">In summary:</span></p><ul><li>Outside caller dials <code>
+      <span style="font-weight: bold;">5555001</span>
+    </code></li><li>Alice picks up the device and says &quot;Hello World!&quot;</li><li>Alice presses the one touch parking DTMF combination</li><li>The parked call times out after 300 seconds</li><li>Asterisk sends the call to the origin, or the <code>
+      <span style="font-weight: bold;">alice</span>
+    </code> extension</li><li>A period of <code>
+      <span style="font-weight: bold;">20 seconds</span>
+    </code> elapses without an answer</li><li>Asterisk sends the call to <code>
+      <span style="font-weight: bold;">t</span>
+    </code> extension in the <code>
+      <span style="font-weight: bold;">park-dial</span>
+    </code> context</li><li>Our caller hears, &quot;Goodbye&quot;, before being disconnected</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>res_parking.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+parkext =&gt; 700                           ; Sets the default extension used to park calls. Note: This option
+                                         ; can take any alphanumeric string.
+
+parkpos =&gt; 701-709                       ; Sets the range of extensions used as the parking lot. Parked calls
+                                         ; may be retrieved by dialing the numbers in this range. Note: These
+                                         ; need to be numeric, as Asterisk starts from the start position and
+                                         ; increments with one for the next parked call.
+
+context =&gt; parkedcalls                   ; Sets the default dialplan context where the parking extension and
+                                         ; the parking lot extensions are created. These will be automatically
+                                         ; generated since we have specified a value for the &#39;parkext&#39; option
+                                         ; above. If you need to use this in your dialplan (extensions.conf),
+                                         ; just include it like: include =&gt; parkedcalls.
+
+parkingtime =&gt; 300                       ; Specifies the number of seconds a call will wait in the parking
+                                         ; lot before timing out. In this example, a parked call will time out
+                                         ; if it is not un-parked before 300 seconds (5 minutes) elapses.
+
+findslot =&gt; next                         ; Configures the parking slot selection behavior. For this example,
+                                         ; the next free slot will be selected when a call is parked.
+
+comebackdialtime=20                      ; When a parked call times out, this is the number of seconds to dial
+                                         ; the device that originally parked the call, or the PARKER
+                                         ; channel variable. The value of &#39;comebackdialtime&#39; is available as
+                                         ; the channel variable &#39;COMEBACKDIALTIME&#39; after a parked call has
+                                         ; timed out. For this example, when a parked call times out, Asterisk
+                                         ; will attempt to call the PARKER for 20 seconds, using an extension
+                                         ; it will automatically create in the &#39;park-dial&#39; context. If the
+                                         ; party does not answer the call during this period, Asterisk will
+                                         ; continue executing any remaining priorities in the dialplan.
+
+comebacktoorigin=yes                     ; Determines what should be done with a parked call if it is not
+                                         ; retrieved before the time specified in the &#39;parkingtime&#39; option
+                                         ; elapses. In the case of this example where &#39;comebacktoorigin=yes&#39;,
+                                         ; Asterisk will attempt to return the parked call to the party that
+                                         ; originally parked the call, or the PARKER channel variable, using
+                                         ; an extension it will automatically create in the &#39;park-dial&#39;
+                                         ; context.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[featuremap]
+parkcall =&gt; #72                          ; Parks the call (one-step parking). For this example, a call will be
+                                         ; automatically parked when an allowed party presses the DTMF digits,
+                                         ; #·7·2. A party is able to make use of this when the the K/k options
+                                         ; are used when invoking the Dial() application. For convenience, the
+                                         ; values of this option are defined below:
+                                         ; K - Allow the calling party to enable parking of the call.
+                                         ; k - Allow the called party to enable parking of the call.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[globals]
+; Extension Maps
+5001=alice                               ; Maps 5001 to a local extension that will emulate
+                                         ; a party pressing DTMF digits from a device.
+;5001=PJSIP/sip:alice@127.0.0.1:5060     ; What a realistc mapping for the alice device would look like.
+
+; Realistically, &#39;alice&#39; would map to a channel for a local device that would receive the call, therefore
+; rendering this extension unnecessary. However, for the purposes of this demonstration, the extension is
+; presented to you to show that sending the sequence of DTMF digits defined in the &#39;parkcall&#39; option in
+; &#39;features.conf&#39; is the trigger that invokes the one-step parking feature.
+
+[parking-example]
+include =&gt; parkedcalls
+
+exten =&gt; alice,1,NoOp(Handles calls to alice.)
+  same =&gt; n,Answer()
+  same =&gt; n,Playback(hello-world)
+  same =&gt; n,SendDTMF(#72w)
+  same =&gt; n,Wait(300)
+  same =&gt; n,Hangup()
+
+[from-outside]
+exten =&gt; 5555001,1,NoOp(Route to a local extension.)
+  ; Dials the device that is mapped to the local resource, alice, giving the recipient of the call the ability
+  ; to park it. Assuming the value of LocalExtension is 5001, the Dial() command will look like: Dial(alice,,k)
+  same =&gt; n,Dial(PJSIP/alice)
+  same =&gt; n,Hangup()
+
+[park-dial]
+; Route here if the party that initiated the call parking cannot be reached after a period of time equaling the
+; value specified in the &#39;comebackdialtime&#39; option elapses.
+exten =&gt; t,1,NoOp(End of the line for a timed-out parked call.)
+  same =&gt; n,Playback(vm-goodbye)
+  same =&gt; n,Hangup()
+</pre>
+</div></div><h2 id="CallParking-CustomHandlingforCallParkingTimeouts">Custom Handling for Call Parking Timeouts</h2><p style="color: rgb(35,31,32);">Finally, we will move on to explain how to handle situations where upon a parked call session timing out, it is not desired to return to the parked call to the device from where the call was originally parked. (This might be handy for situations where you have a dedicated receptionist or service desk extension to handle incoming call traffic.) Just like the previous two examples, this is a basic scenario that only requires minimal adjustments to the following configuration files: <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>, <code>
+    <span style="font-weight: bold;">features.conf</span>
+  </code>, and <code>
+    <span style="font-weight: bold;">extensions.conf</span>
+  </code>.</p><p style="color: rgb(35,31,32);">Like before, our dialplan contains an extension to accept calls from the outside. Again, let's assume that the extension the caller dialed was: <code>
+    <span style="font-weight: bold;">5555001</span>
+  </code>. The handler will then attempt to dial the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension, using the <code>
+    <span style="font-weight: bold;">k</span>
+  </code> option.</p><p style="color: rgb(35,31,32);">Sadly for our caller, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension answers the call and immediately sends the DTMF digits to invoke the call parking feature without giving the caller a chance to speak. Just like in the previous scenario, the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension does not retrieve the parked call. Maybe the <code>
+    <span style="font-weight: bold;">alice</span>
+  </code> extension is having a bad day.</p><p style="color: rgb(35,31,32);">After a period of <code>
+    <span style="font-weight: bold;">300 seconds</span>
+  </code>, or <code>
+    <span style="font-weight: bold;">5 minutes</span>
+  </code> (as defined in the <code>
+    <span style="font-weight: bold;">parkingtime</span>
+  </code> option in <code>
+    <span style="font-weight: bold;">res_parking.conf</span>
+  </code>), the call will time out. Because we told Asterisk to send a timed-out parked call to the <code>
+    <span style="font-weight: bold;">parkedcallstimeout</span>
+  </code> context (<code>
+    <span style="font-weight: bold;">comebacktoorigin=no</span>
+  </code>), we are able to bypass the default logic that directs Asterisk to returning the call to the person who initiated the park. In our example, when a parked call enters our <code>
+    <span style="font-weight: bold;">s</span>
+  </code> extension in our <code>
+    <span style="font-weight: bold;">parkedcallstimeout</span>
+  </code> context, we only play a sound file to the caller and hangup the call, but this is where you could do any custom logic like returning the call to a different extension, or performing a lookup of some sort.</p><p style="color: rgb(35,31,32);"><span style="font-weight: bold;">In summary:</span></p><ul><li>Outside caller dials <code>
+      <span style="font-weight: bold;">5555001</span>
+    </code></li><li>Alice picks up the device and says &quot;Hello World!&quot;</li><li>Alice presses the one touch parking DTMF combination</li><li>The parked call times out after 300 seconds</li><li>Asterisk sends the call to the <code>
+      <span style="font-weight: bold;">s</span>
+    </code> extension in our <code>
+      <span style="font-weight: bold;">parkedcallstimeout</span>
+    </code></li><li>Our caller hears, &quot;Goodbye&quot;, before being disconnected</li></ul><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>res_parking.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[general]
+
+[default]
+parkext =&gt; 700                           ; Sets the default extension used to park calls. Note: This option
+                                         ; can take any alphanumeric string.
+
+parkpos =&gt; 701-709                       ; Sets the range of extensions used as the parking lot. Parked calls
+                                         ; may be retrieved by dialing the numbers in this range. Note: These
+                                         ; need to be numeric, as Asterisk starts from the start position and
+                                         ; increments with one for the next parked call.
+
+context =&gt; parkedcalls                   ; Sets the default dialplan context where the parking extension and
+                                         ; the parking lot extensions are created. These will be automatically
+                                         ; generated since we have specified a value for the &#39;parkext&#39; option
+                                         ; above. If you need to use this in your dialplan (extensions.conf),
+                                         ; just include it like: include =&gt; parkedcalls.
+
+parkingtime =&gt; 300                       ; Specifies the number of seconds a call will wait in the parking
+                                         ; lot before timing out. In this example, a parked call will time out
+                                         ; if it is not un-parked before 300 seconds (5 minutes) elapses.
+
+findslot =&gt; next                         ; Configures the parking slot selection behavior. For this example,
+                                         ; the next free slot will be selected when a call is parked.
+
+comebacktoorigin=no                      ; Determines what should be done with a parked call if it is not
+                                         ; retrieved before the time specified in the &#39;parkingtime&#39; option
+                                         ; elapses.
+                                         ;
+                                         ; Setting &#39;comebacktoorigin=no&#39; (like in this example) is for cases
+                                         ; when you want to perform custom dialplan logic to gracefully handle
+                                         ; the remainder of the parked call when it times out.
+
+comebackcontext=parkedcallstimeout       ; The context that a parked call will be routed to in the event it
+                                         ; times out. Asterisk will first attempt to route the call to an
+                                         ; extension in this context that matches the flattened peer name. If
+                                         ; no such extension exists, Asterisk will next attempt to route the
+                                         ; call to the &#39;s&#39; extension in this context. Note: If you set
+                                         ; &#39;comebacktoorigin=no&#39; in your configuration but do not define this
+                                         ; value, Asterisk will route the call to the &#39;s&#39; extension in the
+                                         ; default context.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>features.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[featuremap]
+parkcall =&gt; #72                          ; Parks the call (one-step parking). For this example, a call will be
+                                         ; automatically parked when an allowed party presses the DTMF digits,
+                                         ; #·7·2. A party is able to make use of this when the the K/k options
+                                         ; are used when invoking the Dial() application. For convenience, the
+                                         ; values of this option are defined below:
+                                         ; K - Allow the calling party to enable parking of the call.
+                                         ; k - Allow the called party to enable parking of the call.
+</pre>
+</div></div><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="first-line: 1; theme: Confluence; brush: text; gutter: true" style="font-size:12px;">[globals]
+; Extension Maps
+5001=alice                               ; Maps 5001 to a local extension that will emulate
+                                         ; a party pressing DTMF digits from a device.
+;5001=PJSIP/sip:alice@127.0.0.1:5060     ; What a realistc mapping for the alice device would look like.
+
+; Realistically, &#39;alice&#39; would map to a channel for a local device that would receive the call, therefore
+; rendering this extension unnecessary. However, for the purposes of this demonstration, the extension is
+; presented to you to show that sending the sequence of DTMF digits defined in the &#39;parkcall&#39; option in
+; &#39;features.conf&#39; is the trigger that invokes the one-step parking feature.
+
+[parking-example]
+include =&gt; parkedcalls
+
+exten =&gt; alice,1,NoOp(Handles calls to alice.)
+  same =&gt; n,Answer()
+  same =&gt; n,Playback(hello-world)
+  same =&gt; n,SendDTMF(#72w)
+  same =&gt; n,Wait(300)
+  same =&gt; n,Hangup()
+
+[from-outside]
+exten =&gt; 5555001,1,NoOp(Route to a local extension.)
+  ; Dials the device that is mapped to the local resource, alice, giving the recipient of the call the ability
+  ; to park it. Assuming the value of LocalExtension is 5001, the Dial() command will look like: Dial(alice,,k)
+  same =&gt; n,Dial(PJSIP/alice)
+  same =&gt; n,Hangup()
+
+[parkedcallstimeout]
+exten =&gt; s,1,NoOp(This is all that happens to parked calls if they time out.)
+  same =&gt; n,Playback(vm-goodbye)
+  same =&gt; n,Hangup()
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : MySQL CDR Backend</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Reporting_27200283.html">Reporting</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5242894.html">Call Detail Records (CDR)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="CDR-Storage-Backends_5242913.html">CDR Storage Backends</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : MySQL CDR Backend
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Jan 25, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h5 id="MySQLCDRBackend-ODBC">ODBC</h5>
+<p>Using MySQL for CDR records is supported by using ODBC and the cdr_adaptive_odbc module (depends on res_odbc).</p>
+
+    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>The below cdr_mysql module has been deprecated in 1.8.</p>
+                    </div>
+    </div>
+
+
+<h5 id="MySQLCDRBackend-Native">Native</h5>
+
+<p>Alternatively, there is a native MySQL CDR module. </p>
+
+<p>To use it, configure the module in cdr_mysql.conf. Create a table called cdr under the database name you will be using the following schema.</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CREATE TABLE cdr ( 
+        calldate datetime NOT NULL default &#39;0000-00-00 00:00:00&#39;, 
+        clid varchar(80) NOT NULL default &#39;&#39;, 
+        src varchar(80) NOT NULL default &#39;&#39;, 
+        dst varchar(80) NOT NULL default &#39;&#39;, 
+        dcontext varchar(80) NOT NULL default &#39;&#39;, 
+        channel varchar(80) NOT NULL default &#39;&#39;, 
+        dstchannel varchar(80) NOT NULL default &#39;&#39;, 
+        lastapp varchar(80) NOT NULL default &#39;&#39;, 
+        lastdata varchar(80) NOT NULL default &#39;&#39;, 
+        duration int(11) NOT NULL default &#39;0&#39;, 
+        billsec int(11) NOT NULL default &#39;0&#39;, 
+        disposition varchar(45) NOT NULL default &#39;&#39;, 
+        amaflags int(11) NOT NULL default &#39;0&#39;, 
+        accountcode varchar(20) NOT NULL default &#39;&#39;, 
+        uniqueid varchar(32) NOT NULL default &#39;&#39;, 
+        userfield varchar(255) NOT NULL default &#39;&#39; 
+);
+</pre>
+</div></div>
+
+
+<h5 id="MySQLCDRBackend-In1.8andlater">In 1.8 and later</h5>
+
+<p>The following columns can also be defined:</p>
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>        peeraccount varchar(20) NOT NULL default &#39;&#39;
+        linkedid varchar(32) NOT NULL default &#39;&#39;
+        sequence int(11) NOT NULL default &#39;0&#39;
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -27,7 +27,7 @@
  * res_config_sqlite is a module for the Asterisk Open Source PBX to
  * support SQLite 2 databases. It can be used to fetch configuration
  * from a database (static configuration files and/or using the Asterisk
- * RealTime Architecture - ARA).  It can also be used to log CDR entries. 
+ * RealTime Architecture - ARA).  It can also be used to log CDR entries.
  * Note that Asterisk already comes with a module named cdr_sqlite.
  * There are two reasons for including it in res_config_sqlite:
  * the first is that rewriting it was a training to learn how to write a
@@ -75,18 +75,17 @@
  * \addtogroup configuration_file Configuration Files
  */
 
-/*! 
+/*!
  * \page res_config_sqlite.conf res_config_sqlite.conf
  * \verbinclude res_config_sqlite.conf.sample
  */
 
 /*** MODULEINFO
 	<depend>sqlite</depend>
-	<support_level>extended</support_level>
+	<support_level>deprecated</support_level>
  ***/
 
 #include "asterisk.h"
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <sqlite.h>
 
@@ -431,7 +430,7 @@ static int realtime_destroy_handler(const char *database, const char *table,
  * \brief Asterisk callback function for the CLI status command.
  *
  * \param e CLI command
- * \param cmd 
+ * \param cmd
  * \param a CLI argument list
  * \return RESULT_SUCCESS
  */
@@ -1657,8 +1656,8 @@ static int unload_module(void)
  * Module loading including tests for configuration or dependencies.
  * This function can return AST_MODULE_LOAD_FAILURE, AST_MODULE_LOAD_DECLINE,
  * or AST_MODULE_LOAD_SUCCESS. If a dependency or environment variable fails
- * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the 
- * configuration file or other non-critical problem return 
+ * tests return AST_MODULE_LOAD_FAILURE. If the module can not load the
+ * configuration file or other non-critical problem return
  * AST_MODULE_LOAD_DECLINE. On success return AST_MODULE_LOAD_SUCCESS.
  */
 static int load_module(void)
@@ -1773,9 +1772,16 @@ static int load_module(void)
 	return AST_MODULE_LOAD_SUCCESS;
 }
 
+/*
+ * This module should require "cdr" to enforce startup/shutdown ordering but it
+ * loads at REALTIME_DRIVER priority which would cause "cdr" to load too early.
+ *
+ * ast_cdr_register / ast_cdr_unregister is safe for use while "cdr" is not running.
+ */
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "Realtime SQLite configuration",
-		.support_level = AST_MODULE_SUPPORT_EXTENDED,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_REALTIME_DRIVER,
+	.support_level = AST_MODULE_SUPPORT_DEPRECATED,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_REALTIME_DRIVER,
+	.requires = "extconfig",
 );

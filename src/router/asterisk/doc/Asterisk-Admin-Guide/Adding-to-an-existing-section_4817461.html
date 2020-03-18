@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Adding to an existing section</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Fundamentals_27200185.html">Fundamentals</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration_4620290.html">Asterisk Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Configuration-Files_4817443.html">Asterisk Configuration Files</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Adding to an existing section
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> George Joseph</span> on Oct 03, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>If you want to add settings to an existing section of a configuration file (either later in the file, or when using the <strong>#include</strong> and <strong>#exec</strong> constructs), add a plus sign in parentheses after the section heading, as shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[section-name]
+setting1=value1
+
+[section-name](+)
+setting2=value2</pre>
+</div></div><p>This example shows that the <strong>setting2</strong> setting was added to the existing section of the configuration file.</p><p>If the section you're adding to appears more than once in the config, such as an endpoint and aor named the same in a pjsip.conf file, the section added to will be the first one defined unless you add a filter qualifier.</p><p>Without a qualifier:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>This will fail because default_expiration isn't valid for an endpoint</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[101]
+type=endpoint
+allow=ulaw
+ 
+[101]
+type=aor
+default_expiration=3600
+ 
+[101](+)
+default_expiration=1200
+
+</pre>
+</div></div><p> </p><p>With qualifiers:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>This works because the filters ensure that the additions are to the correct objects.</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[101]
+type=endpoint
+allow=ulaw
+ 
+[101]
+type=aor
+default_expiration=3600
+ 
+[101](+type=aor)
+default_expiration=1200
+
+[101](+type=endpoint)
+allow=g722
+</pre>
+</div></div><p> </p><p>You're not limited to filtering by the type parameter and you can even use regular expressions in the name or value.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>A weird and not so useful example</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[101]
+type=endpoint
+allow=ulaw
+ 
+[101]
+type=aor
+default_expiration=3600
+ 
+[101](+default_.*=36[0-9][0-9])
+default_expiration=1200
+
+[101](+type=endpoint)
+allow=g722</pre>
+</div></div><p>You can also include multiple filters.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>Another weird and not so useful example</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[101]
+type=endpoint
+allow=ulaw
+ 
+[101]
+type=aor
+default_expiration=3600
+ 
+[101](+type=aor&amp;default_.*=36[0-9][0-9])
+default_expiration=1200
+
+[101](+type=endpoint)
+allow=g722</pre>
+</div></div><p>And finally, you can elect to include or restrict parameters inherited from templates in the search.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>The final weird and not so useful example.  This will NOT match because default_expiration is defined in the parent template.</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[101]
+type=endpoint
+allow=ulaw
+
+[aor_template](!)
+type=aor
+default_expiration=3600
+
+[101](aor_template)
+ 
+[101](+TEMPLATES=restrict&amp;default_.*=36[0-9][0-9])
+default_expiration=1200
+
+[101](+type=endpoint)
+allow=g722</pre>
+</div></div><p> </p><p> </p><p> </p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:34</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

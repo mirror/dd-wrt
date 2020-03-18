@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_endpoint_identifier_ip</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_endpoint_identifier_ip
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 15, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-Modulethatidentifiesendpoints">Module that identifies endpoints</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_endpoint_identifier_ip</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-pjsip.conf">pjsip.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify">identify</h3>
+
+<p>Identifies endpoints via some criteria.</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>endpoint</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Name of endpoint identified </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_match"><code>match</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> IP addresses or networks to match against. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_srv_lookups"><code>srv_lookups</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Perform SRV lookups for provided hostnames. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_match_header"><code>match_header</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Header/value pair to match against. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'identify'. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_match"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-match">match</h5>
+
+<p>The value is a comma-delimited list of IP addresses or hostnames.</p>
+
+<p>IP addresses may have a subnet mask appended. The subnet mask may be written in either CIDR or dotted-decimal notation. Separate the IP address and subnet mask with a slash ('/'). A source port can also be specified by adding a colon (':') after the address but before the subnet mask, e.g. 3.2.1.0:5061/24. To specify a source port for an IPv6 address, the address itself must be enclosed in square brackets ('[2001:db8:0::1]:5060')</p>
+
+<p>When a hostname is used, the behavior depends on whether <em>srv_lookups</em> is enabled and/or a source port is provided. If <em>srv_lookups</em> is enabled and a source port is not provided, Asterisk will perform an SRV lookup on the provided hostname, adding all of the A and AAAA records that are resolved.</p>
+
+<p>If the SRV lookup fails, <em>srv_lookups</em> is disabled, or a source port is specified when the hostname is configured, Asterisk will resolve the hostname and add all A and AAAA records that are resolved.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_srv_lookups"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-srv_lookups">srv_lookups</h5>
+
+<p>When enabled, <em>srv_lookups</em> will perform SRV lookups for _sip._udp, _sip._tcp, and _sips._tcp of the given hostnames to determine additional addresses that traffic may originate from.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-identify_match_header"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-match_header">match_header</h5>
+
+<p>A SIP header whose value is used to match against. SIP requests containing the header, along with the specified value, will be mapped to the specified endpoint. The header must be specified with a <code>:</code>, as in <code>match_header = SIPHeader: value</code>.</p>
+
+<p>The specified SIP header value can be a regular expression if the value is of the form / <em>regex</em>/.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Use of a regex is expensive so be sure you need to use a regex to match your endpoint.</p>
+
+                    </div>
+    </div>
+
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_endpoint_identifier_ip-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-0bd7cd5</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -34,12 +34,11 @@
  */
 
 /*** MODULEINFO
+	<use type="module">func_periodic_hook</use>
 	<support_level>core</support_level>
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/paths.h"	/* use ast_config_AST_MONITOR_DIR */
 #include "asterisk/stringfields.h"
@@ -116,6 +115,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 						Like with the basic filename argument, if an absolute path isn't given, it will create
 						the file in the configured monitoring directory.</para>
 					</option>
+					<option name="S">
+						<para>When combined with the <replaceable>r</replaceable> or <replaceable>t</replaceable>
+						option, inserts silence when necessary to maintain synchronization between the receive
+						and transmit audio streams.</para>
+					</option>
 					<option name="i">
 						<argument name="chanvar" required="true" />
 						<para>Stores the MixMonitor's ID on this channel variable.</para>
@@ -138,6 +142,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<para>Will be executed when the recording is over.</para>
 				<para>Any strings matching <literal>^{X}</literal> will be unescaped to <variable>X</variable>.</para>
 				<para>All variables will be evaluated at the time MixMonitor is called.</para>
+				<warning><para>Do not use untrusted strings such as <variable>CALLERID(num)</variable>
+				or <variable>CALLERID(name)</variable> as part of the command parameters.  You
+				risk a command injection attack executing arbitrary commands if the untrusted
+				strings aren't filtered to remove dangerous characters.  See function
+				<variable>FILTER()</variable>.</para></warning>
 			</parameter>
 		</syntax>
 		<description>
@@ -145,11 +154,21 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<para>This application does not automatically answer and should be preceeded by
 			an application such as Answer or Progress().</para>
 			<note><para>MixMonitor runs as an audiohook.</para></note>
+			<note><para>If a filename passed to MixMonitor ends with
+			<literal>.wav49</literal>, Asterisk will silently convert the extension to
+			<literal>.WAV</literal> for legacy reasons. <variable>MIXMONITOR_FILENAME</variable>
+			will contain the actual filename that Asterisk is writing to, not necessarily the
+			value that was passed in.</para></note>
 			<variablelist>
 				<variable name="MIXMONITOR_FILENAME">
 					<para>Will contain the filename used to record.</para>
 				</variable>
 			</variablelist>
+			<warning><para>Do not use untrusted strings such as <variable>CALLERID(num)</variable>
+			or <variable>CALLERID(name)</variable> as part of ANY of the application's
+			parameters.  You risk a command injection attack executing arbitrary commands
+			if the untrusted strings aren't filtered to remove dangerous characters.  See
+			function <variable>FILTER()</variable>.</para></warning>
 		</description>
 		<see-also>
 			<ref type="application">Monitor</ref>
@@ -224,6 +243,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 				<para>Will be executed when the recording is over.
 				Any strings matching <literal>^{X}</literal> will be unescaped to <variable>X</variable>.
 				All variables will be evaluated at the time MixMonitor is called.</para>
+				<warning><para>Do not use untrusted strings such as <variable>CALLERID(num)</variable>
+				or <variable>CALLERID(name)</variable> as part of the command parameters.  You
+				risk a command injection attack executing arbitrary commands if the untrusted
+				strings aren't filtered to remove dangerous characters.  See function
+				<variable>FILTER()</variable>.</para></warning>
 			</parameter>
 		</syntax>
 		<description>
@@ -295,12 +319,12 @@ struct vm_recipient {
 
 struct mixmonitor {
 	struct ast_audiohook audiohook;
-	struct ast_callid *callid;
 	char *filename;
 	char *filename_read;
 	char *filename_write;
 	char *post_process;
 	char *name;
+	ast_callid callid;
 	unsigned int flags;
 	struct ast_autochan *autochan;
 	struct mixmonitor_ds *mixmonitor_ds;
@@ -333,7 +357,8 @@ enum mixmonitor_flags {
 	MUXFLAG_VMRECIPIENTS = (1 << 10),
 	MUXFLAG_BEEP = (1 << 11),
 	MUXFLAG_BEEP_START = (1 << 12),
-	MUXFLAG_BEEP_STOP = (1 << 13)
+	MUXFLAG_BEEP_STOP = (1 << 13),
+	MUXFLAG_RWSYNC = (1 << 14),
 };
 
 enum mixmonitor_args {
@@ -345,6 +370,7 @@ enum mixmonitor_args {
 	OPT_ARG_UID,
 	OPT_ARG_VMRECIPIENTS,
 	OPT_ARG_BEEP_INTERVAL,
+	OPT_ARG_RWSYNC,
 	OPT_ARG_ARRAY_SIZE,	/* Always last element of the enum */
 };
 
@@ -361,6 +387,7 @@ AST_APP_OPTIONS(mixmonitor_opts, {
 	AST_APP_OPTION_ARG('t', MUXFLAG_WRITE, OPT_ARG_WRITENAME),
 	AST_APP_OPTION_ARG('i', MUXFLAG_UID, OPT_ARG_UID),
 	AST_APP_OPTION_ARG('m', MUXFLAG_VMRECIPIENTS, OPT_ARG_VMRECIPIENTS),
+	AST_APP_OPTION_ARG('S', MUXFLAG_RWSYNC, OPT_ARG_RWSYNC),
 });
 
 struct mixmonitor_ds {
@@ -545,9 +572,6 @@ static void mixmonitor_free(struct mixmonitor *mixmonitor)
 		/* clean stringfields */
 		ast_string_field_free_memory(mixmonitor);
 
-		if (mixmonitor->callid) {
-			ast_callid_unref(mixmonitor->callid);
-		}
 		ast_free(mixmonitor);
 	}
 }
@@ -802,6 +826,8 @@ static int setup_mixmonitor_ds(struct mixmonitor *mixmonitor, struct ast_channel
 
 	if (ast_asprintf(datastore_id, "%p", mixmonitor_ds) == -1) {
 		ast_log(LOG_ERROR, "Failed to allocate memory for MixMonitor ID.\n");
+		ast_free(mixmonitor_ds);
+		return -1;
 	}
 
 	ast_mutex_init(&mixmonitor_ds->lock);
@@ -949,6 +975,9 @@ static int launch_monitor_thread(struct ast_channel *chan, const char *filename,
 	}
 
 	ast_set_flag(&mixmonitor->audiohook, AST_AUDIOHOOK_TRIGGER_SYNC);
+	if ((ast_test_flag(mixmonitor, MUXFLAG_RWSYNC))) {
+		ast_set_flag(&mixmonitor->audiohook, AST_AUDIOHOOK_SUBSTITUTE_SILENCE);
+	}
 
 	if (readvol)
 		mixmonitor->audiohook.options.read_volume = readvol;
@@ -974,16 +1003,34 @@ static int launch_monitor_thread(struct ast_channel *chan, const char *filename,
 static char *filename_parse(char *filename, char *buffer, size_t len)
 {
 	char *slash;
+	char *ext;
+
+	ast_assert(len > 0);
+
 	if (ast_strlen_zero(filename)) {
 		ast_log(LOG_WARNING, "No file name was provided for a file save option.\n");
-	} else if (filename[0] != '/') {
-		char *build;
-		build = ast_alloca(strlen(ast_config_AST_MONITOR_DIR) + strlen(filename) + 3);
+		buffer[0] = 0;
+		return buffer;
+	}
+
+	/* If we don't have an absolute path, make one */
+	if (*filename != '/') {
+		char *build = ast_alloca(strlen(ast_config_AST_MONITOR_DIR) + strlen(filename) + 3);
 		sprintf(build, "%s/%s", ast_config_AST_MONITOR_DIR, filename);
 		filename = build;
 	}
 
 	ast_copy_string(buffer, filename, len);
+
+	/* If the provided filename has a .wav49 extension, we need to convert it to .WAV to
+	   match the behavior of build_filename in main/file.c. Otherwise MIXMONITOR_FILENAME
+	   ends up referring to a file that does not/will not exist */
+	ext = strrchr(buffer, '.');
+	if (ext && !strcmp(ext, ".wav49")) {
+		/* Change to WAV - we know we have at least 6 writeable bytes where 'ext' points,
+		 * so this is safe */
+		memcpy(ext, ".WAV", sizeof(".WAV"));
+	}
 
 	if ((slash = strrchr(filename, '/'))) {
 		*slash = '\0';
@@ -1543,4 +1590,9 @@ static int load_module(void)
 	return res;
 }
 
-AST_MODULE_INFO_STANDARD(ASTERISK_GPL_KEY, "Mixed Audio Monitoring Application");
+AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "Mixed Audio Monitoring Application",
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.optional_modules = "func_periodic_hook",
+);

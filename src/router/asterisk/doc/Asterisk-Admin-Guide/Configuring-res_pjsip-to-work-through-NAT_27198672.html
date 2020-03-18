@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Configuring res_pjsip to work through NAT</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="SIP_28314848.html">SIP</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuring-res_pjsip_25919621.html">Configuring res_pjsip</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Configuring res_pjsip to work through NAT
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> Joshua C. Colp</span> on Jan 22, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Here we can show some examples of working configuration for Asterisk's SIP channel driver when Asterisk is behind NAT (Network Address Translation).</p><p>If you are migrating from chan_sip to chan_pjsip, then also read the NAT section in <a href="Migrating-from-chan_sip-to-res_pjsip_30278068.html">Migrating from chan_sip to res_pjsip</a> for helpful tips.</p><h1 id="Configuringres_pjsiptoworkthroughNAT-AsteriskandPhonesConnectingThroughNATtoanITSP">Asterisk and Phones Connecting Through NAT to an ITSP</h1><p>This example should apply for most simple NAT scenarios that meet the following criteria:</p><ul><li>Asterisk and the phones are on a private network.</li><li>There is a router interfacing the private and public networks. Where the public network is the Internet.</li><li>The router is performing Network Address Translation and Firewall functions.</li><li>The router is configured for port-forwarding, where it is mapping the necessary ranges of SIP and RTP traffic to your internal Asterisk server.<br />In this example the router is port-forwarding WAN inbound TCP/UDP 5060 and UDP 10000-20000 to LAN 192.0.2.10</li></ul><p>This example was based on a configuration for the ITSP <a href="https://www.sip.us/" class="external-link" rel="nofollow">SIP.US</a> and assuming you swap out the addresses and credentials for real ones, it should work for a SIP.US SIP account.</p><h3 id="Configuringres_pjsiptoworkthroughNAT-DevicesInvolvedintheExample">Devices Involved in the Example</h3><p>Using <a href="http://tools.ietf.org/html/rfc5737" class="external-link" rel="nofollow">RFC5737</a> documentation addresses</p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Device</th><th class="confluenceTh">IP in example</th></tr><tr><td class="confluenceTd">VOIP Phone(6001)</td><td class="confluenceTd"><pre class="newpage">192.0.2.20</pre></td></tr><tr><td colspan="1" class="confluenceTd">PC/Asterisk</td><td colspan="1" class="confluenceTd"><pre class="newpage">192.0.2.10</pre></td></tr><tr><td colspan="1" class="confluenceTd">Router</td><td colspan="1" class="confluenceTd"><pre class="newpage">LAN: 192.0.2.1<br />WAN: 198.51.100.5</pre></td></tr><tr><td colspan="1" class="confluenceTd">ITSP SIP gateway</td><td colspan="1" class="confluenceTd"><pre class="newpage">203.0.113.1(gw1.example.com)<br />203.0.113.2(gw2.example.com)</pre></td></tr></tbody></table></div><p>For the sake of a complete example and clarity, in this example we use the following fake details:</p><p>ITSP Account number:  1112223333</p><p>DID number provided by ITSP:  19998887777</p><h3 id="Configuringres_pjsiptoworkthroughNAT-pjsip.confConfiguration">pjsip.conf Configuration</h3><p>We are assuming you have already read the Configuring res_pjsip page and have a basic understanding of Asterisk. For this NAT example, the important config options to note are <strong>local_net</strong>, <strong>external_media_address</strong> and <strong>external_signaling_address</strong> in the transport type section and <strong>direct_media</strong> in the endpoint section. The rest of the options may depend on your particular configuration, phone model, network settings, ITSP, etc. The key is to make sure you have those three options set appropriately.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-local_net">local_net</h5><p>This is the IP network that we want to consider our local network. For communication to addresses within this range, we won't apply any NAT-related settings, such as the external* options below.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-external_media_address">external_media_address</h5><p>This is the external IP address to use in RTP handling. When a request or response is sent out from Asterisk, if the destination of the message is outside the IP network defined in the option 'local_net', and the media address in the SDP is within the localnet network, then the media address in the SDP will be rewritten to the value defined for 'external_media_address'.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-external_signaling_address">external_signaling_address</h5><p>This is much like the external_media_address setting, but for SIP signaling instead of RTP media. The two external* options mentioned here should be set to the same address unless you separate your signaling and media to different addresses or servers.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-direct_media">direct_media</h5><p>Determines whether media may flow directly between endpoints</p><p> </p><p>Together these options make sure the far end knows where to send back SIP and RTP packets, and direct_media ensures Asterisk stays in the media path. This is important, because our Asterisk system has a private IP address that the ITSP cannot route to. We want to make sure the SIP and RTP traffic comes back to the WAN/Public internet address of our router. The sections prefixed with &quot;sipus&quot; are all configuration needed for inbound and outbound connectivity of the SIP trunk, and the sections named 6001 are all for the VOIP phone.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[transport-udp-nat]
+type=transport
+protocol=udp
+bind=0.0.0.0
+local_net=192.0.2.0/24
+local_net=127.0.0.1/32
+external_media_address=198.51.100.5
+external_signaling_address=198.51.100.5
+
+[sipus_reg]
+type=registration
+transport=transport-udp-nat
+outbound_auth=sipus_auth
+server_uri=sip:gw1.example.com
+client_uri=sip:1112223333@gw1.example.com
+contact_user=19998887777
+retry_interval=60
+
+[sipus_auth]
+type=auth
+auth_type=userpass
+password=************
+username=1112223333
+realm=gw1.example.com
+
+[sipus_endpoint]
+type=endpoint
+transport=transport-udp-nat
+context=from-external
+disallow=all
+allow=ulaw
+outbound_auth=sipus_auth
+aors=sipus_aor
+direct_media=no
+from_domain=gw1.example.com
+
+[sipus_aor]
+type=aor
+contact=sip:gw1.example.com
+contact=sip:gw2.example.com
+
+[sipus_identify]
+type=identify
+endpoint=sipus_endpoint
+match=203.0.113.1
+match=203.0.113.2
+
+[6001]
+type=endpoint
+context=from-internal
+disallow=all
+allow=ulaw
+transport=transport-udp-nat
+auth=6001
+aors=6001
+direct_media=no
+
+[6001]
+type=auth
+auth_type=userpass
+password=*********
+username=6001
+
+[6001]
+type=aor
+max_contacts=2</pre>
+</div></div><h3 id="Configuringres_pjsiptoworkthroughNAT-ForRemotePhonesBehindNAT">For Remote Phones Behind NAT</h3><p>In the above example we assumed the phone was on the same local network as Asterisk. Now, perhaps Asterisk is exposed on a public address, and instead your phones are remote and behind NAT, or maybe you have a double NAT scenario?</p><p>In these cases you will want to consider the below settings for the remote endpoints.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-media_address">media_address</h5><p>IP address used in SDP for media handling</p><p>At the time of SDP creation, the IP address defined here will be used as<br />the media address for individual streams in the SDP. <br />NOTE:  Be aware that the 'external_media_address' option, set in Transport<br />configuration, can also affect the final media address used in the SDP.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-rtp_symmetric">rtp_symmetric</h5><p>Enforce that RTP must be symmetric. Send RTP back to the same address/port we received it from.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-force_rport">force_rport</h5><p>Force RFC3581 compliant behavior even when no rport parameter exists. Basically always send SIP responses back to the same port we received SIP requests from.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-direct_media.1">direct_media</h5><p>Determines whether media may flow directly between endpoints.</p><h5 id="Configuringres_pjsiptoworkthroughNAT-rewrite_contact">rewrite_contact</h5><p>Determine whether SIP requests will be sent to the source IP address and port, instead of the address provided by the endpoint.</p><h2 id="Configuringres_pjsiptoworkthroughNAT-ClientsSupportingICE,STUN,TURN">Clients Supporting ICE,STUN,TURN</h2><p>This is really relevant to media, so look to the <a href="https://wiki.asterisk.org/wiki/display/AST/Interactive+Connectivity+Establishment+%28ICE%29+in+Asterisk">section here</a> for basic information on enabling this support and we'll add relevant examples later.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

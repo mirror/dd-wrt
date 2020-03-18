@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_ControlPlayback</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_ControlPlayback
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_ControlPlayback-ControlPlayback">ControlPlayback</h1>
+
+<h3 id="Asterisk17ManagerAction_ControlPlayback-Synopsis">Synopsis</h3>
+
+<p>Control the playback of a file being played to a channel.</p>
+
+<h3 id="Asterisk17ManagerAction_ControlPlayback-Description">Description</h3>
+
+<p>Control the operation of a media file being played back to a channel. Note that this AMI action does not initiate playback of media to channel, but rather controls the operation of a media operation that was already initiated on the channel.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The <code>pause</code> and <code>restart</code> <em>Control</em> options will stop a playback operation if that operation was not initiated from the <em>ControlPlayback</em> application or the <em>control stream file</em> AGI command.</p>
+
+                    </div>
+    </div>
+
+
+<h3 id="Asterisk17ManagerAction_ControlPlayback-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ControlPlayback
+ActionID: &lt;value&gt;
+Channel: &lt;value&gt;
+Control: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_ControlPlayback-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>Channel</code> - The name of the channel that currently has a file being played back to it.</li>
+	<li><code>Control</code>
+	<ul>
+		<li><code>stop</code> - Stop the playback operation.</li>
+		<li><code>forward</code> - Move the current position in the media forward. The amount of time that the stream moves forward is determined by the <em>skipms</em> value passed to the application that initiated the playback.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The default skipms value is <code>3000</code> ms.</p>
+                    </div>
+    </div>
+</li>
+		<li><code>reverse</code> - Move the current position in the media backward. The amount of time that the stream moves backward is determined by the <em>skipms</em> value passed to the application that initiated the playback.
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>The default skipms value is <code>3000</code> ms.</p>
+                    </div>
+    </div>
+</li>
+		<li><code>pause</code> - Pause/unpause the playback operation, if supported. If not supported, stop the playback.</li>
+		<li><code>restart</code> - Restart the playback operation, if supported. If not supported, stop the playback.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_ControlPlayback-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-Application_Playback_42010914.html">Asterisk 17 Application_Playback</a></li>
+	<li><a href="Asterisk-17-Application_ControlPlayback_42010987.html">Asterisk 17 Application_ControlPlayback</a></li>
+	<li><a href="Asterisk-17-AGICommand_stream-file_42011476.html">Asterisk 17 AGICommand_stream file</a></li>
+	<li><a href="Asterisk-17-AGICommand_control-stream-file_42011445.html">Asterisk 17 AGICommand_control stream file</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerAction_ControlPlayback-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

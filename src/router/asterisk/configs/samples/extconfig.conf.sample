@@ -95,6 +95,7 @@
 ;queue_rules => odbc,asterisk
 ;acls => odbc,asterisk
 ;musiconhold => mysql,general
+;musiconhold_entry => mysql,general
 ;queue_log => mysql,general
 ;
 ;
@@ -109,4 +110,3 @@
 ; note that using dynamic realtime extensions is not recommended anymore as a
 ; best practice; instead, you should consider writing a static dialplan with
 ; proper data abstraction via a tool like func_odbc.
-

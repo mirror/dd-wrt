@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Message Waiting Indication</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Voicemail_5242963.html">Voicemail</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Message Waiting Indication
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span>, last modified by <span class='editor'> George Joseph</span> on Sep 15, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="MessageWaitingIndication-WhatisMWI?">What is MWI?</h1><p>This page explains the resources available for Message Waiting Indicator(or Indication) functionality in Asterisk and how to configure.</p><p><strong>Documentation Under Construction</strong></p><h1 id="MessageWaitingIndication-ConfiguringMWI">Configuring MWI</h1><p>Here we talk about configuring Asterisk to provide MWI to endpoints or other systems.</p><h2 id="MessageWaitingIndication-ProvidingMWItochan_pjsipendpoints">Providing MWI to chan_pjsip endpoints</h2><p>Providing MWI to a chan_pjsip endpoint requires configuring the &quot;<strong>mailboxes</strong>&quot; option in either the <strong>endpoint</strong> type config section, or the <strong>aor</strong> section.</p><p>See the descriptions linked below which explain when to use the option in each section.</p><p><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip#Asterisk12Configuration_res_pjsip-endpoint_mailboxes" rel="nofollow">Description of &quot;mailboxes&quot; option for the Endpoint section</a></p><p><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_pjsip#Asterisk12Configuration_res_pjsip-aor_mailboxes" rel="nofollow">Description of &quot;mailboxes&quot; option for the AOR section</a>.</p><h1 id="MessageWaitingIndication-ConfiguringExternalMWI">Configuring External MWI</h1><p>Let's look at configuring Asterisk to receive MWI from other systems.</p><p>Depending on your Asterisk version and configuration, there are a few different ways to configure receiving MWI from external sources.</p><ol><li><strong>chan_sip</strong>: outbound MWI subscriptions and receiving unsolicited MWI NOTIFY messages</li><li><strong>res_external_mwi</strong>: A module providing an API for other systems to communicate MWI state to Asterisk</li><li><strong>chan_pjsip</strong>: Setting <code>incoming_mwi_mailbox</code> on an endpoint</li></ol><p> </p>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p><strong>res_pjsip</strong>: The functionality for outbound SIP subscription is not available in res_pjsip yet. Internal infrastructure is built that would allow it, so if this is something you want to work on, please contact the <a href="http://www.asterisk.org/community/discuss" class="external-link" rel="nofollow">Asterisk development community</a>.</p>
+                    </div>
+    </div>
+<h2 id="MessageWaitingIndication-OutboundMWIsubscriptionwithchan_sip">Outbound MWI subscription with chan_sip</h2><p>Asterisk can subscribe to receive MWI from another SIP server and store it locally for retrieval by other phones. At this time, you can only subscribe using UDP as the transport. Format for the MWI register statement is:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">;[general]
+;mwi =&gt; user[:secret[:authuser]]@host[:port]/mailbox
+;
+; Examples:
+;mwi =&gt; 1234:password@mysipprovider.example.com/1234
+;mwi =&gt; 1234:password@myportprovider.example.com:6969/1234
+;mwi =&gt; 1234:password:authuser@myauthprovider.example.com/1234
+;mwi =&gt; 1234:password:authuser@myauthportprovider.example.com:6969/1234
+
+</pre>
+</div></div><p>MWI received will be stored in the 1234 mailbox of the SIP_Remote context. It can be used by other phones by setting their SIP peers &quot;mailbox&quot; option to the &lt;mailbox_number&gt;@SIP_Remote. e.g. mailbox=1234@SIP_Remote</p><h2 id="MessageWaitingIndication-ReceptionofunsolicitedMWINOTIFYwithchan_sip">Reception of unsolicited MWI NOTIFY with chan_sip</h2><p>A chan_sip peer can be configured to receive unsolicited MWI NOTIFY messages and associate them with a particular mailbox.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">;[somesippeer]
+;unsolicited_mailbox=123456789</pre>
+</div></div><p>If the remote SIP server sends an unsolicited MWI NOTIFY message the new/old message count will be stored in the configured virtual mailbox. It can be used by any device supporting MWI by specifying mailbox=&lt;configured value&gt;@SIP_Remote as the mailbox for the desired SIP peer.</p><h2 id="MessageWaitingIndication-res_external_mwi">res_external_mwi</h2><p>External sources can use the API provided by res_external_mwi to communicate MWI and mailbox state.</p><p><strong>Documentation Under Construction</strong></p><p><a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Configuration_res_mwi_external">Asterisk 12 Configuration_res_mwi_external</a></p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>res_external_mwi.so is mutually exclusive with app_voicemail.so. You'll have to load only the one you want to use.</p>
+                    </div>
+    </div>
+<h2 id="MessageWaitingIndication-chan_pjsip">chan_pjsip</h2><p>The endpoint parameter <code>incoming_mwi_mailbox</code> (introduced in 13.18.0 and 14.7.0) takes a &lt;<code>mailbox&gt;@&lt;context&gt;</code> value.  When an unsolicited NOTIFY message is received <strong><em>from</em></strong> this endpoint with an event type of <code>message-summary</code> and the <code>incoming_mwi_mailbox</code> parameter is set, Asterisk will automatically publish the new/old message counts for the specified mailbox on the internal stasis bus for any other module to use.  For instance, if you have an analog phone and you specify <code>mailbox=userx@default</code> in chan_dahdi.conf, when a NOTIFY comes in on a pjsip endpoint with <code>incoming_mwi_mailbox=userx@default</code>, chan_dahdi will automatically pick that up and turn the MWI light on on the analog phone.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

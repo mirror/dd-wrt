@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Logging Configuration</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Logging Configuration
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Kevin Harwell</span>, last modified by <span class='editor'> Rusty Newton</span> on May 19, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="LoggingConfiguration-AsteriskLogFileConfiguration">Asterisk Log File Configuration</h1><p>General purpose <a href="Logging_27200200.html">logging facilities</a> in Asterisk can be configured in the <em><a href="http://svnview.digium.com/svn/asterisk/trunk/configs/logger.conf.sample?view=markup" class="external-link" rel="nofollow">logger.conf</a></em> file. Within this file one is able to configure Asterisk to log messages to files and/or a syslog and even to the Asterisk console.  Note, the sections and descriptions listed below are meant to be informational and act as a guide (a &quot;how to&quot;) when configuring logging in Asterisk.  Options with stated defaults don't have to be explicitly set as they will simply default to a designated value.</p><h2 id="LoggingConfiguration-GeneralSection:">General Section:</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+; Customize the display of debug message time stamps
+; this example is the ISO 8601 date format (yyyy-mm-dd HH:MM:SS)
+;
+; see strftime(3) Linux manual for format specifiers.  Note that there is
+; also a fractional second parameter which may be used in this field.  Use
+; %1q for tenths, %2q for hundredths, etc.
+;
+dateformat = %F %T.%3q   ; ISO 8601 date format with milliseconds
+
+; Write callids to log messages (defaults to yes)
+use_callids = yes
+
+; Append the hostname to the name of the log files (defaults to no)
+appendhostname = no
+
+; Log queue events to a file (defaults to yes)
+queue_log = yes
+
+; Always log queue events to a file, even when a realtime backend is
+; present (defaults to no).
+queue_log_to_file = no
+
+; Set the queue_log filename (defaults to queue_log)
+queue_log_name = queue_log
+
+; When using realtime for the queue log, use GMT for the timestamp
+; instead of localtime.  (defaults to no)
+queue_log_realtime_use_gmt = no
+
+; Log rotation strategy (defaults to sequential):
+; none:  Do not perform any log rotation at all.  You should make
+;        very sure to set up some external log rotate mechanism
+;        as the asterisk logs can get very large, very quickly.
+; sequential:  Rename archived logs in order, such that the newest
+;              has the highest sequence number.  When
+;              exec_after_rotate is set, ${filename} will specify
+;              the new archived logfile.
+; rotate:  Rotate all the old files, such that the oldest has the
+;          highest sequence number (this is the expected behavior
+;          for Unix administrators).  When exec_after_rotate is
+;          set, ${filename} will specify the original root filename.
+; timestamp:  Rename the logfiles using a timestamp instead of a
+;             sequence number when &quot;logger rotate&quot; is executed.
+;             When exec_after_rotate is set, ${filename} will
+;             specify the new archived logfile.
+rotatestrategy = rotate
+
+; Run a system command after rotating the files.  This is mainly
+; useful for rotatestrategy=rotate. The example allows the last
+; two archive files to remain uncompressed, but after that point,
+; they are compressed on disk.
+exec_after_rotate=gzip -9 ${filename}.2
+
+</pre>
+</div></div><h2 id="LoggingConfiguration-LogFilesSection:">Log Files Section:</h2><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[logfiles]
+; File names can either be relative to the standard Asterisk log directory (see &quot;astlogdir&quot; in
+; asterisk.conf), or absolute paths that begin with &#39;/&#39;.
+;
+; A few file names have been reserved and are considered special, thus cannot be used and will
+; not be considered as a regular file name.  These include the following:
+;
+;    syslog - logs to syslog facility
+;    console - logs messages to the Asterisk root console.
+;
+; For each file name given a comma separated list of logging &quot;level&quot; types should be specified
+; and include at least one of the following (in no particular order):
+;    debug
+;    notice
+;    warning
+;    error
+;    dtmf
+;    fax
+;    security
+;    verbose(&lt;level&gt;)
+;
+; The &quot;verbose&quot; value can take an optional integer argument that indicates the maximum level
+; of verbosity to log at.  Verbose messages with higher levels than the indicated level will
+; not be logged to the file.  If a verbose level is not given, verbose messages are logged
+; based upon the current level set for the root console.
+;
+; The special character &quot;*&quot; can also be specified and represents all levels, even dynamic
+; levels registered by modules after the logger has been initialized.  This means that loading
+; and unloading modules that create and remove dynamic logging levels will result in these
+; levels being included on filenames that have a level name of &quot;*&quot;, without any need to
+; perform a &quot;logger reload&quot; or similar operation.
+;
+; Note, there is no value in specifying both &quot;*&quot; and specific level types for a file name.
+; The &quot;*&quot; level means ALL levels.  The only exception is if you need to specify a specific
+; verbose level. e.g, &quot;verbose(3),*&quot;.
+;
+; It is highly recommended that you DO NOT turn on debug mode when running a production system
+; unless you are in the process of debugging a specific issue.  Debug mode outputs a LOT of
+; extra messages and information that can and do fill up log files quickly. Most of these
+; messages are hard to interpret without an understanding of the underlying code.  Do NOT report
+; debug messages as code issues, unless you have a specific issue that you are attempting to debug.
+; They are messages for just that -- debugging -- and do not rise to the level of something that
+; merit your attention as an Asterisk administrator.  
+
+; output notices, warnings and errors to the console
+console =&gt; notice,warning,error
+
+; output security messages to the file named &quot;security&quot;
+security =&gt; security
+
+; output notices, warnings and errors to the the file named &quot;messages&quot;
+messages =&gt; notice,warning,error
+
+; output notices, warnings, errors, verbose, dtmf, and fax to file name &quot;full&quot;
+full =&gt; notice,warning,error,verbose,dtmf,fax
+
+; output notices, warning, and errors to the syslog facility
+syslog.local0 =&gt; notice,warning,error
+
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

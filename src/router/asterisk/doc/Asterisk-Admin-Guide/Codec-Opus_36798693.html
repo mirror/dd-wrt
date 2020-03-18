@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Codec Opus</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Codec Opus
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Kevin Harwell</span>, last modified on Jan 28, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="CodecOpus-ConfigurationOptions">Configuration Options</h2><p>The Opus codec for Asterisk exposes a few configuration options that allow adjustments to be made to the encoder. The following options can be used to define custom format types within the <em>codecs.conf</em> file. These custom format types can then be specified in the &quot;allow&quot; line of an endpoint.</p><p> </p><div class="table-wrap"><table class="confluenceTable"><tbody><tr><th class="confluenceTh">Option Name</th><th class="confluenceTh">Description</th><th class="confluenceTh">Default</th></tr><tr><td class="confluenceTd">type</td><td class="confluenceTd">Must be of type &quot;opus&quot;.</td><td class="confluenceTd">&quot;&quot; (empty string)</td></tr><tr><td class="confluenceTd">packet_loss</td><td class="confluenceTd"><p>Encoder's packet loss percentage. Can be any number between <em>0</em> and <em>100</em>, inclusive. A higher value results in more loss resistance.</p></td><td class="confluenceTd">0</td></tr><tr><td class="confluenceTd">complexity</td><td class="confluenceTd"><p>Encoder's computational complexity. Can be any number between <em>0</em> and <em>10</em>, inclusive. Note, 10 equals the highest complexity.</p></td><td class="confluenceTd">10</td></tr><tr><td class="confluenceTd">signal</td><td class="confluenceTd"><p>Encoder's signal type. Aids in mode selection on the encoder: Can be any of the following: <em>auto</em>, <em>voice</em>, <em>music</em>.</p></td><td class="confluenceTd">auto</td></tr><tr><td class="confluenceTd">application</td><td class="confluenceTd"><p>Encoder's application type. Can be any of the following: <em>voip</em>, <em>audio</em>, <em>low_delay</em>.</p></td><td class="confluenceTd">voip</td></tr><tr><td class="confluenceTd">max_playback_rate*</td><td class="confluenceTd"><p>Sets the &quot;maxplaybackrate” format parameter on the SDP and also limits the bandwidth on the encoder. Any value between <em>8000</em> and <em>48000</em> (inclusive) is valid, however typically it should match one of the usual opus bandwidths. Below is a mapping of values to bandwidth:</p><div class="table-wrap"><table style="width: 100.0%;border-collapse: collapse;border-spacing: 0;border: none;" class="confluenceTable"><tbody><tr style="background-color: rgb(239,240,242);"><td style="border: none;" class="confluenceTd">8000</td><td style="border: none;" class="confluenceTd">Narrow Band</td></tr><tr><td style="border: none;" class="confluenceTd">8001 – 16000</td><td style="border: none;" class="confluenceTd">Medium Band</td></tr><tr style="background-color: rgb(239,240,242);"><td style="border: none;" class="confluenceTd">16001 – 24000</td><td style="border: none;" class="confluenceTd">Wide Band</td></tr><tr><td style="border: none;" class="confluenceTd">24001 – 32000</td><td style="border: none;" class="confluenceTd">Super Wide Band</td></tr><tr style="background-color: rgb(239,240,242);"><td style="border: none;" class="confluenceTd">32001 – 48000</td><td style="border: none;" class="confluenceTd">Full Band</td></tr></tbody></table></div></td><td class="confluenceTd">48000</td></tr><tr><td class="confluenceTd">max_bandwidth</td><td class="confluenceTd"><p>Sets an upper bandwidth bound on the encoder. Can be any of the following: narrow, medium, wide, super_wide, full.</p></td><td class="confluenceTd">full</td></tr><tr><td colspan="1" class="confluenceTd">bitrate*</td><td colspan="1" class="confluenceTd"><p>Specify the maximum average bitrate (sdp parameter &quot;maxaveragebitrate&quot;). Any value between 500 and 512000 is valid. The following values are also allowed: <em>auto</em>, <em>max</em>.</p></td><td colspan="1" class="confluenceTd">auto</td></tr><tr><td class="confluenceTd">cbr*</td><td class="confluenceTd"><p>Sets the &quot;cbr&quot; (constant bit rate) format parameter on SDP. Also tells the encoder to use a constant bit rate. A value of <em>no (<em>0 </em> </em>or<em> <em> false</em> </em>also work) represents a variable bit rate whereas <em>yes</em> (<em>1</em> or <em>true</em> also work) represents a constant bit rate.</p></td><td class="confluenceTd">0</td></tr><tr><td class="confluenceTd">fec*</td><td class="confluenceTd">Sets the &quot;useinbandfec&quot; format parameter on the SDP. If set, and applicable, the encoder will add in-band forward error correction data. A value of <em>no (<em>0 </em> </em>or<em> <em> false</em> </em>also work) represents disabled whereas <em>yes</em> (<em>1</em> or <em>true</em> also work) represents enabled.</td><td class="confluenceTd">0</td></tr><tr><td colspan="1" class="confluenceTd">dtx*</td><td colspan="1" class="confluenceTd">Sets the &quot;usedtx&quot; format on the SDP. A value of <em>no (<em>0 </em> </em>or<em> <em> false</em> </em>also work) represents disabled whereas <em>yes</em> (<em>1</em> or <em>true</em> also work) represents enabled (usedtx).</td><td colspan="1" class="confluenceTd">0</td></tr></tbody></table></div><p>*If the format parameter is set to its default it will not show up in the fmtp attribute line.</p><h2 id="CodecOpus-Examples">Examples</h2><p>Limit the maximum playback rate of any endpoint that allow &quot;opus&quot; and don't include any forward error correction.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[opus]
+type=opus
+max_playback_rate=8000 ; Limit the bandwidth on the encoder to narrow band
+fec=no ; Do not include in-band forward error correction data</pre>
+</div></div><p>Limit endpoints that allow &quot;myopus&quot; to wide band and use a constant bit rate:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[myopus]
+type=opus
+bitrate=16000 ; Maximum encoded bit rate used
+cbr=yes ; The encoder will use a constant bit rate</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

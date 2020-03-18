@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Secure Calling Tutorial</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Secure-Calling_11338110.html">Secure Calling</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Secure Calling Tutorial
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Chris Savinovich</span> on Oct 23, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h2 id="SecureCallingTutorial-/*&lt;![CDATA[*/div.rbtoc1582303112808{padding:0px;}div.rbtoc1582303112808ul{list-style:disc;margin-left:0px;}div.rbtoc1582303112808li{margin-left:0px;padding-left:0px;}/*]]&gt;*/Overview#SecureCallingTutorial-OverviewPart1(TLS)#SecureCall"><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303112808 {padding: 0px;}
+div.rbtoc1582303112808 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303112808 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303112808'>
+<ul class='toc-indentation'>
+<li><a href='#SecureCallingTutorial-Overview'>Overview</a></li>
+<li><a href='#SecureCallingTutorial-Part1(TLS)'>Part 1 (TLS)</a>
+<ul class='toc-indentation'>
+<li><a href='#SecureCallingTutorial-Keys'>Keys</a></li>
+<li><a href='#SecureCallingTutorial-Asteriskchan_pjsipconfiguration'>Asterisk chan_pjsip configuration</a></li>
+<li><a href='#SecureCallingTutorial-Asteriskchan_sipconfiguration'>Asterisk chan_sip configuration</a></li>
+<li><a href='#SecureCallingTutorial-ConfiguringaTLS-enabledSIPclienttotalktoAsterisk'>Configuring a TLS-enabled SIP client to talk to Asterisk</a></li>
+<li><a href='#SecureCallingTutorial-Problemswithserververification'>Problems with server verification</a></li>
+</ul>
+</li>
+<li><a href='#SecureCallingTutorial-Part2(SRTP)'>Part 2 (SRTP)</a></li>
+</ul>
+</div></h2><h1 id="SecureCallingTutorial-Overview">Overview</h1>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>This tutorial makes use of SRTP and TLS. SRTP support was added in Asterisk 1.8, TLS was added in 1.6.</p>
+                    </div>
+    </div>
+<p>So you'd like to make some secure calls.</p><p>Here's how to do it, using <a href="http://www.icanblink.com/" class="external-link" rel="nofollow">Blink</a>, a SIP soft client for Mac OS X, Windows, and Linux. You can find some <a href="Installing-Blink-SIP-client_27200094.html">brief instructions for installing Blink on Ubuntu</a> on the wiki.</p><p>These instructions assume that you're running as the root user (sudo su -).</p><h1 id="SecureCallingTutorial-Part1(TLS)">Part 1 (TLS)</h1><p><a href="http://en.wikipedia.org/wiki/Transport_Layer_Security" class="external-link" rel="nofollow">Transport Layer Security</a> (TLS) provides encryption for call signaling. It's a practical way to prevent people who aren't Asterisk from knowing who you're calling. Setting up TLS between Asterisk and a SIP client involves creating key files, modifying Asterisk's SIP configuration to enable TLS, creating a SIP peer that's capable of TLS, and modifying the SIP client to connect to Asterisk over TLS.</p><h2 id="SecureCallingTutorial-Keys">Keys</h2><p>First, let's make a place for our keys.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>mkdir /etc/asterisk/keys
+</pre>
+</div></div><p>Next, use the &quot;ast_tls_cert&quot; script in the &quot;contrib/scripts&quot; Asterisk source directory to make a self-signed certificate authority and an Asterisk certificate.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>./ast_tls_cert -C pbx.mycompany.com -O &quot;My Super Company&quot; -d /etc/asterisk/keys
+</pre>
+</div></div><ul class="alternate"><li>The &quot;-C&quot; option is used to define our host - DNS name or our IP address.</li><li>The &quot;-O&quot; option defines our organizational name.</li><li>The &quot;-d&quot; option is the output directory of the keys.</li></ul><ol><li>You'll be asked to enter a pass phrase for /etc/asterisk/keys/ca.key, put in something that you'll remember for later.</li><li>This will create the /etc/asterisk/keys/ca.crt file.</li><li>You'll be asked to enter the pass phrase again, and then the /etc/asterisk/keys/asterisk.key file will be created.</li><li>The /etc/asterisk/keys/asterisk.crt file will be automatically generated.</li><li>You'll be asked to enter the pass phrase a third time, and the /etc/asterisk/keys/asterisk.pem will be created, a combination of the asterisk.key and asterisk.crt files.</li></ol><p>Next, we generate a client certificate for our SIP device.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>./ast_tls_cert -m client -c /etc/asterisk/keys/ca.crt -k /etc/asterisk/keys/ca.key -C phone1.mycompany.com -O &quot;My Super Company&quot; -d /etc/asterisk/keys -o malcolm
+</pre>
+</div></div><ul class="alternate"><li>The &quot;-m client&quot; option tells the script that we want a client certificate, not a server certificate.</li><li>The &quot;-c /etc/asterisk/keys/ca.crt&quot; option specifies which Certificate Authority (ourselves) that we're using.</li><li>The &quot;-k /etc/asterisk/keys/ca.key&quot; provides the key for the above-defined Certificate Authority.</li><li>The &quot;-C&quot; option, since we're defining a client this time, is used to define the hostname or IP address of our SIP phone</li><li>The &quot;-O&quot; option defines our organizational name.</li><li>The &quot;-d&quot; option is the output directory of the keys.&quot;</li><li>The &quot;-o&quot; option is the name of the key we're outputting.</li></ul><ol><li>You'll be asked to enter the pass phrase from before to unlock /etc/asterisk/keys/ca.key.</li></ol><p>Now, let's check the keys directory to see if all of the files we've built are there. You should have:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>asterisk.crt
+asterisk.csr
+asterisk.key
+asterisk.pem
+malcolm.crt
+malcolm.csr
+malcolm.key
+malcolm.pem
+ca.cfg
+ca.crt
+ca.key
+tmp.cfg
+</pre>
+</div></div><p>Next, copy the malcolm.pem and ca.crt files to the computer running the Blink soft client.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">.p12 Client Certificates</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>If your client requires a .p12 certificate file instead, you can generate that using openssl like:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;"># openssl pkcs12 -export -out MySuperClientCert.p12 -inkey ca.key -in ca.crt -certfile asterisk.crt </pre>
+</div></div>
+                    </div>
+    </div>
+<p> </p><h2 id="SecureCallingTutorial-Asteriskchan_pjsipconfiguration">Asterisk chan_pjsip configuration</h2><p>Now, let's configure Asterisk's PJSIP channel driver to use TLS.</p><p>In the <strong>pjsip.conf</strong> configuration file, you'll need to enable a TLS-capable transport.  An example of one would resemble:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[transport-tls]
+type=transport
+protocol=tls
+bind=0.0.0.0:5061
+cert_file=/etc/asterisk/keys/asterisk.crt
+priv_key_file=/etc/asterisk/keys/asterisk.key
+method=tlsv1</pre>
+</div></div><p>Note the <strong>protocol</strong>, <strong>cert_file</strong>, <strong>priv_key_file</strong>, and <strong>method</strong> options.  Here, we're using the TLS protocol, we're specifying the keys that we generated earlier for <strong>cert_file</strong> and <strong>priv_key_file</strong> and we're setting the <strong>method</strong> to TLSv1.</p><p>Next, you'll need to configure a TLS-capable endpoint.  An example of one would resemble:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[malcolm]
+type=aor
+max_contacts=1
+remove_existing=yes
+ 
+[malcolm]
+type=auth
+auth_type=userpass
+username=malcolm
+password=useabetterpasswordplease
+ 
+[malcolm]
+type=endpoint
+aors=malcolm
+auth=malcolm
+context=local
+disallow=all
+allow=g722
+dtmf_mode=rfc4733
+media_encryption=sdes
+ </pre>
+</div></div><p>Note the <strong>media_encryption</strong> option for the endpoint.  In this case, we've configured an endpoint that will be using SDES encryption for RTP.</p><p>You might be tempted to add a <strong>transport=transport-tls </strong>to the endpoint but in pjproject versions at least as late as 2.4.5, this will cause issues like <strong>Connection refused</strong> in a few situations.  Let pjproject do the transport selection on its own.  If you still see issues, set <strong>rewrite_contact = yes</strong> in the endpoint configuration.</p><h2 id="SecureCallingTutorial-Asteriskchan_sipconfiguration">Asterisk chan_sip configuration</h2><p>Or, if you are using chan_sip, you can use the following to assist.</p><p>In the <strong>sip.conf</strong> configuration file, set the following:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>tlsenable=yes
+tlsbindaddr=0.0.0.0
+tlscertfile=/etc/asterisk/keys/asterisk.pem
+tlscafile=/etc/asterisk/keys/ca.crt
+tlscipher=ALL
+tlsclientmethod=tlsv1 ;none of the others seem to work with Blink as the client
+</pre>
+</div></div><p>Here, we're enabling TLS support.<br /> We're binding it to our local IPv4 wildcard (the port defaults to 5061 for TLS).<br /> We've set the TLS certificate file to the one we created above.<br /> We've set the Certificate Authority to the one we created above.<br /> TLS Ciphers have been set to ALL, since it's the most permissive.<br /> And we've set the TLS client method to TLSv1, since that's the preferred one for RFCs and for most clients.</p><p>Next, you'll need to configure a SIP peer within Asterisk to use TLS as a transport type. Here's an example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[malcolm]
+type=peer
+secret=malcolm ;note that this is NOT a secure password
+host=dynamic
+context=local
+dtmfmode=rfc2833
+disallow=all
+allow=g722
+transport=tls
+</pre>
+</div></div><p>Notice the <strong>transport</strong> option. The Asterisk SIP channel driver supports three types: udp, tcp and tls. Since we're configuring for TLS, we'll set that. It's also possible to list several supported transport types for the peer by separating them with commas.</p><h2 id="SecureCallingTutorial-ConfiguringaTLS-enabledSIPclienttotalktoAsterisk">Configuring a TLS-enabled SIP client to talk to Asterisk</h2><p>Next, we'll configure Blink.</p><p>First, let's add a new account.</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632659.png" data-image-src="attachments/8127019/11632659.png"></p><p>Then, we need to modify the Account Preferences, and under the SIP Settings, we need to set the outbound proxy to connect to the TLS port and transport type on our Asterisk server. In this case, there's an Asterisk server running on port 5061 on host 10.24.13.224.</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632654.png" data-image-src="attachments/8127019/11632654.png"></p><p>Now, we need to point the TLS account settings to the client certificate (malcolm.pem) that we copied to our computer.</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632655.png" data-image-src="attachments/8127019/11632655.png"></p><p>Then, we'll point the TLS server settings to the ca.crt file that we copied to our computer.</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632658.png" data-image-src="attachments/8127019/11632658.png"></p><p>Press &quot;close,&quot; and you should see Blink having successfully registered to Asterisk.</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632657.png" data-image-src="attachments/8127019/11632657.png"></p><p>Depending on your Asterisk CLI logging levels, you should see something like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>  -- Registered SIP &#39;malcolm&#39; at 10.24.250.178:5061
+     &gt; Saved useragent &quot;Blink 0.22.2 (MacOSX)&quot; for peer malcolm
+</pre>
+</div></div><p>Notice that we registered on port 5061, the TLS port.</p><p>Now, make a call. You should see a small secure lockbox in your Blink calling window to indicate that the call was made using secure (TLS) signaling:</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632656.png" data-image-src="attachments/8127019/11632656.png"></p><h2 id="SecureCallingTutorial-Problemswithserververification">Problems with server verification</h2><p>If the host or IP you used for the common name on your cert doesn't match up with your server then you may run into problems when your client is calling Asterisk. Make sure the client is configured to <strong>not</strong> verify the server against the cert.</p><p>When calling <strong>from</strong> Asterisk to Blink or another client, you might run into an ERROR on the Asterisk CLI similar to this:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[Jan 29 16:04:11] DEBUG[11217]: tcptls.c:248 handle_tcptls_connection:  SSL Common Name compare s1=&#39;10.24.18.124&#39; s2=&#39;phone1.mycompany.com&#39;
+[Jan 29 16:04:11] ERROR[11217]: tcptls.c:256 handle_tcptls_connection: Certificate common name did not match (10.24.18.124)</pre>
+</div></div><p>This is the opposite scenario, where Asterisk is acting as the client and by default attempting to verify the destination server against the cert.</p><p>You can set <strong>tlsdontverifyserver=yes</strong> in sip.conf to prevent Asterisk from attempting to verify the server.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>;tlsdontverifyserver=[yes|no]
+;        If set to yes, don&#39;t verify the servers certificate when acting as
+;        a client.  If you don&#39;t have the server&#39;s CA certificate you can
+;        set this and it will connect without requiring tlscafile to be set.
+;        Default is no.</pre>
+</div></div><p> </p><h1 id="SecureCallingTutorial-Part2(SRTP)">Part 2 (SRTP)</h1><p>Now that we've got TLS enabled, our signaling is secure - so no one knows what extensions on the PBX we're dialing. But, our media is still not secure - so someone can snoop our RTP conversations from the wire. Let's fix that.</p><p>SRTP support is provided by libsrtp. libsrtp has to be installed on the machine before Asterisk is compiled, otherwise you're going to see something like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[Jan 24 09:29:16] ERROR[10167]: chan_sip.c:27987 setup_srtp: No SRTP module loaded, can&#39;t setup SRTP session.
+</pre>
+</div></div><p>on your Asterisk CLI. If you do see that, install libsrtp (and the development headers), and then reinstall Asterisk (./configure; make; make install).</p><p>With that complete, let's first go back into our peer definition in <strong>sip.conf.</strong> We're going to add a new encryption line, like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[malcolm]
+type=peer
+secret=malcolm ;note that this is NOT a secure password
+host=dynamic
+context=local
+dtmfmode=rfc2833
+disallow=all
+allow=g722
+transport=tls
+encryption=yes
+context=local
+</pre>
+</div></div><p>Next, we'll set Blink to use SRTP:</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/22937664.png" data-image-src="attachments/8127019/22937664.png"></p><p>Reload Asterisk's SIP configuration (sip reload), make a call, and voilà:</p><p><img class="confluence-embedded-image confluence-content-image-border" src="attachments/8127019/11632661.png" data-image-src="attachments/8127019/11632661.png"></p><p>We're making secure calls with TLS (signaling) and SRTP (media).</p>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632654.png">BlinkAccountPrefs.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632655.png">BlinkTLSAccount.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632656.png">BlinkTLSCall.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632657.png">BlinkTLSRegistered.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632658.png">BlinkTLSServer.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632659.png">BlinkAddNewAccount.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632661.png">BlinkTLSSRTP.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/11632665.png">ZoiperTLSCert.png</a> (image/png)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/8127019/22937664.png">BlinkEnableSRTP.png</a> (image/png)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

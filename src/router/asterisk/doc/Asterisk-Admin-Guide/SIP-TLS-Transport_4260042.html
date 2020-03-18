@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : SIP TLS Transport</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Secure-Calling_11338110.html">Secure Calling</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : SIP TLS Transport
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Leif Madsen</span> on Jan 14, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="SIPTLSTransport-AsteriskSIP/TLSTransport">Asterisk SIP/TLS Transport</h1><p>When using TLS the client will typically check the validity of the certificate chain. So that means you either need a certificate that is signed by one of the larger CAs, or if you use a self signed certificate you must install a copy of your CA certificate on the client.</p><p>So far this code has been tested with:</p><ul><li>Asterisk as client and server (TLS and TCP)</li><li>Polycom Soundpoint IP Phones (TLS and TCP) - Polycom phones require that the host (ip or hostname) that is configured match the 'common name' in the certificate</li><li>Minisip Softphone (TLS and TCP)</li><li>Cisco IOS Gateways (TCP only)</li><li>SNOM 360 (TLS only)</li><li>Zoiper Biz Softphone (TLS and TCP)</li></ul><h5 id="SIPTLSTransport-sip.confoptions">sip.conf options</h5><ul><li><code>tlsenable=yes</code> - Enable TLS server, default is <code>no</code></li><li><code>tlsbindaddr=&lt;ip address&gt;</code> - Specify IP address to bind TLS server to, default is <code>0.0.0.0</code></li><li><code>tlscertfile=&lt;/path/to/certificate&gt;</code> - The server's certificate file. Should include the key and certificate. This is mandatory if you're going to run a TLS server.</li><li><code>tlscafile=&lt;/path/to/certificate&gt;</code> - If the server you're connecting to uses a self signed certificate you should have their certificate installed here so the code can verify the authenticity of their certificate.</li><li><code>tlscapath=&lt;/path/to/ca/dir&gt;</code> - A directory full of CA certificates. The files must be named with the CA subject name hash value. (see <code>man SSL_CTX_load_verify_locations</code> for more info)</li><li><code>tlsdontverifyserver=yes</code> - If set to <code>yes</code>, don't verify the servers certificate when acting as a client. If you don't have the server's CA certificate you can set this and it will connect without requiring <code>tlscafile</code> to be set. Default is <code>no</code>.</li><li><code>tlscipher=&lt;SSL cipher string&gt;</code> - A string specifying which SSL ciphers to use or not use. A list of valid SSL cipher strings can be found at <a class="external-link" href="http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS" rel="nofollow">http://www.openssl.org/docs/apps/ciphers.html#CIPHER_STRINGS</a></li></ul><h5 id="SIPTLSTransport-Sampleconfig">Sample config</h5><p>Here are the relevant bits of config for setting up TLS between 2 Asterisk servers. With server_a registering to server_b</p><p>On server_a:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+tlsenable=yes
+tlscertfile=/etc/asterisk/asterisk.pem
+tlscafile=/etc/ssl/ca.pem  ; This is the CA file used to generate both certificates
+register =&gt; tls://100:test@192.168.0.100:5061
+
+[101]
+type=friend
+context=internal
+host=192.168.0.100 ; The host should be either IP or hostname and should 
+                   ; match the &#39;common name&#39; field in the servers certificate
+secret=test
+dtmfmode=rfc2833
+disallow=all
+allow=ulaw
+transport=tls 
+port=5061
+</pre>
+</div></div><p>On server_b:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+tlsenable=yes
+tlscertfile=/etc/asterisk/asterisk.pem
+
+[100]
+type=friend
+context=internal
+host=dynamic
+secret=test
+dtmfmode=rfc2833
+disallow=all
+allow=ulaw
+;You can specify transport= and port=5061 for TLS, but its not necessary in
+;the server configuration, any type of SIP transport will work
+;transport=tls 
+;port=5061
+</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

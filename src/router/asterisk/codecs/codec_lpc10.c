@@ -7,7 +7,7 @@
  *
  * The lpc10 code is from a library used by nautilus, modified to be a bit
  * nicer to the compiler.
- * See http://www.arl.wustl.edu/~jaf/ 
+ * See http://www.arl.wustl.edu/~jaf/
  *
  * See http://www.asterisk.org for more information about
  * the Asterisk project. Please do not directly contact
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/translate.h"
 #include "asterisk/config.h"
@@ -139,7 +137,7 @@ static int lpc10tolin_framein(struct ast_trans_pvt *pvt, struct ast_frame *f)
 		pvt->datalen += 2*LPC10_SAMPLES_PER_FRAME;
 		len += LPC10_BYTES_IN_COMPRESSED_FRAME;
 	}
-	if (len != f->datalen) 
+	if (len != f->datalen)
 		printf("Decoded %d, expected %d\n", len, f->datalen);
 	return 0;
 }
@@ -281,7 +279,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_DEFAULT, "LPC10 2.4kbps Coder/Decoder",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+);

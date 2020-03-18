@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Timing Interfaces</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Core-Configuration_27820183.html">Core Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Timing Interfaces
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Sean Bright</span> on May 08, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="TimingInterfaces-AsteriskTimingInterfaces">Asterisk Timing Interfaces</h1>
+
+<p>In the past, if internal timing were desired for an Asterisk system, then the  only source acceptable was from DAHDI. Beginning with Asterisk 1.6.1, a new timing API was introduced which allows for various timing modules to be used.<br />
+Asterisk includes the following timing modules:</p>
+
+<ul>
+	<li><code>res_timing_pthread.so</code></li>
+	<li><code>res_timing_dahdi.so</code></li>
+	<li><code>res_timing_timerfd.so</code> – <em>as of Asterisk 1.6.2</em></li>
+	<li><code>res_timing_kqueue.so</code> – <em>as of Asterisk 11</em></li>
+</ul>
+
+
+<p><code>res_timing_pthread</code> uses the POSIX pthreads library in order to provide timing.  Since the code uses a commonly-implemented set of functions, <code>res_timing_pthread</code> is portable to many types of systems. In fact, this is the only timing source currently usable on a non-Linux system. Due to the fact that a single userspace thread is used to provide timing for all users of the timer, <code>res_timing_pthread</code> is also the least efficient of the timing sources and has been known to lose its effectiveness in a heavily-loaded environment. </p>
+
+<p><code>res_timing_dahdi</code> uses timing mechanisms provided by DAHDI. This method of timing was previously the only means by which Asterisk could receive timing. It has the benefit of being efficient, and if a system is already going to use DAHDI hardware, then it makes good sense to use this timing source.  If, however, there is no need for DAHDI other than as a timing source, this timing source may seem unattractive. For users who are upgrading from Asterisk 1.4 and are used to the <code>ztdummy</code> timing interface, <code>res_timing_dahdi</code> provides the interface to DAHDI via the <code>dahdi</code> kernel module.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Historical Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>At the time of Asterisk 1.4's release, Zaptel (now DAHDI) was used to provide timing to Asterisk, either by utilizing telephony hardware installed in the computer or via <code>ztdummy</code> (a kernel module) when no hardware was available.</p>
+
+<p>When DAHDI was first released, the <code>ztdummy</code> kernel module was renamed to <code>dahdi_dummy</code>.  As of DAHDI Linux 2.3.0 the <code>dahdi_dummy</code> module has been removed and its functionality moved into the main <code>dahdi</code> kernel module.  As long as the <code>dahdi</code> module is loaded, it will provide timing to Asterisk either through installed telephony hardware or utilizing the kernel timing facilities when separate hardware is not available.</p>
+                    </div>
+    </div>
+
+
+<p><code>res_timing_timerfd</code> uses a timing mechanism provided directly by the Linux kernel. This timing interface is only available on Linux systems using a kernel version at least 2.6.25 and a glibc version at least 2.8. This interface has the benefit of being very efficient, but at the time this is being written, it is a relatively new feature on Linux, meaning that its availability is not widespread. </p>
+
+<p><code>res_timing_kqueue</code> uses the <a href="http://www.freebsd.org/cgi/man.cgi?query=kqueue&amp;sektion=2" class="external-link" rel="nofollow">Kqueue</a> event notification system introduced with FreeBSD 4.1.  It can be used on operating systems that support Kqueue, such as OpenBSD and Mac OS X.  Because Kqueue is not available on Linux, this module will not compile or be available there.</p>
+
+<h3 id="TimingInterfaces-WhatAsteriskdoeswiththeTimingInterfaces">What Asterisk does with the Timing Interfaces</h3>
+
+<p>By default, Asterisk will build and load all of the timing interfaces. These timing interfaces are &quot;ordered&quot; based on a hard-coded priority number defined in each of the modules. As of the time of this writing, the preferences for the modules is the following: <code>res_timing_timerfd.so</code>, <code>res_timing_kqueue.so</code> (where available), <code>res_timing_dahdi.so</code>, <code>res_timing_pthread.so</code>. </p>
+
+<p>The only functionality that requires internal timing is IAX2 trunking. It may also be used when generating audio for playback, such as from a file. Even though internal timing is not a requirement for most Asterisk functionality, it may be advantageous to use it since the alternative is to use timing based on incoming frames of audio. If there are no incoming frames or if the incoming frames of audio are from an unreliable or jittery source, then the corresponding outgoing audio will also be unreliable, or even worse, nonexistent. Using internal timing prevents such unreliability.</p>
+
+<h3 id="TimingInterfaces-Customizations/Troubleshooting">Customizations/Troubleshooting</h3>
+
+<p>Now that you know Asterisk's default preferences for timing modules, you may  decide that you have a different preference. Maybe you're on a timerfd-capable system but you would prefer to get your timing from DAHDI since you already are <br />
+using DAHDI to drive your hardware. </p>
+
+<p>Alternatively, you may have been directed to this document due to an error you are currently experiencing with Asterisk. If you receive an error message regarding timing not working correctly, then you can use one of the following suggestions to disable a faulty timing module. </p>
+
+<ol>
+	<li>Don't build the timing modules you know you will not use. You can disable the compilation of any of the timing modules using <code>menuselect</code>. The modules are listed in the &quot;Resource Modules&quot; section.  Note that if you have already built Asterisk and have received an error about a timing module not working properly, it is not sufficient to disable it from being built. You will need to remove the module from your modules directory (by default, <code>/usr/lib/asterisk/modules</code>) to make sure that it does not get loaded again.</li>
+	<li>Build, but do not load the timing modules you know you will not use. You can edit <code>modules.conf</code> using <code>noload</code> directives to disable the loading of specific timing modules by default. Based on the note in the section above, you may realize that your Asterisk setup does not require internal timing at all. If this is the case, you can safely <code>noload</code> all timing modules.</li>
+</ol>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Some confusion has arisen regarding the fact that non-DAHDI timing interfaces are available now. One common misconception which has arisen is that since timing can be provided elsewhere, DAHDI is no longer required for using the MeetMe application.  Unfortunately, this is not the case. In addition to providing timing, DAHDI also provides a conferencing engine which the MeetMe application requires. </p>
+
+<p>Starting with Asterisk 1.6.2, however, there is a new application, ConfBridge, which is capable of conference bridging without the use of DAHDI's built-in mixing engine.</p>
+                    </div>
+    </div>
+ 
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:35</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

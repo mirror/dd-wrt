@@ -42,8 +42,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <limits.h>
 
 #include <jack/jack.h>
@@ -497,7 +495,7 @@ static int init_jack_data(struct ast_channel *chan, struct jack_data *jack_data)
 				jack_port_name(jack_data->output_port));
 		}
 
-		free((void *) ports);
+		jack_free(ports);
 
 		break;
 	}
@@ -528,7 +526,7 @@ static int init_jack_data(struct ast_channel *chan, struct jack_data *jack_data)
 				jack_port_name(jack_data->input_port));
 		}
 
-		free((void *) ports);
+		jack_free(ports);
 
 		break;
 	}
@@ -1052,4 +1050,3 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "JACK Interface");
-

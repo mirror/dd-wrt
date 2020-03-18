@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : PLC Background on Translation</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="5243109.html">Packet Loss Concealment (PLC)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : PLC Background on Translation
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> George Joseph</span> on Mar 21, 2018
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>As stated in the introduction, generic PLC can only be used on slin audio. The majority of audio communication is not done in slin, but rather using lower bandwidth codecs. This means that for PLC to be used, there must be a translation step involving slin on the write path of a channel.  One item of note is that slin must be present on the write path of a channel since that is the path where PLC is applied. Consider that Asterisk is bridging channels A and B. A uses ulaw for audio and B uses GSM. This translation involves slin, so things are shaping up well for PLC. Consider, however if Asterisk sets up the translation paths like so:</p><p>Fig. 1</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>A                      +------------+       B
+&lt;---ulaw&lt;---slin&lt;---GSM|            |GSM---&gt;
+                       |  Asterisk  |
+ulaw---&gt;slin---&gt;GSM---&gt;|            |&lt;---GSM
+                       +------------+
+ </pre>
+</div></div><p>The arrows indicate the direction of audio flow. Each channel has a write path (the top arrow) and a read path (the bottom arrow). In this setup, PLC can be used when sending audio to A, but it cannot be used when sending audio to B. The reason is simple, the write path to A's channel contains a slin step, but the write path to B contains no slin step. Such a translation setup is perfectly valid, and Asterisk can potentially set up such a path depending on circumstances. When we use PLC, however, we want slin audio to be present on the write paths of both A and B. A visual representation of what we want is the following:</p><p>Fig. 2</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>A               +------------+               B
+&lt;---ulaw&lt;---slin|            |slin---&gt;GSM---&gt;
+                |  Asterisk  |
+ulaw---&gt;slin---&gt;|            |&lt;---slin&lt;---GSM
+                +------------+
+ </pre>
+</div></div><p>In this scenario, the write paths for both A and B begin with slin, and so PLC may be applied to either channel. This translation behavior has, in the past been doable with the transcode_via_sln option in asterisk.conf. Recent changes to the PLC code have also made the <code>genericplc</code> option in codecs.conf imply the <code>transcode_via_sln</code> option. The result is that by enabling <code>genericplc</code> in codecs.conf, the translation path set up in Fig. 2 should automatically be used as long as the two codecs required transcoding in the first place.</p><p>If the codecs on the inbound and outbound channels are the same or do not require transcoding, PLC won't normally be used for the reasons stated above.  You can however, force transcoding and PLC in this situation by setting the <code>genericplc_on_equal_codecs parameter</code> in the <code>plc</code> section of codecs.conf to true.  This feature was introduced in Asterisk 13.21 and 15.4.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

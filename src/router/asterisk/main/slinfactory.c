@@ -30,8 +30,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/frame.h"
 #include "asterisk/format_cache.h"
 #include "asterisk/slinfactory.h"

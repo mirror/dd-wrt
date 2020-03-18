@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Registering Phones to Asterisk</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Registering Phones to Asterisk
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Dec 23, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>The next step is to configure the phones themselves to communicate with Asterisk. The way we have configured the accounts in the SIP channel driver, Asterisk will expect the phones to <strong>register</strong> to it. Registration is simply a mechanism where a phone communicates &quot;Hey, I'm Bob's phone... here's my username and password. Oh, and if you get any calls for me, I'm at this particular IP address.&quot;</p><p>Configuring your particular phone is obviously beyond the scope of this guide, but here are a list of common settings you're going to want to set in your phone, so that it can communicate with Asterisk:</p><ul><li><strong>Registrar/Registration Server</strong> - The location of the server which the phone should register to. This should be set to the IP address of your Asterisk system.</li><li><strong>SIP User Name/Account Name/Address</strong> - The SIP username on the remote system. This should be set to demo-alice on one phone and demo-bob on the other. This username corresponds directly to the section name in square brackets in sip.conf.</li><li><strong>SIP Authentication User/Auth User</strong> - On Asterisk-based systems, this will be the same as the SIP user name above.</li><li><strong>Proxy Server/Outbound Proxy Server</strong> - This is the server with which your phone communicates to make outside calls. This should be set to the IP address of your Asterisk system.</li></ul><p>When using chan_sip you can tell whether or not your phone has registered successfully to Asterisk by checking the output of the <strong>sip show peers</strong> command at the Asterisk CLI. If the <strong>Host</strong> column says <strong>(Unspecified)</strong>, the phone has not yet registered. On the other hand, if the <strong>Host</strong> column contains an IP address and the <strong>Dyn</strong> column contains the letter <strong>D</strong>, you know that the phone has successfully registered.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt; sip show peers
+Name/username              Host            Dyn NAT ACL Port     Status
+demo-alice                 (Unspecified)    D       A  5060     Unmonitored
+demo-bob                   192.168.5.105    D       A  5060     Unmonitored
+2 sip peers [Monitored: 0 online, 0 offline Unmonitored: 2 online, 0 offline]
+</pre>
+</div></div><p>In the example above, you can see that Alice's phone has not registered, but Bob's phone has registered.</p><p>For chan_pjsip you can use <strong>pjsip show endpoints</strong>.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Debugging SIP Registrations</p><p>If you're having troubles getting a phone to register to Asterisk, make sure you watch the Asterisk CLI with the verbosity level set to at least three while you reboot the phone. You'll likely see error messages indicating what the problem is, like in this example:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>NOTICE[22214]: chan_sip.c:20824 handle_request_register: Registration from &#39;&quot;Alice&quot;&amp;nbsp;
+&lt;sip:demo-alice@192.168.5.50&gt;&#39; failed for &#39;192.168.5.103&#39; - Wrong password
+</pre>
+</div></div><p>As you can see, Asterisk has detected that the password entered into the phone doesn't match the secret setting in the [demo-alice] section of sip.conf.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

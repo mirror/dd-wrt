@@ -20,6 +20,7 @@
 	<depend>pjproject</depend>
 	<depend>res_pjsip</depend>
 	<depend>res_pjsip_outbound_publish</depend>
+	<depend>res_pjsip_pubsub</depend>
 	<support_level>core</support_level>
  ***/
 
@@ -35,7 +36,7 @@
 #include "asterisk/res_pjsip_pubsub.h"
 #include "asterisk/module.h"
 #include "asterisk/logger.h"
-#include "asterisk/app.h"
+#include "asterisk/mwi.h"
 
 /*** DOCUMENTATION
 	<configInfo name="res_pjsip_publish_asterisk" language="en_US">
@@ -359,6 +360,9 @@ static int asterisk_start_devicestate_publishing(struct ast_sip_outbound_publish
 		ao2_ref(datastore, -1);
 		return -1;
 	}
+	stasis_subscription_accept_message_type(publisher_state->device_state_subscription, ast_device_state_message_type());
+	stasis_subscription_accept_message_type(publisher_state->device_state_subscription, stasis_subscription_change_type());
+	stasis_subscription_set_filter(publisher_state->device_state_subscription, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	cached = stasis_cache_dump(ast_device_state_cache(), NULL);
 	ao2_callback(cached, OBJ_NODATA, cached_devstate_cb, datastore);
@@ -434,6 +438,9 @@ static int asterisk_start_mwi_publishing(struct ast_sip_outbound_publish *config
 		ao2_ref(datastore, -1);
 		return -1;
 	}
+	stasis_subscription_accept_message_type(publisher_state->mailbox_state_subscription, ast_mwi_state_type());
+	stasis_subscription_accept_message_type(publisher_state->mailbox_state_subscription, stasis_subscription_change_type());
+	stasis_subscription_set_filter(publisher_state->mailbox_state_subscription, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	cached = stasis_cache_dump(ast_mwi_state_cache(), NULL);
 	ao2_callback(cached, OBJ_NODATA, cached_mwistate_cb, datastore);
@@ -605,8 +612,7 @@ static int asterisk_publication_devicestate_state_change(struct ast_sip_publicat
 	}
 
 	/* We only accept JSON for content */
-	if (pj_strcmp2(&body->content_type.type, "application") ||
-		pj_strcmp2(&body->content_type.subtype, "json")) {
+	if (!ast_sip_is_content_type(&body->content_type, "application", "json")) {
 		ast_debug(2, "Received unsupported content type for Asterisk event on resource '%s'\n",
 			ast_sorcery_object_get_id(config));
 		return -1;
@@ -697,8 +703,7 @@ static int asterisk_publication_mwi_state_change(struct ast_sip_publication *pub
 	}
 
 	/* We only accept JSON for content */
-	if (pj_strcmp2(&body->content_type.type, "application") ||
-		pj_strcmp2(&body->content_type.subtype, "json")) {
+	if (!ast_sip_is_content_type(&body->content_type, "application", "json")) {
 		ast_debug(2, "Received unsupported content type for Asterisk event on resource '%s'\n",
 			ast_sorcery_object_get_id(config));
 		return -1;
@@ -856,8 +861,6 @@ static int regex_filter_handler(const struct aco_option *opt, struct ast_variabl
 
 static int load_module(void)
 {
-	CHECK_PJSIP_PUBSUB_MODULE_LOADED();
-
 	if (ast_eid_is_empty(&ast_eid_default)) {
 		ast_log(LOG_ERROR, "Entity ID is not set.\n");
 		return AST_MODULE_LOAD_DECLINE;
@@ -930,8 +933,10 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Asterisk Event PUBLISH Support",
+	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.reload = reload_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_CHANNEL_DEPEND + 5,
+	.requires = "res_pjsip,res_pjsip_outbound_publish,res_pjsip_pubsub",
 );

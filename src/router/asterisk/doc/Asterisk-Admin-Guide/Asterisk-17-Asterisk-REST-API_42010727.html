@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Asterisk REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Asterisk REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17AsteriskRESTAPI-Asterisk">Asterisk</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-getObject">/asterisk/config/dynamic/{configClass}/{objectType}/{id}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-ConfigTuple">List[ConfigTuple]</a> </p></td>
+<td class="confluenceTd"><p> Retrieve a dynamic configuration object. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> PUT </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-updateObject">/asterisk/config/dynamic/{configClass}/{objectType}/{id}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-ConfigTuple">List[ConfigTuple]</a> </p></td>
+<td class="confluenceTd"><p> Create or update a dynamic configuration object. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-deleteObject">/asterisk/config/dynamic/{configClass}/{objectType}/{id}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Delete a dynamic configuration object. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-getInfo">/asterisk/info</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-AsteriskInfo">AsteriskInfo</a> </p></td>
+<td class="confluenceTd"><p> Gets Asterisk system information. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-ping">/asterisk/ping</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-AsteriskPing">AsteriskPing</a> </p></td>
+<td class="confluenceTd"><p> Response pong message. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-listModules">/asterisk/modules</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Module">List[Module]</a> </p></td>
+<td class="confluenceTd"><p> List Asterisk modules. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-getModule">/asterisk/modules/{moduleName}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Module">Module</a> </p></td>
+<td class="confluenceTd"><p> Get Asterisk module information. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-loadModule">/asterisk/modules/{moduleName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Load an Asterisk module. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-unloadModule">/asterisk/modules/{moduleName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Unload an Asterisk module. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> PUT </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-reloadModule">/asterisk/modules/{moduleName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Reload an Asterisk module. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-listLogChannels">/asterisk/logging</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-LogChannel">List[LogChannel]</a> </p></td>
+<td class="confluenceTd"><p> Gets Asterisk log channel information. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-addLog">/asterisk/logging/{logChannelName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Adds a log channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-deleteLog">/asterisk/logging/{logChannelName}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Deletes a log channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> PUT </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-rotateLog">/asterisk/logging/{logChannelName}/rotate</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Rotates a log channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-getGlobalVar">/asterisk/variable</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Variable">Variable</a> </p></td>
+<td class="confluenceTd"><p> Get the value of a global variable. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17AsteriskRESTAPI-setGlobalVar">/asterisk/variable</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Set the value of a global variable. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-getObject"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-getObject:GET/asterisk/config/dynamic/{configClass}/{objectType}/{id}">getObject: GET /asterisk/config/dynamic/{configClass}/{objectType}/{id}</h2>
+
+<p>Retrieve a dynamic configuration object.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>configClass: <em>string</em> - The configuration class containing dynamic configuration objects.</li>
+	<li>objectType: <em>string</em> - The type of configuration object to retrieve.</li>
+	<li>id: <em>string</em> - The unique identifier of the object to retrieve.</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>404 - {configClass|objectType|id} not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-updateObject"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-updateObject:PUT/asterisk/config/dynamic/{configClass}/{objectType}/{id}">updateObject: PUT /asterisk/config/dynamic/{configClass}/{objectType}/{id}</h2>
+
+<p>Create or update a dynamic configuration object.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>configClass: <em>string</em> - The configuration class containing dynamic configuration objects.</li>
+	<li>objectType: <em>string</em> - The type of configuration object to create or update.</li>
+	<li>id: <em>string</em> - The unique identifier of the object to create or update.</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-Bodyparameter">Body parameter</h3>
+<ul>
+	<li>fields: containers - The body object should have a value that is a list of ConfigTuples, which provide the fields to update. Ex. [ { &quot;attribute&quot;: &quot;directmedia&quot;, &quot;value&quot;: &quot;false&quot; } ]</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>400 - Bad request body</li>
+	<li>403 - Could not create or update object</li>
+	<li>404 - {configClass|objectType} not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-deleteObject"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-deleteObject:DELETE/asterisk/config/dynamic/{configClass}/{objectType}/{id}">deleteObject: DELETE /asterisk/config/dynamic/{configClass}/{objectType}/{id}</h2>
+
+<p>Delete a dynamic configuration object.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>configClass: <em>string</em> - The configuration class containing dynamic configuration objects.</li>
+	<li>objectType: <em>string</em> - The type of configuration object to delete.</li>
+	<li>id: <em>string</em> - The unique identifier of the object to delete.</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>403 - Could not delete object</li>
+	<li>404 - {configClass|objectType|id} not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-getInfo"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-getInfo:GET/asterisk/info">getInfo: GET /asterisk/info</h2>
+
+<p>Gets Asterisk system information.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>only: <em>string</em> - Filter information returned
+	<ul>
+		<li>Allowed values: build, system, config, status</li>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-ping"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-ping:GET/asterisk/ping">ping: GET /asterisk/ping</h2>
+
+<p>Response pong message.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-listModules"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-listModules:GET/asterisk/modules">listModules: GET /asterisk/modules</h2>
+
+<p>List Asterisk modules.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-getModule"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-getModule:GET/asterisk/modules/{moduleName}">getModule: GET /asterisk/modules/{moduleName}</h2>
+
+<p>Get Asterisk module information.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.3">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>moduleName: <em>string</em> - Module's name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.3">Error Responses</h3>
+<ul>
+	<li>404 - Module could not be found in running modules.</li>
+	<li>409 - Module information could not be retrieved.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-loadModule"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-loadModule:POST/asterisk/modules/{moduleName}">loadModule: POST /asterisk/modules/{moduleName}</h2>
+
+<p>Load an Asterisk module.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.4">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>moduleName: <em>string</em> - Module's name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.4">Error Responses</h3>
+<ul>
+	<li>409 - Module could not be loaded.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-unloadModule"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-unloadModule:DELETE/asterisk/modules/{moduleName}">unloadModule: DELETE /asterisk/modules/{moduleName}</h2>
+
+<p>Unload an Asterisk module.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.5">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>moduleName: <em>string</em> - Module's name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.5">Error Responses</h3>
+<ul>
+	<li>404 - Module not found in running modules.</li>
+	<li>409 - Module could not be unloaded.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-reloadModule"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-reloadModule:PUT/asterisk/modules/{moduleName}">reloadModule: PUT /asterisk/modules/{moduleName}</h2>
+
+<p>Reload an Asterisk module.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.6">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>moduleName: <em>string</em> - Module's name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.6">Error Responses</h3>
+<ul>
+	<li>404 - Module not found in running modules.</li>
+	<li>409 - Module could not be reloaded.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-listLogChannels"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-listLogChannels:GET/asterisk/logging">listLogChannels: GET /asterisk/logging</h2>
+
+<p>Gets Asterisk log channel information.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-addLog"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-addLog:POST/asterisk/logging/{logChannelName}">addLog: POST /asterisk/logging/{logChannelName}</h2>
+
+<p>Adds a log channel.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.7">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>logChannelName: <em>string</em> - The log channel to add</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-Queryparameters.1">Query parameters</h3>
+<ul>
+	<li>configuration: <em>string</em> - <strong>(required)</strong> levels of the log channel</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.7">Error Responses</h3>
+<ul>
+	<li>400 - Bad request body</li>
+	<li>409 - Log channel could not be created.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-deleteLog"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-deleteLog:DELETE/asterisk/logging/{logChannelName}">deleteLog: DELETE /asterisk/logging/{logChannelName}</h2>
+
+<p>Deletes a log channel.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.8">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>logChannelName: <em>string</em> - Log channels name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.8">Error Responses</h3>
+<ul>
+	<li>404 - Log channel does not exist.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-rotateLog"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-rotateLog:PUT/asterisk/logging/{logChannelName}/rotate">rotateLog: PUT /asterisk/logging/{logChannelName}/rotate</h2>
+
+<p>Rotates a log channel.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Pathparameters.9">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>logChannelName: <em>string</em> - Log channel's name</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.9">Error Responses</h3>
+<ul>
+	<li>404 - Log channel does not exist.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-getGlobalVar"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-getGlobalVar:GET/asterisk/variable">getGlobalVar: GET /asterisk/variable</h2>
+
+<p>Get the value of a global variable.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Queryparameters.2">Query parameters</h3>
+<ul>
+	<li>variable: <em>string</em> - <strong>(required)</strong> The variable to get</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.10">Error Responses</h3>
+<ul>
+	<li>400 - Missing variable parameter.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17AsteriskRESTAPI-setGlobalVar"></span></p>
+<h2 id="Asterisk17AsteriskRESTAPI-setGlobalVar:POST/asterisk/variable">setGlobalVar: POST /asterisk/variable</h2>
+
+<p>Set the value of a global variable.</p>
+
+<h3 id="Asterisk17AsteriskRESTAPI-Queryparameters.3">Query parameters</h3>
+<ul>
+	<li>variable: <em>string</em> - <strong>(required)</strong> The variable to set</li>
+	<li>value: <em>string</em> - The value to set the variable to</li>
+</ul>
+
+
+<h3 id="Asterisk17AsteriskRESTAPI-ErrorResponses.11">Error Responses</h3>
+<ul>
+	<li>400 - Missing variable parameter.</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

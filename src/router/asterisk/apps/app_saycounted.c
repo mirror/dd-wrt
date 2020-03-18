@@ -39,7 +39,7 @@
 				<para>The number of things</para>
 			</parameter>
 			<parameter name="filename" required="true">
-				<para>File name stem for the noun that is the the name of the things</para>
+				<para>File name stem for the noun that is the name of the things</para>
 			</parameter>
 		</syntax>
 		<description>
@@ -113,8 +113,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/logger.h"
 #include "asterisk/module.h"
@@ -206,4 +204,3 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO_STANDARD_EXTENDED(ASTERISK_GPL_KEY, "Decline words according to channel language");
-

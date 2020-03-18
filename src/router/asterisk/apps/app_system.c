@@ -21,7 +21,7 @@
  * \brief Execute arbitrary system commands
  *
  * \author Mark Spencer <markster@digium.com>
- * 
+ *
  * \ingroup applications
  */
 
@@ -30,8 +30,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"
@@ -48,6 +46,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<syntax>
 			<parameter name="command" required="true">
 				<para>Command to execute</para>
+				<warning><para>Do not use untrusted strings such as <variable>CALLERID(num)</variable>
+				or <variable>CALLERID(name)</variable> as part of the command parameters.  You
+				risk a command injection attack executing arbitrary commands if the untrusted
+				strings aren't filtered to remove dangerous characters.  See function
+				<variable>FILTER()</variable>.</para></warning>
 			</parameter>
 		</syntax>
 		<description>
@@ -73,6 +76,11 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		<syntax>
 			<parameter name="command" required="true">
 				<para>Command to execute</para>
+				<warning><para>Do not use untrusted strings such as <variable>CALLERID(num)</variable>
+				or <variable>CALLERID(name)</variable> as part of the command parameters.  You
+				risk a command injection attack executing arbitrary commands if the untrusted
+				strings aren't filtered to remove dangerous characters.  See function
+				<variable>FILTER()</variable>.</para></warning>
 			</parameter>
 		</syntax>
 		<description>
@@ -139,14 +147,14 @@ static int system_exec_helper(struct ast_channel *chan, const char *data, int fa
 		pbx_builtin_setvar_helper(chan, chanvar, "FAILURE");
 		res = failmode;
 	} else {
-		if (res < 0) 
+		if (res < 0)
 			res = 0;
 		if (res != 0)
 			pbx_builtin_setvar_helper(chan, chanvar, "APPERROR");
 		else
 			pbx_builtin_setvar_helper(chan, chanvar, "SUCCESS");
 		res = 0;
-	} 
+	}
 
 	ast_autoservice_stop(chan);
 

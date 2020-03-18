@@ -2,10 +2,13 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.10.0",
+	"apiVersion": "2.0.0",
 	"swaggerVersion": "1.2",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/events.{format}",
+	"requiresModules": [
+		"res_http_websocket"
+	],
 	"apis": [
 		{
 			"path": "/events",
@@ -145,16 +148,18 @@
 				"timestamp": {
 					"type": "Date",
 					"description": "Time at which this event was created.",
-					"required": false
+					"required": true
 				}
 			},
 			"subTypes": [
 				"DeviceStateChanged",
 				"PlaybackStarted",
+				"PlaybackContinuing",
 				"PlaybackFinished",
 				"RecordingStarted",
 				"RecordingFinished",
 				"RecordingFailed",
+				"ApplicationMoveFailed",
 				"ApplicationReplaced",
 				"BridgeCreated",
 				"BridgeDestroyed",
@@ -206,7 +211,7 @@
 							"Unreachable",
 							"Reachable",
 							"Unknown",
-							"Created",
+							"NonQualified",
 							"Removed"
 						]
 					}
@@ -276,6 +281,17 @@
 				}
 			}
 		},
+		"PlaybackContinuing": {
+			"id": "PlaybackContinuing",
+			"description": "Event showing the continuation of a media playback operation from one media URI to the next in the list.",
+			"properties": {
+				"playback": {
+					"type": "Playback",
+					"description": "Playback control object",
+					"required": true
+				}
+			}
+		},
 		"PlaybackFinished": {
 			"id": "PlaybackFinished",
 			"description": "Event showing the completion of a media playback operation.",
@@ -317,6 +333,25 @@
 					"type": "LiveRecording",
 					"description": "Recording control object",
 					"required": true
+				}
+			}
+		},
+		"ApplicationMoveFailed": {
+			"id": "ApplicationMoveFailed",
+			"description": "Notification that trying to move a channel to another Stasis application failed.",
+			"properties": {
+				"channel": {
+					"required": true,
+					"type": "Channel"
+				},
+				"destination": {
+					"required": true,
+					"type": "string"
+				},
+				"args": {
+					"required": true,
+					"type": "List[string]",
+					"description": "Arguments to the application"
 				}
 			}
 		},

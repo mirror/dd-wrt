@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_codec_opus</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_codec_opus
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_codec_opus-CodecopusmoduleforAsterisk">Codec opus module for Asterisk</h1>
+
+<p>This configuration documentation is for functionality provided by <code>codec_opus</code>.</p>
+
+<h2 id="Asterisk17Configuration_codec_opus-codecs.conf">codecs.conf</h2>
+
+<h3 id="Asterisk17Configuration_codec_opus-opus">opus</h3>
+
+<p>Codec opus module for Asterisk options</p>
+
+<h4 id="Asterisk17Configuration_codec_opus-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'opus'. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_packet_loss"><code>packet_loss</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's packet loss percentage. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_complexity"><code>complexity</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>10</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's computational complexity. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_max_bandwidth"><code>max_bandwidth</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>full</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's maximum bandwidth allowed. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_signal"><code>signal</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>auto</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's signal type. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_application"><code>application</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>voip</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's application type. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_max_playback_rate"><code>max_playback_rate</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>48000</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's maximum playback rate. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_bitrate"><code>bitrate</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>auto</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's bit rate. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_cbr"><code>cbr</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's constant bit rate value. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_fec"><code>fec</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's forward error correction value. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_codec_opus-opus_dtx"><code>dtx</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Encoder's discontinuous transmission value. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_codec_opus-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_packet_loss"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-packet_loss">packet_loss</h5>
+
+<p>Can be any number between 0 and 100 (inclusive). Higher values result in a loss resistant behavior, however this has a cost on the quality (dependent upon a given bitrate).</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_complexity"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-complexity">complexity</h5>
+
+<p>Can be any number between 0 and 10, inclusive. Note, 10 equals the highest complexity.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_max_bandwidth"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-max_bandwidth">max_bandwidth</h5>
+
+<p>Sets an upper bandwidth bound on the encoder. Can be any of the following:</p>
+
+<ul>
+	<li><code>narrow</code></li>
+	<li><code>medium</code></li>
+	<li><code>wide</code></li>
+	<li><code>super_wide</code></li>
+	<li><code>full</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_signal"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-signal">signal</h5>
+
+<p>Aids in mode selection on the encoder:</p>
+
+<ul>
+	<li><code>auto</code></li>
+	<li><code>voice</code></li>
+	<li><code>music</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_application"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-application">application</h5>
+
+<ul>
+	<li><code>voip</code></li>
+	<li><code>audio</code></li>
+	<li><code>low_delay</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_max_playback_rate"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-max_playback_rate">max_playback_rate</h5>
+
+<p>Any value between 8000 and 48000, inclusive. Although typically it should match one of the usual Opus bandwidths.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_bitrate"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-bitrate">bitrate</h5>
+
+<p>Can be any number between 500 and 512000 as well as one of the following opus values:</p>
+
+<ul>
+	<li><code>auto</code></li>
+	<li><code>max</code></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_cbr"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-cbr">cbr</h5>
+
+<p>True/False value where 0/false/no represents a variable bit rate and 1/true/yes is constant bit rate.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_fec"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-fec">fec</h5>
+
+<p>True/False value where 0/false/no represents disabled and 1/true/yes is enabled.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_codec_opus-opus_dtx"></span></p>
+<h5 id="Asterisk17Configuration_codec_opus-dtx">dtx</h5>
+
+<p>True/False value where 0/false/no represents disabled and 1/true/yes is enabled.</p>
+
+
+
+<h3 id="Asterisk17Configuration_codec_opus-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

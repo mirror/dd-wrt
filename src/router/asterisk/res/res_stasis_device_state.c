@@ -23,8 +23,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/astdb.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/module.h"
@@ -108,7 +106,6 @@ static int device_state_subscriptions_cmp(void *obj, void *arg, int flags)
 static void device_state_subscription_destroy(void *obj)
 {
 	struct device_state_subscription *sub = obj;
-	sub->sub = stasis_unsubscribe_and_join(sub->sub);
 	ast_string_field_free_memory(sub);
 }
 
@@ -154,6 +151,9 @@ static struct device_state_subscription *find_device_state_subscription(
 static void remove_device_state_subscription(
 	struct device_state_subscription *sub)
 {
+	if (sub->sub) {
+		sub->sub = stasis_unsubscribe_and_join(sub->sub);
+	}
 	ao2_unlink_flags(device_state_subscriptions, sub, OBJ_NOLOCK);
 }
 
@@ -168,22 +168,22 @@ struct ast_json *stasis_app_device_state_to_json(
 struct ast_json *stasis_app_device_states_to_json(void)
 {
 	struct ast_json *array = ast_json_array_create();
-	RAII_VAR(struct ast_db_entry *, tree,
-		 ast_db_gettree(DEVICE_STATE_FAMILY, NULL), ast_db_freetree);
+	struct ast_db_entry *tree;
 	struct ast_db_entry *entry;
 
+	tree = ast_db_gettree(DEVICE_STATE_FAMILY, NULL);
 	for (entry = tree; entry; entry = entry->next) {
 		const char *name = strrchr(entry->key, '/');
+
 		if (!ast_strlen_zero(name)) {
-			struct ast_str *device = ast_str_alloca(DEVICE_STATE_SIZE);
-			ast_str_set(&device, 0, "%s%s",
-				    DEVICE_STATE_SCHEME_STASIS, ++name);
-			ast_json_array_append(
-				array, stasis_app_device_state_to_json(
-					ast_str_buffer(device),
-					ast_device_state(ast_str_buffer(device))));
+			char device[DEVICE_STATE_SIZE];
+
+			snprintf(device, sizeof(device), "%s%s", DEVICE_STATE_SCHEME_STASIS, ++name);
+			ast_json_array_append(array,
+				stasis_app_device_state_to_json(device, ast_device_state(device)));
 		}
 	}
+	ast_db_freetree(tree);
 
 	return array;
 }
@@ -291,7 +291,7 @@ static void populate_cache(void)
 
 static enum ast_device_state stasis_device_state_cb(const char *data)
 {
-	char buf[DEVICE_STATE_SIZE] = "";
+	char buf[DEVICE_STATE_SIZE];
 
 	ast_db_get(DEVICE_STATE_FAMILY, data, buf, sizeof(buf));
 
@@ -394,6 +394,9 @@ static int subscribe_device_state(struct stasis_app *app, void *obj)
 		ao2_ref(sub, -1);
 		return -1;
 	}
+	stasis_subscription_accept_message_type(sub->sub, ast_device_state_message_type());
+	stasis_subscription_accept_message_type(sub->sub, stasis_subscription_change_type());
+	stasis_subscription_set_filter(sub->sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
 
 	ao2_link_flags(device_state_subscriptions, sub, OBJ_NOLOCK);
 	ao2_unlock(device_state_subscriptions);
@@ -458,9 +461,10 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	if (!(device_state_subscriptions = ao2_container_alloc(
-		      DEVICE_STATE_BUCKETS, device_state_subscriptions_hash,
-		      device_state_subscriptions_cmp))) {
+	device_state_subscriptions = ao2_container_alloc_hash(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+		DEVICE_STATE_BUCKETS, device_state_subscriptions_hash, NULL,
+		device_state_subscriptions_cmp);
+	if (!device_state_subscriptions) {
 		ast_devstate_prov_del(DEVICE_STATE_PROVIDER_STASIS);
 		return AST_MODULE_LOAD_DECLINE;
 	}
@@ -482,4 +486,5 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS, "Stasis applicatio
 	.support_level = AST_MODULE_SUPPORT_CORE,
 	.load = load_module,
 	.unload = unload_module,
-	.nonoptreq = "res_stasis");
+	.requires = "res_stasis",
+);

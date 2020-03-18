@@ -2,10 +2,13 @@
 	"_copyright": "Copyright (C) 2012 - 2013, Digium, Inc.",
 	"_author": "David M. Lee, II <dlee@digium.com>",
 	"_svn_revision": "$Revision$",
-	"apiVersion": "1.10.0",
+	"apiVersion": "2.0.0",
 	"swaggerVersion": "1.1",
 	"basePath": "http://localhost:8088/ari",
 	"resourcePath": "/api-docs/recordings.{format}",
+	"requiresModules": [
+		"res_stasis_recording"
+	],
 	"apis": [
 		{
 			"path": "/recordings/stored",
@@ -61,6 +64,38 @@
 						}
 					],
 					"errorResponses": [
+						{
+							"code": 404,
+							"reason": "Recording not found"
+						}
+					]
+				}
+			]
+		},
+		{
+			"path": "/recordings/stored/{recordingName}/file",
+			"description": "The actual file associated with the stored recording",
+			"operations": [
+				{
+					"httpMethod": "GET",
+					"summary": "Get the file associated with the stored recording.",
+					"nickname": "getStoredFile",
+					"responseClass": "binary",
+					"parameters": [
+						{
+							"name": "recordingName",
+							"description": "The name of the recording",
+							"paramType": "path",
+							"required": true,
+							"allowMultiple": false,
+							"dataType": "string"
+						}
+					],
+					"errorResponses": [
+						{
+							"code": 403,
+							"reason": "The recording file could not be opened"
+						},
 						{
 							"code": 404,
 							"reason": "Recording not found"

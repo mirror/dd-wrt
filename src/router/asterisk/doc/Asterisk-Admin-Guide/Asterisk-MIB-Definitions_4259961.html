@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk MIB Definitions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4260049.html">Simple Network Management Protocol (SNMP) Support</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk MIB Definitions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Aug 27, 2010
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>ASTERISK-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+	OBJECT-TYPE, MODULE-IDENTITY, Integer32, Counter32, TimeTicks,
+	Unsigned32, Gauge32
+		FROM SNMPv2-SMI
+
+	TEXTUAL-CONVENTION, DisplayString, TruthValue
+		FROM SNMPv2-TC
+
+	digium
+		FROM DIGIUM-MIB;
+
+asterisk MODULE-IDENTITY
+	LAST-UPDATED	&quot;200806202025Z&quot;
+	ORGANIZATION	&quot;Digium, Inc.&quot;
+	CONTACT-INFO
+		&quot;Mark A. Spencer
+		Postal: Digium, Inc.
+		        445 Jan Davis Drive
+		        Huntsville, AL 35806
+		        USA
+		   Tel: +1 256 428 6000
+		 Email: markster@digium.com
+
+		Thorsten Lockert
+		Postal: Voop AS
+		        Boehmergaten 42
+			NO-5057 Bergen
+			Norway
+		   Tel: +47 5598 7200
+		 Email: tholo@voop.no&quot;
+	DESCRIPTION
+		&quot;Asterisk is an Open Source PBX.  This MIB defined
+		objects for managing Asterisk instances.&quot;
+	REVISION	&quot;200806202025Z&quot;
+	DESCRIPTION
+		&quot;smilint police --
+		 Add missing imports; fix initial capitalization
+		 of enumeration elements; add missing range
+		 restrictions for Integer32 indices, correct
+		 spelling of astChanCidANI in its definition.
+		 Addresses bug 12905. - jeffg@opennms.org&quot;
+	REVISION	&quot;200708211450Z&quot;
+	DESCRIPTION
+		&quot;Add total and current call counter statistics.&quot;
+	REVISION	&quot;200603061840Z&quot;
+	DESCRIPTION
+		&quot;Change audio codec identification from 3kAudio to
+		Audio3k to conform better with specification.
+
+		Expand on contact information.&quot;
+	REVISION	&quot;200602041900Z&quot;
+	DESCRIPTION
+		&quot;Initial published revision.&quot;
+	::= { digium 1 }
+
+asteriskVersion		OBJECT IDENTIFIER ::= { asterisk 1 }
+asteriskConfiguration	OBJECT IDENTIFIER ::= { asterisk 2 }
+asteriskModules		OBJECT IDENTIFIER ::= { asterisk 3 }
+asteriskIndications	OBJECT IDENTIFIER ::= { asterisk 4 }
+asteriskChannels	OBJECT IDENTIFIER ::= { asterisk 5 }
+
+-- asteriskVersion
+
+astVersionString OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Text version string of the version of Asterisk that
+		the SNMP Agent was compiled to run against.&quot;
+	::= { asteriskVersion 1 }
+
+astVersionTag OBJECT-TYPE
+	SYNTAX		Unsigned32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;SubVersion revision of the version of Asterisk that
+		the SNMP Agent was compiled to run against -- this is
+		typically 0 for release-versions of Asterisk.&quot;
+	::= { asteriskVersion 2 }
+
+-- asteriskConfiguration
+
+astConfigUpTime OBJECT-TYPE
+	SYNTAX		TimeTicks
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Time ticks since Asterisk was started.&quot;
+	::= { asteriskConfiguration 1 }
+
+astConfigReloadTime OBJECT-TYPE
+	SYNTAX		TimeTicks
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Time ticks since Asterisk was last reloaded.&quot;
+	::= { asteriskConfiguration 2 }
+
+astConfigPid OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;The process id of the running Asterisk process.&quot;
+	::= { asteriskConfiguration 3 }
+
+astConfigSocket OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;The control socket for giving Asterisk commands.&quot;
+	::= { asteriskConfiguration 4 }
+
+astConfigCallsActive OBJECT-TYPE
+	SYNTAX		Gauge32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;The number of calls currently active on the Asterisk PBX.&quot;
+	::= { asteriskConfiguration 5 }
+
+astConfigCallsProcessed OBJECT-TYPE
+	SYNTAX		Counter32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;The total number of calls processed through the Asterisk PBX since last
+		restart.&quot;
+	::= { asteriskConfiguration 6 }
+
+-- asteriskModules
+
+astNumModules OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number of modules currently loaded into Asterisk.&quot;
+	::= { asteriskModules 1 }
+
+-- asteriskIndications
+
+astNumIndications OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number of indications currently defined in Asterisk.&quot;
+	::= { asteriskIndications 1 }
+
+astCurrentIndication OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Default indication zone to use.&quot;
+	::= { asteriskIndications 2 }
+
+astIndicationsTable OBJECT-TYPE
+	SYNTAX		SEQUENCE OF AstIndicationsEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Table with all the indication zones currently know to
+		the running Asterisk instance.&quot;
+	::= { asteriskIndications 3 }
+
+astIndicationsEntry OBJECT-TYPE
+	SYNTAX		AstIndicationsEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Information about a single indication zone.&quot;
+	INDEX		{ astIndIndex }
+	::= { astIndicationsTable 1 }
+
+AstIndicationsEntry ::= SEQUENCE {
+	astIndIndex		Integer32,
+	astIndCountry		DisplayString,
+	astIndAlias		DisplayString,
+	astIndDescription	DisplayString
+}
+
+astIndIndex OBJECT-TYPE
+	SYNTAX		Integer32 (1 .. 2147483647)
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Numerical index into the table of indication zones.&quot;
+	::= { astIndicationsEntry 1 }
+
+astIndCountry OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Country for which the indication zone is valid,
+		typically this is the ISO 2-letter code of the country.&quot;
+	::= { astIndicationsEntry 2 }
+
+astIndAlias OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;&quot;
+	::= { astIndicationsEntry 3 }
+
+astIndDescription OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Description of the indication zone, usually the full
+		name of the country it is valid for.&quot;
+	::= { astIndicationsEntry 4 }
+
+-- asteriskChannels
+
+astNumChannels OBJECT-TYPE
+	SYNTAX		Gauge32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current number of active channels.&quot;
+	::= { asteriskChannels 1 }
+
+astChanTable OBJECT-TYPE
+	SYNTAX		SEQUENCE OF AstChanEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Table with details of the currently active channels
+		in the Asterisk instance.&quot;
+	::= { asteriskChannels 2 }
+
+astChanEntry OBJECT-TYPE
+	SYNTAX		AstChanEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Details of a single channel.&quot;
+	INDEX		{ astChanIndex }
+	::= { astChanTable 1 }
+
+AstChanEntry ::= SEQUENCE {
+	astChanIndex		Integer32,
+	astChanName		DisplayString,
+	astChanLanguage		DisplayString,
+	astChanType		DisplayString,
+	astChanMusicClass	DisplayString,
+	astChanBridge		DisplayString,
+	astChanMasq		DisplayString,
+	astChanMasqr		DisplayString,
+	astChanWhenHangup	TimeTicks,
+	astChanApp		DisplayString,
+	astChanData		DisplayString,
+	astChanContext		DisplayString,
+	astChanMacroContext	DisplayString,
+	astChanMacroExten	DisplayString,
+	astChanMacroPri		Integer32,
+	astChanExten		DisplayString,
+	astChanPri		Integer32,
+	astChanAccountCode	DisplayString,
+	astChanForwardTo	DisplayString,
+	astChanUniqueId		DisplayString,
+	astChanCallGroup	Unsigned32,
+	astChanPickupGroup	Unsigned32,
+	astChanState		INTEGER,
+	astChanMuted		TruthValue,
+	astChanRings		Integer32,
+	astChanCidDNID		DisplayString,
+	astChanCidNum		DisplayString,
+	astChanCidName		DisplayString,
+	astChanCidANI		DisplayString,
+	astChanCidRDNIS		DisplayString,
+	astChanCidPresentation	DisplayString,
+	astChanCidANI2		Integer32,
+	astChanCidTON		Integer32,
+	astChanCidTNS		Integer32,
+	astChanAMAFlags		INTEGER,
+	astChanADSI		INTEGER,
+	astChanToneZone		DisplayString,
+	astChanHangupCause	INTEGER,
+	astChanVariables	DisplayString,
+	astChanFlags		BITS,
+	astChanTransferCap	INTEGER
+}
+
+astChanIndex OBJECT-TYPE
+	SYNTAX		Integer32 (1 .. 2147483647)
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Index into the channel table.&quot;
+	::= { astChanEntry 1 }
+
+astChanName OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Name of the current channel.&quot;
+	::= { astChanEntry 2 }
+
+astChanLanguage OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Which language the current channel is configured to
+		use -- used mainly for prompts.&quot;
+	::= { astChanEntry 3 }
+
+astChanType OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Underlying technology for the current channel.&quot;
+	::= { astChanEntry 4 }
+
+astChanMusicClass OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Music class to be used for Music on Hold for this
+		channel.&quot;
+	::= { astChanEntry 5 }
+
+astChanBridge OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Which channel this channel is currently bridged (in a
+		conversation) with.&quot;
+	::= { astChanEntry 6 }
+
+astChanMasq OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Channel masquerading for us.&quot;
+	::= { astChanEntry 7 }
+
+astChanMasqr OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Channel we are masquerading for.&quot;
+	::= { astChanEntry 8 }
+
+astChanWhenHangup OBJECT-TYPE
+	SYNTAX		TimeTicks
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;How long until this channel will be hung up.&quot;
+	::= { astChanEntry 9 }
+
+astChanApp OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current application for the channel.&quot;
+	::= { astChanEntry 10 }
+
+astChanData OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Arguments passed to the current application.&quot;
+	::= { astChanEntry 11 }
+
+astChanContext OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current extension context.&quot;
+	::= { astChanEntry 12 }
+
+astChanMacroContext OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current macro context.&quot;
+	::= { astChanEntry 13 }
+
+astChanMacroExten OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current macro extension.&quot;
+	::= { astChanEntry 14 }
+
+astChanMacroPri OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current macro priority.&quot;
+	::= { astChanEntry 15 }
+
+astChanExten OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current extension.&quot;
+	::= { astChanEntry 16 }
+
+astChanPri OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Current priority.&quot;
+	::= { astChanEntry 17 }
+
+astChanAccountCode OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Account Code for billing.&quot;
+	::= { astChanEntry 18 }
+
+astChanForwardTo OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Where to forward to if asked to dial on this
+		interface.&quot;
+	::= { astChanEntry 19 }
+
+astChanUniqueId OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Unique Channel Identifier.&quot;
+	::= { astChanEntry 20 }
+
+astChanCallGroup OBJECT-TYPE
+	SYNTAX		Unsigned32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Call Group.&quot;
+	::= { astChanEntry 21 }
+
+astChanPickupGroup OBJECT-TYPE
+	SYNTAX		Unsigned32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Pickup Group.&quot;
+	::= { astChanEntry 22 }
+
+astChanState OBJECT-TYPE
+	SYNTAX		INTEGER {
+		stateDown(0),
+		stateReserved(1),
+		stateOffHook(2),
+		stateDialing(3),
+		stateRing(4),
+		stateRinging(5),
+		stateUp(6),
+		stateBusy(7),
+		stateDialingOffHook(8),
+		statePreRing(9)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Channel state.&quot;
+	::= { astChanEntry 23 }
+
+astChanMuted OBJECT-TYPE
+	SYNTAX		TruthValue
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Transmission of voice data has been muted.&quot;
+	::= { astChanEntry 24 }
+
+astChanRings OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number of rings so far.&quot;
+	::= { astChanEntry 25 }
+
+astChanCidDNID OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Dialled Number ID.&quot;
+	::= { astChanEntry 26 }
+
+astChanCidNum OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Caller Number.&quot;
+	::= { astChanEntry 27 }
+
+astChanCidName OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Caller Name.&quot;
+	::= { astChanEntry 28 }
+
+astChanCidANI OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;ANI&quot;
+	::= { astChanEntry 29 }
+
+astChanCidRDNIS OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Redirected Dialled Number Service.&quot;
+	::= { astChanEntry 30 }
+
+astChanCidPresentation OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number Presentation/Screening.&quot;
+	::= { astChanEntry 31 }
+
+astChanCidANI2 OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;ANI 2 (info digit).&quot;
+	::= { astChanEntry 32 }
+
+astChanCidTON OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Type of Number.&quot;
+	::= { astChanEntry 33 }
+
+astChanCidTNS OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Transit Network Select.&quot;
+	::= { astChanEntry 34 }
+
+astChanAMAFlags OBJECT-TYPE
+	SYNTAX		INTEGER {
+		default(0),
+		omit(1),
+		billing(2),
+		documentation(3)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;AMA Flags.&quot;
+	::= { astChanEntry 35 }
+
+astChanADSI OBJECT-TYPE
+	SYNTAX		INTEGER {
+		unknown(0),
+		available(1),
+		unavailable(2),
+		offHookOnly(3)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Whether or not ADSI is detected on CPE.&quot;
+	::= { astChanEntry 36 }
+
+astChanToneZone OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Indication zone to use for channel.&quot;
+	::= { astChanEntry 37 }
+
+astChanHangupCause OBJECT-TYPE
+	SYNTAX		INTEGER {
+		notDefined(0),
+		unregistered(3),
+		normal(16),
+		busy(17),
+		noAnswer(19),
+		congestion(34),
+		failure(38),
+		noSuchDriver(66)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Why is the channel hung up.&quot;
+	::= { astChanEntry 38 }
+
+astChanVariables OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Channel Variables defined for this channel.&quot;
+	::= { astChanEntry 39 }
+
+astChanFlags OBJECT-TYPE
+	SYNTAX		BITS {
+		wantsJitter(0),
+		deferDTMF(1),
+		writeInterrupt(2),
+		blocking(3),
+		zombie(4),
+		exception(5),
+		musicOnHold(6),
+		spying(7),
+		nativeBridge(8),
+		autoIncrementingLoop(9)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Flags set on this channel.&quot;
+	::= { astChanEntry 40 }
+
+astChanTransferCap OBJECT-TYPE
+	SYNTAX		INTEGER {
+		speech(0),
+		digital(8),
+		restrictedDigital(9),
+		audio3k(16),
+		digitalWithTones(17),
+		video(24)
+	}
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Transfer Capabilities for this channel.&quot;
+	::= { astChanEntry 41 }
+
+astNumChanTypes OBJECT-TYPE
+	SYNTAX		Integer32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number of channel types (technologies) supported.&quot;
+	::= { asteriskChannels 3 }
+
+astChanTypeTable OBJECT-TYPE
+	SYNTAX		SEQUENCE OF AstChanTypeEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Table with details of the supported channel types.&quot;
+	::= { asteriskChannels 4 }
+
+astChanTypeEntry OBJECT-TYPE
+	SYNTAX		AstChanTypeEntry
+	MAX-ACCESS	not-accessible
+	STATUS		current
+	DESCRIPTION
+		&quot;Information about a technology we support, including
+		how many channels are currently using this technology.&quot;
+	INDEX		{ astChanTypeIndex }
+	::= { astChanTypeTable 1 }
+
+AstChanTypeEntry ::= SEQUENCE {
+	astChanTypeIndex	Integer32,
+	astChanTypeName		DisplayString,
+	astChanTypeDesc		DisplayString,
+	astChanTypeDeviceState	Integer32,
+	astChanTypeIndications	Integer32,
+	astChanTypeTransfer	Integer32,
+	astChanTypeChannels	Gauge32
+}
+
+astChanTypeIndex OBJECT-TYPE
+	SYNTAX		Integer32 (1 .. 2147483647)
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Index into the table of channel types.&quot;
+	::= { astChanTypeEntry 1 }
+
+astChanTypeName OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Unique name of the technology we are describing.&quot;
+	::= { astChanTypeEntry 2 }
+
+astChanTypeDesc OBJECT-TYPE
+	SYNTAX		DisplayString
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Description of the channel type (technology).&quot;
+	::= { astChanTypeEntry 3 }
+
+astChanTypeDeviceState OBJECT-TYPE
+	SYNTAX		TruthValue
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Whether the current technology can hold device states.&quot;
+	::= { astChanTypeEntry 4 }
+
+astChanTypeIndications OBJECT-TYPE
+	SYNTAX		TruthValue
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Whether the current technology supports progress indication.&quot;
+	::= { astChanTypeEntry 5 }
+
+astChanTypeTransfer OBJECT-TYPE
+	SYNTAX		TruthValue
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Whether the current technology supports transfers, where
+		Asterisk can get out from inbetween two bridged channels.&quot;
+	::= { astChanTypeEntry 6 }
+
+astChanTypeChannels OBJECT-TYPE
+	SYNTAX		Gauge32
+	MAX-ACCESS	read-only
+	STATUS		current
+	DESCRIPTION
+		&quot;Number of active channels using the current technology.&quot;
+	::= { astChanTypeEntry 7 }
+
+astChanScalars OBJECT IDENTIFIER ::= { asteriskChannels 5 }
+
+astNumChanBridge OBJECT-TYPE
+       SYNTAX          Gauge32
+       MAX-ACCESS      read-only
+       STATUS          current
+       DESCRIPTION
+               &quot;Number of channels currently in a bridged state.&quot;
+       ::= { astChanScalars 1 }
+
+END</pre>
+</div></div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/_private.h"
 #include "asterisk/astobj2.h"
 #include "asterisk/pbx.h"
@@ -58,7 +56,7 @@ int ast_parking_stasis_init(void)
 		return -1;
 	}
 
-	parking_topic = stasis_topic_create("ast_parking");
+	parking_topic = stasis_topic_create("parking:all");
 	if (!parking_topic) {
 		return -1;
 	}
@@ -134,8 +132,8 @@ int ast_parking_park_bridge_channel(struct ast_bridge_channel *parkee, const cha
 		return -1;
 	}
 
-	if (table->module_info) {
-		SCOPED_MODULE_USE(table->module_info->self);
+	if (table->module) {
+		SCOPED_MODULE_USE(table->module);
 		return table->parking_park_bridge_channel(parkee, parkee_uuid, parker_uuid, app_data);
 	}
 
@@ -153,8 +151,8 @@ int ast_parking_blind_transfer_park(struct ast_bridge_channel *parker,
 		return -1;
 	}
 
-	if (table->module_info) {
-		SCOPED_MODULE_USE(table->module_info->self);
+	if (table->module) {
+		SCOPED_MODULE_USE(table->module);
 		return table->parking_blind_transfer_park(parker, context, exten, parked_channel_cb, parked_channel_data);
 	}
 
@@ -170,8 +168,8 @@ int ast_parking_park_call(struct ast_bridge_channel *parker, char *exten, size_t
 		return -1;
 	}
 
-	if (table->module_info) {
-		SCOPED_MODULE_USE(table->module_info->self);
+	if (table->module) {
+		SCOPED_MODULE_USE(table->module);
 		return table->parking_park_call(parker, exten, length);
 	}
 
@@ -187,8 +185,8 @@ int ast_parking_is_exten_park(const char *context, const char *exten)
 		return -1;
 	}
 
-	if (table->module_info) {
-		SCOPED_MODULE_USE(table->module_info->self);
+	if (table->module) {
+		SCOPED_MODULE_USE(table->module);
 		return table->parking_is_exten_park(context, exten);
 	}
 

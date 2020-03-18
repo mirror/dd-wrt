@@ -16,12 +16,12 @@
  * at the top of the source tree.
  */
 
-/*! 
+/*!
  * \file
  * \brief Skeleton Test
  *
  * \author\verbatim <Your Name Here> <<Your Email Here>> \endverbatim
- * 
+ *
  * This is a skeleton for development of an Asterisk test module
  * \ingroup tests
  */
@@ -32,8 +32,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/utils.h"
 #include "asterisk/module.h"

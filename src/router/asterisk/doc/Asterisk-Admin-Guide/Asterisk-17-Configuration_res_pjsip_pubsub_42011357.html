@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_pjsip_pubsub</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_pjsip_pubsub
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Jan 10, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_pjsip_pubsub-Modulethatimplementspublishandsubscribesupport.">Module that implements publish and subscribe support.</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_pjsip_pubsub</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_pjsip_pubsub-pjsip.conf">pjsip.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_pjsip_pubsub-subscription_persistence">subscription_persistence</h3>
+
+<p>Persists SIP subscriptions so they survive restarts.</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_pubsub-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>packet</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Entire SIP SUBSCRIBE packet that created the subscription </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>src_name</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The source address of the subscription </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>src_port</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The source port of the subscription </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>transport_key</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The type of transport the subscription was received on </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>local_name</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The local address the subscription was received on </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>local_port</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The local port the subscription was received on </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>cseq</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The sequence number of the next NOTIFY to be sent </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>tag</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The local tag of the dialog for the subscription </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>endpoint</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The name of the endpoint that subscribed </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>expires</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The time at which the subscription expires </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>contact_uri</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The Contact URI of the dialog for the subscription </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>prune_on_boot</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> If set, indicates that the contact used a reliable transport and therefore the subscription must be deleted after an asterisk restart. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>generator_data</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> If set, contains persistence data for all generators of content for the subscription. </p></td>
+</tr>
+</tbody></table></div>
+
+<h3 id="Asterisk17Configuration_res_pjsip_pubsub-resource_list">resource_list</h3>
+
+<p>Resource list configuration parameters.</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_pubsub-ConfigurationOptionReference.1">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'resource_list' </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_pubsub-resource_list_event"><code>event</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The SIP event package that the list resource belong to. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_pubsub-resource_list_list_item"><code>list_item</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The name of a resource to report state on </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_pubsub-resource_list_full_state"><code>full_state</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Indicates if the entire list's state should be sent out. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_pjsip_pubsub-resource_list_notification_batch_interval"><code>notification_batch_interval</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Time Asterisk should wait, in milliseconds, before sending notifications. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_pjsip_pubsub-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_pubsub-resource_list_event"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_pubsub-event">event</h5>
+
+<p>The SIP event package describes the types of resources that Asterisk reports the state of.</p>
+
+<ul>
+	<li><code>presence</code> - Device state and presence reporting.</li>
+	<li><code>dialog</code> - This is identical to <em>presence</em>.</li>
+	<li><code>message-summary</code> - Message-waiting indication (MWI) reporting.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_pubsub-resource_list_list_item"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_pubsub-list_item">list_item</h5>
+
+<p>In general Asterisk looks up list items in the following way:</p>
+
+<p>1. Check if the list item refers to another configured resource list.</p>
+
+<p>2. Pass the name of the resource off to event-package-specific handlers to find the specified resource.</p>
+
+<p>The second part means that the way the list item is specified depends on what type of list this is. For instance, if you have the <em>event</em> set to <code>presence</code>, then list items should be in the form of dialplan_extension@dialplan_context. For <code>message-summary</code> mailbox names should be listed.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_pubsub-resource_list_full_state"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_pubsub-full_state">full_state</h5>
+
+<p>If this option is enabled, and a resource changes state, then Asterisk will construct a notification that contains the state of all resources in the list. If the option is disabled, Asterisk will construct a notification that only contains the states of resources that have changed.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>Even with this option disabled, there are certain situations where Asterisk is forced to send a notification with the states of all resources in the list. When a subscriber renews or terminates its subscription to the list, Asterisk MUST send a full state notification.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_pjsip_pubsub-resource_list_notification_batch_interval"></span></p>
+<h5 id="Asterisk17Configuration_res_pjsip_pubsub-notification_batch_interval">notification_batch_interval</h5>
+
+<p>When a resource's state changes, it may be desired to wait a certain amount before Asterisk sends a notification to subscribers. This allows for other state changes to accumulate, so that Asterisk can communicate multiple state changes in a single notification instead of rapidly sending many notifications.</p>
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_pubsub-inbound-publication">inbound-publication</h3>
+
+<p>The configuration for inbound publications</p>
+
+<h4 id="Asterisk17Configuration_res_pjsip_pubsub-ConfigurationOptionReference.2">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>endpoint</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Optional name of an endpoint that is only allowed to publish to this resource </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>type</code> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Must be of type 'inbound-publication'. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<h3 id="Asterisk17Configuration_res_pjsip_pubsub-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-5dda6d4</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

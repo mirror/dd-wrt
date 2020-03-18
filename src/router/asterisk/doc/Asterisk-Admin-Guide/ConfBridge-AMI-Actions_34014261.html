@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ConfBridge AMI Actions</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Applications_4817408.html">Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="ConfBridge_13076234.html">ConfBridge</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ConfBridge AMI Actions
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Rusty Newton</span> on Mar 30, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-equal" data-layout="two-equal">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeAMIActions-ConfbridgeList">ConfbridgeList</h2><p>Lists all users in a particular ConfBridge conference. ConfbridgeList will follow as separate events, followed by a final event called ConfbridgeListComplete</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeList
+Conference: 1111
+
+Response: Success
+EventList: start
+Message: Confbridge user list will follow
+
+Event: ConfbridgeList
+Conference: 1111
+CallerIDNum: malcolm
+CallerIDName: malcolm
+Channel: SIP/malcolm-00000000
+Admin: No
+MarkedUser: No
+
+Event: ConfbridgeListComplete
+EventList: Complete
+ListItems: 1
+</pre>
+</div></div></div>
+</div>
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303031559 {padding: 0px;}
+div.rbtoc1582303031559 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303031559 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303031559'>
+<ul class='toc-indentation'>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeList'>ConfbridgeList</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeListRooms'>ConfbridgeListRooms</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeMute'>ConfbridgeMute</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeUnmute'>ConfbridgeUnmute</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeKick'>ConfbridgeKick</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeLock'>ConfbridgeLock</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeUnlock'>ConfbridgeUnlock</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeStartRecord'>ConfbridgeStartRecord</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeStopRecord'>ConfbridgeStopRecord</a></li>
+<li><a href='#ConfBridgeAMIActions-ConfbridgeSetSingleVideoSrc'>ConfbridgeSetSingleVideoSrc</a></li>
+</ul>
+</div></p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ConfBridgeAMIActions-ConfbridgeListRooms">ConfbridgeListRooms</h2><p>Lists data about all active conferences. ConfbridgeListRooms will follow as separate events, followed by a final event called ConfbridgeListRoomsComplete.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeListRooms
+
+Response: Success
+EventList: start
+Message: Confbridge conferences will follow
+
+Event: ConfbridgeListRooms
+Conference: 1111
+Parties: 1
+Marked: 0
+Locked: No
+
+Event: ConfbridgeListRoomsComplete
+EventList: Complete
+ListItems: 1
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeMute">ConfbridgeMute</h2><p>Mutes a specified user in a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeMute
+Conference: 1111
+Channel: SIP/mypeer-00000001
+
+Response: Success
+Message: User muted
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeUnmute">ConfbridgeUnmute</h2><p>Unmutes a specified user in a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeUnmute
+Conference: 1111
+Channel: SIP/mypeer-00000001
+
+Response: Success
+Message: User unmuted
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeKick">ConfbridgeKick</h2><p>Removes a specified user from a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeKick
+Conference: 1111
+Channel: SIP/mypeer-00000001
+
+Response: Success
+Message: User kicked
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeLock">ConfbridgeLock</h2><p>Locks a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeLock
+Conference: 1111
+
+Response: Success
+Message: Conference locked
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeUnlock">ConfbridgeUnlock</h2><p>Unlocks a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeUnlock
+Conference: 1111
+
+Response: Success
+Message: Conference unlocked
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeStartRecord">ConfbridgeStartRecord</h2><p>Starts recording a specified conference, with an optional filename. If recording is already in progress, an error will be returned. If RecordFile is not provided, the default record_file as specified in the conferences Bridge Profile will be used. If record_file is not specified, a file will automatically be generated in Asterisk's monitor directory.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeStartRecord
+Conference: 1111
+
+Response: Success
+Message: Conference Recording Started.
+
+Event: VarSet
+Privilege: dialplan,all
+Channel: ConfBridgeRecorder/conf-1111-uid-1653801660
+Variable: MIXMONITOR_FILENAME
+Value: /var/spool/asterisk/monitor/confbridge-1111-1303309869.wav
+Uniqueid: 1303309869.6
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeStopRecord">ConfbridgeStopRecord</h2><p>Stops recording a specified conference.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeStopRecord
+Conference: 1111
+
+Response: Success
+Message: Conference Recording Stopped.
+
+Event: Hangup
+Privilege: call,all
+Channel: ConfBridgeRecorder/conf-1111-uid-1653801660
+Uniqueid: 1303309869.6
+CallerIDNum: &lt;unknown&gt;
+CallerIDName: &lt;unknown&gt;
+Cause: 0
+Cause-txt: Unknown
+</pre>
+</div></div><h2 id="ConfBridgeAMIActions-ConfbridgeSetSingleVideoSrc">ConfbridgeSetSingleVideoSrc</h2><p>This action sets a conference user as the single video source distributed to all other video-capable participants.</p><p><strong>Example</strong></p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: ConfbridgeSetSingleVideoSrc
+Conference: 1111
+Channel: SIP/mypeer-00000001
+
+Response: Success
+Message: Conference single video source set.
+</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

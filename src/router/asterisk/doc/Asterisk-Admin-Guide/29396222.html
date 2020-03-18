@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : ARI and Bridges: Bridge Operations</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="29395573.html">Asterisk REST Interface (ARI)</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Introduction-to-ARI-and-Bridges_29396210.html">Introduction to ARI and Bridges</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : ARI and Bridges: Bridge Operations
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified on Nov 16, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="ARIandBridges:BridgeOperations-MovingBetweenBridges">Moving Between Bridges</h1><p>Channels can be both added and removed from bridges via the <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Bridges+REST+API#Asterisk12BridgesRESTAPI-addChannel" rel="nofollow"><code>POST - /bridges/{bridgeId}/addChannel</code></a> and <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+12+Bridges+REST+API#Asterisk12BridgesRESTAPI-removeChannel" rel="nofollow"><code>POST - /bridges/{bridgeId}/removeChannel</code></a> operations. This allows channels to be put in a holding bridge while waiting for an application to continue to its next step for example. One example of this would be to put an incoming channel into a holding bridge playing music on hold while dialing another endpoint. Once that endpoint answers, the incoming channel can be moved from the holding bridge to a mixing bridge to establish an audio call between the two channels.</p><h1 id="ARIandBridges:BridgeOperations-Example:DialingwithEntertainment">Example: Dialing with Entertainment</h1><p>This example ARI application will do the following:</p><ol><li>When a channel enters into the Stasis application, it will be put in a holding bridge and a call will be originated to the endpoint specified by the first command line argument to the script.</li><li>When that channel enters into the Stasis application, the original channel will be removed from the holding bridge, a mixing bridge will be created, and the two channels will be put in it.</li><li>If either channel hangs up, the other channel will also be hung up.</li><li>Once the dialed channel exists the Stasis application, the mixing bridge will be destroyed.</li></ol></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303060418 {padding: 0px;}
+div.rbtoc1582303060418 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303060418 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303060418'>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BridgeOperations-MovingBetweenBridges'>Moving Between Bridges</a></li>
+<li><a href='#ARIandBridges:BridgeOperations-Example:DialingwithEntertainment'>Example: Dialing with Entertainment</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BridgeOperations-Dialplan'>Dialplan</a></li>
+<li><a href='#ARIandBridges:BridgeOperations-Python'>Python</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BridgeOperations-bridge-move.py'>bridge-move.py</a></li>
+<li><a href='#ARIandBridges:BridgeOperations-bridge-move.pyinaction'>bridge-move.py in action</a></li>
+</ul>
+</li>
+<li><a href='#ARIandBridges:BridgeOperations-JavaScript(Node.js)'>JavaScript (Node.js)</a>
+<ul class='toc-indentation'>
+<li><a href='#ARIandBridges:BridgeOperations-bridge-move.js'>bridge-move.js</a></li>
+<li><a href='#ARIandBridges:BridgeOperations-bridge-move.jsinaction'>bridge-move.js in action</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div> </p>
+</div></div></div>
+</div>
+</div>
+<div class="columnLayout single" data-layout="single">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h2 id="ARIandBridges:BridgeOperations-Dialplan">Dialplan</h2><p>For this example, we need to just drop the channel into Stasis, specifying our application:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>extensions.conf</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: true" style="font-size:12px;">exten =&gt; 1000,1,NoOp()
+ same =&gt;      n,Stasis(bridge-move,inbound,PJSIP/bob)
+ same =&gt;      n,Hangup()</pre>
+</div></div><h2 id="ARIandBridges:BridgeOperations-Python">Python</h2><p>A large part of the implementation of this particular example is similar to the <a href="https://wiki.asterisk.org/wiki/display/AST/ARI+and+Bridges%3A+Basic+Mixing+Bridges" rel="nofollow"><code>bridge-dial.py</code> </a>example. However, instead of ringing the inbound channel, we'll instead create a holding bridge and place the channel in said holding bridge. Since a holding bridge can hold a number of channels, we'll reuse the same holding bridge for all of the channels that use the application. The method to obtain the holding bridge is <code>find_or_create_holding_bridge</code>, shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 11; theme: Confluence; brush: py; gutter: true" style="font-size:12px;"># Our one and only holding bridge
+holding_bridge = None
+
+
+def find_or_create_holding_bridge():
+    &quot;&quot;&quot;Find our infinite wait bridge, or create a new one
+
+    Returns:
+    The one and only holding bridge
+    &quot;&quot;&quot;
+    global holding_bridge
+
+    if holding_bridge:
+        return holding_bridge
+
+    bridges = [candidate for candidate in client.bridges.list() if
+               candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+    if bridges:
+        bridge = bridges[0]
+        print &quot;Using bridge {}&quot;.format(bridge.id)
+    else:
+        bridge = client.bridges.create(type=&#39;holding&#39;)
+        bridge.startMoh()
+        print &quot;Created bridge {}&quot;.format(bridge.id)
+
+    holding_bridge = bridge
+    return holding_bridge </pre>
+</div></div><p>When the inbound channel enters the application, we'll place it into our waiting bridge:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 79; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">    wait_bridge = find_or_create_holding_bridge()
+    wait_bridge.addChannel(channel=channel.id)</pre>
+</div></div><p>When the dialed channel answers, we can remove the inbound channel from the waiting bridge - since there is only one waiting bridge being used, we can use <code>find_or_create_holding_bridge</code> to obtain it. We then place it into a newly created mixing bridge along with the dialed channel, in the same fashion as the <code>bridge-dial.py</code> example.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 97; theme: Confluence; brush: py; gutter: true" style="font-size:12px;">        print &quot;{} answered; bridging with {}&quot;.format(outgoing.json.get(&#39;name&#39;),
+                                                     channel.json.get(&#39;name&#39;))
+
+        wait_bridge = find_or_create_holding_bridge()
+        wait_bridge.removeChannel(channel=channel.id)
+
+        bridge = client.bridges.create(type=&#39;mixing&#39;)
+        bridge.addChannel(channel=[channel.id, outgoing.id])
+
+</pre>
+</div></div><h3 id="ARIandBridges:BridgeOperations-bridge-move.py">bridge-move.py</h3><p>The full source code for <code>bridge-move.py</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: py; gutter: true" style="font-size:12px;">#!/usr/bin/env python
+
+import logging
+import requests
+import ari
+
+logging.basicConfig(level=logging.ERROR)
+
+client = ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;)
+
+# Our one and only holding bridge
+holding_bridge = None
+
+
+def find_or_create_holding_bridge():
+    &quot;&quot;&quot;Find our infinite wait bridge, or create a new one
+
+    Returns:
+    The one and only holding bridge
+    &quot;&quot;&quot;
+    global holding_bridge
+
+    if holding_bridge:
+        return holding_bridge
+
+    bridges = [candidate for candidate in client.bridges.list() if
+               candidate.json[&#39;bridge_type&#39;] == &#39;holding&#39;]
+    if bridges:
+        bridge = bridges[0]
+        print &quot;Using bridge {}&quot;.format(bridge.id)
+    else:
+        bridge = client.bridges.create(type=&#39;holding&#39;)
+        bridge.startMoh()
+        print &quot;Created bridge {}&quot;.format(bridge.id)
+
+    holding_bridge = bridge
+    return holding_bridge
+
+
+def safe_hangup(channel):
+    &quot;&quot;&quot;Safely hang up the specified channel&quot;&quot;&quot;
+    try:
+        channel.hangup()
+        print &quot;Hung up {}&quot;.format(channel.json.get(&#39;name&#39;))
+    except requests.HTTPError as e:
+        if e.response.status_code != requests.codes.not_found:
+            raise e
+
+
+def safe_bridge_destroy(bridge):
+    &quot;&quot;&quot;Safely destroy the specified bridge&quot;&quot;&quot;
+    try:
+        bridge.destroy()
+    except requests.HTTPError as e:
+        if e.response.status_code != requests.codes.not_found:
+            raise e
+
+
+def stasis_start_cb(channel_obj, ev):
+    &quot;&quot;&quot;Handler for StasisStart&quot;&quot;&quot;
+
+    channel = channel_obj.get(&#39;channel&#39;)
+    channel_name = channel.json.get(&#39;name&#39;)
+    args = ev.get(&#39;args&#39;)
+
+    if not args:
+        print &quot;Error: {} didn&#39;t provide any arguments!&quot;.format(channel_name)
+        return
+
+    if args and args[0] != &#39;inbound&#39;:
+        # Only handle inbound channels here
+        return
+
+    if len(args) != 2:
+        print &quot;Error: {} didn&#39;t tell us who to dial&quot;.format(channel_name)
+        channel.hangup()
+        return
+
+    wait_bridge = find_or_create_holding_bridge()
+    wait_bridge.addChannel(channel=channel.id)
+
+    try:
+        outgoing = client.channels.originate(endpoint=args[1],
+                                             app=&#39;bridge-move&#39;,
+                                             appArgs=&#39;dialed&#39;)
+    except requests.HTTPError:
+        print &quot;Whoops, pretty sure %s wasn&#39;t valid&quot; % args[1]
+        channel.hangup()
+        return
+
+    channel.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(outgoing))
+    outgoing.on_event(&#39;StasisEnd&#39;, lambda *args: safe_hangup(channel))
+
+    def outgoing_start_cb(channel_obj, ev):
+        &quot;&quot;&quot;StasisStart handler for our dialed channel&quot;&quot;&quot;
+
+        print &quot;{} answered; bridging with {}&quot;.format(outgoing.json.get(&#39;name&#39;),
+                                                     channel.json.get(&#39;name&#39;))
+
+        wait_bridge = find_or_create_holding_bridge()
+        wait_bridge.removeChannel(channel=channel.id)
+
+        bridge = client.bridges.create(type=&#39;mixing&#39;)
+        bridge.addChannel(channel=[channel.id, outgoing.id])
+
+        # Clean up the bridge when done
+        channel.on_event(&#39;StasisEnd&#39;, lambda *args:
+                         safe_bridge_destroy(bridge))
+        outgoing.on_event(&#39;StasisEnd&#39;, lambda *args:
+                          safe_bridge_destroy(bridge))
+
+    outgoing.on_event(&#39;StasisStart&#39;, outgoing_start_cb)
+
+
+client.on_channel_event(&#39;StasisStart&#39;, stasis_start_cb)
+
+client.run(apps=&#39;bridge-move&#39;)
+
+</pre>
+</div></div><h3 id="ARIandBridges:BridgeOperations-bridge-move.pyinaction">bridge-move.py in action</h3><p>The following shows the output of the <code>bridge-move.py</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application and dials a PJSIP channel for bob:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>PJSIP/Alice-00000001 entered our application
+Dialing PJSIP/Bob
+PJSIP/Bob-00000002 answered; bridging with PJSIP/Alice-00000001
+Hung up PJSIP/Bob-00000002</pre>
+</div></div><h2 id="ARIandBridges:BridgeOperations-JavaScript(Node.js)">JavaScript (Node.js)</h2><p>This example is very similar to bridge-dial.js with one main difference: the original Stasis channel is put in a holding bridge while the an originate operation is used to dial another channel. Once the dialed channel enters into the Stasis application, the original channel will be removed from the holding bridge, and both channels will finally be put into a mixing bridge. Once a channel enters into our Stasis application, we either find an existing holding bridge or create one:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 39; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function findOrCreateHoldingBridge(channel) {
+  client.bridges.list(function(err, bridges) {
+    var holdingBridge = bridges.filter(function(candidate) {
+      return candidate.bridge_type === &#39;holding&#39;;
+    })[0];
+
+    if (holdingBridge) {
+      console.log(&#39;Using existing holding bridge %s&#39;, holdingBridge.id);
+
+      originate(channel, holdingBridge);
+    } else {
+      client.bridges.create({type: &#39;holding&#39;}, function(err, holdingBridge) {
+        if (err) {
+          throw err;
+        }
+
+        console.log(&#39;Created new holding bridge %s&#39;, holdingBridge.id);
+
+        originate(channel, holdingBridge);
+      });
+    }
+  });
+}</pre>
+</div></div><p>We then add the channel to the holding bridge and start music on hold before continuing with dialing we we did in the bridge-dial.js example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 64; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">holdingBridge.addChannel({channel: channel.id}, function(err) {
+  if (err) {
+    throw err;
+  }
+   holdingBridge.startMoh(function(err) {
+    // ignore error
+  });
+});</pre>
+</div></div><p>Once the endpoint has answered and a mixing bridge has been created, we proceed by first removing the original channel from the holding bridge and then adding both channels to the mixing bridge as before:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="first-line: 145; theme: Confluence; brush: js; gutter: true" style="font-size:12px;">function moveToMixingBridge(channel, dialed, mixingBridge, holdingBridge) {
+  console.log(&#39;Adding channel %s and dialed channel %s to bridge %s&#39;,
+      channel.name, dialed.name, mixingBridge.id);
+
+  holdingBridge.removeChannel({channel: channel.id}, function(err) {
+    if (err) {
+      throw err;
+    }
+
+    mixingBridge.addChannel(
+        {channel: [channel.id, dialed.id]}, function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+  });
+}</pre>
+</div></div><p>Note that we need to keep track of one more variable as we go down the application flow to ensure we have a reference to both the holding and mixing bridge. Again we use anonymous functions to pass extra arguments to callback handlers to keep the nested callbacks to a minimum.</p><h3 id="ARIandBridges:BridgeOperations-bridge-move.js">bridge-move.js</h3><p>The full source code for <code>bridge-move.js</code> is shown below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeHeader panelHeader pdl" style="border-bottom-width: 1px;"><b>bridge-move.js</b></div><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: js; gutter: true" style="font-size:12px;"> /*jshint node:true*/
+&#39;use strict&#39;;
+
+var ari = require(&#39;ari-client&#39;);
+var util = require(&#39;util&#39;);
+
+// ensure endpoint was passed in to script
+if (!process.argv[2]) {
+  console.error(&#39;usage: node bridge-move.js endpoint&#39;);
+  process.exit(1);
+}
+
+ari.connect(&#39;http://localhost:8088&#39;, &#39;asterisk&#39;, &#39;asterisk&#39;, clientLoaded);
+
+// handler for client being loaded
+function clientLoaded (err, client) {
+  if (err) {
+    throw err;
+  }
+
+  // handler for StasisStart event
+  function stasisStart(event, channel) {
+    // ensure the channel is not a dialed channel
+    var dialed = event.args[0] === &#39;dialed&#39;;
+
+    if (!dialed) {
+      channel.answer(function(err) {
+        if (err) {
+          throw err;
+        }
+
+        console.log(&#39;Channel %s has entered our application&#39;, channel.name);
+
+        findOrCreateHoldingBridge(channel);
+      });
+    }
+  }
+
+  function findOrCreateHoldingBridge(channel) {
+    client.bridges.list(function(err, bridges) {
+      var holdingBridge = bridges.filter(function(candidate) {
+        return candidate.bridge_type === &#39;holding&#39;;
+      })[0];
+
+      if (holdingBridge) {
+        console.log(&#39;Using existing holding bridge %s&#39;, holdingBridge.id);
+
+        originate(channel, holdingBridge);
+      } else {
+        client.bridges.create({type: &#39;holding&#39;}, function(err, holdingBridge) {
+          if (err) {
+            throw err;
+          }
+
+          console.log(&#39;Created new holding bridge %s&#39;, holdingBridge.id);
+
+          originate(channel, holdingBridge);
+        });
+      }
+    });
+  }
+
+  function originate(channel, holdingBridge) {
+    holdingBridge.addChannel({channel: channel.id}, function(err) {
+      if (err) {
+        throw err;
+      }
+
+      holdingBridge.startMoh(function(err) {
+        // ignore error
+      });
+    });
+
+    var dialed = client.Channel();
+
+    channel.on(&#39;StasisEnd&#39;, function(event, channel) {
+      safeHangup(dialed);
+    });
+
+    dialed.on(&#39;ChannelDestroyed&#39;, function(event, dialed) {
+      safeHangup(channel);
+    });
+
+    dialed.on(&#39;StasisStart&#39;, function(event, dialed) {
+      joinMixingBridge(channel, dialed, holdingBridge);
+    });
+
+    dialed.originate(
+      {endpoint: process.argv[2], app: &#39;bridge-move&#39;, appArgs: &#39;dialed&#39;},
+      function(err, dialed) {
+        if (err) {
+          throw err;
+        }
+    });
+  }
+
+  // safely hangs the given channel
+  function safeHangup(channel) {
+    console.log(&#39;Hanging up channel %s&#39;, channel.name);
+
+    channel.hangup(function(err) {
+      // ignore error
+    });
+  }
+
+  // handler for dialed channel entering Stasis
+  function joinMixingBridge(channel, dialed, holdingBridge) {
+    var mixingBridge = client.Bridge();
+
+    dialed.on(&#39;StasisEnd&#39;, function(event, dialed) {
+      dialedExit(dialed, mixingBridge);
+    });
+
+    dialed.answer(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+
+    mixingBridge.create({type: &#39;mixing&#39;}, function(err, mixingBridge) {
+      if (err) {
+        throw err;
+      }
+
+      console.log(&#39;Created mixing bridge %s&#39;, mixingBridge.id);
+
+      moveToMixingBridge(channel, dialed, mixingBridge, holdingBridge);
+    });
+  }
+
+  // handler for the dialed channel leaving Stasis
+  function dialedExit(dialed, mixingBridge) {
+    console.log(
+      &#39;Dialed channel %s has left our application, destroying mixing bridge %s&#39;,
+      dialed.name, mixingBridge.id);
+
+    mixingBridge.destroy(function(err) {
+      if (err) {
+        throw err;
+      }
+    });
+  }
+
+  // handler for new mixing bridge ready for channels to be added to it
+  function moveToMixingBridge(channel, dialed, mixingBridge, holdingBridge) {
+    console.log(&#39;Adding channel %s and dialed channel %s to bridge %s&#39;,
+        channel.name, dialed.name, mixingBridge.id);
+
+    holdingBridge.removeChannel({channel: channel.id}, function(err) {
+      if (err) {
+        throw err;
+      }
+
+      mixingBridge.addChannel(
+          {channel: [channel.id, dialed.id]}, function(err) {
+        if (err) {
+          throw err;
+        }
+      });
+    });
+  }
+
+  client.on(&#39;StasisStart&#39;, stasisStart);
+
+  client.start(&#39;bridge-move&#39;);
+}</pre>
+</div></div><h3 id="ARIandBridges:BridgeOperations-bridge-move.jsinaction">bridge-move.js in action</h3><p>The following shows the output of the <code>bridge-move.js</code> script when a <code>PJSIP</code> channel for <code>alice</code> enters the application and dials a PJSIP channel for bob:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">Channel PJSIP/alice-00000001 has entered our application
+Created new holding bridge e58641af-2006-4c3d-bf9e-8817baa27381
+Created mixing bridge 5ae49fee-e353-4ad9-bfa7-f8306d9dfd1e
+Adding channel PJSIP/alice-00000001 and dialed channel PJSIP/bob-00000002 to bridge 5ae49fee-e353-4ad9-bfa7-f8306d9dfd1e
+Dialed channel PJSIP/bob-00000002 has left our application, destroying mixing bridge 5ae49fee-e353-4ad9-bfa7-f8306d9dfd1e
+Hanging up channel PJSIP/alice-00000001
+Hanging up channel undefined</pre>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

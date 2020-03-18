@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_app_confbridge</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_app_confbridge
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Dec 20, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_app_confbridge-ConferenceBridgeApplication">Conference Bridge Application</h1>
+
+<p>This configuration documentation is for functionality provided by <code>app_confbridge</code>.</p>
+
+<h2 id="Asterisk17Configuration_app_confbridge-confbridge.conf">confbridge.conf</h2>
+
+<h3 id="Asterisk17Configuration_app_confbridge-global">global</h3>
+
+<p>Unused, but reserved.</p>
+
+<h3 id="Asterisk17Configuration_app_confbridge-user_profile">user_profile</h3>
+
+<p>A named profile to apply to specific callers.</p>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_type"><code>type</code></a> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Define this configuration category as a user profile. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>admin</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if the user is an admin or not </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_send_events"><code>send_events</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if events are send to the user </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_echo_events"><code>echo_events</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if events are echoed back to the user that triggered them </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>marked</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if this is a marked user or not </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>startmuted</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if all users should start out muted </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>music_on_hold_when_empty</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Play MOH when user is alone or waiting on a marked user </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>quiet</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Silence enter/leave prompts and user intros for this user </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>announce_user_count</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if the number of users should be announced to the user </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_announce_user_count_all"><code>announce_user_count_all</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Announce user count to all the other users when this user joins </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>announce_only_user</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Announce to a user when they join an empty conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>wait_marked</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets if the user must wait for a marked user to enter before joining a conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>end_marked</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Kick the user from the conference when the last marked user leaves </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>talk_detection_events</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Set whether or not notifications of when a user begins and ends talking should be sent out as events over AMI </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>dtmf_passthrough</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets whether or not DTMF should pass through the conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>announce_join_leave</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Prompt user for their name when joining a conference and play it to the conference when they enter </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>announce_join_leave_review</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Prompt user for their name when joining a conference and play it to the conference when they enter. The user will be asked to review the recording of their name before entering the conference. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>pin</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets a PIN the user must enter before joining the conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>music_on_hold_class</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The MOH class to use for this user </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>announcement</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sound file to play to the user when they join a conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_denoise"><code>denoise</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Apply a denoise filter to the audio before mixing </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_dsp_drop_silence"><code>dsp_drop_silence</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Drop what Asterisk detects as silence from audio sent to the bridge </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_dsp_silence_threshold"><code>dsp_silence_threshold</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>2500</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The number of milliseconds of silence necessary to declare talking stopped. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_dsp_talking_threshold"><code>dsp_talking_threshold</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>160</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Average magnitude threshold to determine talking. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-user_profile_jitterbuffer"><code>jitterbuffer</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Place a jitter buffer on the user's audio stream before audio mixing is performed </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>template</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> When using the CONFBRIDGE dialplan function, use a user profile as a template for creating a new temporary profile </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>timeout</code> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Kick the user out of the conference after this many seconds. 0 means there is no timeout for the user. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_type"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-type">type</h5>
+
+<p>The type parameter determines how a context in the configuration file is interpreted.</p>
+
+<ul>
+	<li><code>user</code> - Configure the context as a <em>user_profile</em></li>
+	<li><code>bridge</code> - Configure the context as a <em>bridge_profile</em></li>
+	<li><code>menu</code> - Configure the context as a <em>menu</em></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_send_events"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-send_events">send_events</h5>
+
+<p>If events are enabled for this bridge and this option is set, users will receive events like join, leave, talking, etc. via text messages. For users accessing the bridge via chan_pjsip, this means in-dialog MESSAGE messages. This is most useful for WebRTC participants where the browser application can use the messages to alter the user interface.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_echo_events"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-echo_events">echo_events</h5>
+
+<p>If events are enabled for this user and this option is set, the user will receive events they trigger, talking, mute, etc. If not set, they will not receive their own events.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_announce_user_count_all"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-announce_user_count_all">announce_user_count_all</h5>
+
+<p>Sets if the number of users should be announced to all the other users in the conference when this user joins. This option can be either set to 'yes' or a number. When set to a number, the announcement will only occur once the user count is above the specified number.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_denoise"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-denoise">denoise</h5>
+
+<p>Sets whether or not a denoise filter should be applied to the audio before mixing or not. Off by default. Requires <code>codec_speex</code> to be built and installed. Do not confuse this option with <em>drop_silence</em>. Denoise is useful if there is a lot of background noise for a user as it attempts to remove the noise while preserving the speech. This option does NOT remove silence from being mixed into the conference and does come at the cost of a slight performance hit.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_dsp_drop_silence"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-dsp_drop_silence">dsp_drop_silence</h5>
+
+<p>This option drops what Asterisk detects as silence from entering into the bridge. Enabling this option will drastically improve performance and help remove the buildup of background noise from the conference. Highly recommended for large conferences due to its performance enhancements.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_dsp_silence_threshold"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-dsp_silence_threshold">dsp_silence_threshold</h5>
+
+<p>The time in milliseconds of sound falling below the <em>dsp_talking_threshold</em> option when a user is considered to stop talking. This value affects several operations and should not be changed unless the impact on call quality is fully understood.</p>
+
+<p>What this value affects internally:</p>
+
+<p>1. When talk detection AMI events are enabled, this value determines when the user has stopped talking after a period of talking. If this value is set too low AMI events indicating the user has stopped talking may get falsely sent out when the user briefly pauses during mid sentence.</p>
+
+<p>2. The <em>drop_silence</em> option depends on this value to determine when the user's audio should begin to be dropped from the conference bridge after the user stops talking. If this value is set too low the user's audio stream may sound choppy to the other participants. This is caused by the user transitioning constantly from silence to talking during mid sentence.</p>
+
+<p>The best way to approach this option is to set it slightly above the maximum amount of milliseconds of silence a user may generate during natural speech.</p>
+
+<p>Valid values are 1 through 2^31.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_dsp_talking_threshold"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-dsp_talking_threshold">dsp_talking_threshold</h5>
+
+<p>The minimum average magnitude per sample in a frame for the DSP to consider talking/noise present. A value below this level is considered silence. This value affects several operations and should not be changed unless the impact on call quality is fully understood.</p>
+
+<p>What this value affects internally:</p>
+
+<p>1. Audio is only mixed out of a user's incoming audio stream if talking is detected. If this value is set too high the user will hear himself talking.</p>
+
+<p>2. When talk detection AMI events are enabled, this value determines when talking has begun which results in an AMI event to fire. If this value is set too low AMI events may be falsely triggered by variants in room noise.</p>
+
+<p>3. The <em>drop_silence</em> option depends on this value to determine when the user's audio should be mixed into the bridge after periods of silence. If this value is too high the user's speech will get discarded as they will be considered silent.</p>
+
+<p>Valid values are 1 through 2^15.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-user_profile_jitterbuffer"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-jitterbuffer">jitterbuffer</h5>
+
+<p>Enabling this option places a jitterbuffer on the user's audio stream before audio mixing is performed. This is highly recommended but will add a slight delay to the audio. This option is using the <code>JITTERBUFFER</code> dialplan function's default adaptive jitterbuffer. For a more fine tuned jitterbuffer, disable this option and use the <code>JITTERBUFFER</code> dialplan function on the user before entering the ConfBridge application.</p>
+
+
+<h3 id="Asterisk17Configuration_app_confbridge-bridge_profile">bridge_profile</h3>
+
+<p>A named profile to apply to specific bridges.</p>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionReference.1">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_type"><code>type</code></a> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Define this configuration category as a bridge profile </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>jitterbuffer</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Place a jitter buffer on the conference's audio stream </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_internal_sample_rate"><code>internal_sample_rate</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Set the internal native sample rate for mixing the conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_maximum_sample_rate"><code>maximum_sample_rate</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Set the maximum native sample rate for mixing the conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_language"><code>language</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>en</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The language used for announcements to the conference. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_mixing_interval"><code>mixing_interval</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>20</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets the internal mixing interval in milliseconds for the bridge </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_binaural_active"><code>binaural_active</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> If true binaural conferencing with stereo audio is active </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_conference"><code>record_conference</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Record the conference starting with the first active user's entrance and ending with the last active user's exit </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_file"><code>record_file</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>confbridge-name of conference bridge-start time.wav</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The filename of the conference recording </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_file_append"><code>record_file_append</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Append to record file when starting/stopping on same conference recording </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_file_timestamp"><code>record_file_timestamp</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Append the start time to the record_file name so that it is unique. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_options"><code>record_options</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Pass additional options to MixMonitor when recording </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_record_command"><code>record_command</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Execute a command after recording ends </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_regcontext"><code>regcontext</code></a> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The name of the context into which to register the name of the conference bridge as NoOP() at priority 1 </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_video_mode"><code>video_mode</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets how confbridge handles video distribution to the conference participants </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_max_members"><code>max_members</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Limit the maximum number of participants for a single conference </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_sound_"><code>sound_</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Override the various conference bridge sound files </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_video_update_discard"><code>video_update_discard</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>2000</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets the amount of time in milliseconds after sending a video update to discard subsequent video updates </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_remb_send_interval"><code>remb_send_interval</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Unsigned Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>0</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets the interval in milliseconds that a combined REMB frame will be sent to video sources </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_remb_behavior"><code>remb_behavior</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>average</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Sets how REMB reports are generated from multiple sources </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-bridge_profile_enable_events"><code>enable_events</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enables events for this bridge </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>template</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> When using the CONFBRIDGE dialplan function, use a bridge profile as a template for creating a new temporary profile </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionDescriptions.1">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_type"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-type.1">type</h5>
+
+<p>The type parameter determines how a context in the configuration file is interpreted.</p>
+
+<ul>
+	<li><code>user</code> - Configure the context as a <em>user_profile</em></li>
+	<li><code>bridge</code> - Configure the context as a <em>bridge_profile</em></li>
+	<li><code>menu</code> - Configure the context as a <em>menu</em></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_internal_sample_rate"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-internal_sample_rate">internal_sample_rate</h5>
+
+<p>Sets the internal native sample rate the conference is mixed at. This is set to automatically adjust the sample rate to the best quality by default. Other values can be anything from 8000-192000. If a sample rate is set that Asterisk does not support, the closest sample rate Asterisk does support to the one requested will be used.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_maximum_sample_rate"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-maximum_sample_rate">maximum_sample_rate</h5>
+
+<p>Sets the maximum native sample rate the conference is mixed at. This is set to not have a maximum by default. If a sample rate is specified, though, the native sample rate will never exceed it.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_language"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-language">language</h5>
+
+<p>By default, announcements to a conference use English. Which means the prompts played to all users within the conference will be English. By changing the language of a bridge, this will change the language of the prompts played to all users.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_mixing_interval"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-mixing_interval">mixing_interval</h5>
+
+<p>Sets the internal mixing interval in milliseconds for the bridge. This number reflects how tight or loose the mixing will be for the conference. In order to improve performance a larger mixing interval such as 40ms may be chosen. Using a larger mixing interval comes at the cost of introducing larger amounts of delay into the bridge. Valid values here are 10, 20, 40, or 80.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_binaural_active"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-binaural_active">binaural_active</h5>
+
+<p>Activates binaural mixing for a conference bridge. Binaural features are disabled by default.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_conference"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_conference">record_conference</h5>
+
+<p>Records the conference call starting when the first user enters the room, and ending when the last user exits the room. The default recorded filename is <code>'confbridge-${name of conference bridge}-${start time}.wav'</code> and the default format is 8khz slinear. This file will be located in the configured monitoring directory in <code>asterisk.conf</code>.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_file"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_file">record_file</h5>
+
+<p>When <em>record_conference</em> is set to yes, the specific name of the record file can be set using this option. Note that since multiple conferences may use the same bridge profile, this may cause issues depending on the configuration. It is recommended to only use this option dynamically with the <code>CONFBRIDGE()</code> dialplan function. This allows the record name to be specified and a unique name to be chosen. By default, the record_file is stored in Asterisk's spool/monitor directory with a unique filename starting with the 'confbridge' prefix.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_file_append"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_file_append">record_file_append</h5>
+
+<p>When <em>record_file_append</em> is set to yes, stopping and starting recording on a conference adds the new portion to end of current record_file. When this is set to no, a new <em>record_file</em> is generated every time you start then stop recording on a conference.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_file_timestamp"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_file_timestamp">record_file_timestamp</h5>
+
+<p>When <em>record_file_timestamp</em> is set to yes, the start time is appended to <em>record_file</em> so that the filename is unique. This allows you to specify a <em>record_file</em> but not overwrite existing recordings.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_options"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_options">record_options</h5>
+
+<p>Pass additional options to MixMonitor when <em>record_conference</em> is set to yes. See <code>MixMonitor</code> for available options.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_record_command"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-record_command">record_command</h5>
+
+<p>Executes the specified command when recording ends. Any strings matching <code>^{X</code>} will be unescaped to <code>X</code>. All variables will be evaluated at the time ConfBridge is called.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_regcontext"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-regcontext">regcontext</h5>
+
+<p>When set this will cause the name of the created conference to be registered into the named context at priority 1 with an operation of NoOP(). This can then be used in other parts of the dialplan to test for the existence of a specific conference bridge. You should be aware that there are potential races between testing for the existence of a bridge, and taking action upon that information, consider for example two callers executing the check simultaniously, and then taking special action as &quot;first caller&quot; into the bridge. The same for exiting, directly after the check the bridge can be destroyed before the new caller enters (creating a new bridge), for example, and the &quot;first member&quot; actions could thus be missed.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_video_mode"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-video_mode">video_mode</h5>
+
+<p>Sets how confbridge handles video distribution to the conference participants. Note that participants wanting to view and be the source of a video feed <strong>MUST</strong> be sharing the same video codec. Also, using video in conjunction with with the jitterbuffer currently results in the audio being slightly out of sync with the video. This is a result of the jitterbuffer only working on the audio stream. It is recommended to disable the jitterbuffer when video is used.</p>
+
+<ul>
+	<li><code>none</code> - No video sources are set by default in the conference. It is still possible for a user to be set as a video source via AMI or DTMF action at any time.</li>
+	<li><code>follow_talker</code> - The video feed will follow whoever is talking and providing video.</li>
+	<li><code>last_marked</code> - The last marked user to join the conference with video capabilities will be the single source of video distributed to all participants. If multiple marked users are capable of video, the last one to join is always the source, when that user leaves it goes to the one who joined before them.</li>
+	<li><code>first_marked</code> - The first marked user to join the conference with video capabilities is the single source of video distribution among all participants. If that user leaves, the marked user to join after them becomes the source.</li>
+	<li><code>sfu</code> - Selective Forwarding Unit - Sets multi-stream operation for a multi-party video conference.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_max_members"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-max_members">max_members</h5>
+
+<p>This option limits the number of participants for a single conference to a specific number. By default conferences have no participant limit. After the limit is reached, the conference will be locked until someone leaves. Note however that an Admin user will always be alowed to join the conference regardless if this limit is reached or not.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_sound_"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-sound_">sound_</h5>
+
+<p>All sounds in the conference are customizable using the bridge profile options below. Simply state the option followed by the filename or full path of the filename after the option. Example: <code>sound_had_joined=conf-hasjoin</code> This will play the <code>conf-hasjoin</code> sound file found in the sounds directory when announcing someone's name is joining the conference.</p>
+
+<ul>
+	<li><code>sound_join</code> - The sound played to everyone when someone enters the conference.</li>
+	<li><code>sound_leave</code> - The sound played to everyone when someone leaves the conference.</li>
+	<li><code>sound_has_joined</code> - The sound played before announcing someone's name has joined the conference. This is used for user intros. Example <code>&quot;_____ has joined the conference&quot;</code></li>
+	<li><code>sound_has_left</code> - The sound played when announcing someone's name has left the conference. This is used for user intros. Example <code>&quot;_____ has left the conference&quot;</code></li>
+	<li><code>sound_kicked</code> - The sound played to a user who has been kicked from the conference.</li>
+	<li><code>sound_muted</code> - The sound played when the mute option it toggled on.</li>
+	<li><code>sound_unmuted</code> - The sound played when the mute option it toggled off.</li>
+	<li><code>sound_binaural_on</code> - The sound played when binaural auudio is turned on.</li>
+	<li><code>sound_binaural_off</code> - The sound played when the binaural audio is turned off.</li>
+	<li><code>sound_only_person</code> - The sound played when the user is the only person in the conference.</li>
+	<li><code>sound_only_one</code> - The sound played to a user when there is only one other person is in the conference.</li>
+	<li><code>sound_there_are</code> - The sound played when announcing how many users there are in a conference.</li>
+	<li><code>sound_other_in_party</code> - This file is used in conjunction with <code>sound_there_are</code> when announcing how many users there are in the conference. The sounds are stringed together like this. <code>&quot;sound_there_are&quot; ${number of participants} &quot;sound_other_in_party&quot;</code></li>
+	<li><code>sound_place_into_conference</code> - The sound played when someone is placed into the conference after waiting for a marked user.</li>
+	<li><code>sound_wait_for_leader</code> - The sound played when a user is placed into a conference that can not start until a marked user enters.</li>
+	<li><code>sound_leader_has_left</code> - The sound played when the last marked user leaves the conference.</li>
+	<li><code>sound_get_pin</code> - The sound played when prompting for a conference pin number.</li>
+	<li><code>sound_invalid_pin</code> - The sound played when an invalid pin is entered too many times.</li>
+	<li><code>sound_locked</code> - The sound played to a user trying to join a locked conference.</li>
+	<li><code>sound_locked_now</code> - The sound played to an admin after toggling the conference to locked mode.</li>
+	<li><code>sound_unlocked_now</code> - The sound played to an admin after toggling the conference to unlocked mode.</li>
+	<li><code>sound_error_menu</code> - The sound played when an invalid menu option is entered.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_video_update_discard"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-video_update_discard">video_update_discard</h5>
+
+<p>Sets the amount of time in milliseconds after sending a video update request that subsequent video updates should be discarded. This means that if we send a video update we will discard any other video update requests until after the configured amount of time has elapsed. This prevents flooding of video update requests from clients.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_remb_send_interval"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-remb_send_interval">remb_send_interval</h5>
+
+<p>Sets the interval in milliseconds that a combined REMB frame will be sent to video sources. This is done by taking all REMB frames that have been received since the last REMB frame was sent, making a combined value, and sending it to the source. A REMB frame contains receiver estimated maximum bitrate information. By creating a combined REMB frame the sender of video can be influenced on the bitrate they choose, allowing better quality for all receivers.</p>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_remb_behavior"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-remb_behavior">remb_behavior</h5>
+
+<p>Sets how REMB reports are combined from multiple sources to form one. A REMB report consists of information about the receiver estimated maximum bitrate. As a source stream may be forwarded to multiple receivers the reports must be combined into a single one which is sent to the sender.</p>
+
+<ul>
+	<li><code>average</code> - The average of all estimated maximum bitrates is taken and sent to the sender.</li>
+	<li><code>lowest</code> - The lowest estimated maximum bitrate is forwarded to the sender.</li>
+	<li><code>highest</code> - The highest estimated maximum bitrate is forwarded to the sender.</li>
+	<li><code>average_all</code> - The average of all estimated maximum bitrates is taken from all receivers in the bridge and a single value is sent to each sender.</li>
+	<li><code>lowest_all</code> - The lowest estimated maximum bitrate of all receivers in the bridge is taken and sent to each sender.</li>
+	<li><code>highest_all</code> - The highest estimated maximum bitrate of all receivers in the bridge is taken and sent to each sender.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-bridge_profile_enable_events"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-enable_events">enable_events</h5>
+
+<p>If enabled, recipients who joined the bridge via a channel driver that supports Enhanced Messaging (currently only chan_pjsip) will receive in-dialog messages containing a JSON body describing the event. The Content-Type header will be <code>text/x-ast-confbridge-event</code>. This feature must also be enabled in user profiles.</p>
+
+
+<h3 id="Asterisk17Configuration_app_confbridge-menu">menu</h3>
+
+<p>A conference user menu</p>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionReference.2">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-menu_type"><code>type</code></a> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Define this configuration category as a menu </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>template</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> When using the CONFBRIDGE dialplan function, use a menu profile as a template for creating a new temporary profile </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_app_confbridge-menu_0-9A-D*#"><code>0-9A-D*#</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>true</code> </p></td>
+<td class="confluenceTd"><p> DTMF sequences to assign various confbridge actions to </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_app_confbridge-ConfigurationOptionDescriptions.2">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-menu_type"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-type.2">type</h5>
+
+<p>The type parameter determines how a context in the configuration file is interpreted.</p>
+
+<ul>
+	<li><code>user</code> - Configure the context as a <em>user_profile</em></li>
+	<li><code>bridge</code> - Configure the context as a <em>bridge_profile</em></li>
+	<li><code>menu</code> - Configure the context as a <em>menu</em></li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_app_confbridge-menu_0-9A-D*#"></span></p>
+<h5 id="Asterisk17Configuration_app_confbridge-0-9A-D*#">0-9A-D*#</h5>
+
+<p>The ConfBridge application also has the ability to apply custom DTMF menus to each channel using the application. Like the User and Bridge profiles a menu is passed in to ConfBridge as an argument in the dialplan.</p>
+
+<p>Below is a list of menu actions that can be assigned to a DTMF sequence.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>To have the first DTMF digit in a sequence be the '#' character, you need to escape it. If it is not escaped then normal config file processing will think it is a directive like #include. For example: The mute setting is toggled when <code>#1</code> is pressed.</p>
+
+<p>#1=toggle_mute</p>
+
+                    </div>
+    </div>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>A single DTMF sequence can have multiple actions associated with it. This is accomplished by stringing the actions together and using a <code>,</code> as the delimiter. Example: Both listening and talking volume is reset when <code>5</code> is pressed. <code>5=reset_talking_volume, reset_listening_volume</code></p>
+
+                    </div>
+    </div>
+
+<ul>
+	<li><code>playback(filename&amp;filename2&amp;...)</code> - <code>playback</code> will play back an audio file to a channel and then immediately return to the conference. This file can not be interupted by DTMF. Multiple files can be chained together using the <code>&amp;</code> character.</li>
+	<li><code>playback_and_continue(filename&amp;filename2&amp;...)</code> - <code>playback_and_continue</code> will play back a prompt while continuing to collect the dtmf sequence. This is useful when using a menu prompt that describes all the menu options. Note however that any DTMF during this action will terminate the prompts playback. Prompt files can be chained together using the <code>&amp;</code> character as a delimiter.</li>
+	<li><code>toggle_mute</code> - Toggle turning on and off mute. Mute will make the user silent to everyone else, but the user will still be able to listen in.</li>
+	<li><code>toggle_binaural</code> - Toggle turning on and off binaural audio processing.</li>
+	<li><code>no_op</code> - This action does nothing (No Operation). Its only real purpose exists for being able to reserve a sequence in the config as a menu exit sequence.</li>
+	<li><code>decrease_listening_volume</code> - Decreases the channel's listening volume.</li>
+	<li><code>increase_listening_volume</code> - Increases the channel's listening volume.</li>
+	<li><code>reset_listening_volume</code> - Reset channel's listening volume to default level.</li>
+	<li><code>decrease_talking_volume</code> - Decreases the channel's talking volume.</li>
+	<li><code>increase_talking_volume</code> - Increases the channel's talking volume.</li>
+	<li><code>reset_talking_volume</code> - Reset channel's talking volume to default level.</li>
+	<li><code>dialplan_exec(context,exten,priority)</code> - The <code>dialplan_exec</code> action allows a user to escape from the conference and execute commands in the dialplan. Once the dialplan exits the user will be put back into the conference. The possibilities are endless!</li>
+	<li><code>leave_conference</code> - This action allows a user to exit the conference and continue execution in the dialplan.</li>
+	<li><code>admin_kick_last</code> - This action allows an Admin to kick the last participant from the conference. This action will only work for admins which allows a single menu to be used for both users and admins.</li>
+	<li><code>admin_toggle_conference_lock</code> - This action allows an Admin to toggle locking and unlocking the conference. Non admins can not use this action even if it is in their menu.</li>
+	<li><code>set_as_single_video_src</code> - This action allows any user to set themselves as the single video source distributed to all participants. This will make the video feed stick to them regardless of what the <code>video_mode</code> is set to.</li>
+	<li><code>release_as_single_video_src</code> - This action allows a user to release themselves as the video source. If <code>video_mode</code> is not set to <code>none</code> this action will result in the conference returning to whatever video mode the bridge profile is using.<br />
+Note that this action will have no effect if the user is not currently the video source. Also, the user is not guaranteed by using this action that they will not become the video source again. The bridge will return to whatever operation the <code>video_mode</code> option is set to upon release of the video src.</li>
+	<li><code>admin_toggle_mute_participants</code> - This action allows an administrator to toggle the mute state for all non-admins within a conference. All admin users are unaffected by this option. Note that all users, regardless of their admin status, are notified that the conference is muted.</li>
+	<li><code>participant_count</code> - This action plays back the number of participants currently in a conference</li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_app_confbridge-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-0c36ef5</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

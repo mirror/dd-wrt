@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <pjsip.h>
 
 #include "asterisk/res_pjsip.h"
@@ -42,31 +40,6 @@ enum pjsip_logging_mode {
 
 static enum pjsip_logging_mode logging_mode;
 static struct ast_sockaddr log_addr;
-
-/*! \brief  Return the first entry from ast_sockaddr_resolve filtered by address family
- *
- * \warning Using this function probably means you have a faulty design.
- * \note This function was taken from the function of the same name in chan_sip.c
- */
-static int ast_sockaddr_resolve_first_af(struct ast_sockaddr *addr,
-				      const char* name, int flag, int family)
-{
-	struct ast_sockaddr *addrs;
-	int addrs_cnt;
-
-	addrs_cnt = ast_sockaddr_resolve(&addrs, name, flag, family);
-	if (addrs_cnt <= 0) {
-		return 1;
-	}
-	if (addrs_cnt > 1) {
-		ast_debug(1, "Multiple addresses, using the first one only\n");
-	}
-
-	ast_sockaddr_copy(addr, &addrs[0]);
-
-	ast_free(addrs);
-	return 0;
-}
 
 /*! \brief See if we pass debug IP filter */
 static inline int pjsip_log_test_addr(const char *address, int port)
@@ -101,22 +74,25 @@ static inline int pjsip_log_test_addr(const char *address, int port)
 
 static pj_status_t logging_on_tx_msg(pjsip_tx_data *tdata)
 {
+	char buffer[AST_SOCKADDR_BUFLEN];
+
 	if (!pjsip_log_test_addr(tdata->tp_info.dst_name, tdata->tp_info.dst_port)) {
 		return PJ_SUCCESS;
 	}
 
-	ast_verbose("<--- Transmitting SIP %s (%d bytes) to %s:%s:%d --->\n%.*s\n",
+	ast_verbose("<--- Transmitting SIP %s (%d bytes) to %s:%s --->\n%.*s\n",
 		    tdata->msg->type == PJSIP_REQUEST_MSG ? "request" : "response",
 		    (int) (tdata->buf.cur - tdata->buf.start),
 		    tdata->tp_info.transport->type_name,
-		    tdata->tp_info.dst_name,
-		    tdata->tp_info.dst_port,
+		    pj_sockaddr_print(&tdata->tp_info.dst_addr, buffer, sizeof(buffer), 3),
 		    (int) (tdata->buf.end - tdata->buf.start), tdata->buf.start);
 	return PJ_SUCCESS;
 }
 
 static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata)
 {
+	char buffer[AST_SOCKADDR_BUFLEN];
+
 	if (!pjsip_log_test_addr(rdata->pkt_info.src_name, rdata->pkt_info.src_port)) {
 		return PJ_FALSE;
 	}
@@ -125,12 +101,11 @@ static pj_bool_t logging_on_rx_msg(pjsip_rx_data *rdata)
 		return PJ_FALSE;
 	}
 
-	ast_verbose("<--- Received SIP %s (%d bytes) from %s:%s:%d --->\n%s\n",
+	ast_verbose("<--- Received SIP %s (%d bytes) from %s:%s --->\n%s\n",
 		    rdata->msg_info.msg->type == PJSIP_REQUEST_MSG ? "request" : "response",
 		    rdata->msg_info.len,
 		    rdata->tp_info.transport->type_name,
-		    rdata->pkt_info.src_name,
-		    rdata->pkt_info.src_port,
+		    pj_sockaddr_print(&rdata->pkt_info.src_addr, buffer, sizeof(buffer), 3),
 		    rdata->pkt_info.packet);
 	return PJ_FALSE;
 }
@@ -233,8 +208,6 @@ static const struct ast_sorcery_observer global_observer = {
 
 static int load_module(void)
 {
-	CHECK_PJSIP_MODULE_LOADED();
-
 	if (ast_sorcery_observer_add(ast_sip_get_sorcery(), "global", &global_observer)) {
 		ast_log(LOG_WARNING, "Unable to add global observer\n");
 		return AST_MODULE_LOAD_DECLINE;
@@ -260,8 +233,9 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER, "PJSIP Packet Logger",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_APP_DEPEND,
-	       );
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_APP_DEPEND,
+	.requires = "res_pjsip",
+);

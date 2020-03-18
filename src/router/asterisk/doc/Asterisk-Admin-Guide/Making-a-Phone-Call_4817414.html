@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Making a Phone Call</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Basic-PBX-Functionality_4817469.html">Basic PBX Functionality</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Making a Phone Call
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Dec 23, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>At this point, you should be able to pick up Alice's phone and dial extension <strong>6002</strong> to call Bob, and dial <strong>6001</strong> from Bob's phone to call Alice. As you make a few test calls, be sure to watch the Asterisk command-line interface (and ensure that your verbosity is set to a value three or higher) so that you can see the messages coming from Asterisk, which should be similar to the ones below:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>server*CLI&gt;     -- Executing [6002@from-internal:1] Dial(&quot;SIP/demo-alice-00000000&quot;, &quot;SIP/demo-bob,20&quot;) in new stack
+    -- Called demo-bob
+    -- SIP/demo-bob-00000001 is ringing
+    -- SIP/demo-bob-00000001 answered SIP/demo-alice-00000000
+    -- Native bridging SIP/demo-alice-00000000 and SIP/demo-bob-00000001
+  == Spawn extension (from-internal, 6002, 1) exited non-zero on &#39;SIP/demo-alice-00000000&#39;
+</pre>
+</div></div><p>As you can see, Alice called extension <strong>6002</strong> in the [from-internal] context, which in turn used the <strong>Dial</strong> application to call Bob's phone. Bob's phone rang, and then answered the call. Asterisk then bridged the two calls (one call from Alice to Asterisk, and the other from Asterisk to Bob), until Alice hung up the phone.</p><p>At this point, you have a very basic PBX. It has two extensions which can dial each other, but that's all. Before we move on, however, let's review a few basic troubleshooting steps that will help you be more successful as you learn about Asterisk.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <h5 id="MakingaPhoneCall-BasicPBXTroubleshooting">Basic PBX Troubleshooting</h5><p>The most important troubleshooting step is to set your verbosity level to three (or higher), and watch the command-line interface for errors or warnings as calls are placed.</p><p>To ensure that your SIP phones are registered, type <strong>sip show peers</strong>(chan_sip), or <strong>pjsip show endpoints</strong>(chan_pjsip) at the Asterisk CLI.</p><p>To see which context your SIP phones will send calls to, type <strong>sip show users</strong>(chan_sip) or <strong>pjsip show endpoint &lt;endpoint name&gt;</strong>(chan_pjsip).</p><p>To ensure that you've created the extensions correctly in the <strong>[from-internal]</strong> context in the dialplan, type <strong>dialplan show from-internal</strong>.</p><p>To see which extension will be executed when you dial extension <strong>6002</strong>, type <strong>dialplan show 6002@from-internal</strong>.</p>
+                    </div>
+    </div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

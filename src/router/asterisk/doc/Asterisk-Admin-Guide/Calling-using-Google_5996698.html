@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Calling using Google</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Channel-Drivers_4817130.html">Channel Drivers</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Motif_27200344.html">Motif</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Calling using Google
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Rusty Newton</span> on Jun 03, 2013
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303015615 {padding: 0px;}
+div.rbtoc1582303015615 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303015615 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303015615'>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-Prerequisites'>Prerequisites</a>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-RTPconfiguration'>RTP configuration</a></li>
+<li><a href='#CallingusingGoogle-Motifconfiguration'>Motif configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-ExampleMotifConfiguration'>Example Motif Configuration</a></li>
+</ul>
+</li>
+<li><a href='#CallingusingGoogle-XMPPConfiguration'>XMPP Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-ExampleXMPPConfiguration'>Example XMPP Configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-MoreaboutPriorities'>More about Priorities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='#CallingusingGoogle-Phoneconfiguration'>Phone configuration</a></li>
+<li><a href='#CallingusingGoogle-Dialplanconfiguration'>Dialplan configuration</a>
+<ul class='toc-indentation'>
+<li><a href='#CallingusingGoogle-Incomingcalls'>Incoming calls</a></li>
+<li><a href='#CallingusingGoogle-Outgoingcalls'>Outgoing calls</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div></p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>This new page replaces the <a href="https://wiki.asterisk.org/wiki/display/AST/Old+Calling+using+Google">old page</a>. The old page documents behavior that is not functional or supported going forward. This new page documents behavior as of Asterisk 11. For more information, please see the blog posting <a href="http://blogs.digium.com/2012/07/24/asterisk-11-development-the-motive-for-motif/" class="external-link" rel="nofollow">http://blogs.digium.com/2012/07/24/asterisk-11-development-the-motive-for-motif/</a></p>
+                    </div>
+    </div>
+<h1 id="CallingusingGoogle-Prerequisites">Prerequisites</h1><p>Asterisk communicates with Google Voice and Google Talk using the chan_motif Channel Driver and the res_xmpp Resource module. Before proceeding, please ensure that both are compiled and part of your installation. Compilation of res_xmpp and chan_motif for use with Google Talk / Voice are dependant on the iksemel library files as well as the OpenSSL development libraries presence on your system.</p><p>Calling using Google Voice or via the Google Talk web client requires the use of Asterisk 11.0 or greater. Older versions of Asterisk will not work.</p><p>For basic calling between Google Talk web clients, you need a Google Mail account.</p><p>For calling to and from the PSTN, you will need a Google Voice account.</p><p>In your Google account, you'll want to change the Chat setting from the default of &quot;Automatically allow people that I communicate with often to chat with me and see when I'm online&quot; to the second option of &quot;Only allow people that I've explicitly approved to chat with me and see when I'm online.&quot;</p><p>IPv6 is currently not supported. Use of IPv4 is required.</p><p>Google Voice can now be used with Google Apps accounts.</p><h2 id="CallingusingGoogle-RTPconfiguration">RTP configuration</h2><p>ICE support is required for chan_motif to operate. It is disabled by default and must be explicitly enabled in the RTP configuration file rtp.conf as follows.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+icesupport=yes
+</pre>
+</div></div><p>If this option is not enabled you will receive the following error message.</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Unable to add Google ICE candidates as ICE support not available or no candidates available
+</pre>
+</div></div><h2 id="CallingusingGoogle-Motifconfiguration">Motif configuration</h2><p>The Motif channel driver is configured with the motif.conf configuration file, typically located in /etc/asterisk. What follows is an example configuration for successful operation.</p><h3 id="CallingusingGoogle-ExampleMotifConfiguration">Example Motif Configuration</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[google]
+context=incoming-motif
+disallow=all
+allow=ulaw
+connection=google
+</pre>
+</div></div><p>This general section of this configuration specifies several items.</p><ol><li>That calls will terminate to or originate from the <strong>incoming-motif</strong> context; context=incoming-motif</li><li>That all codecs are first explicitly disallowed</li><li>That G.711 ulaw is allowed</li><li>The an XMPP connection called &quot;google&quot; is to be used</li></ol><p>Google lists supported audio codecs on this page - <a href="https://developers.google.com/talk/open_communications" class="external-link" rel="nofollow">https://developers.google.com/talk/open_communications</a></p><p>Per section, 5, the supported codecs are:</p><ol><li>PCMA</li><li>PCMU</li><li>G.722</li><li>GSM</li><li>iLBC</li><li>Speex</li></ol><p>Our experience shows this not to be the case. Rather, the codecs, supported by Asterisk, and seen in an invite from Google Chat are:</p><ol><li>PCMA</li><li>PCMU</li><li>G.722</li><li>iLBC</li><li>Speex 16kHz</li><li>Speex 8kHz</li></ol><p>It should be noted that calling using Google Voice requires the G.711 ulaw codec. So, if you want to make sure Google Voice calls work, allow G.711 ulaw, at a minimum.</p><h2 id="CallingusingGoogle-XMPPConfiguration">XMPP Configuration</h2><p>The res_xmpp Resource is configured with the xmpp.conf configuration file, typically located in /etc/asterisk. What follows is an example configuration for successful operation.</p><h3 id="CallingusingGoogle-ExampleXMPPConfiguration">Example XMPP Configuration</h3><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[general]
+[google]
+type=client
+serverhost=talk.google.com
+username=example@gmail.com
+secret=examplepassword
+priority=25
+port=5222
+usetls=yes
+usesasl=yes
+status=available
+statusmessage=&quot;I am available&quot;
+timeout=5
+</pre>
+</div></div><p>The default general section does not need any modification.</p><p>The google section of this configuration specifies several items.</p><ol><li>The type is set to client, as we're connecting to Google as a service; type=client</li><li>The serverhost is Google's talk server; serverhost=talk.google.com</li><li>Our username is configured as your_google_username@gmail.com; username=your_google_username@gmail.com</li><li>Our password is configured using the secret option; secret=your_google_password</li><li>Google's talk service operates on port 5222; port=5222</li><li>Our priority is set to 25; priority=25</li><li>TLS encryption is required by Google; usetls=yes</li><li>Simple Authentication and Security Layer (SASL) is used by Google; usesasl=yes</li><li>We set a status message so other Google chat users can see that we're an Asterisk server; statusmessage=&quot;I am available&quot;</li><li>We set a timeout for receiving message from Google that allows for plenty of time in the event of network delay; timeout=5</li></ol><h4 id="CallingusingGoogle-MoreaboutPriorities">More about Priorities</h4><p>As many different connections to Google are possible simultaneously via different client mechanisms, it is important to understand the role of priorities in the routing of inbound calls. Proper usage of the priority setting can allow use of a Google account that is not otherwise entirely dedicated to voice services.</p><p>With priorities, the higher the setting value, the more any client using that value is preferred as a destination for inbound calls, in deference to any other client with a lower priority value. Known values of commonly used clients include the Gmail chat client, which maintains a priority of <strong>20</strong>, and the Windows GTalk client, which uses a priority of <strong>24</strong>. The maximum allowable value is <strong>127</strong>. Thus, setting one's <strong>priority</strong> option for the XMPP peer in res_xmpp.conf to a value higher than 24 will cause inbound calls to flow to Asterisk, even while one is logged into either Gmail or the Windows GTalk client.</p><p>Outbound calls are unaffected by the priority setting.</p><h2 id="CallingusingGoogle-Phoneconfiguration">Phone configuration</h2><p>Now, let's create a phone. The configuration of a SIP device for this purpose would, in sip.conf, typically located in /etc/asterisk, look something like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[malcolm]
+type=peer
+secret=my_secure_password
+host=dynamic
+context=local
+</pre>
+</div></div><h2 id="CallingusingGoogle-Dialplanconfiguration">Dialplan configuration</h2><h3 id="CallingusingGoogle-Incomingcalls">Incoming calls</h3><p>Next, let's configure our dialplan to receive an incoming call from Google and route it to the SIP phone we created. To do this, our dialplan, extensions.conf, typically located in /etc/asterisk, would look like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>[incoming-motif]
+exten =&gt; s,1,NoOp()
+ same =&gt; n,Wait(1)
+ same =&gt; n,Answer()
+ same =&gt; n,SendDTMF(1)
+ same =&gt; n,Dial(SIP/malcolm,20)
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Did you know that the Google Chat client does this same thing; it waits, and then sends a DTMF 1. Really.</p>
+                    </div>
+    </div>
+<p>This example uses the &quot;s&quot; unmatched extension, because we're only configuring one client connection in this example.</p><p>In this example, we're Waiting 1 second, answering the call, sending the DTMF &quot;1&quot; back to Google, and <strong>then</strong> dialing the call.<br /> We do this, because inbound calls from Google enable, even if it's disabled in your Google Voice control panel, call screening.<br /> Without this SendDTMF event, you'll have to confirm with Google whether or not you want to answer the call.</p>    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Using Google&#39;s voicemail</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Another method for accomplishing the sending of the DTMF event is to use Dial option &quot;D.&quot; The D option tells Asterisk to send a specified DTMF string after the called party has answered. DTMF events specified before a colon are sent to the <strong>called</strong> party. DTMF events specified after a colon are sent to the <strong>calling</strong> party.</p><p>In this example then, one does not need to actually answer the call first, though one should still wait at least a second for things, like STUN setup, to finish. This means that if the called party doesn't answer, Google will resort to sending the call to one's Google Voice voicemail box, instead of leaving it at Asterisk.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; s,1,Dial(SIP/malcolm,20,D(:1))
+</pre>
+</div></div>
+                    </div>
+    </div>
+    <div class="aui-message success shadowed information-macro">
+                    <p class="title">Filtering Caller ID</p>
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>The inbound CallerID from Google is going to look a bit nasty, e.g.:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>+15555551212@voice.google.com/srvres-MTAuMjE4LjIuMTk3Ojk4MzM=
+</pre>
+</div></div><p>Your VoIP client (SIPDroid) might not like this, so let's simplify that Caller ID a bit, and make it more presentable for your phone's display. Here's the example that we'll step through:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; s,1,NoOp()
+ same =&gt; n,Set(crazygooglecid=${CALLERID(name)})
+ same =&gt; n,Set(stripcrazysuffix=${CUT(crazygooglecid,@,1)})
+ same =&gt; n,Set(CALLERID(all)=${stripcrazysuffix})
+ same =&gt; n,Dial(SIP/malcolm,20,D(:1))
+</pre>
+</div></div><p>First, we set a variable called <strong>crazygooglecid</strong> to be equal to the name field of the CALLERID function. Next, we use the CUT function to grab everything that's before the @ symbol, and save it in a new variable called <strong>stripcrazysuffix.</strong> We'll set this new variable to the CALLERID that we're going to use for our Dial. Finally, we'll actually Dial our internal destination.</p>
+                    </div>
+    </div>
+<h3 id="CallingusingGoogle-Outgoingcalls">Outgoing calls</h3><p>Outgoing calls to Google Talk users take the form of:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; 100,1,Dial(Motif/google/mybuddy@gmail.com,,r)
+</pre>
+</div></div><p>Where the technology is &quot;Motif,&quot; the dialing peer is &quot;google&quot; as defined in xmpp.conf, and the dial string is the Google account name.</p><p>We use the Dial option &quot;r&quot; because Google doesn't provide ringing indications.</p><p>Outgoing calls made to Google Voice take the form of:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>exten =&gt; _1XXXXXXXXXX,1,Dial(Motif/google/${EXTEN}@voice.google.com,,r)
+</pre>
+</div></div><p>Where the technology is &quot;Motif,&quot; the dialing peer is &quot;google&quot; as defined in motif.conf, and the dial string is a full E.164 number, sans the plus character.</p><p>Again, we use Dial option &quot;r&quot; because Google doesn't provide ringing indications.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:36</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

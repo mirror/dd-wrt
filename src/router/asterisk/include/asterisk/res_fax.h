@@ -144,7 +144,7 @@ struct ast_fax_session_details {
 	unsigned int pages_transferred;
 	/*! session details flags for options */
 	union {
-		/*! dontuse dummy variable - do not ever use */	
+		/*! dontuse dummy variable - do not ever use */
 		uint32_t dontuse;
 		struct {
 			/*! flag to send debug manager events */
@@ -189,6 +189,9 @@ struct ast_fax_session_details {
 	int faxdetect_flags;
 	/*! Non-zero if T.38 is negotiated */
 	int is_t38_negotiated;
+	/*! Upon v21 detection the gateway sends negotiation requests to both
+		T.38 endpoints, and do not wait on the "other" side to initiate */
+	int negotiate_both;
 };
 
 struct ast_fax_tech;

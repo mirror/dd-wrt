@@ -39,8 +39,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <regex.h>
 #include <pjsip.h>
 
@@ -476,7 +474,7 @@ static int add_extension(struct ast_context *context, const char *exten,
 	}
 
 	if (ast_add_extension2_nolock(context, 0, exten, priority, NULL, NULL,
-			app, data, free_ptr, BASE_REGISTRAR)) {
+			app, data, free_ptr, BASE_REGISTRAR, NULL, 0)) {
 		ast_free(data);
 		return -1;
 	}
@@ -912,8 +910,12 @@ static int handle_registrations(const struct ast_sorcery *sorcery, struct object
 		client_uri_pattern = "sip:${USERNAME}@${REMOTE_HOST}";
 	}
 
-	if(is_variable_true(wizvars, "sends_auth")) {
-		username = ast_variable_find_last_in_list(wizvars, "outbound_auth/username");
+	if (is_variable_true(wizvars, "sends_auth")) {
+		if (!(username = ast_variable_find_last_in_list(wizvars, "outbound_auth/username"))) {
+			ast_log(LOG_ERROR, "Wizard '%s' must have 'outbound_auth/username' if it sends"
+				" authentication.\n", id);
+			return -1;
+		}
 	} else {
 		username = id;
 	}
@@ -1003,7 +1005,10 @@ static int wizard_apply_handler(const struct ast_sorcery *sorcery, struct object
 		char *hosts = ast_strdupa(remote_hosts);
 
 		while ((host = ast_strsep(&hosts, ',', AST_STRSEP_TRIM))) {
-			AST_VECTOR_APPEND(&remote_hosts_vector, ast_strdup(host));
+			host = ast_strdup(host);
+			if (host && AST_VECTOR_APPEND(&remote_hosts_vector, host)) {
+				ast_free(host);
+			}
 		}
 	}
 
@@ -1096,18 +1101,17 @@ static void object_type_loaded_observer(const char *name,
 	while ((category = ast_category_browse_filtered(cfg, NULL, category, "type=^wizard$"))) {
 		const char *id = ast_category_get_name(category);
 		struct ast_category *last_cat = NULL;
-		struct ast_variable *change_set = NULL;
+		int changes = 0;
 
 		if (otw->last_config) {
 			last_cat = ast_category_get(otw->last_config, id, "type=^wizard$");
-			ast_sorcery_changeset_create(ast_category_first(category), ast_category_first(last_cat), &change_set);
+			changes = !ast_variable_lists_match(ast_category_first(category), ast_category_first(last_cat), 1);
 			if (last_cat) {
 				ast_category_delete(otw->last_config, last_cat);
 			}
 		}
 
-		if (!last_cat || change_set) {
-			ast_variables_destroy(change_set);
+		if (!last_cat || changes) {
 			ast_debug(3, "%s: %s(s) for wizard '%s'\n", reloaded ? "Reload" : "Load", object_type, id);
 			if (wizard_apply_handler(sorcery, otw, category)) {
 				ast_log(LOG_ERROR, "Unable to create objects for wizard '%s'\n", id);
@@ -1170,15 +1174,22 @@ static void wizard_mapped_observer(const char *name, struct ast_sorcery *sorcery
 	/* We're only interested in memory wizards with the pjsip_wizard tag. */
 	if (wizard_args && !strcmp(wizard_args, "pjsip_wizard")) {
 		otw = ast_malloc(sizeof(*otw) + strlen(object_type) + 1);
+		if (!otw) {
+			return;
+		}
+
 		otw->sorcery = sorcery;
 		otw->wizard = wizard;
 		otw->wizard_data = wizard_data;
 		otw->last_config = NULL;
 		strcpy(otw->object_type, object_type); /* Safe */
 		AST_VECTOR_RW_WRLOCK(&object_type_wizards);
-		AST_VECTOR_APPEND(&object_type_wizards, otw);
+		if (AST_VECTOR_APPEND(&object_type_wizards, otw)) {
+			ast_free(otw);
+		} else {
+			ast_debug(1, "Wizard mapped for object_type '%s'\n", object_type);
+		}
 		AST_VECTOR_RW_UNLOCK(&object_type_wizards);
-		ast_debug(1, "Wizard mapped for object_type '%s'\n", object_type);
 	}
 }
 
@@ -1334,8 +1345,8 @@ static int unload_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_GLOBAL_SYMBOLS | AST_MODFLAG_LOAD_ORDER, "PJSIP Config Wizard",
-		.support_level = AST_MODULE_SUPPORT_CORE,
-		.load = load_module,
-		.unload = unload_module,
-		.load_pri = AST_MODPRI_REALTIME_DRIVER,
-		);
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module,
+	.load_pri = AST_MODPRI_REALTIME_DRIVER,
+);

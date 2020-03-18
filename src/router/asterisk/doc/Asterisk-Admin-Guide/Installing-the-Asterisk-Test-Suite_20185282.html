@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Installing the Asterisk Test Suite</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-Test-Suite-Documentation_17793142.html">Asterisk Test Suite Documentation</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Installing the Asterisk Test Suite
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Matt Jordan</span>, last modified by <span class='editor'> George Joseph</span> on May 02, 2016
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303207522 {padding: 0px;}
+div.rbtoc1582303207522 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303207522 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303207522'>
+<ul class='toc-indentation'>
+<li><a href='#InstallingtheAsteriskTestSuite-Prerequisites'>Prerequisites</a></li>
+<li><a href='#InstallingtheAsteriskTestSuite-InstallAsteriskPrereqs'>Install Asterisk Prereqs</a>
+<ul class='toc-indentation'>
+<li><a href='#InstallingtheAsteriskTestSuite-ThirdPartyLibraries'>Third Party Libraries</a>
+<ul class='toc-indentation'>
+<li><a href='#InstallingtheAsteriskTestSuite-Installspandsp'>Install spandsp</a></li>
+<li><a href='#InstallingtheAsteriskTestSuite-Installlibsrtp'>Install libsrtp</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='#InstallingtheAsteriskTestSuite-InstallAsteriskTestSuitePrereqs'>Install Asterisk Test Suite Prereqs</a>
+<ul class='toc-indentation'>
+<li><a href='#InstallingtheAsteriskTestSuite-ASTTestInstallation'>ASTTest Installation</a></li>
+<li><a href='#InstallingtheAsteriskTestSuite-ThirdPartyLibraries.1'>Third Party Libraries</a>
+<ul class='toc-indentation'>
+<li><a href='#InstallingtheAsteriskTestSuite-StarPYInstallation'>StarPY Installation</a></li>
+<li><a href='#InstallingtheAsteriskTestSuite-SIPpInstallation'>SIPp Installation</a></li>
+<li><a href='#InstallingtheAsteriskTestSuite-pjsua_installationPJSUAInstallation'>PJSUA Installation</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href='#InstallingtheAsteriskTestSuite-VerifytheTestSuite'>Verify the Test Suite</a></li>
+</ul>
+</div></p><h1 id="InstallingtheAsteriskTestSuite-Prerequisites">Prerequisites</h1><ol><li>A working knowledge of Linux, Subversion, and Asterisk.</li><li>A Linux distribution.  This guide does not assume a lot has been installed on the machine in question; however, some things may be needed on your distribution that were already installed for this guide.  Use common sense here.</li><li>Git is installed.</li><li>SVN is installed (only needed for the <a href="#InstallingtheAsteriskTestSuite-pjsua_installation">PJSUA Installation</a> step).</li></ol><h1 id="InstallingtheAsteriskTestSuite-InstallAsteriskPrereqs">Install Asterisk Prereqs</h1><p>In order to make sure that all of the current Asterisk prerequisites are installed and set up, we will first check-out Asterisk and make sure that we can build and run Asterisk outside of the control of Bamboo.</p><ol><li><p>Open a terminal and enter the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ mkdir -p ~/asterisk/src
+$ cd ~/asterisk/src
+$ git clone https://gerrit.asterisk.org/asterisk
+$ cd contrib
+$ cd scripts
+$ sudo ./install_prereq install
+</pre>
+</div></div></li><li><p>This will typically install a large number of Asterisk prerequisites. When it is finished, you should see:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">######################################
+## install completed successfully
+######################################
+</pre>
+</div></div>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>As of the time writing this, install_prereq does not install the SQLite3 package. If the Asterisk ./configure script fails, install sqlite-devel</p>
+                    </div>
+    </div>
+</li><li><p>Perform the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ../../
+$ ./configure --enable-dev-mode
+$ make
+$ sudo make install
+$ asterisk -cvvvg
+</pre>
+</div></div></li><li><p>Verify that Asterisk starts. On the Asterisk CLI, enter:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: plain; gutter: false" style="font-size:12px;">CLI&gt; core stop now
+</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If installing Asterisk as a non-root user, Asterisk may not be able to find libasteriskssl.so.1. Verify that the shared library was built and in /usr/lib. If it is, activate the current library path by entering &quot;sudo ldconfig&quot;</p><p>As well since Asterisk is not being started as root it may not be able to create certain things. This is perfectly fine as the above is just to test that Asterisk is installed and can be started.</p>
+                    </div>
+    </div>
+</li></ol><h2 id="InstallingtheAsteriskTestSuite-ThirdPartyLibraries">Third Party Libraries</h2><h3 id="InstallingtheAsteriskTestSuite-Installspandsp">Install spandsp</h3><p>For fax support, you'll need spandsp.</p><ol><li><p>Install libtiff</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ sudo yum install libtiff-devel
+</pre>
+</div></div></li><li>Download the spandsp source from <a href="http://soft-switch.org/downloads/spandsp" class="external-link" rel="nofollow">http://soft-switch.org/downloads/spandsp</a>. Pick a recent revision.</li><li><p>Assuming that you downloaded it to Downloads (we'll assume that this is spandsp-0.0.6):</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ~/Downloads/
+$ tar -xzf spandsp-0.0.6
+$ cd spandsp-0.0.6
+$ ./configure
+$ make
+$ sudo make install
+</pre>
+</div></div></li></ol>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>spandsp installs itself into /usr/local/lib. If that isn't in your library include path, res_fax_spandsp will build but will not load, causing the fax tests to fail (typically with INIT failures).</p>
+                    </div>
+    </div>
+<h3 id="InstallingtheAsteriskTestSuite-Installlibsrtp">Install libsrtp</h3><p>For SRTP, you'll need libsrtp. To obtain that library, perform the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ wget http://srtp.sourceforge.net/srtp-1.4.2.tgz
+$ tar xvf srtp-1.4.2.tgz
+$ cd srtp
+$ ./configure CFLAGS=-fPIC --prefix=/usr
+$ make
+$ make runtest
+$ sudo make install
+</pre>
+</div></div><h1 id="InstallingtheAsteriskTestSuite-InstallAsteriskTestSuitePrereqs">Install Asterisk Test Suite Prereqs</h1><p>Check out the Asterisk Test Suite by doing the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ mkdir -p ~/asterisk/testsuite
+$ cd ~/asterisk/testsuite
+$ git clone https://gerrit.asterisk.org/testsuite
+</pre>
+</div></div><p>With the Test Suite checked out, we can begin to install its various prerequisites.</p><h2 id="InstallingtheAsteriskTestSuite-ASTTestInstallation">ASTTest Installation</h2><ol><li><p>Enter the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd asttest
+$ make
+$ sudo make install
+</pre>
+</div></div></li><li><p>Verify that asttest was installed by doing the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ asttest
+asttest: missing arguments -- specify at least one test directory
+Usage:
+ ....
+</pre>
+</div></div></li><li><p>When finished, return to the Test Suite directory:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ..
+</pre>
+</div></div></li></ol><h2 id="InstallingtheAsteriskTestSuite-ThirdPartyLibraries.1">Third Party Libraries</h2><p>The following needs to be installed:</p><ul><li>lua-devel</li><li>lua</li><li>python-twisted</li><li>libpcap-devel</li><li>python-yaml</li><li>python-devel</li><li>python-construct</li></ul><h3 id="InstallingtheAsteriskTestSuite-StarPYInstallation">StarPY Installation</h3><p>StarPY is used as a wrapper around AMI for a large number of tests. It depends on Python twisted, which a number of the tests use as well.</p><ol><li><p>Perform the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd addons
+$ make update
+$ cd starpy
+$ sudo python setup.py install
+</pre>
+</div></div></li><li><p>When finished, return to the testsuite directory:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ../..
+</pre>
+</div></div></li></ol><h3 id="InstallingtheAsteriskTestSuite-SIPpInstallation">SIPp Installation</h3><p>For SIPp, we'll need to download the source and build it ourselves, as we'll want both pcap and openssl support.  The current minimum version required is 3.4.1.</p><ol><li><p>Enter the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ mkdir sipp
+$ cd sipp
+$ wget https://github.com/SIPp/sipp/archive/v3.4.1.tar.gz
+$ tar -zxvf v3.4.1.tar.gz
+$ cd sipp-3.4.1
+$ ./configure --with-pcap --with-openssl
+$ sudo make install
+</pre>
+</div></div><p>By default, sipp is installed in /usr/local/bin.  If you want it installed to /usr/bin, add '–prefix=/usr' to the configure command.</p><p> </p></li><li><p>Verify that sipp is installed and configured correctly:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ sipp -v
+
+SIPp v3.4.1-TLS-PCAP-RTPSTREAM ...
+</pre>
+</div></div></li><li><p>When finished, return to the testsuite directory</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ../..
+</pre>
+</div></div></li></ol><h3 id="InstallingtheAsteriskTestSuite-pjsua_installationPJSUAInstallation"><span class="confluence-anchor-link" id="InstallingtheAsteriskTestSuite-pjsua_installation"></span>PJSUA Installation</h3>    <div class="aui-message hint shadowed information-macro">
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            <p>This step isn't needed if Asterisk was configured with <code>--with-pjproject-bundled</code></p>
+                    </div>
+    </div>
+<p> </p><ol><li><p>Enter the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ svn co http://svn.pjsip.org/repos/pjproject/trunk pjproject
+$ cd pjproject
+$ ./configure CFLAGS=-fPIC
+$ cp pjlib/include/pj/config_site_sample.h pjlib/include/pj/config_site.h
+$ vim pjlib/include/pj/config_site.h
+</pre>
+</div></div></li><li><p>in the vim console, hit <strong>i</strong> and insert the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: c; gutter: false" style="font-size:12px;">#define PJ_HAS_IPV6 1
+</pre>
+</div></div></li><li>Hit <strong>Esc</strong>, then type <strong>:wq</strong> to save and exit vim</li><li><p>Continue the pjsip build process:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ make dep
+$ make
+</pre>
+</div></div></li><li><p>Copy the pjsua executable:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ sudo cp pjsip-apps/bin/pjsua-x86_64-unknown-linux-gnu /usr/sbin/pjsua
+</pre>
+</div></div></li><li><p>Verify that pjsua executes:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ pjsua
+...
+You have 0 active call
+&gt;&gt;&gt;
+</pre>
+</div></div></li><li>Enter <strong>q</strong> to exit</li><li><p>Install pjsua Python bindings</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">sudo make -C pjsip-apps/src/python install
+</pre>
+</div></div></li><li><p>Return to the testsuite directory:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ cd ~/asterisk/testsuite
+</pre>
+</div></div></li></ol><h1 id="InstallingtheAsteriskTestSuite-VerifytheTestSuite">Verify the Test Suite</h1>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>If you haven't run make samples (which you shouldn't have, if you were following the instructions), you'll need to have an asterisk.conf file in /etc/asterisk before the Test Suite will work. Copy one over - it doesn't matter what is in it for now</p>
+                    </div>
+    </div>
+<ol><li><p>Enter the following:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: bash; gutter: false" style="font-size:12px;">$ ./runtests.py -l
+</pre>
+</div></div></li><li>Verify that the tests are listed out, and that the required dependencies (that you care about, anyway) are true.</li></ol>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

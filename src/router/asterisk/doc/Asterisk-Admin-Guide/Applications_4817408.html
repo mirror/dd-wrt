@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Applications</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Applications
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Apr 12, 2015
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="contentLayout2">
+<div class="columnLayout two-right-sidebar" data-layout="two-right-sidebar">
+<div class="cell normal" data-type="normal">
+<div class="innerCell">
+<h1 id="Applications-AsteriskDialplanApplications">Asterisk Dialplan Applications</h1><p>In this section we'll discuss Asterisk dialplan applications. The concept of Asterisk applications shouldn't be confused with the more general idea of building an &quot;application&quot; with Asterisk, where one is talking about what Asterisk is doing in relation to the outside world.</p><p>For example in the general sense; an application of Asterisk could be a voicemail server or PBX. In contrast, an <strong>Asterisk dialplan application</strong> is a unit of functionality provided via an <a href="Types-of-Asterisk-Modules_4817485.html">Asterisk module</a> that can be called via dialplan or one of Asterisk's APIs. Dialplan applications do some work on the <a href="Channels_28314836.html">channel</a>, such as answering a call or playing back a sound prompt. There are a wide variety of dialplan applications available for your use.</p><p>The term <strong>application</strong> in Asterisk documentation and on Asterisk discussion forums is usually referring to dialplan applications.</p><h2 id="Applications-Availableapplications">Available applications</h2><p>Many applications come with Asterisk by default. For a complete list of the dialplan applications available to your installation of Asterisk, type <strong>core show applications</strong> at the Asterisk <a href="Asterisk-Command-Line-Interface_4259982.html">CLI</a>. Not all applications are compiled with Asterisk by default so if you have the source available then you may want to browse the applications listed in <a href="Using-Menuselect-to-Select-Asterisk-Options_4817523.html">menuselect</a>.</p><p>Since anyone can write an Asterisk application they can also be obtained from sources outside the Asterisk distribution. Pre-packaged community or commercial Asterisk distributions that have a special purpose may include a custom application or two.</p><h2 id="Applications-Generalapplicationsyntax">General application syntax</h2><p>Each extension priority in the <a href="Dialplan_4817412.html">dialplan</a> calls an application. Most applications take one or more parameters, which provide additional information to the application or change its behavior. Parameters should be separated by commas.</p><p>You can find examples of Asterisk extensions and priorities in the <a href="4817410.html">Contexts, Extensions, and Priorities</a> section. You'll notice that most extensions look similar to this example:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,ApplicationName(ParamOne,ParamTwo,ParamThree)</pre>
+</div></div><p>ApplicationName is where you put the name of an application you want to call.</p><p>ParamOne, two and three are the parameters passed to the application. Each is separated by a comma. Some applications don't require any parameters, but most do.</p>    <div class="aui-message problem shadowed information-macro">
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            <p>Using the pipe character or vertical bar character (|) to delimit parameters is deprecated syntax. Use commas instead!</p>
+                    </div>
+    </div>
+<h2 id="Applications-Helpforspecificapplications">Help for specific applications</h2><p>The wiki section <a href="CLI-Syntax-and-Help-Commands_28315594.html">CLI Syntax and Help Commands</a> details how to use the CLI-accessible documentation. This will allow you to access the syntax and usage info for each application including detail on all the options for each application.</p><p>Wikibot also publishes the same documentation on the wiki. You can find applications docs in the version specific top level sections; such as <a href="https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+Dialplan+Applications">Asterisk 13 Dialplan Applications</a>.</p><h2 id="Applications-Commonlyusedapplications">Commonly used applications</h2><p>There are many Asterisk applications, but several are very commonly used and essential to almost every Asterisk system. The sub-pages in the section will provide some further detail and usage of these common Asterisk applications.</p></div>
+</div>
+<div class="cell aside" data-type="aside">
+<div class="innerCell">
+<div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>On This Page</b></div><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303031114 {padding: 0px;}
+div.rbtoc1582303031114 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303031114 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303031114'>
+<ul class='toc-indentation'>
+<li><a href='#Applications-AsteriskDialplanApplications'>Asterisk Dialplan Applications</a>
+<ul class='toc-indentation'>
+<li><a href='#Applications-Availableapplications'>Available applications</a></li>
+<li><a href='#Applications-Generalapplicationsyntax'>General application syntax</a></li>
+<li><a href='#Applications-Helpforspecificapplications'>Help for specific applications</a></li>
+<li><a href='#Applications-Commonlyusedapplications'>Commonly used applications</a></li>
+</ul>
+</li>
+</ul>
+</div></p>
+</div></div><div class="panel" style="border-width: 1px;"><div class="panelHeader" style="border-bottom-width: 1px;"><b>Topics</b></div><div class="panelContent">
+<p><ul class='childpages-macro'><li><a href="4817437.html">Answer, Playback, and Hangup Applications</a></li><li><a href="Bridge-Application_32375253.html">Bridge Application</a></li><li><a href="Conferencing-Applications_32375228.html">Conferencing Applications</a></li><li><a href="Dial-Application_4817433.html">Dial Application</a></li><li><a href="Directory-Application_4817389.html">Directory Application</a></li><li><a href="Early-Media-and-the-Progress-Application_18415902.html">Early Media and the Progress Application</a></li><li><a href="External-IVR-Interface_4260001.html">External IVR Interface</a></li><li><a href="MacroExclusive_4260016.html">MacroExclusive</a></li><li><a href="Asterisk-Queues_5243008.html">Asterisk Queues</a></li><li><a href="The-Read-Application_4817355.html">The Read Application</a></li><li><a href="SMS_4260046.html">SMS</a></li><li><a href="The-Verbose-and-NoOp-Applications_4817395.html">The Verbose and NoOp Applications</a></li><li><a href="Voicemail_5242963.html">Voicemail</a></li><li><a href="5242984.html">Short Message Service (SMS)</a></li><li><a href="4816923.html">Shared Line Appearances (SLA)</a></li></ul></p>
+</div></div></div>
+</div>
+</div>
+</div>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

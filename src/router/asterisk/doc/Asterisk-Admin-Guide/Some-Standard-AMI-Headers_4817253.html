@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Some Standard AMI Headers</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Interfaces_27200287.html">Interfaces</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="4817239.html">Asterisk Manager Interface (AMI)</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Some Standard AMI Headers
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified on Dec 21, 2012
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <ul>
+	<li>Account: – Account Code (Status)</li>
+	<li>AccountCode: – Account Code (cdr_manager)</li>
+	<li>ACL: &lt;Y | N&gt; – Does ACL exist for object ?</li>
+	<li>Action: &lt;action&gt; – Request or notification of a particular action</li>
+	<li>Address-IP: – IPaddress</li>
+	<li>Address-Port: – IP port number</li>
+	<li>Agent: &lt;string&gt; – Agent name</li>
+	<li>AMAflags: – AMA flag (cdr_manager, sippeers)</li>
+	<li>AnswerTime: – Time of answer (cdr_manager)</li>
+	<li>Append: &lt;bool&gt; – CDR userfield Append flag</li>
+	<li>Application: – Application to use</li>
+	<li>Async: – Whether or not to use fast setup</li>
+	<li>AuthType: – Authentication type (for login or challenge) &quot;md5&quot;</li>
+	<li>BillableSeconds: – Billable seconds for call (cdr_manager)</li>
+	<li>CallerID: – Caller id (name and number in Originate &amp; cdr_manager)</li>
+	<li>CallerID: – CallerID number Number or &quot;&lt;unknown&gt;&quot; or &quot;unknown&quot; (should change to &quot;&lt;unknown&gt;&quot; in app_queue)</li>
+	<li>CallerID1: – Channel 1 CallerID (Link event)</li>
+	<li>CallerID2: – Channel 2 CallerID (Link event)</li>
+	<li>CallerIDName: – CallerID name Name or &quot;&lt;unknown&gt;&quot; or &quot;unknown&quot; (should change to &quot;&lt;unknown&gt;&quot; in app_queue)</li>
+	<li>Callgroup: – Call group for peer/user</li>
+	<li>CallsTaken: &lt;num&gt; – Queue status variable</li>
+	<li>Cause: &lt;value&gt; – Event change cause - &quot;Expired&quot;</li>
+	<li>Cause: &lt;value&gt; – Hangupcause (channel.c)</li>
+	<li>CID-CallingPres: – Caller ID calling presentation</li>
+	<li>Channel: &lt;channel&gt; – Channel specifier</li>
+	<li>Channel: &lt;dialstring&gt; – Dialstring in Originate</li>
+	<li>Channel: &lt;tech/[peer/username]&gt; – Channel in Registry events (SIP, IAX2)</li>
+	<li>Channel: &lt;tech&gt; – Technology (SIP/IAX2 etc) in Registry events</li>
+	<li>ChannelType: – Tech: SIP, IAX2, DAHDI, MGCP etc</li>
+	<li>Channel1: – Link channel 1</li>
+	<li>Channel2: – Link channel 2</li>
+	<li>ChanObjectType: – &quot;peer&quot;, &quot;user&quot;</li>
+	<li>Codecs: – Codec list</li>
+	<li>CodecOrder: – Codec order, separated with comma &quot;,&quot;</li>
+	<li>Command: – Cli command to run</li>
+	<li>Context: – Context</li>
+	<li>Count: &lt;num&gt; – Number of callers in queue</li>
+	<li>Data: – Application data</li>
+	<li>Default-addr-IP: – IP address to use before registration</li>
+	<li>Default-Username: – Username part of URI to use before registration</li>
+	<li>Destination: – Destination for call (Dialstring ) (dial, cdr_manager)</li>
+	<li>DestinationContext: – Destination context (cdr_manager)</li>
+	<li>DestinationChannel: – Destination channel (cdr_manager)</li>
+	<li>DestUniqueID: – UniqueID of destination (dial event)</li>
+	<li>Direction: &lt;type&gt; – Audio to mute (read | write | both)</li>
+	<li>Disposition: – Call disposition (CDR manager)</li>
+	<li>Domain: &lt;domain&gt; – DNS domain</li>
+	<li>Duration: &lt;secs&gt; – Duration of call (cdr_manager)</li>
+	<li>Dynamic: &lt;Y | N&gt; – Device registration supported?</li>
+	<li>Endtime: – End time stamp of call (cdr_manager)</li>
+	<li>EventList: &lt;flag&gt; – Flag being &quot;Start&quot;, &quot;End&quot;, &quot;Cancelled&quot; or &quot;ListObject&quot;</li>
+	<li>Events: &lt;eventmask&gt; – Eventmask filter (&quot;on&quot;, &quot;off&quot;, &quot;system&quot;, &quot;call&quot;, &quot;log&quot;)</li>
+	<li>Exten: – Extension (Redirect command)</li>
+	<li>Extension: – Extension (Status)</li>
+	<li>Family: &lt;string&gt; – ASTdb key family</li>
+	<li>File: &lt;filename&gt; – Filename (monitor)</li>
+	<li>Format: &lt;format&gt; – Format of sound file (monitor)</li>
+	<li>From: &lt;time&gt; – Parking time (ParkedCall event)</li>
+	<li>Hint: – Extension hint</li>
+	<li>Incominglimit: – SIP Peer incoming limit</li>
+	<li>Key: Key: – ASTdb Database key</li>
+	<li>LastApplication: – Last application executed (cdr_manager)</li>
+	<li>LastCall: &lt;num&gt; – Last call in queue</li>
+	<li>LastData: – Data for last application (cdr_manager)</li>
+	<li>Link: – (Status)</li>
+	<li>ListItems: &lt;number&gt; – Number of items in Eventlist (Optionally sent in &quot;end&quot; packet)</li>
+	<li>Location: – Interface (whatever that is -maybe tech/name in app_queue )</li>
+	<li>Loginchan: – Login channel for agent</li>
+	<li>Logintime: &lt;number&gt; – Login time for agent</li>
+	<li>Mailbox: – VM Mailbox (id@vmcontext) (mailboxstatus, mailboxcount)</li>
+	<li>MD5SecretExist: &lt;Y | N&gt; – Whether secret exists in MD5 format</li>
+	<li>Membership: &lt;string&gt; – &quot;Dynamic&quot; or &quot;static&quot; member in queue</li>
+	<li>Message: &lt;text&gt; – Text message in ACKs, errors (explanation)</li>
+	<li>Mix: &lt;bool&gt; – Boolean parameter (monitor)</li>
+	<li>MOHSuggest: – Suggested music on hold class for peer (mohsuggest)</li>
+	<li>NewMessages: &lt;count&gt; – Count of new Mailbox messages (mailboxcount)</li>
+	<li>Newname:</li>
+	<li>ObjectName: – Name of object in list</li>
+	<li>OldName: – Something in Rename (channel.c)</li>
+	<li>OldMessages: &lt;count&gt; – Count of old mailbox messages (mailboxcount)</li>
+	<li>Outgoinglimit: – SIP Peer outgoing limit</li>
+	<li>Paused: &lt;num&gt; – Queue member paused status</li>
+	<li>Peer: &lt;tech/name&gt; – &quot;channel&quot; specifier</li>
+	<li>PeerStatus: &lt;tech/name&gt; – Peer status code &quot;Unregistered&quot;, &quot;Registered&quot;, &quot;Lagged&quot;, &quot;Reachable&quot;</li>
+	<li>Penalty: &lt;num&gt; – Queue penalty</li>
+	<li>Priority: – Extension priority</li>
+	<li>Privilege: &lt;privilege&gt; – AMI authorization class (system, call, log, verbose, command, agent, user)</li>
+	<li>Pickupgroup: – Pickup group for peer</li>
+	<li>Position: &lt;num&gt; – Position in Queue</li>
+	<li>Queue: – Queue name</li>
+	<li>Reason: – &quot;Autologoff&quot;</li>
+	<li>Reason: – &quot;Chanunavail&quot;</li>
+	<li>Response: &lt;response&gt; – response code, like &quot;200 OK&quot; &quot;Success&quot;, &quot;Error&quot;, &quot;Follows&quot;</li>
+	<li>Restart: – &quot;True&quot;, &quot;False&quot;</li>
+	<li>RegExpire: – SIP registry expire</li>
+	<li>RegExpiry: – SIP registry expiry</li>
+	<li>Reason: – Originate reason code</li>
+	<li>Seconds: – Seconds (Status)</li>
+	<li>Secret: &lt;password&gt; – Authentication secret (for login)</li>
+	<li>SecretExist: &lt;Y | N&gt; – Whether secret exists</li>
+	<li>Shutdown: – &quot;Uncleanly&quot;, &quot;Cleanly&quot;</li>
+	<li>SIP-AuthInsecure:</li>
+	<li>SIP-FromDomain: – Peer FromDomain</li>
+	<li>SIP-FromUser: – Peer FromUser</li>
+	<li>SIP-NatSupport:</li>
+	<li>SIPLastMsg:</li>
+	<li>Source: – Source of call (dial event, cdr_manager)</li>
+	<li>SrcUniqueID: – UniqueID of source (dial event)</li>
+	<li>StartTime: – Start time of call (cdr_manager)</li>
+	<li>State: – Channel state</li>
+	<li>State: &lt;1 | 0&gt; – Mute flag</li>
+	<li>Status: – Registration status (Registry events SIP)</li>
+	<li>Status: – Extension status (Extensionstate)</li>
+	<li>Status: – Peer status (if monitored) ** Will change name ** &quot;unknown&quot;, &quot;lagged&quot;, &quot;ok&quot;</li>
+	<li>Status: &lt;num&gt; – Queue Status</li>
+	<li>Status: – DND status (DNDState)</li>
+	<li>Time: &lt;sec&gt; – Roundtrip time (latency)</li>
+	<li>Timeout: – Parking timeout time</li>
+	<li>Timeout: – Timeout for call setup (Originate)</li>
+	<li>Timeout: &lt;seconds&gt; – Timeout for call</li>
+	<li>Uniqueid: – Channel Unique ID</li>
+	<li>Uniqueid1: – Channel 1 Unique ID (Link event)</li>
+	<li>Uniqueid2: – Channel 2 Unique ID (Link event)</li>
+	<li>User: – Username (SIP registry)</li>
+	<li>UserField: – CDR userfield (cdr_manager)</li>
+	<li>Val: – Value to set/read in ASTdb</li>
+	<li>Variable: – Variable AND value to set (multiple separated with | in Originate)</li>
+	<li>Variable: &lt;name&gt; – For channel variables</li>
+	<li>Value: &lt;value&gt; – Value to set</li>
+	<li>VoiceMailbox: – VM Mailbox in SIPpeers</li>
+	<li>Waiting: – Count of mailbox messages (mailboxstatus)</li>
+</ul>
+
+
+    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            
+<p>Please try to re-use existing headers to simplify manager message parsing in clients.*</p>
+                    </div>
+    </div>
+
+
+<p>Read <a href="https://wiki.asterisk.org/wiki/display/AST/Coding+Guidelines">Coding Guidelines</a> if you develop new manager commands or events.</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

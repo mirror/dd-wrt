@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 ManagerAction_Filter</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-AMI-Actions_42010705.html">Asterisk 17 AMI Actions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 ManagerAction_Filter
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ManagerAction_Filter-Filter">Filter</h1>
+
+<h3 id="Asterisk17ManagerAction_Filter-Synopsis">Synopsis</h3>
+
+<p>Dynamically add filters for the current manager session.</p>
+
+<h3 id="Asterisk17ManagerAction_Filter-Description">Description</h3>
+
+<p>The filters added are only used for the current session. Once the connection is closed the filters are removed.</p>
+
+<p>This comand requires the system permission because this command can be used to create filters that may bypass filters defined in manager.conf</p>
+
+
+<h3 id="Asterisk17ManagerAction_Filter-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Action: Filter
+ActionID: &lt;value&gt;
+Operation: &lt;value&gt;
+Filter: &lt;value&gt;
+</pre>
+</div></div>
+
+<h5 id="Asterisk17ManagerAction_Filter-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>ActionID</code> - ActionID for this transaction. Will be returned.</li>
+	<li><code>Operation</code>
+	<ul>
+		<li><code>Add</code> - Add a filter.</li>
+	</ul>
+	</li>
+	<li><code>Filter</code> - Filters can be whitelist or blacklist<br />
+Example whitelist filter: &quot;Event: Newchannel&quot;<br />
+Example blacklist filter: &quot;!Channel: DAHDI.*&quot;<br />
+This filter option is used to whitelist or blacklist events per user to be reported with regular expressions and are allowed if both the regex matches and the user has read access as defined in manager.conf. Filters are assumed to be for whitelisting unless preceeded by an exclamation point, which marks it as being black. Evaluation of the filters is as follows:</li>
+</ul>
+<ul class="alternate">
+	<li>If no filters are configured all events are reported as normal.</li>
+	<li>If there are white filters only: implied black all filter processed first, then white filters.</li>
+	<li>If there are black filters only: implied white all filter processed first, then black filters.</li>
+	<li>If there are both white and black filters: implied black all filter processed first, then white filters, and lastly black filters.</li>
+</ul>
+
+
+<h3 id="Asterisk17ManagerAction_Filter-SeeAlso">See Also</h3>
+<ul>
+	<li><a href="Asterisk-17-ManagerAction_FilterList_42011301.html">Asterisk 17 ManagerAction_FilterList</a></li>
+</ul>
+
+
+
+<h3 id="Asterisk17ManagerAction_Filter-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

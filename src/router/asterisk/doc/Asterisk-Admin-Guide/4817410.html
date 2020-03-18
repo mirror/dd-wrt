@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Contexts, Extensions, and Priorities</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Configuration_4260139.html">Configuration</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Dialplan_4817412.html">Dialplan</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Contexts, Extensions, and Priorities
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> malcolmd</span>, last modified by <span class='editor'> Rusty Newton</span> on Jul 01, 2017
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <div class="sectionColumnWrapper"><div class="sectionMacro"><div class="sectionMacroRow"><div class="columnMacro"><h1 id="Contexts,Extensions,andPriorities-DialplanFormat">Dialplan Format</h1><p>The dialplan in extensions.conf is organized into sections, called contexts. Contexts are the basic organizational unit within the dialplan, and as such, they keep different sections of the dialplan independent from each other. You can use contexts to separate out functionality and features, enforce security boundaries between the various parts of our dialplan, as well as to provide different classes of service to groups of users.</p><h2 id="Contexts,Extensions,andPriorities-Dialplancontexts">Dialplan contexts</h2><p>The syntax for a context is exactly the same as any other section heading in the configuration files, as explained in <a href="Sections-and-Settings_4817449.html">Sections and Settings</a>. Simply place the context name in square brackets. For example, here we define an example context called 'users'.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">[users]</pre>
+</div></div></div><div class="columnMacro"><div class="panel" style="border-width: 1px;"><div class="panelContent">
+<p><style type='text/css'>/*<![CDATA[*/
+div.rbtoc1582303020516 {padding: 0px;}
+div.rbtoc1582303020516 ul {list-style: disc;margin-left: 0px;}
+div.rbtoc1582303020516 li {margin-left: 0px;padding-left: 0px;}
+
+/*]]>*/</style><div class='toc-macro rbtoc1582303020516'>
+<ul class='toc-indentation'>
+<li><a href='#Contexts,Extensions,andPriorities-DialplanFormat'>Dialplan Format</a>
+<ul class='toc-indentation'>
+<li><a href='#Contexts,Extensions,andPriorities-Dialplancontexts'>Dialplan contexts</a></li>
+<li><a href='#Contexts,Extensions,andPriorities-Dialplanextensions'>Dialplan extensions</a></li>
+<li><a href='#Contexts,Extensions,andPriorities-Dialplanpriorities'>Dialplan priorities</a></li>
+<li><a href='#Contexts,Extensions,andPriorities-Applicationcalls'>Application calls</a></li>
+</ul>
+</li>
+<li><a href='#Contexts,Extensions,andPriorities-Dialplansearchorder'>Dialplan search order</a></li>
+</ul>
+</div></p>
+</div></div></div></div></div></div><p> </p><h2 id="Contexts,Extensions,andPriorities-Dialplanextensions">Dialplan extensions</h2><p>Within each context, we can define one or more <strong>extensions</strong>. An extension is simply a named set of actions. Asterisk will perform each action, in sequence, when that extension number is dialed. The syntax for an extension is:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; number,priority,application([parameter[,parameter2...]])
+</pre>
+</div></div><p>Let's look at an example extension.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6001,1,Dial(PJSIP/demo-alice,20)
+</pre>
+</div></div><p>In this case, the extension number is <strong>6001</strong>, the priority number is <strong>1</strong>, the <a href="Applications_4817408.html">application</a> is <strong>Dial()</strong>, and the two parameters to the application are <strong>PJSIP/demo-alice</strong> and <strong>20</strong>.</p><h2 id="Contexts,Extensions,andPriorities-Dialplanpriorities">Dialplan priorities</h2><p>Within each extension, there must be one or more <em>priorities</em>. A priority is simply a sequence number. The first priority on an extension is executed first. When it finishes, the second priority is executed, and so forth.</p>    <div class="aui-message success shadowed information-macro">
+                            <span class="aui-icon icon-success">Icon</span>
+                <div class="message-content">
+                            <p>Priority numbers<br /> Priority numbers must begin with 1, and must increment sequentially. If Asterisk can't find the next priority number, it will terminate the call. We call this <em>auto-fallthrough</em>. Consider the example below:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,do something
+exten =&gt; 6123,2,do something else
+exten =&gt; 6123,4,do something different
+</pre>
+</div></div><p>In this case, Asterisk would execute priorities one and two, but would then terminate the call, because it couldn't find priority number three.</p>
+                    </div>
+    </div>
+<h3 id="Contexts,Extensions,andPriorities-Prioritylettern">Priority letter n</h3><p>Priority numbers can also be simplified by using the letter <strong>n</strong> in place of the priority numbers greater than one. The letter <strong>n</strong> stands for <strong>next</strong>, and when Asterisk sees priority <strong>n</strong> it replaces it in memory with the previous priority number plus one. Note that you must still explicitly declare priority number one.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,NoOp()
+exten =&gt; 6123,n,Verbose(&quot;Do something!&quot;)
+exten =&gt; 6123,n,Verbose(&quot;Do something different!&quot;)</pre>
+</div></div>    <div class="aui-message warning shadowed information-macro">
+                            <span class="aui-icon icon-warning">Icon</span>
+                <div class="message-content">
+                            <p>Every time an extension and priority is executed Asterisk searches for the next best match in priority sequence.</p>
+                    </div>
+    </div>
+<p>Consider the dialplan below.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">exten =&gt; 1234,1,Verbose(&quot;Valid Number&quot;)
+exten =&gt; 4567,1,Verbose(&quot;Another Valid Number&quot;)
+exten =&gt; _.!,1,Verbose(&quot;Catch all for invalid numbers&quot;)
+exten =&gt; _.!,n,Verbose(&quot;Surprise - executed for all numbers!&quot;)</pre>
+</div></div><p>It may not be immediately intuitive, but the &quot;_.!&quot; extension with the &quot;n&quot; priority will be executed after any of the preceding lines are executed.</p><h2 id="Contexts,Extensions,andPriorities-Applicationcalls">Application calls</h2><p>You'll notice that each priority is calling a dialplan application (such as NoOp, or Verbose in the example above). That is how we tell Asterisk to &quot;do something&quot; with the <a href="Channels_28314836.html">channel</a> that is executing dialplan. See the <a href="Applications_4817408.html">Applications</a> section for more detail.</p><h3 id="Contexts,Extensions,andPriorities-Prioritylabels">Priority labels</h3><p>You can also assign a label (or alias) to a particular priority number by placing the label in parentheses directly after the priority number, as shown below. Labels make it easier to jump back to a particular location within the extension at a later time.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,NoOp()
+exten =&gt; 6123,n(repeat),Verbose(&quot;Do something!&quot;)
+exten =&gt; 6123,n,Verbose(&quot;Do something different!&quot;)</pre>
+</div></div><p>Here, we've assigned a label named <strong>repeat</strong> to the second priority.</p><p>Included in the Asterisk 1.6.2 branch (and later) there is a way to avoid having to repeat the extension name/number or pattern using the <strong>same =&gt;</strong> prefix.</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: javascript; gutter: false" style="font-size:12px;">exten =&gt; 6123,1,NoOp()
+ same =&gt; n(repeat),Verbose(&quot;Do something!&quot;)
+ same =&gt; n,Verbose(&quot;Do something different!&quot;)</pre>
+</div></div><h1 id="Contexts,Extensions,andPriorities-Dialplansearchorder">Dialplan search order</h1><p>The order of matching within a context is always exact extensions, <a href="Pattern-Matching_4817353.html">pattern match</a> extensions, <span class="confluence-link"> </span><a href="Include-Statements_4817359.html"><span class="confluence-link">include</span> statements</a>, and <a href="Switch-Statements_31097228.html">switch statements</a>.  Includes are always processed depth-first.  So for example, if you would like a switch &quot;A&quot; to match before context &quot;B&quot;, simply put switch &quot;A&quot; in an included context &quot;C&quot;, where &quot;C&quot; is included in your original context before &quot;B&quot;.</p><p>Search order:</p><ul><li>Explicit extensions</li><li>Pattern match extensions</li><li>Includes</li><li>Switches</li></ul><p>Make sure to see the <a href="Pattern-Matching_4817353.html">Pattern Matching</a> page for a description of pattern matching order.</p><p> </p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:37</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

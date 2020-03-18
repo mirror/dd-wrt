@@ -23,7 +23,7 @@
  * \author Tilghman Lesher <func_lock_2007@the-tilghman.com>
  *
  * \ingroup functions
- * 
+ *
  */
 
 /*** MODULEINFO
@@ -31,8 +31,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include <signal.h>
 
@@ -75,7 +73,7 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 		</syntax>
 		<description>
 			<para>Attempts to grab a named lock exclusively, and prevents other channels
-			from obtaining the same lock.  Returns <literal>1</literal> if the lock was 
+			from obtaining the same lock.  Returns <literal>1</literal> if the lock was
 			available or <literal>0</literal> otherwise.</para>
 			<note>
 				<para>If <literal>live_dangerously</literal> in <literal>asterisk.conf</literal>
@@ -92,9 +90,9 @@ ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 			<parameter name="lockname" required="true" />
 		</syntax>
 		<description>
-			<para>Unlocks a previously locked mutex. Returns <literal>1</literal> if the channel 
+			<para>Unlocks a previously locked mutex. Returns <literal>1</literal> if the channel
 			had a lock or <literal>0</literal> otherwise.</para>
-			<note><para>It is generally unnecessary to unlock in a hangup routine, as any locks 
+			<note><para>It is generally unnecessary to unlock in a hangup routine, as any locks
 			held are automatically freed when the channel is destroyed.</para></note>
 			<note>
 				<para>If <literal>live_dangerously</literal> in <literal>asterisk.conf</literal>
@@ -217,12 +215,6 @@ static void *lock_broker(void *unused)
 	return NULL;
 }
 
-static int ast_channel_hash_cb(const void *obj, const int flags)
-{
-	const struct ast_channel *chan = obj;
-	return ast_str_case_hash(ast_channel_name(chan));
-}
-
 static int ast_channel_cmp_cb(void *obj, void *arg, int flags)
 {
 	struct ast_channel *chan = obj, *cmp_args = arg;
@@ -298,7 +290,9 @@ static int get_lock(struct ast_channel *chan, char *lockname, int trylock)
 			AST_LIST_UNLOCK(&locklist);
 			return -1;
 		}
-		if (!(current->requesters = ao2_container_alloc(1, ast_channel_hash_cb, ast_channel_cmp_cb))) {
+		current->requesters = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0,
+			NULL, ast_channel_cmp_cb);
+		if (!current->requesters) {
 			ast_mutex_destroy(&current->mutex);
 			ast_cond_destroy(&current->cond);
 			ast_free(current);

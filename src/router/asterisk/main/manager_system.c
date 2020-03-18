@@ -25,8 +25,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/stasis.h"
 #include "asterisk/stasis_message_router.h"
 #include "asterisk/stasis_system.h"
@@ -44,7 +42,6 @@ static void manager_system_shutdown(void)
 
 int manager_system_init(void)
 {
-	int ret = 0;
 	struct stasis_topic *manager_topic;
 	struct stasis_topic *system_topic;
 	struct stasis_message_router *message_router;
@@ -68,14 +65,6 @@ int manager_system_init(void)
 	}
 
 	ast_register_cleanup(manager_system_shutdown);
-
-	/* If somehow we failed to add any routes, just shut down the whole
-	 * thing and fail it.
-	 */
-	if (ret) {
-		manager_system_shutdown();
-		return -1;
-	}
 
 	return 0;
 }

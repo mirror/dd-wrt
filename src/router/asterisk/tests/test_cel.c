@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <math.h>
 #include "asterisk/module.h"
 #include "asterisk/test.h"
@@ -278,8 +276,7 @@ static void do_sleep(void)
 	ast_hangup((channel)); \
 	HANGUP_EVENT(channel, cause, dialstatus); \
 	APPEND_EVENT(channel, AST_CEL_CHANNEL_END, NULL, NULL); \
-	ao2_cleanup(stasis_cache_get(ast_channel_cache(), \
-		ast_channel_snapshot_type(), ast_channel_uniqueid(channel))); \
+	ao2_cleanup(ast_channel_snapshot_get_latest(ast_channel_uniqueid(channel))); \
 	ao2_cleanup(channel); \
 	channel = NULL; \
 	} while (0)
@@ -332,7 +329,7 @@ static struct ast_str *__test_cel_generate_peer_str(struct ast_channel_snapshot 
 			ao2_cleanup);
 
 		/* Don't add the channel for which this message is being generated */
-		if (!strcmp(current_chan, chan->uniqueid)) {
+		if (!strcmp(current_chan, chan->base->uniqueid)) {
 			continue;
 		}
 
@@ -341,7 +338,7 @@ static struct ast_str *__test_cel_generate_peer_str(struct ast_channel_snapshot 
 			continue;
 		}
 
-		ast_str_append(&peer_str, 0, "%s,", current_snapshot->name);
+		ast_str_append(&peer_str, 0, "%s,", current_snapshot->base->name);
 	}
 	ao2_iterator_destroy(&i);
 
@@ -354,7 +351,7 @@ static struct ast_str *__test_cel_generate_peer_str(struct ast_channel_snapshot 
 static struct ast_str *test_cel_generate_peer_str_snapshot(struct ast_channel_snapshot *chan, struct ast_bridge *bridge)
 {
 	RAII_VAR(struct ast_bridge_snapshot *, snapshot,
-		ast_bridge_snapshot_get_latest(bridge->uniqueid),
+		ast_bridge_get_snapshot(bridge),
 		ao2_cleanup);
 
 	if (!snapshot) {
@@ -1671,8 +1668,8 @@ AST_TEST_DEFINE(test_cel_local_optimize)
 	stasis_publish(ast_channel_topic(chan_alice), local_opt_begin);
 	stasis_publish(ast_channel_topic(chan_alice), local_opt_end);
 
-	extra = ast_json_pack("{s: s, s: s}", "local_two", bob_snapshot->name,
-		"local_two_uniqueid", bob_snapshot->uniqueid);
+	extra = ast_json_pack("{s: s, s: s}", "local_two", bob_snapshot->base->name,
+		"local_two_uniqueid", bob_snapshot->base->uniqueid);
 	ast_test_validate(test, extra != NULL);
 
 	APPEND_EVENT_SNAPSHOT(alice_snapshot, AST_CEL_LOCAL_OPTIMIZE, NULL, extra, NULL);
@@ -1792,7 +1789,7 @@ static int append_expected_event(
 
 static void test_sub(struct ast_event *event)
 {
-	struct ast_event *event_dup = ao2_dup_event(event);
+	RAII_VAR(struct ast_event *, event_dup, ao2_dup_event(event), ao2_cleanup);
 	const char *chan_name;
 	SCOPED_MUTEX(mid_test_lock, &mid_test_sync_lock);
 
@@ -1839,8 +1836,8 @@ static int test_cel_init_cb(struct ast_test_info *info, struct ast_test *test)
 	ast_cel_set_config(cel_test_config);
 
 	/* init CEL event storage (degenerate hash table becomes a linked list) */
-	cel_received_events = ao2_container_alloc(1, NULL, NULL);
-	cel_expected_events = ao2_container_alloc(1, NULL, NULL);
+	cel_received_events = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, NULL);
+	cel_expected_events = ao2_container_alloc_list(AO2_ALLOC_OPT_LOCK_MUTEX, 0, NULL, NULL);
 
 	/* start the CEL event callback */
 	if (ast_cel_backend_register(TEST_BACKEND_NAME, test_sub)) {
@@ -1857,10 +1854,14 @@ static int test_cel_init_cb(struct ast_test_info *info, struct ast_test *test)
  */
 static int test_cel_peer_strings_match(const char *str1, const char *str2)
 {
-	struct ao2_container *intersection = ast_str_container_alloc(11);
+	RAII_VAR(struct ao2_container *, intersection, ast_str_container_alloc(11), ao2_cleanup);
 	RAII_VAR(char *, str1_dup, ast_strdup(str1), ast_free);
 	RAII_VAR(char *, str2_dup, ast_strdup(str2), ast_free);
 	char *chan;
+
+	if (!intersection) {
+		return 1;
+	}
 
 	while ((chan = strsep(&str1_dup, ","))) {
 		ast_str_container_add(intersection, chan);
@@ -2142,6 +2143,10 @@ static int unload_module(void)
 
 	ast_channel_unregister(&test_cel_chan_tech);
 
+	ao2_cleanup(cel_expected_events);
+	cel_expected_events = NULL;
+	ao2_cleanup(cel_received_events);
+	cel_received_events = NULL;
 	ao2_cleanup(cel_test_config);
 	cel_test_config = NULL;
 

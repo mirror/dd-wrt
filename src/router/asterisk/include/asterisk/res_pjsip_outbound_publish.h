@@ -93,6 +93,58 @@ void ast_sip_unregister_event_publisher_handler(struct ast_sip_event_publisher_h
 struct ast_sip_outbound_publish_client *ast_sip_publish_client_get(const char *name);
 
 /*!
+ * \brief Get the From URI the client will use.
+ * \since 14.0.0
+ *
+ * \param client The publication client to get the From URI
+ *
+ * \retval From-uri on success
+ * \retval Empty-string on failure
+ */
+const char *ast_sip_publish_client_get_from_uri(struct ast_sip_outbound_publish_client *client);
+
+/*!
+ * \brief Get the From URI the client will use for a specific user.
+ * \since 14.0.0
+ *
+ * \param client The publication client to get the From URI of a user
+ * \param user The user to retrieve the From URI for
+ * \param uri A buffer to place the URI into
+ * \param size The size of the buffer
+ *
+ * \retval From-uri on success
+ * \retval Empty-string on failure
+ */
+const char *ast_sip_publish_client_get_user_from_uri(struct ast_sip_outbound_publish_client *client, const char *user,
+	char *uri, size_t size);
+
+/*!
+ * \brief Get the To URI the client will use.
+ * \since 14.0.0
+ *
+ * \param client The publication client to get the To URI
+ *
+ * \retval From-uri on success
+ * \retval Empty-string on failure
+ */
+const char *ast_sip_publish_client_get_to_uri(struct ast_sip_outbound_publish_client *client);
+
+/*!
+ * \brief Get the To URI the client will use for a specific user.
+ * \since 14.0.0
+ *
+ * \param client The publication client to get the To URI of a user
+ * \param user The user to retrieve the To URI for
+ * \param uri A buffer to place the URI into
+ * \param size The size of the buffer
+ *
+ * \retval To-uri on success
+ * \retval Empty-string on failure
+ */
+const char *ast_sip_publish_client_get_user_to_uri(struct ast_sip_outbound_publish_client *client, const char *user,
+	char *uri, size_t size);
+
+/*!
  * \brief Alternative for ast_datastore_alloc()
  *
  * There are two major differences between this and ast_datastore_alloc()
@@ -161,5 +213,27 @@ void ast_sip_publish_client_remove_datastore(struct ast_sip_outbound_publish_cli
  */
 int ast_sip_publish_client_send(struct ast_sip_outbound_publish_client *client,
 	const struct ast_sip_body *body);
+
+/*!
+* \brief Send an outgoing PUBLISH message based on the user
+*
+* \param client The publication client to send from
+* \param user The user to send to
+* \param body An optional body to add to the PUBLISH
+*
+* \retval -1 failure
+* \retval 0 success
+*/
+int ast_sip_publish_client_user_send(struct ast_sip_outbound_publish_client *client,
+	const char *user, const struct ast_sip_body *body);
+
+/*!
+* \brief Remove the user from the client (stopping it from publishing)
+*
+* \param client The publication client
+* \param user The user to remove
+*/
+void ast_sip_publish_client_remove(struct ast_sip_outbound_publish_client *client,
+	const char *user);
 
 #endif /* RES_PJSIP_OUTBOUND_PUBLISH_H */

@@ -31,8 +31,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <sys/time.h>
 #include <signal.h>
 
@@ -60,6 +58,7 @@ struct asent {
 	 *  it gets stopped for the last time. */
 	unsigned int use_count;
 	unsigned int orig_end_dtmf_flag:1;
+	unsigned int video_update:1;
 	unsigned int ignore_frame_types;
 	/*! Frames go on at the head of deferred_frames, so we have the frames
 	 *  from newest to oldest.  As we put them at the head of the readq, we'll
@@ -78,7 +77,7 @@ static int as_chan_list_state;
 
 static void *autoservice_run(void *ign)
 {
-	struct ast_callid *callid = NULL;
+	ast_callid callid = 0;
 	struct ast_frame hangup_frame = {
 		.frametype = AST_FRAME_CONTROL,
 		.subclass.integer = AST_CONTROL_HANGUP,
@@ -132,9 +131,6 @@ static void *autoservice_run(void *ign)
 
 		callid = ast_channel_callid(chan);
 		ast_callid_threadassoc_change(callid);
-		if (callid) {
-			callid = ast_callid_unref(callid);
-		}
 
 		f = ast_read(chan);
 
@@ -166,6 +162,17 @@ static void *autoservice_run(void *ign)
 					AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
 				}
 			} else {
+				if (defer_frame->frametype == AST_FRAME_CONTROL &&
+					defer_frame->subclass.integer == AST_CONTROL_VIDUPDATE) {
+
+					/* If a video update is already queued don't needlessly queue another */
+					if (ents[i]->video_update) {
+						ast_frfree(defer_frame);
+						break;
+					}
+
+					ents[i]->video_update = 1;
+				}
 				if ((dup_f = ast_frisolate(defer_frame))) {
 					AST_LIST_INSERT_HEAD(&ents[i]->deferred_frames, dup_f, frame_list);
 				}
@@ -184,7 +191,7 @@ static void *autoservice_run(void *ign)
 		 * If we did, we'd need to ast_frfree(f) if (f). */
 	}
 
-	ast_callid_threadassoc_change(NULL);
+	ast_callid_threadassoc_change(0);
 	asthread = AST_PTHREADT_NULL;
 
 	return NULL;
@@ -194,6 +201,13 @@ int ast_autoservice_start(struct ast_channel *chan)
 {
 	int res = 0;
 	struct asent *as;
+
+	if (ast_thread_is_user_interface()) {
+		/* User interface threads do not handle channel media. */
+		ast_debug(1, "Thread is a user interface, not putting channel %s into autoservice\n",
+			ast_channel_name(chan));
+		return 0;
+	}
 
 	AST_LIST_LOCK(&aslist);
 	AST_LIST_TRAVERSE(&aslist, as, list) {
@@ -236,7 +250,7 @@ int ast_autoservice_start(struct ast_channel *chan)
 			/* There will only be a single member in the list at this point,
 			   the one we just added. */
 			AST_LIST_REMOVE(&aslist, as, list);
-			free(as);
+			ast_free(as);
 			asthread = AST_PTHREADT_NULL;
 			res = -1;
 		} else {
@@ -255,6 +269,13 @@ int ast_autoservice_stop(struct ast_channel *chan)
 	struct asent *as, *removed = NULL;
 	struct ast_frame *f;
 	int chan_list_state;
+
+	if (ast_thread_is_user_interface()) {
+		/* User interface threads do not handle channel media. */
+		ast_debug(1, "Thread is a user interface, not removing channel %s from autoservice\n",
+			ast_channel_name(chan));
+		return 0;
+	}
 
 	AST_LIST_LOCK(&aslist);
 
@@ -313,7 +334,7 @@ int ast_autoservice_stop(struct ast_channel *chan)
 	}
 	ast_channel_unlock(chan);
 
-	free(as);
+	ast_free(as);
 
 	return res;
 }

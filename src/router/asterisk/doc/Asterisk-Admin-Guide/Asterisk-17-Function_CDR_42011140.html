@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Function_CDR</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Dialplan-Functions_42010713.html">Asterisk 17 Dialplan Functions</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Function_CDR
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Function_CDR-CDR()">CDR()</h1>
+
+<h3 id="Asterisk17Function_CDR-Synopsis">Synopsis</h3>
+
+<p>Gets or sets a CDR variable.</p>
+
+<h3 id="Asterisk17Function_CDR-Description">Description</h3>
+
+<p>All of the CDR field names are read-only, except for <code>accountcode</code>, <code>userfield</code>, and <code>amaflags</code>. You may, however, supply a name not on the above list, and create your own variable, whose value can be changed with this function, and this variable will be stored on the CDR.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>CDRs can only be modified before the bridge between two channels is torn down. For example, CDRs may not be modified after the <code>Dial</code> application has returned.</p>
+
+                    </div>
+    </div>
+
+<p>Example: exten =&gt; 1,1,Set(CDR(userfield)=test)</p>
+
+
+<h3 id="Asterisk17Function_CDR-Syntax">Syntax</h3>
+
+
+<div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>CDR(name[,options])</pre>
+</div></div>
+
+<h5 id="Asterisk17Function_CDR-Arguments">Arguments</h5>
+
+<ul>
+	<li><code>name</code> - CDR field name:
+	<ul>
+		<li><code>clid</code> - Caller ID.</li>
+		<li><code>lastdata</code> - Last application arguments.</li>
+		<li><code>disposition</code> - The final state of the CDR.
+		<ul>
+			<li><code>0</code> - NO ANSWER</li>
+			<li><code>1</code> - NO ANSWER (NULL record)</li>
+			<li><code>2</code> - FAILED</li>
+			<li><code>4</code> - BUSY</li>
+			<li><code>8</code> - ANSWERED</li>
+			<li><code>16</code> - CONGESTION</li>
+		</ul>
+		</li>
+		<li><code>src</code> - Source.</li>
+		<li><code>start</code> - Time the call started.</li>
+		<li><code>amaflags</code> - R/W the Automatic Message Accounting (AMA) flags on the channel. When read from a channel, the integer value will always be returned. When written to a channel, both the string format or integer value is accepted.
+		<ul>
+			<li><code>1</code> - OMIT</li>
+			<li><code>2</code> - BILLING</li>
+			<li><code>3</code> - DOCUMENTATION
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Accessing this setting is deprecated in CDR. Please use the CHANNEL function instead.</p>
+                    </div>
+    </div>
+</li>
+		</ul>
+		</li>
+		<li><code>dst</code> - Destination.</li>
+		<li><code>answer</code> - Time the call was answered.</li>
+		<li><code>accountcode</code> - The channel's account code.
+    <div class="aui-message problem shadowed information-macro">
+                    <p class="title">Warning</p>
+                            <span class="aui-icon icon-problem">Icon</span>
+                <div class="message-content">
+                            
+<p>Accessing this setting is deprecated in CDR. Please use the CHANNEL function instead.</p>
+                    </div>
+    </div>
+</li>
+		<li><code>dcontext</code> - Destination context.</li>
+		<li><code>end</code> - Time the call ended.</li>
+		<li><code>uniqueid</code> - The channel's unique id.</li>
+		<li><code>dstchannel</code> - Destination channel.</li>
+		<li><code>duration</code> - Duration of the call.</li>
+		<li><code>userfield</code> - The channel's user specified field.</li>
+		<li><code>lastapp</code> - Last application.</li>
+		<li><code>billsec</code> - Duration of the call once it was answered.</li>
+		<li><code>channel</code> - Channel name.</li>
+		<li><code>sequence</code> - CDR sequence number.</li>
+	</ul>
+	</li>
+	<li><code>options</code>
+	<ul>
+		<li><code>f</code> - Returns billsec or duration fields as floating point values.</li>
+		<li><code>u</code> - Retrieves the raw, unprocessed value.<br />
+For example, 'start', 'answer', and 'end' will be retrieved as epoch values, when the <code>u</code> option is passed, but formatted as YYYY-MM-DD HH:MM:SS otherwise. Similarly, disposition and amaflags will return their raw integral values.</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17Function_CDR-SeeAlso">See Also</h3>
+
+
+<h3 id="Asterisk17Function_CDR-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -23,11 +23,10 @@
  * the validator's function pointer.
  *
  * The reason for this seamingly useless indirection is the way function
- * pointers interfere with module loading. Asterisk attempts to dlopen() each
- * module using \c RTLD_LAZY in order to read some metadata from the module.
- * Unfortunately, if you take the address of a function, the function has to be
- * resolvable at load time, even if \c RTLD_LAZY is specified. By moving the
- * function-address-taking into this module, we can once again be lazy.
+ * pointers used to interfere with module loading. Previously, Asterisk
+ * attempted to dlopen() each module using \c RTLD_LAZY in order to read some
+ * metadata from the module. Using functions to get the function pointer
+ * allowed us to be lazy.
  */
 
  /*
@@ -148,7 +147,7 @@ int ast_ari_validate_list(struct ast_json *json, int (*fn)(struct ast_json *));
 /*! @} */
 
 /*!
- * \brief Function type for validator functions. Allows for 
+ * \brief Function type for validator functions. Allows for
  */
 typedef int (*ari_validator)(struct ast_json *json);
 
@@ -169,6 +168,24 @@ int ast_ari_validate_asterisk_info(struct ast_json *json);
  * See \ref ast_ari_model_validators.h for more details.
  */
 ari_validator ast_ari_validate_asterisk_info_fn(void);
+
+/*!
+ * \brief Validator for AsteriskPing.
+ *
+ * Asterisk ping information
+ *
+ * \param json JSON object to validate.
+ * \returns True (non-zero) if valid.
+ * \returns False (zero) if invalid.
+ */
+int ast_ari_validate_asterisk_ping(struct ast_json *json);
+
+/*!
+ * \brief Function pointer to ast_ari_validate_asterisk_ping().
+ *
+ * See \ref ast_ari_model_validators.h for more details.
+ */
+ari_validator ast_ari_validate_asterisk_ping_fn(void);
 
 /*!
  * \brief Validator for BuildInfo.
@@ -371,24 +388,6 @@ int ast_ari_validate_text_message(struct ast_json *json);
 ari_validator ast_ari_validate_text_message_fn(void);
 
 /*!
- * \brief Validator for TextMessageVariable.
- *
- * A key/value pair variable in a text message.
- *
- * \param json JSON object to validate.
- * \returns True (non-zero) if valid.
- * \returns False (zero) if invalid.
- */
-int ast_ari_validate_text_message_variable(struct ast_json *json);
-
-/*!
- * \brief Function pointer to ast_ari_validate_text_message_variable().
- *
- * See \ref ast_ari_model_validators.h for more details.
- */
-ari_validator ast_ari_validate_text_message_variable_fn(void);
-
-/*!
  * \brief Validator for CallerID.
  *
  * Caller identification
@@ -459,6 +458,24 @@ int ast_ari_validate_dialplan_cep(struct ast_json *json);
  * See \ref ast_ari_model_validators.h for more details.
  */
 ari_validator ast_ari_validate_dialplan_cep_fn(void);
+
+/*!
+ * \brief Validator for RTPstat.
+ *
+ * A statistics of a RTP.
+ *
+ * \param json JSON object to validate.
+ * \returns True (non-zero) if valid.
+ * \returns False (zero) if invalid.
+ */
+int ast_ari_validate_rtpstat(struct ast_json *json);
+
+/*!
+ * \brief Function pointer to ast_ari_validate_rtpstat().
+ *
+ * See \ref ast_ari_model_validators.h for more details.
+ */
+ari_validator ast_ari_validate_rtpstat_fn(void);
 
 /*!
  * \brief Validator for Bridge.
@@ -605,6 +622,24 @@ int ast_ari_validate_mailbox(struct ast_json *json);
  * See \ref ast_ari_model_validators.h for more details.
  */
 ari_validator ast_ari_validate_mailbox_fn(void);
+
+/*!
+ * \brief Validator for ApplicationMoveFailed.
+ *
+ * Notification that trying to move a channel to another Stasis application failed.
+ *
+ * \param json JSON object to validate.
+ * \returns True (non-zero) if valid.
+ * \returns False (zero) if invalid.
+ */
+int ast_ari_validate_application_move_failed(struct ast_json *json);
+
+/*!
+ * \brief Function pointer to ast_ari_validate_application_move_failed().
+ *
+ * See \ref ast_ari_model_validators.h for more details.
+ */
+ari_validator ast_ari_validate_application_move_failed_fn(void);
 
 /*!
  * \brief Validator for ApplicationReplaced.
@@ -1205,6 +1240,24 @@ int ast_ari_validate_peer_status_change(struct ast_json *json);
 ari_validator ast_ari_validate_peer_status_change_fn(void);
 
 /*!
+ * \brief Validator for PlaybackContinuing.
+ *
+ * Event showing the continuation of a media playback operation from one media URI to the next in the list.
+ *
+ * \param json JSON object to validate.
+ * \returns True (non-zero) if valid.
+ * \returns False (zero) if invalid.
+ */
+int ast_ari_validate_playback_continuing(struct ast_json *json);
+
+/*!
+ * \brief Function pointer to ast_ari_validate_playback_continuing().
+ *
+ * See \ref ast_ari_model_validators.h for more details.
+ */
+ari_validator ast_ari_validate_playback_continuing_fn(void);
+
+/*!
  * \brief Validator for PlaybackFinished.
  *
  * Event showing the completion of a media playback operation.
@@ -1374,6 +1427,10 @@ ari_validator ast_ari_validate_application_fn(void);
  * - config: ConfigInfo
  * - status: StatusInfo
  * - system: SystemInfo
+ * AsteriskPing
+ * - asterisk_id: string (required)
+ * - ping: string (required)
+ * - timestamp: string (required)
  * BuildInfo
  * - date: string (required)
  * - kernel: string (required)
@@ -1422,16 +1479,14 @@ ari_validator ast_ari_validate_application_fn(void);
  * - body: string (required)
  * - from: string (required)
  * - to: string (required)
- * - variables: List[TextMessageVariable]
- * TextMessageVariable
- * - key: string (required)
- * - value: string (required)
+ * - variables: object
  * CallerID
  * - name: string (required)
  * - number: string (required)
  * Channel
  * - accountcode: string (required)
  * - caller: CallerID (required)
+ * - channelvars: object
  * - connected: CallerID (required)
  * - creationtime: Date (required)
  * - dialplan: DialplanCEP (required)
@@ -1441,13 +1496,49 @@ ari_validator ast_ari_validate_application_fn(void);
  * - state: string (required)
  * Dialed
  * DialplanCEP
+ * - app_data: string (required)
+ * - app_name: string (required)
  * - context: string (required)
  * - exten: string (required)
  * - priority: long (required)
+ * RTPstat
+ * - channel_uniqueid: string (required)
+ * - local_maxjitter: double
+ * - local_maxrxploss: double
+ * - local_minjitter: double
+ * - local_minrxploss: double
+ * - local_normdevjitter: double
+ * - local_normdevrxploss: double
+ * - local_ssrc: int (required)
+ * - local_stdevjitter: double
+ * - local_stdevrxploss: double
+ * - maxrtt: double
+ * - minrtt: double
+ * - normdevrtt: double
+ * - remote_maxjitter: double
+ * - remote_maxrxploss: double
+ * - remote_minjitter: double
+ * - remote_minrxploss: double
+ * - remote_normdevjitter: double
+ * - remote_normdevrxploss: double
+ * - remote_ssrc: int (required)
+ * - remote_stdevjitter: double
+ * - remote_stdevrxploss: double
+ * - rtt: double
+ * - rxcount: int (required)
+ * - rxjitter: double
+ * - rxoctetcount: int (required)
+ * - rxploss: int (required)
+ * - stdevrtt: double
+ * - txcount: int (required)
+ * - txjitter: double
+ * - txoctetcount: int (required)
+ * - txploss: int (required)
  * Bridge
  * - bridge_class: string (required)
  * - bridge_type: string (required)
  * - channels: List[string] (required)
+ * - creationtime: Date (required)
  * - creator: string (required)
  * - id: string (required)
  * - name: string (required)
@@ -1477,6 +1568,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - id: string (required)
  * - language: string
  * - media_uri: string (required)
+ * - next_media_uri: string
  * - state: string (required)
  * - target_uri: string (required)
  * DeviceState
@@ -1486,16 +1578,24 @@ ari_validator ast_ari_validate_application_fn(void);
  * - name: string (required)
  * - new_messages: int (required)
  * - old_messages: int (required)
+ * ApplicationMoveFailed
+ * - asterisk_id: string
+ * - type: string (required)
+ * - application: string (required)
+ * - timestamp: Date (required)
+ * - args: List[string] (required)
+ * - channel: Channel (required)
+ * - destination: string (required)
  * ApplicationReplaced
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * BridgeAttendedTransfer
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - destination_application: string
  * - destination_bridge: string
  * - destination_link_first_leg: Channel
@@ -1516,7 +1616,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge
  * - channel: Channel (required)
  * - context: string (required)
@@ -1529,33 +1629,33 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * BridgeDestroyed
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * BridgeMerged
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * - bridge_from: Bridge (required)
  * BridgeVideoSourceChanged
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * - old_video_source_id: string
  * ChannelCallerId
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - caller_presentation: int (required)
  * - caller_presentation_txt: string (required)
  * - channel: Channel (required)
@@ -1563,19 +1663,19 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * ChannelCreated
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * ChannelDestroyed
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - cause: int (required)
  * - cause_txt: string (required)
  * - channel: Channel (required)
@@ -1583,7 +1683,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * - dialplan_app: string (required)
  * - dialplan_app_data: string (required)
@@ -1591,7 +1691,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * - digit: string (required)
  * - duration_ms: int (required)
@@ -1599,14 +1699,14 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * - channel: Channel
  * ChannelHangupRequest
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - cause: int
  * - channel: Channel (required)
  * - soft: boolean
@@ -1614,46 +1714,46 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * - musicclass: string
  * ChannelLeftBridge
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge (required)
  * - channel: Channel (required)
  * ChannelStateChange
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * ChannelTalkingFinished
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * - duration: int (required)
  * ChannelTalkingStarted
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * ChannelUnhold
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * ChannelUserevent
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - bridge: Bridge
  * - channel: Channel
  * - endpoint: Endpoint
@@ -1663,7 +1763,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel
  * - value: string (required)
  * - variable: string (required)
@@ -1676,20 +1776,20 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - contact_info: ContactInfo (required)
  * - endpoint: Endpoint (required)
  * DeviceStateChanged
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - device_state: DeviceState (required)
  * Dial
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - caller: Channel
  * - dialstatus: string (required)
  * - dialstring: string
@@ -1700,13 +1800,13 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - endpoint: Endpoint (required)
  * Event
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * Message
  * - asterisk_id: string
  * - type: string (required)
@@ -1724,50 +1824,56 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - endpoint: Endpoint (required)
  * - peer: Peer (required)
+ * PlaybackContinuing
+ * - asterisk_id: string
+ * - type: string (required)
+ * - application: string (required)
+ * - timestamp: Date (required)
+ * - playback: Playback (required)
  * PlaybackFinished
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - playback: Playback (required)
  * PlaybackStarted
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - playback: Playback (required)
  * RecordingFailed
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - recording: LiveRecording (required)
  * RecordingFinished
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - recording: LiveRecording (required)
  * RecordingStarted
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - recording: LiveRecording (required)
  * StasisEnd
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - channel: Channel (required)
  * StasisStart
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - args: List[string] (required)
  * - channel: Channel (required)
  * - replace_channel: Channel
@@ -1775,7 +1881,7 @@ ari_validator ast_ari_validate_application_fn(void);
  * - asterisk_id: string
  * - type: string (required)
  * - application: string (required)
- * - timestamp: Date
+ * - timestamp: Date (required)
  * - endpoint: Endpoint
  * - message: TextMessage (required)
  * Application
@@ -1783,6 +1889,8 @@ ari_validator ast_ari_validate_application_fn(void);
  * - channel_ids: List[string] (required)
  * - device_names: List[string] (required)
  * - endpoint_ids: List[string] (required)
+ * - events_allowed: List[object] (required)
+ * - events_disallowed: List[object] (required)
  * - name: string (required)
  */
 

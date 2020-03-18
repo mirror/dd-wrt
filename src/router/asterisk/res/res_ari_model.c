@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "ari/ari_model_validators.h"
 #include "asterisk/logger.h"
 #include "asterisk/module.h"
@@ -208,4 +206,4 @@ AST_MODULE_INFO(ASTERISK_GPL_KEY, AST_MODFLAG_LOAD_ORDER | AST_MODFLAG_GLOBAL_SY
 	.load = load_module,
 	.unload = unload_module,
 	.load_pri = AST_MODPRI_APP_DEPEND,
-        );
+);

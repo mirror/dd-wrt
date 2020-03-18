@@ -37,13 +37,7 @@
 #define	_DB_H 1
 
 #include <sys/types.h>
-#ifdef HAVE_SYS_CDEFS_H
 #include <sys/cdefs.h>
-#else
-#define __P(p) p
-#define __BEGIN_DECLS
-#define __END_DECLS
-#endif
 
 #include <limits.h>
 
@@ -188,7 +182,7 @@ typedef struct {
 	int	lorder;		/* byte order */
 	size_t	reclen;		/* record length (fixed-length records) */
 	u_char	bval;		/* delimiting byte (variable-length records */
-	char	*bfname;	/* btree file name */ 
+	char	*bfname;	/* btree file name */
 } RECNOINFO;
 
 #ifdef __DBINTERFACE_PRIVATE

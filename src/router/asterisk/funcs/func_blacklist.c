@@ -23,7 +23,7 @@
  * \author Mark Spencer <markster@digium.com>
  *
  * \ingroup functions
- * 
+ *
  */
 
 /*** MODULEINFO
@@ -31,8 +31,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/pbx.h"
 #include "asterisk/module.h"

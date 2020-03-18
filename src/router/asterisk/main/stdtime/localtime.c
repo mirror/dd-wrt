@@ -50,8 +50,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include <signal.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -312,7 +310,7 @@ static struct state *	sstate_alloc(void);
 static void		sstate_free(struct state *p);
 
 static AST_LIST_HEAD_STATIC(zonelist, state);
-#ifdef HAVE_NEWLOCALE
+#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
 static AST_LIST_HEAD_STATIC(localelist, locale_entry);
 #endif
 
@@ -506,7 +504,7 @@ static void *kqueue_daemon(void *data)
 			continue;
 		}
 
-		sp = kev.udata;
+		sp = (struct state *) kev.udata;
 
 		AST_LIST_LOCK(&zonelist);
 		/* see comment near psx_sp in add_notify() */
@@ -1057,7 +1055,7 @@ static int tzload(const char *name, struct state * const sp, const int doextend)
 			int	result;
 
 			/* for temporary struct state --
-			 * macro flags the the struct as a stack temp.
+			 * macro flags the struct as a stack temp.
 			 * to prevent use within add_notify()
 			 */
 			SP_STACK_INIT(ts);
@@ -1508,16 +1506,14 @@ static int tzparse(const char *name, struct state *sp, const int lastditch)
 			}
 		} else {
 			long	theirstdoffset;
-			long	theirdstoffset;
 			long	theiroffset;
-			int	isdst;
 			int	i;
 			int	j;
 
 			if (*name != '\0')
 				return -1;
 			/*
-			** Initial values of theirstdoffset and theirdstoffset.
+			** Initial values of theirstdoffset.
 			*/
 			theirstdoffset = 0;
 			for (i = 0; i < sp->timecnt; ++i) {
@@ -1528,19 +1524,6 @@ static int tzparse(const char *name, struct state *sp, const int lastditch)
 					break;
 				}
 			}
-			theirdstoffset = 0;
-			for (i = 0; i < sp->timecnt; ++i) {
-				j = sp->types[i];
-				if (sp->ttis[j].tt_isdst) {
-					theirdstoffset =
-						-sp->ttis[j].tt_gmtoff;
-					break;
-				}
-			}
-			/*
-			** Initially we're assumed to be in standard time.
-			*/
-			isdst = FALSE;
 			theiroffset = theirstdoffset;
 			/*
 			** Now juggle transition times and types
@@ -1552,32 +1535,13 @@ static int tzparse(const char *name, struct state *sp, const int lastditch)
 				if (sp->ttis[j].tt_ttisgmt) {
 					/* No adjustment to transition time */
 				} else {
-					/*
-					** If summer time is in effect, and the
-					** transition time was not specified as
-					** standard time, add the summer time
-					** offset to the transition time;
-					** otherwise, add the standard time
-					** offset to the transition time.
-					*/
-					/*
-					** Transitions from DST to DDST
-					** will effectively disappear since
-					** POSIX provides for only one DST
-					** offset.
-					*/
-					if (isdst && !sp->ttis[j].tt_ttisstd) {
-						sp->ats[i] += dstoffset -
-							theirdstoffset;
-					} else {
-						sp->ats[i] += stdoffset -
-							theirstdoffset;
-					}
+					/* Add the standard time offset to the transition time. */
+					sp->ats[i] += stdoffset - theirstdoffset;
 				}
 				theiroffset = -sp->ttis[j].tt_gmtoff;
-				if (sp->ttis[j].tt_isdst)
-					theirdstoffset = theiroffset;
-				else	theirstdoffset = theiroffset;
+				if (!sp->ttis[j].tt_isdst) {
+					theirstdoffset = theiroffset;
+				}
 			}
 			/*
 			** Finally, fill in ttis.
@@ -1811,7 +1775,7 @@ void ast_get_dst_info(const time_t * const timep, int *dst_enabled, time_t *dst_
 		return;
 
 	/* If the desired time exceeds the bounds of the defined time transitions
-	* then give give up on determining DST info and simply look for gmt offset
+	* then give up on determining DST info and simply look for gmt offset
 	* This requires that I adjust the given time using increments of Gregorian
 	* repeats to place the time within the defined time transitions in the
 	* timezone structure.
@@ -2398,7 +2362,7 @@ struct timeval ast_mktime(struct ast_tm *tmp, const char *zone)
 	return time1(tmp, localsub, 0L, sp);
 }
 
-#ifdef HAVE_NEWLOCALE
+#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
 static struct locale_entry *find_by_locale(locale_t locale)
 {
 	struct locale_entry *cur;
@@ -2436,7 +2400,7 @@ static const char *store_by_locale(locale_t prevlocale)
 			cur = NULL;
 			AST_LIST_LOCK(&localelist);
 			for (x = 0; x < 10000; x++) {
-				char name[5];
+				char name[6];
 				snprintf(name, sizeof(name), "%04d", x);
 				if (!find_by_name(name)) {
 					if ((cur = ast_calloc(1, sizeof(*cur) + strlen(name) + 1))) {
@@ -2587,4 +2551,3 @@ char *ast_strptime(const char *s, const char *format, struct ast_tm *tm)
 {
 	return ast_strptime_locale(s, format, tm, NULL);
 }
-

@@ -29,8 +29,6 @@
 
 #include "asterisk.h"
 
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
-
 #include "asterisk/network.h"
 
 #if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__Darwin__)
@@ -174,7 +172,7 @@ static int get_local_address(struct ast_sockaddr *ourip)
 		}
 
 		bufsz = ifn.lifn_count * sizeof(struct lifreq);
-		if (!(buf = malloc(bufsz))) {
+		if (!(buf = ast_malloc(bufsz))) {
 			close(s);
 			return -1;
 		}
@@ -187,7 +185,7 @@ static int get_local_address(struct ast_sockaddr *ourip)
 		ifc.lifc_flags = 0;
 		if (ioctl(s, SIOCGLIFCONF, &ifc) < 0) {
 			close(s);
-			free(buf);
+			ast_free(buf);
 			return -1;
 		}
 
@@ -201,7 +199,7 @@ static int get_local_address(struct ast_sockaddr *ourip)
 			}
 		}
 
-		free(buf);
+		ast_free(buf);
 #endif /* SOLARIS */
 
 		close(s);
@@ -283,6 +281,12 @@ struct ast_ha *ast_duplicate_ha_list(struct ast_ha *original)
 
 	while (start) {
 		current = ast_duplicate_ha(start);  /* Create copy of this object */
+		if (!current) {
+			ast_free_ha(ret);
+
+			return NULL;
+		}
+
 		if (prev) {
 			prev->next = current;           /* Link previous to this object */
 		}
@@ -320,7 +324,7 @@ struct ast_acl_list *ast_duplicate_acl_list(struct ast_acl_list *original)
 	}
 
 	if (!(clone = ast_calloc(1, sizeof(*clone)))) {
-		ast_log(LOG_WARNING, "Failed to allocate ast_acl_list struct while cloning an ACL\n");
+		ast_log(LOG_ERROR, "Failed to allocate ast_acl_list struct while cloning an ACL\n");
 		return NULL;
 	}
 	AST_LIST_HEAD_INIT(clone);
@@ -329,8 +333,10 @@ struct ast_acl_list *ast_duplicate_acl_list(struct ast_acl_list *original)
 
 	AST_LIST_TRAVERSE(original, current_cursor, list) {
 		if ((acl_new(&current_clone, current_cursor->name))) {
-			ast_log(LOG_WARNING, "Failed to allocate ast_acl struct while cloning an ACL.");
-			continue;
+			ast_log(LOG_ERROR, "Failed to allocate ast_acl struct while cloning an ACL.\n");
+			ast_free_acl_list(clone);
+			clone = NULL;
+			break;
 		}
 
 		/* Copy data from original ACL to clone ACL */
@@ -340,6 +346,15 @@ struct ast_acl_list *ast_duplicate_acl_list(struct ast_acl_list *original)
 		current_clone->is_realtime = current_cursor->is_realtime;
 
 		AST_LIST_INSERT_TAIL(clone, current_clone, list);
+
+		if (current_cursor->acl && !current_clone->acl) {
+			/* Deal with failure after adding to clone so we don't have to free
+			 * current_clone separately. */
+			ast_log(LOG_ERROR, "Failed to duplicate HA list while cloning ACL.\n");
+			ast_free_acl_list(clone);
+			clone = NULL;
+			break;
+		}
 	}
 
 	AST_LIST_UNLOCK(original);
@@ -450,6 +465,8 @@ void ast_append_acl(const char *sense, const char *stuff, struct ast_acl_list **
 				if (error) {
 					*error = 1;
 				}
+				AST_LIST_UNLOCK(working_list);
+				return;
 			}
 			// Need to INSERT the ACL at the head here.
 			AST_LIST_INSERT_HEAD(working_list, acl, list);
@@ -479,7 +496,8 @@ void ast_append_acl(const char *sense, const char *stuff, struct ast_acl_list **
 		AST_LIST_TRAVERSE(working_list, current, list) {
 			if (!strcasecmp(current->name, tmp)) { /* ACL= */
 				/* Inclusion of the same ACL multiple times isn't a catastrophic error, but it will raise the error flag and skip the entry. */
-				ast_log(LOG_ERROR, "Named ACL '%s' is already included in the ast_acl container.", tmp);
+				ast_log(LOG_ERROR, "Named ACL '%s' occurs multiple times in ACL definition. "
+				                   "Please update your ACL configuration.\n", tmp);
 				if (error) {
 					*error = 1;
 				}
@@ -538,7 +556,23 @@ int ast_acl_list_is_empty(struct ast_acl_list *acl_list)
 	return 1;
 }
 
-struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha *path, int *error)
+/*!
+ * \internal
+ * \brief Used by ast_append_ha to avoid ast_strdupa in a loop.
+ *
+ * \note This function is only called at debug level 3 and higher.
+ */
+static void debug_ha_sense_appended(struct ast_ha *ha)
+{
+	const char *parsed_mask = ast_strdupa(ast_sockaddr_stringify(&ha->netmask));
+
+	ast_log(LOG_DEBUG, "%s/%s sense %u appended to ACL\n",
+		ast_sockaddr_stringify(&ha->addr),
+		parsed_mask,
+		ha->sense);
+}
+
+static struct ast_ha *append_ha_core(const char *sense, const char *stuff, struct ast_ha *path, int *error, int port_flags)
 {
 	struct ast_ha *ha;
 	struct ast_ha *prev = NULL;
@@ -547,7 +581,6 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 	char *address = NULL, *mask = NULL;
 	int addr_is_v4;
 	int allowing = strncasecmp(sense, "p", 1) ? AST_SENSE_DENY : AST_SENSE_ALLOW;
-	const char *parsed_addr, *parsed_mask;
 
 	ret = path;
 	while (path) {
@@ -556,6 +589,8 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 	}
 
 	while ((tmp = strsep(&list, ","))) {
+		uint16_t save_port;
+
 		if (!(ha = ast_calloc(1, sizeof(*ha)))) {
 			if (error) {
 				*error = 1;
@@ -577,13 +612,18 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 			ha->sense = allowing;
 		}
 
-		if (!ast_sockaddr_parse(&ha->addr, address, PARSE_PORT_FORBID)) {
+		if (!ast_sockaddr_parse(&ha->addr, address, port_flags)) {
 			ast_log(LOG_WARNING, "Invalid IP address: %s\n", address);
 			ast_free_ha(ha);
 			if (error) {
 				*error = 1;
 			}
 			return ret;
+		}
+
+		/* Be pedantic and zero out the port if we don't want it */
+		if ((port_flags & PARSE_PORT_MASK) == PARSE_PORT_FORBID) {
+			ast_sockaddr_set_port(&ha->addr, 0);
 		}
 
 		/* If someone specifies an IPv4-mapped IPv6 address,
@@ -634,6 +674,10 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 			return ret;
 		}
 
+		/* ast_sockaddr_apply_netmask() does not preserve the port, so we need to save and
+		 * restore it */
+		save_port = ast_sockaddr_port(&ha->addr);
+
 		if (ast_sockaddr_apply_netmask(&ha->addr, &ha->netmask, &ha->addr)) {
 			/* This shouldn't happen because ast_sockaddr_parse would
 			 * have failed much earlier on an unsupported address scheme
@@ -648,6 +692,8 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 			return ret;
 		}
 
+		ast_sockaddr_set_port(&ha->addr, save_port);
+
 		if (prev) {
 			prev->next = ha;
 		} else {
@@ -655,22 +701,40 @@ struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha
 		}
 		prev = ha;
 
-		parsed_addr = ast_strdupa(ast_sockaddr_stringify(&ha->addr));
-		parsed_mask = ast_strdupa(ast_sockaddr_stringify(&ha->netmask));
-
-		ast_debug(3, "%s/%s sense %u appended to ACL\n", parsed_addr, parsed_mask, ha->sense);
+		if (DEBUG_ATLEAST(3)) {
+			debug_ha_sense_appended(ha);
+		}
 	}
 
 	return ret;
 }
 
+struct ast_ha *ast_append_ha(const char *sense, const char *stuff, struct ast_ha *path, int *error)
+{
+	return append_ha_core(sense, stuff, path, error, PARSE_PORT_FORBID);
+}
+
+struct ast_ha *ast_append_ha_with_port(const char *sense, const char *stuff, struct ast_ha *path, int *error)
+{
+	return append_ha_core(sense, stuff, path, error, 0);
+}
+
 void ast_ha_join(const struct ast_ha *ha, struct ast_str **buf)
 {
 	for (; ha; ha = ha->next) {
-		const char *addr = ast_strdupa(ast_sockaddr_stringify_addr(&ha->addr));
-		ast_str_append(buf, 0, "%s%s/%s",
-			       ha->sense == AST_SENSE_ALLOW ? "!" : "",
-			       addr, ast_sockaddr_stringify_addr(&ha->netmask));
+		const char *addr;
+
+		if (ast_sockaddr_port(&ha->addr)) {
+			addr = ast_sockaddr_stringify(&ha->addr);
+		} else {
+			addr = ast_sockaddr_stringify_addr(&ha->addr);
+		}
+
+		ast_str_append(buf, 0, "%s%s/",
+			ha->sense == AST_SENSE_ALLOW ? "!" : "",
+			addr);
+		/* Separated to avoid duplicating stringified addresses. */
+		ast_str_append(buf, 0, "%s", ast_sockaddr_stringify_addr(&ha->netmask));
 		if (ha->next) {
 			ast_str_append(buf, 0, ",");
 		}
@@ -690,7 +754,7 @@ void ast_ha_join_cidr(const struct ast_ha *ha, struct ast_str **buf)
 	}
 }
 
-enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr, const char *purpose)
+static enum ast_acl_sense ast_apply_acl_internal(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr, const char *log_prefix)
 {
 	struct ast_acl *acl;
 
@@ -704,16 +768,22 @@ enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast
 	AST_LIST_TRAVERSE(acl_list, acl, list) {
 		if (acl->is_invalid) {
 			/* In this case, the baseline ACL shouldn't ever trigger this, but if that somehow happens, it'll still be shown. */
-			ast_log(LOG_WARNING, "%sRejecting '%s' due to use of an invalid ACL '%s'.\n", purpose ? purpose : "", ast_sockaddr_stringify_addr(addr),
-					ast_strlen_zero(acl->name) ? "(BASELINE)" : acl->name);
+			if (log_prefix) {
+				ast_log(LOG_WARNING, "%sRejecting '%s' due to use of an invalid ACL '%s'.\n",
+						log_prefix, ast_sockaddr_stringify_addr(addr),
+						ast_strlen_zero(acl->name) ? "(BASELINE)" : acl->name);
+			}
 			AST_LIST_UNLOCK(acl_list);
 			return AST_SENSE_DENY;
 		}
 
 		if (acl->acl) {
 			if (ast_apply_ha(acl->acl, addr) == AST_SENSE_DENY) {
-				ast_log(LOG_NOTICE, "%sRejecting '%s' due to a failure to pass ACL '%s'\n", purpose ? purpose : "", ast_sockaddr_stringify_addr(addr),
-						ast_strlen_zero(acl->name) ? "(BASELINE)" : acl->name);
+				if (log_prefix) {
+					ast_log(LOG_NOTICE, "%sRejecting '%s' due to a failure to pass ACL '%s'\n",
+							log_prefix, ast_sockaddr_stringify_addr(addr),
+							ast_strlen_zero(acl->name) ? "(BASELINE)" : acl->name);
+				}
 				AST_LIST_UNLOCK(acl_list);
 				return AST_SENSE_DENY;
 			}
@@ -723,6 +793,15 @@ enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast
 	AST_LIST_UNLOCK(acl_list);
 
 	return AST_SENSE_ALLOW;
+}
+
+
+enum ast_acl_sense ast_apply_acl(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr, const char *purpose) {
+	return ast_apply_acl_internal(acl_list, addr, purpose ?: "");
+}
+
+enum ast_acl_sense ast_apply_acl_nolog(struct ast_acl_list *acl_list, const struct ast_sockaddr *addr) {
+	return ast_apply_acl_internal(acl_list, addr, NULL);
 }
 
 enum ast_acl_sense ast_apply_ha(const struct ast_ha *ha, const struct ast_sockaddr *addr)
@@ -735,12 +814,13 @@ enum ast_acl_sense ast_apply_ha(const struct ast_ha *ha, const struct ast_sockad
 		struct ast_sockaddr result;
 		struct ast_sockaddr mapped_addr;
 		const struct ast_sockaddr *addr_to_use;
+		uint16_t save_port;
 #if 0	/* debugging code */
 		char iabuf[INET_ADDRSTRLEN];
 		char iabuf2[INET_ADDRSTRLEN];
 		/* DEBUG */
-		ast_copy_string(iabuf, ast_inet_ntoa(sin->sin_addr), sizeof(iabuf));
-		ast_copy_string(iabuf2, ast_inet_ntoa(ha->netaddr), sizeof(iabuf2));
+		ast_copy_string(iabuf, ast_sockaddr_stringify(addr), sizeof(iabuf));
+		ast_copy_string(iabuf2, ast_sockaddr_stringify(&current_ha->addr), sizeof(iabuf2));
 		ast_debug(1, "##### Testing %s with %s\n", iabuf, iabuf2);
 #endif
 		if (ast_sockaddr_is_ipv4(&current_ha->addr)) {
@@ -770,13 +850,22 @@ enum ast_acl_sense ast_apply_ha(const struct ast_ha *ha, const struct ast_sockad
 			}
 		}
 
+		/* ast_sockaddr_apply_netmask() does not preserve the port, so we need to save and
+		 * restore it */
+		save_port = ast_sockaddr_port(addr_to_use);
+
 		/* For each rule, if this address and the netmask = the net address
 		   apply the current rule */
 		if (ast_sockaddr_apply_netmask(addr_to_use, &current_ha->netmask, &result)) {
 			/* Unlikely to happen since we know the address to be IPv4 or IPv6 */
 			continue;
 		}
-		if (!ast_sockaddr_cmp_addr(&result, &current_ha->addr)) {
+
+		ast_sockaddr_set_port(&result, save_port);
+
+		if (!ast_sockaddr_cmp_addr(&result, &current_ha->addr)
+		   && (!ast_sockaddr_port(&current_ha->addr)
+			  || ast_sockaddr_port(&current_ha->addr) == ast_sockaddr_port(&result))) {
 			res = current_ha->sense;
 		}
 	}
@@ -993,4 +1082,3 @@ int ast_find_ourip(struct ast_sockaddr *ourip, const struct ast_sockaddr *bindad
 	ast_sockaddr_set_port(ourip, port);
 	return res;
 }
-

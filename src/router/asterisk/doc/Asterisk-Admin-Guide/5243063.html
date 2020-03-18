@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Phone Provisioning, Putting it all together</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Deployment_27200188.html">Deployment</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Phone-Provisioning-in-Asterisk_5243047.html">Phone Provisioning in Asterisk</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Phone Provisioning, Putting it all together
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Malcolm Davenport</span>, last modified by <span class='editor'> Gaston Draque</span> on Oct 14, 2014
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <p>Make sure that manager.conf has:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+enabled = yes
+webenabled = yes
+</pre>
+</div></div><p>and that http.conf has:</p><div class="code panel pdl" style="border-width: 1px;"><div class="codeContent panelContent pdl">
+<pre class="theme: Confluence; brush: java; gutter: false" style="font-size:12px;">[general]
+enabled = yes
+bindaddr = 192.168.1.1 ; Your IP here
+bindport = 8088 ; Or port 80 if it is the only http server running on the machine
+</pre>
+</div></div><p>With phoneprov.conf and users.conf in place, start Asterisk. From the CLI, type &quot;http show status&quot;. An example output:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>HTTP Server Status: 
+Prefix: /asterisk 
+Server Enabled and Bound to 192.168.1.1:8088 
+
+Enabled URI&#39;s:
+/asterisk/httpstatus =&gt; Asterisk HTTP General Status
+/asterisk/phoneprov/... =&gt; Asterisk HTTP Phone Provisioning Tool
+/asterisk/manager =&gt; HTML Manager Event Interface 
+/asterisk/rawman =&gt; Raw HTTP Manager Event Interface 
+/asterisk/static/... =&gt; Asterisk HTTP Static Delivery 
+/asterisk/mxml =&gt; XML Manager Event Interface 
+Enabled Redirects: 
+ None. 
+POST mappings:
+ None.
+</pre>
+</div></div><p>There should be a phoneprov URI listed. Next, from the CLI, type &quot;phoneprov show routes&quot; and verify that the information there is correct. An example output for Polycom phones woud look like:</p><div class="preformatted panel" style="border-width: 1px;"><div class="preformattedContent panelContent">
+<pre>Static routes
+
+Relative URI Physical location
+sip.ver configs/sip.ver
+sip.ld configs/sip.ld
+bootrom.ver configs/bootrom.ver
+sip.cfg configs/sip.cfg
+bootrom.ld configs/bootrom.ld
+custom.cfg configs/custom.cfg
+Dynamic routes
+Relative URI Template
+deadbeef4dad.cfg 000000000000.cfg
+deadbeef4dad-directory.xml
+000000000000-directory.xml
+deadbeef4dad-phone.cfg
+000000000000-phone.cfg
+config/deadbeef4dad polycom.xml
+</pre>
+</div></div><p>With the above examples, the phones would be pointed to:</p><p><a class="external-link" href="http://192.168.1.1:8080/asterisk/phoneprov" rel="nofollow">http://192.168.1.1:8080/asterisk/phoneprov</a></p><p>for pulling config files.</p><p>Templates would all be placed in AST_DATA_DIR/phoneprov and static files would be placed in AST_DATA_DIR/phoneprov/configs. Examples of valid URIs would be:</p><ul><li><a class="external-link" href="http://192.168.1.1:8080/asterisk/phoneprov/sip.cfg" rel="nofollow">http://192.168.1.1:8080/asterisk/phoneprov/sip.cfg</a></li><li><a class="external-link" href="http://192.168.1.1:8080/asterisk/phoneprov/deadbeef4dad.cfg" rel="nofollow">http://192.168.1.1:8080/asterisk/phoneprov/deadbeef4dad.cfg</a></li><li><a class="external-link" href="http://192.168.1.1:8080/asterisk/phoneprov/config/deadbeef4dad" rel="nofollow">http://192.168.1.1:8080/asterisk/phoneprov/config/deadbeef4dad</a></li></ul>
+                    </div>
+
+                                        <div class="pageSection group">
+                        <div class="pageSectionHeader">
+                            <h2 id="attachments" class="pageSectionTitle">Attachments:</h2>
+                        </div>
+
+                        <div class="greybox" align="left">
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/5243063/18350089.html">list.html</a> (text/html)
+                                <br/>
+                                                            <img src="images/icons/bullet_blue.gif" height="8" width="8" alt=""/>
+                                <a href="attachments/5243063/18350088.html">list.html</a> (text/html)
+                                <br/>
+                                                    </div>
+                    </div>
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:38</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

@@ -17,7 +17,8 @@
  */
 
 /*!
- * \file \brief Test Stasis Channel messages and objects
+ * \file
+ * \brief Test Stasis Channel messages and objects
  *
  * \author\verbatim Matt Jordan <mjordan@digium.com> \endverbatim
  *
@@ -30,8 +31,6 @@
  ***/
 
 #include "asterisk.h"
-
-ASTERISK_FILE_VERSION(__FILE__, "$Revision$")
 
 #include "asterisk/astobj2.h"
 #include "asterisk/module.h"
@@ -221,12 +220,12 @@ AST_TEST_DEFINE(multi_channel_blob_snapshots)
 	/* Test for single match */
 	snapshot = ast_multi_channel_blob_get_channel(blob, "Caller");
 	ast_test_validate(test, NULL != snapshot);
-	ast_test_validate(test, 0 == strcmp("TEST/Alice", snapshot->name));
+	ast_test_validate(test, 0 == strcmp("TEST/Alice", snapshot->base->name));
 
 	/* Test for single match, multiple possibilities */
 	snapshot = ast_multi_channel_blob_get_channel(blob, "Peer");
 	ast_test_validate(test, NULL != snapshot);
-	ast_test_validate(test, 0 != strcmp("TEST/Alice", snapshot->name));
+	ast_test_validate(test, 0 != strcmp("TEST/Alice", snapshot->base->name));
 
 	/* Multi-match */
 	matches = ast_multi_channel_blob_get_channels(blob, "Peer");
@@ -275,7 +274,7 @@ AST_TEST_DEFINE(channel_snapshot_json)
 
 	actual = ast_channel_snapshot_to_json(snapshot, NULL);
 	expected = ast_json_pack("{ s: s, s: s, s: s, s: s,"
-				 "  s: { s: s, s: s, s: i },"
+				 "  s: { s: s, s: s, s: i, s: s, s: s },"
 				 "  s: { s: s, s: s },"
 				 "  s: { s: s, s: s },"
 				 "  s: s"
@@ -289,6 +288,8 @@ AST_TEST_DEFINE(channel_snapshot_json)
 				 "context", "context",
 				 "exten", "exten",
 				 "priority", 1,
+				 "app_name", "",
+				 "app_data", "",
 				 "caller",
 				 "name", "cid_name",
 				 "number", "cid_num",
@@ -328,6 +329,7 @@ static int load_module(void)
 }
 
 AST_MODULE_INFO(ASTERISK_GPL_KEY, 0, "Stasis Channel Testing",
-		.load = load_module,
-		.unload = unload_module
-	);
+	.support_level = AST_MODULE_SUPPORT_CORE,
+	.load = load_module,
+	.unload = unload_module
+);

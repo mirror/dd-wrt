@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Configuration_res_ari</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Module-Configuration_42010715.html">Asterisk 17 Module Configuration</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Configuration_res_ari
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span> on Aug 01, 2019
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17Configuration_res_ari-HTTPbindingfortheStasisAPI">HTTP binding for the Stasis API</h1>
+
+<p>This configuration documentation is for functionality provided by <code>res_ari</code>.</p>
+
+<h2 id="Asterisk17Configuration_res_ari-ari.conf">ari.conf</h2>
+
+<h3 id="Asterisk17Configuration_res_ari-general">general</h3>
+
+<p>General configuration settings</p>
+
+<h4 id="Asterisk17Configuration_res_ari-ConfigurationOptionReference">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_ari-general_enabled"><code>enabled</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>yes</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Enable/disable the ARI module </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_ari-general_websocket_write_timeout"><code>websocket_write_timeout</code></a> </p></td>
+<td class="confluenceTd"><p> <code>Integer</code> </p></td>
+<td class="confluenceTd"><p> <code>100</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> The timeout (in milliseconds) to set on WebSocket connections. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>pretty</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Responses from ARI are formatted to be human readable </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>auth_realm</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> <code>Asterisk REST Interface</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Realm to use for authentication. Defaults to Asterisk REST Interface. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>allowed_origins</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Comma separated list of allowed origins, for Cross-Origin Resource Sharing. May be set to * to allow all origins. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>channelvars</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Comma separated list of channel variables to display in channel json. </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_ari-ConfigurationOptionDescriptions">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_ari-general_enabled"></span></p>
+<h5 id="Asterisk17Configuration_res_ari-enabled">enabled</h5>
+
+<p>This option enables or disables the ARI module.</p>
+
+    <div class="aui-message hint shadowed information-macro">
+                    <p class="title">Note</p>
+                            <span class="aui-icon icon-hint">Icon</span>
+                <div class="message-content">
+                            
+<p>ARI uses Asterisk's HTTP server, which must also be enabled in <code>http.conf</code>.</p>
+
+                    </div>
+    </div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_ari-general_websocket_write_timeout"></span></p>
+<h5 id="Asterisk17Configuration_res_ari-websocket_write_timeout">websocket_write_timeout</h5>
+
+<p>If a websocket connection accepts input slowly, the timeout for writes to it can be increased to keep it from being disconnected. Value is in milliseconds; default is 100 ms.</p>
+
+
+<h3 id="Asterisk17Configuration_res_ari-user">user</h3>
+
+<p>Per-user configuration settings</p>
+
+<h4 id="Asterisk17Configuration_res_ari-ConfigurationOptionReference.1">Configuration Option Reference</h4>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Option Name </p></th>
+<th class="confluenceTh"><p> Type </p></th>
+<th class="confluenceTh"><p> Default Value </p></th>
+<th class="confluenceTh"><p> Regular Expression </p></th>
+<th class="confluenceTh"><p> Description </p></th>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <a href="#Asterisk17Configuration_res_ari-user_type"><code>type</code></a> </p></td>
+<td class="confluenceTd"><p> <code>None</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Define this configuration section as a user. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>read_only</code> </p></td>
+<td class="confluenceTd"><p> <code>Boolean</code> </p></td>
+<td class="confluenceTd"><p> <code>no</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> When set to yes, user is only authorized for read-only requests </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>password</code> </p></td>
+<td class="confluenceTd"><p> <code>String</code> </p></td>
+<td class="confluenceTd"><p> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> Crypted or plaintext password (see password_format) </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> <code>password_format</code> </p></td>
+<td class="confluenceTd"><p> <code>Custom</code> </p></td>
+<td class="confluenceTd"><p> <code>plain</code> </p></td>
+<td class="confluenceTd"><p> <code>false</code> </p></td>
+<td class="confluenceTd"><p> password_format may be set to plain (the default) or crypt. When set to crypt, crypt(3) is used to validate the password. A crypted password can be generated using mkpasswd -m sha-512. When set to plain, the password is in plaintext </p></td>
+</tr>
+</tbody></table></div>
+
+<h4 id="Asterisk17Configuration_res_ari-ConfigurationOptionDescriptions.1">Configuration Option Descriptions</h4>
+
+<p><span class="confluence-anchor-link" id="Asterisk17Configuration_res_ari-user_type"></span></p>
+<h5 id="Asterisk17Configuration_res_ari-type">type</h5>
+
+<ul>
+	<li><code>user</code> - Configure this section as a <em>user</em></li>
+</ul>
+
+
+
+<h3 id="Asterisk17Configuration_res_ari-ImportVersion">Import Version</h3>
+
+<p>This documentation was imported from Asterisk Version GIT-17-7300bdd</p>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:40</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>

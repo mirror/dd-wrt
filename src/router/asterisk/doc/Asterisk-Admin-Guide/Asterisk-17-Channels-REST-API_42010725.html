@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Asterisk Project : Asterisk 17 Channels REST API</title>
+        <link rel="stylesheet" href="styles/site.css" type="text/css" />
+        <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body class="theme-default aui-theme-default">
+        <div id="page">
+            <div id="main" class="aui-page-panel">
+                <div id="main-header">
+                    <div id="breadcrumb-section">
+                        <ol id="breadcrumbs">
+                            <li class="first">
+                                <span><a href="index.html">Asterisk Project</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Home_4259930.html">Home</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Documentation_42010566.html">Asterisk 17 Documentation</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-Command-Reference_42010572.html">Asterisk 17 Command Reference</a></span>
+                            </li>
+                                                    <li>
+                                <span><a href="Asterisk-17-ARI_42010709.html">Asterisk 17 ARI</a></span>
+                            </li>
+                                                </ol>
+                    </div>
+                    <h1 id="title-heading" class="pagetitle">
+                                                <span id="title-text">
+                            Asterisk Project : Asterisk 17 Channels REST API
+                        </span>
+                    </h1>
+                </div>
+
+                <div id="content" class="view">
+                    <div class="page-metadata">
+                        
+        
+    
+        
+    
+        
+    
+            Created by <span class='author'> Wiki Bot</span>, last modified on Feb 21, 2020
+                        </div>
+                    <div id="main-content" class="wiki-content group">
+                    <h1 id="Asterisk17ChannelsRESTAPI-Channels">Channels</h1>
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<th class="confluenceTh"><p> Method </p></th>
+<th class="confluenceTh"><p> Path&lt;br&gt;h5. Parameters are case-sensitive </p></th>
+<th class="confluenceTh"><p> Return Model </p></th>
+<th class="confluenceTh"><p> Summary </p></th>
+</tr>
+</tbody></table></div>
+
+
+<div class="table-wrap"><table class="confluenceTable"><tbody>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-list">/channels</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">List[Channel]</a> </p></td>
+<td class="confluenceTd"><p> List all active channels in Asterisk. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-originate">/channels</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Create a new channel (originate). </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-create">/channels/create</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Create channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-get">/channels/{channelId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Channel details. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-originateWithId">/channels/{channelId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Create a new channel (originate with id). </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-hangup">/channels/{channelId}</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Delete (i.e. hangup) a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-continueInDialplan">/channels/{channelId}/continue</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Exit application; continue execution in the dialplan. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-move">/channels/{channelId}/move</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Move the channel from one Stasis application to another. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-redirect">/channels/{channelId}/redirect</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Redirect the channel to a different location. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-answer">/channels/{channelId}/answer</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Answer a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-ring">/channels/{channelId}/ring</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Indicate ringing to a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-ringStop">/channels/{channelId}/ring</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop ringing indication on a channel if locally generated. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-sendDTMF">/channels/{channelId}/dtmf</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Send provided DTMF to a given channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-mute">/channels/{channelId}/mute</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Mute a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-unmute">/channels/{channelId}/mute</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Unmute a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-hold">/channels/{channelId}/hold</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Hold a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-unhold">/channels/{channelId}/hold</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Remove a channel from hold. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-startMoh">/channels/{channelId}/moh</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Play music on hold to a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-stopMoh">/channels/{channelId}/moh</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop playing music on hold to a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-startSilence">/channels/{channelId}/silence</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Play silence to a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> DELETE </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-stopSilence">/channels/{channelId}/silence</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Stop playing silence to a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-play">/channels/{channelId}/play</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Playback">Playback</a> </p></td>
+<td class="confluenceTd"><p> Start playback of media. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-playWithId">/channels/{channelId}/play/{playbackId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Playback">Playback</a> </p></td>
+<td class="confluenceTd"><p> Start playback of media and specify the playbackId. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-record">/channels/{channelId}/record</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-LiveRecording">LiveRecording</a> </p></td>
+<td class="confluenceTd"><p> Start a recording. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-getChannelVar">/channels/{channelId}/variable</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Variable">Variable</a> </p></td>
+<td class="confluenceTd"><p> Get the value of a channel variable or function. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-setChannelVar">/channels/{channelId}/variable</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Set the value of a channel variable or function. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-snoopChannel">/channels/{channelId}/snoop</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Start snooping. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-snoopChannelWithId">/channels/{channelId}/snoop/{snoopId}</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Start snooping. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-dial">/channels/{channelId}/dial</a> </p></td>
+<td class="confluenceTd"><p> void </p></td>
+<td class="confluenceTd"><p> Dial a created channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> GET </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-rtpstatistics">/channels/{channelId}/rtp_statistics</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-RTPstat">RTPstat</a> </p></td>
+<td class="confluenceTd"><p> RTP stats on a channel. </p></td>
+</tr>
+<tr>
+<td class="confluenceTd"><p> POST </p></td>
+<td class="confluenceTd"><p> <a href="#Asterisk17ChannelsRESTAPI-externalMedia">/channels/externalMedia</a> </p></td>
+<td class="confluenceTd"><p> <a href="Asterisk-17-REST-Data-Models_42010716.html#Asterisk17RESTDataModels-Channel">Channel</a> </p></td>
+<td class="confluenceTd"><p> Start an External Media session. </p></td>
+</tr>
+</tbody></table></div>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-list"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-list:GET/channels">list: GET /channels</h2>
+
+<p>List all active channels in Asterisk.</p>
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-originate"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-originate:POST/channels">originate: POST /channels</h2>
+
+<p>Create a new channel (originate). The new channel is created immediately and a snapshot of it returned. If a Stasis application is provided it will be automatically subscribed to the originated channel for further events and updates.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters">Query parameters</h3>
+<ul>
+	<li>endpoint: <em>string</em> - <strong>(required)</strong> Endpoint to call.</li>
+	<li>extension: <em>string</em> - The extension to dial after the endpoint answers. Mutually exclusive with 'app'.</li>
+	<li>context: <em>string</em> - The context to dial after the endpoint answers. If omitted, uses 'default'. Mutually exclusive with 'app'.</li>
+	<li>priority: <em>long</em> - The priority to dial after the endpoint answers. If omitted, uses 1. Mutually exclusive with 'app'.</li>
+	<li>label: <em>string</em> - The label to dial after the endpoint answers. Will supersede 'priority' if provided. Mutually exclusive with 'app'.</li>
+	<li>app: <em>string</em> - The application that is subscribed to the originated channel. When the channel is answered, it will be passed to this Stasis application. Mutually exclusive with 'context', 'extension', 'priority', and 'label'.</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application provided by 'app'. Mutually exclusive with 'context', 'extension', 'priority', and 'label'.</li>
+	<li>callerId: <em>string</em> - CallerID to use when dialing the endpoint or extension.</li>
+	<li>timeout: <em>int</em> - Timeout (in seconds) before giving up dialing, or -1 for no timeout.
+	<ul>
+		<li>Default: 30</li>
+	</ul>
+	</li>
+	<li>channelId: <em>string</em> - The unique id to assign the channel on creation.</li>
+	<li>otherChannelId: <em>string</em> - The unique id to assign the second channel when using local channels.</li>
+	<li>originator: <em>string</em> - The unique id of the channel which is originating this one.</li>
+	<li>formats: <em>string</em> - The format name capability list to use if originator is not specified. Ex. &quot;ulaw,slin16&quot;.  Format names can be found with &quot;core show codecs&quot;.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Bodyparameter">Body parameter</h3>
+<ul>
+	<li>variables: containers - The &quot;variables&quot; key in the body object holds variable key/value pairs to set on the channel on creation. Other keys in the body object are interpreted as query parameters. Ex. { &quot;endpoint&quot;: &quot;SIP/Alice&quot;, &quot;variables&quot;: { &quot;CALLERID(name)&quot;: &quot;Alice&quot; } }</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters for originating a channel.</li>
+	<li>409 - Channel with given unique ID already exists.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-create"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-create:POST/channels/create">create: POST /channels/create</h2>
+
+<p>Create channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.1">Query parameters</h3>
+<ul>
+	<li>endpoint: <em>string</em> - <strong>(required)</strong> Endpoint for channel communication</li>
+	<li>app: <em>string</em> - <strong>(required)</strong> Stasis Application to place channel into</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application provided by 'app'. Mutually exclusive with 'context', 'extension', 'priority', and 'label'.</li>
+	<li>channelId: <em>string</em> - The unique id to assign the channel on creation.</li>
+	<li>otherChannelId: <em>string</em> - The unique id to assign the second channel when using local channels.</li>
+	<li>originator: <em>string</em> - Unique ID of the calling channel</li>
+	<li>formats: <em>string</em> - The format name capability list to use if originator is not specified. Ex. &quot;ulaw,slin16&quot;.  Format names can be found with &quot;core show codecs&quot;.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.1">Error Responses</h3>
+<ul>
+	<li>409 - Channel with given unique ID already exists.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-get"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-get:GET/channels/{channelId}">get: GET /channels/{channelId}</h2>
+
+<p>Channel details.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.2">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-originateWithId"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-originateWithId:POST/channels/{channelId}">originateWithId: POST /channels/{channelId}</h2>
+
+<p>Create a new channel (originate with id). The new channel is created immediately and a snapshot of it returned. If a Stasis application is provided it will be automatically subscribed to the originated channel for further events and updates.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.1">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - The unique id to assign the channel on creation.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.2">Query parameters</h3>
+<ul>
+	<li>endpoint: <em>string</em> - <strong>(required)</strong> Endpoint to call.</li>
+	<li>extension: <em>string</em> - The extension to dial after the endpoint answers. Mutually exclusive with 'app'.</li>
+	<li>context: <em>string</em> - The context to dial after the endpoint answers. If omitted, uses 'default'. Mutually exclusive with 'app'.</li>
+	<li>priority: <em>long</em> - The priority to dial after the endpoint answers. If omitted, uses 1. Mutually exclusive with 'app'.</li>
+	<li>label: <em>string</em> - The label to dial after the endpoint answers. Will supersede 'priority' if provided. Mutually exclusive with 'app'.</li>
+	<li>app: <em>string</em> - The application that is subscribed to the originated channel. When the channel is answered, it will be passed to this Stasis application. Mutually exclusive with 'context', 'extension', 'priority', and 'label'.</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application provided by 'app'. Mutually exclusive with 'context', 'extension', 'priority', and 'label'.</li>
+	<li>callerId: <em>string</em> - CallerID to use when dialing the endpoint or extension.</li>
+	<li>timeout: <em>int</em> - Timeout (in seconds) before giving up dialing, or -1 for no timeout.
+	<ul>
+		<li>Default: 30</li>
+	</ul>
+	</li>
+	<li>otherChannelId: <em>string</em> - The unique id to assign the second channel when using local channels.</li>
+	<li>originator: <em>string</em> - The unique id of the channel which is originating this one.</li>
+	<li>formats: <em>string</em> - The format name capability list to use if originator is not specified. Ex. &quot;ulaw,slin16&quot;.  Format names can be found with &quot;core show codecs&quot;.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Bodyparameter.1">Body parameter</h3>
+<ul>
+	<li>variables: containers - The &quot;variables&quot; key in the body object holds variable key/value pairs to set on the channel on creation. Other keys in the body object are interpreted as query parameters. Ex. { &quot;endpoint&quot;: &quot;SIP/Alice&quot;, &quot;variables&quot;: { &quot;CALLERID(name)&quot;: &quot;Alice&quot; } }</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.3">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters for originating a channel.</li>
+	<li>409 - Channel with given unique ID already exists.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-hangup"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-hangup:DELETE/channels/{channelId}">hangup: DELETE /channels/{channelId}</h2>
+
+<p>Delete (i.e. hangup) a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.2">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.3">Query parameters</h3>
+<ul>
+	<li>reason_code: <em>string</em> - The reason code for hanging up the channel for detail use. Mutually exclusive with 'reason'. See detail hangup codes at here. <a class="external-link" href="https://wiki.asterisk.org/wiki/display/AST/Hangup+Cause+Mappings" rel="nofollow">https://wiki.asterisk.org/wiki/display/AST/Hangup+Cause+Mappings</a></li>
+	<li>reason: <em>string</em> - Reason for hanging up the channel for simple use. Mutually exclusive with 'reason_code'.
+	<ul>
+		<li>Allowed values: normal, busy, congestion, no_answer, timeout, rejected, unallocated, normal_unspecified, number_incomplete, codec_mismatch, interworking, failure, answered_elsewhere</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.4">Error Responses</h3>
+<ul>
+	<li>400 - Invalid reason for hangup provided</li>
+	<li>404 - Channel not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-continueInDialplan"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-continueInDialplan:POST/channels/{channelId}/continue">continueInDialplan: POST /channels/{channelId}/continue</h2>
+
+<p>Exit application; continue execution in the dialplan.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.3">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.4">Query parameters</h3>
+<ul>
+	<li>context: <em>string</em> - The context to continue to.</li>
+	<li>extension: <em>string</em> - The extension to continue to.</li>
+	<li>priority: <em>int</em> - The priority to continue to.</li>
+	<li>label: <em>string</em> - The label to continue to - will supersede 'priority' if both are provided.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.5">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-move"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-move:POST/channels/{channelId}/move">move: POST /channels/{channelId}/move</h2>
+
+<p>Move the channel from one Stasis application to another.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.4">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.5">Query parameters</h3>
+<ul>
+	<li>app: <em>string</em> - <strong>(required)</strong> The channel will be passed to this Stasis application.</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application provided by 'app'.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.6">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-redirect"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-redirect:POST/channels/{channelId}/redirect">redirect: POST /channels/{channelId}/redirect</h2>
+
+<p>Redirect the channel to a different location.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.5">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.6">Query parameters</h3>
+<ul>
+	<li>endpoint: <em>string</em> - <strong>(required)</strong> The endpoint to redirect the channel to</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.7">Error Responses</h3>
+<ul>
+	<li>400 - Endpoint parameter not provided</li>
+	<li>404 - Channel or endpoint not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>422 - Endpoint is not the same type as the channel</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-answer"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-answer:POST/channels/{channelId}/answer">answer: POST /channels/{channelId}/answer</h2>
+
+<p>Answer a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.6">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.8">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-ring"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-ring:POST/channels/{channelId}/ring">ring: POST /channels/{channelId}/ring</h2>
+
+<p>Indicate ringing to a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.7">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.9">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-ringStop"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-ringStop:DELETE/channels/{channelId}/ring">ringStop: DELETE /channels/{channelId}/ring</h2>
+
+<p>Stop ringing indication on a channel if locally generated.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.8">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.10">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-sendDTMF"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-sendDTMF:POST/channels/{channelId}/dtmf">sendDTMF: POST /channels/{channelId}/dtmf</h2>
+
+<p>Send provided DTMF to a given channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.9">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.7">Query parameters</h3>
+<ul>
+	<li>dtmf: <em>string</em> - DTMF To send.</li>
+	<li>before: <em>int</em> - Amount of time to wait before DTMF digits (specified in milliseconds) start.</li>
+	<li>between: <em>int</em> - Amount of time in between DTMF digits (specified in milliseconds).
+	<ul>
+		<li>Default: 100</li>
+	</ul>
+	</li>
+	<li>duration: <em>int</em> - Length of each DTMF digit (specified in milliseconds).
+	<ul>
+		<li>Default: 100</li>
+	</ul>
+	</li>
+	<li>after: <em>int</em> - Amount of time to wait after DTMF digits (specified in milliseconds) end.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.11">Error Responses</h3>
+<ul>
+	<li>400 - DTMF is required</li>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-mute"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-mute:POST/channels/{channelId}/mute">mute: POST /channels/{channelId}/mute</h2>
+
+<p>Mute a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.10">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.8">Query parameters</h3>
+<ul>
+	<li>direction: <em>string</em> - Direction in which to mute audio
+	<ul>
+		<li>Default: both</li>
+		<li>Allowed values: both, in, out</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.12">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-unmute"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-unmute:DELETE/channels/{channelId}/mute">unmute: DELETE /channels/{channelId}/mute</h2>
+
+<p>Unmute a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.11">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.9">Query parameters</h3>
+<ul>
+	<li>direction: <em>string</em> - Direction in which to unmute audio
+	<ul>
+		<li>Default: both</li>
+		<li>Allowed values: both, in, out</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.13">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-hold"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-hold:POST/channels/{channelId}/hold">hold: POST /channels/{channelId}/hold</h2>
+
+<p>Hold a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.12">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.14">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-unhold"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-unhold:DELETE/channels/{channelId}/hold">unhold: DELETE /channels/{channelId}/hold</h2>
+
+<p>Remove a channel from hold.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.13">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.15">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-startMoh"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-startMoh:POST/channels/{channelId}/moh">startMoh: POST /channels/{channelId}/moh</h2>
+
+<p>Play music on hold to a channel. Using media operations such as /play on a channel playing MOH in this manner will suspend MOH without resuming automatically. If continuing music on hold is desired, the stasis application must reinitiate music on hold.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.14">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.10">Query parameters</h3>
+<ul>
+	<li>mohClass: <em>string</em> - Music on hold class to use</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.16">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-stopMoh"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-stopMoh:DELETE/channels/{channelId}/moh">stopMoh: DELETE /channels/{channelId}/moh</h2>
+
+<p>Stop playing music on hold to a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.15">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.17">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-startSilence"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-startSilence:POST/channels/{channelId}/silence">startSilence: POST /channels/{channelId}/silence</h2>
+
+<p>Play silence to a channel. Using media operations such as /play on a channel playing silence in this manner will suspend silence without resuming automatically.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.16">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.18">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-stopSilence"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-stopSilence:DELETE/channels/{channelId}/silence">stopSilence: DELETE /channels/{channelId}/silence</h2>
+
+<p>Stop playing silence to a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.17">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.19">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-play"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-play:POST/channels/{channelId}/play">play: POST /channels/{channelId}/play</h2>
+
+<p>Start playback of media. The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.18">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.11">Query parameters</h3>
+<ul>
+	<li>media: <em>string</em> - <strong>(required)</strong> Media URIs to play.
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+	<li>lang: <em>string</em> - For sounds, selects language for sound.</li>
+	<li>offsetms: <em>int</em> - Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.</li>
+	<li>skipms: <em>int</em> - Number of milliseconds to skip for forward/reverse operations.
+	<ul>
+		<li>Default: 3000</li>
+	</ul>
+	</li>
+	<li>playbackId: <em>string</em> - Playback ID.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.20">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-playWithId"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-playWithId:POST/channels/{channelId}/play/{playbackId}">playWithId: POST /channels/{channelId}/play/{playbackId}</h2>
+
+<p>Start playback of media and specify the playbackId. The media URI may be any of a number of URI's. Currently sound:, recording:, number:, digits:, characters:, and tone: URI's are supported. This operation creates a playback resource that can be used to control the playback of media (pause, rewind, fast forward, etc.)</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.19">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+	<li>playbackId: <em>string</em> - Playback ID.</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.12">Query parameters</h3>
+<ul>
+	<li>media: <em>string</em> - <strong>(required)</strong> Media URIs to play.
+	<ul>
+		<li>Allows comma separated values.</li>
+	</ul>
+	</li>
+	<li>lang: <em>string</em> - For sounds, selects language for sound.</li>
+	<li>offsetms: <em>int</em> - Number of milliseconds to skip before playing. Only applies to the first URI if multiple media URIs are specified.</li>
+	<li>skipms: <em>int</em> - Number of milliseconds to skip for forward/reverse operations.
+	<ul>
+		<li>Default: 3000</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.21">Error Responses</h3>
+<ul>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+	<li>412 - Channel in invalid state</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-record"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-record:POST/channels/{channelId}/record">record: POST /channels/{channelId}/record</h2>
+
+<p>Start a recording. Record audio from a channel. Note that this will not capture audio sent to the channel. The bridge itself has a record feature if that's what you want.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.20">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.13">Query parameters</h3>
+<ul>
+	<li>name: <em>string</em> - <strong>(required)</strong> Recording's filename</li>
+	<li>format: <em>string</em> - <strong>(required)</strong> Format to encode audio in</li>
+	<li>maxDurationSeconds: <em>int</em> - Maximum duration of the recording, in seconds. 0 for no limit
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>maxSilenceSeconds: <em>int</em> - Maximum duration of silence, in seconds. 0 for no limit
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+	<li>ifExists: <em>string</em> - Action to take if a recording with the same name already exists.
+	<ul>
+		<li>Default: fail</li>
+		<li>Allowed values: fail, overwrite, append</li>
+	</ul>
+	</li>
+	<li>beep: <em>boolean</em> - Play beep when recording begins</li>
+	<li>terminateOn: <em>string</em> - DTMF input to terminate recording
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, any, *, #</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.22">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters</li>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel is not in a Stasis application; the channel is currently bridged with other hcannels; A recording with the same name already exists on the system and can not be overwritten because it is in progress or ifExists=fail</li>
+	<li>422 - The format specified is unknown on this system</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-getChannelVar"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-getChannelVar:GET/channels/{channelId}/variable">getChannelVar: GET /channels/{channelId}/variable</h2>
+
+<p>Get the value of a channel variable or function.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.21">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.14">Query parameters</h3>
+<ul>
+	<li>variable: <em>string</em> - <strong>(required)</strong> The channel variable or function to get</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.23">Error Responses</h3>
+<ul>
+	<li>400 - Missing variable parameter.</li>
+	<li>404 - Channel or variable not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-setChannelVar"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-setChannelVar:POST/channels/{channelId}/variable">setChannelVar: POST /channels/{channelId}/variable</h2>
+
+<p>Set the value of a channel variable or function.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.22">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.15">Query parameters</h3>
+<ul>
+	<li>variable: <em>string</em> - <strong>(required)</strong> The channel variable or function to set</li>
+	<li>value: <em>string</em> - The value to set the variable to</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.24">Error Responses</h3>
+<ul>
+	<li>400 - Missing variable parameter.</li>
+	<li>404 - Channel not found</li>
+	<li>409 - Channel not in a Stasis application</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-snoopChannel"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-snoopChannel:POST/channels/{channelId}/snoop">snoopChannel: POST /channels/{channelId}/snoop</h2>
+
+<p>Start snooping. Snoop (spy/whisper) on a specific channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.23">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.16">Query parameters</h3>
+<ul>
+	<li>spy: <em>string</em> - Direction of audio to spy on
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, both, out, in</li>
+	</ul>
+	</li>
+	<li>whisper: <em>string</em> - Direction of audio to whisper into
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, both, out, in</li>
+	</ul>
+	</li>
+	<li>app: <em>string</em> - <strong>(required)</strong> Application the snooping channel is placed into</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application</li>
+	<li>snoopId: <em>string</em> - Unique ID to assign to snooping channel</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.25">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters</li>
+	<li>404 - Channel not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-snoopChannelWithId"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-snoopChannelWithId:POST/channels/{channelId}/snoop/{snoopId}">snoopChannelWithId: POST /channels/{channelId}/snoop/{snoopId}</h2>
+
+<p>Start snooping. Snoop (spy/whisper) on a specific channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.24">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+	<li>snoopId: <em>string</em> - Unique ID to assign to snooping channel</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.17">Query parameters</h3>
+<ul>
+	<li>spy: <em>string</em> - Direction of audio to spy on
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, both, out, in</li>
+	</ul>
+	</li>
+	<li>whisper: <em>string</em> - Direction of audio to whisper into
+	<ul>
+		<li>Default: none</li>
+		<li>Allowed values: none, both, out, in</li>
+	</ul>
+	</li>
+	<li>app: <em>string</em> - <strong>(required)</strong> Application the snooping channel is placed into</li>
+	<li>appArgs: <em>string</em> - The application arguments to pass to the Stasis application</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.26">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters</li>
+	<li>404 - Channel not found</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-dial"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-dial:POST/channels/{channelId}/dial">dial: POST /channels/{channelId}/dial</h2>
+
+<p>Dial a created channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.25">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.18">Query parameters</h3>
+<ul>
+	<li>caller: <em>string</em> - Channel ID of caller</li>
+	<li>timeout: <em>int</em> - Dial timeout
+	<ul>
+		<li>Allowed range: Min: 0; Max: None</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.27">Error Responses</h3>
+<ul>
+	<li>404 - Channel cannot be found.</li>
+	<li>409 - Channel cannot be dialed.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-rtpstatistics"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-rtpstatistics:GET/channels/{channelId}/rtp_statistics">rtpstatistics: GET /channels/{channelId}/rtp_statistics</h2>
+
+<p>RTP stats on a channel.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Pathparameters.26">Path parameters</h3>
+<p>Parameters are case-sensitive.</p>
+<ul>
+	<li>channelId: <em>string</em> - Channel's id</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.28">Error Responses</h3>
+<ul>
+	<li>404 - Channel cannot be found.</li>
+</ul>
+
+
+<p><span class="confluence-anchor-link" id="Asterisk17ChannelsRESTAPI-externalMedia"></span></p>
+<h2 id="Asterisk17ChannelsRESTAPI-externalMedia:POST/channels/externalMedia">externalMedia: POST /channels/externalMedia</h2>
+
+<p>Start an External Media session. Create a channel to an External Media source/sink.</p>
+
+<h3 id="Asterisk17ChannelsRESTAPI-Queryparameters.19">Query parameters</h3>
+<ul>
+	<li>channelId: <em>string</em> - The unique id to assign the channel on creation.</li>
+	<li>app: <em>string</em> - <strong>(required)</strong> Stasis Application to place channel into</li>
+	<li>external_host: <em>string</em> - <strong>(required)</strong> Hostname/ip:port of external host</li>
+	<li>encapsulation: <em>string</em> - Payload encapsulation protocol
+	<ul>
+		<li>Default: rtp</li>
+		<li>Allowed values: rtp</li>
+	</ul>
+	</li>
+	<li>transport: <em>string</em> - Transport protocol
+	<ul>
+		<li>Default: udp</li>
+		<li>Allowed values: udp</li>
+	</ul>
+	</li>
+	<li>connection_type: <em>string</em> - Connection type (client/server)
+	<ul>
+		<li>Default: client</li>
+		<li>Allowed values: client</li>
+	</ul>
+	</li>
+	<li>format: <em>string</em> - <strong>(required)</strong> Format to encode audio in</li>
+	<li>direction: <em>string</em> - External media direction
+	<ul>
+		<li>Default: both</li>
+		<li>Allowed values: both</li>
+	</ul>
+	</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-Bodyparameter.2">Body parameter</h3>
+<ul>
+	<li>variables: containers - The &quot;variables&quot; key in the body object holds variable key/value pairs to set on the channel on creation. Other keys in the body object are interpreted as query parameters. Ex. { &quot;endpoint&quot;: &quot;SIP/Alice&quot;, &quot;variables&quot;: { &quot;CALLERID(name)&quot;: &quot;Alice&quot; } }</li>
+</ul>
+
+
+<h3 id="Asterisk17ChannelsRESTAPI-ErrorResponses.29">Error Responses</h3>
+<ul>
+	<li>400 - Invalid parameters</li>
+	<li>409 - Channel is not in a Stasis application; Channel is already bridged</li>
+</ul>
+                    </div>
+
+                    
+                 
+                </div>             </div> 
+            <div id="footer" role="contentinfo">
+                <section class="footer-body">
+                    <p>Document generated by Confluence on Feb 21, 2020 09:39</p>
+                    <div id="footer-logo"><a href="http://www.atlassian.com/">Atlassian</a></div>
+                </section>
+            </div>
+        </div>     </body>
+</html>
