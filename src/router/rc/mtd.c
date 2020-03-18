@@ -191,7 +191,7 @@ int mtd_erase(const char *mtd)
 	if (mtdtype == MTD_NANDFLASH)
 		dd_loginfo("flash", "Flash is NAND\n");
 	for (erase_info.start = 0; erase_info.start < mtd_info.size; erase_info.start += mtd_info.erasesize) {
-		dd_loginfo("flash", "erase[%d]\r", erase_info.start);
+		dd_loginfo("flash", "erase[%d]\n", erase_info.start);
 		(void)ioctl(mtd_fd, MEMUNLOCK, &erase_info);
 		if (mtd_block_is_bad(mtd_fd, erase_info.start)) {
 			dd_logerror("flash", "\nSkipping bad block at 0x%08zx\n", erase_info.start);
