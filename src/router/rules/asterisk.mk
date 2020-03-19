@@ -1,5 +1,5 @@
 editline-configure:
-	cd editline && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr \
+	cd editline && ./configure --host=$(ARCH)-linux-uclibc --prefix=/usr --libdir=/usr/lib \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
 	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -D_GNU_SOURCE -I$(TOP)/ncurses/include" \
