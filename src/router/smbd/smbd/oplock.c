@@ -614,10 +614,22 @@ static struct oplock_info *same_client_has_lease(struct ksmbd_inode *ci,
 	return m_opinfo;
 }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+static int bit_wait(void *word)
+{
+	schedule();
+	return 0;
+}
+#endif
+
 static int wait_for_oplock_break(struct oplock_info *opinfo, int req_op_level)
 {
 	while  (test_and_set_bit(0, &opinfo->pending_break)) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
+		wait_on_bit(&opinfo->pending_break, 0, bit_wait, TASK_UNINTERRUPTIBLE);
+#else
 		wait_on_bit(&opinfo->pending_break, 0, TASK_UNINTERRUPTIBLE);
+#endif
 		if (opinfo->op_state == OPLOCK_CLOSING)
 			return -ENOENT;
 		else if (opinfo->level <= req_op_level)
@@ -625,6 +637,10 @@ static int wait_for_oplock_break(struct oplock_info *opinfo, int req_op_level)
 	}
 	return 0;
 }
+
+#ifndef smp_mb__after_atomic
+#define smp_mb__after_atomic smp_mb__after_clear_bit
+#endif
 
 static void wake_up_oplock_break(struct oplock_info *opinfo)
 {
