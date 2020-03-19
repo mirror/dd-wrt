@@ -78,10 +78,12 @@ void netlink_init(void)
 	}
     }
   
-  if (daemon->netlinkfd == -1 || 
-      setsockopt(daemon->netlinkfd, SOL_NETLINK, NETLINK_NO_ENOBUFS, &opt, sizeof(opt)) == -1 ||
+  if (daemon->netlinkfd == -1 ||
       getsockname(daemon->netlinkfd, (struct sockaddr *)&addr, &slen) == -1)
     die(_("cannot create netlink socket: %s"), NULL, EC_MISC);
+
+  if (setsockopt(daemon->netlinkfd, SOL_NETLINK, NETLINK_NO_ENOBUFS, &opt, sizeof(opt)) == -1)
+    my_syslog(LOG_WARNING, _("netlink cannot set setsockopt NETLINK_NO_ENOBUFS"));
    
   /* save pid assigned by bind() and retrieved by getsockname() */ 
   netlink_pid = addr.nl_pid;
