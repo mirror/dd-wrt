@@ -46,6 +46,7 @@ char *__ast_repl_strndup(const char *s, size_t n, const char *file, int lineno, 
 int __ast_repl_vasprintf(char **strp, const char *format, va_list ap, const char *file, int lineno, const char *func)
 	__attribute__((format(printf, 2, 0)));
 
+#if 0
 /* Undefine any macros */
 #undef asprintf
 #undef calloc
@@ -80,7 +81,7 @@ int __ast_repl_vasprintf(char **strp, const char *format, va_list ap, const char
 
 #define vasprintf(strp, format, ap) \
 	__ast_repl_vasprintf(strp, format, ap, __FILE__, __LINE__, __PRETTY_FUNCTION__)
-
+#endif
 #ifdef __cplusplus
 }
 #endif

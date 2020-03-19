@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
+#if 0 
 int __ast_repl_asprintf(const char *file, int lineno, const char *func, char **strp, const char *format, ...)
 {
 	va_list ap;
@@ -68,3 +68,5 @@ int __ast_repl_vasprintf(char **strp, const char *format, va_list ap, const char
 {
 	return vasprintf(strp, format, ap);
 }
+
+#endif
