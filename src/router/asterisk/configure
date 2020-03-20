@@ -6589,9 +6589,9 @@ fi
 
 
 GNU_LD=0
-if test "x$with_gnu_ld" = "xyes" ; then
-   GNU_LD=1
-fi
+#if test "x$with_gnu_ld" = "xyes" ; then
+#   GNU_LD=1
+#fi
 
 
 # Extract the first word of "bison", so it can be a program name with args.
