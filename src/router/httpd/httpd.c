@@ -862,8 +862,7 @@ static void *handle_request(void *arg)
 	strsep(&cp, " ");
 	cur = protocol + strlen(protocol) + 1;
 	/* Parse the rest of the request headers. */
-
-	while (wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
+	while ((line + LINE_LEN - cur) > 1 && wfgets(cur, line + LINE_LEN - cur, conn_fp, &eof) != 0)	//jimmy,https,8/4/2003
 	{
 		if (eof) {
 			send_error(conn_fp, 408, "TCP Error", NULL, "Unexpected connection close");
@@ -890,7 +889,6 @@ static void *handle_request(void *arg)
 			cp = &cur[15];
 			cp += strspn(cp, " \t");
 			content_length = strtoul(cp, NULL, 0);
-
 		} else if ((cp = strstr(cur, "boundary="))) {
 			boundary = &cp[9];
 			for (cp = cp + 9; *cp && *cp != '\r' && *cp != '\n'; cp++) ;
