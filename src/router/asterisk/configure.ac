@@ -252,9 +252,9 @@ AC_CHECK_TOOLS([STRIP], [strip gstrip], :)
 AC_CHECK_TOOLS([AR], [ar gar], :)
 
 GNU_LD=0
-if test "x$with_gnu_ld" = "xyes" ; then
-   GNU_LD=1
-fi
+#if test "x$with_gnu_ld" = "xyes" ; then
+#   GNU_LD=1
+#fi
 AC_SUBST(GNU_LD)
 
 AC_PATH_PROG([BISON], [bison], :)
