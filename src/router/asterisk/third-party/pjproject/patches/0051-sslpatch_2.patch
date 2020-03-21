@@ -1,0 +1,12 @@
+diff -urpN source.old/pjlib/include/pj/config.h source/pjlib/include/pj/config.h
+--- source.old/pjlib/include/pj/config.h	2020-03-21 08:44:01.794199951 +0400
++++ source/pjlib/include/pj/config.h	2020-03-21 08:51:49.757518902 +0400
+@@ -943,6 +943,8 @@
+  */
+ #undef PJ_SSL_SOCK_IMP
+ #define PJ_SSL_SOCK_IMP		    PJ_SSL_SOCK_IMP_OPENSSL
++#undef PJ_HAS_SSL_SOCK
++#define PJ_HAS_SSL_SOCK 	1
+ 
+ 
+ /**
