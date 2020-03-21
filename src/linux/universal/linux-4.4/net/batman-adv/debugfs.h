@@ -31,8 +31,10 @@ struct net_device;
 void batadv_debugfs_init(void);
 void batadv_debugfs_destroy(void);
 int batadv_debugfs_add_meshif(struct net_device *dev);
+void batadv_debugfs_rename_meshif(struct net_device *dev);
 void batadv_debugfs_del_meshif(struct net_device *dev);
 int batadv_debugfs_add_hardif(struct batadv_hard_iface *hard_iface);
+void batadv_debugfs_rename_hardif(struct batadv_hard_iface *hard_iface);
 void batadv_debugfs_del_hardif(struct batadv_hard_iface *hard_iface);
 
 #else
@@ -50,6 +52,10 @@ static inline int batadv_debugfs_add_meshif(struct net_device *dev)
 	return 0;
 }
 
+static inline void batadv_debugfs_rename_meshif(struct net_device *dev)
+{
+}
+
 static inline void batadv_debugfs_del_meshif(struct net_device *dev)
 {
 }
@@ -58,6 +64,11 @@ static inline
 int batadv_debugfs_add_hardif(struct batadv_hard_iface *hard_iface)
 {
 	return 0;
+}
+
+static inline
+void batadv_debugfs_rename_hardif(struct batadv_hard_iface *hard_iface)
+{
 }
 
 static inline
