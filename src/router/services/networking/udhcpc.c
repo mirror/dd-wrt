@@ -146,10 +146,8 @@ static int update_value(void)
 
 	if (changed) {
 		set_host_domain_name();
-#ifdef HAVE_UNBOUND
 		stop_unbound();
 		start_unbound();
-#endif
 	}
 	return 0;
 }
@@ -307,10 +305,8 @@ static int bound(void)
 		start_wshaper();
 		start_wland();
 		start_heartbeat_boot();
-#ifdef HAVE_UNBOUND
 		stop_unbound();
 		start_unbound();
-#endif
 	}
 #else
 	if (0) {

@@ -130,6 +130,14 @@ extern void stop_igmprt(void);
 #ifdef HAVE_UNBOUND
 extern void start_unbound(void);
 extern void stop_unbound(void);
+#else
+static inline void start_unbound(void)
+{
+}
+
+static inline void stop_unbound(void)
+{
+}
 #endif
 
 #ifdef HAVE_UDPXY
