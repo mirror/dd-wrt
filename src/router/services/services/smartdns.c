@@ -89,7 +89,6 @@ void start_smartdns(void)
 			fprintf(fp, "server %s\n", word);
 		}
 	}
-	fprintf(fp, "option domain-name-servers %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 
 	free_dns_list(dns_list);
 
