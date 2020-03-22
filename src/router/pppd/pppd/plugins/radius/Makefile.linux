@@ -13,7 +13,7 @@ INSTALL	= install
 
 PLUGIN=radius.so radattr.so radrealms.so
 #COPTS = -O2
-CFLAGS= $(LTO) -I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
+CFLAGS= $(LTOMIN) -I. -I../.. -I../../../include $(COPTS) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
 LDFLAGS = $(COPTS) $(MIPS16_OPT) $(LDLTO)
 # Uncomment the next line to include support for Microsoft's
 # MS-CHAP authentication protocol.
