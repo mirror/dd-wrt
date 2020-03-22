@@ -1,0 +1,10 @@
+Package: smartdns
+Architecture: 
+Priority: optional
+Section: net
+Version: 
+Depends: libc, libopenssl, libpthread
+Maintainer: pymumu
+Source: http://127.0.0.1/
+Description: A smart dns server
+Enabled: yes
