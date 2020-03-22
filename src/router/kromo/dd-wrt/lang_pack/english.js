@@ -1669,6 +1669,7 @@ service.dhcp_option="Additional DHCPd Options";
 service.dnsmasq_legend="Dnsmasq";
 service.dnsmasq_srv="Dnsmasq";
 service.dns_crypt="Encrypt DNS";
+service.dns_smartdns="SmartDNS Resolver";
 service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
 service.dnsmasq_dnssec_proxy="Cache DNSSEC data";
