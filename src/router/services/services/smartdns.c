@@ -45,7 +45,7 @@ void start_smartdns(void)
 	int tcp_server = nvram_matchi("smartdns_tcp", 1);
 	char *hostname = nvram_safe_get("wan_hostname");
 	if (*hostname)
-		fprintf(fp, "server-name %s\n",hostname);
+		fprintf(fp, "server-name %s\n", hostname);
 	if (ipv6)
 		fprintf(fp, "bind [::]:%d\n", port);
 	else
@@ -75,6 +75,22 @@ void start_smartdns(void)
 		for (i = 0; i < dns_list->num_servers; i++)
 			fprintf(fp, "server %s\n", dns_list->dns_server[i]);
 	}
+	if (nvram_matchi("ipv6_enable", 1)) {
+		char *a1 = nvram_safe_get("ipv6_dns1");
+		char *a2 = nvram_safe_get("ipv6_dns2");
+		if (*a1)
+			fprintf(fp, "server %s\n", a1);
+		if (*a2)
+			fprintf(fp, "server %s\n", a2);
+
+		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+		char word[64];
+		foreach(word, wordlist, next) {
+			fprintf(fp, "server %s\n", word);
+		}
+	}
+	fprintf(fp, "option domain-name-servers %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+
 	free_dns_list(dns_list);
 
 	fclose(fp);
@@ -85,6 +101,4 @@ void stop_smartdns(void)
 {
 	stop_process("smartdns", "daemon");
 }
-
 #endif
-
