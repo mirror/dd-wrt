@@ -80,6 +80,13 @@
 			<input class="spaceradio" type="radio" name="dnsmasq_enable" value="0" <% nvc("dnsmasq_enable", "0"); %> onclick="show_layer_ext(this, 'iddnsmasq', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="iddnsmasq">
+<% ifndef("SMARTDNS", "<!--"); %>
+			<div class="setting">
+				<div class="label"><% tran("service.dns_smartdns"); %></div>
+				<input class="spaceradio" type="radio" name="smartdns" value="1" <% nvc("smartdns", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="smartdns" value="0" <% nvc("smartdns", "0"); %> /><% tran("share.disable"); %>
+			</div>
+<% ifndef("SMARTDNS", "-->"); %>
 <% ifndef("DNSCRYPT", "<!--"); %>
 			<div class="setting">
 				<div class="label"><% tran("service.dns_crypt"); %></div>
