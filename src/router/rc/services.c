@@ -152,6 +152,9 @@ static int start_services_main(int argc, char **argv)
 #ifdef HAVE_DNSMASQ
 	start_service_f("dnsmasq");
 #endif
+#ifdef HAVE_SMARTDNS
+	start_service_f("smartdns");
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service_f("zebra");
 #endif
@@ -281,6 +284,9 @@ static int stop_services_main(int argc, char **argv)
 #ifdef HAVE_UNBOUND
 	stop_service_f("unbound");
 #endif
+#ifdef HAVE_SMARTDNS
+	stop_service_f("smartdns");
+#endif
 #ifdef HAVE_DNSMASQ
 	stop_service_f("dnsmasq");
 #endif
@@ -391,6 +397,9 @@ static void handle_dhcpd(void)
 	restart_f("udhcpd");
 #endif
 	restart_f("dnsmasq");
+#ifdef HAVE_SMARTDNS
+	restart_f("smartdns");
+#endif
 }
 
 static void handle_index(void)
@@ -455,6 +464,9 @@ static void handle_index(void)
 #endif
 #ifdef HAVE_DNSMASQ
 	restart_f("dnsmasq");
+#endif
+#ifdef HAVE_SMARTDNS
+	restart_f("smartdns");
 #endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	restart_f("zebra");
@@ -603,6 +615,9 @@ static void handle_hotspot(void)
 #ifdef HAVE_DNSMASQ
 	restart_f("dnsmasq");
 #endif
+#ifdef HAVE_SMARTDNS
+	restart_f("smartdns");
+#endif
 #if defined(HAVE_BIRD) || defined(HAVE_QUAGGA)
 	start_service("zebra");
 #endif
@@ -675,6 +690,9 @@ static void handle_services(void)
 #endif
 #ifdef HAVE_DNSMASQ
 	restart_f("dnsmasq");
+#endif
+#ifdef HAVE_SMARTDNS
+	restart_f("smartdns");
 #endif
 #ifdef HAVE_UDHCPD
 	restart_f("udhcpd");
@@ -1228,6 +1246,9 @@ static void handle_wireless(void)
 #endif
 #ifdef HAVE_DNSMASQ
 	restart_f("dnsmasq");
+#endif
+#ifdef HAVE_SMARTDNS
+	restart_f("smartdns");
 #endif
 
 	if (getSTA() || getWET() || wanchanged
