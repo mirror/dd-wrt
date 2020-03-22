@@ -310,6 +310,9 @@ endif
 ifeq ($(CONFIG_DNSCRYPT),y)
 CFLAGS += -DHAVE_DNSCRYPT
 endif
+ifeq ($(CONFIG_SMARTDNS),y)
+CFLAGS += -DHAVE_SMARTDNS
+endif
 ifeq ($(CONFIG_GWMF54G2),y)
 CFLAGS += -DHAVE_GWMF54G2
 endif
