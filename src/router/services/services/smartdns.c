@@ -43,6 +43,9 @@ void start_smartdns(void)
 	int port = 6053;
 	int ipv6 = nvram_matchi("ipv6_enable", 1);
 	int tcp_server = nvram_matchi("smartdns_tcp", 1);
+	char *hostname = nvram_safe_get("wan_hostname");
+	if (*hostname)
+		fprintf(fp, "server-name %s\n",hostname);
 	if (ipv6)
 		fprintf(fp, "bind [::]:%d\n", port);
 	else
