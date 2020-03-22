@@ -259,12 +259,16 @@ void start_dhcp6s(void)
 			return;
 
 		fprintf(fp, "option refreshtime %d;\n", 900);	/* 15 minutes for now */
-		fprintf(fp, "option domain-name-servers %s", nvram_safe_get("ipv6_get_dns"));
-		/* dhcp6s won't start if there are duplicate dns ips */
-		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns1")))
-			fprintf(fp, " %s", nvram_safe_get("ipv6_dns1"));
-		if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns2")))
-			fprintf(fp, " %s", nvram_safe_get("ipv6_dns2"));
+		if (nvram_invmatchi("dnsmasq_enable", 1)) {
+			fprintf(fp, "option domain-name-servers %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
+		} else {
+			fprintf(fp, "option domain-name-servers %s", nvram_safe_get("ipv6_get_dns"));
+			/* dhcp6s won't start if there are duplicate dns ips */
+			if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns1")))
+				fprintf(fp, " %s", nvram_safe_get("ipv6_dns1"));
+			if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns2")))
+				fprintf(fp, " %s", nvram_safe_get("ipv6_dns2"));
+		}
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
 			fprintf(fp, "option domain-name \"%s\";\n", nvram_safe_get("ipv6_get_domain"));
