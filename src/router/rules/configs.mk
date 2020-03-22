@@ -349,6 +349,7 @@ obj-$(CONFIG_CAKE) += cake
 obj-$(CONFIG_CAKE) += fq_codel_fast
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 obj-$(CONFIG_APFS) += apfs apfsprogs
+obj-$(CONFIG_SMARTDNS) += smartdns
 
 obj-y+=configs
 
