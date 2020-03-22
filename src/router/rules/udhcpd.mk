@@ -15,9 +15,6 @@ ifeq ($(CONFIG_UDHCPD),y)
 #else
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
 #endif
-ifeq ($(CONFIG_DNSCRYPT),y)
-	install -D udhcpd/config/dhcpd-dnscrypt.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
-endif
 #	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/udhcpd/etc/config/dhcpd.startup
 #	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 #	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
