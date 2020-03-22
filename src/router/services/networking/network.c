@@ -4742,6 +4742,8 @@ void start_wan_done(char *wan_ifname)
 
 	stop_dnsmasq();
 	start_dnsmasq();
+	stop_smartdns();
+	start_smartdns();
 
 	cprintf("start firewall\n");
 

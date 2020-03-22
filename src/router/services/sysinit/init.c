@@ -451,6 +451,8 @@ void restart_dns_main(int argc, char argv[])
 {
 	stop_dnsmasq();
 	start_dnsmasq();
+	stop_smartdns();
+	start_smartdns();
 }
 
 int ipfmt_main(int argc, char *argv[])

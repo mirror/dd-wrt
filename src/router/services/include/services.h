@@ -156,6 +156,18 @@ extern void start_udhcpd(void);
 extern void stop_udhcpd(void);
 extern void start_dnsmasq(void);
 extern void stop_dnsmasq(void);
+#ifdef HAVE_SMARTDNS
+extern void start_smartdns(void);
+extern void stop_smartdns(void);
+#else
+static inline void start_smartdns(void)
+{
+}
+
+static inline void stop_smartdns(void)
+{
+}
+#endif
 extern void start_dhcpfwd(void);
 extern void stop_dhcpfwd(void);
 extern void start_ntpc(void);
@@ -224,7 +236,6 @@ int br_set_bridge_prio(const char *br, int prio);
 int br_set_port_stp(const char *br, char *port, int on);
 int br_set_path_cost(const char *bridge, const char *port, int cost);
 
-
 void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);
 
@@ -253,7 +264,6 @@ int wlconf_up(char *name);
 #ifdef HAVE_ClOUD4WI
 void start_cloud4wi_provisioning(void);
 #endif
-
 
 void start_modules(void);
 void start_radio_on(void);
@@ -315,4 +325,3 @@ void runStartup(char *extension);
 
 void create_openvpnserverrules(FILE * fp);
 void create_openvpnrules(FILE * fp);
-
