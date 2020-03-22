@@ -125,22 +125,14 @@ void create_openvpnserverrules(FILE * fp)
 			"ebtables -t nat -D POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I PREROUTING -i $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n"
 			"ebtables -t nat -I POSTROUTING -o $dev -p ipv4 --ip-proto udp --ip-sport 67:68 --ip-dport 67:68 -j DROP\n");
-	//fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"));
-	//fprintf(fp, "iptables -I INPUT -p %s --dport %s -j ACCEPT\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"));
-	//proto_1 is the environment variable like udp4 or tcp6, local_port_1 is the port number, these are used to open up the port
-	fprintf(fp, "iptables -D INPUT -p ${proto_1:0:3} --dport $local_port_1 -j ACCEPT\n" "iptables -I INPUT -p ${proto_1:0:3} --dport $local_port_1 -j ACCEPT\n");
-	if (nvram_match("openvpn_tuntap", "tun")) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -I INPUT -i $dev -j ACCEPT\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -j ACCEPT\n" "iptables -I FORWARD -i $dev -j ACCEPT\n");
-		fprintf(fp, "iptables -D FORWARD -o $dev -j ACCEPT\n" "iptables -I FORWARD -o $dev -j ACCEPT\n");
-	}
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n" "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n" "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
+
 	fprintf(fp, "/tmp/openvpnsrv_fw.sh\n");
 }
 
@@ -362,13 +354,6 @@ void start_openvpnserver(void)
 	if (nvram_default_matchi("openvpn_fw", 1, 0)) {
 		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
 		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
-	}
-	//fprintf(fp, "iptables -D INPUT -p %s --dport %s -j ACCEPT\n", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", nvram_safe_get("openvpn_port"));
-	fprintf(fp, "iptables -D INPUT -p ${proto_1:0:3} --dport $local_port_1 -j ACCEPT\n");
-	if (nvram_match("openvpn_tuntap", "tun")) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -j ACCEPT\n");
-		fprintf(fp, "iptables -D FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
@@ -666,6 +651,8 @@ void start_openvpn(void)
                         "then rmmod ebtable_nat\n" "\t rmmod ebtables\n", ovpniface, ovpniface);
                 } */
 	fclose(fp);
+
+	eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);

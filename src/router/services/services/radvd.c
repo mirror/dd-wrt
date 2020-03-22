@@ -174,10 +174,14 @@ void start_radvd(void)
 			p = nvram_safe_get("ipv6_get_dns");
 		else
 			p = ipv6_dns_str;
-
-		cnt = write_ipv6_dns_servers(fp, " RDNSS ", (char *)((p && *p) ? p : ip), " ", 1);
-		if (cnt)
+		if (nvram_invmatchi("dnsmasq_enable", 1)) {
+			fprintf(fp, " RDNSS %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0));
 			fprintf(fp, "{};\n");
+		} else {
+			cnt = write_ipv6_dns_servers(fp, " RDNSS ", (char *)((p && *p) ? p : ip), " ", 1);
+			if (cnt)
+				fprintf(fp, "{};\n");
+		}
 		fprintf(fp, "};\n");
 		fclose(fp);
 	}
