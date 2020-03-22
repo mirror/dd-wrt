@@ -825,10 +825,7 @@ static void handle_ipv6(void)
 	start_service_f("httpd");
 	start_service_f("dhcp6c");
 	start_service_f("dhcp6s");
-	stop_service("ttraff");
-	stop_service_force("wan");
-	start_service_force_f("wan_boot");
-	start_service("ttraff");
+	handle_index();
 }
 #endif
 
