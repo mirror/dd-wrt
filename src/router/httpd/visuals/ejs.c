@@ -642,6 +642,9 @@ static struct defrule s_conditions[] = {
 #ifdef HAVE_DNSCRYPT
 	{ "DNSCRYPT", NULL },
 #endif
+#ifdef HAVE_SMARTDNS
+	{ "SMARTDNS", NULL },
+#endif
 #if defined(HAVE_BKM) || defined(HAVE_TMK)
 	{ "MULTISIM", NULL },
 #endif
