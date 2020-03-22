@@ -199,15 +199,23 @@ void start_dnsmasq(void)
 		}
 	} else if (nvram_matchi("pptpd_enable", 1)) {
 		fprintf(fp, "listen-address=127.0.0.1");
-		if (canlan())
+		if (canlan()) {
 			fprintf(fp, ",%s", nvram_safe_get("lan_ipaddr"));
+#ifdef HAVE_IPV6
+			char *ip = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : NULL;
+			if (ip && nvram_matchi("ipv6_enable", 1))
+				fprintf(fp, ",%s", ip);
+#endif
+
+		}
 		if (nvram_exists("dnsmasq_addlisten")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addlisten"));
 		}
 	} else {
 		fprintf(fp, "interface=");
-		if (canlan())
+		if (canlan()) {
 			fprintf(fp, "%s", nvram_safe_get("lan_ifname"));
+		}
 		if (nvram_exists("dnsmasq_addif")) {
 			fprintf(fp, ",%s", nvram_safe_get("dnsmasq_addif"));
 		}
@@ -224,9 +232,14 @@ void start_dnsmasq(void)
 			if (canlan() || i > 0) {
 				fprintf(fp, ",");
 			}
-			if (nvram_matchi("pptpd_enable", 1))
+			if (nvram_matchi("pptpd_enable", 1)) {
 				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
-			else
+#ifdef HAVE_IPV6
+				char *ip = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : NULL;
+				if (ip && nvram_matchi("ipv6_enable", 1))
+					fprintf(fp, ",%s", ip);
+#endif
+			} else
 				fprintf(fp, "%s", ifname);
 		}
 		free(word);
