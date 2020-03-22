@@ -3638,6 +3638,9 @@ struct nvram_param srouter_defaults[] = {
 #ifdef HAVE_USB_ADV
 	{ "drive_ra", "256" },	// read ahead default per physical drive
 #endif
+#ifdef HAVE_SMARTDNS
+	{ "smartdns", "0" },	// read ahead default per physical drive
+#endif
 	{ 0, 0 }
 };
 #else
