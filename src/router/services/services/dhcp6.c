@@ -259,7 +259,7 @@ void start_dhcp6s(void)
 			return;
 
 		fprintf(fp, "option refreshtime %d;\n", 900);	/* 15 minutes for now */
-		if (nvram_invmatchi("dnsmasq_enable", 1)) {
+		if (nvram_matchi("dnsmasq_enable", 1)) {
 			fprintf(fp, "option domain-name-servers %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL));
 		} else {
 			fprintf(fp, "option domain-name-servers %s", nvram_safe_get("ipv6_get_dns"));
