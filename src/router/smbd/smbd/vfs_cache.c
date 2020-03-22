@@ -165,6 +165,7 @@ static int ksmbd_inode_init(struct ksmbd_inode *ci, struct ksmbd_file *fp)
 	ci->m_inode = FP_INODE(fp);
 	atomic_set(&ci->m_count, 1);
 	atomic_set(&ci->op_count, 0);
+	atomic_set(&ci->sop_count, 0);
 	ci->m_flags = 0;
 	ci->m_fattr = 0;
 	INIT_LIST_HEAD(&ci->m_fp_list);
