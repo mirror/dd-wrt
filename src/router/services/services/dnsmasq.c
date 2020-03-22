@@ -505,6 +505,11 @@ void start_dnsmasq(void)
 	fprintf(fp, "dhcp-option=252,\"\\n\"\n");
 #endif
 	char *addoptions = nvram_safe_get("dnsmasq_options");
+#ifdef HAVE_SMARTDNS
+	if (nvram_matchi("smartdns", 1))
+		fprintf(fp, "cache-size=0\n");
+	else
+#endif
 	if (!strstr(addoptions, "cache-size="))
 		fprintf(fp, "cache-size=%d\n", nvram_default_geti("dnsmasq_cachesize", 1500));
 	/*
