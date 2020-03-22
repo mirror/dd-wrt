@@ -237,7 +237,7 @@ void start_dnsmasq(void)
 			if (nvram_matchi("pptpd_enable", 1)) {
 				fprintf(fp, "%s", nvram_nget("%s_ipaddr", ifname));
 #ifdef HAVE_IPV6
-				char *ip = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL) ? : NULL;
+				char *ip = getifaddr(ifname, AF_INET6, GIF_LINKLOCAL) ? : NULL;
 				if (ip && nvram_matchi("ipv6_enable", 1))
 					fprintf(fp, ",%s", ip);
 #endif
