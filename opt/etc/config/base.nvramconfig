@@ -103,6 +103,7 @@
  "dhcpd_usejffs"  "DHCP leases on jffs"  "NULL" "FALSE" "0"
  "dhcpd_options"  "DHCP"  "NULL"  "TRUE" "0"
  "dnsmasq_enable"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
+ "smartdns"  "SmartDNS"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_proxy"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
  "dnssec_cu"  "DNS sec"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"
