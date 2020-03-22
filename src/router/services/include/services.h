@@ -1,3 +1,6 @@
+#ifndef SERVICES_H
+#define SERVICES_H
+
 extern void start_httpd(void);
 extern void stop_httpd(void);
 
@@ -333,3 +336,4 @@ void runStartup(char *extension);
 
 void create_openvpnserverrules(FILE * fp);
 void create_openvpnrules(FILE * fp);
+#endif
