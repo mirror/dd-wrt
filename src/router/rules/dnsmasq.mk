@@ -62,9 +62,6 @@ dnsmasq-install:
 #else
 	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.webservices
 #endif
-ifeq ($(CONFIG_DNSCRYPT),y)
-	install -D udhcpd/config/dhcpd-dnscrypt.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
-endif
 	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/dnsmasq/etc/config/dhcpd.startup
 	install -D dnsmasq/configs/etc/rfc6761.conf $(INSTALLDIR)/dnsmasq/etc/rfc6761.conf
 ifeq ($(CONFIG_DNSSEC),y)
