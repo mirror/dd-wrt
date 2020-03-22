@@ -13,7 +13,7 @@ PPPDVERSION = $(shell awk -F '"' '/VERSION/ { print $$2; }' ../../patchlevel.h)
 INSTALL	= install
 
 #COPTS=-O2 -g
-CFLAGS=$(LTO) -Wall -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include  -I. -I../../../ $(COPTS)  $(MIPS16_OPT) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
+CFLAGS=$(LTOMIN) -Wall -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include  -I. -I../../../ $(COPTS)  $(MIPS16_OPT) -fPIC -DRC_LOG_FACILITY=LOG_DAEMON
 #CFLAGS  = $(COPTS) -I. -I../.. -I../../../include -fPIC -DPPPD_VERSION=\"$(PPPDVERSION)\"
 all: pptp.so
 

@@ -504,8 +504,10 @@ void plugin_init(void)
 	 */
 	add_notifier(&ip_up_notifier, pppol2tp_ip_up, NULL);
 	add_notifier(&ip_down_notifier, pppol2tp_ip_down, NULL);
+#ifdef HAVE_IPV6
 	add_notifier(&ipv6_up_notifier, pppol2tp_ip_up, NULL);
 	add_notifier(&ipv6_down_notifier, pppol2tp_ip_down, NULL);
+#endif
 }
 
 struct channel pppol2tp_channel = {

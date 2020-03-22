@@ -1,7 +1,10 @@
 #CC	= gcc
 #COPTS	= $(COPTS)
 CFLAGS	= $(COPTS) $(MIPS16_OPT) $(LTOMIN) -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(LINUXDIR)/include -I. -I../.. -I../../../include -fPIC
-
+include ../../../../.config
+ifeq ($(CONFIG_IPV6),y)
+CFLAGS+= -DHAVE_IPV6
+endif
 LDFLAGS	= -shared
 INSTALL	= install
 
