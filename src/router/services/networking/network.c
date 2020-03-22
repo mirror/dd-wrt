@@ -4938,10 +4938,8 @@ void start_wan_done(char *wan_ifname)
 	stop_radvd();
 	start_radvd();
 #endif
-#ifdef HAVE_UNBOUND
 	stop_unbound();
 	start_unbound();
-#endif
 
 #ifdef HAVE_MICRO
 	br_shutdown();

@@ -168,10 +168,8 @@ void start_anchorfree(void)
 			start_dnsmasq();
 			stop_smartdns();
 			start_smartdns();
-#ifdef HAVE_UNBOUND
 			stop_unbound();
 			start_unbound();
-#endif
 			start_firewall();
 			stop_firewall();
 			start_firewall();
