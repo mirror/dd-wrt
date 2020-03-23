@@ -118,6 +118,9 @@ addEvent(window, "load", function() {
 		if (document.setup.dns_crypt) {
 			show_layer_ext(document.setup.dnsmasq_enable, 'iddns_crypt', <% nvem("dns_crypt", "1", "1", "0"); %> == 1);
 		}
+		if (document.setup.smartdns) {
+			show_layer_ext(document.setup.dnsmasq_enable, 'idsmartdns', <% nvem("smartdns", "1", "1", "0"); %> == 1);
+		}
 		if (document.setup.lighttpd_enable) {
 			show_layer_ext(document.setup.lighttpd_enable, 'lighttpdconfig', <% nvem("lighttpd_enable", "1", "1", "0"); %> == 1);
 		}
