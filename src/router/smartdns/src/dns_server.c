@@ -3158,9 +3158,11 @@ static int _dns_server_audit_init(void)
 	}
 
 	dns_audit = tlog_open(audit_file, dns_conf_audit_size, dns_conf_audit_num, 0, 0);
+#ifdef NEED_PRINTF
 	if (dns_audit == NULL) {
 		return -1;
 	}
+#endif
 
 	return 0;
 }
