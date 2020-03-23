@@ -362,6 +362,8 @@ int dhcp6c_state_main(int argc, char **argv)
 		stop_radvd();
 		start_radvd();
 #endif
+		stop_smartdns();
+		start_smartdns();
 		stop_dhcp6s();
 		start_dhcp6s();
 	}
