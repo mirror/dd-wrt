@@ -3640,6 +3640,9 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_SMARTDNS
 	{ "smartdns", "0" },	// read ahead default per physical drive
+	{ "smartdns_dualstack_ip_selection", "0" },	// prefer ipv4 over ipv6 if ipv6 is significant slower
+	{ "smartdns_prefetch_domain", "1" },	// do cyclic background resolv and measurement
+	{ "smartdns_serve_expired", "1" },	// 
 #endif
 	{ 0, 0 }
 };
