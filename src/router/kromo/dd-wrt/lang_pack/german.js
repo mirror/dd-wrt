@@ -1424,6 +1424,11 @@ service.dhcp_landomain="LAN-Domain";
 service.dhcp_option="Zus&auml;tzliche DHCPD-Optionen";
 service.dns_crypt="Verschl&uuml;ssele DNS (DNSCrypt)";
 service.dns_crypt_resolv="DNS Crypt Server";
+service.dns_smartdns="SmartDNS Aufl&ouml;sung";
+service.dns_smartdns_dualstack_ip_selection="SmartDNS Dualstack IP Vorauswahl";
+service.dns_smartdns_prefetch_domain="SmartDNS Domain Vorabruf";
+service.dns_smartdns_prefetch_domain="SmartDNS Serve Expired";
+
 service.dnsmasq_dnssec="Pr&uuml;fe DNS Antworten (DNSSEC)";
 service.dnsmasq_dnssec_proxy="DNSSEC Daten Cachen";
 service.dnsmasq_dnssec_cu="Pr&uuml;fe unsignierte DNS Antworten";
