@@ -1,3 +1,4 @@
+#ifdef NEED_PRINTF
 /*
  * tinylog
  * Copyright (C) 2018-2020 Nick Peng <pymumu@gmail.com>
@@ -1654,3 +1655,4 @@ void tlog_exit(void)
     pthread_cond_destroy(&tlog.cond);
     pthread_mutex_destroy(&tlog.lock);
 }
+#endif

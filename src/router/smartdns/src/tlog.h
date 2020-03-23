@@ -73,6 +73,7 @@ format: Log formats
 #endif
 #define tlog(level, format, ...) tlog_ext(level, BASE_FILE_NAME, __LINE__, __func__, NULL, format, ##__VA_ARGS__)
 
+#ifdef NEED_PRINTF
 extern int tlog_ext(tlog_level level, const char *file, int line, const char *func, void *userptr, const char *format, ...)
     __attribute__((format(printf, 6, 7))) __attribute__((nonnull (6)));
 extern int tlog_vext(tlog_level level, const char *file, int line, const char *func, void *userptr, const char *format, va_list ap);
@@ -104,7 +105,6 @@ extern int tlog_init(const char *logfile, int maxlogsize, int maxlogcount, int b
 
 /* flush pending log message, and exit tlog */
 extern void tlog_exit(void);
-
 /*
 customize log output format
 steps:
@@ -171,6 +171,108 @@ extern void *tlog_get_private(tlog_log *log);
 
 /* get local time */
 extern int tlog_localtime(struct tlog_time *tm);
+
+#else
+
+static inline int tlog_ext(tlog_level level, const char *file, int line, const char *func, void *userptr, const char *format, ...) {return 0;}
+static inline int tlog_vext(tlog_level level, const char *file, int line, const char *func, void *userptr, const char *format, va_list ap) {return 0;}
+
+/* write buff to log file */
+extern int tlog_write_log(char *buff, int bufflen);
+
+/* set log level */
+static inline int tlog_setlevel(tlog_level level) {return 0;}
+
+/* enalbe log to screen */
+static inline void tlog_setlogscreen(int enable) {}
+
+/* enalbe early log to screen */
+extern void tlog_set_early_printf(int enable);
+
+/* Get log level in string */
+extern const char *tlog_get_level_string(tlog_level level);
+
+/*
+Function: Initialize log module
+logfile: log file.
+maxlogsize: The maximum size of a single log file.
+maxlogcount: Number of archived logs.
+buffsize: Buffer size, zero for default (128K)
+flag: read tlog flags
+ */
+static inline int tlog_init(const char *logfile, int maxlogsize, int maxlogcount, int buffsize, unsigned int flag) {}
+
+/* flush pending log message, and exit tlog */
+static inline void tlog_exit(void) {}
+/*
+customize log output format
+steps:
+1. define format function, function must be defined as tlog_format_func, use snprintf or vsnprintf format log to buffer
+2. call tlog_reg_format_func to register format function.
+
+read _tlog_format for example.
+*/
+typedef int (*tlog_format_func)(char *buff, int maxlen, struct tlog_info *info, void *userptr, const char *format, va_list ap);
+extern int tlog_reg_format_func(tlog_format_func func);
+
+/* register log output callback 
+ Note: info is invalid when flag TLOG_SEGMENT is not set.
+ */
+typedef int (*tlog_log_output_func)(struct tlog_info *info, char *buff, int bufflen, void *private_data);
+extern int tlog_reg_log_output_func(tlog_log_output_func output, void *private_data);
+
+struct tlog_log;
+typedef struct tlog_log tlog_log;
+/*
+Function: open a new log stream, handler should close by tlog_close
+logfile: log file.
+maxlogsize: The maximum size of a single log file.
+maxlogcount: Number of archived logs.
+buffsize: Buffer size, zero for default (128K)
+flag: read tlog flags
+return: log stream handler.
+ */
+static inline tlog_log *tlog_open(const char *logfile, int maxlogsize, int maxlogcount, int buffsize, unsigned int flag) { return 0;}
+
+/* write buff to log file */
+extern int tlog_write(struct tlog_log *log, char *buff, int bufflen);
+
+/* close log stream */
+extern void tlog_close(tlog_log *log);
+
+/*
+Function: Print log to log stream
+log: log stream
+format: Log formats
+*/
+static inline int tlog_printf(tlog_log *log, const char *format, ...) {return 0;}
+
+/*
+Function: Print log to log stream with ap
+log: log stream
+format: Log formats
+va_list: args list
+*/
+extern int tlog_vprintf(tlog_log *log, const char *format, va_list ap);
+
+/* enalbe log to screen */
+extern void tlog_logscreen(tlog_log *log, int enable);
+
+/* register output callback */
+typedef int (*tlog_output_func)(struct tlog_log *log, char *buff, int bufflen);
+extern int tlog_reg_output_func(tlog_log *log, tlog_output_func output);
+
+/* set private data */
+extern void tlog_set_private(tlog_log *log, void *private_data);
+
+/* get private data */
+extern void *tlog_get_private(tlog_log *log);
+
+/* get local time */
+static inline int tlog_localtime(struct tlog_time *tm) {return 0;}
+
+
+#endif
 
 #ifdef __cplusplus
 }
