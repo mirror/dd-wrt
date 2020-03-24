@@ -333,6 +333,7 @@ void start_dnsmasq(void)
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
 		if (nvram_matchi("dns_dnsmasq", 0)) {
+			fprintf(fp, "port=0\n");
 #ifdef HAVE_UNBOUND
 			if (nvram_matchi("recursive_dns", 1)) {
 				fprintf(fp, "dhcp-option=6,%s\n", nvram_safe_get("lan_ipaddr"));
@@ -466,7 +467,7 @@ void start_dnsmasq(void)
 #endif
 	char *addoptions = nvram_safe_get("dnsmasq_options");
 #ifdef HAVE_SMARTDNS
-	if (nvram_matchi("smartdns", 1))
+	if (nvram_matchi("smartdns", 1) && !nvram_matchi("dnssec", 1))
 		fprintf(fp, "cache-size=0\n");
 	else
 #endif
