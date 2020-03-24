@@ -333,12 +333,9 @@ void start_dnsmasq(void)
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
 		if (nvram_matchi("dns_dnsmasq", 0)) {
-#ifdef HAVE_SMARTDNS
 			if (nvram_matchi("smartdns", 1) || nvram_matchi("recursive_dns", 1)) {
 				fprintf(fp, "dhcp-option=6,%s\n", nvram_safe_get("lan_ipaddr"));
-			} else
-#endif
-			{
+			} else {
 				dns_list = get_dns_list();
 
 				if (dns_list && dns_list->num_servers > 0) {
