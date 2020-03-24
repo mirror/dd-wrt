@@ -68,8 +68,8 @@ static void sync_daemons(void)
 
 		if (nvram_matchi(service[i].nvram, 1)) {
 			dd_syslog(LOG_DEBUG, "Restarting %s (time sync change)\n", service[i].service);
-			eval("stopservice", service[i].service);
-			eval("startservice_f", service[i].service);
+			eval("stopservice", service[i].service, "-f");
+			eval("startservice", service[i].service, "-f");
 
 		}
 	}
