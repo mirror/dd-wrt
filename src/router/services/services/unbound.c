@@ -33,13 +33,16 @@ static void unbound_config(void)
 #ifdef _SC_NPROCESSORS_ONLN
 	int cpucount = sysconf(_SC_NPROCESSORS_ONLN);
 #else
-	int cpucount = 1
+	int cpucount = 1;
 #endif
-	    FILE * fp = fopen("/tmp/unbound.conf", "wb");
+	int port = 7053;
+	if (!nvram_matchi("dns_dnsmasq", 1) && !nvram_matchi("smartdns", 1))
+		port = 53;
+	FILE *fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"	//
 		"verbosity: 1\n"	//
-		"interface: 0.0.0.0@7053\n"	//
-		"interface: ::0@7053\n"	//
+		"interface: 0.0.0.0@%d\n"	//
+		"interface: ::0@%d\n"	//
 		"outgoing-num-tcp: 10\n"	//
 		"incoming-num-tcp: 10\n"	//
 		"msg-buffer-size: 8192\n"	//
@@ -55,7 +58,7 @@ static void unbound_config(void)
 		"harden-large-queries: yes\n"	//
 		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n"	//
 		"key-cache-size: 100k\n"	//
-		"neg-cache-size: 10k\n");	//
+		"neg-cache-size: 10k\n", port, port);	//
 	fprintf(fp, "num-threads: %d\n", cpucount);
 	fprintf(fp, "so-reuseport: yes\n");
 	int slabs = 2;

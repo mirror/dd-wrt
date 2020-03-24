@@ -41,6 +41,8 @@ void start_smartdns(void)
 		return;
 	FILE *fp = fopen("/tmp/smartdns.conf", "wb");
 	int port = 6053;
+	if (!nvram_matchi("dns_dnsmasq", 1))
+		port = 53;
 	int ipv6 = nvram_matchi("ipv6_enable", 1);
 	int tcp_server = nvram_matchi("smartdns_tcp", 1);
 	char *hostname = nvram_safe_get("wan_hostname");
