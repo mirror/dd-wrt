@@ -38,8 +38,8 @@ static void unbound_config(void)
 	    FILE * fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"	//
 		"verbosity: 1\n"	//
-		"interface: 0.0.0.0\n"	//
-		"interface: ::0\n"	//
+		"interface: 0.0.0.0@7053\n"	//
+		"interface: ::0@7053\n"	//
 		"outgoing-num-tcp: 10\n"	//
 		"incoming-num-tcp: 10\n"	//
 		"msg-buffer-size: 8192\n"	//

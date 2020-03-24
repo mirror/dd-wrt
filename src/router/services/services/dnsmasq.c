@@ -254,8 +254,7 @@ void start_dnsmasq(void)
 
 #ifdef HAVE_SMARTDNS
 	if (nvram_matchi("smartdns", 1)) {
-		nvram_seti("recursive_dns", 0);	// disable unbound
-		nvram_seti("dns_crypt", 0);	// disable unbound
+		nvram_seti("dns_crypt", 0);
 		fprintf(fp, "server=127.0.0.1#6053\n");
 		fprintf(fp, "no-resolv\n");
 	}
@@ -268,8 +267,9 @@ void start_dnsmasq(void)
 	}
 #endif
 #ifdef HAVE_UNBOUND
-	if (nvram_matchi("recursive_dns", 1)) {
-		fprintf(fp, "port=0\n");
+	if (nvram_matchi("recursive_dns", 1) && !nvram_matchi("smartdns", 1)) {
+		fprintf(fp, "server=127.0.0.1#7053\n");
+		fprintf(fp, "no-resolv\n");
 	}
 #endif
 	/*
@@ -332,34 +332,17 @@ void start_dnsmasq(void)
 		    && nvram_invmatch("wan_wins", "0.0.0.0"))
 			fprintf(fp, "dhcp-option=44,%s\n", nvram_safe_get("wan_wins"));
 		free(word);
-#ifdef HAVE_UNBOUND
-		if (nvram_matchi("recursive_dns", 1)) {
-			char *word = calloc(128, 1);
-			fprintf(fp, "dhcp-option=%s,6,%s\n", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"));
-			for (i = 0; i < mdhcpcount; i++) {
-				char buffer[128];
-				char *ifname = getmdhcp(IDX_IFNAME, i, word, buffer);
-				if (!*(nvram_nget("%s_ipaddr", ifname)) || !*(nvram_nget("%s_netmask", ifname)))
-					continue;
-				fprintf(fp, "dhcp-option=%s,6,", ifname);
-				fprintf(fp, "%s\n", nvram_nget("%s_ipaddr", ifname));
-			}
-			free(word);
-		} else
-#endif
-		{
-			if (nvram_matchi("dns_dnsmasq", 0)) {
-				dns_list = get_dns_list();
+		if (nvram_matchi("dns_dnsmasq", 0)) {
+			dns_list = get_dns_list();
 
-				if (dns_list && dns_list->num_servers > 0) {
+			if (dns_list && dns_list->num_servers > 0) {
 
-					fprintf(fp, "dhcp-option=6");
-					for (i = 0; i < dns_list->num_servers; i++)
-						fprintf(fp, ",%s", dns_list->dns_server[i]);
-					fprintf(fp, "\n");
-				}
-				free_dns_list(dns_list);
+				fprintf(fp, "dhcp-option=6");
+				for (i = 0; i < dns_list->num_servers; i++)
+					fprintf(fp, ",%s", dns_list->dns_server[i]);
+				fprintf(fp, "\n");
 			}
+			free_dns_list(dns_list);
 		}
 
 		if (nvram_matchi("auth_dnsmasq", 1))
