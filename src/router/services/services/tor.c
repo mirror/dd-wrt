@@ -128,9 +128,11 @@ void start_tor(void)
 	if (nvram_matchi("enable_jffs2", 1)
 	    && nvram_matchi("jffs_mounted", 1)
 	    && nvram_matchi("sys_enable_jffs2", 1)) {
+		eval("rm", "-rf", "/jffs/tor");
 		eval("mkdir", "-p", "/jffs/tor");
 		fprintf(fp, "DataDirectory /jffs/tor\n");
 	} else {
+		eval("rm", "-rf", "/tmp/tor");
 		fprintf(fp, "DataDirectory /tmp/tor\n");
 	}
 #endif
