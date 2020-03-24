@@ -69,29 +69,31 @@ void start_smartdns(void)
 	fprintf(fp, "log-file /tmp/smartdns.log\n");
 	struct dns_lists *dns_list = NULL;
 	dns_list = get_dns_list();
+	if (nvram_matchi("recursive_dns", 1)) {
+		fprintf(fp, "server 127.0.0.1:7053\n");
+	} else {
+		if (dns_list && dns_list->num_servers > 0) {
+			int i;
+			for (i = 0; i < dns_list->num_servers; i++)
+				fprintf(fp, "server %s\n", dns_list->dns_server[i]);
+			if (dns_list)
+				free_dns_list(dns_list);
+		}
+		if (nvram_matchi("ipv6_enable", 1)) {
+			char *a1 = nvram_safe_get("ipv6_dns1");
+			char *a2 = nvram_safe_get("ipv6_dns2");
+			if (*a1)
+				fprintf(fp, "server %s\n", a1);
+			if (*a2)
+				fprintf(fp, "server %s\n", a2);
 
-	if (dns_list && dns_list->num_servers > 0) {
-		int i;
-		for (i = 0; i < dns_list->num_servers; i++)
-			fprintf(fp, "server %s\n", dns_list->dns_server[i]);
-	}
-	if (nvram_matchi("ipv6_enable", 1)) {
-		char *a1 = nvram_safe_get("ipv6_dns1");
-		char *a2 = nvram_safe_get("ipv6_dns2");
-		if (*a1)
-			fprintf(fp, "server %s\n", a1);
-		if (*a2)
-			fprintf(fp, "server %s\n", a2);
-
-		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
-		char word[64];
-		foreach(word, wordlist, next) {
-			fprintf(fp, "server %s\n", word);
+			char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+			char word[64];
+			foreach(word, wordlist, next) {
+				fprintf(fp, "server %s\n", word);
+			}
 		}
 	}
-
-	free_dns_list(dns_list);
-
 	fclose(fp);
 	eval("smartdns", "-c", "/tmp/smartdns.conf");
 	dd_loginfo("smartdns", "daemon successfully started\n");
