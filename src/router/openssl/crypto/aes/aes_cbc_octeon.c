@@ -121,7 +121,7 @@
 #include <assert.h>
 
 #include <openssl/aes.h>
-#include "aes_locl.h"
+#include "aes_local.h"
 
 #ifdef OCTEON_OPENSSL
 #include "cvmx-address.h"
