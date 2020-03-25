@@ -1,47 +1,47 @@
---- Makefile	2018-09-16 13:43:06.810194794 +0200
-+++ Makefile.mips	2018-09-16 13:43:17.530076590 +0200
-@@ -780,7 +780,7 @@ libcrypto$(SHLIB_EXT_SIMPLE): crypto/aes
+--- Makefile	2020-03-25 17:04:14.918320488 +0400
++++ Makefile.new	2020-03-25 17:03:38.208839208 +0400
+@@ -753,7 +753,7 @@ libcrypto$(SHLIB_EXT_SIMPLE) libcrypto$(
  libcrypto.map: util/mkdef.pl util/libcrypto.num
  	$(PERL) util/mkdef.pl crypto linux > $@
  crypto/aes/aes-mips.o: crypto/aes/aes-mips.S
--	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/aes/aes-mips.S
-+	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto -c -o $@ crypto/aes/aes-mips.S
+-	$(CC)  -I. -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/aes/aes-mips.S
++	$(CC)  -I. -Iinclude -Icrypto -c -o $@ crypto/aes/aes-mips.S
  crypto/aes/aes-mips.S: crypto/aes/asm/aes-mips.pl 
  	CC="$(CC)" $(PERL) crypto/aes/asm/aes-mips.pl $(PERLASM_SCHEME) -Icrypto $@
  crypto/aes/aes_cbc.o: crypto/aes/aes_cbc.c
-@@ -1656,7 +1656,7 @@ crypto/blake2/m_blake2s.o: crypto/blake2
+@@ -1629,7 +1629,7 @@ crypto/blake2/m_blake2s.o: crypto/blake2
  		mv crypto/blake2/m_blake2s.d.tmp crypto/blake2/m_blake2s.d; \
  	fi
  crypto/bn/bn-mips.o: crypto/bn/bn-mips.S
--	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/bn/bn-mips.S
-+	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto -c -o $@ crypto/bn/bn-mips.S
+-	$(CC)  -I. -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/bn/bn-mips.S
++	$(CC)  -I. -Iinclude -Icrypto -c -o $@ crypto/bn/bn-mips.S
  crypto/bn/bn-mips.S: crypto/bn/asm/mips.pl 
  	CC="$(CC)" $(PERL) crypto/bn/asm/mips.pl $(PERLASM_SCHEME) $@
  crypto/bn/bn_add.o: crypto/bn/bn_add.c
-@@ -1900,7 +1900,7 @@ crypto/bn/bn_x931p.o: crypto/bn/bn_x931p
+@@ -1873,7 +1873,7 @@ crypto/bn/bn_x931p.o: crypto/bn/bn_x931p
  		mv crypto/bn/bn_x931p.d.tmp crypto/bn/bn_x931p.d; \
  	fi
  crypto/bn/mips-mont.o: crypto/bn/mips-mont.S
--	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/bn/mips-mont.S
-+	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto -c -o $@ crypto/bn/mips-mont.S
+-	$(CC)  -I. -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/bn/mips-mont.S
++	$(CC)  -I. -Iinclude -Icrypto -c -o $@ crypto/bn/mips-mont.S
  crypto/bn/mips-mont.S: crypto/bn/asm/mips-mont.pl 
  	CC="$(CC)" $(PERL) crypto/bn/asm/mips-mont.pl $(PERLASM_SCHEME) $@
  crypto/buffer/buf_err.o: crypto/buffer/buf_err.c
-@@ -4714,7 +4714,7 @@ crypto/sha/keccak1600.o: crypto/sha/kecc
+@@ -4695,7 +4695,7 @@ crypto/sha/keccak1600.o: crypto/sha/kecc
  		mv crypto/sha/keccak1600.d.tmp crypto/sha/keccak1600.d; \
  	fi
  crypto/sha/sha1-mips.o: crypto/sha/sha1-mips.S
--	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/sha/sha1-mips.S
-+	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto -c -o $@ crypto/sha/sha1-mips.S
+-	$(CC)  -I. -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/sha/sha1-mips.S
++	$(CC)  -I. -Iinclude -Icrypto -c -o $@ crypto/sha/sha1-mips.S
  crypto/sha/sha1-mips.S: crypto/sha/asm/sha1-mips.pl 
  	CC="$(CC)" $(PERL) crypto/sha/asm/sha1-mips.pl $(PERLASM_SCHEME) $@
  crypto/sha/sha1_one.o: crypto/sha/sha1_one.c
-@@ -4734,7 +4734,7 @@ crypto/sha/sha1dgst.o: crypto/sha/sha1dg
+@@ -4715,7 +4715,7 @@ crypto/sha/sha1dgst.o: crypto/sha/sha1dg
  		mv crypto/sha/sha1dgst.d.tmp crypto/sha/sha1dgst.d; \
  	fi
  crypto/sha/sha256-mips.o: crypto/sha/sha256-mips.S
--	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/sha/sha256-mips.S
-+	$(CC)  -I. -Icrypto/include -Iinclude -Icrypto -c -o $@ crypto/sha/sha256-mips.S
+-	$(CC)  -I. -Iinclude -Icrypto $(LIB_CFLAGS) $(LIB_CPPFLAGS) -c -o $@ crypto/sha/sha256-mips.S
++	$(CC)  -I. -Iinclude -Icrypto -c -o $@ crypto/sha/sha256-mips.S
  crypto/sha/sha256-mips.S: crypto/sha/asm/sha512-mips.pl 
  	CC="$(CC)" $(PERL) crypto/sha/asm/sha512-mips.pl $(PERLASM_SCHEME) $@
  crypto/sha/sha256.o: crypto/sha/sha256.c
