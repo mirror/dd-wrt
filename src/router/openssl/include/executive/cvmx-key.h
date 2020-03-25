@@ -59,6 +59,7 @@ extern "C" {
 
 #define CVMX_KEY_MEM_SIZE 8192	/* Size in bytes */
 
+#if 0 
 /**
  * Read from KEY memory
  *
@@ -97,7 +98,7 @@ static inline uint64_t cvmx_key_read(uint64_t address)
 
 	cvmx_write_io(ptr.u64, value);
 }
-
+#endif
 /* CSR typedefs have been moved to cvmx-key-defs.h */
 
 #ifdef	__cplusplus
