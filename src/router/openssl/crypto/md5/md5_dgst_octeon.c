@@ -114,7 +114,7 @@
 #define OCTEON_HASH
 #include <stdio.h>
 #include <stdio.h>
-#include "md5_locl.h"
+#include "md5_local.h"
 #include <openssl/opensslv.h>
 
 #ifdef OCTEON_OPENSSL
