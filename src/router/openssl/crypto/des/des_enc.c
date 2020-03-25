@@ -8,7 +8,7 @@
  */
 
 #include <openssl/crypto.h>
-#include "des_locl.h"
+#include "des_local.h"
 #include "spr.h"
 
 #ifdef OCTEON_OPENSSL
