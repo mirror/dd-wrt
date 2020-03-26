@@ -709,7 +709,7 @@ static __attribute__((unused)) unsigned long _pthreads_thread_id(void)
 	ret = (unsigned long)pthread_self();
 	return (ret);
 }
-
+#ifdef HAVE_OPENSSL
 void SSL_CRYPTO_thread_setup(void)
 {
 	int i;
@@ -744,6 +744,7 @@ void SSL_CRYPTO_thread_cleanup(void)
 	OPENSSL_free(lock_cs);
 	OPENSSL_free(lock_count);
 }
+#endif
 #endif
 
 #define SERVER_NAME_LEN 256
