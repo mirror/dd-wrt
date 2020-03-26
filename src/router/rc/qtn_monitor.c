@@ -69,9 +69,14 @@ void rpc_parse_nvram_from_httpd(void)
 	const char *country = getIsoName(nvram_safe_get("wl_regdomain"));
 	char lower[32];
 	int i;
-	for (i = 0; i < strlen(country); i++)
-		lower[i] = tolower(country[i]);
-	lower[i] = 0;
+	if (*country) {
+		for (i = 0; i < strlen(country); i++)
+			lower[i] = tolower(country[i]);
+		lower[i] = 0;
+	} else {
+		strcpy(lower, "us");
+
+	}
 	rpc_qcsapi_set_region("wifi0", lower);
 
 	// rpc_qcsapi_set_bw(value);
