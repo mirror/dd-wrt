@@ -243,10 +243,14 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		/* experimental feature */
 		{"check-edns", no_argument, NULL, 'e'},   /* check edns */
 #endif 
+#ifdef HAVE_OPENSSL
 		{"spki-pin", required_argument, NULL, 'p'}, /* check SPKI pin */
+#endif
 		{"host-name", required_argument, NULL, 'h'}, /* host name */
+#ifdef HAVE_OPENSSL
 		{"http-host", required_argument, NULL, 'H'}, /* http host */
 		{"tls-host-verify", required_argument, NULL, 'V' }, /* verify tls hostname */
+#endif
 		{"group", required_argument, NULL, 'g'}, /* add to group */
 		{"exclude-default-group", no_argument, NULL, 'E'}, /* ecluse this from default group */
 		{NULL, no_argument, NULL, 0}
@@ -271,6 +275,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 
 	ip = argv[1];
 
+#ifdef HAVE_OPENSSL
 	if (type == DNS_SERVER_HTTPS) {
 		if (parse_uri(ip, NULL, server->server, &port, server->path) != 0) {
 			return -1;
@@ -280,7 +285,10 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		if (server->path[0] == 0) {
 			safe_strncpy(server->path, "/", sizeof(server->path));
 		}
-	} else {
+	}
+	 else 
+#endif
+	 {
 		/* parse ip, port from ip */
 		if (parse_ip(ip, server->server, &port) != 0) {
 			return -1;
@@ -317,10 +325,12 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			safe_strncpy(server->hostname, optarg, DNS_MAX_CNAME_LEN);
 			break;
 		}
+#ifdef HAVE_OPENSSL
 		case 'H': {
 			safe_strncpy(server->httphost, optarg, DNS_MAX_CNAME_LEN);
 			break;
 		}
+#endif
 		case 'E': {
 			server_flag |= SERVER_FLAG_EXCLUDE_DEFAULT;
 			break;
@@ -332,6 +342,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			}
 			break;
 		}
+#ifdef HAVE_OPENSSL
 		case 'p': {
 			safe_strncpy(server->spki, optarg, DNS_MAX_SPKI_LEN);
 			break;
@@ -340,6 +351,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			safe_strncpy(server->tls_host_verify, optarg, DNS_MAX_CNAME_LEN);
 			break;
 		}
+#endif
 		default:
 			break;
 		}
@@ -960,6 +972,7 @@ static int _config_server_tcp(void *data, int argc, char *argv[])
 	return _config_server(argc, argv, DNS_SERVER_TCP, DEFAULT_DNS_PORT);
 }
 
+#ifdef HAVE_OPENSSL
 static int _config_server_tls(void *data, int argc, char *argv[])
 {
 	return _config_server(argc, argv, DNS_SERVER_TLS, DEFAULT_DNS_TLS_PORT);
@@ -972,6 +985,7 @@ static int _config_server_https(void *data, int argc, char *argv[])
 
 	return ret;
 }
+#endif
 
 static int _conf_domain_rule_nameserver(char *domain, const char *group_name)
 {
@@ -1337,8 +1351,10 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("bind-tcp", _config_bind_ip_tcp, NULL),
 	CONF_CUSTOM("server", _config_server_udp, NULL),
 	CONF_CUSTOM("server-tcp", _config_server_tcp, NULL),
+#ifdef HAVE_OPENSSL
 	CONF_CUSTOM("server-tls", _config_server_tls, NULL),
 	CONF_CUSTOM("server-https", _config_server_https, NULL),
+#endif
 	CONF_CUSTOM("nameserver", _config_nameserver, NULL),
 	CONF_CUSTOM("address", _config_address, NULL),
 	CONF_YESNO("ipset-timeout", &dns_conf_ipset_timeout_enable),
