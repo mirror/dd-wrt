@@ -351,7 +351,11 @@ static void _sig_error_exit(int signo, siginfo_t *siginfo, void *ct)
 #elif defined(__mips__)
 	PC = context->uc_mcontext.pc;
 #elif defined(__powerpc__)
-	PC = context->uc_mcontext.gregs[32]
+#ifdef __UCLIBC__
+	PC = context->uc_mcontext.uc_regs->gregs[32];
+#else
+	PC = context->uc_mcontext.gregs[32];
+#endif
 #endif
 	tlog(TLOG_FATAL, "process exit with signal %d, code = %d, errno = %d, pid = %d, self = %d, pc = %#lx, addr = %#lx, build(%s %s)\n", signo, siginfo->si_code,
 		 siginfo->si_errno, siginfo->si_pid, getpid(), PC, (unsigned long)siginfo->si_addr, __DATE__, __TIME__);
