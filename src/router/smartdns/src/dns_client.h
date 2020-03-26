@@ -87,8 +87,10 @@ struct client_dns_server_flags {
 
 	union {
 		struct client_dns_server_flag_udp udp;
+#ifdef HAVE_OPENSSL
 		struct client_dns_server_flag_tls tls;
 		struct client_dns_server_flag_https https;
+#endif
 	};
 };
 
