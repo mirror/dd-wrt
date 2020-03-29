@@ -112,7 +112,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -154,6 +154,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -184,8 +185,8 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 libmiscencoding_la_LIBADD =
-am_libmiscencoding_la_OBJECTS = base64.lo charset.lo html_quote.lo \
-	md5.lo rfc1738.lo rfc2617.lo
+am_libmiscencoding_la_OBJECTS = base64.lo html_quote.lo md5.lo \
+	rfc1738.lo rfc2617.lo
 libmiscencoding_la_OBJECTS = $(am_libmiscencoding_la_OBJECTS)
 libmiscutil_la_LIBADD =
 am_libmiscutil_la_OBJECTS = getfullhostname.lo heap.lo iso3307.lo \
@@ -228,16 +229,15 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/Splay.Plo ./$(DEPDIR)/base64.Plo \
-	./$(DEPDIR)/charset.Plo ./$(DEPDIR)/dirent.Plo \
-	./$(DEPDIR)/encrypt.Plo ./$(DEPDIR)/getfullhostname.Plo \
-	./$(DEPDIR)/getopt.Plo ./$(DEPDIR)/hash.Plo \
-	./$(DEPDIR)/heap.Plo ./$(DEPDIR)/html_quote.Plo \
-	./$(DEPDIR)/iso3307.Plo ./$(DEPDIR)/md5.Plo \
-	./$(DEPDIR)/radix.Plo ./$(DEPDIR)/rfc1123.Plo \
-	./$(DEPDIR)/rfc1738.Plo ./$(DEPDIR)/rfc2617.Plo \
-	./$(DEPDIR)/sspwin32.Plo ./$(DEPDIR)/stub_memaccount.Plo \
-	./$(DEPDIR)/util.Plo ./$(DEPDIR)/xusleep.Plo \
-	tests/$(DEPDIR)/testRFC1738.Po
+	./$(DEPDIR)/dirent.Plo ./$(DEPDIR)/encrypt.Plo \
+	./$(DEPDIR)/getfullhostname.Plo ./$(DEPDIR)/getopt.Plo \
+	./$(DEPDIR)/hash.Plo ./$(DEPDIR)/heap.Plo \
+	./$(DEPDIR)/html_quote.Plo ./$(DEPDIR)/iso3307.Plo \
+	./$(DEPDIR)/md5.Plo ./$(DEPDIR)/radix.Plo \
+	./$(DEPDIR)/rfc1123.Plo ./$(DEPDIR)/rfc1738.Plo \
+	./$(DEPDIR)/rfc2617.Plo ./$(DEPDIR)/sspwin32.Plo \
+	./$(DEPDIR)/stub_memaccount.Plo ./$(DEPDIR)/util.Plo \
+	./$(DEPDIR)/xusleep.Plo tests/$(DEPDIR)/testRFC1738.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -630,11 +630,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -646,6 +648,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -834,7 +838,6 @@ EXTRA_libmiscutil_la_SOURCES = \
 
 libmiscencoding_la_SOURCES = \
 	base64.c \
-	charset.c \
 	html_quote.c \
 	md5.c \
 	rfc1738.c \
@@ -954,7 +957,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Splay.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/base64.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/charset.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dirent.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/encrypt.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getfullhostname.Plo@am__quote@ # am--include-marker
@@ -1402,7 +1404,6 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/Splay.Plo
 	-rm -f ./$(DEPDIR)/base64.Plo
-	-rm -f ./$(DEPDIR)/charset.Plo
 	-rm -f ./$(DEPDIR)/dirent.Plo
 	-rm -f ./$(DEPDIR)/encrypt.Plo
 	-rm -f ./$(DEPDIR)/getfullhostname.Plo
@@ -1468,7 +1469,6 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/Splay.Plo
 	-rm -f ./$(DEPDIR)/base64.Plo
-	-rm -f ./$(DEPDIR)/charset.Plo
 	-rm -f ./$(DEPDIR)/dirent.Plo
 	-rm -f ./$(DEPDIR)/encrypt.Plo
 	-rm -f ./$(DEPDIR)/getfullhostname.Plo

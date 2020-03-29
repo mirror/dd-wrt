@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,7 +17,7 @@
 /**
  \defgroup FileSystems  Storage Filesystems
  *
- \section Introduction Introduction
+ \section FileSystemsIntroduction Introduction
  \par
  * Traditionally, Squid has always used the Unix filesystem (\link UFS UFS\endlink)
  * to store cache objects on disk.  Over the years, the

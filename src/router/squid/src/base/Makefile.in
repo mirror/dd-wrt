@@ -98,7 +98,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -140,6 +140,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -164,8 +165,8 @@ CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libbase_la_LIBADD =
 am_libbase_la_OBJECTS = AsyncCall.lo AsyncCallQueue.lo AsyncJob.lo \
-	CharacterSet.lo File.lo Here.lo RegexPattern.lo \
-	RunnersRegistry.lo TextException.lo
+	CharacterSet.lo CodeContext.lo File.lo Here.lo InstanceId.lo \
+	RegexPattern.lo RunnersRegistry.lo TextException.lo
 libbase_la_OBJECTS = $(am_libbase_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -188,8 +189,9 @@ depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/AsyncCall.Plo \
 	./$(DEPDIR)/AsyncCallQueue.Plo ./$(DEPDIR)/AsyncJob.Plo \
-	./$(DEPDIR)/CharacterSet.Plo ./$(DEPDIR)/File.Plo \
-	./$(DEPDIR)/Here.Plo ./$(DEPDIR)/RegexPattern.Plo \
+	./$(DEPDIR)/CharacterSet.Plo ./$(DEPDIR)/CodeContext.Plo \
+	./$(DEPDIR)/File.Plo ./$(DEPDIR)/Here.Plo \
+	./$(DEPDIR)/InstanceId.Plo ./$(DEPDIR)/RegexPattern.Plo \
 	./$(DEPDIR)/RunnersRegistry.Plo ./$(DEPDIR)/TextException.Plo
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -537,11 +539,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -553,6 +557,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -739,18 +745,24 @@ libbase_la_SOURCES = \
 	CbDataList.h \
 	CharacterSet.cc \
 	CharacterSet.h \
+	CodeContext.cc \
+	CodeContext.h \
 	EnumIterator.h \
 	File.cc \
 	File.h \
+	forward.h \
 	HardFun.h \
 	Here.cc \
 	Here.h \
+	InstanceId.cc \
 	InstanceId.h \
 	Lock.h \
 	LookupTable.h \
 	LruMap.h \
 	Packable.h \
 	PackableStream.h \
+	Range.h \
+	RefCount.h \
 	RegexPattern.cc \
 	RegexPattern.h \
 	RunnersRegistry.cc \
@@ -828,8 +840,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncCallQueue.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/AsyncJob.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CharacterSet.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CodeContext.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/File.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Here.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/InstanceId.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RegexPattern.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RunnersRegistry.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TextException.Plo@am__quote@ # am--include-marker
@@ -1168,8 +1182,10 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/AsyncCallQueue.Plo
 	-rm -f ./$(DEPDIR)/AsyncJob.Plo
 	-rm -f ./$(DEPDIR)/CharacterSet.Plo
+	-rm -f ./$(DEPDIR)/CodeContext.Plo
 	-rm -f ./$(DEPDIR)/File.Plo
 	-rm -f ./$(DEPDIR)/Here.Plo
+	-rm -f ./$(DEPDIR)/InstanceId.Plo
 	-rm -f ./$(DEPDIR)/RegexPattern.Plo
 	-rm -f ./$(DEPDIR)/RunnersRegistry.Plo
 	-rm -f ./$(DEPDIR)/TextException.Plo
@@ -1222,8 +1238,10 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/AsyncCallQueue.Plo
 	-rm -f ./$(DEPDIR)/AsyncJob.Plo
 	-rm -f ./$(DEPDIR)/CharacterSet.Plo
+	-rm -f ./$(DEPDIR)/CodeContext.Plo
 	-rm -f ./$(DEPDIR)/File.Plo
 	-rm -f ./$(DEPDIR)/Here.Plo
+	-rm -f ./$(DEPDIR)/InstanceId.Plo
 	-rm -f ./$(DEPDIR)/RegexPattern.Plo
 	-rm -f ./$(DEPDIR)/RunnersRegistry.Plo
 	-rm -f ./$(DEPDIR)/TextException.Plo

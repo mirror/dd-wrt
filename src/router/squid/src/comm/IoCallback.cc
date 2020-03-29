@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -69,13 +69,9 @@ void
 Comm::IoCallback::selectOrQueueWrite()
 {
 #if USE_DELAY_POOLS
-    // stand in line if there is one
-    if (ClientInfo *clientInfo = fd_table[conn->fd].clientInfo) {
-        if (clientInfo->writeLimitingActive) {
-            quotaQueueReserv = clientInfo->quotaEnqueue(conn->fd);
-            clientInfo->kickQuotaQueue();
-            return;
-        }
+    if (BandwidthBucket *bucket = BandwidthBucket::SelectBucket(&fd_table[conn->fd])) {
+        bucket->scheduleWrite(this);
+        return;
     }
 #endif
 

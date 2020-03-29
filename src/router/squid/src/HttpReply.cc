@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,6 +13,7 @@
 #include "acl/FilledChecklist.h"
 #include "base/EnumIterator.h"
 #include "globals.h"
+#include "http/ContentLengthInterpreter.h"
 #include "HttpBody.h"
 #include "HttpHdrCc.h"
 #include "HttpHdrContRange.h"
@@ -26,7 +27,7 @@
 #include "StrList.h"
 
 HttpReply::HttpReply():
-    HttpMsg(hoReply),
+    Http::Message(hoReply),
     date(0),
     last_modified(0),
     expires(0),
@@ -50,7 +51,7 @@ HttpReply::init()
 {
     hdrCacheInit();
     sline.init();
-    pstate = psReadyToParseStartLine;
+    pstate = Http::Message::psReadyToParseStartLine;
     do_clean = true;
 }
 
@@ -115,12 +116,20 @@ HttpReply::pack() const
     return mb;
 }
 
-HttpReply *
+HttpReplyPointer
+HttpReply::MakeConnectionEstablished() {
+
+    HttpReplyPointer rep(new HttpReply);
+    rep->sline.set(Http::ProtocolVersion(), Http::scOkay, "Connection established");
+    return rep;
+}
+
+HttpReplyPointer
 HttpReply::make304() const
 {
     static const Http::HdrType ImsEntries[] = {Http::HdrType::DATE, Http::HdrType::CONTENT_TYPE, Http::HdrType::EXPIRES, Http::HdrType::LAST_MODIFIED, /* eof */ Http::HdrType::OTHER};
 
-    HttpReply *rv = new HttpReply;
+    const HttpReplyPointer rv(new HttpReply);
     int t;
     HttpHeaderEntry *e;
 
@@ -150,9 +159,8 @@ HttpReply::packed304Reply() const
     /* Not as efficient as skipping the header duplication,
      * but easier to maintain
      */
-    HttpReply *temp = make304();
+    const auto temp = make304();
     MemBuf *rv = temp->pack();
-    delete temp;
     return rv;
 }
 
@@ -251,23 +259,20 @@ HttpReply::validatorsMatch(HttpReply const * otherRep) const
     return 1;
 }
 
-bool
-HttpReply::updateOnNotModified(HttpReply const * freshRep)
+HttpReply::Pointer
+HttpReply::recreateOnNotModified(const HttpReply &reply304) const
 {
-    assert(freshRep);
+    // If enough 304s do not update, then this expensive checking is cheaper
+    // than blindly storing reply prefix identical to the already stored one.
+    if (!header.needUpdate(&reply304.header))
+        return nullptr;
 
-    /* update raw headers */
-    if (!header.update(&freshRep->header))
-        return false;
-
-    /* clean cache */
-    hdrCacheClean();
-
-    header.compact();
-    /* init cache */
-    hdrCacheInit();
-
-    return true;
+    const Pointer cloned = clone();
+    cloned->header.update(&reply304.header);
+    cloned->hdrCacheClean();
+    cloned->header.compact();
+    cloned->hdrCacheInit();
+    return cloned;
 }
 
 /* internal routines */
@@ -313,7 +318,7 @@ HttpReply::hdrExpirationTime()
 void
 HttpReply::hdrCacheInit()
 {
-    HttpMsg::hdrCacheInit();
+    Http::Message::hdrCacheInit();
 
     http_ver = sline.version;
     content_length = header.getInt64(Http::HdrType::CONTENT_LENGTH);
@@ -326,7 +331,7 @@ HttpReply::hdrCacheInit()
     const char *str = header.getStr(Http::HdrType::CONTENT_TYPE);
 
     if (str)
-        content_type.limitInit(str, strcspn(str, ";\t "));
+        content_type.assign(str, strcspn(str, ";\t "));
     else
         content_type = String();
 
@@ -452,11 +457,24 @@ HttpReply::parseFirstLine(const char *blk_start, const char *blk_end)
     return sline.parse(protoPrefix, blk_start, blk_end);
 }
 
+void
+HttpReply::configureContentLengthInterpreter(Http::ContentLengthInterpreter &interpreter)
+{
+    interpreter.applyStatusCodeRules(sline.status());
+}
+
+bool
+HttpReply::parseHeader(Http1::Parser &hp)
+{
+    Http::ContentLengthInterpreter clen;
+    return Message::parseHeader(hp, clen);
+}
+
 /* handy: resets and returns -1 */
 int
 HttpReply::httpMsgParseError()
 {
-    int result(HttpMsg::httpMsgParseError());
+    int result(Http::Message::httpMsgParseError());
     /* indicate an error in the status line */
     sline.set(Http::ProtocolVersion(), Http::scInvalidHeader);
     return result;
@@ -567,7 +585,8 @@ HttpReply::clone() const
     return rep;
 }
 
-bool HttpReply::inheritProperties(const HttpMsg *aMsg)
+bool
+HttpReply::inheritProperties(const Http::Message *aMsg)
 {
     const HttpReply *aRep = dynamic_cast<const HttpReply*>(aMsg);
     if (!aRep)
@@ -587,7 +606,7 @@ void HttpReply::removeStaleWarnings()
         header.delById(Http::HdrType::WARNING);
         if (newWarning.size()) { // some warnings left
             HttpHeaderEntry *const e =
-                new HttpHeaderEntry(Http::HdrType::WARNING, NULL, newWarning.termedBuf());
+                new HttpHeaderEntry(Http::HdrType::WARNING, SBuf(), newWarning.termedBuf());
             header.addEntry(e);
         }
     }
@@ -647,5 +666,12 @@ HttpReply::olderThan(const HttpReply *them) const
     if (!them || !them->date || !date)
         return false;
     return date < them->date;
+}
+
+void
+HttpReply::removeIrrelevantContentLength() {
+    if (Http::ProhibitsContentLength(sline.status()))
+        if (header.delById(Http::HdrType::CONTENT_LENGTH))
+            debugs(58, 3, "Removing unexpected Content-Length header");
 }
 

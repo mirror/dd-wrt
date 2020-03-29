@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -343,10 +343,10 @@ Valid_Global_Groups(char *UserName, const char **Groups)
             break;
     }
     if (domain_qualify == NULL) {
-        strcpy(User, NTDomain);
-        strcpy(NTDomain, DefaultDomain);
+        xstrncpy(User, NTDomain, sizeof(User));
+        xstrncpy(NTDomain, DefaultDomain, sizeof(NTDomain));
     } else {
-        strcpy(User, domain_qualify + 1);
+        xstrncpy(User, domain_qualify + 1, sizeof(User));
         domain_qualify[0] = '\0';
         strlwr(NTDomain);
     }
@@ -492,14 +492,14 @@ process_options(int argc, char *argv[])
             break;
         case 'h':
             usage(argv[0]);
-            exit(0);
+            exit(EXIT_SUCCESS);
         case '?':
             opt = optopt;
         /* fall thru to default */
         default:
             fprintf(stderr, "%s: FATAL: Unknown option: -%c. Exiting\n", program_name, opt);
             usage(argv[0]);
-            exit(1);
+            exit(EXIT_FAILURE);
             break;      /* not reached */
         }
     }
@@ -534,7 +534,7 @@ main(int argc, char *argv[])
     if (use_global) {
         if ((machinedomain = GetDomainName()) == NULL) {
             fprintf(stderr, "%s: FATAL: Can't read machine domain\n", program_name);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
         strlwr(machinedomain);
         if (!DefaultDomain)
@@ -594,6 +594,6 @@ main(int argc, char *argv[])
             SEND_ERR("");
         }
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 

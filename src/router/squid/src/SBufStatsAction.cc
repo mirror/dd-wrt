@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -85,6 +85,6 @@ SBufStatsAction::unpack(const Ipc::TypedMsgHdr& msg)
 void
 SBufStatsAction::RegisterWithCacheManager()
 {
-    Mgr::RegisterAction("sbuf", "String-Buffer statistics", &SBufStatsAction::Create, 0 , 1);
+    Mgr::RegisterAction("sbuf", "String-Buffer statistics", &SBufStatsAction::Create, 0, 1);
 }
 

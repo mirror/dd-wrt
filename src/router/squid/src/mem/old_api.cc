@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -245,6 +245,22 @@ memAllocString(size_t net_size, size_t * gross_size)
     return xcalloc(1, net_size);
 }
 
+void *
+memAllocRigid(size_t net_size)
+{
+    // TODO: Use memAllocString() instead (after it stops zeroing memory).
+
+    if (const auto pool = memFindStringPool(net_size, true)) {
+        ++StrCountMeter;
+        StrVolumeMeter += pool->objectSize();
+        return pool->alloc();
+    }
+
+    ++StrCountMeter;
+    StrVolumeMeter += net_size;
+    return xmalloc(net_size);
+}
+
 size_t
 memStringCount()
 {
@@ -269,6 +285,23 @@ memFreeString(size_t size, void *buf)
 
     --StrCountMeter;
     StrVolumeMeter -= size;
+}
+
+void
+memFreeRigid(void *buf, size_t net_size)
+{
+    // TODO: Use memFreeString() instead (after removing fuzzy=false pool search).
+
+    if (const auto pool = memFindStringPool(net_size, true)) {
+        pool->freeOne(buf);
+        StrVolumeMeter -= pool->objectSize();
+        --StrCountMeter;
+        return;
+    }
+
+    xfree(buf);
+    StrVolumeMeter -= net_size;
+    --StrCountMeter;
 }
 
 /* Find the best fit MEM_X_BUF type */
@@ -709,7 +742,7 @@ Mem::Report(std::ostream &stream)
     /* Get stats for Totals report line */
     memPoolGetGlobalStats(&mp_total);
 
-    MemPoolStats *sortme = (MemPoolStats *) xcalloc(mp_total.tot_pools_alloc ,sizeof(*sortme));
+    MemPoolStats *sortme = (MemPoolStats *) xcalloc(mp_total.tot_pools_alloc,sizeof(*sortme));
     int npools = 0;
 
     /* main table */

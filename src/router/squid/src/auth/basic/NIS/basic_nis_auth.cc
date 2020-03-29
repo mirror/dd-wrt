@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -47,7 +47,7 @@ main(int argc, char **argv)
         fprintf(stderr, "Usage: basic_nis_auth <domainname> <nis map for password>\n");
         fprintf(stderr, "\n");
         fprintf(stderr, "Example basic_nis_auth mydomain.com passwd.byname\n");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     nisdomain = argv[1];
     nismap = argv[2];
@@ -90,6 +90,6 @@ main(int argc, char **argv)
         printf("BH message=\"Missing crypto capability\"\n");
 #endif
     }
-    exit(0);
+    return EXIT_SUCCESS;
 }
 

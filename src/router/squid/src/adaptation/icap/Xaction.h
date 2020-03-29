@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -86,7 +86,7 @@ protected:
 
     void cancelRead();
 
-    bool parseHttpMsg(HttpMsg *msg); // true=success; false=needMore; throw=err
+    bool parseHttpMsg(Http::Message *msg); // true=success; false=needMore; throw=err
     bool mayReadMore() const;
 
     virtual bool doneReading() const;

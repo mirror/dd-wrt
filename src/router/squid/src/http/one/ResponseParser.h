@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -23,13 +23,17 @@ namespace One {
  * Works on a raw character I/O buffer and tokenizes the content into
  * the major CRLF delimited segments of an HTTP/1 respone message:
  *
- * \item status-line (version SP status SP reash-phrase)
- * \item mime-header (set of RFC2616 syntax header fields)
+ * \li status-line (version SP status SP reash-phrase)
+ * \li mime-header (set of RFC2616 syntax header fields)
  */
 class ResponseParser : public Http1::Parser
 {
 public:
-    ResponseParser() : Parser(), completedStatus_(false), statusCode_(Http::scNone) {}
+    ResponseParser() = default;
+    ResponseParser(const ResponseParser &) = default;
+    ResponseParser &operator =(const ResponseParser &) = default;
+    ResponseParser(ResponseParser &&) = default;
+    ResponseParser &operator =(ResponseParser &&) = default;
     virtual ~ResponseParser() {}
 
     /* Http::One::Parser API */
@@ -43,17 +47,17 @@ public:
 
 private:
     int parseResponseFirstLine();
-    int parseResponseStatusAndReason(Http1::Tokenizer&, const CharacterSet &);
+    int parseResponseStatusAndReason(Tokenizer&, const CharacterSet &);
 
     /// magic prefix for identifying ICY response messages
     static const SBuf IcyMagic;
 
     /// Whether we found the status code yet.
     /// We cannot rely on status value because server may send "000".
-    bool completedStatus_;
+    bool completedStatus_ = false;
 
     /// HTTP/1 status-line status code
-    Http::StatusCode statusCode_;
+    Http::StatusCode statusCode_ = Http::scNone;
 
     /// HTTP/1 status-line reason phrase
     SBuf reasonPhrase_;

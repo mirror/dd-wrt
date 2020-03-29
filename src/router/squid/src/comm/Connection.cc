@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,6 +17,9 @@
 #include "security/NegotiationHistory.h"
 #include "SquidConfig.h"
 #include "SquidTime.h"
+#include <ostream>
+
+InstanceIdDefinitions(Comm::Connection, "conn");
 
 class CachePeer;
 bool
@@ -61,6 +64,7 @@ Comm::Connection::copyDetails() const
     c->peerType = peerType;
     c->tos = tos;
     c->nfmark = nfmark;
+    c->nfConnmark = nfConnmark;
     c->flags = flags;
     c->startTime_ = startTime_;
 
@@ -150,5 +154,37 @@ Comm::Connection::connectTimeout(const time_t fwdStart) const
     const time_t ftimeout = fwdTimeLeft ? fwdTimeLeft : 5; // seconds
 
     return min(ctimeout, ftimeout);
+}
+
+ScopedId
+Comm::Connection::codeContextGist() const {
+    return id.detach();
+}
+
+std::ostream &
+Comm::Connection::detailCodeContext(std::ostream &os) const
+{
+    return os << Debug::Extra << "connection: " << *this;
+}
+
+std::ostream &
+operator << (std::ostream &os, const Comm::Connection &conn)
+{
+    os << conn.id;
+    if (!conn.local.isNoAddr() || conn.local.port())
+        os << " local=" << conn.local;
+    if (!conn.remote.isNoAddr() || conn.remote.port())
+        os << " remote=" << conn.remote;
+    if (conn.peerType)
+        os << ' ' << hier_code_str[conn.peerType];
+    if (conn.fd >= 0)
+        os << " FD " << conn.fd;
+    if (conn.flags != COMM_UNSET)
+        os << " flags=" << conn.flags;
+#if USE_IDENT
+    if (*conn.rfc931)
+        os << " IDENT::" << conn.rfc931;
+#endif
+    return os;
 }
 

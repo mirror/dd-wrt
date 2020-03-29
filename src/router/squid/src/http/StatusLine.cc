@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -76,7 +76,7 @@ Http::StatusLine::parse(const String &protoPrefix, const char *start, const char
 {
     status_ = Http::scInvalidHeader;    /* Squid header parsing error */
 
-    // XXX: HttpMsg::parse() has a similar check but is using
+    // XXX: Http::Message::parse() has a similar check but is using
     // casesensitive comparison (which is required by HTTP errata?)
 
     if (protoPrefix.cmp("ICY", 3) == 0) {

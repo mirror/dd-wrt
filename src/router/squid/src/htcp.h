@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,6 +22,10 @@ class HtcpReplyData
 
 public:
     HtcpReplyData();
+
+    /// parses request header from the buffer
+    bool parseHeader(const char *buffer, const size_t size);
+
     int hit;
     HttpHeader hdr;
     uint32_t msg_id;

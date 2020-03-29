@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -43,10 +43,10 @@ Auth::Digest::Scheme::shutdownCleanup()
     debugs(29, DBG_CRITICAL, "Shutdown: Digest authentication.");
 }
 
-Auth::Config *
+Auth::SchemeConfig *
 Auth::Digest::Scheme::createConfig()
 {
     Auth::Digest::Config *digestCfg = new Auth::Digest::Config;
-    return dynamic_cast<Auth::Config*>(digestCfg);
+    return dynamic_cast<Auth::SchemeConfig*>(digestCfg);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -21,7 +21,8 @@
 void
 Acl::InnerNode::prepareForUse()
 {
-    std::for_each(nodes.begin(), nodes.end(), std::mem_fun(&ACL::prepareForUse));
+    for (auto node : nodes)
+        node->prepareForUse();
 }
 
 bool

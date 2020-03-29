@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -103,9 +103,7 @@ DoOneRequest(char *buf)
 static void
 ProcessArguments(int argc, char **argv)
 {
-    int i;
-    i = LDAPArguments(argc, argv);
-    if (i)
+    if (int i = LDAPArguments(argc, argv))
         exit(i);
 }
 
@@ -117,6 +115,6 @@ main(int argc, char **argv)
     ProcessArguments(argc, argv);
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin) != NULL)
         DoOneRequest(buf);
-    exit(0);
+    return EXIT_SUCCESS;
 }
 

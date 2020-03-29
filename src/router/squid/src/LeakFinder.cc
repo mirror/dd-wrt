@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,7 +22,7 @@
 
 /* ========================================================================= */
 
-LeakFinderPtr::LeakFinderPtr(void *p , const char *f, const int l) :
+LeakFinderPtr::LeakFinderPtr(void *p, const char *f, const int l) :
     file(f),
     line(l),
     when(squid_curtime)

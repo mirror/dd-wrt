@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -136,7 +136,7 @@ MemChunk::MemChunk(MemPoolChunked *aPool)
 }
 
 MemPoolChunked::MemPoolChunked(const char *aLabel, size_t aSize) :
-    MemImplementingAllocator(aLabel, aSize) , chunk_size(0),
+    MemImplementingAllocator(aLabel, aSize), chunk_size(0),
     chunk_capacity(0), chunkCount(0), freeCache(0), nextFreeChunk(0),
     Chunks(0), allChunks(Splay<MemChunk *>())
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -1337,7 +1337,7 @@ SigTrap(int s)
         CloseLDAP(&edui_ldap);
 
     debug("Terminating, Signal: %d\n", s);
-    exit(0);
+    exit(EXIT_SUCCESS);
 }
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -40,7 +40,6 @@ public:
     virtual void evictCached(StoreEntry &) override;
     virtual void evictIfFound(const cache_key *) override;
     virtual int callback() override;
-    virtual bool smpAware() const override;
 
     /// \returns a locally indexed and SMP-tracked matching StoreEntry (or nil)
     /// Slower than peek() but does not restrict StoreEntry use and storage.
@@ -89,8 +88,8 @@ public:
     /// called to get rid of no longer needed entry data in RAM, if any
     void memoryOut(StoreEntry &, const bool preserveSwappable);
 
-    /// update old entry metadata and HTTP headers using a newer entry
-    void updateOnNotModified(StoreEntry *old, const StoreEntry &newer);
+    /// using a 304 response, update the old entry (metadata and reply headers)
+    void updateOnNotModified(StoreEntry *old, StoreEntry &e304);
 
     /// tries to make the entry available for collapsing future requests
     bool allowCollapsing(StoreEntry *, const RequestFlags &, const HttpRequestMethod &);
@@ -124,11 +123,17 @@ public:
     /// disassociates the entry from the intransit table
     void transientsDisconnect(StoreEntry &);
 
+    /// removes collapsing requirement (for future hits)
+    void transientsClearCollapsingRequirement(StoreEntry &e);
+
     /// disassociates the entry from the memory cache, preserving cached data
     void memoryDisconnect(StoreEntry &);
 
     /// \returns an iterator for all Store entries
     StoreSearch *search();
+
+    /// whether there are any SMP-aware storages
+    static bool SmpAware();
 
     /// the number of cache_dirs being rebuilt; TODO: move to Disks::Rebuilding
     static int store_dirs_rebuilding;
@@ -149,7 +154,8 @@ private:
     void checkTransients(const StoreEntry &) const;
 
     Disks *swapDir; ///< summary view of all disk caches
-    Memory *memStore; ///< memory cache
+    Memory *sharedMemStore; ///< memory cache that multiple workers can use
+    bool localMemStore; ///< whether local (non-shared) memory cache is enabled
 
     /// A shared table of public store entries that do not know whether they
     /// will belong to a memory cache, a disk cache, or will be uncachable

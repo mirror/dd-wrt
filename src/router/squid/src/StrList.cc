@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 
 #include "squid.h"
 #include "base/TextException.h"
+#include "sbuf/SBuf.h"
 #include "SquidString.h"
 #include "StrList.h"
 
@@ -33,17 +34,16 @@ strListAdd(String * str, const char *item, char del)
 
 /** returns true iff "m" is a member of the list */
 int
-strListIsMember(const String * list, const char *m, char del)
+strListIsMember(const String * list, const SBuf &m, char del)
 {
     const char *pos = NULL;
     const char *item;
     int ilen = 0;
-    int mlen;
 
-    assert(list && m);
-    mlen = strlen(m);
+    assert(list);
+    int mlen = m.plength();
     while (strListGetItem(list, del, &item, &ilen, &pos)) {
-        if (mlen == ilen && !strncasecmp(item, m, ilen))
+        if (mlen == ilen && m.caseCmp(item, ilen) == 0)
             return 1;
     }
     return 0;
@@ -129,5 +129,19 @@ strListGetItem(const String * str, char del, const char **item, int *ilen, const
         *ilen = len;
 
     return len > 0;
+}
+
+SBuf
+getListMember(const String &list, const char *key, const char delimiter)
+{
+    const char *pos = nullptr;
+    const char *item = nullptr;
+    int ilen = 0;
+    const auto keyLen = strlen(key);
+    while (strListGetItem(&list, delimiter, &item, &ilen, &pos)) {
+        if (static_cast<size_t>(ilen) > keyLen && strncmp(item, key, keyLen) == 0 && item[keyLen] == '=')
+            return SBuf(item + keyLen + 1, ilen - keyLen - 1);
+    }
+    return SBuf();
 }
 

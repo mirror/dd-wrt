@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -411,14 +411,17 @@ Rock::SwapDir::parseTimeOption(char const *option, const char *value, int reconf
     else
         return false;
 
-    if (!value)
+    if (!value) {
         self_destruct();
+        return false;
+    }
 
     // TODO: handle time units and detect parsing errors better
     const int64_t parsedValue = strtoll(value, NULL, 10);
     if (parsedValue < 0) {
         debugs(3, DBG_CRITICAL, "FATAL: cache_dir " << path << ' ' << option << " must not be negative but is: " << parsedValue);
         self_destruct();
+        return false;
     }
 
     const time_msec_t newTime = static_cast<time_msec_t>(parsedValue);
@@ -453,14 +456,17 @@ Rock::SwapDir::parseRateOption(char const *option, const char *value, int isaRec
     else
         return false;
 
-    if (!value)
+    if (!value) {
         self_destruct();
+        return false;
+    }
 
     // TODO: handle time units and detect parsing errors better
     const int64_t parsedValue = strtoll(value, NULL, 10);
     if (parsedValue < 0) {
         debugs(3, DBG_CRITICAL, "FATAL: cache_dir " << path << ' ' << option << " must not be negative but is: " << parsedValue);
         self_destruct();
+        return false;
     }
 
     const int newRate = static_cast<int>(parsedValue);
@@ -468,6 +474,7 @@ Rock::SwapDir::parseRateOption(char const *option, const char *value, int isaRec
     if (newRate < 0) {
         debugs(3, DBG_CRITICAL, "FATAL: cache_dir " << path << ' ' << option << " must not be negative but is: " << newRate);
         self_destruct();
+        return false;
     }
 
     if (!isaReconfig)
@@ -499,19 +506,23 @@ Rock::SwapDir::parseSizeOption(char const *option, const char *value, int reconf
     else
         return false;
 
-    if (!value)
+    if (!value) {
         self_destruct();
+        return false;
+    }
 
     // TODO: handle size units and detect parsing errors better
     const uint64_t newSize = strtoll(value, NULL, 10);
     if (newSize <= 0) {
         debugs(3, DBG_CRITICAL, "FATAL: cache_dir " << path << ' ' << option << " must be positive; got: " << newSize);
         self_destruct();
+        return false;
     }
 
     if (newSize <= sizeof(DbCellHeader)) {
         debugs(3, DBG_CRITICAL, "FATAL: cache_dir " << path << ' ' << option << " must exceed " << sizeof(DbCellHeader) << "; got: " << newSize);
         self_destruct();
+        return false;
     }
 
     if (!reconfig)
@@ -743,7 +754,7 @@ void
 Rock::SwapDir::noteFreeMapSlice(const Ipc::StoreMapSliceId sliceId)
 {
     Ipc::Mem::PageId pageId;
-    pageId.pool = index+1;
+    pageId.pool = Ipc::Mem::PageStack::IdForSwapDirSpace(index);
     pageId.number = sliceId+1;
     if (waitingForPage) {
         *waitingForPage = pageId;
@@ -834,16 +845,15 @@ Rock::SwapDir::readCompleted(const char *, int rlen, int errflag, RefCount< ::Re
     ReadRequest *request = dynamic_cast<Rock::ReadRequest*>(r.getRaw());
     assert(request);
     IoState::Pointer sio = request->sio;
-
-    if (errflag == DISK_OK && rlen > 0)
-        sio->offset_ += rlen;
-
-    sio->callReaderBack(r->buf, rlen);
+    sio->handleReadCompletion(*request, rlen, errflag);
 }
 
 void
 Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
 {
+    // TODO: Move details into IoState::handleWriteCompletion() after figuring
+    // out how to deal with map access. See readCompleted().
+
     Rock::WriteRequest *request = dynamic_cast<Rock::WriteRequest*>(r.getRaw());
     assert(request);
     assert(request->sio !=  NULL);
@@ -852,7 +862,7 @@ Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
     // quit if somebody called IoState::close() while we were waiting
     if (!sio.stillWaiting()) {
         debugs(79, 3, "ignoring closed entry " << sio.swap_filen);
-        noteFreeMapSlice(request->sidNext);
+        noteFreeMapSlice(request->sidCurrent);
         return;
     }
 
@@ -860,7 +870,7 @@ Rock::SwapDir::writeCompleted(int errflag, size_t, RefCount< ::WriteRequest> r)
 
     if (errflag != DISK_OK)
         handleWriteCompletionProblem(errflag, *request);
-    else if (droppedEarlierRequest(*request))
+    else if (!sio.expectedReply(request->id))
         handleWriteCompletionProblem(DISK_ERROR, *request);
     else
         handleWriteCompletionSuccess(*request);
@@ -877,15 +887,24 @@ Rock::SwapDir::handleWriteCompletionSuccess(const WriteRequest &request)
     sio.splicingPoint = request.sidCurrent;
     // do not increment sio.offset_ because we do it in sio->write()
 
-    // finalize the shared slice info after writing slice contents to disk
+    assert(sio.writeableAnchor_);
+    if (sio.writeableAnchor_->start < 0) { // wrote the first slot
+        Must(request.sidPrevious < 0);
+        sio.writeableAnchor_->start = request.sidCurrent;
+    } else {
+        Must(request.sidPrevious >= 0);
+        map->writeableSlice(sio.swap_filen, request.sidPrevious).next = request.sidCurrent;
+    }
+
+    // finalize the shared slice info after writing slice contents to disk;
+    // the chain gets possession of the slice we were writing
     Ipc::StoreMap::Slice &slice =
         map->writeableSlice(sio.swap_filen, request.sidCurrent);
     slice.size = request.len - sizeof(DbCellHeader);
-    slice.next = request.sidNext;
+    Must(slice.next < 0);
 
     if (request.eof) {
         assert(sio.e);
-        assert(sio.writeableAnchor_);
         if (sio.touchingStoreEntry()) {
             sio.e->swap_file_sz = sio.writeableAnchor_->basics.swap_file_sz =
                                       sio.offset_;
@@ -904,7 +923,7 @@ Rock::SwapDir::handleWriteCompletionProblem(const int errflag, const WriteReques
 {
     auto &sio = *request.sio;
 
-    noteFreeMapSlice(request.sidNext);
+    noteFreeMapSlice(request.sidCurrent);
 
     writeError(sio);
     sio.finishedWriting(errflag);
@@ -923,23 +942,6 @@ Rock::SwapDir::writeError(StoreIOState &sio)
     // else noop: a fresh entry update error does not affect stale entry readers
 
     // All callers must also call IoState callback, to propagate the error.
-}
-
-/// whether the disk has dropped at least one of the previous write requests
-bool
-Rock::SwapDir::droppedEarlierRequest(const WriteRequest &request) const
-{
-    const auto &sio = *request.sio;
-    assert(sio.writeableAnchor_);
-    const Ipc::StoreMapSliceId expectedSliceId = sio.splicingPoint < 0 ?
-            sio.writeableAnchor_->start :
-            map->writeableSlice(sio.swap_filen, sio.splicingPoint).next;
-    if (expectedSliceId != request.sidCurrent) {
-        debugs(79, 3, "yes; expected " << expectedSliceId << ", but got " << request.sidCurrent);
-        return true;
-    }
-
-    return false;
 }
 
 void
@@ -1136,7 +1138,9 @@ void Rock::SwapDirRr::create()
             // TODO: somehow remove pool id and counters from PageStack?
             Ipc::Mem::Owner<Ipc::Mem::PageStack> *const freeSlotsOwner =
                 shm_new(Ipc::Mem::PageStack)(sd->freeSlotsPath(),
-                                             i+1, capacity, 0);
+                                             Ipc::Mem::PageStack::IdForSwapDirSpace(i),
+                                             capacity,
+                                             0);
             freeSlotsOwners.push_back(freeSlotsOwner);
 
             // TODO: add method to initialize PageStack with no free pages

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,21 +11,13 @@
 
 #if USE_AUTH
 
-#include "auth/Config.h"
 #include "auth/User.h"
 #include "hash.h"
 
-namespace Auth
-{
-class Scheme;
-}
 class ConnStateData;
 class StoreEntry;
 
-/**
- \ingroup AuthAPI
- \todo this should be a generic cachemgr API type ?
- */
+// TODO this should be a generic cachemgr API type ?
 typedef void AUTHSSTATS(StoreEntry *);
 
 /// \ingroup AuthAPI

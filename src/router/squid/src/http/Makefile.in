@@ -98,7 +98,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -140,6 +140,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -163,9 +164,9 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libhttp_la_DEPENDENCIES = one/libhttp1.la
-am_libhttp_la_OBJECTS = ContentLengthInterpreter.lo MethodType.lo \
-	RegisteredHeaders.lo RequestMethod.lo StatusCode.lo \
-	StatusLine.lo Stream.lo
+am_libhttp_la_OBJECTS = ContentLengthInterpreter.lo Message.lo \
+	MethodType.lo RegisteredHeaders.lo RequestMethod.lo \
+	StatusCode.lo StatusLine.lo Stream.lo
 libhttp_la_OBJECTS = $(am_libhttp_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -187,7 +188,8 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ContentLengthInterpreter.Plo \
-	./$(DEPDIR)/MethodType.Plo ./$(DEPDIR)/RegisteredHeaders.Plo \
+	./$(DEPDIR)/Message.Plo ./$(DEPDIR)/MethodType.Plo \
+	./$(DEPDIR)/RegisteredHeaders.Plo \
 	./$(DEPDIR)/RequestMethod.Plo ./$(DEPDIR)/StatusCode.Plo \
 	./$(DEPDIR)/StatusLine.Plo ./$(DEPDIR)/Stream.Plo
 am__mv = mv -f
@@ -576,11 +578,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -592,6 +596,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -770,6 +776,8 @@ libhttp_la_SOURCES = \
 	ContentLengthInterpreter.cc \
 	ContentLengthInterpreter.h \
 	forward.h \
+	Message.cc \
+	Message.h \
 	MethodType.cc \
 	MethodType.h \
 	ProtocolVersion.h \
@@ -853,6 +861,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ContentLengthInterpreter.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Message.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MethodType.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RegisteredHeaders.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RequestMethod.Plo@am__quote@ # am--include-marker
@@ -1264,6 +1273,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-recursive
 		-rm -f ./$(DEPDIR)/ContentLengthInterpreter.Plo
+	-rm -f ./$(DEPDIR)/Message.Plo
 	-rm -f ./$(DEPDIR)/MethodType.Plo
 	-rm -f ./$(DEPDIR)/RegisteredHeaders.Plo
 	-rm -f ./$(DEPDIR)/RequestMethod.Plo
@@ -1316,6 +1326,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
 		-rm -f ./$(DEPDIR)/ContentLengthInterpreter.Plo
+	-rm -f ./$(DEPDIR)/Message.Plo
 	-rm -f ./$(DEPDIR)/MethodType.Plo
 	-rm -f ./$(DEPDIR)/RegisteredHeaders.Plo
 	-rm -f ./$(DEPDIR)/RequestMethod.Plo

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,7 @@ CBDATA_NAMESPACED_CLASS_INIT(Rock, Rebuild);
  \defgroup RockFsRebuild Rock Store Rebuild
  \ingroup Filesystems
  *
- \section Overview Overview
+ \section RockFsRebuildOverview Overview
  *  Several layers of information are manipualted during the rebuild:
  \par
  *  Store Entry: Response message plus all the metainformation associated with
@@ -593,7 +593,7 @@ Rock::Rebuild::freeSlot(const SlotId slotId, const bool invalid)
     }
 
     Ipc::Mem::PageId pageId;
-    pageId.pool = sd->index+1;
+    pageId.pool = Ipc::Mem::PageStack::IdForSwapDirSpace(sd->index);
     pageId.number = slotId+1;
     sd->freeSlots->push(pageId);
 }

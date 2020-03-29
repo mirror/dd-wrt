@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,6 +18,8 @@
 #include "acl/Tree.h"
 #include "anyp/PortCfg.h"
 #include "anyp/UriScheme.h"
+#include "auth/Config.h"
+#include "auth/Scheme.h"
 #include "AuthReg.h"
 #include "base/RunnersRegistry.h"
 #include "cache_cf.h"
@@ -34,12 +36,14 @@
 #include "icmp/IcmpConfig.h"
 #include "ident/Config.h"
 #include "ip/Intercept.h"
+#include "ip/NfMarkConfig.h"
 #include "ip/QosConfig.h"
 #include "ip/tools.h"
 #include "ipc/Kids.h"
 #include "log/Config.h"
 #include "log/CustomLog.h"
 #include "MemBuf.h"
+#include "MessageDelayPools.h"
 #include "mgr/ActionPasswordList.h"
 #include "mgr/Registration.h"
 #include "neighbors.h"
@@ -52,6 +56,7 @@
 #include "RefreshPattern.h"
 #include "rfc1738.h"
 #include "sbuf/List.h"
+#include "sbuf/Stream.h"
 #include "SquidConfig.h"
 #include "SquidString.h"
 #include "ssl/ProxyCerts.h"
@@ -76,10 +81,6 @@
 #if USE_OPENSSL
 #include "ssl/Config.h"
 #include "ssl/support.h"
-#endif
-#if USE_AUTH
-#include "auth/Config.h"
-#include "auth/Scheme.h"
 #endif
 #if USE_SQUID_ESI
 #include "esi/Parser.h"
@@ -241,6 +242,7 @@ static void free_configuration_includes_quoted_values(bool *recognizeQuotedValue
 static void parse_on_unsupported_protocol(acl_access **access);
 static void dump_on_unsupported_protocol(StoreEntry *entry, const char *name, acl_access *access);
 static void free_on_unsupported_protocol(acl_access **access);
+static void ParseAclWithAction(acl_access **access, const Acl::Answer &action, const char *desc, ACL *acl = nullptr);
 
 /*
  * LegacyParser is a parser for legacy code that uses the global
@@ -954,11 +956,19 @@ configDoConfigure(void)
      * state will be preserved.
      */
     if (Config.pipeline_max_prefetch > 0) {
-        Auth::Config *nego = Auth::Config::Find("Negotiate");
-        Auth::Config *ntlm = Auth::Config::Find("NTLM");
+        Auth::SchemeConfig *nego = Auth::SchemeConfig::Find("Negotiate");
+        Auth::SchemeConfig *ntlm = Auth::SchemeConfig::Find("NTLM");
         if ((nego && nego->active()) || (ntlm && ntlm->active())) {
             debugs(3, DBG_PARSE_NOTE(DBG_IMPORTANT), "WARNING: pipeline_prefetch breaks NTLM and Negotiate authentication. Forced pipeline_prefetch 0.");
             Config.pipeline_max_prefetch = 0;
+        }
+    }
+
+    for (auto &authSchemes : Auth::TheConfig.schemeLists) {
+        authSchemes.expand();
+        if (authSchemes.authConfigs.empty()) {
+            debugs(3, DBG_CRITICAL, "auth_schemes: at least one scheme name is required; got: " << authSchemes.rawSchemes);
+            self_destruct();
         }
     }
 #endif
@@ -1279,7 +1289,7 @@ parseBytesOptionValue(size_t * bptr, const char *units, char const * value)
     }
 
     String number;
-    number.limitInit(number_begin, number_end - number_begin);
+    number.assign(number_begin, number_end - number_begin);
 
     int d = xatoi(number.termedBuf());
     int m;
@@ -1314,13 +1324,39 @@ parseBytesUnits(const char *unit)
 }
 
 static void
+parse_SBufList(SBufList * list)
+{
+    while (char *token = ConfigParser::NextQuotedToken())
+        list->push_back(SBuf(token));
+}
+
+// just dump a list, no directive name
+static void
 dump_SBufList(StoreEntry * entry, const SBufList &words)
 {
-    for (SBufList::const_iterator i = words.begin(); i != words.end(); ++i) {
-        entry->append(i->rawContent(), i->length());
+    for (const auto &i : words) {
+        entry->append(i.rawContent(), i.length());
         entry->append(" ",1);
     }
     entry->append("\n",1);
+}
+
+// dump a SBufList type directive with name
+static void
+dump_SBufList(StoreEntry * entry, const char *name, SBufList &list)
+{
+    if (!list.empty()) {
+        entry->append(name, strlen(name));
+        entry->append(" ", 1);
+        dump_SBufList(entry, list);
+    }
+}
+
+static void
+free_SBufList(SBufList *list)
+{
+    if (list)
+        list->clear();
 }
 
 static void
@@ -1517,10 +1553,7 @@ static void
 dump_acl_nfmark(StoreEntry * entry, const char *name, acl_nfmark * head)
 {
     for (acl_nfmark *l = head; l; l = l->next) {
-        if (l->nfmark > 0)
-            storeAppendPrintf(entry, "%s 0x%02X", name, l->nfmark);
-        else
-            storeAppendPrintf(entry, "%s none", name);
+        storeAppendPrintf(entry, "%s %s", name, ToSBuf(l->markConfig).c_str());
 
         dump_acl_list(entry, l->aclList);
 
@@ -1531,24 +1564,18 @@ dump_acl_nfmark(StoreEntry * entry, const char *name, acl_nfmark * head)
 static void
 parse_acl_nfmark(acl_nfmark ** head)
 {
-    nfmark_t mark;
-    char *token = ConfigParser::NextToken();
+    SBuf token(ConfigParser::NextToken());
+    const auto mc = Ip::NfMarkConfig::Parse(token);
 
-    if (!token) {
-        self_destruct();
-        return;
-    }
-
-    if (!xstrtoui(token, NULL, &mark, 0, std::numeric_limits<nfmark_t>::max())) {
-        self_destruct();
-        return;
-    }
+    // Packet marking directives should not allow to use masks.
+    const auto pkt_dirs = {"mark_client_packet", "clientside_mark", "tcp_outgoing_mark"};
+    if (mc.hasMask() && std::find(pkt_dirs.begin(), pkt_dirs.end(), cfg_directive) != pkt_dirs.end())
+        throw TexcHere(ToSBuf("'", cfg_directive, "' does not support masked marks"));
 
     acl_nfmark *l = new acl_nfmark;
+    l->markConfig = mc;
 
-    l->nfmark = mark;
-
-    aclParseAclList(LegacyParser, &l->aclList, token);
+    aclParseAclList(LegacyParser, &l->aclList, token.c_str());
 
     acl_nfmark **tail = head;   /* sane name below */
     while (*tail)
@@ -1669,7 +1696,7 @@ parse_delay_pool_access(DelayConfig * cfg)
 static void
 free_client_delay_pool_count(ClientDelayConfig * cfg)
 {
-    cfg->freePoolCount();
+    cfg->freePools();
 }
 
 static void
@@ -1804,7 +1831,7 @@ parse_authparam(Auth::ConfigVector * config)
     }
 
     /* find a configuration for the scheme in the currently parsed configs... */
-    Auth::Config *schemeCfg = Auth::Config::Find(type_str);
+    Auth::SchemeConfig *schemeCfg = Auth::SchemeConfig::Find(type_str);
 
     if (schemeCfg == NULL) {
         /* Create a configuration based on the scheme info */
@@ -1817,7 +1844,7 @@ parse_authparam(Auth::ConfigVector * config)
         }
 
         config->push_back(theScheme->createConfig());
-        schemeCfg = Auth::Config::Find(type_str);
+        schemeCfg = Auth::SchemeConfig::Find(type_str);
         if (schemeCfg == NULL) {
             debugs(3, DBG_CRITICAL, "Parsing Config File: Corruption configuring authentication scheme '" << type_str << "'.");
             self_destruct();
@@ -1843,13 +1870,44 @@ free_authparam(Auth::ConfigVector * cfg)
 static void
 dump_authparam(StoreEntry * entry, const char *name, Auth::ConfigVector cfg)
 {
-    for (Auth::ConfigVector::iterator  i = cfg.begin(); i != cfg.end(); ++i)
-        (*i)->dump(entry, name, (*i));
+    for (auto *scheme : cfg)
+        scheme->dump(entry, name, scheme);
 }
+
+static void
+parse_AuthSchemes(acl_access **authSchemes)
+{
+    const char *tok = ConfigParser::NextQuotedToken();
+    if (!tok) {
+        debugs(29, DBG_CRITICAL, "FATAL: auth_schemes missing the parameter");
+        self_destruct();
+        return;
+    }
+    Auth::TheConfig.schemeLists.emplace_back(tok, ConfigParser::LastTokenWasQuoted());
+    const auto action = Acl::Answer(ACCESS_ALLOWED, Auth::TheConfig.schemeLists.size() - 1);
+    ParseAclWithAction(authSchemes, action, "auth_schemes");
+}
+
+static void
+free_AuthSchemes(acl_access **authSchemes)
+{
+    Auth::TheConfig.schemeLists.clear();
+    free_acl_access(authSchemes);
+}
+
+static void
+dump_AuthSchemes(StoreEntry *entry, const char *name, acl_access *authSchemes)
+{
+    if (authSchemes)
+        dump_SBufList(entry, authSchemes->treeDump(name, [](const Acl::Answer &action) {
+        return Auth::TheConfig.schemeLists.at(action.kind).rawSchemes;
+    }));
+}
+
 #endif /* USE_AUTH */
 
 static void
-ParseAclWithAction(acl_access **access, const allow_t &action, const char *desc, ACL *acl = nullptr)
+ParseAclWithAction(acl_access **access, const Acl::Answer &action, const char *desc, ACL *acl)
 {
     assert(access);
     SBuf name;
@@ -2081,6 +2139,7 @@ parse_peer(CachePeer ** head)
 
     CachePeer *p = new CachePeer;
     p->host = xstrdup(host_str);
+    Tolower(p->host);
     p->name = xstrdup(host_str);
     p->type = parseNeighborType(token);
 
@@ -2388,8 +2447,8 @@ dump_denyinfo(StoreEntry * entry, const char *name, AclDenyInfoList * var)
     while (var != NULL) {
         storeAppendPrintf(entry, "%s %s", name, var->err_page_name);
 
-        for (auto *a = var->acl_list; a != NULL; a = a->next)
-            storeAppendPrintf(entry, " %s", a->name);
+        for (const auto &aclName: var->acl_list)
+            storeAppendPrintf(entry, " " SQUIDSBUFPH, SQUIDSBUFPRINT(aclName));
 
         storeAppendPrintf(entry, "\n");
 
@@ -3463,7 +3522,7 @@ parsePortProtocol(const SBuf &value)
     // HTTP/1.0 not supported because we are version 1.1 which contains a superset of 1.0
     // and RFC 2616 requires us to upgrade 1.0 to 1.1
     if (value.cmp("HTTP") == 0 || value.cmp("HTTP/1.1") == 0)
-        return AnyP::ProtocolVersion(AnyP::PROTO_HTTP, 1,1);
+        return Http::ProtocolVersion(1,1);
 
     if (value.cmp("HTTPS") == 0 || value.cmp("HTTPS/1.1") == 0)
         return AnyP::ProtocolVersion(AnyP::PROTO_HTTPS, 1,1);
@@ -4594,7 +4653,7 @@ static void parse_sslproxy_ssl_bump(acl_access **ssl_bump)
         sslBumpCfgRr::lastDeprecatedRule = Ssl::bumpEnd;
     }
 
-    allow_t action = allow_t(ACCESS_ALLOWED);
+    auto action = Acl::Answer(ACCESS_ALLOWED);
 
     if (strcmp(bm, Ssl::BumpModeStr[Ssl::bumpClientFirst]) == 0) {
         action.kind = Ssl::bumpClientFirst;
@@ -4657,7 +4716,7 @@ static void parse_sslproxy_ssl_bump(acl_access **ssl_bump)
 static void dump_sslproxy_ssl_bump(StoreEntry *entry, const char *name, acl_access *ssl_bump)
 {
     if (ssl_bump)
-        dump_SBufList(entry, ssl_bump->treeDump(name, [](const allow_t &action) {
+        dump_SBufList(entry, ssl_bump->treeDump(name, [](const Acl::Answer &action) {
         return Ssl::BumpModeStr.at(action.kind);
     }));
 }
@@ -4753,7 +4812,7 @@ static void free_note(Notes *notes)
 static bool FtpEspvDeprecated = false;
 static void parse_ftp_epsv(acl_access **ftp_epsv)
 {
-    allow_t ftpEpsvDeprecatedAction;
+    Acl::Answer ftpEpsvDeprecatedAction;
     bool ftpEpsvIsDeprecatedRule = false;
 
     char *t = ConfigParser::PeekAtToken();
@@ -4765,11 +4824,11 @@ static void parse_ftp_epsv(acl_access **ftp_epsv)
     if (!strcmp(t, "off")) {
         (void)ConfigParser::NextToken();
         ftpEpsvIsDeprecatedRule = true;
-        ftpEpsvDeprecatedAction = allow_t(ACCESS_DENIED);
+        ftpEpsvDeprecatedAction = Acl::Answer(ACCESS_DENIED);
     } else if (!strcmp(t, "on")) {
         (void)ConfigParser::NextToken();
         ftpEpsvIsDeprecatedRule = true;
-        ftpEpsvDeprecatedAction = allow_t(ACCESS_ALLOWED);
+        ftpEpsvDeprecatedAction = Acl::Answer(ACCESS_ALLOWED);
     }
 
     // Check for mixing "ftp_epsv on|off" and "ftp_epsv allow|deny .." rules:
@@ -4788,7 +4847,7 @@ static void parse_ftp_epsv(acl_access **ftp_epsv)
         delete *ftp_epsv;
         *ftp_epsv = nullptr;
 
-        if (ftpEpsvDeprecatedAction == allow_t(ACCESS_DENIED)) {
+        if (ftpEpsvDeprecatedAction == Acl::Answer(ACCESS_DENIED)) {
             if (ACL *a = ACL::FindByName("all"))
                 ParseAclWithAction(ftp_epsv, ftpEpsvDeprecatedAction, "ftp_epsv", a);
             else {
@@ -4918,7 +4977,7 @@ parse_on_unsupported_protocol(acl_access **access)
         return;
     }
 
-    allow_t action = allow_t(ACCESS_ALLOWED);
+    auto action = Acl::Answer(ACCESS_ALLOWED);
     if (strcmp(tm, "tunnel") == 0)
         action.kind = 1;
     else if (strcmp(tm, "respond") == 0)
@@ -4942,7 +5001,7 @@ dump_on_unsupported_protocol(StoreEntry *entry, const char *name, acl_access *ac
         "respond"
     };
     if (access) {
-        SBufList lines = access->treeDump(name, [](const allow_t &action) {
+        SBufList lines = access->treeDump(name, [](const Acl::Answer &action) {
             return onErrorTunnelMode.at(action.kind);
         });
         dump_SBufList(entry, lines);

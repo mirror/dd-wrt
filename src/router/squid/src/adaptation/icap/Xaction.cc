@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,9 +24,7 @@
 #include "fde.h"
 #include "FwdState.h"
 #include "globals.h"
-#include "HttpMsg.h"
 #include "HttpReply.h"
-#include "HttpRequest.h"
 #include "icap_log.h"
 #include "ipcache.h"
 #include "pconn.h"
@@ -216,10 +214,8 @@ Adaptation::Icap::Xaction::dnsLookupDone(const ipcache_addrs *ia)
         return;
     }
 
-    assert(ia->cur < ia->count);
-
     connection = new Comm::Connection;
-    connection->remote = ia->in_addrs[ia->cur];
+    connection->remote = ia->current();
     connection->remote.port(s.cfg().port);
     getOutgoingAddress(NULL, connection);
 
@@ -523,7 +519,8 @@ void Adaptation::Icap::Xaction::cancelRead()
     }
 }
 
-bool Adaptation::Icap::Xaction::parseHttpMsg(HttpMsg *msg)
+bool
+Adaptation::Icap::Xaction::parseHttpMsg(Http::Message *msg)
 {
     debugs(93, 5, "have " << readBuf.length() << " head bytes to parse");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -23,7 +23,7 @@
 
 /* HeaderRep */
 
-Adaptation::Ecap::HeaderRep::HeaderRep(HttpMsg &aMessage): theHeader(aMessage.header),
+Adaptation::Ecap::HeaderRep::HeaderRep(Http::Message &aMessage): theHeader(aMessage.header),
     theMessage(aMessage)
 {
 }
@@ -52,7 +52,7 @@ void
 Adaptation::Ecap::HeaderRep::add(const Name &name, const Value &value)
 {
     const Http::HdrType squidId = TranslateHeaderId(name); // Http::HdrType::OTHER OK
-    HttpHeaderEntry *e = new HttpHeaderEntry(squidId, name.image().c_str(),
+    HttpHeaderEntry *e = new HttpHeaderEntry(squidId, SBuf(name.image()),
             value.toString().c_str());
     theHeader.addEntry(e);
 
@@ -78,7 +78,7 @@ Adaptation::Ecap::HeaderRep::visitEach(libecap::NamedValueVisitor &visitor) cons
 {
     HttpHeaderPos pos = HttpHeaderInitPos;
     while (HttpHeaderEntry *e = theHeader.getEntry(&pos)) {
-        const Name name(e->name.termedBuf()); // optimize: find std Names
+        const Name name(std::string(e->name.rawContent(), e->name.length())); // optimize: find std Names
         name.assignHostId(e->id);
         visitor.visit(name, Value(e->value.rawBuf(), e->value.size()));
     }
@@ -111,7 +111,7 @@ Adaptation::Ecap::HeaderRep::TranslateHeaderId(const Name &name)
 
 /* FirstLineRep */
 
-Adaptation::Ecap::FirstLineRep::FirstLineRep(HttpMsg &aMessage): theMessage(aMessage)
+Adaptation::Ecap::FirstLineRep::FirstLineRep(Http::Message &aMessage): theMessage(aMessage)
 {
 }
 
@@ -160,6 +160,10 @@ Adaptation::Ecap::FirstLineRep::protocol() const
         return protocolIcy;
     case AnyP::PROTO_COAP:
     case AnyP::PROTO_COAPS: // use 'unknown' until libecap supports coap:// and coaps://
+    // other protocols defined in Squid but not libecap use 'unknown'
+    case AnyP::PROTO_AUTHORITY_FORM:
+    case AnyP::PROTO_SSL:
+    case AnyP::PROTO_TLS:
     case AnyP::PROTO_UNKNOWN:
         return protocolUnknown; // until we remember the protocol image
     case AnyP::PROTO_NONE:
@@ -200,8 +204,7 @@ Adaptation::Ecap::RequestLineRep::uri(const Area &aUri)
 {
     // TODO: if method is not set, AnyP::Uri::parse will assume it is not connect;
     // Can we change AnyP::Uri::parse API to remove the method parameter?
-    const char *buf = aUri.toString().c_str();
-    const bool ok = theMessage.url.parse(theMessage.method, buf);
+    const auto ok = theMessage.url.parse(theMessage.method, SBuf(aUri.toString()));
     Must(ok);
 }
 
@@ -356,7 +359,7 @@ Adaptation::Ecap::BodyRep::bodySize() const
 
 /* MessageRep */
 
-Adaptation::Ecap::MessageRep::MessageRep(HttpMsg *rawHeader):
+Adaptation::Ecap::MessageRep::MessageRep(Http::Message *rawHeader):
     theMessage(rawHeader), theFirstLineRep(NULL),
     theHeaderRep(NULL), theBodyRep(NULL)
 {
@@ -385,7 +388,7 @@ Adaptation::Ecap::MessageRep::~MessageRep()
 libecap::shared_ptr<libecap::Message>
 Adaptation::Ecap::MessageRep::clone() const
 {
-    HttpMsg *hdr = theMessage.header->clone();
+    Http::Message *hdr = theMessage.header->clone();
     hdr->body_pipe = NULL; // if any; TODO: remove pipe cloning from ::clone?
     libecap::shared_ptr<libecap::Message> res(new MessageRep(hdr));
 

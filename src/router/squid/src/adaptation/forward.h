@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,11 +13,6 @@
 
 template <class C>
 class RefCount;
-
-// For various collections such as AllServices
-// TODO: use std::hash_map<> instead
-template <class Item>
-class Vector;
 
 namespace Adaptation
 {

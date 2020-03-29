@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -53,7 +53,8 @@ public:
     virtual void reference(StoreEntry &e) override;
     virtual bool dereference(StoreEntry &e) override;
     virtual void maintain() override;
-    virtual bool smpAware() const override { return false; }
+    /// whether this disk storage is capable of serving multiple workers
+    virtual bool smpAware() const = 0;
 
     /// the size of the smallest entry this cache_dir can store
     int64_t minObjectSize() const;

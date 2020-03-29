@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,7 +35,7 @@ class XactionRep : public Adaptation::Initiate, public libecap::host::Xaction,
     CBDATA_CLASS(XactionRep);
 
 public:
-    XactionRep(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, const Adaptation::ServicePointer &service);
+    XactionRep(Http::Message *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, const Adaptation::ServicePointer &service);
     virtual ~XactionRep();
 
     typedef libecap::shared_ptr<libecap::adapter::Xaction> AdapterXaction;
@@ -91,10 +91,10 @@ protected:
 
     void moveAbContent();
 
-    void updateHistory(HttpMsg *adapted);
+    void updateHistory(Http::Message *adapted);
     void terminateMaster();
     void scheduleStop(const char *reason);
-    void updateSources(HttpMsg *adapted);
+    void updateSources(Http::Message *adapted);
 
     const libecap::Area clientIpValue() const;
     const libecap::Area usernameValue() const;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -112,7 +112,7 @@ process_options(int argc, char *argv[])
             break;
         case 'h':
             usage();
-            exit(0);
+            exit(EXIT_SUCCESS);
         case '?':
             opt = optopt;
         /* fall thru to default */
@@ -123,7 +123,7 @@ process_options(int argc, char *argv[])
         }
     }
     if (had_error)
-        exit(1);
+        exit(EXIT_FAILURE);
 }
 
 static bool
@@ -131,7 +131,7 @@ token_decode(size_t *decodedLen, uint8_t decoded[], const char *buf)
 {
     struct base64_decode_ctx ctx;
     base64_decode_init(&ctx);
-    if (!base64_decode_update(&ctx, decodedLen, decoded, strlen(buf), reinterpret_cast<const uint8_t*>(buf)) ||
+    if (!base64_decode_update(&ctx, decodedLen, decoded, strlen(buf), buf) ||
             !base64_decode_final(&ctx)) {
         SEND("BH base64 decode failed");
         fprintf(stderr, "ERROR: base64 decoding failed for: '%s'\n", buf);
@@ -306,7 +306,7 @@ main(int argc, char *argv[])
 
     if (LoadSecurityDll(SSP_NTLM, NEGOTIATE_PACKAGE_NAME) == NULL) {
         fprintf(stderr, "FATAL: %s: can't initialize SSPI, exiting.\n", argv[0]);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     debug("SSPI initialized OK\n");
 
@@ -319,6 +319,6 @@ main(int argc, char *argv[])
     while (manage_request()) {
         /* everything is done within manage_request */
     }
-    exit(0);
+    return EXIT_SUCCESS;
 }
 

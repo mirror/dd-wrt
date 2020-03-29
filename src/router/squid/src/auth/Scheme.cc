@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,9 +9,9 @@
 /* DEBUG: section 29    Authenticator */
 
 #include "squid.h"
-#include "auth/Config.h"
 #include "auth/Gadgets.h"
 #include "auth/Scheme.h"
+#include "auth/SchemeConfig.h"
 #include "globals.h"
 
 std::vector<Auth::Scheme::Pointer> *Auth::Scheme::_Schemes = NULL;

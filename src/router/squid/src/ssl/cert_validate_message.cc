@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -85,7 +85,7 @@ get_error_id(const char *label, size_t len)
     const char *e = label + len -1;
     while (e != label && xisdigit(*e)) --e;
     if (e != label) ++e;
-    return strtol(e, 0 , 10);
+    return strtol(e, 0, 10);
 }
 
 bool
@@ -171,7 +171,7 @@ Ssl::CertValidationMsg::parseResponse(CertValidationResponse &resp, std::string 
             return false;
         }
 
-        param = value + value_len +1;
+        param = value + value_len;
     }
 
     /*Run through parsed errors to check for errors*/

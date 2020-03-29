@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,8 +13,6 @@
 class ByteCounter
 {
 public:
-    ByteCounter() : bytes(0), kb(0) {}
-
     ByteCounter &operator +=(size_t v) {
         bytes += v;
         kb += (bytes >> 10);
@@ -23,8 +21,8 @@ public:
     }
 
 public:
-    size_t bytes;
-    size_t kb;
+    size_t bytes = 0;
+    size_t kb = 0;
 };
 
 #endif /* SQUID_SRC_BYTECOUNTER_H */

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,6 +13,11 @@
 
 namespace Http
 {
+
+class ContentLengthInterpreter;
+
+class Message;
+typedef RefCount<Http::Message> MessagePointer;
 
 class Stream;
 typedef RefCount<Http::Stream> StreamPointer;

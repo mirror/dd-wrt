@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,6 +11,8 @@
 #include "format/Token.h"
 #include "format/TokenTableEntry.h"
 #include "globals.h"
+#include "proxyp/Elements.h"
+#include "sbuf/Stream.h"
 #include "SquidConfig.h"
 #include "Store.h"
 
@@ -146,6 +148,7 @@ static TokenTableEntry TokenTableMisc[] = {
     TokenTableEntry("err_detail", LFT_SQUID_ERROR_DETAIL ),
     TokenTableEntry("note", LFT_NOTE ),
     TokenTableEntry("credentials", LFT_CREDENTIALS),
+    TokenTableEntry("master_xaction", LFT_MASTER_XACTION),
     /*
      * Legacy external_acl_type format tokens
      */
@@ -174,6 +177,10 @@ static TokenTableEntry TokenTableMisc[] = {
     TokenTableEntry("USER_CERT", LFT_EXT_ACL_USER_CERT_RAW),
 #endif
     TokenTableEntry(NULL, LFT_NONE)        /* this must be last */
+};
+
+static TokenTableEntry TokenTableProxyProtocol[] = {
+    TokenTableEntry(">h", LFT_PROXY_PROTOCOL_RECEIVED_HEADER),
 };
 
 #if USE_ADAPTATION
@@ -221,6 +228,7 @@ static TokenTableEntry TokenTableSsl[] = {
     TokenTableEntry("<cert_subject", LFT_SSL_SERVER_CERT_SUBJECT),
     TokenTableEntry("<cert_issuer", LFT_SSL_SERVER_CERT_ISSUER),
     TokenTableEntry("<cert_errors", LFT_SSL_SERVER_CERT_ERRORS),
+    TokenTableEntry("<cert", LFT_SSL_SERVER_CERT_WHOLE),
     TokenTableEntry(">negotiated_version", LFT_TLS_CLIENT_NEGOTIATED_VERSION),
     TokenTableEntry("<negotiated_version", LFT_TLS_SERVER_NEGOTIATED_VERSION),
     TokenTableEntry(">negotiated_cipher", LFT_TLS_CLIENT_NEGOTIATED_CIPHER),
@@ -241,15 +249,16 @@ Format::Token::Init()
     // TODO standard log tokens
 
 #if USE_ADAPTATION
-    TheConfig.registerTokens(String("adapt"),::Format::TokenTableAdapt);
+    TheConfig.registerTokens(SBuf("adapt"),::Format::TokenTableAdapt);
 #endif
 #if ICAP_CLIENT
-    TheConfig.registerTokens(String("icap"),::Format::TokenTableIcap);
+    TheConfig.registerTokens(SBuf("icap"),::Format::TokenTableIcap);
 #endif
 #if USE_OPENSSL
-    TheConfig.registerTokens(String("tls"),::Format::TokenTableSsl);
-    TheConfig.registerTokens(String("ssl"),::Format::TokenTableSsl);
+    TheConfig.registerTokens(SBuf("tls"),::Format::TokenTableSsl);
+    TheConfig.registerTokens(SBuf("ssl"),::Format::TokenTableSsl);
 #endif
+    TheConfig.registerTokens(SBuf("proxy_protocol"), ::Format::TokenTableProxyProtocol);
 }
 
 /// Scans a token table to see if the next token exists there
@@ -394,14 +403,14 @@ Format::Token::parse(const char *def, Quoting *quoting)
         type = LFT_NONE;
 
         // Scan each registered token namespace
-        debugs(46, 9, HERE << "check for token in " << TheConfig.tokens.size() << " namespaces.");
-        for (std::list<TokenNamespace>::const_iterator itr = TheConfig.tokens.begin(); itr != TheConfig.tokens.end(); ++itr) {
-            debugs(46, 7, HERE << "check for possible " << itr->prefix << ":: token");
-            const size_t len = itr->prefix.size();
-            if (itr->prefix.cmp(cur, len) == 0 && cur[len] == ':' && cur[len+1] == ':') {
-                debugs(46, 5, HERE << "check for " << itr->prefix << ":: token in '" << cur << "'");
+        debugs(46, 9, "check for token in " << TheConfig.tokens.size() << " namespaces.");
+        for (const auto &itr : TheConfig.tokens) {
+            debugs(46, 7, "check for possible " << itr.prefix << ":: token");
+            const size_t len = itr.prefix.length();
+            if (itr.prefix.cmp(cur, len) == 0 && cur[len] == ':' && cur[len+1] == ':') {
+                debugs(46, 5, "check for " << itr.prefix << ":: token in '" << cur << "'");
                 const char *old = cur;
-                cur = scanForToken(itr->tokenSet, cur+len+2);
+                cur = scanForToken(itr.tokenSet, cur+len+2);
                 if (old != cur) // found
                     break;
                 else // reset to start of namespace
@@ -434,9 +443,8 @@ Format::Token::parse(const char *def, Quoting *quoting)
             }
         }
 
-        if (type == LFT_NONE) {
-            fatalf("Can't parse configuration token: '%s'\n", def);
-        }
+        if (type == LFT_NONE)
+            throw TexcHere(ToSBuf("Unsupported %code: '", def, "'"));
 
         // when {arg} field is after the token (old external_acl_type token syntax)
         // but accept only if there was none before the token
@@ -479,9 +487,14 @@ Format::Token::parse(const char *def, Quoting *quoting)
 
     case LFT_NOTE:
 
+    case LFT_PROXY_PROTOCOL_RECEIVED_HEADER:
+
         if (data.string) {
             char *header = data.string;
-            char *cp = strchr(header, ':');
+            const auto initialType = type;
+
+            const auto pseudoHeader = header[0] == ':';
+            char *cp = strchr(pseudoHeader ? header+1 : header, ':');
 
             if (cp) {
                 *cp = '\0';
@@ -521,10 +534,21 @@ Format::Token::parse(const char *def, Quoting *quoting)
                     type = LFT_ICAP_REP_HEADER_ELEM;
                     break;
 #endif
+                case LFT_PROXY_PROTOCOL_RECEIVED_HEADER:
+                    type = LFT_PROXY_PROTOCOL_RECEIVED_HEADER_ELEM;
+                    break;
                 default:
                     break;
                 }
             }
+
+            if (!*header)
+                throw TexcHere(ToSBuf("Can't parse configuration token: '", def, "': missing header name"));
+
+            if (initialType == LFT_PROXY_PROTOCOL_RECEIVED_HEADER)
+                data.headerId = ProxyProtocol::FieldNameToFieldType(SBuf(header));
+            else if (pseudoHeader)
+                throw TexcHere(ToSBuf("Pseudo headers are not supported in this context; got: '", def, "'"));
 
             data.header.header = header;
         } else {
@@ -553,6 +577,9 @@ Format::Token::parse(const char *def, Quoting *quoting)
                 type = LFT_ICAP_REP_ALL_HEADERS;
                 break;
 #endif
+            case LFT_PROXY_PROTOCOL_RECEIVED_HEADER:
+                type = LFT_PROXY_PROTOCOL_RECEIVED_ALL_HEADERS;
+                break;
             default:
                 break;
             }
@@ -651,6 +678,7 @@ Format::Token::Token() : type(LFT_NONE),
     data.header.header = NULL;
     data.header.element = NULL;
     data.header.separator = ',';
+    data.headerId = ProxyProtocol::Two::htUnknown;
 }
 
 Format::Token::~Token()

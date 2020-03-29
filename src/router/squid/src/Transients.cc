@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -40,9 +40,9 @@ Transients::~Transients()
 void
 Transients::init()
 {
+    assert(Enabled());
     const int64_t entryLimit = EntryLimit();
-    if (entryLimit <= 0)
-        return; // no SMP support or a misconfiguration
+    assert(entryLimit > 0);
 
     Must(!map);
     map = new TransientsMap(MapLabel);
@@ -166,6 +166,8 @@ Transients::get(const cache_key *key)
     e->mem_obj->xitTable.index = index;
     e->mem_obj->xitTable.io = Store::ioReading;
     anchor->exportInto(*e);
+    const bool collapsingRequired = EBIT_TEST(anchor->basics.flags, ENTRY_REQUIRES_COLLAPSING);
+    e->setCollapsingRequirement(collapsingRequired);
     // keep read lock to receive updates from others
     return e;
 }
@@ -184,6 +186,20 @@ Transients::findCollapsed(const sfileno index)
 
     debugs(20, 3, "no entry at " << index << " in " << MapLabel);
     return NULL;
+}
+
+void
+Transients::clearCollapsingRequirement(const StoreEntry &e)
+{
+    assert(map);
+    assert(e.hasTransients());
+    assert(isWriter(e));
+    const auto idx = e.mem_obj->xitTable.index;
+    auto &anchor = map->writeableEntry(idx);
+    if (EBIT_TEST(anchor.basics.flags, ENTRY_REQUIRES_COLLAPSING)) {
+        EBIT_CLR(anchor.basics.flags, ENTRY_REQUIRES_COLLAPSING);
+        CollapsedForwarding::Broadcast(e);
+    }
 }
 
 void
@@ -242,15 +258,16 @@ Transients::noteFreeMapSlice(const Ipc::StoreMapSliceId)
 }
 
 void
-Transients::status(const StoreEntry &entry, bool &aborted, bool &waitingToBeFreed) const
+Transients::status(const StoreEntry &entry, Transients::EntryStatus &entryStatus) const
 {
     assert(map);
     assert(entry.hasTransients());
     const auto idx = entry.mem_obj->xitTable.index;
     const auto &anchor = isWriter(entry) ?
                          map->writeableEntry(idx) : map->readableEntry(idx);
-    aborted = anchor.writerHalted;
-    waitingToBeFreed = anchor.waitingToBeFreed;
+    entryStatus.abortedByWriter = anchor.writerHalted;
+    entryStatus.waitingToBeFreed = anchor.waitingToBeFreed;
+    entryStatus.collapsed = EBIT_TEST(anchor.basics.flags, ENTRY_REQUIRES_COLLAPSING);
 }
 
 void
@@ -320,11 +337,8 @@ Transients::disconnect(StoreEntry &entry)
 int64_t
 Transients::EntryLimit()
 {
-    // TODO: we should also check whether any SMP-aware caching is configured
-    if (!UsingSmp() || !Config.onoff.collapsed_forwarding)
-        return 0; // no SMP collapsed forwarding possible or needed
-
-    return Config.collapsed_forwarding_shared_entries_limit;
+    return (UsingSmp() && Store::Controller::SmpAware()) ?
+           Config.shared_transient_entries_limit : 0;
 }
 
 bool
@@ -373,9 +387,6 @@ TransientsRr::useConfig()
 void
 TransientsRr::create()
 {
-    if (!Config.onoff.collapsed_forwarding)
-        return;
-
     const int64_t entryLimit = Transients::EntryLimit();
     if (entryLimit <= 0)
         return; // no SMP configured or a misconfiguration

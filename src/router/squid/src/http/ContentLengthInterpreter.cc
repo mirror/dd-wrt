@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -18,13 +18,14 @@
 #include "SquidString.h"
 #include "StrList.h"
 
-Http::ContentLengthInterpreter::ContentLengthInterpreter(const int aDebugLevel):
+Http::ContentLengthInterpreter::ContentLengthInterpreter():
     value(-1),
     headerWideProblem(nullptr),
-    debugLevel(aDebugLevel),
+    debugLevel(Config.onoff.relaxed_header_parser <= 0 ? DBG_IMPORTANT : 2),
     sawBad(false),
     needsSanitizing(false),
-    sawGood(false)
+    sawGood(false),
+    prohibitedAndIgnored_(nullptr)
 {
 }
 

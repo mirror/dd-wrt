@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,6 +12,7 @@
 #include "AccessLogEntry.h"
 #include "acl/AclSizeLimit.h"
 #include "acl/FilledChecklist.h"
+#include "CachePeer.h"
 #include "client_side.h"
 #include "client_side_request.h"
 #include "dns/LookupDetails.h"
@@ -20,6 +21,7 @@
 #include "globals.h"
 #include "gopher.h"
 #include "http.h"
+#include "http/ContentLengthInterpreter.h"
 #include "http/one/RequestParser.h"
 #include "http/Stream.h"
 #include "HttpHdrCc.h"
@@ -39,7 +41,7 @@
 #endif
 
 HttpRequest::HttpRequest(const MasterXaction::Pointer &mx) :
-    HttpMsg(hoRequest),
+    Http::Message(hoRequest),
     masterXaction(mx)
 {
     assert(mx);
@@ -47,7 +49,7 @@ HttpRequest::HttpRequest(const MasterXaction::Pointer &mx) :
 }
 
 HttpRequest::HttpRequest(const HttpRequestMethod& aMethod, AnyP::ProtocolType aProtocol, const char *aSchemeImg, const char *aUrlpath, const MasterXaction::Pointer &mx) :
-    HttpMsg(hoRequest),
+    Http::Message(hoRequest),
     masterXaction(mx)
 {
     assert(mx);
@@ -103,7 +105,7 @@ HttpRequest::init()
 #endif
     extacl_log = null_string;
     extacl_message = null_string;
-    pstate = psReadyToParseStartLine;
+    pstate = Http::Message::psReadyToParseStartLine;
 #if FOLLOW_X_FORWARDED_FOR
     indirect_client_addr.setEmpty();
 #endif /* FOLLOW_X_FORWARDED_FOR */
@@ -143,7 +145,7 @@ HttpRequest::clean()
 
     myportname.clean();
 
-    notes = NULL;
+    theNotes = nullptr;
 
     tag.clean();
 #if USE_AUTH
@@ -211,7 +213,7 @@ HttpRequest::clone() const
 }
 
 bool
-HttpRequest::inheritProperties(const HttpMsg *aMsg)
+HttpRequest::inheritProperties(const Http::Message *aMsg)
 {
     const HttpRequest* aReq = dynamic_cast<const HttpRequest*>(aMsg);
     if (!aReq)
@@ -253,7 +255,7 @@ HttpRequest::inheritProperties(const HttpMsg *aMsg)
 
     downloader = aReq->downloader;
 
-    notes = aReq->notes;
+    theNotes = aReq->theNotes;
 
     sources = aReq->sources;
     return true;
@@ -327,15 +329,7 @@ HttpRequest::parseFirstLine(const char *start, const char *end)
     if (end < start)   // missing URI
         return false;
 
-    char save = *end;
-
-    * (char *) end = '\0';     // temp terminate URI, XXX dangerous?
-
-    const bool ret = url.parse(method, start);
-
-    * (char *) end = save;
-
-    return ret;
+    return url.parse(method, SBuf(start, size_t(end-start)));
 }
 
 /* swaps out request using httpRequestPack */
@@ -387,7 +381,7 @@ HttpRequest::prefixLen() const
 void
 HttpRequest::hdrCacheInit()
 {
-    HttpMsg::hdrCacheInit();
+    Http::Message::hdrCacheInit();
 
     assert(!range);
     range = header.getRange();
@@ -449,6 +443,25 @@ bool
 HttpRequest::bodyNibbled() const
 {
     return body_pipe != NULL && body_pipe->consumedSize() > 0;
+}
+
+void
+HttpRequest::prepForPeering(const CachePeer &peer)
+{
+    // XXX: Saving two pointers to memory controlled by an independent object.
+    peer_login = peer.login;
+    peer_domain = peer.domain;
+    flags.auth_no_keytab = peer.options.auth_no_keytab;
+    debugs(11, 4, this << " to " << peer.host << (!peer.options.originserver ? " proxy" : " origin"));
+}
+
+void
+HttpRequest::prepForDirect()
+{
+    peer_login = nullptr;
+    peer_domain = nullptr;
+    flags.auth_no_keytab = false;
+    debugs(11, 4, this);
 }
 
 void
@@ -519,7 +532,7 @@ HttpRequest::expectingBody(const HttpRequestMethod &, int64_t &theSize) const
  * If the request cannot be created cleanly, NULL is returned
  */
 HttpRequest *
-HttpRequest::FromUrl(const char * url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
+HttpRequest::FromUrl(const SBuf &url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
 {
     std::unique_ptr<HttpRequest> req(new HttpRequest(mx));
     if (req->url.parse(method, url)) {
@@ -527,6 +540,12 @@ HttpRequest::FromUrl(const char * url, const MasterXaction::Pointer &mx, const H
         return req.release();
     }
     return nullptr;
+}
+
+HttpRequest *
+HttpRequest::FromUrlXXX(const char * url, const MasterXaction::Pointer &mx, const HttpRequestMethod& method)
+{
+    return FromUrl(SBuf(url), mx, method);
 }
 
 /**
@@ -586,10 +605,13 @@ void
 HttpRequest::recordLookup(const Dns::LookupDetails &dns)
 {
     if (dns.wait >= 0) { // known delay
-        if (dnsWait >= 0) // have recorded DNS wait before
+        if (dnsWait >= 0) { // have recorded DNS wait before
+            debugs(78, 7, this << " " << dnsWait << " += " << dns);
             dnsWait += dns.wait;
-        else
+        } else {
+            debugs(78, 7, this << " " << dns);
             dnsWait = dns.wait;
+        }
     }
 }
 
@@ -646,6 +668,20 @@ HttpRequest::canHandle1xx() const
     return true;
 }
 
+bool
+HttpRequest::parseHeader(Http1::Parser &hp)
+{
+    Http::ContentLengthInterpreter clen;
+    return Message::parseHeader(hp, clen);
+}
+
+bool
+HttpRequest::parseHeader(const char *buffer, const size_t size)
+{
+    Http::ContentLengthInterpreter clen;
+    return header.parse(buffer, size, clen);
+}
+
 ConnStateData *
 HttpRequest::pinnedConnection()
 {
@@ -673,10 +709,26 @@ HttpRequest::effectiveRequestUri() const
     return url.absolute();
 }
 
-char *
-HttpRequest::canonicalCleanUrl() const
+NotePairs::Pointer
+HttpRequest::notes()
 {
-    return urlCanonicalCleanWithoutRequest(effectiveRequestUri(), method, url.getScheme());
+    if (!theNotes)
+        theNotes = new NotePairs;
+    return theNotes;
+}
+
+void
+UpdateRequestNotes(ConnStateData *csd, HttpRequest &request, NotePairs const &helperNotes)
+{
+    // Tag client connection if the helper responded with clt_conn_tag=tag.
+    const char *cltTag = "clt_conn_tag";
+    if (const char *connTag = helperNotes.findFirst(cltTag)) {
+        if (csd) {
+            csd->notes()->remove(cltTag);
+            csd->notes()->add(cltTag, connTag);
+        }
+    }
+    request.notes()->replaceOrAdd(&helperNotes);
 }
 
 void
@@ -717,5 +769,60 @@ HttpRequest::manager(const CbcPointer<ConnStateData> &aMgr, const AccessLogEntry
         } else
             flags.spoofClientIp = false;
     }
+}
+
+char *
+HttpRequest::canonicalCleanUrl() const
+{
+    return urlCanonicalCleanWithoutRequest(effectiveRequestUri(), method, url.getScheme());
+}
+
+/// a helper for validating FindListeningPortAddress()-found address candidates
+static const Ip::Address *
+FindListeningPortAddressInAddress(const Ip::Address *ip)
+{
+    // FindListeningPortAddress() callers do not want INADDR_ANY addresses
+    return (ip && !ip->isAnyAddr()) ? ip : nullptr;
+}
+
+/// a helper for handling PortCfg cases of FindListeningPortAddress()
+static const Ip::Address *
+FindListeningPortAddressInPort(const AnyP::PortCfgPointer &port)
+{
+    return port ? FindListeningPortAddressInAddress(&port->s) : nullptr;
+}
+
+/// a helper for handling Connection cases of FindListeningPortAddress()
+static const Ip::Address *
+FindListeningPortAddressInConn(const Comm::ConnectionPointer &conn)
+{
+    return conn ? FindListeningPortAddressInAddress(&conn->local) : nullptr;
+}
+
+const Ip::Address *
+FindListeningPortAddress(const HttpRequest *callerRequest, const AccessLogEntry *ale)
+{
+    // Check all sources of usable listening port information, giving
+    // HttpRequest and masterXaction a preference over ALE.
+
+    const HttpRequest *request = callerRequest;
+    if (!request && ale)
+        request = ale->request;
+    if (!request)
+        return nullptr; // not enough information
+
+    const Ip::Address *ip = FindListeningPortAddressInPort(request->masterXaction->squidPort);
+    if (!ip && ale)
+        ip = FindListeningPortAddressInPort(ale->cache.port);
+
+    // XXX: also handle PROXY protocol here when we have a flag to identify such request
+    if (ip || request->flags.interceptTproxy || request->flags.intercepted)
+        return ip;
+
+    /* handle non-intercepted cases that were not handled above */
+    ip = FindListeningPortAddressInConn(request->masterXaction->tcpClient);
+    if (!ip && ale)
+        ip = FindListeningPortAddressInConn(ale->tcpClient);
+    return ip; // may still be nil
 }
 

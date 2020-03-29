@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -37,6 +37,11 @@ public:
     ACLFilledChecklist();
     ACLFilledChecklist(const acl_access *, HttpRequest *, const char *ident = nullptr);
     ~ACLFilledChecklist();
+
+    /// configure client request-related fields for the first time
+    void setRequest(HttpRequest *);
+    /// configure rfc931 user identity for the first time
+    void setIdent(const char *userIdentity);
 
 public:
     /// The client connection manager
@@ -84,7 +89,10 @@ public:
 
     /// SSL [certificate validation] errors, in undefined order
     const Security::CertErrors *sslErrors;
-    /// The peer certificate
+
+    /// Peer certificate being checked by ssl_verify_cb() and by
+    /// Security::PeerConnector class. In other contexts, the peer
+    /// certificate is retrieved via ALE or ConnStateData::serverBump.
     Security::CertPointer serverCert;
 
     AccessLogEntry::Pointer al; ///< info for the future access.log, and external ACL

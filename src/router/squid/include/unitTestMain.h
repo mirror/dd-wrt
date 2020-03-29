@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -22,7 +22,7 @@
 #include <cppunit/TestRunner.h>
 
 int
-main( int argc, char* argv[] )
+main(int, char *[])
 {
 #if ENABLE_DEBUG_SECTION
     Debug::Levels[ENABLE_DEBUG_SECTION] = 99;
