@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2020 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -42,6 +42,7 @@ COPIED_SOURCE= \
 	SquidNew.cc \
 	stub_HelperChildConfig.cc \
 	stub_libmem.cc \
+	stub_SBuf.cc \
 	STUB.h \
 	time.cc
 
@@ -102,6 +103,9 @@ stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
 
 stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
 	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
+
+stub_SBuf.cc: $(top_srcdir)/src/tests/stub_SBuf.cc STUB.h
+	cp $(top_srcdir)/src/tests/stub_SBuf.cc $@
 
 STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@

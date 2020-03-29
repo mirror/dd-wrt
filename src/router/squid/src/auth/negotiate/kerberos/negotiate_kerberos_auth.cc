@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -393,7 +393,7 @@ main(int argc, char *const argv[])
                 keytab_name = xstrdup(optarg);
             else {
                 fprintf(stderr, "ERROR: keytab file not given\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             /*
              * Some sanity checks
@@ -408,16 +408,16 @@ main(int argc, char *const argv[])
                     fprintf(stderr, "ERROR: keytab file %s does not exist\n",keytab_name);
                 else
                     fprintf(stderr, "ERROR: Error %s during stat of keytab file %s\n",strerror(errno),keytab_name);
-                exit(1);
+                exit(EXIT_FAILURE);
             } else if (!S_ISREG(fstat.st_mode)) {
                 fprintf(stderr, "ERROR: keytab file %s is not a file\n",keytab_name);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 #endif
 #if HAVE_UNISTD_H
             if (access(ktp, R_OK)) {
                 fprintf(stderr, "ERROR: keytab file %s is not accessible\n",keytab_name);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 #endif
             break;
@@ -429,7 +429,7 @@ main(int argc, char *const argv[])
                 rcache_dir = xstrdup(optarg);
             else {
                 fprintf(stderr, "ERROR: replay cache directory not given\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             /*
              * Some sanity checks
@@ -440,16 +440,16 @@ main(int argc, char *const argv[])
                     fprintf(stderr, "ERROR: replay cache directory %s does not exist\n",rcache_dir);
                 else
                     fprintf(stderr, "ERROR: Error %s during stat of replay cache directory %s\n",strerror(errno),rcache_dir);
-                exit(1);
+                exit(EXIT_FAILURE);
             } else if (!S_ISDIR(dstat.st_mode)) {
                 fprintf(stderr, "ERROR: replay cache directory %s is not a directory\n",rcache_dir);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 #endif
 #if HAVE_UNISTD_H
             if (access(rcache_dir, W_OK)) {
                 fprintf(stderr, "ERROR: replay cache directory %s is not accessible\n",rcache_dir);
-                exit(1);
+                exit(EXIT_FAILURE);
             }
 #endif
             break;
@@ -458,7 +458,7 @@ main(int argc, char *const argv[])
                 rcache_type = xstrdup(optarg);
             else {
                 fprintf(stderr, "ERROR: replay cache type not given\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             break;
         case 's':
@@ -466,7 +466,7 @@ main(int argc, char *const argv[])
                 service_principal = xstrdup(optarg);
             else {
                 fprintf(stderr, "ERROR: service principal not given\n");
-                exit(1);
+                exit(EXIT_FAILURE);
             }
             break;
         default:
@@ -482,7 +482,7 @@ main(int argc, char *const argv[])
             fprintf(stderr,
                     "The SPN can be set to GSS_C_NO_NAME to allow any entry from keytab\n");
             fprintf(stderr, "default SPN is HTTP/fqdn@DEFAULT_REALM\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
     }
 
@@ -501,7 +501,7 @@ main(int argc, char *const argv[])
                     "%s| %s: FATAL: Local hostname could not be determined. Please specify the service principal\n",
                     LogTime(), PROGRAM);
             fprintf(stdout, "BH hostname error\n");
-            exit(-1);
+            exit(EXIT_FAILURE);
         }
         service.value = xmalloc(strlen(service_name) + strlen(host_name) + 2);
         snprintf((char *) service.value, strlen(service_name) + strlen(host_name) + 2,
@@ -591,10 +591,10 @@ main(int argc, char *const argv[])
                       strerror(ferror(stdin)));
 
                 fprintf(stdout, "BH input error\n");
-                exit(1);    /* BIIG buffer */
+                exit(EXIT_FAILURE);    /* BIIG buffer */
             }
             fprintf(stdout, "BH input error\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
         c = (char *) memchr(buf, '\n', sizeof(buf) - 1);
         if (c) {
@@ -655,7 +655,7 @@ main(int argc, char *const argv[])
 #endif
             xfree(rfc_user);
             fprintf(stdout, "BH quit command\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
         if (strncmp(buf, "YR", 2) && strncmp(buf, "KK", 2)) {
             debug((char *) "%s| %s: ERROR: Invalid request [%s]\n", LogTime(), PROGRAM, buf);
@@ -879,6 +879,7 @@ cleanup:
         safe_free(user);
         continue;
     }
+    return EXIT_SUCCESS;
 }
 #else
 #include <cstdlib>
@@ -894,10 +895,11 @@ main(int argc, char *const argv[])
     while (1) {
         if (fgets(buf, sizeof(buf) - 1, stdin) == NULL) {
             fprintf(stdout, "BH input error\n");
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
         fprintf(stdout, "BH Kerberos authentication not supported\n");
     }
+    return EXIT_SUCCESS;
 }
 #endif /* HAVE_GSSAPI */
 

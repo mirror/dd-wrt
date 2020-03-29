@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -70,9 +70,12 @@ public:
 
 /**
  * This class is responsible for composing or parsing messages destined to
- * or comming from a cert validator helper.
+ * or comming from a certificate validation helper.
  * The messages format is:
- *   response/request-code SP body-length SP [key=value ...] \x01
+\verbatim
+   response/request-code SP body-length SP [key=value ...] EOL
+\endverbatim
+ * \note EOL for this interface is character 0x01
  */
 class CertValidationMsg : public CrtdMessage
 {

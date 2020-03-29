@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -58,7 +58,7 @@ AIODiskFile::open(int flags, mode_t, RefCount<IORequestor> callback)
 #if _SQUID_WINDOWS_
     fd = aio_open(path.termedBuf(), flags);
 #else
-    fd = file_open(path.termedBuf() , flags);
+    fd = file_open(path.termedBuf(), flags);
 #endif
 
     ioRequestor = callback;

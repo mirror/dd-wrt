@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,8 +12,6 @@
 #include "acl/Note.h"
 #include "acl/NoteData.h"
 #include "HttpRequest.h"
-#include "parser/Tokenizer.h"
-#include "sbuf/StringConvert.h"
 
 /* Acl::AnnotationStrategy */
 
@@ -34,7 +32,7 @@ int
 ACLNoteStrategy::match(ACLData<MatchType> * &data, ACLFilledChecklist *checklist)
 {
     if (const auto request = checklist->request) {
-        if (request->notes != NULL && matchNotes(data, request->notes.getRaw()))
+        if (request->hasNotes() && matchNotes(data, request->notes().getRaw()))
             return 1;
 #if USE_ADAPTATION
         const Adaptation::History::Pointer ah = request->adaptLogHistory();
@@ -48,24 +46,10 @@ ACLNoteStrategy::match(ACLData<MatchType> * &data, ACLFilledChecklist *checklist
 bool
 ACLNoteStrategy::matchNotes(ACLData<MatchType> *noteData, const NotePairs *note) const
 {
-    for (auto &entry: note->entries) {
-        if (!delimiters.value.isEmpty()) {
-            NotePairs::Entry e(entry->name.termedBuf(), "");
-            Parser::Tokenizer t(StringToSBuf(entry->value));
-            SBuf s;
-            while (t.token(s, delimiters.value)) {
-                e.value = s.c_str();
-                if (noteData->match(&e))
-                    return true;
-            }
-            s = t.remaining();
-            e.value = s.c_str();
-            if (noteData->match(&e))
-                return true;
-        }
-        if (noteData->match(entry))
+    const NotePairs::Entries &entries = note->expandListEntries(&delimiters.value);
+    for (auto e: entries)
+        if (noteData->match(e.getRaw()))
             return true;
-    }
     return false;
 }
 

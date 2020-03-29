@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -81,8 +81,6 @@ static void commSetNoLinger(int);
 static void commSetTcpNoDelay(int);
 #endif
 static void commSetTcpRcvbuf(int, int);
-
-fd_debug_t *fdd_table = NULL;
 
 bool
 isOpen(const int fd)
@@ -428,9 +426,6 @@ comm_init_opened(const Comm::ConnectionPointer &conn,
     assert(!isOpen(conn->fd)); // NP: global isOpen checks the fde entry for openness not the Comm::Connection
     fd_open(conn->fd, FD_SOCKET, note);
 
-    fdd_table[conn->fd].close_file = NULL;
-    fdd_table[conn->fd].close_line = 0;
-
     fde *F = &fd_table[conn->fd];
     F->local_addr = conn->local;
 
@@ -738,6 +733,7 @@ commCallCloseHandlers(int fd)
     }
 }
 
+// XXX: This code has been broken, unused, and untested since 933dd09. Remove.
 #if LINGERING_CLOSE
 static void
 commLingerClose(int fd, void *unused)
@@ -840,6 +836,7 @@ comm_close_complete(const FdeCbParams &params)
     ++ statCounter.syscalls.sock.closes;
 
     /* When one connection closes, give accept() a chance, if need be */
+    CodeContext::Reset(); // exit FD-specific context
     Comm::AcceptLimiter::Instance().kick();
 }
 
@@ -856,13 +853,11 @@ comm_close_complete(const FdeCbParams &params)
 void
 _comm_close(int fd, char const *file, int line)
 {
-    debugs(5, 3, "comm_close: start closing FD " << fd);
+    debugs(5, 3, "start closing FD " << fd << " by " << file << ":" << line);
     assert(fd >= 0);
     assert(fd < Squid_MaxFD);
 
     fde *F = &fd_table[fd];
-    fdd_table[fd].close_file = file;
-    fdd_table[fd].close_line = line;
 
     if (F->closing())
         return;
@@ -883,6 +878,11 @@ _comm_close(int fd, char const *file, int line)
     PROF_start(comm_close);
 
     F->flags.close_request = true;
+
+    // We have caller's context and fde::codeContext. In the unlikely event they
+    // differ, it is not clear which context is more applicable to this closure.
+    // For simplicity sake, we remain in the caller's context while still
+    // allowing individual advanced callbacks to overwrite it.
 
     if (F->ssl) {
         AsyncCall::Pointer startCall=commCbCall(5,4, "commStartTlsClose",
@@ -908,12 +908,9 @@ _comm_close(int fd, char const *file, int line)
     }
 
 #if USE_DELAY_POOLS
-    if (ClientInfo *clientInfo = F->clientInfo) {
-        if (clientInfo->selectWaiting) {
-            clientInfo->selectWaiting = false;
-            // kick queue or it will get stuck as commWriteHandle is not called
-            clientInfo->kickQuotaQueue();
-        }
+    if (BandwidthBucket *bucket = BandwidthBucket::SelectBucket(F)) {
+        if (bucket->selectWaiting)
+            bucket->onFdClosed();
     }
 #endif
 
@@ -1221,7 +1218,6 @@ void
 comm_init(void)
 {
     fd_table =(fde *) xcalloc(Squid_MaxFD, sizeof(fde));
-    fdd_table = (fd_debug_t *)xcalloc(Squid_MaxFD, sizeof(fd_debug_t));
 
     /* make sure the accept() socket FIFO delay queue exists */
     Comm::AcceptLimiter::Instance();
@@ -1248,7 +1244,6 @@ comm_exit(void)
     TheHalfClosed = NULL;
 
     safe_free(fd_table);
-    safe_free(fdd_table);
     Comm::CallbackTableDestruct();
 }
 
@@ -1343,7 +1338,7 @@ ClientInfo::kickQuotaQueue()
 {
     if (!eventWaiting && !selectWaiting && hasQueue()) {
         // wait at least a second if the bucket is empty
-        const double delay = (bucketSize < 1.0) ? 1.0 : 0.0;
+        const double delay = (bucketLevel < 1.0) ? 1.0 : 0.0;
         eventAdd("commHandleWriteHelper", &commHandleWriteHelper,
                  quotaQueue, delay, 0, true);
         eventWaiting = true;
@@ -1352,7 +1347,7 @@ ClientInfo::kickQuotaQueue()
 
 /// calculates how much to write for a single dequeued client
 int
-ClientInfo::quotaForDequed()
+ClientInfo::quota()
 {
     /* If we have multiple clients and give full bucketSize to each client then
      * clt1 may often get a lot more because clt1->clt2 time distance in the
@@ -1368,7 +1363,7 @@ ClientInfo::quotaForDequed()
 
         // Rounding errors do not accumulate here, but we round down to avoid
         // negative bucket sizes after write with rationedCount=1.
-        rationedQuota = static_cast<int>(floor(bucketSize/rationedCount));
+        rationedQuota = static_cast<int>(floor(bucketLevel/rationedCount));
         debugs(77,5, HERE << "new rationedQuota: " << rationedQuota <<
                '*' << rationedCount);
     }
@@ -1382,48 +1377,50 @@ ClientInfo::quotaForDequed()
     return rationedQuota;
 }
 
-///< adds bytes to the quota bucket based on the rate and passed time
-void
-ClientInfo::refillBucket()
+bool
+ClientInfo::applyQuota(int &nleft, Comm::IoCallback *state)
 {
-    // all these times are in seconds, with double precision
-    const double currTime = current_dtime;
-    const double timePassed = currTime - prevTime;
-
-    // Calculate allowance for the time passed. Use double to avoid
-    // accumulating rounding errors for small intervals. For example, always
-    // adding 1 byte instead of 1.4 results in 29% bandwidth allocation error.
-    const double gain = timePassed * writeSpeedLimit;
-
-    debugs(77,5, HERE << currTime << " clt" << (const char*)hash.key << ": " <<
-           bucketSize << " + (" << timePassed << " * " << writeSpeedLimit <<
-           " = " << gain << ')');
-
-    // to further combat error accumulation during micro updates,
-    // quit before updating time if we cannot add at least one byte
-    if (gain < 1.0)
-        return;
-
-    prevTime = currTime;
-
-    // for "first" connections, drain initial fat before refilling but keep
-    // updating prevTime to avoid bursts after the fat is gone
-    if (bucketSize > bucketSizeLimit) {
-        debugs(77,4, HERE << "not refilling while draining initial fat");
-        return;
+    assert(hasQueue());
+    assert(quotaPeekFd() == state->conn->fd);
+    quotaDequeue(); // we will write or requeue below
+    if (nleft > 0 && !BandwidthBucket::applyQuota(nleft, state)) {
+        state->quotaQueueReserv = quotaEnqueue(state->conn->fd);
+        kickQuotaQueue();
+        return false;
     }
+    return true;
+}
 
-    bucketSize += gain;
+void
+ClientInfo::scheduleWrite(Comm::IoCallback *state)
+{
+    if (writeLimitingActive) {
+        state->quotaQueueReserv = quotaEnqueue(state->conn->fd);
+        kickQuotaQueue();
+    }
+}
 
-    // obey quota limits
-    if (bucketSize > bucketSizeLimit)
-        bucketSize = bucketSizeLimit;
+void
+ClientInfo::onFdClosed()
+{
+    BandwidthBucket::onFdClosed();
+    // kick queue or it will get stuck as commWriteHandle is not called
+    kickQuotaQueue();
+}
+
+void
+ClientInfo::reduceBucket(const int len)
+{
+    if (len > 0)
+        BandwidthBucket::reduceBucket(len);
+    // even if we wrote nothing, we were served; give others a chance
+    kickQuotaQueue();
 }
 
 void
 ClientInfo::setWriteLimiter(const int aWriteSpeedLimit, const double anInitialBurst, const double aHighWatermark)
 {
-    debugs(77,5, HERE << "Write limits for " << (const char*)hash.key <<
+    debugs(77,5, "Write limits for " << (const char*)key <<
            " speed=" << aWriteSpeedLimit << " burst=" << anInitialBurst <<
            " highwatermark=" << aHighWatermark);
 
@@ -1440,7 +1437,7 @@ ClientInfo::setWriteLimiter(const int aWriteSpeedLimit, const double anInitialBu
         assert(!quotaQueue);
         quotaQueue = new CommQuotaQueue(this);
 
-        bucketSize = anInitialBurst;
+        bucketLevel = anInitialBurst;
         prevTime = current_dtime;
     }
 }
@@ -1460,7 +1457,7 @@ CommQuotaQueue::~CommQuotaQueue()
 unsigned int
 CommQuotaQueue::enqueue(int fd)
 {
-    debugs(77,5, HERE << "clt" << (const char*)clientInfo->hash.key <<
+    debugs(77,5, "clt" << (const char*)clientInfo->key <<
            ": FD " << fd << " with qqid" << (ins+1) << ' ' << fds.size());
     fds.push_back(fd);
     return ++ins;
@@ -1471,13 +1468,13 @@ void
 CommQuotaQueue::dequeue()
 {
     assert(!fds.empty());
-    debugs(77,5, HERE << "clt" << (const char*)clientInfo->hash.key <<
+    debugs(77,5, "clt" << (const char*)clientInfo->key <<
            ": FD " << fds.front() << " with qqid" << (outs+1) << ' ' <<
            fds.size());
     fds.pop_front();
     ++outs;
 }
-#endif
+#endif /* USE_DELAY_POOLS */
 
 /*
  * hm, this might be too general-purpose for all the places we'd
@@ -1582,12 +1579,27 @@ checkTimeouts(void)
 
         if (writeTimedOut(fd)) {
             // We have an active write callback and we are timed out
+            CodeContext::Reset(F->codeContext);
             debugs(5, 5, "checkTimeouts: FD " << fd << " auto write timeout");
             Comm::SetSelect(fd, COMM_SELECT_WRITE, NULL, NULL, 0);
             COMMIO_FD_WRITECB(fd)->finish(Comm::COMM_ERROR, ETIMEDOUT);
-        } else if (AlreadyTimedOut(F))
+            CodeContext::Reset();
+#if USE_DELAY_POOLS
+        } else if (F->writeQuotaHandler != nullptr && COMMIO_FD_WRITECB(fd)->conn != nullptr) {
+            // TODO: Move and extract quota() call to place it inside F->codeContext.
+            if (!F->writeQuotaHandler->selectWaiting && F->writeQuotaHandler->quota() && !F->closing()) {
+                CodeContext::Reset(F->codeContext);
+                F->writeQuotaHandler->selectWaiting = true;
+                Comm::SetSelect(fd, COMM_SELECT_WRITE, Comm::HandleWrite, COMMIO_FD_WRITECB(fd), 0);
+                CodeContext::Reset();
+            }
+            continue;
+#endif
+        }
+        else if (AlreadyTimedOut(F))
             continue;
 
+        CodeContext::Reset(F->codeContext);
         debugs(5, 5, "checkTimeouts: FD " << fd << " Expired");
 
         if (F->timeoutHandler != NULL) {
@@ -1599,6 +1611,8 @@ checkTimeouts(void)
             debugs(5, 5, "checkTimeouts: FD " << fd << ": Forcing comm_close()");
             comm_close(fd);
         }
+
+        CodeContext::Reset();
     }
 }
 
@@ -1917,10 +1931,6 @@ comm_open_uds(int sock_type,
 
     assert(!isOpen(new_socket));
     fd_open(new_socket, FD_MSGHDR, addr->sun_path);
-
-    fdd_table[new_socket].close_file = NULL;
-
-    fdd_table[new_socket].close_line = 0;
 
     fd_table[new_socket].sock_family = AI.ai_family;
 

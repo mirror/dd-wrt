@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -35,6 +35,6 @@ void netdbDeleteAddrNetwork(Ip::Address &addr) STUB
 void netdbBinaryExchange(StoreEntry *) STUB
 void netdbExchangeStart(void *) STUB
 void netdbExchangeUpdatePeer(Ip::Address &, CachePeer *, double, double) STUB
-CachePeer *netdbClosestParent(HttpRequest *) STUB_RETVAL(NULL)
+CachePeer *netdbClosestParent(PeerSelector *) STUB_RETVAL(nullptr)
 void netdbHostData(const char *host, int *samp, int *rtt, int *hops) STUB
 

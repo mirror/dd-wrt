@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,6 +14,8 @@
 #include "acl/Asn.h"
 #include "acl/forward.h"
 #include "anyp/UriScheme.h"
+#include "auth/Config.h"
+#include "auth/Gadgets.h"
 #include "AuthReg.h"
 #include "base/RunnersRegistry.h"
 #include "base/Subscription.h"
@@ -92,9 +94,6 @@
 #include "adaptation/icap/Config.h"
 #include "adaptation/icap/icap_log.h"
 #endif
-#if USE_AUTH
-#include "auth/Gadgets.h"
-#endif
 #if USE_DELAY_POOLS
 #include "ClientDelayConfig.h"
 #endif
@@ -156,7 +155,7 @@ static volatile int do_reconfigure = 0;
 static volatile int do_rotate = 0;
 static volatile int do_shutdown = 0;
 static volatile int do_revive_kids = 0;
-static volatile int shutdown_status = 0;
+static volatile int shutdown_status = EXIT_SUCCESS;
 static volatile int do_handle_stopped_child = 0;
 
 static int RotateSignal = -1;
@@ -786,7 +785,7 @@ shut_down(int sig)
     ShutdownSignal = sig;
 #if defined(SIGTTIN)
     if (SIGTTIN == sig)
-        shutdown_status = 1;
+        shutdown_status = EXIT_FAILURE;
 #endif
 
 #if !_SQUID_WINDOWS_
@@ -992,7 +991,7 @@ mainReconfigureFinish(void *)
 
     redirectReconfigure();
 #if USE_AUTH
-    authenticateInit(&Auth::TheConfig);
+    authenticateInit(&Auth::TheConfig.schemes);
 #endif
     externalAclInit();
 
@@ -1056,7 +1055,7 @@ mainRotate(void)
     icmpEngine.Open();
     redirectInit();
 #if USE_AUTH
-    authenticateInit(&Auth::TheConfig);
+    authenticateInit(&Auth::TheConfig.schemes);
 #endif
     externalAclInit();
 }
@@ -1204,7 +1203,7 @@ mainInitialize(void)
 
     redirectInit();
 #if USE_AUTH
-    authenticateInit(&Auth::TheConfig);
+    authenticateInit(&Auth::TheConfig.schemes);
 #endif
     externalAclInit();
 
@@ -1233,36 +1232,34 @@ mainInitialize(void)
 
 #endif
 
-    if (!configured_once) {
-        if (unlinkdNeeded())
-            unlinkdInit();
+    if (unlinkdNeeded())
+        unlinkdInit();
 
-        urlInitialize();
-        statInit();
-        storeInit();
-        mainSetCwd();
-        mimeInit(Config.mimeTablePathname);
-        refreshInit();
+    urlInitialize();
+    statInit();
+    storeInit();
+    mainSetCwd();
+    mimeInit(Config.mimeTablePathname);
+    refreshInit();
 #if USE_DELAY_POOLS
-        DelayPools::Init();
+    DelayPools::Init();
 #endif
 
-        FwdState::initModule();
-        /* register the modules in the cache manager menus */
+    FwdState::initModule();
+    /* register the modules in the cache manager menus */
 
-        cbdataRegisterWithCacheManager();
-        SBufStatsAction::RegisterWithCacheManager();
+    cbdataRegisterWithCacheManager();
+    SBufStatsAction::RegisterWithCacheManager();
 
-        /* These use separate calls so that the comm loops can eventually
-         * coexist.
-         */
+    /* These use separate calls so that the comm loops can eventually
+     * coexist.
+     */
 
-        eventInit();
+    eventInit();
 
-        // TODO: pconn is a good candidate for new-style registration
-        // PconnModule::GetInstance()->registerWithCacheManager();
-        //   moved to PconnModule::PconnModule()
-    }
+    // TODO: pconn is a good candidate for new-style registration
+    // PconnModule::GetInstance()->registerWithCacheManager();
+    // moved to PconnModule::PconnModule()
 
     if (IamPrimaryProcess()) {
 #if USE_WCCP
@@ -1340,24 +1337,22 @@ mainInitialize(void)
     Config.ClientDelay.finalize();
 #endif
 
-    if (!configured_once) {
-        eventAdd("storeMaintain", Store::Maintain, NULL, 1.0, 1);
+    eventAdd("storeMaintain", Store::Maintain, nullptr, 1.0, 1);
 
-        if (Config.onoff.announce)
-            eventAdd("start_announce", start_announce, NULL, 3600.0, 1);
+    if (Config.onoff.announce)
+        eventAdd("start_announce", start_announce, nullptr, 3600.0, 1);
 
-        eventAdd("ipcache_purgelru", ipcache_purgelru, NULL, 10.0, 1);
+    eventAdd("ipcache_purgelru", ipcache_purgelru, nullptr, 10.0, 1);
 
-        eventAdd("fqdncache_purgelru", fqdncache_purgelru, NULL, 15.0, 1);
+    eventAdd("fqdncache_purgelru", fqdncache_purgelru, nullptr, 15.0, 1);
 
 #if USE_XPROF_STATS
 
-        eventAdd("cpuProfiling", xprof_event, NULL, 1.0, 1);
+    eventAdd("cpuProfiling", xprof_event, nullptr, 1.0, 1);
 
 #endif
 
-        eventAdd("memPoolCleanIdlePools", Mem::CleanIdlePools, NULL, 15.0, 1);
-    }
+    eventAdd("memPoolCleanIdlePools", Mem::CleanIdlePools, nullptr, 15.0, 1);
 
     configured_once = 1;
 }
@@ -1418,7 +1413,7 @@ SquidMainSafe(int argc, char **argv)
     } catch (...) {
         debugs(1, DBG_CRITICAL, "FATAL: " << CurrentException);
     }
-    return -1; // TODO: return EXIT_FAILURE instead
+    return EXIT_FAILURE;
 }
 
 /// computes name and ID for the current kid process

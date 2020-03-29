@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -58,7 +58,7 @@
 /*
  * Ensure that standard type limits are defined for use
  */
-#if __cplusplus >= 201103L
+#if __cplusplus
 #include <cstdint>
 #elif HAVE_STDINT_H
 #include <stdint.h>

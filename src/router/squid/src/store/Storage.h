@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -76,11 +76,6 @@ public:
 
     /// prepare for shutdown
     virtual void sync() {}
-
-    /// whether this storage is capable of serving multiple workers;
-    /// a true result does not imply [lack of] non-SMP support because
-    /// [only] some SMP-aware storages also support non-SMP configss
-    virtual bool smpAware() const = 0;
 };
 
 } // namespace Store

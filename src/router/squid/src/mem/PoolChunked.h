@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 #define _MEM_POOL_CHUNKED_H_
 
 #include "mem/Pool.h"
+#include "splay.h"
 
 #define MEM_CHUNK_SIZE        4 * 4096  /* 16KB ... 4 * VM_PAGE_SZ */
 #define MEM_CHUNK_MAX_SIZE  256 * 1024  /* 2MB */

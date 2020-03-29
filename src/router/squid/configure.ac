@@ -1,11 +1,11 @@
-## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2020 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[4.8],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.0.1],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -23,6 +23,7 @@ m4_include([acinclude/os-deps.m4])
 m4_include([acinclude/krb5.m4])
 m4_include([acinclude/pam.m4])
 m4_include([acinclude/pkg.m4])
+m4_include([acinclude/tdb.m4])
 m4_include([acinclude/lib-checks.m4])
 m4_include([acinclude/ax_cxx_compile_stdcxx_11.m4])
 m4_include([acinclude/ax_cxx_0x_types.m4])
@@ -381,36 +382,13 @@ AC_ARG_ENABLE(optimizations,
                   Optimization is good for production builds, but not
                   good for debugging. During development, use
                   --disable-optimizations to reduce compilation times
-                  and allow easier debugging. This option implies
-                  --disable-inline]), [
+                  and allow easier debugging.]), [
 if test "x$enableval" = "xno" ; then
   AC_MSG_NOTICE([Disabling compiler optimizations (-O flag)])
   CFLAGS="`echo $CFLAGS | sed -e 's/-O[[0-9g]]*//'`"
   CXXFLAGS="`echo $CXXFLAGS | sed -e 's/-O[[0-9g]]*//'`"
-  enable_inline="no"
 fi
 ])
-
-AH_TEMPLATE(_USE_INLINE_,[Include inline methods into header file])
-AC_ARG_ENABLE(inline,
-  AS_HELP_STRING([--disable-inline],
-                 [Do not compile trivial methods as inline. Squid
-                  is coded with much of the code able to be inlined.
-                  Inlining is good for production builds, but not
-                  good for development. During development, use
-                  --disable-inline to reduce compilation times and
-                  allow incremental builds to be quick. For
-                  production builds, or load tests, use
-                  --enable-inline to have squid make all trivial
-                  methods inlinable by the compiler.]), [
-SQUID_YESNO([$enableval],
-  [Unrecognized argument to --disable-inline: $enableval])
-])
-AC_MSG_NOTICE([inlining optimizations enabled: ${enable_inline:=yes}])
-SQUID_DEFINE_BOOL(_USE_INLINE_,$enable_inline,
-  [Include inline methods into header file])
-# to be used by sub-commands
-export enable_inline
 
 AC_ARG_ENABLE(debug-cbdata,
   AS_HELP_STRING([--enable-debug-cbdata],
@@ -1131,6 +1109,10 @@ AC_ARG_ENABLE(eui,
 SQUID_YESNO([$enableval],[--disable-eui expects no arguments])
 ])
 if test "x${enable_eui:=yes}" = "xyes" ; then
+  SQUID_STATE_SAVE(LIBEUI)
+  # GLIBC 2.30 deprecates sysctl.h. Test with the same flags that (may) break includes later.
+  CFLAGS=$SQUID_CFLAGS
+  CXXFLAGS=$SQUID_CXXFLAGS
   case "$squid_host_os" in
     linux|solaris|freebsd|openbsd|netbsd|cygwin)
       ${TRUE}
@@ -1170,6 +1152,7 @@ include <windows.h>
 #include <sys/param.h>
 #endif
   ]])
+  SQUID_STATE_ROLLBACK(LIBEUI)
 fi
 AC_SUBST(EUILIB)
 AC_MSG_NOTICE([EUI (MAC address) controls enabled: $enable_eui])
@@ -1357,7 +1340,7 @@ if test "x$with_openssl" = "xyes"; then
     AC_CHECK_LIB(crypto,[CRYPTO_new_ex_data],[LIBOPENSSL_LIBS="-lcrypto $LIBOPENSSL_LIBS"],[
       AC_MSG_ERROR([library 'crypto' is required for OpenSSL])
     ],$LIBOPENSSL_LIBS)
-    AC_CHECK_LIB(ssl,[SSL_library_init],[LIBOPENSSL_LIBS="-lssl $LIBOPENSSL_LIBS"],[
+    AC_CHECK_LIB(ssl,[SSL_CTX_new],[LIBOPENSSL_LIBS="-lssl $LIBOPENSSL_LIBS"],[
       AC_MSG_ERROR([library 'ssl' is required for OpenSSL])
     ],$LIBOPENSSL_LIBS)
   ])
@@ -2669,20 +2652,6 @@ SQUID_DEFINE_BOOL(WITH_VALGRIND,${with_valgrind_debug:=no},
                   [Valgrind memory debugger support])
 AC_MSG_NOTICE([Valgrind debug support enabled: $with_valgrind_debug])
 
-dnl Disable "memPools" code
-#AC_ARG_ENABLE(chunkedmempools,
-#  AS_HELP_STRING([--enable-chunkedmempools],
-#                 [Enable experimental chunked memPools. Note that this option
-#                 simply sets the default behaviour. Specific classes can override this 
-#                  at runtime, and only lib/MemPool.c needs to be altered 
-#                  to change the squid-wide default for all classes.]), [ 
-#SQUID_YESNO([$enableval],
-#            [--enable-chunkedmempools option takes no arguments])
-#])
-SQUID_DEFINE_BOOL(USE_CHUNKEDMEMPOOLS,${enable_chunkedmempools:=no},
-   [Enable chunked Memory Pools support (experimental)])
-#AC_MSG_NOTICE([Chunked MemPools enabled: $enable_chunkedmempools])
-
 dnl Enable WIN32 Service compile mode
 AC_ARG_ENABLE(win32-service,
   AS_HELP_STRING([--enable-win32-service],
@@ -3807,6 +3776,7 @@ AC_CONFIG_FILES([
 	src/acl/external/eDirectory_userip/Makefile
 	src/acl/external/file_userip/Makefile
 	src/acl/external/kerberos_ldap_group/Makefile
+	src/acl/external/kerberos_sid_group/Makefile
 	src/acl/external/LDAP_group/Makefile
 	src/acl/external/LM_group/Makefile
 	src/acl/external/session/Makefile
@@ -3877,6 +3847,7 @@ AC_CONFIG_FILES([
 	src/mem/Makefile
 	src/mgr/Makefile
 	src/parser/Makefile
+	src/proxyp/Makefile
 	src/repl/Makefile
 	src/sbuf/Makefile
 	src/security/Makefile

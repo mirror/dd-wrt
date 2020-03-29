@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -74,9 +74,15 @@ public:
 
     /* state variable - replace with class to handle storeentries at some point */
     int lookingforstore;
+
+    /* StoreClient API */
     virtual void created (StoreEntry *newEntry);
+    virtual LogTags *loggingTags();
 
     ClientHttpRequest *http;
+    /// Base reply header bytes received from Store.
+    /// Compatible with ClientHttpRequest::Out::offset.
+    /// Not to be confused with ClientHttpRequest::Out::headers_sz.
     int headers_sz;
     store_client *sc;       /* The store_client we're using */
     StoreIOBuffer tempBuffer;   /* For use in validating requests via IMS */
@@ -99,6 +105,9 @@ public:
     clientStreamNode *ourNode;  /* This will go away if/when this file gets refactored some more */
 
 private:
+    /* StoreClient API */
+    virtual void fillChecklist(ACLFilledChecklist &) const;
+
     clientStreamNode *getNextNode() const;
     void makeThisHead();
     bool errorInStream(StoreIOBuffer const &result, size_t const &sizeToProcess)const ;
@@ -109,7 +118,7 @@ private:
     HttpReply *reply;
     void processReplyAccess();
     static ACLCB ProcessReplyAccessResult;
-    void processReplyAccessResult(const allow_t &accessAllowed);
+    void processReplyAccessResult(const Acl::Answer &accessAllowed);
     void cloneReply();
     void buildReplyHeader ();
     bool alwaysAllowResponse(Http::StatusCode sline) const;

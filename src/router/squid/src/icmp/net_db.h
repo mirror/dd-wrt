@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,6 +17,7 @@
 class CachePeer;
 class HttpRequest;
 class netdbEntry;
+class PeerSelector;
 class StoreEntry;
 
 class net_db_name:
@@ -80,7 +81,7 @@ void netdbBinaryExchange(StoreEntry *);
 void netdbExchangeStart(void *);
 
 void netdbExchangeUpdatePeer(Ip::Address &, CachePeer *, double, double);
-CachePeer *netdbClosestParent(HttpRequest *);
+CachePeer *netdbClosestParent(PeerSelector *);
 void netdbHostData(const char *host, int *samp, int *rtt, int *hops);
 
 #endif /* ICMP_NET_DB_H */

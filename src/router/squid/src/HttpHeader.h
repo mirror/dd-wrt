@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -14,7 +14,7 @@
 #include "http/RegisteredHeaders.h"
 /* because we pass a spec by value */
 #include "HttpHeaderMask.h"
-#include "mem/forward.h"
+#include "mem/PoolingAllocator.h"
 #include "sbuf/forward.h"
 #include "SquidString.h"
 
@@ -52,16 +52,16 @@ class HttpHeaderEntry
     MEMPROXY_CLASS(HttpHeaderEntry);
 
 public:
-    HttpHeaderEntry(Http::HdrType id, const char *name, const char *value);
+    HttpHeaderEntry(Http::HdrType id, const SBuf &name, const char *value);
     ~HttpHeaderEntry();
-    static HttpHeaderEntry *parse(const char *field_start, const char *field_end);
+    static HttpHeaderEntry *parse(const char *field_start, const char *field_end, const http_hdr_owner_type msgType);
     HttpHeaderEntry *clone() const;
     void packInto(Packable *p) const;
     int getInt() const;
     int64_t getInt64() const;
 
     Http::HdrType id;
-    String name;
+    SBuf name;
     String value;
 };
 
@@ -82,13 +82,27 @@ public:
     /* Interface functions */
     void clean();
     void append(const HttpHeader * src);
-    bool update(HttpHeader const *fresh);
+    /// replaces fields with matching names and adds fresh fields with new names
+    /// also updates Http::HdrType::WARNINGs, assuming `fresh` is a 304 reply
+    /// TODO: Refactor most callers to avoid special handling of WARNINGs.
+    void update(const HttpHeader *fresh);
+    /// \returns whether calling update(fresh) would change our set of fields
+    bool needUpdate(const HttpHeader *fresh) const;
     void compact();
-    int parse(const char *header_start, size_t len);
+    int parse(const char *header_start, size_t len, Http::ContentLengthInterpreter &interpreter);
+    /// Parses headers stored in a buffer.
+    /// \returns 1 and sets hdr_sz on success
+    /// \returns 0 when needs more data
+    /// \returns -1 on error
+    int parse(const char *buf, size_t buf_len, bool atEnd, size_t &hdr_sz, Http::ContentLengthInterpreter &interpreter);
     void packInto(Packable * p, bool mask_sensitive_info=false) const;
     HttpHeaderEntry *getEntry(HttpHeaderPos * pos) const;
     HttpHeaderEntry *findEntry(Http::HdrType id) const;
-    int delByName(const char *name);
+    /// deletes all fields with a given name, if any.
+    /// \return #fields deleted
+    int delByName(const SBuf &name);
+    /// \deprecated use SBuf method instead. performance regression: reallocates
+    int delByName(const char *name) { return delByName(SBuf(name)); }
     int delById(Http::HdrType id);
     void delAt(HttpHeaderPos pos, int &headers_deleted);
     void refreshMask();
@@ -107,9 +121,14 @@ public:
     /// returns true iff a [possibly empty] named field is there
     /// when returning true, also sets the `value` parameter (if it is not nil)
     bool hasNamed(const SBuf &s, String *value = 0) const;
-    bool hasNamed(const char *name, int namelen, String *value = 0) const;
-    String getByNameListMember(const char *name, const char *member, const char separator) const;
-    String getListMember(Http::HdrType id, const char *member, const char separator) const;
+    /// \deprecated use SBuf method instead.
+    bool hasNamed(const char *name, unsigned int namelen, String *value = 0) const;
+    /// searches for the first matching key=value pair within the name-identified field
+    /// \returns the value of the found pair or an empty string
+    SBuf getByNameListMember(const char *name, const char *member, const char separator) const;
+    /// searches for the first matching key=value pair within the field
+    /// \returns the value of the found pair or an empty string
+    SBuf getListMember(Http::HdrType id, const char *member, const char separator) const;
     int has(Http::HdrType id) const;
     /// Appends "this cache" information to VIA header field.
     /// Takes the initial VIA value from "from" parameter, if provided.
@@ -143,7 +162,7 @@ public:
     inline bool chunked() const; ///< whether message uses chunked Transfer-Encoding
 
     /* protected, do not use these, use interface functions instead */
-    std::vector<HttpHeaderEntry *> entries;     /**< parsed fields in raw format */
+    std::vector<HttpHeaderEntry*, PoolingAllocator<HttpHeaderEntry*> > entries; /**< parsed fields in raw format */
     HttpHeaderMask mask;    /**< bit set <=> entry present */
     http_hdr_owner_type owner;  /**< request or reply */
     int len;            /**< length when packed, not counting terminating null-byte */
@@ -151,7 +170,13 @@ public:
 protected:
     /** \deprecated Public access replaced by removeHopByHopEntries() */
     void removeConnectionHeaderEntries();
-    bool needUpdate(const HttpHeader *fresh) const;
+    /// either finds the end of headers or returns false
+    /// If the end was found:
+    /// *parse_start points to the first character after the header delimiter
+    /// *blk_start points to the first header character (i.e. old parse_start value)
+    /// *blk_end points to the first header delimiter character (CR or LF in CR?LF).
+    /// If block starts where it ends, then there are no fields in the header.
+    static bool Isolate(const char **parse_start, size_t l, const char **blk_start, const char **blk_end);
     bool skipUpdateHeader(const Http::HdrType id) const;
     void updateWarnings();
 

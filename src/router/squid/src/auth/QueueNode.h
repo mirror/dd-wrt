@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,6 +9,7 @@
 #ifndef SQUID_SRC_AUTH_QUEUENODE_H
 #define SQUID_SRC_AUTH_QUEUENODE_H
 
+#include "auth/forward.h"
 #include "cbdata.h"
 
 namespace Auth

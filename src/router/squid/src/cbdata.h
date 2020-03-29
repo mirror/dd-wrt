@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,7 @@
 /**
 \page CBDATA Callback Data Allocator API
 
- \section  Introduction
+ \section CbDataIntro Introduction
 
  \par
    Squid's extensive use of callback functions makes it very
@@ -382,9 +382,10 @@ public:
     CallbackData(CallbackData &&other): data_(other.data_) { other.data_ = nullptr; }
     ~CallbackData() { cbdataReferenceDone(data_); }
 
-    // implement if needed
-    CallbackData &operator =(const CallbackData &other) = delete;
+    CallbackData &operator =(const CallbackData &other);
+    CallbackData &operator =(CallbackData &&other) { cbdataReferenceDone(data_); data_ = other.data_; other.data_ = nullptr; return *this; }
 
+    bool valid() const { return cbdataReferenceValid(data_); }
     void *validDone() { void *result; return cbdataReferenceValidDone(data_, &result) ? result : nullptr; }
 
 private:

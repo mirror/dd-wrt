@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2020 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -507,7 +507,7 @@ COMMENT_END
 NAME: auth_param
 TYPE: authparam
 IFDEF: USE_AUTH
-LOC: Auth::TheConfig
+LOC: Auth::TheConfig.schemes
 DEFAULT: none
 DOC_START
 	This is used to define parameters for the various authentication
@@ -594,6 +594,7 @@ DOC_START
 
 	"children" numberofchildren [startup=N] [idle=N] [concurrency=N]
 		[queue-size=N] [on-persistent-overload=action]
+		[reservation-timeout=seconds]
 
 		The maximum number of authenticator processes to spawn. If
 		you start too few Squid will have to wait for them to process
@@ -646,15 +647,51 @@ DOC_START
 		NOTE: NTLM and Negotiate schemes do not support concurrency
 			in the Squid code module even though some helpers can.
 
+		The reservation-timeout=seconds option allows NTLM and Negotiate
+		helpers to forget about clients that abandon their in-progress
+		connection authentication without closing the connection. The
+		timeout is measured since the last helper response received by
+		Squid for the client. Fractional seconds are not supported.
+
+		After the timeout, the helper will be used for other clients if
+		there are no unreserved helpers available. In the latter case,
+		the old client attempt to resume authentication will not be
+		forwarded to the helper (and the client should open a new HTTP
+		connection and retry authentication from scratch).
+
+		By default, reservations do not expire and clients that keep
+		their connections open without completing authentication may
+		exhaust all NTLM and Negotiate helpers.
+
+	"keep_alive" on|off
+		If you experience problems with PUT/POST requests when using
+		the NTLM or Negotiate schemes then you can try setting this
+		to off. This will cause Squid to forcibly close the connection
+		on the initial request where the browser asks which schemes
+		are supported by the proxy.
+
+		For Basic and Digest this parameter is ignored.
+
+	"utf8" on|off
+		Useful for sending credentials to authentication backends that
+		expect UTF-8 encoding (e.g., LDAP).
+
+		When this option is enabled, Squid uses HTTP Accept-Language
+		request header to guess the received credentials encoding
+		(ISO-Latin-1, CP1251, or UTF-8) and then converts the first
+		two encodings into UTF-8.
+
+		When this option is disabled and by default, Squid sends
+		credentials in their original (i.e. received) encoding.
+
+		This parameter is only honored for Basic and Digest schemes.
+		For Basic, the entire username:password credentials are
+		checked and, if necessary, re-encoded. For Digest -- just the
+		username component. For NTLM and Negotiate schemes, this
+		parameter is ignored.
 
 IF HAVE_AUTH_MODULE_BASIC
 	=== Basic authentication parameters ===
-
-	"utf8" on|off
-		HTTP uses iso-latin-1 as character set, while some
-		authentication backends such as LDAP expects UTF-8. If this is
-		set to on Squid will translate the HTTP iso-latin-1 charset to
-		UTF-8 before sending the username and password to the helper.
 
 	"credentialsttl" timetolive
 		Specifies how long squid assumes an externally validated
@@ -678,12 +715,6 @@ IF HAVE_AUTH_MODULE_BASIC
 ENDIF
 IF HAVE_AUTH_MODULE_DIGEST
 	=== Digest authentication parameters ===
-
-	"utf8" on|off
-		HTTP uses iso-latin-1 as character set, while some
-		authentication backends such as LDAP expects UTF-8. If this is
-		set to on Squid will translate the HTTP iso-latin-1 charset to
-		UTF-8 before sending the username and password to the helper.
 
 	"nonce_garbage_interval" timeinterval
 		Specifies the interval that nonces that have been issued
@@ -715,27 +746,6 @@ IF HAVE_AUTH_MODULE_DIGEST
 		same nonce as acquired earlier on a GET request.
 
 ENDIF
-IF HAVE_AUTH_MODULE_NEGOTIATE
-	=== Negotiate authentication parameters ===
-
-	"keep_alive" on|off
-		If you experience problems with PUT/POST requests when using
-		the this authentication scheme then you can try setting this
-		to off. This will cause Squid to forcibly close the connection
-		on the initial request where the browser asks which schemes
-		are supported by the proxy.
-
-ENDIF
-IF HAVE_AUTH_MODULE_NTLM
-	=== NTLM authentication parameters ===
-
-	"keep_alive" on|off
-		If you experience problems with PUT/POST requests when using
-		the this authentication scheme then you can try setting this
-		to off. This will cause Squid to forcibly close the connection
-		on the initial request where the browser asks which schemes
-		are supported by the proxy.
-ENDIF
 
 	=== Example Configuration ===
 
@@ -745,7 +755,6 @@ ENDIF
 
 #auth_param negotiate program <uncomment and complete this line to activate>
 #auth_param negotiate children 20 startup=0 idle=1
-#auth_param negotiate keep_alive on
 #
 #auth_param digest program <uncomment and complete this line to activate>
 #auth_param digest children 20 startup=0 idle=1
@@ -756,18 +765,17 @@ ENDIF
 #
 #auth_param ntlm program <uncomment and complete this line to activate>
 #auth_param ntlm children 20 startup=0 idle=1
-#auth_param ntlm keep_alive on
 #
 #auth_param basic program <uncomment and complete this line>
 #auth_param basic children 5 startup=5 idle=1
-#auth_param basic realm Squid proxy-caching web server
 #auth_param basic credentialsttl 2 hours
 DOC_END
 
 NAME: authenticate_cache_garbage_interval
+IFDEF: USE_AUTH
 TYPE: time_t
 DEFAULT: 1 hour
-LOC: Config.authenticateGCInterval
+LOC: Auth::TheConfig.garbageCollectInterval
 DOC_START
 	The time period between garbage collection across the username cache.
 	This is a trade-off between memory utilization (long intervals - say
@@ -776,9 +784,10 @@ DOC_START
 DOC_END
 
 NAME: authenticate_ttl
+IFDEF: USE_AUTH
 TYPE: time_t
 DEFAULT: 1 hour
-LOC: Config.authenticateTTL
+LOC: Auth::TheConfig.credentialsTtl
 DOC_START
 	The time a user & their credentials stay in the logged in
 	user cache since their last request. When the garbage
@@ -787,8 +796,9 @@ DOC_START
 DOC_END
 
 NAME: authenticate_ip_ttl
+IFDEF: USE_AUTH
 TYPE: time_t
-LOC: Config.authenticateIpTTL
+LOC: Auth::TheConfig.ipTtl
 DEFAULT: 1 second
 DOC_START
 	If you use proxy authentication and the 'max_user_ip' ACL,
@@ -1004,7 +1014,8 @@ DEFAULT: all src all
 DEFAULT: manager url_regex -i ^cache_object:// +i ^https?://[^/]+/squid-internal-mgr/
 DEFAULT: localhost src 127.0.0.1/32 ::1
 DEFAULT: to_localhost dst 127.0.0.0/8 0.0.0.0/32 ::1/128 ::/128
-DEFAULT_DOC: ACLs all, manager, localhost, and to_localhost are predefined.
+DEFAULT: CONNECT method CONNECT
+DEFAULT_DOC: ACLs all, manager, localhost, to_localhost, and CONNECT are predefined.
 DOC_START
 	Defining an Access List
 
@@ -1081,6 +1092,10 @@ if USE_SQUID_EUI
 	  # encoded directly in the IPv6 address or not available.
 endif
 	acl aclname clientside_mark mark[/mask] ...
+	  # matches CONNMARK of an accepted connection [fast]
+	  # DEPRECATED. Use the 'client_connection_mark' instead.
+
+	acl aclname client_connection_mark mark[/mask] ...
 	  # matches CONNMARK of an accepted connection [fast]
 	  #
 	  # mark and mask are unsigned integers (hex, octal, or decimal).
@@ -1292,6 +1307,79 @@ endif
 	  # Annotation sources include note and adaptation_meta directives
 	  # as well as helper and eCAP responses.
 
+	acl aclname annotate_transaction [-m[=delimiters]] key=value ...
+	acl aclname annotate_transaction [-m[=delimiters]] key+=value ...
+	  # Always matches. [fast]
+	  # Used for its side effect: This ACL immediately adds a
+	  # key=value annotation to the current master transaction.
+	  # The added annotation can then be tested using note ACL and
+	  # logged (or sent to helpers) using %note format code.
+	  #
+	  # Annotations can be specified using replacement and addition
+	  # formats. The key=value form replaces old same-key annotation
+	  # value(s). The key+=value form appends a new value to the old
+	  # same-key annotation. Both forms create a new key=value
+	  # annotation if no same-key annotation exists already. If
+	  # -m flag is used, then the value is interpreted as a list
+	  # and the annotation will contain key=token pair(s) instead of the
+	  # whole key=value pair.
+	  #
+	  # This ACL is especially useful for recording complex multi-step
+	  # ACL-driven decisions. For example, the following configuration
+	  # avoids logging transactions accepted after aclX matched:
+	  #
+	  #  # First, mark transactions accepted after aclX matched
+	  #  acl markSpecial annotate_transaction special=true
+	  #  http_access allow acl001
+	  #  ...
+	  #  http_access deny acl100
+	  #  http_access allow aclX markSpecial
+	  #
+	  #  # Second, do not log marked transactions:
+	  #  acl markedSpecial note special true
+	  #  access_log ... deny markedSpecial
+	  #
+	  #  # Note that the following would not have worked because aclX
+	  #  # alone does not determine whether the transaction was allowed:
+	  #  access_log ... deny aclX # Wrong!
+	  #
+	  # Warning: This ACL annotates the transaction even when negated
+	  # and even if subsequent ACLs fail to match. For example, the
+	  # following three rules will have exactly the same effect as far
+	  # as annotations set by the "mark" ACL are concerned:
+	  #
+	  #  some_directive acl1 ... mark # rule matches if mark is reached
+	  #  some_directive acl1 ... !mark     # rule never matches
+	  #  some_directive acl1 ... mark !all # rule never matches
+
+	acl aclname annotate_client [-m[=delimiters]] key=value ...
+	acl aclname annotate_client [-m[=delimiters]] key+=value ...
+	  #
+	  # Always matches. [fast]
+	  # Used for its side effect: This ACL immediately adds a
+	  # key=value annotation to the current client-to-Squid
+	  # connection. Connection annotations are propagated to the current
+	  # and all future master transactions on the annotated connection.
+	  # See the annotate_transaction ACL for details.
+	  #
+	  # For example, the following configuration avoids rewriting URLs
+	  # of transactions bumped by SslBump:
+	  #
+	  #  # First, mark bumped connections:
+	  #  acl markBumped annotate_client bumped=true
+	  #  ssl_bump peek acl1
+	  #  ssl_bump stare acl2
+	  #  ssl_bump bump acl3 markBumped
+	  #  ssl_bump splice all
+	  #
+	  #  # Second, do not send marked transactions to the redirector:
+	  #  acl markedBumped note bumped true
+	  #  url_rewrite_access deny markedBumped
+	  #
+	  #  # Note that the following would not have worked because acl3 alone
+	  #  # does not determine whether the connection is going to be bumped:
+	  #  url_rewrite_access deny acl3 # Wrong!
+
 	acl aclname adaptation_service service ...
 	  # Matches the name of any icap_service, ecap_service,
 	  # adaptation_service_set, or adaptation_service_chain that Squid
@@ -1350,6 +1438,17 @@ endif
 	  #  acl hasWhatMyLoggingDaemonNeeds has request
 	  #  acl hasWhatMyLoggingDaemonNeeds has response
 
+acl aclname at_step step
+	  # match against the current request processing step [fast]
+	  # Valid steps are:
+	  #   GeneratingCONNECT: Generating HTTP CONNECT request headers
+IF USE_OPENSSL
+	  # The following ssl_bump processing steps are recognized:
+	  #   SslBump1: After getting TCP-level and HTTP CONNECT info.
+	  #   SslBump2: After getting SSL Client Hello info.
+	  #   SslBump3: After getting SSL Server Hello info.
+ENDIF
+
 IF USE_OPENSSL
 	acl aclname ssl_error errorname
 	  # match against SSL certificate validation error [fast]
@@ -1380,17 +1479,6 @@ IF USE_OPENSSL
 	  # Optional argument specifies the digest algorithm to use.
 	  # The SHA1 digest algorithm is the default and is currently
 	  # the only algorithm supported (-sha1).
-
-	acl aclname at_step step
-	  # match against the current step during ssl_bump evaluation [fast]
-	  # Never matches and should not be used outside the ssl_bump context.
-	  #
-	  # At each SslBump step, Squid evaluates ssl_bump directives to find
-	  # the next bumping action (e.g., peek or splice). Valid SslBump step
-	  # values and the corresponding ssl_bump evaluation moments are:
-	  #   SslBump1: After getting TCP-level and HTTP CONNECT info.
-	  #   SslBump2: After getting SSL Client Hello info.
-	  #   SslBump3: After getting SSL Server Hello info.
 
 	acl aclname ssl::server_name [option] .foo.com ...
 	  # matches server name obtained from various sources [fast]
@@ -1520,7 +1608,6 @@ acl Safe_ports port 280		# http-mgmt
 acl Safe_ports port 488		# gss-http
 acl Safe_ports port 591		# filemaker
 acl Safe_ports port 777		# multiling http
-acl CONNECT method CONNECT
 NOCOMMENT_END
 DOC_END
 
@@ -2024,6 +2111,51 @@ DOC_START
 	See also: squid_error ACL
 DOC_END
 
+NAME: auth_schemes
+TYPE: AuthSchemes
+IFDEF: USE_AUTH
+LOC: Auth::TheConfig.schemeAccess
+DEFAULT: none
+DEFAULT_DOC: use all auth_param schemes in their configuration order
+DOC_START
+	Use this directive to customize authentication schemes presence and
+	order in Squid's Unauthorized and Authentication Required responses.
+
+		auth_schemes scheme1,scheme2,... [!]aclname ...
+
+	where schemeN is the name of one of the authentication schemes
+	configured using auth_param directives. At least one scheme name is
+	required. Multiple scheme names are separated by commas. Either
+	avoid whitespace or quote the entire schemes list.
+
+	A special "ALL" scheme name expands to all auth_param-configured
+	schemes in their configuration order. This directive cannot be used
+	to configure Squid to offer no authentication schemes at all.
+
+	The first matching auth_schemes rule determines the schemes order
+	for the current Authentication Required transaction. Note that the
+	future response is not yet available during auth_schemes evaluation.
+
+	If this directive is not used or none of its rules match, then Squid
+	responds with all configured authentication schemes in the order of
+	auth_param directives in the configuration file.
+
+	This directive does not determine when authentication is used or
+	how each authentication scheme authenticates clients.
+
+	The following example sends basic and negotiate authentication
+	schemes, in that order, when requesting authentication of HTTP
+	requests matching the isIE ACL (not shown) while sending all
+	auth_param schemes in their configuration order to other clients:
+
+		auth_schemes basic,negotiate isIE
+		auth_schemes ALL all # explicit default
+
+	This directive supports fast ACLs only.
+
+	See also: auth_param.
+DOC_END
+
 COMMENT_START
  NETWORK OPTIONS
  -----------------------------------------------------------------------------
@@ -2482,27 +2614,63 @@ DOC_START
 	Only fast ACLs are supported.
 DOC_END
 
-NAME: clientside_mark
+NAME: mark_client_packet clientside_mark
 TYPE: acl_nfmark
 IFDEF: SO_MARK&&USE_LIBCAP
 DEFAULT: none
 LOC: Ip::Qos::TheConfig.nfmarkToClient
 DOC_START
-	Allows you to apply a Netfilter mark value to packets being transmitted
+	Allows you to apply a Netfilter MARK value to packets being transmitted
 	on the client-side, based on an ACL.
 
-	clientside_mark mark-value [!]aclname ...
+	mark_client_packet mark-value [!]aclname ...
 
-	Example where normal_service_net uses the mark value 0x00
+	Example where normal_service_net uses the MARK value 0x00
 	and good_service_net uses 0x20
 
 	acl normal_service_net src 10.0.0.0/24
 	acl good_service_net src 10.0.1.0/24
-	clientside_mark 0x00 normal_service_net
-	clientside_mark 0x20 good_service_net
+	mark_client_packet 0x00 normal_service_net
+	mark_client_packet 0x20 good_service_net
 
 	Note: This feature is incompatible with qos_flows. Any mark values set here
 	will be overwritten by mark values in qos_flows.
+
+	This clause only supports fast acl types.
+	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
+DOC_END
+
+NAME: mark_client_connection
+TYPE: acl_nfmark
+IFDEF: SO_MARK&&USE_LIBCAP
+DEFAULT: none
+LOC: Ip::Qos::TheConfig.nfConnmarkToClient
+DOC_START
+	Allows you to apply a Netfilter CONNMARK value to a connection
+	on the client-side, based on an ACL.
+
+	mark_client_connection mark-value[/mask] [!]aclname ...
+
+	The mark-value and mask are unsigned integers (hex, octal, or decimal).
+	The mask may be used to preserve marking previously set by other agents
+	(e.g., iptables).
+
+	A matching rule replaces the CONNMARK value. If a mask is also
+	specified, then the masked bits of the original value are zeroed, and
+	the configured mark-value is ORed with that adjusted value.
+	For example, applying a mark-value 0xAB/0xF to 0x5F CONNMARK, results
+	in a 0xFB marking (rather than a 0xAB or 0x5B).
+
+	This directive semantics is similar to iptables --set-mark rather than
+	--set-xmark functionality.
+
+	The directive does not interfere with qos_flows (which uses packet MARKs,
+	not CONNMARKs).
+
+	Example where squid marks intercepted FTP connections:
+
+	acl proto_ftp proto FTP
+	mark_client_connection 0x200/0xff00 proto_ftp
 
 	This clause only supports fast acl types.
 	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
@@ -4375,6 +4543,14 @@ DOC_START
 			individual notes. There is currently no way to
 			specify both value and notes separators when logging
 			all notes with %note.
+		master_xaction  The master transaction identifier is an unsigned
+			integer. These IDs are guaranteed to monotonically
+			increase within a single worker process lifetime, with
+			higher values corresponding to transactions that were
+			accepted or initiated later. Due to current implementation
+			deficiencies, some IDs are skipped (i.e. never logged).
+			Concurrent workers and restarted workers use similar,
+			overlapping sequences of master transaction IDs.
 
 	Connection related format codes:
 
@@ -4385,7 +4561,7 @@ DOC_START
 		>la	Local IP address the client connected to
 		>lp	Local port number the client connected to
 		>qos    Client connection TOS/DSCP value set by Squid
-		>nfmark Client connection netfilter mark set by Squid
+		>nfmark Client connection netfilter packet MARK set by Squid
 
 		la	Local listening IP address the client connection was connected to.
 		lp	Local listening port number the client connection was connected to.
@@ -4396,7 +4572,7 @@ DOC_START
 		<la	Local IP address of the last server or peer connection
 		<lp     Local port number of the last server or peer connection
 		<qos	Server connection TOS/DSCP value set by Squid
-		<nfmark Server connection netfilter mark set by Squid
+		<nfmark Server connection netfilter packet MARK set by Squid
 
 		>handshake Raw client handshake
 			Initial client bytes received by Squid on a newly
@@ -4628,6 +4804,34 @@ DOC_START
 				not available. Consider encoding the logged
 				value because Issuer often has spaces.
 
+		ssl::<cert
+				The received server x509 certificate in PEM
+				format, including BEGIN and END lines (or a
+				dash ('-') if the certificate is unavailable).
+
+				WARNING: Large certificates will exceed the
+				current 8KB access.log record limit, resulting
+				in truncated records. Such truncation usually
+				happens in the middle of a record field. The
+				limit applies to all access logging modules.
+
+				The logged certificate may have failed
+				validation and may not be trusted by Squid.
+				This field does not include any intermediate
+				certificates that may have been received from
+				the server or fetched during certificate
+				validation process.
+
+				Currently, Squid only collects server
+				certificates during step3 of SslBump
+				processing; connections that were not subject
+				to ssl_bump rules or that did not match a peek
+				or stare rule at step2 will not have the
+				server certificate information.
+
+				This field is using pass-through URL encoding
+				by default.
+
 		ssl::<cert_errors
 				The list of certificate validation errors
 				detected by Squid (including OpenSSL and
@@ -4697,6 +4901,34 @@ DOC_START
 	You can prefix adapt::*_trs format codes with adaptation
 	service name in curly braces to record response time(s) specific
 	to that service. For example: %{my_service}adapt::sum_trs
+
+	Format codes related to the PROXY protocol:
+
+		proxy_protocol::>h PROXY protocol header, including optional TLVs.
+
+				Supports the same field and element reporting/extraction logic
+				as %http::>h. For configuration and reporting purposes, Squid
+				maps each PROXY TLV to an HTTP header field: the TLV type
+				(configured as a decimal integer) is the field name, and the
+				TLV value is the field value. All TLVs of "LOCAL" connections
+				(in PROXY protocol terminology) are currently skipped/ignored.
+
+				Squid also maps the following standard PROXY protocol header
+				blocks to pseudo HTTP headers (their names use PROXY
+				terminology and start with a colon, following HTTP tradition
+				for pseudo headers): :command, :version, :src_addr, :dst_addr,
+				:src_port, and :dst_port.
+
+				Without optional parameters, this logformat code logs
+				pseudo headers and TLVs.
+
+				This format code uses pass-through URL encoding by default.
+
+				Example:
+					# relay custom PROXY TLV #224 to adaptation services
+					adaptation_meta Client-Foo "%proxy_protocol::>h{224}"
+
+				See also: %http::>h
 
 	The default formats available (which do not need re-defining) are:
 
@@ -6563,6 +6795,9 @@ DOC_START
 
 	    note key value acl ...
 	    logformat myFormat ... %{key}note ...
+
+	This clause only supports fast acl types.
+	See http://wiki.squid-cache.org/SquidFaq/SquidAcl for details.
 DOC_END
 
 NAME: relaxed_header_parser
@@ -6619,25 +6854,66 @@ DOC_START
        disk or memory caches and for Vary-controlled cached objects.
 DOC_END
 
-NAME: collapsed_forwarding_shared_entries_limit
+NAME: collapsed_forwarding_access
+TYPE: acl_access
+DEFAULT: none
+DEFAULT_DOC: Requests may be collapsed if collapsed_forwarding is on.
+LOC: Config.accessList.collapsedForwardingAccess
+DOC_START
+	Use this directive to restrict collapsed forwarding to a subset of
+	eligible requests. The directive is checked for regular HTTP
+	requests, internal revalidation requests, and HTCP/ICP requests.
+
+		collapsed_forwarding_access allow|deny [!]aclname ...
+
+	This directive cannot force collapsing. It has no effect on
+	collapsing unless collapsed_forwarding is 'on', and all other
+	collapsing preconditions are satisfied.
+
+	* A denied request will not collapse, and future transactions will
+	  not collapse on it (even if they are allowed to collapse).
+
+	* An allowed request may collapse, or future transactions may
+	  collapse on it (provided they are allowed to collapse).
+
+	This directive is evaluated before receiving HTTP response headers
+	and without access to Squid-to-peer connection (if any).
+
+	Only fast ACLs are supported.
+
+	See also: collapsed_forwarding.
+DOC_END
+
+NAME: shared_transient_entries_limit collapsed_forwarding_shared_entries_limit
 COMMENT: (number of entries)
 TYPE: int64_t
-LOC: Config.collapsed_forwarding_shared_entries_limit
+LOC: Config.shared_transient_entries_limit
 DEFAULT: 16384
 DOC_START
-	This limits the size of a table used for sharing information
-	about collapsible entries among SMP workers. Limiting sharing
-	too much results in cache content duplication and missed
-	collapsing opportunities. Using excessively large values
-	wastes shared memory.
+	This directive limits the size of a table used for sharing current
+	transaction information among SMP workers. A table entry stores meta
+	information about a single cache entry being delivered to Squid
+	client(s) by one or more SMP workers. A single table entry consumes
+	less than 128 shared memory bytes.
 
-	The limit should be significantly larger then the number of
-	concurrent collapsible entries one wants to share. For a cache
-	that handles less than 5000 concurrent requests, the default
+	The limit should be significantly larger than the number of
+	concurrent non-collapsed cachable responses leaving Squid. For a
+	cache that handles less than 5000 concurrent requests, the default
 	setting of 16384 should be plenty.
 
-	If the limit is set to zero, it disables sharing of collapsed
-	forwarding between SMP workers.
+	Using excessively large values wastes shared memory. Limiting the
+	table size too much results in hash collisions, leading to lower hit
+	ratio and missed SMP request collapsing opportunities: Transactions
+	left without a table entry cannot cache their responses and are
+	invisible to other concurrent requests for the same resource.
+
+	A zero limit is allowed but unsupported. A positive small limit
+	lowers hit ratio, but zero limit disables a lot of essential
+	synchronization among SMP workers, leading to HTTP violations (e.g.,
+	stale hit responses). It also disables shared collapsed forwarding:
+	A worker becomes unable to collapse its requests on transactions in
+	other workers, resulting in more trips to the origin server and more
+	cache thrashing.
 DOC_END
 
 COMMENT_START
@@ -7054,6 +7330,9 @@ DOC_START
 	need an identification token to allow control targeting. Because
 	a farm of surrogates may all perform the same tasks, they may share
 	an identification token.
+
+	When the surrogate is a reverse-proxy, this ID is also
+	used as cdn-id for CDN-Loop detection (RFC 8586).
 DOC_END
 
 NAME: http_accel_surrogate_remote
@@ -7404,6 +7683,64 @@ DOC_START
 
 
 	See also client_delay_parameters and client_delay_pools.
+DOC_END
+
+NAME: response_delay_pool
+TYPE: response_delay_pool_parameters
+DEFAULT: none
+IFDEF: USE_DELAY_POOLS
+LOC: Config.MessageDelay
+DOC_START
+	This option configures client response bandwidth limits using the
+	following format:
+
+	response_delay_pool name [option=value] ...
+
+	name	the response delay pool name
+
+	available options:
+
+		individual-restore	The speed limit of an individual
+					bucket(bytes/s). To be used in conjunction
+					with 'individual-maximum'.
+
+		individual-maximum	The maximum number of bytes which can
+					be placed into the individual bucket. To be used
+					in conjunction with 'individual-restore'.
+
+		aggregate-restore	The speed limit for the aggregate
+					bucket(bytes/s). To be used in conjunction with
+					'aggregate-maximum'.
+
+		aggregate-maximum	The maximum number of bytes which can
+	   				be placed into the aggregate bucket. To be used
+					in conjunction with 'aggregate-restore'.
+
+		initial-bucket-level	The initial bucket size as a percentage
+					of individual-maximum.
+
+	Individual and(or) aggregate bucket options may not be specified,
+   	meaning no individual and(or) aggregate speed limitation.
+	See also response_delay_pool_access and delay_parameters for
+	terminology details.
+DOC_END
+
+NAME: response_delay_pool_access
+TYPE: response_delay_pool_access
+DEFAULT: none
+DEFAULT_DOC: Deny use of the pool, unless allow rules exist in squid.conf for the pool.
+IFDEF: USE_DELAY_POOLS
+LOC: Config.MessageDelay
+DOC_START
+	Determines whether a specific named response delay pool is used
+	for the transaction. The syntax for this directive is:
+
+	response_delay_pool_access pool_name allow|deny acl_name
+
+	All response_delay_pool_access options are checked in the order
+	they appear in this configuration file. The first rule with a
+	matching ACL wins. If (and only if) an "allow" rule won, Squid
+	assigns the response to the corresponding named delay pool.
 DOC_END
 
 COMMENT_START
@@ -8352,6 +8689,7 @@ DOC_START
 
 	URL FORMAT TAGS:
 		%a	- username (if available. Password NOT included)
+		%A	- Local listening IP address the client connection was connected to
 		%B	- FTP path URL
 		%e	- Error number
 		%E	- Error description
@@ -9534,10 +9872,10 @@ DOC_START
 DOC_END
 
 NAME: dns_nameservers
-TYPE: wordlist
+TYPE: SBufList
 DEFAULT: none
 DEFAULT_DOC: Use operating system definitions
-LOC: Config.dns_nameservers
+LOC: Config.dns.nameservers
 DOC_START
 	Use this if you want to specify a list of DNS name servers
 	(IP addresses) to use instead of those given in your
@@ -10064,13 +10402,14 @@ DOC_END
 NAME: max_filedescriptors max_filedesc
 TYPE: int
 DEFAULT: 0
-DEFAULT_DOC: Use operating system limits set by ulimit.
+DEFAULT_DOC: Use operating system soft limit set by ulimit.
 LOC: Config.max_filedescriptors
 DOC_START
-	Reduce the maximum number of filedescriptors supported below
-	the usual operating system defaults.
+	Set the maximum number of filedescriptors, either below the
+	operating system default or up to the hard limit.
 
-	Remove from squid.conf to inherit the current ulimit setting.
+	Remove from squid.conf to inherit the current ulimit soft
+	limit setting.
 
 	Note: Changing this requires a restart of Squid. Also
 	not all I/O types supports large values (eg on Windows).
@@ -10141,6 +10480,101 @@ DOC_START
 	Example:
 		acl SpeedIsWorthTheRisk method POST
 		server_pconn_for_nonretriable allow SpeedIsWorthTheRisk
+DOC_END
+
+NAME: happy_eyeballs_connect_timeout
+COMMENT: (msec)
+TYPE: int
+DEFAULT: 250
+LOC: Config.happyEyeballs.connect_timeout
+DOC_START
+	This Happy Eyeballs (RFC 8305) tuning directive specifies the minimum
+	delay between opening a primary to-server connection and opening a
+	spare to-server connection for the same master transaction. This delay
+	is similar to the Connection Attempt Delay in RFC 8305, but it is only
+	applied to the first spare connection attempt. Subsequent spare
+	connection attempts use happy_eyeballs_connect_gap, and primary
+	connection attempts are not artificially delayed at all.
+
+	Terminology: The "primary" and "spare" designations are determined by
+	the order of DNS answers received by Squid: If Squid DNS AAAA query
+	was answered first, then primary connections are connections to IPv6
+	peer addresses (while spare connections use IPv4 addresses).
+	Similarly, if Squid DNS A query was answered first, then primary
+	connections are connections to IPv4 peer addresses (while spare
+	connections use IPv6 addresses).
+
+	Shorter happy_eyeballs_connect_timeout values reduce master
+	transaction response time, potentially improving user-perceived
+	response times (i.e., making user eyeballs happier). Longer delays
+	reduce both concurrent connection level and server bombardment with
+	connection requests, potentially improving overall Squid performance
+	and reducing the chance of being blocked by servers for opening too
+	many unused connections.
+
+	RFC 8305 prohibits happy_eyeballs_connect_timeout values smaller than
+	10 (milliseconds) to "avoid congestion collapse in the presence of
+	high packet-loss rates".
+
+	The following Happy Eyeballs directives place additional connection
+	opening restrictions: happy_eyeballs_connect_gap and
+	happy_eyeballs_connect_limit.
+DOC_END
+
+NAME: happy_eyeballs_connect_gap
+COMMENT: (msec)
+TYPE: int
+DEFAULT: -1
+DEFAULT_DOC: no artificial delays between spare attempts
+LOC: Config.happyEyeballs.connect_gap
+DOC_START
+	This Happy Eyeballs (RFC 8305) tuning directive specifies the
+	minimum delay between opening spare to-server connections (to any
+	server; i.e. across all concurrent master transactions in a Squid
+	instance). Each SMP worker currently multiplies the configured gap
+	by the total number of workers so that the combined spare connection
+	opening rate of a Squid instance obeys the configured limit. The
+	workers do not coordinate connection openings yet; a micro burst
+	of spare connection openings may violate the configured gap.
+
+	This directive has similar trade-offs as
+	happy_eyeballs_connect_timeout, but its focus is on limiting traffic
+	amplification effects for Squid as a whole, while
+	happy_eyeballs_connect_timeout works on an individual master
+	transaction level.
+
+	The following Happy Eyeballs directives place additional connection
+	opening restrictions: happy_eyeballs_connect_timeout and
+	happy_eyeballs_connect_limit. See the former for related terminology.
+DOC_END
+
+NAME: happy_eyeballs_connect_limit
+TYPE: int
+DEFAULT: -1
+DEFAULT_DOC: no artificial limit on the number of concurrent spare attempts
+LOC: Config.happyEyeballs.connect_limit
+DOC_START
+	This Happy Eyeballs (RFC 8305) tuning directive specifies the
+	maximum number of spare to-server connections (to any server; i.e.
+	across all concurrent master transactions in a Squid instance).
+	Each SMP worker gets an equal share of the total limit. However,
+	the workers do not share the actual connection counts yet, so one
+	(busier) worker cannot "borrow" spare connection slots from another
+	(less loaded) worker.
+
+	Setting this limit to zero disables concurrent use of primary and
+	spare TCP connections: Spare connection attempts are made only after
+	all primary attempts fail. However, Squid would still use the
+	DNS-related optimizations of the Happy Eyeballs approach.
+
+	This directive has similar trade-offs as happy_eyeballs_connect_gap,
+	but its focus is on limiting Squid overheads, while
+	happy_eyeballs_connect_gap focuses on the origin server and peer
+	overheads.
+
+	The following Happy Eyeballs directives place additional connection
+	opening restrictions: happy_eyeballs_connect_timeout and
+	happy_eyeballs_connect_gap. See the former for related terminology.
 DOC_END
 
 EOF

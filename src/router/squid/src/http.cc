@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,6 +45,7 @@
 #include "MemBuf.h"
 #include "MemObject.h"
 #include "neighbors.h"
+#include "pconn.h"
 #include "peer_proxy_negotiate_auth.h"
 #include "profiler/Profiler.h"
 #include "refresh.h"
@@ -99,14 +100,17 @@ HttpStateData::HttpStateData(FwdState *theFwdState) :
     if (fwd->serverConnection() != NULL)
         _peer = cbdataReference(fwd->serverConnection()->getPeer());         /* might be NULL */
 
+    flags.peering =  _peer;
+    flags.tunneling = (_peer && request->flags.sslBumped);
+    flags.toOrigin = (!_peer || _peer->options.originserver || request->flags.sslBumped);
+
     if (_peer) {
-        request->flags.proxying = true;
         /*
          * This NEIGHBOR_PROXY_ONLY check probably shouldn't be here.
          * We might end up getting the object from somewhere else if,
          * for example, the request to this neighbor fails.
          */
-        if (_peer->options.proxy_only)
+        if (!flags.tunneling && _peer->options.proxy_only)
             entry->releaseRequest(true);
 
 #if USE_DELAY_POOLS
@@ -156,7 +160,7 @@ HttpStateData::httpTimeout(const CommTimeoutCbParams &)
     debugs(11, 4, serverConnection << ": '" << entry->url() << "'");
 
     if (entry->store_status == STORE_PENDING) {
-        fwd->fail(new ErrorState(ERR_READ_TIMEOUT, Http::scGatewayTimeout, fwd->request));
+        fwd->fail(new ErrorState(ERR_READ_TIMEOUT, Http::scGatewayTimeout, fwd->request, fwd->al));
     }
 
     closeServer();
@@ -167,7 +171,7 @@ static StoreEntry *
 findPreviouslyCachedEntry(StoreEntry *newEntry) {
     assert(newEntry->mem_obj);
     return newEntry->mem_obj->request ?
-           storeGetPublicByRequest(newEntry->mem_obj->request) :
+           storeGetPublicByRequest(newEntry->mem_obj->request.getRaw()) :
            storeGetPublic(newEntry->mem_obj->storeId(), newEntry->mem_obj->method);
 }
 
@@ -249,7 +253,7 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
     if (pe != NULL) {
         assert(e != pe);
 #if USE_HTCP
-        neighborsHtcpClear(e, NULL, e->mem_obj->request, e->mem_obj->method, HTCP_CLR_INVALIDATION);
+        neighborsHtcpClear(e, nullptr, e->mem_obj->request.getRaw(), e->mem_obj->method, HTCP_CLR_INVALIDATION);
 #endif
         pe->release(true);
     }
@@ -259,14 +263,14 @@ httpMaybeRemovePublic(StoreEntry * e, Http::StatusCode status)
      * changed.
      */
     if (e->mem_obj->request)
-        pe = storeGetPublicByRequestMethod(e->mem_obj->request, Http::METHOD_HEAD);
+        pe = storeGetPublicByRequestMethod(e->mem_obj->request.getRaw(), Http::METHOD_HEAD);
     else
         pe = storeGetPublic(e->mem_obj->storeId(), Http::METHOD_HEAD);
 
     if (pe != NULL) {
         assert(e != pe);
 #if USE_HTCP
-        neighborsHtcpClear(e, NULL, e->mem_obj->request, HttpRequestMethod(Http::METHOD_HEAD), HTCP_CLR_INVALIDATION);
+        neighborsHtcpClear(e, nullptr, e->mem_obj->request.getRaw(), HttpRequestMethod(Http::METHOD_HEAD), HTCP_CLR_INVALIDATION);
 #endif
         pe->release(true);
     }
@@ -624,11 +628,11 @@ void
 HttpStateData::keepaliveAccounting(HttpReply *reply)
 {
     if (flags.keepalive)
-        if (_peer)
+        if (flags.peering && !flags.tunneling)
             ++ _peer->stats.n_keepalives_sent;
 
     if (reply->keep_alive) {
-        if (_peer)
+        if (flags.peering && !flags.tunneling)
             ++ _peer->stats.n_keepalives_recv;
 
         if (Config.onoff.detect_broken_server_pconns
@@ -643,7 +647,7 @@ HttpStateData::keepaliveAccounting(HttpReply *reply)
 void
 HttpStateData::checkDateSkew(HttpReply *reply)
 {
-    if (reply->date > -1 && !_peer) {
+    if (reply->date > -1 && flags.toOrigin) {
         int skew = abs((int)(reply->date - squid_curtime));
 
         if (skew > 86400)
@@ -747,11 +751,11 @@ HttpStateData::processReplyHeader()
     // done with Parser, now process using the HttpReply
     hp = NULL;
 
-    newrep->sources |= request->url.getScheme() == AnyP::PROTO_HTTPS ? HttpMsg::srcHttps : HttpMsg::srcHttp;
+    newrep->sources |= request->url.getScheme() == AnyP::PROTO_HTTPS ? Http::Message::srcHttps : Http::Message::srcHttp;
 
     newrep->removeStaleWarnings();
 
-    if (newrep->sline.protocol == AnyP::PROTO_HTTP && newrep->sline.status() >= 100 && newrep->sline.status() < 200) {
+    if (newrep->sline.protocol == AnyP::PROTO_HTTP && Http::Is1xx(newrep->sline.status())) {
         handle1xx(newrep);
         ctx_exit(ctx);
         return;
@@ -784,6 +788,9 @@ HttpStateData::processReplyHeader()
 void
 HttpStateData::handle1xx(HttpReply *reply)
 {
+    if (fwd->al)
+        fwd->al->reply = reply;
+
     HttpReply::Pointer msg(reply); // will destroy reply if unused
 
     // one 1xx at a time: we must not be called while waiting for previous 1xx
@@ -799,10 +806,10 @@ HttpStateData::handle1xx(HttpReply *reply)
 #if USE_HTTP_VIOLATIONS
     // check whether the 1xx response forwarding is allowed by squid.conf
     if (Config.accessList.reply) {
-        ACLFilledChecklist ch(Config.accessList.reply, originalRequest(), NULL);
+        ACLFilledChecklist ch(Config.accessList.reply, originalRequest().getRaw());
         ch.al = fwd->al;
         ch.reply = reply;
-        ch.syncAle(originalRequest(), nullptr);
+        ch.syncAle(originalRequest().getRaw(), nullptr);
         HTTPMSGLOCK(ch.reply);
         if (!ch.fastCheck().allowed()) { // TODO: support slow lookups?
             debugs(11, 3, HERE << "ignoring denied 1xx");
@@ -844,18 +851,22 @@ HttpStateData::peerSupportsConnectionPinning() const
     if (!_peer)
         return true;
 
+    // we are talking "through" rather than "to" our _peer
+    if (flags.tunneling)
+        return true;
+
     /*If this peer does not support connection pinning (authenticated
       connections) return false
      */
     if (!_peer->connection_auth)
         return false;
 
-    const HttpReply *rep = entry->mem_obj->getReply();
+    const auto &rep = entry->mem().freshestReply();
 
     /*The peer supports connection pinning and the http reply status
       is not unauthorized, so the related connection can be pinned
      */
-    if (rep->sline.status() != Http::scUnauthorized)
+    if (rep.sline.status() != Http::scUnauthorized)
         return true;
 
     /*The server respond with Http::scUnauthorized and the peer configured
@@ -884,7 +895,7 @@ HttpStateData::peerSupportsConnectionPinning() const
       reply and has in its list the "Session-Based-Authentication"
       which means that the peer supports connection pinning.
      */
-    if (rep->header.hasListMember(Http::HdrType::PROXY_SUPPORT, "Session-Based-Authentication", ','))
+    if (rep.header.hasListMember(Http::HdrType::PROXY_SUPPORT, "Session-Based-Authentication", ','))
         return true;
 
     return false;
@@ -908,7 +919,7 @@ HttpStateData::haveParsedReplyHeaders()
 
     if (StoreEntry *oldEntry = findPreviouslyCachedEntry(entry)) {
         oldEntry->lock("HttpStateData::haveParsedReplyHeaders");
-        sawDateGoBack = rep->olderThan(oldEntry->getReply());
+        sawDateGoBack = rep->olderThan(oldEntry->hasFreshestReply());
         oldEntry->unlock("HttpStateData::haveParsedReplyHeaders");
     }
 
@@ -921,7 +932,7 @@ HttpStateData::haveParsedReplyHeaders()
             || rep->header.has(Http::HdrType::HDR_X_ACCELERATOR_VARY)
 #endif
        ) {
-        const SBuf vary(httpMakeVaryMark(request, rep));
+        const SBuf vary(httpMakeVaryMark(request.getRaw(), rep));
 
         if (vary.isEmpty()) {
             // TODO: check whether such responses are shareable.
@@ -1032,7 +1043,8 @@ HttpStateData::statusIfComplete() const
     /** \par
      * If the reply wants to close the connection, it takes precedence */
 
-    if (httpHeaderHasConnDir(&rep->header, "close"))
+    static SBuf close("close", 5);
+    if (httpHeaderHasConnDir(&rep->header, close))
         return COMPLETE_NONPERSISTENT_MSG;
 
     /** \par
@@ -1210,7 +1222,7 @@ HttpStateData::readReply(const CommIoCbParams &io)
     // case Comm::COMM_ERROR:
     default: // no other flags should ever occur
         debugs(11, 2, io.conn << ": read failure: " << xstrerr(rd.xerrno));
-        ErrorState *err = new ErrorState(ERR_READ_ERROR, Http::scBadGateway, fwd->request);
+        const auto err = new ErrorState(ERR_READ_ERROR, Http::scBadGateway, fwd->request, fwd->al);
         err->xerrno = rd.xerrno;
         fwd->fail(err);
         flags.do_next_read = false;
@@ -1313,7 +1325,7 @@ HttpStateData::continueAfterParsingHeader()
 
     assert(error != ERR_NONE);
     entry->reset();
-    fwd->fail(new ErrorState(error, Http::scBadGateway, fwd->request));
+    fwd->fail(new ErrorState(error, Http::scBadGateway, fwd->request, fwd->al));
     flags.do_next_read = false;
     closeServer();
     mustStop("HttpStateData::continueAfterParsingHeader");
@@ -1484,7 +1496,7 @@ HttpStateData::processReplyBody()
                     serverConnectionSaved->close();
                 }
             } else {
-                fwd->pconnPush(serverConnectionSaved, request->url.host());
+                fwdPconnPool->push(serverConnectionSaved, request->url.host());
             }
 
             serverComplete();
@@ -1493,6 +1505,9 @@ HttpStateData::processReplyBody()
 
         case COMPLETE_NONPERSISTENT_MSG:
             debugs(11, 5, "processReplyBody: COMPLETE_NONPERSISTENT_MSG from " << serverConnection);
+            if (flags.chunked && !lastChunk)
+                entry->lengthWentBad("missing last-chunk");
+
             serverComplete();
             return;
         }
@@ -1597,7 +1612,7 @@ HttpStateData::wroteLast(const CommIoCbParams &io)
     request->hier.notePeerWrite();
 
     if (io.flag) {
-        ErrorState *err = new ErrorState(ERR_WRITE_ERROR, Http::scBadGateway, fwd->request);
+        const auto err = new ErrorState(ERR_WRITE_ERROR, Http::scBadGateway, fwd->request, fwd->al);
         err->xerrno = io.xerrno;
         fwd->fail(err);
         closeServer();
@@ -1653,16 +1668,19 @@ HttpStateData::doneWithServer() const
 static void
 httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHeader * hdr_out, const Http::StateFlags &flags)
 {
-    Http::HdrType header = flags.originpeer ? Http::HdrType::AUTHORIZATION : Http::HdrType::PROXY_AUTHORIZATION;
-
     /* Nothing to do unless we are forwarding to a peer */
-    if (!request->flags.proxying)
+    if (!flags.peering)
+        return;
+
+    // This request is going "through" rather than "to" our _peer.
+    if (flags.tunneling)
         return;
 
     /* Needs to be explicitly enabled */
     if (!request->peer_login)
         return;
 
+    const auto header = flags.toOrigin ? Http::HdrType::AUTHORIZATION : Http::HdrType::PROXY_AUTHORIZATION;
     /* Maybe already dealt with? */
     if (hdr_out->has(header))
         return;
@@ -1671,8 +1689,14 @@ httpFixupAuthentication(HttpRequest * request, const HttpHeader * hdr_in, HttpHe
     if (strcmp(request->peer_login, "PASSTHRU") == 0)
         return;
 
-    /* PROXYPASS is a special case, single-signon to servers with the proxy password (basic only) */
-    if (flags.originpeer && strcmp(request->peer_login, "PROXYPASS") == 0 && hdr_in->has(Http::HdrType::PROXY_AUTHORIZATION)) {
+    // Dangerous and undocumented PROXYPASS is a single-signon to servers with
+    // the proxy password. Only Basic Authentication can work this way. This
+    // statement forwards a "basic" Proxy-Authorization value from our client
+    // to an originserver peer. Other PROXYPASS cases are handled lower.
+    if (flags.toOrigin &&
+            strcmp(request->peer_login, "PROXYPASS") == 0 &&
+            hdr_in->has(Http::HdrType::PROXY_AUTHORIZATION)) {
+
         const char *auth = hdr_in->getStr(Http::HdrType::PROXY_AUTHORIZATION);
 
         if (auth && strncasecmp(auth, "basic ", 6) == 0) {
@@ -1775,7 +1799,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
     // Add our own If-None-Match field if the cached entry has a strong ETag.
     // copyOneHeaderFromClientsideRequestToUpstreamRequest() adds client ones.
     if (request->etag.size() > 0) {
-        hdr_out->addEntry(new HttpHeaderEntry(Http::HdrType::IF_NONE_MATCH, NULL,
+        hdr_out->addEntry(new HttpHeaderEntry(Http::HdrType::IF_NONE_MATCH, SBuf(),
                                               request->etag.termedBuf()));
     }
 
@@ -1865,7 +1889,7 @@ HttpStateData::httpBuildRequestHeader(HttpRequest * request,
 
     /* append Authorization if known in URL, not in header and going direct */
     if (!hdr_out->has(Http::HdrType::AUTHORIZATION)) {
-        if (!request->flags.proxying && !request->url.userInfo().isEmpty()) {
+        if (flags.toOrigin && !request->url.userInfo().isEmpty()) {
             static char result[base64_encode_len(MAX_URL*2)]; // should be big enough for a single URI segment
             struct base64_encode_ctx ctx;
             base64_encode_init(&ctx);
@@ -1950,7 +1974,7 @@ copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, co
          * Only pass on proxy authentication to peers for which
          * authentication forwarding is explicitly enabled
          */
-        if (!flags.originpeer && flags.proxying && request->peer_login &&
+        if (!flags.toOrigin && request->peer_login &&
                 (strcmp(request->peer_login, "PASS") == 0 ||
                  strcmp(request->peer_login, "PROXYPASS") == 0 ||
                  strcmp(request->peer_login, "PASSTHRU") == 0)) {
@@ -1975,10 +1999,11 @@ copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, co
         /** \par WWW-Authorization:
          * Pass on WWW authentication */
 
-        if (!flags.originpeer) {
+        if (!flags.toOriginPeer()) {
             hdr_out->addEntry(e->clone());
         } else {
-            /** \note In accelerators, only forward authentication if enabled
+            /** \note Assume that talking to a cache_peer originserver makes
+             * us a reverse proxy and only forward authentication if enabled
              * (see also httpFixupAuthentication for special cases)
              */
             if (request->peer_login &&
@@ -2101,8 +2126,7 @@ copyOneHeaderFromClientsideRequestToUpstreamRequest(const HttpHeaderEntry *e, co
         /** \par default.
          * pass on all other header fields
          * which are NOT listed by the special Connection: header. */
-
-        if (strConnection.size()>0 && strListIsMember(&strConnection, e->name.termedBuf(), ',')) {
+        if (strConnection.size()>0 && strListIsMember(&strConnection, e->name, ',')) {
             debugs(11, 2, "'" << e->name << "' header cropped by Connection: definition");
             return;
         }
@@ -2152,7 +2176,7 @@ HttpStateData::buildRequestPrefix(MemBuf * mb)
      * not the one we are sending. Needs checking.
      */
     const AnyP::ProtocolVersion httpver = Http::ProtocolVersion();
-    const SBuf url(_peer && !_peer->options.originserver ? request->effectiveRequestUri() : request->url.path());
+    const SBuf url(flags.toOrigin ? request->url.path() : request->effectiveRequestUri());
     mb->appendf(SQUIDSBUFPH " " SQUIDSBUFPH " %s/%d.%d\r\n",
                 SQUIDSBUFPRINT(request->method.image()),
                 SQUIDSBUFPRINT(url),
@@ -2161,7 +2185,7 @@ HttpStateData::buildRequestPrefix(MemBuf * mb)
     /* build and pack headers */
     {
         HttpHeader hdr(hoRequest);
-        httpBuildRequestHeader(request, entry, fwd->al, &hdr, flags);
+        httpBuildRequestHeader(request.getRaw(), entry, fwd->al, &hdr, flags);
 
         if (request->flags.pinned && request->flags.connectionAuth)
             request->flags.authSent = true;
@@ -2215,9 +2239,6 @@ HttpStateData::sendRequest()
                                     Dialer, this,  HttpStateData::wroteLast);
     }
 
-    flags.originpeer = (_peer != NULL && _peer->options.originserver);
-    flags.proxying = (_peer != NULL && !flags.originpeer);
-
     /*
      * Is keep-alive okay for all request methods?
      */
@@ -2227,6 +2248,9 @@ HttpStateData::sendRequest()
         flags.keepalive = request->persistent();
     else if (!Config.onoff.server_pconns)
         flags.keepalive = false;
+    else if (flags.tunneling)
+        // tunneled non pinned bumped requests must not keepalive
+        flags.keepalive = !request->flags.sslBumped;
     else if (_peer == NULL)
         flags.keepalive = true;
     else if (_peer->stats.n_keepalives_sent < 10)
@@ -2235,7 +2259,7 @@ HttpStateData::sendRequest()
              (double) _peer->stats.n_keepalives_sent > 0.50)
         flags.keepalive = true;
 
-    if (_peer) {
+    if (_peer && !flags.tunneling) {
         /*The old code here was
           if (neighborType(_peer, request->url) == PEER_SIBLING && ...
           which is equivalent to:
@@ -2334,9 +2358,9 @@ HttpStateData::finishingBrokenPost()
         return false;
     }
 
-    ACLFilledChecklist ch(Config.accessList.brokenPosts, originalRequest(), NULL);
+    ACLFilledChecklist ch(Config.accessList.brokenPosts, originalRequest().getRaw());
     ch.al = fwd->al;
-    ch.syncAle(originalRequest(), nullptr);
+    ch.syncAle(originalRequest().getRaw(), nullptr);
     if (!ch.fastCheck().allowed()) {
         debugs(11, 5, HERE << "didn't match brokenPosts");
         return false;
@@ -2435,7 +2459,7 @@ HttpStateData::handleRequestBodyProducerAborted()
         // We might also get here if client-side aborts, but then our response
         // should not matter because either client-side will provide its own or
         // there will be no response at all (e.g., if the the client has left).
-        ErrorState *err = new ErrorState(ERR_ICAP_FAILURE, Http::scInternalServerError, fwd->request);
+        const auto err = new ErrorState(ERR_ICAP_FAILURE, Http::scInternalServerError, fwd->request, fwd->al);
         err->detailError(ERR_DETAIL_SRV_REQMOD_REQ_BODY);
         fwd->fail(err);
     }

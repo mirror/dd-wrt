@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -15,6 +15,7 @@
 #include "adaptation/icap/Xaction.h"
 #include "BodyPipe.h"
 #include "http/one/forward.h"
+#include "http/one/TeChunkedParser.h"
 
 /*
  * ICAPModXact implements ICAP REQMOD and RESPMOD transaction using
@@ -105,12 +106,44 @@ private:
     enum State { stDisabled, stWriting, stIeof, stDone } theState;
 };
 
+/// Parses and stores ICAP trailer header block.
+class TrailerParser
+{
+public:
+    TrailerParser() : trailer(hoReply), hdr_sz(0) {}
+    /// Parses trailers stored in a buffer.
+    /// \returns true and sets hdr_sz on success
+    /// \returns false and sets *error to zero when needs more data
+    /// \returns false and sets *error to a positive Http::StatusCode on error
+    bool parse(const char *buf, int len, int atEnd, Http::StatusCode *error);
+    HttpHeader trailer;
+    /// parsed trailer size if parse() was successful
+    size_t hdr_sz; // pedantic XXX: wrong type dictated by HttpHeader::parse() API
+};
+
+/// handles ICAP-specific chunk extensions supported by Squid
+class ChunkExtensionValueParser: public Http1::ChunkExtensionValueParser
+{
+public:
+    /* Http1::ChunkExtensionValueParser API */
+    virtual void parse(Tokenizer &tok, const SBuf &extName) override;
+
+    bool sawUseOriginalBody() const { return useOriginalBody_ >= 0; }
+    uint64_t useOriginalBody() const { assert(sawUseOriginalBody()); return static_cast<uint64_t>(useOriginalBody_); }
+
+private:
+    static const SBuf UseOriginalBodyName;
+
+    /// the value of the parsed use-original-body chunk extension (or -1)
+    int64_t useOriginalBody_ = -1;
+};
+
 class ModXact: public Xaction, public BodyProducer, public BodyConsumer
 {
     CBDATA_CLASS(ModXact);
 
 public:
-    ModXact(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, ServiceRep::Pointer &s);
+    ModXact(Http::Message *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, ServiceRep::Pointer &s);
     virtual ~ModXact();
 
     // BodyProducer methods
@@ -202,10 +235,11 @@ private:
     void parseHeaders();
     void parseIcapHead();
     void parseHttpHead();
-    bool parseHead(HttpMsg *head);
+    bool parseHead(Http::Message *head);
 
     void decideOnParsingBody();
     void parseBody();
+    void parseIcapTrailer();
     void maybeAllocateHttpMsg();
 
     void handle100Continue();
@@ -223,7 +257,7 @@ private:
     void prepEchoing();
     void prepPartialBodyEchoing(uint64_t pos);
     void echoMore();
-    void updateSources(); ///< Update the HttpMsg sources
+    void updateSources(); ///< Update the Http::Message sources
 
     virtual bool doneAll() const;
     virtual void swanSong();
@@ -231,7 +265,7 @@ private:
     void stopReceiving();
     void stopSending(bool nicely);
     void stopWriting(bool nicely);
-    void stopParsing();
+    void stopParsing(const bool checkUnparsedData = true);
     void stopBackup();
 
     virtual void fillPendingStatus(MemBuf &buf) const;
@@ -239,9 +273,22 @@ private:
     virtual bool fillVirginHttpHeader(MemBuf&) const;
 
 private:
-    void packHead(MemBuf &httpBuf, const HttpMsg *head);
-    void encapsulateHead(MemBuf &icapBuf, const char *section, MemBuf &httpBuf, const HttpMsg *head);
+    /// parses a message header or trailer
+    /// \returns true on success
+    /// \returns false if more data is needed
+    /// \throw TextException on unrecoverable error
+    template<class Part>
+    bool parsePart(Part *part, const char *description);
+
+    void packHead(MemBuf &httpBuf, const Http::Message *head);
+    void encapsulateHead(MemBuf &icapBuf, const char *section, MemBuf &httpBuf, const Http::Message *head);
     bool gotEncapsulated(const char *section) const;
+    /// whether ICAP response header indicates HTTP header presence
+    bool expectHttpHeader() const;
+    /// whether ICAP response header indicates HTTP body presence
+    bool expectHttpBody() const;
+    /// whether ICAP response header indicates ICAP trailers presence
+    bool expectIcapTrailers() const;
     void checkConsuming();
 
     virtual void finalizeLogInfo();
@@ -269,6 +316,10 @@ private:
     int64_t replyHttpBodySize;
 
     int adaptHistoryId; ///< adaptation history slot reservation
+
+    TrailerParser *trailerParser;
+
+    ChunkExtensionValueParser extensionParser;
 
     class State
     {
@@ -304,7 +355,7 @@ private:
                    parsing == psHttpHeader;
         }
 
-        enum Parsing { psIcapHeader, psHttpHeader, psBody, psDone } parsing;
+        enum Parsing { psIcapHeader, psHttpHeader, psBody, psIcapTrailer, psDone } parsing;
 
         // measures ICAP request writing progress
         enum Writing { writingInit, writingConnect, writingHeaders,
@@ -328,7 +379,7 @@ class ModXactLauncher: public Launcher
     CBDATA_CLASS(ModXactLauncher);
 
 public:
-    ModXactLauncher(HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, Adaptation::ServicePointer s);
+    ModXactLauncher(Http::Message *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp, Adaptation::ServicePointer s);
 
 protected:
     virtual Xaction *createXaction();

@@ -100,7 +100,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -142,6 +142,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -166,6 +167,7 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(libexecdir)" "$(DESTDIR)$(man8dir)"
 PROGRAMS = $(libexec_PROGRAMS)
 am_cachemgr__CGIEXT__OBJECTS = cachemgr__CGIEXT_-cachemgr.$(OBJEXT) \
+	cachemgr__CGIEXT_-CharacterSet.$(OBJEXT) \
 	cachemgr__CGIEXT_-Here.$(OBJEXT) \
 	cachemgr__CGIEXT_-MemBuf.$(OBJEXT) \
 	cachemgr__CGIEXT_-stub_cbdata.$(OBJEXT) \
@@ -207,7 +209,8 @@ am__v_at_1 =
 DEFAULT_INCLUDES = 
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po \
+am__depfiles_remade = ./$(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po \
+	./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po \
@@ -604,11 +607,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -620,6 +625,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -781,8 +788,9 @@ DEFAULT_ICON_DIR = $(datadir)/icons
 DEFAULT_ERROR_DIR = $(datadir)/errors
 AM_CFLAGS = $(SQUID_CFLAGS)
 AM_CXXFLAGS = $(SQUID_CXXFLAGS)
-CLEANFILES = test_tools.cc Here.cc MemBuf.cc stub_debug.cc time.cc \
-	stub_cbdata.cc stub_libmem.cc STUB.h cachemgr.cgi.8
+CLEANFILES = test_tools.cc Here.cc CharacterSet.cc MemBuf.cc \
+	stub_debug.cc time.cc stub_cbdata.cc stub_libmem.cc STUB.h \
+	cachemgr.cgi.8
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
@@ -822,6 +830,7 @@ SUBSTITUTE = sed "\
 TESTSOURCES = test_tools.cc
 DEFAULT_CACHEMGR_CONFIG = $(sysconfdir)/cachemgr.conf
 cachemgr__CGIEXT__SOURCES = cachemgr.cc \
+	CharacterSet.cc \
 	Here.cc \
 	MemBuf.cc \
 	stub_cbdata.cc \
@@ -935,6 +944,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po@am__quote@ # am--include-marker
@@ -987,6 +997,20 @@ cachemgr__CGIEXT_-cachemgr.obj: cachemgr.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='cachemgr.cc' object='cachemgr__CGIEXT_-cachemgr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-cachemgr.obj `if test -f 'cachemgr.cc'; then $(CYGPATH_W) 'cachemgr.cc'; else $(CYGPATH_W) '$(srcdir)/cachemgr.cc'; fi`
+
+cachemgr__CGIEXT_-CharacterSet.o: CharacterSet.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-CharacterSet.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Tpo -c -o cachemgr__CGIEXT_-CharacterSet.o `test -f 'CharacterSet.cc' || echo '$(srcdir)/'`CharacterSet.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Tpo $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='CharacterSet.cc' object='cachemgr__CGIEXT_-CharacterSet.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-CharacterSet.o `test -f 'CharacterSet.cc' || echo '$(srcdir)/'`CharacterSet.cc
+
+cachemgr__CGIEXT_-CharacterSet.obj: CharacterSet.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-CharacterSet.obj -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Tpo -c -o cachemgr__CGIEXT_-CharacterSet.obj `if test -f 'CharacterSet.cc'; then $(CYGPATH_W) 'CharacterSet.cc'; else $(CYGPATH_W) '$(srcdir)/CharacterSet.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Tpo $(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='CharacterSet.cc' object='cachemgr__CGIEXT_-CharacterSet.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-CharacterSet.obj `if test -f 'CharacterSet.cc'; then $(CYGPATH_W) 'CharacterSet.cc'; else $(CYGPATH_W) '$(srcdir)/CharacterSet.cc'; fi`
 
 cachemgr__CGIEXT_-Here.o: Here.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-Here.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-Here.Tpo -c -o cachemgr__CGIEXT_-Here.o `test -f 'Here.cc' || echo '$(srcdir)/'`Here.cc
@@ -1499,7 +1523,8 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libexecPROGRAMS \
 	clean-libtool mostlyclean-am
 
 distclean: distclean-recursive
-		-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
+		-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po
+	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
@@ -1552,7 +1577,8 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-recursive
-		-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
+		-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po
+	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
@@ -1614,6 +1640,9 @@ stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
 
 Here.cc: $(top_srcdir)/src/base/Here.cc
 	cp $(top_srcdir)/src/base/Here.cc $@
+
+CharacterSet.cc: $(top_srcdir)/src/base/CharacterSet.cc
+	cp $(top_srcdir)/src/base/CharacterSet.cc $@
 
 MemBuf.cc: $(top_srcdir)/src/MemBuf.cc
 	cp $(top_srcdir)/src/MemBuf.cc $@

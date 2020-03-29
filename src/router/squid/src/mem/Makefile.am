@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2020 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -14,11 +14,12 @@ libmem_la_SOURCES = \
 	AllocatorProxy.cc \
 	AllocatorProxy.h \
 	forward.h \
-	old_api.cc \
 	Meter.h \
+	old_api.cc \
 	Pool.cc \
 	Pool.h \
 	PoolChunked.cc \
 	PoolChunked.h \
+	PoolingAllocator.h \
 	PoolMalloc.cc \
 	PoolMalloc.h

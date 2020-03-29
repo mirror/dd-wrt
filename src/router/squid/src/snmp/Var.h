@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -11,8 +11,8 @@
 #ifndef SQUID_SNMPX_VAR_H
 #define SQUID_SNMPX_VAR_H
 
+#include "base/Range.h"
 #include "ipc/forward.h"
-#include "Range.h"
 #include "snmp_vars.h"
 
 namespace Snmp

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -57,7 +57,9 @@ ACLUserData::dump() const
 
     sl.insert(sl.end(), userDataNames.begin(), userDataNames.end());
 
-    debugs(28,5, "ACLUserData dump output: " << SBufContainerJoin(userDataNames,SBuf(" ")));
+    debugs(28,5, "ACLUserData dump output: " <<
+           JoinContainerToSBuf(userDataNames.begin(), userDataNames.end(),
+                               SBuf(" ")));
     return sl;
 }
 

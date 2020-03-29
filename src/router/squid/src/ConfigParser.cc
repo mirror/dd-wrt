@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -7,11 +7,13 @@
  */
 
 #include "squid.h"
+#include "base/Here.h"
 #include "cache_cf.h"
 #include "ConfigParser.h"
 #include "Debug.h"
 #include "fatal.h"
 #include "globals.h"
+#include "sbuf/Stream.h"
 
 bool ConfigParser::RecognizeQuotedValues = true;
 bool ConfigParser::StrictMode = true;
@@ -242,6 +244,12 @@ ConfigParser::SetCfgLine(char *line)
     }
 }
 
+SBuf
+ConfigParser::CurrentLocation()
+{
+    return ToSBuf(SourceLocation(cfg_directive, cfg_filename, config_lineno));
+}
+
 char *
 ConfigParser::TokenParse(const char * &nextToken, ConfigParser::TokenType &type)
 {
@@ -309,7 +317,7 @@ ConfigParser::TokenParse(const char * &nextToken, ConfigParser::TokenType &type)
         if (ConfigParser::StrictMode && type == ConfigParser::SimpleToken) {
             bool tokenIsNumber = true;
             for (const char *s = tokenStart; s != nextToken; ++s) {
-                const bool isValidChar = isalnum(*s) || strchr(".,()-=_/:", *s) ||
+                const bool isValidChar = isalnum(*s) || strchr(".,()-=_/:+", *s) ||
                                          (tokenIsNumber && *s == '%' && (s + 1 == nextToken));
 
                 if (!isdigit(*s))

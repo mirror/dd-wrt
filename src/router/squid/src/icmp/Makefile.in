@@ -101,7 +101,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -143,6 +143,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -182,7 +183,7 @@ am_pinger_OBJECTS = IcmpPinger.$(OBJEXT) Icmp4.$(OBJEXT) \
 am__objects_1 = debug.$(OBJEXT) globals.$(OBJEXT) \
 	SquidConfig.$(OBJEXT) SquidNew.$(OBJEXT) \
 	stub_HelperChildConfig.$(OBJEXT) stub_libmem.$(OBJEXT) \
-	time.$(OBJEXT)
+	stub_SBuf.$(OBJEXT) time.$(OBJEXT)
 nodist_pinger_OBJECTS = $(am__objects_1)
 pinger_OBJECTS = $(am_pinger_OBJECTS) $(nodist_pinger_OBJECTS)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
@@ -216,7 +217,7 @@ am__depfiles_remade = ./$(DEPDIR)/Icmp.Plo ./$(DEPDIR)/Icmp4.Po \
 	./$(DEPDIR)/SquidConfig.Po ./$(DEPDIR)/SquidNew.Po \
 	./$(DEPDIR)/debug.Po ./$(DEPDIR)/globals.Po \
 	./$(DEPDIR)/net_db.Plo ./$(DEPDIR)/pinger.Po \
-	./$(DEPDIR)/stub_HelperChildConfig.Po \
+	./$(DEPDIR)/stub_HelperChildConfig.Po ./$(DEPDIR)/stub_SBuf.Po \
 	./$(DEPDIR)/stub_libmem.Po ./$(DEPDIR)/time.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
@@ -566,11 +567,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -582,6 +585,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -780,6 +785,7 @@ COPIED_SOURCE = \
 	SquidNew.cc \
 	stub_HelperChildConfig.cc \
 	stub_libmem.cc \
+	stub_SBuf.cc \
 	STUB.h \
 	time.cc
 
@@ -938,6 +944,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_db.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pinger.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_HelperChildConfig.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_SBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time.Po@am__quote@ # am--include-marker
 
@@ -1287,6 +1294,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/net_db.Plo
 	-rm -f ./$(DEPDIR)/pinger.Po
 	-rm -f ./$(DEPDIR)/stub_HelperChildConfig.Po
+	-rm -f ./$(DEPDIR)/stub_SBuf.Po
 	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/time.Po
 	-rm -f Makefile
@@ -1347,6 +1355,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/net_db.Plo
 	-rm -f ./$(DEPDIR)/pinger.Po
 	-rm -f ./$(DEPDIR)/stub_HelperChildConfig.Po
+	-rm -f ./$(DEPDIR)/stub_SBuf.Po
 	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/time.Po
 	-rm -f Makefile
@@ -1415,6 +1424,9 @@ stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
 
 stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
 	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
+
+stub_SBuf.cc: $(top_srcdir)/src/tests/stub_SBuf.cc STUB.h
+	cp $(top_srcdir)/src/tests/stub_SBuf.cc $@
 
 STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -21,7 +21,9 @@
 #include "http/Stream.h"
 #include "HttpRequest.h"
 #include "MemBuf.h"
+#include "proxyp/Header.h"
 #include "rfc1738.h"
+#include "sbuf/Stream.h"
 #include "sbuf/StringConvert.h"
 #include "security/CertError.h"
 #include "security/NegotiationHistory.h"
@@ -92,6 +94,23 @@ Format::Format::parse(const char *def)
     }
 
     return true;
+}
+
+size_t
+Format::AssembleOne(const char *token, MemBuf &mb, const AccessLogEntryPointer &ale)
+{
+    Token tkn;
+    enum Quoting quote = LOG_QUOTE_NONE;
+    const auto tokenSize = tkn.parse(token, &quote);
+    assert(tokenSize > 0);
+    if (ale != nullptr) {
+        Format fmt("SimpleToken");
+        fmt.format = &tkn;
+        fmt.assemble(mb, ale, 0);
+        fmt.format = nullptr;
+    } else
+        mb.append("-", 1);
+    return static_cast<size_t>(tokenSize);
 }
 
 void
@@ -336,10 +355,10 @@ sslErrorName(Security::ErrorCode err, char *buf, size_t size)
 /// \retval HttpReply sent to the HTTP client (access.log and default context).
 /// \retval HttpReply received (encapsulated) from the ICAP server (icap.log context).
 /// \retval HttpRequest received (encapsulated) from the ICAP server (icap.log context).
-static const HttpMsg *
+static const Http::Message *
 actualReplyHeader(const AccessLogEntry::Pointer &al)
 {
-    const HttpMsg *msg = al->reply;
+    const Http::Message *msg = al->reply.getRaw();
 #if ICAP_CLIENT
     // al->icap.reqMethod is methodNone in access.log context
     if (!msg && al->icap.reqMethod == Adaptation::methodReqmod)
@@ -350,7 +369,7 @@ actualReplyHeader(const AccessLogEntry::Pointer &al)
 
 /// XXX: Misnamed. See actualReplyHeader().
 /// \return HttpRequest or HttpReply for %http::>h.
-static const HttpMsg *
+static const Http::Message *
 actualRequestHeader(const AccessLogEntry::Pointer &al)
 {
 #if ICAP_CLIENT
@@ -380,6 +399,8 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
         struct timeval outtv = {0, 0};
         int doMsec = 0;
         int doSec = 0;
+        bool doUint64 = false;
+        uint64_t outUint64 = 0;
 
         switch (fmt->type) {
 
@@ -470,20 +491,10 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             }
             break;
 
-        case LFT_LOCAL_LISTENING_IP: {
-            // avoid logging a dash if we have reliable info
-            const bool interceptedAtKnownPort = al->request ?
-                                                (al->request->flags.interceptTproxy ||
-                                                 al->request->flags.intercepted) && al->cache.port :
-                                                false;
-            if (interceptedAtKnownPort) {
-                const bool portAddressConfigured = !al->cache.port->s.isAnyAddr();
-                if (portAddressConfigured)
-                    out = al->cache.port->s.toStr(tmp, sizeof(tmp));
-            } else if (al->tcpClient)
-                out = al->tcpClient->local.toStr(tmp, sizeof(tmp));
-        }
-        break;
+        case LFT_LOCAL_LISTENING_IP:
+            if (const auto addr = FindListeningPortAddress(nullptr, al.getRaw()))
+                out = addr->toStr(tmp, sizeof(tmp));
+            break;
 
         case LFT_CLIENT_LOCAL_IP:
             if (al->tcpClient)
@@ -505,11 +516,8 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_LOCAL_LISTENING_PORT:
-            if (al->cache.port) {
-                outint = al->cache.port->s.port();
-                doint = 1;
-            } else if (al->request) {
-                outint = al->request->my_addr.port();
+            if (const auto addr = FindListeningPortAddress(nullptr, al.getRaw())) {
+                outint = addr->port();
                 doint = 1;
             }
             break;
@@ -637,7 +645,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_REQUEST_HEADER:
-            if (const HttpMsg *msg = actualRequestHeader(al)) {
+            if (const Http::Message *msg = actualRequestHeader(al)) {
                 sb = StringToSBuf(msg->header.getByName(fmt->data.header.header));
                 out = sb.c_str();
                 quote = 1;
@@ -653,7 +661,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_REPLY_HEADER:
-            if (const HttpMsg *msg = actualReplyHeader(al)) {
+            if (const Http::Message *msg = actualReplyHeader(al)) {
                 sb = StringToSBuf(msg->header.getByName(fmt->data.header.header));
                 out = sb.c_str();
                 quote = 1;
@@ -696,7 +704,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (al->request) {
                 const Adaptation::History::Pointer ah = al->request->adaptHistory();
                 if (ah) { // XXX: add adapt::<all_h but use lastMeta here
-                    sb = StringToSBuf(ah->allMeta.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+                    sb = ah->allMeta.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
                     out = sb.c_str();
                     quote = 1;
                 }
@@ -755,7 +763,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
 
         case LFT_ICAP_REQ_HEADER_ELEM:
             if (al->icap.request) {
-                sb = StringToSBuf(al->icap.request->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+                sb = al->icap.request->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
                 out = sb.c_str();
                 quote = 1;
             }
@@ -765,7 +773,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (al->icap.request) {
                 HttpHeaderPos pos = HttpHeaderInitPos;
                 while (const HttpHeaderEntry *e = al->icap.request->header.getEntry(&pos)) {
-                    sb.append(StringToSBuf(e->name));
+                    sb.append(e->name);
                     sb.append(": ");
                     sb.append(StringToSBuf(e->value));
                     sb.append("\r\n");
@@ -785,7 +793,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
 
         case LFT_ICAP_REP_HEADER_ELEM:
             if (al->icap.reply) {
-                sb = StringToSBuf(al->icap.reply->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+                sb = al->icap.reply->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
                 out = sb.c_str();
                 quote = 1;
             }
@@ -795,7 +803,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (al->icap.reply) {
                 HttpHeaderPos pos = HttpHeaderInitPos;
                 while (const HttpHeaderEntry *e = al->icap.reply->header.getEntry(&pos)) {
-                    sb.append(StringToSBuf(e->name));
+                    sb.append(e->name);
                     sb.append(": ");
                     sb.append(StringToSBuf(e->value));
                     sb.append("\r\n");
@@ -830,8 +838,32 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 #endif
         case LFT_REQUEST_HEADER_ELEM:
-            if (const HttpMsg *msg = actualRequestHeader(al)) {
-                sb = StringToSBuf(msg->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+            if (const Http::Message *msg = actualRequestHeader(al)) {
+                sb = msg->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
+                out = sb.c_str();
+                quote = 1;
+            }
+            break;
+
+        case LFT_PROXY_PROTOCOL_RECEIVED_HEADER:
+            if (al->proxyProtocolHeader) {
+                sb = al->proxyProtocolHeader->getValues(fmt->data.headerId, fmt->data.header.separator);
+                out = sb.c_str();
+                quote = 1;
+            }
+            break;
+
+        case LFT_PROXY_PROTOCOL_RECEIVED_ALL_HEADERS:
+            if (al->proxyProtocolHeader) {
+                sb = al->proxyProtocolHeader->toMime();
+                out = sb.c_str();
+                quote = 1;
+            }
+            break;
+
+        case LFT_PROXY_PROTOCOL_RECEIVED_HEADER_ELEM:
+            if (al->proxyProtocolHeader) {
+                sb = al->proxyProtocolHeader->getElem(fmt->data.headerId, fmt->data.header.element, fmt->data.header.separator);
                 out = sb.c_str();
                 quote = 1;
             }
@@ -839,15 +871,15 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
 
         case LFT_ADAPTED_REQUEST_HEADER_ELEM:
             if (al->adapted_request) {
-                sb = StringToSBuf(al->adapted_request->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+                sb = al->adapted_request->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
                 out = sb.c_str();
                 quote = 1;
             }
             break;
 
         case LFT_REPLY_HEADER_ELEM:
-            if (const HttpMsg *msg = actualReplyHeader(al)) {
-                sb = StringToSBuf(msg->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator));
+            if (const Http::Message *msg = actualReplyHeader(al)) {
+                sb = msg->header.getByNameListMember(fmt->data.header.header, fmt->data.header.element, fmt->data.header.separator);
                 out = sb.c_str();
                 quote = 1;
             }
@@ -862,24 +894,35 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             } else
 #endif
             {
+                // just headers without start-line and CRLF
+                // XXX: reconcile with '<h'
                 out = al->headers.request;
                 quote = 1;
             }
             break;
 
         case LFT_ADAPTED_REQUEST_ALL_HEADERS:
+            // just headers without start-line and CRLF
+            // XXX: reconcile with '<h'
             out = al->headers.adapted_request;
             quote = 1;
             break;
 
-        case LFT_REPLY_ALL_HEADERS:
-            out = al->headers.reply;
+        case LFT_REPLY_ALL_HEADERS: {
+            MemBuf allHeaders;
+            allHeaders.init();
+            // status-line + headers + CRLF
+            // XXX: reconcile with '>h' and '>ha'
+            al->packReplyHeaders(allHeaders);
+            sb.assign(allHeaders.content(), allHeaders.contentSize());
+            out = sb.c_str();
 #if ICAP_CLIENT
             if (!out && al->icap.reqMethod == Adaptation::methodReqmod)
                 out = al->headers.adapted_request;
 #endif
             quote = 1;
-            break;
+        }
+        break;
 
         case LFT_USER_NAME:
 #if USE_AUTH
@@ -1044,9 +1087,11 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             break;
 
         case LFT_REQUEST_METHOD:
-            sb = al->getLogMethod();
-            out = sb.c_str();
-            quote = 1;
+            if (al->hasLogMethod()) {
+                sb = al->getLogMethod();
+                out = sb.c_str();
+                quote = 1;
+            }
             break;
 
         case LFT_REQUEST_URI:
@@ -1191,8 +1236,10 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (al->request) {
                 ConnStateData *conn = al->request->clientConnectionManager.get();
                 if (conn && Comm::IsConnOpen(conn->clientConnection)) {
-                    if (auto ssl = fd_table[conn->clientConnection->fd].ssl.get())
-                        out = sslGetUserCertificatePEM(ssl);
+                    if (const auto ssl = fd_table[conn->clientConnection->fd].ssl.get()) {
+                        sb = sslGetUserCertificatePEM(ssl);
+                        out = sb.c_str();
+                    }
                 }
             }
             break;
@@ -1201,8 +1248,10 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (al->request) {
                 ConnStateData *conn = al->request->clientConnectionManager.get();
                 if (conn && Comm::IsConnOpen(conn->clientConnection)) {
-                    if (auto ssl = fd_table[conn->clientConnection->fd].ssl.get())
-                        out = sslGetUserCertificatePEM(ssl);
+                    if (const auto ssl = fd_table[conn->clientConnection->fd].ssl.get()) {
+                        sb = sslGetUserCertificatePEM(ssl);
+                        out = sb.c_str();
+                    }
                 }
             }
             break;
@@ -1278,13 +1327,20 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
 
         case LFT_SSL_SERVER_CERT_ISSUER:
         case LFT_SSL_SERVER_CERT_SUBJECT:
+        case LFT_SSL_SERVER_CERT_WHOLE:
             if (al->request && al->request->clientConnectionManager.valid()) {
                 if (Ssl::ServerBump * srvBump = al->request->clientConnectionManager->serverBump()) {
                     if (X509 *serverCert = srvBump->serverCert.get()) {
                         if (fmt->type == LFT_SSL_SERVER_CERT_SUBJECT)
                             out = Ssl::GetX509UserAttribute(serverCert, "DN");
-                        else
+                        else if (fmt->type == LFT_SSL_SERVER_CERT_ISSUER)
                             out = Ssl::GetX509CAAttribute(serverCert, "DN");
+                        else {
+                            assert(fmt->type == LFT_SSL_SERVER_CERT_WHOLE);
+                            sb = Ssl::GetX509PEM(serverCert);
+                            out = sb.c_str();
+                            quote = 1;
+                        }
                     }
                 }
             }
@@ -1339,15 +1395,16 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             tmp[1] = '\0';
             if (fmt->data.header.header && *fmt->data.header.header) {
                 const char *separator = tmp;
+                static SBuf note;
 #if USE_ADAPTATION
                 Adaptation::History::Pointer ah = al->request ? al->request->adaptHistory() : Adaptation::History::Pointer();
                 if (ah && ah->metaHeaders) {
-                    if (const char *meta = ah->metaHeaders->find(fmt->data.header.header, separator))
-                        sb.append(meta);
+                    if (ah->metaHeaders->find(note, fmt->data.header.header, separator))
+                        sb.append(note);
                 }
 #endif
                 if (al->notes) {
-                    if (const char *note = al->notes->find(fmt->data.header.header, separator)) {
+                    if (al->notes->find(note, fmt->data.header.header, separator)) {
                         if (!sb.isEmpty())
                             sb.append(separator);
                         sb.append(note);
@@ -1390,6 +1447,13 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             if (!al->lastAclData.isEmpty())
                 out = al->lastAclData.c_str();
             break;
+
+        case LFT_MASTER_XACTION:
+            if (al->request) {
+                doUint64 = true;
+                outUint64 = static_cast<uint64_t>(al->request->masterXaction->id.value);
+                break;
+            }
         }
 
         if (dooff) {
@@ -1398,6 +1462,9 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
 
         } else if (doint) {
             sb.appendf("%0*ld", fmt->zero && fmt->widthMin >= 0 ? fmt->widthMin : 0, outint);
+            out = sb.c_str();
+        } else if (doUint64) {
+            sb.appendf("%0*" PRIu64, fmt->zero && fmt->widthMin >= 0 ? fmt->widthMin : 0, outUint64);
             out = sb.c_str();
         } else if (doMsec) {
             if (fmt->widthMax < 0) {
@@ -1474,7 +1541,7 @@ Format::Format::assemble(MemBuf &mb, const AccessLogEntry::Pointer &al, int logS
             }
 
             // enforce width limits if configured
-            const bool haveMaxWidth = fmt->widthMax >=0 && !doint && !dooff && !doMsec && !doSec;
+            const bool haveMaxWidth = fmt->widthMax >=0 && !doint && !dooff && !doMsec && !doSec && !doUint64;
             if (haveMaxWidth || fmt->widthMin) {
                 const int minWidth = fmt->widthMin >= 0 ?
                                      fmt->widthMin :0;

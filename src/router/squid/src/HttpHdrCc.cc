@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -69,6 +69,25 @@ void
 HttpHdrCc::clear()
 {
     *this=HttpHdrCc();
+}
+
+/// set a data member to a new value, and set the corresponding mask-bit.
+/// if setting is false, then the mask-bit is cleared.
+void
+HttpHdrCc::setValue(int32_t &value, int32_t new_value, HttpHdrCcType hdr, bool setting)
+{
+    if (setting) {
+        if (new_value < 0) {
+            debugs(65, 3, "rejecting negative-value Cache-Control directive " << hdr
+                   << " value " << new_value);
+            return;
+        }
+    } else {
+        new_value = -1; //rely on the convention that "unknown" is -1
+    }
+
+    value = new_value;
+    setMask(hdr,setting);
 }
 
 bool
@@ -238,7 +257,7 @@ HttpHdrCc::packInto(Packable * p) const
         if (isSet(flag) && flag != HttpHdrCcType::CC_OTHER) {
 
             /* print option name for all options */
-            p->appendf((pcount ? ", %s": "%s") , CcAttrs[flag].name);
+            p->appendf((pcount ? ", %s": "%s"), CcAttrs[flag].name);
 
             /* for all options having values, "=value" after the name */
             switch (flag) {
@@ -330,8 +349,4 @@ operator<< (std::ostream &s, HttpHdrCcType c)
         s << "*invalid hdrcc* [" << ic << ']';
     return s;
 }
-
-#if !_USE_INLINE_
-#include "HttpHdrCc.cci"
-#endif
 

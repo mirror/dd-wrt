@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -46,7 +46,7 @@ public:
 };
 
 Adaptation::Ecap::XactionRep::XactionRep(
-    HttpMsg *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp,
+    Http::Message *virginHeader, HttpRequest *virginCause, AccessLogEntry::Pointer &alp,
     const Adaptation::ServicePointer &aService):
     AsyncJob("Adaptation::Ecap::XactionRep"),
     Adaptation::Initiate("Adaptation::Ecap::XactionRep"),
@@ -189,10 +189,11 @@ Adaptation::Ecap::XactionRep::metaValue(const libecap::Name &name) const
 
     if (name.known()) { // must check to avoid empty names matching unset cfg
         typedef Notes::iterator ACAMLI;
-        for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
-            if (name == (*i)->key.termedBuf()) {
-                if (const char *value = (*i)->match(request, reply, al))
-                    return libecap::Area::FromTempString(value);
+        for (auto h: Adaptation::Config::metaHeaders) {
+            if (name == h->key().toStdString()) {
+                SBuf matched;
+                if (h->match(request, reply, al, matched))
+                    return libecap::Area::FromTempString(matched.toStdString());
                 else
                     return libecap::Area();
             }
@@ -210,12 +211,11 @@ Adaptation::Ecap::XactionRep::visitEachMetaHeader(libecap::NamedValueVisitor &vi
     Must(request);
     HttpReply *reply = dynamic_cast<HttpReply*>(theVirginRep.raw().header);
 
-    typedef Notes::iterator ACAMLI;
-    for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
-        const char *v = (*i)->match(request, reply, al);
-        if (v) {
-            const libecap::Name name((*i)->key.termedBuf());
-            const libecap::Area value = libecap::Area::FromTempString(v);
+    for (auto h: Adaptation::Config::metaHeaders) {
+        SBuf matched;
+        if (h->match(request, reply, al, matched)) {
+            const libecap::Name name(h->key().toStdString());
+            const libecap::Area value = libecap::Area::FromTempString(matched.toStdString());
             visitor.visit(name, value);
         }
     }
@@ -239,14 +239,13 @@ Adaptation::Ecap::XactionRep::start()
     if (ah != NULL) {
         // retrying=false because ecap never retries transactions
         adaptHistoryId = ah->recordXactStart(service().cfg().key, current_time, false);
-        typedef Notes::iterator ACAMLI;
-        for (ACAMLI i = Adaptation::Config::metaHeaders.begin(); i != Adaptation::Config::metaHeaders.end(); ++i) {
-            const char *v = (*i)->match(request, reply, al);
-            if (v) {
+        SBuf matched;
+        for (auto h: Adaptation::Config::metaHeaders) {
+            if (h->match(request, reply, al, matched)) {
                 if (ah->metaHeaders == NULL)
                     ah->metaHeaders = new NotePairs();
-                if (!ah->metaHeaders->hasPair((*i)->key.termedBuf(), v))
-                    ah->metaHeaders->add((*i)->key.termedBuf(), v);
+                if (!ah->metaHeaders->hasPair(h->key(), matched))
+                    ah->metaHeaders->add(h->key(), matched);
             }
         }
     }
@@ -403,7 +402,7 @@ Adaptation::Ecap::XactionRep::useVirgin()
 
     preserveVb("useVirgin");
 
-    HttpMsg *clone = theVirginRep.raw().header->clone();
+    Http::Message *clone = theVirginRep.raw().header->clone();
     // check that clone() copies the pipe so that we do not have to
     Must(!theVirginRep.raw().header->body_pipe == !clone->body_pipe);
 
@@ -420,7 +419,7 @@ Adaptation::Ecap::XactionRep::useAdapted(const libecap::shared_ptr<libecap::Mess
     theAnswerRep = m;
     Must(proxyingAb == opUndecided);
 
-    HttpMsg *msg = answer().header;
+    Http::Message *msg = answer().header;
     updateSources(msg);
     if (!theAnswerRep->body()) { // final, bodyless answer
         proxyingAb = opNever;
@@ -459,7 +458,7 @@ Adaptation::Ecap::XactionRep::blockVirgin()
 /// Called just before sendAnswer() to record adapter meta-information
 /// which may affect answer processing and may be needed for logging.
 void
-Adaptation::Ecap::XactionRep::updateHistory(HttpMsg *adapted)
+Adaptation::Ecap::XactionRep::updateHistory(Http::Message *adapted)
 {
     if (!theMaster) // all updates rely on being able to query the adapter
         return;
@@ -736,9 +735,9 @@ Adaptation::Ecap::XactionRep::status() const
 }
 
 void
-Adaptation::Ecap::XactionRep::updateSources(HttpMsg *adapted)
+Adaptation::Ecap::XactionRep::updateSources(Http::Message *adapted)
 {
-    adapted->sources |= service().cfg().connectionEncryption ? HttpMsg::srcEcaps : HttpMsg::srcEcap;
+    adapted->sources |= service().cfg().connectionEncryption ? Http::Message::srcEcaps : Http::Message::srcEcap;
 
     // Update masterXaction object for adapted HTTP requests.
     if (HttpRequest *adaptedReq = dynamic_cast<HttpRequest*>(adapted)) {

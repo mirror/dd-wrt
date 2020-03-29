@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -40,10 +40,10 @@ Auth::Ntlm::Scheme::shutdownCleanup()
     debugs(29, DBG_CRITICAL, "Shutdown: NTLM authentication.");
 }
 
-Auth::Config *
+Auth::SchemeConfig *
 Auth::Ntlm::Scheme::createConfig()
 {
     Auth::Ntlm::Config *ntlmCfg = new Auth::Ntlm::Config;
-    return dynamic_cast<Auth::Config*>(ntlmCfg);
+    return dynamic_cast<Auth::SchemeConfig*>(ntlmCfg);
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -7,7 +7,6 @@
  */
 
 #include "squid.h"
-
 #include "acl/Gadgets.h"
 #include "cache_cf.h"
 #include "comm/Connection.h"
@@ -78,20 +77,37 @@ Ip::Qos::getTosFromServer(const Comm::ConnectionPointer &server, fde *clientFde)
 #endif
 }
 
-nfmark_t
-Ip::Qos::getNfmarkFromConnection(const Comm::ConnectionPointer &conn, const Ip::Qos::ConnectionDirection connDir)
-{
-    nfmark_t mark = 0;
 #if USE_LIBNETFILTERCONNTRACK
-    /* Allocate a new conntrack */
-    if (struct nf_conntrack *ct = nfct_new()) {
-        /* Prepare data needed to find the connection in the conntrack table.
-         * We need the local and remote IP address, and the local and remote
-         * port numbers.
-         */
-        const auto src = (connDir == Ip::Qos::dirAccepted) ? conn->remote : conn->local;
-        const auto dst = (connDir == Ip::Qos::dirAccepted) ? conn->local : conn->remote;
+/**
+* Callback function to mark connection once it's been found.
+* This function is called by the libnetfilter_conntrack
+* libraries, during nfct_query in Ip::Qos::getNfConnmark.
+* nfct_callback_register is used to register this function.
+* @param nf_conntrack_msg_type Type of conntrack message
+* @param nf_conntrack Pointer to the conntrack structure
+* @param mark Pointer to nfmark_t mark
+*/
+static int
+getNfmarkCallback(enum nf_conntrack_msg_type, struct nf_conntrack *ct, void *connmark)
+{
+    auto *mark = static_cast<nfmark_t *>(connmark);
+    *mark = nfct_get_attr_u32(ct, ATTR_MARK);
+    debugs(17, 3, asHex(*mark));
+    return NFCT_CB_CONTINUE;
+}
 
+/**
+* Prepares a conntrack query for specified source and destination.
+* This can be used for querying or modifying attributes.
+*/
+static nf_conntrack *
+prepareConntrackQuery(const Ip::Address &src, const Ip::Address &dst)
+{
+    /* Allocate a new conntrack */
+    if (auto ct = nfct_new()) {
+        // Prepare data needed to find the connection in the conntrack table.
+        // We need the local and remote IP address, and the local and remote
+        // port numbers.
         if (Ip::EnableIpv6 && src.isIPv6()) {
             nfct_set_attr_u8(ct, ATTR_L3PROTO, AF_INET6);
             struct in6_addr conn_fde_dst_ip6;
@@ -114,11 +130,27 @@ Ip::Qos::getNfmarkFromConnection(const Comm::ConnectionPointer &conn, const Ip::
         nfct_set_attr_u16(ct, ATTR_ORIG_PORT_DST, htons(dst.port()));
         nfct_set_attr_u16(ct, ATTR_ORIG_PORT_SRC, htons(src.port()));
 
-        /* Open a handle to the conntrack */
+        return ct;
+    }
+
+    return nullptr;
+}
+#endif
+
+nfmark_t
+Ip::Qos::getNfConnmark(const Comm::ConnectionPointer &conn, const Ip::Qos::ConnectionDirection connDir)
+{
+    nfmark_t mark = 0;
+#if USE_LIBNETFILTERCONNTRACK
+    const auto src = (connDir == Ip::Qos::dirAccepted) ? conn->remote : conn->local;
+    const auto dst = (connDir == Ip::Qos::dirAccepted) ? conn->local : conn->remote;
+
+    if (const auto ct = prepareConntrackQuery(src, dst)) {
+        // Open a handle to the conntrack
         if (struct nfct_handle *h = nfct_open(CONNTRACK, 0)) {
-            /* Register the callback. The callback function will record the mark value. */
+            // Register the callback. The callback function will record the mark value.
             nfct_callback_register(h, NFCT_T_ALL, getNfmarkCallback, static_cast<void *>(&mark));
-            /* Query the conntrack table using the data previously set */
+            // Query the conntrack table using the data previously set
             int x = nfct_query(h, NFCT_Q_GET, ct);
             if (x == -1) {
                 const int xerrno = errno;
@@ -127,28 +159,56 @@ Ip::Qos::getNfmarkFromConnection(const Comm::ConnectionPointer &conn, const Ip::
             }
             nfct_close(h);
         } else {
-            debugs(17, 2, "QOS: Failed to open conntrack handle for netfilter mark retrieval.");
+            debugs(17, 2, "QOS: Failed to open conntrack handle for netfilter CONNMARK retrieval.");
         }
         nfct_destroy(ct);
     } else {
-        debugs(17, 2, "QOS: Failed to allocate new conntrack for netfilter mark retrieval.");
+        debugs(17, 2, "QOS: Failed to allocate new conntrack for netfilter CONNMARK retrieval.");
     }
 #endif
     return mark;
 }
 
-#if USE_LIBNETFILTERCONNTRACK
-int
-Ip::Qos::getNfmarkCallback(enum nf_conntrack_msg_type,
-                           struct nf_conntrack *ct,
-                           void *connmark)
+bool
+Ip::Qos::setNfConnmark(Comm::ConnectionPointer &conn, const Ip::Qos::ConnectionDirection connDir, const Ip::NfMarkConfig &cm)
 {
-    auto *mark = static_cast<nfmark_t *>(connmark);
-    *mark = nfct_get_attr_u32(ct, ATTR_MARK);
-    debugs(17, 3, asHex(*mark));
-    return NFCT_CB_CONTINUE;
-}
+    bool ret = false;
+
+#if USE_LIBNETFILTERCONNTRACK
+    const auto src = (connDir == Ip::Qos::dirAccepted) ? conn->remote : conn->local;
+    const auto dst = (connDir == Ip::Qos::dirAccepted) ? conn->local : conn->remote;
+
+    const nfmark_t newMark = cm.applyToMark(conn->nfConnmark);
+
+    // No need to do anything if a CONNMARK has not changed.
+    if (newMark == conn->nfConnmark)
+        return true;
+
+    if (const auto ct = prepareConntrackQuery(src, dst)) {
+        // Open a handle to the conntrack
+        if (struct nfct_handle *h = nfct_open(CONNTRACK, 0)) {
+            nfct_set_attr_u32(ct, ATTR_MARK, newMark);
+            // Update the conntrack table using the new mark. We do not need a callback here.
+            const int queryResult = nfct_query(h, NFCT_Q_UPDATE, ct);
+            if (queryResult == 0) {
+                conn->nfConnmark = newMark;
+                ret = true;
+            } else {
+                const int xerrno = errno;
+                debugs(17, 2, "QOS: Failed to modify connection mark: (" << queryResult << ") " << xstrerr(xerrno)
+                       << " (Destination " << dst << ", source " << src << ")" );
+            }
+            nfct_close(h);
+        } else {
+            debugs(17, 2, "QOS: Failed to open conntrack handle for netfilter CONNMARK modification.");
+        }
+        nfct_destroy(ct);
+    } else {
+        debugs(17, 2, "QOS: Failed to allocate new conntrack for netfilter CONNMARK modification.");
+    }
 #endif
+    return ret;
+}
 
 int
 Ip::Qos::doTosLocalMiss(const Comm::ConnectionPointer &conn, const hier_code hierCode)
@@ -182,7 +242,7 @@ Ip::Qos::doNfmarkLocalMiss(const Comm::ConnectionPointer &conn, const hier_code 
         mark = Ip::Qos::TheConfig.markParentHit;
         debugs(33, 2, "QOS: Parent Peer hit with hier code=" << hierCode << ", Mark=" << mark);
     } else if (Ip::Qos::TheConfig.preserveMissMark) {
-        mark = fd_table[conn->fd].nfmarkFromServer & Ip::Qos::TheConfig.preserveMissMarkMask;
+        mark = fd_table[conn->fd].nfConnmarkFromServer & Ip::Qos::TheConfig.preserveMissMarkMask;
         mark = (mark & ~Ip::Qos::TheConfig.markMissMask) | (Ip::Qos::TheConfig.markMiss & Ip::Qos::TheConfig.markMissMask);
         debugs(33, 2, "QOS: Preserving mark on miss, Mark=" << mark);
     } else if (Ip::Qos::TheConfig.markMiss) {
@@ -454,7 +514,113 @@ Ip::Qos::Config::dumpConfigLine(char *entry, const char *name) const
     }
 }
 
-#if !_USE_INLINE_
-#include "Qos.cci"
+int
+Ip::Qos::setSockTos(const int fd, tos_t tos, int type)
+{
+    // Bug 3731: FreeBSD produces 'invalid option'
+    // unless we pass it a 32-bit variable storing 8-bits of data.
+    // NP: it is documented as 'int' for all systems, even those like Linux which accept 8-bit char
+    //     so we convert to a int before setting.
+    int bTos = tos;
+
+    debugs(50, 3, "for FD " << fd << " to " << bTos);
+
+    if (type == AF_INET) {
+#if defined(IP_TOS)
+        const int x = setsockopt(fd, IPPROTO_IP, IP_TOS, &bTos, sizeof(bTos));
+        if (x < 0) {
+            int xerrno = errno;
+            debugs(50, 2, "setsockopt(IP_TOS) on " << fd << ": " << xstrerr(xerrno));
+        }
+        return x;
+#else
+        debugs(50, DBG_IMPORTANT, "WARNING: setsockopt(IP_TOS) not supported on this platform");
+        return -1;
 #endif
+    } else { // type == AF_INET6
+#if defined(IPV6_TCLASS)
+        const int x = setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, &bTos, sizeof(bTos));
+        if (x < 0) {
+            int xerrno = errno;
+            debugs(50, 2, "setsockopt(IPV6_TCLASS) on " << fd << ": " << xstrerr(xerrno));
+        }
+        return x;
+#else
+        debugs(50, DBG_IMPORTANT, "WARNING: setsockopt(IPV6_TCLASS) not supported on this platform");
+        return -1;
+#endif
+    }
+
+    /* CANNOT REACH HERE */
+}
+
+int
+Ip::Qos::setSockTos(const Comm::ConnectionPointer &conn, tos_t tos)
+{
+    const int x = Ip::Qos::setSockTos(conn->fd, tos, conn->remote.isIPv4() ? AF_INET : AF_INET6);
+    conn->tos = (x >= 0) ? tos : 0;
+    return x;
+}
+
+int
+Ip::Qos::setSockNfmark(const int fd, nfmark_t mark)
+{
+#if SO_MARK && USE_LIBCAP
+    debugs(50, 3, "for FD " << fd << " to " << mark);
+    const int x = setsockopt(fd, SOL_SOCKET, SO_MARK, &mark, sizeof(nfmark_t));
+    if (x < 0) {
+        int xerrno = errno;
+        debugs(50, 2, "setsockopt(SO_MARK) on " << fd << ": " << xstrerr(xerrno));
+    }
+    return x;
+#elif USE_LIBCAP
+    debugs(50, DBG_IMPORTANT, "WARNING: setsockopt(SO_MARK) not supported on this platform");
+    return -1;
+#else
+    debugs(50, DBG_IMPORTANT, "WARNING: Netfilter marking disabled (netfilter marking requires build with LIBCAP)");
+    return -1;
+#endif
+}
+
+int
+Ip::Qos::setSockNfmark(const Comm::ConnectionPointer &conn, nfmark_t mark)
+{
+    const int x = Ip::Qos::setSockNfmark(conn->fd, mark);
+    conn->nfmark = (x >= 0) ? mark : 0;
+    return x;
+}
+
+bool
+Ip::Qos::Config::isAclNfmarkActive() const
+{
+    acl_nfmark * nfmarkAcls [] = { nfmarkToServer, nfmarkToClient };
+
+    for (int i=0; i<2; ++i) {
+        while (nfmarkAcls[i]) {
+            acl_nfmark *l = nfmarkAcls[i];
+            if (!l->markConfig.isEmpty())
+                return true;
+            nfmarkAcls[i] = l->next;
+        }
+    }
+
+    return false;
+}
+
+bool
+Ip::Qos::Config::isAclTosActive() const
+{
+    acl_tos * tosAcls [] = { tosToServer, tosToClient };
+
+    for (int i=0; i<2; ++i) {
+        while (tosAcls[i]) {
+            acl_tos *l = tosAcls[i];
+            if (l->tos > 0)
+                return true;
+            tosAcls[i] = l->next;
+        }
+    }
+
+    return false;
+}
 

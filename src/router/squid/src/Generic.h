@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -68,7 +68,7 @@ private:
     C const *theInstance;
 };
 
-template <class InputIterator , class Visitor>
+template <class InputIterator, class Visitor>
 Visitor& for_each(InputIterator from, InputIterator to, Visitor& visitor)
 {
     while (!(from == to)) {

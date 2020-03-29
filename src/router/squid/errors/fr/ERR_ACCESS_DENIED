@@ -1,6 +1,6 @@
 
 <html><head>
-<meta type="copyright" content="Copyright (C) 1996-2019 The Squid Software Foundation and contributors">
+<meta type="copyright" content="Copyright (C) 1996-2020 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 <title>ERREUR : l'URL demandée n'a pas pu être chargée</title>
 <style type="text/css"><!--
@@ -13,7 +13,7 @@ body
 </head><body id="%c">
 <div id="titles">
 <h1>ERREUR</h1>
-<h2>L'URL demandée n'a pas pu être trouvé</h2>
+<h2>L'URL demandée n'a pas pu être trouvée</h2>
 </div>
 <hr>
 

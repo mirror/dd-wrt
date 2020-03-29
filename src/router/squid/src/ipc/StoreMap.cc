@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -582,7 +582,10 @@ Ipc::StoreMap::closeForUpdating(Update &update)
     update.stale.anchor->splicingPoint = update.stale.splicingPoint;
     freeEntry(update.stale.fileNo);
 
-    // make the stale anchor/chain reusable, reachable via its new location
+    // Make the stale anchor/chain reusable, reachable via update.fresh.name. If
+    // update.entry->swap_filen is still update.stale.fileNo, and the entry is
+    // using store, then the entry must have a lock on update.stale.fileNo,
+    // preventing its premature reuse by others.
     relocate(update.fresh.name, update.stale.fileNo);
 
     const Update updateSaved = update; // for post-close debugging below
@@ -810,7 +813,12 @@ Ipc::StoreMapAnchor::exportInto(StoreEntry &into) const
     into.lastModified(basics.lastmod);
     into.swap_file_sz = basics.swap_file_sz;
     into.refcount = basics.refcount;
+    const bool collapsingRequired = into.hittingRequiresCollapsing();
     into.flags = basics.flags;
+    // There are possibly several flags we do not need to overwrite,
+    // and ENTRY_REQUIRES_COLLAPSING is one of them.
+    // TODO: check for other flags.
+    into.setCollapsingRequirement(collapsingRequired);
 }
 
 void

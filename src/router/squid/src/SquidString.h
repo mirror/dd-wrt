@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -26,9 +26,13 @@ class String
 {
 
 public:
-    _SQUID_INLINE_ String();
+    String();
     String(char const *);
     String(String const &);
+    String(String && S) : size_(S.size_), len_(S.len_), buf_(S.buf_) {
+        S.buf_ = nullptr; // S is about to be destructed
+        S.size_ = S.len_ = 0;
+    }
     ~String();
 
     typedef size_t size_type; //storage size intentionally unspecified
@@ -36,36 +40,57 @@ public:
 
     String &operator =(char const *);
     String &operator =(String const &);
+    String &operator =(String && S) {
+        if (this != &S) {
+            size_ = S.size_;
+            len_ = S.len_;
+            buf_ = S.buf_;
+            S.size_ = 0;
+            S.len_ = 0;
+            S.buf_ = nullptr; // S is about to be destructed
+        }
+        return *this;
+    }
+
     bool operator ==(String const &) const;
     bool operator !=(String const &) const;
 
     /**
      * Retrieve a single character in the string.
-     \param pos Position of character to retrieve.
+     \param aPos Position of character to retrieve.
      */
-    _SQUID_INLINE_ char operator [](unsigned int pos) const;
+    char operator [](unsigned int aPos) const {
+        assert(aPos < size_);
+        return buf_[aPos];
+    }
 
     /// The absolute size limit on data held in a String.
     /// Since Strings can be nil-terminated implicitly it is best to ensure
     /// the useful content length is strictly less than this limit.
     static size_type SizeMaxXXX() { return SizeMax_; }
 
-    _SQUID_INLINE_ size_type size() const;
+    size_type size() const { return len_; }
+
     /// variant of size() suited to be used for printf-alikes.
-    /// throws when size() > MAXINT
-    int psize() const;
+    /// throws when size() >= INT_MAX
+    int psize() const {
+        Must(size() < INT_MAX);
+        return size();
+    }
 
     /**
      * Returns a raw pointer to the underlying backing store. The caller has been
      * verified not to make any assumptions about null-termination
      */
-    _SQUID_INLINE_ char const * rawBuf() const;
+    char const * rawBuf() const { return buf_; }
+
     /**
      * Returns a raw pointer to the underlying backing store.
      * The caller requires it to be null-terminated.
      */
-    _SQUID_INLINE_ char const * termedBuf() const;
-    void limitInit(const char *str, int len); // TODO: rename to assign()
+    char const * termedBuf() const { return buf_; }
+
+    void assign(const char *str, int len);
     void clean();
     void reset(char const *str);
     void append(char const *buf, int len);
@@ -81,12 +106,14 @@ public:
     size_type find(char const *aString) const;
     const char * rpos(char const ch) const;
     size_type rfind(char const ch) const;
-    _SQUID_INLINE_ int cmp(char const *) const;
-    _SQUID_INLINE_ int cmp(char const *, size_type count) const;
-    _SQUID_INLINE_ int cmp(String const &) const;
-    _SQUID_INLINE_ int caseCmp(char const *) const;
-    _SQUID_INLINE_ int caseCmp(char const *, size_type count) const;
-    _SQUID_INLINE_ int caseCmp(String const &) const;
+    int cmp(char const *) const;
+    int cmp(char const *, size_type count) const;
+    int cmp(String const &) const;
+    int caseCmp(char const *) const;
+    int caseCmp(char const *, size_type count) const;
+    int caseCmp(String const &str) const {
+        return caseCmp(str.rawBuf(),str.size());
+    }
 
     /// Whether creating a totalLen-character string is safe (i.e., unlikely to assert).
     /// Optional extras can be used for overflow-safe length addition.
@@ -97,7 +124,7 @@ public:
 
     String substr(size_type from, size_type to) const;
 
-    _SQUID_INLINE_ void cut(size_type newLength);
+    void cut(size_type newLength);
 
 private:
     void allocAndFill(const char *str, int len);
@@ -107,31 +134,41 @@ private:
     bool defined() const {return buf_!=NULL;}
     bool undefined() const {return !defined();}
 
-    _SQUID_INLINE_ bool nilCmp(bool, bool, int &) const;
-
     /* never reference these directly! */
-    size_type size_; /* buffer size; limited by SizeMax_ */
+    size_type size_ = 0; /* buffer size; limited by SizeMax_ */
 
-    size_type len_;  /* current length  */
+    size_type len_ = 0;  /* current length  */
 
     static const size_type SizeMax_ = 65535; ///< 64K limit protects some fixed-size buffers
     /// returns true after increasing the first argument by extra if the sum does not exceed SizeMax_
     static bool SafeAdd(size_type &base, size_type extra) { if (extra <= SizeMax_ && base <= SizeMax_ - extra) { base += extra; return true; } return false; }
 
-    char *buf_;
+    char *buf_ = nullptr;
 
-    _SQUID_INLINE_ void set(char const *loc, char const ch);
-    _SQUID_INLINE_ void cutPointer(char const *loc);
+    void set(char const *loc, char const ch) {
+        if (loc < buf_ || loc > (buf_ + size_))
+            return;
+        buf_[loc-buf_] = ch;
+    }
 
+    void cutPointer(char const *loc) {
+        if (loc < buf_ || loc > (buf_ + size_))
+            return;
+        len_ = loc-buf_;
+        buf_[len_] = '\0';
+    }
 };
 
-_SQUID_INLINE_ std::ostream & operator<<(std::ostream& os, String const &aString);
+inline std::ostream & operator<<(std::ostream &os, String const &aString)
+{
+    os.write(aString.rawBuf(),aString.size());
+    return os;
+}
 
-_SQUID_INLINE_ bool operator<(const String &a, const String &b);
-
-#if _USE_INLINE_
-#include "String.cci"
-#endif
+inline bool operator<(const String &a, const String &b)
+{
+    return a.cmp(b) < 0;
+}
 
 const char *checkNullString(const char *p);
 int stringHasWhitespace(const char *);

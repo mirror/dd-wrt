@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -46,6 +46,8 @@ public:
 
     /* StoreClient API */
     virtual void created(StoreEntry *);
+    virtual LogTags *loggingTags() { return nullptr; } // no access logging/ACLs
+    virtual void fillChecklist(ACLFilledChecklist &) const;
 
 private:
     SBuf icon_;
@@ -361,7 +363,7 @@ void
 MimeIcon::created(StoreEntry *newEntry)
 {
     /* if the icon is already in the store, do nothing */
-    if (!newEntry->isNull())
+    if (newEntry)
         return;
     // XXX: if a 204 is cached due to earlier load 'failure' we should try to reload.
 
@@ -402,16 +404,15 @@ MimeIcon::created(StoreEntry *newEntry)
     /* fill `e` with a canned 2xx response object */
 
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initIcon);
-    HttpRequest *r = HttpRequest::FromUrl(url_, mx);
+    HttpRequestPointer r(HttpRequest::FromUrlXXX(url_, mx));
     if (!r)
         fatalf("mimeLoadIcon: cannot parse internal URL: %s", url_);
 
     e->buffer();
 
     e->mem_obj->request = r;
-    HTTPMSGLOCK(e->mem_obj->request);
 
-    HttpReply *reply = new HttpReply;
+    HttpReplyPointer reply(new HttpReply);
 
     if (status == Http::scNoContent)
         reply->setHeaders(status, NULL, NULL, 0, -1, -1);
@@ -420,7 +421,7 @@ MimeIcon::created(StoreEntry *newEntry)
     reply->cache_control = new HttpHdrCc();
     reply->cache_control->maxAge(86400);
     reply->header.putCc(reply->cache_control);
-    e->replaceHttpReply(reply);
+    e->replaceHttpReply(reply.getRaw());
 
     if (status == Http::scOkay) {
         /* read the file into the buffer and append it to store */
@@ -435,8 +436,16 @@ MimeIcon::created(StoreEntry *newEntry)
     e->flush();
     e->complete();
     e->timestampsSet();
-    e->unlock("MimeIcon::created");
+    // MimeIcons are only loaded once, prevent accidental destruction
+    // e->unlock("MimeIcon::created");
     debugs(25, 3, "Loaded icon " << url_);
+}
+
+void
+MimeIcon::fillChecklist(ACLFilledChecklist &) const
+{
+    // Unreachable: We never mayInitiateCollapsing() or startCollapsingOn().
+    assert(false);
 }
 
 MimeEntry::~MimeEntry()
