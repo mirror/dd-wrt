@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -40,6 +40,7 @@
 #include "ntlmauth/support_bits.cci"
 
 #include <cctype>
+#include <chrono>
 #include <cstring>
 #if HAVE_CRYPT_H
 #include <crypt.h>
@@ -50,6 +51,7 @@
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+#include <thread>
 
 /* A couple of harmless helper macros */
 #define SEND(X) {debug("sending '%s' to squid\n",X); printf(X "\n");}
@@ -67,6 +69,7 @@
 const char *authenticate_ntlm_domain = "WORKGROUP";
 int strip_domain_enabled = 0;
 int NTLM_packet_debug_enabled = 0;
+unsigned int response_delay = 0;
 
 /*
  * options:
@@ -80,9 +83,10 @@ static void
 usage(void)
 {
     fprintf(stderr,
-            "Usage: %s [-d] [-v] [-h]\n"
+            "Usage: %s [-d] [-t N] [-v] [-h]\n"
             " -d  enable debugging.\n"
             " -S  strip domain from username.\n"
+            " -t  timeout to delay responses (milliseconds).\n"
             " -v  enable verbose NTLM packet debugging.\n"
             " -h  this message\n\n",
             my_program_name);
@@ -94,7 +98,7 @@ process_options(int argc, char *argv[])
     int opt, had_error = 0;
 
     opterr = 0;
-    while (-1 != (opt = getopt(argc, argv, "hdvS"))) {
+    while (-1 != (opt = getopt(argc, argv, "hdvSt:"))) {
         switch (opt) {
         case 'd':
             debug_enabled = 1;
@@ -106,9 +110,16 @@ process_options(int argc, char *argv[])
         case 'S':
             strip_domain_enabled = 1;
             break;
+        case 't':
+            if (!xstrtoui(optarg, nullptr, &response_delay, 0, 86400)) {
+                fprintf(stderr, "ERROR: invalid parameter value for -t '%s'", optarg);
+                usage();
+                had_error = 1;
+            }
+            break;
         case 'h':
             usage();
-            exit(0);
+            exit(EXIT_SUCCESS);
         case '?':
             opt = optopt;
         /* fall thru to default */
@@ -119,7 +130,7 @@ process_options(int argc, char *argv[])
         }
     }
     if (had_error)
-        exit(1);
+        exit(EXIT_FAILURE);
 }
 
 int
@@ -172,6 +183,10 @@ main(int argc, char *argv[])
         } else
             debug("Got '%s' from Squid\n", buf);
 
+        if (response_delay > 0) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(response_delay));
+        }
+
         if (strncmp(buf, "YR", 2) == 0) {
             char nonce[NTLM_NONCE_LEN];
             ntlm_challenge chal;
@@ -220,6 +235,6 @@ main(int argc, char *argv[])
             }
         }
     }
-    exit(0);
+    return EXIT_SUCCESS;
 }
 

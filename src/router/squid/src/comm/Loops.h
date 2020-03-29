@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,9 +24,6 @@ namespace Comm
 
 /// Initialize the module on Squid startup
 void SelectLoopInit(void);
-
-/// Mark an FD to be watched for its IO status.
-void SetSelect(int, unsigned int, PF *, void *, time_t);
 
 /// reset/undo/unregister the watch for an FD which was set by Comm::SetSelect()
 inline void

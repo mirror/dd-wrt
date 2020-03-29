@@ -87,13 +87,13 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = debug$(EXEEXT) $(am__EXEEXT_2) MemPoolTest$(EXEEXT) \
-	mem_node_test$(EXEEXT) mem_hdr_test$(EXEEXT) splay$(EXEEXT) \
+check_PROGRAMS = debug$(EXEEXT) $(am__EXEEXT_2) mem_node_test$(EXEEXT) \
+	mem_hdr_test$(EXEEXT) splay$(EXEEXT) \
 	syntheticoperators$(EXEEXT) VirtualDeleteOperator$(EXEEXT)
 TESTS = debug$(EXEEXT) syntheticoperators$(EXEEXT) \
 	VirtualDeleteOperator$(EXEEXT) splay$(EXEEXT) \
-	MemPoolTest$(EXEEXT) mem_node_test$(EXEEXT) \
-	mem_hdr_test$(EXEEXT) $(am__EXEEXT_2) squid-conf-tests
+	mem_node_test$(EXEEXT) mem_hdr_test$(EXEEXT) $(am__EXEEXT_2) \
+	squid-conf-tests
 @ENABLE_LOADABLE_MODULES_TRUE@am__append_1 = $(INCLTDL)
 EXTRA_PROGRAMS = mem_node_test$(EXEEXT) membanger$(EXEEXT) \
 	splay$(EXEEXT) tcp-banger2$(EXEEXT)
@@ -105,7 +105,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -147,6 +147,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -191,10 +192,6 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
-am_MemPoolTest_OBJECTS = MemPoolTest.$(OBJEXT) $(am__objects_2)
-MemPoolTest_OBJECTS = $(am_MemPoolTest_OBJECTS)
-MemPoolTest_DEPENDENCIES = $(top_builddir)/src/mem/libmem.la \
-	$(am__DEPENDENCIES_4)
 am_VirtualDeleteOperator_OBJECTS = VirtualDeleteOperator.$(OBJEXT) \
 	stub_libmem.$(OBJEXT) $(am__objects_2)
 VirtualDeleteOperator_OBJECTS = $(am_VirtualDeleteOperator_OBJECTS)
@@ -263,7 +260,6 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ESIExpressions.Po \
-	./$(DEPDIR)/MemPoolTest.Po \
 	./$(DEPDIR)/VirtualDeleteOperator.Po ./$(DEPDIR)/debug.Po \
 	./$(DEPDIR)/mem_hdr_test.Po ./$(DEPDIR)/mem_node_test.Po \
 	./$(DEPDIR)/membanger.Po ./$(DEPDIR)/splay.Po \
@@ -309,11 +305,11 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(ESIExpressions_SOURCES) $(MemPoolTest_SOURCES) \
-	$(VirtualDeleteOperator_SOURCES) $(debug_SOURCES) \
-	$(mem_hdr_test_SOURCES) $(mem_node_test_SOURCES) membanger.c \
-	$(splay_SOURCES) $(syntheticoperators_SOURCES) tcp-banger2.c
-DIST_SOURCES = $(ESIExpressions_SOURCES) $(MemPoolTest_SOURCES) \
+SOURCES = $(ESIExpressions_SOURCES) $(VirtualDeleteOperator_SOURCES) \
+	$(debug_SOURCES) $(mem_hdr_test_SOURCES) \
+	$(mem_node_test_SOURCES) membanger.c $(splay_SOURCES) \
+	$(syntheticoperators_SOURCES) tcp-banger2.c
+DIST_SOURCES = $(ESIExpressions_SOURCES) \
 	$(VirtualDeleteOperator_SOURCES) $(debug_SOURCES) \
 	$(mem_hdr_test_SOURCES) $(mem_node_test_SOURCES) membanger.c \
 	$(splay_SOURCES) $(syntheticoperators_SOURCES) tcp-banger2.c
@@ -623,11 +619,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -639,6 +637,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -858,11 +858,6 @@ mem_hdr_test_LDADD = \
 	$(top_builddir)/src/mem/libmem.la \
 	$(LDADD)
 
-MemPoolTest_SOURCES = MemPoolTest.cc $(DEBUG_SOURCE)
-MemPoolTest_LDADD = \
-	$(top_builddir)/src/mem/libmem.la \
-	$(LDADD)
-
 splay_SOURCES = splay.cc stub_libmem.cc $(DEBUG_SOURCE)
 syntheticoperators_SOURCES = syntheticoperators.cc stub_libmem.cc $(DEBUG_SOURCE)
 VirtualDeleteOperator_SOURCES = VirtualDeleteOperator.cc stub_libmem.cc $(DEBUG_SOURCE)
@@ -914,10 +909,6 @@ ESIExpressions$(EXEEXT): $(ESIExpressions_OBJECTS) $(ESIExpressions_DEPENDENCIES
 	@rm -f ESIExpressions$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(ESIExpressions_OBJECTS) $(ESIExpressions_LDADD) $(LIBS)
 
-MemPoolTest$(EXEEXT): $(MemPoolTest_OBJECTS) $(MemPoolTest_DEPENDENCIES) $(EXTRA_MemPoolTest_DEPENDENCIES) 
-	@rm -f MemPoolTest$(EXEEXT)
-	$(AM_V_CXXLD)$(CXXLINK) $(MemPoolTest_OBJECTS) $(MemPoolTest_LDADD) $(LIBS)
-
 VirtualDeleteOperator$(EXEEXT): $(VirtualDeleteOperator_OBJECTS) $(VirtualDeleteOperator_DEPENDENCIES) $(EXTRA_VirtualDeleteOperator_DEPENDENCIES) 
 	@rm -f VirtualDeleteOperator$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(VirtualDeleteOperator_OBJECTS) $(VirtualDeleteOperator_LDADD) $(LIBS)
@@ -957,7 +948,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ESIExpressions.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/MemPoolTest.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/VirtualDeleteOperator.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debug.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem_hdr_test.Po@am__quote@ # am--include-marker
@@ -1256,13 +1246,6 @@ splay.log: splay$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-MemPoolTest.log: MemPoolTest$(EXEEXT)
-	@p='MemPoolTest$(EXEEXT)'; \
-	b='MemPoolTest'; \
-	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
-	--log-file $$b.log --trs-file $$b.trs \
-	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
-	"$$tst" $(AM_TESTS_FD_REDIRECT)
 mem_node_test.log: mem_node_test$(EXEEXT)
 	@p='mem_node_test$(EXEEXT)'; \
 	b='mem_node_test'; \
@@ -1386,7 +1369,6 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/ESIExpressions.Po
-	-rm -f ./$(DEPDIR)/MemPoolTest.Po
 	-rm -f ./$(DEPDIR)/VirtualDeleteOperator.Po
 	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/mem_hdr_test.Po
@@ -1449,7 +1431,6 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/ESIExpressions.Po
-	-rm -f ./$(DEPDIR)/MemPoolTest.Po
 	-rm -f ./$(DEPDIR)/VirtualDeleteOperator.Po
 	-rm -f ./$(DEPDIR)/debug.Po
 	-rm -f ./$(DEPDIR)/mem_hdr_test.Po

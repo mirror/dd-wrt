@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -79,13 +79,7 @@ ACLCertificateData::dump() const
     if (validAttributesStr)
         sl.push_back(SBuf(attribute));
 
-#if __cplusplus >= 201103L
     sl.splice(sl.end(),values.dump());
-#else
-    // temp is needed until c++11 move constructor
-    SBufList tmp = values.dump();
-    sl.splice(sl.end(),tmp);
-#endif
     return sl;
 }
 

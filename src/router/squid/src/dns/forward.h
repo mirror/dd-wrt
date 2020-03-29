@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,7 +13,7 @@
 
 class rfc1035_rr;
 
-typedef void IDNSCB(void *, const rfc1035_rr *, int, const char *);
+typedef void IDNSCB(void *cbdata, const rfc1035_rr *answer, const int recordsInAnswer, const char *error, bool lastAnswer);
 
 /// generic DNS API
 namespace Dns

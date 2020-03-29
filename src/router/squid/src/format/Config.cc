@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -45,11 +45,11 @@ Format::FmtConfig::parseFormats()
 }
 
 void
-Format::FmtConfig::registerTokens(const String &nsName, TokenTableEntry const *tokenArray)
+Format::FmtConfig::registerTokens(const SBuf &nsName, TokenTableEntry const *tokenArray)
 {
-    debugs(46, 2, HERE << " register format tokens for '" << nsName << "'");
-    if (tokenArray != NULL)
-        tokens.push_back(TokenNamespace(nsName, tokenArray));
+    debugs(46, 2, "register format tokens for '" << nsName << "'");
+    if (tokenArray)
+        tokens.emplace_back(TokenNamespace(nsName, tokenArray));
     else
         debugs(0, DBG_CRITICAL, "BUG: format tokens for '" << nsName << "' missing!");
 }

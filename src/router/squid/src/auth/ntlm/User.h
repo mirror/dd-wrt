@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -16,8 +16,6 @@
 namespace Auth
 {
 
-class Config;
-
 namespace Ntlm
 {
 
@@ -27,7 +25,7 @@ class User : public Auth::User
     MEMPROXY_CLASS(Auth::Ntlm::User);
 
 public:
-    User(Auth::Config *, const char *requestRealm);
+    User(Auth::SchemeConfig *, const char *requestRealm);
     virtual ~User();
     virtual int32_t ttl() const override;
 

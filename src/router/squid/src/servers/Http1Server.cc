@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -74,14 +74,18 @@ Http::One::Server::parseOneRequest()
 {
     PROF_start(HttpServer_parseOneRequest);
 
+    // reset because the protocol may have changed if this is the first request
+    // and because we never bypass parsing failures of N+1st same-proto request
+    preservingClientData_ = shouldPreserveClientData();
+
     // parser is incremental. Generate new parser state if we,
     // a) do not have one already
     // b) have completed the previous request parsing already
     if (!parser_ || !parser_->needsMoreData())
-        parser_ = new Http1::RequestParser(mayTunnelUnsupportedProto());
+        parser_ = new Http1::RequestParser(preservingClientData_);
 
     /* Process request */
-    Http::Stream *context = parseHttpRequest(this, parser_);
+    Http::Stream *context = parseHttpRequest(parser_);
 
     PROF_stop(HttpServer_parseOneRequest);
     return context;
@@ -135,7 +139,8 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
     // TODO: move URL parse into Http Parser and INVALID_URL into the above parse error handling
     MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initClient);
     mx->tcpClient = clientConnection;
-    if ((request = HttpRequest::FromUrl(http->uri, mx, parser_->method())) == NULL) {
+    request = HttpRequest::FromUrlXXX(http->uri, mx, parser_->method());
+    if (!request) {
         debugs(33, 5, "Invalid URL: " << http->uri);
         // setReplyToError() requires log_uri
         http->setLogUriToRawUri(http->uri, parser_->method());
@@ -188,6 +193,13 @@ Http::One::Server::buildHttpRequest(Http::StreamPointer &context)
         debugs(33, 5, "normalize " << x << " Host header using " << request->url.authority());
         SBuf tmp(request->url.authority());
         request->header.putStr(Http::HOST, tmp.c_str());
+    }
+
+    // TODO: We fill request notes here until we find a way to verify whether
+    // no ACL checking is performed before ClientHttpRequest::doCallouts().
+    if (hasNotes()) {
+        assert(!request->hasNotes());
+        request->notes()->append(notes().getRaw());
     }
 
     http->initRequest(request.getRaw());
@@ -305,9 +317,6 @@ Http::One::Server::handleReply(HttpReply *rep, StoreIOBuffer receivedData)
     }
 
     assert(rep);
-    HTTPMSGUNLOCK(http->al->reply);
-    http->al->reply = rep;
-    HTTPMSGLOCK(http->al->reply);
     context->sendStartOfMessage(rep, receivedData);
 }
 
@@ -329,6 +338,8 @@ Http::One::Server::writeControlMsgAndCall(HttpReply *rep, AsyncCall::Pointer &ca
     // apply selected clientReplyContext::buildReplyHeader() mods
     // it is not clear what headers are required for control messages
     rep->header.removeHopByHopEntries();
+    // paranoid: ContentLengthInterpreter has cleaned non-generated replies
+    rep->removeIrrelevantContentLength();
     rep->header.putStr(Http::HdrType::CONNECTION, "keep-alive");
     httpHdrMangleList(&rep->header, http->request, http->al, ROR_REPLY);
 

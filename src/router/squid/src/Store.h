@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -10,6 +10,7 @@
 #define SQUID_STORE_H
 
 #include "base/Packable.h"
+#include "base/Range.h"
 #include "base/RefCount.h"
 #include "comm/forward.h"
 #include "CommRead.h"
@@ -18,7 +19,6 @@
 #include "http/RequestMethod.h"
 #include "HttpReply.h"
 #include "MemObject.h"
-#include "Range.h"
 #include "RemovalPolicy.h"
 #include "store/Controller.h"
 #include "store/forward.h"
@@ -45,36 +45,41 @@ public:
     static DeferredRead::DeferrableRead DeferReader;
     bool checkDeferRead(int fd) const;
 
-    virtual const char *getMD5Text() const;
+    const char *getMD5Text() const;
     StoreEntry();
     virtual ~StoreEntry();
 
-    virtual HttpReply const *getReply() const;
-    virtual void write (StoreIOBuffer);
+    MemObject &mem() { assert(mem_obj); return *mem_obj; }
+    const MemObject &mem() const { assert(mem_obj); return *mem_obj; }
 
-    /** Check if the Store entry is emtpty
+    /// \retval * the address of freshest reply (if mem_obj exists)
+    /// \retval nullptr when mem_obj does not exist
+    /// \see MemObject::freshestReply()
+    const HttpReply *hasFreshestReply() const { return mem_obj ? &mem_obj->freshestReply() : nullptr; }
+
+    void write(StoreIOBuffer);
+
+    /** Check if the Store entry is empty
      * \retval true   Store contains 0 bytes of data.
      * \retval false  Store contains 1 or more bytes of data.
      * \retval false  Store contains negative content !!!!!!
      */
-    virtual bool isEmpty() const {
-        assert (mem_obj);
-        return mem_obj->endOffset() == 0;
-    }
-    virtual bool isAccepting() const;
-    virtual size_t bytesWanted(Range<size_t> const aRange, bool ignoreDelayPool = false) const;
+    bool isEmpty() const { return mem().endOffset() == 0; }
+    bool isAccepting() const;
+    size_t bytesWanted(Range<size_t> const aRange, bool ignoreDelayPool = false) const;
     /// flags [truncated or too big] entry with ENTRY_BAD_LENGTH and releases it
     void lengthWentBad(const char *reason);
-    virtual void complete();
-    virtual store_client_t storeClientType() const;
-    virtual char const *getSerialisedMetaData();
+    void complete();
+    store_client_t storeClientType() const;
+    /// \returns a malloc()ed buffer containing a length-long packed swap header
+    const char *getSerialisedMetaData(size_t &length) const;
     /// Store a prepared error response. MemObject locks the reply object.
     void storeErrorResponse(HttpReply *reply);
-    void replaceHttpReply(HttpReply *, bool andStartWriting = true);
+    void replaceHttpReply(const HttpReplyPointer &, const bool andStartWriting = true);
     void startWriting(); ///< pack and write reply headers and, maybe, body
     /// whether we may start writing to disk (now or in the future)
-    virtual bool mayStartSwapOut();
-    virtual void trimMemory(const bool preserveSwappable);
+    bool mayStartSwapOut();
+    void trimMemory(const bool preserveSwappable);
 
     // called when a decision to cache in memory has been made
     void memOutDecision(const bool willCacheInRam);
@@ -128,7 +133,7 @@ public:
     /// TODO: Rename and make private so only those two methods can call this.
     bool checkCachable();
     int checkNegativeHit() const;
-    int locked() const;
+    int locked() const { return lock_count; }
     int validToSend() const;
     bool memoryCachable(); ///< checkCachable() and can be cached in memory
 
@@ -173,6 +178,11 @@ public:
     /// whether this entry has an ETag; if yes, puts ETag value into parameter
     bool hasEtag(ETag &etag) const;
 
+    /// Updates easily-accessible non-Store-specific parts of the entry.
+    /// Use Controller::updateOnNotModified() instead of this helper.
+    /// \returns whether anything was actually updated
+    bool updateOnNotModified(const StoreEntry &e304);
+
     /// the disk this entry is [being] cached on; asserts for entries w/o a disk
     Store::Disk &disk() const;
     /// whether one of this StoreEntry owners has locked the corresponding
@@ -189,6 +199,12 @@ public:
     bool hasTransients() const { return mem_obj && mem_obj->xitTable.index >= 0; }
     /// whether there is a corresponding locked shared memory table entry
     bool hasMemStore() const { return mem_obj && mem_obj->memCache.index >= 0; }
+
+    /// whether this entry can feed collapsed requests and only them
+    bool hittingRequiresCollapsing() const { return EBIT_TEST(flags, ENTRY_REQUIRES_COLLAPSING); }
+
+    /// allow or forbid collapsed requests feeding
+    void setCollapsingRequirement(const bool required);
 
     MemObject *mem_obj;
     RemovalPolicyNode repl;
@@ -223,18 +239,14 @@ public:
     static void getPublicByRequest(StoreClient * aClient, HttpRequest * request);
     static void getPublic(StoreClient * aClient, const char *uri, const HttpRequestMethod& method);
 
-    virtual bool isNull() {
-        return false;
-    };
-
     void *operator new(size_t byteCount);
     void operator delete(void *address);
 #if USE_SQUID_ESI
 
     ESIElement::Pointer cachedESITree;
 #endif
-    virtual int64_t objectLen() const;
-    virtual int64_t contentLen() const;
+    int64_t objectLen() const { return mem().object_sz; }
+    int64_t contentLen() const { return objectLen() - mem().baseReply().hdr_sz; }
 
     /// claim shared ownership of this entry (for use in a given context)
     /// matching lock() and unlock() contexts eases leak triage but is optional
@@ -254,8 +266,7 @@ public:
     /// Removes all unlocked (and marks for eventual removal all locked) Store
     /// entries, including attached and unattached entries that have our key.
     /// Also destroys us if we are unlocked or makes us private otherwise.
-    /// TODO: remove virtual.
-    virtual void release(const bool shareable = false);
+    void release(const bool shareable = false);
 
     /// One of the three methods to get rid of an unlocked StoreEntry object.
     /// May destroy this object if it is unlocked; does nothing otherwise.
@@ -319,38 +330,6 @@ private:
 };
 
 std::ostream &operator <<(std::ostream &os, const StoreEntry &e);
-
-/// \ingroup StoreAPI
-class NullStoreEntry:public StoreEntry
-{
-
-public:
-    static NullStoreEntry *getInstance();
-    bool isNull() {
-        return true;
-    }
-
-    const char *getMD5Text() const;
-    HttpReply const *getReply() const { return NULL; }
-    void write (StoreIOBuffer) {}
-
-    bool isEmpty () const {return true;}
-
-    virtual size_t bytesWanted(Range<size_t> const aRange, bool) const { return aRange.end; }
-
-    void operator delete(void *address);
-    void complete() {}
-
-private:
-    store_client_t storeClientType() const {return STORE_MEM_CLIENT;}
-
-    char const *getSerialisedMetaData();
-    virtual bool mayStartSwapOut() { return false; }
-
-    void trimMemory(const bool) {}
-
-    static NullStoreEntry _instance;
-};
 
 /// \ingroup StoreAPI
 typedef void (*STOREGETCLIENT) (StoreEntry *, void *cbdata);

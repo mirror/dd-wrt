@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,26 +27,20 @@ ACLNoteData::~ACLNoteData()
 bool
 ACLNoteData::match(NotePairs::Entry *entry)
 {
-    if (entry->name.cmp(name.termedBuf()) != 0)
+    if (entry->name().cmp(name) != 0)
         return false; // name mismatch
 
     // a name-only note ACL matches any value; others require a values match
     return values->empty() ||
-           values->match(entry->value.termedBuf());
+           values->match(entry->value());
 }
 
 SBufList
 ACLNoteData::dump() const
 {
     SBufList sl;
-    sl.push_back(StringToSBuf(name));
-#if __cplusplus >= 201103L
+    sl.push_back(name);
     sl.splice(sl.end(), values->dump());
-#else
-    // temp is needed until c++11 move constructor
-    SBufList temp = values->dump();
-    sl.splice(sl.end(), temp);
-#endif
     return sl;
 }
 
@@ -62,7 +56,7 @@ ACLNoteData::parse()
 bool
 ACLNoteData::empty() const
 {
-    return name.size() == 0;
+    return name.isEmpty();
 }
 
 ACLData<NotePairs::Entry *> *

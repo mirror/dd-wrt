@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -27,7 +27,7 @@
 #include <iostream>
 
 // Internal Special: the STUB framework requires this function
-#define stub_fatal(m) { std::cerr<<"FATAL: "<<(m)<<" for use of "<<__FUNCTION__<<"\n"; exit(1); }
+#define stub_fatal(m) { std::cerr<<"FATAL: "<<(m)<<" for use of "<<__FUNCTION__<<"\n"; exit(EXIT_FAILURE); }
 
 /// macro to stub a void function.
 #define STUB { stub_fatal(STUB_API " required"); }

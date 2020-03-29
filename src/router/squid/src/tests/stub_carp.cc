@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,8 +12,8 @@
 #include "tests/STUB.h"
 
 class CachePeer;
-class HttpRequest;
+class PeerSelector;
 
 void carpInit(void) STUB
-CachePeer * carpSelectParent(HttpRequest *) STUB_RETVAL(NULL)
+CachePeer *carpSelectParent(PeerSelector *ps) STUB_RETVAL(nullptr)
 

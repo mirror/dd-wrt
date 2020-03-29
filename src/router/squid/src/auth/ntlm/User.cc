@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -7,12 +7,12 @@
  */
 
 #include "squid.h"
-#include "auth/Config.h"
 #include "auth/CredentialsCache.h"
 #include "auth/ntlm/User.h"
+#include "auth/SchemeConfig.h"
 #include "Debug.h"
 
-Auth::Ntlm::User::User(Auth::Config *aConfig, const char *aRequestRealm) :
+Auth::Ntlm::User::User(Auth::SchemeConfig *aConfig, const char *aRequestRealm) :
     Auth::User(aConfig, aRequestRealm)
 {
 }

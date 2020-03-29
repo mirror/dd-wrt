@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -326,7 +326,7 @@ refreshCheck(const StoreEntry * entry, HttpRequest * request, time_t delta)
 
     debugs(22, 3, "Staleness = " << staleness);
 
-    const auto *reply = (entry->mem_obj && entry->mem_obj->getReply() ? entry->mem_obj->getReply() : nullptr);
+    const auto reply = entry->hasFreshestReply(); // may be nil
 
     // stale-if-error requires any failure be passed thru when its period is over.
     int staleIfError = -1;
@@ -550,11 +550,7 @@ refreshIsCachable(const StoreEntry * entry)
         /* no mem_obj? */
         return true;
 
-    if (entry->getReply() == NULL)
-        /* no reply? */
-        return true;
-
-    if (entry->getReply()->content_length == 0)
+    if (entry->mem_obj->baseReply().content_length == 0)
         /* No use refreshing (caching?) 0 byte objects */
         return false;
 
@@ -591,6 +587,7 @@ refreshCheckHTTP(const StoreEntry * entry, HttpRequest * request)
     ++ refreshCounts[rcHTTP].total;
     ++ refreshCounts[rcHTTP].status[reason];
     request->flags.staleIfHit = refreshIsStaleIfHit(reason);
+    // TODO: Treat collapsed responses as fresh but second-hand.
     return (Config.onoff.offline || reason < 200) ? 0 : 1;
 }
 
@@ -623,7 +620,7 @@ int
 refreshCheckDigest(const StoreEntry * entry, time_t delta)
 {
     int reason = refreshCheck(entry,
-                              entry->mem_obj ? entry->mem_obj->request : NULL,
+                              entry->mem_obj ? entry->mem_obj->request.getRaw() : nullptr,
                               delta);
     ++ refreshCounts[rcCDigest].total;
     ++ refreshCounts[rcCDigest].status[reason];

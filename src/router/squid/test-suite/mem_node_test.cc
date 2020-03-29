@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,18 +13,8 @@
 
 #include <iostream>
 
-#if 0
-/* TODO: put this in a libTest */
-void
-xassert(const char *msg, const char *file, int line)
-{
-    std::cout << "Assertion failed: (" << msg << ") at " << file << ":" << line << std::endl;
-    exit (1);
-}
-#endif
-
 int
-main(int argc, char **argv)
+main(int, char *[])
 {
     mem_node *aNode = new mem_node(0);
     assert (aNode);
@@ -57,6 +47,6 @@ main(int argc, char **argv)
     assert (!(mem_node (2) < mem_node (0)));
     delete aNode;
     assert (mem_node::InUseCount() == 0);
-    return 0;
+    return EXIT_SUCCESS;
 }
 

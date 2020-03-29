@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -185,13 +185,13 @@ main(int argc, char *argv[])
 
         default:
             usage(argv[0]);
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
     if (optind < argc) {
         fprintf(stderr, "FATAL: Unknown option '%s'\n", argv[optind]);
         usage(argv[0]);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
     while (fgets(buf, HELPER_INPUT_BUFFER, stdin)) {
         j = 0;
@@ -245,6 +245,6 @@ main(int argc, char *argv[])
             SEND_ERR("");
         }
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 

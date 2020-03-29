@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -443,7 +443,7 @@ _db_set_syslog(const char *facility)
         }
 
         fprintf(stderr, "unknown syslog facility '%s'\n", facility);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 
 #else
@@ -843,6 +843,11 @@ Debug::Start(const int section, const int level)
 void
 Debug::Finish()
 {
+    // TODO: #include "base/CodeContext.h" instead if doing so works well.
+    extern std::ostream &CurrentCodeContextDetail(std::ostream &os);
+    if (Current->level <= DBG_IMPORTANT)
+        Current->buf << CurrentCodeContextDetail;
+
     // TODO: Optimize to remove at least one extra copy.
     _db_print(Current->forceAlert, "%s\n", Current->buf.str().c_str());
     Current->forceAlert = false;
@@ -895,7 +900,10 @@ Raw::print(std::ostream &os) const
     const int finalLevel = (level >= 0) ? level :
                            (size_ > 40 ? DBG_DATA : Debug::SectionLevel());
     if (finalLevel <= Debug::SectionLevel()) {
-        os << (label_ ? '=' : ' ');
+        if (label_)
+            os << '=';
+        else if (useGap_)
+            os << ' ';
         if (data_) {
             if (useHex_)
                 printHex(os);

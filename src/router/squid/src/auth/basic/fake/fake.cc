@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -77,12 +77,12 @@ process_options(int argc, char *argv[])
             break;
         case 'h':
             usage();
-            exit(0);
+            exit(EXIT_SUCCESS);
         default:
             std::cerr << program_name << ": FATAL: unknown option: -" <<
                       static_cast<char>(optopt) << ". Exiting" << std::endl;
             usage();
-            exit(1);
+            exit(EXIT_FAILURE);
         }
     }
 }
@@ -104,6 +104,6 @@ main(int argc, char *argv[])
     }
     ndebug(program_name << ' ' << VERSION << ' ' << SQUID_BUILD_INFO <<
            " shutting down...");
-    return 0;
+    return EXIT_SUCCESS;
 }
 

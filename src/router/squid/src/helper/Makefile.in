@@ -98,7 +98,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -140,6 +140,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -163,7 +164,7 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libhelper_la_LIBADD =
-am_libhelper_la_OBJECTS = ChildConfig.lo Reply.lo
+am_libhelper_la_OBJECTS = ChildConfig.lo Reply.lo ReservationId.lo
 libhelper_la_OBJECTS = $(am_libhelper_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -185,7 +186,7 @@ DEFAULT_INCLUDES =
 depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/ChildConfig.Plo \
-	./$(DEPDIR)/Reply.Plo
+	./$(DEPDIR)/Reply.Plo ./$(DEPDIR)/ReservationId.Plo
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -532,11 +533,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -548,6 +551,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -727,7 +732,9 @@ libhelper_la_SOURCES = \
 	Reply.cc \
 	Reply.h \
 	Request.h \
-	ResultCode.h
+	ResultCode.h \
+	ReservationId.h \
+	ReservationId.cc
 
 EXTRA_DIST = protocol_defines.h
 all: all-am
@@ -796,6 +803,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChildConfig.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Reply.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ReservationId.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1129,6 +1137,7 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/ChildConfig.Plo
 	-rm -f ./$(DEPDIR)/Reply.Plo
+	-rm -f ./$(DEPDIR)/ReservationId.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1176,6 +1185,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/ChildConfig.Plo
 	-rm -f ./$(DEPDIR)/Reply.Plo
+	-rm -f ./$(DEPDIR)/ReservationId.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

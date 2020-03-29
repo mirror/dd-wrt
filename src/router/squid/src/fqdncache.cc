@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -30,7 +30,7 @@
 /**
  \defgroup FQDNCacheAPI FQDN Cache API
  \ingroup Components
- \section Introduction Introduction
+ \section FQDNCacheIntroduction Introduction
  \par
  *  The FQDN cache is a built-in component of squid providing
  *  Hostname to IP-Number translation functionality and managing
@@ -38,8 +38,6 @@
  *  mechanisms that allow non-blocking access to these mappings.
  *  The FQDN cache usually doesn't block on a request except for
  *  special cases where this is desired (see below).
- *
- \todo FQDN Cache should have its own API *.h file.
  */
 
 /**
@@ -388,8 +386,9 @@ fqdncacheParse(fqdncache_entry *f, const rfc1035_rr * answers, int nr, const cha
  * Callback for handling DNS results.
  */
 static void
-fqdncacheHandleReply(void *data, const rfc1035_rr * answers, int na, const char *error_message)
+fqdncacheHandleReply(void *data, const rfc1035_rr * answers, int na, const char *error_message, const bool lastAnswer)
 {
+    assert(lastAnswer); // reverse DNS lookups do not generate multiple queries
     fqdncache_entry *f;
     static_cast<generic_cbdata *>(data)->unwrap(&f);
     ++FqdncacheStats.replies;

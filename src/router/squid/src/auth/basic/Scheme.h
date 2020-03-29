@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -19,7 +19,6 @@ namespace Basic
 {
 
 /// \ingroup AuthAPI
-/// \ingroup AuthSchemeAPI
 class Scheme : public Auth::Scheme
 {
 
@@ -31,7 +30,7 @@ public:
     /* per scheme */
     virtual char const *type() const;
     virtual void shutdownCleanup();
-    virtual Auth::Config *createConfig();
+    virtual Auth::SchemeConfig *createConfig();
     /* Not implemented */
     Scheme(Scheme const &);
     Scheme &operator=(Scheme const &);

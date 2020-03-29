@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -67,7 +67,7 @@ main(int, char *argv[])
 
     if ( rc != SASL_OK ) {
         fprintf(stderr, "FATAL: %d %s\n", rc, sasl_errstring(rc, NULL, NULL ));
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
 #if SASL_VERSION_MAJOR < 2
@@ -78,7 +78,7 @@ main(int, char *argv[])
 
     if ( rc != SASL_OK ) {
         fprintf(stderr, "FATAL: %d %s\n", rc, sasl_errstring(rc, NULL, NULL ));
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     while ( fgets( line, HELPER_INPUT_BUFFER, stdin )) {
@@ -126,6 +126,6 @@ main(int, char *argv[])
 
     sasl_dispose(&conn);
     sasl_done();
-    return 0;
+    return EXIT_SUCCESS;
 }
 

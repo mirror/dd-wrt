@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -9,6 +9,7 @@
 /* DEBUG: section 90    Storage Manager Client-Side Interface */
 
 #include "squid.h"
+#include "acl/FilledChecklist.h"
 #include "event.h"
 #include "globals.h"
 #include "HttpReply.h"
@@ -43,6 +44,53 @@ static EVH storeClientCopyEvent;
 static bool CheckQuickAbortIsReasonable(StoreEntry * entry);
 
 CBDATA_CLASS_INIT(store_client);
+
+/* StoreClient */
+
+bool
+StoreClient::onCollapsingPath() const
+{
+    if (!Config.onoff.collapsed_forwarding)
+        return false;
+
+    if (!Config.accessList.collapsedForwardingAccess)
+        return true;
+
+    ACLFilledChecklist checklist(Config.accessList.collapsedForwardingAccess, nullptr, nullptr);
+    fillChecklist(checklist);
+    return checklist.fastCheck().allowed();
+}
+
+bool
+StoreClient::startCollapsingOn(const StoreEntry &e, const bool doingRevalidation)
+{
+    if (!e.hittingRequiresCollapsing())
+        return false; // collapsing is impossible due to the entry state
+
+    if (!onCollapsingPath())
+        return false; // collapsing is impossible due to Squid configuration
+
+    /* collapsing is possible; the caller must collapse */
+
+    if (const auto tags = loggingTags()) {
+        if (doingRevalidation)
+            tags->collapsingHistory.revalidationCollapses++;
+        else
+            tags->collapsingHistory.otherCollapses++;
+    }
+
+    debugs(85, 5, e << " doingRevalidation=" << doingRevalidation);
+    return true;
+}
+
+void
+StoreClient::fillChecklist(ACLFilledChecklist &checklist) const
+{
+    // TODO: Consider moving all CF-related methods into a new dedicated class.
+    Must(!"startCollapsingOn() caller must override fillChecklist()");
+}
+
+/* store_client */
 
 bool
 store_client::memReaderHasLowerOffset(int64_t anOffset) const
@@ -112,7 +160,7 @@ store_client::callback(ssize_t sz, bool error)
     if (sz >= 0 && !error)
         bSz = sz;
 
-    StoreIOBuffer result(bSz, 0 ,copyInto.data);
+    StoreIOBuffer result(bSz, 0,copyInto.data);
 
     if (sz < 0 || error)
         result.flags.error = 1;
@@ -458,18 +506,19 @@ store_client::readBody(const char *, ssize_t len)
     assert(_callback.pending());
     debugs(90, 3, "storeClientReadBody: len " << len << "");
 
-    if (copyInto.offset == 0 && len > 0 && entry->getReply()->sline.status() == Http::scNone) {
-        /* Our structure ! */
-        HttpReply *rep = (HttpReply *) entry->getReply(); // bypass const
+    if (len < 0)
+        return fail();
 
-        if (!rep->parseCharBuf(copyInto.data, headersEnd(copyInto.data, len))) {
+    const auto rep = entry->mem_obj ? &entry->mem().baseReply() : nullptr;
+    if (copyInto.offset == 0 && len > 0 && rep && rep->sline.status() == Http::scNone) {
+        /* Our structure ! */
+        if (!entry->mem_obj->adjustableBaseReply().parseCharBuf(copyInto.data, headersEnd(copyInto.data, len))) {
             debugs(90, DBG_CRITICAL, "Could not parse headers from on disk object");
         } else {
             parsed_header = 1;
         }
     }
 
-    const HttpReply *rep = entry->getReply();
     if (len > 0 && rep && entry->mem_obj->inmem_lo == 0 && entry->objectLen() <= (int64_t)Config.Store.maxInMemObjSize && Config.onoff.memory_cache_disk) {
         storeGetMemSpace(len);
         // The above may start to free our object so we need to check again
@@ -519,13 +568,8 @@ storeClientReadBody(void *data, const char *buf, ssize_t len, StoreIOState::Poin
 bool
 store_client::unpackHeader(char const *buf, ssize_t len)
 {
-    int xerrno = errno; // FIXME: where does errno come from?
     debugs(90, 3, "store_client::unpackHeader: len " << len << "");
-
-    if (len < 0) {
-        debugs(90, 3, "WARNING: unpack error: " << xstrerr(xerrno));
-        return false;
-    }
+    assert(len >= 0);
 
     int swap_hdr_sz = 0;
     tlv *tlv_list = nullptr;
@@ -574,6 +618,9 @@ store_client::readHeader(char const *buf, ssize_t len)
     // abort if we fail()'d earlier
     if (!object_ok)
         return;
+
+    if (len < 0)
+        return fail();
 
     if (!unpackHeader(buf, len)) {
         fail();
@@ -796,15 +843,13 @@ CheckQuickAbortIsReasonable(StoreEntry * entry)
         return true;
     }
 
-    int64_t expectlen = entry->getReply()->content_length + entry->getReply()->hdr_sz;
+    const auto &reply = mem->baseReply();
 
-    if (expectlen < 0) {
-        /* expectlen is < 0 if *no* information about the object has been received */
+    if (reply.hdr_sz <= 0) {
+        // TODO: Check whether this condition works for HTTP/0 responses.
         debugs(90, 3, "quick-abort? YES no object data received yet");
         return true;
     }
-
-    int64_t curlen =  mem->endOffset();
 
     if (Config.quickAbort.min < 0) {
         debugs(90, 3, "quick-abort? NO disabled");
@@ -812,10 +857,20 @@ CheckQuickAbortIsReasonable(StoreEntry * entry)
     }
 
     if (mem->request && mem->request->range && mem->request->getRangeOffsetLimit() < 0) {
-        /* Don't abort if the admin has configured range_ofset -1 to download fully for caching. */
+        // the admin has configured "range_offset_limit none"
         debugs(90, 3, "quick-abort? NO admin configured range replies to full-download");
         return false;
     }
+
+    if (reply.content_length < 0) {
+        // XXX: cf.data.pre does not document what should happen in this case
+        // We know that quick_abort is enabled, but no limit can be applied.
+        debugs(90, 3, "quick-abort? YES unknown content length");
+        return true;
+    }
+    const auto expectlen = reply.hdr_sz + reply.content_length;
+
+    int64_t curlen =  mem->endOffset();
 
     if (curlen > expectlen) {
         debugs(90, 3, "quick-abort? YES bad content length (" << curlen << " of " << expectlen << " bytes received)");
@@ -832,6 +887,7 @@ CheckQuickAbortIsReasonable(StoreEntry * entry)
         return true;
     }
 
+    // XXX: This is absurd! TODO: For positives, "a/(b/c) > d" is "a*c > b*d".
     if (expectlen < 100) {
         debugs(90, 3, "quick-abort? NO avoid FPE");
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -92,7 +92,7 @@ testHdrVisit()
 }
 
 int
-main(int argc, char **argv)
+main(int, char *[])
 {
     assert (mem_node::InUseCount() == 0);
     testLowAndHigh();
@@ -101,6 +101,6 @@ main(int argc, char **argv)
     assert (mem_node::InUseCount() == 0);
     testHdrVisit();
     assert (mem_node::InUseCount() == 0);
-    return 0;
+    return EXIT_SUCCESS;
 }
 

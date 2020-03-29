@@ -1,4 +1,4 @@
-## Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+## Copyright (C) 1996-2020 The Squid Software Foundation and contributors
 ##
 ## Squid software is distributed under GPLv2+ license and includes
 ## contributions from numerous individuals and organizations.
@@ -16,8 +16,9 @@ libip_la_SOURCES = \
 	Address.cc \
 	Intercept.h \
 	Intercept.cc \
+	NfMarkConfig.h \
+	NfMarkConfig.cc \
 	QosConfig.h \
 	QosConfig.cc \
-	Qos.cci \
 	tools.cc \
 	tools.h

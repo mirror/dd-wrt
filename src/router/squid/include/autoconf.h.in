@@ -152,9 +152,6 @@
 /* define if the compiler supports basic C++11 syntax */
 #undef HAVE_CXX11
 
-/* Define to 1 if you have the <db_185.h> header file. */
-#undef HAVE_DB_185_H
-
 /* Define to 1 if you have the <db.h> header file. */
 #undef HAVE_DB_H
 
@@ -1178,6 +1175,9 @@
 /* Define to 1 if you have the <sys/wait.h> header file. */
 #undef HAVE_SYS_WAIT_H
 
+/* Define to 1 if you have the <tdb.h> header file. */
+#undef HAVE_TDB_H
+
 /* Define to 1 if you have the `tempnam' function. */
 #undef HAVE_TEMPNAM
 
@@ -1458,14 +1458,14 @@
 /* Enable support for authentication */
 #undef USE_AUTH
 
+/* BerkleyDB support is available */
+#undef USE_BERKLEYDB
+
 /* Use Cache Digests for locating objects in neighbor caches. */
 #undef USE_CACHE_DIGESTS
 
 /* Enable support for cbdata debug information */
 #undef USE_CBDATA_DEBUG
-
-/* Enable chunked Memory Pools support (experimental) */
-#undef USE_CHUNKEDMEMPOOLS
 
 /* Traffic management via "delay pools". */
 #undef USE_DELAY_POOLS
@@ -1592,6 +1592,9 @@
 #endif
 
 
+/* Samba TrivialDB support is available */
+#undef USE_TRIVIALDB
+
 /* Enable useage of unlinkd */
 #undef USE_UNLINKD
 
@@ -1670,9 +1673,6 @@
    <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
    #define below would cause a syntax error. */
 #undef _UINT8_T
-
-/* Include inline methods into header file */
-#undef _USE_INLINE_
 
 /* Define so that glibc/gnulib argp.h does not typedef error_t. */
 #undef __error_t_defined

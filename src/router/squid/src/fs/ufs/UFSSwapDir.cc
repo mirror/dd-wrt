@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -224,13 +224,17 @@ Fs::Ufs::UFSSwapDir::optionIOParse(char const *option, const char *value, int is
         /* silently ignore this */
         return true;
 
-    if (!value)
+    if (!value) {
         self_destruct();
+        return false;
+    }
 
     DiskIOModule *module = DiskIOModule::Find(value);
 
-    if (!module)
+    if (!module) {
         self_destruct();
+        return false;
+    }
 
     changeIO(module);
 

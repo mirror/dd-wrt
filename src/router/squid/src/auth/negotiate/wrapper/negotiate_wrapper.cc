@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -283,7 +283,7 @@ main(int argc, char *const argv[])
 
     if (argc ==1 || !strncasecmp(argv[1],"-h",2)) {
         usage();
-        return 0;
+        exit(EXIT_SUCCESS);
     }
 
     int j = 1;
@@ -307,7 +307,7 @@ main(int argc, char *const argv[])
     }
     if (nstart == 0 || kstart == 0 || kend-kstart <= 0 || nend-nstart <= 0 ) {
         usage();
-        return 0;
+        exit(EXIT_SUCCESS);
     }
 
     if (debug_enabled)
@@ -316,7 +316,7 @@ main(int argc, char *const argv[])
 
     if ((nargs = (char **)xmalloc((nend-nstart+1)*sizeof(char *))) == NULL) {
         fprintf(stderr, "%s| %s: Error allocating memory for ntlm helper\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
     memcpy(nargs,argv+nstart+1,(nend-nstart)*sizeof(char *));
     nargs[nend-nstart]=NULL;
@@ -328,7 +328,7 @@ main(int argc, char *const argv[])
     }
     if ((kargs = (char **)xmalloc((kend-kstart+1)*sizeof(char *))) == NULL) {
         fprintf(stderr, "%s| %s: Error allocating memory for kerberos helper\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
     memcpy(kargs,argv+kstart+1,(kend-kstart)*sizeof(char *));
     kargs[kend-kstart]=NULL;
@@ -345,16 +345,16 @@ main(int argc, char *const argv[])
 
     if (pipe(pkin) < 0) {
         fprintf(stderr, "%s| %s: Could not assign streams for pkin\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
     if (pipe(pkout) < 0) {
         fprintf(stderr, "%s| %s: Could not assign streams for pkout\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if  (( fpid = vfork()) < 0 ) {
         fprintf(stderr, "%s| %s: Failed first fork\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if ( fpid == 0 ) {
@@ -373,7 +373,7 @@ main(int argc, char *const argv[])
 
         execv(kargs[0], kargs);
         fprintf(stderr, "%s| %s: Failed execv for %s: %s\n", LogTime(), PROGRAM, kargs[0], strerror(errno));
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     close(pkin[0]);
@@ -381,16 +381,16 @@ main(int argc, char *const argv[])
 
     if (pipe(pnin) < 0) {
         fprintf(stderr, "%s| %s: Could not assign streams for pnin\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
     if (pipe(pnout) < 0) {
         fprintf(stderr, "%s| %s: Could not assign streams for pnout\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if  (( fpid = vfork()) < 0 ) {
         fprintf(stderr, "%s| %s: Failed second fork\n", LogTime(), PROGRAM);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     if ( fpid == 0 ) {
@@ -409,7 +409,7 @@ main(int argc, char *const argv[])
 
         execv(nargs[0], nargs);
         fprintf(stderr, "%s| %s: Failed execv for %s: %s\n", LogTime(), PROGRAM, nargs[0], strerror(errno));
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     close(pnin[0]);
@@ -424,7 +424,7 @@ main(int argc, char *const argv[])
     if (!FDKIN || !FDKOUT || !FDNIN || !FDNOUT) {
         fprintf(stderr, "%s| %s: Could not assign streams for FDKIN/FDKOUT/FDNIN/FDNOUT\n", LogTime(), PROGRAM);
         closeFds(FDKIN, FDKOUT, FDNIN, FDNOUT);
-        return 1;
+        exit(EXIT_FAILURE);
     }
 
     setbuf(FDKIN, NULL);

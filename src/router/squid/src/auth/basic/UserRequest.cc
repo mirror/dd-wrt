@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,12 +12,10 @@
 #include "auth/basic/UserRequest.h"
 #include "auth/QueueNode.h"
 #include "auth/State.h"
-#include "charset.h"
 #include "Debug.h"
 #include "format/Format.h"
 #include "helper.h"
 #include "helper/Reply.h"
-#include "HttpMsg.h"
 #include "HttpRequest.h"
 #include "MemBuf.h"
 #include "rfc1738.h"
@@ -59,7 +57,7 @@ Auth::Basic::UserRequest::authenticate(HttpRequest *, ConnStateData *, Http::Hdr
         return;
 
     /* are we about to recheck the credentials externally? */
-    if ((user()->expiretime + static_cast<Auth::Basic::Config*>(Auth::Config::Find("basic"))->credentialsTTL) <= squid_curtime) {
+    if ((user()->expiretime + static_cast<Auth::Basic::Config*>(Auth::SchemeConfig::Find("basic"))->credentialsTTL) <= squid_curtime) {
         debugs(29, 4, HERE << "credentials expired - rechecking");
         return;
     }
@@ -86,7 +84,7 @@ Auth::Basic::UserRequest::module_direction()
         return Auth::CRED_LOOKUP;
 
     case Auth::Ok:
-        if (user()->expiretime + static_cast<Auth::Basic::Config*>(Auth::Config::Find("basic"))->credentialsTTL <= squid_curtime)
+        if (user()->expiretime + static_cast<Auth::Basic::Config*>(Auth::SchemeConfig::Find("basic"))->credentialsTTL <= squid_curtime)
             return Auth::CRED_LOOKUP;
         return Auth::CRED_VALID;
 
@@ -107,7 +105,7 @@ Auth::Basic::UserRequest::startHelperLookup(HttpRequest *request, AccessLogEntry
     assert(basic_auth != NULL);
     debugs(29, 9, HERE << "'" << basic_auth->username() << ":" << basic_auth->passwd << "'");
 
-    if (static_cast<Auth::Basic::Config*>(Auth::Config::Find("basic"))->authenticateProgram == NULL) {
+    if (static_cast<Auth::Basic::Config*>(Auth::SchemeConfig::Find("basic"))->authenticateProgram == NULL) {
         debugs(29, DBG_CRITICAL, "ERROR: No Basic authentication program configured.");
         handler(data);
         return;
@@ -131,15 +129,10 @@ Auth::Basic::UserRequest::startHelperLookup(HttpRequest *request, AccessLogEntry
     char buf[HELPER_INPUT_BUFFER];
     static char usern[HELPER_INPUT_BUFFER];
     static char pass[HELPER_INPUT_BUFFER];
-    if (static_cast<Auth::Basic::Config*>(user()->config)->utf8) {
-        latin1_to_utf8(usern, sizeof(usern), user()->username());
-        latin1_to_utf8(pass, sizeof(pass), basic_auth->passwd);
-        xstrncpy(usern, rfc1738_escape(usern), sizeof(usern));
-        xstrncpy(pass, rfc1738_escape(pass), sizeof(pass));
-    } else {
-        xstrncpy(usern, rfc1738_escape(user()->username()), sizeof(usern));
-        xstrncpy(pass, rfc1738_escape(basic_auth->passwd), sizeof(pass));
-    }
+
+    xstrncpy(usern, rfc1738_escape(user()->username()), sizeof(usern));
+    xstrncpy(pass, rfc1738_escape(basic_auth->passwd), sizeof(pass));
+
     int sz = 0;
     if (const char *keyExtras = helperRequestKeyExtras(request, al))
         sz = snprintf(buf, sizeof(buf), "%s %s %s\n", usern, pass, keyExtras);
@@ -169,7 +162,8 @@ Auth::Basic::UserRequest::HandleReply(void *data, const Helper::Reply &reply)
 
     // add new helper kv-pair notes to the credentials object
     // so that any transaction using those credentials can access them
-    r->auth_user_request->user()->notes.appendNewOnly(&reply.notes);
+    static const NotePairs::Names appendables = { SBuf("group"), SBuf("tag") };
+    r->auth_user_request->user()->notes.replaceOrAddOrAppend(&reply.notes, appendables);
 
     /* this is okay since we only play with the Auth::Basic::User child fields below
      * and do not pass the pointer itself anywhere */

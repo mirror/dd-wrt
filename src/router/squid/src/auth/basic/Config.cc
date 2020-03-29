@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -20,14 +20,15 @@
 #include "auth/CredentialsCache.h"
 #include "auth/Gadgets.h"
 #include "auth/State.h"
+#include "auth/toUtf.h"
 #include "base64.h"
 #include "cache_cf.h"
-#include "charset.h"
 #include "helper.h"
 #include "HttpHeaderTools.h"
 #include "HttpReply.h"
 #include "mgr/Registration.h"
 #include "rfc1738.h"
+#include "sbuf/SBuf.h"
 #include "SquidTime.h"
 #include "Store.h"
 #include "util.h"
@@ -76,8 +77,13 @@ void
 Auth::Basic::Config::fixHeader(Auth::UserRequest::Pointer, HttpReply *rep, Http::HdrType hdrType, HttpRequest *)
 {
     if (authenticateProgram) {
-        debugs(29, 9, "Sending type:" << hdrType << " header: 'Basic realm=\"" << realm << "\"'");
-        httpHeaderPutStrf(&rep->header, hdrType, "Basic realm=\"" SQUIDSBUFPH "\"", SQUIDSBUFPRINT(realm));
+        if (utf8) {
+            debugs(29, 9, "Sending type:" << hdrType << " header: 'Basic realm=\"" << realm << "\", charset=\"UTF-8\"'");
+            httpHeaderPutStrf(&rep->header, hdrType, "Basic realm=\"" SQUIDSBUFPH "\", charset=\"UTF-8\"", SQUIDSBUFPRINT(realm));
+        } else {
+            debugs(29, 9, "Sending type:" << hdrType << " header: 'Basic realm=\"" << realm << "\"'");
+            httpHeaderPutStrf(&rep->header, hdrType, "Basic realm=\"" SQUIDSBUFPH "\"", SQUIDSBUFPRINT(realm));
+        }
     }
 }
 
@@ -96,7 +102,7 @@ Auth::Basic::Config::rotateHelpers()
 void
 Auth::Basic::Config::done()
 {
-    Auth::Config::done();
+    Auth::SchemeConfig::done();
 
     authbasic_initialised = 0;
 
@@ -112,37 +118,33 @@ Auth::Basic::Config::done()
 }
 
 bool
-Auth::Basic::Config::dump(StoreEntry * entry, const char *name, Auth::Config * scheme) const
+Auth::Basic::Config::dump(StoreEntry * entry, const char *name, Auth::SchemeConfig * scheme) const
 {
-    if (!Auth::Config::dump(entry, name, scheme))
+    if (!Auth::SchemeConfig::dump(entry, name, scheme))
         return false; // not configured
 
     storeAppendPrintf(entry, "%s basic credentialsttl %d seconds\n", name, (int) credentialsTTL);
     storeAppendPrintf(entry, "%s basic casesensitive %s\n", name, casesensitive ? "on" : "off");
-    storeAppendPrintf(entry, "%s basic utf8 %s\n", name, utf8 ? "on" : "off");
     return true;
 }
 
 Auth::Basic::Config::Config() :
     credentialsTTL( 2*60*60 ),
-    casesensitive(0),
-    utf8(0)
+    casesensitive(0)
 {
     static const SBuf defaultRealm("Squid proxy-caching web server");
     realm = defaultRealm;
 }
 
 void
-Auth::Basic::Config::parse(Auth::Config * scheme, int n_configured, char *param_str)
+Auth::Basic::Config::parse(Auth::SchemeConfig * scheme, int n_configured, char *param_str)
 {
     if (strcmp(param_str, "credentialsttl") == 0) {
         parse_time_t(&credentialsTTL);
     } else if (strcmp(param_str, "casesensitive") == 0) {
         parse_onoff(&casesensitive);
-    } else if (strcmp(param_str, "utf8") == 0) {
-        parse_onoff(&utf8);
     } else
-        Auth::Config::parse(scheme, n_configured, param_str);
+        Auth::SchemeConfig::parse(scheme, n_configured, param_str);
 }
 
 static void
@@ -153,7 +155,7 @@ authenticateBasicStats(StoreEntry * sentry)
 }
 
 char *
-Auth::Basic::Config::decodeCleartext(const char *httpAuthHeader)
+Auth::Basic::Config::decodeCleartext(const char *httpAuthHeader, const HttpRequest *request)
 {
     const char *proxy_auth = httpAuthHeader;
 
@@ -179,6 +181,13 @@ Auth::Basic::Config::decodeCleartext(const char *httpAuthHeader)
     size_t dstLen = 0;
     if (base64_decode_update(&ctx, &dstLen, reinterpret_cast<uint8_t*>(cleartext), srcLen, eek) && base64_decode_final(&ctx)) {
         cleartext[dstLen] = '\0';
+
+        if (utf8 && !isValidUtf8String(cleartext, cleartext + dstLen)) {
+            auto str = isCP1251EncodingAllowed(request) ?
+                       Cp1251ToUtf8(cleartext) : Latin1ToUtf8(cleartext);
+            safe_free(cleartext);
+            cleartext = xstrdup(str.c_str());
+        }
 
         /*
          * Don't allow NL or CR in the credentials.
@@ -207,13 +216,13 @@ Auth::Basic::Config::decodeCleartext(const char *httpAuthHeader)
  * descriptive message to the user.
  */
 Auth::UserRequest::Pointer
-Auth::Basic::Config::decode(char const *proxy_auth, const char *aRequestRealm)
+Auth::Basic::Config::decode(char const *proxy_auth, const HttpRequest *request, const char *aRequestRealm)
 {
     Auth::UserRequest::Pointer auth_user_request = dynamic_cast<Auth::UserRequest*>(new Auth::Basic::UserRequest);
     /* decode the username */
 
     // retrieve the cleartext (in a dynamically allocated char*)
-    char *cleartext = decodeCleartext(proxy_auth);
+    const auto cleartext = decodeCleartext(proxy_auth, request);
 
     // empty header? no auth details produced...
     if (!cleartext)
@@ -291,7 +300,7 @@ Auth::Basic::Config::decode(char const *proxy_auth, const char *aRequestRealm)
 /** Initialize helpers and the like for this auth scheme. Called AFTER parsing the
  * config file */
 void
-Auth::Basic::Config::init(Auth::Config *)
+Auth::Basic::Config::init(Auth::SchemeConfig *)
 {
     if (authenticateProgram) {
         authbasic_initialised = 1;

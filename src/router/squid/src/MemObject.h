@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,7 +13,6 @@
 #include "dlink.h"
 #include "http/RequestMethod.h"
 #include "RemovalPolicy.h"
-#include "sbuf/SBuf.h"
 #include "SquidString.h"
 #include "stmem.h"
 #include "store/forward.h"
@@ -29,8 +28,7 @@ typedef void STMCB (void *data, StoreIOBuffer wroteBuffer);
 typedef void STABH(void *);
 
 class store_client;
-class HttpRequest;
-class HttpReply;
+class PeerSelector;
 
 class MemObject
 {
@@ -55,12 +53,48 @@ public:
     bool hasUris() const;
 
     void write(const StoreIOBuffer &buf);
-    void unlinkRequest();
-    HttpReply const *getReply() const;
-    void replaceHttpReply(HttpReply *newrep);
+    void unlinkRequest() { request = nullptr; }
+
+    /// HTTP response before 304 (Not Modified) updates
+    /// starts "empty"; modified via replaceBaseReply() or adjustableBaseReply()
+    const HttpReply &baseReply() const { return *reply_; }
+
+    /// \returns nil -- if no 304 updates since replaceBaseReply()
+    /// \returns combination of baseReply() and 304 updates -- after updates
+    const HttpReplyPointer &updatedReply() const { return updatedReply_; }
+
+    /// \returns the updated-by-304(s) response (if it exists)
+    /// \returns baseReply() (otherwise)
+    const HttpReply &freshestReply() const {
+        if (updatedReply_)
+            return *updatedReply_;
+        else
+            return baseReply();
+    }
+
+    /// \returns writable base reply for parsing and other initial modifications
+    /// Base modifications can only be done when forming/loading the entry.
+    /// After that, use replaceBaseReply() to reset all of the replies.
+    HttpReply &adjustableBaseReply();
+
+    /// (re)sets base reply, usually just replacing the initial/empty object
+    /// also forgets the updated reply (if any)
+    void replaceBaseReply(const HttpReplyPointer &r);
+
+    /// (re)sets updated reply; \see updatedReply()
+    void updateReply(const HttpReply &r) { updatedReply_ = &r; }
+
+    /// reflects past Controller::updateOnNotModified(old, e304) calls:
+    /// for HTTP 304 entries: whether our entry was used as "e304"
+    /// for other entries: whether our entry was updated as "old"
+    bool appliedUpdates = false;
+
     void stat (MemBuf * mb) const;
     int64_t endOffset () const;
-    void markEndOfReplyHeaders(); ///< sets _reply->hdr_sz to endOffset()
+
+    /// sets baseReply().hdr_sz (i.e. written reply headers size) to endOffset()
+    void markEndOfReplyHeaders();
+
     /// negative if unknown; otherwise, expected object_sz, expected endOffset
     /// maximum, and stored reply headers+body size (all three are the same)
     int64_t expectedReplySize() const;
@@ -152,13 +186,11 @@ public:
     };
     MemCache memCache; ///< current [shared] memory caching state for the entry
 
-    /* Read only - this reply must be preserved by store clients */
-    /* The original reply. possibly with updated metadata. */
-    HttpRequest *request = nullptr;
+    HttpRequestPointer request;
 
     struct timeval start_ping;
     IRCB *ping_reply_callback;
-    void *ircb_data = nullptr;
+    PeerSelector *ircb_data = nullptr;
 
     struct abort_ {
         abort_() { callback = nullptr; }
@@ -179,7 +211,8 @@ public:
     void kickReads();
 
 private:
-    HttpReply *_reply = nullptr;
+    HttpReplyPointer reply_; ///< \see baseReply()
+    HttpReplyPointer updatedReply_; ///< \see updatedReply()
 
     mutable String storeId_; ///< StoreId for our entry (usually request URI)
     mutable String logUri_;  ///< URI used for logging (usually request URI)

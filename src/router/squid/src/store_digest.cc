@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -47,6 +47,7 @@ public:
     StoreDigestCBlock cblock;
     int rebuild_lock = 0;                 ///< bucket number
     StoreEntry * rewrite_lock = nullptr;  ///< points to store entry with the digest
+    StoreEntry * publicEntry = nullptr;  ///< points to the previous store entry with the digest
     StoreSearchPointer theSearch;
     int rewrite_offset = 0;
     int rebuild_count = 0;
@@ -197,7 +198,8 @@ storeDigestReport(StoreEntry * e)
     }
 
     if (store_digest) {
-        cacheDigestReport(store_digest, "store", e);
+        static const SBuf label("store");
+        cacheDigestReport(store_digest, label, e);
         storeAppendPrintf(e, "\t added: %d rejected: %d ( %.2f %%) del-ed: %d\n",
                           sd_stats.add_count,
                           sd_stats.rej_count,
@@ -414,7 +416,7 @@ storeDigestRewriteStart(void *datanotused)
 
     const char *url = internalLocalUri("/squid-internal-periodic/", SBuf(StoreDigestFileName));
     const MasterXaction::Pointer mx = new MasterXaction(XactionInitiator::initCacheDigest);
-    auto req = HttpRequest::FromUrl(url, mx);
+    auto req = HttpRequest::FromUrlXXX(url, mx);
 
     RequestFlags flags;
     flags.cachable = true;
@@ -424,7 +426,6 @@ storeDigestRewriteStart(void *datanotused)
     sd_state.rewrite_lock = e;
     debugs(71, 3, "storeDigestRewrite: url: " << url << " key: " << e->getMD5Text());
     e->mem_obj->request = req;
-    HTTPMSGLOCK(e->mem_obj->request);
 
     /* wait for rebuild (if any) to finish */
     if (sd_state.rebuild_lock) {
@@ -445,8 +446,15 @@ storeDigestRewriteResume(void)
     e = sd_state.rewrite_lock;
     sd_state.rewrite_offset = 0;
     EBIT_SET(e->flags, ENTRY_SPECIAL);
-    /* setting public key will purge old digest entry if any */
+    /* setting public key will mark the old digest entry for removal once unlocked */
     e->setPublicKey();
+    if (const auto oldEntry = sd_state.publicEntry) {
+        oldEntry->release(true);
+        sd_state.publicEntry = nullptr;
+        oldEntry->unlock("storeDigestRewriteResume");
+    }
+    assert(e->locked());
+    sd_state.publicEntry = e;
     /* fake reply */
     HttpReply *rep = new HttpReply;
     rep->setHeaders(Http::scOkay, "Cache Digest OK",
@@ -472,7 +480,6 @@ storeDigestRewriteFinish(StoreEntry * e)
            " (" << std::showpos << (int) (e->expires - squid_curtime) << ")");
     /* is this the write order? @?@ */
     e->mem_obj->unlinkRequest();
-    e->unlock("storeDigestRewriteFinish");
     sd_state.rewrite_lock = NULL;
     ++sd_state.rewrite_count;
     eventAdd("storeDigestRewriteStart", storeDigestRewriteStart, NULL, (double)

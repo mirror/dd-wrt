@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -108,7 +108,10 @@ enum {
     ENTRY_NEGCACHED,
     ENTRY_VALIDATED,
     ENTRY_BAD_LENGTH,
-    ENTRY_ABORTED
+    ENTRY_ABORTED,
+    /// Whether the entry serves collapsed hits now.
+    /// Meaningful only for public entries.
+    ENTRY_REQUIRES_COLLAPSING
 };
 
 /*
@@ -152,14 +155,6 @@ enum {
     STORE_LOG_RELEASE,
     STORE_LOG_SWAPOUTFAIL
 };
-
-/* parse state of HttpReply or HttpRequest */
-typedef enum {
-    psReadyToParseStartLine = 0,
-    psReadyToParseHeaders,
-    psParsed,
-    psError
-} HttpMsgParseState;
 
 enum {
     PCTILE_HTTP,

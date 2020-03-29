@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -92,7 +92,7 @@ send_announce(const ipcache_addrs *ia, const Dns::LookupDetails &, void *)
         }
     }
 
-    Ip::Address S = ia->in_addrs[0];
+    Ip::Address S = ia->current();
     S.port(port);
     assert(Comm::IsConnOpen(icpOutgoingConn));
 

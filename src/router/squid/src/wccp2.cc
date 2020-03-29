@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -2004,6 +2004,7 @@ parse_wccp2_method(int *method)
     if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2_*_method: missing setting.");
         self_destruct();
+        return;
     }
 
     /* update configuration if its valid */
@@ -2051,6 +2052,7 @@ parse_wccp2_amethod(int *method)
     if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2_assignment_method: missing setting.");
         self_destruct();
+        return;
     }
 
     /* update configuration if its valid */
@@ -2107,6 +2109,7 @@ parse_wccp2_service(void *)
     if ((t = ConfigParser::NextToken()) == NULL) {
         debugs(80, DBG_CRITICAL, "wccp2ParseServiceInfo: missing service info type (standard|dynamic)");
         self_destruct();
+        return;
     }
 
     if (strcmp(t, "standard") == 0) {
@@ -2116,6 +2119,7 @@ parse_wccp2_service(void *)
     } else {
         debugs(80, DBG_CRITICAL, "wccp2ParseServiceInfo: bad service info type (expected standard|dynamic, got " << t << ")");
         self_destruct();
+        return;
     }
 
     /* Snarf the ID */
@@ -2124,6 +2128,7 @@ parse_wccp2_service(void *)
     if (service_id < 0 || service_id > 255) {
         debugs(80, DBG_CRITICAL, "ERROR: invalid WCCP service id " << service_id << " (must be between 0 .. 255)");
         self_destruct();
+        return;
     }
 
     memset(wccp_password, 0, sizeof(wccp_password));
@@ -2291,6 +2296,7 @@ parse_wccp2_service_info(void *)
     if (service_id < 0 || service_id > 255) {
         debugs(80, DBG_CRITICAL, "ERROR: invalid WCCP service id " << service_id << " (must be between 0 .. 255)");
         self_destruct();
+        return;
     }
 
     /* Next: find the (hopefully!) existing service */

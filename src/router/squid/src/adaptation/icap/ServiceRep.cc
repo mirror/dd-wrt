@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -557,7 +557,7 @@ void Adaptation::Icap::ServiceRep::noteAdaptationAnswer(const Answer &answer)
     }
 
     Must(answer.kind == Answer::akForward); // no akBlock for OPTIONS requests
-    const HttpMsg *msg = answer.message.getRaw();
+    const Http::Message *msg = answer.message.getRaw();
     Must(msg);
 
     debugs(93,5, HERE << "is interpreting new options " << status());
@@ -679,7 +679,7 @@ Adaptation::Icap::ServiceRep::optionsFetchTime() const
 }
 
 Adaptation::Initiate *
-Adaptation::Icap::ServiceRep::makeXactLauncher(HttpMsg *virgin,
+Adaptation::Icap::ServiceRep::makeXactLauncher(Http::Message *virgin,
         HttpRequest *cause, AccessLogEntry::Pointer &alp)
 {
     return new Adaptation::Icap::ModXactLauncher(virgin, cause, alp, this);

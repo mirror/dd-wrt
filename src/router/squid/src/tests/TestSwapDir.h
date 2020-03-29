@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -36,6 +36,7 @@ public:
     virtual void evictCached(StoreEntry &) override {}
     virtual void evictIfFound(const cache_key *) override {}
     virtual bool hasReadableEntry(const StoreEntry &) const override { return false; }
+    virtual bool smpAware() const override { return false; }
 };
 
 typedef RefCount<TestSwapDir> TestSwapDirPointer;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -17,9 +17,7 @@
 #include "adaptation/icap/Xaction.h"
 #include "base/TextException.h"
 #include "globals.h"
-#include "HttpMsg.h"
 #include "HttpReply.h"
-#include "HttpRequest.h"
 
 Adaptation::Icap::Launcher::Launcher(const char *aTypeName,
                                      Adaptation::ServicePointer &aService):

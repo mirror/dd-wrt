@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -61,13 +61,15 @@ void Adaptation::Icap::OptXact::makeRequest(MemBuf &buf)
     if (!TheConfig.reuse_connections)
         buf.append("Connection: close\r\n", 19);
 
+    buf.append("Allow: ", 7);
     if (TheConfig.allow206_enable)
-        buf.append("Allow: 206\r\n", 12);
+        buf.append("206, ", 5);
+    buf.append("trailers\r\n", 10);
     buf.append(ICAP::crlf, 2);
 
     // XXX: HttpRequest cannot fully parse ICAP Request-Line
     Http::StatusCode reqStatus;
-    buf.terminate(); // HttpMsg::parse requires terminated buffer
+    buf.terminate(); // Http::Message::parse requires terminated buffer
     Must(icapRequest->parse(buf.content(), buf.contentSize(), true, &reqStatus) > 0);
 }
 
@@ -85,8 +87,8 @@ void Adaptation::Icap::OptXact::handleCommRead(size_t)
         // We read everything if there is no response body. If there is a body,
         // we cannot parse it because we do not support any opt-body-types, so
         // we leave readAll false which forces connection closure.
-        readAll = !icapReply->header.getByNameListMember("Encapsulated",
-                  "opt-body", ',').size();
+        readAll = icapReply->header.getByNameListMember("Encapsulated",
+                  "opt-body", ',').isEmpty();
         debugs(93, 7, HERE << "readAll=" << readAll);
         icap_tio_finish = current_time;
         setOutcome(xoOpt);
@@ -109,7 +111,8 @@ bool Adaptation::Icap::OptXact::parseResponse()
     if (!parseHttpMsg(r.getRaw())) // throws on errors
         return false;
 
-    if (httpHeaderHasConnDir(&r->header, "close"))
+    static SBuf close("close", 5);
+    if (httpHeaderHasConnDir(&r->header, close))
         reuseConnection = false;
 
     icapReply = r;

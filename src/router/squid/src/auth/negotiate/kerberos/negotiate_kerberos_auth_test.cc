@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -241,7 +241,7 @@ main(int argc, char *argv[])
         fprintf(stdout, "Token: %s\n", Token ? Token : "NULL");
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 #else

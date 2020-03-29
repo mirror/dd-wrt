@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -24,13 +24,18 @@ namespace One {
  * Works on a raw character I/O buffer and tokenizes the content into
  * the major CRLF delimited segments of an HTTP/1 request message:
  *
- * \item request-line (method, URL, protocol, version)
- * \item mime-header (set of RFC2616 syntax header fields)
+ * \li request-line (method, URL, protocol, version)
+ * \li mime-header (set of RFC2616 syntax header fields)
  */
 class RequestParser : public Http1::Parser
 {
 public:
-    explicit RequestParser(bool preserveParsed = false);
+    RequestParser() = default;
+    RequestParser(bool preserveParsed) { preserveParsed_ = preserveParsed; }
+    RequestParser(const RequestParser &) = default;
+    RequestParser &operator =(const RequestParser &) = default;
+    RequestParser(RequestParser &&) = default;
+    RequestParser &operator =(RequestParser &&) = default;
     virtual ~RequestParser() {}
 
     /* Http::One::Parser API */
@@ -54,11 +59,11 @@ private:
     bool doParse(const SBuf &aBuf);
 
     /* all these return false and set parseStatusCode on parsing failures */
-    bool parseMethodField(Http1::Tokenizer &);
-    bool parseUriField(Http1::Tokenizer &);
-    bool parseHttpVersionField(Http1::Tokenizer &);
+    bool parseMethodField(Tokenizer &);
+    bool parseUriField(Tokenizer &);
+    bool parseHttpVersionField(Tokenizer &);
     bool skipDelimiter(const size_t count, const char *where);
-    bool skipTrailingCrs(Http1::Tokenizer &tok);
+    bool skipTrailingCrs(Tokenizer &tok);
 
     bool http0() const {return !msgProtocol_.major;}
     static const CharacterSet &RequestTargetCharacters();
@@ -72,7 +77,7 @@ private:
     /// all parsed bytes (i.e., input prefix consumed by parse() calls)
     /// meaningless unless preserveParsed_ is true
     SBuf parsed_;
-    bool preserveParsed_; ///< whether to accumulate parsed bytes (in parsed_)
+    bool preserveParsed_ = false; ///< whether to accumulate parsed bytes (in parsed_)
 };
 
 } // namespace One

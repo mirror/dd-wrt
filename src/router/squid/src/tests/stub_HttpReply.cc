@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -12,7 +12,7 @@
 #define STUB_API "HttpReply.cc"
 #include "tests/STUB.h"
 
-HttpReply::HttpReply() : HttpMsg(hoReply), date (0), last_modified (0),
+HttpReply::HttpReply() : Http::Message(hoReply), date (0), last_modified (0),
     expires(0), surrogate_control(nullptr), keep_alive(0),
     protoPrefix("HTTP/"), do_clean(false), bodySizeMax(-2), content_range(nullptr)
 {STUB_NOP}
@@ -28,8 +28,9 @@ bool HttpReply::expectingBody(const HttpRequestMethod&, int64_t&) const STUB_RET
 bool HttpReply::parseFirstLine(const char *start, const char *end) STUB_RETVAL(false)
 void HttpReply::hdrCacheInit() STUB
 HttpReply * HttpReply::clone() const STUB_RETVAL(NULL)
-bool HttpReply::inheritProperties(const HttpMsg *aMsg) STUB_RETVAL(false)
-bool HttpReply::updateOnNotModified(HttpReply const*) STUB_RETVAL(false)
+bool HttpReply::inheritProperties(const Http::Message *aMsg) STUB_RETVAL(false)
+HttpReply::Pointer HttpReply::recreateOnNotModified(const HttpReply &) const STUB_RETVAL(nullptr)
 int64_t HttpReply::bodySize(const HttpRequestMethod&) const STUB_RETVAL(0)
 const HttpHdrContRange *HttpReply::contentRange() const STUB_RETVAL(nullptr)
+void HttpReply::configureContentLengthInterpreter(Http::ContentLengthInterpreter &) STUB
 

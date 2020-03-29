@@ -98,7 +98,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/acinclude/compiler-flags.m4 \
 	$(top_srcdir)/acinclude/os-deps.m4 \
 	$(top_srcdir)/acinclude/krb5.m4 $(top_srcdir)/acinclude/pam.m4 \
-	$(top_srcdir)/acinclude/pkg.m4 \
+	$(top_srcdir)/acinclude/pkg.m4 $(top_srcdir)/acinclude/tdb.m4 \
 	$(top_srcdir)/acinclude/lib-checks.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_compile_stdcxx_11.m4 \
 	$(top_srcdir)/acinclude/ax_cxx_0x_types.m4 \
@@ -140,6 +140,7 @@ am__aclocal_m4_deps = $(top_srcdir)/acinclude/ax_with_prog.m4 \
 	$(top_srcdir)/src/acl/external/eDirectory_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/file_userip/required.m4 \
 	$(top_srcdir)/src/acl/external/kerberos_ldap_group/required.m4 \
+	$(top_srcdir)/src/acl/external/kerberos_sid_group/required.m4 \
 	$(top_srcdir)/src/acl/external/session/required.m4 \
 	$(top_srcdir)/src/acl/external/time_quota/required.m4 \
 	$(top_srcdir)/src/acl/external/unix_group/required.m4 \
@@ -171,8 +172,8 @@ am__v_lt_0 = --silent
 am__v_lt_1 = 
 am__DEPENDENCIES_1 =
 am_libauth_la_OBJECTS = Type.lo Config.lo CredentialsCache.lo \
-	CredentialState.lo Gadgets.lo Scheme.lo State.lo User.lo \
-	UserRequest.lo
+	CredentialState.lo Gadgets.lo Scheme.lo SchemeConfig.lo \
+	SchemesConfig.lo State.lo toUtf.lo User.lo UserRequest.lo
 libauth_la_OBJECTS = $(am_libauth_la_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -193,9 +194,10 @@ am__depfiles_remade = ./$(DEPDIR)/Acl.Plo ./$(DEPDIR)/AclMaxUserIp.Plo \
 	./$(DEPDIR)/AclProxyAuth.Plo ./$(DEPDIR)/Config.Plo \
 	./$(DEPDIR)/CredentialState.Plo \
 	./$(DEPDIR)/CredentialsCache.Plo ./$(DEPDIR)/Gadgets.Plo \
-	./$(DEPDIR)/Scheme.Plo ./$(DEPDIR)/State.Plo \
+	./$(DEPDIR)/Scheme.Plo ./$(DEPDIR)/SchemeConfig.Plo \
+	./$(DEPDIR)/SchemesConfig.Plo ./$(DEPDIR)/State.Plo \
 	./$(DEPDIR)/Type.Plo ./$(DEPDIR)/User.Plo \
-	./$(DEPDIR)/UserRequest.Plo
+	./$(DEPDIR)/UserRequest.Plo ./$(DEPDIR)/toUtf.Plo
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -582,11 +584,13 @@ KRB5LIBS = @KRB5LIBS@
 LBERLIB = @LBERLIB@
 LD = @LD@
 LDAPLIB = @LDAPLIB@
+LDAPSEARCH = @LDAPSEARCH@
 LDFLAGS = @LDFLAGS@
 LIBADD_DL = @LIBADD_DL@
 LIBADD_DLD_LINK = @LIBADD_DLD_LINK@
 LIBADD_DLOPEN = @LIBADD_DLOPEN@
 LIBADD_SHL_LOAD = @LIBADD_SHL_LOAD@
+LIBBDB_LIBS = @LIBBDB_LIBS@
 LIBCPPUNIT_CFLAGS = @LIBCPPUNIT_CFLAGS@
 LIBCPPUNIT_LIBS = @LIBCPPUNIT_LIBS@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
@@ -598,6 +602,8 @@ LIBOPENSSL_LIBS = @LIBOPENSSL_LIBS@
 LIBPTHREADS = @LIBPTHREADS@
 LIBS = @LIBS@
 LIBSASL = @LIBSASL@
+LIBTDB_CFLAGS = @LIBTDB_CFLAGS@
+LIBTDB_LIBS = @LIBTDB_LIBS@
 LIBTOOL = @LIBTOOL@
 LIBXML2_CFLAGS = @LIBXML2_CFLAGS@
 LIBXML2_LIBS = @LIBXML2_LIBS@
@@ -781,13 +787,20 @@ libauth_la_SOURCES = \
 	CredentialsCache.cc \
 	CredentialState.cc \
 	CredentialState.h \
+	forward.h \
 	Gadgets.cc \
 	Gadgets.h \
 	QueueNode.h \
 	Scheme.cc \
 	Scheme.h \
+	SchemeConfig.cc \
+	SchemeConfig.h \
+	SchemesConfig.h \
+	SchemesConfig.cc \
 	State.h \
 	State.cc \
+	toUtf.h \
+	toUtf.cc \
 	User.h \
 	User.cc \
 	UserRequest.h \
@@ -880,10 +893,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/CredentialsCache.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Gadgets.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Scheme.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SchemeConfig.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SchemesConfig.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/State.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Type.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/User.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/UserRequest.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/toUtf.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1296,10 +1312,13 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/CredentialsCache.Plo
 	-rm -f ./$(DEPDIR)/Gadgets.Plo
 	-rm -f ./$(DEPDIR)/Scheme.Plo
+	-rm -f ./$(DEPDIR)/SchemeConfig.Plo
+	-rm -f ./$(DEPDIR)/SchemesConfig.Plo
 	-rm -f ./$(DEPDIR)/State.Plo
 	-rm -f ./$(DEPDIR)/Type.Plo
 	-rm -f ./$(DEPDIR)/User.Plo
 	-rm -f ./$(DEPDIR)/UserRequest.Plo
+	-rm -f ./$(DEPDIR)/toUtf.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1353,10 +1372,13 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/CredentialsCache.Plo
 	-rm -f ./$(DEPDIR)/Gadgets.Plo
 	-rm -f ./$(DEPDIR)/Scheme.Plo
+	-rm -f ./$(DEPDIR)/SchemeConfig.Plo
+	-rm -f ./$(DEPDIR)/SchemesConfig.Plo
 	-rm -f ./$(DEPDIR)/State.Plo
 	-rm -f ./$(DEPDIR)/Type.Plo
 	-rm -f ./$(DEPDIR)/User.Plo
 	-rm -f ./$(DEPDIR)/UserRequest.Plo
+	-rm -f ./$(DEPDIR)/toUtf.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

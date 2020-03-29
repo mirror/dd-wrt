@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -514,6 +514,17 @@ cbdataDump(StoreEntry * sentry)
 #endif
 
     storeAppendPrintf(sentry, "\nsee also \"Memory utilization\" for detailed per type statistics\n");
+}
+
+CallbackData &
+CallbackData::operator =(const CallbackData &other)
+{
+    if (data_ != other.data_) { // assignment to self and no-op assignments
+        auto old = data_;
+        data_ = cbdataReference(other.data_);
+        cbdataReferenceDone(old);
+    }
+    return *this;
 }
 
 CBDATA_CLASS_INIT(generic_cbdata);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -279,16 +279,16 @@ int main(int argc, char *argv[])
                 break;
             case 'v':
                 std::cout << "security_file_certgen version " << VERSION << std::endl;
-                exit(0);
+                exit(EXIT_SUCCESS);
                 break;
             case 'c':
                 create_new_db = true;
                 break;
             case 'h':
                 usage();
-                exit(0);
+                exit(EXIT_SUCCESS);
             default:
-                exit(0);
+                exit(EXIT_FAILURE);
             }
         }
 
@@ -304,7 +304,7 @@ int main(int argc, char *argv[])
             std::cout << "Initialization SSL db..." << std::endl;
             Ssl::CertificateDb::Create(db_path);
             std::cout << "Done" << std::endl;
-            exit(0);
+            exit(EXIT_SUCCESS);
         }
 
         // only do filesystem checks when a path (-s) is given
@@ -334,7 +334,7 @@ int main(int argc, char *argv[])
 
             while (parse_result == Ssl::CrtdMessage::INCOMPLETE) {
                 if (fgets(request, HELPER_INPUT_BUFFER, stdin) == NULL)
-                    return 1;
+                    exit(EXIT_FAILURE);
                 size_t gcount = strlen(request);
                 parse_result = request_message.parse(request, gcount);
             }
@@ -350,8 +350,8 @@ int main(int argc, char *argv[])
         }
     } catch (std::runtime_error & error) {
         std::cerr << argv[0] << ": " << error.what() << std::endl;
-        return -1;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
 

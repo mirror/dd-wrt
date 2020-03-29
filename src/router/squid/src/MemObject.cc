@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 1996-2019 The Squid Software Foundation and contributors
+ * Copyright (C) 1996-2020 The Squid Software Foundation and contributors
  *
  * Squid software is distributed under GPLv2+ license and includes
  * contributions from numerous individuals and organizations.
@@ -13,7 +13,6 @@
 #include "Generic.h"
 #include "globals.h"
 #include "HttpReply.h"
-#include "HttpRequest.h"
 #include "MemBuf.h"
 #include "MemObject.h"
 #include "profiler/Profiler.h"
@@ -101,8 +100,7 @@ MemObject::MemObject()
     debugs(20, 3, "MemObject constructed, this=" << this);
     ping_reply_callback = nullptr;
     memset(&start_ping, 0, sizeof(start_ping));
-    _reply = new HttpReply;
-    HTTPMSGLOCK(_reply);
+    reply_ = new HttpReply;
 }
 
 MemObject::~MemObject()
@@ -131,17 +129,22 @@ MemObject::~MemObject()
 
 #endif
 
-    HTTPMSGUNLOCK(_reply);
-
-    HTTPMSGUNLOCK(request);
-
     ctx_exit(ctx);              /* must exit before we free mem->url */
 }
 
-void
-MemObject::unlinkRequest()
+HttpReply &
+MemObject::adjustableBaseReply()
 {
-    HTTPMSGUNLOCK(request);
+    assert(!updatedReply_);
+    return *reply_;
+}
+
+void
+MemObject::replaceBaseReply(const HttpReplyPointer &r)
+{
+    assert(r);
+    reply_ = r;
+    updatedReply_ = nullptr;
 }
 
 void
@@ -172,24 +175,12 @@ MemObject::dump() const
     debugs(20, DBG_IMPORTANT, "MemObject->inmem_hi: " << data_hdr.endOffset());
     debugs(20, DBG_IMPORTANT, "MemObject->inmem_lo: " << inmem_lo);
     debugs(20, DBG_IMPORTANT, "MemObject->nclients: " << nclients);
-    debugs(20, DBG_IMPORTANT, "MemObject->reply: " << _reply);
+    debugs(20, DBG_IMPORTANT, "MemObject->reply: " << reply_);
+    debugs(20, DBG_IMPORTANT, "MemObject->updatedReply: " << updatedReply_);
+    debugs(20, DBG_IMPORTANT, "MemObject->appliedUpdates: " << appliedUpdates);
     debugs(20, DBG_IMPORTANT, "MemObject->request: " << request);
     debugs(20, DBG_IMPORTANT, "MemObject->logUri: " << logUri_);
     debugs(20, DBG_IMPORTANT, "MemObject->storeId: " << storeId_);
-}
-
-HttpReply const *
-MemObject::getReply() const
-{
-    return _reply;
-}
-
-void
-MemObject::replaceHttpReply(HttpReply *newrep)
-{
-    HTTPMSGUNLOCK(_reply);
-    _reply = newrep;
-    HTTPMSGLOCK(_reply);
 }
 
 struct LowestMemReader : public unary_function<store_client, void> {
@@ -251,8 +242,8 @@ MemObject::markEndOfReplyHeaders()
 {
     const int hdr_sz = endOffset();
     assert(hdr_sz >= 0);
-    assert(_reply);
-    _reply->hdr_sz = hdr_sz;
+    assert(reply_);
+    reply_->hdr_sz = hdr_sz;
 }
 
 int64_t
@@ -267,18 +258,27 @@ MemObject::size() const
 int64_t
 MemObject::expectedReplySize() const
 {
-    debugs(20, 7, HERE << "object_sz: " << object_sz);
-    if (object_sz >= 0) // complete() has been called; we know the exact answer
+    if (object_sz >= 0) {
+        debugs(20, 7, object_sz << " frozen by complete()");
         return object_sz;
-
-    if (_reply) {
-        const int64_t clen = _reply->bodySize(method);
-        debugs(20, 7, HERE << "clen: " << clen);
-        if (clen >= 0 && _reply->hdr_sz > 0) // yuck: HttpMsg sets hdr_sz to 0
-            return clen + _reply->hdr_sz;
     }
 
-    return -1; // not enough information to predict
+    const auto hdr_sz = baseReply().hdr_sz;
+
+    // Cannot predict future length using an empty/unset or HTTP/0 reply.
+    // For any HTTP/1 reply, hdr_sz is positive  -- status-line cannot be empty.
+    if (hdr_sz <= 0)
+        return -1;
+
+    const auto clen = baseReply().bodySize(method);
+    if (clen < 0) {
+        debugs(20, 7, "unknown; hdr: " << hdr_sz);
+        return -1;
+    }
+
+    const auto messageSize = clen + hdr_sz;
+    debugs(20, 7, messageSize << " hdr: " << hdr_sz << " clen: " << clen);
+    return messageSize;
 }
 
 void
@@ -288,6 +288,10 @@ MemObject::reset()
     data_hdr.freeContent();
     inmem_lo = 0;
     /* Should we check for clients? */
+    assert(reply_);
+    reply_->reset();
+    updatedReply_ = nullptr;
+    appliedUpdates = false;
 }
 
 int64_t
@@ -304,11 +308,12 @@ MemObject::lowestMemReaderOffset() const
 bool
 MemObject::readAheadPolicyCanRead() const
 {
-    const bool canRead = endOffset() - getReply()->hdr_sz <
+    const auto savedHttpHeaders = baseReply().hdr_sz;
+    const bool canRead = endOffset() - savedHttpHeaders <
                          lowestMemReaderOffset() + Config.readAheadGap;
 
     if (!canRead) {
-        debugs(19, 9, "no: " << endOffset() << '-' << getReply()->hdr_sz <<
+        debugs(19, 5, "no: " << endOffset() << '-' << savedHttpHeaders <<
                " < " << lowestMemReaderOffset() << '+' << Config.readAheadGap);
     }
 
