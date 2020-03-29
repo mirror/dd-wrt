@@ -36,19 +36,19 @@ static void run_openvpn(char *prg, char *path)
 {
 	char *conf;
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
-	char *routeup;
+	/*char *routeup;
 	asprintf(&routeup, "/tmp/%s/route-up.sh", path);
 	char *routedown;
-	asprintf(&routedown, "/tmp/%s/route-down.sh", path);
+	asprintf(&routedown, "/tmp/%s/route-down.sh", path);*/
 	if (nvram_matchi("use_crypto", 1)) {
 		insmod("cryptodev");
-		eval(prg, "--config", conf, "--route-up", routeup, "--route-pre-down", routedown, "--daemon", "--engine", "cryptodev");
+		eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev");
 	} else {
 		rmmod("cryptodev");
-		eval(prg, "--config", conf, "--route-up", routeup, "--route-pre-down", routedown, "--daemon");
+		eval(prg, "--config", conf, "--daemon");
 	}
-	free(routedown);
-	free(routeup);
+	/*free(routedown);
+	free(routeup);*/
 	free(conf);
 }
 
@@ -73,7 +73,6 @@ void create_openvpnrules(FILE * fp)
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
-
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
 	    && nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_matchi("openvpncl_bridge", 1)) {
@@ -290,6 +289,9 @@ void start_openvpnserver(void)
 			else
 				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
 		}
+		//egc: add route-up and down to .conf
+		fprintf(fp, "route-up /tmp/openvpn/route-up.sh\n");
+		fprintf(fp, "route-pre-down /tmp/openvpn/route-down.sh\n");
 		if (*(nvram_safe_get("openvpn_crl")))
 			fprintf(fp, "crl-verify /tmp/openvpn/ca.crl\n");
 		/* for QOS */
@@ -410,6 +412,7 @@ void stop_openvpnserver(void)
 		unlink("/tmp/openvpn/openvpn.conf");
 		unlink("/tmp/openvpn/route-up.sh");
 		unlink("/tmp/openvpn/route-down.sh");
+		unlink("/tmp/openvpnsrv_fw.sh");
 	}
 	return;
 }
@@ -562,6 +565,9 @@ void start_openvpn(void)
 	/* for QOS */
 	if (nvram_matchi("wshaper_enable", 1))
 		fprintf(fp, "passtos\n");
+	//egc: add route-up and down to .conf
+	fprintf(fp, "route-up /tmp/openvpncl/route-up.sh\n");
+	fprintf(fp, "route-pre-down /tmp/openvpncl/route-down.sh\n");
 	fprintf(fp, "%s\n", nvram_safe_get("openvpncl_config"));
 	fclose(fp);
 	fp = fopen("/tmp/openvpncl/route-up.sh", "wb");
@@ -713,6 +719,7 @@ void stop_openvpn_wandone(void)
 		unlink("/tmp/openvpncl/openvpn.conf");
 		unlink("/tmp/openvpncl/route-up.sh");
 		unlink("/tmp/openvpncl/route-down.sh");
+		unlink("/tmp/openvpncl_fw.sh");
 	}
 }
 #endif
