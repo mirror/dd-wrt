@@ -50,7 +50,8 @@ void start_smartdns(void)
 		fprintf(fp, "server-name %s\n", hostname);
 	if (ipv6)
 		fprintf(fp, "bind [::]:%d\n", port);
-	fprintf(fp, "bind :%d\n", port);
+	else
+		fprintf(fp, "bind :%d\n", port);
 	if (tcp_server) {
 		if (ipv6)
 			fprintf(fp, "bind-tcp [::]:%d\n", port);
