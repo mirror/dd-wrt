@@ -1821,7 +1821,7 @@ static int __dir_empty(struct dir_context *ctx,
 int ksmbd_vfs_empty_dir(struct ksmbd_file *fp)
 {
 	int err;
-	struct ksmbd_readdir_data readdir_data;
+	struct ksmbd_readdir_data readdir_data = {0};
 
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&readdir_data.ctx, __dir_empty);
