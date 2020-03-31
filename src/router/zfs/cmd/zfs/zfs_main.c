@@ -298,10 +298,10 @@ get_usage(zfs_help_t idx)
 	case HELP_PROMOTE:
 		return (gettext("\tpromote <clone-filesystem>\n"));
 	case HELP_RECEIVE:
-		return (gettext("\treceive [-vnsFhu] "
+		return (gettext("\treceive [-vMnsFhu] "
 		    "[-o <property>=<value>] ... [-x <property>] ...\n"
 		    "\t    <filesystem|volume|snapshot>\n"
-		    "\treceive [-vnsFhu] [-o <property>=<value>] ... "
+		    "\treceive [-vMnsFhu] [-o <property>=<value>] ... "
 		    "[-x <property>] ... \n"
 		    "\t    [-d | -e] <filesystem>\n"
 		    "\treceive -A <filesystem|volume>\n"));
@@ -4328,6 +4328,16 @@ zfs_do_send(int argc, char **argv)
 		}
 	}
 
+	if (flags.dedup) {
+		(void) fprintf(stderr,
+		    gettext("WARNING: deduplicated send is "
+		    "deprecated, and will be removed in a\n"
+		    "future release. (In the future, the flag will be "
+		    "accepted, but a\n"
+		    "regular, non-deduplicated stream will be "
+		    "generated.)\n\n"));
+	}
+
 	if (flags.parsable && flags.verbosity == 0)
 		flags.verbosity = 1;
 
@@ -4408,24 +4418,6 @@ zfs_do_send(int argc, char **argv)
 	if (!(flags.replicate || flags.doall)) {
 		char frombuf[ZFS_MAX_DATASET_NAME_LEN];
 
-		if (redactbook != NULL) {
-			if (strchr(argv[0], '@') == NULL) {
-				(void) fprintf(stderr, gettext("Error: Cannot "
-				    "do a redacted send to a filesystem.\n"));
-				return (1);
-			}
-			if (strchr(redactbook, '#') != NULL) {
-				(void) fprintf(stderr, gettext("Error: "
-				    "redaction bookmark argument must "
-				    "not contain '#'\n"));
-				return (1);
-			}
-		}
-
-		zhp = zfs_open(g_zfs, argv[0], ZFS_TYPE_DATASET);
-		if (zhp == NULL)
-			return (1);
-
 		if (fromname != NULL && (strchr(fromname, '#') == NULL &&
 		    strchr(fromname, '@') == NULL)) {
 			/*
@@ -4454,6 +4446,10 @@ zfs_do_send(int argc, char **argv)
 			(void) strlcat(frombuf, tmpbuf, sizeof (frombuf));
 			fromname = frombuf;
 		}
+
+		zhp = zfs_open(g_zfs, argv[0], ZFS_TYPE_DATASET);
+		if (zhp == NULL)
+			return (1);
 		err = zfs_send_one(zhp, fromname, STDOUT_FILENO, &flags,
 		    redactbook);
 		zfs_close(zhp);
@@ -4552,7 +4548,7 @@ zfs_do_receive(int argc, char **argv)
 		nomem();
 
 	/* check options */
-	while ((c = getopt(argc, argv, ":o:x:dehnuvFsA")) != -1) {
+	while ((c = getopt(argc, argv, ":o:x:dehMnuvFsA")) != -1) {
 		switch (c) {
 		case 'o':
 			if (!parseprop(props, optarg)) {
@@ -4586,6 +4582,9 @@ zfs_do_receive(int argc, char **argv)
 			break;
 		case 'h':
 			flags.skipholds = B_TRUE;
+			break;
+		case 'M':
+			flags.forceunmount = B_TRUE;
 			break;
 		case 'n':
 			flags.dryrun = B_TRUE;
@@ -6208,7 +6207,7 @@ typedef struct holds_cbdata {
 	size_t		cb_max_taglen;
 } holds_cbdata_t;
 
-#define	STRFTIME_FMT_STR "%a %b %e %k:%M %Y"
+#define	STRFTIME_FMT_STR "%a %b %e %H:%M %Y"
 #define	DATETIME_BUF_LEN (32)
 /*
  *

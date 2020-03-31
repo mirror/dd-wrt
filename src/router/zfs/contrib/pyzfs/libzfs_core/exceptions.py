@@ -29,7 +29,8 @@ from ._constants import (
     ZFS_ERR_NO_CHECKPOINT,
     ZFS_ERR_DEVRM_IN_PROGRESS,
     ZFS_ERR_VDEV_TOO_BIG,
-    ZFS_ERR_WRONG_PARENT
+    ZFS_ERR_WRONG_PARENT,
+    zfs_errno
 )
 
 
@@ -349,6 +350,11 @@ class StreamFeatureInvalid(ZFSError):
 class StreamFeatureIncompatible(ZFSError):
     errno = errno.EINVAL
     message = "Incompatible embedded feature with encrypted receive"
+
+
+class StreamTruncated(ZFSError):
+    errno = zfs_errno.ZFS_ERR_STREAM_TRUNCATED
+    message = "incomplete stream"
 
 
 class ReceivePropertyFailure(MultipleOperationsFailure):
