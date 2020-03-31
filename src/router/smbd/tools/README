@@ -1,5 +1,5 @@
 ________________________
-BUILDING KSMBD TOOLS
+BUILDING CIFSD TOOLS
 ________________________
 
 Install preprequisite packages:
@@ -14,14 +14,14 @@ Install preprequisite packages:
 	sudo yum install glib2-devel libnl3-devel
 
 Build steps:
-        - cd into the ksmbd-tools directory
+        - cd into the cifsd-tools directory
         - ./autogen.sh
         - ./configure
         - make
         - make install
 
 _____________________
-USING KSMBD TOOLS
+USING CIFSD TOOLS
 _____________________
 
 Setup steps:

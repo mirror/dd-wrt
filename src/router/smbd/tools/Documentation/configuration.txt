@@ -196,3 +196,6 @@ Define ksmbd configuration parameters list.
 		that will always be set on a directory created by ksmbd.
 	- streams (default: no)
 		Alternate Data Streams support.
+	- follow symlinks (default: yes)
+		This parameter allows to stop ksmbd from following symbolic
+		links in a particular share.
