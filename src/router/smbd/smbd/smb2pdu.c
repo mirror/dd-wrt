@@ -2564,14 +2564,20 @@ int smb2_open(struct ksmbd_work *work)
 			}
 		}
 	} else {
-		/*
-		 * Use LOOKUP_FOLLOW to follow the path of
-		 * symlink in path buildup
-		 */
-		rc = ksmbd_vfs_kern_path(name, LOOKUP_FOLLOW, &path, 1);
-		if (rc) { /* Case for broken link ?*/
+
+
+		if (test_share_config_flag(work->tcon->share_conf,
+					KSMBD_SHARE_FLAG_FOLLOW_SYMLINKS)) {
+			/*
+			 * Use LOOKUP_FOLLOW to follow the path of
+			 * symlink in path buildup
+			 */
+			rc = ksmbd_vfs_kern_path(name, LOOKUP_FOLLOW, &path, 1);
+			if (rc) { /* Case for broken link ?*/
+				rc = ksmbd_vfs_kern_path(name, 0, &path, 1);
+			}
+		} else
 			rc = ksmbd_vfs_kern_path(name, 0, &path, 1);
-		}
 	}
 
 	if (rc) {
