@@ -854,8 +854,11 @@ Default value: \fB10\fR%.
 \fBzfs_arc_max\fR (ulong)
 .ad
 .RS 12n
-Max arc size of ARC in bytes. If set to 0 then it will consume 1/2 of system
-RAM. This value must be at least 67108864 (64 megabytes).
+Max size of ARC in bytes.  If set to 0 then the max size of ARC is determined
+by the amount of system memory installed.  For Linux, 1/2 of system memory will
+be used as the limit.  For FreeBSD, the larger of all system memory - 1GB or
+5/8 of system memory will be used as the limit.  This value must be at least
+67108864 (64 megabytes).
 .sp
 This value can be changed dynamically with some caveats. It cannot be set back
 to 0 while running and reducing it below the current ARC size will not cause
@@ -2993,6 +2996,20 @@ The maximum number of bytes allowed in the \fBzfs receive\fR queue. This value
 must be at least twice the maximum block size in use.
 .sp
 Default value: \fB16,777,216\fR.
+.RE
+
+.sp
+.ne 2
+.na
+\fBzfs_recv_write_batch_size\fR (int)
+.ad
+.RS 12n
+The maximum amount of data (in bytes) that \fBzfs receive\fR will write in
+one DMU transaction.  This is the uncompressed size, even when receiving a
+compressed send stream.  This setting will not reduce the write size below
+a single block. Capped at a maximum of 32MB
+.sp
+Default value: \fB1MB\fR.
 .RE
 
 .sp

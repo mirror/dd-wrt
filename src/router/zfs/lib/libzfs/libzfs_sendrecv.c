@@ -2816,6 +2816,7 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 {
 	int err;
 	libzfs_handle_t *hdl = zhp->zfs_hdl;
+	char *name = zhp->zfs_name;
 	int orig_fd = fd;
 	pthread_t ddtid, ptid;
 	progress_arg_t pa = { 0 };
@@ -2823,7 +2824,7 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 
 	char errbuf[1024];
 	(void) snprintf(errbuf, sizeof (errbuf), dgettext(TEXT_DOMAIN,
-	    "warning: cannot send '%s'"), zhp->zfs_name);
+	    "warning: cannot send '%s'"), name);
 
 	if (from != NULL && strchr(from, '@')) {
 		zfs_handle_t *from_zhp = zfs_open(hdl, from,
@@ -2837,6 +2838,44 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 			return (zfs_error(hdl, EZFS_CROSSTARGET, errbuf));
 		}
 		zfs_close(from_zhp);
+	}
+
+	if (redactbook != NULL) {
+		char bookname[ZFS_MAX_DATASET_NAME_LEN];
+		nvlist_t *redact_snaps;
+		zfs_handle_t *book_zhp;
+		char *at, *pound;
+		int dsnamelen;
+
+		pound = strchr(redactbook, '#');
+		if (pound != NULL)
+			redactbook = pound + 1;
+		at = strchr(name, '@');
+		if (at == NULL) {
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "cannot do a redacted send to a filesystem"));
+			return (zfs_error(hdl, EZFS_BADTYPE, errbuf));
+		}
+		dsnamelen = at - name;
+		if (snprintf(bookname, sizeof (bookname), "%.*s#%s",
+		    dsnamelen, name, redactbook)
+		    >= sizeof (bookname)) {
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "invalid bookmark name"));
+			return (zfs_error(hdl, EZFS_INVALIDNAME, errbuf));
+		}
+		book_zhp = zfs_open(hdl, bookname, ZFS_TYPE_BOOKMARK);
+		if (book_zhp == NULL)
+			return (-1);
+		if (nvlist_lookup_nvlist(book_zhp->zfs_props,
+		    zfs_prop_to_name(ZFS_PROP_REDACT_SNAPS),
+		    &redact_snaps) != 0 || redact_snaps == NULL) {
+			zfs_close(book_zhp);
+			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+			    "not a redaction bookmark"));
+			return (zfs_error(hdl, EZFS_BADTYPE, errbuf));
+		}
+		zfs_close(book_zhp);
 	}
 
 	/*
@@ -2909,7 +2948,7 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 		}
 	}
 
-	err = lzc_send_redacted(zhp->zfs_name, from, fd,
+	err = lzc_send_redacted(name, from, fd,
 	    lzc_flags_from_sendflags(flags), redactbook);
 
 	if (flags->progress) {
@@ -2948,7 +2987,7 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 
 		case ENOENT:
 		case ESRCH:
-			if (lzc_exists(zhp->zfs_name)) {
+			if (lzc_exists(name)) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "incremental source (%s) does not exist"),
 				    from);
@@ -2967,7 +3006,9 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 			return (zfs_error(hdl, EZFS_BUSY, errbuf));
 
 		case EDQUOT:
+		case EFAULT:
 		case EFBIG:
+		case EINVAL:
 		case EIO:
 		case ENOLINK:
 		case ENOSPC:
@@ -2975,7 +3016,6 @@ zfs_send_one(zfs_handle_t *zhp, const char *from, int fd, sendflags_t *flags,
 		case ENXIO:
 		case EPIPE:
 		case ERANGE:
-		case EFAULT:
 		case EROFS:
 			zfs_error_aux(hdl, strerror(errno));
 			return (zfs_error(hdl, EZFS_BADBACKUP, errbuf));
@@ -4059,7 +4099,8 @@ zfs_receive_package(libzfs_handle_t *hdl, int fd, const char *destname,
 				    ZFS_TYPE_FILESYSTEM);
 				if (zhp != NULL) {
 					clp = changelist_gather(zhp,
-					    ZFS_PROP_MOUNTPOINT, 0, 0);
+					    ZFS_PROP_MOUNTPOINT, 0,
+					    flags->forceunmount ? MS_FORCE : 0);
 					zfs_close(zhp);
 					if (clp != NULL) {
 						softerr |=
@@ -4252,12 +4293,12 @@ recv_skip(libzfs_handle_t *hdl, int fd, boolean_t byteswap)
 
 static void
 recv_ecksum_set_aux(libzfs_handle_t *hdl, const char *target_snap,
-    boolean_t resumable)
+    boolean_t resumable, boolean_t checksum)
 {
 	char target_fs[ZFS_MAX_DATASET_NAME_LEN];
 
-	zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
-	    "checksum mismatch or incomplete stream"));
+	zfs_error_aux(hdl, dgettext(TEXT_DOMAIN, (checksum ?
+	    "checksum mismatch" : "incomplete stream")));
 
 	if (!resumable)
 		return;
@@ -4699,6 +4740,26 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			(void) printf("found clone origin %s\n", origin);
 	}
 
+	if (!hdl->libzfs_dedup_warning_printed &&
+	    (DMU_GET_FEATUREFLAGS(drrb->drr_versioninfo) &
+	    DMU_BACKUP_FEATURE_DEDUP)) {
+		(void) fprintf(stderr,
+		    gettext("WARNING: This is a deduplicated send stream.  "
+		    "The ability to send and\n"
+		    "receive deduplicated send streams is deprecated.  "
+		    "In the future, the\n"
+		    "ability to receive a deduplicated send stream with "
+		    "\"zfs receive\" will be\n"
+		    "removed. However, in the future, a utility will be "
+		    "provided to convert a\n"
+		    "deduplicated send stream to a regular "
+		    "(non-deduplicated) stream. This\n"
+		    "future utility will require that the send stream be "
+		    "located in a\n"
+		    "seek-able file, rather than provided by a pipe.\n\n"));
+		hdl->libzfs_dedup_warning_printed = B_TRUE;
+	}
+
 	boolean_t resuming = DMU_GET_FEATUREFLAGS(drrb->drr_versioninfo) &
 	    DMU_BACKUP_FEATURE_RESUMING;
 	boolean_t raw = DMU_GET_FEATUREFLAGS(drrb->drr_versioninfo) &
@@ -4876,7 +4937,8 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 		if (!flags->dryrun && zhp->zfs_type == ZFS_TYPE_FILESYSTEM &&
 		    stream_wantsnewfs) {
 			/* We can't do online recv in this case */
-			clp = changelist_gather(zhp, ZFS_PROP_NAME, 0, 0);
+			clp = changelist_gather(zhp, ZFS_PROP_NAME, 0,
+			    flags->forceunmount ? MS_FORCE : 0);
 			if (clp == NULL) {
 				zfs_close(zhp);
 				err = -1;
@@ -5204,7 +5266,9 @@ zfs_receive_one(libzfs_handle_t *hdl, int infd, const char *tosnap,
 			(void) zfs_error(hdl, EZFS_BADSTREAM, errbuf);
 			break;
 		case ECKSUM:
-			recv_ecksum_set_aux(hdl, destsnap, flags->resumable);
+		case ZFS_ERR_STREAM_TRUNCATED:
+			recv_ecksum_set_aux(hdl, destsnap, flags->resumable,
+			    ioctl_err == ECKSUM);
 			(void) zfs_error(hdl, EZFS_BADSTREAM, errbuf);
 			break;
 		case ENOTSUP:
@@ -5556,7 +5620,8 @@ zfs_receive(libzfs_handle_t *hdl, const char *tosnap, nvlist_t *props,
 			}
 
 			clp = changelist_gather(zhp, ZFS_PROP_MOUNTPOINT,
-			    CL_GATHER_MOUNT_ALWAYS, 0);
+			    CL_GATHER_MOUNT_ALWAYS,
+			    flags->forceunmount ? MS_FORCE : 0);
 			zfs_close(zhp);
 			if (clp == NULL) {
 				err = -1;
