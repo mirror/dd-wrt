@@ -115,7 +115,7 @@ struct zstd_pool {
 	void *mem;
 	size_t size;
 	kmutex_t 		barrier;
-	time_t timeout;
+	hrtime_t timeout;
 };
 
 struct zstd_kmem {
