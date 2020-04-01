@@ -13,14 +13,14 @@ libpcap-configure:
 		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC"
 libpcap:
 	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
-	-cd libpcap ; ln -s libpcap.so.1.9.1 libpcap.so
-	-cd libpcap ; ln -s libpcap.so libpcap.so.1
 
 libpcap-install:
-	install -d $(INSTALLDIR)/libpcap/usr/lib
-	install libpcap/libpcap.so $(INSTALLDIR)/libpcap/usr/lib
-	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1 
-	-cd $(INSTALLDIR)/libpcap/usr/lib ; ln -s libpcap.so libpcap.so.1.0.0
+	$(MAKE) -C libpcap install DESTDIR=$(INSTALLDIR)/libpcap
+	rm -rf $(INSTALLDIR)/libpcap/usr/bin
+	rm -rf $(INSTALLDIR)/libpcap/usr/include
+	rm -rf $(INSTALLDIR)/libpcap/usr/lib/pkgconfig
+	rm -rf $(INSTALLDIR)/libpcap/usr/man
+	rm -f $(INSTALLDIR)/libpcap/usr/lib/libpcap.a
 
 libpcap-clean:
 	$(MAKE) -C libpcap clean
