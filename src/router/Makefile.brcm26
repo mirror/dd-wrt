@@ -387,7 +387,6 @@ endif
 #ifneq ($(CONFIG_JFFS2),y)
 #	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/jffs2.o
 #endif
-	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/*.ko	
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/bridge/netfilter/*.ko
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/*.ko
@@ -589,7 +588,6 @@ ifeq ($(CONFIG_NVRAM_64K),y)
 	cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K26_WNDR4000.chk
 endif
 # end Netgear
-
 # Linksys
 ifneq ($(CONFIG_NVRAM_60K),y)
 ifneq ($(CONFIG_NVRAM_64K),y)
