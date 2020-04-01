@@ -507,7 +507,6 @@ endif
 ifneq ($(CONFIG_3G),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(LINUXVER)/serial
 endif
-	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/*.o		
 ifeq ($(CONFIG_MMC),y)	
 	cp ./mmc_sdhc/mmc.o $(TARGETDIR)/lib/modules/$(LINUXVER)
