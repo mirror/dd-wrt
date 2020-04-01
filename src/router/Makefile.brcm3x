@@ -553,7 +553,7 @@ endif
 #ifneq ($(CONFIG_JFFS2),y)
 #	rm -f $(TARGETDIR)/lib/modules/$(LINUXVER)/jffs2.o
 #endif
-	rm -f $(TARGETDIR)/usr/lib/libpcap.so
+#	rm -f $(TARGETDIR)/usr/lib/libpcap.so
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/drivers/scsi/*.ko	
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/bridge/netfilter/*.ko
 	-mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/$(LINUXVER)/kernel/net/ipv4/netfilter/*.ko
