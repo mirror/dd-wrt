@@ -4608,7 +4608,7 @@ static void start_wan6_done(char *wan_ifname)
 
 	if (nvram_match("ipv6_typ", "ipv6native")) {
 		if (nvram_match("wan_proto", "disabled")) {
-			sysprintf("echo 1 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
+			sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", nvram_safe_get("lan_ifname"));
 		} else {
 			sysprintf("echo 2 > /proc/sys/net/ipv6/conf/%s/accept_ra", wan_ifname);
 		}
