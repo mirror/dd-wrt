@@ -13,7 +13,10 @@ libpcap-configure:
 		--disable-canusb --disable-can --disable-bluetooth \
 		CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC"
 libpcap:
-	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so 
+	rm -f $(TOP)/libpcap/libpcap.a
+	rm -f $(TOP)/libpcap/libpcap.so
+	$(MAKE) -C libpcap CC="$(CC)" AR=$(AR) RANLIB=$(RANLIB) libpcap.so
+	cp -f $(TOP)/libpcap/libpcap.so* $(TOP)/libpcap/libpcap.so
 
 libpcap-install:
 	$(MAKE) -C libpcap install DESTDIR=$(INSTALLDIR)/libpcap
