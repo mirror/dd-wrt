@@ -96,7 +96,7 @@ find_uImage_size(struct map_info *map, unsigned long offset)
 	if (le32_to_cpu(magic) != UBOOT_MAGIC)
 		return 0;
 	map->copy_from(map, &temp, offset + 12, 4);
-	printk("uImage size %X\n",temp + 0x40);
+	printk("uImage size %lX\n",temp + 0x40);
 	return temp + 0x40;
 }
 
@@ -105,7 +105,8 @@ detect_squashfs_partition(struct map_info *map, unsigned long offset)
 {
 	unsigned long temp;
 	map->copy_from(map, &temp, offset, 4);
-	return le32_to_cpu(temp) == SQUASHFS_MAGIC_SWAP;
+	printk(KERN_INFO "Magic = %08lX\n", temp);
+	return le32_to_cpu(temp) == SQUASHFS_MAGIC_SWAP || le32_to_cpu(temp) == SQUASHFS_MAGIC;
 }
 
 #ifdef CONFIG_AR9
@@ -301,7 +302,7 @@ ltq_mtd_probe(struct platform_device *pdev)
 		parts[rootfs_part].offset = parts[kernel_part].offset + parts[kernel_part].size;
 		struct squashfs_super_block sb;
 		ltq_mtd->map->copy_from(ltq_mtd->map, &sb, parts[rootfs_part].offset, sizeof(struct squashfs_super_block));
-		int jffsoffset = sb.bytes_used;
+		int jffsoffset = le64_to_cpu(sb.bytes_used);
 		jffsoffset += parts[rootfs_part].offset;
 		jffsoffset += (ltq_mtd->mtd->erasesize - 1);
 		jffsoffset &= ~(ltq_mtd->mtd->erasesize - 1);
