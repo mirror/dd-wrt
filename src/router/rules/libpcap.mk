@@ -2,6 +2,7 @@ libpcap-configure:
 	cd libpcap ; ac_cv_linux_vers=2 ./configure \
 		--target=$(ARCH)-openwrt-linux \
 		--host=$(ARCH)-linux-uclibc  \
+		--libdir=/usr/lib \
 		--program-prefix= --program-suffix= --prefix=/usr \
 		--exec-prefix=/usr --bindir=/usr/bin --sbindir=/usr/sbin \
 		--libexecdir=/usr/lib --sysconfdir=/etc --datadir=/usr/share \
