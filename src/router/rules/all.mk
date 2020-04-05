@@ -332,6 +332,7 @@ include rules/gnutls.mk
 include rules/smbd.mk
 include rules/irqbalance.mk
 include rules/smartdns.mk
+include rules/nginx.mk
 
 #
 # Generic rules
