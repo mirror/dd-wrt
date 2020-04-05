@@ -66,7 +66,7 @@ ngx_os_init(ngx_log_t *log)
     }
 
 #if (NGX_HAVE_LEVEL1_DCACHE_LINESIZE)
-    size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+    size = DCACHE_LINESIZE;
     if (size > 0) {
         ngx_cacheline_size = size;
     }
