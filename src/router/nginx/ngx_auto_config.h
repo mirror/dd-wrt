@@ -346,7 +346,10 @@
 
 
 #ifndef NGX_HAVE_LEVEL1_DCACHE_LINESIZE
+#include <unistd.h>
+#ifdef _SC_LEVEL1_DCACHE_LINESIZE
 #define NGX_HAVE_LEVEL1_DCACHE_LINESIZE  1
+#endif
 #endif
 
 
