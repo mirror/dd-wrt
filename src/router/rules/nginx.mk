@@ -34,7 +34,7 @@ endif
 
 nginx-configure:
 	cd nginx && CC=gcc;CFLAGS=-O2 && ./configure --with-http_ssl_module --prefix=/usr --add-module=../nginx-rtmp-module
-	cp nginx/objs/Makefile.use nginx/objs/Makefile
+	cp nginx/Makefile.use nginx/objs/Makefile
 
 nginx-clean:
 	$(MAKE) -C nginx clean 
@@ -42,9 +42,7 @@ nginx-clean:
 nginx: openssl
 	cp nginx/Makefile.use nginx/objs/Makefile
 	cp nginx/$(NGINX_CONF) nginx/objs/$(NGINX_CONF)
-	$(MAKE) -C nginx CFLAGS="$(NGINX_FLAGS) -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/pcre -I$(TOP)/openssl/include"
-	#CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/openssl/include" LDFLAGS="$(COPTS) $(MIPS16_OPT) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections  -L$(TOP)/openssl"
+	$(MAKE) -C nginx CFLAGS="$(NGINX_FLAGS) -DNEED_PRINTF $(LTO) -D_GNU_SOURCE $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/zlib  -I$(TOP)/pcre -I$(TOP)/openssl/include"
 
 nginx-install:
-#	install -D nginx/src/nginx $(INSTALLDIR)/nginx/usr/sbin/nginx
-
+	$(MAKE) -C nginx install DESTDIR=$(INSTALLDIR)/nginx
