@@ -2,7 +2,7 @@
 #CC =	gcc
 CFLAGS += $(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -I../nginx-rtmp-module -I$(TOP)/pcre -I$(TOP)/openssl/include
 CPP =	
-LINK =	$(CC)
+LINK =	$(CC) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/pcre/.libs $(LDLTO)  -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
 ALL_INCS = -I src/core \
@@ -1556,9 +1556,6 @@ install:	build
 
 	test -d '$(DESTDIR)/usr/sbin' \
 		|| mkdir -p '$(DESTDIR)/usr/sbin'
-	test ! -f '$(DESTDIR)/usr/sbin/nginx' \
-		|| mv '$(DESTDIR)/usr/sbin/nginx' \
-			'$(DESTDIR)/usr/sbin/nginx.old'
 	cp objs/nginx '$(DESTDIR)/usr/sbin/nginx'
 
 	test -d '$(DESTDIR)/usr/conf' \
