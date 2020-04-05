@@ -195,7 +195,10 @@ static void detect_wireless_devices(int mask)
 	}
 #endif
 #ifdef HAVE_ATH5K
-	if (nvram_match("use_ath5k", "1")) {
+#ifndef HAVE_ATH5KONLY
+	if (nvram_match("use_ath5k", "1")) 
+#endif
+	{
 		loadath5k = loadlegacy;
 		loadlegacy = 0;
 	}
