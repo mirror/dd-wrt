@@ -352,6 +352,9 @@ endif
 ifeq ($(CONFIG_NORTHSTAR),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath*
 endif
+ifeq ($(CONFIG_ATH5KONLY),y)
+	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath9*
+endif
 ifeq ($(CONFIG_MT7620),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath*
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
