@@ -350,7 +350,7 @@ obj-$(CONFIG_CAKE) += fq_codel_fast
 obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 obj-$(CONFIG_APFS) += apfs apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
-obj-$(CONFIG_NGINX) += pcre openssl nginx
+obj-$(CONFIG_NGINX) += pcre openssl zlib nginx
 
 obj-y+=configs
 
