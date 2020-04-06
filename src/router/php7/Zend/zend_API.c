@@ -2656,17 +2656,22 @@ ZEND_API void zend_post_deactivate_modules(void) /* {{{ */
 {
 	if (EG(full_tables_cleanup)) {
 		zend_module_entry *module;
+		zval *zv;
+		zend_string *key;
 
 		ZEND_HASH_FOREACH_PTR(&module_registry, module) {
 			if (module->post_deactivate_func) {
 				module->post_deactivate_func();
 			}
 		} ZEND_HASH_FOREACH_END();
-		ZEND_HASH_REVERSE_FOREACH_PTR(&module_registry, module) {
+		ZEND_HASH_REVERSE_FOREACH_STR_KEY_VAL(&module_registry, key, zv) {
+			module = Z_PTR_P(zv);
 			if (module->type != MODULE_TEMPORARY) {
 				break;
 			}
 			module_destructor(module);
+			free(module);
+			zend_string_release_ex(key, 0);
 		} ZEND_HASH_FOREACH_END_DEL();
 	} else {
 		zend_module_entry **p = module_post_deactivate_handlers;
@@ -2762,6 +2767,7 @@ ZEND_API zend_class_entry *zend_register_internal_interface(zend_class_entry *or
 ZEND_API int zend_register_class_alias_ex(const char *name, size_t name_len, zend_class_entry *ce, int persistent) /* {{{ */
 {
 	zend_string *lcname;
+	zval zv, *ret;
 
 	/* TODO: Move this out of here in 7.4. */
 	if (persistent && EG(current_module) && EG(current_module)->type == MODULE_TEMPORARY) {
@@ -2779,9 +2785,11 @@ ZEND_API int zend_register_class_alias_ex(const char *name, size_t name_len, zen
 	zend_assert_valid_class_name(lcname);
 
 	lcname = zend_new_interned_string(lcname);
-	ce = zend_hash_add_ptr(CG(class_table), lcname, ce);
+
+	ZVAL_ALIAS_PTR(&zv, ce);
+	ret = zend_hash_add(CG(class_table), lcname, &zv);
 	zend_string_release_ex(lcname, 0);
-	if (ce) {
+	if (ret) {
 		if (!(ce->ce_flags & ZEND_ACC_IMMUTABLE)) {
 			ce->refcount++;
 		}
@@ -3146,13 +3154,7 @@ get_function_via_handler:
 					if (strict_class &&
 					    (!fcc->function_handler->common.scope ||
 					     !instanceof_function(ce_org, fcc->function_handler->common.scope))) {
-						if (fcc->function_handler->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) {
-							if (fcc->function_handler->type != ZEND_OVERLOADED_FUNCTION &&
-								fcc->function_handler->common.function_name) {
-								zend_string_release_ex(fcc->function_handler->common.function_name, 0);
-							}
-							zend_free_trampoline(fcc->function_handler);
-						}
+						zend_release_fcall_info_cache(fcc);
 					} else {
 						retval = 1;
 						call_via_handler = (fcc->function_handler->common.fn_flags & ZEND_ACC_CALL_VIA_TRAMPOLINE) != 0;
@@ -3771,7 +3773,9 @@ ZEND_API int zend_declare_typed_property(zend_class_entry *ce, zend_string *name
 		}
 
 		/* Must be interned to avoid ZTS data races */
-		name = zend_new_interned_string(zend_string_copy(name));
+		if (is_persistent_class(ce)) {
+			name = zend_new_interned_string(zend_string_copy(name));
+		}
 	}
 
 	if (access_type & ZEND_ACC_PUBLIC) {

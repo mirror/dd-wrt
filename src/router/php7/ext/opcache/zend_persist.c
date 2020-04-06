@@ -1037,8 +1037,11 @@ static void zend_accel_persist_class_table(HashTable *class_table)
 		zend_accel_store_interned_string(p->key);
 		zend_persist_class_entry(&p->val);
 	} ZEND_HASH_FOREACH_END();
-    ZEND_HASH_FOREACH_PTR(class_table, ce) {
-		zend_update_parent_ce(ce);
+    ZEND_HASH_FOREACH_BUCKET(class_table, p) {
+		if (EXPECTED(Z_TYPE(p->val) != IS_ALIAS_PTR)) {
+			ce = Z_PTR(p->val);
+			zend_update_parent_ce(ce);
+		}
 	} ZEND_HASH_FOREACH_END();
 }
 
@@ -1086,7 +1089,9 @@ zend_persistent_script *zend_accel_script_persist(zend_persistent_script *script
 	} ZEND_HASH_FOREACH_END();
 	zend_persist_op_array_ex(&script->script.main_op_array, script);
 
-	ZCSG(map_ptr_last) = CG(map_ptr_last);
+	if (for_shm) {
+		ZCSG(map_ptr_last) = CG(map_ptr_last);
+	}
 
 	script->corrupted = 0;
 	ZCG(current_persistent_script) = NULL;

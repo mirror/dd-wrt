@@ -812,7 +812,7 @@ static zend_always_inline inheritance_status do_inheritance_check_on_method_ex(z
 		parent = proto;
 	}
 
-	if (!check_only && child_zv && child->common.prototype != proto) {
+	if (!check_only && child->common.prototype != proto) {
 		do {
 			if (child->common.scope != ce
 			 && child->type == ZEND_USER_FUNCTION
@@ -820,7 +820,7 @@ static zend_always_inline inheritance_status do_inheritance_check_on_method_ex(z
 				if (ce->ce_flags & ZEND_ACC_INTERFACE) {
 					/* Few parent interfaces contain the same method */
 					break;
-				} else {
+				} else if (child_zv) {
 					/* op_array wasn't duplicated yet */
 					zend_function *new_function = zend_arena_alloc(&CG(arena), sizeof(zend_op_array));
 					memcpy(new_function, child, sizeof(zend_op_array));
@@ -1585,17 +1585,14 @@ static void zend_add_trait_method(zend_class_entry *ce, const char *name, zend_s
 			}
 			zend_hash_update_mem(*overridden, key, fn, sizeof(zend_function));
 			return;
-		} else if (existing_fn->common.fn_flags & ZEND_ACC_ABSTRACT &&
-				(existing_fn->common.scope->ce_flags & ZEND_ACC_INTERFACE) == 0) {
-			/* Make sure the trait method is compatible with previosly declared abstract method */
-			perform_delayable_implementation_check(
-				ce, fn, existing_fn, /*always_error*/ 1);
-		} else if (fn->common.fn_flags & ZEND_ACC_ABSTRACT) {
+		} else if ((fn->common.fn_flags & ZEND_ACC_ABSTRACT)
+				&& !(existing_fn->common.fn_flags & ZEND_ACC_ABSTRACT)) {
 			/* Make sure the abstract declaration is compatible with previous declaration */
 			perform_delayable_implementation_check(
 				ce, existing_fn, fn, /*always_error*/ 1);
 			return;
-		} else if (UNEXPECTED(existing_fn->common.scope->ce_flags & ZEND_ACC_TRAIT)) {
+		} else if (UNEXPECTED((existing_fn->common.scope->ce_flags & ZEND_ACC_TRAIT)
+				&& !(existing_fn->common.fn_flags & ZEND_ACC_ABSTRACT))) {
 			/* two traits can't define the same non-abstract method */
 #if 1
 			zend_error_noreturn(E_COMPILE_ERROR, "Trait method %s has not been applied, because there are collisions with other trait methods on %s",
@@ -2240,8 +2237,10 @@ typedef struct {
 	union {
 		zend_class_entry *dependency_ce;
 		struct {
-			const zend_function *parent_fn;
-			const zend_function *child_fn;
+			/* Traits may use temporary on-stack functions during inheritance checks,
+			 * so use copies of functions here as well. */
+			zend_function parent_fn;
+			zend_function child_fn;
 			zend_bool always_error;
 		};
 		struct {
@@ -2295,8 +2294,17 @@ static void add_compatibility_obligation(
 	HashTable *obligations = get_or_init_obligations_for_class(ce);
 	variance_obligation *obligation = emalloc(sizeof(variance_obligation));
 	obligation->type = OBLIGATION_COMPATIBILITY;
-	obligation->child_fn = child_fn;
-	obligation->parent_fn = parent_fn;
+	/* Copy functions, because they may be stack-allocated in the case of traits. */
+	if (child_fn->common.type == ZEND_INTERNAL_FUNCTION) {
+		memcpy(&obligation->child_fn, child_fn, sizeof(zend_internal_function));
+	} else {
+		memcpy(&obligation->child_fn, child_fn, sizeof(zend_op_array));
+	}
+	if (parent_fn->common.type == ZEND_INTERNAL_FUNCTION) {
+		memcpy(&obligation->parent_fn, parent_fn, sizeof(zend_internal_function));
+	} else {
+		memcpy(&obligation->parent_fn, parent_fn, sizeof(zend_op_array));
+	}
 	obligation->always_error = always_error;
 	zend_hash_next_index_insert_ptr(obligations, obligation);
 }
@@ -2327,7 +2335,7 @@ static int check_variance_obligation(zval *zv) {
 	} else if (obligation->type == OBLIGATION_COMPATIBILITY) {
 		zend_string *unresolved_class;
 		inheritance_status status = zend_do_perform_implementation_check(
-			&unresolved_class, obligation->child_fn, obligation->parent_fn);
+			&unresolved_class, &obligation->child_fn, &obligation->parent_fn);
 
 		if (UNEXPECTED(status != INHERITANCE_SUCCESS)) {
 			if (EXPECTED(status == INHERITANCE_UNRESOLVED)) {
@@ -2335,7 +2343,7 @@ static int check_variance_obligation(zval *zv) {
 			}
 			ZEND_ASSERT(status == INHERITANCE_ERROR);
 			emit_incompatible_method_error_or_warning(
-				obligation->child_fn, obligation->parent_fn, status, unresolved_class,
+				&obligation->child_fn, &obligation->parent_fn, status, unresolved_class,
 				obligation->always_error);
 		}
 		/* Either the compatibility check was successful or only threw a warning. */
@@ -2405,10 +2413,10 @@ static void report_variance_errors(zend_class_entry *ce) {
 		if (obligation->type == OBLIGATION_COMPATIBILITY) {
 			/* Just used to fetch the unresolved_class in this case. */
 			status = zend_do_perform_implementation_check(
-				&unresolved_class, obligation->child_fn, obligation->parent_fn);
+				&unresolved_class, &obligation->child_fn, &obligation->parent_fn);
 			ZEND_ASSERT(status == INHERITANCE_UNRESOLVED);
 			emit_incompatible_method_error_or_warning(
-				obligation->child_fn, obligation->parent_fn,
+				&obligation->child_fn, &obligation->parent_fn,
 				status, unresolved_class, obligation->always_error);
 		} else if (obligation->type == OBLIGATION_PROPERTY_COMPATIBILITY) {
 			emit_incompatible_property_error(obligation->child_prop, obligation->parent_prop);

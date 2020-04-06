@@ -474,9 +474,6 @@
 /* */
 #undef HAVE_CODBC
 
-/* Compiler supports VLA */
-#undef HAVE_COMPILER_C99_VLA
-
 /* whether __cpuid_count is available */
 #undef HAVE_CPUID_COUNT
 
@@ -507,11 +504,8 @@
 /* */
 #undef HAVE_CURL
 
-/* Have cURL with OpenSSL support */
-#undef HAVE_CURL_OPENSSL
-
-/* Have cURL with SSL support */
-#undef HAVE_CURL_SSL
+/* Have cURL with old OpenSSL */
+#undef HAVE_CURL_OLD_OPENSSL
 
 /* */
 #undef HAVE_DBA

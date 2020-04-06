@@ -69,6 +69,12 @@ PHP 7.4 UPGRADE NOTES
     a warning and always return false. Previously all DateInterval objects were
     considered equal, unless they had properties.
 
+DOM:
+  . As of PHP 7.4.4, the value of the $childNodes property of DOMDocument,
+    DOMNode, DOMProcessingInstruction, DOMComment, DOMText, DOMCdataSection and
+    DOMNotation is now an empty DOMNodeList instead of NULL, according to the
+    W3C and WHATWG standards and the PHP manual.
+
 - Intl:
   . The default parameter value of idn_to_ascii() and idn_to_utf8() is now
     INTL_IDNA_VARIANT_UTS46 instead of the deprecated INTL_IDNA_VARIANT_2003.
@@ -150,7 +156,7 @@ PHP 7.4 UPGRADE NOTES
   . Password hashing algorithm identifiers are now nullable strings rather
     than integers.
 
-     * PASSWORD_DEFAULT was int 1; now is null
+     * PASSWORD_DEFAULT was int 1; now is null in PHP <7.4.3 and string '2y' afterwards
      * PASSWORD_BCRYPT was int 1; now is string '2y'
      * PASSWORD_ARGON2I was int 2; now is string 'argon2i'
      * PASSWORD_ARGON2ID was int 3; now is string 'argon2id'
@@ -563,6 +569,12 @@ PHP 7.4 UPGRADE NOTES
 9. Other Changes to Extensions
 ========================================
 
+ DBA:
+   . As of PHP 7.4.2, dba_open() accepts a fifth optional parameter for lmdb
+     databases which allows to specify the mapsize. The parameter defaults to
+     zero, in which case the compiled in default mapsize (usually 1048576) will
+     be used. The mapsize should be a multiple of the page size of the OS.
+
 - GD:
   . The behavior of imagecropauto() in the bundled libgd has been synced with
     that of system libgd:
@@ -720,7 +732,7 @@ PHP 7.4 UPGRADE NOTES
   the INI directive opcache.cache_id. All processes with the same cache ID and
   user share an OPcache instance.
 
-- The OpenSSL default config path has been changed to 
+- The OpenSSL default config path has been changed to
   "C:\Program Files\Common Files\SSL\openssl.cnf" and
   "C:\Program Files (x86)\Common Files\SSL\openssl.cnf", respectively.
 

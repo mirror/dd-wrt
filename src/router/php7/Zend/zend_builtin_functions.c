@@ -1476,7 +1476,7 @@ static inline void class_exists_impl(INTERNAL_FUNCTION_PARAMETERS, int flags, in
 	}
 
  	if (ce) {
-		RETURN_BOOL((flags == 0 || (ce->ce_flags & flags)) && !(ce->ce_flags & skip_flags));
+		RETURN_BOOL(((ce->ce_flags & flags) == flags) && !(ce->ce_flags & skip_flags));
 	} else {
 		RETURN_FALSE;
 	}
@@ -1487,7 +1487,7 @@ static inline void class_exists_impl(INTERNAL_FUNCTION_PARAMETERS, int flags, in
    Checks if the class exists */
 ZEND_FUNCTION(class_exists)
 {
-	class_exists_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, 0, ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT);
+	class_exists_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, ZEND_ACC_LINKED, ZEND_ACC_INTERFACE | ZEND_ACC_TRAIT);
 }
 /* }}} */
 
@@ -1495,7 +1495,7 @@ ZEND_FUNCTION(class_exists)
    Checks if the class exists */
 ZEND_FUNCTION(interface_exists)
 {
-	class_exists_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, ZEND_ACC_INTERFACE, 0);
+	class_exists_impl(INTERNAL_FUNCTION_PARAM_PASSTHRU, ZEND_ACC_LINKED|ZEND_ACC_INTERFACE, 0);
 }
 /* }}} */
 
@@ -1645,10 +1645,10 @@ ZEND_FUNCTION(set_error_handler)
 
 	if (Z_TYPE(EG(user_error_handler)) != IS_UNDEF) {
 		ZVAL_COPY(return_value, &EG(user_error_handler));
-
-		zend_stack_push(&EG(user_error_handlers_error_reporting), &EG(user_error_handler_error_reporting));
-		zend_stack_push(&EG(user_error_handlers), &EG(user_error_handler));
 	}
+
+	zend_stack_push(&EG(user_error_handlers_error_reporting), &EG(user_error_handler_error_reporting));
+	zend_stack_push(&EG(user_error_handlers), &EG(user_error_handler));
 
 	if (Z_TYPE_P(error_handler) == IS_NULL) { /* unset user-defined handler */
 		ZVAL_UNDEF(&EG(user_error_handler));
@@ -1712,9 +1712,9 @@ ZEND_FUNCTION(set_exception_handler)
 
 	if (Z_TYPE(EG(user_exception_handler)) != IS_UNDEF) {
 		ZVAL_COPY(return_value, &EG(user_exception_handler));
-
-		zend_stack_push(&EG(user_exception_handlers), &EG(user_exception_handler));
 	}
+
+	zend_stack_push(&EG(user_exception_handlers), &EG(user_exception_handler));
 
 	if (Z_TYPE_P(exception_handler) == IS_NULL) { /* unset user-defined handler */
 		ZVAL_UNDEF(&EG(user_exception_handler));

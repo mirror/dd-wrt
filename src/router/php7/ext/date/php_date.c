@@ -3322,6 +3322,7 @@ PHP_METHOD(DateTimeImmutable, modify)
 
 	date_clone_immutable(object, &new_object);
 	if (!php_date_modify(&new_object, modify, modify_len)) {
+		zval_ptr_dtor(&new_object);
 		RETURN_FALSE;
 	}
 
@@ -4443,14 +4444,16 @@ static int php_date_interval_initialize_from_hash(zval **return_value, php_inter
 	PHP_DATE_INTERVAL_READ_PROPERTY("h", h, timelib_sll, -1)
 	PHP_DATE_INTERVAL_READ_PROPERTY("i", i, timelib_sll, -1)
 	PHP_DATE_INTERVAL_READ_PROPERTY("s", s, timelib_sll, -1)
-	do {
+	{
 		zval *z_arg = zend_hash_str_find(myht, "f", sizeof("f") - 1);
+		(*intobj)->diff->us = -1000000;
 		if (z_arg) {
-			(*intobj)->diff->us = ((double)zval_get_double(z_arg) * 1000000);
-		} else {
-			(*intobj)->diff->us = (double) -1000000;
+			double val = zval_get_double(z_arg) * 1000000;
+			if (val >= 0 && val < 1000000) {
+				(*intobj)->diff->us = val;
+			}
 		}
-	} while (0);
+	}
 	PHP_DATE_INTERVAL_READ_PROPERTY("weekday", weekday, int, -1)
 	PHP_DATE_INTERVAL_READ_PROPERTY("weekday_behavior", weekday_behavior, int, -1)
 	PHP_DATE_INTERVAL_READ_PROPERTY("first_last_day_of", first_last_day_of, int, -1)
@@ -4723,7 +4726,7 @@ PHP_METHOD(DatePeriod, __construct)
 			dpobj->end = clone;
 		}
 	}
- 
+
 	if (dpobj->end == NULL && recurrences < 1) {
 		php_error_docref(NULL, E_WARNING, "The recurrence count '%d' is invalid. Needs to be > 0", (int) recurrences);
 	}
@@ -5437,15 +5440,21 @@ static zval *date_period_write_property(zval *object, zval *member, zval *value,
 	}
 	zend_string_release(name);
 
-	std_object_handlers.write_property(object, member, value, cache_slot);
-	return value;
+	return zend_std_write_property(object, member, value, cache_slot);
 }
 /* }}} */
 
 /* {{{ date_period_get_property_ptr_ptr */
 static zval *date_period_get_property_ptr_ptr(zval *object, zval *member, int type, void **cache_slot)
 {
-	/* Fall back to read_property handler. */
-	return NULL;
+	zend_string *name = zval_get_string(member);
+	if (date_period_is_magic_property(name)) {
+		zend_throw_error(NULL, "Retrieval of DatePeriod->%s for modification is unsupported", ZSTR_VAL(name));
+		zend_string_release(name);
+		return &EG(error_zval);
+	}
+	zend_string_release(name);
+
+	return zend_std_get_property_ptr_ptr(object, member, type, cache_slot);
 }
 /* }}} */

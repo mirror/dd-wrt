@@ -29,8 +29,8 @@ curl_close($ch2);
 ===DONE===
 --EXPECTF--
 bool(true)
-string(%d) "АБВ.txt|application/octet-stream"
-string(%d) "АБВ.txt|application/octet-stream"
+string(%d) "АБВ.txt|application/octet-stream|5"
+string(%d) "АБВ.txt|application/octet-stream|5"
 ===DONE===
 --CLEAN--
 <?php

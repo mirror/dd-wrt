@@ -86,6 +86,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <limits.h>
 
 #include "mbfilter.h"
 #include "mbfl_filter_output.h"
@@ -2552,12 +2553,12 @@ collector_decode_htmlnumericentity(int c, void *data)
 		s = 0;
 		f = 0;
 		if (c >= 0x30 && c <= 0x39) {	/* '0' - '9' */
-			if (pc->digit > 9) {
+			s = pc->cache;
+			if (pc->digit > 9 || s > INT_MAX/10) {
 				pc->status = 0;
-				s = pc->cache;
 				f = 1;
 			} else {
-				s = pc->cache*10 + c - 0x30;
+				s = s*10 + (c - 0x30);
 				pc->cache = s;
 				pc->digit++;
 			}
@@ -2586,12 +2587,10 @@ collector_decode_htmlnumericentity(int c, void *data)
 			(*pc->decoder->filter_function)(0x23, pc->decoder);		/* '#' */
 			r = 1;
 			n = pc->digit;
-			while (n > 0) {
+			while (n > 1) {
 				r *= 10;
 				n--;
 			}
-			s %= r;
-			r /= 10;
 			while (r > 0) {
 				d = s/r;
 				s %= r;
@@ -2764,12 +2763,10 @@ int mbfl_filt_decode_htmlnumericentity_flush(mbfl_convert_filter *filter)
 			s = pc->cache;
 			r = 1;
 			n = pc->digit;
-			while (n > 0) {
+			while (n > 1) {
 				r *= 10;
 				n--;
 			}
-			s %= r;
-			r /= 10;
 			while (r > 0) {
 				d = s/r;
 				s %= r;
