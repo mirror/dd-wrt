@@ -273,7 +273,7 @@ char *rc_conf_str(char *optname)
 	option = find_option(optname, OT_STR);
 
 	if (option == NULL)
-		fatal("rc_conf_str: unkown config option requested: %s", optname);
+		fatal("rc_conf_str: unknown config option requested: %s", optname);
 	return (char *)option->val;
 }
 
@@ -284,7 +284,7 @@ int rc_conf_int(char *optname)
 	option = find_option(optname, OT_INT|OT_AUO);
 
 	if (option == NULL)
-		fatal("rc_conf_int: unkown config option requested: %s", optname);
+		fatal("rc_conf_int: unknown config option requested: %s", optname);
 	return *((int *)option->val);
 }
 
@@ -295,7 +295,7 @@ SERVER *rc_conf_srv(char *optname)
 	option = find_option(optname, OT_SRV);
 
 	if (option == NULL)
-		fatal("rc_conf_srv: unkown config option requested: %s", optname);
+		fatal("rc_conf_srv: unknown config option requested: %s", optname);
 	return (SERVER *)option->val;
 }
 
