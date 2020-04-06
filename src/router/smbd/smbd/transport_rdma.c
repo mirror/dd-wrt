@@ -402,7 +402,7 @@ static void free_transport(struct smb_direct_transport *t)
 
 	wake_up_interruptible(&t->wait_send_credits);
 
-	ksmbd_debug("wait for all send posted to IB to finish\n");
+	ksmbd_debug(RDMA, "wait for all send posted to IB to finish\n");
 	wait_event(t->wait_send_payload_pending,
 		atomic_read(&t->send_payload_pending) == 0);
 	wait_event(t->wait_send_pending,
@@ -417,7 +417,7 @@ static void free_transport(struct smb_direct_transport *t)
 		ib_destroy_qp(t->qp);
 	}
 
-	ksmbd_debug("drain the reassembly queue\n");
+	ksmbd_debug(RDMA, "drain the reassembly queue\n");
 	do {
 		spin_lock(&t->reassembly_queue_lock);
 		recvmsg = get_first_reassembly(t);
@@ -484,7 +484,8 @@ static int smb_direct_check_recvmsg(struct smb_direct_recvmsg *recvmsg)
 			(struct smb_direct_data_transfer *) recvmsg->packet;
 		struct smb2_hdr *hdr = (struct smb2_hdr *) (recvmsg->packet
 				+ le32_to_cpu(req->data_offset) - 4);
-		ksmbd_debug("CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemaingDataLength: %u, SMB: %x, Command: %u\n",
+		ksmbd_debug(RDMA,
+				"CreditGranted: %u, CreditRequested: %u, DataLength: %u, RemaingDataLength: %u, SMB: %x, Command: %u\n",
 				le16_to_cpu(req->credits_granted),
 				le16_to_cpu(req->credits_requested),
 				req->data_length, req->remaining_data_length,
@@ -494,7 +495,8 @@ static int smb_direct_check_recvmsg(struct smb_direct_recvmsg *recvmsg)
 	case SMB_DIRECT_MSG_NEGOTIATE_REQ: {
 		struct smb_direct_negotiate_req *req =
 			(struct smb_direct_negotiate_req *)recvmsg->packet;
-		ksmbd_debug("MinVersion: %u, MaxVersion: %u, CreditRequested: %u, MaxSendSize: %u, MaxRecvSize: %u, MaxFragmentedSize: %u\n",
+		ksmbd_debug(RDMA,
+			"MinVersion: %u, MaxVersion: %u, CreditRequested: %u, MaxSendSize: %u, MaxRecvSize: %u, MaxFragmentedSize: %u\n",
 			le16_to_cpu(req->min_version),
 			le16_to_cpu(req->max_version),
 			le16_to_cpu(req->credits_requested),
@@ -537,7 +539,7 @@ static void recv_done(struct ib_cq *cq, struct ib_wc *wc)
 		return;
 	}
 
-	ksmbd_debug("Recv completed. status='%s (%d)', opcode=%d\n",
+	ksmbd_debug(RDMA, "Recv completed. status='%s (%d)', opcode=%d\n",
 			ib_wc_status_msg(wc->status), wc->status,
 			wc->opcode);
 
@@ -697,7 +699,8 @@ again:
 				*((__be32 *)buf) = cpu_to_be32(rfc1002_len);
 				data_read = 4;
 				recvmsg->first_segment = false;
-				ksmbd_debug("returning rfc1002 length %d\n",
+				ksmbd_debug(RDMA,
+					"returning rfc1002 length %d\n",
 					rfc1002_len);
 				goto read_rfc1002_done;
 			}
@@ -750,14 +753,15 @@ again:
 			spin_unlock(&st->receive_credit_lock);
 
 		st->first_entry_offset = offset;
-		ksmbd_debug("returning to thread data_read=%d reassembly_data_length=%d first_entry_offset=%d\n",
+		ksmbd_debug(RDMA,
+			"returning to thread data_read=%d reassembly_data_length=%d first_entry_offset=%d\n",
 			data_read, st->reassembly_data_length,
 			st->first_entry_offset);
 read_rfc1002_done:
 		return data_read;
 	}
 
-	ksmbd_debug("wait_event on more data\n");
+	ksmbd_debug(RDMA, "wait_event on more data\n");
 	rc = wait_event_interruptible(
 		st->wait_reassembly_queue,
 		st->reassembly_data_length >= size ||
@@ -830,7 +834,7 @@ static void send_done(struct ib_cq *cq, struct ib_wc *wc)
 	sendmsg = container_of(wc->wr_cqe, struct smb_direct_sendmsg, cqe);
 	t = sendmsg->transport;
 
-	ksmbd_debug("Send completed. status='%s (%d)', opcode=%d\n",
+	ksmbd_debug(RDMA, "Send completed. status='%s (%d)', opcode=%d\n",
 			ib_wc_status_msg(wc->status), wc->status,
 			wc->opcode);
 
@@ -1011,7 +1015,8 @@ static int smb_direct_create_header(struct smb_direct_transport *t,
 	packet->remaining_data_length = cpu_to_le32(remaining_data_length);
 	packet->padding = 0;
 
-	ksmbd_debug("credits_requested=%d credits_granted=%d data_offset=%d data_length=%d remaining_data_length=%d\n",
+	ksmbd_debug(RDMA,
+		"credits_requested=%d credits_granted=%d data_offset=%d data_length=%d remaining_data_length=%d\n",
 		le16_to_cpu(packet->credits_requested),
 		le16_to_cpu(packet->credits_granted),
 		le32_to_cpu(packet->data_offset),
@@ -1212,7 +1217,7 @@ static int smb_direct_writev(struct ksmbd_transport *t,
 	iov[0].iov_len -= 4;
 
 	remaining_data_length = buflen;
-	ksmbd_debug("Sending smb (RDMA): smb_len=%u\n", buflen);
+	ksmbd_debug(RDMA, "Sending smb (RDMA): smb_len=%u\n", buflen);
 
 	smb_direct_send_ctx_init(st, &send_ctx, need_invalidate, remote_key);
 	start = i = 0;
@@ -1428,7 +1433,7 @@ static void smb_direct_disconnect(struct ksmbd_transport *t)
 {
 	struct smb_direct_transport *st = SMB_DIRECT_TRANS(t);
 
-	ksmbd_debug("Disconnecting cm_id=%p\n", st->cm_id);
+	ksmbd_debug(RDMA, "Disconnecting cm_id=%p\n", st->cm_id);
 
 	smb_direct_disconnect_rdma_connection(st);
 	wait_event_interruptible(st->wait_status,
@@ -1441,7 +1446,7 @@ static int smb_direct_cm_handler(struct rdma_cm_id *cm_id,
 {
 	struct smb_direct_transport *t = cm_id->context;
 
-	ksmbd_debug("RDMA CM event. cm_id=%p event=%s (%d)\n",
+	ksmbd_debug(RDMA, "RDMA CM event. cm_id=%p event=%s (%d)\n",
 			cm_id, rdma_event_msg(event->event), event->event);
 
 	switch (event->event) {
@@ -1476,7 +1481,7 @@ static void smb_direct_qpair_handler(struct ib_event *event, void *context)
 {
 	struct smb_direct_transport *t = context;
 
-	ksmbd_debug("Received QP event. cm_id=%p, event=%s (%d)\n",
+	ksmbd_debug(RDMA, "Received QP event. cm_id=%p, event=%s (%d)\n",
 			t->cm_id, ib_event_msg(event->event), event->event);
 
 	switch (event->event) {
@@ -1619,7 +1624,7 @@ static int smb_direct_negotiate(struct smb_direct_transport *t)
 
 	smb_direct_post_recv_credits(&t->post_recv_credits_work.work);
 
-	ksmbd_debug("Waiting for SMB_DIRECT negotiate request\n");
+	ksmbd_debug(RDMA, "Waiting for SMB_DIRECT negotiate request\n");
 	ret = wait_event_interruptible_timeout(t->wait_status,
 			t->negotiation_requested ||
 			t->status == SMB_DIRECT_CS_DISCONNECTED,
@@ -1968,7 +1973,8 @@ static int smb_direct_listen_handler(struct rdma_cm_id *cm_id,
 			return ret;
 		}
 
-		ksmbd_debug("Received connection request. cm_id=%p\n", cm_id);
+		ksmbd_debug(RDMA, "Received connection request. cm_id=%p\n",
+			cm_id);
 		break;
 	}
 	default:
@@ -2042,7 +2048,7 @@ int ksmbd_rdma_init(void)
 		return ret;
 	}
 
-	ksmbd_debug("init RDMA listener. cm_id=%p\n",
+	ksmbd_debug(RDMA, "init RDMA listener. cm_id=%p\n",
 		smb_direct_listener.cm_id);
 	return 0;
 }

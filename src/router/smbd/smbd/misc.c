@@ -121,7 +121,7 @@ int parse_stream_name(char *filename, char **stream_name, int *s_type)
 
 	s_name = filename;
 	filename = strsep(&s_name, ":");
-	ksmbd_debug("filename : %s, streams : %s\n", filename, s_name);
+	ksmbd_debug(SMB, "filename : %s, streams : %s\n", filename, s_name);
 	if (strchr(s_name, ':')) {
 		stream_type = s_name;
 		s_name = strsep(&stream_type, ":");
@@ -132,7 +132,7 @@ int parse_stream_name(char *filename, char **stream_name, int *s_type)
 			goto out;
 		}
 
-		ksmbd_debug("stream name : %s, stream type : %s\n", s_name,
+		ksmbd_debug(SMB, "stream name : %s, stream type : %s\n", s_name,
 				stream_type);
 		if (!strncasecmp("$data", stream_type, 5))
 			*s_type = DATA_STREAM;
@@ -205,6 +205,16 @@ static void strreplace(char *s, char old, char new)
 void ksmbd_conv_path_to_unix(char *path)
 {
 	strreplace(path, '\\', '/');
+}
+
+void ksmbd_strip_last_slash(char *path)
+{
+	int len = strlen(path);
+
+	while (len && path[len - 1] == '/') {
+		path[len - 1] = '\0';
+		len--;
+	}
 }
 
 void ksmbd_conv_path_to_windows(char *path)

@@ -25,18 +25,18 @@ static int check_smb1_hdr(struct smb_hdr *smb)
 {
 	/* does it have the right SMB "signature" ? */
 	if (*(__le32 *) smb->Protocol != SMB1_PROTO_NUMBER) {
-		ksmbd_debug("Bad protocol string signature header 0x%x\n",
+		ksmbd_debug(SMB, "Bad protocol string signature header 0x%x\n",
 				*(unsigned int *)smb->Protocol);
 		return 1;
 	}
-	ksmbd_debug("got SMB\n");
+	ksmbd_debug(SMB, "got SMB\n");
 
 	/* if it's not a response then accept */
 	/* TODO : check for oplock break */
 	if (!(smb->Flags & SMBFLG_RESPONSE))
 		return 0;
 
-	ksmbd_debug("Server sent request, not response\n");
+	ksmbd_debug(SMB, "Server sent request, not response\n");
 	return 1;
 }
 
@@ -192,11 +192,11 @@ static unsigned int smb1_calc_size(struct smb_hdr *hdr)
 	bc = smb1_get_byte_count(hdr);
 	if (bc < 0)
 		return bc;
-	ksmbd_debug("SMB2 byte count %d, struct size : %d\n", bc,
+	ksmbd_debug(SMB, "SMB2 byte count %d, struct size : %d\n", bc,
 		struct_size);
 	len += bc;
 
-	ksmbd_debug("SMB1 len %d\n", len);
+	ksmbd_debug(SMB, "SMB1 len %d\n", len);
 	return len;
 }
 
