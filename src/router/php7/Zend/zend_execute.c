@@ -596,9 +596,6 @@ static zend_never_inline ZEND_COLD int zend_wrong_assign_to_variable_reference(z
 	Z_TRY_ADDREF_P(value_ptr);
 	value_ptr = zend_assign_to_variable(variable_ptr, value_ptr, IS_TMP_VAR, EX_USES_STRICT_TYPES());
 
-	if (UNEXPECTED(RETURN_VALUE_USED(opline))) {
-		ZVAL_COPY(EX_VAR(opline->result.var), value_ptr);
-	}
 	return 1;
 }
 
@@ -1743,11 +1740,11 @@ static void zend_pre_incdec_property_zval(zval *prop, zend_property_info *prop_i
 		do {
 			if (Z_ISREF_P(prop)) {
 				zend_reference *ref = Z_REF_P(prop);
+				prop = Z_REFVAL_P(prop);
 				if (UNEXPECTED(ZEND_REF_HAS_TYPE_SOURCES(ref))) {
 					zend_incdec_typed_ref(ref, NULL OPLINE_CC EXECUTE_DATA_CC);
 					break;
 				}
-				prop = Z_REFVAL_P(prop);
 			}
 
 			if (UNEXPECTED(prop_info)) {
@@ -1780,11 +1777,11 @@ static void zend_post_incdec_property_zval(zval *prop, zend_property_info *prop_
 	} else {
 		if (Z_ISREF_P(prop)) {
 			zend_reference *ref = Z_REF_P(prop);
+			prop = Z_REFVAL_P(prop);
 			if (ZEND_REF_HAS_TYPE_SOURCES(ref)) {
 				zend_incdec_typed_ref(ref, EX_VAR(opline->result.var) OPLINE_CC EXECUTE_DATA_CC);
 				return;
 			}
-			prop = Z_REFVAL_P(prop);
 		}
 
 		if (UNEXPECTED(prop_info)) {
@@ -2372,7 +2369,7 @@ try_string_offset:
 			offset = Z_LVAL_P(dim);
 		}
 
-		if (UNEXPECTED(Z_STRLEN_P(container) < (size_t)((offset < 0) ? -offset : (offset + 1)))) {
+		if (UNEXPECTED(Z_STRLEN_P(container) < ((offset < 0) ? -(size_t)offset : ((size_t)offset + 1)))) {
 			if (type != BP_VAR_IS) {
 				zend_error(E_NOTICE, "Uninitialized string offset: " ZEND_LONG_FMT, offset);
 				ZVAL_EMPTY_STRING(result);
@@ -3187,7 +3184,9 @@ ZEND_API zval* zend_assign_to_typed_ref(zval *variable_ptr, zval *value, zend_uc
 		Z_TRY_DELREF_P(value);
 	}
 	if (!ret) {
-		zval_ptr_dtor(value);
+		if (value_type & (IS_VAR|IS_TMP_VAR)) {
+			zval_ptr_dtor(value);
+		}
 		return Z_REFVAL_P(variable_ptr);
 	}
 
@@ -4193,6 +4192,8 @@ static zend_never_inline zend_op_array* ZEND_FASTCALL zend_include_or_eval(zval 
 					if (zend_hash_exists(&EG(included_files), resolved_path)) {
 						goto already_compiled;
 					}
+				} else if (UNEXPECTED(EG(exception))) {
+					break;
 				} else if (UNEXPECTED(strlen(Z_STRVAL_P(inc_filename)) != Z_STRLEN_P(inc_filename))) {
 					zend_message_dispatcher(
 						(type == ZEND_INCLUDE_ONCE) ?
@@ -4450,6 +4451,39 @@ static zend_never_inline int ZEND_FASTCALL zend_quick_check_constant(
 {
 	return _zend_quick_get_constant(key, 0, 1 OPLINE_CC EXECUTE_DATA_CC);
 } /* }}} */
+
+#if defined(ZEND_VM_IP_GLOBAL_REG) && ((ZEND_VM_KIND == ZEND_VM_KIND_CALL) || (ZEND_VM_KIND == ZEND_VM_KIND_HYBRID))
+/* Special versions of functions that sets EX(opline) before calling zend_vm_stack_extend() */
+static zend_always_inline zend_execute_data *_zend_vm_stack_push_call_frame_ex(uint32_t used_stack, uint32_t call_info, zend_function *func, uint32_t num_args, void *object_or_called_scope) /* {{{ */
+{
+	zend_execute_data *call = (zend_execute_data*)EG(vm_stack_top);
+
+	ZEND_ASSERT_VM_STACK_GLOBAL;
+
+	if (UNEXPECTED(used_stack > (size_t)(((char*)EG(vm_stack_end)) - (char*)call))) {
+		EX(opline) = opline; /* this is the only difference */
+		call = (zend_execute_data*)zend_vm_stack_extend(used_stack);
+		ZEND_ASSERT_VM_STACK_GLOBAL;
+		zend_vm_init_call_frame(call, call_info | ZEND_CALL_ALLOCATED, func, num_args, object_or_called_scope);
+		return call;
+	} else {
+		EG(vm_stack_top) = (zval*)((char*)call + used_stack);
+		zend_vm_init_call_frame(call, call_info, func, num_args, object_or_called_scope);
+		return call;
+	}
+} /* }}} */
+
+static zend_always_inline zend_execute_data *_zend_vm_stack_push_call_frame(uint32_t call_info, zend_function *func, uint32_t num_args, void *object_or_called_scope) /* {{{ */
+{
+	uint32_t used_stack = zend_vm_calc_used_stack(num_args, func);
+
+	return _zend_vm_stack_push_call_frame_ex(used_stack, call_info,
+		func, num_args, object_or_called_scope);
+} /* }}} */
+#else
+# define _zend_vm_stack_push_call_frame_ex zend_vm_stack_push_call_frame_ex
+# define _zend_vm_stack_push_call_frame    zend_vm_stack_push_call_frame
+#endif
 
 #ifdef ZEND_VM_TRACE_HANDLERS
 # include "zend_vm_trace_handlers.h"

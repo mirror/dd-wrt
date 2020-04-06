@@ -2761,10 +2761,10 @@ static int zend_update_type_info(const zend_op_array *op_array,
 			}
 			if ((t1 & (MAY_BE_ANY|MAY_BE_UNDEF)) == MAY_BE_LONG) {
 				if (!ssa_var_info[ssa_ops[i].op1_use].has_range ||
-				     (opline->opcode == ZEND_PRE_DEC &&
+				     (opline->opcode == ZEND_POST_DEC &&
 				      (ssa_var_info[ssa_ops[i].op1_use].range.underflow ||
 				       ssa_var_info[ssa_ops[i].op1_use].range.min == ZEND_LONG_MIN)) ||
-				      (opline->opcode == ZEND_PRE_INC &&
+				      (opline->opcode == ZEND_POST_INC &&
 				       (ssa_var_info[ssa_ops[i].op1_use].range.overflow ||
 				        ssa_var_info[ssa_ops[i].op1_use].range.max == ZEND_LONG_MAX))) {
 					/* may overflow */
@@ -2997,6 +2997,13 @@ static int zend_update_type_info(const zend_op_array *op_array,
 					tmp |= MAY_BE_NULL;
 				}
 				UPDATE_SSA_TYPE(tmp, ssa_ops[i].op1_def);
+			}
+			break;
+		case ZEND_ASSIGN_STATIC_PROP_REF:
+			if ((opline+1)->op1_type == IS_CV) {
+				opline++;
+				i++;
+				UPDATE_SSA_TYPE(MAY_BE_REF, ssa_ops[i].op1_def);
 			}
 			break;
 		case ZEND_BIND_GLOBAL:

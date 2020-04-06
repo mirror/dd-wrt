@@ -102,7 +102,6 @@
 #include "win32/syslog.h"
 #endif
 
-#define YYERROR_VERBOSE
 #define YYSTYPE zval
 
 int ini_parse(void);
@@ -373,7 +372,7 @@ static void zval_ini_dtor(zval *zv)
 # undef YYERROR_VERBOSE
 # define YYERROR_VERBOSE 1
 #else
-# define YYERROR_VERBOSE 0
+# define YYERROR_VERBOSE 1
 #endif
 
 /* In a future release of Bison, this section will be replaced
@@ -725,16 +724,16 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   318,   318,   319,   323,   330,   338,   347,   348,   352,
-     353,   357,   358,   359,   360,   361,   365,   366,   370,   371,
-     372,   376,   377,   378,   379,   380,   381,   385,   386,   387,
-     388,   389,   390,   394,   395,   396,   397,   398,   399,   400,
-     404,   408,   409,   410,   411,   412,   416,   417,   418,   419,
-     420
+       0,   319,   319,   320,   324,   331,   339,   348,   349,   353,
+     354,   358,   359,   360,   361,   362,   366,   367,   371,   372,
+     373,   377,   378,   379,   380,   381,   382,   386,   387,   388,
+     389,   390,   391,   395,   396,   397,   398,   399,   400,   401,
+     405,   409,   410,   411,   412,   413,   417,   418,   419,   420,
+     421
 };
 #endif
 
-#if YYDEBUG || YYERROR_VERBOSE || 0
+#if YYDEBUG || YYERROR_VERBOSE || 1
 /* YYTNAME[SYMBOL-NUM] -- String name of the symbol SYMBOL-NUM.
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
@@ -1372,6 +1371,66 @@ yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
         break;
 
     case 16: /* NULL_NULL  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 47: /* section_string_or_value  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 48: /* string_or_value  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 49: /* option_offset  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 50: /* encapsed_list  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 51: /* var_string_list_section  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 52: /* var_string_list  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 53: /* expr  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 54: /* cfg_var_ref  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 55: /* constant_literal  */
+
+      { zval_ini_dtor(&((*yyvaluep))); }
+
+        break;
+
+    case 56: /* constant_string  */
 
       { zval_ini_dtor(&((*yyvaluep))); }
 

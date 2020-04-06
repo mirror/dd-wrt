@@ -4323,7 +4323,7 @@ ZEND_METHOD(reflection_class, getProperties)
 	if (zend_parse_parameters(ZEND_NUM_ARGS(), "|l!", &filter, &filter_is_null) == FAILURE) {
 		return;
 	}
-	
+
 	if (filter_is_null) {
 		filter = ZEND_ACC_PPP_MASK | ZEND_ACC_STATIC;
 	}
@@ -4528,6 +4528,8 @@ ZEND_METHOD(reflection_class, isCloneable)
 			if (UNEXPECTED(object_init_ex(&obj, ce) != SUCCESS)) {
 				return;
 			}
+			/* We're not calling the constructor, so don't call the destructor either. */
+			zend_object_store_ctor_failed(Z_OBJ(obj));
 			RETVAL_BOOL(Z_OBJ_HANDLER(obj, clone_obj) != NULL);
 			zval_ptr_dtor(&obj);
 		}

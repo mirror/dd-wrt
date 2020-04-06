@@ -289,7 +289,7 @@ char *alloca();
 	(_default)
 #endif
 
-#if ZEND_DEBUG
+#if ZEND_DEBUG || defined(ZEND_WIN32_NEVER_INLINE)
 # define zend_always_inline inline
 # define zend_never_inline
 #else
@@ -646,6 +646,14 @@ static zend_always_inline double _zend_get_nan(void) /* {{{ */
 /* On CPU with few registers, it's cheaper to reload value then use spill slot */
 #if defined(__i386__) || (defined(_WIN32) && !defined(_WIN64))
 # define ZEND_PREFER_RELOAD
+#endif
+
+#if defined(ZEND_WIN32) && defined(_DEBUG) && defined(PHP_WIN32_DEBUG_HEAP)
+# define ZEND_IGNORE_LEAKS_BEGIN() _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) & ~_CRTDBG_ALLOC_MEM_DF)
+# define ZEND_IGNORE_LEAKS_END() _CrtSetDbgFlag(_CrtSetDbgFlag(_CRTDBG_REPORT_FLAG) | _CRTDBG_ALLOC_MEM_DF)
+#else
+# define ZEND_IGNORE_LEAKS_BEGIN()
+# define ZEND_IGNORE_LEAKS_END()
 #endif
 
 #endif /* ZEND_PORTABILITY_H */

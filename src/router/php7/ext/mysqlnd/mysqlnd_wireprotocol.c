@@ -2141,12 +2141,8 @@ size_t php_mysqlnd_cached_sha2_result_write(MYSQLND_CONN_DATA * conn, void * _pa
 	MYSQLND_PFC * pfc = conn->protocol_frame_codec;
 	MYSQLND_VIO * vio = conn->vio;
 	MYSQLND_STATS * stats = conn->stats;
-#if HAVE_COMPILER_C99_VLA
-	zend_uchar buffer[MYSQLND_HEADER_SIZE + packet->password_len + 1];
-#else
 	ALLOCA_FLAG(use_heap)
 	zend_uchar *buffer = do_alloca(MYSQLND_HEADER_SIZE + packet->password_len + 1, use_heap);
-#endif
 	size_t sent;
 
 	DBG_ENTER("php_mysqlnd_cached_sha2_result_write");
@@ -2159,10 +2155,7 @@ size_t php_mysqlnd_cached_sha2_result_write(MYSQLND_CONN_DATA * conn, void * _pa
 		sent = pfc->data->m.send(pfc, vio, buffer, packet->password_len, stats, error_info);
 	}
 
-#if !HAVE_COMPILER_C99_VLA
 	free_alloca(buffer, use_heap);
-#endif
-
 	DBG_RETURN(sent);
 }
 
@@ -2185,11 +2178,44 @@ php_mysqlnd_cached_sha2_result_read(MYSQLND_CONN_DATA * conn, void * _packet)
 	}
 	BAIL_IF_NO_MORE_DATA;
 
-	p++;
 	packet->response_code = uint1korr(p);
+	p++;
 	BAIL_IF_NO_MORE_DATA;
 
+	if (ERROR_MARKER == packet->response_code) {
+		php_mysqlnd_read_error_from_line(p, packet->header.size - 1,
+										 packet->error, sizeof(packet->error),
+										 &packet->error_no, packet->sqlstate
+										);
+		DBG_RETURN(PASS);
+	}
+	if (0xFE == packet->response_code) {
+		/* Authentication Switch Response */
+		if (packet->header.size > (size_t) (p - buf)) {
+			packet->new_auth_protocol = mnd_pestrdup((char *)p, FALSE);
+			packet->new_auth_protocol_len = strlen(packet->new_auth_protocol);
+			p+= packet->new_auth_protocol_len + 1; /* +1 for the \0 */
+
+			packet->new_auth_protocol_data_len = packet->header.size - (size_t) (p - buf);
+			if (packet->new_auth_protocol_data_len) {
+				packet->new_auth_protocol_data = mnd_emalloc(packet->new_auth_protocol_data_len);
+				memcpy(packet->new_auth_protocol_data, p, packet->new_auth_protocol_data_len);
+			}
+			DBG_INF_FMT("The server requested switching auth plugin to : %s", packet->new_auth_protocol);
+			DBG_INF_FMT("Server salt : [%d][%.*s]", packet->new_auth_protocol_data_len, packet->new_auth_protocol_data_len, packet->new_auth_protocol_data);
+		}
+		DBG_RETURN(PASS);
+	}
+
+	if (0x1 != packet->response_code) {
+		DBG_ERR_FMT("Unexpected response code %d", packet->response_code);
+	}
+
+	/* This is not really the response code, but we reuse the field. */
+	packet->response_code = uint1korr(p);
 	p++;
+	BAIL_IF_NO_MORE_DATA;
+
 	packet->result = uint1korr(p);
 	BAIL_IF_NO_MORE_DATA;
 

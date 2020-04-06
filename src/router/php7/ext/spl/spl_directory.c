@@ -2668,6 +2668,9 @@ SPL_METHOD(SplFileObject, fputcsv)
 			break;
 		}
 		ret = php_fputcsv(intern->u.file.stream, fields, delimiter, enclosure, escape);
+		if (ret < 0) {
+			RETURN_FALSE;
+		}
 		RETURN_LONG(ret);
 	}
 }
@@ -2688,7 +2691,7 @@ SPL_METHOD(SplFileObject, setCsvControl)
 		{
 		case 3:
 			switch (esc_len) {
-				case 0: 
+				case 0:
 					escape = PHP_CSV_NO_ESCAPE;
 					break;
 				case 1:
