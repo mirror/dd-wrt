@@ -241,7 +241,7 @@ smb_strtoUTF16(__le16 *to, const char *from, int len,
 	wchar_t wchar_to; /* needed to quiet sparse */
 
 	/* special case for utf8 to handle no plane0 chars */
-	ksmbd_debug("codepage %s\n", codepage->charset);
+	ksmbd_debug(ALL, "codepage %s\n", codepage->charset);
 	if (!strcmp(codepage->charset, "utf8")) {
 		/*
 		 * convert utf8 -> utf16, we assume we have enough space
