@@ -374,7 +374,7 @@ int lease_read_to_write(struct oplock_info *opinfo)
 	struct lease *lease = opinfo->o_lease;
 
 	if (!(lease->state & SMB2_LEASE_READ_CACHING_LE)) {
-		ksmbd_debug("bad lease state(0x%x)\n",
+		ksmbd_debug(OPLOCK, "bad lease state(0x%x)\n",
 				lease->state);
 		return -EINVAL;
 	}
@@ -401,7 +401,7 @@ static int lease_none_upgrade(struct oplock_info *opinfo,
 	struct lease *lease = opinfo->o_lease;
 
 	if (!(lease->state == SMB2_LEASE_NONE_LE)) {
-		ksmbd_debug("bad lease state(0x%x)\n",
+		ksmbd_debug(OPLOCK, "bad lease state(0x%x)\n",
 				lease->state);
 		return -EINVAL;
 	}
@@ -760,7 +760,7 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 	req->Timeout = 0;
 	req->NumberOfUnlocks = 0;
 	req->ByteCount = 0;
-	ksmbd_debug("sending oplock break for fid %d lock level = %d\n",
+	ksmbd_debug(OPLOCK, "sending oplock break for fid %d lock level = %d\n",
 			req->Fid, req->OplockLevel);
 
 	ksmbd_conn_write(work);
@@ -869,8 +869,9 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 
 	inc_rfc1001_len(rsp, 24);
 
-	ksmbd_debug("sending oplock break v_id %llu p_id = %llu lock level = %d\n",
-			rsp->VolatileFid, rsp->PersistentFid, rsp->OplockLevel);
+	ksmbd_debug(OPLOCK,
+		"sending oplock break v_id %llu p_id = %llu lock level = %d\n",
+		rsp->VolatileFid, rsp->PersistentFid, rsp->OplockLevel);
 
 	ksmbd_fd_put(work, fp);
 	ksmbd_conn_write(work);
@@ -939,7 +940,7 @@ static void __smb2_lease_break_noti(struct work_struct *wk)
 	struct smb2_hdr *rsp_hdr;
 
 	if (conn->ops->allocate_rsp_buf(work)) {
-		ksmbd_debug("smb2_allocate_rsp_buf failed! ");
+		ksmbd_debug(OPLOCK, "smb2_allocate_rsp_buf failed! ");
 		ksmbd_free_work_struct(work);
 		atomic_dec(&conn->r_count);
 		return;
@@ -1065,7 +1066,8 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 	int err = 0;
 
 	/* Need to break exclusive/batch oplock, write lease or overwrite_if */
-	ksmbd_debug("request to send oplock(level : 0x%x) break notification\n",
+	ksmbd_debug(OPLOCK,
+		"request to send oplock(level : 0x%x) break notification\n",
 		brk_opinfo->level);
 
 	if (brk_opinfo->is_lease) {
@@ -1134,7 +1136,7 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 	}
 #endif
 
-	ksmbd_debug("oplock granted = %d\n", brk_opinfo->level);
+	ksmbd_debug(OPLOCK, "oplock granted = %d\n", brk_opinfo->level);
 	if (brk_opinfo->op_state == OPLOCK_CLOSING)
 		err = -ENOENT;
 	wake_up_oplock_break(brk_opinfo);
@@ -1213,7 +1215,8 @@ found:
 				lctx->lease_key);
 		if (err) {
 			err = -EINVAL;
-			ksmbd_debug("found same lease key is already used in other files\n");
+			ksmbd_debug(OPLOCK,
+				"found same lease key is already used in other files\n");
 			opinfo_put(opinfo);
 			goto out;
 		}
@@ -1482,12 +1485,13 @@ void smb_break_all_levII_oplock(struct ksmbd_work *work,
 			if (brk_op->is_lease && (brk_op->o_lease->state &
 					(~(SMB2_LEASE_READ_CACHING_LE |
 					   SMB2_LEASE_HANDLE_CACHING_LE)))) {
-				ksmbd_debug("unexpected lease state(0x%x)\n",
+				ksmbd_debug(OPLOCK,
+					"unexpected lease state(0x%x)\n",
 						brk_op->o_lease->state);
 				goto next;
 			} else if (brk_op->level !=
 					SMB2_OPLOCK_LEVEL_II) {
-				ksmbd_debug("unexpected oplock(0x%x)\n",
+				ksmbd_debug(OPLOCK, "unexpected oplock(0x%x)\n",
 						brk_op->level);
 				goto next;
 			}
@@ -1499,7 +1503,7 @@ void smb_break_all_levII_oplock(struct ksmbd_work *work,
 				goto next;
 		} else {
 			if (brk_op->level != OPLOCK_READ) {
-				ksmbd_debug("unexpected oplock(0x%x)\n",
+				ksmbd_debug(OPLOCK, "unexpected oplock(0x%x)\n",
 					brk_op->level);
 				goto next;
 			}
@@ -1508,12 +1512,12 @@ void smb_break_all_levII_oplock(struct ksmbd_work *work,
 		if (brk_op->is_lease && (brk_op->o_lease->state &
 		    (~(SMB2_LEASE_READ_CACHING_LE |
 				SMB2_LEASE_HANDLE_CACHING_LE)))) {
-			ksmbd_debug("unexpected lease state(0x%x)\n",
+			ksmbd_debug(OPLOCK, "unexpected lease state(0x%x)\n",
 					brk_op->o_lease->state);
 			goto next;
 		} else if (brk_op->level !=
 				SMB2_OPLOCK_LEVEL_II) {
-			ksmbd_debug("unexpected oplock(0x%x)\n",
+			ksmbd_debug(OPLOCK, "unexpected oplock(0x%x)\n",
 					brk_op->level);
 			goto next;
 		}
@@ -1834,7 +1838,7 @@ found:
 		ret = compare_guid_key(opinfo, conn->ClientGUID,
 			lease_key);
 		if (ret) {
-			ksmbd_debug("found opinfo\n");
+			ksmbd_debug(OPLOCK, "found opinfo\n");
 			ret_op = opinfo;
 			goto out;
 		}

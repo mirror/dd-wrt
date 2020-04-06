@@ -22,6 +22,7 @@ char *convert_to_nt_pathname(char *filename, char *sharepath);
 int get_nlink(struct kstat *st);
 
 void ksmbd_conv_path_to_unix(char *path);
+void ksmbd_strip_last_slash(char *path);
 void ksmbd_conv_path_to_windows(char *path);
 
 char *extract_sharename(char *treename);

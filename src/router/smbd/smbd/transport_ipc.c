@@ -343,6 +343,11 @@ static int handle_startup_event(struct sk_buff *skb, struct genl_info *info)
 {
 	int ret = 0;
 
+#ifdef CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN
+	if (!netlink_capable(skb, CAP_NET_ADMIN))
+		return -EPERM;
+#endif
+
 	if (!ksmbd_ipc_validate_version(info))
 		return -EINVAL;
 
@@ -393,6 +398,11 @@ static int handle_generic_event(struct sk_buff *skb, struct genl_info *info)
 	void *payload;
 	int sz;
 	int type = info->genlhdr->cmd;
+
+#ifdef CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN
+	if (!netlink_capable(skb, CAP_NET_ADMIN))
+		return -EPERM;
+#endif
 
 	if (type >= KSMBD_EVENT_MAX) {
 		WARN_ON(1);

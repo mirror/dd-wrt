@@ -77,5 +77,8 @@ struct ksmbd_share_config *ksmbd_share_config_get(char *name);
 bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename);
 void ksmbd_share_configs_cleanup(void);
+const struct cred *ksmbd_override_fsids(struct ksmbd_session *sess,
+		struct ksmbd_share_config *share);
+void ksmbd_revert_fsids(const struct cred *old_cred);
 
 #endif /* __SHARE_CONFIG_MANAGEMENT_H__ */
