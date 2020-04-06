@@ -24,7 +24,7 @@
 #include "mgmt/user_session.h"
 #include "crypto_ctx.h"
 
-int ksmbd_debugging = 1;
+int ksmbd_debug_types;
 
 struct ksmbd_server_config server_conf;
 
