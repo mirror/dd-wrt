@@ -842,6 +842,11 @@ process_option(opt, cmd, argv)
 		free(*optptr);
 	    *optptr = sv;
 	}
+	/* obfuscate original argument for things like password */
+	if (opt->flags & OPT_HIDE) {
+	    memset(*argv, '?', strlen(*argv));
+	    *argv = "********";
+	}
 	break;
 
     case o_special_noarg:
@@ -1129,7 +1134,7 @@ showversion(argv)
     char **argv;
 {
     if (phase == PHASE_INITIALIZE) {
-	fprintf(stderr, "pppd version %s\n", VERSION);
+	fprintf(stdout, "pppd version %s\n", VERSION);
 	exit(0);
     }
     return 0;
