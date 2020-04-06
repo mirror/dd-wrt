@@ -244,18 +244,11 @@ static zend_string *php_session_encode(void) /* {{{ */
 
 static int php_session_decode(zend_string *data) /* {{{ */
 {
-	int res;
 	if (!PS(serializer)) {
 		php_error_docref(NULL, E_WARNING, "Unknown session.serialize_handler. Failed to decode session object");
 		return FAILURE;
 	}
-	/* Make sure that any uses of unserialize() during session decoding do not share
-	 * state with any unserialize() that is already in progress (e.g. because we are
-	 * currently inside Serializable::unserialize(). */
-	BG(serialize_lock)++;
-	res = PS(serializer)->decode(ZSTR_VAL(data), ZSTR_LEN(data));
-	BG(serialize_lock)--;
-	if (res == FAILURE) {
+	if (PS(serializer)->decode(ZSTR_VAL(data), ZSTR_LEN(data)) == FAILURE) {
 		php_session_destroy();
 		php_session_track_init();
 		php_error_docref(NULL, E_WARNING, "Failed to decode session object. Session has been destroyed");
@@ -2303,6 +2296,7 @@ static PHP_FUNCTION(session_create_id)
 				/* Detect collision and retry */
 				if (PS(mod)->s_validate_sid(&PS(mod_data), new_id) == FAILURE) {
 					zend_string_release_ex(new_id, 0);
+                    new_id = NULL;
 					continue;
 				}
 				break;
@@ -3326,10 +3320,12 @@ static int php_session_rfc1867_callback(unsigned int event, void *event_data, vo
 				if (PS(rfc1867_cleanup)) {
 					php_session_rfc1867_cleanup(progress);
 				} else {
-					SEPARATE_ARRAY(&progress->data);
-					add_assoc_bool_ex(&progress->data, "done", sizeof("done") - 1, 1);
-					Z_LVAL_P(progress->post_bytes_processed) = data->post_bytes_processed;
-					php_session_rfc1867_update(progress, 1);
+					if (!Z_ISUNDEF(progress->data)) {
+						SEPARATE_ARRAY(&progress->data);
+						add_assoc_bool_ex(&progress->data, "done", sizeof("done") - 1, 1);
+						Z_LVAL_P(progress->post_bytes_processed) = data->post_bytes_processed;
+						php_session_rfc1867_update(progress, 1);
+					}
 				}
 				php_rshutdown_session_globals();
 			}

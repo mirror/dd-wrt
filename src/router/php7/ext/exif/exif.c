@@ -1697,6 +1697,27 @@ static int exif_rewrite_tag_format_to_unsigned(int format)
 }
 /* }}} */
 
+/* Use saturation for out of bounds values to avoid UB */
+static size_t float_to_size_t(float x) {
+	if (x < 0.0f || zend_isnan(x)) {
+		return 0;
+	} else if (x > (float) SIZE_MAX) {
+		return SIZE_MAX;
+	} else {
+		return (size_t) x;
+	}
+}
+
+static size_t double_to_size_t(double x) {
+	if (x < 0.0 || zend_isnan(x)) {
+		return 0;
+	} else if (x > (double) SIZE_MAX) {
+		return SIZE_MAX;
+	} else {
+		return (size_t) x;
+	}
+}
+
 /* {{{ exif_convert_any_to_int
  * Evaluate number, be it int, rational, or float from directory. */
 static size_t exif_convert_any_to_int(void *value, int format, int motorola_intel)
@@ -1735,12 +1756,12 @@ static size_t exif_convert_any_to_int(void *value, int format, int motorola_inte
 #ifdef EXIF_DEBUG
 			php_error_docref(NULL, E_NOTICE, "Found value of type single");
 #endif
-			return (size_t) php_ifd_get_float(value);
+			return float_to_size_t(php_ifd_get_float(value));
 		case TAG_FMT_DOUBLE:
 #ifdef EXIF_DEBUG
 			php_error_docref(NULL, E_NOTICE, "Found value of type double");
 #endif
-			return (size_t) php_ifd_get_double(value);
+			return double_to_size_t(php_ifd_get_double(value));
 	}
 	return 0;
 }
@@ -3656,6 +3677,11 @@ static void exif_process_TIFF_in_JPEG(image_info_type *ImageInfo, char *CharBuf,
 {
 	unsigned exif_value_2a, offset_of_ifd;
 
+	if (length < 2) {
+		exif_error_docref(NULL EXIFERR_CC, ImageInfo, E_WARNING, "Missing TIFF alignment marker");
+		return;
+	}
+
 	/* set the thumbnail stuff to nothing so we can test to see if they get set up */
 	if (memcmp(CharBuf, "II", 2) == 0) {
 		ImageInfo->motorola_intel = 0;
@@ -3808,7 +3834,7 @@ static int exif_scan_JPEG_header(image_info_type *ImageInfo)
 			return FALSE;
 		}
 
-		sn = exif_file_sections_add(ImageInfo, marker, itemlen+1, NULL);
+		sn = exif_file_sections_add(ImageInfo, marker, itemlen, NULL);
 		Data = ImageInfo->file.list[sn].data;
 
 		/* Store first two pre-read bytes. */

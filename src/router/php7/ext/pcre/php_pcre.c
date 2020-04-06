@@ -995,6 +995,20 @@ static inline void populate_match_value(
 	}
 }
 
+static inline void add_named(
+		zval *subpats, zend_string *name, zval *val, zend_bool unmatched) {
+	/* If the DUPNAMES option is used, multiple subpatterns might have the same name.
+	 * In this case we want to preserve the one that actually has a value. */
+	if (!unmatched) {
+		zend_hash_update(Z_ARRVAL_P(subpats), name, val);
+	} else {
+		if (!zend_hash_add(Z_ARRVAL_P(subpats), name, val)) {
+			return;
+		}
+	}
+	Z_TRY_ADDREF_P(val);
+}
+
 /* {{{ add_offset_pair */
 static inline void add_offset_pair(
 		zval *result, const char *subject, PCRE2_SIZE start_offset, PCRE2_SIZE end_offset,
@@ -1023,8 +1037,7 @@ static inline void add_offset_pair(
 	}
 
 	if (name) {
-		Z_ADDREF(match_pair);
-		zend_hash_update(Z_ARRVAL_P(result), name, &match_pair);
+		add_named(result, name, &match_pair, start_offset == PCRE2_UNSET);
 	}
 	zend_hash_next_index_insert(Z_ARRVAL_P(result), &match_pair);
 }
@@ -1054,8 +1067,7 @@ static void populate_subpat_array(
 				populate_match_value(
 					&val, subject, offsets[2*i], offsets[2*i+1], unmatched_as_null);
 				if (subpat_names[i]) {
-					Z_TRY_ADDREF(val);
-					zend_hash_update(Z_ARRVAL_P(subpats), subpat_names[i], &val);
+					add_named(subpats, subpat_names[i], &val, offsets[2*i] == PCRE2_UNSET);
 				}
 				zend_hash_next_index_insert(Z_ARRVAL_P(subpats), &val);
 			}
@@ -1063,7 +1075,7 @@ static void populate_subpat_array(
 				for (i = count; i < num_subpats; i++) {
 					ZVAL_NULL(&val);
 					if (subpat_names[i]) {
-						zend_hash_update(Z_ARRVAL_P(subpats), subpat_names[i], &val);
+						zend_hash_add(Z_ARRVAL_P(subpats), subpat_names[i], &val);
 					}
 					zend_hash_next_index_insert(Z_ARRVAL_P(subpats), &val);
 				}
@@ -1130,6 +1142,22 @@ static void php_do_pcre_match(INTERNAL_FUNCTION_PARAMETERS, int global) /* {{{ *
 }
 /* }}} */
 
+static zend_always_inline zend_bool is_known_valid_utf8(
+		zend_string *subject_str, PCRE2_SIZE start_offset) {
+	if (!(GC_FLAGS(subject_str) & IS_STR_VALID_UTF8)) {
+		/* We don't know whether the string is valid UTF-8 or not. */
+		return 0;
+	}
+
+	if (start_offset == ZSTR_LEN(subject_str)) {
+		/* Degenerate case: Offset points to end of string. */
+		return 1;
+	}
+
+	/* Check that the offset does not point to an UTF-8 continuation byte. */
+	return (ZSTR_VAL(subject_str)[start_offset] & 0xc0) != 0x80;
+}
+
 /* {{{ php_pcre_match_impl() */
 PHPAPI void php_pcre_match_impl(pcre_cache_entry *pce, zend_string *subject_str, zval *return_value,
 	zval *subpats, int global, int use_flags, zend_long flags, zend_off_t start_offset)
@@ -1151,7 +1179,7 @@ PHPAPI void php_pcre_match_impl(pcre_cache_entry *pce, zend_string *subject_str,
 	PCRE2_SPTR       mark = NULL;		/* Target for MARK name */
 	zval			 marks;				/* Array of marks for PREG_PATTERN_ORDER */
 	pcre2_match_data *match_data;
-	PCRE2_SIZE		 start_offset2;
+	PCRE2_SIZE		 start_offset2, orig_start_offset;
 
 	char *subject = ZSTR_VAL(subject_str);
 	size_t subject_len = ZSTR_LEN(subject_str);
@@ -1247,8 +1275,10 @@ PHPAPI void php_pcre_match_impl(pcre_cache_entry *pce, zend_string *subject_str,
 		}
 	}
 
-	options = (pce->compile_options & PCRE2_UTF) && !(GC_FLAGS(subject_str) & IS_STR_VALID_UTF8)
-		? 0 : PCRE2_NO_UTF_CHECK;
+	orig_start_offset = start_offset2;
+	options =
+		(pce->compile_options & PCRE2_UTF) && !is_known_valid_utf8(subject_str, orig_start_offset)
+			? 0 : PCRE2_NO_UTF_CHECK;
 
 	/* Execute the regular expression. */
 #ifdef HAVE_PCRE_JIT_SUPPORT
@@ -1438,7 +1468,8 @@ error:
 
 	if (PCRE_G(error_code) == PHP_PCRE_NO_ERROR) {
 		/* If there was no error and we're in /u mode, remember that the string is valid UTF-8. */
-		if ((pce->compile_options & PCRE2_UTF) && !ZSTR_IS_INTERNED(subject_str)) {
+		if ((pce->compile_options & PCRE2_UTF)
+				&& !ZSTR_IS_INTERNED(subject_str) && orig_start_offset == 0) {
 			GC_ADD_FLAGS(subject_str, IS_STR_VALID_UTF8);
 		}
 
@@ -1582,6 +1613,7 @@ PHPAPI zend_string *php_pcre_replace_impl(pcre_cache_entry *pce, zend_string *su
 	size_t			 match_len;			/* Length of the current match */
 	int				 backref;			/* Backreference number */
 	PCRE2_SIZE		 start_offset;		/* Where the new search starts */
+	size_t			 last_end_offset;	/* Where the last search ended */
 	char			*walkbuf,			/* Location of current replacement in the result */
 					*walk,				/* Used to walk the replacement string */
 					*match,				/* The current match */
@@ -1600,6 +1632,7 @@ PHPAPI zend_string *php_pcre_replace_impl(pcre_cache_entry *pce, zend_string *su
 	/* Initialize */
 	match = NULL;
 	start_offset = 0;
+	last_end_offset = 0;
 	result_len = 0;
 	PCRE_G(error_code) = PHP_PCRE_NO_ERROR;
 
@@ -1626,7 +1659,7 @@ PHPAPI zend_string *php_pcre_replace_impl(pcre_cache_entry *pce, zend_string *su
 			options, match_data, mctx);
 
 	while (1) {
-		piece = subject + start_offset;
+		piece = subject + last_end_offset;
 
 		if (count >= 0 && limit > 0) {
 			zend_bool simple_string;
@@ -1656,7 +1689,7 @@ matched:
 			/* Set the match location in subject */
 			match = subject + offsets[0];
 
-			new_len = result_len + offsets[0] - start_offset; /* part before the match */
+			new_len = result_len + offsets[0] - last_end_offset; /* part before the match */
 
 			walk = ZSTR_VAL(replace_str);
 			replace_end = walk + ZSTR_LEN(replace_str);
@@ -1733,7 +1766,7 @@ matched:
 			limit--;
 
 			/* Advance to the next piece. */
-			start_offset = offsets[1];
+			start_offset = last_end_offset = offsets[1];
 
 			/* If we have matched an empty string, mimic what Perl's /g options does.
 			   This turns out to be rather cunning. First we set PCRE2_NOTEMPTY_ATSTART and try
@@ -1753,10 +1786,7 @@ matched:
 					   to achieve this, unless we're already at the end of the string. */
 					if (start_offset < subject_len) {
 						size_t unit_len = calculate_unit_length(pce, piece);
-
 						start_offset += unit_len;
-						memcpy(ZSTR_VAL(result) + result_len, piece, unit_len);
-						result_len += unit_len;
 					} else {
 						goto not_matched;
 					}
@@ -1771,7 +1801,7 @@ not_matched:
 				result = zend_string_copy(subject_str);
 				break;
 			}
-			new_len = result_len + subject_len - start_offset;
+			new_len = result_len + subject_len - last_end_offset;
 			if (new_len >= alloc_len) {
 				alloc_len = new_len; /* now we know exactly how long it is */
 				if (NULL != result) {
@@ -1781,8 +1811,8 @@ not_matched:
 				}
 			}
 			/* stick that last bit of string on our output */
-			memcpy(ZSTR_VAL(result) + result_len, piece, subject_len - start_offset);
-			result_len += subject_len - start_offset;
+			memcpy(ZSTR_VAL(result) + result_len, piece, subject_len - last_end_offset);
+			result_len += subject_len - last_end_offset;
 			ZSTR_VAL(result)[result_len] = '\0';
 			ZSTR_LEN(result) = result_len;
 			break;
@@ -1824,6 +1854,7 @@ static zend_string *php_pcre_replace_func_impl(pcre_cache_entry *pce, zend_strin
 	size_t			 new_len;			/* Length of needed storage */
 	size_t			 alloc_len;			/* Actual allocated length */
 	PCRE2_SIZE		 start_offset;		/* Where the new search starts */
+	size_t			 last_end_offset;	/* Where the last search ended */
 	char			*match,				/* The current match */
 					*piece;				/* The current piece of subject */
 	size_t			result_len; 		/* Length of result */
@@ -1853,6 +1884,7 @@ static zend_string *php_pcre_replace_func_impl(pcre_cache_entry *pce, zend_strin
 	/* Initialize */
 	match = NULL;
 	start_offset = 0;
+	last_end_offset = 0;
 	result_len = 0;
 	PCRE_G(error_code) = PHP_PCRE_NO_ERROR;
 
@@ -1885,7 +1917,7 @@ static zend_string *php_pcre_replace_func_impl(pcre_cache_entry *pce, zend_strin
 			options, match_data, mctx);
 
 	while (1) {
-		piece = subject + start_offset;
+		piece = subject + last_end_offset;
 
 		if (count >= 0 && limit) {
 			/* Check for too many substrings condition. */
@@ -1913,7 +1945,7 @@ matched:
 			/* Set the match location in subject */
 			match = subject + offsets[0];
 
-			new_len = result_len + offsets[0] - start_offset; /* part before the match */
+			new_len = result_len + offsets[0] - last_end_offset; /* part before the match */
 
 			/* Use custom function to get replacement string and its length. */
 			eval_result = preg_do_repl_func(
@@ -1945,7 +1977,7 @@ matched:
 			limit--;
 
 			/* Advance to the next piece. */
-			start_offset = offsets[1];
+			start_offset = last_end_offset = offsets[1];
 
 			/* If we have matched an empty string, mimic what Perl's /g options does.
 			   This turns out to be rather cunning. First we set PCRE2_NOTEMPTY_ATSTART and try
@@ -1965,10 +1997,7 @@ matched:
 					   to achieve this, unless we're already at the end of the string. */
 					if (start_offset < subject_len) {
 						size_t unit_len = calculate_unit_length(pce, piece);
-
 						start_offset += unit_len;
-						memcpy(ZSTR_VAL(result) + result_len, piece, unit_len);
-						result_len += unit_len;
 					} else {
 						goto not_matched;
 					}
@@ -1983,7 +2012,7 @@ not_matched:
 				result = zend_string_copy(subject_str);
 				break;
 			}
-			new_len = result_len + subject_len - start_offset;
+			new_len = result_len + subject_len - last_end_offset;
 			if (new_len >= alloc_len) {
 				alloc_len = new_len; /* now we know exactly how long it is */
 				if (NULL != result) {
@@ -1993,8 +2022,8 @@ not_matched:
 				}
 			}
 			/* stick that last bit of string on our output */
-			memcpy(ZSTR_VAL(result) + result_len, piece, subject_len - start_offset);
-			result_len += subject_len - start_offset;
+			memcpy(ZSTR_VAL(result) + result_len, piece, subject_len - last_end_offset);
+			result_len += subject_len - last_end_offset;
 			ZSTR_VAL(result)[result_len] = '\0';
 			ZSTR_LEN(result) = result_len;
 			break;

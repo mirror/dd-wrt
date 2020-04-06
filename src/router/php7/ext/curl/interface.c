@@ -43,22 +43,17 @@
 #endif
 
 /* {{{ cruft for thread safe SSL crypto locks */
-#if defined(ZTS) && defined(HAVE_CURL_SSL)
-# ifdef PHP_WIN32
+#if defined(ZTS) && defined(HAVE_CURL_OLD_OPENSSL)
+# if defined(HAVE_OPENSSL_CRYPTO_H)
 #  define PHP_CURL_NEED_OPENSSL_TSL
 #  include <openssl/crypto.h>
-# elif defined(HAVE_CURL_OPENSSL)
-#  if defined(HAVE_OPENSSL_CRYPTO_H)
-#   define PHP_CURL_NEED_OPENSSL_TSL
-#   include <openssl/crypto.h>
-#  else
-#   warning \
+# else
+#  warning \
 	"libcurl was compiled with OpenSSL support, but configure could not find " \
 	"openssl/crypto.h; thus no SSL crypto locking callbacks will be set, which may " \
 	"cause random crashes on SSL requests"
-#  endif
-# endif /* HAVE_CURL_OPENSSL */
-#endif /* ZTS && HAVE_CURL_SSL */
+# endif
+#endif /* ZTS && HAVE_CURL_OLD_OPENSSL */
 /* }}} */
 
 #define SMART_STR_PREALLOC 4096
@@ -1399,6 +1394,10 @@ PHP_MINIT_FUNCTION(curl)
 	REGISTER_CURL_CONSTANT(CURLOPT_TLS13_CIPHERS);
 #endif
 
+#if LIBCURL_VERSION_NUM >= 0x074000 /* Available since 7.64.0 */
+	REGISTER_CURL_CONSTANT(CURLOPT_HTTP09_ALLOWED);
+#endif
+
 #if LIBCURL_VERSION_NUM >= 0x074001 /* Available since 7.64.1 */
 	REGISTER_CURL_CONSTANT(CURL_VERSION_ALTSVC);
 #endif
@@ -1796,11 +1795,20 @@ static void curl_free_post(void **post)
 }
 /* }}} */
 
-/* {{{ curl_free_stream
+struct mime_data_cb_arg {
+	zend_string *filename;
+	php_stream *stream;
+};
+
+/* {{{ curl_free_cb_arg
  */
-static void curl_free_stream(void **post)
+static void curl_free_cb_arg(void **cb_arg_p)
 {
-	php_stream_close((php_stream *)*post);
+	struct mime_data_cb_arg *cb_arg = (struct mime_data_cb_arg *) *cb_arg_p;
+
+	ZEND_ASSERT(cb_arg->stream == NULL);
+	zend_string_release(cb_arg->filename);
+	efree(cb_arg);
 }
 /* }}} */
 
@@ -1901,11 +1909,13 @@ php_curl *alloc_curl_handle()
 
 	zend_llist_init(&ch->to_free->str,   sizeof(char *),          (llist_dtor_func_t)curl_free_string, 0);
 	zend_llist_init(&ch->to_free->post,  sizeof(struct HttpPost *), (llist_dtor_func_t)curl_free_post,   0);
-	zend_llist_init(&ch->to_free->stream, sizeof(php_stream *),   (llist_dtor_func_t)curl_free_stream, 0);
+	zend_llist_init(&ch->to_free->stream, sizeof(struct mime_data_cb_arg *), (llist_dtor_func_t)curl_free_cb_arg, 0);
 
 	ch->to_free->slist = emalloc(sizeof(HashTable));
 	zend_hash_init(ch->to_free->slist, 4, NULL, curl_free_slist, 0);
-
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	ZVAL_UNDEF(&ch->postfields);
+#endif
 	return ch;
 }
 /* }}} */
@@ -2095,6 +2105,227 @@ void _php_setup_easy_copy_handlers(php_curl *ch, php_curl *source)
 	(*source->clone)++;
 }
 
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+static size_t read_cb(char *buffer, size_t size, size_t nitems, void *arg) /* {{{ */
+{
+	struct mime_data_cb_arg *cb_arg = (struct mime_data_cb_arg *) arg;
+	ssize_t numread;
+
+	if (cb_arg->stream == NULL) {
+		if (!(cb_arg->stream = php_stream_open_wrapper(ZSTR_VAL(cb_arg->filename), "rb", IGNORE_PATH, NULL))) {
+			return CURL_READFUNC_ABORT;
+		}
+	}
+	numread = php_stream_read(cb_arg->stream, buffer, nitems * size);
+	if (numread < 0) {
+		php_stream_close(cb_arg->stream);
+		cb_arg->stream = NULL;
+		return CURL_READFUNC_ABORT;
+	}
+	return numread;
+}
+/* }}} */
+
+static int seek_cb(void *arg, curl_off_t offset, int origin) /* {{{ */
+{
+	struct mime_data_cb_arg *cb_arg = (struct mime_data_cb_arg *) arg;
+	int res;
+
+	if (cb_arg->stream == NULL) {
+		return CURL_SEEKFUNC_CANTSEEK;
+	}
+	res = php_stream_seek(cb_arg->stream, offset, origin);
+	return res == SUCCESS ? CURL_SEEKFUNC_OK : CURL_SEEKFUNC_CANTSEEK;
+}
+/* }}} */
+
+static void free_cb(void *arg) /* {{{ */
+{
+	struct mime_data_cb_arg *cb_arg = (struct mime_data_cb_arg *) arg;
+
+	if (cb_arg->stream != NULL) {
+		php_stream_close(cb_arg->stream);
+		cb_arg->stream = NULL;
+	}
+}
+/* }}} */
+#endif
+
+static inline int build_mime_structure_from_hash(php_curl *ch, zval *zpostfields) /* {{{ */
+{
+	CURLcode error = CURLE_OK;
+	zval *current;
+	HashTable *postfields;
+	zend_string *string_key;
+	zend_ulong num_key;
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	curl_mime *mime = NULL;
+	curl_mimepart *part;
+	CURLcode form_error;
+#else
+	struct HttpPost *first = NULL;
+	struct HttpPost *last  = NULL;
+	CURLFORMcode form_error;
+#endif
+
+	postfields = HASH_OF(zpostfields);
+	if (!postfields) {
+		php_error_docref(NULL, E_WARNING, "Couldn't get HashTable in CURLOPT_POSTFIELDS");
+		return FAILURE;
+	}
+
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	if (zend_hash_num_elements(postfields) > 0) {
+		mime = curl_mime_init(ch->cp);
+		if (mime == NULL) {
+			return FAILURE;
+		}
+	}
+#endif
+
+	ZEND_HASH_FOREACH_KEY_VAL(postfields, num_key, string_key, current) {
+		zend_string *postval, *tmp_postval;
+		/* Pretend we have a string_key here */
+		if (!string_key) {
+			string_key = zend_long_to_str(num_key);
+		} else {
+			zend_string_addref(string_key);
+		}
+
+		ZVAL_DEREF(current);
+		if (Z_TYPE_P(current) == IS_OBJECT &&
+				instanceof_function(Z_OBJCE_P(current), curl_CURLFile_class)) {
+			/* new-style file upload */
+			zval *prop, rv;
+			char *type = NULL, *filename = NULL;
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+			struct mime_data_cb_arg *cb_arg;
+			php_stream *stream;
+			php_stream_statbuf ssb;
+			size_t filesize = -1;
+			curl_seek_callback seekfunc = seek_cb;
+#endif
+
+			prop = zend_read_property(curl_CURLFile_class, current, "name", sizeof("name")-1, 0, &rv);
+			if (Z_TYPE_P(prop) != IS_STRING) {
+				php_error_docref(NULL, E_WARNING, "Invalid filename for key %s", ZSTR_VAL(string_key));
+			} else {
+				postval = Z_STR_P(prop);
+
+				if (php_check_open_basedir(ZSTR_VAL(postval))) {
+					return 1;
+				}
+
+				prop = zend_read_property(curl_CURLFile_class, current, "mime", sizeof("mime")-1, 0, &rv);
+				if (Z_TYPE_P(prop) == IS_STRING && Z_STRLEN_P(prop) > 0) {
+					type = Z_STRVAL_P(prop);
+				}
+				prop = zend_read_property(curl_CURLFile_class, current, "postname", sizeof("postname")-1, 0, &rv);
+				if (Z_TYPE_P(prop) == IS_STRING && Z_STRLEN_P(prop) > 0) {
+					filename = Z_STRVAL_P(prop);
+				}
+
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+				zval_ptr_dtor(&ch->postfields);
+				ZVAL_COPY(&ch->postfields, zpostfields);
+
+				if ((stream = php_stream_open_wrapper(ZSTR_VAL(postval), "rb", STREAM_MUST_SEEK, NULL))) {
+					if (!stream->readfilters.head && !php_stream_stat(stream, &ssb)) {
+						filesize = ssb.sb.st_size;
+					}
+				} else {
+					seekfunc = NULL;
+				}
+
+				cb_arg = emalloc(sizeof *cb_arg);
+				cb_arg->filename = zend_string_copy(postval);
+				cb_arg->stream = stream;
+
+				part = curl_mime_addpart(mime);
+				if (part == NULL) {
+					zend_string_release_ex(string_key, 0);
+					return FAILURE;
+				}
+				if ((form_error = curl_mime_name(part, ZSTR_VAL(string_key))) != CURLE_OK
+					|| (form_error = curl_mime_data_cb(part, filesize, read_cb, seekfunc, free_cb, cb_arg)) != CURLE_OK
+					|| (form_error = curl_mime_filename(part, filename ? filename : ZSTR_VAL(postval))) != CURLE_OK
+					|| (form_error = curl_mime_type(part, type ? type : "application/octet-stream")) != CURLE_OK) {
+					error = form_error;
+				}
+				zend_llist_add_element(&ch->to_free->stream, &cb_arg);
+#else
+				form_error = curl_formadd(&first, &last,
+								CURLFORM_COPYNAME, ZSTR_VAL(string_key),
+								CURLFORM_NAMELENGTH, ZSTR_LEN(string_key),
+								CURLFORM_FILENAME, filename ? filename : ZSTR_VAL(postval),
+								CURLFORM_CONTENTTYPE, type ? type : "application/octet-stream",
+								CURLFORM_FILE, ZSTR_VAL(postval),
+								CURLFORM_END);
+				if (form_error != CURL_FORMADD_OK) {
+					/* Not nice to convert between enums but we only have place for one error type */
+					error = (CURLcode)form_error;
+				}
+#endif
+			}
+
+			zend_string_release_ex(string_key, 0);
+			continue;
+		}
+
+		postval = zval_get_tmp_string(current, &tmp_postval);
+
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+		part = curl_mime_addpart(mime);
+		if (part == NULL) {
+			zend_tmp_string_release(tmp_postval);
+			zend_string_release_ex(string_key, 0);
+			return FAILURE;
+		}
+		if ((form_error = curl_mime_name(part, ZSTR_VAL(string_key))) != CURLE_OK
+			|| (form_error = curl_mime_data(part, ZSTR_VAL(postval), ZSTR_LEN(postval))) != CURLE_OK) {
+			error = form_error;
+		}
+#else
+		/* The arguments after _NAMELENGTH and _CONTENTSLENGTH
+			* must be explicitly cast to long in curl_formadd
+			* use since curl needs a long not an int. */
+		form_error = curl_formadd(&first, &last,
+								CURLFORM_COPYNAME, ZSTR_VAL(string_key),
+								CURLFORM_NAMELENGTH, ZSTR_LEN(string_key),
+								CURLFORM_COPYCONTENTS, ZSTR_VAL(postval),
+								CURLFORM_CONTENTSLENGTH, ZSTR_LEN(postval),
+								CURLFORM_END);
+
+		if (form_error != CURL_FORMADD_OK) {
+			/* Not nice to convert between enums but we only have place for one error type */
+			error = (CURLcode)form_error;
+		}
+#endif
+		zend_tmp_string_release(tmp_postval);
+		zend_string_release_ex(string_key, 0);
+	} ZEND_HASH_FOREACH_END();
+
+	SAVE_CURL_ERROR(ch, error);
+	if (error != CURLE_OK) {
+		return FAILURE;
+	}
+
+	if ((*ch->clone) == 1) {
+		zend_llist_clean(&ch->to_free->post);
+	}
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	zend_llist_add_element(&ch->to_free->post, &mime);
+	error = curl_easy_setopt(ch->cp, CURLOPT_MIMEPOST, mime);
+#else
+	zend_llist_add_element(&ch->to_free->post, &first);
+	error = curl_easy_setopt(ch->cp, CURLOPT_HTTPPOST, first);
+#endif
+
+	SAVE_CURL_ERROR(ch, error);
+	return error == CURLE_OK ? SUCCESS : FAILURE;
+}
+/* }}} */
+
 /* {{{ proto resource curl_copy_handle(resource ch)
    Copy a cURL handle along with all of it's preferences */
 PHP_FUNCTION(curl_copy_handle)
@@ -2102,6 +2333,9 @@ PHP_FUNCTION(curl_copy_handle)
 	CURL		*cp;
 	zval		*zid;
 	php_curl	*ch, *dupch;
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	zval		*postfields;
+#endif
 
 	ZEND_PARSE_PARAMETERS_START(1,1)
 		Z_PARAM_RESOURCE(zid)
@@ -2122,38 +2356,23 @@ PHP_FUNCTION(curl_copy_handle)
 
 	_php_setup_easy_copy_handlers(dupch, ch);
 
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	postfields = &ch->postfields;
+	if (Z_TYPE_P(postfields) != IS_UNDEF) {
+		if (build_mime_structure_from_hash(dupch, postfields) != SUCCESS) {
+			_php_curl_close_ex(dupch);
+			php_error_docref(NULL, E_WARNING, "Cannot rebuild mime structure");
+			RETURN_FALSE;
+		}
+	}
+#endif
+
 	Z_ADDREF_P(zid);
 
 	ZVAL_RES(return_value, zend_register_resource(dupch, le_curl));
 	dupch->res = Z_RES_P(return_value);
 }
 /* }}} */
-
-#if LIBCURL_VERSION_NUM >= 0x073800
-static size_t read_cb(char *buffer, size_t size, size_t nitems, void *arg) /* {{{ */
-{
-	php_stream *stream = (php_stream *) arg;
-	ssize_t numread = php_stream_read(stream, buffer, nitems * size);
-
-	if (numread < 0) {
-		return CURL_READFUNC_ABORT;
-	}
-	return numread;
-}
-/* }}} */
-
-static int seek_cb(void *arg, curl_off_t offset, int origin) /* {{{ */
-{
-	php_stream *stream = (php_stream *) arg;
-	int res = php_stream_seek(stream, offset, origin);
-
-	if (res) {
-		return CURL_SEEKFUNC_CANTSEEK;
-	}
-	return CURL_SEEKFUNC_OK;
-}
-/* }}} */
-#endif
 
 static int _php_curl_setopt(php_curl *ch, zend_long option, zval *zvalue) /* {{{ */
 {
@@ -2350,6 +2569,9 @@ static int _php_curl_setopt(php_curl *ch, zend_long option, zval *zvalue) /* {{{
 #endif
 #if LIBCURL_VERSION_NUM >= 0x073d00 /* Available since 7.61.0 */
 		case CURLOPT_DISALLOW_USERNAME_IN_URL:
+#endif
+#if LIBCURL_VERSION_NUM >= 0x074000 /* Available since 7.64.0 */
+		case CURLOPT_HTTP09_ALLOWED:
 #endif
 			lval = zval_get_long(zvalue);
 #if LIBCURL_VERSION_NUM >= 0x071304
@@ -2749,156 +2971,7 @@ static int _php_curl_setopt(php_curl *ch, zend_long option, zval *zvalue) /* {{{
 
 		case CURLOPT_POSTFIELDS:
 			if (Z_TYPE_P(zvalue) == IS_ARRAY || Z_TYPE_P(zvalue) == IS_OBJECT) {
-				zval *current;
-				HashTable *postfields;
-				zend_string *string_key;
-				zend_ulong  num_key;
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-				curl_mime *mime;
-				curl_mimepart *part;
-				CURLcode form_error;
-#else
-				struct HttpPost *first = NULL;
-				struct HttpPost *last  = NULL;
-				CURLFORMcode form_error;
-#endif
-				postfields = HASH_OF(zvalue);
-				if (!postfields) {
-					php_error_docref(NULL, E_WARNING, "Couldn't get HashTable in CURLOPT_POSTFIELDS");
-					return FAILURE;
-				}
-
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-				mime = curl_mime_init(ch->cp);
-				if (mime == NULL) {
-					return FAILURE;
-				}
-#endif
-
-				ZEND_HASH_FOREACH_KEY_VAL(postfields, num_key, string_key, current) {
-					zend_string *postval, *tmp_postval;
-					/* Pretend we have a string_key here */
-					if (!string_key) {
-						string_key = zend_long_to_str(num_key);
-					} else {
-						zend_string_addref(string_key);
-					}
-
-					ZVAL_DEREF(current);
-					if (Z_TYPE_P(current) == IS_OBJECT &&
-							instanceof_function(Z_OBJCE_P(current), curl_CURLFile_class)) {
-						/* new-style file upload */
-						zval *prop, rv;
-						char *type = NULL, *filename = NULL;
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-						php_stream *stream;
-#endif
-
-						prop = zend_read_property(curl_CURLFile_class, current, "name", sizeof("name")-1, 0, &rv);
-						if (Z_TYPE_P(prop) != IS_STRING) {
-							php_error_docref(NULL, E_WARNING, "Invalid filename for key %s", ZSTR_VAL(string_key));
-						} else {
-							postval = Z_STR_P(prop);
-
-							if (php_check_open_basedir(ZSTR_VAL(postval))) {
-								return 1;
-							}
-
-							prop = zend_read_property(curl_CURLFile_class, current, "mime", sizeof("mime")-1, 0, &rv);
-							if (Z_TYPE_P(prop) == IS_STRING && Z_STRLEN_P(prop) > 0) {
-								type = Z_STRVAL_P(prop);
-							}
-							prop = zend_read_property(curl_CURLFile_class, current, "postname", sizeof("postname")-1, 0, &rv);
-							if (Z_TYPE_P(prop) == IS_STRING && Z_STRLEN_P(prop) > 0) {
-								filename = Z_STRVAL_P(prop);
-							}
-
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-							if (!(stream = php_stream_open_wrapper(ZSTR_VAL(postval), "rb", IGNORE_PATH, NULL))) {
-								zend_string_release_ex(string_key, 0);
-								return FAILURE;
-							}
-							part = curl_mime_addpart(mime);
-							if (part == NULL) {
-								php_stream_close(stream);
-								zend_string_release_ex(string_key, 0);
-								return FAILURE;
-							}
-							if ((form_error = curl_mime_name(part, ZSTR_VAL(string_key))) != CURLE_OK
-								|| (form_error = curl_mime_data_cb(part, -1, read_cb, seek_cb, NULL, stream)) != CURLE_OK
-								|| (form_error = curl_mime_filename(part, filename ? filename : ZSTR_VAL(postval))) != CURLE_OK
-								|| (form_error = curl_mime_type(part, type ? type : "application/octet-stream")) != CURLE_OK) {
-								php_stream_close(stream);
-								error = form_error;
-							}
-							zend_llist_add_element(&ch->to_free->stream, &stream);
-#else
-							form_error = curl_formadd(&first, &last,
-											CURLFORM_COPYNAME, ZSTR_VAL(string_key),
-											CURLFORM_NAMELENGTH, ZSTR_LEN(string_key),
-											CURLFORM_FILENAME, filename ? filename : ZSTR_VAL(postval),
-											CURLFORM_CONTENTTYPE, type ? type : "application/octet-stream",
-											CURLFORM_FILE, ZSTR_VAL(postval),
-											CURLFORM_END);
-							if (form_error != CURL_FORMADD_OK) {
-								/* Not nice to convert between enums but we only have place for one error type */
-								error = (CURLcode)form_error;
-							}
-#endif
-						}
-
-						zend_string_release_ex(string_key, 0);
-						continue;
-					}
-
-					postval = zval_get_tmp_string(current, &tmp_postval);
-
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-					part = curl_mime_addpart(mime);
-					if (part == NULL) {
-						zend_tmp_string_release(tmp_postval);
-						zend_string_release_ex(string_key, 0);
-						return FAILURE;
-					}
-					if ((form_error = curl_mime_name(part, ZSTR_VAL(string_key))) != CURLE_OK
-						|| (form_error = curl_mime_data(part, ZSTR_VAL(postval), ZSTR_LEN(postval))) != CURLE_OK) {
-						error = form_error;
-					}
-#else
-					/* The arguments after _NAMELENGTH and _CONTENTSLENGTH
-					 * must be explicitly cast to long in curl_formadd
-					 * use since curl needs a long not an int. */
-					form_error = curl_formadd(&first, &last,
-										 CURLFORM_COPYNAME, ZSTR_VAL(string_key),
-										 CURLFORM_NAMELENGTH, ZSTR_LEN(string_key),
-										 CURLFORM_COPYCONTENTS, ZSTR_VAL(postval),
-										 CURLFORM_CONTENTSLENGTH, ZSTR_LEN(postval),
-										 CURLFORM_END);
-
-					if (form_error != CURL_FORMADD_OK) {
-						/* Not nice to convert between enums but we only have place for one error type */
-						error = (CURLcode)form_error;
-					}
-#endif
-					zend_tmp_string_release(tmp_postval);
-					zend_string_release_ex(string_key, 0);
-				} ZEND_HASH_FOREACH_END();
-
-				SAVE_CURL_ERROR(ch, error);
-				if (error != CURLE_OK) {
-					return FAILURE;
-				}
-
-				if ((*ch->clone) == 1) {
-					zend_llist_clean(&ch->to_free->post);
-				}
-#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
-				zend_llist_add_element(&ch->to_free->post, &mime);
-				error = curl_easy_setopt(ch->cp, CURLOPT_MIMEPOST, mime);
-#else
-				zend_llist_add_element(&ch->to_free->post, &first);
-				error = curl_easy_setopt(ch->cp, CURLOPT_HTTPPOST, first);
-#endif
+				return build_mime_structure_from_hash(ch, zvalue);
 			} else {
 #if LIBCURL_VERSION_NUM >= 0x071101
 				zend_string *tmp_str;
@@ -3599,6 +3672,9 @@ static void _php_curl_close_ex(php_curl *ch)
 #endif
 
 	efree(ch->handlers);
+#if LIBCURL_VERSION_NUM >= 0x073800 /* 7.56.0 */
+	zval_ptr_dtor(&ch->postfields);
+#endif
 	efree(ch);
 }
 /* }}} */

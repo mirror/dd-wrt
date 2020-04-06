@@ -479,6 +479,9 @@ SAPI_API SAPI_TREAT_DATA_FUNC(php_default_treat_data)
 	var = php_strtok_r(res, separator, &strtok_buf);
 
 	while (var) {
+		size_t val_len;
+		size_t new_val_len;
+
 		val = strchr(var, '=');
 
 		if (arg == PARSE_COOKIE) {
@@ -497,29 +500,25 @@ SAPI_API SAPI_TREAT_DATA_FUNC(php_default_treat_data)
 		}
 
 		if (val) { /* have a value */
-			size_t val_len;
-			size_t new_val_len;
 
 			*val++ = '\0';
-			php_url_decode(var, strlen(var));
-			val_len = php_url_decode(val, strlen(val));
-			val = estrndup(val, val_len);
-			if (sapi_module.input_filter(arg, var, &val, val_len, &new_val_len)) {
-				php_register_variable_safe(var, val, new_val_len, &array);
-			}
-			efree(val);
-		} else {
-			size_t val_len;
-			size_t new_val_len;
 
-			php_url_decode(var, strlen(var));
-			val_len = 0;
-			val = estrndup("", val_len);
-			if (sapi_module.input_filter(arg, var, &val, val_len, &new_val_len)) {
-				php_register_variable_safe(var, val, new_val_len, &array);
+			if (arg == PARSE_COOKIE) {
+				val_len = php_raw_url_decode(val, strlen(val));
+			} else {
+				val_len = php_url_decode(val, strlen(val));
 			}
-			efree(val);
+		} else {
+			val     = "";
+			val_len =  0;
 		}
+
+		val = estrndup(val, val_len);
+		php_url_decode(var, strlen(var));
+		if (sapi_module.input_filter(arg, var, &val, val_len, &new_val_len)) {
+			php_register_variable_safe(var, val, new_val_len, &array);
+		}
+		efree(val);
 next_cookie:
 		var = php_strtok_r(NULL, separator, &strtok_buf);
 	}
@@ -541,40 +540,59 @@ static zend_always_inline int valid_environment_name(const char *name, const cha
 	return 1;
 }
 
-void _php_import_environment_variables(zval *array_ptr)
+static zend_always_inline void import_environment_variable(HashTable *ht, char *env)
 {
-	char **env, *p;
+	char *p;
 	size_t name_len, len;
 	zval val;
 	zend_ulong idx;
 
+	p = strchr(env, '=');
+	if (!p
+		|| p == env
+		|| !valid_environment_name(env, p)) {
+		/* malformed entry? */
+		return;
+	}
+	name_len = p - env;
+	p++;
+	len = strlen(p);
+	if (len == 0) {
+		ZVAL_EMPTY_STRING(&val);
+	} else if (len == 1) {
+		ZVAL_INTERNED_STR(&val, ZSTR_CHAR((zend_uchar)*p));
+	} else {
+		ZVAL_NEW_STR(&val, zend_string_init(p, len, 0));
+	}
+	if (ZEND_HANDLE_NUMERIC_STR(env, name_len, idx)) {
+		zend_hash_index_update(ht, idx, &val);
+	} else {
+		php_register_variable_quick(env, name_len, &val, ht);
+	}
+}
+
+void _php_import_environment_variables(zval *array_ptr)
+{
+#ifndef PHP_WIN32
+	char **env;
+#else
+	char *environment, *env;
+#endif
+
 	tsrm_env_lock();
 
+#ifndef PHP_WIN32
 	for (env = environ; env != NULL && *env != NULL; env++) {
-		p = strchr(*env, '=');
-		if (!p
-		 || p == *env
-		 || !valid_environment_name(*env, p)) {
-			/* malformed entry? */
-			continue;
-		}
-		name_len = p - *env;
-		p++;
-		len = strlen(p);
-		if (len == 0) {
-			ZVAL_EMPTY_STRING(&val);
-		} else if (len == 1) {
-			ZVAL_INTERNED_STR(&val, ZSTR_CHAR((zend_uchar)*p));
-		} else {
-			ZVAL_NEW_STR(&val, zend_string_init(p, len, 0));
-		}
-		if (ZEND_HANDLE_NUMERIC_STR(*env, name_len, idx)) {
-			zend_hash_index_update(Z_ARRVAL_P(array_ptr), idx, &val);
-		} else {
-			php_register_variable_quick(*env, name_len, &val, Z_ARRVAL_P(array_ptr));
-		}
+		import_environment_variable(Z_ARRVAL_P(array_ptr), *env);
 	}
-	
+#else
+	environment = GetEnvironmentStringsA();
+	for (env = environment; env != NULL && *env; env += strlen(env) + 1) {
+		import_environment_variable(Z_ARRVAL_P(array_ptr), env);
+	}
+	FreeEnvironmentStringsA(environment);
+#endif
+
 	tsrm_env_unlock();
 }
 

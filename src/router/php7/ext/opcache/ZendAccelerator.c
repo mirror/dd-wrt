@@ -1677,11 +1677,13 @@ static zend_persistent_script *opcache_compile_file(zend_file_handle *file_handl
     if (file_handle->type == ZEND_HANDLE_FILENAME) {
         if (accelerator_orig_zend_stream_open_function(file_handle->filename, file_handle) != SUCCESS) {
 			*op_array_p = NULL;
-			if (type == ZEND_REQUIRE) {
-				zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
-				zend_bailout();
-			} else {
-				zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+			if (!EG(exception)) {
+				if (type == ZEND_REQUIRE) {
+					zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
+					zend_bailout();
+				} else {
+					zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+				}
 			}
 			return NULL;
     	}
@@ -1825,11 +1827,13 @@ zend_op_array *file_cache_compile_file(zend_file_handle *file_handle, int type)
 	if (!file_handle->opened_path) {
 		if (file_handle->type == ZEND_HANDLE_FILENAME &&
 		    accelerator_orig_zend_stream_open_function(file_handle->filename, file_handle) == FAILURE) {
-			if (type == ZEND_REQUIRE) {
-				zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
-				zend_bailout();
-			} else {
-				zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+			if (!EG(exception)) {
+				if (type == ZEND_REQUIRE) {
+					zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
+					zend_bailout();
+				} else {
+					zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+				}
 			}
 			return NULL;
 	    }
@@ -1979,11 +1983,13 @@ zend_op_array *persistent_compile_file(zend_file_handle *file_handle, int type)
 			/* open file to resolve the path */
 		    if (file_handle->type == ZEND_HANDLE_FILENAME &&
         		accelerator_orig_zend_stream_open_function(file_handle->filename, file_handle) == FAILURE) {
-				if (type == ZEND_REQUIRE) {
-					zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
-					zend_bailout();
-				} else {
-					zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+				if (!EG(exception)) {
+					if (type == ZEND_REQUIRE) {
+						zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
+						zend_bailout();
+					} else {
+						zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+					}
 				}
 				return NULL;
 		    }
@@ -2035,11 +2041,13 @@ zend_op_array *persistent_compile_file(zend_file_handle *file_handle, int type)
 	    UNEXPECTED(ZCG(accel_directives).validate_permission) &&
 	    file_handle->type == ZEND_HANDLE_FILENAME &&
 	    UNEXPECTED(check_persistent_script_access(persistent_script))) {
-		if (type == ZEND_REQUIRE) {
-			zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
-			zend_bailout();
-		} else {
-			zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+		if (!EG(exception)) {
+			if (type == ZEND_REQUIRE) {
+				zend_message_dispatcher(ZMSG_FAILED_REQUIRE_FOPEN, file_handle->filename);
+				zend_bailout();
+			} else {
+				zend_message_dispatcher(ZMSG_FAILED_INCLUDE_FOPEN, file_handle->filename);
+			}
 		}
 		return NULL;
 	}
@@ -3203,6 +3211,18 @@ static void preload_restart(void)
 	}
 }
 
+static size_t preload_try_strip_filename(zend_string *filename) {
+	/*FIXME: better way to hanlde eval()'d code? see COMPILED_STRING_DESCRIPTION_FORMAT */
+	if (ZSTR_LEN(filename) > sizeof(" eval()'d code")
+		&& *(ZSTR_VAL(filename) + ZSTR_LEN(filename) - sizeof(" eval()'d code")) == ':') {
+		const char *cfilename = ZSTR_VAL(filename);
+		size_t cfilenamelen = ZSTR_LEN(filename) - sizeof(" eval()'d code") - 1 /*:*/;
+		while (cfilenamelen && cfilename[--cfilenamelen] != '(');
+		return cfilenamelen;
+	}
+	return 0;
+}
+
 static void preload_move_user_functions(HashTable *src, HashTable *dst)
 {
 	Bucket *p;
@@ -3219,7 +3239,12 @@ static void preload_move_user_functions(HashTable *src, HashTable *dst)
 			if (function->op_array.filename != filename) {
 				filename = function->op_array.filename;
 				if (filename) {
-					copy = zend_hash_exists(preload_scripts, filename);
+					if (!(copy = zend_hash_exists(preload_scripts, filename))) {
+						size_t eval_len = preload_try_strip_filename(filename);
+						if (eval_len) {
+							copy = zend_hash_str_exists(preload_scripts, ZSTR_VAL(filename), eval_len);
+						}
+					}
 				} else {
 					copy = 0;
 				}
@@ -3253,13 +3278,18 @@ static void preload_move_user_classes(HashTable *src, HashTable *dst)
 			if (ce->info.user.filename != filename) {
 				filename = ce->info.user.filename;
 				if (filename) {
-					copy = zend_hash_exists(preload_scripts, filename);
+					if (!(copy = zend_hash_exists(preload_scripts, filename))) {
+						size_t eval_len = preload_try_strip_filename(filename);
+						if (eval_len) {
+							copy = zend_hash_str_exists(preload_scripts, ZSTR_VAL(filename), eval_len);
+						}
+					}
 				} else {
 					copy = 0;
 				}
 			}
 			if (copy) {
-				_zend_hash_append_ptr(dst, p->key, ce);
+				_zend_hash_append(dst, p->key, &p->val);
 			} else {
 				orig_dtor(&p->val);
 			}
@@ -3298,7 +3328,7 @@ static zend_op_array *preload_compile_file(zend_file_handle *file_handle, int ty
 	return op_array;
 }
 
-static void preload_sort_classes(void *base, size_t count, size_t siz, compare_func_t compare, swap_func_t swp) /* {{{ */
+static void preload_sort_classes(void *base, size_t count, size_t siz, compare_func_t compare, swap_func_t swp)
 {
 	Bucket *b1 = base;
 	Bucket *b2;
@@ -3389,13 +3419,6 @@ static void get_unlinked_dependency(zend_class_entry *ce, const char **kind, con
 			*name = ZSTR_VAL(ce->parent_name);
 			return;
 		}
-#ifdef ZEND_WIN32
-		if (p->type == ZEND_INTERNAL_CLASS) {
-			*kind = "Windows can't link to internal parent ";
-			*name = ZSTR_VAL(ce->parent_name);
-			return;
-		}
-#endif
 		if (!(p->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 			*kind = "Parent with unresolved initializers ";
 			*name = ZSTR_VAL(ce->parent_name);
@@ -3515,13 +3538,6 @@ static zend_bool preload_try_resolve_property_types(zend_class_entry *ce)
 				continue;
 			}
 			if (p != ce) {
-#ifdef ZEND_WIN32
-				/* On Windows we can't link with internal class, because of ASLR */
-				if (p->type == ZEND_INTERNAL_CLASS) {
-					ok = 0;
-					continue;
-				}
-#endif
 				if (!(p->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 					ok = 0;
 					continue;
@@ -3658,10 +3674,6 @@ static void preload_link(void)
 					parent = zend_hash_find_ptr(EG(class_table), key);
 					zend_string_release(key);
 					if (!parent) continue;
-#ifdef ZEND_WIN32
-					/* On Windows we can't link with internal class, because of ASLR */
-					if (parent->type == ZEND_INTERNAL_CLASS) continue;
-#endif
 					if (!(parent->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 						continue;
 					}
@@ -3678,13 +3690,6 @@ static void preload_link(void)
 							found = 0;
 							break;
 						}
-#ifdef ZEND_WIN32
-						/* On Windows we can't link with internal class, because of ASLR */
-						if (p->type == ZEND_INTERNAL_CLASS) {
-							found = 0;
-							break;
-						}
-#endif
 						if (!(p->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 							found = 0;
 							break;
@@ -3701,13 +3706,6 @@ static void preload_link(void)
 							found = 0;
 							break;
 						}
-#ifdef ZEND_WIN32
-						/* On Windows we can't link with internal class, because of ASLR */
-						if (p->type == ZEND_INTERNAL_CLASS) {
-							found = 0;
-							break;
-						}
-#endif
 					}
 					if (!found) continue;
 				}
@@ -3720,9 +3718,11 @@ static void preload_link(void)
 					continue;
 				}
 
-				zend_string *key = zend_string_tolower(ce->name);
-				zv = zend_hash_set_bucket_key(EG(class_table), (Bucket*)zv, key);
-				zend_string_release(key);
+				{
+					zend_string *key = zend_string_tolower(ce->name);
+					zv = zend_hash_set_bucket_key(EG(class_table), (Bucket*)zv, key);
+					zend_string_release(key);
+				}
 
 				if (EXPECTED(zv)) {
 					/* Set filename & lineno information for inheritance errors */
@@ -3777,7 +3777,8 @@ static void preload_link(void)
 		}
 		if (!(ce->ce_flags & ZEND_ACC_LINKED)) {
 			zend_string *key = zend_string_tolower(ce->name);
-			if (zend_hash_exists(EG(class_table), key)) {
+			if (!(ce->ce_flags & ZEND_ACC_ANON_CLASS)
+			 && zend_hash_exists(EG(class_table), key)) {
 				zend_error_at(
 					E_WARNING, ZSTR_VAL(ce->info.user.filename), ce->info.user.line_start,
 					"Can't preload already declared class %s", ZSTR_VAL(ce->name));
@@ -3850,26 +3851,6 @@ static void preload_link(void)
 	} ZEND_HASH_FOREACH_END();
 }
 
-#ifdef ZEND_WIN32
-static void preload_check_windows_restriction(zend_class_entry *scope, zend_class_entry *ce) {
-	if (ce && ce->type == ZEND_INTERNAL_CLASS) {
-		zend_error_noreturn(E_ERROR,
-			"Class %s uses internal class %s during preloading, which is not supported on Windows",
-			ZSTR_VAL(scope->name), ZSTR_VAL(ce->name));
-	}
-}
-
-static void preload_check_windows_restrictions(zend_class_entry *scope) {
-	uint32_t i;
-
-	preload_check_windows_restriction(scope, scope->parent);
-
-	for (i = 0; i < scope->num_interfaces; i++) {
-		preload_check_windows_restriction(scope, scope->interfaces[i]);
-	}
-}
-#endif
-
 static inline int preload_update_class_constants(zend_class_entry *ce) {
 	/* This is a separate function to work around what appears to be a bug in GCC
 	 * maybe-uninitialized analysis. */
@@ -3921,10 +3902,6 @@ static void preload_ensure_classes_loadable() {
 				 * things when linking additional classes. */
 				continue;
 			}
-
-#ifdef ZEND_WIN32
-			preload_check_windows_restrictions(ce);
-#endif
 
 			if (!(ce->ce_flags & ZEND_ACC_CONSTANTS_UPDATED)) {
 				if (preload_update_class_constants(ce) == FAILURE) {
@@ -4223,21 +4200,26 @@ static zend_persistent_script* preload_script_in_shared_memory(zend_persistent_s
 static void preload_load(void)
 {
 	/* Load into process tables */
-	if (zend_hash_num_elements(&ZCSG(preload_script)->script.function_table)) {
-		Bucket *p = ZCSG(preload_script)->script.function_table.arData;
-		Bucket *end = p + ZCSG(preload_script)->script.function_table.nNumUsed;
+	zend_script *script = &ZCSG(preload_script)->script;
+	if (zend_hash_num_elements(&script->function_table)) {
+		Bucket *p = script->function_table.arData;
+		Bucket *end = p + script->function_table.nNumUsed;
 
+		zend_hash_extend(CG(function_table),
+			CG(function_table)->nNumUsed + script->function_table.nNumUsed, 0);
 		for (; p != end; p++) {
 			_zend_hash_append_ptr_ex(CG(function_table), p->key, Z_PTR(p->val), 1);
 		}
 	}
 
-	if (zend_hash_num_elements(&ZCSG(preload_script)->script.class_table)) {
-		Bucket *p = ZCSG(preload_script)->script.class_table.arData;
-		Bucket *end = p + ZCSG(preload_script)->script.class_table.nNumUsed;
+	if (zend_hash_num_elements(&script->class_table)) {
+		Bucket *p = script->class_table.arData;
+		Bucket *end = p + script->class_table.nNumUsed;
 
+		zend_hash_extend(CG(class_table),
+			CG(class_table)->nNumUsed + script->class_table.nNumUsed, 0);
 		for (; p != end; p++) {
-			_zend_hash_append_ptr_ex(CG(class_table), p->key, Z_PTR(p->val), 1);
+			_zend_hash_append_ex(CG(class_table), p->key, &p->val, 1);
 		}
 	}
 
@@ -4251,9 +4233,12 @@ static void preload_load(void)
 		EG(persistent_classes_count)   = EG(class_table)->nNumUsed;
 	}
 	if (CG(map_ptr_last) != ZCSG(map_ptr_last)) {
+		size_t old_map_ptr_last = CG(map_ptr_last);
 		CG(map_ptr_last) = ZCSG(map_ptr_last);
 		CG(map_ptr_size) = ZEND_MM_ALIGNED_SIZE_EX(CG(map_ptr_last) + 1, 4096);
 		CG(map_ptr_base) = perealloc(CG(map_ptr_base), CG(map_ptr_size) * sizeof(void*), 1);
+		memset((void **) CG(map_ptr_base) + old_map_ptr_last, 0,
+			(CG(map_ptr_last) - old_map_ptr_last) * sizeof(void *));
 	}
 }
 
@@ -4464,7 +4449,7 @@ static int accel_preload(const char *config)
 		script->ping_auto_globals_mask = ping_auto_globals_mask;
 
 		/* Store all functions and classes in a single pseudo-file */
-		filename = zend_string_init("$PRELOAD$", strlen("$PRELOAD$"), 0);
+		filename = zend_string_init("$PRELOAD$", sizeof("$PRELOAD$") - 1, 0);
 #if ZEND_USE_ABS_CONST_ADDR
 		init_op_array(&script->script.main_op_array, ZEND_USER_FUNCTION, 1);
 #else
@@ -4592,9 +4577,11 @@ static int accel_finish_startup(void)
 	}
 
 	if (ZCG(accel_directives).preload && *ZCG(accel_directives).preload) {
-#ifndef ZEND_WIN32
+#ifdef ZEND_WIN32
+		zend_accel_error(ACCEL_LOG_ERROR, "Preloading is not supported on Windows");
+		return FAILURE;
+#else
 		int in_child = 0;
-#endif
 		int ret = SUCCESS;
 		int rc;
 		int orig_error_reporting;
@@ -4628,7 +4615,6 @@ static int accel_finish_startup(void)
 			return SUCCESS;
 		}
 
-#ifndef ZEND_WIN32
 		if (geteuid() == 0) {
 			pid_t pid;
 			struct passwd *pw;
@@ -4692,7 +4678,6 @@ static int accel_finish_startup(void)
 				zend_accel_error(ACCEL_LOG_WARNING, "\"opcache.preload_user\" is ignored");
 			}
 		}
-#endif
 
 		sapi_module.activate = NULL;
 		sapi_module.deactivate = NULL;
@@ -4704,11 +4689,9 @@ static int accel_finish_startup(void)
 		sapi_module.ub_write = preload_ub_write;
 		sapi_module.flush = preload_flush;
 
-#ifndef ZEND_WIN32
 		if (in_child) {
 			CG(compiler_options) |= ZEND_COMPILE_PRELOAD_IN_CHILD;
 		}
-#endif
 		CG(compiler_options) |= ZEND_COMPILE_PRELOAD;
 		CG(compiler_options) |= ZEND_COMPILE_HANDLE_OP_ARRAY;
 		CG(compiler_options) |= ZEND_COMPILE_IGNORE_INTERNAL_CLASSES;
@@ -4783,7 +4766,6 @@ static int accel_finish_startup(void)
 
 		sapi_activate();
 
-#ifndef ZEND_WIN32
 		if (in_child) {
 			if (ret == SUCCESS) {
 				exit(0);
@@ -4791,9 +4773,9 @@ static int accel_finish_startup(void)
 				exit(2);
 			}
 		}
-#endif
 
 		return ret;
+#endif
 	}
 
 	return SUCCESS;

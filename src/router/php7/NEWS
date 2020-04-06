@@ -1,18 +1,271 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-19 Dec 2019, PHP 7.4.1
 
-- Bcmath:
-  . Fixed bug #78878 (Buffer underflow in bc_shift_addsub). (CVE-2019-11046).
-    (cmb)
+19 Mar 2020, PHP 7.4.4
 
 - Core:
-  . Fixed bug #78862 (link() silently truncates after a null byte on Windows).
-    (CVE-2019-11044). (cmb)
-  . Fixed bug #78863 (DirectoryIterator class silently truncates after a null
-    byte). (CVE-2019-11045). (cmb)
-  . Fixed bug #78943 (mail() may release string with refcount==1 twice).
-    (CVE-2019-11049). (cmb)
+  . Fixed bug #79329 (get_headers() silently truncates after a null byte)
+    (CVE-2020-7066) (cmb)
+  . Fixed bug #79244 (php crashes during parsing INI file). (Laruence)
+  . Fixed bug #63206 (restore_error_handler does not restore previous errors
+    mask). (Mark Plomer)
+
+- COM:
+  . Fixed bug #66322 (COMPersistHelper::SaveToFile can save to wrong location).
+    (cmb)
+  . Fixed bug #79242 (COM error constants don't match com_exception codes on
+    x86). (cmb)
+  . Fixed bug #79247 (Garbage collecting variant objects segfaults). (cmb)
+  . Fixed bug #79248 (Traversing empty VT_ARRAY throws com_exception). (cmb)
+  . Fixed bug #79299 (com_print_typeinfo prints duplicate variables). (Litiano
+    Moura)
+  . Fixed bug #79332 (php_istreams are never freed). (cmb)
+  . Fixed bug #79333 (com_print_typeinfo() leaks memory). (cmb)
+
+- CURL:
+  . Fixed bug #79019 (Copied cURL handles upload empty file). (cmb)
+  . Fixed bug #79013 (Content-Length missing when posting a curlFile with
+    curl). (cmb)
+
+- DOM:
+  . Fixed bug #77569: (Write Access Violation in DomImplementation). (Nikita,
+    cmb)
+  . Fixed bug #79271 (DOMDocumentType::$childNodes is NULL). (cmb)
+
+- Enchant:
+  . Fixed bug #79311 (enchant_dict_suggest() fails on big endian architecture).
+    (cmb)
+
+- EXIF:
+  . Fixed bug #79282 (Use-of-uninitialized-value in exif) (CVE-2020-7064)
+    (Nikita)
+
+- Fileinfo:
+  . Fixed bug #79283 (Segfault in libmagic patch contains a buffer
+    overflow) (cmb)
+
+- FPM:
+  . Fixed bug #77653 (operator displayed instead of the real error message).
+    (Jakub Zelenka)
+  . Fixed bug #79014 (PHP-FPM & Primary script unknown). (Jakub Zelenka)
+
+- MBstring:
+  . Fixed bug #79371 (mb_strtolower (UTF-32LE): stack-buffer-overflow at
+    php_unicode_tolower_full) (CVE-2020-7065) (cmb)
+
+- MySQLi:
+  . Fixed bug #64032 (mysqli reports different client_version). (cmb)
+
+- MySQLnd:
+  . Implemented FR #79275 (Support auth_plugin_caching_sha2_password on
+    Windows). (cmb)
+
+- Opcache:
+  . Fixed bug #79252 (preloading causes php-fpm to segfault during exit).
+    (Nikita)
+
+- PCRE:
+  . Fixed bug #79188 (Memory corruption in preg_replace/preg_replace_callback
+    and unicode). (Nikita)
+  . Fixed bug #79241 (Segmentation fault on preg_match()). (Nikita)
+  . Fixed bug #79257 (Duplicate named groups (?J) prefer last alternative even
+    if not matched). (Nikita)
+
+- PDO_ODBC:
+  . Fixed bug #79038 (PDOStatement::nextRowset() leaks column values). (cmb)
+
+- Reflection:
+  . Fixed bug #79062 (Property with heredoc default value returns false for
+    getDocComment). (Nikita)
+
+- SQLite3:
+  . Fixed bug #79294 (::columnType() may fail after SQLite3Stmt::reset()). (cmb)
+
+- Standard:
+  . Fixed bug #79254 (getenv() w/o arguments not showing changes). (cmb)
+  . Fixed bug #79265 (Improper injection of Host header when using fopen for
+    http requests). (Miguel Xavier Penha Neto)
+
+- Zip:
+  . Fixed bug #79315 (ZipArchive::addFile doesn't honor start/length
+    parameters). (Remi)
+
+20 Feb 2020, PHP 7.4.3
+
+- Core:
+  . Fixed bug #79146 (cscript can fail to run on some systems). (clarodeus)
+  . Fixed bug #79155 (Property nullability lost when using multiple property
+    definition). (Nikita)
+  . Fixed bug #78323 (Code 0 is returned on invalid options). (Ivan Mikheykin)
+  . Fixed bug #78989 (Delayed variance check involving trait segfaults).
+    (Nikita)
+  . Fixed bug #79174 (cookie values with spaces fail to round-trip). (cmb)
+  . Fixed bug #76047 (Use-after-free when accessing already destructed
+    backtrace arguments). (Nikita)
+
+- CURL:
+  . Fixed bug #79078 (Hypothetical use-after-free in curl_multi_add_handle()).
+    (cmb)
+
+- FFI:
+  . Fixed bug #79096 (FFI Struct Segfault). (cmb)
+
+- IMAP:
+  . Fixed bug #79112 (IMAP extension can't find OpenSSL libraries at configure
+    time). (Nikita)
+
+- Intl:
+  . Fixed bug #79212 (NumberFormatter::format() may detect wrong type). (cmb)
+
+- Libxml:
+  . Fixed bug #79191 (Error in SoapClient ctor disables DOMDocument::save()).
+    (Nikita, cmb)
+
+- MBString:
+  . Fixed bug #79149 (SEGV in mb_convert_encoding with non-string encodings).
+    (cmb)
+
+- MySQLi:
+  . Fixed bug #78666 (Properties may emit a warning on var_dump()). (kocsismate)
+
+- MySQLnd:
+  . Fixed bug #79084 (mysqlnd may fetch wrong column indexes with MYSQLI_BOTH).
+    (cmb)
+  . Fixed bug #79011 (MySQL caching_sha2_password Access denied for password
+    with more than 20 chars). (Nikita)
+
+- Opcache:
+  . Fixed bug #79114 (Eval class during preload causes class to be only half
+    available). (Laruence)
+  . Fixed bug #79128 (Preloading segfaults if preload_user is used). (Nikita)
+  . Fixed bug #79193 (Incorrect type inference for self::$field =& $field).
+    (Nikita)
+
+- OpenSSL:
+  . Fixed bug #79145 (openssl memory leak). (cmb, Nikita)
+
+- Phar:
+  . Fixed bug #79082 (Files added to tar with Phar::buildFromIterator have
+    all-access permissions). (CVE-2020-7063) (stas)
+  . Fixed bug #79171 (heap-buffer-overflow in phar_extract_file).
+    (CVE-2020-7061) (cmb)
+  . Fixed bug #76584 (PharFileInfo::decompress not working). (cmb)
+
+- Reflection:
+  . Fixed bug #79115 (ReflectionClass::isCloneable call reflected class
+    __destruct). (Nikita)
+
+- Session:
+  . Fixed bug #79221 (Null Pointer Dereference in PHP Session Upload Progress).
+    (CVE-2020-7062) (stas)
+
+- Standard:
+  . Fixed bug #78902 (Memory leak when using stream_filter_append). (liudaixiao)
+  . Fixed bug #78969 (PASSWORD_DEFAULT should match PASSWORD_BCRYPT instead of being null). (kocsismate)
+
+- Testing:
+  . Fixed bug #78090 (bug45161.phpt takes forever to finish). (cmb)
+
+- XSL:
+  . Fixed bug #70078 (XSL callbacks with nodes as parameter leak memory). (cmb)
+
+- Zip:
+  . Add ZipArchive::CM_LZMA2 and ZipArchive::CM_XZ constants (since libzip 1.6.0). (Remi)
+  . Add ZipArchive::RDONLY (since libzip 1.0.0). (Remi)
+  . Add ZipArchive::ER_* missing constants. (Remi)
+  . Add ZipArchive::LIBZIP_VERSION constant. (Remi)
+  . Fixed bug #73119 (Wrong return for ZipArchive::addEmptyDir Method). (Remi)
+
+23 Jan 2020, PHP 7.4.2
+
+- Core:
+  . Preloading support on Windows has been disabled. (Nikita)
+  . Fixed bug #79022 (class_exists returns True for classes that are not ready
+    to be used). (Laruence)
+  . Fixed bug #78929 (plus signs in cookie values are converted to spaces).
+    (Alexey Kachalin)
+  . Fixed bug #78973 (Destructor during CV freeing causes segfault if opline
+    never saved). (Nikita)
+  . Fixed bug #78776 (Abstract method implementation from trait does not check
+    "static"). (Nikita)
+  . Fixed bug #78999 (Cycle leak when using function result as temporary).
+    (Dmitry)
+  . Fixed bug #79008 (General performance regression with PHP 7.4 on Windows).
+    (cmb)
+  . Fixed bug #79002 (Serializing uninitialized typed properties with __sleep
+    makes unserialize throw). (Nikita)
+
+- CURL:
+  . Fixed bug #79033 (Curl timeout error with specific url and post). (cmb)
+  . Fixed bug #79063 (curl openssl does not respect PKG_CONFIG_PATH). (Nikita)
+
+- Date:
+  . Fixed bug #79015 (undefined-behavior in php_date.c). (cmb)
+
+- DBA:
+  . Fixed bug #78808 ([LMDB] MDB_MAP_FULL: Environment mapsize limit reached).
+    (cmb)
+
+- Exif:
+  . Fixed bug #79046 (NaN to int cast undefined behavior in exif). (Nikita)
+
+- Fileinfo:
+  . Fixed bug #74170 (locale information change after mime_content_type).
+    (Sergei Turchanov)
+
+- GD:
+  . Fixed bug #79067 (gdTransformAffineCopy() may use unitialized values). (cmb)
+  . Fixed bug #79068 (gdTransformAffineCopy() changes interpolation method).
+    (cmb)
+
+- Libxml:
+  . Fixed bug #79029 (Use After Free's in XMLReader / XMLWriter). (Laruence)
+
+- OPcache:
+  . Fixed bug #78961 (erroneous optimization of re-assigned $GLOBALS). (Dmitry)
+  . Fixed bug #78950 (Preloading trait method with static variables). (Nikita)
+  . Fixed bug #78903 (Conflict in RTD key for closures results in crash).
+    (Nikita)
+  . Fixed bug #78986 (Opcache segfaults when inheriting ctor from immutable
+    into mutable class). (Nikita)
+  . Fixed bug #79040 (Warning Opcode handlers are unusable due to ASLR). (cmb)
+  . Fixed bug #79055 (Typed property become unknown with OPcache file cache).
+    (Nikita)
+
+- Pcntl:
+  . Fixed bug #78402 (Converting null to string in error message is bad DX).
+    (SATŌ Kentarō)
+
+- PDO_PgSQL:
+  . Fixed bug #78983 (pdo_pgsql config.w32 cannot find libpq-fe.h). (SATŌ
+    Kentarō)
+  . Fixed bug #78980 (pgsqlGetNotify() overlooks dead connection). (SATŌ
+    Kentarō)
+  . Fixed bug #78982 (pdo_pgsql returns dead persistent connection). (SATŌ
+    Kentarō)
+
+- Session:
+  . Fixed bug #79031 (Session unserialization problem). (Nikita)
+
+- Shmop:
+  . Fixed bug #78538 (shmop memory leak). (cmb)
+
+- Sqlite3:
+  . Fixed bug #79056 (sqlite does not respect PKG_CONFIG_PATH during
+    compilation). (Nikita)
+
+- Spl:
+  . Fixed bug #78976 (SplFileObject::fputcsv returns -1 on failure). (cmb)
+
+- Standard:
+  . Fixed bug #79000 (Non-blocking socket stream reports EAGAIN as error).
+    (Nikita)
+  . Fixed bug #54298 (Using empty additional_headers adding extraneous CRLF).
+    (cmb)
+
+18 Dec 2019, PHP 7.4.1
+
+- Core:
   . Fixed bug #78810 (RW fetches do not throw "uninitialized property"
     exception). (Nikita)
   . Fixed bug #78868 (Calling __autoload() with incorrect EG(fake_scope) value).
@@ -28,12 +281,6 @@ PHP                                                                        NEWS
   . Fixed bug #78849 (GD build broken with -D SIGNED_COMPARE_SLOW). (cmb)
   . Fixed bug #78923 (Artifacts when convoluting image with transparency).
     (wilson chen)
-
-- EXIF:
-  . Fixed bug #78793 (Use-after-free in exif parsing under memory sanitizer).
-    (CVE-2019-11050). (Nikita)
-  . Fixed bug #78910 (Heap-buffer-overflow READ in exif). (CVE-2019-11047).
-    (Nikita)
 
 - FPM:
   . Fixed bug #76601 (Partially working php-fpm ater incomplete reload).
