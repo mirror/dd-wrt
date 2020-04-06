@@ -212,11 +212,6 @@
 #endif
 
 
-#ifndef NGX_HAVE_LITTLE_ENDIAN
-#define NGX_HAVE_LITTLE_ENDIAN  1
-#endif
-
-
 #ifndef NGX_MAX_SIZE_T_VALUE
 #define NGX_MAX_SIZE_T_VALUE  9223372036854775807LL
 #endif
