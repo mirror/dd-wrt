@@ -12,6 +12,11 @@
 #include <linux/namei.h>
 #include <uapi/linux/xattr.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+static inline bool d_is_symlink(const struct dentry *dentry) {
+	return dentry->d_inode->i_op->follow_link;
+}
+#endif
 /* CREATION TIME XATTR PREFIX */
 #define CREATION_TIME_PREFIX		"creation.time."
 #define CREATION_TIME_PREFIX_LEN	(sizeof(CREATION_TIME_PREFIX) - 1)
