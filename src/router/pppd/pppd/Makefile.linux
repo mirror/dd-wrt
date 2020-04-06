@@ -118,6 +118,7 @@ CFLAGS   += -DMSLANMAN=1
 endif
 ifdef MPPE
 CFLAGS   += -DMPPE=1
+HEADERS  += mppe.h
 endif
 endif
 
