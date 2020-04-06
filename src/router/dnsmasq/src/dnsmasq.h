@@ -141,6 +141,7 @@ typedef unsigned long long u64;
 #endif
 
 #if defined(HAVE_LINUX_NETWORK)
+#include <linux/version.h>
 #include <linux/sockios.h>
 #include <linux/capability.h>
 /* There doesn't seem to be a universally-available 
@@ -1062,6 +1063,7 @@ extern struct daemon {
   unsigned int duid_enterprise, duid_config_len;
   unsigned char *duid_config;
   char *dbus_name;
+  char *ubus_name;
   char *dump_file;
   int dump_mask;
   unsigned long soa_sn, soa_refresh, soa_retry, soa_expiry;
@@ -1108,7 +1110,7 @@ extern struct daemon {
   int inotifyfd;
 #endif
 #if defined(HAVE_LINUX_NETWORK)
-  int netlinkfd;
+  int netlinkfd, kernel_version;
 #elif defined(HAVE_BSD_NETWORK)
   int dhcp_raw_fd, dhcp_icmp_fd, routefd;
 #endif
@@ -1288,6 +1290,9 @@ int read_write(int fd, unsigned char *packet, int size, int rw);
 void close_fds(long max_fd, int spare1, int spare2, int spare3);
 int wildcard_match(const char* wildcard, const char* match);
 int wildcard_matchn(const char* wildcard, const char* match, int num);
+#ifdef HAVE_LINUX_NETWORK
+int kernel_version(void);
+#endif
 
 /* log.c */
 #ifdef NEED_PRINTF
@@ -1330,7 +1335,7 @@ void receive_query(struct listener *listen, time_t now);
 unsigned char *tcp_request(int confd, time_t now,
 			   union mysockaddr *local_addr, struct in_addr netmask, int auth_dns);
 void server_gone(struct server *server);
-struct frec *get_new_frec(time_t now, int *wait, int force);
+struct frec *get_new_frec(time_t now, int *wait, struct frec *force);
 int send_from(int fd, int nowild, char *packet, size_t len, 
 	       union mysockaddr *to, union all_addr *source,
 	       unsigned int iface);
