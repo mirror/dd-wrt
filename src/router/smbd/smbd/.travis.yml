@@ -44,7 +44,7 @@ script:
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
- - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile with latest Torvalds' kernel
@@ -55,7 +55,7 @@ script:
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo 'CONFIG_SMB_INSECURE_SERVER=y' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
- - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1.0 & smb2.0) with 4.1 kernel
@@ -66,7 +66,7 @@ script:
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
- - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build (no smb1/smb2) with latest Torvalds' kernel
@@ -77,7 +77,7 @@ script:
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
  - echo '# CONFIG_SMB_SERVER_SMBDIRECT is not set' >> .config
- - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Compile secure server build + SMBD with latest Torvalds' kernel
@@ -87,8 +87,8 @@ script:
  - echo 'source "fs/cifsd/Kconfig"' >> fs/Kconfig
  - echo 'CONFIG_SMB_SERVER=m' >> .config
  - echo '# CONFIG_SMB_INSECURE_SERVER is not set' >> .config
- - echo '# CONFIG_SMB_SERVER_DEBUGGING is not set' >> .config
  - echo 'CONFIG_SMB_SERVER_SMBDIRECT=y' >> .config
+ - echo '# CONFIG_SMB_SERVER_CHECK_CAP_NET_ADMIN is not set' >> .config
  - make -j$((`nproc`+1)) fs/cifsd/ksmbd.ko
 
  # Run xfstests testsuite
@@ -106,9 +106,9 @@ script:
  - sudo mkdir -p /etc/ksmbd/
  - sudo mkdir -p /mnt/1
  - sudo mkdir -p /mnt/2
- - sudo mkdir -p /mnt/test1
- - sudo mkdir -p /mnt/test2
- - sudo mkdir -p /mnt/test3
+ - sudo mkdir -m 777 -p /mnt/test1
+ - sudo mkdir -m 777 -p /mnt/test2
+ - sudo mkdir -m 777 -p /mnt/test3
  - ksmbd.adduser -i ./ksmbdpwd.db -a testuser -p 1234
  - cp cifsd-test-result/testsuites/smb.conf .
  - ksmbd.mountd -n --c=./smb.conf --u=./ksmbdpwd.db&

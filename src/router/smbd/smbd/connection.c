@@ -269,8 +269,8 @@ bool ksmbd_conn_alive(struct ksmbd_conn *conn)
 	 */
 	if (server_conf.deadtime > 0 &&
 		time_after(jiffies, conn->last_active + server_conf.deadtime)) {
-		ksmbd_debug("No response from client in %lu minutes\n",
-			server_conf.deadtime);
+		ksmbd_debug(CONN, "No response from client in %lu minutes\n",
+			server_conf.deadtime / SMB_ECHO_INTERVAL);
 		return false;
 	}
 	return true;
@@ -311,11 +311,11 @@ int ksmbd_conn_handler_loop(void *p)
 			break;
 
 		pdu_size = get_rfc1002_len(hdr_buf);
-		ksmbd_debug("RFC1002 header %u bytes\n", pdu_size);
+		ksmbd_debug(CONN, "RFC1002 header %u bytes\n", pdu_size);
 
 		/* make sure we have enough to get to SMB header end */
 		if (!ksmbd_pdu_size_has_room(pdu_size)) {
-			ksmbd_debug("SMB request too short (%u bytes)\n",
+			ksmbd_debug(CONN, "SMB request too short (%u bytes)\n",
 				    pdu_size);
 			continue;
 		}
@@ -409,7 +409,7 @@ again:
 
 		task = conn->transport->handler;
 		if (task)
-			ksmbd_debug("Stop session handler %s/%d\n",
+			ksmbd_debug(CONN, "Stop session handler %s/%d\n",
 				  task->comm,
 				  task_pid_nr(task));
 		conn->status = KSMBD_SESS_EXITING;

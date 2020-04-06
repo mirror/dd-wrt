@@ -347,17 +347,18 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 	unsigned long *oid = NULL;
 	unsigned int cls, con, tag, oidlen, rc, mechTokenlen;
 
-	ksmbd_debug("Received SecBlob: length %d\n", length);
+	ksmbd_debug(AUTH, "Received SecBlob: length %d\n", length);
 
 	asn1_open(&ctx, security_blob, length);
 
 	/* GSSAPI header */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit header\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit header\n");
 		return 0;
 	} else if ((cls != ASN1_APL) || (con != ASN1_CON)
 		   || (tag != ASN1_EOC)) {
-		ksmbd_debug("cls = %d con = %d tag = %d\n", cls, con, tag);
+		ksmbd_debug(AUTH, "cls = %d con = %d tag = %d\n", cls, con,
+			tag);
 		return 0;
 	}
 
@@ -378,52 +379,56 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 
 	/* SPNEGO OID not present or garbled -- bail out */
 	if (!rc) {
-		ksmbd_debug("Error decoding negTokenInit header\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit header\n");
 		return 0;
 	}
 
 	/* SPNEGO */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_CTX) || (con != ASN1_CON)
 		   || (tag != ASN1_EOC)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* negTokenInit */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_UNI) || (con != ASN1_CON)
 		   || (tag != ASN1_SEQ)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* sequence */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding 2nd part of negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding 2nd part of negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_CTX) || (con != ASN1_CON)
 		   || (tag != ASN1_EOC)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* sequence of */
 	if (asn1_header_decode
 	    (&ctx, &sequence_end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding 2nd part of negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding 2nd part of negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_UNI) || (con != ASN1_CON)
 		   || (tag != ASN1_SEQ)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
@@ -431,7 +436,8 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 	while (!asn1_eoc_decode(&ctx, sequence_end)) {
 		rc = asn1_header_decode(&ctx, &end, &cls, &con, &tag);
 		if (!rc) {
-			ksmbd_debug("Error decoding negTokenInit hdr exit2\n");
+			ksmbd_debug(AUTH,
+				"Error decoding negTokenInit hdr exit2\n");
 			return 0;
 		}
 		if ((tag == ASN1_OJI) && (con == ASN1_PRI)) {
@@ -453,29 +459,32 @@ ksmbd_decode_negTokenInit(unsigned char *security_blob, int length,
 				kfree(oid);
 			}
 		} else {
-			ksmbd_debug("Should be an oid what is going on?\n");
+			ksmbd_debug(AUTH,
+				"Should be an oid what is going on?\n");
 		}
 	}
 
 	/* sequence */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding 2nd part of negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding 2nd part of negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_CTX) || (con != ASN1_CON)
 		   || (tag != ASN1_INT)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* sequence of */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding 2nd part of negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding 2nd part of negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_UNI) || (con != ASN1_PRI)
 		   || (tag != ASN1_OTS)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
@@ -500,50 +509,54 @@ ksmbd_decode_negTokenTarg(unsigned char *security_blob, int length,
 	unsigned char *end;
 	unsigned int cls, con, tag, mechTokenlen;
 
-	ksmbd_debug("Received Auth SecBlob: length %d\n", length);
+	ksmbd_debug(AUTH, "Received Auth SecBlob: length %d\n", length);
 
 	asn1_open(&ctx, security_blob, length);
 
 	/* GSSAPI header */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit header\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit header\n");
 		return 0;
 	} else if ((cls != ASN1_CTX) || (con != ASN1_CON)
 		   || (tag != ASN1_BOL)) {
-		ksmbd_debug("cls = %d con = %d tag = %d\n", cls, con, tag);
+		ksmbd_debug(AUTH, "cls = %d con = %d tag = %d\n", cls, con,
+			tag);
 		return 0;
 	}
 
 	/* SPNEGO */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_UNI) || (con != ASN1_CON)
 		   || (tag != ASN1_SEQ)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 0\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* negTokenTarg */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_CTX) || (con != ASN1_CON)
 		   || (tag != ASN1_INT)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 
 	/* negTokenTarg */
 	if (asn1_header_decode(&ctx, &end, &cls, &con, &tag) == 0) {
-		ksmbd_debug("Error decoding negTokenInit\n");
+		ksmbd_debug(AUTH, "Error decoding negTokenInit\n");
 		return 0;
 	} else if ((cls != ASN1_UNI) || (con != ASN1_PRI)
 		   || (tag != ASN1_OTS)) {
-		ksmbd_debug("cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
-			 cls, con, tag, end, *end);
+		ksmbd_debug(AUTH,
+			"cls = %d con = %d tag = %d end = %p (%d) exit 1\n",
+			cls, con, tag, end, *end);
 		return 0;
 	}
 

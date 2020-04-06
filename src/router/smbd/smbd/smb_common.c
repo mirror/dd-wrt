@@ -125,7 +125,7 @@ int ksmbd_lookup_protocol_idx(char *str)
 
 	while (offt >= 0) {
 		if (!strncmp(str, smb_protos[offt].prot, len)) {
-			ksmbd_debug("selected %s dialect idx = %d\n",
+			ksmbd_debug(SMB, "selected %s dialect idx = %d\n",
 					smb_protos[offt].prot, offt);
 			return smb_protos[offt].index;
 		}
@@ -148,7 +148,7 @@ int ksmbd_verify_smb_message(struct ksmbd_work *work)
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 	if (smb2_hdr->ProtocolId == SMB2_PROTO_NUMBER) {
-		ksmbd_debug("got SMB2 command\n");
+		ksmbd_debug(SMB, "got SMB2 command\n");
 		return ksmbd_smb2_check_message(work);
 	}
 
@@ -177,10 +177,10 @@ bool ksmbd_smb_request(struct ksmbd_conn *conn)
 		/* Regular SMB request */
 		return true;
 	case RFC1002_SESSION_KEEP_ALIVE:
-		ksmbd_debug("RFC 1002 session keep alive\n");
+		ksmbd_debug(SMB, "RFC 1002 session keep alive\n");
 		break;
 	default:
-		ksmbd_debug("RFC 1002 unknown request type 0x%x\n", type);
+		ksmbd_debug(SMB, "RFC 1002 unknown request type 0x%x\n", type);
 	}
 
 	return false;
@@ -211,11 +211,13 @@ static int ksmbd_lookup_dialect_by_name(char *cli_dialects, __le16 byte_count)
 		bcount = le16_to_cpu(byte_count);
 		do {
 			dialect = next_dialect(dialect, &next);
-			ksmbd_debug("client requested dialect %s\n", dialect);
+			ksmbd_debug(SMB, "client requested dialect %s\n",
+				dialect);
 			if (!strcmp(dialect, smb_protos[i].name)) {
 				if (supported_protocol(smb_protos[i].index)) {
-					ksmbd_debug("selected %s dialect\n",
-							smb_protos[i].name);
+					ksmbd_debug(SMB,
+						"selected %s dialect\n",
+						smb_protos[i].name);
 					if (smb_protos[i].index == SMB1_PROT)
 						return seq_num;
 					return smb_protos[i].prot_id;
@@ -237,14 +239,14 @@ int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count)
 	for (i = ARRAY_SIZE(smb_protos) - 1; i >= 0; i--) {
 		count = le16_to_cpu(dialects_count);
 		while (--count >= 0) {
-			ksmbd_debug("client requested dialect 0x%x\n",
+			ksmbd_debug(SMB, "client requested dialect 0x%x\n",
 				le16_to_cpu(cli_dialects[count]));
 			if (le16_to_cpu(cli_dialects[count]) !=
 					smb_protos[i].prot_id)
 				continue;
 
 			if (supported_protocol(smb_protos[i].index)) {
-				ksmbd_debug("selected %s dialect\n",
+				ksmbd_debug(SMB, "selected %s dialect\n",
 					smb_protos[i].name);
 				return smb_protos[i].prot_id;
 			}
@@ -464,13 +466,13 @@ int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command)
 	int ret;
 
 	conn->dialect = ksmbd_negotiate_smb_dialect(REQUEST_BUF(work));
-	ksmbd_debug("conn->dialect 0x%x\n", conn->dialect);
+	ksmbd_debug(SMB, "conn->dialect 0x%x\n", conn->dialect);
 
 	if (command == SMB2_NEGOTIATE_HE) {
 		struct smb2_hdr *smb2_hdr = REQUEST_BUF(work);
 
 		if (smb2_hdr->ProtocolId != SMB2_PROTO_NUMBER) {
-			ksmbd_debug("Downgrade to SMB1 negotiation\n");
+			ksmbd_debug(SMB, "Downgrade to SMB1 negotiation\n");
 			command = SMB_COM_NEGOTIATE;
 		}
 	}
@@ -486,7 +488,7 @@ int ksmbd_smb_negotiate_common(struct ksmbd_work *work, unsigned int command)
 			conn->need_neg = true;
 			init_smb3_11_server(conn);
 			init_smb2_neg_rsp(work);
-			ksmbd_debug("Upgrade to SMB2 negotiation\n");
+			ksmbd_debug(SMB, "Upgrade to SMB2 negotiation\n");
 			return 0;
 		}
 		return smb_handle_negotiate(work);
@@ -518,8 +520,8 @@ static void smb_shared_mode_error(int error,
 				  struct ksmbd_file *prev_fp,
 				  struct ksmbd_file *curr_fp)
 {
-	ksmbd_debug("%s\n", shared_mode_errors[error]);
-	ksmbd_debug("Current mode: 0x%x Desired mode: 0x%x\n",
+	ksmbd_debug(SMB, "%s\n", shared_mode_errors[error]);
+	ksmbd_debug(SMB, "Current mode: 0x%x Desired mode: 0x%x\n",
 		  prev_fp->saccess, curr_fp->daccess);
 }
 

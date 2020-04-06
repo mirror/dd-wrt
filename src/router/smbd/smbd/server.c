@@ -24,9 +24,7 @@
 #include "mgmt/user_session.h"
 #include "crypto_ctx.h"
 
-#ifdef CONFIG_SMB_SERVER_DEBUGGING
 int ksmbd_debugging = 1;
-#endif
 
 struct ksmbd_server_config server_conf;
 
@@ -152,7 +150,7 @@ andx_again:
 	ret = cmds->proc(work);
 
 	if (ret < 0)
-		ksmbd_debug("Failed to process %u [%d]\n", command, ret);
+		ksmbd_debug(CONN, "Failed to process %u [%d]\n", command, ret);
 	/* AndX commands - chained request can return positive values */
 	else if (ret > 0) {
 		command = ret;
@@ -460,13 +458,73 @@ static ssize_t kill_server_store(struct class *class,
 	return len;
 }
 
+static const char * const debug_type_strings[] = {"smb", "auth", "vfs",
+						"oplock", "ipc", "conn",
+						"rdma"};
+
+static ssize_t debug_show(struct class *class,
+			  struct class_attribute *attr,
+			  char *buf)
+{
+	ssize_t sz = 0;
+	int i, pos = 0;
+
+	for (i = 0; i < ARRAY_SIZE(debug_type_strings); i++) {
+		if ((ksmbd_debug_types >> i) & 1) {
+			pos = scnprintf(buf + sz,
+					PAGE_SIZE - sz,
+					"[%s] ",
+					debug_type_strings[i]);
+		} else {
+			pos = scnprintf(buf + sz,
+					PAGE_SIZE - sz,
+					"%s ",
+					debug_type_strings[i]);
+		}
+		sz += pos;
+
+	}
+	sz += scnprintf(buf + sz, PAGE_SIZE - sz, "\n");
+	return sz;
+}
+
+static ssize_t debug_store(struct class *class,
+			   struct class_attribute *attr,
+			   const char *buf,
+			   size_t len)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(debug_type_strings); i++) {
+		if (sysfs_streq(buf, "all")) {
+			if (ksmbd_debug_types == KSMBD_DEBUG_ALL)
+				ksmbd_debug_types = 0;
+			else
+				ksmbd_debug_types = KSMBD_DEBUG_ALL;
+			break;
+		}
+
+		if (sysfs_streq(buf, debug_type_strings[i])) {
+			if (ksmbd_debug_types & (1 << i))
+				ksmbd_debug_types &= ~(1 << i);
+			else
+				ksmbd_debug_types |= (1 << i);
+			break;
+		}
+	}
+
+	return len;
+}
+
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 static CLASS_ATTR_RO(stats);
 static CLASS_ATTR_WO(kill_server);
+static CLASS_ATTR_RW(debug);
 
 static struct attribute *ksmbd_control_class_attrs[] = {
 	&class_attr_stats.attr,
 	&class_attr_kill_server.attr,
+	&class_attr_debug.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(ksmbd_control_class);
@@ -480,6 +538,7 @@ static struct class ksmbd_control_class = {
 static struct class_attribute ksmbd_control_class_attrs[] = {
 	__ATTR_RO(stats),
 	__ATTR_WO(kill_server),
+	__ATTR_RW(debug),
 	__ATTR_NULL,
 };
 
@@ -565,11 +624,6 @@ static void __exit ksmbd_server_exit(void)
 	ksmbd_server_shutdown();
 	ksmbd_release_inode_hash();
 }
-
-#ifdef CONFIG_SMB_SERVER_DEBUGGING
-module_param(ksmbd_debugging, int, 0644);
-MODULE_PARM_DESC(ksmbd_debugging, "Enable/disable KSMBD debugging output");
-#endif
 
 MODULE_AUTHOR("Namjae Jeon <linkinjeon@gmail.com>");
 MODULE_VERSION(KSMBD_VERSION);

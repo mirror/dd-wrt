@@ -56,12 +56,10 @@ config SMB_SERVER_SMBDIRECT
 	help
 	  This enables SMB direct protocol for SMB 3.x
 
-config SMB_SERVER_DEBUGGING
-	bool "Enable verbose debugging code"
+config SMB_SERVER_CHECK_CAP_NET_ADMIN
+	bool "Enable check network administration capability"
 	depends on SMB_SERVER
 	default n
 
 	help
-	  This adds a lot of debugging code, which is compiled out
-	  otherwise. Verbose debugging code increases the size of
-	  the kernel module quite considerably.
+	  Prevent unprivileged processes to start the cifsd kernel server.

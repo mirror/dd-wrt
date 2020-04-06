@@ -157,7 +157,7 @@ static void access_flags_to_mode(__le32 ace_flags, int type, umode_t *pmode,
 			((flags & FILE_EXEC_RIGHTS) == FILE_EXEC_RIGHTS))
 		*pmode |= (0111 & (*pbits_to_set));
 
-	ksmbd_debug("access flags 0x%x mode now %04o\n", flags, *pmode);
+	ksmbd_debug(SMB, "access flags 0x%x mode now %04o\n", flags, *pmode);
 }
 
 /*
@@ -186,7 +186,7 @@ static void mode_to_access_flags(umode_t mode, umode_t bits_to_use,
 	if (mode & 0111)
 		*pace_flags |= SET_FILE_EXEC_RIGHTS;
 
-	ksmbd_debug("mode: 0x%x, access flags now 0x%x\n",
+	ksmbd_debug(SMB, "mode: 0x%x, access flags now 0x%x\n",
 		 mode, *pace_flags);
 }
 
@@ -244,7 +244,7 @@ static void parse_dacl(struct smb_acl *pdacl, char *end_of_acl,
 		return;
 	}
 
-	ksmbd_debug("DACL revision %d size %d num aces %d\n",
+	ksmbd_debug(SMB, "DACL revision %d size %d num aces %d\n",
 		 le16_to_cpu(pdacl->revision), le16_to_cpu(pdacl->size),
 		 le32_to_cpu(pdacl->num_aces));
 
@@ -383,7 +383,8 @@ int parse_sec_desc(struct smb_ntsd *pntsd, int acl_len,
 			le32_to_cpu(pntsd->gsidoffset));
 	dacloffset = le32_to_cpu(pntsd->dacloffset);
 	dacl_ptr = (struct smb_acl *)((char *)pntsd + dacloffset);
-	ksmbd_debug("revision %d type 0x%x ooffset 0x%x goffset 0x%x sacloffset 0x%x dacloffset 0x%x\n",
+	ksmbd_debug(SMB,
+		"revision %d type 0x%x ooffset 0x%x goffset 0x%x sacloffset 0x%x dacloffset 0x%x\n",
 		 pntsd->revision, pntsd->type, le32_to_cpu(pntsd->osidoffset),
 		 le32_to_cpu(pntsd->gsidoffset),
 		 le32_to_cpu(pntsd->sacloffset), dacloffset);

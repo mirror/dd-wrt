@@ -266,14 +266,14 @@ static int ksmbd_kthread_fn(void *p)
 			continue;
 		}
 
-		ksmbd_debug("connect success: accepted new connection\n");
+		ksmbd_debug(CONN, "connect success: accepted new connection\n");
 		client_sk->sk->sk_rcvtimeo = KSMBD_TCP_RECV_TIMEOUT;
 		client_sk->sk->sk_sndtimeo = KSMBD_TCP_SEND_TIMEOUT;
 
 		ksmbd_tcp_new_connection(client_sk);
 	}
 
-	ksmbd_debug("releasing socket\n");
+	ksmbd_debug(CONN, "releasing socket\n");
 	return 0;
 }
 
