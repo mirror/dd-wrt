@@ -719,7 +719,7 @@ static inline void *skb_put_data(struct sk_buff *skb, const void *data, unsigned
 #endif
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0)
 #include <linux/kref.h>
 static inline int kref_read(const struct kref *kref)
 {
