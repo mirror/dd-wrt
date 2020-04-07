@@ -150,6 +150,7 @@ void ksmbd_session_destroy(struct ksmbd_session *sess)
 	if (sess->user)
 		ksmbd_free_user(sess->user);
 
+	ksmbd_tree_conn_session_logoff(sess);
 	ksmbd_destroy_file_table(&sess->file_table);
 	ksmbd_session_rpc_clear_list(sess);
 	free_channel_list(sess);
