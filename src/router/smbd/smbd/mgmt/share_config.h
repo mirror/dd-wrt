@@ -33,6 +33,9 @@ struct ksmbd_share_config {
 	unsigned short		force_gid;
 };
 
+#define KSMBD_SHARE_INVALID_UID	((__u16)-1)
+#define KSMBD_SHARE_INVALID_GID	((__u16)-1)
+
 static inline int share_config_create_mode(struct ksmbd_share_config *share,
 	umode_t posix_mode)
 {
@@ -77,8 +80,5 @@ struct ksmbd_share_config *ksmbd_share_config_get(char *name);
 bool ksmbd_share_veto_filename(struct ksmbd_share_config *share,
 			       const char *filename);
 void ksmbd_share_configs_cleanup(void);
-const struct cred *ksmbd_override_fsids(struct ksmbd_session *sess,
-		struct ksmbd_share_config *share);
-void ksmbd_revert_fsids(const struct cred *old_cred);
 
 #endif /* __SHARE_CONFIG_MANAGEMENT_H__ */
