@@ -10,7 +10,7 @@
 #include <errno.h>
 
 #ifndef __UCLIBC_HAS_THREADS__
-#define __UCLIBC_HAS_THREADS__
+//#define __UCLIBC_HAS_THREADS__
 #endif
 
 #include <sys/poll.h>
