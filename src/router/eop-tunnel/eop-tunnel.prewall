@@ -64,6 +64,10 @@ do
 					logger -p user.info "Establish WireGuard tunnel with peer endpoint $($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
+					#egc: add way out if default route is set via tunnel
+					route add -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null
+				else
+					route del -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null # delete routing out from endpoint
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 				#rm -f /tmp/wireguard/oet${i}_psk${p}
@@ -72,6 +76,20 @@ do
 			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
+			#egc:add routes based on allowed IP's has to be after interface is up
+			for p in `seq 0 $peers`
+				do
+					# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
+					if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]] 
+					then 
+						for aip in $($nv get oet${i}_aip${p} | sed "s/,/ /g") ; do 
+							logger -p user.info "route $aip added via oet${i}" #debug
+							ip route add $aip dev oet${i} 2>&1 > /dev/null
+						done
+					fi			
+				done
+			# end add routes
+			ip route flush cache
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then

@@ -1613,6 +1613,7 @@ void tunnel_save(webs_t wp)
 	for (i = 1; i < tunnels + 1; i++) {
 		copytonv(wp, "oet%d_en", i);
 		copytonv(wp, "oet%d_mit", i);
+		copytonv(wp, "oet%d_natout", i);
 		copytonv(wp, "oet%d_proto", i);
 		copytonv(wp, "oet%d_peers", i);
 		copytonv(wp, "oet%d_id", i);
@@ -1641,6 +1642,7 @@ void tunnel_save(webs_t wp)
 			copytonv(wp, "oet%d_peerport%d", i, peer);
 			copytonv(wp, "oet%d_rem%d", i, peer);
 			copytonv(wp, "oet%d_usepsk%d", i, peer);
+			copytonv(wp, "oet%d_aip_rten%d", i, peer);
 			copytonv(wp, "oet%d_psk%d", i, peer);
 		}
 	}
@@ -1710,6 +1712,7 @@ void add_peer(webs_t wp)
 	default_seti("ka", 0);
 	default_seti("endpoint", 0);
 	default_seti("usepsk", 0);
+	default_seti("aip_rten", 0);
 	default_set("rem", "0.0.0.0");
 	default_seti("peerport", 51820);
 	default_set("ip", "0.0.0.0");
@@ -1760,6 +1763,7 @@ static void copypeer(int tun, int from, int to)
 	copypeervalue("peerport", tun, from, to);
 	copypeervalue("rem", tun, from, to);
 	copypeervalue("usepsk", tun, from, to);
+	copypeervalue("aip_rten", tun, from, to);
 	copypeervalue("psk", tun, from, to);
 }
 
@@ -1775,6 +1779,7 @@ static void copytunpeer(int peer, int from, int to)
 	copypeertunvalue("peerport", peer, from, to);
 	copypeertunvalue("rem", peer, from, to);
 	copypeertunvalue("usepsk", peer, from, to);
+	copypeertunvalue("aip_rten", peer, from, to);
 	copypeertunvalue("psk", peer, from, to);
 }
 
@@ -1790,6 +1795,7 @@ static void delpeer(int tun, int peer)
 	delpeervalue("peerport", tun, peer);
 	delpeervalue("rem", tun, peer);
 	delpeervalue("usepsk", tun, peer);
+	delpeervalue("aip_rten", tun, peer);
 	delpeervalue("psk", tun, peer);
 
 }
@@ -1820,6 +1826,7 @@ void add_tunnel(webs_t wp)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s",tunnels, name))==0)nvram_nseti(val, "oet%d_%s",tunnels,name)
 	default_seti("en", 0);
 	default_seti("mit", 1);
+	default_seti("natout", 0);
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
@@ -1847,6 +1854,7 @@ void del_tunnel(webs_t wp)
 	for (i = tun + 1; i < tunnels + 1; i++) {
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
+		copytunvalue("natout", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
@@ -1855,6 +1863,7 @@ void del_tunnel(webs_t wp)
 		copytunvalue("mtu", i, i - 1);
 		copytunvalue("proto", i, i - 1);
 		copytunvalue("bridged", i, i - 1);
+		copytunvalue("port", i, i - 1);
 #ifdef HAVE_WIREGUARD
 		copytunvalue("peers", i, i - 1);
 		sprintf(idx, "oet%d_peers", i);
@@ -1874,6 +1883,7 @@ void del_tunnel(webs_t wp)
 #endif
 	deltunvalue("en", tunnels);
 	deltunvalue("mit", tunnels);
+	deltunvalue("natout", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
@@ -1882,6 +1892,7 @@ void del_tunnel(webs_t wp)
 	deltunvalue("mtu", tunnels);
 	deltunvalue("proto", tunnels);
 	deltunvalue("bridged", tunnels);
+	deltunvalue("port", tunnels);
 #ifdef HAVE_WIREGUARD
 	deltunvalue("peers", tunnels);
 #endif
