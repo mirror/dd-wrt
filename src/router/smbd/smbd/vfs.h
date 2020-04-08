@@ -144,13 +144,17 @@ int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
 int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 		uint64_t fid, struct iattr *attrs);
 int ksmbd_vfs_fsync(struct ksmbd_work *work, uint64_t fid, uint64_t p_id);
-int ksmbd_vfs_remove_file(char *name);
-int ksmbd_vfs_link(const char *oldname, const char *newname);
-int ksmbd_vfs_symlink(const char *name, const char *symname);
+int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name);
+int ksmbd_vfs_link(struct ksmbd_work *work,
+		const char *oldname, const char *newname);
+int ksmbd_vfs_symlink(struct ksmbd_work *work,
+		const char *name, const char *symname);
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp);
 
-int ksmbd_vfs_fp_rename(struct ksmbd_file *fp, char *newname);
-int ksmbd_vfs_rename_slowpath(char *oldname, char *newname);
+int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
+		char *newname);
+int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
+		char *oldname, char *newname);
 
 int ksmbd_vfs_truncate(struct ksmbd_work *work, const char *name,
 	struct ksmbd_file *fp, loff_t size);
@@ -186,7 +190,8 @@ int ksmbd_vfs_setxattr(struct dentry *dentry,
 		       size_t attr_size,
 		       int flags);
 
-int ksmbd_vfs_fsetxattr(const char *filename,
+int ksmbd_vfs_fsetxattr(struct ksmbd_work *work,
+			const char *filename,
 			const char *attr_name,
 			const void *attr_value,
 			size_t attr_size,
