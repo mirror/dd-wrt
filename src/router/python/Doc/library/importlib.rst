@@ -274,6 +274,8 @@ ABC hierarchy::
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
       use to make a more educated guess about what spec to return.
+      :func:`importlib.util.spec_from_loader` may be useful for implementing
+      concrete ``MetaPathFinders``.
 
       .. versionadded:: 3.4
 
@@ -323,7 +325,8 @@ ABC hierarchy::
       within the :term:`path entry` to which it is assigned.  If a spec
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
-      guess about what spec to return.
+      guess about what spec to return. :func:`importlib.util.spec_from_loader`
+      may be useful for implementing concrete ``PathEntryFinders``.
 
       .. versionadded:: 3.4
 
@@ -500,7 +503,7 @@ ABC hierarchy::
     packages or a module).
 
     Loaders that wish to support resource reading are expected to
-    provide a method called ``get_resource_loader(fullname)`` which
+    provide a method called ``get_resource_reader(fullname)`` which
     returns an object implementing this ABC's interface. If the module
     specified by fullname is not a package, this method should return
     :const:`None`. An object compatible with this ABC should only be
@@ -1165,7 +1168,7 @@ find and load modules.
 
    .. method:: is_package(fullname)
 
-      Return true if :attr:`path` appears to be for a package.
+      Return ``True`` if :attr:`path` appears to be for a package.
 
    .. method:: path_stats(path)
 

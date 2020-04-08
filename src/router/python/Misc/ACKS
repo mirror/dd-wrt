@@ -58,6 +58,7 @@ Jon Anglin
 Michele Angrisano
 Ankur Ankan
 Heidi Annexstad
+David Antonini
 Ramchandra Apte
 Éric Araujo
 Alexandru Ardelean
@@ -160,6 +161,7 @@ Roy Bixler
 Daniel Black
 Jonathan Black
 Renaud Blanch
+Justin Blanchard
 Mike Bland
 Martin Bless
 Pablo Bleyer
@@ -243,6 +245,7 @@ Zach Byrne
 Vedran Čačić
 Nicolas Cadou
 Jp Calderone
+Ben Caller
 Arnaud Calmettes
 Daniel Calvelo
 Tony Campbell
@@ -565,6 +568,7 @@ Karan Goel
 Jeroen Van Goey
 Christoph Gohlke
 Tim Golden
+Yonatan Goldschmidt
 Mark Gollahon
 Guilherme Gonçalves
 Tiago Gonçalves
@@ -815,6 +819,7 @@ Lawrence Kesteloot
 Garvit Khatri
 Vivek Khera
 Dhiru Kholia
+Artem Khramov
 Akshit Khurana
 Sanyam Khurana
 Mads Kiilerich
@@ -947,11 +952,13 @@ Alain Leufroy
 Mark Levinson
 Mark Levitt
 Ivan Levkivskyi
+Ben Lewis
 William Lewis
 Akira Li
 Robert Li
 Xuanji Li
 Zekun Li
+Zheao Li
 Robert van Liere
 Ross Light
 Shawn Ligocki
@@ -1305,6 +1312,7 @@ Burton Radons
 Abhilash Raj
 Shorya Raj
 Dhushyanth Ramasamy
+Ashwin Ramaswami
 Jeff Ramnani
 Bayard Randel
 Varpu Rantala
@@ -1472,6 +1480,7 @@ Dmitry Shachnev
 Anish Shah
 Daniel Shahaf
 Hui Shang
+Geoff Shannon
 Mark Shannon
 Ha Shao
 Richard Shapiro
@@ -1509,6 +1518,7 @@ Ng Pheng Siong
 Yann Sionneau
 George Sipe
 J. Sipprell
+Ngalim Siregar
 Kragen Sitaker
 Kaartic Sivaraam
 Ville Skyttä
@@ -1582,6 +1592,7 @@ Kalle Svensson
 Andrew Svetlov
 Paul Swartz
 Al Sweigart
+Sviatoslav Sydorenko
 Thenault Sylvain
 Péter Szabó
 John Szakmeister
@@ -1670,6 +1681,7 @@ Michael Urman
 Hector Urtubia
 Lukas Vacek
 Ville Vainio
+Yann Vaginay
 Andi Vajda
 Case Van Horsen
 John Mark Vandenberg
@@ -1824,11 +1836,12 @@ Nickolai Zeldovich
 Yuxiao Zeng
 Uwe Zessin
 Cheng Zhang
+George Zhang
 Kai Zhu
 Tarek Ziadé
 Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-Zheao Li
-Geoff Shannon
+
+(Entries should be added in rough alphabetical order by last names)

@@ -321,8 +321,9 @@ PGOBJS=		\
 		Parser/pgenmain.o
 
 PARSER_HEADERS= \
-		$(srcdir)/Parser/parser.h \
+		$(srcdir)/Include/grammar.h \
 		$(srcdir)/Include/parsetok.h \
+		$(srcdir)/Parser/parser.h \
 		$(srcdir)/Parser/tokenizer.h
 
 PGENOBJS=	$(POBJS) $(PGOBJS)
@@ -856,7 +857,7 @@ regen-opcode:
 		$(srcdir)/Include/opcode.h.new
 	$(UPDATE_FILE) $(srcdir)/Include/opcode.h $(srcdir)/Include/opcode.h.new
 
-Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
+Python/compile.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o Parser/parsetok.o: $(srcdir)/Include/graminit.h $(srcdir)/Include/Python-ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
 		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
@@ -951,11 +952,11 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/accu.h \
 		$(srcdir)/Include/asdl.h \
 		$(srcdir)/Include/ast.h \
-		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/bitset.h \
+		$(srcdir)/Include/bltinmodule.h \
 		$(srcdir)/Include/boolobject.h \
-		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytearrayobject.h \
+		$(srcdir)/Include/bytes_methods.h \
 		$(srcdir)/Include/bytesobject.h \
 		$(srcdir)/Include/cellobject.h \
 		$(srcdir)/Include/ceval.h \
@@ -964,6 +965,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/codecs.h \
 		$(srcdir)/Include/compile.h \
 		$(srcdir)/Include/complexobject.h \
+		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/descrobject.h \
 		$(srcdir)/Include/dictobject.h \
 		$(srcdir)/Include/dtoa.h \
@@ -993,6 +995,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/node.h \
 		$(srcdir)/Include/object.h \
 		$(srcdir)/Include/objimpl.h \
+		$(srcdir)/Include/odictobject.h \
 		$(srcdir)/Include/opcode.h \
 		$(srcdir)/Include/osdefs.h \
 		$(srcdir)/Include/osmodule.h \
@@ -1009,15 +1012,15 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pyfpe.h \
 		$(srcdir)/Include/pyhash.h \
 		$(srcdir)/Include/pylifecycle.h \
-		$(srcdir)/Include/pymath.h \
+		$(srcdir)/Include/pymacconfig.h \
 		$(srcdir)/Include/pymacro.h \
+		$(srcdir)/Include/pymath.h \
 		$(srcdir)/Include/pymem.h \
 		$(srcdir)/Include/pyport.h \
 		$(srcdir)/Include/pystate.h \
-		$(srcdir)/Include/context.h \
 		$(srcdir)/Include/pystrcmp.h \
-		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pystrhex.h \
+		$(srcdir)/Include/pystrtod.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytime.h \
@@ -1028,6 +1031,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/structseq.h \
 		$(srcdir)/Include/symtable.h \
 		$(srcdir)/Include/sysmodule.h \
+		$(srcdir)/Include/token.h \
 		$(srcdir)/Include/traceback.h \
 		$(srcdir)/Include/tupleobject.h \
 		$(srcdir)/Include/ucnhash.h \
@@ -1057,6 +1061,11 @@ TESTRUNNER=	$(TESTPYTHON) $(srcdir)/Tools/scripts/run_tests.py
 TESTTIMEOUT=	1200
 
 .PHONY: test testall testuniversal buildbottest pythoninfo
+
+# Remove "test_python_*" directories of previous failed test jobs.
+# Pass TESTOPTS options because it can contain --tempdir option.
+cleantest: build_all
+	$(TESTRUNNER) $(TESTOPTS) --cleanup
 
 # Run a basic set of regression tests.
 # This excludes some tests that are particularly resource-intensive.
@@ -1625,6 +1634,7 @@ tags::
 	ctags -w $(srcdir)/Include/*.h $(srcdir)/Include/internal/*.h
 	for i in $(SRCDIRS); do ctags -f tags -w -a $(srcdir)/$$i/*.[ch]; done
 	ctags -f tags -w -a $(srcdir)/Modules/_ctypes/*.[ch]
+	find $(srcdir)/Lib -type f -name "*.py" -not -name "test_*.py" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/*_test/*" | ctags -f tags -w -a -L -
 	LC_ALL=C sort -o tags tags
 
 # Create a tags file for GNU Emacs
@@ -1632,6 +1642,8 @@ TAGS::
 	cd $(srcdir); \
 	etags Include/*.h Include/internal/*.h; \
 	for i in $(SRCDIRS); do etags -a $$i/*.[ch]; done
+	etags -a $(srcdir)/Modules/_ctypes/*.[ch]
+	find $(srcdir)/Lib -type f -name "*.py" -not -name "test_*.py" -not -path "*/test/*" -not -path "*/tests/*" -not -path "*/*_test/*" | etags - -a
 
 # Sanitation targets -- clean leaves libraries, executables and tags
 # files, which clobber removes as well

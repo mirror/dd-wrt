@@ -1377,6 +1377,54 @@ _get_peer_alt_names (X509 *certificate) {
                 PyTuple_SET_ITEM(t, 1, v);
                 break;
 
+            case GEN_IPADD:
+                /* OpenSSL < 3.0.0 adds a trailing \n to IPv6. 3.0.0 removed
+                 * the trailing newline. Remove it in all versions
+                 */
+                t = PyTuple_New(2);
+                if (t == NULL)
+                    goto fail;
+
+                v = PyUnicode_FromString("IP Address");
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 0, v);
+
+                if (name->d.ip->length == 4) {
+                    unsigned char *p = name->d.ip->data;
+                    v = PyUnicode_FromFormat(
+                        "%d.%d.%d.%d",
+                        p[0], p[1], p[2], p[3]
+                    );
+                } else if (name->d.ip->length == 16) {
+                    /* PyUnicode_FromFormat() does not support %X */
+                    unsigned char *p = name->d.ip->data;
+                    len = sprintf(
+                        buf,
+                        "%X:%X:%X:%X:%X:%X:%X:%X",
+                        p[0] << 8 | p[1],
+                        p[2] << 8 | p[3],
+                        p[4] << 8 | p[5],
+                        p[6] << 8 | p[7],
+                        p[8] << 8 | p[9],
+                        p[10] << 8 | p[11],
+                        p[12] << 8 | p[13],
+                        p[14] << 8 | p[15]
+                    );
+                    v = PyUnicode_FromStringAndSize(buf, len);
+                } else {
+                    v = PyUnicode_FromString("<invalid>");
+                }
+
+                if (v == NULL) {
+                    Py_DECREF(t);
+                    goto fail;
+                }
+                PyTuple_SET_ITEM(t, 1, v);
+                break;
+
             default:
                 /* for everything else, we use the OpenSSL print form */
                 switch (gntype) {
@@ -1384,7 +1432,6 @@ _get_peer_alt_names (X509 *certificate) {
                     case GEN_OTHERNAME:
                     case GEN_X400:
                     case GEN_EDIPARTY:
-                    case GEN_IPADD:
                     case GEN_RID:
                         break;
                     default:
@@ -1789,7 +1836,7 @@ _ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
         goto fail0;
     }
 
-    x = PEM_read_bio_X509_AUX(cert,NULL, NULL, NULL);
+    x = PEM_read_bio_X509(cert, NULL, NULL, NULL);
     if (x == NULL) {
         PyErr_SetString(PySSLErrorObject,
                         "Error decoding PEM-encoded file");
@@ -5384,7 +5431,7 @@ parseKeyUsage(PCCERT_CONTEXT pCertCtx, DWORD flags)
         }
         return PyErr_SetFromWindowsErr(error);
     }
-    retval = PySet_New(NULL);
+    retval = PyFrozenSet_New(NULL);
     if (retval == NULL) {
         goto error;
     }
@@ -5448,6 +5495,7 @@ ssl_collect_certificates(const char *store_name)
             if (result) {
                 ++storesAdded;
             }
+            CertCloseStore(hSystemStore, 0);  /* flag must be 0 */
         }
     }
     if (storesAdded == 0) {
@@ -5456,20 +5504,6 @@ ssl_collect_certificates(const char *store_name)
     }
 
     return hCollectionStore;
-}
-
-/* code from Objects/listobject.c */
-
-static int
-list_contains(PyListObject *a, PyObject *el)
-{
-    Py_ssize_t i;
-    int cmp;
-
-    for (i = 0, cmp = 0 ; cmp == 0 && i < Py_SIZE(a); ++i)
-        cmp = PyObject_RichCompareBool(el, PyList_GET_ITEM(a, i),
-                                           Py_EQ);
-    return cmp;
 }
 
 /*[clinic input]
@@ -5494,7 +5528,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    result = PyList_New(0);
+    result = PySet_New(NULL);
     if (result == NULL) {
         return NULL;
     }
@@ -5534,11 +5568,10 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         enc = NULL;
         PyTuple_SET_ITEM(tup, 2, keyusage);
         keyusage = NULL;
-        if (!list_contains((PyListObject*)result, tup)) {
-            if (PyList_Append(result, tup) < 0) {
-                Py_CLEAR(result);
-                break;
-            }
+        if (PySet_Add(result, tup) == -1) {
+            Py_CLEAR(result);
+            Py_CLEAR(tup);
+            break;
         }
         Py_CLEAR(tup);
     }
@@ -5562,7 +5595,14 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    return result;
+    /* convert set to list */
+    if (result == NULL) {
+        return NULL;
+    } else {
+        PyObject *lst = PySequence_List(result);
+        Py_DECREF(result);
+        return lst;
+    }
 }
 
 /*[clinic input]
@@ -5586,7 +5626,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    result = PyList_New(0);
+    result = PySet_New(NULL);
     if (result == NULL) {
         return NULL;
     }
@@ -5616,11 +5656,10 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         PyTuple_SET_ITEM(tup, 1, enc);
         enc = NULL;
 
-        if (!list_contains((PyListObject*)result, tup)) {
-            if (PyList_Append(result, tup) < 0) {
-                Py_CLEAR(result);
-                break;
-            }
+        if (PySet_Add(result, tup) == -1) {
+            Py_CLEAR(result);
+            Py_CLEAR(tup);
+            break;
         }
         Py_CLEAR(tup);
     }
@@ -5642,7 +5681,14 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         Py_XDECREF(result);
         return PyErr_SetFromWindowsErr(GetLastError());
     }
-    return result;
+    /* convert set to list */
+    if (result == NULL) {
+        return NULL;
+    } else {
+        PyObject *lst = PySequence_List(result);
+        Py_DECREF(result);
+        return lst;
+    }
 }
 
 #endif /* _MSC_VER */

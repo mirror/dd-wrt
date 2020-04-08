@@ -1094,18 +1094,14 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 #if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
 #define FAULTHANDLER_STACK_OVERFLOW
 
-#ifdef __INTEL_COMPILER
-   /* Issue #23654: Turn off ICC's tail call optimization for the
-    * stack_overflow generator. ICC turns the recursive tail call into
-    * a loop. */
-#  pragma intel optimization_level 0
-#endif
-static
-uintptr_t
+static uintptr_t
 stack_overflow(uintptr_t min_sp, uintptr_t max_sp, size_t *depth)
 {
-    /* allocate 4096 bytes on the stack at each call */
-    unsigned char buffer[4096];
+    /* Allocate (at least) 4096 bytes on the stack at each call.
+
+       bpo-23654, bpo-38965: use volatile keyword to prevent tail call
+       optimization. */
+    volatile unsigned char buffer[4096];
     uintptr_t sp = (uintptr_t)&buffer;
     *depth += 1;
     if (sp < min_sp || max_sp < sp)
@@ -1273,25 +1269,36 @@ PyInit_faulthandler(void)
 #ifdef MS_WINDOWS
     /* RaiseException() codes (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_ACCESS_VIOLATION",
-                                EXCEPTION_ACCESS_VIOLATION))
-        return NULL;
+                                EXCEPTION_ACCESS_VIOLATION)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_INT_DIVIDE_BY_ZERO",
-                                EXCEPTION_INT_DIVIDE_BY_ZERO))
-        return NULL;
+                                EXCEPTION_INT_DIVIDE_BY_ZERO)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_STACK_OVERFLOW",
-                                EXCEPTION_STACK_OVERFLOW))
-        return NULL;
+                                EXCEPTION_STACK_OVERFLOW)) {
+        goto error;
+    }
 
     /* RaiseException() flags (prefixed by an underscore) */
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE",
-                                EXCEPTION_NONCONTINUABLE))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE)) {
+        goto error;
+    }
     if (PyModule_AddIntConstant(m, "_EXCEPTION_NONCONTINUABLE_EXCEPTION",
-                                EXCEPTION_NONCONTINUABLE_EXCEPTION))
-        return NULL;
+                                EXCEPTION_NONCONTINUABLE_EXCEPTION)) {
+        goto error;
+    }
 #endif
 
     return m;
+
+#ifdef MS_WINDOWS
+error:
+    Py_DECREF(m);
+    return NULL;
+#endif
 }
 
 static int
@@ -1322,7 +1329,11 @@ _PyFaulthandler_Init(int enable)
      * be able to allocate memory on the stack, even on a stack overflow. If it
      * fails, ignore the error. */
     stack.ss_flags = 0;
-    stack.ss_size = SIGSTKSZ;
+    /* bpo-21131: allocate dedicated stack of SIGSTKSZ*2 bytes, instead of just
+       SIGSTKSZ bytes. Calling the previous signal handler in faulthandler
+       signal handler uses more than SIGSTKSZ bytes of stack memory on some
+       platforms. */
+    stack.ss_size = SIGSTKSZ * 2;
     stack.ss_sp = PyMem_Malloc(stack.ss_size);
     if (stack.ss_sp != NULL) {
         err = sigaltstack(&stack, &old_stack);
