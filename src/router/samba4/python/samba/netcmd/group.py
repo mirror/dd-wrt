@@ -179,7 +179,7 @@ Example2 deletes group Group2 from the local server.  The command is run under r
                       credentials=creds, lp=lp)
 
         filter = ("(&(sAMAccountName=%s)(objectClass=group))" %
-                  groupname)
+                  ldb.binary_encode(groupname))
 
         try:
             res = samdb.search(base=samdb.domain_dn(),
@@ -516,21 +516,22 @@ samba-tool group listmembers \"Domain Users\" -H ldap://samba.samdom.example.com
             samdb = SamDB(url=H, session_info=system_session(),
                           credentials=creds, lp=lp)
 
-            search_filter = "(&(objectClass=group)(samaccountname=%s))" % groupname
-            res = samdb.search(samdb.domain_dn(), scope=ldb.SCOPE_SUBTREE,
-                               expression=(search_filter),
-                               attrs=["objectSid"])
+            search_filter = ("(&(objectClass=group)(sAMAccountName=%s))" %
+                             ldb.binary_encode(groupname))
+            try:
+                res = samdb.search(samdb.domain_dn(), scope=ldb.SCOPE_SUBTREE,
+                                   expression=(search_filter),
+                                   attrs=["objectSid"])
+                group_sid_binary = res[0].get('objectSid', idx=0)
+            except IndexError:
+                raise CommandError('Unable to find group "%s"' % (groupname))
 
-            if (len(res) != 1):
-                return
+            group_sid = ndr_unpack(security.dom_sid, group_sid_binary)
+            (group_dom_sid, rid) = group_sid.split()
+            group_sid_dn = "<SID=%s>" % (group_sid)
 
-            group_dn = res[0].get('dn', idx=0)
-            object_sid = res[0].get('objectSid', idx=0)
-
-            object_sid = ndr_unpack(security.dom_sid, object_sid)
-            (group_dom_sid, rid) = object_sid.split()
-
-            search_filter = "(|(primaryGroupID=%s)(memberOf=%s))" % (rid, group_dn)
+            search_filter = ("(|(primaryGroupID=%s)(memberOf=%s))" %
+                             (rid, group_sid_dn))
             res = samdb.search(samdb.domain_dn(), scope=ldb.SCOPE_SUBTREE,
                                expression=(search_filter),
                                attrs=["samAccountName", "cn"])
@@ -549,7 +550,8 @@ samba-tool group listmembers \"Domain Users\" -H ldap://samba.samdom.example.com
                 self.outf.write("%s\n" % member_name)
 
         except Exception as e:
-            raise CommandError('Failed to list members of "%s" group ' % groupname, e)
+            raise CommandError('Failed to list members of "%s" group - %s' %
+                               (groupname, e))
 
 
 class cmd_group_move(Command):
@@ -605,7 +607,7 @@ class cmd_group_move(Command):
         domain_dn = ldb.Dn(samdb, samdb.domain_dn())
 
         filter = ("(&(sAMAccountName=%s)(objectClass=group))" %
-                  groupname)
+                  ldb.binary_encode(groupname))
         try:
             res = samdb.search(base=domain_dn,
                                expression=filter,
@@ -871,7 +873,8 @@ class cmd_group_edit(Command):
         samdb = SamDB(url=H, session_info=system_session(),
                       credentials=creds, lp=lp)
 
-        filter = ("(&(sAMAccountName=%s)(objectClass=group))" % groupname)
+        filter = ("(&(sAMAccountName=%s)(objectClass=group))" %
+                  ldb.binary_encode(groupname))
 
         domaindn = samdb.domain_dn()
 

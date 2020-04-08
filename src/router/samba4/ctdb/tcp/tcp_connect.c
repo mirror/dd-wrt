@@ -38,9 +38,9 @@
 #include "ctdb_tcp.h"
 
 /*
-  stop any connecting (established or pending) to a node
+  stop any outgoing connection (established or pending) to a node
  */
-void ctdb_tcp_stop_connection(struct ctdb_node *node)
+void ctdb_tcp_stop_outgoing(struct ctdb_node *node)
 {
 	struct ctdb_tcp_node *tnode = talloc_get_type(
 		node->transport_data, struct ctdb_tcp_node);
@@ -54,6 +54,16 @@ void ctdb_tcp_stop_connection(struct ctdb_node *node)
 	}
 }
 
+/*
+  stop incoming connection to a node
+ */
+void ctdb_tcp_stop_incoming(struct ctdb_node *node)
+{
+	struct ctdb_tcp_node *tnode = talloc_get_type(
+		node->transport_data, struct ctdb_tcp_node);
+
+	TALLOC_FREE(tnode->in_queue);
+}
 
 /*
   called when a complete packet has come in - should not happen on this socket
@@ -62,17 +72,9 @@ void ctdb_tcp_stop_connection(struct ctdb_node *node)
 void ctdb_tcp_tnode_cb(uint8_t *data, size_t cnt, void *private_data)
 {
 	struct ctdb_node *node = talloc_get_type(private_data, struct ctdb_node);
-	struct ctdb_tcp_node *tnode = talloc_get_type(
-		node->transport_data, struct ctdb_tcp_node);
 
-	if (data == NULL) {
-		node->ctdb->upcalls->node_dead(node);
-	}
+	node->ctdb->upcalls->node_dead(node);
 
-	ctdb_tcp_stop_connection(node);
-	tnode->connect_te = tevent_add_timer(node->ctdb->ev, tnode,
-					     timeval_current_ofs(3, 0),
-					     ctdb_tcp_node_connect, node);
 	TALLOC_FREE(data);
 }
 
@@ -97,7 +99,7 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 
 	ret = getsockopt(tnode->out_fd, SOL_SOCKET, SO_ERROR, &error, &len);
 	if (ret != 0 || error != 0) {
-		ctdb_tcp_stop_connection(node);
+		ctdb_tcp_stop_outgoing(node);
 		tnode->connect_te = tevent_add_timer(ctdb->ev, tnode,
 						    timeval_current_ofs(1, 0),
 						    ctdb_tcp_node_connect, node);
@@ -134,7 +136,7 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 					    node->name);
 	if (tnode->out_queue == NULL) {
 		DBG_ERR("Failed to set up outgoing queue\n");
-		ctdb_tcp_stop_connection(node);
+		ctdb_tcp_stop_outgoing(node);
 		tnode->connect_te = tevent_add_timer(ctdb->ev,
 						     tnode,
 						     timeval_current_ofs(1, 0),
@@ -157,14 +159,16 @@ static void ctdb_node_connect_write(struct tevent_context *ev,
 }
 
 
+static void ctdb_tcp_node_connect_timeout(struct tevent_context *ev,
+					  struct tevent_timer *te,
+					  struct timeval t,
+					  void *private_data);
+
 /*
   called when we should try and establish a tcp connection to a node
 */
-void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
-			   struct timeval t, void *private_data)
+static void ctdb_tcp_start_outgoing(struct ctdb_node *node)
 {
-	struct ctdb_node *node = talloc_get_type(private_data,
-						 struct ctdb_node);
 	struct ctdb_tcp_node *tnode = talloc_get_type(node->transport_data,
 						      struct ctdb_tcp_node);
 	struct ctdb_context *ctdb = node->ctdb;
@@ -173,8 +177,6 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 	int sockout_size;
         ctdb_sock_addr sock_out;
 	int ret;
-
-	ctdb_tcp_stop_connection(node);
 
 	sock_out = node->address;
 
@@ -252,18 +254,41 @@ void ctdb_tcp_node_connect(struct tevent_context *ev, struct tevent_timer *te,
 	tnode->connect_te = tevent_add_timer(ctdb->ev,
 					     tnode,
 					     timeval_current_ofs(1, 0),
-					     ctdb_tcp_node_connect,
+					     ctdb_tcp_node_connect_timeout,
 					     node);
 
 	return;
 
 failed:
-	ctdb_tcp_stop_connection(node);
+	ctdb_tcp_stop_outgoing(node);
 	tnode->connect_te = tevent_add_timer(ctdb->ev,
 					     tnode,
 					     timeval_current_ofs(1, 0),
 					     ctdb_tcp_node_connect,
 					     node);
+}
+
+void ctdb_tcp_node_connect(struct tevent_context *ev,
+			   struct tevent_timer *te,
+			   struct timeval t,
+			   void *private_data)
+{
+	struct ctdb_node *node = talloc_get_type_abort(private_data,
+						       struct ctdb_node);
+
+	ctdb_tcp_start_outgoing(node);
+}
+
+static void ctdb_tcp_node_connect_timeout(struct tevent_context *ev,
+					  struct tevent_timer *te,
+					  struct timeval t,
+					  void *private_data)
+{
+	struct ctdb_node *node = talloc_get_type_abort(private_data,
+						       struct ctdb_node);
+
+	ctdb_tcp_stop_outgoing(node);
+	ctdb_tcp_start_outgoing(node);
 }
 
 /*
