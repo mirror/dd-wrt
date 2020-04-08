@@ -15,8 +15,8 @@ SYNOPSIS
 
 DESCRIPTION
        xzgrep  invokes  grep(1)  on  files which may be either uncompressed or
-       compressed with xz(1), lzma(1), gzip(1),  bzip2(1),  or  lzop(1).   All
-       options specified are passed directly to grep(1).
+       compressed with xz(1), lzma(1), gzip(1), bzip2(1), or lzop(1).  All op-
+       tions specified are passed directly to grep(1).
 
        If  no file is specified, then standard input is decompressed if neces-
        sary and fed to grep(1).  When reading from  standard  input,  gzip(1),

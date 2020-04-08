@@ -16,9 +16,9 @@ DESCRIPTION
 
        Usually the most interesting information is the uncompressed  size  and
        the  dictionary  size.  Uncompressed size can be shown only if the file
-       is in the non-streamed .lzma format  variant.   The  amount  of  memory
-       required  to decompress the file is a few dozen kilobytes plus the dic-
-       tionary size.
+       is in the non-streamed .lzma format variant.  The amount of memory  re-
+       quired to decompress the file is a few dozen kilobytes plus the dictio-
+       nary size.
 
        lzmainfo is included in XZ Utils primarily for  backward  compatibility
        with LZMA Utils.

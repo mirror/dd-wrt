@@ -15,7 +15,7 @@
 # of malloc(), stat(), or lstat(), since we don't use those functions in
 # a way that would cause the problems the autoconf macros check.
 
-AC_PREREQ([2.64])
+AC_PREREQ([2.69])
 
 AC_INIT([XZ Utils], m4_esyscmd([/bin/sh build-aux/version.sh]),
 	[lasse.collin@tukaani.org], [xz], [https://tukaani.org/xz/])
@@ -498,10 +498,10 @@ AM_CONDITIONAL([COND_SYMVERS], [test "x$enable_symbol_versions" = xyes])
 
 AC_MSG_CHECKING([if sandboxing should be used])
 AC_ARG_ENABLE([sandbox], [AS_HELP_STRING([--enable-sandbox=METHOD],
-		[This is an experimental feature.
-		Sandboxing METHOD can be `auto', `no', or `capsicum'.
-		The default is `no'.])],
-	[], [enable_sandbox=no])
+		[Sandboxing METHOD can be `auto', `no', or `capsicum'.
+		The default is `auto' which enables sandboxing if
+		a supported sandboxing method is found.])],
+	[], [enable_sandbox=auto])
 case $enable_sandbox in
 	auto)
 		AC_MSG_RESULT([maybe (autodetect)])
@@ -516,11 +516,47 @@ case $enable_sandbox in
 esac
 
 
+###########################
+# PATH prefix for scripts #
+###########################
+
+# The scripts can add a prefix to the search PATH so that POSIX tools
+# or the xz binary is always in the PATH.
+AC_ARG_ENABLE([path-for-scripts],
+	[AS_HELP_STRING([--enable-path-for-scripts=PREFIX],
+		[If PREFIX isn't empty, PATH=PREFIX:$PATH will be set in
+		the beginning of the scripts (xzgrep and others).
+		The default is empty except on Solaris the default is
+		/usr/xpg4/bin.])],
+	[], [
+		case $host_os in
+			solaris*) enable_path_for_scripts=/usr/xpg4/bin ;;
+			*)        enable_path_for_scripts= ;;
+		esac
+	])
+if test -n "$enable_path_for_scripts" && test "x$enable_path_for_scripts" != xno ; then
+	enable_path_for_scripts="PATH=$enable_path_for_scripts:\$PATH"
+else
+	enable_path_for_scripts=
+fi
+AC_SUBST([enable_path_for_scripts])
+
+
 ###############################################################################
 # Checks for programs.
 ###############################################################################
 
 echo
+case $host_os in
+	solaris*)
+		# The gnulib POSIX shell macro below may pick a shell that
+		# doesn't work with xzgrep. Workaround by picking a shell
+		# that is known to work.
+		if test -z "$gl_cv_posix_shell" && test -x /usr/xpg4/bin/sh; then
+			gl_cv_posix_shell=/usr/xpg4/bin/sh
+		fi
+		;;
+esac
 gl_POSIX_SHELL
 if test -z "$POSIX_SHELL" && test "x$enable_scripts" = xyes ; then
 	AC_MSG_ERROR([No POSIX conforming shell (sh) was found.])
@@ -592,7 +628,7 @@ AM_CONDITIONAL([COND_THREADS], [test "x$enable_threads" != xno])
 
 echo
 echo "Initializing Libtool:"
-LT_PREREQ([2.2])
+LT_PREREQ([2.4])
 LT_INIT([win32-dll])
 LT_LANG([Windows Resource])
 
@@ -607,9 +643,13 @@ AM_CONDITIONAL([COND_SHARED], [test "x$enable_shared" != xno])
 # Checks for libraries.
 ###############################################################################
 
+dnl Support for _REQUIRE_VERSION was added in gettext 0.19.6. If both
+dnl _REQUIRE_VERSION and _VERSION are present, the _VERSION is ignored.
+dnl We use both for compatibility with other programs in the Autotools family.
 echo
 echo "Initializing gettext:"
-AM_GNU_GETTEXT_VERSION([0.19])
+AM_GNU_GETTEXT_REQUIRE_VERSION([0.19.6])
+AM_GNU_GETTEXT_VERSION([0.19.6])
 AM_GNU_GETTEXT([external])
 
 
@@ -683,7 +723,7 @@ TUKLIB_PHYSMEM
 TUKLIB_CPUCORES
 TUKLIB_MBSTR
 
-# If requsted, check for system-provided SHA-256. At least the following
+# If requested, check for system-provided SHA-256. At least the following
 # implementations are supported:
 #
 # OS       Headers                     Library  Type           Function
