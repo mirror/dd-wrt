@@ -14,14 +14,14 @@ DESCRIPTION
        files.  xzdec is intended to work as a drop-in replacement for xz(1) in
        the  most  common  situations where a script has been written to use xz
        --decompress --stdout (and possibly a few other commonly used  options)
-       to  decompress  .xz  files.   lzmadec is identical to xzdec except that
-       lzmadec supports .lzma files instead of .xz files.
+       to decompress .xz files.  lzmadec is identical to xzdec except that lz-
+       madec supports .lzma files instead of .xz files.
 
        To reduce the size of the  executable,  xzdec  doesn't  support  multi-
        threading  or  localization,  and doesn't read options from XZ_DEFAULTS
-       and XZ_OPT environment variables.   xzdec  doesn't  support  displaying
-       intermediate  progress information: sending SIGINFO to xzdec does noth-
-       ing, but sending SIGUSR1 terminates the process instead  of  displaying
+       and XZ_OPT environment variables.  xzdec doesn't support displaying in-
+       termediate progress information: sending SIGINFO to xzdec does nothing,
+       but sending  SIGUSR1  terminates  the  process  instead  of  displaying
        progress information.
 
 OPTIONS
