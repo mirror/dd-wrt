@@ -1339,7 +1339,7 @@ if test "$Py_LTO" = 'true' ; then
   case $CC in
     *clang*)
       AC_SUBST(LLVM_AR)
-      AC_PATH_TARGET_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
+      AC_PATH_TOOL(LLVM_AR, llvm-ar, '', ${llvm_path})
       AC_SUBST(LLVM_AR_FOUND)
       if test -n "${LLVM_AR}" -a -x "${LLVM_AR}"
       then
@@ -1405,7 +1405,7 @@ AC_SUBST(LLVM_PROF_MERGER)
 AC_SUBST(LLVM_PROF_FILE)
 AC_SUBST(LLVM_PROF_ERR)
 AC_SUBST(LLVM_PROFDATA)
-AC_PATH_TARGET_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
+AC_PATH_TOOL(LLVM_PROFDATA, llvm-profdata, '', ${llvm_path})
 AC_SUBST(LLVM_PROF_FOUND)
 if test -n "${LLVM_PROFDATA}" -a -x "${LLVM_PROFDATA}"
 then
@@ -2333,7 +2333,7 @@ if test "$ac_cv_sizeof_off_t" -gt "$ac_cv_sizeof_long" -a \
 	"$ac_cv_sizeof_long_long" -ge "$ac_cv_sizeof_off_t"; then
   AC_DEFINE(HAVE_LARGEFILE_SUPPORT, 1,
   [Defined to enable large file support when an off_t is bigger than a long
-   and long long is available and at least as big as an off_t. You may need
+   and long long is at least as big as an off_t. You may need
    to add some flags for configuration and compilation to enable this mode.
    (For Solaris and Linux, the necessary defines are already defined.)])
   AC_MSG_RESULT(yes)
@@ -2987,6 +2987,21 @@ AC_ARG_WITH(system_libmpdec,
 
 AC_MSG_RESULT($with_system_libmpdec)
 
+# Check whether _decimal should use a coroutine-local or thread-local context
+AC_MSG_CHECKING(for --with-decimal-contextvar)
+AC_ARG_WITH(decimal_contextvar,
+            AS_HELP_STRING([--with-decimal-contextvar], [build _decimal module using a coroutine-local rather than a thread-local context (default is yes)]),
+            [],
+            [with_decimal_contextvar="yes"])
+
+if test "$with_decimal_contextvar" != "no"
+then
+    AC_DEFINE(WITH_DECIMAL_CONTEXTVAR, 1,
+      [Define if you want build the _decimal module using a coroutine-local rather than a thread-local context])
+fi
+
+AC_MSG_RESULT($with_decimal_contextvar)
+
 # Check for support for loadable sqlite extensions
 AC_MSG_CHECKING(for --enable-loadable-sqlite-extensions)
 AC_ARG_ENABLE(loadable-sqlite-extensions,
@@ -3054,6 +3069,9 @@ then
     # Defining _REENTRANT on system with POSIX threads should not hurt.
     AC_DEFINE(_REENTRANT)
     posix_threads=yes
+    if test "$ac_sys_system" = "SunOS"; then
+        CFLAGS="$CFLAGS -D_REENTRANT"
+    fi
 elif test "$ac_cv_kpthread" = "yes"
 then
     CC="$CC -Kpthread"
@@ -5464,9 +5482,12 @@ AC_LINK_IFELSE(
 [
   AC_LANG_SOURCE([[
     #include <stdatomic.h>
-    atomic_int value = ATOMIC_VAR_INIT(1);
+    atomic_int int_var;
+    atomic_uintptr_t uintptr_var;
     int main() {
-      int loaded_value = atomic_load(&value);
+      atomic_store_explicit(&int_var, 5, memory_order_relaxed);
+      atomic_store_explicit(&uintptr_var, 0, memory_order_relaxed);
+      int loaded_value = atomic_load_explicit(&int_var, memory_order_seq_cst);
       return 0;
     }
   ]])
@@ -5476,7 +5497,7 @@ AC_MSG_RESULT($have_stdatomic_h)
 
 if test "$have_stdatomic_h" = yes; then
     AC_DEFINE(HAVE_STD_ATOMIC, 1,
-              [Has stdatomic.h with atomic_int])
+              [Has stdatomic.h with atomic_int and atomic_uintptr_t])
 fi
 
 # Check for GCC >= 4.7 __atomic builtins

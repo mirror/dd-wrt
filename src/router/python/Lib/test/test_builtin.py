@@ -154,6 +154,11 @@ class BuiltinTest(unittest.TestCase):
         self.assertRaises(TypeError, __import__, 1, 2, 3, 4)
         self.assertRaises(ValueError, __import__, '')
         self.assertRaises(TypeError, __import__, 'sys', name='sys')
+        # Relative import outside of a package with no __package__ or __spec__ (bpo-37409).
+        with self.assertWarns(ImportWarning):
+            self.assertRaises(ImportError, __import__, '',
+                              {'__package__': None, '__spec__': None, '__name__': '__main__'},
+                              locals={}, fromlist=('foo',), level=1)
         # embedded null character
         self.assertRaises(ModuleNotFoundError, __import__, 'string\x00')
 
@@ -1510,6 +1515,11 @@ class BuiltinTest(unittest.TestCase):
         x = bytearray(b"abc")
         self.assertRaises(ValueError, x.translate, b"1", 1)
         self.assertRaises(TypeError, x.translate, b"1"*256, 1)
+
+    def test_bytearray_extend_error(self):
+        array = bytearray()
+        bad_iter = map(int, "X")
+        self.assertRaises(ValueError, array.extend, bad_iter)
 
     def test_construct_singletons(self):
         for const in None, Ellipsis, NotImplemented:

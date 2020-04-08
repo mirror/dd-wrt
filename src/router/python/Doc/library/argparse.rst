@@ -778,9 +778,11 @@ how the command-line arguments should be handled. The supplied actions are:
   example, this is useful for increasing verbosity levels::
 
     >>> parser = argparse.ArgumentParser()
-    >>> parser.add_argument('--verbose', '-v', action='count')
+    >>> parser.add_argument('--verbose', '-v', action='count', default=0)
     >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
+
+  Note, the *default* will be ``None`` unless explicitly set to *0*.
 
 * ``'help'`` - This prints a complete help message for all the options in the
   current parser and then exits. By default a help action is automatically
@@ -1583,7 +1585,7 @@ Sub-commands
      stored; by default ``None`` and no value is stored
 
    * required_ - Whether or not a subcommand must be provided, by default
-     ``False``.
+     ``False`` (added in 3.7)
 
    * help_ - help for sub-parser group in help output, by default ``None``
 
@@ -1738,6 +1740,9 @@ Sub-commands
      >>> subparser2.add_argument('y')
      >>> parser.parse_args(['2', 'frobble'])
      Namespace(subparser_name='2', y='frobble')
+
+   .. versionchanged:: 3.7
+      New *required* keyword argument.
 
 
 FileType objects

@@ -659,7 +659,7 @@ How can my code discover the name of an object?
 -----------------------------------------------
 
 Generally speaking, it can't, because objects don't really have names.
-Essentially, assignment always binds a name to a value; The same is true of
+Essentially, assignment always binds a name to a value; the same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
@@ -1026,7 +1026,7 @@ That's a tough one, in general.  First, here are a list of things to
 remember before diving further:
 
 * Performance characteristics vary across Python implementations.  This FAQ
-  focusses on :term:`CPython`.
+  focuses on :term:`CPython`.
 * Behaviour can vary across operating systems, especially when talking about
   I/O or multi-threading.
 * You should always find the hot spots in your program *before* attempting to

@@ -7085,6 +7085,12 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #define NEED_RETRY
 #endif
 
+/* INT_MAX is the theoretical largest chunk (or INT_MAX / 2 when
+   transcoding from UTF-16), but INT_MAX / 4 perfoms better in
+   both cases also and avoids partial characters overrunning the
+   length limit in MultiByteToWideChar on Windows */
+#define DECODING_CHUNK_SIZE (INT_MAX/4)
+
 #ifndef WC_ERR_INVALID_CHARS
 #  define WC_ERR_INVALID_CHARS 0x0080
 #endif
@@ -7345,8 +7351,8 @@ decode_code_page_stateful(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        if (size > INT_MAX) {
-            chunk_size = INT_MAX;
+        if (size > DECODING_CHUNK_SIZE) {
+            chunk_size = DECODING_CHUNK_SIZE;
             final = 0;
             done = 0;
         }
@@ -7748,10 +7754,8 @@ encode_code_page(int code_page,
     do
     {
 #ifdef NEED_RETRY
-        /* UTF-16 encoding may double the size, so use only INT_MAX/2
-           chunks. */
-        if (len > INT_MAX/2) {
-            chunk_len = INT_MAX/2;
+        if (len > DECODING_CHUNK_SIZE) {
+            chunk_len = DECODING_CHUNK_SIZE;
             done = 0;
         }
         else
@@ -12470,14 +12474,14 @@ str.strip as unicode_strip
     chars: object = None
     /
 
-Return a copy of the string with leading and trailing whitespace remove.
+Return a copy of the string with leading and trailing whitespace removed.
 
 If chars is given and not None, remove characters in chars instead.
 [clinic start generated code]*/
 
 static PyObject *
 unicode_strip_impl(PyObject *self, PyObject *chars)
-/*[clinic end generated code: output=ca19018454345d57 input=eefe24a1059c352b]*/
+/*[clinic end generated code: output=ca19018454345d57 input=385289c6f423b954]*/
 {
     return do_argstrip(self, BOTHSTRIP, chars);
 }

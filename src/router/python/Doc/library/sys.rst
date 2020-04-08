@@ -324,7 +324,7 @@ always available.
 
 .. data:: flags
 
-   The :term:`struct sequence` *flags* exposes the status of command line
+   The :term:`named tuple` *flags* exposes the status of command line
    flags. The attributes are read only.
 
    ============================= =============================
@@ -366,7 +366,7 @@ always available.
 
 .. data:: float_info
 
-   A :term:`struct sequence` holding information about the float type. It
+   A :term:`named tuple` holding information about the float type. It
    contains low level information about the precision and internal
    representation.  The values correspond to the various floating-point
    constants defined in the standard header file :file:`float.h` for the 'C'
@@ -378,8 +378,8 @@ always available.
    +---------------------+----------------+--------------------------------------------------+
    | attribute           | float.h macro  | explanation                                      |
    +=====================+================+==================================================+
-   | :const:`epsilon`    | DBL_EPSILON    | difference between 1 and the least value greater |
-   |                     |                | than 1 that is representable as a float          |
+   | :const:`epsilon`    | DBL_EPSILON    | difference between 1.0 and the least value       |
+   |                     |                | greater than 1.0 that is representable as a float|
    +---------------------+----------------+--------------------------------------------------+
    | :const:`dig`        | DBL_DIG        | maximum number of decimal digits that can be     |
    |                     |                | faithfully represented in a float;  see below    |
@@ -387,20 +387,20 @@ always available.
    | :const:`mant_dig`   | DBL_MANT_DIG   | float precision: the number of base-``radix``    |
    |                     |                | digits in the significand of a float             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max`        | DBL_MAX        | maximum representable finite float               |
+   | :const:`max`        | DBL_MAX        | maximum representable positive finite float      |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer e such that ``radix**(e-1)`` is  |
+   | :const:`max_exp`    | DBL_MAX_EXP    | maximum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a representable finite float                     |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer e such that ``10**e`` is in the  |
+   | :const:`max_10_exp` | DBL_MAX_10_EXP | maximum integer *e* such that ``10**e`` is in the|
    |                     |                | range of representable finite floats             |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min`        | DBL_MIN        | minimum positive normalized float                |
+   | :const:`min`        | DBL_MIN        | minimum representable positive *normalized* float|
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer e such that ``radix**(e-1)`` is  |
+   | :const:`min_exp`    | DBL_MIN_EXP    | minimum integer *e* such that ``radix**(e-1)`` is|
    |                     |                | a normalized float                               |
    +---------------------+----------------+--------------------------------------------------+
-   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer e such that ``10**e`` is a       |
+   | :const:`min_10_exp` | DBL_MIN_10_EXP | minimum integer *e* such that ``10**e`` is a     |
    |                     |                | normalized float                                 |
    +---------------------+----------------+--------------------------------------------------+
    | :const:`radix`      | FLT_RADIX      | radix of exponent representation                 |
@@ -716,7 +716,7 @@ always available.
 
 .. data:: hash_info
 
-   A :term:`struct sequence` giving parameters of the numeric hash
+   A :term:`named tuple` giving parameters of the numeric hash
    implementation.  For more details about hashing of numeric types, see
    :ref:`numeric-hash`.
 
@@ -764,7 +764,7 @@ always available.
 
    This is called ``hexversion`` since it only really looks meaningful when viewed
    as the result of passing it to the built-in :func:`hex` function.  The
-   :term:`struct sequence`  :data:`sys.version_info` may be used for a more
+   :term:`named tuple`  :data:`sys.version_info` may be used for a more
    human-friendly encoding of the same information.
 
    More details of ``hexversion`` can be found at :ref:`apiabiversion`.
@@ -809,10 +809,14 @@ always available.
 
    .. versionadded:: 3.3
 
+   .. note::
+
+      The addition of new required attributes must go through the normal PEP
+      process. See :pep:`421` for more information.
 
 .. data:: int_info
 
-   A :term:`struct sequence` that holds information about Python's internal
+   A :term:`named tuple` that holds information about Python's internal
    representation of integers.  The attributes are read only.
 
    .. tabularcolumns:: |l|L|
@@ -1181,7 +1185,8 @@ always available.
 
    The trace function is invoked (with *event* set to ``'call'``) whenever a new
    local scope is entered; it should return a reference to a local trace
-   function to be used that scope, or ``None`` if the scope shouldn't be traced.
+   function to be used for the new scope, or ``None`` if the scope shouldn't be
+   traced.
 
    The local trace function should return a reference to itself (or to another
    function for further tracing in that scope), or ``None`` to turn off tracing
@@ -1227,6 +1232,17 @@ always available.
 
    Note that as an exception is propagated down the chain of callers, an
    ``'exception'`` event is generated at each level.
+
+   For more fine-grained usage, it's possible to set a trace function by
+   assigning ``frame.f_trace = tracefunc`` explicitly, rather than relying on
+   it being set indirectly via the return value from an already installed
+   trace function. This is also required for activating the trace function on
+   the current frame, which :func:`settrace` doesn't do. Note that in order
+   for this to work, a global tracing function must have been installed
+   with :func:`settrace` in order to enable the runtime tracing machinery,
+   but it doesn't need to be the same tracing function (e.g. it could be a
+   low overhead tracing function that simply returns ``None`` to disable
+   itself immediately on each frame).
 
    For more information on code and frame objects, refer to :ref:`types`.
 
@@ -1361,7 +1377,7 @@ always available.
      On Windows, UTF-8 is used for the console device.  Non-character
      devices such as disk files and pipes use the system locale
      encoding (i.e. the ANSI codepage).  Non-console character
-     devices such as NUL (i.e. where isatty() returns True) use the
+     devices such as NUL (i.e. where ``isatty()`` returns ``True``) use the
      value of the console input and output codepages at startup,
      respectively for stdin and stdout/stderr. This defaults to the
      system locale encoding if the process is not initially attached
@@ -1418,7 +1434,7 @@ always available.
 
 .. data:: thread_info
 
-   A :term:`struct sequence` holding information about the thread
+   A :term:`named tuple` holding information about the thread
    implementation.
 
    .. tabularcolumns:: |l|p{0.7\linewidth}|

@@ -334,14 +334,14 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
 .. function:: IS_LINE_JUNK(line)
 
-   Return true for ignorable lines.  The line *line* is ignorable if *line* is
+   Return ``True`` for ignorable lines.  The line *line* is ignorable if *line* is
    blank or contains a single ``'#'``, otherwise it is not ignorable.  Used as a
    default for parameter *linejunk* in :func:`ndiff` in older versions.
 
 
 .. function:: IS_CHARACTER_JUNK(ch)
 
-   Return true for ignorable characters.  The character *ch* is ignorable if *ch*
+   Return ``True`` for ignorable characters.  The character *ch* is ignorable if *ch*
    is a space or tab, otherwise it is not ignorable.  Used as a default for
    parameter *charjunk* in :func:`ndiff`.
 
@@ -366,7 +366,7 @@ The :class:`SequenceMatcher` class has this constructor:
    Optional argument *isjunk* must be ``None`` (the default) or a one-argument
    function that takes a sequence element and returns true if and only if the
    element is "junk" and should be ignored. Passing ``None`` for *isjunk* is
-   equivalent to passing ``lambda x: 0``; in other words, no elements are ignored.
+   equivalent to passing ``lambda x: False``; in other words, no elements are ignored.
    For example, pass::
 
       lambda x: x in " \t"
@@ -542,6 +542,16 @@ The :class:`SequenceMatcher` class has this constructor:
       :meth:`get_opcodes` hasn't already been called, in which case you may want
       to try :meth:`quick_ratio` or :meth:`real_quick_ratio` first to get an
       upper bound.
+
+      .. note::
+
+         Caution: The result of a :meth:`ratio` call may depend on the order of
+         the arguments. For instance::
+
+            >>> SequenceMatcher(None, 'tide', 'diet').ratio()
+            0.25
+            >>> SequenceMatcher(None, 'diet', 'tide').ratio()
+            0.5
 
 
    .. method:: quick_ratio()

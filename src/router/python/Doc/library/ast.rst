@@ -240,7 +240,7 @@ and classes for traversing abstract syntax trees:
       class RewriteName(NodeTransformer):
 
           def visit_Name(self, node):
-              return copy_location(Subscript(
+              return Subscript(
                   value=Name(id='data', ctx=Load()),
                   slice=Index(value=Str(s=node.id)),
                   ctx=node.ctx
@@ -254,6 +254,14 @@ and classes for traversing abstract syntax trees:
    statement nodes), the visitor may also return a list of nodes rather than
    just a single node.
 
+   If :class:`NodeTransformer` introduces new nodes (that weren't part of
+   original tree) without giving them location information (such as
+   :attr:`lineno`), :func:`fix_missing_locations` should be called with
+   the new sub-tree to recalculate the location information::
+
+      tree = ast.parse('foo', mode='eval')
+      new_tree = fix_missing_locations(RewriteName().visit(tree))
+
    Usually you use the transformer like this::
 
       node = YourTransformer().visit(node)
@@ -262,11 +270,12 @@ and classes for traversing abstract syntax trees:
 .. function:: dump(node, annotate_fields=True, include_attributes=False)
 
    Return a formatted dump of the tree in *node*.  This is mainly useful for
-   debugging purposes.  The returned string will show the names and the values
-   for fields.  This makes the code impossible to evaluate, so if evaluation is
-   wanted *annotate_fields* must be set to ``False``.  Attributes such as line
+   debugging purposes.  If *annotate_fields* is true (by default),
+   the returned string will show the names and the values for fields.
+   If *annotate_fields* is false, the result string will be more compact by
+   omitting unambiguous field names.  Attributes such as line
    numbers and column offsets are not dumped by default.  If this is wanted,
-   *include_attributes* can be set to ``True``.
+   *include_attributes* can be set to true.
 
 .. seealso::
 
