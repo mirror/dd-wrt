@@ -106,6 +106,19 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					show_caption_simple(wp, "share.disable");
 				}
 				websWrite(wp, "</div>\n");
+
+				//egc: add nat out via tunnel, controlled by nvram oet${i}_natout 
+				snprintf(temp, sizeof(temp), "oet%d_natout", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_oet_natout", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+					show_caption_simple(wp, "share.disable");
+				}
+				websWrite(wp, "</div>\n");
+
 				snprintf(temp, sizeof(temp), "oet%d_port", tun);
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
@@ -186,7 +199,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "</div>\n");
 					websWrite(wp, "<div id=\"idendpoint%d_peer%d\">\n", tun, peer);
 					{
-
 						snprintf(temp2, sizeof(temp2), "oet%d_peerport%d", tun, peer);
 						snprintf(temp, sizeof(temp), "oet%d_rem%d", tun, peer);
 						websWrite(wp, "<div class=\"setting\">\n");
@@ -203,9 +215,22 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_allowedips", NULL);
-						websWrite(wp, "<input size=\"18\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
+						websWrite(wp, "<input size=\"30\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
 					}
 					websWrite(wp, "</div>\n");
+
+					//egc: route allowed IP's, controlled by nvram oet${i}_aip_rten${p}
+					snprintf(temp, sizeof(temp), "oet%d_aip_rten%d", tun, peer);
+					websWrite(wp, "<div class=\"setting\">\n");
+					{
+						show_caption(wp, "label", "eoip.wireguard_route_allowedip", NULL);
+						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 1) ? "checked=\"checked\"" : ""));
+						show_caption(wp, NULL, "share.enable", "&nbsp;");
+						websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 1) ? "checked=\"checked\"" : ""));
+						show_caption_simple(wp, "share.disable");
+					}
+					websWrite(wp, "</div>\n");
+
 					snprintf(temp, sizeof(temp), "oet%d_ka%d", tun, peer);
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
