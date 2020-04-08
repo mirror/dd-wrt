@@ -35,6 +35,10 @@
    CoreFoundation framework. */
 #undef HAVE_CFLOCALECOPYCURRENT
 
+/* Define to 1 if you have the Mac OS X function
+   CFLocaleCopyPreferredLanguages in the CoreFoundation framework. */
+#undef HAVE_CFLOCALECOPYPREFERREDLANGUAGES
+
 /* Define to 1 if you have the Mac OS X function CFPreferencesCopyAppValue in
    the CoreFoundation framework. */
 #undef HAVE_CFPREFERENCESCOPYAPPVALUE
@@ -295,6 +299,14 @@
 /* Define to 1 if _mm_movemask_epi8 is available. */
 #undef HAVE__MM_MOVEMASK_EPI8
 
+/* Define to 1 if the GNU C extension __builtin_assume_aligned is supported.
+   */
+#undef HAVE___BUILTIN_ASSUME_ALIGNED
+
+/* Define to 1 if the GNU C extensions __builtin_bswap16/32/64 are supported.
+   */
+#undef HAVE___BUILTIN_BSWAPXX
+
 /* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
@@ -394,6 +406,11 @@
 /* Define to 1 if the amount of physical memory can be detected with Linux
    sysinfo(). */
 #undef TUKLIB_PHYSMEM_SYSINFO
+
+/* Define to 1 to use unsafe type punning, e.g. char *x = ...; *(int *)x =
+   123; which violates strict aliasing rules and thus is undefined behavior
+   and might result in broken code. */
+#undef TUKLIB_USE_UNSAFE_TYPE_PUNNING
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
