@@ -29,7 +29,7 @@ do
 			# Controlled by nvram parameter oet${i}_natout
 			if [[ $($nv get oet${i}_natout) -eq 1 ]]
 			then
-				$ipt -t nat -I POSTROUTING -o oet${i} -j MASQUERADE 2>&1 > /dev/null
+				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to-source $($nv get oet${i}_ipaddr) 2>&1 > /dev/null
 			fi
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
