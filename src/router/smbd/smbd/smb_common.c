@@ -14,6 +14,10 @@
 /* @FIXME */
 #include "connection.h"
 #include "ksmbd_work.h"
+#include "mgmt/user_session.h"
+#include "mgmt/user_config.h"
+#include "mgmt/tree_connect.h"
+#include "mgmt/share_config.h"
 
 /*for shortname implementation */
 static const char basechars[43] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_-!@#$%";
@@ -645,4 +649,59 @@ int ksmbd_smb_check_shared_mode(struct file *filp, struct ksmbd_file *curr_fp)
 bool is_asterisk(char *p)
 {
 	return p && p[0] == '*';
+}
+
+int ksmbd_override_fsids(struct ksmbd_work *work)
+{
+	struct ksmbd_session *sess = work->sess;
+	struct ksmbd_share_config *share = work->tcon->share_conf;
+	struct cred *cred;
+	unsigned int uid;
+	unsigned int gid;
+
+	if (work->saved_cred_level) {
+		WARN_ON(work->saved_cred == NULL);
+		work->saved_cred_level++;
+		validate_process_creds();
+		return 0;
+	}
+
+	uid = user_uid(sess->user);
+	gid = user_gid(sess->user);
+	if (share->force_uid != KSMBD_SHARE_INVALID_UID)
+		uid = share->force_uid;
+	if (share->force_gid != KSMBD_SHARE_INVALID_GID)
+		gid = share->force_gid;
+
+	cred = prepare_kernel_cred(NULL);
+	if (!cred)
+		return -ENOMEM;
+
+	cred->fsuid = make_kuid(current_user_ns(), uid);
+	cred->fsgid = make_kgid(current_user_ns(), gid);
+	if (!uid_eq(cred->fsuid, GLOBAL_ROOT_UID))
+		cred->cap_effective = cap_drop_fs_set(cred->cap_effective);
+
+	work->saved_cred = override_creds(cred);
+	if (!work->saved_cred) {
+		abort_creds(cred);
+		return -EINVAL;
+	}
+
+	work->saved_cred_level = 1;
+	return 0;
+}
+
+void ksmbd_revert_fsids(struct ksmbd_work *work)
+{
+	work->saved_cred_level--;
+	WARN_ON(work->saved_cred_level < 0);
+	if (!work->saved_cred_level) {
+		const struct cred *cred;
+
+		cred = current->cred;
+		revert_creds(work->saved_cred);
+		put_cred(cred);
+		work->saved_cred = NULL;
+	}
 }
