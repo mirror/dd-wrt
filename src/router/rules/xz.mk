@@ -1,10 +1,11 @@
 xz-configure:
-	cd xz && ./autogen.sh
+	-cd xz && ./autogen.sh
 	cd xz && ./configure --host=$(ARCH)-linux --prefix=/usr CFLAGS="$(COPTS) -std=c99" ac_cv_prog_cc_c99= \
 	--libdir=/usr/lib \
 	--enable-small \
 	--enable-assume-ram=4 \
-	--disable-werror
+	--disable-werror \
+	--disable-doc
 
 xz:
 	$(MAKE) -C xz
