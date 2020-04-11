@@ -53,7 +53,7 @@
 
 void check_cryptomod(char *prefix);
 
-void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapid, int aoss);
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss);
 static void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc);
 void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss);
 
@@ -434,10 +434,8 @@ void configure_single_ath9k(int count)
 	cprintf("setup encryption");
 	// setup encryption
 	int isfirst = 1;
-	int curvapid = 0;
 	if (strcmp(apm, "sta") && strcmp(apm, "wdssta") && strcmp(apm, "wdssta_mtik") && strcmp(apm, "wet") && strcmp(apm, "infra") && strcmp(apm, "mesh") && strcmp(apm, "tdma")) {
-		setupHostAP_ath9k(dev, isfirst, 0, &curvapid, 0);
-		curvapid++;
+		setupHostAP_ath9k(dev, isfirst, 0, 0);
 		isfirst = 0;
 	} else {
 		char *clonename = "def_whwaddr";
@@ -465,15 +463,13 @@ void configure_single_ath9k(int count)
 		foreach(var, vifs, next) {
 			if (nvram_nmatch("disabled", "%s_mode", var)) {
 				counter++;
-				curvapid++;
 				continue;
 			}
 			// create the first main hostapd interface when this is repeater mode
 			if (!nvram_nmatch("mesh", "%s_mode", var)) {
 				if (isfirst)
 					sysprintf("iw %s interface add %s type managed", wif, var);
-				setupHostAP_ath9k(dev, isfirst, counter, &curvapid, 0);
-				curvapid++;
+				setupHostAP_ath9k(dev, isfirst, counter, 0);
 			} else {
 				char akm[16];
 				sprintf(akm, "%s_akm", var);
@@ -1089,7 +1085,7 @@ extern char *hostapd_eap_get_types(void);
 extern void addWPS(FILE * fp, char *prefix, int configured);
 extern void setupHS20(FILE * fp, char *prefix);
 void setupHostAPPSK(FILE * fp, char *prefix, int isfirst);
-void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapid, int aoss)
+void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 {
 #ifdef HAVE_REGISTER
 	if (!isregistered())
@@ -1199,13 +1195,13 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int *curvapi
 		int i = wl_hwaddr(maininterface, hwbuff);
 	}
 
-	if (*curvapid > 0) {
+	if (vapid > 0) {
 		int brand = getRouterBrand();
 		if (brand == ROUTER_WRT_3200ACM || brand == ROUTER_WRT_32X) {
 			hwbuff[0] |= 0x2;
-			hwbuff[5] += *curvapid & 0xf;
+			hwbuff[5] += vapid & 0xf;
 		} else {
-			hwbuff[0] ^= ((*curvapid - 1) << 2) | 0x2;
+			hwbuff[0] ^= ((vapid - 1) << 2) | 0x2;
 		}
 
 	}
