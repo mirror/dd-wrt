@@ -32,6 +32,7 @@ endif
 endif
 
 hostapd2: $(TINY)
+	cp shared/nl80211.h hostapd-$(HOSTAPDVERSION)/src/drivers/nl80211_copy.h
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/hostapd clean
 	$(MAKE) -C hostapd-$(HOSTAPDVERSION)/wpa_supplicant clean
 	echo ` \
