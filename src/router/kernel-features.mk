@@ -112,6 +112,7 @@ define kernelfeatures
 		echo "# CONFIG_LKDTM is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FIRMWARE_IN_KERNEL is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_FW_LOADER_USER_HELPER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_FW_LOADER_USER_HELPER_FALLBACK is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_EXTRA_FIRMWARE=\"\"" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_IPV6)" != "y" ]; then \
