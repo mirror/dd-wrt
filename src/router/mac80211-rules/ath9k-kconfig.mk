@@ -325,6 +325,14 @@ endif
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X/hw2.0 && ln -s /tmp/ath10k-board.bin board.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0000:01:00.0.bin && ln -s /tmp/board1.bin pre-cal-pci-0000:01:00.0.bin 
 	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k && rm -f pre-cal-pci-0001:01:00.0.bin && ln -s /tmp/board2.bin pre-cal-pci-0001:01:00.0.bin 
+ifeq ($(CONFIG_QCA9887),y)
+	rm -f $(INSTALLDIR)/ath9k/lib/ath10k/board.bin
+ifeq ($(CONFIG_ARCHERC25),y)
+	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA988X
+endif
+	mv $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0/board.bin $(INSTALLDIR)/ath9k/lib/ath10k
+	cd $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA9887/hw1.0 && ln -s /tmp/ath10k-board.bin board.bin 
+endif
 ifneq ($(CONFIG_QCA4019),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmware/ath10k/QCA4019
 else
@@ -374,7 +382,8 @@ ifneq ($(CONFIG_MT7662),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 endif
-	cp $(REGPATH)/regulatory.db $(INSTALLDIR)/ath9k/lib/firmware
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(REGPATH)/regulatory.db $(INSTALLDIR)/ath9k/lib/firmware
 else
 	@true
 endif
