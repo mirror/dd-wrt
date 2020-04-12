@@ -104,7 +104,7 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		int sgi = 0;
 		int vht = 0;
 		char info[32];
-		if (!wc->rx_is_ht)
+		if (!wc->rx_is_ht && !wc->is_ht)
 			ht = 5;
 		if (wc->rx_is_40mhz || wc->is_40mhz)
 			ht = 1;
