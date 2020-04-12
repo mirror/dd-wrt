@@ -191,6 +191,10 @@ ifeq ($(CONFIG_MVEBU),y)
 endif
 ifeq ($(CONFIG_MT7620),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
+else
+ifeq ($(CONFIG_MT7615),y)
+	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
+endif
 endif
 ifeq ($(CONFIG_WIL6210),y)
 	cat $(TOP)/mac80211-rules/configs/wil6210.config >> $(MAC80211_PATH)/.config_temp
