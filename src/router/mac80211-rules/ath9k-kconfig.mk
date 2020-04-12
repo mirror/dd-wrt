@@ -374,7 +374,7 @@ ifneq ($(CONFIG_MT7662),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 endif
-	cp $(REGPATH)/$(REGBIN) $(INSTALLDIR)/ath9k/lib/firmware
+	cp $(REGPATH)/regulatory.db $(INSTALLDIR)/ath9k/lib/firmware
 else
 	@true
 endif

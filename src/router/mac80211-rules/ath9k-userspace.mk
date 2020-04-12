@@ -12,7 +12,8 @@ else
 endif
 
 crda: libnltiny
-	cd crda ; ./db2fw.py regulatory.bin $(REGTXT)
+	cd crda ; ./db2fw.py regulatory.db $(REGTXT)
+	cd crda ; ./db2bin.py regulatory.bin $(REGTXT)
 ifneq ($(CONFIG_CFG80211_INTERNAL_REGDB),y)
 	$(MAKE) -C crda NL2FOUND=Y NL1FOUND= NLLIBS="-L$(TOP)/libnl-tiny -lm -lnl-tiny" NLLIBNAME="libnl-tiny" IW_CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections $(MIPS16_OPT) $(IW_CFLAGS)  -DNEED_PRINTF" IW_LDFLAGS="$(IW_LDFLAGS)" REG_BIN="$(TOP)/crda/regulatory.bin" LIBS="-lm -lnl-tiny"
 else
