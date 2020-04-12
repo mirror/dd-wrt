@@ -246,7 +246,8 @@ endif
 ifeq ($(CONFIG_CFG80211_INTERNAL_REGDB),y)
 	cp $(REGPATH)/$(REGTXT) $(TOP)/$(MAC80211_PATH)/net/wireless/db.txt
 endif
-	cd crda ; ./db2fw.py $(REGBIN) $(REGTXT)
+	cd crda ; ./db2fw.py regulatory.db $(REGTXT)
+	cd crda ; ./db2bin.py $(REGBIN) $(REGTXT)
 	-rm -f $(TOP)/$(MAC80211_PATH)/include/linux/ath9k_platform.h
 	rm -f $(MAC80211_PATH)/.config $(MAC80211_PATH)/.compat_autoconf_*
 	MAKEFLAGS= KERNELRELEASE= CFLAGS= $(MAKE) -C $(MAC80211_PATH) $(MAKE_OPTS) modules
