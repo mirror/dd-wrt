@@ -188,6 +188,10 @@ ifeq ($(CONFIG_BRCMSMAC),y)
 endif
 ifeq ($(CONFIG_MVEBU),y)
 	cat $(TOP)/mac80211-rules/configs/mwlwifi.config >> $(MAC80211_PATH)/.config_temp
+else
+ifeq ($(CONFIG_MWLWIFI),y)
+	cat $(TOP)/mac80211-rules/configs/mwlwifi.config >> $(MAC80211_PATH)/.config_temp
+endif
 endif
 ifeq ($(CONFIG_MT7620),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
@@ -347,6 +351,7 @@ ifeq ($(CONFIG_MVEBU),y)
 	rm -rf $(INSTALLDIR)/ath9k/lib/firmare/ath10k
 	rm -rf $(INSTALLDIR)/ath9k/lib/ath10k
 endif
+
 ifneq ($(CONFIG_ATH10KUSB),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath10k_usb.ko
 	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath10k_sdio.ko
@@ -369,6 +374,7 @@ ifneq ($(CONFIG_MT7662),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 endif
+	cp $(REGPATH)/$(REGBIN) $(INSTALLDIR)/ath9k/lib/firmware
 else
 	@true
 endif
