@@ -7707,7 +7707,7 @@ static int wpa_driver_nl80211_set_ap(void *priv,
 		smps_mode = NL80211_SMPS_OFF;
 		break;
 	}
-	NLA_PUT_U32(msg, NL80211_ATTR_SMPS_MODE, smps_mode);
+	NLA_PUT_U8(msg, NL80211_ATTR_SMPS_MODE, smps_mode);
 
 	if (params->beacon_ies) {
 		wpa_hexdump_buf(MSG_DEBUG, "nl80211: beacon_ies",
