@@ -531,10 +531,10 @@ endif
 ifeq ($(CONFIG_OPENSSL),y)
 	rm -f $(TARGETDIR)/usr/sbin/openssl
 endif
-ifeq ($(CONFIG_KAID),y)
-	make -C kaid/src
-	cp kaid/kaid $(TARGETDIR)/usr/sbin
-endif
+#ifeq ($(CONFIG_KAID),y)
+#	make -C kaid/src
+#	cp kaid/kaid $(TARGETDIR)/usr/sbin
+#endif
 	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
