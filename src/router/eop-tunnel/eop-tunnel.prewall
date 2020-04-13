@@ -66,8 +66,6 @@ do
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					#egc: add way out if default route is set via tunnel
 					route add -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null
-				else
-					route del -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null # delete routing out from endpoint
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
 				#rm -f /tmp/wireguard/oet${i}_psk${p}
