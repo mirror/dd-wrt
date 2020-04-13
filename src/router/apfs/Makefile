@@ -2,6 +2,7 @@
 #
 # Makefile for the out-of-tree Linux APFS module.
 #
+KERNEL_VERSION := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
 IDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)/net/sched
 
 obj-m = apfs.o
