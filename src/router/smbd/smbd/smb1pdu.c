@@ -5936,8 +5936,8 @@ static int find_first(struct ksmbd_work *work)
 				dirpath, rc);
 		goto err_out;
 	} else {
-		if (ksmbd_vfs_inode_permission(path.dentry,
-				O_RDONLY, false)) {
+		if (inode_permission(d_inode(path.dentry),
+					MAY_READ | MAY_EXEC)) {
 			rc = -EACCES;
 			rsp_hdr->Status.CifsError = STATUS_ACCESS_DENIED;
 			goto err_out;
