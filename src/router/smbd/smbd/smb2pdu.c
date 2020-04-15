@@ -3567,6 +3567,12 @@ int smb2_query_dir(struct ksmbd_work *work)
 	rsp_org = RESPONSE_BUF(work);
 	WORK_BUFFERS(work, req, rsp);
 
+	if (ksmbd_override_fsids(work)) {
+		rsp->hdr.Status = STATUS_NO_MEMORY;
+		smb2_set_err_rsp(work);
+		return 0;
+	}
+
 	rc = verify_info_level(req->FileInformationClass);
 	if (rc) {
 		rsp->hdr.Status = STATUS_INVALID_INFO_CLASS;
@@ -3582,7 +3588,9 @@ int smb2_query_dir(struct ksmbd_work *work)
 		goto err_out2;
 	}
 
-	if (!(dir_fp->daccess & FILE_LIST_DIRECTORY_LE)) {
+	if (!(dir_fp->daccess & FILE_LIST_DIRECTORY_LE) ||
+			inode_permission(file_inode(dir_fp->filp),
+			MAY_READ | MAY_EXEC)) {
 		ksmbd_err("no right to enumerate directory (%s)\n",
 			FP_FILENAME(dir_fp));
 		rsp->hdr.Status = STATUS_ACCESS_DENIED;
@@ -3707,6 +3715,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 
 	kfree(srch_ptr);
 	ksmbd_fd_put(work, dir_fp);
+	ksmbd_revert_fsids(work);
 	return 0;
 
 err_out:
@@ -3718,6 +3727,7 @@ err_out2:
 		rsp->hdr.Status = STATUS_NOT_IMPLEMENTED;
 	smb2_set_err_rsp(work);
 	ksmbd_fd_put(work, dir_fp);
+	ksmbd_revert_fsids(work);
 	return 0;
 }
 
