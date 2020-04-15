@@ -1,4 +1,68 @@
 ------------------------------------------------------------------------
+r5024 | brainslayer | 2020-04-15 13:14:20 +0400 (Wed, 15 Apr 2020) | 1 line
+
+fix typo
+------------------------------------------------------------------------
+r5023 | brainslayer | 2020-04-15 13:13:19 +0400 (Wed, 15 Apr 2020) | 1 line
+
+debug message
+------------------------------------------------------------------------
+r5022 | brainslayer | 2020-04-15 13:12:18 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: avoid consecutive OTP download to reduce boot time
+------------------------------------------------------------------------
+r5021 | brainslayer | 2020-04-15 13:10:56 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: Fix the race condition in firmware dump work queue
+------------------------------------------------------------------------
+r5020 | brainslayer | 2020-04-15 13:10:20 +0400 (Wed, 15 Apr 2020) | 1 line
+
+merge changes to main tree
+------------------------------------------------------------------------
+r5019 | brainslayer | 2020-04-15 13:08:48 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: Fix typo in warning messages
+------------------------------------------------------------------------
+r5018 | brainslayer | 2020-04-15 13:07:58 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: change ATH10K_SDIO_BUS_REQUEST_MAX_NUM from 64 to 1024
+------------------------------------------------------------------------
+r5017 | brainslayer | 2020-04-15 13:07:42 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: disable TX complete indication of htt for sdio
+------------------------------------------------------------------------
+r5016 | brainslayer | 2020-04-15 13:05:19 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: add QCA9377 sdio hw_param item
+------------------------------------------------------------------------
+r5015 | brainslayer | 2020-04-15 13:04:51 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: start recovery process when read int status fail for sdio
+------------------------------------------------------------------------
+r5014 | brainslayer | 2020-04-15 13:04:26 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: use kzalloc to read for ath10k_sdio_hif_diag_read
+------------------------------------------------------------------------
+r5013 | brainslayer | 2020-04-15 13:03:42 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: fix unsupported chip reset debugs file write
+------------------------------------------------------------------------
+r5012 | brainslayer | 2020-04-15 13:02:57 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: allow qca988x family to support ack rssi of tx data packets.
+------------------------------------------------------------------------
+r5011 | brainslayer | 2020-04-15 13:01:43 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: fix not registering airtime of 11a station with WMM disable
+------------------------------------------------------------------------
+r5010 | brainslayer | 2020-04-15 12:54:45 +0400 (Wed, 15 Apr 2020) | 1 line
+
+ath10k: fix kernel null pointer dereference
+------------------------------------------------------------------------
+r5009 | brainslayer | 2020-04-15 07:26:24 +0400 (Wed, 15 Apr 2020) | 1 line
+
+update mt76
+------------------------------------------------------------------------
 r5008 | brainslayer | 2020-04-14 17:12:46 +0400 (Tue, 14 Apr 2020) | 1 line
 
 if 4addr is enabled. disable hwencap
