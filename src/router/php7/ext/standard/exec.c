@@ -159,6 +159,13 @@ PHPAPI int php_exec(int type, char *cmd, zval *array, zval *return_value)
 			b = buf;
 		}
 		if (bufl) {
+			/* output remaining data in buffer */
+			if (type == 1 && buf != b) {
+				PHPWRITE(buf, bufl);
+				if (php_output_get_level() < 1) {
+					sapi_flush();
+				}
+			}
 			/* strip trailing whitespaces if we have not done so already */
 			if ((type == 2 && buf != b) || type != 2) {
 				l = bufl;
@@ -529,6 +536,15 @@ PHP_FUNCTION(shell_exec)
 	ZEND_PARSE_PARAMETERS_START(1, 1)
 		Z_PARAM_STRING(command, command_len)
 	ZEND_PARSE_PARAMETERS_END();
+
+	if (!command_len) {
+		php_error_docref(NULL, E_WARNING, "Cannot execute a blank command");
+		RETURN_FALSE;
+	}
+	if (strlen(command) != command_len) {
+		php_error_docref(NULL, E_WARNING, "NULL byte detected. Possible attack");
+		RETURN_FALSE;
+	}
 
 #ifdef PHP_WIN32
 	if ((in=VCWD_POPEN(command, "rt"))==NULL) {

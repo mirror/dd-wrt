@@ -17,7 +17,7 @@ dnl Basic autoconf initialization, generation of config.nice.
 dnl ----------------------------------------------------------------------------
 
 AC_PREREQ([2.68])
-AC_INIT([PHP],[7.4.4],[https://bugs.php.net],[php],[https://www.php.net])
+AC_INIT([PHP],[7.4.5],[https://bugs.php.net],[php],[https://www.php.net])
 AC_CONFIG_SRCDIR([main/php_version.h])
 AC_CONFIG_AUX_DIR([build])
 AC_PRESERVE_HELP_ORDER
@@ -440,6 +440,7 @@ resolv.h \
 strings.h \
 syslog.h \
 sysexits.h \
+sys/auxv.h \
 sys/ioctl.h \
 sys/file.h \
 sys/mman.h \
