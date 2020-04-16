@@ -602,8 +602,9 @@ int php_zip_glob(char *pattern, int pattern_len, zend_long flags, zval *return_v
 		add_next_index_string(return_value, globbuf.gl_pathv[n]+cwd_skip);
 	}
 
+	ret = globbuf.gl_pathc;
 	globfree(&globbuf);
-	return globbuf.gl_pathc;
+	return ret;
 #else
 	zend_throw_error(NULL, "Glob support is not available");
 	return 0;
@@ -1471,6 +1472,21 @@ static ZIPARCHIVE_METHOD(open)
 		efree(ze_obj->filename);
 		ze_obj->filename = NULL;
 	}
+
+#if LIBZIP_VERSION_MAJOR > 1 || LIBZIP_VERSION_MAJOR == 1 && LIBZIP_VERSION_MINOR >= 6
+	/* reduce BC break introduce in libzip 1.6.0
+	   "Do not accept empty files as valid zip archives any longer" */
+
+	/* open for write without option to empty the archive */
+	if ((flags & (ZIP_TRUNCATE | ZIP_RDONLY)) == 0) {
+		zend_stat_t st;
+
+		/* exists and is empty */
+		if (VCWD_STAT(resolved_path, &st) == 0 && st.st_size == 0) {
+			flags |= ZIP_TRUNCATE;
+		}
+	}
+#endif
 
 	intern = zip_open(resolved_path, flags, &err);
 	if (!intern || err) {
