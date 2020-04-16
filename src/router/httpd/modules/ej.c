@@ -162,9 +162,6 @@ static inline int decompress(webs_t stream, char *pattern, int len, int last)
 		if (last && pattern[2] == '}') {
 			websWrite(stream, decode[last - 1].dst);
 			return 1;
-		} else {
-			websWrite(stream, pattern);
-			return 1;
 		}
 		break;
 	}
