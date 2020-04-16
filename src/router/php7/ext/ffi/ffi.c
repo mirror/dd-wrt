@@ -43,6 +43,11 @@
 #endif
 #endif
 
+#ifndef __BIGGEST_ALIGNMENT__
+/* XXX need something better, perhaps with regard to SIMD, etc. */
+# define __BIGGEST_ALIGNMENT__ sizeof(size_t)
+#endif
+
 ZEND_DECLARE_MODULE_GLOBALS(ffi)
 
 typedef enum _zend_ffi_tag_kind {
@@ -582,6 +587,7 @@ static uint64_t zend_ffi_bit_field_read(void *ptr, zend_ffi_field *field) /* {{{
 
 	return val;
 }
+/* }}} */
 
 static void zend_ffi_bit_field_to_zval(void *ptr, zend_ffi_field *field, zval *rv) /* {{{ */
 {
@@ -2354,7 +2360,7 @@ static zval *zend_ffi_read_var(zval *object, zval *member, int read_type, void *
 
 	if (ffi->symbols) {
 		sym = zend_hash_find_ptr(ffi->symbols, var_name);
-		if (sym && sym->kind != ZEND_FFI_SYM_VAR && sym->kind != ZEND_FFI_SYM_CONST) {
+		if (sym && sym->kind != ZEND_FFI_SYM_VAR && sym->kind != ZEND_FFI_SYM_CONST && sym->kind != ZEND_FFI_SYM_FUNC) {
 			sym = NULL;
 		}
 	}
@@ -2368,6 +2374,24 @@ static zval *zend_ffi_read_var(zval *object, zval *member, int read_type, void *
 
 	if (sym->kind == ZEND_FFI_SYM_VAR) {
 		zend_ffi_cdata_to_zval(NULL, sym->addr, ZEND_FFI_TYPE(sym->type), read_type, rv, (zend_ffi_flags)sym->is_const, 0);
+	} else if (sym->kind == ZEND_FFI_SYM_FUNC) {
+		zend_ffi_cdata *cdata;
+		zend_ffi_type *new_type = emalloc(sizeof(zend_ffi_type));
+
+		new_type->kind = ZEND_FFI_TYPE_POINTER;
+		new_type->attr = 0;
+		new_type->size = sizeof(void*);
+		new_type->align = _Alignof(void*);
+		new_type->pointer.type = ZEND_FFI_TYPE(sym->type);
+
+		cdata = emalloc(sizeof(zend_ffi_cdata));
+		zend_ffi_object_init(&cdata->std, zend_ffi_cdata_ce);
+		cdata->std.handlers = &zend_ffi_cdata_handlers;
+		cdata->type = ZEND_FFI_TYPE_MAKE_OWNED(new_type);
+		cdata->flags = ZEND_FFI_FLAG_CONST;
+		cdata->ptr_holder = sym->addr;
+		cdata->ptr = &cdata->ptr_holder;
+		ZVAL_OBJ(rv, &cdata->std);
 	} else {
 		ZVAL_LONG(rv, sym->value);
 	}
@@ -5016,6 +5040,8 @@ ZEND_MINIT_FUNCTION(ffi)
 	zend_ffi_handlers.get_properties       = zend_fake_get_properties;
 	zend_ffi_handlers.get_gc               = zend_fake_get_gc;
 
+	zend_declare_class_constant_long(zend_ffi_ce, "__BIGGEST_ALIGNMENT__", sizeof("__BIGGEST_ALIGNMENT__")-1, __BIGGEST_ALIGNMENT__);
+
 	INIT_NS_CLASS_ENTRY(ce, "FFI", "CData", NULL);
 	zend_ffi_cdata_ce = zend_register_internal_class(&ce);
 	zend_ffi_cdata_ce->ce_flags |= ZEND_ACC_FINAL;
@@ -6346,11 +6372,6 @@ void zend_ffi_set_abi(zend_ffi_dcl *dcl, uint16_t abi) /* {{{ */
 	}
 }
 /* }}} */
-
-#ifndef __BIGGEST_ALIGNMENT__
-/* XXX need something better, perhaps with regard to SIMD, etc. */
-# define __BIGGEST_ALIGNMENT__ sizeof(size_t)
-#endif
 
 #define SIMPLE_ATTRIBUTES(_) \
 	_(cdecl) \
