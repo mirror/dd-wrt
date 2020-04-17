@@ -146,11 +146,13 @@ static int __shm_remove_share(struct ksmbd_share *share)
 struct ksmbd_share *get_ksmbd_share(struct ksmbd_share *share)
 {
 	pthread_rwlock_wrlock(&share->update_lock);
-	if (share->ref_count != 0)
+	if (share->ref_count != 0) {
 		share->ref_count++;
-	else
+		pthread_rwlock_unlock(&share->update_lock);
+	} else {
+		pthread_rwlock_unlock(&share->update_lock);
 		share = NULL;
-	pthread_rwlock_unlock(&share->update_lock);
+	}
 
 	return share;
 }
@@ -314,9 +316,11 @@ static void force_group(struct ksmbd_share *share, char *name)
 	struct group *grp;
 
 	grp = getgrnam(name);
-	if (grp)
+	if (grp) {
 		share->force_gid = grp->gr_gid;
-	else
+		if (share->force_gid == KSMBD_SHARE_INVALID_GID)
+			pr_err("Invalid force gid: %u\n", share->force_gid);
+	} else
 		pr_err("Unable to lookup up /etc/group entry: %s\n", name);
 }
 
@@ -331,8 +335,12 @@ static void force_user(struct ksmbd_share *share, char *name)
 		 * smb.conf 'force group' has higher priority than
 		 * 'force user'.
 		 */
-		if (share->force_gid == 0)
+		if (share->force_gid == KSMBD_SHARE_INVALID_GID)
 			share->force_gid = passwd->pw_gid;
+		if (share->force_uid == KSMBD_SHARE_INVALID_UID ||
+				share->force_gid == KSMBD_SHARE_INVALID_GID)
+			pr_err("Invalid force uid / gid: %u / %u\n",
+					share->force_uid, share->force_gid);
 	} else {
 		pr_err("Unable to lookup up /etc/passwd entry: %s\n", name);
 	}
@@ -584,8 +592,8 @@ static void init_share_from_group(struct ksmbd_share *share,
 	share->force_create_mode = 0;
 	share->force_directory_mode = 0;
 
-	share->force_uid = KSMBD_SHARE_DEFAULT_UID;
-	share->force_gid = KSMBD_SHARE_DEFAULT_GID;
+	share->force_uid = KSMBD_SHARE_INVALID_UID;
+	share->force_gid = KSMBD_SHARE_INVALID_GID;
 
 	set_share_flag(share, KSMBD_SHARE_FLAG_AVAILABLE);
 	set_share_flag(share, KSMBD_SHARE_FLAG_BROWSEABLE);
