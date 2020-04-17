@@ -27,7 +27,6 @@
 #include <inttypes.h>
 #include "global.h"
 
-#if 0
 struct mdp_superblock_1 {
 	/* constant array information - 128 bytes */
 	unsigned int	magic;		/* MD_SB_MAGIC: 0xa92b4efc - little endian */
@@ -45,27 +44,27 @@ struct mdp_superblock_1 {
 
 	unsigned int	chunksize;	/* in 512byte sectors */
 	unsigned int	raid_disks;
-}
+};
 
-int detect_md(SECTION * section, int level)
+int detect_linux_md(SECTION * section, int level)
 {
 	unsigned char *buf;
 	char s[256];
 	if (get_buffer(section, 4096, 1024, (void **)&buf) < 1024)
 		return 0;
-	struct mdp_superblock *super = (struct mdp_superblock *) buf;
+	struct mdp_superblock_1 *super = (struct mdp_superblock_1 *) buf;
 	if (get_le_long(&super->magic) == 0xa92b4efc) {
 		print_line(level, "Linux MD Raid Version %d Level %d Disks %d", get_le_long(&super->major_version), get_le_long(&super->level), get_le_long(&super->raid_disks));
 		if (super->set_name[0])
 			print_line(level + 1, "Volume name \"%s\"", super->set_name);
 		format_uuid(super->set_uuid, s);
 		print_line(level + 1, "UUID %s", s);
-		format_blocky_size(s, get_le_long(&super->size), 512, "blocks", NULL);
-		print_line(level + 1, "Volume size %s", s);
-		return 1
+		format_blocky_size(s, get_le_quad(&super->size), 512, "blocks", NULL);
+		print_line(level + 1, "Component size %s", s);
+		return 1;
 	}
+	return 0;
 }
-#endif
 
 /*
  * ext2/ext3/ext4 file system
@@ -537,7 +536,7 @@ static char *levels[] = {
 int detect_linux_raid(SECTION * section, int level)
 {
 	unsigned char *buf;
-	u8 pos;
+	unsigned long long pos;
 	int rlevel, nr_disks, raid_disks, spare;
 	u1 uuid[16];
 	char s[256];
@@ -548,7 +547,10 @@ int detect_linux_raid(SECTION * section, int level)
 	 *  - it is inefficient to read from the end of the source
 	 */
 	/* get RAID superblock from the end of the device */
-	pos = 4096;
+	if (section->size < 65536 || section->source->sequential)
+		return 0;
+ 	/* get RAID superblock from the end of the device */
+	pos = (section->size & ~65535) - 65536;
 	if (get_buffer(section, pos, 4096, (void **)&buf) < 4096)
 		return 0;
 

@@ -68,6 +68,7 @@ int detect_f2fs(SECTION * section, int level);
 int detect_reiser(SECTION * section, int level);
 int detect_reiser4(SECTION * section, int level);
 int detect_linux_raid(SECTION * section, int level);
+int detect_linux_md(SECTION * section, int level);
 int detect_linux_lvm(SECTION * section, int level);
 int detect_linux_lvm2(SECTION * section, int level);
 int detect_linux_swap(SECTION * section, int level);
@@ -148,6 +149,7 @@ DETECTOR detectors[] = {
 	detect_f2fs,
 	detect_reiser,
 	detect_reiser4,
+	detect_linux_md,
 	detect_linux_raid,
 	detect_linux_lvm,
 	detect_linux_lvm2,
