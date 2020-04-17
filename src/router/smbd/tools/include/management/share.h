@@ -34,8 +34,8 @@ enum share_hosts {
 #define KSMBD_SHARE_DEFAULT_CREATE_MASK	0744
 #define KSMBD_SHARE_DEFAULT_DIRECTORY_MASK	0755
 
-#define KSMBD_SHARE_DEFAULT_UID		0
-#define KSMBD_SHARE_DEFAULT_GID		0
+#define KSMBD_SHARE_INVALID_UID		((__u16)-1)
+#define KSMBD_SHARE_INVALID_GID		((__u16)-1)
 
 struct ksmbd_share {
 	char		*name;
