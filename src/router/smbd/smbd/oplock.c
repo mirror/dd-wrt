@@ -787,14 +787,13 @@ static int smb1_oplock_break_noti(struct oplock_info *opinfo)
 	work->request_buf = (char *)opinfo;
 	work->conn = conn;
 
+	atomic_inc(&conn->r_count);
 	if (opinfo->op_state == OPLOCK_ACK_WAIT) {
-		atomic_inc(&conn->r_count);
 		INIT_WORK(&work->work, __smb1_oplock_break_noti);
 		ksmbd_queue_work(work);
 
 		wait_for_break_ack(opinfo);
 	} else {
-		atomic_inc(&conn->r_count);
 		__smb1_oplock_break_noti(&work->work);
 		if (opinfo->level == OPLOCK_READ)
 			opinfo->level = OPLOCK_NONE;
@@ -911,14 +910,13 @@ static int smb2_oplock_break_noti(struct oplock_info *opinfo)
 	work->conn = conn;
 	work->sess = opinfo->sess;
 
+	atomic_inc(&conn->r_count);
 	if (opinfo->op_state == OPLOCK_ACK_WAIT) {
-		atomic_inc(&conn->r_count);
 		INIT_WORK(&work->work, __smb2_oplock_break_noti);
 		ksmbd_queue_work(work);
 
 		wait_for_break_ack(opinfo);
 	} else {
-		atomic_inc(&conn->r_count);
 		__smb2_oplock_break_noti(&work->work);
 		if (opinfo->level == SMB2_OPLOCK_LEVEL_II)
 			opinfo->level = SMB2_OPLOCK_LEVEL_NONE;
@@ -1018,6 +1016,7 @@ static int smb2_lease_break_noti(struct oplock_info *opinfo)
 	work->conn = conn;
 	work->sess = opinfo->sess;
 
+	atomic_inc(&conn->r_count);
 	if (opinfo->op_state == OPLOCK_ACK_WAIT) {
 		list_for_each_safe(tmp, t, &opinfo->interim_list) {
 			struct ksmbd_work *in_work;
@@ -1028,12 +1027,10 @@ static int smb2_lease_break_noti(struct oplock_info *opinfo)
 			smb2_send_interim_resp(in_work, STATUS_PENDING);
 			list_del(&in_work->interim_entry);
 		}
-		atomic_inc(&conn->r_count);
 		INIT_WORK(&work->work, __smb2_lease_break_noti);
 		ksmbd_queue_work(work);
 		wait_for_break_ack(opinfo);
 	} else {
-		atomic_inc(&conn->r_count);
 		__smb2_lease_break_noti(&work->work);
 		if (opinfo->o_lease->new_state == SMB2_LEASE_NONE_LE) {
 			opinfo->level = SMB2_OPLOCK_LEVEL_NONE;
