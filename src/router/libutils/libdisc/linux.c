@@ -27,10 +27,49 @@
 #include <inttypes.h>
 #include "global.h"
 
+#if 0
+struct mdp_superblock_1 {
+	/* constant array information - 128 bytes */
+	unsigned int	magic;		/* MD_SB_MAGIC: 0xa92b4efc - little endian */
+	unsigned int	major_version;	/* 1 */
+	unsigned int	feature_map;	/* bit 0 set if 'bitmap_offset' is meaningful */
+	unsigned int	pad0;		/* always set to 0 when writing */
+
+	unsigned char	set_uuid[16];	/* user-space generated. */
+	char	set_name[32];	/* set and interpreted by user-space */
+
+	unsigned long long	ctime;		/* lo 40 bits are seconds, top 24 are microseconds or 0*/
+	unsigned int	level;		/* -4 (multipath), -1 (linear), 0,1,4,5 */
+	unsigned int	layout;		/* only for raid5 and raid10 currently */
+	unsigned long long size;		/* used size of component devices, in 512byte sectors */
+
+	unsigned int	chunksize;	/* in 512byte sectors */
+	unsigned int	raid_disks;
+}
+
+int detect_md(SECTION * section, int level)
+{
+	unsigned char *buf;
+	char s[256];
+	if (get_buffer(section, 4096, 1024, (void **)&buf) < 1024)
+		return 0;
+	struct mdp_superblock *super = (struct mdp_superblock *) buf;
+	if (get_le_long(&super->magic) == 0xa92b4efc) {
+		print_line(level, "Linux MD Raid Version %d Level %d Disks %d", get_le_long(&super->major_version), get_le_long(&super->level), get_le_long(&super->raid_disks));
+		if (super->set_name[0])
+			print_line(level + 1, "Volume name \"%s\"", super->set_name);
+		format_uuid(super->set_uuid, s);
+		print_line(level + 1, "UUID %s", s);
+		format_blocky_size(s, get_le_long(&super->size), 512, "blocks", NULL);
+		print_line(level + 1, "Volume size %s", s);
+		return 1
+	}
+}
+#endif
+
 /*
  * ext2/ext3/ext4 file system
  */
-
 int detect_ext234(SECTION * section, int level)
 {
 	unsigned char *buf;
@@ -508,11 +547,8 @@ int detect_linux_raid(SECTION * section, int level)
 	 *  - the size is too small for the calculation
 	 *  - it is inefficient to read from the end of the source
 	 */
-	if (section->size < 65536 || section->source->sequential)
-		return 0;
-
 	/* get RAID superblock from the end of the device */
-	pos = (section->size & ~65535) - 65536;
+	pos = 4096;
 	if (get_buffer(section, pos, 4096, (void **)&buf) < 4096)
 		return 0;
 
