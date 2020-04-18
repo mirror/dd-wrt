@@ -66,7 +66,7 @@ export BASEOPT:=-Os
 
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic
-export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt
+export COPTS:=$(BASEOPT) -pipe  -mcpu=cortex-a9 -mtune=cortex-a9 -mfpu=vfpv3-d16 -fno-caller-saves -fno-plt
 #endif
 
 
@@ -81,6 +81,7 @@ export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS := $(COPTS) 
+#export LTOFIXUP := -fno-fat-lto-objects -fno-devirtualize
 
 #
 # Install and target directories
@@ -95,7 +96,7 @@ export TARGETDIR := $(PLATFORMDIR)/target
 #
 CONFIG_IPTABLES=y
 CONFIG_MUSL=y
-CONFIG_NOOPT=y
+#CONFIG_NOOPT=y
 
 include rules/configs.mk
 
