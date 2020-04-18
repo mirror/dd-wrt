@@ -44,6 +44,8 @@ CONFIGURE_ARGS_OVPN += \
 	$(SSL_ADDOPT) \
 	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
+	LZO_CFLAGS="-I$(TOP)/lzo/include" \
+	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 	ac_cv_func_epoll_create=yes \
 	ac_cv_path_IFCONFIG=/sbin/ifconfig \
