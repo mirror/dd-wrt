@@ -16,6 +16,8 @@ include .config
 ifneq ($(wildcard ../cy_conf.mak),)
   include ../cy_conf.mak
 endif
+CONFIG_MUSL=y
+#CONFIG_NOOPT=y
 
 #
 # Paths
@@ -152,6 +154,7 @@ all: install_headers build_date clean_target $(obj-y) $(obj-m) $(LINUXDIR)/.conf
 
 build_date:
 	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "CONFIG_MUSL=y" >> .config 
 
 drop-sections	= .comment
 strip-flags	= $(addprefix --remove-section=,$(drop-sections))
@@ -262,7 +265,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) vmlinux EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common-nolto.mk
+include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
@@ -337,7 +340,7 @@ endif
 
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
+	#cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
 	
