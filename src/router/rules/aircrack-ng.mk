@@ -21,8 +21,8 @@ aircrack-ng-configure: pcre zlib
 	PCRE_LIBS="-L$(TOP)/pcre/.libs -lpcre" \
         OPENSSL_LDFLAGS="-L$(TOP)/openssl" \
         OPENSSL_LIBS="-lssl -lcrypto" \
-        CXXFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
-        CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
+        CXXFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
+        CFLAGS="$(COPTS) -fcommon $(MIPS16_OPT) -DNEED_PRINTF -std=gnu99  -ffunction-sections -fdata-sections -Wl,--gc-sections -D_GNU_SOURCE" \
         LDFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/openssl -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 aircrack-ng-clean:
