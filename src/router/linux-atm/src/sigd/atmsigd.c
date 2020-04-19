@@ -283,12 +283,12 @@ static void setup_signals(void)
 /* ------------------------------- main ...  ------------------------------- */
 
 
-static void trace_on_exit(int status,void *dummy)
+static void trace_on_exit(void)
 {
+#if 0
     char path[PATH_MAX+1];
     FILE *file;
 
-    if (!status) return;
     if (!dump_dir) file = stderr;
     else {
 	sprintf(path,"atmsigd.%d.trace.exit",getpid());
@@ -299,6 +299,7 @@ static void trace_on_exit(int status,void *dummy)
     }
     dump_trace(file,"Message trace (after error exit)");
     if (file != stderr) (void) fclose(file);
+#endif
 }
 
 
@@ -517,7 +518,7 @@ int main(int argc,char **argv)
 	    exit(0);
 	}
     }
-    (void) on_exit(trace_on_exit,NULL);
+//    (void) atexit(trace_on_exit);
     poll_loop();
     close_all();
     for (sig = entities; sig; sig = sig->next) stop_saal(&sig->saal);

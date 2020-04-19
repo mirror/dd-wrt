@@ -10,7 +10,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/param.h> /* for OPEN_MAX   */
-#if __GLIBC__ >= 2
+#if 1
 #include <sys/poll.h>
 #else /* ugly hack to make it compile on RH 4.2 - WA */
 #include <syscall.h>
