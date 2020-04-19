@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <mntent.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -68,7 +69,6 @@ struct extmnttab {
 	uint_t mnt_minor;
 };
 
-struct stat64;
 struct statfs;
 
 extern int getmntany(FILE *fp, struct mnttab *mp, struct mnttab *mpref);
