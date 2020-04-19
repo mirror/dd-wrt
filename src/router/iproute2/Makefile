@@ -62,7 +62,7 @@ CFLAGS += -DHAVE_CAKE
 CFLAGS += -DHAVE_FQ_CODEL_FAST
 endif
 
-CFLAGS += $(LTO) $(CCOPTS) $(MIPS16_OPT) -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS += $(LTO) $(CCOPTS) $(MIPS16_OPT) -fcommon -I$(KERNEL_INCLUDE) $(ASM_INCLUDE) -I../include $(DEFINES) -ffunction-sections -fdata-sections -Wl,--gc-sections
 LDFLAGS += $(COPTS) $(LDLTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 
