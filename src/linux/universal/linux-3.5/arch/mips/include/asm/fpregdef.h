@@ -14,6 +14,12 @@
 
 #include <asm/sgidefs.h>
 
+#ifdef GAS_HAS_SET_HARDFLOAT
+#define SET_HARDFLOAT .set hardfloat
+#else
+#define SET_HARDFLOAT
+#endif
+
 #if _MIPS_SIM == _MIPS_SIM_ABI32
 
 /*
