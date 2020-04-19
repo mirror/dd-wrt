@@ -3,10 +3,9 @@ DEBUG="0"
 VERBOSE="0"
 ELITE="0"
 USERID=""
-IFACE=""
 checkvm_status=""
 MAC80211=0
-IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.3.tar.xz"
+IW_SOURCE="https://mirrors.edge.kernel.org/pub/software/network/iw/iw-5.4.tar.xz"
 IW_ERROR=""
 if [ ! -d /sys/ ]; then
 	printf "CONFIG_SYSFS is disabled in your kernel, this program will almost certainly not work.\n"
@@ -734,10 +733,10 @@ getDriver() {
 
 	#here we test for driver usb, ath9k_htc,rt2870, possibly others show this
 	if [ "$DRIVER" = "usb" ]; then
-		printf "Warn ON: USB\n"
 		BUSADDR="$(printf "$ethtool_output" | awk '/bus-info/ {print $2}'):1.0"
 
 		if [ "$DEBUG" = "1" ]; 	then
+			printf "Warn ON: USB\n"
 			printf "${BUSADDR}\n"
 		fi
 
@@ -1107,16 +1106,25 @@ scanProcesses() {
 	PROCESSES="wpa_action\|wpa_supplicant\|wpa_cli\|dhclient\|ifplugd\|dhcdbd\|dhcpcd\|udhcpc\|NetworkManager\|knetworkmanager\|avahi-autoipd\|avahi-daemon\|wlassistant\|wifibox\|net_applet\|wicd-daemon\|wicd-client\|iwd"
 	#PS_ERROR="invalid\|illegal"
 
-	if [ -x "$(command -v service 2>&1)" ] && [ "$1" = "kill" ]; then
-		service network-manager stop 2> /dev/null > /dev/null
-		service NetworkManager stop 2> /dev/null > /dev/null
-		service avahi-daemon stop 2> /dev/null > /dev/null
-		while [ $? -eq 1 ]; do
-			# Sometimes avahi is persistent and keeps being restarted by systemd.
-			# It's usually 4 times that it needs to be stopped
-			service avahi-daemon stop 2> /dev/null > /dev/null
+	if [ "${1}" = "kill" ]; then
+		servicecmd=""
+		if [ -x "$(command -v service 2>&1)" ]; then
+			servicecmd="service"
+		elif [ -x "$(command -v rc-service 2>&1)" ]; then
+			servicecmd="rc-service"
+		fi
+		for service in network-manager NetworkManager avahi-daemon wicd; do
+			if "${servicecmd}" "${service}" status 2> /dev/null > /dev/null; then
+				killservice=1
+				until "${servicecmd}" "${service}" stop 2> /dev/null > /dev/null; do
+					killservice=$((killservice + 1))
+					if [ ${killservice} -gt 5 ]; then
+						printf "Failed to stop ${service}, please stop it on your own.\n"
+						break
+					fi
+				done
+			fi
 		done
-		service wicd stop 2> /dev/null > /dev/null
 	fi
 
 	unset match
@@ -1434,41 +1442,6 @@ else
 	printf "PHY\tInterface\tDriver\t\tChipset\n\n"
 fi
 
-#this whole block of code shouldn't be here, it makes no sense
-#per shellcheck, this block is broken as it runs the loops once with iface=listIfaceUnspec instead of the output of listIFaceUnspec
-#for iface in listIfaceUnspec; do
-#
-#	if [ -e "/proc/sys/dev/$iface/fftxqmin" ]
-#	then
-#		setLink ${iface} up
-#		printf "$iface\t\tAtheros\t\tmadwifi-ng"
-#		if [ x$1 = "xstart" ] && [ x$2 = x$iface ]
-#		then
-#			IFACE=$(wlanconfig ath create wlandev $iface wlanmode monitor -bssid | grep ath)
-#			setLink ${iface} up
-#			if [ $CH -lt 1000 ]
-#			then
-#				iwconfig $IFACE channel $CH 2> /dev/null > /dev/null
-#			else
-#				iwconfig $IFACE freq "$CH"000000 2> /dev/null > /dev/null
-#			fi
-#		setLink ${IFACE} up
-#		UDEV_ISSUE=$?
-#		fi
-#
-#		if [ x$1 = "xstop" ] && [ x$2 = x$iface ]
-#		then
-#			printf "$iface does not support 'stop', do it on ath interface\n"
-#		fi
-#
-#		#why, dear god why is there a random newline here?
-#		printf "\n"
-#		sleep 1
-#		continue
-#	fi
-#done
-#end random block of code that needs to die
-
 for iface in $(printf "${iface_list}"); do
 	unset ethtool_output DRIVER FROM FIRMWARE STACK MADWIFI MAC80211 BUS BUSADDR BUSINFO DEVICEID CHIPSET EXTENDED NET_TYPE PHYDEV ifacet DRIVERt FIELD1 FIELD1t FIELD2 FIELD2t CHIPSETt
 	#add a RUNNING check here and up the device if it isn't already
@@ -1485,9 +1458,7 @@ for iface in $(printf "${iface_list}"); do
 			getExtendedInfo ${iface}
 		fi
 	else
- 		printf "\nethtool failed...\n"
-		printf "Only mac80211 devices on kernel 2.6.33 or higher are officially supported by airmon-ng.\n"
-		exit 1
+ 		CHIPSET="ethtool failed... driver is broken"
 	fi
 
 	#yes this really is the main output loop
