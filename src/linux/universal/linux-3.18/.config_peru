@@ -1405,7 +1405,8 @@ CONFIG_I2C_GPIO=y
 #
 # PPS support
 #
-# CONFIG_PPS is not set
+CONFIG_PPS=m
+CONFIG_PPS_CLIENT_LDISC=m
 
 #
 # PPS generators support
