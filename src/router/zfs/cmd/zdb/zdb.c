@@ -3510,6 +3510,8 @@ dump_l2arc_log_entries(uint64_t log_entries,
 		    (u_longlong_t)L2BLK_GET_PSIZE((&le[j])->le_prop));
 		(void) printf("|\t\t\t\tcompr: %llu\n",
 		    (u_longlong_t)L2BLK_GET_COMPRESS((&le[j])->le_prop));
+		(void) printf("|\t\t\t\tcomplevel: %llu\n",
+		    (u_longlong_t)(&le[j])->le_complevel);
 		(void) printf("|\t\t\t\ttype: %llu\n",
 		    (u_longlong_t)L2BLK_GET_TYPE((&le[j])->le_prop));
 		(void) printf("|\t\t\t\tprotected: %llu\n",
@@ -3593,15 +3595,13 @@ dump_l2arc_log_blocks(int fd, l2arc_dev_hdr_phys_t l2dhdr)
 		switch (L2BLK_GET_COMPRESS((&lbps[0])->lbp_prop)) {
 		case ZIO_COMPRESS_OFF:
 			break;
-		case ZIO_COMPRESS_LZ4:
+		default:
 			abd = abd_alloc_for_io(psize, B_TRUE);
 			abd_copy_from_buf_off(abd, &this_lb, 0, psize);
 			zio_decompress_data(L2BLK_GET_COMPRESS(
 			    (&lbps[0])->lbp_prop), abd, &this_lb,
-			    psize, sizeof (this_lb));
+			    psize, sizeof (this_lb), NULL);
 			abd_free(abd);
-			break;
-		default:
 			break;
 		}
 
