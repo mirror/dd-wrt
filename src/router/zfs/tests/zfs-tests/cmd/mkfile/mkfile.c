@@ -29,6 +29,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/param.h>
 #include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -126,7 +127,7 @@ main(int argc, char **argv)
 
 		if (verbose)
 			(void) fprintf(stdout, gettext("%s %lld bytes\n"),
-			    argv[1], (offset_t)size);
+			    argv[1], (unsigned long long)size);
 		fd = open(argv[1], O_CREAT|O_TRUNC|O_RDWR, FILE_MODE);
 		if (fd < 0) {
 			saverr = errno;
