@@ -3280,7 +3280,7 @@ tcp_gethost(struct soap *soap, const char *addr, struct in_addr *inaddr)
   { memcpy(inaddr, &iadd, sizeof(iadd));
     return SOAP_OK;
   }
-#if defined(__GLIBC__)
+#if 1
   if (gethostbyname_r(addr, &hostent, soap->buf, SOAP_BUFLEN, &host, &soap->errnum) < 0)
     host = NULL;
 #elif defined(_AIXVERSION_431) || defined(TRU64)

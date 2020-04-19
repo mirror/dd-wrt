@@ -17,6 +17,7 @@
 
 #define _GNU_SOURCE     1
 #include <features.h>
+#include <limits.h>
 
 #include <stdlib.h>
 #include <getopt.h>
