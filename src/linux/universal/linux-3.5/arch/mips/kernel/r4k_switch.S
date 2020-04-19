@@ -15,13 +15,15 @@
 #include <asm/fpregdef.h>
 #include <asm/mipsregs.h>
 #include <asm/asm-offsets.h>
-#include <asm/page.h>
 #include <asm/pgtable-bits.h>
 #include <asm/regdef.h>
 #include <asm/stackframe.h>
 #include <asm/thread_info.h>
 
 #include <asm/asmmacro.h>
+
+/* preprocessor replaces the fp in ".set fp=64" with $30 otherwise */
+#undef fp
 
 /*
  * Offset to the current process status flags, the first 32 bytes of the
@@ -41,7 +43,7 @@
 
 /*
  * task_struct *resume(task_struct *prev, task_struct *next,
- *                     struct thread_info *next_ti, int usedfpu)
+ *		       struct thread_info *next_ti, int usedfpu)
  */
 	.align	5
 	LEAF(resume)
@@ -54,7 +56,7 @@
 	 * check if we need to save FPU registers
 	 */
 
-	beqz    a3, 1f
+	beqz	a3, 1f
 
 	PTR_L	t3, TASK_THREAD_INFO(a0)
 	/*
@@ -145,6 +147,9 @@ LEAF(_restore_fp)
  */
 
 #define FPU_DEFAULT  0x00000000
+
+	.set push
+	SET_HARDFLOAT
 
 LEAF(_init_fpu)
 #ifdef CONFIG_MIPS_MT_SMTC
@@ -244,3 +249,5 @@ LEAF(_init_fpu)
 #endif
 	jr	ra
 	END(_init_fpu)
+
+	.set pop	/* SET_HARDFLOAT */
