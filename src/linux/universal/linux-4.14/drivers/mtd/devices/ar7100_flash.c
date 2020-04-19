@@ -261,6 +261,10 @@ int guessbootsize(void *offset, unsigned int maxscan)
 			printk(KERN_EMERG "WNDR3700v2 uboot detected\n");
 			return 0x70000;	// uboot, lzma image
 		}
+		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x54502D4C) {
+			printk(KERN_EMERG "tplink uboot detected\n");
+			return i * 4;	// uboot, lzma image
+		}
 		if (ofs[i] == 0x01000000 && ofs[i+1] == 0x44442d57) {
 			printk(KERN_EMERG "tplink uboot detected\n");
 			return i * 4;	// uboot, lzma image
