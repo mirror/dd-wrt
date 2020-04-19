@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5027 | brainslayer | 2020-04-19 16:45:26 +0400 (Sun, 19 Apr 2020) | 1 line
+
+fix missing driver for experimental broadcom arm builds
+------------------------------------------------------------------------
 r5026 | brainslayer | 2020-04-18 00:14:09 +0400 (Sat, 18 Apr 2020) | 1 line
 
 test region mod
