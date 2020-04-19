@@ -33,8 +33,8 @@ MINI_DLNA_PATH=$(shell pwd)
 
 CFLAGS += $(COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
-CFLAGS += $(MIPS16_OPT) -fPIC
-COPTS += $(MIPS16_OPT) -fPIC
+CFLAGS += $(MIPS16_OPT) -fPIC -fcommon
+COPTS += $(MIPS16_OPT) -fPIC -fcommon
 
 # [FIXME] added by Michael Jiang.
 # The below variables  should be modified when you use different platform.
@@ -114,7 +114,7 @@ libjpeg:
 
 sqlite3:
 	if [ ! -f ./sqlite-3.6.22/Makefile ];then \
-	cd sqlite-3.6.22 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	cd sqlite-3.6.22 && (./configure --host=$(HOST) --disable-shared  CC="ccache $(CROSS_COMPILE)gcc" CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -fcommon -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections -DSQLITE_OMIT_TRIGGERS" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
 				--enable-threadsafe --enable-dynamic-extensions=no ); \
 	fi
 
