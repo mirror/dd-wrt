@@ -41,10 +41,10 @@ static void unbound_config(void)
 	FILE *fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"	//
 		"verbosity: 1\n");
-	if (nvram_match("ipv6_enable", "1"))
-		fprintf(fp, "interface: ::0@%d\n", port);
 
 	fprintf(fp, "interface: 0.0.0.0@%d", port);
+	if (nvram_match("ipv6_enable", "1"))
+		fprintf(fp, "interface: ::0@%d\n", port);
 	fprintf(fp, "outgoing-num-tcp: 10\n"	//
 		"incoming-num-tcp: 10\n"	//
 		"msg-buffer-size: 8192\n"	//
