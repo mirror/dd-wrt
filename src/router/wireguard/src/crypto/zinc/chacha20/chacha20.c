@@ -121,7 +121,6 @@ void chacha20(struct chacha20_ctx *ctx, u8 *dst, const u8 *src, u32 len,
 	if (!chacha20_arch(ctx, dst, src, len, simd_context))
 		chacha20_generic(ctx, dst, src, len);
 }
-EXPORT_SYMBOL(chacha20);
 
 static void hchacha20_generic(u32 derived_key[CHACHA20_KEY_WORDS],
 			      const u8 nonce[HCHACHA20_NONCE_SIZE],
@@ -159,7 +158,6 @@ void hchacha20(u32 derived_key[CHACHA20_KEY_WORDS],
 	if (!hchacha20_arch(derived_key, nonce, key, simd_context))
 		hchacha20_generic(derived_key, nonce, key);
 }
-EXPORT_SYMBOL(hchacha20);
 
 //#include "../selftest/chacha20.c"
 
