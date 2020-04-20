@@ -508,7 +508,15 @@ endif
 	rm -f $(ARCH)-uclibc/vfat/*
 	cp $(LINUXDIR)/vmlinux $(ARCH)-uclibc/vfat/vmlinux.64
 	md5sum $(ARCH)-uclibc/vfat/vmlinux.64 > $(ARCH)-uclibc/vfat/vmlinux.64.md5
-	./gen_image.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+ifeq ($(CONFIG_E200),y)
+ifeq ($(CONFIG_USBBOOT),y)
+	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+else
+	./gen_image_pro.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+endif
+else
+	./gen_image_lite.sh $(ARCH)-uclibc/erouter.image 8 $(ARCH)-uclibc/vfat 128 $(ARCH)-uclibc/root.fs
+endif
 	./tools/wrap $(ARCH)-uclibc/erouter.image $(ARCH)-uclibc/erouter.bin
 
 	mkdir -p $(ARCH)-uclibc/sysupgrade-erlite/
