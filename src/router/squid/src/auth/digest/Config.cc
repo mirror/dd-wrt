@@ -96,9 +96,6 @@ static void authenticateDigestNonceDelete(digest_nonce_h * nonce);
 static void authenticateDigestNonceSetup(void);
 static void authDigestNonceEncode(digest_nonce_h * nonce);
 static void authDigestNonceLink(digest_nonce_h * nonce);
-#if NOT_USED
-static int authDigestNonceLinks(digest_nonce_h * nonce);
-#endif
 static void authDigestNonceUserUnlink(digest_nonce_h * nonce);
 
 static void
@@ -157,10 +154,10 @@ authenticateDigestNonceNew(void)
      * really bad timing with expiry and creation).  Using a random
      * component in the nonce allows us to loop to find a unique nonce.
      * We use H(nonce_data) so the nonce is meaningless to the reciever.
-     * So our nonce looks like hex(H(timestamp,pointertohash,randomdata))
+     * So our nonce looks like hex(H(timestamp,randomdata))
      * And even if our randomness is not very random we don't really care
-     * - the timestamp and memory pointer also guarantee local uniqueness
-     * in the input to the hash function.
+     * - the timestamp also guarantees local uniqueness in the input to
+     * the hash function.
      */
     // NP: this will likely produce the same randomness sequences for each worker
     // since they should all start within the 1-second resolution of seed value.
@@ -170,7 +167,6 @@ authenticateDigestNonceNew(void)
     /* create a new nonce */
     newnonce->nc = 0;
     newnonce->flags.valid = true;
-    newnonce->noncedata.self = newnonce;
     newnonce->noncedata.creationtime = current_time.tv_sec;
     newnonce->noncedata.randomdata = newRandomData(mt);
 
@@ -292,20 +288,9 @@ authDigestNonceLink(digest_nonce_h * nonce)
 {
     assert(nonce != NULL);
     ++nonce->references;
+    assert(nonce->references != 0); // no overflows
     debugs(29, 9, "nonce '" << nonce << "' now at '" << nonce->references << "'.");
 }
-
-#if NOT_USED
-static int
-authDigestNonceLinks(digest_nonce_h * nonce)
-{
-    if (!nonce)
-        return -1;
-
-    return nonce->references;
-}
-
-#endif
 
 void
 authDigestNonceUnlink(digest_nonce_h * nonce)
