@@ -40,10 +40,12 @@ static void unbound_config(void)
 		port = 53;
 	FILE *fp = fopen("/tmp/unbound.conf", "wb");
 	fprintf(fp, "server:\n"	//
-		"verbosity: 1\n"	//
-		"interface: 0.0.0.0@%d\n"	//
-		"interface: ::0@%d\n"	//
-		"outgoing-num-tcp: 10\n"	//
+		"verbosity: 1\n");
+	if (nvram_match("ipv6_enable", "1"))
+		fprintf(fp, "interface: ::0@%d\n", port);
+
+	fprintf(fp, "interface: 0.0.0.0@%d", port);
+	fprintf(fp, "outgoing-num-tcp: 10\n"	//
 		"incoming-num-tcp: 10\n"	//
 		"msg-buffer-size: 8192\n"	//
 		"msg-cache-size: 1m\n"	//
@@ -58,7 +60,7 @@ static void unbound_config(void)
 		"harden-large-queries: yes\n"	//
 		"auto-trust-anchor-file: \"/etc/unbound/root.key\"\n"	//
 		"key-cache-size: 100k\n"	//
-		"neg-cache-size: 10k\n", port, port);	//
+		"neg-cache-size: 10k\n");	//
 	fprintf(fp, "num-threads: %d\n", cpucount);
 	fprintf(fp, "so-reuseport: yes\n");
 	int slabs = 2;
