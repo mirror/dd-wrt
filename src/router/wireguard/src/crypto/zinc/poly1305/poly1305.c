@@ -64,7 +64,6 @@ void poly1305_init(struct poly1305_ctx *ctx, const u8 key[POLY1305_KEY_SIZE])
 
 	ctx->num = 0;
 }
-EXPORT_SYMBOL(poly1305_init);
 
 static inline void poly1305_blocks(void *ctx, const u8 *input, const size_t len,
 				   const u32 padbit,
@@ -115,7 +114,6 @@ void poly1305_update(struct poly1305_ctx *ctx, const u8 *input, size_t len,
 
 	ctx->num = rem;
 }
-EXPORT_SYMBOL(poly1305_update);
 
 void poly1305_final(struct poly1305_ctx *ctx, u8 mac[POLY1305_MAC_SIZE],
 		    simd_context_t *simd_context)
@@ -134,7 +132,6 @@ void poly1305_final(struct poly1305_ctx *ctx, u8 mac[POLY1305_MAC_SIZE],
 
 	memzero_explicit(ctx, sizeof(*ctx));
 }
-EXPORT_SYMBOL(poly1305_final);
 
 //#include "../selftest/poly1305.c"
 

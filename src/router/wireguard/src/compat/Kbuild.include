@@ -53,7 +53,11 @@ endif
 
 ifdef CONFIG_HZ
 ifeq ($(wildcard $(srctree)/include/generated/timeconst.h),)
-ccflags-y += $(shell echo 'define gcd(a,b){auto t;while(b){t=b;b=a%b;a=t;};return a;};hz=$(CONFIG_HZ);cd=gcd(hz,1000000);print "-DHZ_TO_USEC_NUM=",1000000/cd," -DHZ_TO_USEC_DEN=",hz/cd;halt;' | bc -q)
+HZ_IFDEF := $(shell echo 'define gcd(a,b){auto t;while(b){t=b;b=a%b;a=t;};return a;};hz=$(CONFIG_HZ);cd=gcd(hz,1000000);print "-DHZ_TO_USEC_NUM=",1000000/cd," -DHZ_TO_USEC_DEN=",hz/cd;halt;' | bc -q)
+ifeq ($(HZ_IFDEF),)
+$(error bc(1) is required for building)
+endif
+ccflags-y += $(HZ_IFDEF)
 endif
 endif
 

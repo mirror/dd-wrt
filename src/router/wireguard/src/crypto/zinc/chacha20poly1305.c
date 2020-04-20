@@ -71,7 +71,6 @@ void chacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 				   &simd_context);
 	simd_put(&simd_context);
 }
-EXPORT_SYMBOL(chacha20poly1305_encrypt);
 
 bool chacha20poly1305_encrypt_sg_inplace(struct scatterlist *src,
 					 const size_t src_len,
@@ -165,7 +164,6 @@ bool chacha20poly1305_encrypt_sg_inplace(struct scatterlist *src,
 	memzero_explicit(&b, sizeof(b));
 	return true;
 }
-EXPORT_SYMBOL(chacha20poly1305_encrypt_sg_inplace);
 
 static inline bool
 __chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
@@ -230,7 +228,6 @@ bool chacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 	simd_put(&simd_context);
 	return ret;
 }
-EXPORT_SYMBOL(chacha20poly1305_decrypt);
 
 bool chacha20poly1305_decrypt_sg_inplace(struct scatterlist *src,
 					 size_t src_len,
@@ -335,7 +332,6 @@ bool chacha20poly1305_decrypt_sg_inplace(struct scatterlist *src,
 	memzero_explicit(&b, sizeof(b));
 	return ret;
 }
-EXPORT_SYMBOL(chacha20poly1305_decrypt_sg_inplace);
 
 void xchacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 			       const u8 *ad, const size_t ad_len,
@@ -354,7 +350,6 @@ void xchacha20poly1305_encrypt(u8 *dst, const u8 *src, const size_t src_len,
 	memzero_explicit(derived_key, CHACHA20POLY1305_KEY_SIZE);
 	simd_put(&simd_context);
 }
-EXPORT_SYMBOL(xchacha20poly1305_encrypt);
 
 bool xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 			       const u8 *ad, const size_t ad_len,
@@ -375,7 +370,6 @@ bool xchacha20poly1305_decrypt(u8 *dst, const u8 *src, const size_t src_len,
 	simd_put(&simd_context);
 	return ret;
 }
-EXPORT_SYMBOL(xchacha20poly1305_decrypt);
 
 //#include "selftest/chacha20poly1305.c"
 
