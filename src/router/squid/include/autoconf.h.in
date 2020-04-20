@@ -1065,6 +1065,9 @@
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H
 
+/* Define to 1 if you have the <systemd/sd-daemon.h> header file. */
+#undef HAVE_SYSTEMD_SD_DAEMON_H
+
 /* Define to 1 if you have the <sys/bitypes.h> header file. */
 #undef HAVE_SYS_BITYPES_H
 
@@ -1569,6 +1572,9 @@
 
 /* Use ssl-crtd daemon */
 #undef USE_SSL_CRTD
+
+/* systemd support is available */
+#undef USE_SYSTEMD
 
 /* Enable extensions on AIX 3, Interix.  */
 #ifndef _ALL_SOURCE
