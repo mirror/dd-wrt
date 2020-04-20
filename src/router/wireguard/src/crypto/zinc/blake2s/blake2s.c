@@ -66,7 +66,6 @@ static void blake2s_init(struct blake2s_state *state, const size_t outlen)
 	blake2s_init_param(state, 0x01010000 | outlen);
 	state->outlen = outlen;
 }
-EXPORT_SYMBOL(blake2s_init);
 
 static void blake2s_init_key(struct blake2s_state *state, const size_t outlen,
 		      const void *key, const size_t keylen)
@@ -81,7 +80,6 @@ static void blake2s_init_key(struct blake2s_state *state, const size_t outlen,
 	blake2s_update(state, block, BLAKE2S_BLOCK_SIZE);
 	memzero_explicit(block, BLAKE2S_BLOCK_SIZE);
 }
-EXPORT_SYMBOL(blake2s_init_key);
 
 #if defined(CONFIG_ZINC_ARCH_X86_64)
 #include "blake2s-x86_64-glue.c"
@@ -192,7 +190,6 @@ static void blake2s_update(struct blake2s_state *state, const u8 *in, size_t inl
 	memcpy(state->buf + state->buflen, in, inlen);
 	state->buflen += inlen;
 }
-EXPORT_SYMBOL(blake2s_update);
 
 static void blake2s_final(struct blake2s_state *state, u8 *out)
 {
@@ -205,7 +202,6 @@ static void blake2s_final(struct blake2s_state *state, u8 *out)
 	memcpy(out, state->h, state->outlen);
 	memzero_explicit(state, sizeof(*state));
 }
-EXPORT_SYMBOL(blake2s_final);
 
 static void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outlen,
 		  const size_t inlen, const size_t keylen)
@@ -242,7 +238,6 @@ static void blake2s_hmac(u8 *out, const u8 *in, const u8 *key, const size_t outl
 	memzero_explicit(x_key, BLAKE2S_BLOCK_SIZE);
 	memzero_explicit(i_hash, BLAKE2S_HASH_SIZE);
 }
-EXPORT_SYMBOL(blake2s_hmac);
 
 //#include "../selftest/blake2s.c"
 

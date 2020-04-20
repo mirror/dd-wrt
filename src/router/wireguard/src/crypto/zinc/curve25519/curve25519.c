@@ -58,7 +58,6 @@ bool curve25519(u8 mypublic[CURVE25519_KEY_SIZE],
 		curve25519_generic(mypublic, secret, basepoint);
 	return crypto_memneq(mypublic, null_point, CURVE25519_KEY_SIZE);
 }
-EXPORT_SYMBOL(curve25519);
 
 bool curve25519_generate_public(u8 pub[CURVE25519_KEY_SIZE],
 				const u8 secret[CURVE25519_KEY_SIZE])
@@ -72,14 +71,12 @@ bool curve25519_generate_public(u8 pub[CURVE25519_KEY_SIZE],
 		return crypto_memneq(pub, null_point, CURVE25519_KEY_SIZE);
 	return curve25519(pub, secret, basepoint);
 }
-EXPORT_SYMBOL(curve25519_generate_public);
 
 void curve25519_generate_secret(u8 secret[CURVE25519_KEY_SIZE])
 {
 	get_random_bytes_wait(secret, CURVE25519_KEY_SIZE);
 	curve25519_clamp_secret(secret);
 }
-EXPORT_SYMBOL(curve25519_generate_secret);
 
 //#include "../selftest/curve25519.c"
 
