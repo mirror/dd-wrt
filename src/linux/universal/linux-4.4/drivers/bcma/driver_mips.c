@@ -379,7 +379,7 @@ void bcma_core_mips_init(struct bcma_drv_mips *mcore)
 	struct bcma_bus *bus;
 	struct bcma_device *core;
 	bus = mcore->core->bus;
-
+	printk(KERN_INFO "%s:%d\n", __func__,__LINE__);
 	if (mcore->setup_done)
 		return;
 

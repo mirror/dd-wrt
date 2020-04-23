@@ -26,5 +26,5 @@ cat <<EOF
 EOF
 
 for file in $* ; do
-    ${NM} $file | sed -ne 's/[0-9A-Fa-f]* [BDRT] \([^ ]*\)/extern void \1; EXPORT_SYMBOL(\1);/p'
+    ${NM} $file | sed -ne 's/[0-9A-Fa-f]* [BDRT] \([^ ]*\)/extern const void \1; EXPORT_SYMBOL(\1);/p'
 done
