@@ -1,5 +1,5 @@
 ifeq ($(CONFIG_MIPS),y)
-EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
+EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1 -g
 EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
 SRCBASE_OFFSET := ../../../brcm/mipsel

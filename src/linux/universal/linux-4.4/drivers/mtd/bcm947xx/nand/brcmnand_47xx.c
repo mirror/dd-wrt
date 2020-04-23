@@ -47,7 +47,6 @@
 #include <nflash.h>
 
 #include "brcmnand_priv.h"
-int nospare;
 
 spinlock_t *partitions_lock_init(void);
 #define NFLASH_LOCK(lock)       if (lock) spin_lock(lock)
@@ -1052,9 +1051,9 @@ out:
  * @chip:	nand chip info structure
  * @buf:	data buffer
  */
- 
+
 static int brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
-	const uint8_t *buf, int oob_required)
+	const uint8_t *buf, int oob_required,int page)
 {
 	int eccsize = chip->ecc.size;
 	int eccsteps;
@@ -1206,7 +1205,7 @@ static int brcmnand_write_page(struct mtd_info *mtd, struct nand_chip *chip,
 	uint32_t offset, int data_len,const uint8_t *buf,int oob_required, int page, int cached, int raw)
 {
 	chip->pagebuf = page;
-	chip->ecc.write_page(mtd, chip, buf,oob_required);
+	chip->ecc.write_page(mtd, chip, buf,oob_required, page);
 
 	return 0;
 }
@@ -2571,7 +2570,6 @@ init_partitions:
 		printk(KERN_ERR "brcmnand: add_mtd failed\n");
 		goto fail;
 	}
-	brcmnand_info.parts = parts;
 #endif
 	return 0;
 
