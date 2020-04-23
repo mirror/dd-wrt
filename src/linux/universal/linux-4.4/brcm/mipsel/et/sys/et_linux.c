@@ -46,7 +46,6 @@
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
 #include <net/tcp.h>
-#include <net/ip6_checksum.h>
 
 //#include <asm/system.h>
 #include <asm/io.h>
