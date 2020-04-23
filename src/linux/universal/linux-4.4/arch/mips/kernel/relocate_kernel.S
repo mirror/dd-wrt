@@ -7,7 +7,6 @@
  */
 
 #include <asm/asm.h>
-#include <asm/asm_nosec.h>
 #include <asm/asmmacro.h>
 #include <asm/regdef.h>
 #include <asm/mipsregs.h>

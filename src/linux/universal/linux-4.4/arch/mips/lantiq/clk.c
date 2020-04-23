@@ -12,6 +12,7 @@
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/clk.h>
+#include <linux/clkdev.h>
 #include <linux/err.h>
 #include <linux/list.h>
 
@@ -24,33 +25,32 @@
 #include "clk.h"
 #include "prom.h"
 
-struct clk {
-	const char *name;
-	unsigned long rate;
-	unsigned long (*get_rate) (void);
-};
-
-static struct clk *cpu_clk;
-static int cpu_clk_cnt;
-
 /* lantiq socs have 3 static clocks */
-static struct clk cpu_clk_generic[] = {
-	{
-		.name = "cpu",
-		.get_rate = ltq_get_cpu_hz,
-	}, {
-		.name = "fpi",
-		.get_rate = ltq_get_fpi_hz,
-	}, {
-		.name = "io",
-		.get_rate = ltq_get_io_region_clock,
-	},
-};
+static struct clk cpu_clk_generic[4];
 
-void clk_init(void)
+void clkdev_add_static(unsigned long cpu, unsigned long fpi,
+			unsigned long io, unsigned long ppe)
 {
-	cpu_clk = cpu_clk_generic;
-	cpu_clk_cnt = ARRAY_SIZE(cpu_clk_generic);
+	cpu_clk_generic[0].rate = cpu;
+	cpu_clk_generic[1].rate = fpi;
+	cpu_clk_generic[2].rate = io;
+	cpu_clk_generic[3].rate = ppe;
+}
+
+struct clk *clk_get_cpu(void)
+{
+	return &cpu_clk_generic[0];
+}
+
+struct clk *clk_get_fpi(void)
+{
+	return &cpu_clk_generic[1];
+}
+EXPORT_SYMBOL_GPL(clk_get_fpi);
+
+struct clk *clk_get_io(void)
+{
+	return &cpu_clk_generic[2];
 }
 
 struct clk *clk_get_ppe(void)
@@ -187,8 +187,8 @@ void __init plat_time_init(void)
 
 	ltq_soc_init();
 
-	clk = clk_get(0, "cpu");
-	mips_hpt_frequency = clk_get_rate(clk) / ltq_get_counter_resolution();
+	clk = clk_get_cpu();
+	mips_hpt_frequency = clk_get_rate(clk) / get_counter_resolution();
 	write_c0_compare(read_c0_count());
 	pr_info("CPU Clock: %ldMHz\n", clk_get_rate(clk) / 1000000);
 	clk_put(clk);

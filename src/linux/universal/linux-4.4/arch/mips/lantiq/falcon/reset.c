@@ -3,27 +3,37 @@
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  *
- * Copyright (C) 2011 Thomas Langer <thomas.langer@lantiq.com>
- * Copyright (C) 2011 John Crispin <blogic@openwrt.org>
+ * Copyright (C) 2012 Thomas Langer <thomas.langer@lantiq.com>
+ * Copyright (C) 2012 John Crispin <blogic@openwrt.org>
  */
 
 #include <linux/init.h>
 #include <linux/io.h>
 #include <linux/pm.h>
 #include <asm/reboot.h>
-#include <linux/module.h>
+#include <linux/export.h>
 
 #include <lantiq_soc.h>
 
 /* CPU0 Reset Source Register */
-#define LTQ_SYS1_CPU0RS		0x0040
+#define SYS1_CPU0RS		0x0040
 /* reset cause mask */
-#define LTQ_CPU0RS_MASK		0x0003
+#define CPU0RS_MASK		0x0003
+/* CPU0 Boot Mode Register */
+#define SYS1_BM			0x00a0
+/* boot mode mask */
+#define BM_MASK			0x0005
 
-int
-ltq_reset_cause(void)
+/* allow platform code to find out what surce we booted from */
+unsigned char ltq_boot_select(void)
 {
-	return ltq_sys1_r32(LTQ_SYS1_CPU0RS) & LTQ_CPU0RS_MASK;
+	return ltq_sys1_r32(SYS1_BM) & BM_MASK;
+}
+
+/* allow the watchdog driver to find out what the boot reason was */
+int ltq_reset_cause(void)
+{
+	return ltq_sys1_r32(SYS1_CPU0RS) & CPU0RS_MASK;
 }
 EXPORT_SYMBOL_GPL(ltq_reset_cause);
 
@@ -37,10 +47,8 @@ EXPORT_SYMBOL_GPL(ltq_reset_cause);
 #define WDT_PW1		0x00BE0000
 #define WDT_PW2		0x00DC0000
 
-static void
-ltq_machine_restart(char *command)
+static void machine_restart(char *command)
 {
-	pr_notice("System restart\n");
 	local_irq_disable();
 
 	/* reboot magic */
@@ -59,28 +67,23 @@ ltq_machine_restart(char *command)
 	unreachable();
 }
 
-static void
-ltq_machine_halt(void)
+static void machine_halt(void)
 {
-	pr_notice("System halted.\n");
 	local_irq_disable();
 	unreachable();
 }
 
-static void
-ltq_machine_power_off(void)
+static void machine_power_off(void)
 {
-	pr_notice("Please turn off the power now.\n");
 	local_irq_disable();
 	unreachable();
 }
 
-static int __init
-mips_reboot_setup(void)
+static int __init mips_reboot_setup(void)
 {
-	_machine_restart = ltq_machine_restart;
-	_machine_halt = ltq_machine_halt;
-	pm_power_off = ltq_machine_power_off;
+	_machine_restart = machine_restart;
+	_machine_halt = machine_halt;
+	pm_power_off = machine_power_off;
 	return 0;
 }
 

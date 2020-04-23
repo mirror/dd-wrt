@@ -1215,7 +1215,7 @@ static inline void cpu_probe_sibyte(struct cpuinfo_mips *c, unsigned int cpu)
 		__cpu_name[cpu] = "SiByte SB1";
 		/* FPU in pass1 is known to have issues. */
 		if ((c->processor_id & PRID_REV_MASK) < 0x02)
-		c->options &= ~(MIPS_CPU_FPU | MIPS_CPU_32FPR);
+			c->options &= ~(MIPS_CPU_FPU | MIPS_CPU_32FPR);
 		break;
 	case PRID_IMP_SB1A:
 		c->cputype = CPU_SB1A;

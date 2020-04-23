@@ -1,8 +1,5 @@
 if LANTIQ
 
-config LANTIQ_PCIE
-	bool
-
 config SOC_TYPE_XWAY
 	bool
 	select PINCTRL_XWAY
@@ -21,21 +18,24 @@ config SOC_XWAY
 	select SOC_TYPE_XWAY
 	select HW_HAS_PCI
 
-config SOC_VR9
-	bool "VR9"
-	select SOC_TYPE_XWAY
-	select HW_HAS_PCI
-	select LANTIQ_PCIE
-
 config SOC_FALCON
 	bool "FALCON"
+	select PINCTRL_FALCON
+
 endchoice
 
-config AR9
-	bool "AR9 DSL Driver extensions"
+choice
+	prompt "Devicetree"
 
-source "arch/mips/lantiq/xway/Kconfig"
-source "arch/mips/lantiq/falcon/Kconfig"
+config DT_EASY50712
+	bool "Easy50712"
+	depends on SOC_XWAY
+	select BUILTIN_DTB
+endchoice
+
+config PCI_LANTIQ
+	bool "PCI Support"
+	depends on SOC_XWAY && PCI
 
 config XRX200_PHY_FW
 	bool "XRX200 PHY firmware loader"

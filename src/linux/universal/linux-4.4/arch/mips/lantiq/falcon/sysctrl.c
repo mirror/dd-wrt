@@ -8,11 +8,14 @@
  */
 
 #include <linux/ioport.h>
+#include <linux/export.h>
+#include <linux/clkdev.h>
+#include <linux/of_address.h>
 #include <asm/delay.h>
 
 #include <lantiq_soc.h>
 
-#include "devices.h"
+#include "../clk.h"
 
 /* infrastructure control register */
 #define SYS1_INFRAC		0x00bc

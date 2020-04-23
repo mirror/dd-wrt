@@ -182,24 +182,10 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 		else
 			return -1;
 	case CVMX_BOARD_TYPE_UBNT_E100:
-		if (ipd_port == 0) {
-			return 7;
-		} else if (ipd_port == 1) {
-			return 6;
-		} else if (ipd_port == 2 && (cvmx_sysinfo_get()->board_rev_major == 2 || cvmx_sysinfo_get()->board_rev_major == 1)) {
-			return 5;
-		}
-		return -1;
-
-	case CVMX_BOARD_TYPE_UBNT_E120:
-		if (ipd_port == 0) {
-			return 7;
-		} else if (ipd_port == 1) {
-			return 6;
-		} else if (ipd_port == 2) {
-			return 5;
-		}
-		return -1;
+		if (ipd_port >= 0 && ipd_port <= 2)
+			return 7 - ipd_port;
+		else
+			return -1;
 	case CVMX_BOARD_TYPE_CUST_DSR1000N:
 		/*
 		 * Port 2 connects to Broadcom PHY (B5081). Other ports (0-1)
@@ -215,9 +201,6 @@ int cvmx_helper_board_get_mii_address(int ipd_port)
 		else
 			return -1;
 
-	case CVMX_BOARD_TYPE_UBNT_E200:
-	case CVMX_BOARD_TYPE_UBNT_E220:
-		return -1;
 	}
 
 	/* Some unknown board. Somebody forgot to update this function... */
@@ -318,17 +301,6 @@ cvmx_helper_link_info_t __cvmx_helper_board_link_get(int ipd_port)
 			is_broadcom_phy = 1;
 		}
 		break;
-	case CVMX_BOARD_TYPE_UBNT_E100:
-		if (ipd_port == 2
-		    && cvmx_sysinfo_get()->board_rev_major == 1) {
-			result.s.link_up = 1;
-			result.s.full_duplex = 1;
-			result.s.speed = 1000;
-			return result;
-		}
-		break;
-        case CVMX_BOARD_TYPE_UBNT_E120:
-            break;
 	}
 
 	phy_addr = cvmx_helper_board_get_mii_address(ipd_port);
@@ -709,16 +681,6 @@ int __cvmx_helper_board_interface_probe(int interface, int supported_ports)
  */
 int __cvmx_helper_board_hardware_enable(int interface)
 {
-	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E100
-	    || cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E120) {
-		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(0, interface), 0);
-		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(0, interface), 0x16);
-		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(1, interface), 0);
-		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(1, interface), 0x16);
-		cvmx_write_csr(CVMX_ASXX_RX_CLK_SETX(2, interface), 0);
-		cvmx_write_csr(CVMX_ASXX_TX_CLK_SETX(2, interface), 0x16);
-		return 0;
-	}
 	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_CN3005_EVB_HS5) {
 		if (interface == 0) {
 			/* Different config for switch port */

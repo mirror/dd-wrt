@@ -179,31 +179,18 @@ int r4k_clockevent_init(void)
 	struct clock_event_device *cd;
 	unsigned int irq;
 
-#ifndef CONFIG_ATHEROS
 	if (!cpu_has_counter || !mips_hpt_frequency)
 		return -ENXIO;
 
 	if (!c0_compare_int_usable())
 		return -ENXIO;
-#endif
+
 	/*
 	 * With vectored interrupts things are getting platform specific.
 	 * get_c0_compare_int is a hook to allow a platform to return the
 	 * interrupt number of its liking.
 	 */
 	irq = get_c0_compare_int();
-#ifdef CONFIG_ATHEROS
-		if ((irq >= MIPS_CPU_IRQ_BASE) && (irq < MIPS_CPU_IRQ_BASE + 8))
-			cp0_compare_irq = irq - MIPS_CPU_IRQ_BASE;
-#endif
-
-#ifdef CONFIG_ATHEROS
-	if (!cpu_has_counter || !mips_hpt_frequency)
-		return -ENXIO;
-
-	if (!c0_compare_int_usable())
-		return -ENXIO;
-#endif
 
 	cd = &per_cpu(mips_clockevent_device, cpu);
 

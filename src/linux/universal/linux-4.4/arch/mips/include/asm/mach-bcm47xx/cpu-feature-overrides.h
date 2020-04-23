@@ -9,11 +9,7 @@
 #define cpu_has_fpu			0
 #define cpu_has_32fpr			0
 #define cpu_has_counter			1
-#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
 #define cpu_has_watch			1
-#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
-#define cpu_has_watch			0
-#endif
 #define cpu_has_divec			1
 #define cpu_has_vce			0
 #define cpu_has_cache_cdex_p		0
@@ -38,45 +34,28 @@
 #define cpu_has_mips_2			1
 #define cpu_has_mips_3			0
 #define cpu_has_mips32r1		1
-#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
 #define cpu_has_mips32r2		1
-#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
-#define cpu_has_mips32r2		0
-#endif
 #define cpu_has_mips64r1		0
 #define cpu_has_mips64r2		0
 
-#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
 #define cpu_has_dsp			1
 #define cpu_has_dsp2			1
-#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
-#define cpu_has_dsp			0
-#define cpu_has_dsp2			0
-#endif
 #define cpu_has_mipsmt			0
 /* cpu_has_userlocal */
 
 #define cpu_has_nofpuex			0
 #define cpu_has_64bits			0
 #define cpu_has_64bit_zero_reg		0
-#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
 #define cpu_has_vint			1
-#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
-#define cpu_has_vint			0
-#endif
 #define cpu_has_veic			0
 #define cpu_has_inclusive_pcaches	0
 
-#if defined(CONFIG_BCM47XX_BCMA) && !defined(CONFIG_BCM47XX_SSB)
 #define cpu_dcache_line_size()		32
 #define cpu_icache_line_size()		32
 #define cpu_has_perf_cntr_intr_bit	1
-#elif defined(CONFIG_BCM47XX_SSB) && !defined(CONFIG_BCM47XX_BCMA)
-#define cpu_dcache_line_size()		16
-#define cpu_icache_line_size()		16
-#define cpu_has_perf_cntr_intr_bit	0
-#endif
 #define cpu_scache_line_size()		0
 #define cpu_has_vz			0
+
+#define cpu_use_kmap_coherent		0
 
 #endif /* __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H */

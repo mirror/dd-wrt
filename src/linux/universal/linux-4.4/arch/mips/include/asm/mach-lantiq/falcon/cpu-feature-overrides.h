@@ -1,7 +1,7 @@
 /*
  *  Lantiq FALCON specific CPU feature overrides
  *
- *  Copyright (C) 2010 Thomas Langer, Lantiq Deutschland
+ *  Copyright (C) 2013 Thomas Langer, Lantiq Deutschland
  *
  *  This file was derived from: include/asm-mips/cpu-features.h
  *	Copyright (C) 2003, 2004 Ralf Baechle

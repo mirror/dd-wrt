@@ -245,17 +245,12 @@
 #define ADDRMASK (NBYTES-1)
 
 	.text
-#ifdef CONFIG_BCM47XX
-	.section .text.fastpath, "a"
-#endif
 	.set	noreorder
 #ifndef CONFIG_CPU_DADDI_WORKAROUNDS
 	.set	noat
 #else
 	.set	at=v1
 #endif
-
-#include "prefetch.h"
 
 	.align	5
 
@@ -279,8 +274,6 @@
 	 * Temps
 	 */
 #define rem t8
-
-	prefetch_store a0, a2, t0, t1, t2
 
 	R10KCBARRIER(0(ra))
 	/*

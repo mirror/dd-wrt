@@ -9,7 +9,8 @@
 #define _LANTIQ_H__
 
 #include <linux/irq.h>
-#include <linux/ioport.h>
+#include <linux/device.h>
+#include <linux/clk.h>
 
 /* generic reg access functions */
 #define ltq_r32(reg)		__raw_readl(reg)
@@ -19,20 +20,12 @@
 #define ltq_r8(reg)		__raw_readb(reg)
 #define ltq_w8(val, reg)	__raw_writeb(val, reg)
 
-extern unsigned int ltq_get_cpu_ver(void);
-extern unsigned int ltq_get_soc_type(void);
-
-/* clock speeds */
-#define CLOCK_60M	60000000
-#define CLOCK_83M	83333333
-#define CLOCK_100M	100000000
-#define CLOCK_111M	111111111
-#define CLOCK_133M	133333333
-#define CLOCK_167M	166666667
-#define CLOCK_200M	200000000
-#define CLOCK_266M	266666666
-#define CLOCK_333M	333333333
-#define CLOCK_400M	400000000
+/* register access macros for EBU and CGU */
+#define ltq_ebu_w32(x, y)	ltq_w32((x), ltq_ebu_membase + (y))
+#define ltq_ebu_r32(x)		ltq_r32(ltq_ebu_membase + (x))
+#define ltq_ebu_w32_mask(x, y, z) \
+	ltq_w32_mask(x, y, ltq_ebu_membase + (z))
+extern __iomem void *ltq_ebu_membase;
 
 /* spinlock all ebu i/o */
 extern spinlock_t ebu_lock;

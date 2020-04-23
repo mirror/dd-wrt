@@ -7,7 +7,6 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/seq_file.h>
-#include <linux/proc_fs.h>
 #include <asm/bootinfo.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
@@ -17,7 +16,6 @@
 #include <asm/prom.h>
 
 unsigned int vced_count, vcei_count;
-extern unsigned int getCPUClock(void);
 
 /*
  *  * No lock; only written during early bootup by CPU 0.
@@ -33,6 +31,7 @@ int proc_cpuinfo_notifier_call_chain(unsigned long val, void *v)
 {
 	return raw_notifier_call_chain(&proc_cpuinfo_chain, val, v);
 }
+extern unsigned int getCPUClock(void);
 
 static int show_cpuinfo(struct seq_file *m, void *v)
 {
@@ -130,120 +129,6 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 		seq_printf(m, "micromips kernel\t: %s\n",
 		      (read_c0_config3() & MIPS_CONF3_ISA_OE) ?  "yes" : "no");
 	}
-
-	seq_printf(m, "Options implemented\t:");
-	if (cpu_has_tlb)
-		seq_printf(m, "%s", " tlb");
-	if (cpu_has_ftlb)
-		seq_printf(m, "%s", " ftlb");
-	if (cpu_has_tlbinv)
-		seq_printf(m, "%s", " tlbinv");
-	if (cpu_has_segments)
-		seq_printf(m, "%s", " segments");
-	if (cpu_has_rixiex)
-		seq_printf(m, "%s", " rixiex");
-	if (cpu_has_ldpte)
-		seq_printf(m, "%s", " ldpte");
-	if (cpu_has_rw_llb)
-		seq_printf(m, "%s", " rw_llb");
-	if (cpu_has_4kex)
-		seq_printf(m, "%s", " 4kex");
-	if (cpu_has_3k_cache)
-		seq_printf(m, "%s", " 3k_cache");
-	if (cpu_has_4k_cache)
-		seq_printf(m, "%s", " 4k_cache");
-	if (cpu_has_6k_cache)
-		seq_printf(m, "%s", " 6k_cache");
-	if (cpu_has_8k_cache)
-		seq_printf(m, "%s", " 8k_cache");
-	if (cpu_has_tx39_cache)
-		seq_printf(m, "%s", " tx39_cache");
-	if (cpu_has_octeon_cache)
-		seq_printf(m, "%s", " octeon_cache");
-	if (cpu_has_fpu)
-		seq_printf(m, "%s", " fpu");
-	if (cpu_has_32fpr)
-		seq_printf(m, "%s", " 32fpr");
-	if (cpu_has_cache_cdex_p)
-		seq_printf(m, "%s", " cache_cdex_p");
-	if (cpu_has_cache_cdex_s)
-		seq_printf(m, "%s", " cache_cdex_s");
-	if (cpu_has_prefetch)
-		seq_printf(m, "%s", " prefetch");
-	if (cpu_has_mcheck)
-		seq_printf(m, "%s", " mcheck");
-	if (cpu_has_ejtag)
-		seq_printf(m, "%s", " ejtag");
-	if (cpu_has_llsc)
-		seq_printf(m, "%s", " llsc");
-	if (cpu_has_bp_ghist)
-		seq_printf(m, "%s", " bp_ghist");
-	if (cpu_has_guestctl0ext)
-		seq_printf(m, "%s", " guestctl0ext");
-	if (cpu_has_guestctl1)
-		seq_printf(m, "%s", " guestctl1");
-	if (cpu_has_guestctl2)
-		seq_printf(m, "%s", " guestctl2");
-	if (cpu_has_guestid)
-		seq_printf(m, "%s", " guestid");
-	if (cpu_has_drg)
-		seq_printf(m, "%s", " drg");
-	if (cpu_has_rixi)
-		seq_printf(m, "%s", " rixi");
-	if (cpu_has_lpa)
-		seq_printf(m, "%s", " lpa");
-	if (cpu_has_mvh)
-		seq_printf(m, "%s", " mvh");
-	if (cpu_has_vtag_icache)
-		seq_printf(m, "%s", " vtag_icache");
-	if (cpu_has_dc_aliases)
-		seq_printf(m, "%s", " dc_aliases");
-	if (cpu_has_ic_fills_f_dc)
-		seq_printf(m, "%s", " ic_fills_f_dc");
-	if (cpu_has_pindexed_dcache)
-		seq_printf(m, "%s", " pindexed_dcache");
-	if (cpu_has_userlocal)
-		seq_printf(m, "%s", " userlocal");
-	if (cpu_has_nofpuex)
-		seq_printf(m, "%s", " nofpuex");
-	if (cpu_has_vint)
-		seq_printf(m, "%s", " vint");
-	if (cpu_has_veic)
-		seq_printf(m, "%s", " veic");
-	if (cpu_has_inclusive_pcaches)
-		seq_printf(m, "%s", " inclusive_pcaches");
-	if (cpu_has_perf_cntr_intr_bit)
-		seq_printf(m, "%s", " perf_cntr_intr_bit");
-	if (cpu_has_ufr)
-		seq_printf(m, "%s", " ufr");
-	if (cpu_has_fre)
-		seq_printf(m, "%s", " fre");
-	if (cpu_has_cdmm)
-		seq_printf(m, "%s", " cdmm");
-	if (cpu_has_small_pages)
-		seq_printf(m, "%s", " small_pages");
-	if (cpu_has_nan_legacy)
-		seq_printf(m, "%s", " nan_legacy");
-	if (cpu_has_nan_2008)
-		seq_printf(m, "%s", " nan_2008");
-	if (cpu_has_ebase_wg)
-		seq_printf(m, "%s", " ebase_wg");
-	if (cpu_has_badinstr)
-		seq_printf(m, "%s", " badinstr");
-	if (cpu_has_badinstrp)
-		seq_printf(m, "%s", " badinstrp");
-	if (cpu_has_contextconfig)
-		seq_printf(m, "%s", " contextconfig");
-	if (cpu_has_perf)
-		seq_printf(m, "%s", " perf");
-	if (cpu_has_shared_ftlb_ram)
-		seq_printf(m, "%s", " shared_ftlb_ram");
-	if (cpu_has_shared_ftlb_entries)
-		seq_printf(m, "%s", " shared_ftlb_entries");
-	if (cpu_has_mipsmt_pertccounters)
-		seq_printf(m, "%s", " mipsmt_pertccounters");
-	seq_printf(m, "\n");
-
 	seq_printf(m, "shadow register sets\t: %d\n",
 		      cpu_data[n].srsets);
 	seq_printf(m, "kscratch registers\t: %d\n",
@@ -290,19 +175,3 @@ const struct seq_operations cpuinfo_op = {
 	.stop	= c_stop,
 	.show	= show_cpuinfo,
 };
-
-/*
- * Support for MIPS/local /proc hooks in /proc/mips/
- */
-
-static struct proc_dir_entry *mips_proc = NULL;
-
-struct proc_dir_entry *get_mips_proc_dir(void)
-{
-       /*
-        * This ought not to be preemptable.
-        */
-       if(mips_proc == NULL)
-               mips_proc = proc_mkdir("mips", NULL);
-       return(mips_proc);
-}

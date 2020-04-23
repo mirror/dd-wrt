@@ -13,64 +13,6 @@
 #include <asm/cpu-info.h>
 #include <cpu-feature-overrides.h>
 
-#ifdef __mips_isa_rev
-#define MIPS_ISA_REV __mips_isa_rev
-#else
-/* The compiler hasn't defined the isa rev so assume it's MIPS I - V (0) */
-#define MIPS_ISA_REV 0
-#endif
-
-#define __opt(opt)			(cpu_data[0].options & (opt))
-#define __isa(isa)			(cpu_data[0].isa_level & (isa))
-#define __opt(opt)			(cpu_data[0].options & (opt))
-
-/*
- * Check if MIPS_ISA_REV is >= isa *and* an option or ASE is detected during
- * boot (typically by cpu_probe()).
- *
- * Note that these should only be used in cases where a kernel built for an
- * older ISA *cannot* run on a CPU which supports the feature in question. For
- * example this may be used for features introduced with MIPSr6, since a kernel
- * built for an older ISA cannot run on a MIPSr6 CPU. This should not be used
- * for MIPSr2 features however, since a MIPSr1 or earlier kernel might run on a
- * MIPSr2 CPU.
- */
-#define __isa_ge_and_ase(isa, ase)	((MIPS_ISA_REV >= (isa)) && __ase(ase))
-#define __isa_ge_and_opt(isa, opt)	((MIPS_ISA_REV >= (isa)) && __opt(opt))
-
-/*
- * Check if MIPS_ISA_REV is >= isa *or* an option or ASE is detected during
- * boot (typically by cpu_probe()).
- *
- * These are for use with features that are optional up until a particular ISA
- * revision & then become required.
- */
-#define __isa_ge_or_ase(isa, ase)	((MIPS_ISA_REV >= (isa)) || __ase(ase))
-#define __isa_ge_or_opt(isa, opt)	((MIPS_ISA_REV >= (isa)) || __opt(opt))
-
-/*
- * Check if MIPS_ISA_REV is < isa *and* an option or ASE is detected during
- * boot (typically by cpu_probe()).
- *
- * These are for use with features that are optional up until a particular ISA
- * revision & are then removed - ie. no longer present in any CPU implementing
- * the given ISA revision.
- */
-#define __isa_lt_and_ase(isa, ase)	((MIPS_ISA_REV < (isa)) && __ase(ase))
-#define __isa_lt_and_opt(isa, opt)	((MIPS_ISA_REV < (isa)) && __opt(opt))
-
-/*
- * Similarly allow for ISA level checks that take into account knowledge of the
- * ISA targeted by the kernel build, provided by MIPS_ISA_REV.
- */
-#define __isa_ge_and_flag(isa, flag)	((MIPS_ISA_REV >= (isa)) && __isa(flag))
-#define __isa_ge_or_flag(isa, flag)	((MIPS_ISA_REV >= (isa)) || __isa(flag))
-#define __isa_lt_and_flag(isa, flag)	((MIPS_ISA_REV < (isa)) && __isa(flag))
-#define __isa_range(ge, lt) \
-	((MIPS_ISA_REV >= (ge)) && (MIPS_ISA_REV < (lt)))
-#define __isa_range_or_flag(ge, lt, flag) \
-	(__isa_range(ge, lt) || ((MIPS_ISA_REV < (lt)) && __isa(flag)))
-
 /*
  * SMP assumption: Options of CPU 0 are a superset of all processors.
  * This is true for all known MIPS systems.
@@ -112,38 +54,8 @@
 #ifndef cpu_has_3kex
 #define cpu_has_3kex		(!cpu_has_4kex)
 #endif
-#ifndef cpu_has_ftlb
-#define cpu_has_ftlb		__opt(MIPS_CPU_FTLB)
-#endif
-#ifndef cpu_has_tlbinv
-#define cpu_has_tlbinv		__opt(MIPS_CPU_TLBINV)
-#endif
-#ifndef cpu_has_segments
-#define cpu_has_segments	__opt(MIPS_CPU_SEGMENTS)
-#endif
-#ifndef cpu_has_eva
-#define cpu_has_eva		__opt(MIPS_CPU_EVA)
-#endif
-#ifndef cpu_has_htw
-#define cpu_has_htw		__opt(MIPS_CPU_HTW)
-#endif
-#ifndef cpu_has_ldpte
-#define cpu_has_ldpte		__opt(MIPS_CPU_LDPTE)
-#endif
-#ifndef cpu_has_rixiex
-#define cpu_has_rixiex		__isa_ge_or_opt(6, MIPS_CPU_RIXIEX)
-#endif
-#ifndef cpu_has_maar
-#define cpu_has_maar		__opt(MIPS_CPU_MAAR)
-#endif
-#ifndef cpu_has_rw_llb
-#define cpu_has_rw_llb		__isa_ge_or_opt(6, MIPS_CPU_RW_LLB)
-#endif
 #ifndef cpu_has_4kex
 #define cpu_has_4kex		(cpu_data[0].options & MIPS_CPU_4KEX)
-#endif
-#ifndef cpu_has_3kex
-#define cpu_has_3kex		(!cpu_has_4kex)
 #endif
 #ifndef cpu_has_3k_cache
 #define cpu_has_3k_cache	(cpu_data[0].options & MIPS_CPU_3K_CACHE)
@@ -236,12 +148,6 @@
 #ifndef cpu_has_vtag_icache
 #define cpu_has_vtag_icache	(cpu_data[0].icache.flags & MIPS_CACHE_VTAG)
 #endif
-#ifndef cpu_has_vtag_dcache
-#define cpu_has_vtag_dcache     (cpu_data[0].dcache.flags & MIPS_CACHE_VTAG)
-#endif
-#ifndef cpu_has_ic_aliases
-#define cpu_has_ic_aliases      (cpu_data[0].icache.flags & MIPS_CACHE_ALIASES)
-#endif
 #ifndef cpu_has_dc_aliases
 #define cpu_has_dc_aliases	(cpu_data[0].dcache.flags & MIPS_CACHE_ALIASES)
 #endif
@@ -251,127 +157,15 @@
 #ifndef cpu_has_pindexed_dcache
 #define cpu_has_pindexed_dcache	(cpu_data[0].dcache.flags & MIPS_CACHE_PINDEX)
 #endif
-#ifndef cpu_use_kmap_coherent
-#define cpu_use_kmap_coherent 1
-#endif
 #ifndef cpu_has_local_ebase
 #define cpu_has_local_ebase	1
 #endif
-#ifndef cpu_has_bp_ghist
-#define cpu_has_bp_ghist	__opt(MIPS_CPU_BP_GHIST)
+#ifndef cpu_use_kmap_coherent
+#define cpu_use_kmap_coherent 1
 #endif
-#ifndef cpu_has_guestctl0ext
-#define cpu_has_guestctl0ext	__opt(MIPS_CPU_GUESTCTL0EXT)
-#endif
-#ifndef cpu_has_guestctl1
-#define cpu_has_guestctl1	__opt(MIPS_CPU_GUESTCTL1)
-#endif
-#ifndef cpu_has_guestctl2
-#define cpu_has_guestctl2	__opt(MIPS_CPU_GUESTCTL2)
-#endif
-#ifndef cpu_has_guestid
-#define cpu_has_guestid		__opt(MIPS_CPU_GUESTID)
-#endif
-#ifndef cpu_has_drg
-#define cpu_has_drg		__opt(MIPS_CPU_DRG)
-#endif
-#ifndef cpu_has_lpa
-#define cpu_has_lpa		__opt(MIPS_CPU_LPA)
-#endif
-#ifndef cpu_has_mvh
-#define cpu_has_mvh		__opt(MIPS_CPU_MVH)
-#endif
-#ifndef cpu_has_ufr
-# define cpu_has_ufr		__opt(MIPS_CPU_UFR)
-#endif
-
-#ifndef cpu_has_fre
-# define cpu_has_fre		__opt(MIPS_CPU_FRE)
-#endif
-
-#ifndef cpu_has_cdmm
-# define cpu_has_cdmm		__opt(MIPS_CPU_CDMM)
-#endif
-
-#ifndef cpu_has_small_pages
-# define cpu_has_small_pages	__opt(MIPS_CPU_SP)
-#endif
-
-#ifndef cpu_has_nan_legacy
-#define cpu_has_nan_legacy	__isa_lt_and_opt(6, MIPS_CPU_NAN_LEGACY)
-#endif
-#ifndef cpu_has_nan_2008
-#define cpu_has_nan_2008	__isa_ge_or_opt(6, MIPS_CPU_NAN_2008)
-#endif
-
-#ifndef cpu_has_ebase_wg
-# define cpu_has_ebase_wg	__opt(MIPS_CPU_EBASE_WG)
-#endif
-
-#ifndef cpu_has_badinstr
-# define cpu_has_badinstr	__isa_ge_or_opt(6, MIPS_CPU_BADINSTR)
-#endif
-
-#ifndef cpu_has_badinstrp
-# define cpu_has_badinstrp	__isa_ge_or_opt(6, MIPS_CPU_BADINSTRP)
-#endif
-
-#ifndef cpu_has_contextconfig
-# define cpu_has_contextconfig	__opt(MIPS_CPU_CTXTC)
-#endif
-
-#ifndef cpu_has_perf
-# define cpu_has_perf		__opt(MIPS_CPU_PERF)
-#endif
-#ifdef CONFIG_SMP
-/*
- * Some systems share FTLB RAMs between threads within a core (siblings in
- * kernel parlance). This means that FTLB entries may become invalid at almost
- * any point when an entry is evicted due to a sibling thread writing an entry
- * to the shared FTLB RAM.
- *
- * This is only relevant to SMP systems, and the only systems that exhibit this
- * property implement MIPSr6 or higher so we constrain support for this to
- * kernels that will run on such systems.
- */
-# ifndef cpu_has_shared_ftlb_ram
-#  define cpu_has_shared_ftlb_ram \
-	__isa_ge_and_opt(6, MIPS_CPU_SHARED_FTLB_RAM)
-# endif
 
 /*
- * Some systems take this a step further & share FTLB entries between siblings.
- * This is implemented as TLB writes happening as usual, but if an entry
- * written by a sibling exists in the shared FTLB for a translation which would
- * otherwise cause a TLB refill exception then the CPU will use the entry
- * written by its sibling rather than triggering a refill & writing a matching
- * TLB entry for itself.
- *
- * This is naturally only valid if a TLB entry is known to be suitable for use
- * on all siblings in a CPU, and so it only takes effect when MMIDs are in use
- * rather than ASIDs or when a TLB entry is marked global.
- */
-# ifndef cpu_has_shared_ftlb_entries
-#  define cpu_has_shared_ftlb_entries \
-	__isa_ge_and_opt(6, MIPS_CPU_SHARED_FTLB_ENTRIES)
-# endif
-#endif /* SMP */
-
-#ifndef cpu_has_shared_ftlb_ram
-# define cpu_has_shared_ftlb_ram 0
-#endif
-#ifndef cpu_has_shared_ftlb_entries
-# define cpu_has_shared_ftlb_entries 0
-#endif
-#ifdef CONFIG_MIPS_MT_SMP
-# define cpu_has_mipsmt_pertccounters \
-	__isa_lt_and_opt(6, MIPS_CPU_MT_PER_TC_PERF_COUNTERS)
-#else
-# define cpu_has_mipsmt_pertccounters 0
-#endif /* CONFIG_MIPS_MT_SMP */
-
-/*
- * I-Cache snoops remote store.  This only matters on SMP.  Some multiprocessors
+ * I-Cache snoops remote store.	 This only matters on SMP.  Some multiprocessors
  * such as the R10000 have I-Caches that snoop local stores; the embedded ones
  * don't.  For maintaining I-cache coherency this means we need to flush the
  * D-cache all the way back to whever the I-cache does refills from, so the

@@ -1,6 +1,5 @@
 # All platforms listed in alphabetic order
 
-platforms += adm5120
 platforms += alchemy
 platforms += ar7
 platforms += ath25
@@ -25,6 +24,7 @@ platforms += paravirt
 platforms += pistachio
 platforms += pmcs-msp71xx
 platforms += pnx833x
+platforms += ralink
 platforms += rb532
 platforms += sgi-ip22
 platforms += sgi-ip27
@@ -34,7 +34,6 @@ platforms += sni
 platforms += txx9
 platforms += vr41xx
 platforms += xilfpga
-platforms += ralink-openwrt
 
 # include the platform specific files
 include $(patsubst %, $(srctree)/arch/mips/%/Platform, $(platforms))
