@@ -118,6 +118,7 @@ static void pcibios_scanbus(struct pci_controller *hose)
 	if (!pci_has_flag(PCI_PROBE_ONLY)) {
 		pci_bus_size_bridges(bus);
 		pci_bus_assign_resources(bus);
+		pci_enable_bridges(bus);
 	}
 	pci_bus_add_devices(bus);
 }
@@ -178,7 +179,7 @@ void register_pci_controller(struct pci_controller *hose)
 		parent = &iomem_resource;
 
 	if (request_resource(parent, hose->mem_resource) < 0)
- 		goto out;
+		goto out;
 
 	parent = hose->io_resource->parent;
 	if (!parent)
@@ -236,13 +237,11 @@ static void __init pcibios_set_cache_line_size(void)
 
 	pr_debug("PCI: pci_cache_line_size set to %d bytes\n", lsize);
 }
+
 #ifdef CONFIG_BCM47XX
 extern int __init pcibios_init(void);
 #else
-#ifndef CONFIG_MTD_NAND_ATH
-static 
-#endif
-int __init pcibios_init(void)
+static int __init pcibios_init(void)
 {
 	struct pci_controller *hose;
 
@@ -259,9 +258,7 @@ int __init pcibios_init(void)
 	return 0;
 }
 #endif
-#ifndef CONFIG_MTD_NAND_ATH
 subsys_initcall(pcibios_init);
-#endif
 
 #ifndef CONFIG_BCM47XX
 static int pcibios_enable_resources(struct pci_dev *dev, int mask)
@@ -294,7 +291,6 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 		if (r->flags & IORESOURCE_MEM)
 			cmd |= PCI_COMMAND_MEMORY;
 	}
-	printk(KERN_EMERG "%X vs %X\n",cmd,old_cmd);
 	if (cmd != old_cmd) {
 		printk("PCI: Enabling device %s (%04x -> %04x)\n",
 		       pci_name(dev), old_cmd, cmd);
@@ -303,10 +299,12 @@ static int pcibios_enable_resources(struct pci_dev *dev, int mask)
 	return 0;
 }
 #endif
+
 unsigned int pcibios_assign_all_busses(void)
 {
 	return 1;
 }
+
 #ifndef CONFIG_BCM47XX
 int pcibios_enable_device(struct pci_dev *dev, int mask)
 {
@@ -317,6 +315,7 @@ int pcibios_enable_device(struct pci_dev *dev, int mask)
 
 	return pcibios_plat_dev_init(dev);
 }
+
 void pcibios_fixup_bus(struct pci_bus *bus)
 {
 	struct pci_dev *dev = bus->self;

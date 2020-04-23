@@ -22,8 +22,8 @@
 #include <linux/of_pci.h>
 #include <linux/platform_device.h>
 
-#include <asm/mach-ralink-openwrt/rt3883.h>
-#include <asm/mach-ralink-openwrt/ralink_regs.h>
+#include <asm/mach-ralink/rt3883.h>
+#include <asm/mach-ralink/ralink_regs.h>
 
 #define RT3883_MEMORY_BASE		0x00000000
 #define RT3883_MEMORY_SIZE		0x02000000
