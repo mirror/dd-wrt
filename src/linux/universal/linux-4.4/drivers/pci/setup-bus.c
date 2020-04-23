@@ -1778,6 +1778,9 @@ again:
 	goto again;
 
 dump:
+#ifdef CONFIG_MIPS_BRCM
+	pci_enable_bridges(bus);
+#endif
 	/* dump the resource on buses */
 	pci_bus_dump_resources(bus);
 }
@@ -1854,6 +1857,9 @@ enable_all:
 	if (retval)
 		dev_err(&bridge->dev, "Error reenabling bridge (%d)\n", retval);
 	pci_set_master(bridge);
+#ifdef CONFIG_MIPS_BRCM
+	pci_enable_bridges(parent);
+#endif
 }
 EXPORT_SYMBOL_GPL(pci_assign_unassigned_bridge_resources);
 
