@@ -391,7 +391,8 @@ static void ip6gre_err(struct sk_buff *skb, struct inet6_skb_parm *opt,
 	if (flags & GRE_KEY) {
 		key_off = grehlen + offset;
 		grehlen += 4;
-
+	}
+	
 	if (!pskb_may_pull(skb, offset + grehlen))
 		return;
 	ipv6h = (const struct ipv6hdr *)skb->data;
