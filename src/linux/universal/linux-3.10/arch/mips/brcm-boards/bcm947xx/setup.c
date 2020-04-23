@@ -71,6 +71,20 @@
 #endif
 #include "bcmdevs.h"
 
+
+static int __init bcm47xx_cpu_fixes(void)
+{
+	struct cpuinfo_mips *c = &current_cpu_data;
+	if (c->cputype == CPU_74K) {
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID) {
+			printk(KERN_INFO "enable BCMA BUS Errata\n");
+			cpu_wait = NULL;
+		}
+	}
+	return 0;
+}
+arch_initcall(bcm47xx_cpu_fixes);
+
 extern void bcm947xx_time_init(void);
 extern void bcm947xx_timer_setup(struct irqaction *irq);
 
