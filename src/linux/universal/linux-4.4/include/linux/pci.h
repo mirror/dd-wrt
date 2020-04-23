@@ -1151,6 +1151,7 @@ int __must_check pci_bus_alloc_resource(struct pci_bus *bus,
 						  resource_size_t),
 			void *alignf_data);
 
+void pci_enable_bridges(struct pci_bus *bus);
 
 int pci_remap_iospace(const struct resource *res, phys_addr_t phys_addr);
 
