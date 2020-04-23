@@ -1337,8 +1337,10 @@ static struct vm_struct *__get_vm_area_node(unsigned long size,
 {
 	struct vmap_area *va;
 	struct vm_struct *area;
-
+#ifndef CONFIG_MIPS_BRCM
 	BUG_ON(in_interrupt());
+#endif
+
 	if (flags & VM_IOREMAP)
 		align = 1ul << clamp_t(int, fls_long(size),
 				       PAGE_SHIFT, IOREMAP_MAX_ORDER);
