@@ -395,8 +395,12 @@ symbol:		.frame	sp, 0, ra
 
 /* PRID register */
 #define PRID_COPT_MASK		0xff000000
+#ifndef PRID_COMP_MASK				/* May duplicate in cpu.h */
 #define PRID_COMP_MASK		0x00ff0000
+#endif
+#ifndef PRID_IMP_MASK				/* May duplicate in cpu.h */
 #define PRID_IMP_MASK		0x0000ff00
+#endif
 #ifndef PRID_REV_MASK				/* May duplicate in cpu.h */
 #define PRID_REV_MASK		0x000000ff
 #endif
