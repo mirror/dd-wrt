@@ -114,12 +114,13 @@ EXPORT_SYMBOL(ctf_attach_fn);
 static int __init bcm47xx_cpu_fixes(void)
 {
 	struct cpuinfo_mips *c = &current_cpu_data;
-	printk(KERN_INFO "cpu fixes call %X\n",c->cputype);
 	if (c->cputype == CPU_74K) {
-		printk(KERN_INFO "enable BCMA BUS Errata\n");
-		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID) {
+			printk(KERN_INFO "enable BCMA BUS Errata\n");
 			cpu_wait = NULL;
+		}
 	}
+	return 0;
 }
 arch_initcall(bcm47xx_cpu_fixes);
 
