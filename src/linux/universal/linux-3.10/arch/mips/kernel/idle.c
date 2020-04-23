@@ -188,11 +188,11 @@ void __init check_wait(void)
 		break;
 
 	case CPU_74K:
-#ifndef CONFIG_BCM47XX
+//#ifndef CONFIG_BCM47XX
 		cpu_wait = r4k_wait;
 		if ((c->processor_id & 0xff) >= PRID_REV_ENCODE_332(2, 1, 0))
 			cpu_wait = r4k_wait_irqoff;
-#endif
+//#endif
 		break;
 
 	case CPU_TX49XX:
