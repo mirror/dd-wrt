@@ -545,6 +545,9 @@ int module_finalize(const Elf_Ehdr *hdr,
 
 void module_arch_freeing_init(struct module *mod)
 {
+	if (mod->state == MODULE_STATE_LIVE)
+		return;
+
 	if (mod->arch.phys_plt_tbl) {
 		__module_free(mod->arch.phys_plt_tbl);
 		mod->arch.phys_plt_tbl = NULL;

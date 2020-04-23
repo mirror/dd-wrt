@@ -2,20 +2,17 @@
 #define __ASM_BUG_H
 
 #include <linux/compiler.h>
-#include <linux/printk.h>
 #include <asm/sgidefs.h>
 
 #ifdef CONFIG_BUG
 
 #include <asm/break.h>
 
-#define BUG() do { printk(KERN_EMERG "bug on %s:%d\n",__func__,__LINE__); } while(0)
-
-//static inline void __noreturn BUG(void)
-//{
-//	__asm__ __volatile__("break %0" : : "i" (BRK_BUG));
-//	unreachable();
-//}
+static inline void __noreturn BUG(void)
+{
+	__asm__ __volatile__("break %0" : : "i" (BRK_BUG));
+	unreachable();
+}
 
 #define HAVE_ARCH_BUG
 

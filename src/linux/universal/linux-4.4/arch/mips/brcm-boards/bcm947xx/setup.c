@@ -26,6 +26,9 @@
 #include <linux/serialP.h>
 #include <linux/serial_core.h>
 #include <linux/serial_8250.h>	/* for early_serial_setup */
+#include <linux/ssb/ssb.h>
+#include <linux/ssb/ssb_embedded.h>
+#include <linux/bcma/bcma_soc.h>
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 #include <linux/config.h>
 #endif
@@ -65,12 +68,14 @@
 #ifdef HNDCTF
 #include <ctf/hndctf.h>
 #endif /* HNDCTF */
+#include <asm/idle.h>
 #include "bcm947xx.h"
+#include "bcm47xx.h"
+#include "bcm47xx_private.h"
 #ifdef CONFIG_MTD_NFLASH
 #include "nflash.h"
 #endif
 #include "bcmdevs.h"
-#include <asm/idle.h>
 
 extern void bcm947xx_time_init(void);
 extern void bcm947xx_timer_setup(struct irqaction *irq);
@@ -106,6 +111,18 @@ ctf_attach_t ctf_attach_fn = NULL;
 EXPORT_SYMBOL(ctf_attach_fn);
 #endif /* HNDCTF */
 
+static int __init bcm47xx_cpu_fixes(void)
+{
+	struct cpuinfo_mips *c = &current_cpu_data;
+	printk(KERN_INFO "cpu fixes call %X\n",c->cputype);
+	if (c->cputype == CPU_74K) {
+		printk(KERN_INFO "enable BCMA BUS Errata\n");
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
+			cpu_wait = NULL;
+	}
+}
+arch_initcall(bcm47xx_cpu_fixes);
+
 /* Kernel command line */
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 extern char arcs_cmdline[CL_SIZE];
@@ -118,20 +135,13 @@ EXPORT_SYMBOL( hnd_jtagm_init );
 EXPORT_SYMBOL( hnd_jtagm_disable );
 EXPORT_SYMBOL( jtag_scan );
 
-static int __init bcm47xx_cpu_fixes(void)
-{
-	struct cpuinfo_mips *c = &current_cpu_data;
+#if defined(CONFIG_BCM47XX_SSB) || defined(CONFIG_BCM47XX_BCMA)
+union bcm47xx_bus bcm47xx_bus;
+EXPORT_SYMBOL(bcm47xx_bus);
 
-	if (c->cputype == CPU_74K) {
-		printk(KERN_INFO "enable BCMA BUS Errata\n");
-		if (CHIPID(sih->chip) == BCM4706_CHIP_ID)
-			cpu_wait = NULL;
-		set_c0_config7(MIPS_CONF7_ES);
-	}
-}
-arch_initcall(bcm47xx_cpu_fixes);
-
-
+enum bcm47xx_bus_type bcm47xx_bus_type;
+EXPORT_SYMBOL(bcm47xx_bus_type);
+#endif
 
 static void
 bcm947xx_reboot_handler(void)
@@ -267,6 +277,90 @@ static int rootfs_mtdblock(void)
 	/* Boot from norflash and kernel in nandflash */
 	return block+3;
 }
+#ifdef CONFIG_BCM47XX_SSB
+static int bcm47xx_get_invariants(struct ssb_bus *bus,
+				  struct ssb_init_invariants *iv)
+{
+	char buf[20];
+	int len, err;
+
+	/* Fill boardinfo structure */
+	memset(&iv->boardinfo, 0 , sizeof(struct ssb_boardinfo));
+
+	len = bcm47xx_nvram_getenv("boardvendor", buf, sizeof(buf));
+	if (len > 0) {
+		err = kstrtou16(strim(buf), 0, &iv->boardinfo.vendor);
+		if (err)
+			pr_warn("Couldn't parse nvram board vendor entry with value \"%s\"\n",
+				buf);
+	}
+	if (!iv->boardinfo.vendor)
+		iv->boardinfo.vendor = SSB_BOARDVENDOR_BCM;
+
+	len = bcm47xx_nvram_getenv("boardtype", buf, sizeof(buf));
+	if (len > 0) {
+		err = kstrtou16(strim(buf), 0, &iv->boardinfo.type);
+		if (err)
+			pr_warn("Couldn't parse nvram board type entry with value \"%s\"\n",
+				buf);
+	}
+
+	memset(&iv->sprom, 0, sizeof(struct ssb_sprom));
+	bcm47xx_fill_sprom(&iv->sprom, NULL, false);
+
+	if (bcm47xx_nvram_getenv("cardbus", buf, sizeof(buf)) >= 0)
+		iv->has_cardbus_slot = !!simple_strtoul(buf, NULL, 10);
+
+	return 0;
+}
+
+static void __init bcm47xx_register_ssb(void)
+{
+	int err;
+	char buf[100];
+	struct ssb_mipscore *mcore;
+
+	err = ssb_bus_ssbbus_register(&bcm47xx_bus.ssb, SSB_ENUM_BASE,
+				      bcm47xx_get_invariants);
+	if (err)
+		panic("Failed to initialize SSB bus (err %d)", err);
+
+	mcore = &bcm47xx_bus.ssb.mipscore;
+	if (bcm47xx_nvram_getenv("kernel_args", buf, sizeof(buf)) >= 0) {
+		if (strstr(buf, "console=ttyS1")) {
+			struct ssb_serial_port port;
+
+			pr_debug("Swapping serial ports!\n");
+			/* swap serial ports */
+			memcpy(&port, &mcore->serial_ports[0], sizeof(port));
+			memcpy(&mcore->serial_ports[0], &mcore->serial_ports[1],
+			       sizeof(port));
+			memcpy(&mcore->serial_ports[1], &port, sizeof(port));
+		}
+	}
+}
+#endif
+
+#ifdef CONFIG_BCM47XX_BCMA
+static void __init bcm47xx_register_bcma(void)
+{
+	int err;
+
+	err = bcma_host_soc_register(&bcm47xx_bus.bcma);
+	if (err)
+		panic("Failed to register BCMA bus (err %d)", err);
+}
+#endif
+
+__init void bcm47xx_set_system_type(u16 chip_id)
+{
+	if (chip_id > 0x9999)
+	printk(KERN_INFO "Broadcom BCM%d", chip_id);
+	else
+	printk(KERN_INFO "Broadcom BCM%04X", chip_id);
+}
+
+
 int iswrt350n=0;
 int iswrt300n11=0;
 EXPORT_SYMBOL (iswrt350n);
@@ -276,6 +370,7 @@ void __init
 brcm_setup(void)
 {
 	char *value;
+	struct cpuinfo_mips *c = &current_cpu_data;
 
 	/* Get global SB handle */
 	sih = si_kattach(SI_OSH);
@@ -343,6 +438,27 @@ if (iswrt300n11)
 		cpu_wait_enable = 1;
 #endif
 
+	if ((c->cputype == CPU_74K) || (c->cputype == CPU_1074K)) {
+		pr_info("Using bcma bus\n");
+#ifdef CONFIG_BCM47XX_BCMA
+		bcm47xx_bus_type = BCM47XX_BUS_TYPE_BCMA;
+		bcm47xx_sprom_register_fallbacks();
+		bcm47xx_register_bcma();
+		bcm47xx_set_system_type(bcm47xx_bus.bcma.bus.chipinfo.id);
+#ifdef CONFIG_HIGHMEM
+		bcm47xx_prom_highmem_init();
+#endif
+#endif
+	} else {
+		pr_info("Using ssb bus\n");
+#ifdef CONFIG_BCM47XX_SSB
+		bcm47xx_bus_type = BCM47XX_BUS_TYPE_SSB;
+		bcm47xx_sprom_register_fallbacks();
+		bcm47xx_register_ssb();
+		bcm47xx_set_system_type(bcm47xx_bus.ssb.chip_id);
+#endif
+	}
+
 	/* Generic setup */
 	_machine_restart = bcm947xx_machine_restart;
 	_machine_halt = bcm947xx_machine_halt;
@@ -352,6 +468,27 @@ if (iswrt300n11)
 	board_time_init = bcm947xx_time_init;
 #endif
 }
+
+
+static int __init bcm47xx_register_bus_complete(void)
+{
+#if defined(CONFIG_BCM47XX_SSB) || defined(CONFIG_BCM47XX_BCMA)
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		/* Nothing to do */
+		break;
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		bcma_bus_register(&bcm47xx_bus.bcma.bus);
+		break;
+#endif
+	}
+#endif
+	return 0;
+}
+device_initcall(bcm47xx_register_bus_complete);
 
 const char *
 get_system_type(void)

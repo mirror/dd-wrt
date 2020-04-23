@@ -1,76 +1,53 @@
 /*
- * Ralink RT288x SoC specific definitions
- *
- * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
- * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
- *
- * Parts of this file are based on Ralink's 2.6.21 BSP
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
+ *
+ * Parts of this file are based on Ralink's 2.6.21 BSP
+ *
+ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  */
 
-#ifndef _RT288X_H_
-#define _RT288X_H_
+#ifndef _RT288X_REGS_H_
+#define _RT288X_REGS_H_
 
-#include <linux/init.h>
-#include <linux/io.h>
+#define RT2880_SYSC_BASE		0x00300000
 
-#define RT288X_MEM_SIZE_MIN    (2 * 1024 * 1024)
-#define RT288X_MEM_SIZE_MAX    (128 * 1024 * 1024)
+#define SYSC_REG_CHIP_NAME0		0x00
+#define SYSC_REG_CHIP_NAME1		0x04
+#define SYSC_REG_CHIP_ID		0x0c
+#define SYSC_REG_SYSTEM_CONFIG		0x10
+#define SYSC_REG_CLKCFG			0x30
 
-#define RT288X_CPU_IRQ_BASE	0
-#define RT288X_INTC_IRQ_BASE	8
-#define RT288X_INTC_IRQ_COUNT	32
-#define RT288X_GPIO_IRQ_BASE	40
+#define RT2880_CHIP_NAME0		0x38325452
+#define RT2880_CHIP_NAME1		0x20203038
 
-#define RT288X_CPU_IRQ_INTC	(RT288X_CPU_IRQ_BASE + 2)
-#define RT288X_CPU_IRQ_PCI	(RT288X_CPU_IRQ_BASE + 4)
-#define RT288X_CPU_IRQ_FE	(RT288X_CPU_IRQ_BASE + 5)
-#define RT288X_CPU_IRQ_WNIC	(RT288X_CPU_IRQ_BASE + 6)
-#define RT288X_CPU_IRQ_COUNTER	(RT288X_CPU_IRQ_BASE + 7)
+#define CHIP_ID_ID_MASK			0xff
+#define CHIP_ID_ID_SHIFT		8
+#define CHIP_ID_REV_MASK		0xff
 
-#define RT2880_INTC_IRQ_TIMER0	(RT288X_INTC_IRQ_BASE + 0)
-#define RT2880_INTC_IRQ_TIMER1	(RT288X_INTC_IRQ_BASE + 1)
-#define RT2880_INTC_IRQ_UART0	(RT288X_INTC_IRQ_BASE + 2)
-#define RT2880_INTC_IRQ_PIO	(RT288X_INTC_IRQ_BASE + 3)
-#define RT2880_INTC_IRQ_PCM	(RT288X_INTC_IRQ_BASE + 4)
-#define RT2880_INTC_IRQ_UART1	(RT288X_INTC_IRQ_BASE + 8)
-#define RT2880_INTC_IRQ_IA	(RT288X_INTC_IRQ_BASE + 23)
+#define SYSTEM_CONFIG_CPUCLK_SHIFT	20
+#define SYSTEM_CONFIG_CPUCLK_MASK	0x3
+#define SYSTEM_CONFIG_CPUCLK_250	0x0
+#define SYSTEM_CONFIG_CPUCLK_266	0x1
+#define SYSTEM_CONFIG_CPUCLK_280	0x2
+#define SYSTEM_CONFIG_CPUCLK_300	0x3
 
-#define RT288X_GPIO_IRQ(x)	(RT288X_GPIO_IRQ_BASE + (x))
-#define RT288X_GPIO_COUNT	32
+#define RT2880_GPIO_MODE_I2C		BIT(0)
+#define RT2880_GPIO_MODE_UART0		BIT(1)
+#define RT2880_GPIO_MODE_SPI		BIT(2)
+#define RT2880_GPIO_MODE_UART1		BIT(3)
+#define RT2880_GPIO_MODE_JTAG		BIT(4)
+#define RT2880_GPIO_MODE_MDIO		BIT(5)
+#define RT2880_GPIO_MODE_SDRAM		BIT(6)
+#define RT2880_GPIO_MODE_PCI		BIT(7)
 
-extern void __iomem *rt288x_sysc_base;
-extern void __iomem *rt288x_memc_base;
+#define CLKCFG_SRAM_CS_N_WDT		BIT(9)
 
-static inline void rt288x_sysc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt288x_sysc_base + reg);
-}
+#define RT2880_SDRAM_BASE		0x08000000
+#define RT2880_MEM_SIZE_MIN		2
+#define RT2880_MEM_SIZE_MAX		128
 
-static inline u32 rt288x_sysc_rr(unsigned reg)
-{
-	return __raw_readl(rt288x_sysc_base + reg);
-}
-
-static inline void rt288x_memc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt288x_memc_base + reg);
-}
-
-static inline u32 rt288x_memc_rr(unsigned reg)
-{
-	return __raw_readl(rt288x_memc_base + reg);
-}
-
-void rt288x_gpio_init(u32 mode);
-
-#ifdef CONFIG_PCI
-int rt288x_register_pci(void);
-#else
-static inline int rt288x_register_pci(void) { return 0; }
-#endif /* CONFIG_PCI */
-
-#endif /* _RT228X_H_ */
+#endif

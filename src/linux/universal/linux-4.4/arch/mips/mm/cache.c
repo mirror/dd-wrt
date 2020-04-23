@@ -33,7 +33,6 @@ void (*flush_icache_range)(unsigned long start, unsigned long end);
 EXPORT_SYMBOL_GPL(flush_icache_range);
 void (*local_flush_icache_range)(unsigned long start, unsigned long end);
 EXPORT_SYMBOL_GPL(local_flush_icache_range);
-EXPORT_SYMBOL(__flush_cache_all);
 
 void (*__flush_cache_vmap)(void);
 void (*__flush_cache_vunmap)(void);
@@ -51,6 +50,7 @@ void (*flush_icache_all)(void);
 EXPORT_SYMBOL_GPL(local_flush_data_cache_page);
 EXPORT_SYMBOL(flush_data_cache_page);
 EXPORT_SYMBOL(flush_icache_all);
+EXPORT_SYMBOL(__flush_cache_all);
 
 #if defined(CONFIG_DMA_NONCOHERENT) || defined(CONFIG_DMA_MAYBE_COHERENT)
 
@@ -200,15 +200,6 @@ static inline void setup_protection_map(void)
 		protection_map[13] = PAGE_READONLY;
 		protection_map[14] = PAGE_SHARED;
 		protection_map[15] = PAGE_SHARED;
-	}
-}
-
-void __init cpu_early_probe_cache(void)
-{
-	if (cpu_has_4k_cache) {
-		extern void __weak r4k_probe_cache(void);
-
-		return r4k_probe_cache();
 	}
 }
 

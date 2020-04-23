@@ -19,12 +19,12 @@
 #include <linux/platform_device.h>
 #include <linux/io.h>
 #include <linux/dma-mapping.h>
-#include <linux/export.h>
+#include <linux/module.h>
+#include <linux/clk.h>
+#include <linux/err.h>
 
 #include <lantiq_soc.h>
 #include <xway_dma.h>
-
-#include "../devices.h"
 
 #define LTQ_DMA_ID		0x08
 #define LTQ_DMA_CTRL		0x10
@@ -57,9 +57,6 @@
 #define ltq_dma_w32(x, y)		ltq_w32(x, ltq_dma_membase + (y))
 #define ltq_dma_w32_mask(x, y, z)	ltq_w32_mask(x, y, \
 						ltq_dma_membase + (z))
-
-static struct resource ltq_dma_resource =
-	MEM_RES("dma", LTQ_DMA_BASE_ADDR, LTQ_DMA_SIZE);
 
 static void __iomem *ltq_dma_membase;
 
@@ -214,18 +211,25 @@ ltq_dma_init_port(int p)
 }
 EXPORT_SYMBOL_GPL(ltq_dma_init_port);
 
-int
-ltq_dma_init(void)
+static int
+ltq_dma_init(struct platform_device *pdev)
 {
+	struct clk *clk;
+	struct resource *res;
+	unsigned id;
 	int i;
 
-	/* remap dma register range */
-	ltq_dma_membase = ltq_remap_resource(&ltq_dma_resource);
-	if (!ltq_dma_membase)
-		panic("Failed to remap dma memory\n");
+	res = platform_get_resource(pdev, IORESOURCE_MEM, 0);
+	ltq_dma_membase = devm_ioremap_resource(&pdev->dev, res);
+	if (IS_ERR(ltq_dma_membase))
+		panic("Failed to remap dma resource");
 
 	/* power up and reset the dma engine */
-	ltq_pmu_enable(PMU_DMA);
+	clk = clk_get(&pdev->dev, NULL);
+	if (IS_ERR(clk))
+		panic("Failed to get dma clock");
+
+	clk_enable(clk);
 	ltq_dma_w32_mask(0, DMA_RESET, LTQ_DMA_CTRL);
 
 	/* disable all interrupts */

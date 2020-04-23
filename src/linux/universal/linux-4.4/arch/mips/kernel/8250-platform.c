@@ -6,7 +6,6 @@
  * Copyright (C) 2007 Ralf Baechle (ralf@linux-mips.org)
  */
 #include <linux/init.h>
-#include <linux/module.h>
 #include <linux/serial_8250.h>
 
 #define PORT(base, int)							\

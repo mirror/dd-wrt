@@ -1,15 +1,5 @@
 if CPU_CAVIUM_OCTEON
 
-config CAVIUM_OCTEON2
-	bool "Build the kernel to be used only on OCTEON II processor cores"
-	select CAVIUM_CN63XXP1
-	default "n"
-	help
-	  This option enables the generation of Octeon2 specific
-	  instructions by the compiler, resulting in a kernel that is
-	  more efficient, but that will not run on Octeon and
-	  OcteonPlus processor cores.
-
 config CAVIUM_CN63XXP1
 	bool "Enable CN63XXP1 errata workarounds"
 	default "n"

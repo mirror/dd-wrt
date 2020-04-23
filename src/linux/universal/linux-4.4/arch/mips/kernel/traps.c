@@ -64,7 +64,6 @@
 #include <asm/types.h>
 #include <asm/stacktrace.h>
 #include <asm/uasm.h>
-#include <asm/time.h>
 
 extern void check_wait(void);
 extern asmlinkage void rollback_handle_int(void);
@@ -404,7 +403,7 @@ void __noreturn die(const char *str, struct pt_regs *regs)
 
 	if (panic_on_oops) {
 		printk(KERN_EMERG "Fatal exception: panic in 5 seconds");
-		ssleep(5);
+		//ssleep(5);
 		panic("Fatal exception");
 	}
 
@@ -774,7 +773,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 		       unsigned long old_epc, unsigned long old_ra)
 {
 	union mips_instruction inst = { .word = opcode };
-	void __user *fault_addr = NULL;
+	void __user *fault_addr;
 	unsigned long fcr31;
 	int sig;
 
@@ -828,7 +827,7 @@ static int simulate_fp(struct pt_regs *regs, unsigned int opcode,
 asmlinkage void do_fpe(struct pt_regs *regs, unsigned long fcr31)
 {
 	enum ctx_state prev_state;
-	void __user *fault_addr = NULL;
+	void __user *fault_addr;
 	int sig;
 
 	prev_state = exception_enter();
@@ -1353,7 +1352,7 @@ asmlinkage void do_cpu(struct pt_regs *regs)
 	enum ctx_state prev_state;
 	unsigned int __user *epc;
 	unsigned long old_epc, old31;
-	void __user *fault_addr = NULL;
+	void __user *fault_addr;
 	unsigned int opcode;
 	unsigned long fcr31;
 	unsigned int cpid;
@@ -1936,12 +1935,12 @@ static void *set_vi_srs_handler(int n, vi_handler_t addr, int srs)
 	unsigned char *b;
 
 	BUG_ON(!cpu_has_veic && !cpu_has_vint);
-
 	if (addr == NULL) {
 		handler = (unsigned long) do_default_vi;
 		srs = 0;
-	} else
+	} else {
 		handler = (unsigned long) addr;
+	}
 	vi_handlers[n] = handler;
 
 	b = (unsigned char *)(ebase + 0x200 + n*VECTORSPACING);
@@ -2136,8 +2135,6 @@ void per_cpu_trap_init(bool is_boot_cpu)
 	if (cpu_has_mips_r2_r6) {
 		cp0_compare_irq_shift = CAUSEB_TI - CAUSEB_IP;
 		cp0_compare_irq = (read_c0_intctl() >> INTCTLB_IPTI) & 7;
-		if (get_c0_compare_irq)
-			cp0_compare_irq = get_c0_compare_irq();
 		cp0_perfcount_irq = (read_c0_intctl() >> INTCTLB_IPPCI) & 7;
 		cp0_fdc_irq = (read_c0_intctl() >> INTCTLB_IPFDC) & 7;
 		if (!cp0_fdc_irq)
