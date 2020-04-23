@@ -46,11 +46,7 @@
 extern void (*flush_cache_all)(void);
 extern void (*__flush_cache_all)(void);
 extern void (*flush_cache_mm)(struct mm_struct *mm);
-#ifdef CONFIG_BCM47XX
 #define flush_cache_dup_mm(mm) flush_cache_mm(mm)
-#else
-#define flush_cache_dup_mm(mm)	do { (void) (mm); } while (0)
-#endif
 extern void (*flush_cache_range)(struct vm_area_struct *vma,
 	unsigned long start, unsigned long end);
 extern void (*flush_cache_page)(struct vm_area_struct *vma, unsigned long page, unsigned long pfn);

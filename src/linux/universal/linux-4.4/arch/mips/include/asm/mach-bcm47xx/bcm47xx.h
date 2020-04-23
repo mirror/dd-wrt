@@ -23,6 +23,7 @@
 #include <linux/bcma/bcma.h>
 #include <linux/bcma/bcma_soc.h>
 #include <linux/bcm47xx_nvram.h>
+#ifdef (CONFIG_BCM47XX_SSB) || defined(CONFIG_BCM47XX_BCMA)
 
 enum bcm47xx_bus_type {
 #ifdef CONFIG_BCM47XX_SSB
@@ -41,7 +42,7 @@ union bcm47xx_bus {
 	struct bcma_soc bcma;
 #endif
 };
-
+#endif
 extern union bcm47xx_bus bcm47xx_bus;
 extern enum bcm47xx_bus_type bcm47xx_bus_type;
 

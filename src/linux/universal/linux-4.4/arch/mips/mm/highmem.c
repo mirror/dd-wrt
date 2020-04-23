@@ -9,7 +9,6 @@
 static pte_t *kmap_pte;
 
 unsigned long highstart_pfn, highend_pfn;
-unsigned int  last_pkmap_nr_arr[FIX_N_COLOURS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 void *kmap(struct page *page)
 {
@@ -54,12 +53,8 @@ void *kmap_atomic(struct page *page)
 		return page_address(page);
 
 	type = kmap_atomic_idx_push();
-
-	idx = (((unsigned long)lowmem_page_address(page)) >> PAGE_SHIFT) & (FIX_N_COLOURS - 1);
-	idx = (FIX_N_COLOURS - idx);
-	idx = idx + FIX_N_COLOURS * (smp_processor_id() + NR_CPUS * type);
-	vaddr = __fix_to_virt(FIX_KMAP_BEGIN - 1 + idx);    /* actually - FIX_CMAP_END */
-
+	idx = type + KM_TYPE_NR*smp_processor_id();
+	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
 #ifdef CONFIG_DEBUG_HIGHMEM
 	BUG_ON(!pte_none(*(kmap_pte - idx)));
 #endif
@@ -81,16 +76,12 @@ void __kunmap_atomic(void *kvaddr)
 		return;
 	}
 
+	type = kmap_atomic_idx();
 #ifdef CONFIG_DEBUG_HIGHMEM
 	{
-		int idx;
-		type = kmap_atomic_idx();
+		int idx = type + KM_TYPE_NR * smp_processor_id();
 
-		idx = ((unsigned long)kvaddr >> PAGE_SHIFT) & (FIX_N_COLOURS - 1);
-		idx = (FIX_N_COLOURS - idx);
-		idx = idx + FIX_N_COLOURS * (smp_processor_id() + NR_CPUS * type);
-
-		BUG_ON(vaddr != __fix_to_virt(FIX_KMAP_BEGIN -1 + idx));
+		BUG_ON(vaddr != __fix_to_virt(FIX_KMAP_BEGIN + idx));
 
 		/*
 		 * force other mappings to Oops if they'll try to access
@@ -106,11 +97,32 @@ void __kunmap_atomic(void *kvaddr)
 }
 EXPORT_SYMBOL(__kunmap_atomic);
 
+/*
+ * This is the same as kmap_atomic() but can map memory that doesn't
+ * have a struct page associated with it.
+ */
+void *kmap_atomic_pfn(unsigned long pfn)
+{
+	unsigned long vaddr;
+	int idx, type;
+
+	preempt_disable();
+	pagefault_disable();
+
+	type = kmap_atomic_idx_push();
+	idx = type + KM_TYPE_NR*smp_processor_id();
+	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
+	set_pte(kmap_pte-idx, pfn_pte(pfn, PAGE_KERNEL));
+	flush_tlb_one(vaddr);
+
+	return (void*) vaddr;
+}
+
 void __init kmap_init(void)
 {
 	unsigned long kmap_vstart;
 
 	/* cache the first kmap pte */
-	kmap_vstart = __fix_to_virt(FIX_KMAP_BEGIN - 1); /* actually - FIX_CMAP_END */
+	kmap_vstart = __fix_to_virt(FIX_KMAP_BEGIN);
 	kmap_pte = kmap_get_fixmap_pte(kmap_vstart);
 }

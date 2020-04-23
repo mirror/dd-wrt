@@ -6,10 +6,7 @@
  *  Copyright (C) 2010 John Crispin <blogic@openwrt.org>
  */
 
-#include <linux/init.h>
 #include <linux/cpu.h>
-
-#include <lantiq.h>
 #include <lantiq_soc.h>
 
 #define ASC_BUF		1024

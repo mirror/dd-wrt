@@ -3,6 +3,7 @@ menu "Support for Broadcom MIPS based boards"
 config BCM947XX
         bool "Support for Broadcom BCM947XX"
         depends on MIPS_BRCM
+#	select CPU_MIPSR2_IRQ_VI
 	default y
 
 config BCM47XX

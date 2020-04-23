@@ -28,7 +28,7 @@ endif
 BCM947XX_OBJS := $(addprefix $(SHARED)/, hndmips.o hndchipc.o )
 BCM947XX_OBJS += $(addprefix $(SHARED)/, hndsflash.o ccsflash.o)
 BCM947XX_OBJS += $(addprefix $(SHARED)/, nvram.o)
-
+#BCM947XX_OBJS += sprom.o
 EXTRA_CFLAGS += -DLINUX_HYBRID_POSTPROCESSING_REMOVAL
 
 ifeq ($(CONFIG_PCI),y)

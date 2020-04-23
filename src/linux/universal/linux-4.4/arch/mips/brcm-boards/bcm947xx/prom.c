@@ -37,9 +37,7 @@
 #include <hndcpu.h>
 #include <mipsinc.h>
 #include <mips74k_core.h>
-#ifdef	CONFIG_CFE
 #include <asm/fw/cfe/cfe_api.h>
-#endif
 
 #include "bcm947xx.h"
 
@@ -59,14 +57,6 @@ extern si_t *bcm947xx_sih;
 
 
 static unsigned long tmp_tlb_ent __initdata;
-
-#if defined(CONFIG_CFE) && defined(CONFIG_EARLY_PRINTK)
-void prom_putchar(char c)
-{
-	while (cfe_write(cfe_cons_handle, &c, 1) == 0)
-		;
-}
-#endif
 
 /* Initialize the wired register and all tlb entries to 
  * known good state.
@@ -121,6 +111,72 @@ add_tmptlb_entry(unsigned long entrylo0, unsigned long entrylo1,
 }
 #endif  /* CONFIG_HIGHMEM */
 
+#ifdef CONFIG_EARLY_PRINTK
+static int cfe_cons_handle;
+void prom_putchar(char c)
+{
+	while (cfe_write(cfe_cons_handle, &c, 1) == 0)
+		;
+}
+static __init void prom_init_cfe(void)
+{
+	uint32_t cfe_ept;
+	uint32_t cfe_handle;
+	uint32_t cfe_eptseal;
+	int argc = fw_arg0;
+	char **envp = (char **) fw_arg2;
+	int *prom_vec = (int *) fw_arg3;
+
+	/*
+	 * Check if a loader was used; if NOT, the 4 arguments are
+	 * what CFE gives us (handle, 0, EPT and EPTSEAL)
+	 */
+	if (argc < 0) {
+		cfe_handle = (uint32_t)argc;
+		cfe_ept = (uint32_t)envp;
+		cfe_eptseal = (uint32_t)prom_vec;
+	} else {
+		if ((int)prom_vec < 0) {
+			/*
+			 * Old loader; all it gives us is the handle,
+			 * so use the "known" entrypoint and assume
+			 * the seal.
+			 */
+			cfe_handle = (uint32_t)prom_vec;
+			cfe_ept = 0xBFC00500;
+			cfe_eptseal = CFE_EPTSEAL;
+		} else {
+			/*
+			 * Newer loaders bundle the handle/ept/eptseal
+			 * Note: prom_vec is in the loader's useg
+			 * which is still alive in the TLB.
+			 */
+			cfe_handle = prom_vec[0];
+			cfe_ept = prom_vec[2];
+			cfe_eptseal = prom_vec[3];
+		}
+	}
+
+	if (cfe_eptseal != CFE_EPTSEAL) {
+		/* too early for panic to do any good */
+		printk(KERN_ERR "CFE's entrypoint seal doesn't match.");
+		while (1) ;
+	}
+
+	cfe_init(cfe_handle, cfe_ept);
+}
+static __init void prom_init_console(void)
+{
+	/* Initialize CFE console */
+	cfe_cons_handle = cfe_getstdhandle(CFE_STDHANDLE_CONSOLE);
+}
+
+
+#endif
+
+
+
+
 static unsigned long detectmem;
 extern char ram_nvram_buf[];
 void __init
@@ -130,7 +186,12 @@ prom_init(void)
 	static unsigned long mem;
 	unsigned long off1, data1;
 	struct nvram_header *header;
+#ifdef CONFIG_EARLY_PRINTK
+//	prom_init_cfe();
+//	prom_init_console();
+#endif
 
+	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 	/* These are not really being used anywhere - LR */
 	mips_machgroup = MACH_GROUP_BRCM;
@@ -241,6 +302,7 @@ uint boardnum;
 
 	/* Get global SB handle */
 bcm947xx_sih = si_kattach(SI_OSH);
+
 boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
@@ -270,5 +332,69 @@ boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 	}
 #endif  /* CONFIG_HIGHMEM */
 
-
 }
+
+#if 0
+#define	SB_CC			0x0		/* chipcommon core */
+#define SB_CORE_SIZE    	0x1000		/* each core gets 4Kbytes for registers */
+#define SB_ENUM_BASE    	0x18000000	/* Enumeration space base */
+
+typedef long physaddr_t;
+/* === CONFIG === */
+//#define         BASE			0xb8058000
+#define         MAX_BAUD                1152000
+
+
+#define K1BASE 		(_ACAST32_ 0xa0000000)	/* kernel unmapped uncached */
+#define K0SIZE 		0x20000000
+#define K0_TO_PHYS(va)	((va) & (K0SIZE-1))
+#define MYPHYSADDR(x)  K0_TO_PHYS(x)
+#define PHYS_TO_K1(pa)	(K1BASE | (pa))
+#define UNCADDR(x)   PHYS_TO_K1(x)
+#define BASE         UNCADDR(SB_ENUM_BASE + (SB_CC * SB_CORE_SIZE) + 0x300)
+
+
+//#define VALUE_TO_STRING(x) #x
+//#define VALUE(x) VALUE_TO_STRING(x)
+//#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+//#pragma message (VAR_NAME_VALUE(BASE))
+
+
+#define phys_write8(a,b) do { *((volatile uint8_t *) PHYS_TO_K1((physaddr_t)(a))) = (b); } while (0)
+#define phys_write16(a,b) do { *((volatile uint16_t *) PHYS_TO_K1((physaddr_t)(a))) = (b); } while (0)
+#define phys_write32(a,b) do { *((volatile uint32_t *) PHYS_TO_K1((physaddr_t)(a))) = (b); } while (0)
+#define phys_read8(a) (*((volatile uint8_t *) PHYS_TO_K1((physaddr_t)(a))))
+#define phys_read16(a) (*((volatile uint16_t *) PHYS_TO_K1((physaddr_t)(a))))
+#define phys_read32(a) (*((volatile uint32_t *) PHYS_TO_K1((physaddr_t)(a))))
+
+
+#define DEBUG_LED (*(unsigned short*)0xb7ffffc0)
+#define OutputLED(x)  (DEBUG_LED = x)
+
+#define WRITECSR(offset, value) \
+	phys_write8(MYPHYSADDR(BASE) + (offset), (value))
+
+#define READCSR(offset) \
+	phys_read8(MYPHYSADDR(BASE) + (offset))
+
+#define	LSR_TXRDY	0x20	/* transmitter ready */
+
+#define R_UART_DATA	(0 << 2)
+#define R_UART_IER	(1 << 2)
+#define R_UART_IIR	(2 << 2)
+#define R_UART_FIFO	R_UART_IIR
+#define R_UART_CFCR	(3 << 2)
+#define R_UART_MCR	(4 << 2)
+#define R_UART_LSR	(5 << 2)
+#define R_UART_MSR	(6 << 2)
+#define R_UART_SCR	(7 << 2)
+
+
+
+void prom_putchar(char c)
+{
+    while ((READCSR(R_UART_LSR) & LSR_TXRDY)) {
+	WRITECSR(R_UART_DATA, c);
+	}
+}
+#endif

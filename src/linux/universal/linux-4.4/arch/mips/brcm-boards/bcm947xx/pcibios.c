@@ -23,7 +23,6 @@
 #include <linux/kernel.h>
 #include <linux/sched.h>
 #include <linux/pci.h>
-#include <linux/pci-aspm.h>
 #include <linux/init.h>
 #include <linux/delay.h>
 #include <asm/io.h>
@@ -57,12 +56,11 @@ EXPORT_SYMBOL(usb_hsic_cap_port);
 #define sih bcm947xx_sih
 #define sih_lock bcm947xx_sih_lock
 
-static int
-sbpci_read_config_reg(struct pci_bus *bus, unsigned int devfn, int where,
-                      int size, u32 *value)
+static int sbpci_read_config_reg(struct pci_bus *bus, u32 devfn, int where, int size, u32 *value)
 {
 	unsigned long flags;
 	int ret;
+
 	spin_lock_irqsave(&sih_lock, flags);
 	ret = hndpci_read_config(sih, bus->number, PCI_SLOT(devfn),
 	                        PCI_FUNC(devfn), where, value, size);
@@ -85,8 +83,8 @@ sbpci_write_config_reg(struct pci_bus *bus, unsigned int devfn, int where,
 }
 
 static struct pci_ops pcibios_ops = {
-	sbpci_read_config_reg,
-	sbpci_write_config_reg
+	.read = sbpci_read_config_reg,
+	.write = sbpci_write_config_reg
 };
 
 static u32 pci_iobase = 0x100;
@@ -138,15 +136,17 @@ int __init pcibios_init(void)
 
 	bcm947xxcontroller.io_map_base = (unsigned long)ioremap_nocache(SI_PCI_MEM, 0x04000000);
 	set_io_port_base(bcm947xxcontroller.io_map_base);
-	usleep_range(10000, 15000);
+	mdelay(10);
 
 	/* Scan the SB bus */
 	printk(KERN_INFO "PCI: scanning bus %x\n", 0);
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3,2,0)
 	register_pci_controller( &bcm947xxcontroller );
-	root_bus = pci_scan_bus_parented(NULL, 0, &pcibios_ops, &bcm947xxcontroller);
-	if (root_bus)
+	root_bus = pci_scan_bus(0, &pcibios_ops, &bcm947xxcontroller);
+	if (root_bus) {
 		pci_bus_add_devices(root_bus);
+	}
+
 #elif LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
 	register_pci_controller( &bcm947xxcontroller );
 	pci_scan_bus(0, &pcibios_ops, &bcm947xxcontroller);
@@ -160,7 +160,7 @@ int __init pcibios_init(void)
 //arch_initcall(pci_init);
 
 
-char * pcibios_setup(char *str)
+char * __init pcibios_setup(char *str)
 {
 	if (!strncmp(str, "ban=", 4)) {
 		hndpci_ban(simple_strtoul(str + 4, NULL, 0));
@@ -170,13 +170,15 @@ char * pcibios_setup(char *str)
 	return (str);
 }
 
-void pcibios_fixup_bus(struct pci_bus *b)
+void 
+pcibios_fixup_bus(struct pci_bus *b)
 {
 	struct pci_dev *d, *dev;
 	struct resource *res;
 	int pos, size;
 	u32 *base;
 	u8 irq;
+	int readrq;
 
 	printk("PCI: Fixing up bus %d\n", b->number);
 
@@ -230,6 +232,11 @@ void pcibios_fixup_bus(struct pci_bus *b)
 			/* Fix up interrupt lines */
 			d->irq = irq;
 			pci_write_config_byte(d, PCI_INTERRUPT_LINE, d->irq);
+	readrq = pcie_get_readrq(dev);
+	if (readrq > 128) {
+		pr_info("change PCIe max read request size from %i to 128\n", readrq);
+		pcie_set_readrq(dev, 128);
+	}
 		}
 		hndpci_arb_park(sih, PCI_PARK_NVRAM);
 	}
@@ -254,8 +261,7 @@ pcibios_enable_resources(struct pci_dev *dev)
 
 	pci_read_config_word(dev, PCI_COMMAND, &cmd);
 	old_cmd = cmd;
-	
-	for (idx=0; idx < 6; idx++) {
+	for (idx = 0; idx < 6; idx++) {
 		r = &dev->resource[idx];
 		if (r->flags & IORESOURCE_IO)
 			cmd |= PCI_COMMAND_IO;
@@ -264,7 +270,7 @@ pcibios_enable_resources(struct pci_dev *dev)
 	}
 	if (dev->resource[PCI_ROM_RESOURCE].start)
 		cmd |= PCI_COMMAND_MEMORY;
-	printk(KERN_EMERG "Old cmd %X new cmd %X\n",cmd, old_cmd);
+	printk(KERN_EMERG "cmd %X new_cmd %X\n",cmd,old_cmd);
 	if (cmd != old_cmd) {
 		printk("PCI: Enabling device %s (%04x -> %04x)\n", pci_name(dev), old_cmd, cmd);
 		pci_write_config_word(dev, PCI_COMMAND, cmd);
@@ -278,7 +284,7 @@ int pcibios_enable_device(struct pci_dev *dev,int mask)
 	uint coreidx, coreid;
 	void *regs;
 	int rc = -1;
-	
+	dev->dev_flags |= PCI_DEV_FLAGS_NO_BUS_RESET;
 	/* External PCI device enable */
 	if (dev->bus->number != 0)
 		return pcibios_enable_resources(dev);
@@ -438,7 +444,7 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 	u32 reg;
 
 	/* External PCI only */
-	if (PCI_SLOT(dev->devfn) == 0)
+	if (dev->bus->number == 0)
 		return;
 
 	where = PCI_BASE_ADDRESS_0 + (resource * 4);
@@ -448,27 +454,30 @@ pcibios_update_resource(struct pci_dev *dev, struct resource *root,
 	pci_write_config_dword(dev, where, reg);
 }
 
-static void __init
+static void
 quirk_sbpci_bridge(struct pci_dev *dev)
 {
-
-	if (PCI_SLOT(dev->devfn) != 0 || !hndpci_is_hostbridge(dev->bus->number, PCI_SLOT(dev->devfn)))
+	u8 lat;
+	if (dev->bus->number != 0 || PCI_SLOT(dev->devfn) != 0 || !hndpci_is_hostbridge(dev->bus->number, PCI_SLOT(dev->devfn)))
 		return;
-
+	dev->dev_flags |= PCI_DEV_FLAGS_NO_BUS_RESET;
 	printk("PCI: Fixing up bridge\n");
-
-	pci_set_power_state(dev, PCI_D0);
-	pcie_aspm_powersave_config_link(dev);
 
 	/* Enable PCI bridge bus mastering and memory space */
 	pci_set_master(dev);
+	/*if (pcibios_enable_device(dev, ~0) < 0) {
+		printk(KERN_ERR "PCI: bridge enable failed\n");
+		return;
+	}*/
 	pcibios_enable_resources(dev);
 
 	/* Enable PCI bridge BAR1 prefetch and burst */
 	pci_write_config_dword(dev, PCI_BAR1_CONTROL, 3);
-	
+
+//	lat = 168;
+//	printk(KERN_INFO "PCI: Fixing latency timer of device %s to %u\n",
+//		 pci_name(dev), lat);
+//	pci_write_config_byte(dev, PCI_LATENCY_TIMER, lat);
 }
 
 DECLARE_PCI_FIXUP_EARLY(PCI_ANY_ID, PCI_ANY_ID, quirk_sbpci_bridge);
-
-//DECLARE_PCI_FIXUP_HEADER(PCI_ANY_ID, PCI_ANY_ID, quirk_sbpci_bridge);

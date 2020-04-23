@@ -13,8 +13,8 @@
  * by the Free Software Foundation.
  *
  */
-#ifndef __ASM_MACH_RALINK_CPU_FEATURE_OVERRIDES_H
-#define __ASM_MACH_RALINK_CPU_FEATURE_OVERRIDES_H
+#ifndef _RT305X_CPU_FEATURE_OVERRIDES_H
+#define _RT305X_CPU_FEATURE_OVERRIDES_H
 
 #define cpu_has_tlb		1
 #define cpu_has_4kex		1
@@ -53,4 +53,4 @@
 #define cpu_dcache_line_size()	32
 #define cpu_icache_line_size()	32
 
-#endif /* __ASM_MACH_RALINK_CPU_FEATURE_OVERRIDES_H */
+#endif /* _RT305X_CPU_FEATURE_OVERRIDES_H */

@@ -39,6 +39,9 @@
 #include <mipsinc.h>
 #include <hndcpu.h>
 #include <bcmdevs.h>
+#include <linux/ssb/ssb.h>
+#include <asm/time.h>
+#include <bcm47xx.h>
 
 /* Global SB handle */
 extern si_t *bcm947xx_sih;
@@ -194,13 +197,6 @@ bcm947xx_timer_interrupt(int irq, void *dev_id)
 
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)
-static void bcm947xx_clockevent_set_mode(enum clock_event_mode mode,
-	struct clock_event_device *cd)
-{
-	printk( KERN_CRIT "bcm947xx_clockevent_set_mode: %d\n", mode );
-	/* Need to add mode switch to support both
-	periodic and one-shot operation here */
-}
 /* This is used in one-shot operation mode */
 static int bcm947xx_clockevent_set_next(unsigned long delta,
 	struct clock_event_device *cd)
@@ -222,7 +218,6 @@ struct clock_event_device bcm947xx_clockevent = {
 	.features	= CLOCK_EVT_FEAT_ONESHOT,
 	.rating		= 300,
 	.irq		= 7,
-	.set_mode 	= bcm947xx_clockevent_set_mode,
 	.set_next_event = bcm947xx_clockevent_set_next, 
 };
 #endif
@@ -230,11 +225,12 @@ struct clock_event_device bcm947xx_clockevent = {
 /* named initialization should work on earlier 2.6 too */
 static struct irqaction bcm947xx_timer_irqaction = {
 	.handler	= bcm947xx_timer_interrupt,
-	.flags		= IRQF_DISABLED | IRQF_TIMER,
+//	.flags 		= IRQF_PERCPU | IRQF_TIMER | IRQF_SHARED,
+	.flags		= IRQF_TIMER,
 	.name		= "bcm947xx timer",
 	.dev_id		= &bcm947xx_clockevent,
 };
-
+#if 1
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 void __init plat_timer_setup(struct irqaction *irq)
 {
@@ -259,5 +255,37 @@ void __init plat_time_init(void)
 
 	/* Enable the timer interrupt */
 	setup_irq(irq, &bcm947xx_timer_irqaction);
+}
+#endif
+#else
+void __init plat_time_init(void)
+{
+	unsigned long hz = 0;
+
+	/*
+	 * Use deterministic values for initial counter interrupt
+	 * so that calibrate delay avoids encountering a counter wrap.
+	 */
+	write_c0_count(0);
+	write_c0_compare(0xffff);
+
+	switch (bcm47xx_bus_type) {
+#ifdef CONFIG_BCM47XX_SSB
+	case BCM47XX_BUS_TYPE_SSB:
+		hz = ssb_cpu_clock(&bcm47xx_bus.ssb.mipscore) / 2;
+		break;
+#endif
+#ifdef CONFIG_BCM47XX_BCMA
+	case BCM47XX_BUS_TYPE_BCMA:
+		hz = bcma_cpu_clock(&bcm47xx_bus.bcma.bus.drv_mips) / 2;
+		break;
+#endif
+	}
+
+	if (!hz)
+		hz = 100000000;
+
+	/* Set MIPS counter frequency for fixed_rate_gettimeoffset() */
+	mips_hpt_frequency = hz;
 }
 #endif

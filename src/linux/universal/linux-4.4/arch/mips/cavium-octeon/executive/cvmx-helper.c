@@ -83,8 +83,6 @@ static cvmx_helper_link_info_t
  */
 int cvmx_helper_get_number_of_interfaces(void)
 {
-	if (cvmx_sysinfo_get()->board_type == CVMX_BOARD_TYPE_UBNT_E220)
-		return 1;
 	if (OCTEON_IS_MODEL(OCTEON_CN68XX))
 		return 9;
 	if (OCTEON_IS_MODEL(OCTEON_CN56XX) || OCTEON_IS_MODEL(OCTEON_CN52XX))

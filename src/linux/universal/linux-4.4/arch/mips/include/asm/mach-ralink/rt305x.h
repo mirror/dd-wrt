@@ -1,40 +1,28 @@
 /*
- * Ralink RT305x SoC specific definitions
- *
- * Copyright (C) 2009-2011 Gabor Juhos <juhosg@openwrt.org>
- *
- * Parts of this file are based on Ralink's 2.6.21 BSP
- *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
+ *
+ * Parts of this file are based on Ralink's 2.6.21 BSP
+ *
+ * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
+ * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
+ * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
  */
 
-#ifndef _RT305X_H_
-#define _RT305X_H_
+#ifndef _RT305X_REGS_H_
+#define _RT305X_REGS_H_
 
-#include <linux/init.h>
-#include <linux/io.h>
-
-enum rt305x_soc_type {
-	RT305X_SOC_UNKNOWN = 0,
-	RT305X_SOC_RT3050,
-	RT305X_SOC_RT3052,
-	RT305X_SOC_RT3350,
-	RT305X_SOC_RT3352,
-	RT305X_SOC_RT5350,
-};
-
-extern enum rt305x_soc_type rt305x_soc;
+extern enum ralink_soc_type ralink_soc;
 
 static inline int soc_is_rt3050(void)
 {
-	return rt305x_soc == RT305X_SOC_RT3050;
+	return ralink_soc == RT305X_SOC_RT3050;
 }
 
 static inline int soc_is_rt3052(void)
 {
-	return rt305x_soc == RT305X_SOC_RT3052;
+	return ralink_soc == RT305X_SOC_RT3052;
 }
 
 static inline int soc_is_rt305x(void)
@@ -44,126 +32,131 @@ static inline int soc_is_rt305x(void)
 
 static inline int soc_is_rt3350(void)
 {
-	return rt305x_soc == RT305X_SOC_RT3350;
+	return ralink_soc == RT305X_SOC_RT3350;
 }
 
 static inline int soc_is_rt3352(void)
 {
-	return rt305x_soc == RT305X_SOC_RT3352;
+	return ralink_soc == RT305X_SOC_RT3352;
 }
 
 static inline int soc_is_rt5350(void)
 {
-	return rt305x_soc == RT305X_SOC_RT5350;
+	return ralink_soc == RT305X_SOC_RT5350;
 }
 
-#define RT305X_MEM_SIZE_MIN (2 * 1024 * 1024)
-#define RT305X_MEM_SIZE_MAX (64 * 1024 * 1024)
+#define RT305X_SYSC_BASE		0x10000000
 
-#define RT3352_MEM_SIZE_MIN (2 * 1024 * 1024)
-#define RT3352_MEM_SIZE_MAX (256 * 1024 * 1024)
+#define SYSC_REG_CHIP_NAME0		0x00
+#define SYSC_REG_CHIP_NAME1		0x04
+#define SYSC_REG_CHIP_ID		0x0c
+#define SYSC_REG_SYSTEM_CONFIG		0x10
 
-#define RT305X_CPU_IRQ_BASE	0
-#define RT305X_INTC_IRQ_BASE	8
-#define RT305X_INTC_IRQ_COUNT	32
-#define RT305X_GPIO_IRQ_BASE	40
+#define RT3052_CHIP_NAME0		0x30335452
+#define RT3052_CHIP_NAME1		0x20203235
 
-#define RT305X_CPU_IRQ_INTC	(RT305X_CPU_IRQ_BASE + 2)
-#define RT305X_CPU_IRQ_FE	(RT305X_CPU_IRQ_BASE + 5)
-#define RT305X_CPU_IRQ_WNIC	(RT305X_CPU_IRQ_BASE + 6)
-#define RT305X_CPU_IRQ_COUNTER	(RT305X_CPU_IRQ_BASE + 7)
+#define RT3350_CHIP_NAME0		0x33335452
+#define RT3350_CHIP_NAME1		0x20203035
 
-#define RT305X_INTC_IRQ_SYSCTL	(RT305X_INTC_IRQ_BASE + 0)
-#define RT305X_INTC_IRQ_TIMER0	(RT305X_INTC_IRQ_BASE + 1)
-#define RT305X_INTC_IRQ_TIMER1	(RT305X_INTC_IRQ_BASE + 2)
-#define RT305X_INTC_IRQ_IA	(RT305X_INTC_IRQ_BASE + 3)
-#define RT305X_INTC_IRQ_PCM	(RT305X_INTC_IRQ_BASE + 4)
-#define RT305X_INTC_IRQ_UART0	(RT305X_INTC_IRQ_BASE + 5)
-#define RT305X_INTC_IRQ_PIO	(RT305X_INTC_IRQ_BASE + 6)
-#define RT305X_INTC_IRQ_DMA	(RT305X_INTC_IRQ_BASE + 7)
-#define RT305X_INTC_IRQ_NAND	(RT305X_INTC_IRQ_BASE + 8)
-#define RT305X_INTC_IRQ_PERFC	(RT305X_INTC_IRQ_BASE + 9)
-#define RT305X_INTC_IRQ_I2S	(RT305X_INTC_IRQ_BASE + 10)
-#define RT305X_INTC_IRQ_UART1	(RT305X_INTC_IRQ_BASE + 12)
-#define RT305X_INTC_IRQ_ESW	(RT305X_INTC_IRQ_BASE + 17)
-#define RT305X_INTC_IRQ_OTG	(RT305X_INTC_IRQ_BASE + 18)
+#define RT3352_CHIP_NAME0		0x33335452
+#define RT3352_CHIP_NAME1		0x20203235
 
-extern void __iomem *rt305x_sysc_base;
-extern void __iomem *rt305x_memc_base;
+#define RT5350_CHIP_NAME0		0x33355452
+#define RT5350_CHIP_NAME1		0x20203035
 
-static inline void rt305x_sysc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt305x_sysc_base + reg);
-}
+#define CHIP_ID_ID_MASK			0xff
+#define CHIP_ID_ID_SHIFT		8
+#define CHIP_ID_REV_MASK		0xff
 
-static inline u32 rt305x_sysc_rr(unsigned reg)
-{
-	return __raw_readl(rt305x_sysc_base + reg);
-}
+#define RT305X_SYSCFG_CPUCLK_SHIFT		18
+#define RT305X_SYSCFG_CPUCLK_MASK		0x1
+#define RT305X_SYSCFG_CPUCLK_LOW		0x0
+#define RT305X_SYSCFG_CPUCLK_HIGH		0x1
 
-static inline void rt305x_memc_wr(u32 val, unsigned reg)
-{
-	__raw_writel(val, rt305x_memc_base + reg);
-}
+#define RT305X_SYSCFG_SRAM_CS0_MODE_SHIFT	2
+#define RT305X_SYSCFG_CPUCLK_MASK		0x1
+#define RT305X_SYSCFG_SRAM_CS0_MODE_WDT		0x1
 
-static inline u32 rt305x_memc_rr(unsigned reg)
-{
-	return __raw_readl(rt305x_memc_base + reg);
-}
+#define RT3352_SYSCFG0_CPUCLK_SHIFT	8
+#define RT3352_SYSCFG0_CPUCLK_MASK	0x1
+#define RT3352_SYSCFG0_CPUCLK_LOW	0x0
+#define RT3352_SYSCFG0_CPUCLK_HIGH	0x1
 
-#define RT305X_GPIO_I2C_SD	1
-#define RT305X_GPIO_I2C_SCLK	2
-#define RT305X_GPIO_SPI_EN	3
-#define RT305X_GPIO_SPI_CLK	4
-#define RT305X_GPIO_SPI_DOUT	5
-#define RT305X_GPIO_SPI_DIN	6
+#define RT5350_SYSCFG0_CPUCLK_SHIFT	8
+#define RT5350_SYSCFG0_CPUCLK_MASK	0x3
+#define RT5350_SYSCFG0_CPUCLK_360	0x0
+#define RT5350_SYSCFG0_CPUCLK_320	0x2
+#define RT5350_SYSCFG0_CPUCLK_300	0x3
+
+#define RT5350_SYSCFG0_DRAM_SIZE_SHIFT  12
+#define RT5350_SYSCFG0_DRAM_SIZE_MASK   7
+#define RT5350_SYSCFG0_DRAM_SIZE_2M     0
+#define RT5350_SYSCFG0_DRAM_SIZE_8M     1
+#define RT5350_SYSCFG0_DRAM_SIZE_16M    2
+#define RT5350_SYSCFG0_DRAM_SIZE_32M    3
+#define RT5350_SYSCFG0_DRAM_SIZE_64M    4
+
+/* multi function gpio pins */
+#define RT305X_GPIO_I2C_SD		1
+#define RT305X_GPIO_I2C_SCLK		2
+#define RT305X_GPIO_SPI_EN		3
+#define RT305X_GPIO_SPI_CLK		4
 /* GPIO 7-14 is shared between UART0, PCM  and I2S interfaces */
-#define RT305X_GPIO_7		7
-#define RT305X_GPIO_8		8
-#define RT305X_GPIO_9		9
-#define RT305X_GPIO_10		10
-#define RT305X_GPIO_11		11
-#define RT305X_GPIO_12		12
-#define RT305X_GPIO_13		13
-#define RT305X_GPIO_14		14
-#define RT305X_GPIO_UART1_TXD	15
-#define RT305X_GPIO_UART1_RXD	16
-#define RT305X_GPIO_JTAG_TDO	17
-#define RT305X_GPIO_JTAG_TDI	18
-#define RT305X_GPIO_JTAG_TMS	19
-#define RT305X_GPIO_JTAG_TCLK	20
-#define RT305X_GPIO_JTAG_TRST_N	21
-#define RT305X_GPIO_MDIO_MDC	22
-#define RT305X_GPIO_MDIO_MDIO	23
-#define RT305X_GPIO_SDRAM_MD16	24
-#define RT305X_GPIO_SDRAM_MD17	25
-#define RT305X_GPIO_SDRAM_MD18	26
-#define RT305X_GPIO_SDRAM_MD19	27
-#define RT305X_GPIO_SDRAM_MD20	28
-#define RT305X_GPIO_SDRAM_MD21	29
-#define RT305X_GPIO_SDRAM_MD22	30
-#define RT305X_GPIO_SDRAM_MD23	31
-#define RT305X_GPIO_SDRAM_MD24	32
-#define RT305X_GPIO_SDRAM_MD25	33
-#define RT305X_GPIO_SDRAM_MD26	34
-#define RT305X_GPIO_SDRAM_MD27	35
-#define RT305X_GPIO_SDRAM_MD28	36
-#define RT305X_GPIO_SDRAM_MD29	37
-#define RT305X_GPIO_SDRAM_MD30	38
-#define RT305X_GPIO_SDRAM_MD31	39
-#define RT305X_GPIO_GE0_TXD0	40
-#define RT305X_GPIO_GE0_TXD1	41
-#define RT305X_GPIO_GE0_TXD2	42
-#define RT305X_GPIO_GE0_TXD3	43
-#define RT305X_GPIO_GE0_TXEN	44
-#define RT305X_GPIO_GE0_TXCLK	45
-#define RT305X_GPIO_GE0_RXD0	46
-#define RT305X_GPIO_GE0_RXD1	47
-#define RT305X_GPIO_GE0_RXD2	48
-#define RT305X_GPIO_GE0_RXD3	49
-#define RT305X_GPIO_GE0_RXDV	50
-#define RT305X_GPIO_GE0_RXCLK	51
+#define RT305X_GPIO_7			7
+#define RT305X_GPIO_10			10
+#define RT305X_GPIO_14			14
+#define RT305X_GPIO_UART1_TXD		15
+#define RT305X_GPIO_UART1_RXD		16
+#define RT305X_GPIO_JTAG_TDO		17
+#define RT305X_GPIO_JTAG_TDI		18
+#define RT305X_GPIO_MDIO_MDC		22
+#define RT305X_GPIO_MDIO_MDIO		23
+#define RT305X_GPIO_SDRAM_MD16		24
+#define RT305X_GPIO_SDRAM_MD31		39
+#define RT305X_GPIO_GE0_TXD0		40
+#define RT305X_GPIO_GE0_RXCLK		51
 
-void rt305x_gpio_init(u32 mode);
+#define RT305X_GPIO_MODE_UART0_SHIFT	2
+#define RT305X_GPIO_MODE_UART0_MASK	0x7
+#define RT305X_GPIO_MODE_UART0(x)	((x) << RT305X_GPIO_MODE_UART0_SHIFT)
+#define RT305X_GPIO_MODE_UARTF		0
+#define RT305X_GPIO_MODE_PCM_UARTF	1
+#define RT305X_GPIO_MODE_PCM_I2S	2
+#define RT305X_GPIO_MODE_I2S_UARTF	3
+#define RT305X_GPIO_MODE_PCM_GPIO	4
+#define RT305X_GPIO_MODE_GPIO_UARTF	5
+#define RT305X_GPIO_MODE_GPIO_I2S	6
+#define RT305X_GPIO_MODE_GPIO		7
 
-#endif /* _RT305X_H_ */
+#define RT305X_GPIO_MODE_I2C		0
+#define RT305X_GPIO_MODE_SPI		1
+#define RT305X_GPIO_MODE_UART1		5
+#define RT305X_GPIO_MODE_JTAG		6
+#define RT305X_GPIO_MODE_MDIO		7
+#define RT305X_GPIO_MODE_SDRAM		8
+#define RT305X_GPIO_MODE_RGMII		9
+#define RT5350_GPIO_MODE_PHY_LED	14
+#define RT5350_GPIO_MODE_SPI_CS1	21
+#define RT3352_GPIO_MODE_LNA		18
+#define RT3352_GPIO_MODE_PA		20
+
+#define RT3352_SYSC_REG_SYSCFG0		0x010
+#define RT3352_SYSC_REG_SYSCFG1         0x014
+#define RT3352_SYSC_REG_CLKCFG1         0x030
+#define RT3352_SYSC_REG_RSTCTRL         0x034
+#define RT3352_SYSC_REG_USB_PS          0x05c
+
+#define RT3352_CLKCFG0_XTAL_SEL		BIT(20)
+#define RT3352_CLKCFG1_UPHY0_CLK_EN	BIT(18)
+#define RT3352_CLKCFG1_UPHY1_CLK_EN	BIT(20)
+#define RT3352_RSTCTRL_UHST		BIT(22)
+#define RT3352_RSTCTRL_UDEV		BIT(25)
+#define RT3352_SYSCFG1_USB0_HOST_MODE	BIT(10)
+
+#define RT305X_SDRAM_BASE		0x00000000
+#define RT305X_MEM_SIZE_MIN		2
+#define RT305X_MEM_SIZE_MAX		64
+#define RT3352_MEM_SIZE_MIN		2
+#define RT3352_MEM_SIZE_MAX		256
+
+#endif

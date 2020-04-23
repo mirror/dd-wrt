@@ -77,6 +77,7 @@ static inline int fpu_emulator_cop1Handler(struct pt_regs *xcp,
 				struct mips_fpu_struct *ctx, int has_fpu,
 				void *__user *fault_addr)
 {
+	*fault_addr = NULL;
 	return SIGILL;	/* we don't speak MIPS FPU */
 }
 #endif	/* CONFIG_MIPS_FPU_EMULATOR */

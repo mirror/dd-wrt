@@ -13,7 +13,6 @@
 #include <linux/const.h>
 #include <linux/kernel.h>
 #include <asm/mipsregs.h>
-#include <asm/cpu-features.h>
 
 /*
  * PAGE_SHIFT determines the page size
@@ -72,6 +71,7 @@ static inline unsigned int page_size_ftlb(unsigned int mmuextdef)
 #endif /* CONFIG_MIPS_HUGE_TLB_SUPPORT */
 
 #include <linux/pfn.h>
+#include <asm/cpu-features.h>
 
 extern void build_clear_page(void);
 extern void build_copy_page(void);
@@ -87,14 +87,6 @@ extern void clear_page(void * page);
 extern void copy_page(void * to, void * from);
 
 extern unsigned long shm_align_mask;
-extern unsigned char shm_align_shift;
-
-#define VALIAS_PAGE_OFFSET_MASK	(shm_align_mask)
-#define VALIAS_PAGE_MASK	(~VALIAS_PAGE_OFFSET_MASK)
-#define VALIAS_PAGE_SHIFT	(shm_align_shift)
-#define VALIAS_SHIFT		(VALIAS_PAGE_SHIFT - PAGE_SHIFT)
-#define VALIAS_PAGE_SIZE	(1UL << VALIAS_PAGE_SHIFT)
-#define VALIAS_IDX(x)		((x) << VALIAS_SHIFT)
 
 static inline unsigned long pages_do_alias(unsigned long addr1,
 	unsigned long addr2)
@@ -110,19 +102,9 @@ static inline void clear_user_page(void *addr, unsigned long vaddr,
 	extern void (*flush_data_cache_page)(unsigned long addr);
 
 	clear_page(addr);
-	if (cpu_has_vtag_dcache || (cpu_has_dc_aliases &&
-	     pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK)))
+	if (pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK))
 		flush_data_cache_page((unsigned long)addr);
 }
-#if !defined(CONFIG_BCM47XX)
-
-struct vm_area_struct;
-extern void copy_user_highpage(struct page *to, struct page *from,
-	unsigned long vaddr, struct vm_area_struct *vma);
-
-#define __HAVE_ARCH_COPY_USER_HIGHPAGE
-#else
-
 
 static inline void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
 	struct page *to)
@@ -135,7 +117,6 @@ static inline void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
 		flush_data_cache_page((unsigned long)vto);
 }
 
-#endif
 /*
  * These are used to make use of C type-checking..
  */

@@ -3,20 +3,25 @@
  * under the terms of the GNU General Public License version 2 as published
  * by the Free Software Foundation.
  *
- * Copyright (C) 2011 Thomas Langer <thomas.langer@lantiq.com>
- * Copyright (C) 2011 John Crispin <blogic@openwrt.org>
+ * Copyright (C) 2012 Thomas Langer <thomas.langer@lantiq.com>
+ * Copyright (C) 2012 John Crispin <blogic@openwrt.org>
  */
+
+#include <linux/kernel.h>
+#include <asm/cacheflush.h>
+#include <asm/traps.h>
+#include <asm/io.h>
 
 #include <lantiq_soc.h>
 
-#include "devices.h"
-
 #include "../prom.h"
 
-#define SOC_FALCON		"Falcon"
-#define SOC_FALCON_D		"Falcon-D"
-#define SOC_FALCON_V		"Falcon-V"
-#define SOC_FALCON_M		"Falcon-M"
+#define SOC_FALCON	"Falcon"
+#define SOC_FALCON_D	"Falcon-D"
+#define SOC_FALCON_V	"Falcon-V"
+#define SOC_FALCON_M	"Falcon-M"
+
+#define COMP_FALCON	"lantiq,falcon"
 
 #define PART_SHIFT	12
 #define PART_MASK	0x0FFFF000
@@ -27,48 +32,40 @@
 #define TYPE_SHIFT	26
 #define TYPE_MASK	0x3C000000
 
-#define MUXC_SIF_RX_PIN		112
-#define MUXC_SIF_TX_PIN		113
+/* reset, nmi and ejtag exception vectors */
+#define BOOT_REG_BASE	(KSEG1 | 0x1F200000)
+#define BOOT_RVEC	(BOOT_REG_BASE | 0x00)
+#define BOOT_NVEC	(BOOT_REG_BASE | 0x04)
+#define BOOT_EVEC	(BOOT_REG_BASE | 0x08)
 
-/* this parameter allows us enable/disable asc1 via commandline */
-static int register_asc1;
-static int __init
-ltq_parse_asc1(char *p)
+void __init ltq_soc_nmi_setup(void)
 {
-	register_asc1 = 1;
-	return 0;
-}
-__setup("use_asc1", ltq_parse_asc1);
+	extern void (*nmi_handler)(void);
 
-void __init
-ltq_soc_setup(void)
-{
-	ltq_register_asc(0);
-	ltq_register_wdt();
-	falcon_register_gpio();
-	if (register_asc1) {
-		ltq_register_asc(1);
-		if (ltq_gpio_request(MUXC_SIF_RX_PIN, 1, 1, 0, "asc1-rx"))
-			pr_err("failed to request asc1-rx");
-		if (ltq_gpio_request(MUXC_SIF_TX_PIN, 1, 1, 1, "asc1-tx"))
-			pr_err("failed to request asc1-tx");
-		ltq_sysctl_activate(SYSCTL_SYS1, ACTS_ASC1_ACT);
-	}
+	ltq_w32((unsigned long)&nmi_handler, (void *)BOOT_NVEC);
 }
 
-void __init
-ltq_soc_detect(struct ltq_soc_info *i)
+void __init ltq_soc_ejtag_setup(void)
+{
+	extern void (*ejtag_debug_handler)(void);
+
+	ltq_w32((unsigned long)&ejtag_debug_handler, (void *)BOOT_EVEC);
+}
+
+void __init ltq_soc_detect(struct ltq_soc_info *i)
 {
 	u32 type;
-	i->partnum = (ltq_r32(LTQ_FALCON_CHIPID) & PART_MASK) >> PART_SHIFT;
-	i->rev = (ltq_r32(LTQ_FALCON_CHIPID) & REV_MASK) >> REV_SHIFT;
-	i->srev = ((ltq_r32(LTQ_FALCON_CHIPCONF) & SREV_MASK) >> SREV_SHIFT);
+	i->partnum = (ltq_r32(FALCON_CHIPID) & PART_MASK) >> PART_SHIFT;
+	i->rev = (ltq_r32(FALCON_CHIPID) & REV_MASK) >> REV_SHIFT;
+	i->srev = ((ltq_r32(FALCON_CHIPCONF) & SREV_MASK) >> SREV_SHIFT);
+	i->compatible = COMP_FALCON;
+	i->type = SOC_TYPE_FALCON;
 	sprintf(i->rev_type, "%c%d%d", (i->srev & 0x4) ? ('B') : ('A'),
 		i->rev & 0x7, (i->srev & 0x3) + 1);
 
 	switch (i->partnum) {
 	case SOC_ID_FALCON:
-		type = (ltq_r32(LTQ_FALCON_CHIPTYPE) & TYPE_MASK) >> TYPE_SHIFT;
+		type = (ltq_r32(FALCON_CHIPTYPE) & TYPE_MASK) >> TYPE_SHIFT;
 		switch (type) {
 		case 0:
 			i->name = SOC_FALCON_D;
@@ -83,7 +80,6 @@ ltq_soc_detect(struct ltq_soc_info *i)
 			i->name = SOC_FALCON;
 			break;
 		}
-		i->type = SOC_TYPE_FALCON;
 		break;
 
 	default:
