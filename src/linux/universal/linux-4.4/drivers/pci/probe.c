@@ -2403,6 +2403,9 @@ unsigned int pci_rescan_bus(struct pci_bus *bus)
 
 	max = pci_scan_child_bus(bus);
 	pci_assign_unassigned_bus_resources(bus);
+#ifdef CONFIG_MIPS_BRCM
+	pci_enable_bridges(bus);
+#endif
 	pci_bus_add_devices(bus);
 
 	return max;

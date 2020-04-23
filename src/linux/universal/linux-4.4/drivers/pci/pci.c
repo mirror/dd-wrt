@@ -1262,10 +1262,11 @@ static int do_pci_enable_device(struct pci_dev *dev, int bars)
 	if (err < 0 && err != -EIO)
 		return err;
 
+#ifndef CONFIG_MIPS_BRCM
 	bridge = pci_upstream_bridge(dev);
 	if (bridge)
 		pcie_aspm_powersave_config_link(bridge);
-
+#endif
 	err = pcibios_enable_device(dev, bars);
 	if (err < 0)
 		return err;
@@ -1304,7 +1305,7 @@ static void pci_enable_bridge(struct pci_dev *dev)
 {
 	struct pci_dev *bridge;
 	int retval;
-
+	
 	bridge = pci_upstream_bridge(dev);
 	if (bridge)
 		pci_enable_bridge(bridge);
@@ -1343,10 +1344,11 @@ static int pci_enable_device_flags(struct pci_dev *dev, unsigned long flags)
 	if (atomic_inc_return(&dev->enable_cnt) > 1)
 		return 0;		/* already enabled */
 
+#ifndef CONFIG_MIPS_BRCM
 	bridge = pci_upstream_bridge(dev);
 	if (bridge)
 		pci_enable_bridge(bridge);
-
+#endif
 	/* only skip sriov related */
 	for (i = 0; i <= PCI_ROM_RESOURCE; i++)
 		if (dev->resource[i].flags & flags)
