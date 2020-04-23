@@ -18,7 +18,6 @@ obj-$(CONFIG_PCI_TX4927)	+= ops-tx4927.o
 #obj-$(CONFIG_BCM47XX)		+= pci-bcm47xx.o
 obj-$(CONFIG_BCM63XX)		+= pci-bcm63xx.o fixup-bcm63xx.o \
 					ops-bcm63xx.o
-obj-$(CONFIG_ADM5120)		+= pci-adm5120.o
 obj-$(CONFIG_MIPS_ALCHEMY)	+= pci-alchemy.o
 obj-$(CONFIG_PCI_AR2315)	+= pci-ar2315.o
 obj-$(CONFIG_SOC_AR71XX)	+= pci-ar71xx.o
@@ -42,7 +41,10 @@ obj-$(CONFIG_SIBYTE_SB1250)	+= fixup-sb1250.o pci-sb1250.o
 obj-$(CONFIG_SIBYTE_BCM112X)	+= fixup-sb1250.o pci-sb1250.o
 obj-$(CONFIG_SIBYTE_BCM1x80)	+= pci-bcm1480.o pci-bcm1480ht.o
 obj-$(CONFIG_SNI_RM)		+= fixup-sni.o ops-sni.o
+obj-$(CONFIG_LANTIQ)		+= fixup-lantiq.o
+obj-$(CONFIG_PCI_LANTIQ)	+= pci-lantiq.o ops-lantiq.o
 obj-$(CONFIG_SOC_RT288X)	+= pci-rt2880.o
+obj-$(CONFIG_SOC_RT3883)	+= pci-rt3883.o
 obj-$(CONFIG_TANBAC_TB0219)	+= fixup-tb0219.o
 obj-$(CONFIG_TANBAC_TB0226)	+= fixup-tb0226.o
 obj-$(CONFIG_TANBAC_TB0287)	+= fixup-tb0287.o
@@ -63,16 +65,3 @@ ifdef CONFIG_PCI_MSI
 obj-$(CONFIG_CAVIUM_OCTEON_SOC) += msi-octeon.o
 obj-$(CONFIG_CPU_XLP)		+= msi-xlp.o
 endif
-
-obj-$(CONFIG_MACH_AR7100)	+= fixup-ar7100.o ops-ar7100.o pci-ar7100.o
-#obj-$(CONFIG_MACH_AR7240)	+= fixup-ar7240.o ops-ar7240.o pci-ar7240.o
-#obj-$(CONFIG_MACH_AR7100)	+= pci-ar71xx.o pci-ar724x.o
-obj-$(CONFIG_MACH_AR7240)	+= pci-ar724x.o
-#+obj-$(CONFIG_ATHEROS_AR71XX)	+= pci-ar71xx.o pci-ar724x.o
-obj-$(CONFIG_SOC_RT288X)	+= pci-rt288x.o
-
-obj-$(CONFIG_LANTIQ)		+= pci-lantiq.o ops-lantiq.o
-obj-$(CONFIG_SOC_MT7621_OPENWRT)	+= pci-mt7621.o
-obj-$(CONFIG_SOC_MT7620_OPENWRT)	+= pci-mt7620.o
-obj-$(CONFIG_SOC_RT2880_OPENWRT)	+= pci-rt2880.o
-obj-$(CONFIG_SOC_RT3883_OPENWRT)	+= pci-rt3883.o
