@@ -2483,7 +2483,7 @@ void build_tlb_refill_handler(void)
 		}
 		if (cpu_has_local_ebase)
 			build_r4000_tlb_refill_handler();
-		if (cpu_has_xpa)
+		if (cpu_has_lpa)
 			config_xpa_params();
 		if (cpu_has_htw)
 			config_htw_params();
