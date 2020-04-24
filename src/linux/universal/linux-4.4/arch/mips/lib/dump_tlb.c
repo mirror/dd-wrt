@@ -31,7 +31,7 @@ void dump_tlb_regs(void)
 		pr_info("FrameMask: %0x\n", read_c0_framemask());
 		break;
 	}
-	if (cpu_has_small_pages || cpu_has_rixi || cpu_has_xpa)
+	if (cpu_has_small_pages || cpu_has_rixi || cpu_has_lpa)
 		pr_info("PageGrain: %0x\n", read_c0_pagegrain());
 	if (cpu_has_htw) {
 		pr_info("PWField  : %0*lx\n", field, read_c0_pwfield());
@@ -74,7 +74,7 @@ static void dump_tlb(int first, int last)
 	unsigned long long entrylo0, entrylo1, pa;
 	unsigned int s_index, s_pagemask, pagemask, c0, c1, i;
 #ifdef CONFIG_32BIT
-	bool xpa = cpu_has_xpa && (read_c0_pagegrain() & PG_ELPA);
+	bool xpa = cpu_has_lpa && (read_c0_pagegrain() & PG_ELPA);
 	int pwidth = xpa ? 11 : 8;
 	int vwidth = 8;
 #else
