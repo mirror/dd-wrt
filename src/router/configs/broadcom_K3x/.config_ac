@@ -5,7 +5,9 @@
 #
 # Base Features
 #
+#CONFIG_PCIUTILS=y
 #CONFIG_WIRELESS_TOOLS=y
+CONFIG_SMARTDNS=y
 CONFIG_SMBD=y
 CONFIG_CAKE=y
 CONFIG_WIREGUARD=y
@@ -220,7 +222,8 @@ CONFIG_LIBCPP=y
 # Environment
 #
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/universal/linux-3.10
+LINUXDIR=$(SRCBASE)/linux/universal/linux-4.4
+#LINUXDIR=$(SRCBASE)/linux/universal/linux-3.10
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
