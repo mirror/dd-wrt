@@ -8,7 +8,9 @@
 #ifndef __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
 #define __ASM_MACH_BCM47XX_CPU_FEATURE_OVERRIDES_H
 
+#ifdef CONFIG_CPU_MIPS32_R1
 #define cpu_use_kmap_coherent	0
+#endif
 #define cpu_has_tlb                     1
 #define cpu_has_vce                     0
 
