@@ -369,8 +369,8 @@ void fatal_signal(int sig)
 	/* 
 	 * Halt on SIGUSR1 
 	 */
-	reboot(RB_AUTOBOOT);
 	writeproc("/proc/sysrq-trigger", "b");
+	reboot(RB_AUTOBOOT);
 	loop_forever();
 }
 
