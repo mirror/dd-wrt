@@ -13,6 +13,9 @@
 #include <linux/const.h>
 #include <linux/kernel.h>
 #include <asm/mipsregs.h>
+#if defined(CONFIG_BCM47XX) && defined(CONFIG_CPU_MIPS32_R1)
+#include <asm/cpu-features.h>
+#endif
 
 /*
  * PAGE_SHIFT determines the page size
@@ -71,7 +74,6 @@ static inline unsigned int page_size_ftlb(unsigned int mmuextdef)
 #endif /* CONFIG_MIPS_HUGE_TLB_SUPPORT */
 
 #include <linux/pfn.h>
-#include <asm/cpu-features.h>
 
 extern void build_clear_page(void);
 extern void build_copy_page(void);
@@ -105,7 +107,14 @@ static inline void clear_user_page(void *addr, unsigned long vaddr,
 	if (pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK))
 		flush_data_cache_page((unsigned long)addr);
 }
+#if !defined(CONFIG_BCM47XX) || !defined(CONFIG_CPU_MIPS32_R1)
 
+struct vm_area_struct;
+extern void copy_user_highpage(struct page *to, struct page *from,
+	unsigned long vaddr, struct vm_area_struct *vma);
+
+#define __HAVE_ARCH_COPY_USER_HIGHPAGE
+#else
 static inline void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
 	struct page *to)
 {
@@ -116,7 +125,7 @@ static inline void copy_user_page(void *vto, void *vfrom, unsigned long vaddr,
 	    pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK))
 		flush_data_cache_page((unsigned long)vto);
 }
-
+#endif
 /*
  * These are used to make use of C type-checking..
  */

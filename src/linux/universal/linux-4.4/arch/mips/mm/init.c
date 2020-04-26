@@ -158,6 +158,32 @@ void kunmap_coherent(void)
 	preempt_enable();
 }
 
+#if !defined(CONFIG_BCM47XX) || !defined(CONFIG_CPU_MIPS32_R1)
+void copy_user_highpage(struct page *to, struct page *from,
+	unsigned long vaddr, struct vm_area_struct *vma)
+{
+	void *vfrom, *vto;
+
+	vto = kmap_atomic(to);
+	if (cpu_has_dc_aliases && cpu_use_kmap_coherent &&
+	    page_mapcount(from) && !Page_dcache_dirty(from)) {
+		vfrom = kmap_coherent(from, vaddr);
+		copy_page(vto, vfrom);
+		kunmap_coherent();
+	} else {
+		vfrom = kmap_atomic(from);
+		copy_page(vto, vfrom);
+		kunmap_atomic(vfrom);
+	}
+	if ((!cpu_has_ic_fills_f_dc) ||
+	    pages_do_alias((unsigned long)vto, vaddr & PAGE_MASK))
+		flush_data_cache_page((unsigned long)vto);
+	kunmap_atomic(vto);
+	/* Make sure this page is cleared on other CPU's too before using it */
+	smp_wmb();
+}
+#endif
+
 void copy_to_user_page(struct vm_area_struct *vma,
 	struct page *page, unsigned long vaddr, void *dst, const void *src,
 	unsigned long len)
