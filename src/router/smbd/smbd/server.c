@@ -42,7 +42,7 @@ static DEFINE_MUTEX(ctrl_lock);
 
 static int ___server_conf_set(int idx, char *val)
 {
-	if (idx > sizeof(server_conf.conf))
+	if (idx >= sizeof(server_conf.conf))
 		return -EINVAL;
 
 	if (!val || val[0] == 0x00)

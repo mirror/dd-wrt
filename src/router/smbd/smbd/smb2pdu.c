@@ -1045,6 +1045,7 @@ int smb2_handle_negotiate(struct ksmbd_work *work)
 		if (!conn->preauth_info) {
 			rc = -ENOMEM;
 			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+			goto err_out;
 		}
 
 		status = deassemble_neg_contexts(conn, req);
@@ -1664,16 +1665,11 @@ static int smb2_create_open_flags(bool file_present, __le32 access,
 {
 	int oflags = 0;
 
-	if (((access & FILE_READ_DATA_LE || access & FILE_GENERIC_READ_LE) &&
-			(access & FILE_WRITE_DATA_LE ||
-			 access & FILE_GENERIC_WRITE_LE)) ||
-			access & FILE_MAXIMAL_ACCESS_LE ||
-			access & FILE_GENERIC_ALL_LE)
+	if ((access & FILE_READ_DESIRED_ACCESS &&
+			access & FILE_WRITE_DESIRE_ACCESS) ||
+			access & FILE_RW_DESIRED_ACCESS)
 		oflags |= O_RDWR;
-	else if (access & FILE_READ_DATA_LE  || access & FILE_GENERIC_READ_LE)
-		oflags |= O_RDONLY;
-	else if (access & FILE_WRITE_DATA_LE || access & FILE_DELETE_LE ||
-			access & FILE_GENERIC_WRITE_LE)
+	else if (access & FILE_WRITE_DESIRE_ACCESS)
 		oflags |= O_WRONLY;
 	else
 		oflags |= O_RDONLY;
@@ -2044,8 +2040,10 @@ static int smb2_set_ea(struct smb2_ea_info *eabuf, struct path *path)
 				le32_to_cpu(eabuf->NextEntryOffset));
 
 		if (eabuf->EaNameLength >
-				(XATTR_NAME_MAX - XATTR_USER_PREFIX_LEN))
-			return -EINVAL;
+				(XATTR_NAME_MAX - XATTR_USER_PREFIX_LEN)) {
+			rc = -EINVAL;
+			break;
+		}
 
 		memcpy(attr_name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN);
 		memcpy(&attr_name[XATTR_USER_PREFIX_LEN], eabuf->name,
@@ -2114,12 +2112,15 @@ static noinline int smb2_set_stream_name_xattr(struct path *path,
 					       char *stream_name,
 					       int s_type)
 {
-	int xattr_stream_size;
+	size_t xattr_stream_size;
 	char *xattr_stream_name;
 	int rc;
 
-	xattr_stream_size = ksmbd_vfs_xattr_stream_name(stream_name,
-							&xattr_stream_name);
+	rc = ksmbd_vfs_xattr_stream_name(stream_name,
+					 &xattr_stream_name,
+					 &xattr_stream_size);
+	if (rc)
+		return rc;
 
 	fp->stream.name = xattr_stream_name;
 	fp->stream.type = s_type;
@@ -3046,6 +3047,9 @@ err_out1:
 		smb2_set_err_rsp(work);
 		ksmbd_debug(SMB, "Error response: %x\n", rsp->hdr.Status);
 	}
+
+	if (lc)
+		kfree(lc);
 
 	return 0;
 }
@@ -5095,8 +5099,11 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 			goto out;
 		}
 
-		xattr_stream_size = ksmbd_vfs_xattr_stream_name(stream_name,
-							&xattr_stream_name);
+		rc = ksmbd_vfs_xattr_stream_name(stream_name,
+						 &xattr_stream_name,
+						 &xattr_stream_size);
+		if (rc)
+			goto out;
 
 		rc = ksmbd_vfs_setxattr(fp->filp->f_path.dentry,
 					xattr_stream_name,
@@ -7681,8 +7688,8 @@ int smb2_is_sign_req(struct ksmbd_work *work, unsigned int command)
 		return 1;
 
 	/* send session setup auth phase signed response */
-	if (work->sess->sign && command == SMB2_SESSION_SETUP_HE &&
-		work->sess)
+	if (work->sess && work->sess->sign &&
+		command == SMB2_SESSION_SETUP_HE)
 		return 1;
 
 	return 0;

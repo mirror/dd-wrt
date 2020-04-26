@@ -2099,15 +2099,17 @@ out:
 }
 
 int ksmbd_vfs_xattr_stream_name(char *stream_name,
-				char **xattr_stream_name)
+				char **xattr_stream_name,
+				size_t *xattr_stream_name_size)
 {
 	int stream_name_size;
-	int xattr_stream_name_size;
 	char *xattr_stream_name_buf;
 
 	stream_name_size = strlen(stream_name);
-	xattr_stream_name_size = stream_name_size + XATTR_NAME_STREAM_LEN + 1;
-	xattr_stream_name_buf = kmalloc(xattr_stream_name_size, GFP_KERNEL);
+	*xattr_stream_name_size = stream_name_size + XATTR_NAME_STREAM_LEN + 1;
+	xattr_stream_name_buf = kmalloc(*xattr_stream_name_size, GFP_KERNEL);
+	if (!xattr_stream_name_buf)
+		return -ENOMEM;
 
 	memcpy(xattr_stream_name_buf,
 		XATTR_NAME_STREAM,
@@ -2118,10 +2120,10 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 			stream_name,
 			stream_name_size);
 
-	xattr_stream_name_buf[xattr_stream_name_size - 1] = '\0';
+	xattr_stream_name_buf[*xattr_stream_name_size - 1] = '\0';
 	*xattr_stream_name = xattr_stream_name_buf;
 
-	return xattr_stream_name_size;
+	return 0;
 }
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
