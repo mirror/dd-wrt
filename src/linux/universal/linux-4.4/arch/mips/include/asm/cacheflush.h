@@ -49,7 +49,7 @@ extern void (*flush_cache_mm)(struct mm_struct *mm);
 #if defined(CONFIG_BCM47XX) && defined(CONFIG_CPU_MIPS32_R1)
 #define flush_cache_dup_mm(mm) flush_cache_mm(mm)
 #else
-#define flush_cache_dup_mm(mm) flush_cache_mm(mm) do { (void) (mm); } while (0)
+#define flush_cache_dup_mm(mm) do { (void) (mm); } while (0)
 #endif
 extern void (*flush_cache_range)(struct vm_area_struct *vma,
 	unsigned long start, unsigned long end);
