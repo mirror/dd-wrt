@@ -1240,19 +1240,20 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn,
 	rc = crypto_aead_setkey(tfm, key, SMB3_SIGN_KEY_SIZE);
 	if (rc) {
 		ksmbd_err("Failed to set aead key %d\n", rc);
-		return rc;
+		goto free_ctx;
 	}
 
 	rc = crypto_aead_setauthsize(tfm, SMB2_SIGNATURE_SIZE);
 	if (rc) {
 		ksmbd_err("Failed to set authsize %d\n", rc);
-		return rc;
+		goto free_ctx;
 	}
 
 	req = aead_request_alloc(tfm, GFP_KERNEL);
 	if (!req) {
 		ksmbd_err("Failed to alloc aead request\n");
-		return -ENOMEM;
+		rc = -ENOMEM;
+		goto free_ctx;
 	}
 
 	if (!enc) {
@@ -1307,6 +1308,7 @@ free_sg:
 	kfree(sg);
 free_req:
 	kfree(req);
+free_ctx:
 	ksmbd_release_crypto_ctx(ctx);
 	return rc;
 }

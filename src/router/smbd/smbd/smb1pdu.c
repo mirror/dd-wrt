@@ -3601,6 +3601,7 @@ static int smb_get_acl(struct ksmbd_work *work, struct path *path)
 		rsp_data_cnt += ACL_to_cifs_posix((char *)aclbuf, buf,
 				value_len, ACL_TYPE_ACCESS);
 		ksmbd_free(buf);
+		buf = NULL;
 	}
 
 	/* check if POSIX_ACL_XATTR_DEFAULT exists */
@@ -3611,6 +3612,7 @@ static int smb_get_acl(struct ksmbd_work *work, struct path *path)
 		rsp_data_cnt += ACL_to_cifs_posix((char *)aclbuf, buf,
 				value_len, ACL_TYPE_DEFAULT);
 		ksmbd_free(buf);
+		buf = NULL;
 	}
 
 	if (rsp_data_cnt)
