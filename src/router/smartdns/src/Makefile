@@ -41,7 +41,7 @@ ifeq ($(SSL), yes)
 override LDFLAGS += -lssl -lcrypto
 override CFLAGS += -DHAVE_OPENSSL
 endif
-.PHONY: all
+.PHONY: all clean
 
 all: $(BIN)
  
