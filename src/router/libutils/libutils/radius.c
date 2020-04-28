@@ -81,8 +81,10 @@ struct radiusdb *loadradiusdb(void)
 	if (fp == NULL)
 		return NULL;
 	struct radiusdb *db;
-	if (feof(fp))
+	if (feof(fp)) {
+		fclose(fp);
 		return NULL;
+	}
 	db = safe_malloc(sizeof(struct radiusdb));
 	db->usercount = readword(fp);
 	if (db->usercount)
@@ -189,8 +191,10 @@ struct radiusclientdb *loadradiusclientdb(void)
 	if (fp == NULL)
 		return NULL;
 	struct radiusclientdb *db;
-	if (feof(fp))
+	if (feof(fp)) {
+		fclose(fp);
 		return NULL;
+	}
 	db = malloc(sizeof(struct radiusclientdb));
 	db->usercount = readword(fp);
 	if (db->usercount)

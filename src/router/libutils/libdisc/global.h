@@ -52,3 +52,7 @@
 
 #define be32_to_cpu(x) ((uint32_t) be32toh(x))
 #define be64_to_cpu(x) ((uint64_t) be64toh(x))
+
+void bailout(const char *msg, ...) __attribute__((noreturn));
+
+void bailoute(const char *msg, ...) __attribute__((noreturn));
