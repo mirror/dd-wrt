@@ -16,8 +16,9 @@
  * OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
  * CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
- * $Id: et_linux.c 575708 2015-07-30 20:27:43Z $
+ * $Id: et_linux.c 584164 2015-09-04 07:40:24Z $
  */
+
 #include <et_cfg.h>
 #define __UNDEF_NO_VERSION__
 
@@ -30,7 +31,6 @@
 #include <linux/types.h>
 #include <linux/errno.h>
 #include <linux/pci.h>
-#include <linux/semaphore.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
@@ -39,16 +39,13 @@
 #include <linux/delay.h>
 #include <linux/string.h>
 #include <linux/sockios.h>
-#include <linux/mii.h>
 #ifdef SIOCETHTOOL
 #include <linux/ethtool.h>
 #endif /* SIOCETHTOOL */
 #include <linux/ip.h>
 #include <linux/if_vlan.h>
 #include <net/tcp.h>
-#include <net/ip6_checksum.h>
 
-//#include <asm/system.h>
 #include <asm/io.h>
 #include <asm/irq.h>
 #include <asm/pgtable.h>
@@ -83,6 +80,8 @@
 #ifdef ETFA
 #include <etc_fa.h>
 #endif /* ETFA */
+
+#define init_MUTEX(sem)		sema_init(sem, 1)
 
 #ifdef ETFA
 #define CTF_CAPABLE_DEV(et)	FA_CTF_CAPABLE_DEV((fa_t *)(et)->etc->fa)
@@ -221,6 +220,7 @@ typedef struct et_info {
 #ifdef ETFA
 	spinlock_t	fa_lock;	/* lock for fa cache protection */
 #endif
+	bool		dev_registered;	/* netdev registed done */
 } et_info_t;
 
 static int et_found = 0;
@@ -325,7 +325,6 @@ static void et_sendup(et_info_t *et, struct sk_buff *skb, int dataoff);
 static void et_dumpet(et_info_t *et, struct bcmstrbuf *b);
 #endif /* BCMDBG */
 static void et_error(et_info_t *et, struct sk_buff *skb, void *rxh);
-
 #ifndef HAVE_NET_DEVICE_OPS
 #define HAVE_NET_DEVICE_OPS
 #endif
@@ -450,9 +449,7 @@ is_pkt_chainable(et_info_t *et, void * pkt, void *pkthdr, uint8 prio,
 
 			if (et->brc_hot &&
 			    CTF_HOTBRC_CMP(et->brc_hot, evh->ether_dhost, (void*)et->dev) &&
-			    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q)) &&
-			    ((evh->ether_type == HTON16(ETHER_TYPE_IP)) ||
-			     (evh->ether_type == HTON16(ETHER_TYPE_IPV6)))) {
+			    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q))) {
 
 				return TRUE;
 			}
@@ -460,12 +457,7 @@ is_pkt_chainable(et_info_t *et, void * pkt, void *pkthdr, uint8 prio,
 		} else {
 
 			/* Packets are received without VLAN Tag on GMAC forwarders */
-
-			if ((eh->ether_type == HTON16(ETHER_TYPE_IP)) ||
-			    (eh->ether_type == HTON16(ETHER_TYPE_IPV6))) {
-
-				return TRUE;
-			}
+			return !ETHER_ISMULTI(eh);
 		}
 	}
 
@@ -487,8 +479,6 @@ is_pkt_chainable(et_info_t *et, void * pkt, void * pkthdr, uint8 prio,
 	    CTF_HOTBRC_CMP(et->brc_hot, evh, (void *)et->dev) &&
 	    (prio == cd->h_prio) &&
 	    (evh->vlan_type == HTON16(ETHER_TYPE_8021Q)) &&
-	    ((evh->ether_type == HTON16(ETHER_TYPE_IP)) ||
-	     (evh->ether_type == HTON16(ETHER_TYPE_IPV6))) &&
 	    (!RXH_FLAGS(et->etc, PKTDATA(et->osh, pkt)))) {
 
 		return TRUE;
@@ -839,11 +829,11 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* map chip registers (47xx: and sprom) */
 	dev->base_addr = pci_resource_start(pdev, 0);
 	if ((et->regsva = ioremap_nocache(dev->base_addr, PCI_BAR0_WINSZ)) == NULL) {
-		printk(KERN_EMERG "et%d: ioremap() failed\n", unit);
+		ET_ERROR(("et%d: ioremap() failed\n", unit));
 		goto fail;
 	}
 
-	sema_init(&et->sem, 1);
+	init_MUTEX(&et->sem);
 	spin_lock_init(&et->lock);
 	spin_lock_init(&et->txq_lock);
 	spin_lock_init(&et->isr_lock);
@@ -854,7 +844,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	/* common load-time initialization */
 	et->etc = etc_attach((void *)et, pdev->vendor, pdev->device, coreunit, osh, et->regsva);
 	if (et->etc == NULL) {
-		printk(KERN_EMERG "et%d: etc_attach() failed\n", unit);
+		ET_ERROR(("et%d: etc_attach() failed\n", unit));
 		goto fail;
 	}
 
@@ -875,6 +865,11 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 	et->fwdh = (struct fwder *)NULL;
 
 	if (DEV_FWDER(et->etc)) { /* Attach driver to forwarder */
+
+		if (ddr_aliasing_enabled() && !getintvar(NULL, "pacp_tx_off")) {
+			osl_flag_set(osh, OSL_FWDERBUF);
+		}
+
 		/* Ethernet network interface uses "ethXX". Use "fwdXX" instead */
 		strncpy(dev->name, DEV_FWDER_NAME, 3);
 
@@ -1003,7 +998,7 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 
 	/* register our interrupt handler */
 	if (request_irq(pdev->irq, et_isr, IRQF_SHARED, dev->name, et)) {
-		printk(KERN_EMERG "et%d: request_irq() failed\n", unit);
+		ET_ERROR(("et%d: request_irq() failed\n", unit));
 		goto fail;
 	}
 	dev->irq = pdev->irq;
@@ -1057,10 +1052,10 @@ et_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 #endif
 
 	if (register_netdev(dev)) {
-		printk(KERN_EMERG "et%d: register_netdev() failed\n", unit);
-		dev->netdev_ops = NULL;
+		ET_ERROR(("et%d: register_netdev() failed\n", unit));
 		goto fail;
 	}
+	et->dev_registered = TRUE;
 
 #ifdef __ARM_ARCH_7A__
 	dev->features = (NETIF_F_SG | NETIF_F_FRAGLIST | NETIF_F_ALL_CSUM);
@@ -1298,9 +1293,8 @@ et_free(et_info_t *et)
 		ctf_dev_unregister(et->cih, et->dev);
 #endif /* HNDCTF */
 
-	if (et->dev) {
-		if (et->dev->netdev_ops)
-			unregister_netdev(et->dev);
+	if (et->dev_registered) {
+		unregister_netdev(et->dev);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36)
 
@@ -1311,6 +1305,7 @@ et_free(et_info_t *et)
 #endif
 		et->dev = NULL;
 #endif /* LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 36) */
+		et->dev_registered = FALSE;
 	}
 
 #ifdef CTFPOOL
@@ -1700,10 +1695,11 @@ et_sendnext(et_info_t *et)
 			PKTCLRCHAINED(et->osh, p);
 			/* replicate vlan header contents from curr frame */
 			if ((n != NULL) && (vlan_type == HTON16(ETHER_TYPE_8021Q))) {
-				uint8 *n_evh;
-				n_evh = PKTPUSH(et->osh, n, VLAN_TAG_LEN);
-				*(struct ethervlan_header *)n_evh =
-				*(struct ethervlan_header *)PKTDATA(et->osh, p);
+				uint8 *n_evh = PKTPUSH(et->osh, n, VLAN_TAG_LEN);
+
+				/* Retain orig ether_type */
+				bcopy(PKTDATA(et->osh, p), n_evh,
+					OFFSETOF(struct ethervlan_header, ether_type));
 			} else if (n == NULL)
 				PKTCSETFLAG(p, 1);
 
@@ -2479,7 +2475,9 @@ et_sendup_chain_error_handler(et_info_t *et, struct sk_buff *skb, uint sz, int32
 		PKTCSETLEN(skb, PKTLEN(et->etc->osh, skb));
 
 		if (et_ctf_forward(et, skb) == BCME_OK) {
-			ET_ERROR(("et%d: shall not happen\n", et->etc->unit));
+			/* partial packets of this chain can be forwarded by CTF */
+			ET_ERROR(("et%d: unexpected forwarding\n", et->etc->unit));
+			continue;
 		}
 
 		if (et->etc->qos)
