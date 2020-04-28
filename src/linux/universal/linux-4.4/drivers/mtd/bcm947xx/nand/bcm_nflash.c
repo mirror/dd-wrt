@@ -57,7 +57,7 @@
 #include <sbchipc.h>
 #include <hndnand.h>
 
--int nospare;
+int nospare;
 
 #ifdef CONFIG_MTD
 extern struct mtd_partition *
