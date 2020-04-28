@@ -57,6 +57,8 @@
 #include <sbchipc.h>
 #include <hndnand.h>
 
+-int nospare;
+
 #ifdef CONFIG_MTD
 extern struct mtd_partition *
 init_nflash_mtd_partitions(hndnand_t *nfl, struct mtd_info *mtd, size_t size);
