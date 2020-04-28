@@ -34,10 +34,11 @@ struct dlna_share *getdlnashare(char *mp, char *sd, int types)
 {
 
 	struct dlna_share *share = calloc(1, sizeof(struct dlna_share));
-
-	strncpy(share->mp, mp, sizeof(share->mp) - 1);
-	strncpy(share->sd, sd, sizeof(share->sd) - 1);
-	share->types = types;
+	if (share) {
+		strncpy(share->mp, mp, sizeof(share->mp) - 1);
+		strncpy(share->sd, sd, sizeof(share->sd) - 1);
+		share->types = types;
+	}
 	return share;
 }
 
@@ -54,6 +55,8 @@ struct dlna_share *getdlnashares(void)
 
 	// first create dummy entry
 	list = getdlnashare("", "", 0);
+	if (!list)
+		return NULL;
 	current = list;
 
 //      json = json_loads( "[{\"mp\":\"/jffs\",\"label\":\"testshare\",\"perms\":\"rw\",\"public\":0},{\"mp\":\"/mnt\",\"label\":\"othertest\",\"perms\":\"ro\",\"public\":1},{\"label\":\"blah\"}]", &error );
