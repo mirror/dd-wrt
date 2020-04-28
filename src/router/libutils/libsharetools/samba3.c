@@ -62,11 +62,11 @@ struct samba3_user *getsamba3user(char *username, char *password, int type)
 {
 
 	struct samba3_user *user = calloc(1, sizeof(struct samba3_user));
-
-	strncpy(user->username, username, sizeof(user->username) - 1);
-	strncpy(user->password, password, sizeof(user->password) - 1);
-	user->sharetype = type;
-
+	if (user) {
+		strncpy(user->username, username, sizeof(user->username) - 1);
+		strncpy(user->password, password, sizeof(user->password) - 1);
+		user->sharetype = type;
+	}
 	return user;
 }
 
@@ -129,17 +129,17 @@ struct samba3_share *getsamba3share(char *mp, char *sd, char *label, char *acces
 {
 
 	struct samba3_share *share = calloc(1, sizeof(struct samba3_share));
-
-	strncpy(share->mp, mp, sizeof(share->mp) - 1);
-	strncpy(share->sd, sd, sizeof(share->sd) - 1);
-	strncpy(share->label, label, sizeof(share->label) - 1);
-	strncpy(share->access_perms, access_perms, sizeof(share->access_perms) - 1);
-	share->public = public;
-	if (users != NULL) {
-		//fprintf(stderr, "[SHAREUSERS] add\n");
-		share->users = users;
+	if (share) {
+		strncpy(share->mp, mp, sizeof(share->mp) - 1);
+		strncpy(share->sd, sd, sizeof(share->sd) - 1);
+		strncpy(share->label, label, sizeof(share->label) - 1);
+		strncpy(share->access_perms, access_perms, sizeof(share->access_perms) - 1);
+		share->public = public;
+		if (users != NULL) {
+			//fprintf(stderr, "[SHAREUSERS] add\n");
+			share->users = users;
+		}
 	}
-
 	return share;
 }
 
