@@ -36,7 +36,7 @@
 #endif
 #else
 #ifdef CONFIG_CPU_MIPS32_R1
-#define D11CONF		0x0000baa0	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
+#define D11CONF		0x0001baa0	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
 #define D11CONF2	0x0		/* D11 Core Rev > 31, Rev 40(4360a0), 42(4360B0) */
 #else
 #define D11CONF		0x77a70000	/* D11 Core Rev 5 (4306C0), 7 (4712), 9 (4318b0, 5352), */
