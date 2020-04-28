@@ -709,7 +709,8 @@ pid_t *find_pid_by_name(char *pidName)
 		// printf("buffer=[%s] name=[%s]\n",buffer,name);
 		if (strcmp(name, pidName) == 0) {
 			pidList = realloc(pidList, sizeof(pid_t) * (i + 2));
-			pidList[i++] = strtol(next->d_name, NULL, 0);
+			if (pidList)
+				pidList[i++] = strtol(next->d_name, NULL, 0);
 		}
 	}
 
@@ -717,7 +718,8 @@ pid_t *find_pid_by_name(char *pidName)
 		pidList[i] = 0;
 	else {
 		pidList = realloc(pidList, sizeof(pid_t));
-		pidList[0] = -1;
+		if (pidList)
+			pidList[0] = -1;
 	}
 	return pidList;
 
@@ -1671,12 +1673,19 @@ char *get_filter_services(void)
 		strcat(services, temp);
 		filters++;
 	}
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
+	if (services)
+		services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
+	else
+		services = malloc(strlen(nvram_safe_get("filter_services")) + 1);
+	
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
 	// filters
-	services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
+	if (services)
+		services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services_1")) + 1);
+	else
+		services = malloc(strlen(nvram_safe_get("filter_services_1")) + 1);
 	strcat(services, nvram_safe_get("filter_services_1"));
 
 	return services;
@@ -1688,7 +1697,8 @@ void free_filters(filters * filter)
 		return;
 	int count = 0;
 	while (filter[count].name != NULL) {
-		free(filter[count++].name);
+		free(filter[count].name);
+		count++;
 	}
 	free(filter);
 }
