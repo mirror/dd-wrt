@@ -665,10 +665,14 @@ static int robo_probe(char *devname)
 
 	printk(KERN_INFO PFX "trying a %s%s%x!%s at %s\n", robo.devid & 0xf0000 ? "" : "5", robo.devid & 0xff00 ? "" : "3", robo.devid, robo.is_5365 ? " It's a BCM5365." : "", devname);
 
-	if (!iswrt610nv1)
+	if (!iswrt610nv1) {
 		robo_switch_reset();
 
-	err = robo_switch_enable();
+		err = robo_switch_enable();
+	}else {
+		printk(KERN_INFO "WRT610N v1 found, avoid reset\n");
+	}
+
 	if (err)
 		goto err_put;
 
