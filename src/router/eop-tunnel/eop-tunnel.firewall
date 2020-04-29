@@ -17,6 +17,20 @@ do
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
+		if [ `$nv get oet${i}_proto` -eq 1 ]
+		then
+			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		fi
+		if [ `$nv get oet${i}_proto` -eq 0 ]
+		then
+			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
+		fi
+		if [ `$nv get oet${i}_bridged` -ne 1 ]
+		then
+			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
+			$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
+			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
+		fi
 		if [ `$nv get oet${i}_proto` -eq 2 ]
 		then
 			insmod xt_addrtype
@@ -31,20 +45,7 @@ do
 			then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to-source $($nv get oet${i}_ipaddr) 2>&1 > /dev/null
 			fi
-		fi
-		if [ `$nv get oet${i}_proto` -eq 1 ]
-		then
-			$ipt -I INPUT -p 47 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
-		fi
-		if [ `$nv get oet${i}_proto` -eq 0 ]
-		then
-			$ipt -I INPUT -p 97 -s `$nv get oet${i}_rem` -j ACCEPT 2>&1 > /dev/null
-		fi
-		if [ `$nv get oet${i}_bridged` -ne 1 ]
-		then
-			$ipt -I FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
-			$ipt -I INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
+			
 		fi
 	fi
 done

@@ -1740,6 +1740,7 @@ eoip.wireguard_peer="Endpunkt Adresse";
 eoip.wireguard_peerport="Entfernter Port";
 eoip.wireguard_peerkey="Entfernter &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
+eoip.wireguard_localprivatekey="Lokaler Privater Schl&uuml;ssel";
 eoip.wireguard_genpsk="Erzeuge Pre-shared Key";
 eoip.wireguard_usepsk="Nutze Pre-shared Key";
 eoip.wireguard_addpeer="Partner Hinzuf&uuml;gen";

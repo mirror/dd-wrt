@@ -19,6 +19,7 @@ install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)*.prewall $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
+	cp $(MODULE)*.sh $(INSTALLDIR)/etc/config
 	-cp mtik/eoip $(INSTALLDIR)/usr/sbin
 	-cp makewgkey $(INSTALLDIR)/usr/sbin
 	-cp makewgpsk $(INSTALLDIR)/usr/sbin
