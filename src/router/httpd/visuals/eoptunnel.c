@@ -153,9 +153,21 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.wireguard_localkey", NULL);
-					websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
+					//websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
+					//egc set read only so that the key can be copied by all browsers
+					websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" readonly=\"readonly\"/>\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
+				
+				//egc set private key
+				snprintf(temp, sizeof(temp), "oet%d_private", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_localprivatekey", NULL);
+					websWrite(wp, "<input type=\"password\" size=\"48\" maxlength=\"48\" name=\"%s\" onmouseover=\"this.type=\'text\'\" onmouseout=\"this.type=\'password\'\"  value=\"%s\"/>\n", temp, nvram_safe_get(temp));
+				}
+				websWrite(wp, "</div>\n");
+				
 				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
 				int peers = nvram_default_geti(temp, 0);
 				int peer;
@@ -330,7 +342,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					}
 					websWrite(wp, "//]]>\n</script>\n");
 					websWrite(wp, "</fieldset>\n");
-
 				}
 
 				websWrite(wp, "<div class=\"center\">\n");
