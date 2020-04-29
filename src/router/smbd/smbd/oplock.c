@@ -449,6 +449,7 @@ void close_id_del_oplock(struct ksmbd_file *fp)
 	}
 
 	opinfo_count_dec(fp);
+	atomic_dec(&opinfo->refcount);
 	opinfo_put(opinfo);
 }
 
