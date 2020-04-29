@@ -20,6 +20,10 @@ install: all
 	cp $(MODULE)*.prewall $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.sh $(INSTALLDIR)/etc/config
+	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.sh
+	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.firewall
+	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.prewall
+	
 	-cp mtik/eoip $(INSTALLDIR)/usr/sbin
 	-cp makewgkey $(INSTALLDIR)/usr/sbin
 	-cp makewgpsk $(INSTALLDIR)/usr/sbin
