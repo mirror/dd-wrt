@@ -80,7 +80,7 @@ do
 			echo enable > ${i}.pid
 			#add routes based on allowed IP's has to be after interface is up
 			#spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
-			/etc/config/eop-tunnel-raip.sh $i &
+			/usr/bin/eop-tunnel-raip.sh $i &
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then
