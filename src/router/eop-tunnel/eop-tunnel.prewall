@@ -45,6 +45,10 @@ do
 			$nv get oet${i}_private > /tmp/wireguard/oet${i}_private
 			wg set oet${i} private-key /tmp/wireguard/oet${i}_private
 			rm /tmp/wireguard/oet${i}_private
+			
+			## egc add code to regenerate public key from private key if private key is set manually
+			$nv set oet${i}_public=$($nv get oet${i}_private|wg pubkey)
+			
 			peers=$((`$nv get oet${i}_peers` - 1))
 			$nv set oet${i}_bridged=0
 			for p in `seq 0 $peers`
@@ -74,20 +78,9 @@ do
 			ip link set mtu $($nv get oet${i}_mtu) up dev oet${i} 2>&1 > /dev/null
 			ip addr add $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) dev oet${i} 2>&1 > /dev/null
 			echo enable > ${i}.pid
-			#egc:add routes based on allowed IP's has to be after interface is up
-			for p in `seq 0 $peers`
-				do
-					# oet${i}_aip_rten${p} #nvram variable to allow routing of Allowed IP's, 1=add route
-					if [[ $($nv get oet${i}_aip_rten${p}) -eq 1 ]] 
-					then 
-						for aip in $($nv get oet${i}_aip${p} | sed "s/,/ /g") ; do 
-							logger -p user.info "route $aip added via oet${i}" #debug
-							ip route add $aip dev oet${i} 2>&1 > /dev/null
-						done
-					fi			
-				done
-			# end add routes
-			ip route flush cache
+			#add routes based on allowed IP's has to be after interface is up
+			#spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
+			/etc/config/eop-tunnel-raip.sh $i &
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then

@@ -2051,6 +2051,7 @@ eoip.wireguard_peerkey="Peer Public Key";
 eoip.wireguard_peerip="Peer Tunnel IP";
 eoip.wireguard_peerdns="Peer Tunnel DNS";
 eoip.wireguard_localkey="Local Public Key";
+eoip.wireguard_localprivatekey="Local Private Key";
 eoip.wireguard_usepsk="Use Pre-shared Key";
 eoip.wireguard_genpsk="Generate Pre-shared Key";
 eoip.wireguard_psk="Pre-Shared Key";

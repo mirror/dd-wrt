@@ -1620,6 +1620,8 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_bridged", i);
 		copytonv(wp, "oet%d_port", i);
 		copytonv(wp, "oet%d_mtu", i);
+		copytonv(wp, "oet%d_public", i);
+		copytonv(wp, "oet%d_private", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
@@ -1827,6 +1829,8 @@ void add_tunnel(webs_t wp)
 	default_seti("en", 0);
 	default_seti("mit", 1);
 	default_seti("natout", 0);
+	default_set("public", "");
+	default_set("private", "");
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
@@ -1855,6 +1859,8 @@ void del_tunnel(webs_t wp)
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
 		copytunvalue("natout", i, i - 1);
+		copytunvalue("public", i, i - 1);
+		copytunvalue("private", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
@@ -1884,6 +1890,8 @@ void del_tunnel(webs_t wp)
 	deltunvalue("en", tunnels);
 	deltunvalue("mit", tunnels);
 	deltunvalue("natout", tunnels);
+	deltunvalue("public", tunnels);
+	deltunvalue("private", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
