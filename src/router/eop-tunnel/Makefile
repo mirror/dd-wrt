@@ -19,8 +19,8 @@ install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	cp $(MODULE)*.prewall $(INSTALLDIR)/etc/config
 	cp $(MODULE)*.firewall $(INSTALLDIR)/etc/config
-	cp $(MODULE)*.sh $(INSTALLDIR)/etc/config
-	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.sh
+	cp $(MODULE)*.sh $(INSTALLDIR)/usr/bin
+	chmod 700 $(INSTALLDIR)/usr/bin/$(MODULE)*.sh
 	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.firewall
 	chmod 700 $(INSTALLDIR)/etc/config/$(MODULE)*.prewall
 	
