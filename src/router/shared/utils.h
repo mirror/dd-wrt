@@ -1146,6 +1146,7 @@ static inline int is_wil6210(const char *prefix)
 extern int is_mac80211(const char *prefix);
 extern int is_ap8x(void);
 extern int has_channelsurvey(const char *prefix);
+extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
 extern int has_qboost_tdma(const char *prefix);
 extern int has_beacon_limit(const char *prefix);
@@ -1167,6 +1168,10 @@ static inline int has_spectralscanning(char *prefix)
 	return 0;
 }
 static inline int has_qboost(char *prefix)
+{
+	return 0;
+}
+static inline int has_nolivesurvey(char *prefix)
 {
 	return 0;
 }
