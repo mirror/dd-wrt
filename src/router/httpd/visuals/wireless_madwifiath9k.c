@@ -158,7 +158,7 @@ void ej_get_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (!has_nolivesurvey(prefix))
+	if (has_nolivesurvey(prefix))
 		return NULL;
 	if (is_mac80211(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
@@ -174,7 +174,7 @@ void ej_get_active(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (!has_nolivesurvey(prefix))
+	if (has_nolivesurvey(prefix))
 		return NULL;
 	if (is_mac80211(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
@@ -190,7 +190,7 @@ void ej_get_quality(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (!has_nolivesurvey(prefix))
+	if (has_nolivesurvey(prefix))
 		return NULL;
 	if (is_mac80211(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
@@ -211,7 +211,7 @@ void ej_show_busy(webs_t wp, int argc, char_t ** argv)
 {
 	struct mac80211_info info;
 	char *prefix = nvram_safe_get("wifi_display");
-	if (!has_nolivesurvey(prefix))
+	if (has_nolivesurvey(prefix))
 		return NULL;
 	if (is_mac80211(prefix)) {
 		if (nvram_nmatch("disabled", "%s_net_mode", prefix))
