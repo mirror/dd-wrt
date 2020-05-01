@@ -52,6 +52,17 @@ CONFIGURE_ARGS_OVPN += \
 	ac_cv_path_ROUTE=/sbin/route \
 	ac_cv_path_IPROUTE=/usr/sbin/ip 
 
+
+ifeq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_BCMMODERN),y)
+CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=no
+else
+CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=yes
+endif
+else
+CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=yes
+endif
+
 openvpn-conf-prep:
 	-rm -f openvpn/Makefile
 	cd openvpn && aclocal
