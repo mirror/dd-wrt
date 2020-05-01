@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/io.h>
 #include <sys/ioctl.h>
+#include <sys/random.h>
 #include <sys/reboot.h>
 #include <sys/utsname.h>
 #include <sys/sendfile.h>
@@ -73,7 +74,9 @@ static void seed_rng(void)
 	fd = open("/dev/urandom", O_WRONLY);
 	if (fd < 0)
 		panic("open(urandom)");
-	for (int i = 0; i < 256; ++i) {
+	for (;;) {
+		if (getrandom(entropy.buffer, sizeof(entropy.buffer), GRND_NONBLOCK) != -1 || errno != EAGAIN)
+			break;
 		if (ioctl(fd, RNDADDENTROPY, &entropy) < 0)
 			panic("ioctl(urandom)");
 	}
