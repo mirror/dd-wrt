@@ -1395,7 +1395,18 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (has_wpa3(ifname)) {
 		char *owe_ifname = nvram_nget("%s_owe_ifname", ifname);
 		if (*owe_ifname) {
-			if (nvram_nmatch("1", "%s_owe", owe_ifname)) {
+			char oif[32];
+			char *next;
+			int oexists = 0;
+			char *vifs = nvram_nget("%s_vifs", maininterface);
+			foreach(oif, vifs, next) {
+				if (!strcmp(oif, owe_ifname) && !nvram_nmatch("disabled", "%s_net_mode", owe_ifname) && !nvram_nmatch("disabled", "%s_mode", owe_ifname)) {
+					oexists = 1;
+				}
+
+			}
+
+			if (oexists && nvram_nmatch("1", "%s_owe", owe_ifname)) {
 				fprintf(fp, "owe_transition_ifname=%s\n", owe_ifname);
 			}
 		}
