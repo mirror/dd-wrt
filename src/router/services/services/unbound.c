@@ -42,7 +42,7 @@ static void unbound_config(void)
 	fprintf(fp, "server:\n"	//
 		"verbosity: 1\n");
 
-	fprintf(fp, "interface: 0.0.0.0@%d", port);
+	fprintf(fp, "interface: 0.0.0.0@%d\n", port);
 	if (nvram_match("ipv6_enable", "1"))
 		fprintf(fp, "interface: ::0@%d\n", port);
 	fprintf(fp, "outgoing-num-tcp: 10\n"	//
