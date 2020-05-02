@@ -1,7 +1,7 @@
 /*
  * modules.c	Radius module support.
  *
- * Version:	$Id: 319879c870d7578f72e421d666510a05c2e1f541 $
+ * Version:	$Id: c05aa5bf67121bf1190160bddd05a5580ca6dcb1 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2000  Alan Curry <pacman@world.std.com>
  */
 
-RCSID("$Id: 319879c870d7578f72e421d666510a05c2e1f541 $")
+RCSID("$Id: c05aa5bf67121bf1190160bddd05a5580ca6dcb1 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modpriv.h>
@@ -93,14 +93,6 @@ const section_type_value_t section_type_value[MOD_COUNT] = {
 #endif
 #ifndef RTLD_LOCAL
 #define RTLD_LOCAL (0)
-#endif
-
-#ifdef __APPLE__
-#  define LT_SHREXT ".dylib"
-#elif defined (WIN32)
-#  define LT_SHREXT ".dll"
-#else
-#  define LT_SHREXT ".so"
 #endif
 
 /** Check if the magic number in the module matches the one in the library

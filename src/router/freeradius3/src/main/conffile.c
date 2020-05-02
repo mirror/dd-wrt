@@ -5,7 +5,7 @@
  *		write a decent parser. I know how to do that, really :)
  *		miquels@cistron.nl
  *
- * Version:	$Id: 6d6441a55b743b18c38effb19abaefccda577e03 $
+ * Version:	$Id: a8c667bfb5df142f6bfde864339510f2ef3920e4 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -26,7 +26,7 @@
  * Copyright 2000  Alan DeKok <aland@ox.org>
  */
 
-RCSID("$Id: 6d6441a55b743b18c38effb19abaefccda577e03 $")
+RCSID("$Id: a8c667bfb5df142f6bfde864339510f2ef3920e4 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -123,6 +123,7 @@ typedef struct cf_file_t {
 	char const	*filename;
 	CONF_SECTION	*cs;
 	struct stat	buf;
+	bool		from_dir;
 } cf_file_t;
 
 CONF_SECTION *root_config = NULL;
@@ -329,7 +330,7 @@ static int cf_file_open(CONF_SECTION *cs, char const *filename, bool from_dir, F
 		if (stat(filename, &my_file.buf) < 0) goto error;
 
 		file = rbtree_finddata(tree, &my_file);
-		if (file) return 0;
+		if (file && !file->from_dir) return 0;
 	}
 
 	DEBUG2("including configuration file %s", filename);

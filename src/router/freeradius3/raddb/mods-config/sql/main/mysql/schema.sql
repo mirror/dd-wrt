@@ -1,5 +1,5 @@
 ###########################################################################
-# $Id: 2d0fb7e137f9d6f6a2a48d65e013841ed2bfadf9 $                 #
+# $Id: dcb61f7c26b07351c6be5ff28d91b0a37066d744 $                 #
 #                                                                         #
 #  schema.sql                       rlm_sql - FreeRADIUS SQL Module       #
 #                                                                         #
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS radacct (
   username varchar(64) NOT NULL default '',
   realm varchar(64) default '',
   nasipaddress varchar(15) NOT NULL default '',
-  nasportid varchar(15) default NULL,
+  nasportid varchar(32) default NULL,
   nasporttype varchar(32) default NULL,
   acctstarttime datetime NULL default NULL,
   acctupdatetime datetime NULL default NULL,
@@ -132,12 +132,18 @@ CREATE TABLE IF NOT EXISTS radusergroup (
 #
 # Table structure for table 'radpostauth'
 #
+# Note: MySQL versions since 5.6.4 support fractional precision timestamps
+#        which we use here. Replace the authdate definition with the following
+#        if your software is too old:
+#
+#   authdate timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+#
 CREATE TABLE IF NOT EXISTS radpostauth (
   id int(11) NOT NULL auto_increment,
   username varchar(64) NOT NULL default '',
   pass varchar(64) NOT NULL default '',
   reply varchar(32) NOT NULL default '',
-  authdate timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  authdate timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY  (id),
   KEY username (username(32))
 ) ENGINE = INNODB;

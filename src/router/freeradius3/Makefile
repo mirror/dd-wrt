@@ -4,7 +4,7 @@
 #		NOTE: This top-level Makefile must not
 #		use GNU-make extensions. The lower ones can.
 #
-# Version:	$Id: 92097f2bf271b2452609212af7e1c2808bb25cf2 $
+# Version:	$Id: 9815c94a5197f660f6aeafed53c9862fc5329efc $
 #
 
 #
@@ -33,9 +33,13 @@ endif
 #
 ifneq "$(MAKECMDGOALS)" "deb"
 ifneq "$(MAKECMDGOALS)" "rpm"
+ifeq "$(findstring docker,$(MAKECMDGOALS))" ""
+ifeq "$(findstring crossbuild,$(MAKECMDGOALS))" ""
 $(if $(wildcard Make.inc),,$(error Missing 'Make.inc' Run './configure [options]' and retry))
 
 include Make.inc
+endif
+endif
 endif
 endif
 
@@ -52,7 +56,11 @@ export DESTDIR := $(R)
 # And over-ride all of the other magic.
 ifneq "$(MAKECMDGOALS)" "deb"
 ifneq "$(MAKECMDGOALS)" "rpm"
+ifeq "$(findstring docker,$(MAKECMDGOALS))" ""
+ifeq "$(findstring crossbuild,$(MAKECMDGOALS))" ""
 include scripts/boiler.mk
+endif
+endif
 endif
 endif
 
@@ -283,26 +291,30 @@ freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2: .git
 # high-level targets
 .PHONY: dist-check
 dist-check: redhat/freeradius.spec suse/freeradius.spec debian/changelog
-	@if [ `grep ^Version: redhat/freeradius.spec | sed 's/.*://;s/ //'` != "$(RADIUSD_VERSION_STRING)" ]; then \
-		cat redhat/freeradius.spec | sed 's/^Version: .*/Version: $(RADIUSD_VERSION_STRING)/' > redhat/.foo; \
+	@if [ `grep ^Version: redhat/freeradius.spec | sed 's/.*://;s/ //g'` != "$(RADIUSD_VERSION_STRING)" ]; then \
+		cat redhat/freeradius.spec | sed 's/^Version:.*/Version: $(RADIUSD_VERSION_STRING)/' > redhat/.foo; \
 		mv redhat/.foo redhat/freeradius.spec; \
 		echo redhat/freeradius.spec 'Version' needs to be updated; \
 		exit 1; \
 	fi
-	@if [ `grep ^Version: suse/freeradius.spec | sed 's/.*://;s/ //'` != "$(RADIUSD_VERSION_STRING)" ]; then \
-		cat suse/freeradius.spec | sed 's/^Version: .*/Version: $(RADIUSD_VERSION_STRING)/' > suse/.foo; \
+	@if [ `grep ^Version: suse/freeradius.spec | sed 's/.*://;s/ //g'` != "$(RADIUSD_VERSION_STRING)" ]; then \
+		cat suse/freeradius.spec | sed 's/^Version: .*/Version:      $(RADIUSD_VERSION_STRING)/' > suse/.foo; \
 		mv suse/.foo suse/freeradius.spec; \
 		echo suse/freeradius.spec 'Version' needs to be updated; \
 		exit 1; \
 	fi
-	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/-0).*//;s/-1).*//;s/\+.*//'`  != "$(RADIUSD_VERSION_STRING)" ]; then \
+	@if [ `head -n 1 doc/ChangeLog | awk '/^FreeRADIUS/{print $$2}'` != "$(RADIUSD_VERSION_STRING)" ]; then \
+		echo doc/ChangeLog needs to be updated; \
+		exit 1; \
+	fi
+	@if [ `head -n 1 debian/changelog | sed 's/.*(//;s/-0).*//;s/-1).*//;s/\+.*//'` != "$(RADIUSD_VERSION_STRING)" ]; then \
 		echo debian/changelog needs to be updated; \
 		exit 1; \
 	fi
 
 dist: dist-check freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2
 
-dist-sign: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2.sig
+dist-sign: dist-check freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2.sig
 
 dist-publish: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2 freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz.sig freeradius-server-$(RADIUSD_VERSION_STRING).tar.bz2.sig
 	scp $^ freeradius.org@ftp.freeradius.org:public_ftp
@@ -315,30 +327,15 @@ dist-tag: freeradius-server-$(RADIUSD_VERSION_STRING).tar.gz freeradius-server-$
 	@echo "git tag release_`echo $(RADIUSD_VERSION_STRING) | tr .- __`"
 
 #
-#	Docker-related targets
+#	Docker-related targets (main docker images and crossbuild)
 #
-.PHONY: docker
-docker:
-	docker build scripts/docker/ubuntu18 --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
-	docker build scripts/docker/alpine --build-arg=release=release_`echo $(RADIUSD_VERSION_STRING) | tr .- __` -t freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine
+ifneq "$(findstring docker,$(MAKECMDGOALS))" ""
+include scripts/docker/docker.mk
+endif
 
-.PHONY: docker-push
-docker-push: docker
-	docker push freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)
-	docker push freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine
-
-.PHONY: docker-tag-latest
-docker-tag-latest: docker
-	docker tag freeradius/freeradius-server:$(RADIUSD_VERSION_STRING) freeradius/freeradius-server:latest
-	docker tag freeradius/freeradius-server:$(RADIUSD_VERSION_STRING)-alpine freeradius/freeradius-server:latest-alpine
-
-.PHONY: docker-push-latest
-docker-push-latest: docker-push docker-tag-latest
-	docker push freeradius/freeradius-server:latest
-	docker push freeradius/freeradius-server:latest-alpine
-
-.PHONY: docker-publish
-docker-publish: docker-push-latest
+ifneq "$(findstring crossbuild,$(MAKECMDGOALS))" ""
+include scripts/crossbuild/crossbuild.mk
+endif
 
 #
 #	Build a debian package

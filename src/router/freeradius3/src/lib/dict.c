@@ -1,7 +1,7 @@
 /*
  * dict.c	Routines to read the dictionary file.
  *
- * Version:	$Id: 5b44f77f9b91b26fdd1f9e6c3045f13939975912 $
+ * Version:	$Id: 96e06b52871039efe74a6d4e876e16dd67d8abee $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -19,7 +19,7 @@
  *
  * Copyright 2000,2006  The FreeRADIUS server project
  */
-RCSID("$Id: 5b44f77f9b91b26fdd1f9e6c3045f13939975912 $")
+RCSID("$Id: 96e06b52871039efe74a6d4e876e16dd67d8abee $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -2536,7 +2536,8 @@ static int my_dict_init(char const *parent, char const *filename,
 			 *	BEGIN-VENDOR foo format=Foo-Encapsulation-Attr
 			 */
 			if (argc > 2) {
-				if (strncmp(argv[2], "format=", 7) != 0) {
+				if ((strncmp(argv[2], "format=", 7) != 0) &&
+				    (strncmp(argv[2], "parent=", 7) != 0)) {
 					fr_strerror_printf(
 						"dict_init: %s[%d]: Invalid format %s",
 						fn, line, argv[2]);

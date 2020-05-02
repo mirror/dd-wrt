@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: 0159465ea8bfeb162383baee1824b3f534068be6 $
+ * $Id: e5ae41df66e4bc07bd8b72636e32730e2f4cfe49 $
  *
  * @file exec.c
  * @brief Execute external programs.
@@ -23,7 +23,7 @@
  * @copyright 2000-2004,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 0159465ea8bfeb162383baee1824b3f534068be6 $")
+RCSID("$Id: e5ae41df66e4bc07bd8b72636e32730e2f4cfe49 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -44,27 +44,6 @@ RCSID("$Id: 0159465ea8bfeb162383baee1824b3f534068be6 $")
 #endif
 
 #define MAX_ARGV (256)
-
-#define USEC 1000000
-static void tv_sub(struct timeval *end, struct timeval *start,
-		   struct timeval *elapsed)
-{
-	elapsed->tv_sec = end->tv_sec - start->tv_sec;
-	if (elapsed->tv_sec > 0) {
-		elapsed->tv_sec--;
-		elapsed->tv_usec = USEC;
-	} else {
-		elapsed->tv_usec = 0;
-	}
-	elapsed->tv_usec += end->tv_usec;
-	elapsed->tv_usec -= start->tv_usec;
-
-	if (elapsed->tv_usec >= USEC) {
-		elapsed->tv_usec -= USEC;
-		elapsed->tv_sec++;
-	}
-}
-
 
 /** Start a process
  *
@@ -427,12 +406,12 @@ int radius_readfrom_program(int fd, pid_t pid, int timeout,
 		FD_SET(fd, &fds);
 
 		gettimeofday(&when, NULL);
-		tv_sub(&when, &start, &elapsed);
+		rad_tv_sub(&when, &start, &elapsed);
 		if (elapsed.tv_sec >= timeout) goto too_long;
 
 		when.tv_sec = timeout;
 		when.tv_usec = 0;
-		tv_sub(&when, &elapsed, &wake);
+		rad_tv_sub(&when, &elapsed, &wake);
 
 		rcode = select(fd + 1, &fds, NULL, NULL, &wake);
 		if (rcode == 0) {

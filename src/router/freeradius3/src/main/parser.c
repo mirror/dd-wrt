@@ -1,7 +1,7 @@
 /*
  * parser.c	Parse various things
  *
- * Version:	$Id: acc13695ef9461e35263ed0a6c2a9dad7999cc6c $
+ * Version:	$Id: 7bafa8c70b2ab89fae50f4943b8984e5b4e48e36 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2013  Alan DeKok <aland@freeradius.org>
  */
 
-RCSID("$Id: acc13695ef9461e35263ed0a6c2a9dad7999cc6c $")
+RCSID("$Id: 7bafa8c70b2ab89fae50f4943b8984e5b4e48e36 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/parser.h>
@@ -57,7 +57,17 @@ size_t fr_cond_sprint(char *buffer, size_t bufsize, fr_cond_t const *in)
 	rad_assert(bufsize > 0);
 
 next:
+	rad_assert(p < end);
+
 	if (!c) {
+		p[0] = '\0';
+		return 0;
+	}
+
+	/*
+	 *	Don't overflow the output buffer.
+	 */
+	if ((end - p) < 2) {
 		p[0] = '\0';
 		return 0;
 	}
@@ -70,9 +80,9 @@ next:
 	case COND_TYPE_EXISTS:
 		rad_assert(c->data.vpt != NULL);
 		if (c->cast) {
-			len = snprintf(p, end - p, "<%s>", fr_int2str(dict_attr_types,
-								      c->cast->type, "??"));
-			p += len;
+			snprintf(p, end - p, "<%s>", fr_int2str(dict_attr_types,
+								c->cast->type, "??"));
+			p += strlen(p);
 		}
 
 		len = tmpl_prints(p, end - p, c->data.vpt, NULL);
@@ -85,9 +95,9 @@ next:
 		*(p++) = '[';	/* for extra-clear debugging */
 #endif
 		if (c->cast) {
-			len = snprintf(p, end - p, "<%s>", fr_int2str(dict_attr_types,
-								      c->cast->type, "??"));
-			p += len;
+			snprintf(p, end - p, "<%s>", fr_int2str(dict_attr_types,
+								c->cast->type, "??"));
+			p += strlen(p);
 		}
 
 		len = map_prints(p, end - p, c->data.map);

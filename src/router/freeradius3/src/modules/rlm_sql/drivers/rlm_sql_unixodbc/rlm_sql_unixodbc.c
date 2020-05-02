@@ -19,7 +19,7 @@
  * Copyright 2000  Dmitri Ageev <d_ageev@ortcc.ru>
  */
 
-RCSID("$Id: 847f81a3748ee7d8c548c7fe5634733789f92c51 $")
+RCSID("$Id: 248b55e8faf9bec0fb13a75fd37814651e5f01d5 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -161,7 +161,8 @@ static sql_rcode_t sql_select_query(rlm_sql_handle_t *handle, rlm_sql_config_t *
 	conn->row = talloc_zero_array(conn, char *, colcount + 1); /* Space for pointers */
 
 	for (i = 1; i <= colcount; i++) {
-		SQLColAttributes(conn->stmt, ((SQLUSMALLINT) i), SQL_COLUMN_LENGTH, NULL, 0, NULL, &len);
+		len = 0;
+		SQLColAttributes(conn->stmt, ((SQLUSMALLINT) i), SQL_DESC_LENGTH, NULL, 0, NULL, &len);
 		conn->row[i - 1] = talloc_array(conn->row, char, ++len);
 		SQLBindCol(conn->stmt, i, SQL_C_CHAR, (SQLCHAR *)conn->row[i - 1], len, NULL);
 	}

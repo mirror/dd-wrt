@@ -1,7 +1,7 @@
 /*
  * eap_fast.c  contains the interfaces that are called from the main handler
  *
- * Version:     $Id: 74f67056f07c7d5e17aaa2fa15e810f89bcbd27a $
+ * Version:     $Id: b0953aa1d4e15cc9d89fd13c7019d774f38ce59d $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  *   Copyright 2016 The FreeRADIUS server project
  */
 
-RCSID("$Id: 74f67056f07c7d5e17aaa2fa15e810f89bcbd27a $")
+RCSID("$Id: b0953aa1d4e15cc9d89fd13c7019d774f38ce59d $")
 
 #include "eap_fast.h"
 #include "eap_fast_crypto.h"
@@ -44,7 +44,7 @@ static int openssl_get_keyblock_size(REQUEST *request, SSL *ssl)
 {
 	const EVP_CIPHER *c;
 	const EVP_MD *h;
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 	int md_size;
 
 	if (ssl->enc_read_ctx == NULL || ssl->enc_read_ctx->cipher == NULL ||

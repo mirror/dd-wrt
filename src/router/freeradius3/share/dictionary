@@ -2,7 +2,7 @@
 # Copyright (C) 2019 The FreeRADIUS Server project and contributors
 # This work is licensed under CC-BY version 4.0 https://creativecommons.org/licenses/by/4.0
 #
-# Version $Id: 8d1b111aa8959ed72ff61c133efca2eef982fea2 $
+# Version $Id: a6a2e16c0265bb3d0fcaa5521a89511aab695111 $
 #
 #	DO NOT EDIT THE FILES IN THIS DIRECTORY
 #
@@ -252,6 +252,7 @@ $INCLUDE dictionary.mimosa
 $INCLUDE dictionary.motorola
 $INCLUDE dictionary.motorola.wimax
 $INCLUDE dictionary.navini
+$INCLUDE dictionary.net
 $INCLUDE dictionary.netscreen
 $INCLUDE dictionary.networkphysics
 $INCLUDE dictionary.nexans
@@ -264,12 +265,14 @@ $INCLUDE dictionary.paloalto
 $INCLUDE dictionary.patton
 $INCLUDE dictionary.perle
 $INCLUDE dictionary.pfsense
+$INCLUDE dictionary.pica8
 $INCLUDE dictionary.propel
 $INCLUDE dictionary.prosoft
 $INCLUDE dictionary.proxim
 $INCLUDE dictionary.purewave
 $INCLUDE dictionary.quiconnect
 $INCLUDE dictionary.quintum
+$INCLUDE dictionary.rcntec
 $INCLUDE dictionary.redcreek
 $INCLUDE dictionary.riverbed
 $INCLUDE dictionary.riverstone
@@ -302,6 +305,7 @@ $INCLUDE dictionary.unix
 $INCLUDE dictionary.usr
 $INCLUDE dictionary.utstarcom
 $INCLUDE dictionary.valemount
+$INCLUDE dictionary.vasexperts
 $INCLUDE dictionary.verizon
 $INCLUDE dictionary.versanet
 $INCLUDE dictionary.walabi
