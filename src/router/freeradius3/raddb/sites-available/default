@@ -11,7 +11,7 @@
 #	the "inner-tunnel" virtual server.  You will likely have to edit
 #	that, too, for authentication to work.
 #
-#	$Id: 902b6ca2361882b79197d4c5fb10e065deb3466f $
+#	$Id: c60c0ba4c8728fac10b190dbb3b752f9df317c07 $
 #
 ######################################################################
 #
@@ -642,7 +642,7 @@ accounting {
 #	sradutmp
 
 	#  Return an address to the IP Pool when we see a stop record.
-#	main_pool
+#	sqlippool
 
 	#
 	#  Log traffic to an SQL database.
@@ -731,8 +731,9 @@ session {
 #		&reply: += &session-state:
 #	}
 
-	#  Get an address from the IP Pool.
-#	main_pool
+	#  Refresh leases when we see a start or alive. Return an address to
+	#  the IP Pool when we see a stop record.
+#	sqlippool
 
 
 	#  Create the CUI value and add the attribute to Access-Accept.
@@ -773,7 +774,7 @@ session {
 	#  you will need to define the WiMAX NAI, usually via
 	#
 	#	update request {
-	#	       WiMAX-MN-NAI = "%{User-Name}"
+	#	       &WiMAX-MN-NAI = "%{User-Name}"
 	#	}
 	#
 	#  If you want various keys to be calculated, you will need to
@@ -782,8 +783,8 @@ session {
 	#  taken from the cryptographic calculations.  e.g.
 	#
 	# 	update reply {
-	#		WiMAX-FA-RK-Key = 0x00
-	#		WiMAX-MSK = "%{EAP-MSK}"
+	#		&WiMAX-FA-RK-Key = 0x00
+	#		&WiMAX-MSK = "%{reply:EAP-MSK}"
 	#	}
 	#
 	#  You may want to delete the MS-MPPE-*-Keys from the reply,

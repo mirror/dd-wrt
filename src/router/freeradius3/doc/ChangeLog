@@ -1,3 +1,67 @@
+FreeRADIUS 3.0.21 Tue 24 Mar 2020 12:00:00 EDT urgency=low
+	Feature improvements
+	* New stored procedure for allocating IPs with PostgreSQL.
+	  Rates of 1500 IPs per second are now possible.
+	  See raddb/mods-config/sql/ippool/postgresql/procedure.sql
+	  Patch from Terry Burton.
+	* Add SQL IP pool support for Microsoft SQL Server
+	  See raddb/mods-config/sql/ippool/mssql/
+	  Patch from Terry Burton.
+	* Added RCNTEC dictionary. Closes #3168.
+	* Added Pica8 dictionary. Closes #3179.
+	* Add TLS-Client-Cert-Valid-Since attribute holding notBefore date.
+	  Patch from Boris Lytochkin.  Fixes #3157.
+	* Generate attributes containing unknown OIDs.
+	  See raddb/sites-available/tls.  Patch from Boris Lytochkin.
+	* Update the WiMAX dictionary.
+	* Added ability to rlm_python(Python2) show a stacktrace from errors. #2979
+	* Add WiFi Alliance Policy OIDs.  See raddb/certs/xpextensions
+	  Patch from Stefan Winter.
+	* radmin now shows coa stats, too.
+	* Sample schema extensions for summarizing data in SQL.
+	  See mods-config/sql/main/*/process-radacct.sql
+	  Many patches from Terry Burton.
+	* Update dictionary.aerohive, dictionary.fortinet,
+	  dictionary.arista and dictionary.erx
+	* Added VAS Experts dictionary.
+	* Many updates to RPM and jenkins builds from Matthew Newton
+	* Added %C (time now in seconds) and %c (microsecond component of now)
+	  back-ported from the "master" branch.
+	* Add reload capability to systemd unit file in Debian and RedHat.
+	* Increase timestamp precision in postauth to maximum supported by each
+	  database and simplify (and make more consistent between drivers) the
+	  timestamps in SQL queries by using expansions.
+	  Patches from Terry Burton.
+	* Option to set dictionary path in raduat script. Patch from Terry Burton.
+
+	Bug fixes
+	* Various fixes found by PVS-Studio.
+	* Set permissions of certificates in bootstrap shell script.
+	  Fixes #3132.
+	* Increase the 'nasportid' SQL field for 'varchar(32)'. #3141
+	* Skip processing proxy reply if there are no home servers
+	  available.
+	* Update SQLite IPPool queries.  Fixes #3177
+	  Patch from Terry Burton.
+	* rlm_sql_unixodbc fixes. Patches from Terry Burton. Fixes #2822
+	* Fixes when building with LibreSSL. Patch from Nathan Owens.
+	* Fix the rlm_python3 build. Note that this module is experimental. #3183
+	* The rlm_python should append the 'python_path' paths in 'sys.path',
+	  It fixes the expected behavior to use the existing Python modules.
+	  Fixes #3180
+	* Fix rlm_python to print the script errors properly.
+	* Bound total query time for PostgreSQL.  Fixes #3253
+	* Many fixes to Oracle sqlippool.  It now does 500 IPs per second
+	  without any tuning.  Fixes #3270.
+	* Reference sqlippool by it's correct name.  Fixes #3272
+	* Revert 3.0.20 patch which caused crashes on duplicate clients.
+	* Update WiMAX-MSK attribute.  Fixes #3280.
+	* Fix crash when trying to access non-existant regex capture group.
+	* Use timestamps (request or server) rather than SQL NOW() in
+	  accounting queries so that these are stable when replayed from a
+	  file buffer.
+	  Patches from Terry Burton.
+
 FreeRADIUS 3.0.20 Thu 14 Nov 2019 12:00:00 EDT urgency=medium
 	Feature improvements
 	* Add Jenkins continuous integration.  Fixes #2620.

@@ -28,7 +28,7 @@
 
 Summary: High-performance and highly configurable free RADIUS server
 Name: freeradius
-Version: 3.0.20
+Version: 3.0.21
 Release: 1%{?dist}
 License: GPLv2+ and LGPLv2+
 Group: System Environment/Daemons
@@ -267,6 +267,7 @@ This plugin provides Oracle support for the FreeRADIUS server project.
 %endif
 %endif
 
+%if %{?el6:0}%{!?el6:1}
 %package redis
 Summary: Redis support for FreeRADIUS
 Group: System Environment/Daemons
@@ -276,6 +277,7 @@ BuildRequires: hiredis-devel
 
 %description redis
 This plugin provides Redis support for the FreeRADIUS server project.
+%endif
 
 %package rest
 Summary: REST support for FreeRADIUS
@@ -731,6 +733,8 @@ fi
 # freetds
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/main/mssql
 %attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/main/mssql/*
+%dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql/ippool/mssql
+%attr(640,root,radiusd) %config(noreplace) %{_sysconfdir}/raddb/mods-config/sql/ippool/mssql/*
 # oracle
 %if %{?_with_rlm_sql_oracle:1}%{!?_with_rlm_sql_oracle:0}
 %dir %attr(750,root,radiusd) %{_sysconfdir}/raddb/mods-config/sql
@@ -798,10 +802,12 @@ fi
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_sql_unixodbc.so
 
+%if %{?el6:0}%{!?el6:1}
 %files redis
 %defattr(-,root,root)
 %{_libdir}/freeradius/rlm_redis.so
 %{_libdir}/freeradius/rlm_rediswho.so
+%endif
 
 %files rest
 %defattr(-,root,root)

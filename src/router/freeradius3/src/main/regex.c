@@ -15,7 +15,7 @@
  */
 
 /*
- * $Id: bc756f9722905fbdb3e5a0781de120bb4bd3b65e $
+ * $Id: 2a31391af25fea52414cab3b738a891e73f726ce $
  *
  * @file main/regex.c
  * @brief Regular expression functions used by the server library.
@@ -23,7 +23,7 @@
  * @copyright 2014  The FreeRADIUS server project
  */
 
-RCSID("$Id: bc756f9722905fbdb3e5a0781de120bb4bd3b65e $")
+RCSID("$Id: 2a31391af25fea52414cab3b738a891e73f726ce $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -124,7 +124,7 @@ int regex_request_to_sub(TALLOC_CTX *ctx, char **out, REQUEST *request, uint32_t
 	if (!cap) {
 		RDEBUG4("No subcapture data found");
 		*out = NULL;
-		return 1;
+		return -1;
 	}
 
 	ret = pcre_get_substring(cap->value, (int *)cap->rxmatch, (int)cap->nmatch, num, &p);
@@ -182,7 +182,7 @@ int regex_request_to_sub_named(TALLOC_CTX *ctx, char **out, REQUEST *request, ch
 	if (!cap) {
 		RDEBUG4("No subcapture data found");
 		*out = NULL;
-		return 1;
+		return -1;
 	}
 
 	ret = pcre_get_named_substring(cap->preg->compiled, cap->value,

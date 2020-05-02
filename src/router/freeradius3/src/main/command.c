@@ -1,7 +1,7 @@
 /*
  * command.c	Command socket processing.
  *
- * Version:	$Id: 1d777c1c1d6ccc218d958b7f13a010050e52da4c $
+ * Version:	$Id: 844898eed105e750b82825ffd8c848547558beeb $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -2673,7 +2673,7 @@ static fr_command_table_t command_table_set[] = {
 #ifdef WITH_STATS
 static fr_command_table_t command_table_stats[] = {
 	{ "client", FR_READ,
-	  "stats client [auth/acct] <ipaddr> [udp|tcp] [listen <ipaddr> <port>] "
+	  "stats client [auth/acct/coa] <ipaddr> [udp|tcp] [listen <ipaddr> <port>] "
 	  "- show statistics for given client, or for all clients (auth or acct)",
 	  command_stats_client, NULL },
 

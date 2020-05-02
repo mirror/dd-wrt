@@ -1,7 +1,7 @@
 /*
  * util.c	Various utility functions.
  *
- * Version:     $Id: b8eaf590b095aa522ec0c90c262b2121c787c5a3 $
+ * Version:     $Id: b216cc9a5170f90a4ae0d02f0fb551d5bf928189 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: b8eaf590b095aa522ec0c90c262b2121c787c5a3 $")
+RCSID("$Id: b216cc9a5170f90a4ae0d02f0fb551d5bf928189 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -1705,4 +1705,28 @@ int rad_segid(gid_t gid)
 		return -1;
 	}
 	return 0;
+}
+
+/** Determine the elapsed time between two timevals
+  *
+  * @param end timeval nearest to the present
+  * @param start timeval furthest from the present
+  * @param elapsed Where to write the elapsed time
+  */
+void rad_tv_sub(struct timeval const *end, struct timeval const *start, struct timeval *elapsed)
+{
+	elapsed->tv_sec = end->tv_sec - start->tv_sec;
+	if (elapsed->tv_sec > 0) {
+		elapsed->tv_sec--;
+		elapsed->tv_usec = USEC;
+	} else {
+		elapsed->tv_usec = 0;
+	}
+	elapsed->tv_usec += end->tv_usec;
+	elapsed->tv_usec -= start->tv_usec;
+
+	if (elapsed->tv_usec >= USEC) {
+		elapsed->tv_usec -= USEC;
+		elapsed->tv_sec++;
+	}
 }

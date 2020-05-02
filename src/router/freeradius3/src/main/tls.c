@@ -1,7 +1,7 @@
 /*
  * tls.c
  *
- * Version:     $Id: db733996661f24858ff47f18119917b3961aae0f $
+ * Version:     $Id: 78c7370a639eddef8f7aa5db3ab6fba351447d28 $
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -22,7 +22,7 @@
  * Copyright 2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: db733996661f24858ff47f18119917b3961aae0f $")
+RCSID("$Id: 78c7370a639eddef8f7aa5db3ab6fba351447d28 $")
 USES_APPLE_DEPRECATED_API	/* OpenSSL API has been deprecated by Apple */
 
 #include <freeradius-devel/radiusd.h>
@@ -1565,7 +1565,7 @@ done:
 	return 0;
 }
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
+#if OPENSSL_VERSION_NUMBER < 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
 static SSL_SESSION *cbtls_get_session(SSL *ssl, unsigned char *data, int len, int *copy)
 #else
 static SSL_SESSION *cbtls_get_session(SSL *ssl, const unsigned char *data, int len, int *copy)
@@ -2065,7 +2065,7 @@ ocsp_end:
 /*
  *	For creating certificate attributes.
  */
-static char const *cert_attr_names[8][2] = {
+static char const *cert_attr_names[9][2] = {
 	{ "TLS-Client-Cert-Serial",			"TLS-Cert-Serial" },
 	{ "TLS-Client-Cert-Expiration",			"TLS-Cert-Expiration" },
 	{ "TLS-Client-Cert-Subject",			"TLS-Cert-Subject" },
@@ -2073,7 +2073,8 @@ static char const *cert_attr_names[8][2] = {
 	{ "TLS-Client-Cert-Common-Name",		"TLS-Cert-Common-Name" },
 	{ "TLS-Client-Cert-Subject-Alt-Name-Email",	"TLS-Cert-Subject-Alt-Name-Email" },
 	{ "TLS-Client-Cert-Subject-Alt-Name-Dns",	"TLS-Cert-Subject-Alt-Name-Dns" },
-	{ "TLS-Client-Cert-Subject-Alt-Name-Upn",	"TLS-Cert-Subject-Alt-Name-Upn" }
+	{ "TLS-Client-Cert-Subject-Alt-Name-Upn",	"TLS-Cert-Subject-Alt-Name-Upn" },
+	{ "TLS-Client-Cert-Valid-Since",		"TLS-Cert-Valid-Since" }
 };
 
 #define FR_TLS_SERIAL		(0)
@@ -2084,6 +2085,7 @@ static char const *cert_attr_names[8][2] = {
 #define FR_TLS_SAN_EMAIL       	(5)
 #define FR_TLS_SAN_DNS          (6)
 #define FR_TLS_SAN_UPN          (7)
+#define FR_TLS_VALID_SINCE	(8)
 
 /*
  *	Before trusting a certificate, you must make sure that the
@@ -2211,6 +2213,19 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 		memcpy(buf, (char*) asn_time->data, asn_time->length);
 		buf[asn_time->length] = '\0';
 		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_EXPIRATION][lookup], buf, T_OP_SET);
+		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
+	}
+
+	/*
+	 *	Get the Valid Since Date
+	 */
+	buf[0] = '\0';
+	asn_time = X509_get_notBefore(client_cert);
+	if (certs && (lookup <= 1) && asn_time &&
+	    (asn_time->length < (int) sizeof(buf))) {
+		memcpy(buf, (char*) asn_time->data, asn_time->length);
+		buf[asn_time->length] = '\0';
+		vp = fr_pair_make(talloc_ctx, certs, cert_attr_names[FR_TLS_VALID_SINCE][lookup], buf, T_OP_SET);
 		rdebug_pair(L_DBG_LVL_2, request, vp, NULL);
 	}
 
@@ -2360,11 +2375,36 @@ int cbtls_verify(int ok, X509_STORE_CTX *ctx)
 				if (*p == ' ') *p = '-';
 			}
 
-			X509V3_EXT_print(out, ext, 0, 0);
-			len = BIO_read(out, value , sizeof(value) - 1);
-			if (len <= 0) continue;
+			if (X509V3_EXT_get(ext)) { /* Known extension, converting value into plain string */
+				X509V3_EXT_print(out, ext, 0, 0);
+				len = BIO_read(out, value, sizeof(value) - 1);
+				if (len <= 0) continue;
+				value[len] = '\0';
+			} else {
+				/*
+				 * An extension not known to OpenSSL, dump it's value as a value of an unknown attribute.
+				 */
+				value[0] = '0';
+				value[1] = 'x';
+				const unsigned char *srcp;
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(LIBRESSL_VERSION_NUMBER)
+				const ASN1_STRING *srcasn1p;
+				srcasn1p = X509_EXTENSION_get_data(ext);
+				srcp = ASN1_STRING_get0_data(srcasn1p);
+#else
+				ASN1_STRING *srcasn1p;
+				srcasn1p = X509_EXTENSION_get_data(ext);
+				srcp = ASN1_STRING_data(srcasn1p);
+#endif
+				int asn1len = ASN1_STRING_length(srcasn1p);
+				/* 3 comes from '0x' + \0 */
+				if ((size_t)(asn1len << 1) >= sizeof(value) - 3) {
+					RDEBUG("Value of '%s' attribute is too long to be stored, it will be truncated", attribute);
+					asn1len = (sizeof(value) - 3) >> 1;
+				}
+				fr_bin2hex(value + 2, srcp, asn1len);
+			}
 
-			value[len] = '\0';
 
 			vp = fr_pair_make(talloc_ctx, certs, attribute, value, T_OP_ADD);
 			if (!vp) {
@@ -3171,7 +3211,7 @@ post_ca:
 
 		if (rad_debug_lvl && insecure_tls_version) {
 			WARN("The configuration allows TLS 1.0 and/or TLS 1.1.  We STRONGLY recommned using only TLS 1.2 for security");
-			WARN("Please set: min_tls_version = \"1.2\"");
+			WARN("Please set: tls_min_version = \"1.2\"");
 		}
 	}
 
@@ -3394,14 +3434,14 @@ post_ca:
 		 */
 		SSL_CTX_sess_set_cache_size(ctx, conf->session_cache_size);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
 		SSL_CTX_set_num_tickets(ctx, 1);
 #endif
 
 	} else {
 		SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);
 
-#if OPENSSL_VERSION_NUMBER >= 0x10101000L
+#if OPENSSL_VERSION_NUMBER >= 0x10101000L && !defined(LIBRESSL_VERSION_NUMBER)
 		/*
 		 *	This controls the number of stateful or stateless tickets
 		 *	generated with TLS 1.3.  In OpenSSL 1.1.1 it's also
