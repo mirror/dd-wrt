@@ -1,7 +1,7 @@
 /*
  * print.c	Routines to print stuff.
  *
- * Version:	$Id: 7704ac97e5a5b9a13587d2fc7dfca9c1cbacbc1b $
+ * Version:	$Id: 9ac927358b2012ea1ec4bf2ac60db4d1adbdc252 $
  *
  *   This library is free software; you can redistribute it and/or
  *   modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
  * Copyright 2000,2006  The FreeRADIUS server project
  */
 
-RCSID("$Id: 7704ac97e5a5b9a13587d2fc7dfca9c1cbacbc1b $")
+RCSID("$Id: 9ac927358b2012ea1ec4bf2ac60db4d1adbdc252 $")
 
 #include	<freeradius-devel/libradius.h>
 
@@ -101,7 +101,7 @@ int fr_utf8_char(uint8_t const *str, ssize_t inlen)
 	}
 
 	if ((str[0] >= 0xf1) &&		/* 6 */
-	    (str[1] <= 0xf3) &&
+	    (str[0] <= 0xf3) &&
 	    (str[1] >= 0x80) &&
 	    (str[1] <= 0xbf) &&
 	    (str[2] >= 0x80) &&

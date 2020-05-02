@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: abcc15d22506892742b7073e022c25efecbec144 $
+ * $Id: 6228438c47f9f5941e8a0535f44dc152d1b04414 $
  * @file main/client.c
  * @brief Manage clients allowed to communicate with the server.
  *
@@ -24,7 +24,7 @@
  * @copyright 2000 Alan DeKok <aland@ox.org>
  * @copyright 2000 Miquel van Smoorenburg <miquels@cistron.nl>
  */
-RCSID("$Id: abcc15d22506892742b7073e022c25efecbec144 $")
+RCSID("$Id: 6228438c47f9f5941e8a0535f44dc152d1b04414 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -210,7 +210,11 @@ bool client_add(RADCLIENT_LIST *clients, RADCLIENT *client)
 			 *	to the global client list.
 			 */
 			subcs = cf_section_sub_find(cs, "listen");
-			if (!subcs) goto global_clients;
+			if (!subcs) {
+				DEBUG("No 'listen' section in virtual server %s.  Adding client to global client list",
+				      client->server);
+				goto global_clients;
+			}
 
 			/*
 			 *	If the client list already exists, use that.
@@ -286,7 +290,6 @@ bool client_add(RADCLIENT_LIST *clients, RADCLIENT *client)
 		}
 
 		ERROR("Failed to add duplicate client %s", client->shortname);
-		client_free(client);
 		return false;
 	}
 #undef namecmp
@@ -295,7 +298,6 @@ bool client_add(RADCLIENT_LIST *clients, RADCLIENT *client)
 	 *	Other error adding client: likely is fatal.
 	 */
 	if (!rbtree_insert(clients->trees[client->ipaddr.prefix], client)) {
-		client_free(client);
 		return false;
 	}
 

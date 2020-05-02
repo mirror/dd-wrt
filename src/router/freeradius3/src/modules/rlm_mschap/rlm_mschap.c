@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: f4287a97330622fb5f905f03767a3e0412c4bb62 $
+ * $Id: 83c84a63e2c1af9415ffb09a97345dca07ad0666 $
  * @file rlm_mschap.c
  * @brief Implemented mschap authentication.
  *
@@ -23,7 +23,7 @@
  */
 
 /*  MPPE support from Takahiro Wagatsuma <waga@sic.shibaura-it.ac.jp> */
-RCSID("$Id: f4287a97330622fb5f905f03767a3e0412c4bb62 $")
+RCSID("$Id: 83c84a63e2c1af9415ffb09a97345dca07ad0666 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/modules.h>
@@ -1119,7 +1119,7 @@ static int CC_HINT(nonnull (1, 2, 4, 5 ,6)) do_mschap(rlm_mschap_t *inst, REQUES
 		 *	No password: can't do authentication.
 		 */
 		if (!password) {
-			REDEBUG("FAILED: No NT/LM-Password.  Cannot perform authentication");
+			REDEBUG("FAILED: No NT-Password.  Cannot perform authentication");
 			return -1;
 		}
 

@@ -2,7 +2,7 @@
 ##
 ## mods-available/sql -- SQL modules
 ##
-##	$Id: 058c7255fe68c6ee21d64b59cacf111fb5dd8e79 $
+##	$Id: 7e9eee03c58bab67206ec10249db79ebbc0baa3c $
 
 ######################################################################
 #
@@ -56,7 +56,6 @@ sql {
 	#	rlm_sql_freetds
 	#	rlm_sql_iodbc
 	#	rlm_sql_unixodbc
-	#	rlm_sql_mongo
 	#
 	driver = "rlm_sql_null"
 #	driver = "rlm_sql_${dialect}"
@@ -247,7 +246,7 @@ sql {
 	# connection pool, use "pool = name" instead of a "pool"
 	# section.  e.g.
 	#
-	#	sql1 {
+	#	sql sql1 {
 	#	    ...
 	#	    pool {
 	#	    	 ...
@@ -255,7 +254,7 @@ sql {
 	#	}
 	#
 	#	# sql2 will use the connection pool from sql1
-	#	sql2 {
+	#	sql sql2 {
 	#	     ...
 	#	     pool = sql1
 	#	}

@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 78c6d8a9e52223840b431c797228212b37d5bc83 $
+ * $Id: 1a48517d43b5dc0ca73eb7f71fa3fe90ad99699a $
  *
  * @file process.c
  * @brief Defines the state machines that control how requests are processed.
@@ -24,7 +24,7 @@
  * @copyright 2012  Alan DeKok <aland@deployingradius.com>
  */
 
-RCSID("$Id: 78c6d8a9e52223840b431c797228212b37d5bc83 $")
+RCSID("$Id: 1a48517d43b5dc0ca73eb7f71fa3fe90ad99699a $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/process.h>
@@ -2474,13 +2474,12 @@ static int process_proxy_reply(REQUEST *request, RADIUS_PACKET *reply)
 	}
 
 	old_server = request->server;
-	rad_assert(request->home_server != NULL);
 
 	/*
 	 *	If the home server is virtual, just run pre_proxy from
 	 *	that section.
 	 */
-	if (request->home_server->server) {
+	if (request->home_server && request->home_server->server) {
 		request->server = request->home_server->server;
 
 	} else {
@@ -3181,13 +3180,12 @@ do_home:
 	}
 
 	old_server = request->server;
-	rad_assert(request->home_server != NULL);
 
 	/*
 	 *	If the home server is virtual, just run pre_proxy from
 	 *	that section.
 	 */
-	if (request->home_server->server) {
+	if (request->home_server && request->home_server->server) {
 		request->server = request->home_server->server;
 
 	} else {

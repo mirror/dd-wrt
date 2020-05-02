@@ -15,7 +15,7 @@
  */
 
 /**
- * $Id: 21b21b3071470c307ea48f9ed873405146689623 $
+ * $Id: 1ca2f914c258f3c199274421d7d2e2c96e747b18 $
  *
  * @brief Logging functions used by the server core.
  * @file main/log.c
@@ -25,7 +25,7 @@
  * @copyright 2000  Alan DeKok <aland@ox.org>
  * @copyright 2001  Chad Miller <cmiller@surfsouth.com>
  */
-RCSID("$Id: 21b21b3071470c307ea48f9ed873405146689623 $")
+RCSID("$Id: 1ca2f914c258f3c199274421d7d2e2c96e747b18 $")
 
 #include <freeradius-devel/radiusd.h>
 #include <freeradius-devel/rad_assert.h>
@@ -427,7 +427,8 @@ int vradlog(log_type_t type, char const *msg, va_list ap)
 	}
 
 	if (len < sizeof(buffer)) {
-		len += vsnprintf(buffer + len, sizeof(buffer) - len - 1, msg, ap);
+		vsnprintf(buffer + len, sizeof(buffer) - len - 1, msg, ap);
+		len += strlen(buffer + len);
 	}
 
 	/*

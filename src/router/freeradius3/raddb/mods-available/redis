@@ -1,6 +1,6 @@
 # -*- text -*-
 #
-#  $Id: 7952ee4ecebf03496869c88c55a2f32dc689a364 $
+#  $Id: 64789f58a7f937b7b9f4c7ff783153fb5194ba25 $
 
 #
 #  Configuration file for the "redis" module.  This module does nothing
@@ -11,6 +11,9 @@ redis {
 	#  Host where the redis server is located.
 	#  We recommend using ONLY 127.0.0.1 !
 	server = 127.0.0.1
+
+	#  Select the Redis logical database having the specified zero-based numeric index.
+#	database = 0
 
 	#  The default port.
 	port = 6379
