@@ -417,8 +417,11 @@ static int write_main(int argc, char *argv[])
 		if (trx.magic == NETGEAR_CHK_MAGIC) {
 			dd_loginfo("flash", "Netgear chk format detected\n");
 			char board_id[18];
+			char board_id2[19];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
 			safe_fread(board_id, 1, sizeof(board_id), fp);
+			memcpy(board_id2,board_id, 18);
+			board_id2[18] = 0;
 			int fail = 1;
 			int c = 0;
 			for (i = 0; i < (sizeof(netgear_ids) / sizeof(netgear_ids[0])); i++) {
@@ -439,11 +442,11 @@ static int write_main(int argc, char *argv[])
 				}
 			}
 			if (i == (sizeof(netgear_ids) / sizeof(netgear_ids[0]))) {
-				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id);
+				dd_logerror("flash", "Error: Flash to OEM for board %s not supported yet\n", board_id2);
 				return -1;
 			}
 			if (fail) {
-				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id, c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
+				dd_logerror("flash", "Error: board id! but %s expected %s %s %s %s %s\n", board_id2, c ? netgear_ids[i].name : "", c == 2 ? "and" : "or", c > 1 ? netgear_ids[i].name2 : "",
 					    c > 2 ? " or " : "", c > 2 ? netgear_ids[i].name3 : "");
 				return -1;
 			}
