@@ -96,6 +96,8 @@
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0) && !defined(ISRHEL7)
 #define ipv6_dst_lookup(a, b, c, d) ipv6_dst_lookup(b, c, d)
 #endif
+#include <linux/if.h>
+#include <net/ip_tunnels.h>
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
