@@ -773,6 +773,7 @@ ifeq ($(CONFIG_NOAC),y)
 
 # Linksys
 	../../opt/tools/addpattern -4 -p 320N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt320n.bin -g
+	../../opt/tools/addpattern -4 -p EWC2 -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt300nv11.bin -g
 	../../opt/tools/addpattern -0 -p N150 -v v3.0.02 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt160nv3.bin -g
 	../../opt/tools/addpattern -4 -p 610N -v v4.20.6 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt610n.bin -g
 	../../opt/tools/addpattern -4 -p 310N -v v2.0.00 -i $(ARCH)-uclibc/dd-wrt.v24-K3.trx -o $(ARCH)-uclibc/dd-wrt.v24-K3_wrt310n.bin -g
@@ -803,7 +804,8 @@ ifeq ($(CONFIG_NOAC),y)
 #endif
 endif
 	-tools/ubnt/src/mkfwimage -v BZ.bcm4706.v6.0.0.3000.150000.1500 -o mipsel-uclibc/UNIFIAC.dd-wrt.bin -i tools/ubnt/unifiac-ddwrt.txt
-	./netgear/lzma e  $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
+	./netgear/lzma e $(ARCH)-uclibc/vmlinux.bin  $(ARCH)-uclibc/vmlinux_netgear.lzma
+#	./netgear/lzma e $(ARCH)-uclibc/lzma_vmlinus  $(ARCH)-uclibc/vmlinux_netgear.lzma
 	../../opt/tools/trx -m 32000000 -o $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx $(ARCH)-uclibc/vmlinux_netgear.lzma  -a 4096 $(ARCH)-uclibc/rootfs.squashfs
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-r6300.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-r6300.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.chk 
 	./netgear/packet -k $(ARCH)-uclibc/dd-wrt.v24-K3_R6300.trx -f netgear/emptyfile -b netgear/comp-wndr4500.txt -ok kernel_image -oall dd-wrt.bin -or rootfs_image -i netgear/ambitCfg-wndr4500.h && cp dd-wrt.bin.chk $(ARCH)-uclibc/dd-wrt.v24-K3_WNDR4500.chk
