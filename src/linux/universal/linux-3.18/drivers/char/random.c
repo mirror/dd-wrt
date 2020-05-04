@@ -1438,10 +1438,12 @@ urandom_read(struct file *file, char __user *buf, size_t nbytes, loff_t *ppos)
 {
 	int ret;
 
+#if DEBUG_RANDOM_BOOT > 0
 	if (unlikely(nonblocking_pool.initialized == 0))
 		printk_once(KERN_NOTICE "random: %s urandom read "
 			    "with %d bits of entropy available\n",
 			    current->comm, nonblocking_pool.entropy_total);
+#endif
 
 	nbytes = min_t(size_t, nbytes, INT_MAX >> (ENTROPY_SHIFT + 3));
 	ret = extract_entropy_user(&nonblocking_pool, buf, nbytes);
