@@ -361,6 +361,8 @@ __init void bcm47xx_set_system_type(u16 chip_id)
 	printk(KERN_INFO "Broadcom BCM%04X", chip_id);
 }
 
+/* Enable CPU wait or not */
+extern int cpu_wait_enable;
 
 int iswrt350n=0;
 int iswrt300n11=0;
@@ -433,11 +435,9 @@ if (iswrt300n11)
 		lanports_enable = 0;
 
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,36)
 	/* Check if we want to enable cpu wait */
 	if (nvram_match("wait", "1"))
 		cpu_wait_enable = 1;
-#endif
 
 	if ((c->cputype == CPU_74K) || (c->cputype == CPU_1074K)) {
 		pr_info("Using bcma bus\n");
