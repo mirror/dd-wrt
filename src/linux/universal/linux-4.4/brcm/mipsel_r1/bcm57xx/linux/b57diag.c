@@ -607,7 +607,7 @@ b57_test_link(UM_DEVICE_BLOCK *pUmDevice)
 
 #endif
 
-#if defined(ETHTOOL_TEST) || defined(NICE_SUPPORT)
+#if 0 //defined(ETHTOOL_TEST) || defined(NICE_SUPPORT)
 
 #if (LINUX_VERSION_CODE < 0x020605)
 #define pci_dma_sync_single_for_cpu pci_dma_sync_single
