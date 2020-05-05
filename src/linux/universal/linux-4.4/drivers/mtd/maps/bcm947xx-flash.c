@@ -419,7 +419,7 @@ found:
 		len += (mtd->erasesize - 1);
 		len &= ~(mtd->erasesize - 1);
 		part->size = len - part->offset;
-		printk(KERN_EMERG "partition size = %d\n", part->size);
+		printk(KERN_EMERG "partition size = %lld\n", part->size);
 	} else if (*((__u16 *)buf) == JFFS2_MAGIC_BITMASK) {
 		printk(KERN_EMERG "%s: Filesystem type: jffs2\n", mtd->name);
 
@@ -445,7 +445,8 @@ found:
 
 //                      printk(KERN_EMERG "malloc\n",off + i);
 		/* read first eraseblock from the trx */
-		trx2 = block = vmalloc(mtd->erasesize);
+		block = vmalloc(mtd->erasesize);
+		trx2 = (struct trx_header*)block;
 		if (mtd_read(mtd, off, mtd->erasesize, &len, block) || len != mtd->erasesize) {
 			printk(KERN_EMERG "Error accessing the first trx eraseblock\n");
 			vfree(block);
@@ -466,6 +467,7 @@ found:
 
 		/* Write fake Netgear checksum to the flash */
 		if (get_router() == ROUTER_NETGEAR_WGR614L) {
+			char *tmp;
 			/*
 			 * Read into buffer 
 			 */
@@ -479,7 +481,6 @@ found:
 				u32 fake_chk = le32_to_cpu(WGR614_FAKE_CHK);
 				memcpy(&imageInfo[0], (char *)&fake_len, 4);
 				memcpy(&imageInfo[4], (char *)&fake_chk, 4);
-				char *tmp;
 				tmp = block + ((WGR614_CHECKSUM_OFF - WGR614_CHECKSUM_BLOCK_START) % mtd->erasesize);
 				memcpy(tmp, imageInfo, sizeof(imageInfo));
 				mtd_unlock(mtd, WGR614_CHECKSUM_BLOCK_START, mtd->erasesize);
