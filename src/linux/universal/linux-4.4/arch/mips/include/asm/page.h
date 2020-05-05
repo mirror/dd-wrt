@@ -98,13 +98,16 @@ static inline unsigned long pages_do_alias(unsigned long addr1,
 
 struct page;
 
+#include <asm/cpu-features.h>
+
 static inline void clear_user_page(void *addr, unsigned long vaddr,
 	struct page *page)
 {
 	extern void (*flush_data_cache_page)(unsigned long addr);
 
 	clear_page(addr);
-	if (pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK))
+	if (cpu_has_vtag_dcache || (cpu_has_dc_aliases &&
+	    pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK)))
 		flush_data_cache_page((unsigned long)addr);
 }
 #if !defined(CONFIG_BCM47XX) || !defined(CONFIG_CPU_MIPS32_R1)
