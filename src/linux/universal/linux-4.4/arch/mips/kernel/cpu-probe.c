@@ -247,6 +247,12 @@ static int __init ftlb_disable(char *s)
 
 __setup("noftlb", ftlb_disable);
 
+extern int cpu_wait_enable;
+
+#ifdef CONFIG_BCM47XX
+int cpu_wait_enable;
+#include <asm/idle.h>
+#endif
 
 static inline void check_errata(void)
 {
@@ -262,6 +268,18 @@ static inline void check_errata(void)
 		if ((c->processor_id & PRID_REV_MASK) <= PRID_REV_34K_V1_0_2)
 			write_c0_config7(read_c0_config7() | MIPS_CONF7_RPS);
 		break;
+#ifdef CONFIG_BCM47XX
+	case CPU_74K:
+		if (cpu_wait_enable) {
+			printk(KERN_INFO "BRCM Errata: Enable CPU_WAIT\n");
+			cpu_wait = r4k_wait;
+			if ((c->processor_id & 0xff) >= PRID_REV_ENCODE_332(2, 1, 0))
+				cpu_wait = r4k_wait_irqoff;
+		} else {
+			printk(KERN_INFO "BRCM Errata: Disable CPU_WAIT\n");
+		}
+		break;
+#endif
 	default:
 		break;
 	}
