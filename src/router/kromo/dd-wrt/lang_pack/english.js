@@ -1677,7 +1677,6 @@ service.dns_crypt_resolv="DNSCrypt Resolver";
 service.dnsmasq_dnssec="Validate DNS Replies (DNSSEC)";
 service.dnsmasq_dnssec_proxy="Cache DNSSEC data";
 service.dnsmasq_dnssec_cu="Check unsigned DNS replies";
-service.dnsmasq_loc="Local DNS";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_strict="Query DNS in Strict Order";
 service.dnsmasq_add_mac="Add Requestor MAC to DNS Query";

@@ -1253,7 +1253,6 @@ service.dhcp_landomain="LAN Domain";
 service.dhcp_option="Additional DHCPd Options";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Local DNS";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_opt="Additional DNSMasq Options";
 

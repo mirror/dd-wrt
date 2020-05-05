@@ -1254,7 +1254,6 @@ service.dhcp_landomain="Домен LAN";
 service.dhcp_option="Дополнительные опции DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Локальный DNS";
 service.dnsmasq_no_dns_rebind="Отключить DNS Rebind";
 service.dnsmasq_strict="Опрос DNS в порядке следования";
 service.dnsmasq_add_mac="Добавить MAC к DNS запросу";

@@ -1510,7 +1510,6 @@ service.dhcp_landomain="LAN 도메인";
 service.dhcp_option="DHCP 서비스 추가 옵션";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="로컬 DNS";
 service.dnsmasq_no_dns_rebind="DNS 리바인드 안함";
 service.dnsmasq_strict="Strict Order로 DNS 쿼리";
 service.dnsmasq_add_mac="DNS 쿼리에 요청자 MAC 추가";

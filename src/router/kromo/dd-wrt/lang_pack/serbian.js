@@ -1318,7 +1318,6 @@ service.dhcp_landomain="LAN Домен";
 service.dhcp_option="Додатне DHCPd опције";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Локални DNS";
 service.dnsmasq_no_dns_rebind="Без DNS Rebind-овања";
 service.dnsmasq_strict="Упити DNS-у по строгом редоследу";
 service.dnsmasq_add_mac="Додај MAC наручиоца у DNS упит";

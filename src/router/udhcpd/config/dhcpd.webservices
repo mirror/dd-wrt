@@ -135,11 +135,6 @@
 <% ifndef("DNSSEC", "-->"); %>
 
 			<div class="setting">
-				<div class="label"><% tran("service.dnsmasq_loc"); %></div>
-				<input class="spaceradio" type="radio" name="local_dns" value="1" <% nvc("local_dns", "1"); %> /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="local_dns" value="0" <% nvc("local_dns", "0"); %> /><% tran("share.disable"); %>
-			</div>
-			<div class="setting">
 				<div class="label"><% tran("service.dnsmasq_no_dns_rebind"); %></div>
 				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="1" <% nvc("dnsmasq_no_dns_rebind", "1"); %> /><% tran("share.enable"); %>&nbsp;
 				<input class="spaceradio" type="radio" name="dnsmasq_no_dns_rebind" value="0" <% nvc("dnsmasq_no_dns_rebind", "0"); %> /><% tran("share.disable"); %>

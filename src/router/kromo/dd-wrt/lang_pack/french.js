@@ -1042,7 +1042,6 @@ service.dhcp_landomain="Domaine LAN";
 service.dhcp_option="Param&egrave;tres compl&eacute;mentaires DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS Local";
 service.dnsmasq_opt="Options DNSMasq";
 
 //pptp.webservices

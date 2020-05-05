@@ -1327,7 +1327,6 @@ service.dhcp_landomain="Domínio da LAN";
 service.dhcp_option="Opções Adicionais do DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS Local";
 service.dnsmasq_no_dns_rebind="Negar DNS Rebind";
 service.dnsmasq_opt="Opções Adicionais de DNSMasq";
 
