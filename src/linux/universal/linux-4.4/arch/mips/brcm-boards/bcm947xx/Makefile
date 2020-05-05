@@ -18,7 +18,11 @@
 # $Id: Makefile,v 1.8 2010-09-17 04:51:19 $
 #
 
+ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+SHARED := ../../../../brcm/mipsel_r1/shared
+else
 SHARED := ../../../../brcm/mipsel/shared
+endif
 EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -DBCMDRIVER -Dlinux
 
 ifeq ($(CONFIG_MTD_NFLASH),y)
