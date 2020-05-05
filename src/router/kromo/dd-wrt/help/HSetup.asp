@@ -69,6 +69,15 @@
 				<dt>WINS</dt>
 				<% tran("hidx.page21"); %>
 				
+				<dt><% tran("idx.dns_dnsmasq"); %></dt>
+				<% tran("hidx.dns_dnsmasq"); %>
+				
+				<dt><% tran("idx.auth_dnsmasq"); %></dt>
+				<% tran("hidx.auth_dnsmasq"); %>
+				
+				<dt><% tran("idx.force_dnsmasq"); %></dt>
+				<% tran("hidx.force_dnsmasq"); %>
+				
 				<dt><% tran("idx.legend3"); %></dt>
 				<% tran("hidx.page22"); %>
 			</dl>
