@@ -1,8 +1,13 @@
 ifeq ($(CONFIG_MIPS),y)
 EXTRA_CFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux -DCONFIG_NOPRINTK=1
 EXTRA_AFLAGS+=-I$(srctree)/brcm/mipsel/include -I$(srctree)/brcm/mipsel/shared -I$(srctree)/brcm/mipsel/common/include -I$(srctree)/brcm/mipsel/shared/bcmwifi/include -I$(srctree)/brcm/mipsel/wl/dump/include -I$(srctree)/brcm/mipsel/wl/iocv/include -DBCMDRIVER -Dlinux
+ifeq ($(CONFIG_CPU_MIPS32_R1),y)
+SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel_r1
+SRCBASE_OFFSET := ../../../brcm/mipsel_r1
+else
 SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
 SRCBASE_OFFSET := ../../../brcm/mipsel
+endif
 else
 DDFLAGS =-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared -I$(srctree)/brcm/arm/common/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/dump/include -I$(srctree)/brcm/arm/wl/iocv/include
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/hal 
