@@ -2804,10 +2804,7 @@ int smb2_open(struct ksmbd_work *work)
 			rc = find_same_lease_key(sess, fp->f_ci, lc);
 			if (rc)
 				goto err_out;
-		} else if (open_flags == O_RDONLY &&
-			    (req_op_level == SMB2_OPLOCK_LEVEL_BATCH ||
-			     req_op_level == SMB2_OPLOCK_LEVEL_EXCLUSIVE))
-			req_op_level = SMB2_OPLOCK_LEVEL_II;
+		}
 
 		rc = smb_grant_oplock(work, req_op_level,
 				      fp->persistent_id, fp,
