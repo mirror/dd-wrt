@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: GPL-2.0-or-later */
 /*
- *   Copyright (C) 2016 Namjae Jeon <linkinjeon@gmail.com>
+ *   Copyright (C) 2016 Namjae Jeon <linkinjeon@kernel.org>
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
@@ -139,18 +139,24 @@ int ksmbd_vfs_read(struct ksmbd_work *work, struct ksmbd_file *fp,
 		 size_t count, loff_t *pos);
 int ksmbd_vfs_write(struct ksmbd_work *work, struct ksmbd_file *fp,
 	char *buf, size_t count, loff_t *pos, bool sync, ssize_t *written);
-int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
-		struct kstat *stat);
-int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
-		uint64_t fid, struct iattr *attrs);
 int ksmbd_vfs_fsync(struct ksmbd_work *work, uint64_t fid, uint64_t p_id);
 int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name);
 int ksmbd_vfs_link(struct ksmbd_work *work,
 		const char *oldname, const char *newname);
+#ifdef CONFIG_SMB_INSECURE_SERVER
+int ksmbd_vfs_getattr(struct ksmbd_work *work, uint64_t fid,
+		struct kstat *stat);
+int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
+		uint64_t fid, struct iattr *attrs);
 int ksmbd_vfs_symlink(struct ksmbd_work *work,
 		const char *name, const char *symname);
 int ksmbd_vfs_readlink(struct path *path, char *buf, int lenp);
-
+int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
+			   struct ksmbd_kstat *ksmbd_kstat,
+			   const char *de_name,
+			   int de_name_len,
+			   const char *dir_path);
+#endif
 int ksmbd_vfs_fp_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 		char *newname);
 int ksmbd_vfs_rename_slowpath(struct ksmbd_work *work,
@@ -227,11 +233,6 @@ int ksmbd_vfs_unlink(struct dentry *dir, struct dentry *dentry);
 unsigned short ksmbd_vfs_logical_sector_size(struct inode *inode);
 void ksmbd_vfs_smb2_sector_size(struct inode *inode,
 				struct ksmbd_fs_sector_size *fs_ss);
-int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
-			   struct ksmbd_kstat *ksmbd_kstat,
-			   const char *de_name,
-			   int de_name_len,
-			   const char *dir_path);
 void *ksmbd_vfs_init_kstat(char **p, struct ksmbd_kstat *ksmbd_kstat);
 
 int ksmbd_vfs_fill_dentry_attrs(struct ksmbd_work *work,
