@@ -116,17 +116,6 @@ void start_pptpd(void)
 	if (nvram_matchi("dnsmasq_enable", 1)) {
 		if (nvram_invmatch("lan_ipaddr", ""))
 			fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
-	} else if (nvram_matchi("local_dns", 1)) {
-		if (nvram_invmatch("lan_ipaddr", "")
-		    || dns_list) {
-
-			if (nvram_invmatch("lan_ipaddr", ""))
-				fprintf(fp, "ms-dns %s\n", nvram_safe_get("lan_ipaddr"));
-
-			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
-
-		}
 	} else {
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
