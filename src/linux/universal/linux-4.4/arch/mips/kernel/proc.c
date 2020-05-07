@@ -195,8 +195,12 @@ static int show_cpuinfo(struct seq_file *m, void *v)
 		seq_printf(m, "%s", " mvh");
 	if (cpu_has_vtag_icache)
 		seq_printf(m, "%s", " vtag_icache");
+	if (cpu_has_vtag_dcache)
+		seq_printf(m, "%s", " vtag_dcache");
 	if (cpu_has_dc_aliases)
 		seq_printf(m, "%s", " dc_aliases");
+	if (cpu_has_ic_aliases)
+		seq_printf(m, "%s", " ic_aliases");
 	if (cpu_has_ic_fills_f_dc)
 		seq_printf(m, "%s", " ic_fills_f_dc");
 	if (cpu_has_pindexed_dcache)

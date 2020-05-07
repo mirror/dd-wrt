@@ -57,6 +57,8 @@ unsigned long empty_zero_page, zero_page_mask;
 EXPORT_SYMBOL_GPL(empty_zero_page);
 EXPORT_SYMBOL(zero_page_mask);
 
+extern void cpu_early_probe_cache(void);
+
 /*
  * Not static inline because used by IP27 special magic initialization code
  */
@@ -156,7 +158,7 @@ void kunmap_coherent(void)
 	preempt_enable();
 }
 
-#if !defined(CONFIG_BCM47XX) || !defined(CONFIG_CPU_MIPS32_R1)
+#if !defined(CONFIG_BCM47XX)
 void copy_user_highpage(struct page *to, struct page *from,
 	unsigned long vaddr, struct vm_area_struct *vma)
 {
@@ -408,6 +410,8 @@ void __init paging_init(void)
 	unsigned long max_zone_pfns[MAX_NR_ZONES];
 	unsigned long lastpfn;
 
+	cpu_early_probe_cache();
+
 	pagetable_init();
 
 #ifdef CONFIG_HIGHMEM
@@ -437,6 +441,9 @@ static inline void mem_init_free_highmem(void)
 {
 #ifdef CONFIG_HIGHMEM
 	unsigned long tmp;
+
+//	if (cpu_has_dc_aliases)
+//		return;
 
 	for (tmp = highstart_pfn; tmp < highend_pfn; tmp++) {
 		struct page *page = pfn_to_page(tmp);
