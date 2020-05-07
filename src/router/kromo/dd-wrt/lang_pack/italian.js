@@ -1548,7 +1548,6 @@ service.dhcp_landomain="Dominio LAN";
 service.dhcp_option="Opzioni Aggiuntive DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS Locale";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_opt="Opzioni Aggiuntive DNSMasq";
 

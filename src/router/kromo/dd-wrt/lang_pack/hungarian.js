@@ -989,7 +989,6 @@ service.dhcp_landomain="LAN tartomány";
 service.dhcp_option="Egyéb DHCPd beállítások";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Helyi DNS";
 service.dnsmasq_opt="Egyéb DNSMasq beállítások";
 
 //pptp.webservices

@@ -1257,7 +1257,6 @@ service.dhcp_landomain="Domini LAN";
 service.dhcp_option="Opcions DHCPd Adicionals";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS Local";
 service.dnsmasq_no_dns_rebind="Cap tornament a ligar DNS";
 service.dnsmasq_opt="Opcions DNSMasq Adicionals";
 

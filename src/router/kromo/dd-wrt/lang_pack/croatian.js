@@ -1283,7 +1283,6 @@ service.dhcp_landomain="LAN Domena";
 service.dhcp_option="Dodatne DHCPd Opcije";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Lokalni DNS";
 service.dnsmasq_no_dns_rebind="No DNS Rebind";
 service.dnsmasq_opt="Dodatne DNSMasq Opcije";
 

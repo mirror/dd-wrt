@@ -1435,7 +1435,6 @@ service.dnsmasq_dnssec_cu="Pr&uuml;fe unsignierte DNS Antworten";
 
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Lokaler DNS";
 service.dnsmasq_no_dns_rebind="Kein DNS Rebind";
 service.dnsmasq_strict="DNS in fester Reihenfolge abfragen";
 service.dnsmasq_add_mac="DNS Abfrage mit Anfrage MAC";
