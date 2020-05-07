@@ -7,31 +7,6 @@
 		<div id="content">
 			<h2><% tran("bmenu.statu"); %></h2>
 			<dl>
-				<!--dd>This status screen displays the router's current status and configuration. All information is read-only.</dd>
-				<dt>Firmware Version </dt>
-				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the Administration tab if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
-				<dt>Current Time</dt>
-				<dd>The current date and time is displayed here.</dd>
-				<dt>MAC Address </dt>
-				<dd>The MAC Address of the Internet interface is displayed here.</dd>
-				<dt>Router Name</dt>
-				<dd>Shows the configured name of the router.</dd>
-				<dt>Router Model</dt>
-				<dd>Shows the router vendor and model.</dd>
-				<dt>CPU</dt>
-				<dd>Shows the CPU type, revision, # of cores, clock speed, load average, & temperature if temp monitoring is supported.</dd>
-				<dt>Memory</dt>
-				<dd>Shows info on how much RAM is used, free, and allocated to where.,</dd>
-				<dt>Host Name</dt>
-				<dd>The Host Name is the name of the router.</dd>
-				<dt>Configuration Type</dt>
-				<dd>The current Internet connection type is displayed here.</dd>
-				<dt>IP Address, Subnet Mask, and Default Gateway</dt>
-				<dd>The Internet IP Address, Subnet Mask, and Default Gateway IP Address of the router, as seen by external users on the Internet, are displayed here.</dd>
-				<dt>DNS</dt>
-				<dd>The DNS (Domain Name System) IP Addresses currently used by the router are shown here. Multiple DNS IP settings are common. In most cases, the first available DNS entry is used.</dd>
-				<dt>Traffic</dt>
-				<dd>This shows your router's Internet traffic (total since last reboot or by month).</dd-->
 				<% tran("hstatus_router.page1"); %>
 			</dl>
 		</div>
