@@ -14,6 +14,30 @@
 				<dt><% tran("service.dnsmasq_legend"); %></dt>
 				<% tran("hservice.page2"); %>
 				
+				<dt><% tran("service.dnsmasq_dnssec"); %></dt>
+				<% tran("hservice.dnsmasq_dnssec"); %>
+				
+				<dt><% tran("service.dnsmasq_dnssec_proxy"); %></dt>
+				<% tran("hservice.dnsmasq_dnssec_proxy"); %>
+				
+				<dt><% tran("service.dnsmasq_dnssec_cu"); %></dt>
+				<% tran("hservice.dnsmasq_dnssec_cu"); %>
+				
+				<dt><% tran("service.dnsmasq_no_dns_rebind"); %></dt>
+				<% tran("hservice.dnsmasq_no_dns_rebind"); %>
+				
+				<dt><% tran("service.dnsmasq_strict"); %></dt>
+				<% tran("hservice.dnsmasq_strict"); %>
+				
+				<dt><% tran("service.dnsmasq_add_mac"); %></dt>
+				<% tran("hservice.dnsmasq_add_mac"); %>
+				
+				<dt><% tran("service.dnsmasq_rc"); %></dt>
+				<% tran("hservice.dnsmasq_rc"); %>
+				
+				<dt><% tran("service.dnsmasq_cachesize"); %></dt>
+				<% tran("hservice.dnsmasq_cachesize"); %>
+				
 				<dt><% tran("service.kaid_legend"); %></dt>
 				<% tran("hservice.page3"); %>
 				<% tran("service.kaid_locdevnum"); %>
