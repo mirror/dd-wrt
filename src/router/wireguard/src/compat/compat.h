@@ -26,8 +26,10 @@
 #ifdef UTS_UBUNTU_RELEASE_ABI
 #if LINUX_VERSION_CODE == KERNEL_VERSION(3, 13, 11)
 #define ISUBUNTU1404
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0)
 #define ISUBUNTU1604
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 3, 0)
+#define ISUBUNTU1910
 #endif
 #endif
 #ifdef CONFIG_SUSE_KERNEL
@@ -101,7 +103,7 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119) && !defined(ISRHEL82))
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || (((!defined(ISDEBIAN) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 118)) && !defined(ISRHEL82))
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
@@ -418,9 +420,6 @@ static inline u64 __compat_jiffies64_to_nsecs(u64 j)
 #if !(NSEC_PER_SEC % HZ)
 	return (NSEC_PER_SEC / HZ) * j;
 #else
-#if !defined(HZ_TO_USEC_NUM) || !defined(HZ_TO_USEC_DEN)
-#error "bc(1) is required for building or the compat layer could not compute the GCD of HZ and 1000000"
-#endif
 	return div_u64(j * HZ_TO_USEC_NUM, HZ_TO_USEC_DEN) * 1000;
 #endif
 }
@@ -1036,7 +1035,7 @@ out:
 #define COMPAT_CANNOT_USE_MAX_MTU
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 29) || (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 14))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 14) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 29) && !defined(ISUBUNTU1910))
 #include <linux/skbuff.h>
 #include <net/sch_generic.h>
 static inline void skb_reset_redirect(struct sk_buff *skb)
