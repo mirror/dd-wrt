@@ -1,5 +1,5 @@
 name: frr
-version: 7.3
+version: 7.3.1
 summary: FRRouting BGP/OSPFv2/OSPFv3/ISIS/RIP/RIPng/PIM/LDP/EIGRP/BFD routing daemon
 description: BGP/OSPFv2/OSPFv3/ISIS/RIP/RIPng/PIM/LDP/EIGRP/BFD routing daemon
  FRRouting (FRR) is free software which manages TCP/IP based routing 
@@ -322,7 +322,7 @@ parts:
            - libprotobuf-c1
            - libdb5.3
         plugin: autotools
-        source: ../frr-7.3.tar.gz
+        source: ../frr-7.3.1.tar.gz
         configflags:
             - --enable-vtysh
             - --enable-isisd

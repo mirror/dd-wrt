@@ -48,8 +48,8 @@
 
 #### Version String tweak
 # Remove invalid characters form version string and replace with _
-%{expand: %%global rpmversion %(echo '7.3' | tr [:blank:]- _ )}
-%define         frrversion   7.3
+%{expand: %%global rpmversion %(echo '7.3.1' | tr [:blank:]- _ )}
+%define         frrversion   7.3.1
 
 #### Check for systemd or init.d (upstart)
 # Check for init.d (upstart) as used in CentOS 6 or systemd (ie CentOS 7)
@@ -728,7 +728,10 @@ fi
 
 
 %changelog
-* Fri Feb 14 2020 Martin Winter <mwinter@opensourcerouting.org> - %{version}
+* Wed May 06 2020 David Lamparter <equinox@opensourcerouting.org> - %{version}
+- upstream 7.3.1
+
+* Fri Feb 14 2020 Martin Winter <mwinter@opensourcerouting.org> - 7.3
 - BGPd
 -    EVPN PIP Support
 -    Route Aggregation code speed ups
