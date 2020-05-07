@@ -53,10 +53,7 @@ endif
 
 ifdef CONFIG_HZ
 ifeq ($(wildcard $(CURDIR)/include/generated/timeconst.h),)
-HZ_IFDEF := $(shell echo 'define gcd(a,b){auto t;while(b){t=b;b=a%b;a=t;};return a;};hz=$(CONFIG_HZ);cd=gcd(hz,1000000);print "-DHZ_TO_USEC_NUM=",1000000/cd," -DHZ_TO_USEC_DEN=",hz/cd;halt;' | bc -q 2>/dev/null)
-ifneq ($(HZ_IFDEF),)
-ccflags-y += $(HZ_IFDEF)
-endif
+ccflags-y += $(shell bash -c '((a=$(CONFIG_HZ), b=1000000)); while ((b > 0)); do ((t=b, b=a%b, a=t)); done; echo "-DHZ_TO_USEC_NUM=$$((1000000/a)) -DHZ_TO_USEC_DEN=$$(($(CONFIG_HZ)/a))";')
 endif
 endif
 
@@ -98,4 +95,8 @@ ifeq ($(CONFIG_X86_64),y)
 		ccflags-y += $(adx_instr)
 		asflags-y += $(adx_instr)
 	endif
+endif
+
+ifneq ($(shell grep -s -F "\#define LINUX_PACKAGE_ID \" Debian " "$(CURDIR)/include/generated/package.h"),)
+ccflags-y += -DISDEBIAN
 endif
