@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) 2016 Namjae Jeon <linkinjeon@gmail.com>
+ *   Copyright (C) 2016 Namjae Jeon <linkinjeon@kernel.org>
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
@@ -441,7 +441,7 @@ static int create_socket(struct interface *iface)
 		}
 
 		sin.sin_family = PF_INET;
-		sin.sin_addr.s_addr = INADDR_ANY;
+		sin.sin_addr.s_addr = htonl(INADDR_ANY);
 		sin.sin_port = htons(server_conf.tcp_port);
 		ipv4 = true;
 	} else {

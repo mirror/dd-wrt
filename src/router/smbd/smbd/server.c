@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
- *   Copyright (C) 2016 Namjae Jeon <linkinjeon@gmail.com>
+ *   Copyright (C) 2016 Namjae Jeon <linkinjeon@kernel.org>
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
  */
 
@@ -625,7 +625,7 @@ static void __exit ksmbd_server_exit(void)
 	ksmbd_release_inode_hash();
 }
 
-MODULE_AUTHOR("Namjae Jeon <linkinjeon@gmail.com>");
+MODULE_AUTHOR("Namjae Jeon <linkinjeon@kernel.org>");
 MODULE_VERSION(KSMBD_VERSION);
 MODULE_DESCRIPTION("Linux kernel CIFS/SMB SERVER");
 MODULE_LICENSE("GPL");

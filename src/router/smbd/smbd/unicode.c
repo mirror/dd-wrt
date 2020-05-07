@@ -4,7 +4,7 @@
  *
  *   Copyright (c) International Business Machines  Corp., 2000,2009
  *   Modified by Steve French (sfrench@us.ibm.com)
- *   Modified by Namjae Jeon (linkinjeon@gmail.com)
+ *   Modified by Namjae Jeon (linkinjeon@kernel.org)
  */
 #include <linux/fs.h>
 #include <linux/slab.h>
