@@ -50,38 +50,16 @@ extern pte_t *pkmap_page_table;
 
 static __always_inline void *lowmem_page_address(const struct page *page);
 
-#define get_pkmap_color get_pkmap_color
-static inline int get_pkmap_color(struct page *page)
-{
-       return (int)(((unsigned long)lowmem_page_address(page) >> PAGE_SHIFT)
-                       & (FIX_N_COLOURS - 1));
-}
+#define ARCH_PKMAP_COLORING             1
+#define     set_pkmap_color(pg,cl)      { cl = ((unsigned long)lowmem_page_address(pg) \
+					   >> PAGE_SHIFT) & (FIX_N_COLOURS-1); }
+#define     get_last_pkmap_nr(p,cl)     (last_pkmap_nr_arr[cl])
+#define     get_next_pkmap_nr(p,cl)     (last_pkmap_nr_arr[cl] = \
+					    ((p + FIX_N_COLOURS) & LAST_PKMAP_MASK))
+#define     is_no_more_pkmaps(p,cl)     (p < FIX_N_COLOURS)
+#define     get_next_pkmap_counter(c,cl)    (c - FIX_N_COLOURS)
 
-extern unsigned int last_pkmap_nr_arr[];
-
-static inline unsigned int get_next_pkmap_nr(unsigned int color)
-{
-       last_pkmap_nr_arr[color] =
-               (last_pkmap_nr_arr[color] + FIX_N_COLOURS) & LAST_PKMAP_MASK;
-       return last_pkmap_nr_arr[color] + color;
-}
-
-static inline int no_more_pkmaps(unsigned int pkmap_nr, unsigned int color)
-{
-       return pkmap_nr < FIX_N_COLOURS;
-}
-
-static inline int get_pkmap_entries_count(unsigned int color)
-{
-       return LAST_PKMAP / FIX_N_COLOURS;
-}
-
-extern wait_queue_head_t pkmap_map_wait_arr[];
-
-static inline wait_queue_head_t *get_pkmap_wait_queue_head(unsigned int color)
-{
-       return pkmap_map_wait_arr + color;
-}
+extern unsigned int     last_pkmap_nr_arr[];
 
 extern void * kmap_high(struct page *page);
 extern void kunmap_high(struct page *page);

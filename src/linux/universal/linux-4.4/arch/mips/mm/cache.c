@@ -16,6 +16,7 @@
 #include <linux/mm.h>
 
 #include <asm/cacheflush.h>
+#include <asm/highmem.h>
 #include <asm/processor.h>
 #include <asm/cpu.h>
 #include <asm/cpu-features.h>
@@ -155,23 +156,28 @@ void __update_cache(unsigned long address, pte_t pte)
 	int exec = !pte_no_exec(pte) && !cpu_has_ic_fills_f_dc;
 
 	pfn = pte_pfn(pte);
-	if (unlikely(!pfn_valid(pfn)))
+	if (unlikely(!pfn_valid(pfn))) {
+		wmb();
 		return;
-	page = pfn_to_page(pfn);
-	if (Page_dcache_dirty(page)) {
-		if (PageHighMem(page))
-			addr = (unsigned long)kmap_atomic(page);
-		else
-			addr = (unsigned long)page_address(page);
-
-		if (exec || pages_do_alias(addr, address & PAGE_MASK))
-			flush_data_cache_page(addr);
-
-		if (PageHighMem(page))
-			__kunmap_atomic((void *)addr);
-
-		ClearPageDcacheDirty(page);
 	}
+	page = pfn_to_page(pfn);
+	if (page_mapped(page) && Page_dcache_dirty(page)) {
+		void *kaddr = NULL;
+		if (PageHighMem(page)) {
+			addr = (unsigned long)kmap_atomic(page);
+			kaddr = (void *)addr;
+		} else
+			addr = (unsigned long) page_address(page);
+		if (exec || (cpu_has_dc_aliases &&
+		    pages_do_alias(addr, address & PAGE_MASK))) {
+			flush_data_cache_page(addr);
+			ClearPageDcacheDirty(page);
+		}
+
+		if (kaddr)
+			kunmap_atomic((void *)kaddr);
+	}
+	wmb();
 }
 
 unsigned long _page_cachable_default;
@@ -215,6 +221,15 @@ static inline void setup_protection_map(void)
 		protection_map[13] = PAGE_READONLY;
 		protection_map[14] = PAGE_SHARED;
 		protection_map[15] = PAGE_SHARED;
+	}
+}
+
+void __init cpu_early_probe_cache(void)
+{
+	if (cpu_has_4k_cache) {
+		extern void __weak r4k_probe_cache(void);
+
+		return r4k_probe_cache();
 	}
 }
 

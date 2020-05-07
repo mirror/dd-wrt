@@ -9,7 +9,15 @@
 static pte_t *kmap_pte;
 
 unsigned int last_pkmap_nr_arr[FIX_N_COLOURS];
-wait_queue_head_t pkmap_map_wait_arr[FIX_N_COLOURS];
+/*wait_queue_head_t pkmap_map_wait_arr[FIX_N_COLOURS];
+
+static void __init kmap_waitqueues_init(void)
+{
+	unsigned int i;
+
+	for (i = 0; i < ARRAY_SIZE(pkmap_map_wait_arr); ++i)
+		init_waitqueue_head(pkmap_map_wait_arr + i);
+}*/
 
 unsigned long highstart_pfn, highend_pfn;
 unsigned int  last_pkmap_nr_arr[FIX_N_COLOURS] = { 0, 1, 2, 3, 4, 5, 6, 7 };
@@ -116,4 +124,5 @@ void __init kmap_init(void)
 	/* cache the first kmap pte */
 	kmap_vstart = __fix_to_virt(FIX_KMAP_BEGIN - 1); /* actually - FIX_CMAP_END */
 	kmap_pte = kmap_get_fixmap_pte(kmap_vstart);
+//	kmap_waitqueues_init();
 }

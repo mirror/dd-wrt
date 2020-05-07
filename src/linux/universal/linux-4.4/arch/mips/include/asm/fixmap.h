@@ -76,7 +76,7 @@ enum fixed_addresses {
  * the start of the fixmap, and leave one page empty
  * at the top of mem..
  */
-#define FIXADDR_SIZE	(__end_of_fixed_addresses << PAGE_SHIFT)
+#define FIXADDR_SIZE	(__end_of_fixed_addresses << (VALIAS_PAGE_SHIFT))
 #define FIXADDR_START	(FIXADDR_TOP - FIXADDR_SIZE)
 
 #include <asm-generic/fixmap.h>
