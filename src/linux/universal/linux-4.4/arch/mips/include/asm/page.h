@@ -13,7 +13,7 @@
 #include <linux/const.h>
 #include <linux/kernel.h>
 #include <asm/mipsregs.h>
-#if defined(CONFIG_BCM47XX) && defined(CONFIG_CPU_MIPS32_R1)
+#if defined(CONFIG_BCM47XX)
 #include <asm/cpu-features.h>
 #endif
 
@@ -89,6 +89,14 @@ extern void clear_page(void * page);
 extern void copy_page(void * to, void * from);
 
 extern unsigned long shm_align_mask;
+extern unsigned char shm_align_shift;
+
+#define VALIAS_PAGE_OFFSET_MASK	(shm_align_mask)
+#define VALIAS_PAGE_MASK	(~VALIAS_PAGE_OFFSET_MASK)
+#define VALIAS_PAGE_SHIFT	(shm_align_shift)
+#define VALIAS_SHIFT		(VALIAS_PAGE_SHIFT - PAGE_SHIFT)
+#define VALIAS_PAGE_SIZE	(1UL << VALIAS_PAGE_SHIFT)
+#define VALIAS_IDX(x)		((x) << VALIAS_SHIFT)
 
 static inline unsigned long pages_do_alias(unsigned long addr1,
 	unsigned long addr2)
@@ -110,7 +118,7 @@ static inline void clear_user_page(void *addr, unsigned long vaddr,
 	    pages_do_alias((unsigned long) addr, vaddr & PAGE_MASK)))
 		flush_data_cache_page((unsigned long)addr);
 }
-#if !defined(CONFIG_BCM47XX) || !defined(CONFIG_CPU_MIPS32_R1)
+#if !defined(CONFIG_BCM47XX)
 
 struct vm_area_struct;
 extern void copy_user_highpage(struct page *to, struct page *from,

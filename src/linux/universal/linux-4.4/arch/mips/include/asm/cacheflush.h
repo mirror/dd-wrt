@@ -46,7 +46,7 @@
 extern void (*flush_cache_all)(void);
 extern void (*__flush_cache_all)(void);
 extern void (*flush_cache_mm)(struct mm_struct *mm);
-#if defined(CONFIG_BCM47XX) && defined(CONFIG_CPU_MIPS32_R1)
+#if defined(CONFIG_BCM47XX)
 #define flush_cache_dup_mm(mm) flush_cache_mm(mm)
 #else
 #define flush_cache_dup_mm(mm) do { (void) (mm); } while (0)

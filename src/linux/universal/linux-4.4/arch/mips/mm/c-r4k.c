@@ -40,8 +40,9 @@
 #include <asm/mips-cm.h>
 
 /* For enabling BCM4710 cache workarounds */
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 static int bcm4710 = 0;
-
+#endif
 /*
  * Bits describing what cache ops an IPI callback function may perform.
  *
@@ -174,6 +175,13 @@ static void r4k_blast_dcache_page_setup(void)
 {
 	unsigned long  dc_lsize = cpu_dcache_line_size();
 
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
+	if (bcm4710)
+		r4k_blast_dcache_page = blast_dcache_page;
+	else 
+#endif
+	{
+
 	switch (dc_lsize) {
 	case 0:
 		r4k_blast_dcache_page = (void *)cache_noop;
@@ -193,6 +201,7 @@ static void r4k_blast_dcache_page_setup(void)
 	default:
 		break;
 	}
+	}
 }
 
 #ifndef CONFIG_EVA
@@ -205,9 +214,6 @@ static void r4k_blast_dcache_user_page_setup(void)
 {
 	unsigned long  dc_lsize = cpu_dcache_line_size();
 
-	if (bcm4710)
-		r4k_blast_dcache_page = blast_dcache_page;
-	else
 	if (dc_lsize == 0)
 		r4k_blast_dcache_user_page = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -226,9 +232,11 @@ static void r4k_blast_dcache_page_indexed_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (bcm4710)
 		r4k_blast_dcache_page_indexed = blast_dcache_page_indexed;
 	else
+#endif
 	if (dc_lsize == 0)
 		r4k_blast_dcache_page_indexed = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -248,9 +256,11 @@ static void r4k_blast_dcache_setup(void)
 {
 	unsigned long dc_lsize = cpu_dcache_line_size();
 
+#if defined(CONFIG_BCM47XX) && !defined(CONFIG_CPU_MIPS32_R2)
 	if (bcm4710)
 		r4k_blast_dcache = blast_dcache;
 	else
+#endif
 	if (dc_lsize == 0)
 		r4k_blast_dcache = (void *)cache_noop;
 	else if (dc_lsize == 16)
@@ -675,9 +685,12 @@ static inline void local_r4k_flush_cache_page(void *args)
 			if (cpu_context(cpu, mm) != 0)
 				drop_mmu_context(mm, cpu);
 			dontflash = 1;
-		} else
-			vaddr ? r4k_blast_icache_page(addr) :
-				r4k_blast_icache_user_page(addr);
+		} else {
+			if (map_coherent || !cpu_has_ic_aliases) {
+				vaddr ? r4k_blast_icache_page(addr) :
+					r4k_blast_icache_user_page(addr);
+			}
+		}
 	}
 
 	if (vaddr) {
@@ -1037,40 +1050,25 @@ static inline void rm7k_erratum31(void)
 	}
 }
 
-static inline int alias_74k_erratum(struct cpuinfo_mips *c)
+static inline void alias_74k_erratum(struct cpuinfo_mips *c)
 {
-	unsigned int imp = c->processor_id & PRID_IMP_MASK;
-	unsigned int rev = c->processor_id & PRID_REV_MASK;
-	int present = 0;
-
 	/*
 	 * Early versions of the 74K do not update the cache tags on a
 	 * vtag miss/ptag hit which can occur in the case of KSEG0/KUSEG
-	 * aliases.  In this case it is better to treat the cache as always
-	 * having aliases.  Also disable the synonym tag update feature
-	 * where available.  In this case no opportunistic tag update will
-	 * happen where a load causes a virtual address miss but a physical
-	 * address hit during a D-cache look-up.
+	 * aliases. In this case it is better to treat the cache as always
+	 * having aliases.
 	 */
-	switch (imp) {
-	case PRID_IMP_74K:
-		if (rev <= PRID_REV_ENCODE_332(2, 4, 0))
-			present = 1;
-		if (rev == PRID_REV_ENCODE_332(2, 4, 0))
-			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
-		break;
-	case PRID_IMP_1074K:
-		if (rev <= PRID_REV_ENCODE_332(1, 1, 0)) {
-			present = 1;
-			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
-		}
-		break;
-	default:
-		BUG();
+	if ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(2, 4, 0))
+		c->dcache.flags |= MIPS_CACHE_VTAG;
+	if ((c->processor_id & 0xff) == PRID_REV_ENCODE_332(2, 4, 0))
+		write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
+	if (((c->processor_id & 0xff00) == PRID_IMP_1074K) &&
+	    ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(1, 1, 0))) {
+		c->dcache.flags |= MIPS_CACHE_VTAG;
+		write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
 	}
-
-	return present;
 }
+
 
 static void b5k_instruction_hazard(void)
 {
@@ -1095,7 +1093,6 @@ static void probe_pcache(void)
 	struct cpuinfo_mips *c = &current_cpu_data;
 	unsigned int config = read_c0_config();
 	unsigned int prid = read_c0_prid();
-	int has_74k_erratum = 0;
 	unsigned long config1;
 	unsigned int lsize;
 
@@ -1401,10 +1398,32 @@ static void probe_pcache(void)
 	case CPU_R14000:
 	case CPU_R16000:
 		break;
+#ifdef CONFIG_MIPS_BRCM
+	case CPU_74K:
+		/*
+		 * Early versions of the 74k do not update
+		 * the cache tags on a vtag miss/ptag hit
+		 * which can occur in the case of KSEG0/KUSEG aliases
+		 * In this case it is better to treat the cache as always
+		 * having aliases
+		 */
+		if ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(2, 4, 0))
+			c->dcache.flags |= MIPS_CACHE_VTAG;
+		if ((c->processor_id & 0xff) == PRID_REV_ENCODE_332(2, 4, 0))
+			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
+		goto bypass1074;
 
+	case CPU_1074K:
+		if ((c->processor_id & 0xff) <= PRID_REV_ENCODE_332(1, 1, 0)) {
+			c->dcache.flags |= MIPS_CACHE_VTAG;
+			write_c0_config6(read_c0_config6() | MIPS_CONF6_SYND);
+		}
+		/* fall through */
+bypass1074:;
+#else
 	case CPU_74K:
 	case CPU_1074K:
-		has_74k_erratum = alias_74k_erratum(c);
+#endif
 		/* Fall through. */
 	case CPU_M14KC:
 	case CPU_M14KEC:
@@ -1417,10 +1436,14 @@ static void probe_pcache(void)
 	case CPU_M5150:
 	case CPU_QEMU_GENERIC:
 	case CPU_I6400:
-		if (!(read_c0_config7() & MIPS_CONF7_IAR) &&
-		    (c->icache.waysize > PAGE_SIZE))
-			c->icache.flags |= MIPS_CACHE_ALIASES;
-		if (!has_74k_erratum && (read_c0_config7() & MIPS_CONF7_AR)) {
+		if (c->cputype == CPU_74K)
+			alias_74k_erratum(c);
+		if (!(read_c0_config7() & MIPS_CONF7_IAR)) {
+			if (c->icache.waysize > PAGE_SIZE)
+				c->icache.flags |= MIPS_CACHE_ALIASES;
+		}
+		if (read_c0_config7() & MIPS_CONF7_AR) {
+			printk("enable CACHE PINDEX\n");
 			/*
 			 * Effectively physically indexed dcache,
 			 * thus no virtual aliases.
@@ -1429,7 +1452,7 @@ static void probe_pcache(void)
 			break;
 		}
 	default:
-		if (has_74k_erratum || c->dcache.waysize > PAGE_SIZE)
+		if (c->dcache.waysize > PAGE_SIZE)
 			c->dcache.flags |= MIPS_CACHE_ALIASES;
 	}
 
@@ -1461,7 +1484,6 @@ static void probe_pcache(void)
 		 */
 		c->icache.ways = 1;
 	}
-
 	printk("Primary instruction cache %ldkB, %s, %s, %slinesize %d bytes.\n",
 	       icache_size >> 10, way_string[c->icache.ways],
 	       c->icache.flags & MIPS_CACHE_VTAG ? "VIVT" : "VIPT",
@@ -1475,6 +1497,30 @@ static void probe_pcache(void)
 	       (c->dcache.flags & MIPS_CACHE_ALIASES) ?
 			"cache aliases" : "no aliases",
 	       c->dcache.linesz);
+}
+
+void __init r4k_probe_cache(void)
+{
+	unsigned long config1 = read_c0_config1();
+	unsigned int lsize, ways, sets;
+
+	if ((lsize = ((config1 >> 10) & 7)))
+		lsize = 2 << lsize;
+
+	sets = 64 << ((config1 >> 13) & 7);
+	ways = 1 + ((config1 >> 7) & 7);
+
+	if (lsize) {
+                shm_align_mask = max_t( unsigned long,
+                                        sets * lsize - 1,
+                                        PAGE_SIZE - 1);
+
+                if (shm_align_mask != (PAGE_SIZE - 1))
+                        shm_align_shift = ffs((shm_align_mask + 1)) - 1;
+        } else
+                shm_align_mask = PAGE_SIZE-1;
+
+		
 }
 
 /*
@@ -1815,8 +1861,8 @@ void r4k_cache_init(void)
 		printk("Enabling BCM4710A0 cache workarounds.\n");
 		bcm4710 = 1;
 	} else
-#endif
 		bcm4710 = 0;
+#endif
 
 	probe_pcache();
 	setup_scache();
@@ -1840,13 +1886,13 @@ void r4k_cache_init(void)
 	 * This code supports virtually indexed processors and will be
 	 * unnecessarily inefficient on physically indexed processors.
 	 */
-	if (c->dcache.linesz)
+/*	if (c->dcache.linesz)
 		shm_align_mask = max_t( unsigned long,
 					c->dcache.sets * c->dcache.linesz - 1,
 					PAGE_SIZE - 1);
 	else
 		shm_align_mask = PAGE_SIZE-1;
-
+*/
 	__flush_cache_vmap	= r4k__flush_cache_vmap;
 	__flush_cache_vunmap	= r4k__flush_cache_vunmap;
 

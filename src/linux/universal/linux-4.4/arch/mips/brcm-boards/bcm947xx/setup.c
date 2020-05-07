@@ -435,9 +435,16 @@ if (iswrt300n11)
 		lanports_enable = 0;
 
 
+	cpu_wait_enable = 1;
+	if (c->cputype == CPU_74K) {
+		if (CHIPID(sih->chip) == BCM4706_CHIP_ID) {
+			cpu_wait_enable = 0;
+		}
+	}
+
 	/* Check if we want to enable cpu wait */
-	if (nvram_match("wait", "1"))
-		cpu_wait_enable = 1;
+//	if (nvram_match("wait", "1"))
+//		cpu_wait_enable = 1;
 
 	if ((c->cputype == CPU_74K) || (c->cputype == CPU_1074K)) {
 		pr_info("Using bcma bus\n");
