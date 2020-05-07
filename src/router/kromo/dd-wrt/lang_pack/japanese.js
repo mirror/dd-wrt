@@ -1207,7 +1207,6 @@ service.dhcp_landomain="ドメイン名を手動設定";
 service.dhcp_option="DHCPサービス 追加オプション";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="ローカルDNS機能";
 service.dnsmasq_opt="DNSMasqサービス 追加オプション";
 
 //pptp.webservices

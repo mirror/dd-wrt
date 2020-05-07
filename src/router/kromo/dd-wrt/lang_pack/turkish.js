@@ -1194,7 +1194,6 @@ service.dhcp_landomain="LAN Etki Alanı";
 service.dhcp_option="Ek DHCPd Seçenekleri";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Yerel DNS";
 service.dnsmasq_no_dns_rebind="DNS Yeniden Bağlantı Yok";
 service.dnsmasq_opt="Ek DNSMasq Seçenekleri";
 

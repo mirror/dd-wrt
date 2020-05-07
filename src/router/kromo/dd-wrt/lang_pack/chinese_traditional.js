@@ -1131,7 +1131,6 @@ service.dhcp_landomain="LAN網域";
 service.dhcp_option="Additional DHCPd Options";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="本地 DNS";
 service.dnsmasq_opt="Additional DNSMasq Options";
 
 //pptp.webservices
