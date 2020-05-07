@@ -2,7 +2,7 @@
 /*
  *   Copyright (C) International Business Machines  Corp., 2007,2008
  *   Author(s): Steve French (sfrench@us.ibm.com)
- *   Copyright (C) 2020 Namjae Jeon <linkinjeon@gmail.com>
+ *   Modified by Namjae Jeon <linkinjeon@kernel.org>
  */
 
 #include <linux/fs.h>
@@ -312,7 +312,7 @@ static void parse_dacl(struct smb_acl *pdacl, char *end_of_acl,
  * Fill in the special SID based on the mode. See
  * http://technet.microsoft.com/en-us/library/hh509017(v=ws.10).aspx
  */
-unsigned int setup_special_mode_ACE(struct smb_ace *pntace, umode_t mode)
+static unsigned int setup_special_mode_ACE(struct smb_ace *pntace, umode_t mode)
 {
 	int i;
 	unsigned int ace_size = 28;
@@ -409,7 +409,7 @@ int build_sec_desc(struct smb_ntsd *pntsd, __u32 *secdesclen, umode_t nmode)
 
 	dacloffset = sizeof(struct smb_ntsd);
 	dacl_ptr = (struct smb_acl *)((char *)pntsd + dacloffset);
-	dacl_ptr->revision = 1;
+	dacl_ptr->revision = cpu_to_le16(1);
 	dacl_ptr->size = 0;
 	dacl_ptr->num_aces = 0;
 
@@ -432,6 +432,6 @@ int build_sec_desc(struct smb_ntsd *pntsd, __u32 *secdesclen, umode_t nmode)
 					sizeof(struct smb_sid));
 	smb_copy_sid(group_sid_ptr, &sid_unix_NFS_groups);
 
-	*secdesclen = pntsd->gsidoffset + sizeof(struct smb_sid);
+	*secdesclen = le32_to_cpu(pntsd->gsidoffset) + sizeof(struct smb_sid);
 	return rc;
 }

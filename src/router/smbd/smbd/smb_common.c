@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 /*
  *   Copyright (C) 2018 Samsung Electronics Co., Ltd.
- *   Copyright (C) 2018 Namjae Jeon <linkinjeon@gmail.com>
+ *   Copyright (C) 2018 Namjae Jeon <linkinjeon@kernel.org>
  */
 
 #include "smb_common.h"
@@ -454,7 +454,7 @@ static int __smb2_negotiate(struct ksmbd_conn *conn)
 }
 
 #ifndef CONFIG_SMB_INSECURE_SERVER
-int smb_handle_negotiate(struct ksmbd_work *work)
+static int smb_handle_negotiate(struct ksmbd_work *work)
 {
 	struct smb_negotiate_rsp *neg_rsp = RESPONSE_BUF(work);
 

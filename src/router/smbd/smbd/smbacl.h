@@ -2,7 +2,7 @@
 /*
  *   Copyright (c) International Business Machines  Corp., 2007
  *   Author(s): Steve French (sfrench@us.ibm.com)
- *   Modified by Namjae Jeon (linkinjeon@gmail.com)
+ *   Modified by Namjae Jeon (linkinjeon@kernel.org)
  */
 
 #ifndef _SMBACL_H
