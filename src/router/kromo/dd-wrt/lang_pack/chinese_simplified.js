@@ -966,7 +966,6 @@ service.dhcp_landomain="LAN域";
 service.dhcp_option="DHCPd 附加选项";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="本地DNS";
 service.dnsmasq_opt="DNSMasq 附加选项";
 service.pptp_legend="PPTP";
 service.pptp_srv="PPTP服务器";

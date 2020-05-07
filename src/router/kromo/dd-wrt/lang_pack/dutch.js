@@ -1217,7 +1217,6 @@ service.dhcp_landomain="LAN Domein";
 service.dhcp_option="Extra DHCPd Opties";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Lokale DNS";
 service.dnsmasq_opt="Extra DNSMasq Opties";
 
 //pptp.webservices

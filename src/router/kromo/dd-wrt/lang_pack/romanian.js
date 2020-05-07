@@ -1264,7 +1264,6 @@ service.dhcp_landomain="Domeniu LAN";
 service.dhcp_option="Opțiuni DHCPd adiționale";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS local";
 service.dnsmasq_no_dns_rebind="Fără reatașare DNS";
 service.dnsmasq_opt="Opțiuni DNSMasq adiționale";
 

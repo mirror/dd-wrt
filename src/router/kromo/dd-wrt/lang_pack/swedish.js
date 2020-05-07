@@ -1164,7 +1164,6 @@ service.dhcp_landomain="LAN Dom&auml;n";
 service.dhcp_option="Extra DHCPd Alternativ";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Lokal DNS";
 service.dnsmasq_opt="Extra DNSMasq Alternativ";
 
 //pptp.webservices

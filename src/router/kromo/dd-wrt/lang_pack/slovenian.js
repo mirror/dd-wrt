@@ -1308,7 +1308,6 @@ service.dhcp_landomain="LAN domena";
 service.dhcp_option="Dodatne DHCPd možnosti";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="Lokalni DNS";
 service.dnsmasq_no_dns_rebind="Brez DNS ponovnega vezanja";
 service.dnsmasq_opt="Dodatne DNSMasq možnosti";
 
