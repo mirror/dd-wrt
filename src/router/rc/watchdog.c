@@ -176,7 +176,7 @@ static void watchdog(void)
 			fclose(tempfp);
 		}
 		int dummy;
-		if (!nvram_nmatch("ath2_net_mode", "disabled")) {
+		if (!nvram_match("ath2_net_mode", "disabled")) {
 			FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
 			if (check) {
 				fclose(check);
