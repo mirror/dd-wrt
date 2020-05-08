@@ -176,20 +176,22 @@ static void watchdog(void)
 			fclose(tempfp);
 		}
 		int dummy;
-		FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
-		if (check) {
-			fclose(check);
+		if (!nvram_nmatch("ath2_net_mode", "disabled")) {
+			FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
+			if (check) {
+				fclose(check);
 
-			tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
-			if (tempfp) {
+				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_mac\" |cut -d = -f 2", "rb");
+				if (tempfp) {
 
-				fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
-				pclose(tempfp);
-			}
-			tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
-			if (tempfp) {
-				fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
-				pclose(tempfp);
+					fscanf(tempfp, "%d.%d", &wifi3_mac, &dummy);
+					pclose(tempfp);
+				}
+				tempfp = popen("cat /sys/kernel/debug/ieee80211/phy2/wil6210/temp | grep \"T_radio\" |cut -d = -f 2", "rb");
+				if (tempfp) {
+					fscanf(tempfp, "%d.%d", &wifi3_phy, &dummy);
+					pclose(tempfp);
+				}
 			}
 		}
 		if (wifi1 > cpu)
