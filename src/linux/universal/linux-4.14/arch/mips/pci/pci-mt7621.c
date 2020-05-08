@@ -565,7 +565,7 @@ void setup_cm_memory_region(struct resource *mem_resource)
 
 		write_gcr_reg1_base(mem_resource->start);
 		write_gcr_reg1_mask(mask | CM_GCR_REGn_MASK_CMTGT_IOCU0);
-		printk("PCI coherence region base: 0x%08lx, mask/settings: 0x%08lx\n",
+		printk("PCI coherence region base: 0x%08llx, mask/settings: 0x%08llx\n",
 		       read_gcr_reg1_base(),
 		       read_gcr_reg1_mask());
 	}
