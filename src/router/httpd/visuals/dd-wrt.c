@@ -1994,9 +1994,9 @@ static void show_netmode(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wl_basic.label2", NULL);
 	websWrite(wp, "<select name=\"%s\">\n", wl_net_mode);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n", nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 	if (!has_ad(prefix))
-		websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n", nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
-	websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
+		websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
 	if (has_mimo(prefix) && has_2ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 	}
