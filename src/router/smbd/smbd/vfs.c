@@ -1582,10 +1582,11 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 		length = maxbytes - start;
 
 	fieinfo.fi_extents_max = 32;
-	fieinfo.fi_extents_start = kmalloc_array(fieinfo.fi_extents_max,
-				sizeof(struct fiemap_extent), GFP_KERNEL);
-	if (!fieinfo.fi_extents_start)
+	extents = kmalloc_array(fieinfo.fi_extents_max,
+			sizeof(struct fiemap_extent), GFP_KERNEL);
+	if (!extents)
 		return -ENOMEM;
+	fieinfo.fi_extents_start = (struct fiemap_extent __user *)extents;
 
 	range_idx = 0;
 	range = ranges + range_idx;
@@ -1607,7 +1608,6 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 			goto out;
 		}
 
-		extents = (struct fiemap_extent *)(fieinfo.fi_extents_start);
 		for (i = 0; i < fieinfo.fi_extents_mapped; i++) {
 			if (extents[i].fe_logical <=
 					le64_to_cpu(range->file_offset) +
@@ -1665,7 +1665,7 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 	}
 
 out:
-	kfree(fieinfo.fi_extents_start);
+	kfree(extents);
 	return ret;
 }
 

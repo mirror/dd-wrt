@@ -522,10 +522,10 @@ struct smb2_tree_disconnect_rsp {
 					FILE_GENERIC_ALL_LE)
 
 /* Impersonation Levels */
-#define IL_ANONYMOUS		cpu_to_le32(0x00000000)
-#define IL_IDENTIFICATION	cpu_to_le32(0x00000001)
-#define IL_IMPERSONATION	cpu_to_le32(0x00000002)
-#define IL_DELEGATE		cpu_to_le32(0x00000003)
+#define IL_ANONYMOUS_LE		cpu_to_le32(0x00000000)
+#define IL_IDENTIFICATION_LE	cpu_to_le32(0x00000001)
+#define IL_IMPERSONATION_LE	cpu_to_le32(0x00000002)
+#define IL_DELEGATE_LE		cpu_to_le32(0x00000003)
 
 /* Create Context Values */
 #define SMB2_CREATE_EA_BUFFER			"ExtA" /* extended attributes */
