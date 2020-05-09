@@ -2440,7 +2440,8 @@ int smb2_open(struct ksmbd_work *work)
 			lc = parse_lease_state(req);
 	}
 
-	if (req->ImpersonationLevel > IL_DELEGATE) {
+	if (le32_to_cpu(req->ImpersonationLevel) >
+			le32_to_cpu(IL_DELEGATE_LE)) {
 		ksmbd_err("Invalid impersonationlevel : 0x%x\n",
 			le32_to_cpu(req->ImpersonationLevel));
 		rc = -EIO;
@@ -2474,7 +2475,8 @@ int smb2_open(struct ksmbd_work *work)
 		}
 	}
 
-	if (req->CreateDisposition > FILE_OVERWRITE_IF_LE) {
+	if (le32_to_cpu(req->CreateDisposition) >
+			le32_to_cpu(FILE_OVERWRITE_IF_LE)) {
 		ksmbd_err("Invalid create disposition : 0x%x\n",
 			le32_to_cpu(req->CreateDisposition));
 		rc = -EINVAL;
@@ -2805,7 +2807,10 @@ int smb2_open(struct ksmbd_work *work)
 			rc = find_same_lease_key(sess, fp->f_ci, lc);
 			if (rc)
 				goto err_out;
-		}
+		} else if (open_flags == O_RDONLY &&
+			    (req_op_level == SMB2_OPLOCK_LEVEL_BATCH ||
+			     req_op_level == SMB2_OPLOCK_LEVEL_EXCLUSIVE))
+			req_op_level = SMB2_OPLOCK_LEVEL_II;
 
 		rc = smb_grant_oplock(work, req_op_level,
 				      fp->persistent_id, fp,
