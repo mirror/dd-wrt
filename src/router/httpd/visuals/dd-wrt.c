@@ -4853,7 +4853,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue },
 		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
-		{ "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
+//		{ "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
 		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
 		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
 	};
