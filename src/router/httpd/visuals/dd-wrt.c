@@ -1994,7 +1994,8 @@ static void show_netmode(webs_t wp, char *prefix)
 	show_caption(wp, "label", "wl_basic.label2", NULL);
 	websWrite(wp, "<select name=\"%s\">\n", wl_net_mode);
 	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n", nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
+	if (!has_ad(prefix))
+		websWrite(wp, "document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");\n", nvram_match(wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
 	websWrite(wp, "document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");\n", nvram_match(wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
 	if (has_mimo(prefix) && has_2ghz(prefix)) {
 		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
@@ -2528,7 +2529,7 @@ static int show_virtualssid(webs_t wp, char *prefix)
 		websWrite(wp, "//]]>\n</script>\n");
 		websWrite(wp, "</select>\n");
 		websWrite(wp, "</div>\n");
-		
+
 		show_caption(wp, "label", "wl_basic.label3", NULL);
 
 		websWrite(wp, "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"", var);
@@ -3841,64 +3842,67 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	showRadio(wp, "wl_basic.csma", wl_csma);
 #endif
 	// showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-	websWrite(wp,
-		  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width, prefix);
-	websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
-	websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
+	if (!has_ad(prefix)) {
+		websWrite(wp,
+			  "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" onchange=\"to_submit(this.form);\">\n", wl_width,
+			  prefix);
+		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+		websWrite(wp, "document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");\n", nvram_matchi(wl_width, 20) ? "selected=\\\"selected\\\"" : "");
 /* limit channel options by mode */
-	int canht40 = can_ht40(prefix);
-	int canvht80 = can_vht80(prefix);
-	if (!is_mac80211(prefix) || canht40)
-		if (is_mac80211(prefix) && !is_ath5k(prefix)) {
-			if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("mixed", "%s_net_mode", prefix)
-			     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-			     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-			     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
-				websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
+		int canht40 = can_ht40(prefix);
+		int canvht80 = can_vht80(prefix);
+		if (!is_mac80211(prefix) || canht40)
+			if (is_mac80211(prefix) && !is_ath5k(prefix)) {
+				if ((nvram_nmatch("n-only", "%s_net_mode", prefix)
+				     || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+				     || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+				     || nvram_nmatch("mixed", "%s_net_mode", prefix)
+				     || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+				     || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+				     || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+				     || nvram_nmatch("na-only", "%s_net_mode", prefix)))
+					websWrite(wp, "document.write(\"<option value=\\\"2040\\\" %s >\" + share.dynamicturbo + \"</option>\");\n", nvram_matchi(wl_width, 2040) ? "selected=\\\"selected\\\"" : "");
+			}
+		if (!is_mac80211(prefix)
+		    || (is_mac80211(prefix)
+			&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("mixed", "%s_net_mode", prefix)
+			    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
+			    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
+			    || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
+			if (!is_mac80211(prefix) || is_ath5k(prefix))
+				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
+			else if (canht40)
+				websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
+			if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
+			    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
+				if (canvht80)
+					websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
+				if (has_vht160(prefix) && can_vht160(prefix))
+					websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
+				if (has_vht80plus80(prefix) && canvht80)
+					websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
+			}
 		}
-	if (!is_mac80211(prefix)
-	    || (is_mac80211(prefix)
-		&& (nvram_nmatch("n-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("ng-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("n2-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("mixed", "%s_net_mode", prefix)
-		    || nvram_nmatch("n5-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("ac-only", "%s_net_mode", prefix)
-		    || nvram_nmatch("acn-mixed", "%s_net_mode", prefix)
-		    || nvram_nmatch("na-only", "%s_net_mode", prefix)))) {
-		if (!is_mac80211(prefix) || is_ath5k(prefix))
-			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.turbo + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		else if (canht40)
-			websWrite(wp, "document.write(\"<option value=\\\"40\\\" %s >\" + share.ht40 + \"</option>\");\n", nvram_matchi(wl_width, 40) ? "selected=\\\"selected\\\"" : "");
-		if ((is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix)) && has_5ghz(prefix)
-		    && (nvram_nmatch("mixed", "%s_net_mode", prefix) || nvram_nmatch("ac-only", "%s_net_mode", prefix) || nvram_nmatch("acn-mixed", "%s_net_mode", prefix))) {
-			if (canvht80)
-				websWrite(wp, "document.write(\"<option value=\\\"80\\\" %s >\" + share.vht80 + \"</option>\");\n", nvram_matchi(wl_width, 80) ? "selected=\\\"selected\\\"" : "");
-			if (has_vht160(prefix) && can_vht160(prefix))
-				websWrite(wp, "document.write(\"<option value=\\\"160\\\" %s >\" + share.vht160 + \"</option>\");\n", nvram_matchi(wl_width, 160) ? "selected=\\\"selected\\\"" : "");
-			if (has_vht80plus80(prefix) && canvht80)
-				websWrite(wp, "document.write(\"<option value=\\\"80+80\\\" %s >\" + share.vht80plus80 + \"</option>\");\n", nvram_match(wl_width, "80+80") ? "selected=\\\"selected\\\"" : "");
-		}
-	}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
-	if (!(is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix))) {
-		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
-		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
-		if (registered_has_subquarter()) {
-			/* will be enabled once it is tested and the spectrum analyse is done */
-			websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
+		if (!(is_ath10k(prefix) || is_mvebu(prefix) || has_vht80(prefix))) {
+			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
+			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
+			if (registered_has_subquarter()) {
+				/* will be enabled once it is tested and the spectrum analyse is done */
+				websWrite(wp, "document.write(\"<option value=\\\"2\\\" %s >\" + share.subquarter + \"</option>\");\n", nvram_matchi(wl_width, 2) ? "selected=\\\"selected\\\"" : "");
+			}
 		}
+#endif
+#endif
+		websWrite(wp, "//]]>\n</script>\n");
+		websWrite(wp, "</select>\n");
+		websWrite(wp, "</div>\n");
 	}
-#endif
-#endif
-	websWrite(wp, "//]]>\n</script>\n");
-	websWrite(wp, "</select>\n");
-	websWrite(wp, "</div>\n");
 // test
 #if defined(HAVE_RT2880) && !defined(HAVE_MT76)
 #else
@@ -4853,7 +4857,7 @@ void show_authtable(webs_t wp, char *prefix, int show80211x)
 		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue },
 		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
 		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
-//		{ "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
+//              { "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
 		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
 		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
 	};
@@ -5476,7 +5480,8 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "<input name=\"%s_ttls8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
-		websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xpasswd", prefix));
+		websWrite(wp, "<input name=\"%s_ttls8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("ttls8021xpasswd", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
 		websWrite(wp, "<input name=\"%s_ttls8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("ttls8021xphase2", prefix));
@@ -5514,7 +5519,8 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "<input name=\"%s_peap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
-		websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("peap8021xpasswd", prefix));
+		websWrite(wp, "<input name=\"%s_peap8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("peap8021xpasswd", prefix));
 
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase1", NULL);
@@ -5558,7 +5564,8 @@ void show_80211X(webs_t wp, char *prefix)
 		websWrite(wp, "<input name=\"%s_leap8021xanon\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xanon", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "share.passwd", NULL);
-		websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xpasswd", prefix));
+		websWrite(wp, "<input name=\"%s_leap8021xpasswd\" type=\"password\" autocomplete=\"new-password\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix,
+			  nvram_prefix_get("leap8021xpasswd", prefix));
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "sec80211x.phase2", NULL);
 		websWrite(wp, "<input name=\"%s_leap8021xphase2\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n", prefix, nvram_prefix_get("leap8021xphase2", prefix));
