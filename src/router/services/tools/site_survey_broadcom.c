@@ -185,6 +185,15 @@ static void wl_rsn_ie_dump(bcm_tlv_t * ie, char *sum)
 			case WPA_CIPHER_AES_CCM:
 				strcat(sum, "Group-AES-CCMP ");
 				break;
+			case 8:
+				strcat(sum, "Group-GCMP-128 ");
+				break;
+			case 9:
+				strcat(sum, "Group-GCMP-256 ");
+				break;
+			case 10:
+				strcat(sum, "Group-CCMP-256 ");
+				break;
 			default:
 				sprintf(sum, "Unknown-%s(#%d) ", rsn ? "WPA2" : "WPA", rsn_info.mcast->type);
 				break;
