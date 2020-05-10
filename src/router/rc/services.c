@@ -763,24 +763,26 @@ static void handle_services(void)
 
 static void handle_nassrv(void)
 {
-
-#ifdef HAVE_SAMBA3
-	stop_service_f("samba3");
+#ifdef HAVE_TRANSMISSION
+	stop_service_f("transmission");
 #endif
-#ifdef HAVE_NFS
-	stop_service_f("nfs");
-#endif
-#ifdef HAVE_RSYNC
-	stop_service_f("rsync");
+#ifdef HAVE_MINIDLNA
+	stop_service_f("dlna");
 #endif
 #ifdef HAVE_FTP
 	stop_service_f("ftpsrv");
 #endif
+#ifdef HAVE_RSYNC
+	stop_service_f("rsync");
+#endif
+#ifdef HAVE_NFS
+	stop_service_f("nfs");
+#endif
+#ifdef HAVE_SAMBA3
+	stop_service_f("samba3");
+#endif
 #ifdef HAVE_RAID
 	stop_service_f("raid");
-#endif
-#ifdef HAVE_TRANSMISSION
-	stop_service_f("transmission");
 #endif
 
 	stop_running_main(0, NULL);
