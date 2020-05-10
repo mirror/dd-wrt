@@ -3383,8 +3383,9 @@ int wlconf_up(char *name)
 	// Set ACK Timing. Thx to Nbd
 	char *v;
 #if defined(HAVE_ACK)
-
-	if ((v = nvram_nget("wl%d_distance", instance))) {
+	char sens[32];
+	sprintf(sens,"wl%d_distance",instance);
+	if ((v = nvram_default_geti(sens, 500))) {
 		rw_reg_t reg;
 		uint32 shm;
 
