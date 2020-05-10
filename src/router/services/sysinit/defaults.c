@@ -969,14 +969,6 @@ struct nvram_param srouter_defaults[] = {
 #endif
 
 	{ "wl0_sta_retry_time", "5" },	/* 100% duty cycle for LED on router */
-#ifdef HAVE_DDLAN
-	{ "wl_distance", "500" },	/* ack timing, distance in meters */
-#elif HAVE_CARLSONWIRELESS
-	{ "wl_distance", "0" },	/* ack timing, distance in meters */
-	{ "ath0_distance", "0" },	/* ack timing, distance in meters */
-#else
-	{ "wl_distance", "500" },	/* ack timing, distance in meters */
-#endif
 	{ "wl_ifname", "" },	/* Interface name */
 	{ "wl_hwaddr", "" },	/* MAC address */
 	{ "wl_phytype", "g" },	/* Current wireless band ("a" (5 GHz), "b" *
