@@ -103,7 +103,13 @@ all: clean
 #	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
 else
 all: clean $(UTILS)
+ifneq ($(CONFIG_MADWIFI),y)
+ifneq ($(CONFIG_RT2880),y)
+ifneq ($(CONFIG_RT61),y)
 	if test -e "src.new/Makefile"; then make -C src.new; fi
+endif
+endif
+endif
 endif
 ifeq ($(CONFIG_MADWIFI),y)
 ifneq ($(CONFIG_MADWIFI_MIMO),y)
