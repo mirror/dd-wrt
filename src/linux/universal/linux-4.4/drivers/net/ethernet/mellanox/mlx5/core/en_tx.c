@@ -124,7 +124,7 @@ static inline u16 mlx5e_get_inline_hdr_size(struct mlx5e_sq *sq,
 	 * headers and occur before the data gather.
 	 * Therefore these headers must be copied into the WQE
 	 */
-#define MLX5E_MIN_INLINE ETH_HLEN
+#define MLX5E_MIN_INLINE (ETH_HLEN + VLAN_HLEN)
 
 	if (bf) {
 		u16 ihs = skb_headlen(skb);
@@ -136,7 +136,7 @@ static inline u16 mlx5e_get_inline_hdr_size(struct mlx5e_sq *sq,
 			return skb_headlen(skb);
 	}
 
-	return MLX5E_MIN_INLINE;
+	return max(skb_network_offset(skb), MLX5E_MIN_INLINE);
 }
 
 static inline void mlx5e_insert_vlan(void *start, struct sk_buff *skb, u16 ihs)
@@ -290,7 +290,8 @@ static netdev_tx_t mlx5e_sq_xmit(struct mlx5e_sq *sq, struct sk_buff *skb)
 	while ((sq->pc & wq->sz_m1) > sq->edge)
 		mlx5e_send_nop(sq, false);
 
-	sq->bf_budget = bf ? sq->bf_budget - 1 : 0;
+	if (bf)
+		sq->bf_budget--;
 
 	sq->stats.packets++;
 	return NETDEV_TX_OK;

@@ -539,6 +539,7 @@ struct phy_device *phy_connect(struct net_device *dev, const char *bus_id,
 	phydev = to_phy_device(d);
 
 	rc = phy_connect_direct(dev, phydev, handler, interface);
+	put_device(d);
 	if (rc)
 		return ERR_PTR(rc);
 
@@ -738,6 +739,7 @@ struct phy_device *phy_attach(struct net_device *dev, const char *bus_id,
 	phydev = to_phy_device(d);
 
 	rc = phy_attach_direct(dev, phydev, phydev->dev_flags, interface);
+	put_device(d);
 	if (rc)
 		return ERR_PTR(rc);
 
