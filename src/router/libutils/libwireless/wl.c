@@ -3385,7 +3385,7 @@ int wlconf_up(char *name)
 #if defined(HAVE_ACK)
 	char sens[32];
 	sprintf(sens,"wl%d_distance",instance);
-	if ((v = nvram_default_get´(sens, 500))) {
+	if ((v = nvram_default_get(sens, 500))) {
 		rw_reg_t reg;
 		uint32 shm;
 
