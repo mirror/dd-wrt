@@ -2060,7 +2060,11 @@ static int cpsw_probe_dt(struct cpsw_platform_data *data,
 		slave_data->phy_node = of_parse_phandle(slave_node,
 							"phy-handle", 0);
 		parp = of_get_property(slave_node, "phy_id", &lenp);
-		if (of_phy_is_fixed_link(slave_node)) {
+		if (slave_data->phy_node) {
+			dev_dbg(&pdev->dev,
+				"slave[%d] using phy-handle=\"%s\"\n",
+				i, slave_data->phy_node->full_name);
+		} else if (of_phy_is_fixed_link(slave_node)) {
 			struct device_node *phy_node;
 			struct phy_device *phy_dev;
 
@@ -2097,7 +2101,9 @@ static int cpsw_probe_dt(struct cpsw_platform_data *data,
 				 PHY_ID_FMT, mdio->name, phyid);
 			put_device(&mdio->dev);
 		} else {
-			dev_err(&pdev->dev, "No slave[%d] phy_id or fixed-link property\n", i);
+			dev_err(&pdev->dev,
+				"No slave[%d] phy_id, phy-handle, or fixed-link property\n",
+				i);
 			goto no_phy_slave;
 		}
 		slave_data->phy_if = of_get_phy_mode(slave_node);
@@ -2526,12 +2532,14 @@ static int cpsw_probe(struct platform_device *pdev)
 		ret = cpsw_probe_dual_emac(pdev, priv);
 		if (ret) {
 			cpsw_err(priv, probe, "error probe slave 2 emac interface\n");
-			goto clean_ale_ret;
+			goto clean_unregister_netdev_ret;
 		}
 	}
 
 	return 0;
 
+clean_unregister_netdev_ret:
+	unregister_netdev(ndev);
 clean_ale_ret:
 	cpsw_ale_destroy(priv->ale);
 clean_dma_ret:
