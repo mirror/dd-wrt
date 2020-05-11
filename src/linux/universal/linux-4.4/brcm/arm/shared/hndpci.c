@@ -732,8 +732,20 @@ BCMATTACHFN(hndpci_init_pci)(si_t *sih, uint coreunit)
 	}
 
 	boardflags = (uint32)getintvar(NULL, "boardflags");
+	printf("boardflags are %X\n", boardflags);
+	int boardnum = (uint32)getintvar(NULL, "boardnum");
+	char *boardtype = nvram_safe_get("boardtype");
+	char *boardrev = nvram_safe_get("boardrev");
 
-	/*
+	if ((boardnum == 1 || boardnum == 3500)
+	    && !strcmp(boardtype, "0x04CF")
+	    && (!strcmp(boardrev, "0x1213")
+		|| !strcmp(boardrev, "02"))) {
+		pci_disabled[coreunit] = TRUE;
+		printf("netgear wnr3500 quirk required\n");
+		host = 0;
+	} else {
+    	/*
 	 * The NOPCI boardflag indicates we should not touch the PCI core,
 	 * it may not be bonded out or the pins may be floating.
 	 * The 200-pin BCM4712 package does not bond out PCI, and routers
@@ -753,6 +765,7 @@ BCMATTACHFN(hndpci_init_pci)(si_t *sih, uint coreunit)
 		 * Trap handler must be implemented to support this like hndrte_mips.c
 		 */
 		host = !BUSPROBE(val, (pci ? &pci->control : &pcie->control));
+	}
 	}
 
 	if (!host) {
