@@ -9,6 +9,7 @@ SRCBASE := $(srctree)/drivers/net/wl/../../../brcm/mipsel
 SRCBASE_OFFSET := ../../../brcm/mipsel
 endif
 else
+#EXTRA_CFLAGS+=-fanalyzer -Wno-analyzer-null-dereference
 DDFLAGS =-I$(srctree)/brcm/arm/include -I$(srctree)/brcm/arm/shared -I$(srctree)/brcm/arm/common/include -I$(srctree)/brcm/arm/shared/bcmwifi/include -I$(srctree)/brcm/arm/wl/dump/include -I$(srctree)/brcm/arm/wl/iocv/include
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/hal 
 DDFLAGS+=-I$(srctree)/brcm/arm/wl/phymods/cmn/include 

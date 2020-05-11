@@ -266,6 +266,8 @@ extern const void si_pmu_wait_for_steady_state; EXPORT_SYMBOL(si_pmu_wait_for_st
 extern const void si_pmu_waitforclk_on_backplane; EXPORT_SYMBOL(si_pmu_waitforclk_on_backplane);
 extern const void si_sdiod_drive_strength_init; EXPORT_SYMBOL(si_sdiod_drive_strength_init);
 extern const void g_assert_type; EXPORT_SYMBOL(g_assert_type);
+extern const void osl_acp_war_enab; EXPORT_SYMBOL(osl_acp_war_enab);
+extern const void osl_arch_is_coherent; EXPORT_SYMBOL(osl_arch_is_coherent);
 extern const void osl_attach; EXPORT_SYMBOL(osl_attach);
 extern const void osl_cache_flush; EXPORT_SYMBOL(osl_cache_flush);
 extern const void osl_cache_inv; EXPORT_SYMBOL(osl_cache_inv);
@@ -298,6 +300,7 @@ extern const void osl_pci_slot; EXPORT_SYMBOL(osl_pci_slot);
 extern const void osl_pci_write_config; EXPORT_SYMBOL(osl_pci_write_config);
 extern const void osl_pcie_bus; EXPORT_SYMBOL(osl_pcie_bus);
 extern const void osl_pcie_domain; EXPORT_SYMBOL(osl_pcie_domain);
+extern const void osl_pcie_rreg; EXPORT_SYMBOL(osl_pcie_rreg);
 extern const void osl_pcmcia_read_attr; EXPORT_SYMBOL(osl_pcmcia_read_attr);
 extern const void osl_pcmcia_write_attr; EXPORT_SYMBOL(osl_pcmcia_write_attr);
 extern const void osl_pkt_frmnative; EXPORT_SYMBOL(osl_pkt_frmnative);
