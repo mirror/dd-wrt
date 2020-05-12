@@ -225,17 +225,18 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");	//
 		/* service */
 		filters *services = get_filters_list();
-		int count = 0;
-		websWrite(wp, "	<td nowrap>\n");
-		websWrite(wp, "<select name=\"svqos_devservice%d\" style=\"overflow:hidden; max-width:100px;\"> size=\"1\"\n", i);
-		websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
-		while (services[count].name != NULL) {
-			websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
-			count++;
+		if (services) {
+			int count = 0;
+			websWrite(wp, "	<td nowrap>\n");
+			websWrite(wp, "<select name=\"svqos_devservice%d\" style=\"overflow:hidden; max-width:100px;\"> size=\"1\"\n", i);
+			websWrite(wp, "<option value=\"none\" %s >None</option>\n", !strcmp(proto, "none") ? "selected=\"selected\"" : "");
+			while (services[count].name != NULL) {
+				websWrite(wp, "<option value=\"%s\" %s >%s</option>\n", services[count].name, !strcmp(proto, services[count].name) ? "selected=\"selected\"" : "", services[count].name);
+				count++;
+			}
+			websWrite(wp, "</select>\n");
+			free_filters(services);
 		}
-		websWrite(wp, "</select>\n");
-		free_filters(services);
-
 		websWrite(wp, "	<td>\n"	//
 			  "<select name=\"svqos_devprio%d\" onChange=\"iplvl_grey(%d,this,this.form,false)\"> \n"	//
 			  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<option value=\\\"0\\\" %s >\" + qos.prio_m + \"</option>\");\n"	//
