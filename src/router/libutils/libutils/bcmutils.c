@@ -1698,6 +1698,7 @@ void free_filters(filters * filter)
 	int count = 0;
 	while (filter[count].name != NULL) {
 		free(filter[count].name);
+		filter[count].name = NULL;
 		count++;
 	}
 	free(filter);
