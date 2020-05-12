@@ -36,41 +36,47 @@ static int wfflush(webs_t fp);
  */
 
 #ifdef HAVE_ANTAIRA
-static inline void xorBuffer(char *buffer, int len, char key) {
-        int i = 0;
-        for(i = 0; i < len ;i++)
-                buffer[i] ^= key;
+static inline void xorBuffer(char *buffer, int len, char key)
+{
+	int i = 0;
+	for (i = 0; i < len; i++)
+		buffer[i] ^= key;
 }
 
-static int xorFile(const char *src, const char *dst, char key) {
-        FILE *srcfp = fopen(src, "r");
-        if(!srcfp) return -1;
+static int xorFile(const char *src, const char *dst, char key)
+{
+	FILE *srcfp = fopen(src, "r");
+	if (!srcfp)
+		return -1;
 
-        FILE *dstfp = fopen(dst, "w+");
-        if(!dstfp) return -1;
+	FILE *dstfp = fopen(dst, "w+");
+	if (!dstfp)
+		return -1;
 
-        int readlen = 32;
-        int didread = 0;
-        char buffer[readlen];
-        while((didread = fread(buffer, 1, readlen, srcfp)) > 0) {
-                xorBuffer(buffer, didread, key);
-                fwrite(buffer,  1, didread,dstfp);
-        }
+	int readlen = 32;
+	int didread = 0;
+	char buffer[readlen];
+	while ((didread = fread(buffer, 1, readlen, srcfp)) > 0) {
+		xorBuffer(buffer, didread, key);
+		fwrite(buffer, 1, didread, dstfp);
+	}
 
-        fclose(srcfp);
-        fclose(dstfp);
+	fclose(srcfp);
+	fclose(dstfp);
 
-        return 0;
+	return 0;
 }
 
-static int xorFileMove(const char *src, char key) {
-        const char *dst = "/tmp/.tmp.xor";
-        int ret = xorFile(src, dst, key);
-        if(ret != 0) return ret;
+static int xorFileMove(const char *src, char key)
+{
+	const char *dst = "/tmp/.tmp.xor";
+	int ret = xorFile(src, dst, key);
+	if (ret != 0)
+		return ret;
 
-        return rename(dst, src);
+	return rename(dst, src);
 }
-#endif /*HAVE_ANTAIRA*/
+#endif				/*HAVE_ANTAIRA */
 
 static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 {
@@ -125,9 +131,9 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	free(mem);
 
 #ifdef HAVE_ANTAIRA
-	if(nvram_matchi("xor_backup", 1)) xorFileMove("/tmp/restore.bin", 'K');
-#endif /*HAVE_ANTAIRA*/
-
+	if (nvram_matchi("xor_backup", 1))
+		xorFileMove("/tmp/restore.bin", 'K');
+#endif				/*HAVE_ANTAIRA */
 
 	int ret = nvram_restore("/tmp/restore.bin", 0);
 	if (ret < 0)
@@ -136,7 +142,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		wp->restore_ret = 0;
 	unlink("/tmp/restore.bin");
 	chdir("/www");
-	nvram_set("shutdown","fast");
+	nvram_set("shutdown", "fast");
 	return 0;
 }
 
@@ -184,8 +190,9 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
-	if(nvram_matchi("xor_backup", 1)) xorFileMove("/tmp/nvrambak.bin", 'K');
-#endif /*HAVE_ANTAIRA*/
+	if (nvram_matchi("xor_backup", 1))
+		xorFileMove("/tmp/nvrambak.bin", 'K');
+#endif				/*HAVE_ANTAIRA */
 
 	do_file_attach(handler, "/tmp/nvrambak.bin", wp, fname);
 	unlink("/tmp/nvrambak.bin");

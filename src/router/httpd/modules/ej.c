@@ -323,7 +323,7 @@ static FILE *getWebsFile(webs_t wp, char *path2)
 			/* to prevent stack overwrite problems */
 			web = fopen("/tmp/debug/www", "rb");
 			if (!web)
-			web = fopen("/etc/www", "rb");
+				web = fopen("/etc/www", "rb");
 			if (web == NULL)
 				goto err;
 			fseek(web, curoffset, SEEK_SET);
@@ -375,7 +375,7 @@ static void do_ej(unsigned char method, struct mime_handler *handler, char *path
 		if (!strcmp(websRomPageIndex[i].path, path)) {
 			fp = fopen("/tmp/debug/www", "rb");
 			if (!fp)
-			fp = fopen("/etc/www", "rb");
+				fp = fopen("/etc/www", "rb");
 			if (fp == NULL)
 				return;
 			fseek(fp, curoffset, SEEK_SET);

@@ -849,23 +849,23 @@ _8021xprv
 #endif
 //disable due obfuscated nvram backup as for now
 //#ifdef HAVE_ANTAIRA
-//	#define u8 unsigned char
-//	int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
+//      #define u8 unsigned char
+//      int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len, int iterations, u8 *buf, size_t buflen);
 //
-//	sprintf(n, "%s_wpa_psk", prefix);
-//	const char *passphrase = websGetVar(wp, n, "");
-//	if (strlen(passphrase) == 64)
-//		nvram_nset(passphrase, "%s_wpa_psk", prefix);
-//	else {
-//		const char *ssid = nvram_nget("%s_ssid", prefix);
-//		unsigned char psk[32];
-//		pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
-//		char wpapsk[70];
-//		int i;
-//		for (i = 0; i < 32; i++)
-//			sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
-//		nvram_nset(wpapsk, "%s_wpa_psk", prefix);
-//	}
+//      sprintf(n, "%s_wpa_psk", prefix);
+//      const char *passphrase = websGetVar(wp, n, "");
+//      if (strlen(passphrase) == 64)
+//              nvram_nset(passphrase, "%s_wpa_psk", prefix);
+//      else {
+//              const char *ssid = nvram_nget("%s_ssid", prefix);
+//              unsigned char psk[32];
+//              pbkdf2_sha1(passphrase, ssid, strlen(ssid), 4096, psk, 32);
+//              char wpapsk[70];
+//              int i;
+//              for (i = 0; i < 32; i++)
+//                      sprintf(wpapsk, "%s%02x", wpapsk, psk[i]);
+//              nvram_nset(wpapsk, "%s_wpa_psk", prefix);
+//      }
 //#else /*HAVE_ANTAIRA*/
 	copytonv_prefix(wp, "wpa_psk", prefix);
 //#endif /*HAVE_ANTAIRA*/
@@ -2785,7 +2785,8 @@ static char *vapsettings[] = {
 	"gmode", "gmode_protection", "gtk_rekey", "hwaddr", "infra", "intmit", "ipaddr", "isolation", "itxbf", "key", "key1", "key2", "key3", "key4", "label", "lazy_wds", "lazywds", "lbr_aggr_en_mask",
 	"lbr_aggr_len", "lbr_aggr_release_timeout", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "leddc", "local_ip", "maclist", "macmode", "macmode1",
 	"max_unauth_users", "maxassoc", "mbss", "mfp", "mode", "mrate", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nbw", "nbw_cap", "nctrlsb", "net_mode", "netmask", "nmcsidx",
-	"nmode", "nmode_protection", "nreqd", "obss_coex", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase1", "peap8021xphase2", "peap8021xuser", "phytype", "phytypes",
+	"nmode", "nmode_protection", "nreqd", "obss_coex", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase1", "peap8021xphase2", "peap8021xuser", "phytype",
+	    "phytypes",
 	"plcphdr", "poll_time", "preamble", "protmode", "psk2", "psk3", "owe", "radauth", "radio", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_override", "radius_port",
 	"radius_retry", "radmacpassword", "radmactype", "rate", "rateset", "reg_mode", "regdomain", "regulatory", "rifs_advert", "rts", "rts rtsvalue", "rtsvalue", "rx_amsdu_in_ampdu", "rxantenna", "rxchain",
 	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
@@ -3179,6 +3180,8 @@ void del_bond(webs_t wp)
 
 	wordlist = nvram_safe_get("bondings");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3230,6 +3233,8 @@ void del_olsrd(webs_t wp)
 
 	char *wordlist = nvram_safe_get("olsrd_interfaces");
 	char *newlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newlist)
+		return;
 
 	char *next;
 	char word[128];
@@ -3795,6 +3800,8 @@ void del_vlan(webs_t wp)
 
 	wordlist = nvram_safe_get("vlan_tags");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3862,6 +3869,8 @@ void del_mdhcp(webs_t wp)
 
 	wordlist = nvram_safe_get("mdhcpd");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3893,6 +3902,8 @@ void del_bridge(webs_t wp)
 
 	wordlist = nvram_safe_get("bridges");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -3959,6 +3970,8 @@ void del_bridgeif(webs_t wp)
 
 	wordlist = nvram_safe_get("bridgesif");
 	newwordlist = (char *)calloc(strlen(wordlist) + 2, 1);
+	if (!newwordlist)
+		return;
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -4043,8 +4056,11 @@ void del_ipvs(webs_t wp)
 	wordlist = nvram_safe_get("ipvs");
 	if (!*(wordlist))
 		newwordlist = NULL;
-	else
+	else {
 		newwordlist = (char *)calloc(strlen(wordlist), 1);
+		if (!newwordlist)
+			return;
+	}
 	int count = 0;
 
 	foreach(word, wordlist, next) {
@@ -4102,8 +4118,11 @@ void del_ipvstarget(webs_t wp)
 	wordlist = nvram_safe_get("ipvstarget");
 	if (!*(wordlist))
 		newwordlist = NULL;
-	else
+	else {
 		newwordlist = (char *)calloc(strlen(wordlist), 1);
+		if (!newwordlist)
+			return;
+	}
 	int count = 0;
 
 	foreach(word, wordlist, next) {

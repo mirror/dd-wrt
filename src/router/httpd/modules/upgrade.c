@@ -73,7 +73,7 @@ static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, c
 	 */
 	if (stream->upgrade_ret == 0) {
 		// sleep (10);
-		nvram_set("shutdown","fast");
+		nvram_set("shutdown", "fast");
 		sys_reboot();
 	}
 #else
