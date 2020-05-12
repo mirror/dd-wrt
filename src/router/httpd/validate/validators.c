@@ -2165,7 +2165,8 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	int i;
 
 	leases = (char *)calloc((128 * leasenum) + 1, 1);
-
+	if (!leases)
+		return;
 	for (i = 0; i < leasenum; i++) {
 		snprintf(username, sizeof(username), "fon_user%d_name", i);
 		strcat(leases, websGetVar(wp, username, ""));
@@ -2243,7 +2244,8 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	int i;
 
 	leases = (char *)calloc((54 * leasenum) + 1, 1);
-
+	if (!leases)
+		return;
 	for (i = 0; i < leasenum; i++) {
 		snprintf(lease_hwaddr, sizeof(lease_hwaddr), "lease%d_hwaddr", i);
 		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
