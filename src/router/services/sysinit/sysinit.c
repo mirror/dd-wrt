@@ -2926,7 +2926,7 @@ void start_restore_defaults(void)
 	 * Always set OS defaults 
 	 */
 	nvram_set("os_version", SVN_REVISION);
-
+	nvram_unset("shutdown");
 #ifdef HAVE_SPUTNIK_APD
 	/*
 	 * Added for Sputnik Agent 
