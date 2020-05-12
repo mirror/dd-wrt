@@ -136,6 +136,7 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 		wp->restore_ret = 0;
 	unlink("/tmp/restore.bin");
 	chdir("/www");
+	nvram_set("shutdown","fast");
 	return 0;
 }
 
