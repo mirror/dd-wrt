@@ -772,6 +772,8 @@ void addList(char *listname, char *value)
 
 	listlen = strlen(list);
 	newlist = safe_malloc(strlen(value) + listlen + 2);
+	if (!newlist)
+		return;
 	if (*list) {
 		sprintf(newlist, "%s %s", list, value);
 	} else {
@@ -1043,7 +1045,8 @@ int dd_sprintf(char *str, const char *fmt, ...)
 	va_list ap;
 	int n;
 	char *dest;
-
+	if (!str)
+		return 0;
 	va_start(ap, fmt);
 	n = vasprintf(&dest, fmt, ap);
 	va_end(ap);
@@ -1375,6 +1378,9 @@ void add_blocklist(const char *service, char *ip)
 		entry = entry->next;
 	}
 	last->next = malloc(sizeof(*last));
+	if (!last->next) {
+		goto end;
+	}
 	memset(last->next, 0, sizeof(*last));
 	strcpy(&last->next->ip[0], ip);
 	last->next->end = 0;
