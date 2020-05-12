@@ -144,6 +144,10 @@ struct servent *my_getservbyport(int port, const char *proto)
 		return NULL;
 	}
 	struct servent *serv = malloc(sizeof(struct servent));
+	if (serv == NULL) {
+		my_endservent();
+		return NULL;
+	}
 	char *line = malloc(BUFSIZ + 1);
 	while ((my_getservent(servf, serv, serv_aliases, line)) != NULL) {
 		if (serv->s_port != port) {
