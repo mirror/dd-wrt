@@ -63,7 +63,7 @@ PATHS='-DPPPOE_PATH="$(PPPOE_PATH)"' '-DPPPD_PATH="$(PPPD_PATH)"' \
 	'-DPLUGIN_PATH="$(PLUGIN_PATH)"' \
 	'-DPPPOE_SERVER_OPTIONS="$(PPPOESERVER_PPPD_OPTIONS)"'
 
-CFLAGS= $(COPTS) $(MIPS16_OPT) -fno-strict-aliasing -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent -ffunction-sections -fdata-sections -Wl,--gc-sections
+CFLAGS= $(COPTS) $(MIPS16_OPT) -fno-strict-aliasing -fcommon -Wall -Wstrict-prototypes -ansi -pedantic $(LIC_INCDIR) $(DEFINES) $(LIC_DEFINE) $(PATHS) -Ilibevent -ffunction-sections -fdata-sections -Wl,--gc-sections
 ifeq ($(CONFIG_PPPOERELAY),y)
 CFLAGS += -DHAVE_PPPOERELAY
 endif
