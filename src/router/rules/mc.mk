@@ -25,7 +25,7 @@ mc-configure: glib20 ncurses
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libmount.la
 	cd mc && autoreconf -fi
 	cd mc && ./configure --host=$(ARCH)-uclibc-linux AWK="awk" \
-		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -I$(TOP)/glib20/gettext" \
+		CFLAGS="$(COPTS)  $(MIPS16_OPT) -DNEED_PRINTF -DSTAT_STATVFS -fcommon -I$(TOP)/glib20/gettext" \
 		LDFLAGS="-L$(TOP)/glib20/gettext/.libs -lintl" \
 		GLIB_CFLAGS="-I$(TOP)/glib20/libglib/glib -I$(TOP)/glib20/libglib -L$(INSTALLDIR)/util-linux/usr/lib" \
 		GLIB_LIBS="-L$(TOP)/glib20/libglib/glib/.libs -lglib-2.0" \
