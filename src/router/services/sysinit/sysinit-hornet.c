@@ -213,7 +213,8 @@ void start_sysinit(void)
 	eval("insmod", "rtc-pcf8523");
 	writestr("/sys/class/i2c-dev/i2c-0/device/new_device", "pcf8523 0x68");
 	eval("hwclock", "-s", "-u");
-	//eval("ledtool", "1", "0");	//diag ~5sec
+
+	eval("ledtool", "1", "0");	//diag
 	eval("ledtool", "1", "4");	//buzzer
 
 	set_gpio(13, 1);
@@ -221,16 +222,14 @@ void start_sysinit(void)
 	set_gpio(15, 1);
 	set_gpio(16, 1);
 	set_gpio(18, 1);
-	set_gpio(19, 1);
 	set_gpio(20, 1);
 	set_gpio(21, 1);
-	usleep(500000);
+	usleep(1000000);
 	set_gpio(13, 0);
 	set_gpio(14, 0);
 	set_gpio(15, 0);
 	set_gpio(16, 0);
 	set_gpio(18, 0);
-	set_gpio(19, 0);
 	set_gpio(20, 0);
 	set_gpio(21, 0);
 
