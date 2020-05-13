@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5075 | brainslayer | 2020-05-13 23:53:34 +0400 (Wed, 13 May 2020) | 1 line
+
+place wlanleds and boot-done leds flash here, because this is called later than sysinit
+------------------------------------------------------------------------
 r5074 | brainslayer | 2020-05-13 23:42:42 +0400 (Wed, 13 May 2020) | 1 line
 
 robo patch
