@@ -2240,12 +2240,9 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 
 	if (leasenum == 0)
 		return;
-	char *leases;
+	char *leases = NULL;
 	int i;
 
-	leases = (char *)calloc((108 * leasenum) + 1, 1);
-	if (!leases)
-		return;
 	for (i = 0; i < leasenum; i++) {
 		snprintf(lease_hwaddr, sizeof(lease_hwaddr), "lease%d_hwaddr", i);
 		hwaddr = websGetVar(wp, lease_hwaddr, NULL);
@@ -2258,8 +2255,6 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 			websError(wp, 400, "%s is not a valid mac adress\n", hwaddr);
 			return;
 		}
-		strcat(leases, mac);
-		free(mac);
 		snprintf(lease_hostname, sizeof(lease_hostname), "lease%d_hostname", i);
 		char *hostname = websGetVar(wp, lease_hostname, NULL);
 
@@ -2271,6 +2266,11 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 
 		if (hostname == NULL || *(hostname) == 0 || ip == NULL || *(ip) == 0)
 			break;
+		leases = realloc(leases, (leases ? strlen(leases) : 0)  + strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 2);
+		if (!leases)
+		    return;
+		strcat(leases, mac);
+		free(mac);
 		strcat(leases, "=");
 		strcat(leases, hostname);
 		strcat(leases, "=");
