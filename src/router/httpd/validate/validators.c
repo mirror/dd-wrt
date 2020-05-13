@@ -2243,7 +2243,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char *leases;
 	int i;
 
-	leases = (char *)calloc((54 * leasenum) + 1, 1);
+	leases = (char *)calloc((108 * leasenum) + 1, 1);
 	if (!leases)
 		return;
 	for (i = 0; i < leasenum; i++) {
