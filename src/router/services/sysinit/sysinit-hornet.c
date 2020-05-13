@@ -214,25 +214,6 @@ void start_sysinit(void)
 	writestr("/sys/class/i2c-dev/i2c-0/device/new_device", "pcf8523 0x68");
 	eval("hwclock", "-s", "-u");
 
-	eval("ledtool", "1", "0");	//diag
-	eval("ledtool", "1", "4");	//buzzer
-
-	set_gpio(13, 1);
-	set_gpio(14, 1);
-	set_gpio(15, 1);
-	set_gpio(16, 1);
-	set_gpio(18, 1);
-	set_gpio(20, 1);
-	set_gpio(21, 1);
-	usleep(1000000);
-	set_gpio(13, 0);
-	set_gpio(14, 0);
-	set_gpio(15, 0);
-	set_gpio(16, 0);
-	set_gpio(18, 0);
-	set_gpio(20, 0);
-	set_gpio(21, 0);
-
 	setEthLED(14, "eth0");
 	setEthLinkLED(21, "eth0");
 	setEthLED(13, "eth1");
@@ -270,9 +251,6 @@ void start_sysinit(void)
 		set_gpio(0, 1);
 		set_gpio(1, 1);
 	}
-#endif
-#ifdef HAVE_FMS2111
-	eval("/sbin/wlanled", "-l", "generic_19:-99", "-l", "generic_15:-82", "-l", "generic_16:-66", "-l", "generic_18:-50");
 #endif
 	nvram_default_geti("port0vlans", 2);
 	nvram_default_geti("port1vlans", 1);
