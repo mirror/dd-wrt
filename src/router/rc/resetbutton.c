@@ -926,7 +926,6 @@ static void control_wifi(int *wifi_mode, char *title, char *post, int i, int res
 		char off[32];
 		sprintf(off, "radio_off%s", post);
 		eval("restart", off);
-		sysprintf("restart radio_off");
 #ifdef HAVE_MADWIFI
 		if (restart) {
 			char dev[32];
