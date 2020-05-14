@@ -889,12 +889,9 @@ static void handle_reset(void)
 
 }
 
-static void handle_wifi(void)
+static void control_wifi(int *wifi_mode, char *title, char *post, int i, int restart)
 {
-
-	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
-	_count = 0;
-	switch (wifi_mode) {
+	switch (*wifi_mode) {
 	case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
@@ -902,15 +899,19 @@ static void handle_wifi(void)
 		set_gpio(1, 1);
 #endif
 #endif
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("restart radio_on");
+		dd_syslog(LOG_DEBUG, "%s: turning radio(s) on\n", title);
+		char on[32];
+		sprintf(on, "radio_on%s", post);
+		eval("restart", on);
 #ifdef HAVE_MADWIFI
-		start_service_force("restarthostapd");
-		stop_service_force("dnsmasq");
-		start_service_force("dnsmasq");
-		start_service_force("resetleds");
-		start_service_force("postnetwork");
+		if (restart) {
+			eval("startservice", "restarthostapd", "-f");
+			eval("restart", "dnsmasq");
+			eval("startservice", "resetleds", "-f");
+			eval("startservice", "postnetwork", "-f");
+		}
 #endif
+		*wifi_mode = 0;
 
 		break;
 	case 0:
@@ -921,23 +922,38 @@ static void handle_wifi(void)
 #endif
 #endif
 		// (AOSS) led
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
+		dd_syslog(LOG_DEBUG, "%s: turning radio(s) off\n", title);
+		char off[32];
+		sprintf(off, "radio_off%s", post);
+		eval("restart", off);
 		sysprintf("restart radio_off");
 #ifdef HAVE_MADWIFI
-		char dev[32];
-		sprintf(dev, "ath%d", i);
-		eval("ifconfig", dev, "down");
-		char *next;
-		char var[80];
-		char *vifs = nvram_nget("ath%d_vifs", i);
-		foreach(var, vifs, next) {
-			eval("ifconfig", var, "down");
+		if (restart) {
+			char dev[32];
+			sprintf(dev, "ath%d", i);
+			eval("ifconfig", dev, "down");
+			char *next;
+			char var[80];
+			char *vifs = nvram_nget("ath%d_vifs", i);
+			foreach(var, vifs, next) {
+				eval("ifconfig", var, "down");
+			}
 		}
 #endif
-		wifi_mode = 1;
+		*wifi_mode = 1;
 		break;
 	}
 
+}
+
+static void handle_wifi(void)
+{
+
+	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
+	_count = 0;
+	int dummy = wifi_mode;
+	control_wifi(&dummy, "Wifi Button", "_0", 0, 0);
+	control_wifi(&wifi_mode, "Wifi Button", "_1", 1, 1);
 }
 
 static void handle_wifi24(void)
@@ -945,38 +961,7 @@ static void handle_wifi24(void)
 
 	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
 	_count = 0;
-	switch (wifi_mode) {
-	case 1:
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("restart radio_on_0");
-#ifdef HAVE_MADWIFI
-		start_service_force("restarthostapd");
-		stop_service_force("dnsmasq");
-		start_service_force("dnsmasq");
-		start_service_force("resetleds");
-		start_service_force("postnetwork");
-#endif
-		wifi_mode = 0;
-		break;
-	case 0:
-		// (AOSS) led
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-		sysprintf("restart radio_off_0");
-#ifdef HAVE_MADWIFI
-		char dev[32];
-		sprintf(dev, "ath%d", i);
-		eval("ifconfig", dev, "down");
-		char *next;
-		char var[80];
-		char *vifs = nvram_nget("ath%d_vifs", i);
-		foreach(var, vifs, next) {
-			eval("ifconfig", var, "down");
-		}
-#endif
-		wifi_mode = 1;
-		break;
-	}
-
+	control_wifi(&wifi_mode, "Wifi Button", "_0", 0, 1);
 }
 
 static void handle_wifi5(void)
@@ -984,38 +969,7 @@ static void handle_wifi5(void)
 
 	led_control(LED_WLAN, LED_FLASH);	// when pressed, blink white
 	_count = 0;
-	switch (wifi_mode) {
-	case 1:
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
-		sysprintf("restart radio_on_1");
-#ifdef HAVE_MADWIFI
-		start_service_force("restarthostapd");
-		stop_service_force("dnsmasq");
-		start_service_force("dnsmasq");
-		start_service_force("resetleds");
-		start_service_force("postnetwork");
-#endif
-		wifi_mode = 0;
-		break;
-	case 0:
-		// (AOSS) led
-		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
-		sysprintf("restart radio_off_1");
-#ifdef HAVE_MADWIFI
-		char dev[32];
-		sprintf(dev, "ath%d", i);
-		eval("ifconfig", dev, "down");
-		char *next;
-		char var[80];
-		char *vifs = nvram_nget("ath%d_vifs", i);
-		foreach(var, vifs, next) {
-			eval("ifconfig", var, "down");
-		}
-#endif
-		wifi_mode = 1;
-		break;
-	}
-
+	control_wifi(&wifi_mode, "Wifi Button", "_1", 1, 1);
 }
 
 static void handle_ses(void)
@@ -1038,20 +992,20 @@ static void handle_ses(void)
 
 	if (nvram_matchi("radiooff_button", 1)) {
 		led_control(LED_SES, LED_FLASH);	// when pressed, blink white
-		switch (ses_mode) {
-
-		case 1:
-			// SES (AOSS) led
+		int dummy = ses_mode;
+		int dummy2 = ses_mode;
 #ifdef HAVE_RADIOOFF
 #ifndef HAVE_BUFFALO
-			dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) on\n");
+		control_wifi(&dummy, "SES / AOSS / EZ-setup button", "_0", 0, 0);
+		control_wifi(&dummy2, "SES / AOSS / EZ-setup button", "_1", 1, 1);
 #else
-			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) on\n");
-#endif
-#ifndef HAVE_ERC
-			sysprintf("restart radio_on");
+		control_wifi(&dummy, "AOSS button", "_0", 0, 0);
+		control_wifi(&dummy2, "AOSS button", "_1", 1, 1);
 #endif
 #endif
+
+		switch (ses_mode) {
+		case 1:
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
 			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED ON\n");
@@ -1059,46 +1013,15 @@ static void handle_ses(void)
 			set_gpio(1, 1);
 #endif
 #endif
-#ifdef HAVE_MADWIFI
-			start_service_force("restarthostapd");
-			stop_service_force("dnsmasq");
-			start_service_force("dnsmasq");
-			start_service_force("resetleds");
-			start_service_force("postnetwork");
-#endif
-
 			ses_mode = 0;
 			break;
 		case 0:
-
-			// (AOSS) led
-#ifdef HAVE_RADIOOFF
-#ifndef HAVE_BUFFALO
-			dd_syslog(LOG_DEBUG, "SES / AOSS / EZ-setup button: turning radio(s) off\n");
-#else
-			dd_syslog(LOG_DEBUG, "AOSS button: turning radio(s) off\n");
-#endif
-#ifndef HAVE_ERC
-			sysprintf("restart radio_off");
-#endif
-#endif
 #ifdef HAVE_ERC
 #ifdef HAVE_HORNET
 			dd_syslog(LOG_DEBUG, "XXXXXXXX: TURN LED OFF\n");
 			set_gpio(0, 0);
 			set_gpio(1, 0);
 #endif
-#endif
-#ifdef HAVE_MADWIFI
-			char dev[32];
-			sprintf(dev, "ath%d", i);
-			eval("ifconfig", dev, "down");
-			char *next;
-			char var[80];
-			char *vifs = nvram_nget("ath%d_vifs", i);
-			foreach(var, vifs, next) {
-				eval("ifconfig", var, "down");
-			}
 #endif
 			ses_mode = 1;
 			break;
