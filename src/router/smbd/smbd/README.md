@@ -105,21 +105,20 @@ build your kernel
 1. SMB1(CIFS), SMB2/3 protocols for basic file sharing
 2. Dynamic crediting
 3. Compound requests
-4. Durable handle
-5. oplock/lease
-6. Large MTU
-7. NTLM/NTLMv2
-8. Auto negotiation
-9. HMAC-SHA256 Signing
-10. Secure negotiate
-11. Signing Update
-12. Pre-authentication integrity(SMB 3.1.1)
-13. SMB3 encryption(CCM, GCM)
-14. SMB direct(RDMA)
+4. oplock/lease
+5. Large MTU
+6. NTLM/NTLMv2
+7. Auto negotiation
+8. HMAC-SHA256 Signing
+9. Secure negotiate
+10. Signing Update
+11. Pre-authentication integrity(SMB 3.1.1)
+12. SMB3 encryption(CCM, GCM)
+13. SMB direct(RDMA)
 
 *Planned*
 1. Multi-channel
-2. Durable handle v2
+2. Durable handle v1/v2
 3. Kerberos
 4. Persistent handles
 5. Directory lease

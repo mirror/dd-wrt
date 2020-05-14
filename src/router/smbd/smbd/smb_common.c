@@ -458,7 +458,7 @@ static int smb_handle_negotiate(struct ksmbd_work *work)
 {
 	struct smb_negotiate_rsp *neg_rsp = RESPONSE_BUF(work);
 
-	ksmbd_err("Unsupported SMB protocol\n");
+	ksmbd_debug(SMB, "Unsupported SMB protocol\n");
 	neg_rsp->hdr.Status.CifsError = STATUS_INVALID_LOGON_TYPE;
 	return -EINVAL;
 }

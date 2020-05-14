@@ -23,7 +23,7 @@
 
 struct ksmbd_heartbeat {
 	__u32	handle;
-} ____ksmbd_align;
+};
 
 /*
  * Global config flags.
