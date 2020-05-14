@@ -79,14 +79,14 @@ static int _STOPPED(const int method, const char *name)
 #if defined(HAVE_X86) || defined(HAVE_NEWPORT) || defined(HAVE_RB600) && !defined(HAVE_WDR4900)
 		if (method == STOP) {
 			if (stops_running)
-				*stops_running--;
+				(*stops_running)--;
 		}
 #else
 		dd_debug(DEBUG_SERVICE, "calling %s_%s not required!\n", method ? "stop" : "start", name);
 
 		if (method == STOP) {
 			if (stops_running)
-				*stops_running--;
+				(*stops_running)--;
 		}
 #endif
 
@@ -189,7 +189,7 @@ static int handle_service(const int method, const char *name, int force)
 	dlclose(handle);
 	if (method == STOP) {
 		if (stops_running)
-			*stops_running--;
+			(*stops_running)--;
 	}
 #if (!defined(HAVE_X86) && !defined(HAVE_NEWPORT) && !defined(HAVE_RB600)) || defined(HAVE_WDR4900)
 	if (stops_running)
@@ -325,7 +325,7 @@ static void stop_service(char *name)
 {
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	handle_service(STOP, name, 0);
 }
 
@@ -339,7 +339,7 @@ static void stop_service_f(char *name)
 {
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	FORK(handle_service(STOP, name, 0));
 }
 
@@ -348,7 +348,7 @@ static void stop_service_force_f(char *name)
 	RELEASESTOPPED(STOP);
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	RELEASESTOPPED(STOP);
 	FORK(handle_service(STOP, name, 0));
 }
@@ -364,7 +364,7 @@ static void _restart_delay(char *name, int delay)
 		handle_service(START, name, 0);
 	} else {
 		if (stops_running)
-			*stops_running--;
+			(*stops_running)--;
 	}
 }
 
@@ -372,7 +372,7 @@ static void restart(char *name)
 {
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	_restart_delay(name, 0);
 }
 
@@ -380,7 +380,7 @@ static void restart_fdelay(char *name, int delay)
 {
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	FORK(_restart_delay(name, delay));
 }
 
@@ -402,7 +402,7 @@ static int restart_main_f(int argc, char **argv)
 	RELEASESTOPPED(START);
 	init_shared();
 	if (stops_running)
-		*stops_running++;
+		(*stops_running)++;
 	FORK(_restart_delay(name, 0));
 	return 0;
 }
