@@ -133,7 +133,7 @@ andx_again:
 
 	cmds = &conn->cmds[command];
 	if (!cmds->proc) {
-		ksmbd_err("*** not implemented yet cmd = %x\n", command);
+		ksmbd_debug(SMB, "*** not implemented yet cmd = %x\n", command);
 		conn->ops->set_rsp_status(work, STATUS_NOT_IMPLEMENTED);
 		return TCP_HANDLER_CONTINUE;
 	}
@@ -448,7 +448,7 @@ static ssize_t kill_server_store(struct class *class,
 	if (!sysfs_streq(buf, "hard"))
 		return len;
 
-	ksmbd_info("shutting down ksmbd\n");
+	ksmbd_info("kill command received\n");
 	mutex_lock(&ctrl_lock);
 	WRITE_ONCE(server_conf.state, SERVER_STATE_RESETTING);
 	__module_get(THIS_MODULE);

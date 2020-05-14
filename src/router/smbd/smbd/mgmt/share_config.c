@@ -52,22 +52,13 @@ static void kill_share(struct ksmbd_share_config *share)
 	kfree(share);
 }
 
-static void deferred_share_free(struct work_struct *work)
-{
-	struct ksmbd_share_config *share = container_of(work,
-					       struct ksmbd_share_config,
-					       free_work);
-
-	kill_share(share);
-}
-
 void __ksmbd_share_config_put(struct ksmbd_share_config *share)
 {
 	down_write(&shares_table_lock);
 	hash_del(&share->hlist);
 	up_write(&shares_table_lock);
 
-	schedule_work(&share->free_work);
+	kill_share(share);
 }
 
 static struct ksmbd_share_config *
@@ -145,7 +136,6 @@ static struct ksmbd_share_config *share_config_request(char *name)
 
 	share->flags = resp->flags;
 	atomic_set(&share->refcount, 1);
-	INIT_WORK(&share->free_work, deferred_share_free);
 	INIT_LIST_HEAD(&share->veto_list);
 	share->name = kstrdup(name, GFP_KERNEL);
 

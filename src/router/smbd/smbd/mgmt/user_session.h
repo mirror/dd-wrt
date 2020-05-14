@@ -11,7 +11,9 @@
 #include "../smb_common.h"
 #include "../ntlmssp.h"
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 #define CIFDS_SESSION_FLAG_SMB1		(1 << 0)
+#endif
 #define CIFDS_SESSION_FLAG_SMB2		(1 << 1)
 
 #define PREAUTH_HASHVALUE_SIZE		64

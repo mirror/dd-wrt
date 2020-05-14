@@ -4484,7 +4484,7 @@ static int set_fs_info(struct ksmbd_work *work)
 		rsp->t2.TotalDataCount = 0;
 		break;
 	default:
-		ksmbd_err("info level %x  not supported\n", info_level);
+		ksmbd_debug(SMB, "info level %x  not supported\n", info_level);
 		return -EINVAL;
 	}
 
@@ -4691,7 +4691,7 @@ static int query_fs_info(struct ksmbd_work *work)
 		break;
 	}
 	default:
-		ksmbd_err("info level %x not implemented\n", info_level);
+		ksmbd_debug(SMB, "info level %x not implemented\n", info_level);
 		rc = -EINVAL;
 		goto err_out;
 	}
@@ -5554,7 +5554,7 @@ static int set_path_info(struct ksmbd_work *work)
 		err = smb_set_file_size_pinfo(work);
 		break;
 	default:
-		ksmbd_err("info level = %x not implemented yet\n",
+		ksmbd_debug(SMB, "info level = %x not implemented yet\n",
 				info_level);
 		pSMB_rsp->hdr.Status.CifsError = STATUS_NOT_IMPLEMENTED;
 		return -EOPNOTSUPP;
@@ -6537,7 +6537,7 @@ static int query_file_info_pipe(struct ksmbd_work *work)
 
 	if (le16_to_cpu(req_params->InformationLevel) !=
 	    SMB_QUERY_FILE_STANDARD_INFO) {
-		ksmbd_err("query file info for info %u not supported\n",
+		ksmbd_debug(SMB, "query file info for info %u not supported\n",
 				le16_to_cpu(req_params->InformationLevel));
 		rsp_hdr->Status.CifsError = STATUS_NOT_SUPPORTED;
 		return -EOPNOTSUPP;
@@ -7196,7 +7196,7 @@ static int set_file_info(struct ksmbd_work *work)
 		err = smb_fileinfo_rename(work);
 		break;
 	default:
-		ksmbd_err("info level = %x not implemented yet\n",
+		ksmbd_debug(SMB, "info level = %x not implemented yet\n",
 				info_level);
 		rsp->hdr.Status.CifsError = STATUS_NOT_IMPLEMENTED;
 		return -EOPNOTSUPP;
@@ -7344,7 +7344,7 @@ int smb_trans2(struct ksmbd_work *work)
 		err = get_dfs_referral(work);
 		break;
 	default:
-		ksmbd_err("sub command 0x%x not implemented yet\n",
+		ksmbd_debug(SMB, "sub command 0x%x not implemented yet\n",
 				sub_command);
 		rsp_hdr->Status.CifsError = STATUS_NOT_SUPPORTED;
 		return -EINVAL;

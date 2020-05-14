@@ -247,48 +247,6 @@ void __exit ksmbd_release_inode_hash(void)
 	vfree(inode_hashtable);
 }
 
-/*
- * KSMBD FP cache
- */
-
-/* copy-pasted from old fh */
-static void inherit_delete_pending(struct ksmbd_file *fp)
-{
-	struct list_head *cur;
-	struct ksmbd_file *prev_fp;
-	struct ksmbd_inode *ci = fp->f_ci;
-
-	fp->delete_on_close = 0;
-
-	write_lock(&ci->m_lock);
-	list_for_each_prev(cur, &ci->m_fp_list) {
-		prev_fp = list_entry(cur, struct ksmbd_file, node);
-		if (fp != prev_fp && (fp->tcon == prev_fp->tcon ||
-				ci->m_flags & S_DEL_ON_CLS))
-			ci->m_flags |= S_DEL_PENDING;
-	}
-	write_unlock(&ci->m_lock);
-}
-
-/* copy-pasted from old fh */
-static void invalidate_delete_on_close(struct ksmbd_file *fp)
-{
-	struct list_head *cur;
-	struct ksmbd_file *prev_fp;
-	struct ksmbd_inode *ci = fp->f_ci;
-
-	read_lock(&ci->m_lock);
-	list_for_each_prev(cur, &ci->m_fp_list) {
-		prev_fp = list_entry(cur, struct ksmbd_file, node);
-		if (fp == prev_fp)
-			break;
-		if (fp->tcon == prev_fp->tcon)
-			prev_fp->delete_on_close = 0;
-	}
-	read_unlock(&ci->m_lock);
-}
-
-/* copy-pasted from old fh */
 static void __ksmbd_inode_close(struct ksmbd_file *fp)
 {
 	struct dentry *dir, *dentry;
@@ -297,13 +255,6 @@ static void __ksmbd_inode_close(struct ksmbd_file *fp)
 	struct file *filp;
 
 	filp = fp->filp;
-	if (atomic_read(&ci->m_count) >= 2) {
-		if (fp->delete_on_close)
-			inherit_delete_pending(fp);
-		else
-			invalidate_delete_on_close(fp);
-	}
-
 	if (ksmbd_stream_fd(fp) && (ci->m_flags & S_DEL_ON_CLS_STREAM)) {
 		ci->m_flags &= ~S_DEL_ON_CLS_STREAM;
 		err = ksmbd_vfs_remove_xattr(filp->f_path.dentry,
@@ -355,7 +306,6 @@ static void __ksmbd_remove_fd(struct ksmbd_file_table *ft,
 	write_unlock(&ft->lock);
 }
 
-/* copy-pasted from old fh */
 static void __ksmbd_close_fd(struct ksmbd_file_table *ft,
 			     struct ksmbd_file *fp)
 {
@@ -588,7 +538,6 @@ struct ksmbd_file *ksmbd_lookup_fd_filename(struct ksmbd_work *work,
 	return fp;
 }
 
-/* copy-pasted from old fh */
 struct ksmbd_file *ksmbd_lookup_fd_inode(struct inode *inode)
 {
 	struct ksmbd_file	*lfp;
@@ -703,28 +652,27 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work,
 	return fp;
 }
 
-/* copy-pasted from old fh */
 static inline bool is_reconnectable(struct ksmbd_file *fp)
 {
 	struct oplock_info *opinfo = opinfo_get(fp);
-	int reconn = 0;
+	bool reconn = false;
 
 	if (!opinfo)
-		return 0;
+		return false;
 
 	if (opinfo->op_state != OPLOCK_STATE_NONE) {
 		opinfo_put(opinfo);
-		return 0;
+		return false;
 	}
 
 	if (fp->is_resilient || fp->is_persistent)
-		reconn = 1;
+		reconn = true;
 	else if (fp->is_durable && opinfo->is_lease &&
 			opinfo->o_lease->state & SMB2_LEASE_HANDLE_CACHING_LE)
-		reconn = 1;
+		reconn = true;
 
 	else if (fp->is_durable && opinfo->level == SMB2_OPLOCK_LEVEL_BATCH)
-		reconn = 1;
+		reconn = true;
 
 	opinfo_put(opinfo);
 	return reconn;
