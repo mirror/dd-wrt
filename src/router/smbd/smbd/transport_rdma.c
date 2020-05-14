@@ -86,7 +86,7 @@ static struct smb_direct_listener {
 } smb_direct_listener;
 
 
-struct workqueue_struct *smb_direct_wq;
+static struct workqueue_struct *smb_direct_wq;
 
 enum smb_direct_status {
 	SMB_DIRECT_CS_NEW = 0,
@@ -1939,7 +1939,8 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 	struct smb_direct_transport *t;
 
 	if (!rdma_frwr_is_supported(&new_cm_id->device->attrs)) {
-		ksmbd_err("Fast Registration Work Requests is not supported. device capabilities=%llx\n",
+		ksmbd_debug(RDMA,
+			"Fast Registration Work Requests is not supported. device capabilities=%llx\n",
 			new_cm_id->device->attrs.device_cap_flags);
 		return -EPROTONOSUPPORT;
 	}

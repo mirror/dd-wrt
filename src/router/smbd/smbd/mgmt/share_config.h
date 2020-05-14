@@ -24,7 +24,6 @@ struct ksmbd_share_config {
 
 	atomic_t		refcount;
 	struct hlist_node	hlist;
-	struct work_struct	free_work;
 	unsigned short		create_mask;
 	unsigned short		directory_mask;
 	unsigned short		force_create_mode;

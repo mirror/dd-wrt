@@ -1,5 +1,5 @@
 config SMB_SERVER
-	tristate "SMB server support"
+	tristate "SMB server support (EXPERIMENTAL)"
 	depends on INET
 	select NLS
 	select NLS_UTF8
@@ -16,6 +16,7 @@ config SMB_SERVER
 	select CRYPTO_AEAD2
 	select CRYPTO_CCM
 	select CRYPTO_GCM
+	default n
 	help
 	  Choose Y here if you want to allow SMB3 compliant clients
 	  to access files residing on this system using SMB3 protocol.
@@ -50,7 +51,7 @@ config SMB_INSECURE_SERVER
 
 config SMB_SERVER_SMBDIRECT
 	bool "Support for SMB Direct protocol"
-	depends on SMB_SERVER && INFINIBAND && INFINIBAND_ADDR_TRANS
+	depends on SMB_SERVER=m && INFINIBAND && INFINIBAND_ADDR_TRANS || SMB_SERVER=y && INFINIBAND=y && INFINIBAND_ADDR_TRANS=y
 	default n
 
 	help

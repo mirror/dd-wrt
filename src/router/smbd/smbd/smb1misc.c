@@ -251,7 +251,7 @@ int ksmbd_smb1_check_message(struct ksmbd_work *work)
 
 	wc = smb1_req_struct_size(hdr);
 	if (wc == -EOPNOTSUPP) {
-		ksmbd_err("Not support cmd %x\n", command);
+		ksmbd_debug(SMB, "Not support cmd %x\n", command);
 		return 1;
 	} else if (hdr->WordCount != wc) {
 		ksmbd_err("Invalid word count, %d not %d. cmd %x\n",

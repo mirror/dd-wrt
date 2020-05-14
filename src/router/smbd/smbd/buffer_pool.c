@@ -38,6 +38,7 @@ struct wm_list {
 static LIST_HEAD(wm_lists);
 static DEFINE_RWLOCK(wm_lists_lock);
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 /*
  * A simple kvmalloc()/kvfree() implementation.
  */
@@ -81,14 +82,24 @@ static inline void __free(void *addr)
 		kfree(addr);
 }
 
+#endif
+
 void *ksmbd_alloc(size_t size)
 {
-	return __alloc(size, GFP_KERNEL);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	return __alloc(size, GFP_KERNEL);
+#else
+	return kvmalloc(size, GFP_KERNEL);
+#endif
 }
 
 void *ksmbd_zalloc(size_t size)
 {
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+#else
+	return kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
+#endif
 }
 
 void ksmbd_free(void *ptr)
@@ -101,7 +112,11 @@ static struct wm *wm_alloc(size_t sz)
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
-	wm = __alloc(alloc_sz, GFP_KERNEL);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	wm = __alloc(alloc_sz, flags);
+#else
+	wm = kvmalloc(alloc_sz, flags);
+#endif
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
@@ -113,7 +128,11 @@ static int register_wm_size_class(size_t sz)
 {
 	struct wm_list *l, *nl;
 
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	nl = __alloc(sizeof(struct wm_list), GFP_KERNEL);
+#else
+	nl = kvmalloc(sizeof(struct wm_list), GFP_KERNEL);
+#endif
 	if (!nl)
 		return -ENOMEM;
 
@@ -128,7 +147,11 @@ static int register_wm_size_class(size_t sz)
 	list_for_each_entry(l, &wm_lists, list) {
 		if (l->sz == sz) {
 			write_unlock(&wm_lists_lock);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 			__free(nl);
+#else
+			kvfree(nl);
+#endif
 			return 0;
 		}
 	}
@@ -254,9 +277,17 @@ static void wm_list_free(struct wm_list *l)
 	while (!list_empty(&l->idle_wm)) {
 		wm = list_entry(l->idle_wm.next, struct wm, list);
 		list_del(&wm->list);
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 		__free(wm);
+#else
+		kvfree(wm);
+#endif
 	}
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(l);
+#else
+	kvfree(l);
+#endif
 }
 
 static void wm_lists_destroy(void)
@@ -272,22 +303,38 @@ static void wm_lists_destroy(void)
 
 void ksmbd_free_request(void *addr)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(addr);
+#else
+	kvfree(addr);
+#endif
 }
 
 void *ksmbd_alloc_request(size_t size)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	return __alloc(size, GFP_KERNEL);
+#else
+	return kvmalloc(size, GFP_KERNEL);
+#endif
 }
 
 void ksmbd_free_response(void *buffer)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(buffer);
+#else
+	kvfree(buffer);
+#endif
 }
 
 void *ksmbd_alloc_response(size_t size)
 {
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+#else
+	return kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
+#endif
 }
 
 void *ksmbd_find_buffer(size_t size)

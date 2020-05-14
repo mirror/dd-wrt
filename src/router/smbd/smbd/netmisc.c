@@ -14,6 +14,7 @@
 #include "nterr.h"
 #include "time_wrappers.h"
 
+#ifdef CONFIG_SMB_INSECURE_SERVER
 /*****************************************************************************
  * convert a NT status code to a dos class/code
  *****************************************************************************/
@@ -606,6 +607,7 @@ ntstatus_to_dos(__le32 ntstatus, __u8 *eclass, __le16 *ecode)
 	*eclass = ERRHRD;
 	*ecode = cpu_to_le16(ERRgeneral);
 }
+#endif
 
 /*
  * Convert the NT UTC (based 1601-01-01, in hundred nanosecond units)
