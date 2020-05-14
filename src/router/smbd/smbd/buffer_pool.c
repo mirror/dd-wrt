@@ -113,9 +113,9 @@ static struct wm *wm_alloc(size_t sz)
 	size_t alloc_sz = sz + sizeof(struct wm);
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
- 	wm = __alloc(alloc_sz, flags);
+ 	wm = __alloc(alloc_sz, GFP_KERNEL);
 #else
-	wm = kvmalloc(alloc_sz, flags);
+	wm = kvmalloc(alloc_sz, GFP_KERNEL);
 #endif
 	if (!wm)
 		return NULL;
