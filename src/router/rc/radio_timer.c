@@ -84,6 +84,8 @@ static int radio_timer_main(int argc, char **argv)
 							start_service_force("restarthostapd");
 							stop_service_force("dnsmasq");
 							start_service_force("dnsmasq");
+							start_service_force("resetleds");
+							start_service_force("postnetwork");
 #endif
 						}
 						break;
