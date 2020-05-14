@@ -700,7 +700,8 @@ sys_upgrade(char *url, webs_t stream, int *total, int type)	// jimmy,
 	}
 
 	fprintf(stderr, "uploading [%d]\n", uploadcount);
-	fclose(fifo);
+	if (fifo)
+		fclose(fifo);
 	if (fifo2)
 		fclose(fifo2);
 	fifo = NULL;
