@@ -904,7 +904,14 @@ static void handle_wifi(void)
 #endif
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
 		sysprintf("restart radio_on");
-		wifi_mode = 0;
+#ifdef HAVE_MADWIFI
+		start_service_force("restarthostapd");
+		stop_service_force("dnsmasq");
+		start_service_force("dnsmasq");
+		start_service_force("resetleds");
+		start_service_force("postnetwork");
+#endif
+
 		break;
 	case 0:
 #ifdef HAVE_ERC
@@ -916,6 +923,17 @@ static void handle_wifi(void)
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
 		sysprintf("restart radio_off");
+#ifdef HAVE_MADWIFI
+		char dev[32];
+		sprintf(dev, "ath%d", i);
+		eval("ifconfig", dev, "down");
+		char *next;
+		char var[80];
+		char *vifs = nvram_nget("ath%d_vifs", i);
+		foreach(var, vifs, next) {
+			eval("ifconfig", var, "down");
+		}
+#endif
 		wifi_mode = 1;
 		break;
 	}
@@ -931,12 +949,30 @@ static void handle_wifi24(void)
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
 		sysprintf("restart radio_on_0");
+#ifdef HAVE_MADWIFI
+		start_service_force("restarthostapd");
+		stop_service_force("dnsmasq");
+		start_service_force("dnsmasq");
+		start_service_force("resetleds");
+		start_service_force("postnetwork");
+#endif
 		wifi_mode = 0;
 		break;
 	case 0:
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
 		sysprintf("restart radio_off_0");
+#ifdef HAVE_MADWIFI
+		char dev[32];
+		sprintf(dev, "ath%d", i);
+		eval("ifconfig", dev, "down");
+		char *next;
+		char var[80];
+		char *vifs = nvram_nget("ath%d_vifs", i);
+		foreach(var, vifs, next) {
+			eval("ifconfig", var, "down");
+		}
+#endif
 		wifi_mode = 1;
 		break;
 	}
@@ -952,12 +988,30 @@ static void handle_wifi5(void)
 	case 1:
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) on\n");
 		sysprintf("restart radio_on_1");
+#ifdef HAVE_MADWIFI
+		start_service_force("restarthostapd");
+		stop_service_force("dnsmasq");
+		start_service_force("dnsmasq");
+		start_service_force("resetleds");
+		start_service_force("postnetwork");
+#endif
 		wifi_mode = 0;
 		break;
 	case 0:
 		// (AOSS) led
 		dd_syslog(LOG_DEBUG, "Wifi button: turning radio(s) off\n");
 		sysprintf("restart radio_off_1");
+#ifdef HAVE_MADWIFI
+		char dev[32];
+		sprintf(dev, "ath%d", i);
+		eval("ifconfig", dev, "down");
+		char *next;
+		char var[80];
+		char *vifs = nvram_nget("ath%d_vifs", i);
+		foreach(var, vifs, next) {
+			eval("ifconfig", var, "down");
+		}
+#endif
 		wifi_mode = 1;
 		break;
 	}
@@ -1005,6 +1059,13 @@ static void handle_ses(void)
 			set_gpio(1, 1);
 #endif
 #endif
+#ifdef HAVE_MADWIFI
+			start_service_force("restarthostapd");
+			stop_service_force("dnsmasq");
+			start_service_force("dnsmasq");
+			start_service_force("resetleds");
+			start_service_force("postnetwork");
+#endif
 
 			ses_mode = 0;
 			break;
@@ -1027,6 +1088,17 @@ static void handle_ses(void)
 			set_gpio(0, 0);
 			set_gpio(1, 0);
 #endif
+#endif
+#ifdef HAVE_MADWIFI
+			char dev[32];
+			sprintf(dev, "ath%d", i);
+			eval("ifconfig", dev, "down");
+			char *next;
+			char var[80];
+			char *vifs = nvram_nget("ath%d_vifs", i);
+			foreach(var, vifs, next) {
+				eval("ifconfig", var, "down");
+			}
 #endif
 			ses_mode = 1;
 			break;
