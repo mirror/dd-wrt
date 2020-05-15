@@ -2234,11 +2234,11 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 	char *sln = nvram_safe_get("static_leasenum");
 	char *hwaddr;
 
-	if (sln == NULL || *(sln) == 0)
+	if (*(sln) == 0)
 		return;
 	int leasenum = atoi(sln);
 
-	if (leasenum == 0) {
+	if (leasenum <= 0) {
 		nvram_unset("static_leases");
 		nvram_commit();
 		return;
