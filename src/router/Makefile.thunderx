@@ -363,7 +363,7 @@ endif
 	#tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp tools/newport/boot/* /
 	tools/newport/fatfs-tool -i $(ARCH)-uclibc/newport.img cp $(ARCH)-uclibc/newport.scr /
 	# copy openwrt rootfs to image
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -comp xz -root-owned -noappend -Xbcj arm -b 262144
 	dd if=$(ARCH)-uclibc/root.fs of=$(ARCH)-uclibc/newport.img bs=16M seek=1
 	# compress it
 	gzip -k -f $(ARCH)-uclibc/newport.img 

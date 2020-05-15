@@ -384,7 +384,7 @@ endif
 	cat $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq8064-asrockg10.dtb >> $(ARCH)-uclibc/ipq806x-G10-uImage;
 	
 
-	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm
+	$(LINUXDIR)/scripts/squashfs/mksquashfs4 $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -comp xz -nopad  -root-owned -noappend -Xbcj arm -b 262144
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.squashfs -noappend -root-owned -le
 	
 	( dd if=$(ARCH)-uclibc/root.squashfs of=$(ARCH)-uclibc/root.squashfs.new bs=2k conv=sync; )
