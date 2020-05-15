@@ -379,9 +379,9 @@ errmsg.err61="Fișierul imagine nu este corect.";
 errmsg.err62=" este deja definită ca alocare statică.";
 
 //Saving message
-errmsg.err100="Se procesează...<br/>Vă rog așteptați.";
-errmsg.err101="Se restaurează configurația...<br/>Vă rog așteptați.";
-errmsg.err102="Se actualizează microcodul...<br/>Vă rog așteptați.";
+errmsg.err100="Se procesează...<br />Vă rog așteptați.";
+errmsg.err101="Se restaurează configurația...<br />Vă rog așteptați.";
+errmsg.err102="Se actualizează microcodul...<br />Vă rog așteptați.";
 
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Instalare";
@@ -491,7 +491,7 @@ alive.port="Port Proxy";
 
 //help container
 halive.right2="Alegeți când să fie repornit ruterul. Cron trebuie să fie activat în meniul Administrare.";
-halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<br/>Formatul adreselor IP este: xxx.xxx.xxx.xxx.";
+halive.right4="Sunt permise maxim 3 adrese IP separate printr-un <em>SPAȚIU</em>.<br />Formatul adreselor IP este: xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -822,7 +822,7 @@ hotspot.wifidog_username="Nume utilizator server HTTP";
 hotspot.wifidog_password="Parolă server HTTP";
 hotspot.wifidog_auth="Posibilitate de autentificare prin HTTP";
 
-hstatus_hots.right1="conup/condown:<br><i>Când USB sau JFFS este montat în jffs, scripturi pentru conexiune pot fi folosite în /jffs/etc/chilli/</i><br>Utilizatori locali:<br><i>Când se folosesc doar utilizatori locali setați radius primar la 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Când USB sau JFFS este montat în jffs, scripturi pentru conexiune pot fi folosite în /jffs/etc/chilli/</i><br />Utilizatori locali:<br /><i>Când se folosesc doar utilizatori locali setați radius primar la 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1165,9 +1165,9 @@ qos.bandwidth="Lățime de bandă în kbiți";
 
 //help container
 hqos.right1="";
-hqos.right2="Ieșire:<br>Setați la 80%-95% (max) din viteza dumneavoastră totală de încărcare.<br>Intrare:<br>Setați la 80%-100% (max) din viteza dumneavoastră totală de descărcare.";
+hqos.right2="Ieșire:<br />Setați la 80%-95% (max) din viteza dumneavoastră totală de încărcare.<br />Intrare:<br />Setați la 80%-100% (max) din viteza dumneavoastră totală de descărcare.";
 hqos.right3="";
-hqos.right4="Activare limite implicite per utilizator:<br>Activați nivelul implicit per utilizator sau setați nivelul pentru toți utilizatorii.";
+hqos.right4="Activare limite implicite per utilizator:<br />Activați nivelul implicit per utilizator sau setați nivelul pentru toți utilizatorii.";
 hqos.right6="Puteți controla rata de transfer cu respect pentru aplicația care consumă din bandă.";
 hqos.right8="Puteți specifica prioritatea pentru tot traficul provenit de la o adresă IP sau un interval de adrese IP.";
 hqos.right10="Puteți specifica prioritatea pentru tot traficul provenit de la un dispozitiv din rețea atribuind acestui dispozitiv un nume dispozitiv, specificând prioritatea și inserând adresa MAC a acestuia.";
@@ -1386,9 +1386,9 @@ service.vpn_tlscip="Cifru TLS";
 service.vpn_route="Rutare bazată pe politici";
 
 //help container
-hstatus_vpn.right1="Rutare bazată pe politici:<br><i>Adăugați IP-uri/Rețele de forma 0.0.0.0/0 pentru a forța clienții să folosească tunelul ca gateway implicit. O linie per IP/Rețea.<br><i>Adresă IP/Mască de rețea:</i><br>Trebuie setată când este folosit modul DHCP-Proxy și TAP-ul local NU este în modul bridge</i>";
-hstatus_vpn.right2="Configurare adițională:<br><i>Pentru a trimite rute la clienți adăugați \'push \"rută mască IP gateway\"\', pentru a trimite DNS/WINS adăugați \'push \"opțiune-dhcp DNS (sau WINS) IP\"\' la configurație.</i><br>Director de conectare clienți:<br><i>Când USB sau JFFS este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
-hstatus_vpn.right3="General:<br><i>3 metode de autentificare sunt suportate: pkcs12 (+dh pe server), statică, certificate standard. Activați MSS doar pe o parte a legăturii, pe un fragment sau pe ambele.</i>";
+hstatus_vpn.right1="Rutare bazată pe politici:<br /><i>Adăugați IP-uri/Rețele de forma 0.0.0.0/0 pentru a forța clienții să folosească tunelul ca gateway implicit. O linie per IP/Rețea.<br /><i>Adresă IP/Mască de rețea:</i><br />Trebuie setată când este folosit modul DHCP-Proxy și TAP-ul local NU este în modul bridge</i>";
+hstatus_vpn.right2="Configurare adițională:<br /><i>Pentru a trimite rute la clienți adăugați \'push \"rută mască IP gateway\"\', pentru a trimite DNS/WINS adăugați \'push \"opțiune-dhcp DNS (sau WINS) IP\"\' la configurație.</i><br />Director de conectare clienți:<br /><i>Când USB sau JFFS este montat în /jffs, scripturile vor fi apelate din /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right3="General:<br /><i>3 metode de autentificare sunt suportate: pkcs12 (+dh pe server), statică, certificate standard. Activați MSS doar pe o parte a legăturii, pe un fragment sau pe ambele.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1769,7 +1769,7 @@ vlan.legend="VLAN";
 vlan.bridge="Atribuit către<br />punte";
 vlan.tagged="Etichetat";
 vlan.negociate="Auto-negociere";
-vlan.aggregation="Agregare link<br>pe porturile 3 și 4";
+vlan.aggregation="Agregare link<br />pe porturile 3 și 4";
 vlan.trunk="Trunchi";
 vlan.linkstatus="Stare legătură";
 
@@ -2149,7 +2149,7 @@ wl_basic.isolation="Izolare rețea";
 wl_basic.country_settings="Setări țară";
 
 //help container
-hwl_basic.right2="Dacă doriți să excludeți clienți fără fir-G, alegeți modul <em>Doar-B</em>. Dacă doriți să dezactivați accesul în mod fără fir, alegeți <em>Dezactivat</em>.<br/><b>Atenție :</b> când modul fără fir este schimbat s-ar putea ca unii parametrii avansați să se schimbe („" + wl_adv.label16 + "”, „" + wl_adv.label2 + "” sau „" + wl_adv.label5 + "”).";
+hwl_basic.right2="Dacă doriți să excludeți clienți fără fir-G, alegeți modul <em>Doar-B</em>. Dacă doriți să dezactivați accesul în mod fără fir, alegeți <em>Dezactivat</em>.<br /><b>Atenție :</b> când modul fără fir este schimbat s-ar putea ca unii parametrii avansați să se schimbe („" + wl_adv.label16 + "”, „" + wl_adv.label2 + "” sau „" + wl_adv.label5 + "”).";
 hwl_basic.right3="Interval de sensibilitate: ";
 hwl_basic.right4="Ajustează cronometrarea ACK. 0 (zero) dezactivează complet cronometrarea ack pe microcodurile broadcom. Pe microcodurile bazate pe Atheros o va transforma în modul de cronometrare ack automat.";
 hwl_basic.right6="Clic pe orice oră pentru a activa sau dezactiva semnalul radio (<em>verde</em> indică permiterea accesului fără fir, iar <em>roșu</em> blocarea accesului fără fir).";
@@ -2162,8 +2162,8 @@ fail.mess2="Actualizarea a eșuat.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Setările au fost salvate.";
-success.restore="Setările au fost restabilite.<br/>Dispozitivul se va reporni acum. Vă rog așteptați un moment...";
-success.upgrade="Actualizarea s-a realizat cu succes.<br/>Dispozitivul se va reporni acum. Vă rog așteptați un moment...";
+success.restore="Setările au fost restabilite.<br />Dispozitivul se va reporni acum. Vă rog așteptați un moment...";
+success.upgrade="Actualizarea s-a realizat cu succes.<br />Dispozitivul se va reporni acum. Vă rog așteptați un moment...";
 success.success_noreboot="Setările au fost salvate cu succes.";
 success.success_reboot=success.success_noreboot + "<br />Dispozitivul se va reporni acum. Vă rog așteptați un moment...";
 

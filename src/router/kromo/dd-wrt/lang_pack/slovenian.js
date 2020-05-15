@@ -384,9 +384,9 @@ errmsg.err61="Nepravilna datoteka.";
 errmsg.err62=" je že določen kot statični zakup.";
 
 //Saving message
-errmsg.err100="Obdelujem...<br/>Prosimo počakajte.";
-errmsg.err101="Obnavljam nastavitve...<br/>Prosimo počakajte.";
-errmsg.err102="Nadgrajujem strojno programsko opremo...<br/>Prosimo počakajte";
+errmsg.err100="Obdelujem...<br />Prosimo počakajte.";
+errmsg.err101="Obnavljam nastavitve...<br />Prosimo počakajte.";
+errmsg.err102="Nadgrajujem strojno programsko opremo...<br />Prosimo počakajte";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -835,7 +835,7 @@ hotspot.wifidog_auth="HTTP strežnik: podpora overjanju";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br>Lokalni uporabniki:<br><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni radius na 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Kadar je USB ali JFFS priklopljen na jffs, lahko uporabite skripe v /jffs/etc/chilli/</i><br />Lokalni uporabniki:<br /><i>Kadar uporabljante samo lokalne uporabnike nastavite primarni radius na 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 
@@ -1202,9 +1202,9 @@ qos.bandwidth="Pasovna širina v kbit/s";
 //help container
 
 hqos.right1="";
-hqos.right2="Povezava navzgor:<br>Nastavite na 80%-95% (maks.) vaše skupne hitrosti prenosa od vas.<br>Povezava navzdol:<br>Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
+hqos.right2="Povezava navzgor:<br />Nastavite na 80%-95% (maks.) vaše skupne hitrosti prenosa od vas.<br />Povezava navzdol:<br />Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
 hqos.right3="";
-hqos.right4="Omogoči privzete limite po uporabniku:<br>Omogoča nastavitev limite po uporabniku ali za vse uporabnike.";
+hqos.right4="Omogoči privzete limite po uporabniku:<br />Omogoča nastavitev limite po uporabniku ali za vse uporabnike.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno širino.";
 hqos.right8="Določite lahko prioriteto za ves promet z določenega IPja ali obsega IPjev.";
 hqos.right10="Določite lahko hitrost za ves promet z določene naprave na vaši mreži tako, da določite ime naprave, določite prioriteto in vnesete MAC naslov.";
@@ -1432,9 +1432,9 @@ service.vpn_route="Usmerjanje po politiki";
 
 //help container
 
-hstatus_vpn.right1="Usmerjanje po politiki:<br><i>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.</i>";
-hstatus_vpn.right2="Dodatne nastavitve:<br><i>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.</i>";
-status_vpn.right3="Splošno:<br><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";
+hstatus_vpn.right1="Usmerjanje po politiki:<br /><i>Dodaj IPje v obliki 0.0.0.0/0 da prisiliš odjemalce k uporabi tunela za privzeti prehod. Ena vrstica za IP. Presmeritveni prehod MORA biti izključen.</i>";
+hstatus_vpn.right2="Dodatne nastavitve:<br /><i>Da prisiliš poti odjemalcem dodaj \'push \"route 0.0.0.0\"\', da prisiliš DNS/WINS dodaj \'push \"dhcp-option DNS (ali WINS) 0.0.0.0\"\' k konfiguraciji.</i>";
+status_vpn.right3="Splošno:<br /><i>Podprti so 3 auth načini: pkcs12 (+dh na strežniku), static, standard certs</i>. Omogoči MSS samo na eni strani zveze, fragmentiranje na obeh.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1833,7 +1833,7 @@ vlan.legend="VLAN";
 vlan.bridge="Dodeli k<br />mostu";
 vlan.tagged="Oznaka";
 vlan.negociate="Samodejno pogajanje";
-vlan.aggregation="Združitev zveze<br>na vratih 3 & 4";
+vlan.aggregation="Združitev zveze<br />na vratih 3 & 4";
 vlan.trunk="Povezava";
 
 
@@ -2252,8 +2252,8 @@ fail.mess2="Posodabljanje ni uspelo.";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Nastavitve so shranjene.";
-success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosimo, da počakate trenutek...";
-success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosimo, da počakate trenutek...";
+success.restore="Nastavitve so obnovljene.<br />Ponovni zagon naprave. Prosimo, da počakate trenutek...";
+success.upgrade="Posodabljanje je uspelo.<br />Ponovni zagon naprave. Prosimo, da počakate trenutek...";
 success.success_noreboot="Nastavitve so uspele.";
 success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosimo, da počakate trenutek...";
 

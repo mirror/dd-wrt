@@ -380,9 +380,9 @@ errmsg.err61="Fitxer d'imatge incorrecte.";
 errmsg.err62=" ja està definit com arrendament estàtic.";
 
 //Saving message
-errmsg.err100="Processant...<br/>Sis plau, espereu.";
-errmsg.err101="Restaurant fitxer de configuració...<br/>Sis plau, espereu.";
-errmsg.err102="Actualitzant microprogramari...<br/>Sis plau, espereu";
+errmsg.err100="Processant...<br />Sis plau, espereu.";
+errmsg.err101="Restaurant fitxer de configuració...<br />Sis plau, espereu.";
+errmsg.err102="Actualitzant microprogramari...<br />Sis plau, espereu";
 
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Inici";
@@ -491,7 +491,7 @@ alive.port="Port de Proxy";
 
 //help container
 halive.right2="Eligeu quan reiniciar el encaminador. Cron ha d'ésser habilitat en la pestayna d'administració.";
-halive.right4="Un màmix de tres IPs separades per un <em>ESPAI</em> es permet.<br/>Format d'IP és xxx.xxx.xxx.xxx .";
+halive.right4="Un màmix de tres IPs separades per un <em>ESPAI</em> es permet.<br />Format d'IP és xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -811,7 +811,7 @@ hotspot.wifidog_password="Contrasenya del Servidor HTTP";
 hotspot.wifidog_auth="Suport d'Autenticació del Servidor HTTP";
 
 //help container
-hstatus_hots.right1="conup/condown:<br><i>Quan USB o JFFS està muntat a jffs, scripts de connexió es poden utilitzar en /jffs/etc/chilli/</i><br>Usuaris Locals:<br><i>Quan només usuaris locals s'utilitzen, establiu el radius primari com a 127.0.0.1</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Quan USB o JFFS està muntat a jffs, scripts de connexió es poden utilitzar en /jffs/etc/chilli/</i><br />Usuaris Locals:<br /><i>Quan només usuaris locals s'utilitzen, establiu el radius primari com a 127.0.0.1</i>";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Sistema Hotspot";
@@ -1156,9 +1156,9 @@ qos.bandwidth="Ample de banda en kbits";
 
 //help container
 hqos.right1="";
-hqos.right2="Enllaç ascendent:<br>Establiu aquest a 80%-95% (màxim) del vostre límit de pujada total.<br>Enllaç descendent:<br>Establiu aquest a 80%-100% (màxim) del vostre límit de baixada total.";
+hqos.right2="Enllaç ascendent:<br />Establiu aquest a 80%-95% (màxim) del vostre límit de pujada total.<br />Enllaç descendent:<br />Establiu aquest a 80%-100% (màxim) del vostre límit de baixada total.";
 hqos.right3="";
-hqos.right4="Habilita els Límits per Defecte per Usuari:<br>Habilitar el nivell per defecte o establir el nivell per tots els usuaris.";
+hqos.right4="Habilita els Límits per Defecte per Usuari:<br />Habilitar el nivell per defecte o establir el nivell per tots els usuaris.";
 hqos.right6="Podeu controlar el vostre ritme amb respecte a la aplicació que consumeix l'ample de banda.";
 hqos.right8="Podeu especificar la prioritat de tot trànsit d'una adreça IP donada o rang IP.";
 hqos.right10="Podeu especificar la prioritat de tot trànsit d'un dispositu en la vostra xarxa per donar al dispositiu un nom de dispositu, especificant la prioritat i introduint la seva adreça MAC.";
@@ -1379,9 +1379,9 @@ service.vpn_tlscip="Xifra TLS";
 service.vpn_route="Enrutament basat en Política";
 
 //help container
-hstatus_vpn.right1="Enrutament basat en Política:<br><i>Afegiu els IP/NET en la forma 0.0.0.0/0 per forçar que els clients utilitzin el túnel com gateway per defecte. Una línia per IP/NET.<br><i>Adreça IP/Màscara de xarxa:</i><br>Ha de ser establert quan s'utilitza el mode DHCP-Proxy i el TAP local NO s'extén</i>";
-hstatus_vpn.right2="Configuració Adicional:<br><i>Per empenyar les rutes als clients afegiu \'push \"ruta IP màscara gateway\"\', per empenyar DNS/WINS afegiu \'push \"opció-dhcp DNS (o WINS) IP\"\' a la configuració.</i><br>directori de connexió de client:<br><i>Quan USB o JFFS està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
-hstatus_vpn.right3="General:<br><i>3 mètodes d'autenticació es soportan: pkcs12 (+dh en el servidor), estàtica, i certificats estàndards. Habiliteu el MSS en només un costat de l'enllaç, fragmenteu en ambdós.</i>";
+hstatus_vpn.right1="Enrutament basat en Política:<br /><i>Afegiu els IP/NET en la forma 0.0.0.0/0 per forçar que els clients utilitzin el túnel com gateway per defecte. Una línia per IP/NET.<br /><i>Adreça IP/Màscara de xarxa:</i><br />Ha de ser establert quan s'utilitza el mode DHCP-Proxy i el TAP local NO s'extén</i>";
+hstatus_vpn.right2="Configuració Adicional:<br /><i>Per empenyar les rutes als clients afegiu \'push \"ruta IP màscara gateway\"\', per empenyar DNS/WINS afegiu \'push \"opció-dhcp DNS (o WINS) IP\"\' a la configuració.</i><br />directori de connexió de client:<br /><i>Quan USB o JFFS està muntat a /jffs, els scripts es trucan de /jffs/etc/openvpn/ccd/</i>";
+hstatus_vpn.right3="General:<br /><i>3 mètodes d'autenticació es soportan: pkcs12 (+dh en el servidor), estàtica, i certificats estàndards. Habiliteu el MSS en només un costat de l'enllaç, fragmenteu en ambdós.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1755,7 +1755,7 @@ vlan.legend="VLAN";
 vlan.bridge="Assignada al<br />Pont";
 vlan.tagged="Etiquetada";
 vlan.negociate="Negocia Automàticament";
-vlan.aggregation="Agregació d'Enllaç<br>en els Ports 3 i 4";
+vlan.aggregation="Agregació d'Enllaç<br />en els Ports 3 i 4";
 vlan.trunk="Tronc";
 vlan.linkstatus="Estatus d'Enllaç";
 
@@ -2135,7 +2135,7 @@ wl_basic.rate_control="Algorisme de Control de Ritme";
 wl_basic.ap83_vap_note="Afegir més de tres interficies virtuals conduirà a menor rendiment amb certs dispositus de client en aquestes interfícies virtuals adicionals.";
 
 //help container
-hwl_basic.right2="Si voleu excloure els clients de G Sense Fil, trieu el mode <em>Només B</em>. Si voleu deshabilitar el accés sense fil, trieu <em>Deshabilita</em>.<br/><b>Nota :</b> al canvair el mode sense fil, alguns paràmetres avançats són susceptibles a ser modificats (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Si voleu excloure els clients de G Sense Fil, trieu el mode <em>Només B</em>. Si voleu deshabilitar el accés sense fil, trieu <em>Deshabilita</em>.<br /><b>Nota :</b> al canvair el mode sense fil, alguns paràmetres avançats són susceptibles a ser modificats (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Rang de Sensibilitat: ";
 hwl_basic.right4="Ajusta la sincronització ACK. 0 deshabilita la sincronització ACK completament pels microprogramaris de Broadcom. En microprogramari basat en Atheros, 0 habilita el mode de sincronització ACK automàtica.";
 hwl_basic.right6="Feu clic en qualsevol hora per habilitar o deshabilitar la senyal de ràdio (<em>verd</em> indica el accés Sense Fil permés, i <em>vermell</em> indica accés Sense Fil bloquejat)";
@@ -2147,8 +2147,8 @@ fail.mess2="La actualització s'ha fallat.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Paràmetres desats.";
-success.restore="Paràmetres restaurats.<br/>La unitat s'està reiniciant ara. Sis plau, espereu un moment...";
-success.upgrade="Actualització reeixita.<br/>La unitat s'està reiniciant ara. Sis plau, espereu un moment...";
+success.restore="Paràmetres restaurats.<br />La unitat s'està reiniciant ara. Sis plau, espereu un moment...";
+success.upgrade="Actualització reeixita.<br />La unitat s'està reiniciant ara. Sis plau, espereu un moment...";
 success.success_noreboot="Les paràmetres són reexits.";
 success.success_reboot=success.success_noreboot + "<br />La unitat s'està reiniciant ara. Sis plau, espereu un moment...";
 

@@ -373,9 +373,9 @@ errmsg.err61="El archivo de imagen no es correcto.";
 errmsg.err62=" est&aacute; ya definada como un lease est&aacute;tico.";
 
 //Saving message
-errmsg.err100="Procesando...<br/>Por favor, espere.";
-errmsg.err101="Restaurando archivo de configuraci&oacute;n...<br/>Por favor, espere.";
-errmsg.err102="Actualizando firmware...<br/>Por favor, espere.";
+errmsg.err100="Procesando...<br />Por favor, espere.";
+errmsg.err101="Restaurando archivo de configuraci&oacute;n...<br />Por favor, espere.";
+errmsg.err102="Actualizando firmware...<br />Por favor, espere.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 
@@ -481,7 +481,7 @@ alive.port="Puerto del Proxy";
 //help container
 
 halive.right2="Elige cuando reinicar el router. Cron debe estar activado en la pesta&ntilde;a de administraci&oacute;n.";
-halive.right4="Se permite un m&aacute;ximo de tres IPs separdas por un <em>SPACE</em>.<br/>El formato de las IPs es xxx.xxx.xxx.xxx";
+halive.right4="Se permite un m&aacute;ximo de tres IPs separdas por un <em>SPACE</em>.<br />El formato de las IPs es xxx.xxx.xxx.xxx";
 
 
 // ** config.asp **//
@@ -1635,7 +1635,7 @@ vlan.legend="VLAN";
 vlan.bridge="Asignados al<br />Puente";
 vlan.tagged="Etiquetado";
 vlan.negociate="Auto-Negociar";
-vlan.aggregation="Agregaci&oacute;n del enlace<br>en puertos 3 y 4";
+vlan.aggregation="Agregaci&oacute;n del enlace<br />en puertos 3 y 4";
 vlan.trunk="trozo";
 
 
@@ -2003,8 +2003,8 @@ fail.mess2="Actualizaci&oacute;n fallida.";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Configuraci&oacute;n Grabada.";
-success.restore="Configuraci&oacute;n Restaurada.<br/>La unidad est&aacute; se est&aacute; reiniciando. Por favor, espera un momento...";
-success.upgrade="Actualizaci&oacute;n exitosa.<br/>La unidad se est&aacute; reiniciando. Por favor, espera un momento...";
+success.restore="Configuraci&oacute;n Restaurada.<br />La unidad est&aacute; se est&aacute; reiniciando. Por favor, espera un momento...";
+success.upgrade="Actualizaci&oacute;n exitosa.<br />La unidad se est&aacute; reiniciando. Por favor, espera un momento...";
 success.success_noreboot="Configurado con &eacute;xito.";
 success.success_reboot=success.success_noreboot + "<br />La unidad se est&aacute; reiniciando. Por favor, espera un momento...";
 
