@@ -395,9 +395,9 @@ errmsg.err61="Ung&uuml;ltiges Dateiformat.";
 errmsg.err62=" wurde bereits als statisches Lease definiert.";
 
 //Saving message
-errmsg.err100="In Bearbeitung...<br/>Bitte Warten.";
-errmsg.err101="Stelle Konfiguration wieder her...<br/>Bitte Warten.";
-errmsg.err102="Upgrade Firmware...<br/>Bitte Warten.";
+errmsg.err100="In Bearbeitung...<br />Bitte Warten.";
+errmsg.err101="Stelle Konfiguration wieder her...<br />Bitte Warten.";
+errmsg.err102="Upgrade Firmware...<br />Bitte Warten.";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -509,7 +509,7 @@ alive.port="Proxy-Port";
 //help container
 
 halive.right2="W&auml;hlen Sie aus, wann der Router neu starten soll. Cron muss hierf&uuml;r auf dem Management-Tab, eingeschaltet sein.";
-halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br/>IP-Format ist xxx.xxx.xxx.xxx.";
+halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<br />IP-Format ist xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -793,13 +793,13 @@ privoxy.transp="Transparenter Modus";
 privoxy.custom="Eigene Konfiguration";
 privoxy.maxclient="Maximale Verbindungen";
 
-hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients.<br> Proxy IP = <b>Router IP</b> <br>Proxy Port = <b>8118</b>";
+hprivoxy.right2="Schaltet Privoxy ein und konfiguriert ihn f&uuml;r ihre Clients.<br /> Proxy IP = <b>Router IP</b> <br />Proxy Port = <b>8118</b>";
 
 //help page
-hprivoxy.page1="<dd>Privoxy erm&ouml;glicht das Entfernen von Werbung. <br/><ul><br/></ul></dd>";
-hprivoxy.page2="<dd><br/><ul><br/><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es n&ouml;tig die Automatische Proxykonfiguratio zu aktivieren</li><li>Falls ihr Klient Mitglied einer Dom&auml;ne ist, m&uuml;ssen sie das Senden der lokalen Dom&auml;ne aktivieren</li></ul></dd>";
-hprivoxy.page3="<dd><br/><ul><li>Verbindungen ins Internet zu Port 80 werden &uuml;ber den Werbefilter geleitet</li><li>Dadurch kann das Filtern f&uuml;r jeden Klient erzwungen werden</li><li>Im Transparenten Modus k&öuml;nnen keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen &uuml;ber den Werbefilter zu leiten</li></ul></dd>";
-hprivoxy.page4="<dd><br/><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li></ul></dd>";
+hprivoxy.page1="<dd>Privoxy erm&ouml;glicht das Entfernen von Werbung. <br /><ul><br /></ul></dd>";
+hprivoxy.page2="<dd><br /><ul><br /><li>Publiziert ein wpad/pac File das dazu dient den Proxy auf Clientcomputern automatisch zu konfigurieren</li><li>Bei manchen Clients ist es n&ouml;tig die Automatische Proxykonfiguratio zu aktivieren</li><li>Falls ihr Klient Mitglied einer Dom&auml;ne ist, m&uuml;ssen sie das Senden der lokalen Dom&auml;ne aktivieren</li></ul></dd>";
+hprivoxy.page3="<dd><br /><ul><li>Verbindungen ins Internet zu Port 80 werden &uuml;ber den Werbefilter geleitet</li><li>Dadurch kann das Filtern f&uuml;r jeden Klient erzwungen werden</li><li>Im Transparenten Modus k&öuml;nnen keine https Verbindungen gefiltert werden, es sei denn der Klient nutzt die Proxy Autokonfig aum die Verbindungen &uuml;ber den Werbefilter zu leiten</li></ul></dd>";
+hprivoxy.page4="<dd><br /><ul><li>Erlaubt das Vorgeben eigener Einstellungen</li></ul></dd>";
 
 
 //** Lighttpd.asp **//
@@ -895,7 +895,7 @@ hotspot.wifidog_auth="HTTP Authentication Unterst&uuml;tzung";
 
 //help container
 
-hstatus_hots.right1="conup/condown:<br><i>Wenn USB or JFFS als /jffs eingebungen ist, k&ouml;nnen Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br>Locale Benutzer:<br><i>Wenn nur lokale Benutzer verwendet werden, soll der prim&auml;re Radiusserver auf 127.0.0.1 gesetzt werden.</i>";
+hstatus_hots.right1="conup/condown:<br /><i>Wenn USB or JFFS als /jffs eingebungen ist, k&ouml;nnen Verbindungsskripte in  /jffs/etc/chilli/ verwendet werden.</i><br />Locale Benutzer:<br /><i>Wenn nur lokale Benutzer verwendet werden, soll der prim&auml;re Radiusserver auf 127.0.0.1 gesetzt werden.</i>";
 
 // ** Hotspotsystem **//
 
@@ -1568,9 +1568,9 @@ service.vpnd_lzoadaptive="Adaptiv";
 service.vpn_tls_btn="TLS Schl&uuml;ssel Auswahl";
 
 //help container
-hstatus_vpn.right1="Richtlinienbasiertes Routing:<br><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br><i>IP Adresse/Netzmaske:</i><br>Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
-hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br><i>Folgender Eintrag erlaubt Routen an Klienten weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br>Ordner f&uuml;r Klientenverbindungen:<br><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
-hstatus_vpn.right3="Allgemein:<br><i>Drei Methoden zur Authentifizierung sind verf&uuml;gbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
+hstatus_vpn.right1="Richtlinienbasiertes Routing:<br /><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
+hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an Klienten weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br />Ordner f&uuml;r Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
+hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verf&uuml;gbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -2016,7 +2016,7 @@ vlan.legend="VLAN";
 vlan.bridge="Der Br&uuml;cke zuweisen";
 vlan.tagged="Tagged";
 vlan.negociate="Automatisches Aushandeln";
-vlan.aggregation="Schnittstellenb&uuml;ndelung<br>auf Port 3 & 4";
+vlan.aggregation="Schnittstellenb&uuml;ndelung<br />auf Port 3 & 4";
 vlan.trunk="Trunk";
 vlan.linkstatus="Verbindungsstatus";
 
@@ -2498,8 +2498,8 @@ fail.mess2="Aktualisierung fehlgeschlagen.";
 
 
 success.saved="Einstellungen gespeichert.";
-success.restore="Einstellungen wiederhergestellt.<br/>Das Ger&auml;t wird nun neu gestartet. Bitte warten Sie einen Moment...";
-success.upgrade="Aktualisierung erfolgreich.<br/>Das Ger&auml;t wird nun neu gestartet. Bitte warten Sie einen Moment...";
+success.restore="Einstellungen wiederhergestellt.<br />Das Ger&auml;t wird nun neu gestartet. Bitte warten Sie einen Moment...";
+success.upgrade="Aktualisierung erfolgreich.<br />Das Ger&auml;t wird nun neu gestartet. Bitte warten Sie einen Moment...";
 success.success_noreboot="Die Einstellungen wurden erfolgreich gespeichert.";
 success.success_reboot=success.success_noreboot + "<br />Das Ger&auml;t wird nun neu gestartet. Bitte warten Sie einen Moment...";
 

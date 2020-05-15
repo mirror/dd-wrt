@@ -374,7 +374,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="Válassza ki, hogy mikor induljon újra a router. A Cronnak engedélyezettnek kell lennie a kezelés fülön.";
-halive.right4="Maximum 3 IP cím (egy <em>SZÓKÖZ</em> karakterrel elválasztva) megengedett.<br/>IP formátum a következõ: xxx.xxx.xxx.xxx.";
+halive.right4="Maximum 3 IP cím (egy <em>SZÓKÖZ</em> karakterrel elválasztva) megengedett.<br />IP formátum a következõ: xxx.xxx.xxx.xxx.";
 
 // **************************************************************** config.asp **********************************************************************//
 
@@ -1337,7 +1337,7 @@ vlan.legend="VLAN";
 vlan.bridge="A Bridge csatlakoztatva";
 vlan.tagged="Címkézett";
 vlan.negociate="Auto Negotiáció";
-vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br>"; 
+vlan.aggregation="Kapcsolat egyesítése a 3-as és 4es portokon (Link Aggregation<br />"; 
 vlan.trunk="Trönk";
 
 
@@ -1574,7 +1574,7 @@ wl_basic.regulatory="SuperKanal";
 
 //help container
 
-hwl_basic.right2="Wireless-G kliensek kizárásához, válassza a <em>Csak B</em> módot. A vezetéknélküli hozzáférés kikapcsolásához válassza a <em>Letiltást</em>.<br/><b>Megjegyzés :</b> a vezetéknélküli üzemmód változtatásakor, néhány speciális paramétert szükséges módosítani: (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" vagy \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Wireless-G kliensek kizárásához, válassza a <em>Csak B</em> módot. A vezetéknélküli hozzáférés kikapcsolásához válassza a <em>Letiltást</em>.<br /><b>Megjegyzés :</b> a vezetéknélküli üzemmód változtatásakor, néhány speciális paramétert szükséges módosítani: (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" vagy \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Érzékenységi tartomány: ";
 hwl_basic.right4="Ack idõzítés beállítása. 0 letiltja az ack idõzítést.";
 
@@ -1588,8 +1588,8 @@ fail.mess2="A frissítés sikertelen!";
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
 success.saved="A beállítások mentése sikeres";
-success.restore="Beállítások visszaállítva.<br/>A router újraindul. Kérem várjon......";
-success.upgrade="A frissítés sikerült!<br/>A router újraindul. Kérem várjon......";
+success.restore="Beállítások visszaállítva.<br />A router újraindul. Kérem várjon......";
+success.upgrade="A frissítés sikerült!<br />A router újraindul. Kérem várjon......";
 success.success_noreboot="A beállítások mentése sikeres.";
 success.success_reboot=success.success_noreboot + "<br />A router újraindul. Kérem várjon...";
 

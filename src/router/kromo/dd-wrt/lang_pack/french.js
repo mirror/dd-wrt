@@ -340,8 +340,8 @@ errmsg.err62=" est d&eacute;j&agrave; d&eacute;finie comme bail DHCP statique.";
 
 //Saving message
 errmsg.err100="Veuillez patienter SVP...";
-errmsg.err101="Restauration des param&egrave;tres en cours...<br/>Veuillez patienter SVP.";
-errmsg.err102="La mise &agrave; jour est en cours...<br/>Veuillez patienter SVP";
+errmsg.err101="Restauration des param&egrave;tres en cours...<br />Veuillez patienter SVP.";
+errmsg.err102="La mise &agrave; jour est en cours...<br />Veuillez patienter SVP";
 
 // **  ENTR&Eacute;ES DE MENU COMMUNES  **//
 bmenu.setup="Configuration";
@@ -437,7 +437,7 @@ alive.port="Port du proxy";
 
 //help container
 halive.right2="Choisissez quand le routeur doit red&eacute;marrer. <em>Cron</em> doit &ecirc;tre activ&eacute; dans l&apos;onglet gestion.";
-halive.right4="Un maximum de 3 IPs s&eacute;par&eacute;es par un <em>ESPACE</em> est autoris&eacute;.<br/>Le format des IPs est xxx.xxx.xxx.xxx.";
+halive.right4="Un maximum de 3 IPs s&eacute;par&eacute;es par un <em>ESPACE</em> est autoris&eacute;.<br />Le format des IPs est xxx.xxx.xxx.xxx.";
 
 // ** config.asp **//
 config.titl="Sauvegarde &amp; Restauration";
@@ -1422,7 +1422,7 @@ vlan.legend="VLAN";
 vlan.bridge="Assign&eacute; au<br />pont";
 vlan.tagged="&Eacute;tiquet&eacute;";
 vlan.negociate="Auton&eacute;gocier";
-vlan.aggregation="Regroupement de liens<br>des Ports 3 &amp; 4";
+vlan.aggregation="Regroupement de liens<br />des Ports 3 &amp; 4";
 vlan.trunk="Trunk";
 
 // ** WEP.asp **//
@@ -1651,7 +1651,7 @@ wl_basic.noise_immunity="Niveau d&apos;immunit&eacute; au bruit";
 wl_basic.ofdm_weak_det="Faiblesse de d&eacute;tection OFDM";
 
 //help container
-hwl_basic.right2="Si vous disposez &agrave; la fois des p&eacute;riph&eacute;riques 802.11g et 802.11b sur votre r&eacute;seau, conservez le param&egrave;tre par d&eacute;faut <em>Mixte</em>. Si vous utilisez uniquement des p&eacute;riph&eacute;riques 802.11g, s&eacute;lectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des p&eacute;riph&eacute;riques 802.11b, s&eacute;lectionnez <em>B-uniquement</em>. Si votre r&eacute;seau n&apos;est muni d&apos;aucun p&eacute;riph&eacute;rique sans fil, s&eacute;lectionnez l&apos;option <em>D&eacute;sactiver</em>.<br/><b>Remarque :</b> quand vous changez de mode, certains param&egrave;tres avanc&eacute;s sont susceptibles d&apos;&ecirc;tre modifi&eacute;s (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
+hwl_basic.right2="Si vous disposez &agrave; la fois des p&eacute;riph&eacute;riques 802.11g et 802.11b sur votre r&eacute;seau, conservez le param&egrave;tre par d&eacute;faut <em>Mixte</em>. Si vous utilisez uniquement des p&eacute;riph&eacute;riques 802.11g, s&eacute;lectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des p&eacute;riph&eacute;riques 802.11b, s&eacute;lectionnez <em>B-uniquement</em>. Si votre r&eacute;seau n&apos;est muni d&apos;aucun p&eacute;riph&eacute;rique sans fil, s&eacute;lectionnez l&apos;option <em>D&eacute;sactiver</em>.<br /><b>Remarque :</b> quand vous changez de mode, certains param&egrave;tres avanc&eacute;s sont susceptibles d&apos;&ecirc;tre modifi&eacute;s (\""+wl_adv.label16+"\", \""+wl_adv.label2+"\" ou \""+wl_adv.label5+"\").";
 hwl_basic.right3="Sensibilit&eacute; :";
 hwl_basic.right4="Permet de r&eacute;gler le <em>ack timing</em>. 0 d&eacute;sactive compl&egrave;tement cette fonctionnalit&eacute; pour les Micrologiciels Broadcom. Pour ceux bas&eacute;s sur un chipset Atheros cela bascule en mode ack timing automatique";
 hwl_basic.right6="S&eacute;lectionnez les heures pendant lesquelles le signal radio sans fil sera activ&eacute; (<em>vert</em> indique que le signal sans fil est activ&eacute;, et <em>rouge</em> indique que le signal est d&eacute;sactiv&eacute;).";
@@ -1662,8 +1662,8 @@ fail.mess2="La mise &agrave; jour a &eacute;chou&eacute;.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Les param&egrave;tres ont &eacute;t&eacute; enregistr&eacute;s avec succ&egrave;s.";
-success.restore="Les param&egrave;tres ont &eacute;t&eacute; restaur&eacute;s avec succ&egrave;s.<br/>Le routeur red&eacute;marre. Patientez un moment SVP...";
-success.upgrade="Mise &agrave; jour r&eacute;ussie.<br/>Le routeur red&eacute;marre. Patientez un moment SVP...";
+success.restore="Les param&egrave;tres ont &eacute;t&eacute; restaur&eacute;s avec succ&egrave;s.<br />Le routeur red&eacute;marre. Patientez un moment SVP...";
+success.upgrade="Mise &agrave; jour r&eacute;ussie.<br />Le routeur red&eacute;marre. Patientez un moment SVP...";
 success.success_noreboot="Les param&egrave;tres ont &eacute;t&eacute; enregistr&eacute;s avec succ&egrave;s.";
 success.success_reboot=success.success_noreboot + "<br />Le routeur red&eacute;marre. Patientez un moment SVP...";
 

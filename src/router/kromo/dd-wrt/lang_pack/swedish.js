@@ -360,9 +360,9 @@ errmsg.err61="Felaktig image fil.";
 errmsg.err62=" finns redan som fast l&aring;n.";
 
 //Saving message
-errmsg.err100="Arbetar...<br/>Var v&auml;nlig, v&auml;nta.";
-errmsg.err101="&Aring;terst&auml;ller konfigurationsfil...<br/>Var v&auml;nlig, v&auml;nta.";
-errmsg.err102="Uppgraderar firmware...<br/>Var v&auml;nlig, v&auml;nta.";
+errmsg.err100="Arbetar...<br />Var v&auml;nlig, v&auml;nta.";
+errmsg.err101="&Aring;terst&auml;ller konfigurationsfil...<br />Var v&auml;nlig, v&auml;nta.";
+errmsg.err102="Uppgraderar firmware...<br />Var v&auml;nlig, v&auml;nta.";
 //Setup assistant
 sas.title="Inst&auml;llningsguiden";
 sas.internet_connection="Internet Anslutning";
@@ -471,7 +471,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="V&auml;lj n&auml;r du vill starta om routern med en schemalagd omstart. Cron m&aring;ste vara aktiverat i Administrations fliken.";
-halive.right4="Max tre IP-adresser separerade med ett <em>MELLANSLAG</em> &auml;r till&aring;tna.<br/>IPs Formatet &auml;r xxx.xxx.xxx.xxx.";
+halive.right4="Max tre IP-adresser separerade med ett <em>MELLANSLAG</em> &auml;r till&aring;tna.<br />IPs Formatet &auml;r xxx.xxx.xxx.xxx.";
 
 // ** config.asp **//
 config.titl="Backup &amp; &Aring;terst&auml;llning";
@@ -1590,7 +1590,7 @@ vlan.legend="VLAN";
 vlan.bridge="Dedikerat till<br />Bryggan";
 vlan.tagged="Taggad";
 vlan.negociate="Auto-F&ouml;rhandla";
-vlan.aggregation="Link Aggregation<br>p&aring; Port 3 &amp; 4";
+vlan.aggregation="Link Aggregation<br />p&aring; Port 3 &amp; 4";
 vlan.trunk="Trunk";
 
 // ** WEP.asp **//
@@ -1919,7 +1919,7 @@ wl_basic.radar="Radar Detection";
 wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 //help container
-hwl_basic.right2="Om du vill exkludera Tr&aring;dl&ouml;sa-G Klienter, V&auml;lj <em>B-Only</em>. Om du vill st&auml;nga av Tr&aring;dl&ouml;st, v&auml;lj <em>Inaktivera</em>.<br/><b>Notera :</b> N&auml;r du &auml;ndrar Tr&aring;dl&ouml;st mode, blir vissa avancerade funktioner &auml;ndrade (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Om du vill exkludera Tr&aring;dl&ouml;sa-G Klienter, V&auml;lj <em>B-Only</em>. Om du vill st&auml;nga av Tr&aring;dl&ouml;st, v&auml;lj <em>Inaktivera</em>.<br /><b>Notera :</b> N&auml;r du &auml;ndrar Tr&aring;dl&ouml;st mode, blir vissa avancerade funktioner &auml;ndrade (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="K&auml;nslighets intervall: ";
 hwl_basic.right4="Justerar ack tiderna. 0 inaktiverar ack tider helt f&ouml;r broadcom enheter. P&aring; Atheros baserade firmwares s&aring; s&auml;tts automatisk ack";
 hwl_basic.right6="Klicka valfri tid f&ouml;r aktivering eller inaktivering av radio signalen (<em>gr&ouml;n</em> indikerar Tr&aring;dl&ouml;s access, och <em>r&ouml;d</em> indikerar blockerad Tr&aring;dl&ouml;s access)";
@@ -1931,8 +1931,8 @@ fail.mess2="Upgradering Misslyckades.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Inst&auml;llningar Sparade.";
-success.restore="Inst&auml;llningar &Aring;terst&auml;llda.<br/>Enheten startas nu om. V&auml;nligen V&auml;nta...";
-success.upgrade="Uppgradering Lyckades.<br/>Enheten startas nu om. V&auml;nligen V&auml;nta...";
+success.restore="Inst&auml;llningar &Aring;terst&auml;llda.<br />Enheten startas nu om. V&auml;nligen V&auml;nta...";
+success.upgrade="Uppgradering Lyckades.<br />Enheten startas nu om. V&auml;nligen V&auml;nta...";
 success.success_noreboot="Inst&auml;llningar Lyckades.";
 success.success_reboot=success.success_noreboot + "<br />Enheten startas nu om. V&auml;nligen V&auml;nta...";
 success.alert_reset="Alla inst&auml;llningar &aring;terst&auml;llda till fabriksinst&auml;llningen.<br /><br />";

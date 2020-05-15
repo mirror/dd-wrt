@@ -346,9 +346,9 @@ errmsg.err61="不正確的影像檔.";
 errmsg.err62=" 已經定義為靜態的租約.";
 
 //Saving message
-errmsg.err100="進行中...<br/>請稍後.";
-errmsg.err101="正在恢復設定檔...<br/>請稍後.";
-errmsg.err102="正在更新韌體...<br/>請稍後.";
+errmsg.err100="進行中...<br />請稍後.";
+errmsg.err101="正在恢復設定檔...<br />請稍後.";
+errmsg.err102="正在更新韌體...<br />請稍後.";
 
 // **  COMMON MENU ENTRIES  **//
 //
@@ -450,7 +450,7 @@ alive.port="代理伺服器埠號";
 //help container
 //
 halive.right2="選擇何時重新啟動路由器.在普通管理標籤中的Cron選項必須被開啟.";
-halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<br/>IP位址格式為 xxx.xxx.xxx.xxx.";
+halive.right4="最多允許3個IP位址,之間使用 <em>空格</em> 區隔<br />IP位址格式為 xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -1553,7 +1553,7 @@ vlan.legend="VLAN";
 vlan.bridge="被指定到<br />橋接";
 vlan.tagged="已標記的";
 vlan.negociate="自動協商";
-vlan.aggregation="鏈路聚合<br>3號與4號埠";
+vlan.aggregation="鏈路聚合<br />3號與4號埠";
 vlan.trunk="Trunk";
 
 
@@ -1850,8 +1850,8 @@ fail.mess2="更新失敗.";
 // ** Success*.asp / Reboot.asp  **//
 //
 success.saved="設定已儲存.";
-success.restore="設定已恢復.<br/>正在重新啟動.請稍候...";
-success.upgrade="更新成功.<br/>正在重新啟動.請稍候...";
+success.restore="設定已恢復.<br />正在重新啟動.請稍候...";
+success.upgrade="更新成功.<br />正在重新啟動.請稍候...";
 success.success_noreboot="設定成功.";
 success.success_reboot=success.success_noreboot + "<br />正在重新啟動.請稍候...";
 

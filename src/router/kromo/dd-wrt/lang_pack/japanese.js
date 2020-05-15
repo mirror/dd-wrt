@@ -364,9 +364,9 @@ errmsg.err61="ファームウェアが正しくありません";
 errmsg.err62=" は既に静的Leaseアドレスとして登録されています.";
 
 //Saving message
-errmsg.err100="設定を行っています...<br/>しばらくお待ちください";
-errmsg.err101="設定を復元しています...<br/>しばらくお待ちください";
-errmsg.err102="ファームウェアを更新しています...<br/>しばらくお待ちください";
+errmsg.err100="設定を行っています...<br />しばらくお待ちください";
+errmsg.err101="設定を復元しています...<br />しばらくお待ちください";
+errmsg.err102="ファームウェアを更新しています...<br />しばらくお待ちください";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -470,7 +470,7 @@ alive.port="プロキシのポート";
 //help container
 
 halive.right2="再起動を行う時刻を指定します。時刻指定を行うためには、Cronサービスが動作している必要があります。";
-halive.right4="確認を行うIPアドレスは3つまで指定することができます。複数のアドレスを指定する場合は、<em>スペース</em>で区切って入力してください。<br/>IPアドレスの入力形式は次の通りです：xxx.xxx.xxx.xxx.";
+halive.right4="確認を行うIPアドレスは3つまで指定することができます。複数のアドレスを指定する場合は、<em>スペース</em>で区切って入力してください。<br />IPアドレスの入力形式は次の通りです：xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -1995,7 +1995,7 @@ wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="キャリアセンス";
 //help container
 
-hwl_basic.right2="接続する11gのクライアントを除外する場合は「B-Only」を選択してください。無線LANを使用しない場合は「無効」に設定してください。<br/><b>注意：</b>モードを切り替える場合は、幾つかのパラメータの使用に制限があります。(\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="接続する11gのクライアントを除外する場合は「B-Only」を選択してください。無線LANを使用しない場合は「無効」に設定してください。<br /><b>注意：</b>モードを切り替える場合は、幾つかのパラメータの使用に制限があります。(\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="通信距離の有効範囲(Ack Timing): ";
 hwl_basic.right4="通信応答タイムアウトまでの時間を設定することができます。0を設定した場合は最小の応答時間になります。";
 hwl_basic.right6="無線機能を無効にする時間帯を指定します。<em>緑色</em> は無線機能が有効な時間を、<em>赤色</em>の場合は無効である時間帯を指定することができます。";
@@ -2009,8 +2009,8 @@ fail.mess2="更新に失敗しました";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="保存しました";
-success.restore="設定を復元しました。<br/>機器を再起動しています。しばらくお待ちください...";
-success.upgrade="更新が完了しました。<br/>機器を再起動しています。しばらくお待ちください...";
+success.restore="設定を復元しました。<br />機器を再起動しています。しばらくお待ちください...";
+success.upgrade="更新が完了しました。<br />機器を再起動しています。しばらくお待ちください...";
 success.success_noreboot="設定が完了しました。";
 success.success_reboot=success.success_noreboot + "<br />機器を再起動しています。しばらくお待ちください...";
 
