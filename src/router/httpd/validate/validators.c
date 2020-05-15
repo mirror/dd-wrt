@@ -2272,7 +2272,7 @@ void validate_staticleases(webs_t wp, char *value, struct variable *v)
 		if (leases == NULL)
 			leases = calloc(1, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 2);
 		else
-			leases = realloc(leases, strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 2);
+			leases = realloc(leases, strlen(leases) + strlen(mac) + 1 + strlen(hostname) + 1 + strlen(ip) + 1 + strlen(time) + 2);
 		if (!leases)
 			return;
 		strcat(leases, mac);
