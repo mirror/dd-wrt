@@ -409,7 +409,7 @@ bmenu.setupipv6="IPV6";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Klonování MAC";
 bmenu.setuprouting="Pokročilé routování";
-bmenu.setupvlan="Přepínač konf."
+bmenu.setupvlan="Přepínač konf.";
 bmenu.setupeop="Tunely";
 bmenu.networking="Síťování";
 
