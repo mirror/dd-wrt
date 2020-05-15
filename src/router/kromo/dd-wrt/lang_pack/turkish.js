@@ -371,9 +371,9 @@ errmsg.err61="Yanlış görüntü dosyası.";
 errmsg.err62=" zaten statik kira olarak tanımlandı.";
 
 //Saving message
-errmsg.err100="İşleniyor...<br/>Lütfen bekleyin.";
-errmsg.err101="Yapılandırma dosyası geri yükleniyor...<br/>Lütfen bekleyin.";
-errmsg.err102="Ürün yazılımı yükseltiliyor...<br/>Lütfen bekleyin";
+errmsg.err100="İşleniyor...<br />Lütfen bekleyin.";
+errmsg.err101="Yapılandırma dosyası geri yükleniyor...<br />Lütfen bekleyin.";
+errmsg.err102="Ürün yazılımı yükseltiliyor...<br />Lütfen bekleyin";
 
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Kurulum";
@@ -478,7 +478,7 @@ alive.port="Proxy Portu";
 
 //help container
 halive.right2="Yönlendiriciyi geri yüklerken seçin. Cron yönetim sekmesinde etkinleştirilmelidir.";
-halive.right4="<em>SPACE</em> ile maksimum üç IP'nin ayrılmasına izin verilir.<br/>IP Formatı: xxx.xxx.xxx.xxx .";
+halive.right4="<em>SPACE</em> ile maksimum üç IP'nin ayrılmasına izin verilir.<br />IP Formatı: xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -1676,7 +1676,7 @@ vlan.legend="VLAN";
 vlan.bridge="<br />Köprüye Atandı";
 vlan.tagged="Etiketlendi";
 vlan.negociate="Otomatik Anlaş";
-vlan.aggregation="3 ve 4 Portlarında<br>Bağlantı Toplama";
+vlan.aggregation="3 ve 4 Portlarında<br />Bağlantı Toplama";
 vlan.trunk="Birleştirme";
 
 
@@ -2053,7 +2053,7 @@ wl_basic.rate_control="Hız Kontrol Algoritması";
 wl_basic.ap83_vap_note="Üç sanal arayüzden fazla eklemek bu ek sanal arayüzdeki bazı belirli istemci cihazlarıyla düşük performansa neden olur.";
 
 //help container
-hwl_basic.right2="Kablosuz-G istemcilerini hariç tutmak isterseniz, <em>B-Salt</em> modunu seçin. Kablosuz erişimi devre dışı bırakmak isterseniz, <em>Devre Dışı Bırak</em> öğesini seçin.<br/><b>Not :</b> kablosuz modu değiştirdiğinizde, bazı gelişmiş parametreler değiştirilmek üzere elverişli hale gelir (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" veya \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Kablosuz-G istemcilerini hariç tutmak isterseniz, <em>B-Salt</em> modunu seçin. Kablosuz erişimi devre dışı bırakmak isterseniz, <em>Devre Dışı Bırak</em> öğesini seçin.<br /><b>Not :</b> kablosuz modu değiştirdiğinizde, bazı gelişmiş parametreler değiştirilmek üzere elverişli hale gelir (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" veya \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Hassasiyet Aralığı: ";
 hwl_basic.right4="ack zamanlamasını ayarlar. 0 değeri broadcom ürün yazılımları için ack zamanlamasını tamamen devre dışı bırakır. Atheros tabanlı ürün yazılımlarında, otomatik ack zamanlama moduna dönüşür";
 hwl_basic.right6="Radyo sinyalini etkinleştirmek veya devre dışı bırakmak için herhangi bir saate tıklayın (<em>yeşil</em> Kablosuz erişime izin verildiğini belirtir ve <em>kırmızı</em> Kablosuz erişimin engellendiğini belirtir)";
@@ -2065,8 +2065,8 @@ fail.mess2="Yükseltme başarısız oldu.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Ayarlar kaydedildi.";
-success.restore="Ayarlar geri yüklendi.<br/>Ünite şimdi yeniden yükleniyor. Lütfen bir dakika bekleyin...";
-success.upgrade="Yükseltme işlemi başarılı.<br/>Ünite şimdi yeniden yükleniyor. Lütfen bir dakika bekleyin...";
+success.restore="Ayarlar geri yüklendi.<br />Ünite şimdi yeniden yükleniyor. Lütfen bir dakika bekleyin...";
+success.upgrade="Yükseltme işlemi başarılı.<br />Ünite şimdi yeniden yükleniyor. Lütfen bir dakika bekleyin...";
 success.success_noreboot="Ayarlar başarılı.";
 success.success_reboot=success.success_noreboot + "<br />Ünite şimdi yeniden yükleniyor. Lütfen bir dakika bekleyin...";
 

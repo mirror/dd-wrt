@@ -359,9 +359,9 @@ errmsg.err61="Ongeldig image bestand geselecteerd.";
 errmsg.err62=" is reeds bepaald als statische lease.";
 
 //Saving message
-errmsg.err100="Bezig te Verwerken...<br/>Even geduld, a.u.b.";
-errmsg.err101="Configuratie bestand aan het terugzetten...<br/>Even geduld, a.u.b.";
-errmsg.err102="Upgraden van de firmware...<br/>Even geduld, a.u.b";
+errmsg.err100="Bezig te Verwerken...<br />Even geduld, a.u.b.";
+errmsg.err101="Configuratie bestand aan het terugzetten...<br />Even geduld, a.u.b.";
+errmsg.err102="Upgraden van de firmware...<br />Even geduld, a.u.b";
 
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
@@ -466,7 +466,7 @@ alive.port="Proxy Poort";
 //help container
 
 halive.right2="Selecteer uit de opties, wanneer u de router wilt laten herstarten. Cron dient geactiveerd te zijn op de Beheer pagina.";
-halive.right4="Maximaal drie verschillende IP&apos;s scheiden door een <em>SPATIE</em> is toegestaan.<br/>Het IP&apos;s Formaat is xxx.xxx.xxx.xxx.";
+halive.right4="Maximaal drie verschillende IP&apos;s scheiden door een <em>SPATIE</em> is toegestaan.<br />Het IP&apos;s Formaat is xxx.xxx.xxx.xxx.";
 
 
 
@@ -1664,7 +1664,7 @@ vlan.legend="VLAN";
 vlan.bridge="Toegewezen aan<br />Bridge";
 vlan.tagged="Gelabeld";
 vlan.negociate="Automatisch Onderhandelen";
-vlan.aggregation="Link Aggregatie<br>op Poorten 3 &amp; 4";
+vlan.aggregation="Link Aggregatie<br />op Poorten 3 &amp; 4";
 vlan.trunk="Trunk";
 
 
@@ -2008,7 +2008,7 @@ wl_basic.csma="Carrier Sense";
 
 //help container
 
-hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, selecteer dan de <em>alleen-B</em> modus. Indien u de draadloze toegang in zijn geheel wilt verbieden, kies dan voor de keuze <em>Gedeactiveerd</em>.<br/><b>Noteer :</b> bij het wisselen van de draadloze mode, enkele geavanceerd parameters zullen worden gewijzigd (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, selecteer dan de <em>alleen-B</em> modus. Indien u de draadloze toegang in zijn geheel wilt verbieden, kies dan voor de keuze <em>Gedeactiveerd</em>.<br /><b>Noteer :</b> bij het wisselen van de draadloze mode, enkele geavanceerd parameters zullen worden gewijzigd (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Gevoeligheids Bereik: ";
 hwl_basic.right4="De(ACK Timing)past het gevoeligheidsbereik aan. Een 0 ingevuld schakelt het gevoeligheidsbereik volledig uit voor broadcom firmware&apos;s. Op Atheros gebasseerde firmware&apos;s zal het naar de automatische ack timing mode worden gezet";
 hwl_basic.right6="Klik op een uur om het radio signaal in of uit te schakelen. (<em>groen</em> geeft de toegestane draadloze toegang aan, <em>rood</em> de geblokkeerde draadloze toegang)"; 
@@ -2024,8 +2024,8 @@ fail.mess2="De Upgrade is mislukt.";
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
 success.saved="Instellingen opgeslagen.";
-success.restore="Instellingen hersteld.<br/>De router is nu aan het herstarten. Een moment a.u.b...";
-success.upgrade="Upgrade is succesvol.<br/>De router is nu aan het herstarten. Een moment a.u.b...";
+success.restore="Instellingen hersteld.<br />De router is nu aan het herstarten. Een moment a.u.b...";
+success.upgrade="Upgrade is succesvol.<br />De router is nu aan het herstarten. Een moment a.u.b...";
 success.success_noreboot="Instellingen zijn successvol.";
 success.success_reboot=success.success_noreboot + "<br />De router is nu aan het herstarten. Een moment a.u.b...";
 

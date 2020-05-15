@@ -383,9 +383,9 @@ errmsg.err61="Arquivo de imagem incorreto.";
 errmsg.err62=" já está definido como concessão estática.";
 
 //Saving message
-errmsg.err100="Processando...<br/>Por favor, aguarde.";
-errmsg.err101="Restaurando arquivo de configuração...<br/>Por favor, aguarde.";
-errmsg.err102="Atualizando firmware...<br/>Por favor, aguarde";
+errmsg.err100="Processando...<br />Por favor, aguarde.";
+errmsg.err101="Restaurando arquivo de configuração...<br />Por favor, aguarde.";
+errmsg.err102="Atualizando firmware...<br />Por favor, aguarde";
 
 // **  COMMON MENU ENTRIES  **//
 bmenu.setup="Configurações";
@@ -495,10 +495,10 @@ alive.port="Porta do Proxy";
 
 //help container
 halive.right2="Escolha quando reiniciar o roteador. O Cron deve estar habilitado na aba Gerenciamento.";
-halive.right4="São permitidos no máximo 3 IPs, separados por um <em>ESPAÇO</em>.<br/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
+halive.right4="São permitidos no máximo 3 IPs, separados por um <em>ESPAÇO</em>.<br />Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
 
 //help page 
-halive.page1="<dd>Você pode agendar reinicializações regulares para o roteador :<ul><li>Regularmente depois de xxx segundos.</li><li>Na data e hora específicas semanalmente ou diariamente.</li></ul><br/><div class=\"note\"><h4>Nota</h4><div>Para reinicializações baseadas em data o Cron deve estar ativado. Veja <a href=\"HManagement.asp\">Gerenciamento</a> para ativação do Cron.</div></div></dd>"; 
+halive.page1="<dd>Você pode agendar reinicializações regulares para o roteador :<ul><li>Regularmente depois de xxx segundos.</li><li>Na data e hora específicas semanalmente ou diariamente.</li></ul><br /><div class=\"note\"><h4>Nota</h4><div>Para reinicializações baseadas em data o Cron deve estar ativado. Veja <a href=\"HManagement.asp\">Gerenciamento</a> para ativação do Cron.</div></div></dd>"; 
 halive.page2="<dd></dd><dd>Cheque todos os valores e clique em <em>Salvar Configurações</em> para salvar suas configurações. Clique em <em>Cancelar Alterações</em> para cancelar suas alterações que não foram salvas. Clique em <em>Reiniciar roteador</em> para reiniciar seu roteador imediatamente.</dd>"; 
 
 
@@ -552,7 +552,7 @@ hddns.right4="Digite um número inteiro na caixa para selecionar o intervalo de 
 //help page 
 hddns.page1="<dd>O roteador oferece um recurso de Sistema de Nome de Domínio Dinâmico (DDNS). O DDNS permite atribuir um host fixo e nome de domínio para um endereço IP de Internet dinâmico. Ele é útil quando você está hospedando seu próprio site, servidor FTP, ou outro servidor por trás do roteador. Antes de usar esse recurso, você precisa se inscrever num serviço DDNS como em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, um provedor de serviço DDNS.</dd>"; 
 hddns.page2="<dd>Para desativar o serviço DDNS, mantenha a configuração padrão, <i>Desabilitar</i>. Para ativar o serviço DDNS, siga estas instruções:<ol class=\"wide\"><li>Entrar para o serviço DDNS em <a href=\"http:\/\/www.dyndns.org\" target=\"_new\">www.dyndns.org</a>, e anote o seu nome de usuário, senha e nome do host.</li><li>Na tela DDNS, selecione <i>Habilitar</i>.</li><li>Preencha os campos <i>Nome de Usuário</i>, <i>Senha</i>, e <i>Nome do Host</i>.</li><li>Clique no botão <i>Salvar Configurações</i> para salvar suas alterações. Clique no botão <i>Cancelar Alterações</i> para cancelar as alterações não salvas.</li></ol><br />Você agora pode acessar o roteador da Internet com o domínio que você escolheu.</dd>"; 
-hddns.page3="<dd>O serviço de DNS <em>estático</em> é similar ao serviço de DNS <em>dinâmico</em>, na medida em que permite que um nome de host, como seunome.dyndns.org, aponte para seu endereço IP. Ao contrário de um host de DNS <em>dinâmico</em>, um host de DNS <em>estático</em> não expira após 35 dias sem atualizações, mas as atualizações demoram mais para propagar através do sistema de DNS.<br/>O serviço DynDNS <em>personalizado</em> oferece uma solução de DNS primário gerenciado, dando a você o controle completo sobre o nome de domínio fornecido e provém um serviço unificado de DNS primário/secundário. Uma interface baseada na Web oferece dois níveis de controle sobre o seu domínio, atendendo a usuários médios ou avançados.</dd>"; 
+hddns.page3="<dd>O serviço de DNS <em>estático</em> é similar ao serviço de DNS <em>dinâmico</em>, na medida em que permite que um nome de host, como seunome.dyndns.org, aponte para seu endereço IP. Ao contrário de um host de DNS <em>dinâmico</em>, um host de DNS <em>estático</em> não expira após 35 dias sem atualizações, mas as atualizações demoram mais para propagar através do sistema de DNS.<br />O serviço DynDNS <em>personalizado</em> oferece uma solução de DNS primário gerenciado, dando a você o controle completo sobre o nome de domínio fornecido e provém um serviço unificado de DNS primário/secundário. Uma interface baseada na Web oferece dois níveis de controle sobre o seu domínio, atendendo a usuários médios ou avançados.</dd>"; 
 hddns.page4="<dd>Ativando o recurso de curinga para o seu host faz com que *.seuhost.dyndns.org seja direcionado para o mesmo endereço IP de seuhost.dyndns.org. Este recurso é útil se você quiser ser capaz de usar, por exemplo, www.seuhost.dyndns.org e alcançar seu host.</dd>"; 
 hddns.page5="<dd>Digite um número inteiro na caixa para definir o intervalo de atualização forçado (em dias). Forçar atualização é uma atualização que será feita, mesmo que o seu endereço IP ainda seja o mesmo. Forçar atualização é necessário a fim de evitar que o nome do host seja excluído por inatividade.</dd>"; 
 hddns.page6="<dd>O estatus da conexão com o serviço DDNS é exibido aqui.</dd>"; 
@@ -575,8 +575,8 @@ hdiag.right2="Você pode executar comandos via interface web. Preencha a caixa d
 hdiag.page1="<dd>Você é capaz de executar linhas de comando diretamente através da interface Web.</dd>"; 
 hdiag.page2="<dd>Preencha a área de texto com o comando e clique em <em>Executar Comandos</em> para enviar.</dd>"; 
 hdiag.page3="<dd>Você pode salvar algumas linhas de comando a serem executados na inicialização do roteador. Preencha a área de texto com os comandos (apenas um comando por linha) e clique em <em>Salvar Inicialização</em>.</dd>"; 
-hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br/><br/>"; 
-hdiag.page5="<dd>Um script personalizado é armazenado no arquivo /tmp/custom.sh. Você pode executá-lo manualmente ou usar o cron para chamá-lo. Preencha a área de texto com as instruções do script (apenas um comando por linha) e clique em <em>Salvar Script Personalizado</em>.<br/><br/><div class=\"note\"><h4>Nota</h4><div><ul class=\"wide\"><li>Comandos de inicialização são armazenados na variável nvram rc_startup.</li><li>Comandos de firewall são armazenados na variável nvram rc_firewall.</li><li>Scripts personalizados são armazenados na variável nvram rc_custom.</li></ul></div></div></dd>"; 
+hdiag.page4="<dd>Cada vez que o firewall é iniciado, ele pode executar algumas instruções iptables personalizadas. Preencha a área de texto com as instruções do firewall (apenas um comando por linha) e clique em <em>Salvar Firewall</em>.<br /><br />"; 
+hdiag.page5="<dd>Um script personalizado é armazenado no arquivo /tmp/custom.sh. Você pode executá-lo manualmente ou usar o cron para chamá-lo. Preencha a área de texto com as instruções do script (apenas um comando por linha) e clique em <em>Salvar Script Personalizado</em>.<br /><br /><div class=\"note\"><h4>Nota</h4><div><ul class=\"wide\"><li>Comandos de inicialização são armazenados na variável nvram rc_startup.</li><li>Comandos de firewall são armazenados na variável nvram rc_firewall.</li><li>Scripts personalizados são armazenados na variável nvram rc_custom.</li></ul></div></div></dd>"; 
 
 // ** DMZ.asp **//
 dmz.titl="DMZ";
@@ -865,7 +865,7 @@ hotspot.wifidog_password="Senha do Servidor HTTP";
 hotspot.wifidog_auth="Suporte Autenticação Servidor HTTP";
 
 //help container 
-hstatus_hots.right1="ConUp/ConDown:<br>Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br>Usuários Locais:<br>Quando só usuários locais forem usados configure o IP do Radius primário para 127.0.0.1";
+hstatus_hots.right1="ConUp/ConDown:<br />Quando USB ou JFFS são montados em /jffs, scripts de conexão podem ser usados em /jffs/etc/chilli/<br />Usuários Locais:<br />Quando só usuários locais forem usados configure o IP do Radius primário para 127.0.0.1";
 
 // ** Hotspotsystem **//
 hotspotsys.legend="Hotspot System";
@@ -1226,9 +1226,9 @@ qos.bandwidth="Banda em kbits";
 
 //help container
 hqos.right1="";
-hqos.right2="Uplink:<br>Defina para 80%~95% (máx) do total de seu limite de upload.<br>Downlink:<br>Defina para 80%~100% (máx) do seu limite total de download.";
+hqos.right2="Uplink:<br />Defina para 80%~95% (máx) do total de seu limite de upload.<br />Downlink:<br />Defina para 80%~100% (máx) do seu limite total de download.";
 hqos.right3="";
-hqos.right4="Habilitar limite padrão por usuário:<br>Habilita o limite padrão por usuário ou configura o limite para todos os usuários.";
+hqos.right4="Habilitar limite padrão por usuário:<br />Habilita o limite padrão por usuário ou configura o limite para todos os usuários.";
 hqos.right6="Você pode controlar sua taxa de dados em relação à aplicação que está consumindo a largura de banda.";
 hqos.right8="Você pode especificar a prioridade para todo o tráfego a um endereço IP fornecido ou a uma faixa de endereços IP.";
 hqos.right10="Você pode especificar prioridades para todo o tráfego de um dispositivo de sua rede dando a ele um nome de dispositivo, especificando a prioridade e inserindo seu endereço MAC.";
@@ -1449,9 +1449,9 @@ service.vpn_tlscip="Cifra TLS";
 service.vpn_route="Roteamento Baseado em Políticas";
 
 //help container
-hstatus_vpn.right1="Roteamento Baseado em Políticas:<br>Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o túnel como gateway padrão. Uma linha por IP/REDE.<br>Endereço IP/Máscara de Sub-Rede:<br>Deve ser configurado quando se está usando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
-hstatus_vpn.right2="Configurações Adicionais:<br>Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\'. Para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.<br>Diretório de conexão do cliente:<br>Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
-hstatus_vpn.right3="Geral:<br>São suportados 3 métodos de autenticação: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS só num dos lados do link fragmentará em ambos.";
+hstatus_vpn.right1="Roteamento Baseado em Políticas:<br />Adicione IPs/Redes no formato 0.0.0.0/0 para forçar clientes a usar o túnel como gateway padrão. Uma linha por IP/REDE.<br />Endereço IP/Máscara de Sub-Rede:<br />Deve ser configurado quando se está usando o modo DHCP-Proxy e TAP local NÃO está em modo bridged.";
+hstatus_vpn.right2="Configurações Adicionais:<br />Para entregar rotas a clientes adicione \'push \"route IP mask gateway\"\'. Para entregar DNS/WINS adicione \'push \"dhcp-option DNS (ou WINS) IP\"\' à configuração.<br />Diretório de conexão do cliente:<br />Quando USB ou JFFS estão montados em /jffs, scripts são chamados de /jffs/etc/openvpn/ccd/";
+hstatus_vpn.right3="Geral:<br />São suportados 3 métodos de autenticação: pkcs12 (+dh no servidor), estático e certificados padrão. Habilitar o MSS só num dos lados do link fragmentará em ambos.";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1831,7 +1831,7 @@ vlan.legend="VLAN";
 vlan.bridge="Associada à<br />Ponte";
 vlan.tagged="Rotular";
 vlan.negociate="Autonegociação";
-vlan.aggregation="Agregar Link<br>nas Portas 3 & 4";
+vlan.aggregation="Agregar Link<br />nas Portas 3 & 4";
 vlan.trunk="Tronco";
 vlan.linkstatus="Status do Link"; 
 
@@ -2226,7 +2226,7 @@ wl_basic.upper="superior";
 wl_basic.lower="inferior";
 
 //help container
-hwl_basic.right2="Se deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br/><b>Nota:</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Se deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em><br /><b>Nota:</b> alterando o modo wireless, alguns parâmetros avançados são suscetíveis de serem modificados (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" ou \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Escala de Sensibilidade: ";
 hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK completamente em firmwares Broadcom use o valor 0. Em firmwares baseados em Atheros, 0 ativará o modo de sincronismo ACK automático.";
 hwl_basic.right6="Clique a qualquer momento para habilitar ou desabilitar o sinal do rádio (<em>verde</em> indica acesso Wireless permitido e <em>vermelho</em> indica acesso Wireless bloqueado)";
@@ -2238,8 +2238,8 @@ fail.mess2="Falha na Atualização.";
 
 // ** Success*.asp / Reboot.asp  **//
 success.saved="Configurações Salvas.";
-success.restore="Configurações Restauradas.<br/>A unidade está reiniciando. Por favor, aguarde um momento...";
-success.upgrade="Sucesso na Atualização.<br/>A unidade está reiniciando. Por favor, aguarde um momento...";
+success.restore="Configurações Restauradas.<br />A unidade está reiniciando. Por favor, aguarde um momento...";
+success.upgrade="Sucesso na Atualização.<br />A unidade está reiniciando. Por favor, aguarde um momento...";
 success.success_noreboot="Configurações efetuadas com sucesso.";
 success.success_reboot=success.success_noreboot + "<br />A unidade está reiniciando. Por favor, aguarde um momento...";
 

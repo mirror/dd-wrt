@@ -383,9 +383,9 @@ errmsg.err61="Incorrect image file.";
 errmsg.err62=" je već definirani statični najam.";
 
 //Saving message
-errmsg.err100="Procesiram...<br/>Molim, pričekajte.";
-errmsg.err101="Restoring configuration file...<br/>Molim, pričekajte.";
-errmsg.err102="Nadograđujem strojni program...<br/>Molim, pričekajte.";
+errmsg.err100="Procesiram...<br />Molim, pričekajte.";
+errmsg.err101="Restoring configuration file...<br />Molim, pričekajte.";
+errmsg.err102="Nadograđujem strojni program...<br />Molim, pričekajte.";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -496,7 +496,7 @@ alive.port="Proxy Vrata";
 //help container
 
 halive.right2="Postavi kada želite ponovo pokrenuti usmjerivač. CRON mora biti omogućen u kartici UPRAVLJANJE.";
-halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br/>Format IP adresa je:xxx.xxx.xxx.xxx .";
+halive.right4="Najviše tri IP adrese odvojene <em>RAZMAKOM</em> su dozvoljene.<br />Format IP adresa je:xxx.xxx.xxx.xxx .";
 
 
 // ** config.asp **//
@@ -1178,9 +1178,9 @@ qos.bandwidth="Bandwidth in kbits";
 //help container
 
 hqos.right1="";
-hqos.right2="Uplink:<br>Set this to 80%-95% (max) of your total upload limit.<br>Downlink:<br>Set this to 80%-100% (max) of your total download limit.";
+hqos.right2="Uplink:<br />Set this to 80%-95% (max) of your total upload limit.<br />Downlink:<br />Set this to 80%-100% (max) of your total download limit.";
 hqos.right3="";
-hqos.right4="Enable Per User Default Limits:<br>Enable the default level per user or else set the level for all users.";
+hqos.right4="Enable Per User Default Limits:<br />Enable the default level per user or else set the level for all users.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP range.";
 hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a device name, specifying priority and entering its MAC address.";
@@ -1406,9 +1406,9 @@ service.vpn_route="Policy based Routing";
 
 //help container
 
-hstatus_vpn.right1="Policy based Routing:<br><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br><i>IP Address/Netmask:</i><br>Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
-hstatus_vpn.right2="Additional Config:<br><i>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.</i>";
-hstatus_vpn.right3="General:<br><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
+hstatus_vpn.right1="Policy based Routing:<br /><i>Add IPs/NETs in the form 0.0.0.0/0 to force clients to use the tunnel as default gateway. One line per IP/NET.<br /><i>IP Address/Netmask:</i><br />Must be set when using DHCP-Proxy mode and local TAP is NOT bridged</i>";
+hstatus_vpn.right2="Additional Config:<br /><i>To push routes to clients add \'push \"route IP mask gateway\"\', to push DNS/WINS add \'push \"dhcp-option DNS (or WINS) IP\"\' to the config.</i>";
+hstatus_vpn.right3="General:<br /><i>3 auth methods are supported: pkcs12 (+dh on server), static, standard certs</i>";
 
 //vnc.repeater
 service.vncrepeater_legend="VNC";
@@ -1797,7 +1797,7 @@ vlan.legend="VLAN";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
 vlan.negociate="Auto-Negotiate";
-vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
+vlan.aggregation="Link Aggregation<br />on Ports 3 & 4";
 vlan.trunk="Trunk";
 
 
@@ -2202,7 +2202,7 @@ wl_basic.ap83_vap_note="Dodavanje više od tri prividna sučelja dovest će do s
 
 //help container
 
-hwl_basic.right2="Ako želite isključiti 802.11g klijente izaberite <em>Samo B</em> način. Ako želite onemogućiti bežični pristup, izaberi <em>Onemogućeno</em>.<br/><b>Napomena :</b> Pri promjeni modusa bežične mreže, neki napredni parametri su osjetljivi na promjenu (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="Ako želite isključiti 802.11g klijente izaberite <em>Samo B</em> način. Ako želite onemogućiti bežični pristup, izaberi <em>Onemogućeno</em>.<br /><b>Napomena :</b> Pri promjeni modusa bežične mreže, neki napredni parametri su osjetljivi na promjenu (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Raspon Osjetljivosti: ";
 hwl_basic.right4="Postavlja ACK timing. Za Broadcom strojni program 0 onemogućuje ACK timing u potpunosti. Za Atheros strojne programe uključuje automatski mod.";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
@@ -2216,8 +2216,8 @@ fail.mess2="Nadogradnja nije uspjela.";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Postavke su sačuvane.";
-success.restore="Postavke su povraćene.<br/>Stroj se ponovo pokreće. Pričekajte trenutak...";
-success.upgrade="Nadogradnja je uspjela.<br/>Stroj se ponovo pokreće. Pričekajte trenutak...";
+success.restore="Postavke su povraćene.<br />Stroj se ponovo pokreće. Pričekajte trenutak...";
+success.upgrade="Nadogradnja je uspjela.<br />Stroj se ponovo pokreće. Pričekajte trenutak...";
 success.success_noreboot="Postavljanje je uspjelo.";
 success.success_reboot=success.success_noreboot + "<br />Stroj se ponovo pokreće. Pričekajte trenutak...";
 

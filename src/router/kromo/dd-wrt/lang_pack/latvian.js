@@ -355,9 +355,9 @@ errmsg.err61="Incorrect image file.";
 errmsg.err62=" is already defined as a static lease.";
 
 //Saving message
-errmsg.err100="Processing...<br/>Please, wait.";
-errmsg.err101="Restoring configuration file...<br/>Please, wait.";
-errmsg.err102="Upgrading firmware...<br/>Please, wait";
+errmsg.err100="Processing...<br />Please, wait.";
+errmsg.err101="Restoring configuration file...<br />Please, wait.";
+errmsg.err102="Upgrading firmware...<br />Please, wait";
 
 // **  COMMON MENU ENTRIES  **//
 
@@ -459,7 +459,7 @@ alive.port="Proxy Port";
 //help container
 
 halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
-halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<br/>IPs Format is xxx.xxx.xxx.xxx.";
+halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<br />IPs Format is xxx.xxx.xxx.xxx.";
 
 
 // ** config.asp **//
@@ -1597,7 +1597,7 @@ vlan.legend="VLAN";
 vlan.bridge="Assigned To<br />Bridge";
 vlan.tagged="Tagged";
 vlan.negociate="Auto-Negotiate";
-vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
+vlan.aggregation="Link Aggregation<br />on Ports 3 & 4";
 vlan.trunk="Trunk";
 
 
@@ -1892,7 +1892,7 @@ wl_basic.mtikie="MTik Compatibility";
 wl_basic.csma="Carrier Sense";
 //help container
 
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br/><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
+hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.<br /><b>Note :</b> when changing wireless mode, some advanced parameters are succeptible to be modified (\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\").";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely for broadcom firmwares. On Atheros based firmwares it will turn into auto ack timing mode";
 hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
@@ -1906,8 +1906,8 @@ fail.mess2="Upgrade failed.";
 // ** Success*.asp / Reboot.asp  **//
 
 success.saved="Settings saved.";
-success.restore="Settings restored.<br/>Unit is rebooting now. Please wait a moment...";
-success.upgrade="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
+success.restore="Settings restored.<br />Unit is rebooting now. Please wait a moment...";
+success.upgrade="Upgrade successful.<br />Unit is rebooting now. Please wait a moment...";
 success.success_noreboot="Settings are successful.";
 success.success_reboot=success.success_noreboot + "<br />Unit is rebooting now. Please wait a moment...";
 

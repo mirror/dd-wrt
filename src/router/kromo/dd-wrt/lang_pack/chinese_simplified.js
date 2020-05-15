@@ -309,9 +309,9 @@ errmsg.err59="不可用！请启用无线网络。";
 errmsg.err60="请选择要升级的文件。";
 errmsg.err61="不正确的镜像文件。";
 errmsg.err62=" 已经定义为永久租用";
-errmsg.err100="处理中...<br/>请稍候。";
-errmsg.err101="正在恢复配置...<br/>请稍候。";
-errmsg.err102="升级固件中...<br/>请稍候";
+errmsg.err100="处理中...<br />请稍候。";
+errmsg.err101="正在恢复配置...<br />请稍候。";
+errmsg.err102="升级固件中...<br />请稍候";
 
 bmenu.setup="设置";
 bmenu.setupbasic="基本设置";
@@ -398,7 +398,7 @@ alive.IP2="代理服务器IP地址";
 alive.port="代理服务器端口";
 
 halive.right2="选择何时重新启动路由器。在管理标签中，Cron选项必须被开启。";
-halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<br/>IP地址格式为：xxx.xxx.xxx.xxx。";
+halive.right4="最多允许3个IP地址，之间使用<em>空格</em>分隔。<br />IP地址格式为：xxx.xxx.xxx.xxx。";
 
 config.titl="备份 & 恢复";
 config.h2="备份配置";
@@ -1292,7 +1292,7 @@ vlan.legend="VLAN";
 vlan.bridge="指派到<br />网桥";
 vlan.tagged="已标记的";
 vlan.negociate="自动协商";
-vlan.aggregation="3号与4号端口<br>链路汇聚";
+vlan.aggregation="3号与4号端口<br />链路汇聚";
 vlan.trunk="汇集";
 
 wep.defkey="默认传输秘钥";
@@ -1533,7 +1533,7 @@ wl_basic.radar="雷达探测";
 wl_basic.mtikie="MT 兼容性";
 wl_basic.csma="波波ik侦听";
 
-hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。<br/><b>注意：</b> 当修改无线模式时，一些高级参数会相应被修改（\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\"）。";
+hwl_basic.right2="如果您想剔除无线-G客户端，选择 <em>仅B</em> 模式。如果您想禁用无线访问，选择 <em>禁用</em>。<br /><b>注意：</b> 当修改无线模式时，一些高级参数会相应被修改（\"" + wl_adv.label16 + "\", \"" + wl_adv.label2 + "\" or \"" + wl_adv.label5 + "\"）。";
 hwl_basic.right3="灵敏度范围：";
 hwl_basic.right4="调整 ack 时序。输入0，禁用ack时序（broadcom 版的固件）。自动 ack 时序模式（基于 Atheros 的固件）";
 hwl_basic.right6="点击任何时刻启用或禁用无线信号（<em>绿色</em> 代表允许无线访问，<em>红色</em> 代表阻止无线访问）";
@@ -1542,8 +1542,8 @@ fail.mess1="您所输入的值是无效的。请再试一次。";
 fail.mess2="升级失败。";
 
 success.saved="设置已保存。";
-success.restore="设置已恢复。<br/>模块正在重新启动。请稍候……";
-success.upgrade="升级成功。<br/>模块正在重新启动。请稍候……";
+success.restore="设置已恢复。<br />模块正在重新启动。请稍候……";
+success.upgrade="升级成功。<br />模块正在重新启动。请稍候……";
 success.success_noreboot="设置成功。";
 success.success_reboot=success.success_noreboot + "<br />模块正在重新启动。请稍候……";
 success.alert_reset="所有配置已经被恢复到它们的默认值。<br /><br />";
