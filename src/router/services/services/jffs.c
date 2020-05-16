@@ -66,17 +66,20 @@ void start_jffs2(void)
 		if (nvram_matchi("sys_clean_jffs2", 1)) {
 			nvram_seti("sys_clean_jffs2", 0);
 			nvram_commit();
+			sprintf(dev, "/dev/mtd%d", mtd);
 #if defined(HAVE_WNDR3700V4)
 			itworked = eval("erase", rwpart);
+			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("mkfs.jffs2", "-o", "/dev/mtdblock3", "-n", "-b", "-e", "131072", "-p");
 #elif defined(HAVE_MVEBU) || defined(HAVE_R9000) || defined(HAVE_IPQ806X)
-			sprintf(dev, "/dev/mtd%d", mtd);
 			itworked = eval("ubidetach", "-p", dev);
 			itworked = eval("mtd", "erase", dev);
+			itworked = eval("flash_erase", dev, "0", "0");
 			itworked = eval("ubiattach", "-p", dev);
 			itworked = eval("ubimkvol", udev, "-N", "ddwrt", "-m");
 #else
 			itworked = eval("mtd", "erase", rwpart);
+			itworked = eval("flash_erase", dev, "0", "0");
 #endif
 
 #if defined(HAVE_R9000) || defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
