@@ -290,32 +290,25 @@ extern si_t *bcm947xx_sih;
 void __init memory_setup(void)
 {
 #if  defined(CONFIG_HIGHMEM)
-unsigned long extmem = 0, off, data;
-unsigned long off1, data1;
-off = (unsigned long)prom_init;
-data = *(unsigned long *)prom_init;
-off1 = off + 4;
-data1 = *(unsigned long *)off1;
-extmem = 128 MB;
-int highmemsupport=0;
-uint boardnum;
+	unsigned long extmem = 0, off, data;
+	unsigned long off1, data1;
+	off = (unsigned long)prom_init;
+	data = *(unsigned long *)prom_init;
+	off1 = off + 4;
+	data1 = *(unsigned long *)off1;
+	extmem = 128 MB;
+	int highmemsupport = 0;
 
 	/* Get global SB handle */
-bcm947xx_sih = si_kattach(SI_OSH);
+	bcm947xx_sih = si_kattach(SI_OSH);
 
-boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
+	if (nvram_match("productid", "RT-AC66U"))
+		highmemsupport = 1;
 
-	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
+	if (nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100")
 	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
 		highmemsupport = 1;
-
-	if (boardnum == 00 && nvram_match("boardtype", "0xF5B2")
-	    && nvram_match("boardrev", "0x1100")
-	    && nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0")) 
-		highmemsupport = 1;
-
-
 
 	if (extmem && detectmem == 128 MB && highmemsupport) {
 		/* We should deduct 0x1000 from the second memory
@@ -330,7 +323,7 @@ boardnum = bcm_strtoul( nvram_safe_get( "boardnum" ), NULL, 0 );
 		extended_ram = extmem;
 		add_memory_region(SI_SDRAM_R2 + (128 MB) - 0x1000, extmem, BOOT_MEM_RAM);
 	}
-#endif  /* CONFIG_HIGHMEM */
+#endif				/* CONFIG_HIGHMEM */
 
 }
 
