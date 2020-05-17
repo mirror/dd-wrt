@@ -404,10 +404,16 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int lvl)
 		return (s_len);
 	}
 
-	c_len = ZSTD_compressCCtx(cctx,
+	/* set compression level */
+	ZSTD_CCtx_setParameter(cctx, ZSTD_c_compressionLevel, levelcookie);
+
+	/* disable checksum calculation */
+	ZSTD_CCtx_setParameter(cctx, ZSTD_c_checksumFlag, 0);
+
+	c_len = ZSTD_compress2(cctx,
 	    &dest[sizeof (bufsiz) + sizeof (levelcookie)],
 	    d_len - sizeof (bufsiz) - sizeof (levelcookie),
-	    s_start, s_len, levelcookie);
+	    s_start, s_len);
 
 	ZSTD_freeCCtx(cctx);
 
