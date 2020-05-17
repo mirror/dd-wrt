@@ -70,6 +70,7 @@ ifeq ($(CONFIG_BCM47XX),y)
 obj-$(CONFIG_DHDAP) 		+= dhd/
 obj-$(CONFIG_HND) 		+= hnd/
 obj-$(CONFIG_WL) += wl/
+#obj-$(CONFIG_WL) += wl_cfg80211/
 obj-$(CONFIG_PROXYARP) += proxyarp/
 obj-m += switch/
 endif
