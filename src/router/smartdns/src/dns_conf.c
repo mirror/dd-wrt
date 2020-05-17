@@ -68,6 +68,10 @@ char dns_conf_log_file[DNS_MAX_PATH];
 size_t dns_conf_log_size = 1024 * 1024;
 int dns_conf_log_num = 8;
 
+/* CA file */
+char dns_conf_ca_file[DNS_MAX_PATH];
+char dns_conf_ca_path[DNS_MAX_PATH];
+
 /* auditing */
 int dns_conf_audit_enable = 0;
 int dns_conf_audit_log_SOA;
@@ -249,6 +253,7 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 		{"host-name", required_argument, NULL, 'h'}, /* host name */
 #ifdef HAVE_OPENSSL
 		{"http-host", required_argument, NULL, 'H'}, /* http host */
+		{"no-check-certificate", no_argument, NULL, 'N'}, /* do not check certificate */
 		{"tls-host-verify", required_argument, NULL, 'V' }, /* verify tls hostname */
 #endif
 		{"group", required_argument, NULL, 'g'}, /* add to group */
@@ -935,6 +940,10 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 			server_flag |= BIND_FLAG_FORCE_AAAA_SOA;
 			break;
 		}
+		case 'N': {
+			server->skip_check_cert = 1;
+			break;
+		}
 		default:
 			break;
 		}
@@ -1386,6 +1395,8 @@ static struct config_item _config_item[] = {
 	CONF_CUSTOM("ignore-ip", _conf_ip_ignore, NULL),
 	CONF_CUSTOM("edns-client-subnet", _conf_edns_client_subnet, NULL),
 	CONF_CUSTOM("domain-rules", _conf_domain_rules, NULL),
+	CONF_STRING("ca-file", (char *)&dns_conf_ca_file, DNS_MAX_PATH),
+	CONF_STRING("ca-path", (char *)&dns_conf_ca_path, DNS_MAX_PATH),
 	CONF_CUSTOM("conf-file", config_addtional_file, NULL),
 	CONF_END(),
 };
