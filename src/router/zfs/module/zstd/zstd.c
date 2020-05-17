@@ -410,6 +410,9 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int lvl)
 	/* disable checksum calculation */
 	ZSTD_CCtx_setParameter(cctx, ZSTD_c_checksumFlag, 0);
 
+	/* disable store of content size since its redundant */
+	ZSTD_CCtx_setParameter(cctx, ZSTD_c_contentSizeFlag, 0);
+
 	c_len = ZSTD_compress2(cctx,
 	    &dest[sizeof (bufsiz) + sizeof (levelcookie)],
 	    d_len - sizeof (bufsiz) - sizeof (levelcookie),
