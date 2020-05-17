@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5083 | brainslayer | 2020-05-17 19:15:57 +0400 (Sun, 17 May 2020) | 1 line
+
+reduce driver size
+------------------------------------------------------------------------
 r5082 | brainslayer | 2020-05-14 17:28:58 +0400 (Thu, 14 May 2020) | 1 line
 
 hack monitor support for brcmfmac for our firmwares. this allows us to use wiviz
