@@ -22,7 +22,7 @@ EXTRA_DIST = \
 	test_libFLAC++.vcxproj \
 	test_libFLAC++.vcxproj.filters
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/include -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/include -I$(top_srcdir)/include -DNEED_PRINTF
 noinst_PROGRAMS = test_libFLAC++
 test_libFLAC___LDADD = \
 	$(top_builddir)/src/share/grabbag/libgrabbag.la \
