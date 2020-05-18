@@ -22,7 +22,7 @@ EXTRA_DIST = \
 	example_cpp_decode_file.vcxproj \
 	example_cpp_decode_file.vcxproj.filters
 
-AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/include -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_builddir) -I$(srcdir)/include -I$(top_srcdir)/include -DNEED_PRINTF
 noinst_PROGRAMS = example_cpp_decode_file
 example_cpp_decode_file_LDADD = \
 	$(top_builddir)/src/libFLAC++/libFLAC++.la \
