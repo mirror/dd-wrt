@@ -1271,7 +1271,9 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	unsigned already_waited_sec;
 	unsigned opt;
 	IF_FEATURE_UDHCPC_ARPING(unsigned arpping_ms;)
+	int max_fd;
 	int retval;
+	fd_set rfds;
 
 	setup_common_bufsiz();
 
@@ -1420,8 +1422,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 	 * "continue" statements in code below jump to the top of the loop.
 	 */
 	for (;;) {
-		int tv;
-		struct pollfd pfds[2];
+		struct timeval tv;
 		struct dhcp_packet packet;
 		/* silence "uninitialized!" warning */
 		unsigned timestamp_before_wait = timestamp_before_wait;
@@ -1441,15 +1442,16 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		 * to change_listen_mode(). Thus we open listen socket
 		 * BEFORE we send renew request (see "case BOUND:"). */
 
-		udhcp_sp_fd_set(pfds, client_data.sockfd);
+		max_fd = udhcp_sp_fd_set(&rfds, client_data.sockfd);
 
-		tv = timeout - already_waited_sec;
+		tv.tv_sec = timeout - already_waited_sec;
+		tv.tv_usec = 0;
 		retval = 0;
 		/* If we already timed out, fall through with retval = 0, else... */
-		if (tv > 0) {
-			log1("waiting %u seconds", tv);
+		if ((int)tv.tv_sec > 0) {
+			log1("waiting on select %u seconds", (int)tv.tv_sec);
 			timestamp_before_wait = (unsigned)monotonic_sec();
-			retval = poll(pfds, 2, tv < INT_MAX/1000 ? tv * 1000 : INT_MAX);
+			retval = select(max_fd + 1, &rfds, NULL, NULL, &tv);
 			if (retval < 0) {
 				/* EINTR? A signal was caught, don't panic */
 				if (errno == EINTR) {
@@ -1604,7 +1606,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		/* poll() didn't timeout, something happened */
 
 		/* Is it a signal? */
-		switch (udhcp_sp_read()) {
+		/* note: udhcp_sp_read checks FD_ISSET before reading */
+		switch (udhcp_sp_read(&rfds)) {
 		case SIGUSR1:
 			client_data.first_secs = 0; /* make secs field count from 0 */
 			already_waited_sec = 0;
@@ -1637,7 +1640,7 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 		}
 
 		/* Is it a packet? */
-		if (!pfds[1].revents)
+		if (client_data.listen_mode == LISTEN_NONE || !FD_ISSET(client_data.sockfd, &rfds))
 			continue; /* no */
 
 		{
@@ -1753,6 +1756,8 @@ int udhcpc_main(int argc UNUSED_PARAM, char **argv)
 					/* timeout > 60 - ensures at least one unicast renew attempt */
 					if (lease_seconds < 2 * 61)
 						lease_seconds = 2 * 61;
+					if (lease_seconds >= 0x10000000)
+						lease_seconds = 0x0fffffff;
 					//if (lease_seconds > 0x7fffffff)
 					//	lease_seconds = 0x7fffffff;
 					//^^^not necessary since "timeout = lease_seconds / 2"

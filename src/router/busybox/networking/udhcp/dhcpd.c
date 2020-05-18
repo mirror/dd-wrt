@@ -849,7 +849,7 @@ static NOINLINE void send_inform(struct dhcp_packet *oldpacket)
 int udhcpd_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 {
-	int server_socket = -1, retval;
+	int server_socket = -1, retval, max_sock;
 	uint8_t *state;
 	unsigned timeout_end;
 	unsigned num_ips;
@@ -948,10 +948,10 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
  continue_with_autotime:
 	timeout_end = monotonic_sec() + server_data.auto_time;
 	while (1) { /* loop until universe collapses */
-		struct pollfd pfds[2];
+		fd_set rfds;
 		struct dhcp_packet packet;
 		int bytes;
-		int tv;
+		struct timeval tv;
 		uint8_t *server_id_opt;
 		uint8_t *requested_ip_opt;
 		uint32_t requested_nip;
@@ -963,13 +963,17 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 					server_data.interface);
 		}
 
+		max_sock = udhcp_sp_fd_set(&rfds, server_socket);
+
 		udhcp_sp_fd_set(pfds, server_socket);
 
  new_tv:
 		tv = -1;
 		if (server_data.auto_time) {
-			tv = timeout_end - monotonic_sec();
-			if (tv <= 0) {
+			tv.tv_sec = (int)(timeout_end - monotonic_sec());
+			tv.tv_usec = 0;
+
+			if (tv.tv_sec <= 0) {
  write_leases:
 				write_leases();
 				goto continue_with_autotime;
@@ -978,7 +982,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 		}
 
 		/* Block here waiting for either signal or packet */
-		retval = poll(pfds, 2, tv);
+		retval = select(max_sock + 1, &rfds, NULL, NULL, tv.tv_sec);
 		if (retval <= 0) {
 			if (retval == 0)
 				goto write_leases;
@@ -988,7 +992,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 			bb_perror_msg_and_die("poll");
 		}
 
-		if (pfds[0].revents) switch (udhcp_sp_read()) {
+		if (pfds[0].revents) switch (udhcp_sp_read(&rfds)) {
 		case SIGUSR1:
 			bb_info_msg("received %s", "SIGUSR1");
 			write_leases();
