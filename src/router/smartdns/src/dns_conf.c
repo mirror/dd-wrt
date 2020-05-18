@@ -357,6 +357,10 @@ static int _config_server(int argc, char *argv[], dns_server_type_t type, int de
 			break;
 		}
 #endif
+		case 'N': {
+			server->skip_check_cert = 1;
+			break;
+		}
 		default:
 			break;
 		}
@@ -938,10 +942,6 @@ static int _config_bind_ip(int argc, char *argv[], DNS_BIND_TYPE type)
 		}
 		case 'F': {
 			server_flag |= BIND_FLAG_FORCE_AAAA_SOA;
-			break;
-		}
-		case 'N': {
-			server->skip_check_cert = 1;
 			break;
 		}
 		default:
