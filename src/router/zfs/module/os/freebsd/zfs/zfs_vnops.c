@@ -743,6 +743,12 @@ zfs_read(vnode_t *vp, uio_t *uio, int ioflag, cred_t *cr)
 	ZFS_ENTER(zfsvfs);
 	ZFS_VERIFY_ZP(zp);
 
+	/* We don't copy out anything useful for directories. */
+	if (vp->v_type == VDIR) {
+		ZFS_EXIT(zfsvfs);
+		return (SET_ERROR(EISDIR));
+	}
+
 	if (zp->z_pflags & ZFS_AV_QUARANTINED) {
 		ZFS_EXIT(zfsvfs);
 		return (SET_ERROR(EACCES));
@@ -5941,7 +5947,7 @@ zfs_getextattr(struct vop_getextattr_args *ap)
 	flags = FREAD;
 	NDINIT_ATVP(&nd, LOOKUP, NOFOLLOW, UIO_SYSSPACE, attrname,
 	    xvp, td);
-	error = vn_open_cred(&nd, &flags, VN_OPEN_INVFS, 0, ap->a_cred, NULL);
+	error = vn_open_cred(&nd, &flags, 0, VN_OPEN_INVFS, ap->a_cred, NULL);
 	vp = nd.ni_vp;
 	NDFREE(&nd, NDF_ONLY_PNBUF);
 	if (error != 0) {
