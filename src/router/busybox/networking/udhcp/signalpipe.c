@@ -20,41 +20,25 @@
  */
 #include "common.h"
 
-#define READ_FD  3
-#define WRITE_FD 4
+/* Global variable: we access it from signal handler */
+static struct fd_pair signal_pipe;
 
 static void signal_handler(int sig)
 {
-	int sv = errno;
 	unsigned char ch = sig; /* use char, avoid dealing with partial writes */
-	if (write(WRITE_FD, &ch, 1) != 1)
+	if (write(signal_pipe.wr, &ch, 1) != 1)
 		bb_perror_msg("can't send signal");
-	errno = sv;
 }
 
 /* Call this before doing anything else. Sets up the socket pair
  * and installs the signal handler */
 void FAST_FUNC udhcp_sp_setup(void)
 {
-	struct fd_pair signal_pipe;
-
-	/* All callers also want this, so... */
-	bb_sanitize_stdio();
-
 	/* was socketpair, but it needs AF_UNIX in kernel */
 	xpiped_pair(signal_pipe);
-
-	/* usually we get fds 3 and 4, but if we get higher ones... */
-	if (signal_pipe.rd != READ_FD)
-		xmove_fd(signal_pipe.rd, READ_FD);
-	if (signal_pipe.wr != WRITE_FD)
-		xmove_fd(signal_pipe.wr, WRITE_FD);
-
-	close_on_exec_on(READ_FD);
-	close_on_exec_on(WRITE_FD);
-	ndelay_on(READ_FD);
-	ndelay_on(WRITE_FD);
-
+	close_on_exec_on(signal_pipe.rd);
+	close_on_exec_on(signal_pipe.wr);
+	ndelay_on(signal_pipe.wr);
 	bb_signals(0
 		+ (1 << SIGUSR1)
 		+ (1 << SIGUSR2)
@@ -62,33 +46,32 @@ void FAST_FUNC udhcp_sp_setup(void)
 		, signal_handler);
 }
 
-/* Quick little function to setup the pfds.
- * Limited in that you can only pass one extra fd.
- */
-void FAST_FUNC udhcp_sp_fd_set(struct pollfd pfds[2], int extra_fd)
+/* Quick little function to setup the rfds. Will return the
+ * max_fd for use with select. Limited in that you can only pass
+ * one extra fd */
+int FAST_FUNC udhcp_sp_fd_set(fd_set *rfds, int extra_fd)
 {
-	pfds[0].fd = READ_FD;
-	pfds[0].events = POLLIN;
-	pfds[1].fd = -1;
+	FD_ZERO(rfds);
+	FD_SET(signal_pipe.rd, rfds);
 	if (extra_fd >= 0) {
 		close_on_exec_on(extra_fd);
-		pfds[1].fd = extra_fd;
-		pfds[1].events = POLLIN;
+		FD_SET(extra_fd, rfds);
 	}
-	/* this simplifies "is extra_fd ready?" tests elsewhere: */
-	pfds[1].revents = 0;
+	return signal_pipe.rd > extra_fd ? signal_pipe.rd : extra_fd;
 }
 
 /* Read a signal from the signal pipe. Returns 0 if there is
  * no signal, -1 on error (and sets errno appropriately), and
  * your signal on success */
-int FAST_FUNC udhcp_sp_read(void)
+int FAST_FUNC udhcp_sp_read(const fd_set *rfds)
 {
 	unsigned char sig;
 
-	/* Can't block here, fd is in nonblocking mode */
-	if (safe_read(READ_FD, &sig, 1) != 1)
+	if (!FD_ISSET(signal_pipe.rd, rfds))
 		return 0;
+
+	if (safe_read(signal_pipe.rd, &sig, 1) != 1)
+		return -1;
 
 	return sig;
 }
