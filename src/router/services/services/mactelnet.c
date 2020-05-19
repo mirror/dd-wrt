@@ -42,7 +42,11 @@ void start_mactelnetd(void)
 {
 	pid_t pid;
 	int ret = 0;
+#if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
+	char *telnetd_argv[] = { "mactelnetd", NULL };
+#else
 	char *telnetd_argv[] = { "mactelnetd", "-n", NULL };
+#endif
 	stop_mactelnetd();
 
 	if (!nvram_invmatchi("mactelnetd_enable", 0))
