@@ -579,4 +579,10 @@ static __always_inline void __write_once_size(volatile void *p, void *res, int s
 #define __diag_error(compiler, version, option, comment) \
 	__diag_ ## compiler(version, error, option)
 
+
+/*
+ * This is needed in functions which generate the stack canary, see
+ * arch/x86/kernel/smpboot.c::start_secondary() for an example.
+ */
+#define prevent_tail_call_optimization()	mb()
 #endif /* __LINUX_COMPILER_H */
