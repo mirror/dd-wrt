@@ -1,5 +1,60 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+14 May 2020, PHP 7.4.6
+
+- Core:
+  . Fixed bug #78434 (Generator yields no items after valid() call). (Nikita)
+  . Fixed bug #79477 (casting object into array creates references). (Nikita)
+  . Fixed bug #79514 (Memory leaks while including unexistent file). (cmb,
+    Nikita)
+  . Fixed bug #79470 (PHP incompatible with 3rd party file system on demand).
+    (cmb)
+  . Fixed bug #78784 (Unable to interact with files inside a VFS for Git
+    repository). (cmb)
+  . Fixed bug #78875 (Long variables cause OOM and temp files are not cleaned).
+    (cmb) (CVE-2019-11048)
+  . Fixed bug #78876 (Long variables cause OOM and temp files are not cleaned).
+    (cmb) (CVE-2019-11048)
+
+- DOM:
+  . Fixed bug #78221 (DOMNode::normalize() doesn't remove empty text nodes).
+    (cmb)
+
+- EXIF:
+  . Fixed bug #79336 (ext/exif/tests/bug79046.phpt fails on Big endian arch).
+    (Nikita)
+
+- FCGI:
+  . Fixed bug #79491 (Search for .user.ini extends up to root dir). (cmb)
+
+- MBString:
+  . Fixed bug #79441 (Segfault in mb_chr() if internal encoding is unsupported).
+    (Girgias)
+
+- OpenSSL:
+  . Fixed bug #79497 (stream_socket_client() throws an unknown error sometimes
+    with <1s timeout). (Joe Cai)
+
+- PCRE:
+  . Upgraded to PCRE2 10.34. (cmb)
+
+- Phar:
+  . Fixed bug #79503 (Memory leak on duplicate metadata). (cmb)
+
+- SimpleXML:
+  . Fixed bug #79528 (Different object of the same xml between 7.4.5 and
+    7.4.4). (cmb)
+
+- SPL:
+  . Fixed bug #69264 (__debugInfo() ignored while extending SPL classes). (cmb)
+  . Fixed bug #67369 (ArrayObject serialization drops the iterator class).
+    (Alex Dowad)
+
+- Standard:
+  . Fixed bug #79468 (SIGSEGV when closing stream handle with a stream filter
+    appended). (dinosaur)
+  . Fixed bug #79447 (Serializing uninitialized typed properties with __sleep
+    should not throw). (nicolas-grekas)
 
 16 Apr 2020, PHP 7.4.5
 
@@ -46,10 +101,9 @@ PHP                                                                        NEWS
 
 - Standard:
   . Fixed bug #79330 (shell_exec() silently truncates after a null byte). (stas)
+  . Fixed bug #79465 (OOB Read in urldecode()). (CVE-2020-7067) (stas)
   . Fixed bug #79410 (system() swallows last chunk if it is exactly 4095 bytes
     without newline). (Christian Schneider)
-  . Fixed bug #79465 (OOB Read in urldecode()). (stas)
-
 
 - Zip:
   . Fixed Bug #79296 (ZipArchive::open fails on empty file). (Remi)
