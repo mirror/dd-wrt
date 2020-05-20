@@ -1,6 +1,6 @@
 /* error.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -511,6 +511,9 @@ const char* wc_GetErrorString(int error)
 
     case PSS_SALTLEN_RECOVER_E:
         return "PSS - Salt length unable to be recovered";
+
+    case ASN_SELF_SIGNED_E:
+        return "ASN self-signed certificate error";
 
     default:
         return "unknown error number";

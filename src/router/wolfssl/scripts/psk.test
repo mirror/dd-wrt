@@ -62,11 +62,11 @@ do_trap() {
 trap do_trap INT TERM
 
 [ ! -x ./examples/client/client ] && echo -e "\n\nClient doesn't exist" && exit 1
-./examples/client/client -? 2>&1 | grep -- 'Client not compiled in!'
+./examples/client/client '-?' 2>&1 | grep -- 'Client not compiled in!'
 if [ $? -eq 0 ]; then
     exit 0
 fi
-./examples/server/server -? 2>&1 | grep -- 'Server not compiled in!'
+./examples/server/server '-?' 2>&1 | grep -- 'Server not compiled in!'
 if [ $? -eq 0 ]; then
     exit 0
 fi
@@ -105,7 +105,7 @@ if [ $? -ne 0 ]; then
     remove_ready_file
     # if fail here then is a settings issue so return 0
     if [ $RESULT -ne 0 ]; then
-        echo -e "\n\nIssue with choosen non PSK suites"
+        echo -e "\n\nIssue with chosen non PSK suites"
         do_cleanup
         exit 0
     fi

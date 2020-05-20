@@ -1,6 +1,6 @@
 /* wifi_connect.c 
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -35,7 +35,7 @@ const static int CONNECTED_BIT = BIT0;
 static EventGroupHandle_t wifi_event_group;
 /* prefix for logging */
 const static char *TAG = "tls_server";
-/* proto-type difinition */
+/* proto-type definition */
 extern void tls_smp_server_task();
 static void tls_smp_server_init();
 
@@ -89,7 +89,7 @@ static void tls_smp_server_init(void)
         ESP_LOGI(TAG, "create thread %s failed", TLS_SMP_SERVER_TASK_NAME);
     }
 }
-/* event hander for wifi events */
+/* event handler for wifi events */
 static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 {
     switch (event->event_id)
@@ -98,8 +98,13 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         esp_wifi_connect();
         break;
     case SYSTEM_EVENT_STA_GOT_IP:
+#if ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 1
+        ESP_LOGI(TAG, "got ip:" IPSTR "\n",
+                 IP2STR(&event->event_info.got_ip.ip_info.ip));
+#else
         ESP_LOGI(TAG, "got ip:%s",
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+#endif
         /* http://esp32.info/docs/esp_idf/html/dd/d08/group__xEventGroupSetBits.html */
         xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
         break;
@@ -120,8 +125,11 @@ void app_main(void)
 
     ESP_LOGI(TAG, "Initialize wifi");
     /* TCP/IP adapter initialization */
+#if ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 1
+    esp_netif_init();
+#else
     tcpip_adapter_init();
-
+#endif
     /* */
 #if ESP_IDF_VERSION_MAJOR >= 4 && ESP_IDF_VERSION_MINOR >= 1
     (void) wifi_event_handler;

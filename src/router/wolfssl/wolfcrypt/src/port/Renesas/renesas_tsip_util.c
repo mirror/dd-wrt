@@ -1,6 +1,6 @@
 /* renesas_tsip_util.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -149,7 +149,7 @@ byte tsip_checkCA(word32 cmIdx)
     return (cmIdx == g_CAscm_Idx? 1:0);
 }
 
-/* check if tht root CA has been verified by TSIP, *
+/* check if the root CA has been verified by TSIP, *
  * and it exists in the CM table.                  */
 byte tsip_rootCAverified( )
 {
@@ -423,29 +423,31 @@ int tsip_generateSeesionKey(struct WOLFSSL *ssl)
         if (ret != TSIP_SUCCESS) {
             WOLFSSL_MSG("R_TSIP_TlsGenerateSessionKey failed\n");
         } else {
-            /* successed creating session keys */
+            /* succeeded creating session keys */
             /* alloc aes instance for both enc and dec */
             enc = &ssl->encrypt;
             dec = &ssl->decrypt;
             
             if (enc) {
-                if (enc->aes == NULL)
+                if (enc->aes == NULL) {
                     enc->aes = (Aes*)XMALLOC(sizeof(Aes), ssl->heap, 
                                                     DYNAMIC_TYPE_CIPHER);
-                if (enc->aes == NULL) 
-                    return MEMORY_E;
+                    if (enc->aes == NULL)
+                        return MEMORY_E;
+                }
                 
                 XMEMSET(enc->aes, 0, sizeof(Aes));
             }
             if (dec) {
-                if (dec->aes == NULL)
+                if (dec->aes == NULL) {
                     dec->aes = (Aes*)XMALLOC(sizeof(Aes), ssl->heap, 
                                                     DYNAMIC_TYPE_CIPHER);
-                if (dec->aes == NULL) {
-                    if (enc) {
-                        XFREE(enc->aes, NULL, DYNAMIC_TYPE_CIPHER);
+                    if (dec->aes == NULL) {
+                        if (enc) {
+                            XFREE(enc->aes, NULL, DYNAMIC_TYPE_CIPHER);
+                        }
+                        return MEMORY_E;
                     }
-                    return MEMORY_E;
                 }
                 
                 XMEMSET(dec->aes, 0, sizeof(Aes));
@@ -536,7 +538,7 @@ int tsip_generatePremasterSecret(byte *premaster, word32 preSz )
     
     return ret;
 }
-/* generate encrpted pre-Master secrete by TSIP */
+/* generate encrypted pre-Master secrete by TSIP */
 int tsip_generateEncryptPreMasterSecret(WOLFSSL *ssl, byte *out, word32 *outSz)
 {
     int ret;
@@ -634,16 +636,16 @@ int tsip_tls_RootCertVerify(const byte *cert, word32 cert_len,
         ret = R_TSIP_TlsRootCertificateVerification(
                             /* CA cert */
                             (uint8_t*)cert,
-                            /* lenght of CA cert */
+                            /* length of CA cert */
                             (uint32_t)cert_len,
-                            /* Byte position of pubic key */
+                            /* Byte position of public key */
                             key_n_start,
                             (key_n_start + key_n_len),
                             key_e_start,
                             (key_e_start + key_e_len),
                             /* signature by "RSA 2048 PSS with SHA256" */
                             (uint8_t*)ca_cert_sig,
-                            /* RSA-2048 public kye used by
+                            /* RSA-2048 public key used by
                                RSA-2048 PSS with SHA256. 560 Bytes*/
                             g_encrypted_publicCA_key
                             );

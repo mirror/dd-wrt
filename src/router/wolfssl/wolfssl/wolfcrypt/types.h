@@ -1,6 +1,6 @@
 /* types.h
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -37,6 +37,16 @@
     #define WOLFSSL_ABI
             /* Tag for all the APIs that are a part of the fixed ABI. */
 
+    /*
+     * This struct is used multiple time by other structs and
+     * needs to be defined somwhere that all structs can import
+     * (with minimal depencencies).
+     */
+    #if defined(HAVE_EX_DATA) || defined(FORTRESS)
+    typedef struct WOLFSSL_CRYPTO_EX_DATA {
+        void* ex_data[MAX_EX_DATA];
+    } WOLFSSL_CRYPTO_EX_DATA;
+    #endif
 
     #if defined(WORDS_BIGENDIAN)
         #define BIG_ENDIAN_ORDER
@@ -61,12 +71,30 @@
     #endif
 
 
-    /* try to set SIZEOF_LONG or LONG_LONG if user didn't */
-    #if !defined(_MSC_VER) && !defined(__BCPLUSPLUS__) && !defined(__EMSCRIPTEN__)
+    /* constant pointer to a constant char */
+    #ifdef WOLFSSL_NO_CONSTCHARCONST
+        typedef const char*       wcchar;
+    #else
+        typedef const char* const wcchar;
+    #endif
+
+
+    /* try to set SIZEOF_LONG or SIZEOF_LONG_LONG if user didn't */
+    #if defined(_MSC_VER) || defined(HAVE_LIMITS_H)
+        #if !defined(SIZEOF_LONG_LONG) && !defined(SIZEOF_LONG)
+            #include <limits.h>
+            #if defined(ULONG_MAX) && (ULONG_MAX == 0xffffffffUL)
+                #define SIZEOF_LONG 4
+            #endif
+            #if defined(ULLONG_MAX) && (ULLONG_MAX == 0xffffffffffffffffULL)
+                #define SIZEOF_LONG_LONG 8
+            #endif
+        #endif
+    #elif !defined(__BCPLUSPLUS__) && !defined(__EMSCRIPTEN__)
         #if !defined(SIZEOF_LONG_LONG) && !defined(SIZEOF_LONG)
             #if (defined(__alpha__) || defined(__ia64__) || \
                 defined(_ARCH_PPC64) || defined(__mips64) || \
-                defined(__x86_64__) || \
+                defined(__x86_64__)  || defined(__s390x__ ) || \
                 ((defined(sun) || defined(__sun)) && \
                  (defined(LP64) || defined(_LP64))))
                 /* long should be 64bit */
@@ -104,7 +132,7 @@
     /* These platforms have 64-bit CPU registers.  */
     #if (defined(__alpha__) || defined(__ia64__) || defined(_ARCH_PPC64) || \
          defined(__mips64)  || defined(__x86_64__) || defined(_M_X64)) || \
-         defined(__aarch64__) || defined(__sparc64__) || \
+         defined(__aarch64__) || defined(__sparc64__) || defined(__s390x__ ) || \
         (defined(__riscv_xlen) && (__riscv_xlen == 64))
         typedef word64 wolfssl_word;
         #define WC_64BIT_CPU
@@ -228,6 +256,7 @@
         #define USE_WINDOWS_API
     #endif
 
+    #define XSTR_SIZEOF(x) (sizeof(x) - 1) /* -1 to not count the null char */
 
     /* idea to add global alloc override by Moises Guimaraes  */
     /* default to libc stuff */
@@ -469,11 +498,14 @@
                        Windows 10, snprintf is no longer identical to
                        _snprintf. The snprintf function behavior is now
                        C99 standard compliant. */
+                    #include <stdio.h>
                     #define XSNPRINTF snprintf
                 #else
                     /* 4996 warning to use MS extensions e.g., _sprintf_s
                        instead of _snprintf */
+                    #if !defined(__MINGW32__)
                     #pragma warning(disable: 4996)
+                    #endif
                     static WC_INLINE
                     int xsnprintf(char *buffer, size_t bufsize,
                             const char *format, ...) {
@@ -490,7 +522,9 @@
                     }
                     #define XSNPRINTF xsnprintf
                 #endif /* (_MSC_VER >= 1900) */
-            #endif /* _MSC_VER || __CYGWIN__ || __MINGW32__ */
+            #else
+                #define XSNPRINTF snprintf
+            #endif /* _MSC_VER */
         #endif /* USE_WINDOWS_API */
 
         #if defined(WOLFSSL_CERT_EXT) || defined(OPENSSL_EXTRA) \
@@ -635,6 +669,8 @@
         DYNAMIC_TYPE_HASH_TMP     = 88,
         DYNAMIC_TYPE_BLOB         = 89,
         DYNAMIC_TYPE_NAME_ENTRY   = 90,
+        DYNAMIC_TYPE_CURVE448     = 91,
+        DYNAMIC_TYPE_ED448        = 92,
         DYNAMIC_TYPE_SNIFFER_SERVER     = 1000,
         DYNAMIC_TYPE_SNIFFER_SESSION    = 1001,
         DYNAMIC_TYPE_SNIFFER_PB         = 1002,

@@ -1,6 +1,6 @@
 /* suites.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -792,6 +792,17 @@ int SuiteTest(int argc, char** argv)
     /* add ED25519 certificate cipher suite tests */
     strcpy(argv0[1], "tests/test-ed25519.conf");
     printf("starting ED25519 extra cipher suite tests\n");
+    test_harness(&args);
+    if (args.return_code != 0) {
+        printf("error from script %d\n", args.return_code);
+        args.return_code = EXIT_FAILURE;
+        goto exit;
+    }
+#endif
+#if defined(HAVE_CURVE448) && defined(HAVE_ED448)
+    /* add ED448 certificate cipher suite tests */
+    strcpy(argv0[1], "tests/test-ed448.conf");
+    printf("starting ED448 extra cipher suite tests\n");
     test_harness(&args);
     if (args.return_code != 0) {
         printf("error from script %d\n", args.return_code);

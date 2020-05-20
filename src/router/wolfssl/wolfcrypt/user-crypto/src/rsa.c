@@ -1,6 +1,6 @@
 /* rsa.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -70,7 +70,7 @@ enum {
     RSA_MIN_SIZE = 512,
     RSA_MAX_SIZE = 4096, /* max allowed in IPP library */
 
-    RSA_MIN_PAD_SZ   = 11      /* seperator + 0 + pad value + 8 pads */
+    RSA_MIN_PAD_SZ   = 11      /* separator + 0 + pad value + 8 pads */
 };
 
 
@@ -528,8 +528,8 @@ int SetRsaInternal(WOLFSSL_RSA* rsa)
    existing API signing scheme
     input : the msg to be signed
     inputLen : length of input msg
-    pkcsBlock : the outputed padded msg
-    pkcsBlockLen : length of outptued padded msg buffer
+    pkcsBlock : the outputted padded msg
+    pkcsBlockLen : length of outputted padded msg buffer
     padValue : the padded value after first 00 , is either 01 or 02
     rng : random number generator structure
  */
@@ -693,7 +693,7 @@ static IppStatus init_mont(IppsMontState** mont, int* ctxSz,
 
     /* 2. Allocate working buffer using malloc */
     *mont = (IppsMontState*)XMALLOC(*ctxSz, 0, DYNAMIC_TYPE_USER_CRYPTO);
-    if (mont == NULL) {
+    if (*mont == NULL) {
         XFREE(m, NULL, DYNAMIC_TYPE_USER_CRYPTO);
         return ippStsNoMemErr;
     }
@@ -736,7 +736,7 @@ int wc_FreeRsaKey(RsaKey* key)
     }
 
     if (key->pPrv != NULL) {
-        /* write over senstive information */
+        /* write over sensitive information */
         ForceZero(key->pPrv, key->prvSz);
         XFREE(key->pPrv, NULL, DYNAMIC_TYPE_USER_CRYPTO);
         key->pPrv = NULL;
@@ -1509,7 +1509,7 @@ int wc_RsaSSL_VerifyInline(byte* in, word32 inLen, byte** out, RsaKey* key)
         return USER_CRYPTO_ERROR;
     }
 
-    /* extract big num struct to octect string */
+    /* extract big num struct to octet string */
     ret = ippsGetOctString_BN((Ipp8u*)in, key->sz, pTxt);
     if (ret != ippStsNoErr) {
         FreeHelper(pTxt, cTxt, scratchBuffer, pPub);
@@ -1620,7 +1620,6 @@ static void Free_BN(IppsBigNumState* bn)
             USER_DEBUG(("Issue with clearing a struct in RsaSSL_Sign free\n"));
         }
         XFREE(bn, NULL, DYNAMIC_TYPE_USER_CRYPTO);
-        bn = NULL;
     }
 }
 
@@ -1700,7 +1699,7 @@ int wc_RsaSSL_Sign(const byte* in, word32 inLen, byte* out, word32 outLen,
         return USER_CRYPTO_ERROR;
     }
 
-    /* tmp = intput to sign */
+    /* tmp = input to sign */
     ret = init_bn(&tmp, sz);
     if (ret != ippStsNoErr) {
         USER_DEBUG(("init_BN error of %s\n", ippGetStatusString(ret)));
@@ -2552,7 +2551,7 @@ static int SetRsaPublicKey(byte* output, RsaKey* key,
     if (with_header) {
         int  algoSz;
 #ifdef WOLFSSL_SMALL_STACK
-        byte* algo = NULL;
+        byte* algo;
 
         algo = (byte*)XMALLOC(MAX_ALGO_SZ, NULL, DYNAMIC_TYPE_USER_CRYPTO);
         if (algo == NULL) {
@@ -2664,7 +2663,7 @@ int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 inLen)
 
     USER_DEBUG(("Entering RsaKeyToDer\n"));
 
-    if (!key || !output)
+    if (!key)
         return USER_CRYPTO_ERROR;
 
     if (key->type != RSA_PRIVATE)
@@ -2740,19 +2739,21 @@ int wc_RsaKeyToDer(RsaKey* key, byte* output, word32 inLen)
     seqSz = SetSequence(verSz + intTotalLen, seq);
 
     outLen = seqSz + verSz + intTotalLen;
-    if (outLen > (int)inLen) {
-        return USER_CRYPTO_ERROR;
-    }
+    if (output) {
+        if (outLen > (int)inLen) {
+            return USER_CRYPTO_ERROR;
+        }
 
-    /* write to output */
-    XMEMCPY(output, seq, seqSz);
-    j = seqSz;
-    XMEMCPY(output + j, ver, verSz);
-    j += verSz;
+        /* write to output */
+        XMEMCPY(output, seq, seqSz);
+        j = seqSz;
+        XMEMCPY(output + j, ver, verSz);
+        j += verSz;
 
-    for (i = 0; i < RSA_INTS; i++) {
-        XMEMCPY(output + j, tmps[i], sizes[i]);
-        j += sizes[i];
+        for (i = 0; i < RSA_INTS; i++) {
+            XMEMCPY(output + j, tmps[i], sizes[i]);
+            j += sizes[i];
+        }
     }
     FreeTmpRsas(tmps, key->heap);
 

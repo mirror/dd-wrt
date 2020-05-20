@@ -1,6 +1,6 @@
 /* sp_int.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -34,6 +34,26 @@
     #include <wolfcrypt/src/misc.c>
 #endif
 
+/* SP Build Options:
+ * WOLFSSL_HAVE_SP_RSA:         Enable SP RSA support
+ * WOLFSSL_HAVE_SP_DH:          Enable SP DH support
+ * WOLFSSL_HAVE_SP_ECC:         Enable SP ECC support
+ * WOLFSSL_SP_MATH:             Use only single precision math and algorithms it supports (no fastmath tfm.c or normal integer.c)
+ * WOLFSSL_SP_SMALL:            Use smaller version of code and avoid large stack variables
+ * WOLFSSL_SP_NO_MALLOC:        Always use stack, no heap XMALLOC/XFREE allowed
+ * WOLFSSL_SP_NO_3072:          Disable RSA/DH 3072-bit support
+ * WOLFSSL_SP_NO_2048:          Disable RSA/DH 2048-bit support
+ * WOLFSSL_SP_4096:             Enable RSA/RH 4096-bit support
+ * WOLFSSL_SP_384               Enable ECC 384-bit SECP384R1 support
+ * WOLFSSL_SP_NO_256            Disable ECC 256-bit SECP256R1 support
+ * WOLFSSL_SP_CACHE_RESISTANT   Enable cache resistantant code 
+ * WOLFSSL_SP_ASM               Enable assembly speedups (detect platform)
+ * WOLFSSL_SP_X86_64_ASM        Enable Intel x86 assembly speedups like AVX/AVX2
+ * WOLFSSL_SP_ARM32_ASM         Enable Aarch32 assembly speedups
+ * WOLFSSL_SP_ARM64_ASM         Enable Aarch64 assembly speedups
+ * WOLFSSL_SP_ARM_CORTEX_M_ASM  Enable Cortex-M assembly speedups
+ * WOLFSSL_SP_ARM_THUMB_ASM     Enable ARM Thumb assembly speedups (used with -mthumb)
+ */
 
 #ifdef WOLFSSL_SP_MATH
 
@@ -157,36 +177,36 @@ int sp_unsigned_bin_size(sp_int* a)
 int sp_read_unsigned_bin(sp_int* a, const byte* in, int inSz)
 {
     int err = MP_OKAY;
-    int i, j = 0, s = 0;
+    int i, j = 0, k;
 
     if (inSz > SP_INT_DIGITS * (int)sizeof(a->dp[0])) {
         err = MP_VAL;
     }
 
     if (err == MP_OKAY) {
-        a->dp[0] = 0;
-        for (i = inSz-1; i >= 0; i--) {
-            a->dp[j] |= ((sp_int_digit)in[i]) << s;
-            if (s == DIGIT_BIT - 8) {
-                a->dp[++j] = 0;
-                s = 0;
-            }
-            else if (s > DIGIT_BIT - 8) {
-                s = DIGIT_BIT - s;
-                if (j + 1 >= a->size)
-                    break;
-                a->dp[++j] = in[i] >> s;
-                s = 8 - s;
-            }
-            else
-                s += 8;
+        for (i = inSz-1; i >= (SP_WORD_SIZE/8); i -= (SP_WORD_SIZE/8), j++) {
+            a->dp[j]  = (((sp_int_digit)in[i-0]) << (0*8))
+                     |  (((sp_int_digit)in[i-1]) << (1*8))
+                     |  (((sp_int_digit)in[i-2]) << (2*8))
+                     |  (((sp_int_digit)in[i-3]) << (3*8));
+    #if SP_WORD_SIZE == 64
+            a->dp[j] |= (((sp_int_digit)in[i-4]) << (4*8))
+                     |  (((sp_int_digit)in[i-5]) << (5*8))
+                     |  (((sp_int_digit)in[i-6]) << (6*8))
+                     |  (((sp_int_digit)in[i-7]) << (7*8));
+    #endif
         }
-
-        a->used = j + 1;
-        sp_clamp(a);
-        for (j++; j < a->size; j++)
+        if (i >= 0) {
             a->dp[j] = 0;
+            for (k = 0; k <= i; k++) {
+                a->dp[j] <<= 8;
+                a->dp[j] |= in[k];
+            }
+        }
+        a->used = j + 1;
     }
+
+    sp_clamp(a);
 
     return err;
 }
@@ -239,7 +259,7 @@ int sp_read_radix(sp_int* a, const char* in, int radix)
             }
             if (j == DIGIT_BIT)
                 a->dp[++k] = 0;
-            j &= DIGIT_BIT - 1;
+            j &= SP_WORD_SIZE - 1;
         }
     }
 
@@ -306,10 +326,19 @@ int sp_count_bits(sp_int* a)
         r = 0;
     else {
         d = a->dp[r];
-        r *= DIGIT_BIT;
-        while (d != 0) {
-            r++;
-            d >>= 1;
+        r *= SP_WORD_SIZE;
+        if (d >= (1L << (SP_WORD_SIZE / 2))) {
+            r += SP_WORD_SIZE;
+            while ((d & (1UL << (SP_WORD_SIZE - 1))) == 0) {
+                r--;
+                d <<= 1;
+            }
+        }
+        else {
+            while (d != 0) {
+                r++;
+                d >>= 1;
+            }
         }
     }
 
@@ -350,13 +379,17 @@ int sp_leading_bit(sp_int* a)
 int sp_to_unsigned_bin(sp_int* a, byte* out)
 {
     int i, j, b;
+    sp_int_digit d;
 
     j = sp_unsigned_bin_size(a) - 1;
     for (i=0; j>=0; i++) {
-        for (b = 0; b < SP_WORD_SIZE; b += 8) {
-            out[j--] = a->dp[i] >> b;
-            if (j < 0)
+        d = a->dp[i];
+        for (b = 0; b < SP_WORD_SIZE / 8; b++) {
+            out[j] = d;
+            if (--j < 0) {
                 break;
+            }
+            d >>= 8;
         }
     }
 
@@ -450,7 +483,6 @@ int sp_set(sp_int* a, sp_int_digit d)
     return MP_OKAY;
 }
 
-#if !defined(WOLFSSL_RSA_VERIFY_ONLY) || (!defined(NO_DH) || defined(HAVE_ECC))
 /* Recalculate the number of digits used.
  *
  * a  SP integer.
@@ -464,6 +496,7 @@ void sp_clamp(sp_int* a)
     a->used = i + 1;
 }
 
+#if !defined(WOLFSSL_RSA_VERIFY_ONLY) || (!defined(NO_DH) || defined(HAVE_ECC))
 /* Grow big number to be able to hold l digits.
  * This function does nothing as the number of digits is fixed.
  *
@@ -669,7 +702,9 @@ static int sp_div(sp_int* a, sp_int* d, sp_int* r, sp_int* rem)
     int done = 0;
     int i;
     int s;
+#ifndef WOLFSSL_SP_DIV_32
     sp_int_word w = 0;
+#endif
     sp_int_digit dt;
     sp_int_digit t;
 #ifdef WOLFSSL_SMALL_STACK
@@ -752,15 +787,22 @@ static int sp_div(sp_int* a, sp_int* d, sp_int* r, sp_int* rem)
         sp_clear(tr);
         tr->used = sa->used - d->used + 1;
         dt = d->dp[d->used-1];
-        for (i = sa->used - 1; i >= d->used; i--) {
-            w = ((sp_int_word)sa->dp[i] << SP_WORD_SIZE) | sa->dp[i-1];
-            w /= dt;
-            if (w > (sp_int_digit)-1) {
+#ifndef WOLFSSL_SP_DIV_32
+        for (i = sa->used - 1; i >= d->used; ) {
+            if (sa->dp[i] > dt) {
                 t = (sp_int_digit)-1;
             }
             else {
-                t = (sp_int_digit)w;
+                w = ((sp_int_word)sa->dp[i] << SP_WORD_SIZE) | sa->dp[i-1];
+                w /= dt;
+                if (w > (sp_int_digit)-1) {
+                    t = (sp_int_digit)-1;
+                }
+                else {
+                    t = (sp_int_digit)w;
+                }
             }
+
             if (t > 0) {
                 _sp_mul_d(d, t, trial, i - d->used);
                 while (sp_cmp(trial, sa) == MP_GT) {
@@ -771,11 +813,43 @@ static int sp_div(sp_int* a, sp_int* d, sp_int* r, sp_int* rem)
                 tr->dp[i - d->used] += t;
                 if (tr->dp[i - d->used] < t)
                     tr->dp[i + 1 - d->used]++;
-                if (w > (sp_int_digit)-1) {
-                    i++;
-                }
             }
+            i = sa->used - 1;
         }
+#else
+     {
+        sp_int_digit div = (dt >> (SP_WORD_SIZE / 2)) + 1;
+        for (i = sa->used - 1; i >= d->used; ) {
+            t = sa->dp[i] / div;
+            if ((t > 0) && (t << (SP_WORD_SIZE / 2) == 0))
+                t = (sp_int_digit)-1;
+            t <<= SP_WORD_SIZE / 2;
+            if (t == 0) {
+               t = sa->dp[i] << (SP_WORD_SIZE / 2);
+               t += sa->dp[i-1] >> (SP_WORD_SIZE / 2);
+               t /= div;
+            }
+
+            if (t > 0) {
+                _sp_mul_d(d, t, trial, i - d->used);
+                while (sp_cmp(trial, sa) == MP_GT) {
+                    t--;
+                    _sp_mul_d(d, t, trial, i - d->used);
+                }
+                sp_sub(sa, trial, sa);
+                tr->dp[i - d->used] += t;
+                if (tr->dp[i - d->used] < t)
+                    tr->dp[i + 1 - d->used]++;
+            }
+            i = sa->used - 1;
+        }
+
+        while (sp_cmp(sa, d) != MP_LT) {
+            sp_sub(sa, d, sa);
+            sp_add_d(tr, 1, tr);
+        }
+    }
+#endif
 
         sp_clamp(tr);
 
@@ -931,7 +1005,7 @@ int sp_set_int(sp_int* a, unsigned long b)
     }
     else {
         a->used = 1;
-        a->dp[0] = b;
+        a->dp[0] = (sp_int_digit)b;
     }
 
     return MP_OKAY;
@@ -979,7 +1053,7 @@ int sp_tohex(sp_int* a, char* str)
 }
 #endif /* WC_MP_TO_RADIX */
 
-#if defined(WOLFSSL_KEY_GEN) || !defined(NO_DH)
+#if defined(WOLFSSL_KEY_GEN) || !defined(NO_DH) && !defined(WC_NO_RNG)
 /* Set a bit of a: a |= 1 << i
  * The field 'used' is updated in a.
  *
@@ -987,14 +1061,19 @@ int sp_tohex(sp_int* a, char* str)
  * i  Index of bit to set.
  * returns MP_OKAY always.
  */
-static int sp_set_bit(sp_int* a, int i)
+int sp_set_bit(sp_int* a, int i)
 {
-    if (i / SP_WORD_SIZE < SP_INT_DIGITS) {
+    int ret = MP_OKAY;
+
+    if ((a == NULL) ||  (i / SP_WORD_SIZE >= SP_INT_DIGITS)) {
+        ret = BAD_FUNC_ARG;
+    }
+    else {
         a->dp[i/SP_WORD_SIZE] |= (sp_int_digit)1 << (i % SP_WORD_SIZE);
         if (a->used <= i / SP_WORD_SIZE)
             a->used = (i / SP_WORD_SIZE) + 1;
     }
-    return MP_OKAY;
+    return ret;
 }
 
 /* Exponentiate 2 to the power of e: a = 2^e
@@ -1667,7 +1746,7 @@ static const int lnz[SP_LNZ_CNT] = {
 /* Count the number of least significant zero bits.
  *
  * a  Number to check
- * retuns the count of least significant zero bits.
+ * returns the count of least significant zero bits.
  */
 static int sp_cnt_lsb(sp_int* a)
 {
@@ -1869,7 +1948,7 @@ static const sp_int_digit primes[SP_PRIME_SIZE] = {
  * result  MP_YES when prime.
  *         MP_NO when not prime.
  * returns MP_VAL when t is out of range, MP_MEM when dynamic memory allocation
- *         failes and otherwiese MP_OKAY.
+ *         fails and otherwise MP_OKAY.
  */
 int sp_prime_is_prime(sp_int *a, int t, int* result)
 {
@@ -1953,7 +2032,7 @@ int sp_prime_is_prime(sp_int *a, int t, int* result)
  *         MP_NO when not prime.
  * rng     Random number generator.
  * returns MP_VAL when t is out of range, MP_MEM when dynamic memory allocation
- *         failes and otherwiese MP_OKAY.
+ *         fails and otherwise MP_OKAY.
  */
 int sp_prime_is_prime_ex(sp_int* a, int t, int* result, WC_RNG* rng)
 {
@@ -2097,6 +2176,21 @@ int sp_exch(sp_int* a, sp_int* b)
 #endif
 #endif
 
+#if defined(WOLFSSL_KEY_GEN) && !defined(NO_RSA)
+/* Multiply a by digit n and put result into r. r = a * n
+ *
+ * a  SP integer to be multiplied.
+ * n  Number to multiply by.
+ * r  SP integer result.
+ * returns MP_OKAY always.
+ */
+int sp_mul_d(sp_int* a, sp_int_digit n, sp_int* r)
+{
+    _sp_mul_d(a, n, r, 0);
+    return MP_OKAY;
+}
+#endif
+
 /* Returns the run time settings.
  *
  * returns the settings value.
@@ -2107,4 +2201,3 @@ word32 CheckRunTimeSettings(void)
 }
 
 #endif /* WOLFSSL_SP_MATH */
-

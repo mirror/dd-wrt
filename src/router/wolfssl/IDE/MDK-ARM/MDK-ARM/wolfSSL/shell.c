@@ -1,6 +1,6 @@
 /*shell.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -214,7 +214,7 @@ static struct {
     "stack", stack_comm,        /* On/Off check stack size */
     "for", for_command,         /* iterate next command X times */
     "debug", dbg_comm,          /* On/Off debug message  */
-    "help", help_comm,          /* Breif description about the commands */
+    "help", help_comm,          /* Brief description about the commands */
 
     /** short name **/
     "ec", echoclient_test,
@@ -436,7 +436,7 @@ static void for_command(void *args)
 {
     if( args == NULL || ((func_args *)args)->argc == 1) {
         printf("For %d times\n", for_iteration) ;
-    } else if( args == NULL || ((func_args *)args)->argc == 2) {
+    } else if(((func_args *)args)->argc == 2) {
         for_iteration = atoi(((func_args *)args)->argv[1]) ;
     } else printf("Invalid argument\n") ;
 }
@@ -483,7 +483,7 @@ static char command_stack[COMMAND_STACK_SIZE] ;
 static   wolfSSL_Mutex command_mutex ;
 #endif
 
-/***********    Invoke Forground Command  *********************/
+/***********    Invoke Foreground Command  *********************/
 static void command_invoke(void *args)
 {
     void (*func)(void * ) ;

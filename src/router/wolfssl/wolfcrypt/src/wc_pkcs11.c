@@ -1,6 +1,6 @@
 /* wc_pkcs11.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -335,7 +335,7 @@ int wc_Pkcs11Token_Open(Pkcs11Token* token, int readWrite)
 
 /**
  * Close the token's session.
- * All object, like keys, will be destoyed.
+ * All object, like keys, will be destroyed.
  *
  * @param  token    [in]  Token object.
  */
@@ -523,7 +523,7 @@ static int Pkcs11CreateEccPrivateKey(CK_OBJECT_HANDLE* privateKey,
  *
  * @param  session  [in]  Session object.
  * @param  mech     [in]  Mechanism to look for.
- * @return  NOT_COMPILED_IN when mechanism not avaialble.
+ * @return  NOT_COMPILED_IN when mechanism not available.
  *          0 when mechanism is available.
  */
 static int Pkcs11MechAvail(Pkcs11Session* session, CK_MECHANISM_TYPE mech)
@@ -869,7 +869,7 @@ static int Pkcs11RsaPublic(Pkcs11Session* session, wc_CryptoInfo* info)
 
     WOLFSSL_MSG("PKCS#11: RSA Public Key Operation");
 
-    if (ret == 0 && info->pk.rsa.outLen == NULL) {
+    if (info->pk.rsa.outLen == NULL) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -941,7 +941,7 @@ static int Pkcs11RsaPrivate(Pkcs11Session* session, wc_CryptoInfo* info)
 
     WOLFSSL_MSG("PKCS#11: RSA Private Key Operation");
 
-    if (ret == 0 && info->pk.rsa.outLen == NULL) {
+    if (info->pk.rsa.outLen == NULL) {
         ret = BAD_FUNC_ARG;
     }
 
@@ -1611,9 +1611,9 @@ static word32 Pkcs11ECDSASig_Encode(byte* sig, word32 sz)
     word32 i;
 
     /* Find first byte of data in r and s. */
-    while (sig[rStart] == 0x00 && rStart < sz - 1)
+    while (rStart < sz - 1 && sig[rStart] == 0x00)
         rStart++;
-    while (sig[sz + sStart] == 0x00 && sStart < sz - 1)
+    while (sStart < sz - 1 && sig[sz + sStart] == 0x00)
         sStart++;
     /* Check if 0 needs to be prepended to make integer a positive number. */
     rHigh = sig[rStart] >> 7;

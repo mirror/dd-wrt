@@ -1,6 +1,6 @@
 /* dh.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -29,7 +29,7 @@
 #ifndef NO_DH
 
 #if defined(HAVE_FIPS) && \
-	defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
+    defined(HAVE_FIPS_VERSION) && (HAVE_FIPS_VERSION >= 2)
 
     /* set NO_WRAPPERS before headers, use direct internal f()s not wrappers */
     #define FIPS_NO_WRAPPERS
@@ -930,7 +930,11 @@ int wc_InitDhKey_ex(DhKey* key, void* heap, int devId)
 
     key->heap = heap; /* for XMALLOC/XFREE in future */
 
+#if !defined(WOLFSSL_QT) && !defined(OPENSSL_ALL)
     if (mp_init_multi(&key->p, &key->g, &key->q, NULL, NULL, NULL) != MP_OKAY)
+#else
+    if (mp_init_multi(&key->p,&key->g,&key->q,&key->pub,&key->priv,NULL) != MP_OKAY)
+#endif
         return MEMORY_E;
 
 #if defined(WOLFSSL_ASYNC_CRYPT) && defined(WC_ASYNC_ENABLE_DH)
@@ -980,7 +984,7 @@ int wc_FreeDhKey(DhKey* key)
 #endif /* WOLFSSL_DH_CONST*/
 
 
-/* if not using fixed points use DiscreteLogWorkFactor function for unsual size
+/* if not using fixed points use DiscreteLogWorkFactor function for unusual size
    otherwise round up on size needed */
 #ifndef WOLFSSL_DH_CONST
     #define WOLFSSL_DH_ROUND(x)
@@ -1227,8 +1231,8 @@ static int GeneratePublicDh(DhKey* key, byte* priv, word32 privSz,
     int ret = 0;
 #ifndef WOLFSSL_SP_MATH
 #ifdef WOLFSSL_SMALL_STACK
-    mp_int* x = NULL;
-    mp_int* y = NULL;
+    mp_int* x;
+    mp_int* y;
 #else
     mp_int x[1];
     mp_int y[1];
@@ -1495,7 +1499,7 @@ int wc_DhCheckPubKey_ex(DhKey* key, const byte* pub, word32 pubSz,
     /* SP 800-56Ar3, section 5.6.2.3.1, process step 2 */
 #ifndef WOLFSSL_SP_MATH
             /* calculate (y^q) mod(p), store back into y */
-            if (ret == 0 && mp_exptmod(y, q, p, y) != MP_OKAY)
+            if (mp_exptmod(y, q, p, y) != MP_OKAY)
                 ret = MP_EXPTMOD_E;
 #else
             ret = WC_KEY_SIZE_E;
@@ -1535,7 +1539,7 @@ int wc_DhCheckPubKey(DhKey* key, const byte* pub, word32 pubSz)
 
 
 /**
- * Quick validity check of public key value agaist prime.
+ * Quick validity check of public key value against prime.
  * Checks are:
  *   - Public key not 0 or 1
  *   - Public key not equal to prime or prime - 1
@@ -1836,10 +1840,10 @@ static int wc_DhAgree_Sync(DhKey* key, byte* agree, word32* agreeSz,
 {
     int ret = 0;
 #ifdef WOLFSSL_SMALL_STACK
-    mp_int* y = NULL;
+    mp_int* y;
 #ifndef WOLFSSL_SP_MATH
-    mp_int* x = NULL;
-    mp_int* z = NULL;
+    mp_int* x;
+    mp_int* z;
 #endif
 #else
     mp_int y[1];
@@ -2061,6 +2065,76 @@ int wc_DhAgree(DhKey* key, byte* agree, word32* agreeSz, const byte* priv,
     return ret;
 }
 
+#if defined(WOLFSSL_QT) || defined(OPENSSL_ALL)
+/* Sets private and public key in DhKey if both are available, otherwise sets
+    either private or public key, depending on which is available.
+    Returns WOLFSSL_SUCCESS if at least one of the keys was set. */
+WOLFSSL_LOCAL int wc_DhSetFullKeys(DhKey* key,const byte* priv_key,word32 privSz,
+                                   const byte* pub_key, word32 pubSz)
+{
+    byte havePriv = 0;
+    byte havePub = 0;
+    mp_int* keyPriv = NULL;
+    mp_int* keyPub  = NULL;
+
+    if (key == NULL) {
+        return BAD_FUNC_ARG;
+    }
+
+    havePriv = ( (priv_key != NULL) && (privSz > 0) );
+    havePub  = ( (pub_key  != NULL) && (pubSz  > 0) );
+
+    if (!havePub && !havePriv) {
+        WOLFSSL_MSG("No Public or Private Key to Set");
+        return BAD_FUNC_ARG;
+    }
+    /* Set Private Key */
+    if (havePriv == TRUE) {
+        /* may have leading 0 */
+        if (priv_key[0] == 0) {
+            privSz--; priv_key++;
+        }
+        if (mp_init(&key->priv) != MP_OKAY)
+            havePriv = FALSE;
+    }
+
+    if (havePriv == TRUE) {
+        if (mp_read_unsigned_bin(&key->priv, priv_key, privSz) != MP_OKAY) {
+            havePriv = FALSE;
+        } else {
+            keyPriv = &key->priv;
+            WOLFSSL_MSG("DH Private Key Set.");
+        }
+    }
+
+    /* Set Public Key */
+    if (havePub == TRUE) {
+        /* may have leading 0 */
+        if (pub_key[0] == 0) {
+            pubSz--; pub_key++;
+        }
+        if (mp_init(&key->pub) != MP_OKAY)
+            havePub = FALSE;
+    }
+
+    if (havePub == TRUE) {
+        if (mp_read_unsigned_bin(&key->pub, pub_key, pubSz) != MP_OKAY) {
+            havePub = FALSE;
+        } else {
+            keyPub = &key->pub;
+            WOLFSSL_MSG("DH Public Key Set.");
+        }
+    }
+    /* Free Memory if error occured */
+    if (havePriv == FALSE && keyPriv != NULL)
+        mp_clear(keyPriv);
+    if (havePub == FALSE && keyPub != NULL)
+        mp_clear(keyPub);
+
+    /* WOLFSSL_SUCCESS if private or public was set else WOLFSSL_FAILURE */
+    return havePriv || havePub;
+}
+#endif
 
 static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
                    word32 gSz, const byte* q, word32 qSz, int trusted,
@@ -2069,7 +2143,6 @@ static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
     int ret = 0;
     mp_int* keyP = NULL;
     mp_int* keyG = NULL;
-    mp_int* keyQ = NULL;
 
     if (key == NULL || p == NULL || g == NULL || pSz == 0 || gSz == 0) {
         ret = BAD_FUNC_ARG;
@@ -2129,13 +2202,9 @@ static int _DhSetKey(DhKey* key, const byte* p, word32 pSz, const byte* g,
     if (ret == 0 && q != NULL) {
         if (mp_read_unsigned_bin(&key->q, q, qSz) != MP_OKAY)
             ret = MP_INIT_E;
-        else
-            keyQ = &key->q;
     }
 
     if (ret != 0 && key != NULL) {
-        if (keyQ)
-            mp_clear(keyQ);
         if (keyG)
             mp_clear(keyG);
         if (keyP)
@@ -2214,7 +2283,7 @@ int wc_DhGenerateParams(WC_RNG *rng, int modSz, DhKey *dh)
             ret = MEMORY_E;
     }
 
-    /* make a random string that will be multplied against q */
+    /* make a random string that will be multiplied against q */
     if (ret == 0)
         ret = wc_RNG_GenerateBlock(rng, buf, bufSz);
 

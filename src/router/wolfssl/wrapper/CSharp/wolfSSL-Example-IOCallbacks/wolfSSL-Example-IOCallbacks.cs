@@ -1,6 +1,6 @@
 ﻿/* wolfSSL-Example-IOCallbacks.cs
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -35,18 +35,18 @@ using wolfSSL.CSharp;
 class wolfSSL_Example_IOCallbacks
 {
     /// <summary>
-    /// Example call back to allow recieving TLS information
+    /// Example call back to allow receiving TLS information
     /// </summary>
     /// <param name="ssl">structure of ssl passed in</param>
-    /// <param name="buf">buffer to contain recieved msg</param>
+    /// <param name="buf">buffer to contain received msg</param>
     /// <param name="sz">size of buffer for receiving</param>
     /// <param name="ctx">information passed in from set_fd</param>
-    /// <returns>size of message recieved</returns>
+    /// <returns>size of message received</returns>
     private static int wolfSSLCbIORecv(IntPtr ssl, IntPtr buf, int sz, IntPtr ctx)
     {
         if (sz <= 0)
         {
-            wolfssl.log(wolfssl.ERROR_LOG, "wolfssl recieve error, size less than 0");
+            wolfssl.log(wolfssl.ERROR_LOG, "wolfssl receive error, size less than 0");
             return wolfssl.CBIO_ERR_GENERAL;
         }
 
@@ -64,7 +64,7 @@ class wolfSSL_Example_IOCallbacks
         }
         catch (Exception e)
         {
-            wolfssl.log(wolfssl.ENTER_LOG, "Error in recive " + e.ToString());
+            wolfssl.log(wolfssl.ENTER_LOG, "Error in receive " + e.ToString());
             return wolfssl.CBIO_ERR_CONN_CLOSE;
         }
 
@@ -235,7 +235,7 @@ class wolfSSL_Example_IOCallbacks
         if (wolfssl.set_fd(ssl, fd) != wolfssl.SUCCESS)
         {
             /* get and print out the error */
-            Console.Write(wolfssl.get_error(ssl));
+            Console.WriteLine(wolfssl.get_error(ssl));
             tcp.Stop();
             clean(ssl, ctx);
             return;
@@ -244,7 +244,7 @@ class wolfSSL_Example_IOCallbacks
         if (wolfssl.accept(ssl) != wolfssl.SUCCESS)
         {
             /* get and print out the error */
-            Console.Write(wolfssl.get_error(ssl));
+            Console.WriteLine(wolfssl.get_error(ssl));
             tcp.Stop();
             clean(ssl, ctx);
             return;

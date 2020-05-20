@@ -3871,6 +3871,29 @@ WOLFSSL_API long wolfSSL_BIO_set_fd(WOLFSSL_BIO* b, int fd, int flag);
 /*!
     \ingroup IO
 
+    \brief Sets the close flag, used to indicate that the i/o stream should be
+     closed when the BIO is freed
+
+    \return SSL_SUCCESS(1) upon success.
+
+    \param bio WOLFSSL_BIO structure.
+    \param flag flag for behavior when closing i/o stream.
+
+    _Example_
+    \code
+    WOLFSSL_BIO* bio;
+    // setup bio
+    wolfSSL_BIO_set_close(bio, BIO_NOCLOSE);
+    \endcode
+
+    \sa wolfSSL_BIO_new
+    \sa wolfSSL_BIO_free
+*/
+WOLFSSL_API int wolfSSL_BIO_set_close(WOLFSSL_BIO *b, long flag);
+
+/*!
+    \ingroup IO
+
     \brief This is used to get a BIO_SOCKET type WOLFSSL_BIO_METHOD.
 
     \return WOLFSSL_BIO_METHOD pointer to a WOLFSSL_BIO_METHOD structure
@@ -4493,7 +4516,7 @@ WOLFSSL_API WOLFSSL_STACK* wolfSSL_X509_STORE_CTX_get_chain(
     is WOLFSSL_CRL_CHECK.
 
     \return SSL_SUCCESS If no errors were encountered when setting the flag.
-    \return <0 a negative vlaue will be returned upon failure.
+    \return <0 a negative value will be returned upon failure.
 
     \param str certificate store to set flag in.
     \param flag flag for behavior.
@@ -4859,6 +4882,35 @@ WOLFSSL_API long wolfSSL_get_verify_result(const WOLFSSL *ssl);
 WOLFSSL_API void  wolfSSL_ERR_print_errors_fp(FILE*, int err);
 
 /*!
+    \ingroup Debug
+
+    \brief This function uses the provided callback to handle error reporting.
+    The callback function is executed for each error line. The string, length,
+    and userdata are passed into the callback parameters.
+
+    \return none No returns.
+
+    \param cb the callback function.
+    \param u userdata to pass into the callback function.
+
+    _Example_
+    \code
+    int error_cb(const char *str, size_t len, void *u)
+    { fprintf((FILE*)u, "%-*.*s\n", (int)len, (int)len, str); return 0; }
+    ...
+    FILE* fp = ...
+    wolfSSL_ERR_print_errors_cb(error_cb, fp);
+    \endcode
+
+    \sa wolfSSL_get_error
+    \sa wolfSSL_ERR_error_string
+    \sa wolfSSL_ERR_error_string_n
+    \sa wolfSSL_load_error_strings
+*/
+WOLFSSL_API void  wolfSSL_ERR_print_errors_cb (
+        int (*cb)(const char *str, size_t len, void *u), void *u);
+
+/*!
     \brief The function sets the client_psk_cb member of the
     WOLFSSL_CTX structure.
 
@@ -4901,7 +4953,7 @@ WOLFSSL_API void wolfSSL_CTX_set_psk_client_callback(WOLFSSL_CTX*,
     WOLFSSL* ssl;
     unsigned int cb(WOLFSSL*, const char*, char*) // Header of function*
     {
-    	// Funciton body
+    	// Function body
     }
     …
     cb = wc_psk_client_callback;
@@ -5000,7 +5052,7 @@ WOLFSSL_API const char* wolfSSL_get_psk_identity(const WOLFSSL*);
     …
     ret = wolfSSL_CTX_use_psk_identity_hint(ctx, hint);
     if(ret == SSL_SUCCESS){
-    	// Function was succesfull.
+    	// Function was successful.
 	return ret;
     } else {
     	// Failure case.
@@ -5187,7 +5239,7 @@ WOLFSSL_API WOLFSSL_METHOD *wolfSSLv23_server_method(void);
 
     \brief This is used to get the internal error state of the WOLFSSL structure.
 
-    \return wolfssl_error returns ssl error state, usualy a negative
+    \return wolfssl_error returns ssl error state, usually a negative
     \return BAD_FUNC_ARG if ssl is NULL.
 
     \return ssl WOLFSSL structure to get state from.
@@ -5399,7 +5451,7 @@ WOLFSSL_API const char* wolfSSL_lib_version(void);
     \brief This function returns the current library version in hexadecimal
     notation.
 
-    \return LILBWOLFSSL_VERSION_HEX returns the hexidecimal version defined in
+    \return LILBWOLFSSL_VERSION_HEX returns the hexadecimal version defined in
      wolfssl/version.h.
 
     \param none No parameters.
@@ -6448,7 +6500,7 @@ WOLFSSL_API int  wolfSSL_CTX_SetTmpDH_buffer(WOLFSSL_CTX*, const unsigned char* 
     a subroutine is passed a NULL argument.
     \return SSL_BAD_FILE returned if the certificate file is unable to open or
     if the a set of checks on the file fail from wolfSSL_SetTmpDH_file_wrapper.
-    \return SSL_BAD_FILETYPE returned if teh format is not PEM or ASN.1 from
+    \return SSL_BAD_FILETYPE returned if the format is not PEM or ASN.1 from
     wolfSSL_SetTmpDH_buffer_wrapper().
     \return DH_KEY_SIZE_E returned if the DH parameter's key size is less than
     the value of the minDhKeySz member of the WOLFSSL_CTX struct.
@@ -8742,7 +8794,7 @@ WOLFSSL_API int wolfSSL_CertManagerUnload_trust_peers(WOLFSSL_CERT_MANAGER* cm);
     \brief Specifies the certificate to verify with the Certificate Manager
     context.  The format can be SSL_FILETYPE_PEM or SSL_FILETYPE_ASN1.
 
-    \return SSL_SUCCESS If successfull.
+    \return SSL_SUCCESS If successful.
     \return ASN_SIG_CONFIRM_E will be returned if the signature could not be
     verified.
     \return ASN_SIG_OID_E will be returned if the signature type is not
@@ -8844,6 +8896,38 @@ WOLFSSL_API int wolfSSL_CertManagerVerify(WOLFSSL_CERT_MANAGER*, const char* f,
 */
 WOLFSSL_API int wolfSSL_CertManagerVerifyBuffer(WOLFSSL_CERT_MANAGER* cm,
                                 const unsigned char* buff, long sz, int format);
+
+/*!
+    \ingroup CertManager
+    \brief The function sets the verifyCallback function in the Certificate
+    Manager. If present, it will be called for each cert loaded. If there is
+    a verification error, the verify callback can be used to over-ride the
+    error.
+
+    \return none No return.
+
+    \param cm a pointer to a WOLFSSL_CERT_MANAGER structure, created using
+    wolfSSL_CertManagerNew().
+    \param vc a VerifyCallback function pointer to the callback routine
+
+    _Example_
+    \code
+    #include <wolfssl/ssl.h>
+
+    int myVerify(int preverify, WOLFSSL_X509_STORE_CTX* store)
+    { // do custom verification of certificate }
+
+    WOLFSSL_CTX* ctx = WOLFSSL_CTX_new(Protocol define);
+    WOLFSSL_CERT_MANAGER* cm = wolfSSL_CertManagerNew();
+    ...
+    wolfSSL_CertManagerSetVerify(cm, myVerify);
+
+    \endcode
+
+    \sa wolfSSL_CertManagerVerify
+*/
+WOLFSSL_API void wolfSSL_CertManagerSetVerify(WOLFSSL_CERT_MANAGER* cm,
+                                                             VerifyCallback vc);
 
 /*!
     \brief Check CRL if the option is enabled and compares the cert to the
@@ -9465,7 +9549,7 @@ WOLFSSL_API int wolfSSL_SetOCSP_OverrideURL(WOLFSSL*, const char*);
     WOLFSSL_CERT_MANAGER structure.
 
     \return SSL_SUCCESS returned if the function executes without error.
-    The ocspIOCb, ocspRespFreeCb, and ocspIOCtx memebers of the CM are set.
+    The ocspIOCb, ocspRespFreeCb, and ocspIOCtx members of the CM are set.
     \return BAD_FUNC_ARG returned if the WOLFSSL or WOLFSSL_CERT_MANAGER
     structures are NULL.
 
@@ -11246,7 +11330,7 @@ int wolfSSL_DeriveTlsKeys(unsigned char* key_data, word32 keyLen,
     \sa wolfSSL_accept_ex
 */
 WOLFSSL_API int wolfSSL_connect_ex(WOLFSSL*, HandShakeCallBack, TimeoutCallBack,
-                                 Timeval);
+                                 WOLFSSL_TIMEVAL);
 
 /*!
     \brief wolfSSL_accept_ex() is an extension that allows a HandShake Callback
@@ -11278,7 +11362,7 @@ WOLFSSL_API int wolfSSL_connect_ex(WOLFSSL*, HandShakeCallBack, TimeoutCallBack,
     \sa wolfSSL_connect_ex
 */
 WOLFSSL_API int wolfSSL_accept_ex(WOLFSSL*, HandShakeCallBack, TimeoutCallBack,
-                                Timeval);
+                                WOLFSSL_TIMEVAL);
 
 /*!
     \ingroup IO

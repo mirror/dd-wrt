@@ -1,6 +1,6 @@
 /* wolfSSL-DTLS-Server.cs
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -174,8 +174,8 @@ public class wolfSSL_DTLS_Server
         }
 
         Console.WriteLine("At the end freeing stuff");
-        udp.Close();
         wolfssl.shutdown(ssl);
+        udp.Close();
         clean(ssl, ctx);
     }
 }

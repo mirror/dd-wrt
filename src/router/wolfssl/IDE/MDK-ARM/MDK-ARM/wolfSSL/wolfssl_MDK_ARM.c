@@ -1,6 +1,6 @@
 /* wolfssl_KEIL_RL.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -69,7 +69,7 @@ char *inet_ntoa(struct in_addr in)
 unsigned long inet_addr(const char *cp)
 {
     unsigned int a[4] ; unsigned long ret ;
-    sscanf(cp, "%d.%d.%d.%d", &a[0], &a[1], &a[2], &a[3]) ;
+    sscanf(cp, "%u.%u.%u.%u", &a[0], &a[1], &a[2], &a[3]) ;
     ret = ((a[3]<<24) + (a[2]<<16) + (a[1]<<8) + a[0]) ;
     return(ret) ;
 }
