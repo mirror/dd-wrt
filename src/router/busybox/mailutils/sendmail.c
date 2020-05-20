@@ -224,6 +224,7 @@ int sendmail_main(int argc, char **argv) MAIN_EXTERNALLY_VISIBLE;
 int sendmail_main(int argc UNUSED_PARAM, char **argv)
 {
 	char *opt_connect;
+	char *domain;
 	char *opt_from = NULL;
 	char *s;
 	llist_t *list = NULL;
@@ -252,6 +253,7 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		OPT_v = 1 << 8,         // verbosity
 	//--- for -amMETHOD
 		OPT_am_plain = 1 << 9,  // AUTH PLAIN
+		OPT_d = 1 << 10,
 	};
 
 	// init global variables
@@ -271,12 +273,12 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 	// -a is for ssmtp (http://downloads.openwrt.org/people/nico/man/man8/ssmtp.8.html) compatibility,
 	// it is still under development.
 	opts = getopt32(argv, "^"
-			"tf:o:iw:+H:S:a:*:v"
+			"tf:o:iw:+H:S:a:*:v:d:"
 			"\0"
 			// -v is a counter, -H and -S are mutually exclusive, -a is a list
 			"vv:H--S:S--H",
 			&opt_from, NULL,
-			&timeout, &opt_connect, &opt_connect, &list, &verbose
+			&timeout, &opt_connect, &opt_connect, &list, &verbose,&domain
 	);
 	//argc -= optind;
 	argv += optind;
@@ -351,9 +353,13 @@ int sendmail_main(int argc UNUSED_PARAM, char **argv)
 		smtp_check(NULL, 220);
 	}
 
+	usleep(500*1000);
+	if (strlen(domain)==0)
+	    domain="DD-WRT";
+
 	// we should start with modern EHLO
-	if (250 != smtp_checkp("EHLO %s", host, -1))
-		smtp_checkp("HELO %s", host, 250);
+	if (250 != smtp_checkp("EHLO %s", domain, -1))
+		smtp_checkp("HELO %s", domain, 250);
 
 	// perform authentication
 	if (opts & OPT_a) {
