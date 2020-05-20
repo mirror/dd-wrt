@@ -1,6 +1,6 @@
 /* wolfio.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -392,12 +392,11 @@ int EmbedSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     WOLFSSL_DTLS_CTX* dtlsCtx = (WOLFSSL_DTLS_CTX*)ctx;
     int sd = dtlsCtx->wfd;
     int sent;
-    int len = sz;
     int err;
 
     WOLFSSL_ENTER("EmbedSendTo()");
 
-    sent = (int)SENDTO_FUNCTION(sd, &buf[sz - len], len, ssl->wflags,
+    sent = (int)SENDTO_FUNCTION(sd, buf, sz, ssl->wflags,
                                 (const SOCKADDR*)dtlsCtx->peer.sa,
                                 dtlsCtx->peer.sz);
 
@@ -770,7 +769,8 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     int ret = 0;
     SOCKADDR_S addr;
     int sockaddr_len = sizeof(SOCKADDR_IN);
-#ifdef HAVE_GETADDRINFO
+    /* use gethostbyname for c99 */
+#if defined(HAVE_GETADDRINFO) && !defined(WOLF_C99)
     ADDRINFO hints;
     ADDRINFO* answer = NULL;
     char strPort[6];
@@ -785,7 +785,8 @@ int wolfIO_TcpConnect(SOCKET_T* sockfd, const char* ip, word16 port, int to_sec)
     printf("TCP Connect: %s:%d\n", ip, port);
 #endif
 
-#ifdef HAVE_GETADDRINFO
+    /* use gethostbyname for c99 */
+#if defined(HAVE_GETADDRINFO) && !defined(WOLF_C99)
     XMEMSET(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -1135,7 +1136,7 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                         int i;
 
                         start += 13;
-                        while (*start == ' ' && *start != '\0') start++;
+                        while (*start == ' ') start++;
 
                         /* try and match against appStrList */
                         i = 0;
@@ -1154,13 +1155,13 @@ int wolfIO_HttpProcessResponse(int sfd, const char** appStrList,
                     }
                     else if (XSTRNCASECMP(start, "Content-Length:", 15) == 0) {
                         start += 15;
-                        while (*start == ' ' && *start != '\0') start++;
+                        while (*start == ' ') start++;
                         chunkSz = XATOI(start);
                         state = (state == phr_http_start) ? phr_have_length : phr_wait_end;
                     }
                     else if (XSTRNCASECMP(start, "Transfer-Encoding:", 18) == 0) {
                         start += 18;
-                        while (*start == ' ' && *start != '\0') start++;
+                        while (*start == ' ') start++;
                         if (XSTRNCASECMP(start, "chunked", 7) == 0) {
                             isChunked = 1;
                             state = (state == phr_http_start) ? phr_have_length : phr_wait_end;
@@ -1519,65 +1520,67 @@ int EmbedCrlLookup(WOLFSSL_CRL* crl, const char* url, int urlSz)
 
 
 
-WOLFSSL_API void wolfSSL_CTX_SetIORecv(WOLFSSL_CTX *ctx, CallbackIORecv CBIORecv)
+void wolfSSL_CTX_SetIORecv(WOLFSSL_CTX *ctx, CallbackIORecv CBIORecv)
 {
-    if (ctx != NULL) {
+    if (ctx) {
         ctx->CBIORecv = CBIORecv;
-        #ifdef OPENSSL_EXTRA
+    #ifdef OPENSSL_EXTRA
         ctx->cbioFlag |= WOLFSSL_CBIO_RECV;
-        #endif
+    #endif
     }
 }
 
 
-WOLFSSL_API void wolfSSL_CTX_SetIOSend(WOLFSSL_CTX *ctx, CallbackIOSend CBIOSend)
+void wolfSSL_CTX_SetIOSend(WOLFSSL_CTX *ctx, CallbackIOSend CBIOSend)
 {
-    if (ctx != NULL) {
+    if (ctx) {
         ctx->CBIOSend = CBIOSend;
-        #ifdef OPENSSL_EXTRA
+    #ifdef OPENSSL_EXTRA
         ctx->cbioFlag |= WOLFSSL_CBIO_SEND;
-        #endif
+    #endif
     }
 }
 
 
 /* sets the IO callback to use for receives at WOLFSSL level */
-WOLFSSL_API void wolfSSL_SSLSetIORecv(WOLFSSL *ssl, CallbackIORecv CBIORecv)
+void wolfSSL_SSLSetIORecv(WOLFSSL *ssl, CallbackIORecv CBIORecv)
 {
-    if (ssl != NULL) {
+    if (ssl) {
         ssl->CBIORecv = CBIORecv;
-        #ifdef OPENSSL_EXTRA
+    #ifdef OPENSSL_EXTRA
         ssl->cbioFlag |= WOLFSSL_CBIO_RECV;
-        #endif
+    #endif
     }
 }
 
 
 /* sets the IO callback to use for sends at WOLFSSL level */
-WOLFSSL_API void wolfSSL_SSLSetIOSend(WOLFSSL *ssl, CallbackIOSend CBIOSend)
+void wolfSSL_SSLSetIOSend(WOLFSSL *ssl, CallbackIOSend CBIOSend)
 {
-    if (ssl != NULL) {
+    if (ssl) {
         ssl->CBIOSend = CBIOSend;
-        #ifdef OPENSSL_EXTRA
+    #ifdef OPENSSL_EXTRA
         ssl->cbioFlag |= WOLFSSL_CBIO_SEND;
-        #endif
+    #endif
     }
 }
 
 
-WOLFSSL_API void wolfSSL_SetIOReadCtx(WOLFSSL* ssl, void *rctx)
+void wolfSSL_SetIOReadCtx(WOLFSSL* ssl, void *rctx)
 {
-    ssl->IOCB_ReadCtx = rctx;
+    if (ssl)
+        ssl->IOCB_ReadCtx = rctx;
 }
 
 
-WOLFSSL_API void wolfSSL_SetIOWriteCtx(WOLFSSL* ssl, void *wctx)
+void wolfSSL_SetIOWriteCtx(WOLFSSL* ssl, void *wctx)
 {
-    ssl->IOCB_WriteCtx = wctx;
+    if (ssl)
+        ssl->IOCB_WriteCtx = wctx;
 }
 
 
-WOLFSSL_API void* wolfSSL_GetIOReadCtx(WOLFSSL* ssl)
+void* wolfSSL_GetIOReadCtx(WOLFSSL* ssl)
 {
     if (ssl)
         return ssl->IOCB_ReadCtx;
@@ -1586,7 +1589,7 @@ WOLFSSL_API void* wolfSSL_GetIOReadCtx(WOLFSSL* ssl)
 }
 
 
-WOLFSSL_API void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl)
+void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl)
 {
     if (ssl)
         return ssl->IOCB_WriteCtx;
@@ -1595,33 +1598,37 @@ WOLFSSL_API void* wolfSSL_GetIOWriteCtx(WOLFSSL* ssl)
 }
 
 
-WOLFSSL_API void wolfSSL_SetIOReadFlags(WOLFSSL* ssl, int flags)
+void wolfSSL_SetIOReadFlags(WOLFSSL* ssl, int flags)
 {
-    ssl->rflags = flags;
+    if (ssl)
+        ssl->rflags = flags;
 }
 
 
-WOLFSSL_API void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags)
+void wolfSSL_SetIOWriteFlags(WOLFSSL* ssl, int flags)
 {
-    ssl->wflags = flags;
+    if (ssl)
+        ssl->wflags = flags;
 }
 
 
 #ifdef WOLFSSL_DTLS
 
-WOLFSSL_API void wolfSSL_CTX_SetGenCookie(WOLFSSL_CTX* ctx, CallbackGenCookie cb)
+void wolfSSL_CTX_SetGenCookie(WOLFSSL_CTX* ctx, CallbackGenCookie cb)
 {
-    ctx->CBIOCookie = cb;
+    if (ctx)
+        ctx->CBIOCookie = cb;
 }
 
 
-WOLFSSL_API void wolfSSL_SetCookieCtx(WOLFSSL* ssl, void *ctx)
+void wolfSSL_SetCookieCtx(WOLFSSL* ssl, void *ctx)
 {
-    ssl->IOCB_CookieCtx = ctx;
+    if (ssl)
+        ssl->IOCB_CookieCtx = ctx;
 }
 
 
-WOLFSSL_API void* wolfSSL_GetCookieCtx(WOLFSSL* ssl)
+void* wolfSSL_GetCookieCtx(WOLFSSL* ssl)
 {
     if (ssl)
         return ssl->IOCB_CookieCtx;
@@ -1631,15 +1638,17 @@ WOLFSSL_API void* wolfSSL_GetCookieCtx(WOLFSSL* ssl)
 
 #ifdef WOLFSSL_SESSION_EXPORT
 
-WOLFSSL_API void wolfSSL_CTX_SetIOGetPeer(WOLFSSL_CTX* ctx, CallbackGetPeer cb)
+void wolfSSL_CTX_SetIOGetPeer(WOLFSSL_CTX* ctx, CallbackGetPeer cb)
 {
-    ctx->CBGetPeer = cb;
+    if (ctx)
+        ctx->CBGetPeer = cb;
 }
 
 
-WOLFSSL_API void wolfSSL_CTX_SetIOSetPeer(WOLFSSL_CTX* ctx, CallbackSetPeer cb)
+void wolfSSL_CTX_SetIOSetPeer(WOLFSSL_CTX* ctx, CallbackSetPeer cb)
 {
-    ctx->CBSetPeer = cb;
+    if (ctx)
+        ctx->CBSetPeer = cb;
 }
 
 #endif /* WOLFSSL_SESSION_EXPORT */
@@ -1918,12 +1927,11 @@ int MicriumSendTo(WOLFSSL* ssl, char *buf, int sz, void *ctx)
     WOLFSSL_DTLS_CTX* dtlsCtx = (WOLFSSL_DTLS_CTX*)ctx;
     NET_SOCK_ID sd = dtlsCtx->wfd;
     NET_SOCK_RTN_CODE ret;
-    int len = sz;
     NET_ERR err;
 
     WOLFSSL_ENTER("MicriumSendTo()");
 
-    ret = NetSock_TxDataTo(sd, &buf[sz - len], len, ssl->wflags,
+    ret = NetSock_TxDataTo(sd, buf, sz, ssl->wflags,
                            (NET_SOCK_ADDR*)dtlsCtx->peer.sa,
                            (NET_SOCK_ADDR_LEN)dtlsCtx->peer.sz,
                            &err);
@@ -2012,7 +2020,7 @@ void mynewt_ctx_clear(void *ctx) {
 /* return Mynewt_Ctx instance */
 void* mynewt_ctx_new() {
     int rc = 0;
-    Mynewt_Ctx *mynewt_ctx = NULL;
+    Mynewt_Ctx *mynewt_ctx;
     int mem_buf_count = MYNEWT_VAL(WOLFSSL_MNSOCK_MEM_BUF_COUNT);
     int mem_buf_size = MYNEWT_VAL(WOLFSSL_MNSOCK_MEM_BUF_SIZE);
     int mempool_bytes = OS_MEMPOOL_BYTES(mem_buf_count, mem_buf_size);
@@ -2149,7 +2157,7 @@ int Mynewt_Send(WOLFSSL* ssl, char *buf, int sz, void *ctx)
 {
     Mynewt_Ctx *mynewt_ctx = (Mynewt_Ctx*)ctx;
     int rc = 0;
-    struct os_mbuf *m = NULL;
+    struct os_mbuf *m;
     int write_sz = 0;
     m = os_msys_get_pkthdr(sz, 0);
     if (!m) {

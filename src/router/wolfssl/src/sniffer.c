@@ -1,6 +1,6 @@
 /* sniffer.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -367,7 +367,7 @@ typedef struct Flags {
 } Flags;
 
 
-/* Out of Order FIN caputre */
+/* Out of Order FIN capture */
 typedef struct FinCaputre {
     word32 cliFinSeq;               /* client relative sequence FIN  0 is no */
     word32 srvFinSeq;               /* server relative sequence FIN, 0 is no */
@@ -875,7 +875,7 @@ typedef struct TcpHdr {
     word16  srcPort;            /* source port */
     word16  dstPort;            /* destination port */
     word32  sequence;           /* sequence number */
-    word32  ack;                /* acknoledgment number */
+    word32  ack;                /* acknowledgment number */
     byte    offset;             /* data offset, reserved */
     byte    flags;              /* option flags */
     word16  window;             /* window */
@@ -893,7 +893,7 @@ typedef struct TcpHdr {
 
 
 
-/* Use platform specific GetError to write to tracfile if tracing */
+/* Use platform specific GetError to write to trace file if tracing */
 static void Trace(int idx)
 {
     if (TraceOn) {
@@ -1305,7 +1305,7 @@ static word32 SessionHash(IpInfo* ipInfo, TcpInfo* tcpInfo)
 }
 
 
-/* Get Exisiting SnifferSession from IP and Port */
+/* Get Existing SnifferSession from IP and Port */
 static SnifferSession* GetSnifferSession(IpInfo* ipInfo, TcpInfo* tcpInfo)
 {
     SnifferSession* session;
@@ -1774,7 +1774,7 @@ static int GetRecordHeader(const byte* input, RecordLayerHeader* rh, int* size)
 }
 
 
-/* Copies the session's infomation to the provided sslInfo. Skip copy if
+/* Copies the session's information to the provided sslInfo. Skip copy if
  * SSLInfo is not provided. */
 static void CopySessionInfo(SnifferSession* session, SSLInfo* sslInfo)
 {
@@ -1875,14 +1875,14 @@ static int ProcessClientKeyExchange(const byte* input, int* sslBytes,
             }
         }
 
-        if (ret == 0) {
         #ifdef WC_RSA_BLINDING
+        if (ret == 0) {
             ret = wc_RsaSetRNG(&key, session->sslServer->rng);
             if (ret != 0) {
                 SetError(RSA_DECRYPT_STR, error, session, FATAL_ERROR_STATE);
             }
-        #endif
         }
+        #endif
 
         if (ret == 0) {
             session->keySz = length * WOLFSSL_BIT_SIZE;

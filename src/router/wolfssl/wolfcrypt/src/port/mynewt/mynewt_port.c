@@ -1,6 +1,6 @@
 /* mynewt_port.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -128,7 +128,6 @@ size_t mynewt_fread(void *restrict ptr, size_t size, size_t nitems, FILE *restri
 size_t mynewt_fwrite(const void *restrict ptr, size_t size, size_t nitems, FILE *restrict stream)
 {
     size_t to_write = size * nitems;
-    size_t write_size;
     int rc = fs_write(stream, ptr, to_write);
     if(rc != 0) {
         return 0;

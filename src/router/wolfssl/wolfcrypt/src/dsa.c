@@ -1,6 +1,6 @@
 /* dsa.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -41,14 +41,6 @@
     #define WOLFSSL_MISC_INCLUDED
     #include <wolfcrypt/src/misc.c>
 #endif
-
-
-enum {
-    DSA_HALF_SIZE = 20,   /* r and s size  */
-    DSA_SIG_SIZE  = 40    /* signature size */
-};
-
-
 
 int wc_InitDsaKey(DsaKey* key)
 {
@@ -261,7 +253,7 @@ int wc_MakeDsaParameters(WC_RNG *rng, int modulus_size, DsaKey *dsa)
         return MEMORY_E;
     }
 
-    /* make a random string that will be multplied against q */
+    /* make a random string that will be multiplied against q */
     err = wc_RNG_GenerateBlock(rng, buf, msize - qsize);
     if (err != MP_OKAY) {
         XFREE(buf, dsa->heap, DYNAMIC_TYPE_TMP_BUFFER);

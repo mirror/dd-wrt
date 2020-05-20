@@ -1,6 +1,6 @@
 /* keys.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -48,7 +48,7 @@ int SetCipherSpecs(WOLFSSL* ssl)
     if (ssl->options.side == WOLFSSL_CLIENT_END) {
         /* server side verified before SetCipherSpecs call */
         if (VerifyClientSuite(ssl) != 1) {
-            WOLFSSL_MSG("SetCipherSpecs() client has an unusuable suite");
+            WOLFSSL_MSG("SetCipherSpecs() client has an unusable suite");
             return UNSUPPORTED_SUITE;
         }
     }
@@ -241,7 +241,7 @@ int SetCipherSpecs(WOLFSSL* ssl)
 
     switch (ssl->options.cipherSuite) {
 
-#if defined(HAVE_ECC) || defined(HAVE_CURVE25519)
+#if defined(HAVE_ECC) || defined(HAVE_CURVE25519) || defined(HAVE_CURVE448)
 
 #ifdef BUILD_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
     case TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256 :
@@ -417,9 +417,10 @@ int SetCipherSpecs(WOLFSSL* ssl)
         break;
 #endif
 
-#endif /* HAVE_ECC || HAVE_CURVE25519 */
+#endif /* HAVE_ECC || HAVE_CURVE25519 || HAVE_CURVE448 */
 
-#if defined(HAVE_ECC) || (defined(HAVE_CURVE25519) && defined(HAVE_ED25519))
+#if defined(HAVE_ECC) || (defined(HAVE_CURVE25519) && defined(HAVE_ED25519)) \
+                      || (defined(HAVE_CURVE448) && defined(HAVE_ED448))
 
 #ifdef BUILD_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256
     case TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 :
@@ -630,7 +631,7 @@ int SetCipherSpecs(WOLFSSL* ssl)
     break;
 #endif
 
-#endif /* HAVE_ECC || (HAVE_CURVE25519 && HAVE_ED25519) */
+#endif /* HAVE_ECC || (CURVE25519 && ED25519) || (CURVE448 && ED448) */
 
 #if defined(HAVE_ECC)
 
@@ -2226,14 +2227,16 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
 #ifdef BUILD_ARC4
     if (specs->bulk_cipher_algorithm == wolfssl_rc4) {
         word32 sz = specs->key_size;
-        if (enc && enc->arc4 == NULL)
+        if (enc && enc->arc4 == NULL) {
             enc->arc4 = (Arc4*)XMALLOC(sizeof(Arc4), heap, DYNAMIC_TYPE_CIPHER);
-        if (enc && enc->arc4 == NULL)
-            return MEMORY_E;
-        if (dec && dec->arc4 == NULL)
+            if (enc->arc4 == NULL)
+                 return MEMORY_E;
+        }
+        if (dec && dec->arc4 == NULL) {
             dec->arc4 = (Arc4*)XMALLOC(sizeof(Arc4), heap, DYNAMIC_TYPE_CIPHER);
-        if (dec && dec->arc4 == NULL)
-            return MEMORY_E;
+            if (dec->arc4 == NULL)
+                return MEMORY_E;
+        }
 
         if (enc) {
             if (wc_Arc4Init(enc->arc4, heap, devId) != 0) {
@@ -2902,16 +2905,16 @@ static int SetKeys(Ciphers* enc, Ciphers* dec, Keys* keys, CipherSpecs* specs,
             if (enc && enc->hmac == NULL) {
                 enc->hmac = (Hmac*)XMALLOC(sizeof(Hmac), heap,
                                                            DYNAMIC_TYPE_CIPHER);
+                if (enc->hmac == NULL)
+                    return MEMORY_E;
             }
-            if (enc && enc->hmac == NULL)
-                return MEMORY_E;
 
             if (dec && dec->hmac == NULL) {
                 dec->hmac = (Hmac*)XMALLOC(sizeof(Hmac), heap,
                                                            DYNAMIC_TYPE_CIPHER);
+                if (dec->hmac == NULL)
+                    return MEMORY_E;
             }
-            if (dec && dec->hmac == NULL)
-                return MEMORY_E;
 
             if (enc) {
                 if (wc_HmacInit(enc->hmac, heap, devId) != 0) {

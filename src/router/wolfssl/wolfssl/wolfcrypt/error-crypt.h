@@ -1,6 +1,6 @@
 /* error-crypt.h
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -228,7 +228,9 @@ enum {
     PKCS7_SIGNEEDS_CHECK= -272,  /* signature needs verified by caller */
     PSS_SALTLEN_RECOVER_E=-273,  /* PSS slat length not recoverable */
 
-    WC_LAST_E           = -273,  /* Update this to indicate last error */
+    ASN_SELF_SIGNED_E   = -274, /* ASN self-signed certificate error */
+
+    WC_LAST_E           = -274,  /* Update this to indicate last error */
     MIN_CODE_E          = -300   /* errors -101 - -299 */
 
     /* add new companion error id strings for any new error codes

@@ -1,6 +1,6 @@
 /* hash.h
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -210,6 +210,9 @@ WOLFSSL_API int wc_Sha3_224Hash(const byte*, word32, byte*);
 WOLFSSL_API int wc_Sha3_256Hash(const byte*, word32, byte*);
 WOLFSSL_API int wc_Sha3_384Hash(const byte*, word32, byte*);
 WOLFSSL_API int wc_Sha3_512Hash(const byte*, word32, byte*);
+#ifdef WOLFSSL_SHAKE256
+WOLFSSL_API int wc_Shake256Hash(const byte*, word32, byte*, word32);
+#endif
 #endif /* WOLFSSL_SHA3 */
 
 enum max_prf {

@@ -1,6 +1,6 @@
 /* wifi_connect.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -92,7 +92,7 @@ static void tls_smp_client_init(void)
         ESP_LOGI(TAG, "create thread %s failed", TLS_SMP_CLIENT_TASK_NAME);
     }
 }
-/* event hander for wifi events */
+/* event handler for wifi events */
 static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
 {
     switch (event->event_id)
