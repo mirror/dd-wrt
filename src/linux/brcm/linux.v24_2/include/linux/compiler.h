@@ -33,13 +33,31 @@
 #define __attribute_const__	/* unimplemented */
 #endif
 
-#if __GNUC__ == 3
-#if __GNUC_MINOR__ >= 1
-# define inline         __inline__ __attribute__((always_inline))
+#ifdef __GNUC_STDC_INLINE__
+# define __gnu_inline	__attribute__((gnu_inline))
+#else
+# define __gnu_inline
+#endif
+
+#if defined(CC_USING_HOTPATCH) && !defined(__CHECKER__)
+#define notrace __attribute__((hotpatch(0,0)))
+#else
+#define notrace __attribute__((no_instrument_function))
+#endif
+
+
+
+#if !defined(CONFIG_OPTIMIZE_INLINING) || (__GNUC__ < 4)
+#define inline \
+	inline __attribute__((always_inline, unused)) notrace __gnu_inline
+#else
+/* A lot of inline functions can cause havoc with function tracing */
+#define inline inline		__attribute__((unused)) notrace __gnu_inline
+#endif
+
 # define __inline__     __inline__ __attribute__((always_inline))
 # define __inline       __inline__ __attribute__((always_inline))
-#endif
-#endif
+
 
 #ifdef __KERNEL__
 /*#if __GNUC__ > 5 || __GNUC__ == 5 && __GNUC_MINOR__ >= 2

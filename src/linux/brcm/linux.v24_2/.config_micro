@@ -11,6 +11,11 @@ CONFIG_MIPS32=y
 CONFIG_EXPERIMENTAL=y
 
 #
+# optimize inlining
+#
+CONFIG_OPTIMIZE_INLINING=y
+
+#
 # Loadable module support
 #
 CONFIG_MODULES=y
