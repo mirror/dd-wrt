@@ -140,9 +140,7 @@ void ksmbd_fd_set_delete_on_close(struct ksmbd_file *fp,
 		return;
 	}
 
-	fp->delete_on_close = 1;
-	if (file_info == F_CREATED)
-		fp->f_ci->m_flags |= S_DEL_ON_CLS;
+	fp->f_ci->m_flags |= S_DEL_ON_CLS;
 }
 
 static void ksmbd_inode_hash(struct ksmbd_inode *ci)
@@ -266,8 +264,7 @@ static void __ksmbd_inode_close(struct ksmbd_file *fp)
 
 	if (atomic_dec_and_test(&ci->m_count)) {
 		write_lock(&ci->m_lock);
-		if ((ci->m_flags & (S_DEL_ON_CLS | S_DEL_PENDING)) ||
-				fp->delete_on_close) {
+		if (ci->m_flags & (S_DEL_ON_CLS | S_DEL_PENDING)) {
 			dentry = filp->f_path.dentry;
 			dir = dentry->d_parent;
 			ci->m_flags &= ~(S_DEL_ON_CLS | S_DEL_PENDING);
