@@ -2034,12 +2034,14 @@ void ej_do_pagehead(webs_t wp, int argc, char_t ** argv)	// Eko
 #endif
 	websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n", style,
 		  style);
+#ifdef HAVE_ROUTERSTYLE
 	if (!strcmp(style, "blue") || !strcmp(style, "cyan") || !strcmp(style, "elegant") || !strcmp(style, "green") || !strcmp(style, "orange") || !strcmp(style, "red") || !strcmp(style, "yellow")) {
 		websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh.css\" />\n");
 		if (style_dark != NULL && !strcmp(style_dark, "1")) {
 			websWrite(wp, "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/elegant/fresh-dark.css\" />\n");
 		}
 	}
+#endif
 #ifdef HAVE_PWC
 	websWrite(wp,
 		  "\t\t<script type=\"text/javascript\" src=\"js/prototype.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/effects.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window.js\"></script>\n\t\t<script type=\"text/javascript\" src=\"js/window_effects.js\"></script>\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/default.css\" />\n\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/pwc/ddwrt.css\" />\n");
