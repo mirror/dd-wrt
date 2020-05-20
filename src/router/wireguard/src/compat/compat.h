@@ -103,7 +103,7 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0)) || (((!defined(ISDEBIAN) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119)) || LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 118)) && !defined(ISRHEL82))
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 0))
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
