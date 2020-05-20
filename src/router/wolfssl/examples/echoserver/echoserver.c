@@ -1,6 +1,6 @@
 /* echoserver.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -81,7 +81,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 
     int    ret = 0;
     int    doDTLS = 0;
-    int    doPSK = 0;
+    int    doPSK;
     int    outCreated = 0;
     int    shutDown = 0;
     int    useAnyAddr = 0;
@@ -108,12 +108,11 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
     doDTLS  = 1;
 #endif
 
-#ifdef CYASSL_LEANPSK
+#if (defined(NO_RSA) && !defined(HAVE_ECC) && !defined(HAVE_ED25519) && \
+                                !defined(HAVE_ED448)) || defined(CYASSL_LEANPSK)
     doPSK = 1;
-#endif
-
-#if defined(NO_RSA) && !defined(HAVE_ECC) && !defined(HAVE_ED25519)
-    doPSK = 1;
+#else
+    doPSK = 0;
 #endif
 
 #if defined(NO_MAIN_DRIVER) && !defined(CYASSL_SNIFFER) && \
@@ -192,6 +191,17 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
 
         if (CyaSSL_CTX_use_PrivateKey_file(ctx, edKeyFile, WOLFSSL_FILETYPE_PEM)
                 != WOLFSSL_SUCCESS)
+            err_sys("can't load server key file, "
+                    "Please run from wolfSSL home dir");
+    #elif defined(HAVE_ED448) && !defined(CYASSL_SNIFFER)
+        /* ed448 */
+        if (CyaSSL_CTX_use_certificate_chain_file(ctx, ed448CertFile)
+                != WOLFSSL_SUCCESS)
+            err_sys("can't load server cert file, "
+                    "Please run from wolfSSL home dir");
+
+        if (CyaSSL_CTX_use_PrivateKey_file(ctx, ed448KeyFile,
+                WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS)
             err_sys("can't load server key file, "
                     "Please run from wolfSSL home dir");
     #elif defined(NO_CERTS)
@@ -383,7 +393,7 @@ THREAD_RETURN CYASSL_THREAD echoserver_test(void* args)
                 const char resp[] =
                     "HTTP/1.0 200 ok\r\nContent-type: text/html\r\n\r\n"
                     "<html><body BGCOLOR=\"#ffffff\"><pre>\r\n"
-                    "greetings from wolfSSL\r\n</body></html>\r\n\r\n";
+                    "greetings from wolfSSL\r\n</pre></body></html>\r\n\r\n";
 
                 echoSz = (int)strlen(resp) + 1;
                 if (echoSz > (int)sizeof(command)) {

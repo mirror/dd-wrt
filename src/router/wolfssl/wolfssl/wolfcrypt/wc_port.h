@@ -1,6 +1,6 @@
 /* wc_port.h
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -527,7 +527,7 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #endif
     #define NEED_TMP_TIME
 
-#elif defined(WOLFSSL_XILINX) && defined(FREERTOS)
+#elif defined(WOLFSSL_XILINX)
     #define USER_TIME
     #include <time.h>
 
@@ -753,6 +753,24 @@ WOLFSSL_API int wolfCrypt_Cleanup(void);
     #define WOLFSSL_GLOBAL CVMX_SHARED
 #else
     #define WOLFSSL_GLOBAL
+#endif
+
+#ifdef WOLFSSL_DSP
+    #include "wolfssl_dsp.h"
+
+    /* callbacks for setting handle */
+    typedef int (*wolfSSL_DSP_Handle_cb)(remote_handle64 *handle, int finished,
+                                         void *ctx);
+    WOLFSSL_API int wolfSSL_GetHandleCbSet();
+    WOLFSSL_API int wolfSSL_SetHandleCb(wolfSSL_DSP_Handle_cb in);
+    WOLFSSL_LOCAL int wolfSSL_InitHandle();
+    WOLFSSL_LOCAL void wolfSSL_CleanupHandle();
+#endif
+
+#ifdef WOLFSSL_SCE
+    #ifndef WOLFSSL_SCE_GSCE_HANDLE
+        #define WOLFSSL_SCE_GSCE_HANDLE g_sce
+    #endif
 #endif
 
 #ifdef __cplusplus

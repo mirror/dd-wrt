@@ -22,9 +22,12 @@
     #define NO_RABBIT
     #define NO_DSA
     #define NO_MD4
+
+    #define GCM_NONCE_MID_SZ 12
 #else
     /* Enables blinding mode, to prevent timing attacks */
     #define WC_RSA_BLINDING
+    #define NO_MULTIBYTE_PRINT
 
     #if defined(WOLFSSL_LIB)
         /* The lib */

@@ -1,6 +1,6 @@
 /* sha256.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -227,7 +227,7 @@ static int InitSha256(wc_Sha256* sha256)
 
     #if defined(HAVE_INTEL_AVX1)|| defined(HAVE_INTEL_AVX2)
         #if defined(HAVE_INTEL_RORX
-             #define RND with rorx instuction
+             #define RND with rorx instruction
         #else
             #define RND
         #endif
@@ -246,7 +246,7 @@ static int InitSha256(wc_Sha256* sha256)
       #define YMM Instructions/inline asm
 
       int Transform_Sha256() {
-          More granural Stitched Message Sched/Round
+          More granular Stitched Message Sched/Round
       }
 
     #endif
@@ -410,6 +410,7 @@ static int InitSha256(wc_Sha256* sha256)
         if (ret != 0) {
             return ret;
         }
+
     #ifdef FREESCALE_MMCAU_CLASSIC_SHA
         cau_sha256_initialize_output(sha256->digest);
     #else
@@ -420,6 +421,9 @@ static int InitSha256(wc_Sha256* sha256)
         sha256->buffLen = 0;
         sha256->loLen   = 0;
         sha256->hiLen   = 0;
+    #ifdef WOLFSSL_SMALL_STACK_CACHE
+        sha256->W = NULL;
+    #endif
 
         return ret;
     }
@@ -540,6 +544,63 @@ static int InitSha256(wc_Sha256* sha256)
 #elif defined(WOLFSSL_DEVCRYPTO_HASH)
     /* implemented in wolfcrypt/src/port/devcrypto/devcrypt_hash.c */
 
+#elif defined(WOLFSSL_SCE) && !defined(WOLFSSL_SCE_NO_HASH)
+    #include "hal_data.h"
+
+    #ifndef WOLFSSL_SCE_SHA256_HANDLE
+        #define WOLFSSL_SCE_SHA256_HANDLE g_sce_hash_0
+    #endif
+
+    #define WC_SHA256_DIGEST_WORD_SIZE 16
+    #define XTRANSFORM(S, D) wc_Sha256SCE_XTRANSFORM((S), (D))
+    static int wc_Sha256SCE_XTRANSFORM(wc_Sha256* sha256, const byte* data)
+    {
+        if (WOLFSSL_SCE_GSCE_HANDLE.p_cfg->endian_flag ==
+                CRYPTO_WORD_ENDIAN_LITTLE)
+        {
+            ByteReverseWords((word32*)data, (word32*)data,
+                    WC_SHA256_BLOCK_SIZE);
+            ByteReverseWords(sha256->digest, sha256->digest,
+                    WC_SHA256_DIGEST_SIZE);
+        }
+
+        if (WOLFSSL_SCE_SHA256_HANDLE.p_api->hashUpdate(
+                    WOLFSSL_SCE_SHA256_HANDLE.p_ctrl, (word32*)data,
+                    WC_SHA256_DIGEST_WORD_SIZE, sha256->digest) != SSP_SUCCESS){
+            WOLFSSL_MSG("Unexpected hardware return value");
+            return WC_HW_E;
+        }
+
+        if (WOLFSSL_SCE_GSCE_HANDLE.p_cfg->endian_flag ==
+                CRYPTO_WORD_ENDIAN_LITTLE)
+        {
+            ByteReverseWords((word32*)data, (word32*)data,
+                    WC_SHA256_BLOCK_SIZE);
+            ByteReverseWords(sha256->digest, sha256->digest,
+                    WC_SHA256_DIGEST_SIZE);
+        }
+
+        return 0;
+    }
+
+
+    int wc_InitSha256_ex(wc_Sha256* sha256, void* heap, int devId)
+    {
+        int ret = 0;
+        if (sha256 == NULL)
+            return BAD_FUNC_ARG;
+
+        sha256->heap = heap;
+
+        ret = InitSha256(sha256);
+        if (ret != 0)
+            return ret;
+
+        (void)devId;
+
+        return ret;
+    }
+
 #elif defined(WOLFSSL_ESP32WROOM32_CRYPT) && \
     !defined(NO_WOLFSSL_ESP32WROOM32_CRYPT_HASH)
 
@@ -574,7 +635,7 @@ static int InitSha256(wc_Sha256* sha256)
             esp_sha_hw_unlock();
         }
         /* always set mode as INIT
-        *  whether using HW or SW is detemined at first call of update()
+        *  whether using HW or SW is determined at first call of update()
         */
         sha256->ctx.mode = ESP32_SHA_INIT;
 

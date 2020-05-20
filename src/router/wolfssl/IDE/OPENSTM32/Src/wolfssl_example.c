@@ -1,6 +1,6 @@
 /* wolfssl_example.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -1122,7 +1122,7 @@ int bench_tls(void* args)
 {
     int ret = 0;
     info_t *info = NULL;
-    char *cipher, *next_cipher, *ciphers = NULL;
+    char *cipher, *next_cipher, *ciphers;
 
     /* Runtime variables */
     int argRuntimeSec = BENCH_RUNTIME_SEC;

@@ -1,6 +1,6 @@
 /* server-tls-callback.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -64,7 +64,7 @@ static void ShowCiphers(void)
 #include "wolfssl/wolfcrypt/port/atmel/atmel.h"
 
 /* when you want to use a custom slot allocation */
-/* enable the difinition CUSTOM_SLOT_ALLOCATION. */
+/* enable the definition CUSTOM_SLOT_ALLOCATION. */
 
 #if defined(CUSTOM_SLOT_ALLOCATION)
 

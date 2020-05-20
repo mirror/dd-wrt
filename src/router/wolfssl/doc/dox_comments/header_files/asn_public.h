@@ -1306,7 +1306,7 @@ WOLFSSL_API int wc_DerToPemEx(const byte* der, word32 derSz, byte* output,
     byte* bufSz;
     static int LoadKeyFile(byte** keyBuf, word32* keyBufSz,
     const char* keyFile,
-                    int typeKey, const char* pasword);
+                    int typeKey, const char* password);
     …
     bufSz = wc_KeyPemToDer(loadBuf, (int)fileSz, saveBuf,
     (int)fileSz, password);
@@ -1481,7 +1481,7 @@ WOLFSSL_API int wc_EccKeyToDer(ecc_key*, byte* output, word32 inLen);
     word32 idx = 0;
     byte buff[] = { // initialize with key };
     ecc_key pubKey;
-    wc_ecc_init_key(&pubKey);
+    wc_ecc_init(&pubKey);
     if ( wc_EccPublicKeyDecode(buff, &idx, &pubKey, sizeof(buff)) != 0) {
             // error decoding key
     }

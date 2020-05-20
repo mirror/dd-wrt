@@ -1,6 +1,6 @@
 /* pic32mz-crypt.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -427,6 +427,9 @@ static void start_engine(pic32mz_desc *desc)
     bufferLen = desc->dbPtr;
     if (bufferLen % 4)
         bufferLen = (bufferLen + 4) - (bufferLen % 4);
+    /* initialize the MSGLEN on engine startup to avoid infinite loop when
+     * length is less than 257 (size of PIC32_BLOCK_SIZE) */
+    uc_desc->bd[desc->currBd].MSGLEN = desc->msgSize;
     uc_desc->bd[desc->currBd].BD_CTRL.BUFLEN = bufferLen;
     uc_desc->bd[desc->currBd].BD_CTRL.LAST_BD = 1;
     uc_desc->bd[desc->currBd].BD_CTRL.LIFM = 1;
@@ -619,7 +622,7 @@ static void wc_Pic32HashFree(hashUpdCache* cache, void* heap)
     }
 }
 
-/* API's for compatability with Harmony wrappers - not used */
+/* API's for compatibility with Harmony wrappers - not used */
 #ifndef NO_MD5
     int wc_InitMd5_ex(wc_Md5* md5, void* heap, int devId)
     {

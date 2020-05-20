@@ -1,6 +1,6 @@
 /* wolfmath.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -89,6 +89,45 @@ mp_digit get_digit(mp_int* a, int n)
     return (n >= a->used || n < 0) ? 0 : a->dp[n];
 }
 
+/* Conditionally copy a into b. Performed in constant time.
+ *
+ * a     MP integer to copy.
+ * copy  On 1, copy a into b. on 0 leave b unchanged.
+ * b     MP integer to copy into.
+ * returns BAD_FUNC_ARG when a or b is NULL, MEMORY_E when growing b fails and
+ *         MP_OKAY otherwise.
+ */
+int mp_cond_copy(mp_int* a, int copy, mp_int* b)
+{
+    int err = MP_OKAY;
+    int i;
+    mp_digit mask = (mp_digit)0 - copy;
+
+    if (a == NULL || b == NULL)
+        err = BAD_FUNC_ARG;
+
+    /* Ensure b has enough space to copy a into */
+    if (err == MP_OKAY)
+        err = mp_grow(b, a->used + 1);
+    if (err == MP_OKAY) {
+        /* When mask 0, b is unchanged2
+         * When mask all set, b ^ b ^ a = a
+         */
+        /* Conditionaly copy all digits and then number of used diigits.
+         * get_digit() returns 0 when index greater than available digit.
+         */
+        for (i = 0; i < a->used; i++) {
+            b->dp[i] ^= (get_digit(a, i) ^ get_digit(b, i)) & mask;
+        }
+        for (; i < b->used; i++) {
+            b->dp[i] ^= (get_digit(a, i) ^ get_digit(b, i)) & mask;
+        }
+        b->used ^= (a->used ^ b->used) & (int)mask;
+    }
+
+    return err;
+}
+
 #ifndef WC_NO_RNG
 int get_rand_digit(WC_RNG* rng, mp_digit* d)
 {
@@ -99,46 +138,56 @@ int get_rand_digit(WC_RNG* rng, mp_digit* d)
 int mp_rand(mp_int* a, int digits, WC_RNG* rng)
 {
     int ret = 0;
-    mp_digit d;
+    int cnt = digits * sizeof(mp_digit);
+#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+    int i;
+#endif
 
     if (rng == NULL) {
-        ret = MISSING_RNG_E; goto exit;
+        ret = MISSING_RNG_E;
+    }
+    else if (a == NULL) {
+        ret = BAD_FUNC_ARG;
     }
 
-    if (a == NULL) {
-        ret = BAD_FUNC_ARG; goto exit;
+#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+    /* allocate space for digits */
+    if (ret == MP_OKAY) {
+        ret = mp_set_bit(a, digits * DIGIT_BIT - 1);
     }
-
-    mp_zero(a);
-    if (digits <= 0) {
-        ret = MP_OKAY; goto exit;
+#else
+#if defined(WOLFSSL_SP_MATH)
+    if ((ret == MP_OKAY) && (digits > SP_INT_DIGITS))
+#else
+    if ((ret == MP_OKAY) && (digits > FP_SIZE))
+#endif
+    {
+        ret = BAD_FUNC_ARG;
     }
-
-    /* first place a random non-zero digit */
-    do {
-        ret = get_rand_digit(rng, &d);
-        if (ret != 0) {
-            goto exit;
+    if (ret == MP_OKAY) {
+        a->used = digits;
+    }
+#endif
+    /* fill the data with random bytes */
+    if (ret == MP_OKAY) {
+        ret = wc_RNG_GenerateBlock(rng, (byte*)a->dp, cnt);
+    }
+    if (ret == MP_OKAY) {
+#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+        /* Mask down each digit to only bits used */
+        for (i = 0; i < a->used; i++) {
+            a->dp[i] &= MP_MASK;
         }
-    } while (d == 0);
-
-    if ((ret = mp_add_d(a, d, a)) != MP_OKAY) {
-        goto exit;
-    }
-
-    while (--digits > 0) {
-        if ((ret = mp_lshd(a, 1)) != MP_OKAY) {
-            goto exit;
-        }
-        if ((ret = get_rand_digit(rng, &d)) != 0) {
-            goto exit;
-        }
-        if ((ret = mp_add_d(a, d, a)) != MP_OKAY) {
-            goto exit;
+#endif
+        /* ensure top digit is not zero */
+        while ((ret == MP_OKAY) && (a->dp[a->used - 1] == 0)) {
+            ret = get_rand_digit(rng, &a->dp[a->used - 1]);
+#if !defined(USE_FAST_MATH) && !defined(WOLFSSL_SP_MATH)
+            a->dp[a->used - 1] &= MP_MASK;
+#endif
         }
     }
 
-exit:
     return ret;
 }
 #endif /* WC_RSA_BLINDING */
@@ -202,9 +251,9 @@ int wc_bigint_alloc(WC_BIGINT* a, word32 sz)
         }
         if (a->buf == NULL) {
             a->buf = (byte*)XMALLOC(sz, a->heap, DYNAMIC_TYPE_WOLF_BIGINT);
-        }
-        if (a->buf == NULL) {
-            err = MP_MEM;
+            if (a->buf == NULL) {
+                err = MP_MEM;
+            }
         }
         else {
             XMEMSET(a->buf, 0, sz);
@@ -327,7 +376,6 @@ int wc_bigint_to_mp(WC_BIGINT* src, mp_int* dst)
 
     return err;
 }
-
 #endif /* HAVE_WOLF_BIGINT */
 
 #endif /* USE_FAST_MATH || !NO_BIG_INT */

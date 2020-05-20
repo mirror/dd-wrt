@@ -1,6 +1,6 @@
 /* ocsp.c
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -835,7 +835,7 @@ void wolfSSL_OCSP_REQUEST_free(OcspRequest* request)
 
 int wolfSSL_i2d_OCSP_REQUEST(OcspRequest* request, unsigned char** data)
 {
-    word32 size;
+    int size;
 
     size = EncodeOcspRequest(request, NULL, 0);
     if (size <= 0 || data == NULL)
@@ -989,11 +989,21 @@ int wolfSSL_OCSP_id_get0_info(WOLFSSL_ASN1_STRING **name,
             }
             ser->dataMax = cid->serialSz + 2;
             ser->isDynamic = 1;
+        } else {
+            /* Use array instead of dynamic memory */
+            ser->data    = ser->intData;
+            ser->dataMax = WOLFSSL_ASN1_INTEGER_MAX;
         }
 
-        ser->data[i++] = ASN_INTEGER;
-        i += SetLength(cid->serialSz, ser->data + i);
-        XMEMCPY(&ser->data[i], cid->serial, cid->serialSz);
+        #ifdef WOLFSSL_QT
+            /* Serial number starts at 0 index of ser->data */
+            XMEMCPY(&ser->data[i], cid->serial, cid->serialSz);
+            ser->length = cid->serialSz;
+        #else
+            ser->data[i++] = ASN_INTEGER;
+            i += SetLength(cid->serialSz, ser->data + i);
+            XMEMCPY(&ser->data[i], cid->serial, cid->serialSz);
+        #endif
 
         cid->serialInt = ser;
         *serial = cid->serialInt;

@@ -1,6 +1,6 @@
 /* key_data.h
  *
- * Copyright (C) 2006-2019 wolfSSL Inc.
+ * Copyright (C) 2006-2020 wolfSSL Inc.
  *
  * This file is part of wolfSSL.
  *
@@ -25,7 +25,7 @@
 #ifdef WOLFSSL_RENESAS_TSIP
 #include "r_tsip_rx_if.h"
 
-/** user key datas */
+/** user key data */
 typedef struct key_block_data
 {
     uint8_t  encrypted_session_key[R_TSIP_AES_CBC_IV_BYTE_SIZE * 2];
