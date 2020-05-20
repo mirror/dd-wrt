@@ -838,9 +838,9 @@ hlighttpd.right2="Enable lighttpd and configure the HTTP/HTTPS ports lighttpd wi
 // ** Hotspot.asp **//
 hotspot.titl="핫스팟";
 hotspot.h2="핫스팟 서비스";
-hotspot.legend="Chillispot";
+hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="LAN 브리지에서 Wifi를 분리";
-hotspot.hotspot="Chillispot";
+hotspot.hotspot="CoovaChilli";
 hotspot.pserver="메인 Radius 서버 IP/DNS";
 hotspot.bserver="백업 Radius 서버 IP/DNS";
 hotspot.dns="DNS 서버 IP";
@@ -857,8 +857,8 @@ hotspot.allowuad="UAM 도메인 (공백으로 구분)";
 hotspot.macauth="MAC 인증";
 hotspot.macpasswd="MAC 비밀번호";
 hotspot.sec8021Xauth="802.1X 인증 (EAP)";
-hotspot.option="Chillispot 추가 옵션";
-hotspot.fon_chilli="Chillispot 로컬 사용자 관리";
+hotspot.option="CoovaChilli 추가 옵션";
+hotspot.fon_chilli="CoovaChilli 로컬 사용자 관리";
 hotspot.fon_user="사용자 리스트";
 hotspot.http_legend="HTTP 리다이렉트";
 hotspot.http_srv="HTTP 리다이렉트";
@@ -922,7 +922,7 @@ hotspot.wifidog_auth="HTTP 서버 인증 지원";
 hstatus_hots.right1="conup/condown:<br /><i>When USB or JFFS is mounted to jffs, connection scripts can be used in /jffs/etc/chilli/</i><br />Local Users:<br /><i>When only local users are used set primary radius to 127.0.0.1</i>";
 
 // help page
-hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (Chillispot solution) with authentication, accounting (Radius). ChilliSpot is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite radius server.</dd>";
+hstatus_hots.page1="<dd>You can use the router as an Hotspot gateway (CoovaChilli solution) with authentication, accounting (Radius). CoovaChilli is an open source captive portal or wireless LAN access point controller. It is used for authenticating users of a wireless LAN. It supports web based login which is today's standard for public HotSpots and it supports Wireless Protected Access (WPA) which is the standard of the future. Authentication, authorization and accounting (AAA) is handled by your favorite radius server.</dd>";
 hstatus_hots.page2="<dd>You can have your hotspot portal managed by HotspotSystem.com. They provide free and pay-per-use hotspot solutions with billing. For more information please visit <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page3="<dd>The Operator Username which you have registered at <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>";
 hstatus_hots.page4="<dd>The number of the location you would like to set up.</dd>";
@@ -939,8 +939,8 @@ hstatus_hots.page14="<dd>Network access server identifier.</dd>";
 hstatus_hots.page15="<dd>Shared secret between uamserver and chilli. This secret should be set in order not to compromise security.</dd>";
 hstatus_hots.page16="<dd>Allow any DNS server. Normally unauthenticated clients are only allowed to communicate with the DNS servers specified by the dns1 and dns2 options. This option will allow the client to use all DNS servers. This is convenient for clients which are configured to use a fixed set of DNS servers.<br /><br /><div class=\"note\"><h4>Note</h4><div>For security reasons this option should be combined with a destination NAT firewall rule which forwards all DNS requests to a given DNS server.</div></div></dd>";
 hstatus_hots.page17="<dd>IP addresses or network segments the client can access without first authenticating (Comma separated list of domain names). Example: www.chillispot.info,10.11.12.0/24 </dd>";
-hstatus_hots.page18="<dd>If this option is given ChilliSpot will try to authenticate all users based on their mac address alone.</dd>";
-hstatus_hots.page19="<dd>You can specify here additional Options.<br /><br /><div class=\"note\"><h4>Note</h4><div>For more informations about the different options : <a href=\"http:\/\/www.chillispot.info/chilli.html\">www.chillispot.info</a>.</div></div></dd>";
+hstatus_hots.page18="<dd>If this option is given CoovaChilli will try to authenticate all users based on their mac address alone.</dd>";
+hstatus_hots.page19="<dd>You can specify here additional Options.<br /><br /><div class=\"note\"><h4>Note</h4><div>For more informations about the different options : <a href=\"https:\/\/coova.github.io\">coova.github.io</a>.</div></div></dd>";
 hstatus_hots.page20="<dd>Enabling the use of NoCatSplash allows you to redirect a client to a specific web page when connecting via wireless or wired.</dd>";
 hstatus_hots.page21="<dd>The name of the gateway. Whatever you want to call it. \"Joe's Pizza Shop and free DSL Cafe\" for example. Use the variable $GatewayName in your splash.html page to display this.</dd>";
 hstatus_hots.page22="<dd>Configures the Redirection URL after splash login</dd>";
