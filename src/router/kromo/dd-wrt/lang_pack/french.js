@@ -618,9 +618,9 @@ usb.usb_printer="Support imprimante USB";
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
 hotspot.h2="Portail Hotspot";
-hotspot.legend="Chillispot";
+hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="S&eacute;parer sans fil du Pont LAN";
-hotspot.hotspot="Chillispot";
+hotspot.hotspot="CoovaChilli";
 hotspot.pserver="IP/DNS Serveur Radius primaire";
 hotspot.bserver="IP/DNS Serveur Radius secondaire";
 hotspot.dns="IP / DNS";

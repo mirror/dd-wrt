@@ -885,9 +885,9 @@ hlighttpd.right2="Zapněte lighttpd a nakonfigurujte porty HTTP / HTTPS lighttpd
 // ** Hotspot.asp **//
 hotspot.titl="Hotspot";
 hotspot.h2="Hotspot portál";
-hotspot.legend="Chillispot";
+hotspot.legend="CoovaChilli";
 hotspot.nowifibridge="Oddělit Wifi od LAN mostu";
-hotspot.hotspot="Chillispot";
+hotspot.hotspot="CoovaChilli";
 hotspot.pserver="Primární radius Server IP/DNS";
 hotspot.bserver="Záložní radius Server IP/DNS";
 hotspot.dns="DNS server IP";
@@ -904,8 +904,8 @@ hotspot.allowuad="UAM domény (čárka odděluje)";
 hotspot.macauth="MAC ověřování";
 hotspot.macpasswd="MAC heslo";
 hotspot.sec8021Xauth="802.1X ověřování (EAP)";
-hotspot.option="Rozšířené volby Chillispot";
-hotspot.fon_chilli="Správa lokálního uživatele Chillispot";
+hotspot.option="Rozšířené volby CoovaChilli";
+hotspot.fon_chilli="Správa lokálního uživatele CoovaChilli";
 hotspot.fon_user="Seznam uživatelů";
 hotspot.http_legend="HTTP přesměrování";
 hotspot.http_srv="HTTP přesměrování";
@@ -969,7 +969,7 @@ hotspot.wifidog_auth="HTTP server podpora autentifikace";
 hstatus_hots.right1="conup / condown: <br /><i> Když je USB nebo JFFS připojeno k jffs, mohou být připojovací skripty použity v / jffs / etc / chilli / </i><br /> Místní uživatelé: <br /><i> Pokud se používají pouze místní uživatelé, nastavte primární poloměr na 127.0.0.1 </i> ";
 
 // help page
-hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení Chillispot) s ověřováním, účtováním (Radius). ChilliSpot je otevřený zajatý portál nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů bezdrátová síť LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a účetnictví (AAA) zajišťuje váš oblíbený server s poloměrem.</dd> ";
+hstatus_hots.page1="<dd>Router můžete použít jako bránu Hotspot (řešení CoovaChilli) s ověřováním, účtováním (Radius). CoovaChilli je otevřený zajatý portál nebo řadič přístupového bodu bezdrátové sítě LAN. Používá se pro ověřování uživatelů bezdrátová síť LAN. Podporuje webové přihlášení, které je dnes standardem pro veřejné HotSpoty a podporuje bezdrátový chráněný přístup (WPA), který je standardem budoucnosti. Ověřování, autorizaci a účetnictví (AAA) zajišťuje váš oblíbený server s poloměrem.</dd> ";
 hstatus_hots.page2="<dd>Můžete si nechat spravovat váš hotspotový portál pomocí HotspotSystem.com. Poskytují bezplatná hotspotová řešení s placením za použití s ​​fakturací. Pro více informací navštivte <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd> ";
 hstatus_hots.page3="<dd>Uživatelské jméno operátora, které jste zaregistrovali na <a href=\"http:\/\/www.hotspotsystem.com\">www.hotspotsystem.com</a></dd>" ;
 hstatus_hots.page4="<dd>Číslo umístění, které chcete nastavit.</dd>";
@@ -986,8 +986,8 @@ hstatus_hots.page14="<dd>Identifikátor serveru síťového přístupu.</dd>";
 hstatus_hots.page15="<dd>Sdílené tajemství mezi uamserverem a chilli. Toto tajemství by mělo být nastaveno, aby nebyla ohrožena bezpečnost.</dd>";
 hstatus_hots.page16="<dd>Povolit jakýkoli server DNS. Normálně neověření klienti mohou komunikovat pouze se servery DNS určenými možnostmi dns1 a dns2. Tato možnost umožní klientovi používat všechny servery DNS. To je výhodné pro klienty které jsou nakonfigurovány pro použití pevné sady serverů DNS. <br /><br /><div class=\"note\"><h4> Poznámka </h4><div> Z bezpečnostních důvodů by měla být tato možnost kombinována s cílem Pravidlo brány firewall NAT, které předává všechny požadavky DNS na daný server DNS. </div></div></dd> ";
 hstatus_hots.page17="<dd>IP adresy nebo segmenty sítě, ke kterým může klient přistupovat bez předchozího ověření (seznam názvů domén oddělených čárkami). Příklad: www.chillispot.info, 10.11.12.0 / 24</dd>";
-hstatus_hots.page18="<dd>Pokud je tato možnost zadána, ChilliSpot se pokusí autentizovat všechny uživatele pouze na základě své mac adresy.</dd>";
-hstatus_hots.page19="<dd>Zde můžete zadat další možnosti. <br /><br /><div class=\"note\"><h4> Poznámka </h4><div> Další informace o různých možnostech: <a href=\"http:\/\/www.chillispot.info/chilli.html\">www.chillispot.info</a>. </div></div></dd> ";
+hstatus_hots.page18="<dd>Pokud je tato možnost zadána, CoovaChilli se pokusí autentizovat všechny uživatele pouze na základě své mac adresy.</dd>";
+hstatus_hots.page19="<dd>Zde můžete zadat další možnosti. <br /><br /><div class=\"note\"><h4> Poznámka </h4><div> Další informace o různých možnostech: <a href=\"https:\/\/coova.github.io\">coova.github.io</a>. </div></div></dd> ";
 hstatus_hots.page20="<dd>Povolení použití NoCatSplash vám umožňuje přesměrovat klienta na konkrétní webovou stránku při připojení pomocí bezdrátového nebo kabelového připojení.</dd>";
 hstatus_hots.page21="<dd>Název brány. Cokoli chcete nazvat. \"Joe's Pizza Shop a bezplatná kavárna DSL \". Použijte proměnnou $ GatewayName na stránce splash.html.</dd> ";
 hstatus_hots.page22="<dd>Nakonfiguruje URL přesměrování po úvodním přihlášení</dd>";
