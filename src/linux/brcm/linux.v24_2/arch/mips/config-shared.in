@@ -6,6 +6,11 @@ bool 'Prompt for development and/or incomplete code/drivers' CONFIG_EXPERIMENTAL
 endmenu
 
 mainmenu_option next_comment
+comment 'optimize inline'
+bool 'optimize inline' CONFIG_OPTIMIZE_INLINING
+endmenu
+
+mainmenu_option next_comment
 comment 'Loadable module support'
 bool 'Enable loadable module support' CONFIG_MODULES
 if [ "$CONFIG_MODULES" = "y" ]; then
