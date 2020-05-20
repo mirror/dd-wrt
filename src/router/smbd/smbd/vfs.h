@@ -92,6 +92,9 @@ struct ksmbd_file;
 
 struct ksmbd_dir_info {
 	const char	*name;
+#ifdef CONFIG_SMB_INSECURE_SERVER
+	char		*smb1_name;
+#endif
 	char		*wptr;
 	char		*rptr;
 	int		name_len;
