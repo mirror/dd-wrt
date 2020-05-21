@@ -87,15 +87,23 @@ static inline bool wg_check_packet_protocol(struct sk_buff *skb)
 	return real_protocol && skb->protocol == real_protocol;
 }
 
-static inline void wg_reset_packet(struct sk_buff *skb)
+static inline void wg_reset_packet(struct sk_buff *skb, bool encapsulating)
 {
 	const int pfmemalloc = skb->pfmemalloc;
+	u32 hash = skb->hash;
+	u8 l4_hash = skb->l4_hash;
+	u8 sw_hash = skb->sw_hash;
 
 	skb_scrub_packet(skb, true);
 	memset(&skb->headers_start, 0,
 	       offsetof(struct sk_buff, headers_end) -
 		       offsetof(struct sk_buff, headers_start));
 	skb->pfmemalloc = pfmemalloc;
+	if (encapsulating) {
+		skb->hash = hash;
+		skb->l4_hash = l4_hash;
+		skb->sw_hash = sw_hash;
+	}
 	skb->queue_mapping = 0;
 	skb->nohdr = 0;
 	skb->peeked = 0;
