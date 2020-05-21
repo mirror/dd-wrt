@@ -119,7 +119,7 @@ var plot_out = new Array();
 
 var max_num_points = 120;
 var step = 700 / max_num_points;
-var unit = share.bytes;
+var unit = 'kbyte';
 var scale_type = status_band.follow;
 
 var fetch_url='';
@@ -148,7 +148,7 @@ function do_translation()
 
 function switch_unit(event)
 {
-	unit = (unit == 'kbit') ? "kbytes" : 'kbit'; 
+	unit = (unit == 'kbit') ? "kbyte" : 'kbit'; 
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 };
 
