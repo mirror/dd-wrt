@@ -1955,9 +1955,9 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 
 			sprintf(comp, "%d", i + 1 + offset);
 			if (showrates)
-				websWrite(wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i + 1 + offset, nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", showrates[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset, nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", showrates[i]);
 			else
-				websWrite(wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i + 1 + offset, nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", rate[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset, nvram_match(mxrate, comp) ? "selected=\"selected\"" : "", rate[i]);
 		} else {
 			int offset = 0;
 
@@ -1968,9 +1968,9 @@ void show_rates(webs_t wp, char *prefix, int maxrate)
 
 			sprintf(comp, "%d", i + 1 + offset);
 			if (showrates)
-				websWrite(wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i + 1 + offset, nvram_match(srate, comp) ? "selected=\"selected\"" : "", showrates[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset, nvram_match(srate, comp) ? "selected=\"selected\"" : "", showrates[i]);
 			else
-				websWrite(wp, "<option value=\"%d\" %s >%s Mbps</option>\n", i + 1 + offset, nvram_match(srate, comp) ? "selected=\"selected\"" : "", rate[i]);
+				websWrite(wp, "<option value=\"%d\" %s >%s Mbit/s</option>\n", i + 1 + offset, nvram_match(srate, comp) ? "selected=\"selected\"" : "", rate[i]);
 
 		}
 	}
@@ -3662,7 +3662,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label6", NULL);
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "500"));
-		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.metres + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
 
@@ -4463,7 +4463,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<div class=\"setting\">\n");
 		show_caption(wp, "label", "wl_basic.label6", NULL);
 		websWrite(wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" onblur=\"valid_range(this,0,99999999,wl_basic.label6)\" value=\"%s\" />\n", power, nvram_default_get(power, "500"));
-		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
+		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.metres + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
 #ifdef HAVE_MADWIFI
@@ -6284,7 +6284,7 @@ void ej_statnv(webs_t wp, int argc, char_t ** argv)
 {
 	int space = 0;
 	int used = nvram_used(&space);
-	websWrite(wp, "%d KB / %d KB", used / 1024, space / 1024);
+	websWrite(wp, "%d KiB / %d KiB", used / 1024, space / 1024);
 }
 
 #ifdef HAVE_RSTATS

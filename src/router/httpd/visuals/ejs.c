@@ -1308,7 +1308,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 
 	fclose(in);
 
-	rcvd >>= 20;		// output in MBytes
+	rcvd >>= 20;		// output in MiB
 	sent >>= 20;
 
 	if ((in = fopen("/tmp/.megc", "r")) != NULL) {
@@ -1320,7 +1320,7 @@ void ej_get_totaltraff(webs_t wp, int argc, char_t ** argv)
 	}
 
 	if (!strcmp(type, "in")) {
-		websWrite(wp, "%llu", rcvd);	// output in MBytes
+		websWrite(wp, "%llu", rcvd);	// output in MiB
 	} else if (!strcmp(type, "out")) {
 		websWrite(wp, "%llu", sent);
 	}

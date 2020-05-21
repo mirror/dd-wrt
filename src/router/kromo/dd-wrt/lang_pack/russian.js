@@ -102,8 +102,8 @@ share.filter="Фильтровать";
 share.deny="Запретить";
 share.range="Диапазон";
 share.use="Использовать";
-share.mins="мин";
-share.secs="с";
+share.mins="min";
+share.secs="s";
 share.routername="Имя роутера";
 share.manual="Вручную";
 share.port="Порт";
@@ -211,10 +211,10 @@ share.standard="Стандартный";
 share.execscript="Выполнить скрипт";
 share.user="Пользователь";
 share.privatekey="Приватный ключ";
-share.bytes="Байт";
-share.kbytes="КБайт";
-share.mbytes="МБайт";
-share.gbytes="ГБайт";
+share.bytes="B";
+share.kbytes="kB";
+share.mbytes="MB";
+share.gbytes="GB";
 share.preempt="Приоритетн.прерывание";
 share.acktiming="Время ожидания ACK";
 share.broadcast="Поддержка широковещания";
@@ -797,7 +797,7 @@ hotspot.wifidog_url="URL портала";
 hotspot.wifidog_port="Порт";
 hotspot.wifidog_httpdname="Имя веб-сервера";
 hotspot.wifidog_httpdconn="Максимальное число пользователей";
-hotspot.wifidog_checkinter="Интервал проверки (с)";
+hotspot.wifidog_checkinter="Интервал проверки (s)";
 hotspot.wifidog_checktimeout="Таймаут клиента";
 hotspot.wifidog_tmaclist="Список разрешенных MAC";
 hotspot.wifidog_authsrv="Имя хоста AuthServer";
@@ -1590,7 +1590,7 @@ status_band.follow="текущ.";
 status_band.up="макс.";
 //help container
 hstatus_band.svg="Для отображения графиков загрузки сетей требуется плагин SVG фирмы Adobe.";
-hstatus_band.right1="Щелкните по надписи для смены единиц измерения (Байт/с или бит/с).";
+hstatus_band.right1="Щелкните по надписи для смены единиц измерения (B/s или bit/s).";
 hstatus_band.right2="Щелкните по надписи для выбора способа масштабирования.";
 
 // ** Status_Router.asp **//
@@ -2019,7 +2019,7 @@ wl_adv.row4="Голос";
 wl_adv.table2="Параметры EDCA STA (от клиента к точке доступа)";
 wl_adv.lng="Длинный";
 wl_adv.shrt="Короткий";
-wl_adv.mbps="Мбит/с";
+wl_adv.mbps="Mbit/s";
 
 //help container
 hwl_adv.right2="Вы можете задать режимы Авто и Общий ключ. Аутентификация на основе общего ключа более надежна, но все устройства в вашей сети должны поддерживать данный режим аутентификации.";

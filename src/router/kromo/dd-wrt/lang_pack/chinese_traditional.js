@@ -81,8 +81,8 @@ share.filter="過濾";
 share.deny="拒絕";
 share.range="範圍";
 share.use="使用";
-share.mins="分";
-share.secs="秒";
+share.mins="min";
+share.secs="s";
 share.routername="路由器名稱";
 share.manual="手動";
 share.port="埠";
@@ -182,8 +182,8 @@ share.standard="Standard";
 share.execscript="執行 script";
 share.user="用戶";
 share.privatekey="私人金鑰";
-share.bytes="bytes";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
@@ -723,7 +723,7 @@ hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="埠";
 hotspot.wifidog_httpdname="Web伺服器名稱";
 hotspot.wifidog_httpdconn="最大用戶";
-hotspot.wifidog_checkinter="檢查間隔 (秒)";
+hotspot.wifidog_checkinter="檢查間隔 (s)";
 hotspot.wifidog_checktimeout="用戶端超時";
 hotspot.wifidog_tmaclist="信任的MAC清單";
 hotspot.wifidog_authsrv="AuthServer 主機名";
@@ -1018,8 +1018,8 @@ qos.h2="頻寬管理器 (QoS)";
 qos.legend="QoS 設定";
 qos.srv="開啟 QoS";
 qos.type="資料封包計劃器";
-qos.uplink="上傳 (kbps)";
-qos.dnlink="下載 (kbps)";
+qos.uplink="上傳 (kbit/s)";
+qos.dnlink="下載 (kbit/s)";
 qos.gaming="線上遊戲最佳化";
 qos.legend2="協定優先順序";
 qos.prio_x="Exempt（不受限）";
@@ -1028,14 +1028,14 @@ qos.prio_e="Express（快速）";
 qos.prio_b="Bulk（低）";
 qos.legend3="Netmask優先順序";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="最大 Kbits";
-qos.maxuprate_b="最大 Kbits 上傳";
-qos.maxdownrate_b="最大 Kbits 下載";
+qos.maxrate_b="最大 kbit/s";
+qos.maxuprate_b="最大 kbit/s 上傳";
+qos.maxdownrate_b="最大 kbit/s 下載";
 qos.maxrate_o="最大資料傳輸率";
 qos.legend4="MAC 優先順序";
 qos.legend5="LAN 埠優先順序";
 qos.legend6="預設帶寬等級";
-qos.bandwidth="以 Kbits 表示的帶寬";
+qos.bandwidth="以 kbit/s 表示的帶寬";
 
 //help container
 //
@@ -1353,7 +1353,7 @@ status_band.up="up";
 //help container
 //
 hstatus_band.svg="顯示頻寬監控,需安裝 A browser that supports SVG .";
-hstatus_band.right1="按 SWITCH TO 選擇 (bytes/s 或 bits/s).";
+hstatus_band.right1="按 SWITCH TO 選擇 (B/s 或 bit/s).";
 hstatus_band.right2="按 AUTOSCALE 調整顯示範圍.";
 
 // ** Status_Router.asp **//

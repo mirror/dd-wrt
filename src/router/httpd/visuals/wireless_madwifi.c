@@ -433,9 +433,9 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	if (rate > 0) {
 		long long ext = (rate % divisor) / 100000;
 		if (ext)
-			websWrite(wp, "%lld.%lld %cb/s", rate / divisor, ext, scale);
+			websWrite(wp, "%lld.%lld %cbit/s", rate / divisor, ext, scale);
 		else
-			websWrite(wp, "%lld %cb/s", rate / divisor, scale);
+			websWrite(wp, "%lld %cbit/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 }

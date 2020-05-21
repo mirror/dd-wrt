@@ -49,7 +49,7 @@
 
 typedef struct wl_rateset3 {
 	uint32 count;		/* # rates in this set */
-	uint8 rates[16];	/* rates in 500kbps units w/hi bit set if basic */
+	uint8 rates[16];	/* rates in 500 kbit/s units w/hi bit set if basic */
 } wl_rateset3_t;
 
 #ifdef WL_STA_ANT_MAX
@@ -132,7 +132,7 @@ typedef struct {
 
 typedef struct wl_rateset2_compat {
 	uint32 count;		/* # rates in this set */
-	uint8 rates[255];	/* rates in 500kbps units w/hi bit set if basic */
+	uint8 rates[255];	/* rates in 500 kbit/s units w/hi bit set if basic */
 } wl_rateset2_compat_t;
 
 typedef struct {
@@ -474,7 +474,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 	wl_ioctl(ifname, WLC_GET_RATE, &rate, sizeof(rate));
 
 	if (rate > 0)
-		websWrite(wp, "%d%s Mbps", (rate / 2), (rate & 1) ? ".5" : "");
+		websWrite(wp, "%d%s Mbit/s", (rate / 2), (rate & 1) ? ".5" : "");
 	else
 		websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 

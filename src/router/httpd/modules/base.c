@@ -547,7 +547,7 @@ static void do_bigfile(unsigned char method, struct mime_handler *handler, char 
 	} else {
 		send_headers(stream, 200, "Ok", extra, handler->mime_type, filesize, "bigfile.bin", 1);
 	}
-	// send body in 64kb chunks based on random values
+	// send body in 64 KiB chunks based on random values
 	FILE *fp;
 	long long i64;
 	long long sz = filesize / 65536;

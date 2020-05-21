@@ -314,8 +314,8 @@ typedef __uint16_t __le16;
 /*
  * Other parameters useful in 802.11 and some other devices 
  */
-#define SIOCSIWRATE	0x8B20	/* set default bit rate (bps) */
-#define SIOCGIWRATE	0x8B21	/* get default bit rate (bps) */
+#define SIOCSIWRATE	0x8B20	/* set default bit rate (bit/s) */
+#define SIOCGIWRATE	0x8B21	/* get default bit rate (bit/s) */
 #define SIOCSIWRTS	0x8B22	/* set RTS/CTS threshold (bytes) */
 #define SIOCGIWRTS	0x8B23	/* get RTS/CTS threshold (bytes) */
 #define SIOCSIWFRAG	0x8B24	/* set fragmentation thr (bytes) */

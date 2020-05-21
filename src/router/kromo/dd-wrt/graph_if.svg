@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='graph_in_txt'  x='70' y='15' fill='green'>--</text>
 	<text id='graph_out_txt' x='70' y='35' fill='red'>--</text>
 
-	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to bytes/s</text>
+	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to B/s</text>
 	<text id='switch_scale' x='250' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
 
 	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
@@ -148,7 +148,7 @@ function do_translation()
 
 function switch_unit(event)
 {
-	unit = (unit == 'bits') ? share.bytes : 'bits'; 
+	unit = (unit == 'bit') ? share.bytes : 'bit'; 
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 };
 
@@ -305,22 +305,22 @@ function isNumber(a)
 
 function formatSpeed(speed, unit)
 {
-	if (unit == 'bits') return formatSpeedBytes(speed);
+	if (unit == 'bit') return formatSpeedBytes(speed);
 	if (unit == share.bytes) return formatSpeedBits(speed);
 };
 
 function formatSpeedBits(speed)
 {
-	if (speed < 125000) return Math.round(speed / 125) + " Kbps";
-	if (speed < 125000000) return Math.round(speed / 1250)/100 + " Mbps";
-	return Math.round(speed / 1250000)/100 + " Gbps";  
+	if (speed < 125000) return Math.round(speed / 125) + " kbit/s";
+	if (speed < 125000000) return Math.round(speed / 1250)/100 + " Mbit/s";
+	return Math.round(speed / 1250000)/100 + " Gbit/s";  
 };
 
 function formatSpeedBytes(speed)
 {
-	if (speed < 1048576) return Math.round(speed / 10.24)/100 + " " + share.kbytes + "/s";
-	if (speed < 1073741824) return Math.round(speed / 10485.76)/100 + " " + share.mbytes + "/s";
-	return Math.round(speed / 10737418.24)/100 + " " + share.mbytes + "/s";
+	if (speed < 1000000) return Math.round(speed / 10)/100 + " " + share.kbytes + "/s";
+	if (speed < 1000000000) return Math.round(speed / 10000)/100 + " " + share.mbytes + "/s";
+	return Math.round(speed / 10000000)/100 + " " + share.mbytes + "/s";
 };
 
 ]]>
