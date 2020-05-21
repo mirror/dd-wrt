@@ -305,8 +305,8 @@ function isNumber(a)
 
 function formatSpeed(speed, unit)
 {
-	if (unit == 'bit') return formatSpeedBytes(speed);
-	if (unit == share.bytes) return formatSpeedBits(speed);
+	if (unit == 'kbit') return formatSpeedBytes(speed);
+	if (unit == 'kbyte') return formatSpeedBits(speed);
 };
 
 function formatSpeedBits(speed)
