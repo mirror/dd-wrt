@@ -86,8 +86,8 @@ share.filter="Filter";
 share.deny="Verbieden";
 share.range="Bereik";
 share.use="Gebruik";
-share.mins="Min.";
-share.secs="Sec.";
+share.mins="min";
+share.secs="s";
 share.routername="Routernaam";
 share.manual="Handmatig";
 share.port="Poort";
@@ -189,8 +189,8 @@ share.standard="Standaard";
 share.execscript="Script uitvoeren";
 share.user="Gebruiker";
 share.privatekey="Prive Sleutel";
-share.bytes="bytes";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
@@ -774,7 +774,7 @@ hotspot.wifidog_url="Portaal URL";
 hotspot.wifidog_port="Poort";
 hotspot.wifidog_httpdname="Webserver naam";
 hotspot.wifidog_httpdconn="Max Gebruikers";
-hotspot.wifidog_checkinter="Controle Interval (sec.)";
+hotspot.wifidog_checkinter="Controle Interval (s)";
 hotspot.wifidog_checktimeout="Cli&euml;nt Tijdsoverschrijding";
 hotspot.wifidog_tmaclist="Vertrouwde MAC Lijst";
 hotspot.wifidog_authsrv="AuthServer Hostnaam";
@@ -1091,8 +1091,8 @@ qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Instellingen";
 qos.srv="QoS Starten";
 qos.type="Pakket Planner";
-qos.uplink="Upload (kbps)";
-qos.dnlink="Download (kbps)";
+qos.uplink="Upload (kbit/s)";
+qos.dnlink="Download (kbit/s)";
 qos.gaming="Optimaliseren voor Gaming";
 qos.legend2="Services Prioriteit";
 qos.prio_x="Maximum";
@@ -1101,14 +1101,14 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Prioriteit Netmasker";
 qos.ipmask="IP/Masker";
-qos.maxrate_b="Max Kbits";
-qos.maxuprate_b="Max Kbits Up";
-qos.maxdownrate_b="Max Kbits Down";
+qos.maxrate_b="Max kbit/s";
+qos.maxuprate_b="Max kbit/s Up";
+qos.maxdownrate_b="Max kbit/s Down";
 qos.maxrate_o="Max Snelheid";
 qos.legend4="MAC Prioriteit";
 qos.legend5="Ethernet Poort Prioriteit";
 qos.legend6="Standaard Bandbreedte Niveau";
-qos.bandwidth="Bandbreedte in Kbits";
+qos.bandwidth="Bandbreedte in kbit/s";
 
 //help container
 
@@ -1458,7 +1458,7 @@ status_band.up="up";
 //help container
 
 hstatus_band.svg="A browser that supports SVG is nodig om de bandbreedte grafieken te kunnen bekijken.";
-hstatus_band.right1="Klik op de text \"Weergave\" in de grafiek om te schakelen tussen (bytes/s of bits/s).";
+hstatus_band.right1="Klik op de text \"Weergave\" in de grafiek om te schakelen tussen (B/s of bit/s).";
 hstatus_band.right2="Klik op de text \"Autoscale\" in de grafiek om te schakelen tussen (volgen of up)."; 
 
 

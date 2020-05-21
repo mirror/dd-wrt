@@ -103,8 +103,8 @@ share.filter="Filtriraj";
 share.deny="Prepreči";
 share.range="Obseg";
 share.use="Uporabi";
-share.mins="Min.";
-share.secs="Sek.";
+share.mins="min";
+share.secs="s";
 share.routername="Ime usmerjevalnika";
 share.manual="Ročno";
 share.port="Vrata";
@@ -210,8 +210,8 @@ share.standard="Standard";
 share.execscript="Zaženi script";
 share.user="Uporabnik";
 share.privatekey="Osebni ključ";
-share.bytes="bajtov";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Predkup";
@@ -818,7 +818,7 @@ hotspot.wifidog_url="URL portala";
 hotspot.wifidog_port="Vrata";
 hotspot.wifidog_httpdname="Ime spletnega strežnika";
 hotspot.wifidog_httpdconn="Največje št. uporabnikov";
-hotspot.wifidog_checkinter="Interval preverbe (v sek.)";
+hotspot.wifidog_checkinter="Interval preverbe (s)";
 hotspot.wifidog_checktimeout="Časovna omejitev klienta";
 hotspot.wifidog_tmaclist="Poverjeni MAC naslovi";
 hotspot.wifidog_authsrv="AuthServer uporabniško ime";
@@ -1631,7 +1631,7 @@ status_band.up="gor";
 //help container
 
 hstatus_band.svg="Za prikaz grafov pasovne širine je potreben dodatek Adobe SVG.";
-hstatus_band.right1="Klikni na oznako za preklop enote (bytes/s ali bits/s).";
+hstatus_band.right1="Klikni na oznako za preklop enote (B/s ali bit/s).";
 hstatus_band.right2="Klikni na oznako za izbiro merila.";
 
 // ** Status_Router.asp **//

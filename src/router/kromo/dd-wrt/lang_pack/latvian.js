@@ -86,8 +86,8 @@ share.filter="Filtrs";
 share.deny="Noliegt";
 share.range="Diapazons";
 share.use="Lietošana";
-share.mins="Min.";
-share.secs="Sek.";
+share.mins="min";
+share.secs="s";
 share.routername="Maršrutetaja vards";
 share.manual="Manuals";
 share.port="Ports";
@@ -188,8 +188,8 @@ share.standard="Standarts";
 share.execscript="Izpildit skriptu";
 share.user="Lietotajs";
 share.privatekey="Privata atslega";
-share.bytes="baiti";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Priekšrociba";
@@ -755,7 +755,7 @@ hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web Server Name";
 hotspot.wifidog_httpdconn="Max Users";
-hotspot.wifidog_checkinter="Check Interval (in sec.)";
+hotspot.wifidog_checkinter="Check Interval (s)";
 hotspot.wifidog_checktimeout="Client Timeout";
 hotspot.wifidog_tmaclist="Trusted MAC List";
 hotspot.wifidog_authsrv="AuthServer Hostname";
@@ -1058,8 +1058,8 @@ qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Settings";
 qos.srv="Start QoS";
 qos.type="Packet Scheduler";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
+qos.uplink="Uplink (kbit/s)";
+qos.dnlink="Downlink (kbit/s)";
 qos.gaming="Optimize for Gaming";
 qos.legend2="Services Priority";
 qos.prio_x="Maximum";
@@ -1068,14 +1068,14 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Netmask Priority";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="Max Kbits";
-qos.maxuprate_b="Max Kbits Up";
-qos.maxdownrate_b="Max Kbits Down";
+qos.maxrate_b="Max kbit/s";
+qos.maxuprate_b="Max kbit/s Up";
+qos.maxdownrate_b="Max kbit/s Down";
 qos.maxrate_o="Max Rate";
 qos.legend4="MAC Priority";
 qos.legend5="Ethernet Port Priority";
 qos.legend6="Default Bandwidth Level";
-qos.bandwidth="Bandwidth in Kbits";
+qos.bandwidth="Bandwidth in kbit/s";
 
 //help container
 
@@ -1397,7 +1397,7 @@ status_band.up="up";
 //help container
 
 hstatus_band.svg="The A browser that supports SVG is required to display bandwidth graphs.";
-hstatus_band.right1="Click the label to switch unit (bytes/s or bits/s).";
+hstatus_band.right1="Click the label to switch unit (B/s or bit/s).";
 hstatus_band.right2="Click the label to choose graph scale type.";
 
 // ** Status_Router.asp **//

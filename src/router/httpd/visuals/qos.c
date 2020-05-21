@@ -215,13 +215,13 @@ void ej_get_qosdevs(webs_t wp, int argc, char_t ** argv)
 			  "</td>\n", i, i, ip);
 		websWrite(wp, "	<td><em>%s</em></td>\n", getNetworkLabel(wp, ip));
 
-		websWrite(wp, "	<td nowrap>\n" "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
+		websWrite(wp, "	<td nowrap>\n" "<input name=\"svqos_devdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"	//
 			  "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
-		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_devup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,	//
+		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_devup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n" "</td>\n", i, level,	//
 			  strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "	<td nowrap>\n"	//
-			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"	//
+			  "<input name=\"svqos_devlanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"	//
 			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");	//
 		/* service */
 		filters *services = get_filters_list();
@@ -308,12 +308,12 @@ void ej_get_qosips(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "	<td><em>%s</em></td>\n", ip);
 
 		websWrite(wp, "	<td nowrap>\n"
-			  "<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
-		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_ipup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n" "</td>\n", i, level,
+			  "<input name=\"svqos_ipdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n" "</td>\n", i, level2, strcmp(prio, "0") == 0 ? "" : "disabled");
+		websWrite(wp, "	<td nowrap>\n" "<input class=\"num\" name=\"svqos_ipup%d\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n" "</td>\n", i, level,
 			  strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "	<td nowrap>\n"
-			  "<input name=\"svqos_iplanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
+			  "<input name=\"svqos_iplanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
 			  "</td>\n", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
 
 		websWrite(wp, "	<td>\n"
@@ -387,13 +387,13 @@ void ej_get_qosmacs(webs_t wp, int argc, char_t ** argv)
 			  "</td>\n"
 			  "<td><em>%s</em></td>\n"
 			  "<td nowrap>\n"
-			  "<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
+			  "<input name=\"svqos_macdown%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
 			  "</td>\n"
 			  "<td nowrap>\n"
-			  "<input name=\"svqos_macup%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
+			  "<input name=\"svqos_macup%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
 			  "</td>\n"
 			  "<td nowrap>\n"
-			  "<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kBits\n"
+			  "<input name=\"svqos_maclanlvl%d\" class=\"num\" size=\"5\" maxlength=\"6\" value=\"%s\" style=\"text-align:right;\" %s /> kbit/s\n"
 			  "</td>\n"
 			  "<td>\n", i, i, mac, mac, i, level2, strcmp(prio, "0") == 0 ? "" : "disabled", i, level, strcmp(prio, "0") == 0 ? "" : "disabled", i, lanlevel, strcmp(prio, "0") == 0 ? "" : "disabled");
 

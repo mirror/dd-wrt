@@ -79,8 +79,8 @@ share.filter="Filtre";
 share.deny="Interdire";
 share.range="Plage";
 share.use="Utiliser";
-share.mins="Min.";
-share.secs="Sec.";
+share.mins="min";
+share.secs="s";
 share.routername="Nom du routeur";
 share.manual="Manuel";
 share.port="Port";
@@ -179,10 +179,10 @@ share.standard="Standard";
 share.execscript="Ex&eacute;cuter un script";
 share.user="Utilisateur";
 share.privatekey="Cl&eacute; priv&eacute;e";
-share.bytes="octets";
-share.kbytes="Ko";
-share.mbytes="Mo";
-share.gbytes="Go";
+share.bytes="B";
+share.kbytes="kB";
+share.mbytes="MB";
+share.gbytes="GB";
 share.preempt="Pr&eacute;emption";
 share.acktiming="Choix du temps ACK";
 
@@ -674,7 +674,7 @@ hotspot.wifidog_url="URL du Hotspot";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Nom du serveur Web";
 hotspot.wifidog_httpdconn="Utilisateurs Max.";
-hotspot.wifidog_checkinter="Intervalle de v&eacute;rification (en sec.)";
+hotspot.wifidog_checkinter="Intervalle de v&eacute;rification (s)";
 hotspot.wifidog_checktimeout="D&eacute;lai client";
 hotspot.wifidog_tmaclist="Liste d&apos;approbation MAC";
 hotspot.wifidog_authsrv="Serveur d&apos;authentification";
@@ -938,8 +938,8 @@ qos.h2="Qualit&eacute; de Service (QoS)";
 qos.legend="Configuration QoS";
 qos.srv="QoS";
 qos.type="Ordonnanceur de Packets";
-qos.uplink="D&eacute;bit montant (kb/s)";
-qos.dnlink="D&eacute;bit descendant (kb/s)";
+qos.uplink="D&eacute;bit montant (kbit/s)";
+qos.dnlink="D&eacute;bit descendant (kbit/s)";
 qos.gaming="Optimiser pour le jeu";
 qos.legend2="Priorit&eacute; des Services";
 qos.prio_x="Exemption";
@@ -948,14 +948,14 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Priorit&eacute; sous-r&eacute;seau";
 qos.ipmask="IP/Masque";
-qos.maxrate_b="Maximum en Kbits";
-qos.maxuprate_b="Maximum montant en Kbits";
-qos.maxdownrate_b="Maximum descendant en Kbits";
+qos.maxrate_b="Maximum en kbit/s";
+qos.maxuprate_b="Maximum montant en kbit/s";
+qos.maxdownrate_b="Maximum descendant en kbit/s";
 qos.maxrate_o="Taux maximum";
 qos.legend4="Priorit&eacute; MAC";
 qos.legend5="Priorit&eacute; des Ports Ethernet";
 qos.legend6="Niveau par d&eacute;faut de la Bande Passante";
-qos.bandwith="Bande Passante (Kbits)";
+qos.bandwith="Bande Passante (kbit/s)";
 
 //help container
 hqos.right1="D&eacute;bit montant :";
@@ -1253,7 +1253,7 @@ status_band.up="Haut";
 
 //help container
 hstatus_band.svg="Le plugin Adobe SVG est n&eacute;cessaire pour afficher les graphiques de bande passante.";
-hstatus_band.right1="Cliquez sur l&apos;&eacute;tiquette \"<em>"+status_band.chg_unit+" ...</em>\" pour changer d&apos;unit&eacute; ("+share.bytes+"/s ou bits/s).";
+hstatus_band.right1="Cliquez sur l&apos;&eacute;tiquette \"<em>"+status_band.chg_unit+" ...</em>\" pour changer d&apos;unit&eacute; ("+share.bytes+"/s ou bit/s).";
 hstatus_band.right2="Cliquer sur \"<em>"+status_band.chg_scale+" ...</em>\" permet de modifier le type d&apos;&eacute;chelle (<em>"+status_band.follow+"</em> ajuste l&apos;&eacute;chelle en permanence tandis que <em>"+status_band.up+"</em> ajuste l&apos;&eacute;chelle sur le pic maximum constat&eacute;).";
 
 // ** Status_Router.asp **//

@@ -416,7 +416,7 @@ void ej_get_currate(webs_t wp, int argc, char_t ** argv)
 		divisor = KILO;
 	}
 	if (rate > 0.0) {
-		websWrite(wp, "%lld %cb/s", rate / divisor, scale);
+		websWrite(wp, "%lld %cbit/s", rate / divisor, scale);
 	} else
 		websWrite(wp, "%s", live_translate(wp, "share.auto"));
 
