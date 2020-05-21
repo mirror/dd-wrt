@@ -154,7 +154,7 @@ addEvent(window, "unload", function() {
 				<input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvg("wl_distance"); %>" />
 				<span class="default"><script type="text/javascript">
 				//<![CDATA[
-				document.write("(" + share.deflt + ": 2000 " + share.metres + ")");
+				document.write("(" + share.deflt + ": 2000 " + share.meters + ")");
 				//]]>
 				</script></span>
 			   </div>
