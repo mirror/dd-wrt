@@ -965,10 +965,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 
 		max_sock = udhcp_sp_fd_set(&rfds, server_socket);
 
-		udhcp_sp_fd_set(pfds, server_socket);
-
  new_tv:
-		tv = -1;
 		if (server_data.auto_time) {
 			tv.tv_sec = (int)(timeout_end - monotonic_sec());
 			tv.tv_usec = 0;
@@ -978,11 +975,11 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 				write_leases();
 				goto continue_with_autotime;
 			}
-			tv *= 1000;
+			tv.tv_sec *= 1000;
 		}
 
 		/* Block here waiting for either signal or packet */
-		retval = select(max_sock + 1, &rfds, NULL, NULL, tv.tv_sec);
+		retval = select(max_sock + 1, &rfds, NULL, NULL, server_data.auto_time ? &tv : NULL);
 		if (retval <= 0) {
 			if (retval == 0)
 				goto write_leases;
@@ -992,7 +989,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 			bb_perror_msg_and_die("poll");
 		}
 
-		if (pfds[0].revents) switch (udhcp_sp_read(&rfds)) {
+		switch (udhcp_sp_read(&rfds)) {
 		case SIGUSR1:
 			bb_info_msg("received %s", "SIGUSR1");
 			write_leases();
@@ -1002,11 +999,11 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 			bb_info_msg("received %s", "SIGTERM");
 			write_leases();
 			goto ret0;
+		case 0: /* no signal: read a packet */
+			break;
+		default: /* signal or error (probably EINTR): back to select */
+			continue;
 		}
-
-		/* Is it a packet? */
-		if (!pfds[1].revents)
-			continue; /* no */
 
 		/* Note: we do not block here, we block on poll() instead.
 		 * Blocking here would prevent SIGTERM from working:
@@ -1056,7 +1053,7 @@ int udhcpd_main(int argc UNUSED_PARAM, char **argv)
 			fake_lease.lease_nip = static_lease_nip;
 			fake_lease.expires = 0;
 			lease = &fake_lease;
-		} else {
+    		} else {
 			lease = find_lease_by_mac(packet.chaddr);
 		}
 
