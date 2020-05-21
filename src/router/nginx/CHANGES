@@ -1,4 +1,14 @@
 
+Changes with nginx 1.18.0                                        21 Apr 2020
+
+    *) 1.18.x stable branch.
+
+
+Changes with nginx 1.17.10                                       14 Apr 2020
+
+    *) Feature: the "auth_delay" directive.
+
+
 Changes with nginx 1.17.9                                        03 Mar 2020
 
     *) Change: now nginx does not allow several "Host" request header lines.
