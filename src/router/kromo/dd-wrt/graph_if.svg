@@ -41,7 +41,7 @@ POSSIBILITY OF SUCH DAMAGE.
 	<text id='graph_in_txt'  x='70' y='15' fill='green'>--</text>
 	<text id='graph_out_txt' x='70' y='35' fill='red'>--</text>
 
-	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to B/s</text>
+	<text id='switch_unit'  x='250' y='15' fill='#435370' cursor='pointer'>Switch to kbyte/s</text>
 	<text id='switch_scale' x='250' y='35' fill='#435370' cursor='pointer'>Autoscale (follow)</text>
 
 	<text id='error'           x='300' y='125' text-anchor='middle' visibility='hidden' fill='blue'>Cannot get data about interface</text>
@@ -148,7 +148,7 @@ function do_translation()
 
 function switch_unit(event)
 {
-	unit = (unit == 'bit') ? share.bytes : 'bit'; 
+	unit = (unit == 'kbit') ? "kbytes" : 'kbit'; 
 	SVGDoc.getElementById('switch_unit').firstChild.data = status_band.chg_unit + unit + '/s';
 };
 
