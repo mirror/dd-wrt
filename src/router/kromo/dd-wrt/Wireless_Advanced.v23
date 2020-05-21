@@ -204,7 +204,7 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label2"); %></div>
 									<select name="wl_rateset">
-										<option value="12" <% nvs("wl_rateset", "12"); %>>1-2 Mbps</option>
+										<option value="12" <% nvs("wl_rateset", "12"); %>>1-2 Mbit/s</option>
 										<script type="text/javascript">
 										//<![CDATA[
 										document.write("<option value=\"default\" <% nvsjs("wl_rateset", "default"); %>>" + share.deflt + "</option>");
@@ -228,18 +228,18 @@ addEvent(window, "unload", function() {
 										document.write("<option value=\"0\" <% nvsjs("wl_rate", "0"); %>>" + share.auto + "</option>");
 										//]]>
 										</script>
-										<option value="1000000" <% nvs("wl_rate", "1000000"); %>>1 Mbps</option>
-										<option value="2000000" <% nvs("wl_rate", "2000000"); %>>2 Mbps</option>
-										<option value="5500000" <% nvs("wl_rate", "5500000"); %>>5.5 Mbps</option>
-										<option value="6000000" <% nvs("wl_rate", "6000000"); %>>6 Mbps</option>
-										<option value="9000000" <% nvs("wl_rate", "9000000"); %>>9 Mbps</option>
-										<option value="11000000" <% nvs("wl_rate", "11000000"); %>>11 Mbps</option>
-										<option value="12000000" <% nvs("wl_rate", "12000000"); %>>12 Mbps</option>
-										<option value="18000000" <% nvs("wl_rate", "18000000"); %>>18 Mbps</option>
-										<option value="24000000" <% nvs("wl_rate", "24000000"); %>>24 Mbps</option>
-										<option value="36000000" <% nvs("wl_rate", "36000000"); %>>36 Mbps</option>
-										<option value="48000000" <% nvs("wl_rate", "48000000"); %>>48 Mbps</option>
-										<option value="54000000" <% nvs("wl_rate", "54000000"); %>>54 Mbps</option>
+										<option value="1000000" <% nvs("wl_rate", "1000000"); %>>1 Mbit/s</option>
+										<option value="2000000" <% nvs("wl_rate", "2000000"); %>>2 Mbit/s</option>
+										<option value="5500000" <% nvs("wl_rate", "5500000"); %>>5.5 Mbit/s</option>
+										<option value="6000000" <% nvs("wl_rate", "6000000"); %>>6 Mbit/s</option>
+										<option value="9000000" <% nvs("wl_rate", "9000000"); %>>9 Mbit/s</option>
+										<option value="11000000" <% nvs("wl_rate", "11000000"); %>>11 Mbit/s</option>
+										<option value="12000000" <% nvs("wl_rate", "12000000"); %>>12 Mbit/s</option>
+										<option value="18000000" <% nvs("wl_rate", "18000000"); %>>18 Mbit/s</option>
+										<option value="24000000" <% nvs("wl_rate", "24000000"); %>>24 Mbit/s</option>
+										<option value="36000000" <% nvs("wl_rate", "36000000"); %>>36 Mbit/s</option>
+										<option value="48000000" <% nvs("wl_rate", "48000000"); %>>48 Mbit/s</option>
+										<option value="54000000" <% nvs("wl_rate", "54000000"); %>>54 Mbit/s</option>
 									</select>
 									<span class="default">
 										<script type="text/javascript">

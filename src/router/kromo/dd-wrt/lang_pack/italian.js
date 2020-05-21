@@ -104,8 +104,8 @@ share.filter="Filtra";
 share.deny="Nega";
 share.range="Int.";
 share.use="Usa";
-share.mins="Min.";
-share.secs="Sec.";
+share.mins="min";
+share.secs="s";
 share.routername="Nome Router";
 share.manual="Manuale";
 share.port="Porta";
@@ -213,8 +213,8 @@ share.standard="Standard";
 share.execscript="Esegui script";
 share.user="Utente";
 share.privatekey="Chiave Privata";
-share.bytes="bytes";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Preemption";
@@ -944,7 +944,7 @@ hotspot.wifidog_url="URL Del Portale";
 hotspot.wifidog_port="Porta";
 hotspot.wifidog_httpdname="Nome Web Server";
 hotspot.wifidog_httpdconn="Utenti Massimi";
-hotspot.wifidog_checkinter="Check Interval (in sec.)";
+hotspot.wifidog_checkinter="Check Interval (s)";
 hotspot.wifidog_checktimeout="Timeout Del Client";
 hotspot.wifidog_tmaclist="Lista MAC Fidati";
 hotspot.wifidog_authsrv="AuthServer Hostname";
@@ -1347,7 +1347,7 @@ hmanagement.page8="<dd>Abilita / disabilita l&apos;interfacia di loopback. L&apo
 hmanagement.page9="<dd>Un server 802.1x limitato &egrave; necessario per soddisfare i requisiti di handshake WPA in modo tale da consentire ai client Windows XP per lavorare con WPA.</dd>";
 hmanagement.page10="<dd>Questa funzione controlla il processo del resetbuttond. Il pulsante di reset avvier&agrave; azioni diverse a seconda di come verr&agrave; premuto.<ul><li>Pressione breve &ndash; Riavvia il router</li><li>Pressione lunga (&amp;gt;5s) &ndash; Riavvia e ripristina la configurazione di fabbrica del router.</li></ul></dd>";
 hmanagement.page11="<dd>Routing abilita i daemon di OSPF e RIP routing se &egrave; stato abilitato il routing OSPF o RIP nella pagina di Routing Avanzato.</dd>";
-hmanagement.page12="<dd>Se avete applicazioni peer-to-peer (P2P) in esecuzione sulla rete si prega di aumentare il numero massimo di porte e di abbassare i timeout UDP/TCP. Questo &egrave; necessario per mantenere il router stabile perch&eacute; le applicazioni peer-to-peer aprono molte connessioni che molte volte non chiudono correttamente. Considerare di utilizzare questi valori: <ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300 sec</li><li>UDP Timeout: 60 sec</li></ul></dd><dd>Controllare tutti i valori e fare click su <em>Salva Impostazioni</em> per salvare le impostazioni. Fare click su <em>Annulla Modifiche</em> per annullare le modifiche non salvate. Fare click su <em>Riavvia router</em> per riavviare il router immediatamente.</dd>";
+hmanagement.page12="<dd>Se avete applicazioni peer-to-peer (P2P) in esecuzione sulla rete si prega di aumentare il numero massimo di porte e di abbassare i timeout UDP/TCP. Questo &egrave; necessario per mantenere il router stabile perch&eacute; le applicazioni peer-to-peer aprono molte connessioni che molte volte non chiudono correttamente. Considerare di utilizzare questi valori: <ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Controllare tutti i valori e fare click su <em>Salva Impostazioni</em> per salvare le impostazioni. Fare click su <em>Annulla Modifiche</em> per annullare le modifiche non salvate. Fare click su <em>Riavvia router</em> per riavviare il router immediatamente.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 //var portserv=new Object();
@@ -1405,8 +1405,8 @@ qos.aqd="Queueing Discipline";
 qos.aqd_sfq="SFQ";
 qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
+qos.uplink="Uplink (kbit/s)";
+qos.dnlink="Downlink (kbit/s)";
 qos.gaming="Ottimizza per Giocare";
 qos.legend2="Priorit&agrave; Dei Servizi";
 qos.prio_x="Massima";
@@ -1415,7 +1415,7 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Priorit&agrave; Della Netmask";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="Kbits Max";
+qos.maxrate_b="kbit/s Max";
 qos.maxuprate_b="WAN Max Up";
 qos.maxdownrate_b="WAN Max Down";
 qos.maxlanrate_b="LAN Max";
@@ -1430,7 +1430,7 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Abilita Limiti Di Default Per Utente";
-qos.bandwidth="Banda in Kbits";
+qos.bandwidth="Banda in kbit/s";
 qos.up="Up";
 qos.down="Down";
 
@@ -1884,7 +1884,7 @@ status_band.up="massimo";
 //help container
 //var hstatus_band=new Object();
 hstatus_band.svg="E&apos; richiesto un browser che supporti l&apos;SVG per far vedere i grafici della larghezza di banda.";
-hstatus_band.right1="Clicca sull&apos;etichetta per cambiare unit&agrave; di misura (bytes/s or bits/s).";
+hstatus_band.right1="Clicca sull&apos;etichetta per cambiare unit&agrave; di misura (B/s or bit/s).";
 hstatus_band.right2="Clicca sull&apos;etichetta per sciegliere il tipo di scala del grafico.";
 
 // ** Status_Router.asp **//
@@ -2388,7 +2388,7 @@ wl_adv.row4="Voce";
 wl_adv.table2="Parametri EDCA STA (Client verso AP)";
 wl_adv.lng="Lungo";          //************* don&apos;t use .long! *************
 wl_adv.shrt="Corto"; 				//************* don&apos;t use .short! **************
-wl_adv.mpbs="Mbps";
+wl_adv.mbps="Mbit/s";
 
 //help container
 //var hwl_adv=new Object();

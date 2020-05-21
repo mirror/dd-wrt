@@ -103,8 +103,8 @@ share.filter="필터";
 share.deny="거부";
 share.range="범위";
 share.use="사용";
-share.mins="분";
-share.secs="초";
+share.mins="min";
+share.secs="s";
 share.routername="공유기 이름";
 share.manual="수동";
 share.port="포트";
@@ -204,8 +204,8 @@ share.standard="표준";
 share.execscript="실행 스크립트";
 share.user="사용자";
 share.privatekey="개인 키";
-share.bytes="bytes";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="선점";
@@ -903,7 +903,7 @@ hotspot.wifidog_url="포털 URL";
 hotspot.wifidog_port="포트";
 hotspot.wifidog_httpdname="웹 서버 이름";
 hotspot.wifidog_httpdconn="최대 사용자 수";
-hotspot.wifidog_checkinter="체크 간격 (초)";
+hotspot.wifidog_checkinter="체크 간격 (s)";
 hotspot.wifidog_checktimeout="클라이언트 타임아웃";
 hotspot.wifidog_tmaclist="등록 MAC 주소 리스트";
 hotspot.wifidog_authsrv="인증서버 호스트 이름";
@@ -1289,7 +1289,7 @@ hmanagement.page8="<dd>Enable / disable the loopback interface. The loopback int
 hmanagement.page9="<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>";
 hmanagement.page10="<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.<ul><li>Short press &ndash; Reset the router (reboot)</li><li>Long press (&gt;5s) &ndash; Reboot and restore the factory default configuration.</li></ul></dd>";
 hmanagement.page11="<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>";
-hmanagement.page12="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300 sec</li><li>UDP Timeout: 60 sec</li></ul></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>";
+hmanagement.page12="<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using these for old low end routers:<ul><li>Maximum Ports: 4096</li><li>TCP Timeout: 300&nbsp;s</li><li>UDP Timeout: 60&nbsp;s</li></ul></dd><dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>";
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymore) *****************************************//
 portserv.titl="포트 서비스";
@@ -1364,8 +1364,8 @@ qos.aqd="대기 규칙";
 qos.aqd_sfq="SFQ";
 qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
-qos.uplink="업링크 통신 속도 (kbps)";
-qos.dnlink="다운링크 통신 속도 (kbps)";
+qos.uplink="업링크 통신 속도 (kbit/s)";
+qos.dnlink="다운링크 통신 속도 (kbit/s)";
 qos.legend2="서비스 우선순위";
 qos.prio_m="수동";
 qos.prio_x="Maximum";
@@ -1374,7 +1374,7 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="넷마스크 우선순위";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="최대 통신 속도 (kbit)";
+qos.maxrate_b="최대 통신 속도 (kbit/s)";
 qos.maxuprate_b="WAN 최대 업로드";
 qos.maxdownrate_b="WAN 최대 다운로드";
 qos.maxlanrate_b="LAN 최대 전송";
@@ -1390,7 +1390,7 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="사용자별 기본 제한을 사용합니다";
-qos.bandwidth="대역폭(kbit)";
+qos.bandwidth="대역폭(kbit/s)";
 qos.up="업로드";
 qos.down="다운로드";
 qos.service="서비스";
@@ -1889,7 +1889,7 @@ status_band.up="up";
 
 //help container
 hstatus_band.svg="대역폭 그래프를 표시하기 위해서 SVG를 지원하는 브라우저가 필요합니다.";
-hstatus_band.right1="레이블을 클릭해 단위를 변경 가능합니다. (bytes/s 또는 bits/s).";
+hstatus_band.right1="레이블을 클릭해 단위를 변경 가능합니다. (B/s 또는 bit/s).";
 hstatus_band.right2="레이블을 클릭해 그래프 스케일 타입을 선택할 수 있습니다.";
 
 // ** Status_Router.asp **//
@@ -2420,7 +2420,7 @@ wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA 파라미터 (클라이언트 -> AP)";
 wl_adv.lng="Long"; 					//************* don't use .long! *************
 wl_adv.shrt="Short"; 				//************* don't use .short! **************
-wl_adv.mpbs="Mbps";
+wl_adv.mbps="Mbit/s";
 
 //help container
 hwl_adv.right2="자동 또는 공유 키를 선택할 수 있습니다. 공유 키 인증이 더 안전하지만 네트워크의 모든 장치에서 공유 키 인증을 지원해야 합니다.";
@@ -2428,8 +2428,8 @@ hwl_adv.right2="자동 또는 공유 키를 선택할 수 있습니다. 공유 �
 //help page
 hwl_adv.page1="<dd>The Wireless Advanced Settings screen allows you to customize data transmission settings. In most cases, the advanced settings on this screen should remain at their default values.</dd>";
 hwl_adv.page2="<dd>The default is set to <i>Auto</i>, which allows either Open System or Shared Key authentication to be used. For Open System authentication, the sender and the recipient do NOT use a WEP key for authentication. For Shared Key authentication, the sender and recipient use a WEP key for authentication. If you want to use only Shared Key authentication, then select <i>Shared Key</i>.</dd>";
-hwl_adv.page3="<dd>The default value is set to <i>Default</i>. Depending on the wireless mode you have selected, a default set of supported data rates will be selected. The default setting will ensure maximum compatibility with all devices. You may also choose to enable all data rates by selecting <i>ALL</i>. For compatibility with older Wireless-B devices, select <i>1-2Mbps</i>.</dd>";
-hwl_adv.page4="<dd>The default setting is <i>Auto</i>. The range is from 1 to 54Mbps. The rate of data transmission should be set depending on the speed of your wireless network. You can select from a range of transmission speeds, or keep the default setting, <i>Auto</i>, to have the router automatically use the fastest possible data rate and enable the Auto-Fallback feature. Auto-Fallback will negotiate the best possible connection speed between the router and a wireless client.</dd>";
+hwl_adv.page3="<dd>The default value is set to <i>Default</i>. Depending on the wireless mode you have selected, a default set of supported data rates will be selected. The default setting will ensure maximum compatibility with all devices. You may also choose to enable all data rates by selecting <i>ALL</i>. For compatibility with older Wireless-B devices, select <i>1-2&nbsp;Mbit/s</i>.</dd>";
+hwl_adv.page4="<dd>The default setting is <i>Auto</i>. The range is from 1 to 54&nbsp;Mbit/s. The rate of data transmission should be set depending on the speed of your wireless network. You can select from a range of transmission speeds, or keep the default setting, <i>Auto</i>, to have the router automatically use the fastest possible data rate and enable the Auto-Fallback feature. Auto-Fallback will negotiate the best possible connection speed between the router and a wireless client.</dd>";
 hwl_adv.page5="<dd>The default value is <i>Disabled</i>. When set to <i>Auto</i>, a protection mechanism will ensure that your Wireless-B devices will connect to the Wireless-G router when many Wireless-G devices are present. However, performance of your Wireless-G devices may be decreased.</dd>";
 hwl_adv.page6="<dd>The default value is <i>Disabled</i>. Frame burst allows packet bursting which will increase overall network speed though this is only recommended for approx 1-3 wireless clients, Anymore clients and there can be a negative result and throughput will be affected.</dd>";
 hwl_adv.page7="<dd>The default value is 100. Enter a value between 1 and 65,535 milliseconds. The Beacon Interval value indicates the frequency interval of the beacon. A beacon is a packet broadcast by the router to synchronize the wireless network. 50 is recommended in poor reception.</dd>";

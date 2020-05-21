@@ -102,8 +102,8 @@ share.filter="Филтрирај";
 share.deny="Одбиј";
 share.range="макс.";
 share.use="Користи";
-share.mins="Мин.";
-share.secs="Сек.";
+share.mins="min";
+share.secs="s";
 share.routername="Назив рутера";
 share.manual="Ручно";
 share.port="Порт";
@@ -210,14 +210,14 @@ share.standard="Стандардно";
 share.execscript="Изврши скрипту";
 share.user="Корисник";
 share.privatekey="Приватни Кључ";
-share.bytes="bytes";
-share.kbytes="KB";
+share.bytes="B";
+share.kbytes="kB";
 share.mbytes="MB";
 share.gbytes="GB";
 share.preempt="Присвојење";
 share.acktiming="ACK Timing";
 share.broadcast="Broadcast подршка";
-share.secondcharacter="с";
+share.secondcharacter="s";
 share.change="Мењање корисничке лозинке";
 
 sbutton.save="Сачувај";
@@ -832,7 +832,7 @@ hotspot.wifidog_url="Portal's URL";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web Server Name";
 hotspot.wifidog_httpdconn="Макс. корисника";
-hotspot.wifidog_checkinter="Интервал провере (у сек.)";
+hotspot.wifidog_checkinter="Интервал провере (s)";
 hotspot.wifidog_checktimeout="Истицање времена клијента";
 hotspot.wifidog_tmaclist="Листа MAC адреса од поверења";
 hotspot.wifidog_authsrv="AuthServer Hostname";
@@ -1179,8 +1179,8 @@ qos.aqd="Queueing Discipline";
 qos.aqd_sfq="SFQ";
 qos.aqd_codel="CODEL";
 qos.aqd_fqcodel="FQ_CODEL";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
+qos.uplink="Uplink (kbit/s)";
+qos.dnlink="Downlink (kbit/s)";
 qos.legend2="Давање приоритета Сервисима";
 qos.prio_m="Ручно";
 qos.prio_x="Maximum";
@@ -1189,7 +1189,7 @@ qos.prio_e="Express";
 qos.prio_b="Bulk";
 qos.legend3="Давање приоритета према Netmask-у";
 qos.ipmask="IP/Mask";
-qos.maxrate_b="Max kbits";
+qos.maxrate_b="Max kbit/s";
 qos.maxuprate_b="WAN Max Up";
 qos.maxdownrate_b="WAN Max Down";
 qos.maxlanrate_b="LAN Max";
@@ -1204,7 +1204,7 @@ qos.pktrst="RST";
 qos.pktsyn="SYN";
 qos.pktfin="FIN";
 qos.enabledefaultlvls="Омогући дифолтно лимитирање по кориснику";
-qos.bandwidth="Проток у kbits";
+qos.bandwidth="Проток у kbit/s";
 
 //help container
 var hqos=new Object();
@@ -1638,7 +1638,7 @@ status_band.up="горе";
 
 //help container
 hstatus_band.svg="Да би се приказали графикони пропусне моћи потребан је Adobe SVG plugin.";
-hstatus_band.right1="Кликните на ознаку да би променили мерне јединице(bytes/s или bits/s).";
+hstatus_band.right1="Кликните на ознаку да би променили мерне јединице(B/s или bit/s).";
 hstatus_band.right2="Кликните на ознаку да би изабрали тип мерних јединица графикона.";
 
 // ** Status_Router.asp **//

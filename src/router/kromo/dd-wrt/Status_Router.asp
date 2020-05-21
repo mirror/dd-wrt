@@ -14,13 +14,13 @@ function setMemoryValues(val) {
 	var memCached = parseInt(mem[31]);
 	var memActive = parseInt(mem[37]);
 	var memInactive = parseInt(mem[40]);
-	setMeterBar("mem_total", memTotal / memSystem * 100, memTotal + " kB / " + memSystem + " kB");
-	setMeterBar("mem_free", memFree / memTotal * 100, memFree + " kB / " + memTotal + " kB");
-	setMeterBar("mem_used", memUsed / memTotal * 100, memUsed + " kB / " + memTotal + " kB");
-	setMeterBar("mem_buffer", memBuffer / memUsed * 100, memBuffer + " kB / " + memUsed + " kB");
-	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " kB / " + memUsed + " kB");
-	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " kB / " + memUsed + " kB");
-	setMeterBar("mem_inactive", memInactive / memUsed * 100, memInactive + " kB / " + memUsed + " kB");
+	setMeterBar("mem_total", memTotal / memSystem * 100, memTotal + " KiB / " + memSystem + " KiB");
+	setMeterBar("mem_free", memFree / memTotal * 100, memFree + " KiB / " + memTotal + " KiB");
+	setMeterBar("mem_used", memUsed / memTotal * 100, memUsed + " KiB / " + memTotal + " KiB");
+	setMeterBar("mem_buffer", memBuffer / memUsed * 100, memBuffer + " KiB / " + memUsed + " KiB");
+	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " KiB / " + memUsed + " KiB");
+	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " KiB / " + memUsed + " KiB");
+	setMeterBar("mem_inactive", memInactive / memUsed * 100, memInactive + " KiB / " + memUsed + " KiB");
 }
 
 function setUptimeValues(val) {

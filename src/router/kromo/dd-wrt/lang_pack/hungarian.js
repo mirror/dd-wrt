@@ -65,8 +65,8 @@ share.filter="Filter";
 share.deny="Megtilt";
 share.range="Tartomány";
 share.use="Használat";
-share.mins="Perc";
-share.secs="Mp";
+share.mins="min";
+share.secs="s";
 share.routername="Router Név";
 share.manual="Manuális";
 share.port="Port";
@@ -637,7 +637,7 @@ hotspot.wifidog_url="Portál URLje";
 hotspot.wifidog_port="Port";
 hotspot.wifidog_httpdname="Web szerver név";
 hotspot.wifidog_httpdconn="Maximális felhasználók";
-hotspot.wifidog_checkinter="Intervallum ellenõrzés (mp.-ben)";
+hotspot.wifidog_checkinter="Intervallum ellenõrzés (s)";
 hotspot.wifidog_checktimeout="Kliens idõtúllépés";
 hotspot.wifidog_tmaclist="Megbízható MAC lista";
 hotspot.wifidog_authsrv="AuthServer állomásnév";
@@ -891,8 +891,8 @@ qos.h2="Szolgáltatás minõsége (QoS)";
 qos.legend="QoS beállítások";
 qos.srv="QoS engedélyezése";
 qos.type="Csomag ütemezõ (Scheduler)";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
+qos.uplink="Uplink (kbit/s)";
+qos.dnlink="Downlink (kbit/s)";
 qos.gaming="Optimizálás játékokhoz";
 qos.legend2="Szolgáltatás prioritások";
 qos.prio_x="Mentesített";
@@ -901,12 +901,12 @@ qos.prio_e="Express";
 qos.prio_b="Ömlesztett";
 qos.legend3="Hálózati maszk prioritás";
 qos.ipmask="IP/Maszk";
-qos.maxrate_b="Max Kbit-ek";
+qos.maxrate_b="Max kbit/s-ek";
 qos.maxrate_o="Max arány";
 qos.legend4="MAC-prioritás";
 qos.legend5="Ethernet Port-prioritás";
 qos.legend6="Alapértelmezett sávszélesség szint";
-qos.bandwidth="Sávszélesség Kbit-ekben";
+qos.bandwidth="Sávszélesség kbit/s-ekben";
 
 //help container
 
@@ -1147,7 +1147,7 @@ status_band.up="fel";
 
 //help container
 hstatus_band.svg="The A browser that supports SVG is required to display bandwidth graphs.";
-hstatus_band.right1="Kattintson a szövegre mérték változtatáshoz (bytes/s vagy bits/s).";
+hstatus_band.right1="Kattintson a szövegre mérték változtatáshoz (B/s vagy bit/s).";
 hstatus_band.right2="Kattintson a szövegre a grafikus skála változtatásához.";
 
 // **************************************************************** Status_Router.asp **********************************************************************//

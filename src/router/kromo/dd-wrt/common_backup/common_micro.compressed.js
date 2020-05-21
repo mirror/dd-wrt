@@ -1082,7 +1082,7 @@ document.forms[0].submit();
 function comma(n){
 n=""+n;
 var p=n;
-while((n=n.replace(/(\d+)(\d{3})/g,"$1,$2"))!=p){
+while((n=n.replace(/(\d+)(\d{3})/g,"$1\u202f$2"))!=p){
 p=n;
 }
 return n;
@@ -1096,10 +1096,10 @@ return ""+num;
 }
 var s=-1;
 do{
-num/=1024;
+num/=1000;
 ++s;
 }while((num>9999)&&(s<2));
-return comma(num.toFixed(2))+"<small> "+(["KB","MB","GB"])[s]+"</small>";
+return comma(num.toFixed(2))+"<small> "+(["kB","MB","GB"])[s]+"</small>";
 };
 function DisplayDiv(_76,evt,h,w,_77){
 var _78=w;
