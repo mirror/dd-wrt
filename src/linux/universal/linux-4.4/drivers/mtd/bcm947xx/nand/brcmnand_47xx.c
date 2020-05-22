@@ -79,7 +79,6 @@ extern struct nand_hw_control *nand_hwcontrol_lock_init(void);
 #define BRCMNAND_FLASH_STATUS_ERROR         (-2)
 #define BRCMNAND_TIMED_OUT                  (-3)
 
-#define BRCMNAND_OOBBUF(pbuf) (&((pbuf)->databuf[NAND_MAX_PAGESIZE]))
 
 /* Fill-in internal bit fields if missing */
 #ifndef	NAND_ALE_COL
@@ -245,7 +244,6 @@ static struct nand_ecclayout brcmnand_oob_bch4_2k = {
 };
 
 
-static void *page_buffer = NULL;
 
 /* Private global state */
 struct brcmnand_mtd brcmnand_info;
@@ -1104,7 +1102,7 @@ int brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 				reg |= NAC_PARTIAL_PAGE_EN;
 				W_REG(osh, &cc->nand_acc_control, reg);
 
-				memcpy(oob_buf, oob, NAND_MAX_OOBSIZE);
+				memcpy(oob_buf, oob, mtd->oobsize);
 				/* read from the spare area first */
 				ret = chip->ecc.read_oob(mtd, chip, chip->pagebuf);
 				if (ret != 0)
@@ -1112,7 +1110,7 @@ int brcmnand_write_page_hwecc(struct mtd_info *mtd, struct nand_chip *chip,
 				/* merge the oob */
 				for (i = 0; i < chip->ecc.total; i++)
 					oob_buf[eccpos[i]] = chip->oob_poi[eccpos[i]];
-				memcpy(chip->oob_poi, oob_buf, NAND_MAX_OOBSIZE);
+				memcpy(chip->oob_poi, oob_buf,  mtd->oobsize);
 				/* write back to the spare area */
 				ret = chip->ecc.write_oob(mtd, chip, chip->pagebuf);
 			}
@@ -1687,7 +1685,7 @@ int brcmnand_default_block_markbad(struct mtd_info *mtd, loff_t ofs)
 
 	if (chip->bbt)
 		chip->bbt[block >> 2] |= 0x01 << ((block & 0x03) << 1);
-	memcpy(buf, ffchars, NAND_MAX_OOBSIZE);
+	memcpy(buf, ffchars, mtd->oobsize);
 	memcpy(buf + chip->badblockpos, bbmarker, sizeof(bbmarker));
 	ret = chip->ecc.write_oob(mtd, chip, page);
 	page += dir;
@@ -2293,6 +2291,7 @@ brcmnand_mtd_init(void)
 	struct mtd_partition *parts;
 	int i;
 #endif
+	struct nand_buffers *nbuf;
 	list_for_each_entry(dev, &((pci_find_bus(0, 0))->devices), bus_list) {
 		if ((dev != NULL) && (dev->device == CC_CORE_ID))
 			break;
@@ -2345,12 +2344,6 @@ brcmnand_mtd_init(void)
 		goto init_partitions;
 	}
 
-	page_buffer = kmalloc(sizeof(struct nand_buffers), GFP_KERNEL);
-	if (!page_buffer) {
-		printk(KERN_ERR "brcmnand: cannot allocate memory for page buffer\n");
-		return -ENOMEM;
-	}
-	memset(page_buffer, 0, sizeof(struct nand_buffers));
 
 	chip = &brcmnand_info.chip;
 	mtd = &brcmnand_info.mtd;
@@ -2358,7 +2351,6 @@ brcmnand_mtd_init(void)
 
 	chip->ecc.mode = NAND_ECC_HW;
 
-	chip->buffers = (struct nand_buffers *)page_buffer;
 	chip->numchips = 1;
 	chip->chip_shift = 0;
 	chip->priv = mtd;
@@ -2384,6 +2376,21 @@ brcmnand_mtd_init(void)
 	/* 16B oob for 512B page, 64B for 2KB page, etc.. */
 	mtd->oobsize = (info->pagesize >> 5);
 
+
+
+	nbuf = kzalloc(sizeof(*nbuf) + mtd->writesize
+				+ mtd->oobsize * 3, GFP_KERNEL);
+	if (!nbuf) {
+		printk(KERN_ERR "brcmnand: cannot allocate memory for page buffer\n");
+		return -ENOMEM;
+	}
+	nbuf->ecccalc = (uint8_t *)(nbuf + 1);
+	nbuf->ecccode = nbuf->ecccalc + mtd->oobsize;
+	nbuf->databuf = nbuf->ecccode + mtd->oobsize;
+
+	chip->buffers = nbuf;
+
+
 	/* Calculate the address shift from the page size */
 	chip->page_shift = ffs(mtd->writesize) - 1;
 	/* Convert chipsize to number of pages per chip -1. */
@@ -2404,10 +2411,10 @@ brcmnand_mtd_init(void)
 	}
 
 	/* Preset the internal oob write buffer */
-	memset(BRCMNAND_OOBBUF(chip->buffers), 0xff, mtd->oobsize);
+	memset(chip->buffers->databuf + mtd->writesize, 0xff, mtd->oobsize);
 
 	/* Set the internal oob buffer location, just after the page data */
-	chip->oob_poi = BRCMNAND_OOBBUF(chip->buffers);
+	chip->oob_poi = chip->buffers->databuf + mtd->writesize;
 
 	/*
 	 * If no default placement scheme is given, select an appropriate one
@@ -2579,8 +2586,8 @@ fail:
 		iounmap((void *) brcmnand_info.cc);
 	if (brcmnand_info.sih)
 		si_detach(brcmnand_info.sih);
-	if (page_buffer)
-		kfree(page_buffer);
+	if (chip->buffers)
+		kfree(chip->buffers);
 	return ret;
 }
 
