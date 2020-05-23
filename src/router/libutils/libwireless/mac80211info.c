@@ -677,7 +677,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 	if (sinfo[NL80211_STA_INFO_STA_FLAGS]) {
 		sta_flags = (struct nl80211_sta_flag_update *)
 		    nla_data(sinfo[NL80211_STA_INFO_STA_FLAGS]);
-		if (sta_flags->mask & BIT(8))	// may work later. but not yet
+		if (sta_flags->mask & BIT(9))	// may work later. but not yet
 			mac80211_info->wci->ht40intol = 1;
 
 		if (sta_flags->mask & BIT(NL80211_STA_FLAG_PM)) {
