@@ -564,6 +564,11 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		[NL80211_RATE_INFO_VHT_NSS] = {.type = NLA_U8 },
 //              [NL80211_RATE_INFO_10_MHZ_WIDTH] = {.type = NLA_FLAG},
 //              [NL80211_RATE_INFO_5_MHZ_WIDTH] = {.type = NLA_FLAG},
+		[NL80211_RATE_INFO_HE_MCS] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_HE_NSS] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_HE_GI] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_HE_DCM] = {.type = NLA_U8 },
+		[NL80211_RATE_INFO_HE_RU_ALLOC] = {.type = NLA_U8 },
 #endif
 	};
 	nla_parse(tb, NL80211_ATTR_MAX, genlmsg_attrdata(gnlh, 0), genlmsg_attrlen(gnlh, 0), NULL);
@@ -675,6 +680,12 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 		if (sta_flags->mask & BIT(8))	// may work later. but not yet
 			mac80211_info->wci->ht40intol = 1;
 
+		if (sta_flags->mask & BIT(NL80211_STA_FLAG_PM)) {
+			if (sta_flags->set & BIT(NL80211_STA_FLAG_PM))
+				mac80211_info->wci->ps = 1;
+			else
+				mac80211_info->wci->ps = 0;
+		}
 	}
 	if (sinfo[NL80211_STA_INFO_RX_BITRATE]) {
 		if (nla_parse_nested(rinfo, NL80211_RATE_INFO_MAX, sinfo[NL80211_STA_INFO_RX_BITRATE], rate_policy)) {
