@@ -26,35 +26,13 @@
 
 #ifndef _ZSTD_FREEBSD_STDLIB_H_
 #define	_ZSTD_FREEBSD_STDLIB_H_
-
-#ifdef _KERNEL
-#include <sys/param.h>  /* size_t */
-#endif
-
-#if defined(__FreeBSD__) && defined(_KERNEL)
-
-#include <sys/malloc.h>
-MALLOC_DECLARE(M_ZSTD);
 #undef malloc
-#define	malloc(x)	(malloc)((x), M_ZSTD, M_WAITOK)
-#define	free(x)		(free)((x), M_ZSTD)
-#define	calloc(a, b)	(mallocarray)((a), (b), M_ZSTD, M_WAITOK | M_ZERO)
+#undef free
+#undef calloc
+#undef GCC_VERSION
 
-#elif defined(__linux__) && defined(_KERNEL)
-
-#undef	GCC_VERSION
-extern void *spl_kmem_alloc(size_t sz, int fl, const char *func, int line);
-extern void *spl_kmem_zalloc(size_t sz, int fl, const char *func, int line);
-extern void spl_kmem_free(const void *ptr, size_t sz);
-#define	KM_SLEEP	0x0000  /* can block for memory; success guaranteed */
-#define	KM_NOSLEEP	0x0001  /* cannot block for memory; may fail */
-#define	KM_ZERO		0x1000  /* zero the allocation */
-#undef malloc
-#define	malloc(sz)	spl_kmem_alloc((sz), KM_SLEEP, __func__, __LINE__)
-#define	free(ptr)	spl_kmem_free((ptr), 0)
-#define	calloc(n, sz)	\
-    spl_kmem_zalloc((n) * (sz), KM_SLEEP, __func__, __LINE__)
-
-#endif /* _KERNEL */
-
+/* use dummy functions for zstd, since the implemented code is not used */
+static inline void *malloc(int size) { return (NULL); }
+static inline void free(void *ptr) { return; }
+static inline void *calloc(int n, int size) { return (NULL); }
 #endif /* _ZSTD_FREEBSD_STDLIB_H_ */
