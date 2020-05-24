@@ -177,7 +177,6 @@ list:
 .PHONY: install armtest usan asan uasan
 install:
 	@$(MAKE) -C $(ZSTDDIR) $@
-	@$(MAKE) -C $(PRGDIR) $@
 
 .PHONY: uninstall
 uninstall:
