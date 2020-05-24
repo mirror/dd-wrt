@@ -38,7 +38,7 @@ endif
 default: lib-release zstd-release
 
 .PHONY: all
-all: allmost examples manual contrib
+all: allmost examples manual contrib lib
 
 .PHONY: allmost
 allmost: allzstd zlibwrapper
