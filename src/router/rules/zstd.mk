@@ -2,7 +2,7 @@ zstd-configure:
 	@true
 
 zstd:
-	$(MAKE) -C zstd
+	$(MAKE) -C zstd all lib
 
 zstd-clean:
 	$(MAKE) -C zstd clean
