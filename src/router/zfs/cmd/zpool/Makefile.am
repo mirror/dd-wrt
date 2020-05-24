@@ -1,5 +1,7 @@
 include $(top_srcdir)/config/Rules.am
 
+AM_CFLAGS += $(NO_STRINGOP_TRUNCATION)
+
 DEFAULT_INCLUDES += -I.
 
 sbin_PROGRAMS = zpool

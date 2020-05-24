@@ -539,9 +539,9 @@ static const kstat_proc_op_t proc_slab_operations = {
 	.proc_lseek	= seq_lseek,
 	.proc_release	= seq_release,
 #else
-	.open	   = proc_slab_open,
-	.read	   = seq_read,
-	.llseek	 = seq_lseek,
+	.open		= proc_slab_open,
+	.read		= seq_read,
+	.llseek		= seq_lseek,
 	.release	= seq_release,
 #endif
 };

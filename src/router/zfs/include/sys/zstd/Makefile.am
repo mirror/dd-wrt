@@ -1,29 +1,13 @@
 COMMON_H = \
-	$(top_srcdir)/include/sys/zstd/bitstream.h \
-	$(top_srcdir)/include/sys/zstd/cpu.h \
-	$(top_srcdir)/include/sys/zstd/error_private.h \
-	$(top_srcdir)/include/sys/zstd/hist.h \
-	$(top_srcdir)/include/sys/zstd/mem.h \
+	$(top_srcdir)/include/sys/zstd/aarch64_compat.h \
+	$(top_srcdir)/include/sys/zstd/limits.h \
+	$(top_srcdir)/include/sys/zstd/stddef.h \
+	$(top_srcdir)/include/sys/zstd/stdint.h \
+	$(top_srcdir)/include/sys/zstd/stdio.h \
+	$(top_srcdir)/include/sys/zstd/stdlib.h \
+	$(top_srcdir)/include/sys/zstd/string.h \
 	$(top_srcdir)/include/sys/zstd/zstd.h \
-	$(top_srcdir)/include/sys/zstd/zstd_double_fast.h \
-	$(top_srcdir)/include/sys/zstd/zstd_fast.h \
-	$(top_srcdir)/include/sys/zstd/zstd_lazy.h \
-	$(top_srcdir)/include/sys/zstd/zstd_opt.h \
-	$(top_srcdir)/include/sys/zstd/compiler.h \
-	$(top_srcdir)/include/sys/zstd/debug.h \
-	$(top_srcdir)/include/sys/zstd/fse.h \
-	$(top_srcdir)/include/sys/zstd/huf.h \
-	$(top_srcdir)/include/sys/zstd/xxhash.h \
-	$(top_srcdir)/include/sys/zstd/zstd_compress_internal.h \
-	$(top_srcdir)/include/sys/zstd/zstd_compress_literals.h \
-	$(top_srcdir)/include/sys/zstd/zstd_compress_sequences.h \
-	$(top_srcdir)/include/sys/zstd/zstd_cwksp.h \
-	$(top_srcdir)/include/sys/zstd/zstd_ddict.h \
-	$(top_srcdir)/include/sys/zstd/zstd_decompress_internal.h \
-	$(top_srcdir)/include/sys/zstd/zstd_decompress_block.h \
-	$(top_srcdir)/include/sys/zstd/zstd_errors.h \
-	$(top_srcdir)/include/sys/zstd/zstd_internal.h \
-	$(top_srcdir)/include/sys/zstd/zstd_ldm.h
+	$(top_srcdir)/include/sys/zstd/zstd_kfreebsd.h
 
 KERNEL_H =
 

@@ -206,9 +206,6 @@ kv_alloc(spl_kmem_cache_t *skc, int size, int flags)
 		ptr = __vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL);
 	}
 
-	/* Resulting allocated memory will be page aligned */
-	ASSERT(IS_P2ALIGNED(ptr, PAGE_SIZE));
-
 	return (ptr);
 }
 
