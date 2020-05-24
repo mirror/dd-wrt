@@ -5,10 +5,6 @@ VPATH = \
 	$(top_srcdir)/module/zcommon \
 	$(top_srcdir)/module/lua \
 	$(top_srcdir)/module/os/linux/zfs \
-	$(top_srcdir)/module/zstd \
-	$(top_srcdir)/module/zstd/common \
-	$(top_srcdir)/module/zstd/compress \
-	$(top_srcdir)/module/zstd/decompress \
 	$(top_srcdir)/lib/libzpool
 
 # Suppress unused but set variable warnings often due to ASSERTs
@@ -17,7 +13,7 @@ AM_CFLAGS += $(NO_UNUSED_BUT_SET_VARIABLE)
 # Includes kernel code generate warnings for large stack frames
 AM_CFLAGS += $(FRAME_LARGER_THAN)
 
-AM_CFLAGS += -DLIB_ZPOOL_BUILD -w
+AM_CFLAGS += -DLIB_ZPOOL_BUILD
 
 lib_LTLIBRARIES = libzpool.la
 
@@ -167,9 +163,6 @@ KERNEL_C = \
 	zrlock.c \
 	zthr.c
 
-ZSTD_C = \
-	zstd.c
-
 LUA_C = \
 	lapi.c \
 	lauxlib.c \
@@ -199,14 +192,14 @@ LUA_C = \
 nodist_libzpool_la_SOURCES = \
 	$(USER_C) \
 	$(KERNEL_C) \
-	$(LUA_C) \
-	$(ZSTD_C)
+	$(LUA_C)
 
 libzpool_la_LIBADD = \
 	$(top_builddir)/lib/libicp/libicp.la \
 	$(top_builddir)/lib/libnvpair/libnvpair.la \
 	$(top_builddir)/lib/libunicode/libunicode.la \
-	$(top_builddir)/lib/libzutil/libzutil.la
+	$(top_builddir)/lib/libzutil/libzutil.la \
+	$(top_builddir)/lib/libzstd/libzstd.la
 
 if BUILD_FREEBSD
 libzpool_la_LIBADD += $(ZLIB) -ldl -lgeom

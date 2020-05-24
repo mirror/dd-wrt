@@ -52,7 +52,7 @@ typedef enum kmc_bit {
 	KMC_BIT_DESTROY		= 17,	/* Destroy in progress */
 	KMC_BIT_TOTAL		= 18,	/* Proc handler helper bit */
 	KMC_BIT_ALLOC		= 19,	/* Proc handler helper bit */
-	KMC_BIT_MAX		= 21,	/* Proc handler helper bit */
+	KMC_BIT_MAX		= 20,	/* Proc handler helper bit */
 } kmc_bit_t;
 
 /* kmem move callback return values */

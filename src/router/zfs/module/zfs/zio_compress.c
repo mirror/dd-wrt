@@ -20,15 +20,12 @@
  */
 
 /*
- * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+ * Copyright (c) 2009, Sun Microsystems Inc. All rights reserved.
+ * Copyright (c) 2013, Saso Kiselkov. All rights reserved.
+ * Copyright (c) 2013, 2018, Delphix. All rights reserved.
+ * Copyright (c) 2019, Klara Inc. All rights reserved.
+ * Copyright (c) 2019, Allan Jude. All rights reserved.
  * Use is subject to license terms.
- */
-/*
- * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
- */
-
-/*
- * Copyright (c) 2013, 2018 by Delphix. All rights reserved.
  */
 
 #include <sys/zfs_context.h>
@@ -36,6 +33,7 @@
 #include <sys/zfeature.h>
 #include <sys/zio.h>
 #include <sys/zio_compress.h>
+#include <sys/zstd/zstd.h>
 
 /*
  * If nonzero, every 1/X decompression attempts will fail, simulating
@@ -62,9 +60,8 @@ zio_compress_info_t zio_compress_table[ZIO_COMPRESS_FUNCTIONS] = {
 	{"gzip-8",	8,	gzip_compress,	gzip_decompress, NULL},
 	{"gzip-9",	9,	gzip_compress,	gzip_decompress, NULL},
 	{"zle",		64,	zle_compress,	zle_decompress, NULL},
-	{"lz4",		0,	lz4_compress_zfs, lz4_decompress_zfs,
-	    NULL},
-	{"zstd",	ZIO_ZSTD_LEVEL_DEFAULT,	zstd_compress,	zstd_decompress,
+	{"lz4",		0,	lz4_compress_zfs, lz4_decompress_zfs, NULL},
+	{"zstd",	ZIO_ZSTD_LEVEL_DEFAULT,	zstd_compress, zstd_decompress,
 	    zstd_decompress_level},
 };
 
@@ -74,15 +71,8 @@ zio_complevel_select(spa_t *spa, enum zio_compress compress, uint8_t child,
 {
 	uint8_t result;
 
-/* XXX: Allan: These need more investigation before we can assert them */
-#if 0
-	ASSERT3U(child, <, ZIO_ZSTDLVL_LEVELS);
-	ASSERT3U(parent, <, ZIO_ZSTDLVL_LEVELS);
-	ASSERT3U(parent, !=, ZIO_ZSTDLVL_INHERIT);
-#endif
-
 	result = child;
-	if (result == ZIO_ZSTDLVL_INHERIT)
+	if (result == ZIO_ZSTD_LEVEL_INHERIT)
 		result = parent;
 
 	return (result);
@@ -152,7 +142,7 @@ zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len,
 
 	if (c == ZIO_COMPRESS_ZSTD) {
 		/* If we don't know the level, we can't compress it */
-		if (level == ZIO_ZSTDLVL_INHERIT)
+		if (level == ZIO_ZSTD_LEVEL_INHERIT)
 			return (s_len);
 
 		if (level == ZIO_COMPLEVEL_DEFAULT)
@@ -212,11 +202,6 @@ zio_decompress_data(enum zio_compress c, abd_t *src, void *dst,
 int
 zio_compress_to_feature(enum zio_compress comp)
 {
-	/* XXX: Allan */
-#if 0
-	VERIFY((comp & ~SPA_COMPRESSMASK) == 0);
-#endif
-
 	switch (comp) {
 	case ZIO_COMPRESS_ZSTD:
 		return (SPA_FEATURE_ZSTD_COMPRESS);
