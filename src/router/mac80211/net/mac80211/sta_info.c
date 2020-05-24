@@ -2428,6 +2428,7 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 				BIT(NL80211_STA_FLAG_MFP) |
 				BIT(NL80211_STA_FLAG_AUTHENTICATED) |
 				BIT(NL80211_STA_FLAG_ASSOCIATED) |
+				BIT(NL80211_STA_FLAG_PM) |
 				BIT(NL80211_STA_FLAG_TDLS_PEER);
 	if (test_sta_flag(sta, WLAN_STA_AUTHORIZED))
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_AUTHORIZED);
@@ -2443,6 +2444,23 @@ void sta_set_sinfo(struct sta_info *sta, struct station_info *sinfo,
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_ASSOCIATED);
 	if (test_sta_flag(sta, WLAN_STA_TDLS_PEER))
 		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_TDLS_PEER);
+	if (test_sta_flag(sta, WLAN_STA_PS_STA))
+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_PS);
+	if (test_sta_flag(sta, WLAN_STA_PS_DELIVER))
+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_PS);
+	if (test_sta_flag(sta, WLAN_STA_PS_DRIVER))
+		sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_PS);
+
+	if (ht_cap->ht_supported) {
+		struct ieee80211_ht_cap *ht_capa, *ht_capa_mask;
+	       __le16 le_flag = cpu_to_le16(IEEE80211_HT_CAP_40MHZ_INTOLERANT);
+		ht_capa = &sdata->u.mgd.ht_capa;
+		ht_capa_mask = &sdata->u.mgd.ht_capa_mask;
+
+		if ((ht_capa_mask->cap_info & le_flag) &&
+		    (ht_capa->cap_info & le_flag))
+			sinfo->sta_flags.set |= BIT(NL80211_STA_FLAG_HT40INTOL);
+	}
 
 	thr = sta_get_expected_throughput(sta);
 
