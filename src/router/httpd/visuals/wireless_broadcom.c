@@ -375,8 +375,6 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 							ht = 4;
 						}
 					}
-					if (sgi)
-						sprintf(info, "SGI");
 					if (vht)
 						sprintf(info, "VHT");
 					else
@@ -399,10 +397,12 @@ int ej_active_wireless_if(webs_t wp, int argc, char_t ** argv, char *iface, char
 						strcat(info, "160");
 						break;
 					}
+					if (sgi)
+						strcat(info, "SGI");
 					if (i40)
-						strcat(info, "i");
+						strcat(info, "[ht40i]");
 					if (sta4->flags & WL_STA_PS)
-						strcat(info, "PS");
+						strcat(info, "[PS]");
 					break;
 #endif
 				}

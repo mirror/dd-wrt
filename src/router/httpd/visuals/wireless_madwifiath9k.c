@@ -131,14 +131,14 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 		};
 		if (ht < 5 && ht >= 0)
 			sprintf(info, "%s%s", info, bwinfo[ht]);
-		if (wc->ht40intol)
-			sprintf(info, "%si", info);
-		if (wc->ps)
-			sprintf(info, "%sPS", info);
 		if (sgi)
 			sprintf(info, "%s%s", info, "SGI");
 		if (wc->islzo)
 			sprintf(info, "%s %s", info, "LZ");
+		if (wc->ht40intol)
+			sprintf(info, "%s[ht40i]", info);
+		if (wc->ps)
+			sprintf(info, "%s[PS]", info);
 		char str[64] = {
 			0
 		};
