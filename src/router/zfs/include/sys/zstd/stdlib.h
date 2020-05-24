@@ -32,7 +32,7 @@
 #undef GCC_VERSION
 
 /* use dummy functions for zstd, since the implemented code is not used */
-static inline void *malloc(int size) { return (NULL); }
-static inline void free(void *ptr) { return; }
-static inline void *calloc(int n, int size) { return (NULL); }
+#define	malloc(size) NULL
+#define	free(ptr)
+#define	calloc(n, size) NULL
 #endif /* _ZSTD_FREEBSD_STDLIB_H_ */
