@@ -205,15 +205,15 @@ bool QuickOpen::Tell(int64 *Pos)
 
 uint QuickOpen::ReadBuffer()
 {
-  int ReadSize=0;
   int64 SavePos=Arc->Tell();
   Arc->File::Seek(RawDataStart+RawDataPos,SEEK_SET);
   size_t SizeToRead=(size_t)Min(RawDataSize-RawDataPos,MaxBufSize-ReadBufSize);
   if (Arc->SubHead.Encrypted)
     SizeToRead &= ~CRYPT_BLOCK_MASK;
+  int ReadSize=0;
   if (SizeToRead!=0)
   {
-    int ReadSize=Arc->File::Read(Buf+ReadBufSize,SizeToRead);
+    ReadSize=Arc->File::Read(Buf+ReadBufSize,SizeToRead);
     if (ReadSize<=0)
       ReadSize=0;
     else
