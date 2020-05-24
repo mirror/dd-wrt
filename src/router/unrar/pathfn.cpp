@@ -180,7 +180,7 @@ void AddEndSlash(wchar *Path,size_t MaxLength)
 
 void MakeName(const wchar *Path,const wchar *Name,wchar *Pathname,size_t MaxSize)
 {
-  // 'Name' and 'Pathname' can point to same memory area. This is why we use
+  // 'Path', 'Name' and 'Pathname' can point to same memory area. So we use
   // the temporary buffer instead of constructing the name in 'Pathname'.
   wchar OutName[NM];
   wcsncpyz(OutName,Path,ASIZE(OutName));
