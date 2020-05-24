@@ -575,6 +575,14 @@ static int print_sta_handler(struct nl_msg *msg, void *arg)
 				printf("no");
 		}
 
+		if (sta_flags->mask & BIT(NL80211_STA_FLAG_HT40INTOL)) {
+			printf("\n\tHT40 Intollerant:\t");
+			if (sta_flags->set & BIT(NL80211_STA_FLAG_HT40INTOL))
+				printf("yes");
+			else
+				printf("no");
+		}
+
 		printf("\n\tCompression:\t");
 		if (nla_get_u32(sinfo[NL80211_STA_INFO_RX_COMPRESSED]))
 			printf("yes");
