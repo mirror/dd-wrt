@@ -16,7 +16,12 @@ KMOD=	openzfs
 	${SRCDIR}/os/freebsd/zfs \
 	${SRCDIR}/unicode \
 	${SRCDIR}/zcommon \
-	${SRCDIR}/zfs
+	${SRCDIR}/zfs \
+	${SRCDIR}/zstd \
+	${SRCDIR}/../contrib/zstd/common \
+	${SRCDIR}/../contrib/zstd/compress \
+	${SRCDIR}/../contrib/zstd/decompress
+
 
 
 CFLAGS+= -I${INCDIR}
@@ -24,6 +29,11 @@ CFLAGS+= -I${INCDIR}/spl
 CFLAGS+= -I${INCDIR}/os/freebsd
 CFLAGS+= -I${INCDIR}/os/freebsd/spl
 CFLAGS+= -I${INCDIR}/os/freebsd/zfs
+CFLAGS+= -I${SRCDIR}/../contrib/zstd
+CFLAGS+= -I${SRCDIR}/../contrib/zstd/common
+CFLAGS+= -I${SRCDIR}/../contrib/zstd/compress
+CFLAGS+= -I${SRCDIR}/../contrib/zstd/decompress
+CFLAGS+= -I${INCDIR}/sys/zstd
 CFLAGS+= -include ${INCDIR}/os/freebsd/spl/sys/ccompile.h
 
 CFLAGS+= -D__KERNEL__ -DFREEBSD_NAMECACHE -DBUILDING_ZFS  -D__BSD_VISIBLE=1
@@ -290,6 +300,29 @@ SRCS+=	abd.c \
 	zthr.c \
 	zvol.c
 
+#zstd
+SRCS+=	zstd.c \
+	zstd_common.c \
+	fse_decompress.c \
+	entropy_common.c \
+	error_private.c \
+	xxhash.c \
+	zstd_compress.c \
+	zstd_compress_literals.c \
+	zstd_compress_sequences.c \
+	fse_compress.c \
+	hist.c \
+	huf_compress.c \
+	zstd_double_fast.c \
+	zstd_fast.c \
+	zstd_lazy.c \
+	zstd_ldm.c \
+	zstd_opt.c \
+	zstd_ddict.c \
+	zstd_decompress.c \
+	zstd_decompress_block.c \
+	huf_decompress.c
+
 beforeinstall:
 .if ${MK_DEBUG_FILES} != "no"
 	mtree -eu \
@@ -380,3 +413,4 @@ CFLAGS.zio.c= -Wno-missing-prototypes -Wno-cast-qual
 CFLAGS.zio_checksum.c= -Wno-missing-prototypes
 CFLAGS.zle.c= -Wno-missing-prototypes
 CFLAGS.zrlock.c= -Wno-missing-prototypes -Wno-cast-qual
+CFLAGS.zstd.c= -Wno-missing-prototypes -Wno-cast-qual -Wno-pointer-arith

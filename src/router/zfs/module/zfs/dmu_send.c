@@ -18,14 +18,18 @@
  *
  * CDDL HEADER END
  */
+
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
- * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
- * Copyright (c) 2014, Joyent, Inc. All rights reserved.
- * Copyright 2014 HybridCluster. All rights reserved.
- * Copyright 2016 RackTop Systems.
- * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+ * Copyright (c) 2011, Nexenta Systems, Inc. All rights reserved.
+ * Copyright (c) 2011, 2018, Delphix. All rights reserved.
+ * Copyright (c) 2014, Joyent Inc. All rights reserved.
+ * Copyright (c) 2014, HybridCluster. All rights reserved.
+ * Copyright (c) 2016, RackTop Systems. All rights reserved.
+ * Copyright (c) 2016, Actifio Inc. All rights reserved.
+ * Copyright (c) 2019, Klara Inc. All rights reserved.
+ * Copyright (c) 2019, Allan Jude. All rights reserved.
+ * Use is subject to license terms.
  */
 
 #include <sys/dmu.h>
@@ -1958,7 +1962,6 @@ setup_featureflags(struct dmu_send_params *dspp, objset_t *os,
 		*featureflags |= DMU_BACKUP_FEATURE_LZ4;
 	}
 
-	/* XXX: Allan: should be able to use embedok without implying ZSTD */
 	if ((*featureflags &
 	    (DMU_BACKUP_FEATURE_EMBED_DATA | DMU_BACKUP_FEATURE_COMPRESSED |
 	    DMU_BACKUP_FEATURE_RAW)) != 0 &&

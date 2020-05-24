@@ -62,6 +62,7 @@
 #include <sys/btree.h>
 #include <sys/zfeature.h>
 #include <sys/qat.h>
+#include <sys/zstd/zstd.h>
 
 /*
  * SPA locking
@@ -2343,6 +2344,9 @@ spa_init(spa_mode_t mode)
 	}
 #endif
 
+#ifndef _KERNEL
+	zstd_init();
+#endif
 	fm_init();
 	zfs_refcount_init();
 	unique_init();
@@ -2350,9 +2354,6 @@ spa_init(spa_mode_t mode)
 	metaslab_stat_init();
 	ddt_init();
 	zio_init();
-#ifndef _KERNEL
-	zstd_init();
-#endif
 	dmu_init();
 	zil_init();
 	vdev_cache_stat_init();
@@ -2382,9 +2383,6 @@ spa_fini(void)
 	vdev_raidz_math_fini();
 	zil_fini();
 	dmu_fini();
-#ifndef _KERNEL
-	zstd_fini();
-#endif
 	zio_fini();
 	ddt_fini();
 	metaslab_stat_fini();
@@ -2404,6 +2402,9 @@ spa_fini(void)
 	mutex_destroy(&spa_namespace_lock);
 	mutex_destroy(&spa_spare_lock);
 	mutex_destroy(&spa_l2cache_lock);
+#ifndef _KERNEL
+	zstd_fini();
+#endif
 }
 
 /*

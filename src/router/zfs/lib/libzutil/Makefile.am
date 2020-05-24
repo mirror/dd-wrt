@@ -5,7 +5,7 @@ AM_CFLAGS += $(NO_UNUSED_BUT_SET_VARIABLE)
 
 DEFAULT_INCLUDES += -I.
 
-lib_LTLIBRARIES = libzutil.la
+noinst_LTLIBRARIES = libzutil.la
 
 USER_C = \
 	zutil_device_path.c \

@@ -1,34 +1,29 @@
 /*
- * BSD 2-Clause License (http://www.opensource.org/licenses/bsd-license.php)
+ * CDDL HEADER START
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are
- * met:
+ * The contents of this file are subject to the terms of the
+ * Common Development and Distribution License (the "License").
+ * You may not use this file except in compliance with the License.
  *
- * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer
- * Redistributions in binary form must reproduce the above
- * copyright notice, this list of conditions and the following disclaimer
- * in the documentation and/or other materials provided with the
- * distribution.
+ * You can obtain a copy of the license at usr/src/OPENSOLARIS.LICENSE
+ * or http://www.opensolaris.org/os/licensing.
+ * See the License for the specific language governing permissions
+ * and limitations under the License.
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * When distributing Covered Code, include this CDDL HEADER in each
+ * file and include the License file at usr/src/OPENSOLARIS.LICENSE.
+ * If applicable, add the following below this CDDL HEADER, with the
+ * fields enclosed by brackets "[]" replaced with your own identifying
+ * information: Portions Copyright [yyyy] [name of copyright owner]
+ *
+ * CDDL HEADER END
  */
 
 /*
- * Copyright (c) 2016-2018 by Klara Systems Inc.
- * Copyright (c) 2016-2018 Allan Jude <allanjude@freebsd.org>
- * Copyright (c) 2018-2019 Sebastian Gottschall <s.gottschall@dd-wrt.com>
+ * Copyright (c) 2016-2018, Klara Systems Inc. All rights reserved.
+ * Copyright (c) 2016-2018, Allan Jude. All rights reserved.
+ * Copyright (c) 2018-2019, Sebastian Gottschall. All rights reserved.
+ * Copyright (c) 2019, Michael Niewöhner. All rights reserved.
  */
 
 #include <sys/param.h>
@@ -36,59 +31,53 @@
 #include <sys/zfs_context.h>
 #include <sys/zio_compress.h>
 #include <sys/spa.h>
+#include <sys/zstd/zstd.h>
 
 #define	ZSTD_STATIC_LINKING_ONLY
-#include <sys/zstd/zstd.h>
-#include <sys/zstd/zstd_errors.h>
-#include <sys/zstd/error_private.h>
+#include "zstdlib.h"
 
-#include "common/zstd_common.c"
-#include "common/fse_decompress.c"
-#include "common/entropy_common.c"
-#include "common/xxhash.c"
-#include "compress/hist.c"
-#include "compress/zstd_compress.c"
-#include "compress/zstd_compress_literals.c"
-#include "compress/zstd_compress_sequences.c"
-#include "compress/fse_compress.c"
-#include "compress/huf_compress.c"
-#include "compress/zstd_double_fast.c"
-#include "compress/zstd_fast.c"
-#include "compress/zstd_lazy.c"
-#include "compress/zstd_ldm.c"
-#include "compress/zstd_opt.c"
-#include "decompress/zstd_ddict.c"
-#include "decompress/zstd_decompress.c"
-#include "decompress/zstd_decompress_block.c"
-#include "decompress/huf_decompress.c"
+/* FreeBSD compatibility */
+#if defined(__FreeBSD__) && defined(_KERNEL)
 
+MALLOC_DEFINE(M_ZSTD, "zstd", "ZSTD Compressor");
 
-/* for BSD compat */
-#define	__unused			__attribute__((unused))
+#define	KERN_ERR
+#define	printk dprintf
 
 /* for userspace compile, we disable error debugging */
-#ifndef _KERNEL
+#elif !defined(_KERNEL)
 #define	printk(fmt, ...)
 #endif
-
 
 static void *zstd_alloc(void *opaque, size_t size);
 static void *zstd_dctx_alloc(void *opaque, size_t size);
 static void zstd_free(void *opaque, void *ptr);
 
+/*
+ * zstd memory handlers
+ * for decompression we use a different handler which has the possiblity
+ * of a fallback memory allocation in case memory was running out
+ * We split up the zstd handlers for most simplified implementation
+ */
+
+/* compression memory handler */
 static const ZSTD_customMem zstd_malloc = {
 	zstd_alloc,
 	zstd_free,
 	NULL,
 };
 
+/* decompression memory handler */
 static const ZSTD_customMem zstd_dctx_malloc = {
 	zstd_dctx_alloc,
 	zstd_free,
 	NULL,
 };
-/* these enums are index references to zstd_cache_config */
 
+/*
+ * these enums describe the allocator type specified by
+ * kmem_type in struct zstd_kmem
+ */
 enum zstd_kmem_type {
 	ZSTD_KMEM_UNKNOWN = 0,
 	/* allocation type using kmem_vmalloc */
@@ -111,6 +100,7 @@ static int pool_count = 16;
 
 struct zstd_kmem;
 
+/* special structure for pooled memory objects */
 struct zstd_pool {
 	void *mem;
 	size_t size;
@@ -118,12 +108,17 @@ struct zstd_pool {
 	hrtime_t timeout;
 };
 
+/* global structure for handling memory allocations */
 struct zstd_kmem {
 	enum zstd_kmem_type	kmem_type;
 	size_t			kmem_size;
 	struct zstd_pool	*pool;
 };
 
+/*
+ * special fallback memory structure used for decompression only
+ * if memory is running out
+ */
 struct zstd_fallback_mem {
 	size_t			mem_size;
 	void			*mem;
@@ -135,7 +130,7 @@ static struct zstd_pool *zstd_mempool_cctx;
 static struct zstd_pool *zstd_mempool_dctx;
 
 /* initializes memory pool barrier mutexes */
-void
+static void
 zstd_mempool_init(void)
 {
 	int i;
@@ -164,7 +159,7 @@ release_pool(struct zstd_pool *pool)
 }
 
 /* releases memory pool objects */
-void
+static void
 zstd_mempool_deinit(void)
 {
 	int i;
@@ -190,7 +185,7 @@ zstd_mempool_deinit(void)
  * be reused in that timeframe. the scheduled release will be updated every time
  * a object is reused.
  */
-void *
+static void *
 zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 {
 	int i;
@@ -279,7 +274,7 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 /*
  * mark object as released by releasing the barrier mutex
  */
-void
+static void
 zstd_mempool_free(struct zstd_kmem *z)
 {
 	mutex_exit(&z->pool->barrier);
@@ -290,47 +285,48 @@ struct levelmap {
 	enum zio_zstd_levels level;
 };
 
-static struct levelmap fastlevels[] = {
-	{ZIO_ZSTDLVL_1, ZIO_ZSTDLVL_1},
-	{ZIO_ZSTDLVL_2, ZIO_ZSTDLVL_2},
-	{ZIO_ZSTDLVL_3, ZIO_ZSTDLVL_3},
-	{ZIO_ZSTDLVL_4, ZIO_ZSTDLVL_4},
-	{ZIO_ZSTDLVL_5, ZIO_ZSTDLVL_5},
-	{ZIO_ZSTDLVL_6, ZIO_ZSTDLVL_6},
-	{ZIO_ZSTDLVL_7, ZIO_ZSTDLVL_7},
-	{ZIO_ZSTDLVL_8, ZIO_ZSTDLVL_8},
-	{ZIO_ZSTDLVL_9, ZIO_ZSTDLVL_9},
-	{ZIO_ZSTDLVL_10, ZIO_ZSTDLVL_10},
-	{ZIO_ZSTDLVL_11, ZIO_ZSTDLVL_11},
-	{ZIO_ZSTDLVL_12, ZIO_ZSTDLVL_12},
-	{ZIO_ZSTDLVL_13, ZIO_ZSTDLVL_13},
-	{ZIO_ZSTDLVL_14, ZIO_ZSTDLVL_14},
-	{ZIO_ZSTDLVL_15, ZIO_ZSTDLVL_15},
-	{ZIO_ZSTDLVL_16, ZIO_ZSTDLVL_16},
-	{ZIO_ZSTDLVL_17, ZIO_ZSTDLVL_17},
-	{ZIO_ZSTDLVL_18, ZIO_ZSTDLVL_18},
-	{ZIO_ZSTDLVL_19, ZIO_ZSTDLVL_19},
-	{-1, ZIO_ZSTDLVL_FAST_1},
-	{-2, ZIO_ZSTDLVL_FAST_2},
-	{-3, ZIO_ZSTDLVL_FAST_3},
-	{-4, ZIO_ZSTDLVL_FAST_4},
-	{-5, ZIO_ZSTDLVL_FAST_5},
-	{-6, ZIO_ZSTDLVL_FAST_6},
-	{-7, ZIO_ZSTDLVL_FAST_7},
-	{-8, ZIO_ZSTDLVL_FAST_8},
-	{-9, ZIO_ZSTDLVL_FAST_9},
-	{-10, ZIO_ZSTDLVL_FAST_10},
-	{-20, ZIO_ZSTDLVL_FAST_20},
-	{-30, ZIO_ZSTDLVL_FAST_30},
-	{-40, ZIO_ZSTDLVL_FAST_40},
-	{-50, ZIO_ZSTDLVL_FAST_50},
-	{-60, ZIO_ZSTDLVL_FAST_60},
-	{-70, ZIO_ZSTDLVL_FAST_70},
-	{-80, ZIO_ZSTDLVL_FAST_80},
-	{-90, ZIO_ZSTDLVL_FAST_90},
-	{-100, ZIO_ZSTDLVL_FAST_100},
-	{-500, ZIO_ZSTDLVL_FAST_500},
-	{-1000, ZIO_ZSTDLVL_FAST_1000},
+/* level map for converting zfs internal levels to zstd levels and vice versa */
+static struct levelmap zstd_levels[] = {
+	{ZIO_ZSTD_LEVEL_1, ZIO_ZSTD_LEVEL_1},
+	{ZIO_ZSTD_LEVEL_2, ZIO_ZSTD_LEVEL_2},
+	{ZIO_ZSTD_LEVEL_3, ZIO_ZSTD_LEVEL_3},
+	{ZIO_ZSTD_LEVEL_4, ZIO_ZSTD_LEVEL_4},
+	{ZIO_ZSTD_LEVEL_5, ZIO_ZSTD_LEVEL_5},
+	{ZIO_ZSTD_LEVEL_6, ZIO_ZSTD_LEVEL_6},
+	{ZIO_ZSTD_LEVEL_7, ZIO_ZSTD_LEVEL_7},
+	{ZIO_ZSTD_LEVEL_8, ZIO_ZSTD_LEVEL_8},
+	{ZIO_ZSTD_LEVEL_9, ZIO_ZSTD_LEVEL_9},
+	{ZIO_ZSTD_LEVEL_10, ZIO_ZSTD_LEVEL_10},
+	{ZIO_ZSTD_LEVEL_11, ZIO_ZSTD_LEVEL_11},
+	{ZIO_ZSTD_LEVEL_12, ZIO_ZSTD_LEVEL_12},
+	{ZIO_ZSTD_LEVEL_13, ZIO_ZSTD_LEVEL_13},
+	{ZIO_ZSTD_LEVEL_14, ZIO_ZSTD_LEVEL_14},
+	{ZIO_ZSTD_LEVEL_15, ZIO_ZSTD_LEVEL_15},
+	{ZIO_ZSTD_LEVEL_16, ZIO_ZSTD_LEVEL_16},
+	{ZIO_ZSTD_LEVEL_17, ZIO_ZSTD_LEVEL_17},
+	{ZIO_ZSTD_LEVEL_18, ZIO_ZSTD_LEVEL_18},
+	{ZIO_ZSTD_LEVEL_19, ZIO_ZSTD_LEVEL_19},
+	{-1, ZIO_ZSTD_LEVEL_FAST_1},
+	{-2, ZIO_ZSTD_LEVEL_FAST_2},
+	{-3, ZIO_ZSTD_LEVEL_FAST_3},
+	{-4, ZIO_ZSTD_LEVEL_FAST_4},
+	{-5, ZIO_ZSTD_LEVEL_FAST_5},
+	{-6, ZIO_ZSTD_LEVEL_FAST_6},
+	{-7, ZIO_ZSTD_LEVEL_FAST_7},
+	{-8, ZIO_ZSTD_LEVEL_FAST_8},
+	{-9, ZIO_ZSTD_LEVEL_FAST_9},
+	{-10, ZIO_ZSTD_LEVEL_FAST_10},
+	{-20, ZIO_ZSTD_LEVEL_FAST_20},
+	{-30, ZIO_ZSTD_LEVEL_FAST_30},
+	{-40, ZIO_ZSTD_LEVEL_FAST_40},
+	{-50, ZIO_ZSTD_LEVEL_FAST_50},
+	{-60, ZIO_ZSTD_LEVEL_FAST_60},
+	{-70, ZIO_ZSTD_LEVEL_FAST_70},
+	{-80, ZIO_ZSTD_LEVEL_FAST_80},
+	{-90, ZIO_ZSTD_LEVEL_FAST_90},
+	{-100, ZIO_ZSTD_LEVEL_FAST_100},
+	{-500, ZIO_ZSTD_LEVEL_FAST_500},
+	{-1000, ZIO_ZSTD_LEVEL_FAST_1000},
 };
 
 /*
@@ -340,14 +336,15 @@ static enum zio_zstd_levels
 zstd_cookie_to_enum(int32_t level)
 {
 	int i;
-	for (i = 0; i < ARRAY_SIZE(fastlevels); i++) {
-		if (fastlevels[i].cookie == level)
-			return (fastlevels[i].level);
+	for (i = 0; i < ARRAY_SIZE(zstd_levels); i++) {
+		if (zstd_levels[i].cookie == level)
+			return (zstd_levels[i].level);
 	}
 
 	/* This shouldn't happen. Cause a panic. */
 	printk(KERN_ERR "%s:Invalid ZSTD level encountered: %d",
 	    __func__, level);
+
 	return (ZIO_ZSTD_LEVEL_DEFAULT);
 }
 
@@ -358,9 +355,9 @@ static int32_t
 zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 {
 	int i;
-	for (i = 0; i < ARRAY_SIZE(fastlevels); i++) {
-		if (fastlevels[i].level == elevel)
-			return (fastlevels[i].cookie);
+	for (i = 0; i < ARRAY_SIZE(zstd_levels); i++) {
+		if (zstd_levels[i].level == elevel)
+			return (zstd_levels[i].cookie);
 	}
 
 	/* This shouldn't happen. Cause a panic. */
@@ -368,7 +365,7 @@ zstd_enum_to_cookie(enum zio_zstd_levels elevel)
 	    "%s:Invalid ZSTD enum level encountered: %d",
 	    __func__, elevel);
 
-	return (3);
+	return (ZIO_ZSTD_LEVEL_3);
 }
 
 /*
@@ -387,13 +384,6 @@ zstd_compress(void *s_start, void *d_start, size_t s_len, size_t d_len, int lvl)
 	ASSERT3U(d_len, >=, sizeof (bufsiz));
 	ASSERT3U(d_len, <=, s_len);
 	ASSERT3U(levelcookie, !=, 0);
-
-	if (levelcookie == ZIO_COMPLEVEL_DEFAULT) {
-		levelcookie = ZIO_ZSTD_LEVEL_DEFAULT;
-	}
-	if (levelcookie == ZIO_ZSTDLVL_DEFAULT) {
-		levelcookie = ZIO_ZSTD_LEVEL_DEFAULT;
-	}
 
 	cctx = ZSTD_createCCtx_advanced(zstd_malloc);
 	/*
@@ -460,7 +450,7 @@ zstd_decompress_level(void *s_start, void *d_start, size_t s_len, size_t d_len,
 	uint8_t zstdlevel = zstd_cookie_to_enum(levelcookie);
 
 	ASSERT3U(d_len, >=, s_len);
-	ASSERT3U(zstdlevel, !=, ZIO_ZSTDLVL_INHERIT);
+	ASSERT3U(zstdlevel, !=, ZIO_ZSTD_LEVEL_INHERIT);
 
 	/* invalid compressed buffer size encoded at start */
 	if (bufsiz + sizeof (bufsiz) > s_len) {
@@ -506,7 +496,7 @@ zstd_decompress(void *s_start, void *d_start, size_t s_len, size_t d_len, int n)
  * allocator for zstd compression context using mempool_allocator
  */
 extern void *
-zstd_alloc(void *opaque __unused, size_t size)
+zstd_alloc(void *opaque __maybe_unused, size_t size)
 {
 	size_t nbytes = sizeof (struct zstd_kmem) + size;
 	struct zstd_kmem *z = NULL;
@@ -525,7 +515,7 @@ zstd_alloc(void *opaque __unused, size_t size)
  * fallback to reserved memory if allocation fails
  */
 extern void *
-zstd_dctx_alloc(void *opaque __unused, size_t size)
+zstd_dctx_alloc(void *opaque __maybe_unused, size_t size)
 {
 	size_t nbytes = sizeof (struct zstd_kmem) + size;
 	struct zstd_kmem *z = NULL;
@@ -566,7 +556,7 @@ zstd_dctx_alloc(void *opaque __unused, size_t size)
  * free allocated memory by its specific type
  */
 extern void
-zstd_free(void *opaque __unused, void *ptr)
+zstd_free(void *opaque __maybe_unused, void *ptr)
 {
 	struct zstd_kmem *z = ptr - sizeof (struct zstd_kmem);
 	enum zstd_kmem_type type;
@@ -648,7 +638,7 @@ EXPORT_SYMBOL(zstd_compress);
 EXPORT_SYMBOL(zstd_decompress_level);
 EXPORT_SYMBOL(zstd_decompress);
 
-MODULE_DESCRIPTION("ZSTD Compression for ZFS");
-MODULE_LICENSE("Dual BSD/GPL");
-MODULE_VERSION("1.4.4");
+ZFS_MODULE_DESCRIPTION("ZSTD Compression for ZFS");
+ZFS_MODULE_LICENSE("Dual BSD/GPL");
+ZFS_MODULE_VERSION("1.4.4");
 #endif
