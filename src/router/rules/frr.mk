@@ -6,6 +6,7 @@ libcap-clean:
 
 libcap-install:
 	make -C libcap install DESTDIR=$(INSTALLDIR)/libcap
+	rm -rf $(INSTALLDIR)/libcap/usr/include
 
 
 
