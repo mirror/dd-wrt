@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -29,9 +27,9 @@
 @interface PiecesView : NSImageView
 {
     int8_t  * fPieces;
-    
+
     NSColor * fGreenAvailabilityColor, * fBluePieceColor;
-    
+
     Torrent * fTorrent;
     NSInteger fNumPieces, fAcross, fWidth, fExtraBorder;
 }

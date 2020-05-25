@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2009-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -30,13 +28,13 @@
 {
     //we only make NSComparisonPredicates
     NSComparisonPredicate * predicate = (NSComparisonPredicate *)[super predicateWithSubpredicates: subpredicates];
-    
+
     //construct a near-identical predicate
     return [NSComparisonPredicate predicateWithLeftExpression: [predicate leftExpression]
-											  rightExpression: [predicate rightExpression]
-													 modifier: NSAnyPredicateModifier
-														 type: [predicate predicateOperatorType]
-													  options: [predicate options]];
+                                              rightExpression: [predicate rightExpression]
+                                                     modifier: NSAnyPredicateModifier
+                                                         type: [predicate predicateOperatorType]
+                                                      options: [predicate options]];
 }
 
 @end

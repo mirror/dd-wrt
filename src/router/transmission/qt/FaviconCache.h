@@ -4,54 +4,54 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_FAVICON_CACHE_H
-#define QTR_FAVICON_CACHE_H
+#pragma once
 
-#include <QMap>
+#include <unordered_map>
+
 #include <QString>
 #include <QObject>
 #include <QPixmap>
+
+#include <Utils.h> // std::hash<QString>
 
 class QNetworkAccessManager;
 class QNetworkReply;
 class QUrl;
 
-class FaviconCache: public QObject
+class FaviconCache : public QObject
 {
     Q_OBJECT
 
-  public:
-    FaviconCache ();
-    virtual ~FaviconCache ();
+public:
+    FaviconCache();
+    virtual ~FaviconCache();
 
     // returns a cached pixmap, or a NULL pixmap if there's no match in the cache
-    QPixmap find (const QUrl& url);
+    QPixmap find(QString const& key);
+    QPixmap find(QUrl const& url) { return find(getKey(url)); }
 
-    // returns a cached pixmap, or a NULL pixmap if there's no match in the cache
-    QPixmap findFromHost (const QString& host);
+    // This will emit a signal when (if) the icon becomes ready.
+    // Returns the key.
+    QString add(QUrl const& url);
 
-    // this will emit a signal when (if) the icon becomes ready
-    void add (const QUrl& url);
+    static QString getDisplayName(QString const& key);
+    static QString getKey(QUrl const& url);
+    static QString getKey(QString const& displayName);
+    static QSize getIconSize();
 
-    static QString getHost (const QUrl& url);
-    static QSize getIconSize ();
+signals:
+    void pixmapReady(QString const& key);
 
-  signals:
-    void pixmapReady (const QString& host);
+private:
+    QString getCacheDir();
+    void ensureCacheDirHasBeenScanned();
 
-  private:
-    QString getCacheDir ();
-    void ensureCacheDirHasBeenScanned ();
+private slots:
+    void onRequestFinished(QNetworkReply* reply);
 
-  private slots:
-    void onRequestFinished (QNetworkReply * reply);
-
-  private:
-    QNetworkAccessManager * myNAM;
-    QMap<QString, QPixmap> myPixmaps;
+private:
+    QNetworkAccessManager* myNAM;
+    std::unordered_map<QString, QPixmap> myPixmaps;
 };
-
-#endif // QTR_FAVICON_CACHE_H

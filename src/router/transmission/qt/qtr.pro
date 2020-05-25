@@ -11,8 +11,9 @@ unix: INSTALLS += man
 man.path = /share/man/man1/
 man.files = transmission-qt.1
 
-CONFIG += qt thread debug link_pkgconfig c++11 warn_on
+CONFIG += qt thread link_pkgconfig c++1z warn_on
 QT += network dbus
+win32:QT += winextras
 PKGCONFIG = fontconfig libcurl openssl libevent
 
 greaterThan(QT_MAJOR_VERSION, 4) {
@@ -38,8 +39,6 @@ unix: LIBS += -L$${EVENT_TOP}/lib -lz -lrt
 win32:LIBS += -levent-2.0 -lws2_32 -lintl
 win32:LIBS += -lidn -liconv -lwldap32 -liphlpapi
 
-lessThan(QT_MAJOR_VERSION, 5) : *-g++* | *-clang* : QMAKE_CXXFLAGS += -std=gnu++11
-
 TRANSLATIONS += translations/transmission_de.ts \
                 translations/transmission_en.ts \
                 translations/transmission_es.ts \
@@ -48,12 +47,17 @@ TRANSLATIONS += translations/transmission_de.ts \
                 translations/transmission_hu.ts \
                 translations/transmission_id.ts \
                 translations/transmission_it_IT.ts \
+                translations/transmission_ka.ts \
                 translations/transmission_kk.ts \
                 translations/transmission_ko.ts \
                 translations/transmission_lt.ts \
-                translations/transmission_pl_PL.ts \
+                translations/transmission_nl.ts \
+                translations/transmission_pl.ts \
                 translations/transmission_pt_BR.ts \
+                translations/transmission_pt_PT.ts \
                 translations/transmission_ru.ts \
+                translations/transmission_sv.ts \
+                translations/transmission_tr.ts \
                 translations/transmission_uk.ts \
                 translations/transmission_zh_CN.ts
 
@@ -84,7 +88,6 @@ SOURCES += AboutDialog.cc \
            FilterBar.cc \
            FilterBarComboBox.cc \
            FilterBarComboBoxDelegate.cc \
-           FilterBarLineEdit.cc \
            Filters.cc \
            Formatter.cc \
            FreeSpaceLabel.cc \
@@ -100,10 +103,12 @@ SOURCES += AboutDialog.cc \
            PrefsDialog.cc \
            RelocateDialog.cc \
            RpcClient.cc \
+           RpcQueue.cc \
            Session.cc \
            SessionDialog.cc \
            SqueezeLabel.cc \
            StatsDialog.cc \
+           StyleHelper.cc \
            Torrent.cc \
            TorrentDelegate.cc \
            TorrentDelegateMin.cc \
@@ -116,6 +121,6 @@ SOURCES += AboutDialog.cc \
            Utils.cc \
            WatchDir.cc
 HEADERS += $$replace(SOURCES, .cc, .h)
-HEADERS += BaseDialog.h CustomVariantType.h Speed.h
+HEADERS += BaseDialog.h CustomVariantType.h Speed.h Typedefs.h
 
 win32:RC_FILE = qtr.rc

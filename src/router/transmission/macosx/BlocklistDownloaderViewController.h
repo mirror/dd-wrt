@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,14 +21,15 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-#import <transmission.h>
+
+#include <libtransmission/transmission.h>
 
 @class PrefsController;
 
 @interface BlocklistDownloaderViewController : NSObject
-{    
+{
     PrefsController * fPrefsController;
-    
+
     IBOutlet NSWindow * fStatusWindow;
     IBOutlet NSProgressIndicator * fProgressBar;
     IBOutlet NSTextField * fTextField;

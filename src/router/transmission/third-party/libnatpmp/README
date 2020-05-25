@@ -1,3 +1,11 @@
+This repository of libnatpmp was initialized from libnatpmp-20120821.
+
+Then I (Leah X. Schmidt) added automatically Java bindings.  The java
+bindings use JNI directly, but they use JNAerator's extractor to allow
+the native libraries to be used in a simple fashion.  So you'll need
+jnaerator to use them.  Running make jnitest should download JNAerator
+and run a very simple test.
+
 libnatpmp (c) 2007-2009 Thomas Bernard
 contact : miniupnp@free.fr
 

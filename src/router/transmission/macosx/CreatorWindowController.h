@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,8 +21,9 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-#import "transmission.h"
-#import "makemeta.h"
+
+#include <libtransmission/transmission.h>
+#include <libtransmission/makemeta.h>
 
 @interface CreatorWindowController : NSWindowController
 {
@@ -34,17 +33,17 @@
     IBOutlet NSSegmentedControl * fTrackerAddRemoveControl;
     IBOutlet NSTextView * fCommentView;
     IBOutlet NSButton * fPrivateCheck, * fOpenCheck;
-    
+
     IBOutlet NSView * fProgressView;
     IBOutlet NSProgressIndicator * fProgressIndicator;
-    
+
     tr_metainfo_builder * fInfo;
     NSURL * fPath, * fLocation;
     NSMutableArray * fTrackers;
-    
+
     NSTimer * fTimer;
     BOOL fStarted, fOpenWhenCreated;
-    
+
     NSUserDefaults * fDefaults;
 }
 

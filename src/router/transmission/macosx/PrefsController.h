@@ -1,7 +1,5 @@
 /******************************************************************************
- * $Id$
- *
- * Copyright (c) 2005-2012 Transmission authors and contributors
+ * Copyright (c) 2005-2019 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,7 +21,8 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-#import <transmission.h>
+
+#include <libtransmission/transmission.h>
 
 @class PortChecker;
 
@@ -32,15 +31,15 @@
     tr_session * fHandle;
     NSUserDefaults * fDefaults;
     BOOL fHasLoaded;
-    
+
     IBOutlet NSView * fGeneralView, * fTransfersView, * fBandwidthView, * fPeersView, * fNetworkView, * fRemoteView, * fGroupsView;
-    
+
     NSString * fInitialString;
-    
-    IBOutlet NSButton * fBuiltInGrowlButton, *fGrowlAppButton;
+
+    IBOutlet NSButton *fSystemPreferencesButton;
     IBOutlet NSTextField * fCheckForUpdatesLabel;
     IBOutlet NSButton * fCheckForUpdatesButton, * fCheckForUpdatesBetaButton;
-    
+
     IBOutlet NSPopUpButton * fFolderPopUp, * fIncompleteFolderPopUp, * fImportFolderPopUp, * fDoneScriptPopUp;
     IBOutlet NSButton * fShowMagnetAddWindowCheck;
     IBOutlet NSTextField * fRatioStopField, * fIdleStopField, * fQueueDownloadField, * fQueueSeedField, * fStalledField;
@@ -48,11 +47,11 @@
     IBOutlet NSTextField * fUploadField, * fDownloadField,
                         * fSpeedLimitUploadField, * fSpeedLimitDownloadField;
     IBOutlet NSPopUpButton * fAutoSpeedDayTypePopUp;
-    
+
     IBOutlet NSTextField * fPeersGlobalField, * fPeersTorrentField,
                         * fBlocklistURLField, * fBlocklistMessageField, * fBlocklistDateField;
     IBOutlet NSButton * fBlocklistButton;
-    
+
     PortChecker * fPortChecker;
     IBOutlet NSTextField * fPortField, * fPortStatusField;
     IBOutlet NSButton * fNatCheck;
@@ -60,7 +59,7 @@
     IBOutlet NSProgressIndicator * fPortStatusProgress;
     NSTimer * fPortStatusTimer;
     int fPeerPort, fNatStatus;
-    
+
     IBOutlet NSTextField * fRPCPortField, * fRPCPasswordField;
     IBOutlet NSTableView * fRPCWhitelistTable;
     NSMutableArray * fRPCWhitelistArray;
@@ -104,9 +103,7 @@
 
 - (void) setBadge: (id) sender;
 
-- (IBAction) setBuiltInGrowlEnabled: (id) sender;
-- (IBAction) openGrowlApp: (id) sender;
-- (void) openNotificationSystemPrefs: (id) sender;
+- (IBAction) openNotificationSystemPrefs: (NSButton *) sender;
 
 - (void) resetWarnings: (id) sender;
 

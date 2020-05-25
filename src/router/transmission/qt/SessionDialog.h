@@ -4,11 +4,9 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_SESSION_DIALOG_H
-#define QTR_SESSION_DIALOG_H
+#pragma once
 
 #include <QWidgetList>
 
@@ -19,22 +17,21 @@
 class Prefs;
 class Session;
 
-class SessionDialog: public BaseDialog
+class SessionDialog : public BaseDialog
 {
     Q_OBJECT
 
-  public:
-    SessionDialog (Session& session, Prefs& prefs, QWidget * parent = nullptr);
-    virtual ~SessionDialog () {}
+public:
+    SessionDialog(Session& session, Prefs& prefs, QWidget* parent = nullptr);
 
-  public slots:
+public slots:
     // QDialog
-    virtual void accept ();
+    void accept() override;
 
-  private slots:
-    void resensitize ();
+private slots:
+    void resensitize();
 
-  private:
+private:
     Session& mySession;
     Prefs& myPrefs;
 
@@ -43,5 +40,3 @@ class SessionDialog: public BaseDialog
     QWidgetList myRemoteWidgets;
     QWidgetList myAuthWidgets;
 };
-
-#endif // QTR_SESSION_DIALOG_H

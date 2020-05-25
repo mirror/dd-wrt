@@ -4,34 +4,30 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_FILTER_BAR_COMBO_BOX_DELEGATE_H
-#define QTR_FILTER_BAR_COMBO_BOX_DELEGATE_H
+#pragma once
 
 #include <QItemDelegate>
 
 class QAbstractItemModel;
 class QComboBox;
 
-class FilterBarComboBoxDelegate: public QItemDelegate
+class FilterBarComboBoxDelegate : public QItemDelegate
 {
     Q_OBJECT
 
-  public:
-    FilterBarComboBoxDelegate (QObject * parent, QComboBox * combo);
+public:
+    FilterBarComboBoxDelegate(QObject* parent, QComboBox* combo);
 
-    static bool isSeparator (const QModelIndex &index);
-    static void setSeparator (QAbstractItemModel * model, const QModelIndex& index);
+    static bool isSeparator(QModelIndex const& index);
+    static void setSeparator(QAbstractItemModel* model, QModelIndex const& index);
 
-  protected:
+protected:
     // QAbstractItemDelegate
-    virtual void paint (QPainter *, const QStyleOptionViewItem&, const QModelIndex&) const;
-    virtual QSize sizeHint (const QStyleOptionViewItem&, const QModelIndex&) const;
+    void paint(QPainter*, QStyleOptionViewItem const&, QModelIndex const&) const override;
+    QSize sizeHint(QStyleOptionViewItem const&, QModelIndex const&) const override;
 
-  private:
-    QComboBox * const myCombo;
+private:
+    QComboBox* const myCombo;
 };
-
-#endif // QTR_FILTER_BAR_COMBO_BOX_DELEGATE_H
