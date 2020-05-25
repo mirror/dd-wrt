@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -44,7 +42,7 @@ BlocklistScheduler * fScheduler = nil;
 {
     if (!fScheduler)
         fScheduler = [[BlocklistScheduler alloc] init];
-    
+
     return fScheduler;
 }
 
@@ -52,25 +50,25 @@ BlocklistScheduler * fScheduler = nil;
 {
     if ([BlocklistDownloader isRunning])
         return;
-    
+
     [self cancelSchedule];
-    
+
     NSString * blocklistURL;
     if (![[NSUserDefaults standardUserDefaults] boolForKey: @"BlocklistNew"]
         || !((blocklistURL = [[NSUserDefaults standardUserDefaults] stringForKey: @"BlocklistURL"]) &&
                 ![blocklistURL isEqualToString: @""])
         || ![[NSUserDefaults standardUserDefaults] boolForKey: @"BlocklistAutoUpdate"])
         return;
-    
+
     NSDate * lastUpdateDate = [[NSUserDefaults standardUserDefaults] objectForKey: @"BlocklistNewLastUpdate"];
     if (lastUpdateDate)
         lastUpdateDate = [lastUpdateDate dateByAddingTimeInterval: FULL_WAIT];
     NSDate * closeDate = [NSDate dateWithTimeIntervalSinceNow: SMALL_DELAY];
-    
+
     NSDate * useDate = lastUpdateDate ? [lastUpdateDate laterDate: closeDate] : closeDate;
-    
+
     fTimer = [[NSTimer alloc] initWithFireDate: useDate interval: 0 target: self selector: @selector(runUpdater) userInfo: nil repeats: NO];
-    
+
     //current run loop usually means a second update won't work
     NSRunLoop * loop = [NSRunLoop mainRunLoop];
     [loop addTimer: fTimer forMode: NSDefaultRunLoopMode];
@@ -81,7 +79,6 @@ BlocklistScheduler * fScheduler = nil;
 - (void) cancelSchedule
 {
     [fTimer invalidate];
-    [fTimer release];
     fTimer = nil;
 }
 
@@ -91,7 +88,6 @@ BlocklistScheduler * fScheduler = nil;
 
 - (void) runUpdater
 {
-    [fTimer release];
     fTimer = nil;
     [BlocklistDownloader downloader];
 }

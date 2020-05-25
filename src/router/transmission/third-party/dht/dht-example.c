@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <signal.h>
 #include <sys/signal.h>
 
 #include "dht.h"
@@ -84,11 +85,34 @@ callback(void *closure,
 {
     if(event == DHT_EVENT_SEARCH_DONE)
         printf("Search done.\n");
+    else if(event == DHT_EVENT_SEARCH_DONE)
+        printf("IPv6 search done.\n");
     else if(event == DHT_EVENT_VALUES)
         printf("Received %d values.\n", (int)(data_len / 6));
+    else if(event == DHT_EVENT_VALUES6)
+        printf("Received %d IPv6 values.\n", (int)(data_len / 18));
+    else
+        printf("Unknown DHT event %d.\n", event);
 }
 
 static unsigned char buf[4096];
+
+static int
+set_nonblocking(int fd, int nonblocking)
+{
+    int rc;
+    rc = fcntl(fd, F_GETFL, 0);
+    if(rc < 0)
+        return -1;
+
+    rc = fcntl(fd, F_SETFL,
+               nonblocking ? (rc | O_NONBLOCK) : (rc & ~O_NONBLOCK));
+    if(rc < 0)
+        return -1;
+
+    return 0;
+}
+
 
 int
 main(int argc, char **argv)
@@ -111,8 +135,6 @@ main(int argc, char **argv)
 
     memset(&sin6, 0, sizeof(sin6));
     sin6.sin6_family = AF_INET6;
-
-
 
     while(1) {
         opt = getopt(argc, argv, "q46b:i:");
@@ -157,7 +179,7 @@ main(int argc, char **argv)
             have_id = 1;
         close(fd);
     }
-    
+
     fd = open("/dev/urandom", O_RDONLY);
     if(fd < 0) {
         perror("open(random)");
@@ -242,12 +264,17 @@ main(int argc, char **argv)
         dht_debug = stdout;
 
     /* We need an IPv4 and an IPv6 socket, bound to a stable port.  Rumour
-       has it that uTorrent works better when it is the same as your
+       has it that uTorrent likes you better when it is the same as your
        Bittorrent port. */
     if(ipv4) {
         s = socket(PF_INET, SOCK_DGRAM, 0);
         if(s < 0) {
             perror("socket(IPv4)");
+        }
+        rc = set_nonblocking(s, 1);
+        if(rc < 0) {
+            perror("set_nonblocking(IPv4)");
+            exit(1);
         }
     }
 
@@ -255,6 +282,11 @@ main(int argc, char **argv)
         s6 = socket(PF_INET6, SOCK_DGRAM, 0);
         if(s6 < 0) {
             perror("socket(IPv6)");
+        }
+        rc = set_nonblocking(s6, 1);
+        if(rc < 0) {
+            perror("set_nonblocking(IPv6)");
+            exit(1);
         }
     }
 
@@ -296,7 +328,7 @@ main(int argc, char **argv)
         }
     }
 
-    /* Init the dht.  This sets the socket into non-blocking mode. */
+    /* Init the dht. */
     rc = dht_init(s, s6, myid, (unsigned char*)"JC\0\0");
     if(rc < 0) {
         perror("dht_init");
@@ -310,14 +342,20 @@ main(int argc, char **argv)
        file, or from the PORT bittorrent message.
 
        Dht_ping_node is the brutal way of bootstrapping -- it actually
-       sends a message to the peer.  If you're going to bootstrap from
-       a massive number of nodes (for example because you're restoring from
-       a dump) and you already know their ids, it's better to use
-       dht_insert_node.  If the ids are incorrect, the DHT will recover. */
+       sends a message to the peer.  If you know the nodes' ids, it is
+       better to use dht_insert_node. */
     for(i = 0; i < num_bootstrap_nodes; i++) {
-        dht_ping_node((struct sockaddr*)&bootstrap_nodes[i],
-                      sizeof(bootstrap_nodes[i]));
-        usleep(random() % 100000);
+        socklen_t salen;
+        if(bootstrap_nodes[i].ss_family == AF_INET)
+            salen = sizeof(struct sockaddr_in);
+        else
+            salen = sizeof(struct sockaddr_in6);
+        dht_ping_node((struct sockaddr*)&bootstrap_nodes[i], salen);
+        /* Don't overload the DHT, or it will drop your nodes. */
+        if(i <= 128)
+            usleep(random() % 10000);
+        else
+            usleep(500000 + random() % 400000);
     }
 
     while(1) {
@@ -338,7 +376,7 @@ main(int argc, char **argv)
                 sleep(1);
             }
         }
-        
+
         if(exiting)
             break;
 
@@ -374,7 +412,7 @@ main(int argc, char **argv)
 
         /* This is how you trigger a search for a torrent hash.  If port
            (the second argument) is non-zero, it also performs an announce.
-           Since peers expire announced data after 30 minutes, it's a good
+           Since peers expire announced data after 30 minutes, it is a good
            idea to reannounce every 28 minutes or so. */
         if(searching) {
             if(s >= 0)
@@ -402,7 +440,7 @@ main(int argc, char **argv)
 
     dht_uninit();
     return 0;
-    
+
  usage:
     printf("Usage: dht-example [-q] [-4] [-6] [-i filename] [-b address]...\n"
            "                   port [address port]...\n");
@@ -410,6 +448,13 @@ main(int argc, char **argv)
 }
 
 /* Functions called by the DHT. */
+
+int
+dht_sendto(int sockfd, const void *buf, int len, int flags,
+           const struct sockaddr *to, int tolen)
+{
+    return sendto(sockfd, buf, len, flags, to, tolen);
+}
 
 int
 dht_blacklisted(const struct sockaddr *sa, int salen)
@@ -437,7 +482,7 @@ dht_hash(void *hash_return, int hash_size,
     memcpy(hash_return, ctx.digest, hash_size > 16 ? 16 : hash_size);
 }
 #else
-/* But for this example, we might as well use something weaker. */
+/* But for this toy example, we might as well use something weaker. */
 void
 dht_hash(void *hash_return, int hash_size,
          const void *v1, int len1,

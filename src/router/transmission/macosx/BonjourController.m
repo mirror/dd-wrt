@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -35,7 +33,7 @@ BonjourController * fDefaultController = nil;
     dispatch_once(&onceToken, ^{
         fDefaultController = [[BonjourController alloc] init];
     });
-    
+
     return fDefaultController;
 }
 
@@ -44,30 +42,24 @@ BonjourController * fDefaultController = nil;
     return fDefaultController != nil;
 }
 
-- (void) dealloc
-{
-    [fService release];
-    [super dealloc];
-}
 
 - (void) startWithPort: (int) port
 {
     [self stop];
-    
+
     NSMutableString * serviceName = [NSMutableString stringWithFormat: @"Transmission (%@ - %@)", NSUserName(), [[NSHost currentHost] localizedName]];
     if ([serviceName length] > BONJOUR_SERVICE_NAME_MAX_LENGTH)
         [serviceName deleteCharactersInRange: NSMakeRange(BONJOUR_SERVICE_NAME_MAX_LENGTH, [serviceName length] - BONJOUR_SERVICE_NAME_MAX_LENGTH)];
-    
+
     fService = [[NSNetService alloc] initWithDomain: @"" type: @"_http._tcp." name: serviceName port: port];
     [fService setDelegate: self];
-    
+
     [fService publish];
 }
 
 - (void) stop
 {
     [fService stop];
-    [fService release];
     fService = nil;
 }
 

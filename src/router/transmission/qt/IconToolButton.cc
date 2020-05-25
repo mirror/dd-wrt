@@ -4,7 +4,6 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
 #include <QStyle>
@@ -14,29 +13,28 @@
 
 #include "IconToolButton.h"
 
-IconToolButton::IconToolButton (QWidget * parent):
-  QToolButton (parent)
+IconToolButton::IconToolButton(QWidget* parent) :
+    QToolButton(parent)
 {
 }
 
-QSize
-IconToolButton::sizeHint () const
+QSize IconToolButton::sizeHint() const
 {
-  QStyleOptionToolButton option;
-  initStyleOption (&option);
-  option.features = QStyleOptionToolButton::None;
-  option.toolButtonStyle = Qt::ToolButtonIconOnly;
-  const QSize size = style ()->sizeFromContents (QStyle::CT_ToolButton, &option, iconSize (), this);
+    QStyleOptionToolButton option;
+    initStyleOption(&option);
+    option.features = QStyleOptionToolButton::None;
+    option.toolButtonStyle = Qt::ToolButtonIconOnly;
+    QSize const size = style()->sizeFromContents(QStyle::CT_ToolButton, &option, iconSize(), this);
 
-  return size.expandedTo (iconSize () + QSize (8, 8));
+    return size.expandedTo(iconSize() + QSize(8, 8));
 }
 
-void IconToolButton::paintEvent (QPaintEvent * /*event*/)
+void IconToolButton::paintEvent(QPaintEvent* /*event*/)
 {
-  QStylePainter painter(this);
-  QStyleOptionToolButton option;
-  initStyleOption (&option);
-  option.features = QStyleOptionToolButton::None;
-  option.toolButtonStyle = Qt::ToolButtonIconOnly;
-  painter.drawComplexControl(QStyle::CC_ToolButton, option);
+    QStylePainter painter(this);
+    QStyleOptionToolButton option;
+    initStyleOption(&option);
+    option.features = QStyleOptionToolButton::None;
+    option.toolButtonStyle = Qt::ToolButtonIconOnly;
+    painter.drawComplexControl(QStyle::CC_ToolButton, option);
 }

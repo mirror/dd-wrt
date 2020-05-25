@@ -1,7 +1,7 @@
-/* $Id: getgateway.c,v 1.22 2011/08/08 21:20:51 nanard Exp $ */
+/* $Id: getgateway.c,v 1.24 2014/03/31 12:41:35 nanard Exp $ */
 /* libnatpmp
 
-Copyright (c) 2007-2011, Thomas BERNARD 
+Copyright (c) 2007-2014, Thomas BERNARD
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #include <stdio.h>
 #include <ctype.h>
-#ifndef WIN32
+#ifndef _WIN32
 #include <netinet/in.h>
 #endif
 #if !defined(_MSC_VER)
@@ -67,7 +67,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #undef USE_SYSCTL_NET_ROUTE
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #undef USE_PROC_NET_ROUTE
 #undef USE_SOCKET_ROUTE
 #undef USE_SYSCTL_NET_ROUTE
@@ -84,7 +84,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <w32api/windef.h>
 #include <w32api/winbase.h>
 #include <w32api/winreg.h>
-#endif 
+#endif
 
 #ifdef __HAIKU__
 #include <stdlib.h>
@@ -92,7 +92,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <net/if.h>
 #include <sys/sockio.h>
 #define USE_HAIKU_CODE
-#endif 
+#endif
 
 #ifdef USE_SYSCTL_NET_ROUTE
 #include <stdlib.h>
@@ -116,26 +116,28 @@ POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #ifdef USE_WIN32_CODE_2
+#include <winsock2.h>
 #include <windows.h>
 #include <iphlpapi.h>
 #endif
 
 #include "getgateway.h"
 
-#ifndef WIN32
+#ifndef _WIN32
 #define SUCCESS (0)
 #define FAILED  (-1)
 #endif
 
-#ifdef USE_PROC_NET_ROUTE
+#if defined(USE_PROC_NET_ROUTE)
+
 /*
  parse /proc/net/route which is as follow :
 
-Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT           
-wlan0   0001A8C0        00000000        0001    0       0       0       00FFFFFF        0       0       0              
-eth0    0000FEA9        00000000        0001    0       0       0       0000FFFF        0       0       0              
-wlan0   00000000        0101A8C0        0003    0       0       0       00000000        0       0       0              
-eth0    00000000        00000000        0001    0       0       1000    00000000        0       0       0              
+Iface   Destination     Gateway         Flags   RefCnt  Use     Metric  Mask            MTU     Window  IRTT
+wlan0   0001A8C0        00000000        0001    0       0       0       00FFFFFF        0       0       0
+eth0    0000FEA9        00000000        0001    0       0       0       0000FFFF        0       0       0
+wlan0   00000000        0101A8C0        0003    0       0       0       00000000        0       0       0
+eth0    00000000        00000000        0001    0       0       1000    00000000        0       0       0
 
  One header line, and then one line by route by route table entry.
 */
@@ -172,10 +174,8 @@ int getdefaultgateway(in_addr_t * addr)
 		fclose(f);
 	return FAILED;
 }
-#endif /* #ifdef USE_PROC_NET_ROUTE */
 
-
-#ifdef USE_SYSCTL_NET_ROUTE
+#elif defined(USE_SYSCTL_NET_ROUTE)
 
 #define ROUNDUP(a) \
 	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
@@ -230,10 +230,9 @@ int getdefaultgateway(in_addr_t * addr)
 	}
 	return r;
 }
-#endif /* #ifdef USE_SYSCTL_NET_ROUTE */
 
+#elif defined(USE_SOCKET_ROUTE)
 
-#ifdef USE_SOCKET_ROUTE
 /* Thanks to Darren Kenny for this code */
 #define NEXTADDR(w, u) \
         if (rtm_addrs & (w)) {\
@@ -252,7 +251,7 @@ int getdefaultgateway(in_addr_t *addr)
   int s, seq, l, rtm_addrs, i;
   pid_t pid;
   struct sockaddr so_dst, so_mask;
-  char *cp = m_rtmsg.m_space; 
+  char *cp = m_rtmsg.m_space;
   struct sockaddr *gate = NULL, *sa;
   struct rt_msghdr *msg_hdr;
 
@@ -268,7 +267,7 @@ int getdefaultgateway(in_addr_t *addr)
   rtm.rtm_flags = RTF_UP | RTF_GATEWAY;
   rtm.rtm_version = RTM_VERSION;
   rtm.rtm_seq = ++seq;
-  rtm.rtm_addrs = rtm_addrs; 
+  rtm.rtm_addrs = rtm_addrs;
 
   so_dst.sa_family = AF_INET;
   so_mask.sa_family = AF_INET;
@@ -288,7 +287,7 @@ int getdefaultgateway(in_addr_t *addr)
   do {
     l = read(s, (char *)&m_rtmsg, sizeof(m_rtmsg));
   } while (l > 0 && (rtm.rtm_seq != seq || rtm.rtm_pid != pid));
-                        
+
   close(s);
 
   msg_hdr = &rtm;
@@ -315,10 +314,10 @@ int getdefaultgateway(in_addr_t *addr)
       return FAILED;
   }
 }
-#endif /* #ifdef USE_SOCKET_ROUTE */
 
-#ifdef USE_WIN32_CODE
-LIBSPEC int getdefaultgateway(in_addr_t * addr)
+#elif defined(USE_WIN32_CODE)
+
+int getdefaultgateway(in_addr_t * addr)
 {
 	HKEY networkCardsKey;
 	HKEY networkCardKey;
@@ -335,7 +334,7 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 	DWORD gatewayValueLength = MAX_VALUE_LENGTH;
 	DWORD gatewayValueType = REG_MULTI_SZ;
 	int done = 0;
-	
+
 	//const char * networkCardsPath = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\NetworkCards";
 	//const char * interfacesPath = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters\\Interfaces";
 #ifdef UNICODE
@@ -353,7 +352,7 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 #endif
 	// The windows registry lists its primary network devices in the following location:
 	// HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkCards
-	// 
+	//
 	// Each network device has its own subfolder, named with an index, with various properties:
 	// -NetworkCards
 	//   -5
@@ -362,10 +361,10 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 	//   -8
 	//     -Description = Marvell Yukon 88E8058 PCI-E Gigabit Ethernet Controller
 	//     -ServiceName = {86226414-5545-4335-A9D1-5BD7120119AD}
-	// 
+	//
 	// The above service name is the name of a subfolder within:
 	// HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\Interfaces
-	// 
+	//
 	// There may be more subfolders in this interfaces path than listed in the network cards path above:
 	// -Interfaces
 	//   -{3a539854-6a70-11db-887c-806e6f6e6963}
@@ -379,15 +378,15 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 	//     -DhcpIpAddress = 10.0.1.5
 	//     -DhcpDefaultGateay = 10.0.1.1
 	//     -[more]
-	// 
+	//
 	// In order to extract this information, we enumerate each network card, and extract the ServiceName value.
 	// This is then used to open the interface subfolder, and attempt to extract a DhcpDefaultGateway value.
 	// Once one is found, we're done.
-	// 
+	//
 	// It may be possible to simply enumerate the interface folders until we find one with a DhcpDefaultGateway value.
 	// However, the technique used is the technique most cited on the web, and we assume it to be more correct.
-	
-	if(ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, // Open registry key or predifined key 
+
+	if(ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, // Open registry key or predifined key
 	                                 networkCardsPath,   // Name of registry subkey to open
 	                                 0,                  // Reserved - must be zero
 	                                 KEY_READ,           // Mask - desired access rights
@@ -396,7 +395,7 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 		// Unable to open network cards keys
 		return -1;
 	}
-	
+
 	if(ERROR_SUCCESS != RegOpenKeyEx(HKEY_LOCAL_MACHINE, // Open registry key or predefined key
 	                                 interfacesPath,     // Name of registry subkey to open
 	                                 0,                  // Reserved - must be zero
@@ -407,12 +406,12 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 		RegCloseKey(networkCardsKey);
 		return -1;
 	}
-	
+
 	// Figure out how many subfolders are within the NetworkCards folder
 	RegQueryInfoKey(networkCardsKey, NULL, NULL, NULL, &numSubKeys, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-	
+
 	//printf( "Number of subkeys: %u\n", (unsigned int)numSubKeys);
-	
+
 	// Enumrate through each subfolder within the NetworkCards folder
 	for(i = 0; i < numSubKeys && !done; i++)
 	{
@@ -436,7 +435,7 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 				                                    (LPBYTE)keyValue, // Receives value
 				                                    &keyValueLength)) // Receives value length in bytes
 				{
-//					printf("keyValue: %s\n", keyValue);				
+//					printf("keyValue: %s\n", keyValue);
 					if(RegOpenKeyEx(interfacesKey, keyValue, 0, KEY_READ, &interfaceKey) == ERROR_SUCCESS)
 					{
 						gatewayValueLength = MAX_VALUE_LENGTH;
@@ -475,10 +474,10 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 			}
 		}
 	}
-	
+
 	RegCloseKey(interfacesKey);
 	RegCloseKey(networkCardsKey);
-	
+
 	if(done)
 	{
 #if UNICODE
@@ -495,12 +494,12 @@ LIBSPEC int getdefaultgateway(in_addr_t * addr)
 #endif
 		return 0;
 	}
-	
+
 	return -1;
 }
-#endif /* #ifdef USE_WIN32_CODE */
 
-#ifdef USE_WIN32_CODE_2
+#elif defined(USE_WIN32_CODE_2)
+
 int getdefaultgateway(in_addr_t *addr)
 {
 	MIB_IPFORWARDROW ip_forward;
@@ -510,9 +509,9 @@ int getdefaultgateway(in_addr_t *addr)
 	*addr = ip_forward.dwForwardNextHop;
 	return 0;
 }
-#endif /* #ifdef USE_WIN32_CODE_2 */
 
-#ifdef USE_HAIKU_CODE
+#elif defined(USE_HAIKU_CODE)
+
 int getdefaultgateway(in_addr_t *addr)
 {
     int fd, ret = -1;
@@ -563,6 +562,13 @@ fail:
     close(fd);
     return ret;
 }
-#endif /* #ifdef USE_HAIKU_CODE */
 
+#else /* fallback */
 
+int getdefaultgateway(in_addr_t * addr)
+{
+    (void)addr;
+    return -1;
+}
+
+#endif

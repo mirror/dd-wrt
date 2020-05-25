@@ -4,11 +4,9 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_WATCH_DIR_H
-#define QTR_WATCH_DIR_H
+#pragma once
 
 #include <QObject>
 #include <QSet>
@@ -18,41 +16,38 @@ class QFileSystemWatcher;
 
 class TorrentModel;
 
-class WatchDir: public QObject
+class WatchDir : public QObject
 {
     Q_OBJECT
 
-  public:
-    WatchDir (const TorrentModel&);
-    virtual ~WatchDir ();
+public:
+    WatchDir(TorrentModel const&);
 
-    void setPath (const QString& path, bool isEnabled);
+    void setPath(QString const& path, bool isEnabled);
 
-  signals:
-    void torrentFileAdded (const QString& filename);
+signals:
+    void torrentFileAdded(QString const& filename);
 
-  private:
+private:
     enum
     {
-      OK,
-      DUPLICATE,
-      ERROR
+        OK,
+        DUPLICATE,
+        ERROR
     };
 
-  private:
-    int metainfoTest (const QString& filename) const;
+private:
+    int metainfoTest(QString const& filename) const;
 
-  private slots:
-    void watcherActivated (const QString& path);
-    void onTimeout ();
+private slots:
+    void watcherActivated(QString const& path);
+    void onTimeout();
 
-    void rescanAllWatchedDirectories ();
+    void rescanAllWatchedDirectories();
 
-  private:
-    const TorrentModel& myModel;
+private:
+    TorrentModel const& myModel;
 
     QSet<QString> myWatchDirFiles;
-    QFileSystemWatcher * myWatcher;
+    QFileSystemWatcher* myWatcher;
 };
-
-#endif // QTR_WATCH_DIR_H

@@ -1,6 +1,6 @@
-/* $Id: wingettimeofday.h,v 1.2 2011/07/15 08:30:11 nanard Exp $ */
+/* $Id: wingettimeofday.h,v 1.5 2013/09/11 07:22:25 nanard Exp $ */
 /* libnatpmp
-Copyright (c) 2007-2011, Thomas BERNARD 
+Copyright (c) 2007-2013, Thomas BERNARD
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -28,12 +28,12 @@ POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __WINGETTIMEOFDAY_H__
 #define __WINGETTIMEOFDAY_H__
-#ifdef WIN32
+#ifdef _WIN32
 #if defined(_MSC_VER)
 #include <time.h>
 #else
 #include <sys/time.h>
 #endif
-int gettimeofday(struct timeval* p, void* tz /* IGNORED */);
+int natpmp_gettimeofday(struct timeval* p, void* tz /* IGNORED */);
 #endif
 #endif

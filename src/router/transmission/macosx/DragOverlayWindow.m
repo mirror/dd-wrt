@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -40,33 +38,34 @@
                     backing: NSBackingStoreBuffered defer: NO])))
     {
         fLib = lib;
-        
+
         [self setBackgroundColor: [NSColor colorWithCalibratedWhite: 0.0 alpha: 0.5]];
         [self setAlphaValue: 0.0];
         [self setOpaque: NO];
         [self setHasShadow: NO];
-        
+
         DragOverlayView * view = [[DragOverlayView alloc] initWithFrame: [self frame]];
         [self setContentView: view];
-        [view release];
-        
+
         [self setReleasedWhenClosed: NO];
         [self setIgnoresMouseEvents: YES];
-        
-        fFadeInAnimation = [[NSViewAnimation alloc] initWithViewAnimations: [NSArray arrayWithObject:
-                                [NSDictionary dictionaryWithObjectsAndKeys: self, NSViewAnimationTargetKey,
-                                NSViewAnimationFadeInEffect, NSViewAnimationEffectKey, nil]]];
+
+        fFadeInAnimation = [[NSViewAnimation alloc] initWithViewAnimations: @[
+                                                                              @{NSViewAnimationTargetKey: self,
+                                                                                NSViewAnimationEffectKey: NSViewAnimationFadeInEffect}
+                                                                              ]];
         [fFadeInAnimation setDuration: 0.15];
         [fFadeInAnimation setAnimationBlockingMode: NSAnimationNonblockingThreaded];
-        
-        fFadeOutAnimation = [[NSViewAnimation alloc] initWithViewAnimations: [NSArray arrayWithObject:
-                                [NSDictionary dictionaryWithObjectsAndKeys: self, NSViewAnimationTargetKey,
-                                NSViewAnimationFadeOutEffect, NSViewAnimationEffectKey, nil]]];
+
+        fFadeOutAnimation = [[NSViewAnimation alloc] initWithViewAnimations: @[
+                                                                               @{NSViewAnimationTargetKey: self,
+                                                                                 NSViewAnimationEffectKey: NSViewAnimationFadeOutEffect}
+                                                                               ]];
         [fFadeOutAnimation setDuration: 0.5];
         [fFadeOutAnimation setAnimationBlockingMode: NSAnimationNonblockingThreaded];
-        
+
         [window addChildWindow: self ordered: NSWindowAbove];
-        
+
         [[NSNotificationCenter defaultCenter] addObserver: self selector: @selector(resizeWindow)
             name: NSWindowDidResizeNotification object: window];
     }
@@ -76,22 +75,17 @@
 - (void) dealloc
 {
     [[NSNotificationCenter defaultCenter] removeObserver: self];
-    
-    [fFadeInAnimation release];
-    [fFadeOutAnimation release];
-    
-    [super dealloc];
 }
 
 - (void) setTorrents: (NSArray *) files
 {
     uint64_t size = 0;
     NSInteger count = 0;
-    
+
     NSString * name;
     BOOL folder;
     NSInteger fileCount = 0;
-    
+
     for (NSString * file in files)
     {
         if ([[[NSWorkspace sharedWorkspace] typeOfFile: file error: NULL] isEqualToString: @"org.bittorrent.torrent"]
@@ -105,11 +99,11 @@
                 count++;
                 size += info.totalSize;
                 fileCount += info.fileCount;
-                
+
                 //only useful when one torrent
                 if (count == 1)
                 {
-                    name = [NSString stringWithUTF8String: info.name];
+                    name = @(info.name);
                     folder = info.isFolder;
                 }
             }
@@ -117,10 +111,10 @@
             tr_ctorFree(ctor);
         }
     }
-    
+
     if (count <= 0)
         return;
-    
+
     //set strings and icon
     NSString * secondString = [NSString stringForFileSize: size];
     if (count > 1 || folder)
@@ -133,7 +127,7 @@
                             [NSString formattedUInteger: fileCount]];
         secondString = [NSString stringWithFormat: @"%@, %@", fileString, secondString];
     }
-    
+
     NSImage * icon;
     if (count == 1)
         icon = [[NSWorkspace sharedWorkspace] iconForFileType: folder ? NSFileTypeForHFSTypeCode(kGenericFolderIcon) : [name pathExtension]];
@@ -144,7 +138,7 @@
         secondString = [secondString stringByAppendingString: @" total"];
         icon = [NSImage imageNamed: @"TransmissionDocument.icns"];
     }
-    
+
     [[self contentView] setOverlay: icon mainLine: name subLine: secondString];
     [self fadeIn];
 }

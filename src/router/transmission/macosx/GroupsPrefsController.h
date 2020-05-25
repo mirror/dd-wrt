@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2007-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -28,19 +26,14 @@
 {
     IBOutlet NSTableView * fTableView;
     IBOutlet NSSegmentedControl * fAddRemoveControl;
-    
+
     IBOutlet NSColorWell * fSelectedColorView;
     IBOutlet NSTextField * fSelectedColorNameField;
     IBOutlet NSButton * fCustomLocationEnableCheck;
     IBOutlet NSPopUpButton * fCustomLocationPopUp;
-    
+
     IBOutlet NSButton * fAutoAssignRulesEnableCheck;
     IBOutlet NSButton * fAutoAssignRulesEditButton;
-    
-    IBOutlet NSWindow * fGroupRulesSheetWindow;
-    IBOutlet NSPredicateEditor * fRuleEditor;
-
-    IBOutlet NSLayoutConstraint * fRuleEditorHeightConstraint;
 }
 
 - (void) addRemoveGroup: (id) sender;

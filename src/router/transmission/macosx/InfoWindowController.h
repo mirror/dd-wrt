@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -36,13 +34,13 @@
 @interface InfoWindowController : NSWindowController
 {
     NSArray * fTorrents;
-    
+
     CGFloat fMinWindowWidth;
-    
+
     NSViewController <InfoViewController> * fViewController;
     NSInteger fCurrentTabTag;
     IBOutlet NSMatrix * fTabMatrix;
-    
+
     InfoGeneralViewController * fGeneralViewController;
     InfoActivityViewController * fActivityViewController;
     InfoTrackersViewController * fTrackersViewController;

@@ -39,22 +39,19 @@
 **
 ****************************************************************************/
 
-#ifndef QTR_SQUEEZE_LABEL_H
-#define QTR_SQUEEZE_LABEL_H
+#pragma once
 
 #include <QLabel>
 
-class SqueezeLabel: public QLabel
+class SqueezeLabel : public QLabel
 {
     Q_OBJECT
 
-  public:
-    SqueezeLabel (QWidget * parent = nullptr);
-    SqueezeLabel (const QString& text, QWidget * parent = nullptr);
+public:
+    SqueezeLabel(QWidget* parent = nullptr);
+    SqueezeLabel(QString const& text, QWidget* parent = nullptr);
 
-  protected:
+protected:
     // QWidget
-    virtual void paintEvent (QPaintEvent * paintEvent);
+    void paintEvent(QPaintEvent* paintEvent) override;
 };
-
-#endif // QTR_SQUEEZE_LABEL_H

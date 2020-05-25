@@ -4,60 +4,56 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_PATH_BUTTON_H
-#define QTR_PATH_BUTTON_H
+#pragma once
 
 #include <QToolButton>
 
-class PathButton: public QToolButton
+class PathButton : public QToolButton
 {
     Q_OBJECT
 
-  public:
+public:
     enum Mode
     {
-      DirectoryMode,
-      FileMode
+        DirectoryMode,
+        FileMode
     };
 
-  public:
-    PathButton (QWidget * parent = nullptr);
+public:
+    PathButton(QWidget* parent = nullptr);
 
-    void setMode (Mode mode);
-    void setTitle (const QString& title);
-    void setNameFilter (const QString& nameFilter);
+    void setMode(Mode mode);
+    void setTitle(QString const& title);
+    void setNameFilter(QString const& nameFilter);
 
-    void setPath (const QString& path);
-    const QString& path () const;
+    void setPath(QString const& path);
+    QString const& path() const;
 
     // QWidget
-    virtual QSize sizeHint () const;
+    QSize sizeHint() const override;
 
-  signals:
-    void pathChanged (const QString& path);
+signals:
+    void pathChanged(QString const& path);
 
-  protected:
+protected:
     // QWidget
-    virtual void paintEvent (QPaintEvent * event);
+    void paintEvent(QPaintEvent* event) override;
 
-  private:
-    void updateAppearance ();
+private:
+    void updateAppearance();
 
-    bool isDirMode () const;
-    QString effectiveTitle () const;
+    bool isDirMode() const;
+    QString effectiveTitle() const;
 
-  private slots:
-    void onClicked ();
-    void onFileSelected (const QString& path);
+private slots:
+    void onClicked();
+    void onFileSelected(QString const& path);
 
-  private:
+private:
     Mode myMode;
     QString myTitle;
     QString myNameFilter;
     QString myPath;
 };
-
-#endif // QTR_PATH_BUTTON_H

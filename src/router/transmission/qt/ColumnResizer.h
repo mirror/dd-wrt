@@ -4,11 +4,9 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_COLUMN_RESIZER_H
-#define QTR_COLUMN_RESIZER_H
+#pragma once
 
 #include <QObject>
 #include <QSet>
@@ -16,27 +14,25 @@
 class QGridLayout;
 class QTimer;
 
-class ColumnResizer: public QObject
+class ColumnResizer : public QObject
 {
     Q_OBJECT
 
-  public:
-    ColumnResizer (QObject * parent = nullptr);
+public:
+    ColumnResizer(QObject* parent = nullptr);
 
-    void addLayout (QGridLayout * layout);
+    void addLayout(QGridLayout* layout);
 
     // QObject
-    virtual bool eventFilter (QObject * object, QEvent * event);
+    bool eventFilter(QObject* object, QEvent* event) override;
 
-  public slots:
-    void update ();
+public slots:
+    void update();
 
-  private:
-    void scheduleUpdate ();
+private:
+    void scheduleUpdate();
 
-  private:
-    QTimer * myTimer;
-    QSet<QGridLayout *> myLayouts;
+private:
+    QTimer* myTimer;
+    QSet<QGridLayout*> myLayouts;
 };
-
-#endif // QTR_COLUMN_RESIZER_H

@@ -1,6 +1,6 @@
-/* $Id: natpmp.h,v 1.15 2011/07/15 08:30:11 nanard Exp $ */
+/* $Id: natpmp.h,v 1.19 2014/04/01 09:39:29 nanard Exp $ */
 /* libnatpmp
-Copyright (c) 2007-2011, Thomas BERNARD 
+Copyright (c) 2007-2014, Thomas BERNARD
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -35,21 +35,21 @@ POSSIBILITY OF SUCH DAMAGE.
 #include <time.h>
 #if !defined(_MSC_VER)
 #include <sys/time.h>
-#endif
-#ifdef WIN32
+#endif	/* !defined(_MSC_VER) */
+
+#ifdef _WIN32
 #include <winsock2.h>
-#if !defined(_MSC_VER)
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
-#else
+#else	/* !defined(_MSC_VER) || _MSC_VER >= 1600 */
 typedef unsigned long uint32_t;
 typedef unsigned short uint16_t;
-#endif
+#endif	/* !defined(_MSC_VER) || _MSC_VER >= 1600 */
 #define in_addr_t uint32_t
-#include "declspec.h"
-#else
-#define LIBSPEC
+#else	/* _WIN32 */
 #include <netinet/in.h>
-#endif
+#endif	/* _WIN32 */
+#include "natpmp_declspec.h"
 
 typedef struct {
 	int s;	/* socket */
@@ -141,7 +141,7 @@ extern "C" {
  * NATPMP_ERR_FCNTLERROR
  * NATPMP_ERR_CANNOTGETGATEWAY
  * NATPMP_ERR_CONNECTERR */
-LIBSPEC int initnatpmp(natpmp_t * p, int forcegw, in_addr_t forcedgw);
+NATPMP_LIBSPEC int initnatpmp(natpmp_t * p, int forcegw, in_addr_t forcedgw);
 
 /* closenatpmp()
  * close resources associated with a natpmp_t object
@@ -149,7 +149,7 @@ LIBSPEC int initnatpmp(natpmp_t * p, int forcegw, in_addr_t forcedgw);
  * 0 = OK
  * NATPMP_ERR_INVALIDARGS
  * NATPMP_ERR_CLOSEERR */
-LIBSPEC int closenatpmp(natpmp_t * p);
+NATPMP_LIBSPEC int closenatpmp(natpmp_t * p);
 
 /* sendpublicaddressrequest()
  * send a public address NAT-PMP request to the network gateway
@@ -157,7 +157,7 @@ LIBSPEC int closenatpmp(natpmp_t * p);
  * 2 = OK (size of the request)
  * NATPMP_ERR_INVALIDARGS
  * NATPMP_ERR_SENDERR */
-LIBSPEC int sendpublicaddressrequest(natpmp_t * p);
+NATPMP_LIBSPEC int sendpublicaddressrequest(natpmp_t * p);
 
 /* sendnewportmappingrequest()
  * send a new port mapping NAT-PMP request to the network gateway
@@ -171,7 +171,7 @@ LIBSPEC int sendpublicaddressrequest(natpmp_t * p);
  * 12 = OK (size of the request)
  * NATPMP_ERR_INVALIDARGS
  * NATPMP_ERR_SENDERR */
-LIBSPEC int sendnewportmappingrequest(natpmp_t * p, int protocol,
+NATPMP_LIBSPEC int sendnewportmappingrequest(natpmp_t * p, int protocol,
                               uint16_t privateport, uint16_t publicport,
 							  uint32_t lifetime);
 
@@ -183,7 +183,7 @@ LIBSPEC int sendnewportmappingrequest(natpmp_t * p, int protocol,
  * NATPMP_ERR_INVALIDARGS
  * NATPMP_ERR_GETTIMEOFDAYERR
  * NATPMP_ERR_NOPENDINGREQ */
-LIBSPEC int getnatpmprequesttimeout(natpmp_t * p, struct timeval * timeout);
+NATPMP_LIBSPEC int getnatpmprequesttimeout(natpmp_t * p, struct timeval * timeout);
 
 /* readnatpmpresponseorretry()
  * fills the natpmpresp_t structure if possible
@@ -202,10 +202,10 @@ LIBSPEC int getnatpmprequesttimeout(natpmp_t * p, struct timeval * timeout);
  * NATPMP_ERR_OUTOFRESOURCES
  * NATPMP_ERR_UNSUPPORTEDOPCODE
  * NATPMP_ERR_UNDEFINEDERROR */
-LIBSPEC int readnatpmpresponseorretry(natpmp_t * p, natpmpresp_t * response);
+NATPMP_LIBSPEC int readnatpmpresponseorretry(natpmp_t * p, natpmpresp_t * response);
 
 #ifdef ENABLE_STRNATPMPERR
-LIBSPEC const char * strnatpmperr(int t);
+NATPMP_LIBSPEC const char * strnatpmperr(int t);
 #endif
 
 #ifdef __cplusplus
