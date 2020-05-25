@@ -69,15 +69,7 @@ function(tr_make_id INPUT OVAR)
     set(${OVAR} "${ID}" PARENT_SCOPE)
 endfunction()
 
-macro(tr_github_upstream ID REPOID RELID RELMD5)
-    set(${ID}_RELEASE "${RELID}")
-    set(${ID}_UPSTREAM URL "https://github.com/${REPOID}/archive/${RELID}.tar.gz")
-    if(NOT SKIP_UPSTREAM_CHECKSUM)
-        list(APPEND ${ID}_UPSTREAM URL_MD5 "${RELMD5}")
-    endif()
-endmacro()
-
-macro(tr_add_external_auto_library ID LIBNAME)
+macro(tr_add_external_auto_library ID DIRNAME LIBNAME)
     if(USE_SYSTEM_${ID})
         tr_get_required_flag(USE_SYSTEM_${ID} SYSTEM_${ID}_IS_REQUIRED)
         find_package(${ID} ${${ID}_MINIMUM} ${SYSTEM_${ID}_IS_REQUIRED})
@@ -87,30 +79,32 @@ macro(tr_add_external_auto_library ID LIBNAME)
     if(USE_SYSTEM_${ID})
         unset(${ID}_UPSTREAM_TARGET)
     else()
-        set(${ID}_UPSTREAM_TARGET ${LIBNAME}-${${ID}_RELEASE})
+        set(${ID}_UPSTREAM_TARGET ${LIBNAME})
         set(${ID}_PREFIX "${CMAKE_BINARY_DIR}/third-party/${${ID}_UPSTREAM_TARGET}")
-
-        ExternalProject_Add(
-            ${${ID}_UPSTREAM_TARGET}
-            ${${ID}_UPSTREAM}
-            ${ARGN}
-            PREFIX "${${ID}_PREFIX}"
-            CMAKE_ARGS
-                -Wno-dev # We don't want to be warned over unused variables
-                "-DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_TOOLCHAIN_FILE}"
-                "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}"
-                "-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}"
-                "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
-                "-DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>"
-        )
-
-        set_property(TARGET ${${ID}_UPSTREAM_TARGET} PROPERTY FOLDER "ThirdParty")
 
         set(${ID}_INCLUDE_DIR "${${ID}_PREFIX}/include" CACHE INTERNAL "")
         set(${ID}_LIBRARY "${${ID}_PREFIX}/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBNAME}${CMAKE_STATIC_LIBRARY_SUFFIX}" CACHE INTERNAL "")
 
         set(${ID}_INCLUDE_DIRS ${${ID}_INCLUDE_DIR})
         set(${ID}_LIBRARIES ${${ID}_LIBRARY})
+
+        ExternalProject_Add(
+            ${${ID}_UPSTREAM_TARGET}
+            URL "${CMAKE_SOURCE_DIR}/third-party/${DIRNAME}"
+            ${ARGN}
+            PREFIX "${${ID}_PREFIX}"
+            CMAKE_ARGS
+                -Wno-dev # We don't want to be warned over unused variables
+                "-DCMAKE_TOOLCHAIN_FILE:PATH=${CMAKE_TOOLCHAIN_FILE}"
+                "-DCMAKE_USER_MAKE_RULES_OVERRIDE=${CMAKE_USER_MAKE_RULES_OVERRIDE}"
+                "-DCMAKE_C_FLAGS:STRING=${CMAKE_C_FLAGS}"
+                "-DCMAKE_CXX_FLAGS:STRING=${CMAKE_CXX_FLAGS}"
+                "-DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}"
+                "-DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>"
+            BUILD_BYPRODUCTS "${${ID}_LIBRARY}"
+        )
+
+        set_property(TARGET ${${ID}_UPSTREAM_TARGET} PROPERTY FOLDER "ThirdParty")
     endif()
 endmacro()
 
@@ -138,3 +132,67 @@ function(tr_win32_app_info OVAR DESCR INTNAME ORIGFNAME)
 
     set(${OVAR} "${CMAKE_CURRENT_BINARY_DIR}/${INTNAME}-app-info.rc" PARENT_SCOPE)
 endfunction()
+
+function(tr_select_library LIBNAMES FUNCNAME DIRS OVAR)
+    set(LIBNAME)
+    foreach(X ${LIBNAMES})
+        set(VAR_NAME "HAVE_${FUNCNAME}_IN_LIB${X}")
+        string(TOUPPER "${VAR_NAME}" VAR_NAME)
+        check_library_exists("${X}" "${FUNCNAME}" "${DIRS}" ${VAR_NAME})
+        if(${VAR_NAME})
+            set(LIBNAME "${X}")
+            break()
+        endif()
+    endforeach()
+    set(${OVAR} "${LIBNAME}" PARENT_SCOPE)
+endfunction()
+
+function(tr_fixup_bundle_item BUNDLE_DIR BUNDLE_ITEMS DEP_DIRS)
+    while(BUNDLE_ITEMS)
+        list(GET BUNDLE_ITEMS 0 ITEM)
+        list(REMOVE_AT BUNDLE_ITEMS 0)
+
+        set(ITEM_FULL_BUNDLE_PATH "${BUNDLE_DIR}/${ITEM}")
+        get_filename_component(ITEM_FULL_BUNDLE_DIR "${ITEM_FULL_BUNDLE_PATH}" PATH)
+
+        unset(ITEM_DEPS)
+        get_prerequisites("${ITEM_FULL_BUNDLE_PATH}" ITEM_DEPS 1 0 "${ITEM_FULL_BUNDLE_PATH}" "${DEP_DIRS}")
+
+        foreach(DEP IN LISTS ITEM_DEPS)
+            gp_resolve_item("${ITEM_FULL_BUNDLE_PATH}" "${DEP}" "${ITEM_FULL_BUNDLE_DIR}" "${DEP_DIRS}" DEP_FULL_PATH)
+
+            if(DEP_FULL_PATH MATCHES "[.]dylib$")
+                get_filename_component(DEP_NAME "${DEP_FULL_PATH}" NAME)
+                file(COPY "${DEP_FULL_PATH}" DESTINATION "${BUNDLE_DIR}/Contents/MacOS/")
+                set(DEP_BUNDLE_PATH "Contents/MacOS/${DEP_NAME}")
+            elseif(DEP_FULL_PATH MATCHES "^(.+)/(([^/]+[.]framework)/.+)$")
+                set(DEP_NAME "${CMAKE_MATCH_2}")
+                file(COPY "${CMAKE_MATCH_1}/${CMAKE_MATCH_3}" DESTINATION "${BUNDLE_DIR}/Contents/Frameworks/" PATTERN "Headers" EXCLUDE)
+                set(DEP_BUNDLE_PATH "Contents/Frameworks/${DEP_NAME}")
+            else()
+                message(FATAL_ERROR "Don't know how to fixup '${DEP_FULL_PATH}'")
+            endif()
+
+            execute_process(COMMAND install_name_tool -change "${DEP}" "@rpath/${DEP_NAME}" "${ITEM_FULL_BUNDLE_PATH}")
+
+            set(DEP_FULL_BUNDLE_PATH "${BUNDLE_DIR}/${DEP_BUNDLE_PATH}")
+            execute_process(COMMAND chmod u+w "${DEP_FULL_BUNDLE_PATH}")
+            execute_process(COMMAND install_name_tool -id "@rpath/${DEP_NAME}" "${DEP_FULL_BUNDLE_PATH}")
+
+            list(REMOVE_ITEM BUNDLE_ITEMS "${DEP_BUNDLE_PATH}")
+            list(APPEND BUNDLE_ITEMS "${DEP_BUNDLE_PATH}")
+        endforeach()
+    endwhile()
+endfunction()
+
+macro(tr_qt_wrap_ui)
+    qt5_wrap_ui(${ARGN})
+endmacro()
+
+macro(tr_qt_add_resources)
+    qt5_add_resources(${ARGN})
+endmacro()
+
+macro(tr_qt_add_translation)
+    qt5_add_translation(${ARGN} OPTIONS -silent)
+endmacro()

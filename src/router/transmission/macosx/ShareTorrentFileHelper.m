@@ -50,9 +50,8 @@
         service.delegate = (Controller *)[NSApp delegate];
         item.target = self;
         [items addObject: item];
-        [item release];
     }
-    
+
     return items;
 }
 

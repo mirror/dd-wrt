@@ -4,54 +4,49 @@
  * It may be used under the GNU GPL versions 2 or 3
  * or any future license endorsed by Mnemosyne LLC.
  *
- * $Id$
  */
 
-#ifndef QTR_TRACKER_MODEL_H
-#define QTR_TRACKER_MODEL_H
+#pragma once
 
 #include <QAbstractListModel>
-#include <QSet>
 #include <QVector>
 
 #include "Torrent.h"
+#include "Typedefs.h"
 
 class TorrentModel;
 
 struct TrackerInfo
 {
-  TrackerStat st;
-  int torrentId;
+    TrackerStat st;
+    int torrentId;
 };
 
 Q_DECLARE_METATYPE(TrackerInfo)
 
-class TrackerModel: public QAbstractListModel
+class TrackerModel : public QAbstractListModel
 {
     Q_OBJECT
 
-  public:
+public:
     enum Role
     {
-      TrackerRole = Qt::UserRole
+        TrackerRole = Qt::UserRole
     };
 
-  public:
-    TrackerModel () {}
-    virtual ~TrackerModel () {}
+public:
+    TrackerModel() = default;
 
-    void refresh (const TorrentModel&, const QSet<int>& ids);
-    int find (int torrentId, const QString& url) const;
+    void refresh(TorrentModel const&, torrent_ids_t const& ids);
+    int find(int torrentId, QString const& url) const;
 
     // QAbstractItemModel
-    virtual int rowCount (const QModelIndex& parent = QModelIndex ()) const;
-    virtual QVariant data (const QModelIndex& index, int role = Qt::DisplayRole) const;
+    int rowCount(QModelIndex const& parent = QModelIndex()) const override;
+    QVariant data(QModelIndex const& index, int role = Qt::DisplayRole) const override;
 
-  private:
+private:
     typedef QVector<TrackerInfo> rows_t;
 
-  private:
+private:
     rows_t myRows;
 };
-
-#endif // QTR_TRACKER_MODEL_H

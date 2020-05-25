@@ -1,27 +1,5 @@
 project(trqt)
 
-if(USE_QT5)
-    macro(tr_qt_wrap_ui)
-        qt5_wrap_ui(${ARGN})
-    endmacro()
-    macro(tr_qt_add_resources)
-        qt5_add_resources(${ARGN})
-    endmacro()
-    macro(tr_qt_add_translation)
-        qt5_add_translation(${ARGN})
-    endmacro()
-else()
-    macro(tr_qt_wrap_ui)
-        qt4_wrap_ui(${ARGN})
-    endmacro()
-    macro(tr_qt_add_resources)
-        qt4_add_resources(${ARGN})
-    endmacro()
-    macro(tr_qt_add_translation)
-        qt4_add_translation(${ARGN})
-    endmacro()
-endif()
-
 set(${PROJECT_NAME}_SOURCES
     AboutDialog.cc
     AddData.cc
@@ -38,7 +16,6 @@ set(${PROJECT_NAME}_SOURCES
     FilterBar.cc
     FilterBarComboBox.cc
     FilterBarComboBoxDelegate.cc
-    FilterBarLineEdit.cc
     Filters.cc
     Formatter.cc
     FreeSpaceLabel.cc
@@ -54,10 +31,12 @@ set(${PROJECT_NAME}_SOURCES
     PrefsDialog.cc
     RelocateDialog.cc
     RpcClient.cc
+    RpcQueue.cc
     Session.cc
     SessionDialog.cc
     SqueezeLabel.cc
     StatsDialog.cc
+    StyleHelper.cc
     Torrent.cc
     TorrentDelegate.cc
     TorrentDelegateMin.cc
@@ -96,7 +75,6 @@ set(${PROJECT_NAME}_HEADERS
     FilterBar.h
     FilterBarComboBox.h
     FilterBarComboBoxDelegate.h
-    FilterBarLineEdit.h
     Filters.h
     Formatter.h
     FreeSpaceLabel.h
@@ -112,11 +90,13 @@ set(${PROJECT_NAME}_HEADERS
     PrefsDialog.h
     RelocateDialog.h
     RpcClient.h
+    RpcQueue.h
     Session.h
     SessionDialog.h
     Speed.h
     SqueezeLabel.h
     StatsDialog.h
+    StyleHelper.h
     Torrent.h
     TorrentDelegate.h
     TorrentDelegateMin.h
@@ -126,6 +106,7 @@ set(${PROJECT_NAME}_HEADERS
     TrackerDelegate.h
     TrackerModel.h
     TrackerModelFilter.h
+    Typedefs.h
     Utils.h
     WatchDir.h
 )
@@ -152,20 +133,33 @@ endif()
 tr_qt_add_resources(${PROJECT_NAME}_QRC_SOURCES ${${PROJECT_NAME}_QRC_FILES})
 
 set(${PROJECT_NAME}_LINGUAS
+    af
+    ca
+    da
     de
+    el
     en
     es
     eu
+    fi
     fr
     hu
     id
     it_IT
+    ja
+    ka
     kk
     ko
     lt
-    pl_PL
+    nb
+    nl
+    pl
     pt_BR
+    pt_PT
     ru
+    sl
+    sv
+    tr
     uk
     zh_CN
 )
@@ -252,4 +246,9 @@ install(FILES transmission-qt.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/appli
 
 if(ENABLE_NLS)
     install(FILES ${${PROJECT_NAME}_QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/${TR_NAME}/translations)
+endif()
+
+if(WIN32)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/dist-qt.conf" CONTENT "")
+    install(FILES "${CMAKE_CURRENT_BINARY_DIR}/dist-qt.conf" DESTINATION ${CMAKE_INSTALL_SYSCONFDIR} RENAME qt.conf)
 endif()

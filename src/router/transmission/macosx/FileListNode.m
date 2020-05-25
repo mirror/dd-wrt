@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -49,7 +47,7 @@
         fChildren = [[NSMutableArray alloc] init];
         fSize = 0;
     }
-    
+
     return self;
 }
 
@@ -60,21 +58,21 @@
         fSize = size;
         [fIndexes addIndex: index];
     }
-    
+
     return self;
 }
 
 - (void) insertChild: (FileListNode *) child
 {
     NSAssert(fIsFolder, @"method can only be invoked on folders");
-    
+
     [fChildren addObject: child];
 }
 
 - (void) insertIndex: (NSUInteger) index withSize: (uint64_t) size
 {
     NSAssert(fIsFolder, @"method can only be invoked on folders");
-    
+
     [fIndexes addIndex: index];
     fSize += size;
 }
@@ -82,18 +80,9 @@
 - (id) copyWithZone: (NSZone *) zone
 {
     //this object is essentially immutable after initial setup
-    return [self retain];
+    return self;
 }
 
-- (void) dealloc
-{
-    [fName release];
-    [fPath release];
-    [fIndexes release];
-    [fIcon release];
-    [fChildren release];
-    [super dealloc];
-}
 
 - (NSString *) description
 {
@@ -106,15 +95,15 @@
 - (NSImage *) icon
 {
     if (!fIcon)
-        fIcon = [[[NSWorkspace sharedWorkspace] iconForFileType: fIsFolder ? NSFileTypeForHFSTypeCode(kGenericFolderIcon)
-                                                                            : [fName pathExtension]] retain];
+        fIcon = [[NSWorkspace sharedWorkspace] iconForFileType: fIsFolder ? NSFileTypeForHFSTypeCode(kGenericFolderIcon)
+                                                                            : [fName pathExtension]];
     return fIcon;
 }
 
 - (NSMutableArray *) children
 {
     NSAssert(fIsFolder, @"method can only be invoked on folders");
-    
+
     return fChildren;
 }
 
@@ -123,16 +112,16 @@
     NSParameterAssert(oldName != nil);
     NSParameterAssert(newName != nil);
     NSParameterAssert(path != nil);
-    
+
     NSArray * lookupPathComponents = [path pathComponents];
     NSArray * thesePathComponents = [self.path pathComponents];
-    
+
     if ([lookupPathComponents isEqualToArray: thesePathComponents]) //this node represents what's being renamed
     {
         if ([oldName isEqualToString: self.name])
         {
-            [fName release];
             fName = [newName copy];
+            fIcon = nil;
             return YES;
         }
     }
@@ -140,20 +129,19 @@
     {
         lookupPathComponents = [lookupPathComponents arrayByAddingObject: oldName];
         const BOOL allSame = NSNotFound == [lookupPathComponents indexOfObjectWithOptions: NSEnumerationConcurrent passingTest: ^BOOL(NSString * name, NSUInteger idx, BOOL * stop) {
-            return ![name isEqualToString: [thesePathComponents objectAtIndex: idx]];
+            return ![name isEqualToString: thesePathComponents[idx]];
         }];
-        
+
         if (allSame)
         {
             NSString * oldPathPrefix = [path stringByAppendingPathComponent: oldName];
             NSString * newPathPrefix = [path stringByAppendingPathComponent: newName];
-            
-            [fPath autorelease];
-            fPath = [[fPath stringByReplacingCharactersInRange: NSMakeRange(0, [oldPathPrefix length]) withString: newPathPrefix] retain];
+
+            fPath = [fPath stringByReplacingCharactersInRange: NSMakeRange(0, [oldPathPrefix length]) withString: newPathPrefix];
             return YES;
         }
     }
-    
+
     return NO;
 }
 
@@ -168,12 +156,12 @@
         fIsFolder = isFolder;
         fName = [name copy];
         fPath = [path copy];
-        
+
         fIndexes = [[NSMutableIndexSet alloc] init];
-        
+
         fTorrent = torrent;
     }
-    
+
     return self;
 }
 

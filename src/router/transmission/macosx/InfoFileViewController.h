@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2010-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +22,7 @@
 
 #import <Cocoa/Cocoa.h>
 #import <Quartz/Quartz.h>
+
 #import "InfoViewController.h"
 
 @class FileOutlineController;
@@ -31,11 +30,11 @@
 @interface InfoFileViewController : NSViewController <InfoViewController>
 {
     NSArray * fTorrents;
-    
+
     BOOL fSet;
-    
+
     IBOutlet FileOutlineController * fFileController;
-    
+
     IBOutlet NSSearchField * fFileFilterField;
     IBOutlet NSButton * fCheckAllButton, *fUncheckAllButton;
 }

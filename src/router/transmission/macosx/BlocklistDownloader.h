@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -36,13 +34,13 @@ typedef enum
 @interface BlocklistDownloader : NSObject <NSURLDownloadDelegate>
 {
     NSURLDownload * fDownload;
-    
+
     BlocklistDownloaderViewController * fViewController;
-    
+
     NSString * fDestination;
     NSUInteger fCurrentSize;
     long long fExpectedSize;
-    
+
     blocklistDownloadState fState;
 }
 

@@ -1,7 +1,5 @@
 /******************************************************************************
- * $Id$
- *
- * Copyright (c) 2005-2012 Transmission authors and contributors
+ * Copyright (c) 2005-2019 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -23,7 +21,8 @@
  *****************************************************************************/
 
 #import <Cocoa/Cocoa.h>
-#import <transmission.h>
+
+#include <libtransmission/transmission.h>
 
 @class Controller;
 @class Torrent;
@@ -34,25 +33,25 @@
 @interface TorrentTableView : NSOutlineView <NSOutlineViewDelegate, NSAnimationDelegate, NSPopoverDelegate>
 {
     IBOutlet Controller * fController;
-    
+
     TorrentCell * fTorrentCell;
-    
+
     NSUserDefaults * fDefaults;
-    
+
     NSMutableIndexSet * fCollapsedGroups;
-    
+
     IBOutlet NSMenu * fContextRow, * fContextNoRow;
-    
+
     NSInteger fMouseRow, fMouseControlRow, fMouseRevealRow, fMouseActionRow;
     NSArray * fSelectedValues;
-    
+
     IBOutlet NSMenu * fActionMenu, * fUploadMenu, * fDownloadMenu, * fRatioMenu, * fPriorityMenu;
     IBOutlet NSMenuItem * fGlobalLimitItem;
     Torrent * fMenuTorrent;
-    
+
     CGFloat fPiecesBarPercent;
     NSAnimation * fPiecesBarAnimation;
-    
+
     BOOL fActionPopoverShown;
 }
 

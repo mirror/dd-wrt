@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- *
  * Copyright (c) 2006-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -27,17 +25,17 @@
 @interface MessageWindowController : NSWindowController
 {
     IBOutlet NSTableView * fMessageTable;
-    
+
     IBOutlet NSPopUpButton * fLevelButton;
     IBOutlet NSButton * fSaveButton, * fClearButton;
     IBOutlet NSSearchField * fFilterField;
-    
+
     NSMutableArray * fMessages, * fDisplayedMessages;
-    
+
     NSDictionary * fAttributes;
-    
+
     NSTimer * fTimer;
-    
+
     NSLock * fLock;
 }
 

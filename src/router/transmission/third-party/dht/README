@@ -18,12 +18,19 @@ Initialisation
 
 * dht_init
 
-This must be called before using the library.  You pass it a bound IPv4
-datagram socket, a bound IPv6 datagram socket, and your node id, a 20-octet
-array that should be globally unique.
+This must be called before using the library.  You pass it an integer
+identifying a bound IPv4 datagram socket in non-blocking mode, an integer
+identifying a bound IPv6 datagram socket in non-blocking mode, and your
+node id, a 20-octet array that should be globally unique.
 
-If you're on a multi-homed host, you should bind the sockets to one of your
-addresses.
+The integers that identify the two sockets should usually be file
+descriptors; however, as the library does not directly perform any socket-
+or file-related operations on them, they can be arbitrary integers, for
+example indices in a table of structures that represent sockets in your
+code.
+
+If you're on a multi-homed host, you should bind your sockets to one of
+your addresses.  This is especially relevant for IPv6.
 
 Node ids must be well distributed, so you cannot just use your Bittorrent
 id; you should either generate a truly random value (using plenty of
@@ -56,22 +63,19 @@ inserted.
 * dht_insert_node
 
 This is a softer bootstrapping method, which doesn't actually send
-a query -- it only stores the node in the routing table for later use.  It
-is a good idea to use that when e.g. restoring your routing table from
-disk.
+a query -- it only stores the node in the routing table for later use.
 
 Note that dht_insert_node requires that you supply a node id.  If the id
 turns out to be wrong, the DHT will eventually recover; still, inserting
-massive amounts of incorrect information into your routing table is
-certainly not a good idea.
+massive amounts of incorrect information into your routing table is not
+a good idea.
 
-An additionaly difficulty with dht_insert_node is that, for various
-reasons, a Kademlia routing table cannot absorb nodes faster than a certain
-rate.  Dumping a large number of nodes into a table using dht_insert_node
-will probably cause most of these nodes to be discarded straight away.
-(The tolerable rate is difficult to estimate; it is probably on the order
-of one node every few seconds per node already in the table divided by 8,
-for some suitable value of 8.)
+An additionaly difficulty with dht_insert_node is that a Kademlia routing
+table cannot absorb nodes faster than a certain rate.  A freshly initialised
+routing table is able to absorb 128 nodes of each address family without
+dropping any.  The tolerable rate after that is difficult to estimate: it is
+probably on the order of one node every few seconds per node already in
+the table divided by 8, for some suitable value of 8.
 
 Doing some work
 ***************
@@ -93,14 +97,15 @@ interesting happens (see below).
 * dht_search
 
 This schedules a search for information about the info-hash specified in
-id.  If port is not 0, it specifies the TCP port on which the current peer
-is listening; in that case, when the search is complete it will be announced
-to the network.  The port is in host order, beware if you got it from
-a struct sockaddr_in.
+id; it returns 1 if this is a new search, and 0 if it merely reset the
+timeouts for a search in progress.  If port is not 0, it specifies the TCP
+port on which the current peer is listening; in that case, when the search
+is complete it will be announced to the network.  The port is in host
+order, beware if you got it from a struct sockaddr_in.
 
 In either case, data is passed to the callback function as soon as it is
-available, possibly in multiple pieces.  The callback function will
-additionally be called when the search is complete.
+available, possibly in multiple pieces.  The callback function will also
+be called when the search is complete.
 
 Up to DHT_MAX_SEARCHES (1024) searches can be in progress at a given time;
 any more, and dht_search will return -1.  If you specify a new search for
@@ -120,7 +125,7 @@ nodes; however, in order to avoid overloading your bootstrap nodes, you may
 want to wait until good is at least 4 and good + doubtful is at least 30 or
 so.
 
-It also includes the number of nodes that recently send us an unsolicited
+It also includes the number of nodes that recently sent us an unsolicited
 request; this can be used to determine if the UDP port used for the DHT is
 firewalled.
 
@@ -157,6 +162,12 @@ of the search.
 In the case of DHT_EVENT_VALUES, data is a list of nodes in ``compact''
 format -- 6 or 18 bytes per node.  Its length in bytes is in data_len.
 
+* dht_sendto
+
+This will be called whenever the library needs to send a datagram.  If the
+integers passed to dht_init are file descriptors, this can simply be an
+alias for the sendto system call.
+
 * dht_blacklisted
 
 This is a function that takes an IP address and returns true if this
@@ -166,12 +177,13 @@ really must -- Kademlia supposes transitive reachability.
 * dht_hash
 
 This should compute a reasonably strong cryptographic hash of the passed
-values.  It should map cleanly to your favourite crypto toolkit's MD5 or
-SHA-1 function.
+values.  SHA-1 should be good enough.
 
 * dht_random_bytes
 
-This should fill the supplied buffer with true random bytes.
+This should fill the supplied buffer with cryptographically strong random
+bytes.  It's called every 30 minutes on average, so it doesn't need to be
+fast.
 
 Final notes
 ***********
@@ -187,11 +199,6 @@ While there is no periodic pinging in this implementation, maintaining
 a full routing table requires slightly more than one packet exchange per
 minute, even in a completely idle network; this should be sufficient to
 make most full cone NATs happy.
-
-* Missing functionality
-
-Some of the code has had very little testing.  If it breaks, you get to
-keep both pieces.
 
 
                                         Juliusz Chroboczek

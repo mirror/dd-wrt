@@ -5,7 +5,11 @@
 // This should return the global number of bytes sent, used for determining dynamic
 // packet size based on rate
 
+#ifdef _MSC_VER
+#pragma message("WARNING: implement this in libtransmission")
+#else
 #warning implement this in libtransmission
+#endif
 uint64 UTP_GetGlobalUTPBytesSent(const struct sockaddr *remote, socklen_t remotelen) { return 0; }
 
 enum bandwidth_type_t {
@@ -14,12 +18,12 @@ enum bandwidth_type_t {
 	header_overhead, retransmit_overhead
 };
 
-#ifdef WIN32
+#ifdef _WIN32
 #define I64u "%I64u"
 #else
 #define I64u "%Lu"
 #endif
-#ifdef WIN32
+#ifdef _WIN32
 #define snprintf _snprintf
 #endif
 

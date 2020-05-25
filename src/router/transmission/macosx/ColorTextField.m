@@ -1,6 +1,4 @@
 /******************************************************************************
- * $Id$
- * 
  * Copyright (c) 2008-2012 Transmission authors and contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -34,7 +32,7 @@
 - (void) setEnabled: (BOOL) flag
 {
     [super setEnabled: flag];
-    
+
     NSColor * color = flag ? [NSColor controlTextColor] : [NSColor disabledControlTextColor];
     [self setTextColor: color];
 }
