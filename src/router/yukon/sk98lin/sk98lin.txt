@@ -1,0 +1,543 @@
+(C)Copyright 1999-2012 Marvell(R).
+All rights reserved.
+================================================================================
+
+sk98lin.txt created 22-Aug-2012
+
+Readme File for sk98lin v10.93.3.3
+Marvell Yukon/SysKonnect SK-98xx Gigabit Ethernet Adapter driver for Linux
+
+This file contains
+ 1  Overview
+ 2  Supported Functions
+ 3  Required Files
+ 4  Installation
+ 5  Driver Parameters
+    5.1  Port Parameters
+    5.2  Network Controller Parameters
+ 6  Ethtool Support
+ 7  Large Frame Support
+ 8  VLAN and Link Aggregation Support (IEEE 802.1, 802.1q, 802.3ad)
+ 9  Wake on Lan Support
+10  Troubleshooting
+
+================================================================================
+
+
+1  Overview
+===========
+
+The sk98lin driver supports Marvell Yukon Ethernet Network Controllers
+on Linux.
+
+It has been tested with Linux on Intel x86 (32-bit) and x86 (64-bit) systems
+and on PowerPC (PPC) 32-bit and 64-bit systems.
+
+For PowerPC systems, use the "generate patch" option in the installation script
+install.sh. For details on using the "generate patch" option, see chapter 6
+"Patch Generation and Recompilation of the Kernel" in the README file.
+***
+
+2  Supported Functions
+======================
+
+NOTE: The hardware support depends on the used network controller.
+
+The following functions are supported by the driver:
+
+- RX/TX HW Checksum
+- Hardware interrupt moderation (static/dynamic)
+- Transmit poll
+- Zerocopy/Scatter-Gather
+- Ethtool support
+- Wake on Lan (Magic Packet only)
+- DualNet
+- 
+ 
+
+3  Required Files
+=================
+
+The Linux kernel source.
+No additional files required.
+***
+
+
+4  Installation
+===============
+
+It is recommended to download the latest version of the driver from our 
+website. For details on the installation of the driver, refer to the 
+README file.
+***
+
+
+5  Driver Parameters
+====================
+
+The driver parameters can be set at the command line after the module has been 
+loaded with the command 'modprobe'.
+The configuration tools of some distributions are able to pass parameters
+to the driver module.
+
+If the kernel module loader is used, the parameters can be set
+in the file /etc/modprobe.conf (or old name: /etc/modules.conf).
+
+To set the driver parameters in this file:
+
+1. Insert a line similar to the following:
+
+   options sk98lin <parameter>=value1 [value2, etc]
+
+   where value1 refers to the first network controller, value2 to the 
+   second, etc.
+
+2. To activate the new parameters, reboot your system.
+
+To set the paramters from the command line:
+ 
+1.  Unload the driver.
+
+2.  Reload the driver by executing the following command:
+    modprobe sk98lin parameter=value1[,value2[,value3...]]
+
+    where value1 refers to the first network controller, value2 to the 
+    second, etc.
+
+NOTE: All parameters are case sensitive. Write them exactly as shown 
+      below.
+
+Example: You have two network controllers and want to set auto-negotiation
+         to 'On' for the first network controller and to 'Off' for the second
+         network controller. Also, you want to set DuplexCapabilities to 'Full'
+         for the first network controller and to 'Half' for the second
+         network controller.
+
+         Enter: modprobe sk98lin AutoNeg_A=On,Off DupCap_A=Full,Half
+
+NOTE: The number of network controllers that can be configured is limited 
+      in the driver (file skge.c, constant SK_MAX_CARD_PARAM). The current 
+      limit is 16. If you have more network controllers installed, adjust 
+      the parameter in the skge.c file and recompile.
+
+
+5.1  Port Parameters
+--------------------
+
+These settings are available for each port on the network controller (if 
+available).
+In the following description, '?' stands for the port for which you set 
+the parameter (A or B).
+
+Auto-Negotiation
+----------------
+Parameter:    AutoNeg_?
+Values:       On, Off, Sense
+Default:      On
+  
+With auto-negotiation, two connected network devices can negotiate common
+transmission parameters, such as speed and duplex mode. If the value 'Sense' is
+configured, the network controller automatically detects whether the link partner 
+supports auto-negotiation or not.
+
+Speed
+-----
+Parameter:    Speed_?
+Values:       10, 100, 1000, Auto
+Default:      Auto
+
+This parameter is only applicable if auto-negotiation for this port is set 
+to 'Sense'. It is used to set the speed capabilities. Usually, the speed is 
+negotiated between the two ports during link establishment. If this fails, 
+a port can be forced to a specific speed with this parameter.
+
+
+Duplex Capabilities
+-------------------
+Parameter:    DupCap_?
+Values:       Half, Full, Both
+Default:      Both
+
+This parameters is only applicable if auto-negotiation for this port is 
+not set to 'Sense'. If auto-negotiation is set to 'On', all three values
+are possible. If it is set to 'Off', only 'Full' and 'Half' are allowed.
+
+NOTE: The combination of Speed 1000 and Half Duplex is not possible. Please
+      use 100HD or 1000FD instead.
+
+Flow Control
+------------
+Parameter:    FlowCtrl_?
+Values:       Sym, SymOrRem, LocSend, None
+Default:      SymOrRem
+
+This parameter can be used to set the flow control capabilities the port 
+reports during auto-negotiation. It can be set for each port individually.
+
+Possible modes:
+   -- Sym      = Symmetric: both link partners are allowed to send PAUSE frames
+   -- SymOrRem = SymmetricOrRemote: both or only the remote partner are allowed 
+                 to send PAUSE frames
+   -- LocSend  = LocalSend: only local link partner is allowed to send PAUSE frames
+   -- None     = no link partner is allowed to send PAUSE frames
+  
+NOTE: If auto-negotiation is set to 'Off', Flow Control is ignored .
+
+Role in Master-Slave-Negotiation (1000Base-T only)
+--------------------------------------------------
+Parameter:    Role_?
+Values:       Auto, Master, Slave
+Default:      Auto
+
+For two 1000Base-T ports to communicate, one must take the role of the
+master (providing timing information), while the other must be the slave. 
+Usually, this is negotiated between the two ports during link establishment. 
+If this fails, a port can be forced to a specific role with this parameter.
+
+
+5.2  Network Controller Parameters
+----------------------------------
+
+Connection Type (for copper network controllers only)
+---------------
+Parameter:    ConType
+Values:       Auto, 1000FD, 100FD, 100HD, 10FD, 10HD
+Default:      Auto
+
+This parameter is a combination of port parameters. This simplifies the 
+configuration of both ports of a network controller! The different values 
+of this variable reflect the most important combinations of port parameters.
+
+The following table shows the values for 'ConType' and the corresponding
+combinations for the port parameters:
+
+    ConType   |  DupCap   AutoNeg   FlowCtrl   Role             Speed
+    ----------+------------------------------------------------------
+    Auto      |  Both     On        SymOrRem   Auto             Auto
+    1000FD    |  Full     On        None       Auto (ignored)   1000
+    100FD     |  Full     Off       None       Auto (ignored)   100
+    100HD     |  Half     Off       None       Auto (ignored)   100
+    10FD      |  Full     Off       None       Auto (ignored)   10
+    10HD      |  Half     Off       None       Auto (ignored)   10
+
+The port parameters (e.g., Speed_A) have a higher priority than the parameter
+'ConType'. Therefore, setting any other port parameter together with the 'ConType' 
+parameter will result in a merged configuration.
+
+NOTE: This parameter is always used on both ports of the network controller.
+
+
+Wake on Lan Type (for copper network controllers only)
+---------------
+Parameter:    WolType
+Values:       Auto, 100FD, 100HD, 10FD, 10HD
+Default:      Auto
+
+This parameter is a combination of port parameters. This simplifies the 
+configuration of the WOL speed. To support WOL you must have a computer
+with Motherboard that supports WOL. The WOL process is done through
+sending a special packet (aka "Magic Packet") to the remote computer.
+
+The following table shows the values for 'WolType' and the corresponding
+combinations for the port parameters:
+
+    WolType   |  DupCap   AutoNeg   FlowCtrl   Role             Speed
+    ----------+------------------------------------------------------
+    Auto      |  Both     On        SymOrRem   Auto             Auto
+    100FD     |  Full     Off       None       Auto (ignored)   100
+    100HD     |  Half     Off       None       Auto (ignored)   100
+    10FD      |  Full     Off       None       Auto (ignored)   10
+    10HD      |  Half     Off       None       Auto (ignored)   10
+
+NOTE: This parameter is always used on both ports of the network controller.
+
+
+Transmit Moderation
+--------------------
+Parameter:    TxModeration
+Values:       1...4095
+Default:      10
+
+With transmit moderation, the maximum number of transmit complete interrupts 
+the driver must serve can be limited. That is, one or more interrupts (which 
+indicate any transmit packet to be processed) are queued until the driver 
+processes them. When TxModeration is set to '1', all transmit complete interrupts 
+will be generated immediately. When set to '10', the network controller will 
+generate one transmit complete interrupt every ten served packets.
+
+NOTE: This parameter is only used on Yukon Extreme network controllers.
+
+
+Interrupt Moderation
+--------------------
+Parameter:    Moderation
+Values:       None, Static, Dynamic
+Default:      None
+
+With interrupt moderation, the maximum number of interrupts the driver must 
+serve can be limited. That is, one or more interrupts (which indicate any 
+transmit or receive packet to be processed) are queued until the driver processes 
+them. When queued interrupts are to be served is determined by the IntsPerSec 
+parameter (see section "Interrupts per Second").
+
+Possible modes:
+
+   -- None - each transmit or receive interrupt is served immediately as soon as 
+      it appears on the interrupt line of the network controller.
+
+   -- Static - all transmit and receive interrupts are queued until a complete 
+      moderation interval ends. If such a moderation interval ends, all queued 
+      interrupts are processed at once without any delay. 'Static' means that 
+      interrupt moderation is always enabled, regardless how much network load 
+      is currently passing via a particular interface. In addition, the duration
+      of the moderation interval has a fixed length that never changes while 
+      the driver is operational.
+
+   -- Dynamic - Interrupt moderation might be enabled for the network 
+      controller, depending on the system load. If the driver detects that the 
+      system load is too high, it enables interrupt moderation. If, at a later 
+      time, the system load decreases (or if the network load is negligible), 
+      interrupt moderation will automatically be disabled.
+
+Interrupt moderation should be used when the driver must handle one or more
+interfaces with a high network load, which also leads to a high CPU utilization. 
+When interrupt moderation is applied in such high network load situations, 
+CPU load might be reduced by 20-30%.
+
+NOTE: The drawback of using interrupt moderation is an increase of the Round-
+      Trip Time (RTT), due to the queueing and serving of interrupts at 
+      dedicated moderation times.
+
+Interrupts per Second
+---------------------
+Parameter:    IntsPerSec
+Values:       30...40000 (interrupts per second)
+Default:      2000
+
+The number of interrupts per second determines the length of any interrupt 
+moderation interval. This parameter is only applicable if either static or 
+dynamic interrupt moderation is enabled for the network controller. Otherwise, 
+it will be ignored.
+
+Example: Assuming that static interrupt moderation is to be used, an 'IntsPerSec' 
+         parameter value of 2000 will lead to an interrupt moderation interval 
+         of 500 microseconds. 
+
+NOTE: The duration of the moderation interval must be selected with care. A long 
+      interval (e.g., only 100 interrupts/s) results in a significantly increased
+      packet processing delay. But, selecting a very short interval might 
+      compensate the benefits of any moderation applied. 
+
+LowLatency 
+----------
+Parameter:    LowLatency
+Values:       On, Off
+Default:      Off
+
+This parameter is used to reduce the packet latency time of the network 
+controller. Setting the LowLatency parameter to 'On' forces the network 
+controller to pass any received packet immediately to upper network layers and 
+to send out any transmit packet as fast as possible. 
+
+NOTE 1: The system load increases if LowLatency is set to 'On', and a large 
+        number of data packets is transmitted and received.
+
+NOTE 2: This parameter is only used for network controllers which are based on 
+        PCI Express compatible chipsets.
+
+
+Message-Signaled Interrupts
+----------
+Parameter:    MsiIrq
+Values:       On, Off
+Default:      On
+
+Message Signaled Interrupts, in PCI Express, are an alternative way of 
+generating an interrupt. MSI increases the number of interrupts that are 
+possible. There is also a slight performance advantage.
+
+
+Receive-Side Scaling (RSS) 
+----------
+Parameter:    RSS
+Values:       On, Off
+Default:      Off
+
+Receive-Side Scaling (RSS) resolves the single-processor bottleneck by allowing 
+the receive side network load from a network adapter to be shared across multiple 
+processors. RSS enables packet receive-processing to scale with the number of 
+available processors. This allows the subsystem to take advantage of multi-core 
+and many core processor architectures.
+
+NOTE 1: Receive-Side Scaling is supported only for kernel versions >= 2.6.35
+***
+
+
+6  Ethtool Support
+==================
+
+The sk98lin driver provides the built-in ethtool support. Ethtool can 
+be used to display or modify interface-specific configurations.
+Ethtool is used with either a query command or a set command, followed by a 
+number of parameters (optional). With the query command, information about a 
+parameter is displayed. With the set command, the specified parameter is set.
+It is not the intention of this section to explain the ethtool command line 
+tool and all its options. For further information, refer to the man page of 
+ethtool. This section only describes the ethtool parameters supported by the 
+sk98lin driver.
+
+Pause Parameters
+----------------
+Query command:  -a
+Set command:    -A [autoneg on|off] [rx on|off] [tx on|off]
+Example:        ethtool -A eth0 rx off tx off
+
+Coalescing Parameters
+---------------------
+Query command:  -c
+Set command:    -C [sample-interval I]
+                   [rx-usecs N] [tx-usecs N]
+                   [rx-usecs-low N] [tx-usecs-low N]
+                   [rx-usecs-high N] [tx-usecs-high N]
+Parameter:      I = Length of sample interval, in seconds
+                    (supported values range from 1...10)
+                N = Length of coalescing interval, in microseconds
+                    (supported values range from 25...33,333)
+Example:        ethtool -C eth2 rx-usecs 500 tx-usecs 500
+
+NOTE: The sk98lin driver does not support different settings for the 
+      Rx and Tx interrupt coalescing parameters.
+
+Driver Information
+------------------
+Query command:  -i
+Example:        ethtool -i eth1
+
+Checksumming Parameters
+-----------------------
+Query command:  -k
+Set command:    -K [rx on|off] [tx on|off] [sg on|off] [tso on|off]
+Example:        ethtool -K eth0 sg off
+
+Locate NIC Command
+------------------
+Query command:  -p [N]
+Parameter:      N = Amount of time to perform locate NIC command, in seconds
+Example:        ethtool -p 10 eth1
+
+Driver-specific Statistics
+--------------------------
+Query command:  -S
+Example:        ethtool -S eth0
+
+Setting Parameters
+------------------
+Set command:    -s [speed 10|100|1000] [duplex half|full] 
+                   [autoneg on|off] [wol gd]
+Example:        ethtool -s eth2 wol d
+Example:        ethtool -s eth2 autoneg off speed 100 duplex full
+
+NOTE: If the cable is disconnected, set the speed and duplex mode if you 
+      disable/enable autonegotiation.
+ 
+NOTE: To set this parameter back to the default value, use the 'autoneg on'
+      command.
+      Example:    ethtool -s eth2 autoneg on
+***
+
+
+7  Large Frame Support
+======================
+
+The sk98lin supports large frames (also called jumbo frames). Using jumbo
+frames can result in an improved throughput when transferring large amounts 
+of data.
+To enable large frames, set the Maximum Transfer Unit (MTU) of the interface 
+to 9000, execute the following command:
+
+         ifconfig eth0 mtu 9000
+
+This will only work if two network controllers are connected back-to-back or if 
+a switch is used that supports large frames. When using a switch, it must be 
+configured to allow large frames. The setting must be configured for all network 
+controllers that can be reached by the large frames. If one network controller 
+is not set to receive large frames, it will simply drop them.
+
+To switch back to the standard Ethernet frame size, execute the following 
+command:
+         ifconfig eth0 mtu 1500
+
+To permanently configure this setting, add a script including this command 
+to the system startup sequence (named "S99sk98lin" in the directory
+/etc/rc.d/rc2.d).
+***
+
+8  VLAN and Link Aggregation Support (IEEE 802.1, 802.1q, 802.3ad)
+==================================================================
+
+The Marvell Yukon Linux drivers support VLAN and Link Aggregation 
+according to IEEE standards 802.1, 802.1q, and 802.3ad. 
+
+9  Wake on Lan Support
+======================
+
+The sk98lin supports wake up from suspend mode with MagicPacket.
+Wake on Lan support is enabled by default. To disable it, use the ethtool.
+
+NOTE 1: WOL support has to be enabled in the BIOS and in the kernel.
+
+NOTE 2: Refer to the kernel documentation for additional requirements 
+        regarding WOL support.
+
+
+10  Troubleshooting
+===================
+
+If any problems occur during the installation process, check the 
+following list:
+
+
+Problem:  Programs such as 'ifconfig' and 'route' cannot be found, or the 
+          error message 'Operation not permitted' is displayed.
+Reason:   You are not logged in as user 'root'.
+Solution: Logout and login as 'root' or change to 'root' via 'su'.
+
+
+Problem:  The driver can be started, but if an IP address is assigned
+          to a network controller, no link up indication is displayed although
+          it is connected to the network. It is also not possible to receive
+          or transmit any packets, e.g., 'ping' does not work.
+Reason:   The network controller does not receive any interrupts from the Linux 
+          system. This can occur when using the Advanced Programmable Interrupt 
+          Controller (APIC) of a Symmetric Multi-Processor (SMP) compiled kernel 
+          in a Uni-Processor (UP) environment. 
+Solution: Use the Linux kernel parameters 'noapic' or 'nolapic' when booting the
+          kernel. To do this, add these parameters to the boot manager kernel 
+          selection menu: (either /boot/grub/menu.lst  for GRUB or /etc/lilo.conf 
+          for LILO).
+          When you build a kernel, deselect the option CONFIG_X86_LOCAL_APIC.
+
+
+Problem:  The driver can be started, the network controller is connected to the 
+          network and a link up indication is displayed, but it is not possible 
+          to receive or transmit any packets, e.g., 'ping' does not work.
+Reason:   There is an incorrect route in your routing table or the remote host 
+          is unreachable.
+Solution: Check the routing table using the command 'route' and read the 
+          manual help pages dealing with routes (enter 'man route'). Check the 
+          connection to the remote host system.
+
+
+If your problem is not listed here, please contact Marvell technical support 
+for help (MSGG-linux@marvell.com).
+When contacting our technical support, have the following information available:
+--------------------------------------------------------------------------------
+- 'install.log' file created by the install script 'install.sh'
+- System Manufacturer and hardware information (e.g., CPU, Memory... )
+- PCI-Boards in your system
+- Linux distribution
+- Linux kernel version
+- driver version
+***
+
+***End of Readme File***
