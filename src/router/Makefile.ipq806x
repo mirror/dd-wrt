@@ -68,7 +68,7 @@ export BASEOPT:=-Os
 #ifeq ($(ARCH),arm)
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mfpu=vfpv3-d16 -mfloat-abi=softfp -fhonour-copts -msoft-float
 #export COPTS:=$(BASEOPT) -pipe -march=armv7-a -mtune=cortex-a9  -mfloat-abi=soft -fpic -fno-caller-saves 
-export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -Werror=return-local-addr
+export COPTS:=$(BASEOPT) -pipe -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon-vfpv4 -mfloat-abi=hard -fno-caller-saves -fcommon
 #endif
 
 
@@ -226,6 +226,7 @@ endif
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7500v2-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-R7800-uImage;
+	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-XR500-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-TEW827-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-G10-uImage;
 	cp $(ARCH)-uclibc/uImage $(ARCH)-uclibc/ipq806x-EA8500-uImage;
@@ -299,7 +300,11 @@ endif
 include common.mk
 
 its:
+ifeq ($(CONFIG_ANTAIRA),y)
+	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-ars7235-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+else
 	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.gz -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C gzip -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+endif
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
 
@@ -511,8 +516,11 @@ endif
 	
 	cp $(ARCH)-uclibc/ddwrt-ipq806x-EA8500-squashfs-nand-factory.ubi $(ARCH)-uclibc/ddwrt-ea8500-squashfs-nand-factory.ubi
 	
-
+ifeq ($(CONFIG_ANTAIRA),y)
+	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ars7235-habanero-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+else
 	./tools/ipq40xx/mkits.sh -D 8dev_habanero-dvk-c2 -o $(ARCH)-uclibc/habanero.itb.its -k $(TOP)/$(ARCH)-uclibc/Image.lzma -d $(LINUXDIR)/arch/arm/boot/dts/qcom-ipq4019-habanero-dvk-c2.dtb -C lzma -a 0x80208000 -e 0x80208000 -c "config@1" -A arm -v 4.9
+endif
 	cat $(LINUXDIR)/arch/arm/boot/Image | lzma e -si -so -eos -lc1 -lp2 -pb2 -d25 > $(ARCH)-uclibc/Image.lzma
 	gzip -f -9n -c $(LINUXDIR)/arch/arm/boot/Image > $(ARCH)-uclibc/Image.gz
 	./tools/r7500/mkimage -f $(ARCH)-uclibc/habanero.itb.its $(ARCH)-uclibc/habanero.itb.new
