@@ -69,6 +69,12 @@ do
 					ENDPOINTARG1="endpoint"
 					ENDPOINTARG2="$($nv get oet${i}_rem${p}):$($nv get oet${i}_peerport${p})"
 					#egc: add way out if default route is set via tunnel
+					
+					# # not working on  WAP's as wan_gateway is 0.0.0.0 on WAP 's should use lan_gateway first ask BS if this is feasible
+					# GATEWAY="$(nvram get wan_gateway)"
+					# [[ $GATEWAY = "0.0.0.0" ]] && { GATEWAY="$(nvram get lan_gateway)"; logger -p user.info "WireGuard no wan_gateway detected, assuming WAP"; }
+					# route add -host $($nv get oet${i}_rem${p}) gw $GATEWAY dev $(get_wanface) 2>&1 > /dev/null
+					
 					route add -host $($nv get oet${i}_rem${p}) gw $($nv get wan_gateway) dev $(get_wanface) 2>&1 > /dev/null
 				fi
 				wg set oet${i} peer $($nv get oet${i}_peerkey${p}) persistent-keepalive $($nv get oet${i}_ka${p}) $PSKARG1 $PSKARG2 allowed-ips "$($nv get oet${i}_aip${p})" $ENDPOINTARG1 $ENDPOINTARG2 &
@@ -81,6 +87,7 @@ do
 			#add routes based on allowed IP's has to be after interface is up
 			#spawn process so that it does not stop, tunnel is send as parameter maybe use nohup
 			/usr/bin/eop-tunnel-raip.sh $i &
+
 		fi
 		if [ `$nv get oet${i}_proto` -eq 1 ]
 		then

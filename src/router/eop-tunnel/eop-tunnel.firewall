@@ -2,10 +2,18 @@
 nv=/usr/sbin/nvram
 ipt=/usr/sbin/iptables
 tunnels=`$nv get oet_tunnels`
+
+#WAN_IF="$(ip route | awk '/^default/{print $NF}')"
+WAN_IF=$(get_wanface)
+FW_STATE="-m state --state NEW"
+
 for i in `seq 1 $tunnels`
 do
 	if test -e "/tmp/oet/pid/${i}.pid"
 	then 
+		FW_CHAIN="blocked-oet${i}"
+		WGDELRT="/tmp/wgdelrt_oet${i}"
+		
 		$ipt -D FORWARD -i oet${i} -j ACCEPT 2>&1 > /dev/null
 		$ipt -D FORWARD -o oet${i} -j ACCEPT 2>&1 > /dev/null
 		$ipt -D INPUT -i oet${i} -j ACCEPT 2>&1 > /dev/null
@@ -14,6 +22,17 @@ do
 		$ipt -D INPUT -p udp --dport `$nv get oet${i}_port` -j ACCEPT 2>&1 > /dev/null
 		$ipt -t raw -D PREROUTING ! -i oet${i} -d $($nv get oet${i}_ipaddr)/$(getmask $($nv get oet${i}_netmask)) -m addrtype ! --src-type LOCAL -j DROP
 		$ipt -t nat -D POSTROUTING -o oet${i} -j MASQUERADE 2>&1 > /dev/null
+		#clean up inbound firewall
+		$ipt -D FORWARD -i oet${i} -m state --state NEW -j DROP > /dev/null 2>&1
+		$ipt -D INPUT -i oet${i} -m state --state NEW -j DROP > /dev/null 2>&1
+		#clean up kill switch PBR
+		$ipt -D FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN >/dev/null 2>&1
+		$ipt -F $FW_CHAIN >/dev/null 2>&1
+		$ipt -X $FW_CHAIN >/dev/null 2>&1
+		if [[ -f "$WGDELRT" ]]; then
+			(while read route; do $route; done < $WGDELRT) >/dev/null 2>&1
+			rm $WGDELRT
+		fi	
 	fi
 	if [ `$nv get oet${i}_en` -eq 1 ]
 	then
@@ -45,7 +64,39 @@ do
 			then
 				$ipt -t nat -I POSTROUTING -o oet${i} -j SNAT --to-source $($nv get oet${i}_ipaddr) 2>&1 > /dev/null
 			fi
+			#egc: killswitch controled by nvram parameter oet${i}_killswitch
+			if [[ $($nv get oet${i}_killswitch) -eq 1 ]]
+			then
+				if [[ ! -z "$($nv get oet${i}_pbr | sed '/^[[:blank:]]*#/d')" ]]; then
+					#PBR killswitch
+					logger -p user.info "WireGuard Killswitch on PBR activated for oet${i}"
+					# create firewall chain for blocked IPs
+					$ipt -N $FW_CHAIN
+					for ip in $($nv get oet${i}_pbr | sed "s/,/ /g") ; do
+						if [ ${ip:0:1} = "#" ]; then
+							continue
+						fi
+						$ipt -A $FW_CHAIN -s $ip -j REJECT
+					done
+					# begin blocking: force LAN->WAN traffic through firewall chain for inspection
+					$ipt -I FORWARD -o $WAN_IF $FW_STATE -j $FW_CHAIN
+				else
+					#general killswitch
+					logger -p user.info "WireGuard Killswitch on br0 activated for all clients!"
+					echo "$ipt -D FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT" > $WGDELRT
+					$ipt -I FORWARD -i br0 -o $WAN_IF $FW_STATE -j REJECT
+				fi
+			fi
+			#end kill switch
 			
+			#Inbound firewall
+			if [[ $($nv get oet${i}_firewallin) -eq 1 ]]
+			then
+				$ipt -I FORWARD -i oet${i} -m state --state NEW -j DROP > /dev/null 2>&1
+				$ipt -I INPUT -i oet${i} -m state --state NEW -j DROP > /dev/null 2>&1
+				logger -p user.info "WireGuard Inbound Firewall activated on oet${i}"
+			fi
+			#end inbound firewall
 		fi
 	fi
 done
