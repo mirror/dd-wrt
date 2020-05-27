@@ -153,8 +153,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "<div class=\"setting\">\n");
 				{
 					show_caption(wp, "label", "eoip.wireguard_localkey", NULL);
-					//websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" disabled=\"disabled\"/>\n", temp, nvram_safe_get(temp));
-					//egc set read only so that the key can be copied by all browsers
 					websWrite(wp, "<input size=\"48\" maxlength=\"48\" name=\"%s\" value=\"%s\" readonly=\"readonly\"/>\n", temp, nvram_safe_get(temp));
 				}
 				websWrite(wp, "</div>\n");
@@ -169,17 +167,86 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				}
 				websWrite(wp, "</div>\n");
 
+				//egc: PBR input box 
+				snprintf(temp, sizeof(temp), "oet%d_pbr", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_oet_pbr", NULL);
+					websWrite(wp, "<input size=\"78\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, ""));
+				}
+				websWrite(wp, "</div>\n");
+				//end PBR
+				
+/* 				//Inbound firewall controlled by nvram parameter: oet${i}_firewallin default 0 = disabled, Radio buttons
+				snprintf(temp, sizeof(temp), "oet%d_firewallin", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_firewallin", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+					show_caption(wp, NULL, "share.enable", "&nbsp;");
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : ""));
+					show_caption_simple(wp, "share.disable");
+				}
+				websWrite(wp, "</div>\n");
+				//end firewall
+ */
+				//Inbound firewall controlled by nvram parameter: oet${i}_firewallin default 0 = disabled, Checkbox
+				snprintf(temp, sizeof(temp), "oet%d_firewallin", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_firewallin", NULL);
+					websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				//end firewall
+
+				//egc Kill switch nvram param: oet%d_killswitch, Checkbox
+				snprintf(temp, sizeof(temp), "oet%d_killswitch", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_killswitch", NULL);
+					websWrite(wp, "<input type=\"hidden\" name=\"%s\" id=\"%s\" value=\"0\" />\n", temp, temp);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"checkbox\" name=\"%s\" value=\"1\" %s />\n", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+				}
+				websWrite(wp, "</div>\n");
+				//end kill switch
+
+				
+/* 				//egc Kill switch, off, on, nvram param: oet%d_killswitch, Radio Buttons
+				snprintf(temp, sizeof(temp), "oet%d_killswitch", tun);
+				websWrite(wp, "<div class=\"setting\">\n");
+				{
+					show_caption(wp, "label", "eoip.wireguard_killswitch", NULL);
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 0, 0) ? "checked=\"checked\"" : "")); //default 0 is disabled
+					show_caption(wp, NULL, "share.off", "&nbsp;");
+					websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 1, 0) ? "checked=\"checked\"" : ""));
+					show_caption(wp, NULL, "share.on", "&nbsp;");
+					//websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" disabled=\"disabled\" value=\"2\" name=\"%s\" %s />", temp, (nvram_default_matchi(temp, 2, 0) ? "checked=\"checked\"" : ""));
+					//show_caption_simple(wp, "sbutton.allways_on");
+				}
+				websWrite(wp, "</div>\n");
+				//end kill switch
+ */				
 				snprintf(temp, sizeof(temp), "oet%d_peers", tun);
 				int peers = nvram_default_geti(temp, 0);
 				int peer;
 				for (peer = 0; peer < peers; peer++) {
 
-					websWrite(wp, "<fieldset>\n");
-					websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
+					websWrite(wp, "<br /><fieldset>\n");  //added <br>
+					
+					//name legend
+					snprintf(temp, sizeof(temp), "oet%d_namep%d", tun, peer);
+					{
+					websWrite(wp, "<legend>%d. <input type=\"text\" size=\"14\" id=\"%s\" name=\"%s\" value=\"%s\" ></legend>\n", peer + 1, temp, temp, nvram_safe_get(temp));
+					}
+					//legend
+					//websWrite(wp, "<legend>Peer %d</legend>\n", peer + 1);
+					
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_peerip", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\"/>\n", tun, peer);
+						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_ip%d\" value=\"0.0.0.0\" />\n", tun, peer);
 						snprintf(temp, sizeof(temp), "oet%d_ip%d", tun, peer);
 						nvram_default_get(temp, "0.0.0.0");
 						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerip");
@@ -189,7 +256,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_peerdns", NULL);
-						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\"/>\n", tun, peer);
+						websWrite(wp, "<input type=\"hidden\" name=\"oet%d_dns%d\" value=\"0.0.0.0\" />\n", tun, peer);
 						snprintf(temp, sizeof(temp), "oet%d_dns%d", tun, peer);
 						nvram_default_get(temp, "0.0.0.0");
 						show_ip(wp, NULL, temp, 1, "eoip.wireguard_peerdns");
@@ -228,7 +295,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 					websWrite(wp, "<div class=\"setting\">\n");
 					{
 						show_caption(wp, "label", "eoip.wireguard_allowedips", NULL);
-						websWrite(wp, "<input size=\"30\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
+						websWrite(wp, "<input size=\"48\" maxlength=\"1024\" name=\"%s\" value=\"%s\" />\n", temp, nvram_default_get(temp, "0.0.0.0/0"));
 					}
 					websWrite(wp, "</div>\n");
 
@@ -327,6 +394,47 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							hasqr = 1;
 						}
 					}
+
+					
+					//Status box
+					websWrite(wp, "<div id=\"idoet%d_statusbox\">\n", tun);  //naming for periodic refresh
+					{
+						websWrite(wp, "<div class=\"setting\">\n");
+						{
+							snprintf(temp, sizeof(temp), "oet%d_peerkey%d", tun, peer);
+							char buffer[1024] = "Press F5 to refresh";
+							int len = 0;
+							char command[64];
+							
+							//sprintf(command, "/jffs/etc/wireguardstate.sh %d 2> /dev/null", tun);  //testing
+							//sprintf(command, "/jffs/bin/wireguard-state.sh %d %s 2>/dev/null", tun, nvram_safe_get(temp));
+							sprintf(command, "/usr/bin/wireguard-state.sh %d %s 2>/dev/null", tun, nvram_safe_get(temp));
+							FILE *in = popen(command, "r");
+							if (in != NULL)
+							{
+								while ((len = fread(buffer, 1, 1023, in)) == 1023) {
+									buffer[len] = 0;
+								}
+								if (len == 0) {
+									char temp3[64];
+									snprintf(temp3, sizeof(temp3), "oet%d_namep%d", tun, peer);
+									sprintf(buffer, "No connection present for %s ", nvram_safe_get(temp3));
+								}
+							} else {
+								sprintf(buffer, "Unable to retrieve WireGuardStatus oet%d", tun);
+							}
+							show_caption(wp, "label", "eoip.wireguard_oet_status", NULL);
+							websWrite(wp, "<textarea cols=\"32\" rows=\"2\" id=\"oet%d_status%d\" name=\"oet%d_status%d\" disabled=\"disabled\"></textarea>", tun, peer, tun, peer);
+							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+							websWrite(wp, "document.getElementById(\"oet%d_status%d\").value =\"%s\";\n", tun, peer, buffer);
+							websWrite(wp, "//]]>\n</script>\n");
+							pclose(in);
+						}
+						websWrite(wp, "</div>\n");
+					}
+					websWrite(wp, "</div>\n");  
+					//end status box
+					
 					websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 					websWrite(wp, "show_layer_ext(this, 'idpsk%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_usepsk%d", tun, peer) ? "true" : "false");
 					websWrite(wp, "show_layer_ext(this, 'idendpoint%d_peer%d',%s);\n", tun, peer, nvram_nmatchi(1, "oet%d_endpoint%d", tun, peer) ? "true" : "false");
@@ -415,8 +523,10 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, "</div>\n");
 			}
 			websWrite(wp, "</div>\n");
+			
 		}
 		websWrite(wp, "</div>\n");
+		
 		websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 		websWrite(wp, "document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" name=\\\"del_button\\\" value=\\\"\" + eoip.del + \"\\\" onclick=\\\"del_tunnel(this.form,%d)\\\" />\");\n", tun);
 		websWrite(wp, "changeproto(document.eop.oet%d_proto, %d, %s, %s);\n", tun, tun, nvram_nget("oet%d_proto", tun), nvram_nget("oet%d_bridged", tun));

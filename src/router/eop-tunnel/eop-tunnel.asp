@@ -121,6 +121,8 @@ addEvent(window, "unload", function() {
 
 		//]]>
 		</script>
+	//added to do screen refresh but gives nasty screen flicker need intelligent way to only refresh status window
+	//<meta http-equiv="refresh" content="30" />
 	</head>
 
 	<body class="gui">
