@@ -1,0 +1,457 @@
+.\" (C)Copyright 1999-2012 Marvell(R). -- MSGG-linux@marvell.com
+.\" sk98lin.4 1.1 %_%LINDATE%_%
+.\" This manpage can be viewed using `groff -Tascii -man sk98lin.4 | less`
+.\"
+.TH SK98LIN 4 "%_%LINDATE%_%" "sk98lin 10.93.3.3"
+.SH NAME
+sk98lin \- Marvell Gigabit Ethernet driver v10.93.3.3
+.SH SYNOPSIS
+.B insmod sk98lin.ko
+.RB [ Speed_A=\c
+.IR i,j,... ]
+.RB [ Speed_B=\c
+.IR i,j,... ]
+.RB [ AutoNeg_A=\c
+.IR i,j,... ]
+.RB [ AutoNeg_B=\c
+.IR i,j,... ]
+.RB [ DupCap_A=\c
+.IR i,j,... ]
+.RB [ DupCap_B=\c
+.IR i,j,... ]
+.RB [ FlowCtrl_A=\c
+.IR i,j,... ]
+.RB [ FlowCtrl_B=\c
+.IR i,j,... ]
+.RB [ Role_A=\c
+.IR i,j,... ]
+.RB [ Role_B=\c
+.IR i,j,... ]
+.RB [ ConType=\c
+.IR i,j,... ]
+.RB [ TxModeration=\c
+.IR i,j,... ]
+.RB [ Moderation=\c
+.IR i,j,... ]
+.RB [ IntsPerSec=\c
+.IR i,j,... ]
+.RB [ LowLatency=\c
+.IR i,j,... ]
+.RB [ BroadcastPrio=\c
+.IR i,j,... ]
+.RB [ MsiIrq=\c
+.IR i,j,... ]
+.RB [ RSS=\c
+.IR i,j,... ]
+.SH DESCRIPTION
+.B sk98lin
+is the Gigabit Ethernet driver for Marvell Yukon Ethernet Network Controllers.
+
+
+When loading the driver using 
+.BR insmod (8)
+, parameters for the network controllers might be stated as a sequence of comma separated commands. For example, you have two network controllers and want to set auto-negotiation on port A to 'On' for the first network controller and to 'Off' on port A for the second network controller. Enter:
+
+   insmod sk98lin.ko AutoNeg_A=On,Off
+
+If loading is finished, any desired IP address can be assigned to the respective 
+.IR eth[x]
+interface using the 
+.BR ifconfig (8)
+command. This causes the network controller to connect to the Ethernet and to display a status message on the console: "ethx: network connection up using port y" followed by the configured or detected connection parameters.
+
+After 
+.B sk98lin 
+is bound to one or more network controllers and the 
+.IR /proc 
+file system is mounted on your system, a statistics file will be created in folder 
+.IR /proc/net/sk98lin 
+for all ports of the installed network controller. Those files are named 
+.IR eth[x]
+whereby 
+.IR x 
+is the number of the interface that has been assigned to a dedicated port by the system.
+
+The 
+.B sk98lin 
+also supports large frames (also called jumbo frames). Using jumbo frames can result in an improved throughput when transferring large amounts of data. To enable large frames, set the Maximum Transfer Unit (MTU) of the interface 
+to 9000.Setting the MTU size can be done when assigning the IP address to the interface or later by using the
+.BR ifconfig (8)
+command with the mtu parameter. For example, eth0 needs an IP address and a large frame MTU size, execute the following commands:
+
+    ifconfig eth0 10.1.1.1
+    ifconfig eth0 mtu 9000
+
+These two commands can also be combined into one:
+
+    ifconfig eth0 10.1.1.1 mtu 9000
+
+This will only work if the two network infrastructure allows to do so, i.e. all switches used must be configured to allow large frames and the setting must be configured for all network controllers that can be reached by the large frames.
+If one network controller is not set to receive large frames, it will simply drop them.
+
+To switch back to the standard Ethernet frame size, use the 
+.BR ifconfig (8)
+command again:
+
+    ifconfig eth0 mtu 1500
+
+The Marvell Gigabit Ethernet driver for Linux also supports VLAN and Link Aggregation according to IEEE standards 802.1, 802.1q, and 802.3ad.
+
+.SH PARAMETERS
+.TP
+.BI Speed_A= i,j,...
+This parameter is used to set the speed capabilities for port A of a network controller. It is only valid for Yukon copper network controllers. Possible values are:
+.IR 10
+,
+.IR 100
+,
+.IR 1000
+or
+.IR Auto 
+where
+.IR Auto 
+is the default. Usually, the speed is negotiated between the two ports during link establishment. If this fails, a port can be forced to a specific speed with this parameter.
+.TP
+.BI Speed_B= i,j,...
+This parameter is used to set the speed capabilities for port B of a network controller. It is only valid for Yukon copper network controller. Possible values are:
+.IR 10
+,
+.IR 100
+,
+.IR 1000
+or
+.IR Auto 
+where
+.IR Auto 
+is the default. Usually, the speed is negotiated between the two ports during link establishment. If this fails, a port can be forced to a specific speed with this parameter.
+.TP
+.BI AutoNeg_A= i,j,...
+Enables or disables the use of auto-negotiation for port A of a network controller. Possible values are:
+.IR On
+,
+.IR Off
+or
+.IR Sense
+where
+.IR On
+is the default. The 
+.IR Sense 
+mode automatically detects whether the link partner supports auto-negotiation or not.
+.TP
+.BI AutoNeg_B= i,j,...
+Enables or disables the use of auto-negotiation for port B of a network controller. Possible values are:
+.IR On
+,
+.IR Off
+or
+.IR Sense
+where
+.IR On
+is the default. The 
+.IR Sense 
+mode automatically detects whether the link partner supports auto-negotiation or not.
+.TP
+.BI DupCap_A= i,j,...
+This parameter indicates the duplex mode for port A of a network controller. Possible values are:
+.IR Half
+,
+.IR Full
+or
+.IR Both
+where
+.IR Both
+is the default. This parameter is only applicable if AutoNeg_A of port A is not set to 
+.IR Sense.
+If AutoNeg_A is set to 
+.IR On
+, all three values of DupCap_A (
+.IR Half
+, 
+.IR Full
+or 
+.IR Both
+) are possible. If AutoNeg_A is set to 
+.IR Off
+, only DupCap_A values  
+.IR Full
+and 
+.IR Half
+are allowed.
+.TP
+.BI DupCap_B= i,j,...
+This parameter indicates the duplex mode for port B of a network controller. Possible values are:
+.IR Half
+,
+.IR Full
+or
+.IR Both
+where
+.IR Both
+is the default. This parameter is only applicable if AutoNeg_B of port B is not set to
+.IR Sense.
+If AutoNeg_B is set to
+.IR On
+, all three values of DupCap_B (
+.IR Half
+,
+.IR Full
+or
+.IR Both
+) are possible. If AutoNeg_B is set to
+.IR Off
+, only DupCap_B values
+.IR Full
+and
+.IR Half
+are allowed. 
+.TP
+.BI FlowCtrl_A= i,j,...
+This parameter can be used to set the flow control capabilities port A reports during auto-negotiation. Possible values are:
+.IR Sym
+,
+.IR SymOrRem
+,
+.IR LocSend
+or
+.IR None
+where
+.IR SymOrRem
+is the default. The different modes have the following meaning: 
+
+.br
+.IR Sym
+= Symmetric 
+ both link partners are allowed to send PAUSE frames
+.br
+.IR SymOrRem
+= SymmetricOrRemote 
+ both or only remote partner are allowed to send PAUSE frames
+.br
+.IR LocSend
+= LocalSend
+ only local link partner is allowed to send PAUSE frames
+.br
+.IR None
+= None
+ no link partner is allowed to send PAUSE frames
+
+NOTE: Flow Control is ignored if AutoNeg_A is set to
+.IR Off .
+.TP
+.BI FlowCtrl_B= i,j,...
+This parameter can be used to set the flow control capabilities port B reports during auto-negotiation. Possible values are:
+.IR Sym
+,
+.IR SymOrRem
+,
+.IR LocSend
+or
+.IR None
+where
+.IR SymOrRem
+is the default. The different modes have the following meaning:
+
+.IR Sym
+= Symmetric
+ both link partners are allowed to send PAUSE frames
+.br
+.IR SymOrRem
+= SymmetricOrRemote
+ both or only remote partner are allowed to send PAUSE frames
+.br
+.IR LocSend
+= LocalSend
+ only local link partner is allowed to send PAUSE frames
+.br
+.IR None
+= None
+ no link partner is allowed to send PAUSE frames
+.br
+
+NOTE: Flow Control is ignored if AutoNeg_B is set to
+.IR Off .
+.TP
+.BI Role_A= i,j,...
+This parameter is only valid for 1000Base-T network controllers. For two 1000Base-T ports to communicate, one must take the role of the master (providing timing information), while the other must be the slave. Possible values are:
+.IR Auto
+,
+.IR Master
+or
+.IR Slave
+where
+.IR Auto
+is the default. Usually, the role of a port is negotiated between the two ports during link establishment. If this fails, port A of a network controller can be forced to a specific role with this parameter. 
+.TP
+.BI Role_B= i,j,...
+This parameter is only valid for 1000Base-T network controllers. For two 1000Base-T ports to communicate, one must take the role of the master (providing timing information), while the other must be the slave. Possible values are:
+.IR Auto
+,
+.IR Master
+or
+.IR Slave
+where
+.IR Auto
+is the default. Usually, the role of a port is negotiated between the two ports during link establishment. If this fails, port B of a network controller can be forced to a specific role with this parameter. 
+.TP
+.BI ConType= i,j,...
+This parameter (for copper network controllers only) is a combination of port parameters. This simplifies the configuration of both ports of a network controller! The different values of this variable reflect the most important combinations of port parameters.
+Possible values and their corresponding combinations for the port parameters:
+
+.br
+.ad l
+ConType | DupCap   AutoNeg   FlowCtrl   Role   Speed
+--------+-------------------------------------------
+.br
+.IR Auto \c
+    |  Both      On      SymOrRem   Auto   Auto
+.br
+.IR 1000FD \c
+  |  Full      Off       None     Auto   1000
+.br
+.IR 100FD \c
+   |  Full      Off       None     Auto   100
+.br
+.IR 100HD \c
+   |  Half      Off       None     Auto   100
+.br
+.IR 10FD \c
+    |  Full      Off       None     Auto   10
+.br
+.IR 10HD \c
+    |  Half      Off       None     Auto   10
+
+.ad b 
+The port parameters (e.g., 
+.IR Speed_A
+) have a higher priority than the parameter
+.IR ConType
+.
+Therefore, setting any other port parameter together with this parameter will result in a merged configuration. 
+.TP
+.BI TxModeration= i,j,...
+With transmit moderation, the maximum number of transmit complete interrupts the driver must serve can be limited. That is, one or more interrupts (which indicate any transmit or receive packet to be processed) are queued until the driver 
+processes them. When TxModeration is set to '1', all transmit complete interrupts will be generated immediately. When set to '10', the network controller will generate one transmit complete interrupt every ten served packets.
+NOTE: This parameter is only used on Yukon Extreme network controllers.
+.TP
+.BI Moderation= i,j,...
+With interrupt moderation, the maximum number of interrupts the driver must serve can be limited. That is, one or more interrupts (which indicate any transmit or receive packet to be processed) are queued until the driver processes them. When queued interrupts are to be served, is determined by the 
+.IR IntsPerSec
+parameter, which is explained later below. Possible modes are:
+.IR None
+,
+.IR Static
+or
+.IR Dynamic
+where
+.IR None
+is the default. The different modes have the following meaning:
+
+.IR None
+Each transmit or receive interrupt is served immediately as soon as it appears on the interrupt line of the network controller.
+.br
+.IR Static
+All transmit and receive interrupts are queued until a complete moderation interval ends. If such a moderation interval ends, all queued interrupts are processed at once without any delay. 
+.IR Static
+means that interrupt moderation is always enabled, regardless how much network load is currently passing via a particular interface. In addition, the duration of the moderation interval has a fixed length that never changes while the driver is operational.
+.br
+.IR Dynamic
+Interrupt moderation might be enabled for the network controller, depending on the system load. If the driver detects that the system load is too high, it enables interrupt moderation. If, at a later time, the system load decreases (or if the network load is negligible), interrupt moderation will automatically be disabled.
+Interrupt moderation should be used when the driver must handle one or more interfaces with a high network load, which also leads to a high CPU utilization. When interrupt moderation is applied in such high network load situations, CPU load might be reduced by 20-30%.
+
+NOTE: The drawback of using interrupt moderation is an increase of the Round-Trip Time (RTT), due to the queueing and serving of interrupts at dedicated moderation times.
+.TP
+.BI IntsPerSec= i,j,...
+The number of interrupts per second determines the length of any interrupt moderation interval. 
+Assuming that static interrupt moderation is to be used, an 
+.IR IntsPerSec
+parameter value of 2000 will lead to an interrupt moderation interval of 500 microseconds. Possible values for this parameter are in the range of 30...40000 (interrupts per second). The default value is 2000.
+
+This parameter is only applicable if either static or dynamic interrupt moderation is enabled for the network controller. Otherwise, it will be ignored.
+
+NOTE: The duration of the moderation interval must be selected with care. A long interval (e.g., only 100 interrupts/s) results in a significantly increased packet processing delay. But, selecting a very short interval might compensate the benefits of any moderation applied.
+.TP
+.BI LowLatency= i,j,...
+This parameter is used to reduce the packet latency time of the network controller. Setting 
+.IR LowLatency
+to 
+.IR On 
+forces the network controller to pass any received packet immediately to upper network layers and to send out any transmit packet as fast as possible. Possible values are 
+.IR On
+or
+.IR Off
+where
+.IR Off
+is the default.
+
+NOTE: The system load increases if
+.IR LowLatency
+is set to 
+.IR On
+and a large number of data packets is transmitted and received.
+
+NOTE: This parameter is only used for network controllers which are based on PCI Express compatible chipsets.
+.TP
+.BI MsiIrq= i,j,...
+Message Signaled Interrupts, in PCI Express, are an alternative way of generating an interrupt. MSI increases the number of interrupts that are possible. There is also a slightperformance advantage. Setting 
+.IR MsiIrq
+to 
+.IR On 
+will enable  Message Signaled Interrupts handling. Possible values are 
+.IR On
+or
+.IR Off
+where
+.IR On
+is the default.
+.TP
+.BI RSS= i,j,...
+Receive-Side Scaling (RSS) resolves the single-processor bottleneck by allowing 
+the receive side network load from a network adapter to be shared across multiple 
+processors. RSS enables packet receive-processing to scale with the number of 
+available processors. This allows the subsystem to take advantage of multi-core 
+and many core processor architectures. Setting 
+.IR RSS
+to 
+.IR On 
+will enable Receive-Side Scaling handling. Possible values are 
+.IR On
+or
+.IR Off
+where
+.IR Off
+is the default.
+
+NOTE: Receive-Side Scaling is supported only for kernel versions >= 2.6.35
+.TP
+.BI BroadcastPrio= i,j,...
+This parameter specifies whether received broadcast packets have the highest priority for the port switch decision ("Off") or not ("On").
+Possible values are
+.IR On
+or
+.IR Off
+where
+.IR Off
+is the default.
+NOTE: This parameter is only valid for dual port network controllers.
+.SH FILES
+.TP
+.B /proc/net/sk98lin/eth[x]
+.br 
+The statistics file of a particular interface of a network controller. It contains generic information about the network controller plus a detailed summary of all transmit and receive counters.
+.TP
+.B /usr/src/linux/Documentation/networking/sk98lin.txt
+.br 
+This is the 
+.IR README
+file of the 
+.IR sk98lin
+driver. It contains a description of all parameters of the driver. It also contains a list of common problems and provides the solution to them.
+.SH BUGS
+Report any bugs to MSGG-linux@marvell.com
+.SH AUTHOR
+(C)Copyright 1999-2012 Marvell(R).
+.br
+
+MSGG-linux@marvell.com
+.SH "SEE ALSO"
+modprobe(8), insmod(8), ifconfig(8).
