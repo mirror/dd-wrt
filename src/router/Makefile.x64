@@ -105,7 +105,7 @@ ifeq ($(ARCH),i386)
 export COPTS:=$(BASEOPT) -pipe -march=i486 -mtune=i486 -fno-caller-saves -fno-plt
 endif
 ifeq ($(ARCH),x86_64)
-export COPTS:=$(BASEOPT) -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt
+export COPTS:=$(BASEOPT) -pipe -fno-caller-saves -D_FILE_OFFSET_BITS=64 -fno-plt -fcommon
 endif
 
 export CC := ccache $(CROSS_COMPILE)gcc
@@ -167,7 +167,7 @@ endif
 	    $(MAKE) -j 4 -C $(LINUXDIR) bzImage CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
 	fi
 	if grep -q "CONFIG_MODULES=y" $(LINUXDIR)/.config ; then \
-	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ; \
+	    $(MAKE) -j 4 -C $(LINUXDIR) modules CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-" ;\
 	fi
 	rm -rf $(TARGETDIR)/lib/modules
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
@@ -197,6 +197,8 @@ ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.x64 smbd
 	-$(MAKE) -f Makefile.x64 smbd-install
 endif
+	-$(MAKE) -f Makefile.x64 yukon
+	-$(MAKE) -f Makefile.x64 yukon-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x64 wireguard
 	-$(MAKE) -f Makefile.x64 wireguard-install
