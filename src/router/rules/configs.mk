@@ -351,6 +351,7 @@ obj-$(CONFIG_SISPMCTL) += comgt sispmctl
 obj-$(CONFIG_APFS) += apfs apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre openssl zlib nginx
+obj-$(CONFIG_X86) += yukon
 
 obj-y+=configs
 
