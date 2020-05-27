@@ -193,6 +193,8 @@ ifeq ($(CONFIG_SMBD),y)
 	-$(MAKE) -f Makefile.x86 smbd
 	-$(MAKE) -f Makefile.x86 smbd-install
 endif
+	-$(MAKE) -f Makefile.x64 yukon
+	-$(MAKE) -f Makefile.x64 yukon-install
 ifeq ($(CONFIG_WIREGUARD),y)
 	-$(MAKE) -f Makefile.x86 wireguard
 	-$(MAKE) -f Makefile.x86 wireguard-install
