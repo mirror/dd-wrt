@@ -122,6 +122,7 @@ static int l2tp_ip_recv(struct sk_buff *skb)
 	unsigned char *ptr, *optr;
 	struct l2tp_session *session;
 	struct l2tp_tunnel *tunnel = NULL;
+	struct iphdr *iph;
 	int length;
 
 	if (!pskb_may_pull(skb, 4))
@@ -180,23 +181,16 @@ pass_up:
 		goto discard;
 
 	tunnel_id = ntohl(*(__be32 *) &skb->data[4]);
-	tunnel = l2tp_tunnel_find(net, tunnel_id);
-	if (tunnel) {
-		sk = tunnel->sock;
-		sock_hold(sk);
-	} else {
-		struct iphdr *iph = (struct iphdr *) skb_network_header(skb);
+	iph = (struct iphdr *)skb_network_header(skb);
 
-		read_lock_bh(&l2tp_ip_lock);
-		sk = __l2tp_ip_bind_lookup(net, iph->daddr, 0, tunnel_id);
-		if (!sk) {
-			read_unlock_bh(&l2tp_ip_lock);
-			goto discard;
-		}
-
-		sock_hold(sk);
+	read_lock_bh(&l2tp_ip_lock);
+	sk = __l2tp_ip_bind_lookup(net, iph->daddr, 0, tunnel_id);
+	if (!sk) {
 		read_unlock_bh(&l2tp_ip_lock);
+		goto discard;
 	}
+	sock_hold(sk);
+	read_unlock_bh(&l2tp_ip_lock);
 
 	if (!xfrm4_policy_check(sk, XFRM_POLICY_IN, skb))
 		goto discard_put;
@@ -269,15 +263,9 @@ static int l2tp_ip_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 	if (addr->l2tp_family != AF_INET)
 		return -EINVAL;
 
-	ret = -EADDRINUSE;
-	read_lock_bh(&l2tp_ip_lock);
-	if (__l2tp_ip_bind_lookup(net, addr->l2tp_addr.s_addr,
-				  sk->sk_bound_dev_if, addr->l2tp_conn_id))
-		goto out_in_use;
-
-	read_unlock_bh(&l2tp_ip_lock);
-
 	lock_sock(sk);
+
+	ret = -EINVAL;
 	if (!sock_flag(sk, SOCK_ZAPPED))
 		goto out;
 
@@ -294,24 +282,27 @@ static int l2tp_ip_bind(struct sock *sk, struct sockaddr *uaddr, int addr_len)
 		inet->inet_rcv_saddr = inet->inet_saddr = addr->l2tp_addr.s_addr;
 	if (chk_addr_ret == RTN_MULTICAST || chk_addr_ret == RTN_BROADCAST)
 		inet->inet_saddr = 0;  /* Use device */
-	sk_dst_reset(sk);
-
-	l2tp_ip_sk(sk)->conn_id = addr->l2tp_conn_id;
 
 	write_lock_bh(&l2tp_ip_lock);
+	if (__l2tp_ip_bind_lookup(net, addr->l2tp_addr.s_addr,
+				  sk->sk_bound_dev_if, addr->l2tp_conn_id)) {
+		write_unlock_bh(&l2tp_ip_lock);
+		ret = -EADDRINUSE;
+		goto out;
+	}
+
+	sk_dst_reset(sk);
+	l2tp_ip_sk(sk)->conn_id = addr->l2tp_conn_id;
+
 	sk_add_bind_node(sk, &l2tp_ip_bind_table);
 	sk_del_node_init(sk);
 	write_unlock_bh(&l2tp_ip_lock);
+
 	ret = 0;
 	sock_reset_flag(sk, SOCK_ZAPPED);
 
 out:
 	release_sock(sk);
-
-	return ret;
-
-out_in_use:
-	read_unlock_bh(&l2tp_ip_lock);
 
 	return ret;
 }
@@ -321,20 +312,23 @@ static int l2tp_ip_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len
 	struct sockaddr_l2tpip *lsa = (struct sockaddr_l2tpip *) uaddr;
 	int rc;
 
-	if (sock_flag(sk, SOCK_ZAPPED)) /* Must bind first - autobinding does not work */
-		return -EINVAL;
-
 	if (addr_len < sizeof(*lsa))
 		return -EINVAL;
 
 	if (ipv4_is_multicast(lsa->l2tp_addr.s_addr))
 		return -EINVAL;
 
-	rc = ip4_datagram_connect(sk, uaddr, addr_len);
-	if (rc < 0)
-		return rc;
-
 	lock_sock(sk);
+
+	/* Must bind first - autobinding does not work */
+	if (sock_flag(sk, SOCK_ZAPPED)) {
+		rc = -EINVAL;
+		goto out_sk;
+	}
+
+	rc = __ip4_datagram_connect(sk, uaddr, addr_len);
+	if (rc < 0)
+		goto out_sk;
 
 	l2tp_ip_sk(sk)->peer_conn_id = lsa->l2tp_conn_id;
 
@@ -343,7 +337,9 @@ static int l2tp_ip_connect(struct sock *sk, struct sockaddr *uaddr, int addr_len
 	sk_add_bind_node(sk, &l2tp_ip_bind_table);
 	write_unlock_bh(&l2tp_ip_lock);
 
+out_sk:
 	release_sock(sk);
+
 	return rc;
 }
 
