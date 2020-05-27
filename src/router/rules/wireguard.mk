@@ -5,6 +5,12 @@ wireguard: libmnl
 wireguard-install:
 	install -D wireguard/src/wireguard.ko $(INSTALLDIR)/wireguard/lib/modules/$(KERNELRELEASE)/wireguard.ko
 	install -D wireguard/src/tools/wg $(INSTALLDIR)/wireguard/usr/bin/wg
+	#install -d wireguard/$(INSTALLDIR)/usr/bin
+	install -c wireguard/$(MODULE)*.sh $(INSTALLDIR)/wireguard/usr/bin
+	#install -c will set x 
+	#cp wireguard/$(MODULE)*.sh $(INSTALLDIR)/wireguard/usr/bin
+	#chmod 700 $(INSTALLDIR)/wireguard/usr/bin/$(MODULE)*.sh
+
 
 wireguard-configure:
 	@true

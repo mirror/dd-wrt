@@ -1620,8 +1620,11 @@ void tunnel_save(webs_t wp)
 		copytonv(wp, "oet%d_bridged", i);
 		copytonv(wp, "oet%d_port", i);
 		copytonv(wp, "oet%d_mtu", i);
+		copytonv(wp, "oet%d_pbr", i);
 		copytonv(wp, "oet%d_public", i);
 		copytonv(wp, "oet%d_private", i);
+		copytonv(wp, "oet%d_killswitch", i);
+		copytonv(wp, "oet%d_firewallin", i);
 		copymergetonv(wp, "oet%d_rem", i);
 		copymergetonv(wp, "oet%d_local", i);
 		copymergetonv(wp, "oet%d_ipaddr", i);
@@ -1637,6 +1640,7 @@ void tunnel_save(webs_t wp)
 				sprintf(temp, "oet%d_peerpk%d", i, peer);
 				nvram_unset(temp);
 			}
+			copytonv(wp, "oet%d_namep%d", i, peer);  //for naming legend peer
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
 			copymergetonv(wp, "oet%d_ip%d", i, peer);
@@ -1712,6 +1716,7 @@ void add_peer(webs_t wp)
 #define default_set(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nset(val, "oet%d_%s%d",key,name,peer)
 #define default_seti(name,val) if (*(nvram_nget("oet%d_%s%d",key,name,peer))==0)nvram_nseti(val, "oet%d_%s%d",key,name,peer)
 	default_seti("ka", 0);
+	default_set("namep", "Peer");
 	default_seti("endpoint", 0);
 	default_seti("usepsk", 0);
 	default_seti("aip_rten", 0);
@@ -1755,6 +1760,7 @@ static void delpeervalue(char *valuename, int tun, int from)
 
 static void copypeer(int tun, int from, int to)
 {
+	copypeervalue("namep", tun, from, to);
 	copypeervalue("peerkey", tun, from, to);
 	copypeervalue("peerpk", tun, from, to);
 	copypeervalue("endpoint", tun, from, to);
@@ -1771,6 +1777,7 @@ static void copypeer(int tun, int from, int to)
 
 static void copytunpeer(int peer, int from, int to)
 {
+	copypeertunvalue("namep", peer, from, to);
 	copypeertunvalue("peerkey", peer, from, to);
 	copypeertunvalue("peerpk", peer, from, to);
 	copypeertunvalue("endpoint", peer, from, to);
@@ -1787,6 +1794,7 @@ static void copytunpeer(int peer, int from, int to)
 
 static void delpeer(int tun, int peer)
 {
+	delpeervalue("namep", tun, peer);
 	delpeervalue("peerkey", tun, peer);
 	delpeervalue("peerpk", tun, peer);
 	delpeervalue("ka", tun, peer);
@@ -1829,8 +1837,11 @@ void add_tunnel(webs_t wp)
 	default_seti("en", 0);
 	default_seti("mit", 1);
 	default_seti("natout", 0);
+	default_set("pbr", "");
 	default_set("public", "");
 	default_set("private", "");
+	default_seti("killswitch", 0);
+	default_seti("firewallin", 0);
 	default_set("rem", "192.168.90.1");
 	default_set("local", "0.0.0.0");
 	default_set("ipaddr", "1.2.3.4");
@@ -1859,8 +1870,11 @@ void del_tunnel(webs_t wp)
 		copytunvalue("en", i, i - 1);
 		copytunvalue("mit", i, i - 1);
 		copytunvalue("natout", i, i - 1);
+		copytunvalue("pbr", i, i - 1);
 		copytunvalue("public", i, i - 1);
 		copytunvalue("private", i, i - 1);
+		copytunvalue("killswitch", i, i - 1);
+		copytunvalue("firewallin", i, i - 1);
 		copytunvalue("rem", i, i - 1);
 		copytunvalue("local", i, i - 1);
 		copytunvalue("ipaddr", i, i - 1);
@@ -1890,8 +1904,11 @@ void del_tunnel(webs_t wp)
 	deltunvalue("en", tunnels);
 	deltunvalue("mit", tunnels);
 	deltunvalue("natout", tunnels);
+	deltunvalue("pbr", tunnels);
 	deltunvalue("public", tunnels);
 	deltunvalue("private", tunnels);
+	deltunvalue("killswitch", tunnels);
+	deltunvalue("firewallin", tunnels);
 	deltunvalue("rem", tunnels);
 	deltunvalue("local", tunnels);
 	deltunvalue("ipaddr", tunnels);
