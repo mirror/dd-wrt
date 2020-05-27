@@ -16,7 +16,6 @@
 #include <linux/blkdev.h>
 #include <linux/fsnotify.h>
 #include <linux/dcache.h>
-#include <linux/fiemap.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
 
@@ -1556,24 +1555,21 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work,
 #endif
 }
 
-int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
+int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 	struct file_allocated_range_buffer *ranges,
 	int in_count, int *out_count)
 {
+	struct file *f = fp->filp;
 	struct inode *inode = FP_INODE(fp);
-	struct super_block *sb = inode->i_sb;
-	struct fiemap_extent_info fieinfo = { 0, };
-	u64 maxbytes = (u64) sb->s_maxbytes, extent_len, end;
+	loff_t maxbytes = (u64)inode->i_sb->s_maxbytes, end;
+	loff_t extent_start, extent_end;
 	int ret = 0;
-	struct file_allocated_range_buffer *range;
-	struct fiemap_extent *extents;
-	int i, range_idx;
-
-	if (!inode->i_op->fiemap)
-		return -EOPNOTSUPP;
 
 	if (start > maxbytes)
 		return -EFBIG;
+
+	if (!in_count)
+		return 0;
 
 	/*
 	 * Shrink request scope to what the fs can actually handle.
@@ -1581,91 +1577,41 @@ int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
 	if (length > maxbytes || (maxbytes - length) < start)
 		length = maxbytes - start;
 
-	fieinfo.fi_extents_max = 32;
-	extents = kmalloc_array(fieinfo.fi_extents_max,
-			sizeof(struct fiemap_extent), GFP_KERNEL);
-	if (!extents)
-		return -ENOMEM;
-	fieinfo.fi_extents_start = (struct fiemap_extent __user *)extents;
+	if (start + length > inode->i_size)
+		length = inode->i_size - start;
 
-	range_idx = 0;
-	range = ranges + range_idx;
-	range->file_offset = cpu_to_le64(start);
-	range->length = 0;
-
-	end = start + length;
 	*out_count = 0;
-
-	while (start < end) {
-		ret = inode->i_op->fiemap(inode, &fieinfo, start, length);
-		if (ret)
-			goto out;
-		else if (fieinfo.fi_extents_mapped == 0) {
-			if (le64_to_cpu(range->length))
-				*out_count = range_idx + 1;
-			else
-				*out_count = range_idx;
-			goto out;
+	end = start + length;
+	while (start < end && *out_count < in_count) {
+		ret = extent_start = f->f_op->llseek(f, start, SEEK_DATA);
+		if (ret < 0) {
+			if (ret == -ENXIO)
+				ret = 0;
+			break;
 		}
+		ret = 0;
 
-		for (i = 0; i < fieinfo.fi_extents_mapped; i++) {
-			if (extents[i].fe_logical <=
-					le64_to_cpu(range->file_offset) +
-					le64_to_cpu(range->length)) {
-				length = end - le64_to_cpu(range->file_offset);
-				extent_len = extents[i].fe_length;
-				if (extents[i].fe_logical <
-					le64_to_cpu(range->file_offset)) {
-					u64 first_half =
-						le64_to_cpu(range->file_offset)
-						- extents[i].fe_logical;
-					if (first_half > extent_len)
-						continue;
-					extent_len -= first_half;
-				}
-				extent_len = min_t(u64, extent_len,
-						length);
-				le64_add_cpu(&range->length,
-						extent_len);
-			} else {
-				if (extents[i].fe_logical >= end)
-					break;
-				/* skip this increment if the range is
-				 * not initialized
-				 */
-				if (range->length)
-					range_idx++;
-				if (range_idx >= in_count) {
-					*out_count = range_idx;
-					ret = -E2BIG;
-					goto out;
-				}
+		if (extent_start >= end)
+			break;
 
-				length = end - extents[i].fe_logical;
-				extent_len = min_t(u64, extents[i].fe_length,
-						length);
-
-				range = ranges + range_idx;
-				range->file_offset =
-					cpu_to_le64(extents[i].fe_logical);
-				range->length = cpu_to_le64(extent_len);
-			}
-
-			if ((extents[i].fe_flags & FIEMAP_EXTENT_LAST) ||
-					le64_to_cpu(range->file_offset) +
-					le64_to_cpu(range->length) >= end) {
-				*out_count = range_idx + 1;
-				goto out;
-			}
+		ret = extent_end = f->f_op->llseek(f, extent_start, SEEK_HOLE);
+		if (ret < 0) {
+			if (ret == -ENXIO)
+				ret = 0;
+			break;
+		} else if (extent_start >= extent_end) {
+			ret = 0;
+			break;
 		}
+		ret = 0;
 
-		start = le64_to_cpu(range->file_offset) +
-			le64_to_cpu(range->length);
-		length = end - start;
+		ranges[*out_count].file_offset = cpu_to_le64(extent_start);
+		ranges[(*out_count)++].length =
+			cpu_to_le64(min(extent_end, end) - extent_start);
+
+		start = extent_end;
 	}
 
-out:
-	kfree(extents);
 	return ret;
 }
 
