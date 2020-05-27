@@ -2474,7 +2474,7 @@ static struct wifidevices wdevices[] = {
 	{ "BCM43566 802.11ac", NONE, 0x14e4, 43566, 0, 0, NULL },
 	{ "BCM43567 802.11ac", NONE, 0x14e4, 43567, 0, 0, NULL },
 	{ "BCM43569 802.11ac", NONE, 0x14e4, 43569, 0, 0, NULL },
-	{ "BCM43602 802.11ac", NONE, 0x14e4, 43602, 0, 0, NULL },
+	{ "BCM43602 802.11ac", SURVEY_NOPERIOD, 0x14e4, 43602, 0, 0, NULL },
 	{ "BCM43664 802.11ac", NONE, 0x14e4, 43664, 0, 0, NULL },
 	{ "AR9100 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ath9k" },
 	{ "AR933x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ar933x_wmac" },
