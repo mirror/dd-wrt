@@ -7068,7 +7068,7 @@ static int fsctl_query_allocated_ranges(struct ksmbd_work *work, uint64_t id,
 	int in_count, int *out_count)
 {
 	struct ksmbd_file *fp;
-	u64 start, length;
+	loff_t start, length;
 	int ret = 0;
 
 	*out_count = 0;
@@ -7082,7 +7082,7 @@ static int fsctl_query_allocated_ranges(struct ksmbd_work *work, uint64_t id,
 	start = le64_to_cpu(qar_req->file_offset);
 	length = le64_to_cpu(qar_req->length);
 
-	ret = ksmbd_vfs_fiemap(fp, start, length,
+	ret = ksmbd_vfs_fqar_lseek(fp, start, length,
 			qar_rsp, in_count, out_count);
 	if (ret && ret != -E2BIG)
 		*out_count = 0;
