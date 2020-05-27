@@ -621,8 +621,8 @@ filterIP.ip_range="IP Bereich";
 filter.titl="Zugriffsbeschr&auml;nkung";
 filter.h2="Internetzugriff";
 filter.legend="Zugriffsrichtlinie";
-filter.pol="Richtlinie";
-filter.polname="Richtlinienname";
+filter.pol="Regeln";
+filter.polname="Regelnname";
 filter.pcs="PCs";
 filter.polallow="Internetzugriff w&auml;hrend der angegebenen Tage und Stunden.";
 filter.legend2="Tage";
@@ -639,7 +639,7 @@ filter.packetcount="Gefilterte Packete";
 
 //help container
 
-hfilter.right2="Sie k&ouml;nnen bis zu 10 Zugriffsrichtlinien definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu l&ouml;schen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
+hfilter.right2="Sie k&ouml;nnen bis zu 10 Zugriffsregeln definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu l&ouml;schen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
 hfilter.right4="Hier k&ouml;nnnen Sie eine Richtlinie ein- oder ausschalten.";
 hfilter.right6="Hier k&ouml;nnen Sie ihrer Richtlinie einen Namen zuweisen.";
 hfilter.right8="Hier k&ouml;nnen Sie ein oder mehrere Tage ausw&auml;hlen, an denen die Richtlinie gelten soll.";
@@ -1560,7 +1560,7 @@ service.vpn_auth="Hash Algorithmus";
 service.vpn_bridge="&Uuml;berbr&uuml;cke TAP und br0";
 service.vpn_adv="Erweiterte Einstellungen";
 service.vpn_tlscip="TLS Verschl&uuml;sselung";
-service.vpn_route="Richtlinienbasiertes Routen";
+service.vpn_route="Regelbasiertes Routen";
 service.vpn_fw="Eingehende Firewall f&uuml;r TUN";
 service.vpnd_lzoyes="Ja";
 service.vpnd_lzono="Nein";
@@ -1568,7 +1568,7 @@ service.vpnd_lzoadaptive="Adaptiv";
 service.vpn_tls_btn="TLS Schl&uuml;ssel Auswahl";
 
 //help container
-hstatus_vpn.right1="Richtlinienbasiertes Routing:<br /><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
+hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
 hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an Klienten weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br />Ordner f&uuml;r Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verf&uuml;gbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
@@ -1732,7 +1732,7 @@ eoip.srv="EoIP Tunnel";
 eoip.genkey="Erzeuge Schl&uuml;ssel";
 eoip.wireguard_oet_natout ="NAT &uuml;ber Tunnel";
 eoip.wireguard_route_allowedip="Route erlaubte IP's &uuml;ber Tunnel";
-eoip.wireguard_oet_pbr="Richtlinienbasiertes Routing";
+eoip.wireguard_oet_pbr="Regelbasiertes Routing";
 eoip.wireguard_localport="Lokaler Port";
 eoip.wireguard_ka="Persistent Keep-Alive";
 eoip.wireguard_endpoint="Endpunkt";
@@ -1741,7 +1741,7 @@ eoip.wireguard_peerport="Entfernter Port";
 eoip.wireguard_peerkey="Entfernter &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localkey="Lokaler &Ouml;ffentlicher Schl&uuml;ssel";
 eoip.wireguard_localprivatekey="Lokaler Privater Schl&uuml;ssel";
-eoip.wireguard_firewallin="Firewall eingehend";
+eoip.wireguard_firewallin="Eingehende Firewall";
 eoip.wireguard_killswitch="Kill Switch";
 eoip.wireguard_genpsk="Erzeuge Pre-shared Key";
 eoip.wireguard_usepsk="Nutze Pre-shared Key";
