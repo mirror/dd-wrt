@@ -229,7 +229,7 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work,
 			 loff_t len);
 
 struct file_allocated_range_buffer;
-int ksmbd_vfs_fiemap(struct ksmbd_file *fp, u64 start, u64 length,
+int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
 			struct file_allocated_range_buffer *ranges,
 			int in_count, int *out_count);
 int ksmbd_vfs_unlink(struct dentry *dir, struct dentry *dentry);
