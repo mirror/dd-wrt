@@ -1640,7 +1640,7 @@ void tunnel_save(webs_t wp)
 				sprintf(temp, "oet%d_peerpk%d", i, peer);
 				nvram_unset(temp);
 			}
-			copytonv(wp, "oet%d_namep%d", i, peer);  //for naming legend peer
+			copytonv(wp, "oet%d_namep%d", i, peer);	//for naming legend peer
 			copytonv(wp, "oet%d_ka%d", i, peer);
 			copytonv(wp, "oet%d_aip%d", i, peer);
 			copymergetonv(wp, "oet%d_ip%d", i, peer);
@@ -2803,7 +2803,7 @@ static char *vapsettings[] = {
 	"lbr_aggr_len", "lbr_aggr_release_timeout", "leap", "leap8021xaddopt", "leap8021xanon", "leap8021xpasswd", "leap8021xphase2", "leap8021xuser", "leddc", "local_ip", "maclist", "macmode", "macmode1",
 	"max_unauth_users", "maxassoc", "mbss", "mfp", "mode", "mrate", "mtu", "mubf", "multicast", "multicast_to_unicast", "nas", "nat", "nband", "nbw", "nbw_cap", "nctrlsb", "net_mode", "netmask", "nmcsidx",
 	"nmode", "nmode_protection", "nreqd", "obss_coex", "passphrase", "peap", "peap8021xaddopt", "peap8021xanon", "peap8021xca", "peap8021xpasswd", "peap8021xphase1", "peap8021xphase2", "peap8021xuser", "phytype",
-	    "phytypes",
+	"phytypes",
 	"plcphdr", "poll_time", "preamble", "protmode", "psk2", "psk3", "owe", "radauth", "radio", "radius2_ipaddr", "radius2_key", "radius2_port", "radius_ipaddr", "radius_key", "radius_override", "radius_port",
 	"radius_retry", "radmacpassword", "radmactype", "rate", "rateset", "reg_mode", "regdomain", "regulatory", "rifs_advert", "rts", "rts rtsvalue", "rtsvalue", "rx_amsdu_in_ampdu", "rxantenna", "rxchain",
 	"rxchain_pwrsave_enable", "sae_key", "scanlist", "security_mode", "security_mode_akm", "shortgi", "shortslot", "smps", "ssid", "sta_retry_time", "stay", "stbc_rx", "stbc_tx", "strikes", "subf", "tkip", "tls",
