@@ -96,7 +96,7 @@ listbox_drawscroll (WListbox * l)
     int length;
 
     /* Are we at the top? */
-    widget_move (w, 0, w->cols);
+    widget_gotoyx (w, 0, w->cols);
     if (l->top == 0)
         tty_print_one_vline (TRUE);
     else
@@ -105,7 +105,7 @@ listbox_drawscroll (WListbox * l)
     length = g_queue_get_length (l->list);
 
     /* Are we at the bottom? */
-    widget_move (w, max_line, w->cols);
+    widget_gotoyx (w, max_line, w->cols);
     if (l->top + w->lines == length || w->lines >= length)
         tty_print_one_vline (TRUE);
     else
@@ -117,7 +117,7 @@ listbox_drawscroll (WListbox * l)
 
     for (i = 1; i < max_line; i++)
     {
-        widget_move (w, i, w->cols);
+        widget_gotoyx (w, i, w->cols);
         if (i != line)
             tty_print_one_vline (TRUE);
         else
@@ -172,7 +172,7 @@ listbox_draw (WListbox * l, gboolean focused)
         else
             tty_setcolor (normalc);
 
-        widget_move (l, i, 1);
+        widget_gotoyx (l, i, 1);
 
         if (l->list != NULL && le != NULL && (i == 0 || pos < length))
         {
@@ -325,6 +325,11 @@ listbox_execute_cmd (WListbox * l, long command)
                               D_ERROR, 2, _("&Yes"), _("&No")) == 0))
             listbox_remove_list (l);
         break;
+    case CK_View:
+    case CK_Edit:
+    case CK_Enter:
+        ret = send_message (WIDGET (l)->owner, l, MSG_NOTIFY, command, NULL);
+        break;
     default:
         ret = MSG_NOT_HANDLED;
     }
@@ -398,7 +403,7 @@ static void
 listbox_on_change (WListbox * l)
 {
     listbox_draw (l, TRUE);
-    send_message (WIDGET (l)->owner, l, MSG_NOTIFY, l->pos, NULL);
+    send_message (WIDGET (l)->owner, l, MSG_NOTIFY, 0, NULL);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -476,7 +481,7 @@ listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
         return listbox_execute_cmd (l, parm);
 
     case MSG_CURSOR:
-        widget_move (l, l->cursor_y, 0);
+        widget_gotoyx (l, l->cursor_y, 0);
         return MSG_HANDLED;
 
     case MSG_DRAW:
@@ -634,10 +639,9 @@ void
 listbox_select_last (WListbox * l)
 {
     int lines = WIDGET (l)->lines;
-    int length = 0;
+    int length;
 
-    if (!listbox_is_empty (l))
-        length = g_queue_get_length (l->list);
+    length = listbox_get_length (l);
 
     l->pos = length > 0 ? length - 1 : 0;
     l->top = length > lines ? length - lines : 0;
@@ -679,6 +683,14 @@ listbox_select_entry (WListbox * l, int dest)
 
     /* If we are unable to find it, set decent values */
     l->pos = l->top = 0;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+int
+listbox_get_length (const WListbox * l)
+{
+    return listbox_is_empty (l) ? 0 : (int) g_queue_get_length (l->list);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -760,22 +772,19 @@ listbox_is_empty (const WListbox * l)
 
 /* --------------------------------------------------------------------------------------------- */
 
+/**
+ * Set new listbox items list.
+ *
+ * @param l WListbox object
+ * @param list list of WLEntry objects
+ */
 void
-listbox_set_list (WListbox * l, GList * list)
+listbox_set_list (WListbox * l, GQueue * list)
 {
     listbox_remove_list (l);
 
     if (l != NULL)
-    {
-        GList *ll;
-
-        l->list = g_queue_new ();
-
-        for (ll = list; ll != NULL; ll = g_list_next (ll))
-            g_queue_push_tail (l->list, ll->data);
-
-        g_list_free (list);
-    }
+        l->list = list;
 }
 
 /* --------------------------------------------------------------------------------------------- */

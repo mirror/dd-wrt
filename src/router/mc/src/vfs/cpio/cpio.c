@@ -217,8 +217,8 @@ cpio_free_archive (struct vfs_class *me, struct vfs_s_super *super)
         mc_close (arch->fd);
         arch->fd = -1;
     }
-    g_slist_free_full (arch->deferred, g_free);
-    arch->deferred = NULL;
+
+    g_clear_slist (&arch->deferred, g_free);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -890,7 +890,7 @@ void
 vfs_init_cpiofs (void)
 {
     /* FIXME: cpiofs used own temp files */
-    vfs_init_subclass (&cpio_subclass, "cpiofs", VFS_READONLY, "ucpio");
+    vfs_init_subclass (&cpio_subclass, "cpiofs", VFSF_READONLY, "ucpio");
     vfs_cpiofs_ops->read = cpio_read;
     vfs_cpiofs_ops->setctl = NULL;
     cpio_subclass.archive_check = cpio_super_check;

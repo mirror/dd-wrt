@@ -90,28 +90,16 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @CHARSET_TRUE@am__append_1 = mc.charsets
-#if CHARSET is defined, mc.charsets is already here
-@CHARSET_FALSE@am__append_2 = mc.charsets
 subdir = misc
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
-	$(top_srcdir)/m4/fcntl-o.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/glibc2.m4 $(top_srcdir)/m4/glibc21.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intdiv0.m4 \
-	$(top_srcdir)/m4/intl.m4 $(top_srcdir)/m4/intlmacosx.m4 \
-	$(top_srcdir)/m4/intmax.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/lcmessage.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
 	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
 	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/longlong.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/printf-posix.m4 $(top_srcdir)/m4/progtest.m4 \
-	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/uintmax_t.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
-	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
@@ -154,10 +142,11 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
+DIST_COMMON = $(srcdir)/Makefile.am $(dist_pkgdata_DATA) \
+	$(am__DIST_COMMON)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = mc.menu mcedit.menu mc.ext
+CONFIG_CLEAN_FILES = mc.charsets mc.menu mcedit.menu mc.ext
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -187,7 +176,7 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(cfgdir)" "$(DESTDIR)$(cfgdir)" \
-	"$(DESTDIR)$(pkgdatadir)"
+	"$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgdatadir)"
 SCRIPTS = $(cfg_SCRIPTS)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -216,7 +205,7 @@ am__can_run_installinfo = \
     n|no|NO) false;; \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
-DATA = $(cfg_DATA) $(noinst_DATA) $(pkgdata_DATA)
+DATA = $(cfg_DATA) $(dist_pkgdata_DATA) $(noinst_DATA) $(pkgdata_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -245,8 +234,9 @@ am__define_uniq_tagged_files = \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = $(SUBDIRS)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/mc.ext.in \
-	$(srcdir)/mc.menu.in $(srcdir)/mcedit.menu.in
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/mc.charsets.in \
+	$(srcdir)/mc.ext.in $(srcdir)/mc.menu.in \
+	$(srcdir)/mcedit.menu.in
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -274,7 +264,6 @@ am__relativize = \
   done; \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
-ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -282,18 +271,15 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_INCLUDED_LIBINTL = @BUILD_INCLUDED_LIBINTL@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
+CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DATADIRNAME = @DATADIRNAME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DISTR_RELEASE = @DISTR_RELEASE@
@@ -333,10 +319,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
-GENCAT = @GENCAT@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
-GLIBC2 = @GLIBC2@
-GLIBC21 = @GLIBC21@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
 GMODULE_CFLAGS = @GMODULE_CFLAGS@
@@ -344,13 +327,7 @@ GMODULE_LIBS = @GMODULE_LIBS@
 GMSGFMT = @GMSGFMT@
 GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
-HAVE_ASPRINTF = @HAVE_ASPRINTF@
 HAVE_FILECMD = @HAVE_FILECMD@
-HAVE_NEWLOCALE = @HAVE_NEWLOCALE@
-HAVE_POSIX_PRINTF = @HAVE_POSIX_PRINTF@
-HAVE_SNPRINTF = @HAVE_SNPRINTF@
-HAVE_VISIBILITY = @HAVE_VISIBILITY@
-HAVE_WPRINTF = @HAVE_WPRINTF@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
 INSTALL = @INSTALL@
@@ -358,12 +335,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
-INTLBISON = @INTLBISON@
 INTLLIBS = @INTLLIBS@
-INTLOBJS = @INTLOBJS@
-INTL_DEFAULT_VERBOSITY = @INTL_DEFAULT_VERBOSITY@
-INTL_LIBTOOL_SUFFIX_PREFIX = @INTL_LIBTOOL_SUFFIX_PREFIX@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
@@ -371,24 +343,16 @@ LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBMC_RELEASE = @LIBMC_RELEASE@
 LIBMC_VERSION = @LIBMC_VERSION@
-LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
-LIBPTH = @LIBPTH@
-LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBS = @LIBS@
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
-LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
-LTLIBC = @LTLIBC@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
-LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBPTH = @LTLIBPTH@
-LTLIBTHREAD = @LTLIBTHREAD@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -422,7 +386,6 @@ PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 POSUB = @POSUB@
-PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PYTHON = @PYTHON@
 RANLIB = @RANLIB@
 RUBY = @RUBY@
@@ -434,12 +397,8 @@ SLANG_LIBS = @SLANG_LIBS@
 STRIP = @STRIP@
 TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
-USE_INCLUDED_LIBINTL = @USE_INCLUDED_LIBINTL@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-WINDRES = @WINDRES@
-WOE32 = @WOE32@
-WOE32DLL = @WOE32DLL@
 X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
@@ -507,7 +466,15 @@ top_srcdir = @top_srcdir@
 SUBDIRS = ext.d macros.d skins syntax
 LIBFILES_OUT = mc.ext
 noinst_DATA = xterm.ad
-pkgdata_DATA = mc.lib $(am__append_1)
+PKGDATA_IN = mc.charsets.in
+PKGDATA_OUT = $(am__append_1)
+dist_pkgdata_DATA = \
+	mc.lib
+
+pkgdata_DATA = \
+	$(dist_pkgdata_DATA) \
+	$(PKGDATA_OUT)
+
 SCRIPTS_IN = \
 	mc.menu.in \
 	mcedit.menu.in
@@ -524,7 +491,7 @@ LIBFILES_CONST = \
 LIBFILES_SCRIPT = \
 	edit.indent.rc
 
-CLEANFILES = $(SCRIPTS_OUT)
+CLEANFILES = $(SCRIPTS_OUT) $(PKGDATA_OUT)
 cfgdir = $(sysconfdir)/@PACKAGE@
 cfg_DATA = \
 	$(LIBFILES_CONST) \
@@ -536,8 +503,14 @@ cfg_SCRIPTS = \
 
 
 # Files processed by configure don't need to be here
-EXTRA_DIST = $(LIBFILES_CONST) $(LIBFILES_SCRIPT) $(SCRIPTS_IN) \
-	$(noinst_DATA) $(pkgdata_DATA) $(am__append_2)
+EXTRA_DIST = \
+	$(LIBFILES_CONST) \
+	$(LIBFILES_SCRIPT) \
+	$(SCRIPTS_IN) \
+	$(noinst_DATA) \
+	$(dist_pkgdata_DATA) \
+	$(PKGDATA_IN)
+
 all: all-recursive
 
 .SUFFIXES:
@@ -570,6 +543,8 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+mc.charsets: $(top_builddir)/config.status $(srcdir)/mc.charsets.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mc.menu: $(top_builddir)/config.status $(srcdir)/mc.menu.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 mcedit.menu: $(top_builddir)/config.status $(srcdir)/mcedit.menu.in
@@ -638,6 +613,27 @@ uninstall-cfgDATA:
 	@list='$(cfg_DATA)'; test -n "$(cfgdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(cfgdir)'; $(am__uninstall_files_from_dir)
+install-dist_pkgdataDATA: $(dist_pkgdata_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(pkgdatadir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(pkgdatadir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(pkgdatadir)" || exit $$?; \
+	done
+
+uninstall-dist_pkgdataDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(dist_pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(pkgdatadir)'; $(am__uninstall_files_from_dir)
 install-pkgdataDATA: $(pkgdata_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(pkgdata_DATA)'; test -n "$(pkgdatadir)" || list=; \
@@ -822,7 +818,7 @@ check: check-recursive
 all-am: Makefile $(SCRIPTS) $(DATA)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(cfgdir)" "$(DESTDIR)$(cfgdir)" "$(DESTDIR)$(pkgdatadir)"; do \
+	for dir in "$(DESTDIR)$(cfgdir)" "$(DESTDIR)$(cfgdir)" "$(DESTDIR)$(pkgdatadir)" "$(DESTDIR)$(pkgdatadir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -877,7 +873,7 @@ info: info-recursive
 info-am:
 
 install-data-am: install-cfgDATA install-cfgSCRIPTS \
-	install-pkgdataDATA
+	install-dist_pkgdataDATA install-pkgdataDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) install-data-hook
 install-dvi: install-dvi-recursive
@@ -923,7 +919,7 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-cfgDATA uninstall-cfgSCRIPTS \
-	uninstall-pkgdataDATA
+	uninstall-dist_pkgdataDATA uninstall-pkgdataDATA
 	@$(NORMAL_INSTALL)
 	$(MAKE) $(AM_MAKEFLAGS) uninstall-hook
 .MAKE: $(am__recursive_targets) install-am install-data-am \
@@ -934,16 +930,17 @@ uninstall-am: uninstall-cfgDATA uninstall-cfgSCRIPTS \
 	ctags-am distclean distclean-generic distclean-libtool \
 	distclean-tags distdir dvi dvi-am html html-am info info-am \
 	install install-am install-cfgDATA install-cfgSCRIPTS \
-	install-data install-data-am install-data-hook install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-pkgdataDATA install-ps \
-	install-ps-am install-strip installcheck installcheck-am \
-	installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am uninstall-cfgDATA uninstall-cfgSCRIPTS \
-	uninstall-hook uninstall-pkgdataDATA
+	install-data install-data-am install-data-hook \
+	install-dist_pkgdataDATA install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-pkgdataDATA install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am tags tags-am uninstall uninstall-am uninstall-cfgDATA \
+	uninstall-cfgSCRIPTS uninstall-dist_pkgdataDATA uninstall-hook \
+	uninstall-pkgdataDATA
 
 .PRECIOUS: Makefile
 

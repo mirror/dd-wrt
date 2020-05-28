@@ -905,9 +905,9 @@ insert_file (const char *dir, const char *file, gsize start, gsize end)
     while (IS_PATH_SEP (dir[0]) && IS_PATH_SEP (dir[1]))
         dir++;
 
-    if (old_dir)
+    if (old_dir != NULL)
     {
-        if (strcmp (old_dir, dir))
+        if (strcmp (old_dir, dir) != 0)
         {
             g_free (old_dir);
             old_dir = g_strdup (dir);
@@ -939,7 +939,7 @@ find_add_match (const char *dir, const char *file, gsize start, gsize end)
     /* Don't scroll */
     if (matches == 0)
         listbox_select_first (find_list);
-    widget_redraw (WIDGET (find_list));
+    widget_draw (WIDGET (find_list));
 
     matches++;
     found_num_update ();
@@ -1065,6 +1065,7 @@ search_content (WDialog * h, const char *directory, const char *filename)
         while (!ret_val)
         {
             char ch = '\0';
+
             off += i + 1;       /* the previous line, plus a newline character */
             i = 0;
 
@@ -1148,6 +1149,7 @@ search_content (WDialog * h, const char *directory, const char *filename)
             if ((line & 0xff) == 0)
             {
                 FindProgressStatus res;
+
                 res = check_find_events (h);
                 switch (res)
                 {
@@ -1247,11 +1249,8 @@ find_rotate_dash (const WDialog * h, gboolean show)
     static const char rotating_dash[4] = "|/-\\";
     const Widget *w = CONST_WIDGET (h);
 
-    if (!verbose)
-        return;
-
     tty_setcolor (h->color[DLG_COLOR_NORMAL]);
-    widget_move (h, w->lines - 7, w->cols - 4);
+    widget_gotoyx (h, w->lines - 7, w->cols - 4);
     tty_print_char (show ? rotating_dash[pos] : ' ');
     pos = (pos + 1) % sizeof (rotating_dash);
     mc_refresh ();
@@ -1315,7 +1314,8 @@ do_search (WDialog * h)
                                                   ignore_count), ignore_count);
                             status_update (msg);
                         }
-                        find_rotate_dash (h, FALSE);
+                        if (verbose)
+                            find_rotate_dash (h, FALSE);
                         stop_idle (h);
                         return 0;
                     }
@@ -1401,7 +1401,8 @@ do_search (WDialog * h)
             ;
     }                           /* for */
 
-    find_rotate_dash (h, TRUE);
+    if (verbose)
+        find_rotate_dash (h, TRUE);
 
     return 1;
 }
@@ -1594,7 +1595,7 @@ start_stop (WButton * button, int action)
     button_set_text (button, fbuts[is_start ? 3 : 2].text);
 
     find_relocate_buttons (w->owner, FALSE);
-    dlg_redraw (w->owner);
+    dlg_draw (w->owner);
 
     return 0;
 }
@@ -1772,7 +1773,6 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
 
     if (return_value == B_PANELIZE && *filename)
     {
-        int link_to_dir, stale_link;
         int i;
         struct stat st;
         GList *entry;
@@ -1789,6 +1789,7 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
             WLEntry *le = LENTRY (entry->data);
             find_match_location_t *location = le->data;
             char *p;
+            gboolean link_to_dir, stale_link;
 
             if ((le->text == NULL) || (location == NULL) || (location->dir == NULL))
                 continue;
@@ -1832,8 +1833,8 @@ do_find (const char *start_dir, ssize_t start_dir_len, const char *ignore_dirs,
             list->list[list->len].fnamelen = strlen (p);
             list->list[list->len].fname = g_strndup (p, list->list[list->len].fnamelen);
             list->list[list->len].f.marked = 0;
-            list->list[list->len].f.link_to_dir = link_to_dir;
-            list->list[list->len].f.stale_link = stale_link;
+            list->list[list->len].f.link_to_dir = link_to_dir ? 1 : 0;
+            list->list[list->len].f.stale_link = stale_link ? 1 : 0;
             list->list[list->len].f.dir_size_computed = 0;
             list->list[list->len].st = st;
             list->list[list->len].sort_key = NULL;

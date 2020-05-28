@@ -16,8 +16,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-03-24 14:13+0000\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2019-12-22 22:08+0000\n"
 "Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
@@ -492,6 +492,18 @@ msgstr "Maj"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "La variable d'entorn TERM no està definida!\n"
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr "No s'ha pogut comprovar la canonada SIGWINCH"
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr "No s'han pogut crear la canonada per a SIGWINCH"
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr "No s'ha pogut configurar l'escriptura final de la canonada SIGWINCH"
+
+msgid "Cannot configure read end of SIGWINCH pipe"
+msgstr "No s'ha pogut configurar la lectura final de la canonada SIGWINCH"
 
 #, c-format
 msgid ""
@@ -1382,6 +1394,9 @@ msgstr "&Nou"
 msgid "&Close"
 msgstr "Tan&ca"
 
+msgid "&History..."
+msgstr "&Historial..."
+
 msgid "Save &as..."
 msgstr "Desa com &a..."
 
@@ -1817,6 +1832,13 @@ msgstr "No s'ha pogut obtenir una còpia local de %s"
 
 msgid "The shell is already running a command"
 msgstr "La shell ja està executant una ordre"
+
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
+"No feu servir ni xterm ni una consola Linux.\n"
+"No podreu alternar entre els plafons."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Escriviu «exit» per tornar al Midnight Commander"
@@ -2377,13 +2399,6 @@ msgstr ""
 "Ambdós plafons han d'estar en el mode de llistat\n"
 "per usar aquesta ordre"
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-"No feu servir ni xterm ni una consola Linux.\n"
-"No podreu alternar entre els plafons."
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr "«%s» no és un enllaç simbòlic"
@@ -2449,9 +2464,6 @@ msgid ""
 msgstr ""
 "No s'ha pogut fer chdir a «%s»\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "No s'ha pogut llegir el contingut del directori"
 
 msgid "Parameter"
 msgstr "Paràmetre"
@@ -3408,6 +3420,9 @@ msgstr "Mostra les m&ides dels directoris"
 msgid "Command &history"
 msgstr "&Historial de les ordres"
 
+msgid "Viewed/edited files hi&story"
+msgstr "Hi&storial dels fitxers vistos/editats"
+
 msgid "Di&rectory hotlist"
 msgstr "Favorits dels di&rectoris"
 
@@ -3632,6 +3647,9 @@ msgstr "No seleccionis"
 
 msgid "Do you really want to execute?"
 msgstr "Realment el voleu executar?"
+
+msgid "Cannot read directory contents"
+msgstr "No s'ha pogut llegir el contingut del directori"
 
 msgid "User supplied format looks invalid, reverting to default."
 msgstr ""

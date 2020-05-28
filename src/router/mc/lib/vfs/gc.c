@@ -127,7 +127,7 @@ vfs_stamp_compare (gconstpointer a, gconstpointer b)
     const struct vfs_stamping *vsa = (const struct vfs_stamping *) a;
     const struct vfs_stamping *vsb = (const struct vfs_stamping *) b;
 
-    return (vsa->v == vsb->v && vsa->id == vsb->id) ? 0 : 1;
+    return (vsa == NULL || vsb == NULL || (vsa->v == vsb->v && vsa->id == vsb->id)) ? 0 : 1;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -135,7 +135,7 @@ vfs_stamp_compare (gconstpointer a, gconstpointer b)
 static void
 vfs_addstamp (struct vfs_class *v, vfsid id)
 {
-    if ((v->flags & VFS_LOCAL) == 0 && id != NULL && !vfs_stamp (v, id))
+    if ((v->flags & VFSF_LOCAL) == 0 && id != NULL && !vfs_stamp (v, id))
     {
         struct vfs_stamping *stamp;
 
@@ -163,7 +163,7 @@ vfs_stamp (struct vfs_class *v, vfsid id)
     gboolean ret = FALSE;
 
     stamp = g_slist_find_custom (stamps, &what, vfs_stamp_compare);
-    if (stamp != NULL)
+    if (stamp != NULL && stamp->data != NULL)
     {
         gettimeofday (&(VFS_STAMPING (stamp->data)->time), NULL);
         ret = TRUE;

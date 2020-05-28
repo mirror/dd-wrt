@@ -101,24 +101,14 @@ bin_PROGRAMS = mc$(EXEEXT)
 @ENABLE_BACKGROUND_TRUE@am__append_8 = background.c background.h
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/codeset.m4 \
-	$(top_srcdir)/m4/fcntl-o.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/glibc2.m4 $(top_srcdir)/m4/glibc21.m4 \
-	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intdiv0.m4 \
-	$(top_srcdir)/m4/intl.m4 $(top_srcdir)/m4/intlmacosx.m4 \
-	$(top_srcdir)/m4/intmax.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/lcmessage.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
+	$(top_srcdir)/m4/iconv.m4 $(top_srcdir)/m4/intlmacosx.m4 \
 	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
 	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
-	$(top_srcdir)/m4/lock.m4 $(top_srcdir)/m4/longlong.m4 \
-	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
-	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
-	$(top_srcdir)/m4/nls.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/printf-posix.m4 $(top_srcdir)/m4/progtest.m4 \
-	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/stdint_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/uintmax_t.m4 \
-	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/wchar_t.m4 \
-	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/ltoptions.m4 \
+	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
+	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/nls.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/progtest.m4 \
 	$(top_srcdir)/acinclude.m4 \
 	$(top_srcdir)/m4.include/gnulib/mode_t.m4 \
 	$(top_srcdir)/m4.include/gnulib/stat-size.m4 \
@@ -174,17 +164,18 @@ libinternal_la_DEPENDENCIES = filemanager/libmcfilemanager.la \
 	$(SUBSHELLLIB)
 am__libinternal_la_SOURCES_DIST = cons.handler.c consaver/cons.saver.h \
 	args.c args.h clipboard.c clipboard.h events_init.c \
-	events_init.h execute.c execute.h help.c help.h history.h \
-	keybind-defaults.c keybind-defaults.h learn.c learn.h setup.c \
-	setup.h textconf.c textconf.h usermenu.c usermenu.h util.c \
-	util.h selcodepage.c selcodepage.h background.c background.h
+	events_init.h execute.c execute.h file_history.c \
+	file_history.h help.c help.h history.h keybind-defaults.c \
+	keybind-defaults.h learn.c learn.h setup.c setup.h textconf.c \
+	textconf.h usermenu.c usermenu.h util.c util.h selcodepage.c \
+	selcodepage.h background.c background.h
 am__objects_1 = cons.handler.lo
 @CHARSET_TRUE@am__objects_2 = selcodepage.lo
 @ENABLE_BACKGROUND_TRUE@am__objects_3 = background.lo
 am_libinternal_la_OBJECTS = $(am__objects_1) args.lo clipboard.lo \
-	events_init.lo execute.lo help.lo keybind-defaults.lo learn.lo \
-	setup.lo textconf.lo usermenu.lo util.lo $(am__objects_2) \
-	$(am__objects_3)
+	events_init.lo execute.lo file_history.lo help.lo \
+	keybind-defaults.lo learn.lo setup.lo textconf.lo usermenu.lo \
+	util.lo $(am__objects_2) $(am__objects_3)
 libinternal_la_OBJECTS = $(am_libinternal_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -212,11 +203,11 @@ am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/args.Plo ./$(DEPDIR)/background.Plo \
 	./$(DEPDIR)/clipboard.Plo ./$(DEPDIR)/cons.handler.Plo \
 	./$(DEPDIR)/events_init.Plo ./$(DEPDIR)/execute.Plo \
-	./$(DEPDIR)/help.Plo ./$(DEPDIR)/keybind-defaults.Plo \
-	./$(DEPDIR)/learn.Plo ./$(DEPDIR)/main.Po \
-	./$(DEPDIR)/selcodepage.Plo ./$(DEPDIR)/setup.Plo \
-	./$(DEPDIR)/textconf.Plo ./$(DEPDIR)/usermenu.Plo \
-	./$(DEPDIR)/util.Plo
+	./$(DEPDIR)/file_history.Plo ./$(DEPDIR)/help.Plo \
+	./$(DEPDIR)/keybind-defaults.Plo ./$(DEPDIR)/learn.Plo \
+	./$(DEPDIR)/main.Po ./$(DEPDIR)/selcodepage.Plo \
+	./$(DEPDIR)/setup.Plo ./$(DEPDIR)/textconf.Plo \
+	./$(DEPDIR)/usermenu.Plo ./$(DEPDIR)/util.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -309,7 +300,6 @@ am__relativize = \
   reldir="$$dir2"
 pkglibexecdir = $(libexecdir)/@PACKAGE@
 ACLOCAL = @ACLOCAL@
-ALLOCA = @ALLOCA@
 AMTAR = @AMTAR@
 AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
@@ -317,18 +307,15 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
-BUILD_INCLUDED_LIBINTL = @BUILD_INCLUDED_LIBINTL@
-CATOBJEXT = @CATOBJEXT@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CHECK_CFLAGS = @CHECK_CFLAGS@
 CHECK_LIBS = @CHECK_LIBS@
+CP1251 = @CP1251@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
-DATADIRNAME = @DATADIRNAME@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DISTR_RELEASE = @DISTR_RELEASE@
@@ -368,10 +355,7 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
-GENCAT = @GENCAT@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
-GLIBC2 = @GLIBC2@
-GLIBC21 = @GLIBC21@
 GLIB_CFLAGS = @GLIB_CFLAGS@
 GLIB_LIBS = @GLIB_LIBS@
 GMODULE_CFLAGS = @GMODULE_CFLAGS@
@@ -379,13 +363,7 @@ GMODULE_LIBS = @GMODULE_LIBS@
 GMSGFMT = @GMSGFMT@
 GMSGFMT_015 = @GMSGFMT_015@
 GREP = @GREP@
-HAVE_ASPRINTF = @HAVE_ASPRINTF@
 HAVE_FILECMD = @HAVE_FILECMD@
-HAVE_NEWLOCALE = @HAVE_NEWLOCALE@
-HAVE_POSIX_PRINTF = @HAVE_POSIX_PRINTF@
-HAVE_SNPRINTF = @HAVE_SNPRINTF@
-HAVE_VISIBILITY = @HAVE_VISIBILITY@
-HAVE_WPRINTF = @HAVE_WPRINTF@
 HAVE_ZIPINFO = @HAVE_ZIPINFO@
 HAVE_nroff = @HAVE_nroff@
 INSTALL = @INSTALL@
@@ -393,12 +371,7 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-INSTOBJEXT = @INSTOBJEXT@
-INTLBISON = @INTLBISON@
 INTLLIBS = @INTLLIBS@
-INTLOBJS = @INTLOBJS@
-INTL_DEFAULT_VERBOSITY = @INTL_DEFAULT_VERBOSITY@
-INTL_LIBTOOL_SUFFIX_PREFIX = @INTL_LIBTOOL_SUFFIX_PREFIX@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
@@ -406,24 +379,16 @@ LIBICONV = @LIBICONV@
 LIBINTL = @LIBINTL@
 LIBMC_RELEASE = @LIBMC_RELEASE@
 LIBMC_VERSION = @LIBMC_VERSION@
-LIBMULTITHREAD = @LIBMULTITHREAD@
 LIBOBJS = @LIBOBJS@
-LIBPTH = @LIBPTH@
-LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBS = @LIBS@
 LIBSSH_CFLAGS = @LIBSSH_CFLAGS@
 LIBSSH_LIBS = @LIBSSH_LIBS@
-LIBTHREAD = @LIBTHREAD@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
-LTLIBC = @LTLIBC@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
-LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBPTH = @LTLIBPTH@
-LTLIBTHREAD = @LTLIBTHREAD@
 LT_SYS_LIBRARY_PATH = @LT_SYS_LIBRARY_PATH@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
@@ -457,7 +422,6 @@ PKG_CONFIG = @PKG_CONFIG@
 PKG_CONFIG_LIBDIR = @PKG_CONFIG_LIBDIR@
 PKG_CONFIG_PATH = @PKG_CONFIG_PATH@
 POSUB = @POSUB@
-PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PYTHON = @PYTHON@
 RANLIB = @RANLIB@
 RUBY = @RUBY@
@@ -469,12 +433,8 @@ SLANG_LIBS = @SLANG_LIBS@
 STRIP = @STRIP@
 TESTS_LDFLAGS = @TESTS_LDFLAGS@
 UNZIP = @UNZIP@
-USE_INCLUDED_LIBINTL = @USE_INCLUDED_LIBINTL@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
-WINDRES = @WINDRES@
-WOE32 = @WOE32@
-WOE32DLL = @WOE32DLL@
 X11_WWW = @X11_WWW@
 XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
@@ -565,10 +525,10 @@ mc_SOURCES = \
 
 libinternal_la_SOURCES = $(SRC_mc_conssaver) args.c args.h clipboard.c \
 	clipboard.h events_init.c events_init.h execute.c execute.h \
-	help.c help.h history.h keybind-defaults.c keybind-defaults.h \
-	learn.c learn.h setup.c setup.h textconf.c textconf.h \
-	usermenu.c usermenu.h util.c util.h $(am__append_7) \
-	$(am__append_8)
+	file_history.c file_history.h help.c help.h history.h \
+	keybind-defaults.c keybind-defaults.h learn.c learn.h setup.c \
+	setup.h textconf.c textconf.h usermenu.c usermenu.h util.c \
+	util.h $(am__append_7) $(am__append_8)
 EXTRA_DIST = $(SRC_maintainer) $(SRC_charset)
 all: all-recursive
 
@@ -683,6 +643,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cons.handler.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/events_init.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/execute.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_history.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/help.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/keybind-defaults.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/learn.Plo@am__quote@ # am--include-marker
@@ -933,6 +894,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/cons.handler.Plo
 	-rm -f ./$(DEPDIR)/events_init.Plo
 	-rm -f ./$(DEPDIR)/execute.Plo
+	-rm -f ./$(DEPDIR)/file_history.Plo
 	-rm -f ./$(DEPDIR)/help.Plo
 	-rm -f ./$(DEPDIR)/keybind-defaults.Plo
 	-rm -f ./$(DEPDIR)/learn.Plo
@@ -994,6 +956,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/cons.handler.Plo
 	-rm -f ./$(DEPDIR)/events_init.Plo
 	-rm -f ./$(DEPDIR)/execute.Plo
+	-rm -f ./$(DEPDIR)/file_history.Plo
 	-rm -f ./$(DEPDIR)/help.Plo
 	-rm -f ./$(DEPDIR)/keybind-defaults.Plo
 	-rm -f ./$(DEPDIR)/learn.Plo

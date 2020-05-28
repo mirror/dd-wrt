@@ -1,49 +1,100 @@
+Version 4.8.24
+
+- Core
+
+  * Drop bundled gettext (#3629)
+  * Implement the file edit and view history. Default shortcut is alt-shift-e (#2733)
+  * Enable subshell in standalone mceditor, mcviewer, and mcdiffviewer (#3380)
+  * Refactoring of SIGWINCH handling (#117, #4019)
+  * Prevent run/open files with double right click (#4016)
+  * Improve support of Windows 1251 encoding on Solaris (#3992)
+  * Support binary reproducible builds (via --disable-configure-args configure option) (#4031)
+
+- VFS
+
+  * sftpfs: support keyborad interactive authentication (#3921)
+  * uc1541 extfs: update up to 3.3 version (#3936)
+
+- Editor
+
+  * Syntax:
+    * add yabasic (Yet Another BASIC) syntax highlighting (#4005)
+    * improve YAML syntax highlighting (#4010)
+    * add "https://" to Debian sources.list syntax (#4018)
+    * add .desktop files (#4022)
+    * improve RPM spec file syntax highlighting (#4037)
+    * improve Debian sources.list syntax highlighting (#4041)
+
+- Misc
+
+  * Code cleanup (#3997, #4030, #4038, #4039)
+  * menu.mc: handle symbolic links to compressed archives (#4009)
+  * File highlighting updates (#4015)
+    * part - partial files, e.g. used by many download managers ([temp])
+    * apk - Android packages, deb - Debian packages ([archive])
+    * ts - MPEG-TS streams ([media])
+  * New skins:
+    * julia256: a dark skin with calm colors and good contrast.
+
+- Fixes
+
+  * Compile failure on AIX 7.2 (#4033)
+  * Compile failure on OS X 10.9 (#4035)
+  * Enter key works as Down one in menu (#4006)
+  * Menubar: incorrect mouse click coordinate (#4013)
+  * Rotating dash generates way too much output (#3859)
+  * Totals aren't computed before move of a single directory (#4027)
+  * Editor: unusable dynamic paragraphing (#3996)
+  * VFS: iso9660 does not report listing errors (#3993)
+  * VFS: extfs: nested archives are not removed from temporary directory (#4000)
+
+
 Version 4.8.23
 
 - Core
 
-  * Modify "File exists" query dialog (#3935):
-    * change layout
-    * rename "Update" button to "If older"
-    * add new "If smaller" button": overwrite file with smaller one
-    * add "Don't overwrite with zero length file" checkbox
-  * Speed up of large directory structures delete (#3958)
-  * Support key binding for menu (#212)
+    * Modify "File exists" query dialog (#3935):
+        - change layout
+        - rename "Update" button to "If older"
+        - add new "If smaller" button": overwrite file with smaller one
+        - add "Don't overwrite with zero length file" checkbox
+    * Speed up of large directory structures delete (#3958)
+    * Support key binding for menu (#212)
 
 - Editor
 
-  * Expanded syntax highlighting rules (#3975):
-    * expanded file name regexp for sh.syntax
-    * use ini.syntax for systemd cofiguration files
-  * Syntax updates:
-    * shell (#3981)
-    * ebuild (#3988)
-    * RPM spec (#3991)
+    * Expanded syntax highlighting rules (#3975):
+        - expanded file name regexp for sh.syntax
+        - use ini.syntax for systemd cofiguration files
+    * Syntax updates:
+        - shell (#3981)
+        - ebuild (#3988)
+        - RPM spec (#3991)
 
 - Viewer
 
-  * Quick one-off backwards search with N. New action SearchOppositeContinue for key bind (default is shift-n) (#3452)
+    * Quick one-off backwards search with N. New action SearchOppositeContinue for key bind (default is shift-n) (#3452)
 
 - Misc
 
-  * Code cleanup (#3955)
-  * Use Geeqie (a fork of GQview) as main image viewer, fallback to GQview (#3962)
-  * File highlighting updates (#3966)
-    * .go, .s: highlight as source
-    * .m4v: highlighting as media
-  * New skins:
-    * featured-plus: featured skin with alternative directory and file select/mark colors (#3973)
+    * Code cleanup (#3955)
+    * Use Geeqie (a fork of GQview) as main image viewer, fallback to GQview (#3962)
+    * File highlighting updates (#3966)
+        - .go, .s: highlight as source
+        - .m4v: highlighting as media
+    * New skins:
+        - featured-plus: featured skin with alternative directory and file select/mark colors (#3973)
 
 - Fixes
 
-  * Compilation fail on AIX (#3960)
-  * Incorrect file version sort (#3965, #3905)
-  * Garbage in the hardlink error creation message window (#3990)
-  * Cannot shell, or FTP, or SFTP link when the file panel is tree, or info, or quick view (#3948)
-  * Failed gpm connect attempt ... for vc /dev/tty0 (#3208, #3614)
-  * Incorrect include/editor order in mc.ext (#3965)
-  * mcedit: incorrect C/C++ syntax highlighting in some cases (#3487)
-  * Unknown type name 'sighandler_t' on Illumos (#3971)
+    * Compilation fail on AIX (#3960)
+    * Incorrect file version sort (#3965, #3905)
+    * Garbage in the hardlink error creation message window (#3990)
+    * Cannot shell, or FTP, or SFTP link when the file panel is tree, or info, or quick view (#3948)
+    * Failed gpm connect attempt ... for vc /dev/tty0 (#3208, #3614)
+    * Incorrect include/editor order in mc.ext (#3965)
+    * mcedit: incorrect C/C++ syntax highlighting in some cases (#3487)
+    * Unknown type name 'sighandler_t' on Illumos (#3971)
 
 
 Version 4.8.22
