@@ -27,12 +27,22 @@
 #define LTC_DES
 #endif
 
+#if DROPBEAR_ENABLE_CBC_MODE
 #define LTC_CBC_MODE
+#endif
 
 #if DROPBEAR_ENABLE_CTR_MODE
 #define LTC_CTR_MODE
 #endif
 
+#if DROPBEAR_ENABLE_GCM_MODE
+#define LTC_GCM_MODE
+#endif
+
+#if DROPBEAR_CHACHA20POLY1305
+#define LTC_CHACHA
+#define LTC_POLY1305
+#endif
 
 #if DROPBEAR_SHA512
 #define LTC_SHA512
