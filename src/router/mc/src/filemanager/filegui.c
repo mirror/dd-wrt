@@ -831,7 +831,7 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
 
     if (dialog_type != FILEGUI_DIALOG_DELETE_ITEM)
     {
-        ui->showing_eta = with_eta && ctx->progress_totals_computed;
+        ui->showing_eta = with_eta; // && ctx->progress_totals_computed;
         ui->showing_bps = with_eta;
 
         ui->src_file_label = label_new (y++, x, "");
