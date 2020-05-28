@@ -43,6 +43,7 @@
 #include "lib/fileloc.h"        /* MC_HISTORY_FILE */
 #include "lib/event.h"          /* mc_event_raise() */
 #include "lib/util.h"           /* MC_PTR_FREE */
+#include "lib/mcconfig.h"       /* num_history_items_recorded */
 
 #include "lib/widget.h"
 #include "lib/widget/mouse.h"
@@ -519,7 +520,7 @@ frontend_dlg_run (WDialog * h)
     {
         int d_key;
 
-        if (mc_global.tty.winch_flag != 0)
+        if (tty_got_winch ())
             dialog_change_screen_size ();
 
         if (is_idle ())
@@ -604,36 +605,6 @@ dlg_widget_set_position (gpointer data, gpointer user_data)
 }
 
 /* --------------------------------------------------------------------------------------------- */
-
-static void
-dlg_adjust_position (widget_pos_flags_t pos_flags, int *y, int *x, int *lines, int *cols)
-{
-    if ((pos_flags & WPOS_FULLSCREEN) != 0)
-    {
-        *y = 0;
-        *x = 0;
-        *lines = LINES;
-        *cols = COLS;
-    }
-    else
-    {
-        if ((pos_flags & WPOS_CENTER_HORZ) != 0)
-            *x = (COLS - *cols) / 2;
-
-        if ((pos_flags & WPOS_CENTER_VERT) != 0)
-            *y = (LINES - *lines) / 2;
-
-        if ((pos_flags & WPOS_TRYUP) != 0)
-        {
-            if (*y > 3)
-                *y -= 2;
-            else if (*y == 3)
-                *y = 2;
-        }
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -658,7 +629,7 @@ dlg_default_repaint (WDialog * h)
     {
         /* TODO: truncate long title */
         tty_setcolor (h->color[DLG_COLOR_TITLE]);
-        widget_move (h, space, (wh->cols - str_term_width1 (h->title)) / 2);
+        widget_gotoyx (h, space, (wh->cols - str_term_width1 (h->title)) / 2);
         tty_print_string (h->title);
     }
 }
@@ -711,7 +682,7 @@ dlg_set_size (WDialog * h, int lines, int cols)
 {
     int x = 0, y = 0;
 
-    dlg_adjust_position (WIDGET (h)->pos_flags, &y, &x, &lines, &cols);
+    widget_adjust_position (WIDGET (h)->pos_flags, &y, &x, &lines, &cols);
     dlg_set_position (h, y, x, lines, cols);
 }
 
@@ -770,7 +741,7 @@ dlg_create (gboolean modal, int y1, int x1, int lines, int cols, widget_pos_flag
 
     new_d = g_new0 (WDialog, 1);
     w = WIDGET (new_d);
-    dlg_adjust_position (pos_flags, &y1, &x1, &lines, &cols);
+    widget_adjust_position (pos_flags, &y1, &x1, &lines, &cols);
     widget_init (w, y1, x1, lines, cols, (callback != NULL) ? callback : dlg_default_callback,
                  mouse_callback);
     w->pos_flags = pos_flags;
@@ -932,19 +903,18 @@ del_widget (void *w)
     if (d == h->current)
         dlg_set_current_widget_next (h);
 
-    h->widgets = g_list_remove_link (h->widgets, d);
+    h->widgets = g_list_delete_link (h->widgets, d);
     if (h->widgets == NULL)
         h->current = NULL;
-    send_message (d->data, NULL, MSG_DESTROY, 0, NULL);
-    g_free (d->data);
-    g_list_free_1 (d);
 
     /* widget has been deleted in runtime */
     if (widget_get_state (WIDGET (h), WST_ACTIVE))
     {
-        dlg_redraw (h);
+        dlg_draw (h);
         dlg_select_current_widget (h);
     }
+
+    WIDGET (w)->owner = NULL;
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -957,7 +927,7 @@ do_refresh (void)
     if (fast_refresh)
     {
         if (d != NULL)
-            dlg_redraw (DIALOG (d->data));
+            dlg_draw (DIALOG (d->data));
     }
     else
     {
@@ -967,7 +937,7 @@ do_refresh (void)
                 break;
         /* back to top dialog */
         for (; d != NULL; d = g_list_previous (d))
-            dlg_redraw (DIALOG (d->data));
+            dlg_draw (DIALOG (d->data));
     }
 }
 
@@ -1081,7 +1051,7 @@ update_cursor (WDialog * h)
  */
 
 void
-dlg_redraw (WDialog * h)
+dlg_draw (WDialog * h)
 {
     if (!widget_get_state (WIDGET (h), WST_ACTIVE))
         return;
@@ -1136,7 +1106,7 @@ dlg_init (WDialog * h)
         dlg_set_current_widget_next (h);
 
     widget_set_state (wh, WST_ACTIVE, TRUE);
-    dlg_redraw (h);
+    dlg_draw (h);
     /* focus found widget */
     if (h->current != NULL)
         widget_set_state (WIDGET (h->current->data), WST_FOCUSED, TRUE);
@@ -1206,8 +1176,8 @@ dlg_destroy (WDialog * h)
 {
     /* if some widgets have history, save all history at one moment here */
     dlg_save_history (h);
-    dlg_broadcast_msg (h, MSG_DESTROY);
-    g_list_free_full (h->widgets, g_free);
+    g_list_foreach (h->widgets, (GFunc) widget_destroy, NULL);
+    g_list_free (h->widgets);
     mc_event_group_del (h->event_group);
     g_free (h->event_group);
     g_free (h->title);

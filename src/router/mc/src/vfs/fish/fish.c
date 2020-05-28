@@ -452,7 +452,6 @@ fish_set_env (int flags)
     GString *tmp;
 
     tmp = g_string_sized_new (250);
-    g_string_assign (tmp, "");
 
     if ((flags & FISH_HAVE_HEAD) != 0)
         g_string_append (tmp, "FISH_HAVE_HEAD=1 export FISH_HAVE_HEAD; ");
@@ -1751,7 +1750,7 @@ vfs_init_fish (void)
 {
     tcp_init ();
 
-    vfs_init_subclass (&fish_subclass, "fish", VFS_REMOTE | VFS_USETMP, "sh");
+    vfs_init_subclass (&fish_subclass, "fish", VFSF_REMOTE | VFSF_USETMP, "sh");
     vfs_fish_ops->fill_names = fish_fill_names;
     vfs_fish_ops->stat = fish_stat;
     vfs_fish_ops->lstat = fish_lstat;

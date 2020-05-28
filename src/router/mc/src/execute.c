@@ -446,13 +446,25 @@ shell_execute (const char *command, int flags)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-toggle_panels (void)
+toggle_subshell (void)
 {
+    static gboolean message_flag = TRUE;
+
 #ifdef ENABLE_SUBSHELL
     vfs_path_t *new_dir_vpath = NULL;
 #endif /* ENABLE_SUBSHELL */
 
     SIG_ATOMIC_VOLATILE_T was_sigwinch = 0;
+
+    if (!(mc_global.tty.xterm_flag || mc_global.tty.console_flag != '\0'
+          || mc_global.tty.use_subshell || output_starts_shell))
+    {
+        if (message_flag)
+            message (D_ERROR, MSG_ERROR,
+                     _("Not an xterm or Linux console;\nthe panels cannot be toggled."));
+        message_flag = FALSE;
+        return;
+    }
 
     channels_down ();
     disable_mouse ();
@@ -531,19 +543,27 @@ toggle_panels (void)
      * Save sigwinch flag that will be reset in mc_refresh() called via update_panels().
      * There is some problem with screen redraw in ncurses-based mc in this situation.
      */
-    was_sigwinch = mc_global.tty.winch_flag;
-    mc_global.tty.winch_flag = 0;
+    was_sigwinch = tty_got_winch ();
+    tty_flush_winch ();
 
 #ifdef ENABLE_SUBSHELL
     if (mc_global.tty.use_subshell)
     {
-        do_load_prompt ();
-        if (new_dir_vpath != NULL)
-            do_possible_cd (new_dir_vpath);
-        if (mc_global.tty.console_flag != '\0' && output_lines)
-            show_console_contents (output_start_y,
-                                   LINES - mc_global.keybar_visible - output_lines -
-                                   1, LINES - mc_global.keybar_visible - 1);
+        if (mc_global.mc_run_mode == MC_RUN_FULL)
+        {
+            do_load_prompt ();
+            if (new_dir_vpath != NULL)
+                do_possible_cd (new_dir_vpath);
+            if (mc_global.tty.console_flag != '\0' && output_lines != 0)
+            {
+                unsigned char end_line;
+
+                end_line = LINES - (mc_global.keybar_visible ? 1 : 0) - 1;
+                show_console_contents (output_start_y, end_line - output_lines, end_line);
+            }
+        }
+        else if (new_dir_vpath != NULL && mc_chdir (new_dir_vpath) != -1)
+            vfs_setup_cwd ();
     }
 
     vfs_path_free (new_dir_vpath);
@@ -555,7 +575,7 @@ toggle_panels (void)
         update_xterm_title_path ();
     }
 
-    if (was_sigwinch != 0 || mc_global.tty.winch_flag != 0)
+    if (was_sigwinch != 0 || tty_got_winch ())
         dialog_change_screen_size ();
     else
         repaint_screen ();

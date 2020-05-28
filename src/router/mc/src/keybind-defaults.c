@@ -28,7 +28,7 @@
 #include <config.h>
 
 #include "lib/global.h"
-#include "lib/widget.h"         /* dialog_map, input_map, listbox_map */
+#include "lib/widget.h"         /* dialog_map, input_map, listbox_map, menu_map */
 
 #include "keybind-defaults.h"
 
@@ -56,7 +56,6 @@ GArray *diff_keymap = NULL;
 const global_keymap_t *main_map = NULL;
 const global_keymap_t *main_x_map = NULL;
 const global_keymap_t *panel_map = NULL;
-const global_keymap_t *menu_map = NULL;
 const global_keymap_t *tree_map = NULL;
 const global_keymap_t *help_map = NULL;
 
@@ -99,6 +98,7 @@ static const global_keymap_ini_t default_main_keymap[] = {
     {"MenuLastSelected", "f19"},
     {"QuitQuiet", "f20"},
     {"History", "alt-h"},
+    {"EditorViewerHistory", "alt-shift-e"},
     {"DirSize", "ctrl-space"},
     /* Copy useful information to the command line */
     {"PutCurrentPath", "alt-a"},
@@ -233,7 +233,7 @@ static const global_keymap_ini_t default_menu_keymap[] = {
     {"Left", "left; ctrl-b"},
     {"Right", "right; ctrl-f"},
     {"Up", "up; ctrl-p"},
-    {"Down", "down; enter; ctrl-n"},
+    {"Down", "down; ctrl-n"},
     {"Home", "home; alt-lt; ctrl-a"},
     {"End", "end; alt-gt; ctrl-e"},
     {"Enter", "enter"},
@@ -286,6 +286,9 @@ static const global_keymap_ini_t default_listbox_keymap[] = {
     {"PageDown", "pgdn; ctrl-v"},
     {"Delete", "delete; d"},
     {"Clear", "shift-delete; shift-d"},
+    {"View", "f3"},
+    {"Edit", "f4"},
+    {"Enter", "enter"},
     {NULL, NULL}
 };
 
@@ -486,6 +489,7 @@ static const global_keymap_ini_t default_viewer_keymap[] = {
     {"SearchForwardContinue", "ctrl-s"},
     {"SearchBackwardContinue", "ctrl-r"},
     {"SearchOppositeContinue", "shift-n"},
+    {"History", "alt-shift-e"},
     {NULL, NULL}
 };
 
@@ -521,6 +525,7 @@ static const global_keymap_ini_t default_viewer_hex_keymap[] = {
     {"SearchForwardContinue", "ctrl-s"},
     {"SearchBackwardContinue", "ctrl-r"},
     {"SearchOppositeContinue", "shift-n"},
+    {"History", "alt-shift-e"},
     {NULL, NULL}
 };
 

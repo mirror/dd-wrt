@@ -7,13 +7,13 @@
 # Panos Bouklis <panos@echidna-band.com>, 2012
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Thodoris Arvanitidis <inactive+watchdog@transifex.com>, 2015
-# Γιάννης Ανθυμίδης, 2014
+# Yannis Anthymidis, 2014
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-03-02 12:55+0000\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2019-12-16 01:49+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Greek (http://www.transifex.com/mc/mc/language/el/)\n"
 "Language: el\n"
@@ -474,6 +474,18 @@ msgid "Shift"
 msgstr "Shift"
 
 msgid "The TERM environment variable is unset!\n"
+msgstr ""
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr ""
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr ""
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr ""
+
+msgid "Cannot configure read end of SIGWINCH pipe"
 msgstr ""
 
 #, c-format
@@ -1312,6 +1324,9 @@ msgstr "&Νέο"
 msgid "&Close"
 msgstr "&Κλείσιμο"
 
+msgid "&History..."
+msgstr ""
+
 msgid "Save &as..."
 msgstr "Αποθήκευση &ως..."
 
@@ -1741,6 +1756,11 @@ msgstr ""
 
 msgid "The shell is already running a command"
 msgstr "Το κέλυφος τρέχει ήδη μια εντολή"
+
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr ""
@@ -2295,11 +2315,6 @@ msgid ""
 "to use this command"
 msgstr ""
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr ""
@@ -2365,9 +2380,6 @@ msgid ""
 msgstr ""
 "Αδυναμία chdir σε \"%s\"\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "Αδυναμία ανάγνωσης περιεχομένων καταλόγου"
 
 msgid "Parameter"
 msgstr "Παράμετρος"
@@ -3290,6 +3302,9 @@ msgstr "Εμ&φάνιση μεγεθών καταλόγων"
 msgid "Command &history"
 msgstr "&Ιστορικό εντολών"
 
+msgid "Viewed/edited files hi&story"
+msgstr ""
+
 msgid "Di&rectory hotlist"
 msgstr ""
 
@@ -3514,6 +3529,9 @@ msgstr "Αποεπιλογή"
 
 msgid "Do you really want to execute?"
 msgstr "Σίγουρα θέλετε να γίνει εκτέλεση;"
+
+msgid "Cannot read directory contents"
+msgstr "Αδυναμία ανάγνωσης περιεχομένων καταλόγου"
 
 msgid "User supplied format looks invalid, reverting to default."
 msgstr ""

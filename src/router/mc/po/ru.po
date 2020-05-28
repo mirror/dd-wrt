@@ -26,9 +26,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-03-03 23:22+0000\n"
-"Last-Translator: AlexL <loginov.alex.valer@gmail.com>\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2019-12-24 17:03+0000\n"
+"Last-Translator: aborodin <aborodin@vmail.ru>\n"
 "Language-Team: Russian (http://www.transifex.com/mc/mc/language/ru/)\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
@@ -504,6 +504,18 @@ msgstr "Shift"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "Переменная среды TERM не определена!\n"
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr ""
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr "Не удалось создать канал для SIGWINCH"
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr "Не удаётся настроить конец записи канала SIGWINCH"
+
+msgid "Cannot configure read end of SIGWINCH pipe"
+msgstr "Не удаётся настроить конец чтения канала SIGWINCH"
 
 #, c-format
 msgid ""
@@ -1296,7 +1308,7 @@ msgid "Run sort"
 msgstr "Выполнить сортировку"
 
 msgid "Enter sort options (see manpage) separated by whitespace:"
-msgstr "Введите параметры сортировки (man sort(1)), разделенные пробелами:"
+msgstr "Введите параметры сортировки (man sort(1)), разделённые пробелами:"
 
 msgid "Sort"
 msgstr "Сортировка"
@@ -1380,7 +1392,7 @@ msgid ""
 "Continue discards these changes."
 msgstr ""
 "Текущий текст был изменён и не сохранён.\n"
-"Продолжение операции приведёт к потере изменений"
+"Продолжение операции приведёт к потере изменений."
 
 msgid "NoName"
 msgstr "Без имени"
@@ -1393,6 +1405,9 @@ msgstr "&Новый"
 
 msgid "&Close"
 msgstr "&Закрыть"
+
+msgid "&History..."
+msgstr "&История..."
 
 msgid "Save &as..."
 msgstr "Сохранить &как..."
@@ -1830,6 +1845,13 @@ msgstr "Невозможно получить локальную копию %s"
 msgid "The shell is already running a command"
 msgstr "Интерпретатор занят выполнением команды"
 
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
+"Это не xterm и не консоль Linux;\n"
+"панели не могут быть отключены."
+
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Введите exit для возврата в Midnight Commander"
 
@@ -2071,7 +2093,7 @@ msgid "&Long file list"
 msgstr "&Расширенный"
 
 msgid "&User defined:"
-msgstr "&Определенный пользователем"
+msgstr "&Определённый пользователем"
 
 msgid "columns"
 msgstr "столбцы"
@@ -2389,13 +2411,6 @@ msgstr ""
 "Для выполнения этой команды\n"
 "обе панели должны быть в режиме списка"
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-"Это не xterm и не консоль Linux;\n"
-"панели не могут быть отключены."
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr "%s не является символической ссылкой"
@@ -2461,9 +2476,6 @@ msgid ""
 msgstr ""
 "Невозможно перейти в \"%s\"\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "Невозможно прочесть содержимое каталога"
 
 msgid "Parameter"
 msgstr "Параметр"
@@ -2919,10 +2931,10 @@ msgid "Don't overwrite with &zero length file"
 msgstr "Не перезаписывать файл &нулевой длины"
 
 msgid "&Older"
-msgstr ""
+msgstr "&Старше"
 
 msgid "S&maller"
-msgstr ""
+msgstr "&Меньше"
 
 msgid "&Size differs"
 msgstr "&Различающиеся по длине"
@@ -3423,6 +3435,9 @@ msgstr "&Размеры каталогов"
 msgid "Command &history"
 msgstr "&История командной строки"
 
+msgid "Viewed/edited files hi&story"
+msgstr "Ис&тория просмотра/редактирования файлов"
+
 msgid "Di&rectory hotlist"
 msgstr "Каталоги &быстрого доступа"
 
@@ -3652,6 +3667,9 @@ msgstr "Снять отметку"
 msgid "Do you really want to execute?"
 msgstr "Вы действительно хотите выполнить это?"
 
+msgid "Cannot read directory contents"
+msgstr "Невозможно прочесть содержимое каталога"
+
 msgid "User supplied format looks invalid, reverting to default."
 msgstr "Пользовательский формат выглядит неверным, возвращаю к стандартному."
 
@@ -3805,7 +3823,7 @@ msgid ""
 "It seems that all your keys already\n"
 "work fine. That's great."
 msgstr ""
-"Похоже, что все Ваши клавиши теперь\n"
+"Похоже, что все ваши клавиши теперь\n"
 "работают нормально. Просто здорово!"
 
 msgid "&Discard"
@@ -4047,7 +4065,7 @@ msgid ""
 "Corrupted cpio header encountered in\n"
 "%s"
 msgstr ""
-"Поврежденный заголовок cpio обнаружен в\n"
+"Повреждённый заголовок cpio обнаружен в\n"
 "%s"
 
 #, c-format
@@ -4358,7 +4376,7 @@ msgid ""
 "doesn't look like a tar archive."
 msgstr ""
 "%s\n"
-"не похож на архив tar"
+"не похож на архив tar."
 
 msgid "undelfs: error"
 msgstr "undelfs: ошибка"

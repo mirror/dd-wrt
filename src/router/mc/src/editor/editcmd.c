@@ -62,6 +62,7 @@
 #endif
 
 #include "src/history.h"
+#include "src/file_history.h"   /* show_file_history() */
 #include "src/setup.h"          /* option_tab_spacing */
 #ifdef HAVE_CHARSET
 #include "src/selcodepage.h"
@@ -1559,7 +1560,7 @@ edit_syntax_onoff_cmd (WDialog * h)
 {
     option_syntax_highlighting = !option_syntax_highlighting;
     g_list_foreach (h->widgets, edit_syntax_onoff_cb, NULL);
-    dlg_redraw (h);
+    dlg_draw (h);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1574,7 +1575,7 @@ edit_show_tabs_tws_cmd (WDialog * h)
 {
     enable_show_tabs_tws = !enable_show_tabs_tws;
     g_list_foreach (h->widgets, edit_redraw_page_cb, NULL);
-    dlg_redraw (h);
+    dlg_draw (h);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1589,7 +1590,7 @@ edit_show_margin_cmd (WDialog * h)
 {
     show_right_margin = !show_right_margin;
     g_list_foreach (h->widgets, edit_redraw_page_cb, NULL);
-    dlg_redraw (h);
+    dlg_draw (h);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1605,7 +1606,7 @@ edit_show_numbers_cmd (WDialog * h)
     option_line_state = !option_line_state;
     option_line_state_width = option_line_state ? LINE_STATE_WIDTH : 0;
     g_list_foreach (h->widgets, edit_redraw_page_cb, NULL);
-    dlg_redraw (h);
+    dlg_draw (h);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2107,6 +2108,35 @@ edit_load_cmd (WDialog * h)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
+  * Show history od edited or viewed files and open selected file.
+  *
+  * @return TRUE on success, FALSE otherwise.
+  */
+
+gboolean
+edit_load_file_from_history (WDialog * h)
+{
+    char *exp;
+    int action;
+    gboolean ret = TRUE;        /* possible cancel */
+
+    exp = show_file_history (CONST_WIDGET (h), &action);
+    if (exp != NULL && (action == CK_Edit || action == CK_Enter))
+    {
+        vfs_path_t *exp_vpath;
+
+        exp_vpath = vfs_path_from_str (exp);
+        ret = edit_load_file_from_filename (h, exp_vpath);
+        vfs_path_free (exp_vpath);
+    }
+
+    g_free (exp);
+
+    return ret;
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/**
   * Load syntax file to edit.
   *
   * @return TRUE on success
@@ -2238,6 +2268,7 @@ edit_close_cmd (WEdit * edit)
             unlock_file (edit->filename_vpath);
 
         del_widget (edit);
+        widget_destroy (WIDGET (edit));
 
         if (edit_widget_is_editor (CONST_WIDGET (h->current->data)))
             edit = (WEdit *) h->current->data;
@@ -2776,7 +2807,7 @@ edit_search_cmd (WEdit * edit, gboolean again)
         /* find last search string in history */
         GList *history;
 
-        history = history_get (MC_HISTORY_SHARED_SEARCH);
+        history = mc_config_history_get (MC_HISTORY_SHARED_SEARCH);
         if (history != NULL && history->data != NULL)
         {
             edit->last_search_string = (char *) history->data;
@@ -3385,7 +3416,7 @@ edit_select_codepage_cmd (WEdit * edit)
         edit_set_codeset (edit);
 
     edit->force = REDRAW_PAGE;
-    widget_redraw (WIDGET (edit));
+    widget_draw (WIDGET (edit));
 }
 #endif
 

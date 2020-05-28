@@ -40,9 +40,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#else
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
 
 #include "lib/global.h"
 
@@ -2028,7 +2032,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
             }
         }
 
-        if (!block || mc_global.tty.winch_flag != 0)
+        if (!block || tty_got_winch ())
         {
             time_addr = &time_out;
             time_out.tv_sec = 0;
@@ -2048,7 +2052,7 @@ tty_get_event (struct Gpm_Event *event, gboolean redo_event, gboolean block)
         {
             if (redo_event)
                 return EV_MOUSE;
-            if (!block || mc_global.tty.winch_flag != 0)
+            if (!block || tty_got_winch ())
                 return EV_NONE;
             vfs_timeout_handler ();
         }

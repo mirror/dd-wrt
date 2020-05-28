@@ -9,7 +9,7 @@
 # Fabian Affolter <fab@fedoraproject.org>, 2012-2013
 # Karsten <waldstadt@web.de>, 2016
 # Larson März <larson@protonmail.ch>, 2016
-# Mr.Update, 2019
+# Mr.Update, 2019-2020
 # Slow Rider, 2015,2018
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # username <my.somewhat.lengthy.loginname@gmail.com>, 2011
@@ -19,8 +19,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-04-20 21:08+0000\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2020-01-05 13:48+0000\n"
 "Last-Translator: Mr.Update\n"
 "Language-Team: German (http://www.transifex.com/mc/mc/language/de/)\n"
 "Language: de\n"
@@ -498,6 +498,18 @@ msgstr "Umschalt"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "Die TERM-Variable ist nicht gesetzt!\n"
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr "Kann SIGWINCH-Pipe nicht überprüfen"
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr "Kann Pipe für SIGWINCH nicht erstellen"
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr "Kann Schreib-Ende der SIGWINCH-Pipe nicht konfigurieren"
+
+msgid "Cannot configure read end of SIGWINCH pipe"
+msgstr "Kann Lese-Ende der SIGWINCH-Pipe nicht konfigurieren"
 
 #, c-format
 msgid ""
@@ -1232,7 +1244,7 @@ msgstr "Ersetzen"
 
 #, c-format
 msgid "%ld replacements made"
-msgstr "%ld Ersetzungen durchgeführt."
+msgstr "%ld Ersetzung(en) durchgeführt."
 
 msgid "[NoName]"
 msgstr "[KeinName]"
@@ -1387,6 +1399,9 @@ msgstr "&Neu"
 
 msgid "&Close"
 msgstr "&Schließen"
+
+msgid "&History..."
+msgstr "C&hronik..."
 
 msgid "Save &as..."
 msgstr "Speichern &unter..."
@@ -1823,6 +1838,13 @@ msgstr "Kann lokale Kopie von %s nicht erstellen"
 
 msgid "The shell is already running a command"
 msgstr "Die Shell führt bereits einen Befehl aus"
+
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
+"Weder xterm noch Linux-Konsole;\n"
+"die Panels können nicht ausgetauscht werden."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Geben Sie 'exit' ein, um zum Midnight Commander zurückzukehren"
@@ -2382,13 +2404,6 @@ msgstr ""
 "Beide Panels sollten für diesen Befehl\n"
 "im Listenmodus sein"
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-"Weder xterm noch Linux-Konsole;\n"
-"die Panels können nicht ausgetauscht werden."
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr "'%s' ist kein symbolischer Link"
@@ -2454,9 +2469,6 @@ msgid ""
 msgstr ""
 "Kann nicht ins Verzeichnis \"%s\" wechseln\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "Kann Verzeichnis nicht lesen"
 
 msgid "Parameter"
 msgstr "Parameter"
@@ -3414,6 +3426,9 @@ msgstr "Verze&ichnisgrößen anzeigen"
 msgid "Command &history"
 msgstr "Befehlsc&hronik"
 
+msgid "Viewed/edited files hi&story"
+msgstr "Chronik der angezeigten/bearbeiteten Dateien"
+
 msgid "Di&rectory hotlist"
 msgstr "Ve&rzeichnis-Hotlist"
 
@@ -3638,6 +3653,9 @@ msgstr "Deselektieren"
 
 msgid "Do you really want to execute?"
 msgstr "Möchten Sie wirklich ausführen?"
+
+msgid "Cannot read directory contents"
+msgstr "Kann Verzeichnis nicht lesen"
 
 msgid "User supplied format looks invalid, reverting to default."
 msgstr "Benutzerdefiniertes Format sieht ungültig aus, benutze Standard."

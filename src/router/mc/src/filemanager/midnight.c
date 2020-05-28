@@ -58,9 +58,11 @@
 #ifdef ENABLE_SUBSHELL
 #include "src/subshell/subshell.h"
 #endif
+#include "src/execute.h"        /* toggle_subshell */
 #include "src/setup.h"          /* variables */
 #include "src/learn.h"          /* learn_keys() */
 #include "src/keybind-defaults.h"
+#include "lib/fileloc.h"        /* MC_FILEPOS_FILE */
 #include "lib/keybind.h"
 #include "lib/event.h"
 
@@ -86,6 +88,7 @@
 #endif
 
 #include "src/consaver/cons.saver.h"    /* show_console_contents */
+#include "src/file_history.h"   /* show_file_history() */
 
 #include "midnight.h"
 
@@ -289,6 +292,10 @@ create_command_menu (void)
     entries = g_list_prepend (entries, menu_entry_create (_("Show directory s&izes"), CK_DirSize));
     entries = g_list_prepend (entries, menu_separator_create ());
     entries = g_list_prepend (entries, menu_entry_create (_("Command &history"), CK_History));
+    entries =
+        g_list_prepend (entries,
+                        menu_entry_create (_("Viewed/edited files hi&story"),
+                                           CK_EditorViewerHistory));
     entries = g_list_prepend (entries, menu_entry_create (_("Di&rectory hotlist"), CK_HotList));
 #ifdef ENABLE_VFS
     entries = g_list_prepend (entries, menu_entry_create (_("&Active VFS list"), CK_VfsList));
@@ -915,7 +922,7 @@ create_file_manager (void)
     /* allow rebind tab */
     widget_want_tab (WIDGET (midnight_dlg), TRUE);
 
-    the_menubar = menubar_new (0, 0, COLS, NULL, menubar_visible);
+    the_menubar = menubar_new (NULL, menubar_visible);
     add_widget (midnight_dlg, the_menubar);
     init_menu ();
 
@@ -924,7 +931,7 @@ create_file_manager (void)
     add_widget (midnight_dlg, get_panel_widget (1));
 
     the_hint = label_new (0, 0, 0);
-    the_hint->transparent = 1;
+    the_hint->transparent = TRUE;
     the_hint->auto_adjust_cols = 0;
     WIDGET (the_hint)->cols = COLS;
     add_widget (midnight_dlg, the_hint);
@@ -1000,6 +1007,48 @@ mc_maybe_editor_or_viewer (void)
 
 /* --------------------------------------------------------------------------------------------- */
 
+static void
+show_editor_viewer_history (void)
+{
+    char *s;
+    int act;
+
+    s = show_file_history (WIDGET (midnight_dlg), &act);
+    if (s != NULL)
+    {
+        vfs_path_t *s_vpath;
+
+        switch (act)
+        {
+        case CK_Edit:
+            s_vpath = vfs_path_from_str (s);
+            edit_file_at_line (s_vpath, use_internal_edit, 0);
+            break;
+
+        case CK_View:
+            s_vpath = vfs_path_from_str (s);
+            view_file (s_vpath, use_internal_view, 0);
+            break;
+
+        default:
+            {
+                char *d;
+
+                d = g_path_get_dirname (s);
+                s_vpath = vfs_path_from_str (d);
+                do_cd (s_vpath, cd_exact);
+                try_to_select (current_panel, s);
+                g_free (d);
+            }
+        }
+
+        g_free (s);
+        vfs_path_free (s_vpath);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
 static gboolean
 quit_cmd_internal (int quiet)
 {
@@ -1062,10 +1111,10 @@ static void
 update_dirty_panels (void)
 {
     if (get_current_type () == view_listing && current_panel->dirty)
-        widget_redraw (WIDGET (current_panel));
+        widget_draw (WIDGET (current_panel));
 
     if (get_other_type () == view_listing && other_panel->dirty)
-        widget_redraw (WIDGET (other_panel));
+        widget_draw (WIDGET (other_panel));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1119,7 +1168,7 @@ midnight_execute_cmd (Widget * sender, long command)
         break;
 #ifdef ENABLE_VFS
     case CK_OptionsVfs:
-        configure_vfs ();
+        configure_vfs_box ();
         break;
 #endif
     case CK_OptionsConfirm:
@@ -1238,7 +1287,7 @@ midnight_execute_cmd (Widget * sender, long command)
         break;
 #ifdef ENABLE_BACKGROUND
     case CK_Jobs:
-        jobs_cmd ();
+        jobs_box ();
         break;
 #endif
     case CK_OptionsLayout:
@@ -1319,7 +1368,7 @@ midnight_execute_cmd (Widget * sender, long command)
         res = send_message (current_panel, midnight_dlg, MSG_ACTION, command, NULL);
         break;
     case CK_Shell:
-        view_other_cmd ();
+        toggle_subshell ();
         break;
     case CK_DirSize:
         smart_dirsize_cmd ();
@@ -1373,6 +1422,9 @@ midnight_execute_cmd (Widget * sender, long command)
         break;
     case CK_ViewFile:
         view_file_cmd ();
+        break;
+    case CK_EditorViewerHistory:
+        show_editor_viewer_history ();
         break;
     case CK_Cancel:
         /* don't close panels due to SIGINT */
@@ -1449,16 +1501,17 @@ midnight_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void
     case MSG_DRAW:
         load_hint (TRUE);
         /* We handle the special case of the output lines */
-        if (mc_global.tty.console_flag != '\0' && output_lines)
-            show_console_contents (output_start_y,
-                                   LINES - output_lines - mc_global.keybar_visible -
-                                   1, LINES - mc_global.keybar_visible - 1);
+        if (mc_global.tty.console_flag != '\0' && output_lines != 0)
+        {
+            unsigned char end_line;
+
+            end_line = LINES - (mc_global.keybar_visible ? 1 : 0) - 1;
+            show_console_contents (output_start_y, end_line - output_lines, end_line);
+        }
         return MSG_HANDLED;
 
     case MSG_RESIZE:
-        /* dlg_set_size() is surplus for this case */
-        w->lines = LINES;
-        w->cols = COLS;
+        widget_adjust_position (w->pos_flags, &w->y, &w->x, &w->lines, &w->cols);
         setup_panels ();
         menubar_arrange (the_menubar);
         return MSG_HANDLED;
