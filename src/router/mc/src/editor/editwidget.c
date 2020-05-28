@@ -57,7 +57,8 @@
 
 #include "src/keybind-defaults.h"       /* keybind_lookup_keymap_command() */
 #include "src/setup.h"          /* home_dir */
-#include "src/filemanager/cmd.h"        /* view_other_cmd(), save_setup_cmd()  */
+#include "src/execute.h"        /* toggle_subshell()  */
+#include "src/filemanager/cmd.h"        /* save_setup_cmd()  */
 #include "src/learn.h"          /* learn_keys() */
 #include "src/args.h"           /* mcedit_arg_t */
 
@@ -179,31 +180,6 @@ edit_help (void)
 
 /* --------------------------------------------------------------------------------------------- */
 /**
- * Callback for the iteration of objects in the 'editors' array.
- * Resize the editor window.
- *
- * @param data      probably WEdit object
- * @param user_data unused
- */
-
-static void
-edit_dialog_resize_cb (void *data, void *user_data)
-{
-    Widget *w = WIDGET (data);
-
-    (void) user_data;
-
-    if (edit_widget_is_editor (w) && ((WEdit *) w)->fullscreen)
-    {
-        Widget *wh = WIDGET (w->owner);
-
-        w->lines = wh->lines - 2;
-        w->cols = wh->cols;
-    }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/**
  * Restore saved window size.
  *
  * @param edit editor object
@@ -217,7 +193,7 @@ edit_restore_size (WEdit * edit)
     edit->drag_state = MCEDIT_DRAG_NONE;
     w->mouse.forced_capture = FALSE;
     widget_set_size (w, edit->y_prev, edit->x_prev, edit->lines_prev, edit->cols_prev);
-    dlg_redraw (w->owner);
+    dlg_draw (w->owner);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -257,7 +233,7 @@ edit_window_move (WEdit * edit, long command)
     }
 
     edit->force |= REDRAW_PAGE;
-    dlg_redraw (w->owner);
+    dlg_draw (w->owner);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -297,7 +273,7 @@ edit_window_resize (WEdit * edit, long command)
     }
 
     edit->force |= REDRAW_COMPLETELY;
-    dlg_redraw (w->owner);
+    dlg_draw (w->owner);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -414,6 +390,9 @@ edit_dialog_command_execute (WDialog * h, long command)
     case CK_EditFile:
         edit_load_cmd (h);
         break;
+    case CK_History:
+        edit_load_file_from_history (h);
+        break;
     case CK_EditSyntaxFile:
         edit_load_syntax_file (h);
         break;
@@ -464,7 +443,7 @@ edit_dialog_command_execute (WDialog * h, long command)
         edit_refresh_cmd ();
         break;
     case CK_Shell:
-        view_other_cmd ();
+        toggle_subshell ();
         break;
     case CK_LearnKeys:
         learn_keys ();
@@ -767,8 +746,6 @@ edit_update_cursor (WEdit * edit, const mouse_event_t * event)
 static cb_ret_t
 edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
-    WMenuBar *menubar;
-    WButtonBar *buttonbar;
     WDialog *h = DIALOG (w);
 
     switch (msg)
@@ -784,15 +761,8 @@ edit_dialog_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, v
         return MSG_HANDLED;
 
     case MSG_RESIZE:
-        menubar = find_menubar (h);
-        buttonbar = find_buttonbar (h);
-        /* dlg_set_size() is surplus for this case */
-        w->lines = LINES;
-        w->cols = COLS;
-        widget_set_size (WIDGET (buttonbar), w->lines - 1, w->x, 1, w->cols);
-        widget_set_size (WIDGET (menubar), w->y, w->x, 1, w->cols);
-        menubar_arrange (menubar);
-        g_list_foreach (h->widgets, (GFunc) edit_dialog_resize_cb, NULL);
+        dlg_default_callback (w, NULL, MSG_RESIZE, 0, NULL);
+        menubar_arrange (find_menubar (h));
         return MSG_HANDLED;
 
     case MSG_ACTION:
@@ -990,7 +960,7 @@ edit_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *da
             x = (e->fullscreen ? 0 : 1) + EDIT_TEXT_HORIZONTAL_OFFSET + option_line_state_width +
                 e->curs_col + e->start_col + e->over_col;
 
-            widget_move (w, y, x);
+            widget_gotoyx (w, y, x);
             return MSG_HANDLED;
         }
 
@@ -1059,7 +1029,7 @@ edit_mouse_handle_move_resize (Widget * w, mouse_msg_t msg, mouse_event_t * even
     edit->force |= REDRAW_COMPLETELY;   /* Not really needed as WEdit's MSG_DRAW already does this. */
 
     /* We draw the whole dialog because dragging/resizing exposes area beneath. */
-    dlg_redraw (w->owner);
+    dlg_draw (w->owner);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1218,6 +1188,7 @@ edit_files (const GList * files)
     static gboolean made_directory = FALSE;
     WDialog *edit_dlg;
     WMenuBar *menubar;
+    Widget *w, *wd;
     const GList *file;
     gboolean ok = FALSE;
 
@@ -1242,24 +1213,26 @@ edit_files (const GList * files)
     edit_dlg =
         dlg_create (FALSE, 0, 0, 1, 1, WPOS_FULLSCREEN, FALSE, NULL, edit_dialog_callback,
                     edit_dialog_mouse_callback, "[Internal File Editor]", NULL);
-    widget_want_tab (WIDGET (edit_dlg), TRUE);
+    wd = WIDGET (edit_dlg);
+    widget_want_tab (wd, TRUE);
 
     edit_dlg->get_shortcut = edit_get_shortcut;
     edit_dlg->get_title = edit_get_title;
 
-    menubar = menubar_new (0, 0, COLS, NULL, TRUE);
-    add_widget (edit_dlg, menubar);
+    menubar = menubar_new (NULL, TRUE);
+    w = WIDGET (menubar);
+    add_widget_autopos (edit_dlg, w, w->pos_flags, NULL);
     edit_init_menu (menubar);
 
-    add_widget (edit_dlg, buttonbar_new (TRUE));
+    w = WIDGET (buttonbar_new (TRUE));
+    add_widget_autopos (edit_dlg, w, w->pos_flags, NULL);
 
     for (file = files; file != NULL; file = g_list_next (file))
     {
-        Widget *w = WIDGET (edit_dlg);
         mcedit_arg_t *f = (mcedit_arg_t *) file->data;
         gboolean f_ok;
 
-        f_ok = edit_add_window (edit_dlg, w->y + 1, w->x, w->lines - 2, w->cols, f->file_vpath,
+        f_ok = edit_add_window (edit_dlg, wd->y + 1, wd->x, wd->lines - 2, wd->cols, f->file_vpath,
                                 f->line_number);
         /* at least one file has been opened succefully */
         ok = ok || f_ok;
@@ -1268,7 +1241,7 @@ edit_files (const GList * files)
     if (ok)
         dlg_run (edit_dlg);
 
-    if (!ok || widget_get_state (WIDGET (edit_dlg), WST_CLOSED))
+    if (!ok || widget_get_state (wd, WST_CLOSED))
         dlg_destroy (edit_dlg);
 
     return ok;
@@ -1327,7 +1300,7 @@ edit_update_screen (WEdit * e)
         edit_render_keypress (e);
     }
 
-    widget_redraw (WIDGET (find_buttonbar (h)));
+    widget_draw (WIDGET (find_buttonbar (h)));
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1377,9 +1350,9 @@ edit_add_window (WDialog * h, int y, int x, int lines, int cols, const vfs_path_
     w->callback = edit_callback;
     w->mouse_callback = edit_mouse_callback;
 
-    add_widget (h, w);
+    add_widget_autopos (h, w, WPOS_KEEP_ALL, NULL);
     edit_set_buttonbar (edit, find_buttonbar (h));
-    dlg_redraw (h);
+    dlg_draw (h);
 
     return TRUE;
 }
@@ -1513,18 +1486,25 @@ edit_handle_move_resize (WEdit * edit, long command)
 void
 edit_toggle_fullscreen (WEdit * edit)
 {
+    Widget *w = WIDGET (edit);
+
     edit->fullscreen = !edit->fullscreen;
     edit->force = REDRAW_COMPLETELY;
 
     if (!edit->fullscreen)
+    {
         edit_restore_size (edit);
+        /* do not follow screen size on resize */
+        w->pos_flags = WPOS_KEEP_DEFAULT;
+    }
     else
     {
-        Widget *w = WIDGET (edit);
         Widget *h = WIDGET (w->owner);
 
         edit_save_size (edit);
         widget_set_size (w, h->y + 1, h->x, h->lines - 2, h->cols);
+        /* follow screen size on resize */
+        w->pos_flags = WPOS_KEEP_ALL;
         edit->force |= REDRAW_PAGE;
         edit_update_screen (edit);
     }

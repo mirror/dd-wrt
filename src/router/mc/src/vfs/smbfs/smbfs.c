@@ -224,12 +224,7 @@ smbfs_auth_free (struct smb_authinfo const *a)
 static void
 smbfs_auth_free_all (void)
 {
-    if (auth_list)
-    {
-        g_slist_foreach (auth_list, (GFunc) smbfs_auth_free, 0);
-        g_slist_free (auth_list);
-        auth_list = 0;
-    }
+    g_clear_slist (&auth_list, (GDestroyNotify) smbfs_auth_free);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -2258,7 +2253,7 @@ vfs_init_smbfs (void)
     /* NULLize vfs_s_subclass members */
     memset (&smbfs_subclass, 0, sizeof (smbfs_subclass));
 
-    vfs_init_class (vfs_smbfs_ops, "smbfs", VFS_NOLINKS, "smb");
+    vfs_init_class (vfs_smbfs_ops, "smbfs", VFSF_NOLINKS, "smb");
     vfs_smbfs_ops->init = smbfs_init;
     vfs_smbfs_ops->fill_names = smbfs_fill_names;
     vfs_smbfs_ops->open = smbfs_open;

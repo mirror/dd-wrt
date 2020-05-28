@@ -57,7 +57,7 @@
 
 #include "filemanager/midnight.h"       /* current_panel */
 #include "filemanager/treestore.h"      /* tree_store_save */
-#include "filemanager/layout.h" /* command_prompt */
+#include "filemanager/layout.h"
 #include "filemanager/ext.h"    /* flush_extension_file() */
 #include "filemanager/command.h"        /* cmdline */
 #include "filemanager/panel.h"  /* panalized_panel */
@@ -331,10 +331,6 @@ main (int argc, char *argv[])
     handle_console (CONSOLE_INIT);
 
 #ifdef ENABLE_SUBSHELL
-    /* Don't use subshell when invoked as viewer or editor */
-    if (mc_global.mc_run_mode != MC_RUN_FULL)
-        mc_global.tty.use_subshell = FALSE;
-
     if (mc_global.tty.use_subshell)
         subshell_get_console_attributes ();
 #endif /* ENABLE_SUBSHELL */

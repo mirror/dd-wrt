@@ -49,6 +49,7 @@
 #include "lib/keybind.h"        /* global_keymap_t */
 #include "lib/widget.h"
 #include "lib/event.h"          /* mc_event_raise() */
+#include "lib/mcconfig.h"       /* mc_config_history_*() */
 
 #include "input_complete.h"
 
@@ -112,13 +113,13 @@ draw_history_button (WInput * in)
     else
         c = '|';
 
-    widget_move (in, 0, WIDGET (in)->cols - HISTORY_BUTTON_WIDTH);
+    widget_gotoyx (in, 0, WIDGET (in)->cols - HISTORY_BUTTON_WIDTH);
     disabled = widget_get_state (WIDGET (in), WST_DISABLED);
     tty_setcolor (disabled ? DISABLED_COLOR : in->color[WINPUTC_HISTORY]);
 
 #ifdef LARGE_HISTORY_BUTTON
     tty_print_string ("[ ]");
-    widget_move (in, 0, WIDGET (in)->cols - HISTORY_BUTTON_WIDTH + 1);
+    widget_gotoyx (in, 0, WIDGET (in)->cols - HISTORY_BUTTON_WIDTH + 1);
 #endif
 
     tty_print_char (c);
@@ -171,16 +172,19 @@ static void
 do_show_hist (WInput * in)
 {
     size_t len;
-    char *r;
+    history_descriptor_t hd;
 
     len = get_history_length (in->history.list);
 
-    r = history_show (&in->history.list, WIDGET (in),
-                      g_list_position (in->history.list, in->history.list));
-    if (r != NULL)
+    history_descriptor_init (&hd, WIDGET (in)->y, WIDGET (in)->x, in->history.list,
+                             g_list_position (in->history.list, in->history.list));
+    history_show (&hd);
+
+    in->history.list = hd.list;
+    if (hd.text != NULL)
     {
-        input_assign_text (in, r);
-        g_free (r);
+        input_assign_text (in, hd.text);
+        g_free (hd.text);
     }
 
     /* Has history cleaned up or not? */
@@ -839,7 +843,7 @@ input_load_history (const gchar * event_group_name, const gchar * event_name,
     (void) event_group_name;
     (void) event_name;
 
-    in->history.list = history_load (ev->cfg, in->history.name);
+    in->history.list = mc_config_history_load (ev->cfg, in->history.name);
     in->history.current = in->history.list;
 
     if (in->init_from_history)
@@ -873,7 +877,7 @@ input_save_history (const gchar * event_group_name, const gchar * event_name,
 
         push_history (in, in->buffer);
         if (in->history.changed)
-            history_save (ev->cfg, in->history.name, in->history.list);
+            mc_config_history_save (ev->cfg, in->history.name, in->history.list);
         in->history.changed = FALSE;
     }
 
@@ -1087,7 +1091,7 @@ input_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         return MSG_HANDLED;
 
     case MSG_CURSOR:
-        widget_move (in, 0, str_term_width2 (in->buffer, in->point) - in->term_first_shown);
+        widget_gotoyx (in, 0, str_term_width2 (in->buffer, in->point) - in->term_first_shown);
         return MSG_HANDLED;
 
     case MSG_DESTROY:
@@ -1286,7 +1290,7 @@ input_update (WInput * in, gboolean clear_first)
     else
         tty_setcolor (in->color[WINPUTC_MAIN]);
 
-    widget_move (in, 0, 0);
+    widget_gotoyx (in, 0, 0);
 
     if (!in->is_password)
     {
@@ -1305,7 +1309,7 @@ input_update (WInput * in, gboolean clear_first)
                 tty_setcolor (in->color[WINPUTC_MARK]);
                 if (m1 < in->term_first_shown)
                 {
-                    widget_move (in, 0, 0);
+                    widget_gotoyx (in, 0, 0);
                     tty_print_string (str_term_substring
                                       (in->buffer, in->term_first_shown,
                                        m2 - in->term_first_shown));
@@ -1314,7 +1318,7 @@ input_update (WInput * in, gboolean clear_first)
                 {
                     int sel_width, buf_width;
 
-                    widget_move (in, 0, m1 - in->term_first_shown);
+                    widget_gotoyx (in, 0, m1 - in->term_first_shown);
                     buf_width = str_term_width2 (in->buffer, m1);
                     sel_width =
                         MIN (m2 - m1, (w->cols - has_history) - (buf_width - in->term_first_shown));

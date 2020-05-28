@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-03-03 09:55+0000\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2019-12-16 05:03+0000\n"
 "Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
 "Language-Team: Czech (http://www.transifex.com/mc/mc/language/cs/)\n"
 "Language: cs\n"
@@ -489,6 +489,18 @@ msgstr "Shift"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "Proměnná prostředí TERM není nastavena!\n"
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr "Nedaří se zkontrolovat rouru SIGWINCH"
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr "Nedaří se vytvořit rouru pro signál SIGWINCH"
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr "Nedaří se nastavit zápisovou část roury pro signál SIGWINCH"
+
+msgid "Cannot configure read end of SIGWINCH pipe"
+msgstr "Nedaří se nastavit čtecí část roury pro signál SIGWINCH"
 
 #, c-format
 msgid ""
@@ -1373,6 +1385,9 @@ msgstr "&Nový"
 msgid "&Close"
 msgstr "&Zavřít"
 
+msgid "&History..."
+msgstr "&Historie…"
+
 msgid "Save &as..."
 msgstr "Uložit j&ako…"
 
@@ -1809,6 +1824,13 @@ msgstr "Nedaří se získat místní kopii souboru %s"
 
 msgid "The shell is already running a command"
 msgstr "V shellu je už spuštěný příkaz"
+
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
+"Toto není xterm nebo linuxová konzola;\n"
+"panely nelze přepnout."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Do Midnight Commander se vrátíte zadáním příkazu „exit“"
@@ -2369,13 +2391,6 @@ msgstr ""
 "Pro použití tohoto příkazu je třeba, aby\n"
 "oba panely zobrazovaly seznam souborů"
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-"Toto není xterm nebo linuxová konzola;\n"
-"panely nelze přepnout."
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr "„%s“ není symbolický odkaz"
@@ -2443,9 +2458,6 @@ msgid ""
 msgstr ""
 "Nedaří se přejít do složky „%s“\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "Nedaří se načíst obsah složky"
 
 msgid "Parameter"
 msgstr "Parametr"
@@ -3310,7 +3322,7 @@ msgid "S&hell link..."
 msgstr "S&hell spojení…"
 
 msgid "S&FTP link..."
-msgstr "S&FTP spojení…"
+msgstr "SFTP sp&ojení…"
 
 msgid "SM&B link..."
 msgstr "SM&B spojení…"
@@ -3404,6 +3416,9 @@ msgstr "Zobrazit velikost&i složek"
 
 msgid "Command &history"
 msgstr "&Historie příkazů"
+
+msgid "Viewed/edited files hi&story"
+msgstr "Hi&storie zobrazených/upravovaných souborů"
 
 msgid "Di&rectory hotlist"
 msgstr "&Rychlý přístup ke složkám"
@@ -3633,6 +3648,9 @@ msgstr "Zrušit výběr"
 
 msgid "Do you really want to execute?"
 msgstr "Opravdu chcete spustit?"
+
+msgid "Cannot read directory contents"
+msgstr "Nedaří se načíst obsah složky"
 
 msgid "User supplied format looks invalid, reverting to default."
 msgstr "Chybný formát zadaný uživatelem, náhradně bude použit výchozí."

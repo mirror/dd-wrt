@@ -85,7 +85,7 @@
 hook_t *select_file_hook = NULL;
 
 /* *INDENT-OFF* */
-panelized_panel_t panelized_panel = { {NULL, 0, -1}, NULL };
+panelized_panel_t panelized_panel = { {NULL, 0, -1, NULL}, NULL };
 /* *INDENT-ON* */
 
 static const char *string_file_name (file_entry_t *, int);
@@ -937,7 +937,7 @@ repaint_file (WPanel * panel, int file_index, gboolean mv, int attr, gboolean is
             ypos %= panel_lines (panel);
 
         ypos += 2;              /* top frame and header */
-        widget_move (w, ypos, offset + 1);
+        widget_gotoyx (w, ypos, offset + 1);
     }
 
     ret_frm = format_file (panel, file_index, width, attr, isstatus, &fln);
@@ -961,7 +961,7 @@ repaint_file (WPanel * panel, int file_index, gboolean mv, int attr, gboolean is
             }
         }
 
-        widget_move (w, ypos, offset);
+        widget_gotoyx (w, ypos, offset);
         tty_setcolor (NORMAL_COLOR);
         tty_print_string (panel_filename_scroll_left_char);
 
@@ -971,7 +971,7 @@ repaint_file (WPanel * panel, int file_index, gboolean mv, int attr, gboolean is
             if (nth_column + 1 >= panel->list_cols)
                 offset++;
 
-            widget_move (w, ypos, offset);
+            widget_gotoyx (w, ypos, offset);
             tty_setcolor (NORMAL_COLOR);
             tty_print_string (panel_filename_scroll_right_char);
         }
@@ -988,7 +988,7 @@ display_mini_info (WPanel * panel)
     if (!panels_options.show_mini_info)
         return;
 
-    widget_move (w, panel_lines (panel) + 3, 1);
+    widget_gotoyx (w, panel_lines (panel) + 3, 1);
 
     if (panel->searching)
     {
@@ -1098,7 +1098,7 @@ display_total_marked_size (const WPanel * panel, int y, int x, gboolean size_onl
      * y == panel_lines (panel) + 2  for mini_info_separator
      * y == w->lines - 1             for panel bottom frame
      */
-    widget_move (w, y, x);
+    widget_gotoyx (w, y, x);
     tty_setcolor (MARKED_COLOR);
     tty_printf (" %s ", buf);
 }
@@ -1163,7 +1163,7 @@ show_free_space (const WPanel * panel)
         g_snprintf (tmp, sizeof (tmp), " %s/%s (%d%%) ", buffer1, buffer2,
                     myfs_stats.total == 0 ? 0 :
                     (int) (100 * (long double) myfs_stats.avail / myfs_stats.total));
-        widget_move (w, w->lines - 1, w->cols - 2 - (int) strlen (tmp));
+        widget_gotoyx (w, w->lines - 1, w->cols - 2 - (int) strlen (tmp));
         tty_setcolor (NORMAL_COLOR);
         tty_print_string (tmp);
     }
@@ -1267,25 +1267,25 @@ show_dir (const WPanel * panel)
 
         y = panel_lines (panel) + 2;
 
-        widget_move (w, y, 0);
+        widget_gotoyx (w, y, 0);
         tty_print_alt_char (ACS_LTEE, FALSE);
-        widget_move (w, y, w->cols - 1);
+        widget_gotoyx (w, y, w->cols - 1);
         tty_print_alt_char (ACS_RTEE, FALSE);
     }
 
-    widget_move (w, 0, 1);
+    widget_gotoyx (w, 0, 1);
     tty_print_string (panel_history_prev_item_sign);
 
     tmp = panels_options.show_dot_files ? panel_hiddenfiles_sign_show : panel_hiddenfiles_sign_hide;
     tmp = g_strdup_printf ("%s[%s]%s", tmp, panel_history_show_list_sign,
                            panel_history_next_item_sign);
 
-    widget_move (w, 0, w->cols - 6);
+    widget_gotoyx (w, 0, w->cols - 6);
     tty_print_string (tmp);
 
     g_free (tmp);
 
-    widget_move (w, 0, 3);
+    widget_gotoyx (w, 0, 3);
 
     if (panel->is_panelized)
         tty_printf (" %s ", _("Panelize"));
@@ -1296,7 +1296,7 @@ show_dir (const WPanel * panel)
         if (tmp != NULL)
         {
             tty_printf ("%s", tmp);
-            widget_move (w, 0, 3 + strlen (tmp));
+            widget_gotoyx (w, 0, 3 + strlen (tmp));
             g_free (tmp);
         }
     }
@@ -1322,7 +1322,7 @@ show_dir (const WPanel * panel)
                             size_trunc_sep (panel->dir.list[panel->selected].st.st_size,
                                             panels_options.kilobyte_si));
                 tty_setcolor (NORMAL_COLOR);
-                widget_move (w, w->lines - 1, 4);
+                widget_gotoyx (w, w->lines - 1, 4);
                 tty_print_string (buffer);
             }
         }
@@ -1433,9 +1433,9 @@ panel_load_history (const gchar * event_group_name, const gchar * event_name,
     if (ev->receiver == NULL || ev->receiver == WIDGET (p))
     {
         if (ev->cfg != NULL)
-            p->dir_history = history_load (ev->cfg, p->hist_name);
+            p->dir_history = mc_config_history_load (ev->cfg, p->hist_name);
         else
-            p->dir_history = history_get (p->hist_name);
+            p->dir_history = mc_config_history_get (p->hist_name);
 
         directory_history_add (p, p->cwd_vpath);
     }
@@ -1459,7 +1459,7 @@ panel_save_history (const gchar * event_group_name, const gchar * event_name,
     {
         ev_history_load_save_t *ev = (ev_history_load_save_t *) data;
 
-        history_save (ev->cfg, p->hist_name, p->dir_history);
+        mc_config_history_save (ev->cfg, p->hist_name, p->dir_history);
     }
 
     return TRUE;
@@ -1518,7 +1518,7 @@ panel_paint_sort_info (const WPanel * panel)
         char *str;
 
         str = g_strdup_printf ("%s%s", sort_sign, Q_ (panel->sort_field->hotkey));
-        widget_move (panel, 1, 1);
+        widget_gotoyx (panel, 1, 1);
         tty_print_string (str);
         g_free (str);
     }
@@ -1558,7 +1558,7 @@ panel_print_header (const WPanel * panel)
     int i;
     GString *format_txt;
 
-    widget_move (w, 1, 1);
+    widget_gotoyx (w, 1, 1);
     tty_getyx (&y, &x);
     tty_setcolor (NORMAL_COLOR);
     tty_draw_hline (y, x, ' ', w->cols - 2);
@@ -2711,7 +2711,7 @@ do_search (WPanel * panel, int c_code)
         unselect_item (panel);
         panel->selected = sel;
         select_item (panel);
-        widget_redraw (WIDGET (panel));
+        widget_draw (WIDGET (panel));
     }
     else if (c_code != KEY_BACKSPACE)
     {
@@ -3277,8 +3277,10 @@ _do_panel_cd (WPanel * panel, const vfs_path_t * new_dir_vpath, enum cd_enum cd_
     /* Reload current panel */
     panel_clean_dir (panel);
 
-    dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                   &panel->sort_info, panel->filter);
+    if (!dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
+                        &panel->sort_info, panel->filter))
+        message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
+
     try_to_select (panel, get_parent_dir_name (panel->cwd_vpath, olddir_vpath));
 
     load_hint (FALSE);
@@ -3349,25 +3351,29 @@ directory_history_prev (WPanel * panel)
 static void
 directory_history_list (WPanel * panel)
 {
-    char *s;
+    history_descriptor_t hd;
     gboolean ok = FALSE;
     size_t pos;
 
     pos = g_list_position (panel->dir_history_current, panel->dir_history);
 
-    s = history_show (&panel->dir_history, WIDGET (panel), pos);
-    if (s != NULL)
+    history_descriptor_init (&hd, WIDGET (panel)->y, WIDGET (panel)->x, panel->dir_history,
+                             (int) pos);
+    history_show (&hd);
+
+    panel->dir_history = hd.list;
+    if (hd.text != NULL)
     {
         vfs_path_t *s_vpath;
 
-        s_vpath = vfs_path_from_str (s);
+        s_vpath = vfs_path_from_str (hd.text);
         ok = _do_panel_cd (panel, s_vpath, cd_exact);
         if (ok)
             directory_history_add (panel, panel->cwd_vpath);
         else
             message (D_ERROR, MSG_ERROR, _("Cannot change directory"));
         vfs_path_free (s_vpath);
-        g_free (s);
+        g_free (hd.text);
     }
 
     if (!ok)
@@ -3668,7 +3674,7 @@ panel_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
         bb = find_buttonbar (w->owner);
         midnight_set_buttonbar (bb);
-        widget_redraw (WIDGET (bb));
+        widget_draw (WIDGET (bb));
         return MSG_HANDLED;
 
     case MSG_UNFOCUS:
@@ -3892,7 +3898,7 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         break;
 
     case MSG_MOUSE_CLICK:
-        if ((event->count & GPM_DOUBLE) != 0)
+        if ((event->count & GPM_DOUBLE) != 0 && (event->buttons & GPM_B_LEFT) != 0)
         {
             int y, lines;
 
@@ -3933,7 +3939,7 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
     }
 
     if (panel->dirty)
-        widget_redraw (w);
+        widget_draw (w);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -4174,6 +4180,36 @@ panel_recursive_cd_to_parent (const vfs_path_t * vpath)
 }
 
 /* --------------------------------------------------------------------------------------------- */
+
+static void
+panel_dir_list_callback (dir_list_cb_state_t state, void *data)
+{
+    static int count = 0;
+
+    (void) data;
+
+    switch (state)
+    {
+    case DIR_OPEN:
+        count = 0;
+        break;
+
+    case DIR_READ:
+        count++;
+        if ((count & 15) == 0)
+            rotate_dash (TRUE);
+        break;
+
+    case DIR_CLOSE:
+        rotate_dash (FALSE);
+        break;
+
+    default:
+        g_assert_not_reached ();
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
 /*** public functions ****************************************************************************/
 /* --------------------------------------------------------------------------------------------- */
 
@@ -4264,6 +4300,7 @@ panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols
     panel->dir.size = DIR_LIST_MIN_SIZE;
     panel->dir.list = g_new (file_entry_t, panel->dir.size);
     panel->dir.len = 0;
+    panel->dir.callback = panel_dir_list_callback;
 
     panel->list_cols = 1;
     panel->brief_cols = 2;
@@ -4360,8 +4397,9 @@ panel_sized_with_dir_new (const char *panel_name, int y, int x, int lines, int c
     }
 
     /* Load the default format */
-    dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                   &panel->sort_info, panel->filter);
+    if (!dir_list_load (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
+                        &panel->sort_info, panel->filter))
+        message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
 
     /* Restore old right path */
     if (curdir != NULL)
@@ -4407,8 +4445,9 @@ panel_reload (WPanel * panel)
     memset (&(panel->dir_stat), 0, sizeof (panel->dir_stat));
     show_dir (panel);
 
-    dir_list_reload (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
-                     &panel->sort_info, panel->filter);
+    if (!dir_list_reload (&panel->dir, panel->cwd_vpath, panel->sort_field->sort_routine,
+                          &panel->sort_info, panel->filter))
+        message (D_ERROR, MSG_ERROR, _("Cannot read directory contents"));
 
     panel->dirty = 1;
     if (panel->selected >= panel->dir.len)

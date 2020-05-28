@@ -355,7 +355,7 @@ sel_charset_button (WButton * button, int action)
             cpname = _("7-bit ASCII");  /* FIXME */
 
         button_set_text (button, cpname);
-        dlg_redraw (WIDGET (button)->owner);
+        dlg_draw (WIDGET (button)->owner);
     }
 
     return 0;
@@ -484,7 +484,7 @@ task_cb (WButton * button, int action)
     jobs_fill_listbox (bg_list);
 
     /* This can be optimized to just redraw this widget :-) */
-    dlg_redraw (WIDGET (button)->owner);
+    dlg_draw (WIDGET (button)->owner);
 
     return 0;
 }
@@ -632,7 +632,7 @@ panel_options_box (void)
     gboolean simple_swap;
 
     simple_swap = mc_config_get_bool (mc_global.main_config, CONFIG_PANELS_SECTION,
-                                      "simple_swap", FALSE) ? 1 : 0;
+                                      "simple_swap", FALSE);
     {
         const char *qsearch_options[] = {
             N_("Case &insensitive"),
@@ -943,9 +943,9 @@ display_bits_box (void)
         mc_global.eight_bit_clean = current_mode < 3;
         mc_global.full_eight_bits = current_mode < 2;
 #ifndef HAVE_SLANG
-        meta (stdscr, mc_global.eight_bit_clean);
+        tty_display_8bit (mc_global.eight_bit_clean);
 #else
-        SLsmg_Display_Eight_Bit = mc_global.full_eight_bits ? 128 : 160;
+        tty_display_8bit (mc_global.full_eight_bits);
 #endif
         use_8th_bit_as_meta = !new_meta;
     }
@@ -1060,7 +1060,7 @@ tree_box (const char *current_dir)
 
 #ifdef ENABLE_VFS
 void
-configure_vfs (void)
+configure_vfs_box (void)
 {
     char buffer2[BUF_TINY];
 #ifdef ENABLE_VFS_FTP
@@ -1151,7 +1151,7 @@ configure_vfs (void)
 /* --------------------------------------------------------------------------------------------- */
 
 char *
-cd_dialog (void)
+cd_box (void)
 {
     const Widget *w = CONST_WIDGET (current_panel);
     char *my_str;
@@ -1174,8 +1174,8 @@ cd_dialog (void)
 /* --------------------------------------------------------------------------------------------- */
 
 void
-symlink_dialog (const vfs_path_t * existing_vpath, const vfs_path_t * new_vpath,
-                char **ret_existing, char **ret_new)
+symlink_box (const vfs_path_t * existing_vpath, const vfs_path_t * new_vpath,
+             char **ret_existing, char **ret_new)
 {
     quick_widget_t quick_widgets[] = {
         /* *INDENT-OFF* */
@@ -1208,7 +1208,7 @@ symlink_dialog (const vfs_path_t * existing_vpath, const vfs_path_t * new_vpath,
 
 #ifdef ENABLE_BACKGROUND
 void
-jobs_cmd (void)
+jobs_box (void)
 {
     struct
     {

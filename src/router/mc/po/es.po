@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2019-06-22 13:45+0200\n"
-"PO-Revision-Date: 2019-03-05 09:31+0000\n"
+"POT-Creation-Date: 2020-01-19 02:04+0400\n"
+"PO-Revision-Date: 2019-12-16 14:54+0000\n"
 "Last-Translator: David Martin <dhmartina@yahoo.es>\n"
 "Language-Team: Spanish (http://www.transifex.com/mc/mc/language/es/)\n"
 "Language: es\n"
@@ -48,7 +48,7 @@ msgstr "¡Verifique los datos de entrada! ¡Hay parámetros nulos!"
 
 #, c-format
 msgid "Unable to create group '%s' for events!"
-msgstr "Imposible crear el grupo de eventos «%s»"
+msgstr "¡Imposible crear el grupo de eventos «%s»!"
 
 #, c-format
 msgid "Unable to create event '%s'!"
@@ -485,6 +485,18 @@ msgstr "Mayús"
 
 msgid "The TERM environment variable is unset!\n"
 msgstr "¡La variable de entorno TERM está sin definir!\n"
+
+msgid "Cannot check SIGWINCH pipe"
+msgstr "Imposible comprobar tuberia para SIGWINCH"
+
+msgid "Cannot create pipe for SIGWINCH"
+msgstr "Imposible crear tubería para SIGWINCH"
+
+msgid "Cannot configure write end of SIGWINCH pipe"
+msgstr "Imposible configurar extremo de escritura de la tuberia para SIGWINCH"
+
+msgid "Cannot configure read end of SIGWINCH pipe"
+msgstr "Imposible configurar extremo de lectura de la tuberia para SIGWINCH"
 
 #, c-format
 msgid ""
@@ -1374,6 +1386,9 @@ msgstr "&Nuevo"
 msgid "&Close"
 msgstr "&Cerrar"
 
+msgid "&History..."
+msgstr "&Historia..."
+
 msgid "Save &as..."
 msgstr "guar&Dar como..."
 
@@ -1809,6 +1824,13 @@ msgstr "Imposible obtener una copia local de «%s»"
 
 msgid "The shell is already running a command"
 msgstr "El shell ya está ejecutando un comando"
+
+msgid ""
+"Not an xterm or Linux console;\n"
+"the panels cannot be toggled."
+msgstr ""
+"No se está usando ni xterm ni la consola Linux.\n"
+"Los paneles no pueden ser ocultados."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Teclee «exit» para regresar a Midnight Commander"
@@ -2369,13 +2391,6 @@ msgstr ""
 "Ambos paneles deben estar en\n"
 "modo listado para usar esta función"
 
-msgid ""
-"Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
-msgstr ""
-"No se está usando ni xterm ni la consola Linux.\n"
-"Los paneles no pueden ser ocultados."
-
 #, c-format
 msgid "'%s' is not a symbolic link"
 msgstr "«%s» no es un enlace simbólico"
@@ -2441,9 +2456,6 @@ msgid ""
 msgstr ""
 "Imposible cambiar al directorio «%s»\n"
 "%s"
-
-msgid "Cannot read directory contents"
-msgstr "Imposible leer directorio"
 
 msgid "Parameter"
 msgstr "Parámetro"
@@ -3400,6 +3412,9 @@ msgstr "mostrar &Tamaños de los directorios"
 msgid "Command &history"
 msgstr "&Historia de órdenes"
 
+msgid "Viewed/edited files hi&story"
+msgstr "hi&Storia de archivos"
+
 msgid "Di&rectory hotlist"
 msgstr "&Favoritos..."
 
@@ -3624,6 +3639,9 @@ msgstr "De-seleccionar grupo"
 
 msgid "Do you really want to execute?"
 msgstr "¿Realmente quiere ejecutar?"
+
+msgid "Cannot read directory contents"
+msgstr "Imposible leer directorio"
 
 msgid "User supplied format looks invalid, reverting to default."
 msgstr "Formato no parece válido. Recuperando el predeterminado."
@@ -4078,21 +4096,21 @@ msgstr "fish: Leyendo el directorio %s..."
 
 #, c-format
 msgid "%s: done."
-msgstr "%s: hecho."
+msgstr "%s: Hecho."
 
 #, c-format
 msgid "%s: failure"
-msgstr "%s: fallo"
+msgstr "%s: Fallo."
 
 #, c-format
 msgid "fish: store %s: sending command..."
-msgstr "fish: guardar %s: enviando comando..."
+msgstr "fish: Guardar %s: enviando comando..."
 
 msgid "fish: Local read failed, sending zeros"
 msgstr "fish: Fallo de lectura local, enviando ceros"
 
 msgid "fish: storing file"
-msgstr "ftpfs: guardando archivo"
+msgstr "fish: Guardando archivo"
 
 msgid "Aborting transfer..."
 msgstr "Abortando transferencia."
@@ -4132,7 +4150,7 @@ msgstr "ftpfs: Autorizados"
 
 #, c-format
 msgid "ftpfs: Login incorrect for user %s "
-msgstr "ftpfs: denegada autorización al usuario %s"
+msgstr "ftpfs: Denegada autorización al usuario %s"
 
 msgid "ftpfs: Invalid host name."
 msgstr "ftpfs: Nombre de máquina incorrecto"
@@ -4199,7 +4217,7 @@ msgid "ftpfs: failed; nowhere to fallback to"
 msgstr "ftpfs: Falló; no hay dónde replegarse"
 
 msgid "ftpfs: storing file"
-msgstr "ftpfs: guardando archivo"
+msgstr "ftpfs: Guardando archivo"
 
 msgid ""
 "~/.netrc file has incorrect mode\n"
@@ -4210,7 +4228,7 @@ msgstr ""
 
 #, c-format
 msgid "%s: Warning: file %s not found\n"
-msgstr "%s: Atención: no se encuentra el archivo %s\n"
+msgstr "%s: Atención: No se encuentra el archivo %s\n"
 
 #, c-format
 msgid ""
@@ -4334,7 +4352,7 @@ msgstr ""
 "no parece un archivo de tipo tar."
 
 msgid "undelfs: error"
-msgstr "undelfs: error"
+msgstr "undelfs: Error"
 
 msgid "not enough memory"
 msgstr "memoria insuficiente"
@@ -4352,7 +4370,7 @@ msgstr "al iniciar rastreo de inodos %d"
 
 #, c-format
 msgid "undelfs: loading deleted files information %d inodes"
-msgstr "undelfs: cargando información de archivos eliminados %d inodos"
+msgstr "undelfs: Cargando información de archivos eliminados %d inodos"
 
 #, c-format
 msgid "while calling ext2_block_iterate %d"
@@ -4370,7 +4388,7 @@ msgid "Cannot open file %s"
 msgstr "Imposible abrir el archivo %s"
 
 msgid "undelfs: reading inode bitmap..."
-msgstr "undelfs: leyendo mapa de inodos..."
+msgstr "undelfs: Leyendo mapa de inodos..."
 
 #, c-format
 msgid ""
@@ -4381,7 +4399,7 @@ msgstr ""
 "%s"
 
 msgid "undelfs: reading block bitmap..."
-msgstr "undelfs: leyendo mapa de bloques..."
+msgstr "undelfs: Leyendo mapa de bloques..."
 
 #, c-format
 msgid ""
