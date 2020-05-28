@@ -514,8 +514,13 @@ void start_sysinit(void)
 	case ROUTER_HABANERO:
 		eval("swconfig", "dev", "switch0", "set", "reset", "1");
 		eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
+#ifdef HAVE_ANTAIRA
+		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1");
+		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 2");
+#else /*HAVE_ANTAIRA*/
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");
+#endif /*HAVE_ANTAIRA*/
 		eval("swconfig", "dev", "switch0", "set", "apply");
 		eval("ifconfig", "eth0", "up");
 		eval("ifconfig", "eth1", "up");
