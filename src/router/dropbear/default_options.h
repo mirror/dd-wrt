@@ -29,6 +29,9 @@
 #ifndef ECDSA_PRIV_FILENAME
 #define ECDSA_PRIV_FILENAME "/etc/dropbear/dropbear_ecdsa_host_key"
 #endif
+#ifndef ED25519_PRIV_FILENAME
+#define ED25519_PRIV_FILENAME "/etc/dropbear/dropbear_ed25519_host_key"
+#endif
 
 /* Set NON_INETD_MODE if you require daemon functionality (ie Dropbear listens
  * on chosen ports and keeps accepting connections. This is the default.
@@ -107,6 +110,19 @@ much traffic. */
  * and forwards compatibility */
 #define DROPBEAR_ENABLE_CTR_MODE 1
 
+/* Enable "Galois/Counter Mode" for ciphers. This authenticated
+ * encryption mode is combination of CTR mode and GHASH. Recommended
+ * for security and forwards compatibility, but slower than CTR on
+ * CPU w/o dedicated AES/GHASH instructions.
+ * Compiling in will add ~6kB to binary size on x86-64 */
+#define DROPBEAR_ENABLE_GCM_MODE 0
+
+/* Enable Chacha20-Poly1305 authenticated encryption mode. This is
+ * generally faster than AES256 on CPU w/o dedicated AES instructions,
+ * having the same key size.
+ * Compiling in will add ~5,5kB to binary size on x86-64 */
+#define DROPBEAR_CHACHA20POLY1305 0
+
 /* Twofish counter mode is disabled by default because it 
 has not been tested for interoperability with other SSH implementations.
 If you test it please contact the Dropbear author */
@@ -151,6 +167,10 @@ If you test it please contact the Dropbear author */
  * code (either ECDSA or ECDH) increases binary size - around 30kB
  * on x86-64 */
 #define DROPBEAR_ECDSA 0
+
+/* Ed25519 is faster than ECDSA. Compiling in Ed25519 code increases
+   binary size - around 7,5kB on x86-64 */
+#define DROPBEAR_ED25519 0
 
 #define DROPBEAR_DEFAULT_RSA_SIZE 2048
 
