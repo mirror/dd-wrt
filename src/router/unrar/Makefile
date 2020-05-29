@@ -7,7 +7,7 @@ CXXFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO)
 LIBFLAGS=-fPIC
 DEFINES=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DRAR_SMP -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections
 #STRIP=strip
-LDFLAGS=-pthread -ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO)
+LDFLAGS=-pthread -ffunction-sections -fdata-sections -Wl,--gc-sections $(COPTS) $(MIPS16_OPT) $(LDLTO)
 DESTDIR=$(INSTALLDIR)/usr
 
 # Linux using LCC
