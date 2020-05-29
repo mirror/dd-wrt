@@ -297,6 +297,7 @@ void __init memory_setup(void)
 	off1 = off + 4;
 	data1 = *(unsigned long *)off1;
 	extmem = 128 MB;
+	uint boardnum;
 	int highmemsupport = 0;
 
 	/* Get global SB handle */
