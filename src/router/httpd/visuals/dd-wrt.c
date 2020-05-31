@@ -3188,13 +3188,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-	if (has_subeamforming(prefix)) {
-		nvram_default_get(wl_subf, "0");
-		showRadio(wp, "wl_basic.subf", wl_subf);
-	}
-	if (has_mubeamforming(prefix)) {
-		nvram_default_get(wl_mubf, "0");
-		showRadio(wp, "wl_basic.mubf", wl_mubf);
+	if (has_5ghz(prefix) && has_ac(prefix)) {
+		if (has_subeamforming(prefix)) {
+			nvram_default_get(wl_subf, "0");
+			showRadio(wp, "wl_basic.subf", wl_subf);
+		}
+		if (has_mubeamforming(prefix)) {
+			nvram_default_get(wl_mubf, "0");
+			showRadio(wp, "wl_basic.mubf", wl_mubf);
+		}
 	}
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
@@ -4282,13 +4284,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		nvram_default_get(wl_shortgi, "1");
 		showRadio(wp, "wl_basic.shortgi", wl_shortgi);
 	}
-	if (has_subeamforming(prefix)) {
-		nvram_default_get(wl_subf, "0");
-		showRadio(wp, "wl_basic.subf", wl_subf);
-	}
-	if (has_mubeamforming(prefix)) {
-		nvram_default_get(wl_mubf, "0");
-		showRadio(wp, "wl_basic.mubf", wl_mubf);
+	if (has_5ghz(prefix) && has_ac(prefix)) {
+		if (has_subeamforming(prefix)) {
+			nvram_default_get(wl_subf, "0");
+			showRadio(wp, "wl_basic.subf", wl_subf);
+		}
+		if (has_mubeamforming(prefix)) {
+			nvram_default_get(wl_mubf, "0");
+			showRadio(wp, "wl_basic.mubf", wl_mubf);
+		}
 	}
 #ifndef HAVE_BUFFALO
 #if !defined(HAVE_FONERA) && !defined(HAVE_LS2) && !defined(HAVE_MERAKI)
