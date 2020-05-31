@@ -740,6 +740,7 @@ choice
 		  their output to the serial port on Qualcomm devices.
 
 		  ARCH      DEBUG_UART_PHYS   DEBUG_UART_VIRT
+		  IPQ8064   0x16340000        0xf0040000
 		  APQ8064   0x16640000        0xf0040000
 		  APQ8084   0xf995e000        0xfa75e000
 		  MSM8X60   0x19c40000        0xf0040000
