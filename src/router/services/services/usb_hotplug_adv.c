@@ -343,6 +343,7 @@ static void do_mount(char *fs, char *path, char *mount_point, char *dev)
 	if (!ret)
 		run_on_mount(path);
 }
+
 void start_raid(void);
 
  /* 
@@ -430,7 +431,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 				} else if (strstr(line, "HFS")) {
 					fs = "hfs";
 					usb_load_modules(fs);
-				} 
+				}
 #ifdef HAVE_NTFS3G
 				else if (strstr(line, "NTFS")) {
 					fs = "ntfs";
@@ -440,8 +441,7 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 #ifdef HAVE_RAID
 				else if (strstr(line, "ZFS")) {
 					start_raid();
-				}
-				else if (strstr(line, "MD Raid")) {
+				} else if (strstr(line, "MD Raid")) {
 					start_raid();
 				}
 #endif

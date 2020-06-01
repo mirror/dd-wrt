@@ -1982,6 +1982,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 			br_add_interface(getBridge(dev, tmp), dev);
 			eval("ifconfig", dev, "0.0.0.0", "up");
 		} else {
+			nvram_set("sfe", "0");
 			eval("ifconfig", dev, "mtu", getMTU(dev));
 			eval("ifconfig", dev, "txqueuelen", getTXQ(dev));
 			eval("ifconfig", dev, nvram_nget("%s_ipaddr", dev), "netmask", nvram_nget("%s_netmask", dev), "up");
@@ -2015,8 +2016,10 @@ void ath9k_start_supplicant(int count, char *prefix)
 				sprintf(subinterface, "-i%s", var);
 				if (nvram_matchi(bridged, 1))
 					eval("wpa_supplicant", "-b", getBridge(var, tmp), background, "-Dnl80211", subinterface, "-c", fstr);
-				else
+				else {
+					nvram_set("sfe", "0");
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
+				}
 
 			}
 
@@ -2025,6 +2028,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 					eval("ifconfig", dev, "0.0.0.0", "up");
 					br_add_interface(getBridge(var, tmp), var);
 				} else {
+					nvram_set("sfe", "0");
 					eval("ifconfig", var, "mtu", getMTU(var));
 					eval("ifconfig", var, "txqueuelen", getTXQ(var));
 					eval("ifconfig", var, nvram_nget("%s_ipaddr", var), "netmask", nvram_nget("%s_netmask", var), "up");
