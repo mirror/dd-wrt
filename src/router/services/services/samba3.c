@@ -150,7 +150,6 @@ void start_samba3(void)
 			"socket options = TCP_NODELAY IPTOS_LOWDELAY SO_SNDBUF=262144 SO_RCVBUF=262144\n"	//
 			"read raw = yes\n"	//
 			"write raw = yes\n"	//
-			"oplocks = yes\n"	//
 			"max xmit = 65536\n"	//
 			"dead time = 15\n"	//
 			"getwd cache = yes\n"	//
