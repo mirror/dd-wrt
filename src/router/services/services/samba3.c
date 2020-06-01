@@ -185,6 +185,7 @@ void start_samba3(void)
 			}
 			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
+				fprintf(fp, "oplocks = no\n");
 #ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
 				fprintf(fp, "path = %s/%s\n", cs->mp, cs->sd);
