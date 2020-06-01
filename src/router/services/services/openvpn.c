@@ -37,9 +37,9 @@ static void run_openvpn(char *prg, char *path)
 	char *conf;
 	asprintf(&conf, "/tmp/%s/openvpn.conf", path);
 	/*char *routeup;
-	asprintf(&routeup, "/tmp/%s/route-up.sh", path);
-	char *routedown;
-	asprintf(&routedown, "/tmp/%s/route-down.sh", path);*/
+	   asprintf(&routeup, "/tmp/%s/route-up.sh", path);
+	   char *routedown;
+	   asprintf(&routedown, "/tmp/%s/route-down.sh", path); */
 	if (nvram_matchi("use_crypto", 1)) {
 		insmod("cryptodev");
 		eval(prg, "--config", conf, "--daemon", "--engine", "cryptodev");
@@ -48,7 +48,7 @@ static void run_openvpn(char *prg, char *path)
 		eval(prg, "--config", conf, "--daemon");
 	}
 	/*free(routedown);
-	free(routeup);*/
+	   free(routeup); */
 	free(conf);
 }
 
