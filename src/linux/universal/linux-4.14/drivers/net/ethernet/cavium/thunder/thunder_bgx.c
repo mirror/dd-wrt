@@ -1401,48 +1401,6 @@ static int bgx_register_intr(struct pci_dev *pdev)
 	return 0;
 }
 
-static irqreturn_t bgx_intr_handler(int irq, void *data)
-{
-	struct bgx *bgx = (struct bgx *)data;
-	u64 status, val;
-	int lmac;
-
-	for (lmac = 0; lmac < bgx->lmac_count; lmac++) {
-		status = bgx_reg_read(bgx, lmac, BGX_GMP_GMI_TXX_INT);
-		if (status & GMI_TXX_INT_UNDFLW) {
-			pci_err(bgx->pdev, "BGX%d lmac%d UNDFLW\n",
-				bgx->bgx_id, lmac);
-			val = bgx_reg_read(bgx, lmac, BGX_CMRX_CFG);
-			val &= ~CMR_EN;
-			bgx_reg_write(bgx, lmac, BGX_CMRX_CFG, val);
-			val |= CMR_EN;
-			bgx_reg_write(bgx, lmac, BGX_CMRX_CFG, val);
-		}
-		/* clear interrupts */
-		bgx_reg_write(bgx, lmac, BGX_GMP_GMI_TXX_INT, status);
-	}
-
-	return IRQ_HANDLED;
-}
-
-static void bgx_register_intr(struct pci_dev *pdev)
-{
-	struct bgx *bgx = pci_get_drvdata(pdev);
-	int ret;
-
-	ret = pci_alloc_irq_vectors(pdev, BGX_LMAC_VEC_OFFSET,
-				    BGX_LMAC_VEC_OFFSET, PCI_IRQ_ALL_TYPES);
-	if (ret < 0) {
-		pci_err(pdev, "Req for #%d msix vectors failed\n",
-			BGX_LMAC_VEC_OFFSET);
-		return;
-	}
-	ret = pci_request_irq(pdev, GMPX_GMI_TX_INT, bgx_intr_handler, NULL,
-			      bgx, "BGX%d", bgx->bgx_id);
-	if (ret)
-		pci_free_irq(pdev, GMPX_GMI_TX_INT, bgx);
-}
-
 static int bgx_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 {
 	int err;
