@@ -1515,7 +1515,7 @@ extern int init_smb2_neg_rsp(struct ksmbd_work *work);
 extern void smb2_set_err_rsp(struct ksmbd_work *work);
 extern int smb2_check_user_session(struct ksmbd_work *work);
 extern int smb2_get_ksmbd_tcon(struct ksmbd_work *work);
-extern int smb2_is_sign_req(struct ksmbd_work *work, unsigned int command);
+extern bool smb2_is_sign_req(struct ksmbd_work *work, unsigned int command);
 extern int smb2_check_sign_req(struct ksmbd_work *work);
 extern void smb2_set_sign_rsp(struct ksmbd_work *work);
 extern int smb3_check_sign_req(struct ksmbd_work *work);
@@ -1531,7 +1531,7 @@ extern void smb3_preauth_hash_rsp(struct ksmbd_work *work);
 extern int smb3_is_transform_hdr(void *buf);
 extern int smb3_decrypt_req(struct ksmbd_work *work);
 extern int smb3_encrypt_resp(struct ksmbd_work *work);
-extern int smb3_final_sess_setup_resp(struct ksmbd_work *work);
+extern bool smb3_11_final_sess_setup_resp(struct ksmbd_work *work);
 extern int smb2_set_rsp_credits(struct ksmbd_work *work);
 
 /* smb2 misc functions */

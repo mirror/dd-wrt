@@ -1586,7 +1586,7 @@ extern int init_smb_rsp_hdr(struct ksmbd_work *work);
 extern uint16_t get_smb_cmd_val(struct ksmbd_work *work);
 extern void set_smb_rsp_status(struct ksmbd_work *work, __le32 err);
 extern int smb_allocate_rsp_buf(struct ksmbd_work *work);
-extern int smb1_is_sign_req(struct ksmbd_work *work, unsigned int command);
+extern bool smb1_is_sign_req(struct ksmbd_work *work, unsigned int command);
 extern int smb1_check_sign_req(struct ksmbd_work *work);
 extern void smb1_set_sign_rsp(struct ksmbd_work *work);
 extern int smb_check_user_session(struct ksmbd_work *work);
