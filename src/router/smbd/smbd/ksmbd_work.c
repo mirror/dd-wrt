@@ -38,8 +38,7 @@ struct ksmbd_work *ksmbd_alloc_work_struct(void)
 void ksmbd_free_work_struct(struct ksmbd_work *work)
 {
 	WARN_ON(work->saved_cred_level != 0);
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF &&
-			work->set_trans_buf)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
 		ksmbd_release_buffer(RESPONSE_BUF(work));
 	else
 		ksmbd_free_response(RESPONSE_BUF(work));
@@ -67,7 +66,7 @@ int ksmbd_work_pool_init(void)
 					sizeof(struct ksmbd_work), 0,
 					SLAB_HWCACHE_ALIGN, NULL);
 	if (!work_cache)
-		return -ENOMEM;
+		return -EINVAL;
 	return 0;
 }
 
@@ -75,7 +74,7 @@ int ksmbd_workqueue_init(void)
 {
 	ksmbd_wq = alloc_workqueue("ksmbd-io", 0, 0);
 	if (!ksmbd_wq)
-		return -ENOMEM;
+		return -EINVAL;
 	return 0;
 }
 
