@@ -8276,16 +8276,16 @@ out:
  * smb1_is_sign_req() - handler for checking packet signing status
  * @work:	smb work containing notify command buffer
  *
- * Return:	1 if packed is signed, 0 otherwise
+ * Return:	true if packed is signed, false otherwise
  */
-int smb1_is_sign_req(struct ksmbd_work *work, unsigned int command)
+bool smb1_is_sign_req(struct ksmbd_work *work, unsigned int command)
 {
 	struct smb_hdr *rcv_hdr1 = (struct smb_hdr *)REQUEST_BUF(work);
 
 	if ((rcv_hdr1->Flags2 & SMBFLG2_SECURITY_SIGNATURE) &&
 			command != SMB_COM_SESSION_SETUP_ANDX)
-		return 1;
-	return 0;
+		return true;
+	return false;
 }
 
 /**

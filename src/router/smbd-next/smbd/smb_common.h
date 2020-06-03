@@ -451,7 +451,7 @@ struct smb_version_ops {
 	int (*set_rsp_credits)(struct ksmbd_work *work);
 	int (*check_user_session)(struct ksmbd_work *work);
 	int (*get_ksmbd_tcon)(struct ksmbd_work *work);
-	int (*is_sign_req)(struct ksmbd_work *work, unsigned int command);
+	bool (*is_sign_req)(struct ksmbd_work *work, unsigned int command);
 	int (*check_sign_req)(struct ksmbd_work *work);
 	void (*set_sign_rsp)(struct ksmbd_work *work);
 	int (*generate_signingkey)(struct ksmbd_session *sess);
