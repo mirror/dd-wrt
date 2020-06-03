@@ -136,6 +136,7 @@ void start_samba3(void)
 			"aio write size = 2048\n"	//
 			"large readwrite = yes\n"	//
 			"security = user\n"	//
+			"oplocks = yes\n"
 			"mangled names = no\n"	//
 			"max stat cache size = 64\n"	//
 			"workgroup = %s\n"	//
@@ -184,7 +185,6 @@ void start_samba3(void)
 			}
 			if (*cs->label) {
 				fprintf(fp, "[%s]\n", cs->label);
-				fprintf(fp, "oplocks = no\n");
 #ifdef HAVE_SMBD
 				fprintf(fp, "comment = %s\n", cs->label);
 				fprintf(fp, "path = %s/%s\n", cs->mp, cs->sd);
