@@ -667,10 +667,8 @@ static void wait_for_break_ack(struct oplock_info *opinfo)
 	}
 }
 
-static int oplock_break_pending(struct oplock_info *opinfo)
+static int oplock_break_pending(struct oplock_info *opinfo, int req_op_level)
 {
-	int prev_op_level = opinfo->level;
-
 	while  (test_and_set_bit(0, &opinfo->pending_break)) {
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
 		wait_on_bit(&opinfo->pending_break, 0, bit_wait, TASK_UNINTERRUPTIBLE);
@@ -683,7 +681,7 @@ static int oplock_break_pending(struct oplock_info *opinfo)
 
 		if (opinfo->op_state == OPLOCK_CLOSING)
 			return -ENOENT;
-		else if (!opinfo->is_lease && opinfo->level <= prev_op_level)
+		else if (!opinfo->is_lease && opinfo->level <= req_op_level)
 			return 1;
 	}
 	return 0;
@@ -1075,7 +1073,7 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 
 		atomic_inc(&brk_opinfo->breaking_cnt);
 
-		err = oplock_break_pending(brk_opinfo);
+		err = oplock_break_pending(brk_opinfo, req_op_level);
 		if (err)
 			return err < 0 ? err : 0;
 
@@ -1109,7 +1107,7 @@ static int oplock_break(struct oplock_info *brk_opinfo, int req_op_level)
 		else
 			atomic_dec(&brk_opinfo->breaking_cnt);
 	} else {
-		err = oplock_break_pending(brk_opinfo);
+		err = oplock_break_pending(brk_opinfo, req_op_level);
 		if (err)
 			return err < 0 ? err : 0;
 
