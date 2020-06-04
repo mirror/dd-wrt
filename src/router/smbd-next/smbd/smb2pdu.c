@@ -568,7 +568,6 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 
 	if (cmd == SMB2_IOCTL_HE || cmd == SMB2_QUERY_DIRECTORY_HE) {
 		sz = large_sz;
-		work->set_trans_buf = true;
 	}
 
 	if (cmd == SMB2_QUERY_INFO_HE) {
@@ -579,7 +578,6 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 			(req->FileInfoClass == FILE_FULL_EA_INFORMATION ||
 				req->FileInfoClass == FILE_ALL_INFORMATION)) {
 			sz = large_sz;
-			work->set_trans_buf = true;
 		}
 	}
 
@@ -587,8 +585,7 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 	if (le32_to_cpu(hdr->NextCommand) > 0)
 		sz = large_sz;
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF &&
-			work->set_trans_buf)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
 		work->response_buf = ksmbd_find_buffer(sz);
 	else
 		work->response_buf = ksmbd_alloc_response(sz);
