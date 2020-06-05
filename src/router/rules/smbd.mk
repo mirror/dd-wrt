@@ -32,7 +32,7 @@ smbd: libnl
 
 smbd-install:
 	$(MAKE) -C smbd-next/smbd install
-	$(MAKE) -C smbd-next/tools install DESTDIR=$(INSTALLDIR)/smbd
+	$(MAKE) -C smbd-next/tools install DESTDIR=$(INSTALLDIR)/smbd-next
 	rm -rf $(INSTALLDIR)/smbd-next/usr/lib
 	cd $(INSTALLDIR)/smbd-next/usr/sbin && ln -sf smbd_multicall ksmbd.mountd
 	cd $(INSTALLDIR)/smbd-next/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
