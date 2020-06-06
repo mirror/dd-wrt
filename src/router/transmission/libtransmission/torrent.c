@@ -2268,14 +2268,25 @@ static void torrentCallScript(tr_torrent const* tor, char const* script)
     };
 
     tr_logAddTorInfo(tor, "Calling script \"%s\"", script);
+    FILE *tmp = fopen("/tmp/tmp.sh","wb");
 
-    tr_error* error = NULL;
+        fprintf(tmp,"export TR_APP_VERSION=%s\n", SHORT_VERSION_STRING),
+        fprintf(tmp,"export TR_TIME_LOCALTIME=%s\n", time_str),
+        fprintf(tmp,"export TR_TORRENT_DIR=%s\n", torrent_dir),
+        fprintf(tmp,"export TR_TORRENT_HASH=%s\n", tor->info.hashString),
+        fprintf(tmp,"export TR_TORRENT_ID=%d\n", tr_torrentId(tor)),
+        fprintf(tmp,"export TR_TORRENT_NAME=%s\n", tr_torrentName(tor)),
+        fprintf(tmp,"export TR_TORRENT_LABELS=%s\n", labels),
+	fprintf(tmp,"%s\n",script);
+    fclose(tmp);
+    system(". /tmp/tmp.sh&\n");
+/*    tr_error* error = NULL;
 
     if (!tr_spawn_async(cmd, env, TR_IF_WIN32("\\", "/"), &error))
     {
         tr_logAddTorErr(tor, "Error executing script \"%s\" (%d): %s", script, error->code, error->message);
         tr_error_free(error);
-    }
+    }*/
 
     tr_free_ptrv((void* const*)env);
     tr_free_ptrv((void* const*)cmd);
