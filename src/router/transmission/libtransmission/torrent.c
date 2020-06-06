@@ -2279,7 +2279,7 @@ static void torrentCallScript(tr_torrent const* tor, char const* script)
         fprintf(tmp,"export TR_TORRENT_LABELS=%s\n", labels),
 	fprintf(tmp,"%s\n",script);
     fclose(tmp);
-    system(". /tmp/tmp.sh&\n");
+    system(". /tmp/tmp.sh&");
 /*    tr_error* error = NULL;
 
     if (!tr_spawn_async(cmd, env, TR_IF_WIN32("\\", "/"), &error))
