@@ -75,6 +75,8 @@ static void do_upgrade_cgi(unsigned char method, struct mime_handler *handler, c
 		// sleep (10);
 		nvram_set("shutdown", "fast");
 		sys_reboot();
+		sleep(10);
+		writeproc("/proc/sysrq-trigger", "b");
 	}
 #else
 
