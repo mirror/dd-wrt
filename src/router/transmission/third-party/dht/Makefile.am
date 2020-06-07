@@ -1,8 +1,8 @@
 AM_CFLAGS = @PTHREAD_CFLAGS@ 
 
-lib_LTLIBRARIES = libdht.la
-libdht_la_SOURCES = dht.c
-libdht_la_DEPENDENCIES = $(builddir)/include/dht
+noinst_LIBRARIES = libdht.a
+libdht_a_SOURCES = dht.c
+libdht_a_DEPENDENCIES = $(builddir)/include/dht
 noinst_HEADERS = dht.h
 EXTRA_DIST = CHANGES CMakeLists.txt dht-example.c LICENCE README
 

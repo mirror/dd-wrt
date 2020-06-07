@@ -27,7 +27,7 @@ dist_man_MANS = \
     transmission-show.1
 
 transmission_create_LDADD = \
-    $(top_builddir)/libtransmission/libtransmission.la \
+    $(top_builddir)/libtransmission/libtransmission.a \
     @LIBUPNP_LIBS@ \
     @LIBNATPMP_LIBS@ \
     @INTLLIBS@ \
