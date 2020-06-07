@@ -1,8 +1,8 @@
-lib_LTLIBRARIES = libnatpmp.la
+noinst_LIBRARIES = libnatpmp.a
 
 AM_CFLAGS = @PTHREAD_CFLAGS@ -DENABLE_STRNATPMPERR
 
-libnatpmp_la_SOURCES = \
+libnatpmp_a_SOURCES = \
     getgateway.c \
     natpmp.c \
     wingettimeofday.c
