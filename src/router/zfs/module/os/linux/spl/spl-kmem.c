@@ -202,7 +202,11 @@ spl_kvmalloc(size_t size, gfp_t lflags)
 		return (ptr);
 	}
 
+#ifdef HAVE_VMALLOC_PAGE_KERNEL
 	return (__vmalloc(size, lflags | __GFP_HIGHMEM, PAGE_KERNEL));
+#else
+	return (__vmalloc(size, lflags | __GFP_HIGHMEM));
+#endif
 }
 
 /*
@@ -251,8 +255,12 @@ spl_kmem_alloc_impl(size_t size, int flags, int node)
 		 */
 		if (size > spl_kmem_alloc_max) {
 			if (flags & KM_VMEM) {
+#ifdef HAVE_VMALLOC_PAGE_KERNEL
 				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM,
 				    PAGE_KERNEL);
+#else
+				ptr = __vmalloc(size, lflags | __GFP_HIGHMEM);
+#endif
 			} else {
 				return (NULL);
 			}
