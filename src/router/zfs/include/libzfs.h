@@ -313,7 +313,7 @@ extern nvlist_t *zpool_find_vdev(zpool_handle_t *, const char *, boolean_t *,
     boolean_t *, boolean_t *);
 extern nvlist_t *zpool_find_vdev_by_physpath(zpool_handle_t *, const char *,
     boolean_t *, boolean_t *, boolean_t *);
-extern int zpool_label_disk(libzfs_handle_t *, zpool_handle_t *, char *);
+extern int zpool_label_disk(libzfs_handle_t *, zpool_handle_t *, const char *);
 extern uint64_t zpool_vdev_path_to_guid(zpool_handle_t *zhp, const char *path);
 
 const char *zpool_get_state_str(zpool_handle_t *);
@@ -802,6 +802,13 @@ extern int zfs_mount(zfs_handle_t *, const char *, int);
 extern int zfs_mount_at(zfs_handle_t *, const char *, int, const char *);
 extern int zfs_unmount(zfs_handle_t *, const char *, int);
 extern int zfs_unmountall(zfs_handle_t *, int);
+
+#if defined(__linux__)
+extern int zfs_parse_mount_options(char *mntopts, unsigned long *mntflags,
+    unsigned long *zfsflags, int sloppy, char *badopt, char *mtabopt);
+extern void zfs_adjust_mount_options(zfs_handle_t *zhp, const char *mntpoint,
+    char *mntopts, char *mtabopt);
+#endif
 
 /*
  * Share support functions.
