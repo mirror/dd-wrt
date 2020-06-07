@@ -267,8 +267,8 @@ dnl
 dnl  dht
 
 DHT_CFLAGS="-I\$(top_builddir)/third-party/dht/include"
-DHT_LIBS="\$(top_builddir)/third-party/dht/libdht.la"
-DHT_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/dht/libdht.la"
+DHT_LIBS="\$(top_builddir)/third-party/dht/libdht.a"
+DHT_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/dht/libdht.a"
 build_bundled_dht="yes"
 AC_ARG_ENABLE([external-dht],
               AS_HELP_STRING([--enable-external-dht],[Use system external-dht]),
@@ -293,8 +293,8 @@ dnl
 dnl  libb64
 
 LIBB64_CFLAGS="-I\$(top_srcdir)/third-party/libb64/include"
-LIBB64_LIBS="\$(top_builddir)/third-party/libb64/libb64.la"
-LIBB64_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libb64/libb64.la"
+LIBB64_LIBS="\$(top_builddir)/third-party/libb64/libb64.a"
+LIBB64_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libb64/libb64.a"
 build_bundled_b64="yes"
 AC_ARG_ENABLE([external-b64],
               AS_HELP_STRING([--enable-external-b64],[Use system libb64]),
@@ -355,8 +355,8 @@ if test "x$want_utp" = "xyes"; then
         build_utp="system"
     elif test "x$CXX" != "x"; then
         LIBUTP_CFLAGS="-I\$(top_builddir)/third-party/libutp/include"
-        LIBUTP_LIBS="\$(top_builddir)/third-party/libutp/libutp.la"
-        LIBUTP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libutp/libutp.la"
+        LIBUTP_LIBS="\$(top_builddir)/third-party/libutp/libutp.a"
+        LIBUTP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libutp/libutp.a"
         if test "x$libutp_extra_libs" != "x" ; then
             LIBUTP_LIBS="$LIBUTP_LIBS $libutp_extra_libs"
             LIBUTP_LIBS_QT="$LIBUTP_LIBS_QT $libutp_extra_libs"
@@ -459,8 +459,8 @@ AC_MSG_RESULT([$upnp_version])
 AM_CONDITIONAL([BUILD_MINIUPNP],[test "x$upnp_version" = "xnone"])
 if test "x$upnp_version" = "xnone" ; then
     LIBUPNP_CFLAGS="-I\$(top_builddir)/third-party/miniupnpc/include"
-    LIBUPNP_LIBS="\$(top_builddir)/third-party/miniupnpc/libminiupnp.la"
-    LIBUPNP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/miniupnpc/libminiupnp.la"
+    LIBUPNP_LIBS="\$(top_builddir)/third-party/miniupnpc/libminiupnp.a"
+    LIBUPNP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/miniupnpc/libminiupnp.a"
 else
     AC_DEFINE([SYSTEM_MINIUPNP])
     LIBUPNP_CFLAGS="" 
@@ -479,8 +479,8 @@ dnl
 dnl  Allow usage of system natpmp library 
 
 LIBNATPMP_CFLAGS="-I\$(top_srcdir)/third-party/libnatpmp/" 
-LIBNATPMP_LIBS="\$(top_builddir)/third-party/libnatpmp/libnatpmp.la" 
-LIBNATPMP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libnatpmp/libnatpmp.la" 
+LIBNATPMP_LIBS="\$(top_builddir)/third-party/libnatpmp/libnatpmp.a" 
+LIBNATPMP_LIBS_QT="\$\${TRANSMISSION_TOP}/third-party/libnatpmp/libnatpmp.a" 
 build_bundled_natpmp="yes" 
 AC_ARG_ENABLE([external-natpmp], 
               AS_HELP_STRING([--enable-external-natpmp],[Use system external-natpmp]), 

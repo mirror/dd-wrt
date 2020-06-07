@@ -15,10 +15,10 @@ AM_CFLAGS = \
   @PTHREAD_CFLAGS@ \
   @ZLIB_CFLAGS@
 
-lib_LTLIBRARIES = libtransmission.la
+noinst_LIBRARIES = libtransmission.a
 
 
-libtransmission_la_SOURCES = \
+libtransmission_a_SOURCES = \
   announcer.c \
   announcer-http.c \
   announcer-udp.c \
@@ -82,32 +82,32 @@ libtransmission_la_SOURCES = \
   wildmat.c
 
 if USE_INOTIFY
-libtransmission_la_SOURCES += watchdir-inotify.c
+libtransmission_a_SOURCES += watchdir-inotify.c
 AM_CPPFLAGS += -DWITH_INOTIFY
 endif
 
 if USE_KQUEUE
-libtransmission_la_SOURCES += watchdir-kqueue.c
+libtransmission_a_SOURCES += watchdir-kqueue.c
 AM_CPPFLAGS += -DWITH_KQUEUE
 endif
 
 if WIN32
-libtransmission_la_SOURCES += file-win32.c subprocess-win32.c watchdir-win32.c
+libtransmission_a_SOURCES += file-win32.c subprocess-win32.c watchdir-win32.c
 else
-libtransmission_la_SOURCES += file-posix.c subprocess-posix.c
+libtransmission_a_SOURCES += file-posix.c subprocess-posix.c
 endif
 
 if CRYPTO_USE_OPENSSL
-libtransmission_la_SOURCES += crypto-utils-openssl.c
+libtransmission_a_SOURCES += crypto-utils-openssl.c
 endif
 if CRYPTO_USE_CYASSL
-libtransmission_la_SOURCES += crypto-utils-cyassl.c
+libtransmission_a_SOURCES += crypto-utils-cyassl.c
 if CYASSL_IS_WOLFSSL
 AM_CPPFLAGS += -DCYASSL_IS_WOLFSSL
 endif
 endif
 if CRYPTO_USE_POLARSSL
-libtransmission_la_SOURCES += crypto-utils-polarssl.c
+libtransmission_a_SOURCES += crypto-utils-polarssl.c
 if POLARSSL_IS_MBEDTLS
 AM_CPPFLAGS += -DPOLARSSL_IS_MBEDTLS
 endif
@@ -209,7 +209,7 @@ TESTS = \
 noinst_PROGRAMS = $(TESTS)
 
 apps_ldadd = \
-  ./libtransmission.la  \
+  ./libtransmission.a  \
   @LIBUPNP_LIBS@ \
   @LIBNATPMP_LIBS@ \
   @INTLLIBS@ \

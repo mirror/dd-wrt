@@ -17,7 +17,7 @@ bin_PROGRAMS = \
     transmission-daemon
 
 LDADD = \
-    $(top_builddir)/libtransmission/libtransmission.la \
+    $(top_builddir)/libtransmission/libtransmission.a \
     @LIBUPNP_LIBS@ \
     @LIBNATPMP_LIBS@ \
     @DHT_LIBS@ \

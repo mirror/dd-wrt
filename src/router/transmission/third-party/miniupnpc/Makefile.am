@@ -1,8 +1,8 @@
-lib_LTLIBRARIES = libminiupnp.la
+noinst_LIBRARIES = libminiupnp.a
 
 AM_CFLAGS = @PTHREAD_CFLAGS@ -DNDEBUG -D_GNU_SOURCE
 
-libminiupnp_la_SOURCES = \
+libminiupnp_a_SOURCES = \
 	connecthostport.c \
 	igd_desc_parse.c \
 	minisoap.c \
@@ -17,7 +17,7 @@ libminiupnp_la_SOURCES = \
 	upnperrors.c \
 	upnpreplyparse.c
 
-libminiupnp_la_DEPENDENCIES = $(builddir)/include/miniupnp
+libminiupnp_a_DEPENDENCIES = $(builddir)/include/miniupnp
 
 noinst_HEADERS = \
 	codelength.h \
