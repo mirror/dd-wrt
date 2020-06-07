@@ -1018,11 +1018,14 @@ ADMIN *JsonRpcAuthLogin(CEDAR *c, SOCK *sock, HTTP_HEADER *h)
 			{
 				Lock(h->lock);
 				{
-					if (Cmp(pw_hash, h->HashedPassword, SHA1_SIZE) == 0)
+					if (Cmp(h->HashedPassword, empty_pw_hash, SHA1_SIZE) != 0 && IsZero(h->HashedPassword, sizeof(h->HashedPassword)) == false)
 					{
-						is_hub_admin = true;
+						if (Cmp(pw_hash, h->HashedPassword, SHA1_SIZE) == 0)
+						{
+							is_hub_admin = true;
 
-						StrCpy(hub_name, sizeof(hub_name), h->Name);
+							StrCpy(hub_name, sizeof(hub_name), h->Name);
+						}
 					}
 				}
 				Unlock(h->lock);
@@ -11438,7 +11441,7 @@ void SiReadLocalLogFile(SERVER *s, char *filepath, UINT offset, RPC_READ_LOG_FIL
 
 	Zero(t, sizeof(RPC_READ_LOG_FILE));
 
-	GetExeDir(exe_dir, sizeof(exe_dir));
+	GetLogDir(exe_dir, sizeof(exe_dir));
 	Format(full_path, sizeof(full_path), "%s/%s", exe_dir, filepath);
 
 	// Read file
