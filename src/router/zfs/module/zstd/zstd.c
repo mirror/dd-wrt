@@ -175,9 +175,9 @@ zstd_mempool_deinit(void)
 
 /*
  * tries to get cached allocated buffer from memory pool and allocate new one
- * if neccessary. if a object is older than 2 minutes and does not fit to the
+ * if necessary. if a object is older than 2 minutes and does not fit to the
  * requested size, it will be released and a new cached entry will be allocated
- * if other pooled objects are detected without beeing used for 2 minutes,
+ * if other pooled objects are detected without being used for 2 minutes,
  * they will be released too.
  * the concept is that high frequency memory allocations of bigger objects are
  * expensive.
