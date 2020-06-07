@@ -149,11 +149,11 @@ bool tr_spawn_async(char* const* cmd, char* const* env, char const* work_dir, tr
         return false;
     }
 
-    int const child_pid = fork();
+    int const child_pid = vfork();
 
     if (child_pid == -1)
     {
-        set_system_error(error, errno, "Call to fork()");
+        set_system_error(error, errno, "Call to vfork()");
         return false;
     }
 
