@@ -94,6 +94,18 @@ for i in /tmp/services/* ; do echo `basename $i .start` ; done | grep -v "httpd"
 killall process_monitor
 killall mstpd
 killall resetbutton
+killall cron
+stopservice snmp
+stopservice transmission
+stopservice freeradius
+stopservice pppoeserver
+stopservice upnp
+stopservice olsrd
+stopservice rsync
+killall wdswatchdog.sh
+killall schedulerb.sh
+killall proxywatchdog.sh
+nvram_set("shutdown", "fast");
 if [ -f /tmp/${UPDATEFILE} ]
 then
 	mv /tmp/${UPDATEFILE} ${R}/tmp/

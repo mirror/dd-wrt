@@ -44,4 +44,6 @@ busybox sync
 if [ x$3 = x1 ]
 then
 	busybox reboot
+	sleep 5
+	echo b > /proc/sysrq-trigger
 fi
