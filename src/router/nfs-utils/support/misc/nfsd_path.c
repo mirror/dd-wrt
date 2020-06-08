@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -5,7 +9,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "config.h"
 #include "conffile.h"
 #include "xmalloc.h"
 #include "xlog.h"

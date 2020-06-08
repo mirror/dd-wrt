@@ -204,6 +204,13 @@ create_mtab (void) {
 	int flags;
 	mntFILE *mfp;
 
+	/* Avoid writing if the mtab is a symlink to /proc/mounts, since
+	   that would create a file /proc/mounts in case the proc filesystem
+	   is not mounted, and the fchmod below would also fail. */
+	if (mtab_is_a_symlink()) {
+		return;
+	}
+
 	lock_mtab();
 
 	mfp = nfs_setmntent (MOUNTED, "a+");

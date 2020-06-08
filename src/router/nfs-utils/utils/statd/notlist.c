@@ -210,7 +210,6 @@ nlist_free(notify_list **head, notify_list *entry)
 	if (NL_MON_NAME(entry))
 		free(NL_MON_NAME(entry));
 	free(entry->dns_name);
-	free(entry);
 }
 
 /* 
@@ -219,8 +218,14 @@ nlist_free(notify_list **head, notify_list *entry)
 void 
 nlist_kill(notify_list **head)
 {
-	while (*head)
+	notify_list *next;
+
+	while (*head) {
+		next = (*head)->next;
 		nlist_free(head, *head);
+		free(*head);
+		*head = next;
+	}
 }
 
 /*

@@ -1020,10 +1020,10 @@ main(int argc, char *argv[])
 			    "support setting debug levels\n");
 #endif
 
+	daemon_init(fg);
+
 	if (gssd_check_mechs() != 0)
 		errx(1, "Problem with gssapi library");
-
-	daemon_init(fg);
 
 	event_init();
 

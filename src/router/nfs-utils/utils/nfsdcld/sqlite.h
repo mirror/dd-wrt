@@ -24,6 +24,8 @@ struct cld_client;
 
 int sqlite_prepare_dbh(const char *topdir);
 int sqlite_insert_client(const unsigned char *clname, const size_t namelen);
+int sqlite_insert_client_and_princhash(const unsigned char *clname, const size_t namelen,
+		const unsigned char *clprinchash, const size_t princhashlen);
 int sqlite_remove_client(const unsigned char *clname, const size_t namelen);
 int sqlite_check_client(const unsigned char *clname, const size_t namelen);
 int sqlite_grace_start(void);

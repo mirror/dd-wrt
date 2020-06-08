@@ -28,8 +28,6 @@
 #include "v4root.h"
 #include "pseudoflavors.h"
 
-int v4root_needed;
-
 static nfs_export pseudo_root = {
 	.m_next = NULL,
 	.m_client = NULL,

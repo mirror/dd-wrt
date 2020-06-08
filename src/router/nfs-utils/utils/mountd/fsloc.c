@@ -128,7 +128,7 @@ static struct servers *method_list(char *data)
 	bool v6esc = false;
 
 	xlog(L_NOTICE, "method_list(%s)", data);
-	for (ptr--, listsize=1; ptr; ptr=index(ptr, ':'), listsize++)
+	for (ptr--, listsize=1; ptr; ptr=strchr(ptr, ':'), listsize++)
 		ptr++;
 	list = malloc(listsize * sizeof(char *));
 	copy = strdup(data);

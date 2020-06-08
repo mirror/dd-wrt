@@ -7,6 +7,10 @@
  * - Moved code to nfs-utils/support/nfs from util-linux/mount.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <errno.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -57,7 +61,7 @@ mtab_does_not_exist(void) {
 	return var_mtab_does_not_exist;
 }
 
-static int
+int
 mtab_is_a_symlink(void) {
         get_mtab_info();
         return var_mtab_is_a_symlink;

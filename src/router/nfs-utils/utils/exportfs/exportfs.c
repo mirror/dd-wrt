@@ -651,6 +651,9 @@ out:
 	return result;
 }
 
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
+__attribute__((format (printf, 2, 3)))
+#endif
 static char
 dumpopt(char c, char *fmt, ...)
 {

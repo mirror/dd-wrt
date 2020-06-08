@@ -41,7 +41,7 @@ extern void	load_state(void);
 /*
  * Host status structure and macros.
  */
-stat_chge		SM_stat_chge;
+extern stat_chge	SM_stat_chge;
 #define MY_NAME		SM_stat_chge.mon_name
 #define MY_STATE	SM_stat_chge.state
 

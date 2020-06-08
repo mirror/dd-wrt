@@ -22,7 +22,7 @@
 #include <netdb.h>
 #include <rpc/rpc.h>
 #include <sys/socket.h>
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <errno.h>
 #include "xlog.h"
 #include "rpcmisc.h"

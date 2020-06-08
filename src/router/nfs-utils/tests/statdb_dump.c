@@ -23,6 +23,7 @@
 #include "config.h"
 #endif
 
+#include <string.h>
 #include <stdio.h>
 #include <errno.h>
 #include <arpa/inet.h>

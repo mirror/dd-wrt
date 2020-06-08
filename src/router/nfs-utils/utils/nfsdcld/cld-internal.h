@@ -18,16 +18,27 @@
 #ifndef _CLD_INTERNAL_H_
 #define _CLD_INTERNAL_H_
 
+#if CLD_UPCALL_VERSION >= 2
+#define UPCALL_VERSION		2
+#else
+#define UPCALL_VERSION		1
+#endif
+
 struct cld_client {
 	int			cl_fd;
 	struct event		cl_event;
-	struct cld_msg	cl_msg;
+	union {
+		struct cld_msg		cl_msg;
+#if UPCALL_VERSION >= 2
+		struct cld_msg_v2	cl_msg_v2;
+#endif
+	} cl_u;
 };
 
-uint64_t current_epoch;
-uint64_t recovery_epoch;
-int first_time;
-int num_cltrack_records;
-int num_legacy_records;
+extern uint64_t current_epoch;
+extern uint64_t recovery_epoch;
+extern int first_time;
+extern int num_cltrack_records;
+extern int num_legacy_records;
 
 #endif /* _CLD_INTERNAL_H_ */

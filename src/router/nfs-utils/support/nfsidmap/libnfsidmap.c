@@ -101,7 +101,7 @@ static void default_logger(const char *fmt, ...)
 
 #pragma GCC visibility pop
 nfs4_idmap_log_function_t idmap_log_func = default_logger;
-int idmap_verbosity = 2;
+int idmap_verbosity = 0;
 #pragma GCC visibility push(hidden)
 
 static int id_as_chars(char *name, uid_t *id)
@@ -485,6 +485,9 @@ out:
 
 	if (gss_methods)
 		conf_free_list(gss_methods);
+
+	if (nfs4_methods)
+		conf_free_list(nfs4_methods);
 
 	return ret ? -ENOENT: 0;
 }

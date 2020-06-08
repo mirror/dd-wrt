@@ -77,6 +77,8 @@ static CLIENT *nfs_get_localclient(const struct sockaddr *sap,
 		.len		= (size_t)salen,
 		.buf		= &address,
 	};
+#else
+	(void) salen;
 #endif	/* HAVE_LIBTIRPC */
 	CLIENT *client;
 	int sock;
