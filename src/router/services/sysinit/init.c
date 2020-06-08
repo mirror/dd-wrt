@@ -437,8 +437,8 @@ void start_modules_wait(void)
 			// custom
 			// script
 		{
-			nvram2file("rc_custom", "/tmp/custom.sh");
-			chmod("/tmp/custom.sh", 0700);
+			nvram2file("rc_custom", "/tmp/.rc_custom");
+			chmod("/tmp/.rc_custom", 0700);
 		}
 		stop_run_rc_startup();
 		start_run_rc_startup();
