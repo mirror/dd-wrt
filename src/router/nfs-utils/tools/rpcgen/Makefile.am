@@ -1,5 +1,8 @@
 CLEANFILES = *~
 
+CC=$(CC_FOR_BUILD)
+LIBTOOL = @LIBTOOL@ --tag=CC
+
 bin_PROGRAMS = rpcgen
 man_MANS = rpcgen.1
 
@@ -10,4 +13,9 @@ noinst_HEADERS = proto.h rpc_parse.h rpc_scan.h rpc_util.h
 rpcgen_SOURCES = rpc_clntout.c rpc_cout.c rpc_hout.c rpc_main.c \
 	rpc_parse.c rpc_sample.c rpc_scan.c rpc_svcout.c rpc_tblout.c \
 	rpc_util.c
+CFLAGS=
+rpcgen_CFLAGS=
+rpcgen_CPPLAGS=
+rpcgen_LDFLAGS=
+rpcgen_LDADD=
 rpcgen_LDADD = $(LIBINTL)
