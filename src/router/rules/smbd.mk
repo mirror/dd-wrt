@@ -38,9 +38,9 @@ smbd-install:
 	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.adduser
 	cd $(INSTALLDIR)/smbd/usr/sbin && ln -sf smbd_multicall ksmbd.addshare
 
-	install -D smbd-next/config/samba_ksmbd.webnas $(INSTALLDIR)/smbd-next/etc/config/02samba_ksmbd.webnas
-	install -D smbd-next/config/samba_ksmbd.nvramconfig $(INSTALLDIR)/smbd-next/etc/config/samba_ksmbd.nvramconfig
-	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/smbd-next/etc/config/03zfilesharing.webnas
+	install -D smbd-next/config/samba_ksmbd.webnas $(INSTALLDIR)/smbd/etc/config/02samba_ksmbd.webnas
+	install -D smbd-next/config/samba_ksmbd.nvramconfig $(INSTALLDIR)/smbd/etc/config/samba_ksmbd.nvramconfig
+	install -D filesharing/config/zfilesharing.webnas $(INSTALLDIR)/smbd/etc/config/03zfilesharing.webnas
 
 smbd-clean:
 	$(MAKE) -C smbd-next/smbd clean
