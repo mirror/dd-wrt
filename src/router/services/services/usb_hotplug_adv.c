@@ -60,6 +60,7 @@ static void run_on_mount(char *p)
 /* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
 static bool usb_stop_services()
 {
+	eval("stopservice", "run_rc_usb");
 	eval("stopservice", "cron");
 	eval("stopservice", "samba3");
 	eval("stopservice", "nfs");
@@ -90,6 +91,7 @@ static bool usb_start_services()
 #ifdef HAVE_TRANSMISSION
 	eval("startservice", "transmission", "-f");
 #endif
+	eval("startservice", "run_rc_usb", "-f");
 	return 0;
 }
 
