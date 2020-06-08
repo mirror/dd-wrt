@@ -33,6 +33,7 @@
 #include <linux/netfilter/xt_dscp.h>
 #include <linux/if_bridge.h>
 #include <net/pkt_sched.h>
+#include <linux/prefetch.h>
 
 #include "sfe.h"
 #include "sfe_cm.h"
