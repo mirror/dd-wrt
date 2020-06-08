@@ -84,6 +84,7 @@
 #include "asterisk/data_buffer.h"
 #ifdef HAVE_PJPROJECT
 #include "asterisk/res_pjproject.h"
+#include "asterisk/security_events.h"
 #endif
 
 #define MAX_TIMESTAMP_SKEW	640
@@ -212,13 +213,16 @@ static pj_str_t turnaddr;
 static int turnport = DEFAULT_TURN_PORT;
 static pj_str_t turnusername;
 static pj_str_t turnpassword;
+static struct stasis_subscription *acl_change_sub = NULL;
+static struct ast_sockaddr lo6 = { .len = 0 };
 
-static struct ast_ha *ice_blacklist = NULL;    /*!< Blacklisted ICE networks */
-static ast_rwlock_t ice_blacklist_lock = AST_RWLOCK_INIT_VALUE;
+/*! ACL for ICE addresses */
+static struct ast_acl_list *ice_acl = NULL;
+static ast_rwlock_t ice_acl_lock = AST_RWLOCK_INIT_VALUE;
 
-/*! Blacklisted networks for STUN requests */
-static struct ast_ha *stun_blacklist = NULL;
-static ast_rwlock_t stun_blacklist_lock = AST_RWLOCK_INIT_VALUE;
+/*! ACL for STUN requests */
+static struct ast_acl_list *stun_acl = NULL;
+static ast_rwlock_t stun_acl_lock = AST_RWLOCK_INIT_VALUE;
 
 /*! \brief Pool factory used by pjlib to allocate memory. */
 static pj_caching_pool cachingpool;
@@ -258,8 +262,8 @@ static AST_LIST_HEAD_STATIC(ioqueues, ast_rtp_ioqueue_thread);
 
 /*! \brief Structure which contains ICE host candidate mapping information */
 struct ast_ice_host_candidate {
-	pj_sockaddr local;
-	pj_sockaddr advertised;
+	struct ast_sockaddr local;
+	struct ast_sockaddr advertised;
 	unsigned int include_local;
 	AST_RWLIST_ENTRY(ast_ice_host_candidate) next;
 };
@@ -716,29 +720,6 @@ static void host_candidate_overrides_clear(void)
 	}
 	AST_RWLIST_TRAVERSE_SAFE_END;
 	AST_RWLIST_UNLOCK(&host_candidates);
-}
-
-/*! \brief Applies the ICE host candidate mapping */
-static unsigned int host_candidate_overrides_apply(unsigned int count, unsigned int max_count, pj_sockaddr addrs[])
-{
-	int pos;
-	struct ast_ice_host_candidate *candidate;
-	unsigned int added = 0;
-
-	AST_RWLIST_RDLOCK(&host_candidates);
-	for (pos = 0; pos < count; pos++) {
-		AST_LIST_TRAVERSE(&host_candidates, candidate, next) {
-			if (!pj_sockaddr_cmp(&candidate->local, &addrs[pos])) {
-				pj_sockaddr_copy_addr(&addrs[pos], &candidate->advertised);
-				if (candidate->include_local && (count + (++added)) <= max_count) {
-					pj_sockaddr_cp(&addrs[count + (added - 1)], &candidate->local);
-				}
-				break;
-			}
-		}
-	}
-	AST_RWLIST_UNLOCK(&host_candidates);
-	return added;
 }
 
 /*! \brief Helper function which updates an ast_sockaddr with the candidate used for the component */
@@ -3424,6 +3405,21 @@ static void rtp_learning_start(struct ast_rtp *rtp)
 }
 
 #ifdef HAVE_PJPROJECT
+static void acl_change_stasis_cb(void *data, struct stasis_subscription *sub, struct stasis_message *message);
+
+/*!
+ * \internal
+ * \brief Resets and ACL to empty state.
+ *
+ * \return Nothing
+ */
+static void rtp_unload_acl(ast_rwlock_t *lock, struct ast_acl_list **acl)
+{
+	ast_rwlock_wrlock(lock);
+	*acl = ast_free_acl_list(*acl);
+	ast_rwlock_unlock(lock);
+}
+
 /*!
  * \internal
  * \brief Checks an address against the ICE blacklist
@@ -3433,19 +3429,13 @@ static void rtp_learning_start(struct ast_rtp *rtp)
  * \retval 0 if address is not ICE blacklisted
  * \retval 1 if address is ICE blacklisted
  */
-static int rtp_address_is_ice_blacklisted(const pj_sockaddr_t *address)
+static int rtp_address_is_ice_blacklisted(const struct ast_sockaddr *address)
 {
-	char buf[PJ_INET6_ADDRSTRLEN];
-	struct ast_sockaddr saddr;
-	int result = 1;
+	int result = 0;
 
-	ast_sockaddr_parse(&saddr, pj_sockaddr_print(address, buf, sizeof(buf), 0), 0);
-
-	ast_rwlock_rdlock(&ice_blacklist_lock);
-	if (!ice_blacklist || (ast_apply_ha(ice_blacklist, &saddr) == AST_SENSE_ALLOW)) {
-		result = 0;
-	}
-	ast_rwlock_unlock(&ice_blacklist_lock);
+	ast_rwlock_rdlock(&ice_acl_lock);
+	result |= ast_apply_acl_nolog(ice_acl, address) == AST_SENSE_DENY;
+	ast_rwlock_unlock(&ice_acl_lock);
 
 	return result;
 }
@@ -3464,14 +3454,11 @@ static int rtp_address_is_ice_blacklisted(const pj_sockaddr_t *address)
  */
 static int stun_address_is_blacklisted(const struct ast_sockaddr *addr)
 {
-	int result = 1;
+	int result = 0;
 
-	ast_rwlock_rdlock(&stun_blacklist_lock);
-	if (!stun_blacklist
-		|| ast_apply_ha(stun_blacklist, addr) == AST_SENSE_ALLOW) {
-		result = 0;
-	}
-	ast_rwlock_unlock(&stun_blacklist_lock);
+	ast_rwlock_rdlock(&stun_acl_lock);
+	result |= ast_apply_acl_nolog(stun_acl, addr) == AST_SENSE_DENY;
+	ast_rwlock_unlock(&stun_acl_lock);
 
 	return result;
 }
@@ -3480,41 +3467,123 @@ static int stun_address_is_blacklisted(const struct ast_sockaddr *addr)
 static void rtp_add_candidates_to_ice(struct ast_rtp_instance *instance, struct ast_rtp *rtp, struct ast_sockaddr *addr, int port, int component,
 				      int transport)
 {
-	pj_sockaddr address[PJ_ICE_MAX_CAND];
-	unsigned int count = PJ_ARRAY_SIZE(address), pos = 0;
-	unsigned int max_count = PJ_ARRAY_SIZE(address);
-	int basepos = -1;
+	unsigned int count = 0;
+	struct ifaddrs *ifa, *ia;
+	struct ast_sockaddr tmp;
+	pj_sockaddr pjtmp;
+	struct ast_ice_host_candidate *candidate;
+	int af_inet_ok = 0, af_inet6_ok = 0;
 
-	/* Add all the local interface IP addresses */
 	if (ast_sockaddr_is_ipv4(addr)) {
-		pj_enum_ip_interface(pj_AF_INET(), &count, address);
+		af_inet_ok = 1;
 	} else if (ast_sockaddr_is_any(addr)) {
-		pj_enum_ip_interface(pj_AF_UNSPEC(), &count, address);
+		af_inet_ok = af_inet6_ok = 1;
 	} else {
-		pj_enum_ip_interface(pj_AF_INET6(), &count, address);
+		af_inet6_ok = 1;
 	}
 
-	count += host_candidate_overrides_apply(count, max_count, address);
-
-	for (pos = 0; pos < count; pos++) {
-		if (!rtp_address_is_ice_blacklisted(&address[pos])) {
-			if (basepos == -1) {
-				basepos = pos;
+	if (getifaddrs(&ifa) < 0) {
+		/* If we can't get addresses, we can't load ICE candidates */
+		ast_log(LOG_ERROR, "Error obtaining list of local addresses: %s\n",
+				strerror(errno));
+	} else {
+		/* Iterate through the list of addresses obtained from the system,
+		 * until we've iterated through all of them, or accepted
+		 * PJ_ICE_MAX_CAND candidates */
+		for (ia = ifa; ia && count < PJ_ICE_MAX_CAND; ia = ia->ifa_next) {
+			/* Interface is either not UP or doesn't have an address assigned,
+			 * eg, a ppp that just completed LCP but no IPCP yet */
+			if (!ia->ifa_addr || (ia->ifa_flags & IFF_UP) == 0) {
+				continue;
 			}
-			pj_sockaddr_set_port(&address[pos], port);
+
+			/* Filter out non-IPvX addresses, eg, link-layer */
+			if (ia->ifa_addr->sa_family != AF_INET && ia->ifa_addr->sa_family != AF_INET6) {
+				continue;
+			}
+
+			ast_sockaddr_from_sockaddr(&tmp, ia->ifa_addr);
+
+			if (ia->ifa_addr->sa_family == AF_INET) {
+				const struct sockaddr_in *sa_in = (struct sockaddr_in*)ia->ifa_addr;
+				if (!af_inet_ok) {
+					continue;
+				}
+
+				/* Skip 127.0.0.0/8 (loopback) */
+				/* Don't use IFF_LOOPBACK check since one could assign usable
+				 * publics to the loopback */
+				if ((sa_in->sin_addr.s_addr & htonl(0xFF000000)) == htonl(0x7F000000)) {
+					continue;
+				}
+
+				/* Skip 0.0.0.0/8 based on RFC1122, and from pjproject */
+				if ((sa_in->sin_addr.s_addr & htonl(0xFF000000)) == 0) {
+					continue;
+				}
+			} else { /* ia->ifa_addr->sa_family == AF_INET6 */
+				if (!af_inet6_ok) {
+					continue;
+				}
+
+				/* Filter ::1 */
+				if (!ast_sockaddr_cmp_addr(&lo6, &tmp)) {
+					continue;
+				}
+			}
+
+			/* Pull in the host candidates from [ice_host_candidates] */
+			AST_RWLIST_RDLOCK(&host_candidates);
+			AST_LIST_TRAVERSE(&host_candidates, candidate, next) {
+				if (!ast_sockaddr_cmp(&candidate->local, &tmp)) {
+					/* candidate->local matches actual assigned, so check if
+					 * advertised is blacklisted, if not, add it to the
+					 * advertised list.  Not that it would make sense to remap
+					 * a local address to a blacklisted address, but honour it
+					 * anyway. */
+					if (!rtp_address_is_ice_blacklisted(&candidate->advertised)) {
+						ast_sockaddr_to_pj_sockaddr(&candidate->advertised, &pjtmp);
+						pj_sockaddr_set_port(&pjtmp, port);
+						ast_rtp_ice_add_cand(instance, rtp, component, transport,
+								PJ_ICE_CAND_TYPE_HOST, 65535, &pjtmp, &pjtmp, NULL,
+								pj_sockaddr_get_len(&pjtmp));
+						++count;
+					}
+
+					if (!candidate->include_local) {
+						/* We don't want to advertise the actual address */
+						ast_sockaddr_setnull(&tmp);
+					}
+
+					break;
+				}
+			}
+			AST_RWLIST_UNLOCK(&host_candidates);
+
+			/* we had an entry in [ice_host_candidates] that matched, and
+			 * didn't have include_local_address set.  Alternatively, adding
+			 * that match resulted in us going to PJ_ICE_MAX_CAND */
+			if (ast_sockaddr_isnull(&tmp) || count == PJ_ICE_MAX_CAND) {
+				continue;
+			}
+
+			if (rtp_address_is_ice_blacklisted(&tmp)) {
+				continue;
+			}
+
+			ast_sockaddr_to_pj_sockaddr(&tmp, &pjtmp);
+			pj_sockaddr_set_port(&pjtmp, port);
 			ast_rtp_ice_add_cand(instance, rtp, component, transport,
-				PJ_ICE_CAND_TYPE_HOST, 65535, &address[pos], &address[pos], NULL,
-				pj_sockaddr_get_len(&address[pos]));
+					PJ_ICE_CAND_TYPE_HOST, 65535, &pjtmp, &pjtmp, NULL,
+					pj_sockaddr_get_len(&pjtmp));
+			++count;
 		}
-	}
-	if (basepos == -1) {
-		/* start with first address unless excluded above */
-		basepos = 0;
 	}
 
 	/* If configured to use a STUN server to get our external mapped address do so */
-	if (count && stunaddr.sin_addr.s_addr && !stun_address_is_blacklisted(addr) &&
-		(ast_sockaddr_is_ipv4(addr) || ast_sockaddr_is_any(addr))) {
+	if (stunaddr.sin_addr.s_addr && !stun_address_is_blacklisted(addr) &&
+		(ast_sockaddr_is_ipv4(addr) || ast_sockaddr_is_any(addr)) &&
+		count < PJ_ICE_MAX_CAND) {
 		struct sockaddr_in answer;
 		int rsp;
 
@@ -3527,41 +3596,38 @@ static void rtp_add_candidates_to_ice(struct ast_rtp_instance *instance, struct 
 			? rtp->rtcp->s : rtp->s, &stunaddr, NULL, &answer);
 		ao2_lock(instance);
 		if (!rsp) {
-			pj_sockaddr base;
+			struct ast_rtp_engine_ice_candidate *candidate;
+			pj_sockaddr ext, base;
+			pj_str_t mapped = pj_str(ast_strdupa(ast_inet_ntoa(answer.sin_addr)));
+			int srflx = 1, baseset = 0;
+			struct ao2_iterator i;
 
-			/* Use the first local IPv4 host candidate as the base */
-			for (pos = basepos; pos < count; pos++) {
-				if (address[pos].addr.sa_family == PJ_AF_INET &&
-					!rtp_address_is_ice_blacklisted(&address[pos])) {
-					pj_sockaddr_cp(&base, &address[pos]);
-					break;
+			pj_sockaddr_init(pj_AF_INET(), &ext, &mapped, ntohs(answer.sin_port));
+
+			/*
+			 * If the returned address is the same as one of our host
+			 * candidates, don't send the srflx.  At the same time,
+			 * we need to set the base address (raddr).
+			 */
+			i = ao2_iterator_init(rtp->ice_local_candidates, 0);
+			while (srflx && (candidate = ao2_iterator_next(&i))) {
+				if (!baseset && ast_sockaddr_is_ipv4(&candidate->address)) {
+					baseset = 1;
+					ast_sockaddr_to_pj_sockaddr(&candidate->address, &base);
 				}
+
+				if (!pj_sockaddr_cmp(&candidate->address, &ext)) {
+					srflx = 0;
+				}
+
+				ao2_ref(candidate, -1);
 			}
+			ao2_iterator_destroy(&i);
 
-			if (pos < count) {
-				pj_sockaddr ext;
-				pj_str_t mapped = pj_str(ast_strdupa(ast_inet_ntoa(answer.sin_addr)));
-				int srflx = 1;
-
-				pj_sockaddr_init(pj_AF_INET(), &ext, &mapped, ntohs(answer.sin_port));
-
-				/*
-				 * If the returned address is the same as one of our host
-				 * candidates, don't send the srflx
-				 */
-				for (pos = 0; pos < count; pos++) {
-					if (pj_sockaddr_cmp(&address[pos], &ext) == 0 &&
-						!rtp_address_is_ice_blacklisted(&address[pos])) {
-						srflx = 0;
-						break;
-					}
-				}
-
-				if (srflx) {
-					ast_rtp_ice_add_cand(instance, rtp, component, transport,
-						PJ_ICE_CAND_TYPE_SRFLX, 65535, &ext, &base, &base,
-						pj_sockaddr_get_len(&ext));
-				}
+			if (srflx && baseset) {
+				ast_rtp_ice_add_cand(instance, rtp, component, transport,
+					PJ_ICE_CAND_TYPE_SRFLX, 65535, &ext, &base, &base,
+					pj_sockaddr_get_len(&ext));
 			}
 		}
 	}
@@ -4925,7 +4991,9 @@ static int rtp_raw_write(struct ast_rtp_instance *instance, struct ast_frame *fr
 			if (payload) {
 				payload->size = packet_len;
 				memcpy(payload->buf, rtpheader, packet_len);
-				ast_data_buffer_put(rtp->send_buffer, rtp->seqno, payload);
+				if (ast_data_buffer_put(rtp->send_buffer, rtp->seqno, payload) == -1) {
+					ast_free(payload);
+				}
 			}
 		}
 
@@ -5426,7 +5494,7 @@ static void process_dtmf_rfc2833(struct ast_rtp_instance *instance, unsigned cha
 
 		if (event_end & 0x80) {
 			/* End event */
-			if ((rtp->last_seqno != seqno) && (timestamp > rtp->last_end_timestamp)) {
+			if ((rtp->last_seqno != seqno) && ((timestamp > rtp->last_end_timestamp) || ((timestamp == 0) && (rtp->last_end_timestamp == 0)))) {
 				rtp->last_end_timestamp = timestamp;
 				rtp->dtmf_duration = new_duration;
 				rtp->resp = resp;
@@ -6604,6 +6672,11 @@ static int bridge_p2p_rtp_write(struct ast_rtp_instance *instance,
 	reconstruct |= (mark << 23);
 	rtpheader[0] = htonl(reconstruct);
 
+	if (mark) {
+		/* make this rtp instance aware of the new ssrc it is sending */
+		bridged->ssrc = ntohl(rtpheader[2]);
+	}
+
 	/* Send the packet back out */
 	res = rtp_sendto(instance1, (void *)rtpheader, len, 0, &remote_address, &ice);
 	if (res < 0) {
@@ -7730,7 +7803,7 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 		}
 
 		return AST_LIST_FIRST(&frames);
-	} else if (((abs(seqno - rtp->expectedrxseqno) > 100) && timestamp > rtp->lastividtimestamp) ||
+	} else if ((((seqno - rtp->expectedrxseqno) > 100) && timestamp > rtp->lastividtimestamp) ||
 		ast_data_buffer_count(rtp->recv_buffer) == ast_data_buffer_max(rtp->recv_buffer)) {
 		int inserted = 0;
 
@@ -7761,6 +7834,14 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 					prev_seqno = seqno;
 					ast_debug(2, "Inserted just received packet with sequence number '%d' in correct order on RTP instance '%p'\n",
 						seqno, instance);
+				}
+				/* It is possible due to packet retransmission for this packet to also exist in the receive
+				 * buffer so we explicitly remove it in case this occurs, otherwise the receive buffer will
+				 * never be empty.
+				 */
+				payload = (struct ast_rtp_rtcp_nack_payload *)ast_data_buffer_remove(rtp->recv_buffer, seqno);
+				if (payload) {
+					ast_free(payload);
 				}
 				rtp->expectedrxseqno++;
 				if (rtp->expectedrxseqno == SEQNO_CYCLE_OVER) {
@@ -7867,7 +7948,9 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 
 		payload->size = res;
 		memcpy(payload->buf, rtpheader, res);
-		ast_data_buffer_put(rtp->recv_buffer, seqno, payload);
+		if (ast_data_buffer_put(rtp->recv_buffer, seqno, payload) == -1) {
+			ast_free(payload);
+		}
 
 		/* If this sequence number is removed that means we had a gap and this packet has filled it in
 		 * some. Since it was part of the gap we will have already added any other missing sequence numbers
@@ -7944,12 +8027,15 @@ static struct ast_frame *ast_rtp_read(struct ast_rtp_instance *instance, int rtc
 			int res = 0;
 			int ice;
 			int sr;
-			size_t data_size = AST_UUID_STR_LEN + 128 + (seqno - rtp->expectedrxseqno) / 17;
+			size_t data_size = AST_UUID_STR_LEN + 128 + (AST_VECTOR_SIZE(&rtp->missing_seqno) * 4);
 			RAII_VAR(unsigned char *, rtcpheader, NULL, ast_free_ptr);
 			RAII_VAR(struct ast_rtp_rtcp_report *, rtcp_report,
 					ast_rtp_rtcp_report_alloc(rtp->themssrc_valid ? 1 : 0),
 					ao2_cleanup);
 
+			/* Sufficient space for RTCP headers and report, SDES with CNAME, NACK header,
+			 * and worst case 4 bytes per missing sequence number.
+			 */
 			rtcpheader = ast_malloc(sizeof(*rtcpheader) + data_size);
 			if (!rtcpheader) {
 				ast_debug(1, "Failed to allocate memory for NACK\n");
@@ -8760,6 +8846,44 @@ static char *handle_cli_rtp_set_debug(struct ast_cli_entry *e, int cmd, struct a
 	return CLI_SHOWUSAGE;   /* default, failure */
 }
 
+
+static char *handle_cli_rtp_settings(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
+{
+	switch (cmd) {
+	case CLI_INIT:
+		e->command = "rtp show settings";
+		e->usage =
+			"Usage: rtp show settings\n"
+			"       Display RTP configuration settings\n";
+		return NULL;
+	case CLI_GENERATE:
+		return NULL;
+	}
+
+	if (a->argc != 3) {
+		return CLI_SHOWUSAGE;
+	}
+
+	ast_cli(a->fd, "\n\nGeneral Settings:\n");
+	ast_cli(a->fd, "----------------\n");
+	ast_cli(a->fd, "  Port start:      %d\n", rtpstart);
+	ast_cli(a->fd, "  Port end:        %d\n", rtpend);
+#ifdef SO_NO_CHECK
+	ast_cli(a->fd, "  Checksums:       %s\n", AST_CLI_YESNO(nochecksums == 0));
+#endif
+	ast_cli(a->fd, "  DTMF Timeout:    %d\n", dtmftimeout);
+	ast_cli(a->fd, "  Strict RTP:      %s\n", AST_CLI_YESNO(strictrtp));
+
+	if (strictrtp) {
+		ast_cli(a->fd, "  Probation:       %d frames\n", learning_min_sequential);
+	}
+#ifdef HAVE_PJPROJECT
+	ast_cli(a->fd, "  ICE support:     %s\n", AST_CLI_YESNO(icesupport));
+#endif
+	return CLI_SUCCESS;
+}
+
+
 static char *handle_cli_rtcp_set_debug(struct ast_cli_entry *e, int cmd, struct ast_cli_args *a)
 {
 	switch (cmd) {
@@ -8822,79 +8946,21 @@ static char *handle_cli_rtcp_set_stats(struct ast_cli_entry *e, int cmd, struct 
 
 static struct ast_cli_entry cli_rtp[] = {
 	AST_CLI_DEFINE(handle_cli_rtp_set_debug,  "Enable/Disable RTP debugging"),
+	AST_CLI_DEFINE(handle_cli_rtp_settings,   "Display RTP settings"),
 	AST_CLI_DEFINE(handle_cli_rtcp_set_debug, "Enable/Disable RTCP debugging"),
 	AST_CLI_DEFINE(handle_cli_rtcp_set_stats, "Enable/Disable RTCP stats"),
 };
 
-#ifdef HAVE_PJPROJECT
-/*!
- * \internal
- * \brief Clear the configured blacklist.
- * \since 13.16.0
- *
- * \param lock R/W lock protecting the blacklist
- * \param blacklist List to clear
- *
- * \return Nothing
- */
-static void blacklist_clear(ast_rwlock_t *lock, struct ast_ha **blacklist)
-{
-	ast_rwlock_wrlock(lock);
-	ast_free_ha(*blacklist);
-	*blacklist = NULL;
-	ast_rwlock_unlock(lock);
-}
-
-/*!
- * \internal
- * \brief Load the blacklist configuration.
- * \since 13.16.0
- *
- * \param cfg Raw config file options.
- * \param option_name Blacklist option name
- * \param lock R/W lock protecting the blacklist
- * \param blacklist List to load
- *
- * \return Nothing
- */
-static void blacklist_config_load(struct ast_config *cfg, const char *option_name,
-	ast_rwlock_t *lock, struct ast_ha **blacklist)
-{
-	struct ast_variable *var;
-
-	ast_rwlock_wrlock(lock);
-	for (var = ast_variable_browse(cfg, "general"); var; var = var->next) {
-		if (!strcasecmp(var->name, option_name)) {
-			struct ast_ha *na;
-			int ha_error = 0;
-
-			na = ast_append_ha("d", var->value, *blacklist, &ha_error);
-			if (!na) {
-				ast_log(LOG_WARNING, "Invalid %s value: %s\n",
-					option_name, var->value);
-			} else {
-				*blacklist = na;
-			}
-			if (ha_error) {
-				ast_log(LOG_ERROR,
-					"Bad %s configuration value line %d: %s\n",
-					option_name, var->lineno, var->value);
-			}
-		}
-	}
-	ast_rwlock_unlock(lock);
-}
-#endif
-
-static int rtp_reload(int reload)
+static int rtp_reload(int reload, int by_external_config)
 {
 	struct ast_config *cfg;
 	const char *s;
-	struct ast_flags config_flags = { reload ? CONFIG_FLAG_FILEUNCHANGED : 0 };
+	struct ast_flags config_flags = { (reload && !by_external_config) ? CONFIG_FLAG_FILEUNCHANGED : 0 };
 
 #ifdef HAVE_PJPROJECT
 	struct ast_variable *var;
 	struct ast_ice_host_candidate *candidate;
+	int acl_subscription_flag = 0;
 #endif
 
 	cfg = ast_config_load2("rtp.conf", "rtp", config_flags);
@@ -8930,8 +8996,6 @@ static int rtp_reload(int reload)
 	turnusername = pj_str(NULL);
 	turnpassword = pj_str(NULL);
 	host_candidate_overrides_clear();
-	blacklist_clear(&ice_blacklist_lock, &ice_blacklist);
-	blacklist_clear(&stun_blacklist_lock, &stun_blacklist);
 #endif
 
 #if defined(HAVE_OPENSSL) && (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_SRTP)
@@ -9026,7 +9090,6 @@ static int rtp_reload(int reload)
 	AST_RWLIST_WRLOCK(&host_candidates);
 	for (var = ast_variable_browse(cfg, "ice_host_candidates"); var; var = var->next) {
 		struct ast_sockaddr local_addr, advertised_addr;
-		pj_str_t address;
 		unsigned int include_local_address = 0;
 		char *sep;
 
@@ -9058,18 +9121,52 @@ static int rtp_reload(int reload)
 
 		candidate->include_local = include_local_address;
 
-		pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&address, ast_sockaddr_stringify(&local_addr)), &candidate->local);
-		pj_sockaddr_parse(pj_AF_UNSPEC(), 0, pj_cstr(&address, ast_sockaddr_stringify(&advertised_addr)), &candidate->advertised);
+		ast_sockaddr_copy(&candidate->local, &local_addr);
+		ast_sockaddr_copy(&candidate->advertised, &advertised_addr);
 
 		AST_RWLIST_INSERT_TAIL(&host_candidates, candidate, next);
 	}
 	AST_RWLIST_UNLOCK(&host_candidates);
 
-	/* Read ICE blacklist configuration lines */
-	blacklist_config_load(cfg, "ice_blacklist", &ice_blacklist_lock, &ice_blacklist);
+	ast_rwlock_wrlock(&ice_acl_lock);
+	ast_rwlock_wrlock(&stun_acl_lock);
 
-	/* Read STUN blacklist configuration lines */
-	blacklist_config_load(cfg, "stun_blacklist", &stun_blacklist_lock, &stun_blacklist);
+	ice_acl = ast_free_acl_list(ice_acl);
+	stun_acl = ast_free_acl_list(stun_acl);
+
+	for (var = ast_variable_browse(cfg, "general"); var; var = var->next) {
+		const char* sense = NULL;
+		struct ast_acl_list **acl = NULL;
+		if (strncasecmp(var->name, "ice_", 4) == 0) {
+			sense = var->name + 4;
+			acl = &ice_acl;
+		} else if (strncasecmp(var->name, "stun_", 5) == 0) {
+			sense = var->name + 5;
+			acl = &stun_acl;
+		} else {
+			continue;
+		}
+
+		if (strcasecmp(sense, "blacklist") == 0) {
+			sense = "deny";
+		}
+
+		if (strcasecmp(sense, "acl") && strcasecmp(sense, "permit") && strcasecmp(sense, "deny")) {
+			continue;
+		}
+
+		ast_append_acl(sense, var->value, acl, NULL, &acl_subscription_flag);
+	}
+	ast_rwlock_unlock(&ice_acl_lock);
+	ast_rwlock_unlock(&stun_acl_lock);
+
+	if (acl_subscription_flag && !acl_change_sub) {
+		acl_change_sub = stasis_subscribe(ast_security_topic(), acl_change_stasis_cb, NULL);
+		stasis_subscription_accept_message_type(acl_change_sub, ast_named_acl_change_type());
+		stasis_subscription_set_filter(acl_change_sub, STASIS_SUBSCRIPTION_FILTER_SELECTIVE);
+	} else if (!acl_subscription_flag && acl_change_sub) {
+		acl_change_sub = stasis_unsubscribe_and_join(acl_change_sub);
+	}
 #endif
 #if defined(HAVE_OPENSSL) && (OPENSSL_VERSION_NUMBER >= 0x10001000L) && !defined(OPENSSL_NO_SRTP)
 	if ((s = ast_variable_retrieve(cfg, "general", "dtls_mtu"))) {
@@ -9094,7 +9191,7 @@ static int rtp_reload(int reload)
 
 static int reload_module(void)
 {
-	rtp_reload(1);
+	rtp_reload(1, 0);
 	return 0;
 }
 
@@ -9112,12 +9209,24 @@ static void rtp_terminate_pjproject(void)
 	ast_pjproject_caching_pool_destroy(&cachingpool);
 	pj_shutdown();
 }
+
+static void acl_change_stasis_cb(void *data, struct stasis_subscription *sub, struct stasis_message *message)
+{
+	if (stasis_message_type(message) != ast_named_acl_change_type()) {
+		return;
+	}
+
+	/* There is no simple way to just reload the ACLs, so just execute a forced reload. */
+	rtp_reload(1, 1);
+}
 #endif
 
 static int load_module(void)
 {
 #ifdef HAVE_PJPROJECT
 	pj_lock_t *lock;
+
+	ast_sockaddr_parse(&lo6, "::1", PARSE_PORT_IGNORE);
 
 	AST_PJPROJECT_INIT_LOG_LEVEL();
 	if (pj_init() != PJ_SUCCESS) {
@@ -9192,7 +9301,7 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	rtp_reload(0);
+	rtp_reload(0, 0);
 
 	return AST_MODULE_LOAD_SUCCESS;
 }
@@ -9212,6 +9321,10 @@ static int unload_module(void)
 	host_candidate_overrides_clear();
 	pj_thread_register_check();
 	rtp_terminate_pjproject();
+
+	acl_change_sub = stasis_unsubscribe_and_join(acl_change_sub);
+	rtp_unload_acl(&ice_acl_lock, &ice_acl);
+	rtp_unload_acl(&stun_acl_lock, &stun_acl);
 #endif
 
 	return 0;
