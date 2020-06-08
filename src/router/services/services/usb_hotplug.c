@@ -295,11 +295,11 @@ static int usb_process_path(char *path, char *fs, char *target)
 //      writeprocsys("vm/swappiness","90");
 //      writeprocsys("vm/overcommit_memory","2");
 //      writeprocsys("vm/overcommit_ratio","145");
-	eval("startservice_f", "samba3");
-	eval("startservice_f", "nfs");
-	eval("startservice_f", "rsync");
-	eval("startservice_f", "ftpsrv");
-	eval("startservice_f", "dlna");
+	eval("startservice", "samba3", "-f");
+	eval("startservice", "nfs", "-f");
+	eval("startservice", "rsync", "-f");
+	eval("startservice", "ftpsrv", "-f");
+	eval("startservice", "dlna", "-f");
 	if (ret == 0)
 		run_on_mount(path);
 	return ret;
@@ -359,11 +359,11 @@ static void usb_unmount(char *path)
 		strcpy(mount_point, path);
 	eval("/bin/umount", mount_point);
 	unlink(DUMPFILE);
-	eval("startservice_f", "samba3");
-	eval("startservice_f", "ftpsrv");
-	eval("startservice_f", "nfs");
-	eval("startservice_f", "rsync");
-	eval("startservice_f", "dlna");
+	eval("startservice", "samba3", "-f");
+	eval("startservice", "ftpsrv", "-f");
+	eval("startservice", "nfs", "-f");
+	eval("startservice", "rsync", "-f");
+	eval("startservice", "dlna", "-f");
 	return;
 }
 
