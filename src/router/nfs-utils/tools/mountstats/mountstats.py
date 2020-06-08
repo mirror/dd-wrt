@@ -308,6 +308,8 @@ class DeviceData:
             op = words[0][:-1]
             self.__rpc_data['ops'] += [op]
             self.__rpc_data[op] = [int(word) for word in words[1:]]
+            if len(self.__rpc_data[op]) < 9:
+                self.__rpc_data[op] += [0]
 
     def parse_stats(self, lines):
         """Turn a list of lines from a mount stat file into a 
@@ -582,7 +584,7 @@ class DeviceData:
             self.__nfs_data['fstype'] = 'nfs4'
         self.__rpc_data['ops'] = ops
         for op in ops:
-            self.__rpc_data[op] = [0 for i in range(8)]
+            self.__rpc_data[op] = [0 for i in range(9)]
 
     def accumulate_iostats(self, new_stats):
         """Accumulate counters from all RPC op buckets in new_stats.  This is
@@ -607,6 +609,8 @@ class DeviceData:
         queued_for = float(rpc_stats[5])
         rtt = float(rpc_stats[6])
         exe = float(rpc_stats[7])
+        if len(rpc_stats) >= 9:
+            errs = int(rpc_stats[8])
 
         # prevent floating point exceptions
         if ops != 0:
@@ -615,12 +619,15 @@ class DeviceData:
             rtt_per_op = rtt / ops
             exe_per_op = exe / ops
             queued_for_per_op = queued_for / ops
+            if len(rpc_stats) >= 9:
+                errs_percent = (errs * 100) / ops
         else:
             kb_per_op = 0.0
             retrans_percent = 0.0
             rtt_per_op = 0.0
             exe_per_op = 0.0
             queued_for_per_op = 0.0
+            errs_percent = 0.0
 
         op += ':'
         print(format(op.lower(), '<16s'), end='')
@@ -630,7 +637,10 @@ class DeviceData:
         print(format('retrans', '>16s'), end='')
         print(format('avg RTT (ms)', '>16s'), end='')
         print(format('avg exe (ms)', '>16s'), end='')
-        print(format('avg queue (ms)', '>16s'))
+        print(format('avg queue (ms)', '>16s'), end='')
+        if len(rpc_stats) >= 9:
+            print(format('errors', '>16s'), end='')
+        print()
 
         print(format((ops / sample_time), '>24.3f'), end='')
         print(format((kilobytes / sample_time), '>16.3f'), end='')
@@ -639,7 +649,11 @@ class DeviceData:
         print(format(retransmits, '>16'), end='')
         print(format(rtt_per_op, '>16.3f'), end='')
         print(format(exe_per_op, '>16.3f'), end='')
-        print(format(queued_for_per_op, '>16.3f'))
+        print(format(queued_for_per_op, '>16.3f'), end='')
+        if len(rpc_stats) >= 9:
+            errors = '{0:>10.0f} ({1:>3.1f}%)'.format(errs, errs_percent).strip()
+            print(format(errors, '>16'), end='')
+        print()
 
     def display_iostats(self, sample_time):
         """Display NFS and RPC stats in an iostat-like way

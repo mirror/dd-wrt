@@ -185,15 +185,37 @@ on stable storage by manipulating information on the filesystem
 directly, in the directory to which \fI/proc/fs/nfsd/nfsv4recoverydir\fR
 points.
 .PP
-This daemon requires a kernel that supports the nfsdcld upcall. If the
-kernel does not support the new upcall, or is using the legacy client
-name tracking code then it will not create the pipe that nfsdcld uses to
-talk to the kernel.
+This changed with the original introduction of \fBnfsdcld\fR upcall in kernel version 3.4,
+which was later deprecated in favor of the \fBnfsdcltrack\fR(8) usermodehelper
+program, support for which was added in kernel version 3.8.  However, since the
+usermodehelper upcall does not work in containers, support for a new version of
+the \fBnfsdcld\fR upcall was added in kernel version 5.2.
+.PP
+This daemon requires a kernel that supports the \fBnfsdcld\fR upcall. On older kernels, if
+the legacy client name tracking code was in use, then the kernel would not create the
+pipe that \fBnfsdcld\fR uses to talk to the kernel.  On newer kernels, nfsd attempts to
+initialize client tracking in the following order:  First, the \fBnfsdcld\fR upcall.  Second,
+the \fBnfsdcltrack\fR usermodehelper upcall.  Finally, the legacy client tracking.
 .PP
 This daemon should be run as root, as the pipe that it uses to communicate
 with the kernel is only accessable by root. The daemon however does drop all
 superuser capabilities after starting. Because of this, the \fIstoragedir\fR
 should be owned by root, and be readable and writable by owner.
+.PP
+The daemon now supports different upcall versions to allow the kernel to pass additional
+data to be stored in the on-disk database.  The kernel will query the supported upcall
+version from \fBnfsdcld\fR during client tracking initialization.  A restart of \fBnfsd\fR is
+not necessary after upgrading \fBnfsdcld\fR, however \fBnfsd\fR will not use a later upcall
+version until restart.  A restart of \fBnfsd is necessary\fR after downgrading \fBnfsdcld\fR,
+to ensure that \fBnfsd\fR does not use an upcall version that \fBnfsdcld\fR does not support.
+Additionally, a downgrade of \fBnfsdcld\fR requires the schema of the on-disk database to
+be downgraded as well.  That can be accomplished using the \fBclddb-tool\fR(8) utility.
+.SH FILES
+.TP
+.B /var/lib/nfs/nfsdcld/main.sqlite
+.SH SEE ALSO
+.BR nfsdcltrack "(8), " clddb-tool (8)
 .SH "AUTHORS"
 .IX Header "AUTHORS"
-The nfsdcld daemon was developed by Jeff Layton <jlayton@redhat.com>.
+The nfsdcld daemon was developed by Jeff Layton <jlayton@redhat.com>
+with modifications from Scott Mayhew <smayhew@redhat.com>.

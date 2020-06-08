@@ -302,7 +302,7 @@ static int get_uuid(const char *val, size_t uuidlen, char *u)
  * we generate the identifier from statfs->f_fsid. The rest are network or
  * pseudo filesystems. (See <linux/magic.h> for the basic IDs.)
  */
-static const long int nonblkid_filesystems[] = {
+static const unsigned long nonblkid_filesystems[] = {
     0x2fc12fc1,    /* ZFS_SUPER_MAGIC */
     0x9123683E,    /* BTRFS_SUPER_MAGIC */
     0xFF534D42,    /* CIFS_MAGIC_NUMBER */
@@ -355,9 +355,9 @@ static int uuid_by_path(char *path, int type, size_t uuidlen, char *uuid)
 	rc = statfs64(path, &st);
 
 	if (type == 0 && rc == 0) {
-		const long int *bad;
+		const unsigned long *bad;
 		for (bad = nonblkid_filesystems; *bad; bad++) {
-			if (*bad == st.f_type)
+			if (*bad == (unsigned long)st.f_type)
 				break;
 		}
 		if (*bad == 0)
@@ -446,7 +446,7 @@ static int same_path(char *child, char *parent, int len)
 	if (count_slashes(p) != count_slashes(parent))
 		return 0;
 
-#ifdef HAVE_NAME_TO_HANDLE_AT
+#if defined(HAVE_NAME_TO_HANDLE_AT) && defined(HAVE_STRUCT_FILE_HANDLE)
 	struct {
 		struct file_handle fh;
 		unsigned char handle[128];
@@ -672,7 +672,6 @@ static bool match_fsid(struct parsed_fsid *parsed, nfs_export *exp, char *path)
 				if (memcmp(u, parsed->fhuuid, parsed->uuidlen) == 0)
 					return true;
 	}
-	/* Well, unreachable, actually: */
 	return false;
 }
 
@@ -987,8 +986,7 @@ lookup_export(char *dom, char *path, struct addrinfo *ai)
 			} else if (found_type == i && found->m_warned == 0) {
 				xlog(L_WARNING, "%s exported to both %s and %s, "
 				     "arbitrarily choosing options from first",
-				     path, found->m_client->m_hostname, exp->m_client->m_hostname,
-				     dom);
+				     path, found->m_client->m_hostname, exp->m_client->m_hostname);
 				found->m_warned = 1;
 			}
 		}

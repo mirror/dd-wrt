@@ -18,7 +18,7 @@
 #include "xcommon.h"
 
 int verbose = 0;
-char *usage = "Usage: %s [-vh] [-c || [-u|-g|-r key] || -d || -l || [-t timeout] key desc]";
+#define USAGE "Usage: %s [-vh] [-c || [-u|-g|-r key] || -d || -l || [-t timeout] key desc]"
 
 #define MAX_ID_LEN   11
 #define IDMAP_NAMESZ 128
@@ -403,7 +403,7 @@ int main(int argc, char **argv)
 			break;
 		case 'h':
 		default:
-			xlog_warn(usage, progname);
+			xlog_warn(USAGE, progname);
 			exit(opt == 'h' ? 0 : 1);
 		}
 	}
@@ -435,7 +435,7 @@ int main(int argc, char **argv)
 	xlog_stderr(verbose);
 	if ((argc - optind) != 2) {
 		xlog_warn("Bad arg count. Check /etc/request-key.conf");
-		xlog_warn(usage, progname);
+		xlog_warn(USAGE, progname);
 		return EXIT_FAILURE;
 	}
 
@@ -453,7 +453,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 	if (verbose) {
-		xlog_warn("key: 0x%lx type: %s value: %s timeout %ld",
+		xlog_warn("key: 0x%x type: %s value: %s timeout %d",
 			key, type, value, timeout);
 	}
 

@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-AC_INIT([linux nfs-utils],[2.3.4],[linux-nfs@vger.kernel.org],[nfs-utils])
+AC_INIT([linux nfs-utils],[2.4.3],[linux-nfs@vger.kernel.org],[nfs-utils])
 AC_CANONICAL_BUILD([])
 AC_CANONICAL_HOST([])
 AC_CONFIG_MACRO_DIR(aclocal)
@@ -510,6 +510,7 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
+AC_CHECK_TYPES([struct file_handle])
 
 dnl *************************************************************
 dnl Check for functions
@@ -533,10 +534,22 @@ AC_FUNC_STAT
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS([alarm atexit dup2 fdatasync ftruncate getcwd \
                gethostbyaddr gethostbyname gethostname getmntent \
-               getnameinfo getrpcbyname getrpcbynumber getrpcbynumber_r getifaddrs \
+               getnameinfo getrpcbyname getifaddrs \
                gettimeofday hasmntopt inet_ntoa innetgr memset mkdir pathconf \
                ppoll realpath rmdir select socket strcasecmp strchr strdup \
                strerror strrchr strtol strtoul sigprocmask name_to_handle_at])
+
+save_CFLAGS=$CFLAGS
+save_LIBS=$LIBS
+CFLAGS="$CFLAGS $AM_CPPFLAGS"
+LIBS="$LIBS $LIBTIRPC"
+AC_CHECK_FUNCS([getrpcbynumber getrpcbynumber_r])
+CFLAGS=$save_CFLAGS
+LIBS=$save_LIBS
+
+if test "$ac_cv_func_getrpcbynumber_r" != "yes" -a "$ac_cv_func_getrpcbynumber" != "yes"; then
+   AC_MSG_ERROR([Neither getrpcbynumber_r nor getrpcbynumber are available])
+fi
 
 dnl *************************************************************
 dnl Check for data sizes
@@ -545,7 +558,10 @@ AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 AC_CHECK_SIZEOF(size_t)
-AC_CHECK_SIZEOF(socklen_t)
+AC_CHECK_SIZEOF(socklen_t,, [AC_INCLUDES_DEFAULT
+                             #ifdef HAVE_SYS_SOCKET_H
+                             # include <sys/socket.h>
+                             #endif])
 
 
 dnl *************************************************************
@@ -616,6 +632,7 @@ CHECK_CCSUPPORT([-Werror=format-overflow=2], [flg1])
 CHECK_CCSUPPORT([-Werror=int-conversion], [flg2])
 CHECK_CCSUPPORT([-Werror=incompatible-pointer-types], [flg3])
 CHECK_CCSUPPORT([-Werror=misleading-indentation], [flg4])
+AX_GCC_FUNC_ATTRIBUTE([format])
 
 AC_SUBST([AM_CFLAGS], ["$my_am_cflags $flg1 $flg2 $flg3 $flg4"])
 
@@ -652,6 +669,7 @@ AC_CONFIG_FILES([
 	tools/mountstats/Makefile
 	tools/nfs-iostat/Makefile
 	tools/nfsconf/Makefile
+	tools/clddb-tool/Makefile
 	utils/Makefile
 	utils/blkmapd/Makefile
 	utils/nfsdcld/Makefile

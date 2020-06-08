@@ -62,7 +62,7 @@ static int rpc_strerror(int spos)
 	char *tmp;
 
 	if (estr) {
-		if ((ptr = index(estr, ':')))
+		if ((ptr = strchr(estr, ':')))
 			estr = ++ptr;
 
 		tmp = &errbuf[spos];

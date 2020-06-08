@@ -412,11 +412,18 @@ conf_parse_line(int trans, char *line, const char *filename, int lineno, char **
 
 	if (strcasecmp(line, "include")==0) {
 		/* load and parse subordinate config files */
+		_Bool optional = false;
+
+		if (val && *val == '-') {
+			optional = true;
+			val++;
+		}
+
 		relpath = relative_path(filename, val);
 		if (relpath == NULL) {
-			xlog_warn("config error at %s:%d: "
-				"error loading included config",
-				  filename, lineno);
+			if (!optional)
+				xlog_warn("config error at %s:%d: error loading included config",
+					  filename, lineno);
 			return;
 		}
 
@@ -500,7 +507,7 @@ conf_readfile(const char *path)
 
 	if ((stat (path, &sb) == 0) || (errno != ENOENT)) {
 		char *new_conf_addr = NULL;
-		size_t sz = sb.st_size;
+		off_t sz;
 		int fd = open (path, O_RDONLY, 0);
 
 		if (fd == -1) {
@@ -517,6 +524,11 @@ conf_readfile(const char *path)
 
 		/* only after we have the lock, check the file size ready to read it */
 		sz = lseek(fd, 0, SEEK_END);
+		if (sz < 0) {
+			xlog_warn("conf_readfile: unable to determine file size: %s",
+				  strerror(errno));
+			goto fail;
+		}
 		lseek(fd, 0, SEEK_SET);
 
 		new_conf_addr = malloc(sz+1);
@@ -2162,6 +2174,7 @@ conf_write(const char *filename, const char *section, const char *arg,
 	ret = 0;
 
 cleanup:
+	flush_outqueue(&inqueue, NULL);
 	flush_outqueue(&outqueue, NULL);
 
 	if (buff)

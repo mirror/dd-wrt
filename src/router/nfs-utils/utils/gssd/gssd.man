@@ -305,6 +305,14 @@ section of the
 .I /etc/nfs.conf
 configuration file.  Values recognized include:
 .TP
+.B verbosity
+Value which is equivalent to the number of
+.BR -v .
+.TP
+.B rpc-verbosity
+Value which is equivalent to the number of
+.BR -r .
+.TP
 .B use-memcache
 A Boolean flag equivalent to
 .BR -M .

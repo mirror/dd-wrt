@@ -182,7 +182,7 @@ nsm_xmit_getport(const int sock, const struct sockaddr_in *sin,
 	uint32_t xid;
 	XDR xdr;
 
-	xlog(D_CALL, "Sending PMAP_GETPORT for %u, %u, udp", program, version);
+	xlog(D_CALL, "Sending PMAP_GETPORT for %lu, %lu, udp", program, version);
 
 	nsm_init_xdrmem(msgbuf, NSM_MAXMSGSIZE, &xdr);
 	xid = nsm_init_rpc_header(PMAPPROG, PMAPVERS,

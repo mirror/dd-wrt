@@ -190,7 +190,15 @@ by default.
 After starting,
 .B sm-notify
 attempts to set its effective UID and GID to the owner
-and group of this directory.
+and group of the subdirectory
+.B sm
+of this directory.  After changing the effective ids,
+.B sm-notify
+only needs to access files in
+.B sm
+and
+.B sm.bak
+within the state-directory-path.
 .TP
 .BI -v " ipaddr " | " hostname
 Specifies the network address from which to send reboot notifications,

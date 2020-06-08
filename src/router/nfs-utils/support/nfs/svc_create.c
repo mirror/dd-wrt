@@ -184,7 +184,7 @@ svc_create_sock(const struct sockaddr *sap, socklen_t salen,
 		type = SOCK_STREAM;
 		break;
 	default:
-		xlog(D_GENERAL, "%s: Unrecognized bind address semantics: %u",
+		xlog(D_GENERAL, "%s: Unrecognized bind address semantics: %lu",
 			__func__, nconf->nc_semantics);
 		return -1;
 	}

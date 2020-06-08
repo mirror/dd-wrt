@@ -7,6 +7,10 @@
 #ifndef XLOG_H
 #define XLOG_H
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <stdarg.h>
 
 /* These are logged always. L_FATAL also does exit(1) */
@@ -35,6 +39,12 @@ struct xlog_debugfac {
 	int		df_fac;
 };
 
+#ifdef HAVE_FUNC_ATTRIBUTE_FORMAT
+#define XLOG_FORMAT(_x) __attribute__((__format__ _x))
+#else
+#define XLOG_FORMAT(_x)
+#endif
+
 extern int export_errno;
 void			xlog_open(char *progname);
 void			xlog_stderr(int on);
@@ -43,10 +53,10 @@ void			xlog_config(int fac, int on);
 void			xlog_sconfig(char *, int on);
 void			xlog_from_conffile(char *);
 int			xlog_enabled(int fac);
-void			xlog(int fac, const char *fmt, ...);
-void			xlog_warn(const char *fmt, ...);
-void			xlog_err(const char *fmt, ...);
-void			xlog_errno(int err, const char *fmt, ...);
-void			xlog_backend(int fac, const char *fmt, va_list args);
+void			xlog(int fac, const char *fmt, ...) XLOG_FORMAT((printf, 2, 3));
+void			xlog_warn(const char *fmt, ...) XLOG_FORMAT((printf, 1, 2));
+void			xlog_err(const char *fmt, ...) XLOG_FORMAT((printf, 1, 2));
+void			xlog_errno(int err, const char *fmt, ...) XLOG_FORMAT((printf, 2, 3));
+void			xlog_backend(int fac, const char *fmt, va_list args) XLOG_FORMAT((printf, 2, 0));
 
 #endif /* XLOG_H */

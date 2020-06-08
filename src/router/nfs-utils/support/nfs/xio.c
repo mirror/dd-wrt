@@ -10,7 +10,7 @@
 #include <config.h>
 #endif
 
-#include <sys/fcntl.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>

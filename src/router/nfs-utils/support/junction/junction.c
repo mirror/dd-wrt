@@ -23,6 +23,10 @@
  *	http://www.gnu.org/licenses/old-licenses/gpl-2.0.txt
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <sys/types.h>
 #include <sys/stat.h>
 

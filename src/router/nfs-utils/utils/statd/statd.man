@@ -185,18 +185,16 @@ restarts without the
 option.
 .TP
 .BI "\-n, " "" "\-\-name " ipaddr " | " hostname
-Specifies the bind address used for RPC listener sockets.
+This string is only used by the
+.B sm-notify
+command as the source address from which to send reboot notification requests.
+.IP
 The
 .I ipaddr
 form can be expressed as either an IPv4 or an IPv6 presentation address.
 If this option is not specified,
 .B rpc.statd
 uses a wildcard address as the transport bind address.
-.IP
-This string is also passed to the
-.B sm-notify
-command to be used as the source address from which
-to send reboot notification requests.
 See
 .BR sm-notify (8)
 for details.
@@ -259,7 +257,15 @@ by default.
 After starting,
 .B rpc.statd
 attempts to set its effective UID and GID to the owner
-and group of this directory.
+and group of the subdirectory
+.B sm
+of this directory.  After changing the effective ids,
+.B rpc.statd
+only needs to access files in
+.B sm
+and
+.B sm.bak
+within the state-directory-path.
 .TP
 .BR -v ", " -V ", " --version
 Causes

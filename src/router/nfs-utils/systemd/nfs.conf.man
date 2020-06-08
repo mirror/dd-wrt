@@ -65,6 +65,9 @@ section headers, then new sections will be created just as if the
 included file appeared in place of the
 .B include
 line.
+If the file name starts with a hyphen then that is stripped off
+before the file is opened, and if file doesn't exist no warning is
+given.  Normally a non-existent include file generates a warning.
 .PP
 Lookup of section and value names is case-insensitive.
 

@@ -4,6 +4,8 @@
 #ifndef NFSD_PATH_H
 #define NFSD_PATH_H
 
+#include <sys/stat.h>
+
 void 		nfsd_path_init(void);
 
 const char *	nfsd_path_nfsd_rootdir(void);
