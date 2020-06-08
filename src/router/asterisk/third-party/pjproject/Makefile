@@ -73,7 +73,7 @@ ifeq ($(SPECIAL_TARGETS),)
             MALLOC_DEBUG_LDFLAGS = -L$(PJDIR)/pjsip-apps/lib -Wl,-whole-archive -lasterisk_malloc_debug -Wl,-no-whole-archive
         endif
         ifeq ($(findstring DONT_OPTIMIZE,$(MENUSELECT_CFLAGS)),)
-            CF += -O3
+#            CF += -O3
         endif
         export CFLAGS += $(CF) -g3
         export LDFLAGS += $(CC_LDFLAGS)
