@@ -1186,8 +1186,8 @@ void removeLineBreak(char *startup)
 
 static void do_ping(webs_t wp, char *type)
 {
-char fname[32];
-sprintf(fname, "/tmp/.%s", type);
+	char fname[32];
+	sprintf(fname, "/tmp/.%s", type);
 
 	char *startup = websGetVar(wp, "ping_ip", NULL);
 	if (startup) {
