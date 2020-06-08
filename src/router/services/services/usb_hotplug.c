@@ -346,6 +346,7 @@ static char *getfs(char *line)
 static void usb_unmount(char *path)
 {
 	char mount_point[32];
+	eval("stopservice", "run_rc_usb");
 	eval("stopservice", "dlna");
 	eval("stopservice", "samba3");
 	eval("stopservice", "nfs");
@@ -364,6 +365,7 @@ static void usb_unmount(char *path)
 	eval("startservice", "nfs", "-f");
 	eval("startservice", "rsync", "-f");
 	eval("startservice", "dlna", "-f");
+	eval("startservice", "run_rc_usb", "-f");
 	return;
 }
 

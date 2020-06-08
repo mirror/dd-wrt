@@ -842,10 +842,23 @@ void start_wanup(void)
 	runStartup(".wanup");
 	return;
 }
+void stop_run_rc_usb(void)
+{
+}
+
+void start_run_rc_usb(void)
+{
+	create_rc_file(RC_USB);
+
+	if (f_exists("/tmp/.rc_usb"))
+		eval("/tmp/.rc_usb");
+}
 
 void stop_run_rc_startup(void)
 {
 }
+
+
 
 void start_run_rc_startup(void)
 {

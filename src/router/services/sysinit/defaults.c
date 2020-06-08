@@ -2160,6 +2160,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "macupd_enable", "0" },
 	{ "wl_radauth", "0" },
 	{ "rc_startup", "" },
+	{ "rc_usb", "" },
 	{ "rc_firewall", "" },
 	{ "rc_custom", "" },
 	{ "rc_shutdown", "" },
