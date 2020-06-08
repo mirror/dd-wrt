@@ -299,6 +299,8 @@ void stop_ttraff(void);
 void start_run_rc_shutdown(void);
 void start_run_rc_startup(void);
 void stop_run_rc_startup(void);
+void start_run_rc_usb(void);
+void stop_run_rc_usb(void);
 void start_bonding(void);
 void start_overclocking(void);
 void stop_mkfiles(void);
