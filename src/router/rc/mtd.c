@@ -420,7 +420,7 @@ static int write_main(int argc, char *argv[])
 			char board_id2[19];
 			safe_fread(&trx, 1, sizeof(struct chk_header) - sizeof(struct trx_header), fp);
 			safe_fread(board_id, 1, sizeof(board_id), fp);
-			memcpy(board_id2,board_id, 18);
+			memcpy(board_id2, board_id, 18);
 			board_id2[18] = 0;
 			int fail = 1;
 			int c = 0;
