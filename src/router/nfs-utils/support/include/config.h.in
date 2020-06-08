@@ -83,6 +83,9 @@
 /* Define to 1 if you have the `ftruncate' function. */
 #undef HAVE_FTRUNCATE
 
+/* Define to 1 if the system has the `format' function attribute */
+#undef HAVE_FUNC_ATTRIBUTE_FORMAT
+
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
 
@@ -298,6 +301,9 @@
 
 /* Define to 1 if you have the `strtoul' function. */
 #undef HAVE_STRTOUL
+
+/* Define to 1 if the system has the type `struct file_handle'. */
+#undef HAVE_STRUCT_FILE_HANDLE
 
 /* Define to 1 if you have the <syslog.h> header file. */
 #undef HAVE_SYSLOG_H

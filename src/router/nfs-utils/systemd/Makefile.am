@@ -36,6 +36,11 @@ unit_files += \
 endif
 endif
 
+if CONFIG_NFSDCLD
+unit_files += \
+    nfsdcld.service
+endif
+
 man5_MANS	= nfs.conf.man
 man7_MANS	= nfs.systemd.man
 EXTRA_DIST = $(unit_files) $(man5_MANS) $(man7_MANS)

@@ -121,6 +121,36 @@ option may mitigate some of the risks of using the
 .B soft
 option.
 .TP 1.5i
+.BR softreval " / " nosoftreval
+In cases where the NFS server is down, it may be useful to
+allow the NFS client to continue to serve up paths and
+attributes from cache after
+.B retrans
+attempts to revalidate that cache have timed out.
+This may, for instance, be helpful when trying to unmount a
+filesystem tree from a server that is permanently down.
+.IP
+It is possible to combine
+.BR softreval
+with the
+.B soft
+mount option, in which case operations that cannot be served up
+from cache will time out and return an error after
+.B retrans
+attempts. The combination with the default
+.B hard
+mount option implies those uncached operations will continue to
+retry until a response is received from the server.
+.IP
+Note: the default mount option is
+.BR nosoftreval
+which disallows fallback to cache when revalidation fails, and
+instead follows the behavior dictated by the
+.B hard
+or
+.B soft
+mount option.
+.TP 1.5i
 .BR intr " / " nointr
 This option is provided for backward compatibility.
 It is ignored after kernel 2.6.25.
@@ -368,6 +398,23 @@ Alternatively these issues can be addressed
 using an automounter (refer to
 .BR automount (8)
 for details).
+.TP 1.5i
+.BR nconnect= n
+When using a connection oriented protocol such as TCP, it may
+sometimes be advantageous to set up multiple connections between
+the client and server. For instance, if your clients and/or servers
+are equipped with multiple network interface cards (NICs), using multiple
+connections to spread the load may improve overall performance.
+In such cases, the
+.BR nconnect
+option allows the user to specify the number of connections
+that should be established between the client and server up to
+a limit of 16.
+.IP
+Note that the
+.BR nconnect
+option may also be used by some pNFS drivers to decide how many
+connections to set up to the data servers.
 .TP 1.5i
 .BR rdirplus " / " nordirplus
 Selects whether to use NFS v3 or v4 READDIRPLUS requests.
@@ -1252,7 +1299,7 @@ If absolute cache coherence among clients is required,
 applications should use file locking. Alternatively, applications
 can also open their files with the O_DIRECT flag
 to disable data caching entirely.
-.SS "File timestamp maintainence"
+.SS "File timestamp maintenance"
 NFS servers are responsible for managing file and directory timestamps
 .RB ( atime ,
 .BR ctime ", and"

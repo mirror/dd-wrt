@@ -92,7 +92,14 @@ main(int argc, char **argv)
 	port = conf_get_str("nfsd", "port");
 	if (!port)
 		port = "nfs";
-	rdma_port = conf_get_str("nfsd", "rdma");
+	if (conf_get_bool("nfsd", "rdma", false)) {
+		rdma_port = conf_get_str("nfsd", "rdma-port");
+		if (!rdma_port)
+			rdma_port = "nfsrdma";
+	}
+	/* backward compatibility - nfs.conf used to set rdma port directly */
+	if (!rdma_port)
+		rdma_port = conf_get_str("nfsd", "rdma");
 	if (conf_get_bool("nfsd", "udp", NFSCTL_UDPISSET(protobits)))
 		NFSCTL_UDPSET(protobits);
 	else

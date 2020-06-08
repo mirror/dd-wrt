@@ -327,8 +327,8 @@ junction_parse_xml_read(const char *pathname, int fd, const char *name,
 	if (retval != FEDFS_OK)
 		return retval;
 
-	xlog(D_CALL, "%s: XML document contained in junction:\n%.*s",
-		__func__, len, buf);
+	xlog(D_CALL, "%s: XML document contained in junction:\n%zu.%s",
+		__func__, len, (char *)buf);
 
 	retval = junction_parse_xml_buf(pathname, name, buf, len, doc);
 

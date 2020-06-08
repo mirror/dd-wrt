@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <errno.h>
 #include <sys/types.h>
 #include <fcntl.h>
@@ -5,7 +9,7 @@
 #include <sys/sysmacros.h>
 #include <unistd.h>
 
-#include "config.h"
+#include "nfslib.h"
 #include "xstat.h"
 
 #ifdef HAVE_FSTATAT
@@ -47,6 +51,9 @@ statx_do_stat(int fd, const char *pathname, struct stat *statbuf, int flags)
 			statx_copy(statbuf, &stxbuf);
 			return 0;
 		}
+		/* glibc emulation doesn't support AT_STATX_DONT_SYNC */
+		if (errno == EINVAL)
+			errno = ENOSYS;
 		if (errno == ENOSYS)
 			statx_supported = 0;
 	} else
@@ -63,7 +70,7 @@ statx_stat_nosync(int fd, const char *pathname, struct stat *statbuf, int flags)
 #else
 
 static int
-statx_stat_nosync(int fd, const char *pathname, struct stat *statbuf, int flags)
+statx_stat_nosync(int UNUSED(fd), const char *UNUSED(pathname), struct stat *UNUSED(statbuf), int UNUSED(flags))
 {
 	errno = ENOSYS;
 	return -1;

@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <mntent.h>
+#include <alloca.h>
 
 #include "misc.h"
 #include "nfslib.h"
@@ -98,7 +99,7 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	path = malloc(strlen(argv[1]) + sizeof(dirbase) + sizeof(filebase));
+	path = alloca(strlen(argv[1]) + sizeof(dirbase) + sizeof(filebase));
 	if (!path)
 		exit(2);
 	if (export_read(_PATH_EXPORTS, 1) +

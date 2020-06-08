@@ -144,7 +144,11 @@ The lease time for NFSv4, in seconds.
 Set the port for TCP/UDP to bind to.
 .TP
 .B rdma
-Set RDMA port.  Use "rdma=nfsrdma" to enable standard port.
+Enable RDMA port (with "on" or "yes" etc) on the standard port
+("nfsrdma", port 20049).
+.TP
+.B rdma-port
+Set an alternate RDMA port.
 .TP
 .B UDP
 Enable (with "on" or "yes" etc) or disable ("off", "no") UDP support.

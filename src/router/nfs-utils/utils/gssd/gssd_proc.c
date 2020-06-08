@@ -439,7 +439,11 @@ change_identity(uid_t uid)
 	int res;
 
 	/* drop list of supplimentary groups first */
+#ifdef __NR_setgroups32
+	if (syscall(SYS_setgroups32, 0, 0) != 0) {
+#else
 	if (syscall(SYS_setgroups, 0, 0) != 0) {
+#endif
 		printerr(0, "WARNING: unable to drop supplimentary groups!");
 		return errno;
 	}

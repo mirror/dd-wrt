@@ -388,20 +388,14 @@ nsm_drop_privileges(const int pidfd)
 
 	(void)umask(S_IRWXO);
 
-	/*
-	 * XXX: If we can't stat dirname, or if dirname is owned by
-	 *      root, we should use "statduser" instead, which is set up
-	 *      by configure.ac.  Nothing in nfs-utils seems to use
-	 *      "statduser," though.
-	 */
-	if (lstat(nsm_base_dirname, &st) == -1) {
-		xlog(L_ERROR, "Failed to stat %s: %m", nsm_base_dirname);
-		return false;
-	}
-
 	if (chdir(nsm_base_dirname) == -1) {
 		xlog(L_ERROR, "Failed to change working directory to %s: %m",
 				nsm_base_dirname);
+		return false;
+	}
+
+	if (lstat(NSM_MONITOR_DIR, &st) == -1) {
+		xlog(L_ERROR, "Failed to stat %s/%s: %m", nsm_base_dirname, NSM_MONITOR_DIR);
 		return false;
 	}
 

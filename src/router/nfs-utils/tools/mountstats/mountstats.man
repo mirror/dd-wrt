@@ -35,7 +35,7 @@ mountstats \- Displays various NFS client per-mount statistics
 .RI [ count ]
 .RI [ mountpoint ] ...
 .P
-.B mounstats nfsstat
+.B mountstats nfsstat
 .RB [ \-h | \-\-help ]
 .RB [ \-v | \-\-version ]
 .RB [ \-f | \-\-file

@@ -247,7 +247,7 @@ process_reply(FD_SET_TYPE *rfds)
 		xlog_warn("%s: service %d not registered on localhost",
 			__func__, NL_MY_PROG(lp));
 	} else {
-		xlog(D_GENERAL, "%s: Callback to %s (for %d) succeeded",
+		xlog(D_GENERAL, "%s: Callback to %s (for %s) succeeded",
 			__func__, NL_MY_NAME(lp), NL_MON_NAME(lp));
 	}
 	nlist_free(&notify, lp);

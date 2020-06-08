@@ -210,10 +210,10 @@ killer (int sig)
 }
 
 static void
-sig_hup (int sig)
+sig_hup (int UNUSED(sig))
 {
 	/* don't exit on SIGHUP */
-	xlog (L_NOTICE, "Received SIGHUP... Ignoring.\n", sig);
+	xlog (L_NOTICE, "Received SIGHUP... Ignoring.\n");
 	return;
 }
 
@@ -681,6 +681,9 @@ main(int argc, char **argv)
 	else
 		progname = argv[0];
 
+	/* Initialize logging. */
+	xlog_open(progname);
+
 	conf_init_file(NFS_CONFFILE);
 	xlog_from_conffile("mountd");
 	manage_gids = conf_get_bool("mountd", "manage-gids", manage_gids);
@@ -820,9 +823,7 @@ main(int argc, char **argv)
 			}
 		}
 	}
-	/* Initialize logging. */
 	if (!foreground) xlog_stderr(0);
-	xlog_open(progname);
 
 	sa.sa_handler = SIG_IGN;
 	sa.sa_flags = 0;
@@ -833,10 +834,6 @@ main(int argc, char **argv)
 	sigaction(SIGPIPE, &sa, NULL);
 	/* WARNING: the following works on Linux and SysV, but not BSD! */
 	sigaction(SIGCHLD, &sa, NULL);
-
-	/* Daemons should close all extra filehandles ... *before* RPC init. */
-	if (!foreground)
-		closeall(3);
 
 	unregister_services();
 	if (version2()) {

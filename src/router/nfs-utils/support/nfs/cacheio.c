@@ -15,6 +15,10 @@
  *
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <nfslib.h>
 #include <stdio.h>
 #include <stdio_ext.h>

@@ -97,6 +97,14 @@ This is the duration from the time the NFS client created the RPC request task t
 .RE
 .RE
 .RE
+.RS 8
+- \fBerrors\fR
+.RS
+This is the number of operations that completed with an error status (status < 0).  This count is only available on kernels with RPC iostats version 1.1 or above.
+.RS
+.RE
+.RE
+.RE
 .TP
 Note that if an interval is used as argument to \fBnfsiostat\fR, then the diffrence from previous interval will be displayed, otherwise the results will be from the time that the share was mounted.
 

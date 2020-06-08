@@ -3,6 +3,10 @@
  * check if a given path is a mountpoint 
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include "xcommon.h"
 #include <sys/stat.h>
