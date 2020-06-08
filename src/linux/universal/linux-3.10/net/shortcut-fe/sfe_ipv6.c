@@ -21,6 +21,7 @@
 #include <linux/icmp.h>
 #include <net/tcp.h>
 #include <linux/etherdevice.h>
+#include <linux/prefetch.h>
 
 #include "sfe.h"
 #include "sfe_cm.h"
