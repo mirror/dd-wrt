@@ -254,7 +254,8 @@ sbutton.runcmd="Kommandos ausf&uuml;hren";
 sbutton.startup="Startup speichern";
 sbutton.shutdown="Shutdown speichern";
 sbutton.firewall="Firewall speichern";
-sbutton.custom="Speichere benutzerdefiniertes Skript";
+sbutton.custom="Benutzerdefiniert speichern";
+sbutton.usb="USB speichern";
 sbutton.wol="Aufwecken";
 sbutton.add_wol="Host hinzuf&uuml;gen";
 sbutton.manual_wol="Manuelles Aufwecken";
@@ -568,10 +569,11 @@ diag.titl="Diagnose";
 diag.h2="Diagnose";
 diag.legend="Kommandozeile";
 diag.cmd="Kommandos";
-diag.startup="Startup";
-diag.shutdown="Shutdown";
+diag.startup="Hochfahren";
+diag.shutdown="Runterfahren";
 diag.firewall="Firewall";
 diag.custom="Benutzerdefiniertes Skript";
+diag.usb="USB Skript";
 
 //help container
 
