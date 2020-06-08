@@ -78,17 +78,17 @@ static bool usb_stop_services()
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
 static bool usb_start_services()
 {
-	eval("startservice_f", "cron");
-	eval("startservice_f", "samba3");
-	eval("startservice_f", "nfs");
-	eval("startservice_f", "rsync");
-	eval("startservice_f", "dlna");
-	eval("startservice_f", "ftpsrv");
+	eval("startservice", "cron", "-f");
+	eval("startservice", "samba3", "-f");
+	eval("startservice", "nfs", "-f");
+	eval("startservice", "rsync", "-f");
+	eval("startservice", "dlna", "-f");
+	eval("startservice", "ftpsrv", "-f");
 #ifdef HAVE_WEBSERVER
-	eval("startservice_f", "lighttpd");
+	eval("startservice", "lighttpd", "-f");
 #endif
 #ifdef HAVE_TRANSMISSION
-	eval("startservice_f", "transmission");
+	eval("startservice", "transmission", "-f");
 #endif
 	return 0;
 }
@@ -233,6 +233,7 @@ void start_hotplug_block(void)
 
 		if (!strcmp(action, "add")) {
 			//runs user specified script
+			sleep(3);
 
 			//finally start services again after mounting all partitions for this drive
 			usb_start_services();
