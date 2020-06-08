@@ -414,6 +414,7 @@ static int parse_naptr(unsigned char *dst, int dstsize, char *tech, int techsize
 	int size, matchindex; /* size is the size of the backreference sub. */
 	size_t d_len = sizeof(tempdst) - 1;
 	regex_t preg;
+	int re_flags = REG_EXTENDED | REG_NEWLINE;
 	regmatch_t pmatch[max_bt];
 
 	tech_return[0] = '\0';
@@ -495,13 +496,23 @@ static int parse_naptr(unsigned char *dst, int dstsize, char *tech, int techsize
 	 * and uses that character to find the index of the second delimiter */
 	delim = regexp[0];
 	delim2 = strchr(regexp + 1, delim);
-	if ((delim2 == NULL) || (regexp[regexp_len - 1] != delim)) {  /* is the second delimiter found, and is the end of the regexp a delimiter */
+	if ((delim2 == NULL)
+		|| ((regexp[regexp_len - 1] != 'i' || regexp[regexp_len - 2] != delim)
+			&& regexp[regexp_len - 1] != delim)) {
 		ast_log(LOG_WARNING, "Regex delimiter error (on \"%s\").\n", regexp);
 		return -1;
 	} else if (strchr((delim2 + 1), delim) == NULL) { /* if the second delimiter is found, make sure there is a third instance.  this could be the end one instead of the middle */
 		ast_log(LOG_WARNING, "Regex delimiter error (on \"%s\").\n", regexp);
 		return -1;
 	}
+
+	/* Make the regex case-insensitive if the 'i' flag is present. This assumes you
+	 * aren't using 'i' as a delimiter which, altough dubious, does not appear to be
+	 * explicitly non-compliant */
+	if (regexp[regexp_len - 1] == 'i') {
+		re_flags |= REG_ICASE;
+	}
+
 	pattern = regexp + 1;   /* pattern is the regex without the begining and ending delimiter */
 	*delim2 = 0;    /* zero out the middle delimiter */
 	subst   = delim2 + 1; /* dst substring is everything after the second delimiter. */
@@ -511,7 +522,7 @@ static int parse_naptr(unsigned char *dst, int dstsize, char *tech, int techsize
  * now do the regex wizardry.
  */
 
-	if (regcomp(&preg, pattern, REG_EXTENDED | REG_NEWLINE)) {
+	if (regcomp(&preg, pattern, re_flags)) {
 		ast_log(LOG_WARNING, "NAPTR Regex compilation error (regex = \"%s\").\n", regexp);
 		return -1;
 	}
@@ -931,37 +942,88 @@ int ast_get_enum(struct ast_channel *chan, const char *number, char *dst, int ds
 	return ret;
 }
 
+/*! \internal
+ * \brief Format a phone number as a domain in an ENUM-adjacent way.
+ *
+ * Creates a domain name suitable for query by:
+ *
+ * 1. Removing non-digits
+ * 2. Adding a '.' between adjacent digits
+ * 3. Reversing the string
+ * 4. Appending the specified suffix (or e164.arpa if none is specified)
+ */
+static char *format_numeric_domain(const char *number, const char *suffix)
+{
+	char *buffer, *dst;
+	size_t suffix_length;
+	size_t number_length = strlen(number);
+	const char *src = number + number_length - 1;
+
+	if (!suffix) {
+		suffix = "e164.arpa";
+	}
+
+	suffix_length = strlen(suffix);
+
+	dst = buffer = ast_malloc(
+		(number_length * 2) /* We need 2 bytes per input digit */
+		+ suffix_length     /* ... plus however long the suffix is */
+		+ 1                 /* ... plus room for the '.' separator */
+		+ 1                 /* ... and room for the \0 byte at the end */);
+
+	if (buffer) {
+		while (src >= number) {
+			if (isdigit(*src)) {
+				*dst++ = *src;
+				*dst++ = '.';
+			}
+			src--;
+		}
+
+		/* The length arguments below make sure that the \0 byte is copied into
+		   the final string */
+		if (*suffix == '.') {
+			memcpy(dst, &suffix[1], suffix_length);
+		} else {
+			memcpy(dst, suffix, suffix_length + 1);
+		}
+	}
+
+	return buffer;
+}
+
 int ast_get_txt(struct ast_channel *chan, const char *number, char *txt, int txtlen, char *suffix)
 {
 	struct txt_context context;
-	char tmp[259 + 512];
-	int pos = strlen(number) - 1;
-	int newpos = 0;
-	int ret = -1;
+	char *domain;
+	int ret;
+	int autoservice = 0;
 
 	ast_debug(4, "ast_get_txt: Number = '%s', suffix = '%s'\n", number, suffix);
 
-	if (pos > 128) {
-		pos = 128;
+	domain = format_numeric_domain(number, suffix);
+	if (!domain) {
+		return -1;
 	}
 
-	while (pos >= 0) {
-		if (isdigit(number[pos])) {
-			tmp[newpos++] = number[pos];
-			tmp[newpos++] = '.';
-		}
-		pos--;
+	if (chan) {
+		/* DNS might take a while, so service the channel while we're blocked */
+		autoservice = !ast_autoservice_start(chan);
 	}
 
-	ast_copy_string(&tmp[newpos], suffix, sizeof(tmp) - newpos);
-
-	if (ret < 0) {
-		ast_debug(2, "No such number found in ENUM: %s (%s)\n", tmp, strerror(errno));
-		ret = 0;
-	} else {
+	ret = ast_search_dns(&context, domain, C_IN, T_TXT, txt_callback);
+	if (ret > 0) {
 		ast_copy_string(txt, context.txt, txtlen);
+	} else {
+		ast_debug(2, "No such number found in ENUM: %s (%s)\n", domain, strerror(errno));
 	}
-	return ret;
+
+	if (autoservice) {
+		ast_autoservice_stop(chan);
+	}
+
+	ast_free(domain);
+	return 0;
 }
 
 /*! \brief Initialize the ENUM support subsystem */
