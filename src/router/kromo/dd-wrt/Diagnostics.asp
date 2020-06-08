@@ -13,18 +13,19 @@ function to_submit(F, I) {
 	}
 	else { 
 		if (I == "startup") {
-		    F.startup.value = sbutton.saving;
-		} else { if (I == "shutdown") {
-			    F.shutdown.value = sbutton.saving;
-			    } else { 
-				    if (I == "firewall") {
-					F.firewall.value = sbutton.saving;
-				    } else {  
-					    if (I == "custom") {
-						    F.custom.value = sbutton.saving;
-					    }
-				    }
-			    }
+			F.startup.value = sbutton.saving;
+		} 
+		if (I == "shutdown") {
+			F.shutdown.value = sbutton.saving;
+		} 
+		if (I == "firewall") {
+			F.firewall.value = sbutton.saving;
+		}  
+		if (I == "custom") {
+			F.custom.value = sbutton.saving;
+		}
+		if (I == "usb") {
+			F.usb.value = sbutton.saving;
 		}
 	}
 		
@@ -139,7 +140,21 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<% nvm("rc_firewall", "", "-->"); %>
-
+							<% ifndef("USB", "<!--"); %>
+							<% nvm("rc_usb", "", "<!--"); %>
+							<fieldset>
+								<legend><% tran("diag.usb"); %></legend>
+								<pre id="usb"><% nvg("rc_usb"); %></pre><br />
+								<div class="center">
+									<script type="text/javascript">
+									//<![CDATA[
+									document.write("<input class=\"button\" type=\"button\" name=\"button_usb\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('usb').firstChild.data\" />")
+									//]]>
+									</script>
+								</div>
+							</fieldset><br />
+							<% nvm("rc_usb", "", "-->"); %>
+							<% ifndef("USB", "-->"); %>
 							<% nvm("rc_custom", "", "<!--"); %>
 							<fieldset>
 								<legend><% tran("diag.custom"); %></legend>
@@ -161,6 +176,9 @@ addEvent(window, "unload", function() {
 								document.write("<input class=\"button\" type=\"button\" name=\"startup\" value=\"" + sbutton.startup + "\" onclick=\"to_submit(this.form, 'startup');\" />");
 								document.write("<input class=\"button\" type=\"button\" name=\"shutdown\" value=\"" + sbutton.shutdown + "\" onclick=\"to_submit(this.form, 'shutdown');\" />");
 								document.write("<input class=\"button\" type=\"button\" name=\"firewall\" value=\"" + sbutton.firewall + "\" onclick=\"to_submit(this.form, 'firewall');\" />");
+								<% ifndef("USB", "<!--"); %>
+								document.write("<input class=\"button\" type=\"button\" name=\"usb\" value=\"" + sbutton.usb + "\" onclick=\"to_submit(this.form, 'usb');\" />");
+								<% ifndef("USB", "-->"); %>
 								document.write("<input class=\"button\" type=\"button\" name=\"custom\" value=\"" + sbutton.custom + "\" onclick=\"to_submit(this.form, 'custom');\" />");
 								//]]>
 								</script>
