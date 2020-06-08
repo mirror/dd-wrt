@@ -140,6 +140,7 @@ extern int zebra_ripd_init(void);
 #define RC_FIREWALL "rc_firewall"
 #define RC_STARTUP  "rc_startup"
 #define RC_SHUTDOWN "rc_shutdown"
+#define RC_USB  "rc_usb"
 
 extern int ipupdate_main(int argc, char **argv);
 extern int gpio_main(int argc, char **argv);
