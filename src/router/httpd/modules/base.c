@@ -1094,6 +1094,7 @@ static struct gozila_action gozila_actions[] = {
 	{ "Ping", "shutdown", "", REFRESH, "ping_shutdown" },
 	{ "Ping", "firewall", "", SYS_RESTART, "ping_firewall" },
 	{ "Ping", "custom", "", REFRESH, "ping_custom" },
+	{ "Ping", "usb", "", REFRESH, "ping_usb" },
 	{ "QoS", "add_svc", "", REFRESH, "qos_add_svc" },
 	{ "QoS", "add_ip", "", REFRESH, "qos_add_ip" },
 	{ "QoS", "add_mac", "", REFRESH, "qos_add_mac" },

@@ -1184,68 +1184,47 @@ void removeLineBreak(char *startup)
 
 }
 
-void ping_startup(webs_t wp)
+static void do_ping(webs_t wp, char *type)
 {
+char fname[32];
+sprintf(fname, "/tmp/.%s", type);
+
 	char *startup = websGetVar(wp, "ping_ip", NULL);
 	if (startup) {
 		// filter Windows <cr>ud
 		removeLineBreak(startup);
 
-		nvram_set("rc_startup", startup);
+		nvram_set(type, startup);
 		nvram_commit();
-		nvram2file("rc_startup", "/tmp/.rc_startup");
-		chmod("/tmp/.rc_startup", 0700);
+		nvram2file(type, fname);
+		chmod(fname, 0700);
 	}
-	return;
 
+}
+
+void ping_startup(webs_t wp)
+{
+	do_ping(wp, "rc_startup");
 }
 
 void ping_shutdown(webs_t wp)
 {
-	char *shutdown = websGetVar(wp, "ping_ip", NULL);
-	if (shutdown) {
-		// filter Windows <cr>ud
-		removeLineBreak(shutdown);
-
-		nvram_set("rc_shutdown", shutdown);
-		nvram_commit();
-		nvram2file("rc_shutdown", "/tmp/.rc_shutdown");
-		chmod("/tmp/.rc_shutdown", 0700);
-	}
-	return;
-
+	do_ping(wp, "rc_shutdown");
 }
 
 void ping_firewall(webs_t wp)
 {
-	char *firewall = websGetVar(wp, "ping_ip", NULL);
-	if (firewall) {
-		// filter Windows <cr>ud
-		removeLineBreak(firewall);
-		nvram_set("rc_firewall", firewall);
-		nvram_commit();
-		nvram2file("rc_firewall", "/tmp/.rc_firewall");
-		chmod("/tmp/.rc_firewall", 0700);
-	}
-	return;
+	do_ping(wp, "rc_firefall");
 }
 
 void ping_custom(webs_t wp)
 {
-	char *custom = websGetVar(wp, "ping_ip", NULL);
-	if (custom) {
-		// filter Windows <cr>ud
-		unlink("/tmp/custom.sh");
-		removeLineBreak(custom);
-		nvram_set("rc_custom", custom);
-		nvram_commit();
-		if (nvram_invmatch("rc_custom", "")) {
-			nvram2file("rc_custom", "/tmp/custom.sh");
-			chmod("/tmp/custom.sh", 0700);
-		}
-	}
+	do_ping(wp, "rc_custom");
+}
 
-	return;
+void ping_usb(webs_t wp)
+{
+	do_ping(wp, "rc_usb");
 }
 
 void ping_wol(webs_t wp)
