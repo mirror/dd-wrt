@@ -3914,9 +3914,21 @@ static void ast_sip_ouraddrfor(const struct ast_sockaddr *them, struct ast_socka
 					/* for consistency, default to the externaddr port */
 					externtcpport = ast_sockaddr_port(&externaddr);
 				}
+				if (!externtcpport) {
+					externtcpport = ast_sockaddr_port(&sip_tcp_desc.local_address);
+				}
+				if (!externtcpport) {
+					externtcpport = STANDARD_SIP_PORT;
+				}
 				ast_sockaddr_set_port(us, externtcpport);
 				break;
 			case AST_TRANSPORT_TLS:
+				if (!externtlsport) {
+					externtlsport = ast_sockaddr_port(&sip_tls_desc.local_address);
+				}
+				if (!externtlsport) {
+					externtlsport = STANDARD_TLS_PORT;
+				}
 				ast_sockaddr_set_port(us, externtlsport);
 				break;
 			case AST_TRANSPORT_UDP:
@@ -3934,23 +3946,27 @@ static void ast_sip_ouraddrfor(const struct ast_sockaddr *them, struct ast_socka
 		/* no remapping, but we bind to a specific address, so use it. */
 		switch (p->socket.type) {
 		case AST_TRANSPORT_TCP:
-			if (!ast_sockaddr_is_any(&sip_tcp_desc.local_address)) {
-				ast_sockaddr_copy(us,
-						  &sip_tcp_desc.local_address);
-			} else {
-				ast_sockaddr_set_port(us,
-						      ast_sockaddr_port(&sip_tcp_desc.local_address));
-			}
-			break;
+			if (!ast_sockaddr_isnull(&sip_tcp_desc.local_address)) {
+				if (!ast_sockaddr_is_any(&sip_tcp_desc.local_address)) {
+					ast_sockaddr_copy(us,
+							  &sip_tcp_desc.local_address);
+				} else {
+					ast_sockaddr_set_port(us,
+					  ast_sockaddr_port(&sip_tcp_desc.local_address));
+				}
+				break;
+			} /* fall through on purpose */
 		case AST_TRANSPORT_TLS:
-			if (!ast_sockaddr_is_any(&sip_tls_desc.local_address)) {
-				ast_sockaddr_copy(us,
-						  &sip_tls_desc.local_address);
-			} else {
-				ast_sockaddr_set_port(us,
-						      ast_sockaddr_port(&sip_tls_desc.local_address));
-			}
-			break;
+			if (!ast_sockaddr_isnull(&sip_tls_desc.local_address)) {
+				if (!ast_sockaddr_is_any(&sip_tls_desc.local_address)) {
+					ast_sockaddr_copy(us,
+							  &sip_tls_desc.local_address);
+				} else {
+					ast_sockaddr_set_port(us,
+					  ast_sockaddr_port(&sip_tls_desc.local_address));
+				}
+				break;
+			} /* fall through on purpose */
 		case AST_TRANSPORT_UDP:
 			/* fall through on purpose */
 		default:
@@ -16249,8 +16265,15 @@ static int transmit_register(struct sip_registry *r, int sipmethod, const char *
 		/* Set transport and port so the correct contact is built */
 		set_socket_transport(&p->socket, r->transport);
 		if (r->transport == AST_TRANSPORT_TLS || r->transport == AST_TRANSPORT_TCP) {
-			p->socket.port =
-			    htons(ast_sockaddr_port(&sip_tcp_desc.local_address));
+			if (ast_sockaddr_isnull(&sip_tcp_desc.local_address)) {
+				ast_log(LOG_ERROR,
+				    "TCP/TLS clients without server were not tested.\n");
+				ast_log(LOG_ERROR,
+				    "Please, follow-up and report at issue 28798.\n");
+			} else {
+				p->socket.port =
+				    htons(ast_sockaddr_port(&sip_tcp_desc.local_address));
+			}
 		}
 
 		/*
@@ -19636,6 +19659,7 @@ static void send_check_user_failure_response(struct sip_pvt *p, struct sip_reque
 	case AUTH_UNKNOWN_DOMAIN:
 	case AUTH_PEER_NOT_DYNAMIC:
 	case AUTH_BAD_TRANSPORT:
+	case AUTH_ACL_FAILED:
 		ast_log(LOG_NOTICE, "Failed to authenticate device %s for %s, code = %d\n",
 			sip_get_header(req, "From"), sip_methods[p->method].text, res);
 		response = "403 Forbidden";
@@ -29684,6 +29708,8 @@ static int sip_prepare_socket(struct sip_pvt *p)
 		goto create_tcptls_session_fail;
 	}
 
+	ast_set_qos(s->fd, global_tos_sip, global_cos_sip, "SIP");
+
 	return s->fd;
 
 create_tcptls_session_fail:
@@ -32638,8 +32664,8 @@ static int reload_config(enum channelreloadreason reason)
 	default_primary_transport = AST_TRANSPORT_UDP;
 	ourport_tcp = STANDARD_SIP_PORT;
 	ourport_tls = STANDARD_TLS_PORT;
-	externtcpport = STANDARD_SIP_PORT;
-	externtlsport = STANDARD_TLS_PORT;
+	externtcpport = 0;
+	externtlsport = 0;
 	sip_cfg.srvlookup = DEFAULT_SRVLOOKUP;
 	global_tos_sip = DEFAULT_TOS_SIP;
 	global_tos_audio = DEFAULT_TOS_AUDIO;
@@ -33130,10 +33156,9 @@ static int reload_config(enum channelreloadreason reason)
 		} else if (!strcasecmp(v->name, "externtcpport")) {
 			if (!(externtcpport = port_str2int(v->value, 0))) {
 				ast_log(LOG_WARNING, "Invalid externtcpport value, must be a positive integer between 1 and 65535 at line %d\n", v->lineno);
-				externtcpport = 0;
 			}
 		} else if (!strcasecmp(v->name, "externtlsport")) {
-			if (!(externtlsport = port_str2int(v->value, STANDARD_TLS_PORT))) {
+			if (!(externtlsport = port_str2int(v->value, 0))) {
 				ast_log(LOG_WARNING, "Invalid externtlsport value, must be a positive integer between 1 and 65535 at line %d\n", v->lineno);
 			}
 		} else if (!strcasecmp(v->name, "allow")) {
@@ -33498,6 +33523,7 @@ static int reload_config(enum channelreloadreason reason)
 			if (setsockopt(sip_tcp_desc.accept_fd, SOL_SOCKET, SO_KEEPALIVE, &flags, sizeof(flags))) {
 				ast_log(LOG_ERROR, "Error enabling TCP keep-alive on sip socket: %s\n", strerror(errno));
 			}
+			ast_set_qos(sip_tcp_desc.accept_fd, global_tos_sip, global_cos_sip, "SIP");
 		}
 	}
 
@@ -33525,6 +33551,7 @@ static int reload_config(enum channelreloadreason reason)
 				ast_log(LOG_ERROR, "Error enabling TCP keep-alive on sip socket: %s\n", strerror(errno));
 				sip_tls_desc.tls_cfg = NULL;
 			}
+			ast_set_qos(sip_tls_desc.accept_fd, global_tos_sip, global_cos_sip, "SIP");
 		}
 	} else if (sip_tls_desc.tls_cfg->enabled) {
 		sip_tls_desc.tls_cfg = NULL;
