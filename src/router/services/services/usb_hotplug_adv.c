@@ -217,40 +217,25 @@ void start_hotplug_block(void)
 	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) && strncmp(part, "md", 2))
 		return;
 
-	if (strlen(part) == 4 || strlen(part) == 7) {	// example: sr0, sda, hda or mmcblock0
+	if (!strcmp(action, "add")) {
+		usb_stop_services();
+	}
 
-		if (!strcmp(action, "add")) {
-			usb_stop_services();
-			sleep(3);
-		}
-
-		sprintf(devname, "/dev/%s", part);
-		sysprintf("/usr/sbin/disktype %s", devname);
-		eval("hdparm", "-S", "242", devname);
-		eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
-		if (!strcmp(action, "add"))
-			usb_add_ufd(NULL, 0, devname, 1);
-		if (!strcmp(action, "remove"))
-			usb_unmount(devname);
-
-		if (!strcmp(action, "add")) {
-			//runs user specified script
-			sleep(3);
-
-			//finally start services again after mounting all partitions for this drive
-			usb_start_services();
-		}
-
-	} else {
-		sprintf(devname, "/dev/%s", part);
-		//devices may come in unordered so lets do a little trick
+	sprintf(devname, "/dev/%s", part);
+	sysprintf("/usr/sbin/disktype %s", devname);
+	eval("hdparm", "-S", "242", devname);
+	eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
+	if (strlen(part) != 4 && strlen(part) != 7) {
 		sysprintf("echo  \"<b>Partition %s:</b>\" >> /tmp/disk/%s", part, part);
 		sysprintf("/usr/sbin/disktype %s >> /tmp/disk/%s", devname, part);
-		if (!strcmp(action, "add"))
-			usb_add_ufd(NULL, 0, devname, 1);
-		if (!strcmp(action, "remove"))
-			usb_unmount(devname);
-
+	}
+	if (!strcmp(action, "add"))
+		usb_add_ufd(NULL, 0, devname, 1);
+	if (!strcmp(action, "remove"))
+		usb_unmount(devname);
+	if (!strcmp(action, "add")) {
+		//finally start services again after mounting all partitions for this drive
+		usb_start_services();
 	}
 
 	return;
