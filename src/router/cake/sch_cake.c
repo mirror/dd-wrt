@@ -606,11 +606,25 @@ static bool cobalt_should_drop(struct cobalt_vars *vars,
 	return drop;
 }
 
+static __be16 cake_skb_proto(const struct sk_buff *skb)
+{
+	unsigned int offset = skb_mac_offset(skb) + sizeof(struct ethhdr);
+	__be16 proto = skb->protocol;
+	struct vlan_hdr vhdr, *vh;
+
+	while (proto == htons(ETH_P_8021Q) || proto == htons(ETH_P_8021AD)) {
+		vh = skb_header_pointer(skb, offset, sizeof(vhdr), &vhdr);
+		if (!vh)
+			break;
+
+		proto = vh->h_vlan_encapsulated_proto;
+		offset += sizeof(vhdr);
+	}
+
+	return proto;
+}
+
 #if IS_REACHABLE(CONFIG_NF_CONNTRACK)
-#if KERNEL_VERSION(4, 0, 0) > LINUX_VERSION_CODE
-#define tc_skb_protocol(_skb) \
-(vlan_tx_tag_present(_skb) ? _skb->vlan_proto : _skb->protocol)
-#endif
 
 static void cake_update_flowkeys(struct flow_keys *keys,
 				 const struct sk_buff *skb)
@@ -620,7 +634,7 @@ static void cake_update_flowkeys(struct flow_keys *keys,
 	struct nf_conn *ct;
 	bool rev = false;
 
-	if (tc_skb_protocol(skb) != htons(ETH_P_IP))
+	if (cake_skb_proto(skb) != htons(ETH_P_IP))
 		return;
 
 	ct = nf_ct_get(skb, &ctinfo);
@@ -1635,7 +1649,7 @@ static u8 cake_handle_diffserv(struct sk_buff *skb, u16 wash)
 	int wlen = skb_network_offset(skb);
 	u8 dscp;
 
-	switch (tc_skb_protocol(skb)) {
+	switch (cake_skb_proto(skb)) {
 	case htons(ETH_P_IP):
 		wlen += sizeof(struct iphdr);
 		if (!pskb_may_pull(skb, wlen) ||
