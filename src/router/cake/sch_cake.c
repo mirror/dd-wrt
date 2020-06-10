@@ -762,7 +762,11 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 	bool nat_enabled = !!(flow_mode & CAKE_FLOW_NAT_FLAG);
 	u32 flow_hash = 0, srchost_hash = 0, dsthost_hash = 0;
 	u16 reduced_hash, srchost_idx, dsthost_idx;
+#if KERNEL_VERSION(3, 18, 0) > LINUX_VERSION_CODE
+	bool use_skbhash = false;
+#else
 	bool use_skbhash = skb->l4_hash;
+#endif
 #if KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE
 	struct flow_keys keys;
 #else
@@ -868,8 +872,10 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 skip_hash:
 	if (flow_override)
 		flow_hash = flow_override - 1;
+#if KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE
 	else if (use_skbhash)
 		flow_hash = skb->hash;
+#endif
 	if (host_override) {
 		dsthost_hash = host_override - 1;
 		srchost_hash = host_override - 1;
