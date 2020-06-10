@@ -626,16 +626,17 @@ static __be16 cake_skb_proto(const struct sk_buff *skb)
 
 #if IS_REACHABLE(CONFIG_NF_CONNTRACK)
 
-static void cake_update_flowkeys(struct flow_keys *keys,
+static bool cake_update_flowkeys(struct flow_keys *keys,
 				 const struct sk_buff *skb)
 {
 	const struct nf_conntrack_tuple *tuple;
 	enum ip_conntrack_info ctinfo;
 	struct nf_conn *ct;
-	bool rev = false;
+	bool rev = false, upd = false;
+	__be32 ip;
 
 	if (cake_skb_proto(skb) != htons(ETH_P_IP))
-		return;
+		return false;
 
 	ct = nf_ct_get(skb, &ctinfo);
 	if (ct) {
@@ -652,7 +653,7 @@ static void cake_update_flowkeys(struct flow_keys *keys,
 				       NFPROTO_IPV4, dev_net(skb->dev),
 				       &srctuple))
 #endif
-			return;
+			return false;
 
 #if KERNEL_VERSION(4, 3, 0) > LINUX_VERSION_CODE
 		hash = nf_conntrack_find_get(dev_net(skb->dev),
@@ -664,7 +665,7 @@ static void cake_update_flowkeys(struct flow_keys *keys,
 					     &srctuple);
 #endif
 		if (!hash)
-			return;
+			return false;
 
 		rev = true;
 		ct = nf_ct_tuplehash_to_ctrack(hash);
@@ -672,31 +673,69 @@ static void cake_update_flowkeys(struct flow_keys *keys,
 	}
 
 #if KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE
-	keys->src = rev ? tuple->dst.u3.ip : tuple->src.u3.ip;
-	keys->dst = rev ? tuple->src.u3.ip : tuple->dst.u3.ip;
+	ip = rev ? tuple->dst.u3.ip : tuple->src.u3.ip;
+	if (ip != keys->src) {
+		keys->src = ip;
+		upd = true;
+	}
+	ip = rev ? tuple->src.u3.ip : tuple->dst.u3.ip;
+	if (ip != keys->dst) {
+		keys->dst = ip;
+		upd = true;
+	}
 #else
-	keys->addrs.v4addrs.src = rev ? tuple->dst.u3.ip : tuple->src.u3.ip;
-	keys->addrs.v4addrs.dst = rev ? tuple->src.u3.ip : tuple->dst.u3.ip;
+	ip = rev ? tuple->dst.u3.ip : tuple->src.u3.ip;
+	if (ip != keys->addrs.v4addrs.src) {
+		keys->addrs.v4addrs.src = ip;
+		upd = true;
+	}
+	ip = rev ? tuple->src.u3.ip : tuple->dst.u3.ip;
+	if (ip != keys->addrs.v4addrs.dst) {
+		keys->addrs.v4addrs.dst = ip;
+		upd = true;
+	}
 #endif
 
 #if KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE
 	if (keys->ports) {
-		keys->port16[0] = rev ? tuple->dst.u.all : tuple->src.u.all;
-		keys->port16[1] = rev ? tuple->src.u.all : tuple->dst.u.all;
+		__be16 port;
+
+		port = rev ? tuple->dst.u.all : tuple->src.u.all;
+		if (port != keys->port16[0]) {
+			keys->port16[0] = port;
+			upd = true;
+		}
+		port = rev ? tuple->src.u.all : tuple->dst.u.all;
+		if (port != keys->port16[1]) {
+			port = keys->port16[1];
+			upd = true;
+		}
 	}
 #else
 	if (keys->ports.ports) {
-		keys->ports.src = rev ? tuple->dst.u.all : tuple->src.u.all;
-		keys->ports.dst = rev ? tuple->src.u.all : tuple->dst.u.all;
+		__be16 port;
+
+		port = rev ? tuple->dst.u.all : tuple->src.u.all;
+		if (port != keys->ports.src) {
+			keys->ports.src = port;
+			upd = true;
+		}
+		port = rev ? tuple->src.u.all : tuple->dst.u.all;
+		if (port != keys->ports.dst) {
+			port = keys->ports.dst;
+			upd = true;
+		}
 	}
 #endif
 	if (rev)
 		nf_ct_put(ct);
+	return upd;
 }
 #else
-static void cake_update_flowkeys(struct flow_keys *keys,
+static bool cake_update_flowkeys(struct flow_keys *keys,
 				 const struct sk_buff *skb)
 {
+	return false;
 	/* There is nothing we can do here without CONNTRACK */
 }
 #endif
@@ -718,8 +757,12 @@ static bool cake_ddst(int flow_mode)
 static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 		     int flow_mode, u16 flow_override, u16 host_override)
 {
+	bool hash_flows = (!flow_override && !!(flow_mode & CAKE_FLOW_FLOWS));
+	bool hash_hosts = (!host_override && !!(flow_mode & CAKE_FLOW_HOSTS));
+	bool nat_enabled = !!(flow_mode & CAKE_FLOW_NAT_FLAG);
 	u32 flow_hash = 0, srchost_hash = 0, dsthost_hash = 0;
 	u16 reduced_hash, srchost_idx, dsthost_idx;
+	bool use_skbhash = skb->l4_hash;
 #if KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE
 	struct flow_keys keys;
 #else
@@ -729,21 +772,31 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 	if (unlikely(flow_mode == CAKE_FLOW_NONE))
 		return 0;
 
-	/* If both overrides are set we can skip packet dissection entirely */
-	if ((flow_override || !(flow_mode & CAKE_FLOW_FLOWS)) &&
-	    (host_override || !(flow_mode & CAKE_FLOW_HOSTS)))
+	/* If both overrides are set, or we can use the SKB hash and nat mode is
+	 * disabled, we can skip packet dissection entirely. If nat mode is
+	 * enabled there's another check below after doing the conntrack lookup.
+	 */
+	if ((!hash_flows || (use_skbhash && !nat_enabled)) && !hash_hosts)
 		goto skip_hash;
 
 #if KERNEL_VERSION(4, 2, 0) > LINUX_VERSION_CODE
 	skb_flow_dissect(skb, &keys);
 
-	if (flow_mode & CAKE_FLOW_NAT_FLAG)
-		cake_update_flowkeys(&keys, skb);
+	/* Don't use the SKB hash if we change the lookup keys from conntrack */
+	if (nat_enabled && cake_update_flowkeys(&keys, skb))
+		use_skbhash = false;
+
+	/* If we can still use the SKB hash and don't need the host hash, we can
+	 * skip the rest of the hashing procedure
+	 */
+	if (use_skbhash && !hash_hosts)
+		goto skip_hash;
+ 
 
 	srchost_hash = jhash_1word((__force u32)keys.src, q->perturb);
 	dsthost_hash = jhash_1word((__force u32)keys.dst, q->perturb);
 
-	if (flow_mode & CAKE_FLOW_FLOWS)
+	if (hash_flows && !use_skbhash)
 		flow_hash = jhash_3words((__force u32)keys.dst, (__force u32)keys.src ^ keys.ip_proto, (__force u32)keys.ports, q->perturb);
 
 #else
@@ -758,8 +811,15 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 				   FLOW_DISSECTOR_F_STOP_AT_FLOW_LABEL);
 #endif
 
-	if (flow_mode & CAKE_FLOW_NAT_FLAG)
-		cake_update_flowkeys(&keys, skb);
+	/* Don't use the SKB hash if we change the lookup keys from conntrack */
+	if (nat_enabled && cake_update_flowkeys(&keys, skb))
+		use_skbhash = false;
+
+	/* If we can still use the SKB hash and don't need the host hash, we can
+	 * skip the rest of the hashing procedure
+	 */
+	if (use_skbhash && !hash_hosts)
+		goto skip_hash;
 
 	/* flow_hash_from_keys() sorts the addresses by value, so we have
 	 * to preserve their order in a separate data structure to treat
@@ -801,13 +861,15 @@ static u32 cake_hash(struct cake_tin_data *q, const struct sk_buff *skb,
 	/* This *must* be after the above switch, since as a
 	 * side-effect it sorts the src and dst addresses.
 	 */
-	if (flow_mode & CAKE_FLOW_FLOWS)
+	if (hash_flows && !use_skbhash)
 		flow_hash = flow_hash_from_keys(&keys);
 #endif
 
 skip_hash:
 	if (flow_override)
 		flow_hash = flow_override - 1;
+	else if (use_skbhash)
+		flow_hash = skb->hash;
 	if (host_override) {
 		dsthost_hash = host_override - 1;
 		srchost_hash = host_override - 1;
