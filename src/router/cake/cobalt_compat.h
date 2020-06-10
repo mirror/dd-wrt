@@ -87,7 +87,8 @@ static inline void qdisc_qstats_drop(struct Qdisc *sch)
 		(config_enabled(option##_MODULE) && config_enabled(MODULE)))
 #endif
 
-#if KERNEL_VERSION(4, 4, 114) > LINUX_VERSION_CODE
+#if ((KERNEL_VERSION(4, 4, 114) > LINUX_VERSION_CODE) && \
+     ((KERNEL_VERSION(4,  1, 50) > LINUX_VERSION_CODE) || (KERNEL_VERSION(4,  2, 0) <= LINUX_VERSION_CODE)))
 static inline unsigned int __tcp_hdrlen(const struct tcphdr *th)
 {
 	return th->doff * 4;
@@ -100,6 +101,13 @@ static inline int skb_try_make_writable(struct sk_buff *skb,
 {
 	return skb_cloned(skb) && !skb_clone_writable(skb, write_len) &&
 	       pskb_expand_head(skb, 0, 0, GFP_ATOMIC);
+}
+#endif
+
+#if KERNEL_VERSION(4, 11, 0) > LINUX_VERSION_CODE
+static inline int skb_mac_offset(const struct sk_buff *skb)
+{
+	return skb_mac_header(skb) - skb->data;
 }
 #endif
 
@@ -134,7 +142,7 @@ not in 3.17
 3.18.37
 not in 3.19
 not in 4.0
-4.1.27 onward
+4.1.28 onward
 not in 4.2
 not in 4.3
 4.4.11 onward
@@ -142,7 +150,7 @@ not in 4.3
  */
 #if ((KERNEL_VERSION(3,  0, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(3, 16, 37) > LINUX_VERSION_CODE)) || \
     ((KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(3, 18, 37) > LINUX_VERSION_CODE)) || \
-    ((KERNEL_VERSION(4,  1, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(4,  1, 27) > LINUX_VERSION_CODE)) || \
+    ((KERNEL_VERSION(4,  1, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(4,  1, 28) > LINUX_VERSION_CODE)) || \
     ((KERNEL_VERSION(4,  4, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(4,  4, 11) > LINUX_VERSION_CODE)) || \
     ((KERNEL_VERSION(4,  5, 0) <= LINUX_VERSION_CODE) && (KERNEL_VERSION(4,  5,  5) > LINUX_VERSION_CODE))
 #define qdisc_tree_reduce_backlog(_a, _b, _c) qdisc_tree_decrease_qlen(_a, _b)
