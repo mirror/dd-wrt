@@ -326,7 +326,7 @@ static int verify_pubkey(const char *file,
 			 const char *host, const char *service,
 			 const gnutls_datum_t * pubkey)
 {
-	FILE *fd;
+	FILE *fp;
 	char *line = NULL;
 	size_t line_size = 0;
 	int ret, l2, mismatch = 0;
@@ -343,14 +343,14 @@ static int verify_pubkey(const char *file,
 	if (service != NULL)
 		service_len = strlen(service);
 
-	fd = fopen(file, "rb");
-	if (fd == NULL) {
+	fp = fopen(file, "rbe");
+	if (fp == NULL) {
 		ret = gnutls_assert_val(GNUTLS_E_FILE_ERROR);
 		goto cleanup;
 	}
 
 	do {
-		l2 = getline(&line, &line_size, fd);
+		l2 = getline(&line, &line_size, fp);
 		if (l2 > 0) {
 			ret =
 			    parse_line(line, host, host_len, service,
@@ -371,8 +371,8 @@ static int verify_pubkey(const char *file,
 
       cleanup:
 	free(line);
-	if (fd != NULL)
-		fclose(fd);
+	if (fp != NULL)
+		fclose(fp);
 	gnutls_free(b64key.data);
 
 	return ret;
@@ -400,7 +400,7 @@ int store_pubkey(const char *db_name, const char *host,
 		 const char *service, time_t expiration,
 		 const gnutls_datum_t * pubkey)
 {
-	FILE *fd = NULL;
+	FILE *fp = NULL;
 	gnutls_datum_t b64key = { NULL, 0 };
 	int ret;
 
@@ -414,8 +414,8 @@ int store_pubkey(const char *db_name, const char *host,
 		goto cleanup;
 	}
 
-	fd = fopen(db_name, "ab+");
-	if (fd == NULL) {
+	fp = fopen(db_name, "abe+");
+	if (fp == NULL) {
 		ret = gnutls_assert_val(GNUTLS_E_FILE_ERROR);
 		goto cleanup;
 	}
@@ -425,14 +425,14 @@ int store_pubkey(const char *db_name, const char *host,
 	if (host == NULL)
 		host = "*";
 
-	fprintf(fd, "|g0|%s|%s|%lu|%.*s\n", host, service,
+	fprintf(fp, "|g0|%s|%s|%lu|%.*s\n", host, service,
 		(unsigned long) expiration, b64key.size, b64key.data);
 
 	ret = 0;
 
       cleanup:
-	if (fd != NULL)
-		fclose(fd);
+	if (fp != NULL)
+		fclose(fp);
 
 	gnutls_mutex_unlock(&_gnutls_file_mutex);
 	gnutls_free(b64key.data);
@@ -446,11 +446,11 @@ int store_commitment(const char *db_name, const char *host,
 		     gnutls_digest_algorithm_t hash_algo,
 		     const gnutls_datum_t * hash)
 {
-	FILE *fd;
+	FILE *fp;
 	char buffer[MAX_HASH_SIZE * 2 + 1];
 
-	fd = fopen(db_name, "ab+");
-	if (fd == NULL)
+	fp = fopen(db_name, "abe+");
+	if (fp == NULL)
 		return gnutls_assert_val(GNUTLS_E_FILE_ERROR);
 
 	if (service == NULL)
@@ -458,12 +458,12 @@ int store_commitment(const char *db_name, const char *host,
 	if (host == NULL)
 		host = "*";
 
-	fprintf(fd, "|c0|%s|%s|%lu|%u|%s\n", host, service,
+	fprintf(fp, "|c0|%s|%s|%lu|%u|%s\n", host, service,
 		(unsigned long) expiration, (unsigned) hash_algo,
 		_gnutls_bin2hex(hash->data, hash->size, buffer,
 				sizeof(buffer), NULL));
 
-	fclose(fd);
+	fclose(fp);
 
 	return 0;
 }

@@ -67,7 +67,7 @@ gnutls_cipher_init(gnutls_cipher_hd_t * handle,
 		return gnutls_assert_val(GNUTLS_E_UNWANTED_ALGORITHM);
 
 	e = cipher_to_entry(cipher);
-	if (e == NULL || e->only_aead)
+	if (e == NULL || (e->flags & GNUTLS_CIPHER_FLAG_ONLY_AEAD))
 		return gnutls_assert_val(GNUTLS_E_INVALID_REQUEST);
 
 	*handle = gnutls_calloc(1, sizeof(api_cipher_hd_st));
@@ -453,6 +453,23 @@ void gnutls_hmac_deinit(gnutls_hmac_hd_t handle, void *digest)
 unsigned gnutls_hmac_get_len(gnutls_mac_algorithm_t algorithm)
 {
 	return _gnutls_mac_get_algo_len(mac_to_entry(algorithm));
+}
+
+/**
+ * gnutls_hmac_get_key_size:
+ * @algorithm: the mac algorithm to use
+ *
+ * This function will return the size of the key to be used with this
+ * algorithm. On the algorithms which may accept arbitrary key sizes,
+ * the returned size is the MAC key size used in the TLS protocol.
+ *
+ * Returns: The key size or zero on error.
+ *
+ * Since: 3.6.12
+ **/
+unsigned gnutls_hmac_get_key_size(gnutls_mac_algorithm_t algorithm)
+{
+	return _gnutls_mac_get_key_size(mac_to_entry(algorithm));
 }
 
 /**
@@ -992,9 +1009,9 @@ gnutls_aead_cipher_encryptv(gnutls_aead_cipher_hd_t handle,
 	uint8_t *dst;
 	size_t dst_size, total = 0;
 	uint8_t *p;
+	size_t len;
 	size_t blocksize = handle->ctx_enc.e->blocksize;
 	struct iov_iter_st iter;
-	size_t blocks;
 
 	/* Limitation: this function provides an optimization under the internally registered
 	 * AEAD ciphers. When an AEAD cipher is used registered with gnutls_crypto_register_aead_cipher(),
@@ -1006,7 +1023,7 @@ gnutls_aead_cipher_encryptv(gnutls_aead_cipher_hd_t handle,
 	else if (tag_size > (unsigned)_gnutls_cipher_get_tag_size(h->ctx_enc.e))
 		return gnutls_assert_val(GNUTLS_E_INVALID_REQUEST);
 
-	if (handle->ctx_enc.e->only_aead || handle->ctx_enc.encrypt == NULL) {
+	if ((handle->ctx_enc.e->flags & GNUTLS_CIPHER_FLAG_ONLY_AEAD) || handle->ctx_enc.encrypt == NULL) {
 		/* ciphertext cannot be produced in a piecemeal approach */
 		struct iov_store_st auth;
 		struct iov_store_st ptext;
@@ -1045,15 +1062,7 @@ gnutls_aead_cipher_encryptv(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		ret = _gnutls_cipher_auth(&handle->ctx_enc, p,
-					  blocksize * blocks);
-		if (unlikely(ret < 0))
-			return gnutls_assert_val(ret);
-	}
-	if (iter.block_offset > 0) {
-		ret = _gnutls_cipher_auth(&handle->ctx_enc,
-					  iter.block, iter.block_offset);
+		ret = _gnutls_cipher_auth(&handle->ctx_enc, p, ret);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
 	}
@@ -1070,29 +1079,15 @@ gnutls_aead_cipher_encryptv(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		if (unlikely(dst_size < blocksize * blocks))
-			return gnutls_assert_val(GNUTLS_E_SHORT_MEMORY_BUFFER);
-		ret = _gnutls_cipher_encrypt2(&handle->ctx_enc, p,
-					      blocksize * blocks,
-					      dst, dst_size);
-		if (unlikely(ret < 0))
-			return gnutls_assert_val(ret);
-		DECR_LEN(dst_size, blocksize * blocks);
-		dst += blocksize * blocks;
-		total += blocksize * blocks;
-	}
-	if (iter.block_offset > 0) {
-		if (unlikely(dst_size < iter.block_offset))
-			return gnutls_assert_val(GNUTLS_E_SHORT_MEMORY_BUFFER);
+		len = ret;
 		ret = _gnutls_cipher_encrypt2(&handle->ctx_enc,
-					      iter.block, iter.block_offset,
+					      p, len,
 					      dst, dst_size);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
-		DECR_LEN(dst_size, iter.block_offset);
-		dst += iter.block_offset;
-		total += iter.block_offset;
+		DECR_LEN(dst_size, len);
+		dst += len;
+		total += len;
 	}
 
 	if (dst_size < tag_size)
@@ -1135,9 +1130,9 @@ gnutls_aead_cipher_encryptv2(gnutls_aead_cipher_hd_t handle,
 	api_aead_cipher_hd_st *h = handle;
 	ssize_t ret;
 	uint8_t *p;
+	size_t len;
 	ssize_t blocksize = handle->ctx_enc.e->blocksize;
 	struct iov_iter_st iter;
-	size_t blocks;
 	size_t _tag_size;
 
 	if (tag_size == NULL || *tag_size == 0)
@@ -1152,7 +1147,7 @@ gnutls_aead_cipher_encryptv2(gnutls_aead_cipher_hd_t handle,
 	 * AEAD ciphers. When an AEAD cipher is used registered with gnutls_crypto_register_aead_cipher(),
 	 * then this becomes a convenience function as it missed the lower-level primitives
 	 * necessary for piecemeal encryption. */
-	if (handle->ctx_enc.e->only_aead || handle->ctx_enc.encrypt == NULL) {
+	if ((handle->ctx_enc.e->flags & GNUTLS_CIPHER_FLAG_ONLY_AEAD) || handle->ctx_enc.encrypt == NULL) {
 		/* ciphertext cannot be produced in a piecemeal approach */
 		struct iov_store_st auth;
 		struct iov_store_st ptext;
@@ -1220,15 +1215,7 @@ gnutls_aead_cipher_encryptv2(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		ret = _gnutls_cipher_auth(&handle->ctx_enc, p,
-					  blocksize * blocks);
-		if (unlikely(ret < 0))
-			return gnutls_assert_val(ret);
-	}
-	if (iter.block_offset > 0) {
-		ret = _gnutls_cipher_auth(&handle->ctx_enc,
-					  iter.block, iter.block_offset);
+		ret = _gnutls_cipher_auth(&handle->ctx_enc, p, ret);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
 	}
@@ -1242,17 +1229,13 @@ gnutls_aead_cipher_encryptv2(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		ret = _gnutls_cipher_encrypt2(&handle->ctx_enc,
-					      p, blocksize * blocks,
-					      p, blocksize * blocks);
+
+		len = ret;
+		ret = _gnutls_cipher_encrypt2(&handle->ctx_enc, p, len, p, len);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
-	}
-	if (iter.block_offset > 0) {
-		ret = _gnutls_cipher_encrypt2(&handle->ctx_enc,
-					      iter.block, iter.block_offset,
-					      iter.block, iter.block_offset);
+
+		ret = _gnutls_iov_iter_sync(&iter, p, len);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
 	}
@@ -1294,9 +1277,9 @@ gnutls_aead_cipher_decryptv2(gnutls_aead_cipher_hd_t handle,
 	api_aead_cipher_hd_st *h = handle;
 	ssize_t ret;
 	uint8_t *p;
+	size_t len;
 	ssize_t blocksize = handle->ctx_enc.e->blocksize;
 	struct iov_iter_st iter;
-	size_t blocks;
 	uint8_t _tag[MAX_HASH_SIZE];
 
 	if (tag_size == 0)
@@ -1308,7 +1291,7 @@ gnutls_aead_cipher_decryptv2(gnutls_aead_cipher_hd_t handle,
 	 * AEAD ciphers. When an AEAD cipher is used registered with gnutls_crypto_register_aead_cipher(),
 	 * then this becomes a convenience function as it missed the lower-level primitives
 	 * necessary for piecemeal encryption. */
-	if (handle->ctx_enc.e->only_aead || handle->ctx_enc.encrypt == NULL) {
+	if ((handle->ctx_enc.e->flags & GNUTLS_CIPHER_FLAG_ONLY_AEAD) || handle->ctx_enc.encrypt == NULL) {
 		/* ciphertext cannot be produced in a piecemeal approach */
 		struct iov_store_st auth;
 		struct iov_store_st ctext;
@@ -1370,15 +1353,7 @@ gnutls_aead_cipher_decryptv2(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		ret = _gnutls_cipher_auth(&handle->ctx_enc, p,
-					  blocksize * blocks);
-		if (unlikely(ret < 0))
-			return gnutls_assert_val(ret);
-	}
-	if (iter.block_offset > 0) {
-		ret = _gnutls_cipher_auth(&handle->ctx_enc,
-					  iter.block, iter.block_offset);
+		ret = _gnutls_cipher_auth(&handle->ctx_enc, p, ret);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
 	}
@@ -1392,17 +1367,13 @@ gnutls_aead_cipher_decryptv2(gnutls_aead_cipher_hd_t handle,
 			return gnutls_assert_val(ret);
 		if (ret == 0)
 			break;
-		blocks = ret;
-		ret = _gnutls_cipher_decrypt2(&handle->ctx_enc,
-					      p, blocksize * blocks,
-					      p, blocksize * blocks);
+
+		len = ret;
+		ret = _gnutls_cipher_decrypt2(&handle->ctx_enc, p, len, p, len);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
-	}
-	if (iter.block_offset > 0) {
-		ret = _gnutls_cipher_decrypt2(&handle->ctx_enc,
-					      iter.block, iter.block_offset,
-					      iter.block, iter.block_offset);
+
+		ret = _gnutls_iov_iter_sync(&iter, p, len);
 		if (unlikely(ret < 0))
 			return gnutls_assert_val(ret);
 	}
@@ -1429,4 +1400,99 @@ void gnutls_aead_cipher_deinit(gnutls_aead_cipher_hd_t handle)
 {
 	_gnutls_aead_cipher_deinit(handle);
 	gnutls_free(handle);
+}
+
+extern gnutls_crypto_kdf_st _gnutls_kdf_ops;
+
+/**
+ * gnutls_hkdf_extract:
+ * @mac: the mac algorithm used internally
+ * @key: the initial keying material
+ * @salt: the optional salt
+ * @output: the output value of the extract operation
+ *
+ * This function will derive a fixed-size key using the HKDF-Extract
+ * function as defined in RFC 5869.
+ *
+ * Returns: Zero or a negative error code on error.
+ *
+ * Since: 3.6.13
+ */
+int
+gnutls_hkdf_extract(gnutls_mac_algorithm_t mac,
+		    const gnutls_datum_t *key,
+		    const gnutls_datum_t *salt,
+		    void *output)
+{
+	/* MD5 is only allowed internally for TLS */
+	if (is_mac_algo_forbidden(mac))
+		return gnutls_assert_val(GNUTLS_E_UNWANTED_ALGORITHM);
+
+	return _gnutls_kdf_ops.hkdf_extract(mac, key->data, key->size,
+					    salt ? salt->data : NULL,
+					    salt ? salt->size : 0,
+					    output);
+}
+
+/**
+ * gnutls_hkdf_expand:
+ * @mac: the mac algorithm used internally
+ * @key: the pseudorandom key created with HKDF-Extract
+ * @info: the optional informational data
+ * @output: the output value of the expand operation
+ * @length: the desired length of the output key
+ *
+ * This function will derive a variable length keying material from
+ * the pseudorandom key using the HKDF-Expand function as defined in
+ * RFC 5869.
+ *
+ * Returns: Zero or a negative error code on error.
+ *
+ * Since: 3.6.13
+ */
+int
+gnutls_hkdf_expand(gnutls_mac_algorithm_t mac,
+		   const gnutls_datum_t *key,
+		   const gnutls_datum_t *info,
+		   void *output, size_t length)
+{
+	/* MD5 is only allowed internally for TLS */
+	if (is_mac_algo_forbidden(mac))
+		return gnutls_assert_val(GNUTLS_E_UNWANTED_ALGORITHM);
+
+	return _gnutls_kdf_ops.hkdf_expand(mac, key->data, key->size,
+					   info->data, info->size,
+					   output, length);
+}
+
+/**
+ * gnutls_pbkdf2:
+ * @mac: the mac algorithm used internally
+ * @key: the initial keying material
+ * @salt: the salt
+ * @iter_count: the iteration count
+ * @output: the output value
+ * @length: the desired length of the output key
+ *
+ * This function will derive a variable length keying material from
+ * a password according to PKCS #5 PBKDF2.
+ *
+ * Returns: Zero or a negative error code on error.
+ *
+ * Since: 3.6.13
+ */
+int
+gnutls_pbkdf2(gnutls_mac_algorithm_t mac,
+	      const gnutls_datum_t *key,
+	      const gnutls_datum_t *salt,
+	      unsigned iter_count,
+	      void *output, size_t length)
+{
+	/* MD5 is only allowed internally for TLS */
+	if (is_mac_algo_forbidden(mac))
+		return gnutls_assert_val(GNUTLS_E_UNWANTED_ALGORITHM);
+
+	return _gnutls_kdf_ops.pbkdf2(mac, key->data, key->size,
+				      salt->data, salt->size, iter_count,
+				      output, length);
 }

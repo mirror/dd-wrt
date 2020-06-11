@@ -121,7 +121,7 @@ asn1_length_der (unsigned long int len, unsigned char *der, int *der_len)
 /******************************************************/
 static void
 _asn1_tag_der (unsigned char class, unsigned int tag_value,
-	       unsigned char *ans, int *ans_len)
+	       unsigned char ans[ASN1_MAX_TAG_SIZE], int *ans_len)
 {
   int k;
   unsigned char temp[ASN1_MAX_TAG_SIZE];
@@ -265,6 +265,9 @@ _asn1_time_der (unsigned char *str, int str_len, unsigned char *der,
   int len_len;
   int max_len;
 
+  if (der == NULL)
+    return ASN1_VALUE_NOT_VALID;
+
   max_len = *der_len;
 
   asn1_length_der (str_len, (max_len > 0) ? der : NULL, &len_len);
@@ -292,7 +295,8 @@ _asn1_get_utctime_der(unsigned char *der,int *der_len,unsigned char *str)
   if (str_len<0) return;
   memcpy(temp,der+len_len,str_len);
   *der_len=str_len+len_len;
-  switch(str_len){
+  switch(str_len)
+  {
   case 11:
     temp[10]=0;
     strcat(temp,"00+0000");
@@ -316,8 +320,30 @@ _asn1_get_utctime_der(unsigned char *der,int *der_len,unsigned char *str)
 }
 */
 
+static
+void encode_val(uint64_t val, unsigned char *der, int max_len, int *der_len)
+{
+  int first, k;
+  unsigned char bit7;
+
+  first = 0;
+  for (k = sizeof(val); k >= 0; k--)
+    {
+      bit7 = (val >> (k * 7)) & 0x7F;
+      if (bit7 || first || !k)
+	{
+	  if (k)
+	    bit7 |= 0x80;
+	  if (max_len > (*der_len))
+	    der[*der_len] = bit7;
+	  (*der_len)++;
+	  first = 1;
+	}
+    }
+}
+
 /******************************************************/
-/* Function : _asn1_objectid_der                      */
+/* Function : _asn1_object_id_der                     */
 /* Description: creates the DER coding for an         */
 /* OBJECT IDENTIFIER  type (length included).         */
 /* Parameters:                                        */
@@ -332,15 +358,18 @@ _asn1_get_utctime_der(unsigned char *der,int *der_len,unsigned char *str)
 /*   or an error value.                               */
 /******************************************************/
 static int
-_asn1_objectid_der (unsigned char *str, unsigned char *der, int *der_len)
+_asn1_object_id_der (const char *str, unsigned char *der, int *der_len)
 {
-  int len_len, counter, k, first, max_len;
+  int len_len, counter, max_len;
   char *temp, *n_end, *n_start;
-  unsigned char bit7;
   uint64_t val, val1 = 0;
   int str_len = _asn1_strlen (str);
 
   max_len = *der_len;
+  *der_len = 0;
+
+  if (der == NULL && max_len > 0)
+    return ASN1_VALUE_NOT_VALID;
 
   temp = malloc (str_len + 2);
   if (temp == NULL)
@@ -359,30 +388,30 @@ _asn1_objectid_der (unsigned char *str, unsigned char *der, int *der_len)
       counter++;
 
       if (counter == 1)
-	val1 = val;
+        {
+	  val1 = val;
+	}
       else if (counter == 2)
 	{
-	  if (max_len > 0)
-	    der[0] = 40 * val1 + val;
-	  *der_len = 1;
+	  uint64_t val0;
+
+          if (val1 > 2)
+            {
+              free(temp);
+              return ASN1_VALUE_NOT_VALID;
+            }
+          else if ((val1 == 0 || val1 == 1) && val > 39)
+            {
+              free(temp);
+              return ASN1_VALUE_NOT_VALID;
+            }
+
+	  val0 = 40 * val1 + val;
+	  encode_val(val0, der, max_len, der_len);
 	}
       else
 	{
-	  first = 0;
-	  for (k = sizeof(val); k >= 0; k--)
-	    {
-	      bit7 = (val >> (k * 7)) & 0x7F;
-	      if (bit7 || first || !k)
-		{
-		  if (k)
-		    bit7 |= 0x80;
-		  if (max_len > (*der_len))
-		    der[*der_len] = bit7;
-		  (*der_len)++;
-		  first = 1;
-		}
-	    }
-
+	  encode_val(val, der, max_len, der_len);
 	}
       n_start = n_end + 1;
     }
@@ -403,6 +432,46 @@ _asn1_objectid_der (unsigned char *str, unsigned char *der, int *der_len)
   return ASN1_SUCCESS;
 }
 
+/**
+ * asn1_object_id_der:
+ * @str: An object identifier in numeric, dot format.
+ * @der: buffer to hold the returned encoding (may be %NULL).
+ * @der_len: initially the size of @der; will hold the final size.
+ * @flags: must be zero
+ *
+ * Creates the DER encoding of the provided object identifier.
+ *
+ * Returns: %ASN1_SUCCESS if DER encoding was OK, %ASN1_VALUE_NOT_VALID
+ *   if @str is not a valid OID, %ASN1_MEM_ERROR if the @der
+ *   vector isn't big enough and in this case @der_len will contain the
+ *   length needed.
+ **/
+int asn1_object_id_der(const char *str, unsigned char *der, int *der_len, unsigned flags)
+{
+  unsigned char tag_der[MAX_TAG_LEN];
+  int tag_len = 0, r;
+  int max_len = *der_len;
+
+  *der_len = 0;
+
+  _asn1_tag_der (ETYPE_CLASS (ASN1_ETYPE_OBJECT_ID), ETYPE_TAG (ASN1_ETYPE_OBJECT_ID),
+                 tag_der, &tag_len);
+
+  if (max_len > tag_len)
+    {
+      memcpy(der, tag_der, tag_len);
+    }
+  max_len -= tag_len;
+  der += tag_len;
+
+  r = _asn1_object_id_der (str, der, &max_len);
+  if (r == ASN1_MEM_ERROR || r == ASN1_SUCCESS)
+    {
+      *der_len = max_len + tag_len;
+    }
+
+  return r;
+}
 
 static const unsigned char bit_mask[] =
   { 0xFF, 0xFE, 0xFC, 0xF8, 0xF0, 0xE0, 0xC0, 0x80 };
@@ -472,6 +541,9 @@ _asn1_complete_explicit_tag (asn1_node node, unsigned char *der,
   asn1_node p;
   int is_tag_implicit, len2, len3;
   unsigned char temp[SIZEOF_UNSIGNED_INT];
+
+  if (der == NULL && *max_len > 0)
+    return ASN1_VALUE_NOT_VALID;
 
   is_tag_implicit = 0;
 
@@ -830,6 +902,39 @@ error:
   return err;
 }
 
+struct vet
+{
+  unsigned char *ptr;
+  int size;
+};
+
+static int setof_compar(const void *_e1, const void *_e2)
+{
+  unsigned length;
+  const struct vet *e1 = _e1, *e2 = _e2;
+  int rval;
+
+  /* The encodings of the component values of a set-of value shall
+   * appear in ascending order, the encodings being compared
+   * as octet strings with the shorter components being
+   * padded at their trailing end with 0-octets.
+   * The padding octets are for comparison purposes and
+   * do not appear in the encodings.
+   */
+  length = MIN(e1->size, e2->size);
+
+  rval = memcmp(e1->ptr, e2->ptr, length);
+  if (rval == 0 && e1->size != e2->size)
+    {
+      if (e1->size > e2->size)
+        rval = 1;
+      else if (e2->size > e1->size)
+        rval = -1;
+    }
+
+  return rval;
+}
+
 /******************************************************/
 /* Function : _asn1_ordering_set_of                   */
 /* Description: puts the elements of a SET OF type in */
@@ -844,18 +949,18 @@ error:
 static int
 _asn1_ordering_set_of (unsigned char *der, int der_len, asn1_node node)
 {
-  struct vet
-  {
-    int end;
-    struct vet *next, *prev;
-  };
-
-  int counter, len, len2, change;
-  struct vet *first, *last, *p_vet, *p2_vet;
+  int counter, len, len2;
+  struct vet *list = NULL, *tlist;
+  unsigned list_size = 0;
+  struct vet *p_vet;
   asn1_node p;
-  unsigned char *temp, class;
-  unsigned long k, length;
+  unsigned char class;
+  unsigned i;
+  unsigned char *out = NULL;
   int err;
+
+  if (der == NULL)
+    return ASN1_VALUE_NOT_VALID;
 
   counter = 0;
 
@@ -873,33 +978,30 @@ _asn1_ordering_set_of (unsigned char *der, int der_len, asn1_node node)
   if ((p == NULL) || (p->right == NULL))
     return ASN1_SUCCESS;
 
-  first = last = NULL;
   while (p)
     {
-      p_vet = malloc (sizeof (struct vet));
-      if (p_vet == NULL)
+      list_size++;
+      tlist = realloc (list, list_size*sizeof(struct vet));
+      if (tlist == NULL)
 	{
 	  err = ASN1_MEM_ALLOC_ERROR;
 	  goto error;
 	}
+      list = tlist;
+      p_vet = &list[list_size-1];
 
-      p_vet->next = NULL;
-      p_vet->prev = last;
-      if (first == NULL)
-	first = p_vet;
-      else
-	last->next = p_vet;
-      last = p_vet;
+      p_vet->ptr = der+counter;
+      p_vet->size = 0;
 
       /* extraction of tag and length */
       if (der_len - counter > 0)
 	{
-
 	  err = asn1_get_tag_der (der + counter, der_len - counter, &class,
 	                          &len, NULL);
 	  if (err != ASN1_SUCCESS)
 	    goto error;
 	  counter += len;
+          p_vet->size += len;
 
 	  len2 = asn1_get_length_der (der + counter, der_len - counter, &len);
 	  if (len2 < 0)
@@ -908,84 +1010,47 @@ _asn1_ordering_set_of (unsigned char *der, int der_len, asn1_node node)
 	      goto error;
 	    }
 	  counter += len + len2;
+          p_vet->size += len + len2;
+
 	}
       else
 	{
 	  err = ASN1_DER_ERROR;
 	  goto error;
 	}
-
-      p_vet->end = counter;
       p = p->right;
     }
 
-  p_vet = first;
-
-  while (p_vet)
+  if (counter > der_len)
     {
-      p2_vet = p_vet->next;
-      counter = 0;
-      while (p2_vet)
-	{
-	  length = MIN(p_vet->end - counter, p2_vet->end - p_vet->end);
-	  change = -1;
-	  for (k = 0; k < length; k++)
-	    if (der[counter + k] > der[p_vet->end + k])
-	      {
-		change = 1;
-		break;
-	      }
-	    else if (der[counter + k] < der[p_vet->end + k])
-	      {
-		change = 0;
-		break;
-	      }
-
-	  if ((change == -1)
-	      && ((p_vet->end - counter) > (p2_vet->end - p_vet->end)))
-	    change = 1;
-
-	  if (change == 1)
-	    {
-	      /* change position */
-	      temp = malloc (p_vet->end - counter);
-	      if (temp == NULL)
-		{
-		  err = ASN1_MEM_ALLOC_ERROR;
-		  goto error;
-		}
-
-	      memcpy (temp, der + counter, (p_vet->end) - counter);
-	      memcpy (der + counter, der + (p_vet->end),
-		      (p2_vet->end) - (p_vet->end));
-	      memcpy (der + counter + (p2_vet->end) - (p_vet->end), temp,
-		      (p_vet->end) - counter);
-	      free (temp);
-
-	      p_vet->end = counter + (p2_vet->end - p_vet->end);
-	    }
-	  counter = p_vet->end;
-
-	  p2_vet = p2_vet->next;
-	  p_vet = p_vet->next;
-	}
-
-      if (p_vet != first)
-	p_vet->prev->next = NULL;
-      else
-	first = NULL;
-      free (p_vet);
-      p_vet = first;
+      err = ASN1_DER_ERROR;
+      goto error;
     }
-  return ASN1_SUCCESS;
+
+  qsort(list, list_size, sizeof(struct vet), setof_compar);
+
+  out = malloc(der_len);
+  if (out == NULL)
+    {
+      err = ASN1_MEM_ERROR;
+      goto error;
+    }
+
+  /* the sum of p_vet->size == der_len */
+  counter = 0;
+  for (i = 0; i < list_size; i++)
+    {
+      p_vet = &list[i];
+      memcpy(out+counter, p_vet->ptr, p_vet->size);
+      counter += p_vet->size;
+    }
+  memcpy(der, out, der_len);
+  free(out);
+
+  err = ASN1_SUCCESS;
 
 error:
-  while (first != NULL)
-    {
-      p_vet = first;
-      first = first->next;
-      free(p_vet);
-    }
+  free(list);
   return err;
 }
 
@@ -1011,7 +1076,7 @@ error:
  *   length needed.
  **/
 int
-asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
+asn1_der_coding (asn1_node_const element, const char *name, void *ider, int *len,
 		 char *ErrorDescription)
 {
   asn1_node node, p, p2;
@@ -1037,6 +1102,9 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 
   max_len = *len;
 
+  if (der == NULL && max_len > 0)
+    return ASN1_VALUE_NOT_VALID;
+
   counter = 0;
   move = DOWN;
   p = node;
@@ -1057,7 +1125,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 	{
 	case ASN1_ETYPE_NULL:
 	  max_len--;
-	  if (max_len >= 0)
+	  if (der != NULL && max_len >= 0)
 	    der[counter] = 0;
 	  counter++;
 	  move = RIGHT;
@@ -1078,7 +1146,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 		  goto error;
 		}
 	      max_len -= 2;
-	      if (max_len >= 0)
+	      if (der != NULL && max_len >= 0)
 		{
 		  der[counter++] = 1;
 		  if (p->value[0] == 'F')
@@ -1114,7 +1182,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 		  goto error;
 		}
 	      max_len -= len2 + len3;
-	      if (max_len >= 0)
+	      if (der != NULL && max_len >= 0)
 		memcpy (der + counter, p->value, len3 + len2);
 	      counter += len3 + len2;
 	    }
@@ -1136,7 +1204,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 		  goto error;
 		}
 	      len2 = max_len;
-	      err = _asn1_objectid_der (p->value, der + counter, &len2);
+	      err = _asn1_object_id_der ((char*)p->value, der + counter, &len2);
 	      if (err != ASN1_SUCCESS && err != ASN1_MEM_ERROR)
 		goto error;
 
@@ -1186,7 +1254,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 	      goto error;
 	    }
 	  max_len -= len2 + len3;
-	  if (max_len >= 0)
+	  if (der != NULL && max_len >= 0)
 	    memcpy (der + counter, p->value, len3 + len2);
 	  counter += len3 + len2;
 	  move = RIGHT;
@@ -1228,7 +1296,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 		}
 	      asn1_length_der (counter - len2, temp, &len3);
 	      max_len -= len3;
-	      if (max_len >= 0)
+	      if (der != NULL && max_len >= 0)
 		{
 		  memmove (der + len2 + len3, der + len2, counter - len2);
 		  memcpy (der + len2, temp, len3);
@@ -1269,7 +1337,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 		}
 	      asn1_length_der (counter - len2, temp, &len3);
 	      max_len -= len3;
-	      if (max_len >= 0)
+	      if (der != NULL && max_len >= 0)
 		{
 		  memmove (der + len2 + len3, der + len2, counter - len2);
 		  memcpy (der + len2, temp, len3);
@@ -1292,7 +1360,7 @@ asn1_der_coding (asn1_node element, const char *name, void *ider, int *len,
 	      goto error;
 	    }
 	  max_len -= len2;
-	  if (max_len >= 0)
+	  if (der != NULL && max_len >= 0)
 	    memcpy (der + counter, p->value + len3, len2);
 	  counter += len2;
 	  move = RIGHT;

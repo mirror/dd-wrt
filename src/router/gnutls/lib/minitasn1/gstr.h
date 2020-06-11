@@ -19,6 +19,9 @@
  * 02110-1301, USA
  */
 
+#ifndef GSTR_H
+# define GSTR_H
+
 unsigned int _asn1_str_cpy (char *dest, size_t dest_tot_size,
 			    const char *src);
 void _asn1_str_cat (char *dest, size_t dest_tot_size, const char *src);
@@ -40,3 +43,5 @@ void safe_memset(void *data, int c, size_t size)
 		memset(data, c, size);
 	} while(vdata[volatile_zero] != c);
 }
+
+#endif /* GSTR_H */

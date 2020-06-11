@@ -1,4 +1,4 @@
-/* Copyright (C) 1992-2001, 2003-2007, 2009-2019 Free Software Foundation, Inc.
+/* Copyright (C) 1992-2001, 2003-2007, 2009-2020 Free Software Foundation, Inc.
 
    This file is part of the GNU C Library.
 
@@ -96,7 +96,7 @@ getpass (const char *prompt)
   /* Try to write to and read from the terminal if we can.
      If we can't open the terminal, use stderr and stdin.  */
 
-  tty = fopen ("/dev/tty", "w+");
+  tty = fopen ("/dev/tty", "w+e");
   if (tty == NULL)
     {
       in = stdin;

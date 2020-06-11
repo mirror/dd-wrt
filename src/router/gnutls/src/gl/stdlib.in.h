@@ -1,6 +1,6 @@
 /* A GNU-like <stdlib.h>.
 
-   Copyright (C) 1995, 2001-2004, 2006-2019 Free Software Foundation, Inc.
+   Copyright (C) 1995, 2001-2004, 2006-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -101,10 +101,12 @@ struct random_data
 
 /* The __attribute__ feature is available in gcc versions 2.5 and later.
    The attribute __pure__ was added in gcc 2.96.  */
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
-# define _GL_ATTRIBUTE_PURE __attribute__ ((__pure__))
-#else
-# define _GL_ATTRIBUTE_PURE /* empty */
+#ifndef _GL_ATTRIBUTE_PURE
+# if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
+#  define _GL_ATTRIBUTE_PURE __attribute__ ((__pure__))
+# else
+#  define _GL_ATTRIBUTE_PURE /* empty */
+# endif
 #endif
 
 /* The definition of _Noreturn is copied here.  */
@@ -176,7 +178,9 @@ _GL_CXXALIAS_RPL (calloc, void *, (size_t nmemb, size_t size));
 # else
 _GL_CXXALIAS_SYS (calloc, void *, (size_t nmemb, size_t size));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (calloc);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef calloc
 /* Assume calloc is always declared.  */
@@ -198,6 +202,10 @@ _GL_FUNCDECL_SYS (canonicalize_file_name, char *, (const char *name)
                                                   _GL_ARG_NONNULL ((1)));
 #  endif
 _GL_CXXALIAS_SYS (canonicalize_file_name, char *, (const char *name));
+# endif
+# ifndef GNULIB_defined_canonicalize_file_name
+#  define GNULIB_defined_canonicalize_file_name \
+     (!@HAVE_CANONICALIZE_FILE_NAME@ || @REPLACE_CANONICALIZE_FILE_NAME@)
 # endif
 _GL_CXXALIASWARN (canonicalize_file_name);
 #elif defined GNULIB_POSIXCHECK
@@ -238,8 +246,8 @@ _GL_WARN_ON_USE (getloadavg, "getloadavg is not portable - "
        element (or NULL if it doesn't contain an "=" sign),
      - It returns the index of the "token" in the given array of tokens.
    Otherwise it returns -1, and *OPTIONP and *VALUEP are undefined.
-   For more details see the POSIX:2001 specification.
-   http://www.opengroup.org/susv3xsh/getsubopt.html */
+   For more details see the POSIX specification.
+   https://pubs.opengroup.org/onlinepubs/9699919799/functions/getsubopt.html */
 # if !@HAVE_GETSUBOPT@
 _GL_FUNCDECL_SYS (getsubopt, int,
                   (char **optionp, char *const *tokens, char **valuep)
@@ -288,7 +296,9 @@ _GL_CXXALIAS_RPL (malloc, void *, (size_t size));
 # else
 _GL_CXXALIAS_SYS (malloc, void *, (size_t size));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (malloc);
+# endif
 #elif defined GNULIB_POSIXCHECK && !_GL_USE_STDLIB_ALLOC
 # undef malloc
 /* Assume malloc is always declared.  */
@@ -303,15 +313,21 @@ _GL_WARN_ON_USE (malloc, "malloc is not POSIX compliant everywhere - "
 #   undef mbtowc
 #   define mbtowc rpl_mbtowc
 #  endif
-_GL_FUNCDECL_RPL (mbtowc, int, (wchar_t *pwc, const char *s, size_t n));
-_GL_CXXALIAS_RPL (mbtowc, int, (wchar_t *pwc, const char *s, size_t n));
+_GL_FUNCDECL_RPL (mbtowc, int,
+                  (wchar_t *restrict pwc, const char *restrict s, size_t n));
+_GL_CXXALIAS_RPL (mbtowc, int,
+                  (wchar_t *restrict pwc, const char *restrict s, size_t n));
 # else
 #  if !@HAVE_MBTOWC@
-_GL_FUNCDECL_SYS (mbtowc, int, (wchar_t *pwc, const char *s, size_t n));
+_GL_FUNCDECL_SYS (mbtowc, int,
+                  (wchar_t *restrict pwc, const char *restrict s, size_t n));
 #  endif
-_GL_CXXALIAS_SYS (mbtowc, int, (wchar_t *pwc, const char *s, size_t n));
+_GL_CXXALIAS_SYS (mbtowc, int,
+                  (wchar_t *restrict pwc, const char *restrict s, size_t n));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (mbtowc);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef mbtowc
 # if HAVE_RAW_DECL_MBTOWC
@@ -510,6 +526,9 @@ _GL_FUNCDECL_SYS (ptsname_r, int, (int fd, char *buf, size_t len));
 #  endif
 _GL_CXXALIAS_SYS (ptsname_r, int, (int fd, char *buf, size_t len));
 # endif
+# ifndef GNULIB_defined_ptsname_r
+#  define GNULIB_defined_ptsname_r (!@HAVE_PTSNAME_R@ || @REPLACE_PTSNAME_R@)
+# endif
 _GL_CXXALIASWARN (ptsname_r);
 #elif defined GNULIB_POSIXCHECK
 # undef ptsname_r
@@ -593,7 +612,9 @@ _GL_CXXALIAS_RPL (random, long, (void));
 #  if !@HAVE_RANDOM@
 _GL_FUNCDECL_SYS (random, long, (void));
 #  endif
-_GL_CXXALIAS_SYS (random, long, (void));
+/* Need to cast, because on Haiku, the return type is
+                               int.  */
+_GL_CXXALIAS_SYS_CAST (random, long, (void));
 # endif
 _GL_CXXALIASWARN (random);
 #elif defined GNULIB_POSIXCHECK
@@ -616,7 +637,9 @@ _GL_CXXALIAS_RPL (srandom, void, (unsigned int seed));
 #  if !@HAVE_RANDOM@
 _GL_FUNCDECL_SYS (srandom, void, (unsigned int seed));
 #  endif
-_GL_CXXALIAS_SYS (srandom, void, (unsigned int seed));
+/* Need to cast, because on FreeBSD, the first parameter is
+                                       unsigned long seed.  */
+_GL_CXXALIAS_SYS_CAST (srandom, void, (unsigned int seed));
 # endif
 _GL_CXXALIASWARN (srandom);
 #elif defined GNULIB_POSIXCHECK
@@ -644,8 +667,10 @@ _GL_FUNCDECL_SYS (initstate, char *,
                   (unsigned int seed, char *buf, size_t buf_size)
                   _GL_ARG_NONNULL ((2)));
 #  endif
-_GL_CXXALIAS_SYS (initstate, char *,
-                  (unsigned int seed, char *buf, size_t buf_size));
+/* Need to cast, because on FreeBSD, the first parameter is
+                        unsigned long seed.  */
+_GL_CXXALIAS_SYS_CAST (initstate, char *,
+                       (unsigned int seed, char *buf, size_t buf_size));
 # endif
 _GL_CXXALIASWARN (initstate);
 #elif defined GNULIB_POSIXCHECK
@@ -668,7 +693,9 @@ _GL_CXXALIAS_RPL (setstate, char *, (char *arg_state));
 #  if !@HAVE_SETSTATE@ || !@HAVE_DECL_SETSTATE@
 _GL_FUNCDECL_SYS (setstate, char *, (char *arg_state) _GL_ARG_NONNULL ((1)));
 #  endif
-_GL_CXXALIAS_SYS (setstate, char *, (char *arg_state));
+/* Need to cast, because on Mac OS X 10.13, HP-UX, Solaris the first parameter
+   is                                     const char *arg_state.  */
+_GL_CXXALIAS_SYS_CAST (setstate, char *, (char *arg_state));
 # endif
 _GL_CXXALIASWARN (setstate);
 #elif defined GNULIB_POSIXCHECK
@@ -754,9 +781,11 @@ _GL_FUNCDECL_SYS (initstate_r, int,
                    struct random_data *rand_state)
                   _GL_ARG_NONNULL ((2, 4)));
 #  endif
-_GL_CXXALIAS_SYS (initstate_r, int,
-                  (unsigned int seed, char *buf, size_t buf_size,
-                   struct random_data *rand_state));
+/* Need to cast, because on Haiku, the third parameter is
+                                                     unsigned long buf_size.  */
+_GL_CXXALIAS_SYS_CAST (initstate_r, int,
+                       (unsigned int seed, char *buf, size_t buf_size,
+                        struct random_data *rand_state));
 # endif
 _GL_CXXALIASWARN (initstate_r);
 #elif defined GNULIB_POSIXCHECK
@@ -784,8 +813,10 @@ _GL_FUNCDECL_SYS (setstate_r, int,
                   (char *arg_state, struct random_data *rand_state)
                   _GL_ARG_NONNULL ((1, 2)));
 #  endif
-_GL_CXXALIAS_SYS (setstate_r, int,
-                  (char *arg_state, struct random_data *rand_state));
+/* Need to cast, because on Haiku, the first parameter is
+                        void *arg_state.  */
+_GL_CXXALIAS_SYS_CAST (setstate_r, int,
+                       (char *arg_state, struct random_data *rand_state));
 # endif
 _GL_CXXALIASWARN (setstate_r);
 #elif defined GNULIB_POSIXCHECK
@@ -809,7 +840,9 @@ _GL_CXXALIAS_RPL (realloc, void *, (void *ptr, size_t size));
 # else
 _GL_CXXALIAS_SYS (realloc, void *, (void *ptr, size_t size));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (realloc);
+# endif
 #elif defined GNULIB_POSIXCHECK && !_GL_USE_STDLIB_ALLOC
 # undef realloc
 /* Assume realloc is always declared.  */
@@ -839,15 +872,19 @@ _GL_WARN_ON_USE (reallocarray, "reallocarray is not portable - "
 #  if !(defined __cplusplus && defined GNULIB_NAMESPACE)
 #   define realpath rpl_realpath
 #  endif
-_GL_FUNCDECL_RPL (realpath, char *, (const char *name, char *resolved)
-                                    _GL_ARG_NONNULL ((1)));
-_GL_CXXALIAS_RPL (realpath, char *, (const char *name, char *resolved));
+_GL_FUNCDECL_RPL (realpath, char *,
+                  (const char *restrict name, char *restrict resolved)
+                  _GL_ARG_NONNULL ((1)));
+_GL_CXXALIAS_RPL (realpath, char *,
+                  (const char *restrict name, char *restrict resolved));
 # else
 #  if !@HAVE_REALPATH@
-_GL_FUNCDECL_SYS (realpath, char *, (const char *name, char *resolved)
-                                    _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (realpath, char *,
+                  (const char *restrict name, char *restrict resolved)
+                  _GL_ARG_NONNULL ((1)));
 #  endif
-_GL_CXXALIAS_SYS (realpath, char *, (const char *name, char *resolved));
+_GL_CXXALIAS_SYS (realpath, char *,
+                  (const char *restrict name, char *restrict resolved));
 # endif
 _GL_CXXALIASWARN (realpath);
 #elif defined GNULIB_POSIXCHECK
@@ -930,17 +967,23 @@ _GL_WARN_ON_USE (setenv, "setenv is unportable - "
 #   define strtod rpl_strtod
 #  endif
 #  define GNULIB_defined_strtod_function 1
-_GL_FUNCDECL_RPL (strtod, double, (const char *str, char **endp)
-                                  _GL_ARG_NONNULL ((1)));
-_GL_CXXALIAS_RPL (strtod, double, (const char *str, char **endp));
+_GL_FUNCDECL_RPL (strtod, double,
+                  (const char *restrict str, char **restrict endp)
+                  _GL_ARG_NONNULL ((1)));
+_GL_CXXALIAS_RPL (strtod, double,
+                  (const char *restrict str, char **restrict endp));
 # else
 #  if !@HAVE_STRTOD@
-_GL_FUNCDECL_SYS (strtod, double, (const char *str, char **endp)
-                                  _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (strtod, double,
+                  (const char *restrict str, char **restrict endp)
+                  _GL_ARG_NONNULL ((1)));
 #  endif
-_GL_CXXALIAS_SYS (strtod, double, (const char *str, char **endp));
+_GL_CXXALIAS_SYS (strtod, double,
+                  (const char *restrict str, char **restrict endp));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (strtod);
+# endif
 #elif defined GNULIB_POSIXCHECK
 # undef strtod
 # if HAVE_RAW_DECL_STRTOD
@@ -956,15 +999,19 @@ _GL_WARN_ON_USE (strtod, "strtod is unportable - "
 #   define strtold rpl_strtold
 #  endif
 #  define GNULIB_defined_strtold_function 1
-_GL_FUNCDECL_RPL (strtold, long double, (const char *str, char **endp)
-                                        _GL_ARG_NONNULL ((1)));
-_GL_CXXALIAS_RPL (strtold, long double, (const char *str, char **endp));
+_GL_FUNCDECL_RPL (strtold, long double,
+                  (const char *restrict str, char **restrict endp)
+                  _GL_ARG_NONNULL ((1)));
+_GL_CXXALIAS_RPL (strtold, long double,
+                  (const char *restrict str, char **restrict endp));
 # else
 #  if !@HAVE_STRTOLD@
-_GL_FUNCDECL_SYS (strtold, long double, (const char *str, char **endp)
-                                        _GL_ARG_NONNULL ((1)));
+_GL_FUNCDECL_SYS (strtold, long double,
+                  (const char *restrict str, char **restrict endp)
+                  _GL_ARG_NONNULL ((1)));
 #  endif
-_GL_CXXALIAS_SYS (strtold, long double, (const char *str, char **endp));
+_GL_CXXALIAS_SYS (strtold, long double,
+                  (const char *restrict str, char **restrict endp));
 # endif
 _GL_CXXALIASWARN (strtold);
 #elif defined GNULIB_POSIXCHECK
@@ -986,11 +1033,13 @@ _GL_WARN_ON_USE (strtold, "strtold is unportable - "
    to ERANGE.  */
 # if !@HAVE_STRTOLL@
 _GL_FUNCDECL_SYS (strtoll, long long,
-                  (const char *string, char **endptr, int base)
+                  (const char *restrict string, char **restrict endptr,
+                   int base)
                   _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (strtoll, long long,
-                  (const char *string, char **endptr, int base));
+                  (const char *restrict string, char **restrict endptr,
+                   int base));
 _GL_CXXALIASWARN (strtoll);
 #elif defined GNULIB_POSIXCHECK
 # undef strtoll
@@ -1011,11 +1060,13 @@ _GL_WARN_ON_USE (strtoll, "strtoll is unportable - "
    ERANGE.  */
 # if !@HAVE_STRTOULL@
 _GL_FUNCDECL_SYS (strtoull, unsigned long long,
-                  (const char *string, char **endptr, int base)
+                  (const char *restrict string, char **restrict endptr,
+                   int base)
                   _GL_ARG_NONNULL ((1)));
 # endif
 _GL_CXXALIAS_SYS (strtoull, unsigned long long,
-                  (const char *string, char **endptr, int base));
+                  (const char *restrict string, char **restrict endptr,
+                   int base));
 _GL_CXXALIASWARN (strtoull);
 #elif defined GNULIB_POSIXCHECK
 # undef strtoull
@@ -1079,7 +1130,9 @@ _GL_CXXALIAS_RPL (wctomb, int, (char *s, wchar_t wc));
 # else
 _GL_CXXALIAS_SYS (wctomb, int, (char *s, wchar_t wc));
 # endif
+# if __GLIBC__ >= 2
 _GL_CXXALIASWARN (wctomb);
+# endif
 #endif
 
 

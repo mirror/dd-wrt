@@ -27,13 +27,13 @@
 
 int _gnutls_file_exists(const char *file)
 {
-	FILE *fd;
+	FILE *fp;
 
-	fd = fopen(file, "r");
-	if (fd == NULL)
+	fp = fopen(file, "re");
+	if (fp == NULL)
 		return -1;
 
-	fclose(fd);
+	fclose(fp);
 	return 0;
 }
 
@@ -46,6 +46,10 @@ int _gnutls_file_exists(const char *file)
  * zero terminated but the terminating null is not included in length.
  * The returned data are allocated using gnutls_malloc().
  *
+ * Note that this function is not designed for reading sensitive materials,
+ * such as private keys, on practical applications. When the reading fails
+ * in the middle, the partially loaded content might remain on memory.
+ *
  * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned, otherwise
  *   an error code is returned.
  *
@@ -55,7 +59,7 @@ int gnutls_load_file(const char *filename, gnutls_datum_t * data)
 {
 	size_t len;
 
-	data->data = (void *) read_binary_file(filename, &len);
+	data->data = (void *) read_file(filename, RF_BINARY, &len);
 	if (data->data == NULL)
 		return GNUTLS_E_FILE_ERROR;
 

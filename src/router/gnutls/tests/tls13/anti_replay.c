@@ -24,10 +24,13 @@
 #include <assert.h>
 #include <stdint.h>
 
-#include "utils.h"
 #include "virt-time.h"
 #include "../../lib/tls13/anti_replay.h"
 #include "../../lib/system.h"
+
+/* utils.h must be loaded after gnutls_int.h, as it redefines some
+ * macros from gnulib */
+#include "utils.h"
 
 #define MAX_CLIENT_HELLO_RECORDED 10
 

@@ -207,6 +207,14 @@ void _register_aarch64_crypto(unsigned capabilities)
 
 			ret =
 			    gnutls_crypto_single_cipher_register
+			    (GNUTLS_CIPHER_AES_192_GCM, 90,
+			     &_gnutls_aes_gcm_aarch64, 0);
+			if (ret < 0) {
+					gnutls_assert();
+				}
+
+			ret =
+			    gnutls_crypto_single_cipher_register
 			    (GNUTLS_CIPHER_AES_256_GCM, 90,
 			     &_gnutls_aes_gcm_aarch64, 0);
 			if (ret < 0) {

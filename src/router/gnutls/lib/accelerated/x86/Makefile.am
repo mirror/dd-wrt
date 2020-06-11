@@ -39,7 +39,7 @@ noinst_LTLIBRARIES = libx86.la
 
 libx86_la_SOURCES = x86-common.c aes-x86.h x86-common.h sha-x86-ssse3.c sha-x86.h hmac-x86-ssse3.c \
 	aes-gcm-x86-ssse3.c aes-gcm-x86-aesni.c aes-cbc-x86-ssse3.c aes-cbc-x86-aesni.c aes-gcm-aead.h \
-	aes-ccm-x86-aesni.c
+	aes-ccm-x86-aesni.c aes-xts-x86-aesni.c
 
 if ENABLE_PADLOCK
 libx86_la_SOURCES += sha-padlock.c hmac-padlock.c aes-padlock.c aes-gcm-padlock.c \

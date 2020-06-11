@@ -54,7 +54,12 @@ const hello_ext_entry_st ext_mod_session_ticket = {
 	.gid = GNUTLS_EXTENSION_SESSION_TICKET,
 	.validity = GNUTLS_EXT_FLAG_TLS | GNUTLS_EXT_FLAG_DTLS | GNUTLS_EXT_FLAG_CLIENT_HELLO |
 		    GNUTLS_EXT_FLAG_TLS12_SERVER_HELLO,
-	.parse_type = GNUTLS_EXT_TLS,
+	/* This extension must be parsed on session resumption as well; see
+	 * https://gitlab.com/gnutls/gnutls/issues/841 */
+	.client_parse_point = GNUTLS_EXT_MANDATORY,
+	/* on server side we want this parsed after normal handshake resumption
+	 * actions are complete */
+	.server_parse_point = GNUTLS_EXT_TLS,
 	.recv_func = session_ticket_recv_params,
 	.send_func = session_ticket_send_params,
 	.pack_func = session_ticket_pack,
@@ -782,15 +787,17 @@ int _gnutls_recv_new_session_ticket(gnutls_session_t session)
 		ret = GNUTLS_E_MEMORY_ERROR;
 		goto error;
 	}
-	priv->session_ticket =
-	    gnutls_realloc_fast(priv->session_ticket, ticket_len);
-	if (!priv->session_ticket) {
-		gnutls_free(priv);
-		gnutls_assert();
-		ret = GNUTLS_E_MEMORY_ERROR;
-		goto error;
+	if (ticket_len > 0) {
+		priv->session_ticket =
+		    gnutls_realloc_fast(priv->session_ticket, ticket_len);
+		if (!priv->session_ticket) {
+			gnutls_free(priv);
+			gnutls_assert();
+			ret = GNUTLS_E_MEMORY_ERROR;
+			goto error;
+		}
+		memcpy(priv->session_ticket, p, ticket_len);
 	}
-	memcpy(priv->session_ticket, p, ticket_len);
 	priv->session_ticket_len = ticket_len;
 	epriv = priv;
 

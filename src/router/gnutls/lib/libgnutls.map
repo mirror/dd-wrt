@@ -1301,6 +1301,36 @@ GNUTLS_3_6_10
 	gnutls_aead_cipher_decryptv2;
 } GNUTLS_3_6_9;
 
+GNUTLS_3_6_12
+{
+ global:
+	gnutls_certificate_verification_profile_get_name;
+	gnutls_certificate_verification_profile_get_id;
+	gnutls_hmac_get_key_size;
+} GNUTLS_3_6_10;
+
+GNUTLS_3_6_13
+{
+ global:
+	gnutls_hkdf_extract;
+	gnutls_hkdf_expand;
+	gnutls_pbkdf2;
+	gnutls_session_get_keylog_function;
+	gnutls_session_set_keylog_function;
+	gnutls_prf_hash_get;
+	gnutls_psk_server_get_username2;
+	gnutls_psk_set_server_credentials_function2;
+	gnutls_psk_set_client_credentials2;
+	gnutls_psk_set_client_credentials_function2;
+} GNUTLS_3_6_12;
+
+GNUTLS_3_6_14
+{
+ global:
+	gnutls_ext_get_name2;
+	gnutls_pkcs7_print_signature_info;
+} GNUTLS_3_6_13;
+
 GNUTLS_FIPS140_3_4 {
   global:
 	gnutls_cipher_self_test;
@@ -1394,4 +1424,9 @@ GNUTLS_PRIVATE_3_4 {
 	# needed by tests/iov:
 	_gnutls_iov_iter_init;
 	_gnutls_iov_iter_next;
+	_gnutls_iov_iter_sync;
+	# needed by tests/buffer:
+	_gnutls_buffer_unescape;
+	_gnutls_buffer_pop_datum;
+	_gnutls_buffer_clear;
 } GNUTLS_3_4;

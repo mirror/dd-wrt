@@ -1,5 +1,5 @@
 /* ftruncate emulations for native Windows.
-   Copyright (C) 1992-2019 Free Software Foundation, Inc.
+   Copyright (C) 1992-2020 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -30,8 +30,10 @@
    argument.  So, define a 64-bit safe SetFileSize function ourselves.  */
 
 /* Ensure that <windows.h> declares GetFileSizeEx.  */
-#  undef _WIN32_WINNT
-#  define _WIN32_WINNT _WIN32_WINNT_WIN2K
+#  if !defined _WIN32_WINNT || (_WIN32_WINNT < _WIN32_WINNT_WIN2K)
+#   undef _WIN32_WINNT
+#   define _WIN32_WINNT _WIN32_WINNT_WIN2K
+#  endif
 
 /* Get declarations of the native Windows API functions.  */
 #  define WIN32_LEAN_AND_MEAN

@@ -1,5 +1,5 @@
-# gnulib-common.m4 serial 44
-dnl Copyright (C) 2007-2019 Free Software Foundation, Inc.
+# gnulib-common.m4 serial 50
+dnl Copyright (C) 2007-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -12,20 +12,40 @@ AC_DEFUN([gl_COMMON], [
   dnl Use AC_REQUIRE here, so that the code is expanded once only.
   AC_REQUIRE([gl_00GNULIB])
   AC_REQUIRE([gl_COMMON_BODY])
+  AC_REQUIRE([gl_ZZGNULIB])
 ])
 AC_DEFUN([gl_COMMON_BODY], [
+  AH_VERBATIM([_GL_GNUC_PREREQ],
+[/* True if the compiler says it groks GNU C version MAJOR.MINOR.  */
+#if defined __GNUC__ && defined __GNUC_MINOR__
+# define _GL_GNUC_PREREQ(major, minor) \
+    ((major) < __GNUC__ + ((minor) <= __GNUC_MINOR__))
+#else
+# define _GL_GNUC_PREREQ(major, minor) 0
+#endif
+])
   AH_VERBATIM([_Noreturn],
 [/* The _Noreturn keyword of C11.  */
 #ifndef _Noreturn
 # if (defined __cplusplus \
       && ((201103 <= __cplusplus && !(__GNUC__ == 4 && __GNUC_MINOR__ == 7)) \
-          || (defined _MSC_VER && 1900 <= _MSC_VER)))
+          || (defined _MSC_VER && 1900 <= _MSC_VER)) \
+      && 0)
+    /* [[noreturn]] is not practically usable, because with it the syntax
+         extern _Noreturn void func (...);
+       would not be valid; such a declaration would only be valid with 'extern'
+       and '_Noreturn' swapped, or without the 'extern' keyword.  However, some
+       AIX system header files and several gnulib header files use precisely
+       this syntax with 'extern'.  */
 #  define _Noreturn [[noreturn]]
 # elif ((!defined __cplusplus || defined __clang__) \
         && (201112 <= (defined __STDC_VERSION__ ? __STDC_VERSION__ : 0)  \
-            || 4 < __GNUC__ + (7 <= __GNUC_MINOR__)))
+            || _GL_GNUC_PREREQ (4, 7) \
+            || (defined __apple_build_version__ \
+                ? 6000000 <= __apple_build_version__ \
+                : 3 < __clang_major__ + (5 <= __clang_minor__))))
    /* _Noreturn works as-is.  */
-# elif 2 < __GNUC__ + (8 <= __GNUC_MINOR__) || 0x5110 <= __SUNPRO_C
+# elif _GL_GNUC_PREREQ (2, 8) || 0x5110 <= __SUNPRO_C
 #  define _Noreturn __attribute__ ((__noreturn__))
 # elif 1200 <= (defined _MSC_VER ? _MSC_VER : 0)
 #  define _Noreturn __declspec (noreturn)
@@ -44,48 +64,206 @@ AC_DEFUN([gl_COMMON_BODY], [
 #if defined __APPLE__ && defined __MACH__ && __APPLE_CC__ >= 5465 && !defined __cplusplus && __STDC_VERSION__ >= 199901L && !defined __GNUC_STDC_INLINE__
 # define __GNUC_STDC_INLINE__ 1
 #endif])
-  AH_VERBATIM([unused_parameter],
-[/* Define as a marker that can be attached to declarations that might not
-    be used.  This helps to reduce warnings, such as from
-    GCC -Wunused-parameter.  */
-#if __GNUC__ >= 3 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 7)
-# define _GL_UNUSED __attribute__ ((__unused__))
+  AH_VERBATIM([attribute],
+[/* Attributes.  */
+#ifdef __has_attribute
+# define _GL_HAS_ATTRIBUTE(attr) __has_attribute (__##attr##__)
 #else
-# define _GL_UNUSED
+# define _GL_HAS_ATTRIBUTE(attr) _GL_ATTR_##attr
+# define _GL_ATTR_alloc_size _GL_GNUC_PREREQ (4, 3)
+# define _GL_ATTR_always_inline _GL_GNUC_PREREQ (3, 2)
+# define _GL_ATTR_artificial _GL_GNUC_PREREQ (4, 3)
+# define _GL_ATTR_cold _GL_GNUC_PREREQ (4, 3)
+# define _GL_ATTR_const _GL_GNUC_PREREQ (2, 95)
+# define _GL_ATTR_deprecated _GL_GNUC_PREREQ (3, 1)
+# define _GL_ATTR_error _GL_GNUC_PREREQ (4, 3)
+# define _GL_ATTR_externally_visible _GL_GNUC_PREREQ (4, 1)
+# define _GL_ATTR_fallthrough _GL_GNUC_PREREQ (7, 0)
+# define _GL_ATTR_format _GL_GNUC_PREREQ (2, 7)
+# define _GL_ATTR_leaf _GL_GNUC_PREREQ (4, 6)
+# ifdef _ICC
+#  define _GL_ATTR_may_alias 0
+# else
+#  define _GL_ATTR_may_alias _GL_GNUC_PREREQ (3, 3)
+# endif
+# define _GL_ATTR_malloc _GL_GNUC_PREREQ (3, 0)
+# define _GL_ATTR_noinline _GL_GNUC_PREREQ (3, 1)
+# define _GL_ATTR_nonnull _GL_GNUC_PREREQ (3, 3)
+# define _GL_ATTR_nonstring _GL_GNUC_PREREQ (8, 0)
+# define _GL_ATTR_nothrow _GL_GNUC_PREREQ (3, 3)
+# define _GL_ATTR_packed _GL_GNUC_PREREQ (2, 7)
+# define _GL_ATTR_pure _GL_GNUC_PREREQ (2, 96)
+# define _GL_ATTR_returns_nonnull _GL_GNUC_PREREQ (4, 9)
+# define _GL_ATTR_sentinel _GL_GNUC_PREREQ (4, 0)
+# define _GL_ATTR_unused _GL_GNUC_PREREQ (2, 7)
+# define _GL_ATTR_warn_unused_result _GL_GNUC_PREREQ (3, 4)
 #endif
-/* The name _UNUSED_PARAMETER_ is an earlier spelling, although the name
-   is a misnomer outside of parameter lists.  */
-#define _UNUSED_PARAMETER_ _GL_UNUSED
 
-/* gcc supports the "unused" attribute on possibly unused labels, and
-   g++ has since version 4.5.  Note to support C++ as well as C,
-   _GL_UNUSED_LABEL should be used with a trailing ;  */
-#if !defined __cplusplus || __GNUC__ > 4 \
-    || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5)
-# define _GL_UNUSED_LABEL _GL_UNUSED
+]dnl There is no _GL_ATTRIBUTE_ALIGNED; use stdalign's _Alignas instead.
+[
+#if _GL_HAS_ATTRIBUTE (alloc_size)
+# define _GL_ATTRIBUTE_ALLOC_SIZE(args) __attribute__ ((__alloc_size__ args))
 #else
-# define _GL_UNUSED_LABEL
+# define _GL_ATTRIBUTE_ALLOC_SIZE(args)
 #endif
 
-/* The __pure__ attribute was added in gcc 2.96.  */
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
-# define _GL_ATTRIBUTE_PURE __attribute__ ((__pure__))
+#if _GL_HAS_ATTRIBUTE (always_inline)
+# define _GL_ATTRIBUTE_ALWAYS_INLINE __attribute__ ((__always_inline__))
 #else
-# define _GL_ATTRIBUTE_PURE /* empty */
+# define _GL_ATTRIBUTE_ALWAYS_INLINE
 #endif
 
-/* The __const__ attribute was added in gcc 2.95.  */
-#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 95)
+#if _GL_HAS_ATTRIBUTE (artificial)
+# define _GL_ATTRIBUTE_ARTIFICIAL __attribute__ ((__artificial__))
+#else
+# define _GL_ATTRIBUTE_ARTIFICIAL
+#endif
+
+/* Avoid __attribute__ ((cold)) on MinGW; see thread starting at
+   <https://lists.gnu.org/r/emacs-devel/2019-04/msg01152.html>. */
+#if _GL_HAS_ATTRIBUTE (cold) && !defined __MINGW32__
+# define _GL_ATTRIBUTE_COLD __attribute__ ((__cold__))
+#else
+# define _GL_ATTRIBUTE_COLD
+#endif
+
+#if _GL_HAS_ATTRIBUTE (const)
 # define _GL_ATTRIBUTE_CONST __attribute__ ((__const__))
 #else
-# define _GL_ATTRIBUTE_CONST /* empty */
+# define _GL_ATTRIBUTE_CONST
 #endif
 
-/* The __malloc__ attribute was added in gcc 3.  */
-#if 3 <= __GNUC__
+#if 201710L < __STDC_VERSION__
+# define _GL_ATTRIBUTE_DEPRECATED [[__deprecated__]]
+#elif _GL_HAS_ATTRIBUTE (deprecated)
+# define _GL_ATTRIBUTE_DEPRECATED __attribute__ ((__deprecated__))
+#else
+# define _GL_ATTRIBUTE_DEPRECATED
+#endif
+
+#if _GL_HAS_ATTRIBUTE (error)
+# define _GL_ATTRIBUTE_ERROR(msg) __attribute__ ((__error__ (msg)))
+# define _GL_ATTRIBUTE_WARNING(msg) __attribute__ ((__warning__ (msg)))
+#else
+# define _GL_ATTRIBUTE_ERROR(msg)
+# define _GL_ATTRIBUTE_WARNING(msg)
+#endif
+
+#if _GL_HAS_ATTRIBUTE (externally_visible)
+# define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE __attribute__ ((externally_visible))
+#else
+# define _GL_ATTRIBUTE_EXTERNALLY_VISIBLE
+#endif
+
+/* FALLTHROUGH is special, because it always expands to something.  */
+#if 201710L < __STDC_VERSION__
+# define _GL_ATTRIBUTE_FALLTHROUGH [[__fallthrough__]]
+#elif _GL_HAS_ATTRIBUTE (fallthrough)
+# define _GL_ATTRIBUTE_FALLTHROUGH __attribute__ ((__fallthrough__))
+#else
+# define _GL_ATTRIBUTE_FALLTHROUGH ((void) 0)
+#endif
+
+#if _GL_HAS_ATTRIBUTE (format)
+# define _GL_ATTRIBUTE_FORMAT(spec) __attribute__ ((__format__ spec))
+#else
+# define _GL_ATTRIBUTE_FORMAT(spec)
+#endif
+
+#if _GL_HAS_ATTRIBUTE (leaf)
+# define _GL_ATTRIBUTE_LEAF __attribute__ ((__leaf__))
+#else
+# define _GL_ATTRIBUTE_LEAF
+#endif
+
+#if _GL_HAS_ATTRIBUTE (may_alias)
+# define _GL_ATTRIBUTE_MAY_ALIAS __attribute__ ((__may_alias__))
+#else
+# define _GL_ATTRIBUTE_MAY_ALIAS
+#endif
+
+#if 201710L < __STDC_VERSION__
+# define _GL_ATTRIBUTE_MAYBE_UNUSED [[__maybe_unused__]]
+#elif _GL_HAS_ATTRIBUTE (unused)
+# define _GL_ATTRIBUTE_MAYBE_UNUSED __attribute__ ((__unused__))
+#else
+# define _GL_ATTRIBUTE_MAYBE_UNUSED
+#endif
+/* Earlier spellings of this macro.  */
+#define _GL_UNUSED _GL_ATTRIBUTE_MAYBE_UNUSED
+#define _UNUSED_PARAMETER_ _GL_ATTRIBUTE_MAYBE_UNUSED
+
+#if _GL_HAS_ATTRIBUTE (malloc)
 # define _GL_ATTRIBUTE_MALLOC __attribute__ ((__malloc__))
 #else
-# define _GL_ATTRIBUTE_MALLOC /* empty */
+# define _GL_ATTRIBUTE_MALLOC
+#endif
+
+#if 201710L < __STDC_VERSION__
+# define _GL_ATTRIBUTE_NODISCARD [[__nodiscard__]]
+#elif _GL_HAS_ATTRIBUTE (warn_unused_result)
+# define _GL_ATTRIBUTE_NODISCARD __attribute__ ((__warn_unused_result__))
+#else
+# define _GL_ATTRIBUTE_NODISCARD
+#endif
+
+#if _GL_HAS_ATTRIBUTE (noinline)
+# define _GL_ATTRIBUTE_NOINLINE __attribute__ ((__noinline__))
+#else
+# define _GL_ATTRIBUTE_NOINLINE
+#endif
+
+#if _GL_HAS_ATTRIBUTE (nonnull)
+# define _GL_ATTRIBUTE_NONNULL(args) __attribute__ ((__nonnull__ args))
+#else
+# define _GL_ATTRIBUTE_NONNULL(args)
+#endif
+
+#if _GL_HAS_ATTRIBUTE (nonstring)
+# define _GL_ATTRIBUTE_NONSTRING __attribute__ ((__nonstring__))
+#else
+# define _GL_ATTRIBUTE_NONSTRING
+#endif
+
+/* There is no _GL_ATTRIBUTE_NORETURN; use _Noreturn instead.  */
+
+#if _GL_HAS_ATTRIBUTE (nothrow) && !defined __cplusplus
+# define _GL_ATTRIBUTE_NOTHROW __attribute__ ((__nothrow__))
+#else
+# define _GL_ATTRIBUTE_NOTHROW
+#endif
+
+#if _GL_HAS_ATTRIBUTE (packed)
+# define _GL_ATTRIBUTE_PACKED __attribute__ ((__packed__))
+#else
+# define _GL_ATTRIBUTE_PACKED
+#endif
+
+#if _GL_HAS_ATTRIBUTE (pure)
+# define _GL_ATTRIBUTE_PURE __attribute__ ((__pure__))
+#else
+# define _GL_ATTRIBUTE_PURE
+#endif
+
+#if _GL_HAS_ATTRIBUTE (returns_nonnull)
+# define _GL_ATTRIBUTE_RETURNS_NONNULL __attribute__ ((__returns_nonnull__))
+#else
+# define _GL_ATTRIBUTE_RETURNS_NONNULL
+#endif
+
+#if _GL_HAS_ATTRIBUTE (sentinel)
+# define _GL_ATTRIBUTE_SENTINEL(pos) __attribute__ ((__sentinel__ pos))
+#else
+# define _GL_ATTRIBUTE_SENTINEL(pos)
+#endif
+
+]dnl There is no _GL_ATTRIBUTE_VISIBILITY; see m4/visibility.m4 instead.
+[
+/* To support C++ as well as C, use _GL_UNUSED_LABEL with trailing ';'.  */
+#if !defined __cplusplus || _GL_GNUC_PREREQ (4, 5)
+# define _GL_UNUSED_LABEL _GL_ATTRIBUTE_MAYBE_UNUSED
+#else
+# define _GL_UNUSED_LABEL
 #endif
 ])
   AH_VERBATIM([async_safe],
@@ -94,7 +272,7 @@ AC_DEFUN([gl_COMMON_BODY], [
    invoked from such signal handlers.  Such functions have some restrictions:
      * All functions that it calls should be marked _GL_ASYNC_SAFE as well,
        or should be listed as async-signal-safe in POSIX
-       <http://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04>
+       <https://pubs.opengroup.org/onlinepubs/9699919799/functions/V2_chap02.html#tag_15_04>
        section 2.4.3.  Note that malloc(), sprintf(), and fwrite(), in
        particular, are NOT async-signal-safe.
      * All memory locations (variables and struct fields) that these functions
@@ -115,6 +293,33 @@ AC_DEFUN([gl_COMMON_BODY], [
        errno.  */
 #define _GL_ASYNC_SAFE
 ])
+  dnl Hint which direction to take regarding cross-compilation guesses:
+  dnl When a user installs a program on a platform they are not intimately
+  dnl familiar with, --enable-cross-guesses=conservative is the appropriate
+  dnl choice.  It implements the "If we don't know, assume the worst" principle.
+  dnl However, when an operating system developer (on a platform which is not
+  dnl yet known to gnulib) builds packages for their platform, they want to
+  dnl expose, not hide, possible platform bugs; in this case,
+  dnl --enable-cross-guesses=risky is the appropriate choice.
+  dnl Sets the variables
+  dnl gl_cross_guess_normal    (to be used when 'yes' is good and 'no' is bad),
+  dnl gl_cross_guess_inverted  (to be used when 'no' is good and 'yes' is bad).
+  AC_ARG_ENABLE([cross-guesses],
+    [AS_HELP_STRING([--enable-cross-guesses={conservative|risky}],
+       [specify policy for cross-compilation guesses])],
+    [if test "x$enableval" != xconservative && test "x$enableval" != xrisky; then
+       AC_MSG_WARN([invalid argument supplied to --enable-cross-guesses])
+       enableval=conservative
+     fi
+     gl_cross_guesses="$enableval"],
+    [gl_cross_guesses=conservative])
+  if test $gl_cross_guesses = risky; then
+    gl_cross_guess_normal="guessing yes"
+    gl_cross_guess_inverted="guessing no"
+  else
+    gl_cross_guess_normal="guessing no"
+    gl_cross_guess_inverted="guessing yes"
+  fi
   dnl Preparation for running test programs:
   dnl Tell glibc to write diagnostics from -D_FORTIFY_SOURCE=2 to stderr, not
   dnl to /dev/tty, so they can be redirected to log files.  Such diagnostics
@@ -381,12 +586,13 @@ AC_DEFUN([AC_C_RESTRICT],
    nothing if this is not supported.  Do not define if restrict is
    supported directly.  */
 #undef restrict
-/* Work around a bug in Sun C++: it does not support _Restrict or
-   __restrict__, even though the corresponding Sun C compiler ends up with
-   "#define restrict _Restrict" or "#define restrict __restrict__" in the
-   previous line.  Perhaps some future version of Sun C++ will work with
-   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
-#if defined __SUNPRO_CC && !defined __RESTRICT
+/* Work around a bug in older versions of Sun C++, which did not
+   #define __restrict__ or support _Restrict or __restrict__
+   even though the corresponding Sun C compiler ended up with
+   "#define restrict _Restrict" or "#define restrict __restrict__"
+   in the previous line.  This workaround can be removed once
+   we assume Oracle Developer Studio 12.5 (2016) or later.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT && !defined __restrict__
 # define _Restrict
 # define __restrict__
 #endif])

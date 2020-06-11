@@ -1,6 +1,6 @@
 ## DO NOT EDIT! GENERATED AUTOMATICALLY!
 ## Process this file with automake to produce Makefile.in.
-# Copyright (C) 2002-2019 Free Software Foundation, Inc.
+# Copyright (C) 2002-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -170,6 +170,7 @@ arpa/inet.h: arpa_inet.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON
 	      -e 's|@''HAVE_ARPA_INET_H''@|$(HAVE_ARPA_INET_H)|g' \
 	      -e 's/@''GNULIB_INET_NTOP''@/$(GNULIB_INET_NTOP)/g' \
 	      -e 's/@''GNULIB_INET_PTON''@/$(GNULIB_INET_PTON)/g' \
+	      -e 's|@''HAVE_WS2TCPIP_H''@|$(HAVE_WS2TCPIP_H)|g' \
 	      -e 's|@''HAVE_DECL_INET_NTOP''@|$(HAVE_DECL_INET_NTOP)|g' \
 	      -e 's|@''HAVE_DECL_INET_PTON''@|$(HAVE_DECL_INET_PTON)|g' \
 	      -e 's|@''REPLACE_INET_NTOP''@|$(REPLACE_INET_NTOP)|g' \
@@ -187,6 +188,13 @@ EXTRA_DIST += arpa_inet.in.h
 
 ## end   gnulib module arpa_inet
 
+## begin gnulib module attribute
+
+
+EXTRA_DIST += attribute.h
+
+## end   gnulib module attribute
+
 ## begin gnulib module bind
 
 
@@ -196,11 +204,25 @@ EXTRA_libgnu_gpl_la_SOURCES += bind.c
 
 ## end   gnulib module bind
 
+## begin gnulib module bison
+
+# See the comments in bison.m4.
+
+## end   gnulib module bison
+
 ## begin gnulib module c-ctype
 
 libgnu_gpl_la_SOURCES += c-ctype.h c-ctype.c
 
 ## end   gnulib module c-ctype
+
+## begin gnulib module cloexec
+
+libgnu_gpl_la_SOURCES += cloexec.c
+
+EXTRA_DIST += cloexec.h
+
+## end   gnulib module cloexec
 
 ## begin gnulib module close
 
@@ -263,6 +285,61 @@ EXTRA_DIST += errno.in.h
 
 ## end   gnulib module errno
 
+## begin gnulib module explicit_bzero
+
+
+EXTRA_DIST += explicit_bzero.c
+
+EXTRA_libgnu_gpl_la_SOURCES += explicit_bzero.c
+
+## end   gnulib module explicit_bzero
+
+## begin gnulib module fcntl
+
+
+EXTRA_DIST += fcntl.c
+
+EXTRA_libgnu_gpl_la_SOURCES += fcntl.c
+
+## end   gnulib module fcntl
+
+## begin gnulib module fcntl-h
+
+BUILT_SOURCES += fcntl.h
+
+# We need the following in order to create <fcntl.h> when the system
+# doesn't have one that works with the given compiler.
+fcntl.h: fcntl.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) $(WARN_ON_USE_H)
+	$(AM_V_GEN)rm -f $@-t $@ && \
+	{ echo '/* DO NOT EDIT! GENERATED AUTOMATICALLY! */'; \
+	  sed -e 's|@''GUARD_PREFIX''@|GL_GGL|g' \
+	      -e 's|@''INCLUDE_NEXT''@|$(INCLUDE_NEXT)|g' \
+	      -e 's|@''PRAGMA_SYSTEM_HEADER''@|@PRAGMA_SYSTEM_HEADER@|g' \
+	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
+	      -e 's|@''NEXT_FCNTL_H''@|$(NEXT_FCNTL_H)|g' \
+	      -e 's/@''GNULIB_CREAT''@/$(GNULIB_CREAT)/g' \
+	      -e 's/@''GNULIB_FCNTL''@/$(GNULIB_FCNTL)/g' \
+	      -e 's/@''GNULIB_NONBLOCKING''@/$(GNULIB_NONBLOCKING)/g' \
+	      -e 's/@''GNULIB_OPEN''@/$(GNULIB_OPEN)/g' \
+	      -e 's/@''GNULIB_OPENAT''@/$(GNULIB_OPENAT)/g' \
+	      -e 's|@''HAVE_FCNTL''@|$(HAVE_FCNTL)|g' \
+	      -e 's|@''HAVE_OPENAT''@|$(HAVE_OPENAT)|g' \
+	      -e 's|@''REPLACE_CREAT''@|$(REPLACE_CREAT)|g' \
+	      -e 's|@''REPLACE_FCNTL''@|$(REPLACE_FCNTL)|g' \
+	      -e 's|@''REPLACE_OPEN''@|$(REPLACE_OPEN)|g' \
+	      -e 's|@''REPLACE_OPENAT''@|$(REPLACE_OPENAT)|g' \
+	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
+	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
+	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
+	      < $(srcdir)/fcntl.in.h; \
+	} > $@-t && \
+	mv $@-t $@
+MOSTLYCLEANFILES += fcntl.h fcntl.h-t
+
+EXTRA_DIST += fcntl.in.h
+
+## end   gnulib module fcntl-h
+
 ## begin gnulib module fd-hook
 
 libgnu_gpl_la_SOURCES += fd-hook.c
@@ -270,6 +347,13 @@ libgnu_gpl_la_SOURCES += fd-hook.c
 EXTRA_DIST += fd-hook.h
 
 ## end   gnulib module fd-hook
+
+## begin gnulib module filename
+
+
+EXTRA_DIST += filename.h
+
+## end   gnulib module filename
 
 ## begin gnulib module flexmember
 
@@ -308,6 +392,15 @@ EXTRA_DIST += float.c float.in.h itold.c
 EXTRA_libgnu_gpl_la_SOURCES += float.c itold.c
 
 ## end   gnulib module float
+
+## begin gnulib module fopen
+
+
+EXTRA_DIST += fopen.c
+
+EXTRA_libgnu_gpl_la_SOURCES += fopen.c
+
+## end   gnulib module fopen
 
 ## begin gnulib module fseek
 
@@ -371,6 +464,15 @@ EXTRA_DIST += getdelim.c
 EXTRA_libgnu_gpl_la_SOURCES += getdelim.c
 
 ## end   gnulib module getdelim
+
+## begin gnulib module getdtablesize
+
+
+EXTRA_DIST += getdtablesize.c
+
+EXTRA_libgnu_gpl_la_SOURCES += getdtablesize.c
+
+## end   gnulib module getdtablesize
 
 ## begin gnulib module getline
 
@@ -461,8 +563,6 @@ inttypes.h: inttypes.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(WARN_ON_U
 	      -e 's|@''NEXT_INTTYPES_H''@|$(NEXT_INTTYPES_H)|g' \
 	      -e 's/@''PRI_MACROS_BROKEN''@/$(PRI_MACROS_BROKEN)/g' \
 	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
-	      -e 's/@''HAVE_LONG_LONG_INT''@/$(HAVE_LONG_LONG_INT)/g' \
-	      -e 's/@''HAVE_UNSIGNED_LONG_LONG_INT''@/$(HAVE_UNSIGNED_LONG_LONG_INT)/g' \
 	      -e 's/@''PRIPTR_PREFIX''@/$(PRIPTR_PREFIX)/g' \
 	      -e 's/@''GNULIB_IMAXABS''@/$(GNULIB_IMAXABS)/g' \
 	      -e 's/@''GNULIB_IMAXDIV''@/$(GNULIB_IMAXDIV)/g' \
@@ -643,6 +743,7 @@ netdb.h: netdb.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) 
 	      -e 's|@''HAVE_DECL_GETADDRINFO''@|$(HAVE_DECL_GETADDRINFO)|g' \
 	      -e 's|@''HAVE_DECL_GETNAMEINFO''@|$(HAVE_DECL_GETNAMEINFO)|g' \
 	      -e 's|@''REPLACE_GAI_STRERROR''@|$(REPLACE_GAI_STRERROR)|g' \
+	      -e 's|@''REPLACE_GETADDRINFO''@|$(REPLACE_GETADDRINFO)|g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
 	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)' \
@@ -694,24 +795,39 @@ EXTRA_DIST += strftime.h
 
 ## end   gnulib module nstrftime
 
+## begin gnulib module open
+
+
+EXTRA_DIST += open.c
+
+EXTRA_libgnu_gpl_la_SOURCES += open.c
+
+## end   gnulib module open
+
 ## begin gnulib module parse-datetime
 
-# This rule overrides the Automake generated .y.c rule, to ensure that the
-# parse-datetime.c file gets generated in the source directory, not in the
-# build directory.
+# The Automake generated .y.c rule is broken: When executed in a VPATH build,
+#   - The .c file gets generated in the build directory. But since it requires
+#     special tools to rebuild it, we need to distribute it in the tarballs,
+#     and by the GNU Coding Standards
+#     <https://www.gnu.org/prep/standards/html_node/Makefile-Basics.html>
+#     the file should be generated in the source directory.
+#   - The #line numbers in the .c file refer to a nonexistent file once it
+#     has been moved from the build directory to the source directory. This
+#     leads to error if 'lcov' is used later.
+# Additionally, here we assume GNU Bison and therefore don't need the ylwrap
+# script.
+# Therefore we override this rule.
 parse-datetime.c: parse-datetime.y
-	$(AM_V_GEN)$(SHELL) $(YLWRAP) $(srcdir)/parse-datetime.y \
-	                              y.tab.c parse-datetime.c \
-	                              y.tab.h parse-datetime.h \
-	                              y.output parse-datetime.output \
-	                              -- $(YACC) $(YFLAGS) $(AM_YFLAGS) && \
-	sed -e 's|".*/parse-datetime.y"|"parse-datetime.y"|' \
-	 < parse-datetime.c > parse-datetime.c-t && \
-	rm -f parse-datetime.c && \
-	mv parse-datetime.c-t $(srcdir)/parse-datetime.c
+	$(AM_V_YACC)$(PARSE_DATETIME_BISON) -d $(YFLAGS) $(AM_YFLAGS) $(srcdir)/parse-datetime.y \
+	&& test ':' = '$(PARSE_DATETIME_BISON)' || { \
+	  sed -e 's|".*/parse-datetime.y"|"parse-datetime.y"|' < parse-datetime.tab.c > parse-datetime.c-t \
+	  && rm -f parse-datetime.tab.c parse-datetime.tab.h \
+	  && mv parse-datetime.c-t $(srcdir)/parse-datetime.c; \
+	}
 libgnu_gpl_la_SOURCES += parse-datetime.y
 BUILT_SOURCES += parse-datetime.c
-MOSTLYCLEANFILES += parse-datetime.c-t
+MOSTLYCLEANFILES += parse-datetime.tab.c parse-datetime.tab.h parse-datetime.c-t
 MAINTAINERCLEANFILES += parse-datetime.c
 EXTRA_DIST += parse-datetime.c
 
@@ -943,6 +1059,15 @@ EXTRA_DIST += w32sock.h
 
 ## end   gnulib module sockets
 
+## begin gnulib module stat
+
+
+EXTRA_DIST += stat-w32.c stat-w32.h stat.c
+
+EXTRA_libgnu_gpl_la_SOURCES += stat-w32.c stat.c
+
+## end   gnulib module stat
+
 ## begin gnulib module stat-time
 
 libgnu_gpl_la_SOURCES += stat-time.c
@@ -1050,8 +1175,6 @@ stdint.h: stdint.in.h $(top_builddir)/config.status
 	      -e 's/@''HAVE_SYS_INTTYPES_H''@/$(HAVE_SYS_INTTYPES_H)/g' \
 	      -e 's/@''HAVE_SYS_BITYPES_H''@/$(HAVE_SYS_BITYPES_H)/g' \
 	      -e 's/@''HAVE_WCHAR_H''@/$(HAVE_WCHAR_H)/g' \
-	      -e 's/@''HAVE_LONG_LONG_INT''@/$(HAVE_LONG_LONG_INT)/g' \
-	      -e 's/@''HAVE_UNSIGNED_LONG_LONG_INT''@/$(HAVE_UNSIGNED_LONG_LONG_INT)/g' \
 	      -e 's/@''APPLE_UNIVERSAL_BUILD''@/$(APPLE_UNIVERSAL_BUILD)/g' \
 	      -e 's/@''BITSIZEOF_PTRDIFF_T''@/$(BITSIZEOF_PTRDIFF_T)/g' \
 	      -e 's/@''PTRDIFF_T_SUFFIX''@/$(PTRDIFF_T_SUFFIX)/g' \
@@ -1566,6 +1689,7 @@ sys/stat.h: sys_stat.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNU
 	      -e 's|@''HAVE_MKNOD''@|$(HAVE_MKNOD)|g' \
 	      -e 's|@''HAVE_MKNODAT''@|$(HAVE_MKNODAT)|g' \
 	      -e 's|@''HAVE_UTIMENSAT''@|$(HAVE_UTIMENSAT)|g' \
+	      -e 's|@''REPLACE_FCHMODAT''@|$(REPLACE_FCHMODAT)|g' \
 	      -e 's|@''REPLACE_FSTAT''@|$(REPLACE_FSTAT)|g' \
 	      -e 's|@''REPLACE_FSTATAT''@|$(REPLACE_FSTATAT)|g' \
 	      -e 's|@''REPLACE_FUTIMENS''@|$(REPLACE_FUTIMENS)|g' \
@@ -1790,9 +1914,11 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''PRAGMA_COLUMNS''@|@PRAGMA_COLUMNS@|g' \
 	      -e 's|@''NEXT_UNISTD_H''@|$(NEXT_UNISTD_H)|g' \
 	      -e 's|@''WINDOWS_64_BIT_OFF_T''@|$(WINDOWS_64_BIT_OFF_T)|g' \
+	      -e 's/@''GNULIB_ACCESS''@/$(GNULIB_ACCESS)/g' \
 	      -e 's/@''GNULIB_CHDIR''@/$(GNULIB_CHDIR)/g' \
 	      -e 's/@''GNULIB_CHOWN''@/$(GNULIB_CHOWN)/g' \
 	      -e 's/@''GNULIB_CLOSE''@/$(GNULIB_CLOSE)/g' \
+	      -e 's/@''GNULIB_COPY_FILE_RANGE''@/$(GNULIB_COPY_FILE_RANGE)/g' \
 	      -e 's/@''GNULIB_DUP''@/$(GNULIB_DUP)/g' \
 	      -e 's/@''GNULIB_DUP2''@/$(GNULIB_DUP2)/g' \
 	      -e 's/@''GNULIB_DUP3''@/$(GNULIB_DUP3)/g' \
@@ -1807,12 +1933,15 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's/@''GNULIB_GETCWD''@/$(GNULIB_GETCWD)/g' \
 	      -e 's/@''GNULIB_GETDOMAINNAME''@/$(GNULIB_GETDOMAINNAME)/g' \
 	      -e 's/@''GNULIB_GETDTABLESIZE''@/$(GNULIB_GETDTABLESIZE)/g' \
+	      -e 's/@''GNULIB_GETENTROPY''@/$(GNULIB_GETENTROPY)/g' \
 	      -e 's/@''GNULIB_GETGROUPS''@/$(GNULIB_GETGROUPS)/g' \
 	      -e 's/@''GNULIB_GETHOSTNAME''@/$(GNULIB_GETHOSTNAME)/g' \
 	      -e 's/@''GNULIB_GETLOGIN''@/$(GNULIB_GETLOGIN)/g' \
 	      -e 's/@''GNULIB_GETLOGIN_R''@/$(GNULIB_GETLOGIN_R)/g' \
+	      -e 's/@''GNULIB_GETOPT_POSIX''@/$(GNULIB_GETOPT_POSIX)/g' \
 	      -e 's/@''GNULIB_GETPAGESIZE''@/$(GNULIB_GETPAGESIZE)/g' \
 	      -e 's/@''GNULIB_GETPASS''@/$(GNULIB_GETPASS)/g' \
+	      -e 's/@''GNULIB_GETRANDOM''@/$(GNULIB_GETRANDOM)/g' \
 	      -e 's/@''GNULIB_GETUSERSHELL''@/$(GNULIB_GETUSERSHELL)/g' \
 	      -e 's/@''GNULIB_GROUP_MEMBER''@/$(GNULIB_GROUP_MEMBER)/g' \
 	      -e 's/@''GNULIB_ISATTY''@/$(GNULIB_ISATTY)/g' \
@@ -1843,6 +1972,7 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's/@''GNULIB_WRITE''@/$(GNULIB_WRITE)/g' \
 	      < $(srcdir)/unistd.in.h | \
 	  sed -e 's|@''HAVE_CHOWN''@|$(HAVE_CHOWN)|g' \
+	      -e 's|@''HAVE_COPY_FILE_RANGE''@|$(HAVE_COPY_FILE_RANGE)|g' \
 	      -e 's|@''HAVE_DUP2''@|$(HAVE_DUP2)|g' \
 	      -e 's|@''HAVE_DUP3''@|$(HAVE_DUP3)|g' \
 	      -e 's|@''HAVE_EUIDACCESS''@|$(HAVE_EUIDACCESS)|g' \
@@ -1853,10 +1983,12 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''HAVE_FSYNC''@|$(HAVE_FSYNC)|g' \
 	      -e 's|@''HAVE_FTRUNCATE''@|$(HAVE_FTRUNCATE)|g' \
 	      -e 's|@''HAVE_GETDTABLESIZE''@|$(HAVE_GETDTABLESIZE)|g' \
+	      -e 's|@''HAVE_GETENTROPY''@|$(HAVE_GETENTROPY)|g' \
 	      -e 's|@''HAVE_GETGROUPS''@|$(HAVE_GETGROUPS)|g' \
 	      -e 's|@''HAVE_GETHOSTNAME''@|$(HAVE_GETHOSTNAME)|g' \
 	      -e 's|@''HAVE_GETPAGESIZE''@|$(HAVE_GETPAGESIZE)|g' \
 	      -e 's|@''HAVE_GETPASS''@|$(HAVE_GETPASS)|g' \
+	      -e 's|@''HAVE_GETRANDOM''@|$(HAVE_GETRANDOM)|g' \
 	      -e 's|@''HAVE_GROUP_MEMBER''@|$(HAVE_GROUP_MEMBER)|g' \
 	      -e 's|@''HAVE_LCHOWN''@|$(HAVE_LCHOWN)|g' \
 	      -e 's|@''HAVE_LINK''@|$(HAVE_LINK)|g' \
@@ -1887,7 +2019,8 @@ unistd.h: unistd.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H
 	      -e 's|@''HAVE_OS_H''@|$(HAVE_OS_H)|g' \
 	      -e 's|@''HAVE_SYS_PARAM_H''@|$(HAVE_SYS_PARAM_H)|g' \
 	  | \
-	  sed -e 's|@''REPLACE_CHOWN''@|$(REPLACE_CHOWN)|g' \
+	  sed -e 's|@''REPLACE_ACCESS''@|$(REPLACE_ACCESS)|g' \
+	      -e 's|@''REPLACE_CHOWN''@|$(REPLACE_CHOWN)|g' \
 	      -e 's|@''REPLACE_CLOSE''@|$(REPLACE_CLOSE)|g' \
 	      -e 's|@''REPLACE_DUP''@|$(REPLACE_DUP)|g' \
 	      -e 's|@''REPLACE_DUP2''@|$(REPLACE_DUP2)|g' \
@@ -2074,6 +2207,7 @@ wchar.h: wchar.in.h $(top_builddir)/config.status $(CXXDEFS_H) $(ARG_NONNULL_H) 
 	      -e 's|@''REPLACE_WCWIDTH''@|$(REPLACE_WCWIDTH)|g' \
 	      -e 's|@''REPLACE_WCSWIDTH''@|$(REPLACE_WCSWIDTH)|g' \
 	      -e 's|@''REPLACE_WCSFTIME''@|$(REPLACE_WCSFTIME)|g' \
+	      -e 's|@''REPLACE_WCSTOK''@|$(REPLACE_WCSTOK)|g' \
 	      -e '/definitions of _GL_FUNCDECL_RPL/r $(CXXDEFS_H)' \
 	      -e '/definition of _GL_ARG_NONNULL/r $(ARG_NONNULL_H)' \
 	      -e '/definition of _GL_WARN_ON_USE/r $(WARN_ON_USE_H)'; \

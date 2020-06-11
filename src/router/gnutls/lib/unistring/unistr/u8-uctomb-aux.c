@@ -1,5 +1,5 @@
 /* Conversion UCS-4 to UTF-8.
-   Copyright (C) 2002, 2006-2007, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2002, 2006-2007, 2009-2020 Free Software Foundation, Inc.
    Written by Bruno Haible <bruno@clisp.org>, 2002.
 
    This program is free software: you can redistribute it and/or
@@ -29,13 +29,7 @@
 /* Specification.  */
 #include "unistr.h"
 
-#ifndef FALLTHROUGH
-# if __GNUC__ < 7
-#  define FALLTHROUGH ((void) 0)
-# else
-#  define FALLTHROUGH __attribute__ ((__fallthrough__))
-# endif
-#endif
+#include "attribute.h"
 
 int
 u8_uctomb_aux (uint8_t *s, ucs4_t uc, int n)

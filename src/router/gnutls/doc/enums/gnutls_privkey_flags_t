@@ -22,9 +22,12 @@ even if the information about the seed used will be lost.
 Make an RSA signature on the hashed data with the PSS padding.
 @item GNUTLS_@-PRIVKEY_@-FLAG_@-REPRODUCIBLE
 Make a signature on the hashed data with reproducible parameters.
-For RSA-PSS, that means to use empty salt instead of random value. For ECDSA/DSA, it uses the deterministic
-construction of random parameter according to RFC 6979. Note that
-this only supports the NIST curves and DSA subgroup bits up to 512.
+For RSA-PSS, that means to use empty salt instead of random value. To
+verify a signature created using this flag, the corresponding SPKI needs
+to be set on the public key. Use @code{gnutls_pubkey_set_spki()}  for that.
+For ECDSA/DSA, it uses the deterministic construction of random parameter
+according to RFC 6979. Note that this only supports the NIST curves and DSA
+subgroup bits up to 512.
 @item GNUTLS_@-PRIVKEY_@-FLAG_@-CA
 The generated private key is going to be used as a CA (relevant for RSA-PSS keys).
 @end table

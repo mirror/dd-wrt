@@ -667,15 +667,29 @@ is for the conformance to NIST's FIPS140-2 publication, which consists of polici
 for cryptographic modules (such as software libraries). Its implementation in
 GnuTLS is designed for Red Hat Enterprise Linux, and can only be enabled
 when the library is explicitly compiled with the '--enable-fips140-mode'
-configure option. The operation of the library is then modified, as follows.
+configure option.
+
+There are two distinct library states with regard to FIPS140-2: the FIPS140-2
+mode is @emph{installed} if @code{/etc/system-fips} is present, and the
+FIPS140-2 mode is @emph{enabled} if @code{/proc/sys/crypto/fips_enabled}
+contains '1', which is typically set with the ``fips=1'' kernel command line
+option.
+
+When the FIPS140-2 mode is installed, the operation of the library is modified
+as follows.
 
 @itemize
-@item FIPS140-2 mode is enabled when @code{/proc/sys/crypto/fips_enabled} contains '1' and @code{/etc/system-fips} is present.
-@item Only approved by FIPS140-2 algorithms are enabled
-@item Only approved by FIPS140-2 key lengths are allowed for key generation
 @item The random generator used switches to DRBG-AES
 @item The integrity of the GnuTLS and dependent libraries is checked on startup
 @item Algorithm self-tests are run on library load
+@end itemize
+
+When the FIPS140-2 mode is enabled, The operation of the library is in addition
+modified as follows.
+
+@itemize
+@item Only approved by FIPS140-2 algorithms are enabled
+@item Only approved by FIPS140-2 key lengths are allowed for key generation
 @item Any cryptographic operation will be refused if any of the self-tests failed
 @end itemize
 

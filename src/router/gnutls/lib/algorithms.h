@@ -44,7 +44,9 @@
 		      ((x)==GNUTLS_PK_GOST_12_256)|| \
 		      ((x)==GNUTLS_PK_GOST_12_512))
 
-#define IS_EC(x) (((x)==GNUTLS_PK_ECDSA)||((x)==GNUTLS_PK_ECDH_X25519)||((x)==GNUTLS_PK_EDDSA_ED25519))
+#define IS_EC(x) (((x)==GNUTLS_PK_ECDSA)|| \
+		  ((x)==GNUTLS_PK_ECDH_X25519)||((x)==GNUTLS_PK_EDDSA_ED25519)|| \
+		  ((x)==GNUTLS_PK_ECDH_X448)||((x)==GNUTLS_PK_EDDSA_ED448))
 
 #define SIG_SEM_PRE_TLS12 (1<<1)
 #define SIG_SEM_TLS13 (1<<2)
@@ -183,7 +185,7 @@ inline static int _gnutls_digest_is_secure(const mac_entry_st * e)
 	if (unlikely(e == NULL))
 		return 0;
 	else
-		return (e->preimage_insecure==0);
+		return !(e->flags & GNUTLS_MAC_FLAG_PREIMAGE_INSECURE);
 }
 
 /* Functions for cipher suites. */
@@ -337,6 +339,8 @@ unsigned _gnutls_digest_is_insecure(gnutls_digest_algorithm_t dig);
 int _gnutls_version_mark_disabled(const char *name);
 gnutls_protocol_t _gnutls_protocol_get_id_if_supported(const char *name);
 
+#define GNUTLS_SIGN_FLAG_TLS13_OK	1 /* if it is ok to use under TLS1.3 */
+#define GNUTLS_SIGN_FLAG_CRT_VRFY_REVERSE (1 << 1) /* reverse order of bytes in CrtVrfy signature */
 struct gnutls_sign_entry_st {
 	const char *name;
 	const char *oid;
@@ -353,8 +357,7 @@ struct gnutls_sign_entry_st {
 	gnutls_pk_algorithm_t priv_pk;
 	gnutls_pk_algorithm_t cert_pk;
 
-	/* non-zero if it is ok to use under TLS1.3 */
-	unsigned tls13_ok;
+	unsigned flags;
 
 	/* if this signature algorithm is restricted to a curve
 	 * under TLS 1.3. */
@@ -364,6 +367,10 @@ struct gnutls_sign_entry_st {
 	   for values to use in aid struct. */
 	const sign_algorithm_st aid;
 	hash_security_level_t slevel;	/* contains values of hash_security_level_t */
+
+	/* 0 if it matches the predefined hash output size, otherwise
+	 * it is truncated or expanded (with XOF) */
+	unsigned hash_output_size;
 };
 typedef struct gnutls_sign_entry_st gnutls_sign_entry_st;
 
@@ -428,6 +435,7 @@ typedef struct gnutls_ecc_curve_entry_st {
 	unsigned sig_size;	/* the size of curve signatures in bytes (EdDSA) */
 	unsigned gost_curve;
 	bool supported;
+	gnutls_group_t group;
 } gnutls_ecc_curve_entry_st;
 
 const gnutls_ecc_curve_entry_st
@@ -435,6 +443,7 @@ const gnutls_ecc_curve_entry_st
 
 unsigned _gnutls_ecc_curve_is_supported(gnutls_ecc_curve_t);
 
+gnutls_group_t _gnutls_ecc_curve_get_group(gnutls_ecc_curve_t);
 const gnutls_group_entry_st *_gnutls_tls_id_to_group(unsigned num);
 const gnutls_group_entry_st * _gnutls_id_to_group(unsigned id);
 
@@ -447,7 +456,8 @@ inline static int _curve_is_eddsa(const gnutls_ecc_curve_entry_st * e)
 {
 	if (unlikely(e == NULL))
 		return 0;
-	if (e->pk == GNUTLS_PK_EDDSA_ED25519)
+	if (e->pk == GNUTLS_PK_EDDSA_ED25519 ||
+	    e->pk == GNUTLS_PK_EDDSA_ED448)
 		return 1;
 	return 0;
 }
@@ -485,6 +495,24 @@ static inline int _gnutls_kx_is_dhe(gnutls_kx_algorithm_t kx)
 	return 0;
 }
 
+static inline unsigned _gnutls_kx_is_vko_gost(gnutls_kx_algorithm_t kx)
+{
+	if (kx == GNUTLS_KX_VKO_GOST_12)
+		return 1;
+
+	return 0;
+}
+
+static inline bool
+_sign_is_gost(const gnutls_sign_entry_st *se)
+{
+	gnutls_pk_algorithm_t pk = se->pk;
+
+	return  (pk == GNUTLS_PK_GOST_01) ||
+		(pk == GNUTLS_PK_GOST_12_256) ||
+		(pk == GNUTLS_PK_GOST_12_512);
+}
+
 static inline int _sig_is_ecdsa(gnutls_sign_algorithm_t sig)
 {
 	if (sig == GNUTLS_SIGN_ECDSA_SHA1 || sig == GNUTLS_SIGN_ECDSA_SHA224 ||
@@ -496,5 +524,7 @@ static inline int _sig_is_ecdsa(gnutls_sign_algorithm_t sig)
 }
 
 bool _gnutls_pk_are_compat(gnutls_pk_algorithm_t pk1, gnutls_pk_algorithm_t pk2);
+
+unsigned _gnutls_sign_get_hash_strength(gnutls_sign_algorithm_t sign);
 
 #endif /* GNUTLS_LIB_ALGORITHMS_H */

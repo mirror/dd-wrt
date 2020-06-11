@@ -422,9 +422,11 @@ _tls13_set_keys(gnutls_session_t session, hs_stage_t stage,
 	if (ret < 0)
 		return gnutls_assert_val(ret);
 
-	_gnutls_nss_keylog_write(session, keylog_label,
-				 ckey,
-				 session->security_parameters.prf->output_size);
+	ret = _gnutls_call_keylog_func(session, keylog_label,
+				       ckey,
+				       session->security_parameters.prf->output_size);
+	if (ret < 0)
+		return gnutls_assert_val(ret);
 
 	/* client keys */
 	ret = _tls13_expand_secret(session, "key", 3, NULL, 0, ckey, key_size, ckey_block);
@@ -457,9 +459,11 @@ _tls13_set_keys(gnutls_session_t session, hs_stage_t stage,
 	if (ret < 0)
 		return gnutls_assert_val(ret);
 
-	_gnutls_nss_keylog_write(session, keylog_label,
-				 skey,
-				 session->security_parameters.prf->output_size);
+	ret = _gnutls_call_keylog_func(session, keylog_label,
+				       skey,
+				       session->security_parameters.prf->output_size);
+	if (ret < 0)
+		return gnutls_assert_val(ret);
 
 	ret = _tls13_expand_secret(session, "key", 3, NULL, 0, skey, key_size, skey_block);
 	if (ret < 0)
@@ -538,8 +542,12 @@ _gnutls_init_record_state(record_parameters_st * params,
 	mac.data = state->mac_key;
 	mac.size = state->mac_key_size;
 
-	if (!_gnutls_version_has_explicit_iv(ver)) {
-		if (_gnutls_cipher_type(params->cipher) == CIPHER_BLOCK)
+	if (_gnutls_cipher_type(params->cipher) == CIPHER_BLOCK) {
+		if (!_gnutls_version_has_explicit_iv(ver))
+			iv = &_iv;
+	} else if (_gnutls_cipher_type(params->cipher) == CIPHER_STREAM) {
+		/* To handle GOST ciphersuites */
+		if (_gnutls_cipher_get_implicit_iv_size(params->cipher))
 			iv = &_iv;
 	}
 
@@ -977,10 +985,12 @@ _gnutls_epoch_setup_next(gnutls_session_t session, unsigned null_epoch, record_p
 		(*slot)->mac = NULL;
 	}
 
-	if (IS_DTLS(session))
-		_gnutls_write_uint16(session->security_parameters.epoch_next,
-				     UINT64DATA((*slot)->write.
-						sequence_number));
+	if (IS_DTLS(session)) {
+		uint64_t seq = (*slot)->write.sequence_number;
+		seq &= UINT64_C(0xffffffffffff);
+		seq |= ((uint64_t)session->security_parameters.epoch_next) << 48;
+		(*slot)->write.sequence_number = seq;
+	}
 
  finish:
 	if (newp != NULL)

@@ -99,10 +99,9 @@ static void request_info(void)
 
 	if (HAVE_OPT(LOAD_REQUEST))
 		dat.data =
-		    (void *) read_binary_file(OPT_ARG(LOAD_REQUEST),
-					      &size);
+		    (void *) read_file(OPT_ARG(LOAD_REQUEST), RF_BINARY, &size);
 	else
-		dat.data = (void *) fread_file(infile, &size);
+		dat.data = (void *) fread_file(infile, 0, &size);
 	if (dat.data == NULL) {
 		fprintf(stderr, "error reading request\n");
 		app_exit(1);
@@ -236,10 +235,9 @@ static void response_info(void)
 
 	if (HAVE_OPT(LOAD_RESPONSE))
 		dat.data =
-		    (void *) read_binary_file(OPT_ARG(LOAD_RESPONSE),
-					      &size);
+		    (void *) read_file(OPT_ARG(LOAD_RESPONSE), RF_BINARY, &size);
 	else
-		dat.data = (void *) fread_file(infile, &size);
+		dat.data = (void *) fread_file(infile, 0, &size);
 	if (dat.data == NULL) {
 		fprintf(stderr, "error reading response\n");
 		app_exit(1);
@@ -348,7 +346,7 @@ static int _verify_response(gnutls_datum_t * data, gnutls_datum_t * nonce,
 
 	if (HAVE_OPT(LOAD_TRUST)) {
 		dat.data =
-		    (void *) read_binary_file(OPT_ARG(LOAD_TRUST), &size);
+		    (void *) read_file(OPT_ARG(LOAD_TRUST), RF_BINARY, &size);
 		if (dat.data == NULL) {
 			fprintf(stderr, "error reading --load-trust: %s\n",
 				OPT_ARG(LOAD_TRUST));
@@ -524,10 +522,9 @@ static void verify_response(gnutls_datum_t *nonce)
 
 	if (HAVE_OPT(LOAD_RESPONSE))
 		dat.data =
-		    (void *) read_binary_file(OPT_ARG(LOAD_RESPONSE),
-					      &size);
+		    (void *) read_file(OPT_ARG(LOAD_RESPONSE), RF_BINARY, &size);
 	else
-		dat.data = (void *) fread_file(infile, &size);
+		dat.data = (void *) fread_file(infile, 0, &size);
 	if (dat.data == NULL) {
 		fprintf(stderr, "error reading response\n");
 		app_exit(1);

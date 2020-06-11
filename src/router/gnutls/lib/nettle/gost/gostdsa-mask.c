@@ -37,10 +37,8 @@
 
 #include <stdlib.h>
 
-#include "gostdsa.h"
-#include "ecc-internal.h"
-
-#include "gmp-glue.h"
+#include "gostdsa2.h"
+#include "ecc/ecc-internal.h"
 
 /* Key comes in form .... M_2 M_1 K_0,
   unmask is K_i = K_i-1 * M_i mod Q */

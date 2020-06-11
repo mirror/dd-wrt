@@ -121,7 +121,8 @@ typedef struct hello_ext_entry_st {
 	uint16_t tls_id;
 	unsigned gid; /* gnutls internal ID */
 
-	gnutls_ext_parse_type_t parse_type;
+	gnutls_ext_parse_type_t client_parse_point;
+	gnutls_ext_parse_type_t server_parse_point;
 	unsigned validity; /* multiple items of gnutls_ext_flags_t */
 
 	/* this function must return 0 when Not Applicable
@@ -159,7 +160,7 @@ typedef struct hello_ext_entry_st {
 inline static unsigned
 _gnutls_hello_ext_is_present(gnutls_session_t session, extensions_t id)
 {
-	if ((1 << id) & session->internals.used_exts)
+	if (session->internals.used_exts & ((ext_track_t)1 << id))
 		return 1;
 
 	return 0;
@@ -183,7 +184,7 @@ unsigned _gnutls_hello_ext_save(gnutls_session_t session,
 			return 0;
 	}
 
-	session->internals.used_exts |= (1 << id);
+	session->internals.used_exts |= ((ext_track_t)1 << id);
 
 	return 1;
 }

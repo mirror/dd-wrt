@@ -193,7 +193,7 @@ static int parse_tpasswd_conf_values(SRP_PWD_ENTRY * entry, char *str)
 static int
 pwd_read_conf(const char *pconf_file, SRP_PWD_ENTRY * entry, int idx)
 {
-	FILE *fd;
+	FILE *fp;
 	char *line = NULL;
 	size_t line_size = 0;
 	unsigned i, len;
@@ -202,14 +202,14 @@ pwd_read_conf(const char *pconf_file, SRP_PWD_ENTRY * entry, int idx)
 
 	snprintf(indexstr, sizeof(indexstr), "%u", (unsigned int) idx);
 
-	fd = fopen(pconf_file, "r");
-	if (fd == NULL) {
+	fp = fopen(pconf_file, "re");
+	if (fp == NULL) {
 		gnutls_assert();
 		return GNUTLS_E_FILE_ERROR;
 	}
 
 	len = strlen(indexstr);
-	while (getline(&line, &line_size, fd) > 0) {
+	while (getline(&line, &line_size, fp) > 0) {
 		/* move to first ':' */
 		i = 0;
 		while ((i < line_size) && (line[i] != ':')
@@ -234,7 +234,7 @@ pwd_read_conf(const char *pconf_file, SRP_PWD_ENTRY * entry, int idx)
 cleanup:
 	zeroize_key(line, line_size);
 	free(line);
-	fclose(fd);
+	fclose(fp);
 	return ret;
 
 }
@@ -244,7 +244,7 @@ _gnutls_srp_pwd_read_entry(gnutls_session_t state, char *username,
 			   SRP_PWD_ENTRY ** _entry)
 {
 	gnutls_srp_server_credentials_t cred;
-	FILE *fd = NULL;
+	FILE *fp = NULL;
 	char *line = NULL;
 	size_t line_size = 0;
 	unsigned i, len;
@@ -308,15 +308,15 @@ _gnutls_srp_pwd_read_entry(gnutls_session_t state, char *username,
 
 	/* Open the selected password file.
 	 */
-	fd = fopen(cred->password_file, "r");
-	if (fd == NULL) {
+	fp = fopen(cred->password_file, "re");
+	if (fp == NULL) {
 		gnutls_assert();
 		ret = GNUTLS_E_SRP_PWD_ERROR;
 		goto cleanup;
 	}
 
 	len = strlen(username);
-	while (getline(&line, &line_size, fd) > 0) {
+	while (getline(&line, &line_size, fp) > 0) {
 		/* move to first ':' */
 		i = 0;
 		while ((i < line_size) && (line[i] != '\0')
@@ -368,10 +368,12 @@ cleanup:
 	_gnutls_srp_entry_free(entry);
 
 found:
-	zeroize_key(line, line_size);
-	free(line);
-	if (fd)
-		fclose(fd);
+	if (line) {
+		zeroize_key(line, line_size);
+		free(line);
+	}
+	if (fp)
+		fclose(fp);
 	return ret;
 }
 

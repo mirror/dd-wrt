@@ -27,6 +27,10 @@ AM_CPPFLAGS = -DASN1_BUILDING		\
 	-I$(builddir)/../../gl          \
 	-I$(srcdir)/..
 
+# Too many warnings from gnulib macros
+WARN_CFLAGS += \
+	-Wno-type-limits
+
 noinst_LTLIBRARIES = libminitasn1.la
 
 libminitasn1_la_SOURCES = libtasn1.h gstr.h int.h parser_aux.h		\

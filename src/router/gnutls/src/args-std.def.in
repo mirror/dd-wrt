@@ -10,7 +10,7 @@ no-misuse-usage;
 export          = '#include <gettext.h>';
 
 copyright = {
-    date  = "2000-@YEAR@";
+    date  = "2000-2020";
     owner = "Free Software Foundation, and others";
     author = "Nikos Mavrogiannopoulos, Simon Josefsson and others; "
              "see /usr/share/doc/gnutls/AUTHORS for a complete list.";

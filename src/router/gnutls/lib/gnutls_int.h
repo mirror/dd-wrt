@@ -55,6 +55,8 @@ typedef int ssize_t;
 
 #include <nettle/memxor.h>
 
+#include "attribute.h"
+
 #define ENABLE_ALIGN16
 
 #ifdef __clang_major
@@ -75,34 +77,6 @@ typedef int ssize_t;
 # define likely
 # define unlikely
 #endif
-
-#if _GNUTLS_GCC_VERSION >= 30300
-# define attr_nonnull_all __attribute__ ((nonnull))
-# define attr_nonnull(a)  __attribute__ ((nonnull a))
-#else
-# define attr_nonnull_all
-# define attr_nonnull(a)
-#endif
-
-#if _GNUTLS_GCC_VERSION >= 30400 && (_GNUTLS_CLANG_VERSION == 0 || _GNUTLS_CLANG_VERSION >= 40000)
-# define attr_warn_unused_result __attribute__((warn_unused_result))
-#else
-# define attr_warn_unused_result
-#endif
-
-#if _GNUTLS_GCC_VERSION >= 70100
-# define FALLTHROUGH __attribute__ ((fallthrough))
-#else
-# define FALLTHROUGH
-#endif
-
-
-/* some systems had problems with long long int, thus,
- * it is not used.
- */
-typedef struct {
-	unsigned char i[8];
-} gnutls_uint64;
 
 #include <gnutls/gnutls.h>
 #include <gnutls/dtls.h>
@@ -154,7 +128,7 @@ typedef struct {
 /* TLS Extensions */
 /* we can receive up to MAX_EXT_TYPES extensions.
  */
-#define MAX_EXT_TYPES 32
+#define MAX_EXT_TYPES 64
 
 /* TLS-internal extension (will be parsed after a ciphersuite is selected).
  * This amends the gnutls_ext_parse_type_t. Not exported yet to allow more refining
@@ -271,10 +245,6 @@ typedef enum record_send_state_t {
 
 #define GNUTLS_KX_INVALID (-1)
 
-typedef struct {
-	uint8_t pint[3];
-} uint24;
-
 #include <mpi.h>
 
 typedef enum handshake_state_t { STATE0 = 0, STATE1, STATE2,
@@ -370,22 +340,24 @@ typedef enum extensions_t {
 	GNUTLS_EXTENSION_MAX /* not real extension - used for iterators */
 } extensions_t;
 
-#define GNUTLS_EXTENSION_MAX_VALUE 31
-#define ext_track_t uint32_t
+#define GNUTLS_EXTENSION_MAX_VALUE 63
+#define ext_track_t uint64_t
 
-#if GNUTLS_EXTENSION_MAX >= GNUTLS_EXTENSION_MAX_VALUE
-# error over limit
-#endif
+#include <verify.h>
 
-#if GNUTLS_EXTENSION_MAX >= MAX_EXT_TYPES
-# error over limit
-#endif
+verify(GNUTLS_EXTENSION_MAX < GNUTLS_EXTENSION_MAX_VALUE);
+verify(GNUTLS_EXTENSION_MAX < MAX_EXT_TYPES);
 
-/* we must provide at least 16 extensions for users to register */
-#if GNUTLS_EXTENSION_MAX_VALUE - GNUTLS_EXTENSION_MAX < 16
-# error not enough extension types; increase GNUTLS_EXTENSION_MAX_VALUE, MAX_EXT_TYPES and used_exts type
-#endif
+/* we must provide at least 16 extensions for users to register;
+ * increase GNUTLS_EXTENSION_MAX_VALUE, MAX_EXT_TYPES and used_exts
+ * type if this fails
+ */
+verify(GNUTLS_EXTENSION_MAX_VALUE - GNUTLS_EXTENSION_MAX >= 16);
 
+/* The 'verify' symbol from <verify.h> is used extensively in the
+ * code; undef it to avoid clash
+ */
+#undef verify
 
 typedef enum { CIPHER_STREAM, CIPHER_BLOCK, CIPHER_AEAD } cipher_type_t;
 
@@ -462,7 +434,7 @@ typedef struct mbuffer_st {
 	content_type_t type;
 
 	/* record layer sequence */
-	gnutls_uint64 record_sequence;
+	uint64_t record_sequence;
 
 	/* Filled in by handshake layer on send:
 	 * type, epoch, htype, handshake_sequence
@@ -645,6 +617,10 @@ typedef struct record_state_st record_state_st;
 struct record_parameters_st;
 typedef struct record_parameters_st record_parameters_st;
 
+#define GNUTLS_CIPHER_FLAG_ONLY_AEAD	(1 << 0) /* When set, this cipher is only available through the new AEAD API */
+#define GNUTLS_CIPHER_FLAG_XOR_NONCE	(1 << 1) /* In this TLS AEAD cipher xor the implicit_iv with the nonce */
+#define GNUTLS_CIPHER_FLAG_NO_REKEY	(1 << 2) /* whether this tls1.3 cipher doesn't need to rekey after 2^24 messages */
+
 /* cipher and mac parameters */
 typedef struct cipher_entry_st {
 	const char *name;
@@ -656,9 +632,7 @@ typedef struct cipher_entry_st {
 	uint16_t explicit_iv;	/* the size of explicit IV - the IV stored in record */
 	uint16_t cipher_iv;	/* the size of IV needed by the cipher */
 	uint16_t tagsize;
-	bool xor_nonce;	/* In this TLS AEAD cipher xor the implicit_iv with the nonce */
-	bool only_aead; /* When set, this cipher is only available through the new AEAD API */
-	bool no_rekey; /* whether this tls1.3 cipher doesn't need to rekey after 2^24 messages */
+	unsigned flags;
 } cipher_entry_st;
 
 typedef struct gnutls_cipher_suite_entry_st {
@@ -691,6 +665,8 @@ typedef struct gnutls_group_entry_st {
 	unsigned tls_id;		/* The RFC4492 namedCurve ID or TLS 1.3 group ID */
 } gnutls_group_entry_st;
 
+#define GNUTLS_MAC_FLAG_PREIMAGE_INSECURE	1  /* if this algorithm should not be trusted for pre-image attacks */
+#define GNUTLS_MAC_FLAG_CONTINUOUS_MAC		(1 << 1) /* if this MAC should be used in a 'continuous' way in TLS */
 /* This structure is used both for MACs and digests
  */
 typedef struct mac_entry_st {
@@ -703,7 +679,7 @@ typedef struct mac_entry_st {
 	unsigned nonce_size;
 	unsigned placeholder;	/* if set, then not a real MAC */
 	unsigned block_size;	/* internal block size for HMAC */
-	unsigned preimage_insecure; /* if this algorithm should not be trusted for pre-image attacks */
+	unsigned flags;
 } mac_entry_st;
 
 typedef struct {
@@ -727,6 +703,7 @@ typedef struct {
 	bool only_extension;	/* negotiated only with an extension */
 	bool post_handshake_auth;	/* Supports the TLS 1.3 post handshake auth */
 	bool key_shares;	/* TLS 1.3 key share key exchange */
+	bool multi_ocsp;	/* TLS 1.3 multiple OCSP responses */
 	/*
 	 * TLS versions modify the semantics of signature algorithms. This number
 	 * is there to distinguish signature algorithms semantics between versions
@@ -873,7 +850,7 @@ struct record_state_st {
 	} ctx;
 	unsigned aead_tag_size;
 	unsigned is_aead;
-	gnutls_uint64 sequence_number;
+	uint64_t sequence_number;
 };
 
 
@@ -1250,6 +1227,8 @@ typedef struct {
 	unsigned int h_type;	/* the hooked type */
 	int16_t h_post;		/* whether post-generation/receive */
 
+	gnutls_keylog_func keylog_func;
+
 	/* holds the selected certificate and key.
 	 * use _gnutls_selected_certs_deinit() and _gnutls_selected_certs_set()
 	 * to change them.
@@ -1389,6 +1368,8 @@ typedef struct {
 #define HSK_RECORD_SIZE_LIMIT_NEGOTIATED (1<<24)
 #define HSK_RECORD_SIZE_LIMIT_SENT (1<<25) /* record_size_limit extension was sent */
 #define HSK_RECORD_SIZE_LIMIT_RECEIVED (1<<26) /* server: record_size_limit extension was seen but not accepted yet */
+#define HSK_OCSP_REQUESTED (1<<27) /* server: client requested OCSP stapling */
+#define HSK_CLIENT_OCSP_REQUESTED (1<<28) /* client: server requested OCSP stapling */
 
 	/* The hsk_flags are for use within the ongoing handshake;
 	 * they are reset to zero prior to handshake start by gnutls_handshake. */
@@ -1446,7 +1427,7 @@ typedef struct {
 
 	/* The saved username from PSK or SRP auth */
 	char saved_username[MAX_USERNAME_SIZE+1];
-	bool saved_username_set;
+	int saved_username_size;
 
 	/* Needed for TCP Fast Open (TFO), set by gnutls_transport_set_fastopen() */
 	tfo_st tfo;

@@ -33,6 +33,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>
 
+
 VPATH = @srcdir@
 am__is_gnu_make = { \
   if test -z '$(MAKELEVEL)'; then \
@@ -108,38 +109,87 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @ENABLE_MINITASN1_TRUE@am__append_1 = -I$(srcdir)/../minitasn1
-@WINDOWS_TRUE@am__append_2 = sysrng-windows.c
-@HAVE_GETENTROPY_TRUE@@WINDOWS_FALSE@am__append_3 = sysrng-getentropy.c
-@HAVE_GETENTROPY_FALSE@@WINDOWS_FALSE@am__append_4 = sysrng-linux.c
-@ENABLE_FIPS140_TRUE@am__append_5 = rnd-fips.c int/drbg-aes-self-test.c \
+@HAVE_BCRYPT_TRUE@@WINDOWS_TRUE@am__append_2 = sysrng-bcrypt.c
+@HAVE_BCRYPT_FALSE@@WINDOWS_TRUE@am__append_3 = sysrng-windows.c
+@HAVE_GETENTROPY_TRUE@@WINDOWS_FALSE@am__append_4 = sysrng-getentropy.c
+@HAVE_GETENTROPY_FALSE@@HAVE_KERN_ARND_TRUE@@WINDOWS_FALSE@am__append_5 = sysrng-netbsd.c
+@HAVE_GETENTROPY_FALSE@@HAVE_KERN_ARND_FALSE@@WINDOWS_FALSE@am__append_6 = sysrng-linux.c
+@ENABLE_FIPS140_TRUE@am__append_7 = rnd-fips.c int/drbg-aes-self-test.c \
 @ENABLE_FIPS140_TRUE@	int/drbg-aes.c int/drbg-aes.h
 
-@ENABLE_GOST_TRUE@am__append_6 = gost/nettle-write.h gost/gost28147.c \
-@ENABLE_GOST_TRUE@	gost/gost28147.h gost/gosthash94.c \
+@ENABLE_GOST_TRUE@am__append_8 = gost/nettle-write.h gost/write-le32.c \
+@ENABLE_GOST_TRUE@	gost/gost28147.c gost/gost28147.h \
+@ENABLE_GOST_TRUE@	gost/gost-wrap.c gost/gosthash94.c \
 @ENABLE_GOST_TRUE@	gost/gosthash94.h gost/gosthash94-meta.c \
 @ENABLE_GOST_TRUE@	gost/streebog.c gost/streebog.h \
 @ENABLE_GOST_TRUE@	gost/streebog-meta.c gost/hmac-gosthash94.c \
 @ENABLE_GOST_TRUE@	gost/hmac-streebog.c gost/hmac-gost.h \
 @ENABLE_GOST_TRUE@	gost/bignum-le.c gost/bignum-le.h \
-@ENABLE_GOST_TRUE@	gost/pbkdf2-hmac-gosthash94.c \
-@ENABLE_GOST_TRUE@	gost/pbkdf2-hmac-streebog.c \
-@ENABLE_GOST_TRUE@	gost/pbkdf2-gost.h gost/nettle-internal.h \
-@ENABLE_GOST_TRUE@	gost/ecc-gost256cpa.c \
-@ENABLE_GOST_TRUE@	gost/ecc-gost256cpa-32.h \
-@ENABLE_GOST_TRUE@	gost/ecc-gost256cpa-64.h gost/ecc-gost512a.c \
-@ENABLE_GOST_TRUE@	gost/ecc-gost512a-32.h \
-@ENABLE_GOST_TRUE@	gost/ecc-gost512a-64.h gost/ecc-internal.h \
-@ENABLE_GOST_TRUE@	gost/gmp-glue.h gost/ecc-gostdsa-sign.c \
-@ENABLE_GOST_TRUE@	gost/ecc-gostdsa-verify.c \
-@ENABLE_GOST_TRUE@	gost/gostdsa-mask.c gost/gostdsa-sign.c \
-@ENABLE_GOST_TRUE@	gost/gostdsa-verify.c gost/gostdsa.h \
-@ENABLE_GOST_TRUE@	gost/ecc-gost-curve.h gost/ecc-gost-hash.c
+@ENABLE_GOST_TRUE@	gost/gostdsa-mask.c gost/gostdsa2.h \
+@ENABLE_GOST_TRUE@	gost_keywrap.c
+@NEED_INT_ECC_TRUE@am__append_9 = gost/ecc-gost-hash.c nettle-alloca.h \
+@NEED_INT_ECC_TRUE@	ecc-gost-curve.h ecc/write-le64.c \
+@NEED_INT_ECC_TRUE@	ecc/nettle-write.h ecc/gmp-glue.h \
+@NEED_INT_ECC_TRUE@	ecc/gmp-glue.c ecc/sha3.c ecc/sha3.h \
+@NEED_INT_ECC_TRUE@	ecc/sha3-256.c ecc/sha3-permute.c \
+@NEED_INT_ECC_TRUE@	ecc/sha3-internal.h ecc/shake256.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-internal.h ecc/ecc-add-eh.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-add-ehh.c ecc/ecc-dup-eh.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-eh-to-a.c ecc/ecc-mul-a-eh.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mul-g-eh.c ecc/ecc-mul-m.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mod.c ecc/ecc-mod-arith.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mod-inv.c ecc/ecc-a-to-j.c \
+@NEED_INT_ECC_TRUE@	ecc/sec-tabselect.c ecc/cnd-copy.c \
+@NEED_INT_ECC_TRUE@	ecc/sec-add-1.c ecc/ecc-curve448.c \
+@NEED_INT_ECC_TRUE@	$(ecc_genereated_headers) \
+@NEED_INT_ECC_TRUE@	ecc/curve448-eh-to-x.c ecc/curve448.h \
+@NEED_INT_ECC_TRUE@	ecc/curve448-mul.c ecc/curve448-mul-g.c \
+@NEED_INT_ECC_TRUE@	gost/gost-point.c gost/gost-point-mul-g.c \
+@NEED_INT_ECC_TRUE@	gost/gostdsa-keygen.c ecc/ecc-add-jja.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-add-jjj.c ecc/ecc-dup-jj.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mul-a.c ecc/ecc-mul-g.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-random.c ecc/ecc-j-to-a.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gost-gc256b.c ecc/ecc-gost-gc512a.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gostdsa-sign.c \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gostdsa-verify.c ecc/gostdsa.h \
+@NEED_INT_ECC_TRUE@	ecc/gostdsa-sign.c ecc/gostdsa-verify.c \
+@NEED_INT_ECC_TRUE@	ecc/gostdsa-vko.c ecc/eddsa.h \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-compress.c ecc/eddsa-decompress.c \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-expand.c ecc/eddsa-hash.c \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-internal.h ecc/eddsa-pubkey.c \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-sign.c ecc/eddsa-verify.c \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256.c \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-pubkey.c \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-sign.c \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-verify.c
+@NEED_CFB_TRUE@am__append_10 = \
+@NEED_CFB_TRUE@	backport/cfb.c backport/cfb.h
+
+@NEED_CMAC_TRUE@am__append_11 = \
+@NEED_CMAC_TRUE@	backport/cmac.c backport/cmac.h \
+@NEED_CMAC_TRUE@	backport/cmac-aes128.c backport/cmac-aes256.c
+
+@NEED_XTS_TRUE@am__append_12 = \
+@NEED_XTS_TRUE@	backport/xts.c backport/xts.h \
+@NEED_XTS_TRUE@	backport/xts-aes128.c backport/xts-aes256.c
+
+@NEED_CHACHA_TRUE@am__append_13 = \
+@NEED_CHACHA_TRUE@	backport/chacha-core-internal.c backport/chacha-crypt.c \
+@NEED_CHACHA_TRUE@	backport/chacha-internal.h backport/chacha-poly1305.c \
+@NEED_CHACHA_TRUE@	backport/chacha-poly1305.h backport/chacha-set-key.c \
+@NEED_CHACHA_TRUE@	backport/chacha-set-nonce.c backport/chacha.h \
+@NEED_CHACHA_TRUE@	backport/poly1305.h backport/poly1305-internal.c \
+@NEED_CHACHA_TRUE@	backport/poly1305-internal.h
+
+@NEED_SIV_TRUE@am__append_14 = \
+@NEED_SIV_TRUE@	backport/siv-cmac-aes128.c backport/siv-cmac-aes256.c \
+@NEED_SIV_TRUE@	backport/siv-cmac.c backport/siv-cmac.h
+
 subdir = lib/nettle
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/lib/unistring/m4/inline.m4 \
 	$(top_srcdir)/lib/unistring/m4/libunistring-base.m4 \
-	$(top_srcdir)/src/gl/m4/__inline.m4 \
 	$(top_srcdir)/src/gl/m4/bison.m4 \
 	$(top_srcdir)/src/gl/m4/clock_time.m4 \
 	$(top_srcdir)/src/gl/m4/fseek.m4 \
@@ -159,7 +209,7 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/src/gl/m4/tzset.m4 \
 	$(top_srcdir)/src/libopts/m4/libopts.m4 \
 	$(top_srcdir)/src/libopts/m4/stdnoreturn.m4 \
-	$(top_srcdir)/m4/00gnulib.m4 \
+	$(top_srcdir)/m4/00gnulib.m4 $(top_srcdir)/m4/__inline.m4 \
 	$(top_srcdir)/m4/absolute-header.m4 $(top_srcdir)/m4/alloca.m4 \
 	$(top_srcdir)/m4/arpa_inet_h.m4 \
 	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
@@ -174,18 +224,19 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/ctype.m4 \
 	$(top_srcdir)/m4/dup2.m4 $(top_srcdir)/m4/eealloc.m4 \
 	$(top_srcdir)/m4/environ.m4 $(top_srcdir)/m4/errno_h.m4 \
+	$(top_srcdir)/m4/explicit_bzero.m4 \
 	$(top_srcdir)/m4/exponentd.m4 $(top_srcdir)/m4/extensions.m4 \
 	$(top_srcdir)/m4/extern-inline.m4 $(top_srcdir)/m4/fcntl-o.m4 \
 	$(top_srcdir)/m4/fcntl.m4 $(top_srcdir)/m4/fcntl_h.m4 \
 	$(top_srcdir)/m4/fdopen.m4 $(top_srcdir)/m4/flexmember.m4 \
-	$(top_srcdir)/m4/float_h.m4 $(top_srcdir)/m4/fpieee.m4 \
-	$(top_srcdir)/m4/fseeko.m4 $(top_srcdir)/m4/fstat.m4 \
-	$(top_srcdir)/m4/ftell.m4 $(top_srcdir)/m4/ftello.m4 \
-	$(top_srcdir)/m4/ftruncate.m4 $(top_srcdir)/m4/func.m4 \
-	$(top_srcdir)/m4/getcwd.m4 $(top_srcdir)/m4/getdelim.m4 \
-	$(top_srcdir)/m4/getdtablesize.m4 $(top_srcdir)/m4/getline.m4 \
-	$(top_srcdir)/m4/getpagesize.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gettimeofday.m4 \
+	$(top_srcdir)/m4/float_h.m4 $(top_srcdir)/m4/fopen.m4 \
+	$(top_srcdir)/m4/fpieee.m4 $(top_srcdir)/m4/fseeko.m4 \
+	$(top_srcdir)/m4/fstat.m4 $(top_srcdir)/m4/ftell.m4 \
+	$(top_srcdir)/m4/ftello.m4 $(top_srcdir)/m4/ftruncate.m4 \
+	$(top_srcdir)/m4/func.m4 $(top_srcdir)/m4/getcwd.m4 \
+	$(top_srcdir)/m4/getdelim.m4 $(top_srcdir)/m4/getdtablesize.m4 \
+	$(top_srcdir)/m4/getline.m4 $(top_srcdir)/m4/getpagesize.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gettimeofday.m4 \
 	$(top_srcdir)/m4/gnulib-common.m4 \
 	$(top_srcdir)/m4/gnulib-comp.m4 $(top_srcdir)/m4/gtk-doc.m4 \
 	$(top_srcdir)/m4/guile.m4 $(top_srcdir)/m4/hooks.m4 \
@@ -194,12 +245,13 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/inet_pton.m4 \
 	$(top_srcdir)/m4/intl-thread-locale.m4 \
 	$(top_srcdir)/m4/intlmacosx.m4 $(top_srcdir)/m4/intmax_t.m4 \
-	$(top_srcdir)/m4/inttypes-pri.m4 $(top_srcdir)/m4/inttypes.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/ioctl.m4 \
-	$(top_srcdir)/m4/isblank.m4 $(top_srcdir)/m4/langinfo_h.m4 \
-	$(top_srcdir)/m4/largefile.m4 $(top_srcdir)/m4/lcmessage.m4 \
+	$(top_srcdir)/m4/inttostr.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
+	$(top_srcdir)/m4/inttypes.m4 $(top_srcdir)/m4/inttypes_h.m4 \
+	$(top_srcdir)/m4/ioctl.m4 $(top_srcdir)/m4/isblank.m4 \
+	$(top_srcdir)/m4/langinfo_h.m4 $(top_srcdir)/m4/largefile.m4 \
+	$(top_srcdir)/m4/lcmessage.m4 \
 	$(top_srcdir)/m4/ld-output-def.m4 \
-	$(top_srcdir)/m4/ld-version-script.m4 \
+	$(top_srcdir)/m4/ld-version-script.m4 $(top_srcdir)/m4/ldd.m4 \
 	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
 	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/limits-h.m4 $(top_srcdir)/m4/locale-fr.m4 \
@@ -207,27 +259,32 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/locale-zh.m4 $(top_srcdir)/m4/locale_h.m4 \
 	$(top_srcdir)/m4/localename.m4 \
 	$(top_srcdir)/m4/localtime-buffer.m4 $(top_srcdir)/m4/lock.m4 \
-	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/lseek.m4 \
-	$(top_srcdir)/m4/lstat.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/malloc.m4 \
-	$(top_srcdir)/m4/malloca.m4 $(top_srcdir)/m4/manywarnings.m4 \
-	$(top_srcdir)/m4/memchr.m4 $(top_srcdir)/m4/memmem.m4 \
-	$(top_srcdir)/m4/minmax.m4 $(top_srcdir)/m4/mmap-anon.m4 \
-	$(top_srcdir)/m4/mode_t.m4 $(top_srcdir)/m4/msvc-inval.m4 \
+	$(top_srcdir)/m4/lseek.m4 $(top_srcdir)/m4/lstat.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/malloc.m4 $(top_srcdir)/m4/malloca.m4 \
+	$(top_srcdir)/m4/manywarnings.m4 $(top_srcdir)/m4/memchr.m4 \
+	$(top_srcdir)/m4/memmem.m4 $(top_srcdir)/m4/minmax.m4 \
+	$(top_srcdir)/m4/mmap-anon.m4 $(top_srcdir)/m4/mode_t.m4 \
+	$(top_srcdir)/m4/msvc-inval.m4 \
 	$(top_srcdir)/m4/msvc-nothrow.m4 $(top_srcdir)/m4/multiarch.m4 \
 	$(top_srcdir)/m4/nanosleep.m4 $(top_srcdir)/m4/netdb_h.m4 \
 	$(top_srcdir)/m4/netinet_in_h.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/off_t.m4 $(top_srcdir)/m4/open-cloexec.m4 \
-	$(top_srcdir)/m4/open.m4 $(top_srcdir)/m4/pathmax.m4 \
-	$(top_srcdir)/m4/perror.m4 $(top_srcdir)/m4/pipe.m4 \
-	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/printf.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/open-slash.m4 $(top_srcdir)/m4/open.m4 \
+	$(top_srcdir)/m4/pathmax.m4 $(top_srcdir)/m4/perror.m4 \
+	$(top_srcdir)/m4/pipe.m4 $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/printf.m4 \
+	$(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/pthread-thread.m4 \
+	$(top_srcdir)/m4/pthread_h.m4 \
 	$(top_srcdir)/m4/pthread_rwlock_rdlock.m4 \
-	$(top_srcdir)/m4/putenv.m4 $(top_srcdir)/m4/raise.m4 \
-	$(top_srcdir)/m4/read-file.m4 $(top_srcdir)/m4/realloc.m4 \
+	$(top_srcdir)/m4/pthread_sigmask.m4 $(top_srcdir)/m4/putenv.m4 \
+	$(top_srcdir)/m4/raise.m4 $(top_srcdir)/m4/read-file.m4 \
+	$(top_srcdir)/m4/realloc.m4 $(top_srcdir)/m4/sched_h.m4 \
 	$(top_srcdir)/m4/secure_getenv.m4 $(top_srcdir)/m4/select.m4 \
 	$(top_srcdir)/m4/setenv.m4 $(top_srcdir)/m4/setlocale.m4 \
+	$(top_srcdir)/m4/setlocale_null.m4 \
 	$(top_srcdir)/m4/sigaction.m4 $(top_srcdir)/m4/signal_h.m4 \
 	$(top_srcdir)/m4/signalblocking.m4 \
 	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/sleep.m4 \
@@ -235,29 +292,30 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/sockets.m4 $(top_srcdir)/m4/socklen.m4 \
 	$(top_srcdir)/m4/sockpfaf.m4 $(top_srcdir)/m4/ssize_t.m4 \
 	$(top_srcdir)/m4/stat-time.m4 $(top_srcdir)/m4/stat.m4 \
-	$(top_srcdir)/m4/stdalign.m4 $(top_srcdir)/m4/stdbool.m4 \
-	$(top_srcdir)/m4/stddef_h.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/m4/stdint_h.m4 $(top_srcdir)/m4/stdio_h.m4 \
-	$(top_srcdir)/m4/stdlib_h.m4 $(top_srcdir)/m4/strcase.m4 \
-	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/strerror.m4 \
-	$(top_srcdir)/m4/strerror_r.m4 $(top_srcdir)/m4/string_h.m4 \
-	$(top_srcdir)/m4/strings_h.m4 $(top_srcdir)/m4/strndup.m4 \
-	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/strtok_r.m4 \
-	$(top_srcdir)/m4/strverscmp.m4 $(top_srcdir)/m4/symlink.m4 \
-	$(top_srcdir)/m4/sys_ioctl_h.m4 \
+	$(top_srcdir)/m4/std-gnu11.m4 $(top_srcdir)/m4/stdalign.m4 \
+	$(top_srcdir)/m4/stdbool.m4 $(top_srcdir)/m4/stddef_h.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
+	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
+	$(top_srcdir)/m4/strcase.m4 $(top_srcdir)/m4/strdup.m4 \
+	$(top_srcdir)/m4/strerror.m4 $(top_srcdir)/m4/strerror_r.m4 \
+	$(top_srcdir)/m4/string_h.m4 $(top_srcdir)/m4/strings_h.m4 \
+	$(top_srcdir)/m4/strndup.m4 $(top_srcdir)/m4/strnlen.m4 \
+	$(top_srcdir)/m4/strtok_r.m4 $(top_srcdir)/m4/strverscmp.m4 \
+	$(top_srcdir)/m4/symlink.m4 $(top_srcdir)/m4/sys_ioctl_h.m4 \
 	$(top_srcdir)/m4/sys_select_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
 	$(top_srcdir)/m4/sys_types_h.m4 $(top_srcdir)/m4/sys_uio_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/time_h.m4 \
-	$(top_srcdir)/m4/time_r.m4 $(top_srcdir)/m4/ungetc.m4 \
-	$(top_srcdir)/m4/unistd_h.m4 \
+	$(top_srcdir)/m4/thread.m4 $(top_srcdir)/m4/threadlib.m4 \
+	$(top_srcdir)/m4/time_h.m4 $(top_srcdir)/m4/time_r.m4 \
+	$(top_srcdir)/m4/ungetc.m4 $(top_srcdir)/m4/unistd_h.m4 \
 	$(top_srcdir)/m4/valgrind-tests.m4 \
 	$(top_srcdir)/m4/vasnprintf.m4 $(top_srcdir)/m4/vasprintf.m4 \
-	$(top_srcdir)/m4/vsnprintf.m4 $(top_srcdir)/m4/warn-on-use.m4 \
-	$(top_srcdir)/m4/warnings.m4 $(top_srcdir)/m4/wchar_h.m4 \
-	$(top_srcdir)/m4/wchar_t.m4 $(top_srcdir)/m4/wint_t.m4 \
-	$(top_srcdir)/m4/xsize.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/vsnprintf.m4 \
+	$(top_srcdir)/m4/warn-on-use.m4 $(top_srcdir)/m4/warnings.m4 \
+	$(top_srcdir)/m4/wchar_h.m4 $(top_srcdir)/m4/wchar_t.m4 \
+	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/m4/zzgnulib.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -265,63 +323,145 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+PROGRAMS = $(noinst_PROGRAMS)
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libcrypto_la_LIBADD =
 am__libcrypto_la_SOURCES_DIST = pk.c mpi.c mac.c cipher.c init.c \
-	gnettle.h rnd-common.h prf.c backport/cfb8.c backport/cfb8.h \
-	backport/cmac.c backport/cmac.h backport/xts.c backport/xts.h \
-	rnd.c int/rsa-fips.h int/rsa-keygen-fips186.c \
-	int/provable-prime.c int/dsa-fips.h int/dsa-keygen-fips186.c \
-	int/dsa-validate.c int/tls1-prf.c int/tls1-prf.h \
-	int/dsa-compute-k.c int/dsa-compute-k.h int/ecdsa-compute-k.c \
-	int/ecdsa-compute-k.h int/mpn-base256.c int/mpn-base256.h \
-	sysrng-windows.c sysrng-getentropy.c sysrng-linux.c \
-	rnd-fuzzer.c rnd-fips.c int/drbg-aes-self-test.c \
-	int/drbg-aes.c int/drbg-aes.h gost/nettle-write.h \
-	gost/gost28147.c gost/gost28147.h gost/gosthash94.c \
+	gnettle.h rnd-common.h prf.c rnd.c int/rsa-fips.h \
+	int/rsa-keygen-fips186.c int/provable-prime.c int/dsa-fips.h \
+	int/dsa-keygen-fips186.c int/dsa-validate.c int/tls1-prf.c \
+	int/tls1-prf.h int/dsa-compute-k.c int/dsa-compute-k.h \
+	int/ecdsa-compute-k.c int/ecdsa-compute-k.h int/mpn-base256.c \
+	int/mpn-base256.h int/block8.h backport/block-internal.h \
+	sysrng-bcrypt.c sysrng-windows.c sysrng-getentropy.c \
+	sysrng-netbsd.c sysrng-linux.c rnd-fuzzer.c rnd-fips.c \
+	int/drbg-aes-self-test.c int/drbg-aes.c int/drbg-aes.h \
+	gost/nettle-write.h gost/write-le32.c gost/gost28147.c \
+	gost/gost28147.h gost/gost-wrap.c gost/gosthash94.c \
 	gost/gosthash94.h gost/gosthash94-meta.c gost/streebog.c \
 	gost/streebog.h gost/streebog-meta.c gost/hmac-gosthash94.c \
 	gost/hmac-streebog.c gost/hmac-gost.h gost/bignum-le.c \
-	gost/bignum-le.h gost/pbkdf2-hmac-gosthash94.c \
-	gost/pbkdf2-hmac-streebog.c gost/pbkdf2-gost.h \
-	gost/nettle-internal.h gost/ecc-gost256cpa.c \
-	gost/ecc-gost256cpa-32.h gost/ecc-gost256cpa-64.h \
-	gost/ecc-gost512a.c gost/ecc-gost512a-32.h \
-	gost/ecc-gost512a-64.h gost/ecc-internal.h gost/gmp-glue.h \
-	gost/ecc-gostdsa-sign.c gost/ecc-gostdsa-verify.c \
-	gost/gostdsa-mask.c gost/gostdsa-sign.c gost/gostdsa-verify.c \
-	gost/gostdsa.h gost/ecc-gost-curve.h gost/ecc-gost-hash.c
+	gost/bignum-le.h gost/gostdsa-mask.c gost/gostdsa2.h \
+	gost_keywrap.c gost/ecc-gost-hash.c nettle-alloca.h \
+	ecc-gost-curve.h ecc/write-le64.c ecc/nettle-write.h \
+	ecc/gmp-glue.h ecc/gmp-glue.c ecc/sha3.c ecc/sha3.h \
+	ecc/sha3-256.c ecc/sha3-permute.c ecc/sha3-internal.h \
+	ecc/shake256.c ecc/ecc-internal.h ecc/ecc-add-eh.c \
+	ecc/ecc-add-ehh.c ecc/ecc-dup-eh.c ecc/ecc-eh-to-a.c \
+	ecc/ecc-mul-a-eh.c ecc/ecc-mul-g-eh.c ecc/ecc-mul-m.c \
+	ecc/ecc-mod.c ecc/ecc-mod-arith.c ecc/ecc-mod-inv.c \
+	ecc/ecc-a-to-j.c ecc/sec-tabselect.c ecc/cnd-copy.c \
+	ecc/sec-add-1.c ecc/ecc-curve448.c ecc/curve448-eh-to-x.c \
+	ecc/curve448.h ecc/curve448-mul.c ecc/curve448-mul-g.c \
+	gost/gost-point.c gost/gost-point-mul-g.c \
+	gost/gostdsa-keygen.c ecc/ecc-add-jja.c ecc/ecc-add-jjj.c \
+	ecc/ecc-dup-jj.c ecc/ecc-mul-a.c ecc/ecc-mul-g.c \
+	ecc/ecc-random.c ecc/ecc-j-to-a.c ecc/ecc-gost-gc256b.c \
+	ecc/ecc-gost-gc512a.c ecc/ecc-gostdsa-sign.c \
+	ecc/ecc-gostdsa-verify.c ecc/gostdsa.h ecc/gostdsa-sign.c \
+	ecc/gostdsa-verify.c ecc/gostdsa-vko.c ecc/eddsa.h \
+	ecc/eddsa-compress.c ecc/eddsa-decompress.c ecc/eddsa-expand.c \
+	ecc/eddsa-hash.c ecc/eddsa-internal.h ecc/eddsa-pubkey.c \
+	ecc/eddsa-sign.c ecc/eddsa-verify.c ecc/ed448-shake256.c \
+	ecc/ed448-shake256-pubkey.c ecc/ed448-shake256-sign.c \
+	ecc/ed448-shake256-verify.c backport/cfb.c backport/cfb.h \
+	backport/cmac.c backport/cmac.h backport/cmac-aes128.c \
+	backport/cmac-aes256.c backport/xts.c backport/xts.h \
+	backport/xts-aes128.c backport/xts-aes256.c \
+	backport/chacha-core-internal.c backport/chacha-crypt.c \
+	backport/chacha-internal.h backport/chacha-poly1305.c \
+	backport/chacha-poly1305.h backport/chacha-set-key.c \
+	backport/chacha-set-nonce.c backport/chacha.h \
+	backport/poly1305.h backport/poly1305-internal.c \
+	backport/poly1305-internal.h backport/siv-cmac-aes128.c \
+	backport/siv-cmac-aes256.c backport/siv-cmac.c \
+	backport/siv-cmac.h
 am__dirstamp = $(am__leading_dot)dirstamp
-@WINDOWS_TRUE@am__objects_1 = sysrng-windows.lo
-@HAVE_GETENTROPY_TRUE@@WINDOWS_FALSE@am__objects_2 =  \
+@HAVE_BCRYPT_TRUE@@WINDOWS_TRUE@am__objects_1 = sysrng-bcrypt.lo
+@HAVE_BCRYPT_FALSE@@WINDOWS_TRUE@am__objects_2 = sysrng-windows.lo
+@HAVE_GETENTROPY_TRUE@@WINDOWS_FALSE@am__objects_3 =  \
 @HAVE_GETENTROPY_TRUE@@WINDOWS_FALSE@	sysrng-getentropy.lo
-@HAVE_GETENTROPY_FALSE@@WINDOWS_FALSE@am__objects_3 = sysrng-linux.lo
-@ENABLE_FIPS140_TRUE@am__objects_4 = rnd-fips.lo \
+@HAVE_GETENTROPY_FALSE@@HAVE_KERN_ARND_TRUE@@WINDOWS_FALSE@am__objects_4 = sysrng-netbsd.lo
+@HAVE_GETENTROPY_FALSE@@HAVE_KERN_ARND_FALSE@@WINDOWS_FALSE@am__objects_5 = sysrng-linux.lo
+@ENABLE_FIPS140_TRUE@am__objects_6 = rnd-fips.lo \
 @ENABLE_FIPS140_TRUE@	int/drbg-aes-self-test.lo int/drbg-aes.lo
-@ENABLE_GOST_TRUE@am__objects_5 = gost/gost28147.lo gost/gosthash94.lo \
+@ENABLE_GOST_TRUE@am__objects_7 = gost/write-le32.lo gost/gost28147.lo \
+@ENABLE_GOST_TRUE@	gost/gost-wrap.lo gost/gosthash94.lo \
 @ENABLE_GOST_TRUE@	gost/gosthash94-meta.lo gost/streebog.lo \
 @ENABLE_GOST_TRUE@	gost/streebog-meta.lo \
 @ENABLE_GOST_TRUE@	gost/hmac-gosthash94.lo \
 @ENABLE_GOST_TRUE@	gost/hmac-streebog.lo gost/bignum-le.lo \
-@ENABLE_GOST_TRUE@	gost/pbkdf2-hmac-gosthash94.lo \
-@ENABLE_GOST_TRUE@	gost/pbkdf2-hmac-streebog.lo \
-@ENABLE_GOST_TRUE@	gost/ecc-gost256cpa.lo gost/ecc-gost512a.lo \
-@ENABLE_GOST_TRUE@	gost/ecc-gostdsa-sign.lo \
-@ENABLE_GOST_TRUE@	gost/ecc-gostdsa-verify.lo \
-@ENABLE_GOST_TRUE@	gost/gostdsa-mask.lo gost/gostdsa-sign.lo \
-@ENABLE_GOST_TRUE@	gost/gostdsa-verify.lo gost/ecc-gost-hash.lo
+@ENABLE_GOST_TRUE@	gost/gostdsa-mask.lo gost_keywrap.lo
+@NEED_INT_ECC_TRUE@am__objects_8 = gost/ecc-gost-hash.lo \
+@NEED_INT_ECC_TRUE@	ecc/write-le64.lo ecc/gmp-glue.lo \
+@NEED_INT_ECC_TRUE@	ecc/sha3.lo ecc/sha3-256.lo \
+@NEED_INT_ECC_TRUE@	ecc/sha3-permute.lo ecc/shake256.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-add-eh.lo ecc/ecc-add-ehh.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-dup-eh.lo ecc/ecc-eh-to-a.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mul-a-eh.lo ecc/ecc-mul-g-eh.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mul-m.lo ecc/ecc-mod.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mod-arith.lo ecc/ecc-mod-inv.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-a-to-j.lo ecc/sec-tabselect.lo \
+@NEED_INT_ECC_TRUE@	ecc/cnd-copy.lo ecc/sec-add-1.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-curve448.lo ecc/curve448-eh-to-x.lo \
+@NEED_INT_ECC_TRUE@	ecc/curve448-mul.lo ecc/curve448-mul-g.lo \
+@NEED_INT_ECC_TRUE@	gost/gost-point.lo gost/gost-point-mul-g.lo \
+@NEED_INT_ECC_TRUE@	gost/gostdsa-keygen.lo ecc/ecc-add-jja.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-add-jjj.lo ecc/ecc-dup-jj.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-mul-a.lo ecc/ecc-mul-g.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-random.lo ecc/ecc-j-to-a.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gost-gc256b.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gost-gc512a.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gostdsa-sign.lo \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gostdsa-verify.lo \
+@NEED_INT_ECC_TRUE@	ecc/gostdsa-sign.lo ecc/gostdsa-verify.lo \
+@NEED_INT_ECC_TRUE@	ecc/gostdsa-vko.lo ecc/eddsa-compress.lo \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-decompress.lo ecc/eddsa-expand.lo \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-hash.lo ecc/eddsa-pubkey.lo \
+@NEED_INT_ECC_TRUE@	ecc/eddsa-sign.lo ecc/eddsa-verify.lo \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256.lo \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-pubkey.lo \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-sign.lo \
+@NEED_INT_ECC_TRUE@	ecc/ed448-shake256-verify.lo
+@NEED_CFB_TRUE@am__objects_9 = backport/cfb.lo
+@NEED_CMAC_TRUE@am__objects_10 = backport/cmac.lo \
+@NEED_CMAC_TRUE@	backport/cmac-aes128.lo \
+@NEED_CMAC_TRUE@	backport/cmac-aes256.lo
+@NEED_XTS_TRUE@am__objects_11 = backport/xts.lo backport/xts-aes128.lo \
+@NEED_XTS_TRUE@	backport/xts-aes256.lo
+@NEED_CHACHA_TRUE@am__objects_12 = backport/chacha-core-internal.lo \
+@NEED_CHACHA_TRUE@	backport/chacha-crypt.lo \
+@NEED_CHACHA_TRUE@	backport/chacha-poly1305.lo \
+@NEED_CHACHA_TRUE@	backport/chacha-set-key.lo \
+@NEED_CHACHA_TRUE@	backport/chacha-set-nonce.lo \
+@NEED_CHACHA_TRUE@	backport/poly1305-internal.lo
+@NEED_SIV_TRUE@am__objects_13 = backport/siv-cmac-aes128.lo \
+@NEED_SIV_TRUE@	backport/siv-cmac-aes256.lo \
+@NEED_SIV_TRUE@	backport/siv-cmac.lo
 am_libcrypto_la_OBJECTS = pk.lo mpi.lo mac.lo cipher.lo init.lo prf.lo \
-	backport/cfb8.lo backport/cmac.lo backport/xts.lo rnd.lo \
-	int/rsa-keygen-fips186.lo int/provable-prime.lo \
+	rnd.lo int/rsa-keygen-fips186.lo int/provable-prime.lo \
 	int/dsa-keygen-fips186.lo int/dsa-validate.lo int/tls1-prf.lo \
 	int/dsa-compute-k.lo int/ecdsa-compute-k.lo int/mpn-base256.lo \
 	$(am__objects_1) $(am__objects_2) $(am__objects_3) \
-	rnd-fuzzer.lo $(am__objects_4) $(am__objects_5)
+	$(am__objects_4) $(am__objects_5) rnd-fuzzer.lo \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
+	$(am__objects_12) $(am__objects_13)
 libcrypto_la_OBJECTS = $(am_libcrypto_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am__ecc_eccdata_SOURCES_DIST = ecc/eccdata.c
+@NEED_INT_ECC_TRUE@am_ecc_eccdata_OBJECTS =  \
+@NEED_INT_ECC_TRUE@	ecc/eccdata-eccdata.$(OBJEXT)
+ecc_eccdata_OBJECTS = $(am_ecc_eccdata_OBJECTS)
+am__DEPENDENCIES_1 =
+@NEED_INT_ECC_TRUE@ecc_eccdata_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+@NEED_INT_ECC_TRUE@	../../gl/libgnu.la
+ecc_eccdata_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(ecc_eccdata_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -337,28 +477,71 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/build-aux/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/cipher.Plo ./$(DEPDIR)/init.Plo \
+am__depfiles_remade = ./$(DEPDIR)/cipher.Plo \
+	./$(DEPDIR)/gost_keywrap.Plo ./$(DEPDIR)/init.Plo \
 	./$(DEPDIR)/mac.Plo ./$(DEPDIR)/mpi.Plo ./$(DEPDIR)/pk.Plo \
 	./$(DEPDIR)/prf.Plo ./$(DEPDIR)/rnd-fips.Plo \
 	./$(DEPDIR)/rnd-fuzzer.Plo ./$(DEPDIR)/rnd.Plo \
+	./$(DEPDIR)/sysrng-bcrypt.Plo \
 	./$(DEPDIR)/sysrng-getentropy.Plo ./$(DEPDIR)/sysrng-linux.Plo \
-	./$(DEPDIR)/sysrng-windows.Plo backport/$(DEPDIR)/cfb8.Plo \
-	backport/$(DEPDIR)/cmac.Plo backport/$(DEPDIR)/xts.Plo \
-	gost/$(DEPDIR)/bignum-le.Plo gost/$(DEPDIR)/ecc-gost-hash.Plo \
-	gost/$(DEPDIR)/ecc-gost256cpa.Plo \
-	gost/$(DEPDIR)/ecc-gost512a.Plo \
-	gost/$(DEPDIR)/ecc-gostdsa-sign.Plo \
-	gost/$(DEPDIR)/ecc-gostdsa-verify.Plo \
-	gost/$(DEPDIR)/gost28147.Plo gost/$(DEPDIR)/gostdsa-mask.Plo \
-	gost/$(DEPDIR)/gostdsa-sign.Plo \
-	gost/$(DEPDIR)/gostdsa-verify.Plo \
+	./$(DEPDIR)/sysrng-netbsd.Plo ./$(DEPDIR)/sysrng-windows.Plo \
+	backport/$(DEPDIR)/cfb.Plo \
+	backport/$(DEPDIR)/chacha-core-internal.Plo \
+	backport/$(DEPDIR)/chacha-crypt.Plo \
+	backport/$(DEPDIR)/chacha-poly1305.Plo \
+	backport/$(DEPDIR)/chacha-set-key.Plo \
+	backport/$(DEPDIR)/chacha-set-nonce.Plo \
+	backport/$(DEPDIR)/cmac-aes128.Plo \
+	backport/$(DEPDIR)/cmac-aes256.Plo backport/$(DEPDIR)/cmac.Plo \
+	backport/$(DEPDIR)/poly1305-internal.Plo \
+	backport/$(DEPDIR)/siv-cmac-aes128.Plo \
+	backport/$(DEPDIR)/siv-cmac-aes256.Plo \
+	backport/$(DEPDIR)/siv-cmac.Plo \
+	backport/$(DEPDIR)/xts-aes128.Plo \
+	backport/$(DEPDIR)/xts-aes256.Plo backport/$(DEPDIR)/xts.Plo \
+	ecc/$(DEPDIR)/cnd-copy.Plo ecc/$(DEPDIR)/curve448-eh-to-x.Plo \
+	ecc/$(DEPDIR)/curve448-mul-g.Plo \
+	ecc/$(DEPDIR)/curve448-mul.Plo ecc/$(DEPDIR)/ecc-a-to-j.Plo \
+	ecc/$(DEPDIR)/ecc-add-eh.Plo ecc/$(DEPDIR)/ecc-add-ehh.Plo \
+	ecc/$(DEPDIR)/ecc-add-jja.Plo ecc/$(DEPDIR)/ecc-add-jjj.Plo \
+	ecc/$(DEPDIR)/ecc-curve448.Plo ecc/$(DEPDIR)/ecc-dup-eh.Plo \
+	ecc/$(DEPDIR)/ecc-dup-jj.Plo ecc/$(DEPDIR)/ecc-eh-to-a.Plo \
+	ecc/$(DEPDIR)/ecc-gost-gc256b.Plo \
+	ecc/$(DEPDIR)/ecc-gost-gc512a.Plo \
+	ecc/$(DEPDIR)/ecc-gostdsa-sign.Plo \
+	ecc/$(DEPDIR)/ecc-gostdsa-verify.Plo \
+	ecc/$(DEPDIR)/ecc-j-to-a.Plo ecc/$(DEPDIR)/ecc-mod-arith.Plo \
+	ecc/$(DEPDIR)/ecc-mod-inv.Plo ecc/$(DEPDIR)/ecc-mod.Plo \
+	ecc/$(DEPDIR)/ecc-mul-a-eh.Plo ecc/$(DEPDIR)/ecc-mul-a.Plo \
+	ecc/$(DEPDIR)/ecc-mul-g-eh.Plo ecc/$(DEPDIR)/ecc-mul-g.Plo \
+	ecc/$(DEPDIR)/ecc-mul-m.Plo ecc/$(DEPDIR)/ecc-random.Plo \
+	ecc/$(DEPDIR)/eccdata-eccdata.Po \
+	ecc/$(DEPDIR)/ed448-shake256-pubkey.Plo \
+	ecc/$(DEPDIR)/ed448-shake256-sign.Plo \
+	ecc/$(DEPDIR)/ed448-shake256-verify.Plo \
+	ecc/$(DEPDIR)/ed448-shake256.Plo \
+	ecc/$(DEPDIR)/eddsa-compress.Plo \
+	ecc/$(DEPDIR)/eddsa-decompress.Plo \
+	ecc/$(DEPDIR)/eddsa-expand.Plo ecc/$(DEPDIR)/eddsa-hash.Plo \
+	ecc/$(DEPDIR)/eddsa-pubkey.Plo ecc/$(DEPDIR)/eddsa-sign.Plo \
+	ecc/$(DEPDIR)/eddsa-verify.Plo ecc/$(DEPDIR)/gmp-glue.Plo \
+	ecc/$(DEPDIR)/gostdsa-sign.Plo \
+	ecc/$(DEPDIR)/gostdsa-verify.Plo ecc/$(DEPDIR)/gostdsa-vko.Plo \
+	ecc/$(DEPDIR)/sec-add-1.Plo ecc/$(DEPDIR)/sec-tabselect.Plo \
+	ecc/$(DEPDIR)/sha3-256.Plo ecc/$(DEPDIR)/sha3-permute.Plo \
+	ecc/$(DEPDIR)/sha3.Plo ecc/$(DEPDIR)/shake256.Plo \
+	ecc/$(DEPDIR)/write-le64.Plo gost/$(DEPDIR)/bignum-le.Plo \
+	gost/$(DEPDIR)/ecc-gost-hash.Plo \
+	gost/$(DEPDIR)/gost-point-mul-g.Plo \
+	gost/$(DEPDIR)/gost-point.Plo gost/$(DEPDIR)/gost-wrap.Plo \
+	gost/$(DEPDIR)/gost28147.Plo gost/$(DEPDIR)/gostdsa-keygen.Plo \
+	gost/$(DEPDIR)/gostdsa-mask.Plo \
 	gost/$(DEPDIR)/gosthash94-meta.Plo \
 	gost/$(DEPDIR)/gosthash94.Plo \
 	gost/$(DEPDIR)/hmac-gosthash94.Plo \
 	gost/$(DEPDIR)/hmac-streebog.Plo \
-	gost/$(DEPDIR)/pbkdf2-hmac-gosthash94.Plo \
-	gost/$(DEPDIR)/pbkdf2-hmac-streebog.Plo \
 	gost/$(DEPDIR)/streebog-meta.Plo gost/$(DEPDIR)/streebog.Plo \
+	gost/$(DEPDIR)/write-le32.Plo \
 	int/$(DEPDIR)/drbg-aes-self-test.Plo \
 	int/$(DEPDIR)/drbg-aes.Plo int/$(DEPDIR)/dsa-compute-k.Plo \
 	int/$(DEPDIR)/dsa-keygen-fips186.Plo \
@@ -386,8 +569,9 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(libcrypto_la_SOURCES)
-DIST_SOURCES = $(am__libcrypto_la_SOURCES_DIST)
+SOURCES = $(libcrypto_la_SOURCES) $(ecc_eccdata_SOURCES)
+DIST_SOURCES = $(am__libcrypto_la_SOURCES_DIST) \
+	$(am__ecc_eccdata_SOURCES_DIST)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -440,6 +624,7 @@ CCASDEPMODE = @CCASDEPMODE@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CMOCKA_CFLAGS = @CMOCKA_CFLAGS@
 CMOCKA_LIBS = @CMOCKA_LIBS@
 CODE_COVERAGE_CFLAGS = @CODE_COVERAGE_CFLAGS@
@@ -492,6 +677,7 @@ GMSGFMT = @GMSGFMT@
 GMSGFMT_015 = @GMSGFMT_015@
 GNULIB_ACCEPT = @GNULIB_ACCEPT@
 GNULIB_ACCEPT4 = @GNULIB_ACCEPT4@
+GNULIB_ACCESS = @GNULIB_ACCESS@
 GNULIB_ATOLL = @GNULIB_ATOLL@
 GNULIB_BIND = @GNULIB_BIND@
 GNULIB_BTOWC = @GNULIB_BTOWC@
@@ -501,6 +687,8 @@ GNULIB_CHDIR = @GNULIB_CHDIR@
 GNULIB_CHOWN = @GNULIB_CHOWN@
 GNULIB_CLOSE = @GNULIB_CLOSE@
 GNULIB_CONNECT = @GNULIB_CONNECT@
+GNULIB_COPY_FILE_RANGE = @GNULIB_COPY_FILE_RANGE@
+GNULIB_CREAT = @GNULIB_CREAT@
 GNULIB_CTIME = @GNULIB_CTIME@
 GNULIB_DPRINTF = @GNULIB_DPRINTF@
 GNULIB_DUP = @GNULIB_DUP@
@@ -550,15 +738,18 @@ GNULIB_GETCWD = @GNULIB_GETCWD@
 GNULIB_GETDELIM = @GNULIB_GETDELIM@
 GNULIB_GETDOMAINNAME = @GNULIB_GETDOMAINNAME@
 GNULIB_GETDTABLESIZE = @GNULIB_GETDTABLESIZE@
+GNULIB_GETENTROPY = @GNULIB_GETENTROPY@
 GNULIB_GETGROUPS = @GNULIB_GETGROUPS@
 GNULIB_GETHOSTNAME = @GNULIB_GETHOSTNAME@
 GNULIB_GETLINE = @GNULIB_GETLINE@
 GNULIB_GETLOADAVG = @GNULIB_GETLOADAVG@
 GNULIB_GETLOGIN = @GNULIB_GETLOGIN@
 GNULIB_GETLOGIN_R = @GNULIB_GETLOGIN_R@
+GNULIB_GETOPT_POSIX = @GNULIB_GETOPT_POSIX@
 GNULIB_GETPAGESIZE = @GNULIB_GETPAGESIZE@
 GNULIB_GETPASS = @GNULIB_GETPASS@
 GNULIB_GETPEERNAME = @GNULIB_GETPEERNAME@
+GNULIB_GETRANDOM = @GNULIB_GETRANDOM@
 GNULIB_GETSOCKNAME = @GNULIB_GETSOCKNAME@
 GNULIB_GETSOCKOPT = @GNULIB_GETSOCKOPT@
 GNULIB_GETSUBOPT = @GNULIB_GETSUBOPT@
@@ -638,7 +829,15 @@ GNULIB_PREAD = @GNULIB_PREAD@
 GNULIB_PRINTF = @GNULIB_PRINTF@
 GNULIB_PRINTF_POSIX = @GNULIB_PRINTF_POSIX@
 GNULIB_PSELECT = @GNULIB_PSELECT@
+GNULIB_PTHREAD_COND = @GNULIB_PTHREAD_COND@
+GNULIB_PTHREAD_MUTEX = @GNULIB_PTHREAD_MUTEX@
+GNULIB_PTHREAD_MUTEX_TIMEDLOCK = @GNULIB_PTHREAD_MUTEX_TIMEDLOCK@
+GNULIB_PTHREAD_ONCE = @GNULIB_PTHREAD_ONCE@
+GNULIB_PTHREAD_RWLOCK = @GNULIB_PTHREAD_RWLOCK@
 GNULIB_PTHREAD_SIGMASK = @GNULIB_PTHREAD_SIGMASK@
+GNULIB_PTHREAD_SPIN = @GNULIB_PTHREAD_SPIN@
+GNULIB_PTHREAD_THREAD = @GNULIB_PTHREAD_THREAD@
+GNULIB_PTHREAD_TSS = @GNULIB_PTHREAD_TSS@
 GNULIB_PTSNAME = @GNULIB_PTSNAME@
 GNULIB_PTSNAME_R = @GNULIB_PTSNAME_R@
 GNULIB_PUTC = @GNULIB_PUTC@
@@ -665,6 +864,7 @@ GNULIB_RENAMEAT = @GNULIB_RENAMEAT@
 GNULIB_RMDIR = @GNULIB_RMDIR@
 GNULIB_RPMATCH = @GNULIB_RPMATCH@
 GNULIB_SCANF = @GNULIB_SCANF@
+GNULIB_SCHED_YIELD = @GNULIB_SCHED_YIELD@
 GNULIB_SECURE_GETENV = @GNULIB_SECURE_GETENV@
 GNULIB_SELECT = @GNULIB_SELECT@
 GNULIB_SEND = @GNULIB_SEND@
@@ -672,6 +872,7 @@ GNULIB_SENDTO = @GNULIB_SENDTO@
 GNULIB_SETENV = @GNULIB_SETENV@
 GNULIB_SETHOSTNAME = @GNULIB_SETHOSTNAME@
 GNULIB_SETLOCALE = @GNULIB_SETLOCALE@
+GNULIB_SETLOCALE_NULL = @GNULIB_SETLOCALE_NULL@
 GNULIB_SETSOCKOPT = @GNULIB_SETSOCKOPT@
 GNULIB_SHUTDOWN = @GNULIB_SHUTDOWN@
 GNULIB_SIGACTION = @GNULIB_SIGACTION@
@@ -801,6 +1002,7 @@ HAVE_BTOWC = @HAVE_BTOWC@
 HAVE_C99_STDINT_H = @HAVE_C99_STDINT_H@
 HAVE_CANONICALIZE_FILE_NAME = @HAVE_CANONICALIZE_FILE_NAME@
 HAVE_CHOWN = @HAVE_CHOWN@
+HAVE_COPY_FILE_RANGE = @HAVE_COPY_FILE_RANGE@
 HAVE_CRTDEFS_H = @HAVE_CRTDEFS_H@
 HAVE_DECL_ENVIRON = @HAVE_DECL_ENVIRON@
 HAVE_DECL_FCHDIR = @HAVE_DECL_FCHDIR@
@@ -872,11 +1074,13 @@ HAVE_FTELLO = @HAVE_FTELLO@
 HAVE_FTRUNCATE = @HAVE_FTRUNCATE@
 HAVE_FUTIMENS = @HAVE_FUTIMENS@
 HAVE_GETDTABLESIZE = @HAVE_GETDTABLESIZE@
+HAVE_GETENTROPY = @HAVE_GETENTROPY@
 HAVE_GETGROUPS = @HAVE_GETGROUPS@
 HAVE_GETHOSTNAME = @HAVE_GETHOSTNAME@
 HAVE_GETLOGIN = @HAVE_GETLOGIN@
 HAVE_GETPAGESIZE = @HAVE_GETPAGESIZE@
 HAVE_GETPASS = @HAVE_GETPASS@
+HAVE_GETRANDOM = @HAVE_GETRANDOM@
 HAVE_GETSUBOPT = @HAVE_GETSUBOPT@
 HAVE_GETTIMEOFDAY = @HAVE_GETTIMEOFDAY@
 HAVE_GRANTPT = @HAVE_GRANTPT@
@@ -895,12 +1099,12 @@ HAVE_LCHMOD = @HAVE_LCHMOD@
 HAVE_LCHOWN = @HAVE_LCHOWN@
 HAVE_LIBCRYPTO = @HAVE_LIBCRYPTO@
 HAVE_LIBDL = @HAVE_LIBDL@
+HAVE_LIBEV = @HAVE_LIBEV@
 HAVE_LIBPTHREAD = @HAVE_LIBPTHREAD@
 HAVE_LIBRT = @HAVE_LIBRT@
 HAVE_LIBSECCOMP = @HAVE_LIBSECCOMP@
 HAVE_LINK = @HAVE_LINK@
 HAVE_LINKAT = @HAVE_LINKAT@
-HAVE_LONG_LONG_INT = @HAVE_LONG_LONG_INT@
 HAVE_LSTAT = @HAVE_LSTAT@
 HAVE_MAX_ALIGN_T = @HAVE_MAX_ALIGN_T@
 HAVE_MBRLEN = @HAVE_MBRLEN@
@@ -938,7 +1142,65 @@ HAVE_POSIX_OPENPT = @HAVE_POSIX_OPENPT@
 HAVE_POSIX_SIGNALBLOCKING = @HAVE_POSIX_SIGNALBLOCKING@
 HAVE_PREAD = @HAVE_PREAD@
 HAVE_PSELECT = @HAVE_PSELECT@
+HAVE_PTHREAD_ATTR_DESTROY = @HAVE_PTHREAD_ATTR_DESTROY@
+HAVE_PTHREAD_ATTR_GETDETACHSTATE = @HAVE_PTHREAD_ATTR_GETDETACHSTATE@
+HAVE_PTHREAD_ATTR_INIT = @HAVE_PTHREAD_ATTR_INIT@
+HAVE_PTHREAD_ATTR_SETDETACHSTATE = @HAVE_PTHREAD_ATTR_SETDETACHSTATE@
+HAVE_PTHREAD_CONDATTR_DESTROY = @HAVE_PTHREAD_CONDATTR_DESTROY@
+HAVE_PTHREAD_CONDATTR_INIT = @HAVE_PTHREAD_CONDATTR_INIT@
+HAVE_PTHREAD_COND_BROADCAST = @HAVE_PTHREAD_COND_BROADCAST@
+HAVE_PTHREAD_COND_DESTROY = @HAVE_PTHREAD_COND_DESTROY@
+HAVE_PTHREAD_COND_INIT = @HAVE_PTHREAD_COND_INIT@
+HAVE_PTHREAD_COND_SIGNAL = @HAVE_PTHREAD_COND_SIGNAL@
+HAVE_PTHREAD_COND_TIMEDWAIT = @HAVE_PTHREAD_COND_TIMEDWAIT@
+HAVE_PTHREAD_COND_WAIT = @HAVE_PTHREAD_COND_WAIT@
+HAVE_PTHREAD_CREATE = @HAVE_PTHREAD_CREATE@
+HAVE_PTHREAD_CREATE_DETACHED = @HAVE_PTHREAD_CREATE_DETACHED@
+HAVE_PTHREAD_DETACH = @HAVE_PTHREAD_DETACH@
+HAVE_PTHREAD_EQUAL = @HAVE_PTHREAD_EQUAL@
+HAVE_PTHREAD_EXIT = @HAVE_PTHREAD_EXIT@
+HAVE_PTHREAD_GETSPECIFIC = @HAVE_PTHREAD_GETSPECIFIC@
+HAVE_PTHREAD_H = @HAVE_PTHREAD_H@
+HAVE_PTHREAD_JOIN = @HAVE_PTHREAD_JOIN@
+HAVE_PTHREAD_KEY_CREATE = @HAVE_PTHREAD_KEY_CREATE@
+HAVE_PTHREAD_KEY_DELETE = @HAVE_PTHREAD_KEY_DELETE@
+HAVE_PTHREAD_MUTEXATTR_DESTROY = @HAVE_PTHREAD_MUTEXATTR_DESTROY@
+HAVE_PTHREAD_MUTEXATTR_GETROBUST = @HAVE_PTHREAD_MUTEXATTR_GETROBUST@
+HAVE_PTHREAD_MUTEXATTR_GETTYPE = @HAVE_PTHREAD_MUTEXATTR_GETTYPE@
+HAVE_PTHREAD_MUTEXATTR_INIT = @HAVE_PTHREAD_MUTEXATTR_INIT@
+HAVE_PTHREAD_MUTEXATTR_SETROBUST = @HAVE_PTHREAD_MUTEXATTR_SETROBUST@
+HAVE_PTHREAD_MUTEXATTR_SETTYPE = @HAVE_PTHREAD_MUTEXATTR_SETTYPE@
+HAVE_PTHREAD_MUTEX_DESTROY = @HAVE_PTHREAD_MUTEX_DESTROY@
+HAVE_PTHREAD_MUTEX_INIT = @HAVE_PTHREAD_MUTEX_INIT@
+HAVE_PTHREAD_MUTEX_LOCK = @HAVE_PTHREAD_MUTEX_LOCK@
+HAVE_PTHREAD_MUTEX_RECURSIVE = @HAVE_PTHREAD_MUTEX_RECURSIVE@
+HAVE_PTHREAD_MUTEX_ROBUST = @HAVE_PTHREAD_MUTEX_ROBUST@
+HAVE_PTHREAD_MUTEX_TIMEDLOCK = @HAVE_PTHREAD_MUTEX_TIMEDLOCK@
+HAVE_PTHREAD_MUTEX_TRYLOCK = @HAVE_PTHREAD_MUTEX_TRYLOCK@
+HAVE_PTHREAD_MUTEX_UNLOCK = @HAVE_PTHREAD_MUTEX_UNLOCK@
+HAVE_PTHREAD_ONCE = @HAVE_PTHREAD_ONCE@
+HAVE_PTHREAD_PROCESS_SHARED = @HAVE_PTHREAD_PROCESS_SHARED@
+HAVE_PTHREAD_RWLOCKATTR_DESTROY = @HAVE_PTHREAD_RWLOCKATTR_DESTROY@
+HAVE_PTHREAD_RWLOCKATTR_INIT = @HAVE_PTHREAD_RWLOCKATTR_INIT@
+HAVE_PTHREAD_RWLOCK_DESTROY = @HAVE_PTHREAD_RWLOCK_DESTROY@
+HAVE_PTHREAD_RWLOCK_INIT = @HAVE_PTHREAD_RWLOCK_INIT@
+HAVE_PTHREAD_RWLOCK_RDLOCK = @HAVE_PTHREAD_RWLOCK_RDLOCK@
+HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK = @HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK@
+HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK = @HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK@
+HAVE_PTHREAD_RWLOCK_TRYRDLOCK = @HAVE_PTHREAD_RWLOCK_TRYRDLOCK@
+HAVE_PTHREAD_RWLOCK_TRYWRLOCK = @HAVE_PTHREAD_RWLOCK_TRYWRLOCK@
+HAVE_PTHREAD_RWLOCK_UNLOCK = @HAVE_PTHREAD_RWLOCK_UNLOCK@
+HAVE_PTHREAD_RWLOCK_WRLOCK = @HAVE_PTHREAD_RWLOCK_WRLOCK@
+HAVE_PTHREAD_SELF = @HAVE_PTHREAD_SELF@
+HAVE_PTHREAD_SETSPECIFIC = @HAVE_PTHREAD_SETSPECIFIC@
 HAVE_PTHREAD_SIGMASK = @HAVE_PTHREAD_SIGMASK@
+HAVE_PTHREAD_SPINLOCK_T = @HAVE_PTHREAD_SPINLOCK_T@
+HAVE_PTHREAD_SPIN_DESTROY = @HAVE_PTHREAD_SPIN_DESTROY@
+HAVE_PTHREAD_SPIN_INIT = @HAVE_PTHREAD_SPIN_INIT@
+HAVE_PTHREAD_SPIN_LOCK = @HAVE_PTHREAD_SPIN_LOCK@
+HAVE_PTHREAD_SPIN_TRYLOCK = @HAVE_PTHREAD_SPIN_TRYLOCK@
+HAVE_PTHREAD_SPIN_UNLOCK = @HAVE_PTHREAD_SPIN_UNLOCK@
+HAVE_PTHREAD_T = @HAVE_PTHREAD_T@
 HAVE_PTSNAME = @HAVE_PTSNAME@
 HAVE_PTSNAME_R = @HAVE_PTSNAME_R@
 HAVE_PWRITE = @HAVE_PWRITE@
@@ -955,6 +1217,8 @@ HAVE_REALPATH = @HAVE_REALPATH@
 HAVE_RENAMEAT = @HAVE_RENAMEAT@
 HAVE_RPMATCH = @HAVE_RPMATCH@
 HAVE_SA_FAMILY_T = @HAVE_SA_FAMILY_T@
+HAVE_SCHED_H = @HAVE_SCHED_H@
+HAVE_SCHED_YIELD = @HAVE_SCHED_YIELD@
 HAVE_SECURE_GETENV = @HAVE_SECURE_GETENV@
 HAVE_SETENV = @HAVE_SETENV@
 HAVE_SETHOSTNAME = @HAVE_SETHOSTNAME@
@@ -983,6 +1247,7 @@ HAVE_STRTOLL = @HAVE_STRTOLL@
 HAVE_STRTOULL = @HAVE_STRTOULL@
 HAVE_STRUCT_ADDRINFO = @HAVE_STRUCT_ADDRINFO@
 HAVE_STRUCT_RANDOM_DATA = @HAVE_STRUCT_RANDOM_DATA@
+HAVE_STRUCT_SCHED_PARAM = @HAVE_STRUCT_SCHED_PARAM@
 HAVE_STRUCT_SIGACTION_SA_SIGACTION = @HAVE_STRUCT_SIGACTION_SA_SIGACTION@
 HAVE_STRUCT_SOCKADDR_STORAGE = @HAVE_STRUCT_SOCKADDR_STORAGE@
 HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY = @HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY@
@@ -991,6 +1256,7 @@ HAVE_STRVERSCMP = @HAVE_STRVERSCMP@
 HAVE_SYMLINK = @HAVE_SYMLINK@
 HAVE_SYMLINKAT = @HAVE_SYMLINKAT@
 HAVE_SYS_BITYPES_H = @HAVE_SYS_BITYPES_H@
+HAVE_SYS_CDEFS_H = @HAVE_SYS_CDEFS_H@
 HAVE_SYS_INTTYPES_H = @HAVE_SYS_INTTYPES_H@
 HAVE_SYS_IOCTL_H = @HAVE_SYS_IOCTL_H@
 HAVE_SYS_LOADAVG_H = @HAVE_SYS_LOADAVG_H@
@@ -1007,11 +1273,11 @@ HAVE_TZSET = @HAVE_TZSET@
 HAVE_UNISTD_H = @HAVE_UNISTD_H@
 HAVE_UNLINKAT = @HAVE_UNLINKAT@
 HAVE_UNLOCKPT = @HAVE_UNLOCKPT@
-HAVE_UNSIGNED_LONG_LONG_INT = @HAVE_UNSIGNED_LONG_LONG_INT@
 HAVE_USLEEP = @HAVE_USLEEP@
 HAVE_UTIMENSAT = @HAVE_UTIMENSAT@
 HAVE_VASPRINTF = @HAVE_VASPRINTF@
 HAVE_VDPRINTF = @HAVE_VDPRINTF@
+HAVE_VISIBILITY = @HAVE_VISIBILITY@
 HAVE_WCHAR_H = @HAVE_WCHAR_H@
 HAVE_WCHAR_T = @HAVE_WCHAR_T@
 HAVE_WCPCPY = @HAVE_WCPCPY@
@@ -1071,12 +1337,18 @@ INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LCOV = @LCOV@
 LD = @LD@
+LDDPOSTPROC = @LDDPOSTPROC@
+LDDPROG = @LDDPROG@
 LDFLAGS = @LDFLAGS@
 LIBATOMIC_LIBS = @LIBATOMIC_LIBS@
+LIBBCRYPT = @LIBBCRYPT@
 LIBCRYPTO = @LIBCRYPTO@
 LIBCRYPTO_PREFIX = @LIBCRYPTO_PREFIX@
 LIBDL = @LIBDL@
 LIBDL_PREFIX = @LIBDL_PREFIX@
+LIBEV = @LIBEV@
+LIBEV_LIBS = @LIBEV_LIBS@
+LIBEV_PREFIX = @LIBEV_PREFIX@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
 LIBICONV = @LIBICONV@
@@ -1084,20 +1356,21 @@ LIBIDN2_CFLAGS = @LIBIDN2_CFLAGS@
 LIBIDN2_LIBS = @LIBIDN2_LIBS@
 LIBINTL = @LIBINTL@
 LIBMULTITHREAD = @LIBMULTITHREAD@
+LIBNCRYPT = @LIBNCRYPT@
 LIBOBJS = @LIBOBJS@
 LIBOPTS_CFLAGS = @LIBOPTS_CFLAGS@
 LIBOPTS_DIR = @LIBOPTS_DIR@
 LIBOPTS_LDADD = @LIBOPTS_LDADD@
-LIBPTH = @LIBPTH@
+LIBPMULTITHREAD = @LIBPMULTITHREAD@
 LIBPTHREAD = @LIBPTHREAD@
 LIBPTHREAD_PREFIX = @LIBPTHREAD_PREFIX@
-LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBRT = @LIBRT@
 LIBRT_PREFIX = @LIBRT_PREFIX@
 LIBS = @LIBS@
 LIBSECCOMP = @LIBSECCOMP@
 LIBSECCOMP_PREFIX = @LIBSECCOMP_PREFIX@
 LIBSOCKET = @LIBSOCKET@
+LIBSTDTHREAD = @LIBSTDTHREAD@
 LIBTASN1_CFLAGS = @LIBTASN1_CFLAGS@
 LIBTASN1_LIBS = @LIBTASN1_LIBS@
 LIBTESTS_LIBDEPS = @LIBTESTS_LIBDEPS@
@@ -1109,8 +1382,14 @@ LIBUNISTRING_UNINORM_H = @LIBUNISTRING_UNINORM_H@
 LIBUNISTRING_UNISTR_H = @LIBUNISTRING_UNISTR_H@
 LIBUNISTRING_UNITYPES_H = @LIBUNISTRING_UNITYPES_H@
 LIB_CLOCK_GETTIME = @LIB_CLOCK_GETTIME@
+LIB_CRYPT32 = @LIB_CRYPT32@
 LIB_NANOSLEEP = @LIB_NANOSLEEP@
+LIB_PTHREAD = @LIB_PTHREAD@
+LIB_PTHREAD_SIGMASK = @LIB_PTHREAD_SIGMASK@
+LIB_SCHED_YIELD = @LIB_SCHED_YIELD@
 LIB_SELECT = @LIB_SELECT@
+LIB_SETLOCALE = @LIB_SETLOCALE@
+LIB_SETLOCALE_NULL = @LIB_SETLOCALE_NULL@
 LIMITS_H = @LIMITS_H@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -1122,11 +1401,11 @@ LOCALE_ZH_CN = @LOCALE_ZH_CN@
 LTALLOCA = @LTALLOCA@
 LTLIBCRYPTO = @LTLIBCRYPTO@
 LTLIBDL = @LTLIBDL@
+LTLIBEV = @LTLIBEV@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
 LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBPTH = @LTLIBPTH@
 LTLIBPTHREAD = @LTLIBPTHREAD@
 LTLIBRT = @LTLIBRT@
 LTLIBSECCOMP = @LTLIBSECCOMP@
@@ -1168,6 +1447,8 @@ NEXT_AS_FIRST_DIRECTIVE_LIMITS_H = @NEXT_AS_FIRST_DIRECTIVE_LIMITS_H@
 NEXT_AS_FIRST_DIRECTIVE_LOCALE_H = @NEXT_AS_FIRST_DIRECTIVE_LOCALE_H@
 NEXT_AS_FIRST_DIRECTIVE_NETDB_H = @NEXT_AS_FIRST_DIRECTIVE_NETDB_H@
 NEXT_AS_FIRST_DIRECTIVE_NETINET_IN_H = @NEXT_AS_FIRST_DIRECTIVE_NETINET_IN_H@
+NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H = @NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H@
+NEXT_AS_FIRST_DIRECTIVE_SCHED_H = @NEXT_AS_FIRST_DIRECTIVE_SCHED_H@
 NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H = @NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H@
 NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = @NEXT_AS_FIRST_DIRECTIVE_STDDEF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDINT_H@
@@ -1195,6 +1476,8 @@ NEXT_LIMITS_H = @NEXT_LIMITS_H@
 NEXT_LOCALE_H = @NEXT_LOCALE_H@
 NEXT_NETDB_H = @NEXT_NETDB_H@
 NEXT_NETINET_IN_H = @NEXT_NETINET_IN_H@
+NEXT_PTHREAD_H = @NEXT_PTHREAD_H@
+NEXT_SCHED_H = @NEXT_SCHED_H@
 NEXT_SIGNAL_H = @NEXT_SIGNAL_H@
 NEXT_STDDEF_H = @NEXT_STDDEF_H@
 NEXT_STDINT_H = @NEXT_STDINT_H@
@@ -1228,6 +1511,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PARSE_DATETIME_BISON = @PARSE_DATETIME_BISON@
 PATCH_VERSION = @PATCH_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
@@ -1243,17 +1527,20 @@ PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PTHREAD_H_DEFINES_STRUCT_TIMESPEC = @PTHREAD_H_DEFINES_STRUCT_TIMESPEC@
 PTRDIFF_T_SUFFIX = @PTRDIFF_T_SUFFIX@
 RANLIB = @RANLIB@
+REPLACE_ACCESS = @REPLACE_ACCESS@
 REPLACE_BTOWC = @REPLACE_BTOWC@
 REPLACE_CALLOC = @REPLACE_CALLOC@
 REPLACE_CANONICALIZE_FILE_NAME = @REPLACE_CANONICALIZE_FILE_NAME@
 REPLACE_CHOWN = @REPLACE_CHOWN@
 REPLACE_CLOSE = @REPLACE_CLOSE@
+REPLACE_CREAT = @REPLACE_CREAT@
 REPLACE_CTIME = @REPLACE_CTIME@
 REPLACE_DPRINTF = @REPLACE_DPRINTF@
 REPLACE_DUP = @REPLACE_DUP@
 REPLACE_DUP2 = @REPLACE_DUP2@
 REPLACE_DUPLOCALE = @REPLACE_DUPLOCALE@
 REPLACE_FACCESSAT = @REPLACE_FACCESSAT@
+REPLACE_FCHMODAT = @REPLACE_FCHMODAT@
 REPLACE_FCHOWNAT = @REPLACE_FCHOWNAT@
 REPLACE_FCLOSE = @REPLACE_FCLOSE@
 REPLACE_FCNTL = @REPLACE_FCNTL@
@@ -1273,6 +1560,7 @@ REPLACE_FTELLO = @REPLACE_FTELLO@
 REPLACE_FTRUNCATE = @REPLACE_FTRUNCATE@
 REPLACE_FUTIMENS = @REPLACE_FUTIMENS@
 REPLACE_GAI_STRERROR = @REPLACE_GAI_STRERROR@
+REPLACE_GETADDRINFO = @REPLACE_GETADDRINFO@
 REPLACE_GETCWD = @REPLACE_GETCWD@
 REPLACE_GETDELIM = @REPLACE_GETDELIM@
 REPLACE_GETDOMAINNAME = @REPLACE_GETDOMAINNAME@
@@ -1325,7 +1613,58 @@ REPLACE_POPEN = @REPLACE_POPEN@
 REPLACE_PREAD = @REPLACE_PREAD@
 REPLACE_PRINTF = @REPLACE_PRINTF@
 REPLACE_PSELECT = @REPLACE_PSELECT@
+REPLACE_PTHREAD_ATTR_DESTROY = @REPLACE_PTHREAD_ATTR_DESTROY@
+REPLACE_PTHREAD_ATTR_GETDETACHSTATE = @REPLACE_PTHREAD_ATTR_GETDETACHSTATE@
+REPLACE_PTHREAD_ATTR_INIT = @REPLACE_PTHREAD_ATTR_INIT@
+REPLACE_PTHREAD_ATTR_SETDETACHSTATE = @REPLACE_PTHREAD_ATTR_SETDETACHSTATE@
+REPLACE_PTHREAD_CONDATTR_DESTROY = @REPLACE_PTHREAD_CONDATTR_DESTROY@
+REPLACE_PTHREAD_CONDATTR_INIT = @REPLACE_PTHREAD_CONDATTR_INIT@
+REPLACE_PTHREAD_COND_BROADCAST = @REPLACE_PTHREAD_COND_BROADCAST@
+REPLACE_PTHREAD_COND_DESTROY = @REPLACE_PTHREAD_COND_DESTROY@
+REPLACE_PTHREAD_COND_INIT = @REPLACE_PTHREAD_COND_INIT@
+REPLACE_PTHREAD_COND_SIGNAL = @REPLACE_PTHREAD_COND_SIGNAL@
+REPLACE_PTHREAD_COND_TIMEDWAIT = @REPLACE_PTHREAD_COND_TIMEDWAIT@
+REPLACE_PTHREAD_COND_WAIT = @REPLACE_PTHREAD_COND_WAIT@
+REPLACE_PTHREAD_CREATE = @REPLACE_PTHREAD_CREATE@
+REPLACE_PTHREAD_DETACH = @REPLACE_PTHREAD_DETACH@
+REPLACE_PTHREAD_EQUAL = @REPLACE_PTHREAD_EQUAL@
+REPLACE_PTHREAD_EXIT = @REPLACE_PTHREAD_EXIT@
+REPLACE_PTHREAD_GETSPECIFIC = @REPLACE_PTHREAD_GETSPECIFIC@
+REPLACE_PTHREAD_JOIN = @REPLACE_PTHREAD_JOIN@
+REPLACE_PTHREAD_KEY_CREATE = @REPLACE_PTHREAD_KEY_CREATE@
+REPLACE_PTHREAD_KEY_DELETE = @REPLACE_PTHREAD_KEY_DELETE@
+REPLACE_PTHREAD_MUTEXATTR_DESTROY = @REPLACE_PTHREAD_MUTEXATTR_DESTROY@
+REPLACE_PTHREAD_MUTEXATTR_GETROBUST = @REPLACE_PTHREAD_MUTEXATTR_GETROBUST@
+REPLACE_PTHREAD_MUTEXATTR_GETTYPE = @REPLACE_PTHREAD_MUTEXATTR_GETTYPE@
+REPLACE_PTHREAD_MUTEXATTR_INIT = @REPLACE_PTHREAD_MUTEXATTR_INIT@
+REPLACE_PTHREAD_MUTEXATTR_SETROBUST = @REPLACE_PTHREAD_MUTEXATTR_SETROBUST@
+REPLACE_PTHREAD_MUTEXATTR_SETTYPE = @REPLACE_PTHREAD_MUTEXATTR_SETTYPE@
+REPLACE_PTHREAD_MUTEX_DESTROY = @REPLACE_PTHREAD_MUTEX_DESTROY@
+REPLACE_PTHREAD_MUTEX_INIT = @REPLACE_PTHREAD_MUTEX_INIT@
+REPLACE_PTHREAD_MUTEX_LOCK = @REPLACE_PTHREAD_MUTEX_LOCK@
+REPLACE_PTHREAD_MUTEX_TIMEDLOCK = @REPLACE_PTHREAD_MUTEX_TIMEDLOCK@
+REPLACE_PTHREAD_MUTEX_TRYLOCK = @REPLACE_PTHREAD_MUTEX_TRYLOCK@
+REPLACE_PTHREAD_MUTEX_UNLOCK = @REPLACE_PTHREAD_MUTEX_UNLOCK@
+REPLACE_PTHREAD_ONCE = @REPLACE_PTHREAD_ONCE@
+REPLACE_PTHREAD_RWLOCKATTR_DESTROY = @REPLACE_PTHREAD_RWLOCKATTR_DESTROY@
+REPLACE_PTHREAD_RWLOCKATTR_INIT = @REPLACE_PTHREAD_RWLOCKATTR_INIT@
+REPLACE_PTHREAD_RWLOCK_DESTROY = @REPLACE_PTHREAD_RWLOCK_DESTROY@
+REPLACE_PTHREAD_RWLOCK_INIT = @REPLACE_PTHREAD_RWLOCK_INIT@
+REPLACE_PTHREAD_RWLOCK_RDLOCK = @REPLACE_PTHREAD_RWLOCK_RDLOCK@
+REPLACE_PTHREAD_RWLOCK_TIMEDRDLOCK = @REPLACE_PTHREAD_RWLOCK_TIMEDRDLOCK@
+REPLACE_PTHREAD_RWLOCK_TIMEDWRLOCK = @REPLACE_PTHREAD_RWLOCK_TIMEDWRLOCK@
+REPLACE_PTHREAD_RWLOCK_TRYRDLOCK = @REPLACE_PTHREAD_RWLOCK_TRYRDLOCK@
+REPLACE_PTHREAD_RWLOCK_TRYWRLOCK = @REPLACE_PTHREAD_RWLOCK_TRYWRLOCK@
+REPLACE_PTHREAD_RWLOCK_UNLOCK = @REPLACE_PTHREAD_RWLOCK_UNLOCK@
+REPLACE_PTHREAD_RWLOCK_WRLOCK = @REPLACE_PTHREAD_RWLOCK_WRLOCK@
+REPLACE_PTHREAD_SELF = @REPLACE_PTHREAD_SELF@
+REPLACE_PTHREAD_SETSPECIFIC = @REPLACE_PTHREAD_SETSPECIFIC@
 REPLACE_PTHREAD_SIGMASK = @REPLACE_PTHREAD_SIGMASK@
+REPLACE_PTHREAD_SPIN_DESTROY = @REPLACE_PTHREAD_SPIN_DESTROY@
+REPLACE_PTHREAD_SPIN_INIT = @REPLACE_PTHREAD_SPIN_INIT@
+REPLACE_PTHREAD_SPIN_LOCK = @REPLACE_PTHREAD_SPIN_LOCK@
+REPLACE_PTHREAD_SPIN_TRYLOCK = @REPLACE_PTHREAD_SPIN_TRYLOCK@
+REPLACE_PTHREAD_SPIN_UNLOCK = @REPLACE_PTHREAD_SPIN_UNLOCK@
 REPLACE_PTSNAME = @REPLACE_PTSNAME@
 REPLACE_PTSNAME_R = @REPLACE_PTSNAME_R@
 REPLACE_PUTENV = @REPLACE_PUTENV@
@@ -1343,6 +1682,7 @@ REPLACE_REMOVE = @REPLACE_REMOVE@
 REPLACE_RENAME = @REPLACE_RENAME@
 REPLACE_RENAMEAT = @REPLACE_RENAMEAT@
 REPLACE_RMDIR = @REPLACE_RMDIR@
+REPLACE_SCHED_YIELD = @REPLACE_SCHED_YIELD@
 REPLACE_SELECT = @REPLACE_SELECT@
 REPLACE_SETENV = @REPLACE_SETENV@
 REPLACE_SETLOCALE = @REPLACE_SETLOCALE@
@@ -1394,6 +1734,7 @@ REPLACE_WCRTOMB = @REPLACE_WCRTOMB@
 REPLACE_WCSFTIME = @REPLACE_WCSFTIME@
 REPLACE_WCSNRTOMBS = @REPLACE_WCSNRTOMBS@
 REPLACE_WCSRTOMBS = @REPLACE_WCSRTOMBS@
+REPLACE_WCSTOK = @REPLACE_WCSTOK@
 REPLACE_WCSWIDTH = @REPLACE_WCSWIDTH@
 REPLACE_WCTOB = @REPLACE_WCTOB@
 REPLACE_WCTOMB = @REPLACE_WCTOMB@
@@ -1442,7 +1783,6 @@ XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 YACC = @YACC@
-YEAR = @YEAR@
 YFLAGS = @YFLAGS@
 abs_aux_dir = @abs_aux_dir@
 abs_builddir = @abs_builddir@
@@ -1502,13 +1842,13 @@ libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
+maybe_guileextensiondir = @maybe_guileextensiondir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -1533,16 +1873,30 @@ AM_CPPFLAGS = -I$(srcdir)/int -I$(srcdir)/backport \
 	-I$(builddir)/../../gl -I$(srcdir)/.. $(am__append_1)
 noinst_LTLIBRARIES = libcrypto.la
 libcrypto_la_SOURCES = pk.c mpi.c mac.c cipher.c init.c gnettle.h \
-	rnd-common.h prf.c backport/cfb8.c backport/cfb8.h \
-	backport/cmac.c backport/cmac.h backport/xts.c backport/xts.h \
-	rnd.c int/rsa-fips.h int/rsa-keygen-fips186.c \
-	int/provable-prime.c int/dsa-fips.h int/dsa-keygen-fips186.c \
-	int/dsa-validate.c int/tls1-prf.c int/tls1-prf.h \
-	int/dsa-compute-k.c int/dsa-compute-k.h int/ecdsa-compute-k.c \
-	int/ecdsa-compute-k.h int/mpn-base256.c int/mpn-base256.h \
-	$(am__append_2) $(am__append_3) $(am__append_4) rnd-fuzzer.c \
-	$(am__append_5) $(am__append_6)
-all: all-am
+	rnd-common.h prf.c rnd.c int/rsa-fips.h \
+	int/rsa-keygen-fips186.c int/provable-prime.c int/dsa-fips.h \
+	int/dsa-keygen-fips186.c int/dsa-validate.c int/tls1-prf.c \
+	int/tls1-prf.h int/dsa-compute-k.c int/dsa-compute-k.h \
+	int/ecdsa-compute-k.c int/ecdsa-compute-k.h int/mpn-base256.c \
+	int/mpn-base256.h int/block8.h backport/block-internal.h \
+	$(am__append_2) $(am__append_3) $(am__append_4) \
+	$(am__append_5) $(am__append_6) rnd-fuzzer.c $(am__append_7) \
+	$(am__append_8) $(am__append_9) $(am__append_10) \
+	$(am__append_11) $(am__append_12) $(am__append_13) \
+	$(am__append_14)
+@NEED_INT_ECC_TRUE@ecc_generated_headers = \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gost-gc256b-32.h ecc/ecc-gost-gc256b-64.h \
+@NEED_INT_ECC_TRUE@	ecc/ecc-gost-gc512a-32.h ecc/ecc-gost-gc512a-64.h \
+@NEED_INT_ECC_TRUE@	ecc/ecc-curve448-32.h ecc/ecc-curve448-64.h
+
+@NEED_INT_ECC_TRUE@BUILT_SOURCES = $(ecc_generated_headers)
+@NEED_INT_ECC_TRUE@EXTRA_DIST = $(ecc_generated_headers) ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@noinst_PROGRAMS = ecc/eccdata$(EXEEXT)
+@NEED_INT_ECC_TRUE@ecc_eccdata_SOURCES = ecc/eccdata.c
+@NEED_INT_ECC_TRUE@ecc_eccdata_CFLAGS = $(GMP_CFLAGS)
+@NEED_INT_ECC_TRUE@ecc_eccdata_LDADD = $(GMP_LIBS) ../../gl/libgnu.la
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
@@ -1577,6 +1931,15 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
+clean-noinstPROGRAMS:
+	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
+	echo " rm -f" $$list; \
+	rm -f $$list || exit $$?; \
+	test -n "$(EXEEXT)" || exit 0; \
+	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
+	echo " rm -f" $$list; \
+	rm -f $$list
+
 clean-noinstLTLIBRARIES:
 	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
 	@list='$(noinst_LTLIBRARIES)'; \
@@ -1587,18 +1950,6 @@ clean-noinstLTLIBRARIES:
 	  echo rm -f $${locs}; \
 	  rm -f $${locs}; \
 	}
-backport/$(am__dirstamp):
-	@$(MKDIR_P) backport
-	@: > backport/$(am__dirstamp)
-backport/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) backport/$(DEPDIR)
-	@: > backport/$(DEPDIR)/$(am__dirstamp)
-backport/cfb8.lo: backport/$(am__dirstamp) \
-	backport/$(DEPDIR)/$(am__dirstamp)
-backport/cmac.lo: backport/$(am__dirstamp) \
-	backport/$(DEPDIR)/$(am__dirstamp)
-backport/xts.lo: backport/$(am__dirstamp) \
-	backport/$(DEPDIR)/$(am__dirstamp)
 int/$(am__dirstamp):
 	@$(MKDIR_P) int
 	@: > int/$(am__dirstamp)
@@ -1627,7 +1978,10 @@ gost/$(am__dirstamp):
 gost/$(DEPDIR)/$(am__dirstamp):
 	@$(MKDIR_P) gost/$(DEPDIR)
 	@: > gost/$(DEPDIR)/$(am__dirstamp)
+gost/write-le32.lo: gost/$(am__dirstamp) \
+	gost/$(DEPDIR)/$(am__dirstamp)
 gost/gost28147.lo: gost/$(am__dirstamp) gost/$(DEPDIR)/$(am__dirstamp)
+gost/gost-wrap.lo: gost/$(am__dirstamp) gost/$(DEPDIR)/$(am__dirstamp)
 gost/gosthash94.lo: gost/$(am__dirstamp) \
 	gost/$(DEPDIR)/$(am__dirstamp)
 gost/gosthash94-meta.lo: gost/$(am__dirstamp) \
@@ -1640,34 +1994,140 @@ gost/hmac-gosthash94.lo: gost/$(am__dirstamp) \
 gost/hmac-streebog.lo: gost/$(am__dirstamp) \
 	gost/$(DEPDIR)/$(am__dirstamp)
 gost/bignum-le.lo: gost/$(am__dirstamp) gost/$(DEPDIR)/$(am__dirstamp)
-gost/pbkdf2-hmac-gosthash94.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/pbkdf2-hmac-streebog.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/ecc-gost256cpa.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/ecc-gost512a.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/ecc-gostdsa-sign.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/ecc-gostdsa-verify.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
 gost/gostdsa-mask.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/gostdsa-sign.lo: gost/$(am__dirstamp) \
-	gost/$(DEPDIR)/$(am__dirstamp)
-gost/gostdsa-verify.lo: gost/$(am__dirstamp) \
 	gost/$(DEPDIR)/$(am__dirstamp)
 gost/ecc-gost-hash.lo: gost/$(am__dirstamp) \
 	gost/$(DEPDIR)/$(am__dirstamp)
+ecc/$(am__dirstamp):
+	@$(MKDIR_P) ecc
+	@: > ecc/$(am__dirstamp)
+ecc/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) ecc/$(DEPDIR)
+	@: > ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/write-le64.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/gmp-glue.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/sha3.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/sha3-256.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/sha3-permute.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/shake256.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-add-eh.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-add-ehh.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-dup-eh.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-eh-to-a.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mul-a-eh.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mul-g-eh.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mul-m.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mod.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mod-arith.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mod-inv.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-a-to-j.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/sec-tabselect.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/cnd-copy.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/sec-add-1.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-curve448.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/curve448-eh-to-x.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/curve448-mul.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/curve448-mul-g.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+gost/gost-point.lo: gost/$(am__dirstamp) \
+	gost/$(DEPDIR)/$(am__dirstamp)
+gost/gost-point-mul-g.lo: gost/$(am__dirstamp) \
+	gost/$(DEPDIR)/$(am__dirstamp)
+gost/gostdsa-keygen.lo: gost/$(am__dirstamp) \
+	gost/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-add-jja.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-add-jjj.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-dup-jj.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mul-a.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-mul-g.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-random.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-j-to-a.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-gost-gc256b.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-gost-gc512a.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-gostdsa-sign.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ecc-gostdsa-verify.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/gostdsa-sign.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/gostdsa-verify.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/gostdsa-vko.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-compress.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-decompress.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-expand.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-hash.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-pubkey.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-sign.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/eddsa-verify.lo: ecc/$(am__dirstamp) ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ed448-shake256.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ed448-shake256-pubkey.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ed448-shake256-sign.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+ecc/ed448-shake256-verify.lo: ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+backport/$(am__dirstamp):
+	@$(MKDIR_P) backport
+	@: > backport/$(am__dirstamp)
+backport/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) backport/$(DEPDIR)
+	@: > backport/$(DEPDIR)/$(am__dirstamp)
+backport/cfb.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/cmac.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/cmac-aes128.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/cmac-aes256.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/xts.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/xts-aes128.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/xts-aes256.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/chacha-core-internal.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/chacha-crypt.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/chacha-poly1305.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/chacha-set-key.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/chacha-set-nonce.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/poly1305-internal.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/siv-cmac-aes128.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/siv-cmac-aes256.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
+backport/siv-cmac.lo: backport/$(am__dirstamp) \
+	backport/$(DEPDIR)/$(am__dirstamp)
 
 libcrypto.la: $(libcrypto_la_OBJECTS) $(libcrypto_la_DEPENDENCIES) $(EXTRA_libcrypto_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK)  $(libcrypto_la_OBJECTS) $(libcrypto_la_LIBADD) $(LIBS)
+ecc/eccdata-eccdata.$(OBJEXT): ecc/$(am__dirstamp) \
+	ecc/$(DEPDIR)/$(am__dirstamp)
+
+ecc/eccdata$(EXEEXT): $(ecc_eccdata_OBJECTS) $(ecc_eccdata_DEPENDENCIES) $(EXTRA_ecc_eccdata_DEPENDENCIES) ecc/$(am__dirstamp)
+	@rm -f ecc/eccdata$(EXEEXT)
+	$(AM_V_CCLD)$(ecc_eccdata_LINK) $(ecc_eccdata_OBJECTS) $(ecc_eccdata_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 	-rm -f backport/*.$(OBJEXT)
 	-rm -f backport/*.lo
+	-rm -f ecc/*.$(OBJEXT)
+	-rm -f ecc/*.lo
 	-rm -f gost/*.$(OBJEXT)
 	-rm -f gost/*.lo
 	-rm -f int/*.$(OBJEXT)
@@ -1677,6 +2137,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cipher.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gost_keywrap.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/init.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mac.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi.Plo@am__quote@ # am--include-marker
@@ -1685,30 +2146,92 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rnd-fips.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rnd-fuzzer.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rnd.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysrng-bcrypt.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysrng-getentropy.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysrng-linux.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysrng-netbsd.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sysrng-windows.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/cfb8.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/cfb.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/chacha-core-internal.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/chacha-crypt.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/chacha-poly1305.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/chacha-set-key.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/chacha-set-nonce.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/cmac-aes128.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/cmac-aes256.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/cmac.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/poly1305-internal.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/siv-cmac-aes128.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/siv-cmac-aes256.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/siv-cmac.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/xts-aes128.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/xts-aes256.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@backport/$(DEPDIR)/xts.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/cnd-copy.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/curve448-eh-to-x.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/curve448-mul-g.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/curve448-mul.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-a-to-j.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-add-eh.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-add-ehh.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-add-jja.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-add-jjj.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-curve448.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-dup-eh.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-dup-jj.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-eh-to-a.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-gost-gc256b.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-gost-gc512a.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-gostdsa-sign.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-gostdsa-verify.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-j-to-a.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mod-arith.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mod-inv.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mod.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mul-a-eh.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mul-a.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mul-g-eh.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mul-g.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-mul-m.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ecc-random.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eccdata-eccdata.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ed448-shake256-pubkey.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ed448-shake256-sign.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ed448-shake256-verify.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/ed448-shake256.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-compress.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-decompress.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-expand.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-hash.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-pubkey.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-sign.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/eddsa-verify.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/gmp-glue.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/gostdsa-sign.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/gostdsa-verify.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/gostdsa-vko.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/sec-add-1.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/sec-tabselect.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/sha3-256.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/sha3-permute.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/sha3.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/shake256.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@ecc/$(DEPDIR)/write-le64.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/bignum-le.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/ecc-gost-hash.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/ecc-gost256cpa.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/ecc-gost512a.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/ecc-gostdsa-sign.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/ecc-gostdsa-verify.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gost-point-mul-g.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gost-point.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gost-wrap.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gost28147.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gostdsa-keygen.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gostdsa-mask.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gostdsa-sign.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gostdsa-verify.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gosthash94-meta.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/gosthash94.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/hmac-gosthash94.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/hmac-streebog.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/pbkdf2-hmac-gosthash94.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/pbkdf2-hmac-streebog.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/streebog-meta.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/streebog.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@gost/$(DEPDIR)/write-le32.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@int/$(DEPDIR)/drbg-aes-self-test.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@int/$(DEPDIR)/drbg-aes.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@int/$(DEPDIR)/dsa-compute-k.Plo@am__quote@ # am--include-marker
@@ -1750,12 +2273,27 @@ am--depfiles: $(am__depfiles_remade)
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LTCOMPILE) -c -o $@ $<
 
+ecc/eccdata-eccdata.o: ecc/eccdata.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecc_eccdata_CFLAGS) $(CFLAGS) -MT ecc/eccdata-eccdata.o -MD -MP -MF ecc/$(DEPDIR)/eccdata-eccdata.Tpo -c -o ecc/eccdata-eccdata.o `test -f 'ecc/eccdata.c' || echo '$(srcdir)/'`ecc/eccdata.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ecc/$(DEPDIR)/eccdata-eccdata.Tpo ecc/$(DEPDIR)/eccdata-eccdata.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ecc/eccdata.c' object='ecc/eccdata-eccdata.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecc_eccdata_CFLAGS) $(CFLAGS) -c -o ecc/eccdata-eccdata.o `test -f 'ecc/eccdata.c' || echo '$(srcdir)/'`ecc/eccdata.c
+
+ecc/eccdata-eccdata.obj: ecc/eccdata.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecc_eccdata_CFLAGS) $(CFLAGS) -MT ecc/eccdata-eccdata.obj -MD -MP -MF ecc/$(DEPDIR)/eccdata-eccdata.Tpo -c -o ecc/eccdata-eccdata.obj `if test -f 'ecc/eccdata.c'; then $(CYGPATH_W) 'ecc/eccdata.c'; else $(CYGPATH_W) '$(srcdir)/ecc/eccdata.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) ecc/$(DEPDIR)/eccdata-eccdata.Tpo ecc/$(DEPDIR)/eccdata-eccdata.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='ecc/eccdata.c' object='ecc/eccdata-eccdata.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ecc_eccdata_CFLAGS) $(CFLAGS) -c -o ecc/eccdata-eccdata.obj `if test -f 'ecc/eccdata.c'; then $(CYGPATH_W) 'ecc/eccdata.c'; else $(CYGPATH_W) '$(srcdir)/ecc/eccdata.c'; fi`
+
 mostlyclean-libtool:
 	-rm -f *.lo
 
 clean-libtool:
 	-rm -rf .libs _libs
 	-rm -rf backport/.libs backport/_libs
+	-rm -rf ecc/.libs ecc/_libs
 	-rm -rf gost/.libs gost/_libs
 	-rm -rf int/.libs int/_libs
 
@@ -1845,10 +2383,12 @@ distdir-am: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
-all-am: Makefile $(LTLIBRARIES)
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
+all-am: Makefile $(PROGRAMS) $(LTLIBRARIES)
 installdirs:
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -1876,6 +2416,8 @@ distclean-generic:
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
 	-rm -f backport/$(DEPDIR)/$(am__dirstamp)
 	-rm -f backport/$(am__dirstamp)
+	-rm -f ecc/$(DEPDIR)/$(am__dirstamp)
+	-rm -f ecc/$(am__dirstamp)
 	-rm -f gost/$(DEPDIR)/$(am__dirstamp)
 	-rm -f gost/$(am__dirstamp)
 	-rm -f int/$(DEPDIR)/$(am__dirstamp)
@@ -1884,13 +2426,15 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
-	mostlyclean-am
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/cipher.Plo
+	-rm -f ./$(DEPDIR)/gost_keywrap.Plo
 	-rm -f ./$(DEPDIR)/init.Plo
 	-rm -f ./$(DEPDIR)/mac.Plo
 	-rm -f ./$(DEPDIR)/mpi.Plo
@@ -1899,30 +2443,92 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/rnd-fips.Plo
 	-rm -f ./$(DEPDIR)/rnd-fuzzer.Plo
 	-rm -f ./$(DEPDIR)/rnd.Plo
+	-rm -f ./$(DEPDIR)/sysrng-bcrypt.Plo
 	-rm -f ./$(DEPDIR)/sysrng-getentropy.Plo
 	-rm -f ./$(DEPDIR)/sysrng-linux.Plo
+	-rm -f ./$(DEPDIR)/sysrng-netbsd.Plo
 	-rm -f ./$(DEPDIR)/sysrng-windows.Plo
-	-rm -f backport/$(DEPDIR)/cfb8.Plo
+	-rm -f backport/$(DEPDIR)/cfb.Plo
+	-rm -f backport/$(DEPDIR)/chacha-core-internal.Plo
+	-rm -f backport/$(DEPDIR)/chacha-crypt.Plo
+	-rm -f backport/$(DEPDIR)/chacha-poly1305.Plo
+	-rm -f backport/$(DEPDIR)/chacha-set-key.Plo
+	-rm -f backport/$(DEPDIR)/chacha-set-nonce.Plo
+	-rm -f backport/$(DEPDIR)/cmac-aes128.Plo
+	-rm -f backport/$(DEPDIR)/cmac-aes256.Plo
 	-rm -f backport/$(DEPDIR)/cmac.Plo
+	-rm -f backport/$(DEPDIR)/poly1305-internal.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac-aes128.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac-aes256.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac.Plo
+	-rm -f backport/$(DEPDIR)/xts-aes128.Plo
+	-rm -f backport/$(DEPDIR)/xts-aes256.Plo
 	-rm -f backport/$(DEPDIR)/xts.Plo
+	-rm -f ecc/$(DEPDIR)/cnd-copy.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-eh-to-x.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-mul-g.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-mul.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-a-to-j.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-ehh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-jja.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-jjj.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-curve448.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-dup-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-dup-jj.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-eh-to-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gost-gc256b.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gost-gc512a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gostdsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gostdsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-j-to-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod-arith.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod-inv.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-a-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-g-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-g.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-m.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-random.Plo
+	-rm -f ecc/$(DEPDIR)/eccdata-eccdata.Po
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-pubkey.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-sign.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-verify.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-compress.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-decompress.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-expand.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-hash.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-pubkey.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/gmp-glue.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-vko.Plo
+	-rm -f ecc/$(DEPDIR)/sec-add-1.Plo
+	-rm -f ecc/$(DEPDIR)/sec-tabselect.Plo
+	-rm -f ecc/$(DEPDIR)/sha3-256.Plo
+	-rm -f ecc/$(DEPDIR)/sha3-permute.Plo
+	-rm -f ecc/$(DEPDIR)/sha3.Plo
+	-rm -f ecc/$(DEPDIR)/shake256.Plo
+	-rm -f ecc/$(DEPDIR)/write-le64.Plo
 	-rm -f gost/$(DEPDIR)/bignum-le.Plo
 	-rm -f gost/$(DEPDIR)/ecc-gost-hash.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gost256cpa.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gost512a.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gostdsa-sign.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gostdsa-verify.Plo
+	-rm -f gost/$(DEPDIR)/gost-point-mul-g.Plo
+	-rm -f gost/$(DEPDIR)/gost-point.Plo
+	-rm -f gost/$(DEPDIR)/gost-wrap.Plo
 	-rm -f gost/$(DEPDIR)/gost28147.Plo
+	-rm -f gost/$(DEPDIR)/gostdsa-keygen.Plo
 	-rm -f gost/$(DEPDIR)/gostdsa-mask.Plo
-	-rm -f gost/$(DEPDIR)/gostdsa-sign.Plo
-	-rm -f gost/$(DEPDIR)/gostdsa-verify.Plo
 	-rm -f gost/$(DEPDIR)/gosthash94-meta.Plo
 	-rm -f gost/$(DEPDIR)/gosthash94.Plo
 	-rm -f gost/$(DEPDIR)/hmac-gosthash94.Plo
 	-rm -f gost/$(DEPDIR)/hmac-streebog.Plo
-	-rm -f gost/$(DEPDIR)/pbkdf2-hmac-gosthash94.Plo
-	-rm -f gost/$(DEPDIR)/pbkdf2-hmac-streebog.Plo
 	-rm -f gost/$(DEPDIR)/streebog-meta.Plo
 	-rm -f gost/$(DEPDIR)/streebog.Plo
+	-rm -f gost/$(DEPDIR)/write-le32.Plo
 	-rm -f int/$(DEPDIR)/drbg-aes-self-test.Plo
 	-rm -f int/$(DEPDIR)/drbg-aes.Plo
 	-rm -f int/$(DEPDIR)/dsa-compute-k.Plo
@@ -1979,6 +2585,7 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/cipher.Plo
+	-rm -f ./$(DEPDIR)/gost_keywrap.Plo
 	-rm -f ./$(DEPDIR)/init.Plo
 	-rm -f ./$(DEPDIR)/mac.Plo
 	-rm -f ./$(DEPDIR)/mpi.Plo
@@ -1987,30 +2594,92 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/rnd-fips.Plo
 	-rm -f ./$(DEPDIR)/rnd-fuzzer.Plo
 	-rm -f ./$(DEPDIR)/rnd.Plo
+	-rm -f ./$(DEPDIR)/sysrng-bcrypt.Plo
 	-rm -f ./$(DEPDIR)/sysrng-getentropy.Plo
 	-rm -f ./$(DEPDIR)/sysrng-linux.Plo
+	-rm -f ./$(DEPDIR)/sysrng-netbsd.Plo
 	-rm -f ./$(DEPDIR)/sysrng-windows.Plo
-	-rm -f backport/$(DEPDIR)/cfb8.Plo
+	-rm -f backport/$(DEPDIR)/cfb.Plo
+	-rm -f backport/$(DEPDIR)/chacha-core-internal.Plo
+	-rm -f backport/$(DEPDIR)/chacha-crypt.Plo
+	-rm -f backport/$(DEPDIR)/chacha-poly1305.Plo
+	-rm -f backport/$(DEPDIR)/chacha-set-key.Plo
+	-rm -f backport/$(DEPDIR)/chacha-set-nonce.Plo
+	-rm -f backport/$(DEPDIR)/cmac-aes128.Plo
+	-rm -f backport/$(DEPDIR)/cmac-aes256.Plo
 	-rm -f backport/$(DEPDIR)/cmac.Plo
+	-rm -f backport/$(DEPDIR)/poly1305-internal.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac-aes128.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac-aes256.Plo
+	-rm -f backport/$(DEPDIR)/siv-cmac.Plo
+	-rm -f backport/$(DEPDIR)/xts-aes128.Plo
+	-rm -f backport/$(DEPDIR)/xts-aes256.Plo
 	-rm -f backport/$(DEPDIR)/xts.Plo
+	-rm -f ecc/$(DEPDIR)/cnd-copy.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-eh-to-x.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-mul-g.Plo
+	-rm -f ecc/$(DEPDIR)/curve448-mul.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-a-to-j.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-ehh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-jja.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-add-jjj.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-curve448.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-dup-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-dup-jj.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-eh-to-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gost-gc256b.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gost-gc512a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gostdsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-gostdsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-j-to-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod-arith.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod-inv.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mod.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-a-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-a.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-g-eh.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-g.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-mul-m.Plo
+	-rm -f ecc/$(DEPDIR)/ecc-random.Plo
+	-rm -f ecc/$(DEPDIR)/eccdata-eccdata.Po
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-pubkey.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-sign.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256-verify.Plo
+	-rm -f ecc/$(DEPDIR)/ed448-shake256.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-compress.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-decompress.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-expand.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-hash.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-pubkey.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/eddsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/gmp-glue.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-sign.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-verify.Plo
+	-rm -f ecc/$(DEPDIR)/gostdsa-vko.Plo
+	-rm -f ecc/$(DEPDIR)/sec-add-1.Plo
+	-rm -f ecc/$(DEPDIR)/sec-tabselect.Plo
+	-rm -f ecc/$(DEPDIR)/sha3-256.Plo
+	-rm -f ecc/$(DEPDIR)/sha3-permute.Plo
+	-rm -f ecc/$(DEPDIR)/sha3.Plo
+	-rm -f ecc/$(DEPDIR)/shake256.Plo
+	-rm -f ecc/$(DEPDIR)/write-le64.Plo
 	-rm -f gost/$(DEPDIR)/bignum-le.Plo
 	-rm -f gost/$(DEPDIR)/ecc-gost-hash.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gost256cpa.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gost512a.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gostdsa-sign.Plo
-	-rm -f gost/$(DEPDIR)/ecc-gostdsa-verify.Plo
+	-rm -f gost/$(DEPDIR)/gost-point-mul-g.Plo
+	-rm -f gost/$(DEPDIR)/gost-point.Plo
+	-rm -f gost/$(DEPDIR)/gost-wrap.Plo
 	-rm -f gost/$(DEPDIR)/gost28147.Plo
+	-rm -f gost/$(DEPDIR)/gostdsa-keygen.Plo
 	-rm -f gost/$(DEPDIR)/gostdsa-mask.Plo
-	-rm -f gost/$(DEPDIR)/gostdsa-sign.Plo
-	-rm -f gost/$(DEPDIR)/gostdsa-verify.Plo
 	-rm -f gost/$(DEPDIR)/gosthash94-meta.Plo
 	-rm -f gost/$(DEPDIR)/gosthash94.Plo
 	-rm -f gost/$(DEPDIR)/hmac-gosthash94.Plo
 	-rm -f gost/$(DEPDIR)/hmac-streebog.Plo
-	-rm -f gost/$(DEPDIR)/pbkdf2-hmac-gosthash94.Plo
-	-rm -f gost/$(DEPDIR)/pbkdf2-hmac-streebog.Plo
 	-rm -f gost/$(DEPDIR)/streebog-meta.Plo
 	-rm -f gost/$(DEPDIR)/streebog.Plo
+	-rm -f gost/$(DEPDIR)/write-le32.Plo
 	-rm -f int/$(DEPDIR)/drbg-aes-self-test.Plo
 	-rm -f int/$(DEPDIR)/drbg-aes.Plo
 	-rm -f int/$(DEPDIR)/dsa-compute-k.Plo
@@ -2039,24 +2708,45 @@ ps-am:
 
 uninstall-am:
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am am--depfiles check check-am clean \
 	clean-generic clean-libtool clean-noinstLTLIBRARIES \
-	cscopelist-am ctags ctags-am distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-am uninstall uninstall-am
+	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags tags-am uninstall uninstall-am
 
 .PRECIOUS: Makefile
 
+
+@NEED_INT_ECC_TRUE@ecc/eccdata.stamp: $(ecc_eccdata_SOURCES)
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)$(MAKE) $(AM_MAKEFLAGS) ecc/eccdata$(EXEEXT) && touch $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-curve448-32.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) curve448 38 6 32 > $@T && mv $@T $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-curve448-64.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) curve448 38 6 64 > $@T && mv $@T $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-gost-gc256b-32.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) gost_gc256b 11 6 32 > $@T && mv $@T $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-gost-gc256b-64.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) gost_gc256b 11 6 64 > $@T && mv $@T $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-gost-gc512a-32.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) gost_gc512a 43 6 32 > $@T && mv $@T $@
+
+@NEED_INT_ECC_TRUE@ecc/ecc-gost-gc512a-64.h: ecc/eccdata.stamp
+@NEED_INT_ECC_TRUE@	$(AM_V_GEN)ecc/eccdata$(EXEEXT) gost_gc512a 43 6 64 > $@T && mv $@T $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

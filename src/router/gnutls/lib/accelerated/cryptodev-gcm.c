@@ -69,6 +69,7 @@ static void aes_gcm_deinit(void *_ctx)
 
 static const int cipher_map[] = {
 	[GNUTLS_CIPHER_AES_128_GCM] = CRYPTO_AES_GCM,
+	[GNUTLS_CIPHER_AES_192_GCM] = CRYPTO_AES_GCM,
 	[GNUTLS_CIPHER_AES_256_GCM] = CRYPTO_AES_GCM,
 };
 
