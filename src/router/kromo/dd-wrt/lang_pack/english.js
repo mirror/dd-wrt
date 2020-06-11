@@ -615,7 +615,7 @@ hdiag.page1="<dd>You can run commands directly via the web interface.</dd>";
 hdiag.page2="<dd>Fill the text area with your command and click <em>"+ sbutton.runcmd + "</em> to run them.</dd>";
 hdiag.page3="<dd>You can specify certain commands to be executed during router startup. Fill the text area with commands (only one command per row) and click <em>" + sbutton.startup + "</em>.</dd>";
 hdiag.page4="<dd>Each time the firewall is started custom firewall rules can added to the chain. Fill the text area with additional iptables/ip6tables commands (only one command per row) and click <em>" + sbutton.firewall + "</em>.<br /><br />";
-hdiag.page5="<dd>A custom script is stored in /tmp/custom.sh. You can run it manually or use Cron to execute the contents. Fill the text area with any commands (only one command per row) and click <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>Note</h4><div><ul class=\"wide\"><li>Startup commands are stored in NVRAM rc_startup variable</li><li>Firewall commands are stored in NVRAM rc_firewall variable</li><li>Custom script is stored in NVRAM rc_custom variable</li></ul></div></div></dd>";
+hdiag.page5="<dd>A custom script is stored in /tmp/.rc_custom. You can run it manually or use Cron to execute the contents. Fill the text area with any commands (only one command per row) and click <em>" + sbutton.custom + "</em>.<br /><br /><div class=\"note\"><h4>Note</h4><div><ul class=\"wide\"><li>Startup commands are stored in NVRAM rc_startup variable</li><li>Firewall commands are stored in NVRAM rc_firewall variable</li><li>Custom script is stored in NVRAM rc_custom variable</li></ul></div></div></dd>";
 
 // ** DMZ.asp **//
 var dmz=new Object();
