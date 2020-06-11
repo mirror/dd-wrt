@@ -1,6 +1,6 @@
-# getdelim.m4 serial 13
+# getdelim.m4 serial 15
 
-dnl Copyright (C) 2005-2007, 2009-2019 Free Software Foundation, Inc.
+dnl Copyright (C) 2005-2007, 2009-2020 Free Software Foundation, Inc.
 dnl
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
@@ -42,6 +42,7 @@ AC_DEFUN([gl_FUNC_GETDELIM],
         int len = getdelim (&line, &siz, '\n', in);
         if (!(len == 4 && line && strcmp (line, "foo\n") == 0))
           { free (line); fclose (in); return 2; }
+        free (line);
       }
       {
         /* Test result for a NULL buffer and a non-zero size.
@@ -72,7 +73,7 @@ AC_DEFUN([gl_FUNC_GETDELIM],
             [gl_cv_func_working_getdelim="guessing yes"],
             [case "$host_os" in
                *-musl*) gl_cv_func_working_getdelim="guessing yes" ;;
-               *)       gl_cv_func_working_getdelim="guessing no" ;;
+               *)       gl_cv_func_working_getdelim="$gl_cross_guess_normal" ;;
              esac
             ])
          ])

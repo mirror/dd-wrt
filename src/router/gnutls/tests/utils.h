@@ -41,13 +41,16 @@
 # error tests cannot be compiled with NDEBUG defined
 #endif
 
-#if _GNUTLS_GCC_VERSION >= 70100
-#define FALLTHROUGH      __attribute__ ((fallthrough))
-#endif
-
 #ifndef FALLTHROUGH
+#if _GNUTLS_GCC_VERSION >= 70100
+# define FALLTHROUGH      __attribute__ ((fallthrough))
+#else
 # define FALLTHROUGH
 #endif
+#endif
+
+/* number of elements within an array */
+#define countof(a) (sizeof(a)/sizeof(*(a)))
 
 inline static int global_init(void)
 {

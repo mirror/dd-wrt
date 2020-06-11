@@ -28,7 +28,7 @@ write_pkcs12(const gnutls_datum_t * cert,
         gnutls_pkcs12_bag_t bag, key_bag;
         char pkcs12_struct[10 * 1024];
         size_t pkcs12_struct_size;
-        FILE *fd;
+        FILE *fp;
 
         /* A good idea might be to use gnutls_x509_privkey_get_key_id()
          * to obtain a unique ID.
@@ -116,13 +116,13 @@ write_pkcs12(const gnutls_datum_t * cert,
                 return 1;
         }
 
-        fd = fopen(OUTFILE, "w");
-        if (fd == NULL) {
+        fp = fopen(OUTFILE, "w");
+        if (fp == NULL) {
                 fprintf(stderr, "cannot open file\n");
                 return 1;
         }
-        fwrite(pkcs12_struct, 1, pkcs12_struct_size, fd);
-        fclose(fd);
+        fwrite(pkcs12_struct, 1, pkcs12_struct_size, fp);
+        fclose(fp);
 
         gnutls_pkcs12_bag_deinit(bag);
         gnutls_pkcs12_bag_deinit(key_bag);

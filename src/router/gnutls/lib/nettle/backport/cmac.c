@@ -1,5 +1,4 @@
-/* backport of cmac*.c for CMAC
-
+/*
    AES-CMAC-128 (rfc 4493)
    Copyright (C) Stefan Metzmacher 2012
    Copyright (C) Jeremy Allison 2012
@@ -30,63 +29,43 @@
 
    You should have received copies of the GNU General Public License and
    the GNU Lesser General Public License along with this program.  If
-   not, see https://www.gnu.org/licenses/.
+   not, see http://www.gnu.org/licenses/.
 */
 
-/* #############################################
- * THIS IS A BACKPORT FROM NETTLE, DO NOT MODIFY
- * #############################################
- */
-
-#ifdef HAVE_CONFIG_H
-#include <config.h>
+#if HAVE_CONFIG_H
+# include "config.h"
 #endif
 
-#ifndef HAVE_NETTLE_CMAC128_UPDATE
-
-#include <nettle/aes.h>
-#include "cmac.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "cmac.h"
+
 #include <nettle/memxor.h>
+#include "nettle-alloca.h"
+#include "block-internal.h"
 #include <nettle/macros.h>
 
-/* shift one and XOR with 0x87. */
-static void
-block_mulx(union nettle_block16 *dst,
-	   const union nettle_block16 *src)
+void
+cmac128_set_key(struct cmac128_key *key, const void *cipher,
+		nettle_cipher_func *encrypt)
 {
-  uint64_t b1 = READ_UINT64(src->b);
-  uint64_t b2 = READ_UINT64(src->b+8);
+  static const union nettle_block16 zero_block;
+  union nettle_block16 L;
 
-  b1 = (b1 << 1) | (b2 >> 63);
-  b2 <<= 1;
+  /* step 1 - generate subkeys k1 and k2 */
+  encrypt(cipher, 16, L.b, zero_block.b);
 
-  if (src->b[0] & 0x80)
-    b2 ^= 0x87;
-
-  WRITE_UINT64(dst->b, b1);
-  WRITE_UINT64(dst->b+8, b2);
+  block16_mulx_be(&key->K1, &L);
+  block16_mulx_be(&key->K2, &key->K1);
 }
 
 void
-cmac128_set_key(struct cmac128_ctx *ctx, const void *cipher,
-		nettle_cipher_func *encrypt)
+cmac128_init(struct cmac128_ctx *ctx)
 {
-  static const uint8_t const_zero[] = {
-    0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,  0x00, 0x00, 0x00, 0x00
-  };
-  union nettle_block16 *L = &ctx->block;
-  memset(ctx, 0, sizeof(*ctx));
-
-  /* step 1 - generate subkeys k1 and k2 */
-  encrypt(cipher, 16, L->b, const_zero);
-
-  block_mulx(&ctx->K1, L);
-  block_mulx(&ctx->K2, &ctx->K1);
+  memset(&ctx->X, 0, sizeof(ctx->X));
+  ctx->index = 0;
 }
 
 #define MIN(x,y) ((x)<(y)?(x):(y))
@@ -117,12 +96,12 @@ cmac128_update(struct cmac128_ctx *ctx, const void *cipher,
   /*
    * now checksum everything but the last block
    */
-  memxor3(Y.b, ctx->X.b, ctx->block.b, 16);
+  block16_xor3(&Y, &ctx->X, &ctx->block);
   encrypt(cipher, 16, ctx->X.b, Y.b);
 
   while (msg_len > 16)
     {
-      memxor3(Y.b, ctx->X.b, msg, 16);
+      block16_xor_bytes (&Y, &ctx->X, msg);
       encrypt(cipher, 16, ctx->X.b, Y.b);
       msg += 16;
       msg_len -= 16;
@@ -137,27 +116,26 @@ cmac128_update(struct cmac128_ctx *ctx, const void *cipher,
 }
 
 void
-cmac128_digest(struct cmac128_ctx *ctx, const void *cipher,
-	       nettle_cipher_func *encrypt,
-	       unsigned length,
-	       uint8_t *dst)
+cmac128_digest(struct cmac128_ctx *ctx, const struct cmac128_key *key,
+	       const void *cipher, nettle_cipher_func *encrypt,
+	       unsigned length, uint8_t *dst)
 {
   union nettle_block16 Y;
-
-  memset(ctx->block.b+ctx->index, 0, sizeof(ctx->block.b)-ctx->index);
 
   /* re-use ctx->block for memxor output */
   if (ctx->index < 16)
     {
       ctx->block.b[ctx->index] = 0x80;
-      memxor(ctx->block.b, ctx->K2.b, 16);
+      memset(ctx->block.b + ctx->index + 1, 0, 16 - 1 - ctx->index);
+
+      block16_xor (&ctx->block, &key->K2);
     }
   else
     {
-      memxor(ctx->block.b, ctx->K1.b, 16);
+      block16_xor (&ctx->block, &key->K1);
     }
 
-  memxor3(Y.b, ctx->block.b, ctx->X.b, 16);
+  block16_xor3 (&Y, &ctx->block, &ctx->X);
 
   assert(length <= 16);
   if (length == 16)
@@ -171,47 +149,5 @@ cmac128_digest(struct cmac128_ctx *ctx, const void *cipher,
     }
 
   /* reset state for re-use */
-  memset(&ctx->X, 0, sizeof(ctx->X));
-  ctx->index = 0;
+  cmac128_init(ctx);
 }
-
-void
-cmac_aes128_set_key(struct cmac_aes128_ctx *ctx, const uint8_t *key)
-{
-  CMAC128_SET_KEY(ctx, aes128_set_encrypt_key, aes128_encrypt, key);
-}
-
-void
-cmac_aes128_update (struct cmac_aes128_ctx *ctx,
-		   size_t length, const uint8_t *data)
-{
-  CMAC128_UPDATE (ctx, aes128_encrypt, length, data);
-}
-
-void
-cmac_aes128_digest(struct cmac_aes128_ctx *ctx,
-		  size_t length, uint8_t *digest)
-{
-  CMAC128_DIGEST(ctx, aes128_encrypt, length, digest);
-}
-
-void
-cmac_aes256_set_key(struct cmac_aes256_ctx *ctx, const uint8_t *key)
-{
-  CMAC128_SET_KEY(ctx, aes256_set_encrypt_key, aes256_encrypt, key);
-}
-
-void
-cmac_aes256_update (struct cmac_aes256_ctx *ctx,
-		   size_t length, const uint8_t *data)
-{
-  CMAC128_UPDATE (ctx, aes256_encrypt, length, data);
-}
-
-void
-cmac_aes256_digest(struct cmac_aes256_ctx *ctx,
-		  size_t length, uint8_t *digest)
-{
-  CMAC128_DIGEST(ctx, aes256_encrypt, length, digest);
-}
-#endif /* HAVE_NETTLE_CMAC128_UPDATE */

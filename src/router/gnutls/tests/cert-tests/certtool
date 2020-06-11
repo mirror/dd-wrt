@@ -153,6 +153,18 @@ if test $? = 0;then
 	exit 1
 fi
 
+${VALGRIND} "${CERTTOOL}" -i --infile "${srcdir}/data/commonName.cer" | grep -v "Not After:" > ${TMPFILE1}
+if test $? != 0;then
+	echo "commonName cert output failed"
+	exit 1
+fi
+
+${DIFF} "${srcdir}/data/commonName.cer" ${TMPFILE1}
+if test $? != 0;then
+	exit 1
+fi
+
+
 rm -f ${TMPFILE1} ${TMPFILE2}
 
 export TZ="UTC"

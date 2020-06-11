@@ -112,38 +112,38 @@ host_triplet = @host@
 @HAVE_LIBUNISTRING_FALSE@am__append_2 = unistring
 @HAVE_LIBUNISTRING_FALSE@am__append_3 = -I$(srcdir)/unistring/ -I$(builddir)/unistring/
 @ENABLE_MINITASN1_TRUE@am__append_4 = -I$(srcdir)/minitasn1
-@WINDOWS_TRUE@am__append_5 = system/keys-win.c
-@WINDOWS_FALSE@am__append_6 = system/keys-dummy.c
-@ENABLE_PKCS11_TRUE@am__append_7 = pkcs11.c pkcs11x.c pkcs11_privkey.c pkcs11_write.c pkcs11_secret.c \
+@ENABLE_GOST_TRUE@am__append_5 = vko.c
+@WINDOWS_TRUE@am__append_6 = system/keys-win.c
+@WINDOWS_FALSE@am__append_7 = system/keys-dummy.c
+@ENABLE_PKCS11_TRUE@am__append_8 = pkcs11.c pkcs11x.c pkcs11_privkey.c pkcs11_write.c pkcs11_secret.c \
 @ENABLE_PKCS11_TRUE@	pkcs11_int.c
 
-@ENABLE_NETTLE_TRUE@am__append_8 = nettle
-@ENABLE_PKCS11_TRUE@am__append_9 = pkcs11_int.h pkcs11x.h
-@HAVE_LIBIDN2_TRUE@am__append_10 = $(LIBIDN2_LIBS)
-@HAVE_LIBUNISTRING_TRUE@am__append_11 = $(LIBUNISTRING)
-@HAVE_LIBUNISTRING_FALSE@am__append_12 = unistring/libunistring.la
-@ENABLE_NETTLE_TRUE@am__append_13 = accelerated/libaccelerated.la
-@WINDOWS_FALSE@am__append_14 = $(LTLIBPTHREAD)
-@NEEDS_LIBRT_TRUE@am__append_15 = $(LTLIBRT)
-@ENABLE_FIPS140_TRUE@am__append_16 = $(FIPS140_LIBS) $(LTLIBDL)
-@ENABLE_TROUSERS_TRUE@am__append_17 = $(LTLIBDL)
-@HAVE_LD_VERSION_SCRIPT_TRUE@am__append_18 = -Wl,--version-script=$(srcdir)/libgnutls.map
-@HAVE_LD_VERSION_SCRIPT_FALSE@am__append_19 = -export-symbols-regex '^(gnutls|_gnutls).*'
-@ENABLE_MINITASN1_TRUE@am__append_20 = minitasn1/libminitasn1.la
-@ENABLE_MINITASN1_FALSE@am__append_21 = $(LIBTASN1_LIBS)
-@ENABLE_NETTLE_TRUE@am__append_22 = $(NETTLE_LIBS) $(HOGWEED_LIBS) $(GMP_LIBS)
-@ENABLE_NETTLE_TRUE@am__append_23 = nettle/libcrypto.la
-@HAVE_LD_OUTPUT_DEF_TRUE@am__append_24 = -Wl,--output-def,libgnutls-$(DLL_VERSION).def
-@HAVE_LD_OUTPUT_DEF_TRUE@am__append_25 = $(defexec_DATA)
-@WINDOWS_TRUE@am__append_26 = -lcrypt32
-@MACOSX_TRUE@am__append_27 = -framework Security -framework CoreFoundation
-@ENABLE_CXX_TRUE@am__append_28 = libgnutlsxx.la
+@ENABLE_NETTLE_TRUE@am__append_9 = nettle
+@ENABLE_PKCS11_TRUE@am__append_10 = pkcs11_int.h pkcs11x.h
+@ENABLE_GOST_TRUE@am__append_11 = vko.h
+@HAVE_LIBIDN2_TRUE@am__append_12 = $(LIBIDN2_LIBS)
+@HAVE_LIBUNISTRING_TRUE@am__append_13 = $(LIBUNISTRING)
+@HAVE_LIBUNISTRING_FALSE@am__append_14 = unistring/libunistring.la
+@ENABLE_NETTLE_TRUE@am__append_15 = accelerated/libaccelerated.la
+@WINDOWS_FALSE@am__append_16 = $(LTLIBPTHREAD)
+@NEEDS_LIBRT_TRUE@am__append_17 = $(LTLIBRT)
+@ENABLE_FIPS140_TRUE@am__append_18 = $(FIPS140_LIBS) $(LTLIBDL)
+@ENABLE_TROUSERS_TRUE@am__append_19 = $(LTLIBDL)
+@HAVE_LD_VERSION_SCRIPT_TRUE@am__append_20 = -Wl,--version-script=$(srcdir)/libgnutls.map
+@HAVE_LD_VERSION_SCRIPT_FALSE@am__append_21 = -export-symbols-regex '^(gnutls|_gnutls).*'
+@ENABLE_MINITASN1_TRUE@am__append_22 = minitasn1/libminitasn1.la
+@ENABLE_MINITASN1_FALSE@am__append_23 = $(LIBTASN1_LIBS)
+@ENABLE_NETTLE_TRUE@am__append_24 = $(NETTLE_LIBS) $(HOGWEED_LIBS) $(GMP_LIBS)
+@ENABLE_NETTLE_TRUE@am__append_25 = nettle/libcrypto.la
+@HAVE_LD_OUTPUT_DEF_TRUE@am__append_26 = -Wl,--output-def,libgnutls-$(DLL_VERSION).def
+@HAVE_LD_OUTPUT_DEF_TRUE@am__append_27 = $(defexec_DATA)
+@MACOSX_TRUE@am__append_28 = -framework Security -framework CoreFoundation
+@ENABLE_CXX_TRUE@am__append_29 = libgnutlsxx.la
 subdir = lib
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/lib/unistring/m4/inline.m4 \
 	$(top_srcdir)/lib/unistring/m4/libunistring-base.m4 \
-	$(top_srcdir)/src/gl/m4/__inline.m4 \
 	$(top_srcdir)/src/gl/m4/bison.m4 \
 	$(top_srcdir)/src/gl/m4/clock_time.m4 \
 	$(top_srcdir)/src/gl/m4/fseek.m4 \
@@ -163,7 +163,7 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/src/gl/m4/tzset.m4 \
 	$(top_srcdir)/src/libopts/m4/libopts.m4 \
 	$(top_srcdir)/src/libopts/m4/stdnoreturn.m4 \
-	$(top_srcdir)/m4/00gnulib.m4 \
+	$(top_srcdir)/m4/00gnulib.m4 $(top_srcdir)/m4/__inline.m4 \
 	$(top_srcdir)/m4/absolute-header.m4 $(top_srcdir)/m4/alloca.m4 \
 	$(top_srcdir)/m4/arpa_inet_h.m4 \
 	$(top_srcdir)/m4/ax_ac_append_to_file.m4 \
@@ -178,18 +178,19 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/codeset.m4 $(top_srcdir)/m4/ctype.m4 \
 	$(top_srcdir)/m4/dup2.m4 $(top_srcdir)/m4/eealloc.m4 \
 	$(top_srcdir)/m4/environ.m4 $(top_srcdir)/m4/errno_h.m4 \
+	$(top_srcdir)/m4/explicit_bzero.m4 \
 	$(top_srcdir)/m4/exponentd.m4 $(top_srcdir)/m4/extensions.m4 \
 	$(top_srcdir)/m4/extern-inline.m4 $(top_srcdir)/m4/fcntl-o.m4 \
 	$(top_srcdir)/m4/fcntl.m4 $(top_srcdir)/m4/fcntl_h.m4 \
 	$(top_srcdir)/m4/fdopen.m4 $(top_srcdir)/m4/flexmember.m4 \
-	$(top_srcdir)/m4/float_h.m4 $(top_srcdir)/m4/fpieee.m4 \
-	$(top_srcdir)/m4/fseeko.m4 $(top_srcdir)/m4/fstat.m4 \
-	$(top_srcdir)/m4/ftell.m4 $(top_srcdir)/m4/ftello.m4 \
-	$(top_srcdir)/m4/ftruncate.m4 $(top_srcdir)/m4/func.m4 \
-	$(top_srcdir)/m4/getcwd.m4 $(top_srcdir)/m4/getdelim.m4 \
-	$(top_srcdir)/m4/getdtablesize.m4 $(top_srcdir)/m4/getline.m4 \
-	$(top_srcdir)/m4/getpagesize.m4 $(top_srcdir)/m4/gettext.m4 \
-	$(top_srcdir)/m4/gettimeofday.m4 \
+	$(top_srcdir)/m4/float_h.m4 $(top_srcdir)/m4/fopen.m4 \
+	$(top_srcdir)/m4/fpieee.m4 $(top_srcdir)/m4/fseeko.m4 \
+	$(top_srcdir)/m4/fstat.m4 $(top_srcdir)/m4/ftell.m4 \
+	$(top_srcdir)/m4/ftello.m4 $(top_srcdir)/m4/ftruncate.m4 \
+	$(top_srcdir)/m4/func.m4 $(top_srcdir)/m4/getcwd.m4 \
+	$(top_srcdir)/m4/getdelim.m4 $(top_srcdir)/m4/getdtablesize.m4 \
+	$(top_srcdir)/m4/getline.m4 $(top_srcdir)/m4/getpagesize.m4 \
+	$(top_srcdir)/m4/gettext.m4 $(top_srcdir)/m4/gettimeofday.m4 \
 	$(top_srcdir)/m4/gnulib-common.m4 \
 	$(top_srcdir)/m4/gnulib-comp.m4 $(top_srcdir)/m4/gtk-doc.m4 \
 	$(top_srcdir)/m4/guile.m4 $(top_srcdir)/m4/hooks.m4 \
@@ -198,12 +199,13 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/inet_pton.m4 \
 	$(top_srcdir)/m4/intl-thread-locale.m4 \
 	$(top_srcdir)/m4/intlmacosx.m4 $(top_srcdir)/m4/intmax_t.m4 \
-	$(top_srcdir)/m4/inttypes-pri.m4 $(top_srcdir)/m4/inttypes.m4 \
-	$(top_srcdir)/m4/inttypes_h.m4 $(top_srcdir)/m4/ioctl.m4 \
-	$(top_srcdir)/m4/isblank.m4 $(top_srcdir)/m4/langinfo_h.m4 \
-	$(top_srcdir)/m4/largefile.m4 $(top_srcdir)/m4/lcmessage.m4 \
+	$(top_srcdir)/m4/inttostr.m4 $(top_srcdir)/m4/inttypes-pri.m4 \
+	$(top_srcdir)/m4/inttypes.m4 $(top_srcdir)/m4/inttypes_h.m4 \
+	$(top_srcdir)/m4/ioctl.m4 $(top_srcdir)/m4/isblank.m4 \
+	$(top_srcdir)/m4/langinfo_h.m4 $(top_srcdir)/m4/largefile.m4 \
+	$(top_srcdir)/m4/lcmessage.m4 \
 	$(top_srcdir)/m4/ld-output-def.m4 \
-	$(top_srcdir)/m4/ld-version-script.m4 \
+	$(top_srcdir)/m4/ld-version-script.m4 $(top_srcdir)/m4/ldd.m4 \
 	$(top_srcdir)/m4/lib-ld.m4 $(top_srcdir)/m4/lib-link.m4 \
 	$(top_srcdir)/m4/lib-prefix.m4 $(top_srcdir)/m4/libtool.m4 \
 	$(top_srcdir)/m4/limits-h.m4 $(top_srcdir)/m4/locale-fr.m4 \
@@ -211,27 +213,32 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/locale-zh.m4 $(top_srcdir)/m4/locale_h.m4 \
 	$(top_srcdir)/m4/localename.m4 \
 	$(top_srcdir)/m4/localtime-buffer.m4 $(top_srcdir)/m4/lock.m4 \
-	$(top_srcdir)/m4/longlong.m4 $(top_srcdir)/m4/lseek.m4 \
-	$(top_srcdir)/m4/lstat.m4 $(top_srcdir)/m4/ltoptions.m4 \
-	$(top_srcdir)/m4/ltsugar.m4 $(top_srcdir)/m4/ltversion.m4 \
-	$(top_srcdir)/m4/lt~obsolete.m4 $(top_srcdir)/m4/malloc.m4 \
-	$(top_srcdir)/m4/malloca.m4 $(top_srcdir)/m4/manywarnings.m4 \
-	$(top_srcdir)/m4/memchr.m4 $(top_srcdir)/m4/memmem.m4 \
-	$(top_srcdir)/m4/minmax.m4 $(top_srcdir)/m4/mmap-anon.m4 \
-	$(top_srcdir)/m4/mode_t.m4 $(top_srcdir)/m4/msvc-inval.m4 \
+	$(top_srcdir)/m4/lseek.m4 $(top_srcdir)/m4/lstat.m4 \
+	$(top_srcdir)/m4/ltoptions.m4 $(top_srcdir)/m4/ltsugar.m4 \
+	$(top_srcdir)/m4/ltversion.m4 $(top_srcdir)/m4/lt~obsolete.m4 \
+	$(top_srcdir)/m4/malloc.m4 $(top_srcdir)/m4/malloca.m4 \
+	$(top_srcdir)/m4/manywarnings.m4 $(top_srcdir)/m4/memchr.m4 \
+	$(top_srcdir)/m4/memmem.m4 $(top_srcdir)/m4/minmax.m4 \
+	$(top_srcdir)/m4/mmap-anon.m4 $(top_srcdir)/m4/mode_t.m4 \
+	$(top_srcdir)/m4/msvc-inval.m4 \
 	$(top_srcdir)/m4/msvc-nothrow.m4 $(top_srcdir)/m4/multiarch.m4 \
 	$(top_srcdir)/m4/nanosleep.m4 $(top_srcdir)/m4/netdb_h.m4 \
 	$(top_srcdir)/m4/netinet_in_h.m4 $(top_srcdir)/m4/nls.m4 \
 	$(top_srcdir)/m4/off_t.m4 $(top_srcdir)/m4/open-cloexec.m4 \
-	$(top_srcdir)/m4/open.m4 $(top_srcdir)/m4/pathmax.m4 \
-	$(top_srcdir)/m4/perror.m4 $(top_srcdir)/m4/pipe.m4 \
-	$(top_srcdir)/m4/pkg.m4 $(top_srcdir)/m4/po.m4 \
-	$(top_srcdir)/m4/printf.m4 $(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/open-slash.m4 $(top_srcdir)/m4/open.m4 \
+	$(top_srcdir)/m4/pathmax.m4 $(top_srcdir)/m4/perror.m4 \
+	$(top_srcdir)/m4/pipe.m4 $(top_srcdir)/m4/pkg.m4 \
+	$(top_srcdir)/m4/po.m4 $(top_srcdir)/m4/printf.m4 \
+	$(top_srcdir)/m4/progtest.m4 \
+	$(top_srcdir)/m4/pthread-thread.m4 \
+	$(top_srcdir)/m4/pthread_h.m4 \
 	$(top_srcdir)/m4/pthread_rwlock_rdlock.m4 \
-	$(top_srcdir)/m4/putenv.m4 $(top_srcdir)/m4/raise.m4 \
-	$(top_srcdir)/m4/read-file.m4 $(top_srcdir)/m4/realloc.m4 \
+	$(top_srcdir)/m4/pthread_sigmask.m4 $(top_srcdir)/m4/putenv.m4 \
+	$(top_srcdir)/m4/raise.m4 $(top_srcdir)/m4/read-file.m4 \
+	$(top_srcdir)/m4/realloc.m4 $(top_srcdir)/m4/sched_h.m4 \
 	$(top_srcdir)/m4/secure_getenv.m4 $(top_srcdir)/m4/select.m4 \
 	$(top_srcdir)/m4/setenv.m4 $(top_srcdir)/m4/setlocale.m4 \
+	$(top_srcdir)/m4/setlocale_null.m4 \
 	$(top_srcdir)/m4/sigaction.m4 $(top_srcdir)/m4/signal_h.m4 \
 	$(top_srcdir)/m4/signalblocking.m4 \
 	$(top_srcdir)/m4/size_max.m4 $(top_srcdir)/m4/sleep.m4 \
@@ -239,29 +246,30 @@ am__aclocal_m4_deps = $(top_srcdir)/lib/unistring/m4/gnulib-comp.m4 \
 	$(top_srcdir)/m4/sockets.m4 $(top_srcdir)/m4/socklen.m4 \
 	$(top_srcdir)/m4/sockpfaf.m4 $(top_srcdir)/m4/ssize_t.m4 \
 	$(top_srcdir)/m4/stat-time.m4 $(top_srcdir)/m4/stat.m4 \
-	$(top_srcdir)/m4/stdalign.m4 $(top_srcdir)/m4/stdbool.m4 \
-	$(top_srcdir)/m4/stddef_h.m4 $(top_srcdir)/m4/stdint.m4 \
-	$(top_srcdir)/m4/stdint_h.m4 $(top_srcdir)/m4/stdio_h.m4 \
-	$(top_srcdir)/m4/stdlib_h.m4 $(top_srcdir)/m4/strcase.m4 \
-	$(top_srcdir)/m4/strdup.m4 $(top_srcdir)/m4/strerror.m4 \
-	$(top_srcdir)/m4/strerror_r.m4 $(top_srcdir)/m4/string_h.m4 \
-	$(top_srcdir)/m4/strings_h.m4 $(top_srcdir)/m4/strndup.m4 \
-	$(top_srcdir)/m4/strnlen.m4 $(top_srcdir)/m4/strtok_r.m4 \
-	$(top_srcdir)/m4/strverscmp.m4 $(top_srcdir)/m4/symlink.m4 \
-	$(top_srcdir)/m4/sys_ioctl_h.m4 \
+	$(top_srcdir)/m4/std-gnu11.m4 $(top_srcdir)/m4/stdalign.m4 \
+	$(top_srcdir)/m4/stdbool.m4 $(top_srcdir)/m4/stddef_h.m4 \
+	$(top_srcdir)/m4/stdint.m4 $(top_srcdir)/m4/stdint_h.m4 \
+	$(top_srcdir)/m4/stdio_h.m4 $(top_srcdir)/m4/stdlib_h.m4 \
+	$(top_srcdir)/m4/strcase.m4 $(top_srcdir)/m4/strdup.m4 \
+	$(top_srcdir)/m4/strerror.m4 $(top_srcdir)/m4/strerror_r.m4 \
+	$(top_srcdir)/m4/string_h.m4 $(top_srcdir)/m4/strings_h.m4 \
+	$(top_srcdir)/m4/strndup.m4 $(top_srcdir)/m4/strnlen.m4 \
+	$(top_srcdir)/m4/strtok_r.m4 $(top_srcdir)/m4/strverscmp.m4 \
+	$(top_srcdir)/m4/symlink.m4 $(top_srcdir)/m4/sys_ioctl_h.m4 \
 	$(top_srcdir)/m4/sys_select_h.m4 \
 	$(top_srcdir)/m4/sys_socket_h.m4 \
 	$(top_srcdir)/m4/sys_stat_h.m4 $(top_srcdir)/m4/sys_time_h.m4 \
 	$(top_srcdir)/m4/sys_types_h.m4 $(top_srcdir)/m4/sys_uio_h.m4 \
-	$(top_srcdir)/m4/threadlib.m4 $(top_srcdir)/m4/time_h.m4 \
-	$(top_srcdir)/m4/time_r.m4 $(top_srcdir)/m4/ungetc.m4 \
-	$(top_srcdir)/m4/unistd_h.m4 \
+	$(top_srcdir)/m4/thread.m4 $(top_srcdir)/m4/threadlib.m4 \
+	$(top_srcdir)/m4/time_h.m4 $(top_srcdir)/m4/time_r.m4 \
+	$(top_srcdir)/m4/ungetc.m4 $(top_srcdir)/m4/unistd_h.m4 \
 	$(top_srcdir)/m4/valgrind-tests.m4 \
 	$(top_srcdir)/m4/vasnprintf.m4 $(top_srcdir)/m4/vasprintf.m4 \
-	$(top_srcdir)/m4/vsnprintf.m4 $(top_srcdir)/m4/warn-on-use.m4 \
-	$(top_srcdir)/m4/warnings.m4 $(top_srcdir)/m4/wchar_h.m4 \
-	$(top_srcdir)/m4/wchar_t.m4 $(top_srcdir)/m4/wint_t.m4 \
-	$(top_srcdir)/m4/xsize.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/visibility.m4 $(top_srcdir)/m4/vsnprintf.m4 \
+	$(top_srcdir)/m4/warn-on-use.m4 $(top_srcdir)/m4/warnings.m4 \
+	$(top_srcdir)/m4/wchar_h.m4 $(top_srcdir)/m4/wchar_t.m4 \
+	$(top_srcdir)/m4/wint_t.m4 $(top_srcdir)/m4/xsize.m4 \
+	$(top_srcdir)/m4/zzgnulib.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 DIST_COMMON = $(srcdir)/Makefile.am $(am__DIST_COMMON)
@@ -313,16 +321,16 @@ am__DEPENDENCIES_1 =
 @ENABLE_NETTLE_TRUE@	$(am__DEPENDENCIES_1)
 am__DEPENDENCIES_10 = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_4) $(am__DEPENDENCIES_5) \
-	$(am__DEPENDENCIES_6) $(am__DEPENDENCIES_7) \
-	$(am__DEPENDENCIES_8) $(am__DEPENDENCIES_9) \
-	$(am__DEPENDENCIES_1)
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_2) \
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_4) \
+	$(am__DEPENDENCIES_5) $(am__DEPENDENCIES_6) \
+	$(am__DEPENDENCIES_7) $(am__DEPENDENCIES_8) \
+	$(am__DEPENDENCIES_9)
 libgnutls_la_DEPENDENCIES = ../gl/libgnu.la x509/libgnutls_x509.la \
 	ext/libgnutls_ext.la auth/libgnutls_auth.la \
 	algorithms/libgnutls_alg.la extras/libgnutls_extras.la \
-	$(am__append_12) $(am__append_13) $(am__append_20) \
-	$(am__append_23) $(am__DEPENDENCIES_10)
+	$(am__append_14) $(am__append_15) $(am__append_22) \
+	$(am__append_25) $(am__DEPENDENCIES_10)
 am__libgnutls_la_SOURCES_DIST = abstract_int.h debug.h cipher.h \
 	buffers.h errors.h gnutls_int.h dtls.h handshake.h num.h \
 	algorithms.h dh.h kx.h hash_int.h cipher_int.h db.h auth.h \
@@ -332,27 +340,27 @@ am__libgnutls_la_SOURCES_DIST = abstract_int.h debug.h cipher.h \
 	crypto-backend.h srp.h auth/srp_kx.h auth/srp_passwd.h file.h \
 	supplemental.h crypto.h random.h system.h locks.h mbuffers.h \
 	ecc.h pin.h fips.h priority_options.h secrets.h stek.h \
-	cert-cred.h pkcs11_int.h pkcs11x.h range.c record.c compress.c \
-	debug.c cipher.c gthreads.h handshake-tls13.c mbuffers.c \
-	buffers.c handshake.c num.c errors.c dh.c kx.c cipher-cbc.c \
-	priority.c hash_int.c cipher_int.c session.c db.c x509_b64.c \
-	hello_ext.c auth.c sslv2_compat.c datum.c session_pack.c mpi.c \
-	pk.c cert-cred.c global.c constate.c anon_cred.c \
-	pkix_asn1_tab.c gnutls_asn1_tab.c mem.c fingerprint.c \
-	tls-sig.c ecc.c alert.c privkey_raw.c atomic.h system/certs.c \
-	system/threads.c system/fastopen.c system/sockets.c \
-	str-iconv.c system.c profiles.c profiles.h inih/ini.c str.c \
-	str-unicode.c str-idna.c state.c cert-cred-x509.c file.c \
-	supplemental.c random.c crypto-api.c crypto-api.h privkey.c \
-	pcert.c pubkey.c locks.c dtls.c system_override.c \
-	crypto-backend.c verify-tofu.c pin.c tpm.c fips.c \
-	safe-memfuncs.c atfork.c atfork.h randomart.c name_val_array.h \
-	system-keys.h urls.c urls.h prf.c auto-verify.c dh-session.c \
-	cert-session.c handshake-checks.c dtls-sw.c dh-primes.c \
-	openpgp_compat.c crypto-selftests.c crypto-selftests-pk.c \
-	secrets.c extv.c extv.h hello_ext_lib.c hello_ext_lib.h \
-	ocsp-api.c stek.c cert-cred-rawpk.c iov.c iov.h \
-	system/keys-win.c system/keys-dummy.c \
+	cert-cred.h pkcs11_int.h pkcs11x.h vko.h range.c record.c \
+	compress.c debug.c cipher.c gthreads.h handshake-tls13.c \
+	mbuffers.c buffers.c handshake.c errors.c dh.c kx.c \
+	cipher-cbc.c priority.c hash_int.c cipher_int.c session.c db.c \
+	x509_b64.c hello_ext.c auth.c sslv2_compat.c datum.c \
+	session_pack.c mpi.c pk.c cert-cred.c global.c constate.c \
+	anon_cred.c pkix_asn1_tab.c gnutls_asn1_tab.c mem.c \
+	fingerprint.c tls-sig.c ecc.c alert.c privkey_raw.c atomic.h \
+	system/certs.c system/threads.c system/fastopen.c \
+	system/sockets.c str-iconv.c system.c profiles.c profiles.h \
+	inih/ini.c str.c str-unicode.c str-idna.c state.c \
+	cert-cred-x509.c file.c supplemental.c random.c crypto-api.c \
+	crypto-api.h privkey.c pcert.c pubkey.c locks.c dtls.c \
+	system_override.c crypto-backend.c verify-tofu.c pin.c tpm.c \
+	fips.c safe-memfuncs.c atfork.c atfork.h randomart.c \
+	name_val_array.h system-keys.h urls.c urls.h prf.c \
+	auto-verify.c dh-session.c cert-session.c handshake-checks.c \
+	dtls-sw.c dh-primes.c openpgp_compat.c crypto-selftests.c \
+	crypto-selftests-pk.c secrets.c extv.c extv.h hello_ext_lib.c \
+	hello_ext_lib.h ocsp-api.c stek.c cert-cred-rawpk.c iov.c \
+	iov.h vko.c system/keys-win.c system/keys-dummy.c \
 	tls13/encrypted_extensions.c tls13/encrypted_extensions.h \
 	tls13/certificate_request.c tls13/certificate_request.h \
 	tls13/certificate_verify.c tls13/certificate_verify.h \
@@ -366,15 +374,16 @@ am__libgnutls_la_SOURCES_DIST = abstract_int.h debug.h cipher.h \
 	pkcs11_privkey.c pkcs11_write.c pkcs11_secret.c pkcs11_int.c \
 	srp.c psk.c gnutls.asn pkix.asn libgnutls.map
 am__objects_1 =
-am__objects_2 = $(am__objects_1)
+am__objects_2 = $(am__objects_1) $(am__objects_1)
 am__dirstamp = $(am__leading_dot)dirstamp
-@WINDOWS_TRUE@am__objects_3 = system/keys-win.lo
-@WINDOWS_FALSE@am__objects_4 = system/keys-dummy.lo
-@ENABLE_PKCS11_TRUE@am__objects_5 = pkcs11.lo pkcs11x.lo \
+@ENABLE_GOST_TRUE@am__objects_3 = vko.lo
+@WINDOWS_TRUE@am__objects_4 = system/keys-win.lo
+@WINDOWS_FALSE@am__objects_5 = system/keys-dummy.lo
+@ENABLE_PKCS11_TRUE@am__objects_6 = pkcs11.lo pkcs11x.lo \
 @ENABLE_PKCS11_TRUE@	pkcs11_privkey.lo pkcs11_write.lo \
 @ENABLE_PKCS11_TRUE@	pkcs11_secret.lo pkcs11_int.lo
-am__objects_6 = range.lo record.lo compress.lo debug.lo cipher.lo \
-	handshake-tls13.lo mbuffers.lo buffers.lo handshake.lo num.lo \
+am__objects_7 = range.lo record.lo compress.lo debug.lo cipher.lo \
+	handshake-tls13.lo mbuffers.lo buffers.lo handshake.lo \
 	errors.lo dh.lo kx.lo cipher-cbc.lo priority.lo hash_int.lo \
 	cipher_int.lo session.lo db.lo x509_b64.lo hello_ext.lo \
 	auth.lo sslv2_compat.lo datum.lo session_pack.lo mpi.lo pk.lo \
@@ -392,17 +401,17 @@ am__objects_6 = range.lo record.lo compress.lo debug.lo cipher.lo \
 	handshake-checks.lo dtls-sw.lo dh-primes.lo openpgp_compat.lo \
 	crypto-selftests.lo crypto-selftests-pk.lo secrets.lo extv.lo \
 	hello_ext_lib.lo ocsp-api.lo stek.lo cert-cred-rawpk.lo iov.lo \
-	$(am__objects_3) $(am__objects_4) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	tls13/encrypted_extensions.lo tls13/certificate_request.lo \
 	tls13/certificate_verify.lo tls13-sig.lo tls13/finished.lo \
 	tls13/key_update.lo tls13/hello_retry.lo \
 	tls13/session_ticket.lo tls13/certificate.lo \
 	tls13/early_data.lo tls13/post_handshake.lo \
-	tls13/psk_ext_parser.lo tls13/anti_replay.lo $(am__objects_5)
-am__objects_7 = srp.lo
-am__objects_8 = psk.lo
-am_libgnutls_la_OBJECTS = $(am__objects_2) $(am__objects_6) \
-	$(am__objects_7) $(am__objects_8)
+	tls13/psk_ext_parser.lo tls13/anti_replay.lo $(am__objects_6)
+am__objects_8 = srp.lo
+am__objects_9 = psk.lo
+am_libgnutls_la_OBJECTS = $(am__objects_2) $(am__objects_7) \
+	$(am__objects_8) $(am__objects_9)
 libgnutls_la_OBJECTS = $(am_libgnutls_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -461,7 +470,7 @@ am__depfiles_remade = ./$(DEPDIR)/alert.Plo ./$(DEPDIR)/anon_cred.Plo \
 	./$(DEPDIR)/hello_ext_lib.Plo ./$(DEPDIR)/iov.Plo \
 	./$(DEPDIR)/kx.Plo ./$(DEPDIR)/libgnutlsxx_la-gnutlsxx.Plo \
 	./$(DEPDIR)/locks.Plo ./$(DEPDIR)/mbuffers.Plo \
-	./$(DEPDIR)/mem.Plo ./$(DEPDIR)/mpi.Plo ./$(DEPDIR)/num.Plo \
+	./$(DEPDIR)/mem.Plo ./$(DEPDIR)/mpi.Plo \
 	./$(DEPDIR)/ocsp-api.Plo ./$(DEPDIR)/openpgp_compat.Plo \
 	./$(DEPDIR)/pcert.Plo ./$(DEPDIR)/pin.Plo ./$(DEPDIR)/pk.Plo \
 	./$(DEPDIR)/pkcs11.Plo ./$(DEPDIR)/pkcs11_int.Plo \
@@ -483,11 +492,11 @@ am__depfiles_remade = ./$(DEPDIR)/alert.Plo ./$(DEPDIR)/anon_cred.Plo \
 	./$(DEPDIR)/system_override.Plo ./$(DEPDIR)/tls-sig.Plo \
 	./$(DEPDIR)/tls13-sig.Plo ./$(DEPDIR)/tpm.Plo \
 	./$(DEPDIR)/urls.Plo ./$(DEPDIR)/verify-tofu.Plo \
-	./$(DEPDIR)/x509_b64.Plo inih/$(DEPDIR)/ini.Plo \
-	system/$(DEPDIR)/certs.Plo system/$(DEPDIR)/fastopen.Plo \
-	system/$(DEPDIR)/keys-dummy.Plo system/$(DEPDIR)/keys-win.Plo \
-	system/$(DEPDIR)/sockets.Plo system/$(DEPDIR)/threads.Plo \
-	tls13/$(DEPDIR)/anti_replay.Plo \
+	./$(DEPDIR)/vko.Plo ./$(DEPDIR)/x509_b64.Plo \
+	inih/$(DEPDIR)/ini.Plo system/$(DEPDIR)/certs.Plo \
+	system/$(DEPDIR)/fastopen.Plo system/$(DEPDIR)/keys-dummy.Plo \
+	system/$(DEPDIR)/keys-win.Plo system/$(DEPDIR)/sockets.Plo \
+	system/$(DEPDIR)/threads.Plo tls13/$(DEPDIR)/anti_replay.Plo \
 	tls13/$(DEPDIR)/certificate.Plo \
 	tls13/$(DEPDIR)/certificate_request.Plo \
 	tls13/$(DEPDIR)/certificate_verify.Plo \
@@ -635,6 +644,7 @@ CCASDEPMODE = @CCASDEPMODE@
 CCASFLAGS = @CCASFLAGS@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+CFLAG_VISIBILITY = @CFLAG_VISIBILITY@
 CMOCKA_CFLAGS = @CMOCKA_CFLAGS@
 CMOCKA_LIBS = @CMOCKA_LIBS@
 CODE_COVERAGE_CFLAGS = @CODE_COVERAGE_CFLAGS@
@@ -687,6 +697,7 @@ GMSGFMT = @GMSGFMT@
 GMSGFMT_015 = @GMSGFMT_015@
 GNULIB_ACCEPT = @GNULIB_ACCEPT@
 GNULIB_ACCEPT4 = @GNULIB_ACCEPT4@
+GNULIB_ACCESS = @GNULIB_ACCESS@
 GNULIB_ATOLL = @GNULIB_ATOLL@
 GNULIB_BIND = @GNULIB_BIND@
 GNULIB_BTOWC = @GNULIB_BTOWC@
@@ -696,6 +707,8 @@ GNULIB_CHDIR = @GNULIB_CHDIR@
 GNULIB_CHOWN = @GNULIB_CHOWN@
 GNULIB_CLOSE = @GNULIB_CLOSE@
 GNULIB_CONNECT = @GNULIB_CONNECT@
+GNULIB_COPY_FILE_RANGE = @GNULIB_COPY_FILE_RANGE@
+GNULIB_CREAT = @GNULIB_CREAT@
 GNULIB_CTIME = @GNULIB_CTIME@
 GNULIB_DPRINTF = @GNULIB_DPRINTF@
 GNULIB_DUP = @GNULIB_DUP@
@@ -745,15 +758,18 @@ GNULIB_GETCWD = @GNULIB_GETCWD@
 GNULIB_GETDELIM = @GNULIB_GETDELIM@
 GNULIB_GETDOMAINNAME = @GNULIB_GETDOMAINNAME@
 GNULIB_GETDTABLESIZE = @GNULIB_GETDTABLESIZE@
+GNULIB_GETENTROPY = @GNULIB_GETENTROPY@
 GNULIB_GETGROUPS = @GNULIB_GETGROUPS@
 GNULIB_GETHOSTNAME = @GNULIB_GETHOSTNAME@
 GNULIB_GETLINE = @GNULIB_GETLINE@
 GNULIB_GETLOADAVG = @GNULIB_GETLOADAVG@
 GNULIB_GETLOGIN = @GNULIB_GETLOGIN@
 GNULIB_GETLOGIN_R = @GNULIB_GETLOGIN_R@
+GNULIB_GETOPT_POSIX = @GNULIB_GETOPT_POSIX@
 GNULIB_GETPAGESIZE = @GNULIB_GETPAGESIZE@
 GNULIB_GETPASS = @GNULIB_GETPASS@
 GNULIB_GETPEERNAME = @GNULIB_GETPEERNAME@
+GNULIB_GETRANDOM = @GNULIB_GETRANDOM@
 GNULIB_GETSOCKNAME = @GNULIB_GETSOCKNAME@
 GNULIB_GETSOCKOPT = @GNULIB_GETSOCKOPT@
 GNULIB_GETSUBOPT = @GNULIB_GETSUBOPT@
@@ -833,7 +849,15 @@ GNULIB_PREAD = @GNULIB_PREAD@
 GNULIB_PRINTF = @GNULIB_PRINTF@
 GNULIB_PRINTF_POSIX = @GNULIB_PRINTF_POSIX@
 GNULIB_PSELECT = @GNULIB_PSELECT@
+GNULIB_PTHREAD_COND = @GNULIB_PTHREAD_COND@
+GNULIB_PTHREAD_MUTEX = @GNULIB_PTHREAD_MUTEX@
+GNULIB_PTHREAD_MUTEX_TIMEDLOCK = @GNULIB_PTHREAD_MUTEX_TIMEDLOCK@
+GNULIB_PTHREAD_ONCE = @GNULIB_PTHREAD_ONCE@
+GNULIB_PTHREAD_RWLOCK = @GNULIB_PTHREAD_RWLOCK@
 GNULIB_PTHREAD_SIGMASK = @GNULIB_PTHREAD_SIGMASK@
+GNULIB_PTHREAD_SPIN = @GNULIB_PTHREAD_SPIN@
+GNULIB_PTHREAD_THREAD = @GNULIB_PTHREAD_THREAD@
+GNULIB_PTHREAD_TSS = @GNULIB_PTHREAD_TSS@
 GNULIB_PTSNAME = @GNULIB_PTSNAME@
 GNULIB_PTSNAME_R = @GNULIB_PTSNAME_R@
 GNULIB_PUTC = @GNULIB_PUTC@
@@ -860,6 +884,7 @@ GNULIB_RENAMEAT = @GNULIB_RENAMEAT@
 GNULIB_RMDIR = @GNULIB_RMDIR@
 GNULIB_RPMATCH = @GNULIB_RPMATCH@
 GNULIB_SCANF = @GNULIB_SCANF@
+GNULIB_SCHED_YIELD = @GNULIB_SCHED_YIELD@
 GNULIB_SECURE_GETENV = @GNULIB_SECURE_GETENV@
 GNULIB_SELECT = @GNULIB_SELECT@
 GNULIB_SEND = @GNULIB_SEND@
@@ -867,6 +892,7 @@ GNULIB_SENDTO = @GNULIB_SENDTO@
 GNULIB_SETENV = @GNULIB_SETENV@
 GNULIB_SETHOSTNAME = @GNULIB_SETHOSTNAME@
 GNULIB_SETLOCALE = @GNULIB_SETLOCALE@
+GNULIB_SETLOCALE_NULL = @GNULIB_SETLOCALE_NULL@
 GNULIB_SETSOCKOPT = @GNULIB_SETSOCKOPT@
 GNULIB_SHUTDOWN = @GNULIB_SHUTDOWN@
 GNULIB_SIGACTION = @GNULIB_SIGACTION@
@@ -996,6 +1022,7 @@ HAVE_BTOWC = @HAVE_BTOWC@
 HAVE_C99_STDINT_H = @HAVE_C99_STDINT_H@
 HAVE_CANONICALIZE_FILE_NAME = @HAVE_CANONICALIZE_FILE_NAME@
 HAVE_CHOWN = @HAVE_CHOWN@
+HAVE_COPY_FILE_RANGE = @HAVE_COPY_FILE_RANGE@
 HAVE_CRTDEFS_H = @HAVE_CRTDEFS_H@
 HAVE_DECL_ENVIRON = @HAVE_DECL_ENVIRON@
 HAVE_DECL_FCHDIR = @HAVE_DECL_FCHDIR@
@@ -1067,11 +1094,13 @@ HAVE_FTELLO = @HAVE_FTELLO@
 HAVE_FTRUNCATE = @HAVE_FTRUNCATE@
 HAVE_FUTIMENS = @HAVE_FUTIMENS@
 HAVE_GETDTABLESIZE = @HAVE_GETDTABLESIZE@
+HAVE_GETENTROPY = @HAVE_GETENTROPY@
 HAVE_GETGROUPS = @HAVE_GETGROUPS@
 HAVE_GETHOSTNAME = @HAVE_GETHOSTNAME@
 HAVE_GETLOGIN = @HAVE_GETLOGIN@
 HAVE_GETPAGESIZE = @HAVE_GETPAGESIZE@
 HAVE_GETPASS = @HAVE_GETPASS@
+HAVE_GETRANDOM = @HAVE_GETRANDOM@
 HAVE_GETSUBOPT = @HAVE_GETSUBOPT@
 HAVE_GETTIMEOFDAY = @HAVE_GETTIMEOFDAY@
 HAVE_GRANTPT = @HAVE_GRANTPT@
@@ -1090,12 +1119,12 @@ HAVE_LCHMOD = @HAVE_LCHMOD@
 HAVE_LCHOWN = @HAVE_LCHOWN@
 HAVE_LIBCRYPTO = @HAVE_LIBCRYPTO@
 HAVE_LIBDL = @HAVE_LIBDL@
+HAVE_LIBEV = @HAVE_LIBEV@
 HAVE_LIBPTHREAD = @HAVE_LIBPTHREAD@
 HAVE_LIBRT = @HAVE_LIBRT@
 HAVE_LIBSECCOMP = @HAVE_LIBSECCOMP@
 HAVE_LINK = @HAVE_LINK@
 HAVE_LINKAT = @HAVE_LINKAT@
-HAVE_LONG_LONG_INT = @HAVE_LONG_LONG_INT@
 HAVE_LSTAT = @HAVE_LSTAT@
 HAVE_MAX_ALIGN_T = @HAVE_MAX_ALIGN_T@
 HAVE_MBRLEN = @HAVE_MBRLEN@
@@ -1133,7 +1162,65 @@ HAVE_POSIX_OPENPT = @HAVE_POSIX_OPENPT@
 HAVE_POSIX_SIGNALBLOCKING = @HAVE_POSIX_SIGNALBLOCKING@
 HAVE_PREAD = @HAVE_PREAD@
 HAVE_PSELECT = @HAVE_PSELECT@
+HAVE_PTHREAD_ATTR_DESTROY = @HAVE_PTHREAD_ATTR_DESTROY@
+HAVE_PTHREAD_ATTR_GETDETACHSTATE = @HAVE_PTHREAD_ATTR_GETDETACHSTATE@
+HAVE_PTHREAD_ATTR_INIT = @HAVE_PTHREAD_ATTR_INIT@
+HAVE_PTHREAD_ATTR_SETDETACHSTATE = @HAVE_PTHREAD_ATTR_SETDETACHSTATE@
+HAVE_PTHREAD_CONDATTR_DESTROY = @HAVE_PTHREAD_CONDATTR_DESTROY@
+HAVE_PTHREAD_CONDATTR_INIT = @HAVE_PTHREAD_CONDATTR_INIT@
+HAVE_PTHREAD_COND_BROADCAST = @HAVE_PTHREAD_COND_BROADCAST@
+HAVE_PTHREAD_COND_DESTROY = @HAVE_PTHREAD_COND_DESTROY@
+HAVE_PTHREAD_COND_INIT = @HAVE_PTHREAD_COND_INIT@
+HAVE_PTHREAD_COND_SIGNAL = @HAVE_PTHREAD_COND_SIGNAL@
+HAVE_PTHREAD_COND_TIMEDWAIT = @HAVE_PTHREAD_COND_TIMEDWAIT@
+HAVE_PTHREAD_COND_WAIT = @HAVE_PTHREAD_COND_WAIT@
+HAVE_PTHREAD_CREATE = @HAVE_PTHREAD_CREATE@
+HAVE_PTHREAD_CREATE_DETACHED = @HAVE_PTHREAD_CREATE_DETACHED@
+HAVE_PTHREAD_DETACH = @HAVE_PTHREAD_DETACH@
+HAVE_PTHREAD_EQUAL = @HAVE_PTHREAD_EQUAL@
+HAVE_PTHREAD_EXIT = @HAVE_PTHREAD_EXIT@
+HAVE_PTHREAD_GETSPECIFIC = @HAVE_PTHREAD_GETSPECIFIC@
+HAVE_PTHREAD_H = @HAVE_PTHREAD_H@
+HAVE_PTHREAD_JOIN = @HAVE_PTHREAD_JOIN@
+HAVE_PTHREAD_KEY_CREATE = @HAVE_PTHREAD_KEY_CREATE@
+HAVE_PTHREAD_KEY_DELETE = @HAVE_PTHREAD_KEY_DELETE@
+HAVE_PTHREAD_MUTEXATTR_DESTROY = @HAVE_PTHREAD_MUTEXATTR_DESTROY@
+HAVE_PTHREAD_MUTEXATTR_GETROBUST = @HAVE_PTHREAD_MUTEXATTR_GETROBUST@
+HAVE_PTHREAD_MUTEXATTR_GETTYPE = @HAVE_PTHREAD_MUTEXATTR_GETTYPE@
+HAVE_PTHREAD_MUTEXATTR_INIT = @HAVE_PTHREAD_MUTEXATTR_INIT@
+HAVE_PTHREAD_MUTEXATTR_SETROBUST = @HAVE_PTHREAD_MUTEXATTR_SETROBUST@
+HAVE_PTHREAD_MUTEXATTR_SETTYPE = @HAVE_PTHREAD_MUTEXATTR_SETTYPE@
+HAVE_PTHREAD_MUTEX_DESTROY = @HAVE_PTHREAD_MUTEX_DESTROY@
+HAVE_PTHREAD_MUTEX_INIT = @HAVE_PTHREAD_MUTEX_INIT@
+HAVE_PTHREAD_MUTEX_LOCK = @HAVE_PTHREAD_MUTEX_LOCK@
+HAVE_PTHREAD_MUTEX_RECURSIVE = @HAVE_PTHREAD_MUTEX_RECURSIVE@
+HAVE_PTHREAD_MUTEX_ROBUST = @HAVE_PTHREAD_MUTEX_ROBUST@
+HAVE_PTHREAD_MUTEX_TIMEDLOCK = @HAVE_PTHREAD_MUTEX_TIMEDLOCK@
+HAVE_PTHREAD_MUTEX_TRYLOCK = @HAVE_PTHREAD_MUTEX_TRYLOCK@
+HAVE_PTHREAD_MUTEX_UNLOCK = @HAVE_PTHREAD_MUTEX_UNLOCK@
+HAVE_PTHREAD_ONCE = @HAVE_PTHREAD_ONCE@
+HAVE_PTHREAD_PROCESS_SHARED = @HAVE_PTHREAD_PROCESS_SHARED@
+HAVE_PTHREAD_RWLOCKATTR_DESTROY = @HAVE_PTHREAD_RWLOCKATTR_DESTROY@
+HAVE_PTHREAD_RWLOCKATTR_INIT = @HAVE_PTHREAD_RWLOCKATTR_INIT@
+HAVE_PTHREAD_RWLOCK_DESTROY = @HAVE_PTHREAD_RWLOCK_DESTROY@
+HAVE_PTHREAD_RWLOCK_INIT = @HAVE_PTHREAD_RWLOCK_INIT@
+HAVE_PTHREAD_RWLOCK_RDLOCK = @HAVE_PTHREAD_RWLOCK_RDLOCK@
+HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK = @HAVE_PTHREAD_RWLOCK_TIMEDRDLOCK@
+HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK = @HAVE_PTHREAD_RWLOCK_TIMEDWRLOCK@
+HAVE_PTHREAD_RWLOCK_TRYRDLOCK = @HAVE_PTHREAD_RWLOCK_TRYRDLOCK@
+HAVE_PTHREAD_RWLOCK_TRYWRLOCK = @HAVE_PTHREAD_RWLOCK_TRYWRLOCK@
+HAVE_PTHREAD_RWLOCK_UNLOCK = @HAVE_PTHREAD_RWLOCK_UNLOCK@
+HAVE_PTHREAD_RWLOCK_WRLOCK = @HAVE_PTHREAD_RWLOCK_WRLOCK@
+HAVE_PTHREAD_SELF = @HAVE_PTHREAD_SELF@
+HAVE_PTHREAD_SETSPECIFIC = @HAVE_PTHREAD_SETSPECIFIC@
 HAVE_PTHREAD_SIGMASK = @HAVE_PTHREAD_SIGMASK@
+HAVE_PTHREAD_SPINLOCK_T = @HAVE_PTHREAD_SPINLOCK_T@
+HAVE_PTHREAD_SPIN_DESTROY = @HAVE_PTHREAD_SPIN_DESTROY@
+HAVE_PTHREAD_SPIN_INIT = @HAVE_PTHREAD_SPIN_INIT@
+HAVE_PTHREAD_SPIN_LOCK = @HAVE_PTHREAD_SPIN_LOCK@
+HAVE_PTHREAD_SPIN_TRYLOCK = @HAVE_PTHREAD_SPIN_TRYLOCK@
+HAVE_PTHREAD_SPIN_UNLOCK = @HAVE_PTHREAD_SPIN_UNLOCK@
+HAVE_PTHREAD_T = @HAVE_PTHREAD_T@
 HAVE_PTSNAME = @HAVE_PTSNAME@
 HAVE_PTSNAME_R = @HAVE_PTSNAME_R@
 HAVE_PWRITE = @HAVE_PWRITE@
@@ -1150,6 +1237,8 @@ HAVE_REALPATH = @HAVE_REALPATH@
 HAVE_RENAMEAT = @HAVE_RENAMEAT@
 HAVE_RPMATCH = @HAVE_RPMATCH@
 HAVE_SA_FAMILY_T = @HAVE_SA_FAMILY_T@
+HAVE_SCHED_H = @HAVE_SCHED_H@
+HAVE_SCHED_YIELD = @HAVE_SCHED_YIELD@
 HAVE_SECURE_GETENV = @HAVE_SECURE_GETENV@
 HAVE_SETENV = @HAVE_SETENV@
 HAVE_SETHOSTNAME = @HAVE_SETHOSTNAME@
@@ -1178,6 +1267,7 @@ HAVE_STRTOLL = @HAVE_STRTOLL@
 HAVE_STRTOULL = @HAVE_STRTOULL@
 HAVE_STRUCT_ADDRINFO = @HAVE_STRUCT_ADDRINFO@
 HAVE_STRUCT_RANDOM_DATA = @HAVE_STRUCT_RANDOM_DATA@
+HAVE_STRUCT_SCHED_PARAM = @HAVE_STRUCT_SCHED_PARAM@
 HAVE_STRUCT_SIGACTION_SA_SIGACTION = @HAVE_STRUCT_SIGACTION_SA_SIGACTION@
 HAVE_STRUCT_SOCKADDR_STORAGE = @HAVE_STRUCT_SOCKADDR_STORAGE@
 HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY = @HAVE_STRUCT_SOCKADDR_STORAGE_SS_FAMILY@
@@ -1186,6 +1276,7 @@ HAVE_STRVERSCMP = @HAVE_STRVERSCMP@
 HAVE_SYMLINK = @HAVE_SYMLINK@
 HAVE_SYMLINKAT = @HAVE_SYMLINKAT@
 HAVE_SYS_BITYPES_H = @HAVE_SYS_BITYPES_H@
+HAVE_SYS_CDEFS_H = @HAVE_SYS_CDEFS_H@
 HAVE_SYS_INTTYPES_H = @HAVE_SYS_INTTYPES_H@
 HAVE_SYS_IOCTL_H = @HAVE_SYS_IOCTL_H@
 HAVE_SYS_LOADAVG_H = @HAVE_SYS_LOADAVG_H@
@@ -1202,11 +1293,11 @@ HAVE_TZSET = @HAVE_TZSET@
 HAVE_UNISTD_H = @HAVE_UNISTD_H@
 HAVE_UNLINKAT = @HAVE_UNLINKAT@
 HAVE_UNLOCKPT = @HAVE_UNLOCKPT@
-HAVE_UNSIGNED_LONG_LONG_INT = @HAVE_UNSIGNED_LONG_LONG_INT@
 HAVE_USLEEP = @HAVE_USLEEP@
 HAVE_UTIMENSAT = @HAVE_UTIMENSAT@
 HAVE_VASPRINTF = @HAVE_VASPRINTF@
 HAVE_VDPRINTF = @HAVE_VDPRINTF@
+HAVE_VISIBILITY = @HAVE_VISIBILITY@
 HAVE_WCHAR_H = @HAVE_WCHAR_H@
 HAVE_WCHAR_T = @HAVE_WCHAR_T@
 HAVE_WCPCPY = @HAVE_WCPCPY@
@@ -1266,12 +1357,18 @@ INTLLIBS = @INTLLIBS@
 INTL_MACOSX_LIBS = @INTL_MACOSX_LIBS@
 LCOV = @LCOV@
 LD = @LD@
+LDDPOSTPROC = @LDDPOSTPROC@
+LDDPROG = @LDDPROG@
 LDFLAGS = @LDFLAGS@
 LIBATOMIC_LIBS = @LIBATOMIC_LIBS@
+LIBBCRYPT = @LIBBCRYPT@
 LIBCRYPTO = @LIBCRYPTO@
 LIBCRYPTO_PREFIX = @LIBCRYPTO_PREFIX@
 LIBDL = @LIBDL@
 LIBDL_PREFIX = @LIBDL_PREFIX@
+LIBEV = @LIBEV@
+LIBEV_LIBS = @LIBEV_LIBS@
+LIBEV_PREFIX = @LIBEV_PREFIX@
 LIBGNUTLS_CFLAGS = @LIBGNUTLS_CFLAGS@
 LIBGNUTLS_LIBS = @LIBGNUTLS_LIBS@
 LIBICONV = @LIBICONV@
@@ -1279,20 +1376,21 @@ LIBIDN2_CFLAGS = @LIBIDN2_CFLAGS@
 LIBIDN2_LIBS = @LIBIDN2_LIBS@
 LIBINTL = @LIBINTL@
 LIBMULTITHREAD = @LIBMULTITHREAD@
+LIBNCRYPT = @LIBNCRYPT@
 LIBOBJS = @LIBOBJS@
 LIBOPTS_CFLAGS = @LIBOPTS_CFLAGS@
 LIBOPTS_DIR = @LIBOPTS_DIR@
 LIBOPTS_LDADD = @LIBOPTS_LDADD@
-LIBPTH = @LIBPTH@
+LIBPMULTITHREAD = @LIBPMULTITHREAD@
 LIBPTHREAD = @LIBPTHREAD@
 LIBPTHREAD_PREFIX = @LIBPTHREAD_PREFIX@
-LIBPTH_PREFIX = @LIBPTH_PREFIX@
 LIBRT = @LIBRT@
 LIBRT_PREFIX = @LIBRT_PREFIX@
 LIBS = @LIBS@
 LIBSECCOMP = @LIBSECCOMP@
 LIBSECCOMP_PREFIX = @LIBSECCOMP_PREFIX@
 LIBSOCKET = @LIBSOCKET@
+LIBSTDTHREAD = @LIBSTDTHREAD@
 LIBTASN1_CFLAGS = @LIBTASN1_CFLAGS@
 LIBTASN1_LIBS = @LIBTASN1_LIBS@
 LIBTESTS_LIBDEPS = @LIBTESTS_LIBDEPS@
@@ -1304,8 +1402,14 @@ LIBUNISTRING_UNINORM_H = @LIBUNISTRING_UNINORM_H@
 LIBUNISTRING_UNISTR_H = @LIBUNISTRING_UNISTR_H@
 LIBUNISTRING_UNITYPES_H = @LIBUNISTRING_UNITYPES_H@
 LIB_CLOCK_GETTIME = @LIB_CLOCK_GETTIME@
+LIB_CRYPT32 = @LIB_CRYPT32@
 LIB_NANOSLEEP = @LIB_NANOSLEEP@
+LIB_PTHREAD = @LIB_PTHREAD@
+LIB_PTHREAD_SIGMASK = @LIB_PTHREAD_SIGMASK@
+LIB_SCHED_YIELD = @LIB_SCHED_YIELD@
 LIB_SELECT = @LIB_SELECT@
+LIB_SETLOCALE = @LIB_SETLOCALE@
+LIB_SETLOCALE_NULL = @LIB_SETLOCALE_NULL@
 LIMITS_H = @LIMITS_H@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -1317,11 +1421,11 @@ LOCALE_ZH_CN = @LOCALE_ZH_CN@
 LTALLOCA = @LTALLOCA@
 LTLIBCRYPTO = @LTLIBCRYPTO@
 LTLIBDL = @LTLIBDL@
+LTLIBEV = @LTLIBEV@
 LTLIBICONV = @LTLIBICONV@
 LTLIBINTL = @LTLIBINTL@
 LTLIBMULTITHREAD = @LTLIBMULTITHREAD@
 LTLIBOBJS = @LTLIBOBJS@
-LTLIBPTH = @LTLIBPTH@
 LTLIBPTHREAD = @LTLIBPTHREAD@
 LTLIBRT = @LTLIBRT@
 LTLIBSECCOMP = @LTLIBSECCOMP@
@@ -1363,6 +1467,8 @@ NEXT_AS_FIRST_DIRECTIVE_LIMITS_H = @NEXT_AS_FIRST_DIRECTIVE_LIMITS_H@
 NEXT_AS_FIRST_DIRECTIVE_LOCALE_H = @NEXT_AS_FIRST_DIRECTIVE_LOCALE_H@
 NEXT_AS_FIRST_DIRECTIVE_NETDB_H = @NEXT_AS_FIRST_DIRECTIVE_NETDB_H@
 NEXT_AS_FIRST_DIRECTIVE_NETINET_IN_H = @NEXT_AS_FIRST_DIRECTIVE_NETINET_IN_H@
+NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H = @NEXT_AS_FIRST_DIRECTIVE_PTHREAD_H@
+NEXT_AS_FIRST_DIRECTIVE_SCHED_H = @NEXT_AS_FIRST_DIRECTIVE_SCHED_H@
 NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H = @NEXT_AS_FIRST_DIRECTIVE_SIGNAL_H@
 NEXT_AS_FIRST_DIRECTIVE_STDDEF_H = @NEXT_AS_FIRST_DIRECTIVE_STDDEF_H@
 NEXT_AS_FIRST_DIRECTIVE_STDINT_H = @NEXT_AS_FIRST_DIRECTIVE_STDINT_H@
@@ -1390,6 +1496,8 @@ NEXT_LIMITS_H = @NEXT_LIMITS_H@
 NEXT_LOCALE_H = @NEXT_LOCALE_H@
 NEXT_NETDB_H = @NEXT_NETDB_H@
 NEXT_NETINET_IN_H = @NEXT_NETINET_IN_H@
+NEXT_PTHREAD_H = @NEXT_PTHREAD_H@
+NEXT_SCHED_H = @NEXT_SCHED_H@
 NEXT_SIGNAL_H = @NEXT_SIGNAL_H@
 NEXT_STDDEF_H = @NEXT_STDDEF_H@
 NEXT_STDINT_H = @NEXT_STDINT_H@
@@ -1423,6 +1531,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PARSE_DATETIME_BISON = @PARSE_DATETIME_BISON@
 PATCH_VERSION = @PATCH_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKG_CONFIG = @PKG_CONFIG@
@@ -1438,17 +1547,20 @@ PRI_MACROS_BROKEN = @PRI_MACROS_BROKEN@
 PTHREAD_H_DEFINES_STRUCT_TIMESPEC = @PTHREAD_H_DEFINES_STRUCT_TIMESPEC@
 PTRDIFF_T_SUFFIX = @PTRDIFF_T_SUFFIX@
 RANLIB = @RANLIB@
+REPLACE_ACCESS = @REPLACE_ACCESS@
 REPLACE_BTOWC = @REPLACE_BTOWC@
 REPLACE_CALLOC = @REPLACE_CALLOC@
 REPLACE_CANONICALIZE_FILE_NAME = @REPLACE_CANONICALIZE_FILE_NAME@
 REPLACE_CHOWN = @REPLACE_CHOWN@
 REPLACE_CLOSE = @REPLACE_CLOSE@
+REPLACE_CREAT = @REPLACE_CREAT@
 REPLACE_CTIME = @REPLACE_CTIME@
 REPLACE_DPRINTF = @REPLACE_DPRINTF@
 REPLACE_DUP = @REPLACE_DUP@
 REPLACE_DUP2 = @REPLACE_DUP2@
 REPLACE_DUPLOCALE = @REPLACE_DUPLOCALE@
 REPLACE_FACCESSAT = @REPLACE_FACCESSAT@
+REPLACE_FCHMODAT = @REPLACE_FCHMODAT@
 REPLACE_FCHOWNAT = @REPLACE_FCHOWNAT@
 REPLACE_FCLOSE = @REPLACE_FCLOSE@
 REPLACE_FCNTL = @REPLACE_FCNTL@
@@ -1468,6 +1580,7 @@ REPLACE_FTELLO = @REPLACE_FTELLO@
 REPLACE_FTRUNCATE = @REPLACE_FTRUNCATE@
 REPLACE_FUTIMENS = @REPLACE_FUTIMENS@
 REPLACE_GAI_STRERROR = @REPLACE_GAI_STRERROR@
+REPLACE_GETADDRINFO = @REPLACE_GETADDRINFO@
 REPLACE_GETCWD = @REPLACE_GETCWD@
 REPLACE_GETDELIM = @REPLACE_GETDELIM@
 REPLACE_GETDOMAINNAME = @REPLACE_GETDOMAINNAME@
@@ -1520,7 +1633,58 @@ REPLACE_POPEN = @REPLACE_POPEN@
 REPLACE_PREAD = @REPLACE_PREAD@
 REPLACE_PRINTF = @REPLACE_PRINTF@
 REPLACE_PSELECT = @REPLACE_PSELECT@
+REPLACE_PTHREAD_ATTR_DESTROY = @REPLACE_PTHREAD_ATTR_DESTROY@
+REPLACE_PTHREAD_ATTR_GETDETACHSTATE = @REPLACE_PTHREAD_ATTR_GETDETACHSTATE@
+REPLACE_PTHREAD_ATTR_INIT = @REPLACE_PTHREAD_ATTR_INIT@
+REPLACE_PTHREAD_ATTR_SETDETACHSTATE = @REPLACE_PTHREAD_ATTR_SETDETACHSTATE@
+REPLACE_PTHREAD_CONDATTR_DESTROY = @REPLACE_PTHREAD_CONDATTR_DESTROY@
+REPLACE_PTHREAD_CONDATTR_INIT = @REPLACE_PTHREAD_CONDATTR_INIT@
+REPLACE_PTHREAD_COND_BROADCAST = @REPLACE_PTHREAD_COND_BROADCAST@
+REPLACE_PTHREAD_COND_DESTROY = @REPLACE_PTHREAD_COND_DESTROY@
+REPLACE_PTHREAD_COND_INIT = @REPLACE_PTHREAD_COND_INIT@
+REPLACE_PTHREAD_COND_SIGNAL = @REPLACE_PTHREAD_COND_SIGNAL@
+REPLACE_PTHREAD_COND_TIMEDWAIT = @REPLACE_PTHREAD_COND_TIMEDWAIT@
+REPLACE_PTHREAD_COND_WAIT = @REPLACE_PTHREAD_COND_WAIT@
+REPLACE_PTHREAD_CREATE = @REPLACE_PTHREAD_CREATE@
+REPLACE_PTHREAD_DETACH = @REPLACE_PTHREAD_DETACH@
+REPLACE_PTHREAD_EQUAL = @REPLACE_PTHREAD_EQUAL@
+REPLACE_PTHREAD_EXIT = @REPLACE_PTHREAD_EXIT@
+REPLACE_PTHREAD_GETSPECIFIC = @REPLACE_PTHREAD_GETSPECIFIC@
+REPLACE_PTHREAD_JOIN = @REPLACE_PTHREAD_JOIN@
+REPLACE_PTHREAD_KEY_CREATE = @REPLACE_PTHREAD_KEY_CREATE@
+REPLACE_PTHREAD_KEY_DELETE = @REPLACE_PTHREAD_KEY_DELETE@
+REPLACE_PTHREAD_MUTEXATTR_DESTROY = @REPLACE_PTHREAD_MUTEXATTR_DESTROY@
+REPLACE_PTHREAD_MUTEXATTR_GETROBUST = @REPLACE_PTHREAD_MUTEXATTR_GETROBUST@
+REPLACE_PTHREAD_MUTEXATTR_GETTYPE = @REPLACE_PTHREAD_MUTEXATTR_GETTYPE@
+REPLACE_PTHREAD_MUTEXATTR_INIT = @REPLACE_PTHREAD_MUTEXATTR_INIT@
+REPLACE_PTHREAD_MUTEXATTR_SETROBUST = @REPLACE_PTHREAD_MUTEXATTR_SETROBUST@
+REPLACE_PTHREAD_MUTEXATTR_SETTYPE = @REPLACE_PTHREAD_MUTEXATTR_SETTYPE@
+REPLACE_PTHREAD_MUTEX_DESTROY = @REPLACE_PTHREAD_MUTEX_DESTROY@
+REPLACE_PTHREAD_MUTEX_INIT = @REPLACE_PTHREAD_MUTEX_INIT@
+REPLACE_PTHREAD_MUTEX_LOCK = @REPLACE_PTHREAD_MUTEX_LOCK@
+REPLACE_PTHREAD_MUTEX_TIMEDLOCK = @REPLACE_PTHREAD_MUTEX_TIMEDLOCK@
+REPLACE_PTHREAD_MUTEX_TRYLOCK = @REPLACE_PTHREAD_MUTEX_TRYLOCK@
+REPLACE_PTHREAD_MUTEX_UNLOCK = @REPLACE_PTHREAD_MUTEX_UNLOCK@
+REPLACE_PTHREAD_ONCE = @REPLACE_PTHREAD_ONCE@
+REPLACE_PTHREAD_RWLOCKATTR_DESTROY = @REPLACE_PTHREAD_RWLOCKATTR_DESTROY@
+REPLACE_PTHREAD_RWLOCKATTR_INIT = @REPLACE_PTHREAD_RWLOCKATTR_INIT@
+REPLACE_PTHREAD_RWLOCK_DESTROY = @REPLACE_PTHREAD_RWLOCK_DESTROY@
+REPLACE_PTHREAD_RWLOCK_INIT = @REPLACE_PTHREAD_RWLOCK_INIT@
+REPLACE_PTHREAD_RWLOCK_RDLOCK = @REPLACE_PTHREAD_RWLOCK_RDLOCK@
+REPLACE_PTHREAD_RWLOCK_TIMEDRDLOCK = @REPLACE_PTHREAD_RWLOCK_TIMEDRDLOCK@
+REPLACE_PTHREAD_RWLOCK_TIMEDWRLOCK = @REPLACE_PTHREAD_RWLOCK_TIMEDWRLOCK@
+REPLACE_PTHREAD_RWLOCK_TRYRDLOCK = @REPLACE_PTHREAD_RWLOCK_TRYRDLOCK@
+REPLACE_PTHREAD_RWLOCK_TRYWRLOCK = @REPLACE_PTHREAD_RWLOCK_TRYWRLOCK@
+REPLACE_PTHREAD_RWLOCK_UNLOCK = @REPLACE_PTHREAD_RWLOCK_UNLOCK@
+REPLACE_PTHREAD_RWLOCK_WRLOCK = @REPLACE_PTHREAD_RWLOCK_WRLOCK@
+REPLACE_PTHREAD_SELF = @REPLACE_PTHREAD_SELF@
+REPLACE_PTHREAD_SETSPECIFIC = @REPLACE_PTHREAD_SETSPECIFIC@
 REPLACE_PTHREAD_SIGMASK = @REPLACE_PTHREAD_SIGMASK@
+REPLACE_PTHREAD_SPIN_DESTROY = @REPLACE_PTHREAD_SPIN_DESTROY@
+REPLACE_PTHREAD_SPIN_INIT = @REPLACE_PTHREAD_SPIN_INIT@
+REPLACE_PTHREAD_SPIN_LOCK = @REPLACE_PTHREAD_SPIN_LOCK@
+REPLACE_PTHREAD_SPIN_TRYLOCK = @REPLACE_PTHREAD_SPIN_TRYLOCK@
+REPLACE_PTHREAD_SPIN_UNLOCK = @REPLACE_PTHREAD_SPIN_UNLOCK@
 REPLACE_PTSNAME = @REPLACE_PTSNAME@
 REPLACE_PTSNAME_R = @REPLACE_PTSNAME_R@
 REPLACE_PUTENV = @REPLACE_PUTENV@
@@ -1538,6 +1702,7 @@ REPLACE_REMOVE = @REPLACE_REMOVE@
 REPLACE_RENAME = @REPLACE_RENAME@
 REPLACE_RENAMEAT = @REPLACE_RENAMEAT@
 REPLACE_RMDIR = @REPLACE_RMDIR@
+REPLACE_SCHED_YIELD = @REPLACE_SCHED_YIELD@
 REPLACE_SELECT = @REPLACE_SELECT@
 REPLACE_SETENV = @REPLACE_SETENV@
 REPLACE_SETLOCALE = @REPLACE_SETLOCALE@
@@ -1589,6 +1754,7 @@ REPLACE_WCRTOMB = @REPLACE_WCRTOMB@
 REPLACE_WCSFTIME = @REPLACE_WCSFTIME@
 REPLACE_WCSNRTOMBS = @REPLACE_WCSNRTOMBS@
 REPLACE_WCSRTOMBS = @REPLACE_WCSRTOMBS@
+REPLACE_WCSTOK = @REPLACE_WCSTOK@
 REPLACE_WCSWIDTH = @REPLACE_WCSWIDTH@
 REPLACE_WCTOB = @REPLACE_WCTOB@
 REPLACE_WCTOMB = @REPLACE_WCTOMB@
@@ -1637,7 +1803,6 @@ XGETTEXT = @XGETTEXT@
 XGETTEXT_015 = @XGETTEXT_015@
 XGETTEXT_EXTRA_OPTIONS = @XGETTEXT_EXTRA_OPTIONS@
 YACC = @YACC@
-YEAR = @YEAR@
 YFLAGS = @YFLAGS@
 abs_aux_dir = @abs_aux_dir@
 abs_builddir = @abs_builddir@
@@ -1697,13 +1862,13 @@ libexecdir = @libexecdir@
 localedir = $(datadir)/locale
 localstatedir = @localstatedir@
 mandir = @mandir@
+maybe_guileextensiondir = @maybe_guileextensiondir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
 pdfdir = @pdfdir@
 prefix = @prefix@
 program_transform_name = @program_transform_name@
 psdir = @psdir@
-runstatedir = @runstatedir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 srcdir = @srcdir@
@@ -1721,7 +1886,7 @@ ACLOCAL_AMFLAGS = -I ../m4 -I ../gl/m4
 EXTRA_DIST = priority_options.gperf common.mk inih/LICENSE.txt
 BUILT_SOURCES = pkix_asn1_tab.c gnutls_asn1_tab.c priority_options.h
 SUBDIRS = includes x509 auth ext algorithms extras accelerated \
-	$(am__append_1) $(am__append_2) $(am__append_8)
+	$(am__append_1) $(am__append_2) $(am__append_9)
 AM_CFLAGS = $(WERROR_CFLAGS) $(WSTACK_CFLAGS) $(WARN_CFLAGS) $(NETTLE_CFLAGS) \
   $(LIBTASN1_CFLAGS) $(LIBIDN2_CFLAGS) $(P11_KIT_CFLAGS) $(CODE_COVERAGE_CFLAGS)
 
@@ -1735,30 +1900,30 @@ AM_CPPFLAGS = -DLOCALEDIR=\"$(localedir)\" -I$(srcdir)/../gl \
 # Pkg-config script.
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = gnutls.pc
-DISTCLEANFILES = $(pkgconfig_DATA) $(am__append_25)
-lib_LTLIBRARIES = libgnutls.la $(am__append_28)
+DISTCLEANFILES = $(pkgconfig_DATA) $(am__append_27)
+lib_LTLIBRARIES = libgnutls.la $(am__append_29)
 SRP_COBJECTS = srp.c
 PSK_COBJECTS = psk.c
 COBJECTS = range.c record.c compress.c debug.c cipher.c gthreads.h \
-	handshake-tls13.c mbuffers.c buffers.c handshake.c num.c \
-	errors.c dh.c kx.c cipher-cbc.c priority.c hash_int.c \
-	cipher_int.c session.c db.c x509_b64.c hello_ext.c auth.c \
-	sslv2_compat.c datum.c session_pack.c mpi.c pk.c cert-cred.c \
-	global.c constate.c anon_cred.c pkix_asn1_tab.c \
-	gnutls_asn1_tab.c mem.c fingerprint.c tls-sig.c ecc.c alert.c \
-	privkey_raw.c atomic.h system/certs.c system/threads.c \
-	system/fastopen.c system/sockets.c str-iconv.c system.c \
-	profiles.c profiles.h inih/ini.c str.c str-unicode.c \
-	str-idna.c state.c cert-cred-x509.c file.c supplemental.c \
-	random.c crypto-api.c crypto-api.h privkey.c pcert.c pubkey.c \
-	locks.c dtls.c system_override.c crypto-backend.c \
-	verify-tofu.c pin.c tpm.c fips.c safe-memfuncs.c atfork.c \
-	atfork.h randomart.c name_val_array.h system-keys.h urls.c \
-	urls.h prf.c auto-verify.c dh-session.c cert-session.c \
-	handshake-checks.c dtls-sw.c dh-primes.c openpgp_compat.c \
-	crypto-selftests.c crypto-selftests-pk.c secrets.c extv.c \
-	extv.h hello_ext_lib.c hello_ext_lib.h ocsp-api.c stek.c \
-	cert-cred-rawpk.c iov.c iov.h $(am__append_5) $(am__append_6) \
+	handshake-tls13.c mbuffers.c buffers.c handshake.c errors.c \
+	dh.c kx.c cipher-cbc.c priority.c hash_int.c cipher_int.c \
+	session.c db.c x509_b64.c hello_ext.c auth.c sslv2_compat.c \
+	datum.c session_pack.c mpi.c pk.c cert-cred.c global.c \
+	constate.c anon_cred.c pkix_asn1_tab.c gnutls_asn1_tab.c mem.c \
+	fingerprint.c tls-sig.c ecc.c alert.c privkey_raw.c atomic.h \
+	system/certs.c system/threads.c system/fastopen.c \
+	system/sockets.c str-iconv.c system.c profiles.c profiles.h \
+	inih/ini.c str.c str-unicode.c str-idna.c state.c \
+	cert-cred-x509.c file.c supplemental.c random.c crypto-api.c \
+	crypto-api.h privkey.c pcert.c pubkey.c locks.c dtls.c \
+	system_override.c crypto-backend.c verify-tofu.c pin.c tpm.c \
+	fips.c safe-memfuncs.c atfork.c atfork.h randomart.c \
+	name_val_array.h system-keys.h urls.c urls.h prf.c \
+	auto-verify.c dh-session.c cert-session.c handshake-checks.c \
+	dtls-sw.c dh-primes.c openpgp_compat.c crypto-selftests.c \
+	crypto-selftests-pk.c secrets.c extv.c extv.h hello_ext_lib.c \
+	hello_ext_lib.h ocsp-api.c stek.c cert-cred-rawpk.c iov.c \
+	iov.h $(am__append_5) $(am__append_6) $(am__append_7) \
 	tls13/encrypted_extensions.c tls13/encrypted_extensions.h \
 	tls13/certificate_request.c tls13/certificate_request.h \
 	tls13/certificate_verify.c tls13/certificate_verify.h \
@@ -1768,7 +1933,7 @@ COBJECTS = range.c record.c compress.c debug.c cipher.c gthreads.h \
 	tls13/session_ticket.h tls13/certificate.c tls13/certificate.h \
 	tls13/early_data.c tls13/early_data.h tls13/post_handshake.c \
 	tls13/psk_ext_parser.c tls13/psk_ext_parser.h \
-	tls13/anti_replay.c tls13/anti_replay.h $(am__append_7)
+	tls13/anti_replay.c tls13/anti_replay.h $(am__append_8)
 HFILES = abstract_int.h debug.h cipher.h buffers.h errors.h \
 	gnutls_int.h dtls.h handshake.h num.h algorithms.h dh.h kx.h \
 	hash_int.h cipher_int.h db.h auth.h hello_ext.h \
@@ -1778,25 +1943,25 @@ HFILES = abstract_int.h debug.h cipher.h buffers.h errors.h \
 	crypto-backend.h srp.h auth/srp_kx.h auth/srp_passwd.h file.h \
 	supplemental.h crypto.h random.h system.h locks.h mbuffers.h \
 	ecc.h pin.h fips.h priority_options.h secrets.h stek.h \
-	cert-cred.h $(am__append_9)
+	cert-cred.h $(am__append_10) $(am__append_11)
 libgnutls_la_SOURCES = $(HFILES) $(COBJECTS) $(SRP_COBJECTS)	\
 	$(PSK_COBJECTS) \
 	gnutls.asn pkix.asn libgnutls.map
 
 libgnutls_la_LDFLAGS = -no-undefined -version-info \
 	$(LT_CURRENT):$(LT_REVISION):$(LT_AGE) $(COMMON_LINK_FLAGS) \
-	$(am__append_18) $(am__append_19) $(am__append_24) \
-	$(am__append_27)
+	$(am__append_20) $(am__append_21) $(am__append_26) \
+	$(am__append_28)
 libgnutls_la_LIBADD = ../gl/libgnu.la x509/libgnutls_x509.la \
 	ext/libgnutls_ext.la auth/libgnutls_auth.la \
 	algorithms/libgnutls_alg.la extras/libgnutls_extras.la \
-	$(am__append_12) $(am__append_13) $(am__append_20) \
-	$(am__append_23) $(thirdparty_libadd)
+	$(am__append_14) $(am__append_15) $(am__append_22) \
+	$(am__append_25) $(thirdparty_libadd)
 thirdparty_libadd = $(LTLIBZ) $(LTLIBINTL) $(LIBSOCKET) $(LTLIBNSL) \
-	$(P11_KIT_LIBS) $(LIB_SELECT) $(am__append_10) \
-	$(am__append_11) $(am__append_14) $(am__append_15) \
-	$(am__append_16) $(am__append_17) $(am__append_21) \
-	$(am__append_22) $(am__append_26)
+	$(P11_KIT_LIBS) $(LIB_SELECT) $(LIB_CRYPT32) $(am__append_12) \
+	$(am__append_13) $(am__append_16) $(am__append_17) \
+	$(am__append_18) $(am__append_19) $(am__append_23) \
+	$(am__append_24)
 @HAVE_LD_OUTPUT_DEF_TRUE@defexecdir = $(libdir)
 @HAVE_LD_OUTPUT_DEF_TRUE@defexec_DATA = libgnutls-$(DLL_VERSION).def
 
@@ -2005,7 +2170,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mbuffers.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mem.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi.Plo@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ocsp-api.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openpgp_compat.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pcert.Plo@am__quote@ # am--include-marker
@@ -2049,6 +2213,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpm.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/urls.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/verify-tofu.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vko.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/x509_b64.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@inih/$(DEPDIR)/ini.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@system/$(DEPDIR)/certs.Plo@am__quote@ # am--include-marker
@@ -2441,7 +2606,6 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/mbuffers.Plo
 	-rm -f ./$(DEPDIR)/mem.Plo
 	-rm -f ./$(DEPDIR)/mpi.Plo
-	-rm -f ./$(DEPDIR)/num.Plo
 	-rm -f ./$(DEPDIR)/ocsp-api.Plo
 	-rm -f ./$(DEPDIR)/openpgp_compat.Plo
 	-rm -f ./$(DEPDIR)/pcert.Plo
@@ -2485,6 +2649,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/tpm.Plo
 	-rm -f ./$(DEPDIR)/urls.Plo
 	-rm -f ./$(DEPDIR)/verify-tofu.Plo
+	-rm -f ./$(DEPDIR)/vko.Plo
 	-rm -f ./$(DEPDIR)/x509_b64.Plo
 	-rm -f inih/$(DEPDIR)/ini.Plo
 	-rm -f system/$(DEPDIR)/certs.Plo
@@ -2598,7 +2763,6 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/mbuffers.Plo
 	-rm -f ./$(DEPDIR)/mem.Plo
 	-rm -f ./$(DEPDIR)/mpi.Plo
-	-rm -f ./$(DEPDIR)/num.Plo
 	-rm -f ./$(DEPDIR)/ocsp-api.Plo
 	-rm -f ./$(DEPDIR)/openpgp_compat.Plo
 	-rm -f ./$(DEPDIR)/pcert.Plo
@@ -2642,6 +2806,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/tpm.Plo
 	-rm -f ./$(DEPDIR)/urls.Plo
 	-rm -f ./$(DEPDIR)/verify-tofu.Plo
+	-rm -f ./$(DEPDIR)/vko.Plo
 	-rm -f ./$(DEPDIR)/x509_b64.Plo
 	-rm -f inih/$(DEPDIR)/ini.Plo
 	-rm -f system/$(DEPDIR)/certs.Plo

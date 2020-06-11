@@ -266,8 +266,10 @@ void start(const char *name, int algo, unsigned aead)
 void doit(void)
 {
 	start("aes128-gcm", GNUTLS_CIPHER_AES_128_GCM, 1);
+	start("aes192-gcm", GNUTLS_CIPHER_AES_192_GCM, 1);
 	start("aes256-gcm", GNUTLS_CIPHER_AES_256_GCM, 1);
 	start("aes128-cbc", GNUTLS_CIPHER_AES_128_CBC, 0);
+	start("aes192-cbc", GNUTLS_CIPHER_AES_192_CBC, 0);
 	start("aes256-cbc", GNUTLS_CIPHER_AES_256_CBC, 0);
 	start("3des-cbc", GNUTLS_CIPHER_3DES_CBC, 0);
 	if (!gnutls_fips140_mode_enabled()) {

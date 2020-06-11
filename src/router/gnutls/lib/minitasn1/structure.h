@@ -28,13 +28,18 @@
 #ifndef _STRUCTURE_H
 #define _STRUCTURE_H
 
-int _asn1_create_static_structure (asn1_node pointer,
+#include "parser_aux.h" // list_type
+
+int _asn1_create_static_structure (asn1_node_const pointer,
 				   char *output_file_name, char *vector_name);
 
-asn1_node _asn1_copy_structure3 (asn1_node source_node);
+asn1_node _asn1_copy_structure3 (asn1_node_const source_node);
 
 asn1_node _asn1_add_single_node (unsigned int type);
 
-asn1_node _asn1_find_left (asn1_node node);
+asn1_node _asn1_find_left (asn1_node_const node);
+
+int
+_asn1_delete_structure (list_type *e_list, asn1_node *structure, unsigned int flags);
 
 #endif

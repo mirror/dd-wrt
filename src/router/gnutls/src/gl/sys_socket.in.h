@@ -1,6 +1,6 @@
 /* Provide a sys/socket header file for systems lacking it (read: MinGW)
    and for systems where it is incomplete.
-   Copyright (C) 2005-2019 Free Software Foundation, Inc.
+   Copyright (C) 2005-2020 Free Software Foundation, Inc.
    Written by Simon Josefsson.
 
    This program is free software; you can redistribute it and/or modify
@@ -346,14 +346,20 @@ _GL_WARN_ON_USE (connect, "connect is not always POSIX compliant - "
 #   define accept rpl_accept
 #  endif
 _GL_FUNCDECL_RPL (accept, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                  (int fd,
+                   struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen));
 _GL_CXXALIAS_RPL (accept, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                  (int fd,
+                   struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen));
 # else
 /* Need to cast, because on Solaris 10 systems, the third parameter is
-                                                       void *addrlen.  */
+                        void *addrlen.  */
 _GL_CXXALIAS_SYS_CAST (accept, int,
-                       (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                       (int fd,
+                        struct sockaddr *restrict addr,
+                        socklen_t *restrict addrlen));
 # endif
 _GL_CXXALIASWARN (accept);
 #elif @HAVE_WINSOCK2_H@
@@ -404,15 +410,18 @@ _GL_WARN_ON_USE (bind, "bind is not always POSIX compliant - "
 #   define getpeername rpl_getpeername
 #  endif
 _GL_FUNCDECL_RPL (getpeername, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen)
+                  (int fd, struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen)
                   _GL_ARG_NONNULL ((2, 3)));
 _GL_CXXALIAS_RPL (getpeername, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                  (int fd, struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen));
 # else
 /* Need to cast, because on Solaris 10 systems, the third parameter is
-                                                       void *addrlen.  */
+                        void *addrlen.  */
 _GL_CXXALIAS_SYS_CAST (getpeername, int,
-                       (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                       (int fd, struct sockaddr *restrict addr,
+                        socklen_t *restrict addrlen));
 # endif
 _GL_CXXALIASWARN (getpeername);
 #elif @HAVE_WINSOCK2_H@
@@ -433,15 +442,18 @@ _GL_WARN_ON_USE (getpeername, "getpeername is not always POSIX compliant - "
 #   define getsockname rpl_getsockname
 #  endif
 _GL_FUNCDECL_RPL (getsockname, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen)
+                  (int fd, struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen)
                   _GL_ARG_NONNULL ((2, 3)));
 _GL_CXXALIAS_RPL (getsockname, int,
-                  (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                  (int fd, struct sockaddr *restrict addr,
+                   socklen_t *restrict addrlen));
 # else
 /* Need to cast, because on Solaris 10 systems, the third parameter is
-                                                       void *addrlen.  */
+                        void *addrlen.  */
 _GL_CXXALIAS_SYS_CAST (getsockname, int,
-                       (int fd, struct sockaddr *addr, socklen_t *addrlen));
+                       (int fd, struct sockaddr *restrict addr,
+                        socklen_t *restrict addrlen));
 # endif
 _GL_CXXALIASWARN (getsockname);
 #elif @HAVE_WINSOCK2_H@
@@ -461,16 +473,19 @@ _GL_WARN_ON_USE (getsockname, "getsockname is not always POSIX compliant - "
 #   undef getsockopt
 #   define getsockopt rpl_getsockopt
 #  endif
-_GL_FUNCDECL_RPL (getsockopt, int, (int fd, int level, int optname,
-                                    void *optval, socklen_t *optlen)
-                                   _GL_ARG_NONNULL ((4, 5)));
-_GL_CXXALIAS_RPL (getsockopt, int, (int fd, int level, int optname,
-                                    void *optval, socklen_t *optlen));
+_GL_FUNCDECL_RPL (getsockopt, int,
+                  (int fd, int level, int optname,
+                   void *restrict optval, socklen_t *restrict optlen)
+                  _GL_ARG_NONNULL ((4, 5)));
+_GL_CXXALIAS_RPL (getsockopt, int,
+                  (int fd, int level, int optname,
+                   void *restrict optval, socklen_t *restrict optlen));
 # else
 /* Need to cast, because on Solaris 10 systems, the fifth parameter is
                                                        void *optlen.  */
-_GL_CXXALIAS_SYS_CAST (getsockopt, int, (int fd, int level, int optname,
-                                         void *optval, socklen_t *optlen));
+_GL_CXXALIAS_SYS_CAST (getsockopt, int,
+                       (int fd, int level, int optname,
+                        void *restrict optval, socklen_t *restrict optlen));
 # endif
 _GL_CXXALIASWARN (getsockopt);
 #elif @HAVE_WINSOCK2_H@
@@ -517,7 +532,10 @@ _GL_FUNCDECL_RPL (recv, ssize_t, (int fd, void *buf, size_t len, int flags)
                                  _GL_ARG_NONNULL ((2)));
 _GL_CXXALIAS_RPL (recv, ssize_t, (int fd, void *buf, size_t len, int flags));
 # else
-_GL_CXXALIAS_SYS (recv, ssize_t, (int fd, void *buf, size_t len, int flags));
+/* Need to cast, because on HP-UX 11.31 the return type may be
+                             int,
+   depending on compiler options.  */
+_GL_CXXALIAS_SYS_CAST (recv, ssize_t, (int fd, void *buf, size_t len, int flags));
 # endif
 _GL_CXXALIASWARN (recv);
 #elif @HAVE_WINSOCK2_H@
@@ -543,8 +561,11 @@ _GL_FUNCDECL_RPL (send, ssize_t,
 _GL_CXXALIAS_RPL (send, ssize_t,
                   (int fd, const void *buf, size_t len, int flags));
 # else
-_GL_CXXALIAS_SYS (send, ssize_t,
-                  (int fd, const void *buf, size_t len, int flags));
+/* Need to cast, because on HP-UX 11.31 the return type may be
+                             int,
+   depending on compiler options.  */
+_GL_CXXALIAS_SYS_CAST (send, ssize_t,
+                       (int fd, const void *buf, size_t len, int flags));
 # endif
 _GL_CXXALIASWARN (send);
 #elif @HAVE_WINSOCK2_H@
@@ -565,18 +586,21 @@ _GL_WARN_ON_USE (send, "send is not always POSIX compliant - "
 #   define recvfrom rpl_recvfrom
 #  endif
 _GL_FUNCDECL_RPL (recvfrom, ssize_t,
-                  (int fd, void *buf, size_t len, int flags,
-                   struct sockaddr *from, socklen_t *fromlen)
+                  (int fd, void *restrict buf, size_t len, int flags,
+                   struct sockaddr *restrict from,
+                   socklen_t *restrict fromlen)
                   _GL_ARG_NONNULL ((2)));
 _GL_CXXALIAS_RPL (recvfrom, ssize_t,
-                  (int fd, void *buf, size_t len, int flags,
-                   struct sockaddr *from, socklen_t *fromlen));
+                  (int fd, void *restrict buf, size_t len, int flags,
+                   struct sockaddr *restrict from,
+                   socklen_t *restrict fromlen));
 # else
 /* Need to cast, because on Solaris 10 systems, the sixth parameter is
                                                void *fromlen.  */
 _GL_CXXALIAS_SYS_CAST (recvfrom, ssize_t,
-                       (int fd, void *buf, size_t len, int flags,
-                        struct sockaddr *from, socklen_t *fromlen));
+                       (int fd, void *restrict buf, size_t len, int flags,
+                        struct sockaddr *restrict from,
+                        socklen_t *restrict fromlen));
 # endif
 _GL_CXXALIASWARN (recvfrom);
 #elif @HAVE_WINSOCK2_H@

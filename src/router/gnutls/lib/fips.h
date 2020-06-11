@@ -138,6 +138,7 @@ static unsigned is_cipher_algo_forbidden(gnutls_cipher_algorithm_t algo)
 			case GNUTLS_CIPHER_AES_256_CBC:
 			case GNUTLS_CIPHER_AES_192_CBC:
 			case GNUTLS_CIPHER_AES_128_GCM:
+			case GNUTLS_CIPHER_AES_192_GCM:
 			case GNUTLS_CIPHER_AES_256_GCM:
 			case GNUTLS_CIPHER_AES_128_CCM:
 			case GNUTLS_CIPHER_AES_256_CCM:

@@ -22,10 +22,27 @@
 #ifndef _PARSER_AUX_H
 #define _PARSER_AUX_H
 
+/***********************************************/
+/* Type: list_type                             */
+/* Description: type used in the list during   */
+/* the structure creation.                     */
+/***********************************************/
+typedef struct list_struct
+{
+  asn1_node node;
+  struct list_struct *next;
+} list_type;
+
 /***************************************/
 /*  Functions used by ASN.1 parser     */
 /***************************************/
-asn1_node _asn1_add_static_node (unsigned int type);
+asn1_node _asn1_add_static_node (list_type **e_list, unsigned int type);
+
+void _asn1_delete_list (list_type *e_list);
+
+void _asn1_delete_list_and_nodes (list_type *e_list);
+
+void _asn1_delete_node_from_list (list_type *list, asn1_node node);
 
 asn1_node
 _asn1_set_value (asn1_node node, const void *value, unsigned int len);
@@ -40,31 +57,28 @@ _asn1_append_value (asn1_node node, const void *value, unsigned int len);
 
 asn1_node _asn1_set_name (asn1_node node, const char *name);
 
-asn1_node _asn1_cpy_name (asn1_node dst, asn1_node src);
+asn1_node _asn1_cpy_name (asn1_node dst, asn1_node_const src);
 
 asn1_node _asn1_set_right (asn1_node node, asn1_node right);
 
-asn1_node _asn1_get_last_right (asn1_node node);
+asn1_node _asn1_get_last_right (asn1_node_const node);
 
 void _asn1_remove_node (asn1_node node, unsigned int flags);
-
-void _asn1_delete_list (void);
-
-void _asn1_delete_list_and_nodes (void);
 
 /* Max 64-bit integer length is 20 chars + 1 for sign + 1 for null termination */
 #define LTOSTR_MAX_SIZE 22
 char *_asn1_ltostr (int64_t v, char str[LTOSTR_MAX_SIZE]);
 
-asn1_node _asn1_find_up (asn1_node node);
+asn1_node _asn1_find_up (asn1_node_const node);
 
 int _asn1_change_integer_value (asn1_node node);
 
-int _asn1_expand_object_id (asn1_node node);
+#define EXPAND_OBJECT_ID_MAX_RECURSION 16
+int _asn1_expand_object_id (list_type **list, asn1_node node);
 
 int _asn1_type_set_config (asn1_node node);
 
-int _asn1_check_identifier (asn1_node node);
+int _asn1_check_identifier (asn1_node_const node);
 
 int _asn1_set_default_tag (asn1_node node);
 
@@ -77,7 +91,7 @@ int _asn1_set_default_tag (asn1_node node);
 /* Return: field RIGHT of NODE.                                   */
 /******************************************************************/
 inline static asn1_node
-_asn1_get_right (asn1_node node)
+_asn1_get_right (asn1_node_const node)
 {
   if (node == NULL)
     return NULL;
@@ -113,7 +127,7 @@ _asn1_set_down (asn1_node node, asn1_node down)
 /* Return: field DOWN of NODE.                                    */
 /******************************************************************/
 inline static asn1_node
-_asn1_get_down (asn1_node node)
+_asn1_get_down (asn1_node_const node)
 {
   if (node == NULL)
     return NULL;
@@ -128,11 +142,11 @@ _asn1_get_down (asn1_node node)
 /* Return: a null terminated string.                              */
 /******************************************************************/
 inline static char *
-_asn1_get_name (asn1_node node)
+_asn1_get_name (asn1_node_const node)
 {
   if (node == NULL)
     return NULL;
-  return node->name;
+  return (char *) node->name;
 }
 
 /******************************************************************/

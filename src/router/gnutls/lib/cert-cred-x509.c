@@ -543,7 +543,7 @@ read_cert_file(gnutls_certificate_credentials_t res,
 		return read_cert_url(res, key, certfile);
 	}
 
-	data = read_binary_file(certfile, &size);
+	data = read_file(certfile, RF_BINARY, &size);
 
 	if (data == NULL) {
 		gnutls_assert();
@@ -588,7 +588,7 @@ _gnutls_read_key_file(gnutls_certificate_credentials_t res,
 			    (GNUTLS_E_UNIMPLEMENTED_FEATURE);
 	}
 
-	data = read_binary_file(keyfile, &size);
+	data = read_file(keyfile, RF_BINARY | RF_SENSITIVE, &size);
 
 	if (data == NULL) {
 		gnutls_assert();
@@ -596,6 +596,7 @@ _gnutls_read_key_file(gnutls_certificate_credentials_t res,
 	}
 
 	ret = _gnutls_read_key_mem(res, data, size, type, pass, flags, rkey);
+	zeroize_key(data, size);
 	free(data);
 
 	return ret;
@@ -1447,7 +1448,8 @@ int
 	size_t size;
 	int ret;
 
-	p12blob.data = (void *) read_binary_file(pkcs12file, &size);
+	p12blob.data = (void *) read_file(pkcs12file, RF_BINARY | RF_SENSITIVE,
+					  &size);
 	p12blob.size = (unsigned int) size;
 	if (p12blob.data == NULL) {
 		gnutls_assert();
@@ -1457,7 +1459,9 @@ int
 	ret =
 	    gnutls_certificate_set_x509_simple_pkcs12_mem(res, &p12blob,
 							  type, password);
+	zeroize_key(p12blob.data, p12blob.size);
 	free(p12blob.data);
+	p12blob.size = 0;
 
 	return ret;
 }

@@ -1,17 +1,17 @@
 /* C++ compatible function declaration macros.
-   Copyright (C) 2010-2019 Free Software Foundation, Inc.
+   Copyright (C) 2010-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify it
-   under the terms of the GNU General Public License as published
-   by the Free Software Foundation; either version 3 of the License, or
+   under the terms of the GNU Lesser General Public License as published
+   by the Free Software Foundation; either version 2.1 of the License, or
    (at your option) any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-   General Public License for more details.
+   Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 #ifndef _GL_CXXDEFS_H
@@ -301,9 +301,6 @@
     _GL_WARN_ON_USE_CXX (func, rettype, parameters_and_attributes, \
                          "The symbol ::" #func " refers to the system function. " \
                          "Use " #namespace "::" #func " instead.")
-# elif __GNUC__ >= 3 && GNULIB_STRICT_CHECKING
-#  define _GL_CXXALIASWARN1_2(func,rettype,parameters_and_attributes,namespace) \
-     extern __typeof__ (func) func
 # else
 #  define _GL_CXXALIASWARN1_2(func,rettype,parameters_and_attributes,namespace) \
      _GL_EXTERN_C int _gl_cxxalias_dummy

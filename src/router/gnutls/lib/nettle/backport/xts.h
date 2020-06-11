@@ -1,37 +1,43 @@
-/*
- * Copyright (C) 2018 Red Hat, Inc.
- *
- * Author: Simo Sorce
- *
- * This file is part of GnuTLS.
- *
- * The GnuTLS is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation; either version 2.1 of
- * the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- */
+/* xts.h
 
-#ifndef GNUTLS_LIB_NETTLE_BACKPORT_XTS_H
-#define GNUTLS_LIB_NETTLE_BACKPORT_XTS_H
+   XEX-based tweaked-codebook mode with ciphertext stealing (XTS)
 
-#ifdef HAVE_NETTLE_XTS_ENCRYPT_MESSAGE
-#include <nettle/xts.h>
+   Copyright (C) 2005 Niels Möller
+   Copyright (C) 2018 Red Hat, Inc.
 
-#else /* Nettle version is old, use a vendored version instead */
+   This file is part of GNU Nettle.
 
-#ifndef NETTLE_XTS_H_INCLUDED
-#define NETTLE_XTS_H_INCLUDED
+   GNU Nettle is free software: you can redistribute it and/or
+   modify it under the terms of either:
+
+     * the GNU Lesser General Public License as published by the Free
+       Software Foundation; either version 3 of the License, or (at your
+       option) any later version.
+
+   or
+
+     * the GNU General Public License as published by the Free
+       Software Foundation; either version 2 of the License, or (at your
+       option) any later version.
+
+   or both in parallel, as here.
+
+   GNU Nettle is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+   General Public License for more details.
+
+   You should have received copies of the GNU General Public License and
+   the GNU Lesser General Public License along with this program.  If
+   not, see http://www.gnu.org/licenses/.
+*/
+
+
+#ifndef GNUTLS_LIB_NETTLE_BACKPORT_NETTLE_XTS_H_INCLUDED
+#define GNUTLS_LIB_NETTLE_BACKPORT_NETTLE_XTS_H_INCLUDED
 
 #include <nettle/nettle-types.h>
+#include "block8.h"
 #include <nettle/aes.h>
 
 #ifdef __cplusplus
@@ -39,16 +45,16 @@ extern "C" {
 #endif
 
 /* Name mangling */
-#define xts_encrypt_message nettle_xts_encrypt_message
-#define xts_decrypt_message nettle_xts_decrypt_message
-#define xts_aes128_set_encrypt_key nettle_xts_aes128_set_encrypt_key
-#define xts_aes128_set_decrypt_key nettle_xts_aes128_set_decrypt_key
-#define xts_aes128_encrypt_message nettle_xts_aes128_encrypt_message
-#define xts_aes128_decrypt_message nettle_xts_aes128_decrypt_message
-#define xts_aes256_set_encrypt_key nettle_xts_aes256_set_encrypt_key
-#define xts_aes256_set_decrypt_key nettle_xts_aes256_set_decrypt_key
-#define xts_aes256_encrypt_message nettle_xts_aes256_encrypt_message
-#define xts_aes256_decrypt_message nettle_xts_aes256_decrypt_message
+#define xts_encrypt_message gnutls_nettle_backport_xts_encrypt_message
+#define xts_decrypt_message gnutls_nettle_backport_xts_decrypt_message
+#define xts_aes128_set_encrypt_key gnutls_nettle_backport_xts_aes128_set_encrypt_key
+#define xts_aes128_set_decrypt_key gnutls_nettle_backport_xts_aes128_set_decrypt_key
+#define xts_aes128_encrypt_message gnutls_nettle_backport_xts_aes128_encrypt_message
+#define xts_aes128_decrypt_message gnutls_nettle_backport_xts_aes128_decrypt_message
+#define xts_aes256_set_encrypt_key gnutls_nettle_backport_xts_aes256_set_encrypt_key
+#define xts_aes256_set_decrypt_key gnutls_nettle_backport_xts_aes256_set_decrypt_key
+#define xts_aes256_encrypt_message gnutls_nettle_backport_xts_aes256_encrypt_message
+#define xts_aes256_decrypt_message gnutls_nettle_backport_xts_aes256_decrypt_message
 
 #define XTS_BLOCK_SIZE 16
 
@@ -115,8 +121,4 @@ xts_aes256_decrypt_message(struct xts_aes256_key *xts_key,
 }
 #endif
 
-#endif /* NETTLE_XTS_H_INCLUDED */
-
-#endif /* HAVE_NETTLE_XTS_ENCRYPT_MESSAGE */
-
-#endif /* GNUTLS_LIB_NETTLE_BACKPORT_XTS_H */
+#endif /* GNUTLS_LIB_NETTLE_BACKPORT_NETTLE_XTS_H_INCLUDED */

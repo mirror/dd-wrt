@@ -1,5 +1,5 @@
 # DO NOT EDIT! GENERATED AUTOMATICALLY!
-# Copyright (C) 2002-2019 Free Software Foundation, Inc.
+# Copyright (C) 2002-2020 Free Software Foundation, Inc.
 #
 # This file is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,28 +47,39 @@ AC_DEFUN([ggl_EARLY],
   # Code from module alloca:
   # Code from module alloca-opt:
   # Code from module arpa_inet:
+  # Code from module attribute:
   # Code from module bind:
+  # Code from module bison:
   # Code from module c-ctype:
+  # Code from module c99:
   # Code from module clock-time:
+  # Code from module cloexec:
   # Code from module close:
   # Code from module connect:
   # Code from module dup2:
   # Code from module environ:
   # Code from module errno:
+  # Code from module explicit_bzero:
   # Code from module extensions:
   # Code from module extern-inline:
+  # Code from module fcntl:
+  # Code from module fcntl-h:
   # Code from module fd-hook:
+  # Code from module filename:
   # Code from module flexmember:
   # Code from module float:
+  # Code from module fopen:
+  # Code from module fopen-gnu:
   # Code from module fseek:
   # Code from module fseeko:
-  AC_REQUIRE([AC_FUNC_FSEEKO])
+  AC_REQUIRE([gl_SET_LARGEFILE_SOURCE])
   # Code from module fstat:
   # Code from module ftell:
   # Code from module ftello:
-  AC_REQUIRE([AC_FUNC_FSEEKO])
+  AC_REQUIRE([gl_SET_LARGEFILE_SOURCE])
   # Code from module getaddrinfo:
   # Code from module getdelim:
+  # Code from module getdtablesize:
   # Code from module getline:
   # Code from module getpass:
   # Code from module getpeername:
@@ -101,6 +112,7 @@ AC_DEFUN([ggl_EARLY],
   # Code from module netdb:
   # Code from module netinet_in:
   # Code from module nstrftime:
+  # Code from module open:
   # Code from module parse-datetime:
   # Code from module pathmax:
   # Code from module progname:
@@ -127,7 +139,9 @@ AC_DEFUN([ggl_EARLY],
   # Code from module sockets:
   # Code from module socklen:
   # Code from module ssize_t:
+  # Code from module stat:
   # Code from module stat-time:
+  # Code from module std-gnu11:
   # Code from module stdalign:
   # Code from module stdbool:
   # Code from module stddef:
@@ -188,7 +202,9 @@ AC_SUBST([LTALLOCA])
     AC_LIBOBJ([bind])
   fi
   gl_SYS_SOCKET_MODULE_INDICATOR([bind])
+  # See the comments in bison.m4.
   gl_CLOCK_TIME
+  gl_MODULE_INDICATOR_FOR_TESTS([cloexec])
   gl_FUNC_CLOSE
   if test $REPLACE_CLOSE = 1; then
     AC_LIBOBJ([close])
@@ -208,7 +224,19 @@ AC_SUBST([LTALLOCA])
   gl_ENVIRON
   gl_UNISTD_MODULE_INDICATOR([environ])
   gl_HEADER_ERRNO_H
+  gl_FUNC_EXPLICIT_BZERO
+  if test $HAVE_EXPLICIT_BZERO = 0; then
+    AC_LIBOBJ([explicit_bzero])
+    gl_PREREQ_EXPLICIT_BZERO
+  fi
+  gl_STRING_MODULE_INDICATOR([explicit_bzero])
   AC_REQUIRE([gl_EXTERN_INLINE])
+  gl_FUNC_FCNTL
+  if test $HAVE_FCNTL = 0 || test $REPLACE_FCNTL = 1; then
+    AC_LIBOBJ([fcntl])
+  fi
+  gl_FCNTL_MODULE_INDICATOR([fcntl])
+  gl_FCNTL_H
   AC_C_FLEXIBLE_ARRAY_MEMBER
   gl_FLOAT_H
   if test $REPLACE_FLOAT_LDBL = 1; then
@@ -217,6 +245,18 @@ AC_SUBST([LTALLOCA])
   if test $REPLACE_ITOLD = 1; then
     AC_LIBOBJ([itold])
   fi
+  gl_FUNC_FOPEN
+  if test $REPLACE_FOPEN = 1; then
+    AC_LIBOBJ([fopen])
+    gl_PREREQ_FOPEN
+  fi
+  gl_STDIO_MODULE_INDICATOR([fopen])
+  gl_FUNC_FOPEN_GNU
+  if test $REPLACE_FOPEN = 1; then
+    AC_LIBOBJ([fopen])
+    gl_PREREQ_FOPEN
+  fi
+  gl_MODULE_INDICATOR([fopen-gnu])
   gl_FUNC_FSEEK
   if test $REPLACE_FSEEK = 1; then
     AC_LIBOBJ([fseek])
@@ -251,7 +291,7 @@ AC_SUBST([LTALLOCA])
   fi
   gl_STDIO_MODULE_INDICATOR([ftello])
   gl_GETADDRINFO
-  if test $HAVE_GETADDRINFO = 0; then
+  if test $HAVE_GETADDRINFO = 0 || test $REPLACE_GETADDRINFO = 1; then
     AC_LIBOBJ([getaddrinfo])
   fi
   if test $HAVE_DECL_GAI_STRERROR = 0 || test $REPLACE_GAI_STRERROR = 1; then
@@ -264,6 +304,12 @@ AC_SUBST([LTALLOCA])
     gl_PREREQ_GETDELIM
   fi
   gl_STDIO_MODULE_INDICATOR([getdelim])
+  gl_FUNC_GETDTABLESIZE
+  if test $HAVE_GETDTABLESIZE = 0 || test $REPLACE_GETDTABLESIZE = 1; then
+    AC_LIBOBJ([getdtablesize])
+    gl_PREREQ_GETDTABLESIZE
+  fi
+  gl_UNISTD_MODULE_INDICATOR([getdtablesize])
   gl_FUNC_GETLINE
   if test $REPLACE_GETLINE = 1; then
     AC_LIBOBJ([getline])
@@ -298,7 +344,7 @@ AC_SUBST([LTALLOCA])
   fi
   gl_ARPA_INET_MODULE_INDICATOR([inet_ntop])
   gl_FUNC_INET_PTON
-  if test $HAVE_INET_PTON = 0 || test $REPLACE_INET_NTOP = 1; then
+  if test $HAVE_INET_PTON = 0 || test $REPLACE_INET_PTON = 1; then
     AC_LIBOBJ([inet_pton])
     gl_PREREQ_INET_PTON
   fi
@@ -358,6 +404,12 @@ AC_SUBST([LTALLOCA])
   gl_HEADER_NETINET_IN
   AC_PROG_MKDIR_P
   gl_FUNC_GNU_STRFTIME
+  gl_FUNC_OPEN
+  if test $REPLACE_OPEN = 1; then
+    AC_LIBOBJ([open])
+    gl_PREREQ_OPEN
+  fi
+  gl_FCNTL_MODULE_INDICATOR([open])
   gl_PARSE_DATETIME
   gl_PATHMAX
   AC_CHECK_DECLS([program_invocation_name], [], [], [#include <errno.h>])
@@ -432,6 +484,17 @@ AC_SUBST([LTALLOCA])
   AC_REQUIRE([gl_SOCKETS])
   gl_TYPE_SOCKLEN_T
   gt_TYPE_SSIZE_T
+  gl_FUNC_STAT
+  if test $REPLACE_STAT = 1; then
+    AC_LIBOBJ([stat])
+    case "$host_os" in
+      mingw*)
+        AC_LIBOBJ([stat-w32])
+        ;;
+    esac
+    gl_PREREQ_STAT
+  fi
+  gl_SYS_STAT_MODULE_INDICATOR([stat])
   gl_STAT_TIME
   gl_STAT_BIRTHTIME
   gl_STDALIGN_H
@@ -490,6 +553,7 @@ AC_SUBST([LTALLOCA])
     gl_PREREQ_UNSETENV
   fi
   gl_STDLIB_MODULE_INDICATOR([unsetenv])
+  AC_REQUIRE([AC_C_RESTRICT])
   gl_FUNC_VASNPRINTF
   gl_WCHAR_H
   gl_XSIZE
@@ -637,21 +701,29 @@ AC_DEFUN([ggl_FILE_LIST], [
   lib/arg-nonnull.h
   lib/arpa_inet.in.h
   lib/asnprintf.c
+  lib/attribute.h
   lib/bind.c
   lib/c++defs.h
   lib/c-ctype.c
   lib/c-ctype.h
   lib/cdefs.h
+  lib/cloexec.c
+  lib/cloexec.h
   lib/close.c
   lib/connect.c
   lib/dup2.c
   lib/errno.in.h
+  lib/explicit_bzero.c
+  lib/fcntl.c
+  lib/fcntl.in.h
   lib/fd-hook.c
   lib/fd-hook.h
+  lib/filename.h
   lib/flexmember.h
   lib/float+.h
   lib/float.c
   lib/float.in.h
+  lib/fopen.c
   lib/fseek.c
   lib/fseeko.c
   lib/fstat.c
@@ -660,6 +732,7 @@ AC_DEFUN([ggl_FILE_LIST], [
   lib/gai_strerror.c
   lib/getaddrinfo.c
   lib/getdelim.c
+  lib/getdtablesize.c
   lib/getline.c
   lib/getpass.c
   lib/getpass.h
@@ -693,6 +766,7 @@ AC_DEFUN([ggl_FILE_LIST], [
   lib/netdb.in.h
   lib/netinet_in.in.h
   lib/nstrftime.c
+  lib/open.c
   lib/parse-datetime.h
   lib/parse-datetime.y
   lib/pathmax.h
@@ -723,6 +797,7 @@ AC_DEFUN([ggl_FILE_LIST], [
   lib/stat-time.h
   lib/stat-w32.c
   lib/stat-w32.h
+  lib/stat.c
   lib/stdalign.in.h
   lib/stdbool.in.h
   lib/stddef.in.h
@@ -772,11 +847,16 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/eealloc.m4
   m4/environ.m4
   m4/errno_h.m4
+  m4/explicit_bzero.m4
   m4/exponentd.m4
   m4/extensions.m4
   m4/extern-inline.m4
+  m4/fcntl-o.m4
+  m4/fcntl.m4
+  m4/fcntl_h.m4
   m4/flexmember.m4
   m4/float_h.m4
+  m4/fopen.m4
   m4/fseek.m4
   m4/fseeko.m4
   m4/fstat.m4
@@ -784,6 +864,7 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/ftello.m4
   m4/getaddrinfo.m4
   m4/getdelim.m4
+  m4/getdtablesize.m4
   m4/getline.m4
   m4/getpass.m4
   m4/gettime.m4
@@ -800,7 +881,6 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/largefile.m4
   m4/limits-h.m4
   m4/localtime-buffer.m4
-  m4/longlong.m4
   m4/lseek.m4
   m4/malloc.m4
   m4/malloca.m4
@@ -809,6 +889,7 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/minmax.m4
   m4/mktime.m4
   m4/mmap-anon.m4
+  m4/mode_t.m4
   m4/msvc-inval.m4
   m4/msvc-nothrow.m4
   m4/multiarch.m4
@@ -816,6 +897,9 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/netinet_in_h.m4
   m4/nstrftime.m4
   m4/off_t.m4
+  m4/open-cloexec.m4
+  m4/open-slash.m4
+  m4/open.m4
   m4/parse-datetime.m4
   m4/pathmax.m4
   m4/printf.m4
@@ -833,6 +917,8 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/sockpfaf.m4
   m4/ssize_t.m4
   m4/stat-time.m4
+  m4/stat.m4
+  m4/std-gnu11.m4
   m4/stdalign.m4
   m4/stdbool.m4
   m4/stddef_h.m4
@@ -862,4 +948,5 @@ AC_DEFUN([ggl_FILE_LIST], [
   m4/wchar_t.m4
   m4/wint_t.m4
   m4/xsize.m4
+  m4/zzgnulib.m4
 ])

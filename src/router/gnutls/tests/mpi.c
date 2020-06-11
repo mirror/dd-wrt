@@ -26,11 +26,14 @@
 
 #include <stdio.h>
 
-#include "utils.h"
 #include "../lib/gnutls_int.h"
 #include "../lib/mpi.h"
 #include "../lib/errors.h"
 #include "../lib/debug.h"
+
+/* utils.h must be loaded after gnutls_int.h, as it redefines some
+ * macros from gnulib */
+#include "utils.h"
 
 static void tls_log_func(int level, const char *str)
 {

@@ -21,6 +21,9 @@
  */
 #include "gnutls_int.h"
 #include "stek.h"
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+#include <valgrind/memcheck.h>
+#endif
 
 #define NAME_POS (0)
 #define KEY_POS (TICKET_KEY_NAME_SIZE)
@@ -143,6 +146,11 @@ static int rotate(gnutls_session_t session)
 		call_rotation_callback(session, key, t);
 		session->key.totp.last_result = t;
 		memcpy(session->key.session_ticket_key, key, sizeof(key));
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+		if (RUNNING_ON_VALGRIND)
+			VALGRIND_MAKE_MEM_DEFINED(session->key.session_ticket_key,
+						  TICKET_MASTER_KEY_SIZE);
+#endif
 
 		session->key.totp.was_rotated = 1;
 	} else if (t < 0) {
@@ -323,20 +331,13 @@ int _gnutls_initialize_session_ticket_key_rotation(gnutls_session_t session, con
 	if (unlikely(session == NULL || key == NULL))
 		return gnutls_assert_val(GNUTLS_E_INTERNAL_ERROR);
 
-	if (session->key.totp.last_result == 0) {
-		int64_t t;
-		memcpy(session->key.initial_stek, key->data, key->size);
-		t = totp_next(session);
-		if (t < 0)
-			return gnutls_assert_val(t);
+	if (unlikely(session->key.totp.last_result != 0))
+		return GNUTLS_E_INVALID_REQUEST;
 
-		session->key.totp.last_result = t;
-		session->key.totp.was_rotated = 0;
+	memcpy(session->key.initial_stek, key->data, key->size);
 
-		return GNUTLS_E_SUCCESS;
-	}
-
-	return GNUTLS_E_INVALID_REQUEST;
+	session->key.totp.was_rotated = 0;
+	return 0;
 }
 
 /*

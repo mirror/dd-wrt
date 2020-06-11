@@ -1,6 +1,6 @@
 /* Test the "ignore-value" module.
 
-   Copyright (C) 2011-2019 Free Software Foundation, Inc.
+   Copyright (C) 2011-2020 Free Software Foundation, Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -23,20 +23,14 @@
 
 #include <stdio.h>
 
-#ifndef _GL_ATTRIBUTE_RETURN_CHECK
-# if __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 4)
-#  define _GL_ATTRIBUTE_RETURN_CHECK
-# else
-#  define _GL_ATTRIBUTE_RETURN_CHECK __attribute__((__warn_unused_result__))
-# endif
-#endif
+#include "attribute.h"
 
 struct s { int i; };
-static char doChar (void) _GL_ATTRIBUTE_RETURN_CHECK;
-static int doInt (void) _GL_ATTRIBUTE_RETURN_CHECK;
-static off_t doOff (void) _GL_ATTRIBUTE_RETURN_CHECK;
-static void *doPtr (void) _GL_ATTRIBUTE_RETURN_CHECK;
-static struct s doStruct (void) _GL_ATTRIBUTE_RETURN_CHECK;
+static char doChar (void) NODISCARD;
+static int doInt (void) NODISCARD;
+static off_t doOff (void) NODISCARD;
+static void *doPtr (void) NODISCARD;
+static struct s doStruct (void) NODISCARD;
 
 static char
 doChar (void)

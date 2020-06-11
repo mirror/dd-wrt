@@ -30,13 +30,13 @@
 #include "parser_aux.h"
 #include <gstr.h>
 #include "structure.h"
-
+#include "c-ctype.h"
 #include "element.h"
 
 void
-_asn1_hierarchical_name (asn1_node node, char *name, int name_size)
+_asn1_hierarchical_name (asn1_node_const node, char *name, int name_size)
 {
-  asn1_node p;
+  asn1_node_const p;
   char tmp_name[64];
 
   p = node;
@@ -135,7 +135,7 @@ _asn1_convert_integer (const unsigned char *value, unsigned char *value_out,
  * The last element in the list may be provided in @pcache, to avoid
  * traversing the list, an expensive operation in long lists.
  *
- * On success it returns in @pcache the added element (which is the 
+ * On success it returns in @pcache the added element (which is the
  * tail in the list of added elements).
  */
 int
@@ -380,7 +380,7 @@ asn1_write_value (asn1_node node_root, const char *name,
     case ASN1_ETYPE_ENUMERATED:
       if (len == 0)
 	{
-	  if ((isdigit (value[0])) || (value[0] == '-'))
+	  if ((c_isdigit (value[0])) || (value[0] == '-'))
 	    {
 	      value_temp = malloc (SIZEOF_UNSIGNED_LONG_INT);
 	      if (value_temp == NULL)
@@ -453,7 +453,7 @@ asn1_write_value (asn1_node node_root, const char *name,
 	  p = node->down;
 	  while (type_field (p->type) != ASN1_ETYPE_DEFAULT)
 	    p = p->right;
-	  if ((isdigit (p->value[0])) || (p->value[0] == '-'))
+	  if ((c_isdigit (p->value[0])) || (p->value[0] == '-'))
 	    {
 	      default_temp = malloc (SIZEOF_UNSIGNED_LONG_INT);
 	      if (default_temp == NULL)
@@ -519,7 +519,7 @@ asn1_write_value (asn1_node node_root, const char *name,
       break;
     case ASN1_ETYPE_OBJECT_ID:
       for (i = 0; i < _asn1_strlen (value); i++)
-	if ((!isdigit (value[i])) && (value[i] != '.') && (value[i] != '+'))
+	if ((!c_isdigit (value[i])) && (value[i] != '.') && (value[i] != '+'))
 	  return ASN1_VALUE_NOT_VALID;
       if (node->type & CONST_DEFAULT)
 	{
@@ -540,7 +540,7 @@ asn1_write_value (asn1_node node_root, const char *name,
 	if (len < 11)
 	  return ASN1_VALUE_NOT_VALID;
 	for (k = 0; k < 10; k++)
-	  if (!isdigit (value[k]))
+	  if (!c_isdigit (value[k]))
 	    return ASN1_VALUE_NOT_VALID;
 	switch (len)
 	  {
@@ -549,7 +549,7 @@ asn1_write_value (asn1_node node_root, const char *name,
 	      return ASN1_VALUE_NOT_VALID;
 	    break;
 	  case 13:
-	    if ((!isdigit (value[10])) || (!isdigit (value[11])) ||
+	    if ((!c_isdigit (value[10])) || (!c_isdigit (value[11])) ||
 		(value[12] != 'Z'))
 	      return ASN1_VALUE_NOT_VALID;
 	    break;
@@ -557,16 +557,16 @@ asn1_write_value (asn1_node node_root, const char *name,
 	    if ((value[10] != '+') && (value[10] != '-'))
 	      return ASN1_VALUE_NOT_VALID;
 	    for (k = 11; k < 15; k++)
-	      if (!isdigit (value[k]))
+	      if (!c_isdigit (value[k]))
 		return ASN1_VALUE_NOT_VALID;
 	    break;
 	  case 17:
-	    if ((!isdigit (value[10])) || (!isdigit (value[11])))
+	    if ((!c_isdigit (value[10])) || (!c_isdigit (value[11])))
 	      return ASN1_VALUE_NOT_VALID;
 	    if ((value[12] != '+') && (value[12] != '-'))
 	      return ASN1_VALUE_NOT_VALID;
 	    for (k = 13; k < 17; k++)
-	      if (!isdigit (value[k]))
+	      if (!c_isdigit (value[k]))
 		return ASN1_VALUE_NOT_VALID;
 	    break;
 	  default:
@@ -699,7 +699,7 @@ asn1_write_value (asn1_node node_root, const char *name,
  * @len: number of bytes of *value: value[0]..value[len-1]. Initialy
  *   holds the sizeof value.
  *
- * Returns the value of one element inside a structure. 
+ * Returns the value of one element inside a structure.
  * If an element is OPTIONAL and this returns
  * %ASN1_ELEMENT_NOT_FOUND, it means that this element wasn't present
  * in the der encoding that created the structure.  The first element
@@ -757,7 +757,7 @@ asn1_write_value (asn1_node node_root, const char *name,
  *   this function may return %ASN1_SUCCESS even if the provided @len is zero.
  **/
 int
-asn1_read_value (asn1_node root, const char *name, void *ivalue, int *len)
+asn1_read_value (asn1_node_const root, const char *name, void *ivalue, int *len)
 {
   return asn1_read_value_type (root, name, ivalue, len, NULL);
 }
@@ -772,7 +772,7 @@ asn1_read_value (asn1_node root, const char *name, void *ivalue, int *len)
  *   holds the sizeof value.
  * @etype: The type of the value read (ASN1_ETYPE)
  *
- * Returns the type and value of one element inside a structure. 
+ * Returns the type and value of one element inside a structure.
  * If an element is OPTIONAL and this returns
  * %ASN1_ELEMENT_NOT_FOUND, it means that this element wasn't present
  * in the der encoding that created the structure.  The first element
@@ -831,10 +831,10 @@ asn1_read_value (asn1_node root, const char *name, void *ivalue, int *len)
  *   this function may return %ASN1_SUCCESS even if the provided @len is zero.
  **/
 int
-asn1_read_value_type (asn1_node root, const char *name, void *ivalue,
+asn1_read_value_type (asn1_node_const root, const char *name, void *ivalue,
 		      int *len, unsigned int *etype)
 {
-  asn1_node node, p, p2;
+  asn1_node_const node, p, p2;
   int len2, len3, result;
   int value_size = *len;
   unsigned char *value = ivalue;
@@ -890,7 +890,7 @@ asn1_read_value_type (asn1_node root, const char *name, void *ivalue,
 	  p = node->down;
 	  while (type_field (p->type) != ASN1_ETYPE_DEFAULT)
 	    p = p->right;
-	  if ((isdigit (p->value[0])) || (p->value[0] == '-')
+	  if ((c_isdigit (p->value[0])) || (p->value[0] == '-')
 	      || (p->value[0] == '+'))
 	    {
 	      result = _asn1_convert_integer
@@ -1025,7 +1025,7 @@ asn1_read_value_type (asn1_node root, const char *name, void *ivalue,
  *   @name is not a valid element.
  **/
 int
-asn1_read_tag (asn1_node root, const char *name, int *tagValue,
+asn1_read_tag (asn1_node_const root, const char *name, int *tagValue,
 	       int *classValue)
 {
   asn1_node node, p, pTag;
@@ -1100,7 +1100,7 @@ asn1_read_tag (asn1_node root, const char *name, int *tagValue,
  * Returns: %ASN1_SUCCESS if the node exists.
  **/
 int
-asn1_read_node_value (asn1_node node, asn1_data_node_st * data)
+asn1_read_node_value (asn1_node_const node, asn1_data_node_st * data)
 {
   data->name = node->name;
   data->value = node->value;

@@ -32,7 +32,6 @@
 #include <sys/wait.h>
 #endif
 
-#include "utils.h"
 #include <gnutls/gnutls.h>
 #include <gnutls/crypto.h>
 
@@ -45,6 +44,10 @@ void doit(void)
 
 #include "../lib/atfork.h"
 #include "../lib/atfork.c"
+
+/* utils.h must be loaded after gnutls_int.h, as it redefines some
+ * macros from gnulib */
+#include "utils.h"
 
 void doit(void)
 {

@@ -26,6 +26,7 @@
 #define _WIN32_WINNT 0x600
 #endif
 
+#include <config.h>
 #include "gnutls_int.h"
 #include "errors.h"
 #include <gnutls/gnutls.h>
@@ -44,8 +45,6 @@
 #include <wincrypt.h>
 #include <winbase.h>
 #include <winapifamily.h>
-
-#define DYN_NCRYPT
 
 #ifdef __MINGW32__
 # include <_mingw.h>
@@ -234,6 +233,7 @@ get_id(const char *url, uint8_t * bin, size_t * bin_size, unsigned cert)
 	return 0;
 }
 
+#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
 static
 void *memrev(unsigned char *pvData, DWORD cbData)
 {
@@ -437,6 +437,106 @@ static int capi_info(gnutls_privkey_t key, unsigned int flags, void *userdata)
 	return -1;
 }
 
+static 
+int privkey_import_capi(gnutls_privkey_t pkey, const char *url, 
+		priv_st *priv, CRYPT_KEY_PROV_INFO *kpi)
+{
+	HCRYPTPROV hCryptProv = NULL;
+	int ret, enc_too = 0;
+	DWORD i, dwErrCode = 0;
+
+	if (CryptAcquireContextW(&hCryptProv,
+					kpi->pwszContainerName,
+					kpi->pwszProvName,
+					kpi->dwProvType, kpi->dwFlags)) {
+		for (i = 0; i < kpi->cProvParam; i++)
+			if (!CryptSetProvParam(hCryptProv,
+							kpi->rgProvParam[i].
+							dwParam,
+							kpi->rgProvParam[i].
+							pbData,
+							kpi->rgProvParam[i].
+							dwFlags)) {
+				dwErrCode = GetLastError();
+				break;
+			};
+	} else {
+		dwErrCode = GetLastError();
+	}
+
+	if (ERROR_SUCCESS != dwErrCode) {
+		_gnutls_debug_log
+			("error in getting cryptprov: %d from %s\n",
+				(int)GetLastError(), url);
+		ret =
+			gnutls_assert_val
+			(GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
+		goto cleanup;
+	}
+
+	{
+		BYTE buf[100 + sizeof(PROV_ENUMALGS_EX) * 2];
+		PROV_ENUMALGS_EX *pAlgo = (PROV_ENUMALGS_EX *) buf;
+		DWORD len = sizeof(buf);
+
+		if (CryptGetProvParam
+			(hCryptProv, PP_ENUMALGS_EX, buf, &len,
+				CRYPT_FIRST)) {
+			DWORD hash = 0;
+			do {
+				switch (pAlgo->aiAlgid) {
+				case CALG_RSA_SIGN:
+					priv->pk = GNUTLS_PK_RSA;
+					enc_too = 1;
+					break;
+				case CALG_DSS_SIGN:
+					priv->pk =
+						priv->pk ==
+						GNUTLS_PK_RSA ?
+						GNUTLS_PK_RSA :
+						GNUTLS_PK_DSA;
+					break;
+				case CALG_SHA1:
+					hash = 1;
+					break;
+				case CALG_SHA_256:
+					hash = 256;
+					break;
+				default:
+					break;
+				}
+
+				len = sizeof(buf);	// reset the buffer size
+			} while (CryptGetProvParam
+					(hCryptProv, PP_ENUMALGS_EX, buf, &len,
+					CRYPT_NEXT));
+
+			if (priv->pk == GNUTLS_PK_DSA)
+				priv->sign_algo = GNUTLS_SIGN_DSA_SHA1;
+			else
+				priv->sign_algo =
+					(hash >
+						1) ? GNUTLS_SIGN_RSA_SHA256 :
+					GNUTLS_SIGN_RSA_SHA1;
+		}
+	}
+
+	priv->hCryptProv = hCryptProv;
+	priv->dwKeySpec = kpi->dwKeySpec;
+
+	ret = gnutls_privkey_import_ext3(pkey, priv, capi_sign,
+						(enc_too !=
+						0) ? capi_decrypt : NULL,
+						capi_deinit, capi_info, 0);
+ cleanup:
+	if (ret < 0) {
+		if (hCryptProv != 0)
+			CryptReleaseContext(hCryptProv, 0);
+	}
+	return ret;
+}
+#endif /* WINAPI_PARTITION_DESKTOP */
+
 static
 int cng_sign(gnutls_privkey_t key, void *userdata,
 	     const gnutls_datum_t * raw_data, gnutls_datum_t * signature)
@@ -597,6 +697,70 @@ static int cng_info(gnutls_privkey_t key, unsigned int flags, void *userdata)
 	return -1;
 }
 
+static
+int privkey_import_ncrypt(gnutls_privkey_t pkey, const char *url, 
+		priv_st *priv, CRYPT_KEY_PROV_INFO *kpi, NCRYPT_PROV_HANDLE *sctx)
+{
+	SECURITY_STATUS r;
+	NCRYPT_KEY_HANDLE nc = NULL;
+	int ret, enc_too = 0;
+	WCHAR algo_str[64];
+	DWORD algo_str_size = 0;
+
+	r = pNCryptOpenKey(*sctx, &nc, kpi->pwszContainerName, 0, 0);
+	if (FAILED(r)) {
+		ret =
+			gnutls_assert_val
+			(GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
+		goto cleanup;
+	}
+
+	r = pNCryptGetProperty(nc, NCRYPT_ALGORITHM_PROPERTY,
+					(BYTE *) algo_str, sizeof(algo_str),
+					&algo_str_size, 0);
+	if (FAILED(r)) {
+		ret =
+			gnutls_assert_val
+			(GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
+		goto cleanup;
+	}
+
+	if (StrCmpW(algo_str, BCRYPT_RSA_ALGORITHM) == 0) {
+		priv->pk = GNUTLS_PK_RSA;
+		priv->sign_algo = GNUTLS_SIGN_RSA_SHA256;
+		enc_too = 1;
+	} else if (StrCmpW(algo_str, BCRYPT_DSA_ALGORITHM) == 0) {
+		priv->pk = GNUTLS_PK_DSA;
+		priv->sign_algo = GNUTLS_SIGN_DSA_SHA1;
+	} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P256_ALGORITHM) == 0) {
+		priv->pk = GNUTLS_PK_EC;
+		priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA256;
+	} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P384_ALGORITHM) == 0) {
+		priv->pk = GNUTLS_PK_EC;
+		priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA384;
+	} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P521_ALGORITHM) == 0) {
+		priv->pk = GNUTLS_PK_EC;
+		priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA512;
+	} else {
+		_gnutls_debug_log("unknown key algorithm: %ls\n",
+					algo_str);
+		ret = gnutls_assert_val(GNUTLS_E_UNKNOWN_PK_ALGORITHM);
+		goto cleanup;
+	}
+	priv->nc = nc;
+
+	ret = gnutls_privkey_import_ext3(pkey, priv, cng_sign,
+						(enc_too !=
+						0) ? cng_decrypt : NULL,
+						cng_deinit, cng_info, 0);
+ cleanup:
+	if (ret < 0) {
+		if (nc != 0)
+			pNCryptFreeObject(nc);
+	}
+	return ret;
+}
+
 /*-
  * _gnutls_privkey_import_system:
  * @pkey: The private key
@@ -613,25 +777,20 @@ static int cng_info(gnutls_privkey_t key, unsigned int flags, void *userdata)
  -*/
 int _gnutls_privkey_import_system_url(gnutls_privkey_t pkey, const char *url)
 {
-#if WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_APP)
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP) && _WIN32_WINNT < 0x0A00	/*win10 */
     return gnutls_assert_val(GNUTLS_E_UNIMPLEMENTED_FEATURE);
-#else
+#else /* WINAPI_PARTITION_DESKTOP || _WIN32_WINNT_WIN10 */
 	uint8_t id[MAX_WID_SIZE];
 	HCERTSTORE store = NULL;
 	size_t id_size;
 	const CERT_CONTEXT *cert = NULL;
 	CRYPT_HASH_BLOB blob;
 	CRYPT_KEY_PROV_INFO *kpi = NULL;
-	NCRYPT_KEY_HANDLE nc = NULL;
-	HCRYPTPROV hCryptProv = NULL;
 	NCRYPT_PROV_HANDLE sctx = NULL;
 	DWORD kpi_size;
 	SECURITY_STATUS r;
-	int ret, enc_too = 0;
-	WCHAR algo_str[64];
-	DWORD algo_str_size = 0;
+	int ret;
 	priv_st *priv;
-	DWORD i, dwErrCode = 0;
 
 	if (ncrypt_init == 0)
 		return gnutls_assert_val(GNUTLS_E_UNIMPLEMENTED_FEATURE);
@@ -702,157 +861,31 @@ int _gnutls_privkey_import_system_url(gnutls_privkey_t pkey, const char *url)
 	r = pNCryptOpenStorageProvider(&sctx, kpi->pwszProvName, 0);
 	if (!FAILED(r)) {	/* if this works carry on with CNG */
 
-		r = pNCryptOpenKey(sctx, &nc, kpi->pwszContainerName, 0, 0);
-		if (FAILED(r)) {
-			ret =
-			    gnutls_assert_val
-			    (GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
-			goto cleanup;
-		}
-
-		r = pNCryptGetProperty(nc, NCRYPT_ALGORITHM_PROPERTY,
-				       (BYTE *) algo_str, sizeof(algo_str),
-				       &algo_str_size, 0);
-		if (FAILED(r)) {
-			ret =
-			    gnutls_assert_val
-			    (GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
-			goto cleanup;
-		}
-
-		if (StrCmpW(algo_str, BCRYPT_RSA_ALGORITHM) == 0) {
-			priv->pk = GNUTLS_PK_RSA;
-			priv->sign_algo = GNUTLS_SIGN_RSA_SHA256;
-			enc_too = 1;
-		} else if (StrCmpW(algo_str, BCRYPT_DSA_ALGORITHM) == 0) {
-			priv->pk = GNUTLS_PK_DSA;
-			priv->sign_algo = GNUTLS_SIGN_DSA_SHA1;
-		} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P256_ALGORITHM) == 0) {
-			priv->pk = GNUTLS_PK_EC;
-			priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA256;
-		} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P384_ALGORITHM) == 0) {
-			priv->pk = GNUTLS_PK_EC;
-			priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA384;
-		} else if (StrCmpW(algo_str, BCRYPT_ECDSA_P521_ALGORITHM) == 0) {
-			priv->pk = GNUTLS_PK_EC;
-			priv->sign_algo = GNUTLS_SIGN_ECDSA_SHA512;
-		} else {
-			_gnutls_debug_log("unknown key algorithm: %ls\n",
-					  algo_str);
-			ret = gnutls_assert_val(GNUTLS_E_UNKNOWN_PK_ALGORITHM);
-			goto cleanup;
-		}
-		priv->nc = nc;
-
-		ret = gnutls_privkey_import_ext3(pkey, priv, cng_sign,
-						 (enc_too !=
-						  0) ? cng_decrypt : NULL,
-						 cng_deinit, cng_info, 0);
+		ret = privkey_import_ncrypt(pkey, url, priv, kpi, &sctx);
 		if (ret < 0) {
 			gnutls_assert();
 			goto cleanup;
 		}
 	} else {
+#if !WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+		/* CAPI is not supported in UWP */
+		return gnutls_assert_val(GNUTLS_E_UNIMPLEMENTED_FEATURE);
+#else /* WINAPI_PARTITION_DESKTOP */
 		/* this should be CAPI */
 		_gnutls_debug_log
 		    ("error in opening CNG keystore: %x from %ls\n", (int)r,
 		     kpi->pwszProvName);
 
-		if (CryptAcquireContextW(&hCryptProv,
-					 kpi->pwszContainerName,
-					 kpi->pwszProvName,
-					 kpi->dwProvType, kpi->dwFlags)) {
-			for (i = 0; i < kpi->cProvParam; i++)
-				if (!CryptSetProvParam(hCryptProv,
-						       kpi->rgProvParam[i].
-						       dwParam,
-						       kpi->rgProvParam[i].
-						       pbData,
-						       kpi->rgProvParam[i].
-						       dwFlags)) {
-					dwErrCode = GetLastError();
-					break;
-				};
-		} else {
-			dwErrCode = GetLastError();
-		}
-
-		if (ERROR_SUCCESS != dwErrCode) {
-			_gnutls_debug_log
-			    ("error in getting cryptprov: %d from %s\n",
-			     (int)GetLastError(), url);
-			ret =
-			    gnutls_assert_val
-			    (GNUTLS_E_REQUESTED_DATA_NOT_AVAILABLE);
-			goto cleanup;
-		}
-
-		{
-			BYTE buf[100 + sizeof(PROV_ENUMALGS_EX) * 2];
-			PROV_ENUMALGS_EX *pAlgo = (PROV_ENUMALGS_EX *) buf;
-			DWORD len = sizeof(buf);
-
-			if (CryptGetProvParam
-			    (hCryptProv, PP_ENUMALGS_EX, buf, &len,
-			     CRYPT_FIRST)) {
-				DWORD hash = 0;
-				do {
-					switch (pAlgo->aiAlgid) {
-					case CALG_RSA_SIGN:
-						priv->pk = GNUTLS_PK_RSA;
-						enc_too = 1;
-						break;
-					case CALG_DSS_SIGN:
-						priv->pk =
-						    priv->pk ==
-						    GNUTLS_PK_RSA ?
-						    GNUTLS_PK_RSA :
-						    GNUTLS_PK_DSA;
-						break;
-					case CALG_SHA1:
-						hash = 1;
-						break;
-					case CALG_SHA_256:
-						hash = 256;
-						break;
-					default:
-						break;
-					}
-
-					len = sizeof(buf);	// reset the buffer size
-				} while (CryptGetProvParam
-					 (hCryptProv, PP_ENUMALGS_EX, buf, &len,
-					  CRYPT_NEXT));
-
-				if (priv->pk == GNUTLS_PK_DSA)
-					priv->sign_algo = GNUTLS_SIGN_DSA_SHA1;
-				else
-					priv->sign_algo =
-					    (hash >
-					     1) ? GNUTLS_SIGN_RSA_SHA256 :
-					    GNUTLS_SIGN_RSA_SHA1;
-			}
-		}
-
-		priv->hCryptProv = hCryptProv;
-		priv->dwKeySpec = kpi->dwKeySpec;
-
-		ret = gnutls_privkey_import_ext3(pkey, priv, capi_sign,
-						 (enc_too !=
-						  0) ? capi_decrypt : NULL,
-						 capi_deinit, capi_info, 0);
+		ret = privkey_import_capi(pkey, url, priv, kpi);
 		if (ret < 0) {
 			gnutls_assert();
 			goto cleanup;
 		}
+#endif /* WINAPI_PARTITION_DESKTOP */
 	}
 	ret = 0;
  cleanup:
 	if (ret < 0) {
-		if (nc != 0)
-			pNCryptFreeObject(nc);
-		if (hCryptProv != 0)
-			CryptReleaseContext(hCryptProv, 0);
 		gnutls_free(priv);
 	}
 	if (sctx != 0)
@@ -865,7 +898,7 @@ int _gnutls_privkey_import_system_url(gnutls_privkey_t pkey, const char *url)
 
 	CertCloseStore(store, 0);
 	return ret;
-#endif
+#endif /* WINAPI_PARTITION_DESKTOP || _WIN32_WINNT_WIN10 */
 }
 
 int _gnutls_x509_crt_import_system_url(gnutls_x509_crt_t crt, const char *url)
@@ -1487,13 +1520,16 @@ int _gnutls_system_key_init(void)
 		ret = GNUTLS_E_CRYPTO_INIT_FAILED;
 		goto fail;
 	}
-#endif
 	ncrypt_init = 1;
 
 	return 0;
  fail:
 	FreeLibrary(ncrypt_lib);
 	return ret;
+#else
+    ncrypt_init = 1;
+    return 0;
+#endif
 }
 
 void _gnutls_system_key_deinit(void)

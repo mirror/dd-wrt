@@ -75,6 +75,22 @@ typedef struct {
 	int (*exists) (gnutls_digest_algorithm_t);
 } gnutls_crypto_digest_st;
 
+typedef struct {
+	int (*hkdf_extract) (gnutls_mac_algorithm_t,
+			     const void *key, size_t keysize,
+			     const void *salt, size_t saltsize,
+			     void *output);
+	int (*hkdf_expand) (gnutls_mac_algorithm_t,
+			    const void *key, size_t keysize,
+			    const void *info, size_t infosize,
+			    void *output, size_t length);
+	int (*pbkdf2) (gnutls_mac_algorithm_t,
+		       const void *key, size_t keysize,
+		       const void *salt, size_t saltsize,
+		       unsigned iter_count,
+		       void *output, size_t length);
+} gnutls_crypto_kdf_st;
+
 typedef struct gnutls_crypto_rnd {
 	int (*init) (void **ctx); /* called prior to first usage of randomness */
 	int (*rnd) (void *ctx, int level, void *data, size_t datasize);
@@ -397,6 +413,7 @@ typedef struct gnutls_crypto_pk {
 	int (*derive) (gnutls_pk_algorithm_t, gnutls_datum_t * out,
 		       const gnutls_pk_params_st * priv,
 		       const gnutls_pk_params_st * pub,
+		       const gnutls_datum_t *nonce,
 		       unsigned int flags);
 
 	int (*curve_exists) (gnutls_ecc_curve_t);	/* true/false */
@@ -432,5 +449,19 @@ _gnutls_prf_raw(gnutls_mac_algorithm_t mac,
 		size_t label_size, const char *label,
 		size_t seed_size, const uint8_t *seed, size_t outsize,
 		char *out);
+
+int _gnutls_gost_key_wrap(gnutls_gost_paramset_t gost_params,
+			  const gnutls_datum_t *kek,
+			  const gnutls_datum_t *ukm,
+			  const gnutls_datum_t *cek,
+			  gnutls_datum_t *enc,
+			  gnutls_datum_t *imit);
+
+int _gnutls_gost_key_unwrap(gnutls_gost_paramset_t gost_params,
+			    const gnutls_datum_t *kek,
+			    const gnutls_datum_t *ukm,
+			    const gnutls_datum_t *enc,
+			    const gnutls_datum_t *imit,
+			    gnutls_datum_t *cek);
 
 #endif /* GNUTLS_LIB_CRYPTO_BACKEND_H */

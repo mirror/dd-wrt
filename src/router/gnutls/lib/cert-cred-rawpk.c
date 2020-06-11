@@ -239,8 +239,6 @@ int gnutls_certificate_set_rawpk_key_file(gnutls_certificate_credentials_t cred,
 	gnutls_privkey_t privkey;
 	gnutls_pubkey_t pubkey;
 	gnutls_pcert_st* pcert;
-	gnutls_datum_t rawpubkey = { NULL, 0 }; // to hold rawpk data from file
-	size_t key_size;
 	gnutls_str_array_t str_names;
 	unsigned int i;
 
@@ -291,8 +289,13 @@ int gnutls_certificate_set_rawpk_key_file(gnutls_certificate_credentials_t cred,
 		}
 
 	} else {
+		gnutls_datum_t rawpubkey; // to hold rawpk data from file
+		size_t key_size;
+
 		/* Read our raw public-key into memory from file */
-		rawpubkey.data = (void*) read_binary_file(rawpkfile, &key_size);
+		rawpubkey.data = (void*) read_file(rawpkfile,
+						   RF_BINARY | RF_SENSITIVE,
+						   &key_size);
 		if (rawpubkey.data == NULL) {
 			gnutls_privkey_deinit(privkey);
 
@@ -307,7 +310,9 @@ int gnutls_certificate_set_rawpk_key_file(gnutls_certificate_credentials_t cred,
 		ret = gnutls_pcert_import_rawpk_raw(pcert, &rawpubkey,
 						format, key_usage, 0);
 
-		_gnutls_free_datum(&rawpubkey);
+		zeroize_key(rawpubkey.data, rawpubkey.size);
+		free(rawpubkey.data);
+		rawpubkey.size = 0;
 
 		if (ret < 0) {
 			gnutls_privkey_deinit(privkey);

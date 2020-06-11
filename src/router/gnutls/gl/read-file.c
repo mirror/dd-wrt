@@ -1,18 +1,18 @@
 /* read-file.c -- read file contents into a string
-   Copyright (C) 2006, 2009-2019 Free Software Foundation, Inc.
+   Copyright (C) 2006, 2009-2020 Free Software Foundation, Inc.
    Written by Simon Josefsson and Bruno Haible.
 
    This program is free software; you can redistribute it and/or modify
-   it under the terms of the GNU General Public License as published by
-   the Free Software Foundation; either version 3, or (at your option)
+   it under the terms of the GNU Lesser General Public License as published by
+   the Free Software Foundation; either version 2.1, or (at your option)
    any later version.
 
    This program is distributed in the hope that it will be useful,
    but WITHOUT ANY WARRANTY; without even the implied warranty of
    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU General Public License for more details.
+   GNU Lesser General Public License for more details.
 
-   You should have received a copy of the GNU General Public License
+   You should have received a copy of the GNU Lesser General Public License
    along with this program; if not, see <https://www.gnu.org/licenses/>.  */
 
 #include <config.h>
@@ -25,11 +25,14 @@
 /* Get ftello.  */
 #include <stdio.h>
 
-/* Get SIZE_MAX.  */
+/* Get PTRDIFF_MAX.  */
 #include <stdint.h>
 
 /* Get malloc, realloc, free. */
 #include <stdlib.h>
+
+/* Get explicit_bzero, memcpy. */
+#include <string.h>
 
 /* Get errno. */
 #include <errno.h>
@@ -38,9 +41,15 @@
    and set *LENGTH to the length of the string.  The string is
    zero-terminated, but the terminating zero byte is not counted in
    *LENGTH.  On errors, *LENGTH is undefined, errno preserves the
-   values set by system functions (if any), and NULL is returned.  */
+   values set by system functions (if any), and NULL is returned.
+
+   If the RF_SENSITIVE flag is set in FLAGS:
+     - You should control the buffering of STREAM using 'setvbuf'.  Either
+       clear the buffer of STREAM after closing it, or disable buffering of
+       STREAM before calling this function.
+     - The memory buffer internally allocated will be cleared upon failure.  */
 char *
-fread_file (FILE *stream, size_t *length)
+fread_file (FILE *stream, int flags, size_t *length)
 {
   char *buf = NULL;
   size_t alloc = BUFSIZ;
@@ -59,7 +68,7 @@ fread_file (FILE *stream, size_t *length)
             off_t alloc_off = st.st_size - pos;
 
             /* '1' below, accounts for the trailing NUL.  */
-            if (SIZE_MAX - 1 < alloc_off)
+            if (PTRDIFF_MAX - 1 < alloc_off)
               {
                 errno = ENOMEM;
                 return NULL;
@@ -94,9 +103,25 @@ fread_file (FILE *stream, size_t *length)
             /* Shrink the allocated memory if possible.  */
             if (size < alloc - 1)
               {
-                char *smaller_buf = realloc (buf, size + 1);
-                if (smaller_buf != NULL)
-                  buf = smaller_buf;
+                if (flags & RF_SENSITIVE)
+                  {
+                    char *smaller_buf = malloc (size + 1);
+                    if (smaller_buf == NULL)
+                      explicit_bzero (buf + size, alloc - size);
+                    else
+                      {
+                        memcpy (smaller_buf, buf, size);
+                        explicit_bzero (buf, alloc);
+                        free (buf);
+                        buf = smaller_buf;
+                      }
+                  }
+                else
+                  {
+                    char *smaller_buf = realloc (buf, size + 1);
+                    if (smaller_buf != NULL)
+                      buf = smaller_buf;
+                  }
               }
 
             buf[size] = '\0';
@@ -106,19 +131,34 @@ fread_file (FILE *stream, size_t *length)
 
         {
           char *new_buf;
+          size_t save_alloc = alloc;
 
-          if (alloc == SIZE_MAX)
+          if (alloc == PTRDIFF_MAX)
             {
               save_errno = ENOMEM;
               break;
             }
 
-          if (alloc < SIZE_MAX - alloc / 2)
+          if (alloc < PTRDIFF_MAX - alloc / 2)
             alloc = alloc + alloc / 2;
           else
-            alloc = SIZE_MAX;
+            alloc = PTRDIFF_MAX;
 
-          if (!(new_buf = realloc (buf, alloc)))
+          if (flags & RF_SENSITIVE)
+            {
+              new_buf = malloc (alloc);
+              if (!new_buf)
+                {
+                  /* BUF should be cleared below after the loop.  */
+                  save_errno = errno;
+                  break;
+                }
+              memcpy (new_buf, buf, save_alloc);
+              explicit_bzero (buf, save_alloc);
+              free (buf);
+              buf = new_buf;
+            }
+          else if (!(new_buf = realloc (buf, alloc)))
             {
               save_errno = errno;
               break;
@@ -128,15 +168,29 @@ fread_file (FILE *stream, size_t *length)
         }
       }
 
+    if (flags & RF_SENSITIVE)
+      explicit_bzero (buf, alloc);
+
     free (buf);
     errno = save_errno;
     return NULL;
   }
 }
 
-static char *
-internal_read_file (const char *filename, size_t *length, const char *mode)
+/* Open and read the contents of FILENAME, and return a newly
+   allocated string with the content, and set *LENGTH to the length of
+   the string.  The string is zero-terminated, but the terminating
+   zero byte is not counted in *LENGTH.  On errors, *LENGTH is
+   undefined, errno preserves the values set by system functions (if
+   any), and NULL is returned.
+
+   If the RF_BINARY flag is set in FLAGS, the file is opened in binary
+   mode.  If the RF_SENSITIVE flag is set in FLAGS, the memory buffer
+   internally allocated will be cleared upon failure.  */
+char *
+read_file (const char *filename, int flags, size_t *length)
 {
+  const char *mode = (flags & RF_BINARY) ? "rbe" : "re";
   FILE *stream = fopen (filename, mode);
   char *out;
   int save_errno;
@@ -144,7 +198,10 @@ internal_read_file (const char *filename, size_t *length, const char *mode)
   if (!stream)
     return NULL;
 
-  out = fread_file (stream, length);
+  if (flags & RF_SENSITIVE)
+    setvbuf (stream, NULL, _IONBF, 0);
+
+  out = fread_file (stream, flags, length);
 
   save_errno = errno;
 
@@ -153,6 +210,8 @@ internal_read_file (const char *filename, size_t *length, const char *mode)
       if (out)
         {
           save_errno = errno;
+          if (flags & RF_SENSITIVE)
+            explicit_bzero (out, *length);
           free (out);
         }
       errno = save_errno;
@@ -160,29 +219,4 @@ internal_read_file (const char *filename, size_t *length, const char *mode)
     }
 
   return out;
-}
-
-/* Open and read the contents of FILENAME, and return a newly
-   allocated string with the content, and set *LENGTH to the length of
-   the string.  The string is zero-terminated, but the terminating
-   zero byte is not counted in *LENGTH.  On errors, *LENGTH is
-   undefined, errno preserves the values set by system functions (if
-   any), and NULL is returned.  */
-char *
-read_file (const char *filename, size_t *length)
-{
-  return internal_read_file (filename, length, "r");
-}
-
-/* Open (on non-POSIX systems, in binary mode) and read the contents
-   of FILENAME, and return a newly allocated string with the content,
-   and set LENGTH to the length of the string.  The string is
-   zero-terminated, but the terminating zero byte is not counted in
-   the LENGTH variable.  On errors, *LENGTH is undefined, errno
-   preserves the values set by system functions (if any), and NULL is
-   returned.  */
-char *
-read_binary_file (const char *filename, size_t *length)
-{
-  return internal_read_file (filename, length, "rb");
 }

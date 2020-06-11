@@ -45,13 +45,16 @@
 
 /* FIXME: Use a macro shortcut to memcpy for native endianness. */
 void
+#define _nettle_write_be32 _gnutls_nettle_ecc_write_be32
 _nettle_write_be32(size_t length, uint8_t *dst,
 		   const uint32_t *src);
 void
+#define _nettle_write_le32 _gnutls_nettle_ecc_write_le32
 _nettle_write_le32(size_t length, uint8_t *dst,
 		   const uint32_t *src);
 
 void
+#define _nettle_write_le64 _gnutls_nettle_ecc_write_le64
 _nettle_write_le64(size_t length, uint8_t *dst,
 		   const uint64_t *src);
 

@@ -4,9 +4,9 @@ Signers:
 	Signer's serial: 1656c8b2bf9bb3b24e6f3411cdcff0b5
 	Signature Algorithm: RSA-SHA1
 	Signed Attributes:
-		1.2.840.113549.1.9.4: 041490608f08aab36bbeef8cb509bef6e60385058afa
+		messageDigest: 041490608f08aab36bbeef8cb509bef6e60385058afa
 		1.3.6.1.4.1.311.2.1.11: 300c060a2b060104018237020115
-		1.2.840.113549.1.9.3: 06092b0601040182370a01
+		contentType: 06092b0601040182370a01
 		1.3.6.1.4.1.311.2.1.12: 3000
 
 Number of certificates: 1

@@ -76,6 +76,20 @@ cipher-stealing requires to know where the message actually terminates
 in order to be able to compute where the stealing occurs.
 @item GNUTLS_@-CIPHER_@-GOST28147_@-TC26Z_@-CNT
 GOST 28147-89 (Magma) cipher in CNT mode with TC26 Z S-box.
+@item GNUTLS_@-CIPHER_@-CHACHA20_@-64
+Chacha20 cipher with 64-bit nonces and 64-bit block counters.
+@item GNUTLS_@-CIPHER_@-CHACHA20_@-32
+Chacha20 cipher with 96-bit nonces and 32-bit block counters.
+@item GNUTLS_@-CIPHER_@-AES_@-128_@-SIV
+AES in SIV mode with 128-bit key.
+@item GNUTLS_@-CIPHER_@-AES_@-256_@-SIV
+AES in SIV mode with 256-bit key.
+Note that the SIV ciphers can only be used with
+the AEAD interface, and the IV plays a role as
+the authentication tag while it is prepended to
+the cipher text.
+@item GNUTLS_@-CIPHER_@-AES_@-192_@-GCM
+AES in GCM mode with 192-bit keys (AEAD).
 @item GNUTLS_@-CIPHER_@-IDEA_@-PGP_@-CFB
 IDEA in CFB mode (placeholder - unsupported).
 @item GNUTLS_@-CIPHER_@-3DES_@-PGP_@-CFB
@@ -130,6 +144,8 @@ ECDHE-ECDSA key-exchange algorithm.
 ECDHE-PSK key-exchange algorithm.
 @item GNUTLS_@-KX_@-RSA_@-PSK
 RSA-PSK key-exchange algorithm.
+@item GNUTLS_@-KX_@-VKO_@-GOST_@-12
+VKO GOST R 34.10-2012 key-exchange algorithm.
 @end table
 
 @c gnutls_params_type_t
@@ -212,6 +228,10 @@ The AES-GMAC-192 MAC algorithm (requires nonce).
 The AES-GMAC-256 MAC algorithm (requires nonce).
 @item GNUTLS_@-MAC_@-GOST28147_@-TC26Z_@-IMIT
 The GOST 28147-89 working in IMIT mode with TC26 Z S-box.
+@item GNUTLS_@-MAC_@-SHAKE_@-128
+Reserved; unimplemented.
+@item GNUTLS_@-MAC_@-SHAKE_@-256
+Reserved; unimplemented.
 @end table
 
 @c gnutls_digest_algorithm_t
@@ -252,6 +272,10 @@ GOST R 34.11-94 algorithm.
 GOST R 34.11-2001 (Streebog) algorithm, 256 bit.
 @item GNUTLS_@-DIG_@-STREEBOG_@-512
 GOST R 34.11-2001 (Streebog) algorithm, 512 bit.
+@item GNUTLS_@-DIG_@-SHAKE_@-128
+Reserved; unimplemented.
+@item GNUTLS_@-DIG_@-SHAKE_@-256
+Reserved; unimplemented.
 @end table
 
 @c gnutls_compression_method_t
@@ -334,6 +358,9 @@ in different threads.
 @item GNUTLS_@-ENABLE_@-EARLY_@-DATA
 Under TLS1.3 allow the server to receive early data sent as part of the initial ClientHello (0-RTT). 
 This is not enabled by default as early data has weaker security properties than other data. Since 3.6.5.
+@item GNUTLS_@-NO_@-AUTO_@-SEND_@-TICKET
+Under TLS1.3 disable auto-sending of
+session tickets during the handshake.
 @end table
 
 @c gnutls_alert_level_t
@@ -626,6 +653,10 @@ GOST R 34.10-2001 algorithm per rfc5832.
 GOST R 34.10-2012 algorithm, 256-bit key per rfc7091.
 @item GNUTLS_@-PK_@-GOST_@-12_@-512
 GOST R 34.10-2012 algorithm, 512-bit key per rfc7091.
+@item GNUTLS_@-PK_@-ECDH_@-X448
+Elliptic curve algorithm, restricted to ECDH as per rfc7748.
+@item GNUTLS_@-PK_@-EDDSA_@-ED448
+Edwards curve Digital signature algorithm. Used with SHAKE256 on signatures.
 @item GNUTLS_@-PK_@-MAX
 -- undescribed --
 @end table
@@ -735,6 +766,8 @@ Digital signature algorithm GOST R 34.10-2001 with GOST R 34.11-94
 Digital signature algorithm GOST R 34.10-2012 with GOST R 34.11-2012 256 bit
 @item GNUTLS_@-SIGN_@-GOST_@-512
 Digital signature algorithm GOST R 34.10-2012 with GOST R 34.11-2012 512 bit
+@item GNUTLS_@-SIGN_@-EDDSA_@-ED448
+Digital signature algorithm EdDSA with Ed448 curve.
 @item GNUTLS_@-SIGN_@-MAX
 -- undescribed --
 @end table
@@ -771,6 +804,20 @@ GOST R 34.10 CryptoPro 256 XchB curve
 GOST R 34.10 TC26 512 A curve
 @item GNUTLS_@-ECC_@-CURVE_@-GOST512B
 GOST R 34.10 TC26 512 B curve
+@item GNUTLS_@-ECC_@-CURVE_@-GOST512C
+GOST R 34.10 TC26 512 C curve
+@item GNUTLS_@-ECC_@-CURVE_@-GOST256A
+GOST R 34.10 TC26 256 A curve
+@item GNUTLS_@-ECC_@-CURVE_@-GOST256B
+GOST R 34.10 TC26 256 B curve
+@item GNUTLS_@-ECC_@-CURVE_@-GOST256C
+GOST R 34.10 TC26 256 C curve
+@item GNUTLS_@-ECC_@-CURVE_@-GOST256D
+GOST R 34.10 TC26 256 D curve
+@item GNUTLS_@-ECC_@-CURVE_@-X448
+the X448 curve (ECDH only)
+@item GNUTLS_@-ECC_@-CURVE_@-ED448
+the Ed448 curve
 @item GNUTLS_@-ECC_@-CURVE_@-MAX
 -- undescribed --
 @end table
@@ -791,6 +838,22 @@ the SECP384R1 curve group
 the SECP521R1 curve group
 @item GNUTLS_@-GROUP_@-X25519
 the X25519 curve group
+@item GNUTLS_@-GROUP_@-X448
+the X448 curve group
+@item GNUTLS_@-GROUP_@-GC256A
+the GOST R 34.10 TC26 256 A curve group
+@item GNUTLS_@-GROUP_@-GC256B
+the GOST R 34.10 TC26 256 B curve group
+@item GNUTLS_@-GROUP_@-GC256C
+the GOST R 34.10 TC26 256 C curve group
+@item GNUTLS_@-GROUP_@-GC256D
+the GOST R 34.10 TC26 256 D curve group
+@item GNUTLS_@-GROUP_@-GC512A
+the GOST R 34.10 TC26 512 A curve group
+@item GNUTLS_@-GROUP_@-GC512B
+the GOST R 34.10 TC26 512 B curve group
+@item GNUTLS_@-GROUP_@-GC512C
+the GOST R 34.10 TC26 512 C curve group
 @item GNUTLS_@-GROUP_@-FFDHE2048
 the FFDHE2048 group
 @item GNUTLS_@-GROUP_@-FFDHE3072
@@ -897,6 +960,10 @@ Indicates client capability for post-handshake auth; set only on server side.
 The TLS1.3 server session returned early.
 @item GNUTLS_@-SFLAGS_@-EARLY_@-DATA
 The TLS1.3 early data has been received by the server.
+@item GNUTLS_@-SFLAGS_@-CLI_@-REQUESTED_@-OCSP
+Set when the client has requested OCSP staple during handshake.
+@item GNUTLS_@-SFLAGS_@-SERV_@-REQUESTED_@-OCSP
+Set when the server has requested OCSP staple during handshake.
 @end table
 
 @c gnutls_supplemental_data_format_type_t
@@ -1433,9 +1500,12 @@ even if the information about the seed used will be lost.
 Make an RSA signature on the hashed data with the PSS padding.
 @item GNUTLS_@-PRIVKEY_@-FLAG_@-REPRODUCIBLE
 Make a signature on the hashed data with reproducible parameters.
-For RSA-PSS, that means to use empty salt instead of random value. For ECDSA/DSA, it uses the deterministic
-construction of random parameter according to RFC 6979. Note that
-this only supports the NIST curves and DSA subgroup bits up to 512.
+For RSA-PSS, that means to use empty salt instead of random value. To
+verify a signature created using this flag, the corresponding SPKI needs
+to be set on the public key. Use @code{gnutls_pubkey_set_spki()}  for that.
+For ECDSA/DSA, it uses the deterministic construction of random parameter
+according to RFC 6979. Note that this only supports the NIST curves and DSA
+subgroup bits up to 512.
 @item GNUTLS_@-PRIVKEY_@-FLAG_@-CA
 The generated private key is going to be used as a CA (relevant for RSA-PSS keys).
 @end table

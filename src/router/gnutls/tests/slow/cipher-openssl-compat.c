@@ -195,6 +195,7 @@ void doit(void)
 
 	/* ciphers */
 	cipher_test("aes-128-gcm", GNUTLS_CIPHER_AES_128_GCM, 16);
+	cipher_test("aes-192-gcm", GNUTLS_CIPHER_AES_192_GCM, 16);
 	cipher_test("aes-256-gcm", GNUTLS_CIPHER_AES_256_GCM, 16);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 	if (!gnutls_fips140_mode_enabled()) {

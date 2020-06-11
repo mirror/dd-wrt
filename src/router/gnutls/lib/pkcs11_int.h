@@ -460,6 +460,11 @@ inline static bool is_pkcs11_url_object(const char *url)
 	return 0;
 }
 
+unsigned
+_gnutls_pkcs11_crt_is_known(const char *url, gnutls_x509_crt_t cert,
+			    unsigned int flags,
+			    gnutls_x509_crt_t *trusted_cert);
+
 #endif				/* ENABLE_PKCS11 */
 
 #endif /* GNUTLS_LIB_PKCS11_INT_H */

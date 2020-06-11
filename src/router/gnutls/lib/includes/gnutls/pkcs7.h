@@ -144,6 +144,10 @@ int gnutls_pkcs7_print(gnutls_pkcs7_t pkcs7,
 		       gnutls_certificate_print_formats_t format,
 		       gnutls_datum_t * out);
 
+int gnutls_pkcs7_print_signature_info(gnutls_pkcs7_signature_info_st * info,
+				      gnutls_certificate_print_formats_t format,
+				      gnutls_datum_t * out);
+
 /* *INDENT-OFF* */
 #ifdef __cplusplus
 }
