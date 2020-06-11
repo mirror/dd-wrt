@@ -1214,7 +1214,7 @@ void ping_shutdown(webs_t wp)
 
 void ping_firewall(webs_t wp)
 {
-	do_ping(wp, "rc_firefall");
+	do_ping(wp, "rc_firewall");
 }
 
 void ping_custom(webs_t wp)
