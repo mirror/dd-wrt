@@ -292,9 +292,11 @@ static int generate_ap_traffic_keys(gnutls_session_t session)
 	if (ret < 0)
 		return gnutls_assert_val(ret);
 
-	_gnutls_nss_keylog_write(session, "EXPORTER_SECRET",
-				 session->key.proto.tls13.ap_expkey,
-				 session->security_parameters.prf->output_size);
+	ret = _gnutls_call_keylog_func(session, "EXPORTER_SECRET",
+				       session->key.proto.tls13.ap_expkey,
+				       session->security_parameters.prf->output_size);
+	if (ret < 0)
+		return gnutls_assert_val(ret);
 
 	_gnutls_epoch_bump(session);
 	ret = _gnutls_epoch_dup(session, EPOCH_READ_CURRENT);
@@ -508,8 +510,9 @@ int _gnutls13_handshake_server(gnutls_session_t session)
 			_gnutls_set_resumed_parameters(session);
 
 		if (session->internals.hsk_flags & HSK_EARLY_START_USED) {
-			ret = _gnutls13_send_session_ticket(session, TLS13_TICKETS_TO_SEND,
-							    AGAIN(STATE109));
+			if (!(session->internals.flags & GNUTLS_NO_AUTO_SEND_TICKET))
+				ret = _gnutls13_send_session_ticket(session, TLS13_TICKETS_TO_SEND,
+								    AGAIN(STATE109));
 
 			STATE = STATE109;
 			IMED_RET("send session ticket", ret, 0);
@@ -563,7 +566,8 @@ int _gnutls13_handshake_server(gnutls_session_t session)
 
 		FALLTHROUGH;
 	case STATE115:
-		if (!(session->internals.hsk_flags & (HSK_TLS13_TICKET_SENT|HSK_EARLY_START_USED))) {
+		if (!(session->internals.hsk_flags & (HSK_TLS13_TICKET_SENT|HSK_EARLY_START_USED)) &&
+		    !(session->internals.flags & GNUTLS_NO_AUTO_SEND_TICKET)) {
 			ret = _gnutls13_send_session_ticket(session, TLS13_TICKETS_TO_SEND,
 							    AGAIN(STATE115));
 			STATE = STATE115;

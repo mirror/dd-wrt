@@ -35,6 +35,6 @@ int _asn1_convert_integer (const unsigned char *value,
 			   unsigned char *value_out,
 			   int value_out_size, int *len);
 
-void _asn1_hierarchical_name (asn1_node node, char *name, int name_size);
+void _asn1_hierarchical_name (asn1_node_const node, char *name, int name_size);
 
 #endif

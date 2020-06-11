@@ -68,4 +68,7 @@ in different threads.
 @item GNUTLS_@-ENABLE_@-EARLY_@-DATA
 Under TLS1.3 allow the server to receive early data sent as part of the initial ClientHello (0-RTT). 
 This is not enabled by default as early data has weaker security properties than other data. Since 3.6.5.
+@item GNUTLS_@-NO_@-AUTO_@-SEND_@-TICKET
+Under TLS1.3 disable auto-sending of
+session tickets during the handshake.
 @end table

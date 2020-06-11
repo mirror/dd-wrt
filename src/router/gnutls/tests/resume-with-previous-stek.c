@@ -196,8 +196,8 @@ static void server(int fd, unsigned rounds, const char *prio)
 		serverx509cred = NULL;
 	}
 
-	if (num_stek_rotations != 2)
-		fail("STEK should be rotated exactly twice (%d)!\n", num_stek_rotations);
+	if (num_stek_rotations != 3)
+		fail("STEK should be rotated exactly three times (%d)!\n", num_stek_rotations);
 
 	if (serverx509cred)
 		gnutls_certificate_free_credentials(serverx509cred);

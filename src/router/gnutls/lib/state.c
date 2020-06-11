@@ -54,6 +54,10 @@
 #include "tls13/session_ticket.h"
 #include "ext/cert_types.h"
 #include "locks.h"
+#include "kx.h"
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+#include <valgrind/memcheck.h>
+#endif
 
 /* to be used by supplemental data support to disable TLS1.3
  * when supplemental data have been globally registered */
@@ -227,6 +231,32 @@ gnutls_compression_method_t
 gnutls_compression_get(gnutls_session_t session)
 {
 	return GNUTLS_COMP_NULL;
+}
+
+/**
+ * gnutls_prf_hash_get:
+ * @session: is a #gnutls_session_t type.
+ *
+ * Get the currently used hash algorithm. In TLS 1.3, the hash
+ * algorithm is used for both the key derivation function and
+ * handshake message authentication code. In TLS 1.2, it matches the
+ * hash algorithm used for PRF.
+ *
+ * Returns: the currently used hash algorithm, a
+ *    #gnutls_digest_algorithm_t value.
+ *
+ * Since: 3.6.13
+ **/
+gnutls_digest_algorithm_t
+gnutls_prf_hash_get(const gnutls_session_t session)
+{
+	if (session->security_parameters.prf == NULL)
+		return gnutls_assert_val(GNUTLS_DIG_UNKNOWN);
+
+	if (session->security_parameters.prf->id >= GNUTLS_MAC_AEAD)
+		return gnutls_assert_val(GNUTLS_DIG_UNKNOWN);
+
+	return (gnutls_digest_algorithm_t)session->security_parameters.prf->id;
 }
 
 void reset_binders(gnutls_session_t session)
@@ -537,10 +567,25 @@ int gnutls_init(gnutls_session_t * session, unsigned int flags)
 			UINT32_MAX;
 	}
 
-	/* everything else not initialized here is initialized
-	 * as NULL or 0. This is why calloc is used.
+	/* Everything else not initialized here is initialized as NULL
+	 * or 0. This is why calloc is used. However, we want to
+	 * ensure that certain portions of data are initialized at
+	 * runtime before being used. Mark such regions with a
+	 * valgrind client request as undefined.
 	 */
-
+#ifdef HAVE_VALGRIND_MEMCHECK_H
+	if (RUNNING_ON_VALGRIND) {
+		if (flags & GNUTLS_CLIENT)
+			VALGRIND_MAKE_MEM_UNDEFINED((*session)->security_parameters.client_random,
+						    GNUTLS_RANDOM_SIZE);
+		if (flags & GNUTLS_SERVER) {
+			VALGRIND_MAKE_MEM_UNDEFINED((*session)->security_parameters.server_random,
+						    GNUTLS_RANDOM_SIZE);
+			VALGRIND_MAKE_MEM_UNDEFINED((*session)->key.session_ticket_key,
+						    TICKET_MASTER_KEY_SIZE);
+		}
+	}
+#endif
 	handshake_internal_state_clear1(*session);
 
 #ifdef HAVE_WRITEV
@@ -556,6 +601,8 @@ int gnutls_init(gnutls_session_t * session, unsigned int flags)
 	(*session)->internals.pull_timeout_func = gnutls_system_recv_timeout;
 	(*session)->internals.pull_func = system_read;
 	(*session)->internals.errno_func = system_errno;
+
+	(*session)->internals.saved_username_size = -1;
 
 	/* heartbeat timeouts */
 	(*session)->internals.hb_retrans_timeout_ms = 1000;
@@ -586,6 +633,9 @@ int gnutls_init(gnutls_session_t * session, unsigned int flags)
 
 	if (_gnutls_disable_tls13 != 0)
 		(*session)->internals.flags |= INT_FLAG_NO_TLS13;
+
+	/* Install the default keylog function */
+	gnutls_session_set_keylog_function(*session, _gnutls_nss_keylog_func);
 
 	return 0;
 }
@@ -645,6 +695,8 @@ void gnutls_deinit(gnutls_session_t session)
 	_gnutls_free_datum(&session->internals.resumption_data);
 	_gnutls_free_datum(&session->internals.dtls.dcookie);
 
+	for (i = 0; i < session->internals.rexts_size; i++)
+		gnutls_free(session->internals.rexts[i].name);
 	gnutls_free(session->internals.rexts);
 	gnutls_free(session->internals.post_handshake_cr_context.data);
 
@@ -1479,7 +1531,7 @@ gnutls_record_get_state(gnutls_session_t session,
 	}
 
 	if (seq_number)
-		memcpy(seq_number, UINT64DATA(record_state->sequence_number), 8);
+		_gnutls_write_uint64(record_state->sequence_number, seq_number);
 	return 0;
 }
 
@@ -1523,7 +1575,7 @@ gnutls_record_set_state(gnutls_session_t session,
 	else
 		record_state = &record_params->write;
 
-	memcpy(UINT64DATA(record_state->sequence_number), seq_number, 8);
+	record_state->sequence_number = _gnutls_read_uint64(seq_number);
 
 	if (IS_DTLS(session)) {
 		_dtls_reset_window(record_params);
@@ -1574,6 +1626,10 @@ unsigned gnutls_session_get_flags(gnutls_session_t session)
 		flags |= GNUTLS_SFLAGS_POST_HANDSHAKE_AUTH;
 	if (session->internals.hsk_flags & HSK_EARLY_DATA_ACCEPTED)
 		flags |= GNUTLS_SFLAGS_EARLY_DATA;
+	if (session->internals.hsk_flags & HSK_OCSP_REQUESTED)
+		flags |= GNUTLS_SFLAGS_CLI_REQUESTED_OCSP;
+	if (session->internals.hsk_flags & HSK_CLIENT_OCSP_REQUESTED)
+		flags |= GNUTLS_SFLAGS_SERV_REQUESTED_OCSP;
 
 	return flags;
 }

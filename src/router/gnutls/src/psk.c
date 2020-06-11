@@ -141,35 +141,35 @@ int main(int argc, char **argv)
 
 static int filecopy(const char *src, const char *dst)
 {
-	FILE *fd, *fd2;
+	FILE *fp, *fp2;
 	char line[5 * 1024];
 	char *p;
 
-	fd = fopen(dst, "w");
-	if (fd == NULL) {
+	fp = fopen(dst, "w");
+	if (fp == NULL) {
 		fprintf(stderr, "Cannot open '%s' for write\n", dst);
 		return -1;
 	}
 
-	fd2 = fopen(src, "r");
-	if (fd2 == NULL) {
+	fp2 = fopen(src, "r");
+	if (fp2 == NULL) {
 		/* empty file */
-		fclose(fd);
+		fclose(fp);
 		return 0;
 	}
 
 	line[sizeof(line) - 1] = 0;
 	do {
-		p = fgets(line, sizeof(line) - 1, fd2);
+		p = fgets(line, sizeof(line) - 1, fp2);
 		if (p == NULL)
 			break;
 
-		fputs(line, fd);
+		fputs(line, fp);
 	}
 	while (1);
 
-	fclose(fd);
-	fclose(fd2);
+	fclose(fp);
+	fclose(fp2);
 
 	return 0;
 }
@@ -178,7 +178,7 @@ static int
 write_key(const char *username, const char *key, int key_size,
 	  const char *passwd_file)
 {
-	FILE *fd;
+	FILE *fp;
 	char line[5 * 1024];
 	char *p, *pp;
 	char tmpname[1024];
@@ -186,7 +186,7 @@ write_key(const char *username, const char *key, int key_size,
 
 	/* delete previous entry */
 	struct stat st;
-	FILE *fd2;
+	FILE *fp2;
 	int put;
 
 	if (strlen(passwd_file) + 5 > sizeof(tmpname)) {
@@ -207,25 +207,25 @@ write_key(const char *username, const char *key, int key_size,
 		return -1;
 	}
 
-	fd = fopen(passwd_file, "w");
-	if (fd == NULL) {
+	fp = fopen(passwd_file, "w");
+	if (fp == NULL) {
 		fprintf(stderr, "Cannot open '%s' for write\n",
 			passwd_file);
 		(void)remove(tmpname);
 		return -1;
 	}
 
-	fd2 = fopen(tmpname, "r");
-	if (fd2 == NULL) {
+	fp2 = fopen(tmpname, "r");
+	if (fp2 == NULL) {
 		fprintf(stderr, "Cannot open '%s' for read\n", tmpname);
 		(void)remove(tmpname);
-		fclose(fd);
+		fclose(fp);
 		return -1;
 	}
 
 	put = 0;
 	do {
-		p = fgets(line, sizeof(line) - 1, fd2);
+		p = fgets(line, sizeof(line) - 1, fp2);
 		if (p == NULL)
 			break;
 
@@ -237,19 +237,19 @@ write_key(const char *username, const char *key, int key_size,
 			    MAX(strlen(username),
 				(unsigned int) (pp - p))) == 0) {
 			put = 1;
-			fprintf(fd, "%s:%s\n", username, key);
+			fprintf(fp, "%s:%s\n", username, key);
 		} else {
-			fputs(line, fd);
+			fputs(line, fp);
 		}
 	}
 	while (1);
 
 	if (put == 0) {
-		fprintf(fd, "%s:%s\n", username, key);
+		fprintf(fp, "%s:%s\n", username, key);
 	}
 
-	fclose(fd);
-	fclose(fd2);
+	fclose(fp);
+	fclose(fp2);
 
 	(void)remove(tmpname);
 

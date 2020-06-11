@@ -1,5 +1,5 @@
-# printf.m4 serial 61
-dnl Copyright (C) 2003, 2007-2019 Free Software Foundation, Inc.
+# printf.m4 serial 64
+dnl Copyright (C) 2003, 2007-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -93,8 +93,8 @@ changequote([,])dnl
                                    [gl_cv_func_printf_sizes_c99="guessing yes"],
                                    [gl_cv_func_printf_sizes_c99="guessing no"])
                                  ;;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_printf_sizes_c99="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_printf_sizes_c99="$gl_cross_guess_normal";;
          esac
         ])
     ])
@@ -271,8 +271,8 @@ changequote([,])dnl
                                    [gl_cv_func_printf_infinite="guessing yes"],
                                    [gl_cv_func_printf_infinite="guessing no"])
                                  ;;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_printf_infinite="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_printf_infinite="$gl_cross_guess_normal";;
          esac
         ])
     ])
@@ -481,8 +481,8 @@ changequote([,])dnl
                                            [gl_cv_func_printf_infinite_long_double="guessing yes"],
                                            [gl_cv_func_printf_infinite_long_double="guessing no"])
                                          ;;
-                                         # If we don't know, assume the worst.
-                   *)                    gl_cv_func_printf_infinite_long_double="guessing no";;
+                                         # If we don't know, obey --enable-cross-guesses.
+                   *)                    gl_cv_func_printf_infinite_long_double="$gl_cross_guess_normal";;
                  esac
                  ;;
              esac
@@ -587,8 +587,8 @@ int main ()
            linux*-android*)      gl_cv_func_printf_directive_a="guessing no";;
                                  # Guess no on native Windows.
            mingw*)               gl_cv_func_printf_directive_a="guessing no";;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_printf_directive_a="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_printf_directive_a="$gl_cross_guess_normal";;
          esac
         ])
     ])
@@ -656,8 +656,8 @@ changequote([,])dnl
                                    [gl_cv_func_printf_directive_f="guessing yes"],
                                    [gl_cv_func_printf_directive_f="guessing no"])
                                  ;;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_printf_directive_f="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_printf_directive_f="$gl_cross_guess_normal";;
          esac
         ])
     ])
@@ -711,6 +711,16 @@ int main ()
         [gl_cv_func_printf_directive_n=yes],
         [gl_cv_func_printf_directive_n=no],
         [case "$host_os" in
+                            # Guess no on glibc when _FORTIFY_SOURCE >= 2.
+           *-gnu* | gnu*)   AC_COMPILE_IFELSE(
+                              [AC_LANG_SOURCE(
+                                 [[#if _FORTIFY_SOURCE >= 2
+                                    error fail
+                                   #endif
+                                 ]])],
+                              [gl_cv_func_printf_directive_n="guessing yes"],
+                              [gl_cv_func_printf_directive_n="guessing no"])
+                            ;;
                             # Guess no on Android.
            linux*-android*) gl_cv_func_printf_directive_n="guessing no";;
                             # Guess no on native Windows.
@@ -978,8 +988,8 @@ changequote(,)dnl
            linux*-android*) gl_cv_func_printf_flag_zero="guessing no";;
                             # Guess no on native Windows.
            mingw*)          gl_cv_func_printf_flag_zero="guessing no";;
-                            # If we don't know, assume the worst.
-           *)               gl_cv_func_printf_flag_zero="guessing no";;
+                            # If we don't know, obey --enable-cross-guesses.
+           *)               gl_cv_func_printf_flag_zero="$gl_cross_guess_normal";;
          esac
 changequote([,])dnl
         ])
@@ -1156,8 +1166,8 @@ changequote(,)dnl
           haiku*)          gl_cv_func_printf_enomem="guessing yes";;
                            # Guess no on Android.
           linux*-android*) gl_cv_func_printf_enomem="guessing no";;
-                           # If we don't know, assume the worst.
-          *)               gl_cv_func_printf_enomem="guessing no";;
+                           # If we don't know, obey --enable-cross-guesses.
+          *)               gl_cv_func_printf_enomem="$gl_cross_guess_normal";;
         esac
 changequote([,])dnl
       fi
@@ -1255,8 +1265,8 @@ changequote(,)dnl
            linux*-android*)      gl_cv_func_snprintf_truncation_c99="guessing yes";;
                                  # Guess no on native Windows.
            mingw*)               gl_cv_func_snprintf_truncation_c99="guessing no";;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_snprintf_truncation_c99="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_snprintf_truncation_c99="$gl_cross_guess_normal";;
          esac
 changequote([,])dnl
         ])
@@ -1358,8 +1368,8 @@ changequote([,])dnl
                                    [gl_cv_func_snprintf_retval_c99="guessing yes"],
                                    [gl_cv_func_snprintf_retval_c99="guessing no"])
                                  ;;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_snprintf_retval_c99="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_snprintf_retval_c99="$gl_cross_guess_normal";;
          esac
         ])
     ])
@@ -1412,10 +1422,18 @@ int main ()
         [gl_cv_func_snprintf_directive_n=yes],
         [gl_cv_func_snprintf_directive_n=no],
         [
-changequote(,)dnl
          case "$host_os" in
-                                 # Guess yes on glibc systems.
-           *-gnu* | gnu*)        gl_cv_func_snprintf_directive_n="guessing yes";;
+                                 # Guess no on glibc when _FORTIFY_SOURCE >= 2.
+           *-gnu* | gnu*)        AC_COMPILE_IFELSE(
+                                   [AC_LANG_SOURCE(
+                                      [[#if _FORTIFY_SOURCE >= 2
+                                         error fail
+                                        #endif
+                                      ]])],
+                                   [gl_cv_func_snprintf_directive_n="guessing yes"],
+                                   [gl_cv_func_snprintf_directive_n="guessing no"])
+                                 ;;
+changequote(,)dnl
                                  # Guess yes on musl systems.
            *-musl*)              gl_cv_func_snprintf_directive_n="guessing yes";;
                                  # Guess yes on FreeBSD >= 5.
@@ -1446,10 +1464,10 @@ changequote(,)dnl
            linux*-android*)      gl_cv_func_snprintf_directive_n="guessing no";;
                                  # Guess no on native Windows.
            mingw*)               gl_cv_func_snprintf_directive_n="guessing no";;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_snprintf_directive_n="guessing no";;
-         esac
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_snprintf_directive_n="$gl_cross_guess_normal";;
 changequote([,])dnl
+         esac
         ])
     ])
 ])
@@ -1601,8 +1619,8 @@ changequote(,)dnl
            linux*-android*)      gl_cv_func_vsnprintf_zerosize_c99="guessing yes";;
                                  # Guess yes on native Windows.
            mingw* | pw*)         gl_cv_func_vsnprintf_zerosize_c99="guessing yes";;
-                                 # If we don't know, assume the worst.
-           *)                    gl_cv_func_vsnprintf_zerosize_c99="guessing no";;
+                                 # If we don't know, obey --enable-cross-guesses.
+           *)                    gl_cv_func_vsnprintf_zerosize_c99="$gl_cross_guess_normal";;
          esac
 changequote([,])dnl
         ])

@@ -83,6 +83,7 @@ aes_gcm_cipher_init(gnutls_cipher_algorithm_t algorithm, void **_ctx,
 {
 	/* we use key size to distinguish */
 	if (algorithm != GNUTLS_CIPHER_AES_128_GCM &&
+	    algorithm != GNUTLS_CIPHER_AES_192_GCM &&
 	    algorithm != GNUTLS_CIPHER_AES_256_GCM)
 		return GNUTLS_E_INVALID_REQUEST;
 

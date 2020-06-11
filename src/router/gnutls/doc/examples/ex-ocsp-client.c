@@ -183,7 +183,7 @@ static gnutls_x509_crt_t load_cert(const char *cert_file)
         if (ret < 0)
                 exit(1);
 
-        data.data = (void *) read_binary_file(cert_file, &size);
+        data.data = (void *) read_file(cert_file, RF_BINARY, &size);
         data.size = size;
 
         if (!data.data) {

@@ -64,6 +64,31 @@ static void print_dn(gnutls_buffer_st * str, const char *prefix,
 	gnutls_free(output.data);
 }
 
+/* Do not encode ASN1 and type for now */
+#define ENTRY(oid, name, type) {oid, sizeof(oid)-1, name, sizeof(name)-1, NULL, type}
+#define ENTRY2(oid, name) {oid, sizeof(oid)-1, name, sizeof(name)-1, NULL, ASN1_ETYPE_INVALID}
+
+static const struct oid_to_string pkcs7_attrs[] = {
+	ENTRY ("1.2.840.113549.1.9.3", "contentType", ASN1_ETYPE_OBJECT_ID),
+	ENTRY ("1.2.840.113549.1.9.4", "messageDigest", ASN1_ETYPE_OCTET_STRING),
+	ENTRY ("1.2.840.113549.1.9.5", "signingTime", ASN1_ETYPE_INVALID),
+	ENTRY2("1.2.840.113549.1.9.6", "countersignature"),
+	ENTRY2("1.2.840.113549.1.9.15", "smimeCapabilities"),
+
+	ENTRY2("1.2.840.113549.1.9.16.2.1", "aa-receiptRequest"),
+	ENTRY2("1.2.840.113549.1.9.16.2.2", "aa-securityLabel"),
+	ENTRY2("1.2.840.113549.1.9.16.2.3", "aa-mlExpandHistory"),
+	ENTRY2("1.2.840.113549.1.9.16.2.4", "aa-contentHint"),
+	ENTRY2("1.2.840.113549.1.9.16.2.9", "aa-equivalentLabels"),
+	ENTRY2("1.2.840.113549.1.9.16.2.10", "aa-contentReference"),
+	ENTRY2("1.2.840.113549.1.9.16.2.11", "aa-encrypKeyPref"),
+	ENTRY2("1.2.840.113549.1.9.16.2.12", "aa-signingCertificate"),
+	ENTRY2("1.2.840.113549.1.9.16.2.19", "aa-ets-otherSigCert"),
+	ENTRY2("1.2.840.113549.1.9.16.2.47", "aa-signingCertificateV2"),
+
+	{NULL, 0, NULL, 0, NULL, 0}
+};
+
 static void print_raw(gnutls_buffer_st * str, const char *prefix,
 		      const gnutls_datum_t * raw)
 {
@@ -94,6 +119,7 @@ static void print_pkcs7_info(gnutls_pkcs7_signature_info_st * info,
 	char s[42];
 	size_t max;
 	int ret;
+	const struct oid_to_string * entry;
 
 	if (info->issuer_dn.size > 0)
 		print_dn(str, "\tSigner's issuer DN", &info->issuer_dn);
@@ -130,7 +156,9 @@ static void print_pkcs7_info(gnutls_pkcs7_signature_info_st * info,
 				if (i == 0)
 					addf(str, "\tSigned Attributes:\n");
 
-				snprintf(prefix, sizeof(prefix), "\t\t%s", oid);
+				entry = _gnutls_oid_get_entry(pkcs7_attrs, oid);
+				snprintf(prefix, sizeof(prefix), "\t\t%s",
+						(entry && entry->name_desc) ? entry->name_desc : oid);
 				print_raw(str, prefix, &data);
 				gnutls_free(data.data);
 			}
@@ -145,13 +173,46 @@ static void print_pkcs7_info(gnutls_pkcs7_signature_info_st * info,
 				if (i == 0)
 					addf(str, "\tUnsigned Attributes:\n");
 
-				snprintf(prefix, sizeof(prefix), "\t\t%s", oid);
+				entry = _gnutls_oid_get_entry(pkcs7_attrs, oid);
+				snprintf(prefix, sizeof(prefix), "\t\t%s",
+						(entry && entry->name_desc) ? entry->name_desc : oid);
 				print_raw(str, prefix, &data);
 				gnutls_free(data.data);
 			}
 		}
 	}
 	adds(str, "\n");
+}
+
+/**
+ * gnutls_pkcs7_print_signature_info:
+ * @info: The PKCS7 signature info struct to be printed
+ * @format: Indicate the format to use
+ * @out: Newly allocated datum with null terminated string.
+ *
+ * This function will pretty print a PKCS #7 signature info structure, suitable
+ * for display to a human.
+ *
+ * Currently the supported formats are %GNUTLS_CRT_PRINT_FULL and
+ * %GNUTLS_CRT_PRINT_COMPACT.
+ *
+ * The output @out needs to be deallocated using gnutls_free().
+ *
+ * Returns: On success, %GNUTLS_E_SUCCESS (0) is returned, otherwise a
+ *   negative error value.
+ *
+ * Since: 3.6.14
+ **/
+int gnutls_pkcs7_print_signature_info(gnutls_pkcs7_signature_info_st * info,
+				      gnutls_certificate_print_formats_t format,
+				      gnutls_datum_t * out)
+{
+	gnutls_buffer_st str;
+
+	_gnutls_buffer_init(&str);
+	print_pkcs7_info(info, &str, format);
+
+	return _gnutls_buffer_to_datum(&str, out, 1);
 }
 
 /**

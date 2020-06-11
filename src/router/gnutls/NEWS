@@ -5,6 +5,169 @@ Copyright (C) 2000-2016 Free Software Foundation, Inc.
 Copyright (C) 2013-2019 Nikos Mavrogiannopoulos
 See the end for copying conditions.
 
+* Version 3.6.14 (released 2020-06-03)
+
+** libgnutls: Fixed insecure session ticket key construction, since 3.6.4.
+   The TLS server would not bind the session ticket encryption key with a
+   value supplied by the application until the initial key rotation, allowing
+   attacker to bypass authentication in TLS 1.3 and recover previous
+   conversations in TLS 1.2 (#1011).
+   [GNUTLS-SA-2020-06-03, CVSS: high]
+
+** libgnutls: Fixed handling of certificate chain with cross-signed
+   intermediate CA certificates (#1008).
+
+** libgnutls: Fixed reception of empty session ticket under TLS 1.2 (#997).
+
+** libgnutls: gnutls_x509_crt_print() is enhanced to recognizes commonName
+   (2.5.4.3), decodes certificate policy OIDs (!1245), and prints Authority
+   Key Identifier (AKI) properly (#989, #991).
+
+** certtool: PKCS #7 attributes are now printed with symbolic names (!1246).
+
+** libgnutls: Added several improvements on Windows Vista and later releases
+   (!1257, !1254, !1256). Most notably the system random number generator now
+   uses Windows BCrypt* API if available (!1255).
+
+** libgnutls: Use accelerated AES-XTS implementation if possible (!1244).
+   Also both accelerated and non-accelerated implementations check key block
+   according to FIPS-140-2 IG A.9 (!1233).
+
+** libgnutls: Added support for AES-SIV ciphers (#463).
+
+** libgnutls: Added support for 192-bit AES-GCM cipher (!1267).
+
+** libgnutls: No longer use internal symbols exported from Nettle (!1235)
+
+** API and ABI modifications:
+GNUTLS_CIPHER_AES_128_SIV: Added
+GNUTLS_CIPHER_AES_256_SIV: Added
+GNUTLS_CIPHER_AES_192_GCM: Added
+gnutls_pkcs7_print_signature_info: Added
+
+* Version 3.6.13 (released 2020-03-31)
+
+** libgnutls: Fix a DTLS-protocol regression (caused by TLS1.3 support), since 3.6.3.
+   The DTLS client would not contribute any randomness to the DTLS negotiation,
+   breaking the security guarantees of the DTLS protocol (#960)
+   [GNUTLS-SA-2020-03-31, CVSS: high]
+
+** libgnutls: Added new APIs to access KDF algorithms (#813).
+
+** libgnutls: Added new callback gnutls_keylog_func that enables a custom
+   logging functionality.
+
+** libgnutls: Added support for non-null terminated usernames in PSK
+   negotiation (#586).
+
+** gnutls-cli-debug: Improved support for old servers that only support
+   SSL 3.0.
+
+** API and ABI modifications:
+gnutls_hkdf_extract: Added
+gnutls_hkdf_expand: Added
+gnutls_pbkdf2: Added
+gnutls_session_get_keylog_function: Added
+gnutls_session_set_keylog_function: Added
+gnutls_prf_hash_get: Added
+gnutls_psk_server_get_username2: Added
+gnutls_psk_set_client_credentials2: Added
+gnutls_psk_set_client_credentials_function2: Added
+gnutls_psk_set_server_credentials_function2: Added
+
+
+* Version 3.6.12 (released 2020-02-01)
+
+** libgnutls: Introduced TLS session flag (gnutls_session_get_flags())
+   to identify sessions that client request OCSP status request (#829).
+
+** libgnutls: Added support for X448 key exchange (RFC 7748) and Ed448
+   signature algorithm (RFC 8032) under TLS (#86).
+
+** libgnutls: Added the default-priority-string option to system configuration;
+   it allows overriding the compiled-in default-priority-string.
+
+** libgnutls: Added support for GOST CNT_IMIT ciphersuite (as defined by
+   draft-smyshlyaev-tls12-gost-suites-07).
+   By default this ciphersuite is disabled. It can be enabled by adding
+   +GOST to priority string. In the future this priority string may enable
+   other GOST ciphersuites as well.  Note, that server will fail to negotiate
+   GOST ciphersuites if TLS 1.3 is enabled both on a server and a client. It
+   is recommended for now to disable TLS 1.3 in setups where GOST ciphersuites
+   are enabled on GnuTLS-based servers.
+
+** libgnutls: added priority shortcuts for different GOST categories like
+   CIPHER-GOST-ALL, MAC-GOST-ALL, KX-GOST-ALL, SIGN-GOST-ALL, GROUP-GOST-ALL.
+
+** libgnutls: Reject certificates with invalid time fields. That is we reject
+   certificates with invalid characters in Time fields, or invalid time formatting
+   To continue accepting the invalid form compile with --disable-strict-der-time
+   (#207, #870).
+
+** libgnutls: Reject certificates which contain duplicate extensions. We were
+   previously printing warnings when printing such a certificate, but that is
+   not always sufficient to flag such certificates as invalid. Instead we now
+   refuse to import them (#887).
+
+** libgnutls: If a CA is found in the trusted list, check in addition to
+   time validity, whether the algorithms comply to the expected level prior
+   to accepting it. This addresses the problem of accepting CAs which would
+   have been marked as insecure otherwise (#877).
+
+** libgnutls: The min-verification-profile from system configuration applies
+   for all certificate verifications, not only under TLS. The configuration can
+   be overriden using the GNUTLS_SYSTEM_PRIORITY_FILE environment variable.
+
+** libgnutls: The stapled OCSP certificate verification adheres to the convention
+   used throughout the library of setting the 'GNUTLS_CERT_INVALID' flag.
+
+** libgnutls: On client side only send OCSP staples if they have been requested
+   by the server, and on server side always advertise that we support OCSP stapling
+   (#876).
+
+** libgnutls: Introduced the gnutls_ocsp_req_const_t which is compatible
+   with gnutls_ocsp_req_t but const.
+
+** certtool: Added the --verify-profile option to set a certificate
+   verification profile. Use '--verify-profile low' for certificate verification
+   to apply the 'NORMAL' verification profile.
+
+** certtool: The add_extension template option is considered even when generating
+   a certificate from a certificate request.
+
+** API and ABI modifications:
+GNUTLS_SFLAGS_CLI_REQUESTED_OCSP: Added
+GNUTLS_SFLAGS_SERV_REQUESTED_OCSP: Added
+gnutls_ocsp_req_const_t: Added
+
+
+* Version 3.6.11 (released 2019-12-01)
+
+** libgnutls: Use KERN_ARND for the system random number generator on NetBSD.
+   This syscall provides an endless stream of random numbers from the kernel's
+   ChaCha20-based random number generator, without blocking or requiring an open file
+   descriptor.
+
+** libgnutls: Corrected issue with TLS 1.2 session ticket handling as client
+   during resumption (#841).
+
+** libgnutls: gnutls_base64_decode2() succeeds decoding the empty string to
+   the empty string. This is a behavioral change of the API but it conforms
+   to the RFC4648 expectations (#834).
+
+** libgnutls: Fixed AES-CFB8 implementation, when input is shorter than
+   the block size. Fix backported from nettle.
+
+** certtool: CRL distribution points will be set in CA certificates even when
+   non self-signed (#765).
+
+** gnutls-cli/serv: added raw public-key handling capabilities (RFC7250).
+   Key material can be set via the --rawpkkeyfile and --rawpkfile flags.
+
+** API and ABI modifications:
+No changes since last version.
+
+
 * Version 3.6.10 (released 2019-09-29)
 
 ** libgnutls: Added support for deterministic ECDSA/DSA (RFC6979)

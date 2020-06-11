@@ -30,12 +30,7 @@
 
 # include <idn2.h>
 
-#if IDN2_VERSION_NUMBER < 0x02000000
-# define idn2_to_ascii_8z idn2_lookup_u8
-# define ICAST uint8_t
-#else
 # define ICAST char
-#endif
 
 /**
  * gnutls_idna_map:
@@ -69,7 +64,6 @@ int gnutls_idna_map(const char *input, unsigned ilen, gnutls_datum_t *out, unsig
 	unsigned int idn2_flags = IDN2_NFC_INPUT;
 	unsigned int idn2_tflags = IDN2_NFC_INPUT;
 
-#if IDN2_VERSION_NUMBER >= 0x00140000
 	/* IDN2_NONTRANSITIONAL automatically converts to lowercase
 	 * IDN2_NFC_INPUT converts to NFC before toASCII conversion
 	 *
@@ -83,15 +77,6 @@ int gnutls_idna_map(const char *input, unsigned ilen, gnutls_datum_t *out, unsig
 	 * 'evil.ca/c.example.com', which seems no good idea. */
 	idn2_flags |= IDN2_NONTRANSITIONAL | IDN2_USE_STD3_ASCII_RULES;
 	idn2_tflags |= IDN2_TRANSITIONAL | IDN2_USE_STD3_ASCII_RULES;
-#endif
-
-	/* This avoids excessive CPU usage with libidn2 < 2.1.1 */
-	if (ilen > 2048) {
-		gnutls_assert();
-		_gnutls_debug_log("unable to convert name '%.*s' to IDNA format: %s\n",
-			(int) ilen, input, idn2_strerror(IDN2_TOO_BIG_DOMAIN));
-		return GNUTLS_E_INVALID_UTF8_STRING;
-	}
 
 	if (ilen == 0) {
 		out->data = (uint8_t*)gnutls_strdup("");
@@ -137,73 +122,6 @@ int gnutls_idna_map(const char *input, unsigned ilen, gnutls_datum_t *out, unsig
 	gnutls_free(istr.data);
 	return ret;
 }
-
-#if IDN2_VERSION_NUMBER < 0x02000000
-int _idn2_punycode_decode(
-	size_t input_length,
-	const char input[],
-	size_t *output_length,
-	uint32_t output[],
-	unsigned char case_flags[]);
-
-static int idn2_to_unicode_8z8z(const char *src, char **dst, unsigned flags)
-{
-	int rc, run;
-	size_t out_len = 0;
-	const char *e, *s;
-	char *p = NULL;
-
-	for (run = 0; run < 2; run++) {
-		if (run) {
-			p = malloc(out_len + 1);
-			if (!p)
-				return IDN2_MALLOC;
-			*dst = p;
-		}
-
-		out_len = 0;
-		for (e = s = src; *e; s = e) {
-			while (*e && *e != '.')
-				e++;
-
-			if (e - s > 4 && (s[0] == 'x' || s[0] == 'X') && (s[1] == 'n' || s[1] == 'N') && s[2] == '-' && s[3] == '-') {
-				size_t u32len = IDN2_LABEL_MAX_LENGTH * 4;
-				uint32_t u32[IDN2_LABEL_MAX_LENGTH * 4];
-				uint8_t u8[IDN2_LABEL_MAX_LENGTH + 1];
-				size_t u8len;
-
-				rc = _idn2_punycode_decode(e - s - 4, s + 4, &u32len, u32, NULL);
-				if (rc != IDN2_OK)
-					return rc;
-
-				u8len = sizeof(u8);
-				if (u32_to_u8(u32, u32len, u8, &u8len) == NULL)
-					return IDN2_ENCODING_ERROR;
-				u8[u8len] = '\0';
-
-				if (run)
-					memcpy(*dst + out_len, u8, u8len);
-				out_len += u8len;
-			} else {
-				if (run)
-					memcpy(*dst + out_len, s, e - s);
-				out_len += e - s;
-			}
-
-			if (*e) {
-				e++;
-				if (run)
-					(*dst)[out_len] = '.';
-				out_len++;
-			}
-		}
-	}
-
-	(*dst)[out_len] = 0;
-
-	return IDN2_OK;
-}
-#endif
 
 /**
  * gnutls_idna_reverse_map:

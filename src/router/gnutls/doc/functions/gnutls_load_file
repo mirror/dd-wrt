@@ -11,6 +11,10 @@ This function will load a file into a datum. The data are
 zero terminated but the terminating null is not included in length.
 The returned data are allocated using @code{gnutls_malloc()} .
 
+Note that this function is not designed for reading sensitive materials,
+such as private keys, on practical applications. When the reading fails
+in the middle, the partially loaded content might remain on memory.
+
 @strong{Returns:} On success, @code{GNUTLS_E_SUCCESS}  (0) is returned, otherwise
 an error code is returned.
 

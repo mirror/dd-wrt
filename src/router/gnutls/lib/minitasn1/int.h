@@ -29,7 +29,6 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
 #include <stdint.h>
 
 #ifdef HAVE_SYS_TYPES_H
@@ -135,39 +134,39 @@ extern const tag_and_class_st _asn1_tags[];
 /* List of constants to better specify the type of typedef asn1_node_st.   */
 /***********************************************************************/
 /*  Used with TYPE_TAG  */
-#define CONST_UNIVERSAL   (1<<8)
-#define CONST_PRIVATE     (1<<9)
-#define CONST_APPLICATION (1<<10)
-#define CONST_EXPLICIT    (1<<11)
-#define CONST_IMPLICIT    (1<<12)
+#define CONST_UNIVERSAL   (1U<<8)
+#define CONST_PRIVATE     (1U<<9)
+#define CONST_APPLICATION (1U<<10)
+#define CONST_EXPLICIT    (1U<<11)
+#define CONST_IMPLICIT    (1U<<12)
 
-#define CONST_TAG         (1<<13)	/*  Used in ASN.1 assignement  */
-#define CONST_OPTION      (1<<14)
-#define CONST_DEFAULT     (1<<15)
-#define CONST_TRUE        (1<<16)
-#define CONST_FALSE       (1<<17)
+#define CONST_TAG         (1U<<13)	/*  Used in ASN.1 assignement  */
+#define CONST_OPTION      (1U<<14)
+#define CONST_DEFAULT     (1U<<15)
+#define CONST_TRUE        (1U<<16)
+#define CONST_FALSE       (1U<<17)
 
-#define CONST_LIST        (1<<18)	/*  Used with TYPE_INTEGER and TYPE_BIT_STRING  */
-#define CONST_MIN_MAX     (1<<19)
+#define CONST_LIST        (1U<<18)	/*  Used with TYPE_INTEGER and TYPE_BIT_STRING  */
+#define CONST_MIN_MAX     (1U<<19)
 
-#define CONST_1_PARAM     (1<<20)
+#define CONST_1_PARAM     (1U<<20)
 
-#define CONST_SIZE        (1<<21)
+#define CONST_SIZE        (1U<<21)
 
-#define CONST_DEFINED_BY  (1<<22)
+#define CONST_DEFINED_BY  (1U<<22)
 
 /* Those two are deprecated and used for backwards compatibility */
-#define CONST_GENERALIZED (1<<23)
-#define CONST_UTC         (1<<24)
+#define CONST_GENERALIZED (1U<<23)
+#define CONST_UTC         (1U<<24)
 
-/* #define CONST_IMPORTS     (1<<25) */
+/* #define CONST_IMPORTS     (1U<<25) */
 
-#define CONST_NOT_USED    (1<<26)
-#define CONST_SET         (1<<27)
-#define CONST_ASSIGN      (1<<28)
+#define CONST_NOT_USED    (1U<<26)
+#define CONST_SET         (1U<<27)
+#define CONST_ASSIGN      (1U<<28)
 
-#define CONST_DOWN        (1<<29)
-#define CONST_RIGHT       (1<<30)
+#define CONST_DOWN        (1U<<29)
+#define CONST_RIGHT       (1U<<30)
 
 
 #define ASN1_ETYPE_TIME 17

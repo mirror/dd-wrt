@@ -1,5 +1,5 @@
-# stdlib_h.m4 serial 48
-dnl Copyright (C) 2007-2019 Free Software Foundation, Inc.
+# stdlib_h.m4 serial 49
+dnl Copyright (C) 2007-2020 Free Software Foundation, Inc.
 dnl This file is free software; the Free Software Foundation
 dnl gives unlimited permission to copy and/or distribute it,
 dnl with or without modifications, as long as this notice is preserved.
@@ -27,6 +27,8 @@ AC_DEFUN([gl_STDLIB_H],
     posix_openpt ptsname ptsname_r qsort_r random random_r reallocarray
     realpath rpmatch secure_getenv setenv setstate setstate_r srandom
     srandom_r strtod strtold strtoll strtoull unlockpt unsetenv])
+
+  AC_REQUIRE([AC_C_RESTRICT])
 ])
 
 AC_DEFUN([gl_STDLIB_MODULE_INDICATOR],

@@ -37,7 +37,7 @@
 
 #include <gnutls_int.h>
 
-#include "ecc-internal.h"
+#include "ecc/ecc-internal.h"
 
 /* Convert hash value to an integer. If the digest is larger than
    the ecc bit size, then we must truncate it and use the leftmost
