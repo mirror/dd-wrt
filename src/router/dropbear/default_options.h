@@ -148,7 +148,7 @@ If you test it please contact the Dropbear author */
  * which are not the standard form. */
 #define DROPBEAR_SHA1_HMAC 1
 #define DROPBEAR_SHA1_96_HMAC 0
-#define DROPBEAR_SHA2_256_HMAC 0
+#define DROPBEAR_SHA2_256_HMAC 1
 #define DROPBEAR_SHA2_512_HMAC 0
 #define DROPBEAR_MD5_HMAC 1
 
