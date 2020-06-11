@@ -1184,7 +1184,7 @@ void removeLineBreak(char *startup)
 
 }
 
-static void do_ping(webs_t wp, char *type)
+static void do_script_save(webs_t wp, char *type)
 {
 	char fname[32];
 	sprintf(fname, "/tmp/.%s", type);
@@ -1202,29 +1202,29 @@ static void do_ping(webs_t wp, char *type)
 
 }
 
-void ping_startup(webs_t wp)
+void save_startup(webs_t wp)
 {
-	do_ping(wp, "rc_startup");
+	do_script_save(wp, "rc_startup");
 }
 
-void ping_shutdown(webs_t wp)
+void save_shutdown(webs_t wp)
 {
-	do_ping(wp, "rc_shutdown");
+	do_script_save(wp, "rc_shutdown");
 }
 
-void ping_firewall(webs_t wp)
+void save_firewall(webs_t wp)
 {
-	do_ping(wp, "rc_firewall");
+	do_script_save(wp, "rc_firewall");
 }
 
-void ping_custom(webs_t wp)
+void save_custom(webs_t wp)
 {
-	do_ping(wp, "rc_custom");
+	do_script_save(wp, "rc_custom");
 }
 
-void ping_usb(webs_t wp)
+void save_usb(webs_t wp)
 {
-	do_ping(wp, "rc_usb");
+	do_script_save(wp, "rc_usb");
 }
 
 void ping_wol(webs_t wp)
