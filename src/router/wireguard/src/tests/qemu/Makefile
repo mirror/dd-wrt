@@ -43,13 +43,23 @@ $(DISTFILES_PATH)/$(1):
 	flock -x $$@.lock -c '[ -f $$@ ] && exit 0; wget -O $$@ $(MIRROR)$(1) || wget -t inf --retry-on-http-error=404 -O $$@ $(2)$(1) || rm -f $$@'
 endef
 
+ifneq ($(findstring https://,$(KERNEL_VERSION)),)
+KERNEL_URL := $(word 1,$(KERNEL_VERSION))
+KERNEL_NAME := $(word 2,$(KERNEL_VERSION))
+KERNEL_TAR := $(DISTFILES_PATH)/linux-$(KERNEL_NAME)-$(notdir $(KERNEL_URL))
+KERNEL_PATH := $(BUILD_PATH)/linux-$(KERNEL_NAME)
+KERNEL_VERSION := $(KERNEL_NAME)
+$(KERNEL_TAR):
+	mkdir -p $(DISTFILES_PATH)
+	flock -x $@.lock -c '[ -f $@ ] && exit 0; wget -O $@ $(KERNEL_URL) || rm -f $@'
+else
 ifeq ($(findstring -rc,$(KERNEL_VERSION)),)
 KERNEL_URL_DIRECTORY := https://cdn.kernel.org/pub/linux/kernel/v$(firstword $(subst ., ,$(KERNEL_VERSION:-debug=))).x/
 else
 KERNEL_URL_DIRECTORY := https://git.kernel.org/torvalds/t/
 endif
-
 $(eval $(call tar_download,KERNEL,linux,$(KERNEL_VERSION),.tar.gz,$(KERNEL_URL_DIRECTORY)))
+endif
 $(eval $(call tar_download,MUSL,musl,1.1.24,.tar.gz,https://www.musl-libc.org/releases/))
 $(eval $(call tar_download,LIBMNL,libmnl,1.0.4,.tar.bz2,https://www.netfilter.org/projects/libmnl/files/))
 $(eval $(call tar_download,IPERF,iperf,3.7,.tar.gz,https://downloads.es.net/pub/iperf/))
@@ -67,7 +77,7 @@ export CPPFLAGS := -I$(BUILD_PATH)/include
 ifeq ($(HOST_ARCH),$(ARCH))
 CROSS_COMPILE_FLAG := --host=$(CHOST)
 CFLAGS += -march=native
-OMIT_AVX512 := $(shell gcc -march=native -Q --help=target | sed -n 's/.*\-m\(avx512[^ ]*\).*\[enabled\].*/-mno-\1/p')
+OMIT_AVX512 := $(shell $(CBUILD)-gcc -march=native -Q --help=target | sed -n 's/.*\-m\(avx512[^ ]*\).*\[enabled\].*/-mno-\1/p')
 CFLAGS += $(OMIT_AVX512)
 STRIP := strip
 else
@@ -263,6 +273,11 @@ $(KERNEL_PATH)/.installed: $(KERNEL_TAR)
 	flock -s $<.lock tar --strip-components=1 -C $(KERNEL_PATH) -xf $<
 	find $(KERNEL_PATH) -type f -name Makefile -exec sed -i 's/-Werror\(\s\|$$\)//g' {} +
 	sed -i "/printf '\\\\#/d" $(KERNEL_PATH)/tools/build/Build.include || true
+	sed -i '/jmp early_idt_handler$$/a .fill early_idt_handlers + i*9 - ., 1, 0xcc' $(KERNEL_PATH)/arch/x86/kernel/head_{64,32}.S || true
+	printf 'ifdef CONFIG_X86_64\nLDFLAGS += $$(call ld-option, -z max-page-size=0x200000)\nendif\n' >> $(KERNEL_PATH)/arch/x86/Makefile
+	sed -i 's/^Elf_Addr per_cpu_load_addr;$$/static \0/' $(KERNEL_PATH)/arch/x86/tools/relocs.c || true
+	sed -i 's/pages = generic_max_swapfile_size();/pages = IS_ENABLED(CONFIG_SWAP) ? generic_max_swapfile_size() : 0;/' $(KERNEL_PATH)/arch/x86/mm/init.c || true
+	if grep -qr UTS_UBUNTU_RELEASE_ABI $(KERNEL_PATH)/debian/rules.d; then echo 'KBUILD_CFLAGS += -DUTS_UBUNTU_RELEASE_ABI=0' >> $(KERNEL_PATH)/Makefile; fi
 	sed -i "/^if INET\$$/a source \"net/wireguard/Kconfig\"" $(KERNEL_PATH)/net/Kconfig
 	sed -i "/^obj-\$$(CONFIG_NETFILTER).*+=/a obj-\$$(CONFIG_WIREGUARD) += wireguard/" $(KERNEL_PATH)/net/Makefile
 	ln -sfT $(shell readlink -f ../..) $(KERNEL_PATH)/net/wireguard
