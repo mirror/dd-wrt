@@ -135,7 +135,7 @@ static void __compat_fake_destructor(struct sk_buff *skb)
 {
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
 static void __compat_iptunnel_xmit(struct rtable *rt, struct sk_buff *skb,
 		  __be32 src, __be32 dst, __u8 proto,
 		  __u8 tos, __u8 ttl, __be16 df, bool xnet)
@@ -183,7 +183,7 @@ void udp_tunnel_xmit_skb(struct rtable *rt, struct sock *sk, struct sk_buff *skb
 			 bool xnet, bool nocheck)
 {
 	struct udphdr *uh;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 	struct net_device *dev = skb->dev;
 	int ret;
 #endif
@@ -204,15 +204,22 @@ void udp_tunnel_xmit_skb(struct rtable *rt, struct sock *sk, struct sk_buff *skb
 		skb->sk = sk;
 	if (!skb->destructor)
 		skb->destructor = __compat_fake_destructor;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 	ret =
 #endif
 	     iptunnel_xmit(
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 15, 0)
 			   sk,
 #endif
-			   rt, skb, src, dst, IPPROTO_UDP, tos, ttl, df, xnet);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 12, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
+			   dev_net(dev),
+#endif
+			   rt, skb, src, dst, IPPROTO_UDP, tos, ttl, df
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) || LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+			   , xnet
+#endif
+	     );
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 	if (ret)
 		iptunnel_xmit_stats(ret - 8, &dev->stats, dev->tstats);
 #endif
