@@ -105,7 +105,7 @@ stopservice rsync
 killall wdswatchdog.sh
 killall schedulerb.sh
 killall proxywatchdog.sh
-nvram_set("shutdown", "fast");
+nvram set shutdown=fast
 if [ -f /tmp/${UPDATEFILE} ]
 then
 	mv /tmp/${UPDATEFILE} ${R}/tmp/
