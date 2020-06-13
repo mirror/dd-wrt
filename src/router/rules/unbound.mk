@@ -1,3 +1,19 @@
+ifeq ($(ARCH),arm)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),mips64)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),i386)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),x86_64)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
+ifeq ($(ARCH),aarch64)
+UNBOUND_COPTS += -DNEED_PRINTF
+endif
+
 unbound-configure:
 	cd unbound && ./configure --disable-ecdsa \
 		--disable-gost \
@@ -12,7 +28,7 @@ unbound-configure:
 		--sysconfdir=/etc \
 		--host=$(ARCH)-linux \
 		CC="$(CC)" \
-		CFLAGS="$(COPTS) $(MIPS16_OPT) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) $(UNBOUND_COPTS) -ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl" \
 		LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl"
 
 unbound: 
@@ -31,7 +47,7 @@ unbound-install:
 	rm -rf $(INSTALLDIR)/unbound/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/unbound/usr/lib/*.la
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-checkconf
-	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control
+#	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control-setup
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-host
 	
