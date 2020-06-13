@@ -441,10 +441,10 @@ void close_id_del_oplock(struct ksmbd_file *fp)
 	rcu_assign_pointer(fp->f_opinfo, NULL);
 	if (opinfo->op_state == OPLOCK_ACK_WAIT) {
 		opinfo->op_state = OPLOCK_CLOSING;
-		wake_up_interruptible(&opinfo->oplock_q);
+		wake_up_interruptible_all(&opinfo->oplock_q);
 		if (opinfo->is_lease) {
 			atomic_set(&opinfo->breaking_cnt, 0);
-			wake_up_interruptible(&opinfo->oplock_brk);
+			wake_up_interruptible_all(&opinfo->oplock_brk);
 		}
 	}
 
@@ -1058,7 +1058,7 @@ static void wait_lease_breaking(struct oplock_info *opinfo)
 	if (!opinfo->is_lease)
 		return;
 
-	wake_up_interruptible(&opinfo->oplock_brk);
+	wake_up_interruptible_all(&opinfo->oplock_brk);
 	if (atomic_read(&opinfo->breaking_cnt)) {
 		int ret = 0;
 
