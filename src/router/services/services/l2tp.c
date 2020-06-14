@@ -81,7 +81,7 @@ void start_l2tp(int status)
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 		struct dns_lists *dns_list = NULL;
 		dns_to_resolv();
-		dns_list = get_dns_list();
+		dns_list = get_dns_list(0);
 		int i = 0;
 
 		if (dns_list) {

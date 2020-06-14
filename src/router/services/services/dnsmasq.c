@@ -345,7 +345,7 @@ void start_dnsmasq(void)
 			} else
 #endif
 			{
-				dns_list = get_dns_list();
+				dns_list = get_dns_list(0);
 
 				if (dns_list && dns_list->num_servers > 0) {
 

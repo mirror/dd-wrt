@@ -321,7 +321,7 @@ static int bound(void)
 
 		dns_to_resolv();
 
-		dns_list = get_dns_list();
+		dns_list = get_dns_list(0);
 		int i = 0;
 
 		if (dns_list) {
@@ -356,7 +356,7 @@ static int bound(void)
 
 		dns_to_resolv();
 
-		dns_list = get_dns_list();
+		dns_list = get_dns_list(0);
 
 		int i = 0;
 

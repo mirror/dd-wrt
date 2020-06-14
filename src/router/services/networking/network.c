@@ -4181,7 +4181,7 @@ void start_wan(int status)
 				ifconfig(wan_iface, IFUP, nvram_safe_get("wan_ipaddr_static"), nvram_safe_get("wan_netmask_static"));
 
 			dns_to_resolv();
-			dns_list = get_dns_list();
+			dns_list = get_dns_list(0);
 
 			if (dns_list)
 				for (i = 0; i < dns_list->num_servers; i++)
