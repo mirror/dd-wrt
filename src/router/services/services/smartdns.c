@@ -77,7 +77,7 @@ void start_smartdns(void)
 		if (dns_list && dns_list->num_servers > 0) {
 			int i;
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "server %s\n", dns_list->dns_server[i]);
+				fprintf(fp, "server %s\n", dns_list->dns_server[i].ip);
 			if (dns_list)
 				free_dns_list(dns_list);
 		}

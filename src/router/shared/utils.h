@@ -966,15 +966,19 @@ enum { BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM5350_CHIP, BCM5365_CHIP,
 enum { FIRST, SECOND };
 
 #define ACTION(cmd)	buf_to_file(ACTION_FILE, cmd)
+struct dns_entry {
+	int type; //0 = isp, 1 = user defined
+	int ipv6; // 0 = ipv4, 1 = ipv6
+	char *ip;
+};
 
 struct dns_lists {
 	int num_servers;
-	int wan_offset;
-	char **dns_server;
+	struct dns_entry *dns_server;
 };
 
-extern char *get_dns_entry(struct dns_lists *dns_list, int idx);
-extern struct dns_lists *get_dns_list(int v4only);
+extern struct dns_entry *get_dns_entry(struct dns_lists *dns_list, int idx);
+extern struct dns_lists *get_dns_list(int ipv6);
 extern void free_dns_list(struct dns_lists *list);
 
 #define NOT_USING	0
