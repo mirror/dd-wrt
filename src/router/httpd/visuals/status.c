@@ -266,7 +266,7 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
-	char *entry;
+	struct dns_entry *entry;
 	struct dns_lists *dns_list = NULL;
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
