@@ -485,7 +485,7 @@ char *get_dns_entry(struct dns_lists *dns_list, int idx)
 	return dns_list->dns_server[idx];
 }
 
-struct dns_lists *get_dns_list(int v4only)
+struct dns_lists *get_dns_list(int v6)
 {
 	struct dns_lists *dns_list = NULL;
 	int altdns_index = 1;
@@ -521,7 +521,7 @@ struct dns_lists *get_dns_list(int v4only)
 		add_dnslist(dns_list, wan_get_dns);
 	}
 
-	if (!v4only && nvram_matchi("ipv6_enable", 1)) {
+	if (v6 && nvram_matchi("ipv6_enable", 1)) {
 		char *a1 = nvram_safe_get("ipv6_dns1");
 		char *a2 = nvram_safe_get("ipv6_dns2");
 		if (*a1)
