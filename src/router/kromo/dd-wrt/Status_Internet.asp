@@ -159,18 +159,7 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("share.gateway"); %></div>
 											<span id="wan_gateway"><% nvram_status_get("wan_gateway","0"); %></span>&nbsp;
 										</div>
-										<div class="setting">
-											<div class="label">DNS 1</div>
-											<span id="wan_dns0"><% nvram_status_get("wan_dns0","0"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">DNS 2</div>
-											<span id="wan_dns1"><% nvram_status_get("wan_dns1","0"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">DNS 3</div>
-											<span id="wan_dns2"><% nvram_status_get("wan_dns2","0"); %></span>&nbsp;
-										</div>
+										<% show_dns_list(); %>
 										<div id="wan_dhcp">
 											<div class="setting">
 												<div class="label"><% tran("status_inet.leasetime"); %></div>
