@@ -197,7 +197,9 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 	else if (!strncmp(type, "wan_dns", 7)) {
 		dns_list = get_dns_list(1);
 		int index = atoi(type + 7);
-		websWrite(wp, "%s", get_dns_entry(dns_list, index));
+		struct dns_entry *entry = get_dns_entry(dns_list, index);
+		if (entry)
+			websWrite(wp, "%s", entry->ip);
 		free_dns_list(dns_list);
 	} else if (!strcmp(type, "status1"))
 		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, status1) : live_translate(wp, status1));
