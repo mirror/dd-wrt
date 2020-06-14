@@ -481,14 +481,21 @@ void free_dns_list(struct dns_lists *dns_list)
 char *get_dns_entry(struct dns_lists *dns_list, int idx)
 {
 	if (!dns_list || idx > (dns_list->num_servers - 1))
-		return "";
+		return NULL;
 	return dns_list->dns_server[idx];
 }
 
-struct dns_lists *get_dns_list(void)
+struct dns_lists *get_dns_list(int v4only)
 {
 	struct dns_lists *dns_list = NULL;
 	int altdns_index = 1;
+
+	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
+	bzero(dns_list, sizeof(struct dns_lists));
+	char *sv_localdns = nvram_safe_get("sv_localdns");
+	char *wan_dns = nvram_safe_get("wan_dns");
+	char *wan_get_dns = nvram_safe_get("wan_get_dns");
+
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
@@ -504,13 +511,7 @@ struct dns_lists *get_dns_list(void)
 		}
 		altdns_index++;
 	}
-
-	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
-	bzero(dns_list, sizeof(struct dns_lists));
-	char *sv_localdns = nvram_safe_get("sv_localdns");
-	char *wan_dns = nvram_safe_get("wan_dns");
-	char *wan_get_dns = nvram_safe_get("wan_get_dns");
-
+	dns_list->wan_offset = altdns_index - 1;
 	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns);
 	if (*wan_dns) {
@@ -520,7 +521,7 @@ struct dns_lists *get_dns_list(void)
 		add_dnslist(dns_list, wan_get_dns);
 	}
 
-	if (nvram_matchi("ipv6_enable", 1)) {
+	if (!v4only && nvram_matchi("ipv6_enable", 1)) {
 		char *a1 = nvram_safe_get("ipv6_dns1");
 		char *a2 = nvram_safe_get("ipv6_dns2");
 		if (*a1)
@@ -569,7 +570,7 @@ int dns_to_resolv(void)
 		}
 	}
 
-	dns_list = get_dns_list();
+	dns_list = get_dns_list(0);
 
 	for (i = 0; i < dns_list->num_servers; i++)
 		fprintf(fp_w, "nameserver %s\n", dns_list->dns_server[i]);
