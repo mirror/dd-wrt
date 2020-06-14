@@ -291,6 +291,10 @@ function refresh(F)
 									</div>
 									<% ifndef("HASWIFI", "-->"); %>
 									<div class="setting">
+										<div class="label">WAN IPv6</div>
+										<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr"); %></span>&nbsp;
+									</div>
+									<div class="setting">
 										<div class="label">WAN IPv4</div>
 										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
 									</div>
