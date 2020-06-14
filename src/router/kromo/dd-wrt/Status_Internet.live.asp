@@ -6,9 +6,7 @@
 {wan_ipaddr::<% nvram_status_get("wan_ipaddr","0"); %>}
 {wan_netmask::<% nvram_status_get("wan_netmask"); %>}
 {wan_gateway::<% nvram_status_get("wan_gateway"); %>}
-{wan_dns0::<% nvram_status_get("wan_dns0"); %>}
-{wan_dns1::<% nvram_status_get("wan_dns1"); %>}
-{wan_dns2::<% nvram_status_get("wan_dns2"); %>}
+<% show_live_dns_list(); %>
 {dhcp_remaining::<% dhcp_remaining_time(); %>}
 {ttraff_in::<% get_totaltraff("in"); %>}
 {ttraff_out::<% get_totaltraff("out"); %>}
