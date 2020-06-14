@@ -2280,8 +2280,10 @@ static void clear_translationcache(void)
 static char *_live_translate(webs_t wp, const char *tran)	// todo: add locking to be thread safe
 {
 	static char *cur_language = NULL;
-	if (!tran || *(tran) == 0)
+	if (!tran || *(tran) == 0) {
+		dd_debug(DEBUG_HTTPD, "translation string is empty\n");
 		return "Error";
+	}
 	if (!cur_language) {
 		cur_language = nvram_safe_get("language");
 	} else {
@@ -2332,8 +2334,10 @@ static char *_live_translate(webs_t wp, const char *tran)	// todo: add locking t
 	entry->time = cur;
 	if (ret)
 		entry->translation = ret;
-	else
+	else {
+		dd_debug(DEBUG_HTTPD, "no translation found for %s\n", tran);
 		entry->translation = strdup("Error");
+	}
 	return entry->translation;
 }
 
