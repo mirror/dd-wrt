@@ -128,7 +128,6 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		wan_netmask = nvram_safe_get("wan_netmask");
 	}
 
-
 	if (!strcmp(wan_proto, "pppoe")
 	    || !strcmp(wan_proto, "pptp")
 #ifdef HAVE_PPPOEDUAL
@@ -233,7 +232,6 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 		}
 	}
 
-
 	return;
 }
 
@@ -255,8 +253,8 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">%sDNS %d</div>\n",entry->type?"ALT":"", entry->ipv6?"IPV6":"", i);
-		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry);
+		websWrite(wp, "<div class=\"label\">%s%sDNS %d</div>\n", entry->type ? "ALT" : "", entry->ipv6 ? "IPV6" : "", i);
+		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry->ip);
 		websWrite(wp, "</div>\n");
 		i++;
 	}
@@ -270,7 +268,7 @@ void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 	struct dns_lists *dns_list = NULL;
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
-		websWrite(wp, "{wan_dns%d::%s}\n", i, entry);
+		websWrite(wp, "{wan_dns%d::%s}\n", i, entry->ip);
 		i++;
 	}
 	free_dns_list(dns_list);
