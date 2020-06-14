@@ -138,7 +138,7 @@ int mk_nocat_conf(void)
 		} else {
 			fprintf(fp, "DNSAddr \t");
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "%s ", dns_list->dns_server[i]);
+				fprintf(fp, "%s ", dns_list->dns_server[i].ip);
 			fprintf(fp, "\n");
 		}
 		free_dns_list(dns_list);

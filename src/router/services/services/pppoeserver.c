@@ -210,7 +210,7 @@ static void do_pppoeconfig(FILE * fp)
 
 	if (dns_list) {
 		for (i = 0; i < dns_list->num_servers; i++)
-			fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
+			fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i].ip);
 	}
 
 	free_dns_list(dns_list);

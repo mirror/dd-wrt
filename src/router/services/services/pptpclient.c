@@ -235,7 +235,7 @@ void start_pptp(int status)
 
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_add(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("pptp_wan_gateway"), "255.255.255.255");
+				route_add(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("pptp_wan_gateway"), "255.255.255.255");
 		}
 		route_add(wan_ifname, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
 		char pptpip[64];
@@ -243,7 +243,7 @@ void start_pptp(int status)
 		route_del(wan_ifname, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway"), "0.0.0.0");
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				route_del(wan_ifname, 0, dns_list->dns_server[i], nvram_safe_get("pptp_wan_gateway"), "255.255.255.255");
+				route_del(wan_ifname, 0, dns_list->dns_server[i].ip, nvram_safe_get("pptp_wan_gateway"), "255.255.255.255");
 			free_dns_list(dns_list);
 		}
 

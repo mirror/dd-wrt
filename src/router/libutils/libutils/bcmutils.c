@@ -437,30 +437,32 @@ char *get_mac_from_ip(char *mac, char *ip)
 	return NULL;
 }
 
-static void add_dnslist_internal(struct dns_lists *dns_list, char *dns)
+static void add_dnslist_internal(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
 	int i;
 	if (strcmp(dns, "0.0.0.0") && strcmp(dns, "")) {
 		int match = 0;
 		for (i = 0; i < dns_list->num_servers; i++) {	// Skip same DNS
-			if (!strcmp(dns_list->dns_server[i], dns))
+			if (!strcmp(dns_list->dns_server[i].ip, dns))
 				match = 1;
 		}
 		if (!match) {
-			dns_list->dns_server = (char **)realloc(dns_list->dns_server, sizeof(char *) * (dns_list->num_servers + 1));
-			dns_list->dns_server[dns_list->num_servers] = strdup(dns);
+			dns_list->dns_server = (struct dns_entry *)realloc(dns_list->dns_server, sizeof(struct dns_entry) * (dns_list->num_servers + 1));
+			dns_list->dns_server[dns_list->num_servers].ip = strdup(dns);
+			dns_list->dns_server[dns_list->num_servers].type = custom;
+			dns_list->dns_server[dns_list->num_servers].ipv6 = ipv6;
 			dns_list->num_servers++;
 		}
 	}
 }
 
-static void add_dnslist(struct dns_lists *dns_list, char *dns)
+static void add_dnslist(struct dns_lists *dns_list, char *dns, int custom, int ipv6)
 {
 	char *next, word[32];
 	if (!dns)
 		return;
 	foreach(word, dns, next) {
-		add_dnslist_internal(dns_list, word);
+		add_dnslist_internal(dns_list, word, custom, ipv6);
 	}
 }
 
@@ -470,19 +472,19 @@ void free_dns_list(struct dns_lists *dns_list)
 	if (!dns_list)
 		return;
 	for (i = 0; i < dns_list->num_servers; i++) {
-		free(dns_list->dns_server[i]);
+		free(dns_list->dns_server[i].ip);
 	}
-	if (dns_list->dns_server)
-		free(dns_list->dns_server);
+	free(dns_list->dns_server);
+	
 	free(dns_list);
 
 }
 
-char *get_dns_entry(struct dns_lists *dns_list, int idx)
+struct dns_entry *get_dns_entry(struct dns_lists *dns_list, int idx)
 {
 	if (!dns_list || idx > (dns_list->num_servers - 1))
 		return NULL;
-	return dns_list->dns_server[idx];
+	return &dns_list->dns_server[idx];
 }
 
 struct dns_lists *get_dns_list(int v6)
@@ -507,35 +509,34 @@ struct dns_lists *get_dns_list(int v6)
 		snprintf(altdnsvar, 31, "altdns%d", altdns_index);
 
 		if (*(nvram_safe_get(altdnsvar))) {
-			add_dnslist(dns_list, nvram_safe_get(altdnsvar));
+			add_dnslist(dns_list, nvram_safe_get(altdnsvar), 1, 0);
 		}
 		altdns_index++;
 	}
-	dns_list->wan_offset = altdns_index - 1;
 	if (*sv_localdns)
-		add_dnslist(dns_list, sv_localdns);
+		add_dnslist(dns_list, sv_localdns, 0, 0);
 	if (*wan_dns) {
-		add_dnslist(dns_list, wan_dns);
+		add_dnslist(dns_list, wan_dns, 0, 0);
 	}
 	if (*wan_get_dns) {
-		add_dnslist(dns_list, wan_get_dns);
+		add_dnslist(dns_list, wan_get_dns, 0, 0);
 	}
-
+#ifdef HAVE_IPV6
 	if (v6 && nvram_matchi("ipv6_enable", 1)) {
 		char *a1 = nvram_safe_get("ipv6_dns1");
 		char *a2 = nvram_safe_get("ipv6_dns2");
 		if (*a1)
-			add_dnslist(dns_list, a1);
+			add_dnslist(dns_list, a1, 1, 1);
 		if (*a2)
-			add_dnslist(dns_list, a2);
+			add_dnslist(dns_list, a2, 1, 1);
 
 		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
 		char word[64];
 		foreach(word, wordlist, next) {
-			add_dnslist(dns_list, word);
+			add_dnslist(dns_list, word, 0, 1);
 		}
 	}
-
+#endif
 
 	return dns_list;
 }
@@ -573,7 +574,7 @@ int dns_to_resolv(void)
 	dns_list = get_dns_list(0);
 
 	for (i = 0; i < dns_list->num_servers; i++)
-		fprintf(fp_w, "nameserver %s\n", dns_list->dns_server[i]);
+		fprintf(fp_w, "nameserver %s\n", dns_list->dns_server[i].ip);
 
 	/*
 	 * Put a pseudo DNS IP to trigger Connect On Demand 

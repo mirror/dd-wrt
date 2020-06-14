@@ -247,24 +247,26 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 	nvram_status_get(wp, type, trans);
 }
 
-void ej_show_dnslist(webs_t wp int argc, char_t ** argv)
+void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
-	char *entry;
+	struct dns_lists *dns_list = NULL;
+	struct dns_entry *entry;
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">DNS %d</div>\n",i);
+		websWrite(wp, "<div class=\"label\">%sDNS %d</div>\n",entry->type?"ALT":"", entry->ipv6?"IPV6":"", i);
 		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry);
 		websWrite(wp, "</div>\n");
 	}
 	free_dns_list(dns_list);
 }
 
-void ej_show_live_dnslist(webs_t wp int argc, char_t ** argv)
+void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 {
 	int i = 0;
 	char *entry;
+	struct dns_lists *dns_list = NULL;
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "{wan_dns%d::%s}\n", i, entry);

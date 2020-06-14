@@ -229,7 +229,7 @@ void start_udhcpd(void)
 				fprintf(fp, " %s", nvram_safe_get("lan_ipaddr"));
 			if (dns_list) {
 				for (i = 0; i < dns_list->num_servers; i++)
-					fprintf(fp, " %s", dns_list->dns_server[i]);
+					fprintf(fp, " %s", dns_list->dns_server[i].ip);
 			}
 			fprintf(fp, "\n");
 		}
@@ -237,7 +237,7 @@ void start_udhcpd(void)
 		if (dns_list && dns_list->num_servers > 0) {
 			fprintf(fp, "option dns");
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, " %s", dns_list->dns_server[i]);
+				fprintf(fp, " %s", dns_list->dns_server[i].ip);
 			fprintf(fp, "\n");
 		}
 	}

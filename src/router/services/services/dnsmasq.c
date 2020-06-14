@@ -351,7 +351,7 @@ void start_dnsmasq(void)
 
 					fprintf(fp, "dhcp-option=6");
 					for (i = 0; i < dns_list->num_servers; i++)
-						fprintf(fp, ",%s", dns_list->dns_server[i]);
+						fprintf(fp, ",%s", dns_list->dns_server[i].ip);
 					fprintf(fp, "\n");
 				}
 				if (dns_list)

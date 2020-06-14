@@ -119,7 +119,7 @@ void start_pptpd(void)
 	} else {
 		if (dns_list) {
 			for (i = 0; i < dns_list->num_servers; i++)
-				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i]);
+				fprintf(fp, "ms-dns %s\n", dns_list->dns_server[i].ip);
 
 		}
 	}
