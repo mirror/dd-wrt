@@ -6,7 +6,7 @@
 {wan_ipaddr::<% nvram_status_get("wan_ipaddr","0"); %>}
 {wan_netmask::<% nvram_status_get("wan_netmask"); %>}
 {wan_gateway::<% nvram_status_get("wan_gateway"); %>}
-<% show_live_dns_list(); %>
+<% show_live_dnslist(); %>
 {dhcp_remaining::<% dhcp_remaining_time(); %>}
 {ttraff_in::<% get_totaltraff("in"); %>}
 {ttraff_out::<% get_totaltraff("out"); %>}
