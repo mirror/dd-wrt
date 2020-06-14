@@ -265,8 +265,9 @@ void start_dhcp6s(void)
 			struct dns_lists *list = get_dns_list(1);
 			fprintf(fp, "option domain-name-servers");
 			int i;
-			for (i=0;i<lists->num_servers;i++)
-			    fprintf(fp, " %s", lists->dns_server[i].ip);			
+			for (i=0;i<list->num_servers;i++)
+			    fprintf(fp, " %s", list->dns_server[i].ip);
+			free_dns_list(list);
 		}
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
