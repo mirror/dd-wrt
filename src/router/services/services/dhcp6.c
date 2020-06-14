@@ -262,12 +262,11 @@ void start_dhcp6s(void)
 		if (nvram_matchi("dnsmasq_enable", 1)) {
 			fprintf(fp, "option domain-name-servers %s", getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, GIF_LINKLOCAL));
 		} else {
-			fprintf(fp, "option domain-name-servers %s", nvram_safe_get("ipv6_get_dns"));
-			/* dhcp6s won't start if there are duplicate dns ips */
-			if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns1")))
-				fprintf(fp, " %s", nvram_safe_get("ipv6_dns1"));
-			if (!strstr(nvram_safe_get("ipv6_get_dns"), nvram_safe_get("ipv6_dns2")))
-				fprintf(fp, " %s", nvram_safe_get("ipv6_dns2"));
+			struct dns_lists *list = get_dns_list(1);
+			fprintf(fp, "option domain-name-servers");
+			int i;
+			for (i=0;i<lists->num_servers;i++)
+			    fprintf(fp, " %s", lists->dns_server[i].ip);			
 		}
 		fprintf(fp, ";\n");
 		if (nvram_invmatch("ipv6_get_domain", ""))
