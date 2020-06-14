@@ -175,6 +175,7 @@ addEvent(window, "load", function() {
 <% ifndef("HASWIFI", "*"); %><% ifndef("HASWIFI", "/"); %>
 	setDHCPTable(<% dumpleases(1); %>);
 	setElementVisible("dhcp", "<% nvg("lan_proto"); %>" == "dhcp");
+	setElementVisible("ipv6", "<% nvg("ipv6_enable"); %>" == "1");
 
 	update = new StatusUpdate("Info.live.htm", <% nvg("refresh_time"); %>);
 	update.onUpdate("packet_info", function(u) {
@@ -290,7 +291,7 @@ function refresh(F)
 										</script>&nbsp;
 									</div>
 									<% ifndef("HASWIFI", "-->"); %>
-									<div class="setting">
+									<div class="setting" id="ipv6">
 										<div class="label">WAN IPv6</div>
 										<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr"); %></span>&nbsp;
 									</div>
