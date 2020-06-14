@@ -489,21 +489,6 @@ struct dns_lists *get_dns_list(void)
 {
 	struct dns_lists *dns_list = NULL;
 	int altdns_index = 1;
-
-	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
-	bzero(dns_list, sizeof(struct dns_lists));
-	char *sv_localdns = nvram_safe_get("sv_localdns");
-	char *wan_dns = nvram_safe_get("wan_dns");
-	char *wan_get_dns = nvram_safe_get("wan_get_dns");
-
-	if (*sv_localdns)
-		add_dnslist(dns_list, sv_localdns);
-	if (*wan_dns) {
-		add_dnslist(dns_list, wan_dns);
-	}
-	if (*wan_get_dns) {
-		add_dnslist(dns_list, wan_get_dns);
-	}
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
@@ -518,6 +503,21 @@ struct dns_lists *get_dns_list(void)
 			add_dnslist(dns_list, nvram_safe_get(altdnsvar));
 		}
 		altdns_index++;
+	}
+
+	dns_list = (struct dns_lists *)malloc(sizeof(struct dns_lists));
+	bzero(dns_list, sizeof(struct dns_lists));
+	char *sv_localdns = nvram_safe_get("sv_localdns");
+	char *wan_dns = nvram_safe_get("wan_dns");
+	char *wan_get_dns = nvram_safe_get("wan_get_dns");
+
+	if (*sv_localdns)
+		add_dnslist(dns_list, sv_localdns);
+	if (*wan_dns) {
+		add_dnslist(dns_list, wan_dns);
+	}
+	if (*wan_get_dns) {
+		add_dnslist(dns_list, wan_get_dns);
 	}
 	return dns_list;
 }
