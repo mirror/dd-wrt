@@ -86,18 +86,13 @@ void ej_localtime(webs_t wp, int argc, char_t ** argv)
 	}
 }
 
-void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
+void nvram_status_get(webs_t wp, char *type, int trans)
 {
-	char *type;
 	char *wan_ipaddr, *wan_netmask, *wan_gateway;
 	char *status1 = "", *status2 = "", *hidden1, *hidden2, *button1 = "";
 	char *wan_proto = nvram_safe_get("wan_proto");
 	struct dns_lists *dns_list = NULL;
 	int wan_link = check_wan_link(0);
-	int trans = 0;
-	type = argv[0];
-	if (argc > 1)
-		trans = atoi(argv[1]);
 	if (!strcmp(wan_proto, "pptp")) {
 		wan_ipaddr = wan_link ? nvram_safe_get("pptp_get_ip") : nvram_safe_get("wan_ipaddr");
 		wan_netmask = wan_link ? nvram_safe_get("wan_netmask") : nvram_safe_get("wan_netmask");
@@ -133,7 +128,6 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		wan_netmask = nvram_safe_get("wan_netmask");
 	}
 
-	dns_list = get_dns_list();
 
 	if (!strcmp(wan_proto, "pppoe")
 	    || !strcmp(wan_proto, "pptp")
@@ -201,12 +195,11 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%s", wan_netmask);
 	else if (!strcmp(type, "wan_gateway"))
 		websWrite(wp, "%s", wan_gateway);
-	else if (!strcmp(type, "wan_dns0")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list, 0));
-	} else if (!strcmp(type, "wan_dns1")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list, 1));
-	} else if (!strcmp(type, "wan_dns2")) {
-		websWrite(wp, "%s", get_dns_entry(dns_list, 2));
+	else if (!strncmp(type, "wan_dns", 7)) {
+		dns_list = get_dns_list(1);
+		int index = atoi(type + 7);
+		websWrite(wp, "%s", get_dns_entry(dns_list, index));
+		free_dns_list(dns_list);
 	} else if (!strcmp(type, "status1"))
 		websWrite(wp, "%s", trans == 3 ? status1 : trans == 2 ? tran_string(buf, status1) : live_translate(wp, status1));
 	else if (!strcmp(type, "status2"))
@@ -240,9 +233,43 @@ void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
 		}
 	}
 
-	free_dns_list(dns_list);
 
 	return;
+}
+
+void ej_nvram_status_get(webs_t wp, int argc, char_t ** argv)
+{
+	char *type;
+	int trans = 0;
+	type = argv[0];
+	if (argc > 1)
+		trans = atoi(argv[1]);
+	nvram_status_get(wp, type, trans);
+}
+
+void ej_show_dnslist(webs_t wp int argc, char_t ** argv)
+{
+	int i = 0;
+	char *entry;
+	dns_list = get_dns_list(1);
+	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
+		websWrite(wp, "<div class=\"setting\">\n");
+		websWrite(wp, "<div class=\"label\">DNS %d</div>\n",i);
+		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry);
+		websWrite(wp, "</div>\n");
+	}
+	free_dns_list(dns_list);
+}
+
+void ej_show_live_dnslist(webs_t wp int argc, char_t ** argv)
+{
+	int i = 0;
+	char *entry;
+	dns_list = get_dns_list(1);
+	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
+		websWrite(wp, "{wan_dns%d::%s}\n", i, entry);
+	}
+	free_dns_list(dns_list);
 }
 
 void ej_show_status(webs_t wp, int argc, char_t ** argv)
