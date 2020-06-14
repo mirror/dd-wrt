@@ -190,6 +190,21 @@ void nvram_status_get(webs_t wp, char *type, int trans)
 			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
 		} else
 			websWrite(wp, "%s", wan_ipaddr);
+#ifdef HAVE_IPV6
+	} else if (!strcmp(type, "wan_ipv6addr")) {
+		const char *ipv6addr = NULL;
+		if (nvram_match("ipv6_typ", "ipv6native"))
+			ipv6addr = getifaddr(get_wan_face(), AF_INET6, 0);
+		if (nvram_match("ipv6_typ", "ipv6in4"))
+			ipv6addr = getifaddr("ip6tun", AF_INET6, 0);
+		if (nvram_match("ipv6_typ", "ipv6pd"))
+			ipv6addr = getifaddr(nvram_safe_get("lan_ifname"), AF_INET6, 0);
+		if (!ipv6addr || getWET() || !strcmp(wan_proto, "disabled")) {
+			websWrite(wp, "%s", trans == 2 ? tran_string(buf, "share.disabled") : live_translate(wp, "share.disabled"));
+		} else {
+			websWrite(wp, "%s", ipv6addr);
+		}
+#endif
 	} else if (!strcmp(type, "wan_netmask"))
 		websWrite(wp, "%s", wan_netmask);
 	else if (!strcmp(type, "wan_gateway"))
@@ -253,9 +268,21 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 	struct dns_lists *dns_list = NULL;
 	struct dns_entry *entry;
 	dns_list = get_dns_list(1);
+	int dnscount = 0;
+	int altcount = 0;
+	int ipv6count = 0;
+	int ipv6altcount = 0;
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "<div class=\"setting\">\n");
-		websWrite(wp, "<div class=\"label\">%s%sDNS %d</div>\n", entry->type ? "ALT" : "", entry->ipv6 ? "IPV6" : "", i);
+		char buf[64];
+		if (entry->type && !entry->ipv6)
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", altcount++, tran_string(buf, "share.sttic"));
+		if (entry->type && entry->ipv6)
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6altcount++, tran_string(buf, "share.sttic"));
+		if (!entry->type && !entry->ipv6)
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d</div>\n", dnscount++);
+		if (!entry->type && entry->ipv6)
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d</div>\n", ipv6count++);
 		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry->ip);
 		websWrite(wp, "</div>\n");
 		i++;
