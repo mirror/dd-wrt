@@ -111,7 +111,7 @@ void start_pptpd(void)
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("pptpd_wins2"));
 	}
 
-	struct dns_lists *dns_list = get_dns_list();
+	struct dns_lists *dns_list = get_dns_list(0);
 
 	if (nvram_matchi("dnsmasq_enable", 1)) {
 		if (nvram_invmatch("lan_ipaddr", ""))

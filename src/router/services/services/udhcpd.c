@@ -216,7 +216,7 @@ void start_udhcpd(void)
 
 	fprintf(fp, "option lease %d\n", nvram_geti("dhcp_lease") ? nvram_geti("dhcp_lease") * 60 : 86400);
 
-	dns_list = get_dns_list();
+	dns_list = get_dns_list(0);
 
 	if (!dns_list || dns_list->num_servers == 0) {
 		if (nvram_invmatch("lan_ipaddr", ""))
