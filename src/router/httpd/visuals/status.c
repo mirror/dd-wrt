@@ -268,19 +268,17 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 	struct dns_lists *dns_list = NULL;
 	struct dns_entry *entry;
 	dns_list = get_dns_list(1);
-	int dnscount = 0;
-	int altcount = 0;
+	int ipv4count = 0;
 	int ipv6count = 0;
-	int ipv6altcount = 0;
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "<div class=\"setting\">\n");
 		char buf[64];
 		if (entry->type && !entry->ipv6)
-			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", altcount++, tran_string(buf, "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d (%s)</div>\n", ipv4count++, tran_string(buf, "share.sttic"));
 		if (entry->type && entry->ipv6)
-			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6altcount++, tran_string(buf, "share.sttic"));
+			websWrite(wp, "<div class=\"label\">IPv6 DNS %d (%s)</div>\n", ipv6count++, tran_string(buf, "share.sttic"));
 		if (!entry->type && !entry->ipv6)
-			websWrite(wp, "<div class=\"label\">IPv4 DNS %d</div>\n", dnscount++);
+			websWrite(wp, "<div class=\"label\">IPv4 DNS %d</div>\n", ipv4count++);
 		if (!entry->type && entry->ipv6)
 			websWrite(wp, "<div class=\"label\">IPv6 DNS %d</div>\n", ipv6count++);
 		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry->ip);
