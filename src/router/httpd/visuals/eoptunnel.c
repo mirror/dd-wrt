@@ -393,7 +393,6 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 							hasqr = 1;
 						}
 					}
-
 					//Status box
 					websWrite(wp, "<div id=\"idoet%d_statusbox\">\n", tun);	//naming for periodic refresh
 					{
