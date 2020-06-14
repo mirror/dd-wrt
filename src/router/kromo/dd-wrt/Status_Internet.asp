@@ -148,7 +148,11 @@ addEvent(window, "unload", function() {
 											<span id="wan_uptime"><% get_wan_uptime("1"); %></span>&nbsp;
 										</div>
 										<div class="setting">
-											<div class="label"><% tran("share.ip"); %></div>
+											<div class="label"><% tran("share.ipv6"); %></div>
+											<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr","2"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label"><% tran("share.ipv4"); %></div>
 											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr","2"); %></span>&nbsp;
 										</div>
 										<div class="setting">
