@@ -258,6 +258,7 @@ void ej_show_dnslist(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "<div class=\"label\">%sDNS %d</div>\n",entry->type?"ALT":"", entry->ipv6?"IPV6":"", i);
 		websWrite(wp, "<span id=\"wan_dns%d\">%s</span>&nbsp;\n", i, entry);
 		websWrite(wp, "</div>\n");
+		i++;
 	}
 	free_dns_list(dns_list);
 }
@@ -270,6 +271,7 @@ void ej_show_live_dnslist(webs_t wp, int argc, char_t ** argv)
 	dns_list = get_dns_list(1);
 	while ((entry = get_dns_entry(dns_list, i)) != NULL) {
 		websWrite(wp, "{wan_dns%d::%s}\n", i, entry);
+		i++;
 	}
 	free_dns_list(dns_list);
 }
