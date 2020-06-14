@@ -70,6 +70,7 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_connection", "<% nvg("wan_proto"); %>" != "dhcp" && "<% nvg("wan_proto"); %>" != "dhcp_auth" && "<% nvg("wan_proto"); %>" != "static");
 	setElementVisible("wan_signal", "<% nvg("wan_proto"); %>" == "3g");
 	setElementVisible("wan_acname", "<% nvg("wan_proto"); %>" == "pppoe");
+	setElementVisible("ipv6", "<% nvg("ipv6_enable"); %>" == "1");
 
 	update = new StatusUpdate("Status_Internet.live.asp", <% nvg("refresh_time"); %>);
 	update.onUpdate("wan_shortproto", function(u) {
@@ -147,7 +148,7 @@ addEvent(window, "unload", function() {
 											<div class="label"><% tran("status_inet.wanuptime"); %></div>
 											<span id="wan_uptime"><% get_wan_uptime("1"); %></span>&nbsp;
 										</div>
-										<div class="setting">
+										<div class="setting" id="ipv6">
 											<div class="label"><% tran("share.ipv6"); %></div>
 											<span id="wan_ipv6addr"><% nvram_status_get("wan_ipv6addr","2"); %></span>&nbsp;
 										</div>
