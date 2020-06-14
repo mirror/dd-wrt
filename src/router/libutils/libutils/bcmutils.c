@@ -519,6 +519,23 @@ struct dns_lists *get_dns_list(void)
 	if (*wan_get_dns) {
 		add_dnslist(dns_list, wan_get_dns);
 	}
+
+	if (nvram_matchi("ipv6_enable", 1)) {
+		char *a1 = nvram_safe_get("ipv6_dns1");
+		char *a2 = nvram_safe_get("ipv6_dns2");
+		if (*a1)
+			add_dnslist(dns_list, a1);
+		if (*a2)
+			add_dnslist(dns_list, a2);
+
+		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+		char word[64];
+		foreach(word, wordlist, next) {
+			add_dnslist(dns_list, word);
+		}
+	}
+
+
 	return dns_list;
 }
 
@@ -576,21 +593,6 @@ int dns_to_resolv(void)
 #endif
 	    ) && nvram_matchi("ppp_demand", 1))
 		fprintf(fp_w, "nameserver 1.1.1.1\n");
-
-	if (nvram_matchi("ipv6_enable", 1)) {
-		char *a1 = nvram_safe_get("ipv6_dns1");
-		char *a2 = nvram_safe_get("ipv6_dns2");
-		if (*a1)
-			fprintf(fp_w, "nameserver %s\n", a1);
-		if (*a2)
-			fprintf(fp_w, "nameserver %s\n", a2);
-
-		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
-		char word[64];
-		foreach(word, wordlist, next) {
-			fprintf(fp_w, "nameserver %s\n", word);
-		}
-	}
 
 	fclose(fp_w);
 	free_dns_list(dns_list);
