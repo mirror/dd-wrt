@@ -969,11 +969,12 @@ enum { FIRST, SECOND };
 
 struct dns_lists {
 	int num_servers;
+	int wan_offset;
 	char **dns_server;
 };
 
 extern char *get_dns_entry(struct dns_lists *dns_list, int idx);
-extern struct dns_lists *get_dns_list(void);
+extern struct dns_lists *get_dns_list(int v4only);
 extern void free_dns_list(struct dns_lists *list);
 
 #define NOT_USING	0
