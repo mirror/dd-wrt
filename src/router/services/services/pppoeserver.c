@@ -206,7 +206,7 @@ static void do_pppoeconfig(FILE * fp)
 	if (!nowins) {
 		fprintf(fp, "ms-wins %s\n", nvram_safe_get("wan_wins"));
 	}
-	struct dns_lists *dns_list = get_dns_list();
+	struct dns_lists *dns_list = get_dns_list(0);
 
 	if (dns_list) {
 		for (i = 0; i < dns_list->num_servers; i++)
