@@ -37,9 +37,6 @@ TALLOCCROSS = " \
 	\nChecking if toolchain accepts -fstack-protector: OK \
 	\n"
 
-LINUX_UNAME_VERSION:=$(strip $(shell cat $(LINUXDIR)/include/config/kernel.release))
-
-
 libtalloc-configure:
 	(cd libtalloc; \
 		echo -e >cache.txt $(TALLOCCROSS) " \
