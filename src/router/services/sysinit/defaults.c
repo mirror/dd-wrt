@@ -1760,9 +1760,9 @@ struct nvram_param srouter_defaults[] = {
 #elif  HAVE_TMK
 	{ "router_name", "KMT-WAS" },
 #elif  HAVE_ANTAIRA
-#ifdef HAVE_FMS2111
 	{ "ath0_ssid", "Antaira" },
-#endif				//HAVE_FMS2111
+	{ "ath1_ssid", "Antaira" },
+	{ "ath2_ssid", "Antaira" },
 	{ "router_style", "red" },
 	{ "router_name", "Antaira" },
 	{ "radius_country", "US" },
@@ -1784,6 +1784,10 @@ struct nvram_param srouter_defaults[] = {
 	{ "ath1_akm", "psk2" },
 	{ "ath1_psk2", "1" },
 	{ "ath1_wpa_psk", "12345678" },
+	{ "ath2_security_mode", "psk2" },
+	{ "ath2_akm", "psk2" },
+	{ "ath2_psk2", "1" },
+	{ "ath2_wpa_psk", "12345678" },
 	{ "resetbutton_enable", "0" },
 	{ "menu_nosecurity", "1" },
 	{ "menu_noaccrestriction", "1" },
