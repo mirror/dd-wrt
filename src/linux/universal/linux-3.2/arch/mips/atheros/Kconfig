@@ -1,5 +1,6 @@
 config ATHEROS_AR5312
 	bool "Atheros 5312/2312+ support"
+	select SYS_HAS_CPU_MIPS32_R2
 	depends on ATHEROS
 	default y
 
