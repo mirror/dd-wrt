@@ -116,8 +116,8 @@ void start_sysinit(void)
 	writeprocsys("dev/wifi0/softled", "1");
 #endif
 	// eval ("ifconfig", "wifi0", "up");
-#ifdef HAVE_LS2
 	eval("ifconfig", "eth0", "up");	// wan
+#ifdef HAVE_LS2
 	vlan_init(5);		// 4 lan + 1 wan, but only first one is used
 #endif
 	int s;
