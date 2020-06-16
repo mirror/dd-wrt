@@ -489,10 +489,13 @@ mvswitch_fixup(struct phy_device *dev)
 {
 	u16 reg;
 //	printk(KERN_EMERG "fixup %d\n",dev->addr);
-	if (dev->addr != 0)
-		return 0;
 
 	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+//	printk(KERN_EMERG "phy_id %X\n",reg);
+	if (dev->addr != 0x10) {
+//		printk(KERN_INFO "ignore \n");
+		return 0;
+	}
 	if (reg != MV_IDENT_VALUE && reg != MV_IDENT_VALUE2)
 		return 0;
 
