@@ -480,6 +480,8 @@ static void do_madwifi_check(void)
 		sprintf(dev, "ath%d", i);
 		if (is_mac80211(dev))
 			continue;
+		if (nvram_nmatch("disabled", "%s_net_mode", dev))
+			continue;
 		if (nvram_matchi("wds_watchdog_debug", 1))
 			for (s = 1; s <= 10; s++) {
 				char wdsvarname[32] = { 0 };
