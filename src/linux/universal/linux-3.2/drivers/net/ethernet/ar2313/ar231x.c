@@ -1099,6 +1099,11 @@ static int ar231x_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	return 0;
 }
 
+static short armiiread (struct net_device *dev, short phy, short reg);
+static void armiiwrite (struct net_device *dev, short phy, short reg,
+			short data);
+
+
 static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
 	struct mii_ioctl_data *data = (struct mii_ioctl_data *)&ifr->ifr_data;
@@ -1126,10 +1131,21 @@ static int ar231x_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 			return -EFAULT;
 		return 0;
 
-	case SIOCGMIIPHY:
-	case SIOCGMIIREG:
-	case SIOCSMIIREG:
-		return phy_mii_ioctl(sp->phy_dev, ifr, cmd);
+    case SIOCGMIIPHY:		/* Get address of MII PHY in use. */
+      data->phy_id = 1;
+      /* Fall Through */
+
+    case SIOCGMIIREG:		/* Read MII PHY register. */
+      data->val_out = armiiread (dev, data->phy_id & 0x1f,
+				 data->reg_num & 0x1f);
+      return 0;
+    case SIOCSMIIREG:		/* Write MII PHY register. */
+      if (!capable (CAP_NET_ADMIN))
+	return -EPERM;
+      armiiwrite (dev, data->phy_id & 0x1f,
+		  data->reg_num & 0x1f, data->val_in);
+      return 0;
+
 
 	default:
 		break;
@@ -1160,6 +1176,31 @@ static void ar231x_adjust_link(struct net_device *dev)
 
 #define MII_ADDR(phy, reg) \
 	((reg << MII_ADDR_REG_SHIFT) | (phy << MII_ADDR_PHY_SHIFT))
+
+
+static short
+armiiread (struct net_device *dev, short phy, short reg)
+{
+
+  short outp;
+
+  struct ar231x_private *sp = netdev_priv(dev);
+  volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
+  ethernet->mii_addr = MII_ADDR (phy, reg);
+  while (ethernet->mii_addr & MII_ADDR_BUSY);
+  outp = ethernet->mii_data >> MII_DATA_SHIFT;
+  return (outp);
+}
+
+static void
+armiiwrite (struct net_device *dev, short phy, short reg, short data)
+{
+  struct ar231x_private *sp =  netdev_priv(dev);
+  volatile ETHERNET_STRUCT *ethernet = sp->phy_regs;
+  while (ethernet->mii_addr & MII_ADDR_BUSY);
+  ethernet->mii_data = data << MII_DATA_SHIFT;
+  ethernet->mii_addr = MII_ADDR (phy, reg) | MII_ADDR_WRITE;
+}
 
 static int ar231x_mdiobus_read(struct mii_bus *bus, int phy_addr, int regnum)
 {
