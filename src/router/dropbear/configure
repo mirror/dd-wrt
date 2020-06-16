@@ -4702,8 +4702,54 @@ $as_echo "$as_me: Using uClibc - login() and logout() probably don't work, so we
 fi
 
 
-found_crypt_func=here
-CRYPTLIB="-lcrypt"
+ac_fn_c_check_func "$LINENO" "crypt" "ac_cv_func_crypt"
+if test "x$ac_cv_func_crypt" = xyes; then :
+  found_crypt_func=here
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for crypt in -lcrypt" >&5
+$as_echo_n "checking for crypt in -lcrypt... " >&6; }
+if ${ac_cv_lib_crypt_crypt+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lcrypt  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char crypt ();
+int
+main ()
+{
+return crypt ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_crypt_crypt=yes
+else
+  ac_cv_lib_crypt_crypt=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_crypt_crypt" >&5
+$as_echo "$ac_cv_lib_crypt_crypt" >&6; }
+if test "x$ac_cv_lib_crypt_crypt" = xyes; then :
+
+	CRYPTLIB="-lcrypt"
+	found_crypt_func=here
+
+fi
+
 
 if test "t$found_crypt_func" = there; then
 
@@ -5638,7 +5684,8 @@ for ac_header in netinet/in.h netinet/tcp.h \
 	crypt.h \
 	pty.h libutil.h libgen.h inttypes.h stropts.h utmp.h \
 	utmpx.h lastlog.h paths.h util.h netdb.h security/pam_appl.h \
-	pam/pam_appl.h netinet/in_systm.h sys/uio.h linux/pkt_sched.h
+	pam/pam_appl.h netinet/in_systm.h sys/uio.h linux/pkt_sched.h \
+	sys/random.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -6535,7 +6582,7 @@ fi
 done
 
 
-for ac_func in explicit_bzero memset_s
+for ac_func in explicit_bzero memset_s getrandom
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
