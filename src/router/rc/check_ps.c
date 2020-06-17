@@ -57,6 +57,13 @@ static int check_igmprt(void)
 	return !search_process("igmprt", 1);
 }
 
+static int check_transmission(void)
+{
+	if (nvram_match("transmission_enable", "0"))	// todo: add upstream 
+		return 0;
+	return !search_process("transmissiond", 1);
+}
+
 static int check_ddns(void)
 {
 	if (nvram_match("wan_proto", "disabled") || !*(get_wan_face()))	// todo: add upstream 
@@ -110,7 +117,7 @@ struct mon mons[] = {
 	{ "igmprt", M_WAN, "block_multicast", "0", NULL, NULL, &check_igmprt },
 #endif
 #ifdef HAVE_TRANSMISSION
-	{ "transmissiond", M_LAN, "transmission_enable", "1", NULL, NULL, NULL },
+	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN
