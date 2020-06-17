@@ -91,6 +91,9 @@
 #define SMB2_CLIENT_GUID_SIZE		16
 #define SMB2_CREATE_GUID_SIZE		16
 
+/* Maximum buffer size value we can send with 1 credit */
+#define SMB2_MAX_BUFFER_SIZE 65536
+
 #define NUMBER_OF_SMB2_COMMANDS	0x0013
 
 /* BB FIXME - analyze following length BB */
