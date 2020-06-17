@@ -112,6 +112,7 @@ void start_raid(void)
 #ifdef HAVE_TRANSMISSION
 		eval("stopservice", "transmission");
 #endif
+		eval("stopservice", "run_rc_usb");
 	}
 	if (md) {
 		insmod("libcrc32c crc32c_generic crc32_generic");
@@ -381,6 +382,7 @@ void start_raid(void)
 #ifdef HAVE_TRANSMISSION
 		eval("startservice_f", "transmission");
 #endif
+		eval("startservice", "run_rc_usb", "-f");
 	}
 
 }
