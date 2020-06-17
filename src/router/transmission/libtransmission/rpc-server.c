@@ -299,13 +299,12 @@ static void add_response(struct evhttp_request* req, struct tr_rpc_server* serve
 {
     char const* key = "Accept-Encoding";
     char const* encoding = evhttp_find_header(req->input_headers, key);
-    bool const do_compress = encoding != NULL && strstr(encoding, "gzip") != NULL;
+    bool const do_compress = 0; //encoding != NULL && strstr(encoding, "gzip") != NULL;
 
-//    if (!do_compress)
+    if (!do_compress)
     {
         evbuffer_add_buffer(out, content);
     }
-#if 0
     else
     {
         int state;
@@ -365,7 +364,6 @@ static void add_response(struct evhttp_request* req, struct tr_rpc_server* serve
         evbuffer_commit_space(out, iovec, 1);
         deflateReset(&server->stream);
     }
-#endif
 }
 
 static void add_time_header(struct evkeyvalq* headers, char const* key, time_t value)
