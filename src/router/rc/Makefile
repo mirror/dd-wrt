@@ -1164,6 +1164,9 @@ endif
 ifeq ($(CONFIG_CPE880),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
 endif
+ifeq ($(CONFIG_HABANERO),y)
+	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
+endif
 ifeq ($(CONFIG_CARAMBOLA),y)
 ifeq ($(CONFIG_FMS2111),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wlanled
