@@ -339,8 +339,8 @@ static int smb2_validate_credit_charge(struct smb2_hdr *hdr)
 	}
 
 	max_len = max(req_len, expect_resp_len);
-	calc_credit_num = (max_len - 1) / 65536 + 1;
-	if (!credit_charge && max_len > 65536) {
+	calc_credit_num = DIV_ROUND_UP(max_len, SMB2_MAX_BUFFER_SIZE);
+	if (!credit_charge && max_len > SMB2_MAX_BUFFER_SIZE) {
 		ksmbd_err("credit charge is zero and payload size(%d) is bigger than 64K\n",
 			max_len);
 		return 1;

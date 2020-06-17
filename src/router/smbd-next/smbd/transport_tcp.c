@@ -39,26 +39,35 @@ static struct ksmbd_transport_ops ksmbd_tcp_transport_ops;
 
 static inline void ksmbd_tcp_nodelay(struct socket *sock)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 	int val = 1;
 
 	kernel_setsockopt(sock, SOL_TCP, TCP_NODELAY,
 		(char *)&val, sizeof(val));
+#else
+	tcp_sock_set_nodelay(sock->sk);
+#endif
 }
 
 static inline void ksmbd_tcp_reuseaddr(struct socket *sock)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 	int val = 1;
 
 	kernel_setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		(char *)&val, sizeof(val));
+#else
+	sock_set_reuseaddr(sock->sk);
+#endif
 }
 
-static inline void ksmbd_tcp_rev_timeout(struct socket *sock, unsigned int sec)
+static inline void ksmbd_tcp_rcv_timeout(struct socket *sock, s64 secs)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
-	struct timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+	struct timeval tv = { .tv_sec = secs, .tv_usec = 0 };
 #else
-	struct __kernel_old_timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+	struct __kernel_old_timeval tv = { .tv_sec = secs, .tv_usec = 0 };
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
@@ -68,14 +77,23 @@ static inline void ksmbd_tcp_rev_timeout(struct socket *sock, unsigned int sec)
 	kernel_setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv,
 			  sizeof(tv));
 #endif
+#else
+	lock_sock(sock->sk);
+	if (secs && secs < MAX_SCHEDULE_TIMEOUT / HZ - 1)
+		sock->sk->sk_rcvtimeo = secs * HZ;
+	else
+		sock->sk->sk_rcvtimeo = MAX_SCHEDULE_TIMEOUT;
+	release_sock(sock->sk);
+#endif
 }
 
-static inline void ksmbd_tcp_snd_timeout(struct socket *sock, unsigned int sec)
+static inline void ksmbd_tcp_snd_timeout(struct socket *sock, s64 secs)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 18, 0)
-	struct timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+	struct timeval tv = { .tv_sec = secs, .tv_usec = 0 };
 #else
-	struct __kernel_old_timeval tv = { .tv_sec = sec, .tv_usec = 0 };
+	struct __kernel_old_timeval tv = { .tv_sec = secs, .tv_usec = 0 };
 #endif
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0)
@@ -84,6 +102,9 @@ static inline void ksmbd_tcp_snd_timeout(struct socket *sock, unsigned int sec)
 #else
 	kernel_setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char *)&tv,
 			  sizeof(tv));
+#endif
+#else
+	sock_set_sndtimeo(sock->sk, secs);
 #endif
 }
 
@@ -405,7 +426,7 @@ static void tcp_destroy_socket(struct socket *ksmbd_socket)
 		return;
 
 	/* set zero to timeout */
-	ksmbd_tcp_rev_timeout(ksmbd_socket, 0);
+	ksmbd_tcp_rcv_timeout(ksmbd_socket, 0);
 	ksmbd_tcp_snd_timeout(ksmbd_socket, 0);
 
 	ret = kernel_sock_shutdown(ksmbd_socket, SHUT_RDWR);
@@ -453,11 +474,19 @@ static int create_socket(struct interface *iface)
 	ksmbd_tcp_nodelay(ksmbd_socket);
 	ksmbd_tcp_reuseaddr(ksmbd_socket);
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 	ret = kernel_setsockopt(ksmbd_socket,
 				SOL_SOCKET,
 				SO_BINDTODEVICE,
 				iface->name,
 				strlen(iface->name));
+#else
+	ret = sock_setsockopt(ksmbd_socket,
+			      SOL_SOCKET,
+			      SO_BINDTODEVICE,
+			      (char __user *)iface->name,
+			      strlen(iface->name));
+#endif
 	if (ret != -ENODEV && ret < 0) {
 		ksmbd_err("Failed to set SO_BINDTODEVICE: %d\n", ret);
 		goto out_error;
