@@ -1152,42 +1152,140 @@ static int ksmbd_get_encryption_key(struct ksmbd_conn *conn,
 	return 0;
 }
 
+static inline void smb2_sg_set_buf(struct scatterlist *sg, const void *buf,
+		unsigned int buflen)
+{
+	void *addr;
+
+	if (is_vmalloc_addr(buf))
+		addr = vmalloc_to_page(buf);
+	else
+		addr = virt_to_page(buf);
+	sg_set_page(sg, addr, buflen, offset_in_page(buf));
+}
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
 static struct scatterlist *ksmbd_init_sg(struct kvec *iov,
-					 unsigned int nvec,
-					 u8 *sign)
+		unsigned int nvec, u8 *sign)
 {
 	struct scatterlist *sg;
-	unsigned int i = 0;
+	int i, nr_entries[2] = {0}, total_entries = 0, sg_idx = 0;
 
-	sg = kmalloc_array(nvec, sizeof(struct scatterlist), GFP_KERNEL);
+	for (i = 0; i < nvec - 1; i++) {
+		unsigned long kaddr = (unsigned long)iov[i + 1].iov_base;
+
+		if (is_vmalloc_addr(iov[i + 1].iov_base)) {
+			nr_entries[i] = ((kaddr + iov[i + 1].iov_len +
+					PAGE_SIZE - 1) >> PAGE_SHIFT) -
+				(kaddr >> PAGE_SHIFT);
+		} else
+			nr_entries[i]++;
+		total_entries += nr_entries[i];
+	}
+
+	/* add one more entry for signature */
+	total_entries++;
+
+	sg = kmalloc_array(total_entries, sizeof(struct scatterlist), GFP_KERNEL);
 	if (!sg)
 		return NULL;
 
-	sg_init_table(sg, nvec);
-	for (i = 0; i < nvec - 1; i++)
-		sg_set_buf(&sg[i], iov[i + 1].iov_base, iov[i + 1].iov_len);
-	sg_set_buf(&sg[nvec - 1], sign, SMB2_SIGNATURE_SIZE);
+	sg_init_table(sg, total_entries);
+	for (i = 0; i < nvec - 1; i++) {
+		void *data = iov[i + 1].iov_base;
+		int len = iov[i + 1].iov_len;
+
+		if (is_vmalloc_addr(data)) {
+			int j, offset = offset_in_page(data);
+
+			for (j = 0; j < nr_entries[i]; j++) {
+				unsigned int bytes = PAGE_SIZE - offset;
+
+				if (len <= 0)
+					break;
+
+				if (bytes > len)
+					bytes = len;
+
+				sg_set_page(&sg[sg_idx++],
+					    vmalloc_to_page(data), bytes,
+					    offset_in_page(data));
+
+				data += bytes;
+				len -= bytes;
+				offset = 0;
+			}
+		} else {
+			sg_set_page(&sg[sg_idx++], virt_to_page(data), len,
+				    offset_in_page(data));
+		}
+
+	}
+	smb2_sg_set_buf(&sg[sg_idx], sign, SMB2_SIGNATURE_SIZE);
 	return sg;
 }
+
 #else
 static struct scatterlist *ksmbd_init_sg(struct kvec *iov,
 					 unsigned int nvec,
 					 u8 *sign)
 {
 	struct scatterlist *sg;
-	unsigned int i = 0;
 	unsigned int assoc_data_len = sizeof(struct smb2_transform_hdr) - 24;
+	int i, nr_entries[3] = {0}, total_entries = 0, sg_idx = 0;
 
-	sg = kmalloc_array(nvec + 1, sizeof(struct scatterlist), GFP_KERNEL);
+	for (i = 0; i < nvec - 1; i++) {
+		unsigned long kaddr = (unsigned long)iov[i + 1].iov_base;
+
+		if (is_vmalloc_addr(iov[i + 1].iov_base)) {
+			nr_entries[i] = ((kaddr + iov[i + 1].iov_len +
+					PAGE_SIZE - 1) >> PAGE_SHIFT) -
+				(kaddr >> PAGE_SHIFT);
+		} else
+			nr_entries[i]++;
+		total_entries += nr_entries[i];
+	}
+
+	/* Add two entries for transform header and signature */
+	total_entries += 2;
+
+	sg = kmalloc_array(total_entries, sizeof(struct scatterlist), GFP_KERNEL);
 	if (!sg)
 		return NULL;
 
-	sg_init_table(sg, nvec + 1);
-	sg_set_buf(&sg[0], iov[0].iov_base + 24, assoc_data_len);
-	for (i = 1; i < nvec; i++)
-		sg_set_buf(&sg[i], iov[i].iov_base, iov[i].iov_len);
-	sg_set_buf(&sg[nvec], sign, SMB2_SIGNATURE_SIZE);
+	sg_init_table(sg, total_entries);
+	smb2_sg_set_buf(&sg[sg_idx++], iov[0].iov_base + 24, assoc_data_len);
+	for (i = 0; i < nvec - 1; i++) {
+		void *data = iov[i + 1].iov_base;
+		int len = iov[i + 1].iov_len;
+
+		if (is_vmalloc_addr(data)) {
+			int j, offset = offset_in_page(data);
+
+			for (j = 0; j < nr_entries[i]; j++) {
+				unsigned int bytes = PAGE_SIZE - offset;
+
+				if (len <= 0)
+					break;
+
+				if (bytes > len)
+					bytes = len;
+
+				sg_set_page(&sg[sg_idx++],
+					    vmalloc_to_page(data), bytes,
+					    offset_in_page(data));
+
+				data += bytes;
+				len -= bytes;
+				offset = 0;
+			}
+		} else {
+			sg_set_page(&sg[sg_idx++], virt_to_page(data), len,
+				    offset_in_page(data));
+		}
+
+	}
+	smb2_sg_set_buf(&sg[sg_idx], sign, SMB2_SIGNATURE_SIZE);
 	return sg;
 }
 #endif
@@ -1262,7 +1360,8 @@ int ksmbd_crypt_message(struct ksmbd_conn *conn,
 	}
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)
-	sg_init_one(&assoc, iov[0].iov_base + 24, assoc_data_len);
+	sg_init_table(&assoc, 1);
+	smb2_sg_set_buf(&assoc, iov[0].iov_base + 24, assoc_data_len);
 #endif
 
 	sg = ksmbd_init_sg(iov, nvec, sign);
