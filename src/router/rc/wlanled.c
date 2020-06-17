@@ -38,6 +38,9 @@
 #define LED_PREFIX "/sys/class/leds/"
 #define LED_SUFFIX "/brightness"
 
+#define GPIO_PREFIX "/sys/class/gpio/"
+#define GPIO_SUFFIX "/value"
+
 static struct unl unl;
 static LIST_HEAD(interfaces);
 static LIST_HEAD(wdev);
@@ -89,6 +92,64 @@ static void add_interface(const char *ifname)
 		*c = 0;
 	}
 	list_add_tail(&iface->list, &interfaces);
+}
+
+static int _fswrite(const char *fname, const char *value) {
+	int fd = open(fname, O_WRONLY);
+	if (fd < 0)
+		return 1;
+
+	write(fd, value, strlen(value));
+	return close(fd);
+}
+
+static int init_gpio(const char *num) {
+	char dirpath[64];
+	_fswrite("/sys/class/gpio/export", num);
+
+	sprintf(dirpath, "/sys/class/gpio%s/direction", num);
+	_fswrite(dirpath, "out");
+
+	return 0;
+}
+
+static bool add_gpio(const char *name, bool inversed)
+{
+	struct led *led;
+	const char *c;
+	char *err, *led_name;
+	int min, len;
+	struct stat st;
+
+	c = strrchr(name, ':');
+	if (!c)
+		return false;
+
+	len = c - name;
+	min = strtol(c + 1, &err, 0);
+	if (err && *err)
+		return false;
+
+	led_name = alloca(len + 1);
+	memcpy(led_name, name, len);
+	led_name[len] = 0;
+
+	init_gpio(led_name);
+
+	led = calloc(1, 4 + sizeof(*led) + sizeof(GPIO_PREFIX) + len + sizeof(GPIO_SUFFIX) + 1);
+	sprintf(led->name, GPIO_PREFIX "gpio%s" GPIO_SUFFIX, led_name);
+	if (stat(led->name, &st) < 0) {
+		fprintf(stderr, "Could not find system GPIO %s\n", led_name);
+		free(led);
+		return false;
+	}
+
+	led->signal_min = min;
+	led->last_val = -1;
+	led->inversed = inversed;
+	list_add_tail(&led->list, &leds);
+
+	return true;
 }
 
 static bool add_led(const char *name, bool inversed)
@@ -260,6 +321,8 @@ static int b_usage(const char *progname)
 		"  -i <pattern>			Pattern for interfaces (if not specified, use all interfaces)\n"
 		"  -l <name>:<thresh>		Add a led with name <name> and minimum signal strength <thresh>\n"
 		"  -L <name>:<thresh>		Add a inversed led with name <name> and minimum signal strength <thresh>\n"
+		"  -g <gpionum>:<thresh>	Add gpio <gpionum> and minimum signal strength <thresh>\n"
+		"  -G <gpionum>:<thresh>	Add inversed gpio <gpionum> and minimum signal strength <thresh>\n"
 		"  -d <delay>			Set polling delay (default: %d)\n" "\n", progname, DEFAULT_POLL_DELAY);
 	return 1;
 }
@@ -283,7 +346,7 @@ static int wlanled_main(int argc, char **argv)
 {
 	int ch;
 
-	while ((ch = getopt(argc, argv, "i:l:L:")) != -1) {
+	while ((ch = getopt(argc, argv, "i:l:L:g:G:")) != -1) {
 		switch (ch) {
 		case 'i':
 			add_interface(optarg);
@@ -294,6 +357,14 @@ static int wlanled_main(int argc, char **argv)
 			break;
 		case 'L':
 			if (!add_led(optarg, 1))
+				return b_usage(argv[0]);
+			break;
+		case 'g':
+			if (!add_gpio(optarg, 0))
+				return b_usage(argv[0]);
+			break;
+		case 'G':
+			if (!add_gpio(optarg, 1))
 				return b_usage(argv[0]);
 			break;
 		case 'd':
