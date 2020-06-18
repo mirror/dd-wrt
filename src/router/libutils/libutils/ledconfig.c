@@ -1542,6 +1542,12 @@ static void getledconfig(struct ledconfig *cfg)
 		cfg->usb_gpio = 0x004;	//usb1 
 		cfg->usb_gpio1 = 0x005;	//usb2 
 		break;
+	case ROUTER_HABANERO:
+#ifdef HAVE_ANTAIRA
+		cfg->diag_gpio = 0x0C8;	 //on i2c slave antaira-gpio
+		cfg->beeper_gpio= 0x0D7; //on i2c slave antaira-gpio
+#endif
+		break;
 	case ROUTER_NETGEAR_R7800:
 		cfg->power_gpio = 0x000;	// power led 
 		cfg->diag_gpio = 0x00a;	// power led orange     
