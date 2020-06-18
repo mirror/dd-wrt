@@ -34,3 +34,10 @@
 #define __must_be_array(a) 0
 
 #endif
+
+#ifndef __HAVE_BUILTIN_BSWAP16__
+/* icc has this, but it's called _bswap16 */
+#define __HAVE_BUILTIN_BSWAP16__
+#define __builtin_bswap16 _bswap16
+#endif
+
