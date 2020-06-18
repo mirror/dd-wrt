@@ -1269,7 +1269,7 @@ struct device_link *device_link_add(struct device *consumer,
 				    struct device *supplier, u32 flags);
 void device_link_del(struct device_link *link);
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 
 extern __printf(3, 0)
 int dev_vprintk_emit(int level, const struct device *dev,
