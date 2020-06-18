@@ -2362,7 +2362,7 @@ struct wifidevices {
 #define QBOOST 0x2		// qboost is a tdma like protocol. i just added this feature to ath10k for doing some experiments. its only supported on 10.4 based firmwares (9984, ipq40xx etc)
 #define TDMA 0x4		// older chipsets to not support tdma, just some sort of polling. so we need this flag
 #define BEACONVAP100 0x8	// limit if vaps are configured, beacon minimum must be 100ms (chipset specific)
-#define SURVEY_NOPERIOD 0x10    // survey is non periodic
+#define SURVEY_NOPERIOD 0x10	// survey is non periodic
 
 #ifdef HAVE_ATH5K
 #define CHANNELSURVEY5K 0x1
@@ -2736,6 +2736,18 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 	else
 		ret = 0;
 	globfree(&globbuf);
+
+	if (!strcmp(drivername, "ath5k")) {
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum, drivername);
+		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+		free(globstring);
+		if (globresult == 0)
+			ret = (int)globbuf.gl_pathc;
+		else
+			ret = 0;
+	}
+	globfree(&globbuf);
+
 	return ret;
 
 }
@@ -3384,7 +3396,7 @@ int wlconf_up(char *name)
 	char *v;
 #if defined(HAVE_ACK)
 	char sens[32];
-	sprintf(sens,"wl%d_distance",instance);
+	sprintf(sens, "wl%d_distance", instance);
 	if ((v = nvram_default_get(sens, "500"))) {
 		rw_reg_t reg;
 		uint32 shm;
