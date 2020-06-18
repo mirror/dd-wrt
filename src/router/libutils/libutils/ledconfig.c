@@ -1544,8 +1544,8 @@ static void getledconfig(struct ledconfig *cfg)
 		break;
 	case ROUTER_HABANERO:
 #ifdef HAVE_ANTAIRA
-		cfg->diag_gpio = 0x0C8;	 //on i2c slave antaira-gpio
-		cfg->beeper_gpio= 0x0D7; //on i2c slave antaira-gpio
+		cfg->diag_gpio = 0x0D4;	 //gpio 212 on i2c slave antaira-gpio
+		cfg->beeper_gpio= 0x0D7; //gpio 215 on i2c slave antaira-gpio
 #endif
 		break;
 	case ROUTER_NETGEAR_R7800:
