@@ -525,8 +525,8 @@ void start_sysinit(void)
 		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
 		eval("hwclock", "-s", "-u");
 
-		eval("ledtool", "1", "4");
-		eval("ledtool", "5", "0");
+		//eval("ledtool", "1", "4");
+		eval("ledtool", "20", "0");
 
 #else /*HAVE_ANTAIRA*/
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
