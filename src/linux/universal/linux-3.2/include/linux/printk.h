@@ -94,7 +94,7 @@ void early_printk(const char *fmt, ...);
 extern int printk_needs_cpu(int cpu);
 extern void printk_tick(void);
 
-#ifdef CONFIG_PRINTK && !defined(CONFIG_NOPRINTK)
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 asmlinkage __printf(1, 0)
 int vprintk(const char *fmt, va_list args);
 asmlinkage __printf(1, 2) __cold
