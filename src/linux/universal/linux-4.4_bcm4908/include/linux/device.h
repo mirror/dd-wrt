@@ -1099,7 +1099,7 @@ extern void device_shutdown(void);
 extern const char *dev_driver_string(const struct device *dev);
 
 
-#ifdef CONFIG_PRINTK
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_NOPRINTK)
 
 extern __printf(3, 0)
 int dev_vprintk_emit(int level, const struct device *dev,
