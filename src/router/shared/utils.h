@@ -1132,8 +1132,18 @@ char *hash_string(char *str, char *hashbuf);
 
 #ifdef HAVE_ATH5K
 extern int is_ath5k(const char *prefix);
+extern int is_ath5k_ahb(const char *prefix);
+extern int is_ath5k_pci(const char *prefix);
 #else
 static inline int is_ath5k(const char *prefix)
+{
+	return 0;
+}
+static inline int is_ath5k_pci(const char *prefix)
+{
+	return 0;
+}
+static inline int is_ath5k_ahb(const char *prefix)
 {
 	return 0;
 }
