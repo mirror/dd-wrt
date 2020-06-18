@@ -218,7 +218,7 @@ static int flash_erase_nvram(unsigned int flashsize, unsigned int blocksize)
 		nvramdetect = getPartition("cfg");
 	}
 	if (!nvramdetect) {
-		puts("nvram can and will not erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
+		puts("nvram can and will not be erased, since nvram was not detected on this device (maybe dd-wrt isnt installed)!\n");
 		return;
 	}
 	printf("erasing nvram at [0x%08X]\n", nvramdetect);
