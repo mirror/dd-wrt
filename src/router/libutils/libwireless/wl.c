@@ -2482,6 +2482,7 @@ static struct wifidevices wdevices[] = {
 	{ "QCA955x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca955x_wmac" },
 	{ "QCA953x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca953x_wmac" },
 	{ "QCA956x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca956x_wmac" },
+	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac" },
 };
 
 char *getWifiDeviceName(const char *prefix, int *flags)
@@ -2717,6 +2718,37 @@ int has_airtime_fairness(const char *prefix)
 }
 
 #endif
+
+
+
+#ifdef HAVE_ATH5K
+
+static int devicecountbydriver_ath5kahb(const char *prefix)
+{
+	glob_t globbuf;
+	char *globstring;
+	int globresult;
+	int devnum;
+	int ret;
+	// correct index if there are legacy cards arround... should not...
+	devnum = get_ath9k_phy_ifname(prefix);
+	if (devnum == -1)
+		return 0;
+
+		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum);
+		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+		free(globstring);
+		if (globresult == 0)
+			ret = (int)globbuf.gl_pathc;
+		else
+			ret = 0;
+	globfree(&globbuf);
+
+	return ret;
+
+}
+
+#endif
 static int devicecountbydriver(const char *prefix, char *drivername)
 {
 	glob_t globbuf;
@@ -2737,29 +2769,30 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 		ret = 0;
 	globfree(&globbuf);
 
-	if (!strcmp(drivername, "ath5k")) {
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum, drivername);
-		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-		free(globstring);
-		if (globresult == 0)
-			ret = (int)globbuf.gl_pathc;
-		else
-			ret = 0;
-	}
-	globfree(&globbuf);
-
 	return ret;
 
 }
 
 #ifdef HAVE_ATH5K
-int is_ath5k(const char *prefix)
+int is_ath5k_pci(const char *prefix)
 {
 	INITVALUECACHE();
 	RETURNVALUE(devicecountbydriver(prefix, "ath5k"));
 	EXITVALUECACHE();
 	return ret;
 }
+int is_ath5k_ahb(const char *prefix)
+{
+	INITVALUECACHE();
+	RETURNVALUE(devicecountbydriver_ath5kahb(prefix);
+	EXITVALUECACHE();
+	return ret;
+}
+int is_ath5k(const char *prefix)
+{
+    return is_ath5k_pci(prefix) || is_ath5k_ahb(prefix);
+}
+
 #endif
 #ifdef HAVE_ATH9K
 int is_ath9k(const char *prefix)
