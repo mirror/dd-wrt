@@ -2482,7 +2482,8 @@ static struct wifidevices wdevices[] = {
 	{ "QCA955x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca955x_wmac" },
 	{ "QCA953x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca953x_wmac" },
 	{ "QCA956x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "qca956x_wmac" },
-	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac" },
+	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac.0" },
+	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac.1" },
 };
 
 char *getWifiDeviceName(const char *prefix, int *flags)
