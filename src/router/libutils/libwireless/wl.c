@@ -2719,8 +2719,6 @@ int has_airtime_fairness(const char *prefix)
 
 #endif
 
-
-
 #ifdef HAVE_ATH5K
 
 static int devicecountbydriver_ath5kahb(const char *prefix)
@@ -2735,13 +2733,13 @@ static int devicecountbydriver_ath5kahb(const char *prefix)
 	if (devnum == -1)
 		return 0;
 
-		asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum);
-		globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
-		free(globstring);
-		if (globresult == 0)
-			ret = (int)globbuf.gl_pathc;
-		else
-			ret = 0;
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/ar231x-wmac.0", devnum);
+	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
+	free(globstring);
+	if (globresult == 0)
+		ret = (int)globbuf.gl_pathc;
+	else
+		ret = 0;
 	globfree(&globbuf);
 
 	return ret;
@@ -2781,16 +2779,18 @@ int is_ath5k_pci(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_ath5k_ahb(const char *prefix)
 {
 	INITVALUECACHE();
-	RETURNVALUE(devicecountbydriver_ath5kahb(prefix);
+	RETURNVALUE(devicecountbydriver_ath5kahb(prefix));
 	EXITVALUECACHE();
 	return ret;
 }
+
 int is_ath5k(const char *prefix)
 {
-    return is_ath5k_pci(prefix) || is_ath5k_ahb(prefix);
+	return is_ath5k_pci(prefix) || is_ath5k_ahb(prefix);
 }
 
 #endif
