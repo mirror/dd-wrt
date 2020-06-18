@@ -191,8 +191,11 @@ static int getbuttonstate()
 		ret = get_gpio(16);
 		break;
 	case ROUTER_HABANERO:
+#ifdef HAVE_ANTAIRA
+		return 0;
+#elif
 		ret = get_gpio(8);
-		ret = 0;
+#endif
 		break;
 	default:
 		ret = get_gpio(54);
