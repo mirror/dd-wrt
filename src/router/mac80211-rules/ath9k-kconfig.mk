@@ -208,10 +208,10 @@ ifeq ($(CONFIG_WIL6210),y)
 endif
 ifeq ($(CONFIG_ATH5K),y)
 	cat $(TOP)/mac80211-rules/configs/ath5k.config >> $(MAC80211_PATH)/.config_temp
-ifeq ($(CPTCFG_ATH5K_PCI),y)
+ifeq ($(CONFIG_ATH5K_PCI),y)
 	echo "CPTCFG_ATH5K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 endif
-ifeq ($(CPTCFG_ATH5K_AHB),y)
+ifeq ($(CONFIG_ATH5K_AHB),y)
 	echo "CPTCFG_ATH5K_AHB=y" >>$(MAC80211_PATH)/.config_temp
 	BUILDFLAGS += -DCONFIG_NOPRINTK
 	
