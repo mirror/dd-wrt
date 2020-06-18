@@ -354,6 +354,7 @@ ulg decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end
 		enable_ethernet();
 		puts("loading");
 		lzma_unzip();
+		puts("\n");
 		set_cmdline();
 	}
 }
