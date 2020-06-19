@@ -36,7 +36,7 @@
 /* #define cpu_has_mcheck		? */
 #define cpu_has_ejtag			1
 
-#if !defined(CONFIG_ATHEROS_AR5312)
+#if !defined(CONFIG_ATHEROS_AR5312) || defined(CONFIG_CPU_MIPS32_R2)
 #  define cpu_has_llsc			1
 #else
 /*
@@ -60,7 +60,7 @@
 
 #define cpu_has_mips32r1		1
 
-#if !defined(CONFIG_ATHEROS_AR5312)
+#if !defined(CONFIG_ATHEROS_AR5312) || defined(CONFIG_CPU_MIPS32_R2)
 #  define cpu_has_mips32r2		1
 #endif
 
