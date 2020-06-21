@@ -46,9 +46,7 @@
 #include "common/userpref.h"
 #include "libimobiledevice/libimobiledevice.h"
 
-enum connection_type {
-	CONNECTION_USBMUXD = 1
-};
+#define DEVICE_VERSION(maj, min, patch) (((maj & 0xFF) << 16) | ((min & 0xFF) << 8) | (patch & 0xFF))
 
 struct ssl_data_private {
 #ifdef HAVE_OPENSSL
@@ -66,8 +64,8 @@ struct ssl_data_private {
 typedef struct ssl_data_private *ssl_data_t;
 
 struct idevice_connection_private {
-	char *udid;
-	enum connection_type type;
+	idevice_t device;
+	enum idevice_connection_type type;
 	void *data;
 	ssl_data_t ssl_data;
 };
@@ -75,7 +73,7 @@ struct idevice_connection_private {
 struct idevice_private {
 	char *udid;
 	uint32_t mux_id;
-	enum connection_type conn_type;
+	enum idevice_connection_type conn_type;
 	void *conn_data;
 	int version;
 };
