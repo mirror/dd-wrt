@@ -30,9 +30,9 @@ extern "C" {
 
 /** Device lookup options for usbmuxd_get_device. */
 enum usbmux_lookup_options {
-	DEVICE_LOOKUP_USBMUX = 1 << 1, /** include USBMUX devices during lookup */
-	DEVICE_LOOKUP_NETWORK = 1 << 2, /** include network devices during lookup */
-	DEVICE_LOOKUP_PREFER_NETWORK = 1 << 3 /** prefer network connection if device is available via USBMUX *and* network */
+	DEVICE_LOOKUP_USBMUX = 1 << 1, /**< include USBMUX devices during lookup */
+	DEVICE_LOOKUP_NETWORK = 1 << 2, /**< include network devices during lookup */
+	DEVICE_LOOKUP_PREFER_NETWORK = 1 << 3 /**< prefer network connection if device is available via USBMUX *and* network */
 };
 
 /** Type of connection a device is available on */
@@ -132,7 +132,7 @@ int usbmuxd_subscribe(usbmuxd_event_cb_t callback, void *user_data);
  * @note Deprecated. Use usbmuxd_events_subscribe and usbmuxd_events_unsubscribe instead.
  * @see usbmuxd_events_unsubscribe
  */
-int usbmuxd_unsubscribe();
+int usbmuxd_unsubscribe(void);
 
 /**
  * Contacts usbmuxd and retrieves a list of connected devices.
@@ -166,7 +166,7 @@ int usbmuxd_device_list_free(usbmuxd_device_info_t **device_list);
  *
  * @param udid A device UDID of the device to look for. If udid is NULL,
  *      This function will return the first device found.
- * @param device Pointer to a previously allocated (or static) 
+ * @param device Pointer to a previously allocated (or static)
  *      usbmuxd_device_info_t that will be filled with the device info.
  *
  * @return 0 if no matching device is connected, 1 if the device was found,
