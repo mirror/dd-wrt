@@ -197,6 +197,11 @@ static property_list_service_error_t internal_plist_receive_timeout(property_lis
 		return service_to_property_list_service_error(serr);
 	}
 
+	if (bytes == 0) {
+		/* success but 0 bytes length, assume timeout */
+		return PROPERTY_LIST_SERVICE_E_RECEIVE_TIMEOUT;
+	}
+
 	debug_info("initial read=%i", bytes);
 
 	uint32_t curlen = 0;
@@ -219,6 +224,7 @@ static property_list_service_error_t internal_plist_receive_timeout(property_lis
 		debug_info("received %d bytes", bytes);
 		curlen += bytes;
 	}
+
 	if (curlen < pktlen) {
 		debug_info("received incomplete packet (%d of %d bytes)", curlen, pktlen);
 		if (curlen > 0) {
@@ -228,6 +234,7 @@ static property_list_service_error_t internal_plist_receive_timeout(property_lis
 		free(content);
 		return res;
 	}
+
 	if ((pktlen > 8) && !memcmp(content, "bplist00", 8)) {
 		plist_from_bin(content, pktlen, plist);
 	} else if ((pktlen > 5) && !memcmp(content, "<?xml", 5)) {
@@ -241,15 +248,17 @@ static property_list_service_error_t internal_plist_receive_timeout(property_lis
 		debug_info("WARNING: received unexpected non-plist content");
 		debug_buffer(content, pktlen);
 	}
+
 	if (*plist) {
 		debug_plist(*plist);
 		res = PROPERTY_LIST_SERVICE_E_SUCCESS;
 	} else {
 		res = PROPERTY_LIST_SERVICE_E_PLIST_ERROR;
 	}
+
 	free(content);
 	content = NULL;
-	
+
 	return res;
 }
 
@@ -260,7 +269,7 @@ LIBIMOBILEDEVICE_API property_list_service_error_t property_list_service_receive
 
 LIBIMOBILEDEVICE_API property_list_service_error_t property_list_service_receive_plist(property_list_service_client_t client, plist_t *plist)
 {
-	return internal_plist_receive_timeout(client, plist, 10000);
+	return internal_plist_receive_timeout(client, plist, 30000);
 }
 
 LIBIMOBILEDEVICE_API property_list_service_error_t property_list_service_enable_ssl(property_list_service_client_t client)

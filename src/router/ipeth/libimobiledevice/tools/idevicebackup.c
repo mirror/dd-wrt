@@ -24,6 +24,8 @@
 #include <config.h>
 #endif
 
+#define TOOL_NAME "idevicebackup"
+
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -606,7 +608,7 @@ static void do_post_notification(const char *notification)
 	np_client_t np;
 
 	if (!client) {
-		if (lockdownd_client_new_with_handshake(device, &client, "idevicebackup") != LOCKDOWN_E_SUCCESS) {
+		if (lockdownd_client_new_with_handshake(device, &client, TOOL_NAME) != LOCKDOWN_E_SUCCESS) {
 			return;
 		}
 	}
@@ -665,16 +667,22 @@ static void print_usage(int argc, char **argv)
 	char *name = NULL;
 	name = strrchr(argv[0], '/');
 	printf("Usage: %s [OPTIONS] CMD [DIRECTORY]\n", (name ? name + 1: argv[0]));
-	printf("Create or restore backup from the current or specified directory.\n\n");
-	printf("commands:\n");
-	printf("  backup\tSaves a device backup into DIRECTORY\n");
-	printf("  restore\tRestores a device backup from DIRECTORY.\n\n");
-	printf("options:\n");
-	printf("  -d, --debug\t\tenable communication debugging\n");
-	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
-	printf("  -h, --help\t\tprints usage information\n");
 	printf("\n");
-	printf("Homepage: <" PACKAGE_URL ">\n");
+	printf("Create or restore backup from the current or specified directory.\n");
+	printf("\n");
+	printf("CMD:\n");
+	printf("  backup\tSaves a device backup into DIRECTORY\n");
+	printf("  restore\tRestores a device backup from DIRECTORY.\n");
+	printf("\n");
+	printf("OPTIONS:\n");
+	printf("  -u, --udid UDID\ttarget specific device by UDID\n");
+	printf("  -n, --network\t\tconnect to network device\n");
+	printf("  -d, --debug\t\tenable communication debugging\n");
+	printf("  -h, --help\t\tprints usage information\n");
+	printf("  -v, --version\t\tprints version information\n");
+	printf("\n");
+	printf("Homepage:    <" PACKAGE_URL ">\n");
+	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 int main(int argc, char *argv[])
@@ -683,6 +691,7 @@ int main(int argc, char *argv[])
 	lockdownd_error_t ldret = LOCKDOWN_E_UNKNOWN_ERROR;
 	int i;
 	char* udid = NULL;
+	int use_network = 0;
 	lockdownd_service_descriptor_t service = NULL;
 	int cmd = -1;
 	int is_full_backup = 0;
@@ -722,8 +731,16 @@ int main(int argc, char *argv[])
 			udid = strdup(argv[i]);
 			continue;
 		}
+		else if (!strcmp(argv[i], "-n") || !strcmp(argv[i], "--network")) {
+			use_network = 1;
+			continue;
+		}
 		else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
 			print_usage(argc, argv);
+			return 0;
+		}
+		else if (!strcmp(argv[i], "-v") || !strcmp(argv[i], "--version")) {
+			printf("%s %s\n", TOOL_NAME, PACKAGE_VERSION);
 			return 0;
 		}
 		else if (!strcmp(argv[i], "backup")) {
@@ -772,23 +789,17 @@ int main(int argc, char *argv[])
 
 	printf("Backup directory is \"%s\"\n", backup_directory);
 
-	if (udid) {
-		ret = idevice_new(&device, udid);
-		if (ret != IDEVICE_E_SUCCESS) {
-			printf("No device found with udid %s, is it plugged in?\n", udid);
-			return -1;
+	ret = idevice_new_with_options(&device, udid, (use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX);
+	if (ret != IDEVICE_E_SUCCESS) {
+		if (udid) {
+			printf("No device found with udid %s.\n", udid);
+		} else {
+			printf("No device found.\n");
 		}
-	}
-	else
-	{
-		ret = idevice_new(&device, NULL);
-		if (ret != IDEVICE_E_SUCCESS) {
-			printf("No device found, is it plugged in?\n");
-			return -1;
-		}
+		return -1;
 	}
 
-	if (LOCKDOWN_E_SUCCESS != (ldret = lockdownd_client_new_with_handshake(device, &client, "idevicebackup"))) {
+	if (LOCKDOWN_E_SUCCESS != (ldret = lockdownd_client_new_with_handshake(device, &client, TOOL_NAME))) {
 		printf("ERROR: Could not connect to lockdownd, error code %d\n", ldret);
 		idevice_free(device);
 		return -1;
