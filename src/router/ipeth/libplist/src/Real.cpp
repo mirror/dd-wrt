@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <plist/Real.h>
 
 namespace PList
@@ -70,4 +70,4 @@ double Real::GetValue() const
     return d;
 }
 
-};
+}  // namespace PList
