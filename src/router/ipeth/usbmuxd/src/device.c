@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 
 #ifdef HAVE_CONFIG_H
@@ -146,7 +147,6 @@ static struct mux_device* get_mux_device_for_id(int device_id)
 static struct mux_connection* get_mux_connection(int device_id, struct mux_client *client)
 {
 	struct mux_connection *conn = NULL;
-	pthread_mutex_lock(&device_list_mutex);
 	FOREACH(struct mux_device *dev, &device_list) {
 		if(dev->id == device_id) {
 			FOREACH(struct mux_connection *lconn, &dev->connections) {
@@ -158,7 +158,6 @@ static struct mux_connection* get_mux_connection(int device_id, struct mux_clien
 			break;
 		}
 	} ENDFOREACH
-	pthread_mutex_unlock(&device_list_mutex);
 
 	return conn;
 }
@@ -225,7 +224,7 @@ static int send_packet(struct mux_device *dev, enum mux_protocol proto, void *he
 		mhdr->tx_seq = htons(dev->tx_seq);
 		mhdr->rx_seq = htons(dev->rx_seq);
 		dev->tx_seq++;
-	}	
+	}
 	memcpy(buffer + mux_header_size, header, hdrlen);
 	if(data && length)
 		memcpy(buffer + mux_header_size + hdrlen, data, length);
@@ -344,10 +343,8 @@ static void connection_teardown(struct mux_connection *conn)
 			client_close(conn->client);
 		}
 	}
-	if(conn->ib_buf)
-		free(conn->ib_buf);
-	if(conn->ob_buf)
-		free(conn->ob_buf);
+	free(conn->ib_buf);
+	free(conn->ob_buf);
 	collection_remove(&conn->dev->connections, conn);
 	free(conn);
 }
@@ -394,6 +391,8 @@ int device_start_connect(int device_id, uint16_t dport, struct mux_client *clien
 	res = send_tcp(conn, TH_SYN, NULL, 0);
 	if(res < 0) {
 		usbmuxd_log(LL_ERROR, "Error sending TCP SYN to device %d (%d->%d)", dev->id, sport, dport);
+		free(conn->ib_buf);
+		free(conn->ob_buf);
 		free(conn);
 		return -RESULT_CONNREFUSED; //bleh
 	}
@@ -465,8 +464,9 @@ static int send_tcp_ack(struct mux_connection *conn)
  */
 void device_client_process(int device_id, struct mux_client *client, short events)
 {
+	pthread_mutex_lock(&device_list_mutex);
 	struct mux_connection *conn = get_mux_connection(device_id, client);
-
+	pthread_mutex_unlock(&device_list_mutex);
 	if(!conn) {
 		usbmuxd_log(LL_WARNING, "Could not find connection for device %d client %p", device_id, client);
 		return;
@@ -598,10 +598,10 @@ static void device_control_input(struct mux_device *dev, unsigned char *payload,
 				char* buf = malloc(payload_length);
 				strncpy(buf, (char*)payload+1, payload_length-1);
 				buf[payload_length-1] = '\0';
-				usbmuxd_log(LL_ERROR, "%s: ERROR: %s", __func__, buf);
+				usbmuxd_log(LL_ERROR, "%s: ERROR (on device): %s", __func__, buf);
 				free(buf);
 			} else {
-				usbmuxd_log(LL_ERROR, "%s: Error occurred, but empty error message", __func__);
+				usbmuxd_log(LL_ERROR, "%s: Got device error payload with empty message", __func__);
 			}
 			break;
 		case 7:
@@ -611,13 +611,16 @@ static void device_control_input(struct mux_device *dev, unsigned char *payload,
 				buf[payload_length-1] = '\0';
 				usbmuxd_log(LL_INFO, "%s: %s", __func__, buf);
 				free(buf);
+			} else {
+				usbmuxd_log(LL_WARNING, "%s: Got payload type 7 with empty message", __func__);
 			}
 			break;
 		default:
+			usbmuxd_log(LL_WARNING, "%s: Got unhandled payload type %d", __func__, payload[0]);
 			break;
 		}
 	} else {
-		usbmuxd_log(LL_WARNING, "%s: got a type 1 packet without payload", __func__);
+		usbmuxd_log(LL_WARNING, "%s: Got a type 1 packet without payload", __func__);
 	}
 }
 
@@ -690,6 +693,7 @@ static void device_tcp_input(struct mux_device *dev, struct tcphdr *th, unsigned
 				return;
 			}
 			conn->state = CONN_CONNECTED;
+			usbmuxd_log(LL_INFO, "Client connected to device %d (%d->%d)", dev->id, sport, dport);
 			if(client_notify_connect(conn->client, RESULT_OK) < 0) {
 				conn->client = NULL;
 				connection_teardown(conn);
@@ -933,7 +937,7 @@ int device_get_list(int include_hidden, struct device_info **devices)
 	*devices = malloc(sizeof(struct device_info) * dev_list.capacity);
 	struct device_info *p = *devices;
 
-	FOREACH(struct mux_device *dev, &device_list) {
+	FOREACH(struct mux_device *dev, &dev_list) {
 		if((dev->state == MUXDEV_ACTIVE) && (include_hidden || dev->visible)) {
 			p->id = dev->id;
 			p->serial = usb_get_serial(dev->usbdev);
@@ -978,8 +982,8 @@ void device_check_timeouts(void)
 	FOREACH(struct mux_device *dev, &device_list) {
 		if(dev->state == MUXDEV_ACTIVE) {
 			FOREACH(struct mux_connection *conn, &dev->connections) {
-				if((conn->state == CONN_CONNECTED) && 
-						(conn->flags & CONN_ACK_PENDING) && 
+				if((conn->state == CONN_CONNECTED) &&
+						(conn->flags & CONN_ACK_PENDING) &&
 						(ct - conn->last_ack_time) > ACK_TIMEOUT) {
 					usbmuxd_log(LL_DEBUG, "Sending ACK due to expired timeout (%" PRIu64 " -> %" PRIu64 ")", conn->last_ack_time, ct);
 					send_tcp_ack(conn);

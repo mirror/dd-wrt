@@ -20,6 +20,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#define _DEFAULT_SOURCE
 #define _BSD_SOURCE
 #define _GNU_SOURCE
 
@@ -52,10 +53,13 @@
 static const char *socket_path = "/var/run/usbmuxd";
 static const char *lockfile = "/var/run/usbmuxd.pid";
 
+// Global state used in other files
 int should_exit;
 int should_discover;
 int use_logfile = 0;
+int no_preflight = 0;
 
+// Global state for main.c
 static int verbose = 0;
 static int foreground = 0;
 static int drop_privileges = 0;
@@ -150,7 +154,7 @@ static void set_signal_handlers(void)
 	sigaddset(&set, SIGUSR1);
 	sigaddset(&set, SIGUSR2);
 	sigprocmask(SIG_SETMASK, &set, NULL);
-	
+
 	memset(&sa, 0, sizeof(struct sigaction));
 	sa.sa_handler = handle_signal;
 	sigaction(SIGINT, &sa, NULL);
@@ -358,7 +362,10 @@ static int notify_parent(int status)
 static void usage()
 {
 	printf("Usage: %s [OPTIONS]\n", PACKAGE_NAME);
-	printf("Expose a socket to multiplex connections from and to iOS devices.\n\n");
+	printf("\n");
+	printf("Expose a socket to multiplex connections from and to iOS devices.\n");
+	printf("\n");
+	printf("OPTIONS:\n");
 	printf("  -h, --help\t\tPrint this message.\n");
 	printf("  -v, --verbose\t\tBe verbose (use twice or more to increase).\n");
 	printf("  -f, --foreground\tDo not daemonize (implies one -v).\n");
@@ -367,6 +374,7 @@ static void usage()
 	printf("                       \tStarting another instance will trigger discovery instead.\n");
 	printf("  -z, --enable-exit\tEnable \"--exit\" request from other instances and exit\n");
 	printf("                   \tautomatically if no device is attached.\n");
+	printf("  -p, --no-preflight\tDisable lockdownd preflight on new device.\n");
 #ifdef HAVE_UDEV
 	printf("  -u, --udev\t\tRun in udev operation mode (implies -n and -z).\n");
 #endif
@@ -380,6 +388,8 @@ static void usage()
 	printf("  -l, --logfile=LOGFILE\tLog (append) to LOGFILE instead of stderr or syslog.\n");
 	printf("  -V, --version\t\tPrint version information and exit.\n");
 	printf("\n");
+	printf("Homepage:    <" PACKAGE_URL ">\n");
+	printf("Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 static void parse_opts(int argc, char **argv)
@@ -391,6 +401,7 @@ static void parse_opts(int argc, char **argv)
 		{"user", required_argument, NULL, 'U'},
 		{"disable-hotplug", no_argument, NULL, 'n'},
 		{"enable-exit", no_argument, NULL, 'z'},
+		{"no-preflight", no_argument, NULL, 'p'},
 #ifdef HAVE_UDEV
 		{"udev", no_argument, NULL, 'u'},
 #endif
@@ -406,11 +417,11 @@ static void parse_opts(int argc, char **argv)
 	int c;
 
 #ifdef HAVE_SYSTEMD
-	const char* opts_spec = "hfvVuU:xXsnzl:";
+	const char* opts_spec = "hfvVuU:xXsnzl:p";
 #elif HAVE_UDEV
-	const char* opts_spec = "hfvVuU:xXnzl:";
+	const char* opts_spec = "hfvVuU:xXnzl:p";
 #else
-	const char* opts_spec = "hfvVU:xXnzl:";
+	const char* opts_spec = "hfvVU:xXnzl:p";
 #endif
 
 	while (1) {
@@ -435,6 +446,9 @@ static void parse_opts(int argc, char **argv)
 		case 'U':
 			drop_privileges = 1;
 			drop_user = optarg;
+			break;
+		case 'p':
+			no_preflight = 1;
 			break;
 #ifdef HAVE_UDEV
 		case 'u':
