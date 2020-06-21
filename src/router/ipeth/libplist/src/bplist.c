@@ -201,7 +201,7 @@ struct bplist_data {
     uint8_t offset_size;
     const char* offset_table;
     uint32_t level;
-    plist_t used_indexes;
+    ptrarray_t* used_indexes;
 };
 
 #ifdef DEBUG
@@ -339,7 +339,7 @@ static char *plist_utf16be_to_utf8(uint16_t *unistr, long len, long *items_read,
 				read_lead_surrogate = 1;
 				w = 0x010000 + ((wc & 0x3FF) << 10);
 			} else {
-				// This is invalid, the next 16 bit char should be a trail surrogate. 
+				// This is invalid, the next 16 bit char should be a trail surrogate.
 				// Handling error by skipping.
 				read_lead_surrogate = 0;
 			}
@@ -740,20 +740,20 @@ static plist_t parse_bin_node_at_index(struct bplist_data *bplist, uint32_t node
     }
 
     /* store node_index for current recursion level */
-    if (plist_array_get_size(bplist->used_indexes) < bplist->level+1) {
-        while (plist_array_get_size(bplist->used_indexes) < bplist->level+1) {
-            plist_array_append_item(bplist->used_indexes, plist_new_uint(node_index));
+    if ((uint32_t)ptr_array_size(bplist->used_indexes) < bplist->level+1) {
+        while ((uint32_t)ptr_array_size(bplist->used_indexes) < bplist->level+1) {
+            ptr_array_add(bplist->used_indexes, (void*)(uintptr_t)node_index);
         }
     } else {
-        plist_array_set_item(bplist->used_indexes, plist_new_uint(node_index), bplist->level);
+	ptr_array_set(bplist->used_indexes, (void*)(uintptr_t)node_index, bplist->level);
     }
 
     /* recursion check */
     if (bplist->level > 0) {
         for (i = bplist->level-1; i >= 0; i--) {
-            plist_t node_i = plist_array_get_item(bplist->used_indexes, i);
-            plist_t node_level = plist_array_get_item(bplist->used_indexes, bplist->level);
-            if (plist_compare_node_value(node_i, node_level)) {
+            uint32_t node_i = (uint32_t)(uintptr_t)ptr_array_index(bplist->used_indexes, i);
+            uint32_t node_level = (uint32_t)(uintptr_t)ptr_array_index(bplist->used_indexes, bplist->level);
+            if (node_i == node_level) {
                 PLIST_BIN_ERR("recursion detected in binary plist\n");
                 return NULL;
             }
@@ -850,7 +850,7 @@ PLIST_API void plist_from_bin(const char *plist_bin, uint32_t length, plist_t * 
     bplist.offset_size = offset_size;
     bplist.offset_table = offset_table;
     bplist.level = 0;
-    bplist.used_indexes = plist_new_array();
+    bplist.used_indexes = ptr_array_new(16);
 
     if (!bplist.used_indexes) {
         PLIST_BIN_ERR("failed to create array to hold used node indexes. Out of memory?\n");
@@ -859,7 +859,7 @@ PLIST_API void plist_from_bin(const char *plist_bin, uint32_t length, plist_t * 
 
     *plist = parse_bin_node_at_index(&bplist, root_object);
 
-    plist_free(bplist.used_indexes);
+    ptr_array_free(bplist.used_indexes);
 }
 
 static unsigned int plist_data_hash(const void* key)
@@ -941,8 +941,6 @@ static void serialize_plist(node_t* node, void* data)
     for (ch = node_first_child(node); ch; ch = node_next_sibling(ch)) {
         serialize_plist(ch, data);
     }
-
-    return;
 }
 
 #define Log2(x) (x == 8 ? 3 : (x == 4 ? 2 : (x == 2 ? 1 : 0)))
@@ -1170,11 +1168,10 @@ PLIST_API void plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length)
     uint64_t offset_table_index = 0;
     bytearray_t *bplist_buff = NULL;
     uint64_t i = 0;
-    uint8_t *buff = NULL;
+    uint64_t buff_len = 0;
     uint64_t *offsets = NULL;
     bplist_trailer_t trailer;
     uint64_t objects_len = 0;
-    uint64_t buff_len = 0;
 
     //check for valid input
     if (!plist || !plist_bin || *plist_bin || !length)
@@ -1298,13 +1295,11 @@ PLIST_API void plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length)
 
         switch (data->type)
         {
-        case PLIST_BOOLEAN:
-            buff = (uint8_t *) malloc(sizeof(uint8_t));
-            buff[0] = data->boolval ? BPLIST_TRUE : BPLIST_FALSE;
-            byte_array_append(bplist_buff, buff, sizeof(uint8_t));
-            free(buff);
+        case PLIST_BOOLEAN: {
+            uint8_t b = data->boolval ? BPLIST_TRUE : BPLIST_FALSE;
+            byte_array_append(bplist_buff, &b, 1);
             break;
-
+        }
         case PLIST_UINT:
             if (data->length == 16) {
                 write_uint(bplist_buff, data->intval);
@@ -1378,4 +1373,9 @@ PLIST_API void plist_to_bin(plist_t plist, char **plist_bin, uint32_t * length)
 
     bplist_buff->data = NULL; // make sure we don't free the output buffer
     byte_array_free(bplist_buff);
+}
+
+PLIST_API void plist_to_bin_free(char *plist_bin)
+{
+    free(plist_bin);
 }

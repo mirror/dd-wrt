@@ -1,4 +1,4 @@
-/* 
+/*
 
 Copyright (c) 2007-2010  Michael G Schwern
 
@@ -30,7 +30,7 @@ THE SOFTWARE.
 
 Programmers who have available to them 64-bit time values as a 'long
 long' type can use localtime64_r() and gmtime64_r() which correctly
-converts the time even on 32-bit systems. Whether you have 64-bit time 
+converts the time even on 32-bit systems. Whether you have 64-bit time
 values will depend on the operating system.
 
 localtime64_r() is a 64-bit equivalent of localtime_r().
@@ -293,7 +293,7 @@ static int check_tm(struct TM *tm)
 
     assert(tm->tm_wday >= 0);
     assert(tm->tm_wday <= 6);
-    
+
     assert(tm->tm_yday >= 0);
     assert(tm->tm_yday <= length_of_year[IS_LEAP(tm->tm_year)]);
 
@@ -346,11 +346,11 @@ static Year cycle_offset(Year year)
 */
 static int safe_year(const Year year)
 {
-    int safe_year= (int)year;
+    int _safe_year = (int)year;
     Year year_cycle;
 
     if( year >= MIN_SAFE_YEAR && year <= MAX_SAFE_YEAR ) {
-        return safe_year;
+        return _safe_year;
     }
 
     year_cycle = year + cycle_offset(year);
@@ -368,24 +368,24 @@ static int safe_year(const Year year)
         year_cycle += 17;
 
     year_cycle %= SOLAR_CYCLE_LENGTH;
-    if( year_cycle < 0 ) 
+    if( year_cycle < 0 )
         year_cycle = SOLAR_CYCLE_LENGTH + year_cycle;
 
     assert( year_cycle >= 0 );
     assert( year_cycle < SOLAR_CYCLE_LENGTH );
     if( year < MIN_SAFE_YEAR )
-        safe_year = safe_years_low[year_cycle];
+        _safe_year = safe_years_low[year_cycle];
     else if( year > MAX_SAFE_YEAR )
-        safe_year = safe_years_high[year_cycle];
+        _safe_year = safe_years_high[year_cycle];
     else
         assert(0);
 
     TIME64_TRACE3("# year: %lld, year_cycle: %lld, safe_year: %d\n",
-          year, year_cycle, safe_year);
+          year, year_cycle, _safe_year);
 
-    assert(safe_year <= MAX_SAFE_YEAR && safe_year >= MIN_SAFE_YEAR);
+    assert(_safe_year <= MAX_SAFE_YEAR && _safe_year >= MIN_SAFE_YEAR);
 
-    return safe_year;
+    return _safe_year;
 }
 
 
@@ -519,17 +519,17 @@ static Time64_T seconds_between_years(Year left_year, Year right_year) {
 Time64_T mktime64(struct TM *input_date) {
     struct tm safe_date;
     struct TM date;
-    Time64_T  time;
+    Time64_T  timev;
     Year      year = input_date->tm_year + 1900;
 
     if( date_in_safe_range(input_date, &SYSTEM_MKTIME_MIN, &SYSTEM_MKTIME_MAX) )
     {
         copy_TM64_to_tm(input_date, &safe_date);
-        time = (Time64_T)mktime(&safe_date);
+        timev = (Time64_T)mktime(&safe_date);
 
         /* Correct the possibly out of bound input date */
         copy_tm_to_TM64(&safe_date, input_date);
-        return time;
+        return timev;
     }
 
     /* Have to make the year safe in date else it won't fit in safe_date */
@@ -537,14 +537,14 @@ Time64_T mktime64(struct TM *input_date) {
     date.tm_year = safe_year(year) - 1900;
     copy_TM64_to_tm(&date, &safe_date);
 
-    time = (Time64_T)mktime(&safe_date);
+    timev = (Time64_T)mktime(&safe_date);
 
     /* Correct the user's possibly out of bound input date */
     copy_tm_to_TM64(&safe_date, input_date);
 
-    time += seconds_between_years(year, (Year)(safe_date.tm_year + 1900));
+    timev += seconds_between_years(year, (Year)(safe_date.tm_year + 1900));
 
-    return time;
+    return timev;
 }
 
 
@@ -560,7 +560,7 @@ struct TM *gmtime64_r (const Time64_T *in_time, struct TM *p)
     Time64_T v_tm_tday;
     int leap;
     Time64_T m;
-    Time64_T time = *in_time;
+    Time64_T timev = *in_time;
     Year year = 70;
     int cycles = 0;
 
@@ -587,13 +587,13 @@ struct TM *gmtime64_r (const Time64_T *in_time, struct TM *p)
     p->tm_zone   = (char*)"UTC";
 #endif
 
-    v_tm_sec =  (int)(time % 60);
-    time /= 60;
-    v_tm_min =  (int)(time % 60);
-    time /= 60;
-    v_tm_hour = (int)(time % 24);
-    time /= 24;
-    v_tm_tday = time;
+    v_tm_sec =  (int)(timev % 60);
+    timev /= 60;
+    v_tm_min =  (int)(timev % 60);
+    timev /= 60;
+    v_tm_hour = (int)(timev % 24);
+    timev /= 24;
+    v_tm_tday = timev;
 
     WRAP (v_tm_sec, v_tm_min, 60);
     WRAP (v_tm_min, v_tm_hour, 60);
@@ -674,14 +674,14 @@ struct TM *gmtime64_r (const Time64_T *in_time, struct TM *p)
     p->tm_hour = v_tm_hour;
     p->tm_mon  = v_tm_mon;
     p->tm_wday = v_tm_wday;
-    
+
     assert(check_tm(p));
 
     return p;
 }
 
 
-struct TM *localtime64_r (const Time64_T *time, struct TM *local_tm)
+struct TM *localtime64_r (const Time64_T *timev, struct TM *local_tm)
 {
     time_t safe_time;
     struct tm safe_date;
@@ -692,10 +692,10 @@ struct TM *localtime64_r (const Time64_T *time, struct TM *local_tm)
     assert(local_tm != NULL);
 
     /* Use the system localtime() if time_t is small enough */
-    if( SHOULD_USE_SYSTEM_LOCALTIME(*time) ) {
-        safe_time = (time_t)*time;
+    if( SHOULD_USE_SYSTEM_LOCALTIME(*timev) ) {
+        safe_time = (time_t)*timev;
 
-        TIME64_TRACE1("Using system localtime for %lld\n", *time);
+        TIME64_TRACE1("Using system localtime for %lld\n", *timev);
 
         LOCALTIME_R(&safe_time, &safe_date);
 
@@ -705,8 +705,8 @@ struct TM *localtime64_r (const Time64_T *time, struct TM *local_tm)
         return local_tm;
     }
 
-    if( gmtime64_r(time, &gm_tm) == NULL ) {
-        TIME64_TRACE1("gmtime64_r returned null for %lld\n", *time);
+    if( gmtime64_r(timev, &gm_tm) == NULL ) {
+        TIME64_TRACE1("gmtime64_r returned null for %lld\n", *timev);
         return NULL;
     }
 
@@ -756,7 +756,7 @@ struct TM *localtime64_r (const Time64_T *time, struct TM *local_tm)
         local_tm->tm_year++;
     }
 
-    /* GMT is Jan 1st, xx01 year, but localtime is still Dec 31st 
+    /* GMT is Jan 1st, xx01 year, but localtime is still Dec 31st
        in a non-leap xx00.  There is one point in the cycle
        we can't account for which the safe xx00 year is a leap
        year.  So we need to correct for Dec 31st comming out as
@@ -766,7 +766,7 @@ struct TM *localtime64_r (const Time64_T *time, struct TM *local_tm)
         local_tm->tm_yday--;
 
     assert(check_tm(local_tm));
-    
+
     return local_tm;
 }
 
@@ -803,10 +803,12 @@ char *asctime64_r( const struct TM* date, char *result ) {
 }
 
 
-char *ctime64_r( const Time64_T* time, char* result ) {
+char *ctime64_r( const Time64_T* timev, char* result ) {
     struct TM date;
 
-    localtime64_r( time, &date );
+    if (!localtime64_r( timev, &date ))
+        return NULL;
+
     return asctime64_r( &date, result );
 }
 

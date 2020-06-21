@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <plist/Dictionary.h>
 
 namespace PList
@@ -28,7 +28,7 @@ Dictionary::Dictionary(Node* parent) : Structure(PLIST_DICT, parent)
 {
 }
 
-static void dictionary_fill(Dictionary *_this, std::map<std::string,Node*> map, plist_t node)
+static void dictionary_fill(Dictionary *_this, std::map<std::string,Node*> &map, plist_t node)
 {
     plist_dict_iter it = NULL;
     plist_dict_new_iter(node, &it);
@@ -50,7 +50,7 @@ Dictionary::Dictionary(plist_t node, Node* parent) : Structure(parent)
     dictionary_fill(this, _map, _node);
 }
 
-Dictionary::Dictionary(const PList::Dictionary& d) : Structure()
+Dictionary::Dictionary(const PList::Dictionary& d)
 {
     for (Dictionary::iterator it = _map.begin(); it != _map.end(); it++)
     {
@@ -104,7 +104,22 @@ Dictionary::iterator Dictionary::End()
     return _map.end();
 }
 
+Dictionary::const_iterator Dictionary::Begin() const
+{
+    return _map.begin();
+}
+
+Dictionary::const_iterator Dictionary::End() const
+{
+    return _map.end();
+}
+
 Dictionary::iterator Dictionary::Find(const std::string& key)
+{
+    return _map.find(key);
+}
+
+Dictionary::const_iterator Dictionary::Find(const std::string& key) const
 {
     return _map.find(key);
 }
@@ -164,4 +179,4 @@ std::string Dictionary::GetNodeKey(Node* node)
     return "";
 }
 
-};
+}  // namespace PList

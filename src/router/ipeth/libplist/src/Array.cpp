@@ -18,10 +18,11 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
 #include <plist/Array.h>
 
 #include <algorithm>
+#include <climits>
+#include <cstdlib>
 
 namespace PList
 {
@@ -50,7 +51,7 @@ Array::Array(plist_t node, Node* parent) : Structure(parent)
     array_fill(this, _array, _node);
 }
 
-Array::Array(const PList::Array& a) : Structure()
+Array::Array(const PList::Array& a)
 {
     _array.clear();
     _node = plist_copy(a.GetPlist());
@@ -118,6 +119,9 @@ void Array::Remove(Node* node)
     if (node)
     {
         uint32_t pos = plist_array_get_item_index(node->GetPlist());
+        if (pos == UINT_MAX) {
+            return;
+        }
         plist_array_remove_item(_node, pos);
         std::vector<Node*>::iterator it = _array.begin();
         it += pos;
@@ -141,4 +145,4 @@ unsigned int Array::GetNodeIndex(Node* node) const
     return std::distance (_array.begin(), it);
 }
 
-};
+}  // namespace PList
