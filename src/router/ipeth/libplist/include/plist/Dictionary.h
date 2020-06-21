@@ -41,17 +41,21 @@ public :
     Node* Clone() const;
 
     typedef std::map<std::string,Node*>::iterator iterator;
+    typedef std::map<std::string,Node*>::const_iterator const_iterator;
 
     Node* operator[](const std::string& key);
     iterator Begin();
     iterator End();
     iterator Find(const std::string& key);
+    const_iterator Begin() const;
+    const_iterator End() const;
+    const_iterator Find(const std::string& key) const;
     iterator Set(const std::string& key, const Node* node);
     iterator Set(const std::string& key, const Node& node);
     iterator Insert(const std::string& key, Node* node) PLIST_WARN_DEPRECATED("use Set() instead");
     void Remove(Node* node);
     void Remove(const std::string& key);
-    std::string GetNodeKey(Node* key);
+    std::string GetNodeKey(Node* node);
 
 private :
     std::map<std::string,Node*> _map;
