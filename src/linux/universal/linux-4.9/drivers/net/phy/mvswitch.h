@@ -1,7 +1,6 @@
 /*
  * Marvell 88E6060 switch driver
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
- * Copyright (c) 2008 Sebastian Gottschall <s.gottschall@dd-wrt.com> (just 88E6061 support)
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -22,15 +21,12 @@
 #define MV_TRAILER_FLAGS_S	24
 #define MV_TRAILER_OVERRIDE	0x80
 
-#define MV_STATUS_REAL_TIME_LINK_UP               0x0400
-#define MV_STATUS_RESOLVED                        0x0800
-
 
 #define MV_PORTS	5
 #ifdef CONFIG_MTD_AR531X
 #define MV_WANPORT	0
 #else
-#ifndef CONFIG_ATHEROS
+#ifndef CONFIG_ATH25
 #define MV_WANPORT	0
 #else
 #define MV_WANPORT	4
@@ -38,11 +34,12 @@
 #endif
 #define MV_CPUPORT	5
 
-#ifdef CONFIG_ATHEROS
+#ifdef CONFIG_ATH25
 #define MV_BASE		0x10
 #else
 #define MV_BASE		0
 #endif
+
 #define MV_PHYPORT_BASE		(MV_BASE + 0x0)
 #define MV_PHYPORT(_n)		(MV_PHYPORT_BASE + (_n))
 #define MV_SWITCHPORT_BASE	(MV_BASE + 0x8)

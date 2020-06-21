@@ -1,6 +1,6 @@
 /*
  * Marvell 88E6060 switch driver
- * Copyright (c) 2008 Felix Fietkau <nbd@openwrt.org>
+ * Copyright (c) 2008 Felix Fietkau <nbd@nbd.name>
  *
  * This program is free software; you can redistribute  it and/or modify it
  * under  the terms of the GNU General Public License v2 as published by the
@@ -24,10 +24,11 @@
 #include <linux/ethtool.h>
 #include <linux/phy.h>
 #include <linux/if_vlan.h>
+#include <linux/version.h>
 
 #include <asm/io.h>
 #include <asm/irq.h>
-#include <linux/uaccess.h>
+#include <asm/uaccess.h>
 #include "mvswitch.h"
 
 /* Undefine this to use trailer mode instead.
@@ -50,13 +51,17 @@ struct mvswitch_priv {
 static inline u16
 r16(struct phy_device *phydev, int addr, int reg)
 {
-	return phydev->bus->read(phydev->bus, addr, reg);
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	return bus->read(bus, addr, reg);
 }
 
 static inline void
 w16(struct phy_device *phydev, int addr, int reg, u16 val)
 {
-	phydev->bus->write(phydev->bus, addr, reg, val);
+	struct mii_bus *bus = phydev->mdio.bus;
+
+	bus->write(bus, addr, reg, val);
 }
 
 
@@ -198,17 +203,26 @@ mvswitch_config_init(struct phy_device *pdev)
 	struct net_device *dev = pdev->attached_dev;
 	u8 vlmap = 0;
 	u16 reg;
- 	int i;
+	int i;
 	u16 emask;
 
 	if (!dev)
 		return -EINVAL;
 
 	printk("%s: Marvell 88E6060 PHY driver attached.\n", dev->name);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+	linkmode_zero(pdev->supported);
+	linkmode_set_bit(ETHTOOL_LINK_MODE_100baseT_Full_BIT, pdev->supported);
+	linkmode_copy(pdev->advertising, pdev->supported);
+#else
 	pdev->supported = ADVERTISED_100baseT_Full;
 	pdev->advertising = ADVERTISED_100baseT_Full;
+#endif
 	dev->phy_ptr = priv;
-	dev->irq = PHY_POLL;
+	pdev->irq = PHY_POLL;
+#ifdef HEADER_MODE
+	dev->flags |= IFF_PROMISC;
+#endif
 	emask = MV_PORTCTRL_ENABLED;
 	reg = r16(pdev, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;	
 	if (reg == MV_IDENT_VALUE2)
@@ -216,9 +230,6 @@ mvswitch_config_init(struct phy_device *pdev)
 	    printk("%s: Marvell 88E6061 workaround enabled\n",dev->name);
 	    emask = MV_PORTCTRL_ENABLED | MV_PORTCTRL_EGRESSALL;
 	    }
-#ifdef HEADER_MODE
-	dev->flags |= IFF_PROMISC;
-#endif
 
 	/* initialize default vlans */
 	for (i = 0; i < MV_PORTS; i++)
@@ -238,7 +249,6 @@ mvswitch_config_init(struct phy_device *pdev)
 		printk("%s: Timeout waiting for the switch to reset.\n", dev->name);
 		return i;
 	}
-	msleep(10); /* wait for the status change to settle in */
 
 	/* set the ATU flags */
 	w16(pdev, MV_SWITCHREG(ATU_CTRL),
@@ -352,22 +362,38 @@ mvswitch_read_status(struct phy_device *pdev)
 }
 
 static int
+mvswitch_aneg_done(struct phy_device *phydev)
+{
+	return 1;	/* Return any positive value */
+}
+
+static int
 mvswitch_config_aneg(struct phy_device *phydev)
 {
 	return 0;
 }
 
 static void
-mvswitch_remove(struct phy_device *pdev)
+mvswitch_detach(struct phy_device *pdev)
 {
 	struct mvswitch_priv *priv = to_mvsw(pdev);
 	struct net_device *dev = pdev->attached_dev;
+
+	if (!dev)
+		return;
 
 	dev->phy_ptr = NULL;
 	dev->eth_mangle_rx = NULL;
 	dev->eth_mangle_tx = NULL;
 	dev->features = priv->orig_features;
 	dev->priv_flags &= ~IFF_NO_IP_ALIGN;
+}
+
+static void
+mvswitch_remove(struct phy_device *pdev)
+{
+	struct mvswitch_priv *priv = to_mvsw(pdev);
+
 	kfree(priv);
 }
 
@@ -388,12 +414,13 @@ mvswitch_probe(struct phy_device *pdev)
 static int
 mvswitch_fixup(struct phy_device *dev)
 {
+	struct mii_bus *bus = dev->mdio.bus;
 	u16 reg;
 
-	if (dev->addr != 0)
+	if (dev->mdio.addr != 0x10)
 		return 0;
 
-	reg = dev->bus->read(dev->bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
+	reg = bus->read(bus, MV_PORTREG(IDENT, 0)) & MV_IDENT_MASK;
 	if (reg != MV_IDENT_VALUE && reg != MV_IDENT_VALUE2)
 		return 0;
 
@@ -403,23 +430,24 @@ mvswitch_fixup(struct phy_device *dev)
 
 
 static struct phy_driver mvswitch_driver = {
-	.name		= "Marvell 88E6060/88E6061",
+	.name		= "Marvell 88E6060",
 	.phy_id		= MVSWITCH_MAGIC,
 	.phy_id_mask	= 0xffffffff,
 	.features	= PHY_BASIC_FEATURES,
 	.probe		= &mvswitch_probe,
 	.remove		= &mvswitch_remove,
+	.detach		= &mvswitch_detach,
 	.config_init	= &mvswitch_config_init,
 	.config_aneg	= &mvswitch_config_aneg,
+	.aneg_done	= &mvswitch_aneg_done,
 	.read_status	= &mvswitch_read_status,
-	.driver		= { .owner = THIS_MODULE,},
 };
 
 static int __init
 mvswitch_init(void)
 {
 	phy_register_fixup_for_id(PHY_ANY_ID, mvswitch_fixup);
-	return phy_driver_register(&mvswitch_driver);
+	return phy_driver_register(&mvswitch_driver, THIS_MODULE);
 }
 
 static void __exit
