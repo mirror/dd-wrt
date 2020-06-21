@@ -335,29 +335,54 @@ mvswitch_config_init(struct phy_device *pdev)
 	return 0;
 }
 
+#define MV_AUTONEG_DONE(mv_phy_specific_status)                   \
+    (((mv_phy_specific_status) &                                  \
+        (MV_STATUS_RESOLVED | MV_STATUS_REAL_TIME_LINK_UP)) ==    \
+        (MV_STATUS_RESOLVED | MV_STATUS_REAL_TIME_LINK_UP))
+
 static int
 mvswitch_read_status(struct phy_device *pdev)
 {
 	pdev->speed = SPEED_100;
 	pdev->duplex = DUPLEX_FULL;
-	pdev->link = 1;
+	pdev->state = PHY_UP;
+	static int linkstatus[5]={0,0,0,0,0};
 
-	/* XXX ugly workaround: we can't force the switch
-	 * to gracefully handle hosts moving from one port to another,
-	 * so we have to regularly clear the ATU database */
+	int i;
+	for (i=0;i<MV_PORTS;i++)
+	    {
+	    int status = r16(pdev,MV_PHYPORT(i),MV_PHY_STATUS1);
+	    if (linkstatus[i])
+	    {
+	    if (!(status & MV_STATUS_REAL_TIME_LINK_UP))
+		{
+		printk(KERN_INFO "port %d, link down\n",i);
+		/* XXX ugly workaround: we can't force the switch
+		* to gracefully handle hosts moving from one port to another,
+		* so we have to regularly clear the ATU database */
 
-	/* wait for the ATU to become available */
-	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+		/* wait for the ATU to become available */
+		mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
 
-	/* flush the ATU */
-	w16(pdev, MV_SWITCHREG(ATU_OP),
-		MV_ATUOP_INPROGRESS |
-		MV_ATUOP_FLUSH_ALL
-	);
+		/* flush the ATU */
+		w16(pdev, MV_SWITCHREG(ATU_OP),
+			MV_ATUOP_INPROGRESS |
+			MV_ATUOP_FLUSH_ALL
+		);
 
-	/* wait for operation to complete */
-	mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
-
+		/* wait for operation to complete */
+		mvswitch_wait_mask(pdev, MV_SWITCHREG(ATU_OP), MV_ATUOP_INPROGRESS, 0);
+		linkstatus[i]=0;
+		}
+	    }else
+	    {
+		if (MV_AUTONEG_DONE(status))
+		    {
+		    printk(KERN_INFO "port %d, link up\n",i);
+		    linkstatus[i]=1;
+		    }
+	    }
+	}    
 	return 0;
 }
 
