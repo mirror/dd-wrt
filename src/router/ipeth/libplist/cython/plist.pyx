@@ -2,10 +2,6 @@ cimport cpython
 cimport libc.stdlib
 from libc.stdint cimport *
 
-# https://groups.google.com/forum/#!topic/cython-users/xoKNFTRagvk
-cdef _from_string_and_size(char *s, size_t length):
-    return s[:length].encode('utf-8')
-
 cdef extern from *:
     ctypedef enum plist_type:
         PLIST_BOOLEAN,
@@ -457,6 +453,8 @@ cdef String String_factory(plist_t c_node, bint managed=True):
     instance._c_node = c_node
     return instance
 
+MAC_EPOCH = 978307200
+
 cdef extern from "plist_util.h":
     void datetime_to_ints(object obj, int32_t* sec, int32_t* usec)
     object ints_to_datetime(int32_t sec, int32_t usec)
@@ -470,6 +468,7 @@ cdef plist_t create_date_plist(value=None):
         node = plist_new_date(0, 0)
     elif check_datetime(value):
         datetime_to_ints(value, &secs, &usecs)
+        secs -= MAC_EPOCH
         node = plist_new_date(secs, usecs)
     return node
 
@@ -499,8 +498,8 @@ cdef class Date(Node):
     cpdef object get_value(self):
         cdef int32_t secs = 0
         cdef int32_t usecs = 0
-        cdef object result
         plist_get_date_val(self._c_node, &secs, &usecs)
+        secs += MAC_EPOCH
         return ints_to_datetime(secs, usecs)
 
     cpdef set_value(self, object value):
@@ -550,7 +549,7 @@ cdef class Data(Node):
         plist_get_data_val(self._c_node, &val, &length)
 
         try:
-            return _from_string_and_size(val, length)
+            return bytes(val[:length])
         finally:
             libc.stdlib.free(val)
 
@@ -852,3 +851,97 @@ cdef object plist_t_to_node(plist_t c_plist, bint managed=True):
         return Uid_factory(c_plist, managed)
     if t == PLIST_NONE:
         return None
+
+# This is to match up with the new plistlib API
+# http://docs.python.org/dev/library/plistlib.html
+# dump() and dumps() are not yet implemented
+FMT_XML = 1
+FMT_BINARY = 2
+
+cpdef object load(fp, fmt=None, use_builtin_types=True, dict_type=dict):
+    is_binary = fp.read(6) == 'bplist'
+    fp.seek(0)
+
+    cdef object cb = None
+
+    if not fmt:
+        if is_binary:
+            if 'b' not in fp.mode:
+                raise IOError('File handle must be opened in binary (b) mode to read binary property lists')
+            cb = from_bin
+        else:
+            cb = from_xml
+    else:
+        if fmt not in (FMT_XML, FMT_BINARY):
+            raise ValueError('Format must be constant FMT_XML or FMT_BINARY')
+        if fmt == FMT_BINARY:
+            cb = from_bin
+        elif fmt == FMT_XML:
+            cb = from_xml
+
+    if is_binary and fmt == FMT_XML:
+        raise ValueError('Cannot parse binary property list as XML')
+    elif not is_binary and fmt == FMT_BINARY:
+        raise ValueError('Cannot parse XML property list as binary')
+
+    return cb(fp.read())
+
+cpdef object loads(data, fmt=None, use_builtin_types=True, dict_type=dict):
+    is_binary = data[0:6] == 'bplist'
+
+    cdef object cb = None
+
+    if fmt is not None:
+        if fmt not in (FMT_XML, FMT_BINARY):
+            raise ValueError('Format must be constant FMT_XML or FMT_BINARY')
+        if fmt == FMT_BINARY:
+            cb = from_bin
+        else:
+            cb = from_xml
+    else:
+        if is_binary:
+            cb = from_bin
+        else:
+            cb = from_xml
+
+    if is_binary and fmt == FMT_XML:
+        raise ValueError('Cannot parse binary property list as XML')
+    elif not is_binary and fmt == FMT_BINARY:
+        raise ValueError('Cannot parse XML property list as binary')
+
+    return cb(data)
+
+cpdef object dump(value, fp, fmt=FMT_XML, sort_keys=True, skipkeys=False):
+    fp.write(dumps(value, fmt=fmt))
+
+cpdef object dumps(value, fmt=FMT_XML, sort_keys=True, skipkeys=False):
+    if fmt not in (FMT_XML, FMT_BINARY):
+        raise ValueError('Format must be constant FMT_XML or FMT_BINARY')
+
+    if check_datetime(value):
+        node = Date(value)
+    elif isinstance(value, unicode):
+        node = String(value)
+    elif PY_MAJOR_VERSION >= 3 and isinstance(value, bytes):
+        node = Data(value)
+    elif isinstance(value, str):
+        # See if this is binary
+        try:
+            node = String(value)
+        except ValueError:
+            node = Data(value)
+    elif isinstance(value, bool):
+        node = Bool(value)
+    elif isinstance(value, int):
+        node = Integer(value)
+    elif isinstance(value, float):
+        node = Real(value)
+    elif isinstance(value, dict):
+        node = Dict(value)
+    elif type(value) in (list, set, tuple):
+        node = Array(value)
+
+    if fmt == FMT_XML:
+        return node.to_xml()
+
+    return node.to_bin()
