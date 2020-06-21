@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.64)
-AC_INIT([usbmuxd], [1.1.1], [https://github.com/libimobiledevice/usbmuxd/issues],, [http://libimobiledevice.org])
+AC_INIT([usbmuxd], [1.1.1], [https://github.com/libimobiledevice/usbmuxd/issues],, [https://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])
@@ -17,8 +17,8 @@ AC_PROG_LIBTOOL
 
 # Checks for libraries.
 PKG_CHECK_MODULES(libusb, libusb-1.0 >= 1.0.9)
-PKG_CHECK_MODULES(libplist, libplist >= 1.11)
-PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.2.1, have_limd=yes, have_limd=no)
+PKG_CHECK_MODULES(libplist, libplist-2.0 >= 2.2.0)
+PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.3.0, have_limd=yes, have_limd=no)
 AC_CHECK_LIB(pthread, [pthread_create, pthread_mutex_lock], [AC_SUBST(libpthread_LIBS,[-lpthread])], [AC_MSG_ERROR([libpthread is required to build usbmuxd])])
 
 AC_ARG_WITH([preflight],
@@ -35,6 +35,18 @@ if test "x$have_limd" = "xyes"; then
     AC_DEFINE(HAVE_LIBIMOBILEDEVICE, 1, [Define if you have libimobiledevice support])
     AC_SUBST(libimobiledevice_CFLAGS)
     AC_SUBST(libimobiledevice_LIBS)
+    CACHED_CFLAGS="$CFLAGS"
+    CFLAGS+=" $libimobiledevice_CFLAGS"
+    AC_CACHE_CHECK(for enum idevice_connection_type, ac_cv_enum_idevice_connection_type,
+      AC_TRY_COMPILE([
+        #include <libimobiledevice/libimobiledevice.h>
+      ], [
+        enum idevice_connection_type conn_type = CONNECTION_USBMUXD;
+      ], ac_cv_enum_idevice_connection_type=yes, ac_cv_enum_idevice_connection_type=no))
+    CFLAGS="$CACHED_CFLAGS"
+    if (test "$ac_cv_enum_idevice_connection_type" = "yes"); then
+      AC_DEFINE(HAVE_ENUM_IDEVICE_CONNECTION_TYPE, 1, [Define if enum idevice_connection_type is available])
+    fi
   fi
 else
   if test "x$with_preflight" == "xyes"; then

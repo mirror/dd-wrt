@@ -41,16 +41,22 @@
 #include "client.h"
 #include "conf.h"
 #include "log.h"
+#include "usb.h"
+
+extern int no_preflight;
 
 #ifdef HAVE_LIBIMOBILEDEVICE
-enum connection_type {
-	CONNECTION_USBMUXD = 1
+#ifndef HAVE_ENUM_IDEVICE_CONNECTION_TYPE
+enum idevice_connection_type {
+	CONNECTION_USBMUXD = 1,
+	CONNECTION_NETWORK
 };
+#endif
 
 struct idevice_private {
 	char *udid;
 	uint32_t mux_id;
-	enum connection_type conn_type;
+	enum idevice_connection_type conn_type;
 	void *conn_data;
 	int version;
 };
@@ -59,6 +65,7 @@ struct cb_data {
 	idevice_t dev;
 	np_client_t np;
 	int is_device_connected;
+	int is_finished;
 };
 
 static void lockdownd_set_untrusted_host_buid(lockdownd_client_t lockdown)
@@ -97,6 +104,7 @@ static void np_callback(const char* notification, void* userdata)
 		lerr = lockdownd_client_new(dev, &lockdown, "usbmuxd");
 		if (lerr != LOCKDOWN_E_SUCCESS) {
 			usbmuxd_log(LL_ERROR, "%s: ERROR: Could not connect to lockdownd on device %s, lockdown error %d", __func__, _dev->udid, lerr);
+			cbdata->is_finished = 1;
 			return;
 		}
 
@@ -104,10 +112,11 @@ static void np_callback(const char* notification, void* userdata)
 		if (lerr != LOCKDOWN_E_SUCCESS) {
 			usbmuxd_log(LL_ERROR, "%s: ERROR: Pair failed for device %s, lockdown error %d", __func__, _dev->udid, lerr);
 			lockdownd_client_free(lockdown);
+			cbdata->is_finished = 1;
 			return;
 		}
 		lockdownd_client_free(lockdown);
-		// device will reconnect by itself at this point.
+		cbdata->is_finished = 1;
 
 	} else if (strcmp(notification, "com.apple.mobile.lockdown.request_host_buid") == 0) {
 		lerr = lockdownd_client_new(cbdata->dev, &lockdown, "usbmuxd");
@@ -255,6 +264,7 @@ retry:
 		cbdata.dev = dev;
 		cbdata.np = np;
 		cbdata.is_device_connected = 1;
+		cbdata.is_finished = 0;
 
 		np_set_notify_callback(np, np_callback, (void*)&cbdata);
 		device_set_preflight_cb_data(info->id, (void*)&cbdata);
@@ -263,7 +273,7 @@ retry:
 			"com.apple.mobile.lockdown.request_pair",
 			"com.apple.mobile.lockdown.request_host_buid",
 			NULL
-		}; 
+		};
 		np_observe_notifications(np, spec);
 
 		/* TODO send notification to user's desktop */
@@ -273,7 +283,7 @@ retry:
 		/* make device visible anyways */
 		client_device_add(info);
 
-		while (cbdata.np && cbdata.is_device_connected == 1) {
+		while (cbdata.np && cbdata.is_device_connected && !cbdata.is_finished) {
 			sleep(1);
 		}
 		device_set_preflight_cb_data(info->id, NULL);
@@ -333,6 +343,7 @@ leave:
 	if (dev)
 		idevice_free(dev);
 
+	free((char*)info->serial);
 	free(info);
 
 	return NULL;
@@ -345,10 +356,18 @@ void preflight_device_remove_cb(void *data)
 
 void preflight_worker_device_add(struct device_info* info)
 {
+	if (info->pid == PID_APPLE_T2_COPROCESSOR || no_preflight == 1) {
+		client_device_add(info);
+		return;
+	}
+
 #ifdef HAVE_LIBIMOBILEDEVICE
 	struct device_info *infocopy = (struct device_info*)malloc(sizeof(struct device_info));
 
 	memcpy(infocopy, info, sizeof(struct device_info));
+	if (info->serial) {
+		infocopy->serial = strdup(info->serial);
+	}
 
 	pthread_t th;
 	pthread_attr_t attr;
@@ -358,6 +377,7 @@ void preflight_worker_device_add(struct device_info* info)
 
 	int perr = pthread_create(&th, &attr, preflight_worker_handle_device_add, infocopy);
 	if (perr != 0) {
+		free((char*)infocopy->serial);
 		free(infocopy);
 		usbmuxd_log(LL_ERROR, "ERROR: failed to start preflight worker thread for device %s: %s (%d). Invoking client_device_add() directly but things might not work as expected.", info->serial, strerror(perr), perr);
 		client_device_add(info);
