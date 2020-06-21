@@ -12,9 +12,9 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libusbmuxd && ./autogen.sh
 	cd $(TOP)/ipeth/libusbmuxd && ./configure --host=$(ARCH)-linux --without-cython CFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist/include -I$(TOP)/usb_modeswitch/libusb/libusb -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/ipeth/libplist/src/.libs -lplist -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
-		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes
+		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes
 		
 	cd $(TOP)/ipeth/libusbmuxd && make
 
@@ -22,15 +22,15 @@ ipeth-configure:
 	cd $(TOP)/ipeth/libimobiledevice && ./configure --without-cython --host=$(ARCH)-linux \
 		ac_cv_sys_file_offset_bits=64 \
 		CFLAGS="$(COPTS) $(MIPS16_OPT)  -ffunction-sections -fdata-sections -Wl,--gc-sections -fPIC -I$(TOP)/ipeth  -Drpl_localtime=localtime -I$(TOP)/openssl/include -Drpl_malloc=malloc -Drpl_realloc=realloc" \
-		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/src/.libs -lusbmuxd -L$(TOP)/ipeth/libplist/src/.libs -lplist  -L$(TOP)/zlib" \
+		LDFLAGS="-L$(TOP)/ipeth/nettle -L$(TOP)/openssl -L$(TOP)/ipeth/libusbmuxd/src/.libs -lusbmuxd-2.0 -L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0  -L$(TOP)/zlib" \
 		openssl_CFLAGS="-I$(TOP)/openssl/include" \
 		openssl_LIBS="-L$(TOP)/openssl -lssl -lcrypto" \
 		libusbmuxd_CFLAGS="-I$(TOP)/usb_modeswitch/libusb/libusb -I$(TOP)/ipeth/libusbmuxd/include" \
-		libusbmuxd_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a -lusbmuxd" \
+		libusbmuxd_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a -lusbmuxd-2.0" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
-		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" \
+		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0" \
 		libplistmm_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
-		libplistmm_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" \
+		libplistmm_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0" \
 		openssl_CFLAGS="-I$(TOP)/openssl/include" \
 		openssl_LIBS="-L$(TOP)/openssl -lcrypto -lssl"
 
@@ -41,11 +41,11 @@ ipeth-configure:
 		CXXFLAGS="$(TARGET_CFLAGS) $(EXTRA_CFLAGS) $(COPTS) $(MIPS16_OPT) -I$(TOP)/ipeth/libplist -fPIC  -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/openssl -lssl -lcrypto -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		libusbmuxd_CFLAGS="-I$(TOP)/ipeth/libusbmuxd/include" \
-		libusbmuxd_LIBS="$(TOP)/ipeth/libusbmuxd/src/.libs/libusbmuxd.a" \
+		libusbmuxd_LIBS="$(TOP)/ipeth/libusbmuxd/src/.libs/libusbmuxd-2.0.a" \
 		libplist_CFLAGS="-I$(TOP)/ipeth/libplist/include" \
-		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes \
+		libplist_LIBS="-L$(TOP)/ipeth/libplist/src/.libs -lplist-2.0" ac_cv_func_malloc_0_nonnull=yes  ac_cv_func_realloc_0_nonnull=yes \
 		libimobiledevice_CFLAGS="-I$(TOP)/ipeth/libimobiledevice/include" \
-		libimobiledevice_LIBS="$(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.a $(TOP)/ipeth/libusbmuxd/src/.libs/libusbmuxd.a" \
+		libimobiledevice_LIBS="$(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice-1.0.a $(TOP)/ipeth/libusbmuxd/src/.libs/libusbmuxd-2.0.a" \
 		libusb_CFLAGS="-I$(TOP)/ipeth/libusbmuxd/include -I$(TOP)/usb_modeswitch/libusb/libusb" \
 		libusb_LIBS="$(TOP)/usb_modeswitch/libusb/libusb/.libs/libusb-1.0.a"
 
