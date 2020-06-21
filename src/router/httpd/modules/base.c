@@ -1567,7 +1567,9 @@ static int apply_cgi(webs_t wp, char_t * urlPrefix, char_t * webDir, int arg, ch
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 		diag_led(DIAG, STOP_LED);
 #endif
-		_sys_commit();
+		if (!strcmp(value, "ApplyTake")) {
+			_sys_commit();
+		}
 	}
 
 				/** Restore defaults **/
