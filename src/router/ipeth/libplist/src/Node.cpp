@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <plist/Node.h>
 #include <plist/Structure.h>
 #include <plist/Dictionary.h>
@@ -163,4 +163,4 @@ Node* Node::FromPlist(plist_t node, Node* parent)
     return ret;
 }
 
-};
+}  // namespace PList

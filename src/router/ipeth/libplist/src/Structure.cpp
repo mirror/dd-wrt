@@ -18,7 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <plist/Structure.h>
 
 namespace PList
@@ -119,5 +119,5 @@ Structure* Structure::FromBin(const std::vector<char>& bin)
 
 }
 
-};
+}  // namespace PList
 

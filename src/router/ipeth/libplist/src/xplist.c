@@ -36,6 +36,7 @@
 #include <time.h>
 
 #include <inttypes.h>
+#include <float.h>
 #include <math.h>
 #include <limits.h>
 
@@ -102,46 +103,26 @@ void plist_xml_deinit(void)
 
 static size_t dtostr(char *buf, size_t bufsize, double realval)
 {
-    double f = realval;
-    double ip = 0.0;
-    int64_t v;
-    size_t len;
-    size_t p;
-    double CORR = 0.0000005;
-
-    f = modf(f, &ip);
-    v = (int64_t)ip;
-    if (f < 0) {
-        if (((int)((f - CORR) * -10.0f)) >= 10) {
-            v--;
-            f = 0;
-        }
+    size_t len = 0;
+    if (isnan(realval)) {
+        len = snprintf(buf, bufsize, "nan");
+    } else if (isinf(realval)) {
+        len = snprintf(buf, bufsize, "%cinfinity", (realval > 0.0) ? '+' : '-');
+    } else if (realval == 0.0f) {
+        len = snprintf(buf, bufsize, "0.0");
     } else {
-        if (((int)((f + CORR) * 10.0f)) >= 10) {
-            v++;
-            f = 0;
+        size_t i = 0;
+        len = snprintf(buf, bufsize, "%.*g", 17, realval);
+        for (i = 0; i < len; i++) {
+            if (buf[i] == ',') {
+                buf[i] = '.';
+                break;
+            } else if (buf[i] == '.') {
+                break;
+            }
         }
     }
-    len = snprintf(buf, bufsize, "%s%"PRIi64, ((f < 0) && (ip >= 0)) ? "-" : "", v);
-    if (len >= bufsize) {
-        return 0;
-    }
-
-    if (f < 0) {
-        f *= -1;
-    }
-    f += CORR;
-
-    p = len;
-    buf[p++] = '.';
-
-    while (p < bufsize && (p <= len+6)) {
-        f = modf(f*10, &ip);
-        v = (int)ip;
-        buf[p++] = (v + 0x30);
-    }
-    buf[p] = '\0';
-    return p;
+    return len;
 }
 
 static void node_to_xml(node_t* node, bytearray_t **outbuf, uint32_t depth)
@@ -389,8 +370,6 @@ static void node_to_xml(node_t* node, bytearray_t **outbuf, uint32_t depth)
         str_buf_append(*outbuf, ">", 1);
     }
     str_buf_append(*outbuf, "\n", 1);
-
-    return;
 }
 
 static void parse_date(const char *strval, struct TM *btime)
@@ -550,6 +529,11 @@ PLIST_API void plist_to_xml(plist_t plist, char **plist_xml, uint32_t * length)
 
     outbuf->data = NULL;
     str_buf_free(outbuf);
+}
+
+PLIST_API void plist_to_xml_free(char *plist_xml)
+{
+    free(plist_xml);
 }
 
 struct _parse_ctx {
