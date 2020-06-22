@@ -8,10 +8,10 @@ ipheth-pair: ipheth-pair.o
 ipheth-loop: ipheth-loop.o
 	$(CC) -o ipheth-loop  -fdata-sections -Wl,--gc-sections ipheth-loop.o
 
-install:
-	install -m 0755 ipheth-pair /lib/udev/
-	install -m 0644 90-iphone-tether.rules /etc/udev/rules.d
-	/sbin/udevadm control --reload-rules
+#install:
+#	install -m 0755 ipheth-pair /lib/udev/
+#	install -m 0644 90-iphone-tether.rules /etc/udev/rules.d
+#	/sbin/udevadm control --reload-rules
 
 clean:
 	rm -f *.o ipheth-pair ipheth-loop
