@@ -79,7 +79,7 @@ ipeth-clean:
 	$(MAKE) -C $(TOP)/ipeth/ipheth-pair clean
 
 ipeth-install:
-	install -D $(TOP)/ipeth/libplist/src/.libs/libplist.so.3 $(INSTALLDIR)/ipeth/usr/lib/libplist.so.3
+	install -D $(TOP)/ipeth/libplist/src/.libs/libplist-2.0.so.3 $(INSTALLDIR)/ipeth/usr/lib/libplist-2.0.so.3
 #	install -D $(TOP)/ipeth/libusbmuxd/libusbmuxd/libusbmuxd.so.2 $(INSTALLDIR)/ipeth/usr/lib/libusbmuxd.so.2
 	install -D $(TOP)/ipeth/usbmuxd/src/.libs/usbmuxd $(INSTALLDIR)/ipeth/usr/sbin/usbmuxd
 #	install -D $(TOP)/ipeth/libimobiledevice/src/.libs/libimobiledevice.so.3 $(INSTALLDIR)/ipeth/usr/lib/libimobiledevice.so.3
