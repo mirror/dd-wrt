@@ -194,6 +194,14 @@ int set_getresp(const char *str, const char **next)
 	const char *p, *val;
 	size_t keylen, vallen;
 
+	if (str == NULL) {
+	    return -1;
+	}
+
+	if (*str == '\0') {
+	    return -1;
+	}
+
 	/* Trim leading space. */
 	while (*str && isspace(*str))
 		str++;
