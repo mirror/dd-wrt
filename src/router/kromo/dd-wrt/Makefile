@@ -10,7 +10,7 @@ installwebfiles:
 #	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -m 644 $(wildcard *.asp) $(wildcard *.svg) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
-
+	cp common.js.ugly $(INSTALLDIR)/www/common.js
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	
