@@ -189,23 +189,6 @@ void file_close_conn(connection_struct *conn)
 }
 
 /****************************************************************************
- Close all open files for a pid and a vuid.
-****************************************************************************/
-
-void file_close_pid(struct smbd_server_connection *sconn, uint16_t smbpid,
-		    uint64_t vuid)
-{
-	files_struct *fsp, *next;
-
-	for (fsp=sconn->files;fsp;fsp=next) {
-		next = fsp->next;
-		if ((fsp->file_pid == smbpid) && (fsp->vuid == vuid)) {
-			close_file(NULL, fsp, SHUTDOWN_CLOSE);
-		}
-	}
-}
-
-/****************************************************************************
  Initialise file structures.
 ****************************************************************************/
 
@@ -598,6 +581,9 @@ files_struct *file_fsp(struct smb_request *req, uint16_t fid)
 		if (req->chain_fsp->deferred_close) {
 			return NULL;
 		}
+		if (req->chain_fsp->closing) {
+			return NULL;
+		}
 		return req->chain_fsp;
 	}
 
@@ -619,6 +605,10 @@ files_struct *file_fsp(struct smb_request *req, uint16_t fid)
 	}
 
 	if (fsp->deferred_close) {
+		return NULL;
+	}
+
+	if (fsp->closing) {
 		return NULL;
 	}
 
@@ -669,6 +659,10 @@ struct files_struct *file_fsp_get(struct smbd_smb2_request *smb2req,
 		return NULL;
 	}
 
+	if (fsp->closing) {
+		return NULL;
+	}
+
 	return fsp;
 }
 
@@ -680,6 +674,9 @@ struct files_struct *file_fsp_smb2(struct smbd_smb2_request *smb2req,
 
 	if (smb2req->compat_chain_fsp != NULL) {
 		if (smb2req->compat_chain_fsp->deferred_close) {
+			return NULL;
+		}
+		if (smb2req->compat_chain_fsp->closing) {
 			return NULL;
 		}
 		return smb2req->compat_chain_fsp;

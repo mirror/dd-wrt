@@ -51,6 +51,7 @@ struct aio_open_private_data {
 	const char *fname;
 	char *dname;
 	connection_struct *conn;
+	struct smbXsrv_connection *xconn;
 	const struct security_unix_token *ux_tok;
 	uint64_t initial_allocation_size;
 	/* Returns. */
@@ -62,6 +63,7 @@ struct aio_open_private_data {
 static struct aio_open_private_data *open_pd_list;
 
 static void aio_open_do(struct aio_open_private_data *opd);
+static void opd_free(struct aio_open_private_data *opd);
 
 /************************************************************************
  Find the open private data by mid.
@@ -90,10 +92,40 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 		tevent_req_callback_data(subreq,
 		struct aio_open_private_data);
 	int ret;
-	struct smbXsrv_connection *xconn;
 
 	ret = pthreadpool_tevent_job_recv(subreq);
 	TALLOC_FREE(subreq);
+
+	/*
+	 * We're no longer in flight. Remove the
+	 * destructor used to preserve opd so
+	 * a talloc_free actually removes it.
+	 */
+	talloc_set_destructor(opd, NULL);
+
+	if (opd->conn == NULL) {
+		/*
+		 * We were shutdown closed in flight. No one
+		 * wants the result, and state has been reparented
+		 * to the NULL context, so just free it so we
+		 * don't leak memory.
+		 */
+		DBG_NOTICE("aio open request for %s/%s abandoned in flight\n",
+			opd->dname,
+			opd->fname);
+		if (opd->ret_fd != -1) {
+			close(opd->ret_fd);
+			opd->ret_fd = -1;
+		}
+		/*
+		 * Find outstanding event and reschedule so the client
+		 * gets an error message return from the open.
+		 */
+		schedule_deferred_open_message_smb(opd->xconn, opd->mid);
+		opd_free(opd);
+		return;
+	}
+
 	if (ret != 0) {
 		bool ok;
 
@@ -127,15 +159,8 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 
 	opd->in_progress = false;
 
-	/*
-	 * TODO: In future we need a proper algorithm
-	 * to find the correct connection for a fsp.
-	 * For now we only have one connection, so this is correct...
-	 */
-	xconn = opd->conn->sconn->client->connections;
-
 	/* Find outstanding event and reschedule. */
-	if (!schedule_deferred_open_message_smb(xconn, opd->mid)) {
+	if (!schedule_deferred_open_message_smb(opd->xconn, opd->mid)) {
 		/*
 		 * Outstanding event didn't exist or was
 		 * cancelled. Free up the fd and throw
@@ -145,7 +170,7 @@ static void aio_open_handle_completion(struct tevent_req *subreq)
 			close(opd->ret_fd);
 			opd->ret_fd = -1;
 		}
-		TALLOC_FREE(opd);
+		opd_free(opd);
 	}
 }
 
@@ -207,27 +232,28 @@ static void aio_open_do(struct aio_open_private_data *opd)
 }
 
 /************************************************************************
- Open private data destructor.
+ Open private data teardown.
 ***********************************************************************/
 
-static int opd_destructor(struct aio_open_private_data *opd)
+static void opd_free(struct aio_open_private_data *opd)
 {
 	if (opd->dir_fd != -1) {
 		close(opd->dir_fd);
 	}
 	DLIST_REMOVE(open_pd_list, opd);
-	return 0;
+	TALLOC_FREE(opd);
 }
 
 /************************************************************************
  Create and initialize a private data struct for async open.
 ***********************************************************************/
 
-static struct aio_open_private_data *create_private_open_data(const files_struct *fsp,
+static struct aio_open_private_data *create_private_open_data(TALLOC_CTX *ctx,
+					const files_struct *fsp,
 					int flags,
 					mode_t mode)
 {
-	struct aio_open_private_data *opd = talloc_zero(NULL,
+	struct aio_open_private_data *opd = talloc_zero(ctx,
 					struct aio_open_private_data);
 	const char *fname = NULL;
 
@@ -244,13 +270,19 @@ static struct aio_open_private_data *create_private_open_data(const files_struct
 		.mid = fsp->mid,
 		.in_progress = true,
 		.conn = fsp->conn,
+		/*
+		 * TODO: In future we need a proper algorithm
+		 * to find the correct connection for a fsp.
+		 * For now we only have one connection, so this is correct...
+		 */
+		.xconn = fsp->conn->sconn->client->connections,
 		.initial_allocation_size = fsp->initial_allocation_size,
 	};
 
 	/* Copy our current credentials. */
 	opd->ux_tok = copy_unix_token(opd, get_current_utok(fsp->conn));
 	if (opd->ux_tok == NULL) {
-		TALLOC_FREE(opd);
+		opd_free(opd);
 		return NULL;
 	}
 
@@ -262,12 +294,12 @@ static struct aio_open_private_data *create_private_open_data(const files_struct
 			fsp->fsp_name->base_name,
 			&opd->dname,
 			&fname) == false) {
-		TALLOC_FREE(opd);
+		opd_free(opd);
 		return NULL;
 	}
 	opd->fname = talloc_strdup(opd, fname);
 	if (opd->fname == NULL) {
-		TALLOC_FREE(opd);
+		opd_free(opd);
 		return NULL;
 	}
 
@@ -277,13 +309,28 @@ static struct aio_open_private_data *create_private_open_data(const files_struct
 	opd->dir_fd = open(opd->dname, O_RDONLY);
 #endif
 	if (opd->dir_fd == -1) {
-		TALLOC_FREE(opd);
+		opd_free(opd);
 		return NULL;
 	}
 
-	talloc_set_destructor(opd, opd_destructor);
 	DLIST_ADD_END(open_pd_list, opd);
 	return opd;
+}
+
+static int opd_inflight_destructor(struct aio_open_private_data *opd)
+{
+	/*
+	 * Setting conn to NULL allows us to
+	 * discover the connection was torn
+	 * down which kills the fsp that owns
+	 * opd.
+	 */
+	DBG_NOTICE("aio open request for %s/%s cancelled\n",
+		opd->dname,
+		opd->fname);
+	opd->conn = NULL;
+	/* Don't let opd go away. */
+	return -1;
 }
 
 /*****************************************************************
@@ -297,7 +344,18 @@ static int open_async(const files_struct *fsp,
 	struct aio_open_private_data *opd = NULL;
 	struct tevent_req *subreq = NULL;
 
-	opd = create_private_open_data(fsp, flags, mode);
+	/*
+	 * Allocate off fsp->conn, not NULL or fsp. As we're going
+	 * async fsp will get talloc_free'd when we return
+	 * EINPROGRESS/NT_STATUS_MORE_PROCESSING_REQUIRED. A new fsp
+	 * pointer gets allocated on every re-run of the
+	 * open code path. Allocating on fsp->conn instead
+	 * of NULL allows use to get notified via destructor
+	 * if the conn is force-closed or we shutdown.
+	 * opd is always safely freed in all codepath so no
+	 * memory leaks.
+	 */
+	opd = create_private_open_data(fsp->conn, fsp, flags, mode);
 	if (opd == NULL) {
 		DEBUG(10, ("open_async: Could not create private data.\n"));
 		return -1;
@@ -308,6 +366,7 @@ static int open_async(const files_struct *fsp,
 					     fsp->conn->sconn->pool,
 					     aio_open_worker, opd);
 	if (subreq == NULL) {
+		opd_free(opd);
 		return -1;
 	}
 	tevent_req_set_callback(subreq, aio_open_handle_completion, opd);
@@ -316,6 +375,12 @@ static int open_async(const files_struct *fsp,
 		(unsigned long long)opd->mid,
 		opd->dname,
 		opd->fname));
+
+	/*
+	 * Add a destructor to protect us from connection
+	 * teardown whilst the open thread is in flight.
+	 */
+	talloc_set_destructor(opd, opd_inflight_destructor);
 
 	/* Cause the calling code to reschedule us. */
 	errno = EINPROGRESS; /* Maps to NT_STATUS_MORE_PROCESSING_REQUIRED. */
@@ -364,7 +429,7 @@ static bool find_completed_open(files_struct *fsp,
 		smb_fname_str_dbg(fsp->fsp_name)));
 
 	/* Now we can free the opd. */
-	TALLOC_FREE(opd);
+	opd_free(opd);
 	return true;
 }
 
