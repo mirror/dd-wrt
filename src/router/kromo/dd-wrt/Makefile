@@ -10,7 +10,7 @@ installwebfiles:
 #	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -m 644 $(wildcard *.asp) $(wildcard *.svg) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
-	cp common.js.ugly $(INSTALLDIR)/www/common.js
+	cp common.js $(INSTALLDIR)/www/common.js
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	
@@ -19,9 +19,9 @@ ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
-	cp common_micro.js.ugly $(INSTALLDIR)/www/common.js
+	cp common_micro.js $(INSTALLDIR)/www/common.js
 else
-	cp common_micro.compressed.js.ugly $(INSTALLDIR)/www/common.js
+	cp common_micro.compressed.js $(INSTALLDIR)/www/common.js
 endif
 	rm -f $(INSTALLDIR)/www/Log_incoming.asp
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
@@ -43,17 +43,17 @@ ifeq ($(CONFIG_DIST),"micro-special")
 	rm -f $(INSTALLDIR)/www/images/dd-logo.png
 	rm -f $(INSTALLDIR)/www/images/valid-xhtml10.png
 ifneq ($(CONFIG_COMPRESSEDJS),y)
-	cp common_micro.js.ugly $(INSTALLDIR)/www/common.js
+	cp common_micro.js $(INSTALLDIR)/www/common.js
 else
-	cp common_micro.compressed.js.ugly $(INSTALLDIR)/www/common.js
+	cp common_micro.compressed.js $(INSTALLDIR)/www/common.js
 endif
 	rm -f $(INSTALLDIR)/www/Log_incoming.asp
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
 
-	rm -f $(INSTALLDIR)/www/common.js.ugly
-	rm -f $(INSTALLDIR)/www/common_micro.js.ugly
-	rm -f $(INSTALLDIR)/www/common_micro.compressed.js.ugly
+	rm -f $(INSTALLDIR)/www/common.js
+	rm -f $(INSTALLDIR)/www/common_micro.js
+	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
 	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 
@@ -401,7 +401,7 @@ ifeq ($(CONFIG_PWC),y)
 	cp -r common_style/pwc $(INSTALLDIR)/www/style
 	cp common_style/common.css $(INSTALLDIR)/www/style
 else
-	cp common_micro.js.ugly $(INSTALLDIR)/www/common.js
+	cp common_micro.js $(INSTALLDIR)/www/common.js
 endif
 
 ifeq ($(CONFIG_SKYTEL),y)
@@ -1111,7 +1111,7 @@ optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/*.html
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
-#	-repugly $(INSTALLDIR)/www
+	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
 	-repugly $(INSTALLDIR)/www/intatstart/js
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/intatstart/js
