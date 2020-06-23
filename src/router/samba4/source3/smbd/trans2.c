@@ -6675,6 +6675,13 @@ static NTSTATUS smb_set_file_size(connection_struct *conn,
 		 get_file_size_stat(psbuf));
 
 	if (size == get_file_size_stat(psbuf)) {
+		if (fsp == NULL) {
+			return NT_STATUS_OK;
+		}
+		if (!fsp->modified) {
+			return NT_STATUS_OK;
+		}
+		trigger_write_time_update_immediate(fsp);
 		return NT_STATUS_OK;
 	}
 
@@ -7817,8 +7824,15 @@ static NTSTATUS smb_set_file_basic_info(connection_struct *conn,
 	DEBUG(10, ("smb_set_file_basic_info: file %s\n",
 		   smb_fname_str_dbg(smb_fname)));
 
-	return smb_set_file_time(conn, fsp, smb_fname, &ft,
-				 true);
+	status = smb_set_file_time(conn, fsp, smb_fname, &ft, true);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	if (fsp != NULL && fsp->modified) {
+		trigger_write_time_update_immediate(fsp);
+	}
+	return NT_STATUS_OK;
 }
 
 /****************************************************************************
@@ -7855,11 +7869,15 @@ static NTSTATUS smb_set_info_standard(connection_struct *conn,
 		return status;
 	}
 
-        return smb_set_file_time(conn,
-                                fsp,
-				smb_fname,
-				&ft,
-                                true);
+	status = smb_set_file_time(conn, fsp, smb_fname, &ft, true);
+	if (!NT_STATUS_IS_OK(status)) {
+		return status;
+	}
+
+	if (fsp != NULL && fsp->modified) {
+		trigger_write_time_update_immediate(fsp);
+	}
+	return NT_STATUS_OK;
 }
 
 /****************************************************************************

@@ -32,10 +32,17 @@
 ssize_t read_file(files_struct *fsp,char *data,off_t pos,size_t n)
 {
 	ssize_t ret = 0;
+	bool ok;
 
 	/* you can't read from print files */
 	if (fsp->print_file) {
 		errno = EBADF;
+		return -1;
+	}
+
+	ok = vfs_valid_pread_range(pos, n);
+	if (!ok) {
+		errno = EINVAL;
 		return -1;
 	}
 
@@ -69,6 +76,17 @@ static ssize_t real_write_file(struct smb_request *req,
 				size_t n)
 {
 	ssize_t ret;
+	bool ok;
+
+	ok = vfs_valid_pwrite_range(pos, n);
+	if (!ok) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (n == 0) {
+		return 0;
+	}
 
 	fsp->fh->pos = pos;
 	if (pos && lp_strict_allocate(SNUM(fsp->conn) &&
@@ -104,15 +122,7 @@ void fsp_flush_write_time_update(struct files_struct *fsp)
 
 	DEBUG(5, ("Update write time on %s\n", fsp_str_dbg(fsp)));
 
-	/* change the write time in the open file db. */
-	(void)set_write_time(fsp->file_id, timespec_current());
-
-	/* And notify. */
-        notify_fname(fsp->conn, NOTIFY_ACTION_MODIFIED,
-                     FILE_NOTIFY_CHANGE_LAST_WRITE, fsp->fsp_name->base_name);
-
-	/* Remove the timed event handler. */
-	TALLOC_FREE(fsp->update_write_time_event);
+	trigger_write_time_update_immediate(fsp);
 }
 
 static void update_write_time_handler(struct tevent_context *ctx,
@@ -214,16 +224,13 @@ void mark_file_modified(files_struct *fsp)
 {
 	int dosmode;
 
+	trigger_write_time_update(fsp);
+
 	if (fsp->modified) {
 		return;
 	}
 
 	fsp->modified = true;
-
-	if (SMB_VFS_FSTAT(fsp, &fsp->fsp_name->st) != 0) {
-		return;
-	}
-	trigger_write_time_update(fsp);
 
 	if (fsp->posix_flags & FSP_POSIX_FLAGS_OPEN) {
 		return;

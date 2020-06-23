@@ -42,6 +42,7 @@
 #include "smbprofile.h"
 #include "../lib/tsocket/tsocket.h"
 #include "lib/tevent_wait.h"
+#include "lib/util/tevent_ntstatus.h"
 #include "libcli/smb/smb_signing.h"
 #include "lib/util/sys_rw_data.h"
 #include "librpc/gen_ndr/open_files.h"
@@ -2611,40 +2612,196 @@ void reply_open_and_X(struct smb_request *req)
  Reply to a SMBulogoffX.
 ****************************************************************************/
 
-void reply_ulogoffX(struct smb_request *req)
+static struct tevent_req *reply_ulogoffX_send(struct smb_request *smb1req,
+				struct smbXsrv_session *session);
+static void reply_ulogoffX_done(struct tevent_req *req);
+
+void reply_ulogoffX(struct smb_request *smb1req)
 {
 	struct timeval now = timeval_current();
 	struct smbXsrv_session *session = NULL;
+	struct tevent_req *req;
 	NTSTATUS status;
 
-	START_PROFILE(SMBulogoffX);
+	/*
+	 * Don't setup the profile charge here, take
+	 * it in reply_ulogoffX_done(). Not strictly correct
+	 * but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
 
-	status = smb1srv_session_lookup(req->xconn,
-					req->vuid,
+	status = smb1srv_session_lookup(smb1req->xconn,
+					smb1req->vuid,
 					timeval_to_nttime(&now),
 					&session);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(3,("ulogoff, vuser id %llu does not map to user.\n",
-			 (unsigned long long)req->vuid));
+		/* Not going async, profile here. */
+		START_PROFILE(SMBulogoffX);
+		DBG_WARNING("ulogoff, vuser id %llu does not map to user.\n",
+			 (unsigned long long)smb1req->vuid);
 
-		req->vuid = UID_FIELD_INVALID;
-		reply_force_doserror(req, ERRSRV, ERRbaduid);
+		smb1req->vuid = UID_FIELD_INVALID;
+		reply_force_doserror(smb1req, ERRSRV, ERRbaduid);
 		END_PROFILE(SMBulogoffX);
 		return;
 	}
 
+	req = reply_ulogoffX_send(smb1req, session);
+	if (req == NULL) {
+		/* Not going async, profile here. */
+		START_PROFILE(SMBulogoffX);
+		reply_force_doserror(smb1req, ERRDOS, ERRnomem);
+		END_PROFILE(SMBulogoffX);
+		return;
+	}
+
+	/* We're async. This will complete later. */
+	tevent_req_set_callback(req, reply_ulogoffX_done, smb1req);
+	return;
+}
+
+struct reply_ulogoffX_state {
+	struct tevent_queue *wait_queue;
+	struct smbXsrv_session *session;
+};
+
+static void reply_ulogoffX_wait_done(struct tevent_req *subreq);
+
+/****************************************************************************
+ Async SMB1 ulogoffX.
+ Note, on failure here we deallocate and return NULL to allow the caller to
+ SMB1 return an error of ERRnomem immediately.
+****************************************************************************/
+
+static struct tevent_req *reply_ulogoffX_send(struct smb_request *smb1req,
+					struct smbXsrv_session *session)
+{
+	struct tevent_req *req;
+	struct reply_ulogoffX_state *state;
+	struct tevent_req *subreq;
+	files_struct *fsp;
+	struct smbd_server_connection *sconn = session->client->sconn;
+	uint64_t vuid = session->global->session_wire_id;
+
+	req = tevent_req_create(smb1req, &state,
+			struct reply_ulogoffX_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	state->wait_queue = tevent_queue_create(state,
+				"reply_ulogoffX_wait_queue");
+	if (tevent_req_nomem(state->wait_queue, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+	state->session = session;
+
 	/*
-	 * TODO: cancel all outstanding requests on the session
+	 * Make sure that no new request will be able to use this session.
+	 * This ensures that once all outstanding fsp->aio_requests
+	 * on this session are done, we are safe to close it.
 	 */
+	session->status = NT_STATUS_USER_SESSION_DELETED;
+
+	for (fsp = sconn->files; fsp; fsp = fsp->next) {
+		if (fsp->vuid != vuid) {
+			continue;
+		}
+		/*
+		 * Flag the file as close in progress.
+		 * This will prevent any more IO being
+		 * done on it.
+		 */
+		fsp->closing = true;
+
+		if (fsp->num_aio_requests > 0) {
+			/*
+			 * Now wait until all aio requests on this fsp are
+			 * finished.
+			 *
+			 * We don't set a callback, as we just want to block the
+			 * wait queue and the talloc_free() of fsp->aio_request
+			 * will remove the item from the wait queue.
+			 */
+			subreq = tevent_queue_wait_send(fsp->aio_requests,
+						sconn->ev_ctx,
+						state->wait_queue);
+			if (tevent_req_nomem(subreq, req)) {
+				TALLOC_FREE(req);
+				return NULL;
+			}
+		}
+	}
+
+	/*
+	 * Now we add our own waiter to the end of the queue,
+	 * this way we get notified when all pending requests are finished
+	 * and reply to the outstanding SMB1 request.
+	 */
+	subreq = tevent_queue_wait_send(state,
+				sconn->ev_ctx,
+				state->wait_queue);
+	if (tevent_req_nomem(subreq, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+
+	/*
+	 * We're really going async - move the SMB1 request from
+	 * a talloc stackframe above us to the sconn talloc-context.
+	 * We need this to stick around until the wait_done
+	 * callback is invoked.
+	 */
+	smb1req = talloc_move(sconn, &smb1req);
+
+	tevent_req_set_callback(subreq, reply_ulogoffX_wait_done, req);
+
+	return req;
+}
+
+static void reply_ulogoffX_wait_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+
+	tevent_queue_wait_recv(subreq);
+	TALLOC_FREE(subreq);
+	tevent_req_done(req);
+}
+
+static NTSTATUS reply_ulogoffX_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
+}
+
+static void reply_ulogoffX_done(struct tevent_req *req)
+{
+	struct smb_request *smb1req = tevent_req_callback_data(
+		req, struct smb_request);
+	struct reply_ulogoffX_state *state = tevent_req_data(req,
+						struct reply_ulogoffX_state);
+	struct smbXsrv_session *session = state->session;
+	NTSTATUS status;
+
+	/*
+	 * Take the profile charge here. Not strictly
+	 * correct but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
+	START_PROFILE(SMBulogoffX);
+
+	status = reply_ulogoffX_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb1req);
+		END_PROFILE(SMBulogoffX);
+		exit_server(__location__ ": reply_ulogoffX_recv failed");
+		return;
+	}
+
 	status = smbXsrv_session_logoff(session);
 	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("reply_ulogoff: "
-			  "smbXsrv_session_logoff() failed: %s\n",
-			  nt_errstr(status)));
-		/*
-		 * If we hit this case, there is something completely
-		 * wrong, so we better disconnect the transport connection.
-		 */
+		TALLOC_FREE(smb1req);
 		END_PROFILE(SMBulogoffX);
 		exit_server(__location__ ": smbXsrv_session_logoff failed");
 		return;
@@ -2652,15 +2809,21 @@ void reply_ulogoffX(struct smb_request *req)
 
 	TALLOC_FREE(session);
 
-	reply_outbuf(req, 2, 0);
-	SSVAL(req->outbuf, smb_vwv0, 0xff); /* andx chain ends */
-	SSVAL(req->outbuf, smb_vwv1, 0);    /* no andx offset */
+	reply_outbuf(smb1req, 2, 0);
+	SSVAL(smb1req->outbuf, smb_vwv0, 0xff); /* andx chain ends */
+	SSVAL(smb1req->outbuf, smb_vwv1, 0);    /* no andx offset */
 
-	DEBUG(3, ("ulogoffX vuid=%llu\n",
-		  (unsigned long long)req->vuid));
+	DBG_NOTICE("ulogoffX vuid=%llu\n",
+		  (unsigned long long)smb1req->vuid);
 
+	smb1req->vuid = UID_FIELD_INVALID;
+	/*
+	 * The following call is needed to push the
+	 * reply data back out the socket after async
+	 * return. Plus it frees smb1req.
+	 */
+	smb_request_done(smb1req);
 	END_PROFILE(SMBulogoffX);
-	req->vuid = UID_FIELD_INVALID;
 }
 
 /****************************************************************************
@@ -5538,6 +5701,10 @@ static struct files_struct *file_sync_one_fn(struct files_struct *fsp,
 	}
 	sync_file(conn, fsp, True /* write through */);
 
+	if (fsp->modified) {
+		trigger_write_time_update_immediate(fsp);
+	}
+
 	return NULL;
 }
 
@@ -5576,6 +5743,9 @@ void reply_flush(struct smb_request *req)
 			END_PROFILE(SMBflush);
 			return;
 		}
+		if (fsp->modified) {
+			trigger_write_time_update_immediate(fsp);
+		}
 	}
 
 	reply_outbuf(req, 0, 0);
@@ -5590,16 +5760,228 @@ void reply_flush(struct smb_request *req)
  conn POINTER CAN BE NULL HERE !
 ****************************************************************************/
 
-void reply_exit(struct smb_request *req)
+static struct tevent_req *reply_exit_send(struct smb_request *smb1req);
+static void reply_exit_done(struct tevent_req *req);
+
+void reply_exit(struct smb_request *smb1req)
 {
+	struct tevent_req *req;
+
+	/*
+	 * Don't setup the profile charge here, take
+	 * it in reply_exit_done(). Not strictly correct
+	 * but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
+	req = reply_exit_send(smb1req);
+	if (req == NULL) {
+		/* Not going async, profile here. */
+		START_PROFILE(SMBexit);
+		reply_force_doserror(smb1req, ERRDOS, ERRnomem);
+		END_PROFILE(SMBexit);
+		return;
+	}
+
+	/* We're async. This will complete later. */
+	tevent_req_set_callback(req, reply_exit_done, smb1req);
+	return;
+}
+
+struct reply_exit_state {
+	struct tevent_queue *wait_queue;
+};
+
+static void reply_exit_wait_done(struct tevent_req *subreq);
+
+/****************************************************************************
+ Async SMB1 exit.
+ Note, on failure here we deallocate and return NULL to allow the caller to
+ SMB1 return an error of ERRnomem immediately.
+****************************************************************************/
+
+static struct tevent_req *reply_exit_send(struct smb_request *smb1req)
+{
+	struct tevent_req *req;
+	struct reply_exit_state *state;
+	struct tevent_req *subreq;
+	files_struct *fsp;
+	struct smbd_server_connection *sconn = smb1req->sconn;
+
+	req = tevent_req_create(smb1req, &state,
+			struct reply_exit_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	state->wait_queue = tevent_queue_create(state,
+				"reply_exit_wait_queue");
+	if (tevent_req_nomem(state->wait_queue, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+
+	for (fsp = sconn->files; fsp; fsp = fsp->next) {
+		if (fsp->file_pid != smb1req->smbpid) {
+			continue;
+		}
+		if (fsp->vuid != smb1req->vuid) {
+			continue;
+		}
+		/*
+		 * Flag the file as close in progress.
+		 * This will prevent any more IO being
+		 * done on it.
+		 */
+		fsp->closing = true;
+
+		if (fsp->num_aio_requests > 0) {
+			/*
+			 * Now wait until all aio requests on this fsp are
+			 * finished.
+			 *
+			 * We don't set a callback, as we just want to block the
+			 * wait queue and the talloc_free() of fsp->aio_request
+			 * will remove the item from the wait queue.
+			 */
+			subreq = tevent_queue_wait_send(fsp->aio_requests,
+						sconn->ev_ctx,
+						state->wait_queue);
+			if (tevent_req_nomem(subreq, req)) {
+				TALLOC_FREE(req);
+				return NULL;
+			}
+		}
+	}
+
+	/*
+	 * Now we add our own waiter to the end of the queue,
+	 * this way we get notified when all pending requests are finished
+	 * and reply to the outstanding SMB1 request.
+	 */
+	subreq = tevent_queue_wait_send(state,
+				sconn->ev_ctx,
+				state->wait_queue);
+	if (tevent_req_nomem(subreq, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+
+	/*
+	 * We're really going async - move the SMB1 request from
+	 * a talloc stackframe above us to the conn talloc-context.
+	 * We need this to stick around until the wait_done
+	 * callback is invoked.
+	 */
+	smb1req = talloc_move(sconn, &smb1req);
+
+	tevent_req_set_callback(subreq, reply_exit_wait_done, req);
+
+	return req;
+}
+
+static void reply_exit_wait_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+
+	tevent_queue_wait_recv(subreq);
+	TALLOC_FREE(subreq);
+	tevent_req_done(req);
+}
+
+static NTSTATUS reply_exit_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
+}
+
+static void reply_exit_done(struct tevent_req *req)
+{
+	struct smb_request *smb1req = tevent_req_callback_data(
+		req, struct smb_request);
+	struct smbd_server_connection *sconn = smb1req->sconn;
+	struct smbXsrv_connection *xconn = smb1req->xconn;
+	NTTIME now = timeval_to_nttime(&smb1req->request_time);
+	struct smbXsrv_session *session = NULL;
+	files_struct *fsp, *next;
+	NTSTATUS status;
+
+	/*
+	 * Take the profile charge here. Not strictly
+	 * correct but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
 	START_PROFILE(SMBexit);
 
-	file_close_pid(req->sconn, req->smbpid, req->vuid);
+	status = reply_exit_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb1req);
+		END_PROFILE(SMBexit);
+		exit_server(__location__ ": reply_exit_recv failed");
+		return;
+	}
 
-	reply_outbuf(req, 0, 0);
+	/*
+	 * Ensure the session is still valid.
+	 */
+	status = smb1srv_session_lookup(xconn,
+					smb1req->vuid,
+					now,
+					&session);
+	if (!NT_STATUS_IS_OK(status)) {
+		reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
+		smb_request_done(smb1req);
+		END_PROFILE(SMBexit);
+	}
 
-	DEBUG(3,("exit\n"));
+	/*
+	 * Ensure the vuid is still valid - no one
+	 * called reply_ulogoffX() in the meantime.
+	 * reply_exit() doesn't have AS_USER set, so
+	 * use set_current_user_info() directly.
+	 * This is the same logic as in switch_message().
+	 */
+	if (session->global->auth_session_info != NULL) {
+		set_current_user_info(
+			session->global->auth_session_info->unix_info->sanitized_username,
+			session->global->auth_session_info->unix_info->unix_name,
+			session->global->auth_session_info->info->domain_name);
+	}
 
+	/* No more aio - do the actual closes. */
+	for (fsp = sconn->files; fsp; fsp = next) {
+		bool ok;
+		next = fsp->next;
+
+		if (fsp->file_pid != smb1req->smbpid) {
+			continue;
+		}
+		if (fsp->vuid != smb1req->vuid) {
+			continue;
+		}
+		if (!fsp->closing) {
+			continue;
+		}
+
+		/*
+		 * reply_exit() has the DO_CHDIR flag set.
+		 */
+		ok = chdir_current_service(fsp->conn);
+		if (!ok) {
+			reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
+			smb_request_done(smb1req);
+			END_PROFILE(SMBexit);
+		}
+		close_file(NULL, fsp, SHUTDOWN_CLOSE);
+	}
+
+	reply_outbuf(smb1req, 0, 0);
+	/*
+	 * The following call is needed to push the
+	 * reply data back out the socket after async
+	 * return. Plus it frees smb1req.
+	 */
+	smb_request_done(smb1req);
+	DBG_INFO("reply_exit complete\n");
 	END_PROFILE(SMBexit);
 	return;
 }
@@ -5658,6 +6040,13 @@ void reply_close(struct smb_request *req)
 
 		DEBUG(10, ("closing with aio %u requests pending\n",
 			   fsp->num_aio_requests));
+
+		/*
+		 * Flag the file as close in progress.
+		 * This will prevent any more IO being
+		 * done on it.
+		 */
+		fsp->closing = true;
 
 		/*
 		 * We depend on the aio_extra destructor to take care of this
@@ -6018,46 +6407,211 @@ void reply_unlock(struct smb_request *req)
  conn POINTER CAN BE NULL HERE !
 ****************************************************************************/
 
-void reply_tdis(struct smb_request *req)
+static struct tevent_req *reply_tdis_send(struct smb_request *smb1req);
+static void reply_tdis_done(struct tevent_req *req);
+
+void reply_tdis(struct smb_request *smb1req)
 {
-	NTSTATUS status;
-	connection_struct *conn = req->conn;
-	struct smbXsrv_tcon *tcon;
+	connection_struct *conn = smb1req->conn;
+	struct tevent_req *req;
 
-	START_PROFILE(SMBtdis);
+	/*
+	 * Don't setup the profile charge here, take
+	 * it in reply_tdis_done(). Not strictly correct
+	 * but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
 
-	if (!conn) {
-		DEBUG(4,("Invalid connection in tdis\n"));
-		reply_force_doserror(req, ERRSRV, ERRinvnid);
+	if (conn == NULL) {
+		/* Not going async, profile here. */
+		START_PROFILE(SMBtdis);
+		DBG_INFO("Invalid connection in tdis\n");
+		reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
 		END_PROFILE(SMBtdis);
 		return;
 	}
 
-	tcon = conn->tcon;
-	req->conn = NULL;
+	req = reply_tdis_send(smb1req);
+	if (req == NULL) {
+		/* Not going async, profile here. */
+		START_PROFILE(SMBtdis);
+		reply_force_doserror(smb1req, ERRDOS, ERRnomem);
+		END_PROFILE(SMBtdis);
+		return;
+	}
+	/* We're async. This will complete later. */
+	tevent_req_set_callback(req, reply_tdis_done, smb1req);
+	return;
+}
+
+struct reply_tdis_state {
+	struct tevent_queue *wait_queue;
+};
+
+static void reply_tdis_wait_done(struct tevent_req *subreq);
+
+/****************************************************************************
+ Async SMB1 tdis.
+ Note, on failure here we deallocate and return NULL to allow the caller to
+ SMB1 return an error of ERRnomem immediately.
+****************************************************************************/
+
+static struct tevent_req *reply_tdis_send(struct smb_request *smb1req)
+{
+	struct tevent_req *req;
+	struct reply_tdis_state *state;
+	struct tevent_req *subreq;
+	connection_struct *conn = smb1req->conn;
+	files_struct *fsp;
+
+	req = tevent_req_create(smb1req, &state,
+			struct reply_tdis_state);
+	if (req == NULL) {
+		return NULL;
+	}
+	state->wait_queue = tevent_queue_create(state, "reply_tdis_wait_queue");
+	if (tevent_req_nomem(state->wait_queue, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
 
 	/*
-	 * TODO: cancel all outstanding requests on the tcon
+	 * Make sure that no new request will be able to use this tcon.
+	 * This ensures that once all outstanding fsp->aio_requests
+	 * on this tcon are done, we are safe to close it.
 	 */
-	status = smbXsrv_tcon_disconnect(tcon, req->vuid);
-	if (!NT_STATUS_IS_OK(status)) {
-		DEBUG(0, ("reply_tdis: "
-			  "smbXsrv_tcon_disconnect() failed: %s\n",
-			  nt_errstr(status)));
+	conn->tcon->status = NT_STATUS_NETWORK_NAME_DELETED;
+
+	for (fsp = conn->sconn->files; fsp; fsp = fsp->next) {
+		if (fsp->conn != conn) {
+			continue;
+		}
 		/*
-		 * If we hit this case, there is something completely
-		 * wrong, so we better disconnect the transport connection.
+		 * Flag the file as close in progress.
+		 * This will prevent any more IO being
+		 * done on it. Not strictly needed, but
+		 * doesn't hurt to flag it as closing.
 		 */
+		fsp->closing = true;
+
+		if (fsp->num_aio_requests > 0) {
+			/*
+			 * Now wait until all aio requests on this fsp are
+			 * finished.
+			 *
+			 * We don't set a callback, as we just want to block the
+			 * wait queue and the talloc_free() of fsp->aio_request
+			 * will remove the item from the wait queue.
+			 */
+			subreq = tevent_queue_wait_send(fsp->aio_requests,
+						conn->sconn->ev_ctx,
+						state->wait_queue);
+			if (tevent_req_nomem(subreq, req)) {
+				TALLOC_FREE(req);
+				return NULL;
+			}
+		}
+	}
+
+	/*
+	 * Now we add our own waiter to the end of the queue,
+	 * this way we get notified when all pending requests are finished
+	 * and reply to the outstanding SMB1 request.
+	 */
+	subreq = tevent_queue_wait_send(state,
+				conn->sconn->ev_ctx,
+				state->wait_queue);
+	if (tevent_req_nomem(subreq, req)) {
+		TALLOC_FREE(req);
+		return NULL;
+	}
+
+	/*
+	 * We're really going async - move the SMB1 request from
+	 * a talloc stackframe above us to the sconn talloc-context.
+	 * We need this to stick around until the wait_done
+	 * callback is invoked.
+	 */
+	smb1req = talloc_move(smb1req->sconn, &smb1req);
+
+	tevent_req_set_callback(subreq, reply_tdis_wait_done, req);
+
+	return req;
+}
+
+static void reply_tdis_wait_done(struct tevent_req *subreq)
+{
+	struct tevent_req *req = tevent_req_callback_data(
+		subreq, struct tevent_req);
+
+	tevent_queue_wait_recv(subreq);
+	TALLOC_FREE(subreq);
+	tevent_req_done(req);
+}
+
+static NTSTATUS reply_tdis_recv(struct tevent_req *req)
+{
+	return tevent_req_simple_recv_ntstatus(req);
+}
+
+static void reply_tdis_done(struct tevent_req *req)
+{
+	struct smb_request *smb1req = tevent_req_callback_data(
+		req, struct smb_request);
+	NTSTATUS status;
+	struct smbXsrv_tcon *tcon = smb1req->conn->tcon;
+	bool ok;
+
+	/*
+	 * Take the profile charge here. Not strictly
+	 * correct but better than the other SMB1 async
+	 * code that double-charges at the moment.
+	 */
+	START_PROFILE(SMBtdis);
+
+	status = reply_tdis_recv(req);
+	TALLOC_FREE(req);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb1req);
+		END_PROFILE(SMBtdis);
+		exit_server(__location__ ": reply_tdis_recv failed");
+		return;
+	}
+
+	/*
+	 * As we've been awoken, we may have changed
+	 * directory in the meantime.
+	 * reply_tdis() has the DO_CHDIR flag set.
+	 */
+	ok = chdir_current_service(smb1req->conn);
+	if (!ok) {
+		reply_force_doserror(smb1req, ERRSRV, ERRinvnid);
+		smb_request_done(smb1req);
+		END_PROFILE(SMBtdis);
+	}
+
+	status = smbXsrv_tcon_disconnect(tcon,
+					 smb1req->vuid);
+	if (!NT_STATUS_IS_OK(status)) {
+		TALLOC_FREE(smb1req);
 		END_PROFILE(SMBtdis);
 		exit_server(__location__ ": smbXsrv_tcon_disconnect failed");
 		return;
 	}
 
+	/* smbXsrv_tcon_disconnect frees smb1req->conn. */
+	smb1req->conn = NULL;
+
 	TALLOC_FREE(tcon);
 
-	reply_outbuf(req, 0, 0);
+	reply_outbuf(smb1req, 0, 0);
+	/*
+	 * The following call is needed to push the
+	 * reply data back out the socket after async
+	 * return. Plus it frees smb1req.
+	 */
+	smb_request_done(smb1req);
 	END_PROFILE(SMBtdis);
-	return;
 }
 
 /****************************************************************************
@@ -8855,6 +9409,10 @@ void reply_setattrE(struct smb_request *req)
 	if (!NT_STATUS_IS_OK(status)) {
 		reply_nterror(req, status);
 		goto out;
+	}
+
+	if (fsp->modified) {
+		trigger_write_time_update_immediate(fsp);
 	}
 
 	DEBUG( 3, ( "reply_setattrE %s actime=%u modtime=%u "
