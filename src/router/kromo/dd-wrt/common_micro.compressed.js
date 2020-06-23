@@ -1083,7 +1083,7 @@ document.forms[0].submit();
 function comma(n){
 n=""+n;
 var p=n;
-while((n=n.replace(/(\d+)(\d{3})/g,"$1\u202f$2"))!=p){
+while((n=n.replace(/(\d+)(\d{3})/g,"$1,$2"))!=p){
 p=n;
 }
 return n;
