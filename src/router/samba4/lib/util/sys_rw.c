@@ -24,6 +24,30 @@
 #include "system/filesys.h"
 #include "lib/util/sys_rw.h"
 
+bool sys_valid_io_range(off_t offset, size_t length)
+{
+	uint64_t last_byte_ofs;
+
+	if (offset < 0) {
+		return false;
+	}
+
+	if (offset > INT64_MAX) {
+		return false;
+	}
+
+	if (length > UINT32_MAX) {
+		return false;
+	}
+
+	last_byte_ofs = (uint64_t)offset + (uint64_t)length;
+	if (last_byte_ofs > INT64_MAX) {
+		return false;
+	}
+
+	return true;
+}
+
 /*******************************************************************
 A read wrapper that will deal with EINTR/EWOULDBLOCK
 ********************************************************************/
@@ -120,6 +144,54 @@ ssize_t sys_pread(int fd, void *buf, size_t count, off_t off)
 }
 
 /*******************************************************************
+ A pread wrapper that will deal with EINTR and never return a short
+ read unless pread returns zero meaning EOF.
+********************************************************************/
+
+ssize_t sys_pread_full(int fd, void *buf, size_t count, off_t off)
+{
+	ssize_t total_read = 0;
+	uint8_t *curr_buf = (uint8_t *)buf;
+	size_t curr_count = count;
+	off_t curr_off = off;
+	bool ok;
+
+	ok = sys_valid_io_range(off, count);
+	if (!ok) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	while (curr_count != 0) {
+		ssize_t ret = sys_pread(fd,
+					curr_buf,
+					curr_count,
+					curr_off);
+
+		if (ret == -1) {
+			return -1;
+		}
+		if (ret == 0) {
+			/* EOF */
+			break;
+		}
+
+		if (ret > curr_count) {
+			errno = EIO;
+			return -1;
+		}
+
+		curr_buf += ret;
+		curr_count -= ret;
+		curr_off += ret;
+
+		total_read += ret;
+	}
+
+	return total_read;
+}
+
+/*******************************************************************
 A write wrapper that will deal with EINTR
 ********************************************************************/
 
@@ -131,4 +203,53 @@ ssize_t sys_pwrite(int fd, const void *buf, size_t count, off_t off)
 		ret = pwrite(fd, buf, count, off);
 	} while (ret == -1 && errno == EINTR);
 	return ret;
+}
+
+/*******************************************************************
+ A pwrite wrapper that will deal with EINTR and never allow a short
+ write unless the file system returns an error.
+********************************************************************/
+
+ssize_t sys_pwrite_full(int fd, const void *buf, size_t count, off_t off)
+{
+	ssize_t total_written = 0;
+	const uint8_t *curr_buf = (const uint8_t *)buf;
+	size_t curr_count = count;
+	off_t curr_off = off;
+	bool ok;
+
+	ok = sys_valid_io_range(off, count);
+	if (!ok) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	while (curr_count != 0) {
+		ssize_t ret = sys_pwrite(fd,
+					 curr_buf,
+					 curr_count,
+					 curr_off);
+
+		if (ret == -1) {
+			return -1;
+		}
+		if (ret == 0) {
+			/* Ensure we can never spin. */
+			errno = ENOSPC;
+			return -1;
+		}
+
+		if (ret > curr_count) {
+			errno = EIO;
+			return -1;
+		}
+
+		curr_buf += ret;
+		curr_count -= ret;
+		curr_off += ret;
+
+		total_written += ret;
+	}
+
+	return total_written;
 }

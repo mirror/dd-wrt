@@ -2,12 +2,12 @@
 .\"     Title: smb.conf
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 04/07/2020
+.\"      Date: 05/19/2020
 .\"    Manual: File Formats and Conventions
-.\"    Source: Samba 4.12.1
+.\"    Source: Samba 4.12.3
 .\"  Language: English
 .\"
-.TH "SMB\&.CONF" "5" "04/07/2020" "Samba 4\&.12\&.1" "File Formats and Conventions"
+.TH "SMB\&.CONF" "5" "05/19/2020" "Samba 4\&.12\&.3" "File Formats and Conventions"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -5330,6 +5330,48 @@ Default:
 .sp
 Example:
 \fI\fIldap machine suffix\fR\fR\fI = \fR\fIou=Computers\fR\fI \fR
+.RE
+
+ldap max anonymous request size (G)
+.PP
+.RS 4
+This parameter specifies the maximum permitted size (in bytes) for an LDAP request received on an anonymous connection\&.
+.sp
+If the request size exceeds this limit the request will be rejected\&.
+.sp
+Default:
+\fI\fIldap max anonymous request size\fR\fR\fI = \fR\fI256000\fR\fI \fR
+.sp
+Example:
+\fI\fIldap max anonymous request size\fR\fR\fI = \fR\fI500000\fR\fI \fR
+.RE
+
+ldap max authenticated request size (G)
+.PP
+.RS 4
+This parameter specifies the maximum permitted size (in bytes) for an LDAP request received on an authenticated connection\&.
+.sp
+If the request size exceeds this limit the request will be rejected\&.
+.sp
+Default:
+\fI\fIldap max authenticated request size\fR\fR\fI = \fR\fI16777216\fR\fI \fR
+.sp
+Example:
+\fI\fIldap max authenticated request size\fR\fR\fI = \fR\fI4194304\fR\fI \fR
+.RE
+
+ldap max search request size (G)
+.PP
+.RS 4
+This parameter specifies the maximum permitted size (in bytes) for an LDAP search request\&.
+.sp
+If the request size exceeds this limit the request will be rejected\&.
+.sp
+Default:
+\fI\fIldap max search request size\fR\fR\fI = \fR\fI256000\fR\fI \fR
+.sp
+Example:
+\fI\fIldap max search request size\fR\fR\fI = \fR\fI4194304\fR\fI \fR
 .RE
 
 ldap page size (G)
@@ -13412,7 +13454,7 @@ and
 special sections make life for an administrator easy, but the various combinations of default attributes can be tricky\&. Take extreme care when designing these sections\&. In particular, ensure that the permissions on spool directories are correct\&.
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.12\&.1 of the Samba suite\&.
+This man page is part of version 4\&.12\&.3 of the Samba suite\&.
 .SH "SEE ALSO"
 .PP
 \fBsamba\fR(7),

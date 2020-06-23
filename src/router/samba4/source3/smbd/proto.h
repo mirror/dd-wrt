@@ -356,6 +356,12 @@ NTSTATUS check_name(connection_struct *conn,
 int get_real_filename(connection_struct *conn, const char *path,
 		      const char *name, TALLOC_CTX *mem_ctx,
 		      char **found_name);
+int get_real_filename_full_scan(connection_struct *conn,
+				const char *path,
+				const char *name,
+				bool mangled,
+				TALLOC_CTX *mem_ctx,
+				char **found_name);
 NTSTATUS filename_convert(TALLOC_CTX *mem_ctx,
 			connection_struct *conn,
 			const char *name_in,
@@ -379,8 +385,6 @@ void fsp_set_gen_id(files_struct *fsp);
 NTSTATUS file_new(struct smb_request *req, connection_struct *conn,
 		  files_struct **result);
 void file_close_conn(connection_struct *conn);
-void file_close_pid(struct smbd_server_connection *sconn, uint16_t smbpid,
-		    uint64_t vuid);
 bool file_init_global(void);
 bool file_init(struct smbd_server_connection *sconn);
 void file_close_user(struct smbd_server_connection *sconn, uint64_t vuid);
@@ -1242,6 +1246,8 @@ void sys_utmp_yield(const char *username, const char *hostname,
 bool vfs_init_custom(connection_struct *conn, const char *vfs_object);
 bool smbd_vfs_init(connection_struct *conn);
 NTSTATUS vfs_file_exist(connection_struct *conn, struct smb_filename *smb_fname);
+bool vfs_valid_pread_range(off_t offset, size_t length);
+bool vfs_valid_pwrite_range(off_t offset, size_t length);
 ssize_t vfs_pwrite_data(struct smb_request *req,
 			files_struct *fsp,
 			const char *buffer,

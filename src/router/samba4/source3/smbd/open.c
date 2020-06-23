@@ -1500,17 +1500,18 @@ static bool mask_conflict(
  Returns True if conflict, False if not.
 ****************************************************************************/
 
+static const uint32_t conflicting_access =
+	FILE_WRITE_DATA|
+	FILE_APPEND_DATA|
+	FILE_READ_DATA|
+	FILE_EXECUTE|
+	DELETE_ACCESS;
+
 static bool share_conflict(uint32_t e_access_mask,
 			   uint32_t e_share_access,
 			   uint32_t access_mask,
 			   uint32_t share_access)
 {
-	const uint32_t conflicting_access =
-		FILE_WRITE_DATA|
-		FILE_APPEND_DATA|
-		FILE_READ_DATA|
-		FILE_EXECUTE|
-		DELETE_ACCESS;
 	bool conflict;
 
 	DBG_DEBUG("existing access_mask = 0x%"PRIx32", "
@@ -1743,7 +1744,9 @@ static uint16_t share_mode_flags_restrict(
 		&existing_lease_type);
 
 	existing_access_mask |= access_mask;
-	existing_share_mode &= share_mode;
+	if (access_mask & conflicting_access) {
+		existing_share_mode &= share_mode;
+	}
 	existing_lease_type |= lease_type;
 
 	ret = share_mode_flags_set(
@@ -1782,7 +1785,10 @@ static bool open_mode_check_fn(
 	}
 
 	access_mask = state->access_mask | e->access_mask;
-	share_access = state->share_access & e->share_access;
+	share_access = state->share_access;
+	if (e->access_mask & conflicting_access) {
+		share_access &= e->share_access;
+	}
 	lease_type = state->lease_type | get_lease_type(e, state->fid);
 
 	if ((access_mask == state->access_mask) &&

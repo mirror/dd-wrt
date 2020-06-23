@@ -739,7 +739,7 @@ static ssize_t vfswrap_pread(vfs_handle_struct *handle, files_struct *fsp, void 
 
 #if defined(HAVE_PREAD) || defined(HAVE_PREAD64)
 	START_PROFILE_BYTES(syscall_pread, n);
-	result = sys_pread(fsp->fh->fd, data, n, offset);
+	result = sys_pread_full(fsp->fh->fd, data, n, offset);
 	END_PROFILE_BYTES(syscall_pread);
 
 	if (result == -1 && errno == ESPIPE) {
@@ -763,7 +763,7 @@ static ssize_t vfswrap_pwrite(vfs_handle_struct *handle, files_struct *fsp, cons
 
 #if defined(HAVE_PWRITE) || defined(HAVE_PRWITE64)
 	START_PROFILE_BYTES(syscall_pwrite, n);
-	result = sys_pwrite(fsp->fh->fd, data, n, offset);
+	result = sys_pwrite_full(fsp->fh->fd, data, n, offset);
 	END_PROFILE_BYTES(syscall_pwrite);
 
 	if (result == -1 && errno == ESPIPE) {
@@ -843,10 +843,10 @@ static void vfs_pread_do(void *private_data)
 
 	PROFILE_TIMESTAMP(&start_time);
 
-	do {
-		state->ret = pread(state->fd, state->buf, state->count,
-				   state->offset);
-	} while ((state->ret == -1) && (errno == EINTR));
+	state->ret = sys_pread_full(state->fd,
+				    state->buf,
+				    state->count,
+				    state->offset);
 
 	if (state->ret == -1) {
 		state->vfs_aio_state.error = errno;
@@ -971,10 +971,10 @@ static void vfs_pwrite_do(void *private_data)
 
 	PROFILE_TIMESTAMP(&start_time);
 
-	do {
-		state->ret = pwrite(state->fd, state->buf, state->count,
-				   state->offset);
-	} while ((state->ret == -1) && (errno == EINTR));
+	state->ret = sys_pwrite_full(state->fd,
+				     state->buf,
+				     state->count,
+				     state->offset);
 
 	if (state->ret == -1) {
 		state->vfs_aio_state.error = errno;
@@ -2582,6 +2582,13 @@ static int strict_allocate_ftruncate(vfs_handle_struct *handle, files_struct *fs
 	int ret;
 	NTSTATUS status;
 	SMB_STRUCT_STAT *pst;
+	bool ok;
+
+	ok = vfs_valid_pwrite_range(len, 0);
+	if (!ok) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	status = vfs_stat_fsp(fsp);
 	if (!NT_STATUS_IS_OK(status)) {
