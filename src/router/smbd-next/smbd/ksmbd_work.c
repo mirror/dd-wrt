@@ -43,8 +43,7 @@ void ksmbd_free_work_struct(struct ksmbd_work *work)
 	else
 		ksmbd_free_response(RESPONSE_BUF(work));
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF &&
-			work->set_read_buf)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
 		ksmbd_release_buffer(AUX_PAYLOAD(work));
 	else
 		ksmbd_free_response(AUX_PAYLOAD(work));
