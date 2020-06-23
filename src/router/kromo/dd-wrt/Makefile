@@ -1111,7 +1111,7 @@ optimizefiles:
 	../../../../tools/write4 $(INSTALLDIR)/www/*.htm
 	../../../../tools/write4 $(INSTALLDIR)/www/*.html
 	../../../../tools/write4 $(INSTALLDIR)/www/help/*.asp
-	-repugly $(INSTALLDIR)/www
+#	-repugly $(INSTALLDIR)/www
 ifeq ($(CONFIG_IAS),y)
 	-repugly $(INSTALLDIR)/www/intatstart/js
 	../../../../tools/removewhitespace.sh $(TOP)/../../tools $(INSTALLDIR)/www/intatstart/js
