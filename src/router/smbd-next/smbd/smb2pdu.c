@@ -561,7 +561,7 @@ int init_smb2_rsp_hdr(struct ksmbd_work *work)
 int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 {
 	struct smb2_hdr *hdr = REQUEST_BUF(work);
-	size_t small_sz = ksmbd_small_buffer_size();
+	size_t small_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 	size_t large_sz = work->conn->vals->max_trans_size + MAX_SMB2_HDR_SIZE;
 	size_t sz = small_sz;
 	int cmd = le16_to_cpu(hdr->Command);
@@ -1609,12 +1609,16 @@ int smb2_tree_connect(struct ksmbd_work *work)
 	} else {
 		rsp->ShareType = SMB2_SHARE_TYPE_DISK;
 		rsp->MaximalAccess = FILE_READ_DATA_LE | FILE_READ_EA_LE |
-			FILE_WRITE_DATA_LE | FILE_APPEND_DATA_LE |
-			FILE_WRITE_EA_LE | FILE_EXECUTE_LE |
-			FILE_DELETE_CHILD_LE | FILE_READ_ATTRIBUTES_LE |
-			FILE_WRITE_ATTRIBUTES_LE | FILE_DELETE_LE |
-			FILE_READ_CONTROL_LE | FILE_WRITE_DAC_LE |
-			FILE_WRITE_OWNER_LE | FILE_SYNCHRONIZE_LE;
+			FILE_EXECUTE_LE | FILE_READ_ATTRIBUTES_LE;
+		if (test_tree_conn_flag(status.tree_conn,
+					KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+			rsp->MaximalAccess |= FILE_WRITE_DATA_LE |
+				FILE_APPEND_DATA_LE | FILE_WRITE_EA_LE |
+				FILE_DELETE_CHILD_LE | FILE_DELETE_LE |
+				FILE_WRITE_ATTRIBUTES_LE | FILE_DELETE_LE |
+				FILE_READ_CONTROL_LE | FILE_WRITE_DAC_LE |
+				FILE_WRITE_OWNER_LE | FILE_SYNCHRONIZE_LE;
+		}
 	}
 
 	status.tree_conn->maximal_access = le32_to_cpu(rsp->MaximalAccess);
@@ -2683,7 +2687,7 @@ int smb2_open(struct ksmbd_work *work)
 		req->DesiredAccess, req->CreateDisposition);
 
 	if (!test_tree_conn_flag(tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
-		if (open_flags & (O_CREAT | O_RDWR | O_WRONLY)) {
+		if (open_flags & O_CREAT) {
 			ksmbd_debug(SMB,
 				"User does not have write permission\n");
 			rc = -EACCES;
@@ -5597,6 +5601,12 @@ static int smb2_set_info_file(struct ksmbd_work *work,
 		return set_end_of_file_info(work, fp, buf);
 
 	case FILE_RENAME_INFORMATION:
+		if (!test_tree_conn_flag(work->tcon,
+		    KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+			ksmbd_debug(SMB,
+				"User does not have write permission\n");
+			return -EACCES;
+		}
 		return set_rename_info(work, fp, buf);
 
 	case FILE_LINK_INFORMATION:
@@ -5884,6 +5894,14 @@ int smb2_read(struct ksmbd_work *work)
 		return -ENOENT;
 	}
 
+	if (!(fp->daccess & (FILE_READ_DATA_LE | FILE_GENERIC_READ_LE |
+			     FILE_READ_ATTRIBUTES_LE | FILE_MAXIMAL_ACCESS_LE |
+			     FILE_GENERIC_ALL_LE))) {
+		ksmbd_err("Not permitted to read : 0x%x\n", fp->daccess);
+		err = -EACCES;
+		goto out;
+	}
+
 	offset = le64_to_cpu(req->Offset);
 	length = le32_to_cpu(req->Length);
 	mincount = le32_to_cpu(req->MinimumCount);
@@ -5891,7 +5909,8 @@ int smb2_read(struct ksmbd_work *work)
 	if (length > conn->vals->max_read_size) {
 		ksmbd_debug(SMB, "limiting read size to max size(%u)\n",
 			    conn->vals->max_read_size);
-		length = conn->vals->max_read_size;
+		err = -EINVAL;
+		goto out;
 	}
 
 	ksmbd_debug(SMB, "filename %s, offset %lld, len %zu\n", FP_FILENAME(fp),
@@ -6113,7 +6132,7 @@ int smb2_write(struct ksmbd_work *work)
 {
 	struct smb2_write_req *req;
 	struct smb2_write_rsp *rsp, *rsp_org;
-	struct ksmbd_file *fp;
+	struct ksmbd_file *fp = NULL;
 	loff_t offset;
 	size_t length;
 	ssize_t nbytes;
@@ -6130,6 +6149,12 @@ int smb2_write(struct ksmbd_work *work)
 		return smb2_write_pipe(work);
 	}
 
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB, "User does not have write permission\n");
+		err = -EACCES;
+		goto out;
+	}
+
 	fp = ksmbd_lookup_fd_slow(work,
 				le64_to_cpu(req->VolatileFileId),
 				le64_to_cpu(req->PersistentFileId));
@@ -6138,8 +6163,23 @@ int smb2_write(struct ksmbd_work *work)
 		return -ENOENT;
 	}
 
+	if (!(fp->daccess & (FILE_WRITE_DATA_LE | FILE_GENERIC_WRITE_LE |
+			     FILE_READ_ATTRIBUTES_LE | FILE_MAXIMAL_ACCESS_LE |
+			     FILE_GENERIC_ALL_LE))) {
+		ksmbd_err("Not permitted to write : 0x%x\n", fp->daccess);
+		err = -EACCES;
+		goto out;
+	}
+
 	offset = le64_to_cpu(req->Offset);
 	length = le32_to_cpu(req->Length);
+
+	if (length > work->conn->vals->max_write_size) {
+		ksmbd_debug(SMB, "limiting write size to max size(%u)\n",
+			    work->conn->vals->max_write_size);
+		err = -EINVAL;
+		goto out;
+	}
 
 	if (le32_to_cpu(req->Flags) & SMB2_WRITEFLAG_WRITE_THROUGH)
 		writethrough = true;
@@ -7282,6 +7322,14 @@ int smb2_ioctl(struct ksmbd_work *work)
 		break;
 	case FSCTL_COPYCHUNK:
 	case FSCTL_COPYCHUNK_WRITE:
+		if (!test_tree_conn_flag(work->tcon,
+		    KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+			ksmbd_debug(SMB,
+				"User does not have write permission\n");
+			ret = -EACCES;
+			goto out;
+		}
+
 		if (out_buf_len < sizeof(struct copychunk_ioctl_rsp)) {
 			ret = -EINVAL;
 			goto out;
@@ -7301,6 +7349,14 @@ int smb2_ioctl(struct ksmbd_work *work)
 		struct file_zero_data_information *zero_data;
 		struct ksmbd_file *fp;
 		loff_t off, len;
+
+		if (!test_tree_conn_flag(work->tcon,
+		    KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+			ksmbd_debug(SMB,
+				"User does not have write permission\n");
+			ret = -EACCES;
+			goto out;
+		}
 
 		zero_data =
 			(struct file_zero_data_information *)&req->Buffer[0];
