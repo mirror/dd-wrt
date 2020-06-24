@@ -53,8 +53,6 @@ endif
 
 	rm -f $(INSTALLDIR)/www/common_micro.js
 	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
-	rm -f $(INSTALLDIR)/www/common_micro.js
-	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
