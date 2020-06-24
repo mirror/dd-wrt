@@ -51,7 +51,6 @@ endif
 	rm -f $(INSTALLDIR)/www/Log_outgoing.asp
 endif
 
-	rm -f $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
 	rm -f $(INSTALLDIR)/www/common_micro.compressed.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
