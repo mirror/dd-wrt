@@ -88,11 +88,6 @@ static struct smb_protocol smb_protos[] = {
 	},
 };
 
-unsigned int ksmbd_small_buffer_size(void)
-{
-	return 448;
-}
-
 unsigned int ksmbd_server_side_copy_max_chunk_count(void)
 {
 	return 256;

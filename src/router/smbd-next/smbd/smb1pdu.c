@@ -159,9 +159,9 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 {
 	struct smb_hdr *hdr = (struct smb_hdr *)REQUEST_BUF(work);
 	unsigned char cmd = hdr->Command;
-	size_t small_sz = ksmbd_small_buffer_size();
+	size_t small_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 	size_t large_sz = work->conn->vals->max_read_size + MAX_CIFS_HDR_SIZE;
-	size_t sz = small_sz;
+	size_t sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 
 	if (cmd == SMB_COM_TRANSACTION2) {
 		struct smb_com_trans2_qpi_req *req = REQUEST_BUF(work);
@@ -190,7 +190,7 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 		 */
 		resp_size = sizeof(struct smb_com_echo_rsp) +
 			le16_to_cpu(req->ByteCount) - 1;
-		if (resp_size > ksmbd_small_buffer_size())
+		if (resp_size > MAX_CIFS_SMALL_BUFFER_SIZE)
 			sz = large_sz;
 	}
 
@@ -499,8 +499,11 @@ int smb_tree_connect_andx(struct ksmbd_work *work)
 	rsp->OptionalSupport = cpu_to_le16((SMB_SUPPORT_SEARCH_BITS |
 				SMB_CSC_NO_CACHING | SMB_UNIQUE_FILE_NAME));
 
-	rsp->MaximalShareAccessRights = cpu_to_le32((FILE_READ_RIGHTS |
-					FILE_EXEC_RIGHTS | FILE_WRITE_RIGHTS));
+	rsp->MaximalShareAccessRights = cpu_to_le32(FILE_READ_RIGHTS |
+					FILE_EXEC_RIGHTS);
+	if (test_tree_conn_flag(status.tree_conn,
+				KSMBD_TREE_CONN_FLAG_WRITABLE))
+		rsp->MaximalShareAccessRights |= FILE_WRITE_RIGHTS;
 	rsp->GuestMaximalShareAccessRights = 0;
 
 	set_service_type(conn, share, rsp);
@@ -762,6 +765,13 @@ int smb_rename(struct ksmbd_work *work)
 	struct path path;
 	bool file_present = true;
 	int rc = 0;
+
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
 
 	abs_oldname = smb_get_name(share, req->OldFileName, PATH_MAX, work,
 		false);
@@ -2418,17 +2428,12 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	 */
 
 	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
-		err = -EACCES;
-		if (!file_present) {
-			if (open_flags & O_CREAT)
-				ksmbd_debug(SMB, "returning as user does not have permission to write\n");
-			else {
-				err = -ENOENT;
-				ksmbd_debug(SMB, "returning as file does not exist\n");
-			}
+		if (open_flags & O_CREAT) {
+			ksmbd_debug(SMB,
+				"returning as user does not have permission to write\n");
+			err = -EACCES;
 			goto out;
 		}
-		goto free_path;
 	}
 
 	ksmbd_debug(SMB, "filename : %s, open_flags = 0x%x\n", conv_name,
@@ -2751,10 +2756,10 @@ static int smb_read_andx_pipe(struct ksmbd_work *work)
 	char *data_buf;
 	int ret = 0, nbytes = 0;
 	unsigned int count;
-	unsigned int rsp_buflen = ksmbd_small_buffer_size() -
+	unsigned int rsp_buflen = MAX_CIFS_SMALL_BUFFER_SIZE -
 		sizeof(struct smb_com_read_rsp);
 
-	rsp_buflen = min((unsigned int)(ksmbd_small_buffer_size() -
+	rsp_buflen = min((unsigned int)(MAX_CIFS_SMALL_BUFFER_SIZE -
 				sizeof(struct smb_com_read_rsp)), rsp_buflen);
 
 	count = min_t(unsigned int, le16_to_cpu(req->MaxCount), rsp_buflen);
@@ -2929,6 +2934,13 @@ int smb_write(struct ksmbd_work *work)
 	ssize_t nbytes = 0;
 	int err = 0;
 
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
+
 	fp = ksmbd_lookup_fd_fast(work, req->Fid);
 	if (!fp) {
 		ksmbd_err("failed to get filp for fid %u\n", req->Fid);
@@ -3043,6 +3055,13 @@ int smb_write_andx(struct ksmbd_work *work)
 	ssize_t nbytes = 0;
 	char *data_buf;
 	int err = 0;
+
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
 
 	if (test_share_config_flag(work->tcon->share_conf,
 				   KSMBD_SHARE_FLAG_PIPE)) {
@@ -4864,17 +4883,12 @@ static int smb_posix_open(struct ksmbd_work *work)
 	rsp_info_level = le16_to_cpu(psx_req->Level);
 
 	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
-		err = -EACCES;
-		if (!file_present) {
-			if (posix_open_flags & O_CREAT)
-				ksmbd_debug(SMB, "returning as user does not have permission to write\n");
-			else {
-				err = -ENOENT;
-				ksmbd_debug(SMB, "returning as file does not exist\n");
-			}
+		if (posix_open_flags & O_CREAT) {
+			err = -EACCES;
+			ksmbd_debug(SMB,
+				"returning as user does not have permission to write\n");
 			goto out;
 		}
-		goto free_path;
 	}
 
 	/* posix mkdir command */
@@ -5051,6 +5065,13 @@ static int smb_posix_unlink(struct ksmbd_work *work)
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	char *name;
 	int rc = 0;
+
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
 
 	name = smb_get_name(share, req->FileName, PATH_MAX, work, false);
 	if (IS_ERR(name)) {
@@ -7107,6 +7128,13 @@ static int smb_fileinfo_rename(struct ksmbd_work *work)
 	char *newname;
 	int rc = 0;
 
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
+
 	req = (struct smb_com_trans2_sfi_req *)REQUEST_BUF(work);
 	rsp = (struct smb_com_trans2_sfi_rsp *)RESPONSE_BUF(work);
 	info =  (struct set_file_rename *)
@@ -7401,6 +7429,13 @@ int smb_mkdir(struct ksmbd_work *work)
 	char *name;
 	int err;
 
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
+
 	name = smb_get_name(share, req->DirName, PATH_MAX, work, false);
 	if (IS_ERR(name)) {
 		rsp->hdr.Status.CifsError =
@@ -7586,6 +7621,13 @@ int smb_rmdir(struct ksmbd_work *work)
 	char *name;
 	int err;
 
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
+
 	name = smb_get_name(share, req->DirName, PATH_MAX, work, false);
 	if (IS_ERR(name)) {
 		rsp->hdr.Status.CifsError =
@@ -7628,6 +7670,13 @@ int smb_unlink(struct ksmbd_work *work)
 	char *name;
 	int err;
 	struct ksmbd_file *fp;
+
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
 
 	name = smb_get_name(share, req->fileName, PATH_MAX, work, false);
 	if (IS_ERR(name)) {
@@ -7713,6 +7762,13 @@ int smb_nt_rename(struct ksmbd_work *work)
 	struct ksmbd_share_config *share = work->tcon->share_conf;
 	char *oldname, *newname;
 	int oldname_len, err;
+
+	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
+		ksmbd_debug(SMB,
+			"returning as user does not have permission to write\n");
+		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
+		return -EACCES;
+	}
 
 	if (le16_to_cpu(req->Flags) != CREATE_HARD_LINK) {
 		rsp->hdr.Status.CifsError = STATUS_INVALID_PARAMETER;
