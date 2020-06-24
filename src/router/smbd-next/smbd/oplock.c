@@ -710,6 +710,15 @@ static void wake_up_oplock_break(struct oplock_info *opinfo)
 	wake_up_bit(&opinfo->pending_break, 0);
 }
 
+static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
+{
+	work->response_buf = ksmbd_alloc_response(MAX_CIFS_SMALL_BUFFER_SIZE);
+	if (!work->response_buf)
+		return -ENOMEM;
+	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
+	return 0;
+}
+
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /**
  * smb1_oplock_break_noti() - send smb1 oplock break cmd from conn
@@ -729,7 +738,7 @@ static void __smb1_oplock_break_noti(struct work_struct *wk)
 	struct smb_com_lock_req *req;
 	struct oplock_info *opinfo = REQUEST_BUF(work);
 
-	if (conn->ops->allocate_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		ksmbd_err("smb_allocate_rsp_buf failed! ");
 		ksmbd_free_work_struct(work);
 		return;
@@ -841,7 +850,7 @@ static void __smb2_oplock_break_noti(struct work_struct *wk)
 		return;
 	}
 
-	if (conn->ops->allocate_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		ksmbd_err("smb2_allocate_rsp_buf failed! ");
 		atomic_dec(&conn->r_count);
 		ksmbd_free_work_struct(work);
@@ -950,7 +959,7 @@ static void __smb2_lease_break_noti(struct work_struct *wk)
 	struct ksmbd_conn *conn = work->conn;
 	struct smb2_hdr *rsp_hdr;
 
-	if (conn->ops->allocate_rsp_buf(work)) {
+	if (allocate_oplock_break_buf(work)) {
 		ksmbd_debug(OPLOCK, "smb2_allocate_rsp_buf failed! ");
 		ksmbd_free_work_struct(work);
 		atomic_dec(&conn->r_count);
