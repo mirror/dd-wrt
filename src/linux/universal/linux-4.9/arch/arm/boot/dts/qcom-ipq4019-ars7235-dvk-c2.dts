@@ -28,6 +28,7 @@
 		};
 
                 ess-switch@c000000 {
+			gpio-controller;
                         switch_wan_bmp = <0x2>; //ARS-7235 port 1 lan, port 2 wan
                         switch_lan_bmp = <0x4>; //ARS-7235 port 1 lan, port 2 wan
 
@@ -36,12 +37,11 @@
                 edma@c080000 { //ARS-7235 port 1 lan, port 2 wan
                         status = "okay";
 
-                        gmac1: gmac1 {
+                        gmac0: gmac0 { //ARS-7235
                                 local-mac-address = [00 00 00 00 00 00];
                                 vlan_tag = <1 0x3>;
                         };
-
-                        gmac0: gmac0 {
+                        gmac1: gmac1 { //ARS-7235
                                 local-mac-address = [00 00 00 00 00 00];
                                 qcom,phy_mdio_addr = <1>;
                                 qcom,poll_required = <1>;
@@ -50,16 +50,6 @@
                                 vlan_tag = <2 0x5>;
                         };
                 };
-	};
-
-	gpio-keys {
-		compatible = "gpio-keys";
-
-		wps {
-			label = "wps";
-			gpios = <&tlmm 8 GPIO_ACTIVE_LOW>;
-			linux,code = <KEY_WPS_BUTTON>;
-		};
 	};
 
 	gpio-leds {
@@ -132,7 +122,7 @@
 &tlmm {
 	serial_1_pins: serial1_pinmux {
 		pinmux {
-			pins = "gpio8", "gpio9";
+			pins = "gpio9";
 			function = "blsp_uart1";
 			bias-disable;
 		};
@@ -140,7 +130,7 @@
 
 	free_pins {
 		pinmux {
-			pins = "gpio10", "gpio11";
+			pins = "gpio10", "gpio11", "gpio8";
 			function = "gpio";
 			bias-disable;
 		};
