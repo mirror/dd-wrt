@@ -569,7 +569,7 @@ static int ksmbd_server_shutdown(void)
 static int __init ksmbd_server_init(void)
 {
 	int ret;
-
+	printk(KERN_INFO "Linux kernel CIFS/SMB SERVER " KSMBD_VERSION " by Namjae Jeon <linkinjeon@kernel.org>\n");
 	ret = class_register(&ksmbd_control_class);
 	if (ret) {
 		ksmbd_err("Unable to register ksmbd-control class\n");
