@@ -236,7 +236,7 @@ if (nvram_match("boardtype", "0xF5B2") && nvram_match("boardrev", "0x1100") && n
 }
 
 if (nvram_match("productid", "RT-N66U")) {
-		printk(KERN_EMERG "Asus-RT-AC66U init\n");
+		printk(KERN_EMERG "Asus-RT-N66U init\n");
 		gpios = 0;
 		isac66 = 1;
 		isdefault = 0;

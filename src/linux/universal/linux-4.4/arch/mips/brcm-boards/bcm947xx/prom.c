@@ -307,6 +307,14 @@ void __init memory_setup(void)
 	if (nvram_match("productid", "RT-AC66U"))
 		highmemsupport = 1;
 
+	if (nvram_match("productid", "RT-N66U"))
+		highmemsupport = 1;
+
+	if (nvram_match("boardtype", "0xF5B2")
+	    && nvram_match("boardrev", "0x1100")
+	    && !nvram_match("pci/2/1/sb20in80and160hr5ghpo", "0"))
+		highmemsupport = 1;
+
 	if (boardnum == 0 && nvram_match("boardtype", "0xF5B2")
 	    && nvram_match("boardrev", "0x1100"))
 		highmemsupport = 1;
