@@ -370,17 +370,17 @@ void start_raid(void)
 
 	}
 	if (todo) {
-		eval("startservice_f", "cron");
-		eval("startservice_f", "samba3");
-		eval("startservice_f", "nfs");
-		eval("startservice_f", "rsync");
-		eval("startservice_f", "ftpsrv");
-		eval("startservice_f", "dlna");
+		eval("restart_f", "cron");
+		eval("restart_f", "samba3");
+		eval("restart_f", "nfs");
+		eval("restart_f", "rsync");
+		eval("restart_f", "ftpsrv");
+		eval("restart_f", "dlna");
 #ifdef HAVE_WEBSERVER
-		eval("startservice_f", "lighttpd");
+		eval("restart_f", "lighttpd");
 #endif
 #ifdef HAVE_TRANSMISSION
-		eval("startservice_f", "transmission");
+		eval("restart_f", "transmission");
 #endif
 		eval("startservice", "run_rc_usb", "-f");
 	}
