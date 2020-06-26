@@ -298,6 +298,9 @@ ifeq ($(CONFIG_BRCMFMAC),y)
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac43602-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366b-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcmfmac4366c-pcie.bin $(INSTALLDIR)/ath9k/lib/firmware/brcm
+ifeq ($(CONFIG_X86),y)
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/* $(INSTALLDIR)/ath9k/lib/firmware/brcm
+endif	
 #	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43/* $(INSTALLDIR)/ath9k/lib/firmware/b43
 #	-cp -av $(MAC80211_PATH)/ath10k-firmware*/b43legacy/* $(INSTALLDIR)/ath9k/lib/firmware/b43legacy
 endif
