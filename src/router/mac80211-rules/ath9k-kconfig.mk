@@ -98,6 +98,9 @@ ifeq ($(CONFIG_MVEBU),y)
   CPTCFG_MWIFIEX_SDIO=y
   CPTCFG_MWLWIFI=y
 endif
+ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
+  CPTCFG_WLAN_VENDOR_REALTEK=y
+endif
 ifeq ($(CONFIG_BRCMFMAC),y)
   CPTCFG_BRCMUTIL=m
   CPTCFG_BRCMFMAC=m
@@ -227,6 +230,9 @@ endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	cat $(TOP)/mac80211-rules/configs/rtl8192cu.config >> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
+	cat $(TOP)/mac80211-rules/configs/rtlwifi.config >> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
 	cat $(TOP)/mac80211-rules/configs/rt2800.config>> $(MAC80211_PATH)/.config_temp
 endif
@@ -274,8 +280,12 @@ ifeq ($(CONFIG_MAC80211_ATH9K_HTC),y)
 	-cp $(MAC80211_PATH)/linux-firmware-*/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
-	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp -av $(MAC80211_PATH)/linux-firmware-*/rtlwifi $(INSTALLDIR)/ath9k/lib/firmware/
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+endif
+ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
 endif
 ifeq ($(CONFIG_WIL6210),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
