@@ -289,17 +289,18 @@ static void detect_wireless_devices(int mask)
 		insmod("rtlwifi");
 		insmod("rtl_pci");
 		insmod("rtl_usb");
+		insmod("btcoexist");
 		insmod("rtl8188ee");
+		insmod("rtl8192c-common");
 		insmod("rtl8192ce");
 		insmod("rtl8192de");
 		insmod("rtl8192se");
-		insmod("rtl8723ae");
 		insmod("rtl8821ae");
-		insmod("rtl8192c-common");
 		insmod("rtl8192cu");
 		insmod("rtl8192ee");
 		insmod("rtl8723-common");
 		insmod("rtl8723be");
+		insmod("rtl8723ae");
 		insmod("rtw88");
 		insmod("rtwpci");
 	}
