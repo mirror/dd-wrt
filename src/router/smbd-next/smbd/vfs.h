@@ -103,6 +103,7 @@ struct ksmbd_dir_info {
 	int		data_count;
 	int		last_entry_offset;
 	bool		hide_dot_file;
+	int		flags;
 };
 
 struct ksmbd_readdir_data {

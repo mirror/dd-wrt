@@ -352,6 +352,10 @@ int ksmbd_populate_dot_dotdot_entries(struct ksmbd_work *work,
 				break;
 
 			dir->dot_dotdot[i] = 1;
+			if (d_info->flags & SMB2_RETURN_SINGLE_ENTRY) {
+				d_info->out_buf_len = 0;
+				break;
+			}
 		}
 	}
 
