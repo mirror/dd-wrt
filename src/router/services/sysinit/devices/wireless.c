@@ -304,12 +304,12 @@ static void detect_wireless_devices(int mask)
 	
 		insmod("rtw88_core");
 		insmod("rtw88_pci");
-		insmod("rtw8822b");
-		insmod("rtw8822be");
-		insmod("rtw8822c");
-		insmod("rtw8822ce");
-		insmod("rtw8823d");
-		insmod("rtw8823de");
+		insmod("rtw88_8822b");
+		insmod("rtw88_8822be");
+		insmod("rtw88_8822c");
+		insmod("rtw88_8822ce");
+		insmod("rtw88_8723d");
+		insmod("rtw88_8723de");
 	}
 #endif
 #endif
