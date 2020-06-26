@@ -300,6 +300,8 @@ static void detect_wireless_devices(int mask)
 		insmod("rtl8192ee");
 		insmod("rtl8723-common");
 		insmod("rtl8723be");
+		insmod("rtw88");
+		insmod("rtwpci");
 	}
 #endif
 #endif
