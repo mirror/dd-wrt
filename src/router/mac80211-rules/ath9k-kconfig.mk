@@ -286,6 +286,8 @@ endif
 ifeq ($(CONFIG_MAC80211_RTLWIFI),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
 	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtlwifi/* $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtw88
+	-cp -av $(MAC80211_PATH)/ath10k-firmware-*/rtw88/* $(INSTALLDIR)/ath9k/lib/firmware/rtw88
 endif
 ifeq ($(CONFIG_WIL6210),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
