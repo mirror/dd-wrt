@@ -3308,7 +3308,6 @@ struct smb2_query_dir_private {
 
 	struct ksmbd_dir_info	*d_info;
 	int			info_level;
-	int			flags;
 };
 
 static void lock_dir(struct ksmbd_file *dir_fp)
@@ -3538,8 +3537,10 @@ static int __query_dir(struct dir_context *ctx,
 	rc = reserve_populate_dentry(d_info, priv->info_level);
 	if (rc)
 		return rc;
-	if (priv->flags & SMB2_RETURN_SINGLE_ENTRY)
+	if (d_info->flags & SMB2_RETURN_SINGLE_ENTRY) {
+		d_info->out_buf_len = 0;
 		return 0;
+	}
 	return 0;
 }
 
@@ -3651,23 +3652,18 @@ int smb2_query_dir(struct ksmbd_work *work)
 	d_info.out_buf_len = min_t(int, d_info.out_buf_len,
 				le32_to_cpu(req->OutputBufferLength)) -
 				sizeof(struct smb2_query_directory_rsp);
+	d_info.flags = srch_flag;
 
-	if (!(srch_flag & SMB2_RETURN_SINGLE_ENTRY) || is_asterisk(srch_ptr)) {
-		/*
-		 * reserve dot and dotdot entries in head of buffer
-		 * in first response
-		 */
-		rc = ksmbd_populate_dot_dotdot_entries(work,
-						req->FileInformationClass,
-						dir_fp,
-						&d_info,
-						srch_ptr,
-						smb2_populate_readdir_entry);
-		if (rc == -ENOSPC)
-			rc = 0;
-		if (rc)
-			goto err_out;
-	}
+	/*
+	 * reserve dot and dotdot entries in head of buffer
+	 * in first response
+	 */
+	rc = ksmbd_populate_dot_dotdot_entries(work, req->FileInformationClass,
+		dir_fp,	&d_info, srch_ptr, smb2_populate_readdir_entry);
+	if (rc == -ENOSPC)
+		rc = 0;
+	else if (rc)
+		goto err_out;
 
 	if (test_share_config_flag(share, KSMBD_SHARE_FLAG_HIDE_DOT_FILES))
 		d_info.hide_dot_file = true;
@@ -3679,7 +3675,6 @@ int smb2_query_dir(struct ksmbd_work *work)
 	query_dir_private.dir_fp		= dir_fp;
 	query_dir_private.d_info		= &d_info;
 	query_dir_private.info_level		= req->FileInformationClass;
-	query_dir_private.flags			= srch_flag;
 	dir_fp->readdir_data.private		= &query_dir_private;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, __query_dir);
@@ -3704,12 +3699,9 @@ int smb2_query_dir(struct ksmbd_work *work)
 		goto err_out;
 
 	if (!d_info.data_count && d_info.out_buf_len >= 0) {
-		if (srch_flag & SMB2_RETURN_SINGLE_ENTRY)
-			if (is_asterisk(srch_ptr))
-				rsp->hdr.Status = STATUS_NO_MORE_FILES;
-			else
-				rsp->hdr.Status = STATUS_NO_SUCH_FILE;
-		else if (rsp->hdr.Status == 0) {
+		if (srch_flag & SMB2_RETURN_SINGLE_ENTRY && !is_asterisk(srch_ptr))
+			rsp->hdr.Status = STATUS_NO_SUCH_FILE;
+		else {
 			dir_fp->dot_dotdot[0] = dir_fp->dot_dotdot[1] = 0;
 			rsp->hdr.Status = STATUS_NO_MORE_FILES;
 		}
