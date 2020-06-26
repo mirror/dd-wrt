@@ -92,6 +92,7 @@ static void load_mac80211(void)
 #define RADIO_LEGACY 0x4
 #define RADIO_BRCMFMAC 0x8
 #define RADIO_WIL6210 0x10
+#define RADIO_RTLWIFI 0x20
 
 static void detect_wireless_devices(int mask)
 {
@@ -196,7 +197,7 @@ static void detect_wireless_devices(int mask)
 #endif
 #ifdef HAVE_ATH5K
 #ifndef HAVE_ATH5KONLY
-	if (nvram_match("use_ath5k", "1")) 
+	if (nvram_match("use_ath5k", "1"))
 #endif
 	{
 		loadath5k = loadlegacy;
@@ -282,7 +283,25 @@ static void detect_wireless_devices(int mask)
 		insmod("brcmfmac");
 	}
 #endif
-
+#ifdef HAVE_RTLWIFI
+	if ((mask & RADIO_RTLWIFI)) {
+		fprintf(stderr, "load Realtek RTLWIFI Driver\n");
+		insmod("rtlwifi");
+		insmod("rtl_pci");
+		insmod("rtl_usb");
+		insmod("rtl8188ee");
+		insmod("rtl8192ce");
+		insmod("rtl8192de");
+		insmod("rtl8192se");
+		insmod("rtl8723ae");
+		insmod("rtl8821ae");
+		insmod("rtl8192c-common");
+		insmod("rtl8192cu");
+		insmod("rtl8192ee");
+		insmod("rtl8723-common");
+		insmod("rtl8723be");
+	}
+#endif
 #endif
 #endif
 }
