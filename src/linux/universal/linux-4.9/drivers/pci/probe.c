@@ -2039,9 +2039,14 @@ static void pcie_write_mrrs(struct pci_dev *dev)
 	/* In the "safe" case, do not configure the MRRS.  There appear to be
 	 * issues with setting MRRS to 0 on a number of devices.
 	 */
+#ifdef CONFIG_ARCH_CNS3XXX	
 	if (pcie_bus_config != PCIE_BUS_PERFORMANCE &&
 	    pcie_bus_config != PCIE_BUS_PEER2PEER)
 		return;
+#else
+	if (pcie_bus_config != PCIE_BUS_PERFORMANCE)
+		return;
+#endif
 
 	/* For Max performance, the MRRS must be set to the largest supported
 	 * value.  However, it cannot be configured larger than the MPS the
