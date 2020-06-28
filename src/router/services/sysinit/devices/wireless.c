@@ -129,6 +129,7 @@ static void load_mac80211(void)
 #define RADIO_BRCMFMAC 0x8
 #define RADIO_WIL6210 0x10
 #define RADIO_RTLWIFI 0x20
+#define RADIO_MT76 0x40
 
 static void detect_wireless_devices(int mask)
 {
@@ -381,15 +382,57 @@ static void detect_wireless_devices(int mask)
 			rmmod("rtw88_core");
 		}
 	}
-	if (!totalwifi) {
+#endif
+#ifdef HAVE_X86
+	if ((mask & RADIO_MT76)) {
+		fprintf(stderr, "load Medatek MT76 Driver\n");
+		int wificnt = 0;
+		int total = 0;
+		insmod("mt76");
+		insmod("mt76-usb");
+		insmod("mt7615-common");
+		wificnt += detect("mt7615e");
+		if (!wificnt) {
+			rmmod("mt7615-common");
+		}
+		total += wificnt;
+		wificnt = 0;
+		insmod("mt76x02-lib");
+		insmod("mt76x02-usb");
+		insmod("mt76x2-common");
+		wificnt += detect("mt76x2e");
+		wificnt += detect("mt76x2u");
+		if (!wificnt) {
+			rmmod("mt76x2-common");
+			rmmod("mt76x02-usb");
+			rmmod("mt76x02-lib");
+		}
+		total += wificnt;
+		wificnt = 0;
+		insmod("mt76x0-common");
+		wificnt += detect("mt76x0e");
+		wificnt += detect("mt76x0u");
+		if (!wificnt)
+			rmmod("mt76x0-common");
+		total += wificnt;
+		wificnt = 0;
+		wificnt += detect("mt7603e");
+		wificnt += detect("mt7915e");
+		total += wificnt;
+		if (!total) {
+			rmmod("mt76-usb");
+			rmmod("mt76");
+		}
 
+	}
+#endif
+	if (!totalwifi) {
 		rmmod("mac80211");
 		rmmod("cfg80211");
 		rmmod("compat_firmware_class");
 		rmmod("compat");
 
 	}
-#endif
 #endif
 #endif
 }
