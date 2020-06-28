@@ -3646,6 +3646,13 @@ struct nvram_param srouter_defaults[] = {
 	{ "boot_disable_ari", "0" },
 	{ "boot_pci_noacpi", "0" },
 	{ "boot_pcie_tune", "default" },
+	{ "boot_mds", "0" },
+	{ "boot_tsx_async_abort", "0" },
+	{ "boot_srbds", "0" },
+	{ "boot_nospectre_v1", "0" },
+	{ "boot_nospectre_v2", "0" },
+	{ "boot_l1tf", "0" },
+	{ "boot_nospec_store_bypass_disable", "0" },
 #endif
 	{ 0, 0 }
 };
