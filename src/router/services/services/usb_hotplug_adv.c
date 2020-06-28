@@ -58,7 +58,7 @@ static void run_on_mount(char *p)
 }
 
 /* TODO improvement: use procfs to identify pids that have openfiles on externel discs and then stop them before umount*/
-static bool usb_stop_services()
+static bool usb_stopservices()
 {
 	eval("stopservice", "cron");
 	eval("stopservice", "samba3");
@@ -77,7 +77,7 @@ static bool usb_stop_services()
 }
 
 /* when adding external media some services should be restarted, e.g. minidlna in order to scan for media files*/
-static bool usb_start_services()
+static bool usb_startservices()
 {
 	eval("startservice", "cron", "-f");
 	eval("startservice", "samba3", "-f");
@@ -218,7 +218,7 @@ void start_hotplug_block(void)
 		return;
 
 	if (!strcmp(action, "add")) {
-		usb_stop_services();
+		usb_stopservices();
 	}
 
 	sprintf(devname, "/dev/%s", part);
@@ -235,7 +235,7 @@ void start_hotplug_block(void)
 		usb_unmount(devname);
 	if (!strcmp(action, "add")) {
 		//finally start services again after mounting all partitions for this drive
-		usb_start_services();
+		usb_startservices();
 	}
 
 	return;
@@ -538,7 +538,7 @@ static void usb_unmount(char *devpath)
 	char sym_link[256];
 	struct dirent *entry;
 
-	usb_stop_services();
+	usb_stopservices();
 
 	writeprocsys("vm/drop_caches", "3");	// flush fs cache
 
@@ -559,7 +559,7 @@ static void usb_unmount(char *devpath)
 		}
 	}
 
-	usb_start_services();
+	usb_startservices();
 
 	return;
 }
@@ -582,7 +582,7 @@ static int usb_add_ufd(char *link, int host, char *devpath, int mode)
 	if (mode == 1) {	//K3
 		usb_process_path(devpath, -1, NULL, NULL);	//use -1 to signal K3          
 	} else {		//K2.6
-		usb_stop_services();	//K3 will start/stop only for a drive not partition
+		usb_stopservices();	//K3 will start/stop only for a drive not partition
 		dir = opendir(link);
 		if (dir != NULL) {
 			while ((entry = readdir(dir)) != NULL) {
@@ -599,7 +599,7 @@ static int usb_add_ufd(char *link, int host, char *devpath, int mode)
 			}
 			closedir(dir);
 		}
-		usb_start_services();
+		usb_startservices();
 	}
 
 	return 0;
