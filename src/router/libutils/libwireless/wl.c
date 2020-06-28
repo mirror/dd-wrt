@@ -2476,6 +2476,26 @@ static struct wifidevices wdevices[] = {
 	{ "BCM43569 802.11ac", NONE, 0x14e4, 43569, 0, 0, NULL },
 	{ "BCM43602 802.11ac", SURVEY_NOPERIOD, 0x14e4, 43602, 0, 0, NULL },
 	{ "BCM43664 802.11ac", NONE, 0x14e4, 43664, 0, 0, NULL },
+	{ "Realtek 802.11n 8723de", NONE, 0x10ec, 0xd723, 0, 0, NULL },
+	{ "Realtek 802.11ac 8822ce", NONE, 0x10ec, 0xc822, 0, 0, NULL },
+	{ "Realtek 802.11ac 8822be", NONE, 0x10ec, 0xb822, 0, 0, NULL },
+	{ "Realtek 8192DE 802.11n", NONE, 0x10ec, 0x8153, 0, 0, NULL },
+	{ "Realtek 8192DE 802.11n", NONE, 0x10ec, 0x002b, 0, 0, NULL },
+	{ "Realtek 8188E 802.11n", NONE, 0x10ec, 0x8179, 0, 0, NULL },
+	{ "Realtek 8192C 802.11n", NONE, 0x10ec, 0x8191, 0, 0, NULL },
+	{ "Realtek 8188C 802.11n", NONE, 0x10ec, 0x8178, 0, 0, NULL },
+	{ "Realtek 8188C 802.11n", NONE, 0x10ec, 0x8177, 0, 0, NULL },
+	{ "Realtek 8188C 802.11n", NONE, 0x10ec, 0x8176, 0, 0, NULL },
+	{ "Realtek 8192EE 802.11n", NONE, 0x10ec, 0x818b, 0, 0, NULL },
+	{ "Realtek 8192S 802.11n", NONE, 0x10ec, 0x8192, 0, 0, NULL },
+	{ "Realtek 8191S 802.11n", NONE, 0x10ec, 0x8171, 0, 0, NULL },
+	{ "Realtek 8191S 802.11n", NONE, 0x10ec, 0x8172, 0, 0, NULL },
+	{ "Realtek 8191S 802.11n", NONE, 0x10ec, 0x8173, 0, 0, NULL },
+	{ "Realtek 8191S 802.11n", NONE, 0x10ec, 0x8174, 0, 0, NULL },
+	{ "Realtek 8723E 802.11n", NONE, 0x10ec, 0x8723, 0, 0, NULL },
+	{ "Realtek 8723BE 802.11n", NONE, 0x10ec, 0xB723, 0, 0, NULL },
+	{ "Realtek 8821ae 802.11ac", NONE, 0x10ec, 0x8812, 0, 0, NULL },
+	{ "Realtek 8821ae 802.11ac", NONE, 0x10ec, 0x8821, 0, 0, NULL },
 	{ "AR9100 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ath9k" },
 	{ "AR933x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ar933x_wmac" },
 	{ "AR934x 802.11n WiSOC", CHANNELSURVEY, 0, 0, 0, 0, "ar934x_wmac" },
@@ -2485,6 +2505,7 @@ static struct wifidevices wdevices[] = {
 	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac.0" },
 	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac.1" },
 };
+
 
 char *getWifiDeviceName(const char *prefix, int *flags)
 {
