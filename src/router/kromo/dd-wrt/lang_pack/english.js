@@ -1408,10 +1408,17 @@ management.boot_pci_tuning="PCI/PCI-E Bus tuning";
 management.boot_pcie_aer="PCI-E Advanced Error Reporting";
 management.boot_pcie_ari="PCI-E Alternative Routing Interpretation";
 management.boot_pci_noacpi="Disable ACPI Irq Routing";
-management.bus_tune_off="Disable Bus Tuning");
-management.bus_safe="Safe Bus Tuning");
-management.bus_perf="Performance Bus Tuning");
-management.bus_peer2peer="Peer2Peer Bus Tuning");
+management.bus_tune_off="Disable Bus Tuning";
+management.bus_safe="Safe Bus Tuning";
+management.bus_perf="Performance Bus Tuning";
+management.bus_peer2peer="Peer2Peer Bus Tuning";
+management.nospectre_v1="Spectre V1 Mitigation";
+management.nospectre_v2="Spectre V2 Mitigation";
+management.mds="MDS Mitigation";
+management.srbds="SRBDS Mitigation";
+management.l1tf="L1TF Mitigation";
+management.nospec_store_bypass_disable="Speculative Store Bypass Mitigation";
+management.tsx_async_abort="TSX Async Abort Mitigation";
 
 //help container
 var hmanagement=new Object();
