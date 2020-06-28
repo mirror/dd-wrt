@@ -59,6 +59,40 @@ static char *has_device(char *dev)
 	return "";
 }
 
+static int phy_lookup_by_number(int idx)
+{
+	int err;
+	int phy = getValueFromPath("/sys/class/ieee80211/phy%d/index", idx, "%d", &err);
+	if (err)
+		return -1;
+	return phy;
+}
+
+static int totalwifi = 0;
+int detectchange(char *mod)
+{
+	static int lastidx = -1;
+	int cnt = 0;
+	if (mod)
+		insmod(mod);
+	while (phy_lookup_by_number(cnt) >= 0) {
+		cnt++;
+	}
+	if (!cnt) {
+		if (mod)
+			rmmod(mod);
+		return 0;
+	}
+	if (cnt > lastidx) {
+		lastidx = cnt;
+		totalwifi++;
+		return 1;
+	}
+	if (mod)
+		rmmod(mod);
+	return 0;
+}
+
 #define AR5416_DEVID_PCI	0x0023
 #define AR5416_DEVID_PCIE	0x0024
 #define AR9160_DEVID_PCI	0x0027
@@ -232,6 +266,8 @@ static void detect_wireless_devices(int mask)
 			if (loadath5k && (mask & RADIO_LEGACY)) {
 				fprintf(stderr, "load ATH5K 802.11 Driver\n");
 				insmod("ath5k");
+				if (!detectchange(NULL))
+					rmmod("ath5k");
 			}
 #endif
 			if (!nvram_match("no_ath9k", "1") && (mask & RADIO_ATH9K)) {
@@ -251,7 +287,11 @@ static void detect_wireless_devices(int mask)
 #else
 				eval("insmod", "ath9k", overdrive);
 #endif
+				if (!detectchange(NULL))
+					rmmod("ath9k");
 			}
+			if (!totalwifi)
+				rmmod("ath");
 			delete_ath9k_devices(NULL);
 		}
 	}
@@ -268,12 +308,16 @@ static void detect_wireless_devices(int mask)
 				eval("insmod", "ath10k", "ethernetmode=1");
 			else
 				insmod("ath10k");
+			if (!detectchange(NULL))
+				rmmod("ath10k");
 		}
 	}
 #endif
 #ifdef HAVE_WIL6210
 	if ((mask & RADIO_WIL6210)) {
 		eval("insmod", "wil6210", "led_id=2");
+		if (!detectchange(NULL))
+			rmmod("wil6210");
 	}
 #endif
 #ifdef HAVE_BRCMFMAC
@@ -281,35 +325,67 @@ static void detect_wireless_devices(int mask)
 		fprintf(stderr, "load Broadcom FMAC Driver\n");
 		insmod("brcmutil");
 		insmod("brcmfmac");
+		if (!detectchange("brcmfmac")) {
+			rmmod("brcmutil");
+		}
 	}
 #endif
 #ifdef HAVE_RTLWIFI
 	if ((mask & RADIO_RTLWIFI)) {
 		fprintf(stderr, "load Realtek RTLWIFI Driver\n");
+		int total = 0;
 		insmod("rtlwifi");
 		insmod("rtl_pci");
 		insmod("rtl_usb");
 		insmod("btcoexist");
-		insmod("rtl8188ee");
+		int wificnt = 0;
+		wificnt += detectchange("rtl8188ee");
 		insmod("rtl8192c-common");
-		insmod("rtl8192ce");
-		insmod("rtl8192de");
-		insmod("rtl8192se");
-		insmod("rtl8821ae");
-		insmod("rtl8192cu");
-		insmod("rtl8192ee");
+		wificnt += detectchange("rtl8192ce");
+		wificnt += detectchange("rtl8192de");
+		wificnt += detectchange("rtl8192se");
+		wificnt += detectchange("rtl8821ae");
+		wificnt += detectchange("rtl8192cu");
+		wificnt += detectchange("rtl8192ee");
+		if (!wificnt)
+			rmmod("rtl8192c-common");
+		total += wificnt;
+		wificnt = 0;
+
 		insmod("rtl8723-common");
-		insmod("rtl8723be");
-		insmod("rtl8723ae");
-	
+		wificnt += detectchange("rtl8723be");
+		wificnt += detectchange("rtl8723ae");
+		if (!wificnt)
+			rmmod("rtl8723-common");
+		total += wificnt;
+		wificnt = 0;
+		if (total) {
+			rmmod("btcoexist");
+			rmmod("rtl_usb");
+			rmmod("rtl_pci");
+			rmmod("rtlwifi");
+		}
+
 		insmod("rtw88_core");
 		insmod("rtw88_pci");
-		insmod("rtw88_8822b");
-		insmod("rtw88_8822be");
-		insmod("rtw88_8822c");
-		insmod("rtw88_8822ce");
-		insmod("rtw88_8723d");
-		insmod("rtw88_8723de");
+		wificnt += detectchange("rtw88_8822b");
+		wificnt += detectchange("rtw88_8822be");
+		wificnt += detectchange("rtw88_8822c");
+		wificnt += detectchange("rtw88_8822ce");
+		wificnt += detectchange("rtw88_8723d");
+		wificnt += detectchange("rtw88_8723de");
+		if (!wificnt) {
+			rmmod("rtw88_pci");
+			rmmod("rtw88_core");
+		}
+	}
+	if (!totalwifi) {
+
+		rmmod("mac80211");
+		rmmod("cfg80211");
+		rmmod("compat_firmware_class");
+		rmmod("compat");
+
 	}
 #endif
 #endif
