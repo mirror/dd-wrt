@@ -38,6 +38,7 @@
 #include <linux/acpi.h>
 #include <linux/cdrom.h>
 #include <linux/sched.h>
+#include <linux/async.h>
 #ifdef CONFIG_ATA_LEDS
 #include <linux/leds.h>
 #endif
@@ -887,6 +888,8 @@ struct ata_port {
 
 	struct timer_list	fastdrain_timer;
 	unsigned long		fastdrain_cnt;
+
+	async_cookie_t		cookie;
 
 	int			em_message_type;
 	void			*private_data;
