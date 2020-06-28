@@ -1216,10 +1216,17 @@ management.boot_pci_tuning="PCI/PCI-E Bus Anpassen";
 management.boot_pcie_aer="PCI-E Erweitertes Error Reporting (AER)";
 management.boot_pcie_ari="PCI-E Alternative Routen Interpretatoin (ARI)";
 management.boot_pci_noacpi="ACPI Irq Routing Abschalten";
-management.bus_tune_off="Kein Bus Tuning");
-management.bus_safe="Sicheres Bus Tuning");
-management.bus_perf="Schnelles Bus Tuning");
-management.bus_peer2peer="Peer2Peer Bus Tuning");
+management.bus_tune_off="Kein Bus Tuning";
+management.bus_safe="Sicheres Bus Tuning";
+management.bus_perf="Schnelles Bus Tuning";
+management.bus_peer2peer="Peer2Peer Bus Tuning";
+management.nospectre_v1="Spectre V1 Entsch&auml;rfen";
+management.nospectre_v2="Spectre V2 Entsch&auml;rfen";
+management.mds="MDS Entsch&auml;rfen";
+management.srbds="SRBDS Entsch&auml;rfen";
+management.l1tf="L1TF Entsch&auml;rfen";
+management.nospec_store_bypass_disable="Speculative Store Bypass Entsch&auml;rfen";
+management.tsx_async_abort="TSX Async Abort Entsch&auml;rfen";
 
 //help container
 
