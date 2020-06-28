@@ -1,0 +1,5 @@
+"boot_disable_msi" "Disable MSI" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"boot_noaer" "Disable AER" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"boot_noari" "Disable ARI" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"boot_pci_noacpi" "Disable PCI ACPI" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"boot_pcie_tune" "PCIE Bus Tuning" "CHOICE" "5" "default" "pcie_bus_tune_off" "pcie_bus_safe" "pcie_bus_perf" "pcie_bus_peer2peer "FALSE" "0"
