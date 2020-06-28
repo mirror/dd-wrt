@@ -887,6 +887,10 @@ static void handle_management(void)
 #ifdef HAVE_JFFS2
 	FORK(eval("/etc/config/jffs2.startup"));
 #endif
+#ifdef HAVE_X86
+	restart_f("bootconfig");
+#endif
+
 //      start_service_f("anchorfreednat");
 
 }
