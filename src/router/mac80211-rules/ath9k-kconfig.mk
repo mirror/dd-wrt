@@ -206,6 +206,9 @@ ifeq ($(CONFIG_MT7615),y)
 	cat $(TOP)/mac80211-rules/configs/mt76xx.config >> $(MAC80211_PATH)/.config_temp
 endif
 endif
+ifeq ($(CONFIG_X86),y)
+	cat $(TOP)/mac80211-rules/configs/mt76full.config >> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CONFIG_WIL6210),y)
 	cat $(TOP)/mac80211-rules/configs/wil6210.config >> $(MAC80211_PATH)/.config_temp
 endif
@@ -401,6 +404,11 @@ endif
 ifneq ($(CONFIG_MT7662),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
+endif
+
+ifeq ($(CONFIG_X86),y)
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-cp $(REGPATH)/regulatory.db $(INSTALLDIR)/ath9k/lib/firmware
