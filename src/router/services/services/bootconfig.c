@@ -26,6 +26,10 @@
 #include <syslog.h>
 #include <signal.h>
 #include <services.h>
+char *bootconfig_deps(void)
+{
+	return "boot_disable_msi boot_noaer boot_noari boot_noacpi boot_pcie_tune";
+}
 
 void start_bootconfig(void)
 {
