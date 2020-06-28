@@ -3642,9 +3642,9 @@ struct nvram_param srouter_defaults[] = {
 #endif
 #ifdef HAVE_X86
 	{ "boot_disable_msi", "0" },
-	{ "boot_disable_aer", "0" },
-	{ "boot_disable_ari", "0" },
-	{ "boot_pci_noacpi", "0" },
+	{ "boot_noaer", "0" },
+	{ "boot_noari", "0" },
+	{ "boot_noacpi", "0" },
 	{ "boot_pcie_tune", "default" },
 	{ "boot_mds", "0" },
 	{ "boot_tsx_async_abort", "0" },
