@@ -1473,6 +1473,7 @@ endif
 ifeq ($(CONFIG_X86),y)
 CFLAGS_EXTRA += -DHAVE_X86
 CFLAGS_EXTRA += -DHAVE_USB
+OBJS += bootconfig.o
 endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS_EXTRA += -DHAVE_OPENVPN
