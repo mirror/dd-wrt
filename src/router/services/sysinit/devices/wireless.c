@@ -307,12 +307,15 @@ static void detect_wireless_devices(int mask)
 		insmod("thermal_sys");
 		nvram_default_get("ath10k_encap", "0");
 		if (!nvram_match("noath10k", "1")) {
+			insmod("ath");
 			if (nvram_match("ath10k_encap", "1"))
 				eval("insmod", "ath10k", "ethernetmode=1");
 			else
 				insmod("ath10k");
-			if (!detectchange(NULL))
+			if (!detectchange(NULL)) {
 				rmmod("ath10k");
+				rmmod("ath");
+			}
 		}
 	}
 #endif
@@ -362,7 +365,7 @@ static void detect_wireless_devices(int mask)
 			rmmod("rtl8723-common");
 		total += wificnt;
 		wificnt = 0;
-		if (total) {
+		if (!total) {
 			rmmod("btcoexist");
 			rmmod("rtl_usb");
 			rmmod("rtl_pci");
@@ -371,13 +374,16 @@ static void detect_wireless_devices(int mask)
 
 		insmod("rtw88_core");
 		insmod("rtw88_pci");
-		wificnt += detectchange("rtw88_8822b");
+		insmod("rtw88_8822b");
+		insmod("rtw88_8822c");
+		insmod("rtw88_8822d");
 		wificnt += detectchange("rtw88_8822be");
-		wificnt += detectchange("rtw88_8822c");
 		wificnt += detectchange("rtw88_8822ce");
-		wificnt += detectchange("rtw88_8723d");
 		wificnt += detectchange("rtw88_8723de");
 		if (!wificnt) {
+			rmmod("rtw88_8822d");
+			rmmod("rtw88_8822c");
+			rmmod("rtw88_8822b");
 			rmmod("rtw88_pci");
 			rmmod("rtw88_core");
 		}
@@ -393,7 +399,7 @@ static void detect_wireless_devices(int mask)
 		insmod("mt7615-common");
 		wificnt += detect("mt7615e");
 		if (!wificnt) {
-			rmmod("mt7615-common");
+			rmmod("mt7615_common");
 		}
 		total += wificnt;
 		wificnt = 0;
