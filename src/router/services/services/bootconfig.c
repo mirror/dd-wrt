@@ -60,6 +60,20 @@ void start_bootconfig(void)
 		strcat(args, " pci=pcie_bus_perf");
 	if (nvram_match("boot_pcie_tune", "pcie_bus_peer2peer"))
 		strcat(args, " pci=pcie_bus_peer2peer");
+	if (nvram_match("boot_mds", "1"))
+		strcat(args, " mds=off");
+	if (nvram_match("boot_tsx_async_abort", "1"))
+		strcat(args, " tsx_async_abort=off");
+	if (nvram_match("boot_srbds", "1"))
+		strcat(args, " srbds=off");
+	if (nvram_match("boot_nospectre_v1", "1"))
+		strcat(args, " nospectre_v1");
+	if (nvram_match("boot_nospectre_v2", "1"))
+		strcat(args, " nospectre_v2");
+	if (nvram_match("boot_l1tf", "1"))
+		strcat(args, " l1tf=off");
+	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
+		strcat(args, " nospec_store_bypass_disable");
 	FILE *in = fopen("/boot/boot/grub/menu.lst", "rb");
 	char serial[64];
 	fscanf(in, "%s", serial);
