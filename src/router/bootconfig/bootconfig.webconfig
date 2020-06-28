@@ -30,4 +30,39 @@
 		<option value="pcie_bus_peer2peer" <% nvs("boot_pcie_tune", "pcie_bus_peer2peer"); %> ><% tran("management.bus_peer2peer"); %></option>
 		</select>
 	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.mds"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_mds" <% nvram_checked("boot_mds","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_mds" <% nvram_checked("boot_mds","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.tsx_async_abort"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_tsx_async_abort" <% nvram_checked("boot_tsx_async_abort","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_tsx_async_abort" <% nvram_checked("boot_tsx_async_abort","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.srbds"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_srbds" <% nvram_checked("boot_srbds","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_srbds" <% nvram_checked("boot_srbds","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.nospectre_v1"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_nospectre_v1" <% nvram_checked("boot_nospectre_v1","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_nospectre_v1" <% nvram_checked("boot_nospectre_v1","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.nospectre_v2"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_nospectre_v2" <% nvram_checked("boot_nospectre_v2","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_nospectre_v2" <% nvram_checked("boot_nospectre_v2","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.l1tf"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_l1tf" <% nvram_checked("boot_l1tf","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_l1tf" <% nvram_checked("boot_l1tf","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.nospec_store_bypass_disable"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_nospec_store_bypass_disable" <% nvram_checked("boot_nospec_store_bypass_disable","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_nospec_store_bypass_disable" <% nvram_checked("boot_nospec_store_bypass_disable","1"); %> /><% tran("share.disable"); %>
+	</div>
 </fieldset><br/>
