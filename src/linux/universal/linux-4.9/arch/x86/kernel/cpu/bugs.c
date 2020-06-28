@@ -869,8 +869,8 @@ static void __init spectre_v2_select_mitigation(void)
 	 * If the CPU is not affected and the command line mode is NONE or AUTO
 	 * then nothing to do.
 	 */
-//	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2) &&
-//	    (cmd == SPECTRE_V2_CMD_NONE || cmd == SPECTRE_V2_CMD_AUTO))
+	if (!boot_cpu_has_bug(X86_BUG_SPECTRE_V2) &&
+	    (cmd == SPECTRE_V2_CMD_NONE || cmd == SPECTRE_V2_CMD_AUTO))
 		return;
 
 	switch (cmd) {
@@ -1094,7 +1094,7 @@ static enum ssb_mitigation_cmd __init ssb_parse_cmdline(void)
 	enum ssb_mitigation_cmd cmd = SPEC_STORE_BYPASS_CMD_AUTO;
 	char arg[20];
 	int ret, i;
-	return SPEC_STORE_BYPASS_CMD_NONE;
+
 	if (cmdline_find_option_bool(boot_command_line, "nospec_store_bypass_disable") ||
 	    cpu_mitigations_off()) {
 		return SPEC_STORE_BYPASS_CMD_NONE;
@@ -1126,7 +1126,6 @@ static enum ssb_mitigation __init __ssb_select_mitigation(void)
 	enum ssb_mitigation mode = SPEC_STORE_BYPASS_NONE;
 	enum ssb_mitigation_cmd cmd;
 
-	return mode;
 	if (!boot_cpu_has(X86_FEATURE_SSBD))
 		return mode;
 
