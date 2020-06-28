@@ -1402,10 +1402,16 @@ management.strong="Strong";
 management.very_strong="Very Strong";
 management.score="Score:";
 management.complexity="Complexity:";
+management.bootconfig="Boot Configuration (Grub)";
 management.boot_disable_msi="Disable MSI Interrupt handling.";
 management.boot_pci_tuning="PCI/PCI-E Bus tuning";
 management.boot_pcie_aer="PCI-E Advanced Error Reporting";
 management.boot_pcie_ari="PCI-E Alternative Routing Interpretation";
+management.boot_pci_noacpi="Disable ACPI Irq Routing";
+management.bus_tune_off="Disable Bus Tuning");
+management.bus_safe="Safe Bus Tuning");
+management.bus_perf="Performance Bus Tuning");
+management.bus_peer2peer="Peer2Peer Bus Tuning");
 
 //help container
 var hmanagement=new Object();

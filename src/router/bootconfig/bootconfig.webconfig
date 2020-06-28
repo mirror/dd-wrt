@@ -1,0 +1,33 @@
+<fieldset>
+	<legend><% tran("management.bootconfig"); %></legend>
+	<div class="setting">
+		<div class="label"><% tran("management.disable_msi"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_disable_msi" <% nvram_checked("boot_disable_msi","1"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_disable_msi" <% nvram_checked("boot_disable_msi","0"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.pcie_aer"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_noaer" <% nvram_checked("boot_noaer","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_noaer" <% nvram_checked("boot_noaer","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.pcie_ari"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_noari" <% nvram_checked("boot_noari","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_noari" <% nvram_checked("boot_noari","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.pci_noacpi"); %></div>
+		<input class="spaceradio" type="radio" value="0" name="boot_noacpi" <% nvram_checked("boot_noacpi","0"); %> /><% tran("share.dflt"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="boot_noacpi" <% nvram_checked("boot_noacpi","1"); %> /><% tran("share.disable"); %>
+	</div>
+	<div class="setting">
+		<div class="label"><% tran("management.pci_tuning"); %></div>
+		<select name="boot_pcie_tune" >
+		<option value="default" <% nvs("boot_pcie_tune", "default"); %> ><% tran("share.dflt"); %></option>
+		<option value="pcie_bus_tune_off" <% nvs("boot_pcie_tune", "pcie_bus_tune_off"); %> ><% tran("management.bus_tune_off"); %></option>
+		<option value="pcie_bus_safe" <% nvs("boot_pcie_tune", "pcie_bus_safe"); %> ><% tran("management.bus_safe"); %></option>
+		<option value="pcie_bus_perf" <% nvs("boot_pcie_tune", "pcie_bus_perf"); %> ><% tran("management.bus_perf"); %></option>
+		<option value="pcie_bus_peer2peer" <% nvs("boot_pcie_tune", "pcie_bus_peer2peer"); %> ><% tran("management.bus_peer2peer"); %></option>
+		</select>
+	</div>
+</fieldset><br/>
