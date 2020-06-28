@@ -1402,6 +1402,10 @@ management.strong="Strong";
 management.very_strong="Very Strong";
 management.score="Score:";
 management.complexity="Complexity:";
+management.boot_disable_msi="Disable MSI Interrupt handling.";
+management.boot_pci_tuning="PCI/PCI-E Bus tuning";
+management.boot_pcie_aer="PCI-E Advanced Error Reporting";
+management.boot_pcie_ari="PCI-E Alternative Routing Interpretation";
 
 //help container
 var hmanagement=new Object();
