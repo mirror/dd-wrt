@@ -46,6 +46,8 @@ void start_bootconfig(void)
 		strcat(args, " pci=noaer");
 	if (nvram_match("boot_noari", "1"))
 		strcat(args, " pci=noari");
+	if (nvram_match("boot_noacpi", "1"))
+		strcat(args, " pci=noacpi");
 	if (nvram_match("boot_pcie_tune", "pcie_bus_tune_off"))
 		strcat(args, " pci=pcie_bus_tune_off");
 	if (nvram_match("boot_pcie_tune", "pcie_bus_safe"))
@@ -69,7 +71,7 @@ void start_bootconfig(void)
 	fprintf(out, "\n");
 	fprintf(out, "title   DD-WRT\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5 %s\n", args);
+	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5%s\n", args);
 	fprintf(out, "boot\n");
 	fprintf(out, "title   DD-WRT (default)\n");
 	fprintf(out, "root    (hd0,0)\n");
