@@ -3640,6 +3640,13 @@ struct nvram_param srouter_defaults[] = {
 	{ "smartdns_prefetch_domain", "1" },	// do cyclic background resolv and measurement
 	{ "smartdns_serve_expired", "1" },	// 
 #endif
+#ifdef HAVE_X86
+	{ "boot_disable_msi", "0" },
+	{ "boot_disable_aer", "0" },
+	{ "boot_disable_ari", "0" },
+	{ "boot_pci_noacpi", "0" },
+	{ "boot_pcie_tune", "default" },
+#endif
 	{ 0, 0 }
 };
 #else
