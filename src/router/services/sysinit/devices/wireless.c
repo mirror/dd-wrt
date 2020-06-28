@@ -23,6 +23,8 @@
  */
 
 // extern int getath9kdevicecount(void);
+#include <wlutils.h>
+
 extern void delete_ath9k_devices(char *physical_iface);
 
 static void setWirelessLed(int phynum, int ledpin)
