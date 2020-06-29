@@ -1419,6 +1419,7 @@ management.srbds="SRBDS Mitigation";
 management.l1tf="L1TF Mitigation";
 management.nospec_store_bypass_disable="Speculative Store Bypass Mitigation";
 management.tsx_async_abort="TSX Async Abort Mitigation";
+management.nopti="Page Table Isolation";
 
 //help container
 var hmanagement=new Object();
