@@ -29,7 +29,7 @@
 
 char *bootconfig_deps(void)
 {
-	return "boot_disable_msi boot_noaer boot_noari boot_noacpi boot_pcie_tune boot_mds boot_tsx_async_abort boot_srbds boot_nospectre_v1 boot_nospectre_v2 boot_l1tf nospec_store_bypass_disable";
+	return "boot_disable_msi boot_noaer boot_noari boot_noacpi boot_pcie_tune boot_mds boot_tsx_async_abort boot_srbds boot_nospectre_v1 boot_nospectre_v2 boot_l1tf boot_nospec_store_bypass_disable";
 }
 
 void start_bootconfig(void)
