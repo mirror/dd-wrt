@@ -3654,16 +3654,19 @@ int smb2_query_dir(struct ksmbd_work *work)
 				sizeof(struct smb2_query_directory_rsp);
 	d_info.flags = srch_flag;
 
-	/*
-	 * reserve dot and dotdot entries in head of buffer
-	 * in first response
-	 */
-	rc = ksmbd_populate_dot_dotdot_entries(work, req->FileInformationClass,
-		dir_fp,	&d_info, srch_ptr, smb2_populate_readdir_entry);
-	if (rc == -ENOSPC)
-		rc = 0;
-	else if (rc)
-		goto err_out;
+	if (!(srch_flag & SMB2_RETURN_SINGLE_ENTRY)) {
+		/*
+		 * reserve dot and dotdot entries in head of buffer
+		 * in first response
+		 */
+		rc = ksmbd_populate_dot_dotdot_entries(work,
+			req->FileInformationClass, dir_fp, &d_info, srch_ptr,
+			smb2_populate_readdir_entry);
+		if (rc == -ENOSPC)
+			rc = 0;
+		else if (rc)
+			goto err_out;
+	}
 
 	if (test_share_config_flag(share, KSMBD_SHARE_FLAG_HIDE_DOT_FILES))
 		d_info.hide_dot_file = true;
