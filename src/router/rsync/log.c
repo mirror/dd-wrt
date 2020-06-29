@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2000-2001 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,6 @@ extern int64 total_data_written;
 extern int64 total_data_read;
 extern mode_t orig_umask;
 extern char *auth_user;
-extern char *checksum_choice;
 extern char *stdout_format;
 extern char *logfile_format;
 extern char *logfile_name;
@@ -76,8 +75,8 @@ static int64 initial_data_written;
 static int64 initial_data_read;
 
 struct {
-        int code;
-        char const *name;
+	int code;
+	char const *name;
 } const rerr_names[] = {
 	{ RERR_SYNTAX     , "syntax or usage error" },
 	{ RERR_PROTOCOL   , "protocol incompatibility" },
@@ -223,25 +222,26 @@ void logfile_reopen(void)
 	}
 }
 
-static void filtered_fwrite(FILE *f, const char *buf, int len, int use_isprint)
+static void filtered_fwrite(FILE *f, const char *in_buf, int in_len, int use_isprint, char end_char)
 {
-	const char *s, *end = buf + len;
-	for (s = buf; s < end; s++) {
-		if ((s < end - 4
-		  && *s == '\\' && s[1] == '#'
-		  && isDigit(s + 2)
-		  && isDigit(s + 3)
-		  && isDigit(s + 4))
-		 || (*s != '\t'
-		  && ((use_isprint && !isPrint(s))
-		   || *(uchar*)s < ' '))) {
-			if (s != buf && fwrite(buf, s - buf, 1, f) != 1)
+	char outbuf[1024], *ob = outbuf;
+	const char *end = in_buf + in_len;
+	while (in_buf < end) {
+		if (ob - outbuf >= (int)sizeof outbuf - 10) {
+			if (fwrite(outbuf, ob - outbuf, 1, f) != 1)
 				exit_cleanup(RERR_MESSAGEIO);
-			fprintf(f, "\\#%03o", *(uchar*)s);
-			buf = s + 1;
+			ob = outbuf;
 		}
+		if ((in_buf < end - 4 && *in_buf == '\\' && in_buf[1] == '#'
+		  && isDigit(in_buf + 2) && isDigit(in_buf + 3) && isDigit(in_buf + 4))
+		 || (*in_buf != '\t' && ((use_isprint && !isPrint(in_buf)) || *(uchar*)in_buf < ' ')))
+			ob += snprintf(ob, 6, "\\#%03o", *(uchar*)in_buf++);
+		else
+			*ob++ = *in_buf++;
 	}
-	if (buf != end && fwrite(buf, end - buf, 1, f) != 1)
+	if (end_char) /* The "- 10" above means that there is always room for one more char here. */
+		*ob++ = end_char;
+	if (ob != outbuf && fwrite(outbuf, ob - outbuf, 1, f) != 1)
 		exit_cleanup(RERR_MESSAGEIO);
 }
 
@@ -250,7 +250,7 @@ static void filtered_fwrite(FILE *f, const char *buf, int len, int use_isprint)
  * can happen with certain fatal conditions. */
 void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 {
-	int trailing_CR_or_NL;
+	char trailing_CR_or_NL;
 	FILE *f = msgs2stderr ? stderr : stdout;
 #ifdef ICONV_OPTION
 	iconv_t ic = is_utf8 && ic_recv != (iconv_t)-1 ? ic_recv : ic_chck;
@@ -264,14 +264,13 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 		exit_cleanup(RERR_MESSAGEIO);
 
 	if (msgs2stderr) {
-		if (!am_daemon) {
-			if (code == FLOG)
-				return;
-			goto output_msg;
-		}
-		if (code == FCLIENT)
-			return;
-		code = FLOG;
+		/* A normal daemon can get msgs2stderr set if the socket is busted, so we
+		 * change the message destination into an FLOG message in order to try to
+		 * get some info about an abnormal-exit into the log file. An rsh daemon
+		 * can have this set via user request, so we'll leave the code alone so
+		 * that the msg gets logged and then sent to stderr after that. */
+		if (am_daemon > 0 && code != FCLIENT)
+			code = FLOG;
 	} else if (send_msgs_to_gen) {
 		assert(!is_utf8);
 		/* Pass the message to our sibling in native charset. */
@@ -307,10 +306,28 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 	} else if (code == FLOG)
 		return;
 
-	if (quiet && code == FINFO)
-		return;
+	switch (code) {
+	case FERROR_XFER:
+		got_xfer_error = 1;
+		/* FALL THROUGH */
+	case FERROR:
+	case FWARNING:
+		f = stderr;
+		break;
+	case FINFO:
+		if (quiet)
+			return;
+		break;
+	/*case FLOG:*/
+	/*case FCLIENT:*/
+	/*case FERROR_UTF8:*/
+	/*case FERROR_SOCKET:*/
+	default:
+		fprintf(stderr, "Bad logcode in rwrite(): %d [%s]\n", (int)code, who_am_i());
+		exit_cleanup(RERR_MESSAGEIO);
+	}
 
-	if (am_server) {
+	if (am_server && !msgs2stderr) {
 		enum msgcode msg = (enum msgcode)code;
 		if (protocol_version < 30) {
 			if (msg == MSG_ERROR)
@@ -321,31 +338,11 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 		/* Pass the message to the non-server side. */
 		if (send_msg(msg, buf, len, !is_utf8))
 			return;
-		if (am_daemon) {
+		if (am_daemon > 0) {
 			/* TODO: can we send the error to the user somehow? */
 			return;
 		}
 		f = stderr;
-	}
-
-output_msg:
-	switch (code) {
-	case FERROR_XFER:
-		got_xfer_error = 1;
-		/* FALL THROUGH */
-	case FERROR:
-	case FERROR_UTF8:
-	case FERROR_SOCKET:
-	case FWARNING:
-		f = stderr;
-		break;
-	case FLOG:
-	case FINFO:
-	case FCLIENT:
-		break;
-	default:
-		fprintf(stderr, "Unknown logcode in rwrite(): %d [%s]\n", (int)code, who_am_i());
-		exit_cleanup(RERR_MESSAGEIO);
 	}
 
 	if (output_needs_newline) {
@@ -375,21 +372,28 @@ output_msg:
 			iconvbufs(ic, &inbuf, &outbuf, inbuf.pos ? 0 : ICB_INIT);
 			ierrno = errno;
 			if (outbuf.len) {
-				filtered_fwrite(f, convbuf, outbuf.len, 0);
+				filtered_fwrite(f, convbuf, outbuf.len, 0, 0);
 				outbuf.len = 0;
 			}
-			if (!ierrno || ierrno == E2BIG)
-				continue;
-			fprintf(f, "\\#%03o", CVAL(inbuf.buf, inbuf.pos++));
-			inbuf.len--;
+			/* Log one byte of illegal/incomplete sequence and continue with
+			 * the next character. Check that the buffer is non-empty for the
+			 * sake of robustness. */
+			if ((ierrno == EILSEQ || ierrno == EINVAL) && inbuf.len) {
+				fprintf(f, "\\#%03o", CVAL(inbuf.buf, inbuf.pos++));
+				inbuf.len--;
+			}
+		}
+
+		if (trailing_CR_or_NL) {
+			fputc(trailing_CR_or_NL, f);
+			fflush(f);
 		}
 	} else
 #endif
-		filtered_fwrite(f, buf, len, !allow_8bit_chars);
-
-	if (trailing_CR_or_NL) {
-		fputc(trailing_CR_or_NL, f);
-		fflush(f);
+	{
+		filtered_fwrite(f, buf, len, !allow_8bit_chars, trailing_CR_or_NL);
+		if (trailing_CR_or_NL)
+			fflush(f);
 	}
 }
 #ifdef NEED_PRINTF
@@ -448,8 +452,7 @@ void rsyserr(enum logcode code, int errcode, const char *format, ...)
 	char buf[BIGPATHBUFLEN];
 	size_t len;
 
-	strlcpy(buf, RSYNC_NAME ": ", sizeof buf);
-	len = (sizeof RSYNC_NAME ": ") - 1;
+	len = snprintf(buf, sizeof buf, RSYNC_NAME ": [%s] ", who_am_i());
 
 	va_start(ap, format);
 	len += vsnprintf(buf + len, sizeof buf - len, format, ap);
@@ -673,9 +676,9 @@ static void log_formatted(enum logcode code, const char *format, const char *op,
 		case 'C':
 			n = NULL;
 			if (S_ISREG(file->mode)) {
-				if (always_checksum && canonical_checksum(checksum_type))
+				if (always_checksum)
 					n = sum_as_hex(checksum_type, F_SUM(file), 1);
-				else if (iflags & ITEM_TRANSFER && canonical_checksum(xfersum_type))
+				else if (iflags & ITEM_TRANSFER)
 					n = sum_as_hex(xfersum_type, sender_file_sum, 0);
 			}
 			if (!n) {
@@ -693,7 +696,7 @@ static void log_formatted(enum logcode code, const char *format, const char *op,
 			}
 			n  = c = buf2 + MAXPATHLEN - 32;
 			c[0] = iflags & ITEM_LOCAL_CHANGE
-			      ? iflags & ITEM_XNAME_FOLLOWS ? 'h' : 'c'
+			     ? iflags & ITEM_XNAME_FOLLOWS ? 'h' : 'c'
 			     : !(iflags & ITEM_TRANSFER) ? '.'
 			     : !local_server && *op == 's' ? '<' : '>';
 			if (S_ISLNK(file->mode)) {
@@ -714,7 +717,8 @@ static void log_formatted(enum logcode code, const char *format, const char *op,
 			c[5] = !(iflags & ITEM_REPORT_PERMS) ? '.' : 'p';
 			c[6] = !(iflags & ITEM_REPORT_OWNER) ? '.' : 'o';
 			c[7] = !(iflags & ITEM_REPORT_GROUP) ? '.' : 'g';
-			c[8] = !(iflags & ITEM_REPORT_ATIME) ? '.' : 'u';
+			c[8] = !(iflags & ITEM_REPORT_ATIME) ? '.'
+			     : S_ISLNK(file->mode) ? 'U' : 'u';
 			c[9] = !(iflags & ITEM_REPORT_ACL) ? '.' : 'a';
 			c[10] = !(iflags & ITEM_REPORT_XATTR) ? '.' : 'x';
 			c[11] = '\0';
@@ -811,8 +815,7 @@ void log_item(enum logcode code, struct file_struct *file, int iflags, const cha
 		log_formatted(FLOG, logfile_format, s_or_r, file, NULL, iflags, hlink);
 }
 
-void maybe_log_item(struct file_struct *file, int iflags, int itemizing,
-		    const char *buf)
+void maybe_log_item(struct file_struct *file, int iflags, int itemizing, const char *buf)
 {
 	int significant_flags = iflags & SIGNIFICANT_ITEM_FLAGS;
 	int see_item = itemizing && (significant_flags || *buf
@@ -866,12 +869,15 @@ void log_delete(const char *fname, int mode)
  */
 void log_exit(int code, const char *file, int line)
 {
-	if (code == 0) {
+	/* The receiving side's stats are split between 2 procs until the
+	 * end of the run, so only the sender can output non-final info. */
+	if (code == 0 || am_sender) {
 		rprintf(FLOG,"sent %s bytes  received %s bytes  total size %s\n",
 			big_num(stats.total_written),
 			big_num(stats.total_read),
 			big_num(stats.total_size));
-	} else if (am_server != 2) {
+	}
+	if (code != 0 && am_server != 2) {
 		const char *name;
 
 		name = rerr_name(code);

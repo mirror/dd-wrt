@@ -15,8 +15,13 @@ config.status
 aclocal.m4
 /proto.h
 /proto.h-tstamp
-/rsync.1
-/rsyncd.conf.5
+/rsync*.1
+/rsync*.5
+/rsync*.html
+/help-rsync*.h
+/default-cvsignore.h
+/default-dont-compress.h
+/.md2man-works
 /autom4te*.cache
 /confdefs.h
 /conftest*
@@ -24,8 +29,6 @@ aclocal.m4
 /getgroups
 /gmon.out
 /rsync
-/rsync-ssl
-/stunnel-rsync
 /stunnel-rsyncd.conf
 /shconfig
 /testdir
@@ -45,4 +48,5 @@ aclocal.m4
 /testsuite/devices-fake.test
 /testsuite/xattrs-hlink.test
 /patches
+/SaVeDiR
 .deps

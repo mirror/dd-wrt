@@ -1,7 +1,7 @@
 /*
  * A pre-compilation helper program to aid in the creation of rounding.h.
  *
- * Copyright (C) 2007-2018 Wayne Davison
+ * Copyright (C) 2007-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,16 +23,16 @@
 #define SIZEOF(x) ((long int)sizeof (x))
 
 struct test {
-    union file_extras extras[ARRAY_LEN];
-    struct file_struct file;
+	union file_extras extras[ARRAY_LEN];
+	int64 test;
 };
 
 #define ACTUAL_SIZE	SIZEOF(struct test)
-#define EXPECTED_SIZE	(SIZEOF(union file_extras) * ARRAY_LEN + SIZEOF(struct file_struct))
+#define EXPECTED_SIZE	(SIZEOF(union file_extras) * ARRAY_LEN + SIZEOF(int64))
 
  int main(UNUSED(int argc), UNUSED(char *argv[]))
 {
-    static int test_array[1 - 2 * (ACTUAL_SIZE != EXPECTED_SIZE)];
-    test_array[0] = 0;
-    return 0;
+	static int test_array[1 - 2 * (ACTUAL_SIZE != EXPECTED_SIZE)];
+	test_array[0] = 0;
+	return 0;
 }

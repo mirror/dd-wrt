@@ -4,7 +4,7 @@
  *
  * Copyright (C) 1998 Andrew Tridgell
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,7 @@ extern int inplace;
 extern int preallocate_files;
 extern int preserve_perms;
 extern int preserve_executability;
+extern int open_noatime;
 
 #ifndef S_BLKSIZE
 # if defined hpux || defined __hpux__ || defined __hpux
@@ -120,11 +121,11 @@ ssize_t do_readlink(const char *path, char *buf, size_t bufsiz)
 #endif
 
 #ifdef HAVE_LINK
-int do_link(const char *fname1, const char *fname2)
+int do_link(const char *old_path, const char *new_path)
 {
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
-	return link(fname1, fname2);
+	return link(old_path, new_path);
 }
 #endif
 
@@ -170,8 +171,8 @@ int do_mknod(const char *pathname, mode_t mode, dev_t dev)
 		saddr.sun_family = AF_UNIX;
 
 		if ((sock = socket(PF_UNIX, SOCK_STREAM, 0)) < 0
-		    || (unlink(pathname) < 0 && errno != ENOENT)
-		    || (bind(sock, (struct sockaddr*)&saddr, sizeof saddr)) < 0)
+		 || (unlink(pathname) < 0 && errno != ENOENT)
+		 || (bind(sock, (struct sockaddr*)&saddr, sizeof saddr)) < 0)
 			return -1;
 		close(sock);
 #ifdef HAVE_CHMOD
@@ -201,6 +202,11 @@ int do_open(const char *pathname, int flags, mode_t mode)
 		RETURN_ERROR_IF(dry_run, 0);
 		RETURN_ERROR_IF_RO_OR_LO;
 	}
+
+#ifdef O_NOATIME
+	if (open_noatime)
+		flags |= O_NOATIME;
+#endif
 
 	return open(pathname, flags | O_BINARY, mode);
 }
@@ -235,11 +241,11 @@ int do_chmod(const char *path, mode_t mode)
 }
 #endif
 
-int do_rename(const char *fname1, const char *fname2)
+int do_rename(const char *old_path, const char *new_path)
 {
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
-	return rename(fname1, fname2);
+	return rename(old_path, new_path);
 }
 
 #ifdef HAVE_FTRUNCATE
@@ -361,7 +367,7 @@ OFF_T do_lseek(int fd, OFF_T offset, int whence)
 }
 
 #ifdef HAVE_SETATTRLIST
-int do_setattrlist_times(const char *fname, time_t modtime, uint32 mod_nsec)
+int do_setattrlist_times(const char *fname, STRUCT_STAT *stp)
 {
 	struct attrlist attrList;
 	struct timespec ts;
@@ -369,8 +375,8 @@ int do_setattrlist_times(const char *fname, time_t modtime, uint32 mod_nsec)
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
 
-	ts.tv_sec = modtime;
-	ts.tv_nsec = mod_nsec;
+	ts.tv_sec = stp->st_mtime;
+	ts.tv_nsec = stp->ST_MTIME_NSEC;
 
 	memset(&attrList, 0, sizeof attrList);
 	attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
@@ -380,54 +386,78 @@ int do_setattrlist_times(const char *fname, time_t modtime, uint32 mod_nsec)
 #endif
 
 #ifdef HAVE_UTIMENSAT
-int do_utimensat(const char *fname, time_t modtime, uint32 mod_nsec)
+int do_utimensat(const char *fname, STRUCT_STAT *stp)
 {
 	struct timespec t[2];
 
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
 
-	t[0].tv_sec = 0;
-	t[0].tv_nsec = UTIME_NOW;
-	t[1].tv_sec = modtime;
-	t[1].tv_nsec = mod_nsec;
+	t[0].tv_sec = stp->st_atime;
+#ifdef ST_ATIME_NSEC
+	t[0].tv_nsec = stp->ST_ATIME_NSEC;
+#else
+	t[0].tv_nsec = 0;
+#endif
+	t[1].tv_sec = stp->st_mtime;
+#ifdef ST_MTIME_NSEC
+	t[1].tv_nsec = stp->ST_MTIME_NSEC;
+#else
+	t[1].tv_nsec = 0;
+#endif
 	return utimensat(AT_FDCWD, fname, t, AT_SYMLINK_NOFOLLOW);
 }
 #endif
 
 #ifdef HAVE_LUTIMES
-int do_lutimes(const char *fname, time_t modtime, uint32 mod_nsec)
+int do_lutimes(const char *fname, STRUCT_STAT *stp)
 {
 	struct timeval t[2];
 
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
 
-	t[0].tv_sec = time(NULL);
+	t[0].tv_sec = stp->st_atime;
+#ifdef ST_ATIME_NSEC
+	t[0].tv_usec = stp->ST_ATIME_NSEC / 1000;
+#else
 	t[0].tv_usec = 0;
-	t[1].tv_sec = modtime;
-	t[1].tv_usec = mod_nsec / 1000;
+#endif
+	t[1].tv_sec = stp->st_mtime;
+#ifdef ST_MTIME_NSEC
+	t[1].tv_usec = stp->ST_MTIME_NSEC / 1000;
+#else
+	t[1].tv_usec = 0;
+#endif
 	return lutimes(fname, t);
 }
 #endif
 
 #ifdef HAVE_UTIMES
-int do_utimes(const char *fname, time_t modtime, uint32 mod_nsec)
+int do_utimes(const char *fname, STRUCT_STAT *stp)
 {
 	struct timeval t[2];
 
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
 
-	t[0].tv_sec = time(NULL);
+	t[0].tv_sec = stp->st_atime;
+#ifdef ST_ATIME_NSEC
+	t[0].tv_usec = stp->ST_ATIME_NSEC / 1000;
+#else
 	t[0].tv_usec = 0;
-	t[1].tv_sec = modtime;
-	t[1].tv_usec = mod_nsec / 1000;
+#endif
+	t[1].tv_sec = stp->st_mtime;
+#ifdef ST_MTIME_NSEC
+	t[1].tv_usec = stp->ST_MTIME_NSEC / 1000;
+#else
+	t[1].tv_usec = 0;
+#endif
 	return utimes(fname, t);
 }
 
 #elif defined HAVE_UTIME
-int do_utime(const char *fname, time_t modtime, UNUSED(uint32 mod_nsec))
+int do_utime(const char *fname, STRUCT_STAT *stp)
 {
 #ifdef HAVE_STRUCT_UTIMBUF
 	struct utimbuf tbuf;
@@ -439,12 +469,12 @@ int do_utime(const char *fname, time_t modtime, UNUSED(uint32 mod_nsec))
 	RETURN_ERROR_IF_RO_OR_LO;
 
 # ifdef HAVE_STRUCT_UTIMBUF
-	tbuf.actime = time(NULL);
-	tbuf.modtime = modtime;
+	tbuf.actime = stp->st_atime;
+	tbuf.modtime = stp->st_mtime;
 	return utime(fname, &tbuf);
 # else
-	t[0] = time(NULL);
-	t[1] = modtime;
+	t[0] = stp->st_atime;
+	t[1] = stp->st_mtime;
 	return utime(fname, t);
 # endif
 }
@@ -462,7 +492,7 @@ int do_utime(const char *fname, time_t modtime, UNUSED(uint32 mod_nsec))
 
 OFF_T do_fallocate(int fd, OFF_T offset, OFF_T length)
 {
-	int opts = inplace || preallocate_files ? 0 : DO_FALLOC_OPTIONS;
+	int opts = inplace || preallocate_files ? DO_FALLOC_OPTIONS : 0;
 	int ret;
 	RETURN_ERROR_IF(dry_run, 0);
 	RETURN_ERROR_IF_RO_OR_LO;
@@ -493,7 +523,7 @@ OFF_T do_fallocate(int fd, OFF_T offset, OFF_T length)
 
 /* Punch a hole at pos for len bytes. The current file position must be at pos and will be
  * changed to be at pos + len. */
-int do_punch_hole(int fd, UNUSED(OFF_T pos), int len)
+int do_punch_hole(int fd, UNUSED(OFF_T pos), OFF_T len)
 {
 #ifdef HAVE_FALLOCATE
 # ifdef HAVE_FALLOC_FL_PUNCH_HOLE

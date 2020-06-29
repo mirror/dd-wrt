@@ -1,0 +1,120 @@
+<html><head>
+<title>rsync-ssl(1) man page</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto&family=Roboto+Mono&display=swap" rel="stylesheet">
+<style>
+body {
+  max-width: 50em;
+  margin: auto;
+}
+body, b, strong, u {
+  font-family: 'Roboto', sans-serif;
+}
+code {
+  font-family: 'Roboto Mono', monospace;
+  font-weight: bold;
+  white-space: pre;
+}
+pre code {
+  display: block;
+  font-weight: normal;
+}
+blockquote pre code {
+  background: #f1f1f1;
+}
+dd p:first-of-type {
+  margin-block-start: 0em;
+}
+</style>
+</head><body>
+<h1>NAME</h1>
+<p>rsync-ssl -&#8288; a helper script for connecting to an ssl rsync daemon</p>
+<h1>SYNOPSIS</h1>
+<pre><code>rsync-ssl [--type=SSL_TYPE] RSYNC_ARGS
+</code></pre>
+<h1>DESCRIPTION</h1>
+<p>The rsync-ssl script helps you to run an rsync copy to/from an rsync daemon
+that requires ssl connections.</p>
+<p>The script requires that you specify an rsync-daemon arg in the style of either
+<code>hostname::</code> (with 2 colons) or <code>rsync://hostname/</code>.  The default port used for
+connecting is 874 (one higher than the normal 873) unless overridden in the
+environment.  You can specify an overriding port via <code>--port</code> or by including
+it in the normal spot in the URL format, though both of those require your
+rsync version to be at least 3.2.0.</p>
+<h1>OPTIONS</h1>
+<p>If the <strong>first</strong> arg is a <code>--type=SSL_TYPE</code> option, the script will only use
+that particular program to open an ssl connection instead of trying to find an
+openssl or stunnel executable via a simple heuristic (assuming that the
+<code>RSYNC_SSL_TYPE</code> environment variable is not set as well&nbsp;-&#8288;-&#8288; see below).  This
+option must specify one of <code>openssl</code> or <code>stunnel</code>.  The equal sign is
+required for this particular option.</p>
+<p>All the other options are passed through to the rsync command, so consult the
+<strong>rsync</strong>(1) manpage for more information on how it works.</p>
+<h1>ENVIRONMENT VARIABLES</h1>
+<p>The ssl helper scripts are affected by the following environment variables:</p>
+<dl>
+<dt><code>RSYNC_SSL_TYPE</code></dt><dd> Specifies the program type that should be used to open the
+ssl connection.  It must be one of <code>openssl</code> or <code>stunnel</code>.  The
+<code>--type=SSL_TYPE</code> option overrides this, when specified.</dd>
+<dt><code>RSYNC_SSL_PORT</code></dt><dd> If specified, the value is the port number that is used as
+the default when the user does not specify a port in their rsync command.
+When not specified, the default port number is 874.  (Note that older rsync
+versions (prior to 3.2.0) did not communicate an overriding port number
+value to the helper script.)</dd>
+<dt><code>RSYNC_SSL_CERT</code></dt><dd> If specified, the value is a filename that contains a
+certificate to use for the connection.</dd>
+<dt><code>RSYNC_SSL_CA_CERT</code></dt><dd> If specified, the value is a filename that contains a
+certificate authority certificate that is used to validate the connection.</dd>
+<dt><code>RSYNC_SSL_OPENSSL</code></dt><dd> Specifies the openssl executable to run when the
+connection type is set to openssl.  If unspecified, the $PATH is searched
+for &quot;openssl&quot;.</dd>
+<dt><code>RSYNC_SSL_GNUTLS</code></dt><dd> Specifies the gnutls-cli executable to run when the
+connection type is set to gnutls.  If unspecified, the $PATH is searched
+for &quot;gnutls-cli&quot;.</dd>
+<dt><code>RSYNC_SSL_STUNNEL</code></dt><dd> Specifies the stunnel executable to run when the
+connection type is set to stunnel.  If unspecified, the $PATH is searched
+first for &quot;stunnel4&quot; and then for &quot;stunnel&quot;.</dd>
+</dl>
+<h1>EXAMPLES</h1>
+<blockquote>
+<pre><code>rsync-ssl -aiv example.com::mod/ dest
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>rsync-ssl --type=openssl -aiv example.com::mod/ dest
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>rsync-ssl -aiv --port 9874 example.com::mod/ dest
+</code></pre>
+</blockquote>
+<blockquote>
+<pre><code>rsync-ssl -aiv rsync://example.com:9874/mod/ dest
+</code></pre>
+</blockquote>
+<h1>SEE ALSO</h1>
+<p><strong>rsync</strong>(1), <strong>rsyncd.conf</strong>(5)</p>
+<h1>CAVEATS</h1>
+<p>Note that using an stunnel connection requires at least version 4 of stunnel,
+which should be the case on modern systems.  Also, it does not verify a
+connection against the CA certificate collection, so it only encrypts the
+connection without any cert validation unless you have specified the
+certificate environment options.</p>
+<p>This script also supports a <code>--type=gnutls</code> option, but at the time of this
+release the gnutls-cli command was dropping output, making it unusable.  If
+that bug has been fixed in your version, feel free to put gnutls into an
+exported RSYNC_SSL_TYPE environment variable to make its use the default.</p>
+<h1>BUGS</h1>
+<p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
+<h1>VERSION</h1>
+<p>This man page is current for version 3.2.1 of rsync.</p>
+<h1>CREDITS</h1>
+<p>rsync is distributed under the GNU General Public License.  See the file
+COPYING for details.</p>
+<p>A web site is available at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.  The site includes an
+FAQ-O-Matic which may cover questions unanswered by this manual page.</p>
+<h1>AUTHOR</h1>
+<p>This manpage was written by Wayne Davison.</p>
+<p>Mailing lists for support and development are available at
+<a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
+<div style="float: right"><p><i>22 Jun 2020</i></p></div>
+</body></html>

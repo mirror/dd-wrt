@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1996 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
- * Copyright (C) 2004-2018 Wayne Davison
+ * Copyright (C) 2004-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,8 +47,8 @@ extern char *groupmap;
 #define NFLAGS_NAME_MATCH (1<<1)
 
 union name_or_id {
-    const char *name;
-    id_t max_id;
+	const char *name;
+	id_t max_id;
 };
 
 struct idlist {
@@ -176,8 +176,7 @@ static int is_in_group(gid_t gid)
 			char *gidbuf = new_array(char, ngroups*21+32);
 			if (!gidbuf)
 				out_of_memory("is_in_group");
-			pos = snprintf(gidbuf, 32, "process has %d gid%s: ",
-				       ngroups, ngroups == 1? "" : "s");
+			pos = snprintf(gidbuf, 32, "process has %d gid%s: ", ngroups, ngroups == 1? "" : "s");
 			for (n = 0; n < ngroups; n++) {
 				pos += snprintf(gidbuf+pos, 21, " %d", (int)gidset[n]);
 			}
@@ -252,7 +251,7 @@ static struct idlist *recv_add_id(struct idlist **idlist_ptr, struct idlist *idm
 	return node;
 }
 
-/* this function is a definate candidate for a faster algorithm */
+/* this function is a definite candidate for a faster algorithm */
 uid_t match_uid(uid_t uid)
 {
 	static struct idlist *last = NULL;
@@ -435,8 +434,7 @@ void recv_id_list(int f, struct file_list *flist)
 	}
 	if (preserve_gid && (!am_root || !numeric_ids || groupmap)) {
 		for (i = 0; i < flist->used; i++) {
-			F_GROUP(flist->files[i]) = match_gid(F_GROUP(flist->files[i]),
-							     &flist->files[i]->flags);
+			F_GROUP(flist->files[i]) = match_gid(F_GROUP(flist->files[i]), &flist->files[i]->flags);
 		}
 	}
 }
@@ -497,18 +495,14 @@ void parse_name_map(char *map, BOOL usernames)
 			if (user_to_uid(colon+1, &uid, True))
 				add_to_list(idmap_ptr, id1, noiu, uid, flags);
 			else {
-				rprintf(FERROR,
-				    "Unknown --usermap name on receiver: %s\n",
-				    colon+1);
+				rprintf(FERROR, "Unknown --usermap name on receiver: %s\n", colon+1);
 			}
 		} else {
 			gid_t gid;
 			if (group_to_gid(colon+1, &gid, True))
 				add_to_list(idmap_ptr, id1, noiu, gid, flags);
 			else {
-				rprintf(FERROR,
-				    "Unknown --groupmap name on receiver: %s\n",
-				    colon+1);
+				rprintf(FERROR, "Unknown --groupmap name on receiver: %s\n", colon+1);
 			}
 		}
 
@@ -519,8 +513,7 @@ void parse_name_map(char *map, BOOL usernames)
 	}
 
 	/* The 0 user/group doesn't get its name sent, so add it explicitly. */
-	recv_add_id(idlist_ptr, *idmap_ptr, 0,
-		    numeric_ids ? NULL : usernames ? uid_to_user(0) : gid_to_group(0));
+	recv_add_id(idlist_ptr, *idmap_ptr, 0, numeric_ids ? NULL : usernames ? uid_to_user(0) : gid_to_group(0));
 }
 
 #ifdef HAVE_GETGROUPLIST
@@ -534,14 +527,14 @@ const char *getallgroups(uid_t uid, item_list *gid_list)
 		return "getpwuid failed";
 
 	gid_list->count = 0; /* We're overwriting any items in the list */
-	EXPAND_ITEM_LIST(gid_list, gid_t, 32);
+	(void)EXPAND_ITEM_LIST(gid_list, gid_t, 32);
 	size = gid_list->malloced;
 
 	/* Get all the process's groups, with the pw_gid group first. */
 	if (getgrouplist(pw->pw_name, pw->pw_gid, gid_list->items, &size) < 0) {
 		if (size > (int)gid_list->malloced) {
 			gid_list->count = gid_list->malloced;
-			EXPAND_ITEM_LIST(gid_list, gid_t, size);
+			(void)EXPAND_ITEM_LIST(gid_list, gid_t, size);
 			if (getgrouplist(pw->pw_name, pw->pw_gid, gid_list->items, &size) < 0)
 				size = -1;
 		} else
@@ -560,7 +553,7 @@ const char *getallgroups(uid_t uid, item_list *gid_list)
 				break;
 		}
 		if (j == size) { /* The default group wasn't found! */
-			EXPAND_ITEM_LIST(gid_list, gid_t, size+1);
+			(void)EXPAND_ITEM_LIST(gid_list, gid_t, size+1);
 			gid_array = gid_list->items;
 		}
 		gid_array[j] = gid_array[0];
