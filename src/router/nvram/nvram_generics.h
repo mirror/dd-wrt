@@ -360,7 +360,7 @@ static int internal_nvram_state(char *nvram, int zerofirstrun)
 //	fprintf(stderr, "open %s\n", file);
 	FILE *fp = fopen(file, "rb");
 	if (!fp) {
-		fprintf(stderr, "no exist\n");
+//		fprintf(stderr, "no exist\n");
 		mkdir("/tmp/nvstate", 0700);
 		int ret = update_state(file, nvram);
 //		fprintf(stderr, "update states returns %s: %d zero %d\n",nvram, ret, zerofirstrun);
