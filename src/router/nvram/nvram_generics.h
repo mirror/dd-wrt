@@ -354,13 +354,16 @@ static int update_state(char *file, char *nvram)
  */
 static int internal_nvram_state(char *nvram, int zerofirstrun)
 {
-	char file[64];
+	char file[128];
 	char *nv = nvram_safe_get(nvram);
 	snprintf(file, sizeof(file), "/tmp/nvstate/%s.state", nvram);
+//	fprintf(stderr, "open %s\n", file);
 	FILE *fp = fopen(file, "rb");
 	if (!fp) {
+		fprintf(stderr, "no exist\n");
 		mkdir("/tmp/nvstate", 0700);
 		int ret = update_state(file, nvram);
+//		fprintf(stderr, "update states returns %s: %d zero %d\n",nvram, ret, zerofirstrun);
 		if (zerofirstrun)
 			return 0;
 		return ret;
@@ -369,8 +372,10 @@ static int internal_nvram_state(char *nvram, int zerofirstrun)
 	size_t len = ftell(fp);
 	if (!len) {
 		fclose(fp);
-		if (!*nv)
+		if (!*nv) {
+//			fprintf(stderr, "nv %s is empty\n",nvram);
 			return 0;
+		}
 		return update_state(file, nvram);
 	}
 	rewind(fp);
@@ -379,21 +384,23 @@ static int internal_nvram_state(char *nvram, int zerofirstrun)
 	fclose(fp);
 	checkbuf[len] = 0;
 	if (!strcmp(nv, checkbuf)) {
+//		fprintf(stderr, "%s is equal (checkbuf %s)\n", nvram, checkbuf);
 		free(checkbuf);
 		return 0;
 	}
+//	fprintf(stderr, "%s is not equal (checkbuf %s)\n", nvram, checkbuf);
 	free(checkbuf);
 	return update_state(file, nvram);
 }
 
 int nvram_state(char *nvram)
 {
-	internal_nvram_state(nvram, 0);
+	return internal_nvram_state(nvram, 0);
 }
 
 int nvram_state_change(char *nvram)
 {
-	internal_nvram_state(nvram, 1);
+	return internal_nvram_state(nvram, 1);
 }
 
 int nvram_states(char *list)
