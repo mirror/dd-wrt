@@ -346,7 +346,8 @@ ip1 -4 rule add table main suppress_prefixlength 0
 if [[ $(ip1 -4 rule show all) == *suppress_prefixlength* ]]; then
 	# Flood the pings instead of sending just one, to trigger routing table reference counting bugs.
 	n1 ping -W 1 -c 100 -f 192.168.99.7
-	n1 ping -W 1 -c 100 -f abab::1111
+	# ca7a03c got ported to 5.2 when it shouldn't have.
+	[[ $(< /proc/version) =~ ^Linux\ version\ 5\.2[.\ ] ]] || n1 ping -W 1 -c 100 -f abab::1111
 fi
 
 # Have ns2 NAT into wg0 packets from ns0, but return an icmp error along the right route.
@@ -590,9 +591,20 @@ ip0 link set wg0 up
 kill $ncat_pid
 ip0 link del wg0
 
+# Ensure there aren't circular reference loops
+ip1 link add wg1 type wireguard
+ip2 link add wg2 type wireguard
+ip1 link set wg1 netns $netns2
+ip2 link set wg2 netns $netns1
+pp ip netns delete $netns1
+pp ip netns delete $netns2
+pp ip netns add $netns1
+pp ip netns add $netns2
+
+sleep 2 # Wait for cleanup and grace periods
 declare -A objects
 while read -t 0.1 -r line 2>/dev/null || [[ $? -ne 142 ]]; do
-	[[ $line =~ .*(wg[0-9]+:\ [A-Z][a-z]+\ [0-9]+)\ .*(created|destroyed).* ]] || continue
+	[[ $line =~ .*(wg[0-9]+:\ [A-Z][a-z]+\ ?[0-9]*)\ .*(created|destroyed).* ]] || continue
 	objects["${BASH_REMATCH[1]}"]+="${BASH_REMATCH[2]}"
 done < /dev/kmsg
 alldeleted=1
