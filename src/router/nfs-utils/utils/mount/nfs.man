@@ -1639,52 +1639,55 @@ from a server's pseudo-fs
 into one of the server's exported physical filesystems,
 which often have more restrictive security settings than the pseudo-fs.
 .SS "NFS version 4 Leases"
-In NFS version 4, a lease is a period of time during which a server
-irrevocably grants a file lock to a client.
-If the lease expires, the server is allowed to revoke that lock.
+In NFS version 4, a lease is a period during which a server
+irrevocably grants a client file locks.
+Once the lease expires, the server may revoke those locks.
 Clients periodically renew their leases to prevent lock revocation.
 .P
 After an NFS version 4 server reboots, each client tells the
-server about all file open and lock state under its lease
+server about existing file open and lock state under its lease
 before operation can continue.
-If the client reboots, the server frees all open and lock state
+If a client reboots, the server frees all open and lock state
 associated with that client's lease.
 .P
-As part of establishing a lease, therefore,
+When establishing a lease, therefore,
 a client must identify itself to a server.
-A fixed string is used to distinguish that client from
-others, and a changeable verifier is used to indicate
-when the client has rebooted.
+Each client presents an arbitrary string
+to distinguish itself from other clients.
+The client administrator can
+supplement the default identity string using the
+.I nfs4.nfs4_unique_id
+module parameter to avoid collisions
+with other client identity strings.
 .P
-A client uses a particular security flavor and principal
-when performing the operations to establish a lease.
-If two clients happen to present the same identity string,
-a server can use their principals to detect that they are
-different clients, and prevent one client from interfering
-with the other's lease.
+A client also uses a unique security flavor and principal
+when it establishes its lease.
+If two clients present the same identity string,
+a server can use client principals to distinguish between them,
+thus securely preventing one client from interfering with the other's lease.
 .P
-The Linux NFS client establishes one lease for each server.
+The Linux NFS client establishes one lease on each NFS version 4 server.
 Lease management operations, such as lease renewal, are not
 done on behalf of a particular file, lock, user, or mount
-point, but on behalf of the whole client that owns that lease.
-These operations must use the same security flavor and
-principal that was used when the lease was established,
-even across client reboots.
+point, but on behalf of the client that owns that lease.
+A client uses a consistent identity string, security flavor,
+and principal across client reboots to ensure that the server
+can promptly reap expired lease state.
 .P
 When Kerberos is configured on a Linux NFS client
 (i.e., there is a
 .I /etc/krb5.keytab
 on that client), the client attempts to use a Kerberos
 security flavor for its lease management operations.
-This provides strong authentication of the client to
-each server it contacts.
+Kerberos provides secure authentication of each client.
 By default, the client uses the
 .I host/
 or
 .I nfs/
 service principal in its
 .I /etc/krb5.keytab
-for this purpose.
+for this purpose, as described in
+.BR rpc.gssd (8).
 .P
 If the client has Kerberos configured, but the server
 does not, or if the client does not have a keytab or
