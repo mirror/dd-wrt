@@ -429,9 +429,9 @@ conf_parse_line(int trans, char *line, const char *filename, int lineno, char **
 
 		subconf = conf_readfile(relpath);
 		if (subconf == NULL) {
-			xlog_warn("config error at %s:%d: "
-				"error loading included config",
-				  filename, lineno);
+			if (!optional)
+				xlog_warn("config error at %s:%d: error loading included config",
+					  filename, lineno);
 			if (relpath)
 				free(relpath);
 			return;

@@ -89,6 +89,10 @@ gid_t nobody_gid = (gid_t)-1;
 #define NFS4DNSTXTREC "_nfsv4idmapdomain"
 #endif
 
+#ifndef NS_MAXMSG
+#define NS_MAXMSG 65535
+#endif
+
 /* Default logging fuction */
 static void default_logger(const char *fmt, ...)
 {
