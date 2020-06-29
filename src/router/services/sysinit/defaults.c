@@ -3653,6 +3653,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "boot_nospectre_v2", "0" },
 	{ "boot_l1tf", "0" },
 	{ "boot_nospec_store_bypass_disable", "0" },
+	{ "boot_nopti", "0" },
 #endif
 	{ 0, 0 }
 };

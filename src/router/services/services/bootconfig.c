@@ -68,13 +68,15 @@ void start_bootconfig(void)
 	if (nvram_match("boot_srbds", "1"))
 		strcat(args, " srbds=off");
 	if (nvram_match("boot_nospectre_v1", "1"))
-		strcat(args, " nospectre_v1");
+		strcat(args, " spectre_v1=off");
 	if (nvram_match("boot_nospectre_v2", "1"))
-		strcat(args, " nospectre_v2");
+		strcat(args, " spectre_v2=off");
 	if (nvram_match("boot_l1tf", "1"))
 		strcat(args, " l1tf=off");
+	if (nvram_match("boot_nopti", "1"))
+		strcat(args, " pti=off");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
-		strcat(args, " nospec_store_bypass_disable");
+		strcat(args, " spec_store_bypass_disable=off");
 	FILE *in = fopen("/boot/boot/grub/menu.lst", "rb");
 	char serial[64];
 	fscanf(in, "%s", serial);
