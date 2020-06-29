@@ -31,7 +31,7 @@ if [ ! -f "$flagfile" ]; then
 	    if [ -f "$HOME/build_farm/build_test.fns" ]; then
 		exit 0 # No exit errorno to avoid a build failure in the samba build farm
 	    else
-		exit 1
+		exit 0
 	    fi
 	fi
     fi
