@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ extern int dry_run;
 extern int am_server;
 extern int am_daemon;
 extern int am_receiver;
+extern int am_sender;
 extern int io_error;
 extern int keep_partial;
 extern int got_xfer_error;
@@ -34,6 +35,7 @@ extern int output_needs_newline;
 extern char *partial_dir;
 extern char *logfile_name;
 
+int called_from_signal_handler = 0;
 BOOL shutting_down = False;
 BOOL flush_ok_after_signal = False;
 
@@ -138,7 +140,6 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 				who_am_i(), code, file, line);
 		}
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -152,7 +153,6 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 			}
 		}
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -172,18 +172,17 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 				const char *fname = cleanup_fname;
 				cleanup_fname = NULL;
 				if (!partial_dir) {
-				    /* We don't want to leave a partial file with a modern time or it
-				     * could be skipped via --update.  Setting the time to something
-				     * really old also helps it to stand out as unfinished in an ls. */
-				    tweak_modtime = 1;
-				    cleanup_file->modtime = 0;
+					/* We don't want to leave a partial file with a modern time or it
+					 * could be skipped via --update.  Setting the time to something
+					 * really old also helps it to stand out as unfinished in an ls. */
+					tweak_modtime = 1;
+					cleanup_file->modtime = 0;
 				}
 				finish_transfer(cleanup_new_fname, fname, NULL, NULL,
 						cleanup_file, tweak_modtime, !partial_dir);
 			}
 		}
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -195,7 +194,6 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 		if (!exit_code && !code)
 			io_flush(FULL_FLUSH);
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -226,7 +224,6 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 		 || am_daemon || (logfile_name && (am_server || !INFO_GTE(STATS, 1))))
 			log_exit(exit_code, exit_file, exit_line);
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -238,23 +235,27 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 				dry_run ? " (DRY RUN)" : "");
 		}
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
 		if (exit_code && exit_code != RERR_SOCKETIO && exit_code != RERR_STREAMIO && exit_code != RERR_SIGNAL1
-		 && exit_code != RERR_TIMEOUT && !shutting_down && (protocol_version >= 31 || am_receiver)) {
-			if (line > 0) {
-				if (DEBUG_GTE(EXIT, 3)) {
-					rprintf(FINFO, "[%s] sending MSG_ERROR_EXIT with exit_code %d\n",
-						who_am_i(), exit_code);
+		 && exit_code != RERR_TIMEOUT && !shutting_down) {
+			if (protocol_version >= 31 || am_receiver) {
+				if (line > 0) {
+					if (DEBUG_GTE(EXIT, 3)) {
+						rprintf(FINFO, "[%s] sending MSG_ERROR_EXIT with exit_code %d\n",
+							who_am_i(), exit_code);
+					}
+					send_msg_int(MSG_ERROR_EXIT, exit_code);
 				}
-				send_msg_int(MSG_ERROR_EXIT, exit_code);
+				if (!am_sender)
+					io_flush(MSG_FLUSH); /* Be sure to send all messages */
+				noop_io_until_death();
 			}
-			noop_io_until_death();
+			else if (!am_sender)
+				io_flush(MSG_FLUSH); /* Be sure to send all messages */
 		}
 
-		/* FALLTHROUGH */
 #include "case_N.h"
 		switch_step++;
 
@@ -267,6 +268,8 @@ NORETURN void _exit_cleanup(int code, const char *file, int line)
 		break;
 	}
 
+	if (called_from_signal_handler)
+		_exit(exit_code);
 	exit(exit_code);
 }
 

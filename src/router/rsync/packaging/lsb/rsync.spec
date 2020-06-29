@@ -1,22 +1,17 @@
 Summary: A fast, versatile, remote (and local) file-copying tool
 Name: rsync
-Version: 3.1.3
+Version: 3.2.1
 %define fullversion %{version}
 Release: 1
 %define srcdir src
 Group: Applications/Internet
 License: GPL
-Source0: http://rsync.samba.org/ftp/rsync/%{srcdir}/rsync-%{fullversion}.tar.gz
-#Source1: http://rsync.samba.org/ftp/rsync/%{srcdir}/rsync-patches-%{fullversion}.tar.gz
-URL: http://rsync.samba.org/
+Source0: https://rsync.samba.org/ftp/rsync/%{srcdir}/rsync-%{fullversion}.tar.gz
+#Source1: https://rsync.samba.org/ftp/rsync/%{srcdir}/rsync-patches-%{fullversion}.tar.gz
+URL: https://rsync.samba.org/
 
 Prefix: %{_prefix}
 BuildRoot: /var/tmp/%{name}-root
-
-%package ssl-client
-Summary: Provides rsync-ssl
-Group: Applications/Internet
-Requires: rsync, stunnel >= 4
 
 %package ssl-daemon
 Summary: An stunnel config file to support ssl rsync daemon connections.
@@ -33,11 +28,6 @@ which reduces the amount of data sent over the network by sending only the
 differences between the source files and the existing files in the
 destination.  Rsync is widely used for backups and mirroring and as an
 improved copy command for everyday use.
-
-%description ssl-client
-Provides the rsync-ssl script that makes use of stunnel 4 to open an ssl
-connection to an rsync daemon (on port 874).  This setup does NOT require
-any local stunnel daemon to be running to connect to the remote ssl rsyncd.
 
 %description ssl-daemon
 Provides a config file for stunnel that will (if you start your stunnel
@@ -66,7 +56,7 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install install-ssl-client install-ssl-daemon DESTDIR=$RPM_BUILD_ROOT
+make install install-ssl-daemon DESTDIR=$RPM_BUILD_ROOT
 
 mkdir -p $RPM_BUILD_ROOT/etc/xinetd.d $RPM_BUILD_ROOT/etc/rsync-ssl/certs
 install -m 644 packaging/lsb/rsync.xinetd $RPM_BUILD_ROOT/etc/xinetd.d/rsync
@@ -76,24 +66,22 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-%doc COPYING NEWS OLDNEWS README support/ tech_report.tex
+%doc COPYING NEWS.md README.md support/ tech_report.tex
 %config(noreplace) /etc/xinetd.d/rsync
 %{_prefix}/bin/rsync
-%{_mandir}/man1/rsync.1*
-%{_mandir}/man5/rsyncd.conf.5*
-
-%files ssl-client
 %{_prefix}/bin/rsync-ssl
-%{_prefix}/bin/stunnel-rsync
+%{_mandir}/man1/rsync.1*
+%{_mandir}/man1/rsync-ssl.1*
+%{_mandir}/man5/rsyncd.conf.5*
 
 %files ssl-daemon
 %config(noreplace) /etc/stunnel/rsyncd.conf
 %dir /etc/rsync-ssl/certs
 
 %changelog
-* Sun Jan 28 2018 Wayne Davison <wayned@samba.org>
-Released 3.1.3.
+* Mon Jun 22 2020 Wayne Davison <wayne@opencoder.net>
+Released 3.2.1.
 
-* Fri Mar 21 2008 Wayne Davison <wayned@samba.org>
+* Fri Mar 21 2008 Wayne Davison <wayne@opencoder.net>
 Added installation of /etc/xinetd.d/rsync file and some commented-out
 lines that demonstrate how to use the rsync-patches tar file.

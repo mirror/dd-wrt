@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1996 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
- * Copyright (C) 2006-2018 Wayne Davison
+ * Copyright (C) 2006-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,7 +48,7 @@ extern int preserve_specials;
 /* When we send the access bits over the wire, we shift them 2 bits to the
  * left and use the lower 2 bits as flags (relevant only to a name entry).
  * This makes the protocol more efficient than sending a value that would
- * be likely to have its hightest bits set. */
+ * be likely to have its highest bits set. */
 #define XFLAG_NAME_FOLLOWS 0x0001u
 #define XFLAG_NAME_IS_USER 0x0002u
 
@@ -332,14 +332,12 @@ static BOOL unpack_smb_acl(SMB_ACL_T sacl, rsync_acl *racl)
 	if (temp_ida_list.count) {
 #ifdef SMB_ACL_NEED_SORT
 		if (temp_ida_list.count > 1) {
-			qsort(temp_ida_list.items, temp_ida_list.count,
-			      sizeof (id_access), id_access_sorter);
+			qsort(temp_ida_list.items, temp_ida_list.count, sizeof (id_access), id_access_sorter);
 		}
 #endif
 		if (!(racl->names.idas = new_array(id_access, temp_ida_list.count)))
 			out_of_memory("unpack_smb_acl");
-		memcpy(racl->names.idas, temp_ida_list.items,
-		       temp_ida_list.count * sizeof (id_access));
+		memcpy(racl->names.idas, temp_ida_list.items, temp_ida_list.count * sizeof (id_access));
 	} else
 		racl->names.idas = NULL;
 
@@ -825,14 +823,12 @@ void cache_tmp_acl(struct file_struct *file, stat_x *sxp)
 	if (prior_access_count == (size_t)-1)
 		prior_access_count = access_acl_list.count;
 
-	F_ACL(file) = cache_rsync_acl(sxp->acc_acl,
-				      SMB_ACL_TYPE_ACCESS, &access_acl_list);
+	F_ACL(file) = cache_rsync_acl(sxp->acc_acl, SMB_ACL_TYPE_ACCESS, &access_acl_list);
 
 	if (S_ISDIR(sxp->st.st_mode)) {
 		if (prior_default_count == (size_t)-1)
 			prior_default_count = default_acl_list.count;
-		F_DIR_DEFACL(file) = cache_rsync_acl(sxp->def_acl,
-				      SMB_ACL_TYPE_DEFAULT, &default_acl_list);
+		F_DIR_DEFACL(file) = cache_rsync_acl(sxp->def_acl, SMB_ACL_TYPE_DEFAULT, &default_acl_list);
 	}
 }
 
@@ -996,8 +992,7 @@ static int set_rsync_acl(const char *fname, acl_duo *duo_item,
 		mode = 0; /* eliminate compiler warning */
 #else
 		if (type == SMB_ACL_TYPE_ACCESS) {
-			cur_mode = change_sacl_perms(duo_item->sacl, &duo_item->racl,
-						     cur_mode, mode);
+			cur_mode = change_sacl_perms(duo_item->sacl, &duo_item->racl, cur_mode, mode);
 			if (cur_mode == (mode_t)-1)
 				return 0;
 		}
@@ -1117,14 +1112,12 @@ int default_perms_for_dir(const char *dir)
 		case ENOSYS:
 			/* No ACLs are available. */
 			break;
-		case ENOENT:
-			if (dry_run) {
+		default:
+			if (dry_run && errno == ENOENT) {
 				/* We're doing a dry run, so the containing directory
 				 * wasn't actually created.  Don't worry about it. */
 				break;
 			}
-			/* Otherwise fall through. */
-		default:
 			rprintf(FWARNING,
 				"default_perms_for_dir: sys_acl_get_file(%s, %s): %s, falling back on umask\n",
 				dir, str_acl_type(SMB_ACL_TYPE_DEFAULT), strerror(errno));

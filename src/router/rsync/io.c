@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2001 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@ extern int am_generator;
 extern int msgs2stderr;
 extern int inc_recurse;
 extern int io_error;
+extern int batch_fd;
 extern int eol_nulls;
 extern int flist_eof;
 extern int file_total;
@@ -67,7 +68,6 @@ extern iconv_t ic_send, ic_recv;
 
 int csum_length = SHORT_SUM_LENGTH; /* initial value */
 int allowed_lull = 0;
-int batch_fd = -1;
 int msgdone_cnt = 0;
 int forward_flist_data = 0;
 BOOL flist_receiving_enabled = False;
@@ -251,8 +251,7 @@ static size_t safe_read(int fd, char *buf, size_t len)
 		cnt = select(fd+1, &r_fds, NULL, &e_fds, &tv);
 		if (cnt <= 0) {
 			if (cnt < 0 && errno == EBADF) {
-				rsyserr(FERROR, errno, "safe_read select failed [%s]",
-					who_am_i());
+				rsyserr(FERROR, errno, "safe_read select failed");
 				exit_cleanup(RERR_FILEIO);
 			}
 			check_timeout(1, MSK_ALLOW_FLUSH);
@@ -271,8 +270,7 @@ static size_t safe_read(int fd, char *buf, size_t len)
 			if (n < 0) {
 				if (errno == EINTR)
 					continue;
-				rsyserr(FERROR, errno, "safe_read failed to read %ld bytes [%s]",
-					(long)len, who_am_i());
+				rsyserr(FERROR, errno, "safe_read failed to read %ld bytes", (long)len);
 				exit_cleanup(RERR_STREAMIO);
 			}
 			if ((got += (size_t)n) == len)
@@ -315,8 +313,8 @@ static void safe_write(int fd, const char *buf, size_t len)
 		if (errno != EINTR && errno != EWOULDBLOCK && errno != EAGAIN) {
 		  write_failed:
 			rsyserr(FERROR, errno,
-				"safe_write failed to write %ld bytes to %s [%s]",
-				(long)len, what_fd_is(fd), who_am_i());
+				"safe_write failed to write %ld bytes to %s",
+				(long)len, what_fd_is(fd));
 			exit_cleanup(RERR_STREAMIO);
 		}
 	} else {
@@ -337,8 +335,7 @@ static void safe_write(int fd, const char *buf, size_t len)
 		cnt = select(fd + 1, NULL, &w_fds, NULL, &tv);
 		if (cnt <= 0) {
 			if (cnt < 0 && errno == EBADF) {
-				rsyserr(FERROR, errno, "safe_write select failed on %s [%s]",
-					what_fd_is(fd), who_am_i());
+				rsyserr(FERROR, errno, "safe_write select failed on %s", what_fd_is(fd));
 				exit_cleanup(RERR_FILEIO);
 			}
 			if (io_timeout)
@@ -815,7 +812,7 @@ static char *perform_io(size_t needed, int flags)
 					msgs2stderr = 1;
 					iobuf.out_fd = -2;
 					iobuf.out.len = iobuf.msg.len = iobuf.raw_flushing_ends_before = 0;
-					rsyserr(FERROR_SOCKET, errno, "[%s] write error", who_am_i());
+					rsyserr(FERROR_SOCKET, errno, "write error");
 					drain_multiplex_messages();
 					exit_cleanup(RERR_SOCKETIO);
 				}
@@ -915,7 +912,7 @@ void noop_io_until_death(void)
 {
 	char buf[1024];
 
-	if (!iobuf.in.buf || !iobuf.out.buf || iobuf.in_fd < 0 || iobuf.out_fd < 0 || kluge_around_eof)
+	if (!iobuf.in.buf || !iobuf.out.buf || iobuf.in_fd < 0 || iobuf.out_fd < 0 || kluge_around_eof || msgs2stderr)
 		return;
 
 	kluge_around_eof = 2;
@@ -954,8 +951,17 @@ int send_msg(enum msgcode code, const char *buf, size_t len, int convert)
 	} else
 #endif
 		needed = len + 4 + 3;
-	if (iobuf.msg.len + needed > iobuf.msg.size)
-		perform_io(needed, PIO_NEED_MSGROOM);
+	if (iobuf.msg.len + needed > iobuf.msg.size) {
+		if (!am_receiver)
+			perform_io(needed, PIO_NEED_MSGROOM);
+		else { /* We allow the receiver to increase their iobuf.msg size to avoid a deadlock. */
+			size_t old_size = iobuf.msg.size;
+			restore_iobuf_size(&iobuf.msg);
+			realloc_xbuf(&iobuf.msg, iobuf.msg.size * 2);
+			if (iobuf.msg.pos + iobuf.msg.len > old_size)
+				memcpy(iobuf.msg.buf + old_size, iobuf.msg.buf, iobuf.msg.pos + iobuf.msg.len - old_size);
+		}
+	}
 
 	pos = iobuf.msg.pos + iobuf.msg.len; /* Must be set after any flushing. */
 	if (pos >= iobuf.msg.size)
@@ -1113,8 +1119,7 @@ static void check_for_d_option_error(const char *msg)
 	}
 
 	if (saw_d) {
-		rprintf(FWARNING,
-		    "*** Try using \"--old-d\" if remote rsync is <= 2.6.3 ***\n");
+		rprintf(FWARNING, "*** Try using \"--old-d\" if remote rsync is <= 2.6.3 ***\n");
 	}
 }
 
@@ -1176,7 +1181,7 @@ int read_line(int fd, char *buf, size_t bufsiz, int flags)
 
 #ifdef ICONV_OPTION
 	if (flags & RL_CONVERT && iconv_buf.size < bufsiz)
-		realloc_xbuf(&iconv_buf, bufsiz + 1024);
+		realloc_xbuf(&iconv_buf, ROUND_UP_1024(bufsiz) + 1024);
 #endif
 
   start:
@@ -1982,13 +1987,14 @@ static void sleep_for_bwlimit(int bytes_written)
 	total_written = (sleep_usec - elapsed_usec) * bwlimit / (ONE_SEC/1024);
 }
 
-void io_flush(int flush_it_all)
+void io_flush(int flush_type)
 {
 	if (iobuf.out.len > iobuf.out_empty_len) {
-		if (flush_it_all) /* FULL_FLUSH: flush everything in the output buffers */
+		if (flush_type == FULL_FLUSH)		/* flush everything in the output buffers */
 			perform_io(iobuf.out.size - iobuf.out_empty_len, PIO_NEED_OUTROOM);
-		else /* NORMAL_FLUSH: flush at least 1 byte */
+		else if (flush_type == NORMAL_FLUSH)	/* flush at least 1 byte */
 			perform_io(iobuf.out.size - iobuf.out.len + 1, PIO_NEED_OUTROOM);
+							/* MSG_FLUSH: flush iobuf.msg only */
 	}
 	if (iobuf.msg.len)
 		perform_io(iobuf.msg.size, PIO_NEED_MSGROOM);
@@ -2013,20 +2019,20 @@ void write_varint(int f, int32 x)
 {
 	char b[5];
 	uchar bit;
-	int cnt = 4;
+	int cnt;
 
 	SIVAL(b, 1, x);
 
-	while (cnt > 1 && b[cnt] == 0)
-		cnt--;
+	for (cnt = 4; cnt > 1 && b[cnt] == 0; cnt--) {}
 	bit = ((uchar)1<<(7-cnt+1));
+
 	if (CVAL(b, cnt) >= bit) {
 		cnt++;
 		*b = ~(bit-1);
 	} else if (cnt > 1)
 		*b = b[cnt] | ~(bit*2-1);
 	else
-		*b = b[cnt];
+		*b = b[1];
 
 	write_buf(f, b, cnt);
 }
@@ -2368,7 +2374,7 @@ void start_write_batch(int fd)
 	 * is involved. */
 	write_int(batch_fd, protocol_version);
 	if (protocol_version >= 30)
-		write_byte(batch_fd, compat_flags);
+		write_varint(batch_fd, compat_flags);
 	write_int(batch_fd, checksum_seed);
 
 	if (am_sender)

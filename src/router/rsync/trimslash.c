@@ -2,7 +2,7 @@
  * Simple utility used only by the test harness.
  *
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,10 +26,6 @@ int am_root = 0;
 int am_sender = 1;
 int read_only = 1;
 int list_only = 0;
-int preserve_perms = 0;
-int preserve_executability = 0;
-int preallocate_files = 0;
-int inplace = 0;
 
 int
 main(int argc, char **argv)

@@ -19,9 +19,10 @@ int make_backup(const char *fname, BOOL prefer_rename);
 void write_stream_flags(int fd);
 void read_stream_flags(int fd);
 void check_batch_flags(void);
-void write_batch_shell_file(int argc, char *argv[], int file_arg_cnt);
-int parse_checksum_choice(void);
+void open_batch_files(void);
+void write_batch_shell_file(void);
 int parse_csum_name(const char *name, int len);
+void parse_checksum_choice(int final_call);
 int csum_len_for_type(int cst, BOOL flist_csum);
 int canonical_checksum(int csum_type);
 uint32 get_checksum1(char *buf1, int32 len);
@@ -41,25 +42,19 @@ void cleanup_set(const char *fnametmp, const char *fname, struct file_struct *fi
 		 int fd_r, int fd_w);
 void cleanup_set_pid(pid_t pid);
 char *client_addr(int fd);
-char *client_name(int fd);
-void client_sockaddr(int fd,
-		     struct sockaddr_storage *ss,
-		     socklen_t *ss_len);
-int lookup_name(int fd, const struct sockaddr_storage *ss,
-		socklen_t ss_len,
-		char *name_buf, size_t name_buf_size,
-		char *port_buf, size_t port_buf_size);
-int compare_addrinfo_sockaddr(const struct addrinfo *ai,
-			      const struct sockaddr_storage *ss);
-int check_name(int fd,
-	       const struct sockaddr_storage *ss,
-	       char *name_buf, size_t name_buf_size);
+char *client_name(const char *ipaddr);
+int read_proxy_protocol_header(int fd);
 int start_socket_client(char *host, int remote_argc, char *remote_argv[],
 			int argc, char *argv[]);
 int start_inband_exchange(int f_in, int f_out, const char *user, int argc, char *argv[]);
+void set_env_num(const char *var, long num);
 int start_daemon(int f_in, int f_out);
 int daemon_main(void);
 void set_allow_inc_recurse(void);
+void parse_compress_choice(int final_call);
+struct name_num_item *get_nni_by_name(struct name_num_obj *nno, const char *name, int len);
+struct name_num_item *get_nni_by_num(struct name_num_obj *nno, int num);
+int get_default_nno_list(struct name_num_obj *nno, char *to_buf, int to_buf_len, char dup_markup);
 void setup_protocol(int f_out,int f_in);
 int claim_connection(char *fname, int max_connections);
 enum delret delete_item(char *fbuf, uint16 mode, uint16 flags);
@@ -92,6 +87,7 @@ int link_stat(const char *path, STRUCT_STAT *stp, int follow_dirlinks);
 int change_pathname(struct file_struct *file, const char *dir, int dirlen);
 struct file_struct *make_file(const char *fname, struct file_list *flist,
 			      STRUCT_STAT *stp, int flags, int filter_level);
+OFF_T get_device_size(int fd, const char *fname);
 void unmake_file(struct file_struct *file);
 void send_extra_file_list(int f, int at_least);
 struct file_list *send_file_list(int f, int argc, char *argv[]);
@@ -119,7 +115,7 @@ void check_for_finished_files(int itemizing, enum logcode code, int check_redo);
 void generate_files(int f_out, const char *local_name);
 struct hashtable *hashtable_create(int size, int key64);
 void hashtable_destroy(struct hashtable *tbl);
-void *hashtable_find(struct hashtable *tbl, int64 key, int allocate_if_missing);
+void *hashtable_find(struct hashtable *tbl, int64 key, void *data_when_new);
 uint32_t hashlittle(const void *key, size_t length);
 void init_hard_links(void);
 struct ht_int64_node *idev_find(int64 dev, int64 ino);
@@ -168,7 +164,7 @@ uchar read_byte(int f);
 int read_vstring(int f, char *buf, int bufsize);
 void read_sum_head(int f, struct sum_struct *sum);
 void write_sum_head(int f, struct sum_struct *sum);
-void io_flush(int flush_it_all);
+void io_flush(int flush_type);
 void write_shortint(int f, unsigned short x);
 void write_int(int f, int32 x);
 void write_varint(int f, int32 x);
@@ -189,6 +185,7 @@ int io_end_multiplex_in(int mode);
 int io_end_multiplex_out(int mode);
 void start_write_batch(int fd);
 void stop_write_batch(void);
+void reset_daemon_vars(void);
 char *lp_bind_address(void);
 char *lp_daemon_chroot(void);
 char *lp_daemon_gid(void);
@@ -198,10 +195,12 @@ char *lp_pid_file(void);
 char *lp_socket_options(void);
 int lp_listen_backlog(void);
 int lp_rsync_port(void);
+BOOL lp_proxy_protocol(void);
 char *lp_auth_users(int module_id);
 char *lp_charset(int module_id);
 char *lp_comment(int module_id);
 char *lp_dont_compress(int module_id);
+char *lp_early_exec(int module_id);
 char *lp_exclude(int module_id);
 char *lp_exclude_from(int module_id);
 char *lp_filter(int module_id);
@@ -255,11 +254,11 @@ void rflush(enum logcode code);
 void remember_initial_stats(void);
 int log_format_has(const char *format, char esc);
 void log_item(enum logcode code, struct file_struct *file, int iflags, const char *hlink);
-void maybe_log_item(struct file_struct *file, int iflags, int itemizing,
-		    const char *buf);
+void maybe_log_item(struct file_struct *file, int iflags, int itemizing, const char *buf);
 void log_delete(const char *fname, int mode);
 void log_exit(int code, const char *file, int line);
 pid_t wait_process(pid_t pid, int *status_ptr, int flags);
+int shell_exec(const char *cmd);
 void write_del_stats(int f);
 void read_del_stats(int f);
 int child_main(int argc, char *argv[]);
@@ -275,6 +274,7 @@ void reset_output_levels(void);
 void negate_output_levels(void);
 void usage(enum logcode F);
 void option_error(void);
+char *alt_dest_opt(int type);
 int parse_arguments(int *argc_p, const char ***argv_p);
 void server_options(char **args, int *argc_p);
 char *check_for_hostspec(char *s, char **host_ptr, int *port_ptr);
@@ -284,7 +284,9 @@ int pm_process( char *FileName,
 pid_t piped_child(char **command, int *f_in, int *f_out);
 pid_t local_child(int argc, char **argv, int *f_in, int *f_out,
 		  int (*child_main)(int, char*[]));
+void progress_init(void);
 void set_current_file_index(struct file_struct *file, int ndx);
+void instant_progress(const char *fname);
 void end_progress(OFF_T size);
 void show_progress(OFF_T ofs, OFF_T size);
 int get_tmpname(char *fnametmp, const char *fname, BOOL make_unique);
@@ -293,8 +295,7 @@ int recv_files(int f_in, int f_out, char *local_name);
 void setup_iconv(void);
 int iconvbufs(iconv_t ic, xbuf *in, xbuf *out, int flags);
 void send_protected_args(int fd, char *args[]);
-int read_ndx_and_attrs(int f_in, int f_out, int *iflag_ptr, uchar *type_ptr,
-		       char *buf, int *len_ptr);
+int read_ndx_and_attrs(int f_in, int f_out, int *iflag_ptr, uchar *type_ptr, char *buf, int *len_ptr);
 void free_sums(struct sum_struct *s);
 mode_t dest_mode(mode_t flist_mode, mode_t stat_mode, int dflt_perms,
 		 int exists);
@@ -311,23 +312,21 @@ void successful_send(int ndx);
 void send_files(int f_in, int f_out);
 int try_bind_local(int s, int ai_family, int ai_socktype,
 		   const char *bind_addr);
-int open_socket_out(char *host, int port, const char *bind_addr,
-		    int af_hint);
-int open_socket_out_wrapped(char *host, int port, const char *bind_addr,
-			    int af_hint);
+int open_socket_out(char *host, int port, const char *bind_addr, int af_hint);
+int open_socket_out_wrapped(char *host, int port, const char *bind_addr, int af_hint);
 int is_a_socket(int fd);
 void start_accept_loop(int port, int (*fn)(int, int));
 void set_socket_options(int fd, char *options);
 int do_unlink(const char *fname);
 int do_symlink(const char *lnk, const char *fname);
 ssize_t do_readlink(const char *path, char *buf, size_t bufsiz);
-int do_link(const char *fname1, const char *fname2);
+int do_link(const char *old_path, const char *new_path);
 int do_lchown(const char *path, uid_t owner, gid_t group);
 int do_mknod(const char *pathname, mode_t mode, dev_t dev);
 int do_rmdir(const char *pathname);
 int do_open(const char *pathname, int flags, mode_t mode);
 int do_chmod(const char *path, mode_t mode);
-int do_rename(const char *fname1, const char *fname2);
+int do_rename(const char *old_path, const char *new_path);
 int do_ftruncate(int fd, OFF_T size);
 void trim_trailing_slashes(char *name);
 int do_mkdir(char *fname, mode_t mode);
@@ -336,14 +335,15 @@ int do_stat(const char *fname, STRUCT_STAT *st);
 int do_lstat(const char *fname, STRUCT_STAT *st);
 int do_fstat(int fd, STRUCT_STAT *st);
 OFF_T do_lseek(int fd, OFF_T offset, int whence);
-int do_setattrlist_times(const char *fname, time_t modtime, uint32 mod_nsec);
-int do_utimensat(const char *fname, time_t modtime, uint32 mod_nsec);
-int do_lutimes(const char *fname, time_t modtime, uint32 mod_nsec);
-int do_utimes(const char *fname, time_t modtime, uint32 mod_nsec);
-int do_utime(const char *fname, time_t modtime, UNUSED(uint32 mod_nsec));
+int do_setattrlist_times(const char *fname, STRUCT_STAT *stp);
+int do_utimensat(const char *fname, STRUCT_STAT *stp);
+int do_lutimes(const char *fname, STRUCT_STAT *stp);
+int do_utimes(const char *fname, STRUCT_STAT *stp);
+int do_utime(const char *fname, STRUCT_STAT *stp);
 OFF_T do_fallocate(int fd, OFF_T offset, OFF_T length);
-int do_punch_hole(int fd, UNUSED(OFF_T pos), int len);
+int do_punch_hole(int fd, UNUSED(OFF_T pos), OFF_T len);
 int do_open_nofollow(const char *pathname, int flags);
+void init_compression_level(void);
 void set_compression(const char *fname);
 void send_token(int f, int32 token, struct map_struct *buf, OFF_T offset,
 		int32 n, int32 toklen);
@@ -367,7 +367,7 @@ void set_nonblocking(int fd);
 void set_blocking(int fd);
 int fd_pair(int fd[2]);
 void print_child_argv(const char *prefix, char **cmd);
-int set_modtime(const char *fname, time_t modtime, uint32 mod_nsec, mode_t mode);
+int set_times(const char *fname, STRUCT_STAT *stp);
 int make_path(char *fname, int flags);
 int full_write(int desc, const char *ptr, size_t len);
 int copy_file(const char *source, const char *dest, int ofd, mode_t mode);
@@ -385,8 +385,7 @@ size_t pathjoin(char *dest, size_t destsize, const char *p1, const char *p2);
 size_t stringjoin(char *dest, size_t destsize, ...);
 int count_dir_elements(const char *p);
 int clean_fname(char *name, int flags);
-char *sanitize_path(char *dest, const char *p, const char *rootdir, int depth,
-		    int flags);
+char *sanitize_path(char *dest, const char *p, const char *rootdir, int depth, int flags);
 int change_dir(const char *dir, int set_path_only);
 char *normalize_path(char *path, BOOL force_newbuf, unsigned int *len_ptr);
 char *full_fname(const char *fn);
@@ -394,7 +393,7 @@ char *partial_dir_fname(const char *fname);
 int handle_partial_dir(const char *fname, int create);
 int unsafe_symlink(const char *dest, const char *src);
 char *timestring(time_t t);
-int cmp_time(time_t f1_sec, unsigned long f1_nsec, time_t f2_sec, unsigned long f2_nsec);
+int same_time(time_t f1_sec, unsigned long f1_nsec, time_t f2_sec, unsigned long f2_nsec);
 int _Insure_trap_error(int a1, int a2, int a3, int a4, int a5, int a6);
 const char *find_filename_suffix(const char *fn, int fn_len, int *len_ptr);
 uint32 fuzzy_distance(const char *s1, unsigned len1, const char *s2, unsigned len2);
@@ -405,8 +404,8 @@ int bitbag_check_bit(struct bitbag *bb, int ndx);
 int bitbag_next_bit(struct bitbag *bb, int after);
 void flist_ndx_push(flist_ndx_list *lp, int ndx);
 int flist_ndx_pop(flist_ndx_list *lp);
-void *expand_item_list(item_list *lp, size_t item_size,
-		       const char *desc, int incr);
+void *expand_item_list(item_list *lp, size_t item_size, const char *desc, int incr);
+void force_memzero(void *buf, size_t len);
 int msleep(int t);
 void *_new_array(unsigned long num, unsigned int size, int use_calloc);
 void *_realloc_array(void *ptr, unsigned int size, size_t num);
@@ -423,8 +422,7 @@ int recv_xattr_request(struct file_struct *file, int f_in);
 void receive_xattr(int f, struct file_struct *file);
 void cache_tmp_xattr(struct file_struct *file, stat_x *sxp);
 void uncache_tmp_xattrs(void);
-int set_xattr(const char *fname, const struct file_struct *file,
-	      const char *fnamecmp, stat_x *sxp);
+int set_xattr(const char *fname, const struct file_struct *file, const char *fnamecmp, stat_x *sxp);
 char *get_xattr_acl(const char *fname, int is_access_acl, size_t *len_p);
 int set_xattr_acl(const char *fname, int is_access_acl, const char *buf, size_t buf_len);
 int del_def_xattr_acl(const char *fname);

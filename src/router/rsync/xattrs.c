@@ -3,7 +3,7 @@
  * Written by Jay Fenlason, vaguely based on the ACLs patch.
  *
  * Copyright (C) 2004 Red Hat, Inc.
- * Copyright (C) 2006-2018 Wayne Davison
+ * Copyright (C) 2006-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,8 +44,7 @@ extern int saw_xattr_filter;
 
 #define MAX_FULL_DATUM 32
 
-#define HAS_PREFIX(str, prfx) (*(str) == *(prfx) \
-			    && strncmp(str, prfx, sizeof (prfx) - 1) == 0)
+#define HAS_PREFIX(str, prfx) (*(str) == *(prfx) && strncmp(str, prfx, sizeof (prfx) - 1) == 0)
 
 #define XATTR_ABBREV(x) ((size_t)((x).name - (x).datum) < (x).datum_len)
 
@@ -185,8 +184,7 @@ static ssize_t get_xattr_names(const char *fname)
 /* On entry, the *len_ptr parameter contains the size of the extra space we
  * should allocate when we create a buffer for the data.  On exit, it contains
  * the length of the datum. */
-static char *get_xattr_data(const char *fname, const char *name, size_t *len_ptr,
-			    int no_missing_error)
+static char *get_xattr_data(const char *fname, const char *name, size_t *len_ptr, int no_missing_error)
 {
 	size_t datum_len = sys_lgetxattr(fname, name, NULL, 0);
 	size_t extra_len = *len_ptr;
@@ -215,13 +213,13 @@ static char *get_xattr_data(const char *fname, const char *name, size_t *len_ptr
 		if (len != datum_len) {
 			if (len == (size_t)-1) {
 				rsyserr(FERROR_XFER, errno,
-				    "get_xattr_data: lgetxattr(%s,\"%s\",%ld) failed",
-				    full_fname(fname), name, (long)datum_len);
+					"get_xattr_data: lgetxattr(%s,\"%s\",%ld) failed",
+					full_fname(fname), name, (long)datum_len);
 			} else {
 				rprintf(FERROR_XFER,
-				    "get_xattr_data: lgetxattr(%s,\"%s\",%ld) returned %ld\n",
-				    full_fname(fname), name,
-				    (long)datum_len, (long)len);
+					"get_xattr_data: lgetxattr(%s,\"%s\",%ld) returned %ld\n",
+					full_fname(fname), name,
+					(long)datum_len, (long)len);
 			}
 			free(ptr);
 			return NULL;
@@ -415,7 +413,7 @@ static int find_matching_xattr(const item_list *xalp)
 
 	key = xattr_lookup_hash(xalp);
 
-	node = hashtable_find(rsync_xal_h, key, 0);
+	node = hashtable_find(rsync_xal_h, key, NULL);
 	if (node == NULL)
 		return -1;
 
@@ -478,21 +476,17 @@ static int rsync_xal_store(item_list *xalp)
 	new_list->key = xattr_lookup_hash(&new_list->xa_items);
 
 	if (rsync_xal_h == NULL)
-		rsync_xal_h = hashtable_create(512, 1);
+		rsync_xal_h = hashtable_create(512, HT_KEY64);
 	if (rsync_xal_h == NULL)
 		out_of_memory("rsync_xal_h hashtable_create()");
-
-	node = hashtable_find(rsync_xal_h, new_list->key, 1);
-	if (node == NULL)
-		out_of_memory("rsync_xal_h hashtable_find()");
 
 	new_ref = new0(rsync_xa_list_ref);
 	if (new_ref == NULL)
 		out_of_memory("new0(rsync_xa_list_ref)");
-
 	new_ref->ndx = ndx;
 
-	if (node->data != NULL) {
+	node = hashtable_find(rsync_xal_h, new_list->key, new_ref);
+	if (node->data != (void*)new_ref) {
 		rsync_xa_list_ref *ref = node->data;
 
 		while (ref != NULL) {
@@ -504,8 +498,7 @@ static int rsync_xal_store(item_list *xalp)
 			ref->next = new_ref;
 			break;
 		}
-	} else
-		node->data = new_ref;
+	}
 
 	return ndx;
 }
@@ -719,7 +712,7 @@ int recv_xattr_request(struct file_struct *file, int f_in)
 		num += rel_pos;
 		if (am_sender) {
 			/* The sender-related num values are only in order on the sender.
-			 * We use that order here to scan foward or backward as needed. */
+			 * We use that order here to scan forward or backward as needed. */
 			if (rel_pos < 0) {
 				while (cnt < (int)lst->count && rxa->num > num) {
 					rxa--;
@@ -926,7 +919,7 @@ void uncache_tmp_xattrs(void)
 			if (rsync_xal_h == NULL)
 				continue;
 
-			node = hashtable_find(rsync_xal_h, xa_list_item->key, 0);
+			node = hashtable_find(rsync_xal_h, xa_list_item->key, NULL);
 			if (node == NULL)
 				continue;
 
@@ -1072,8 +1065,7 @@ static int rsync_xal_set(const char *fname, item_list *xalp,
 }
 
 /* Set extended attributes on indicated filename. */
-int set_xattr(const char *fname, const struct file_struct *file,
-	      const char *fnamecmp, stat_x *sxp)
+int set_xattr(const char *fname, const struct file_struct *file, const char *fnamecmp, stat_x *sxp)
 {
 	rsync_xa_list *glst = rsync_xal_l.items;
 	item_list *lst;

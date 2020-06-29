@@ -2,7 +2,7 @@
  * Implement the core of the --chmod option.
  *
  * Copyright (C) 2002 Scott Howard
- * Copyright (C) 2005-2018 Wayne Davison
+ * Copyright (C) 2005-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,7 @@ struct chmod_mode_struct {
 #define STATE_OCTAL_NUM 3
 
 /* Parse a chmod-style argument, and break it down into one or more AND/OR
- * pairs in a linked list.  We return a pointer to new items on succcess
+ * pairs in a linked list.  We return a pointer to new items on success
  * (appending the items to the specified list), or NULL on error. */
 struct chmod_mode_struct *parse_chmod(const char *modestr,
 				      struct chmod_mode_struct **root_mode_ptr)

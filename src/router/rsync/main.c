@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 #if defined CONFIG_LOCALE && defined HAVE_LOCALE_H
 #include <locale.h>
 #endif
+#include <popt.h>
 
 extern int dry_run;
 extern int list_only;
@@ -39,6 +40,7 @@ extern int blocking_io;
 extern int always_checksum;
 extern int remove_source_files;
 extern int output_needs_newline;
+extern int called_from_signal_handler;
 extern int need_messages_from_generator;
 extern int kluge_around_eof;
 extern int got_xfer_error;
@@ -75,20 +77,21 @@ extern pid_t cleanup_child_pid;
 extern size_t bwlimit_writemax;
 extern unsigned int module_dirlen;
 extern BOOL flist_receiving_enabled;
+extern BOOL want_progress_now;
 extern BOOL shutting_down;
 extern int backup_dir_len;
 extern int basis_dir_cnt;
+extern int default_af_hint;
 extern struct stats stats;
 extern char *stdout_format;
 extern char *logfile_format;
 extern char *filesfrom_host;
 extern char *partial_dir;
-extern char *dest_option;
 extern char *rsync_path;
 extern char *shell_cmd;
-extern char *batch_name;
 extern char *password_file;
 extern char *backup_dir;
+extern char *copy_as;
 extern char curr_dir[MAXPATHLEN];
 extern char backup_dir_buf[MAXPATHLEN];
 extern char *basis_dir[MAX_BASIS_DIRS+1];
@@ -104,6 +107,8 @@ int daemon_over_rsh = 0;
 mode_t orig_umask = 0;
 int batch_gen_fd = -1;
 int sender_keeps_checksum = 0;
+int raw_argc, cooked_argc;
+char **raw_argv, **cooked_argv;
 
 /* There's probably never more than at most 2 outstanding child processes,
  * but set it higher, just in case. */
@@ -152,6 +157,27 @@ pid_t wait_process(pid_t pid, int *status_ptr, int flags)
 	}
 
 	return waited_pid;
+}
+
+int shell_exec(const char *cmd)
+{
+	char *shell = getenv("RSYNC_SHELL");
+	int status;
+	pid_t pid;
+
+	if (!shell)
+		return system(cmd);
+
+	if ((pid = fork()) < 0)
+		return -1;
+
+	if (pid == 0) {
+		execlp(shell, shell, "-c", cmd, NULL);
+		_exit(1);
+	}
+
+	int ret = wait_process(pid, &status, 0);
+	return ret < 0 ? -1 : status;
 }
 
 /* Wait for a process to exit, calling io_flush while waiting. */
@@ -208,6 +234,74 @@ void read_del_stats(int f)
 	stats.deleted_files += stats.deleted_symlinks = read_varint(f);
 	stats.deleted_files += stats.deleted_devices = read_varint(f);
 	stats.deleted_files += stats.deleted_specials = read_varint(f);
+}
+
+static void become_copy_as_user()
+{
+	char *gname;
+	uid_t uid;
+	gid_t gid;
+
+	if (!copy_as)
+		return;
+
+	if (DEBUG_GTE(CMD, 2))
+		rprintf(FINFO, "[%s] copy_as=%s\n", who_am_i(), copy_as);
+
+	if ((gname = strchr(copy_as, ':')) != NULL)
+		*gname++ = '\0';
+
+	if (!user_to_uid(copy_as, &uid, True)) {
+		rprintf(FERROR, "Invalid copy-as user: %s\n", copy_as);
+		exit_cleanup(RERR_SYNTAX);
+	}
+
+	if (gname) {
+		if (!group_to_gid(gname, &gid, True)) {
+			rprintf(FERROR, "Invalid copy-as group: %s\n", gname);
+			exit_cleanup(RERR_SYNTAX);
+		}
+	} else {
+		struct passwd *pw;
+		if ((pw = getpwuid(uid)) == NULL) {
+			rsyserr(FERROR, errno, "getpwuid failed");
+			exit_cleanup(RERR_SYNTAX);
+		}
+		gid = pw->pw_gid;
+	}
+
+	if (setgid(gid) < 0) {
+		rsyserr(FERROR, errno, "setgid failed");
+		exit_cleanup(RERR_SYNTAX);
+	}
+#ifdef HAVE_SETGROUPS
+	if (setgroups(1, &gid)) {
+		rsyserr(FERROR, errno, "setgroups failed");
+		exit_cleanup(RERR_SYNTAX);
+	}
+#endif
+#ifdef HAVE_INITGROUPS
+	if (!gname && initgroups(copy_as, gid) < 0) {
+		rsyserr(FERROR, errno, "initgroups failed");
+		exit_cleanup(RERR_SYNTAX);
+	}
+#endif
+
+	if (setuid(uid) < 0
+#ifdef HAVE_SETEUID
+	 || seteuid(uid) < 0
+#endif
+	) {
+		rsyserr(FERROR, errno, "setuid failed");
+		exit_cleanup(RERR_SYNTAX);
+	}
+
+	our_uid = MY_UID();
+	our_gid = MY_GID();
+	am_root = (our_uid == 0);
+
+	if (gname)
+		gname[-1] = ':';
 }
 
 /* This function gets called from all 3 processes.  We want the client side
@@ -432,8 +526,8 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 				if (!*f) {
 					if (in_quote) {
 						rprintf(FERROR,
-						    "Missing trailing-%c in remote-shell command.\n",
-						    in_quote);
+							"Missing trailing-%c in remote-shell command.\n",
+							in_quote);
 						exit_cleanup(RERR_SYNTAX);
 					}
 					f--;
@@ -454,8 +548,13 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 			*t++ = '\0';
 		}
 
-		/* check to see if we've already been given '-l user' in
-		 * the remote-shell command */
+		/* NOTE: must preserve t == start of command name until the end of the args handling! */
+		if ((t = strrchr(cmd, '/')) != NULL)
+			t++;
+		else
+			t = cmd;
+
+		/* Check to see if we've already been given '-l user' in the remote-shell command. */
 		for (i = 0; i < argc-1; i++) {
 			if (!strcmp(args[i], "-l") && args[i+1][0] != '-')
 				dash_l_set = 1;
@@ -473,22 +572,23 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 			args[argc++] = "-l";
 			args[argc++] = user;
 		}
+#ifdef AF_INET
+		if (default_af_hint == AF_INET && strcmp(t, "ssh") == 0)
+			args[argc++] = "-4"; /* we're using ssh so we can add a -4 option */
+#endif
+#ifdef AF_INET6
+		if (default_af_hint == AF_INET6 && strcmp(t, "ssh") == 0)
+			args[argc++] = "-6"; /* we're using ssh so we can add a -6 option */
+#endif
 		args[argc++] = machine;
 #endif
 
 		args[argc++] = rsync_path;
 
-		if (blocking_io < 0) {
-			char *cp;
-			if ((cp = strrchr(cmd, '/')) != NULL)
-				cp++;
-			else
-				cp = cmd;
-			if (strcmp(cp, "rsh") == 0 || strcmp(cp, "remsh") == 0)
-				blocking_io = 1;
-		}
+		if (blocking_io < 0 && (strcmp(t, "rsh") == 0 || strcmp(t, "remsh") == 0))
+			blocking_io = 1;
 
-		server_options(args,&argc);
+		server_options(args, &argc);
 
 		if (argc >= MAX_ARGS - 2)
 			goto arg_overflow;
@@ -592,7 +692,7 @@ static char *get_local_name(struct file_list *flist, char *dest_path)
 
 	/* Treat an empty string as a copy into the current directory. */
 	if (!*dest_path)
-	    dest_path = ".";
+		dest_path = ".";
 
 	if (daemon_filter_list.head) {
 		char *slash = strrchr(dest_path, '/');
@@ -653,8 +753,7 @@ static char *get_local_name(struct file_list *flist, char *dest_path)
 			*cp = '\0';
 
 		if (statret == 0) {
-			rprintf(FERROR,
-			    "ERROR: destination path is not a directory\n");
+			rprintf(FERROR, "ERROR: destination path is not a directory\n");
 			exit_cleanup(RERR_SYNTAX);
 		}
 
@@ -728,21 +827,21 @@ static void check_alt_basis_dirs(void)
 			if (!new)
 				out_of_memory("check_alt_basis_dirs");
 			if (slash && strncmp(bdir, "../", 3) == 0) {
-			    /* We want to remove only one leading "../" prefix for
-			     * the directory we couldn't create in dry-run mode:
-			     * this ensures that any other ".." references get
-			     * evaluated the same as they would for a live copy. */
-			    *slash = '\0';
-			    pathjoin(new, len, curr_dir, bdir + 3);
-			    *slash = '/';
+				/* We want to remove only one leading "../" prefix for
+				 * the directory we couldn't create in dry-run mode:
+				 * this ensures that any other ".." references get
+				 * evaluated the same as they would for a live copy. */
+				*slash = '\0';
+				pathjoin(new, len, curr_dir, bdir + 3);
+				*slash = '/';
 			} else
-			    pathjoin(new, len, curr_dir, bdir);
+				pathjoin(new, len, curr_dir, bdir);
 			basis_dir[j] = bdir = new;
 		}
 		if (do_stat(bdir, &st) < 0)
-			rprintf(FWARNING, "%s arg does not exist: %s\n", dest_option, bdir);
+			rprintf(FWARNING, "%s arg does not exist: %s\n", alt_dest_opt(0), bdir);
 		else if (!S_ISDIR(st.st_mode))
-			rprintf(FWARNING, "%s arg is not a dir: %s\n", dest_option, bdir);
+			rprintf(FWARNING, "%s arg is not a dir: %s\n", alt_dest_opt(0), bdir);
 	}
 }
 
@@ -802,6 +901,8 @@ static void do_server_sender(int f_in, int f_out, int argc, char *argv[])
 		rprintf(FERROR, "ERROR: do_server_sender called without args\n");
 		exit_cleanup(RERR_SYNTAX);
 	}
+
+	become_copy_as_user();
 
 	dir = argv[0];
 	if (!relative_paths) {
@@ -1006,6 +1107,8 @@ static void do_server_recv(int f_in, int f_out, int argc, char *argv[])
 		return;
 	}
 
+	become_copy_as_user();
+
 	if (argc > 0) {
 		char *dir = argv[0];
 		argc--;
@@ -1072,8 +1175,7 @@ static void do_server_recv(int f_in, int f_out, int argc, char *argv[])
 		if (partial_dir && *partial_dir == '/'
 		 && check_filter(elp, FLOG, partial_dir + module_dirlen, 1) < 0) {
 		    options_rejected:
-			rprintf(FERROR,
-				"Your options have been rejected by the server.\n");
+			rprintf(FERROR, "Your options have been rejected by the server.\n");
 			exit_cleanup(RERR_SYNTAX);
 		}
 	}
@@ -1165,6 +1267,9 @@ int client_run(int f_in, int f_out, pid_t pid, int argc, char *argv[])
 
 		if (write_batch && !am_server)
 			start_write_batch(f_out);
+
+		become_copy_as_user();
+
 		flist = send_file_list(f_out, argc, argv);
 		if (DEBUG_GTE(FLIST, 3))
 			rprintf(FINFO,"file list sent\n");
@@ -1197,6 +1302,8 @@ int client_run(int f_in, int f_out, pid_t pid, int argc, char *argv[])
 		else
 			io_start_buffering_out(f_out);
 	}
+
+	become_copy_as_user();
 
 	send_filter_list(read_batch ? -1 : f_out);
 
@@ -1258,7 +1365,7 @@ static int start_client(int argc, char *argv[])
 {
 	char *p, *shell_machine = NULL, *shell_user = NULL;
 	char **remote_argv;
-	int remote_argc;
+	int remote_argc, env_port = rsync_port;
 	int f_in, f_out;
 	int ret;
 	pid_t pid;
@@ -1287,8 +1394,7 @@ static int start_client(int argc, char *argv[])
 				remote_argc--; /* don't count dest */
 				argc = 1;
 			}
-			if (filesfrom_host && *filesfrom_host
-			    && strcmp(filesfrom_host, shell_machine) != 0) {
+			if (filesfrom_host && *filesfrom_host && strcmp(filesfrom_host, shell_machine) != 0) {
 				rprintf(FERROR,
 					"--files-from hostname is not the same as the transfer hostname\n");
 				exit_cleanup(RERR_SYNTAX);
@@ -1310,8 +1416,7 @@ static int start_client(int argc, char *argv[])
 			remote_argc = 1;
 
 			path = check_for_hostspec(p, &shell_machine, &rsync_port);
-			if (path && filesfrom_host && *filesfrom_host
-			    && strcmp(filesfrom_host, shell_machine) != 0) {
+			if (path && filesfrom_host && *filesfrom_host && strcmp(filesfrom_host, shell_machine) != 0) {
 				rprintf(FERROR,
 					"--files-from hostname is not the same as the transfer hostname\n");
 				exit_cleanup(RERR_SYNTAX);
@@ -1324,6 +1429,7 @@ static int start_client(int argc, char *argv[])
 					exit_cleanup(RERR_SYNTAX);
 				}
 				shell_machine = NULL;
+				rsync_port = 0;
 			} else { /* hostspec was found, so dest is remote */
 				argv[argc] = path;
 				if (rsync_port)
@@ -1338,6 +1444,7 @@ static int start_client(int argc, char *argv[])
 		}
 		remote_argv = argv += argc - 1;
 		remote_argc = argc = 1;
+		rsync_port = 0;
 	}
 
 	if (!rsync_port && remote_argc && !**remote_argv) /* Turn an empty arg into a dot dir. */
@@ -1384,6 +1491,11 @@ static int start_client(int argc, char *argv[])
 		}
 	}
 
+	if (rsync_port < 0)
+		rsync_port = RSYNC_PORT;
+	else
+		env_port = rsync_port;
+
 	if (daemon_over_rsh < 0)
 		return start_socket_client(shell_machine, remote_argc, remote_argv, argc, argv);
 
@@ -1414,8 +1526,12 @@ static int start_client(int argc, char *argv[])
 			NS(remote_argv[0]));
 	}
 
-	pid = do_cmd(shell_cmd, shell_machine, shell_user, remote_argv, remote_argc,
-		     &f_in, &f_out);
+#ifdef HAVE_PUTENV
+	if (daemon_over_rsh)
+		set_env_num("RSYNC_PORT", env_port);
+#endif
+
+	pid = do_cmd(shell_cmd, shell_machine, shell_user, remote_argv, remote_argc, &f_in, &f_out);
 
 	/* if we're running an rsync server on the remote host over a
 	 * remote shell command, we need to do the RSYNCD protocol first */
@@ -1437,6 +1553,7 @@ static int start_client(int argc, char *argv[])
 
 static void sigusr1_handler(UNUSED(int val))
 {
+	called_from_signal_handler = 1;
 	exit_cleanup(RERR_SIGNAL1);
 }
 
@@ -1448,6 +1565,12 @@ static void sigusr2_handler(UNUSED(int val))
 	if (got_xfer_error)
 		_exit(RERR_PARTIAL);
 	_exit(0);
+}
+
+static void siginfo_handler(UNUSED(int val))
+{
+	if (!am_server && !INFO_GTE(PROGRESS, 1))
+		want_progress_now = True;
 }
 
 void remember_children(UNUSED(int val))
@@ -1497,9 +1620,7 @@ const char *get_panic_action(void)
 
 	if (cmd_fmt)
 		return cmd_fmt;
-	else
-		return "xterm -display :0 -T Panic -n Panic "
-			"-e gdb /proc/%d/exe %d";
+	return "xterm -display :0 -T Panic -n Panic -e gdb /proc/%d/exe %d";
 }
 
 
@@ -1520,7 +1641,7 @@ static void rsync_panic_handler(UNUSED(int whatsig))
 
 	/* Unless we failed to execute gdb, we allow the process to
 	 * continue.  I'm not sure if that's right. */
-	ret = system(cmd_buf);
+	ret = shell_exec(cmd_buf);
 	if (ret)
 		_exit(ret);
 }
@@ -1530,8 +1651,10 @@ static void rsync_panic_handler(UNUSED(int whatsig))
 int main(int argc,char *argv[])
 {
 	int ret;
-	int orig_argc = argc;
-	char **orig_argv = argv;
+
+	raw_argc = argc;
+	raw_argv = argv;
+
 #ifdef HAVE_SIGACTION
 # ifdef HAVE_SIGPROCMASK
 	sigset_t sigmask;
@@ -1549,6 +1672,12 @@ int main(int argc,char *argv[])
 	SIGACTMASK(SIGABRT, rsync_panic_handler);
 	SIGACTMASK(SIGBUS, rsync_panic_handler);
 #endif
+#ifdef SIGINFO
+	SIGACTMASK(SIGINFO, siginfo_handler);
+#endif
+#ifdef SIGVTALRM
+	SIGACTMASK(SIGVTALRM, siginfo_handler);
+#endif
 
 	starttime = time(NULL);
 	our_uid = MY_UID();
@@ -1556,6 +1685,10 @@ int main(int argc,char *argv[])
 	am_root = our_uid == 0;
 
 	memset(&stats, 0, sizeof(stats));
+
+	/* Even a non-daemon runs needs the default config values to be set, e.g.
+	 * lp_dont_compress() is queried when no --skip-compress option is set. */
+	reset_daemon_vars();
 
 	if (argc < 2) {
 		usage(FERROR);
@@ -1572,11 +1705,12 @@ int main(int argc,char *argv[])
 #endif
 
 	if (!parse_arguments(&argc, (const char ***) &argv)) {
-		/* FIXME: We ought to call the same error-handling
-		 * code here, rather than relying on getopt. */
 		option_error();
 		exit_cleanup(RERR_SYNTAX);
 	}
+	if (write_batch
+	 && poptDupArgv(argc, (const char **)argv, &cooked_argc, (const char ***)&cooked_argv) != 0)
+		out_of_memory("main");
 
 	SIGACTMASK(SIGINT, sig_int);
 	SIGACTMASK(SIGHUP, sig_int);
@@ -1599,21 +1733,7 @@ int main(int argc,char *argv[])
 	change_dir(NULL, CD_NORMAL);
 
 	if ((write_batch || read_batch) && !am_server) {
-		if (write_batch)
-			write_batch_shell_file(orig_argc, orig_argv, argc);
-
-		if (read_batch && strcmp(batch_name, "-") == 0)
-			batch_fd = STDIN_FILENO;
-		else {
-			batch_fd = do_open(batch_name,
-				   write_batch ? O_WRONLY | O_CREAT | O_TRUNC
-				   : O_RDONLY, S_IRUSR | S_IWUSR);
-		}
-		if (batch_fd < 0) {
-			rsyserr(FERROR, errno, "Batch file %s open error",
-				full_fname(batch_name));
-			exit_cleanup(RERR_FILEIO);
-		}
+		open_batch_files(); /* sets batch_fd */
 		if (read_batch)
 			read_stream_flags(batch_fd);
 		else

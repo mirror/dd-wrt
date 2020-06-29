@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1992-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ extern char *bind_address;
 extern char *sockopts;
 extern int default_af_hint;
 extern int connect_timeout;
+extern int pid_file_fd;
 
 #ifdef HAVE_SIGACTION
 static struct sigaction sigact;
@@ -48,8 +49,7 @@ static int sock_exec(const char *prog);
 /* Establish a proxy connection on an open socket to a web proxy by using the
  * CONNECT method.  If proxy_user and proxy_pass are not NULL, they are used to
  * authenticate to the proxy using the "Basic" proxy-authorization protocol. */
-static int establish_proxy_connection(int fd, char *host, int port,
-				      char *proxy_user, char *proxy_pass)
+static int establish_proxy_connection(int fd, char *host, int port, char *proxy_user, char *proxy_pass)
 {
 	char *cp, buffer[1024];
 	char *authhdr, authbuf[1024];
@@ -73,9 +73,8 @@ static int establish_proxy_connection(int fd, char *host, int port,
 		authhdr = "";
 	}
 
-	snprintf(buffer, sizeof buffer, "CONNECT %s:%d HTTP/1.0%s%s\r\n\r\n",
-		 host, port, authhdr, authbuf);
-	len = strlen(buffer);
+	len = snprintf(buffer, sizeof buffer, "CONNECT %s:%d HTTP/1.0%s%s\r\n\r\n", host, port, authhdr, authbuf);
+	assert(len > 0 && len < (int)sizeof buffer);
 	if (write(fd, buffer, len) != len) {
 		rsyserr(FERROR, errno, "failed to write to proxy");
 		return -1;
@@ -182,8 +181,7 @@ static void contimeout_handler(UNUSED(int val))
  * bind_addr: local address to use.  Normally NULL to bind the wildcard address.
  *
  * af_hint: address family, e.g. AF_INET or AF_INET6. */
-int open_socket_out(char *host, int port, const char *bind_addr,
-		    int af_hint)
+int open_socket_out(char *host, int port, const char *bind_addr, int af_hint)
 {
 	int type = SOCK_STREAM;
 	int error, s, j, addr_cnt, *errnos;
@@ -195,7 +193,7 @@ int open_socket_out(char *host, int port, const char *bind_addr,
 	char *proxy_user = NULL, *proxy_pass = NULL;
 
 	/* if we have a RSYNC_PROXY env variable then redirect our
-	 * connetcion via a web proxy at the given address. */
+	 * connection via a web proxy at the given address. */
 	h = getenv("RSYNC_PROXY");
 	proxied = h != NULL && *h != '\0';
 
@@ -294,9 +292,7 @@ int open_socket_out(char *host, int port, const char *bind_addr,
 			continue;
 		}
 
-		if (proxied
-		 && establish_proxy_connection(s, host, port,
-					       proxy_user, proxy_pass) != 0) {
+		if (proxied && establish_proxy_connection(s, host, port, proxy_user, proxy_pass) != 0) {
 			close(s);
 			s = -1;
 			continue;
@@ -340,8 +336,7 @@ int open_socket_out(char *host, int port, const char *bind_addr,
  * This is based on the Samba LIBSMB_PROG feature.
  *
  * bind_addr: local address to use.  Normally NULL to get the stack default. */
-int open_socket_out_wrapped(char *host, int port, const char *bind_addr,
-			    int af_hint)
+int open_socket_out_wrapped(char *host, int port, const char *bind_addr, int af_hint)
 {
 	char *prog = getenv("RSYNC_CONNECT_PROG");
 
@@ -458,9 +453,8 @@ static int *open_socket_in(int type, int port, const char *bind_addr,
 
 #ifdef IPV6_V6ONLY
 		if (resp->ai_family == AF_INET6) {
-			if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,
-				       (char *)&one, sizeof one) < 0
-			    && default_af_hint != AF_INET6) {
+			if (setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&one, sizeof one) < 0
+			 && default_af_hint != AF_INET6) {
 				close(s);
 				continue;
 			}
@@ -561,8 +555,7 @@ void start_accept_loop(int port, int (*fn)(int, int))
 			rsyserr(FERROR, errno, "listen() on socket failed");
 #ifdef INET6
 			if (errno == EADDRINUSE && i > 0) {
-				rprintf(FINFO,
-				    "Try using --ipv4 or --ipv6 to avoid this listen() error.\n");
+				rprintf(FINFO, "Try using --ipv4 or --ipv6 to avoid this listen() error.\n");
 			}
 #endif
 			exit_cleanup(RERR_SOCKETIO);
@@ -597,8 +590,7 @@ void start_accept_loop(int port, int (*fn)(int, int))
 
 		for (i = 0, fd = -1; sp[i] >= 0; i++) {
 			if (FD_ISSET(sp[i], &fds)) {
-				fd = accept(sp[i], (struct sockaddr *)&addr,
-					    &addrlen);
+				fd = accept(sp[i], (struct sockaddr *)&addr, &addrlen);
 				break;
 			}
 		}
@@ -610,6 +602,8 @@ void start_accept_loop(int port, int (*fn)(int, int))
 
 		if ((pid = fork()) == 0) {
 			int ret;
+			if (pid_file_fd >= 0)
+				close(pid_file_fd);
 			for (i = 0; sp[i] >= 0; i++)
 				close(sp[i]);
 			/* Re-open log file in child before possibly giving
@@ -797,8 +791,7 @@ static int socketpair_tcp(int fd[2])
 	set_blocking(fd[1]);
 
 	if (connect_done == 0) {
-		if (connect(fd[1], (struct sockaddr *)&sock, sizeof sock) != 0
-		    && errno != EISCONN)
+		if (connect(fd[1], (struct sockaddr *)&sock, sizeof sock) != 0 && errno != EISCONN)
 			goto failed;
 	}
 
@@ -820,7 +813,7 @@ static int socketpair_tcp(int fd[2])
  * stdout.  This is used to fake a connection to a daemon for testing -- not
  * for the normal case of running SSH.
  *
- * Retruns a socket which is attached to a subprocess running "prog". stdin and
+ * Returns a socket which is attached to a subprocess running "prog". stdin and
  * stdout are attached. stderr is left attached to the original stderr. */
 static int sock_exec(const char *prog)
 {
@@ -847,7 +840,7 @@ static int sock_exec(const char *prog)
 			fprintf(stderr, "Failed to run \"%s\"\n", prog);
 			exit(1);
 		}
-		exit(system(prog));
+		exit(shell_exec(prog));
 	}
 
 	close(fd[1]);

@@ -4,14 +4,17 @@
 prefix=@prefix@
 datarootdir=@datarootdir@
 exec_prefix=@exec_prefix@
-stunnel4=@STUNNEL4@
 bindir=@bindir@
+libdir=@libdir@/rsync
 mandir=@mandir@
 
 LIBS=@LIBS@
 CC=@CC@
+AWK=@AWK@
 CFLAGS=@CFLAGS@
 CPPFLAGS=@CPPFLAGS@
+CXX=@CXX@
+CXXFLAGS=@CXXFLAGS@
 EXEEXT=@EXEEXT@
 LDFLAGS=@LDFLAGS@
 LIBOBJDIR=lib/
@@ -29,9 +32,13 @@ VERSION=@RSYNC_VERSION@
 .SUFFIXES:
 .SUFFIXES: .c .o
 
-GENFILES=configure.sh aclocal.m4 config.h.in proto.h proto.h-tstamp rsync.1 rsyncd.conf.5
+SIMD_x86_64=simd-checksum-x86_64.o
+ASM_x86_64=lib/md5-asm-x86_64.o
+
+GENFILES=configure.sh aclocal.m4 config.h.in proto.h proto.h-tstamp rsync.1 rsync.1.html \
+	 rsync-ssl.1 rsync-ssl.1.html rsyncd.conf.5 rsyncd.conf.5.html
 HEADERS=byteorder.h config.h errcode.h proto.h rsync.h ifuncs.h itypes.h inums.h \
-	lib/pool_alloc.h
+	lib/pool_alloc.h lib/mdigest.h lib/md-defines.h
 LIBOBJ=lib/wildmatch.o lib/compat.o lib/snprintf.o lib/mdfour.o lib/md5.o \
 	lib/permstring.o lib/pool_alloc.o lib/sysacls.o lib/sysxattrs.o @LIBOBJS@
 zlib_OBJS=zlib/deflate.o zlib/inffast.o zlib/inflate.o zlib/inftrees.o \
@@ -40,13 +47,13 @@ OBJS1=flist.o rsync.o generator.o receiver.o cleanup.o sender.o exclude.o \
 	util.o util2.o main.o checksum.o match.o syscall.o log.o backup.o delete.o
 OBJS2=options.o io.o compat.o hlink.o token.o uidlist.o socket.o hashtable.o \
 	fileio.o batch.o clientname.o chmod.o acls.o xattrs.o
-OBJS3=progress.o pipe.o
+OBJS3=progress.o pipe.o @ASM@
 DAEMON_OBJ = params.o loadparm.o clientserver.o access.o connection.o authenticate.o
 popt_OBJS=popt/findme.o  popt/popt.o  popt/poptconfig.o \
 	popt/popthelp.o popt/poptparse.o
-OBJS=$(OBJS1) $(OBJS2) $(OBJS3) $(DAEMON_OBJ) $(LIBOBJ) @BUILD_ZLIB@ @BUILD_POPT@
+OBJS=$(OBJS1) $(OBJS2) $(OBJS3) @SIMD@ $(DAEMON_OBJ) $(LIBOBJ) @BUILD_ZLIB@ @BUILD_POPT@
 
-TLS_OBJ = tls.o syscall.o lib/compat.o lib/snprintf.o lib/permstring.o lib/sysxattrs.o @BUILD_POPT@
+TLS_OBJ = tls.o syscall.o t_stub.o lib/compat.o lib/snprintf.o lib/permstring.o lib/sysxattrs.o @BUILD_POPT@
 
 # Programs we must have to run the test cases
 CHECK_PROGS = rsync$(EXEEXT) tls$(EXEEXT) getgroups$(EXEEXT) getfsdev$(EXEEXT) \
@@ -63,20 +70,19 @@ CHECK_OBJS=tls.o testrun.o getgroups.o getfsdev.o t_stub.o t_unsafe.o trimslash.
 	$(CC) -I. -I$(srcdir) $(CFLAGS) $(CPPFLAGS) -c $< @CC_SHOBJ_FLAG@
 @OBJ_RESTORE@
 
-all: Makefile rsync$(EXEEXT) rsync-ssl stunnel-rsync stunnel-rsyncd.conf @MAKE_MAN@
+.PHONY: all
+all: Makefile rsync$(EXEEXT) stunnel-rsyncd.conf @MAKE_MAN@
 
+.PHONY: install
 install: all
 	-${MKDIR_P} ${DESTDIR}${bindir}
 	${INSTALLCMD} ${INSTALL_STRIP} -m 755 rsync$(EXEEXT) ${DESTDIR}${bindir}
+	${INSTALLCMD} -m 755 rsync-ssl ${DESTDIR}${bindir}
 	-${MKDIR_P} ${DESTDIR}${mandir}/man1
 	-${MKDIR_P} ${DESTDIR}${mandir}/man5
 	if test -f rsync.1; then ${INSTALLMAN} -m 644 rsync.1 ${DESTDIR}${mandir}/man1; fi
+	if test -f rsync-ssl.1; then ${INSTALLMAN} -m 644 rsync-ssl.1 ${DESTDIR}${mandir}/man1; fi
 	if test -f rsyncd.conf.5; then ${INSTALLMAN} -m 644 rsyncd.conf.5 ${DESTDIR}${mandir}/man5; fi
-
-install-ssl-client: rsync-ssl stunnel-rsync
-	-${MKDIR_P} ${DESTDIR}${bindir}
-	${INSTALLCMD} -m 755 rsync-ssl ${DESTDIR}${bindir}
-	${INSTALLCMD} -m 755 stunnel-rsync ${DESTDIR}${bindir}
 
 install-ssl-daemon: stunnel-rsyncd.conf
 	-${MKDIR_P} ${DESTDIR}/etc/stunnel
@@ -95,8 +101,18 @@ rsync$(EXEEXT): $(OBJS)
 
 $(OBJS): $(HEADERS)
 $(CHECK_OBJS): $(HEADERS)
+tls.o xattrs.o: lib/sysxattrs.h
+options.o: latest-year.h help-rsync.h help-rsyncd.h
+exclude.o: default-cvsignore.h
+loadparm.o: default-dont-compress.h
 
 flist.o: rounding.h
+
+default-cvsignore.h default-dont-compress.h: rsync.1.md define-from-md.awk
+	$(AWK) -f $(srcdir)/define-from-md.awk -v hfile=$@ $(srcdir)/rsync.1.md
+
+help-rsync.h help-rsyncd.h: rsync.1.md help-from-md.awk
+	$(AWK) -f $(srcdir)/help-from-md.awk -v hfile=$@ $(srcdir)/rsync.1.md
 
 rounding.h: rounding.c rsync.h proto.h
 	@for r in 0 1 3; do \
@@ -116,6 +132,12 @@ rounding.h: rounding.c rsync.h proto.h
 	fi
 	@rm -f rounding.out
 
+simd-checksum-x86_64.o: simd-checksum-x86_64.cpp
+	@$(srcdir)/cmdormsg disable-simd $(CXX) -I. $(CXXFLAGS) $(CPPFLAGS) -c -o $@ $(srcdir)/simd-checksum-x86_64.cpp
+
+lib/md5-asm-x86_64.o: lib/md5-asm-x86_64.S config.h lib/md-defines.h
+	@$(srcdir)/cmdormsg disable-asm $(CC) -I. @NOEXECSTACK@ -c -o $@ $(srcdir)/lib/md5-asm-x86_64.S
+
 tls$(EXEEXT): $(TLS_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(TLS_OBJ) $(LIBS)
 
@@ -128,7 +150,7 @@ getgroups$(EXEEXT): getgroups.o
 getfsdev$(EXEEXT): getfsdev.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ getfsdev.o $(LIBS)
 
-TRIMSLASH_OBJ = trimslash.o syscall.o lib/compat.o lib/snprintf.o
+TRIMSLASH_OBJ = trimslash.o syscall.o t_stub.o lib/compat.o lib/snprintf.o
 trimslash$(EXEEXT): $(TRIMSLASH_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(TRIMSLASH_OBJ) $(LIBS)
 
@@ -136,13 +158,15 @@ T_UNSAFE_OBJ = t_unsafe.o syscall.o util.o util2.o t_stub.o lib/compat.o lib/snp
 t_unsafe$(EXEEXT): $(T_UNSAFE_OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(T_UNSAFE_OBJ) $(LIBS)
 
+.PHONY: conf
+conf: configure.sh config.h.in
+
+.PHONY: gen
 gen: conf proto.h man
 
+.PHONY: gensend
 gensend: gen
-	rsync -aivzc $(GENFILES) $${SAMBA_HOST-samba.org}:/home/ftp/pub/rsync/generated-files/
-
-conf:
-	cd $(srcdir) && $(MAKE) -f prepare-source.mak conf
+	rsync -aic $(GENFILES) $${SAMBA_HOST-samba.org}:/home/ftp/pub/rsync/generated-files/
 
 aclocal.m4: $(srcdir)/m4/*.m4
 	aclocal -I $(srcdir)/m4
@@ -174,6 +198,7 @@ configure.sh config.h.in: configure.ac aclocal.m4
 	    fi \
 	fi
 
+.PHONY: reconfigure
 reconfigure: configure.sh
 	./config.status --recheck
 	./config.status
@@ -193,52 +218,46 @@ Makefile: Makefile.in config.status configure.sh config.h.in
 	    fi \
 	fi
 
-rsync-ssl: $(srcdir)/rsync-ssl.in Makefile
-	sed 's;\@bindir\@;$(bindir);g' <$(srcdir)/rsync-ssl.in >rsync-ssl
-	@chmod +x rsync-ssl
-
-stunnel-rsync: $(srcdir)/stunnel-rsync.in Makefile
-	sed 's;\@stunnel4\@;$(stunnel4);g' <$(srcdir)/stunnel-rsync.in >stunnel-rsync
-	@chmod +x stunnel-rsync
-
 stunnel-rsyncd.conf: $(srcdir)/stunnel-rsyncd.conf.in Makefile
 	sed 's;\@bindir\@;$(bindir);g' <$(srcdir)/stunnel-rsyncd.conf.in >stunnel-rsyncd.conf
 
+.PHONY: proto
 proto: proto.h-tstamp
 
 proto.h: proto.h-tstamp
 	@if test -f proto.h; then :; else cp -p $(srcdir)/proto.h .; fi
 
 proto.h-tstamp: $(srcdir)/*.c $(srcdir)/lib/compat.c config.h
-	perl $(srcdir)/mkproto.pl $(srcdir)/*.c $(srcdir)/lib/compat.c
+	$(AWK) -f $(srcdir)/mkproto.awk $(srcdir)/*.c $(srcdir)/lib/compat.c
 
-man: rsync.1 rsyncd.conf.5 man-copy
+.PHONY: man
+man: rsync.1 rsync-ssl.1 rsyncd.conf.5
 
-man-copy:
-	@if test -f rsync.1; then :; elif test -f $(srcdir)/rsync.1; then echo 'Copying srcdir rsync.1'; cp -p $(srcdir)/rsync.1 .; else echo "NOTE: rsync.1 cannot be created."; fi
-	@if test -f rsyncd.conf.5; then :; elif test -f $(srcdir)/rsyncd.conf.5; then echo 'Copying srcdir rsyncd.conf.5'; cp -p $(srcdir)/rsyncd.conf.5 .; else echo "NOTE: rsyncd.conf.5 cannot be created."; fi
+rsync.1: rsync.1.md md2man NEWS.md Makefile
+	@$(srcdir)/maybe-make-man $(srcdir) rsync.1.md
 
-rsync.1: rsync.yo
-	yodl2man -o rsync.1 $(srcdir)/rsync.yo
-	-$(srcdir)/tweak_manpage rsync.1
+rsync-ssl.1: rsync-ssl.1.md md2man NEWS.md Makefile
+	@$(srcdir)/maybe-make-man $(srcdir) rsync-ssl.1.md
 
-rsyncd.conf.5: rsyncd.conf.yo
-	yodl2man -o rsyncd.conf.5 $(srcdir)/rsyncd.conf.yo
-	-$(srcdir)/tweak_manpage rsyncd.conf.5
+rsyncd.conf.5: rsyncd.conf.5.md md2man NEWS.md Makefile
+	@$(srcdir)/maybe-make-man $(srcdir) rsyncd.conf.5.md
 
+.PHONY: clean
 clean: cleantests
 	rm -f *~ $(OBJS) $(CHECK_PROGS) $(CHECK_OBJS) $(CHECK_SYMLINKS) \
-		rounding rounding.h *.old
+		rounding rounding.h *.old rsync*.1 rsync*.5 rsync*.html
 
+.PHONY: cleantests
 cleantests:
 	rm -rf ./testtmp*
 
 # We try to delete built files from both the source and build
 # directories, just in case somebody previously configured things in
 # the source directory.
+.PHONY: distclean
 distclean: clean
 	rm -f Makefile config.h config.status
-	rm -f rsync-ssl stunnel-rsync stunnel-rsyncd.conf
+	rm -f stunnel-rsyncd.conf
 	rm -f lib/dummy popt/dummy zlib/dummy
 	rm -f $(srcdir)/Makefile $(srcdir)/config.h $(srcdir)/config.status
 	rm -f $(srcdir)/lib/dummy $(srcdir)/popt/dummy $(srcdir)/zlib/dummy
@@ -251,14 +270,14 @@ distclean: clean
 # this target is really just for my use. It only works on a limited
 # range of machines and is used to produce a list of potentially
 # dead (ie. unused) functions in the code. (tridge)
+.PHONY: finddead
 finddead:
 	nm *.o */*.o |grep 'U ' | awk '{print $$2}' | sort -u > nmused.txt
 	nm *.o */*.o |grep 'T ' | awk '{print $$3}' | sort -u > nmfns.txt
 	comm -13 nmused.txt nmfns.txt
 
 # 'check' is the GNU name, 'test' is the name for everybody else :-)
-.PHONY: check test
-
+.PHONY: test
 test: check
 
 # There seems to be no standard way to specify some variables as
@@ -271,16 +290,19 @@ test: check
 # catch Bash-isms earlier even if we're running on GNU.  Of course, we
 # might lose in the future where POSIX diverges from old sh.
 
+.PHONY: check
 check: all $(CHECK_PROGS) $(CHECK_SYMLINKS)
 	rsync_bin=`pwd`/rsync$(EXEEXT) $(srcdir)/runtests.sh
 
+.PHONY: check29
 check29: all $(CHECK_PROGS) $(CHECK_SYMLINKS)
 	rsync_bin=`pwd`/rsync$(EXEEXT) $(srcdir)/runtests.sh --protocol=29
 
+.PHONY: check30
 check30: all $(CHECK_PROGS) $(CHECK_SYMLINKS)
 	rsync_bin=`pwd`/rsync$(EXEEXT) $(srcdir)/runtests.sh --protocol=30
 
-wildtest.o: wildtest.c lib/wildmatch.c rsync.h config.h
+wildtest.o: wildtest.c t_stub.o lib/wildmatch.c rsync.h config.h
 wildtest$(EXEEXT): wildtest.o lib/compat.o lib/snprintf.o @BUILD_POPT@
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ wildtest.o lib/compat.o lib/snprintf.o @BUILD_POPT@ $(LIBS)
 
@@ -297,6 +319,7 @@ testsuite/xattrs-hlink.test:
 # check a version installed from a binary or some other source tree,
 # if you want.
 
+.PHONY: installcheck
 installcheck: $(CHECK_PROGS) $(CHECK_SYMLINKS)
 	POSIXLY_CORRECT=1 TOOLDIR=`pwd` rsync_bin="$(bindir)/rsync$(EXEEXT)" srcdir="$(srcdir)" $(srcdir)/runtests.sh
 
@@ -307,10 +330,12 @@ installcheck: $(CHECK_PROGS) $(CHECK_SYMLINKS)
 splint:
 	splint +unixlib +gnuextensions -weak rsync.c
 
+.PHONY: doxygen
 doxygen:
 	cd $(srcdir) && rm dox/html/* && doxygen
 
 # for maintainers only
+.PHONY: doxygen-upload
 doxygen-upload:
 	rsync -avzv $(srcdir)/dox/html/ --delete \
 	$${SAMBA_HOST-samba.org}:/home/httpd/html/rsync/doxygen/head/

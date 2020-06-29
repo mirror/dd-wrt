@@ -2,7 +2,7 @@
  * Support rsync daemon authentication.
  *
  * Copyright (C) 1998-2000 Andrew Tridgell
- * Copyright (C) 2002-2018 Wayne Davison
+ * Copyright (C) 2002-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -162,8 +162,8 @@ static const char *check_secret(int module, const char *user, const char *group,
 
 	fclose(fh);
 
-	memset(line, 0, sizeof line);
-	memset(pass2, 0, sizeof pass2);
+	force_memzero(line, sizeof line);
+	force_memzero(pass2, sizeof pass2);
 
 	return err;
 }
@@ -318,8 +318,8 @@ char *auth_server(int f_in, int f_out, int module, const char *host,
 		err = check_secret(module, line, group, challenge, pass);
 	}
 
-	memset(challenge, 0, sizeof challenge);
-	memset(pass, 0, strlen(pass));
+	force_memzero(challenge, sizeof challenge);
+	force_memzero(pass, strlen(pass));
 
 	if (auth_uid_groups) {
 		int j;
@@ -357,12 +357,12 @@ void auth_client(int fd, const char *user, const char *challenge)
 		/* XXX: cyeoh says that getpass is deprecated, because
 		 * it may return a truncated password on some systems,
 		 * and it is not in the LSB.
-                 *
-                 * Andrew Klein says that getpassphrase() is present
-                 * on Solaris and reads up to 256 characters.
-                 *
-                 * OpenBSD has a readpassphrase() that might be more suitable.
-                 */
+		 *
+		 * Andrew Klein says that getpassphrase() is present
+		 * on Solaris and reads up to 256 characters.
+		 *
+		 * OpenBSD has a readpassphrase() that might be more suitable.
+		 */
 		pass = getpass("Password: ");
 	}
 

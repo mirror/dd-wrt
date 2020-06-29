@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,7 @@ extern int preserve_acls;
 extern int preserve_xattrs;
 extern int preserve_links;
 extern int preserve_devices;
+extern int write_devices;
 extern int preserve_specials;
 extern int preserve_hard_links;
 extern int preserve_executability;
@@ -58,6 +59,7 @@ extern int human_readable;
 extern int ignore_existing;
 extern int ignore_non_existing;
 extern int want_xattr_optim;
+extern int modify_window;
 extern int inplace;
 extern int append_mode;
 extern int make_backups;
@@ -76,9 +78,7 @@ extern int fuzzy_basis;
 extern int always_checksum;
 extern int flist_csum_len;
 extern char *partial_dir;
-extern int compare_dest;
-extern int copy_dest;
-extern int link_dest;
+extern int alt_dest_type;
 extern int whole_file;
 extern int list_only;
 extern int read_batch;
@@ -99,7 +99,7 @@ extern struct file_list *cur_flist, *first_flist, *dir_flist;
 extern filter_rule_list filter_list, daemon_filter_list;
 
 int maybe_ATTRS_REPORT = 0;
-int maybe_ATTRS_SET_NANO = 0;
+int maybe_ATTRS_ACCURATE_TIME = 0;
 
 static dev_t dev_zero;
 static int deldelay_size = 0, deldelay_cnt = 0;
@@ -113,7 +113,7 @@ static int need_retouch_dir_perms;
 static const char *solo_file = NULL;
 
 enum nonregtype {
-    TYPE_DIR, TYPE_SPECIAL, TYPE_DEVICE, TYPE_SYMLINK
+	TYPE_DIR, TYPE_SPECIAL, TYPE_DEVICE, TYPE_SYMLINK
 };
 
 /* Forward declarations. */
@@ -171,10 +171,8 @@ static int remember_delete(struct file_struct *file, const char *fname, int flag
 		deldelay_buf[deldelay_cnt++] = '!';
 
 	while (1) {
-		len = snprintf(deldelay_buf + deldelay_cnt,
-			       deldelay_size - deldelay_cnt,
-			       "%x %s%c",
-			       (int)file->mode, fname, '\0');
+		len = snprintf(deldelay_buf + deldelay_cnt, deldelay_size - deldelay_cnt,
+			       "%x %s%c", (int)file->mode, fname, '\0');
 		if ((deldelay_cnt += len) <= deldelay_size)
 			break;
 		deldelay_cnt -= len;
@@ -211,8 +209,7 @@ static int read_delay_line(char *buf, int *flags_p)
 			   deldelay_size - deldelay_cnt);
 		if (len == 0) {
 			if (deldelay_cnt) {
-				rprintf(FERROR,
-				    "ERROR: unexpected EOF in delete-delay file.\n");
+				rprintf(FERROR, "ERROR: unexpected EOF in delete-delay file.\n");
 			}
 			return -1;
 		}
@@ -276,6 +273,7 @@ static void do_delayed_deletions(char *delbuf)
 static void delete_in_dir(char *fbuf, struct file_struct *file, dev_t *fs_dev)
 {
 	static int already_warned = 0;
+	static struct hashtable *dev_tbl;
 	struct file_list *dirlist;
 	char delbuf[MAXPATHLEN];
 	int dlen, i;
@@ -304,10 +302,16 @@ static void delete_in_dir(char *fbuf, struct file_struct *file, dev_t *fs_dev)
 	change_local_filter_dir(fbuf, dlen, F_DEPTH(file));
 
 	if (one_file_system) {
-		if (file->flags & FLAG_TOP_DIR)
+		if (!dev_tbl)
+			dev_tbl = hashtable_create(16, HT_KEY64);
+		if (file->flags & FLAG_TOP_DIR) {
+			hashtable_find(dev_tbl, *fs_dev+1, "");
 			filesystem_dev = *fs_dev;
-		else if (filesystem_dev != *fs_dev)
-			return;
+		} else if (filesystem_dev != *fs_dev) {
+			if (!hashtable_find(dev_tbl, *fs_dev+1, NULL))
+				return;
+			filesystem_dev = *fs_dev; /* it's a prior top-dir dev */
+		}
 	}
 
 	dirlist = get_dirlist(fbuf, dlen, 0);
@@ -383,12 +387,12 @@ static void do_delete_pass(void)
 		rprintf(FINFO, "                    \r");
 }
 
-static inline int time_diff(STRUCT_STAT *stp, struct file_struct *file)
+static inline int mtime_differs(STRUCT_STAT *stp, struct file_struct *file)
 {
 #ifdef ST_MTIME_NSEC
-	return cmp_time(stp->st_mtime, stp->ST_MTIME_NSEC, file->modtime, F_MOD_NSEC(file));
+	return !same_time(stp->st_mtime, stp->ST_MTIME_NSEC, file->modtime, F_MOD_NSEC_or_0(file));
 #else
-	return cmp_time(stp->st_mtime, 0L, file->modtime, 0L);
+	return !same_time(stp->st_mtime, 0, file->modtime, 0);
 #endif
 }
 
@@ -446,7 +450,7 @@ int unchanged_attrs(const char *fname, struct file_struct *file, stat_x *sxp)
 {
 	if (S_ISLNK(file->mode)) {
 #ifdef CAN_SET_SYMLINK_TIMES
-		if (preserve_times & PRESERVE_LINK_TIMES && time_diff(&sxp->st, file))
+		if (preserve_times & PRESERVE_LINK_TIMES && mtime_differs(&sxp->st, file))
 			return 0;
 #endif
 #ifdef CAN_CHMOD_SYMLINK
@@ -466,7 +470,7 @@ int unchanged_attrs(const char *fname, struct file_struct *file, stat_x *sxp)
 			return 0;
 #endif
 	} else {
-		if (preserve_times && time_diff(&sxp->st, file))
+		if (preserve_times && mtime_differs(&sxp->st, file))
 			return 0;
 		if (perms_differ(file, sxp))
 			return 0;
@@ -501,10 +505,13 @@ void itemize(const char *fnamecmp, struct file_struct *file, int ndx, int statre
 			if (iflags & ITEM_LOCAL_CHANGE)
 				iflags |= symlink_timeset_failed_flags;
 		} else if (keep_time
-		 ? time_diff(&sxp->st, file)
+		 ? mtime_differs(&sxp->st, file)
 		 : iflags & (ITEM_TRANSFER|ITEM_LOCAL_CHANGE) && !(iflags & ITEM_MATCHED)
 		  && (!(iflags & ITEM_XNAME_FOLLOWS) || *xname))
 			iflags |= ITEM_REPORT_TIME;
+		if (atimes_ndx && !S_ISDIR(file->mode) && !S_ISLNK(file->mode)
+		 && !same_time(F_ATIME(file), 0, sxp->st.st_atime, 0))
+			iflags |= ITEM_REPORT_ATIME;
 #if !defined HAVE_LCHMOD && !defined HAVE_SETATTRLIST
 		if (S_ISLNK(file->mode)) {
 			;
@@ -518,8 +525,7 @@ void itemize(const char *fnamecmp, struct file_struct *file, int ndx, int statre
 			iflags |= ITEM_REPORT_PERMS;
 		if (uid_ndx && am_root && (uid_t)F_OWNER(file) != sxp->st.st_uid)
 			iflags |= ITEM_REPORT_OWNER;
-		if (gid_ndx && !(file->flags & FLAG_SKIP_GROUP)
-		    && sxp->st.st_gid != (gid_t)F_GROUP(file))
+		if (gid_ndx && !(file->flags & FLAG_SKIP_GROUP) && sxp->st.st_gid != (gid_t)F_GROUP(file))
 			iflags |= ITEM_REPORT_GROUP;
 #ifdef SUPPORT_ACLS
 		if (preserve_acls && !S_ISLNK(file->mode)) {
@@ -593,7 +599,7 @@ int unchanged_file(char *fn, struct file_struct *file, STRUCT_STAT *st)
 	if (ignore_times)
 		return 0;
 
-	return time_diff(st, file) == 0;
+	return !mtime_differs(st, file);
 }
 
 
@@ -638,14 +644,14 @@ static void sum_sizes_sqroot(struct sum_struct *sum, int64 len)
 		if (c < 0 || c >= max_blength)
 			blength = max_blength;
 		else {
-		    blength = 0;
-		    do {
-			    blength |= c;
-			    if (len < (int64)blength * blength)
-				    blength &= ~c;
-			    c >>= 1;
-		    } while (c >= 8);	/* round to multiple of 8 */
-		    blength = MAX(blength, BLOCK_SIZE);
+			blength = 0;
+			do {
+				blength |= c;
+				if (len < (int64)blength * blength)
+					blength &= ~c;
+				c >>= 1;
+			} while (c >= 8);	/* round to multiple of 8 */
+			blength = MAX(blength, BLOCK_SIZE);
 		}
 	}
 
@@ -770,7 +776,7 @@ static struct file_struct *find_fuzzy(struct file_struct *file, struct file_list
 			if (!S_ISREG(fp->mode) || !F_LENGTH(fp) || fp->flags & FLAG_FILE_SENT)
 				continue;
 
-			if (F_LENGTH(fp) == F_LENGTH(file) && cmp_time(fp->modtime, 0L, file->modtime, 0L) == 0) {
+			if (F_LENGTH(fp) == F_LENGTH(file) && same_time(fp->modtime, 0, file->modtime, 0)) {
 				if (DEBUG_GTE(FUZZY, 2))
 					rprintf(FINFO, "fuzzy size/modtime match for %s\n", f_name(fp, NULL));
 				*fnamecmp_type_ptr = FNAMECMP_FUZZY + i;
@@ -876,27 +882,22 @@ static int try_dests_reg(struct file_struct *file, char *fname, int ndx,
 		pathjoin(cmpbuf, MAXPATHLEN, basis_dir[j], fname);
 		if (link_stat(cmpbuf, &sxp->st, 0) < 0 || !S_ISREG(sxp->st.st_mode))
 			continue;
-		switch (match_level) {
-		case 0:
+		if (match_level == 0) {
 			best_match = j;
 			match_level = 1;
-			/* FALL THROUGH */
-		case 1:
-			if (!unchanged_file(cmpbuf, file, &sxp->st))
-				continue;
+		}
+		if (!unchanged_file(cmpbuf, file, &sxp->st))
+			continue;
+		if (match_level == 1) {
 			best_match = j;
 			match_level = 2;
-			/* FALL THROUGH */
-		case 2:
-			if (!unchanged_attrs(cmpbuf, file, sxp)) {
-				free_stat_x(sxp);
-				continue;
-			}
+		}
+		if (unchanged_attrs(cmpbuf, file, sxp)) {
 			best_match = j;
 			match_level = 3;
 			break;
 		}
-		break;
+		free_stat_x(sxp);
 	} while (basis_dir[++j] != NULL);
 
 	if (!match_level)
@@ -909,17 +910,19 @@ static int try_dests_reg(struct file_struct *file, char *fname, int ndx,
 			goto got_nothing_for_ya;
 	}
 
-	if (match_level == 3 && !copy_dest) {
+	if (match_level == 3 && alt_dest_type != COPY_DEST) {
 		if (find_exact_for_existing) {
-			if (link_dest && real_st.st_dev == sxp->st.st_dev && real_st.st_ino == sxp->st.st_ino)
+			if (alt_dest_type == LINK_DEST && real_st.st_dev == sxp->st.st_dev && real_st.st_ino == sxp->st.st_ino)
 				return -1;
 			if (do_unlink(fname) < 0 && errno != ENOENT)
 				goto got_nothing_for_ya;
 		}
 #ifdef SUPPORT_HARD_LINKS
-		if (link_dest) {
+		if (alt_dest_type == LINK_DEST) {
 			if (!hard_link_one(file, fname, cmpbuf, 1))
 				goto try_a_copy;
+			if (atimes_ndx)
+				set_file_attrs(fname, file, sxp, NULL, 0);
 			if (preserve_hard_links && F_IS_HLINKED(file))
 				finish_hard_link(file, fname, ndx, &sxp->st, itemizing, code, j);
 			if (!maybe_ATTRS_REPORT && (INFO_GTE(NAME, 2) || stdout_format_has_i > 1)) {
@@ -1085,7 +1088,7 @@ static int try_dests_non(struct file_struct *file, char *fname, int ndx,
 
 	if (match_level == 3) {
 #ifdef SUPPORT_HARD_LINKS
-		if (link_dest
+		if (alt_dest_type == LINK_DEST
 #ifndef CAN_HARDLINK_SYMLINK
 		 && !S_ISLNK(file->mode)
 #endif
@@ -1106,7 +1109,7 @@ static int try_dests_non(struct file_struct *file, char *fname, int ndx,
 			match_level = 2;
 		if (itemizing && stdout_format_has_i
 		 && (INFO_GTE(NAME, 2) || stdout_format_has_i > 1)) {
-			int chg = compare_dest && type != TYPE_DIR ? 0
+			int chg = alt_dest_type == COMPARE_DEST && type != TYPE_DIR ? 0
 			    : ITEM_LOCAL_CHANGE + (match_level == 3 ? ITEM_XNAME_FOLLOWS : 0);
 			char *lp = match_level == 3 ? "" : NULL;
 			itemize(cmpbuf, file, ndx, 0, sxp, chg + ITEM_MATCHED, 0, lp);
@@ -1124,35 +1127,40 @@ static int try_dests_non(struct file_struct *file, char *fname, int ndx,
 static void list_file_entry(struct file_struct *f)
 {
 	char permbuf[PERMSTRING_SIZE];
-	int64 len;
-	int colwidth = human_readable ? 14 : 11;
+	const char *mtime_str = timestring(f->modtime);
+	int size_width = human_readable ? 14 : 11;
+	int mtime_width = 1 + strlen(mtime_str);
+	int atime_width = atimes_ndx ? mtime_width : 0;
 
 	if (!F_IS_ACTIVE(f)) {
 		/* this can happen if duplicate names were removed */
 		return;
 	}
 
-	permstring(permbuf, f->mode);
-	len = F_LENGTH(f);
-
 	/* TODO: indicate '+' if the entry has an ACL. */
 
-#ifdef SUPPORT_LINKS
-	if (preserve_links && S_ISLNK(f->mode)) {
-		rprintf(FINFO, "%s %*s %s %s -> %s\n",
-			permbuf, colwidth, human_num(len),
-			timestring(f->modtime), f_name(f, NULL),
-			F_SYMLINK(f));
-	} else
-#endif
 	if (missing_args == 2 && f->mode == 0) {
 		rprintf(FINFO, "%-*s %s\n",
-			colwidth + 31, "*missing",
+			10 + 1 + size_width + mtime_width + atime_width, "*missing",
 			f_name(f, NULL));
 	} else {
-		rprintf(FINFO, "%s %*s %s %s\n",
-			permbuf, colwidth, human_num(len),
-			timestring(f->modtime), f_name(f, NULL));
+		const char *atime_str = atimes_ndx && !S_ISDIR(f->mode) ? timestring(F_ATIME(f)) : "";
+		const char *arrow, *lnk;
+
+		permstring(permbuf, f->mode);
+
+#ifdef SUPPORT_LINKS
+		if (preserve_links && S_ISLNK(f->mode)) {
+			arrow = " -> ";
+			lnk = F_SYMLINK(f);
+		} else
+#endif
+			arrow = lnk = "";
+
+		rprintf(FINFO, "%s %*s %s%*s %s%s%s\n",
+			permbuf, size_width, human_num(F_LENGTH(f)),
+			timestring(f->modtime), atime_width, atime_str,
+			f_name(f, NULL), arrow, lnk);
 	}
 }
 
@@ -1215,7 +1223,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 		return;
 	}
 
-	maybe_ATTRS_SET_NANO = always_checksum ? ATTRS_SET_NANO : 0;
+	maybe_ATTRS_ACCURATE_TIME = always_checksum ? ATTRS_ACCURATE_TIME : 0;
 
 	if (skip_dir) {
 		if (is_below(file, skip_dir)) {
@@ -1271,10 +1279,16 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 			 && (*dn != '.' || dn[1]) /* Avoid an issue with --relative and the "." dir. */
 			 && (!prior_dir_file || strcmp(dn, f_name(prior_dir_file, NULL)) != 0)
 			 && flist_find_name(cur_flist, dn, 1) < 0) {
-				rprintf(FERROR,
-					"ABORTING due to invalid path from sender: %s/%s\n",
-					dn, file->basename);
-				exit_cleanup(RERR_PROTOCOL);
+				/* The --delete-missing-args option can actually put invalid entries into
+				 * the file list, so if that option was specified, we'll just complain about
+				 * it and allow it. */
+				if (missing_args == 2 && file->mode == 0)
+					rprintf(FERROR, "WARNING: parent dir is absent in the file list: %s\n", dn);
+				else {
+					rprintf(FERROR, "ABORTING due to invalid path from sender: %s/%s\n",
+						dn, file->basename);
+					exit_cleanup(RERR_PROTOCOL);
+				}
 			}
 			if (relative_paths && !implied_dirs
 			 && do_stat(dn, &sx.st) < 0) {
@@ -1302,21 +1316,6 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 #endif
 		}
 		parent_dirname = dn;
-
-		if (need_fuzzy_dirlist && S_ISREG(file->mode)) {
-			int i;
-			strlcpy(fnamecmpbuf, dn, sizeof fnamecmpbuf);
-			for (i = 0; i < fuzzy_basis; i++) {
-				if (i && pathjoin(fnamecmpbuf, MAXPATHLEN, basis_dir[i-1], dn) >= MAXPATHLEN)
-					continue;
-				fuzzy_dirlist[i] = get_dirlist(fnamecmpbuf, -1, GDL_IGNORE_FILTER_RULES);
-				if (fuzzy_dirlist[i] && fuzzy_dirlist[i]->used == 0) {
-					flist_free(fuzzy_dirlist[i]);
-					fuzzy_dirlist[i] = NULL;
-				}
-			}
-			need_fuzzy_dirlist = 0;
-		}
 
 		statret = link_stat(fname, &sx.st, keep_dirlinks && is_dir);
 		stat_errno = errno;
@@ -1377,7 +1376,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 			added_perms = 0;
 		if (is_dir < 0) {
 			if (!(preserve_times & PRESERVE_DIR_TIMES))
-				return;
+				goto cleanup;
 			/* In inc_recurse mode we want to make sure any missing
 			 * directories get created while we're still processing
 			 * the parent dir (which allows us to touch the parent
@@ -1412,12 +1411,10 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 		if (file->flags & FLAG_DIR_CREATED)
 			statret = -1;
 		if (!preserve_perms) { /* See comment in non-dir code below. */
-			file->mode = dest_mode(file->mode, sx.st.st_mode,
-					       dflt_perms, statret == 0);
+			file->mode = dest_mode(file->mode, sx.st.st_mode, dflt_perms, statret == 0);
 		}
 		if (statret != 0 && basis_dir[0] != NULL) {
-			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx,
-					      itemizing, code);
+			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx, itemizing, code);
 			if (j == -2) {
 				itemizing = 0;
 				code = FNONE;
@@ -1439,8 +1436,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 					"recv_generator: mkdir %s failed",
 					full_fname(fname));
 			  skipping_dir_contents:
-				rprintf(FERROR,
-				    "*** Skipping any contents from this failed directory ***\n");
+				rprintf(FERROR, "*** Skipping any contents from this failed directory ***\n");
 				skip_dir = file;
 				file->flags |= FLAG_MISSING_DIR;
 				goto cleanup;
@@ -1452,7 +1448,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 			copy_xattrs(fnamecmpbuf, fname);
 #endif
 		if (set_file_attrs(fname, file, real_ret ? NULL : &real_sx, NULL, 0)
-		    && INFO_GTE(NAME, 1) && code != FNONE && f_out != -1)
+		 && INFO_GTE(NAME, 1) && code != FNONE && f_out != -1)
 			rprintf(code, "%s/\n", fname);
 
 		/* We need to ensure that the dirs in the transfer have both
@@ -1495,8 +1491,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 	 * mode based on the local permissions and some heuristics. */
 	if (!preserve_perms) {
 		int exists = statret == 0 && !S_ISDIR(sx.st.st_mode);
-		file->mode = dest_mode(file->mode, sx.st.st_mode, dflt_perms,
-				       exists);
+		file->mode = dest_mode(file->mode, sx.st.st_mode, dflt_perms, exists);
 	}
 
 #ifdef SUPPORT_HARD_LINKS
@@ -1519,7 +1514,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 					"ignoring unsafe symlink \"%s\" -> \"%s\"\n",
 					fname, sl);
 			}
-			return;
+			goto cleanup;
 		}
 		if (statret == 0) {
 			char lnk[MAXPATHLEN];
@@ -1541,15 +1536,14 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 				goto cleanup;
 			}
 		} else if (basis_dir[0] != NULL) {
-			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx,
-					      itemizing, code);
+			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx, itemizing, code);
 			if (j == -2) {
 #ifndef CAN_HARDLINK_SYMLINK
-				if (link_dest) {
+				if (alt_dest_type == LINK_DEST) {
 					/* Resort to --copy-dest behavior. */
 				} else
 #endif
-				if (!copy_dest)
+				if (alt_dest_type != COPY_DEST)
 					goto cleanup;
 				itemizing = 0;
 				code = FNONE;
@@ -1617,15 +1611,14 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 				goto cleanup;
 			}
 		} else if (basis_dir[0] != NULL) {
-			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx,
-					      itemizing, code);
+			int j = try_dests_non(file, fname, ndx, fnamecmpbuf, &sx, itemizing, code);
 			if (j == -2) {
 #ifndef CAN_HARDLINK_SPECIAL
-				if (link_dest) {
+				if (alt_dest_type == LINK_DEST) {
 					/* Resort to --copy-dest behavior. */
 				} else
 #endif
-				if (!copy_dest)
+				if (alt_dest_type != COPY_DEST)
 					goto cleanup;
 				itemizing = 0;
 				code = FNONE;
@@ -1681,7 +1674,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 		goto cleanup;
 	}
 
-	if (update_only > 0 && statret == 0 && time_diff(&sx.st, file) > 0) {
+	if (update_only > 0 && statret == 0 && file->modtime - sx.st.st_mtime <= modify_window) {
 		if (INFO_GTE(SKIP, 1))
 			rprintf(FINFO, "%s is newer\n", fname);
 #ifdef SUPPORT_HARD_LINKS
@@ -1693,16 +1686,15 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 
 	fnamecmp_type = FNAMECMP_FNAME;
 
-	if (statret == 0 && !S_ISREG(sx.st.st_mode)) {
+	if (statret == 0 && !(S_ISREG(sx.st.st_mode) || (write_devices && IS_DEVICE(sx.st.st_mode)))) {
 		if (delete_item(fname, sx.st.st_mode, del_opts | DEL_FOR_FILE) != 0)
 			goto cleanup;
 		statret = -1;
 		stat_errno = ENOENT;
 	}
 
-	if (basis_dir[0] != NULL && (statret != 0 || !copy_dest)) {
-		int j = try_dests_reg(file, fname, ndx, fnamecmpbuf, &sx,
-				      statret == 0, itemizing, code);
+	if (basis_dir[0] != NULL && (statret != 0 || alt_dest_type != COPY_DEST)) {
+		int j = try_dests_reg(file, fname, ndx, fnamecmpbuf, &sx, statret == 0, itemizing, code);
 		if (j == -2) {
 			if (remove_source_files == 1)
 				goto return_with_success;
@@ -1720,14 +1712,30 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 	real_ret = statret;
 
 	if (partial_dir && (partialptr = partial_dir_fname(fname)) != NULL
-	    && link_stat(partialptr, &partial_st, 0) == 0
-	    && S_ISREG(partial_st.st_mode)) {
+	 && link_stat(partialptr, &partial_st, 0) == 0
+	 && S_ISREG(partial_st.st_mode)) {
 		if (statret != 0)
 			goto prepare_to_open;
 	} else
 		partialptr = NULL;
 
 	if (statret != 0 && fuzzy_basis) {
+		if (need_fuzzy_dirlist && S_ISREG(file->mode)) {
+			const char *dn = file->dirname ? file->dirname : ".";
+			int i;
+			strlcpy(fnamecmpbuf, dn, sizeof fnamecmpbuf);
+			for (i = 0; i < fuzzy_basis; i++) {
+				if (i && pathjoin(fnamecmpbuf, MAXPATHLEN, basis_dir[i-1], dn) >= MAXPATHLEN)
+					continue;
+				fuzzy_dirlist[i] = get_dirlist(fnamecmpbuf, -1, GDL_IGNORE_FILTER_RULES | GDL_PERHAPS_DIR);
+				if (fuzzy_dirlist[i] && fuzzy_dirlist[i]->used == 0) {
+					flist_free(fuzzy_dirlist[i]);
+					fuzzy_dirlist[i] = NULL;
+				}
+			}
+			need_fuzzy_dirlist = 0;
+		}
+
 		/* Sets fnamecmp_type to FNAMECMP_FUZZY or above. */
 		fuzzy_file = find_fuzzy(file, fuzzy_dirlist, &fnamecmp_type);
 		if (fuzzy_file) {
@@ -1765,7 +1773,7 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 			do_unlink(partialptr);
 			handle_partial_dir(partialptr, PDIR_DELETE);
 		}
-		set_file_attrs(fname, file, &sx, NULL, maybe_ATTRS_REPORT | maybe_ATTRS_SET_NANO);
+		set_file_attrs(fname, file, &sx, NULL, maybe_ATTRS_REPORT | maybe_ATTRS_ACCURATE_TIME);
 		if (itemizing)
 			itemize(fnamecmp, file, ndx, statret, &sx, 0, 0, NULL);
 #ifdef SUPPORT_HARD_LINKS
@@ -1912,8 +1920,8 @@ static void recv_generator(char *fname, struct file_struct *file, int ndx,
 	} else {
 		if (generate_and_send_sums(fd, sx.st.st_size, f_out, f_copy) < 0) {
 			rprintf(FWARNING,
-			    "WARNING: file is too large for checksum sending: %s\n",
-			    fnamecmp);
+				"WARNING: file is too large for checksum sending: %s\n",
+				fnamecmp);
 			write_sum_head(f_out, NULL);
 		}
 		close(fd);
@@ -2068,8 +2076,13 @@ static void touch_up_dirs(struct file_list *flist, int ndx)
 			do_chmod(fname, file->mode);
 		if (need_retouch_dir_times) {
 			STRUCT_STAT st;
-			if (link_stat(fname, &st, 0) == 0 && time_diff(&st, file))
-				set_modtime(fname, file->modtime, F_MOD_NSEC(file), file->mode);
+			if (link_stat(fname, &st, 0) == 0 && mtime_differs(&st, file)) {
+				st.st_mtime = file->modtime;
+#ifdef ST_MTIME_NSEC
+				st.ST_MTIME_NSEC = F_MOD_NSEC_or_0(file);
+#endif
+				set_times(fname, &st);
+			}
 		}
 		if (counter >= loopchk_limit) {
 			if (allowed_lull)
