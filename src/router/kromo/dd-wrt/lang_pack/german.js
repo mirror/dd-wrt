@@ -1227,6 +1227,7 @@ management.srbds="SRBDS Entsch&auml;rfen";
 management.l1tf="L1TF Entsch&auml;rfen";
 management.nospec_store_bypass_disable="Speculative Store Bypass Entsch&auml;rfen";
 management.tsx_async_abort="TSX Async Abort Entsch&auml;rfen";
+management.nopti="Seitentabelle Isolieren";
 
 //help container
 
