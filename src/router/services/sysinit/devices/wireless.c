@@ -376,12 +376,12 @@ static void detect_wireless_devices(int mask)
 		insmod("rtw88_pci");
 		insmod("rtw88_8822b");
 		insmod("rtw88_8822c");
-		insmod("rtw88_8822d");
+		insmod("rtw88_8723d");
 		wificnt += detectchange("rtw88_8822be");
 		wificnt += detectchange("rtw88_8822ce");
 		wificnt += detectchange("rtw88_8723de");
 		if (!wificnt) {
-			rmmod("rtw88_8822d");
+			rmmod("rtw88_8723d");
 			rmmod("rtw88_8822c");
 			rmmod("rtw88_8822b");
 			rmmod("rtw88_pci");
@@ -400,6 +400,7 @@ static void detect_wireless_devices(int mask)
 		wificnt += detect("mt7615e");
 		if (!wificnt) {
 			rmmod("mt7615_common");
+			rmmod("mt7615-common");
 		}
 		total += wificnt;
 		wificnt = 0;
@@ -427,6 +428,7 @@ static void detect_wireless_devices(int mask)
 		total += wificnt;
 		if (!total) {
 			rmmod("mt76-usb");
+			rmmod("mt76_usb");
 			rmmod("mt76");
 		}
 
