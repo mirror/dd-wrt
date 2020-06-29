@@ -3,7 +3,7 @@
  * functions, so that module test harnesses can run standalone.
  *
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,9 +28,11 @@ int protect_args = 0;
 int module_id = -1;
 int relative_paths = 0;
 int module_dirlen = 0;
-int preserve_acls = 0;
 int preserve_times = 0;
 int preserve_xattrs = 0;
+int preserve_perms = 0;
+int preserve_executability = 0;
+int open_noatime = 0;
 char *partial_dir;
 char *module_dir;
 filter_rule_list daemon_filter_list;
@@ -101,4 +103,9 @@ filter_rule_list daemon_filter_list;
  int csum_len_for_type(int cst, int flg)
 {
 	return cst || !flg ? 16 : 1;
+}
+
+ int canonical_checksum(int cst)
+{
+	return cst ? 0 : 0;
 }

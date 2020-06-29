@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# Copyright (C) 2005 by Wayne Davison <wayned@samba.org>
+# Copyright (C) 2005-2020 Wayne Davison
 
 # This program is distributable under the terms of the GNU GPL (see
 # COPYING).
@@ -40,7 +40,7 @@ case "$RSYNC" in
     T=.T
     ;;
 *)
-    if $RSYNC --version | grep ", symtimes" >/dev/null; then
+    if $RSYNC --version | grep "[, ] symtimes" >/dev/null; then
 	T=.t
     else
 	T=.T

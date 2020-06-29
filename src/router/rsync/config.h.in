@@ -61,6 +61,9 @@
 /* Define to 1 if you have the <arpa/nameser.h> header file. */
 #undef HAVE_ARPA_NAMESER_H
 
+/* Define to 1 to enable ASM optimizations */
+#undef HAVE_ASM
+
 /* Define to 1 if you have the `asprintf' function. */
 #undef HAVE_ASPRINTF
 
@@ -75,6 +78,9 @@
 
 /* Define to 1 if vsprintf has a C99-compatible return value */
 #undef HAVE_C99_VSNPRINTF
+
+/* Define to 1 if you have the `chflags' function. */
+#undef HAVE_CHFLAGS
 
 /* Define to 1 if you have the `chmod' function. */
 #undef HAVE_CHMOD
@@ -134,6 +140,9 @@
 
 /* Define to 1 if you have the "getaddrinfo" function and required types. */
 #undef HAVE_GETADDRINFO
+
+/* Define to 1 if you have the `getattrlist' function. */
+#undef HAVE_GETATTRLIST
 
 /* Define to 1 if you have the `getcwd' function. */
 #undef HAVE_GETCWD
@@ -266,6 +275,9 @@
 /* Define to 1 if you have the `lutimes' function. */
 #undef HAVE_LUTIMES
 
+/* Define to 1 if you have the <lz4.h> header file. */
+#undef HAVE_LZ4_H
+
 /* Define to 1 if you have the `mallinfo' function. */
 #undef HAVE_MALLINFO
 
@@ -296,6 +308,9 @@
 /* Define to 1 if you have the `mtrace' function. */
 #undef HAVE_MTRACE
 
+/* Define to 1 if you have the `nanosleep' function. */
+#undef HAVE_NANOSLEEP
+
 /* Define to 1 if you have the <ndir.h> header file, and it defines `DIR'. */
 #undef HAVE_NDIR_H
 
@@ -316,6 +331,12 @@
 
 /* Define to 1 if you have the `open64' function. */
 #undef HAVE_OPEN64
+
+/* Define to 1 if you have the <openssl/md4.h> header file. */
+#undef HAVE_OPENSSL_MD4_H
+
+/* Define to 1 if you have the <openssl/md5.h> header file. */
+#undef HAVE_OPENSSL_MD5_H
 
 /* true if you have Mac OS X ACLs */
 #undef HAVE_OSX_ACLS
@@ -376,6 +397,9 @@
 
 /* Define to 1 if you have the `sigprocmask' function. */
 #undef HAVE_SIGPROCMASK
+
+/* Define to 1 to enable SIMD optimizations */
+#undef HAVE_SIMD
 
 /* Define to 1 if the system has the type `size_t'. */
 #undef HAVE_SIZE_T
@@ -574,8 +598,14 @@
 /* Define to 1 if you have the `waitpid' function. */
 #undef HAVE_WAITPID
 
+/* Define to 1 if you have the <xxhash.h> header file. */
+#undef HAVE_XXHASH_H
+
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
+
+/* Define to 1 if you have the <zstd.h> header file. */
+#undef HAVE_ZSTD_H
 
 /* Define to 1 if you have the `_acl' function. */
 #undef HAVE__ACL
@@ -595,7 +625,7 @@
 /* Define as const if the declaration of iconv() needs const. */
 #undef ICONV_CONST
 
-/* Define if you want the --iconv option. Specifing a value will set the
+/* Define if you want the --iconv option. Specifying a value will set the
    default iconv setting (a NULL means no --iconv processing by default). */
 #undef ICONV_OPTION
 
@@ -676,6 +706,9 @@
 /* Define to 1 if "signed char" is a valid type */
 #undef SIGNED_CHAR_OK
 
+/* The size of `char*', as computed by sizeof. */
+#undef SIZEOF_CHARP
+
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
@@ -726,14 +759,29 @@
 /* Define to 1 to add support for ACLs */
 #undef SUPPORT_ACLS
 
+/* Undefine if you do not want LZ4 compression. By default this is defined. */
+#undef SUPPORT_LZ4
+
 /* Define to 1 to add support for extended attributes */
 #undef SUPPORT_XATTRS
+
+/* Undefine if you do not want xxhash checksums. By default this is defined.
+   */
+#undef SUPPORT_XXHASH
+
+/* Undefine if you do not want zstd compression. By default this is defined.
+   */
+#undef SUPPORT_ZSTD
 
 /* Define to 1 if you can safely include both <sys/time.h> and <time.h>. */
 #undef TIME_WITH_SYS_TIME
 
 /* Define to 1 if you want rsync to make use of iconv_open() */
 #undef USE_ICONV_OPEN
+
+/* Undefine if you do not want to use openssl crypto library. By default this
+   is defined. */
+#undef USE_OPENSSL
 
 /* String to pass to iconv() for the UTF-8 charset. */
 #undef UTF8_CHARSET

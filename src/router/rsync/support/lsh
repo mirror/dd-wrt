@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # This script can be used as a "remote shell" command that is only
 # capable of pretending to connect to "localhost".  This is useful
 # for testing or for running a local copy where the sender and the
@@ -26,7 +26,9 @@ my $host = shift;
 if ($host =~ s/^([^@]+)\@//) {
     $login_name = $1;
 }
-if ($host ne 'localhost') {
+if ($host eq 'lh') {
+    $no_chdir = 1;
+} elsif ($host ne 'localhost') {
     die "lsh: unable to connect to host $host\n";
 }
 
@@ -77,5 +79,8 @@ sub usage
 {
     die <<EOT;
 Usage: lsh [-l user] [--sudo] [--no-cd] localhost COMMAND [...]
+
+Note that if you pass hostname "lh" instead of "localhost" that
+the --no-cd option is implied.
 EOT
 }

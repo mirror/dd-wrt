@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998 Andrew Tridgell
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2004-2018 Wayne Davison
+ * Copyright (C) 2004-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,12 +26,12 @@
 #define ENODATA EAGAIN
 #endif
 
-/* We want all reads to be aligned on 1K boundries. */
-#define ALIGN_BOUNDRY 1024
+/* We want all reads to be aligned on 1K boundaries. */
+#define ALIGN_BOUNDARY 1024
 /* How far past the boundary is an offset? */
-#define ALIGNED_OVERSHOOT(oft) ((oft) & (ALIGN_BOUNDRY-1))
+#define ALIGNED_OVERSHOOT(oft) ((oft) & (ALIGN_BOUNDARY-1))
 /* Round up a length to the next boundary */
-#define ALIGNED_LENGTH(len) ((((len) - 1) | (ALIGN_BOUNDRY-1)) + 1)
+#define ALIGNED_LENGTH(len) ((((len) - 1) | (ALIGN_BOUNDARY-1)) + 1)
 
 extern int sparse_files;
 
@@ -43,6 +43,8 @@ static OFF_T sparse_past_write = 0;
 int sparse_end(int f, OFF_T size)
 {
 	int ret;
+
+	sparse_past_write = 0;
 
 	if (!sparse_seek)
 		return 0;
@@ -322,7 +324,9 @@ int unmap_file(struct map_struct *map)
 		map->p = NULL;
 	}
 	ret = map->status;
-	memset(map, 0, sizeof map[0]);
+#if 0 /* I don't think we really need this. */
+	force_memzero(map, sizeof map[0]);
+#endif
 	free(map);
 
 	return ret;

@@ -3,7 +3,7 @@
  *
  * Copyright (C) 1998 Andrew Tridgell
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2004-2018 Wayne Davison
+ * Copyright (C) 2004-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ static char number_separator;
 
 #ifndef HAVE_STRPBRK
 /**
- * Find the first ocurrence in @p s of any character in @p accept.
+ * Find the first occurrence in @p s of any character in @p accept.
  *
  * Derived from glibc
  **/

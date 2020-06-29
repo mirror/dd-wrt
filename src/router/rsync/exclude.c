@@ -4,7 +4,7 @@
  * Copyright (C) 1996-2001 Andrew Tridgell <tridge@samba.org>
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
  */
 
 #include "rsync.h"
+#include "default-cvsignore.h"
 
 extern int am_server;
 extern int am_sender;
@@ -1051,16 +1052,6 @@ static filter_rule *parse_rule_tok(const char **rulestr_ptr,
 	return rule;
 }
 
-static char default_cvsignore[] =
-	/* These default ignored items come from the CVS manual. */
-	"RCS SCCS CVS CVS.adm RCSLOG cvslog.* tags TAGS"
-	" .make.state .nse_depinfo *~ #* .#* ,* _$* *$"
-	" *.old *.bak *.BAK *.orig *.rej .del-*"
-	" *.a *.olb *.o *.obj *.so *.exe"
-	" *.Z *.elc *.ln core"
-	/* The rest we added to suit ourself. */
-	" .svn/ .git/ .hg/ .bzr/";
-
 static void get_cvs_excludes(uint32 rflags)
 {
 	static int initialized = 0;
@@ -1070,7 +1061,7 @@ static void get_cvs_excludes(uint32 rflags)
 		return;
 	initialized = 1;
 
-	parse_filter_str(&cvs_filter_list, default_cvsignore,
+	parse_filter_str(&cvs_filter_list, DEFAULT_CVSIGNORE,
 			 rule_template(rflags | (protocol_version >= 30 ? FILTRULE_PERISHABLE : 0)),
 			 0);
 
@@ -1286,6 +1277,8 @@ char *get_rule_prefix(filter_rule *rule, const char *pat, int for_xfer,
 	}
 	if (rule->rflags & FILTRULE_EXCLUDE_SELF)
 		*op++ = 'e';
+	if (rule->rflags & FILTRULE_XATTR)
+		*op++ = 'x';
 	if (rule->rflags & FILTRULE_SENDER_SIDE
 	    && (!for_xfer || protocol_version >= 29))
 		*op++ = 's';
@@ -1404,8 +1397,7 @@ void recv_filter_list(int f_in)
 	char line[BIGPATHBUFLEN];
 	int xflags = protocol_version >= 29 ? 0 : XFLG_OLD_PREFIXES;
 	int receiver_wants_list = prune_empty_dirs
-	    || (delete_mode
-	     && (!delete_excluded || protocol_version >= 29));
+	    || (delete_mode && (!delete_excluded || protocol_version >= 29));
 	unsigned int len;
 
 	if (!local_server && (am_sender || receiver_wants_list)) {

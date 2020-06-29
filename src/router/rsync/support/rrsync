@@ -1,8 +1,8 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 # Name: /usr/local/bin/rrsync (should also have a symlink in /usr/bin)
 # Purpose: Restricts rsync to subdirectory declared in .ssh/authorized_keys
 # Author: Joe Smith <js-cgi@inwap.com> 30-Sep-2004
-# Modified by: Wayne Davison <wayned@samba.org>
+# Modified by: Wayne Davison <wayne@opencoder.net>
 use strict;
 
 use Socket;
@@ -62,8 +62,8 @@ die "$0 reading from write-only server not allowed\n" if $only eq 'w' && $am_sen
 # To disable a short-named option, add its letter to this string:
 our $short_disabled = 's';
 
-our $short_no_arg = 'ACDEHIJKLORSWXbcdgklmnoprstuvxyz'; # DO NOT REMOVE ANY
-our $short_with_num = 'B'; # DO NOT REMOVE ANY
+our $short_no_arg = 'ACDEHIJKLORSUWXbcdgklmnopqrstuvxyz'; # DO NOT REMOVE ANY
+our $short_with_num = '@B'; # DO NOT REMOVE ANY
 
 # To disable a long-named option, change its value to a -1.  The values mean:
 # 0 = the option has no arg; 1 = the arg doesn't need any checking; 2 = only
@@ -73,8 +73,10 @@ our %long_opt = (
   'backup-dir' => 2,
   'block-size' => 1,
   'bwlimit' => 1,
+  'checksum-choice' => 1,
   'checksum-seed' => 1,
   'compare-dest' => 2,
+  'compress-choice' => 1,
   'compress-level' => 1,
   'copy-dest' => 2,
   'copy-unsafe-links' => 0,
@@ -107,7 +109,7 @@ our %long_opt = (
   'link-dest' => 2,
   'links' => 0,
   'list-only' => 0,
-  'log-file' => 3,
+  'log-file' => $only eq 'r' ? -1 : 3,
   'log-format' => 1,
   'max-delete' => 1,
   'max-size' => 1,
@@ -119,8 +121,10 @@ our %long_opt = (
   'no-relative' => 0,
   'no-specials' => 0,
   'numeric-ids' => 0,
+  'old-compress' => 0,
   'one-file-system' => 0,
   'only-write-batch' => 1,
+  'open-noatime' => 0,
   'owner' => 0,
   'partial' => 0,
   'partial-dir' => 2,
@@ -130,7 +134,7 @@ our %long_opt = (
   'remove-sent-files' => $only eq 'r' ? -1 : 0,
   'remove-source-files' => $only eq 'r' ? -1 : 0,
   'safe-links' => 0,
-  'sender' => 0,
+  'sender' => $only eq 'w' ? -1 : 0,
   'server' => 0,
   'size-only' => 0,
   'skip-compress' => 1,
@@ -143,6 +147,7 @@ our %long_opt = (
   'times' => 0,
   'use-qsort' => 0,
   'usermap' => 1,
+  'write-devices' => -1,
 );
 
 ### END of options data produced by the cull_options script. ###
@@ -207,12 +212,15 @@ while ($command =~ /((?:[^\s\\]+|\\.[^\s\\]*)+)/g) {
       s{//+}{/}g;
       s{^/}{};
       s{^$}{.};
-      die "$0: do not use .. in any path!\n" if m{(^|/)\\?\.\\?\.(\\?/|$)};
     }
     push(@args, bsd_glob($_, GLOB_LIMIT|GLOB_NOCHECK|GLOB_BRACE|GLOB_QUOTE));
   }
 }
 die "$0: invalid rsync-command syntax or options\n" if $in_options;
+
+if ($subdir ne '/') {
+    die "$0: do not use .. in any path!\n" if grep m{(^|/)\.\.(/|$)}, @args;
+}
 
 @args = ( '.' ) if !@args;
 
@@ -227,7 +235,7 @@ if ($write_log) {
 }
 
 # Note: This assumes that the rsync protocol will not be maliciously hijacked.
-exec(RSYNC, @opts, @args) or die "exec(rsync @opts @args) failed: $? $!";
+exec(RSYNC, @opts, '--', @args) or die "exec(rsync @opts -- @args) failed: $? $!";
 
 sub check_arg
 {
