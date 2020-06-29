@@ -1337,7 +1337,7 @@ sqlite_iterate_recovery(int (*cb)(struct cld_client *clnt), struct cld_client *c
 		cmsg->cm_u.cm_clntinfo.cc_name.cn_len = sqlite3_column_bytes(stmt, 0);
 		if (sqlite3_column_bytes(stmt, 1) > 0) {
 			memcpy(&cmsg->cm_u.cm_clntinfo.cc_princhash.cp_data,
-				sqlite3_column_blob(stmt, 1), NFS4_OPAQUE_LIMIT);
+				sqlite3_column_blob(stmt, 1), SHA256_DIGEST_SIZE);
 			cmsg->cm_u.cm_clntinfo.cc_princhash.cp_len = sqlite3_column_bytes(stmt, 1);
 		}
 #else

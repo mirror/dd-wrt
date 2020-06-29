@@ -493,8 +493,8 @@ gssd_get_clnt(struct topdir *tdi, const char *name)
 	clp->wd = inotify_add_watch(inotify_fd, clp->relpath, IN_CREATE | IN_DELETE);
 	if (clp->wd < 0) {
 		if (errno != ENOENT)
-			printerr(0, "ERROR: inotify_add_watch failed for %s: %s\n",
-			 	clp->relpath, strerror(errno));
+			printerr(0, "ERROR: %s: inotify_add_watch failed for %s: %s\n",
+			 	__FUNCTION__, clp->relpath, strerror(errno));
 		goto out;
 	}
 
@@ -523,8 +523,9 @@ gssd_scan_clnt(struct clnt_info *clp)
 
 	clntfd = openat(pipefs_fd, clp->relpath, O_RDONLY);
 	if (clntfd < 0) {
-		printerr(0, "ERROR: can't openat %s: %s\n",
-			 clp->relpath, strerror(errno));
+		if (errno != ENOENT)
+			printerr(0, "ERROR: %s: can't openat %s: %s\n",
+			 	__FUNCTION__, clp->relpath, strerror(errno));
 		return -1;
 	}
 
@@ -588,8 +589,8 @@ gssd_get_topdir(const char *name)
 
 	tdi->wd = inotify_add_watch(inotify_fd, name, IN_CREATE);
 	if (tdi->wd < 0) {
-		printerr(0, "ERROR: inotify_add_watch failed for top dir %s: %s\n",
-			 tdi->name, strerror(errno));
+		printerr(0, "ERROR: %s: inotify_add_watch failed for top dir %s: %s\n",
+			 __FUNCTION__, tdi->name, strerror(errno));
 		free(tdi);
 		return NULL;
 	}
@@ -616,8 +617,9 @@ gssd_scan_topdir(const char *name)
 
 	dfd = openat(pipefs_fd, tdi->name, O_RDONLY);
 	if (dfd < 0) {
-		printerr(0, "ERROR: can't openat %s: %s\n",
-			 tdi->name, strerror(errno));
+		if (errno != ENOENT)
+			printerr(0, "ERROR: %s: can't openat %s: %s\n",
+			 	__FUNCTION__, tdi->name, strerror(errno));
 		return;
 	}
 

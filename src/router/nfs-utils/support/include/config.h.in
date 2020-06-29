@@ -17,6 +17,9 @@
 /* Enable LDAP Support */
 #undef ENABLE_LDAP
 
+/* Enable LDAP SASL support */
+#undef ENABLE_LDAP_SASL
+
 /* Define to the type of elements in the array set by `getgroups'. Usually
    this is either `int' or `gid_t'. */
 #undef GETGROUPS_T
@@ -122,6 +125,24 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define to 1 if you have the <gssapi/gssapi_generic.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_GENERIC_H
+
+/* Define to 1 if you have the <gssapi/gssapi.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_H
+
+/* Define to 1 if you have the <gssapi/gssapi_krb5.h> header file. */
+#undef HAVE_GSSAPI_GSSAPI_KRB5_H
+
+/* Define to 1 if you have the <gssapi.h> header file. */
+#undef HAVE_GSSAPI_H
+
+/* Define to 1 if you have the <gsssasl.h> header file. */
+#undef HAVE_GSSSASL_H
+
+/* Has gss_krb5_ccache_name function */
+#undef HAVE_GSS_KRB5_CCACHE_NAME
+
 /* Define this if the Kerberos GSS library supports
    gss_krb5_free_lucid_sec_context */
 #undef HAVE_GSS_KRB5_FREE_LUCID_SEC_CONTEXT
@@ -159,6 +180,12 @@
 /* Define this if the function krb5_get_init_creds_opt_set_addressless is
    available */
 #undef HAVE_KRB5_GET_INIT_CREDS_OPT_SET_ADDRESSLESS
+
+/* Define to 1 if you have the <krb5.h> header file. */
+#undef HAVE_KRB5_H
+
+/* Has ldap_sasl_interactive_bind_s function */
+#undef HAVE_LDAP_SASL_INTERACTIVE_BIND_S
 
 /* Define to 1 if you have the <libgen.h> header file. */
 #undef HAVE_LIBGEN_H
@@ -242,6 +269,12 @@
 
 /* Define to 1 if you have the `rmdir' function. */
 #undef HAVE_RMDIR
+
+/* Define to 1 if you have the <sasl.h> header file. */
+#undef HAVE_SASL_H
+
+/* Define to 1 if you have the <sasl/sasl.h> header file. */
+#undef HAVE_SASL_SASL_H
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H

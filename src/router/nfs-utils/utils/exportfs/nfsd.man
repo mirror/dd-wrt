@@ -13,14 +13,8 @@ nfsd \- special filesystem for controlling Linux NFS server
 The
 .B nfsd
 filesystem is a special filesystem which provides access to the Linux
-NFS server.  The filesystem consists of a single directory which
-contains a number of files.  These files are actually gateways into
-the NFS server.  Writing to them can affect the server.  Reading from
-them can provide information about the server.
-.P
-This file system is only available in Linux 2.6 and later series
-kernels (and in the later parts of the 2.5 development series leading
-up to 2.6).  This man page does not apply to 2.4 and earlier.
+NFS server.  Writing to files in this filesystem can affect the server.
+Reading from them can provide information about the server.
 .P
 As well as this filesystem, there are a collection of files in the
 .B procfs
@@ -38,13 +32,10 @@ filesystem mounted at
 .B /proc/fs/nfsd
 or
 .BR /proc/fs/nfs .
-If it is not mounted, they will fall-back on 2.4 style functionality.
-This involves accessing the NFS server via a systemcall.  This
-systemcall is scheduled to be removed after the 2.6 kernel series.
 .SH DETAILS
-The three files in the
+Files in the
 .B nfsd
-filesystem are:
+filesystem include:
 .TP
 .B exports
 This file contains a list of filesystems that are currently exported
@@ -90,6 +81,16 @@ for that path as exported to the given client.  The filehandle's length
 will be at most the number of bytes given.
 
 The filehandle will be represented in hex with a leading '\ex'.
+
+.TP
+.B clients/
+This directory contains a subdirectory for each NFSv4 client.  Each file
+under that subdirectory gives some details about the client in YAML
+format.  In addition, writing "expire\\n" to the
+.B ctl
+file will force the server to immediately revoke all state held by that
+client.
+
 .PP
 The directory
 .B /proc/net/rpc
@@ -190,6 +191,16 @@ Decimal numbers can be read from or written to these files.  Each
 number represents a bit-pattern where bits that are set cause certain
 classes of tracing to be enabled.  Consult the kernel header files to
 find out what number correspond to what tracing.
+
+.SH NOTES
+This file system is only available in Linux 2.6 and later series
+kernels (and in the later parts of the 2.5 development series leading
+up to 2.6).  This man page does not apply to 2.4 and earlier.
+.P
+Previously the nfsctl systemcall was used for communication between nfsd
+and user utilities.  That systemcall was removed in kernel version 3.1.
+Older nfs-utils versions were able to fall back to nfsctl if necessary;
+that was removed from nfs-utils 1.3.5.
 
 .SH SEE ALSO
 .BR nfsd (8),

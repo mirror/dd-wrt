@@ -72,6 +72,18 @@ static ssize_t cache_write(int fd, const char *buf, size_t len)
 	return nfsd_path_write(fd, buf, len);
 }
 
+static bool path_lookup_error(int err)
+{
+	switch (err) {
+	case ELOOP:
+	case ENAMETOOLONG:
+	case ENOENT:
+	case ENOTDIR:
+		return 1;
+	}
+	return 0;
+}
+
 /*
  * Support routines for text-based upcalls.
  * Fields are separated by spaces.
@@ -352,7 +364,7 @@ static int uuid_by_path(char *path, int type, size_t uuidlen, char *uuid)
 	const char *val;
 	int rc;
 
-	rc = statfs64(path, &st);
+	rc = nfsd_path_statfs64(path, &st);
 
 	if (type == 0 && rc == 0) {
 		const unsigned long *bad;
@@ -430,10 +442,70 @@ static inline int count_slashes(char *p)
 	return cnt;
 }
 
+#if defined(HAVE_STRUCT_FILE_HANDLE)
+static int check_same_path_by_handle(const char *child, const char *parent)
+{
+	struct {
+		struct file_handle fh;
+		unsigned char handle[128];
+	} fchild, fparent;
+	int mnt_child, mnt_parent;
+
+	fchild.fh.handle_bytes = 128;
+	fparent.fh.handle_bytes = 128;
+
+	/* This process should have the CAP_DAC_READ_SEARCH capability */
+	if (nfsd_name_to_handle_at(AT_FDCWD, child, &fchild.fh, &mnt_child, 0) < 0)
+		return -1;
+	if (nfsd_name_to_handle_at(AT_FDCWD, parent, &fparent.fh, &mnt_parent, 0) < 0) {
+		/* If the child resolved, but the parent did not, they differ */
+		if (path_lookup_error(errno))
+			return 0;
+		/* Otherwise, we just don't know */
+		return -1;
+	}
+
+	if (mnt_child != mnt_parent ||
+	    fchild.fh.handle_bytes != fparent.fh.handle_bytes ||
+	    fchild.fh.handle_type != fparent.fh.handle_type ||
+	    memcmp(fchild.handle, fparent.handle,
+		   fchild.fh.handle_bytes) != 0)
+		return 0;
+
+	return 1;
+}
+#else
+static int check_same_path_by_handle(const char *child, const char *parent)
+{
+	errno = ENOSYS;
+	return -1;
+}
+#endif
+
+static int check_same_path_by_inode(const char *child, const char *parent)
+{
+	struct stat sc, sp;
+
+	/* This is nearly good enough.  However if a directory is
+	 * bind-mounted in two places and both are exported, it
+	 * could give a false positive
+	 */
+	if (nfsd_path_lstat(child, &sc) != 0)
+		return 0;
+	if (nfsd_path_lstat(parent, &sp) != 0)
+		return 0;
+	if (sc.st_dev != sp.st_dev)
+		return 0;
+	if (sc.st_ino != sp.st_ino)
+		return 0;
+
+	return 1;
+}
+
 static int same_path(char *child, char *parent, int len)
 {
 	static char p[PATH_MAX];
-	struct stat sc, sp;
+	int err;
 
 	if (len <= 0)
 		len = strlen(child);
@@ -446,48 +518,11 @@ static int same_path(char *child, char *parent, int len)
 	if (count_slashes(p) != count_slashes(parent))
 		return 0;
 
-#if defined(HAVE_NAME_TO_HANDLE_AT) && defined(HAVE_STRUCT_FILE_HANDLE)
-	struct {
-		struct file_handle fh;
-		unsigned char handle[128];
-	} fchild, fparent;
-	int mnt_child, mnt_parent;
-
-	fchild.fh.handle_bytes = 128;
-	fparent.fh.handle_bytes = 128;
-	if (name_to_handle_at(AT_FDCWD, p, &fchild.fh, &mnt_child, 0) != 0) {
-		if (errno == ENOSYS)
-			goto fallback;
-		return 0;
-	}
-	if (name_to_handle_at(AT_FDCWD, parent, &fparent.fh, &mnt_parent, 0) != 0)
-		return 0;
-
-	if (mnt_child != mnt_parent ||
-	    fchild.fh.handle_bytes != fparent.fh.handle_bytes ||
-	    fchild.fh.handle_type != fparent.fh.handle_type ||
-	    memcmp(fchild.handle, fparent.handle,
-		   fchild.fh.handle_bytes) != 0)
-		return 0;
-
-	return 1;
-fallback:
-#endif
-
-	/* This is nearly good enough.  However if a directory is
-	 * bind-mounted in two places and both are exported, it
-	 * could give a false positive
-	 */
-	if (nfsd_path_lstat(p, &sc) != 0)
-		return 0;
-	if (nfsd_path_lstat(parent, &sp) != 0)
-		return 0;
-	if (sc.st_dev != sp.st_dev)
-		return 0;
-	if (sc.st_ino != sp.st_ino)
-		return 0;
-
-	return 1;
+	/* Try to use filehandle approach before falling back to stat() */
+	err = check_same_path_by_handle(p, parent);
+	if (err != -1)
+		return err;
+	return check_same_path_by_inode(p, parent);
 }
 
 static int is_subdirectory(char *child, char *parent)
@@ -624,55 +659,66 @@ static int parse_fsid(int fsidtype, int fsidlen, char *fsid,
 	return 0;
 }
 
-static bool match_fsid(struct parsed_fsid *parsed, nfs_export *exp, char *path)
+static int match_fsid(struct parsed_fsid *parsed, nfs_export *exp, char *path)
 {
 	struct stat stb;
 	int type;
 	char u[16];
 
 	if (nfsd_path_stat(path, &stb) != 0)
-		return false;
+		goto path_error;
 	if (!S_ISDIR(stb.st_mode) && !S_ISREG(stb.st_mode))
-		return false;
+		goto nomatch;
 
 	switch (parsed->fsidtype) {
 	case FSID_DEV:
 	case FSID_MAJOR_MINOR:
 	case FSID_ENCODE_DEV:
 		if (stb.st_ino != parsed->inode)
-			return false;
+			goto nomatch;
 		if (parsed->major != major(stb.st_dev) ||
 		    parsed->minor != minor(stb.st_dev))
-			return false;
-		return true;
+			goto nomatch;
+		goto match;
 	case FSID_NUM:
 		if (((exp->m_export.e_flags & NFSEXP_FSID) == 0 ||
 		     exp->m_export.e_fsid != parsed->fsidnum))
-			return false;
-		return true;
+			goto nomatch;
+		goto match;
 	case FSID_UUID4_INUM:
 	case FSID_UUID16_INUM:
 		if (stb.st_ino != parsed->inode)
-			return false;
+			goto nomatch;
 		goto check_uuid;
 	case FSID_UUID8:
 	case FSID_UUID16:
-		if (!is_mountpoint(path))
-			return false;
+		errno = 0;
+		if (!is_mountpoint(path)) {
+			if (!errno)
+				goto nomatch;
+			goto path_error;
+		}
 	check_uuid:
 		if (exp->m_export.e_uuid) {
 			get_uuid(exp->m_export.e_uuid, parsed->uuidlen, u);
 			if (memcmp(u, parsed->fhuuid, parsed->uuidlen) == 0)
-				return true;
+				goto match;
 		}
 		else
 			for (type = 0;
 			     uuid_by_path(path, type, parsed->uuidlen, u);
 			     type++)
 				if (memcmp(u, parsed->fhuuid, parsed->uuidlen) == 0)
-					return true;
+					goto match;
 	}
-	return false;
+nomatch:
+	return 0;
+match:
+	return 1;
+path_error:
+	if (path_lookup_error(errno))
+		goto nomatch;
+	return -1;
 }
 
 static struct addrinfo *lookup_client_addr(char *dom)
@@ -780,8 +826,12 @@ static void nfsd_fh(int f)
 					   exp->m_export.e_path))
 				dev_missing ++;
 
-			if (!match_fsid(&parsed, exp, path))
+			switch(match_fsid(&parsed, exp, path)) {
+			case 0:
 				continue;
+			case -1:
+				goto out;
+			}
 			if (is_ipaddr_client(dom)
 					&& !ipaddr_client_matches(exp, ai))
 				continue;
@@ -808,8 +858,14 @@ static void nfsd_fh(int f)
 			}
 		}
 	}
-	if (found && 
-	    found->e_mountpoint &&
+
+	if (!found) {
+		/* The missing dev could be what we want, so just be
+		 * quiet rather than returning stale yet
+		 */
+		if (dev_missing)
+			goto out;
+	} else if (found->e_mountpoint &&
 	    !is_mountpoint(found->e_mountpoint[0]?
 			   found->e_mountpoint:
 			   found->e_path)) {
@@ -820,17 +876,12 @@ static void nfsd_fh(int f)
 		 */
 		/* FIXME we need to make sure we re-visit this later */
 		goto out;
+	} else if (cache_export_ent(buf, sizeof(buf), dom, found, found_path) < 0) {
+		if (!path_lookup_error(errno))
+			goto out;
+		/* The kernel is saying the path is unexportable */
+		found = NULL;
 	}
-	if (!found && dev_missing) {
-		/* The missing dev could be what we want, so just be
-		 * quite rather than returning stale yet
-		 */
-		goto out;
-	}
-
-	if (found)
-		if (cache_export_ent(buf, sizeof(buf), dom, found, found_path) < 0)
-			found = 0;
 
 	bp = buf; blen = sizeof(buf);
 	qword_add(&bp, &blen, dom);
@@ -901,12 +952,13 @@ static void write_secinfo(char **bp, int *blen, struct exportent *ep, int flag_m
 
 }
 
-static int dump_to_cache(int f, char *buf, int buflen, char *domain,
+static int dump_to_cache(int f, char *buf, int blen, char *domain,
 			 char *path, struct exportent *exp, int ttl)
 {
 	char *bp = buf;
-	int blen = buflen;
 	time_t now = time(0);
+	size_t buflen;
+	ssize_t err;
 
 	if (ttl <= 1)
 		ttl = DEFAULT_TTL;
@@ -939,8 +991,18 @@ static int dump_to_cache(int f, char *buf, int buflen, char *domain,
 	} else
 		qword_adduint(&bp, &blen, now + ttl);
 	qword_addeol(&bp, &blen);
-	if (blen <= 0) return -1;
-	if (cache_write(f, buf, bp - buf) != bp - buf) return -1;
+	if (blen <= 0) {
+		errno = ENOBUFS;
+		return -1;
+	}
+	buflen = bp - buf;
+	err = cache_write(f, buf, buflen);
+	if (err < 0)
+		return err;
+	if ((size_t)err != buflen) {
+		errno = ENOSPC;
+		return -1;
+	}
 	return 0;
 }
 

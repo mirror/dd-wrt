@@ -42,7 +42,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
-#include <libintl.h>
 #include <locale.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -54,6 +53,7 @@
 #include "rpc_util.h"
 #include "rpc_scan.h"
 #include "proto.h"
+#include "nls.h"
 
 #ifndef _
 #define _(String) gettext (String)

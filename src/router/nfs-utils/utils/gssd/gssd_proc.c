@@ -750,7 +750,7 @@ handle_gssd_upcall(struct clnt_upcall_info *info)
 	char			*upcall_str;
 	char			*pbuf = info->lbuf;
 
-	printerr(2, "%s: '%s' (%s)\n", __func__, info->lbuf, clp->relpath);
+	printerr(2, "\n%s: '%s' (%s)\n", __func__, info->lbuf, clp->relpath);
 
 	upcall_str = strdup(info->lbuf);
 	if (upcall_str == NULL) {

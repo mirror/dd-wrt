@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 dnl
-AC_INIT([linux nfs-utils],[2.4.3],[linux-nfs@vger.kernel.org],[nfs-utils])
+AC_INIT([linux nfs-utils],[2.5.1],[linux-nfs@vger.kernel.org],[nfs-utils])
 AC_CANONICAL_BUILD([])
 AC_CANONICAL_HOST([])
 AC_CONFIG_MACRO_DIR(aclocal)
@@ -453,12 +453,33 @@ if test "x$enable_ldap" != "xno" ; then
                               [have_ldap="yes"],[have_ldap="no"])],
                 [have_ldap="no"])
         if test "x$have_ldap" = "xyes" ; then
-                AC_DEFINE([ENABLE_LDAP], 1, [Enable LDAP Support])
+                dnl check for sasl funcs
+                AC_CHECK_HEADERS(sasl.h sasl/sasl.h)
+                AC_CHECK_HEADERS(gsssasl.h)
+                AC_CHECK_TYPE(sasl_interact_t,[have_sasl_interact_t="yes"],,[
+                        #ifdef HAVE_SASL_SASL_H
+                        #include <sasl/sasl.h>
+                        #elif defined(HAVE_SASL_H)
+                        #include <sasl.h>
+                        #endif])
+		AC_CHECK_LIB([ldap],[ldap_sasl_interactive_bind_s],[have_ldap_sasl_interactive_bind_s="yes"])
+		AC_CHECK_LIB([gssapi_krb5],[gss_krb5_ccache_name],[have_gss_krb5_ccache_name="yes"])
+		if test "x$have_sasl_interact_t" = "xyes" -a \
+			"x$have_ldap_sasl_interactive_bind_s" = "xyes" -a \
+			"x$have_gss_krb5_ccache_name" = "xyes"; then
+			AC_DEFINE([HAVE_LDAP_SASL_INTERACTIVE_BIND_S],[1],[Has ldap_sasl_interactive_bind_s function])
+			AC_DEFINE([HAVE_GSS_KRB5_CCACHE_NAME],[1],[Has gss_krb5_ccache_name function])
+			AC_CHECK_HEADERS(gssapi/gssapi.h gssapi/gssapi_generic.h gssapi/gssapi_krb5.h gssapi.h krb5.h)
+			AC_DEFINE([ENABLE_LDAP_SASL],1,[Enable LDAP SASL support])
+			have_ldap_sasl="yes"
+		fi
+		AC_DEFINE([ENABLE_LDAP], 1, [Enable LDAP Support])
         elif test "x$enable_ldap$have_ldap" = "xyesno" ; then
                 AC_MSG_ERROR(LDAP support not found!)
         fi
 fi
 AM_CONDITIONAL(ENABLE_LDAP, test "x$have_ldap" = "xyes")
+AM_CONDITIONAL(ENABLE_LDAP_SASL, test "x$have_ldap_sasl" = "xyes")
 
 dnl Should we build gums mapping library?
 AC_ARG_ENABLE([gums],
@@ -510,7 +531,12 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_HEADER_TIME
 AC_STRUCT_TM
-AC_CHECK_TYPES([struct file_handle])
+AC_CHECK_TYPES([struct file_handle], [], [], [[
+		#define _GNU_SOURCE
+		#include <sys/types.h>
+		#include <sys/stat.h>
+		#include <fcntl.h>
+	]])
 
 dnl *************************************************************
 dnl Check for functions
@@ -668,8 +694,9 @@ AC_CONFIG_FILES([
 	tools/rpcgen/Makefile
 	tools/mountstats/Makefile
 	tools/nfs-iostat/Makefile
+	tools/nfsdclnts/Makefile
 	tools/nfsconf/Makefile
-	tools/clddb-tool/Makefile
+	tools/nfsdclddb/Makefile
 	utils/Makefile
 	utils/blkmapd/Makefile
 	utils/nfsdcld/Makefile
