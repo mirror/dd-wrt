@@ -1015,7 +1015,7 @@ static int al_nand_remove(struct platform_device *pdev)
 
 	dev_dbg(&nand_dat->pdev->dev, "%s: nand driver removed\n", __func__);
 
-	nand_release(&nand_dat->mtd);
+	nand_release(mtd_to_nand(&nand_dat->mtd));
 
 	kfree(nand_dat->mtd.name);
 	kfree(nand_dat);
