@@ -2303,7 +2303,7 @@ mtk_nand_remove(struct platform_device *pdev)
 	struct mtd_info *mtd = host->mtd;
 	struct nand_chip *nand_chip = &host->nand_chip;
 
-	nand_release(mtd);
+	nand_release(nand_chip);
 	kfree(host);
 	nand_disable_clock();
 
