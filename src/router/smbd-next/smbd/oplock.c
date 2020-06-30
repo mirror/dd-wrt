@@ -641,14 +641,6 @@ static struct oplock_info *same_client_has_lease(struct ksmbd_inode *ci,
 	return m_opinfo;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
-static int bit_wait(void *word)
-{
-	schedule();
-	return 0;
-}
-#endif
-
 static void wait_for_break_ack(struct oplock_info *opinfo)
 {
 	int rc = 0;
@@ -670,23 +662,9 @@ static void wait_for_break_ack(struct oplock_info *opinfo)
 static int oplock_break_pending(struct oplock_info *opinfo)
 {
 	int prev_op_level = opinfo->level;
-	int ret = 0;
 
 	while  (test_and_set_bit(0, &opinfo->pending_break)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3,17,0)
-		wait_on_bit(&opinfo->pending_break, 0, bit_wait, TASK_UNINTERRUPTIBLE);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,4,0)
 		wait_on_bit(&opinfo->pending_break, 0, TASK_UNINTERRUPTIBLE);
-#else
-		ret = wait_on_bit_timeout(&opinfo->pending_break, 0,
-				TASK_UNINTERRUPTIBLE, 60*HZ);
-#endif
-
-		/* Oplock break timeout */
-		if (ret && ret != -EINTR) {
-			ksmbd_err("oplock break pending timeout !!!!!, opinfo level : 0x%x, prev_op_level 0x%x\n", opinfo->level,prev_op_level);
-			return 1;
-		}
 
 		/* Not immediately break to none. */
 		opinfo->open_trunc = 0;
@@ -699,13 +677,10 @@ static int oplock_break_pending(struct oplock_info *opinfo)
 	return 0;
 }
 
-#ifndef smp_mb__after_atomic
-#define smp_mb__after_atomic smp_mb__after_clear_bit
-#endif
-
 static void wake_up_oplock_break(struct oplock_info *opinfo)
 {
 	clear_bit_unlock(0, &opinfo->pending_break);
+	/* memory barrier is needed for wake_up_bit() */
 	smp_mb__after_atomic();
 	wake_up_bit(&opinfo->pending_break, 0);
 }

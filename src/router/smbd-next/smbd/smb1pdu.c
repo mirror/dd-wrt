@@ -5849,27 +5849,6 @@ static int smb_populate_readdir_entry(struct ksmbd_conn *conn,
  *
  * Return:	0 on success, otherwise -EINVAL
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-static int ksmbd_fill_dirent(void *arg,
-			     const char *name,
-			     int namlen,
-			     loff_t offset,
-			     u64 ino,
-			     unsigned d_type)
-{
-	struct ksmbd_readdir_data *buf = arg;
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
-static int ksmbd_fill_dirent(void *arg,
-			     const char *name,
-			     int namlen,
-			     loff_t offset,
-			     u64 ino,
-			     unsigned d_type)
-{
-	struct dir_context *ctx = arg;
-	struct ksmbd_readdir_data *buf =
-		container_of(ctx, struct ksmbd_readdir_data, ctx);
-#else
 static int ksmbd_fill_dirent(struct dir_context *ctx,
 			     const char *name,
 			     int namlen,
@@ -5879,7 +5858,6 @@ static int ksmbd_fill_dirent(struct dir_context *ctx,
 {
 	struct ksmbd_readdir_data *buf =
 		container_of(ctx, struct ksmbd_readdir_data, ctx);
-#endif
 	struct ksmbd_dirent *de = (void *)(buf->dirent + buf->used);
 	unsigned int reclen;
 
@@ -5981,11 +5959,7 @@ static int find_first(struct ksmbd_work *work)
 		goto err_out;
 	}
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, ksmbd_fill_dirent);
-#else
-	dir_fp->readdir_data.filldir = ksmbd_fill_dirent;
-#endif
 	dir_fp->readdir_data.dirent = (void *)__get_free_page(GFP_KERNEL);
 	if (!dir_fp->readdir_data.dirent) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
@@ -6237,11 +6211,7 @@ static int find_next(struct ksmbd_work *work)
 		goto err_out;
 	}
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&dir_fp->readdir_data.ctx, ksmbd_fill_dirent);
-#else
-	dir_fp->readdir_data.filldir = ksmbd_fill_dirent;
-#endif
 	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
 	if (!pathname) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
