@@ -232,7 +232,7 @@ static struct ksmbd_ipc_msg *ipc_msg_alloc(size_t sz)
 	struct ksmbd_ipc_msg *msg;
 	size_t msg_sz = sz + sizeof(struct ksmbd_ipc_msg);
 
-	msg = ksmbd_alloc(msg_sz);
+	msg = ksmbd_zalloc(msg_sz);
 	if (msg)
 		msg->sz = sz;
 	return msg;

@@ -148,7 +148,7 @@ static struct blkcipher_desc *alloc_blk_desc(int id)
 
 static struct ksmbd_crypto_ctx *ctx_alloc(void)
 {
-	return ksmbd_alloc(sizeof(struct ksmbd_crypto_ctx));
+	return ksmbd_zalloc(sizeof(struct ksmbd_crypto_ctx));
 }
 
 static void ctx_free(struct ksmbd_crypto_ctx *ctx)
