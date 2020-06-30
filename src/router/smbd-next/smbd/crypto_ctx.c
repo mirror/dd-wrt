@@ -54,9 +54,13 @@ static struct crypto_aead *alloc_aead(int id)
 	switch (id) {
 	case CRYPTO_AEAD_AES128_GCM:
 		tfm = crypto_alloc_aead("gcm(aes)", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc aead gcm(aes)\n");
 		break;
 	case CRYPTO_AEAD_AES128_CCM:
 		tfm = crypto_alloc_aead("ccm(aes)", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc aead ccm(aes)\n");
 		break;
 	}
 
@@ -74,21 +78,33 @@ static struct shash_desc *alloc_shash_desc(int id)
 	switch (id) {
 	case CRYPTO_SHASH_HMACMD5:
 		tfm = crypto_alloc_shash("hmac(md5)", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash hmac(md5)\n");
 		break;
 	case CRYPTO_SHASH_HMACSHA256:
 		tfm = crypto_alloc_shash("hmac(sha256)", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash hmac(sha256)\n");
 		break;
 	case CRYPTO_SHASH_CMACAES:
 		tfm = crypto_alloc_shash("cmac(aes)", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash cmac(aes)\n");
 		break;
 	case CRYPTO_SHASH_SHA512:
 		tfm = crypto_alloc_shash("sha512", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash sha512\n");
 		break;
 	case CRYPTO_SHASH_MD4:
 		tfm = crypto_alloc_shash("md4", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash md4\n");
 		break;
 	case CRYPTO_SHASH_MD5:
 		tfm = crypto_alloc_shash("md5", 0, 0);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc shash md5\n");
 		break;
 	}
 
@@ -113,6 +129,8 @@ static struct blkcipher_desc *alloc_blk_desc(int id)
 	switch (id) {
 	case CRYPTO_BLK_ECBDES:
 		tfm = crypto_alloc_blkcipher("ecb(des)", 0, CRYPTO_ALG_ASYNC);
+		if (IS_ERR(tfm))
+		    printk(KERN_ERR "cannot alloc blkcipher ecb(des)\n");
 		break;
 	}
 

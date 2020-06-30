@@ -133,6 +133,7 @@ andx_again:
 
 	cmds = &conn->cmds[command];
 	if (!cmds->proc) {
+		printk(KERN_ERR "*** not implemented yet cmd = %x\n", command);
 		ksmbd_debug(SMB, "*** not implemented yet cmd = %x\n", command);
 		conn->ops->set_rsp_status(work, STATUS_NOT_IMPLEMENTED);
 		return TCP_HANDLER_CONTINUE;
@@ -569,7 +570,7 @@ static int ksmbd_server_shutdown(void)
 static int __init ksmbd_server_init(void)
 {
 	int ret;
-
+	printk(KERN_INFO "Linux kernel CIFS/SMB SERVER " KSMBD_VERSION " by Namjae Jeon <linkinjeon@kernel.org>\n");
 	ret = class_register(&ksmbd_control_class);
 	if (ret) {
 		ksmbd_err("Unable to register ksmbd-control class\n");
@@ -629,6 +630,7 @@ MODULE_AUTHOR("Namjae Jeon <linkinjeon@kernel.org>");
 MODULE_VERSION(KSMBD_VERSION);
 MODULE_DESCRIPTION("Linux kernel CIFS/SMB SERVER");
 MODULE_LICENSE("GPL");
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 MODULE_SOFTDEP("pre: arc4");
 MODULE_SOFTDEP("pre: ecb");
 MODULE_SOFTDEP("pre: hmac");
@@ -642,5 +644,6 @@ MODULE_SOFTDEP("pre: sha512");
 MODULE_SOFTDEP("pre: aead2");
 MODULE_SOFTDEP("pre: ccm");
 MODULE_SOFTDEP("pre: gcm");
+#endif
 module_init(ksmbd_server_init)
 module_exit(ksmbd_server_exit)

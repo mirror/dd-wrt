@@ -38,6 +38,12 @@ struct timespec64 ksmbd_NTtimeToUnix(__le64 ntutc);
 
 static inline long long ksmbd_systime(void)
 {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+	struct timespec		ts;
+
+	getnstimeofday(&ts);
+	return ksmbd_UnixTimeToNT(ts);
+#else
 	struct timespec64	ts;
 
 	ktime_get_real_ts64(&ts);
@@ -45,6 +51,7 @@ static inline long long ksmbd_systime(void)
 	return ksmbd_UnixTimeToNT(timespec64_to_timespec(ts));
 #else
 	return ksmbd_UnixTimeToNT(ts);
+#endif
 #endif
 }
 #endif /* __KSMBD_TIME_WRAPPERS_H */

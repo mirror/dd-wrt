@@ -40,7 +40,7 @@ static DEFINE_MUTEX(startup_lock);
 
 static struct ksmbd_ida *ida;
 
-static unsigned int ksmbd_tools_pid;
+static unsigned int ksmbd_tools_pid = 0;
 
 #define KSMBD_IPC_MSG_HANDLE(m)	(*(unsigned int *)m)
 
@@ -192,8 +192,10 @@ static struct genl_family ksmbd_genl_family = {
 	.maxattr	= KSMBD_EVENT_MAX,
 	.netnsok	= true,
 	.module		= THIS_MODULE,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 11, 0)
 	.ops		= ksmbd_genl_ops,
 	.n_ops		= ARRAY_SIZE(ksmbd_genl_ops),
+#endif
 };
 
 static void ksmbd_nl_init_fixup(void)
@@ -839,17 +841,25 @@ void ksmbd_ipc_soft_reset(void)
 int ksmbd_ipc_init(void)
 {
 	int ret;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+	int i;
+#endif
 
 	ksmbd_nl_init_fixup();
 	INIT_DELAYED_WORK(&ipc_timer_work, ipc_timer_heartbeat);
 
 	ret = genl_register_family(&ksmbd_genl_family);
 	if (ret) {
-		ksmbd_err("Failed to register KSMBD netlink interface %d\n",
+		ksmbd_err("Failed to register SMBD netlink interface %d\n",
 				ret);
 		return ret;
 	}
-
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
+	for (i = 0; i < ARRAY_SIZE(ksmbd_genl_ops); i++) {
+		genl_register_ops(&ksmbd_genl_family,
+				&ksmbd_genl_ops[i]);
+	}
+#endif
 	ida = ksmbd_ida_alloc();
 	if (!ida)
 		return -ENOMEM;
