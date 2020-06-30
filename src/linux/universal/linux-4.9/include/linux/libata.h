@@ -38,6 +38,7 @@
 #include <linux/acpi.h>
 #include <linux/cdrom.h>
 #include <linux/sched.h>
+#include <linux/async.h>
 #ifdef CONFIG_ATA_LEDS
 #include <linux/leds.h>
 #endif
