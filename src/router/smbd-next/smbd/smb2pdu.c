@@ -568,6 +568,7 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 
 	if (cmd == SMB2_IOCTL_HE || cmd == SMB2_QUERY_DIRECTORY_HE) {
 		sz = large_sz;
+		work->set_trans_buf = true;
 	}
 
 	if (cmd == SMB2_QUERY_INFO_HE) {
@@ -578,6 +579,7 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 			(req->FileInfoClass == FILE_FULL_EA_INFORMATION ||
 				req->FileInfoClass == FILE_ALL_INFORMATION)) {
 			sz = large_sz;
+			work->set_trans_buf = true;
 		}
 	}
 
@@ -585,7 +587,8 @@ int smb2_allocate_rsp_buf(struct ksmbd_work *work)
 	if (le32_to_cpu(hdr->NextCommand) > 0)
 		sz = large_sz;
 
-	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF)
+	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_TBUF &&
+			work->set_trans_buf)
 		work->response_buf = ksmbd_find_buffer(sz);
 	else
 		work->response_buf = ksmbd_alloc_response(sz);
@@ -1776,7 +1779,15 @@ int smb2_session_logoff(struct ksmbd_work *work)
 	ksmbd_close_session_fds(work);
 	ksmbd_conn_wait_idle(conn);
 
-	ksmbd_tree_conn_session_logoff(sess);
+	if (ksmbd_tree_conn_session_logoff(sess)) {
+		struct smb2_logoff_req *req = REQUEST_BUF(work);
+
+		ksmbd_debug(SMB, "Invalid tid %d\n", req->hdr.Id.SyncId.TreeId);
+		rsp->hdr.Status = STATUS_NETWORK_NAME_DELETED;
+		smb2_set_err_rsp(work);
+		return 0;
+	}
+
 	ksmbd_destroy_file_table(&sess->file_table);
 	sess->state = SMB2_SESSION_EXPIRED;
 
@@ -3308,6 +3319,7 @@ struct smb2_query_dir_private {
 
 	struct ksmbd_dir_info	*d_info;
 	int			info_level;
+	int			flags;
 };
 
 static void lock_dir(struct ksmbd_file *dir_fp)
@@ -3515,9 +3527,9 @@ static int __query_dir(struct dir_context *ctx,
 	struct smb2_query_dir_private	*priv;
 	struct ksmbd_dir_info		*d_info;
 	int				rc;
+
 	buf	= container_of(ctx, struct ksmbd_readdir_data, ctx);
 #endif
-
 	priv	= buf->private;
 	d_info	= priv->d_info;
 
@@ -3537,10 +3549,8 @@ static int __query_dir(struct dir_context *ctx,
 	rc = reserve_populate_dentry(d_info, priv->info_level);
 	if (rc)
 		return rc;
-	if (d_info->flags & SMB2_RETURN_SINGLE_ENTRY) {
-		d_info->out_buf_len = 0;
+	if (priv->flags & SMB2_RETURN_SINGLE_ENTRY)
 		return 0;
-	}
 	return 0;
 }
 
@@ -3550,6 +3560,7 @@ static void restart_ctx(struct dir_context *ctx)
 	ctx->pos = 0;
 }
 #endif
+
 static int verify_info_level(int info_level)
 {
 	switch (info_level) {
@@ -3652,19 +3663,21 @@ int smb2_query_dir(struct ksmbd_work *work)
 	d_info.out_buf_len = min_t(int, d_info.out_buf_len,
 				le32_to_cpu(req->OutputBufferLength)) -
 				sizeof(struct smb2_query_directory_rsp);
-	d_info.flags = srch_flag;
 
-	if (!(srch_flag & SMB2_RETURN_SINGLE_ENTRY)) {
+	if (!(srch_flag & SMB2_RETURN_SINGLE_ENTRY) || is_asterisk(srch_ptr)) {
 		/*
 		 * reserve dot and dotdot entries in head of buffer
 		 * in first response
 		 */
 		rc = ksmbd_populate_dot_dotdot_entries(work,
-			req->FileInformationClass, dir_fp, &d_info, srch_ptr,
-			smb2_populate_readdir_entry);
+						req->FileInformationClass,
+						dir_fp,
+						&d_info,
+						srch_ptr,
+						smb2_populate_readdir_entry);
 		if (rc == -ENOSPC)
 			rc = 0;
-		else if (rc)
+		if (rc)
 			goto err_out;
 	}
 
@@ -3678,9 +3691,10 @@ int smb2_query_dir(struct ksmbd_work *work)
 	query_dir_private.dir_fp		= dir_fp;
 	query_dir_private.d_info		= &d_info;
 	query_dir_private.info_level		= req->FileInformationClass;
+	query_dir_private.flags			= srch_flag;
 	dir_fp->readdir_data.private		= &query_dir_private;
 #if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
-	set_ctx_actor(&dir_fp->readdir_data.ctx, __query_dir);
+ 	set_ctx_actor(&dir_fp->readdir_data.ctx, __query_dir);
 #else
 	dir_fp->readdir_data.filldir = __query_dir;
 #endif
@@ -3702,9 +3716,12 @@ int smb2_query_dir(struct ksmbd_work *work)
 		goto err_out;
 
 	if (!d_info.data_count && d_info.out_buf_len >= 0) {
-		if (srch_flag & SMB2_RETURN_SINGLE_ENTRY && !is_asterisk(srch_ptr))
-			rsp->hdr.Status = STATUS_NO_SUCH_FILE;
-		else {
+		if (srch_flag & SMB2_RETURN_SINGLE_ENTRY)
+			if (is_asterisk(srch_ptr))
+				rsp->hdr.Status = STATUS_NO_MORE_FILES;
+			else
+				rsp->hdr.Status = STATUS_NO_SUCH_FILE;
+		else if (rsp->hdr.Status == 0) {
 			dir_fp->dot_dotdot[0] = dir_fp->dot_dotdot[1] = 0;
 			rsp->hdr.Status = STATUS_NO_MORE_FILES;
 		}
@@ -5788,12 +5805,8 @@ static noinline int smb2_read_pipe(struct ksmbd_work *work)
 			goto out;
 		}
 
-		if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF)
-			work->aux_payload_buf =
-				ksmbd_find_buffer(rpc_resp->payload_sz);
-		else
-			work->aux_payload_buf =
-				ksmbd_alloc_response(rpc_resp->payload_sz);
+		work->aux_payload_buf =
+			ksmbd_alloc_response(rpc_resp->payload_sz);
 		if (!work->aux_payload_buf) {
 			err = -ENOMEM;
 			goto out;
@@ -5912,7 +5925,9 @@ int smb2_read(struct ksmbd_work *work)
 		offset, length);
 
 	if (server_conf.flags & KSMBD_GLOBAL_FLAG_CACHE_RBUF) {
-		work->aux_payload_buf = ksmbd_find_buffer(length);
+		work->aux_payload_buf =
+			ksmbd_find_buffer(conn->vals->max_read_size);
+		work->set_read_buf = true;
 	} else {
 		work->aux_payload_buf = ksmbd_alloc_response(length);
 	}
