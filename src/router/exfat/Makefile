@@ -2,17 +2,13 @@
 #
 # Makefile for the linux exFAT filesystem support.
 #
-ifneq ($(KERNELRELEASE),)
 obj-$(CONFIG_EXFAT_FS) += exfat.o
 
 exfat-y	:= inode.o namei.o dir.o super.o fatent.o cache.o nls.o misc.o \
 	   file.o balloc.o
-else
-# Called from external kernel module build
-
-KERNELRELEASE	?= $(shell uname -r)
-KDIR	?= /lib/modules/${KERNELRELEASE}/build
-MDIR	?= /lib/modules/${KERNELRELEASE}
+KERNELRELEASE := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
+MDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
+KDIR := $(LINUXDIR)
 PWD	:= $(shell pwd)
 
 export CONFIG_EXFAT_FS := m
@@ -35,6 +31,5 @@ uninstall:
 	rm -rf ${MDIR}/kernel/fs/exfat
 	depmod -aq
 
-endif
 
 .PHONY : all clean install uninstal
