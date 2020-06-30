@@ -10,6 +10,7 @@ void *ksmbd_find_buffer(size_t size);
 void ksmbd_release_buffer(void *buffer);
 
 void *ksmbd_alloc(size_t size);
+void *ksmbd_zalloc(size_t size);
 void ksmbd_free(void *ptr);
 
 void ksmbd_free_request(void *addr);

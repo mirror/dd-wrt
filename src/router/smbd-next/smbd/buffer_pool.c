@@ -17,16 +17,17 @@
 #include "mgmt/ksmbd_ida.h"
 
 static struct kmem_cache *filp_cache;
-
+static int threads; 
 struct wm {
 	struct list_head	list;
-	unsigned int		sz;
+	size_t			sz;
+	size_t			realsize;
 	char			buffer[0];
 };
 
 struct wm_list {
 	struct list_head	list;
-	unsigned int		sz;
+	size_t			sz;
 
 	spinlock_t		wm_lock;
 	int			avail_wm;
@@ -43,8 +44,8 @@ static DEFINE_RWLOCK(wm_lists_lock);
  */
 static inline void *__alloc(size_t size, gfp_t flags)
 {
-	gfp_t kmalloc_flags = flags;
 	void *ret;
+	gfp_t kmalloc_flags = flags;
 
 	/*
 	 * We want to attempt a large physically contiguous block first because
@@ -53,10 +54,15 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 * However make sure that larger requests are not too disruptive - no
 	 * OOM killer and no allocation failure warnings as we have a fallback.
 	 */
-	if (size > PAGE_SIZE)
-		kmalloc_flags |= __GFP_NOWARN | __GFP_NORETRY;
-
-	ret = kmalloc(size, kmalloc_flags);
+	if (size > PAGE_SIZE) {
+		kmalloc_flags |= __GFP_NORETRY | __GFP_NOWARN;
+		if (kmalloc_flags & GFP_KERNEL) {
+			kmalloc_flags &= ~GFP_KERNEL;
+			kmalloc_flags |= GFP_NOWAIT;
+		}
+	}
+	
+	ret = kmalloc(size,  kmalloc_flags);
 
 	/*
 	 * It doesn't really make sense to fallback to vmalloc for sub page
@@ -64,7 +70,7 @@ static inline void *__alloc(size_t size, gfp_t flags)
 	 */
 	if (ret || size <= PAGE_SIZE)
 		return ret;
-
+	
 	return __vmalloc(size, flags, PAGE_KERNEL);
 }
 
@@ -75,12 +81,22 @@ static inline void __free(void *addr)
 	else
 		kfree(addr);
 }
+
 #endif
 
 void *ksmbd_alloc(size_t size)
 {
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
+ 	return __alloc(size, GFP_KERNEL);
+#else
+	return kvmalloc(size, GFP_KERNEL);
+#endif
+}
+
+void *ksmbd_zalloc(size_t size)
+{
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
+ 	return __alloc(size, GFP_KERNEL | __GFP_ZERO);
 #else
 	return kvmalloc(size, GFP_KERNEL | __GFP_ZERO);
 #endif
@@ -88,26 +104,23 @@ void *ksmbd_alloc(size_t size)
 
 void ksmbd_free(void *ptr)
 {
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
 	__free(ptr);
-#else
-	kvfree(ptr);
-#endif
 }
 
-static struct wm *wm_alloc(size_t sz, gfp_t flags)
+static struct wm *wm_alloc(size_t sz)
 {
 	struct wm *wm;
 	size_t alloc_sz = sz + sizeof(struct wm);
 
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 0, 0)
-	wm = __alloc(alloc_sz, flags);
+ 	wm = __alloc(alloc_sz, GFP_KERNEL);
 #else
-	wm = kvmalloc(alloc_sz, flags);
+	wm = kvmalloc(alloc_sz, GFP_KERNEL);
 #endif
 	if (!wm)
 		return NULL;
 	wm->sz = sz;
+	wm->realsize = sz;
 	return wm;
 }
 
@@ -163,12 +176,35 @@ static struct wm_list *match_wm_list(size_t size)
 	return rl;
 }
 
+static struct wm_list *search_wm_list(size_t size, size_t *realsize)
+{
+	struct wm_list *l, *rl = NULL;
+	size_t last_size = (size_t)-1;
+	read_lock(&wm_lists_lock);
+	list_for_each_entry(l, &wm_lists, list) {
+		if (l->sz == size) {
+			rl = l;
+			break;
+		}
+
+		if (l->sz > size && l->sz < last_size) {
+			last_size = l->sz;
+			rl = l;
+		}
+	}
+	if (rl)
+	    *realsize = rl->sz;
+	read_unlock(&wm_lists_lock);
+	return rl;
+}
+
 static struct wm *find_wm(size_t size)
 {
 	struct wm_list *wm_list;
 	struct wm *wm;
+	size_t realsize = size;
 
-	wm_list = match_wm_list(size);
+	wm_list = search_wm_list(size, &realsize);
 	if (!wm_list) {
 		if (register_wm_size_class(size))
 			return NULL;
@@ -186,10 +222,11 @@ static struct wm *find_wm(size_t size)
 					list);
 			list_del(&wm->list);
 			spin_unlock(&wm_list->wm_lock);
+			wm->realsize = realsize;
 			return wm;
 		}
 
-		if (wm_list->avail_wm > num_online_cpus()) {
+		if (wm_list->avail_wm > threads) {
 			spin_unlock(&wm_list->wm_lock);
 			wait_event(wm_list->wm_wait,
 				   !list_empty(&wm_list->idle_wm));
@@ -199,7 +236,7 @@ static struct wm *find_wm(size_t size)
 		wm_list->avail_wm++;
 		spin_unlock(&wm_list->wm_lock);
 
-		wm = wm_alloc(size, GFP_KERNEL);
+		wm = wm_alloc(realsize);
 		if (!wm) {
 			spin_lock(&wm_list->wm_lock);
 			wm_list->avail_wm--;
@@ -211,6 +248,7 @@ static struct wm *find_wm(size_t size)
 		break;
 	}
 
+	wm->realsize = realsize;
 	return wm;
 }
 
@@ -220,7 +258,7 @@ static void release_wm(struct wm *wm, struct wm_list *wm_list)
 		return;
 
 	spin_lock(&wm_list->wm_lock);
-	if (wm_list->avail_wm <= num_online_cpus()) {
+	if (wm_list->avail_wm <= threads) {
 		list_add(&wm->list, &wm_list->idle_wm);
 		spin_unlock(&wm_list->wm_lock);
 		wake_up(&wm_list->wm_wait);
@@ -320,7 +358,7 @@ void ksmbd_release_buffer(void *buffer)
 		return;
 
 	wm = container_of(buffer, struct wm, buffer);
-	wm_list = match_wm_list(wm->sz);
+	wm_list = match_wm_list(wm->realsize);
 	WARN_ON(!wm_list);
 	if (wm_list)
 		release_wm(wm, wm_list);
@@ -346,7 +384,7 @@ void ksmbd_free_file_struct(void *filp)
 
 void *ksmbd_alloc_file_struct(void)
 {
-	return kmem_cache_zalloc(filp_cache, GFP_KERNEL);
+	return kmem_cache_zalloc(filp_cache, 0);
 }
 
 void ksmbd_destroy_buffer_pools(void)
@@ -358,9 +396,10 @@ void ksmbd_destroy_buffer_pools(void)
 
 int ksmbd_init_buffer_pools(void)
 {
+	threads = num_online_cpus() * 2;
 	if (ksmbd_work_pool_init())
 		goto out;
-
+	
 	filp_cache = kmem_cache_create("ksmbd_file_cache",
 					sizeof(struct ksmbd_file), 0,
 					SLAB_HWCACHE_ALIGN, NULL);
