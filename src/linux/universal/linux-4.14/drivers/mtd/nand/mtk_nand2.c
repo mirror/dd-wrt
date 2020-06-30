@@ -2289,7 +2289,7 @@ mtk_nand_probe(struct platform_device *pdev)
 
 out:
 	MSG(INIT, "[NFI] mtk_nand_probe fail, err = %d!\n", err);
-	nand_release(mtd);
+	nand_release(nand_chip);
 	platform_set_drvdata(pdev, NULL);
 	kfree(host);
 	nand_disable_clock();
