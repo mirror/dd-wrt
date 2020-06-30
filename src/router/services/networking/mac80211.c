@@ -715,6 +715,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			}
 			break;
 		case 20:
+		case 10:
+		case 5:
 			ht = "HT20";
 		default:
 			if (has_2ghz(prefix)) {
@@ -845,6 +847,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 						break;
 					default:
 					case 20:
+					case 10:
+					case 5:
 						ht = "HT20";
 						break;
 					}
