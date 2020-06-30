@@ -393,6 +393,11 @@ int main(int argc, char *argv[])
 	if(!strncmp(progname, "umount", strlen("umount")))
 		exit(nfsumount(argc, argv));
 
+	if ((argc < 3)) {
+		mount_usage();
+		exit(EX_USAGE);
+	}
+
 	mount_config_init(progname);
 
 	while ((c = getopt_long(argc, argv, "rvVwfno:hs",
@@ -430,11 +435,6 @@ int main(int argc, char *argv[])
 			mount_usage();
 			goto out_usage;
 		}
-	}
-
-	if ((argc < 3)) {
-		mount_usage();
-		exit(EX_USAGE);
 	}
 
 	/*

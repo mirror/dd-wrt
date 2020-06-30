@@ -247,28 +247,23 @@ void secinfo_show(FILE *fp, struct exportent *ep)
 	}
 }
 
-static void
-fprintpath(FILE *fp, const char *path)
-{
-	int i;
-	for (i=0; path[i]; i++)
-		if (iscntrl(path[i]) || path[i] == '"' || path[i] == '\\' || path[i] == '#' || isspace(path[i]))
-			fprintf(fp, "\\%03o", path[i]);
-		else
-			fprintf(fp, "%c", path[i]);
-}
-
 void
 putexportent(struct exportent *ep)
 {
 	FILE	*fp;
 	int	*id, i;
+	char	*esc=ep->e_path;
 
 	if (!efp)
 		return;
 
 	fp = efp->x_fp;
-	fprintpath(fp, ep->e_path);
+	for (i=0; esc[i]; i++)
+	        if (iscntrl(esc[i]) || esc[i] == '"' || esc[i] == '\\' || esc[i] == '#' || isspace(esc[i]))
+			fprintf(fp, "\\%03o", esc[i]);
+		else
+			fprintf(fp, "%c", esc[i]);
+
 	fprintf(fp, "\t%s(", ep->e_hostname);
 	fprintf(fp, "%s,", (ep->e_flags & NFSEXP_READONLY)? "ro" : "rw");
 	fprintf(fp, "%ssync,", (ep->e_flags & NFSEXP_ASYNC)? "a" : "");
@@ -307,14 +302,10 @@ putexportent(struct exportent *ep)
 	case FSLOC_NONE:
 		break;
 	case FSLOC_REFER:
-		fprintf(fp, "refer=");
-		fprintpath(fp, ep->e_fslocdata);
-		fprintf(fp, ",");
+		fprintf(fp, "refer=%s,", ep->e_fslocdata);
 		break;
 	case FSLOC_REPLICA:
-		fprintf(fp, "replicas=");
-		fprintpath(fp, ep->e_fslocdata);
-		fprintf(fp, ",");
+		fprintf(fp, "replicas=%s,", ep->e_fslocdata);
 		break;
 #ifdef DEBUG
 	case FSLOC_STUB:

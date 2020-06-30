@@ -20,7 +20,6 @@
 #endif
 
 #include <nfslib.h>
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdio_ext.h>
 #include <string.h>
@@ -42,7 +41,7 @@ void qword_add(char **bpp, int *lp, char *str)
 
 	if (len < 0) return;
 
-	while ((c=*str++) && len > 0)
+	while ((c=*str++) && len)
 		switch(c) {
 		case ' ':
 		case '\t':
@@ -239,7 +238,7 @@ cache_flush(int force)
 	    stb.st_mtime > now)
 		stb.st_mtime = time(0);
 	
-	sprintf(stime, "%" PRId64 "\n", (int64_t)stb.st_mtime);
+	sprintf(stime, "%ld\n", stb.st_mtime);
 	for (c=0; cachelist[c]; c++) {
 		int fd;
 		sprintf(path, "/proc/net/rpc/%s/flush", cachelist[c]);
