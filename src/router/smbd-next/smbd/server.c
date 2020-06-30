@@ -133,6 +133,7 @@ andx_again:
 
 	cmds = &conn->cmds[command];
 	if (!cmds->proc) {
+		printk(KERN_ERR "*** not implemented yet cmd = %x\n", command);
 		ksmbd_debug(SMB, "*** not implemented yet cmd = %x\n", command);
 		conn->ops->set_rsp_status(work, STATUS_NOT_IMPLEMENTED);
 		return TCP_HANDLER_CONTINUE;
