@@ -212,7 +212,7 @@ out:
 }
 
 /**
- * smbd_gen_sess_key() - function to generate session key
+ * ksmbd_gen_sess_key() - function to generate session key
  * @sess:	session of connection
  * @hash:	source hash value to be used for find session key
  * @hmac:	source hmac value to be used for finding session key
@@ -225,12 +225,9 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess,
 	struct ksmbd_crypto_ctx *ctx;
 	int rc = -EINVAL;
 
-	ksmbd_debug(ALL, "enter %s\n", __func__);
 	ctx = ksmbd_crypto_ctx_find_hmacmd5();
-	if (!ctx) {
-		ksmbd_debug(ALL, "hmacmd5 crypto error\n");
+	if (!ctx)
 		goto out;
-	}
 
 	rc = crypto_shash_setkey(CRYPTO_HMACMD5_TFM(ctx),
 				 hash,
@@ -246,8 +243,6 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess,
 		goto out;
 	}
 
-	ksmbd_debug(ALL, "%s hmac  %*ph\n",__func__, 
-			SMB2_NTLMV2_SESSKEY_SIZE, hmac);
 	rc = crypto_shash_update(CRYPTO_HMACMD5(ctx),
 				 hmac,
 				 SMB2_NTLMV2_SESSKEY_SIZE);
@@ -263,8 +258,6 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess,
 			rc);
 		goto out;
 	}
-	ksmbd_debug(ALL, "%s   %*ph\n",__func__, 
-			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 
 out:
 	ksmbd_release_crypto_ctx(ctx);
@@ -306,8 +299,7 @@ static int calc_ntlmv2_hash(struct ksmbd_session *sess, char *ntlmv2_hash,
 		ret = -ENOMEM;
 		goto out;
 	}
-	ksmbd_debug(ALL, "convert username to unicode %s\n", user_name(sess->user));
-	
+
 	if (len) {
 		len = smb_strtoUTF16(uniname, user_name(sess->user), len,
 			sess->conn->local_nls);
@@ -330,7 +322,6 @@ static int calc_ntlmv2_hash(struct ksmbd_session *sess, char *ntlmv2_hash,
 		goto out;
 	}
 
-	ksmbd_debug(ALL, "convert dname to unicode %s\n", dname);
 	len = smb_strtoUTF16((__le16 *)domain, dname, len,
 			     sess->conn->local_nls);
 
@@ -699,7 +690,7 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 
 #ifdef CONFIG_SMB_INSECURE_SERVER
 /**
- * smbd_sign_smb1_pdu() - function to generate SMB1 packet signing
+ * ksmbd_sign_smb1_pdu() - function to generate SMB1 packet signing
  * @sess:	session of connection
  * @iov:        buffer iov array
  * @n_vec:	number of iovecs
@@ -727,8 +718,6 @@ int ksmbd_sign_smb1_pdu(struct ksmbd_session *sess,
 		goto out;
 	}
 
-	ksmbd_debug(ALL, "%s   %*ph\n",__func__, 
-			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 	rc = crypto_shash_update(CRYPTO_MD5(ctx), sess->sess_key, 40);
 	if (rc) {
 		ksmbd_debug(AUTH, "md5 update error %d\n", rc);
@@ -891,8 +880,6 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		goto smb3signkey_ret;
 	}
 
-	ksmbd_debug(ALL, "%s   %*ph\n",__func__, 
-			SMB2_NTLMV2_SESSKEY_SIZE, sess->sess_key);
 	rc = crypto_shash_setkey(CRYPTO_HMACSHA256_TFM(ctx),
 				 sess->sess_key,
 				 SMB2_NTLMV2_SESSKEY_SIZE);

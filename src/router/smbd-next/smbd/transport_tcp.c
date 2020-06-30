@@ -5,7 +5,6 @@
  */
 
 #include <linux/freezer.h>
-#include <linux/etherdevice.h>
 
 #include "smb_common.h"
 #include "server.h"
@@ -436,8 +435,6 @@ static void tcp_destroy_socket(struct socket *ksmbd_socket)
 		sock_release(ksmbd_socket);
 }
 
-static const struct in6_addr my_in6addr_any = IN6ADDR_ANY_INIT;
-
 /**
  * create_socket - create socket for ksmbd/0
  *
@@ -453,7 +450,7 @@ static int create_socket(struct interface *iface)
 
 	ret = sock_create(PF_INET6, SOCK_STREAM, IPPROTO_TCP, &ksmbd_socket);
 	if (ret) {
-		ksmbd_debug(ALL, "Can't create socket for ipv6, try ipv4: %d\n", ret);
+		ksmbd_err("Can't create socket for ipv6, try ipv4: %d\n", ret);
 		ret = sock_create(PF_INET, SOCK_STREAM, IPPROTO_TCP,
 				&ksmbd_socket);
 		if (ret) {
@@ -467,7 +464,7 @@ static int create_socket(struct interface *iface)
 		ipv4 = true;
 	} else {
 		sin6.sin6_family = PF_INET6;
-		sin6.sin6_addr = my_in6addr_any;
+		sin6.sin6_addr = in6addr_any;
 		sin6.sin6_port = htons(server_conf.tcp_port);
 	}
 
@@ -491,6 +488,7 @@ static int create_socket(struct interface *iface)
 		ksmbd_err("Failed to set SO_BINDTODEVICE: %d\n", ret);
 		goto out_error;
 	}
+
 	if (ipv4)
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin,
 				sizeof(sin));
@@ -498,7 +496,7 @@ static int create_socket(struct interface *iface)
 		ret = kernel_bind(ksmbd_socket, (struct sockaddr *)&sin6,
 				sizeof(sin6));
 	if (ret) {
-		ksmbd_err("Failed to bind socket: %d (%s)\n", ret, iface->name);
+		ksmbd_err("Failed to bind socket: %d\n", ret);
 		goto out_error;
 	}
 
@@ -530,7 +528,7 @@ int ksmbd_tcp_init(void)
 {
 	struct interface *iface;
 	struct list_head *tmp;
-	int ret = 0;
+	int ret;
 
 	if (list_empty(&iface_list))
 		return 0;
@@ -538,6 +536,8 @@ int ksmbd_tcp_init(void)
 	list_for_each(tmp, &iface_list) {
 		iface = list_entry(tmp, struct interface, entry);
 		ret = create_socket(iface);
+		if (ret)
+			break;
 	}
 
 	return ret;
@@ -617,9 +617,6 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 		rtnl_lock();
 		for_each_netdev(&init_net, netdev) {
 			if (netdev->priv_flags & IFF_BRIDGE_PORT)
-				continue;
-			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
-			    !is_valid_ether_addr(netdev->dev_addr))
 				continue;
 			if (alloc_iface(kstrdup(netdev->name, GFP_KERNEL)))
 				return -ENOMEM;

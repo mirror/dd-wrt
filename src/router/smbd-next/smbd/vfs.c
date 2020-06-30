@@ -290,59 +290,6 @@ static int ksmbd_vfs_stream_read(struct ksmbd_file *fp, char *buf, loff_t *pos,
  *
  * Return:	0 on success, otherwise error
  */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
-static inline bool d_really_is_negative(const struct dentry *dentry)
-{
-	return dentry->d_inode == NULL;
-}
-static inline bool d_really_is_positive(const struct dentry *dentry)
-{
-	return dentry->d_inode != NULL;
-}
-
-static int check_lock_range(struct file *filp,
-			    loff_t start,
-			    loff_t end,
-			    unsigned char type)
-{
-	struct file_lock *flock;
-	struct inode *inode = file_inode(filp);
-	int error = 0;
-	
-	if (inode->i_flock == NULL)
-		return 0;
-
-	spin_lock(&inode->i_lock);
-	for (flock = inode->i_flock; flock != NULL; flock = flock->fl_next) {
-		if (filp == flock->fl_owner)
-			continue;
-		/* check conflict locks */
-		if (flock->fl_end >= start && end >= flock->fl_start) {
-			if (flock->fl_type == F_RDLCK) {
-				if (type == WRITE) {
-					ksmbd_err("not allow write by shared lock\n");
-					error = 1;
-					goto out;
-				}
-			} else if (flock->fl_type == F_WRLCK) {
-				/* check owner in lock */
-				if (flock->fl_file != filp) {
-					error = 1;
-					ksmbd_err("not allow rw access by exclusive lock from other opens\n");
-					goto out;
-				}
-			}
-		}
-	}
-out:
-	spin_unlock(&inode->i_lock);
-	return error;
-}
-
-
-
-
-#else
 static int check_lock_range(struct file *filp,
 			    loff_t start,
 			    loff_t end,
@@ -379,7 +326,7 @@ out:
 	spin_unlock(&ctx->flc_lock);
 	return error;
 }
-#endif
+
 /**
  * ksmbd_vfs_read() - vfs helper for smb file read
  * @work:	smb work
@@ -761,15 +708,9 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 	err = notify_change(dentry, attrs, NULL);
 	inode_unlock(inode);
 #else
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	mutex_lock(&inode->i_mutex);
-	err = notify_change(dentry, attrs);
-	mutex_unlock(&inode->i_mutex);
-#else
 	mutex_lock(&inode->i_mutex);
 	err = notify_change(dentry, attrs, NULL);
 	mutex_unlock(&inode->i_mutex);
-#endif
 #endif
 
 	if (update_size)
@@ -1019,11 +960,7 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 			ksmbd_debug(VFS, "%s: rmdir failed, err %d\n", name,
 				err);
 	} else {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		err = vfs_unlink(d_inode(dir), dentry);
-#else
 		err = vfs_unlink(d_inode(dir), dentry, NULL);
-#endif
 		if (err)
 			ksmbd_debug(VFS, "%s: unlink failed, err %d\n", name,
 				err);
@@ -1081,11 +1018,7 @@ int ksmbd_vfs_link(struct ksmbd_work *work,
 		goto out3;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	err = vfs_link(oldpath.dentry, d_inode(newpath.dentry), dentry);
-#else
 	err = vfs_link(oldpath.dentry, d_inode(newpath.dentry), dentry, NULL);
-#endif
 	if (err)
 		ksmbd_debug(VFS, "vfs_link failed err %d\n", err);
 
@@ -1145,19 +1078,12 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 
 	err = -ENOTEMPTY;
 	if (dst_dent != trap_dent && !d_really_is_positive(dst_dent)) {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		err = vfs_rename(d_inode(src_dent_parent),
-				 src_dent,
-				 d_inode(dst_dent_parent),
-				 dst_dent);
-#else
 		err = vfs_rename(d_inode(src_dent_parent),
 				 src_dent,
 				 d_inode(dst_dent_parent),
 				 dst_dent,
 				 NULL,
 				 0);
-#endif
 	}
 	if (err)
 		ksmbd_err("vfs_rename failed err %d\n", err);
@@ -1469,16 +1395,6 @@ int ksmbd_vfs_fsetxattr(struct ksmbd_work *work,
 }
 #endif
 
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 0, 0)
-	/* EMPTY */
-#else /* LINUX_VERSION_CODE < KERNEL_VERSION(4, 0, 0) */
-static struct backing_dev_info *inode_to_bdi(struct inode *bd_inode)
-{
-	return bd_inode->i_mapping->backing_dev_info;
-}
-#endif
-
 /**
  * ksmbd_vfs_set_fadvise() - convert smb IO caching options to linux options
  * @filp:	file pointer for IO
@@ -1524,11 +1440,7 @@ int ksmbd_vfs_lock(struct file *filp, int cmd,
 
 int ksmbd_vfs_readdir(struct file *file, struct ksmbd_readdir_data *rdata)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	return vfs_readdir(file, rdata->filldir, rdata);
-#else
 	return iterate_dir(file, &rdata->ctx);
-#endif
 }
 
 int ksmbd_vfs_alloc_size(struct ksmbd_work *work,
@@ -1548,11 +1460,8 @@ int ksmbd_vfs_zero_data(struct ksmbd_work *work,
 	if (fp->f_ci->m_fattr & ATTR_SPARSE_FILE_LE)
 		return vfs_fallocate(fp->filp,
 			FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE, off, len);
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	return vfs_fallocate(fp->filp, 0, off, len);
-#else
+
 	return vfs_fallocate(fp->filp, FALLOC_FL_ZERO_RANGE, off, len);
-#endif
 }
 
 int ksmbd_vfs_fqar_lseek(struct ksmbd_file *fp, loff_t start, loff_t length,
@@ -1640,17 +1549,11 @@ int ksmbd_vfs_unlink(struct dentry *dir, struct dentry *dentry)
 		goto out;
 	}
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-	if (S_ISDIR(d_inode(dentry)->i_mode))
-		err = vfs_rmdir(d_inode(dir), dentry);
-	else
-		err = vfs_unlink(d_inode(dir), dentry);
-#else
 	if (S_ISDIR(d_inode(dentry)->i_mode))
 		err = vfs_rmdir(d_inode(dir), dentry);
 	else
 		err = vfs_unlink(d_inode(dir), dentry, NULL);
-#endif
+
 out:
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 21)
 	inode_unlock(d_inode(dir));
@@ -1782,27 +1685,6 @@ struct ksmbd_file *ksmbd_vfs_dentry_open(struct ksmbd_work *work,
 }
 #endif
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-static int __dir_empty(void *arg,
-				   const char *name,
-				   int namlen,
-				   loff_t offset,
-				   u64 ino,
-				   unsigned d_type)
-{
-	struct ksmbd_readdir_data *buf = arg;
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
-static int __dir_empty(void *arg,
-				   const char *name,
-				   int namlen,
-				   loff_t offset,
-				   u64 ino,
-				   unsigned d_type)
-{
-	struct dir_context *ctx = arg;
-	struct ksmbd_readdir_data *buf;
-	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
-#else
 static int __dir_empty(struct dir_context *ctx,
 				   const char *name,
 				   int namlen,
@@ -1811,8 +1693,8 @@ static int __dir_empty(struct dir_context *ctx,
 				   unsigned int d_type)
 {
 	struct ksmbd_readdir_data *buf;
+
 	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
-#endif
 	buf->dirent_count++;
 
 	if (buf->dirent_count > 2)
@@ -1833,13 +1715,8 @@ int ksmbd_vfs_empty_dir(struct ksmbd_file *fp)
 
 	memset(&readdir_data, 0, sizeof(struct ksmbd_readdir_data));
 
-#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 	set_ctx_actor(&readdir_data.ctx, __dir_empty);
-#else
-	readdir_data.filldir = __dir_empty;
-#endif
 	readdir_data.dirent_count = 0;
-	fp->readdir_data.dirent_count	= 0;
 
 	err = ksmbd_vfs_readdir(fp->filp, &readdir_data);
 	if (readdir_data.dirent_count > 2)
@@ -1849,27 +1726,6 @@ int ksmbd_vfs_empty_dir(struct ksmbd_file *fp)
 	return err;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-static int __caseless_lookup(void *arg,
-			     const char *name,
-			     int namlen,
-			     loff_t offset,
-			     u64 ino,
-			     unsigned d_type)
-{
-	struct ksmbd_readdir_data *buf = arg; 
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(3, 19, 0)
-static int __caseless_lookup(void *arg,
-			     const char *name,
-			     int namlen,
-			     loff_t offset,
-			     u64 ino,
-			     unsigned d_type)
-{
-	struct dir_context *ctx = arg;
-	struct ksmbd_readdir_data *buf;
-	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
-#else
 static int __caseless_lookup(struct dir_context *ctx,
 			     const char *name,
 			     int namlen,
@@ -1878,9 +1734,8 @@ static int __caseless_lookup(struct dir_context *ctx,
 			     unsigned int d_type)
 {
 	struct ksmbd_readdir_data *buf;
-	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
-#endif
 
+	buf = container_of(ctx, struct ksmbd_readdir_data, ctx);
 
 	if (buf->used != namlen)
 		return 0;
@@ -1907,11 +1762,7 @@ static int ksmbd_vfs_lookup_in_dir(char *dirname, char *filename)
 	int flags = O_RDONLY|O_LARGEFILE;
 	int dirnamelen = strlen(dirname);
 	struct ksmbd_readdir_data readdir_data = {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
-		.filldir	= __caseless_lookup,
-#else
 		.ctx.actor	= __caseless_lookup,
-#endif
 		.private	= filename,
 		.used		= strlen(filename),
 	};
@@ -2074,10 +1925,6 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 	return 0;
 }
 
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-extern long do_splice_direct(struct file *in, loff_t *ppos, struct file *out,
-		loff_t *opos, size_t len, unsigned int flags);
-#endif
 
 static int ksmbd_vfs_copy_file_range(struct file *file_in, loff_t pos_in,
 				struct file *file_out, loff_t pos_out,
@@ -2222,9 +2069,7 @@ int ksmbd_vfs_posix_lock_wait_timeout(struct file_lock *flock, long timeout)
 
 void ksmbd_vfs_posix_lock_unblock(struct file_lock *flock)
 {
-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 11, 0)
-	posix_unblock_lock(NULL, flock);
-#elif LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 	posix_unblock_lock(flock);
 #else
 	locks_delete_block(flock);
