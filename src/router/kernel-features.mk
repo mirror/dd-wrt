@@ -194,8 +194,10 @@ define kernelfeatures
 		sed -i 's/\CONFIG_MSDOS_FS=m/# CONFIG_MSDOS_FS is not set/g' $(LINUXDIR)/.config; \
 		sed -i 's/\CONFIG_VFAT_FS=m/# CONFIG_VFAT_FS is not set/g' $(LINUXDIR)/.config; \
 	fi	
-	sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
-	echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
+	if [ "$(CONFIG_EXFAT)" != "y" ]; then \
+		sed -i 's/\CONFIG_EXFAT_FS=m/# CONFIG_EXFAT_FS is not set/g' $(LINUXDIR)/.config; \
+		echo "# CONFIG_EXFAT_FS is not set" >> $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_EXFAT)" = "y" ]; then \
 		sed -i 's/\# CONFIG_EXFAT_FS is not set/CONFIG_EXFAT_FS=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_EXFAT_FS=m" >> $(LINUXDIR)/.config; \
