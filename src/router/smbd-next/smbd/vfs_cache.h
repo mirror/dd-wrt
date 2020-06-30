@@ -128,6 +128,7 @@ struct ksmbd_file {
  * makes the compiler require that the actor member be set at object
  * initialisation time (or not at all).
  */
+#if LINUX_VERSION_CODE > KERNEL_VERSION(3, 11, 0)
 #if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 16, 0)
 static inline void set_ctx_actor(struct dir_context *ctx,
 				 filldir_t actor)
@@ -145,7 +146,14 @@ static inline void set_ctx_actor(struct dir_context *ctx,
 	ctx->actor = actor;
 }
 #endif
+#endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 18, 0)
+static inline struct inode *d_inode(const struct dentry *dentry)
+{
+	return dentry->d_inode;
+}
+#endif
 #define KSMBD_NR_OPEN_DEFAULT BITS_PER_LONG
 
 struct ksmbd_file_table {
@@ -206,6 +214,7 @@ void ksmbd_free_global_file_table(void);
 int ksmbd_file_table_flush(struct ksmbd_work *work);
 
 void ksmbd_set_fd_limit(unsigned long limit);
+
 
 /*
  * INODE hash
