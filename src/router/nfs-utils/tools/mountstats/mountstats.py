@@ -4,7 +4,6 @@
 """
 
 from __future__ import print_function
-import datetime as datetime
 
 __copyright__ = """
 Copyright (C) 2005, Chuck Lever <cel@netapp.com>
@@ -226,12 +225,7 @@ Nfsv4ops = [
     'ALLOCATE',
     'DEALLOCATE',
     'LAYOUTSTATS',
-    'CLONE',
-    'COPY',
-    'OFFLOAD_CANCEL',
-    'LOOKUPP',
-    'LAYOUTERROR',
-    'COPY_NOTIFY'
+    'CLONE'
 ]
 
 class DeviceData:
@@ -392,7 +386,6 @@ class DeviceData:
         """Pretty-print the NFS options
         """
         print('  NFS mount options: %s' % ','.join(self.__nfs_data['mountoptions']))
-        print('  NFS mount age: %s' % datetime.timedelta(seconds = self.__nfs_data['age']))
         print('  NFS server capabilities: %s' % ','.join(self.__nfs_data['servercapabilities']))
         if 'nfsv4flags' in self.__nfs_data:
             print('  NFSv4 capability flags: %s' % ','.join(self.__nfs_data['nfsv4flags']))
