@@ -7,7 +7,7 @@ obj-$(CONFIG_EXFAT_FS) += exfat.o
 exfat-y	:= inode.o namei.o dir.o super.o fatent.o cache.o nls.o misc.o \
 	   file.o balloc.o
 KERNELRELEASE := $(shell cat $(LINUXDIR)/include/config/kernel.release 2> /dev/null)
-MDIR := $(INSTALLDIR)/lib/modules/$(KERNEL_VERSION)
+MDIR := $(INSTALLDIR)/lib/modules/$(KERNELRELEASE)
 KDIR := $(LINUXDIR)
 PWD	:= $(shell pwd)
 
