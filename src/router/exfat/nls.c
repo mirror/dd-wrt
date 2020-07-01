@@ -514,6 +514,8 @@ static int exfat_utf8_to_utf16(struct super_block *sb,
 		return -ENAMETOOLONG;
 	}
 
+	p_uniname->name_len = unilen & 0xFF;
+
 	for (i = 0; i < unilen; i++) {
 		if (*uniname < 0x0020 ||
 		    exfat_wstrchr(bad_uni_chars, *uniname))
@@ -525,7 +527,7 @@ static int exfat_utf8_to_utf16(struct super_block *sb,
 
 	*uniname = '\0';
 	p_uniname->name_len = unilen;
-	p_uniname->name_hash = exfat_calc_chksum16(upname, unilen << 1, 0,
+	p_uniname->name_hash = exfat_calc_chksum_2byte(upname, unilen << 1, 0,
 			CS_DEFAULT);
 
 	if (p_lossy)
@@ -621,7 +623,7 @@ static int exfat_nls_to_ucs2(struct super_block *sb,
 
 	*uniname = '\0';
 	p_uniname->name_len = unilen;
-	p_uniname->name_hash = exfat_calc_chksum16(upname, unilen << 1, 0,
+	p_uniname->name_hash = exfat_calc_chksum_2byte(upname, unilen << 1, 0,
 			CS_DEFAULT);
 
 	if (p_lossy)
@@ -653,8 +655,7 @@ static int exfat_load_upcase_table(struct super_block *sb,
 {
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	unsigned int sect_size = sb->s_blocksize;
-	unsigned int i, index = 0;
-	u32 chksum = 0;
+	unsigned int i, index = 0, checksum = 0;
 	int ret;
 	unsigned char skip = false;
 	unsigned short *upcase_table;
@@ -680,6 +681,13 @@ static int exfat_load_upcase_table(struct super_block *sb,
 		for (i = 0; i < sect_size && index <= 0xFFFF; i += 2) {
 			unsigned short uni = get_unaligned_le16(bh->b_data + i);
 
+			checksum = ((checksum & 1) ? 0x80000000 : 0) +
+				(checksum >> 1) +
+				*(((unsigned char *)bh->b_data) + i);
+			checksum = ((checksum & 1) ? 0x80000000 : 0) +
+				(checksum >> 1) +
+				*(((unsigned char *)bh->b_data) + (i + 1));
+
 			if (skip) {
 				index += uni;
 				skip = false;
@@ -692,15 +700,14 @@ static int exfat_load_upcase_table(struct super_block *sb,
 				index++;
 			}
 		}
-		chksum = exfat_calc_chksum32(bh->b_data, i, chksum, CS_DEFAULT);
 		brelse(bh);
 	}
 
-	if (index >= 0xFFFF && utbl_checksum == chksum)
+	if (index >= 0xFFFF && utbl_checksum == checksum)
 		return 0;
 
 	exfat_err(sb, "failed to load upcase table (idx : 0x%08x, chksum : 0x%08x, utbl_chksum : 0x%08x)",
-		  index, chksum, utbl_checksum);
+		  index, checksum, utbl_checksum);
 	ret = -EINVAL;
 free_table:
 	exfat_free_upcase_table(sbi);

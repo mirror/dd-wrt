@@ -71,11 +71,7 @@ void exfat_msg(struct super_block *sb, const char *level, const char *fmt, ...)
 #define SECS_PER_MIN    (60)
 #define TIMEZONE_SEC(x)	((x) * 15 * SECS_PER_MIN)
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-static void exfat_adjust_tz(struct timespec64 *ts, u8 tz_off)
-#else
 static void exfat_adjust_tz(struct timespec *ts, u8 tz_off)
-#endif
 {
 	if (tz_off <= 0x3F)
 		ts->tv_sec -= TIMEZONE_SEC(tz_off);
@@ -84,13 +80,8 @@ static void exfat_adjust_tz(struct timespec *ts, u8 tz_off)
 }
 
 /* Convert a EXFAT time/date pair to a UNIX date (seconds since 1 1 70). */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
-		u8 tz, __le16 time, __le16 date, u8 time_cs)
-#else
 void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 tz, __le16 time, __le16 date, u8 time_cs)
-#endif
 {
 	u16 t = le16_to_cpu(time);
 	u16 d = le16_to_cpu(date);
@@ -115,13 +106,8 @@ void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 }
 
 /* Convert linear UNIX date to a EXFAT time/date pair. */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
-		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
-#else
 void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs)
-#endif
 {
 	struct tm tm;
 	u16 t, d;
@@ -150,69 +136,35 @@ void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 }
 
 /* atime has only a 2-second resolution */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
-void exfat_truncate_atime(struct timespec64 *ts)
-#else
 void exfat_truncate_atime(struct timespec *ts)
-#endif
 {
 	ts->tv_sec = round_down(ts->tv_sec, 2);
 	ts->tv_nsec = 0;
 }
 
-u16 exfat_calc_chksum16(void *data, int len, u16 chksum, int type)
+unsigned short exfat_calc_chksum_2byte(void *data, int len,
+		unsigned short chksum, int type)
 {
 	int i;
-	u8 *c = (u8 *)data;
+	unsigned char *c = (unsigned char *)data;
 
 	for (i = 0; i < len; i++, c++) {
-		if (unlikely(type == CS_DIR_ENTRY && (i == 2 || i == 3)))
+		if (((i == 2) || (i == 3)) && (type == CS_DIR_ENTRY))
 			continue;
-		chksum = ((chksum << 15) | (chksum >> 1)) + *c;
+		chksum = (((chksum & 1) << 15) | ((chksum & 0xFFFE) >> 1)) +
+			(unsigned short)*c;
 	}
 	return chksum;
 }
 
-u32 exfat_calc_chksum32(void *data, int len, u32 chksum, int type)
+void exfat_update_bh(struct super_block *sb, struct buffer_head *bh, int sync)
 {
-	int i;
-	u8 *c = (u8 *)data;
-
-	for (i = 0; i < len; i++, c++) {
-		if (unlikely(type == CS_BOOT_SECTOR &&
-			     (i == 106 || i == 107 || i == 112)))
-			continue;
-		chksum = ((chksum << 31) | (chksum >> 1)) + *c;
-	}
-	return chksum;
-}
-
-void exfat_update_bh(struct buffer_head *bh, int sync)
-{
+	set_bit(EXFAT_SB_DIRTY, &EXFAT_SB(sb)->s_state);
 	set_buffer_uptodate(bh);
 	mark_buffer_dirty(bh);
 
 	if (sync)
 		sync_dirty_buffer(bh);
-}
-
-int exfat_update_bhs(struct buffer_head **bhs, int nr_bhs, int sync)
-{
-	int i, err = 0;
-
-	for (i = 0; i < nr_bhs; i++) {
-		set_buffer_uptodate(bhs[i]);
-		mark_buffer_dirty(bhs[i]);
-		if (sync)
-			write_dirty_buffer(bhs[i], 0);
-	}
-
-	for (i = 0; i < nr_bhs && sync; i++) {
-		wait_on_buffer(bhs[i]);
-		if (!err && !buffer_uptodate(bhs[i]))
-			err = -EIO;
-	}
-	return err;
 }
 
 void exfat_chain_set(struct exfat_chain *ec, unsigned int dir,
