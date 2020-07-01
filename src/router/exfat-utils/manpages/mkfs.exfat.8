@@ -1,0 +1,60 @@
+.TH mkfs.exfat 8
+.SH NAME
+mkfs.exfat \- create an exFAT filesystem
+.SH SYNOPSIS
+.B mkfs.exfat
+[
+.B \-c
+.I cluster_size
+] [
+.B \-f
+] [
+.B \-h
+] [
+.B \-L
+.I volume_label
+] [
+.B \-v
+]
+.I device
+.br
+.B mkfs.exfat \-V
+.SH DESCRIPTION
+.B mkfs.exfat
+creates an exFAT filesystem by writing on a special
+file using the values found in the arguments of the command line.
+It is invoked automatically by
+.BR mkfs (8)
+when it is given the
+.B \-t exfat
+option.
+.PP
+As an example, to make a filesystem on the first partition on the first
+SCSI disk, use:
+.IP
+.B mkfs.exfat /dev/sda1
+.PP
+.SH OPTIONS
+.TP
+.BI \-c " cluster_size"
+Specify the cluster size. Cluster size can be specified in m/M for megabytes
+and k/K for kilobytes.
+.TP
+.BI \-f
+Performs a full format. This zeros the entire disk device while
+creating the exFAT filesystem.
+.TP
+.BI \-h
+Prints the help and exit.
+.TP
+.BI \-L " volume_label"
+Specifies the volume label associated with the exFAT filesystem.
+.TP
+.BI \-v
+Prints verbose debugging information while creating the exFAT filesystem.
+.TP
+.B \-V
+Prints the version number and exits.
+.SH SEE ALSO
+.BR mkfs (8),
+.BR mount (8),
