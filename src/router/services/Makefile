@@ -1612,9 +1612,11 @@ OBJS += sshd.o
 CFLAGS_EXTRA += -DHAVE_SSHD
 endif
 
+ifeq ($(CONFIG_IPV6),y)
 ifeq ($(CONFIG_RADVD),y)
 CFLAGS_EXTRA += -DHAVE_RADVD 
 OBJS += radvd.o
+endif
 endif
 
 ifeq ($(CONFIG_FREERADIUS),y)
