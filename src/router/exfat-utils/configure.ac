@@ -1,50 +1,35 @@
-#
-#	configure.ac (30.03.15)
-#	Autoconf source.
-#
-#	Free exFAT implementation.
-#	Copyright (C) 2010-2018  Andrew Nayenko
-#
-#	This program is free software; you can redistribute it and/or modify
-#	it under the terms of the GNU General Public License as published by
-#	the Free Software Foundation, either version 2 of the License, or
-#	(at your option) any later version.
-#
-#	This program is distributed in the hope that it will be useful,
-#	but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	GNU General Public License for more details.
-#
-#	You should have received a copy of the GNU General Public License along
-#	with this program; if not, write to the Free Software Foundation, Inc.,
-#	51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-#
+AC_PREREQ([2.68])
 
-AC_INIT([Free exFAT implementation],
-	[1.3.0],
-	[relan@users.noreply.github.com],
-	[exfat-utils],
-	[https://github.com/relan/exfat])
-AM_INIT_AUTOMAKE([1.11.2 -Wall -Werror foreign subdir-objects])
-LT_INIT
-LT_LIB_M
+m4_define([exfat_progs_version], m4_esyscmd_s(
+	 grep "define EXFAT_PROGS_VERSION " include/version.h | \
+		 awk '{print $3}' | sed 's/\"//g'))
+
+AC_INIT([exfatprogs],
+	exfat_progs_version,
+	[linkinjeon@kernel.org],
+	[exfatprogs],
+	[https://github.com/exfatprogs/exfatprogs])
+
+AC_CONFIG_SRCDIR([config.h.in])
+AC_CONFIG_HEADER([config.h])
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR([build-aux])
+AM_INIT_AUTOMAKE([foreign tar-pax subdir-objects])
+
+AC_LANG([C])
 AC_PROG_CC
-AC_PROG_CC_C99
-AC_PROG_RANLIB
-AM_PROG_AR
+AC_PROG_CC_STDC
+AM_SILENT_RULES([yes])
+AC_PROG_LIBTOOL
 AC_SYS_LARGEFILE
-PKG_CHECK_MODULES([UBLIO], [libublio], [
-  CFLAGS="$CFLAGS $UBLIO_CFLAGS"
-  LIBS="$LIBS $UBLIO_LIBS"
-  AC_DEFINE([USE_UBLIO], [1],
-    [Define if block devices are not supported.])
-], [:])
-AC_CONFIG_HEADERS([libexfat/config.h])
+AC_C_BIGENDIAN
+
 AC_CONFIG_FILES([
-	libexfat/Makefile
-	dump/Makefile
-	fsck/Makefile
-	label/Makefile
+	Makefile
+	lib/Makefile
 	mkfs/Makefile
-	Makefile])
+	fsck/Makefile
+	tune/Makefile
+])
+
 AC_OUTPUT

@@ -1,0 +1,10 @@
+// Copyright 2020 The Android Open Source Project
+
+cc_library_static {
+    name: "libexfat",
+
+    srcs: [
+        "libexfat.c",
+    ],
+    defaults: ["exfatprogs-defaults"],
+}
