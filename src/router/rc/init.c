@@ -468,9 +468,9 @@ int main(int argc, char **argv)
 	initlcd();
 	cprintf("first message\n");
 	lcdmessage("System Start");
-	dd_loginfo("init", "start service\n");
-	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
+	dd_loginfo("init", "starting devinit\n");
 	start_service("devinit");	//init /dev /proc etc.
+	dd_loginfo("init", "starting Architecture code for " ARCHITECTURE "\n");
 	start_service("sysinit");
 #ifndef HAVE_MICRO
 	if (console_init())
