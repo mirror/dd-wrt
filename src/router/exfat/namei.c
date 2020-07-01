@@ -414,7 +414,7 @@ static int exfat_find_empty_entry(struct inode *inode,
 			ep->dentry.stream.valid_size = cpu_to_le64(size);
 			ep->dentry.stream.size = ep->dentry.stream.valid_size;
 			ep->dentry.stream.flags = p_dir->flags;
-			exfat_update_bh(bh, IS_DIRSYNC(inode));
+			exfat_update_bh(sb, bh, IS_DIRSYNC(inode));
 			brelse(bh);
 			if (exfat_update_dir_chksum(inode, &(ei->dir),
 			    ei->entry))
@@ -645,6 +645,8 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 	int ret, dentry, num_entries, count;
 	struct exfat_chain cdir;
 	struct exfat_uni_name uni_name;
+	struct exfat_dentry *ep, *ep2;
+	struct exfat_entry_set_cache *es = NULL;
 	struct super_block *sb = dir->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	struct exfat_inode_info *ei = EXFAT_I(dir);
@@ -711,14 +713,10 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 
 		info->num_subdirs = count;
 	} else {
-		struct exfat_dentry *ep, *ep2;
-		struct exfat_entry_set_cache *es;
-
-		es = exfat_get_dentry_set(sb, &cdir, dentry, ES_2_ENTRIES);
+		es = exfat_get_dentry_set(sb, &cdir, dentry, ES_2_ENTRIES, &ep);
 		if (!es)
 			return -EIO;
-		ep = exfat_get_validated_dentry(es, 0, TYPE_FILE);
-		ep2 = exfat_get_validated_dentry(es, 1, TYPE_STREAM);
+		ep2 = ep + 1;
 
 		info->type = exfat_get_entry_type(ep);
 		info->attr = le16_to_cpu(ep->dentry.file.attr);
@@ -736,7 +734,7 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 			exfat_fs_error(sb,
 				"non-zero size file starts with zero cluster (size : %llu, p_dir : %u, entry : 0x%08x)",
 				i_size_read(dir), ei->dir.dir, ei->entry);
-			exfat_free_dentry_set(es, false);
+			kfree(es);
 			return -EIO;
 		}
 
@@ -755,7 +753,7 @@ static int exfat_find(struct inode *dir, struct qstr *qname,
 				ep->dentry.file.access_time,
 				ep->dentry.file.access_date,
 				0);
-		exfat_free_dentry_set(es, false);
+		kfree(es);
 
 		if (info->type == TYPE_DIR) {
 			exfat_chain_set(&cdir, info->start_clu,
@@ -1066,6 +1064,7 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 		goto unlock;
 	}
 
+	exfat_set_vol_flags(sb, VOL_DIRTY);
 	exfat_chain_set(&clu_to_free, ei->start_clu,
 		EXFAT_B_TO_CLU_ROUND_UP(i_size_read(inode), sbi), ei->flags);
 
@@ -1092,7 +1091,6 @@ static int exfat_rmdir(struct inode *dir, struct dentry *dentry)
 	num_entries++;
 	brelse(bh);
 
-	exfat_set_vol_flags(sb, VOL_DIRTY);
 	err = exfat_remove_entries(dir, &cdir, entry, 0, num_entries);
 	if (err) {
 		exfat_err(sb, "failed to exfat_remove_entries : err(%d)", err);
@@ -1178,23 +1176,19 @@ static int exfat_rename_file(struct inode *inode, struct exfat_chain *p_dir,
 			epnew->dentry.file.attr |= cpu_to_le16(ATTR_ARCHIVE);
 			ei->attr |= ATTR_ARCHIVE;
 		}
-		exfat_update_bh(new_bh, sync);
+		exfat_update_bh(sb, new_bh, sync);
 		brelse(old_bh);
 		brelse(new_bh);
 
 		epold = exfat_get_dentry(sb, p_dir, oldentry + 1, &old_bh,
 			&sector_old);
-		if (!epold)
-			return -EIO;
 		epnew = exfat_get_dentry(sb, p_dir, newentry + 1, &new_bh,
 			&sector_new);
-		if (!epnew) {
-			brelse(old_bh);
+		if (!epold || !epnew)
 			return -EIO;
-		}
 
 		memcpy(epnew, epold, DENTRY_SIZE);
-		exfat_update_bh(new_bh, sync);
+		exfat_update_bh(sb, new_bh, sync);
 		brelse(old_bh);
 		brelse(new_bh);
 
@@ -1211,7 +1205,7 @@ static int exfat_rename_file(struct inode *inode, struct exfat_chain *p_dir,
 			epold->dentry.file.attr |= cpu_to_le16(ATTR_ARCHIVE);
 			ei->attr |= ATTR_ARCHIVE;
 		}
-		exfat_update_bh(old_bh, sync);
+		exfat_update_bh(sb, old_bh, sync);
 		brelse(old_bh);
 		ret = exfat_init_ext_entry(inode, p_dir, oldentry,
 			num_new_entries, p_uniname);
@@ -1266,23 +1260,19 @@ static int exfat_move_file(struct inode *inode, struct exfat_chain *p_olddir,
 		epnew->dentry.file.attr |= cpu_to_le16(ATTR_ARCHIVE);
 		ei->attr |= ATTR_ARCHIVE;
 	}
-	exfat_update_bh(new_bh, IS_DIRSYNC(inode));
+	exfat_update_bh(sb, new_bh, IS_DIRSYNC(inode));
 	brelse(mov_bh);
 	brelse(new_bh);
 
 	epmov = exfat_get_dentry(sb, p_olddir, oldentry + 1, &mov_bh,
 		&sector_mov);
-	if (!epmov)
-		return -EIO;
 	epnew = exfat_get_dentry(sb, p_newdir, newentry + 1, &new_bh,
 		&sector_new);
-	if (!epnew) {
-		brelse(mov_bh);
+	if (!epmov || !epnew)
 		return -EIO;
-	}
 
 	memcpy(epnew, epmov, DENTRY_SIZE);
-	exfat_update_bh(new_bh, IS_DIRSYNC(inode));
+	exfat_update_bh(sb, new_bh, IS_DIRSYNC(inode));
 	brelse(mov_bh);
 	brelse(new_bh);
 
