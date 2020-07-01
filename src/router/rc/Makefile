@@ -897,8 +897,10 @@ endif
 ifeq ($(CONFIG_IPV6),y)
 CFLAGS += -DHAVE_IPV6
 endif
+ifeq ($(CONFIG_IPV6),y)
 ifeq ($(CONFIG_RADVD),y)
 CFLAGS += -DHAVE_RADVD
+endif
 endif
 
 ifeq ($(CONFIG_DHCPFORWARD),y)
