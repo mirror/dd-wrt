@@ -170,7 +170,7 @@ void start_sysinit(void)
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");
 		eval("swconfig", "dev", "eth0", "vlan", "2", "set", "ports", "5 6t");
 		eval("swconfig", "dev", "eth0", "set", "apply");
-		nvram_seti("sw_cpuport", "6");
+		nvram_seti("sw_cpuport", 6);
 		nvram_seti("sw_wan", 5);
 		nvram_seti("sw_lan1", 0);
 		nvram_seti("sw_lan2", 1);
