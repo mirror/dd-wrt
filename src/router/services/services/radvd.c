@@ -54,7 +54,7 @@
 #include <syslog.h>
 #include <services.h>
 
-#ifdef HAVE_RADVD
+#if defined(HAVE_RADVD) && defined(HAVE_IPV6)
 
 static int write_ipv6_dns_servers(FILE * f, const char *prefix, char *dns, const char *suffix, int once)
 {
