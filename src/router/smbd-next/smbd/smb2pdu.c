@@ -3559,12 +3559,12 @@ int smb2_query_dir(struct ksmbd_work *work)
 	if (ksmbd_override_fsids(work)) {
 		rsp->hdr.Status = STATUS_NO_MEMORY;
 		smb2_set_err_rsp(work);
-		return 0;
+		return -ENOMEM;
 	}
 
 	rc = verify_info_level(req->FileInformationClass);
 	if (rc) {
-		rsp->hdr.Status = STATUS_INVALID_INFO_CLASS;
+		rc = -EFAULT;
 		goto err_out2;
 	}
 
@@ -3572,8 +3572,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 			le64_to_cpu(req->VolatileFileId),
 			le64_to_cpu(req->PersistentFileId));
 	if (!dir_fp) {
-		rsp->hdr.Status = STATUS_FILE_CLOSED;
-		rc = -ENOENT;
+		rc = -EBADF;
 		goto err_out2;
 	}
 
@@ -3582,14 +3581,12 @@ int smb2_query_dir(struct ksmbd_work *work)
 			MAY_READ | MAY_EXEC)) {
 		ksmbd_err("no right to enumerate directory (%s)\n",
 			FP_FILENAME(dir_fp));
-		rsp->hdr.Status = STATUS_ACCESS_DENIED;
 		rc = -EACCES;
 		goto err_out2;
 	}
 
 	if (!S_ISDIR(file_inode(dir_fp->filp)->i_mode)) {
 		ksmbd_err("can't do query dir for a file\n");
-		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 		rc = -EINVAL;
 		goto err_out2;
 	}
@@ -3600,7 +3597,6 @@ int smb2_query_dir(struct ksmbd_work *work)
 			conn->local_nls);
 	if (IS_ERR(srch_ptr)) {
 		ksmbd_debug(SMB, "Search Pattern not found\n");
-		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 		rc = -EINVAL;
 		goto err_out2;
 	} else
@@ -3703,8 +3699,21 @@ err_out:
 	kfree(srch_ptr);
 
 err_out2:
-	if (rsp->hdr.Status == 0)
-		rsp->hdr.Status = STATUS_NOT_IMPLEMENTED;
+	if (rc == -EINVAL)
+		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
+	else if (rc == -EACCES)
+		rsp->hdr.Status = STATUS_ACCESS_DENIED;
+	else if (rc == -ENOENT)
+		rsp->hdr.Status = STATUS_NO_SUCH_FILE;
+	else if (rc == -EBADF)
+		rsp->hdr.Status = STATUS_FILE_CLOSED;
+	else if (rc == -ENOMEM)
+		rsp->hdr.Status = STATUS_NO_MEMORY;
+	else if (rc == -EFAULT)
+		rsp->hdr.Status = STATUS_INVALID_INFO_CLASS;
+	if (!rsp->hdr.Status)
+		rsp->hdr.Status = STATUS_UNEXPECTED_IO_ERROR;
+
 	smb2_set_err_rsp(work);
 	ksmbd_fd_put(work, dir_fp);
 	ksmbd_revert_fsids(work);
