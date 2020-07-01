@@ -1102,46 +1102,52 @@ static int read_children(struct exfat *exfat, struct exfat_inode *dir)
 		}
 
 		dentry_count = 1;
-
-		switch (dentry->type) {
-		case EXFAT_FILE:
-			ret = read_file(de_iter, &node, &dentry_count);
-			if (ret) {
-				exfat_err("failed to verify file. %d\n", ret);
-				goto err;
-			}
-
-			if ((node->attr & ATTR_SUBDIR) && node->size) {
-				node->parent = dir;
-				list_add_tail(&node->sibling, &dir->children);
-				list_add_tail(&node->list, &sub_dir_list);
-			} else
-				free_exfat_inode(node);
-			break;
-		case EXFAT_VOLUME:
-			if (!read_volume_label(de_iter)) {
-				exfat_err("failed to verify volume label\n");
+		#define EXFAT_ENTRY_VALID     0x80
+		#define EXFAT_ENTRY_BITMAP    (0x01 | EXFAT_ENTRY_VALID)
+		#define EXFAT_ENTRY_UPCASE    (0x02 | EXFAT_ENTRY_VALID)
+		#define EXFAT_ENTRY_LABEL     (0x03 | EXFAT_ENTRY_VALID)
+		#define EXFAT_ENTRY_FILE      (0x05 | EXFAT_ENTRY_VALID)
+		if (dentry->type & EXFAT_ENTRY_VALID) {
+			unsigned int type = dentry->type & (EXFAT_ENTRY_VALID | 0x0f);
+			if (type == EXFAT_ENTRY_BITMAP) {
+				if (!read_bitmap(de_iter)) {
+					exfat_err(
+						"failed to verify allocation bitmap\n");
+					ret = -EINVAL;
+					goto err;
+				}
+			} else if (type == EXFAT_ENTRY_UPCASE) {
+				if (!read_upcase_table(de_iter)) {
+					exfat_err(
+						"failed to verify upcase table\n");
+					ret = -EINVAL;
+					goto err;
+				}
+			} else if (type == EXFAT_ENTRY_LABEL) {
+				if (!read_volume_label(de_iter)) {
+					exfat_err("failed to verify volume label\n");
+					ret = -EINVAL;
+					goto err;
+				}
+			} else if (type == EXFAT_ENTRY_FILE) {
+				ret = read_file(de_iter, &node, &dentry_count);
+				if (ret) {
+					exfat_err("failed to verify file. %d\n", ret);
+					goto err;
+				}
+			
+				if ((node->attr & ATTR_SUBDIR) && node->size) {
+					node->parent = dir;
+					list_add_tail(&node->sibling, &dir->children);
+					list_add_tail(&node->list, &sub_dir_list);
+				} else
+					free_exfat_inode(node);
+			} else {
+				exfat_err("unknown entry type. 0x%x\n", dentry->type);
 				ret = -EINVAL;
 				goto err;
 			}
-			break;
-		case EXFAT_BITMAP:
-			if (!read_bitmap(de_iter)) {
-				exfat_err(
-					"failed to verify allocation bitmap\n");
-				ret = -EINVAL;
-				goto err;
-			}
-			break;
-		case EXFAT_UPCASE:
-			if (!read_upcase_table(de_iter)) {
-				exfat_err(
-					"failed to verify upcase table\n");
-				ret = -EINVAL;
-				goto err;
-			}
-			break;
-		default:
+		} else {
 			if (IS_EXFAT_DELETED(dentry->type) ||
 					(dentry->type == EXFAT_UNUSED))
 				break;
@@ -1149,7 +1155,6 @@ static int read_children(struct exfat *exfat, struct exfat_inode *dir)
 			ret = -EINVAL;
 			goto err;
 		}
-
 		exfat_de_iter_advance(de_iter, dentry_count);
 	}
 	list_splice(&sub_dir_list, &exfat->dir_list);
