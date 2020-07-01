@@ -1,0 +1,46 @@
+exfatprogs 1.0.3 - released 2020-05-12
+======================================
+
+CHANGES :
+ * Rename label.exfat to tune.exfat.
+ * tune.exfat: change argument style(-l option for print level,
+   -L option for setting label)
+ * mkfs.exfat: harmonize set volume label option with tune.exfat.
+
+NEW FEATURES :
+ * Add man page.
+
+BUG FIXES :
+ * Fix the reported build warnings/errors.
+ * Add memset to clean garbage in allocation.
+ * Fix wrong volume label array size.
+ * Open a device using O_EXCL to avoid formatting it while it is mounted.
+ * Fix incomplete "make dist" generated tarball.
+
+
+exfatprogs 1.0.2 - released 2020-04-23
+======================================
+
+CHANGES :
+ * Rename project name to exfatprogs.
+ * Replace iconv library by standard C functions mbstowcs() and wcrtomb().
+
+NEW FEATURES :
+ * Add support for Android build system.
+ * label.exfat: Add support for label.exfat to set/get exfat volume label.
+
+BUG FIXES :
+ * Fix the build warnings/errors and add warning options.
+ * Fix several bugs(memory leak, wrong endian conversion, zero out beyond
+   end of file) and cleanup codes
+ * Fix issues on big endian system and on 32bit system.
+
+
+exfatprogs 1.0.1 - released 2020-04-09
+======================================
+
+NEW FEATURES :
+ * mkfs.exfat: quick/full format support
+ * mkfs.exfat: specify cluster size
+ * mkfs.exfat: set volume label
+ * fsck.exfat: consistency check support

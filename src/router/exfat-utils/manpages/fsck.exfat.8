@@ -1,0 +1,44 @@
+.TH fsck.exfat 8
+.SH NAME
+fsck.exfat \- check an exFAT filesystem
+.SH SYNOPSIS
+.B fsck.exfat
+[
+.B \-n
+] [
+.B \-r
+] [
+.B \-v
+] [
+.B \-y
+] [
+.B \-v
+]
+.I device
+.br
+.B fsck.exfat \-V
+.SH DESCRIPTION
+.B fsck.exfat
+checks an exFAT filesystem and repairs the filesytem
+depending on the options passed.
+.PP
+.SH OPTIONS
+.TP
+.BI \-n
+Check the filesystem but do not attempt to repair the filesystem.
+.TP
+.BI \-r
+Repair the filesystem interactively.
+.TP
+.BI \-v
+Prints verbose debugging information while checking the exFAT filesystem.
+.TP
+.BI \-V
+Prints the version number and exits.
+.TP
+.B \-y
+Repair the filesystem answering yes to all questions.
+.TP
+.SH SEE ALSO
+.BR fsck (8),
+.BR fstab (5),

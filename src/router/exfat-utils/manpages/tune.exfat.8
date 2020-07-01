@@ -1,0 +1,34 @@
+.TH tune.exfat 8
+.SH NAME
+tune.exfat \- adjust tunable filesystem parameters on an exFAT filesystem
+.SH SYNOPSIS
+.B tune.exfat
+[
+.B \-l
+] [
+.B \-L volume_label
+.I volume_label
+] [
+.B \-v
+]
+.I device
+.br
+.B tune.exfat \-V
+.SH DESCRIPTION
+.B tune.exfat
+adjust tunable ondisk parameters of an existing exFAT filesystem.
+.PP
+.SH OPTIONS
+.TP
+.BI \-l
+Print the volume label of the exFAT filesystem.
+.TP
+.BI \-L" volume_label"
+Set the volume label of the filesystem to the provided argument.
+.TP
+.BI \-v
+Prints verbose debugging information while extracting or tuning parameters of the exFAT filesystem.
+.TP
+.B \-V
+Prints the version number and exits.
+.TP
