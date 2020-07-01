@@ -159,7 +159,7 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 
 	/* update the directory entry */
 	if (!evict) {
-		struct timespec64 ts;
+		struct timespec ts;
 		struct exfat_dentry *ep, *ep2;
 		struct exfat_entry_set_cache *es;
 
