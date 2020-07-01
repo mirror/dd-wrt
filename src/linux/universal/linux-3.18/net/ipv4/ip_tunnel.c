@@ -1172,7 +1172,7 @@ void ip_tunnel_uninit(struct net_device *dev)
 
 	itn = net_generic(net, tunnel->ip_tnl_net_id);
 	/* fb_tunnel_dev will be unregisted in net-exit call. */
-	ip_tunnel_del(itn, netdev_priv(dev));
+	ip_tunnel_del(netdev_priv(dev));
 	if (itn->fb_tunnel_dev == dev)
 		WRITE_ONCE(itn->fb_tunnel_dev, NULL);
 
