@@ -188,9 +188,9 @@ struct exfat_dir_entry {
 	unsigned short attr;
 	loff_t size;
 	unsigned int num_subdirs;
-	struct timespec64 atime;
-	struct timespec64 mtime;
-	struct timespec64 crtime;
+	struct timespec atime;
+	struct timespec mtime;
+	struct timespec crtime;
 	struct exfat_dentry_namebuf namebuf;
 };
 
@@ -299,7 +299,7 @@ struct exfat_inode_info {
 	struct rw_semaphore truncate_lock;
 	struct inode vfs_inode;
 	/* File creation time */
-	struct timespec64 i_crtime;
+	struct timespec i_crtime;
 };
 
 static inline struct exfat_sb_info *EXFAT_SB(struct super_block *sb)
@@ -516,10 +516,10 @@ void exfat_msg(struct super_block *sb, const char *lv, const char *fmt, ...)
 #define exfat_info(sb, fmt, ...)					\
 	exfat_msg(sb, KERN_INFO, fmt, ##__VA_ARGS__)
 
-void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
+void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 tz, __le16 time, __le16 date, u8 time_cs);
-void exfat_truncate_atime(struct timespec64 *ts);
-void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec64 *ts,
+void exfat_truncate_atime(struct timespec *ts);
+void exfat_set_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 		u8 *tz, __le16 *time, __le16 *date, u8 *time_cs);
 u16 exfat_calc_chksum16(void *data, int len, u16 chksum, int type);
 u32 exfat_calc_chksum32(void *data, int len, u32 chksum, int type);
