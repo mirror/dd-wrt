@@ -4,6 +4,7 @@
  */
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include "exfat_ondisk.h"
 #include "libexfat.h"
@@ -12,37 +13,34 @@
 
 struct exfat_repair_problem {
 	er_problem_code_t	prcode;
-	const char		*description;
-	bool (*fix_problem)(struct exfat *exfat,
-			union exfat_repair_context *rctx);
+	unsigned int		flags;
+	unsigned int		prompt_type;
 };
 
-static bool fix_bs_checksum(struct exfat *exfat,
-			union exfat_repair_context *rctx)
-{
-	unsigned int size;
-	unsigned int i;
+/* Problem flags */
+#define ERF_PREEN_YES		0x00000001
+#define ERF_DEFAULT_YES		0x00000002
+#define ERF_DEFAULT_NO		0x00000004
 
-	size = EXFAT_SECTOR_SIZE(exfat->bs);
-	for (i = 0; i < size/sizeof(__le32); i++) {
-		((__le32 *)rctx->bs_checksum.checksum_sect)[i] =
-				rctx->bs_checksum.checksum;
-	}
+/* Prompt types */
+#define ERP_FIX			0x00000001
+#define ERP_TRUNCATE		0x00000002
 
-	if (exfat_write(exfat->blk_dev->dev_fd,
-			rctx->bs_checksum.checksum_sect,
-			size, size * 11) != size) {
-		exfat_err("failed to write checksum sector\n");
-		return false;
-	}
-
-	return true;
-}
+static const char *prompts[] = {
+	"Repair",
+	"Fix",
+	"Truncate",
+};
 
 static struct exfat_repair_problem problems[] = {
-	{ER_BS_CHECKSUM,
-		"the checksum of boot sector is not correct",
-		fix_bs_checksum},
+	{ER_BS_CHECKSUM, ERF_DEFAULT_YES | ERF_PREEN_YES, ERP_FIX},
+	{ER_DE_CHECKSUM, ERF_DEFAULT_YES | ERF_PREEN_YES, ERP_FIX},
+	{ER_FILE_VALID_SIZE, ERF_DEFAULT_YES | ERF_PREEN_YES, ERP_FIX},
+	{ER_FILE_INVALID_CLUS, ERF_DEFAULT_NO, ERP_TRUNCATE},
+	{ER_FILE_FIRST_CLUS, ERF_DEFAULT_NO, ERP_TRUNCATE},
+	{ER_FILE_SMALLER_SIZE, ERF_DEFAULT_NO, ERP_TRUNCATE},
+	{ER_FILE_LARGER_SIZE, ERF_DEFAULT_NO, ERP_TRUNCATE},
+	{ER_FILE_DUPLICATED_CLUS, ERF_DEFAULT_NO, ERP_TRUNCATE},
 };
 
 static struct exfat_repair_problem *find_problem(er_problem_code_t prcode)
@@ -59,42 +57,45 @@ static struct exfat_repair_problem *find_problem(er_problem_code_t prcode)
 
 static bool ask_repair(struct exfat *exfat, struct exfat_repair_problem *pr)
 {
+	bool repair = false;
 	char answer[8];
 
-	switch (exfat->options & FSCK_OPTS_REPAIR) {
-	case FSCK_OPTS_REPAIR_ASK:
-		do {
-			printf("%s: Fix (y/N)?", pr->description);
-			fflush(stdout);
+	if (exfat->options & FSCK_OPTS_REPAIR_NO ||
+			pr->flags & ERF_DEFAULT_NO)
+		repair = false;
+	else if (exfat->options & FSCK_OPTS_REPAIR_YES ||
+			pr->flags & ERF_DEFAULT_YES)
+		repair = true;
+	else {
+		if (exfat->options & FSCK_OPTS_REPAIR_ASK) {
+			do {
+				printf(". %s (y/N)? ",
+					prompts[pr->prompt_type]);
+				fflush(stdout);
 
-			if (fgets(answer, sizeof(answer), stdin)) {
-				if (strcasecmp(answer, "Y\n") == 0)
-					return true;
-				else if (strcasecmp(answer, "\n") == 0 ||
-					strcasecmp(answer, "N\n") == 0)
-					return false;
-			}
-		} while (1);
-		return false;
-	case FSCK_OPTS_REPAIR_YES:
-		return true;
-	case FSCK_OPTS_REPAIR_NO:
-	case 0:
-	default:
-		return false;
+				if (fgets(answer, sizeof(answer), stdin)) {
+					if (strcasecmp(answer, "Y\n") == 0)
+						return true;
+					else if (strcasecmp(answer, "\n") == 0
+						|| strcasecmp(answer, "N\n") == 0)
+						return false;
+				}
+			} while (1);
+		} else if (exfat->options & FSCK_OPTS_REPAIR_AUTO &&
+				pr->flags & ERF_PREEN_YES)
+			repair = true;
 	}
-	return false;
+
+	printf(". %s (y/N)? %c\n", prompts[pr->prompt_type],
+		repair ? 'y' : 'n');
+	return repair;
 }
 
-bool exfat_repair(struct exfat *exfat, er_problem_code_t prcode,
-			union exfat_repair_context *rctx)
+bool exfat_repair_ask(struct exfat *exfat, er_problem_code_t prcode,
+			const char *desc, ...)
 {
 	struct exfat_repair_problem *pr = NULL;
-	int need_repair;
-
-	need_repair = ask_repair(exfat, pr);
-	if (!need_repair)
-		return false;
+	va_list ap;
 
 	pr = find_problem(prcode);
 	if (!pr) {
@@ -102,5 +103,15 @@ bool exfat_repair(struct exfat *exfat, er_problem_code_t prcode,
 		return false;
 	}
 
-	return pr->fix_problem(exfat, rctx);
+	va_start(ap, desc);
+	vprintf(desc, ap);
+	va_end(ap);
+
+	if (ask_repair(exfat, pr)) {
+		if (pr->prompt_type & ERP_TRUNCATE)
+			exfat->dirty_fat = true;
+		exfat->dirty = true;
+		return true;
+	} else
+		return false;
 }

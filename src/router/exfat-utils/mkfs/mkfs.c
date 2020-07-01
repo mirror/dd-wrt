@@ -15,8 +15,8 @@
 #include <getopt.h>
 #include <inttypes.h>
 #include <errno.h>
-#include <math.h>
 #include <locale.h>
+#include <time.h>
 
 #include "exfat_ondisk.h"
 #include "libexfat.h"
@@ -24,11 +24,26 @@
 
 struct exfat_mkfs_info finfo;
 
+/* random serial generator based on current time */
+static unsigned int get_new_serial(void)
+{
+	struct timespec ts;
+
+	if (clock_gettime(CLOCK_REALTIME, &ts)) {
+		/* set 0000-0000 on error */
+		ts.tv_sec = 0;
+		ts.tv_nsec = 0;
+	}
+
+	return (unsigned int)(ts.tv_nsec << 12 | ts.tv_sec);
+}
+
 static void exfat_setup_boot_sector(struct pbr *ppbr,
 		struct exfat_blk_dev *bd, struct exfat_user_input *ui)
 {
 	struct bpb64 *pbpb = &ppbr->bpb;
 	struct bsx64 *pbsx = &ppbr->bsx;
+	unsigned int i;
 
 	/* Fill exfat BIOS paramemter block */
 	pbpb->jmp_boot[0] = 0xeb;
@@ -45,10 +60,13 @@ static void exfat_setup_boot_sector(struct pbr *ppbr,
 	pbsx->clu_offset = cpu_to_le32(finfo.clu_byte_off / bd->sector_size);
 	pbsx->clu_count = cpu_to_le32(finfo.total_clu_cnt);
 	pbsx->root_cluster = cpu_to_le32(finfo.root_start_clu);
-	pbsx->vol_serial = cpu_to_le32(1234);
+	pbsx->vol_serial = cpu_to_le32(finfo.volume_serial);
 	pbsx->vol_flags = 0;
 	pbsx->sect_size_bits = bd->sector_size_bits;
-	pbsx->sect_per_clus_bits = log2(ui->cluster_size / bd->sector_size);
+	pbsx->sect_per_clus_bits = 0;
+	/* Compute base 2 logarithm of ui->cluster_size / bd->sector_size */
+	for (i = ui->cluster_size / bd->sector_size; i > 1; i /= 2)
+		pbsx->sect_per_clus_bits++;
 	pbsx->num_fats = 1;
 	/* fs_version[0] : minor and fs_version[1] : major */
 	pbsx->fs_version[0] = 0;
@@ -409,14 +427,14 @@ static struct option opts[] = {
 static int exfat_build_mkfs_info(struct exfat_blk_dev *bd,
 		struct exfat_user_input *ui)
 {
-	if (ui->cluster_size > DEFAULT_CLUSTER_SIZE)
+	if (ui->cluster_size > DEFAULT_BOUNDARY_ALIGNMENT)
 		finfo.fat_byte_off = ui->cluster_size;
 	else
-		finfo.fat_byte_off = DEFAULT_CLUSTER_SIZE;
+		finfo.fat_byte_off = DEFAULT_BOUNDARY_ALIGNMENT;
 	finfo.fat_byte_len = round_up((bd->num_clusters * sizeof(int)),
 		ui->cluster_size);
 	finfo.clu_byte_off = round_up(finfo.fat_byte_off + finfo.fat_byte_len,
-		DEFAULT_CLUSTER_SIZE);
+		DEFAULT_BOUNDARY_ALIGNMENT);
 	finfo.total_clu_cnt = (bd->size - finfo.clu_byte_off) /
 		ui->cluster_size;
 	if (finfo.total_clu_cnt > EXFAT_MAX_NUM_CLUSTER) {
@@ -437,6 +455,7 @@ static int exfat_build_mkfs_info(struct exfat_blk_dev *bd,
 	finfo.root_byte_off = round_up(finfo.ut_byte_off + finfo.ut_byte_len,
 		ui->cluster_size);
 	finfo.root_byte_len = sizeof(struct exfat_dentry) * 3;
+	finfo.volume_serial = get_new_serial();
 
 	return 0;
 }
@@ -622,23 +641,24 @@ int main(int argc, char *argv[])
 
 	ret = exfat_build_mkfs_info(&bd, &ui);
 	if (ret)
-		goto out;
+		goto close;
 
 	ret = exfat_zero_out_disk(&bd, &ui);
 	if (ret)
-		goto out;
+		goto close;
 
 	ret = make_exfat(&bd, &ui);
 	if (ret)
-		goto out;
+		goto close;
 
 	exfat_info("Synchronizing...\n");
 	ret = fsync(bd.dev_fd);
+close:
+	close(bd.dev_fd);
 out:
 	if (!ret)
 		exfat_info("\nexFAT format complete!\n");
 	else
 		exfat_info("\nexFAT format fail!\n");
-	close(bd.dev_fd);
 	return ret;
 }

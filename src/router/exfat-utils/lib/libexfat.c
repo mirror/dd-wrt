@@ -195,6 +195,15 @@ ssize_t exfat_write(int fd, void *buf, size_t size, off_t offset)
 	return pwrite(fd, buf, size, offset);
 }
 
+size_t exfat_utf16_len(const __le16 *str, size_t max_size)
+{
+	size_t i = 0;
+
+	while (le16_to_cpu(str[i]) && i < max_size)
+		i++;
+	return i;
+}
+
 ssize_t exfat_utf16_enc(const char *in_str, __u16 *out_str, size_t out_size)
 {
 	size_t mbs_len, out_len, i;
@@ -215,6 +224,7 @@ ssize_t exfat_utf16_enc(const char *in_str, __u16 *out_str, size_t out_size)
 	if (mbstowcs(wcs, in_str, mbs_len+1) == (size_t)-1) {
 		if (errno == EINVAL || errno == EILSEQ)
 			exfat_err("invalid character sequence in current locale\n");
+		free(wcs);
 		return -errno;
 	}
 
@@ -278,7 +288,7 @@ ssize_t exfat_utf16_dec(const __u16 *in_str, size_t in_len,
 	memset(&ps, 0, sizeof(ps));
 
 	/* And then convert wchar_t* string to multibyte char* string */
-	for (i = 0, out_len = 0, c_len = 0; i < wcs_len; i++) {
+	for (i = 0, out_len = 0, c_len = 0; i <= wcs_len; i++) {
 		c_len = wcrtomb(c_str, wcs[i], &ps);
 		/*
 		 * If character is non-representable in current locale then
@@ -307,7 +317,7 @@ ssize_t exfat_utf16_dec(const __u16 *in_str, size_t in_len,
 	free(wcs);
 
 	/* Last iteration of above loop should have produced null byte */
-	if (c_len == 0 || out_str[out_len] != 0) {
+	if (c_len == 0 || out_str[out_len-1] != 0) {
 		exfat_err("invalid UTF-16 sequence\n");
 		return -errno;
 	}
