@@ -11,6 +11,7 @@
 #else
 #include <linux/compat.h>
 #endif
+#include <linux/blkdev.h>
 
 #include "exfat_raw.h"
 #include "exfat_fs.h"
@@ -159,16 +160,21 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 
 	/* update the directory entry */
 	if (!evict) {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+		struct timespec64 ts;
+#else
 		struct timespec ts;
+#endif
 		struct exfat_dentry *ep, *ep2;
 		struct exfat_entry_set_cache *es;
+		int err;
 
 		es = exfat_get_dentry_set(sb, &(ei->dir), ei->entry,
 				ES_ALL_ENTRIES);
 		if (!es)
 			return -EIO;
-		ep = exfat_get_dentry_cached(es, 0);
-		ep2 = exfat_get_dentry_cached(es, 1);
+		ep = exfat_get_validated_dentry(es, 0, TYPE_FILE);
+		ep2 = exfat_get_validated_dentry(es, 1, TYPE_STREAM);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
 		ts = current_time(inode);
@@ -200,7 +206,9 @@ int __exfat_truncate(struct inode *inode, loff_t new_size)
 		}
 
 		exfat_update_dir_chksum_with_entry_set(es);
-		exfat_free_dentry_set(es, inode_needs_sync(inode));
+		err = exfat_free_dentry_set(es, inode_needs_sync(inode));
+		if (err)
+			return err;
 	}
 
 	/* cut off from the FAT chain */
@@ -381,12 +389,32 @@ out:
 	return error;
 }
 
+int exfat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
+{
+	struct inode *inode = filp->f_mapping->host;
+	int err;
+
+	err = __generic_file_fsync(filp, start, end, datasync);
+	if (err)
+		return err;
+
+	err = sync_blockdev(inode->i_sb->s_bdev);
+	if (err)
+		return err;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 8, 0)
+	return blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL);
+#else
+	return blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL, NULL);
+#endif
+}
+
 const struct file_operations exfat_file_operations = {
 	.llseek		= generic_file_llseek,
 	.read_iter	= generic_file_read_iter,
 	.write_iter	= generic_file_write_iter,
 	.mmap		= generic_file_mmap,
-	.fsync		= generic_file_fsync,
+	.fsync		= exfat_file_fsync,
 	.splice_read	= generic_file_splice_read,
 	.splice_write	= iter_file_splice_write,
 };
