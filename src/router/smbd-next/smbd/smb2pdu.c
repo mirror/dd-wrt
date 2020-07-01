@@ -299,44 +299,16 @@ static int smb2_consume_credit_charge(struct ksmbd_work *work,
 		unsigned short credit_charge)
 {
 	struct ksmbd_conn *conn = work->conn;
-	struct smb2_hdr *req_hdr = REQUEST_BUF_NEXT(work);
-	struct smb2_hdr *rsp_hdr = RESPONSE_BUF_NEXT(work);
-	unsigned int rsp_credits = 1, sz = 0;
+	unsigned int rsp_credits = 1;
 
 	if (!conn->total_credits)
 		return 0;
 
-	switch (req_hdr->Command) {
-	case SMB2_READ:
-		sz = le32_to_cpu(((struct smb2_read_rsp *)rsp_hdr)->DataLength);
-		break;
-	case SMB2_WRITE:
-		sz = le32_to_cpu(((struct smb2_write_req *)req_hdr)->Length);
-		break;
-	case SMB2_IOCTL:
-		sz = le32_to_cpu(((struct smb2_ioctl_rsp *)
-				rsp_hdr)->OutputCount);
-		break;
-	case SMB2_QUERY_DIRECTORY:
-		sz = le32_to_cpu(((struct smb2_query_directory_rsp *)
-				rsp_hdr)->OutputBufferLength);
-		break;
-	}
-
-	if (sz > SMB2_MAX_BUFFER_SIZE && credit_charge > 1) {
-		/* Compute credit charge from response size */
-		rsp_credits = DIV_ROUND_UP(sz, SMB2_MAX_BUFFER_SIZE);
-		if (credit_charge < rsp_credits) {
-			ksmbd_err("The calculated credit number is greater than the CreditCharge\n");
-			return -EINVAL;
-		}
-
-		conn->total_credits -= rsp_credits;
-		return rsp_credits;
-	}
+	if (credit_charge > 0)
+		rsp_credits = credit_charge;
 
 	conn->total_credits -= rsp_credits;
-	return credit_charge;
+	return rsp_credits;
 }
 
 /**
