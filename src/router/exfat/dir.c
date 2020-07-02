@@ -33,17 +33,11 @@ static void exfat_get_uniname_from_ext_entry(struct super_block *sb,
 		struct exfat_chain *p_dir, int entry, unsigned short *uniname)
 {
 	int i;
-	struct exfat_dentry *ep;
 	struct exfat_entry_set_cache *es;
 
-	es = exfat_get_dentry_set(sb, p_dir, entry, ES_ALL_ENTRIES, &ep);
+	es = exfat_get_dentry_set(sb, p_dir, entry, ES_ALL_ENTRIES);
 	if (!es)
 		return;
-
-	if (es->num_entries < 3)
-		goto free_es;
-
-	ep += 2;
 
 	/*
 	 * First entry  : file entry
@@ -51,17 +45,18 @@ static void exfat_get_uniname_from_ext_entry(struct super_block *sb,
 	 * Third entry  : first file-name entry
 	 * So, the index of first file-name dentry should start from 2.
 	 */
-	for (i = 2; i < es->num_entries; i++, ep++) {
+	for (i = 2; i < es->num_entries; i++) {
+		struct exfat_dentry *ep = exfat_get_dentry_cached(es, i);
+
 		/* end of name entry */
 		if (exfat_get_entry_type(ep) != TYPE_EXTEND)
-			goto free_es;
+			break;
 
 		exfat_extract_uni_name(ep, uniname);
 		uniname += EXFAT_FILE_NAME_LEN;
 	}
 
-free_es:
-	kfree(es);
+	exfat_free_dentry_set(es, false);
 }
 
 /* read a directory entry from the opened directory */
@@ -79,6 +74,7 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 	unsigned int dentry = ei->rwoffset & 0xFFFFFFFF;
 	struct buffer_head *bh;
 
+	pr_err("%s: start\n", __func__);
 	/* check if the given file ID is opened */
 	if (ei->type != TYPE_DIR)
 		return -EPERM;
@@ -95,10 +91,13 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 	clu_offset = dentry >> dentries_per_clu_bits;
 	exfat_chain_dup(&clu, &dir);
 
+	pr_err("1 clu.dir : %u, clu_offset : %u\n", clu.dir, clu_offset);
 	if (clu.flags == ALLOC_NO_FAT_CHAIN) {
 		clu.dir += clu_offset;
 		clu.size -= clu_offset;
+		pr_err("bitmap lookup\n");
 	} else {
+		pr_err("fat table lookup\n");
 		/* hint_information */
 		if (clu_offset > 0 && ei->hint_bmap.off != EXFAT_EOF_CLUSTER &&
 		    ei->hint_bmap.off > 0 && clu_offset >= ei->hint_bmap.off) {
@@ -107,8 +106,10 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 		}
 
 		while (clu_offset > 0) {
-			if (exfat_get_next_cluster(sb, &(clu.dir)))
+			if (exfat_get_next_cluster(sb, &(clu.dir))) {
+				pr_err("%s:%d\n", __func__, __LINE__);
 				return -EIO;
+			}
 
 			clu_offset--;
 		}
@@ -117,12 +118,15 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 	while (clu.dir != EXFAT_EOF_CLUSTER) {
 		i = dentry & (dentries_per_clu - 1);
 
+		pr_err("2 clu.dir : %u, clu_offset : %u\n", clu.dir, clu_offset);
 		for ( ; i < dentries_per_clu; i++, dentry++) {
+			pr_err("i : %d, dentry : %d\n", i, dentry);
 			ep = exfat_get_dentry(sb, &clu, i, &bh, &sector);
 			if (!ep)
 				return -EIO;
 
 			type = exfat_get_entry_type(ep);
+			pr_err("type : %x\n", type);
 			if (type == TYPE_UNUSED) {
 				brelse(bh);
 				break;
@@ -156,6 +160,7 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 			exfat_utf16_to_nls(sb, &uni_name,
 				dir_entry->namebuf.lfn,
 				dir_entry->namebuf.lfnbuf_len);
+			pr_err("file name : %s\n", dir_entry->namebuf.lfn);
 			brelse(bh);
 
 			ep = exfat_get_dentry(sb, &clu, i + 1, &bh, NULL);
@@ -163,6 +168,7 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 				return -EIO;
 			dir_entry->size =
 				le64_to_cpu(ep->dentry.stream.valid_size);
+			pr_err("file size : %lld\n", dir_entry->size);
 			brelse(bh);
 
 			ei->hint_bmap.off = dentry >> dentries_per_clu_bits;
@@ -185,6 +191,7 @@ static int exfat_readdir(struct inode *inode, struct exfat_dir_entry *dir_entry)
 
 	dir_entry->namebuf.lfn[0] = '\0';
 	ei->rwoffset = dentry;
+	pr_err("%s: end\n", __func__);
 	return 0;
 }
 
@@ -315,7 +322,7 @@ const struct file_operations exfat_dir_operations = {
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
 	.iterate	= exfat_iterate,
-	.fsync		= generic_file_fsync,
+	.fsync		= exfat_file_fsync,
 };
 
 int exfat_alloc_new_dir(struct inode *inode, struct exfat_chain *clu)
@@ -431,10 +438,12 @@ static void exfat_init_name_entry(struct exfat_dentry *ep,
 	ep->dentry.name.flags = 0x0;
 
 	for (i = 0; i < EXFAT_FILE_NAME_LEN; i++) {
-		ep->dentry.name.unicode_0_14[i] = cpu_to_le16(*uniname);
-		if (*uniname == 0x0)
-			break;
-		uniname++;
+		if (*uniname != 0x0) {
+			ep->dentry.name.unicode_0_14[i] = cpu_to_le16(*uniname);
+			uniname++;
+		} else {
+			ep->dentry.name.unicode_0_14[i] = 0x0;
+		}
 	}
 }
 
@@ -444,14 +453,20 @@ int exfat_init_dir_entry(struct inode *inode, struct exfat_chain *p_dir,
 {
 	struct super_block *sb = inode->i_sb;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
-	struct timespec ts = current_time(inode);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 19, 0)
+	struct timespec64 ts;
 #else
-	struct timespec ts = CURRENT_TIME_SEC;
+	struct timespec ts;
 #endif
 	sector_t sector;
 	struct exfat_dentry *ep;
 	struct buffer_head *bh;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)
+	ts = current_time(inode);
+#else
+	ts = CURRENT_TIME_SEC;
+#endif
 
 	/*
 	 * We cannot use exfat_get_dentry_set here because file ep is not
@@ -478,7 +493,7 @@ int exfat_init_dir_entry(struct inode *inode, struct exfat_chain *p_dir,
 			&ep->dentry.file.access_date,
 			NULL);
 
-	exfat_update_bh(sb, bh, IS_DIRSYNC(inode));
+	exfat_update_bh(bh, IS_DIRSYNC(inode));
 	brelse(bh);
 
 	ep = exfat_get_dentry(sb, p_dir, entry + 1, &bh, &sector);
@@ -488,7 +503,7 @@ int exfat_init_dir_entry(struct inode *inode, struct exfat_chain *p_dir,
 	exfat_init_stream_entry(ep,
 		(type == TYPE_FILE) ? ALLOC_FAT_CHAIN : ALLOC_NO_FAT_CHAIN,
 		start_clu, size);
-	exfat_update_bh(sb, bh, IS_DIRSYNC(inode));
+	exfat_update_bh(bh, IS_DIRSYNC(inode));
 	brelse(bh);
 
 	return 0;
@@ -501,7 +516,7 @@ int exfat_update_dir_chksum(struct inode *inode, struct exfat_chain *p_dir,
 	int ret = 0;
 	int i, num_entries;
 	sector_t sector;
-	unsigned short chksum;
+	u16 chksum;
 	struct exfat_dentry *ep, *fep;
 	struct buffer_head *fbh, *bh;
 
@@ -510,7 +525,7 @@ int exfat_update_dir_chksum(struct inode *inode, struct exfat_chain *p_dir,
 		return -EIO;
 
 	num_entries = fep->dentry.file.num_ext + 1;
-	chksum = exfat_calc_chksum_2byte(fep, DENTRY_SIZE, 0, CS_DIR_ENTRY);
+	chksum = exfat_calc_chksum16(fep, DENTRY_SIZE, 0, CS_DIR_ENTRY);
 
 	for (i = 1; i < num_entries; i++) {
 		ep = exfat_get_dentry(sb, p_dir, entry + i, &bh, NULL);
@@ -518,13 +533,13 @@ int exfat_update_dir_chksum(struct inode *inode, struct exfat_chain *p_dir,
 			ret = -EIO;
 			goto release_fbh;
 		}
-		chksum = exfat_calc_chksum_2byte(ep, DENTRY_SIZE, chksum,
+		chksum = exfat_calc_chksum16(ep, DENTRY_SIZE, chksum,
 				CS_DEFAULT);
 		brelse(bh);
 	}
 
 	fep->dentry.file.checksum = cpu_to_le16(chksum);
-	exfat_update_bh(sb, fbh, IS_DIRSYNC(inode));
+	exfat_update_bh(fbh, IS_DIRSYNC(inode));
 release_fbh:
 	brelse(fbh);
 	return ret;
@@ -546,7 +561,7 @@ int exfat_init_ext_entry(struct inode *inode, struct exfat_chain *p_dir,
 		return -EIO;
 
 	ep->dentry.file.num_ext = (unsigned char)(num_entries - 1);
-	exfat_update_bh(sb, bh, sync);
+	exfat_update_bh(bh, sync);
 	brelse(bh);
 
 	ep = exfat_get_dentry(sb, p_dir, entry + 1, &bh, &sector);
@@ -555,7 +570,7 @@ int exfat_init_ext_entry(struct inode *inode, struct exfat_chain *p_dir,
 
 	ep->dentry.stream.name_len = p_uniname->name_len;
 	ep->dentry.stream.name_hash = cpu_to_le16(p_uniname->name_hash);
-	exfat_update_bh(sb, bh, sync);
+	exfat_update_bh(bh, sync);
 	brelse(bh);
 
 	for (i = EXFAT_FIRST_CLUSTER; i < num_entries; i++) {
@@ -564,7 +579,7 @@ int exfat_init_ext_entry(struct inode *inode, struct exfat_chain *p_dir,
 			return -EIO;
 
 		exfat_init_name_entry(ep, uniname);
-		exfat_update_bh(sb, bh, sync);
+		exfat_update_bh(bh, sync);
 		brelse(bh);
 		uniname += EXFAT_FILE_NAME_LEN;
 	}
@@ -588,69 +603,40 @@ int exfat_remove_entries(struct inode *inode, struct exfat_chain *p_dir,
 			return -EIO;
 
 		exfat_set_entry_type(ep, TYPE_DELETED);
-		exfat_update_bh(sb, bh, IS_DIRSYNC(inode));
+		exfat_update_bh(bh, IS_DIRSYNC(inode));
 		brelse(bh);
 	}
 
 	return 0;
 }
 
-int exfat_update_dir_chksum_with_entry_set(struct super_block *sb,
-		struct exfat_entry_set_cache *es, int sync)
+void exfat_update_dir_chksum_with_entry_set(struct exfat_entry_set_cache *es)
 {
-	struct exfat_sb_info *sbi = EXFAT_SB(sb);
-	struct buffer_head *bh;
-	sector_t sec = es->sector;
-	unsigned int off = es->offset;
-	int chksum_type = CS_DIR_ENTRY, i, num_entries = es->num_entries;
-	unsigned int buf_off = (off - es->offset);
-	unsigned int remaining_byte_in_sector, copy_entries, clu;
+	int chksum_type = CS_DIR_ENTRY, i;
 	unsigned short chksum = 0;
+	struct exfat_dentry *ep;
 
-	for (i = 0; i < num_entries; i++) {
-		chksum = exfat_calc_chksum_2byte(&es->entries[i], DENTRY_SIZE,
-			chksum, chksum_type);
+	for (i = 0; i < es->num_entries; i++) {
+		ep = exfat_get_dentry_cached(es, i);
+		chksum = exfat_calc_chksum16(ep, DENTRY_SIZE, chksum,
+					     chksum_type);
 		chksum_type = CS_DEFAULT;
 	}
+	ep = exfat_get_dentry_cached(es, 0);
+	ep->dentry.file.checksum = cpu_to_le16(chksum);
+	es->modified = true;
+}
 
-	es->entries[0].dentry.file.checksum = cpu_to_le16(chksum);
+void exfat_free_dentry_set(struct exfat_entry_set_cache *es, int sync)
+{
+	int i;
 
-	while (num_entries) {
-		/* write per sector base */
-		remaining_byte_in_sector = (1 << sb->s_blocksize_bits) - off;
-		copy_entries = min_t(int,
-			EXFAT_B_TO_DEN(remaining_byte_in_sector),
-			num_entries);
-		bh = sb_bread(sb, sec);
-		if (!bh)
-			goto err_out;
-		memcpy(bh->b_data + off,
-			(unsigned char *)&es->entries[0] + buf_off,
-			EXFAT_DEN_TO_B(copy_entries));
-		exfat_update_bh(sb, bh, sync);
-		brelse(bh);
-		num_entries -= copy_entries;
-
-		if (num_entries) {
-			/* get next sector */
-			if (exfat_is_last_sector_in_cluster(sbi, sec)) {
-				clu = exfat_sector_to_cluster(sbi, sec);
-				if (es->alloc_flag == ALLOC_NO_FAT_CHAIN)
-					clu++;
-				else if (exfat_get_next_cluster(sb, &clu))
-					goto err_out;
-				sec = exfat_cluster_to_sector(sbi, clu);
-			} else {
-				sec++;
-			}
-			off = 0;
-			buf_off += EXFAT_DEN_TO_B(copy_entries);
-		}
+	for (i = 0; i < es->num_bh; i++) {
+		if (es->modified)
+			exfat_update_bh(es->bh[i], sync);
+		brelse(es->bh[i]);
 	}
-
-	return 0;
-err_out:
-	return -EIO;
+	kfree(es);
 }
 
 static int exfat_walk_fat_chain(struct super_block *sb,
@@ -825,34 +811,40 @@ static bool exfat_validate_entry(unsigned int type,
 	}
 }
 
+struct exfat_dentry *exfat_get_dentry_cached(
+	struct exfat_entry_set_cache *es, int num)
+{
+	int off = es->start_off + num * DENTRY_SIZE;
+	struct buffer_head *bh = es->bh[EXFAT_B_TO_BLK(off, es->sb)];
+	char *p = bh->b_data + EXFAT_BLK_OFFSET(off, es->sb);
+
+	return (struct exfat_dentry *)p;
+}
+
 /*
  * Returns a set of dentries for a file or dir.
  *
- * Note that this is a copy (dump) of dentries so that user should
- * call write_entry_set() to apply changes made in this entry set
- * to the real device.
+ * Note It provides a direct pointer to bh->data via exfat_get_dentry_cached().
+ * User should call exfat_get_dentry_set() after setting 'modified' to apply
+ * changes made in this entry set to the real device.
  *
  * in:
  *   sb+p_dir+entry: indicates a file/dir
  *   type:  specifies how many dentries should be included.
- * out:
- *   file_ep: will point the first dentry(= file dentry) on success
  * return:
  *   pointer of entry set on success,
  *   NULL on failure.
  */
 struct exfat_entry_set_cache *exfat_get_dentry_set(struct super_block *sb,
-		struct exfat_chain *p_dir, int entry, unsigned int type,
-		struct exfat_dentry **file_ep)
+		struct exfat_chain *p_dir, int entry, unsigned int type)
 {
-	int ret;
+	int ret, i, num_bh;
 	unsigned int off, byte_offset, clu = 0;
-	unsigned int entry_type;
 	sector_t sec;
 	struct exfat_sb_info *sbi = EXFAT_SB(sb);
 	struct exfat_entry_set_cache *es;
-	struct exfat_dentry *ep, *pos;
-	unsigned char num_entries;
+	struct exfat_dentry *ep;
+	int num_entries;
 	enum exfat_validate_dentry_mode mode = ES_MODE_STARTED;
 	struct buffer_head *bh;
 
@@ -866,11 +858,18 @@ struct exfat_entry_set_cache *exfat_get_dentry_set(struct super_block *sb,
 	if (ret)
 		return NULL;
 
+	es = kzalloc(sizeof(*es), GFP_KERNEL);
+	if (!es)
+		return NULL;
+	es->sb = sb;
+	es->modified = false;
+
 	/* byte offset in cluster */
 	byte_offset = EXFAT_CLU_OFFSET(byte_offset, sbi);
 
 	/* byte offset in sector */
 	off = EXFAT_BLK_OFFSET(byte_offset, sb);
+	es->start_off = off;
 
 	/* sector offset in cluster */
 	sec = EXFAT_B_TO_BLK(byte_offset, sb);
@@ -878,78 +877,46 @@ struct exfat_entry_set_cache *exfat_get_dentry_set(struct super_block *sb,
 
 	bh = sb_bread(sb, sec);
 	if (!bh)
-		return NULL;
+		goto free_es;
+	es->bh[es->num_bh++] = bh;
 
-	ep = (struct exfat_dentry *)(bh->b_data + off);
-	entry_type = exfat_get_entry_type(ep);
-
-	if (entry_type != TYPE_FILE && entry_type != TYPE_DIR)
-		goto release_bh;
+	ep = exfat_get_dentry_cached(es, 0);
+	if (!exfat_validate_entry(exfat_get_entry_type(ep), &mode))
+		goto free_es;
 
 	num_entries = type == ES_ALL_ENTRIES ?
 		ep->dentry.file.num_ext + 1 : type;
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
-	es = kmalloc(struct_size(es, entries, num_entries), GFP_KERNEL);
-#else
-	es = kmalloc((offsetof(struct exfat_entry_set_cache, entries) +
-		(num_entries) * sizeof(struct exfat_dentry)), GFP_KERNEL);
-#endif
-	if (!es)
-		goto release_bh;
-
 	es->num_entries = num_entries;
-	es->sector = sec;
-	es->offset = off;
-	es->alloc_flag = p_dir->flags;
 
-	pos = &es->entries[0];
-
-	while (num_entries) {
-		if (!exfat_validate_entry(exfat_get_entry_type(ep), &mode))
-			goto free_es;
-
-		/* copy dentry */
-		memcpy(pos, ep, sizeof(struct exfat_dentry));
-
-		if (--num_entries == 0)
-			break;
-
-		if (((off + DENTRY_SIZE) & (sb->s_blocksize - 1)) <
-		    (off & (sb->s_blocksize - 1))) {
-			/* get the next sector */
-			if (exfat_is_last_sector_in_cluster(sbi, sec)) {
-				if (es->alloc_flag == ALLOC_NO_FAT_CHAIN)
-					clu++;
-				else if (exfat_get_next_cluster(sb, &clu))
-					goto free_es;
-				sec = exfat_cluster_to_sector(sbi, clu);
-			} else {
-				sec++;
-			}
-
-			brelse(bh);
-			bh = sb_bread(sb, sec);
-			if (!bh)
+	num_bh = EXFAT_B_TO_BLK_ROUND_UP(off + num_entries * DENTRY_SIZE, sb);
+	for (i = 1; i < num_bh; i++) {
+		/* get the next sector */
+		if (exfat_is_last_sector_in_cluster(sbi, sec)) {
+			if (p_dir->flags == ALLOC_NO_FAT_CHAIN)
+				clu++;
+			else if (exfat_get_next_cluster(sb, &clu))
 				goto free_es;
-			off = 0;
-			ep = (struct exfat_dentry *)bh->b_data;
+			sec = exfat_cluster_to_sector(sbi, clu);
 		} else {
-			ep++;
-			off += DENTRY_SIZE;
+			sec++;
 		}
-		pos++;
+
+		bh = sb_bread(sb, sec);
+		if (!bh)
+			goto free_es;
+		es->bh[es->num_bh++] = bh;
 	}
 
-	if (file_ep)
-		*file_ep = &es->entries[0];
-	brelse(bh);
+	/* validiate cached dentries */
+	for (i = 1; i < num_entries; i++) {
+		ep = exfat_get_dentry_cached(es, i);
+		if (!exfat_validate_entry(exfat_get_entry_type(ep), &mode))
+			goto free_es;
+	}
 	return es;
 
 free_es:
-	kfree(es);
-release_bh:
-	brelse(bh);
+	exfat_free_dentry_set(es, false);
 	return NULL;
 }
 
@@ -1058,7 +1025,7 @@ rewind:
 			}
 
 			if (entry_type == TYPE_STREAM) {
-				unsigned short name_hash;
+				u16 name_hash;
 
 				if (step != DIRENT_STEP_STRM) {
 					step = DIRENT_STEP_FILE;
