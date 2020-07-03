@@ -164,6 +164,22 @@ void start_sysinit(void)
 	} else if (brand == ROUTER_BOARD_E1700 || brand == ROUTER_DIR810L) {
 
 	} else {
+		insmod("compat");
+		insmod("mac80211");
+		/* load soc drivers */
+		insmod("rt2x00lib");
+		insmod("rt2x00mmio");
+		insmod("rt2x00soc");
+		insmod("rt2x00pci");
+		insmod("rt2800lib");
+		insmod("rt2800mmio");
+		insmod("rt2800soc");
+		insmod("rt2800pci");
+		
+		insmod("mt76");
+		insmod("mt76x02-lib");
+		insmod("mt76x2-common");
+		insmod("mt76x2e");
 #ifdef HAVE_WHR1166D
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
