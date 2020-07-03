@@ -209,7 +209,11 @@ static void exfat_free_namebuf(struct exfat_dentry_namebuf *nb)
 
 /* skip iterating emit_dots when dir is empty */
 #define ITER_POS_FILLED_DOTS    (2)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_iterate(struct file *filp, struct dir_context *ctx)
+#else
+static int exfat_iterate(struct file *filp, void *dirent, filldir_t filldir)
+#endif
 {
 	struct inode *inode = filp->f_path.dentry->d_inode;
 	struct super_block *sb = inode->i_sb;
@@ -224,7 +228,12 @@ static int exfat_iterate(struct file *filp, struct dir_context *ctx)
 	exfat_init_namebuf(nb);
 	mutex_lock(&EXFAT_SB(sb)->s_lock);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	cpos = ctx->pos;
+#else
+	cpos = filp->f_pos;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	if (!dir_emit_dots(filp, ctx))
 		goto unlock;
 
@@ -232,6 +241,18 @@ static int exfat_iterate(struct file *filp, struct dir_context *ctx)
 		cpos = 0;
 		fake_offset = 1;
 	}
+#else
+	if (inode->i_ino == EXFAT_ROOT_INO)
+		inum = EXFAT_ROOT_INO;
+	else if (cpos == 0)
+		inum = inode->i_ino;
+	else /* (cpos == 1) */
+		inum = parent_ino(filp->f_path.dentry);
+	if (filldir(dirent, "..", cpos+1, cpos, inum, DT_DIR) < 0)
+		goto unlock;
+
+#endif
+
 
 	if (cpos & (DENTRY_SIZE - 1)) {
 		err = -ENOENT;
@@ -284,17 +305,30 @@ get_new:
 	 * of buffer given from user is larger than one page size.
 	 */
 	mutex_unlock(&EXFAT_SB(sb)->s_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	if (!dir_emit(ctx, nb->lfn, strlen(nb->lfn), inum,
 			(de.attr & ATTR_SUBDIR) ? DT_DIR : DT_REG))
+#else
+	if (filldir(dirent, nb->lfn, strlen(nb->lfn), cpos-1, inum,
+				(de.attr & ATTR_SUBDIR) ? DT_DIR : DT_REG) < 0)
+#endif
 		goto out_unlocked;
 	mutex_lock(&EXFAT_SB(sb)->s_lock);
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	ctx->pos = cpos;
+#else
+	filp->f_pos = cpos;
+#endif
 	goto get_new;
 
 end_of_dir:
 	if (!cpos && fake_offset)
 		cpos = ITER_POS_FILLED_DOTS;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 	ctx->pos = cpos;
+#else
+	filp->f_pos = cpos;
+#endif
 unlock:
 	mutex_unlock(&EXFAT_SB(sb)->s_lock);
 out_unlocked:
@@ -309,7 +343,11 @@ out_unlocked:
 const struct file_operations exfat_dir_operations = {
 	.llseek		= generic_file_llseek,
 	.read		= generic_read_dir,
-	.iterate	= exfat_iterate,
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+	.iterate    = exfat_iterate,
+#else
+	.readdir    = exfat_iterate,
+#endif
 	.fsync		= exfat_file_fsync,
 };
 
