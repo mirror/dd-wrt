@@ -51,7 +51,7 @@ static int exfat_d_revalidate(struct dentry *dentry, unsigned int flags)
 	 * positive dentry isn't good idea. So it's unsupported like
 	 * rename("filename", "FILENAME") for now.
 	 */
-	if (d_really_is_positive(dentry))
+	if (dentry->d_inode)
 		return 1;
 
 	/*
@@ -86,7 +86,14 @@ static unsigned int exfat_striptail_len(unsigned int len, const char *name)
  * is invalid, we leave the hash code unchanged so that the existing dentry can
  * be used. The exfat fs routines will return ENOENT or EINVAL as appropriate.
  */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_d_hash(const struct dentry *dentry, struct qstr *qstr)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+static int exfat_d_hash(struct dentry *dentry, struct qstr *qstr)
+#else
+static int exfat_d_hash(const struct dentry *dentry, const struct inode *inode,
+		struct qstr *qstr)
+#endif
 {
 	struct super_block *sb = dentry->d_sb;
 	struct nls_table *t = EXFAT_SB(sb)->nls_io;
@@ -111,11 +118,18 @@ static int exfat_d_hash(const struct dentry *dentry, struct qstr *qstr)
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
-static int exfat_d_cmp(const struct dentry *dentry, unsigned int len,
-		const char *str, const struct qstr *name)
-#else
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_d_cmp(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_d_cmp(const struct dentry *parent, const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+static int exfat_d_cmp(struct dentry *parent, struct qstr *a,
+			struct qstr *b)
+#else
+static int exfat_d_cmp(const struct dentry *parent, const struct inode *pinode,
+		const struct dentry *dentry, const struct inode *inode,
 		unsigned int len, const char *str, const struct qstr *name)
 #endif
 {
@@ -149,7 +163,14 @@ const struct dentry_operations exfat_dentry_ops = {
 	.d_compare	= exfat_d_cmp,
 };
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
 static int exfat_utf8_d_hash(const struct dentry *dentry, struct qstr *qstr)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+static int exfat_utf8_d_hash(struct dentry *dentry, struct qstr *qstr)
+#else
+static int exfat_utf8_d_hash(const struct dentry *dentry, const struct inode *inode,
+		struct qstr *qstr)
+#endif
 {
 	struct super_block *sb = dentry->d_sb;
 	const unsigned char *name = qstr->name;
@@ -178,13 +199,19 @@ static int exfat_utf8_d_hash(const struct dentry *dentry, struct qstr *qstr)
 	return 0;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
-static int exfat_utf8_d_cmp(const struct dentry *dentry, unsigned int len,
-		const char *str, const struct qstr *name)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4,8,0)
+static int exfat_utf8_d_cmp(const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3,11,0)
+static int exfat_utf8_d_cmp(const struct dentry *parent, const struct dentry *dentry,
+		unsigned int len, const char *str, const struct qstr *name)
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2,6,38)
+static int exfat_utf8_d_cmp(struct dentry *parent, struct qstr *a,
+			struct qstr *b)
 #else
-static int exfat_utf8_d_cmp(const struct dentry *parent,
-		const struct dentry *dentry, unsigned int len,
-		const char *str, const struct qstr *name)
+static int exfat_utf8_d_cmp(const struct dentry *parent, const struct inode *pinode,
+		const struct dentry *dentry, const struct inode *inode,
+		unsigned int len, const char *str, const struct qstr *name)
 #endif
 {
 	struct super_block *sb = dentry->d_sb;
