@@ -303,7 +303,7 @@ int exfat_getattr(struct vfsmount *mnt, struct dentry *dentry,
 	struct inode *inode = d_backing_inode(path->dentry);
 	struct exfat_inode_info *ei = EXFAT_I(inode);
 #else
-	struct inode *inode = d_inode(dentry);
+	struct inode *inode = dentry->d_inode;
 #endif
 
 	generic_fillattr(inode, stat);
@@ -389,6 +389,7 @@ out:
 	return error;
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,18,0)
 int exfat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 {
 	struct inode *inode = filp->f_mapping->host;
@@ -408,15 +409,35 @@ int exfat_file_fsync(struct file *filp, loff_t start, loff_t end, int datasync)
 	return blkdev_issue_flush(inode->i_sb->s_bdev, GFP_KERNEL, NULL);
 #endif
 }
+#endif
 
 const struct file_operations exfat_file_operations = {
 	.llseek		= generic_file_llseek,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,16,0)
+	.read        = do_sync_read,
+	.write       = do_sync_write,
+	.aio_read    = generic_file_aio_read,
+	.aio_write   = generic_file_aio_write,
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(4,1,0)
+	.read        = new_sync_read,
+	.write       = new_sync_write,
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3,16,0)
 	.read_iter	= generic_file_read_iter,
 	.write_iter	= generic_file_write_iter,
+#endif
 	.mmap		= generic_file_mmap,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	.fsync		= generic_file_fsync,
+#else
 	.fsync		= exfat_file_fsync,
+#endif
 	.splice_read	= generic_file_splice_read,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	.splice_write	= generic_file_splice_write,
+#else
 	.splice_write	= iter_file_splice_write,
+#endif
 };
 
 const struct inode_operations exfat_file_inode_operations = {
