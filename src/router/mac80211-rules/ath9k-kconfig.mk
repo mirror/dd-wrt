@@ -398,10 +398,10 @@ endif
 ifeq ($(CONFIG_MT7620),y)
 	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/ath*
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
-ifneq ($(CONFIG_MT7615),y)
+ifeq ($(CONFIG_MT7615),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7615* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
-ifneq ($(CONFIG_MT7662),y)
+ifeq ($(CONFIG_MT7662),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 endif
 endif
