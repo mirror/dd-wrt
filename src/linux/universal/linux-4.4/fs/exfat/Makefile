@@ -1,12 +1,8 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Makefile for Linux FAT12/FAT16/FAT32(VFAT)/FAT64(ExFAT) filesystem driver.
+# Makefile for the linux exFAT filesystem support.
 #
-
-# call from kernel build system
 obj-$(CONFIG_EXFAT_FS) += exfat.o
 
-exfat-objs := exfat_core.o exfat_super.o exfat_api.o exfat_blkdev.o exfat_cache.o \
-			   exfat_data.o exfat_bitmap.o exfat_nls.o exfat_oal.o exfat_upcase.o
-
-
-.PHONY : all clean install uninstall
+exfat-y	:= inode.o namei.o dir.o super.o fatent.o cache.o nls.o misc.o \
+	   file.o balloc.o
