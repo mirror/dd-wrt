@@ -400,9 +400,23 @@ ifeq ($(CONFIG_MT7620),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/mediatek
 ifeq ($(CONFIG_MT7615),y)
 	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7615* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+else
+	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/mt7615*
 endif
 ifeq ($(CONFIG_MT7662),y)
-	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_patch* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_firmware*v1.9* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_rom* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662.bin $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+else
+ifeq ($(CONFIG_MT7612),y)
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_patch* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_firmware*v1.9* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662_rom* $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+	-cp -av $(MAC80211_PATH)/drivers/net/wireless/mediatek/mt76/firmware/mt7662.bin $(INSTALLDIR)/ath9k/lib/firmware/mediatek
+else
+	rm -f $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)/mt76x*
+endif
 endif
 endif
 
