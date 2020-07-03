@@ -51,7 +51,7 @@ static int exfat_d_revalidate(struct dentry *dentry, unsigned int flags)
 	 * positive dentry isn't good idea. So it's unsupported like
 	 * rename("filename", "FILENAME") for now.
 	 */
-	if (d_really_is_positive(dentry))
+	if (dentry->d_inode)
 		return 1;
 
 	/*

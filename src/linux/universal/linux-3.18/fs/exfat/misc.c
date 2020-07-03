@@ -95,9 +95,13 @@ void exfat_get_entry_time(struct exfat_sb_info *sbi, struct timespec *ts,
 	u16 t = le16_to_cpu(time);
 	u16 d = le16_to_cpu(date);
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0)
 	ts->tv_sec = mktime64(1980 + (d >> 9), d >> 5 & 0x000F, d & 0x001F,
 			      t >> 11, (t >> 5) & 0x003F, (t & 0x001F) << 1);
-
+#else
+	ts->tv_sec = mktime(1980 + (d >> 9), d >> 5 & 0x000F, d & 0x001F,
+			      t >> 11, (t >> 5) & 0x003F, (t & 0x001F) << 1);
+#endif
 
 	/* time_cs field represent 0 ~ 199cs(1990 ms) */
 	if (time_cs) {
