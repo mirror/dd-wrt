@@ -173,7 +173,7 @@ static int cb_survey(struct nl_msg *msg, void *data)
 		// int channel=ieee80211_mhz2ieee(freq);
 		// noise[channel] = lnoise;
 	} else {
-		noise[freq] = 0;
+		noise[freq] = -95;
 	}
 	if (sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME] && sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME_BUSY]) {
 		active[freq] = nla_get_u64(sinfo[NL80211_SURVEY_INFO_CHANNEL_TIME]);
