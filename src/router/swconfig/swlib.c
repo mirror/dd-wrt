@@ -981,7 +981,7 @@ int getPortStatus(int port)
 				return -1;
 			} else {
 				swlib_free_all(dev);
-				if (val.value.link) {
+				if (val.value.link && val.value.link->link) {
 					return val.value.link->speed;
 				} else {
 					return 0;
