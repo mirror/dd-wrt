@@ -268,7 +268,7 @@ void ej_dump_channel_survey(webs_t wp, int argc, char_t ** argv)
 		if (f->noise_count)
 			websWrite(wp, ",\"%d\"", f->noise / f->noise_count);
 		else
-			websWrite(wp, ",\"\"");
+			websWrite(wp, ",\"-95\"");
 		if (f->active_count && f->busy_count)
 			websWrite(wp, ",\"%lld\"", 100 - ((f->busy * 100) / f->active));
 		else
