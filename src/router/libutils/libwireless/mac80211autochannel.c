@@ -330,6 +330,7 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 	if (f->active && f->active_count && f->busy_count) {
 
 		c = 100 - (uint32_t) (f->busy * 100 / f->active);
+//		fprintf(stderr, "base quality %d\n", c);
 		if (c < 0)
 			c = 0;
 		idx = (f->freq - 2412) / 5;
@@ -365,10 +366,15 @@ static int freq_quality(struct wifi_channels *wifi_channels, int _max_eirp, int 
 		}
 	}*/
 	int eirp = get_eirp(wifi_channels, f->freq);
+//	fprintf(stderr, "eirp %d\n", eirp);
+//	fprintf(stderr, "lowest noise %d\n", s->lowest_noise);
+//	fprintf(stderr, "noise %d\n", f->noise);
+//	fprintf(stderr, "max_eirp %d\n", _max_eirp);
 	/* subtract noise delta to lowest noise. */
 	c -= (f->noise - s->lowest_noise);
 	/* subtract max capable output power (regulatory limited by hw caps) delta from maximum eirp possible */
 	c -= (_max_eirp - eirp);
+
 	f->eirp = eirp;
 	if (c < 0)
 		c = 0;
@@ -505,8 +511,14 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 	dd_list_for_each_entry(f, &frequencies, list) {
 		if (f->passive && !enable_passive)
 			continue;
+		dd_loginfo("autochannel"," calc chan %d, bw\n", f->freq, bw);
 		/* todo, implement algorithm for 80+80 */
 		struct wifi_channels *chan = get_chan(wifi_channels, f->freq);
+		if (!chan) {
+		dd_loginfo("autochannel","chan %d not found, curious\n", f->freq);
+		continue;
+		}
+		    
 		if (chan->freq == -1)
 			continue;
 		switch (bw) {
@@ -712,6 +724,7 @@ struct mac80211_ac *mac80211autochannel(const char *interface, char *freq_range,
 			acs->freq = f->freq;
 			acs->quality = f->quality;
 			acs->noise = f->noise;
+			dd_loginfo("autochannel", "%s: freq: %d default quality %d\n", interface, f->freq, acs->quality);
 			break;
 		}
 	}
