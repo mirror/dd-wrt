@@ -3254,7 +3254,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI)
-	if ((is_ath10k(prefix) && has_5ghz(prefix)) || (!is_mvebu(prefix) && !has_vht80(prefix) && !is_ath10k(prefix))) {
+	if ((is_ath10k(prefix) && has_5ghz(prefix)) || (!is_mvebu(prefix) && !has_vht80(prefix) && !is_ath10k(prefix) && !is_mt76(prefix))) {
 		websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 		websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
 		if (registered_has_subquarter()) {
@@ -3891,7 +3891,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		}
 #if !defined(HAVE_BUFFALO)
 #if defined(HAVE_MADWIFI) || defined(HAVE_ATH9K) && !defined(HAVE_MADIFI_MIMO)
-		if ((is_ath10k(prefix) && has_5ghz(prefix)) || (!is_mvebu(prefix) && !has_vht80(prefix) && !is_ath10k(prefix))) {
+		if ((is_ath10k(prefix) && has_5ghz(prefix)) || (!is_mvebu(prefix) && !has_vht80(prefix) && !is_ath10k(prefix) && !is_mt76(prefix))) {
 			websWrite(wp, "document.write(\"<option value=\\\"10\\\" %s >\" + share.half + \"</option>\");\n", nvram_matchi(wl_width, 10) ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"5\\\" %s >\" + share.quarter + \"</option>\");\n", nvram_matchi(wl_width, 5) ? "selected=\\\"selected\\\"" : "");
 			if (registered_has_subquarter()) {
