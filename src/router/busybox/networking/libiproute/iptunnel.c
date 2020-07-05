@@ -346,7 +346,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 
 	if (p->iph.protocol == IPPROTO_IPIP || p->iph.protocol == IPPROTO_IPV6  || p->iph.protocol == IPPROTO_ETHERIP) {
 		if ((p->i_flags & GRE_KEY) || (p->o_flags & GRE_KEY)) {
-			bb_error_msg_and_die("keys are not allowed with ipip and sit");
+			bb_simple_error_msg_and_die("keys are not allowed with ipip and sit");
 		}
 	}
 
@@ -363,7 +363,7 @@ static void parse_args(char **argv, int cmd, struct ip_tunnel_parm *p)
 		p->o_flags |= GRE_KEY;
 	}
 	if (IN_MULTICAST(ntohl(p->iph.daddr)) && !p->iph.saddr) {
-		bb_error_msg_and_die("broadcast tunnel requires a source address");
+		bb_simple_error_msg_and_die("broadcast tunnel requires a source address");
 	}
 }
 
@@ -375,7 +375,7 @@ static int do_add(int cmd, char **argv)
 	parse_args(argv, cmd, &p);
 
 	if (p.iph.ttl && p.iph.frag_off == 0) {
-		bb_error_msg_and_die("ttl != 0 and noptmudisc are incompatible");
+		bb_simple_error_msg_and_die("ttl != 0 and noptmudisc are incompatible");
 	}
 
 	switch (p.iph.protocol) {
@@ -388,7 +388,7 @@ static int do_add(int cmd, char **argv)
  	case IPPROTO_ETHERIP:
  		return do_add_ioctl(cmd, "etherip0", &p);
 	default:
-		bb_error_msg_and_die("can't determine tunnel mode (ipip, gre or sit)");
+		bb_simple_error_msg_and_die("can't determine tunnel mode (ipip, gre or sit)");
 	}
 }
 
@@ -497,7 +497,7 @@ static void do_tunnels_list(struct ip_tunnel_parm *p)
 		if (ptr == NULL ||
 		    (*ptr++ = 0, sscanf(buf, "%s", name) != 1)
 		) {
-			bb_error_msg("wrong format of /proc/net/dev");
+			bb_simple_error_msg("wrong format of /proc/net/dev");
 			return;
 		}
 		if (sscanf(ptr, "%lu%lu%lu%lu%lu%lu%lu%*d%lu%lu%lu%lu%lu%lu%lu",

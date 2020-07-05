@@ -64,6 +64,14 @@
 //config:	help
 //config:	Supports restricted syslogd config. See docs/syslog.conf.txt
 //config:
+//config:config FEATURE_SYSLOGD_PRECISE_TIMESTAMPS
+//config:	bool "Include milliseconds in timestamps"
+//config:	default n
+//config:	depends on SYSLOGD
+//config:	help
+//config:	Includes milliseconds (HH:MM:SS.mmm) in timestamp when
+//config:	timestamps are added.
+//config:
 //config:config FEATURE_SYSLOGD_READ_BUFFER_SIZE
 //config:	int "Read buffer size in bytes"
 //config:	default 256
@@ -279,7 +287,7 @@ struct globals {
 	/* ...then copy to parsebuf, escaping control chars */
 	/* (can grow x2 max) */
 	char parsebuf[MAX_READ*2];
-	/* ...then sprintf into printbuf, adding timestamp (15 chars),
+	/* ...then sprintf into printbuf, adding timestamp (15 or 19 chars),
 	 * host (64), fac.prio (20) to the message */
 	/* (growth by: 15 + 64 + 20 + delims = ~110) */
 	char printbuf[MAX_READ*2 + 128];
@@ -577,12 +585,12 @@ static void ipcsyslog_init(void)
 
 	G.shmid = shmget(KEY_ID, G.shm_size, IPC_CREAT | 0644);
 	if (G.shmid == -1) {
-		bb_perror_msg_and_die("shmget");
+		bb_simple_perror_msg_and_die("shmget");
 	}
 
 	G.shbuf = shmat(G.shmid, NULL, 0);
 	if (G.shbuf == (void*) -1L) { /* shmat has bizarre error return */
-		bb_perror_msg_and_die("shmat");
+		bb_simple_perror_msg_and_die("shmat");
 	}
 
 	memset(G.shbuf, 0, G.shm_size);
@@ -597,7 +605,7 @@ static void ipcsyslog_init(void)
 			if (G.s_semid != -1)
 				return;
 		}
-		bb_perror_msg_and_die("semget");
+		bb_simple_perror_msg_and_die("semget");
 	}
 }
 
@@ -608,7 +616,7 @@ static void log_to_shmem(const char *msg)
 	int len;
 
 	if (semop(G.s_semid, G.SMwdn, 3) == -1) {
-		bb_perror_msg_and_die("SMwdn");
+		bb_simple_perror_msg_and_die("SMwdn");
 	}
 
 	/* Circular Buffer Algorithm:
@@ -636,7 +644,7 @@ static void log_to_shmem(const char *msg)
 		goto again;
 	}
 	if (semop(G.s_semid, G.SMwup, 1) == -1) {
-		bb_perror_msg_and_die("SMwup");
+		bb_simple_perror_msg_and_die("SMwup");
 	}
 	if (DEBUG)
 		printf("tail:%d\n", G.shbuf->tail);
@@ -844,6 +852,23 @@ static void timestamp_and_log(int pri, char *msg, int len)
 		msg += 16;
 	}
 
+#if ENABLE_FEATURE_SYSLOGD_PRECISE_TIMESTAMPS
+	if (!timestamp) {
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		now = tv.tv_sec;
+		if (G.adjustTimezone) {
+			nowtm = localtime(&now);
+			timestamp = asctime(nowtm) + 4;
+		} else {
+			timestamp = ctime(&now) + 4; /* skip day of week */
+		}
+		/* overwrite year by milliseconds, zero terminate */
+		sprintf(timestamp + 15, ".%03u", (unsigned)tv.tv_usec / 1000u);
+	} else {
+		timestamp[15] = '\0';
+	}
+#else
 	if (!timestamp) {
 		if (G.adjustTimezone) {
 			time(&now);
@@ -854,7 +879,7 @@ static void timestamp_and_log(int pri, char *msg, int len)
 			timestamp = ctime(&now) + 4; /* skip day of week */
 		}
 	}
-
+#endif
 	timestamp[15] = '\0';
 
 	if (option_mask32 & OPT_kmsg) {

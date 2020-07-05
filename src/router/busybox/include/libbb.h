@@ -306,6 +306,7 @@ typedef unsigned long uoff_t;
 /* scary. better ideas? (but do *test* them first!) */
 #define OFF_T_MAX  ((off_t)~((off_t)1 << (sizeof(off_t)*8-1)))
 /* Users report bionic to use 32-bit off_t even if LARGEFILE support is requested.
+ * On musl, !ENABLE_LFS on 32-bit arches thinks that off_t is 32-bit.
  * We misdetected that. Don't let it build:
  */
 struct BUG_off_t_size_is_misdetected {
@@ -1145,7 +1146,7 @@ void exec_prog_or_SHELL(char **argv) NORETURN FAST_FUNC;
 ({ \
 	pid_t bb__xvfork_pid = vfork(); \
 	if (bb__xvfork_pid < 0) \
-		bb_perror_msg_and_die("vfork"); \
+		bb_simple_perror_msg_and_die("vfork"); \
 	bb__xvfork_pid; \
 })
 #if BB_MMU
@@ -1334,13 +1335,17 @@ void xfunc_die(void) NORETURN FAST_FUNC;
 #ifdef HAVE_NOMESSAGE
 #define bb_show_usage() exit(-1) 
 #define bb_error_msg(fmt, args...)
+#define bb_simple_error_msg(s)
 #define bb_error_msg_and_die(fmt, arg...) exit(-1)
+#define bb_simple_error_msg_and_die(s) exit(-1)
 #define bb_perror_msg(fmt, args...)
-#define bb_simple_perror_msg(fmt)
+#define bb_simple_perror_msg(s)
 #define bb_perror_msg_and_die(fmt, arg...) exit(-1)
-#define bb_simple_perror_msg_and_die(fmt) exit(-1)
+#define bb_simple_perror_msg_and_die(s) exit(-1)
+#define bb_simple_herror_msg(s)
 #define bb_herror_msg(fmt, arg...)
 #define bb_herror_msg_and_die(fmt, arg...) exit(-1)
+#define bb_simple_herror_msg_and_die(s) exit(-1)
 #define bb_perror_nomsg_and_die() exit(-1)
 #define bb_perror_nomsg()
 #define bb_die_memory_exhausted() exit(-1)
@@ -1349,13 +1354,17 @@ void xfunc_die(void) NORETURN FAST_FUNC;
 void xfunc_die(void) NORETURN FAST_FUNC;
 void bb_show_usage(void) NORETURN FAST_FUNC;
 void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
+void bb_simple_error_msg(const char *s) FAST_FUNC;
 void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;
+void bb_simple_error_msg_and_die(const char *s) NORETURN FAST_FUNC;
 void bb_perror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
 void bb_simple_perror_msg(const char *s) FAST_FUNC;
 void bb_perror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;
 void bb_simple_perror_msg_and_die(const char *s) NORETURN FAST_FUNC;
 void bb_herror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
+void bb_simple_herror_msg(const char *s) FAST_FUNC;
 void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2))) FAST_FUNC;
+void bb_simple_herror_msg_and_die(const char *s) NORETURN FAST_FUNC;
 void bb_perror_nomsg_and_die(void) NORETURN FAST_FUNC;
 void bb_perror_nomsg(void) FAST_FUNC;
 void bb_die_memory_exhausted(void) NORETURN FAST_FUNC;
@@ -1365,10 +1374,51 @@ void bb_logenv_override(void) FAST_FUNC;
 
 #if ENABLE_FEATURE_SYSLOG_INFO
 void bb_info_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
+void bb_simple_info_msg(const char *s) FAST_FUNC;
 void bb_vinfo_msg(const char *s, va_list p) FAST_FUNC;
 #else
 #define bb_info_msg bb_error_msg
+#define bb_simple_info_msg bb_simple_error_msg
 #define bb_vinfo_msg(s,p) bb_verror_msg(s,p,NULL)
+#endif
+
+#if ENABLE_WARN_SIMPLE_MSG
+/* If enabled, cause calls to bb_error_msg() et al that only take a single
+ * parameter to generate a warning.
+ */
+static inline void __attribute__ ((deprecated("use bb_simple_error_msg instead")))
+	bb_not_simple_error_msg(const char *s) { bb_simple_error_msg(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_error_msg_and_die instead"))) NORETURN
+	bb_not_simple_error_msg_and_die(const char *s) { bb_simple_error_msg_and_die(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_perror_msg instead")))
+	bb_not_simple_perror_msg(const char *s) { bb_simple_perror_msg(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_perror_msg_and_die instead"))) NORETURN
+	bb_not_simple_perror_msg_and_die(const char *s) { bb_simple_perror_msg_and_die(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_herror_msg instead")))
+	bb_not_simple_herror_msg(const char *s) { bb_simple_herror_msg(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_herror_msg_and_die instead"))) NORETURN
+	bb_not_simple_herror_msg_and_die(const char *s) { bb_simple_herror_msg_and_die(s); }
+static inline void __attribute__ ((deprecated("use bb_simple_info_msg instead")))
+	bb_not_simple_info_msg(const char *s) { bb_simple_info_msg(s); }
+/* Override bb_error_msg() and related functions with macros that will
+ * substitute them for the equivalent bb_not_simple_error_msg() function when
+ * they are used with only a single parameter. Macro approach inspired by
+ * https://gustedt.wordpress.com/2010/06/08/detect-empty-macro-arguments and
+ * https://gustedt.wordpress.com/2010/06/03/default-arguments-for-c99
+ */
+#define _ARG18(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, _16, _17, ...) _17
+#define BB_MSG_KIND(...)           _ARG18(__VA_ARGS__, , , , , , , , , , , , , , , , , _not_simple)
+#define _BB_MSG(name, kind, ...)   bb##kind##name(__VA_ARGS__)
+#define BB_MSG(name, kind, ...)    _BB_MSG(name, kind, __VA_ARGS__)
+#define bb_error_msg(...)          BB_MSG(_error_msg, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#define bb_error_msg_and_die(...)  BB_MSG(_error_msg_and_die, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#define bb_perror_msg(...)         BB_MSG(_perror_msg, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#define bb_perror_msg_and_die(...) BB_MSG(_perror_msg_and_die, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#define bb_herror_msg(...)         BB_MSG(_herror_msg, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#define bb_herror_msg_and_die(...) BB_MSG(_herror_msg_and_die, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#if ENABLE_FEATURE_SYSLOG_INFO
+#define bb_info_msg(...)           BB_MSG(_info_msg, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
+#endif
 #endif
 
 /* We need to export XXX_main from libbusybox
@@ -1801,10 +1851,19 @@ unsigned size_from_HISTFILESIZE(const char *hp) FAST_FUNC;
 # else
 #  define MAX_HISTORY 0
 # endif
+typedef const char *get_exe_name_t(int i) FAST_FUNC;
 typedef struct line_input_t {
 	int flags;
 	int timeout;
 	const char *path_lookup;
+# if ENABLE_FEATURE_TAB_COMPLETION \
+&& (ENABLE_ASH  || ENABLE_SH_IS_ASH  || ENABLE_BASH_IS_ASH \
+||  ENABLE_HUSH || ENABLE_SH_IS_HUSH || ENABLE_BASH_IS_HUSH \
+)
+	/* function to fetch additional application-specific names to match */
+	get_exe_name_t *get_exe_name;
+#  define EDITING_HAS_get_exe_name 1
+# endif
 # if MAX_HISTORY
 	int cnt_history;
 	int cur_history;
@@ -1849,6 +1908,10 @@ void save_history(line_input_t *st);
 int read_line_input(const char* prompt, char* command, int maxsize) FAST_FUNC;
 #define read_line_input(state, prompt, command, maxsize) \
 	read_line_input(prompt, command, maxsize)
+#endif
+
+#ifndef EDITING_HAS_get_exe_name
+# define EDITING_HAS_get_exe_name 0
 #endif
 
 
@@ -2136,12 +2199,32 @@ struct globals;
  * Magic prevents ptr_to_globals from going into rodata.
  * If you want to assign a value, use SET_PTR_TO_GLOBALS(x) */
 extern struct globals *const ptr_to_globals;
+
+#if defined(__clang_major__) && __clang_major__ >= 9
+/* Clang/llvm drops assignment to "constant" storage. Silently.
+ * Needs serious convincing to not eliminate the store.
+ */
+static ALWAYS_INLINE void* not_const_pp(const void *p)
+{
+	void *pp;
+	__asm__ __volatile__(
+		"# forget that p points to const"
+		: /*outputs*/ "=r" (pp)
+		: /*inputs*/ "0" (p)
+	);
+	return pp;
+}
+#else
+static ALWAYS_INLINE void* not_const_pp(const void *p) { return (void*)p; }
+#endif
+
 /* At least gcc 3.4.6 on mipsel system needs optimization barrier */
 #define barrier() __asm__ __volatile__("":::"memory")
 #define SET_PTR_TO_GLOBALS(x) do { \
-	(*(struct globals**)&ptr_to_globals) = (void*)(x); \
+	(*(struct globals**)not_const_pp(&ptr_to_globals)) = (void*)(x); \
 	barrier(); \
 } while (0)
+
 #define FREE_PTR_TO_GLOBALS() do { \
 	if (ENABLE_FEATURE_CLEAN_UP) { \
 		free(ptr_to_globals); \

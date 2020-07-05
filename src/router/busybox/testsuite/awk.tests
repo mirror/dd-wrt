@@ -85,7 +85,8 @@ testing "awk floating const with leading zeroes" \
 	"" "\n"
 
 # long field seps requiring regex
-testing "awk long field sep" "awk -F-- '{ print NF, length(\$NF), \$NF }'" \
+testing "awk long field sep" \
+	"awk -F-- '{ print NF, length(\$NF), \$NF }'" \
 	"2 0 \n3 0 \n4 0 \n5 0 \n" \
 	"" \
 	"a--\na--b--\na--b--c--\na--b--c--d--"
@@ -317,6 +318,26 @@ testing "awk length()" \
 	"3\n3\n3\n3\n" \
 	"" "qwe"
 
+testing "awk print length, 1" \
+	"awk '{ print length, 1 }'" \
+	"0 1\n" \
+	"" "\n"
+
+testing "awk print length 1" \
+	"awk '{ print length 1 }'" \
+	"01\n" \
+	"" "\n"
+
+testing "awk length == 0" \
+	"awk 'length == 0 { print \"foo\" }'" \
+	"foo\n" \
+	"" "\n"
+
+testing "awk if (length == 0)" \
+	"awk '{ if (length == 0) { print \"bar\" } }'" \
+	"bar\n" \
+	"" "\n"
+
 testing "awk -f and ARGC" \
 	"awk -f - input" \
 	"re\n2\n" \
@@ -366,6 +387,14 @@ SKIP=
 testing 'awk negative field access' \
 	'awk 2>&1 -- '\''{ $(-1) }'\' \
 	"awk: cmd. line:1: Access to negative field\n" \
+	'' \
+	'anything'
+
+# was misinterpreted as (("str"++) i) instead of ("str" (++i))
+# (and was executed: "str"++ is "0", thus concatenating "0" and "1"):
+testing 'awk do not allow "str"++' \
+	'awk -v i=1 "BEGIN {print \"str\" ++i}"' \
+	"str2\n" \
 	'' \
 	'anything'
 

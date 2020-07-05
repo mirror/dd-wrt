@@ -91,7 +91,7 @@ int rmmod_main(int argc, char **argv)
 					1, misc_buf, COMMON_BUFSIZE,
 					&nmod))
 			{
-				bb_perror_msg_and_die("QM_MODULES");
+				bb_simple_perror_msg_and_die("QM_MODULES");
 			}
 		}
 		return EXIT_SUCCESS;

@@ -3210,17 +3210,17 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 			|| f->header.e_ident[EI_MAG1] != ELFMAG1
 			|| f->header.e_ident[EI_MAG2] != ELFMAG2
 			|| f->header.e_ident[EI_MAG3] != ELFMAG3) {
-		bb_error_msg_and_die("not an ELF file");
+		bb_simple_error_msg_and_dir("not an ELF file");
 	}
 	if (f->header.e_ident[EI_CLASS] != ELFCLASSM
 			|| f->header.e_ident[EI_DATA] != (BB_BIG_ENDIAN
 				? ELFDATA2MSB : ELFDATA2LSB)
 			|| f->header.e_ident[EI_VERSION] != EV_CURRENT
 			|| !MATCH_MACHINE(f->header.e_machine)) {
-		bb_error_msg_and_die("ELF file not for this architecture");
+		bb_simple_error_msg_and_dir("ELF file not for this architecture");
 	}
 	if (f->header.e_type != ET_REL) {
-		bb_error_msg_and_die("ELF file not a relocatable object");
+		bb_simple_error_msg_and_dir("ELF file not a relocatable object");
 	}
 
 	/* Read the section headers.  */
@@ -3283,10 +3283,10 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 
 #if SHT_RELM == SHT_REL
 			case SHT_RELA:
-				bb_error_msg_and_die("RELA relocations not supported on this architecture");
+				bb_simple_error_msg_and_dir("RELA relocations not supported on this architecture");
 #else
 			case SHT_REL:
-				bb_error_msg_and_die("REL relocations not supported on this architecture");
+				bb_simple_error_msg_and_dir("REL relocations not supported on this architecture");
 #endif
 			default:
 				if (sec->header.sh_type >= SHT_LOPROC) {
@@ -3830,7 +3830,7 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options UNUS
 		if (m_has_modinfo) {
 			m_version = new_get_module_version(f, m_strversion);
 			if (m_version == -1) {
-				bb_error_msg_and_die("cannot find the kernel version the module was "
+				bb_simple_error_msg_and_dir("cannot find the kernel version the module was "
 						"compiled for");
 			}
 		}
@@ -3849,7 +3849,7 @@ int FAST_FUNC bb_init_module_24(const char *m_filename, const char *options UNUS
 #endif /* FEATURE_INSMOD_VERSION_CHECKING */
 
 	if (query_module(NULL, 0, NULL, 0, NULL))
-		bb_error_msg_and_die("not configured to support old kernels");
+		bb_simple_error_msg_and_dir("not configured to support old kernels");
 	new_get_kernel_symbols();
 	k_crcs = new_is_kernel_checksummed();
 

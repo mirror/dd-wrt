@@ -99,7 +99,7 @@ static bool BB_ispunct(CHAR_T c)
 # if ENABLE_FEATURE_EDITING_VI
 static bool BB_isalnum_or_underscore(CHAR_T c)
 {
-	return ((unsigned)c < 256 && isalnum(c)) || c == '_';
+	return isalnum(c) || c == '_';
 }
 # endif
 # define BB_ispunct(c) ispunct(c)
@@ -203,7 +203,7 @@ extern struct lineedit_statics *const lineedit_ptr_to_statics;
 #define delbuf           (S.delbuf          )
 
 #define INIT_S() do { \
-	(*(struct lineedit_statics**)&lineedit_ptr_to_statics) = xzalloc(sizeof(S)); \
+	(*(struct lineedit_statics**)not_const_pp(&lineedit_ptr_to_statics)) = xzalloc(sizeof(S)); \
 	barrier(); \
 	cmdedit_termw = 80; \
 	IF_USERNAME_OR_HOMEDIR(home_pwd_buf = (char*)null_str;) \
@@ -813,18 +813,29 @@ static NOINLINE unsigned complete_cmd_dir_file(const char *command, int type)
 	}
 	pf_len = strlen(pfind);
 
-# if ENABLE_FEATURE_SH_STANDALONE && NUM_APPLETS != 1
 	if (type == FIND_EXE_ONLY && !dirbuf) {
+# if ENABLE_FEATURE_SH_STANDALONE && NUM_APPLETS != 1
 		const char *p = applet_names;
-
 		while (*p) {
 			if (strncmp(pfind, p, pf_len) == 0)
 				add_match(xstrdup(p));
 			while (*p++ != '\0')
 				continue;
 		}
-	}
 # endif
+# if EDITING_HAS_get_exe_name
+		if (state->get_exe_name) {
+			i = 0;
+			for (;;) {
+				const char *b = state->get_exe_name(i++);
+				if (!b)
+					break;
+				if (strncmp(pfind, b, pf_len) == 0)
+					add_match(xstrdup(b));
+			}
+		}
+# endif
+	}
 
 	for (i = 0; i < npaths; i++) {
 		DIR *dir;

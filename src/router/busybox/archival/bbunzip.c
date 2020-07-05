@@ -114,7 +114,7 @@ int FAST_FUNC bbunpack(char **argv,
 
 		/* Check that the input is sane */
 		if (!(option_mask32 & BBUNPK_OPT_FORCE) && isatty(STDIN_FILENO)) {
-			bb_error_msg_and_die("compressed data not read from terminal, "
+			bb_simple_error_msg_and_die("compressed data not read from terminal, "
 					"use -f to force it");
 		}
 
@@ -386,7 +386,7 @@ int gunzip_main(int argc UNUSED_PARAM, char **argv)
 	 * Normally, "zcat" is just "gunzip -c".
 	 * But if seamless magic is enabled, then we are much more clever.
 	 */
-	if (ENABLE_ZCAT && (!ENABLE_GUNZIP || applet_name[1] == 'c'))
+	if (ENABLE_ZCAT && applet_name[1] == 'c')
 		option_mask32 |= BBUNPK_OPT_STDOUT | BBUNPK_SEAMLESS_MAGIC;
 
 	return bbunpack(argv, unpack_gz_stream, make_new_name_gunzip, /*unused:*/ NULL);
@@ -536,6 +536,7 @@ int unlzma_main(int argc UNUSED_PARAM, char **argv)
 //usage:     "\n	-c	Write to stdout"
 //usage:     "\n	-f	Force"
 //usage:     "\n	-k	Keep input files"
+//usage:     "\n	-t	Test file integrity"
 //usage:
 //usage:#define xz_trivial_usage
 //usage:       "-d [-cfk] [FILE]..."
@@ -545,6 +546,7 @@ int unlzma_main(int argc UNUSED_PARAM, char **argv)
 //usage:     "\n	-c	Write to stdout"
 //usage:     "\n	-f	Force"
 //usage:     "\n	-k	Keep input files"
+//usage:     "\n	-t	Test file integrity"
 //usage:
 //usage:#define xzcat_trivial_usage
 //usage:       "[FILE]..."
