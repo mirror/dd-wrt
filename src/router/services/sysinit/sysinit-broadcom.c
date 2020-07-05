@@ -505,10 +505,10 @@ void start_sysinit(void)
 	if (!nvram_matchi("disable_watchdog", 1))
 		eval("watchdog");	// system watchdog
 #endif
-#ifdef HAVE_80211AC
 	fprintf(stderr, "boardnum %s\n", nvram_safe_get("boardnum"));
 	fprintf(stderr, "boardtype %s\n", nvram_safe_get("boardtype"));
 	fprintf(stderr, "boardrev %s\n", nvram_safe_get("boardrev"));
+#ifdef HAVE_80211AC
 	if (!nvram_exists("bootflags")) {
 		fprintf(stderr, "nvram invalid, erase\n");
 //          eval("erase","nvram"); // ignore it for testbed
