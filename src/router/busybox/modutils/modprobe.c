@@ -440,7 +440,7 @@ static struct dep_t *build_dep(void)
 		/* Ok, that didn't work.  Fall back to looking in /lib/modules */
 		f = fopen_for_read(CONFIG_DEFAULT_MODULES_DIR"/"CONFIG_DEFAULT_DEPMOD_FILE);
 		if (f == NULL) {
-			bb_error_msg_and_die("cannot parse "CONFIG_DEFAULT_DEPMOD_FILE);
+			bb_simple_error_msg_and_die("cannot parse "CONFIG_DEFAULT_DEPMOD_FILE);
 		}
 	}
 
@@ -938,12 +938,12 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 	if (opt & (DUMP_CONF_EXIT | LIST_ALL))
 		return EXIT_SUCCESS;
 	if (opt & (RESTRICT_DIR | CONFIG_FILE))
-		bb_error_msg_and_die("-t and -C not supported");
+		bb_simple_error_msg_and_die("-t and -C not supported");
 
 	depend = build_dep();
 
 	if (!depend)
-		bb_error_msg_and_die("cannot parse "CONFIG_DEFAULT_DEPMOD_FILE);
+		bb_simple_error_msg_and_die("cannot parse "CONFIG_DEFAULT_DEPMOD_FILE);
 
 	if (remove_opt) {
 		do {
@@ -956,7 +956,7 @@ int modprobe_main(int argc UNUSED_PARAM, char **argv)
 		} while (*argv && *++argv);
 	} else {
 		if (!*argv)
-			bb_error_msg_and_die("no module or pattern provided");
+			bb_simple_error_msg_and_die("no module or pattern provided");
 
 		if (mod_insert(argv))
 			bb_perror_msg_and_die("failed to %s module %s", "load", *argv);
