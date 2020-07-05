@@ -434,7 +434,6 @@ static void detect_wireless_devices(int mask)
 		wificnt = 0;
 		insmod("rt2x00lib");
 		insmod("rt2x00mmio");
-		insmod("rt2x00soc");
 		insmod("rt2x00pci");
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
@@ -442,7 +441,6 @@ static void detect_wireless_devices(int mask)
 			rmmod("rt2800mmio");
 			rmmod("rt2800lib");
 			rmmod("rt2x00pci");
-			rmmod("rt2x00soc");
 			rmmod("rt2x00mmio");
 			rmmod("rt2x00lib");
 		}
