@@ -3,13 +3,15 @@
  *  it under the terms of the GNU General Public License version 2 as
  *  publishhed by the Free Software Foundation.
  *
- *  Copyright (C) 2012 John Crispin <blogic@openwrt.org>
+ *  Copyright (C) 2012 John Crispin <john@phrozen.org>
  */
 
 #ifndef _RT288X_PINMUX_H__
 #define _RT288X_PINMUX_H__
 
-#define FUNC(name, value, pin_first, pin_count) { name, value, pin_first, pin_count }
+#define FUNC(name, value, pin_first, pin_count) \
+	{ name, value, pin_first, pin_count }
+
 #define GRP(_name, _func, _mask, _shift) \
 	{ .name = _name, .mask = _mask, .shift = _shift, \
 	  .func = _func, .gpio = _mask, \

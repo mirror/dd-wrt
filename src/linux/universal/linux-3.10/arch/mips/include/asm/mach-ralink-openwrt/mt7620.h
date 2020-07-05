@@ -7,7 +7,7 @@
  *
  * Copyright (C) 2008-2011 Gabor Juhos <juhosg@openwrt.org>
  * Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
- * Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+ * Copyright (C) 2013 John Crispin <john@phrozen.org>
  */
 
 #ifndef _MT7620_REGS_H_
@@ -17,6 +17,7 @@
 
 #define SYSC_REG_CHIP_NAME0		0x00
 #define SYSC_REG_CHIP_NAME1		0x04
+#define SYSC_REG_EFUSE_CFG		0x08
 #define SYSC_REG_CHIP_REV		0x0c
 #define SYSC_REG_SYSTEM_CONFIG0		0x10
 #define SYSC_REG_SYSTEM_CONFIG1		0x14
@@ -71,6 +72,7 @@
 #define SYSCFG0_DRAM_TYPE_SDRAM		0
 #define SYSCFG0_DRAM_TYPE_DDR1		1
 #define SYSCFG0_DRAM_TYPE_DDR2		2
+#define SYSCFG0_DRAM_TYPE_UNKNOWN	3
 
 #define SYSCFG0_DRAM_TYPE_DDR2_MT7628	0
 #define SYSCFG0_DRAM_TYPE_DDR1_MT7628	1
@@ -113,9 +115,14 @@
 #define MT7620_GPIO_MODE_WDT_MASK	0x3
 #define MT7620_GPIO_MODE_WDT_SHIFT	21
 
+#define MT7620_GPIO_MODE_MDIO		0
+#define MT7620_GPIO_MODE_MDIO_REFCLK	1
+#define MT7620_GPIO_MODE_MDIO_GPIO	2
+#define MT7620_GPIO_MODE_MDIO_MASK	0x3
+#define MT7620_GPIO_MODE_MDIO_SHIFT	7
+
 #define MT7620_GPIO_MODE_I2C		0
 #define MT7620_GPIO_MODE_UART1		5
-#define MT7620_GPIO_MODE_MDIO		8
 #define MT7620_GPIO_MODE_RGMII1		9
 #define MT7620_GPIO_MODE_RGMII2		10
 #define MT7620_GPIO_MODE_SPI		11
@@ -128,6 +135,18 @@
 static inline int mt7620_get_eco(void)
 {
 	return rt_sysc_r32(SYSC_REG_CHIP_REV) & CHIP_REV_ECO_MASK;
+}
+
+static inline int mt7620_get_chipver(void)
+{
+	return (rt_sysc_r32(SYSC_REG_CHIP_REV) >> CHIP_REV_VER_SHIFT) &
+		CHIP_REV_VER_MASK;
+}
+
+static inline int mt7620_get_pkg(void)
+{
+	return (rt_sysc_r32(SYSC_REG_CHIP_REV) >> CHIP_REV_PKG_SHIFT) &
+		CHIP_REV_PKG_MASK;
 }
 
 #endif
