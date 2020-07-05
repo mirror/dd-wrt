@@ -27,7 +27,7 @@ static void signal_handler(int sig)
 {
 	unsigned char ch = sig; /* use char, avoid dealing with partial writes */
 	if (write(signal_pipe.wr, &ch, 1) != 1)
-		bb_perror_msg("can't send signal");
+		bb_simple_perror_msg("can't send signal");
 }
 
 /* Call this before doing anything else. Sets up the socket pair

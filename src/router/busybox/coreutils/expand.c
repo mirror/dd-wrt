@@ -160,7 +160,7 @@ static void unexpand(FILE *file, unsigned tab_size, unsigned opt)
 					putchar('\t');
 			}
 
-			if ((opt & OPT_INITIAL) && ptr != line) {
+			if (!(opt & OPT_ALL) && ptr != line) {
 				printf("%*s%s", len, "", ptr);
 				break;
 			}
@@ -207,13 +207,13 @@ int expand_main(int argc UNUSED_PARAM, char **argv)
 				"ft:a"
 				"\0"
 				"ta" /* -t NUM sets -a */,
-				"first-only\0"       No_argument       "i"
+				"first-only\0"       No_argument       "f"
 				"tabs\0"             Required_argument "t"
 				"all\0"              No_argument       "a"
 				, &opt_t
 		);
-		/* -f --first-only is the default */
-		if (!(opt & OPT_ALL)) opt |= OPT_INITIAL;
+		/* -t implies -a, but an explicit -f overrides */
+		if (opt & OPT_INITIAL) opt &= ~OPT_ALL;
 	}
 	tab_size = xatou_range(opt_t, 1, UINT_MAX);
 
@@ -247,7 +247,7 @@ int expand_main(int argc UNUSED_PARAM, char **argv)
 	/* Now close stdin also */
 	/* (if we didn't read from it, it's a no-op) */
 	if (fclose(stdin))
-		bb_perror_msg_and_die(bb_msg_standard_input);
+		bb_simple_perror_msg_and_die(bb_msg_standard_input);
 
 	fflush_stdout_and_exit(exit_status);
 }

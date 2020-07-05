@@ -1025,7 +1025,7 @@ static void log_and_exit(void)
 	*/
 
 	if (verbose > 2)
-		bb_error_msg("closed");
+		bb_simple_error_msg("closed");
 	_exit(xfunc_error_retval);
 }
 
@@ -1220,7 +1220,7 @@ static void send_headers(unsigned responseNum)
 	}
 	if (full_write(STDOUT_FILENO, iobuf, len) != len) {
 		if (verbose > 1)
-			bb_perror_msg("error");
+			bb_simple_perror_msg("error");
 		log_and_exit();
 	}
 }
@@ -1838,7 +1838,7 @@ static NOINLINE void send_file_and_exit(const char *url, int what)
 	if (count < 0) {
  IF_FEATURE_USE_SENDFILE(fin:)
 		if (verbose > 1)
-			bb_perror_msg("error");
+			bb_simple_perror_msg("error");
 	}
 	log_and_exit();
 }
@@ -2149,7 +2149,7 @@ static void handle_incoming_and_exit(const len_and_sockaddr *fromAddr)
 		if (rmt_ip_str)
 			applet_name = rmt_ip_str;
 		if (verbose > 2)
-			bb_error_msg("connected");
+			bb_simple_error_msg("connected");
 	}
 	if_ip_denied_send_HTTP_FORBIDDEN_and_exit(remote_ip);
 
@@ -2734,10 +2734,15 @@ int httpd_main(int argc UNUSED_PARAM, char **argv)
 #if !BB_MMU
 	if (!(opt & OPT_FOREGROUND)) {
 		bb_daemonize_or_rexec(0, argv); /* don't change current directory */
+		re_execed = 0; /* for the following chdir to work */
 	}
 #endif
+	/* Chdir to home (unless we were re_exec()ed for NOMMU case
+	 * in mini_httpd_nommu(): we are already in the home dir then).
+	 */
+	if (!re_execed)
+		xchdir(home_httpd);
 
-	xchdir(home_httpd);
 	if (!(opt & OPT_INETD)) {
 		signal(SIGCHLD, SIG_IGN);
 		server_socket = openServer();
@@ -2746,7 +2751,7 @@ int httpd_main(int argc UNUSED_PARAM, char **argv)
 		if (opt & OPT_SETUID) {
 			if (ugid.gid != (gid_t)-1) {
 				if (setgroups(1, &ugid.gid) == -1)
-					bb_perror_msg_and_die("setgroups");
+					bb_simple_perror_msg_and_die("setgroups");
 				xsetgid(ugid.gid);
 			}
 			xsetuid(ugid.uid);

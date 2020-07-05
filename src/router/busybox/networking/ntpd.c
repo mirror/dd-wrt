@@ -164,7 +164,7 @@
  */
 
 #define INITIAL_SAMPLES    4    /* how many samples do we want for init */
-#define MIN_FREQHOLD      12    /* adjust offset, but not freq in this many first adjustments */
+#define MIN_FREQHOLD      10    /* adjust offset, but not freq in this many first adjustments */
 #define BAD_DELAY_GROWTH   4    /* drop packet if its delay grew by more than this factor */
 
 #define RETRY_INTERVAL    32    /* on send/recv error, retry in N secs (need to be power of 2) */
@@ -504,12 +504,14 @@ static ALWAYS_INLINE double MAXD(double a, double b)
 		return a;
 	return b;
 }
+#if !USING_KERNEL_PLL_LOOP
 static ALWAYS_INLINE double MIND(double a, double b)
 {
 	if (a < b)
 		return a;
 	return b;
 }
+#endif
 static NOINLINE double my_SQRT(double X)
 {
 	union {
@@ -905,7 +907,7 @@ do_sendto(int fd,
 		ret = send_to_from(fd, msg, len, MSG_DONTWAIT, to, from, addrlen);
 	}
 	if (ret != len) {
-		bb_perror_msg("send failed");
+		bb_simple_perror_msg("send failed");
 		return -1;
 	}
 	return 0;
@@ -1121,7 +1123,7 @@ step_time(double offset)
 	dtime = tvc.tv_sec + (1.0e-6 * tvc.tv_usec) + offset;
 	d_to_tv(dtime, &tvn);
 	if (settimeofday(&tvn, NULL) == -1)
-		bb_perror_msg_and_die("settimeofday");
+		bb_simple_perror_msg_and_die("settimeofday");
 
 	VERB2 {
 		tval = tvc.tv_sec;
@@ -1494,7 +1496,7 @@ select_and_cluster(void)
 		/* Starting from 1 is ok here */
 		for (i = 1; i < num_survivors; i++) {
 			if (G.last_update_peer == survivor[i].p) {
-				VERB5 bb_error_msg("keeping old synced peer");
+				VERB5 bb_simple_error_msg("keeping old synced peer");
 				p = G.last_update_peer;
 				goto keep_old;
 			}
@@ -1702,7 +1704,7 @@ update_local_clock(peer_t *p)
 #else
 			set_new_values(STATE_SYNC, offset, recv_time);
 #endif
-			VERB4 bb_error_msg("transitioning to FREQ, datapoint ignored");
+			VERB4 bb_simple_error_msg("transitioning to FREQ, datapoint ignored");
 			return 0; /* "leave poll interval as is" */
 
 #if 0 /* this is dead code for now */
@@ -1796,7 +1798,7 @@ update_local_clock(peer_t *p)
 	VERB4 {
 		memset(&tmx, 0, sizeof(tmx));
 		if (adjtimex(&tmx) < 0)
-			bb_perror_msg_and_die("adjtimex");
+			bb_simple_perror_msg_and_die("adjtimex");
 		bb_error_msg("p adjtimex freq:%ld offset:%+ld status:0x%x tc:%ld",
 				tmx.freq, tmx.offset, tmx.status, tmx.constant);
 	}
@@ -1874,9 +1876,11 @@ update_local_clock(peer_t *p)
 //15:31:53.473 update from:<IP> offset:+0.000007 delay:0.158142 jitter:0.010922 clock drift:+9.343ppm tc:6
 //15:32:58.902 update from:<IP> offset:-0.000728 delay:0.158222 jitter:0.009454 clock drift:+9.298ppm tc:6
 			/*
-			 * This expression would choose MIN_FREQHOLD + 8 in the above example.
+			 * This expression would choose MIN_FREQHOLD + 14 in the above example
+			 * (off_032 is +1 for each 0.032768 seconds of offset).
 			 */
-			G.FREQHOLD_cnt = 1 + MIN_FREQHOLD + ((unsigned)(abs(tmx.offset)) >> 16);
+			unsigned off_032 = abs((int)(tmx.offset >> 15));
+			G.FREQHOLD_cnt = 1 + MIN_FREQHOLD + off_032;
 		}
 		G.FREQHOLD_cnt--;
 		tmx.status |= STA_FREQHOLD;
@@ -1906,7 +1910,7 @@ update_local_clock(peer_t *p)
 	//tmx.maxerror = (uint32_t)((sys_rootdelay / 2 + sys_rootdisp) * 1e6);
 	rc = adjtimex(&tmx);
 	if (rc < 0)
-		bb_perror_msg_and_die("adjtimex");
+		bb_simple_perror_msg_and_die("adjtimex");
 	/* NB: here kernel returns constant == G.poll_exp, not == G.poll_exp - 4.
 	 * Not sure why. Perhaps it is normal.
 	 */
@@ -2018,7 +2022,7 @@ recv_and_process_peer_pkt(peer_t *p)
 
 #if ENABLE_FEATURE_NTP_AUTH
 	if (size != NTP_MSGSIZE_NOAUTH && size != NTP_MSGSIZE_MD5_AUTH && size != NTP_MSGSIZE_SHA1_AUTH) {
-		bb_error_msg("malformed packet received from %s", p->p_dotted);
+		bb_error_msg("malformed packet received from %s: size %u", p->p_dotted, (int)size);
 		return;
 	}
 	if (p->key_entry && hashes_differ(p, &msg)) {
@@ -2027,7 +2031,7 @@ recv_and_process_peer_pkt(peer_t *p)
 	}
 #else
 	if (size != NTP_MSGSIZE_NOAUTH && size != NTP_MSGSIZE_MD5_AUTH) {
-		bb_error_msg("malformed packet received from %s", p->p_dotted);
+		bb_error_msg("malformed packet received from %s: size %u", p->p_dotted, (int)size);
 		return;
 	}
 #endif
@@ -2238,6 +2242,13 @@ recv_and_process_client_pkt(void /*int fd*/)
 	from = xzalloc(to->len);
 
 	size = recv_from_to(G_listen_fd, &msg, sizeof(msg), MSG_DONTWAIT, from, &to->u.sa, to->len);
+
+	/* "ntpq -p" (4.2.8p13) sends a 12-byte NTPv2 request:
+	 * m_status is 0x16: leap:0 version:2 mode:6(reserved1)
+	 *  https://docs.ntpsec.org/latest/mode6.html
+	 * We don't support this.
+	 */
+
 #if ENABLE_FEATURE_NTP_AUTH
 	if (size != NTP_MSGSIZE_NOAUTH && size != NTP_MSGSIZE_MD5_AUTH && size != NTP_MSGSIZE_SHA1_AUTH)
 #else
@@ -2248,7 +2259,7 @@ recv_and_process_client_pkt(void /*int fd*/)
 		if (size < 0) {
 			if (errno == EAGAIN)
 				goto bail;
-			bb_perror_msg_and_die("recv");
+			bb_simple_perror_msg_and_die("recv");
 		}
 		addr = xmalloc_sockaddr2dotted_noport(from);
 		bb_error_msg("malformed packet received from %s: size %u", addr, (int)size);
@@ -2415,7 +2426,7 @@ static NOINLINE void ntp_init(char **argv)
 	srand(getpid());
 
 	if (getuid())
-		bb_error_msg_and_die(bb_msg_you_must_be_root);
+		bb_simple_error_msg_and_die(bb_msg_you_must_be_root);
 
 	/* Set some globals */
 	G.discipline_jitter = G_precision_sec;
@@ -2436,7 +2447,8 @@ static NOINLINE void ntp_init(char **argv)
 			"d" /* compat */
 			"46aAbgL" /* compat, ignored */
 				"\0"
-				"dd:wn"  /* -d: counter; -p: list; -w implies -n */
+				"=0"      /* should have no arguments */
+				":dd:wn"  /* -d: counter; -p: list; -w implies -n */
 				IF_FEATURE_NTPD_SERVER(":Il") /* -I implies -l */
 			IF_FEATURE_NTP_AUTH(, &key_file_path)
 			, &peers, &G.script_name
@@ -2490,7 +2502,7 @@ static NOINLINE void ntp_init(char **argv)
 				/* supports 'sha' and 'sha1' formats */
 				hash_type = HASH_SHA1;
 			else
-				bb_error_msg_and_die("only MD5 and SHA1 keys supported");
+				bb_simple_error_msg_and_die("only MD5 and SHA1 keys supported");
 /* man ntp.keys:
  *  MD5    The key is 1 to 16 printable characters terminated by an EOL,
  *         whitespace, or a # (which is the "start of comment" character).
@@ -2673,7 +2685,7 @@ int ntpd_main(int argc UNUSED_PARAM, char **argv)
 				if (p->p_fd == -1) {
 					/* Time to send new req */
 					if (--cnt == 0) {
-						VERB4 bb_error_msg("disabling burst mode");
+						VERB4 bb_simple_error_msg("disabling burst mode");
 						G.polladj_count = 0;
 						G.poll_exp = MINPOLL;
 					}
