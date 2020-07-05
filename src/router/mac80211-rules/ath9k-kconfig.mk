@@ -239,6 +239,9 @@ endif
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
 	cat $(TOP)/mac80211-rules/configs/rt2800.config>> $(MAC80211_PATH)/.config_temp
 endif
+ifeq ($(CONFIG_MAC80211_RT2800),y)
+	cat $(TOP)/mac80211-rules/configs/rt2800_soc.config>> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CPTCFG_MAC80211_MESH),y)
 	echo "CPTCFG_MAC80211_MESH=y" >>$(MAC80211_PATH)/.config_temp
 endif
