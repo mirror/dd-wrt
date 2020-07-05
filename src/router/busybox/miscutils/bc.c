@@ -844,10 +844,10 @@ struct globals {
 # error Strange INT_MAX
 #endif
 
-#if UINT_MAX == 4294967295
+#if UINT_MAX == 4294967295U
 # define BC_MAX_SCALE_STR  "4294967295"
 # define BC_MAX_STRING_STR "4294967294"
-#elif UINT_MAX == 18446744073709551615
+#elif UINT_MAX == 18446744073709551615U
 # define BC_MAX_SCALE_STR  "18446744073709551615"
 # define BC_MAX_STRING_STR "18446744073709551614"
 #else
@@ -893,7 +893,7 @@ static void fflush_and_check(void)
 {
 	fflush_all();
 	if (ferror(stdout) || ferror(stderr))
-		bb_perror_msg_and_die("output error");
+		bb_simple_perror_msg_and_die("output error");
 }
 
 #if ENABLE_FEATURE_CLEAN_UP
@@ -908,7 +908,7 @@ static void quit(void) NORETURN;
 static void quit(void)
 {
 	if (ferror(stdin))
-		bb_perror_msg_and_die("input error");
+		bb_simple_perror_msg_and_die("input error");
 	fflush_and_check();
 	dbg_exec("quit(): exiting with exitcode SUCCESS");
 	exit(0);
@@ -1465,7 +1465,10 @@ static ssize_t bc_num_cmp(BcNum *a, BcNum *b)
 	b_int = BC_NUM_INT(b);
 	a_int -= b_int;
 
-	if (a_int != 0) return (ssize_t) a_int;
+	if (a_int != 0) {
+		if (neg) return - (ssize_t) a_int;
+		return (ssize_t) a_int;
+	}
 
 	a_max = (a->rdx > b->rdx);
 	if (a_max) {
@@ -2519,7 +2522,9 @@ static void xc_read_line(BcVec *vec, FILE *fp)
 
 #if ENABLE_FEATURE_BC_INTERACTIVE
 	if (G_interrupt) { // ^C was pressed
+# if ENABLE_FEATURE_EDITING
  intr:
+# endif
 		if (fp != stdin) {
 			// ^C while running a script (bc SCRIPT): die.
 			// We do not return to interactive prompt:
@@ -2576,7 +2581,7 @@ static void xc_read_line(BcVec *vec, FILE *fp)
 				goto get_char;
 			if (c == EOF) {
 				if (ferror(fp))
-					bb_perror_msg_and_die("input error");
+					bb_simple_perror_msg_and_die("input error");
 				// Note: EOF does not append '\n'
 				break;
 			}
@@ -6934,9 +6939,9 @@ static BC_STATUS zxc_vm_process(const char *text)
 		ip = (void*)G.prog.exestack.v;
 #if SANITY_CHECKS
 		if (G.prog.exestack.len != 1) // should have only main's IP
-			bb_error_msg_and_die("BUG:call stack");
+			bb_simple_error_msg_and_die("BUG:call stack");
 		if (ip->func != BC_PROG_MAIN)
-			bb_error_msg_and_die("BUG:not MAIN");
+			bb_simple_error_msg_and_die("BUG:not MAIN");
 #endif
 		f = xc_program_func_BC_PROG_MAIN();
 		// bc discards strings, constants and code after each
@@ -6952,7 +6957,7 @@ static BC_STATUS zxc_vm_process(const char *text)
 		if (IS_BC) {
 #if SANITY_CHECKS
 			if (G.prog.results.len != 0) // should be empty
-				bb_error_msg_and_die("BUG:data stack");
+				bb_simple_error_msg_and_die("BUG:data stack");
 #endif
 			IF_BC(bc_vec_pop_all(&f->strs);)
 			IF_BC(bc_vec_pop_all(&f->consts);)

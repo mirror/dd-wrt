@@ -156,12 +156,13 @@ config FEATURE_PIDFILE
 config PID_FILE_PATH
 	string "Directory for pidfiles"
 	default "/var/run"
-	depends on FEATURE_PIDFILE
+	depends on FEATURE_PIDFILE || FEATURE_CROND_SPECIAL_TIMES
 	help
 	This is the default path where pidfiles are created.  Applets which
 	allow you to set the pidfile path on the command line will override
 	this value.  The option has no effect on applets that require you to
-	specify a pidfile path.
+	specify a pidfile path.  When crond has the 'Support special times'
+	option enabled, the 'crond.reboot' file is also stored here.
 
 config BUSYBOX
 	bool "Include busybox applet"
@@ -660,6 +661,19 @@ config WERROR
 	This adds -Werror to gcc command line.
 
 	Most people should answer N.
+
+config WARN_SIMPLE_MSG
+	bool "Warn about single parameter bb_xx_msg calls"
+	default n
+	help
+	This will cause warnings to be shown for any instances of
+	bb_error_msg(), bb_error_msg_and_die(), bb_perror_msg(),
+	bb_perror_msg_and_die(), bb_herror_msg() or bb_herror_msg_and_die()
+	being called with a single parameter. In these cases the equivalent
+	bb_simple_xx_msg function should be used instead.
+	Note that use of STRERROR_FMT may give false positives.
+
+	If you aren't developing busybox, say N here.
 
 choice
 	prompt "Additional debugging library"

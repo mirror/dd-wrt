@@ -411,7 +411,7 @@ extern struct test_statics *const test_ptr_to_statics;
 #define leaving         (S.leaving      )
 
 #define INIT_S() do { \
-	(*(struct test_statics**)&test_ptr_to_statics) = xzalloc(sizeof(S)); \
+	(*(struct test_statics**)not_const_pp(&test_ptr_to_statics)) = xzalloc(sizeof(S)); \
 	barrier(); \
 } while (0)
 #define DEINIT_S() do { \
@@ -832,12 +832,12 @@ int test_main(int argc, char **argv)
 		--argc;
 		if (!arg0[1]) { /* "[" ? */
 			if (NOT_LONE_CHAR(argv[argc], ']')) {
-				bb_error_msg("missing ]");
+				bb_simple_error_msg("missing ]");
 				return 2;
 			}
 		} else { /* assuming "[[" */
 			if (strcmp(argv[argc], "]]") != 0) {
-				bb_error_msg("missing ]]");
+				bb_simple_error_msg("missing ]]");
 				return 2;
 			}
 		}

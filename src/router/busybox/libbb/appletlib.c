@@ -306,7 +306,7 @@ void lbb_prepare(const char *applet
 		IF_FEATURE_INDIVIDUAL(, char **argv))
 {
 #ifdef __GLIBC__
-	(*(int **)&bb_errno) = __errno_location();
+	(*(int **)not_const_pp(&bb_errno)) = __errno_location();
 	barrier();
 #endif
 	applet_name = applet;
@@ -633,7 +633,7 @@ static void check_suid(int applet_no)
 			/* same group / in group */
 			m >>= 3;
 		if (!(m & S_IXOTH)) /* is x bit not set? */
-			bb_error_msg_and_die("you have no permission to run this applet");
+			bb_simple_error_msg_and_die("you have no permission to run this applet");
 
 		/* We set effective AND saved ids. If saved-id is not set
 		 * like we do below, seteuid(0) can still later succeed! */
@@ -645,7 +645,7 @@ static void check_suid(int applet_no)
 			rgid = sct->m_ugid.gid;
 		/* else: we will set egid = rgid, thus dropping sgid effect */
 		if (setresgid(-1, rgid, rgid))
-			bb_perror_msg_and_die("setresgid");
+			bb_simple_perror_msg_and_die("setresgid");
 
 		/* Are we directed to change uid
 		 * (APPLET = s** USER.GROUP or APPLET = S** USER.GROUP)?
@@ -655,7 +655,7 @@ static void check_suid(int applet_no)
 			uid = sct->m_ugid.uid;
 		/* else: we will set euid = ruid, thus dropping suid effect */
 		if (setresuid(-1, uid, uid))
-			bb_perror_msg_and_die("setresuid");
+			bb_simple_perror_msg_and_die("setresuid");
 
 		goto ret;
 	}
@@ -665,7 +665,7 @@ static void check_suid(int applet_no)
 
 		if (!onetime) {
 			onetime = 1;
-			bb_error_msg("using fallback suid method");
+			bb_simple_error_msg("using fallback suid method");
 		}
 	}
 #   endif
@@ -675,7 +675,7 @@ static void check_suid(int applet_no)
 		/* Real uid is not 0. If euid isn't 0 too, suid bit
 		 * is most probably not set on our executable */
 		if (geteuid())
-			bb_error_msg_and_die("must be suid to work properly");
+			bb_simple_error_msg_and_die("must be suid to work properly");
 	} else if (APPLET_SUID(applet_no) == BB_SUID_DROP) {
 		/*
 		 * Drop all privileges.
@@ -756,7 +756,9 @@ static void install_links(const char *busybox UNUSED_PARAM,
 }
 # endif
 
+# if ENABLE_BUSYBOX || NUM_APPLETS > 0
 static void run_applet_and_exit(const char *name, char **argv) NORETURN;
+#endif
 
 # if NUM_SCRIPTS > 0
 static int find_script_by_name(const char *name)
@@ -777,13 +779,13 @@ int scripted_main(int argc UNUSED_PARAM, char **argv)
 {
 	int script = find_script_by_name(applet_name);
 	if (script >= 0)
-#if ENABLE_ASH || ENABLE_SH_IS_ASH || ENABLE_BASH_IS_ASH
+#  if ENABLE_SHELL_ASH
 		exit(ash_main(-script - 1, argv));
-#elif ENABLE_HUSH || ENABLE_SH_IS_HUSH || ENABLE_BASH_IS_HUSH
+#  elif ENABLE_SHELL_HUSH
 		exit(hush_main(-script - 1, argv));
-#else
+#  else
 		return 1;
-#endif
+#  endif
 	return 0;
 }
 
@@ -1028,7 +1030,33 @@ static NORETURN void run_applet_and_exit(const char *name, char **argv)
 }
 # endif
 
-#endif /* !defined(SINGLE_APPLET_MAIN) */
+#else /* defined(SINGLE_APPLET_MAIN) */
+
+# if NUM_SCRIPTS > 0
+/* if SINGLE_APPLET_MAIN, these two functions are simpler: */
+int scripted_main(int argc UNUSED_PARAM, char **argv) MAIN_EXTERNALLY_VISIBLE;
+int scripted_main(int argc UNUSED_PARAM, char **argv)
+{
+#  if ENABLE_SHELL_ASH
+	int script = 0;
+	exit(ash_main(-script - 1, argv));
+#  elif ENABLE_SHELL_HUSH
+	int script = 0;
+	exit(hush_main(-script - 1, argv));
+#  else
+	return 1;
+#  endif
+}
+char* FAST_FUNC
+get_script_content(unsigned n UNUSED_PARAM)
+{
+	char *t = unpack_bz2_data(packed_scripts, sizeof(packed_scripts),
+					UNPACKED_SCRIPTS_LENGTH);
+	return t;
+}
+# endif /* NUM_SCRIPTS > 0 */
+
+#endif /* defined(SINGLE_APPLET_MAIN) */
 
 
 #if ENABLE_BUILD_LIBBUSYBOX

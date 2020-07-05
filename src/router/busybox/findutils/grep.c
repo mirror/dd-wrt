@@ -60,7 +60,7 @@
 
 /* options */
 //usage:#define grep_trivial_usage
-//usage:       "[-HhnlLoqvsriwFE"
+//usage:       "[-HhnlLoqvsrRiwFE"
 //usage:	IF_EXTRA_COMPAT("z")
 //usage:       "] [-m N] "
 //usage:	IF_FEATURE_GREP_CONTEXT("[-A/B/C N] ")
@@ -78,6 +78,7 @@
 //usage:     "\n	-v	Select non-matching lines"
 //usage:     "\n	-s	Suppress open and read errors"
 //usage:     "\n	-r	Recurse"
+//usage:     "\n	-R	Recurse and dereference symlinks"
 //usage:     "\n	-i	Ignore case"
 //usage:     "\n	-w	Match whole words only"
 //usage:     "\n	-x	Match whole lines only"
@@ -108,7 +109,7 @@
 
 /* -e,-f are lists; -m,-A,-B,-C have numeric param */
 #define OPTSTR_GREP \
-	"lnqvscFiHhe:*f:*Lorm:+wx" \
+	"lnqvscFiHhe:*f:*LorRm:+wx" \
 	IF_FEATURE_GREP_CONTEXT("A:+B:+C:+") \
 	"E" \
 	IF_EXTRA_COMPAT("z") \
@@ -131,6 +132,7 @@ enum {
 	OPTBIT_L, /* list unmatched file names only */
 	OPTBIT_o, /* show only matching parts of lines */
 	OPTBIT_r, /* recurse dirs */
+	OPTBIT_R, /* recurse dirs and symlinks to dirs */
 	OPTBIT_m, /* -m MAX_MATCHES */
 	OPTBIT_w, /* -w whole word match */
 	OPTBIT_x, /* -x whole line match */
@@ -154,6 +156,7 @@ enum {
 	OPT_L = 1 << OPTBIT_L,
 	OPT_o = 1 << OPTBIT_o,
 	OPT_r = 1 << OPTBIT_r,
+	OPT_R = 1 << OPTBIT_R,
 	OPT_m = 1 << OPTBIT_m,
 	OPT_w = 1 << OPTBIT_w,
 	OPT_x = 1 << OPTBIT_x,
@@ -647,6 +650,13 @@ static void load_regexes_from_file(llist_t *fopt)
 	}
 }
 
+static void load_pattern_list(llist_t **lst, char *pattern)
+{
+	char *p;
+	while ((p = strsep(&pattern, "\n")) != NULL)
+		llist_add_to(lst, new_grep_list_data(p, 0));
+}
+
 static int FAST_FUNC file_action_grep(const char *filename,
 			struct stat *statbuf,
 			void* matched,
@@ -687,6 +697,7 @@ static int grep_dir(const char *dir)
 	int matched = 0;
 	recursive_action(dir,
 		/* recurse=yes */ ACTION_RECURSE |
+		/* followLinks=always */ ((option_mask32 & OPT_R) ? ACTION_FOLLOWLINKS : 0) |
 		/* followLinks=command line only */ ACTION_FOLLOWLINKS_L0 |
 		/* depthFirst=yes */ ACTION_DEPTHFIRST,
 		/* fileAction= */ file_action_grep,
@@ -750,16 +761,19 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 #endif
 	invert_search = ((option_mask32 & OPT_v) != 0); /* 0 | 1 */
 
-	{	/* convert char **argv to grep_list_data_t */
-		llist_t *cur;
+	{	/* convert char **argv to pattern_list */
+		llist_t *cur, *new = NULL;
 		for (cur = pattern_head; cur; cur = cur->link)
-			cur->data = new_grep_list_data(cur->data, 0);
+			load_pattern_list(&new, cur->data);
+		llist_free(pattern_head, NULL);
+		pattern_head = new;
 	}
 	if (option_mask32 & OPT_f) {
 		load_regexes_from_file(fopt);
 		if (!pattern_head) { /* -f EMPTY_FILE? */
-			/* GNU grep treats it as "nothing matches" */
-			llist_add_to(&pattern_head, new_grep_list_data((char*) "", 0));
+			/* GNU grep treats it as "nothing matches" except when -x */
+			const char *data = (option_mask32 & OPT_x) ? ".*" : "";
+			llist_add_to(&pattern_head, new_grep_list_data((char*)data, 0));
 			invert_search ^= 1;
 		}
 	}
@@ -801,11 +815,9 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 	/* if we didn't get a pattern from -e and no command file was specified,
 	 * first parameter should be the pattern. no pattern, no worky */
 	if (pattern_head == NULL) {
-		char *pattern;
 		if (*argv == NULL)
 			bb_show_usage();
-		pattern = new_grep_list_data(*argv++, 0);
-		llist_add_to(&pattern_head, pattern);
+		load_pattern_list(&pattern_head, *argv++);
 	}
 
 	/* argv[0..(argc-1)] should be names of file to grep through. If
@@ -827,7 +839,7 @@ int grep_main(int argc UNUSED_PARAM, char **argv)
 		if (!cur_file || LONE_DASH(cur_file)) {
 			cur_file = "(standard input)";
 		} else {
-			if (option_mask32 & OPT_r) {
+			if (option_mask32 & (OPT_r|OPT_R)) {
 				struct stat st;
 				if (stat(cur_file, &st) == 0 && S_ISDIR(st.st_mode)) {
 					if (!(option_mask32 & OPT_h))

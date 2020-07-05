@@ -240,7 +240,7 @@ uint8_t* FAST_FUNC udhcp_get_option(struct dhcp_packet *packet, int code)
 	while (1) {
 		if (rem <= 0) {
  complain:
-			bb_error_msg("bad packet, malformed option field");
+			bb_simple_error_msg("bad packet, malformed option field");
 			return NULL;
 		}
 
@@ -431,7 +431,7 @@ static NOINLINE void attach_option(
 #if ENABLE_FEATURE_UDHCP_RFC3397
 	if ((optflag->flags & OPTION_TYPE_MASK) == OPTION_DNS_STRING) {
 		/* reuse buffer and length for RFC1035-formatted string */
-		allocated = buffer = (char *)dname_enc(NULL, 0, buffer, &length);
+		allocated = buffer = (char *)dname_enc(/*NULL, 0,*/ buffer, &length);
 	}
 #endif
 
@@ -539,7 +539,7 @@ int FAST_FUNC udhcp_str2optset(const char *const_str, void *arg,
 
 		if (optflag->flags == OPTION_BIN) {
 			val = strtok(NULL, ""); /* do not split "'q w e'" */
-			trim(val);
+			if (val) trim(val);
 		} else
 			val = strtok(NULL, ", \t");
 		if (!val)
