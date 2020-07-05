@@ -2720,7 +2720,7 @@ static void new_get_kernel_symbols(void)
 			module_names = xrealloc(module_names, bufsize);
 			goto retry_modules_load;
 		}
-		bb_perror_msg_and_die("QM_MODULES");
+		bb_simple_perror_msg_and_die("QM_MODULES");
 	}
 
 	n_ext_modules = nmod = ret;
@@ -2780,7 +2780,7 @@ static void new_get_kernel_symbols(void)
 			syms = xrealloc(syms, bufsize);
 			goto retry_kern_sym_load;
 		}
-		bb_perror_msg_and_die("kernel: QM_SYMBOLS");
+		bb_simple_perror_msg_and_die("kernel: QM_SYMBOLS");
 	}
 	nksyms = nsyms = ret;
 	ksyms = syms;
@@ -3367,7 +3367,7 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 
 	fseek(fp, 0, SEEK_SET);
 	if (fread(&f->header, sizeof(f->header), 1, fp) != 1) {
-		bb_perror_msg_and_die("error reading ELF header");
+		bb_simple_perror_msg_and_die("error reading ELF header");
 	}
 
 	if (f->header.e_ident[EI_MAG0] != ELFMAG0
@@ -3375,17 +3375,17 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 	 || f->header.e_ident[EI_MAG2] != ELFMAG2
 	 || f->header.e_ident[EI_MAG3] != ELFMAG3
 	) {
-		bb_error_msg_and_die("not an ELF file");
+		bb_simple_error_msg_and_die("not an ELF file");
 	}
 	if (f->header.e_ident[EI_CLASS] != ELFCLASSM
 	 || f->header.e_ident[EI_DATA] != (BB_BIG_ENDIAN ? ELFDATA2MSB : ELFDATA2LSB)
 	 || f->header.e_ident[EI_VERSION] != EV_CURRENT
 	 || !MATCH_MACHINE(f->header.e_machine)
 	) {
-		bb_error_msg_and_die("ELF file not for this architecture");
+		bb_simple_error_msg_and_die("ELF file not for this architecture");
 	}
 	if (f->header.e_type != ET_REL) {
-		bb_error_msg_and_die("ELF file not a relocatable object");
+		bb_simple_error_msg_and_die("ELF file not a relocatable object");
 	}
 
 	/* Read the section headers.  */
@@ -3405,7 +3405,7 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 	section_headers = alloca(sizeof(ElfW(Shdr)) * shnum);
 	fseek(fp, f->header.e_shoff, SEEK_SET);
 	if (fread(section_headers, sizeof(ElfW(Shdr)), shnum, fp) != shnum) {
-		bb_perror_msg_and_die("error reading ELF section headers");
+		bb_simple_perror_msg_and_die("error reading ELF section headers");
 	}
 
 	/* Read the section data.  */
@@ -3442,17 +3442,17 @@ static struct obj_file *obj_load(FILE *fp, int loadprogbits UNUSED_PARAM)
 					sec->contents = xzalloc(sec->header.sh_size);
 					fseek(fp, sec->header.sh_offset, SEEK_SET);
 					if (fread(sec->contents, sec->header.sh_size, 1, fp) != 1) {
-						bb_perror_msg_and_die("error reading ELF section data");
+						bb_simple_perror_msg_and_die("error reading ELF section data");
 					}
 				}
 				break;
 
 #if SHT_RELM == SHT_REL
 			case SHT_RELA:
-				bb_error_msg_and_die("RELA relocations not supported on this architecture");
+				bb_simple_error_msg_and_die("RELA relocations not supported on this architecture");
 #else
 			case SHT_REL:
-				bb_error_msg_and_die("REL relocations not supported on this architecture");
+				bb_simple_error_msg_and_die("REL relocations not supported on this architecture");
 #endif
 			default:
 				if (sec->header.sh_type >= SHT_LOPROC) {
@@ -3577,7 +3577,7 @@ static int obj_load_progbits(FILE *fp, struct obj_file *f, char *imagebase)
 		sec->contents = imagebase + (sec->header.sh_addr - base);
 		fseek(fp, sec->header.sh_offset, SEEK_SET);
 		if (fread(sec->contents, sec->header.sh_size, 1, fp) != 1) {
-			bb_perror_msg("error reading ELF section data");
+			bb_simple_perror_msg("error reading ELF section data");
 			return 0;
 		}
 
@@ -4118,7 +4118,7 @@ int insmod_main(int argc, char **argv)
 		if (m_has_modinfo) {
 			m_version = new_get_module_version(f, m_strversion);
 			if (m_version == -1) {
-				bb_error_msg_and_die("cannot find the kernel version the module was "
+				bb_simple_error_msg_and_die("cannot find the kernel version the module was "
 						"compiled for");
 			}
 		}
@@ -4137,7 +4137,7 @@ int insmod_main(int argc, char **argv)
 #endif /* FEATURE_INSMOD_VERSION_CHECKING */
 
 	if (query_module(NULL, 0, NULL, 0, NULL))
-		bb_error_msg_and_die("not configured to support old kernels");
+		bb_simple_error_msg_and_die("not configured to support old kernels");
 	new_get_kernel_symbols();
 	k_crcs = new_is_kernel_checksummed();
 
