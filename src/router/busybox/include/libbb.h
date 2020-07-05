@@ -1332,25 +1332,7 @@ extern uint8_t xfunc_error_retval;
 extern void (*die_func)(void);
 
 void xfunc_die(void) NORETURN FAST_FUNC;
-#ifdef HAVE_NOMESSAGE
-#define bb_show_usage() exit(-1) 
-#define bb_error_msg(fmt, args...)
-#define bb_simple_error_msg(s)
-#define bb_error_msg_and_die(fmt, arg...) exit(-1)
-#define bb_simple_error_msg_and_die(s) exit(-1)
-#define bb_perror_msg(fmt, args...)
-#define bb_simple_perror_msg(s)
-#define bb_perror_msg_and_die(fmt, arg...) exit(-1)
-#define bb_simple_perror_msg_and_die(s) exit(-1)
-#define bb_simple_herror_msg(s)
-#define bb_herror_msg(fmt, arg...)
-#define bb_herror_msg_and_die(fmt, arg...) exit(-1)
-#define bb_simple_herror_msg_and_die(s) exit(-1)
-#define bb_perror_nomsg_and_die() exit(-1)
-#define bb_perror_nomsg()
-#define bb_die_memory_exhausted() exit(-1)
-#define bb_verror_msg(a1, a2, a3) 
-#else
+#ifndef HAVE_NOMESSAGE
 void xfunc_die(void) NORETURN FAST_FUNC;
 void bb_show_usage(void) NORETURN FAST_FUNC;
 void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2))) FAST_FUNC;
@@ -1382,6 +1364,7 @@ void bb_vinfo_msg(const char *s, va_list p) FAST_FUNC;
 #define bb_vinfo_msg(s,p) bb_verror_msg(s,p,NULL)
 #endif
 
+#ifndef HAVE_NOMESSAGE
 #if ENABLE_WARN_SIMPLE_MSG
 /* If enabled, cause calls to bb_error_msg() et al that only take a single
  * parameter to generate a warning.
@@ -1419,6 +1402,49 @@ static inline void __attribute__ ((deprecated("use bb_simple_info_msg instead"))
 #if ENABLE_FEATURE_SYSLOG_INFO
 #define bb_info_msg(...)           BB_MSG(_info_msg, BB_MSG_KIND(__VA_ARGS__), __VA_ARGS__)
 #endif
+#endif
+#endif
+#ifdef HAVE_NOMESSAGE
+
+
+
+#undef bb_show_usage
+#undef bb_error_msg
+#undef bb_simple_error_msg
+#undef bb_error_msg_and_die
+#undef bb_simple_error_msg_and_die
+#undef bb_perror_msg
+#undef bb_simple_perror_msg
+#undef bb_perror_msg_and_die
+#undef bb_simple_perror_msg_and_die
+#undef bb_simple_herror_msg
+#undef bb_herror_msg
+#undef bb_herror_msg_and_die
+#undef bb_simple_herror_msg_and_die
+#undef bb_perror_nomsg_and_die
+#undef bb_perror_nomsg
+#undef bb_die_memory_exhausted
+#undef bb_verror_msg
+
+
+
+#define bb_show_usage() exit(-1) 
+#define bb_error_msg(fmt, args...)
+#define bb_simple_error_msg(s)
+#define bb_error_msg_and_die(fmt, arg...) exit(-1)
+#define bb_simple_error_msg_and_die(s) exit(-1)
+#define bb_perror_msg(fmt, args...)
+#define bb_simple_perror_msg(s)
+#define bb_perror_msg_and_die(fmt, arg...) exit(-1)
+#define bb_simple_perror_msg_and_die(s) exit(-1)
+#define bb_simple_herror_msg(s)
+#define bb_herror_msg(fmt, arg...)
+#define bb_herror_msg_and_die(fmt, arg...) exit(-1)
+#define bb_simple_herror_msg_and_die(s) exit(-1)
+#define bb_perror_nomsg_and_die() exit(-1)
+#define bb_perror_nomsg()
+#define bb_die_memory_exhausted() exit(-1)
+#define bb_verror_msg(a1, a2, a3) 
 #endif
 
 /* We need to export XXX_main from libbusybox
