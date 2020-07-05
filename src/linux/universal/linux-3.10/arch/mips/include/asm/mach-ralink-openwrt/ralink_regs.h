@@ -1,7 +1,7 @@
 /*
  *  Ralink SoC register definitions
  *
- *  Copyright (C) 2013 John Crispin <blogic@openwrt.org>
+ *  Copyright (C) 2013 John Crispin <john@phrozen.org>
  *  Copyright (C) 2008-2010 Gabor Juhos <juhosg@openwrt.org>
  *  Copyright (C) 2008 Imre Kaloz <kaloz@openwrt.org>
  *
@@ -13,8 +13,12 @@
 #ifndef _RALINK_REGS_H_
 #define _RALINK_REGS_H_
 
+#include <linux/io.h>
+
 enum ralink_soc_type {
 	RALINK_UNKNOWN = 0,
+	RT2880_SOC,
+	RT3883_SOC,
 	RT305X_SOC_RT3050,
 	RT305X_SOC_RT3052,
 	RT305X_SOC_RT3350,
@@ -24,6 +28,7 @@ enum ralink_soc_type {
 	MT762X_SOC_MT7620N,
 	MT762X_SOC_MT7621AT,
 	MT762X_SOC_MT7628AN,
+	MT762X_SOC_MT7688,
 };
 extern enum ralink_soc_type ralink_soc;
 
