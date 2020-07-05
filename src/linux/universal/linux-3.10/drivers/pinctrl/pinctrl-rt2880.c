@@ -27,6 +27,7 @@
 #include "core.h"
 
 #define SYSC_REG_GPIO_MODE	0x60
+#define SYSC_REG_GPIO_MODE2	0x64
 
 struct rt2880_priv {
 	struct device *dev;
@@ -44,8 +45,6 @@ struct rt2880_priv {
 	uint8_t *gpio;
 	int max_pins;
 };
-
-struct rt2880_pmx_group *rt2880_pinmux_data = NULL;
 
 static int rt2880_get_group_count(struct pinctrl_dev *pctrldev)
 {
@@ -105,8 +104,8 @@ static void rt2880_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctrldev,
 				struct pinctrl_map **map)
 {
         const char *function;
-	int func = of_property_read_string(np, "ralink,function", &function);
-	int grps = of_property_count_strings(np, "ralink,group");
+	int func = of_property_read_string(np, "function", &function);
+	int grps = of_property_count_strings(np, "groups");
 	int i;
 
 	if (func || !grps)
@@ -115,7 +114,7 @@ static void rt2880_pinctrl_dt_subnode_to_map(struct pinctrl_dev *pctrldev,
 	for (i = 0; i < grps; i++) {
 	        const char *group;
 
-		of_property_read_string_index(np, "ralink,group", i, &group);
+		of_property_read_string_index(np, "groups", i, &group);
 
 		(*map)->type = PIN_MAP_TYPE_MUX_GROUP;
 		(*map)->name = function;
@@ -135,14 +134,14 @@ static int rt2880_pinctrl_dt_node_to_map(struct pinctrl_dev *pctrldev,
 	struct device_node *np;
 
 	for_each_child_of_node(np_config, np) {
-		int ret = of_property_count_strings(np, "ralink,group");
+		int ret = of_property_count_strings(np, "groups");
 
 		if (ret >= 0)
 			max_maps += ret;
 	}
 
 	if (!max_maps)
-		return max_maps;
+		return -EINVAL;
 
 	*map = kzalloc(max_maps * sizeof(struct pinctrl_map), GFP_KERNEL);
 	if (!*map)
@@ -204,8 +203,10 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 {
 	struct rt2880_priv *p = pinctrl_dev_get_drvdata(pctrldev);
         u32 mode = 0;
+	u32 reg = SYSC_REG_GPIO_MODE;
 	int i;
-
+	int shift;
+	printk(KERN_INFO "func %d group %d\n",func,group);
 	/* dont allow double use */
 	if (p->groups[group].enabled) {
 		dev_err(p->dev, "%s is already enabled\n", p->groups[group].name);
@@ -215,8 +216,13 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 	p->groups[group].enabled = 1;
 	p->func[func]->enabled = 1;
 
-	mode = rt_sysc_r32(SYSC_REG_GPIO_MODE);
-	mode &= ~(p->groups[group].mask << p->groups[group].shift);
+	shift = p->groups[group].shift;
+	if (shift >= 32) {
+		shift -= 32;
+		reg = SYSC_REG_GPIO_MODE2;
+	}
+	mode = rt_sysc_r32(reg);
+	mode &= ~(p->groups[group].mask << shift);
 
 	/* mark the pins as gpio */
 	for (i = 0; i < p->groups[group].func[0].pin_count; i++)
@@ -224,15 +230,14 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 
 	/* function 0 is gpio and needs special handling */
 	if (func == 0) {
-		mode |= p->groups[group].gpio << p->groups[group].shift;
+		mode |= p->groups[group].gpio << shift;
 	} else {
 		for (i = 0; i < p->func[func]->pin_count; i++)
 			p->gpio[p->func[func]->pins[i]] = 0;
-		mode |= p->func[func]->value << p->groups[group].shift;
+		mode |= p->func[func]->value << shift;
 	}
-	rt_sysc_w32(mode, SYSC_REG_GPIO_MODE);
-
-
+	rt_sysc_w32(mode, reg);
+	printk(KERN_INFO "done\n");
 	return 0;
 }
 

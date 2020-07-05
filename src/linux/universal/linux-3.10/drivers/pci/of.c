@@ -18,8 +18,8 @@
 static struct device_node *__pcibios_get_phb_of_node(struct pci_bus *bus)
 {
 	/* This should only be called for PHBs */
-	if (WARN_ON(bus->self || bus->parent))
-		return NULL;
+//	if (WARN_ON(bus->self || bus->parent))
+//		return NULL;
 
 	if (pcibios_get_phb_of_node)
 		return pcibios_get_phb_of_node(bus);
@@ -53,10 +53,12 @@ void pci_release_of_node(struct pci_dev *dev)
 
 void pci_set_bus_of_node(struct pci_bus *bus)
 {
-	if (bus->self == NULL)
+	if (bus->self == NULL || bus->self->dev.of_node == NULL) {
 		bus->dev.of_node = __pcibios_get_phb_of_node(bus);
-	else
+	}
+	else {
 		bus->dev.of_node = of_node_get(bus->self->dev.of_node);
+	}
 }
 
 void pci_release_bus_of_node(struct pci_bus *bus)
@@ -65,6 +67,7 @@ void pci_release_bus_of_node(struct pci_bus *bus)
 	bus->dev.of_node = NULL;
 }
 
+#if 0
 struct device_node * __weak pcibios_get_phb_of_node(struct pci_bus *bus)
 {
 	/* This should only be called for PHBs */
@@ -81,3 +84,4 @@ struct device_node * __weak pcibios_get_phb_of_node(struct pci_bus *bus)
 		return of_node_get(bus->bridge->parent->of_node);
 	return NULL;
 }
+#endif
