@@ -1185,6 +1185,7 @@ static int __init fe_init(struct net_device *dev)
 {
 	struct fe_priv *priv = netdev_priv(dev);
 	struct device_node *port;
+	const char *addr;
 	int err;
 
 	BUG_ON(!priv->soc->reset_fe);
@@ -1194,7 +1195,10 @@ static int __init fe_init(struct net_device *dev)
 		priv->soc->switch_init(priv);
 
 	memcpy(dev->dev_addr, priv->soc->mac, ETH_ALEN);
-	of_get_mac_address_mtd(priv->device->of_node, dev->dev_addr);
+	addr = of_get_mac_address_mtd(priv->device->of_node);
+	if (addr)
+		memcpy(dev->dev_addr, addr, ETH_ALEN);
+	    
 
 	err = fe_mdio_init(priv);
 	if (err)
