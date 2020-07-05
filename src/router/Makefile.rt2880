@@ -17,6 +17,9 @@ ifneq ($(wildcard ../cy_conf.mak),)
   include ../cy_conf.mak
 endif
 
+CONFIG_MUSL=y
+#CONFIG_NOOPT=y
+
 #
 # Paths
 #
@@ -139,7 +142,8 @@ obj-distclean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-distclean)
 all: install_headers  build_date clean_target $(obj-y) $(LINUXDIR)/.config kernel
 
 build_date:
-	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h 
+	echo "#define BUILD_DATE \"$(shell date +%D)\"" > ../../opt/build.h
+	echo "CONFIG_MUSL=y" >> .config 
 
 include kernel-features.mk
 
@@ -264,6 +268,10 @@ endif
 	$(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR)
 #	-$(MAKE) -f Makefile.rt2880 ath9k
 #	-$(MAKE) -f Makefile.rt2880 ath9k-install
+ifeq ($(CONFIG_MT76),y)
+	-$(MAKE) -f Makefile.mt7621 ath9k
+	-$(MAKE) -f Makefile.mt7621 ath9k-install
+endif
 	-$(MAKE) -f Makefile.rt2880 libutils
 #	-$(MAKE) -f Makefile.rt2880 madwifi
 #	-$(MAKE) -f Makefile.rt2880 madwifi-install
@@ -399,7 +407,11 @@ else
 ifeq ($(CONFIG_WHR1166D),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_1166.dts
 else
+ifeq ($(CONFIG_WHR600D),y)
 	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a.dts
+else
+	$(LINUXDIR)/scripts/dtc/dtc -O dtb -o $(LINUXDIR)/dts/MT7620a.dtb $(LINUXDIR)/dts/MT7620a_whr300hp2.dts
+endif
 endif
 endif
 endif
@@ -412,6 +424,7 @@ endif
 #	cp mipsel-uclibc/root.uimage /GruppenLW/releases/test.bin
 
 include common.mk
+
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
