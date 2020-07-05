@@ -206,7 +206,6 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 	u32 reg = SYSC_REG_GPIO_MODE;
 	int i;
 	int shift;
-	printk(KERN_INFO "func %d group %d\n",func,group);
 	/* dont allow double use */
 	if (p->groups[group].enabled) {
 		dev_err(p->dev, "%s is already enabled\n", p->groups[group].name);
@@ -237,7 +236,6 @@ static int rt2880_pmx_group_enable(struct pinctrl_dev *pctrldev,
 		mode |= p->func[func]->value << shift;
 	}
 	rt_sysc_w32(mode, reg);
-	printk(KERN_INFO "done\n");
 	return 0;
 }
 
