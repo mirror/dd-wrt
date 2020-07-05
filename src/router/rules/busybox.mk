@@ -622,6 +622,10 @@ ifeq ($(CONFIG_I2CTOOLS),y)
 	sed -i 's/\# CONFIG_I2CDETECT is not set/CONFIG_I2CDETECT=y/g' busybox/.config
 	sed -i 's/\# CONFIG_I2CTRANSFER is not set/CONFIG_I2CTRANSFER=y/g' busybox/.config
 endif
+	echo "CONFIG_WARN_SIMPLE_MSG=y" >> busybox/.config
+	echo "# CONFIG_FEATURE_FIND_EMPTY is not set" >> busybox/.config
+	echo "# CONFIG_SHELL_HUSH is not set" >> busybox/.config
+	echo "CONFIG_FEATURE_SYSLOGD_PRECISE_TIMESTAMPS=y" >> busybox/.config
 	cd busybox && make oldconfig
 	
 #	-$(MAKE) -j 4 -C busybox STRIPTOOL=$(STRIP) PREFIX=$(INSTALLDIR)/busybox
