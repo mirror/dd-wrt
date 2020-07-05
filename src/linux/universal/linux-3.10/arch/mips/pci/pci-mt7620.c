@@ -28,6 +28,17 @@
 #define RALINK_PCI_MEMORY_BASE		0x0
 
 #define RALINK_INT_PCIE0		4
+/* region for indirect MEM accesses */
+#define RALINK_PCI_IND_MEM_MAP_BASE	0x10150000
+
+/*
+ * RAM address offset for PCIe MEM access from device
+ * 0 = direct mapping
+ */
+#define RALINK_PCI_BUSMASTER_OFFSET	0x0
+
+/* IRQ number for all interrupts from PCIe */
+#define RALINK_IRQ_PCIE0		4
 
 #define RALINK_CLKCFG1			0x30
 #define RALINK_GPIOMODE			0x60
@@ -90,6 +101,15 @@ static inline u32 bridge_r32(unsigned reg)
 	return ioread32(bridge_base + reg);
 }
 
+static inline void bridge_m32(u32 clr, u32 set, unsigned reg)
+{
+	u32 val = bridge_r32(reg);
+
+	val &= ~clr;
+	val |= set;
+	bridge_w32(val, reg);
+}
+
 static inline void pcie_w32(u32 val, unsigned reg)
 {
 	iowrite32(val, pcie_base + reg);
@@ -117,7 +137,7 @@ static int wait_pciephy_busy(void)
 		reg_value = pcie_r32(PCIEPHY0_CFG);
 
 		if (reg_value & BUSY)
-			mdelay(100);
+			msleep(100);
 		else
 			break;
 		if (retry++ > WAITRETRY_MAX) {
@@ -133,7 +153,7 @@ static void pcie_phy(unsigned long addr, unsigned long val)
 	wait_pciephy_busy();
 	pcie_w32(WRITE_MODE | (val << DATA_SHIFT) | (addr << ADDR_SHIFT),
 		 PCIEPHY0_CFG);
-	mdelay(1);
+	msleep(1);
 	wait_pciephy_busy();
 }
 
@@ -231,7 +251,7 @@ static int mt7620_pci_hw_init(struct platform_device *pdev)
 	pcie_phy(0x68, 0xB4);
 
 	/* put core into reset */
-	pcie_m32(0, PCIRST, RALINK_PCI_PCICFG_ADDR);
+	bridge_m32(0, PCIRST, RALINK_PCI_PCICFG_ADDR);
 	reset_control_assert(rstpcie0);
 
 	/* disable power and all clocks */
@@ -241,7 +261,7 @@ static int mt7620_pci_hw_init(struct platform_device *pdev)
 	/* bring core out of reset */
 	reset_control_deassert(rstpcie0);
 	rt_sysc_m32(0, RALINK_PCIE0_CLK_EN, RALINK_CLKCFG1);
-	mdelay(100);
+	msleep(100);
 
 	if (!(rt_sysc_r32(PPLL_CFG1) & PPLL_LD)) {
 		dev_err(&pdev->dev, "MT7620 PPLL is unlocked, aborting init\n");
@@ -324,28 +344,31 @@ static int mt7620_pci_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "pcie is not supported on this hardware\n");
 		return -1;
 	}
-	mdelay(50);
+	msleep(50);
 
 	/* enable write access */
 	pcie_m32(PCIRST, 0, RALINK_PCI_PCICFG_ADDR);
-	mdelay(100);
+	msleep(100);
 
 	/* check if there is a card present */
 	if ((pcie_r32(RALINK_PCI0_STATUS) & PCIE_LINK_UP_ST) == 0) {
+#if 0
 		reset_control_assert(rstpcie0);
 		rt_sysc_m32(RALINK_PCIE0_CLK_EN, 0, RALINK_CLKCFG1);
 		if (ralink_soc == MT762X_SOC_MT7620A)
 			rt_sysc_m32(LC_CKDRVPD, PDRV_SW_SET, PPLL_DRV);
+#endif
 		dev_err(&pdev->dev, "PCIE0 no card, disable it(RST&CLK)\n");
 		return -1;
 	}
 
 	/* setup ranges */
-	bridge_w32(0xffffffff, RALINK_PCI_MEMBASE);
-	bridge_w32(RALINK_PCI_IO_MAP_BASE, RALINK_PCI_IOBASE);
+	bridge_w32(0x30000000, RALINK_PCI_MEMBASE);
+	bridge_w32(0, RALINK_PCI_IOBASE);
 
-	pcie_w32(0x7FFF0001, RALINK_PCI0_BAR0SETUP_ADDR);
-	pcie_w32(RALINK_PCI_MEMORY_BASE, RALINK_PCI0_IMBASEBAR0_ADDR);
+	/* default offset for busmaster = beginning of RAM */
+	pcie_w32(RALINK_PCI_BUSMASTER_OFFSET, RALINK_PCI0_IMBASEBAR0_ADDR);
+
 	pcie_w32(0x06040001, RALINK_PCI0_CLASS);
 
 	/* enable interrupts */

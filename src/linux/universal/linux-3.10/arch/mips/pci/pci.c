@@ -172,6 +172,7 @@ void pci_load_of_ranges(struct pci_controller *hose, struct device_node *node)
 struct device_node *pcibios_get_phb_of_node(struct pci_bus *bus)
 {
 	struct pci_controller *hose = bus->sysdata;
+	printk(KERN_INFO "host %X of %X\n", hose, hose->of_node);
 
 	return of_node_get(hose->of_node);
 }
