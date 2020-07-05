@@ -1241,7 +1241,19 @@ extern int is_mt7603(const char *prefix);
 extern int is_mt76x0(const char *prefix);
 extern int is_mt76x2(const char *prefix);
 extern int is_mt76(const char *prefix);
+extern int is_rt2880_wmac(const char *prefix);
+extern int is_rt2880_pci(const char *prefix);
 #else
+static inline int is_rt2880_wmac(const char *prefix)
+{
+	return 0;
+}
+
+static inline int is_rt2880_pci(const char *prefix)
+{
+	return 0;
+}
+
 static inline int is_mt7615(const char *prefix)
 {
 	return 0;
