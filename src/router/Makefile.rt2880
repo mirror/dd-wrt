@@ -524,6 +524,12 @@ ifeq ($(CONFIG_E1700),y)
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
 	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
 endif
+ifeq ($(CONFIG_ATH9K),y)
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt5592
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7612
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7610
+	rm -rf $(TARGETDIR)/lib/modules/$(KERNELRELEASE)/kernel/drivers/net/wireless/rt7620
+endif
 ifneq ($(CONFIG_DIR860),y)
 ifneq ($(CONFIG_WHR1166D),y)
 ifneq ($(CONFIG_DIR810L),y)
