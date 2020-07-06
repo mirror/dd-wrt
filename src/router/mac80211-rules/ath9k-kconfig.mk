@@ -279,15 +279,15 @@ ifneq ($(CONFIG_NOWIFI),y)
 	cd $(MAC80211_PATH) ; mkdir -p $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE) ; cp `find -name \*.ko` $(INSTALLDIR)/ath9k/lib/modules/$(KERNELRELEASE)
 ifeq ($(CONFIG_MAC80211_RT2800USB),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/linux-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(MAC80211_PATH)/ath10k-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_RT2800),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/linux-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(MAC80211_PATH)/ath10k-firmware-*/rt*.bin $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_ATH9K_HTC),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
-	-cp $(MAC80211_PATH)/linux-firmware-*/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
+	-cp $(MAC80211_PATH)/ath10k-firmware-*/htc_*.fw $(INSTALLDIR)/ath9k/lib/firmware
 endif
 ifeq ($(CONFIG_MAC80211_RTL8192CU),y)
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/rtlwifi
