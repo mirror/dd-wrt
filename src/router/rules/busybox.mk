@@ -439,6 +439,7 @@ ifeq ($(CONFIG_SMP),y)
 else
 	echo "# CONFIG_TASKSET is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_TASKSET_FANCY is not set" >> busybox/.config
+	echo "# CONFIG_FEATURE_TASKSET_CPULIST is not set" >> busybox/.config
 endif
 	echo "# CONFIG_FEATURE_GZIP_LEVELS is not set" >> busybox/.config
 	echo "# CONFIG_FEATURE_DD_STATUS is not set" >> busybox/.config
