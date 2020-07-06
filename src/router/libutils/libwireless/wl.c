@@ -2512,7 +2512,6 @@ static struct wifidevices wdevices[] = {
 	{ "AR231X WiSOC", CHANNELSURVEY5K, 0, 0, 0, 0, "ar231x-wmac.1" },
 };
 
-
 char *getWifiDeviceName(const char *prefix, int *flags)
 {
 	int devnum;
@@ -2786,7 +2785,7 @@ static int devicecountbydriver(const char *prefix, char *drivername)
 	devnum = get_ath9k_phy_ifname(prefix);
 	if (devnum == -1)
 		return 0;
-    	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
+	asprintf(&globstring, "/sys/class/ieee80211/phy%d/device/driver/module/drivers/%s", devnum, drivername);
 	globresult = glob(globstring, GLOB_NOSORT, NULL, &globbuf);
 	free(globstring);
 	if (globresult == 0)
