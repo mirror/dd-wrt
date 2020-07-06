@@ -240,9 +240,12 @@ struct pci_controller mt7620_controller = {
 	.io_offset	= 0x00000000UL,
 	.io_map_base	= 0xa0000000,
 };
+#define RALINK_SYSTEM_CONTROL_BASE	0xB0000000
+#define RALINK_GPIOMODE2			*(unsigned int *)(RALINK_SYSTEM_CONTROL_BASE + 0x60)
 
 static int mt7620_pci_hw_init(struct platform_device *pdev)
 {
+//	RALINK_GPIOMODE2 = (RALINK_GPIOMODE & ~(0x3<<16));	//PERST_GPIO_MODE = 2'b00
 	/* bypass PCIe DLL */
 	pcie_phy(0x0, 0x80);
 	pcie_phy(0x1, 0x04);
@@ -269,10 +272,11 @@ static int mt7620_pci_hw_init(struct platform_device *pdev)
 		rt_sysc_m32(RALINK_PCIE0_CLK_EN, 0, RALINK_CLKCFG1);
 		return -1;
 	}
-
+	printk(KERN_INFO "power up bus");
 	/* power up the bus */
 	rt_sysc_m32(LC_CKDRVHZ | LC_CKDRVOHZ, LC_CKDRVPD | PDRV_SW_SET,
 		    PPLL_DRV);
+	msleep(500);
 
 	return 0;
 }
@@ -347,8 +351,8 @@ static int mt7620_pci_probe(struct platform_device *pdev)
 	msleep(50);
 
 	/* enable write access */
-	pcie_m32(PCIRST, 0, RALINK_PCI_PCICFG_ADDR);
-	msleep(100);
+	bridge_m32(PCIRST, 0, RALINK_PCI_PCICFG_ADDR);
+	msleep(500);
 
 	/* check if there is a card present */
 	if ((pcie_r32(RALINK_PCI0_STATUS) & PCIE_LINK_UP_ST) == 0) {
@@ -444,3 +448,27 @@ static int __init mt7620_pci_init(void)
 }
 
 arch_initcall(mt7620_pci_init);
+
+static void mediatek_fixup_bar(struct pci_dev *dev) {
+pr_info("++++++ mediatek_fixup_bar dev=%px\n",dev);
+
+//TODO probably put it directly to init, here only if mt7620 work OK
+//	dev->non_compliant_bars = true;
+
+	pcie_w32(0x0, RALINK_PCI0_BAR0SETUP_ADDR);
+	pcie_w32(0x0, RALINK_PCI0_BAR0SETUP_ADDR + 4);
+}
+DECLARE_PCI_FIXUP_EARLY(0x14c3, 0x0801, mediatek_fixup_bar);
+DECLARE_PCI_FIXUP_EARLY(0x1814, 0x0801, mediatek_fixup_bar);
+
+static void mediatek_fixup_final_bar(struct pci_dev *dev) {
+
+pr_info("++++++ MTK final fixup, BAR0 must-be-set bug\n");
+
+	pcie_w32(0x0FFF0001, RALINK_PCI0_BAR0SETUP_ADDR);
+	pcie_w32(0x0FFF0001, RALINK_PCI0_BAR0SETUP_ADDR);
+}
+
+//TODO for mt7620 ... or does it works there OK?
+DECLARE_PCI_FIXUP_FINAL(0x14c3, 0x0801, mediatek_fixup_final_bar);
+DECLARE_PCI_FIXUP_FINAL(0x1814, 0x0801, mediatek_fixup_final_bar);
