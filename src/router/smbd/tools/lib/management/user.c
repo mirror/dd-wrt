@@ -16,7 +16,7 @@
 #define KSMBD_USER_STATE_FREEING	1
 
 static struct LIST *users_table;
-#if 0
+#if 1
 static pthread_rwlock_t users_table_lock;
 #else
 #define pthread_rwlock_unlock(a)
