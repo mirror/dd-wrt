@@ -5379,7 +5379,7 @@ static int set_file_allocation_info(struct ksmbd_work *work,
 
 	if (alloc_blks > inode->i_blocks) {
 		rc = ksmbd_vfs_alloc_size(work, fp, alloc_blks * 512);
-		if (rc) {
+		if (rc && rc != -EOPNOTSUPP) {
 			ksmbd_err("ksmbd_vfs_alloc_size is failed : %d\n", rc);
 			return rc;
 		}
