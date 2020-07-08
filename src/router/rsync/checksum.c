@@ -27,8 +27,12 @@
  */
 
 #include "rsync.h"
+
 #ifdef SUPPORT_XXHASH
 #include "xxhash.h"
+# if XXH_VERSION_NUMBER >= 800
+#  define SUPPORT_XXH3 1
+# endif
 #endif
 
 extern int am_server;
@@ -40,6 +44,10 @@ extern const char *checksum_choice;
 
 struct name_num_obj valid_checksums = {
 	"checksum", NULL, NULL, 0, 0, {
+#ifdef SUPPORT_XXH3
+		{ CSUM_XXH3_128, "xxh128", NULL },
+		{ CSUM_XXH3_64, "xxh3", NULL },
+#endif
 #ifdef SUPPORT_XXHASH
 		{ CSUM_XXH64, "xxh64", NULL },
 		{ CSUM_XXH64, "xxhash", NULL },
@@ -85,7 +93,7 @@ static const char *checksum_name(int num)
 {
 	struct name_num_item *nni = get_nni_by_num(&valid_checksums, num);
 
-	return nni ? nni->name : num < CSUM_MD4 ? "MD4" : "UNKNOWN";
+	return nni ? nni->name : num < CSUM_MD4 ? "md4" : "UNKNOWN";
 }
 
 void parse_checksum_choice(int final_call)
@@ -99,6 +107,8 @@ void parse_checksum_choice(int final_call)
 			checksum_type = parse_csum_name(cp+1, -1);
 		} else
 			xfersum_type = checksum_type = parse_csum_name(checksum_choice, -1);
+		if (am_server && checksum_choice)
+			validate_choice_vs_env(NSTR_CHECKSUM, xfersum_type, checksum_type);
 	}
 
 	if (xfersum_type == CSUM_NONE)
@@ -133,10 +143,11 @@ int csum_len_for_type(int cst, BOOL flist_csum)
 		return MD4_DIGEST_LEN;
 	  case CSUM_MD5:
 		return MD5_DIGEST_LEN;
-#ifdef SUPPORT_XXHASH
 	  case CSUM_XXH64:
+	  case CSUM_XXH3_64:
 		return 64/8;
-#endif
+	  case CSUM_XXH3_128:
+		return 128/8;
 	  default: /* paranoia to prevent missing case values */
 		exit_cleanup(RERR_UNSUPPORTED);
 	}
@@ -158,10 +169,10 @@ int canonical_checksum(int csum_type)
 	  case CSUM_MD4:
 	  case CSUM_MD5:
 		return -1;
-#ifdef SUPPORT_XXHASH
 	  case CSUM_XXH64:
+	  case CSUM_XXH3_64:
+	  case CSUM_XXH3_128:
 		return 1;
-#endif
 	  default: /* paranoia to prevent missing case values */
 		exit_cleanup(RERR_UNSUPPORTED);
 	}
@@ -198,6 +209,17 @@ void get_checksum2(char *buf, int32 len, char *sum)
 	  case CSUM_XXH64:
 		SIVAL64(sum, 0, XXH64(buf, len, checksum_seed));
 		break;
+#endif
+#ifdef SUPPORT_XXH3
+	  case CSUM_XXH3_64:
+		SIVAL64(sum, 0, XXH3_64bits_withSeed(buf, len, checksum_seed));
+		break;
+	  case CSUM_XXH3_128: {
+		XXH128_hash_t digest = XXH3_128bits_withSeed(buf, len, checksum_seed);
+		SIVAL64(sum, 0, digest.low64);
+		SIVAL64(sum, 8, digest.high64);
+		break;
+	  }
 #endif
 	  case CSUM_MD5: {
 		MD5_CTX m5;
@@ -249,8 +271,6 @@ void get_checksum2(char *buf, int32 len, char *sum)
 				free(buf1);
 			buf1 = new_array(char, len+4);
 			len1 = len;
-			if (!buf1)
-				out_of_memory("get_checksum2");
 		}
 
 		memcpy(buf1, buf, len);
@@ -311,6 +331,45 @@ void file_checksum(const char *fname, const STRUCT_STAT *st_p, char *sum)
 			XXH64_update(state, (uchar *)map_ptr(buf, i, remainder), remainder);
 
 		SIVAL64(sum, 0, XXH64_digest(state));
+		break;
+	  }
+#endif
+#ifdef SUPPORT_XXH3
+	  case CSUM_XXH3_64: {
+		static XXH3_state_t* state = NULL;
+		if (!state && !(state = XXH3_createState()))
+			out_of_memory("file_checksum");
+
+		XXH3_64bits_reset(state);
+
+		for (i = 0; i + CHUNK_SIZE <= len; i += CHUNK_SIZE)
+			XXH3_64bits_update(state, (uchar *)map_ptr(buf, i, CHUNK_SIZE), CHUNK_SIZE);
+
+		remainder = (int32)(len - i);
+		if (remainder > 0)
+			XXH3_64bits_update(state, (uchar *)map_ptr(buf, i, remainder), remainder);
+
+		SIVAL64(sum, 0, XXH3_64bits_digest(state));
+		break;
+	  }
+	  case CSUM_XXH3_128: {
+		XXH128_hash_t digest;
+		static XXH3_state_t* state = NULL;
+		if (!state && !(state = XXH3_createState()))
+			out_of_memory("file_checksum");
+
+		XXH3_128bits_reset(state);
+
+		for (i = 0; i + CHUNK_SIZE <= len; i += CHUNK_SIZE)
+			XXH3_128bits_update(state, (uchar *)map_ptr(buf, i, CHUNK_SIZE), CHUNK_SIZE);
+
+		remainder = (int32)(len - i);
+		if (remainder > 0)
+			XXH3_128bits_update(state, (uchar *)map_ptr(buf, i, remainder), remainder);
+
+		digest = XXH3_128bits_digest(state);
+		SIVAL64(sum, 0, digest.low64);
+		SIVAL64(sum, 8, digest.high64);
 		break;
 	  }
 #endif
@@ -389,6 +448,9 @@ static union {
 #ifdef SUPPORT_XXHASH
 static XXH64_state_t* xxh64_state;
 #endif
+#ifdef SUPPORT_XXH3
+static XXH3_state_t* xxh3_state;
+#endif
 static int cursum_type;
 
 void sum_init(int csum_type, int seed)
@@ -405,6 +467,18 @@ void sum_init(int csum_type, int seed)
 		if (!xxh64_state && !(xxh64_state = XXH64_createState()))
 			out_of_memory("sum_init");
 		XXH64_reset(xxh64_state, 0);
+		break;
+#endif
+#ifdef SUPPORT_XXH3
+	  case CSUM_XXH3_64:
+		if (!xxh3_state && !(xxh3_state = XXH3_createState()))
+			out_of_memory("sum_init");
+		XXH3_64bits_reset(xxh3_state);
+		break;
+	  case CSUM_XXH3_128:
+		if (!xxh3_state && !(xxh3_state = XXH3_createState()))
+			out_of_memory("sum_init");
+		XXH3_128bits_reset(xxh3_state);
 		break;
 #endif
 	  case CSUM_MD5:
@@ -447,6 +521,14 @@ void sum_update(const char *p, int32 len)
 #ifdef SUPPORT_XXHASH
 	  case CSUM_XXH64:
 		XXH64_update(xxh64_state, p, len);
+		break;
+#endif
+#ifdef SUPPORT_XXH3
+	  case CSUM_XXH3_64:
+		XXH3_64bits_update(xxh3_state, p, len);
+		break;
+	  case CSUM_XXH3_128:
+		XXH3_128bits_update(xxh3_state, p, len);
 		break;
 #endif
 	  case CSUM_MD5:
@@ -502,6 +584,17 @@ int sum_end(char *sum)
 	  case CSUM_XXH64:
 		SIVAL64(sum, 0, XXH64_digest(xxh64_state));
 		break;
+#endif
+#ifdef SUPPORT_XXH3
+	  case CSUM_XXH3_64:
+		SIVAL64(sum, 0, XXH3_64bits_digest(xxh3_state));
+		break;
+	  case CSUM_XXH3_128: {
+		XXH128_hash_t digest = XXH3_128bits_digest(xxh3_state);
+		SIVAL64(sum, 0, digest.low64);
+		SIVAL64(sum, 8, digest.high64);
+		break;
+	  }
 #endif
 	  case CSUM_MD5:
 		MD5_Final((uchar *)sum, &ctx.m5);

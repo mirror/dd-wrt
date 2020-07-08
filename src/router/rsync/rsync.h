@@ -20,6 +20,7 @@
 
 #define False 0
 #define True 1
+#define Unset (-1) /* Our BOOL values are always an int. */
 
 #define BLOCK_SIZE 700
 #define RSYNC_RSH_ENV "RSYNC_RSH"
@@ -297,6 +298,7 @@ enum delret {
 #include "errcode.h"
 
 #include "config.h"
+#include "version.h"
 
 /* The default RSYNC_RSH is always set in config.h. */
 
@@ -1078,6 +1080,9 @@ typedef struct {
 #define CPRES_LZ4 3
 #define CPRES_ZSTD 4
 
+#define NSTR_CHECKSUM 0
+#define NSTR_COMPRESS 1
+
 struct name_num_item {
 	int num;
 	const char *name, *main_name;
@@ -1262,12 +1267,19 @@ extern int errno;
 /* handler for null strings in printf format */
 #define NS(s) ((s)?(s):"<NULL>")
 
+extern char *do_malloc;
+
 /* Convenient wrappers for malloc and realloc.  Use them. */
-#define new(type) ((type*)malloc(sizeof (type)))
-#define new0(type) ((type*)calloc(1, sizeof (type)))
-#define new_array(type, num) ((type*)_new_array((num), sizeof (type), 0))
-#define new_array0(type, num) ((type*)_new_array((num), sizeof (type), 1))
-#define realloc_array(ptr, type, num) ((type*)_realloc_array((ptr), sizeof(type), (num)))
+#define new(type) ((type*)my_alloc(do_malloc, sizeof (type), 1, __FILE__, __LINE__))
+#define new0(type) ((type*)my_alloc(NULL, sizeof (type), 1, __FILE__, __LINE__))
+#define realloc_buf(ptr, num) my_alloc((ptr), (num), 1, __FILE__, __LINE__)
+
+#define new_array(type, num) ((type*)my_alloc(do_malloc, (num), sizeof (type), __FILE__, __LINE__))
+#define new_array0(type, num) ((type*)my_alloc(NULL, (num), sizeof (type), __FILE__, __LINE__))
+#define realloc_array(ptr, type, num) ((type*)my_alloc((ptr), (num), sizeof (type), __FILE__, __LINE__))
+
+#undef strdup
+#define strdup(s) my_strdup(s, __FILE__, __LINE__)
 
 #ifdef NEED_PRINTF
 /* use magic gcc attributes to catch format errors */

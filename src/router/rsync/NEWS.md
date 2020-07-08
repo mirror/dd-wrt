@@ -1,10 +1,84 @@
+<a name="3.2.2"></a>
+
+# NEWS for rsync 3.2.2 (4 Jul 2020)
+
+## Changes in this version:
+
+### BUG FIXES:
+
+ - Avoid a crash when a daemon module enables `transfer logging` without
+   setting a `log format` value.
+
+ - Fixed installing rsync-ssl script from an alternate build dir.
+
+ - Fixed the updating of configure.sh from an alternate build dir.
+
+ - Apple requires the asm function name to begin with an underscore.
+
+ - Avoid a test failure in the daemon test when --atimes is disabled.
+
+### ENHANCEMENTS:
+
+ - Allow the server side to restrict checksum & compression choices via the
+   same environment variables the client uses.  The env vars can be divided
+   into "client list & server list" by the "`&`" char or the same list can
+   apply to both.
+
+ - Simplify how the negotiation environment variables apply when interacting
+   with an older rsync and also when a list contains only invalid names.
+
+ - Do not allow a negotiated checksum or compression choice of "none" unless
+   the user authorized it via an environment variable or command-line option.
+
+ - Added the `--max-alloc=SIZE` option to be able to override the memory
+   allocator's sanity-check limit.  It defaults to 1G (as before) but the error
+   message when exceeding it specifically mentions the new option so that you
+   can differentiate an out-of-memory error from a failure of this limit.  It
+   also allows you to specify the value via the RSYNC_MAX_ALLOC environment
+   variable.
+
+ - Add the "open atime" daemon parameter to allow a daemon to always enable or
+   disable the use of O_NOATIME (the default is to let the user control it).
+
+ - The default systemd config was changed to remove the `ProtectHome=on`
+   setting since rsync is often used to serve files in /home and /root and this
+   seemed a bit too strict.  Feel free to use `systemctl edit rsync` to add
+   that restriction (or maybe `ProtectHome=read-only`), if you like.  See the
+   3.2.0 NEWS for the other restrictions that were added compared to 3.1.3.
+
+ - The memory allocation functions now automatically check for a failure and
+   die when out of memory.  This eliminated some caller-side check-and-die
+   code and added some missing sanity-checking of allocations.
+
+ - Put optimizations into their own list in the `--version` output.
+
+ - Improved the man page a bit more.
+
+### PACKAGING RELATED:
+
+ - Prepared the checksum code for an upcoming xxHash release that provides new
+   XXH3 (64-bit) & XXH128 (128-bit) checksum routines.  These will not be
+   compiled into rsync until the xxhash v0.8.0 include files are installed on
+   the build host, and that release is a few weeks away at the time this was
+   written.  So, if it's now the future and you have packaged and installed
+   xxhash-0.8.0-devel, a fresh rebuild of rsync 3.2.2 will give you the new
+   checksum routines.  Just make sure that the new rsync package depends on
+   xxhash >= 0.8.0.
+
+### DEVELOPER RELATED:
+
+ - Moved the version number out of configure.ac into its own version.h file so
+   that we don't need to reconfigure just because the version number changes.
+
+ - Moved the daemon parameter list into daemon-parm.txt so that an awk script
+   can create the interrelated structs and accessors that loadparm.c needs.
+
+------------------------------------------------------------------------------
 <a name="3.2.1"></a>
 
 # NEWS for rsync 3.2.1 (22 Jun 2020)
 
-Protocol: 31 (unchanged)
-
-## Changes since 3.2.0:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -23,7 +97,7 @@ Protocol: 31 (unchanged)
    their buggy compiler (since the configure test is apparently not finding
    all the compilers that will to crash and burn).
 
- - Fix an issue in the md2man script when building from an external dir.
+ - Fixed an issue in the md2man script when building from an alternate dir.
 
  - Disable `--atimes` on macOS (it apparently just ignores the atime change).
 
@@ -67,9 +141,7 @@ Protocol: 31 (unchanged)
 
 # NEWS for rsync 3.2.0 (19 Jun 2020)
 
-Protocol: 31 (unchanged)
-
-## Changes since 3.1.3:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -122,10 +194,17 @@ Protocol: 31 (unchanged)
 
 ### ENHANCEMENTS:
 
+ - The default systemd config was made stricter by default.  For instance,
+   `ProtectHome=on` (which hides content in /root and /home/USER dirs),
+   `ProtectSystem=full` (which makes /usr, /boot, & /etc dirs read-only), and
+   `PrivateDevices=on` (which hides devices).  You can override any of these
+   using the standard `systemctl edit rsync` and add one or more directives
+   under a `[Service]` heading (and restart the rsync service).
+
  - Various checksum enhancements, including the optional use of openssl's MD4 &
    MD5 checksum algorithms, some x86-64 optimizations for the rolling checksum,
    some x86-64 optimizations for the (non-openssl) MD5 checksum, the addition
-   of xxhash checksum support, and a negotiation heuristic that ensures that it
+   of xxHash checksum support, and a negotiation heuristic that ensures that it
    is easier to add new checksum algorithms in the future.  The environment
    variable `RSYNC_CHECKSUM_LIST` can be used to customize the preference order
    of the negotiation, or use `--checksum-choice` (`--cc`) to force a choice.
@@ -274,9 +353,7 @@ Protocol: 31 (unchanged)
 
 # NEWS for rsync 3.1.3 (28 Jan 2018)
 
-Protocol: 31 (unchanged)
-
-## Changes since 3.1.2:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -346,9 +423,7 @@ Protocol: 31 (unchanged)
 
 # NEWS for rsync 3.1.2 (21 Dec 2015)
 
-Protocol: 31 (unchanged)
-
-## Changes since 3.1.1:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -414,9 +489,7 @@ Protocol: 31 (unchanged)
 
 # NEWS for rsync 3.1.1 (22 Jun 2014)
 
-Protocol: 31 (unchanged)
-
-## Changes since 3.1.0:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -536,9 +609,11 @@ Protocol: 31 (unchanged)
 
 # NEWS for rsync 3.1.0 (28 Sep 2013)
 
-Protocol: 31 (changed)
+## Changes in this version:
 
-## Changes since 3.0.9:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 31.
 
 ### OUTPUT CHANGES:
 
@@ -785,9 +860,7 @@ Protocol: 31 (changed)
 
 # NEWS for rsync 3.0.9 (23 Sep 2011)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.8:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -847,9 +920,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.8 (26 Mar 2011)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.7:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -988,9 +1059,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.7 (31 Dec 2009)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.6:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1058,9 +1127,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.6 (8 May 2009)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.5:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1119,9 +1186,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.5 (28 Dec 2008)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.4:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1186,9 +1251,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.4 (6 Sep 2008)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.3:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1256,9 +1319,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.3 (29 Jun 2008)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.2:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1349,9 +1410,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.2 (8 Apr 2008)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.1:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -1373,9 +1432,7 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.1 (3 Apr 2008)
 
-Protocol: 30 (unchanged)
-
-## Changes since 3.0.0:
+## Changes in this version:
 
 ### NOTABLE CHANGES IN BEHAVIOR:
 
@@ -1513,9 +1570,11 @@ Protocol: 30 (unchanged)
 
 # NEWS for rsync 3.0.0 (1 Mar 2008)
 
-Protocol: 30 (changed)
+## Changes in this version:
 
-## Changes since 2.6.9:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 30.
 
 ### NOTABLE CHANGES IN BEHAVIOR:
 
@@ -1862,9 +1921,7 @@ Protocol: 30 (changed)
 
 # NEWS for rsync 2.6.9 (6 Nov 2006)
 
-Protocol: 29 (unchanged)
-
-## Changes since 2.6.8:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -2024,9 +2081,7 @@ Protocol: 29 (unchanged)
 
 # NEWS for rsync 2.6.8 (22 Apr 2006)
 
-Protocol: 29 (unchanged)
-
-## Changes since 2.6.7:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -2096,9 +2151,7 @@ Protocol: 29 (unchanged)
 
 # NEWS for rsync 2.6.7 (11 Mar 2006)
 
-Protocol: 29 (unchanged)
-
-## Changes since 2.6.6:
+## Changes in this version:
 
 ### OUTPUT CHANGES:
 
@@ -2422,9 +2475,7 @@ Protocol: 29 (unchanged)
 
 # NEWS for rsync 2.6.6 (28 Jul 2005)
 
-Protocol: 29 (unchanged)
-
-## Changes since 2.6.5:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -2490,9 +2541,7 @@ Protocol: 29 (unchanged)
 
 # NEWS for rsync 2.6.5 (1 Jun 2005)
 
-Protocol: 29 (unchanged)
-
-## Changes since 2.6.4:
+## Changes in this version:
 
 ### OUTPUT CHANGES:
 
@@ -2673,9 +2722,11 @@ Protocol: 29 (unchanged)
 
 # NEWS for rsync 2.6.4 (30 March 2005)
 
-Protocol: 29 (changed)
+## Changes in this version:
 
-## Changes since 2.6.3:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 29.
 
 ### OUTPUT CHANGES:
 
@@ -3053,9 +3104,7 @@ Protocol: 29 (changed)
 
 # NEWS for rsync 2.6.3 (30 Sep 2004)
 
-Protocol: 28 (unchanged)
-
-## Changes since 2.6.2:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -3299,9 +3348,7 @@ Protocol: 28 (unchanged)
 
 # NEWS for rsync 2.6.2 (30 Apr 2004)
 
-Protocol: 28 (unchanged)
-
-## Changes since 2.6.1:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -3343,9 +3390,11 @@ Protocol: 28 (unchanged)
 
 # NEWS for rsync 2.6.1 (26 Apr 2004)
 
-Protocol: 28 (changed)
+## Changes in this version:
 
-## Changes since 2.6.0:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 28.
 
 ### SECURITY FIXES:
 
@@ -3533,9 +3582,12 @@ Protocol: 28 (changed)
 
 # NEWS for rsync 2.6.0 (1 Jan 2004)
 
-Protocol: 27 (changed)
+## Changes in this version:
 
-## Changes since 2.5.7:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 27.  The maximum accepted protocol number
+   was increased from 30 to 40.
 
 ### ENHANCEMENTS:
 
@@ -3670,9 +3722,7 @@ Protocol: 27 (changed)
 
 # NEWS for rsync 2.5.7 (4 Dec 2003)
 
-Protocol: 26 (unchanged)
-
-## Changes since 2.5.6:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -3684,9 +3734,7 @@ Protocol: 26 (unchanged)
 
 # NEWS for rsync 2.5.6, aka "the dwd-between-jobs release" (26 Jan 2003)
 
-Protocol: 26 (unchanged)
-
-## Changes since 2.5.5:
+## Changes in this version:
 
 ### ENHANCEMENTS:
 
@@ -3781,9 +3829,7 @@ Protocol: 26 (unchanged)
 
 # NEWS for rsync 2.5.5, aka Snowy River (2 Apr 2002)
 
-Protocol: 26 (unchanged)
-
-## Changes since 2.5.4:
+## Changes in this version:
 
 ### ENHANCEMENTS:
 
@@ -3822,9 +3868,7 @@ Protocol: 26 (unchanged)
 
 # NEWS for rsync 2.5.4, aka "Imitation lizard skin" (13 Mar 2002)
 
-Protocol: 26 (unchanged)
-
-## Changes since 2.5.3:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -3844,9 +3888,7 @@ Protocol: 26 (unchanged)
 
 # NEWS for rsync 2.5.3, aka "Happy 26" (11 Mar 2002)
 
-Protocol: 26 (unchanged)
-
-## Changes since 2.5.2:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
@@ -3895,15 +3937,17 @@ Protocol: 26 (unchanged)
 
 # NEWS for rsync 2.5.2 (26 Jan 2002)
 
-Protocol: 26 (changed)
-
-## Changes since 2.5.1:
+## Changes in this version:
 
 ### SECURITY FIXES:
 
  - Signedness security patch from Sebastian Krahmer <krahmer@suse.de> -- in
    some cases we were not sufficiently careful about reading integers from the
    network.
+
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 26.
 
 ### BUG FIXES:
 
@@ -3942,9 +3986,7 @@ Protocol: 26 (changed)
 
 # NEWS for rsync 2.5.1 (3 Jan 2002)
 
-Protocol: 25 (unchanged)
-
-## Changes since 2.5.0:
+## Changes in this version:
 
 ### BUG FIXES:
 
@@ -3979,9 +4021,11 @@ Protocol: 25 (unchanged)
 
 # NEWS for rsync 2.5.0 (30 Nov 2001)
 
-Protocol: 25 (changed)
+## Changes in this version:
 
-## Changes since 2.4.6:
+### PROTOCOL NUMBER:
+
+ - The protocol number was changed to 25.
 
 ### ANNOUNCEMENTS:
 
@@ -4099,6 +4143,7 @@ Protocol: 25 (changed)
 
 | RELEASE DATE | VER.   | DATE OF COMMIT\* | PROTOCOL    |
 |--------------|--------|------------------|-------------|
+| 04 Jul 2020  | 3.2.2  |                  | 31          |
 | 22 Jun 2020  | 3.2.1  |                  | 31          |
 | 19 Jun 2020  | 3.2.0  |                  | 31          |
 | 28 Jan 2018  | 3.1.3  |                  | 31          |

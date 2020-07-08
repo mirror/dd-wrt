@@ -1,6 +1,6 @@
 Summary: A fast, versatile, remote (and local) file-copying tool
 Name: rsync
-Version: 3.2.1
+Version: 3.2.2
 %define fullversion %{version}
 Release: 1
 %define srcdir src
@@ -79,8 +79,8 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/rsync-ssl/certs
 
 %changelog
-* Mon Jun 22 2020 Wayne Davison <wayne@opencoder.net>
-Released 3.2.1.
+* Sat Jul 04 2020 Wayne Davison <wayne@opencoder.net>
+Released 3.2.2.
 
 * Fri Mar 21 2008 Wayne Davison <wayne@opencoder.net>
 Added installation of /etc/xinetd.d/rsync file and some commented-out

@@ -697,9 +697,6 @@
 /* Define to 1 if --protected-args should be the default */
 #undef RSYNC_USE_PROTECTED_ARGS
 
-/* rsync release version */
-#undef RSYNC_VERSION
-
 /* Define to 1 if sockets need to be shutdown */
 #undef SHUTDOWN_ALL_SOCKETS
 

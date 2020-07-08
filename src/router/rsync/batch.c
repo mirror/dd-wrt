@@ -38,13 +38,10 @@ extern int do_compression;
 extern int inplace;
 extern int append_mode;
 extern int write_batch;
-extern int xfersum_type;
 extern int protocol_version;
 extern int raw_argc, cooked_argc;
 extern char **raw_argv, **cooked_argv;
 extern char *batch_name;
-extern const char *checksum_choice;
-extern const char *compress_choice;
 #ifdef ICONV_OPTION
 extern char *iconv_opt;
 #endif
@@ -268,14 +265,6 @@ void write_batch_shell_file(void)
 		else
 			err |= write_opt("--exclude-from", "-");
 	}
-
-	/* We need to make sure that any protocol-based or negotiated choices get accurately
-	 * reflected in the options we save AND that we avoid any need for --read-batch to
-	 * do a string-based negotiation (since we don't write them into the file). */
-	if (do_compression)
-		err |= write_opt("--compress-choice", compress_choice);
-	if (strchr(checksum_choice, ',') || xfersum_type != parse_csum_name(NULL, -1))
-		err |= write_opt("--checksum-choice", checksum_choice);
 
 	/* Elide the filename args from the option list, but scan for them in reverse. */
 	for (i = raw_argc-1, j = cooked_argc-1; i > 0 && j >= 0; i--) {
