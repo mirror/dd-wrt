@@ -30,13 +30,14 @@
 extern void *MMALLOC(size_t size);
 extern void MMFREE(void *addr);
 
-#ifdef MAX_NVRAM_SPACE
-// nothign
-
-#elif defined(NVRAM_SPACE_256)
+#if defined(NVRAM_SPACE_256)
+#undef MAX_NVRAM_SPACE
+#undef DEF_NVRAM_SPACE
+extern int NVRAMSIZEREAL;
 #define MAX_NVRAM_SPACE NVRAMSIZEREAL
 #define DEF_NVRAM_SPACE NVRAMSIZEREAL
-extern int NVRAMSIZEREAL;
+#elif defined(MAX_NVRAM_SPACE)
+
 #else
 #define NVRAMSIZEREAL NVRAM_SPACE
 #define MAX_NVRAM_SPACE NVRAM_SPACE
@@ -98,7 +99,7 @@ hash(const char *s)
 	return hashval;
 }
 
-static unsigned long nvram_space = MAX_NVRAM_SPACE;
+static unsigned long nvram_space;
 /* (Re)initialize the hash table. Should be locked. */
 static int
 BCMINITFN(nvram_rehash)(struct nvram_header *header)
@@ -334,6 +335,7 @@ BCMINITFN(_nvram_init)(void *sih)
 {
 	struct nvram_header *header;
 	int ret;
+	nvram_space = MAX_NVRAM_SPACE;
 	printk(KERN_INFO "max nvram space = %d\n",MAX_NVRAM_SPACE);
 
 	if (!(header = (struct nvram_header *) MMALLOC(MAX_NVRAM_SPACE))) {
