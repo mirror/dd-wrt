@@ -410,6 +410,20 @@ disabled.</p>
 write-only module.</p>
 </dd>
 
+<dt><code>open noatime</code></dt><dd>
+<p>When set to True, this parameter tells the rsync daemon to open files with
+the O_NOATIME flag
+(on systems that support it) to avoid changing the access time of the files
+that are being transferred.  If your OS does not support the O_NOATIME flag
+then rsync will silently ignore this option.  Note also that some
+filesystems are mounted to avoid updating the atime on read access even
+without the O_NOATIME flag being set.</p>
+<p>When set to False, this parameters ensures that files on the server are not
+opened with O_NOATIME.</p>
+<p>When set to Unset (the default) the user controls the setting via
+<code>--open-noatime</code>.</p>
+</dd>
+
 <dt><code>list</code></dt><dd>
 <p>This parameter determines whether this module is listed when the client
 asks for a listing of available modules.  In addition, if this is false,
@@ -873,15 +887,15 @@ explicitly accepted with &quot;<code>!write-devices</code>&quot;.  The options &
 <ul>
 <li><code>--server</code>: Required for rsync to even work.</li>
 <li><code>--rsh</code>, <code>-e</code>: Required to convey compatibility flags to the server.</li>
-<li><code>--log-format</code>: This is required to convey things like
-<code>--itemize-changes</code> to a remote receiver. Is an older name for
-<code>--out-format</code> that is still passed to the server for improved backward
-compatibility and should not be confused with <code>--log-file-format</code>.</li>
+<li><code>--out-format</code>: This is required to convey output behavior to a remote
+receiver.  While rsync passes the older alias <code>--log-format</code> for
+compatibility reasons, this options should not be confused with
+<code>--log-file-format</code>.</li>
 <li><code>--sender</code>: Use &quot;write only&quot; parameter instead of refusing this.</li>
 <li><code>--dry-run</code>, <code>-n</code>: Who would want to disable this?</li>
-<li><code>--protect-args</code>, <code>-n</code>: This actually makes transfers safer.</li>
-<li><code>--from0</code>, <code>-0</code>: Make it easier to accept/refuse <code>--files-from</code> without
-affecting this modifier.</li>
+<li><code>--protect-args</code>, <code>-s</code>: This actually makes transfers safer.</li>
+<li><code>--from0</code>, <code>-0</code>: Makes it easier to accept/refuse <code>--files-from</code> without
+affecting this helpful modifier.</li>
 <li><code>--iconv</code>: This is auto-disabled based on &quot;charset&quot; parameter.</li>
 <li><code>--no-iconv</code>: Most transfers use this option.</li>
 <li><code>--checksum-seed</code>: Is a fairly rare, safe option.</li>
@@ -1057,7 +1071,7 @@ backend be_rsync
        listen [::]:874 ssl;
 
        ssl_certificate /etc/letsencrypt/example.com/fullchain.pem;
-       ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem
+       ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem;
 
        proxy_pass localhost:873;
        proxy_protocol on; # Requires &quot;proxy protocol = true&quot;
@@ -1122,7 +1136,7 @@ susan:herpass
 <p>Please report bugs! The rsync bug tracking system is online at
 <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h1>VERSION</h1>
-<p>This man page is current for version 3.2.1 of rsync.</p>
+<p>This man page is current for version 3.2.2 of rsync.</p>
 <h1>CREDITS</h1>
 <p>rsync is distributed under the GNU General Public License.  See the file
 COPYING for details.</p>
@@ -1139,5 +1153,5 @@ Thanks to Karsten Thygesen for his many suggestions and documentation!</p>
 later contributed to it.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>22 Jun 2020</i></p></div>
+<div style="float: right"><p><i>04 Jul 2020</i></p></div>
 </body></html>

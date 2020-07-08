@@ -394,6 +394,7 @@ detailed description below for a complete description.</p>
 --max-delete=NUM         don't delete more than NUM files
 --max-size=SIZE          don't transfer any file larger than SIZE
 --min-size=SIZE          don't transfer any file smaller than SIZE
+--max-alloc=SIZE         change a limit relating to memory alloc
 --partial                keep partially transferred files
 --partial-dir=DIR        put a partially transferred file into DIR
 --delay-updates          put all updated files into place at end
@@ -500,8 +501,6 @@ options since it normally means <code>--human-readable</code>.</p>
 <p>The output includes the default list of checksum algorithms, the default
 list of compression algorithms, a list of compiled-in capabilities, a link
 to the rsync web site, and some license/copyright info.</p>
-<p>Repeat the option (<code>-VV</code>) to include some optimization info at the end of
-the capabilities list.</p>
 </dd>
 
 <dt><code>--verbose</code>, <code>-v</code></dt><dd>
@@ -583,7 +582,7 @@ errors that happen on a remote receiver tend to get delayed until after the
 file's data is fully sent.  It is also helpful for debugging, since it
 helps to avoid overpopulating the protocol data with extra message data.</p>
 <p>The option does not affect the remote side of a transfer without using
-<code>--remote-option</code>&nbsp;-&#8288;-&#8288; e.g. <code>-M--msgs2stderr</code> or <code>{-M,}--msgs2stderr</code>.</p>
+<code>--remote-option</code>, e.g. <code>-M--msgs2stderr</code> or <code>{-M,}--msgs2stderr</code>.</p>
 <p>Also keep in mind that connecting to a normal (non-remote-shell) daemon
 does not have a stderr channel to send messages back to the client side, so
 a modern rsync only allows the option on a remote-shell-run daemon.</p>
@@ -663,7 +662,7 @@ is generated as the file is transferred, but that automatic
 after-the-transfer verification has nothing to do with this option's
 before-the-transfer &quot;Does this file need to be updated?&quot; check.</p>
 <p>The checksum used is auto-negotiated between the client and the server, but
-can be overridden using either the <code>--checksum-choice</code> option or an
+can be overridden using either the <code>--checksum-choice</code> (<code>--cc</code>) option or an
 environment variable that is discussed in that option's section.</p>
 </dd>
 
@@ -1403,34 +1402,37 @@ comma-separated names are supplied, the first name affects the transfer
 checksums, and the second name affects the pre-transfer checksums (<code>-c</code>).</p>
 <p>The checksum options that you may be able to use are:</p>
 <ul>
-<li><code>auto</code> (the default)</li>
-<li><code>xxh64</code> (aka xxhash)</li>
+<li><code>auto</code> (the default automatic choice)</li>
+<li><code>xxh128</code></li>
+<li><code>xxh3</code></li>
+<li><code>xxh64</code> (aka <code>xxhash</code>)</li>
 <li><code>md5</code></li>
 <li><code>md4</code></li>
 <li><code>none</code></li>
 </ul>
-<p>Run <code>rsync -V</code> to see the default checksum list compiled into your version.</p>
+<p>Run <code>rsync --version</code> to see the default checksum list compiled into your
+version (which may differ from the list above).</p>
 <p>If &quot;none&quot; is specified for the first (or only) name, the <code>--whole-file</code>
 option is forced on and no checksum verification is performed on the
 transferred data.  If &quot;none&quot; is specified for the second (or only) name,
 the <code>--checksum</code> option cannot be used.</p>
 <p>The &quot;auto&quot; option is the default, where rsync bases its algorithm choice on
 a negotiation between the client and the server as follows:</p>
-<p>If both the client and the server are at least version 3.2.0, they will
-exchange a list of checksum names and choose the first one in the list that
-they have in common.  This typically means that they will choose xxh64 if
-they both support it and fall back to MD5.  If one side of the transfer is
-not new enough to support this checksum negotiation, then a value is chosen
-based on the protocol version (which chooses between MD5 and various
-flavors of MD4 based on protocol age).</p>
-<p>You can also override the checksum using the RSYNC_CHECKSUM_LIST
-environment variable by setting it to a space-separated list of checksum
-names that you consider acceptable.  If no common checksum is found, the
-client exits with an error.  This method does not allow you to specify the
-transfer checksum separately from the pre-transfer checksum, and it ignores
-&quot;auto&quot; and all unknown checksum names.  If the remote rsync is not new
-enough to handle a checksum negotiation list, the list is silently ignored
-unless it contains the string &quot;FAIL&quot;.</p>
+<p>When both sides of the transfer are at least 3.2.0, rsync chooses the first
+algorithm in the client's list of choices that is also in the server's list
+of choices.  If no common checksum choice is found, rsync exits with
+an error.  If the remote rsync is too old to support checksum negotiation,
+a value is chosen based on the protocol version (which chooses between MD5
+and various flavors of MD4 based on protocol age).</p>
+<p>The default order can be customized by setting the environment variable
+RSYNC_CHECKSUM_LIST to a space-separated list of acceptable checksum names.
+If the string contains a &quot;<code>&amp;</code>&quot; character, it is separated into the &quot;client
+string &amp; server string&quot;, otherwise the same string
+applies to both.  If the string (or string portion) contains no
+non-whitespace characters, the default checksum list is used.  This method
+does not allow you to specify the transfer checksum separately from the
+pre-transfer checksum, and it discards &quot;auto&quot; and all unknown checksum
+names.  A list with only invalid names results in a failed negotiation.</p>
 <p>The use of the <code>--checksum-choice</code> option overrides this environment list.</p>
 </dd>
 
@@ -1639,12 +1641,15 @@ size multiplier, and may be a fractional value (e.g. <code>--max-size=1.5m</code
 <p>This option is a transfer rule, not an exclude, so it doesn't affect the
 data that goes into the file-lists, and thus it doesn't affect deletions.
 It just limits the files that the receiver requests to be transferred.</p>
-<p>The suffixes are as follows: &quot;K&quot; (or &quot;KiB&quot;) is a kibibyte (1024), &quot;M&quot; (or
-&quot;MiB&quot;) is a mebibyte (1024*1024), and &quot;G&quot; (or &quot;GiB&quot;) is a gibibyte
-(1024*1024*1024).  If you want the multiplier to be 1000 instead of 1024,
-use &quot;KB&quot;, &quot;MB&quot;, or &quot;GB&quot;. (Note: lower-case is also accepted for all
-values.) Finally, if the suffix ends in either &quot;+1&quot; or &quot;-&#8288;1&quot;, the value will
-be offset by one byte in the indicated direction.</p>
+<p>The accepted suffix letters are: <code>B</code>, <code>K</code>, <code>G</code>, <code>T</code>, and <code>P</code> for bytes,
+kilobytes/kibibytes, megabytes/mebibytes, gigabytes/gibibytes,
+terabytes/tebibytes, and petabytes/pebibytes.  If you use a single-char
+suffix or add-on &quot;ib&quot; to it (e.g. &quot;G&quot; or &quot;GiB&quot;) then you get units that are
+multiples of 1024.  If you use a two-letter suffix that ends with a &quot;B&quot;
+(e.g. &quot;kb&quot;) then you get units that are multiples of 1000.  The suffix
+letters can be any mix of upper and lower-case that you want to use.</p>
+<p>Finally, if the string ends with either &quot;+1&quot; or &quot;-&#8288;1&quot;, it is offset by one
+byte in the indicated direction.  The largest possible value is <code>8192P-1</code>.</p>
 <p>Examples: <code>--max-size=1.5mb-1</code> is 1499999 bytes, and <code>--max-size=2g+1</code> is
 2147483649 bytes.</p>
 <p>Note that rsync versions prior to 3.1.0 did not allow <code>--max-size=0</code>.</p>
@@ -1655,6 +1660,25 @@ be offset by one byte in the indicated direction.</p>
 specified SIZE, which can help in not transferring small, junk files.  See
 the <code>--max-size</code> option for a description of SIZE and other information.</p>
 <p>Note that rsync versions prior to 3.1.0 did not allow <code>--min-size=0</code>.</p>
+</dd>
+
+<dt><code>--max-alloc=SIZE</code></dt><dd>
+<p>By default rsync limits an individual malloc/realloc to about 1GB in size.
+For most people this limit works just fine and prevents a protocol error
+causing rsync to request massive amounts of memory.  However, if you have
+many millions of files in a transfer, a large amount of server memory, and
+you don't want to split up your transfer into multiple parts, you can
+increase the per-allocation limit to something larger and rsync will
+consume more memory.</p>
+<p>Keep in mind that this is not a limit on the total size of allocated
+memory.  It is a sanity-check value for each individual allocation.</p>
+<p>See the <code>--max-size</code> option for a description of how SIZE can be specified.
+The default suffix if none is given is bytes.</p>
+<p>You can set a default value using the environment variable RSYNC_MAX_ALLOC
+using the same SIZE values as supported by this option.  If the remote
+rsync doesn't understand the <code>--max-alloc</code> option, you can override an
+environmental value by specifying <code>--max-alloc=1g</code>, which will make rsync
+avoid sending the option to the remote side (because &quot;1G&quot; is the default).</p>
 </dd>
 
 <dt><code>--block-size=SIZE</code>, <code>-B</code></dt><dd>
@@ -1962,8 +1986,9 @@ make sure it's disabled if you ever need to interact with a remote rsync
 that is older than that.</p>
 <p>Rsync can also be configured (at build time) to have this option enabled by
 default (with is overridden by both the environment and the command-line).
-Run <code>rsync -V</code> to check if this is the case, as it will display &quot;default
-protect-args&quot; or &quot;optional protect-args&quot; depending on how it was compiled.</p>
+Run <code>rsync --version</code> to check if this is the case, as it will display
+&quot;default protect-args&quot; or &quot;optional protect-args&quot; depending on how it was
+compiled.</p>
 <p>This option will eventually become a new default setting at some
 as-yet-undetermined point in the future.</p>
 </dd>
@@ -2133,27 +2158,37 @@ the <code>-o</code> option when sending to an old rsync.</p>
 <p>With this option, rsync compresses the file data as it is sent to the
 destination machine, which reduces the amount of data being transmitted&nbsp;-&#8288;-&#8288;
 something that is useful over a slow connection.</p>
-<p>The &quot;zlib&quot; compression method typically achieves better compression ratios
-than can be achieved by using a compressing remote shell or a compressing
-transport because it takes advantage of the implicit information in the
-matching data blocks that are not explicitly sent over the connection.
-This matching-data compression comes at a cost of CPU, though, and can be
-disabled by using the &quot;zlibx&quot; compresson method instead.  This can be
-selected by repeating the <code>-z</code> option or specifying
-<code>--compress-choice=zlibx</code>, but it only works if both sides of the transfer
-are at least version 3.1.1.</p>
-<p>Note that if you see an error about an option named <code>--old-compress</code> or
-<code>--new-compress</code>, this is rsync trying to send the <code>--compress-choice=zlib</code>
-or <code>--compress-choice=zlibx</code> option in a backward-compatible manner that
-more rsync versions understand.  This error indicates that the older rsync
-version will not allow you to force the compression type.</p>
-<p>See the <code>--skip-compress</code> option for the default list of file suffixes that
-will not be compressed.</p>
+<p>Rsync supports multiple compression methods and will choose one for you
+unless you force the choice using the <code>--compress-choice</code> (<code>--zc</code>) option.</p>
+<p>Run <code>rsync --version</code> to see the default compress list compiled into your
+version.</p>
+<p>When both sides of the transfer are at least 3.2.0, rsync chooses the first
+algorithm in the client's list of choices that is also in the server's list
+of choices.  If no common compress choice is found, rsync exits with
+an error.  If the remote rsync is too old to support checksum negotiation,
+its list is assumed to be &quot;zlib&quot;.</p>
+<p>The default order can be customized by setting the environment variable
+RSYNC_COMPRESS_LIST to a space-separated list of acceptable compression
+names.  If the string contains a &quot;<code>&amp;</code>&quot; character, it is separated into the
+&quot;client string &amp; server string&quot;, otherwise the same string applies to both.
+If the string (or string portion) contains no
+non-whitespace characters, the default compress list is used.  Any unknown
+compression names are discarded from the list, but a list with only invalid
+names results in a failed negotiation.</p>
+<p>There are some older rsync versions that were configured to reject a <code>-z</code>
+option and require the use of <code>-zz</code> because their compression library was
+not compatible with the default zlib compression method.  You can usually
+ignore this weirdness unless the rsync server complains and tells you to
+specify <code>-zz</code>.</p>
+<p>See also the <code>--skip-compress</code> option for the default list of file suffixes
+that will trasnferred with no (or minimal) compression.</p>
 </dd>
 
 <dt><code>--compress-choice=STR</code>, <code>--zc=STR</code></dt><dd>
-<p>This option can be used to override the automatic selection of the
-compression algorithm that is the default when <code>--compress</code> is used.</p>
+<p>This option can be used to override the automatic negotiation of the
+compression algorithm that occurs when <code>--compress</code> is used.  The option
+implies <code>--compress</code> unless &quot;none&quot; was specified, which instead implies
+<code>--no-compress</code>.</p>
 <p>The compression options that you may be able to use are:</p>
 <ul>
 <li><code>zstd</code></li>
@@ -2162,21 +2197,16 @@ compression algorithm that is the default when <code>--compress</code> is used.<
 <li><code>zlib</code></li>
 <li><code>none</code></li>
 </ul>
-<p>Run <code>rsync -V</code> to see the compress list compiled into your version.</p>
-<p>The &quot;zlibx&quot; algorithm is given preference over &quot;zlib&quot; if both sides of the
-transfer are at least version 3.2.0, otherwise it will choose &quot;zlib&quot; unless
-you override it via something like <code>-zz</code>.  These 2 algorithms are the stame
-except that &quot;zlibx&quot; does not try to include matched data that was not
-transferred in the compression computations.</p>
-<p>If &quot;none&quot; is specified, that is equivalent to using <code>--no-compress</code>.</p>
-<p>This option implies <code>--compress</code> unless &quot;none&quot; was specified.</p>
-<p>You can also override the compression negotiation using the
-RSYNC_COMPRESS_LIST environment variable by setting it to a space-separated
-list of compression names that you consider acceptable.  If no common
-compress choice is found, the client exits with an error.  It ignores
-&quot;auto&quot; and all unknown compression names.  If the remote rsync is not new
-enough to handle a compression negotiation list, the list is silently
-ignored unless it contains the string &quot;FAIL&quot;.</p>
+<p>Run <code>rsync --version</code> to see the default compress list compiled into your
+version (which may differ from the list above).</p>
+<p>Note that if you see an error about an option named <code>--old-compress</code> or
+<code>--new-compress</code>, this is rsync trying to send the <code>--compress-choice=zlib</code>
+or <code>--compress-choice=zlibx</code> option in a backward-compatible manner that
+more rsync versions understand.  This error indicates that the older rsync
+version on the server will not allow you to force the compression type.</p>
+<p>Note that the &quot;zlibx&quot; compression algorithm is just the &quot;zlib&quot; algorithm
+with matched data excluded from the compression stream (to try to make it
+more compatible with an external zlib implementation).</p>
 </dd>
 
 <dt><code>--compress-level=NUM</code>, <code>--zl=NUM</code></dt><dd>
@@ -2186,8 +2216,8 @@ as the level chosen is not a &quot;don't compress&quot; level for the compressio
 algorithm that is in effect (e.g. zlib compression treats level 0 as
 &quot;off&quot;).</p>
 <p>The level values vary depending on the checksum in effect.  Because rsync
-will negotiate a checksum choice by default when the remote rsync is new
-enough, it can be good to combine this option with a <code>--compress-choice</code>
+will negotiate a checksum choice by default (when the remote rsync is new
+enough), it can be good to combine this option with a <code>--compress-choice</code>
 (<code>--zc</code>) option unless you're sure of the choice in effect.  For example:</p>
 <blockquote>
 <pre><code>rsync -aiv --zc=zstd --zl=22 host:src/ dest/
@@ -2214,8 +2244,10 @@ choice in effect).</p>
 possible.  Rsync sets the compression level on a per-file basis based on
 the file's suffix.  If the compression algorithm has an &quot;off&quot; level (such
 as zlib/zlibx) then no compression occurs for those files.  Other
-algorithms have the level minimized to reduces the CPU usage as much as
-possible.</p>
+algorithms that support changing the streaming level on-the-fly will have
+the level minimized to reduces the CPU usage as much as possible for a
+matching file.  At this time, only zlib &amp; zlibx compression support this
+changing of levels on a per-file basis.</p>
 <p>The <strong>LIST</strong> should be one or more file suffixes (without the dot) separated
 by slashes (<code>/</code>).  You may specify an empty string to indicate that no files
 should be skipped.</p>
@@ -2895,6 +2927,10 @@ output buffer occurs.  This may be fixed in a future version.</p>
 <p>Record a file that can later be applied to another identical destination
 with <code>--read-batch</code>.  See the &quot;BATCH MODE&quot; section for details, and also
 the <code>--only-write-batch</code> option.</p>
+<p>This option overrides the negotiated checksum &amp; compress lists and always
+negotiates a choice based on old-school md5/md4/zlib choices.  If you want
+a more modern choice, use the <code>--checksum-choice</code> (<code>--cc</code>) and/or
+<code>--compress-choice</code> (<code>--zc</code>) options.</p>
 </dd>
 
 <dt><code>--only-write-batch=FILE</code></dt><dd>
@@ -2968,8 +3004,8 @@ the &quot;<code>--rsh SHELL -4</code>&quot; option directly (or whatever ipv4/ip
 it uses).</p>
 <p>These options also exist in the <code>--daemon</code> mode section.</p>
 <p>If rsync was complied without support for IPv6, the <code>--ipv6</code> option will
-have no effect.  The <code>rsync -V</code> output will contain &quot;<code>no IPv6</code>&quot; if is the
-case.</p>
+have no effect.  The <code>rsync --version</code> output will contain &quot;<code>no IPv6</code>&quot; if
+is the case.</p>
 </dd>
 
 <dt><code>--checksum-seed=NUM</code></dt><dd>
@@ -3081,8 +3117,8 @@ using the port, try specifying <code>--ipv6</code> or <code>--ipv4</code> when s
 daemon).</p>
 <p>These options also exist in the regular rsync options section.</p>
 <p>If rsync was complied without support for IPv6, the <code>--ipv6</code> option will
-have no effect.  The <code>rsync -V</code> output will contain &quot;<code>no IPv6</code>&quot; if is the
-case.</p>
+have no effect.  The <code>rsync --version</code> output will contain &quot;<code>no IPv6</code>&quot; if
+is the case.</p>
 </dd>
 
 <dt><code>--help</code>, <code>-h</code></dt><dd>
@@ -3726,7 +3762,7 @@ values</p>
 <p>see also the comments on the <code>--delete</code> option</p>
 <p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h1>VERSION</h1>
-<p>This man page is current for version 3.2.1 of rsync.</p>
+<p>This man page is current for version 3.2.2 of rsync.</p>
 <h1>INTERNAL OPTIONS</h1>
 <p>The options <code>--server</code> and <code>--sender</code> are used internally by rsync, and should
 never be typed by a user under normal circumstances.  Some awareness of these
@@ -3755,5 +3791,5 @@ people have later contributed to it. It is currently maintained by Wayne
 Davison.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>22 Jun 2020</i></p></div>
+<div style="float: right"><p><i>04 Jul 2020</i></p></div>
 </body></html>

@@ -3,7 +3,7 @@
  * `id -G` on Linux, but it's too hard to find a portable equivalent.
  *
  * Copyright (C) 2002 Martin Pool
- * Copyright (C) 2003-2019 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -20,8 +20,7 @@
 
 #include "rsync.h"
 
-int
-main(UNUSED(int argc), UNUSED(char *argv[]))
+ int main(UNUSED(int argc), UNUSED(char *argv[]))
 {
 	int n, i;
 	gid_t *list;

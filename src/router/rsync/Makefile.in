@@ -1,5 +1,4 @@
-# Makefile for rsync. This is processed by configure to produce the final
-# Makefile
+# The Makefile for rsync (configure creates it from Makefile.in).
 
 prefix=@prefix@
 datarootdir=@datarootdir@
@@ -27,8 +26,6 @@ MKDIR_P=@MKDIR_P@
 VPATH=$(srcdir)
 SHELL=/bin/sh
 
-VERSION=@RSYNC_VERSION@
-
 .SUFFIXES:
 .SUFFIXES: .c .o
 
@@ -38,7 +35,7 @@ ASM_x86_64=lib/md5-asm-x86_64.o
 GENFILES=configure.sh aclocal.m4 config.h.in proto.h proto.h-tstamp rsync.1 rsync.1.html \
 	 rsync-ssl.1 rsync-ssl.1.html rsyncd.conf.5 rsyncd.conf.5.html
 HEADERS=byteorder.h config.h errcode.h proto.h rsync.h ifuncs.h itypes.h inums.h \
-	lib/pool_alloc.h lib/mdigest.h lib/md-defines.h
+	lib/pool_alloc.h lib/mdigest.h lib/md-defines.h version.h
 LIBOBJ=lib/wildmatch.o lib/compat.o lib/snprintf.o lib/mdfour.o lib/md5.o \
 	lib/permstring.o lib/pool_alloc.o lib/sysacls.o lib/sysxattrs.o @LIBOBJS@
 zlib_OBJS=zlib/deflate.o zlib/inffast.o zlib/inflate.o zlib/inftrees.o \
@@ -77,7 +74,7 @@ all: Makefile rsync$(EXEEXT) stunnel-rsyncd.conf @MAKE_MAN@
 install: all
 	-${MKDIR_P} ${DESTDIR}${bindir}
 	${INSTALLCMD} ${INSTALL_STRIP} -m 755 rsync$(EXEEXT) ${DESTDIR}${bindir}
-	${INSTALLCMD} -m 755 rsync-ssl ${DESTDIR}${bindir}
+	${INSTALLCMD} -m 755 $(srcdir)/rsync-ssl ${DESTDIR}${bindir}
 	-${MKDIR_P} ${DESTDIR}${mandir}/man1
 	-${MKDIR_P} ${DESTDIR}${mandir}/man5
 	if test -f rsync.1; then ${INSTALLMAN} -m 644 rsync.1 ${DESTDIR}${mandir}/man1; fi
@@ -104,7 +101,7 @@ $(CHECK_OBJS): $(HEADERS)
 tls.o xattrs.o: lib/sysxattrs.h
 options.o: latest-year.h help-rsync.h help-rsyncd.h
 exclude.o: default-cvsignore.h
-loadparm.o: default-dont-compress.h
+loadparm.o: default-dont-compress.h daemon-parm.h
 
 flist.o: rounding.h
 
@@ -113,6 +110,9 @@ default-cvsignore.h default-dont-compress.h: rsync.1.md define-from-md.awk
 
 help-rsync.h help-rsyncd.h: rsync.1.md help-from-md.awk
 	$(AWK) -f $(srcdir)/help-from-md.awk -v hfile=$@ $(srcdir)/rsync.1.md
+
+daemon-parm.h: daemon-parm.txt daemon-parm.awk
+	$(AWK) -f $(srcdir)/daemon-parm.awk $(srcdir)/daemon-parm.txt
 
 rounding.h: rounding.c rsync.h proto.h
 	@for r in 0 1 3; do \
@@ -203,6 +203,10 @@ reconfigure: configure.sh
 	./config.status --recheck
 	./config.status
 
+.PHONY: restatus
+restatus:
+	./config.status
+
 Makefile: Makefile.in config.status configure.sh config.h.in
 	@if test -f Makefile; then cp -p Makefile Makefile.old; else touch Makefile.old; fi
 	@./config.status
@@ -227,19 +231,19 @@ proto: proto.h-tstamp
 proto.h: proto.h-tstamp
 	@if test -f proto.h; then :; else cp -p $(srcdir)/proto.h .; fi
 
-proto.h-tstamp: $(srcdir)/*.c $(srcdir)/lib/compat.c config.h
-	$(AWK) -f $(srcdir)/mkproto.awk $(srcdir)/*.c $(srcdir)/lib/compat.c
+proto.h-tstamp: $(srcdir)/*.c $(srcdir)/lib/compat.c config.h daemon-parm.h
+	$(AWK) -f $(srcdir)/mkproto.awk $(srcdir)/*.c $(srcdir)/lib/compat.c daemon-parm.h
 
 .PHONY: man
 man: rsync.1 rsync-ssl.1 rsyncd.conf.5
 
-rsync.1: rsync.1.md md2man NEWS.md Makefile
+rsync.1: rsync.1.md md2man version.h Makefile
 	@$(srcdir)/maybe-make-man $(srcdir) rsync.1.md
 
-rsync-ssl.1: rsync-ssl.1.md md2man NEWS.md Makefile
+rsync-ssl.1: rsync-ssl.1.md md2man version.h Makefile
 	@$(srcdir)/maybe-make-man $(srcdir) rsync-ssl.1.md
 
-rsyncd.conf.5: rsyncd.conf.5.md md2man NEWS.md Makefile
+rsyncd.conf.5: rsyncd.conf.5.md md2man version.h Makefile
 	@$(srcdir)/maybe-make-man $(srcdir) rsyncd.conf.5.md
 
 .PHONY: clean

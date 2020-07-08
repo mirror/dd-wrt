@@ -403,6 +403,7 @@ detailed description below for a complete description.
 --max-delete=NUM         don't delete more than NUM files
 --max-size=SIZE          don't transfer any file larger than SIZE
 --min-size=SIZE          don't transfer any file smaller than SIZE
+--max-alloc=SIZE         change a limit relating to memory alloc
 --partial                keep partially transferred files
 --partial-dir=DIR        put a partially transferred file into DIR
 --delay-updates          put all updated files into place at end
@@ -520,9 +521,6 @@ your home directory (remove the '=' for that).
     list of compression algorithms, a list of compiled-in capabilities, a link
     to the rsync web site, and some license/copyright info.
 
-    Repeat the option (`-VV`) to include some optimization info at the end of
-    the capabilities list.
-
 0.  `--verbose`, `-v`
 
     This option increases the amount of information you are given during the
@@ -605,7 +603,7 @@ your home directory (remove the '=' for that).
     helps to avoid overpopulating the protocol data with extra message data.
 
     The option does not affect the remote side of a transfer without using
-    `--remote-option` -- e.g. `-M--msgs2stderr` or `{-M,}--msgs2stderr`.
+    `--remote-option`, e.g. `-M--msgs2stderr` or `{-M,}--msgs2stderr`.
 
     Also keep in mind that connecting to a normal (non-remote-shell) daemon
     does not have a stderr channel to send messages back to the client side, so
@@ -690,7 +688,7 @@ your home directory (remove the '=' for that).
     before-the-transfer "Does this file need to be updated?" check.
 
     The checksum used is auto-negotiated between the client and the server, but
-    can be overridden using either the `--checksum-choice` option or an
+    can be overridden using either the `--checksum-choice` (`--cc`) option or an
     environment variable that is discussed in that option's section.
 
 0.  `--archive`, `-a`
@@ -1473,13 +1471,16 @@ your home directory (remove the '=' for that).
 
     The checksum options that you may be able to use are:
 
-    - `auto` (the default)
-    - `xxh64` (aka xxhash)
+    - `auto` (the default automatic choice)
+    - `xxh128`
+    - `xxh3`
+    - `xxh64` (aka `xxhash`)
     - `md5`
     - `md4`
     - `none`
 
-    Run `rsync -V` to see the default checksum list compiled into your version.
+    Run `rsync --version` to see the default checksum list compiled into your
+    version (which may differ from the list above).
 
     If "none" is specified for the first (or only) name, the `--whole-file`
     option is forced on and no checksum verification is performed on the
@@ -1489,22 +1490,22 @@ your home directory (remove the '=' for that).
     The "auto" option is the default, where rsync bases its algorithm choice on
     a negotiation between the client and the server as follows:
 
-    If both the client and the server are at least version 3.2.0, they will
-    exchange a list of checksum names and choose the first one in the list that
-    they have in common.  This typically means that they will choose xxh64 if
-    they both support it and fall back to MD5.  If one side of the transfer is
-    not new enough to support this checksum negotiation, then a value is chosen
-    based on the protocol version (which chooses between MD5 and various
-    flavors of MD4 based on protocol age).
+    When both sides of the transfer are at least 3.2.0, rsync chooses the first
+    algorithm in the client's list of choices that is also in the server's list
+    of choices.  If no common checksum choice is found, rsync exits with
+    an error.  If the remote rsync is too old to support checksum negotiation,
+    a value is chosen based on the protocol version (which chooses between MD5
+    and various flavors of MD4 based on protocol age).
 
-    You can also override the checksum using the RSYNC_CHECKSUM_LIST
-    environment variable by setting it to a space-separated list of checksum
-    names that you consider acceptable.  If no common checksum is found, the
-    client exits with an error.  This method does not allow you to specify the
-    transfer checksum separately from the pre-transfer checksum, and it ignores
-    "auto" and all unknown checksum names.  If the remote rsync is not new
-    enough to handle a checksum negotiation list, the list is silently ignored
-    unless it contains the string "FAIL".
+    The default order can be customized by setting the environment variable
+    RSYNC_CHECKSUM_LIST to a space-separated list of acceptable checksum names.
+    If the string contains a "`&`" character, it is separated into the "client
+    string & server string", otherwise the same string
+    applies to both.  If the string (or string portion) contains no
+    non-whitespace characters, the default checksum list is used.  This method
+    does not allow you to specify the transfer checksum separately from the
+    pre-transfer checksum, and it discards "auto" and all unknown checksum
+    names.  A list with only invalid names results in a failed negotiation.
 
     The use of the `--checksum-choice` option overrides this environment list.
 
@@ -1731,12 +1732,16 @@ your home directory (remove the '=' for that).
     data that goes into the file-lists, and thus it doesn't affect deletions.
     It just limits the files that the receiver requests to be transferred.
 
-    The suffixes are as follows: "K" (or "KiB") is a kibibyte (1024), "M" (or
-    "MiB") is a mebibyte (1024\*1024), and "G" (or "GiB") is a gibibyte
-    (1024\*1024\*1024).  If you want the multiplier to be 1000 instead of 1024,
-    use "KB", "MB", or "GB". (Note: lower-case is also accepted for all
-    values.) Finally, if the suffix ends in either "+1" or "-1", the value will
-    be offset by one byte in the indicated direction.
+    The accepted suffix letters are: `B`, `K`, `G`, `T`, and `P` for bytes,
+    kilobytes/kibibytes, megabytes/mebibytes, gigabytes/gibibytes,
+    terabytes/tebibytes, and petabytes/pebibytes.  If you use a single-char
+    suffix or add-on "ib" to it (e.g. "G" or "GiB") then you get units that are
+    multiples of 1024.  If you use a two-letter suffix that ends with a "B"
+    (e.g. "kb") then you get units that are multiples of 1000.  The suffix
+    letters can be any mix of upper and lower-case that you want to use.
+
+    Finally, if the string ends with either "+1" or "-1", it is offset by one
+    byte in the indicated direction.  The largest possible value is `8192P-1`.
 
     Examples: `--max-size=1.5mb-1` is 1499999 bytes, and `--max-size=2g+1` is
     2147483649 bytes.
@@ -1750,6 +1755,28 @@ your home directory (remove the '=' for that).
     the `--max-size` option for a description of SIZE and other information.
 
     Note that rsync versions prior to 3.1.0 did not allow `--min-size=0`.
+
+0.  `--max-alloc=SIZE`
+
+    By default rsync limits an individual malloc/realloc to about 1GB in size.
+    For most people this limit works just fine and prevents a protocol error
+    causing rsync to request massive amounts of memory.  However, if you have
+    many millions of files in a transfer, a large amount of server memory, and
+    you don't want to split up your transfer into multiple parts, you can
+    increase the per-allocation limit to something larger and rsync will
+    consume more memory.
+
+    Keep in mind that this is not a limit on the total size of allocated
+    memory.  It is a sanity-check value for each individual allocation.
+
+    See the `--max-size` option for a description of how SIZE can be specified.
+    The default suffix if none is given is bytes.
+
+    You can set a default value using the environment variable RSYNC_MAX_ALLOC
+    using the same SIZE values as supported by this option.  If the remote
+    rsync doesn't understand the `--max-alloc` option, you can override an
+    environmental value by specifying `--max-alloc=1g`, which will make rsync
+    avoid sending the option to the remote side (because "1G" is the default).
 
 0.  `--block-size=SIZE`, `-B`
 
@@ -2073,8 +2100,9 @@ your home directory (remove the '=' for that).
 
     Rsync can also be configured (at build time) to have this option enabled by
     default (with is overridden by both the environment and the command-line).
-    Run `rsync -V` to check if this is the case, as it will display "default
-    protect-args" or "optional protect-args" depending on how it was compiled.
+    Run `rsync --version` to check if this is the case, as it will display
+    "default protect-args" or "optional protect-args" depending on how it was
+    compiled.
 
     This option will eventually become a new default setting at some
     as-yet-undetermined point in the future.
@@ -2260,29 +2288,42 @@ your home directory (remove the '=' for that).
     destination machine, which reduces the amount of data being transmitted --
     something that is useful over a slow connection.
 
-    The "zlib" compression method typically achieves better compression ratios
-    than can be achieved by using a compressing remote shell or a compressing
-    transport because it takes advantage of the implicit information in the
-    matching data blocks that are not explicitly sent over the connection.
-    This matching-data compression comes at a cost of CPU, though, and can be
-    disabled by using the "zlibx" compresson method instead.  This can be
-    selected by repeating the `-z` option or specifying
-    `--compress-choice=zlibx`, but it only works if both sides of the transfer
-    are at least version 3.1.1.
+    Rsync supports multiple compression methods and will choose one for you
+    unless you force the choice using the `--compress-choice` (`--zc`) option.
 
-    Note that if you see an error about an option named `--old-compress` or
-    `--new-compress`, this is rsync trying to send the `--compress-choice=zlib`
-    or `--compress-choice=zlibx` option in a backward-compatible manner that
-    more rsync versions understand.  This error indicates that the older rsync
-    version will not allow you to force the compression type.
+    Run `rsync --version` to see the default compress list compiled into your
+    version.
 
-    See the `--skip-compress` option for the default list of file suffixes that
-    will not be compressed.
+    When both sides of the transfer are at least 3.2.0, rsync chooses the first
+    algorithm in the client's list of choices that is also in the server's list
+    of choices.  If no common compress choice is found, rsync exits with
+    an error.  If the remote rsync is too old to support checksum negotiation,
+    its list is assumed to be "zlib".
+
+    The default order can be customized by setting the environment variable
+    RSYNC_COMPRESS_LIST to a space-separated list of acceptable compression
+    names.  If the string contains a "`&`" character, it is separated into the
+    "client string & server string", otherwise the same string applies to both.
+    If the string (or string portion) contains no
+    non-whitespace characters, the default compress list is used.  Any unknown
+    compression names are discarded from the list, but a list with only invalid
+    names results in a failed negotiation.
+
+    There are some older rsync versions that were configured to reject a `-z`
+    option and require the use of `-zz` because their compression library was
+    not compatible with the default zlib compression method.  You can usually
+    ignore this weirdness unless the rsync server complains and tells you to
+    specify `-zz`.
+
+    See also the `--skip-compress` option for the default list of file suffixes
+    that will trasnferred with no (or minimal) compression.
 
 0.  `--compress-choice=STR`, `--zc=STR`
 
-    This option can be used to override the automatic selection of the
-    compression algorithm that is the default when `--compress` is used.
+    This option can be used to override the automatic negotiation of the
+    compression algorithm that occurs when `--compress` is used.  The option
+    implies `--compress` unless "none" was specified, which instead implies
+    `--no-compress`.
 
     The compression options that you may be able to use are:
 
@@ -2292,25 +2333,18 @@ your home directory (remove the '=' for that).
     - `zlib`
     - `none`
 
-    Run `rsync -V` to see the compress list compiled into your version.
+    Run `rsync --version` to see the default compress list compiled into your
+    version (which may differ from the list above).
 
-    The "zlibx" algorithm is given preference over "zlib" if both sides of the
-    transfer are at least version 3.2.0, otherwise it will choose "zlib" unless
-    you override it via something like `-zz`.  These 2 algorithms are the stame
-    except that "zlibx" does not try to include matched data that was not
-    transferred in the compression computations.
+    Note that if you see an error about an option named `--old-compress` or
+    `--new-compress`, this is rsync trying to send the `--compress-choice=zlib`
+    or `--compress-choice=zlibx` option in a backward-compatible manner that
+    more rsync versions understand.  This error indicates that the older rsync
+    version on the server will not allow you to force the compression type.
 
-    If "none" is specified, that is equivalent to using `--no-compress`.
-
-    This option implies `--compress` unless "none" was specified.
-
-    You can also override the compression negotiation using the
-    RSYNC_COMPRESS_LIST environment variable by setting it to a space-separated
-    list of compression names that you consider acceptable.  If no common
-    compress choice is found, the client exits with an error.  It ignores
-    "auto" and all unknown compression names.  If the remote rsync is not new
-    enough to handle a compression negotiation list, the list is silently
-    ignored unless it contains the string "FAIL".
+    Note that the "zlibx" compression algorithm is just the "zlib" algorithm
+    with matched data excluded from the compression stream (to try to make it
+    more compatible with an external zlib implementation).
 
 0.  `--compress-level=NUM`, `--zl=NUM`
 
@@ -2321,8 +2355,8 @@ your home directory (remove the '=' for that).
     "off").
 
     The level values vary depending on the checksum in effect.  Because rsync
-    will negotiate a checksum choice by default when the remote rsync is new
-    enough, it can be good to combine this option with a `--compress-choice`
+    will negotiate a checksum choice by default (when the remote rsync is new
+    enough), it can be good to combine this option with a `--compress-choice`
     (`--zc`) option unless you're sure of the choice in effect.  For example:
 
     >     rsync -aiv --zc=zstd --zl=22 host:src/ dest/
@@ -2352,8 +2386,10 @@ your home directory (remove the '=' for that).
     possible.  Rsync sets the compression level on a per-file basis based on
     the file's suffix.  If the compression algorithm has an "off" level (such
     as zlib/zlibx) then no compression occurs for those files.  Other
-    algorithms have the level minimized to reduces the CPU usage as much as
-    possible.
+    algorithms that support changing the streaming level on-the-fly will have
+    the level minimized to reduces the CPU usage as much as possible for a
+    matching file.  At this time, only zlib & zlibx compression support this
+    changing of levels on a per-file basis.
 
     The **LIST** should be one or more file suffixes (without the dot) separated
     by slashes (`/`).  You may specify an empty string to indicate that no files
@@ -3077,6 +3113,11 @@ your home directory (remove the '=' for that).
     with `--read-batch`.  See the "BATCH MODE" section for details, and also
     the `--only-write-batch` option.
 
+    This option overrides the negotiated checksum & compress lists and always
+    negotiates a choice based on old-school md5/md4/zlib choices.  If you want
+    a more modern choice, use the `--checksum-choice` (`--cc`) and/or
+    `--compress-choice` (`--zc`) options.
+
 0.  `--only-write-batch=FILE`
 
     Works like `--write-batch`, except that no updates are made on the
@@ -3157,8 +3198,8 @@ your home directory (remove the '=' for that).
     These options also exist in the `--daemon` mode section.
 
     If rsync was complied without support for IPv6, the `--ipv6` option will
-    have no effect.  The `rsync -V` output will contain "`no IPv6`" if is the
-    case.
+    have no effect.  The `rsync --version` output will contain "`no IPv6`" if
+    is the case.
 
 0.  `--checksum-seed=NUM`
 
@@ -3271,8 +3312,8 @@ The options allowed when starting an rsync daemon are as follows:
     These options also exist in the regular rsync options section.
 
     If rsync was complied without support for IPv6, the `--ipv6` option will
-    have no effect.  The `rsync -V` output will contain "`no IPv6`" if is the
-    case.
+    have no effect.  The `rsync --version` output will contain "`no IPv6`" if
+    is the case.
 
 0.  `--help`, `-h`
 

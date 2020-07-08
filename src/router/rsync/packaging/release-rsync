@@ -13,6 +13,7 @@ sys.path = ['packaging'] + sys.path
 
 from pkglib import *
 
+os.environ['LESS'] = 'mqeiXR'; # Make sure that -F is turned off and -R is turned on.
 dest = os.environ['HOME'] + '/samba-rsync-ftp'
 ORIGINAL_PATH = os.environ['PATH']
 
@@ -29,7 +30,11 @@ def main():
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    gen_files = get_gen_files()
+    if cmd_txt_chk(['packaging/prep-auto-dir']) == '':
+        die('You must setup an auto-build-save dir to use this script.');
+
+    auto_dir, gen_files = get_gen_files(True)
+    gen_pathnames = [ os.path.join(auto_dir, fn) for fn in gen_files ]
 
     dash_line = '=' * 74
 
@@ -52,13 +57,13 @@ def main():
 
     check_git_state(args.master_branch, True, 'patches')
 
-    confversion = get_configure_version()
+    curversion = get_rsync_version()
 
     # All version values are strings!
-    lastversion, last_protocol_version = get_NEWS_version_info()
+    lastversion, last_protocol_version, pdate = get_NEWS_version_info()
     protocol_version, subprotocol_version = get_protocol_versions()
 
-    version = confversion
+    version = curversion
     m = re.search(r'pre(\d+)', version)
     if m:
         version = re.sub(r'pre\d+', 'pre' + str(int(m[1]) + 1), version)
@@ -88,8 +93,8 @@ def main():
         cmd_chk(['git', 'tag', '-d', v_ver])
 
     version = re.sub(r'[-.]*pre[-.]*', 'pre', version)
-    if 'pre' in version and not confversion.endswith('dev'):
-        lastversion = confversion
+    if 'pre' in version and not curversion.endswith('dev'):
+        lastversion = curversion
 
     ans = input(f"Enter the previous version to produce a patch against: [{lastversion}] ")
     if ans != '':
@@ -111,11 +116,8 @@ def main():
         release += '.' + pre
 
     finalversion = re.sub(r'pre\d+', '', version)
-    if protocol_version == last_protocol_version:
-        proto_changed = 'unchanged'
-        proto_change_date = ' ' * 11
-    else:
-        proto_changed = 'changed'
+    proto_changed = protocol_version != last_protocol_version
+    if proto_changed:
         if finalversion in pdate:
             proto_change_date = pdate[finalversion]
         else:
@@ -124,6 +126,8 @@ def main():
                 if re.match(r'^\d\d \w\w\w \d\d\d\d$', ans):
                     break
             proto_change_date = ans
+    else:
+        proto_change_date = ' ' * 11
 
     if 'pre' in lastversion:
         if not pre:
@@ -152,7 +156,7 @@ release is "{release}"
 
 About to:
     - tweak SUBPROTOCOL_VERSION in rsync.h, if needed
-    - tweak the version in configure.ac and the spec files
+    - tweak the version in version.h and the spec files
     - tweak NEWS.md to ensure header values are correct
     - generate configure.sh, config.h.in, and proto.h
     - page through the differences
@@ -167,16 +171,15 @@ About to:
         '%define srcdir': srcdir,
         }
 
-    tweak_files = 'configure.ac rsync.h NEWS.md'.split()
+    tweak_files = 'version.h rsync.h NEWS.md'.split()
     tweak_files += glob.glob('packaging/*.spec')
     tweak_files += glob.glob('packaging/*/*.spec')
 
     for fn in tweak_files:
         with open(fn, 'r', encoding='utf-8') as fh:
             old_txt = txt = fh.read()
-        if 'configure' in fn:
-            x_re = re.compile(r'^(AC_INIT\(\[rsync\],\s*\[)\d.+?(\])', re.M)
-            txt = replace_or_die(x_re, r'\g<1>%s\2' % version, txt, f"Unable to update AC_INIT with version in {fn}")
+        if fn == 'version.h':
+            txt = f'#define RSYNC_VERSION "{version}"\n'
         elif '.spec' in fn:
             for var, val in specvars.items():
                 x_re = re.compile(r'^%s .*' % re.escape(var), re.M)
@@ -185,14 +188,17 @@ About to:
             txt = replace_or_die(x_re, r'%s \1' % cl_today, txt, f"Unable to update ChangeLog header in {fn}")
         elif fn == 'rsync.h':
             x_re = re.compile('(#define\s+SUBPROTOCOL_VERSION)\s+(\d+)')
-            repl = lambda m: m[1] + ' ' + '0' if not pre or proto_changed != 'changed' else 1 if m[2] == '0' else m[2]
+            repl = lambda m: m[1] + ' ' + ('0' if not pre or proto_changed else 1 if m[2] == '0' else m[2])
             txt = replace_or_die(x_re, repl, txt, f"Unable to find SUBPROTOCOL_VERSION define in {fn}")
         elif fn == 'NEWS.md':
             efv = re.escape(finalversion)
-            x_re = re.compile(r'^<.+>\s+# NEWS for rsync %s \(UNRELEASED\)\s+Protocol: .+\n' % efv)
+            x_re = re.compile(r'^<.+>\s+# NEWS for rsync %s \(UNRELEASED\)\s+## Changes in this version:\n' % efv
+                    + r'(\n### PROTOCOL NUMBER:\s+- The protocol number was changed to \d+\.\n)?')
             rel_day = 'UNRELEASED' if pre else today
             repl = (f'<a name="{finalversion}"></a>\n\n# NEWS for rsync {finalversion} ({rel_day})\n\n'
-                + f"Protocol: {protocol_version} ({proto_changed})\n")
+                + '## Changes in this version:\n')
+            if proto_changed:
+                repl += f'\n### PROTOCOL NUMBER:\n\n - The protocol number was changed to {protocol_version}.\n'
             good_top = re.sub(r'\(.*?\)', '(UNRELEASED)', repl, 1)
             msg = f"The top lines of {fn} are not in the right format.  It should be:\n" + good_top
             txt = replace_or_die(x_re, repl, txt, msg)
@@ -215,10 +221,10 @@ About to:
     srctar_name = f"{rsync_ver}.tar.gz"
     pattar_name = f"rsync-patches-{version}.tar.gz"
     diff_name = f"{rsync_lastver}-{version}.diffs.gz"
-    srctar_file = f"{dest}/{srcdir}/{srctar_name}"
-    pattar_file = f"{dest}/{srcdir}/{pattar_name}"
-    diff_file = f"{dest}/{srcdiffdir}/{diff_name}"
-    lasttar_file = f"{dest}/{lastsrcdir}/{rsync_lastver}.tar.gz"
+    srctar_file = os.path.join(dest, srcdir, srctar_name)
+    pattar_file = os.path.join(dest, srcdir, pattar_name)
+    diff_file = os.path.join(dest, srcdiffdir, diff_name)
+    lasttar_file = os.path.join(dest, lastsrcdir, rsync_lastver + '.tar.gz')
 
     print(f"""\
 {dash_line}
@@ -236,8 +242,7 @@ About to:
     if s.returncode:
         die('Aborting')
 
-    cmd_chk('make reconfigure ; make gen')
-    cmd_chk(['rsync', '-a', *gen_files, 'SaVeDiR/'])
+    cmd_chk('make gen')
 
     print(f'Creating any missing patch branches.')
     s = cmd_run(f'packaging/branch-from-patch --branch={args.master_branch} --add-missing')
@@ -252,9 +257,6 @@ About to:
     if re.match(r'^y', ans, re.I):
         print(f'\nVisiting all "patch/{args.master_branch}/*" branches ...')
         cmd_run(f"packaging/patch-update --branch={args.master_branch} --skip-check --shell")
-
-    cmd_run("rm -f *.[o15] *.html")
-    cmd_chk('rsync -a SaVeDiR/ .'.split())
 
     if os.path.isdir('patches/.git'):
         s = cmd_run(f"cd patches && git commit -a -m 'The patches for {version}.'")
@@ -294,12 +296,12 @@ About to:
     os.environ['PATH'] = ORIGINAL_PATH
 
     # Extract the generated files from the old tar.
-    tweaked_gen_files = [ f"{rsync_lastver}/{x}" for x in gen_files ]
+    tweaked_gen_files = [ os.path.join(rsync_lastver, fn) for fn in gen_files ]
     cmd_run(['tar', 'xzf', lasttar_file, *tweaked_gen_files])
     os.rename(rsync_lastver, 'a')
 
     print(f"Creating {diff_file} ...")
-    cmd_chk(['rsync', '-a', *gen_files, 'b/'])
+    cmd_chk(['rsync', '-a', *gen_pathnames, 'b/'])
 
     sed_script = r's:^((---|\+\+\+) [ab]/[^\t]+)\t.*:\1:' # CAUTION: must not contain any single quotes!
     cmd_chk(f"(git diff v{lastversion} {v_ver} -- ':!.github'; diff -upN a b | sed -r '{sed_script}') | gzip -9 >{diff_file}")
@@ -317,18 +319,13 @@ About to:
     os.mkdir(f"{rsync_ver}/patches", 0o755)
     cmd_chk(f"packaging/patch-update --skip-check --branch={args.master_branch} --gen={rsync_ver}/patches".split())
 
-    cmd_run("rm -f *.[o15] *.html")
-    cmd_chk('rsync -a SaVeDiR/ .'.split())
-    shutil.rmtree('SaVeDiR')
-    cmd_chk('make gen'.split())
-
     print(f"Creating {pattar_file} ...")
     cmd_chk(['fakeroot', 'tar', 'chzf', pattar_file, rsync_ver + '/patches'])
     shutil.rmtree(rsync_ver)
 
     print(f"Updating the other files in {dest} ...")
     md_files = 'README.md NEWS.md'.split()
-    html_files = [ fn for fn in gen_files if fn.endswith('.html') ]
+    html_files = [ fn for fn in gen_pathnames if fn.endswith('.html') ]
     cmd_chk(['rsync', '-a', *md_files, *html_files, dest])
     cmd_chk(["packaging/md2html"] + [ dest +'/'+ fn for fn in md_files ])
 
@@ -381,4 +378,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     main()
 
-# vim: sw=4 et
+# vim: sw=4 et ft=python
