@@ -181,38 +181,43 @@ def mandate_gensend_hook():
 
 
 # Snag the GENFILES values out of the Makefile.in file and return them as a list.
-def get_gen_files():
+def get_gen_files(want_dir_plus_list=False):
     cont_re = re.compile(r'\\\n')
 
-    extras = [ ]
+    gen_files = [ ]
+
+    auto_dir = os.path.join('auto-build-save', cmd_txt('git rev-parse --abbrev-ref HEAD').strip().replace('/', '%'))
 
     with open('Makefile.in', 'r', encoding='utf-8') as fh:
         for line in fh:
-            if not extras:
+            if not gen_files:
                 chk = re.sub(r'^GENFILES=', '', line)
                 if line == chk:
                     continue
                 line = chk
             m = re.search(r'\\$', line)
             line = re.sub(r'^\s+|\s*\\\n?$|\s+$', '', line)
-            extras += line.split()
+            gen_files += line.split()
             if not m:
                 break
 
-    return extras
+    if want_dir_plus_list:
+        return (auto_dir, gen_files)
+
+    return [ os.path.join(auto_dir, fn) for fn in gen_files ]
 
 
-def get_configure_version():
-    with open('configure.ac', 'r', encoding='utf-8') as fh:
-        for line in fh:
-            m = re.match(r'^AC_INIT\(\[rsync\],\s*\[(\d.+?)\]', line)
-            if m:
-                return m[1]
-    die("Unable to find AC_INIT with version in configure.ac")
+def get_rsync_version():
+    with open('version.h', 'r', encoding='utf-8') as fh:
+        txt = fh.read()
+    m = re.match(r'^#define\s+RSYNC_VERSION\s+"(\d.+?)"', txt)
+    if m:
+        return m[1]
+    die("Unable to find RSYNC_VERSION define in version.h")
 
 
 def get_NEWS_version_info():
-    rel_re = re.compile(r'^\| \d{2} \w{3} \d{4}\s+\|\s+(?P<ver>\d+\.\d+\.\d+)\s+\|\s+(?P<pdate>\d{2} \w{3} \d{4}\s+)?\|\s+(?P<pver>\d+)\s+\|')
+    rel_re = re.compile(r'^\| \S{2} \w{3} \d{4}\s+\|\s+(?P<ver>\d+\.\d+\.\d+)\s+\|\s+(?P<pdate>\d{2} \w{3} \d{4})?\s+\|\s+(?P<pver>\d+)\s+\|')
     last_version = last_protocol_version = None
     pdate = { }
 
@@ -228,12 +233,11 @@ def get_NEWS_version_info():
                     pdate[m['ver']] = m['pdate']
                 if m['ver'] == last_version:
                     last_protocol_version = m['pver']
-                    break
 
     if not last_protocol_version:
         die(f"Unable to determine protocol_version for {last_version}.")
 
-    return last_version, last_protocol_version
+    return last_version, last_protocol_version, pdate
 
 
 def get_protocol_versions():

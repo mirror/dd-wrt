@@ -1,4 +1,4 @@
-.TH "rsyncd.conf" "5" "22 Jun 2020" "rsyncd.conf 3.2.1" "User Commands"
+.TH "rsyncd.conf" "5" "04 Jul 2020" "rsyncd.conf 3.2.2" "User Commands"
 .P
 .SH "NAME"
 .P
@@ -397,6 +397,20 @@ disabled.
 .IP
 Helpful hint: you probably want to specify "refuse options = delete" for a
 write-only module.
+.IP "\fBopen\ noatime\fP"
+When set to True, this parameter tells the rsync daemon to open files with
+the O_NOATIME flag
+(on systems that support it) to avoid changing the access time of the files
+that are being transferred.  If your OS does not support the O_NOATIME flag
+then rsync will silently ignore this option.  Note also that some
+filesystems are mounted to avoid updating the atime on read access even
+without the O_NOATIME flag being set.
+.IP
+When set to False, this parameters ensures that files on the server are not
+opened with O_NOATIME.
+.IP
+When set to Unset (the default) the user controls the setting via
+\fB\-\-open-noatime\fP.
 .IP "\fBlist\fP"
 This parameter determines whether this module is listed when the client
 asks for a listing of available modules.  In addition, if this is false,
@@ -900,19 +914,19 @@ Here are all the options that are not matched by wild-cards:
 .IP o
 \fB\-\-rsh\fP, \fB\-e\fP: Required to convey compatibility flags to the server.
 .IP o
-\fB\-\-log-format\fP: This is required to convey things like
-\fB\-\-itemize-changes\fP to a remote receiver. Is an older name for
-\fB\-\-out-format\fP that is still passed to the server for improved backward
-compatibility and should not be confused with \fB\-\-log-file-format\fP.
+\fB\-\-out-format\fP: This is required to convey output behavior to a remote
+receiver.  While rsync passes the older alias \fB\-\-log-format\fP for
+compatibility reasons, this options should not be confused with
+\fB\-\-log-file-format\fP.
 .IP o
 \fB\-\-sender\fP: Use "write only" parameter instead of refusing this.
 .IP o
 \fB\-\-dry-run\fP, \fB\-n\fP: Who would want to disable this?
 .IP o
-\fB\-\-protect-args\fP, \fB\-n\fP: This actually makes transfers safer.
+\fB\-\-protect-args\fP, \fB\-s\fP: This actually makes transfers safer.
 .IP o
-\fB\-\-from0\fP, \fB\-0\fP: Make it easier to accept/refuse \fB\-\-files-from\fP without
-affecting this modifier.
+\fB\-\-from0\fP, \fB\-0\fP: Makes it easier to accept/refuse \fB\-\-files-from\fP without
+affecting this helpful modifier.
 .IP o
 \fB\-\-iconv\fP: This is auto-disabled based on "charset" parameter.
 .IP o
@@ -1134,7 +1148,7 @@ stream {
        listen [::]:874 ssl;
 
        ssl_certificate /etc/letsencrypt/example.com/fullchain.pem;
-       ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem
+       ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem;
 
        proxy_pass localhost:873;
        proxy_protocol on; # Requires "proxy protocol = true"
@@ -1217,7 +1231,7 @@ https://rsync.samba.org/.
 .P
 .SH "VERSION"
 .P
-This man page is current for version 3.2.1 of rsync.
+This man page is current for version 3.2.2 of rsync.
 .P
 .SH "CREDITS"
 .P

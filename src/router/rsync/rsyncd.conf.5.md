@@ -424,6 +424,22 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     Helpful hint: you probably want to specify "refuse options = delete" for a
     write-only module.
 
+0.  `open noatime`
+
+    When set to True, this parameter tells the rsync daemon to open files with
+    the O_NOATIME flag
+    (on systems that support it) to avoid changing the access time of the files
+    that are being transferred.  If your OS does not support the O_NOATIME flag
+    then rsync will silently ignore this option.  Note also that some
+    filesystems are mounted to avoid updating the atime on read access even
+    without the O_NOATIME flag being set.
+
+    When set to False, this parameters ensures that files on the server are not
+    opened with O_NOATIME.
+
+    When set to Unset (the default) the user controls the setting via
+    `--open-noatime`.
+
 0.  `list`
 
     This parameter determines whether this module is listed when the client
@@ -905,15 +921,15 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
 
     - `--server`: Required for rsync to even work.
     - `--rsh`, `-e`: Required to convey compatibility flags to the server.
-    - `--log-format`: This is required to convey things like
-      `--itemize-changes` to a remote receiver. Is an older name for
-      `--out-format` that is still passed to the server for improved backward
-      compatibility and should not be confused with `--log-file-format`.
+    - `--out-format`: This is required to convey output behavior to a remote
+      receiver.  While rsync passes the older alias `--log-format` for
+      compatibility reasons, this options should not be confused with
+      `--log-file-format`.
     - `--sender`: Use "write only" parameter instead of refusing this.
     - `--dry-run`, `-n`: Who would want to disable this?
-    - `--protect-args`, `-n`: This actually makes transfers safer.
-    - `--from0`, `-0`: Make it easier to accept/refuse `--files-from` without
-      affecting this modifier.
+    - `--protect-args`, `-s`: This actually makes transfers safer.
+    - `--from0`, `-0`: Makes it easier to accept/refuse `--files-from` without
+      affecting this helpful modifier.
     - `--iconv`: This is auto-disabled based on "charset" parameter.
     - `--no-iconv`: Most transfers use this option.
     - `--checksum-seed`: Is a fairly rare, safe option.
@@ -1105,7 +1121,7 @@ An example nginx proxy setup is as follows:
 >        listen [::]:874 ssl;
 >
 >        ssl_certificate /etc/letsencrypt/example.com/fullchain.pem;
->        ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem
+>        ssl_certificate_key /etc/letsencrypt/example.com/privkey.pem;
 >
 >        proxy_pass localhost:873;
 >        proxy_protocol on; # Requires "proxy protocol = true"

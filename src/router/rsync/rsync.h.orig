@@ -2,7 +2,7 @@
  * Copyright (C) 1996, 2000 Andrew Tridgell
  * Copyright (C) 1996 Paul Mackerras
  * Copyright (C) 2001, 2002 Martin Pool <mbp@samba.org>
- * Copyright (C) 2003-2018 Wayne Davison
+ * Copyright (C) 2003-2020 Wayne Davison
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,16 +52,24 @@
 #define XMIT_SAME_NAME (1<<5)
 #define XMIT_LONG_NAME (1<<6)
 #define XMIT_SAME_TIME (1<<7)
+
 #define XMIT_SAME_RDEV_MAJOR (1<<8)	/* protocols 28 - now (devices only) */
 #define XMIT_NO_CONTENT_DIR (1<<8)	/* protocols 30 - now (dirs only) */
-#define XMIT_HLINKED (1<<9)		/* protocols 28 - now */
+#define XMIT_HLINKED (1<<9)		/* protocols 28 - now (non-dirs) */
 #define XMIT_SAME_DEV_pre30 (1<<10)	/* protocols 28 - 29  */
 #define XMIT_USER_NAME_FOLLOWS (1<<10)	/* protocols 30 - now */
-#define XMIT_RDEV_MINOR_8_pre30 (1<<11)	/* protocols 28 - 29  */
+#define XMIT_RDEV_MINOR_8_pre30 (1<<11) /* protocols 28 - 29  */
 #define XMIT_GROUP_NAME_FOLLOWS (1<<11) /* protocols 30 - now */
 #define XMIT_HLINK_FIRST (1<<12)	/* protocols 30 - now (HLINKED files only) */
 #define XMIT_IO_ERROR_ENDLIST (1<<12)	/* protocols 31*- now (w/XMIT_EXTENDED_FLAGS) (also protocol 30 w/'f' compat flag) */
 #define XMIT_MOD_NSEC (1<<13)		/* protocols 31 - now */
+#define XMIT_SAME_ATIME (1<<14) 	/* any protocol - restricted by command-line option */
+#define XMIT_UNUSED_15 (1<<15)  	/* unused flag bit */
+
+/* The following XMIT flags require an rsync that uses a varint for the flag values */
+
+#define XMIT_RESERVED_16 (1<<16) 	/* reserved for future fileflags use */
+#define XMIT_RESERVED_17 (1<<17) 	/* reserved for future crtimes use */
 
 /* These flags are used in the live flist data. */
 
@@ -87,9 +95,11 @@
 /* These flags are passed to functions but not stored. */
 
 #define FLAG_DIVERT_DIRS (1<<16)   /* sender, but must be unique */
+#define FLAG_PERHAPS_DIR (1<<17)   /* generator */
 
 /* These flags are for get_dirlist(). */
 #define GDL_IGNORE_FILTER_RULES (1<<0)
+#define GDL_PERHAPS_DIR (1<<1)
 
 /* Some helper macros for matching bits. */
 #define BITS_SET(val,bits) (((val) & (bits)) == (bits))
@@ -151,6 +161,10 @@
 #define MAX_BASIS_DIRS 20
 #define MAX_SERVER_ARGS (MAX_BASIS_DIRS*2 + 100)
 
+#define COMPARE_DEST 1
+#define COPY_DEST 2
+#define LINK_DEST 3
+
 #define MPLEX_BASE 7
 
 #define NO_FILTERS	0
@@ -165,8 +179,10 @@
 
 #define ATTRS_REPORT		(1<<0)
 #define ATTRS_SKIP_MTIME	(1<<1)
-#define ATTRS_SET_NANO		(1<<2)
+#define ATTRS_ACCURATE_TIME	(1<<2)
+#define ATTRS_SKIP_ATIME	(1<<3)
 
+#define MSG_FLUSH	2
 #define FULL_FLUSH	1
 #define NORMAL_FLUSH	0
 
@@ -392,10 +408,13 @@ enum delret {
 #ifdef CAN_SET_NSEC
 #ifdef HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
 #define ST_MTIME_NSEC st_mtim.tv_nsec
+#define ST_ATIME_NSEC st_atim.tv_nsec
 #elif defined(HAVE_STRUCT_STAT_ST_MTIMENSEC)
 #define ST_MTIME_NSEC st_mtimensec
+#define ST_ATIME_NSEC st_atimensec
 #elif defined(HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC)
 #define ST_MTIME_NSEC st_mtimespec.tv_nsec
+#define ST_ATIME_NSEC st_atimespec.tv_nsec
 #endif
 #endif
 
@@ -616,6 +635,9 @@ typedef unsigned int size_t;
 # define SIZEOF_INT64 SIZEOF_OFF_T
 #endif
 
+#define HT_KEY32 0
+#define HT_KEY64 1
+
 struct hashtable {
 	void *nodes;
 	int32 size, entries;
@@ -698,9 +720,29 @@ struct ht_int64_node {
 #endif
 #endif
 
+#if SIZEOF_CHARP == 4
+# define PTRS_ARE_32 1
+# define PTR_EXTRA_CNT 1
+#elif SIZEOF_CHARP == 8
+# define PTRS_ARE_64 1
+# define PTR_EXTRA_CNT EXTRA64_CNT
+#else
+# error Character pointers are not 4 or 8 bytes.
+#endif
+
 union file_extras {
 	int32 num;
 	uint32 unum;
+#ifdef PTRS_ARE_32
+	const char* ptr;
+#endif
+};
+
+union file_extras64 {
+	int64 num;
+#ifdef PTRS_ARE_64
+	const char* ptr;
+#endif
 };
 
 struct file_struct {
@@ -714,6 +756,9 @@ struct file_struct {
 
 extern int file_extra_cnt;
 extern int inc_recurse;
+extern int atimes_ndx;
+extern int pathname_ndx;
+extern int depth_ndx;
 extern int uid_ndx;
 extern int gid_ndx;
 extern int acls_ndx;
@@ -721,13 +766,17 @@ extern int xattrs_ndx;
 
 #define FILE_STRUCT_LEN (offsetof(struct file_struct, basename))
 #define EXTRA_LEN (sizeof (union file_extras))
-#define PTR_EXTRA_CNT ((sizeof (char *) + EXTRA_LEN - 1) / EXTRA_LEN)
 #define DEV_EXTRA_CNT 2
 #define DIRNODE_EXTRA_CNT 3
+#define EXTRA64_CNT ((sizeof (union file_extras64) + EXTRA_LEN - 1) / EXTRA_LEN)
 #define SUM_EXTRA_CNT ((MAX_DIGEST_LEN + EXTRA_LEN - 1) / EXTRA_LEN)
 
 #define REQ_EXTRA(f,ndx) ((union file_extras*)(f) - (ndx))
 #define OPT_EXTRA(f,bump) ((union file_extras*)(f) - file_extra_cnt - 1 - (bump))
+
+/* These are guaranteed to be allocated first in the array so that they
+ * are aligned for direct int64-pointer access. */
+#define REQ_EXTRA64(f,ndx) ((union file_extras64*)REQ_EXTRA(f,ndx))
 
 #define NSEC_BUMP(f) ((f)->flags & FLAG_MOD_NSEC ? 1 : 0)
 #define LEN64_BUMP(f) ((f)->flags & FLAG_LENGTH64 ? 1 : 0)
@@ -739,20 +788,25 @@ extern int xattrs_ndx;
 #if SIZEOF_INT64 < 8
 #define F_LENGTH(f) ((int64)(f)->len32)
 #else
-#define F_LENGTH(f) ((int64)(f)->len32 + ((f)->flags & FLAG_LENGTH64 \
-		   ? (int64)OPT_EXTRA(f, NSEC_BUMP(f))->unum << 32 : 0))
+#define F_HIGH_LEN(f) (OPT_EXTRA(f, NSEC_BUMP(f))->unum)
+#define F_LENGTH(f) ((int64)(f)->len32 + ((f)->flags & FLAG_LENGTH64 ? (int64)F_HIGH_LEN(f) << 32 : 0))
 #endif
 
-#define F_MOD_NSEC(f) ((f)->flags & FLAG_MOD_NSEC ? OPT_EXTRA(f, 0)->unum : 0)
+#define F_MOD_NSEC(f) OPT_EXTRA(f, 0)->unum
+#define F_MOD_NSEC_or_0(f) ((f)->flags & FLAG_MOD_NSEC ? F_MOD_NSEC(f) : 0)
 
 /* If there is a symlink string, it is always right after the basename */
 #define F_SYMLINK(f) ((f)->basename + strlen((f)->basename) + 1)
 
 /* The sending side always has this available: */
-#define F_PATHNAME(f) (*(const char**)REQ_EXTRA(f, PTR_EXTRA_CNT))
+#ifdef PTRS_ARE_32
+#define F_PATHNAME(f) REQ_EXTRA(f, pathname_ndx)->ptr
+#else
+#define F_PATHNAME(f) REQ_EXTRA64(f, pathname_ndx)->ptr
+#endif
 
 /* The receiving side always has this available: */
-#define F_DEPTH(f) REQ_EXTRA(f, 1)->num
+#define F_DEPTH(f) REQ_EXTRA(f, depth_ndx)->num
 
 /* When the associated option is on, all entries will have these present: */
 #define F_OWNER(f) REQ_EXTRA(f, uid_ndx)->unum
@@ -760,6 +814,7 @@ extern int xattrs_ndx;
 #define F_ACL(f) REQ_EXTRA(f, acls_ndx)->num
 #define F_XATTR(f) REQ_EXTRA(f, xattrs_ndx)->num
 #define F_NDX(f) REQ_EXTRA(f, unsort_ndx)->num
+#define F_ATIME(f) REQ_EXTRA64(f, atimes_ndx)->num
 
 /* These items are per-entry optional: */
 #define F_HL_GNUM(f) OPT_EXTRA(f, START_BUMP(f))->num /* non-dirs */
@@ -1014,7 +1069,32 @@ typedef struct {
 #define ACL_READY(sx) ((sx).acc_acl != NULL)
 #define XATTR_READY(sx) ((sx).xattr != NULL)
 
+#define CLVL_NOT_SPECIFIED INT_MIN
+
+#define CPRES_AUTO (-1)
+#define CPRES_NONE 0
+#define CPRES_ZLIB 1
+#define CPRES_ZLIBX 2
+#define CPRES_LZ4 3
+#define CPRES_ZSTD 4
+
+struct name_num_item {
+	int num;
+	const char *name, *main_name;
+};
+
+struct name_num_obj {
+	const char *type;
+	const char *negotiated_name;
+	uchar *saw;
+	int saw_len;
+	int negotiated_num;
+	struct name_num_item list[];
+};
+
+#ifndef __cplusplus
 #include "proto.h"
+#endif
 
 #ifndef SUPPORT_XATTRS
 #define x_stat(fn,fst,xst) do_stat(fn,fst)
@@ -1040,7 +1120,6 @@ int vsnprintf(char *str, size_t count, const char *fmt, va_list args);
 #define snprintf rsync_snprintf
 int snprintf(char *str, size_t count, const char *fmt,...);
 #endif
-
 
 #ifndef HAVE_STRERROR
 extern char *sys_errlist[];
@@ -1286,7 +1365,8 @@ extern short info_levels[], debug_levels[];
 #define DEBUG_HLINK (DEBUG_HASH+1)
 #define DEBUG_ICONV (DEBUG_HLINK+1)
 #define DEBUG_IO (DEBUG_ICONV+1)
-#define DEBUG_OWN (DEBUG_IO+1)
+#define DEBUG_NSTR (DEBUG_IO+1)
+#define DEBUG_OWN (DEBUG_NSTR+1)
 #define DEBUG_PROTO (DEBUG_OWN+1)
 #define DEBUG_RECV (DEBUG_PROTO+1)
 #define DEBUG_SEND (DEBUG_RECV+1)
