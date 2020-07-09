@@ -335,8 +335,14 @@ int br_add_interface(const char *br, const char *dev)
 		nvram_nset(eabuf, "%s_hwaddr", br);	// safe for gui
 		set_hwaddr(br, eabuf);
 	}
-
-	sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", dev), dev);
+	char *sep = NULL char mainif[32];
+	strncpy(mainif, dev, 31);
+	if (!strncmp(dev, "ath", 3) && (sep = strpbrk(mainif, ".sta"))) {
+		*sep = 0;
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", mainif), dev);
+	} else {
+		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", dev), dev);
+	}
 	return ret;
 }
 
