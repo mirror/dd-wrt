@@ -203,9 +203,9 @@ int sm_handle_tree_disconnect(unsigned long long sess_id,
 		sess->ref_counter--;
 		tcm_tree_conn_free(tree_conn);
 	}
+	put_ksmbd_user(sess->user);
 	pthread_rwlock_unlock(&sess->update_lock);
 
-	put_ksmbd_user(sess->user);
 	__put_session(sess);
 	return 0;
 }
