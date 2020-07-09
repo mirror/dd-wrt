@@ -17,12 +17,12 @@
 #include <management/user.h>
 #include <ksmbdtools.h>
 
-#define pthread_rwlock_unlock(a)
+/*#define pthread_rwlock_unlock(a)
 #define pthread_rwlock_wrlock(a)
 #define pthread_rwlock_rdlock(a)
 #define pthread_rwlock_init(a,b)
 #define pthread_rwlock_destroy(a)
-
+*/
 #define KSMBD_SHARE_STATE_FREEING	1
 
 /*
