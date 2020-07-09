@@ -433,7 +433,7 @@ int base64_encode_blockend(char *code_out, base64_encodestate *state_in)
 
 char *base64_encode(unsigned char *src, size_t srclen)
 {
-	char *out = malloc((srclen / 3 + 1) * 4 + 1);
+	char *out = malloc((srclen * 4 + 1) / 3);
 	base64_encodestate state;
 
 	base64_init_encodestate(&state);
@@ -548,7 +548,7 @@ unsigned char *base64_decode(char const *src, size_t *dstlen)
 	base64_decodestate state;
 
 	base64_init_decodestate(&state);
-	int len = ((strlen(src) / 4) * 3) + 1;
+	int len = strlen(src) + 1;
 	char *out = malloc(len);
 	*dstlen = base64_decode_block(src, strlen(src), out, len, &state);
 	return out;
