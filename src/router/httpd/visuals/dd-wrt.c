@@ -2235,7 +2235,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	rep(vvar, '.', 'X');
 	int iswds = 0;
 	if (!strncmp(var, "ath", 3) && strpbrk(var, ".sta"))
-	    iswds = 1;
+		iswds = 1;
 	if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 		char unicast[32];
 		sprintf(unicast, "%s_multicast_to_unicast", var);
