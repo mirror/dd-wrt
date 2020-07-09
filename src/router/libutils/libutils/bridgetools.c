@@ -335,7 +335,8 @@ int br_add_interface(const char *br, const char *dev)
 		nvram_nset(eabuf, "%s_hwaddr", br);	// safe for gui
 		set_hwaddr(br, eabuf);
 	}
-	char *sep = NULL char mainif[32];
+	char *sep = NULL;
+	char mainif[32];
 	strncpy(mainif, dev, 31);
 	if (!strncmp(dev, "ath", 3) && (sep = strpbrk(mainif, ".sta"))) {
 		*sep = 0;
