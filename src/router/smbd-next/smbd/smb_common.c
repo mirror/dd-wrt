@@ -210,11 +210,11 @@ static int ksmbd_lookup_dialect_by_name(char *cli_dialects, __le16 byte_count)
 		bcount = le16_to_cpu(byte_count);
 		do {
 			dialect = next_dialect(dialect, &next);
-			ksmbd_info("client requested dialect %s\n",
+			ksmbd_debug(SMB, "client requested dialect %s\n",
 				dialect);
 			if (!strcmp(dialect, smb_protos[i].name)) {
 				if (supported_protocol(smb_protos[i].index)) {
-					ksmbd_info(
+					ksmbd_debug(SMB,
 						"selected %s dialect\n",
 						smb_protos[i].prot);
 					if (smb_protos[i].index == SMB1_PROT)
@@ -238,14 +238,14 @@ int ksmbd_lookup_dialect_by_id(__le16 *cli_dialects, __le16 dialects_count)
 	for (i = ARRAY_SIZE(smb_protos) - 1; i >= 0; i--) {
 		count = le16_to_cpu(dialects_count);
 		while (--count >= 0) {
-			ksmbd_info("client requested dialect 0x%x\n",
+			ksmbd_debug(SMB, "client requested dialect 0x%x\n",
 				le16_to_cpu(cli_dialects[count]));
 			if (le16_to_cpu(cli_dialects[count]) !=
 					smb_protos[i].prot_id)
 				continue;
 
 			if (supported_protocol(smb_protos[i].index)) {
-				ksmbd_info("selected %s dialect\n",
+				ksmbd_debug(SMB, "selected %s dialect\n",
 					smb_protos[i].prot);
 				return smb_protos[i].prot_id;
 			}
