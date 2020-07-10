@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5191 | brainslayer | 2020-07-11 00:27:19 +0400 (Sat, 11 Jul 2020) | 1 line
+
+add SKY85806 support and add another NULL check related to archer c8 crash
+------------------------------------------------------------------------
 r5190 | brainslayer | 2020-07-08 23:46:30 +0400 (Wed, 08 Jul 2020) | 1 line
 
 fix nvram
