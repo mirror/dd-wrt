@@ -338,7 +338,7 @@ int br_add_interface(const char *br, const char *dev)
 	char *sep = NULL;
 	char mainif[32];
 	strncpy(mainif, dev, 31);
-	if (!strncmp(dev, "ath", 3) && (sep = strpbrk(mainif, ".sta"))) {
+	if (!strncmp(dev, "ath", 3) && (sep = strstr(mainif, ".sta"))) {
 		*sep = 0;
 		sysprintf("echo %d > /sys/class/net/%s/brport/multicast_to_unicast", nvram_ngeti("%s_multicast_to_unicast", mainif), dev);
 	} else {
