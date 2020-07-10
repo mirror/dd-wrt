@@ -2551,6 +2551,10 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	}
 #endif
 #ifdef HAVE_RT2880
+	if (is_rt2880_wmac(basedev)) {
+		*flags = CHANNELSURVEY;
+		return "MT7620 WiSOC";
+	}
 	if (!vendor || !device) {
 
 		if (!strncmp(prefix, "ra", 2) || !strncmp(prefix, "wl0", 3)) {
