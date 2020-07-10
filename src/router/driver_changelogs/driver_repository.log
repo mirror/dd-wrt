@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5192 | brainslayer | 2020-07-11 00:28:44 +0400 (Sat, 11 Jul 2020) | 1 line
+
+add SKY85806 support and add another NULL check related to archer c8 crash
+------------------------------------------------------------------------
 r5191 | brainslayer | 2020-07-11 00:27:19 +0400 (Sat, 11 Jul 2020) | 1 line
 
 add SKY85806 support and add another NULL check related to archer c8 crash
