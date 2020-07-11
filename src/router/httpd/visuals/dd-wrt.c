@@ -1118,7 +1118,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 			  nvram_match("lan_proto", "static") ? "checked=\"checked\"" : "");
 		show_caption(wp, "label", "idx.dhcp_start", NULL);
 		char *dhcp_start = nvram_safe_get("dhcp_start");
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\"  disabled=\"true\" />.", 1, 223, "idx.dhcp_start", "dhcp_start",
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\" disabled=\"true\" />.", 1, 223, "idx.dhcp_start", "dhcp_start",
 			  get_single_ip(nvram_safe_get("lan_ipaddr"), 0));
 		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 1));
 		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 2));
