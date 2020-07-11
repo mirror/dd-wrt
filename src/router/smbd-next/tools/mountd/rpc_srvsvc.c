@@ -47,7 +47,8 @@ static int __share_type(struct ksmbd_share *share)
 static int __share_entry_size_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
 	struct ksmbd_share *share = entry;
-
+	if (!share)
+	    return 0;
 	return strlen(share->name) * 2 + 4 * sizeof(__u32);
 }
 
@@ -55,6 +56,8 @@ static int __share_entry_size_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
 	struct ksmbd_share *share = entry;
 	int sz = 0;
+	if (!share)
+	    return 0;
 
 	sz = strlen(share->name) * 2;
 	if (share->comment)
@@ -80,6 +83,8 @@ static int __share_entry_rep_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
 	struct ksmbd_share *share = entry;
 	int ret;
+	if (!share)
+	    return 0;
 
 	dce->num_pointers++;
 	ret = ndr_write_int32(dce, dce->num_pointers);	/* ref pointer */
@@ -92,6 +97,8 @@ static int __share_entry_rep_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 static int __share_entry_data_ctr0(struct ksmbd_dcerpc *dce, void *entry)
 {
 	struct ksmbd_share *share = entry;
+	if (!share)
+	    return 0;
 
 	return ndr_write_vstring(dce, share->name);
 }
@@ -100,6 +107,8 @@ static int __share_entry_data_ctr1(struct ksmbd_dcerpc *dce, void *entry)
 {
 	struct ksmbd_share *share = entry;
 	int ret;
+	if (!share)
+	    return 0;
 
 	ret = ndr_write_vstring(dce, share->name);
 	ret |= ndr_write_vstring(dce, share->comment);
