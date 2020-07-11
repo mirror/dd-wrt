@@ -45,7 +45,7 @@
 
 struct nvram_param srouter_defaults[] = {
 	// {"default_init","1",0},
-	{ "nvram_ver", "3" },
+	{ "nvram_ver", "4" },
 #ifdef HAVE_GGEW
 	{ "router_style", "blue" },
 #elif HAVE_OCTAGON
@@ -229,7 +229,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "ath0_regdomain", "GERMANY" },	/* LAN IP address */
 #endif
 	{ "lan_ipaddr", "192.168.11.1" },	/* LAN IP address */
-	{ "dhcp_start", "2" },	/* DHCP Start IP */
+	{ "dhcp_start", "192.168.11.2" },	/* DHCP Start IP */
 	{ "dhcp_num", "64" },	/* DHCP Start IP */
 #elif HAVE_GGEW
 #if defined(HAVE_NS5) || defined(HAVE_EOC5610)
@@ -677,9 +677,9 @@ struct nvram_param srouter_defaults[] = {
 	 * DHCP server parameters 
 	 */
 #ifdef HAVE_IDEXX
-	{ "dhcp_start", "2" },	/* First assignable DHCP address */
+	{ "dhcp_start", "192.168.1.2" },	/* First assignable DHCP address */
 #else
-	{ "dhcp_start", "100" },	/* First assignable DHCP address */
+	{ "dhcp_start", "192.168.1.100" },	/* First assignable DHCP address */
 #endif
 	// { "dhcp_end", "150", 0 }, /* Last assignable DHCP address */ /* Remove 
 	// 
