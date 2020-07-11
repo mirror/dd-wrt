@@ -18,6 +18,7 @@
 
 static struct LIST *pipes_table;
 static pthread_rwlock_t pipes_table_lock;
+static pthread_mutex_t request_lock;
 
 /*
  * Version 2.0 data representation protocol
@@ -621,6 +622,7 @@ int ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe)
 int rpc_init(void)
 {
 	pthread_rwlock_init(&pipes_table_lock);
+	pthread_mutex_init(&request_lock);
 	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
@@ -633,6 +635,7 @@ void rpc_destroy(void)
 		__clear_pipes_table();
 		list_clear(&pipes_table);
 	}
+	pthread_mutex_destroy(&request_lock);
 	pthread_rwlock_destroy(&pipes_table_lock);
 }
 
@@ -994,12 +997,13 @@ int rpc_read_request(struct ksmbd_rpc_command *req,
 	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 	struct ksmbd_rpc_pipe *pipe;
 	struct ksmbd_dcerpc *dce;
-
+	pthread_mutex_lock(&request_lock);
 	pipe = rpc_pipe_lookup(req->handle);
 	if (!pipe || !pipe->dce) {
 		pr_err("RPC: no pipe or pipe has no associated DCE [%d]\n",
 		       req->handle);
-		return KSMBD_RPC_EBAD_FID;
+		ret = KSMBD_RPC_EBAD_FID;
+		goto err;
 	}
 
 	dce = pipe->dce;
@@ -1009,16 +1013,17 @@ int rpc_read_request(struct ksmbd_rpc_command *req,
 	dcerpc_set_ext_payload(dce, resp->payload, max_resp_sz);
 
 	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND)
-		return dcerpc_bind_return(pipe);
+		ret = dcerpc_bind_return(pipe);
+	else if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
+		ret = KSMBD_RPC_ENOTIMPLEMENTED;
+	else if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
+		ret = rpc_srvsvc_read_request(pipe, resp, max_resp_sz);
+	else if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
+		ret = rpc_wkssvc_read_request(pipe, resp, max_resp_sz);
 
-	if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
-		return KSMBD_RPC_ENOTIMPLEMENTED;
+	err:;
+	pthread_mutex_unlock(&request_lock);
 
-	if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
-		return rpc_srvsvc_read_request(pipe, resp, max_resp_sz);
-
-	if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
-		return rpc_wkssvc_read_request(pipe, resp, max_resp_sz);
 	return ret;
 }
 
@@ -1027,13 +1032,19 @@ int rpc_write_request(struct ksmbd_rpc_command *req,
 {
 	struct ksmbd_rpc_pipe *pipe;
 	struct ksmbd_dcerpc *dce;
+	int ret = KSMBD_RPC_ENOTIMPLEMENTED;
 
+	pthread_mutex_lock(&request_lock);
 	pipe = rpc_pipe_lookup(req->handle);
-	if (!pipe)
-		return KSMBD_RPC_ENOMEM;
+	if (!pipe) {
+		ret = KSMBD_RPC_ENOMEM;
+		goto end;
+	}
 
-	if (pipe->dce->flags & KSMBD_DCERPC_RETURN_READY)
-		return KSMBD_RPC_OK;
+	if (pipe->dce->flags & KSMBD_DCERPC_RETURN_READY) {
+		ret = KSMBD_RPC_OK;
+		goto end;
+	}
 
 	if (pipe->num_entries)
 		pr_err("RPC: A call on unflushed pipe. Pending %d\n",
@@ -1046,23 +1057,21 @@ int rpc_write_request(struct ksmbd_rpc_command *req,
 	dce->flags |= KSMBD_DCERPC_RETURN_READY;
 
 	if (dcerpc_hdr_read(dce, &dce->hdr))
-		return KSMBD_RPC_EBAD_DATA;
+		ret = KSMBD_RPC_EBAD_DATA;
+	else if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND)
+		ret = dcerpc_bind_invoke(pipe);
+	else if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
+		ret = KSMBD_RPC_ENOTIMPLEMENTED;
+	else if (dcerpc_request_hdr_read(dce, &dce->req_hdr))
+		ret = KSMBD_RPC_EBAD_DATA;
+	else if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
+		ret = rpc_srvsvc_write_request(pipe);
+	else if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
+		ret = rpc_wkssvc_write_request(pipe);
 
-	if (dce->hdr.ptype == DCERPC_PTYPE_RPC_BIND)
-		return dcerpc_bind_invoke(pipe);
-
-	if (dce->hdr.ptype != DCERPC_PTYPE_RPC_REQUEST)
-		return KSMBD_RPC_ENOTIMPLEMENTED;
-
-	if (dcerpc_request_hdr_read(dce, &dce->req_hdr))
-		return KSMBD_RPC_EBAD_DATA;
-
-	if (req->flags & KSMBD_RPC_SRVSVC_METHOD_INVOKE)
-		return rpc_srvsvc_write_request(pipe);
-
-	if (req->flags & KSMBD_RPC_WKSSVC_METHOD_INVOKE)
-		return rpc_wkssvc_write_request(pipe);
-	return KSMBD_RPC_ENOTIMPLEMENTED;
+	end:;
+	pthread_mutex_unlock(&request_lock);
+	return ret;
 }
 
 int rpc_open_request(struct ksmbd_rpc_command *req,
@@ -1070,23 +1079,30 @@ int rpc_open_request(struct ksmbd_rpc_command *req,
 {
 	struct ksmbd_rpc_pipe *pipe;
 
+	pthread_mutex_lock(&request_lock);
+
 	pipe = rpc_pipe_lookup(req->handle);
 	if (pipe) {
 		pr_err("RPC: pipe ID collision: %d\n", req->handle);
+		pthread_mutex_unlock(&request_lock);
 		return -EEXIST;
 	}
 
 	pipe = rpc_pipe_alloc_bind(req->handle);
-	if (!pipe)
+	if (!pipe) {
+		pthread_mutex_unlock(&request_lock);
 		return -ENOMEM;
+	}
 
 	pipe->dce = dcerpc_ext_alloc(KSMBD_DCERPC_LITTLE_ENDIAN |
 				     KSMBD_DCERPC_ALIGN4,
 				     req->payload, req->payload_sz);
 	if (!pipe->dce) {
 		rpc_pipe_free(pipe);
+		pthread_mutex_unlock(&request_lock);
 		return KSMBD_RPC_ENOMEM;
 	}
+	pthread_mutex_unlock(&request_lock);
 	return KSMBD_RPC_OK;
 }
 
@@ -1095,12 +1111,15 @@ int rpc_close_request(struct ksmbd_rpc_command *req,
 {
 	struct ksmbd_rpc_pipe *pipe;
 
+	pthread_mutex_lock(&request_lock);
 	pipe = rpc_pipe_lookup(req->handle);
 	if (pipe) {
 		rpc_pipe_free(pipe);
+		pthread_mutex_unlock(&request_lock);
 		return 0;
 	}
 
 	pr_err("RPC: unknown pipe ID: %d\n", req->handle);
+	pthread_mutex_unlock(&request_lock);
 	return KSMBD_RPC_OK;
 }
