@@ -154,7 +154,7 @@ function setARPTable() {
 var update;
 
 addEvent(window, "load", function() {
-	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvg("dhcp_start"); %>") + parseInt("<% nvg("dhcp_num"); %>") - 1));
+	setElementContent("dhcp_end_ip", "<% calcendip(); %>");
 	setDHCPTable(<% dumpleases(0); %>);
 <% ifndef("PPTPD", "/*"); %>
 	setPPTPTable(<% dumppptp(); %>);
@@ -174,8 +174,10 @@ addEvent(window, "load", function() {
 		setElementVisible("dhcp_2", u.lan_proto == "dhcp");
 	});
 	update.onUpdate("dhcp_start", function(u) {
-		setElementContent("dhcp_start_ip", u.lan_ip_prefix + u.dhcp_start);
-		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
+		setElementContent("dhcp_start_ip", u.dhcp_start);
+	});
+	update.onUpdate("dhcp_end", function(u) {
+		setElementContent("dhcp_end_ip", u.dhcp_end);
 	});
 	update.onUpdate("dhcp_leases", function(u) {
 		eval('setDHCPTable(' + u.dhcp_leases + ')');
@@ -285,11 +287,11 @@ addEvent(window, "unload", function() {
 								<div id="dhcp_1" style="display:none">
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_start"); %></div>
-										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvg("dhcp_start"); %></span>&nbsp;
+										<span id="dhcp_start_ip"><% nvg("dhcp_start"); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_end"); %></div>
-										<span id="dhcp_end_ip"></span>&nbsp;
+										<span id="dhcp_end_ip"><% calcendip(); %></span>&nbsp;
 									</div>
 									<div class="setting">
 										<div class="label"><% tran("idx.dhcp_lease"); %></div>
