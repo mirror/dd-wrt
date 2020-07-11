@@ -141,7 +141,7 @@ function dhcp_enable_disable(F,T) {
 	var start = '';
 	var end = '';
  	var total = F.elements.length;
-	
+	choose_disable(F.dhcp_start_0);
 	for(var i=0 ; i < total ; i++) {
 		if(F.elements[i].name == "dhcp_start_1")
 			start = i;
