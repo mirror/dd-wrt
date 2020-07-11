@@ -1,4 +1,4 @@
-AM_CFLAGS = -I$(top_srcdir)/include $(GLIB_CFLAGS) $(LIBNL_CFLAGS) -fno-common
+AM_CFLAGS = -I$(top_srcdir)/include $(GLIB_CFLAGS) $(LIBNL_CFLAGS) -fno-common -g
 ksmbd_adduser_LDADD = $(top_builddir)/lib/libksmbdtools.la
 
 sbin_PROGRAMS = ksmbd.adduser
