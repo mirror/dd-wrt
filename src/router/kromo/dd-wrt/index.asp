@@ -113,12 +113,6 @@ function valid_dhcp_server(F) {
 	if (F.lan_proto.selectedIndex == 0)
 		return true;
 
-	a1 = parseInt(F.dhcp_start.value,10);
-	a2 = parseInt(F.dhcp_num.value,10);
-	if (a1 + a2 > 999) {
-		alert(errmsg.err2);
-		return false;
-	}
 
 	if (F.wan_dns0 != null)
 		if (!valid_ip(F,"F.wan_dns0","DNS",MASK_NO))
@@ -149,7 +143,7 @@ function dhcp_enable_disable(F,T) {
  	var total = F.elements.length;
 	
 	for(var i=0 ; i < total ; i++) {
-		if(F.elements[i].name == "dhcp_start")
+		if(F.elements[i].name == "dhcp_start_1")
 			start = i;
 		if(F.elements[i].name == "wan_wins_3")
 			end = i;
