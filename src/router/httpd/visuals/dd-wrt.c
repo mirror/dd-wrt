@@ -1064,6 +1064,25 @@ void ej_getWET(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "0");
 }
 
+void ej_calcendip(webs_t wp, int argc, char_t ** argv) {
+{
+	char *ip = nvram_safe_get("dhcp_start");
+	char *netmask = nvram_safe_get("lan_netmask");
+	int dhcpnum = atoi("dhcp_num");
+	unsigned int ip1 = get_single_ip(ip, 0);
+	unsigned int ip2 = get_single_ip(ip, 1);
+	unsigned int ip3 = get_single_ip(ip, 2);
+	unsigned int ip4 = get_single_ip(ip, 3);
+	unsigned int im1 = get_single_ip(netmask, 0);
+	unsigned int im2 = get_single_ip(netmask, 1);
+	unsigned int im3 = get_single_ip(netmask, 2);
+	unsigned int im4 = get_single_ip(netmask, 3);
+	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + ip4;
+	unsigned int eip = sip + dhcpnum - 1;
+
+	websWrite(wp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
+}
+
 void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 {
 	int i;
@@ -1101,7 +1120,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 			  nvram_match("lan_proto", "static") ? "checked=\"checked\"" : "");
 		show_caption(wp, "label", "idx.dhcp_start", buf);
 		char *dhcp_start=nvram_safe_get("dhcp_start");
-		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\"  disabled=\"true\" />.", 1, 223, "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 0));
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\"  disabled=\"true\" />.", 1, 223, "idx.dhcp_start", "dhcp_start", get_single_ip(nvram_safe_get("lan_ipaddr"), 0));
 		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 1));
 		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 2));
 		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 3));
