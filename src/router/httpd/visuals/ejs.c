@@ -151,6 +151,8 @@ void prefix_ip_get(char *name, char *buf, int type)
 		sprintf(buf, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
 	if (type == 2)
 		sprintf(buf, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
+	if (type == 3)
+		sprintf(buf, "%d.", get_single_ip(val, 0));
 }
 
 /*
@@ -172,6 +174,8 @@ void ej_prefix_ip_get(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "%d.%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1), get_single_ip(val, 2));
 	if (type == 2)
 		websWrite(wp, "%d.%d.", get_single_ip(val, 0), get_single_ip(val, 1));
+	if (type == 3)
+		websWrite(wp, "%d.", get_single_ip(val, 0));
 
 	return;
 }
