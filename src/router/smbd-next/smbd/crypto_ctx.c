@@ -238,6 +238,7 @@ static struct ksmbd_crypto_ctx *____crypto_shash_ctx_find(int id)
 	if (ctx->desc[id])
 		return ctx;
 	ksmbd_release_crypto_ctx(ctx);
+	printk(KERN_ERR "cannot find hhash context for id %d\n", id);
 	return NULL;
 }
 
