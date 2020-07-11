@@ -343,6 +343,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
+							<input type="hidden" name="dhcp_start" value="4" />
 						
 							<% show_sas(); %>
 							<% show_admincard(); %>
