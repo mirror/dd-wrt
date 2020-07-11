@@ -315,6 +315,7 @@ static struct ksmbd_crypto_ctx *____crypto_blk_ctx_find(int id)
 	if (ctx->blk_desc[id])
 		return ctx;
 	ksmbd_release_crypto_ctx(ctx);
+	printk(KERN_ERR "cannot find context for id %d\n", id);
 	return NULL;
 }
 
