@@ -1880,7 +1880,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/share
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: services
+all: services.so services.a
 ifeq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_MT7620),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620
@@ -1917,14 +1917,8 @@ ifeq ($(CONFIG_WZRG300NH2),y)
 	install $(TOP)/private/buffalo/WZRG300NH2/boot.bin $(INSTALLDIR)/services/etc
 endif
 
-services: $(OBJS)
+services.so: $(OBJS)
 	@echo "[LD] $@"
-	nm *.o|grep stop_ > symbols_stop
-	nm *.o|grep start_ > symbols_start
-	nm *.o|grep restart_ > symbols_restart
-	nm *.o|grep _main > symbols_main
-	nm *.o|grep _deps > symbols_deps
-	nm *.o|grep _proc > symbols_proc
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
 	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
