@@ -1090,7 +1090,7 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 	} else {
 		char buf[20];
 
-		prefix_ip_get("lan_ipaddr", buf, 1);
+		prefix_ip_get("lan_ipaddr", buf, 3);
 		websWrite(wp, "<div class=\"setting\">\n");
 		// char *nv = nvram_safe_get ("wan_wins");
 		websWrite(wp,
@@ -1100,7 +1100,11 @@ void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
 			  "<input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s /><script type=\"text/javascript\">Capture(share.disable)</script></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
 			  nvram_match("lan_proto", "static") ? "checked=\"checked\"" : "");
 		show_caption(wp, "label", "idx.dhcp_start", buf);
-		websWrite(wp, "<input class=\"num\" name=\"dhcp_start\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,254,idx.dhcp_start)\" value=\"%s\" />", nvram_safe_get("dhcp_start"));
+		char *dhcp_start=nvram_safe_get("dhcp_start");
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,%d,%d,%s)\" name=\"%s_0\" value=\"%d\"  disabled=\"true\" />.", 1, 223, "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 0));
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_1\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 1));
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_2\" value=\"%d\" />.", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 2));
+		websWrite(wp, "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,%s)\" name=\"%s_3\" value=\"%d\" />\n", "idx.dhcp_start", "dhcp_start", get_single_ip(dhcp_start, 3));
 		websWrite(wp, "</div>\n");
 		websWrite(wp, "<div class=\"setting\">\n");
 		websWrite(wp,
