@@ -1,4 +1,4 @@
-AM_CFLAGS = -I$(top_srcdir)/include $(GLIB_CFLAGS) -fno-common
+AM_CFLAGS = -I$(top_srcdir)/include $(GLIB_CFLAGS) -fno-common -g
 LIBS = $(GLIB_LIBS)
 
 lib_LTLIBRARIES = libksmbdtools.la

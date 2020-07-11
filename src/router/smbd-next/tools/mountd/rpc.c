@@ -621,8 +621,8 @@ int ndr_write_array_of_structs(struct ksmbd_rpc_pipe *pipe)
 
 int rpc_init(void)
 {
-	pthread_rwlock_init(&pipes_table_lock);
-	pthread_mutex_init(&request_lock);
+	pthread_rwlock_init(&pipes_table_lock, NULL);
+	pthread_mutex_init(&request_lock, NULL);
 	list_init(&pipes_table);
 	if (!pipes_table)
 		return -ENOMEM;
