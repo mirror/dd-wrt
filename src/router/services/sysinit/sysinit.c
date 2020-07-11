@@ -842,6 +842,7 @@ void start_wanup(void)
 	runStartup(".wanup");
 	return;
 }
+
 void stop_run_rc_usb(void)
 {
 }
@@ -857,8 +858,6 @@ void start_run_rc_usb(void)
 void stop_run_rc_startup(void)
 {
 }
-
-
 
 void start_run_rc_startup(void)
 {
@@ -2977,8 +2976,8 @@ void start_restore_defaults(void)
 #endif
 		}
 	}
-	if (nvram_geti("nvram_ver") < 3) {
-		nvram_seti("nvram_ver", 3);
+	if (nvram_geti("nvram_ver") < 4) {
+		nvram_seti("nvram_ver", 4);
 		nvram_seti("block_multicast", 1);
 	}
 	nvram_unset("flash_active");
@@ -2991,6 +2990,17 @@ void start_restore_defaults(void)
 	nvram_unset("ipv6_get_domain");
 	nvram_unset("ipv6_get_sip_name");
 	nvram_unset("ipv6_get_sip_servers");
+	// convert old dhcp start
+	char *dhcp_start = nvram_safe_get("dhcp_start");
+	if (strlen(dhcp_start) < 4) {
+		char *lan = nvram_safe_get("lan_ipaddr");
+		int ip1 = get_single_ip(lan, 0);
+		int ip2 = get_single_ip(lan, 1);
+		int ip3 = get_single_ip(lan, 2);
+		char merge[64];
+		sprintf(merge, "%d.%d.%d.%s", ip1, ip2, ip3, dhcp_start);
+		nvram_set("dhcp_start", merge);
+	}
 
 	cprintf("check CFE nv\n");
 	if (check_now_boot() == PMON_BOOT)
