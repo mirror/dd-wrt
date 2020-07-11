@@ -183,11 +183,11 @@ static int ksmbd_enc_update_sess_key(unsigned char *md5_hash,
 	int rc;
 	struct ksmbd_crypto_ctx *ctx;
 	if (!nonce) {
-		printk(KERN_ERR "%s: nonce is NULL\n", ___func__);
+		printk(KERN_ERR "%s: nonce is NULL\n", __func__);
 		return -EINVAL;
 	}
 	if (!server_challenge) {
-		printk(KERN_ERR "%s: server_challenge is NULL\n", ___func__);
+		printk(KERN_ERR "%s: server_challenge is NULL\n", __func__);
 		return -EINVAL;
 	}
 
@@ -238,12 +238,12 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess,
 	int rc = -EINVAL;
 
 	if (!hash) {
-		printk(KERN_ERR "%s: hash is NULL\n", ___func__);
+		printk(KERN_ERR "%s: hash is NULL\n", __func__);
 		return -EINVAL;
 	}
 
 	if (!hmac) {
-		printk(KERN_ERR "%s: hmac is NULL\n", ___func__);
+		printk(KERN_ERR "%s: hmac is NULL\n", __func__);
 		return -EINVAL;
 	}
 	ksmbd_debug(ALL, "enter %s\n", __func__);
@@ -946,7 +946,7 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		if (label.iov_base == NULL) {
 		    printk(KERN_ERR "%s: label.iov_base is NULL\n", __func__);
 		    rc = -EINVAL;
-		    goto out;
+		    goto smb3signkey_ret;
 		}
 	rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx),
 				 label.iov_base,
@@ -965,7 +965,7 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		if (context.iov_base == NULL) {
 		    printk(KERN_ERR "%s: context.iov_base is NULL\n", __func__);
 		    rc = -EINVAL;
-		    goto out;
+		    goto smb3signkey_ret;
 		}
 	rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx),
 				 context.iov_base,
@@ -984,7 +984,7 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		if (hashptr == NULL) {
 		    printk(KERN_ERR "%s: hashptr is NULL\n", __func__);
 		    rc = -EINVAL;
-		    goto out;
+		    goto smb3signkey_ret;
 		}
 	rc = crypto_shash_final(CRYPTO_HMACSHA256(ctx), hashptr);
 	if (rc) {
