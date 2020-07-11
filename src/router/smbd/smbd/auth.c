@@ -144,7 +144,11 @@ static int ksmbd_enc_md4(unsigned char *md4_hash,
 {
 	int rc;
 	struct ksmbd_crypto_ctx *ctx;
-
+	if (!link_str) {
+		printk(KERN_ERR "%s: link_str is NULL\n", __func__);
+		return -EINVAL;
+	}
+	    
 	ctx = ksmbd_crypto_ctx_find_md4();
 	if (!ctx) {
 		ksmbd_debug(AUTH, "Crypto md4 allocation error\n");
@@ -178,6 +182,14 @@ static int ksmbd_enc_update_sess_key(unsigned char *md5_hash,
 {
 	int rc;
 	struct ksmbd_crypto_ctx *ctx;
+	if (!nonce) {
+		printk(KERN_ERR "%s: nonce is NULL\n", ___func__);
+		return -EINVAL;
+	}
+	if (!server_challenge) {
+		printk(KERN_ERR "%s: server_challenge is NULL\n", ___func__);
+		return -EINVAL;
+	}
 
 	ctx = ksmbd_crypto_ctx_find_md5();
 	if (!ctx) {
@@ -225,6 +237,15 @@ static int ksmbd_gen_sess_key(struct ksmbd_session *sess,
 	struct ksmbd_crypto_ctx *ctx;
 	int rc = -EINVAL;
 
+	if (!hash) {
+		printk(KERN_ERR "%s: hash is NULL\n", ___func__);
+		return -EINVAL;
+	}
+
+	if (!hmac) {
+		printk(KERN_ERR "%s: hmac is NULL\n", ___func__);
+		return -EINVAL;
+	}
 	ksmbd_debug(ALL, "enter %s\n", __func__);
 	ctx = ksmbd_crypto_ctx_find_hmacmd5();
 	if (!ctx) {
@@ -793,6 +814,12 @@ int ksmbd_sign_smb2_pdu(struct ksmbd_conn *conn,
 	}
 
 	for (i = 0; i < n_vec; i++) {
+		if (iov[i].iov_base == NULL) {
+		    printk(KERN_ERR "%s: iov_base[%d] is NULL\n", __func__,i);
+		    rc = -EINVAL;
+		    goto out;
+		}
+			
 		rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx),
 					 iov[i].iov_base,
 					 iov[i].iov_len);
@@ -848,6 +875,11 @@ int ksmbd_sign_smb3_pdu(struct ksmbd_conn *conn,
 	}
 
 	for (i = 0; i < n_vec; i++) {
+		if (iov[i].iov_base == NULL) {
+		    printk(KERN_ERR "%s: iov_base[%d] is NULL\n", __func__,i);
+		    rc = -EINVAL;
+		    goto out;
+		}
 		rc = crypto_shash_update(CRYPTO_CMACAES(ctx),
 					 iov[i].iov_base,
 					 iov[i].iov_len);
@@ -911,6 +943,11 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		goto smb3signkey_ret;
 	}
 
+		if (label.iov_base == NULL) {
+		    printk(KERN_ERR "%s: label.iov_base is NULL\n", __func__);
+		    rc = -EINVAL;
+		    goto out;
+		}
 	rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx),
 				 label.iov_base,
 				 label.iov_len);
@@ -925,6 +962,11 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		goto smb3signkey_ret;
 	}
 
+		if (context.iov_base == NULL) {
+		    printk(KERN_ERR "%s: context.iov_base is NULL\n", __func__);
+		    rc = -EINVAL;
+		    goto out;
+		}
 	rc = crypto_shash_update(CRYPTO_HMACSHA256(ctx),
 				 context.iov_base,
 				 context.iov_len);
@@ -939,6 +981,11 @@ static int generate_key(struct ksmbd_session *sess, struct kvec label,
 		goto smb3signkey_ret;
 	}
 
+		if (hashptr == NULL) {
+		    printk(KERN_ERR "%s: hashptr is NULL\n", __func__);
+		    rc = -EINVAL;
+		    goto out;
+		}
 	rc = crypto_shash_final(CRYPTO_HMACSHA256(ctx), hashptr);
 	if (rc) {
 		ksmbd_debug(AUTH, "Could not generate hmacmd5 hash error %d\n",
