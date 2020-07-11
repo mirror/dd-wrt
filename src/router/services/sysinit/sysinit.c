@@ -2345,21 +2345,6 @@ void start_restore_defaults(void)
 	case ROUTER_RT210W:
 #endif
 	case ROUTER_BRCM4702_GENERIC:
-		ds = nvram_safe_get("dhcp_start");
-		if (ds != NULL && strlen(ds) > 3) {
-			for (t = srouter_defaults; t->name; t++) {
-				nvram_unset(t->name);
-			}
-			restore_defaults = 1;
-		}
-
-		/*
-		 * ds = nvram_safe_get ("http_passwd"); if (ds == NULL || strlen
-		 * (ds) == 0) //fix for empty default password { nvram_set
-		 * ("http_passwd", "admin"); } ds = nvram_safe_get ("language");
-		 * if (ds != NULL && strlen (ds) < 3) { nvram_set ("language",
-		 * "english"); }
-		 */
 		// fall through 
 	default:
 		if (check_vlan_support())
