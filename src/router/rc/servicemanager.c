@@ -118,10 +118,12 @@ static int handle_service(const int method, const char *name, int force)
 		fclose(ck);
 		return sysprintf("%s %s", service, method_name);
 	}
+	if (method == RESTART)
+	    return -1;
 	if (force)
-	eval("/sbin/service",name, method_name, "-f");
+	ret = eval("/sbin/service",name, method_name, "-f");
 	else
-	eval("/sbin/service",name, method_name);
+	ret = eval("/sbin/service",name, method_name);
 	if (method == STOP) {
 		if (stops_running)
 			(*stops_running)--;
