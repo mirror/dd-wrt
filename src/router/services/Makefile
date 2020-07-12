@@ -1778,6 +1778,10 @@ endif
 
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS_EXTRA += -DHAVE_HTTPS
+else
+ifeq ($(CONFIG_WOLFSSL),y)
+CFLAGS_EXTRA += -DHAVE_HTTPS
+endif
 endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
