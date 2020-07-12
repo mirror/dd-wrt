@@ -348,7 +348,11 @@ const struct file_operations exfat_dir_operations = {
 #else
 	.readdir    = exfat_iterate,
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0)
+	.fsync		= generic_file_fsync,
+#else
 	.fsync		= exfat_file_fsync,
+#endif
 };
 
 int exfat_alloc_new_dir(struct inode *inode, struct exfat_chain *clu)
