@@ -354,7 +354,7 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_RC),y)
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 endif
 
 	# optimize the crypto library by removing unneeded symbols

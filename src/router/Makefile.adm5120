@@ -353,7 +353,7 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 ifneq ($(CONFIG_WP54G),y)
 ifneq ($(CONFIG_NP28G),y)
 	cd $(TARGETDIR) && find . -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +

@@ -381,7 +381,7 @@ ifeq ($(CONFIG_KAID),y)
 	cp ./opt/etc/kaid/* $(ARCH)-uclibc/target/etc/kaid
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 ifneq ($(CONFIG_RB600),y)
