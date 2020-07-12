@@ -181,7 +181,7 @@ static void start_service_force_f(char *name)
 static int start_main(char *name, int argc, char **argv)
 {
 	int pid;
-	char *args[32] = { "/sbin/service", main, "main", NULL };
+	char *args[32] = { "/sbin/service", name, "main", NULL };
 	int i;
 	for (i = 1; i < argc && i < 30; i++)
 		args[2 + i] = argv[i];
