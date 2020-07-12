@@ -1905,7 +1905,7 @@ endif
 	@cd bin && ./defaults
     
 clean:
-	rm -f *.o *.a *.so
+	rm -f *.o *.a *.so services_main
 	rm -f *.c~ services/*.c~ networking/*.c~ tools/*.c~ sysinit/*.c~
 	rm -f *.h~ services/*.h~ networking/*.h~ tools/*.h~ sysinit/*.h~
 
@@ -1931,7 +1931,7 @@ ifneq ($(CONFIG_NOWIFI),y)
 	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
 endif
 endif
-	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o services.so $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+#	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o services.so $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
 	nm *.o|sort> symbols
 	gcc -o genmain genmain.c
 	./genmain
