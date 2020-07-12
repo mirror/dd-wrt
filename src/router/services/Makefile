@@ -905,12 +905,12 @@ ifeq ($(CONFIG_THOM),y)
 CFLAGS_EXTRA += -DHAVE_THOM
 endif
 ifeq ($(CONFIG_ATH9K),y)
+ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ifneq ($(CONFIG_NOWIFI),y)
 
 ATH9KCFLAGS+= $(COPTS) -fPIC -DHAVE_ATH9K -I. -I$(TOP)/services/include -I$(TOP)/shared -I../httpd -I$(SRCBASE)/include.v24 -I$(TOP)/kernel_headers/$(KERNELRELEASE)/include -I$(TOP)/libnl-tiny/include -I$(SRCBASE)/
 ATH9KOBJS += mac80211.o site_survey_mac80211.o
 ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
-ATH9KLDFLAGS += -L$(TOP)/libnl-tiny -lnl-tiny
 ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
 
