@@ -38,7 +38,7 @@
 #include <wlutils.h>
 #include <services.h>
 
-void start_nas_notify(char *ifname)
+void run_nas_notify(char *ifname)
 {
 	char *argv[] = { "nas4not", "lan", ifname, "up",
 		NULL,		/* role */
@@ -429,7 +429,7 @@ void start_nas(void)
 
 				dev = nvram_nget("wl%d_wds%d_if", c, s);
 
-				start_nas_notify(dev);
+				run_nas_notify(dev);
 			}
 
 		}
