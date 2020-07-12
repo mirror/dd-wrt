@@ -118,8 +118,6 @@ int main(int argc, char *argv[])
 	fprintf(out, "int main(int argc,char *argv[]){\n");
 	fprintf(out, "int function;\n");
 	fprintf(out, "check_arguments(argc, argv, &function);\n");
-	fprintf(out, "int force;\n");
-	fprintf(out, "if (argc>3 && !strcmp(argv[3],\"-f\")) force = 1;\n");
 
 	i = 0;
 	fprintf(out, "if (!strcmp(argv[2],\"start\")) {\n");
@@ -132,11 +130,11 @@ int main(int argc, char *argv[])
 			if (deps && proc)
 				fprintf(out, "HANDLE_START_DEPS_PROC(%d,%s);\n", inlist(name), name);
 			else if (deps)
-				fprintf(out, "HANDLE_START_DEPS(%d,%s);\n",  inlist(name), name);
+				fprintf(out, "HANDLE_START_DEPS(%d,%s);\n", inlist(name), name);
 			else if (proc)
-				fprintf(out, "HANDLE_START_PROC(%d,%s);\n",  inlist(name), name);
+				fprintf(out, "HANDLE_START_PROC(%d,%s);\n", inlist(name), name);
 			else
-				fprintf(out, "HANDLE_START(%d,%s);\n",  inlist(name), name);
+				fprintf(out, "HANDLE_START(%d,%s);\n", inlist(name), name);
 		}
 		i++;
 	}
@@ -150,7 +148,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		if (!strncmp(syms[i], "stop_", 5)) {
-			fprintf(out, "HANDLE_STOP(%d,%s);\n",  inlist(syms[i] + 5), syms[i] + 5);
+			fprintf(out, "HANDLE_STOP(%d,%s);\n", inlist(syms[i] + 5), syms[i] + 5);
 		}
 		i++;
 	}
@@ -165,7 +163,7 @@ int main(int argc, char *argv[])
 		if (p) {
 			*p = 0;
 			if (sym(copy, NULL, "main"))
-				fprintf(out, "HANDLE_MAIN(%d, %s);\n",  inlist(copy), copy);
+				fprintf(out, "HANDLE_MAIN(%d, %s);\n", inlist(copy), copy);
 		}
 		i++;
 	}
