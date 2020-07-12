@@ -327,7 +327,7 @@ static int notify_nas(char *type, char *ifname, char *action);
 #endif
 #endif
 
-void start_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig)
+void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig)
 {
 	char temp[12];
 
@@ -2927,7 +2927,7 @@ static void vdsl_fuckup(char *ifname)
 	eval("ifconfig", ifname, "up");
 }
 
-void start_wan(int status)
+void run_wan(int status)
 {
 	FILE *fp;
 	char *wan_ifname = get_wan_face();
@@ -3430,7 +3430,7 @@ void start_wan(int status)
 			nvram_set("wan_hwaddr", eabuf);
 		}
 		close(s);
-		start_wan_done(wan_ifname);
+		wan_done(wan_ifname);
 		return;
 	}
 
@@ -3459,7 +3459,7 @@ void start_wan(int status)
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
-			start_drivers(1);
+			load_drivers(1);
 		}
 
 		stop_dhcpc();
@@ -3596,7 +3596,7 @@ void start_wan(int status)
 			chmod("/tmp/qmi-connect.sh", 0700);
 			sysprintf("/tmp/qmi-connect.sh >/tmp/qmi-connect.out 2>&1");
 			eval("ifconfig", "wwan0", "up");
-			start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
+			run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 			if (status != REDIAL) {
 				start_redial();
 			}
@@ -3636,7 +3636,7 @@ void start_wan(int status)
 			if (!strcmp(controldevice, "qmiraw"))
 				sysprintf("echo Y > /sys/class/net/wwan0/qmi/raw_ip");
 			eval("ifconfig", "wwan0", "up");
-			start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
+			run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 			if (status != REDIAL) {
 				start_redial();
 			}
@@ -3730,7 +3730,7 @@ void start_wan(int status)
 				rmmod("sierra_net");
 				insmod("sierra_net");
 				// sysprintf("echo 1 > /proc/sys/net/ipv6/conf/wwan0/disable_ipv6\n");
-				start_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
+				run_dhcpc("wwan0", NULL, NULL, 1, 0, 0);
 				if (status != REDIAL) {
 					start_redial();
 				}
@@ -3847,7 +3847,7 @@ void start_wan(int status)
 
 					nvram_set("wan_gateway", peer);
 
-					start_wan_done("ppp0");
+					wan_done("ppp0");
 
 					// if user press Connect" button from web, we must force to dial
 					if (nvram_match("action_service", "start_3g")) {
@@ -3908,7 +3908,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
+					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", ifn);
 				if (!ifexists(vlannic)) {
@@ -3944,7 +3944,7 @@ void start_wan(int status)
 					}
 					nvram_set("tvnicfrom", vlannic);
 					symlink("/sbin/rc", "/tmp/udhcpc_tv");
-					start_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
+					run_dhcpc(vlannic, "/var/run/udhcpc_tv.pid", "/tmp/udhcpc_tv", 1, 0, 0);
 				}
 				sprintf(vlannic, "%s.0007", pppoe_wan_ifname);
 				if (!ifexists(vlannic)) {
@@ -4140,7 +4140,7 @@ void start_wan(int status)
 
 			nvram_set("wan_gateway", peer);
 
-			start_wan_done("ppp0");
+			wan_done("ppp0");
 
 			// if user press Connect" button from web, we must force to dial
 			if (nvram_match("action_service", "start_pppoe")) {
@@ -4169,7 +4169,7 @@ void start_wan(int status)
 				pppoe_dual_ifname = getSTA();
 			}
 
-			start_dhcpc(pppoe_dual_ifname, NULL, NULL, 1, 0, 0);
+			run_dhcpc(pppoe_dual_ifname, NULL, NULL, 1, 0, 0);
 		} else {
 			char *wan_iface = nvram_safe_get("wan_iface");
 			struct dns_lists *dns_list = NULL;
@@ -4189,7 +4189,7 @@ void start_wan(int status)
 			route_del(wan_iface, 0, "0.0.0.0", nvram_safe_get("pptp_wan_gateway_static"), "0.0.0.0");
 
 			start_firewall();
-			start_pppoe_dual(status);
+			run_pppoe_dual(status);
 		}
 	} else
 #endif
@@ -4198,7 +4198,7 @@ void start_wan(int status)
 		stop_atm();
 		start_atm();
 		br_add_interface("br0", "nas0");
-		start_wan_done("nas0");
+		wan_done("nas0");
 	} else
 #endif
 #ifdef HAVE_PPPOATM
@@ -4349,7 +4349,7 @@ void start_wan(int status)
 
 			nvram_set("wan_gateway", peer);
 
-			start_wan_done("ppp0");
+			wan_done("ppp0");
 
 			// if user press Connect" button from web, we must force to dial
 			if (nvram_match("action_service", "start_pppoa")) {
@@ -4365,14 +4365,14 @@ void start_wan(int status)
 	} else
 #endif
 	if (strcmp(wan_proto, "dhcp") == 0 || strcmp(wan_proto, "dhcp_auth") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
+		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #ifdef HAVE_IPETH
 	else if (strcmp(wan_proto, "iphone") == 0) {
 		if (!nvram_matchi("usb_enable", 1)) {
 			nvram_seti("usb_enable", 1);	//  simply enable it, otherwise 3g might not work
 			nvram_commit();
-			start_drivers(1);
+			load_drivers(1);
 		}
 		insmod("ipheth");
 		stop_process("ipheth-loop", "IPhone Pairing daemon");
@@ -4381,7 +4381,7 @@ void start_wan(int status)
 		eval("usbmuxd");
 		eval("ipheth-pair");
 		eval("ifconfig", "iph0", "up");
-		start_dhcpc("iph0", NULL, NULL, 1, 0, 0);
+		run_dhcpc("iph0", NULL, NULL, 1, 0, 0);
 		if (status != REDIAL) {
 			start_redial();
 		}
@@ -4394,7 +4394,7 @@ void start_wan(int status)
 		else
 			nvram_unset("tvnicfrom");
 
-		start_pptp(status);
+		run_pptp(status);
 	}
 #endif
 #ifdef HAVE_L2TP
@@ -4411,20 +4411,20 @@ void start_wan(int status)
 				l2tp_ifname = getSTA();
 			}
 
-			start_dhcpc(l2tp_ifname, NULL, NULL, 1, 0, 0);
+			run_dhcpc(l2tp_ifname, NULL, NULL, 1, 0, 0);
 		} else {
-			start_l2tp(status);
+			run_l2tp(status);
 		}
 	}
 #endif
 #ifdef HAVE_HEARTBEAT
 	else if (strcmp(wan_proto, "heartbeat") == 0) {
-		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
+		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 	}
 #endif
 	else {
 		ifconfig(wan_ifname, IFUP, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
-		start_wan_done(wan_ifname);
+		wan_done(wan_ifname);
 		eval("gratarp", wan_ifname);
 	}
 	cprintf("dhcp client ready\n");
@@ -4509,12 +4509,12 @@ void start_wan(int status)
 
 void start_wan_boot(void)
 {
-	start_wan(BOOT);
+	run_wan(BOOT);
 }
 
 void start_wan_redial(void)
 {
-	start_wan(REDIAL);
+	run_wan(REDIAL);
 }
 
 void start_wan_service(void)
@@ -4651,7 +4651,7 @@ static void start_wan6_done(char *wan_ifname)
 
 }
 #endif
-void start_wan_done(char *wan_ifname)
+void wan_done(char *wan_ifname)
 {
 	if (nvram_matchi("wan_testmode", 1)) {
 		fprintf(stderr, "[WAN IF] testmode: skipping wan_done\n");

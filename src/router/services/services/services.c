@@ -105,7 +105,6 @@ void addHost(char *host, char *ip, int withdomain)
 /*
  * AhMan March 18 2005 
  */
-void start_tmp_ppp(int num);
 
 int usejffs = 0;
 

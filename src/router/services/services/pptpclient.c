@@ -142,7 +142,7 @@ static void create_pptp_config(char *servername, char *username)
 
 }
 
-void start_pptp(int status)
+void run_pptp(int status)
 {
 	int ret;
 	FILE *fp;
@@ -217,7 +217,7 @@ void start_pptp(int status)
 		nvram_set("wan_get_dns", "");
 		nvram_unset("dhcpc_done");
 		//dirty hack
-		start_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
+		run_dhcpc(wan_ifname, NULL, NULL, 1, 0, 0);
 		int timeout;
 
 		for (timeout = 60; !nvram_matchi("dhcpc_done", 1) && timeout > 0; --timeout) {	/* wait for info from dhcp server */

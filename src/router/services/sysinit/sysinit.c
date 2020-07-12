@@ -3082,7 +3082,7 @@ static void set_led_usbport(char *led, char *ports)
 
 }
 
-void start_drivers(int boot)
+void load_drivers(int boot)
 {
 	/*
 	 * #ifdef HAVE_USB //load usb driver. we will add samba server, ftp
@@ -3285,7 +3285,7 @@ void start_drivers(int boot)
 
 void start_drivers_net(void)
 {
-	start_drivers(0);
+	load_drivers(0);
 }
 
 /*

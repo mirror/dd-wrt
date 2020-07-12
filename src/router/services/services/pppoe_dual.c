@@ -88,7 +88,7 @@
 #include <services.h>
 
 #ifdef HAVE_PPPOEDUAL
-void start_pppoe_dual(int status)
+void run_pppoe_dual(int status)
 {
 	FILE *fp;
 	char username[80], passwd[80];
@@ -286,7 +286,7 @@ void start_pppoe_dual(int status)
 		start_redial();
 	}
 
-	start_wan_done(nvram_safe_get("pppoe_ifname"));
+	wan_done(nvram_safe_get("pppoe_ifname"));
 }
 
 void stop_pppoe_dual()

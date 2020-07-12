@@ -71,7 +71,7 @@
  * Get the IP, Subnetmask, Geteway from WAN interface
  * and set to NV ram.
  */
-void start_tmp_ppp(int num)
+void run_tmp_ppp(int num)
 {
 
 	int timeout = 5;
@@ -123,7 +123,7 @@ void start_tmp_ppp(int num)
 	}
 	nvram_set(wangw[num], inet_ntoa(sin_addr(&(ifr.ifr_dstaddr))));
 
-	start_wan_done(nvram_safe_get(pppoeifname));
+	wan_done(nvram_safe_get(pppoeifname));
 
 	// if user press Connect" button from web, we must force to dial
 	if (nvram_match("action_service", "start_pppoe")
@@ -139,7 +139,7 @@ void start_tmp_ppp(int num)
 	return;
 }
 
-void start_pppoe(int pppoe_num)
+void run_pppoe(int pppoe_num)
 {
 	char idletime[20], retry_num[20], param[4];
 	char username[80], passwd[80];
@@ -244,9 +244,9 @@ void start_pppoe(int pppoe_num)
 
 	if (nvram_matchi(ppp_demand[pppoe_num], 1)) {
 		// int timeout = 5;
-		start_tmp_ppp(pppoe_num);
+		run_tmp_ppp(pppoe_num);
 
-		// This should be handled in start_wan_done
+		// This should be handled in wan_done
 		// while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
 		// && timeout--)
 		// sleep (1);
@@ -295,7 +295,7 @@ void start_dns_clear_resolv(void)
 	return;
 }
 
-void stop_single_pppoe(int pppoe_num)
+void single_pppoe_stop(int pppoe_num)
 {
 	int ret;
 	char pppoe_pid[15], pppoe_ifname[15];
