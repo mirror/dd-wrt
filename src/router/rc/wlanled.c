@@ -94,7 +94,8 @@ static void add_interface(const char *ifname)
 	list_add_tail(&iface->list, &interfaces);
 }
 
-static int _fswrite(const char *fname, const char *value) {
+static int _fswrite(const char *fname, const char *value)
+{
 	int fd = open(fname, O_WRONLY);
 	if (fd < 0)
 		return 1;
@@ -103,7 +104,8 @@ static int _fswrite(const char *fname, const char *value) {
 	return close(fd);
 }
 
-static int init_gpio(const char *num) {
+static int init_gpio(const char *num)
+{
 	char dirpath[64];
 	_fswrite("/sys/class/gpio/export", num);
 
