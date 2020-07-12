@@ -10,7 +10,7 @@ static int force;
 static void handle_procdeps(void)
 {
 	char *deps = NULL;
-	int state;
+	int state = 1;
 	if (deps_func) {
 		deps = deps_func();
 		dd_debug(DEBUG_SERVICE, "%s_deps exists, check nvram params %s\n", functiontable[function], deps);
