@@ -121,13 +121,13 @@ static int handle_service(const int method, const char *name, int force)
 	if (method == RESTART)
 		return -1;
 	setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
-	char *args[] = { "/sbin/service", name, method_name };
-	char *args_f[] = { "/sbin/service", name, method_name, "-f" };
+	char *args[] = { "/sbin/service", (char*)name, method_name };
+	char *args_f[] = { "/sbin/service", (char*)name, method_name, "-f" };
 	if (force)
 		ret = execvp("/sbin/service", args_f);
 	else
 		ret = execvp("/sbin/service", args);
-	perror(argv[0]);
+	perror(args[0]);
 	ret = errno;
 	if (method == STOP) {
 		if (stops_running)
