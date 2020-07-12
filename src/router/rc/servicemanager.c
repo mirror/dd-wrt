@@ -119,11 +119,11 @@ static int handle_service(const int method, const char *name, int force)
 		return sysprintf("%s %s", service, method_name);
 	}
 	if (method == RESTART)
-	    return -1;
+		return -1;
 	if (force)
-	ret = eval("/sbin/service",name, method_name, "-f");
+		ret = eval("/sbin/service", name, method_name, "-f");
 	else
-	ret = eval("/sbin/service",name, method_name);
+		ret = eval("/sbin/service", name, method_name);
 	if (method == STOP) {
 		if (stops_running)
 			(*stops_running)--;
@@ -178,10 +178,15 @@ static void start_service_force_f(char *name)
 	start_service_force_f_arg(name, 0);
 }
 
-
 static int start_main(char *name, int argc, char **argv)
 {
-	return eval("/sbin/service", name, "main");
+	int pid;
+	char *args[32] = { "/sbin/service", main, "main", NULL };
+	int i;
+	for (i = 1; i < argc && i < 30; i++)
+		args[2 + i] = argv[i];
+	args[2 + i] = NULL;
+	return _evalpid(args, NULL, 0, &pid);
 }
 
 static void start_main_f(char *name, int argc, char **argv)
