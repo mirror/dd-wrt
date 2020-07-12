@@ -3288,6 +3288,11 @@ void start_drivers_net(void)
 	load_drivers(0);
 }
 
+void start_drivers(void)
+{
+	load_drivers(1);
+}
+
 /*
  * States 
  */

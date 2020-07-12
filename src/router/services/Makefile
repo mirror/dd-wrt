@@ -1908,7 +1908,7 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/services/sbin
 	install -d $(INSTALLDIR)/services/etc
-	install services_main $(INSTALLDIR)/services/sbin/services
+	install services_main $(INSTALLDIR)/services/sbin/service
 	install bin/defaults.bin $(INSTALLDIR)/services/etc
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
