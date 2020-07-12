@@ -1906,9 +1906,9 @@ clean:
 	rm -f *.h~ services/*.h~ networking/*.h~ tools/*.h~ sysinit/*.h~
 
 install: all
-	install -d $(INSTALLDIR)/services/usr/lib	
+	install -d $(INSTALLDIR)/services/sbin
 	install -d $(INSTALLDIR)/services/etc
-	install services.so $(INSTALLDIR)/services/usr/lib
+	install services_main $(INSTALLDIR)/services/sbin/services
 	install bin/defaults.bin $(INSTALLDIR)/services/etc
 ifeq ($(CONFIG_RT2880),y)
 	install -d $(INSTALLDIR)/services/sbin	
