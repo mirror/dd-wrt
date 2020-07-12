@@ -74,7 +74,7 @@ int ipup_main(int argc, char **argv)
 
 	cprintf("%s\n", argv[0]);
 	if (!strcmp(argv[1], "wwan0") && (!strcmp(argv[2], "fastpath"))) {
-		start_wan_done("wwan0");
+		wan_done("wwan0");
 		cprintf("done (fastpath)\n");
 		return 0;
 	}
@@ -177,7 +177,7 @@ int ipup_main(int argc, char **argv)
 		nvram_set("ppp_get_srv", v);
 	if ((v = getenv("MTU")))
 		nvram_set("wan_run_mtu", v);
-	start_wan_done(wan_ifname);
+	wan_done(wan_ifname);
 	cprintf("done\n");
 	return 0;
 }
@@ -320,8 +320,8 @@ int disconnected_pppoe_main(int argc, char **argv)
 	if (nvram_matchi(ppp_demand[pppoe_num], 1)
 	    && nvram_match("action_service", "")) {
 		cprintf("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
-		stop_single_pppoe(pppoe_num);
-		start_pppoe(pppoe_num);
+		single_pppoe_stop(pppoe_num);
+		run_pppoe(pppoe_num);
 		dns_to_resolv();
 
 		stop_dnsmasq();

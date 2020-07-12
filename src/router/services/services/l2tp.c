@@ -55,7 +55,7 @@
 #include <services.h>
 
 #ifdef HAVE_L2TP
-void start_l2tp(int status)
+void run_l2tp(int status)
 {
 	FILE *fp;
 	char *l2tp_argv[] = { "xl2tpd",
@@ -269,12 +269,12 @@ void start_l2tp(int status)
 
 void start_l2tp_redial(void)
 {
-	start_l2tp(REDIAL);
+	run_l2tp(REDIAL);
 }
 
 void start_l2tp_boot(void)
 {
-	start_l2tp(BOOT);
+	run_l2tp(BOOT);
 }
 
 void stop_l2tp(void)

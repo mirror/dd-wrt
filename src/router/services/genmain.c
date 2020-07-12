@@ -100,6 +100,11 @@ int main(int argc, char *argv[])
 	fprintf(out, "}\n");
 	fprintf(out, "if (!strcmp(argv[2],\"stop\")) {\n");
 	while (syms[i]) {
+		fprintf(stdout, "process %s\n",syms[i]);
+		if (!strcmp(syms[i],"stop_process")) {
+			i++;
+			continue;
+		}
 		if (!strncmp(syms[i],"stop_", 5)) {
 			fprintf(out, "HANDLE_STOP(\"%s\",%s);\n",syms[i]+5,syms[i]+5);
 		} 

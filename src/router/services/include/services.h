@@ -28,7 +28,7 @@ extern void stop_vpn_modules(void);
 extern void start_tftpd(void);
 extern void stop_tftpd(void);
 
-extern void start_drivers(int boot);
+extern void load_drivers(int boot);
 extern void start_drivers_net(void);
 
 extern void start_cron(void);
@@ -61,7 +61,7 @@ extern void start_qtn(void);
 extern void stop_qtn(void);
 #endif
 
-extern void start_pptp(int status);
+extern void run_pptp(int status);
 extern void stop_pptp(void);
 
 extern void start_syslog(void);
@@ -97,7 +97,7 @@ extern void start_pptpd(void);
 extern void stop_pptpd(void);
 #endif
 #ifdef HAVE_PPPOEDUAL
-extern void start_pppoe_dual(int status);
+extern void run_pppoe_dual(int status);
 extern void stop_pppoe_dual();
 #endif
 #ifdef HAVE_MMC
@@ -185,10 +185,10 @@ extern void start_ntpc(void);
 extern void stop_ntpc(void);
 extern void start_lan(void);
 extern void stop_lan(void);
-extern void start_wan(int status);
+extern void run_wan(int status);
 extern void start_wan_boot(void);
 extern void start_wan_redial(void);
-extern void start_wan_done(char *ifname);
+extern void wan_done(char *ifname);
 extern void stop_wan(void);
 extern void start_hotplug_net(void);
 #ifdef HAVE_NOCAT
@@ -202,7 +202,7 @@ extern void stop_milkfish(void);
 #endif
 
 extern void start_mkfiles(void);
-void start_pppoe(int pppoe_num);
+void run_pppoe(int pppoe_num);
 void stop_single_pppoe(int pppoe_num);
 
 char *enable_dtag_vlan(int status);

@@ -180,7 +180,7 @@ int hb_connect_main(int argc, char **argv)
 	fprintf(fp, "%s", argv[2]);
 	fclose(fp);
 
-	start_wan_done(get_wan_face());
+	wan_done(get_wan_face());
 
 	sysprintf("iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j ACCEPT", get_wan_face(), argv[3], nvram_safe_get("wan_ipaddr"), argv[1]);
 

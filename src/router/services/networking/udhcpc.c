@@ -156,7 +156,7 @@ static int mbim(void)
 {
 	stop_firewall();
 	cprintf("start wan done\n");
-	start_wan_done(nvram_safe_get("wan_ifname"));
+	wan_done(nvram_safe_get("wan_ifname"));
 	nvram_set("dhcpc_done", "1");
 	cprintf("done\n");
 	return 0;
@@ -404,12 +404,12 @@ static int bound(void)
 		 */
 
 		start_firewall();
-		start_pppoe_dual(BOOT);
+		run_pppoe_dual(BOOT);
 	}
 #endif
 	else {
 		cprintf("start wan done\n");
-		start_wan_done(wan_ifname);
+		wan_done(wan_ifname);
 	}
 	nvram_seti("dhcpc_done", 1);
 	cprintf("done\n");

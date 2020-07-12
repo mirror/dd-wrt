@@ -405,7 +405,7 @@ void start_init_start(void)
 	stop_resetbutton();
 	start_resetbutton();
 #endif
-	start_drivers(1);
+	load_drivers(1);
 	eval("startservice_f", "modules_wait");
 #ifdef HAVE_X86
 	eval("restart_f", "bootconfig");
@@ -451,12 +451,13 @@ void start_modules_wait(void)
 
 }
 
-void restart_dns_main(int argc, char argv[])
+int restart_dns_main(int argc, char *argv[])
 {
 	stop_dnsmasq();
 	start_dnsmasq();
 	stop_smartdns();
 	start_smartdns();
+	return 0;
 }
 
 int ipfmt_main(int argc, char *argv[])
