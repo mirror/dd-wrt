@@ -1932,7 +1932,7 @@ ifneq ($(CONFIG_NOWIFI),y)
 endif
 endif
 	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o services.so $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
-	nm *.o> symbols
+	nm *.o|sort> symbols
 	gcc -o genmain genmain.c
 	./genmain
 	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.c $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils

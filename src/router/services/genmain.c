@@ -40,6 +40,22 @@ int sym(char *name, char *prefix, char *postfix)
 	return 0;
 }
 
+char **list = NULL;
+int inlist(char *name)
+{
+	if (!list) {
+		list = (char **)malloc(sizeof(char *) * 10000);
+		memset(list, 0, sizeof(char *) * 10000);
+	}
+	int cnt = 0;
+	while (list[cnt]) {
+		if (!strcmp(list[cnt++], name))
+			return cnt - 1;
+	}
+	list[cnt] = strdup(name);
+	return -1;
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *out = fopen("main.c", "wb");
@@ -71,10 +87,37 @@ int main(int argc, char *argv[])
 		}
 		i++;
 	}
-	fprintf(out, "#include <string.h>\n");
+	fprintf(out, "char *functiontable[]={\n");
+	i = 0;
+	while (syms[i]) {
+		if (!strncmp(syms[i], "start_", 6)) {
+			if (inlist(syms[i] + 6) == -1)
+				fprintf(out, "\"%s\",\n", syms[i] + 6);
+		} else if (!strncmp(syms[i], "stop_", 5)) {
+			if (inlist(syms[i] + 5) == -1)
+				fprintf(out, "\"%s\",\n", syms[i] + 5);
+		} else {
+			char copy[256];
+			strcpy(copy, syms[i]);
+			char *p = strstr(copy, "_main");
+			if (p) {
+				*p = 0;
+				if (sym(copy, NULL, "main")) {
+					if (inlist(copy) == -1)
+						fprintf(out, "\"%s\",\n", copy);
+				}
+			}
+		}
+		i++;
+	}
+	fprintf(out, "};\n");
+
 	fprintf(out, "#include \"genmain.h\"\n");
+
+	fprintf(out, "#include <string.h>\n");
 	fprintf(out, "int main(int argc,char *argv[]){\n");
-	fprintf(out, "check_arguments(argc, argv);\n");
+	fprintf(out, "int function;\n");
+	fprintf(out, "check_arguments(argc, argv, &function);\n");
 	fprintf(out, "int force;\n");
 	fprintf(out, "if (argc>3 && !strcmp(argv[3],\"-f\")) force = 1;\n");
 
@@ -87,13 +130,13 @@ int main(int argc, char *argv[])
 			int deps = sym(name, NULL, "deps");
 			int proc = sym(name, NULL, "proc");
 			if (deps && proc)
-				fprintf(out, "HANDLE_START_DEPS_PROC(\"%s\",%s);\n", name, name);
+				fprintf(out, "HANDLE_START_DEPS_PROC(%d,%s);\n", inlist(name), name);
 			else if (deps)
-				fprintf(out, "HANDLE_START_DEPS(\"%s\",%s);\n", name, name);
+				fprintf(out, "HANDLE_START_DEPS(%d,%s);\n",  inlist(name), name);
 			else if (proc)
-				fprintf(out, "HANDLE_START_PROC(\"%s\",%s);\n", name, name);
+				fprintf(out, "HANDLE_START_PROC(%d,%s);\n",  inlist(name), name);
 			else
-				fprintf(out, "HANDLE_START(\"%s\",%s);\n", name, name);
+				fprintf(out, "HANDLE_START(%d,%s);\n",  inlist(name), name);
 		}
 		i++;
 	}
@@ -107,7 +150,7 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		if (!strncmp(syms[i], "stop_", 5)) {
-			fprintf(out, "HANDLE_STOP(\"%s\",%s);\n", syms[i] + 5, syms[i] + 5);
+			fprintf(out, "HANDLE_STOP(%d,%s);\n",  inlist(syms[i] + 5), syms[i] + 5);
 		}
 		i++;
 	}
@@ -122,12 +165,11 @@ int main(int argc, char *argv[])
 		if (p) {
 			*p = 0;
 			if (sym(copy, NULL, "main"))
-				fprintf(out, "HANDLE_MAIN(\"%s\", %s);\n", copy, copy);
+				fprintf(out, "HANDLE_MAIN(%d, %s);\n",  inlist(copy), copy);
 		}
 		i++;
 	}
 	fprintf(out, "}\n");
-	fprintf(out, "end(argv);\n");
 	fprintf(out, "}\n");
 	fclose(out);
 }
