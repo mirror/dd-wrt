@@ -1935,7 +1935,8 @@ endif
 	nm *.o|sort> symbols
 	gcc -o genmain genmain.c
 	./genmain
-	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.c $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
+	$(CC) $(CFLAGS) $(MAD_FLAGS) $(LTO) -c -o main.o main.c  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
+	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.o $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
 	
 services.a: $(OBJS)
 	@echo "[AR] $@"
