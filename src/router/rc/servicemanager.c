@@ -19,8 +19,6 @@
  *
  * $Id:
  */
-
-#include <dlfcn.h>
 #include <stdio.h>
 #include <shutils.h>
 #include <stdlib.h>
@@ -36,26 +34,6 @@ static void init_shared(void)
 	if (!stops_running)
 		stops_running = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
 
-}
-
-static void *load_service(const char *name)
-{
-	void *handle = dlopen(SERVICE_MODULE, RTLD_LAZY);
-	if (!handle) {
-		dd_logerror("servicemanager", "Cannot open library: %s", dlerror());
-	}
-
-	if (handle == NULL && name != NULL) {
-		char dl[64];
-
-		sprintf(dl, "/usr/lib/%s_service.so", name);
-		handle = dlopen(dl, RTLD_LAZY);
-		if (handle == NULL) {
-			dd_logerror("servicemanager", "cannot load %s\n", dl);
-			return NULL;
-		}
-	}
-	return handle;
 }
 
 #define START 0x0
@@ -140,53 +118,10 @@ static int handle_service(const int method, const char *name, int force)
 		fclose(ck);
 		return sysprintf("%s %s", service, method_name);
 	}
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
-		return -1;
-	}
-	void (*fptr)(void);
-
-	sprintf(service, "%s_%s", method_name, name);
-	fptr = (void (*)(void))dlsym(handle, service);
-	char *deps = NULL;
-	if (fptr) {
-		int state = 1;
-		if (method == START) {
-			char dep_name[64];
-			char proc_name[64];
-			snprintf(dep_name, sizeof(dep_name), "%s_deps", name);
-			char *(*dep_func)(void) =(char * (*)(void))dlsym(handle, dep_name);
-			if (dep_func) {
-				deps = dep_func();
-				dd_debug(DEBUG_SERVICE, "%s exists, check nvram params %s\n", dep_name, deps);
-				state = nvram_states(deps);
-			}
-			if (!state) {
-				snprintf(proc_name, sizeof(proc_name), "%s_proc", name);
-				char *(*proc_func)(void) =(char * (*)(void))dlsym(handle, proc_name);
-				if (proc_func) {
-					dd_debug(DEBUG_SERVICE, "%s exists, check process\n", proc_name);
-					char *proc = proc_func();
-					int pid = pidof(proc);
-					dd_debug(DEBUG_SERVICE, "process name is %s, pid is %d\n", proc, pidof(proc));
-					if (pid == -1)
-						state = 1;
-				}
-			}
-
-		}
-		if (force || state) {
-			(*fptr) ();
-			if (deps)
-				nvram_states(deps);
-		}
-	} else {
-		dd_debug(DEBUG_SERVICE, "function %s not found \n", service);
-
-		ret = -1;
-	}
-	dlclose(handle);
+	if (force)
+	eval("/sbin/service",name, method_name, "-f");
+	else
+	eval("/sbin/service",name, method_name);
 	if (method == STOP) {
 		if (stops_running)
 			(*stops_running)--;
@@ -241,51 +176,10 @@ static void start_service_force_f(char *name)
 	start_service_force_f_arg(name, 0);
 }
 
-static void start_servicei(char *name, int param)
-{
-	// lcdmessaged("Starting Service",name);
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
-		return;
-	}
-	void (*fptr)(int);
-	char service[64];
-
-	sprintf(service, "start_%s", name);
-	fptr = (void (*)(int))dlsym(handle, service);
-	if (fptr)
-		(*fptr) (param);
-	else
-		dd_logerror("servicemanager", "function %s not found \n", service);
-	dlclose(handle);
-	return;
-}
-
-static void start_servicei_f(char *name, int param)
-{
-	FORK(start_servicei(name, param));
-}
 
 static int start_main(char *name, int argc, char **argv)
 {
-	int ret = -1;
-	void *handle = load_service(name);
-
-	if (handle == NULL) {
-		return -1;
-	}
-	int (*fptr)(int, char **);
-	char service[64];
-
-	sprintf(service, "%s_main", name);
-	fptr = (int (*)(int, char **))dlsym(handle, service);
-	if (fptr)
-		ret = (*fptr) (argc, argv);
-	else
-		dd_logerror("servicemanager", "function %s not found \n", service);
-	dlclose(handle);
-	return ret;
+	return eval("/sbin/service", name, "main");
 }
 
 static void start_main_f(char *name, int argc, char **argv)
