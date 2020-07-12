@@ -2,19 +2,20 @@
 #include <shutils.h>
 #include <utils.h>
 
-static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(void), char *(*proc_func)(void), int force)
+
+static void handle_procdeps(int name, void (*start)(void), char *(*deps_func)(void), char *(*proc_func)(void), int force)
 {
 	char *deps = NULL;
 	int state;
 	if (deps_func) {
 		deps = deps_func();
-		dd_debug(DEBUG_SERVICE, "%s_deps exists, check nvram params %s\n", name, deps);
+		dd_debug(DEBUG_SERVICE, "%s_deps exists, check nvram params %s\n", functiontable[name], deps);
 		state = nvram_states(deps);
 	}
 
 	if (!state) {
 		if (proc_func) {
-			dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", name);
+			dd_debug(DEBUG_SERVICE, "%s_proc exists, check process\n", functiontable[name]);
 			char *proc = proc_func();
 			int pid = pidof(proc);
 			dd_debug(DEBUG_SERVICE, "process name is %s, pid is %d\n", proc, pidof(proc));
@@ -31,13 +32,13 @@ static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(
 }
 
 #define HANDLE_START(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		start_##sym(); \
 		return 0; \
 	}
 
 #define HANDLE_START_DEPS(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		char * (*deps)(void) = sym##_deps; \
 		void (*start)(void) = start_##sym; \
 		handle_procdeps(name,start, deps,  NULL, force); \
@@ -45,7 +46,7 @@ static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(
 	}
 
 #define HANDLE_START_PROC(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		char * (*proc)(void) = sym##_proc; \
 		void (*start)(void) = start_##sym; \
 		handle_procdeps(name,start,  NULL, proc, force); \
@@ -53,7 +54,7 @@ static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(
 	}
 
 #define HANDLE_START_DEPS_PROC(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		char * (*deps)(void) = sym##_deps; \
 		char * (*proc)(void) = sym##_proc; \
 		void (*start)(void) = start_##sym; \
@@ -62,13 +63,13 @@ static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(
 	}
 
 #define HANDLE_STOP(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		stop_##sym(); \
 		return 0; \
 	}
 
 #define HANDLE_MAIN(name, sym) \
-	if (!strcmp(argv[1],name)) { \
+	if (name == function) { \
 		return sym##_main(argc-2, args); \
 	}
 
@@ -83,15 +84,24 @@ static char **buildargs(int argc, char *argv[])
 	return args;
 }
 
-void check_arguments(int argc, char *argv[])
+void check_arguments(int argc, char *argv[], int *f)
 {
 	if (argc < 3) {
-		fprintf(stderr, "%s servicename start/stop/restart [-f]", argv[0]);
+		fprintf(stderr, "%s servicename start|stop [-f]", argv[0]);
+		fprintf(stderr, "list of services:\n");
+		int i;
+		for (i=0;i<sizeof(functiontable) / sizeof(char*);i++) {
+		fprintf(stderr, "\t%s\n", functiontable[i]);		
+		}
 		exit(-1);
 	}
-}
-
-void end(char *argv[]) {
+	int i;
+	for (i=0;i<sizeof(functiontable) / sizeof(char*);i++) {
+		if (!strcmp(functiontable[i], argv[1])) {
+		    *f = i;
+		    return;
+		}
+	}
 	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
 	exit(-1);
 }
