@@ -535,7 +535,7 @@ endif
 #	make -C kaid/src
 #	cp kaid/kaid $(TARGETDIR)/usr/sbin
 #endif
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 
 	$(TOP)/../../tools/removewhitespace.sh $(TOP)/../../tools $(TARGETDIR)/etc/config
 
