@@ -480,7 +480,7 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	cd $(TARGETDIR) && find . -name *.ko -exec mipsel-linux-strip --strip-unneeded --remove-section=.comment {} +
 #	mipsel-linux-strip $(TARGETDIR)/lib/modules/$(LINUXVER)/*.ko		
 ifneq ($(CONFIG_SAMBA),y)

@@ -218,7 +218,7 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
+#	mv $(TARGETDIR)/usr/lib/services.so $(TARGETDIR)/lib
 	-./strip_libs.sh $(ARCH)
 	cp lib.$(ARCH)/libgcc_s.so.1 $(TARGETDIR)/lib
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
