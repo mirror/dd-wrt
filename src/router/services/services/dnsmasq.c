@@ -387,7 +387,7 @@ void start_dnsmasq(void)
 			char *ip = nvram_safe_get("lan_ipaddr");
 			char *netmask = nvram_safe_get("lan_netmask");
 			char *leasetime = nvram_safe_get("dhcp_lease");
-			makeentry_full(fp, nvram_safe_get("dhcp_start"), dhcpnum, ip, netmask, leasetime);
+			makeentry_full(fp, nvram_safe_get("lan_ifname"), dhcpnum, nvram_safe_get("dhcp_start"), netmask, leasetime);
 		}
 
 		for (i = 0; i < mdhcpcount; i++) {
