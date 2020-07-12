@@ -458,6 +458,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			dhcp_argv[i++] = wan_hostname;
 		}
 	}
+	
 #ifndef HAVE_MICRO
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
