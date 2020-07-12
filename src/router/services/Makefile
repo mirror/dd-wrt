@@ -56,7 +56,7 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -L../libutils -lutils -lwireless -lqos
+LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lcrypt -L../libnet/lib -lnet -L../libutils -lutils -lwireless -lqos -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_DIST),"micro-special")
@@ -83,7 +83,7 @@ COPTS +=$(call cc-option,-Werror=return-local-addr,)
 
 BCFLAGS	 += $(COPTS) -I. -I$(TOP)/shared  -I$(SRCBASE)/include.bcm -Wall -I$(SRCBASE)/ -I$(TOP)/httpd
 BCFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN -I$(LINUXDIR)/brcm/shared/bcmwifi/include -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
-BCFLAGS  += -fpic -I$(TOP)/services/include
+BCFLAGS  += -fpic -I$(TOP)/services/include $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections
 
 ifeq ($(CONFIG_DIST),"micro")
 #BCFLAGS += -DNEED_NOPRINTF
@@ -1020,6 +1020,7 @@ ifeq ($(CONFIG_MINIDLNA),y)
   CFLAGS_EXTRA += -DHAVE_MINIDLNA
 OBJS += minidlna.o
 LDFLAGS += -lsharetools
+LDFLAGS += -L$(TOP)/jansson/src/.libs -ljansson -lm
 endif
 ifeq ($(CONFIG_MEDIASERVER),y)
 CFLAGS_EXTRA += -DHAVE_MEDIASERVER
@@ -1131,6 +1132,7 @@ ifeq ($(CONFIG_FTP),y)
 CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_FTP
 LDFLAGS += -lsharetools
+LDFLAGS += -L$(TOP)/jansson/src/.libs -ljansson -lm
 OBJS += proftp.o
 endif
 ifeq ($(CONFIG_SAMBA3),y)
@@ -1138,6 +1140,7 @@ CFLAGS_EXTRA += -I$(TOP)/jansson/src
 CFLAGS_EXTRA += -DHAVE_SAMBA3
 OBJS += samba3.o
 LDFLAGS += -lsharetools
+LDFLAGS += -L$(TOP)/jansson/src/.libs -ljansson -lm
 endif
 ifeq ($(CONFIG_SAMBA4),y)
 CFLAGS_EXTRA += -DHAVE_SAMBA4
@@ -1880,7 +1883,7 @@ vpath %.c sysinit sysinit/switchlib services tools networking utils $(TOP)/share
 	@echo "[CC] $@"
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-all: services.so services.a
+all: services_main
 ifeq ($(CONFIG_RT2880),y)
 ifeq ($(CONFIG_MT7620),y)
 	$(CC) $(CFLAGS) -DNEED_PRINTF -o switch tools/switch_gsw.c -DCONFIG_RALINK_MT7620
@@ -1917,15 +1920,18 @@ ifeq ($(CONFIG_WZRG300NH2),y)
 	install $(TOP)/private/buffalo/WZRG300NH2/boot.bin $(INSTALLDIR)/services/etc
 endif
 
-services.so: $(OBJS)
+services_main: $(OBJS)
 	@echo "[LD] $@"
 ifeq ($(CONFIG_ATH9K),y)
 ifneq ($(CONFIG_NOWIFI),y)
 	$(CC) -shared -L ../wireless-tools -c $(ATH9KCFLAGS)  $(MAD_FLAGS)  $(ATH9KFILES) -liw
 endif
 endif
-	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o $@ $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
-#	$(CC) $(CFLAGS) -o wland $^ $(LDFLAGS)
+	$(CC) --shared -L ../wireless-tools $(CFLAGS)  $(MAD_FLAGS) -o services.so $^  $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS)
+	nm *.o> symbols
+	gcc -o genmain genmain.c
+	./genmain
+	$(CC) $(CFLAGS) $(MAD_FLAGS) -o services_main $^ main.c $(LDLTO) $(NOBJS) $(ATH9KOBJS) $(LDFLAGS) $(ATH9KLDFLAGS) -lshutils
 	
 services.a: $(OBJS)
 	@echo "[AR] $@"
