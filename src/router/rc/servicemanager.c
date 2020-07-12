@@ -120,15 +120,16 @@ static int handle_service(const int method, const char *name, int force)
 	}
 	if (method == RESTART)
 		return -1;
-	setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 	char *args[] = { "/sbin/service", (char*)name, method_name, NULL};
 	char *args_f[] = { "/sbin/service", (char*)name, method_name, "-f", NULL };
+
+	if (_evalpid(argv, NULL, 0, NULL) != 0) {
+
 	if (force)
-		ret = execvp("/sbin/service", args_f);
+		ret = _evalpid(args_f, NULL, 0, NULL);
 	else
-		ret = execvp("/sbin/service", args);
-	perror(args[0]);
-	ret = errno;
+		ret = _evalpid(args, NULL, 0, NULL);
+
 	if (method == STOP) {
 		if (stops_running)
 			(*stops_running)--;
@@ -190,9 +191,7 @@ static int start_main(char *name, int argc, char **argv)
 	for (i = 1; i < argc && i < 30; i++)
 		args[2 + i] = argv[i];
 	args[2 + i] = NULL;
-	execvp(args[0], args);
-
-	return errno;
+	return _evalpid(args, NULL, 0, NULL);
 }
 
 static void start_main_f(char *name, int argc, char **argv)
