@@ -2,7 +2,7 @@
 #include <shutils.h>
 #include <utils.h>
 
-static void handle_procdeps(char *name, void (*start)(void), char * (*deps_func)(void), char * (*proc_func)(void), int force)
+static void handle_procdeps(char *name, void (*start)(void), char *(*deps_func)(void), char *(*proc_func)(void), int force)
 {
 	char *deps = NULL;
 	int state;
@@ -31,14 +31,17 @@ static void handle_procdeps(char *name, void (*start)(void), char * (*deps_func)
 }
 
 #define HANDLE_START(name, sym) \
-	if (!strcmp(argv[1],name)) \
-		start_##sym();
+	if (!strcmp(argv[1],name)) { \
+		start_##sym(); \
+		return 0; \
+	}
 
 #define HANDLE_START_DEPS(name, sym) \
 	if (!strcmp(argv[1],name)) { \
 		char * (*deps)(void) = sym##_deps; \
 		void (*start)(void) = start_##sym; \
 		handle_procdeps(name,start, deps,  NULL, force); \
+		return 0; \
 	}
 
 #define HANDLE_START_PROC(name, sym) \
@@ -46,6 +49,7 @@ static void handle_procdeps(char *name, void (*start)(void), char * (*deps_func)
 		char * (*proc)(void) = sym##_proc; \
 		void (*start)(void) = start_##sym; \
 		handle_procdeps(name,start,  NULL, proc, force); \
+		return 0; \
 	}
 
 #define HANDLE_START_DEPS_PROC(name, sym) \
@@ -54,16 +58,18 @@ static void handle_procdeps(char *name, void (*start)(void), char * (*deps_func)
 		char * (*proc)(void) = sym##_proc; \
 		void (*start)(void) = start_##sym; \
 		handle_procdeps(name,start, deps, proc, force); \
+		return 0; \
 	}
 
 #define HANDLE_STOP(name, sym) \
 	if (!strcmp(argv[1],name)) { \
 		stop_##sym(); \
+		return 0; \
 	}
 
 #define HANDLE_MAIN(name, sym) \
 	if (!strcmp(argv[1],name)) { \
-		sym##_main(argc-2, args); \
+		return sym##_main(argc-2, args); \
 	}
 
 #include <stdlib.h>
@@ -75,4 +81,17 @@ static char **buildargs(int argc, char *argv[])
 		args[i + 1] = argv[i + 3];
 	args[0] = argv[1];
 	return args;
+}
+
+void check_arguments(int argc, char *argv[])
+{
+	if (argc < 3) {
+		fprintf(stderr, "%s servicename start/stop/restart [-f]", argv[0]);
+		exit(-1);
+	}
+}
+
+void end(char *argv[]) {
+	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
+	exit(-1);
 }
