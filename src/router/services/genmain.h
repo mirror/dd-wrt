@@ -99,7 +99,7 @@ void check_arguments(int argc, char *argv[], int *f)
 	if (argc < 3) {
 		fprintf(stderr, "%s servicename start|stop [-f]\n", argv[0]);
 		fprintf(stderr, "options:\n");
-		fprintf(stderr, "-f : force start of server, no matter if neccessary\n");
+		fprintf(stderr, "-f : force start of service, no matter if neccessary\n");
 		fprintf(stderr, "list of services:\n");
 		int i;
 		for (i = 0; i < sizeof(functiontable) / sizeof(char *); i++) {
