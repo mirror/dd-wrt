@@ -168,6 +168,7 @@ int main(int argc, char *argv[])
 		i++;
 	}
 	fprintf(out, "}\n");
+	fprintf(out, "end();\n");
 	fprintf(out, "}\n");
 	fclose(out);
 }
