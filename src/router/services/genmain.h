@@ -88,6 +88,12 @@ static char **buildargs(int argc, char *argv[])
 	return args;
 }
 
+void end(char *argv[])
+{
+	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
+	exit(-1);
+}
+
 void check_arguments(int argc, char *argv[], int *f)
 {
 	if (argc < 3) {
@@ -110,6 +116,5 @@ void check_arguments(int argc, char *argv[], int *f)
 			return;
 		}
 	}
-	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
-	exit(-1);
+	end(argv);
 }
