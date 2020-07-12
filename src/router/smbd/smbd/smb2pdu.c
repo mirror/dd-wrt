@@ -1406,8 +1406,7 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 				conn->ops->generate_encryptionkey) {
 			rc = conn->ops->generate_encryptionkey(sess);
 			if (rc) {
-				ksmbd_debug(SMB,
-					"SMB3 encryption key generation failed\n");
+				ksmbd_err("SMB3 encryption key generation failed\n");
 				rsp->hdr.Status = STATUS_LOGON_FAILURE;
 				return rc;
 			}
@@ -1437,8 +1436,7 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 	if (conn->ops->generate_signingkey) {
 		rc = conn->ops->generate_signingkey(sess);
 		if (rc) {
-			ksmbd_debug(SMB,
-				"SMB3 signing key generation failed\n");
+			ksmbd_err("SMB3 signing key generation failed\n");
 			rsp->hdr.Status = STATUS_LOGON_FAILURE;
 			return rc;
 		}
