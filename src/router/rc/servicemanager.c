@@ -123,8 +123,6 @@ static int handle_service(const int method, const char *name, int force)
 	char *args[] = { "/sbin/service", (char*)name, method_name, NULL};
 	char *args_f[] = { "/sbin/service", (char*)name, method_name, "-f", NULL };
 
-	if (_evalpid(argv, NULL, 0, NULL) != 0) {
-
 	if (force)
 		ret = _evalpid(args_f, NULL, 0, NULL);
 	else
