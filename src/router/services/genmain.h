@@ -110,7 +110,25 @@ int check_arguments(int argc, char *argv[])
 		fprintf(stderr, "list of services:\n");
 		int i;
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
-			fprintf(stderr, "\t%s\n", functiontable[i].name);
+			char feature[128] = { 0 };
+			if (functiontable[i].start) {
+				strcat(feature, "[start] ");
+			}
+			if (functiontable[i].stop) {
+				strcat(feature, "[stop] ");
+			}
+			if (functiontable[i].stop && functiontable[i].start) {
+				strcat(feature, "[restart] ");
+			}
+			if (functiontable[i].main) {
+				strcat(feature, "[main]");
+			}
+			if (strlen(functiontable[i].name) > 15)
+				fprintf(stderr, "\t%s\t%s\n", functiontable[i].name, feature);
+			else if (strlen(functiontable[i].name) > 7)
+				fprintf(stderr, "\t%s\t\t%s\n", functiontable[i].name, feature);
+			else
+				fprintf(stderr, "\t%s\t\t\t%s\n", functiontable[i].name, feature);
 		}
 		return -1;
 	}
