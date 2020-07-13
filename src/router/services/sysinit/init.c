@@ -453,8 +453,10 @@ void start_modules_wait(void)
 
 int restart_dns_main(int argc, char *argv[])
 {
+#ifdef HAVE_DNSMASQ
 	stop_dnsmasq();
 	start_dnsmasq();
+#endif
 	stop_smartdns();
 	start_smartdns();
 	return 0;
