@@ -386,7 +386,7 @@ void start_init_start(void)
 #ifdef HAVE_EMF
 	start_emf();
 #endif
-#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
+#if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880) && !defined(HAVE_RT2860) && !defined(HAVE_RT61)
 	start_nas();
 #endif
 	start_radio_timer();
