@@ -2153,6 +2153,7 @@ void start_lan(void)
 				}
 			}
 #endif
+			fprintf(stderr, "check %s\n", name);
 			if (nvram_match("wan_ifname", name))
 				continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA) && !defined(HAVE_NEWPORT) && !defined(HAVE_MAGICBOX) && !defined(HAVE_RB600) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) && !defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000)
@@ -2162,7 +2163,7 @@ void start_lan(void)
 #endif
 				strcpy(realname, name);
 
-			cprintf("name=[%s] lan_ifname=[%s]\n", realname, lan_ifname);
+			fprintf(stderr, "name=[%s] lan_ifname=[%s]\n", realname, lan_ifname);
 
 			/*
 			 * Bring up interface 
@@ -4742,8 +4743,10 @@ void wan_done(char *wan_ifname)
 	 * Restart DNS proxy 
 	 */
 
+#ifdef HAVE_DNSMASQ
 	stop_dnsmasq();
 	start_dnsmasq();
+#endif
 	stop_smartdns();
 	start_smartdns();
 
