@@ -1,6 +1,7 @@
 #include <bcmnvram.h>
 #include <shutils.h>
 #include <utils.h>
+#include <airbag.h>
 
 static char *(*deps_func)(void);
 static char *(*proc_func)(void);
@@ -103,6 +104,7 @@ void end(char *argv[])
 
 int check_arguments(int argc, char *argv[])
 {
+	airbag_init();
 	if (argc < 3) {
 		fprintf(stderr, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
 		fprintf(stderr, "options:\n");
