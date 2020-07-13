@@ -33,6 +33,7 @@ int sym(char *name, char *prefix, char *postfix)
 	int i = 0;
 	char check[256];
 	sprintf(check, "%s%s%s%s%s", prefix ? prefix : "", prefix ? "_" : "", name, postfix ? "_" : "", postfix ? postfix : "");
+	fprintf(stderr, "check %s\n", check);
 	while (syms[i]) {
 		if (!strcmp(syms[i++], check))
 			return 1;
@@ -61,6 +62,7 @@ int main(int argc, char *argv[])
 	FILE *out = fopen("main.c", "wb");
 	int i = 0;
 	readsymbols();
+	fprintf(out, "#include <string.h>\n");
 	while (syms[i]) {
 		if (!strncmp(syms[i], "start_", 6)) {
 			fprintf(stdout, "process %s\n", syms[i]);
@@ -87,15 +89,72 @@ int main(int argc, char *argv[])
 		}
 		i++;
 	}
-	fprintf(out, "char *functiontable[]={\n");
+	fprintf(out, "typedef struct fn {\n");
+	fprintf(out, "char *name;\n");
+	fprintf(out, "void (*start)(void);\n");
+	fprintf(out, "char  * (*deps)(void);\n");
+	fprintf(out, "char  * (*proc)(void);\n");
+	fprintf(out, "void (*stop)(void);\n");
+	fprintf(out, "int  (*main)(int argc,char *argv[]);\n");
+	fprintf(out, "};\n");
+	fprintf(out, "struct fn functiontable[]={\n");
 	i = 0;
 	while (syms[i]) {
 		if (!strncmp(syms[i], "start_", 6)) {
-			if (inlist(syms[i] + 6) == -1)
-				fprintf(out, "\"%s\",\n", syms[i] + 6);
+			if (inlist(syms[i] + 6) == -1) {
+				fprintf(out, "{\"%s\"", syms[i] + 6);
+				int stop = sym(syms[i] + 6, "stop", NULL);
+				int main = sym(syms[i] + 6, NULL, "main");
+				int proc = sym(syms[i] + 6, NULL, "proc");
+				int deps = sym(syms[i] + 6, NULL, "deps");
+				fprintf(out, ",\tstart_%s", syms[i] + 6);
+
+				if (deps)
+					fprintf(out, ",\t%s_deps", syms[i] + 6);
+				else
+					fprintf(out, ",\tNULL");
+				if (proc)
+					fprintf(out, ",\t%s_proc", syms[i] + 6);
+				else
+					fprintf(out, ",\tNULL");
+				if (stop)
+					fprintf(out, ",\tstop_%s", syms[i] + 6);
+				else
+					fprintf(out, ",\tNULL");
+				if (main)
+					fprintf(out, ",\t%s_main", syms[i] + 6);
+				else
+					fprintf(out, ",\tNULL");
+				fprintf(out, "},\n");
+			}
 		} else if (!strncmp(syms[i], "stop_", 5)) {
-			if (inlist(syms[i] + 5) == -1)
-				fprintf(out, "\"%s\",\n", syms[i] + 5);
+			if (inlist(syms[i] + 5) == -1) {
+				fprintf(out, "{\"%s\"", syms[i] + 5);
+
+				int start = sym(syms[i] + 5, "start", NULL);
+				int main = sym(syms[i] + 5, NULL, "main");
+				int proc = sym(syms[i] + 5, NULL, "proc");
+				int deps = sym(syms[i] + 5, NULL, "deps");
+				if (start)
+					fprintf(out, ",\tstart_%s", syms[i] + 5);
+				else
+					fprintf(out, ",\tNULL");
+				if (deps)
+					fprintf(out, ",\t%s_deps", syms[i] + 5);
+				else
+					fprintf(out, ",\tNULL");
+				if (proc)
+					fprintf(out, ",\t%s_proc", syms[i] + 5);
+				else
+					fprintf(out, ",\tNULL");
+
+				fprintf(out, ",\tstop_%s", syms[i] + 5);
+				if (main)
+					fprintf(out, ",\t%s_main", syms[i] + 5);
+				else
+					fprintf(out, ",\tNULL");
+				fprintf(out, "},\n");
+			}
 		} else {
 			char copy[256];
 			strcpy(copy, syms[i]);
@@ -104,7 +163,7 @@ int main(int argc, char *argv[])
 				*p = 0;
 				if (sym(copy, NULL, "main")) {
 					if (inlist(copy) == -1)
-						fprintf(out, "\"%s\",\n", copy);
+						fprintf(out, "{\"%s\",\tNULL,\tNULL,\tNULL,\tNULL,\t%s_main},\n", copy, copy);
 				}
 			}
 		}
@@ -114,11 +173,11 @@ int main(int argc, char *argv[])
 
 	fprintf(out, "#include \"genmain.h\"\n");
 
-	fprintf(out, "#include <string.h>\n");
 	fprintf(out, "int main(int argc,char *argv[]){\n");
+	fprintf(out, "return check_arguments(argc, argv);\n");
+#if 0
 	fprintf(out, "int function;\n");
 	fprintf(out, "check_arguments(argc, argv, &function);\n");
-
 	i = 0;
 	fprintf(out, "if (!strcmp(argv[2],\"start\")) {\n");
 	while (syms[i]) {
@@ -142,13 +201,27 @@ int main(int argc, char *argv[])
 	fprintf(out, "}\n");
 	fprintf(out, "if (!strcmp(argv[2],\"stop\")) {\n");
 	while (syms[i]) {
-		fprintf(stdout, "process %s\n", syms[i]);
+		fprintf(stdout, "process stop %s\n", syms[i]);
 		if (!strcmp(syms[i], "stop_process")) {
 			i++;
 			continue;
 		}
 		if (!strncmp(syms[i], "stop_", 5)) {
 			fprintf(out, "HANDLE_STOP(%d,%s);\n", inlist(syms[i] + 5), syms[i] + 5);
+		}
+		i++;
+	}
+	i = 0;
+	fprintf(out, "}\n");
+	fprintf(out, "if (!strcmp(argv[2],\"restart\")) {\n");
+	while (syms[i]) {
+		fprintf(stdout, "process restart %s\n", syms[i]);
+		if (!strcmp(syms[i], "stop_process")) {
+			i++;
+			continue;
+		}
+		if (!strncmp(syms[i], "stop_", 5) && sym(syms[i] + 5, "start", NULL)) {
+			fprintf(out, "HANDLE_RESTART(%d,%s);\n", inlist(syms[i] + 5), syms[i] + 5);
 		}
 		i++;
 	}
@@ -169,6 +242,7 @@ int main(int argc, char *argv[])
 	}
 	fprintf(out, "}\n");
 	fprintf(out, "end(argv);\n");
+#endif
 	fprintf(out, "}\n");
 	fclose(out);
 }

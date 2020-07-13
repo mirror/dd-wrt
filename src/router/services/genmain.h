@@ -5,6 +5,7 @@
 static char *(*deps_func)(void);
 static char *(*proc_func)(void);
 static void (*start)(void);
+static void (*stop)(void);
 static int function;
 static int force;
 static void handle_procdeps(void)
@@ -72,6 +73,13 @@ static void handle_procdeps(void)
 		return 0; \
 	}
 
+#define HANDLE_RESTART(name, sym) \
+	if (name == function) { \
+		stop_##sym(); \
+		start_##sym(); \
+		return 0; \
+	}
+
 #define HANDLE_MAIN(name, sym) \
 	if (name == function) { \
 		return sym##_main(argc-2, args); \
@@ -91,30 +99,54 @@ static char **buildargs(int argc, char *argv[])
 void end(char *argv[])
 {
 	dd_debug(DEBUG_SERVICE, "function %s_%s not found\n", argv[2], argv[1]);
-	exit(-1);
 }
 
-void check_arguments(int argc, char *argv[], int *f)
+int check_arguments(int argc, char *argv[])
 {
 	if (argc < 3) {
-		fprintf(stderr, "%s servicename start|stop [-f]\n", argv[0]);
+		fprintf(stderr, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
 		fprintf(stderr, "options:\n");
 		fprintf(stderr, "-f : force start of service, no matter if neccessary\n");
 		fprintf(stderr, "list of services:\n");
 		int i;
-		for (i = 0; i < sizeof(functiontable) / sizeof(char *); i++) {
-			fprintf(stderr, "\t%s\n", functiontable[i]);
+		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
+			fprintf(stderr, "\t%s\n", functiontable[i].name);
 		}
-		exit(-1);
+		return -1;
 	}
 	int i;
 	if (argc > 3 && !strcmp(argv[3], "-f"))
 		force = 1;
 	for (i = 0; i < sizeof(functiontable) / sizeof(char *); i++) {
-		if (!strcmp(functiontable[i], argv[1])) {
-			*f = i;
-			return;
+		if (!strcmp(functiontable[i].name, argv[1])) {
+			deps_func = functiontable[i].deps;
+			proc_func = functiontable[i].proc;
+			start = functiontable[i].start;
+			stop = functiontable[i].stop;
+			if (!strcmp(argv[2], "start") && start) {
+				if (deps_func || proc_func) {
+					handle_procdeps();
+				} else
+					start();
+				return 0;
+			}
+			if (!strcmp(argv[2], "stop") && stop) {
+				stop();
+				return 0;
+			}
+			if (!strcmp(argv[2], "restart") && stop && start) {
+				stop();
+				start();
+				return 0;
+			}
+			if (!strcmp(argv[2], "main") && functiontable[i].main) {
+				char **args = buildargs(argc, argv);
+				return functiontable[i].main(argc - 2, args);
+			}
+			end(argv);
+			return -1;
 		}
 	}
 	end(argv);
+	return -1;
 }
