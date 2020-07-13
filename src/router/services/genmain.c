@@ -33,7 +33,6 @@ int sym(char *name, char *prefix, char *postfix)
 	int i = 0;
 	char check[256];
 	sprintf(check, "%s%s%s%s%s", prefix ? prefix : "", prefix ? "_" : "", name, postfix ? "_" : "", postfix ? postfix : "");
-	fprintf(stderr, "check %s\n", check);
 	while (syms[i]) {
 		if (!strcmp(syms[i++], check))
 			return 1;
@@ -64,8 +63,11 @@ int main(int argc, char *argv[])
 	readsymbols();
 	fprintf(out, "#include <string.h>\n");
 	while (syms[i]) {
+		if (!strcmp(syms[i], "stop_process")) {
+			i++;
+			continue;
+		}
 		if (!strncmp(syms[i], "start_", 6)) {
-			fprintf(stdout, "process %s\n", syms[i]);
 			char *name = syms[i] + 6;
 			int deps = sym(name, NULL, "deps");
 			int proc = sym(name, NULL, "proc");
@@ -89,7 +91,7 @@ int main(int argc, char *argv[])
 		}
 		i++;
 	}
-	fprintf(out, "typedef struct fn {\n");
+	fprintf(out, "struct fn {\n");
 	fprintf(out, "char *name;\n");
 	fprintf(out, "void (*start)(void);\n");
 	fprintf(out, "char  * (*deps)(void);\n");
@@ -128,6 +130,10 @@ int main(int argc, char *argv[])
 				fprintf(out, "},\n");
 			}
 		} else if (!strncmp(syms[i], "stop_", 5)) {
+			if (!strcmp(syms[i], "stop_process")) {
+				i++;
+				continue;
+			}
 			if (inlist(syms[i] + 5) == -1) {
 				fprintf(out, "{\"%s\"", syms[i] + 5);
 
