@@ -397,7 +397,7 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76");
 		insmod("mt76-usb");
 		insmod("mt7615-common");
-		wificnt += detect("mt7615e");
+		wificnt += detectchange("mt7615e");
 		if (!wificnt) {
 			rmmod("mt7615_common");
 			rmmod("mt7615-common");
@@ -407,8 +407,8 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76x02-lib");
 		insmod("mt76x02-usb");
 		insmod("mt76x2-common");
-		wificnt += detect("mt76x2e");
-		wificnt += detect("mt76x2u");
+		wificnt += detectchange("mt76x2e");
+		wificnt += detectchange("mt76x2u");
 		if (!wificnt) {
 			rmmod("mt76x2-common");
 			rmmod("mt76x02-usb");
@@ -417,14 +417,14 @@ static void detect_wireless_devices(int mask)
 		total += wificnt;
 		wificnt = 0;
 		insmod("mt76x0-common");
-		wificnt += detect("mt76x0e");
-		wificnt += detect("mt76x0u");
+		wificnt += detectchange("mt76x0e");
+		wificnt += detectchange("mt76x0u");
 		if (!wificnt)
 			rmmod("mt76x0-common");
 		total += wificnt;
 		wificnt = 0;
-		wificnt += detect("mt7603e");
-		wificnt += detect("mt7915e");
+		wificnt += detectchange("mt7603e");
+		wificnt += detectchange("mt7915e");
 		total += wificnt;
 		if (!total) {
 			rmmod("mt76-usb");
@@ -437,7 +437,7 @@ static void detect_wireless_devices(int mask)
 		insmod("rt2x00pci");
 		insmod("rt2800lib");
 		insmod("rt2800mmio");
-		if (!detect("rt2800pci")) {
+		if (!detectchange("rt2800pci")) {
 			rmmod("rt2800mmio");
 			rmmod("rt2800lib");
 			rmmod("rt2x00pci");
