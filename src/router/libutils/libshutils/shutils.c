@@ -385,9 +385,6 @@ int _evalpid(char *const argv[], char *path, int timeout, int *ppid)
 		/*
 		 * execute command 
 		 */
-		// for (i = 0; argv[i]; i++)
-		// snprintf (buf + strlen (buf), sizeof (buf), "%s ", argv[i]);
-		// cprintf("cmd=[%s]\n", buf);
 		setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
 		alarm(timeout);
 		execvp(argv[0], argv);
