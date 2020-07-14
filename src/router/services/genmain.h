@@ -166,7 +166,7 @@ int check_arguments(int argc, char *argv[])
 			start = functiontable[i].start;
 			stop = functiontable[i].stop;
 			if (!strcmp(argv[2], "start") && start) {
-				dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[2]);
+				dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[1]);
 				if (deps_func || proc_func) {
 					handle_procdeps();
 				} else
@@ -174,18 +174,18 @@ int check_arguments(int argc, char *argv[])
 				return 0;
 			}
 			if (!strcmp(argv[2], "stop") && stop) {
-				dd_debug(DEBUG_SERVICE, "call stop for %s\n", argv[2]);
+				dd_debug(DEBUG_SERVICE, "call stop for %s\n", argv[1]);
 				stop();
 				return 0;
 			}
 			if (!strcmp(argv[2], "restart") && stop && start) {
-				dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[2]);
+				dd_debug(DEBUG_SERVICE, "call restart for %s\n", argv[1]);
 				stop();
 				start();
 				return 0;
 			}
 			if (!strcmp(argv[2], "main") && functiontable[i].main) {
-				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[2]);
+				dd_debug(DEBUG_SERVICE, "call main for %s\n", argv[1]);
 				char **args = buildargs(argc, argv);
 				return functiontable[i].main(argc - 2, args);
 			}
