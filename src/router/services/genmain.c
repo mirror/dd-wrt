@@ -82,6 +82,7 @@ int main(int argc, char *argv[])
 	FILE *out = fopen("main.c", "wb");
 	int i = 0;
 	readsymbols();
+	fprintf(out, "/* generated - do not edit */\n");
 	fprintf(out, "#include <string.h>\n");
 	while (syms[i]) {
 		if (!strcmp(syms[i], "stop_process")) {
