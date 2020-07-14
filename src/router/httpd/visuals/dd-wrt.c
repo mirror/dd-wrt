@@ -1069,7 +1069,7 @@ void ej_calcendip(webs_t wp, int argc, char_t ** argv)
 
 	char *ip = nvram_safe_get("dhcp_start");
 	char *netmask = nvram_safe_get("lan_netmask");
-	int dhcpnum = atoi("dhcp_num");
+	int dhcpnum = atoi(nvram_safe_get("dhcp_num"));
 	unsigned int ip1 = get_single_ip(ip, 0);
 	unsigned int ip2 = get_single_ip(ip, 1);
 	unsigned int ip3 = get_single_ip(ip, 2);
@@ -1081,7 +1081,7 @@ void ej_calcendip(webs_t wp, int argc, char_t ** argv)
 	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + ip4;
 	unsigned int eip = sip + dhcpnum - 1;
 
-	websWrite(wp, "%d.%d.%d.%d,", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
+	websWrite(wp, "%d.%d.%d.%d", (eip >> 24) & 0xff, (eip >> 16) & 0xff, (eip >> 8) & 0xff, eip & 0xff);
 }
 
 void ej_show_dhcpd_settings(webs_t wp, int argc, char_t ** argv)
