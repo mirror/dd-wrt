@@ -165,7 +165,6 @@ int check_arguments(int argc, char *argv[])
 			proc_func = functiontable[i].proc;
 			start = functiontable[i].start;
 			stop = functiontable[i].stop;
-			fprintf(stderr, "%X %X %X %X\n", deps_func, proc_func, start, stop);
 			if (!strcmp(argv[2], "start") && start) {
 				dd_debug(DEBUG_SERVICE, "call start for %s\n", argv[2]);
 				if (deps_func || proc_func) {
