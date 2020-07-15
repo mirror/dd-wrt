@@ -46,8 +46,8 @@ snmp-configure: nvram libutils
 				--with-cc="$(CC)" \
 				--with-ar=$(ARCH)-linux-uclibc-ar \
 				--with-endianness=$(SNMP_ENDIAN) \
-				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
-				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(SNMP_EXTRACFLAGS) $(LTO) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)" \
 				--enable-mini-agent \
 				--disable-debugging \
 				--enable-privacy \
@@ -63,7 +63,6 @@ snmp-configure: nvram libutils
 				--with-gnu-ld \
 				--enable-internal-md5 \
 				--with-copy-persistent-files=no \
-				--with-openssl=$(TOP)/openssl \
 				--sysconfdir=/tmp \
 				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp$(SNMP_EXTRAMIB) \
 				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target,etherlike-mib,notification-log-mib,snmp-notification-mib,tsm-mib,tlstm-lib \
@@ -73,8 +72,11 @@ snmp-configure: nvram libutils
 				--without-rsaref \
 				--without-kmem-usage \
 				--without-rpm \
+				--without-openssl \
 				--without-dmalloc \
-				--with-opaque-special-types
+				--with-opaque-special-types \
+				AR_FLAGS="cru $(LTOPLUGIN)" \
+				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
