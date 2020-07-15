@@ -409,18 +409,17 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76x2-common");
 		wificnt += detectchange("mt76x2e");
 		wificnt += detectchange("mt76x2u");
-		if (!wificnt) {
-			rmmod("mt76x2-common");
-			rmmod("mt76x02-usb");
-			rmmod("mt76x02-lib");
-		}
 		total += wificnt;
 		wificnt = 0;
 		insmod("mt76x0-common");
 		wificnt += detectchange("mt76x0e");
 		wificnt += detectchange("mt76x0u");
-		if (!wificnt)
+		if (!wificnt) {
 			rmmod("mt76x0-common");
+			rmmod("mt76x2-common");
+			rmmod("mt76x02-usb");
+			rmmod("mt76x02-lib");
+		}
 		total += wificnt;
 		wificnt = 0;
 		wificnt += detectchange("mt7603e");
