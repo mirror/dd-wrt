@@ -120,8 +120,8 @@ static int handle_service(const int method, const char *name, int force)
 	}
 	if (method == RESTART)
 		return -1;
-	char *args[] = { "/sbin/service", (char*)name, method_name, NULL};
-	char *args_f[] = { "/sbin/service", (char*)name, method_name, "-f", NULL };
+	char *args[] = { "/sbin/service", (char *)name, method_name, NULL };
+	char *args_f[] = { "/sbin/service", (char *)name, method_name, "-f", NULL };
 
 	if (force)
 		ret = _evalpid(args_f, ">/dev/console", 0, NULL);
@@ -184,14 +184,13 @@ static void start_service_force_f(char *name)
 
 static int start_main(char *name, int argc, char **argv)
 {
-	char args[256] = {0};
-/7	char *args[32] = { "/sbin/service", name, "main", NULL };
+	char *args[32] = { "/sbin/service", name, "main", NULL };
 	int i;
 	for (i = 1; i < argc && i < 30; i++)
-		sprintf(args, "%s \"%s\"", args, argv[i]);;
+		args[i + 2] = argv[i];
 	args[2 + i] = NULL;
-	return sysprintf("/sbin/service %s main%s", name, args);
-//	return _evalpid(args, ">/dev/tty", 0, NULL);
+	execvp(args[0], args);
+	return errno;
 }
 
 static void start_main_f(char *name, int argc, char **argv)
