@@ -124,9 +124,9 @@ static int handle_service(const int method, const char *name, int force)
 	char *args_f[] = { "/sbin/service", (char *)name, method_name, "-f", NULL };
 
 	if (force)
-		ret = _evalpid(args_f, ">/dev/console", 0, NULL);
+		ret = _evalpid(args_f, NULL, 0, NULL);
 	else
-		ret = _evalpid(args, ">/dev/console", 0, NULL);
+		ret = _evalpid(args, NULL, 0, NULL);
 
 	if (method == STOP) {
 		if (stops_running)
