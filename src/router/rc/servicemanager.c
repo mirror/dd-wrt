@@ -184,12 +184,14 @@ static void start_service_force_f(char *name)
 
 static int start_main(char *name, int argc, char **argv)
 {
-	char *args[32] = { "/sbin/service", name, "main", NULL };
+	char args[256] = {0};
+/7	char *args[32] = { "/sbin/service", name, "main", NULL };
 	int i;
 	for (i = 1; i < argc && i < 30; i++)
-		args[2 + i] = argv[i];
+		sprintf(args, "%s \"%s\"", args, argv[i]);;
 	args[2 + i] = NULL;
-	return _evalpid(args, ">/dev/console", 0, NULL);
+	return sysprintf("/sbin/service %s main%s", name, args);
+//	return _evalpid(args, ">/dev/tty", 0, NULL);
 }
 
 static void start_main_f(char *name, int argc, char **argv)
