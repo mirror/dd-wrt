@@ -195,6 +195,7 @@ void Initnvramtab()
 		{ "WANIPADDR", "validate_wan_ipaddr", 0 },
 		{ "MERGEREMOTEIP", "validate_remote_ip", 0 },
 		{ "MERGEIPADDRS", "validate_merge_ipaddrs", 0 },
+		{ "MERGEDHCPSTART", "validate_merge_dhcpstart", 0 },
 		{ "DNS", "validate_dns", 0 },
 		{ "SAVEWDS", "save_wds", 0 },
 		{ "DHCP", "dhcp_check", 0 },
