@@ -63,7 +63,7 @@
 #include <jansson.h>
 #endif
 
-extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr);
+extern int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value);
 void save_networking(webs_t wp);
 
 void wan_proto(webs_t wp)
@@ -756,7 +756,7 @@ void copymergetonv(webs_t wp, const char *fmt, ...)
 	vsnprintf(varbuf, sizeof(varbuf), fmt, args);
 	va_end(args);
 	char ipaddr[32];
-	if (get_merge_ipaddr(wp, varbuf, ipaddr)) {
+	if (get_merge_ipaddr(wp, varbuf, ipaddr, NULL)) {
 		nvram_set(varbuf, ipaddr);
 	}
 
