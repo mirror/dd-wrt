@@ -64,7 +64,6 @@ void stop_redial(void)
 void start_redial(void)
 {
 	int ret;
-	pid_t pid;
 	char *redial_argv[] = { "/tmp/ppp/redial",
 		nvram_safe_get("ppp_redialperiod"),
 		NULL
@@ -76,7 +75,7 @@ void start_redial(void)
 	mkdir("/tmp/ppp", 0777);
 	symlink("/sbin/rc", "/tmp/ppp/redial");
 
-	ret = _evalpid(redial_argv, NULL, 0, &pid);
+	ret = _evalpid(redial_argv, NULL, 0, NULL);
 	dd_loginfo("ppp_redial", "redial process successfully started\n");
 
 	cprintf("done\n");

@@ -69,7 +69,6 @@ void start_gen_radius_cert(void)
 void start_freeradius(void)
 {
 	int ret = 0;
-	pid_t pid;
 
 	char *radiusd_argv[] = { "radiusd", "-d", "/jffs/etc/freeradius", NULL };
 	FILE *fp = NULL;
@@ -166,7 +165,7 @@ void start_freeradius(void)
 			freeradiusdb(db);
 		}
 	}
-	ret = _evalpid(radiusd_argv, NULL, 0, &pid);
+	ret = _evalpid(radiusd_argv, NULL, 0, NULL);
 
 	dd_loginfo("freeradius", "daemon successfully started\n");
 

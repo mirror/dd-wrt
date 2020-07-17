@@ -59,10 +59,8 @@ void start_process_monitor(void)
 	if (nvram_matchi("pmonitor_enable", 0))
 		return;
 
-	pid_t pid;
-
 	char *argv[] = { "process_monitor", NULL };
-	_evalpid(argv, NULL, 0, &pid);
+	_evalpid(argv, NULL, 0, NULL);
 
 	dd_loginfo("process_monitor", "successfully started\n");
 

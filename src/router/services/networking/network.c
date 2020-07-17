@@ -331,7 +331,6 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 {
 	char temp[12];
 
-	pid_t pid;
 	char *wan_hostname = nvram_safe_get("wan_hostname");
 #ifdef HAVE_FREECWMP
 	char *vendorclass = "dslforum.org";
@@ -486,7 +485,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 
 	}
 #endif
-	_evalpid(dhcp_argv, NULL, 0, &pid);
+	_evalpid(dhcp_argv, NULL, 0, NULL);
 
 	if (s_auth)
 		free(s_auth);
