@@ -1124,6 +1124,11 @@ struct ndpi_flow_struct {
     u_int16_t response_status_code; /* 200, 404, etc. */
   } http;
 
+  struct {    
+    char *pktbuf;
+    u_int16_t pktbuf_maxlen, pktbuf_currlen;
+  } kerberos_buf;
+
   union {
     /* the only fields useful for nDPI and ntopng */
     struct {
@@ -1135,6 +1140,10 @@ struct ndpi_flow_struct {
       u_int8_t request_code;
       u_int8_t version;
     } ntp;
+
+    struct {
+      char hostname[48], domain[48], username[48];
+    } kerberos;
 
     struct {
       struct {
