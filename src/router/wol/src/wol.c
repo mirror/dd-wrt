@@ -370,6 +370,24 @@ main (int argc, char *argv[])
       exit (1);
     }
 
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
 
   /* loop through possible MAC addresses */
   if (!request_stdin)
