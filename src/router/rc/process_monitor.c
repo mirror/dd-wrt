@@ -48,6 +48,24 @@ void monitor_signal(int sig)
 
 static int process_monitor_main(int argc, char **argv)
 {
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
 	int time;
 	long int leasetime = 0;
 	sigset_t sigs_to_catch;
