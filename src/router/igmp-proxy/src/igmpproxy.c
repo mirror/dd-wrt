@@ -105,6 +105,25 @@ int main( int ArgCn, char *ArgVc[] ) {
        exit(1);
     }
 
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
+
     openlog("igmpproxy", LOG_PID, LOG_USER);
 
     // Write debug notice with file path...
