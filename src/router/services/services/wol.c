@@ -54,7 +54,6 @@ void stop_wol(void)
 
 void start_wol(void)
 {
-	pid_t pid;
 	char *wol_argv[] = { "wol",
 		NULL
 	};
@@ -64,7 +63,7 @@ void start_wol(void)
 	if (nvram_matchi("wol_enable", 0))
 		return;
 
-	_evalpid(wol_argv, NULL, 0, &pid);
+	_evalpid(wol_argv, NULL, 0, NULL);
 
 }
 

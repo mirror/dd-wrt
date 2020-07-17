@@ -54,7 +54,6 @@ void stop_tor(void)
 void start_tor(void)
 {
 	int ret;
-	pid_t pid;
 	char *tor_argv[] = { "tor", "--defaults-torrc", "/tmp/torrc",
 		NULL
 	};
@@ -138,7 +137,7 @@ void start_tor(void)
 #endif
 
 	fclose(fp);
-	ret = _evalpid(tor_argv, NULL, 0, &pid);
+	ret = _evalpid(tor_argv, NULL, 0, NULL);
 }
 
 #endif				/* HAVE_WOL */
