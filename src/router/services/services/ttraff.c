@@ -76,10 +76,8 @@ void start_ttraff(void)
 		|| getWET()))
 		return;
 
-	pid_t pid;
-
 	char *argv[] = { "ttraff", NULL };
-	int ret = _evalpid(argv, NULL, 0, &pid);
+	int ret = _evalpid(argv, NULL, 0, NULL);
 
 	dd_loginfo("ttraff", "traffic counter daemon successfully started\n");
 
