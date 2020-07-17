@@ -411,7 +411,6 @@ void start_init_start(void)
 	eval("restart_f", "bootconfig");
 #endif
 
-
 }
 
 void start_modules_wait(void)

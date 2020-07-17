@@ -32,6 +32,7 @@
 #include <utils.h>
 #include <bcmnvram.h>
 
+void run_opt(void);
 static int usb_process_path(char *path, int host, char *part, char *devpath);
 static void usb_unmount(char *dev);
 static int usb_add_ufd(char *link, int host, char *devpath, int mode);
@@ -473,11 +474,13 @@ static int usb_process_path(char *path, int host, char *part, char *devpath)
 			if (strstr(line, "Opt") || strstr(line, "OPT") || strstr(line, "\"opt")) {
 				found = 1;
 				do_mount(fs, path, "/opt", dev);
+				run_opt();
 			}
 			sprintf(uuid, "%s", nvram_safe_get("usb_mntopt"));
 			if (strlen(uuid) > 15 && strstr(line, uuid)) {
 				found = 1;
 				do_mount(fs, path, "/opt", dev);
+				run_opt();
 			}
 		}
 		fclose(fp);
