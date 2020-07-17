@@ -97,7 +97,7 @@ void start_sysinit(void)
 #else
 	insmod("ar2313");
 #endif
-	nvram_set("use_ath5k","1");
+	nvram_set("use_ath5k", "1");
 	detect_wireless_devices(RADIO_ALL);
 
 #if defined(HAVE_EAP3660) || defined(HAVE_EOC2610) || defined(HAVE_ECB3500) || defined(HAVE_EOC1650)
