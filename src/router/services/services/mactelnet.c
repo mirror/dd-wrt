@@ -40,7 +40,6 @@ char *mactelnetd_proc(void)
 
 void start_mactelnetd(void)
 {
-	pid_t pid;
 	int ret = 0;
 #if defined(ARCH_broadcom) && !defined(HAVE_BCMMODERN)
 	char *telnetd_argv[] = { "mactelnetd", NULL };
@@ -60,7 +59,7 @@ void start_mactelnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		ret = _evalpid(telnetd_argv, NULL, 0, &pid);
+		ret = _evalpid(telnetd_argv, NULL, 0, NULL);
 #ifdef HAVE_REGISTER
 	else
 		return;

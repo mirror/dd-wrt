@@ -62,7 +62,6 @@ void stop_wland(void)
 
 void start_wland(void)
 {
-	pid_t pid;
 	char *wland_argv[] = { "wland",
 		NULL
 	};
@@ -72,7 +71,7 @@ void start_wland(void)
 	// if( nvram_matchi("apwatchdog_enable",0) )
 	// return 0;
 
-	_evalpid(wland_argv, NULL, 0, &pid);
+	_evalpid(wland_argv, NULL, 0, NULL);
 	dd_loginfo("wland", "daemon successfully started\n");
 	cprintf("done\n");
 	return;
