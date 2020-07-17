@@ -22,6 +22,24 @@ extern void handle_wireless(void);
 
 static int radio_timer_main(int argc, char **argv)
 {
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
 
 	unsigned int *radiotime;	// 4 byte int number (24 bits from gui + 1 bit for midnight)
 	int cnt = getdevicecount();
