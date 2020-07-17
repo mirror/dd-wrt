@@ -184,12 +184,31 @@ static void start_service_force_f(char *name)
 
 static int start_main(char *name, int argc, char **argv)
 {
+	pid_t pid;
+	int status;
+	int sig;
 	char *args[32] = { "/sbin/service", name, "main", NULL };
 	int i;
 	for (i = 1; i < argc && i < 30; i++)
 		args[i + 2] = argv[i];
 	args[2 + i] = NULL;
-	execvp(args[0], args);
+	switch (pid = fork()) {
+	case -1:		/* error */
+		perror("fork");
+		return errno;
+	case 0:		/* child */
+		for (sig = 0; sig < (_NSIG - 1); sig++)
+			signal(sig, SIG_DFL);
+		execvp(args[0], args);
+		perror(argv[0]);
+		exit(errno);
+	default:		/* parent */
+		waitpid(pid, &status, 0);
+		if (WIFEXITED(status))
+			return WEXITSTATUS(status);
+		else
+			return status;
+	}
 	return errno;
 }
 
