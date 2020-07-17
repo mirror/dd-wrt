@@ -1467,6 +1467,8 @@ int wifi_gettxpower(char *ifname)
 		 * Check for relative values 
 		 */
 		if (txpower->flags & IW_TXPOW_RELATIVE) {
+			if (txpower->value < 0)
+				return 0;
 			return txpower->value + poweroffset;
 		} else {
 			int dbm = 0;
@@ -1478,6 +1480,8 @@ int wifi_gettxpower(char *ifname)
 				dbm = iw_mwatt2dbm(txpower->value);
 			else
 				dbm = txpower->value;
+			if (dbm < 0)
+				return 0;
 			return dbm + poweroffset;
 		}
 	}
