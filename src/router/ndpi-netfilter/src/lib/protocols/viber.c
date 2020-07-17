@@ -31,12 +31,15 @@ void ndpi_search_viber(struct ndpi_detection_module_struct *ndpi_struct, struct 
   
   NDPI_LOG_DBG(ndpi_struct, "search for VIBER\n");
   
-  if(packet->udp != NULL) {
+  if((packet->udp != NULL) && (packet->payload_packet_len > 5)) {
     NDPI_LOG_DBG2(ndpi_struct, "calculating dport over udp\n");
 
-    if((packet->payload_packet_len == 12 && packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
+    if((packet->payload[2] == 0x03 && packet->payload[3] == 0x00)
        || (packet->payload_packet_len == 20 && packet->payload[2] == 0x09 && packet->payload[3] == 0x00)
-       || ((packet->payload_packet_len < 135) && (packet->payload[0] == 0x11))) {
+       || (packet->payload[2] == 0x01 && packet->payload[3] == 0x00 && packet->payload[4] == 0x05 && packet->payload[5] == 0x00)
+       || (packet->payload_packet_len == 34 && packet->payload[2] == 0x19 && packet->payload[3] == 0x00)
+       || (packet->payload_packet_len == 34 && packet->payload[2] == 0x1b && packet->payload[3] == 0x00)
+       ) {
       NDPI_LOG_DBG(ndpi_struct, "found VIBER\n");
       ndpi_set_detected_protocol(ndpi_struct, flow, NDPI_PROTOCOL_VIBER, NDPI_PROTOCOL_UNKNOWN);
       return;

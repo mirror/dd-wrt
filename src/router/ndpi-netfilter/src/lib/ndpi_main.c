@@ -3839,8 +3839,19 @@ static int ndpi_init_packet_header(struct ndpi_detection_module_struct *ndpi_str
 	u_int8_t backup;
 	u_int16_t backup1, backup2;
 	
-	if(flow->http.url)          ndpi_free(flow->http.url);
-	if(flow->http.content_type) ndpi_free(flow->http.content_type);
+	if(flow->http.url) {
+	  ndpi_free(flow->http.url);
+	  flow->http.url = NULL;
+	}
+	if(flow->http.content_type) {
+	  ndpi_free(flow->http.content_type);
+	  flow->http.content_type = NULL;
+	}
+
+	if(flow->kerberos_buf.pktbuf) {
+	  ndpi_free(flow->kerberos_buf.pktbuf);
+	  flow->kerberos_buf.pktbuf = NULL;
+	}
 
 	backup  = flow->num_processed_pkts;
 	backup1 = flow->guessed_protocol_id;
@@ -6306,6 +6317,8 @@ void ndpi_free_flow(struct ndpi_flow_struct *flow) {
   if(flow) {
     if(flow->http.url)          ndpi_free(flow->http.url);
     if(flow->http.content_type) ndpi_free(flow->http.content_type);
+    if(flow->kerberos_buf.pktbuf)
+      ndpi_free(flow->kerberos_buf.pktbuf);
 #ifndef __KERNEL__
     ndpi_free(flow);
 #endif
