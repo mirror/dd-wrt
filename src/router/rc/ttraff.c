@@ -136,6 +136,25 @@ void write_to_nvram(int day, int month, int year, unsigned long long rcvd, unsig
 static int ttraff_main(int argc, char **argv)
 {
 
+	switch (fork()) {
+	case -1:
+		// can't fork
+		exit(0);
+		break;
+	case 0:
+		/* 
+		 * child process 
+		 */
+		// fork ok
+		(void)setsid();
+		break;
+	default:
+		/* 
+		 * parent process should just die 
+		 */
+		_exit(0);
+	}
+
 	struct tm *currtime;
 	long int tloc;
 
