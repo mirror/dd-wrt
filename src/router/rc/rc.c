@@ -97,7 +97,7 @@ static int softwarerevision_main(int argc, char **argv)
 /* 
  * Call when keepalive mode
  */
-int redial_main(int argc, char **argv)
+static int redial_main(int argc, char **argv)
 {
 	switch (fork()) {
 	case -1:
@@ -145,16 +145,19 @@ int redial_main(int argc, char **argv)
 			start_service_force("check_qmi");
 		}
 #endif
-		sleep(atoi(argv[1]));
+		if (argc < 2)
+			sleep(30);
+		else
+			sleep(atoi(argv[1]));
 		num = 0;
 		_count++;
 
-		// fprintf(stderr, "check PPPoE %d\n", num);
+//               fprintf(stderr, "check PPPoE %d\n", num);
 		if (!check_wan_link(num)) {
-			// fprintf(stderr, "PPPoE %d need to redial\n", num);
+//                       fprintf(stderr, "PPPoE %d need to redial\n", num);
 			need_redial = 1;
 		} else {
-			// fprintf(stderr, "PPPoE %d not need to redial\n", num);
+//                       fprintf(stderr, "PPPoE %d not need to redial\n", num);
 			continue;
 		}
 
