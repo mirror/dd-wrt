@@ -859,32 +859,20 @@ void stop_run_rc_startup(void)
 {
 }
 
+void run_opt(void)
+{
+
+	eval("/opt/etc/init.d/rcS");
+	internal_runStartup("/opt/etc/unit.d", "S**");
+}
+
 void start_run_rc_startup(void)
 {
 #ifndef HAVE_MICRO
-	DIR *directory;
-	int count = 36;		// 36 * 5 s = 180s
-
 	create_rc_file(RC_STARTUP);
-
 	if (f_exists("/tmp/.rc_startup"))
 		eval("/tmp/.rc_startup");
-
-	if (nvram_matchi("rc_opt_run", 1))
-		return;
-	nvram_seti("rc_opt_run", 1);
-	while (count > 0) {
-		directory = opendir("/opt/etc/init.d");
-		if (directory == NULL) {
-			sleep(5);
-			count--;
-		} else {
-			closedir(directory);
-			runStartup("S**");	// if available; run S** startup scripts
-			nvram_seti("rc_opt_run", 0);
-			return;
-		}
-	}
+	internal_runStartup("/opt/etc/unit.d", "S**");
 #endif
 }
 

@@ -264,8 +264,8 @@ void start_sysinit(void)
 	eval("/sbin/vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 	eval("/sbin/vconfig", "add", "eth1", "1");
 	eval("/sbin/vconfig", "add", "eth2", "2");
-//	set_smp_affinity(230, 4);
-//	set_smp_affinity(231, 8);
+//      set_smp_affinity(230, 4);
+//      set_smp_affinity(231, 8);
 	int i;
 /*	for (i = 242; i < 251; i++)
 		set_smp_affinity(i, 1);
