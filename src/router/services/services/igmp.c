@@ -32,7 +32,6 @@ void stop_igmprt(void);
 void start_igmprt(void)
 {
 	int ret = 0;
-	pid_t pid;
 	char name[80], *next, *svbuf;
 	char *argv[] = { "igmprt", "/tmp/igmpproxy.conf", NULL };
 
@@ -85,7 +84,7 @@ void start_igmprt(void)
 	fclose(fp);
 	if (ifcount) {
 		if (pidof("igmprt") < 1) {
-			ret = _evalpid(argv, NULL, 0, &pid);
+			ret = _evalpid(argv, NULL, 0, NULL);
 			dd_logstart("igmprt", ret);
 		}
 	}

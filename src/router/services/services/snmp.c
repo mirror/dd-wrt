@@ -47,7 +47,6 @@ char *snmp_proc(void)
 
 void start_snmp(void)
 {
-	pid_t pid;
 
 	char *snmpd_argv[] = { "snmpd", "-c", SNMP_CONF_FILE, NULL };
 	FILE *fp = NULL;
@@ -92,7 +91,7 @@ void start_snmp(void)
 		}
 	}
 #endif
-	_evalpid(snmpd_argv, NULL, 0, &pid);
+	_evalpid(snmpd_argv, NULL, 0, NULL);
 
 	cprintf("done\n");
 	dd_loginfo("snmpd", "SNMP daemon successfully started\n");
