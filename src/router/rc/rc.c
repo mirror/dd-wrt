@@ -115,7 +115,7 @@ int redial_main(int argc, char **argv)
 #endif
 		if (nvram_match("wan_proto", "3g")
 		    && nvram_match("3gdata", "sierradirectip")) {
-			start_check_sierradirectip();
+			start_service_force("check_sierradirectip");
 		} else if (nvram_match("wan_proto", "3g")
 			   && nvram_match("3gnmvariant", "1")) {
 			start_service_force("check_sierrappp");
@@ -179,7 +179,7 @@ int redial_main(int argc, char **argv)
 
 #ifdef HAVE_PPTP
 				if (nvram_match("wan_proto", "pptp")) {
-					stop_pptp();
+					stop_service_force("pptp");
 					unlink("/tmp/services/pptp.stop");
 					sleep(1);
 					start_service_force("wan_redial");
@@ -190,7 +190,7 @@ int redial_main(int argc, char **argv)
 #endif
 #ifdef HAVE_L2TP
 				if (nvram_match("wan_proto", "l2tp")) {
-					stop_l2tp();
+					stop_service_force("l2tp");
 					unlink("/tmp/services/l2tp.stop");
 					sleep(1);
 					start_service_force("wan_redial");
