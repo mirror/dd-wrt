@@ -40,7 +40,6 @@ char *telnetd_proc(void)
 
 void start_telnetd(void)
 {
-	pid_t pid;
 	char *telnetd_argv[] = { "telnetd", NULL };
 #ifdef HAVE_REGISTER
 	char *telnetd_argv_reg[] = { "telnetd", "-l", "/sbin/regshell", NULL };
@@ -55,7 +54,7 @@ void start_telnetd(void)
 #ifdef HAVE_REGISTER
 	if (isregistered_real())
 #endif
-		_evalpid(telnetd_argv, NULL, 0, &pid);
+		_evalpid(telnetd_argv, NULL, 0, NULL);
 #ifdef HAVE_REGISTER
 	else
 		return;

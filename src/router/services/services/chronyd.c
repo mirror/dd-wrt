@@ -63,7 +63,6 @@ static int write_default_config(FILE * fp)
 void start_chronyd(void)
 {
 	int ret = 0;
-	pid_t pid;
 	char *chronyd_argv[] = { "chronyd", NULL };
 
 	stop_chronyd();
@@ -81,7 +80,7 @@ void start_chronyd(void)
 	fclose(fp);
 
 	if (!ret)
-		ret = _evalpid(chronyd_argv, NULL, 0, &pid);
+		ret = _evalpid(chronyd_argv, NULL, 0, NULL);
 }
 
 #endif
