@@ -184,7 +184,7 @@ bool tls_ctx_set_options(struct tls_root_ctx *ctx, unsigned int ssl_flags)
         msg(M_FATAL, "Unidentified maximum TLS version");
     }
 
-    wolfSSL_CTX_set_session_cache_mode(ctx->ctx, WOLFSSL_SESS_CACHE_OFF);
+//    wolfSSL_CTX_set_session_cache_mode(ctx->ctx, WOLFSSL_SESS_CACHE_OFF);
     wolfSSL_CTX_set_default_passwd_cb(ctx->ctx, pem_password_callback);
     wolfSSL_CTX_set_info_callback(ctx->ctx, info_callback);
 
@@ -317,7 +317,7 @@ void tls_ctx_load_ecdh_params(struct tls_root_ctx *ctx, const char *curve_name)
 int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
         const char *pkcs12_file_inline, bool load_ca_file)
 {
-    int err, i, ret = 1;
+    int err, i, ret = 1,fd, size;
     uint32_t pkcs12_len;
     struct gc_arena gc = gc_new();
     struct buffer buf;
@@ -358,11 +358,32 @@ int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
     else
     {
         /* PKCS12 in file */
-        buf = buffer_read_from_file(pkcs12_file, &gc);
+//        buf = buffer_read_from_file(pkcs12_file, &gc);
+
+        buf = alloc_buf_gc(2048, &gc);
+        fd = platform_open(pkcs12_file, O_RDONLY, 0);
+        if (fd == -1)
+        {
+            msg(M_ERR, "Cannot open key file '%s'", pkcs12_file);
+        }
+        size = read(fd, buf.data, buf.capacity);
+        if (size < 0)
+        {
+            msg(M_FATAL, "Read error on key file ('%s')", pkcs12_file);
+        }
+        if (size == buf.capacity)
+        {
+            msg(M_FATAL, "Key file ('%s') can be a maximum of %d bytes", pkcs12_file, (int)buf.capacity);
+        }
+        close(fd);
+
+
         if (!buf_valid(&buf))
         {
             msg(M_FATAL, "Read error on pkcs12 file ('%s')", pkcs12_file);
         }
+
+
     }
 
     if ((err = wc_d2i_PKCS12(BPTR(&buf), BLEN(&buf), pkcs12)) != 0)
@@ -450,6 +471,18 @@ tls_ctx_load_cryptoapi(struct tls_root_ctx *ctx, const char *cryptoapi_cert)
     msg(M_FATAL, "Windows CryptoAPI is not yet supported for wolfSSL.");
 }
 #endif /* ENABLE_CRYPTOAPI */
+
+int
+tls_ctx_use_external_private_key(struct tls_root_ctx *ctx,
+                                 const char *cert_file, const char *cert_file_inline)
+{
+    ASSERT(NULL != ctx);
+
+    tls_ctx_load_cert_file(ctx, cert_file, cert_file_inline);
+    if (ctx->ctx == NULL)
+	return 1;
+    return 0;
+}
 
 void tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
         const char *cert_file_inline)
