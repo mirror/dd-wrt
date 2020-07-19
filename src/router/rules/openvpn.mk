@@ -1,26 +1,21 @@
-ifeq ($(CONFIG_POLARSSL),y)
-OVPN=openvpn-polarssl
-SSLPATH=$(TOP)/polarssl
-SSL_LIB_PATH=$(SSLPATH)/library
-SSL_TYPE=polarssl
-SSL_DEP=polarssl
-SSL_ADDOPT=--with-pkcs11-helper-headers=$(TOP)/pkcs11-helper/include \
-	   --with-pkcs11-helper-lib=$(TOP)/pkcs11-helper/lib/.libs \
-           POLARSSL_CFLAGS="-I$(SSLPATH)/include"  \
-           POLARSSL_LIBS="-L$(SSL_LIB_PATH) -lpolarssl"
-else
+WOLFSSL_SSLPATH=$(TOP)/wolfssl
+WOLFSSL_SSL_LIB_PATH=$(WOLFSSL_SSLPATH)/standard/src/.libs
+WOLFSSL_SSL_DEP=wolfssl
+WOLFSSL_SSL_ADDOPT=OPENSSL_LIBS="-L$(WOLFSSL_SSL_LIB_PATH)" \
+	WOLFSSL_LIBS="-L$(WOLFSSL_SSL_LIB_PATH) -lwolfssl" \
+	WOLFSSL_CFLAGS="-I$(WOLFSSL_SSLPATH) -I$(WOLFSSL_SSLPATH)/standard -I$(WOLFSSL_SSLPATH)/standard/wolfssl  -I$(WOLFSSL_SSLPATH)/wolfssl"
+
+
 OVPN=openvpn
-SSLPATH=$(TOP)/openssl
-SSL_LIB_PATH=$(SSLPATH)
-SSL_TYPE=openssl
-SSL_DEP=openssl
-SSL_ADDOPT=OPENSSL_LIBS="-L$(SSL_LIB_PATH) -lssl -lcrypto" \
-	OPTIONAL_CRYPTO_LIBS="-L$(SSL_LIB_PATH) -lssl -lcrypto" \
-	OPENSSL_SSL_CFLAGS="-I$(SSLPATH)/include" \
-	OPENSSL_SSL_LIBS="-L$(SSL_LIB_PATH) -lssl" \
-	OPENSSL_CRYPTO_CFLAGS="-I$(SSLPATH)/include" \
-	OPENSSL_CRYPTO_LIBS="-L$(SSL_LIB_PATH) -lcrypto"
-endif
+OPENSSL_SSLPATH=$(TOP)/openssl
+OPENSSL_SSL_LIB_PATH=$(OPENSSL_SSLPATH)
+OPENSSL_SSL_DEP=openssl
+OPENSSL_SSL_ADDOPT=OPENSSL_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lssl -lcrypto" \
+	OPTIONAL_CRYPTO_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lssl -lcrypto" \
+	OPENSSL_SSL_CFLAGS="-I$(OPENSSL_SSLPATH)/include" \
+	OPENSSL_SSL_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lssl" \
+	OPENSSL_CRYPTO_CFLAGS="-I$(OPENSSL_SSLPATH)/include" \
+	OPENSSL_CRYPTO_LIBS="-L$(OPENSSL_SSL_LIB_PATH) -lcrypto"
 
 
 
@@ -40,10 +35,38 @@ CONFIGURE_ARGS_OVPN += \
 	--enable-fragment \
 	--enable-server \
 	--enable-multihome \
-	--with-crypto-library=$(SSL_TYPE) \
-	$(SSL_ADDOPT) \
-	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
+	--with-crypto-library=openssl \
+	$(OPENSSL_SSL_ADDOPT) \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
+	LZO_CFLAGS="-I$(TOP)/lzo/include" \
+	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
+	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
+	ac_cv_func_epoll_create=yes \
+	ac_cv_path_IFCONFIG=/sbin/ifconfig \
+	ac_cv_path_ROUTE=/sbin/route \
+	ac_cv_path_IPROUTE=/usr/sbin/ip 
+
+CONFIGURE_ARGS_WOLFSSL += \
+	--host=$(ARCH)-linux \
+	CPPFLAGS="-I$(TOP)/lzo/include -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs" \
+	--prefix=/usr \
+	--disable-selinux \
+	--disable-systemd \
+	--disable-debug \
+	--disable-eurephia \
+	--disable-pkcs11 \
+	--disable-plugins \
+	--enable-password-save \
+	--enable-management \
+	--enable-lzo \
+	--enable-fragment \
+	--enable-server \
+	--enable-multihome \
+	--with-crypto-library=wolfssl \
+	$(WOLFSSL_SSL_ADDOPT) \
+	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
@@ -56,11 +79,14 @@ CONFIGURE_ARGS_OVPN += \
 ifeq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_BCMMODERN),y)
 CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=no
+CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=no
 else
 CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=yes
+CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=yes
 endif
 else
 CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=yes
+CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=yes
 endif
 
 openvpn-conf-prep:
@@ -69,8 +95,11 @@ openvpn-conf-prep:
 	cd openvpn && autoconf
 	cd openvpn && automake
 
-openvpn-conf: $(SSL_DEP)
-	if ! test -e "$(OVPN)/Makefile"; then cd $(OVPN) && ./configure $(CONFIGURE_ARGS_OVPN); fi 
+openvpn-conf: openssl wolfssl
+	mkdir -p openvpn/openssl
+	mkdir -p openvpn/wolfssl
+	if ! test -e "$(OVPN)/openssl/Makefile"; then cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN); fi 
+	if ! test -e "$(OVPN)/wolfssl/Makefile"; then cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL); fi 
 
 
 openvpn-configure: lzo openvpn-conf-prep openvpn-conf
@@ -99,19 +128,21 @@ endif
 endif
 endif
 endif
-ifeq ($(CONFIG_NEWMEDIA),y)
-	make -j 4 -C $(OVPN) clean
-else
-	make -j 4 -C $(OVPN) clean
-endif
+	make -j 4 -C $(OVPN)/openssl clean
 ifeq ($(CONFIG_OPENVPN_SSLSTATIC),y)
 	rm -f openssl/*.so*
 endif
-	make -j 4 -C $(OVPN)
-
+ifeq ($(CONFIG_WOLFSSL),y)
+	make -j 4 -C $(OVPN)/wolfssl
+else
+	make -j 4 -C $(OVPN)/openssl
+endif
 openvpn-install:
-	install -D $(OVPN)/src/openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
-
+ifeq ($(CONFIG_WOLFSSL),y)
+	install -D $(OVPN)/src/openvpn/wolfssl/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+else
+	install -D $(OVPN)/src/openvpn/openssl/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+endif
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
 	install -D openvpn/config-airnet/openvpncl.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpncl.webvpn
