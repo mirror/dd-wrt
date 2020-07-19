@@ -1383,7 +1383,12 @@ endif
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_WOLFSSL),y)
 CFLAGS += -I$(TOP)/wolfssl/wolfssl/openssl/    -I$(TOP)/wolfssl -I$(TOP)/wolfssl/wolfssl $(LTOMIN)
-SSLLDFLAGS += $(LDLTO) -L$(TOP)/wolfssl/src/.libs -lwolfssl -lm 
+
+ifeq ($(CONFIG_WOLFSSLMIN),y)
+SSLLDFLAGS += $(LDLTO) -L$(TOP)/wolfssl/minimal/src/.libs -lwolfssl -lm 
+else
+SSLLDFLAGS += $(LDLTO) -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl -lm 
+endif
 CFLAGS += -DHAVE_OPENSSL
 CFLAGS += -DHAVE_HTTPS
 CFLAGS += -DHAVE_WOLFSSL
