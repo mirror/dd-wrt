@@ -27,7 +27,7 @@ ifeq ($(CONFIG_WPA3),y)
 ifeq ($(CONFIG_OPENSSL),y)
 ATH9K_LDFLAGS += -L$(TOP)/openssl -lcrypto -lssl
 else
-ATH9K_LDFLAGS += -L$(TOP)/wolfssl/src/.libs -lwolfssl
+ATH9K_LDFLAGS += -L$(TOP)/wolfssl/standard/src/.libs -lwolfssl
 endif
 endif
 
