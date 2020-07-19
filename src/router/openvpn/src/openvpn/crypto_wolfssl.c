@@ -76,6 +76,34 @@ void crypto_init_lib_engine(const char *engine_name)
     msg(M_INFO, "Note: wolfSSL does not have an engine");
 }
 
+void
+print_cipher(const cipher_kt_t *cipher)
+{
+    const char *var_key_size = cipher_kt_var_key_size(cipher) ?
+                               " by default" : "";
+
+    printf("%s  (%d bit key%s, ",
+           cipher_kt_name(cipher),
+           cipher_kt_key_size(cipher) * 8, var_key_size);
+
+    if (cipher_kt_block_size(cipher) == 1)
+    {
+        printf("stream cipher");
+    }
+    else
+    {
+        printf("%d bit block", cipher_kt_block_size(cipher) * 8);
+    }
+
+    if (!cipher_kt_mode_cbc(cipher))
+    {
+        printf(", TLS client/server mode only");
+    }
+
+    printf(")\n");
+}
+
+
 void show_available_ciphers(void)
 {
     cipher_kt_t cipher;
@@ -1243,7 +1271,7 @@ const cipher_kt_t *cipher_ctx_get_cipher_kt(const cipher_ctx_t *ctx)
  * Reset the cipher context to the initial settings used in cipher_ctx_init
  * and set a new IV
  */
-int cipher_ctx_reset(cipher_ctx_t *ctx, const uint8_t *iv_buf)
+int cipher_ctx_reset(cipher_ctx_t *ctx, uint8_t *iv_buf)
 {
     int ret;
     if ((ret = wolfssl_ctx_init(ctx, (uint8_t*) &ctx->key,
