@@ -34,6 +34,72 @@ SNMP_EXTRALIB=-lnl-tiny
 endif
 SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
 
+SNMP_MIB_MODULES_INCLUDED = \
+	agent/extend \
+	agentx \
+	host/hr_device \
+	host/hr_disk \
+	host/hr_filesys \
+	host/hr_network \
+	host/hr_partition \
+	host/hr_proc \
+	host/hr_storage \
+	host/hr_system \
+	ieee802dot11 \
+	if-mib/ifXTable \
+	ip-mib/inetNetToMediaTable \
+	mibII/at \
+	mibII/icmp \
+	mibII/ifTable \
+	mibII/ip \
+	mibII/snmp_mib \
+	mibII/sysORTable \
+	mibII/system_mib \
+	mibII/tcp \
+	mibII/udp \
+	mibII/vacm_context \
+	mibII/vacm_vars \
+	tunnel \
+	ucd-snmp/extensible \
+	ucd-snmp/loadave \
+	ucd-snmp/memory \
+	ucd-snmp/pass \
+	ucd-snmp/pass_persist \
+	ucd-snmp/proc \
+	ucd-snmp/vmstat \
+	util_funcs \
+	utilities/execute \
+
+SNMP_MIB_MODULES_EXCLUDED = \
+	agent_mibs \
+	disman/event \
+	disman/schedule \
+	hardware \
+	host \
+	if-mib \
+	ip-mib \
+	mibII \
+	notification \
+	notification-log-mib \
+	snmpv3mibs \
+	target \
+	tcp-mib \
+	ucd_snmp \
+	udp-mib \
+	utilities \
+	snmpv3/snmpEngine \
+	snmpv3/snmpMPDStats \
+	snmpv3/usmConf \
+	snmpv3/usmStats \
+	snmpv3/usmUser \
+	ucd-snmp/disk \
+	ucd-snmp/dlmod \
+
+SNMP_TRANSPORTS_INCLUDED = Callback UDP Unix
+
+SNMP_TRANSPORTS_EXCLUDED = TCP TCPIPv6
+
+
 snmp-configure: nvram libutils
 	cd snmp && rm -f config.cache
 	-cd snmp && mkdir build_mac80211
@@ -63,8 +129,10 @@ snmp-configure: nvram libutils
 				--enable-internal-md5 \
 				--with-copy-persistent-files=no \
 				--sysconfdir=/tmp \
-				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp$(SNMP_EXTRAMIB) \
-				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target,etherlike-mib,notification-log-mib,snmp-notification-mib,tsm-mib,tlstm-lib \
+				--with-out-mib-modules="$(SNMP_MIB_MODULES_EXCLUDED)" \
+				--with-mib-modules="$(SNMP_MIB_MODULES_INCLUDED) ddwrt/ddwrt" \
+				--with-out-transports="$(SNMP_TRANSPORTS_EXCLUDED)" \
+				--with-transports="$(SNMP_TRANSPORTS_INCLUDED)" \
 				--disable-ipv6 \
 				--with-defaults \
 				--without-efence \
@@ -73,6 +141,10 @@ snmp-configure: nvram libutils
 				--without-rpm \
 				--without-openssl \
 				--without-dmalloc \
+				--without-zlib \
+				--disable-perl-cc-checks \
+				--disable-embedded-perl \
+				--without-perl-modules \
 				--with-opaque-special-types \
 				AR_FLAGS="cru $(LTOPLUGIN)" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
@@ -102,8 +174,10 @@ snmp-configure: nvram libutils
 				--enable-internal-md5 \
 				--with-copy-persistent-files=no \
 				--sysconfdir=/tmp \
-				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp \
-				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target,etherlike-mib,notification-log-mib,snmp-notification-mib,tsm-mib,tlstm-lib \
+				--with-out-mib-modules="$(SNMP_MIB_MODULES_EXCLUDED)" \
+				--with-mib-modules="$(SNMP_MIB_MODULES_INCLUDED)" \
+				--with-out-transports="$(SNMP_TRANSPORTS_EXCLUDED)" \
+				--with-transports="$(SNMP_TRANSPORTS_INCLUDED)" \
 				--disable-ipv6 \
 				--with-defaults \
 				--without-efence \
@@ -112,6 +186,10 @@ snmp-configure: nvram libutils
 				--without-rpm \
 				--without-openssl \
 				--without-dmalloc \
+				--without-zlib \
+				--disable-perl-cc-checks \
+				--disable-embedded-perl \
+				--without-perl-modules \
 				--with-opaque-special-types \
 				AR_FLAGS="cru $(LTOPLUGIN)" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
