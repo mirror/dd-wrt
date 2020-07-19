@@ -38,7 +38,7 @@ snmp-configure: nvram libutils
 	cd snmp && rm -f config.cache
 	-cd snmp && mkdir build_mac80211
 	-cd snmp && mkdir build_standard
-	cd snmp && cd build_mac80211 && ../configure  --quiet \
+	-cd snmp && cd build_mac80211 && ../configure  --quiet \
 				--prefix=/tmp/snmp \
 				--target=$(ARCH)-linux \
 				--host=$(ARCH) \
