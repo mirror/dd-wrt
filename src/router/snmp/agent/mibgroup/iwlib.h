@@ -92,7 +92,7 @@
 
 /* Unsupported combination */
 #else
-#error "Your kernel/libc combination is not supported"
+#define GENERIC_HEADERS
 #endif
 
 #ifdef GENERIC_HEADERS 
