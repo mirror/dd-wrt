@@ -139,9 +139,9 @@ else
 endif
 openvpn-install:
 ifeq ($(CONFIG_WOLFSSL),y)
-	install -D $(OVPN)/src/openvpn/wolfssl/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+	install -D $(OVPN)/wolfssl/src/openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
 else
-	install -D $(OVPN)/src/openvpn/openssl/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+	install -D $(OVPN)/openssl/src/openvpn/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
 endif
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
