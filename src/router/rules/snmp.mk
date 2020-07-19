@@ -206,7 +206,8 @@ else
 endif
 
 snmp-clean:
-	$(MAKE) -C snmp clean
+	-$(MAKE) -C snmp/build_mac80211/ clean
+	-$(MAKE) -C snmp/build_standard/ clean
 	rm -f $(INSTALLDIR)/etc/snmp
 
 snmp-install:
