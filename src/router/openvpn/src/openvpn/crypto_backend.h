@@ -29,16 +29,20 @@
 #ifndef CRYPTO_BACKEND_H_
 #define CRYPTO_BACKEND_H_
 
+/* TLS uses a tag of 128 bytes, let's do the same for OpenVPN */
+#define OPENVPN_AEAD_TAG_LENGTH 16
+
 #ifdef ENABLE_CRYPTO_OPENSSL
 #include "crypto_openssl.h"
 #endif
 #ifdef ENABLE_CRYPTO_MBEDTLS
 #include "crypto_mbedtls.h"
 #endif
+#ifdef ENABLE_CRYPTO_WOLFSSL
+#include "crypto_wolfssl.h"
+#endif
 #include "basic.h"
 
-/* TLS uses a tag of 128 bytes, let's do the same for OpenVPN */
-#define OPENVPN_AEAD_TAG_LENGTH 16
 
 /* Maximum cipher block size (bytes) */
 #define OPENVPN_MAX_CIPHER_BLOCK_SIZE 32
@@ -321,7 +325,7 @@ void cipher_ctx_free(cipher_ctx_t *ctx);
  * @param key_len       Length of the key, in bytes
  * @param kt            Static cipher parameters to use
  * @param enc           Whether to encrypt or decrypt (either
- *                      \c MBEDTLS_OP_ENCRYPT or \c MBEDTLS_OP_DECRYPT).
+ *                      \c OPENVPN_OP_ENCRYPT or \c OPENVPN_OP_DECRYPT).
  */
 void cipher_ctx_init(cipher_ctx_t *ctx, const uint8_t *key, int key_len,
                      const cipher_kt_t *kt, int enc);
