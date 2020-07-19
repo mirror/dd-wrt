@@ -31,4 +31,6 @@ ifneq ($(CONFIG_WOLFSSLMIN),y)
 	rm -rf $(INSTALLDIR)/wolfssl/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/wolfssl/usr/lib/*.la
 	rm -rf $(INSTALLDIR)/wolfssl/usr/share
+else
+	@true
 endif
