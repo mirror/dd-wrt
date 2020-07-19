@@ -184,7 +184,7 @@ bool tls_ctx_set_options(struct tls_root_ctx *ctx, unsigned int ssl_flags)
         msg(M_FATAL, "Unidentified maximum TLS version");
     }
 
-//    wolfSSL_CTX_set_session_cache_mode(ctx->ctx, WOLFSSL_SESS_CACHE_OFF);
+    wolfSSL_CTX_set_session_cache_mode(ctx->ctx, WOLFSSL_SESS_CACHE_OFF);
     wolfSSL_CTX_set_default_passwd_cb(ctx->ctx, pem_password_callback);
     wolfSSL_CTX_set_info_callback(ctx->ctx, info_callback);
 
