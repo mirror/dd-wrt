@@ -158,7 +158,8 @@ endif
 
 
 openvpn-clean:
-	-make -C $(OVPN) clean
+	-make -C $(OVPN)/wolfssl clean
+	-make -C $(OVPN)/openssl clean
 
 
 
