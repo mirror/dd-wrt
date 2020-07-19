@@ -225,7 +225,7 @@ ifeq ($(CONFIG_SNMP-UTILS),y)
 ifeq ($(CONFIG_ATH9K),y)
 	install -D snmp/build_mac80211/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
 else
-	install -D snmp/build_standart/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
+	install -D snmp/build_standard/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
 
 endif
 endif
