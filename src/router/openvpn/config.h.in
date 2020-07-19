@@ -36,6 +36,9 @@
 /* Use OpenSSL library */
 #undef ENABLE_CRYPTO_OPENSSL
 
+/* Use wolfSSL crypto library */
+#undef ENABLE_CRYPTO_WOLFSSL
+
 /* Enable debugging support */
 #undef ENABLE_DEBUG
 
@@ -345,6 +348,9 @@
 
 /* Define to 1 if you have the `lz4' library (-llz4). */
 #undef HAVE_LIBLZ4
+
+/* Define to 1 if you have the `wolfssl' library (-lwolfssl). */
+#undef HAVE_LIBWOLFSSL
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
