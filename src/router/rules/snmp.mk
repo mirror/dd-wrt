@@ -25,7 +25,6 @@ endif
 ifeq ($(ARCH),powerpc)
 SNMP_ENDIAN=big
 endif
-ifeq ($(CONFIG_MADWIFI),y)
 SNMP_EXTRACFLAGS+=-DHAVE_MADWIFI -I$(TOP)/madwifi.dev/madwifi.dev -include $(TOP)/madwifi.dev/madwifi.dev/include/compat.h -I$(TOP)/wireless-tools -I$(TOP)/shared -DHEADERS_KERNEL 
 SNMP_EXTRAMIB=,ddwrt/ddwrt
 ifeq ($(CONFIG_WIRELESS_TOOLS),y)
@@ -33,13 +32,13 @@ SNMP_EXTRALIB=-liw -lnl-tiny
 else
 SNMP_EXTRALIB=-lnl-tiny
 endif
-endif
-ifeq ($(CONFIG_ATH9K),y)
 SNMP_EXTRACFLAGS+=-DHAVE_ATH9K
-endif
+
 snmp-configure: nvram libutils
 	cd snmp && rm -f config.cache
-	cd snmp && ./configure  --quiet \
+	-cd snmp && mkdir build_mac80211
+	-cd snmp && mkdir build_standard
+	cd snmp && cd build_mac80211 && ../configure  --quiet \
 				--prefix=/tmp/snmp \
 				--target=$(ARCH)-linux \
 				--host=$(ARCH) \
@@ -78,9 +77,52 @@ snmp-configure: nvram libutils
 				AR_FLAGS="cru $(LTOPLUGIN)" \
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
+	cd snmp && cd build_standard && ../configure  --quiet \
+				--prefix=/tmp/snmp \
+				--target=$(ARCH)-linux \
+				--host=$(ARCH) \
+				--with-cc="$(CC)" \
+				--with-ar=$(ARCH)-linux-uclibc-ar \
+				--with-endianness=$(SNMP_ENDIAN) \
+				--with-cflags="$(COPTS) $(MIPS16_OPT) $(LTO) -I$(TOP)/openssl/include -D_GNU_SOURCE -DCAN_USE_SYSCTL=1 -I$(TOP)/libnl-tiny/include -ffunction-sections -fdata-sections -Wl,--gc-sections -I$(TOP)/shared -I$(TOP)/../include.v24" \
+				--with-ldflags="-ffunction-sections -fdata-sections -Wl,--gc-sections $(LDLTO) -L$(TOP)/openssl" \
+				--enable-mini-agent \
+				--disable-debugging \
+				--enable-privacy \
+				--without-opaque-special-types \
+				--with-persistent-directory=/tmp/snmp-persist \
+				--with-default-snmp-version=3 \
+				--with-sys-contact=root \
+				--with-sys-location=Unknown \
+				--with-logfile=/dev/null \
+				--with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix \
+				--enable-shared=no \
+				--enable-static \
+				--with-gnu-ld \
+				--enable-internal-md5 \
+				--with-copy-persistent-files=no \
+				--sysconfdir=/tmp \
+				--with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,ucd_snmp \
+				--with-out-mib-modules=host/hr_swrun,agent_mips,agentx,notification,utilities,target,etherlike-mib,notification-log-mib,snmp-notification-mib,tsm-mib,tlstm-lib \
+				--disable-ipv6 \
+				--with-defaults \
+				--without-efence \
+				--without-rsaref \
+				--without-kmem-usage \
+				--without-rpm \
+				--without-openssl \
+				--without-dmalloc \
+				--with-opaque-special-types \
+				AR_FLAGS="cru $(LTOPLUGIN)" \
+				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
+
 snmp:
 ifeq ($(CONFIG_SNMP),y)
-	$(MAKE) -C snmp LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
+ifeq ($(CONFIG_ATH9K),y)
+	$(MAKE) -C snmp/build_mac80211 LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram $(SNMP_EXTRALIB)"
+else
+	$(MAKE) -C snmp/build_standard LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -L$(TOP)/openssl -L$(TOP)/libutils -L$(TOP)/nvram -L$(TOP)/libnl-tiny -L$(TOP)/wireless-tools -lshutils -lutils -lwireless -lnvram"
+endif
 else
 	@true
 endif
@@ -91,13 +133,22 @@ snmp-clean:
 
 snmp-install:
 ifeq ($(CONFIG_SNMP),y)
-	install -D snmp/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+ifeq ($(CONFIG_ATH9K),y)
+	install -D snmp/build_mac80211/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+else
+	install -D snmp/build_standard/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+endif
 	install -D snmp/config/snmp.webservices $(INSTALLDIR)/snmp/etc/config/snmp.webservices
 	$(STRIP) $(INSTALLDIR)/snmp/usr/sbin/snmpd
 	ln -sf /tmp/etc/snmp $(INSTALLDIR)/snmp/etc/snmp
 ifeq ($(CONFIG_SNMP-UTILS),y)
 	mkdir -p $(INSTALLDIR)/snmp/usr/bin
-	install -D snmp/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
+ifeq ($(CONFIG_ATH9K),y)
+	install -D snmp/build_mac80211/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
+else
+	install -D snmp/build_standart/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
+
+endif
 endif
 else
         # So that generic rule does not take precedence
