@@ -105,7 +105,8 @@ snmp-configure: nvram libutils
 	-cd snmp && mkdir build_mac80211
 	-cd snmp && mkdir build_standard
 	-cd snmp && cd build_mac80211 && ../configure  --quiet \
-				--prefix=/tmp/snmp \
+				--prefix=/usr \
+				--libdir=/usr/lib \
 				--target=$(ARCH)-linux \
 				--host=$(ARCH) \
 				--with-cc="$(CC)" \
@@ -150,7 +151,8 @@ snmp-configure: nvram libutils
 				RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
 	cd snmp && cd build_standard && ../configure  --quiet \
-				--prefix=/tmp/snmp \
+				--prefix=/usr \
+				--libdir=/usr/lib \
 				--target=$(ARCH)-linux \
 				--host=$(ARCH) \
 				--with-cc="$(CC)" \
@@ -213,21 +215,21 @@ snmp-clean:
 snmp-install:
 ifeq ($(CONFIG_SNMP),y)
 ifeq ($(CONFIG_ATH9K),y)
-	install -D snmp/build_mac80211/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+	$(MAKE) -C snmp/build_mac80211 install DESTDIR=$(INSTALLDIR)/snmp
 else
-	install -D snmp/build_standard/agent/snmpd $(INSTALLDIR)/snmp/usr/sbin/snmpd
+	$(MAKE) -C snmp/build_standard install DESTDIR=$(INSTALLDIR)/snmp
 endif
+	rm -rf $(INSTALLDIR)/snmp/etc
+	rm -rf $(INSTALLDIR)/snmp/usr/include
+	rm -rf $(INSTALLDIR)/snmp/usr/lib
+	rm -rf $(INSTALLDIR)/snmp/usr/share
+		
 	install -D snmp/config/snmp.webservices $(INSTALLDIR)/snmp/etc/config/snmp.webservices
 	$(STRIP) $(INSTALLDIR)/snmp/usr/sbin/snmpd
 	ln -sf /tmp/etc/snmp $(INSTALLDIR)/snmp/etc/snmp
-ifeq ($(CONFIG_SNMP-UTILS),y)
-	mkdir -p $(INSTALLDIR)/snmp/usr/bin
-ifeq ($(CONFIG_ATH9K),y)
-	install -D snmp/build_mac80211/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
-else
-	install -D snmp/build_standard/apps/snmp{get,set,status,test,trap,walk} $(INSTALLDIR)/snmp/usr/bin/
-
-endif
+ifneq ($(CONFIG_SNMP-UTILS),y)
+	rm -rf $(INSTALLDIR)/snmp/usr/bin
+	rm -f $(INSTALLDIR)/snmp/usr/sbin/snmptrapd
 endif
 else
         # So that generic rule does not take precedence
