@@ -139,10 +139,12 @@ else
 endif
 openvpn-install:
 ifeq ($(CONFIG_WOLFSSL),y)
-	install -D $(OVPN)/wolfssl/src/openvpn/.libs/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+	make -C $(OVPN)/wolfssl install DESTDIR=$(INSTALLDIR)/openvpn
 else
-	install -D $(OVPN)/openssl/src/openvpn/.libs/openvpn $(INSTALLDIR)/openvpn/usr/sbin/openvpn
+	make -C $(OVPN)/openssl install DESTDIR=$(INSTALLDIR)/openvpn
 endif
+	rm -rf $(INSTALLDIR)/openvpn/usr/share
+	rm -rf $(INSTALLDIR)/openvpn/usr/include
 ifeq ($(CONFIG_AIRNET),y)
 	install -D openvpn/config-airnet/openvpncl.nvramconfig $(INSTALLDIR)/openvpn/etc/config/openvpncl.nvramconfig
 	install -D openvpn/config-airnet/openvpncl.webvpn $(INSTALLDIR)/openvpn/etc/config/openvpncl.webvpn
