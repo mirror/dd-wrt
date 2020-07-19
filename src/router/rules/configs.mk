@@ -52,7 +52,9 @@ obj-$(CONFIG_PPPOE) += pppoe
 obj-$(CONFIG_UDHCPC) += udhcpd
 obj-$(CONFIG_UPNP) += upnp
 ifneq ($(ARCHITECTURE),broadcom)
+ifneq ($(CONFIG_ATH5K_AHB),y)
 obj-$(CONFIG_MADWIFI) += madwifi relayd
+endif
 else
 obj-$(CONFIG_MADWIFI) += madwifi
 endif
