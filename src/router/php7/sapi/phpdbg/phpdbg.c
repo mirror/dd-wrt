@@ -71,7 +71,7 @@ static PHP_INI_MH(OnUpdateEol)
 
 PHP_INI_BEGIN()
 	STD_PHP_INI_ENTRY("phpdbg.path", "", PHP_INI_SYSTEM | PHP_INI_PERDIR, OnUpdateString, socket_path, zend_phpdbg_globals, phpdbg_globals)
-	STD_PHP_INI_ENTRY("phpdbg.eol", "2", PHP_INI_ALL, OnUpdateEol, socket_path, zend_phpdbg_globals, phpdbg_globals)
+	STD_PHP_INI_ENTRY("phpdbg.eol", "2", PHP_INI_ALL, OnUpdateEol, eol, zend_phpdbg_globals, phpdbg_globals)
 PHP_INI_END()
 
 static zend_bool phpdbg_booted = 0;
@@ -1341,10 +1341,12 @@ php_stream *phpdbg_stream_url_wrap_php(php_stream_wrapper *wrapper, const char *
 	if (!strncasecmp(path, "stdin", 6) && PHPDBG_G(stdin_file)) {
 		php_stream *stream = php_stream_fopen_from_fd(dup(fileno(PHPDBG_G(stdin_file))), "r", NULL);
 #ifdef PHP_WIN32
-		zval *blocking_pipes = php_stream_context_get_option(context, "pipe", "blocking");
-		if (blocking_pipes) {
-			convert_to_long(blocking_pipes);
-			php_stream_set_option(stream, PHP_STREAM_OPTION_PIPE_BLOCKING, Z_LVAL_P(blocking_pipes), NULL);
+		if (context != NULL) {
+			zval *blocking_pipes = php_stream_context_get_option(context, "pipe", "blocking");
+			if (blocking_pipes) {
+				convert_to_long(blocking_pipes);
+				php_stream_set_option(stream, PHP_STREAM_OPTION_PIPE_BLOCKING, Z_LVAL_P(blocking_pipes), NULL);
+			}
 		}
 #endif
 		return stream;
@@ -2058,6 +2060,8 @@ phpdbg_out:
 	}
 phpdbg_out:
 #endif
+
+		phpdbg_purge_watchpoint_tree();
 
 		if (first_command) {
 			free(first_command);
