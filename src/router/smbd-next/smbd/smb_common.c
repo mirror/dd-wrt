@@ -187,8 +187,10 @@ bool ksmbd_smb_request(struct ksmbd_conn *conn)
 
 static bool supported_protocol(int idx)
 {
-       if (SMB2X_PROT == idx && server_conf.min_protocol > SMB2_PROT)
-               return true;
+	if (idx == SMB2X_PROT &&
+	    (server_conf.min_protocol >= SMB21_PROT ||
+	     server_conf.max_protocol <= SMB311_PROT))
+		return true;
 
 	return (server_conf.min_protocol <= idx &&
 			idx <= server_conf.max_protocol);
@@ -298,7 +300,7 @@ int ksmbd_init_smb_server(struct ksmbd_work *work)
 	if (proto == SMB1_PROTO_NUMBER)
 		init_smb1_server(conn);
 	else
-		init_smb3_11_server(conn);
+		init_smb2_0_server(conn);
 #else
 	init_smb3_11_server(conn);
 #endif

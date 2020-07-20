@@ -7265,6 +7265,11 @@ int smb2_ioctl(struct ksmbd_work *work)
 		nbytes = fsctl_pipe_transceive(work, id, out_buf_len, req, rsp);
 		break;
 	case FSCTL_VALIDATE_NEGOTIATE_INFO:
+		if (conn->dialect < SMB30_PROT_ID) {
+			ret = -EOPNOTSUPP;
+			goto out;
+		}
+
 		ret = fsctl_validate_negotiate_info(conn,
 			(struct validate_negotiate_info_req *)&req->Buffer[0],
 			(struct validate_negotiate_info_rsp *)&rsp->Buffer[0]);
@@ -7368,7 +7373,7 @@ int smb2_ioctl(struct ksmbd_work *work)
 	default:
 		ksmbd_debug(SMB, "not implemented yet ioctl command 0x%x\n",
 				cnt_code);
-		rsp->hdr.Status = STATUS_NOT_SUPPORTED;
+		ret = -EOPNOTSUPP;
 		goto out;
 	}
 
@@ -7390,6 +7395,8 @@ out:
 		rsp->hdr.Status = STATUS_ACCESS_DENIED;
 	else if (ret == -ENOENT)
 		rsp->hdr.Status = STATUS_OBJECT_NAME_NOT_FOUND;
+	else if (ret == -EOPNOTSUPP)
+		rsp->hdr.Status = STATUS_NOT_SUPPORTED;
 	else if (ret < 0 || rsp->hdr.Status == 0)
 		rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 	smb2_set_err_rsp(work);
