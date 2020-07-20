@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -430,6 +434,10 @@ Subprocess Transports
 
 Protocols
 =========
+
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
 
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
@@ -988,7 +996,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys
@@ -1030,10 +1038,6 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         # pipe_data_received() method of the protocol.
         data = bytes(protocol.output)
         return data.decode('ascii').rstrip()
-
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(
-            asyncio.WindowsProactorEventLoopPolicy())
 
     date = asyncio.run(get_date())
     print(f"Current date: {date}")

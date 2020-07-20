@@ -27,12 +27,7 @@ See :pep:`405` for more information about Python virtual environments.
 .. seealso::
 
    `Python Packaging User Guide: Creating and using virtual environments
-   <https://packaging.python.org/installing/#creating-virtual-environments>`__
-
-.. note::
-   The ``pyvenv`` script has been deprecated as of Python 3.6 in favor of using
-   ``python3 -m venv`` to help prevent any potential confusion as to which
-   Python interpreter a virtual environment will be based on.
+   <https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/#creating-a-virtual-environment>`__
 
 
 Creating virtual environments

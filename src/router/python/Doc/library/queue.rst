@@ -11,9 +11,7 @@
 The :mod:`queue` module implements multi-producer, multi-consumer queues.
 It is especially useful in threaded programming when information must be
 exchanged safely between multiple threads.  The :class:`Queue` class in this
-module implements all the required locking semantics.  It depends on the
-availability of thread support in Python; see the :mod:`threading`
-module.
+module implements all the required locking semantics.
 
 The module implements three types of queue, which differ only in the order in
 which the entries are retrieved.  In a :abbr:`FIFO (first-in, first-out)`
@@ -192,32 +190,28 @@ fully processed by daemon consumer threads.
 
 Example of how to wait for enqueued tasks to be completed::
 
+    import threading, queue
+
+    q = queue.Queue()
+
     def worker():
         while True:
             item = q.get()
-            if item is None:
-                break
-            do_work(item)
+            print(f'Working on {item}')
+            print(f'Finished {item}')
             q.task_done()
 
-    q = queue.Queue()
-    threads = []
-    for i in range(num_worker_threads):
-        t = threading.Thread(target=worker)
-        t.start()
-        threads.append(t)
+    # turn-on the worker thread
+    threading.Thread(target=worker, daemon=True).start()
 
-    for item in source():
+    # send thirty task requests to the worker
+    for item in range(30):
         q.put(item)
+    print('All task requests sent\n', end='')
 
     # block until all tasks are done
     q.join()
-
-    # stop workers
-    for i in range(num_worker_threads):
-        q.put(None)
-    for t in threads:
-        t.join()
+    print('All work completed')
 
 
 SimpleQueue Objects
@@ -282,4 +276,5 @@ SimpleQueue Objects
 
    :class:`collections.deque` is an alternative implementation of unbounded
    queues with fast atomic :meth:`~collections.deque.append` and
-   :meth:`~collections.deque.popleft` operations that do not require locking.
+   :meth:`~collections.deque.popleft` operations that do not require locking
+   and also support indexing.

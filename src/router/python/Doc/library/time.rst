@@ -122,36 +122,17 @@ Functions
 
    Convert a tuple or :class:`struct_time` representing a time as returned by
    :func:`gmtime` or :func:`localtime` to a string of the following
-   form: ``'Sun Jun 20 23:21:05 1993'``.  If *t* is not provided, the current time
-   as returned by :func:`localtime` is used. Locale information is not used by
-   :func:`asctime`.
+   form: ``'Sun Jun 20 23:21:05 1993'``. The day field is two characters long
+   and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+
+   If *t* is not provided, the current time as returned by :func:`localtime`
+   is used. Locale information is not used by :func:`asctime`.
 
    .. note::
 
       Unlike the C function of the same name, :func:`asctime` does not add a
       trailing newline.
-
-
-.. function:: clock()
-
-   .. index::
-      single: CPU time
-      single: processor time
-      single: benchmarking
-
-   On Unix, return the current processor time as a floating point number expressed
-   in seconds.  The precision, and in fact the very definition of the meaning of
-   "processor time", depends on that of the C function of the same name.
-
-   On Windows, this function returns wall-clock seconds elapsed since the first
-   call to this function, as a floating point number, based on the Win32 function
-   :c:func:`QueryPerformanceCounter`. The resolution is typically better than one
-   microsecond.
-
-   .. deprecated-removed:: 3.3 3.8
-      The behaviour of this function depends on the platform: use
-      :func:`perf_counter` or :func:`process_time` instead, depending on your
-      requirements, to have a well defined behaviour.
 
 .. function:: pthread_getcpuclockid(thread_id)
 
@@ -220,10 +201,15 @@ Functions
 
 .. function:: ctime([secs])
 
-   Convert a time expressed in seconds since the epoch to a string representing
-   local time. If *secs* is not provided or :const:`None`, the current time as
-   returned by :func:`.time` is used.  ``ctime(secs)`` is equivalent to
-   ``asctime(localtime(secs))``. Locale information is not used by :func:`ctime`.
+   Convert a time expressed in seconds since the epoch to a string of a form:
+   ``'Sun Jun 20 23:21:05 1993'`` representing local time. The day field
+   is two characters long and is space padded if the day is a single digit,
+   e.g.: ``'Wed Jun  9 04:26:40 1993'``.
+
+   If *secs* is not provided or :const:`None`, the current time as
+   returned by :func:`.time` is used. ``ctime(secs)`` is equivalent to
+   ``asctime(localtime(secs))``. Locale information is not used by
+   :func:`ctime`.
 
 
 .. function:: get_clock_info(name)
@@ -232,7 +218,6 @@ Functions
    Supported clock names and the corresponding functions to read their value
    are:
 
-   * ``'clock'``: :func:`time.clock`
    * ``'monotonic'``: :func:`time.monotonic`
    * ``'perf_counter'``: :func:`time.perf_counter`
    * ``'process_time'``: :func:`time.process_time`
@@ -810,8 +795,20 @@ These constants are used as parameters for :func:`clock_getres` and
    .. versionadded:: 3.7
 
 
+.. data:: CLOCK_UPTIME_RAW
+
+   Clock that increments monotonically, tracking the time since an arbitrary
+   point, unaffected by frequency or time adjustments and not incremented while
+   the system is asleep.
+
+   .. availability:: macOS 10.12 and newer.
+
+   .. versionadded:: 3.8
+
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
+
 
 .. data:: CLOCK_REALTIME
 

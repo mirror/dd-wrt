@@ -32,6 +32,7 @@ Notes on the availability of these functions:
   objects, and result in an object of the same type, if a path or file name is
   returned.
 
+* On VxWorks, os.fork, os.execv and os.spawn*p* are not supported.
 
 .. note::
 
@@ -450,6 +451,8 @@ process and user.
    calls to :func:`putenv` don't update ``os.environ``, so it is actually
    preferable to assign to items of ``os.environ``.
 
+   .. audit-event:: os.putenv key,value os.putenv
+
 
 .. function:: setegid(egid)
 
@@ -642,6 +645,8 @@ process and user.
    calls to :func:`unsetenv` don't update ``os.environ``, so it is actually
    preferable to delete items of ``os.environ``.
 
+   .. audit-event:: os.unsetenv key os.unsetenv
+
    .. availability:: most flavors of Unix.
 
 
@@ -650,7 +655,7 @@ process and user.
 File Object Creation
 --------------------
 
-This function creates new :term:`file objects <file object>`.  (See also
+These functions create new :term:`file objects <file object>`.  (See also
 :func:`~os.open` for opening file descriptors.)
 
 
@@ -706,6 +711,28 @@ as internal buffering of data.
               pass
 
 
+.. function:: copy_file_range(src, dst, count, offset_src=None, offset_dst=None)
+
+   Copy *count* bytes from file descriptor *src*, starting from offset
+   *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
+   If *offset_src* is None, then *src* is read from the current position;
+   respectively for *offset_dst*. The files pointed by *src* and *dst*
+   must reside in the same filesystem, otherwise an :exc:`OSError` is
+   raised with :attr:`~OSError.errno` set to :data:`errno.EXDEV`.
+
+   This copy is done without the additional cost of transferring data
+   from the kernel to user space and then back into the kernel. Additionally,
+   some filesystems could implement extra optimizations. The copy is done as if
+   both files are opened as binary.
+
+   The return value is the amount of bytes copied. This could be less than the
+   amount requested.
+
+   .. availability:: Linux kernel >= 4.5 or glibc >= 2.27.
+
+   .. versionadded:: 3.8
+
+
 .. function:: device_encoding(fd)
 
    Return a string describing the encoding of the device associated with *fd*
@@ -745,6 +772,8 @@ as internal buffering of data.
    docs for :func:`chmod` for possible values of *mode*.  As of Python 3.3, this
    is equivalent to ``os.chmod(fd, mode)``.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.fchmod
+
    .. availability:: Unix.
 
 
@@ -754,6 +783,8 @@ as internal buffering of data.
    and *gid*.  To leave one of the ids unchanged, set it to -1.  See
    :func:`chown`.  As of Python 3.3, this is equivalent to ``os.chown(fd, uid,
    gid)``.
+
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.fchown
 
    .. availability:: Unix.
 
@@ -828,10 +859,13 @@ as internal buffering of data.
    most *length* bytes in size.  As of Python 3.3, this is equivalent to
    ``os.truncate(fd, length)``.
 
+   .. audit-event:: os.truncate fd,length os.ftruncate
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.5
       Added support for Windows
+
 
 .. function:: get_blocking(fd)
 
@@ -843,6 +877,7 @@ as internal buffering of data.
    .. availability:: Unix.
 
    .. versionadded:: 3.5
+
 
 .. function:: isatty(fd)
 
@@ -857,6 +892,8 @@ as internal buffering of data.
    *cmd* specifies the command to use - one of :data:`F_LOCK`, :data:`F_TLOCK`,
    :data:`F_ULOCK` or :data:`F_TEST`.
    *len* specifies the section of the file to lock.
+
+   .. audit-event:: os.lockf fd,cmd,len os.lockf
 
    .. availability:: Unix.
 
@@ -910,6 +947,8 @@ as internal buffering of data.
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>` with the *dir_fd* parameter.
+
+   .. audit-event:: open path,mode,flags os.open
 
    .. versionchanged:: 3.4
       The new file descriptor is now non-inheritable.
@@ -1453,16 +1492,19 @@ features:
 .. _path_fd:
 
 * **specifying a file descriptor:**
-  For some functions, the *path* argument can be not only a string giving a path
-  name, but also a file descriptor.  The function will then operate on the file
-  referred to by the descriptor.  (For POSIX systems, Python will call the
-  ``f...`` version of the function.)
+  Normally the *path* argument provided to functions in the :mod:`os` module
+  must be a string specifying a file path.  However, some functions now
+  alternatively accept an open file descriptor for their *path* argument.
+  The function will then operate on the file referred to by the descriptor.
+  (For POSIX systems, Python will call the variant of the function prefixed
+  with ``f`` (e.g. call ``fchdir`` instead of ``chdir``).)
 
-  You can check whether or not *path* can be specified as a file descriptor on
-  your platform using :data:`os.supports_fd`.  If it is unavailable, using it
-  will raise a :exc:`NotImplementedError`.
+  You can check whether or not *path* can be specified as a file descriptor
+  for a particular function on your platform using :data:`os.supports_fd`.
+  If this functionality is unavailable, using it will raise a
+  :exc:`NotImplementedError`.
 
-  If the function also supports *dir_fd* or *follow_symlinks* arguments, it is
+  If the function also supports *dir_fd* or *follow_symlinks* arguments, it's
   an error to specify one of those when supplying *path* as a file descriptor.
 
 .. _dir_fd:
@@ -1471,23 +1513,24 @@ features:
   should be a file descriptor referring to a directory, and the path to operate
   on should be relative; path will then be relative to that directory.  If the
   path is absolute, *dir_fd* is ignored.  (For POSIX systems, Python will call
-  the ``...at`` or ``f...at`` version of the function.)
+  the variant of the function with an ``at`` suffix and possibly prefixed with
+  ``f`` (e.g. call ``faccessat`` instead of ``access``).
 
-  You can check whether or not *dir_fd* is supported on your platform using
-  :data:`os.supports_dir_fd`.  If it is unavailable, using it will raise a
-  :exc:`NotImplementedError`.
+  You can check whether or not *dir_fd* is supported for a particular function
+  on your platform using :data:`os.supports_dir_fd`.  If it's unavailable,
+  using it will raise a :exc:`NotImplementedError`.
 
 .. _follow_symlinks:
 
 * **not following symlinks:** If *follow_symlinks* is
   ``False``, and the last element of the path to operate on is a symbolic link,
-  the function will operate on the symbolic link itself instead of the file the
-  link points to.  (For POSIX systems, Python will call the ``l...`` version of
-  the function.)
+  the function will operate on the symbolic link itself rather than the file
+  pointed to by the link.  (For POSIX systems, Python will call the ``l...``
+  variant of the function.)
 
-  You can check whether or not *follow_symlinks* is supported on your platform
-  using :data:`os.supports_follow_symlinks`.  If it is unavailable, using it
-  will raise a :exc:`NotImplementedError`.
+  You can check whether or not *follow_symlinks* is supported for a particular
+  function on your platform using :data:`os.supports_follow_symlinks`.
+  If it's unavailable, using it will raise a :exc:`NotImplementedError`.
 
 
 
@@ -1569,6 +1612,8 @@ features:
    This function can raise :exc:`OSError` and subclasses such as
    :exc:`FileNotFoundError`, :exc:`PermissionError`, and :exc:`NotADirectoryError`.
 
+   .. audit-event:: os.chdir path os.chdir
+
    .. versionadded:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
@@ -1596,6 +1641,8 @@ features:
    * :data:`stat.SF_SNAPSHOT`
 
    This function can support :ref:`not following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.chflags path,flags os.chflags
 
    .. availability:: Unix.
 
@@ -1642,6 +1689,8 @@ features:
       read-only flag with it (via the ``stat.S_IWRITE`` and ``stat.S_IREAD``
       constants or a corresponding integer value).  All other bits are ignored.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.chmod
+
    .. versionadded:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
@@ -1662,10 +1711,12 @@ features:
    See :func:`shutil.chown` for a higher-level function that accepts names in
    addition to numeric ids.
 
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.chown
+
    .. availability:: Unix.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*,
+      Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
    .. versionchanged:: 3.6
@@ -1688,6 +1739,8 @@ features:
    descriptor *fd*.  The descriptor must refer to an opened directory, not an
    open file.  As of Python 3.3, this is equivalent to ``os.chdir(fd)``.
 
+   .. audit-event:: os.chdir path os.fchdir
+
    .. availability:: Unix.
 
 
@@ -1700,12 +1753,19 @@ features:
 
    Return a bytestring representing the current working directory.
 
+   .. versionchanged:: 3.8
+      The function now uses the UTF-8 encoding on Windows, rather than the ANSI
+      code page: see :pep:`529` for the rationale. The function is no longer
+      deprecated on Windows.
+
 
 .. function:: lchflags(path, flags)
 
    Set the flags of *path* to the numeric *flags*, like :func:`chflags`, but do
    not follow symbolic links.  As of Python 3.3, this is equivalent to
    ``os.chflags(path, flags, follow_symlinks=False)``.
+
+   .. audit-event:: os.chflags path,flags os.lchflags
 
    .. availability:: Unix.
 
@@ -1720,6 +1780,8 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
+
    .. availability:: Unix.
 
    .. versionchanged:: 3.6
@@ -1730,6 +1792,8 @@ features:
    Change the owner and group id of *path* to the numeric *uid* and *gid*.  This
    function will not follow symbolic links.  As of Python 3.3, this is equivalent
    to ``os.chown(path, uid, gid, follow_symlinks=False)``.
+
+   .. audit-event:: os.chown path,uid,gid,dir_fd os.lchown
 
    .. availability:: Unix.
 
@@ -1744,6 +1808,8 @@ features:
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
    following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
    .. availability:: Unix, Windows.
 
@@ -1771,6 +1837,8 @@ features:
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
 
+   .. audit-event:: os.listdir path os.listdir
+
    .. note::
       To encode ``str`` filenames to ``bytes``, use :func:`~os.fsencode`.
 
@@ -1784,7 +1852,7 @@ features:
       The *path* parameter became optional.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*.
+      Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -1818,6 +1886,12 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
 
+   .. versionchanged:: 3.8
+      On Windows, now opens reparse points that represent another path
+      (name surrogates), including symbolic links and directory junctions.
+      Other kinds of reparse points are resolved by the operating system as
+      for :func:`~os.stat`.
+
 
 .. function:: mkdir(path, mode=0o777, *, dir_fd=None)
 
@@ -1838,6 +1912,8 @@ features:
 
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
+
+   .. audit-event:: os.mkdir path,mode,dir_fd os.mkdir
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -1870,6 +1946,8 @@ features:
       include :data:`pardir` (eg. ".." on UNIX systems).
 
    This function handles UNC paths correctly.
+
+   .. audit-event:: os.mkdir path,mode,dir_fd os.makedirs
 
    .. versionadded:: 3.2
       The *exist_ok* parameter.
@@ -1999,6 +2077,10 @@ features:
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
+   When trying to resolve a path that may contain links, use
+   :func:`~os.path.realpath` to properly handle recursion and platform
+   differences.
+
    .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
@@ -2008,8 +2090,15 @@ features:
       The *dir_fd* argument.
 
    .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
+      Accepts a :term:`path-like object` on Unix.
 
+   .. versionchanged:: 3.8
+      Accepts a :term:`path-like object` and a bytes object on Windows.
+
+   .. versionchanged:: 3.8
+      Added support for directory junctions, and changed to return the
+      substitution path (which typically includes ``\\?\`` prefix) rather
+      than the optional "print name" field that was previously returned.
 
 .. function:: remove(path, *, dir_fd=None)
 
@@ -2024,6 +2113,8 @@ features:
    to the file is not made available until the original file is no longer in use.
 
    This function is semantically identical to :func:`unlink`.
+
+   .. audit-event:: os.remove path,dir_fd os.remove
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -2044,6 +2135,8 @@ features:
    the directory ``'foo/bar/baz'``, and then remove ``'foo/bar'`` and ``'foo'`` if
    they are empty. Raises :exc:`OSError` if the leaf directory could not be
    successfully removed.
+
+   .. audit-event:: os.remove path,dir_fd os.removedirs
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2070,6 +2163,8 @@ features:
 
    If you want cross-platform overwriting of the destination, use :func:`replace`.
 
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.rename
+
    .. versionadded:: 3.3
       The *src_dir_fd* and *dst_dir_fd* arguments.
 
@@ -2089,6 +2184,8 @@ features:
       This function can fail with the new directory structure made if you lack
       permissions needed to remove the leaf directory or file.
 
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.renames
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *old* and *new*.
 
@@ -2103,6 +2200,8 @@ features:
 
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`.
+
+   .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.replace
 
    .. versionadded:: 3.3
 
@@ -2119,6 +2218,8 @@ features:
 
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
+
+   .. audit-event:: os.rmdir path,dir_fd os.rmdir
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
@@ -2152,6 +2253,8 @@ features:
 
    This function can also support :ref:`specifying a file descriptor
    <path_fd>`; the file descriptor must refer to a directory.
+
+   .. audit-event:: os.scandir path os.scandir
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
    and has the following method:
@@ -2322,7 +2425,8 @@ features:
 
       On Unix, this method always requires a system call. On Windows, it
       only requires a system call if *follow_symlinks* is ``True`` and the
-      entry is a symbolic link.
+      entry is a reparse point (for example, a symbolic link or directory
+      junction).
 
       On Windows, the ``st_ino``, ``st_dev`` and ``st_nlink`` attributes of the
       :class:`stat_result` are always set to zero. Call :func:`os.stat` to
@@ -2359,6 +2463,17 @@ features:
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   On Windows, passing ``follow_symlinks=False`` will disable following all
+   name-surrogate reparse points, which includes symlinks and directory
+   junctions. Other types of reparse points that do not resemble links or that
+   the operating system is unable to follow will be opened directly. When
+   following a chain of multiple links, this may result in the original link
+   being returned instead of the non-link that prevented full traversal. To
+   obtain stat results for the final path in this case, use the
+   :func:`os.path.realpath` function to resolve the path name as far as
+   possible and call :func:`lstat` on the result. This does not apply to
+   dangling symlinks or junction points, which will raise the usual exceptions.
+
    .. index:: module: stat
 
    Example::
@@ -2382,6 +2497,14 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.8
+      On Windows, all reparse points that can be resolved by the operating
+      system are now followed, and passing ``follow_symlinks=False``
+      disables following all name surrogate reparse points. If the operating
+      system reaches a reparse point that it is not able to follow, *stat* now
+      returns the information for the original path as if
+      ``follow_symlinks=False`` had been specified instead of raising an error.
 
 
 .. class:: stat_result
@@ -2534,7 +2657,7 @@ features:
 
       File type.
 
-   On Windows systems, the following attribute is also available:
+   On Windows systems, the following attributes are also available:
 
    .. attribute:: st_file_attributes
 
@@ -2542,6 +2665,12 @@ features:
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
       :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
       constants in the :mod:`stat` module.
+
+   .. attribute:: st_reparse_tag
+
+      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      set, this field contains the tag identifying the type of reparse point.
+      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:type:`stat` structure. (On
@@ -2569,6 +2698,14 @@ features:
 
    .. versionadded:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
+
+   .. versionadded:: 3.8
+      Added the :attr:`st_reparse_tag` member on Windows.
+
+   .. versionchanged:: 3.8
+      On Windows, the :attr:`st_mode` member now identifies special
+      files as :const:`S_IFCHR`, :const:`S_IFIFO` or :const:`S_IFBLK`
+      as appropriate.
 
 .. function:: statvfs(path)
 
@@ -2601,7 +2738,7 @@ features:
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*.
+      Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.4
       The :const:`ST_NODEV`, :const:`ST_NOEXEC`, :const:`ST_SYNCHRONOUS`,
@@ -2618,59 +2755,61 @@ features:
 
 .. data:: supports_dir_fd
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of their *dir_fd* parameter.  Different platforms
-   provide different functionality, and an option that might work on one might
-   be unsupported on another.  For consistency's sakes, functions that support
-   *dir_fd* always allow specifying the parameter, but will raise an exception
-   if the functionality is not actually available.
+   A :class:`set` object indicating which functions in the :mod:`os`
+   module accept an open file descriptor for their *dir_fd* parameter.
+   Different platforms provide different features, and the underlying
+   functionality Python uses to implement the *dir_fd* parameter is not
+   available on all platforms Python supports.  For consistency's sake,
+   functions that may support *dir_fd* always allow specifying the
+   parameter, but will throw an exception if the functionality is used
+   when it's not locally available. (Specifying ``None`` for *dir_fd*
+   is always supported on all platforms.)
 
-   To check whether a particular function permits use of its *dir_fd*
-   parameter, use the ``in`` operator on ``supports_dir_fd``.  As an example,
-   this expression determines whether the *dir_fd* parameter of :func:`os.stat`
-   is locally available::
+   To check whether a particular function accepts an open file descriptor
+   for its *dir_fd* parameter, use the ``in`` operator on ``supports_dir_fd``.
+   As an example, this expression evaluates to ``True`` if :func:`os.stat`
+   accepts open file descriptors for *dir_fd* on the local platform::
 
        os.stat in os.supports_dir_fd
 
-   Currently *dir_fd* parameters only work on Unix platforms; none of them work
-   on Windows.
+   Currently *dir_fd* parameters only work on Unix platforms;
+   none of them work on Windows.
 
    .. versionadded:: 3.3
 
 
 .. data:: supports_effective_ids
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of the *effective_ids* parameter for
-   :func:`os.access`.  If the local platform supports it, the collection will
-   contain :func:`os.access`, otherwise it will be empty.
+   A :class:`set` object indicating whether :func:`os.access` permits
+   specifying ``True`` for its *effective_ids* parameter on the local platform.
+   (Specifying ``False`` for *effective_ids* is always supported on all
+   platforms.)  If the local platform supports it, the collection will contain
+   :func:`os.access`; otherwise it will be empty.
 
-   To check whether you can use the *effective_ids* parameter for
-   :func:`os.access`, use the ``in`` operator on ``supports_effective_ids``,
-   like so::
+   This expression evaluates to ``True`` if :func:`os.access` supports
+   ``effective_ids=True`` on the local platform::
 
        os.access in os.supports_effective_ids
 
-   Currently *effective_ids* only works on Unix platforms; it does not work on
-   Windows.
+   Currently *effective_ids* is only supported on Unix platforms;
+   it does not work on Windows.
 
    .. versionadded:: 3.3
 
 
 .. data:: supports_fd
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
+   A :class:`set` object indicating which functions in the
    :mod:`os` module permit specifying their *path* parameter as an open file
-   descriptor.  Different platforms provide different functionality, and an
-   option that might work on one might be unsupported on another.  For
-   consistency's sakes, functions that support *fd* always allow specifying
-   the parameter, but will raise an exception if the functionality is not
-   actually available.
+   descriptor on the local platform.  Different platforms provide different
+   features, and the underlying functionality Python uses to accept open file
+   descriptors as *path* arguments is not available on all platforms Python
+   supports.
 
-   To check whether a particular function permits specifying an open file
+   To determine whether a particular function permits specifying an open file
    descriptor for its *path* parameter, use the ``in`` operator on
-   ``supports_fd``. As an example, this expression determines whether
-   :func:`os.chdir` accepts open file descriptors when called on your local
+   ``supports_fd``. As an example, this expression evaluates to ``True`` if
+   :func:`os.chdir` accepts open file descriptors for *path* on your local
    platform::
 
        os.chdir in os.supports_fd
@@ -2680,17 +2819,21 @@ features:
 
 .. data:: supports_follow_symlinks
 
-   A :class:`~collections.abc.Set` object indicating which functions in the
-   :mod:`os` module permit use of their *follow_symlinks* parameter.  Different
-   platforms provide different functionality, and an option that might work on
-   one might be unsupported on another.  For consistency's sakes, functions that
-   support *follow_symlinks* always allow specifying the parameter, but will
-   raise an exception if the functionality is not actually available.
+   A :class:`set` object indicating which functions in the :mod:`os` module
+   accept ``False`` for their *follow_symlinks* parameter on the local platform.
+   Different platforms provide different features, and the underlying
+   functionality Python uses to implement *follow_symlinks* is not available
+   on all platforms Python supports.  For consistency's sake, functions that
+   may support *follow_symlinks* always allow specifying the parameter, but
+   will throw an exception if the functionality is used when it's not locally
+   available.  (Specifying ``True`` for *follow_symlinks* is always supported
+   on all platforms.)
 
-   To check whether a particular function permits use of its *follow_symlinks*
-   parameter, use the ``in`` operator on ``supports_follow_symlinks``.  As an
-   example, this expression determines whether the *follow_symlinks* parameter
-   of :func:`os.stat` is locally available::
+   To check whether a particular function accepts ``False`` for its
+   *follow_symlinks* parameter, use the ``in`` operator on
+   ``supports_follow_symlinks``.  As an example, this expression evaluates
+   to ``True`` if you may specify ``follow_symlinks=False`` when calling
+   :func:`os.stat` on the local platform::
 
        os.stat in os.supports_follow_symlinks
 
@@ -2707,23 +2850,21 @@ features:
    as a directory if *target_is_directory* is ``True`` or a file symlink (the
    default) otherwise.  On non-Windows platforms, *target_is_directory* is ignored.
 
-   Symbolic link support was introduced in Windows 6.0 (Vista).  :func:`symlink`
-   will raise a :exc:`NotImplementedError` on Windows versions earlier than 6.0.
-
    This function can support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
    .. note::
 
-      On Windows, the *SeCreateSymbolicLinkPrivilege* is required in order to
-      successfully create symlinks. This privilege is not typically granted to
-      regular users but is available to accounts which can escalate privileges
-      to the administrator level. Either obtaining the privilege or running your
-      application as an administrator are ways to successfully create symlinks.
+      On newer versions of Windows 10, unprivileged accounts can create symlinks
+      if Developer Mode is enabled. When Developer Mode is not available/enabled,
+      the *SeCreateSymbolicLinkPrivilege* privilege is required, or the process
+      must be run as an administrator.
 
 
       :exc:`OSError` is raised when the function is called by an unprivileged
       user.
+
+   .. audit-event:: os.symlink src,dst,dir_fd os.symlink
 
    .. availability:: Unix, Windows.
 
@@ -2736,6 +2877,9 @@ features:
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
+
+   .. versionchanged:: 3.8
+      Added support for unelevated symlinks on Windows with Developer Mode.
 
 
 .. function:: sync()
@@ -2754,6 +2898,8 @@ features:
 
    This function can support :ref:`specifying a file descriptor <path_fd>`.
 
+   .. audit-event:: os.truncate path,length os.truncate
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
@@ -2771,6 +2917,8 @@ features:
    identical to :func:`remove`; the ``unlink`` name is its
    traditional Unix name.  Please see the documentation for
    :func:`remove` for further information.
+
+   .. audit-event:: os.remove path,dir_fd os.unlink
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
@@ -2798,21 +2946,21 @@ features:
 
    It is an error to specify tuples for both *times* and *ns*.
 
-   Whether a directory can be given for *path*
-   depends on whether the operating system implements directories as files
-   (for example, Windows does not).  Note that the exact times you set here may
-   not be returned by a subsequent :func:`~os.stat` call, depending on the
-   resolution with which your operating system records access and modification
-   times; see :func:`~os.stat`.  The best way to preserve exact times is to
-   use the *st_atime_ns* and *st_mtime_ns* fields from the :func:`os.stat`
-   result object with the *ns* parameter to `utime`.
+   Note that the exact times you set here may not be returned by a subsequent
+   :func:`~os.stat` call, depending on the resolution with which your operating
+   system records access and modification times; see :func:`~os.stat`. The best
+   way to preserve exact times is to use the *st_atime_ns* and *st_mtime_ns*
+   fields from the :func:`os.stat` result object with the *ns* parameter to
+   `utime`.
 
    This function can support :ref:`specifying a file descriptor <path_fd>`,
    :ref:`paths relative to directory descriptors <dir_fd>` and :ref:`not
    following symlinks <follow_symlinks>`.
 
+   .. audit-event:: os.utime path,times,ns,dir_fd os.utime
+
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*,
+      Added support for specifying *path* as an open file descriptor,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
 
    .. versionchanged:: 3.6
@@ -2974,6 +3122,51 @@ features:
       Added support for :class:`bytes` paths.
 
 
+.. function:: memfd_create(name[, flags=os.MFD_CLOEXEC])
+
+   Create an anonymous file and return a file descriptor that refers to it.
+   *flags* must be one of the ``os.MFD_*`` constants available on the system
+   (or a bitwise ORed combination of them).  By default, the new file
+   descriptor is :ref:`non-inheritable <fd_inheritance>`.
+
+   The name supplied in *name* is used as a filename and will be displayed as
+   the target of the corresponding symbolic link in the directory
+   ``/proc/self/fd/``. The displayed name is always prefixed with ``memfd:``
+   and serves only for debugging purposes. Names do not affect the behavior of
+   the file descriptor, and as such multiple files can have the same name
+   without any side effects.
+
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.
+
+   .. versionadded:: 3.8
+
+
+.. data:: MFD_CLOEXEC
+          MFD_ALLOW_SEALING
+          MFD_HUGETLB
+          MFD_HUGE_SHIFT
+          MFD_HUGE_MASK
+          MFD_HUGE_64KB
+          MFD_HUGE_512KB
+          MFD_HUGE_1MB
+          MFD_HUGE_2MB
+          MFD_HUGE_8MB
+          MFD_HUGE_16MB
+          MFD_HUGE_32MB
+          MFD_HUGE_256MB
+          MFD_HUGE_512MB
+          MFD_HUGE_1GB
+          MFD_HUGE_2GB
+          MFD_HUGE_16GB
+
+   These flags can be passed to :func:`memfd_create`.
+
+   .. availability:: Linux 3.17 or newer with glibc 2.27 or newer.  The
+      ``MFD_HUGE*`` flags are only available since Linux 4.14.
+
+   .. versionadded:: 3.8
+
+
 Linux extended attributes
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2991,6 +3184,8 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. audit-event:: os.getxattr path,attribute os.getxattr
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
 
@@ -3005,6 +3200,8 @@ These functions are all available on Linux only.
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
 
+   .. audit-event:: os.listxattr path os.listxattr
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -3018,6 +3215,8 @@ These functions are all available on Linux only.
 
    This function can support :ref:`specifying a file descriptor <path_fd>` and
    :ref:`not following symlinks <follow_symlinks>`.
+
+   .. audit-event:: os.removexattr path,attribute os.removexattr
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
@@ -3041,6 +3240,8 @@ These functions are all available on Linux only.
 
       A bug in Linux kernel versions less than 2.6.39 caused the flags argument
       to be ignored on some filesystems.
+
+   .. audit-event:: os.setxattr path,attribute,value,flags os.setxattr
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *path* and *attribute*.
@@ -3087,6 +3288,38 @@ to be ignored.
    an exit code of ``3``.  Be aware that calling this function will not call the
    Python signal handler registered for :const:`SIGABRT` with
    :func:`signal.signal`.
+
+
+.. function:: add_dll_directory(path)
+
+   Add a path to the DLL search path.
+
+   This search path is used when resolving dependencies for imported
+   extension modules (the module itself is resolved through sys.path),
+   and also by :mod:`ctypes`.
+
+   Remove the directory by calling **close()** on the returned object
+   or using it in a :keyword:`with` statement.
+
+   See the `Microsoft documentation
+   <https://msdn.microsoft.com/44228cf2-6306-466c-8f16-f513cd3ba8b5>`_
+   for more information about how DLLs are loaded.
+
+   .. audit-event:: os.add_dll_directory path os.add_dll_directory
+
+   .. availability:: Windows.
+
+   .. versionadded:: 3.8
+      Previous versions of CPython would resolve DLLs using the default
+      behavior for the current process. This led to inconsistencies,
+      such as only sometimes searching :envvar:`PATH` or the current
+      working directory, and OS functions such as ``AddDllDirectory``
+      having no effect.
+
+      In 3.8, the two primary ways DLLs are loaded now explicitly
+      override the process-wide behavior to ensure consistency. See the
+      :ref:`porting notes <bpo-36085-whatsnew>` for information on
+      updating libraries.
 
 
 .. function:: execl(path, arg0, arg1, ...)
@@ -3140,10 +3373,12 @@ to be ignored.
    you can check whether or not it is available using :data:`os.supports_fd`.
    If it is unavailable, using it will raise a :exc:`NotImplementedError`.
 
+   .. audit-event:: os.exec path,args,env os.execl
+
    .. availability:: Unix, Windows.
 
    .. versionadded:: 3.3
-      Added support for specifying an open file descriptor for *path*
+      Added support for specifying *path* as an open file descriptor
       for :func:`execve`.
 
    .. versionchanged:: 3.6
@@ -3302,7 +3537,13 @@ written in Python, such as a mail server's external command delivery program.
    parent.  If an error occurs :exc:`OSError` is raised.
 
    Note that some platforms including FreeBSD <= 6.3 and Cygwin have
-   known issues when using fork() from a thread.
+   known issues when using ``fork()`` from a thread.
+
+   .. audit-event:: os.fork "" os.fork
+
+   .. versionchanged:: 3.8
+      Calling ``fork()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. warning::
 
@@ -3318,6 +3559,12 @@ written in Python, such as a mail server's external command delivery program.
    new child's process id in the parent, and *fd* is the file descriptor of the
    master end of the pseudo-terminal.  For a more portable approach, use the
    :mod:`pty` module.  If an error occurs :exc:`OSError` is raised.
+
+   .. audit-event:: os.forkpty "" os.forkpty
+
+   .. versionchanged:: 3.8
+      Calling ``forkpty()`` in a subinterpreter is no longer supported
+      (:exc:`RuntimeError` is raised).
 
    .. availability:: some flavors of Unix.
 
@@ -3341,6 +3588,8 @@ written in Python, such as a mail server's external command delivery program.
 
    See also :func:`signal.pthread_kill`.
 
+   .. audit-event:: os.kill pid,sig os.kill
+
    .. versionadded:: 3.2
       Windows support.
 
@@ -3352,6 +3601,8 @@ written in Python, such as a mail server's external command delivery program.
       single: process; signalling
 
    Send the signal *sig* to the process group *pgid*.
+
+   .. audit-event:: os.killpg pgid,sig os.killpg
 
    .. availability:: Unix.
 
@@ -3393,6 +3644,109 @@ written in Python, such as a mail server's external command delivery program.
    This is implemented using :class:`subprocess.Popen`; see that class's
    documentation for more powerful ways to manage and communicate with
    subprocesses.
+
+
+.. function:: posix_spawn(path, argv, env, *, file_actions=None, \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
+                          setsigdef=(), scheduler=None)
+
+   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+
+   Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
+
+   The positional-only arguments *path*, *args*, and *env* are similar to
+   :func:`execve`.
+
+   The *path* parameter is the path to the executable file.The *path* should
+   contain a directory.Use :func:`posix_spawnp` to pass an executable file
+   without directory.
+
+   The *file_actions* argument may be a sequence of tuples describing actions
+   to take on specific file descriptors in the child process between the C
+   library implementation's :c:func:`fork` and :c:func:`exec` steps.
+   The first item in each tuple must be one of the three type indicator
+   listed below describing the remaining tuple elements:
+
+   .. data:: POSIX_SPAWN_OPEN
+
+      (``os.POSIX_SPAWN_OPEN``, *fd*, *path*, *flags*, *mode*)
+
+      Performs ``os.dup2(os.open(path, flags, mode), fd)``.
+
+   .. data:: POSIX_SPAWN_CLOSE
+
+      (``os.POSIX_SPAWN_CLOSE``, *fd*)
+
+      Performs ``os.close(fd)``.
+
+   .. data:: POSIX_SPAWN_DUP2
+
+      (``os.POSIX_SPAWN_DUP2``, *fd*, *new_fd*)
+
+      Performs ``os.dup2(fd, new_fd)``.
+
+   These tuples correspond to the C library
+   :c:func:`posix_spawn_file_actions_addopen`,
+   :c:func:`posix_spawn_file_actions_addclose`, and
+   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`posix_spawn` call itself.
+
+   The *setpgroup* argument will set the process group of the child to the value
+   specified. If the value specified is 0, the child's process group ID will be
+   made the same as its process ID. If the value of *setpgroup* is not set, the
+   child will inherit the parent's process group ID. This argument corresponds
+   to the C library :c:data:`POSIX_SPAWN_SETPGROUP` flag.
+
+   If the *resetids* argument is ``True`` it will reset the effective UID and
+   GID of the child to the real UID and GID of the parent process. If the
+   argument is ``False``, then the child retains the effective UID and GID of
+   the parent. In either case, if the set-user-ID and set-group-ID permission
+   bits are enabled on the executable file, their effect will override the
+   setting of the effective UID and GID. This argument corresponds to the C
+   library :c:data:`POSIX_SPAWN_RESETIDS` flag.
+
+   If the *setsid* argument is ``True``, it will create a new session ID
+   for `posix_spawn`. *setsid* requires :c:data:`POSIX_SPAWN_SETSID`
+   or :c:data:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   is raised.
+
+   The *setsigmask* argument will set the signal mask to the signal set
+   specified. If the parameter is not used, then the child inherits the
+   parent's signal mask. This argument corresponds to the C library
+   :c:data:`POSIX_SPAWN_SETSIGMASK` flag.
+
+   The *sigdef* argument will reset the disposition of all signals in the set
+   specified. This argument corresponds to the C library
+   :c:data:`POSIX_SPAWN_SETSIGDEF` flag.
+
+   The *scheduler* argument must be a tuple containing the (optional) scheduler
+   policy and an instance of :class:`sched_param` with the scheduler parameters.
+   A value of ``None`` in the place of the scheduler policy indicates that is
+   not being provided. This argument is a combination of the C library
+   :c:data:`POSIX_SPAWN_SETSCHEDPARAM` and :c:data:`POSIX_SPAWN_SETSCHEDULER`
+   flags.
+
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
+
+   .. versionadded:: 3.8
+
+   .. availability:: Unix.
+
+.. function:: posix_spawnp(path, argv, env, *, file_actions=None, \
+                          setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
+                          setsigdef=(), scheduler=None)
+
+   Wraps the :c:func:`posix_spawnp` C library API for use from Python.
+
+   Similar to :func:`posix_spawn` except that the system searches
+   for the *executable* file in the list of directories specified by the
+   :envvar:`PATH` environment variable (in the same way as for ``execvp(3)``).
+
+   .. audit-event:: os.posix_spawn path,argv,env os.posix_spawnp
+
+   .. versionadded:: 3.8
+
+   .. availability:: See :func:`posix_spawn` documentation.
 
 
 .. function:: register_at_fork(*, before=None, after_in_parent=None, \
@@ -3450,6 +3804,9 @@ written in Python, such as a mail server's external command delivery program.
    process.  On Windows, the process id will actually be the process handle, so can
    be used with the :func:`waitpid` function.
 
+   Note on VxWorks, this function doesn't return ``-signal`` when the new process is
+   killed. Instead it raises OSError exception.
+
    The "l" and "v" variants of the :func:`spawn\* <spawnl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
@@ -3486,6 +3843,8 @@ written in Python, such as a mail server's external command delivery program.
 
       L = ['cp', 'index.html', '/dev/null']
       os.spawnvpe(os.P_WAIT, 'cp', L, os.environ)
+
+   .. audit-event:: os.spawn mode,path,args,env os.spawnl
 
    .. availability:: Unix, Windows.  :func:`spawnlp`, :func:`spawnlpe`, :func:`spawnvp`
       and :func:`spawnvpe` are not available on Windows.  :func:`spawnle` and
@@ -3556,6 +3915,8 @@ written in Python, such as a mail server's external command delivery program.
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
+   .. audit-event:: os.startfile path,operation os.startfile
+
    .. availability:: Windows.
 
 
@@ -3582,6 +3943,8 @@ written in Python, such as a mail server's external command delivery program.
    new processes and retrieving their results; using that module is preferable
    to using this function.  See the :ref:`subprocess-replacements` section in
    the :mod:`subprocess` documentation for some helpful recipes.
+
+   .. audit-event:: os.system command os.system
 
    .. availability:: Unix, Windows.
 
@@ -3765,28 +4128,36 @@ used to determine the disposition of a process.
    Return ``True`` if a core dump was generated for the process, otherwise
    return ``False``.
 
+   This function should be employed only if :func:`WIFSIGNALED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WIFCONTINUED(status)
 
-   Return ``True`` if the process has been continued from a job control stop,
-   otherwise return ``False``.
+   Return ``True`` if a stopped child has been resumed by delivery of
+   :data:`~signal.SIGCONT` (if the process has been continued from a job
+   control stop), otherwise return ``False``.
+
+   See :data:`WCONTINUED` option.
 
    .. availability:: Unix.
 
 
 .. function:: WIFSTOPPED(status)
 
-   Return ``True`` if the process has been stopped, otherwise return
-   ``False``.
+   Return ``True`` if the process was stopped by delivery of a signal,
+   otherwise return ``False``.
+
+   :func:`WIFSTOPPED` only returns ``True`` if the :func:`waitpid` call was
+   done using :data:`WUNTRACED` option or when the process is being traced (see
+   :manpage:`ptrace(2)`).
 
    .. availability:: Unix.
 
-
 .. function:: WIFSIGNALED(status)
 
-   Return ``True`` if the process exited due to a signal, otherwise return
+   Return ``True`` if the process was terminated by a signal, otherwise return
    ``False``.
 
    .. availability:: Unix.
@@ -3794,7 +4165,8 @@ used to determine the disposition of a process.
 
 .. function:: WIFEXITED(status)
 
-   Return ``True`` if the process exited using the :manpage:`exit(2)` system call,
+   Return ``True`` if the process exited terminated normally, that is,
+   by calling ``exit()`` or ``_exit()``, or by returning from ``main()``;
    otherwise return ``False``.
 
    .. availability:: Unix.
@@ -3802,8 +4174,9 @@ used to determine the disposition of a process.
 
 .. function:: WEXITSTATUS(status)
 
-   If ``WIFEXITED(status)`` is true, return the integer parameter to the
-   :manpage:`exit(2)` system call.  Otherwise, the return value is meaningless.
+   Return the process exit status.
+
+   This function should be employed only if :func:`WIFEXITED` is true.
 
    .. availability:: Unix.
 
@@ -3812,12 +4185,16 @@ used to determine the disposition of a process.
 
    Return the signal which caused the process to stop.
 
+   This function should be employed only if :func:`WIFSTOPPED` is true.
+
    .. availability:: Unix.
 
 
 .. function:: WTERMSIG(status)
 
-   Return the signal which caused the process to exit.
+   Return the number of the signal that caused the process to terminate.
+
+   This function should be employed only if :func:`WIFSIGNALED` is true.
 
    .. availability:: Unix.
 

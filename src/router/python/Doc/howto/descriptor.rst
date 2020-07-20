@@ -58,7 +58,7 @@ That is all there is to it.  Define any of these methods and an object is
 considered a descriptor and can override default behavior upon being looked up
 as an attribute.
 
-If an object defines both :meth:`__get__` and :meth:`__set__`, it is considered
+If an object defines :meth:`__set__` or :meth:`__delete__`, it is considered
 a data descriptor.  Descriptors that only define :meth:`__get__` are called
 non-data descriptors (they are typically used for methods but other uses are
 possible).
@@ -117,7 +117,7 @@ The important points to remember are:
 * non-data descriptors may be overridden by instance dictionaries.
 
 The object returned by ``super()`` also has a custom :meth:`__getattribute__`
-method for invoking descriptors.  The call ``super(B, obj).m()`` searches
+method for invoking descriptors.  The attribute lookup ``super(B, obj).m`` searches
 ``obj.__class__.__mro__`` for the base class ``A`` immediately following ``B``
 and then returns ``A.__dict__['m'].__get__(obj, B)``.  If not a descriptor,
 ``m`` is returned unchanged.  If not in the dictionary, ``m`` reverts to a

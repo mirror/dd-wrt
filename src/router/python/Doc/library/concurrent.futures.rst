@@ -159,6 +159,15 @@ And::
    .. versionchanged:: 3.7
       Added the *initializer* and *initargs* arguments.
 
+   .. versionchanged:: 3.8
+      Default value of *max_workers* is changed to ``min(32, os.cpu_count() + 4)``.
+      This default value preserves at least 5 workers for I/O bound tasks.
+      It utilizes at most 32 CPU cores for CPU bound tasks which release the GIL.
+      And it avoids using very large resources implicitly on many-core machines.
+
+      ThreadPoolExecutor now reuses idle worker threads before starting
+      *max_workers* worker threads too.
+
 
 .. _threadpoolexecutor-example:
 
@@ -261,6 +270,10 @@ ProcessPoolExecutor Example
        1099726899285419]
 
    def is_prime(n):
+       if n < 2:
+           return False
+       if n == 2:
+           return True
        if n % 2 == 0:
            return False
 
@@ -385,6 +398,11 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
+
     .. method:: set_exception(exception)
 
        Sets the result of the work associated with the :class:`Future` to the
@@ -393,6 +411,10 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
        This method should only be used by :class:`Executor` implementations and
        unit tests.
 
+       .. versionchanged:: 3.8
+          This method raises
+          :exc:`concurrent.futures.InvalidStateError` if the :class:`Future` is
+          already done.
 
 Module Functions
 ----------------
@@ -471,6 +493,13 @@ Exception classes
    to submit or execute new tasks.
 
    .. versionadded:: 3.7
+
+.. exception:: InvalidStateError
+
+   Raised when an operation is performed on a future that is not allowed
+   in the current state.
+
+   .. versionadded:: 3.8
 
 .. currentmodule:: concurrent.futures.thread
 

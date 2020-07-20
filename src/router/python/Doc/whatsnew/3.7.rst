@@ -1379,10 +1379,6 @@ Supported protocols are indicated by several new flags, such as
 :data:`~ssl.HAS_TLSv1_1`.
 (Contributed by Christian Heimes in :issue:`32609`.)
 
-Added :attr:`SSLContext.post_handshake_auth` to enable and
-:meth:`ssl.SSLSocket.verify_client_post_handshake` to initiate TLS 1.3
-post-handshake authentication.
-(Contributed by Christian Heimes in :issue:`34670`.)
 
 string
 ------
@@ -1600,15 +1596,6 @@ The initialization of the default warnings filters has changed as follows:
 Deprecation warnings are once again shown by default in single-file scripts and
 at the interactive prompt.  See :ref:`whatsnew37-pep565` for details.
 (Contributed by Nick Coghlan in :issue:`31975`.)
-
-
-xml
----
-
-As mitigation against DTD and external entity retrieval, the
-:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
-external entities by default.
-(Contributed by Christian Heimes in :issue:`17239`.)
 
 
 xml.etree
@@ -2544,9 +2531,6 @@ calling :c:func:`Py_Initialize`.
 In 3.7.1 the C API for Context Variables
 :ref:`was updated <contextvarsobjects_pointertype_change>` to use
 :c:type:`PyObject` pointers.  See also :issue:`34762`.
-
-:mod:`xml.dom.minidom` and :mod:`xml.sax` modules no longer process
-external entities by default. See also :issue:`17239`.
 
 In 3.7.1 the :mod:`tokenize` module now implicitly emits a ``NEWLINE`` token
 when provided with input that does not have a trailing new line.  This behavior

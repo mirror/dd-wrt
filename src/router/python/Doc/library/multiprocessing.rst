@@ -102,7 +102,7 @@ to start a process.  These *start methods* are
     will not be inherited.  Starting a process using this method is
     rather slow compared to using *fork* or *forkserver*.
 
-    Available on Unix and Windows.  The default on Windows.
+    Available on Unix and Windows.  The default on Windows and macOS.
 
   *fork*
     The parent process uses :func:`os.fork` to fork the Python
@@ -124,6 +124,12 @@ to start a process.  These *start methods* are
     Available on Unix platforms which support passing file descriptors
     over Unix pipes.
 
+.. versionchanged:: 3.8
+
+   On macOS, the *spawn* start method is now the default.  The *fork* start
+   method should be considered unsafe as it can lead to crashes of the
+   subprocess. See :issue:`33725`.
+
 .. versionchanged:: 3.4
    *spawn* added on all unix platforms, and *forkserver* added for
    some unix platforms.
@@ -131,13 +137,17 @@ to start a process.  These *start methods* are
    handles on Windows.
 
 On Unix using the *spawn* or *forkserver* start methods will also
-start a *semaphore tracker* process which tracks the unlinked named
-semaphores created by processes of the program.  When all processes
-have exited the semaphore tracker unlinks any remaining semaphores.
+start a *resource tracker* process which tracks the unlinked named
+system resources (such as named semaphores or
+:class:`~multiprocessing.shared_memory.SharedMemory` objects) created
+by processes of the program.  When all processes
+have exited the resource tracker unlinks any remaining tracked object.
 Usually there should be none, but if a process was killed by a signal
-there may be some "leaked" semaphores.  (Unlinking the named semaphores
-is a serious matter since the system allows only a limited number, and
-they will not be automatically unlinked until the next reboot.)
+there may be some "leaked" resources.  (Neither leaked semaphores nor shared
+memory segments will be automatically unlinked until the next reboot. This is
+problematic for both objects because the system allows only a limited number of
+named semaphores, and shared memory segments occupy some space in the main
+memory.)
 
 To select a start method you use the :func:`set_start_method` in
 the ``if __name__ == '__main__'`` clause of the main module.  For
@@ -429,7 +439,8 @@ process which created it.
       >>> def f(x):
       ...     return x*x
       ...
-      >>> p.map(f, [1,2,3])
+      >>> with p:
+      ...   p.map(f, [1,2,3])
       Process PoolWorker-1:
       Process PoolWorker-2:
       Process PoolWorker-3:
@@ -442,7 +453,7 @@ process which created it.
 
    (If you try this it will actually output three full tracebacks
    interleaved in a semi-random fashion, and then you may have to
-   stop the master process somehow.)
+   stop the parent process somehow.)
 
 
 Reference
@@ -628,18 +639,19 @@ The :mod:`multiprocessing` package mostly replicates the API of the
    Example usage of some of the methods of :class:`Process`:
 
    .. doctest::
+      :options: +ELLIPSIS
 
        >>> import multiprocessing, time, signal
        >>> p = multiprocessing.Process(target=time.sleep, args=(1000,))
        >>> print(p, p.is_alive())
-       <Process(Process-1, initial)> False
+       <Process ... initial> False
        >>> p.start()
        >>> print(p, p.is_alive())
-       <Process(Process-1, started)> True
+       <Process ... started> True
        >>> p.terminate()
        >>> time.sleep(0.1)
        >>> print(p, p.is_alive())
-       <Process(Process-1, stopped[SIGTERM])> False
+       <Process ... stopped exitcode=-SIGTERM> False
        >>> p.exitcode == -signal.SIGTERM
        True
 
@@ -793,6 +805,10 @@ For an example of the usage of queues for interprocess communication see
       available, else raise the :exc:`queue.Full` exception (*timeout* is
       ignored in that case).
 
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
+
    .. method:: put_nowait(obj)
 
       Equivalent to ``put(obj, False)``.
@@ -806,6 +822,10 @@ For an example of the usage of queues for interprocess communication see
       exception if no item was available within that time.  Otherwise (block is
       ``False``), return an item if one is immediately available, else raise the
       :exc:`queue.Empty` exception (*timeout* is ignored in that case).
+
+      .. versionchanged:: 3.8
+         If the queue is closed, :exc:`ValueError` is raised instead of
+         :exc:`OSError`.
 
    .. method:: get_nowait()
 
@@ -930,6 +950,14 @@ Miscellaneous
    Return the :class:`Process` object corresponding to the current process.
 
    An analogue of :func:`threading.current_thread`.
+
+.. function:: parent_process()
+
+   Return the :class:`Process` object corresponding to the parent process of
+   the :func:`current_process`. For the main process, ``parent_process`` will
+   be ``None``.
+
+   .. versionadded:: 3.8
 
 .. function:: freeze_support()
 
@@ -2100,6 +2128,16 @@ with the :class:`Pool` class.
    Note that the methods of the pool object should only be called by
    the process which created the pool.
 
+   .. warning::
+      :class:`multiprocessing.pool` objects have internal resources that need to be
+      properly managed (like any other resource) by using the pool as a context manager
+      or by calling :meth:`close` and :meth:`terminate` manually. Failure to do this
+      can lead to the process hanging on finalization.
+
+      Note that is **not correct** to rely on the garbage colletor to destroy the pool
+      as CPython does not assure that the finalizer of the pool will be called
+      (see :meth:`object.__del__` for more information).
+
    .. versionadded:: 3.2
       *maxtasksperchild*
 
@@ -2253,6 +2291,10 @@ with the :class:`Pool` class.
 
       Return whether the call completed without raising an exception.  Will
       raise :exc:`ValueError` if the result is not ready.
+
+      .. versionchanged:: 3.7
+         If the result is not ready, :exc:`ValueError` is raised instead of
+         :exc:`AssertionError`.
 
 The following example demonstrates the use of a pool::
 

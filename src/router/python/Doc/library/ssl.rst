@@ -42,7 +42,7 @@ This module provides a class, :class:`ssl.SSLSocket`, which is derived from the
 :class:`socket.socket` type, and provides a socket-like wrapper that also
 encrypts and decrypts the data going over the socket with SSL.  It supports
 additional methods such as :meth:`getpeercert`, which retrieves the
-certificate of the other side of the connection, and :meth:`cipher`,which
+certificate of the other side of the connection, and :meth:`cipher`, which
 retrieves the cipher being used for the secure connection.
 
 For more sophisticated applications, the :class:`ssl.SSLContext` class
@@ -139,6 +139,10 @@ purposes.
    *cadata* is given) or uses :meth:`SSLContext.load_default_certs` to load
    default CA certificates.
 
+   When :attr:`~SSLContext.keylog_filename` is supported and the environment
+   variable :envvar:`SSLKEYLOGFILE` is set, :func:`create_default_context`
+   enables key logging.
+
    .. note::
       The protocol, options, cipher and other settings may change to more
       restrictive values anytime without prior deprecation.  The values
@@ -171,6 +175,10 @@ purposes.
      ChaCha20/Poly1305 was added to the default cipher string.
 
      3DES was dropped from the default cipher string.
+
+   .. versionchanged:: 3.8
+
+      Support for key logging to :envvar:`SSLKEYLOGFILE` was added.
 
 
 Exceptions
@@ -1056,6 +1064,7 @@ Constants
 
    SSL 3.0 to TLS 1.3.
 
+
 SSL Sockets
 -----------
 
@@ -1247,7 +1256,7 @@ SSL sockets also have the following additional methods and attributes:
       The returned dictionary includes additional X509v3 extension items
         such as ``crlDistributionPoints``, ``caIssuers`` and ``OCSP`` URIs.
 
-   .. versionchanged:: 3.7.6
+   .. versionchanged:: 3.8.1
       IPv6 address strings no longer have a trailing new line.
 
 .. method:: SSLSocket.cipher()
@@ -1335,7 +1344,7 @@ SSL sockets also have the following additional methods and attributes:
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the method raises :exc:`NotImplementedError`.
 
-   .. versionadded:: 3.7.1
+   .. versionadded:: 3.8
 
 .. method:: SSLSocket.version()
 
@@ -1906,6 +1915,20 @@ to speed up repeated connections from the same clients.
 
      This features requires OpenSSL 0.9.8f or newer.
 
+.. attribute:: SSLContext.keylog_filename
+
+   Write TLS keys to a keylog file, whenever key material is generated or
+   received. The keylog file is designed for debugging purposes only. The
+   file format is specified by NSS and used by many traffic analyzers such
+   as Wireshark. The log file is opened in append-only mode. Writes are
+   synchronized between threads, but not between processes.
+
+   .. versionadded:: 3.8
+
+   .. note::
+
+     This features requires OpenSSL 1.1.1 or newer.
+
 .. attribute:: SSLContext.maximum_version
 
    A :class:`TLSVersion` enum member representing the highest supported
@@ -1940,6 +1963,19 @@ to speed up repeated connections from the same clients.
      with OpenSSL 1.1.0g or newer.
 
    .. versionadded:: 3.7
+
+.. attribute:: SSLContext.num_tickets
+
+   Control the number of TLS 1.3 session tickets of a
+   :attr:`TLS_PROTOCOL_SERVER` context. The setting has no impact on TLS
+   1.0 to 1.2 connections.
+
+   .. note::
+
+     This attribute is not available unless the ssl module is compiled
+     with OpenSSL 1.1.1 or newer.
+
+   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.options
 
@@ -1978,7 +2014,7 @@ to speed up repeated connections from the same clients.
       Only available with OpenSSL 1.1.1 and TLS 1.3 enabled. Without TLS 1.3
       support, the property value is None and can't be modified
 
-   .. versionadded:: 3.7.1
+   .. versionadded:: 3.8
 
 .. attribute:: SSLContext.protocol
 
@@ -2235,7 +2271,7 @@ Visual inspection shows that the certificate does identify the desired service
                 (('postalCode', '03894-4801'),),
                 (('countryName', 'US'),),
                 (('stateOrProvinceName', 'NH'),),
-                (('localityName', 'Wolfeboro,'),),
+                (('localityName', 'Wolfeboro'),),
                 (('organizationName', 'Python Software Foundation'),),
                 (('commonName', 'www.python.org'),)),
     'subjectAltName': (('DNS', 'www.python.org'),
@@ -2450,14 +2486,17 @@ provided.
    - :meth:`~SSLSocket.read`
    - :meth:`~SSLSocket.write`
    - :meth:`~SSLSocket.getpeercert`
+   - :meth:`~SSLSocket.selected_alpn_protocol`
    - :meth:`~SSLSocket.selected_npn_protocol`
    - :meth:`~SSLSocket.cipher`
    - :meth:`~SSLSocket.shared_ciphers`
    - :meth:`~SSLSocket.compression`
    - :meth:`~SSLSocket.pending`
    - :meth:`~SSLSocket.do_handshake`
+   - :meth:`~SSLSocket.verify_client_post_handshake`
    - :meth:`~SSLSocket.unwrap`
    - :meth:`~SSLSocket.get_channel_binding`
+   - :meth:`~SSLSocket.version`
 
    When compared to :class:`SSLSocket`, this object lacks the following
    features:

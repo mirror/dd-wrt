@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _api-intro:
@@ -158,10 +158,55 @@ complete listing.
 .. c:macro:: Py_UNUSED(arg)
 
    Use this for unused arguments in a function definition to silence compiler
-   warnings, e.g. ``PyObject* func(PyObject *Py_UNUSED(ignored))``.
+   warnings. Example: ``int func(int a, int Py_UNUSED(b)) { return a; }``.
 
    .. versionadded:: 3.4
 
+.. c:macro:: Py_DEPRECATED(version)
+
+   Use this for deprecated declarations.  The macro must be placed before the
+   symbol name.
+
+   Example::
+
+      Py_DEPRECATED(3.8) PyAPI_FUNC(int) Py_OldFunction(void);
+
+   .. versionchanged:: 3.8
+      MSVC support was added.
+
+.. c:macro:: PyDoc_STRVAR(name, str)
+
+   Creates a variable with name ``name`` that can be used in docstrings.
+   If Python is built without docstrings, the value will be empty.
+
+   Use :c:macro:`PyDoc_STRVAR` for docstrings to support building
+   Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      PyDoc_STRVAR(pop_doc, "Remove and return the rightmost element.");
+
+      static PyMethodDef deque_methods[] = {
+          // ...
+          {"pop", (PyCFunction)deque_pop, METH_NOARGS, pop_doc},
+          // ...
+      }
+
+.. c:macro:: PyDoc_STR(str)
+
+   Creates a docstring for the given input string or an empty string
+   if docstrings are disabled.
+
+   Use :c:macro:`PyDoc_STR` in specifying docstrings to support
+   building Python without docstrings, as specified in :pep:`7`.
+
+   Example::
+
+      static PyMethodDef pysqlite_row_methods[] = {
+          {"keys", (PyCFunction)pysqlite_row_keys, METH_NOARGS,
+              PyDoc_STR("Returns the keys of the row.")},
+          {NULL, NULL}
+      };
 
 .. _api-objects:
 
@@ -240,7 +285,7 @@ duration of the call.
 However, a common pitfall is to extract an object from a list and hold on to it
 for a while without incrementing its reference count. Some other operation might
 conceivably remove the object from the list, decrementing its reference count
-and possible deallocating it. The real danger is that innocent-looking
+and possibly deallocating it. The real danger is that innocent-looking
 operations may invoke arbitrary Python code which could do this; there is a code
 path which allows control to flow back to the user from a :c:func:`Py_DECREF`, so
 almost any operation is potentially dangerous.

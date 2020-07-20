@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _extending-intro:
@@ -395,18 +395,26 @@ optionally followed by an import of the module::
        }
 
        /* Add a built-in module, before Py_Initialize */
-       PyImport_AppendInittab("spam", PyInit_spam);
+       if (PyImport_AppendInittab("spam", PyInit_spam) == -1) {
+           fprintf(stderr, "Error: could not extend in-built modules table\n");
+           exit(1);
+       }
 
        /* Pass argv[0] to the Python interpreter */
        Py_SetProgramName(program);
 
-       /* Initialize the Python interpreter.  Required. */
+       /* Initialize the Python interpreter.  Required.
+          If this step fails, it will be a fatal error. */
        Py_Initialize();
 
        /* Optionally import the module; alternatively,
           import can be deferred until the embedded script
           imports it. */
-       PyImport_ImportModule("spam");
+       pmodule = PyImport_ImportModule("spam");
+       if (!pmodule) {
+           PyErr_Print();
+           fprintf(stderr, "Error: could not import module 'spam'\n");
+       }
 
        ...
 
@@ -768,7 +776,7 @@ Philbrick (philbrick@hks.com)::
         * only take two PyObject* parameters, and keywdarg_parrot() takes
         * three.
         */
-       {"parrot", (PyCFunction)keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
+       {"parrot", (PyCFunction)(void(*)(void))keywdarg_parrot, METH_VARARGS | METH_KEYWORDS,
         "Print a lovely skit to standard output."},
        {NULL, NULL, 0, NULL}   /* sentinel */
    };

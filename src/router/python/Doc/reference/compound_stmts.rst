@@ -90,8 +90,8 @@ The :keyword:`!if` statement
 The :keyword:`if` statement is used for conditional execution:
 
 .. productionlist::
-   if_stmt: "if" `expression` ":" `suite`
-          : ("elif" `expression` ":" `suite`)*
+   if_stmt: "if" `assignment_expression` ":" `suite`
+          : ("elif" `assignment_expression` ":" `suite`)*
           : ["else" ":" `suite`]
 
 It selects exactly one of the suites by evaluating the expressions one by one
@@ -116,7 +116,7 @@ The :keyword:`while` statement is used for repeated execution as long as an
 expression is true:
 
 .. productionlist::
-   while_stmt: "while" `expression` ":" `suite`
+   while_stmt: "while" `assignment_expression` ":" `suite`
              : ["else" ":" `suite`]
 
 This repeatedly tests the expression and, if it is true, executes the first
@@ -174,7 +174,7 @@ statement executed in the first suite skips the rest of the suite and continues
 with the next item, or with the :keyword:`!else` clause if there is no next
 item.
 
-The for-loop makes assignments to the variables(s) in the target list.
+The for-loop makes assignments to the variables in the target list.
 This overwrites all previous assignments to those variables including
 those made in the suite of the for-loop::
 
@@ -325,8 +325,8 @@ not handled, the exception is temporarily saved. The :keyword:`!finally` clause
 is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
-If the :keyword:`!finally` clause executes a :keyword:`return` or :keyword:`break`
-statement, the saved exception is discarded::
+If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
+or :keyword:`continue` statement, the saved exception is discarded::
 
    >>> def f():
    ...     try:
@@ -347,10 +347,7 @@ the :keyword:`finally` clause.
 
 When a :keyword:`return`, :keyword:`break` or :keyword:`continue` statement is
 executed in the :keyword:`try` suite of a :keyword:`!try`...\ :keyword:`!finally`
-statement, the :keyword:`finally` clause is also executed 'on the way out.' A
-:keyword:`continue` statement is illegal in the :keyword:`!finally` clause. (The
-reason is a problem with the current implementation --- this restriction may be
-lifted in the future).
+statement, the :keyword:`finally` clause is also executed 'on the way out.'
 
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`finally` clause always executes, a
@@ -369,6 +366,10 @@ always be the last one executed::
 Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
+
+.. versionchanged:: 3.8
+   Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
+   :keyword:`finally` clause due to a problem with the implementation.
 
 
 .. _with:
@@ -397,6 +398,8 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
 
 #. The context expression (the expression given in the :token:`with_item`) is
    evaluated to obtain a context manager.
+
+#. The context manager's :meth:`__enter__` is loaded for later use.
 
 #. The context manager's :meth:`__exit__` is loaded for later use.
 
@@ -429,17 +432,41 @@ The execution of the :keyword:`with` statement with one "item" proceeds as follo
    value from :meth:`__exit__` is ignored, and execution proceeds at the normal
    location for the kind of exit that was taken.
 
+The following code::
+
+    with EXPRESSION as TARGET:
+        SUITE
+
+is semantically equivalent to::
+
+    manager = (EXPRESSION)
+    enter = type(manager).__enter__
+    exit = type(manager).__exit__
+    value = enter(manager)
+    hit_except = False
+
+    try:
+        TARGET = value
+        SUITE
+    except:
+        hit_except = True
+        if not exit(manager, *sys.exc_info()):
+            raise
+    finally:
+        if not hit_except:
+            exit(manager, None, None, None)
+
 With more than one item, the context managers are processed as if multiple
 :keyword:`with` statements were nested::
 
    with A() as a, B() as b:
-       suite
+       SUITE
 
-is equivalent to ::
+is semantically equivalent to::
 
    with A() as a:
        with B() as b:
-           suite
+           SUITE
 
 .. versionchanged:: 3.1
    Support for multiple context expressions.
@@ -482,8 +509,10 @@ A function definition defines a user-defined function object (see section
    decorators: `decorator`+
    decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
-   parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
-                 : | `parameter_list_starargs`
+   parameter_list: `defparameter` ("," `defparameter`)* "," "/" ["," [`parameter_list_no_posonly`]]
+                 :   | `parameter_list_no_posonly`
+   parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
+                            : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`parameter`] ("," `defparameter`)* ["," ["**" `parameter` [","]]]
                           : | "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]
@@ -769,24 +798,25 @@ iterators.
 The following code::
 
     async for TARGET in ITER:
-        BLOCK
+        SUITE
     else:
-        BLOCK2
+        SUITE2
 
 Is semantically equivalent to::
 
     iter = (ITER)
     iter = type(iter).__aiter__(iter)
     running = True
+
     while running:
         try:
             TARGET = await type(iter).__anext__(iter)
         except StopAsyncIteration:
             running = False
         else:
-            BLOCK
+            SUITE
     else:
-        BLOCK2
+        SUITE2
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
@@ -808,23 +838,27 @@ able to suspend execution in its *enter* and *exit* methods.
 
 The following code::
 
-    async with EXPR as VAR:
-        BLOCK
+    async with EXPRESSION as TARGET:
+        SUITE
 
-Is semantically equivalent to::
+is semantically equivalent to::
 
-    mgr = (EXPR)
-    aexit = type(mgr).__aexit__
-    aenter = type(mgr).__aenter__(mgr)
+    manager = (EXPRESSION)
+    aexit = type(manager).__aexit__
+    aenter = type(manager).__aenter__
+    value = await aenter(manager)
+    hit_except = False
 
-    VAR = await aenter
     try:
-        BLOCK
+        TARGET = value
+        SUITE
     except:
-        if not await aexit(mgr, *sys.exc_info()):
+        hit_except = True
+        if not await aexit(manager, *sys.exc_info()):
             raise
-    else:
-        await aexit(mgr, None, None, None)
+    finally:
+        if not hit_except:
+            await aexit(manager, None, None, None)
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 

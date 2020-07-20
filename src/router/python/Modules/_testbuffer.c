@@ -2036,7 +2036,7 @@ static PyObject *
 ndarray_get_readonly(NDArrayObject *self, void *closure)
 {
     Py_buffer *base = &self->head->base;
-    return PyLong_FromLong(base->readonly);
+    return PyBool_FromLong(base->readonly);
 }
 
 static PyObject *
@@ -2352,7 +2352,7 @@ out:
 }
 
 static PyObject *
-get_sizeof_void_p(PyObject *self)
+get_sizeof_void_p(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return PyLong_FromSize_t(sizeof(void *));
 }
@@ -2633,7 +2633,7 @@ static PyMethodDef ndarray_methods [] =
 {
     { "tolist", ndarray_tolist, METH_NOARGS, NULL },
     { "tobytes", ndarray_tobytes, METH_NOARGS, NULL },
-    { "push", (PyCFunction)ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
+    { "push", (PyCFunction)(void(*)(void))ndarray_push, METH_VARARGS|METH_KEYWORDS, NULL },
     { "pop", ndarray_pop, METH_NOARGS, NULL },
     { "add_suboffsets", ndarray_add_suboffsets, METH_NOARGS, NULL },
     { "memoryview_from_buffer", ndarray_memoryview_from_buffer, METH_NOARGS, NULL },
@@ -2646,10 +2646,10 @@ static PyTypeObject NDArray_Type = {
     sizeof(NDArrayObject),       /* Basic object size */
     0,                           /* Item size for varobject */
     (destructor)ndarray_dealloc, /* tp_dealloc */
-    0,                           /* tp_print */
+    0,                           /* tp_vectorcall_offset */
     0,                           /* tp_getattr */
     0,                           /* tp_setattr */
-    0,                           /* tp_compare */
+    0,                           /* tp_as_async */
     0,                           /* tp_repr */
     0,                           /* tp_as_number */
     &ndarray_as_sequence,        /* tp_as_sequence */
@@ -2766,10 +2766,10 @@ static PyTypeObject StaticArray_Type = {
     sizeof(StaticArrayObject),       /* Basic object size */
     0,                               /* Item size for varobject */
     (destructor)staticarray_dealloc, /* tp_dealloc */
-    0,                               /* tp_print */
+    0,                               /* tp_vectorcall_offset */
     0,                               /* tp_getattr */
     0,                               /* tp_setattr */
-    0,                               /* tp_compare */
+    0,                               /* tp_as_async */
     0,                               /* tp_repr */
     0,                               /* tp_as_number */
     0,                               /* tp_as_sequence */
@@ -2805,7 +2805,7 @@ static PyTypeObject StaticArray_Type = {
 static struct PyMethodDef _testbuffer_functions[] = {
     {"slice_indices", slice_indices, METH_VARARGS, NULL},
     {"get_pointer", get_pointer, METH_VARARGS, NULL},
-    {"get_sizeof_void_p", (PyCFunction)get_sizeof_void_p, METH_NOARGS, NULL},
+    {"get_sizeof_void_p", get_sizeof_void_p, METH_NOARGS, NULL},
     {"get_contiguous", get_contiguous, METH_VARARGS, NULL},
     {"py_buffer_to_contiguous", py_buffer_to_contiguous, METH_VARARGS, NULL},
     {"is_contiguous", is_contiguous, METH_VARARGS, NULL},
