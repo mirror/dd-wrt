@@ -145,10 +145,7 @@ typedef int socklen_t;
 #  define ALG_OP_VERIFY                   3
 # endif
 
-#else
-
-# undef AF_VSOCK
-#endif
+#endif /* HAVE_SOCKADDR_ALG */
 
 
 #ifndef Py__SOCKET_H

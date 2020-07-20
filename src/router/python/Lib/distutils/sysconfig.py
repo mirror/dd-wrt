@@ -18,10 +18,17 @@ from .errors import DistutilsPlatformError
 from .util import get_platform, get_host_platform
 
 # These are needed in a couple of spots, so just compute them once.
-PREFIX = os.path.normpath(sys.prefix)
-EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
-BASE_PREFIX = os.path.normpath(sys.base_prefix)
-BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
+if "_python_sysroot" in os.environ:
+    _sysroot=os.environ.get('_python_sysroot')
+    PREFIX = os.path.normpath(_sysroot + os.environ.get('_python_prefix'))
+    EXEC_PREFIX = os.path.normpath(_sysroot + os.environ.get('_python_exec_prefix'))
+    BASE_PREFIX = PREFIX
+    BASE_EXEC_PREFIX = EXEC_PREFIX
+else:
+    PREFIX = os.path.normpath(sys.prefix)
+    EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
+    BASE_PREFIX = os.path.normpath(sys.base_prefix)
+    BASE_EXEC_PREFIX = os.path.normpath(sys.base_exec_prefix)
 
 # Path to the base directory of the project. On Windows the binary may
 # live in project/PCbuild/win32 or project/PCbuild/amd64.
