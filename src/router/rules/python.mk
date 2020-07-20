@@ -1,5 +1,5 @@
 python-configure: libffi-configure libffi libffi-install
-	cd python && cp Modules/Setup.dist Modules/Setup
+#	cd python && cp Modules/Setup Modules/Setup
 	cd python && echo "# bogus" > Modules/Setup.local 
 	cd python && ./configure  --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
 		--enable-shared \
@@ -14,7 +14,7 @@ python-configure: libffi-configure libffi libffi-install
 		--enable-ipv6 \
 		CONFIG_SITE="$(TOP)/python/site/config.site" \
 		OPT="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib" \
-		LDFLAGS="$(COPTS) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/python" \
+		LDFLAGS="$(COPTS) -L$(TOP)/openssl -L$(TOP)/zlib -L$(TOP)/python -L$(INSTALLDIR)/libffi/usr/lib" \
 		CFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
 		CXXFLAGS="$(COPTS) -I$(TOP)/openssl/include -I$(TOP)/zlib -I$(INSTALLDIR)/libffi/usr/lib/libffi-3.2.1/include" \
 		CC="ccache $(ARCH)-linux-uclibc-gcc $(COPTS)" \
