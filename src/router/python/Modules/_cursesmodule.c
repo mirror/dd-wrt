@@ -119,6 +119,7 @@ static const char PyCursesVersion[] = "2.2";
 /* Including <term.h> #defines many common symbols. */
 #undef lines
 #undef columns
+#endif
 
 #ifdef HAVE_LANGINFO_H
 #include <langinfo.h>
