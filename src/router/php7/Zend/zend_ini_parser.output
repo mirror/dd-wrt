@@ -19,7 +19,7 @@ Terminals unused in grammar
 
 Grammar
 
-    0 $accept: statement_list $end
+    0 $accept: statement_list "end of file"
 
     1 statement_list: statement_list statement
     2               | %empty
@@ -85,7 +85,7 @@ Grammar
 
 Terminals, with rules where they appear
 
-$end (0) 0
+"end of file" (0) 0
 '!' (33) 37
 '"' (34) 22 25 28 31
 '$' (36)
@@ -162,7 +162,7 @@ constant_string (56)
 
 State 0
 
-    0 $accept: . statement_list $end
+    0 $accept: . statement_list "end of file"
 
     $default  reduce using rule 2 (statement_list)
 
@@ -171,21 +171,21 @@ State 0
 
 State 1
 
-    0 $accept: statement_list . $end
+    0 $accept: statement_list . "end of file"
     1 statement_list: statement_list . statement
 
-    $end         shift, and go to state 2
-    TC_SECTION   shift, and go to state 3
-    TC_LABEL     shift, and go to state 4
-    TC_OFFSET    shift, and go to state 5
-    END_OF_LINE  shift, and go to state 6
+    "end of file"  shift, and go to state 2
+    TC_SECTION     shift, and go to state 3
+    TC_LABEL       shift, and go to state 4
+    TC_OFFSET      shift, and go to state 5
+    END_OF_LINE    shift, and go to state 6
 
     statement  go to state 7
 
 
 State 2
 
-    0 $accept: statement_list $end .
+    0 $accept: statement_list "end of file" .
 
     $default  accept
 
