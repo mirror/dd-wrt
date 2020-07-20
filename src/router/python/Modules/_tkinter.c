@@ -658,7 +658,6 @@ Tkapp_New(const char *screenName, const char *className,
     v = PyObject_New(TkappObject, (PyTypeObject *) Tkapp_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tkapp_Type);
 
     v->interp = Tcl_CreateInterp();
     v->wantobjects = wantobjects;
@@ -843,7 +842,6 @@ newPyTclObject(Tcl_Obj *arg)
     self = PyObject_New(PyTclObject, (PyTypeObject *) PyTclObject_Type);
     if (self == NULL)
         return NULL;
-    Py_INCREF(PyTclObject_Type);
     Tcl_IncrRefCount(arg);
     self->value = arg;
     self->string = NULL;
@@ -2752,7 +2750,6 @@ Tktt_New(PyObject *func)
     v = PyObject_New(TkttObject, (PyTypeObject *) Tktt_Type);
     if (v == NULL)
         return NULL;
-    Py_INCREF(Tktt_Type);
 
     Py_INCREF(func);
     v->token = NULL;
@@ -3153,8 +3150,8 @@ _tkinter__flatten(PyObject *module, PyObject *item)
 /*[clinic input]
 _tkinter.create
 
-    screenName: str(accept={str, NoneType}) = NULL
-    baseName: str = NULL
+    screenName: str(accept={str, NoneType}) = None
+    baseName: str = ""
     className: str = "Tk"
     interactive: bool(accept={int}) = False
     wantobjects: bool(accept={int}) = False
@@ -3162,7 +3159,7 @@ _tkinter.create
         if false, then Tk_Init() doesn't get called
     sync: bool(accept={int}) = False
         if true, then pass -sync to wish
-    use: str(accept={str, NoneType}) = NULL
+    use: str(accept={str, NoneType}) = None
         if not None, then pass -use to wish
     /
 
@@ -3173,7 +3170,7 @@ _tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=e3315607648e6bb4 input=431907c134c80085]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=da9b17ee7358d862]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

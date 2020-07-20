@@ -1,7 +1,6 @@
 from test import support
 
 from contextlib import contextmanager
-import errno
 import imaplib
 import os.path
 import socketserver
@@ -11,7 +10,8 @@ import threading
 import socket
 
 from test.support import (reap_threads, verbose, transient_internet,
-                          run_with_tz, run_with_locale, cpython_only)
+                          run_with_tz, run_with_locale, cpython_only,
+                          requires_hashdigest)
 import unittest
 from unittest import mock
 from datetime import datetime, timezone, timedelta
@@ -371,6 +371,7 @@ class NewIMAPTestsMixin():
         self.assertEqual(code, 'OK')
         self.assertEqual(server.response, b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
+    @requires_hashdigest('md5')
     def test_login_cram_md5_bytes(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -388,6 +389,7 @@ class NewIMAPTestsMixin():
         ret, _ = client.login_cram_md5("tim", b"tanstaaftanstaaf")
         self.assertEqual(ret, "OK")
 
+    @requires_hashdigest('md5')
     def test_login_cram_md5_plain_text(self):
         class AuthHandler(SimpleIMAPHandler):
             capabilities = 'LOGINDISABLED AUTH=CRAM-MD5'
@@ -798,6 +800,7 @@ class ThreadedNetworkedTests(unittest.TestCase):
                              b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
 
     @reap_threads
+    @requires_hashdigest('md5')
     def test_login_cram_md5(self):
 
         class AuthHandler(SimpleIMAPHandler):
@@ -908,6 +911,7 @@ class ThreadedNetworkedTestsSSL(ThreadedNetworkedTests):
 
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAPTest(unittest.TestCase):
     host = 'cyrus.andrew.cmu.edu'
     port = 143
@@ -943,6 +947,7 @@ class RemoteIMAPTest(unittest.TestCase):
 @unittest.skipUnless(ssl, "SSL not available")
 @unittest.skipUnless(
     support.is_resource_enabled('network'), 'network resource disabled')
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
     def setUp(self):
@@ -958,6 +963,7 @@ class RemoteIMAP_STARTTLSTest(RemoteIMAPTest):
 
 
 @unittest.skipUnless(ssl, "SSL not available")
+@unittest.skip('cyrus.andrew.cmu.edu blocks connections')
 class RemoteIMAP_SSLTest(RemoteIMAPTest):
     port = 993
     imap_class = IMAP4_SSL

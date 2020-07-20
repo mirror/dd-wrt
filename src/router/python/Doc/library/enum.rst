@@ -273,6 +273,10 @@ overridden::
     the next :class:`int` in sequence with the last :class:`int` provided, but
     the way it does this is an implementation detail and may change.
 
+.. note::
+
+    The :meth:`_generate_next_value_` method must be defined before any members.
+
 Iteration
 ---------
 
@@ -281,7 +285,7 @@ Iterating over the members of an enum does not provide the aliases::
     >>> list(Shape)
     [<Shape.SQUARE: 2>, <Shape.DIAMOND: 1>, <Shape.CIRCLE: 3>]
 
-The special attribute ``__members__`` is an ordered dictionary mapping names
+The special attribute ``__members__`` is a read-only ordered mapping of names
 to members.  It includes all names defined in the enumeration, including the
 aliases::
 
@@ -743,6 +747,37 @@ Some rules:
    type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
    :func:`repr` is desired, use the `!s` or `!r` format codes.
 
+When to use :meth:`__new__` vs. :meth:`__init__`
+------------------------------------------------
+
+:meth:`__new__` must be used whenever you want to customize the actual value of
+the :class:`Enum` member.  Any other modifications may go in either
+:meth:`__new__` or :meth:`__init__`, with :meth:`__init__` being preferred.
+
+For example, if you want to pass several items to the constructor, but only
+want one of them to be the value::
+
+    >>> class Coordinate(bytes, Enum):
+    ...     """
+    ...     Coordinate with binary codes that can be indexed by the int code.
+    ...     """
+    ...     def __new__(cls, value, label, unit):
+    ...         obj = bytes.__new__(cls, [value])
+    ...         obj._value_ = value
+    ...         obj.label = label
+    ...         obj.unit = unit
+    ...         return obj
+    ...     PX = (0, 'P.X', 'km')
+    ...     PY = (1, 'P.Y', 'km')
+    ...     VX = (2, 'V.X', 'km/s')
+    ...     VY = (3, 'V.Y', 'km/s')
+    ...
+
+    >>> print(Coordinate['PY'])
+    Coordinate.PY
+
+    >>> print(Coordinate(3))
+    Coordinate.VY
 
 Interesting examples
 --------------------
@@ -1005,7 +1040,7 @@ Finer Points
 Supported ``__dunder__`` names
 """"""""""""""""""""""""""""""
 
-:attr:`__members__` is an :class:`OrderedDict` of ``member_name``:``member``
+:attr:`__members__` is a read-only ordered mapping of ``member_name``:``member``
 items.  It is only available on the class.
 
 :meth:`__new__`, if specified, must create and return the enum members; it is

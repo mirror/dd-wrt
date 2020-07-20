@@ -17,7 +17,7 @@ Objects, values and types
 
 :dfn:`Objects` are Python's abstraction for data.  All data in a Python program
 is represented by objects or by relations between objects. (In a sense, and in
-conformance to Von Neumann's model of a "stored program computer," code is also
+conformance to Von Neumann's model of a "stored program computer", code is also
 represented by objects.)
 
 .. index::
@@ -420,6 +420,11 @@ Mappings
       equal (e.g., ``1`` and ``1.0``) then they can be used interchangeably to index
       the same dictionary entry.
 
+      Dictionaries preserve insertion order, meaning that keys will be produced
+      in the same order they were added sequentially over the dictionary.
+      Replacing an existing key does not change the order, however removing a key
+      and re-inserting it will add it to the end instead of keeping its old place.
+
       Dictionaries are mutable; they can be created by the ``{...}`` notation (see
       section :ref:`dict`).
 
@@ -430,6 +435,11 @@ Mappings
       The extension modules :mod:`dbm.ndbm` and :mod:`dbm.gnu` provide
       additional examples of mapping types, as does the :mod:`collections`
       module.
+
+      .. versionchanged:: 3.7
+         Dictionaries did not preserve insertion order in versions of Python before 3.6.
+         In CPython 3.6, insertion order was preserved, but it was considered
+         an implementation detail at that time rather than a language guarantee.
 
 Callable types
    .. index::
@@ -539,7 +549,9 @@ Callable types
       the value of the cell, as well as set the value.
 
       Additional information about a function's definition can be retrieved from its
-      code object; see the description of internal types below.
+      code object; see the description of internal types below. The
+      :data:`cell <types.CellType>` type can be accessed in the :mod:`types`
+      module.
 
    Instance methods
       .. index::
@@ -575,12 +587,6 @@ Callable types
       :attr:`__self__` attribute is the instance, and the method object is said
       to be bound.  The new method's :attr:`__func__` attribute is the original
       function object.
-
-      When a user-defined method object is created by retrieving another method
-      object from a class or instance, the behaviour is the same as for a
-      function object, except that the :attr:`__func__` attribute of the new
-      instance is not the original method object but its :attr:`__func__`
-      attribute.
 
       When an instance method object is created by retrieving a class method
       object from a class or instance, its :attr:`__self__` attribute is the
@@ -894,6 +900,8 @@ Internal types
 
       .. index::
          single: co_argcount (code object attribute)
+         single: co_posonlyargcount (code object attribute)
+         single: co_kwonlyargcount (code object attribute)
          single: co_code (code object attribute)
          single: co_consts (code object attribute)
          single: co_filename (code object attribute)
@@ -909,21 +917,26 @@ Internal types
          single: co_freevars (code object attribute)
 
       Special read-only attributes: :attr:`co_name` gives the function name;
-      :attr:`co_argcount` is the number of positional arguments (including arguments
-      with default values); :attr:`co_nlocals` is the number of local variables used
-      by the function (including arguments); :attr:`co_varnames` is a tuple containing
+      :attr:`co_argcount` is the total number of positional arguments
+      (including positional-only arguments and arguments with default values);
+      :attr:`co_posonlyargcount` is the number of positional-only arguments
+      (including arguments with default values); :attr:`co_kwonlyargcount` is
+      the number of keyword-only arguments (including arguments with default
+      values); :attr:`co_nlocals` is the number of local variables used by the
+      function (including arguments); :attr:`co_varnames` is a tuple containing
       the names of the local variables (starting with the argument names);
-      :attr:`co_cellvars` is a tuple containing the names of local variables that are
-      referenced by nested functions; :attr:`co_freevars` is a tuple containing the
-      names of free variables; :attr:`co_code` is a string representing the sequence
-      of bytecode instructions; :attr:`co_consts` is a tuple containing the literals
-      used by the bytecode; :attr:`co_names` is a tuple containing the names used by
-      the bytecode; :attr:`co_filename` is the filename from which the code was
-      compiled; :attr:`co_firstlineno` is the first line number of the function;
-      :attr:`co_lnotab` is a string encoding the mapping from bytecode offsets to
-      line numbers (for details see the source code of the interpreter);
-      :attr:`co_stacksize` is the required stack size; :attr:`co_flags` is an
-      integer encoding a number of flags for the interpreter.
+      :attr:`co_cellvars` is a tuple containing the names of local variables
+      that are referenced by nested functions; :attr:`co_freevars` is a tuple
+      containing the names of free variables; :attr:`co_code` is a string
+      representing the sequence of bytecode instructions; :attr:`co_consts` is
+      a tuple containing the literals used by the bytecode; :attr:`co_names` is
+      a tuple containing the names used by the bytecode; :attr:`co_filename` is
+      the filename from which the code was compiled; :attr:`co_firstlineno` is
+      the first line number of the function; :attr:`co_lnotab` is a string
+      encoding the mapping from bytecode offsets to line numbers (for details
+      see the source code of the interpreter); :attr:`co_stacksize` is the
+      required stack size; :attr:`co_flags` is an integer encoding a number
+      of flags for the interpreter.
 
       .. index:: object: generator
 
@@ -1163,10 +1176,10 @@ Basic customization
    with appropriate arguments and then modifying the newly-created instance
    as necessary before returning it.
 
-   If :meth:`__new__` returns an instance of *cls*, then the new instance's
-   :meth:`__init__` method will be invoked like ``__init__(self[, ...])``, where
-   *self* is the new instance and the remaining arguments are the same as were
-   passed to :meth:`__new__`.
+   If :meth:`__new__` is invoked during object construction and it returns an
+   instance or subclass of *cls*, then the new instance’s :meth:`__init__` method
+   will be invoked like ``__init__(self[, ...])``, where *self* is the new instance
+   and the remaining arguments are the same as were passed to the object constructor.
 
    If :meth:`__new__` does not return an instance of *cls*, then the new instance's
    :meth:`__init__` method will not be invoked.
@@ -1442,8 +1455,8 @@ Basic customization
 
    .. note::
 
-      By default, the :meth:`__hash__` values of str, bytes and datetime
-      objects are "salted" with an unpredictable random value.  Although they
+      By default, the :meth:`__hash__` values of str and bytes objects are
+      "salted" with an unpredictable random value.  Although they
       remain constant within an individual Python process, they are not
       predictable between repeated invocations of Python.
 
@@ -1615,21 +1628,32 @@ refers to the attribute whose name is the key of the property in the owner
 class' :attr:`~object.__dict__`.
 
 
-.. method:: object.__get__(self, instance, owner)
+.. method:: object.__get__(self, instance, owner=None)
 
-   Called to get the attribute of the owner class (class attribute access) or of an
-   instance of that class (instance attribute access). *owner* is always the owner
-   class, while *instance* is the instance that the attribute was accessed through,
-   or ``None`` when the attribute is accessed through the *owner*.  This method
-   should return the (computed) attribute value or raise an :exc:`AttributeError`
-   exception.
+   Called to get the attribute of the owner class (class attribute access) or
+   of an instance of that class (instance attribute access). The optional
+   *owner* argument is the owner class, while *instance* is the instance that
+   the attribute was accessed through, or ``None`` when the attribute is
+   accessed through the *owner*.
 
+   This method should return the computed attribute value or raise an
+   :exc:`AttributeError` exception.
+
+   :PEP:`252` specifies that :meth:`__get__` is callable with one or two
+   arguments.  Python's own built-in descriptors support this specification;
+   however, it is likely that some third-party tools have descriptors
+   that require both arguments.  Python's own :meth:`__getattribute__`
+   implementation always passes in both arguments whether they are required
+   or not.
 
 .. method:: object.__set__(self, instance, value)
 
    Called to set the attribute on an instance *instance* of the owner class to a
    new value, *value*.
 
+   Note, adding :meth:`__set__` or :meth:`__delete__` changes the kind of
+   descriptor to a "data descriptor".  See :ref:`descriptor-invocation` for
+   more details.
 
 .. method:: object.__delete__(self, instance)
 
@@ -1826,7 +1850,7 @@ class defining the method.
    class, as in::
 
        class Philosopher:
-           def __init_subclass__(cls, default_name, **kwargs):
+           def __init_subclass__(cls, /, default_name, **kwargs):
                super().__init_subclass__(**kwargs)
                cls.default_name = default_name
 
@@ -1992,8 +2016,7 @@ current call is identified based on the first argument passed to the method.
    as a ``__classcell__`` entry in the class namespace. If present, this must
    be propagated up to the ``type.__new__`` call in order for the class to be
    initialised correctly.
-   Failing to do so will result in a :exc:`DeprecationWarning` in Python 3.6,
-   and a :exc:`RuntimeError` in Python 3.8.
+   Failing to do so will result in a :exc:`RuntimeError` in Python 3.8.
 
 When using the default metaclass :class:`type`, or any metaclass that ultimately
 calls ``type.__new__``, the following additional customisation steps are
@@ -2415,11 +2438,9 @@ left undefined.
    functions). Presence of this method indicates that the numeric object is
    an integer type.  Must return an integer.
 
-   .. note::
-
-      In order to have a coherent integer type class, when :meth:`__index__` is
-      defined :meth:`__int__` should also be defined, and both should return
-      the same value.
+   If :meth:`__int__`, :meth:`__float__` and :meth:`__complex__` are not
+   defined then corresponding built-in functions :func:`int`, :func:`float`
+   and :func:`complex` fall back to :meth:`__index__`.
 
 
 .. method:: object.__round__(self, [,ndigits])
@@ -2708,13 +2729,13 @@ Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
-   This method is semantically similar to the :meth:`__enter__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__enter__`, the only
+   difference being that it must return an *awaitable*.
 
 .. method:: object.__aexit__(self, exc_type, exc_value, traceback)
 
-   This method is semantically similar to the :meth:`__exit__`, with only
-   difference that it must return an *awaitable*.
+   Semantically similar to :meth:`__exit__`, the only
+   difference being that it must return an *awaitable*.
 
 An example of an asynchronous context manager class::
 

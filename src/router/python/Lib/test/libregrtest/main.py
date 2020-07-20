@@ -17,6 +17,7 @@ from test.libregrtest.runtest import (
     INTERRUPTED, CHILD_ERROR, TEST_DID_NOT_RUN, TIMEOUT,
     PROGRESS_MIN_TIME, format_test_result, is_failed)
 from test.libregrtest.setup import setup_tests
+from test.libregrtest.pgo import setup_pgo_tests
 from test.libregrtest.utils import removepy, count, format_duration, printlist
 from test import support
 
@@ -224,6 +225,10 @@ class Regrtest:
 
         removepy(self.tests)
 
+        if self.ns.pgo:
+            # add default PGO tests if no tests are specified
+            setup_pgo_tests(self.ns)
+
         stdtests = STDTESTS[:]
         nottests = NOTTESTS.copy()
         if self.ns.exclude:
@@ -282,7 +287,7 @@ class Regrtest:
 
     def list_cases(self):
         support.verbose = False
-        support.set_match_tests(self.ns.match_tests)
+        support.set_match_tests(self.ns.match_tests, self.ns.ignore_tests)
 
         for test_name in self.selected:
             abstest = get_abs_module(self.ns, test_name)
@@ -389,7 +394,10 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
-        self.log("Run tests sequentially")
+        msg = "Run tests sequentially"
+        if self.ns.timeout:
+            msg += " (timeout: %s)" % format_duration(self.ns.timeout)
+        self.log(msg)
 
         previous_test = None
         for test_index, test_name in enumerate(self.tests, 1):
@@ -594,7 +602,7 @@ class Regrtest:
     def cleanup(self):
         import glob
 
-        path = os.path.join(self.tmp_dir, 'test_python_*')
+        path = os.path.join(glob.escape(self.tmp_dir), 'test_python_*')
         print("Cleanup %s directory" % self.tmp_dir)
         for name in glob.glob(path):
             if os.path.isdir(name):
@@ -652,6 +660,7 @@ class Regrtest:
             input("Press any key to continue...")
 
         support.PGO = self.ns.pgo
+        support.PGO_EXTENDED = self.ns.pgo_extended
 
         setup_tests(self.ns)
 

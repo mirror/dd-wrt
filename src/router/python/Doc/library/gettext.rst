@@ -39,7 +39,7 @@ class-based API instead.
    Bind the *domain* to the locale directory *localedir*.  More concretely,
    :mod:`gettext` will look for binary :file:`.mo` files for the given domain using
    the path (on Unix): :file:`{localedir}/{language}/LC_MESSAGES/{domain}.mo`, where
-   *languages* is searched for in the environment variables :envvar:`LANGUAGE`,
+   *language* is searched for in the environment variables :envvar:`LANGUAGE`,
    :envvar:`LC_ALL`, :envvar:`LC_MESSAGES`, and :envvar:`LANG` respectively.
 
    If *localedir* is omitted or ``None``, then the current binding for *domain* is
@@ -52,6 +52,8 @@ class-based API instead.
    returned by the :func:`lgettext`, :func:`ldgettext`, :func:`lngettext`
    and :func:`ldngettext` functions.
    If *codeset* is omitted, then the current binding is returned.
+
+   .. deprecated-removed:: 3.8 3.10
 
 
 .. function:: textdomain(domain=None)
@@ -94,6 +96,18 @@ class-based API instead.
    Like :func:`ngettext`, but look the message up in the specified *domain*.
 
 
+.. function:: pgettext(context, message)
+.. function:: dpgettext(domain, context, message)
+.. function:: npgettext(context, singular, plural, n)
+.. function:: dnpgettext(domain, context, singular, plural, n)
+
+   Similar to the corresponding functions without the ``p`` in the prefix (that
+   is, :func:`gettext`, :func:`dgettext`, :func:`ngettext`, :func:`dngettext`),
+   but the translation is restricted to the given message *context*.
+
+   .. versionadded:: 3.8
+
+
 .. function:: lgettext(message)
 .. function:: ldgettext(domain, message)
 .. function:: lngettext(singular, plural, n)
@@ -112,9 +126,9 @@ class-based API instead.
       Unicode strings instead, since most Python applications will want to
       manipulate human readable text as strings instead of bytes.  Further,
       it's possible that you may get unexpected Unicode-related exceptions
-      if there are encoding problems with the translated strings.  It is
-      possible that the ``l*()`` functions will be deprecated in future Python
-      versions due to their inherent problems and limitations.
+      if there are encoding problems with the translated strings.
+
+   .. deprecated-removed:: 3.8 3.10
 
 
 Note that GNU :program:`gettext` also defines a :func:`dcgettext` method, but
@@ -191,6 +205,9 @@ install themselves in the built-in namespace as the function :func:`_`.
    .. versionchanged:: 3.3
       :exc:`IOError` used to be raised instead of :exc:`OSError`.
 
+   .. deprecated-removed:: 3.8 3.10
+      The *codeset* parameter.
+
 
 .. function:: install(domain, localedir=None, codeset=None, names=None)
 
@@ -210,6 +227,9 @@ install themselves in the built-in namespace as the function :func:`_`.
    For convenience, you want the :func:`_` function to be installed in Python's
    builtins namespace, so it is easily accessible in all modules of your
    application.
+
+   .. deprecated-removed:: 3.8 3.10
+      The *codeset* parameter.
 
 
 The :class:`NullTranslations` class
@@ -258,6 +278,22 @@ are the methods of :class:`!NullTranslations`:
       Overridden in derived classes.
 
 
+   .. method:: pgettext(context, message)
+
+      If a fallback has been set, forward :meth:`pgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      If a fallback has been set, forward :meth:`npgettext` to the fallback.
+      Otherwise, return the translated message.  Overridden in derived classes.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
 
@@ -270,6 +306,8 @@ are the methods of :class:`!NullTranslations`:
 
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
+
+      .. deprecated-removed:: 3.8 3.10
 
 
    .. method:: info()
@@ -288,10 +326,14 @@ are the methods of :class:`!NullTranslations`:
       Return the encoding used to return translated messages in :meth:`.lgettext`
       and :meth:`.lngettext`.
 
+      .. deprecated-removed:: 3.8 3.10
+
 
    .. method:: set_output_charset(charset)
 
       Change the encoding used to return translated messages.
+
+      .. deprecated-removed:: 3.8 3.10
 
 
    .. method:: install(names=None)
@@ -302,7 +344,7 @@ are the methods of :class:`!NullTranslations`:
       If the *names* parameter is given, it must be a sequence containing the
       names of functions you want to install in the builtins namespace in
       addition to :func:`_`.  Supported names are ``'gettext'``, ``'ngettext'``,
-      ``'lgettext'`` and ``'lngettext'``.
+      ``'pgettext'``, ``'npgettext'``, ``'lgettext'``, and ``'lngettext'``.
 
       Note that this is only one way, albeit the most convenient way, to make
       the :func:`_` function available to your application.  Because it affects
@@ -316,6 +358,9 @@ are the methods of :class:`!NullTranslations`:
 
       This puts :func:`_` only in the module's global namespace and so only
       affects calls within this module.
+
+      .. versionchanged:: 3.8
+         Added ``'pgettext'`` and ``'npgettext'``.
 
 
 The :class:`GNUTranslations` class
@@ -380,6 +425,31 @@ unexpected, or if other problems occur while reading the file, instantiating a
              n) % {'num': n}
 
 
+   .. method:: pgettext(context, message)
+
+      Look up the *context* and *message* id in the catalog and return the
+      corresponding message string, as a Unicode string.  If there is no
+      entry in the catalog for the *message* id and *context*, and a fallback
+      has been set, the look up is forwarded to the fallback's
+      :meth:`pgettext` method.  Otherwise, the *message* id is returned.
+
+      .. versionadded:: 3.8
+
+
+   .. method:: npgettext(context, singular, plural, n)
+
+      Do a plural-forms lookup of a message id.  *singular* is used as the
+      message id for purposes of lookup in the catalog, while *n* is used to
+      determine which plural form to use.
+
+      If the message id for *context* is not found in the catalog, and a
+      fallback is specified, the request is forwarded to the fallback's
+      :meth:`npgettext` method.  Otherwise, when *n* is 1 *singular* is
+      returned, and *plural* is returned in all other cases.
+
+      .. versionadded:: 3.8
+
+
    .. method:: lgettext(message)
    .. method:: lngettext(singular, plural, n)
 
@@ -392,6 +462,8 @@ unexpected, or if other problems occur while reading the file, instantiating a
 
          These methods should be avoided in Python 3.  See the warning for the
          :func:`lgettext` function.
+
+      .. deprecated-removed:: 3.8 3.10
 
 
 Solaris message catalog support

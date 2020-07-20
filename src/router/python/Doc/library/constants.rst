@@ -97,4 +97,3 @@ should not be used in programs.
    Object that when printed, prints the message "Type license() to see the
    full license text", and when called, displays the full license text in a
    pager-like fashion (one screen at a time).
-

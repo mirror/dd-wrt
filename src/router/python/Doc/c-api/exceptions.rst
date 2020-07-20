@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _exceptionhandling:
@@ -53,8 +53,8 @@ Printing and clearing
 .. c:function:: void PyErr_PrintEx(int set_sys_last_vars)
 
    Print a standard traceback to ``sys.stderr`` and clear the error indicator.
-   **Unless** the error is a ``SystemExit``.  In that case the no traceback
-   is printed and Python process will exit with the error code specified by
+   **Unless** the error is a ``SystemExit``, in that case no traceback is
+   printed and the Python process will exit with the error code specified by
    the ``SystemExit`` instance.
 
    Call this function **only** when the error indicator is set.  Otherwise it
@@ -71,6 +71,9 @@ Printing and clearing
 
 
 .. c:function:: void PyErr_WriteUnraisable(PyObject *obj)
+
+   Call :func:`sys.unraisablehook` using the current exception and *obj*
+   argument.
 
    This utility function prints a warning message to ``sys.stderr`` when an
    exception has been set but it is impossible for the interpreter to actually
@@ -355,7 +358,7 @@ an error value).
 .. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
 
    Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
-   :exc:`ResourceWarning` and pass *source* to :func:`warnings.WarningMessage`.
+   :exc:`ResourceWarning` and it passes *source* to :func:`warnings.WarningMessage`.
 
    .. versionadded:: 3.6
 

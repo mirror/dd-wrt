@@ -1320,14 +1320,14 @@ There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
-.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: CDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Instances of this class represent loaded shared libraries. Functions in these
    libraries use the standard C calling convention, and are assumed to return
    :c:type:`int`.
 
 
-.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: OleDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1340,7 +1340,7 @@ way is to instantiate one of the following classes:
       :exc:`WindowsError` used to be raised.
 
 
-.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False)
+.. class:: WinDLL(name, mode=DEFAULT_MODE, handle=None, use_errno=False, use_last_error=False, winmode=0)
 
    Windows only: Instances of this class represent loaded shared libraries,
    functions in these libraries use the ``stdcall`` calling convention, and are
@@ -1391,6 +1391,17 @@ the Windows error code which is managed by the :func:`GetLastError` and
 :func:`SetLastError` Windows API functions; :func:`ctypes.get_last_error` and
 :func:`ctypes.set_last_error` are used to request and change the ctypes private
 copy of the windows error code.
+
+The *winmode* parameter is used on Windows to specify how the library is loaded
+(since *mode* is ignored). It takes any value that is valid for the Win32 API
+``LoadLibraryEx`` flags parameter. When omitted, the default is to use the flags
+that result in the most secure DLL load to avoiding issues such as DLL
+hijacking. Passing the full path to the DLL is the safest way to ensure the
+correct library and dependencies are loaded.
+
+.. versionchanged:: 3.8
+   Added *winmode* parameter.
+
 
 .. data:: RTLD_GLOBAL
    :noindex:
@@ -1496,6 +1507,23 @@ object is available:
    :c:type:`int`, which is of course not always the truth, so you have to assign
    the correct :attr:`restype` attribute to use these functions.
 
+.. audit-event:: ctypes.dlopen name ctypes.LibraryLoader
+
+   Loading a library through any of these objects raises an
+   :ref:`auditing event <auditing>` ``ctypes.dlopen`` with string argument
+   ``name``, the name used to load the library.
+
+.. audit-event:: ctypes.dlsym library,name ctypes.LibraryLoader
+
+   Accessing a function on a loaded library raises an auditing event
+   ``ctypes.dlsym`` with arguments ``library`` (the library object) and ``name``
+   (the symbol's name as a string or integer).
+
+.. audit-event:: ctypes.dlsym/handle handle,name ctypes.LibraryLoader
+
+   In cases when only the library handle is available rather than the object,
+   accessing a function raises an auditing event ``ctypes.dlsym/handle`` with
+   arguments ``handle`` (the raw library handle) and ``name``.
 
 .. _ctypes-foreign-functions:
 
@@ -1581,6 +1609,19 @@ They are instances of a private class:
    This exception is raised when a foreign function call cannot convert one of the
    passed arguments.
 
+
+.. audit-event:: ctypes.seh_exception code foreign-functions
+
+   On Windows, when a foreign function call raises a system exception (for
+   example, due to an access violation), it will be captured and replaced with
+   a suitable Python exception. Further, an auditing event
+   ``ctypes.seh_exception`` with argument ``code`` will be raised, allowing an
+   audit hook to replace the exception with its own.
+
+.. audit-event:: ctypes.call_function func_pointer,arguments ctype-foreign-functions
+
+   Some ways to invoke foreign function calls may raise an auditing event
+   ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
 
@@ -1773,6 +1814,8 @@ Utility functions
    Returns the address of the memory buffer as integer.  *obj* must be an
    instance of a ctypes type.
 
+   .. audit-event:: ctypes.addressof obj ctypes.addressof
+
 
 .. function:: alignment(obj_or_type)
 
@@ -1815,6 +1858,7 @@ Utility functions
    termination character. An integer can be passed as second argument which allows
    specifying the size of the array if the length of the bytes should not be used.
 
+   .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
 
 .. function:: create_unicode_buffer(init_or_size, size=None)
@@ -1831,6 +1875,7 @@ Utility functions
    allows specifying the size of the array if the length of the string should not
    be used.
 
+   .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
 
 .. function:: DllCanUnloadNow()
@@ -1888,10 +1933,14 @@ Utility functions
    Returns the current value of the ctypes-private copy of the system
    :data:`errno` variable in the calling thread.
 
+   .. audit-event:: ctypes.get_errno "" ctypes.get_errno
+
 .. function:: get_last_error()
 
    Windows only: returns the current value of the ctypes-private copy of the system
    :data:`LastError` variable in the calling thread.
+
+   .. audit-event:: ctypes.get_last_error "" ctypes.get_last_error
 
 .. function:: memmove(dst, src, count)
 
@@ -1936,6 +1985,7 @@ Utility functions
    Set the current value of the ctypes-private copy of the system :data:`errno`
    variable in the calling thread to *value* and return the previous value.
 
+   .. audit-event:: ctypes.set_errno errno ctypes.set_errno
 
 
 .. function:: set_last_error(value)
@@ -1944,6 +1994,7 @@ Utility functions
    :data:`LastError` variable in the calling thread to *value* and return the
    previous value.
 
+   .. audit-event:: ctypes.set_last_error error ctypes.set_last_error
 
 
 .. function:: sizeof(obj_or_type)
@@ -1957,6 +2008,8 @@ Utility functions
    This function returns the C string starting at memory address *address* as a bytes
    object. If size is specified, it is used as size, otherwise the string is assumed
    to be zero-terminated.
+
+   .. audit-event:: ctypes.string_at address,size ctypes.string_at
 
 
 .. function:: WinError(code=None, descr=None)
@@ -1977,6 +2030,8 @@ Utility functions
    *address* as a string.  If *size* is specified, it is used as the number of
    characters of the string, otherwise the string is assumed to be
    zero-terminated.
+
+   .. audit-event:: ctypes.wstring_at address,size ctypes.wstring_at
 
 
 .. _ctypes-data-types:
@@ -2005,6 +2060,7 @@ Data types
       source buffer in bytes; the default is zero.  If the source buffer is not
       large enough a :exc:`ValueError` is raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer
 
    .. method:: _CData.from_buffer_copy(source[, offset])
 
@@ -2014,10 +2070,18 @@ Data types
       is zero.  If the source buffer is not large enough a :exc:`ValueError` is
       raised.
 
+      .. audit-event:: ctypes.cdata/buffer pointer,size,offset ctypes._CData.from_buffer_copy
+
    .. method:: from_address(address)
 
       This method returns a ctypes type instance using the memory specified by
       *address* which must be an integer.
+
+      .. audit-event:: ctypes.cdata address ctypes._CData.from_address
+
+         This method, and others that indirectly call this method, raises an
+         :ref:`auditing event <auditing>` ``ctypes.cdata`` with argument
+         ``address``.
 
    .. method:: from_param(obj)
 

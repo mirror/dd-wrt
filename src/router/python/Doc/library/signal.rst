@@ -91,6 +91,110 @@ The variables defined in the :mod:`signal` module are:
    signal.
 
 
+.. data:: SIGABRT
+
+   Abort signal from :manpage:`abort(3)`.
+
+.. data:: SIGALRM
+
+   Timer signal from :manpage:`alarm(2)`.
+
+   .. availability:: Unix.
+
+.. data:: SIGBREAK
+
+   Interrupt from keyboard (CTRL + BREAK).
+
+   .. availability:: Windows.
+
+.. data:: SIGBUS
+
+   Bus error (bad memory access).
+
+   .. availability:: Unix.
+
+.. data:: SIGCHLD
+
+   Child process stopped or terminated.
+
+   .. availability:: Windows.
+
+.. data:: SIGCLD
+
+   Alias to :data:`SIGCHLD`.
+
+.. data:: SIGCONT
+
+   Continue the process if it is currently stopped
+
+   .. availability:: Unix.
+
+.. data:: SIGFPE
+
+   Floating-point exception. For example, division by zero.
+
+   .. seealso::
+      :exc:`ZeroDivisionError` is raised when the second argument of a division
+      or modulo operation is zero.
+
+.. data:: SIGHUP
+
+   Hangup detected on controlling terminal or death of controlling process.
+
+   .. availability:: Unix.
+
+.. data:: SIGILL
+
+   Illegal instruction.
+
+.. data:: SIGINT
+
+   Interrupt from keyboard (CTRL + C).
+
+   Default action is to raise :exc:`KeyboardInterrupt`.
+
+.. data:: SIGKILL
+
+   Kill signal.
+
+   It cannot be caught, blocked, or ignored.
+
+   .. availability:: Unix.
+
+.. data:: SIGPIPE
+
+   Broken pipe: write to pipe with no readers.
+
+   Default action is to ignore the signal.
+
+   .. availability:: Unix.
+
+.. data:: SIGSEGV
+
+   Segmentation fault: invalid memory reference.
+
+.. data:: SIGTERM
+
+   Termination signal.
+
+.. data:: SIGUSR1
+
+   User-defined signal 1.
+
+   .. availability:: Unix.
+
+.. data:: SIGUSR2
+
+   User-defined signal 2.
+
+   .. availability:: Unix.
+
+.. data:: SIGWINCH
+
+   Window resize signal.
+
+   .. availability:: Unix.
+
 .. data:: SIG*
 
    All the signal numbers are defined symbolically.  For example, the hangup signal
@@ -210,6 +314,24 @@ The :mod:`signal` module defines the following functions:
    installed from Python.
 
 
+.. function:: strsignal(signalnum)
+
+   Return the system description of the signal *signalnum*, such as
+   "Interrupt", "Segmentation fault", etc. Returns :const:`None` if the signal
+   is not recognized.
+
+   .. versionadded:: 3.8
+
+
+.. function:: valid_signals()
+
+   Return the set of valid signal numbers on this platform.  This can be
+   less than ``range(1, NSIG)`` if some signals are reserved by the system
+   for internal use.
+
+   .. versionadded:: 3.8
+
+
 .. function:: pause()
 
    Cause the process to sleep until a signal is received; the appropriate handler
@@ -220,6 +342,13 @@ The :mod:`signal` module defines the following functions:
 
    See also :func:`sigwait`, :func:`sigwaitinfo`, :func:`sigtimedwait` and
    :func:`sigpending`.
+
+
+.. function:: raise_signal(signum)
+
+   Sends a signal to the calling process. Returns nothing.
+
+   .. versionadded:: 3.8
 
 
 .. function:: pthread_kill(thread_id, signalnum)
@@ -238,6 +367,8 @@ The :mod:`signal` module defines the following functions:
 
    If *signalnum* is 0, then no signal is sent, but error checking is still
    performed; this can be used to check if the target thread is still running.
+
+   .. audit-event:: signal.pthread_kill thread_id,signalnum signal.pthread_kill
 
    .. availability:: Unix.  See the man page :manpage:`pthread_kill(3)` for further
       information.
@@ -264,11 +395,13 @@ The :mod:`signal` module defines the following functions:
      argument.
 
    *mask* is a set of signal numbers (e.g. {:const:`signal.SIGINT`,
-   :const:`signal.SIGTERM`}). Use ``range(1, signal.NSIG)`` for a full mask
-   including all signals.
+   :const:`signal.SIGTERM`}). Use :func:`~signal.valid_signals` for a full
+   mask including all signals.
 
    For example, ``signal.pthread_sigmask(signal.SIG_BLOCK, [])`` reads the
    signal mask of the calling thread.
+
+   :data:`SIGKILL` and :data:`SIGSTOP` cannot be blocked.
 
    .. availability:: Unix.  See the man page :manpage:`sigprocmask(3)` and
       :manpage:`pthread_sigmask(3)` for further information.

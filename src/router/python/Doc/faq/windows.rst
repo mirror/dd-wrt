@@ -1,6 +1,6 @@
 :tocdepth: 2
 
-.. highlightlang:: none
+.. highlight:: none
 
 .. _windows-faq:
 
@@ -282,3 +282,4 @@ How do I check for a keypress without blocking?
 Use the msvcrt module.  This is a standard Windows-specific extension module.
 It defines a function ``kbhit()`` which checks whether a keyboard hit is
 present, and ``getch()`` which gets one character without echoing it.
+

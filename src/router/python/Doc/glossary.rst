@@ -13,10 +13,14 @@ Glossary
       examples which can be executed interactively in the interpreter.
 
    ``...``
-      The default Python prompt of the interactive shell when entering the
-      code for an indented code block, when within a pair of matching left and
-      right delimiters (parentheses, square brackets, curly braces or triple
-      quotes), or after specifying a decorator.
+      Can refer to:
+
+      * The default Python prompt of the interactive shell when entering the
+        code for an indented code block, when within a pair of matching left and
+        right delimiters (parentheses, square brackets, curly braces or triple
+        quotes), or after specifying a decorator.
+
+      * The :const:`Ellipsis` built-in constant.
 
    2to3
       A tool that tries to convert Python 2.x code to Python 3.x code by
@@ -184,6 +188,10 @@ Glossary
 
       A list of bytecode instructions can be found in the documentation for
       :ref:`the dis module <bytecodes>`.
+
+   callback
+      A subroutine function which is passed as an argument to be executed at
+      some point in the future.
 
    class
       A template for creating user-defined objects. Class definitions
@@ -820,9 +828,11 @@ Glossary
       .. _positional-only_parameter:
 
       * :dfn:`positional-only`: specifies an argument that can be supplied only
-        by position.  Python has no syntax for defining positional-only
-        parameters.  However, some built-in functions have positional-only
-        parameters (e.g. :func:`abs`).
+        by position. Positional-only parameters can be defined by including a
+        ``/`` character in the parameter list of the function definition after
+        them, for example *posonly1* and *posonly2* in the following::
+
+           def func(posonly1, posonly2, /, positional_or_keyword): ...
 
       .. _keyword-only_parameter:
 

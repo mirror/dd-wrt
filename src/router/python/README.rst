@@ -1,17 +1,22 @@
-This is Python version 3.7.7
+This is Python version 3.8.4
 ============================
 
-.. image:: https://travis-ci.org/python/cpython.svg?branch=3.7
+.. image:: https://travis-ci.org/python/cpython.svg?branch=3.8
    :alt: CPython build status on Travis CI
    :target: https://travis-ci.org/python/cpython/branches
 
-.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.7
-   :alt: CPython build status on Azure Pipelines
-   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.7
+.. image:: https://dev.azure.com/python/cpython/_apis/build/status/Azure%20Pipelines%20CI?branchName=3.8
+   :alt: CPython build status on Azure DevOps
+   :target: https://dev.azure.com/python/cpython/_build/latest?definitionId=4&branchName=3.8
 
-.. image:: https://codecov.io/gh/python/cpython/branch/3.7/graph/badge.svg
+.. image:: https://codecov.io/gh/python/cpython/branch/3.8/graph/badge.svg
    :alt: CPython code coverage on Codecov
-   :target: https://codecov.io/gh/python/cpython/branch/3.7
+   :target: https://codecov.io/gh/python/cpython/branch/3.8
+
+.. image:: https://img.shields.io/badge/zulip-join_chat-brightgreen.svg
+   :alt: Python Zulip chat
+   :target: https://python.zulipchat.com
+
 
 Copyright (c) 2001-2020 Python Software Foundation.  All rights reserved.
 
@@ -70,10 +75,10 @@ dependencies for various Linux distributions and macOS.
 
 On macOS, there are additional configure and build options related
 to macOS framework and universal builds.  Refer to `Mac/README.rst
-<https://github.com/python/cpython/blob/3.7/Mac/README.rst>`_.
+<https://github.com/python/cpython/blob/3.8/Mac/README.rst>`_.
 
 On Windows, see `PCbuild/readme.txt
-<https://github.com/python/cpython/blob/3.7/PCbuild/readme.txt>`_.
+<https://github.com/python/cpython/blob/3.8/PCbuild/readme.txt>`_.
 
 If you wish, you can create a subdirectory and invoke configure from there.
 For example::
@@ -85,14 +90,13 @@ For example::
     make test
 
 (This will fail if you *also* built at the top-level directory.  You should do
-a ``make clean`` at the toplevel first.)
+a ``make clean`` at the top-level first.)
 
 To get an optimized build of Python, ``configure --enable-optimizations``
 before you run ``make``.  This sets the default make targets up to enable
 Profile Guided Optimization (PGO) and may be used to auto-enable Link Time
 Optimization (LTO) on some platforms.  For more details, see the sections
 below.
-
 
 Profile Guided Optimization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -133,20 +137,20 @@ What's New
 ----------
 
 We have a comprehensive overview of the changes in the `What's New in Python
-3.7 <https://docs.python.org/3.7/whatsnew/3.7.html>`_ document.  For a more
+3.8 <https://docs.python.org/3.8/whatsnew/3.8.html>`_ document.  For a more
 detailed change log, read `Misc/NEWS
-<https://github.com/python/cpython/blob/3.7/Misc/NEWS.d>`_, but a full
+<https://github.com/python/cpython/blob/3.8/Misc/NEWS.d>`_, but a full
 accounting of changes can only be gleaned from the `commit history
-<https://github.com/python/cpython/commits/3.7>`_.
+<https://github.com/python/cpython/commits/3.8>`_.
 
-If you want to install multiple versions of Python see the section below
+If you want to install multiple versions of Python, see the section below
 entitled "Installing multiple versions".
 
 
 Documentation
 -------------
 
-`Documentation for Python 3.7 <https://docs.python.org/3.7/>`_ is online,
+`Documentation for Python 3.8 <https://docs.python.org/3.8/>`_ is online,
 updated daily.
 
 It can also be downloaded in many formats for faster access.  The documentation
@@ -155,7 +159,7 @@ is primarily for documentation authors, translators, and people with special
 formatting requirements.
 
 For information about building Python's documentation, refer to `Doc/README.rst
-<https://github.com/python/cpython/blob/3.7/Doc/README.rst>`_.
+<https://github.com/python/cpython/blob/3.8/Doc/README.rst>`_.
 
 
 Converting From Python 2.x to 3.x
@@ -205,8 +209,8 @@ intend to install multiple versions using the same prefix you must decide which
 version (if any) is your "primary" version.  Install that version using ``make
 install``.  Install all other versions using ``make altinstall``.
 
-For example, if you want to install Python 2.7, 3.6, and 3.7 with 3.7 being the
-primary version, you would execute ``make install`` in your 3.7 build directory
+For example, if you want to install Python 2.7, 3.6, and 3.8 with 3.8 being the
+primary version, you would execute ``make install`` in your 3.8 build directory
 and ``make altinstall`` in the others.
 
 
@@ -236,7 +240,7 @@ All current PEPs, as well as guidelines for submitting a new PEP, are listed at
 Release Schedule
 ----------------
 
-See :pep:`537` for Python 3.7 release details.
+See :pep:`569` for Python 3.8 release details.
 
 
 Copyright and License Information

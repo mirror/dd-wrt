@@ -629,6 +629,33 @@ class TestLiterals(GrammarTest):
         self.validate(s)
 
 
+class TestNamedAssignments(GrammarTest):
+
+    def test_named_assignment_if(self):
+        driver.parse_string("if f := x(): pass\n")
+
+    def test_named_assignment_while(self):
+        driver.parse_string("while f := x(): pass\n")
+
+    def test_named_assignment_generator(self):
+        driver.parse_string("any((lastNum := num) == 1 for num in [1, 2, 3])\n")
+
+    def test_named_assignment_listcomp(self):
+        driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
+
+
+class TestPickleableException(unittest.TestCase):
+    def test_ParseError(self):
+        err = ParseError('msg', 2, None, (1, 'context'))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            err2 = pickle.loads(pickle.dumps(err, protocol=proto))
+            self.assertEqual(err.args, err2.args)
+            self.assertEqual(err.msg, err2.msg)
+            self.assertEqual(err.type, err2.type)
+            self.assertEqual(err.value, err2.value)
+            self.assertEqual(err.context, err2.context)
+
+
 def diff_texts(a, b, filename):
     a = a.splitlines()
     b = b.splitlines()

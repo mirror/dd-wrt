@@ -515,8 +515,10 @@ Pure paths provide the following methods and properties:
       >>> PurePath('a/b.py').match('/*.py')
       False
 
-   As with other methods, case-sensitivity is observed::
+   As with other methods, case-sensitivity follows platform defaults::
 
+      >>> PurePosixPath('b.py').match('*.PY')
+      False
       >>> PureWindowsPath('b.py').match('*.PY')
       True
 
@@ -638,7 +640,17 @@ Methods
 
 Concrete paths provide the following methods in addition to pure paths
 methods.  Many of these methods can raise an :exc:`OSError` if a system
-call fails (for example because the path doesn't exist):
+call fails (for example because the path doesn't exist).
+
+.. versionchanged:: 3.8
+
+   :meth:`~Path.exists()`, :meth:`~Path.is_dir()`, :meth:`~Path.is_file()`,
+   :meth:`~Path.is_mount()`, :meth:`~Path.is_symlink()`,
+   :meth:`~Path.is_block_device()`, :meth:`~Path.is_char_device()`,
+   :meth:`~Path.is_fifo()`, :meth:`~Path.is_socket()` now return ``False``
+   instead of raising an exception for paths that contain characters
+   unrepresentable at the OS level.
+
 
 .. classmethod:: Path.cwd()
 
@@ -923,23 +935,32 @@ call fails (for example because the path doesn't exist):
 
 .. method:: Path.rename(target)
 
-   Rename this file or directory to the given *target*.  On Unix, if
-   *target* exists and is a file, it will be replaced silently if the user
-   has permission.  *target* can be either a string or another path object::
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  On Unix, if *target* exists and is a file,
+   it will be replaced silently if the user has permission.  *target* can be
+   either a string or another path object::
 
       >>> p = Path('foo')
       >>> p.open('w').write('some text')
       9
       >>> target = Path('bar')
       >>> p.rename(target)
+      PosixPath('bar')
       >>> target.open().read()
       'some text'
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.replace(target)
 
-   Rename this file or directory to the given *target*.  If *target* points
-   to an existing file or directory, it will be unconditionally replaced.
+   Rename this file or directory to the given *target*, and return a new Path
+   instance pointing to *target*.  If *target* points to an existing file or
+   directory, it will be unconditionally replaced.
+
+   .. versionchanged:: 3.8
+      Added return value, return the new Path instance.
 
 
 .. method:: Path.resolve(strict=False)
@@ -1038,10 +1059,26 @@ call fails (for example because the path doesn't exist):
    otherwise :exc:`FileExistsError` is raised.
 
 
-.. method:: Path.unlink()
+.. method:: Path.unlink(missing_ok=False)
 
    Remove this file or symbolic link.  If the path points to a directory,
    use :func:`Path.rmdir` instead.
+
+   If *missing_ok* is false (the default), :exc:`FileNotFoundError` is
+   raised if the path does not exist.
+
+   If *missing_ok* is true, :exc:`FileNotFoundError` exceptions will be
+   ignored (same behavior as the POSIX ``rm -f`` command).
+
+   .. versionchanged:: 3.8
+      The *missing_ok* parameter was added.
+
+
+.. method:: Path.link_to(target)
+
+   Create a hard link pointing to a path named *target*.
+
+   .. versionchanged:: 3.8
 
 
 .. method:: Path.write_bytes(data)
@@ -1070,6 +1107,9 @@ call fails (for example because the path doesn't exist):
       18
       >>> p.read_text()
       'Text file contents'
+
+   An existing file of the same name is overwritten. The optional parameters
+   have the same meaning as in :func:`open`.
 
    .. versionadded:: 3.5
 
