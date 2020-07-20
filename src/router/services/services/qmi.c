@@ -49,7 +49,7 @@ static char *get_popen_data(char *command)
 			length += strlen(temp);
 			data = (char *)realloc(data, length + 1);
 			if (data)
-				strncat(data, temp, strlen(temp));
+				strncat(data, temp, length);
 			else {
 				pclose(pf);
 				return (NULL);
