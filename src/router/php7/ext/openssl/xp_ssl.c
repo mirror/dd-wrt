@@ -1711,16 +1711,12 @@ int php_openssl_setup_crypto(php_stream *stream,
 	}
 
 	if (GET_VER_OPT("security_level")) {
-#ifdef HAVE_SEC_LEVEL
 		zend_long lval = zval_get_long(val);
 		if (lval < 0 || lval > 5) {
 			php_error_docref(NULL, E_WARNING, "Security level must be between 0 and 5");
 		}
+#ifdef HAVE_SEC_LEVEL
 		SSL_CTX_set_security_level(sslsock->ctx, lval);
-#else
-		php_error_docref(NULL, E_WARNING,
-				"security_level is not supported by the linked OpenSSL library "
-				"- it is supported from version 1.1.0");
 #endif
 	}
 
@@ -1956,7 +1952,7 @@ static int php_openssl_enable_crypto(php_stream *stream,
 		}
 
 		timeout = sslsock->is_client ? &sslsock->connect_timeout : &sslsock->s.timeout;
-		has_timeout = !sslsock->s.is_blocked && (timeout->tv_sec || timeout->tv_usec);
+		has_timeout = !sslsock->s.is_blocked && (timeout->tv_sec > 0 || (timeout->tv_sec == 0 && timeout->tv_usec));
 		/* gettimeofday is not monotonic; using it here is not strictly correct */
 		if (has_timeout) {
 			gettimeofday(&start_time, NULL);
@@ -2108,7 +2104,7 @@ static ssize_t php_openssl_sockop_io(int read, php_stream *stream, char *buf, si
 			sslsock->s.is_blocked = 0;
 		}
 
-		if (!sslsock->s.is_blocked && timeout && (timeout->tv_sec || timeout->tv_usec)) {
+		if (!sslsock->s.is_blocked && timeout && (timeout->tv_sec > 0 || (timeout->tv_sec == 0 && timeout->tv_usec))) {
 			has_timeout = 1;
 			/* gettimeofday is not monotonic; using it here is not strictly correct */
 			gettimeofday(&start_time, NULL);

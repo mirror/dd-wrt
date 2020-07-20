@@ -392,6 +392,7 @@ extern int ini_debug;
 # define YYTOKENTYPE
   enum yytokentype
   {
+    END = 0,
     TC_SECTION = 258,
     TC_RAW = 259,
     TC_CONSTANT = 260,
@@ -724,12 +725,12 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   319,   319,   320,   324,   331,   339,   348,   349,   353,
-     354,   358,   359,   360,   361,   362,   366,   367,   371,   372,
-     373,   377,   378,   379,   380,   381,   382,   386,   387,   388,
-     389,   390,   391,   395,   396,   397,   398,   399,   400,   401,
-     405,   409,   410,   411,   412,   413,   417,   418,   419,   420,
-     421
+       0,   320,   320,   321,   325,   332,   340,   349,   350,   354,
+     355,   359,   360,   361,   362,   363,   367,   368,   372,   373,
+     374,   378,   379,   380,   381,   382,   383,   387,   388,   389,
+     390,   391,   392,   396,   397,   398,   399,   400,   401,   402,
+     406,   410,   411,   412,   413,   414,   418,   419,   420,   421,
+     422
 };
 #endif
 
@@ -738,13 +739,13 @@ static const yytype_uint16 yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "TC_SECTION", "TC_RAW", "TC_CONSTANT",
-  "TC_NUMBER", "TC_STRING", "TC_WHITESPACE", "TC_LABEL", "TC_OFFSET",
-  "TC_DOLLAR_CURLY", "TC_VARNAME", "TC_QUOTED_STRING", "BOOL_TRUE",
-  "BOOL_FALSE", "NULL_NULL", "END_OF_LINE", "'='", "':'", "','", "'.'",
-  "'\"'", "'\\''", "'^'", "'+'", "'-'", "'/'", "'*'", "'%'", "'$'", "'~'",
-  "'<'", "'>'", "'?'", "'@'", "'{'", "'}'", "'|'", "'&'", "'!'", "']'",
-  "'('", "')'", "$accept", "statement_list", "statement",
+  "\"end of file\"", "error", "$undefined", "TC_SECTION", "TC_RAW",
+  "TC_CONSTANT", "TC_NUMBER", "TC_STRING", "TC_WHITESPACE", "TC_LABEL",
+  "TC_OFFSET", "TC_DOLLAR_CURLY", "TC_VARNAME", "TC_QUOTED_STRING",
+  "BOOL_TRUE", "BOOL_FALSE", "NULL_NULL", "END_OF_LINE", "'='", "':'",
+  "','", "'.'", "'\"'", "'\\''", "'^'", "'+'", "'-'", "'/'", "'*'", "'%'",
+  "'$'", "'~'", "'<'", "'>'", "'?'", "'@'", "'{'", "'}'", "'|'", "'&'",
+  "'!'", "']'", "'('", "')'", "$accept", "statement_list", "statement",
   "section_string_or_value", "string_or_value", "option_offset",
   "encapsed_list", "var_string_list_section", "var_string_list", "expr",
   "cfg_var_ref", "constant_literal", "constant_string", YY_NULLPTR

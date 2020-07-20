@@ -347,6 +347,9 @@
 /* Whether 3 arg set_rebind_proc() */
 #undef HAVE_3ARG_SETREBINDPROC
 
+/* Define when aarch64 CRC32 API is available. */
+#undef HAVE_AARCH64_CRC32
+
 /* Define to 1 if you have the `acosh' function. */
 #undef HAVE_ACOSH
 
@@ -2183,6 +2186,9 @@
 
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
+
+/* The size of `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
 
 /* Size of ptrdiff_t */
 #undef SIZEOF_PTRDIFF_T

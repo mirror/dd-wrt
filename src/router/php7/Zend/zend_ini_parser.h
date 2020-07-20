@@ -45,6 +45,7 @@ extern int ini_debug;
 # define YYTOKENTYPE
   enum yytokentype
   {
+    END = 0,
     TC_SECTION = 258,
     TC_RAW = 259,
     TC_CONSTANT = 260,

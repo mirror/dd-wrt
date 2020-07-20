@@ -17,7 +17,7 @@ dnl Basic autoconf initialization, generation of config.nice.
 dnl ----------------------------------------------------------------------------
 
 AC_PREREQ([2.68])
-AC_INIT([PHP],[7.4.6],[https://bugs.php.net],[php],[https://www.php.net])
+AC_INIT([PHP],[7.4.8],[https://bugs.php.net],[php],[https://www.php.net])
 AC_CONFIG_SRCDIR([main/php_version.h])
 AC_CONFIG_AUX_DIR([build])
 AC_PRESERVE_HELP_ORDER
@@ -720,6 +720,12 @@ if test "x$php_crypt_r" = "x1"; then
   PHP_CRYPT_R_STYLE
 fi
 
+AC_CACHE_CHECK([for aarch64 CRC32 API], ac_cv_func___crc32d,
+[AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <arm_acle.h>]],[[__crc32d(0, 0);]])],[ac_cv_func___crc32d=yes],[ac_cv_func___crc32d="no"])])
+if test "$ac_cv_func___crc32d" = "yes"; then
+  AC_DEFINE([HAVE_AARCH64_CRC32], [1], [Define when aarch64 CRC32 API is available.])
+fi
+
 dnl Check for asm goto support.
 AC_CACHE_CHECK([for asm goto], ac_cv__asm_goto,
 [AC_RUN_IFELSE([AC_LANG_SOURCE([[
@@ -1317,7 +1323,8 @@ PHP_BUILD_DATE=`date -u +%Y-%m-%d`
 fi
 AC_DEFINE_UNQUOTED(PHP_BUILD_DATE,"$PHP_BUILD_DATE",[PHP build date])
 
-PHP_UNAME=`uname -a | xargs`
+UNAME=`uname -a | xargs`
+PHP_UNAME=${PHP_UNAME:-$UNAME}
 AC_DEFINE_UNQUOTED(PHP_UNAME,"$PHP_UNAME",[uname -a output])
 PHP_OS=`uname | xargs`
 AC_DEFINE_UNQUOTED(PHP_OS,"$PHP_OS",[uname output])

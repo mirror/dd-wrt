@@ -1733,7 +1733,7 @@ dnl Search for the sendmail binary.
 dnl
 AC_DEFUN([PHP_PROG_SENDMAIL], [
   PHP_ALT_PATH=/usr/bin:/usr/sbin:/usr/etc:/etc:/usr/ucblib:/usr/lib
-  AC_PATH_PROG(PROG_SENDMAIL, sendmail,[], $PATH:$PHP_ALT_PATH)
+  AC_PATH_PROG(PROG_SENDMAIL, sendmail, /usr/sbin/sendmail, $PATH:$PHP_ALT_PATH)
   PHP_SUBST(PROG_SENDMAIL)
 ])
 
@@ -2416,6 +2416,7 @@ AC_DEFUN([PHP_CHECK_STDINT_TYPES], [
   AC_CHECK_SIZEOF([long])
   AC_CHECK_SIZEOF([long long])
   AC_CHECK_SIZEOF([size_t])
+  AC_CHECK_SIZEOF([off_t])
   AC_CHECK_TYPES([int8, int16, int32, int64, int8_t, int16_t, int32_t, int64_t, uint8, uint16, uint32, uint64, uint8_t, uint16_t, uint32_t, uint64_t, u_int8_t, u_int16_t, u_int32_t, u_int64_t], [], [], [
 #if HAVE_STDINT_H
 # include <stdint.h>
