@@ -1041,8 +1041,8 @@
 /* Define to 1 if `nl_inipaddr.in6' is a member of `struct natlookup'. */
 #undef HAVE_STRUCT_NATLOOKUP_NL_INIPADDR_IN6
 
-/* Define to 1 if `nl_realipaddr.in6' is a member of `struct natlookup '. */
-#undef HAVE_STRUCT_NATLOOKUP_NL_REALIPADDR_IN6___
+/* Define to 1 if `nl_realipaddr.in6' is a member of `struct natlookup'. */
+#undef HAVE_STRUCT_NATLOOKUP_NL_REALIPADDR_IN6
 
 /* The system provides struct rusage */
 #undef HAVE_STRUCT_RUSAGE

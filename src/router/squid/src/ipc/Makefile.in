@@ -163,7 +163,8 @@ CONFIG_HEADER = $(top_builddir)/include/autoconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
-libipc_la_LIBADD =
+am__DEPENDENCIES_1 =
+libipc_la_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__dirstamp = $(am__leading_dot)dirstamp
 am_libipc_la_OBJECTS = FdNotes.lo Kid.lo Kids.lo MemMap.lo Queue.lo \
 	ReadWriteLock.lo StartListening.lo StoreMap.lo StrandCoord.lo \
@@ -801,6 +802,7 @@ libipc_la_SOURCES = \
 	mem/Segment.h \
 	mem/forward.h
 
+libipc_la_LIBADD = $(ATOMICLIB)
 all: all-am
 
 .SUFFIXES:

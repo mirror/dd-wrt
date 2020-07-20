@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[5.0.2],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.0.3],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -440,13 +440,36 @@ if test "x$with_dl" = "xyes"; then
   AC_MSG_NOTICE([With dl])
 fi
 
+AC_DEFUN([LIBATOMIC_CHECKER],[
+  AC_MSG_CHECKING(whether linking $1 -latomic works)
+  AC_LINK_IFELSE([
+    AC_LANG_SOURCE([[
+#include <atomic>
+#include <cstdint>
+      int
+      main(int, char **) {
+          return std::atomic<uint64_t>{}.is_lock_free() ? 0 : 1;
+      }
+  ]])],[
+    AC_MSG_RESULT(yes)
+    libatomic_checker_result="yes"],[
+    AC_MSG_RESULT(no)
+    libatomic_checker_result="no"
+])])
+
 ## check for atomics library before anything that might need it
 # AC_SEARCH_LIBS pollutes LIBS
-#SQUID_STATE_SAVE(LIBATOMIC)
-#AC_SEARCH_LIBS([__atomic_load_8],[atomic],[
-#  test "$ac_res" = "none required" || ATOMICLIB=$ac_res],[])
-#SQUID_STATE_ROLLBACK(LIBATOMIC)
-#AC_SUBST(ATOMICLIB)
+SQUID_STATE_SAVE(LIBATOMIC)
+LIBATOMIC_CHECKER(without)
+AS_IF([test "x$libatomic_checker_result" = "xno"],[
+  LIBS="$LIBS -latomic"
+  LIBATOMIC_CHECKER(with)
+  AS_IF([test "x$libatomic_checker_result" = "xyes"],[
+    ATOMICLIB="-latomic"],[
+    AC_MSG_ERROR([Required library libatomic not found.])
+])])
+SQUID_STATE_ROLLBACK(LIBATOMIC)
+AC_SUBST(ATOMICLIB)
 
 AC_SEARCH_LIBS([shm_open], [rt])
 if test "x$ac_cv_search_shm_open" != "xno" ; then
