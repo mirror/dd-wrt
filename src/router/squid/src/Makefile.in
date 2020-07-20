@@ -454,8 +454,8 @@ squid_DEPENDENCIES = $(AUTH_ACL_LIBS) ident/libident.la acl/libacls.la \
 	$(top_builddir)/lib/libmiscutil.la $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
 	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_3) \
-	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_6)
+	$(am__DEPENDENCIES_3) $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_6)
 squid_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CXXLD) $(AM_CXXFLAGS) \
 	$(CXXFLAGS) $(squid_LDFLAGS) $(LDFLAGS) -o $@
@@ -3179,9 +3179,9 @@ squid_LDADD = $(AUTH_ACL_LIBS) ident/libident.la acl/libacls.la \
 	$(ESI_LIBS) $(SNMP_LIBS) mem/libmem.la store/libstore.la \
 	$(top_builddir)/lib/libmisccontainers.la \
 	$(top_builddir)/lib/libmiscencoding.la \
-	$(top_builddir)/lib/libmiscutil.la $(ATOMICLIB) $(SSLLIB) \
-	$(EPOLL_LIBS) $(MINGW_LIBS) $(KRB5LIBS) $(SYSTEMD_LIBS) \
-	$(COMPAT_LIB) $(XTRA_LIBS) $(am__append_9)
+	$(top_builddir)/lib/libmiscutil.la $(SSLLIB) $(EPOLL_LIBS) \
+	$(MINGW_LIBS) $(KRB5LIBS) $(SYSTEMD_LIBS) $(COMPAT_LIB) \
+	$(XTRA_LIBS) $(am__append_9)
 @ENABLE_LOADABLE_MODULES_TRUE@squid_LDFLAGS = -export-dynamic -dlopen force
 unlinkd_SOURCES = unlinkd_daemon.cc
 unlinkd_LDADD = \
