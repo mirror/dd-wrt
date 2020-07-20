@@ -234,7 +234,10 @@ class build_ext(Command):
         if (sysconfig.get_config_var('Py_ENABLE_SHARED')):
             if not sysconfig.python_build:
                 # building third party extensions
-                self.library_dirs.append(sysconfig.get_config_var('LIBDIR'))
+                libdir = sysconfig.get_config_var('LIBDIR')
+                if "_python_sysroot" in os.environ:
+                    libdir = os.environ.get("_python_sysroot") + libdir
+                self.library_dirs.append(libdir)
             else:
                 # building python standard extensions
                 self.library_dirs.append('.')

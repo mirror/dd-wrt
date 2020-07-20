@@ -1,6 +1,4 @@
-
 #include "Python.h"
-#include "pyatomic.h"
 #include "pycore_pymem.h"
 #include "pycore_pystate.h"
 #include "pycore_tupleobject.h"

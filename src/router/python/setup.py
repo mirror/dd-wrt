@@ -441,6 +441,7 @@ class PyBuildExt(build_ext):
             print("Failed to build these modules:")
             print_three_column(failed)
             print()
+            if CROSS_COMPILING: sys.exit(1)
 
         if self.failed_on_import:
             failed = self.failed_on_import[:]
@@ -631,8 +632,9 @@ class PyBuildExt(build_ext):
         # directly since an inconsistently reproducible issue comes up where
         # the environment variable is not set even though the value were passed
         # into configure and stored in the Makefile (issue found on OS X 10.3).
+        rt_lib_dirs = [] if CROSS_COMPILING else self.compiler.runtime_library_dirs
         for env_var, arg_name, dir_list in (
-                ('LDFLAGS', '-R', self.compiler.runtime_library_dirs),
+                ('LDFLAGS', '-R', rt_lib_dirs),
                 ('LDFLAGS', '-L', self.compiler.library_dirs),
                 ('CPPFLAGS', '-I', self.compiler.include_dirs)):
             env_val = sysconfig.get_config_var(env_var)
@@ -654,7 +656,8 @@ class PyBuildExt(build_ext):
         # only change this for cross builds for 3.3, issues on Mageia
         if CROSS_COMPILING:
             self.add_cross_compiling_paths()
-        self.add_multiarch_paths()
+        else:
+            self.add_multiarch_paths()
         self.add_ldflags_cppflags()
 
     def init_inc_lib_dirs(self):

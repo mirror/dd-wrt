@@ -37,13 +37,12 @@
 
 #include "pycore_ceval.h"     /* _PyEval_ReInitThreads() */
 #include "pycore_pystate.h"   /* _PyRuntime */
-#include "pyport.h"
 #include "pythread.h"
 #include "structmember.h"
 #ifndef MS_WINDOWS
-#include "posixmodule.h"
+#  include "posixmodule.h"
 #else
-#include "winreparse.h"
+#  include "winreparse.h"
 #endif
 
 /* On android API level 21, 'AT_EACCESS' is not declared although
