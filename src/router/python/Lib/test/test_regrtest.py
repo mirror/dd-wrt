@@ -6,6 +6,7 @@ Note: test_regrtest cannot be run twice in parallel.
 
 import contextlib
 import faulthandler
+import glob
 import io
 import os.path
 import platform
@@ -27,9 +28,8 @@ ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
 
 TEST_INTERRUPTED = textwrap.dedent("""
-    from signal import SIGINT
+    from signal import SIGINT, raise_signal
     try:
-        from _testcapi import raise_signal
         raise_signal(SIGINT)
     except ImportError:
         import os
@@ -156,6 +156,24 @@ class ParseArgsTestCase(unittest.TestCase):
                 ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.single)
                 self.checkError([opt, '-f', 'foo'], "don't go together")
+
+    def test_ignore(self):
+        for opt in '-i', '--ignore':
+            with self.subTest(opt=opt):
+                ns = libregrtest._parse_args([opt, 'pattern'])
+                self.assertEqual(ns.ignore_tests, ['pattern'])
+                self.checkError([opt], 'expected one argument')
+
+        self.addCleanup(support.unlink, support.TESTFN)
+        with open(support.TESTFN, "w") as fp:
+            print('matchfile1', file=fp)
+            print('matchfile2', file=fp)
+
+        filename = os.path.abspath(support.TESTFN)
+        ns = libregrtest._parse_args(['-m', 'match',
+                                      '--ignorefile', filename])
+        self.assertEqual(ns.ignore_tests,
+                         ['matchfile1', 'matchfile2'])
 
     def test_match(self):
         for opt in '-m', '--match':
@@ -532,6 +550,31 @@ class BaseTestCase(unittest.TestCase):
         return proc.stdout
 
 
+class CheckActualTests(BaseTestCase):
+    """
+    Check that regrtest appears to find the expected set of tests.
+    """
+
+    def test_finds_expected_number_of_tests(self):
+        args = ['-Wd', '-E', '-bb', '-m', 'test.regrtest', '--list-tests']
+        output = self.run_python(args)
+        rough_number_of_tests_found = len(output.splitlines())
+        actual_testsuite_glob = os.path.join(glob.escape(os.path.dirname(__file__)),
+                                             'test*.py')
+        rough_counted_test_py_files = len(glob.glob(actual_testsuite_glob))
+        # We're not trying to duplicate test finding logic in here,
+        # just give a rough estimate of how many there should be and
+        # be near that.  This is a regression test to prevent mishaps
+        # such as https://bugs.python.org/issue37667 in the future.
+        # If you need to change the values in here during some
+        # mythical future test suite reorganization, don't go
+        # overboard with logic and keep that goal in mind.
+        self.assertGreater(rough_number_of_tests_found,
+                           rough_counted_test_py_files*9//10,
+                           msg='Unexpectedly low number of tests found in:\n'
+                           f'{", ".join(output.splitlines())}')
+
+
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -619,7 +662,9 @@ class ProgramsTestCase(BaseTestCase):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
         test_args = ['--testdir=%s' % self.tmptestdir]
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            test_args.append('-arm64') # ARM 64-bit build
+        elif platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
             test_args.append('+d')     # Release build, use python.exe
@@ -632,7 +677,9 @@ class ProgramsTestCase(BaseTestCase):
         if not os.path.isfile(script):
             self.skipTest(f'File "{script}" does not exist')
         rt_args = ["-q"]             # Quick, don't run tests twice
-        if platform.architecture()[0] == '64bit':
+        if platform.machine() == 'ARM64':
+            rt_args.append('-arm64') # ARM 64-bit build
+        elif platform.architecture()[0] == '64bit':
             rt_args.append('-x64')   # 64-bit build
         if Py_DEBUG:
             rt_args.append('-d')     # Debug build, use python_d.exe
@@ -930,6 +977,42 @@ class ArgsTestCase(BaseTestCase):
     def parse_methods(self, output):
         regex = re.compile("^(test[^ ]+).*ok$", flags=re.MULTILINE)
         return [match.group(1) for match in regex.finditer(output)]
+
+    def test_ignorefile(self):
+        code = textwrap.dedent("""
+            import unittest
+
+            class Tests(unittest.TestCase):
+                def test_method1(self):
+                    pass
+                def test_method2(self):
+                    pass
+                def test_method3(self):
+                    pass
+                def test_method4(self):
+                    pass
+        """)
+        all_methods = ['test_method1', 'test_method2',
+                       'test_method3', 'test_method4']
+        testname = self.create_test(code=code)
+
+        # only run a subset
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        subset = [
+            # only ignore the method name
+            'test_method1',
+            # ignore the full identifier
+            '%s.Tests.test_method3' % testname]
+        with open(filename, "w") as fp:
+            for name in subset:
+                print(name, file=fp)
+
+        output = self.run_tests("-v", "--ignorefile", filename, testname)
+        methods = self.parse_methods(output)
+        subset = ['test_method2', 'test_method4']
+        self.assertEqual(methods, subset)
 
     def test_matchfile(self):
         code = textwrap.dedent("""

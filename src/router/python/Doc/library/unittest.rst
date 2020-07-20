@@ -27,7 +27,7 @@ object-oriented way:
 
 test fixture
    A :dfn:`test fixture` represents the preparation needed to perform one or more
-   tests, and any associate cleanup actions.  This may involve, for example,
+   tests, and any associated cleanup actions.  This may involve, for example,
    creating temporary or proxy databases, directories, or starting a server
    process.
 
@@ -910,10 +910,10 @@ Test cases
       .. versionadded:: 3.1
 
 
-   .. method:: assertIn(first, second, msg=None)
-               assertNotIn(first, second, msg=None)
+   .. method:: assertIn(member, container, msg=None)
+               assertNotIn(member, container, msg=None)
 
-      Test that *first* is (or is not) in *second*.
+      Test that *member* is (or is not) in *container*.
 
       .. versionadded:: 3.1
 
@@ -1455,6 +1455,115 @@ Test cases
       functions one at a time, so it can be called at any time.
 
       .. versionadded:: 3.1
+
+   .. classmethod:: addClassCleanup(function, /, *args, **kwargs)
+
+      Add a function to be called after :meth:`tearDownClass` to cleanup
+      resources used during the test class. Functions will be called in reverse
+      order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+      They are called with any arguments and keyword arguments passed into
+      :meth:`addClassCleanup` when they are added.
+
+      If :meth:`setUpClass` fails, meaning that :meth:`tearDownClass` is not
+      called, then any cleanup functions added will still be called.
+
+      .. versionadded:: 3.8
+
+
+   .. classmethod:: doClassCleanups()
+
+      This method is called unconditionally after :meth:`tearDownClass`, or
+      after :meth:`setUpClass` if :meth:`setUpClass` raises an exception.
+
+      It is responsible for calling all the cleanup functions added by
+      :meth:`addCleanupClass`. If you need cleanup functions to be called
+      *prior* to :meth:`tearDownClass` then you can call
+      :meth:`doCleanupsClass` yourself.
+
+      :meth:`doCleanupsClass` pops methods off the stack of cleanup
+      functions one at a time, so it can be called at any time.
+
+      .. versionadded:: 3.8
+
+
+.. class:: IsolatedAsyncioTestCase(methodName='runTest')
+
+   This class provides an API similar to :class:`TestCase` and also accepts
+   coroutines as test functions.
+
+   .. versionadded:: 3.8
+
+   .. coroutinemethod:: asyncSetUp()
+
+      Method called to prepare the test fixture. This is called after :meth:`setUp`.
+      This is called immediately before calling the test method; other than
+      :exc:`AssertionError` or :exc:`SkipTest`, any exception raised by this method
+      will be considered an error rather than a test failure. The default implementation
+      does nothing.
+
+   .. coroutinemethod:: asyncTearDown()
+
+      Method called immediately after the test method has been called and the
+      result recorded.  This is called before :meth:`tearDown`. This is called even if
+      the test method raised an exception, so the implementation in subclasses may need
+      to be particularly careful about checking internal state.  Any exception, other than
+      :exc:`AssertionError` or :exc:`SkipTest`, raised by this method will be
+      considered an additional error rather than a test failure (thus increasing
+      the total number of reported errors). This method will only be called if
+      the :meth:`asyncSetUp` succeeds, regardless of the outcome of the test method.
+      The default implementation does nothing.
+
+   .. method:: addAsyncCleanup(function, /, *args, **kwargs)
+
+      This method accepts a coroutine that can be used as a cleanup function.
+
+   .. method:: run(result=None)
+
+      Sets up a new event loop to run the test, collecting the result into
+      the :class:`TestResult` object passed as *result*.  If *result* is
+      omitted or ``None``, a temporary result object is created (by calling
+      the :meth:`defaultTestResult` method) and used. The result object is
+      returned to :meth:`run`'s caller. At the end of the test all the tasks
+      in the event loop are cancelled.
+
+
+   An example illustrating the order::
+
+      from unittest import IsolatedAsyncioTestCase
+
+      events = []
+
+
+      class Test(IsolatedAsyncioTestCase):
+
+
+          def setUp(self):
+              events.append("setUp")
+
+          async def asyncSetUp(self):
+              self._async_connection = await AsyncConnection()
+              events.append("asyncSetUp")
+
+          async def test_response(self):
+              events.append("test_response")
+              response = await self._async_connection.get("https://example.com")
+              self.assertEqual(response.status_code, 200)
+              self.addAsyncCleanup(self.on_cleanup)
+
+          def tearDown(self):
+              events.append("tearDown")
+
+          async def asyncTearDown(self):
+              await self._async_connection.close()
+              events.append("asyncTearDown")
+
+          async def on_cleanup(self):
+              events.append("cleanup")
+
+      if __name__ == "__main__":
+          unittest.main()
+
+   After running the test, ``events`` would contain ``["setUp", "asyncSetUp", "test_response", "asyncTearDown", "tearDown", "cleanup"]``.
 
 
 .. class:: FunctionTestCase(testFunc, setUp=None, tearDown=None, description=None)
@@ -2276,6 +2385,38 @@ module will be run and the ``tearDownModule`` will not be run. If the exception 
 :exc:`SkipTest` exception then the module will be reported as having been skipped
 instead of as an error.
 
+To add cleanup code that must be run even in the case of an exception, use
+``addModuleCleanup``:
+
+
+.. function:: addModuleCleanup(function, /, *args, **kwargs)
+
+   Add a function to be called after :func:`tearDownModule` to cleanup
+   resources used during the test class. Functions will be called in reverse
+   order to the order they are added (:abbr:`LIFO (last-in, first-out)`).
+   They are called with any arguments and keyword arguments passed into
+   :meth:`addModuleCleanup` when they are added.
+
+   If :meth:`setUpModule` fails, meaning that :func:`tearDownModule` is not
+   called, then any cleanup functions added will still be called.
+
+   .. versionadded:: 3.8
+
+
+.. function:: doModuleCleanups()
+
+   This function is called unconditionally after :func:`tearDownModule`, or
+   after :func:`setUpModule` if :func:`setUpModule` raises an exception.
+
+   It is responsible for calling all the cleanup functions added by
+   :func:`addCleanupModule`. If you need cleanup functions to be called
+   *prior* to :func:`tearDownModule` then you can call
+   :func:`doModuleCleanups` yourself.
+
+   :func:`doModuleCleanups` pops methods off the stack of cleanup
+   functions one at a time, so it can be called at any time.
+
+   .. versionadded:: 3.8
 
 Signal Handling
 ---------------

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _unicodeobjects:
 
@@ -700,6 +700,8 @@ Extension modules can continue using them, as they will not be removed in Python
    :c:func:`PyUnicode_AsWideChar`, :c:func:`PyUnicode_ReadChar` or similar new
    APIs.
 
+   .. deprecated-removed:: 3.3 3.10
+
 
 .. c:function:: PyObject* PyUnicode_TransformDecimalToASCII(Py_UNICODE *s, Py_ssize_t size)
 
@@ -760,8 +762,8 @@ system.
                                                         Py_ssize_t len, \
                                                         const char *errors)
 
-   Decode a string from UTF-8 on Android, or from the current locale encoding
-   on other platforms. The supported
+   Decode a string from UTF-8 on Android and VxWorks, or from the current
+   locale encoding on other platforms. The supported
    error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The decoder uses ``"strict"`` error handler if
    *errors* is ``NULL``.  *str* must end with a null character but
@@ -796,8 +798,8 @@ system.
 
 .. c:function:: PyObject* PyUnicode_EncodeLocale(PyObject *unicode, const char *errors)
 
-   Encode a Unicode object to UTF-8 on Android, or to the current locale
-   encoding on other platforms. The
+   Encode a Unicode object to UTF-8 on Android and VxWorks, or to the current
+   locale encoding on other platforms. The
    supported error handlers are ``"strict"`` and ``"surrogateescape"``
    (:pep:`383`). The encoder uses ``"strict"`` error handler if
    *errors* is ``NULL``. Return a :class:`bytes` object. *unicode* cannot

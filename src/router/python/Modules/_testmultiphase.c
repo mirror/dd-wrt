@@ -53,10 +53,13 @@ static PyObject *
 Example_getattro(ExampleObject *self, PyObject *name)
 {
     if (self->x_attr != NULL) {
-        PyObject *v = PyDict_GetItem(self->x_attr, name);
+        PyObject *v = PyDict_GetItemWithError(self->x_attr, name);
         if (v != NULL) {
             Py_INCREF(v);
             return v;
+        }
+        else if (PyErr_Occurred()) {
+            return NULL;
         }
     }
     return PyObject_GenericGetAttr((PyObject *)self, name);
@@ -72,7 +75,7 @@ Example_setattr(ExampleObject *self, const char *name, PyObject *v)
     }
     if (v == NULL) {
         int rv = PyDict_DelItemString(self->x_attr, name);
-        if (rv < 0)
+        if (rv < 0 && PyErr_ExceptionMatches(PyExc_KeyError))
             PyErr_SetString(PyExc_AttributeError,
                 "delete non-existing Example attribute");
         return rv;
@@ -95,7 +98,7 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     Example_Type_slots
 };
 

@@ -591,14 +591,6 @@ _lzma_LZMACompressor_flush_impl(Compressor *self)
     return result;
 }
 
-static PyObject *
-Compressor_getstate(Compressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static int
 Compressor_init_xz(lzma_stream *lzs, int check, uint32_t preset,
                    PyObject *filterspecs)
@@ -794,7 +786,6 @@ Compressor_dealloc(Compressor *self)
 static PyMethodDef Compressor_methods[] = {
     _LZMA_LZMACOMPRESSOR_COMPRESS_METHODDEF
     _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF
-    {"__getstate__", (PyCFunction)Compressor_getstate, METH_NOARGS},
     {NULL}
 };
 
@@ -832,10 +823,10 @@ static PyTypeObject Compressor_type = {
     sizeof(Compressor),                 /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)Compressor_dealloc,     /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */
@@ -1094,14 +1085,6 @@ _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
     return result;
 }
 
-static PyObject *
-Decompressor_getstate(Decompressor *self, PyObject *noargs)
-{
-    PyErr_Format(PyExc_TypeError, "cannot serialize '%s' object",
-                 Py_TYPE(self)->tp_name);
-    return NULL;
-}
-
 static int
 Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 {
@@ -1251,7 +1234,6 @@ Decompressor_dealloc(Decompressor *self)
 
 static PyMethodDef Decompressor_methods[] = {
     _LZMA_LZMADECOMPRESSOR_DECOMPRESS_METHODDEF
-    {"__getstate__", (PyCFunction)Decompressor_getstate, METH_NOARGS},
     {NULL}
 };
 
@@ -1285,10 +1267,10 @@ static PyTypeObject Decompressor_type = {
     sizeof(Decompressor),               /* tp_basicsize */
     0,                                  /* tp_itemsize */
     (destructor)Decompressor_dealloc,   /* tp_dealloc */
-    0,                                  /* tp_print */
+    0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
+    0,                                  /* tp_as_async */
     0,                                  /* tp_repr */
     0,                                  /* tp_as_number */
     0,                                  /* tp_as_sequence */

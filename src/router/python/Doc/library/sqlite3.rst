@@ -165,9 +165,10 @@ Module functions and constants
    that 'mytype' is the type of the column. It will try to find an entry of
    'mytype' in the converters dictionary and then use the converter function found
    there to return the value. The column name found in :attr:`Cursor.description`
-   is only the first word of the column name, i.  e. if you use something like
-   ``'as "x [datetime]"'`` in your SQL, then we will parse out everything until the
-   first blank for the column name: the column name would simply be "x".
+   does not include the type, i. e. if you use something like
+   ``'as "Expiration date [datetime]"'`` in your SQL, then we will parse out
+   everything until the first ``'['`` for the column name and strip
+   the preceeding space: the column name would simply be "Expiration date".
 
 
 .. function:: connect(database[, timeout, detect_types, isolation_level, check_same_thread, factory, cached_statements, uri])
@@ -223,6 +224,8 @@ Module functions and constants
 
    More information about this feature, including a list of recognized options, can
    be found in the `SQLite URI documentation <https://www.sqlite.org/uri.html>`_.
+
+   .. audit-event:: sqlite3.connect database sqlite3.connect
 
    .. versionchanged:: 3.4
       Added the *uri* parameter.
@@ -337,16 +340,23 @@ Connection Objects
       :meth:`~Cursor.executescript` method with the given *sql_script*, and
       returns the cursor.
 
-   .. method:: create_function(name, num_params, func)
+   .. method:: create_function(name, num_params, func, *, deterministic=False)
 
       Creates a user-defined function that you can later use from within SQL
       statements under the function name *name*. *num_params* is the number of
       parameters the function accepts (if *num_params* is -1, the function may
       take any number of arguments), and *func* is a Python callable that is
-      called as the SQL function.
+      called as the SQL function. If *deterministic* is true, the created function
+      is marked as `deterministic <https://sqlite.org/deterministic.html>`_, which
+      allows SQLite to perform additional optimizations. This flag is supported by
+      SQLite 3.8.3 or higher, :exc:`NotSupportedError` will be raised if used
+      with older versions.
 
       The function can return any of the types supported by SQLite: bytes, str, int,
       float and ``None``.
+
+      .. versionchanged:: 3.8
+         The *deterministic* parameter was added.
 
       Example:
 

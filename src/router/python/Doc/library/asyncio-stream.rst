@@ -6,6 +6,10 @@
 Streams
 =======
 
+**Source code:** :source:`Lib/asyncio/streams.py`
+
+-------------------------------------------------
+
 Streams are high-level async/await-ready primitives to work with
 network connections.  Streams allow sending and receiving data without
 using callbacks or low-level protocols and transports.
@@ -23,6 +27,7 @@ streams::
 
         print(f'Send: {message!r}')
         writer.write(message.encode())
+        await writer.drain()
 
         data = await reader.read(100)
         print(f'Received: {data.decode()!r}')
@@ -148,9 +153,6 @@ and work with streams:
       The *path* parameter can now be a :term:`path-like object`.
 
 
----------
-
-
 StreamReader
 ============
 
@@ -227,6 +229,38 @@ StreamWriter
    directly; use :func:`open_connection` and :func:`start_server`
    instead.
 
+   .. method:: write(data)
+
+      The method attempts to write the *data* to the underlying socket immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      The method should be used along with the ``drain()`` method::
+
+         stream.write(data)
+         await stream.drain()
+
+   .. method:: writelines(data)
+
+      The method writes a list (or any iterable) of bytes to the underlying socket
+      immediately.
+      If that fails, the data is queued in an internal write buffer until it can be
+      sent.
+
+      The method should be used along with the ``drain()`` method::
+
+         stream.writelines(lines)
+         await stream.drain()
+
+   .. method:: close()
+
+      The method closes the stream and the underlying socket.
+
+      The method should be used along with the ``wait_closed()`` method::
+
+         stream.close()
+         await stream.wait_closed()
+
    .. method:: can_write_eof()
 
       Return ``True`` if the underlying transport supports
@@ -246,20 +280,6 @@ StreamWriter
       Access optional transport information; see
       :meth:`BaseTransport.get_extra_info` for details.
 
-   .. method:: write(data)
-
-      Write *data* to the stream.
-
-      This method is not subject to flow control.  Calls to ``write()`` should
-      be followed by :meth:`drain`.
-
-   .. method:: writelines(data)
-
-      Write a list (or any iterable) of bytes to the stream.
-
-      This method is not subject to flow control. Calls to ``writelines()``
-      should be followed by :meth:`drain`.
-
    .. coroutinemethod:: drain()
 
       Wait until it is appropriate to resume writing to the stream.
@@ -274,10 +294,6 @@ StreamWriter
       buffer is drained down to the low watermark and writing can
       be resumed.  When there is nothing to wait for, the :meth:`drain`
       returns immediately.
-
-   .. method:: close()
-
-      Close the stream.
 
    .. method:: is_closing()
 

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _supporting-cycle-detection:
 
@@ -61,14 +61,6 @@ Constructors for container types must conform to two rules:
    end of the constructor.
 
 
-.. c:function:: void _PyObject_GC_TRACK(PyObject *op)
-
-   A macro version of :c:func:`PyObject_GC_Track`.  It should not be used for
-   extension modules.
-
-   .. deprecated:: 3.6
-      This macro is removed from Python 3.8.
-
 Similarly, the deallocator for the object must conform to a similar pair of
 rules:
 
@@ -93,13 +85,10 @@ rules:
    the fields used by the :c:member:`~PyTypeObject.tp_traverse` handler become invalid.
 
 
-.. c:function:: void _PyObject_GC_UNTRACK(PyObject *op)
+.. versionchanged:: 3.8
 
-   A macro version of :c:func:`PyObject_GC_UnTrack`.  It should not be used for
-   extension modules.
-
-   .. deprecated:: 3.6
-      This macro is removed from Python 3.8.
+   The :c:func:`_PyObject_GC_TRACK` and :c:func:`_PyObject_GC_UNTRACK` macros
+   have been removed from the public C API.
 
 The :c:member:`~PyTypeObject.tp_traverse` handler accepts a function parameter of this type:
 

@@ -80,7 +80,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 
@@ -93,7 +93,7 @@ Scheduler Objects
    .. versionchanged:: 3.3
       *argument* parameter is optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *kwargs* parameter was added.
 
 .. method:: scheduler.cancel(event)
@@ -127,7 +127,7 @@ Scheduler Objects
    the calling code is responsible for canceling  events which are no longer
    pertinent.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       *blocking* parameter was added.
 
 .. attribute:: scheduler.queue

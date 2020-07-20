@@ -20,6 +20,39 @@ function for the purposes of this module.
 
 The :mod:`functools` module defines the following functions:
 
+.. decorator:: cached_property(func)
+
+   Transform a method of a class into a property whose value is computed once
+   and then cached as a normal attribute for the life of the instance. Similar
+   to :func:`property`, with the addition of caching. Useful for expensive
+   computed properties of instances that are otherwise effectively immutable.
+
+   Example::
+
+       class DataSet:
+           def __init__(self, sequence_of_numbers):
+               self._data = sequence_of_numbers
+
+           @cached_property
+           def stdev(self):
+               return statistics.stdev(self._data)
+
+           @cached_property
+           def variance(self):
+               return statistics.variance(self._data)
+
+   .. versionadded:: 3.8
+
+   .. note::
+
+      This decorator requires that the ``__dict__`` attribute on each instance
+      be a mutable mapping. This means it will not work with some types, such as
+      metaclasses (since the ``__dict__`` attributes on type instances are
+      read-only proxies for the class namespace), and those that specify
+      ``__slots__`` without including ``__dict__`` as one of the defined slots
+      (as such classes don't provide a ``__dict__`` attribute at all).
+
+
 .. function:: cmp_to_key(func)
 
    Transform an old-style comparison function to a :term:`key function`.  Used
@@ -43,7 +76,8 @@ The :mod:`functools` module defines the following functions:
    .. versionadded:: 3.2
 
 
-.. decorator:: lru_cache(maxsize=128, typed=False)
+.. decorator:: lru_cache(user_function)
+               lru_cache(maxsize=128, typed=False)
 
    Decorator to wrap a function with a memoizing callable that saves up to the
    *maxsize* most recent calls.  It can save time when an expensive or I/O bound
@@ -57,9 +91,17 @@ The :mod:`functools` module defines the following functions:
    differ in their keyword argument order and may have two separate cache
    entries.
 
+   If *user_function* is specified, it must be a callable. This allows the
+   *lru_cache* decorator to be applied directly to a user function, leaving
+   the *maxsize* at its default value of 128::
+
+       @lru_cache
+       def count_vowels(sentence):
+           sentence = sentence.casefold()
+           return sum(sentence.count(vowel) for vowel in 'aeiou')
+
    If *maxsize* is set to ``None``, the LRU feature is disabled and the cache can
-   grow without bound.  The LRU feature performs best when *maxsize* is a
-   power-of-two.
+   grow without bound.
 
    If *typed* is set to true, function arguments of different types will be
    cached separately.  For example, ``f(3)`` and ``f(3.0)`` will be treated
@@ -132,6 +174,9 @@ The :mod:`functools` module defines the following functions:
    .. versionchanged:: 3.3
       Added the *typed* option.
 
+   .. versionchanged:: 3.8
+      Added the *user_function* option.
+
 .. decorator:: total_ordering
 
    Given a class defining one or more rich comparison ordering methods, this
@@ -175,7 +220,7 @@ The :mod:`functools` module defines the following functions:
       Returning NotImplemented from the underlying comparison function for
       unrecognised types is now supported.
 
-.. function:: partial(func, *args, **keywords)
+.. function:: partial(func, /, *args, **keywords)
 
    Return a new :ref:`partial object<partial-objects>` which when called
    will behave like *func* called with the positional arguments *args*
@@ -184,10 +229,9 @@ The :mod:`functools` module defines the following functions:
    supplied, they extend and override *keywords*.
    Roughly equivalent to::
 
-      def partial(func, *args, **keywords):
+      def partial(func, /, *args, **keywords):
           def newfunc(*fargs, **fkeywords):
-              newkeywords = keywords.copy()
-              newkeywords.update(fkeywords)
+              newkeywords = {**keywords, **fkeywords}
               return func(*args, *fargs, **newkeywords)
           newfunc.func = func
           newfunc.args = args
@@ -207,7 +251,7 @@ The :mod:`functools` module defines the following functions:
       18
 
 
-.. class:: partialmethod(func, *args, **keywords)
+.. class:: partialmethod(func, /, *args, **keywords)
 
    Return a new :class:`partialmethod` descriptor which behaves
    like :class:`partial` except that it is designed to be used as a method
@@ -253,14 +297,14 @@ The :mod:`functools` module defines the following functions:
 
 .. function:: reduce(function, iterable[, initializer])
 
-   Apply *function* of two arguments cumulatively to the items of *sequence*, from
-   left to right, so as to reduce the sequence to a single value.  For example,
+   Apply *function* of two arguments cumulatively to the items of *iterable*, from
+   left to right, so as to reduce the iterable to a single value.  For example,
    ``reduce(lambda x, y: x+y, [1, 2, 3, 4, 5])`` calculates ``((((1+2)+3)+4)+5)``.
    The left argument, *x*, is the accumulated value and the right argument, *y*, is
-   the update value from the *sequence*.  If the optional *initializer* is present,
-   it is placed before the items of the sequence in the calculation, and serves as
-   a default when the sequence is empty.  If *initializer* is not given and
-   *sequence* contains only one item, the first item is returned.
+   the update value from the *iterable*.  If the optional *initializer* is present,
+   it is placed before the items of the iterable in the calculation, and serves as
+   a default when the iterable is empty.  If *initializer* is not given and
+   *iterable* contains only one item, the first item is returned.
 
    Roughly equivalent to::
 
@@ -274,6 +318,8 @@ The :mod:`functools` module defines the following functions:
               value = function(value, element)
           return value
 
+   See :func:`itertools.accumulate` for an iterator that yields all intermediate
+   values.
 
 .. decorator:: singledispatch
 
@@ -392,6 +438,55 @@ The :mod:`functools` module defines the following functions:
 
    .. versionchanged:: 3.7
       The :func:`register` attribute supports using type annotations.
+
+
+.. class:: singledispatchmethod(func)
+
+   Transform a method into a :term:`single-dispatch <single
+   dispatch>` :term:`generic function`.
+
+   To define a generic method, decorate it with the ``@singledispatchmethod``
+   decorator. Note that the dispatch happens on the type of the first non-self
+   or non-cls argument, create your function accordingly::
+
+    class Negator:
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register
+        def _(self, arg: int):
+            return -arg
+
+        @neg.register
+        def _(self, arg: bool):
+            return not arg
+
+   ``@singledispatchmethod`` supports nesting with other decorators such as
+   ``@classmethod``. Note that to allow for ``dispatcher.register``,
+   ``singledispatchmethod`` must be the *outer most* decorator. Here is the
+   ``Negator`` class with the ``neg`` methods being class bound::
+
+    class Negator:
+        @singledispatchmethod
+        @classmethod
+        def neg(cls, arg):
+            raise NotImplementedError("Cannot negate a")
+
+        @neg.register
+        @classmethod
+        def _(cls, arg: int):
+            return -arg
+
+        @neg.register
+        @classmethod
+        def _(cls, arg: bool):
+            return not arg
+
+   The same pattern can be used for other similar decorators: ``staticmethod``,
+   ``abstractmethod``, and others.
+
+   .. versionadded:: 3.8
 
 
 .. function:: update_wrapper(wrapper, wrapped, assigned=WRAPPER_ASSIGNMENTS, updated=WRAPPER_UPDATES)

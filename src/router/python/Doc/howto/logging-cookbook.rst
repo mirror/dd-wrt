@@ -579,7 +579,7 @@ information. When you call one of the logging methods on an instance of
 information in the delegated call. Here's a snippet from the code of
 :class:`LoggerAdapter`::
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg, /, *args, **kwargs):
         """
         Delegate a debug call to the underlying logger, after adding
         contextual information from this adapter instance.
@@ -721,9 +721,8 @@ existing processes to perform this function.)
 includes a working socket receiver which can be used as a starting point for you
 to adapt in your own applications.
 
-If you are using a recent version of Python which includes the
-:mod:`multiprocessing` module, you could write your own handler which uses the
-:class:`~multiprocessing.Lock` class from this module to serialize access to the
+You could also write your own handler which uses the :class:`~multiprocessing.Lock`
+class from the :mod:`multiprocessing` module to serialize access to the
 file from your processes. The existing :class:`FileHandler` and subclasses do
 not make use of :mod:`multiprocessing` at present, though they may do so in the
 future. Note that at present, the :mod:`multiprocessing` module does not provide
@@ -1115,7 +1114,7 @@ call ``str()`` on that object to get the actual format string. Consider the
 following two classes::
 
     class BraceMessage:
-        def __init__(self, fmt, *args, **kwargs):
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -1124,7 +1123,7 @@ following two classes::
             return self.fmt.format(*self.args, **self.kwargs)
 
     class DollarMessage:
-        def __init__(self, fmt, **kwargs):
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -1179,7 +1178,7 @@ to the above, as in the following example::
 
     import logging
 
-    class Message(object):
+    class Message:
         def __init__(self, fmt, args):
             self.fmt = fmt
             self.args = args
@@ -1191,7 +1190,7 @@ to the above, as in the following example::
         def __init__(self, logger, extra=None):
             super(StyleAdapter, self).__init__(logger, extra or {})
 
-        def log(self, level, msg, *args, **kwargs):
+        def log(self, level, msg, /, *args, **kwargs):
             if self.isEnabledFor(level):
                 msg, kwargs = self.process(msg, kwargs)
                 self.logger._log(level, Message(msg, args), (), **kwargs)
@@ -1337,7 +1336,7 @@ You can also subclass :class:`QueueListener` to get messages from other kinds
 of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
 
     class ZeroMQSocketListener(QueueListener):
-        def __init__(self, uri, *handlers, **kwargs):
+        def __init__(self, uri, /, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
             socket.setsockopt_string(zmq.SUBSCRIBE, '')  # subscribe to everything
@@ -1491,12 +1490,18 @@ works::
         which then get dispatched, by the logging system, to the handlers
         configured for those loggers.
         """
+
         def handle(self, record):
-            logger = logging.getLogger(record.name)
-            # The process name is transformed just to show that it's the listener
-            # doing the logging to files and console
-            record.processName = '%s (for %s)' % (current_process().name, record.processName)
-            logger.handle(record)
+            if record.name == "root":
+                logger = logging.getLogger()
+            else:
+                logger = logging.getLogger(record.name)
+
+            if logger.isEnabledFor(record.levelno):
+                # The process name is transformed just to show that it's the listener
+                # doing the logging to files and console
+                record.processName = '%s (for %s)' % (current_process().name, record.processName)
+                logger.handle(record)
 
     def listener_process(q, stop_event, config):
         """
@@ -1561,22 +1566,16 @@ works::
         # The main process gets a simple configuration which prints to the console.
         config_initial = {
             'version': 1,
-            'formatters': {
-                'detailed': {
-                    'class': 'logging.Formatter',
-                    'format': '%(asctime)s %(name)-15s %(levelname)-8s %(processName)-10s %(message)s'
-                }
-            },
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
-                },
+                    'level': 'INFO'
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console']
-            },
+                'handlers': ['console'],
+                'level': 'DEBUG'
+            }
         }
         # The worker process configuration is just a QueueHandler attached to the
         # root logger, which allows all messages to be sent to the queue.
@@ -1589,13 +1588,13 @@ works::
             'handlers': {
                 'queue': {
                     'class': 'logging.handlers.QueueHandler',
-                    'queue': q,
-                },
+                    'queue': q
+                }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['queue']
-            },
+                'handlers': ['queue'],
+                'level': 'DEBUG'
+            }
         }
         # The listener process configuration shows that the full flexibility of
         # logging configuration is available to dispatch events to handlers however
@@ -1619,28 +1618,28 @@ works::
             'handlers': {
                 'console': {
                     'class': 'logging.StreamHandler',
-                    'level': 'INFO',
                     'formatter': 'simple',
+                    'level': 'INFO'
                 },
                 'file': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'foofile': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-foo.log',
                     'mode': 'w',
-                    'formatter': 'detailed',
+                    'formatter': 'detailed'
                 },
                 'errors': {
                     'class': 'logging.FileHandler',
                     'filename': 'mplog-errors.log',
                     'mode': 'w',
-                    'level': 'ERROR',
                     'formatter': 'detailed',
-                },
+                    'level': 'ERROR'
+                }
             },
             'loggers': {
                 'foo': {
@@ -1648,9 +1647,9 @@ works::
                 }
             },
             'root': {
-                'level': 'DEBUG',
-                'handlers': ['console', 'file', 'errors']
-            },
+                'handlers': ['console', 'file', 'errors'],
+                'level': 'DEBUG'
+            }
         }
         # Log some initial events, just to show that logging in the parent works
         # normally.
@@ -1742,8 +1741,8 @@ which uses JSON to serialise the event in a machine-parseable manner::
     import json
     import logging
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -1786,8 +1785,8 @@ as in the following complete example::
                 return o.encode('unicode_escape').decode('ascii')
             return super(Encoder, self).default(o)
 
-    class StructuredMessage(object):
-        def __init__(self, message, **kwargs):
+    class StructuredMessage:
+        def __init__(self, message, /, **kwargs):
             self.message = message
             self.kwargs = kwargs
 
@@ -2018,8 +2017,8 @@ object as a message format string, and that the logging package will call
 :func:`str` on that object to get the actual format string. Consider the
 following two classes::
 
-    class BraceMessage(object):
-        def __init__(self, fmt, *args, **kwargs):
+    class BraceMessage:
+        def __init__(self, fmt, /, *args, **kwargs):
             self.fmt = fmt
             self.args = args
             self.kwargs = kwargs
@@ -2027,8 +2026,8 @@ following two classes::
         def __str__(self):
             return self.fmt.format(*self.args, **self.kwargs)
 
-    class DollarMessage(object):
-        def __init__(self, fmt, **kwargs):
+    class DollarMessage:
+        def __init__(self, fmt, /, **kwargs):
             self.fmt = fmt
             self.kwargs = kwargs
 
@@ -2493,7 +2492,7 @@ scope of the context manager::
     import logging
     import sys
 
-    class LoggingContext(object):
+    class LoggingContext:
         def __init__(self, logger, level=None, handler=None, close=True):
             self.logger = logger
             self.level = level

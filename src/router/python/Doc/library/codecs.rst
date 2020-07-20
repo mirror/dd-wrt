@@ -174,7 +174,7 @@ recommended approach for working with encoded text files, this module
 provides additional utility functions and classes that allow the use of a
 wider range of codecs when working with binary files:
 
-.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=1)
+.. function:: open(filename, mode='r', encoding=None, errors='strict', buffering=-1)
 
    Open an encoded file using the given *mode* and return an instance of
    :class:`StreamReaderWriter`, providing transparent encoding/decoding.
@@ -194,8 +194,8 @@ wider range of codecs when working with binary files:
    *errors* may be given to define the error handling. It defaults to ``'strict'``
    which causes a :exc:`ValueError` to be raised in case an encoding error occurs.
 
-   *buffering* has the same meaning as for the built-in :func:`open` function.  It
-   defaults to line buffered.
+   *buffering* has the same meaning as for the built-in :func:`open` function.
+   It defaults to -1 which means that the default buffer size will be used.
 
 
 .. function:: EncodedFile(file, data_encoding, file_encoding=None, errors='strict')
@@ -1106,11 +1106,6 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1258          | windows-1258                   | Vietnamese                     |
 +-----------------+--------------------------------+--------------------------------+
-| cp65001         |                                | Windows only: Windows UTF-8    |
-|                 |                                | (``CP_UTF8``)                  |
-|                 |                                |                                |
-|                 |                                | .. versionadded:: 3.3          |
-+-----------------+--------------------------------+--------------------------------+
 | euc_jp          | eucjp, ujis, u-jis             | Japanese                       |
 +-----------------+--------------------------------+--------------------------------+
 | euc_jis_2004    | jisx0213, eucjis2004           | Japanese                       |
@@ -1235,7 +1230,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | utf_7           | U7, unicode-1-1-utf-7          | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
-| utf_8           | U8, UTF, utf8                  | all languages                  |
+| utf_8           | U8, UTF, utf8, cp65001         | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
 | utf_8_sig       |                                | all languages                  |
 +-----------------+--------------------------------+--------------------------------+
@@ -1245,6 +1240,9 @@ particular, the following variants typically exist:
    (``U+D800``--``U+DFFF``) to be encoded.
    The utf-32\* decoders no longer decode
    byte sequences that correspond to surrogate code points.
+
+.. versionchanged:: 3.8
+   ``cp65001`` is now an alias to ``utf_8``.
 
 
 Python Specific Encodings
@@ -1316,16 +1314,10 @@ encodings.
 |                    |         | code actually uses UTF-8  |
 |                    |         | by default.               |
 +--------------------+---------+---------------------------+
-| unicode_internal   |         | Return the internal       |
-|                    |         | representation of the     |
-|                    |         | operand. Stateful codecs  |
-|                    |         | are not supported.        |
-|                    |         |                           |
-|                    |         | .. deprecated:: 3.3       |
-|                    |         |    This representation is |
-|                    |         |    obsoleted by           |
-|                    |         |    :pep:`393`.            |
-+--------------------+---------+---------------------------+
+
+.. versionchanged:: 3.8
+   "unicode_internal" codec is removed.
+
 
 .. _binary-transforms:
 

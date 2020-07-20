@@ -304,11 +304,14 @@ Set implementation specific option. The following options are available:
            * Enable the faulthandler module to dump the Python traceback on a crash
            * Enable asyncio debug mode
            * Set the dev_mode attribute of sys.flags to True
+           * io.IOBase destructor logs close() exceptions
 
     -X utf8: enable UTF-8 mode for operating system interfaces, overriding the default
         locale-aware mode. -X utf8=0 explicitly disables UTF-8 mode (even when it would
         otherwise activate automatically). See PYTHONUTF8 for more details
 
+    -X pycache_prefix=PATH: enable writing .pyc files to a parallel tree rooted at the
+         given directory instead of to the code tree.
 .TP
 .B \-x
 Skip the first line of the source.  This is intended for a DOS
@@ -466,7 +469,7 @@ If this is set to a comma-separated string it is equivalent to
 specifying the \fB\-W\fP option for each separate value.
 .IP PYTHONHASHSEED
 If this variable is set to "random", a random value is used to seed the hashes
-of str, bytes and datetime objects.
+of str and bytes objects.
 
 If PYTHONHASHSEED is set to an integer value, it is used as a fixed seed for
 generating the hash() of the types covered by the hash randomization.  Its

@@ -1,4 +1,4 @@
-.. highlightlang:: c
+.. highlight:: c
 
 
 .. _initialization:
@@ -6,6 +6,8 @@
 *****************************************
 Initialization, Finalization, and Threads
 *****************************************
+
+See also :ref:`Python Initialization Configuration <init-config>`.
 
 .. _pre-init-safe:
 
@@ -299,8 +301,9 @@ Initializing and finalizing the interpreter
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
    :c:func:`Py_FinalizeEx` more than once.
 
-   .. versionadded:: 3.6
+   .. audit-event:: cpython._PySys_ClearAuditHooks "" c.Py_FinalizeEx
 
+   .. versionadded:: 3.6
 
 .. c:function:: void Py_Finalize()
 
@@ -469,8 +472,8 @@ Process-wide parameters
    dependent delimiter character, which is ``':'`` on Unix and Mac OS X, ``';'``
    on Windows.
 
-   This also causes :data:`sys.executable` to be set only to the raw program
-   name (see :c:func:`Py_SetProgramName`) and for :data:`sys.prefix` and
+   This also causes :data:`sys.executable` to be set to the program
+   full path (see :c:func:`Py_GetProgramFullPath`) and for :data:`sys.prefix` and
    :data:`sys.exec_prefix` to be empty.  It is up to the caller to modify these
    if required after calling :c:func:`Py_Initialize`.
 
@@ -479,6 +482,10 @@ Process-wide parameters
 
    The path argument is copied internally, so the caller may free it after the
    call completes.
+
+   .. versionchanged:: 3.8
+      The program full path is now used for :data:`sys.executable`, instead
+      of the program name.
 
 
 .. c:function:: const char* Py_GetVersion()
@@ -762,9 +769,19 @@ supports the creation of additional interpreters (using
 :c:func:`Py_NewInterpreter`), but mixing multiple interpreters and the
 :c:func:`PyGILState_\*` API is unsupported.
 
+
+.. _fork-and-threads:
+
+Cautions about fork()
+---------------------
+
 Another important thing to note about threads is their behaviour in the face
 of the C :c:func:`fork` call. On most systems with :c:func:`fork`, after a
-process forks only the thread that issued the fork will exist. That also
+process forks only the thread that issued the fork will exist.  This has a
+concrete impact both on how locks must be handled and on all stored state
+in CPython's runtime.
+
+The fact that only the "current" thread remains
 means any locks held by other threads will never be released. Python solves
 this for :func:`os.fork` by acquiring the locks it uses internally before
 the fork, and releasing them afterwards. In addition, it resets any
@@ -778,6 +795,17 @@ into Python) may result in a deadlock by one of Python's internal locks
 being held by a thread that is defunct after the fork.
 :c:func:`PyOS_AfterFork_Child` tries to reset the necessary locks, but is not
 always able to.
+
+The fact that all other threads go away also means that CPython's
+runtime state there must be cleaned up properly, which :func:`os.fork`
+does.  This means finalizing all other :c:type:`PyThreadState` objects
+belonging to the current interpreter and all other
+:c:type:`PyInterpreterState` objects.  Due to this and the special
+nature of the :ref:`"main" interpreter <sub-interpreter-support>`,
+:c:func:`fork` should only be called in that interpreter's "main"
+thread, where the CPython global runtime was originally initialized.
+The only exception is if :c:func:`exec` will be called immediately
+after.
 
 
 High-level API
@@ -843,18 +871,18 @@ code, or when embedding the Python interpreter:
 
 .. c:function:: PyThreadState* PyEval_SaveThread()
 
-   Release the global interpreter lock (if it has been created and thread
-   support is enabled) and reset the thread state to ``NULL``, returning the
-   previous thread state (which is not ``NULL``).  If the lock has been created,
-   the current thread must have acquired it.
+   Release the global interpreter lock (if it has been created) and reset the
+   thread state to ``NULL``, returning the previous thread state (which is not
+   ``NULL``).  If the lock has been created, the current thread must have
+   acquired it.
 
 
 .. c:function:: void PyEval_RestoreThread(PyThreadState *tstate)
 
-   Acquire the global interpreter lock (if it has been created and thread
-   support is enabled) and set the thread state to *tstate*, which must not be
-   ``NULL``.  If the lock has been created, the current thread must not have
-   acquired it, otherwise deadlock ensues.
+   Acquire the global interpreter lock (if it has been created) and set the
+   thread state to *tstate*, which must not be ``NULL``.  If the lock has been
+   created, the current thread must not have acquired it, otherwise deadlock
+   ensues.
 
    .. note::
       Calling this function from a thread when the runtime is finalizing
@@ -875,13 +903,6 @@ code, or when embedding the Python interpreter:
    Swap the current thread state with the thread state given by the argument
    *tstate*, which may be ``NULL``.  The global interpreter lock must be held
    and is not released.
-
-
-.. c:function:: void PyEval_ReInitThreads()
-
-   This function is called from :c:func:`PyOS_AfterFork_Child` to ensure
-   that newly created child processes don't hold locks referring to threads
-   which are not running in the child process.
 
 
 The following functions use thread-local storage, and are not compatible
@@ -997,11 +1018,15 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    be held, but may be held if it is necessary to serialize calls to this
    function.
 
+   .. audit-event:: cpython.PyInterpreterState_New "" c.PyInterpreterState_New
+
 
 .. c:function:: void PyInterpreterState_Clear(PyInterpreterState *interp)
 
    Reset all information in an interpreter state object.  The global interpreter
    lock must be held.
+
+   .. audit-event:: cpython.PyInterpreterState_Clear "" c.PyInterpreterState_Clear
 
 
 .. c:function:: void PyInterpreterState_Delete(PyInterpreterState *interp)
@@ -1039,6 +1064,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    .. versionadded:: 3.7
 
 
+.. c:function:: PyObject* PyInterpreterState_GetDict(PyInterpreterState *interp)
+
+   Return a dictionary in which interpreter-specific data may be stored.
+   If this function returns ``NULL`` then no exception has been raised and
+   the caller should assume no interpreter-specific dict is available.
+
+   This is not a replacement for :c:func:`PyModule_GetState()`, which
+   extensions should use to store interpreter-specific state information.
+
+   .. versionadded:: 3.8
+
+
 .. c:function:: PyObject* PyThreadState_GetDict()
 
    Return a dictionary in which extensions can store thread-specific state
@@ -1068,6 +1105,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    *tstate*, which should not be ``NULL``.  The lock must have been created earlier.
    If this thread already has the lock, deadlock ensues.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
+
    :c:func:`PyEval_RestoreThread` is a higher-level function which is always
    available (even when threads have not been initialized).
 
@@ -1094,6 +1143,18 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
       :c:func:`PyEval_RestoreThread` or :c:func:`PyEval_AcquireThread`
       instead.
 
+   .. note::
+      Calling this function from a thread when the runtime is finalizing
+      will terminate the thread, even if the thread was not created by Python.
+      You can use :c:func:`_Py_IsFinalizing` or :func:`sys.is_finalizing` to
+      check if the interpreter is in process of being finalized before calling
+      this function to avoid unwanted termination.
+
+   .. versionchanged:: 3.8
+      Updated to be consistent with :c:func:`PyEval_RestoreThread`,
+      :c:func:`Py_END_ALLOW_THREADS`, and :c:func:`PyGILState_Ensure`,
+      and terminate the current thread if called while the interpreter is finalizing.
+
 
 .. c:function:: void PyEval_ReleaseLock()
 
@@ -1112,10 +1173,18 @@ Sub-interpreter support
 
 While in most uses, you will only embed a single Python interpreter, there
 are cases where you need to create several independent interpreters in the
-same process and perhaps even in the same thread.  Sub-interpreters allow
-you to do that.  You can switch between sub-interpreters using the
-:c:func:`PyThreadState_Swap` function.  You can create and destroy them
-using the following functions:
+same process and perhaps even in the same thread. Sub-interpreters allow
+you to do that.
+
+The "main" interpreter is the first one created when the runtime initializes.
+It is usually the only Python interpreter in a process.  Unlike sub-interpreters,
+the main interpreter has unique process-global responsibilities like signal
+handling.  It is also responsible for execution during runtime initialization and
+is usually the active interpreter during runtime finalization.  The
+:c:func:`PyInterpreterState_Main` function returns a pointer to its state.
+
+You can switch between sub-interpreters using the :c:func:`PyThreadState_Swap`
+function. You can create and destroy them using the following functions:
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter()
@@ -1153,15 +1222,31 @@ using the following functions:
       single: Py_FinalizeEx()
       single: Py_Initialize()
 
-   Extension modules are shared between (sub-)interpreters as follows: the first
-   time a particular extension is imported, it is initialized normally, and a
-   (shallow) copy of its module's dictionary is squirreled away.  When the same
-   extension is imported by another (sub-)interpreter, a new module is initialized
-   and filled with the contents of this copy; the extension's ``init`` function is
-   not called.  Note that this is different from what happens when an extension is
-   imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that case, the extension's
-   ``initmodule`` function *is* called again.
+   Extension modules are shared between (sub-)interpreters as follows:
+
+   *  For modules using multi-phase initialization,
+      e.g. :c:func:`PyModule_FromDefAndSpec`, a separate module object is
+      created and initialized for each interpreter.
+      Only C-level static and global variables are shared between these
+      module objects.
+
+   *  For modules using single-phase initialization,
+      e.g. :c:func:`PyModule_Create`, the first time a particular extension
+      is imported, it is initialized normally, and a (shallow) copy of its
+      module's dictionary is squirreled away.
+      When the same extension is imported by another (sub-)interpreter, a new
+      module is initialized and filled with the contents of this copy; the
+      extension's ``init`` function is not called.
+      Objects in the module's dictionary thus end up shared across
+      (sub-)interpreters, which might cause unwanted behavior (see
+      `Bugs and caveats`_ below).
+
+      Note that this is different from what happens when an extension is
+      imported after the interpreter has been completely re-initialized by
+      calling :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that
+      case, the extension's ``initmodule`` function *is* called again.
+      As with multi-phase initialization, this means that only C-level static
+      and global variables are shared between these modules.
 
    .. index:: single: close() (in module os)
 
@@ -1187,14 +1272,16 @@ process, the insulation between them isn't perfect --- for example, using
 low-level file operations like  :func:`os.close` they can
 (accidentally or maliciously) affect each other's open files.  Because of the
 way extensions are shared between (sub-)interpreters, some extensions may not
-work properly; this is especially likely when the extension makes use of
-(static) global variables, or when the extension manipulates its module's
-dictionary after its initialization.  It is possible to insert objects created
-in one sub-interpreter into a namespace of another sub-interpreter; this should
-be done with great care to avoid sharing user-defined functions, methods,
-instances or classes between sub-interpreters, since import operations executed
-by such objects may affect the wrong (sub-)interpreter's dictionary of loaded
-modules.
+work properly; this is especially likely when using single-phase initialization
+or (static) global variables.
+It is possible to insert objects created in one sub-interpreter into
+a namespace of another (sub-)interpreter; this should be avoided if possible.
+
+Special care should be taken to avoid sharing user-defined functions,
+methods, instances or classes between sub-interpreters, since import
+operations executed by such objects may affect the wrong (sub-)interpreter's
+dictionary of loaded modules. It is equally important to avoid sharing
+objects from which the above are reachable.
 
 Also note that combining this functionality with :c:func:`PyGILState_\*` APIs
 is delicate, because these APIs assume a bijection between Python thread states
