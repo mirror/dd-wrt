@@ -5,8 +5,8 @@
 # Translators:
 # Arthur Titeica <arthur@psw.ro>, 2013
 # Arthur Țițeică <arthur.titeica@gmail.com>, 2013-2014,2017
-# Christian Eichert, 2018
-# Mihai Draghicioiu <inactive+vampirefrog@transifex.com>, 2016
+# 666ac67b8cef279621e9f9f0d4368bd5_672ede5, 2018
+# 7ad110ef65cb8fea3e45887cffdf497a_28ca6f3 <3e77beb79c064caff61514bbc685d086_451299>, 2016
 # Nicolae Crefelean, 2014,2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 # Sorin Sfirlogea, 2016
@@ -15,9 +15,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Romanian (http://www.transifex.com/mc/mc/language/ro/)\n"
 "Language: ro\n"
 "MIME-Version: 1.0\n"
@@ -493,13 +493,22 @@ msgstr "Variabila de mediu TERM nu este setată!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1136,9 +1145,6 @@ msgstr "Schimbă finalul de linie în:"
 msgid "Save As"
 msgstr "Salvează ca"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Blocul este mare, este posibil sa nu poți anula această acțiune"
-
 msgid "Collect completions"
 msgstr "Colecționează completări"
 
@@ -1338,7 +1344,7 @@ msgstr "Apasă orice tastă:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Textul curent a fost modificat fără a se salva fișierul.\n"
 "Dacă se continuă schimbările vor fi pierdute."
@@ -1369,13 +1375,6 @@ msgstr "Confirmă înlocuirea"
 
 msgid "Cancel"
 msgstr "Renunță"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Textul curent a fost modificat fără a se salva fișierul.\n"
-"Dacă se continuă schimbările vor fi pierdute."
 
 msgid "NoName"
 msgstr "FărăNume"
@@ -1675,8 +1674,8 @@ msgstr ""
 "Un editor de text ușor de utilizat\n"
 "creat pentru Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Despre"
@@ -1830,10 +1829,8 @@ msgstr "Terminalul deja rulează o comandă"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Nu este o consolă xterm sau Linux;\n"
-"panourile nu pot fi comutate."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tastați `exit' pentru a reveni în Midnight Commander"
@@ -1858,6 +1855,10 @@ msgstr "alții"
 
 msgid "Flag"
 msgstr "Ind."
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Comandă avansată chown"
@@ -2206,6 +2207,105 @@ msgstr "Nume proprietar:"
 msgid "SMB authentication"
 msgstr "Autentificare SMB"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "&Tot marc."
+
+msgid "S&et marked"
+msgstr "Set. &marc."
+
+msgid "C&lear marked"
+msgstr "Şter&g marc."
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "Setează ID &proprietar la executare"
 
@@ -2253,15 +2353,6 @@ msgstr "Nume proprietar:"
 
 msgid "Group name:"
 msgstr "Nume grup:"
-
-msgid "&Marked all"
-msgstr "&Tot marc."
-
-msgid "S&et marked"
-msgstr "Set. &marc."
-
-msgid "C&lear marked"
-msgstr "Şter&g marc."
 
 msgid "Chmod command"
 msgstr "Comanda chmod"
@@ -3245,6 +3336,16 @@ msgstr "Proprietar: %s/%s"
 msgid "Links:      %d"
 msgstr "Legături: %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Mod: %s (%04o)"
@@ -3363,6 +3464,9 @@ msgstr "Ch&own"
 
 msgid "&Advanced chown"
 msgstr "Chown &avansat"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "&Redenumește/Mută"
@@ -3835,6 +3939,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Calea către dosarul acasă nu este absolută"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3865,15 +3975,6 @@ msgstr ""
 "Nu se poate salva fișierul %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander rulează\n"
-"deja în acest terminal.\n"
-"Suportul pentru subshell va fi dezactivat."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nu se poate deschide pipe %s\n"
@@ -3885,54 +3986,64 @@ msgstr "Terminalul este încă activ. Ieși oricum?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Atenție: Nu se poate schimba în %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Folosind librăria S-Lang cu baza de date terminfo\n"
+msgid "With builtin Editor and Aspell support"
+msgstr ""
 
-msgid "Using the ncurses library\n"
-msgstr "Folosind librăria ncurses\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "Using the ncursesw library\n"
-msgstr "Folosind librăria ncursesw\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Cu Editor încorporat și suport Aspell\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "Cu editor integrat\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "Cu suport pentru subshell opțional\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Cu suport pentru subshell implicit\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Cu suport pentru sarcini în fundal\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Cu suport de mouse în xterm și consola Linux\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "Cu suport de mouse în xterm.\n"
+msgid "With multiple codepages support"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "Cu suport pentru evenimente X11\n"
-
-msgid "With internationalization support\n"
-msgstr "Cu suport de internaționalizare\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Cu suport pentru coduri de pagină multiple\n"
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Construit cu GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Sistem virtual de fișiere:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Tipuri de date:"
 

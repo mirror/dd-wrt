@@ -3,17 +3,17 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# 이정희 <daemul72@gmail.com>, 2019
+# MarongHappy <daemul72@gmail.com>, 2019-2020
 # JinYeong Bak <dongdm@gmail.com>, 2016
-# 이정희 <daemul72@gmail.com>, 2019
+# MarongHappy <daemul72@gmail.com>, 2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Korean (http://www.transifex.com/mc/mc/language/ko/)\n"
 "Language: ko\n"
 "MIME-Version: 1.0\n"
@@ -484,16 +484,31 @@ msgid "The TERM environment variable is unset!\n"
 msgstr "TERM 환경변수가 설정되어있지 않습니다!\n"
 
 msgid "Cannot check SIGWINCH pipe"
+msgstr "SIGWINCH 파이프를 확인할 수 없습니다"
+
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
+"\n"
+"SIGWINCH용 파이프를 작성할 수 없음: %s (%d)\n"
 
-msgid "Cannot create pipe for SIGWINCH"
-msgstr "SIGWINCH용 파이프를 생성할 수 없음"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"SIGWINCH 파이프의 쓰기 끝을 구성할 수 없음: %s (%d)\n"
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr "SIGWINCH 파이프의 쓰기 끝을 구성할 수 없음"
-
-msgid "Cannot configure read end of SIGWINCH pipe"
-msgstr "SIGWINCH 파이프의 읽기 엔드를 구성할 수 없음"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"SIGWINCH 파이프의 읽기 끝을 구성할 수 없음: %s (%d)\n"
 
 #, c-format
 msgid ""
@@ -1126,9 +1141,6 @@ msgstr "줄바꿈 변경:"
 msgid "Save As"
 msgstr "다른이름으로 저장"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "블록이 크면 이 작업을 실행 취소할 수 없음"
-
 msgid "Collect completions"
 msgstr "수집 완료"
 
@@ -1327,7 +1339,7 @@ msgstr "아무 키나 누르십시오:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "파일 저장 없이 현재 텍스트가 수정됨.\n"
 "계속 이런 변경 내용을 삭제합니다."
@@ -1358,13 +1370,6 @@ msgstr "바꾸기 확인"
 
 msgid "Cancel"
 msgstr "취소"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"파일 저장 없이 현재 텍스트가 수정됨.\n"
-"계속 이런 변경 내용을 삭제합니다."
 
 msgid "NoName"
 msgstr "이름없음"
@@ -1664,8 +1669,8 @@ msgstr ""
 "사용자 친화적인 텍스트 편집기\n"
 "미드나잇 커맨더를 위해 작성됨."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2020 the Free Software Foundation"
 
 msgid "About"
 msgstr "소개"
@@ -1818,10 +1823,8 @@ msgstr "셸이 이미 명령을 실행하고 있음"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"XTerm 또는 Linux 콘솔이 아님;\n"
-"패널을 전환할 수 없습니다."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "미드나잇 커맨더로 돌아가려면 'exit'를 입력하십시오."
@@ -1846,6 +1849,10 @@ msgstr "기타"
 
 msgid "Flag"
 msgstr "플래그"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Chown 고급 명령어"
@@ -2194,6 +2201,105 @@ msgstr "사용자 이름:"
 msgid "SMB authentication"
 msgstr "SMB 인증"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "모두 표시됨(&M)"
+
+msgid "S&et marked"
+msgstr "표시됨 설정(&E)"
+
+msgid "C&lear marked"
+msgstr "표시됨 지우기(&L)"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "실행 시 사용자 ID 설정(&U)"
 
@@ -2241,15 +2347,6 @@ msgstr "소유자 이름:"
 
 msgid "Group name:"
 msgstr "그룹 이름:"
-
-msgid "&Marked all"
-msgstr "모두 표시됨(&M)"
-
-msgid "S&et marked"
-msgstr "표시됨 설정(&E)"
-
-msgid "C&lear marked"
-msgstr "표시됨 지우기(&L)"
 
 msgid "Chmod command"
 msgstr "Chmod 명령어"
@@ -3230,6 +3327,16 @@ msgstr "소유자:    %s/%s"
 msgid "Links:      %d"
 msgstr "링크:        %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "모드:        %s (%04o)"
@@ -3348,6 +3455,9 @@ msgstr "파일 소유자 변경 (&O)"
 
 msgid "&Advanced chown"
 msgstr "고급 파일 소유자 변경(&A)"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "이름변경/이동(&R)"
@@ -3815,6 +3925,15 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "홈 디렉토리 경로가 절대적이지 않음"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+"GNU 미드나잇 코맨더가\n"
+"이미 이 터미널에서 실행 중입니다.\n"
+"Subshell 지원이 비활성화 됩니다."
+
 #, c-format
 msgid ""
 "\n"
@@ -3845,15 +3964,6 @@ msgstr ""
 "파일을 저장할 수 없음%s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU 미드나잇 커맨더가 이미\n"
-"이 터미널에서 실행 중입니다.\n"
-"Subshell 지원이 비활성화됩니다."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "명명된 %s 파이프를 열 수 없음\n"
@@ -3865,54 +3975,64 @@ msgstr "셸이 아직 활성 상태입니다. 그래도 끝낼까요?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "경고: %s으(로) 변경할 수 없음.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "터미널 데이터베이스와 함께 S-Lang 라이브러리 사용\n"
+msgid "With builtin Editor and Aspell support"
+msgstr "기본 제공 편집기 및 Aspell 지원 포함"
 
-msgid "Using the ncurses library\n"
-msgstr "ncurses 라이브러리 사용\n"
+msgid "With builtin Editor"
+msgstr "기본 제공 편집기 포함"
 
-msgid "Using the ncursesw library\n"
-msgstr "ncursesw 라이브러리 사용\n"
+msgid "With optional subshell support"
+msgstr "subshell 지원 옵션 포함"
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "편집기 내장 및 Aspell 지원 사용\n"
+msgid "With subshell support as default"
+msgstr "기본 설정으로 subshell 지원 포함"
 
-msgid "With builtin Editor\n"
-msgstr "편집기 내장 사용\n"
+msgid "With support for background operations"
+msgstr "백그라운드 작업용 지원 포함"
 
-msgid "With optional subshell support\n"
-msgstr "옵션으로 하위 쉘 지원 사용\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr "xterm 및 Linux 콘솔에서 마우스 지원 포함"
 
-msgid "With subshell support as default\n"
-msgstr "기본으로 하위 쉘 지원 사용\n"
+msgid "With mouse support on xterm"
+msgstr "xterm에서 마우스 지원 포함"
 
-msgid "With support for background operations\n"
-msgstr "백그라운드 작업 지원 사용\n"
+msgid "With support for X11 events"
+msgstr "X11 이벤트에 대한 지원 포함"
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "XTerm 및 Linux 콘솔에서 마우스 지원 사용\n"
+msgid "With internationalization support"
+msgstr "국제화 지원 포함"
 
-msgid "With mouse support on xterm\n"
-msgstr "XTerm에서 마우스 지원 사용\n"
+msgid "With multiple codepages support"
+msgstr "다중 코드페이지 지원 포함"
 
-msgid "With support for X11 events\n"
-msgstr "X11 이벤트 지원 사용\n"
-
-msgid "With internationalization support\n"
-msgstr "국제화 지원 사용\n"
-
-msgid "With multiple codepages support\n"
-msgstr "복수의 코드페이지 지원 사용\n"
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "GLib %d.%d.%d로 빌드\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr "터미널 데이터베이스가 있는 S-Lang %s로 구축\n"
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr "ncurses %s로 구축\n"
+
+msgid "Built with ncurses (unknown version)"
+msgstr "ncures로 구축 (알 수 없는 버전)"
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr "ncursesw %s로 구축\n"
+
+msgid "Built with ncursesw (unknown version)"
+msgstr "ncursesw로 구축 (알 수 없는 버전)"
+
 msgid "Virtual File Systems:"
 msgstr "가상 파일 시스템:"
 
-#, c-format
 msgid "Data types:"
 msgstr "데이터 유형:"
 

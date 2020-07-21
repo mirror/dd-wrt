@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Bulgarian (http://www.transifex.com/mc/mc/language/bg/)\n"
 "Language: bg\n"
 "MIME-Version: 1.0\n"
@@ -490,13 +490,22 @@ msgstr "Променливата TERM не е установена!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1115,9 +1124,6 @@ msgstr "Преобразуване на новите редове към:"
 msgid "Save As"
 msgstr "Запазване като"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Блокът е голям, може да нямате възможност да отмените това действие"
-
 msgid "Collect completions"
 msgstr "Събиране на довършванията"
 
@@ -1318,7 +1324,7 @@ msgstr "Натиснете който и да е клавиш:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Сегашния текст е променен без запис на файл.\n"
 "Продължаване изоставяйки тези промени"
@@ -1349,13 +1355,6 @@ msgstr "Потвърждаване замяната"
 
 msgid "Cancel"
 msgstr "Отказ"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Сегашния текст е променен без запис на файл.\n"
-"Продължаване изоставяйки тези промени"
 
 msgid "NoName"
 msgstr "БезИме"
@@ -1655,7 +1654,7 @@ msgstr ""
 "Удобен за потребителя текстови редактор\n"
 "написан за Midnight Commander-а."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1810,10 +1809,8 @@ msgstr "Обвивката вече изпълнява команда"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-" Не е xterm или Линукс конзола;\n"
-"панелите не могат да бъдат показвани/скривани."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Напишете 'exit', за да се върнете в Midnight Commander-а"
@@ -1838,6 +1835,10 @@ msgstr "други"
 
 msgid "Flag"
 msgstr "Флаг"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Разширена Chown команда"
@@ -2186,6 +2187,105 @@ msgstr "Потребителско име:"
 msgid "SMB authentication"
 msgstr "SMB удостоверяване"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "Само марк"
+
+msgid "S&et marked"
+msgstr "Уст марк"
+
+msgid "C&lear marked"
+msgstr "Изтр марк"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "задаване на &потребителско ID при изпълнение"
 
@@ -2233,15 +2333,6 @@ msgstr "Име на собственик:"
 
 msgid "Group name:"
 msgstr "Име на група:"
-
-msgid "&Marked all"
-msgstr "Само марк"
-
-msgid "S&et marked"
-msgstr "Уст марк"
-
-msgid "C&lear marked"
-msgstr "Изтр марк"
 
 msgid "Chmod command"
 msgstr "Команда Chmod"
@@ -3222,6 +3313,16 @@ msgstr "Притежател: %s/%s"
 msgid "Links:      %d"
 msgstr "Линкове: %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Права: %s (%04o)"
@@ -3340,6 +3441,9 @@ msgstr "Ch&own"
 
 msgid "&Advanced chown"
 msgstr "&Разширена chown"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "&Преименуване или местене"
@@ -3810,6 +3914,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Пътят до домашната папка не е абсолютен"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3841,15 +3951,6 @@ msgstr ""
 "Не може да се запише файл %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander вече е отворен\n"
-"на този терминал.\n"
-"Поддръжката на subshell ще бъде деактивирана."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Не може да се отвори именуваният канал %s\n"
@@ -3861,54 +3962,64 @@ msgstr "Обвивката е още активна. Да се напусне л
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Внимание: Не мога да премина в %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Използване на S-Lang библиотеката с terminfo базата данни\n"
-
-msgid "Using the ncurses library\n"
-msgstr "Използване на библиотеката ncurses\n"
-
-msgid "Using the ncursesw library\n"
-msgstr "Използване на библиотеката ncursesw\n"
-
-msgid "With builtin Editor and Aspell support\n"
+msgid "With builtin Editor and Aspell support"
 msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "С вграден редактор\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "С опционална поддръжка на subshell\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "С поддръжка на subshell по подразбиране\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "С поддръжка на фонови операции\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "С поддръжка на мишка в xterm и Linux конзола\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "С поддръжка на мишка в xterm\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "С поддръжка на X11 събития\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With internationalization support\n"
-msgstr "С поддръжка на интернационализация\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With multiple codepages support\n"
-msgstr "С поддръжка на много кодови страници\n"
+msgid "With multiple codepages support"
+msgstr ""
+
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Компилиран с GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Виртуални файлови системи:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Типове за данни:"
 

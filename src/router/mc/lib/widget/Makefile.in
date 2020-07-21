@@ -120,6 +120,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-with-internal-edit.m4 \
 	$(top_srcdir)/m4.include/mc-subshell.m4 \
 	$(top_srcdir)/m4.include/mc-background.m4 \
+	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -147,11 +148,11 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libmcwidget_la_LIBADD =
-am_libmcwidget_la_OBJECTS = button.lo buttonbar.lo check.lo dialog.lo \
-	dialog-switch.lo gauge.lo groupbox.lo hline.lo history.lo \
-	input.lo input_complete.lo listbox-window.lo listbox.lo \
-	label.lo menu.lo mouse.lo quick.lo radio.lo widget-common.lo \
-	wtools.lo
+am_libmcwidget_la_OBJECTS = background.lo button.lo buttonbar.lo \
+	check.lo dialog.lo dialog-switch.lo frame.lo gauge.lo group.lo \
+	groupbox.lo hline.lo history.lo input.lo input_complete.lo \
+	listbox-window.lo listbox.lo label.lo menu.lo mouse.lo \
+	quick.lo radio.lo rect.lo widget-common.lo wtools.lo
 libmcwidget_la_OBJECTS = $(am_libmcwidget_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -172,16 +173,19 @@ am__v_at_1 =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
-am__depfiles_remade = ./$(DEPDIR)/button.Plo ./$(DEPDIR)/buttonbar.Plo \
+am__depfiles_remade = ./$(DEPDIR)/background.Plo \
+	./$(DEPDIR)/button.Plo ./$(DEPDIR)/buttonbar.Plo \
 	./$(DEPDIR)/check.Plo ./$(DEPDIR)/dialog-switch.Plo \
-	./$(DEPDIR)/dialog.Plo ./$(DEPDIR)/gauge.Plo \
+	./$(DEPDIR)/dialog.Plo ./$(DEPDIR)/frame.Plo \
+	./$(DEPDIR)/gauge.Plo ./$(DEPDIR)/group.Plo \
 	./$(DEPDIR)/groupbox.Plo ./$(DEPDIR)/history.Plo \
 	./$(DEPDIR)/hline.Plo ./$(DEPDIR)/input.Plo \
 	./$(DEPDIR)/input_complete.Plo ./$(DEPDIR)/label.Plo \
 	./$(DEPDIR)/listbox-window.Plo ./$(DEPDIR)/listbox.Plo \
 	./$(DEPDIR)/menu.Plo ./$(DEPDIR)/mouse.Plo \
 	./$(DEPDIR)/quick.Plo ./$(DEPDIR)/radio.Plo \
-	./$(DEPDIR)/widget-common.Plo ./$(DEPDIR)/wtools.Plo
+	./$(DEPDIR)/rect.Plo ./$(DEPDIR)/widget-common.Plo \
+	./$(DEPDIR)/wtools.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -278,11 +282,15 @@ DX_MAKEINDEX = @DX_MAKEINDEX@
 DX_PDFLATEX = @DX_PDFLATEX@
 DX_PERL = @DX_PERL@
 DX_PROJECT = @DX_PROJECT@
+E2P_CFLAGS = @E2P_CFLAGS@
+E2P_LIBS = @E2P_LIBS@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
+EXT2FS_LIBS = @EXT2FS_LIBS@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
@@ -431,17 +439,20 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 noinst_LTLIBRARIES = libmcwidget.la
 libmcwidget_la_SOURCES = \
+	background.c background.h \
 	button.c button.h \
 	buttonbar.c buttonbar.h \
 	check.c check.h \
 	dialog.c dialog.h \
 	dialog-switch.c dialog-switch.h \
+	frame.c frame.h \
 	gauge.c gauge.h \
+	group.c group.h \
 	groupbox.c groupbox.h \
 	hline.c hline.h \
 	history.c history.h \
 	input.c input.h \
-	input_complete.c input_complete.h \
+	input_complete.c \
 	listbox-window.c listbox-window.h \
 	listbox.c listbox.h \
 	label.c label.h \
@@ -449,6 +460,7 @@ libmcwidget_la_SOURCES = \
 	mouse.c mouse.h \
 	quick.c quick.h \
 	radio.c radio.h \
+	rect.c rect.h \
 	widget-common.c widget-common.h \
 	wtools.c wtools.h
 
@@ -507,12 +519,15 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/background.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/button.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buttonbar.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dialog-switch.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dialog.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/frame.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gauge.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/groupbox.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/history.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hline.Plo@am__quote@ # am--include-marker
@@ -525,6 +540,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mouse.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/quick.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/radio.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rect.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget-common.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wtools.Plo@am__quote@ # am--include-marker
 
@@ -686,12 +702,15 @@ clean-am: clean-generic clean-libtool clean-noinstLTLIBRARIES \
 	mostlyclean-am
 
 distclean: distclean-am
-		-rm -f ./$(DEPDIR)/button.Plo
+		-rm -f ./$(DEPDIR)/background.Plo
+	-rm -f ./$(DEPDIR)/button.Plo
 	-rm -f ./$(DEPDIR)/buttonbar.Plo
 	-rm -f ./$(DEPDIR)/check.Plo
 	-rm -f ./$(DEPDIR)/dialog-switch.Plo
 	-rm -f ./$(DEPDIR)/dialog.Plo
+	-rm -f ./$(DEPDIR)/frame.Plo
 	-rm -f ./$(DEPDIR)/gauge.Plo
+	-rm -f ./$(DEPDIR)/group.Plo
 	-rm -f ./$(DEPDIR)/groupbox.Plo
 	-rm -f ./$(DEPDIR)/history.Plo
 	-rm -f ./$(DEPDIR)/hline.Plo
@@ -704,6 +723,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/mouse.Plo
 	-rm -f ./$(DEPDIR)/quick.Plo
 	-rm -f ./$(DEPDIR)/radio.Plo
+	-rm -f ./$(DEPDIR)/rect.Plo
 	-rm -f ./$(DEPDIR)/widget-common.Plo
 	-rm -f ./$(DEPDIR)/wtools.Plo
 	-rm -f Makefile
@@ -751,12 +771,15 @@ install-ps-am:
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-		-rm -f ./$(DEPDIR)/button.Plo
+		-rm -f ./$(DEPDIR)/background.Plo
+	-rm -f ./$(DEPDIR)/button.Plo
 	-rm -f ./$(DEPDIR)/buttonbar.Plo
 	-rm -f ./$(DEPDIR)/check.Plo
 	-rm -f ./$(DEPDIR)/dialog-switch.Plo
 	-rm -f ./$(DEPDIR)/dialog.Plo
+	-rm -f ./$(DEPDIR)/frame.Plo
 	-rm -f ./$(DEPDIR)/gauge.Plo
+	-rm -f ./$(DEPDIR)/group.Plo
 	-rm -f ./$(DEPDIR)/groupbox.Plo
 	-rm -f ./$(DEPDIR)/history.Plo
 	-rm -f ./$(DEPDIR)/hline.Plo
@@ -769,6 +792,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/mouse.Plo
 	-rm -f ./$(DEPDIR)/quick.Plo
 	-rm -f ./$(DEPDIR)/radio.Plo
+	-rm -f ./$(DEPDIR)/rect.Plo
 	-rm -f ./$(DEPDIR)/widget-common.Plo
 	-rm -f ./$(DEPDIR)/wtools.Plo
 	-rm -f Makefile

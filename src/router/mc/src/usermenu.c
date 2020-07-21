@@ -1,7 +1,7 @@
 /*
    User Menu implementation
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -843,7 +843,7 @@ expand_format (const WEdit * edit_widget, char c, gboolean do_quote)
         {
             char *file;
 
-            file = mc_config_get_full_path (EDIT_BLOCK_FILE);
+            file = mc_config_get_full_path (EDIT_HOME_BLOCK_FILE);
             result = quote_func (file, FALSE);
             g_free (file);
             goto ret;

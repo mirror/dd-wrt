@@ -13,6 +13,7 @@ SYNTAXFILES =			\
 	cabal.syntax		\
 	changelog.syntax	\
 	cmake.syntax		\
+	cobol.syntax		\
 	cs.syntax		\
 	css.syntax		\
 	cuda.syntax		\
@@ -43,6 +44,7 @@ SYNTAXFILES =			\
 	jal.syntax		\
 	java.syntax		\
 	js.syntax		\
+	kotlin.syntax		\
 	latex.syntax		\
 	lisp.syntax		\
 	lkr.syntax		\

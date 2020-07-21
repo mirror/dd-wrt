@@ -1,7 +1,7 @@
 /*
    lib/vfs - test vfs_parse_ls_lga() functionality
 
-   Copyright (C) 2011-2019
+   Copyright (C) 2011-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,6 +55,7 @@ setup (void)
 {
     static struct stat initstat;
 
+    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -80,6 +81,7 @@ teardown (void)
     vfs_s_free_entry (vfs_test_ops1, vfs_root_entry);
     vfs_shut ();
     str_uninit_strings ();
+    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */

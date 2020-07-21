@@ -3,7 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2019
+# Antoni Bella Pérez <antonibella5@yahoo.com>, 2017-2020
 # Daniel <danicases@gmail.com>, 2011
 # Daniel <danicases@gmail.com>, 2011-2012
 # Daniel <danicases@gmail.com>, 2012
@@ -16,8 +16,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-22 22:08+0000\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-18 08:43+0000\n"
 "Last-Translator: Antoni Bella Pérez <antonibella5@yahoo.com>\n"
 "Language-Team: Catalan (http://www.transifex.com/mc/mc/language/ca/)\n"
 "Language: ca\n"
@@ -496,14 +496,31 @@ msgstr "La variable d'entorn TERM no està definida!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr "No s'ha pogut comprovar la canonada SIGWINCH"
 
-msgid "Cannot create pipe for SIGWINCH"
-msgstr "No s'han pogut crear la canonada per a SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
+msgstr ""
+"\n"
+"No s'ha pogut crear una canonada per a SIGWINCH: %s (%d)\n"
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr "No s'ha pogut configurar l'escriptura final de la canonada SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"No s'ha pogut configurar el final de l'escriptura de la canonada SIGWINCH: "
+"%s (%d)\n"
 
-msgid "Cannot configure read end of SIGWINCH pipe"
-msgstr "No s'ha pogut configurar la lectura final de la canonada SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"No s'ha pogut configurar el final de la lectura de la canonada SIGWINCH: %s "
+"(%d)\n"
 
 #, c-format
 msgid ""
@@ -1140,9 +1157,6 @@ msgstr "Canvia els salts de línia a:"
 msgid "Save As"
 msgstr "Desa com a"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "El bloc és gran, potser no pudreu desfer aquesta acció."
-
 msgid "Collect completions"
 msgstr "Recull completat"
 
@@ -1343,7 +1357,7 @@ msgstr "Premeu una tecla: "
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "El text actual ha estat modificat sense desar-lo a un fitxer.\n"
 "Continueu i es descartaran aquests canvis."
@@ -1374,13 +1388,6 @@ msgstr "Consigna la substitució"
 
 msgid "Cancel"
 msgstr "Cancel·la"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"El text actual ha estat modificat sense desar-lo a un fitxer.\n"
-"Continueu i es descartaran aquests canvis."
 
 msgid "NoName"
 msgstr "Sense nom"
@@ -1680,8 +1687,8 @@ msgstr ""
 "Un editor de text fàcil d'emprar\n"
 "escrit per al Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2019 la Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr "Copyright (C) 1996-2020 la Free Software Foundation"
 
 msgid "About"
 msgstr "Quant a"
@@ -1835,10 +1842,10 @@ msgstr "La shell ja està executant una ordre"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"No feu servir ni xterm ni una consola Linux.\n"
-"No podreu alternar entre els plafons."
+"No és una consola «xterm» o Linux;\n"
+"no es pot alternar el subintèrpret d'ordres."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Escriviu «exit» per tornar al Midnight Commander"
@@ -1863,6 +1870,10 @@ msgstr "altres"
 
 msgid "Flag"
 msgstr "Bandera"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr "Permisos (octal): %o"
 
 msgid "Chown advanced command"
 msgstr "Ordre del canvi avançat del propietari"
@@ -2211,6 +2222,105 @@ msgstr "Nom d'usuari:"
 msgid "SMB authentication"
 msgstr "Autenticació SMB"
 
+msgid "Secure deletion"
+msgstr "Supressió segura"
+
+msgid "Undelete"
+msgstr "Recupera"
+
+msgid "Synchronous updates"
+msgstr "Actualitzacions sincròniques"
+
+msgid "Synchronous directory updates"
+msgstr "Actualitzacions sincròniques del directori"
+
+msgid "Immutable"
+msgstr "Immutable"
+
+msgid "Append only"
+msgstr "Només annexar"
+
+msgid "No dump"
+msgstr "No bolcar"
+
+msgid "No update atime"
+msgstr "No actualitzar «atime»"
+
+msgid "Compress"
+msgstr "Comprimeix"
+
+msgid "Compressed clusters"
+msgstr "Clústers comprimits"
+
+msgid "Compressed dirty file"
+msgstr "Fitxer en brut comprimit"
+
+msgid "Compression raw access"
+msgstr "Compressió amb accès sense processar"
+
+msgid "Encrypted inode"
+msgstr "Inode encriptat"
+
+msgid "Journaled data"
+msgstr "Dades amb diari"
+
+msgid "Indexed directory"
+msgstr "Directori indexat"
+
+msgid "No tail merging"
+msgstr "No fusionar els «tail»"
+
+msgid "Top of directory hierarchies"
+msgstr "Començament de les jerarquies de directori"
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "&Marca'ls tots"
+
+msgid "S&et marked"
+msgstr "&Posa els marcats"
+
+msgid "C&lear marked"
+msgstr "&Esborra els marcats"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "estableix l'ID d'&usuari en l'execució"
 
@@ -2258,15 +2368,6 @@ msgstr "Nom del propietari:"
 
 msgid "Group name:"
 msgstr "Nom del grup:"
-
-msgid "&Marked all"
-msgstr "&Marca'ls tots"
-
-msgid "S&et marked"
-msgstr "&Posa els marcats"
-
-msgid "C&lear marked"
-msgstr "&Esborra els marcats"
 
 msgid "Chmod command"
 msgstr "Canvi dels permisos"
@@ -3250,6 +3351,16 @@ msgstr "Propietari: %s/%s"
 msgid "Links:      %d"
 msgstr "Enllaços:   %d"
 
+msgid "Attributes: not supported"
+msgstr "Atributs: no admesos"
+
+#, c-format
+msgid "Attributes: %s"
+msgstr "Atributs: %s"
+
+msgid "Attributes: unavailable"
+msgstr "Atributs: no disponibles"
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Mode:       %s (%04o)"
@@ -3368,6 +3479,9 @@ msgstr "Can&via el propietari"
 
 msgid "&Advanced chown"
 msgstr "C&anvi avançat del propietari"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "&Reanomena/Mou"
@@ -3842,6 +3956,15 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "El camí del directori d'inici no és absolut"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+"El Midnight Commander de GNU\n"
+"ja s'està executant en aquest terminal.\n"
+"La implementació del subintèrpret d'ordres està inhabilitada."
+
 #, c-format
 msgid ""
 "\n"
@@ -3872,15 +3995,6 @@ msgstr ""
 "No s'ha pogut desar el fitxer %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander està\n"
-"funcionant en aquest terminal.\n"
-"El suport Subshell es desactivarà."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "No s'ha pogut obrir la canonada anomenada %s\n"
@@ -3892,55 +4006,64 @@ msgstr "L'intèrpret d'ordres encara està actiu. Surto de totes maneres?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Avís: no s'ha pogut canviar a %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Emprant la biblioteca «S-Lang» amb la base de dades «terminfo»\n"
+msgid "With builtin Editor and Aspell support"
+msgstr "Amb la implementació incorporada de l'Editor i Aspell"
 
-msgid "Using the ncurses library\n"
-msgstr "Emprant la biblioteca «ncurses»\n"
+msgid "With builtin Editor"
+msgstr "Amb l'editor integrat"
 
-msgid "Using the ncursesw library\n"
-msgstr "Emprant la biblioteca «ncursesw»\n"
+msgid "With optional subshell support"
+msgstr "Amb la implementació opcional del subintèrpret d'ordres"
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Amb editor incorporat i implementació per a Aspell\n"
+msgid "With subshell support as default"
+msgstr "Amb la implementació del subintèrpret d'ordres com a predeterminat"
 
-msgid "With builtin Editor\n"
-msgstr "Amb editor incorporat\n"
+msgid "With support for background operations"
+msgstr "Amb la implementació per a operacions en segon pla"
 
-msgid "With optional subshell support\n"
-msgstr "Amb implementació opcional de subintèrpret\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr "Amb la implementació per al ratolí a xterm i a la consola de Linux"
 
-msgid "With subshell support as default\n"
-msgstr "Amb implementació de subintèrpret per omissió\n"
+msgid "With mouse support on xterm"
+msgstr "Amb la implementació per al ratolí a xterm"
 
-msgid "With support for background operations\n"
-msgstr "Amb implementació per a operacions en segon pla\n"
+msgid "With support for X11 events"
+msgstr "Amb la implementació per als esdeveniments d'X11"
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr ""
-"Amb la possibilitat d'emprar el ratolí al xterm i a la consola de Linux\n"
+msgid "With internationalization support"
+msgstr "Amb la implementació per a la internacionalització"
 
-msgid "With mouse support on xterm\n"
-msgstr "Amb la possibilitat d'emprar el ratolí al xterm.\n"
+msgid "With multiple codepages support"
+msgstr "Amb la implementació per a múltiples pàgines de codi"
 
-msgid "With support for X11 events\n"
-msgstr "Amb la possibilitat d'emprar els esdeveniments de l'X11\n"
-
-msgid "With internationalization support\n"
-msgstr "Amb implementació de la internacionalització\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Amb implementació per a múltiples pàgines de codis\n"
+msgid "With ext2fs attributes support"
+msgstr "Amb la implementació dels atributs «ext2fs»"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Construït amb GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr "Construïda amb S-Lang %s amb base de dades terminfo\n"
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr "Construïda amb ncurses %s\n"
+
+msgid "Built with ncurses (unknown version)"
+msgstr "Construïda amb ncurses (versió desconeguda)"
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr "Construïda amb ncursesw %s\n"
+
+msgid "Built with ncursesw (unknown version)"
+msgstr "Construïda amb ncursesw (versió desconeguda)"
+
 msgid "Virtual File Systems:"
 msgstr "Sistemes de fitxers virtuals:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Tipus de dades:"
 

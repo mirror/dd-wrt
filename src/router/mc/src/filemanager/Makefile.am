@@ -14,7 +14,7 @@ libmcfilemanager_la_SOURCES = \
 	filegui.c filegui.h \
 	filenot.c filenot.h \
 	fileopctx.c fileopctx.h \
-	find.c find.h \
+	find.c \
 	hotlist.c hotlist.h \
 	info.c info.h \
 	ioblksize.h \
@@ -30,5 +30,12 @@ libmcfilemanager_la_SOURCES = \
 #	listmode.c listmode.h
 
 AM_CPPFLAGS = -I$(top_srcdir) $(GLIB_CFLAGS) $(PCRE_CPPFLAGS)
+
+if ENABLE_EXT2FS_ATTR
+libmcfilemanager_la_SOURCES += \
+	chattr.c chattr.h
+
+AM_CPPFLAGS += @EXT2FS_CFLAGS@ @E2P_CFLAGS@
+endif
 
 libmcfilemanager_la_LIBADD = ../../lib/libmc.la

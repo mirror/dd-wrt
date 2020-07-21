@@ -121,6 +121,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-with-internal-edit.m4 \
 	$(top_srcdir)/m4.include/mc-subshell.m4 \
 	$(top_srcdir)/m4.include/mc-background.m4 \
+	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -295,11 +296,15 @@ DX_MAKEINDEX = @DX_MAKEINDEX@
 DX_PDFLATEX = @DX_PDFLATEX@
 DX_PERL = @DX_PERL@
 DX_PROJECT = @DX_PROJECT@
+E2P_CFLAGS = @E2P_CFLAGS@
+E2P_LIBS = @E2P_LIBS@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
+EXT2FS_LIBS = @EXT2FS_LIBS@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@

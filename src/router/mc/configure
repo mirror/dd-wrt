@@ -733,6 +733,12 @@ UNZIP
 ZIP
 ENABLE_VFS_CPIO_FALSE
 ENABLE_VFS_CPIO_TRUE
+ENABLE_EXT2FS_ATTR_FALSE
+ENABLE_EXT2FS_ATTR_TRUE
+E2P_LIBS
+E2P_CFLAGS
+EXT2FS_LIBS
+EXT2FS_CFLAGS
 ENABLE_BACKGROUND_FALSE
 ENABLE_BACKGROUND_TRUE
 ENABLE_SUBSHELL_FALSE
@@ -996,6 +1002,10 @@ GMODULE_LIBS
 SLANG_CFLAGS
 SLANG_LIBS
 XMKMF
+EXT2FS_CFLAGS
+EXT2FS_LIBS
+E2P_CFLAGS
+E2P_LIBS
 LIBSSH_CFLAGS
 LIBSSH_LIBS
 DOXYGEN_PAPER_SIZE'
@@ -1747,6 +1757,11 @@ Some influential environment variables:
               C compiler flags for SLANG, overriding pkg-config
   SLANG_LIBS  linker flags for SLANG, overriding pkg-config
   XMKMF       Path to xmkmf, Makefile generator for X Window System
+  EXT2FS_CFLAGS
+              C compiler flags for EXT2FS, overriding pkg-config
+  EXT2FS_LIBS linker flags for EXT2FS, overriding pkg-config
+  E2P_CFLAGS  C compiler flags for E2P, overriding pkg-config
+  E2P_LIBS    linker flags for E2P, overriding pkg-config
   LIBSSH_CFLAGS
               C compiler flags for LIBSSH, overriding pkg-config
   LIBSSH_LIBS linker flags for LIBSSH, overriding pkg-config
@@ -15817,12 +15832,12 @@ if test -n "$GLIB_CFLAGS"; then
     pkg_cv_GLIB_CFLAGS="$GLIB_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GLIB_CFLAGS=`$PKG_CONFIG --cflags "glib-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15834,12 +15849,12 @@ if test -n "$GLIB_LIBS"; then
     pkg_cv_GLIB_LIBS="$GLIB_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"glib-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "glib-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GLIB_LIBS=`$PKG_CONFIG --libs "glib-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15860,9 +15875,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.26" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "glib-2.0 >= 2.30" 2>&1`
         else
-	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.26" 2>&1`
+	        GLIB_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "glib-2.0 >= 2.30" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GLIB_PKG_ERRORS" >&5
@@ -15880,7 +15895,7 @@ $as_echo "yes" >&6; }
 	glib_found=yes
 fi
     if test x"$glib_found" = xno; then
-        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.26)" "$LINENO" 5
+        as_fn_error $? "glib-2.0 not found or version too old (must be >= 2.30)" "$LINENO" 5
     fi
 
 
@@ -15898,12 +15913,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-no-export-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15915,12 +15930,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-no-export-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-no-export-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-no-export-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15941,9 +15956,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.26" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.30" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.26" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-no-export-2.0 >= 2.30" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -15972,12 +15987,12 @@ if test -n "$GMODULE_CFLAGS"; then
     pkg_cv_GMODULE_CFLAGS="$GMODULE_CFLAGS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GMODULE_CFLAGS=`$PKG_CONFIG --cflags "gmodule-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -15989,12 +16004,12 @@ if test -n "$GMODULE_LIBS"; then
     pkg_cv_GMODULE_LIBS="$GMODULE_LIBS"
  elif test -n "$PKG_CONFIG"; then
     if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.26\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.26") 2>&5
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"gmodule-2.0 >= 2.30\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "gmodule-2.0 >= 2.30") 2>&5
   ac_status=$?
   $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
   test $ac_status = 0; }; then
-  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.26" 2>/dev/null`
+  pkg_cv_GMODULE_LIBS=`$PKG_CONFIG --libs "gmodule-2.0 >= 2.30" 2>/dev/null`
 		      test "x$?" != "x0" && pkg_failed=yes
 else
   pkg_failed=yes
@@ -16015,9 +16030,9 @@ else
         _pkg_short_errors_supported=no
 fi
         if test $_pkg_short_errors_supported = yes; then
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.26" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "gmodule-2.0 >= 2.30" 2>&1`
         else
-	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.26" 2>&1`
+	        GMODULE_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "gmodule-2.0 >= 2.30" 2>&1`
         fi
 	# Put the nasty error message in config.log where it belongs
 	echo "$GMODULE_PKG_ERRORS" >&5
@@ -24105,6 +24120,182 @@ fi
 
 
 
+    ext2fs_attr_msg="no"
+
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXT2FS" >&5
+$as_echo_n "checking for EXT2FS... " >&6; }
+
+if test -n "$EXT2FS_CFLAGS"; then
+    pkg_cv_EXT2FS_CFLAGS="$EXT2FS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ext2fs >= 1.42.4\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ext2fs >= 1.42.4") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXT2FS_CFLAGS=`$PKG_CONFIG --cflags "ext2fs >= 1.42.4" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$EXT2FS_LIBS"; then
+    pkg_cv_EXT2FS_LIBS="$EXT2FS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"ext2fs >= 1.42.4\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "ext2fs >= 1.42.4") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_EXT2FS_LIBS=`$PKG_CONFIG --libs "ext2fs >= 1.42.4" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        EXT2FS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "ext2fs >= 1.42.4" 2>&1`
+        else
+	        EXT2FS_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "ext2fs >= 1.42.4" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$EXT2FS_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	EXT2FS_CFLAGS=$pkg_cv_EXT2FS_CFLAGS
+	EXT2FS_LIBS=$pkg_cv_EXT2FS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	found_ext2fs=yes
+fi
+
+    if test x"$found_ext2fs" = "xyes"; then
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for E2P" >&5
+$as_echo_n "checking for E2P... " >&6; }
+
+if test -n "$E2P_CFLAGS"; then
+    pkg_cv_E2P_CFLAGS="$E2P_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"e2p >= 1.42.4\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "e2p >= 1.42.4") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_E2P_CFLAGS=`$PKG_CONFIG --cflags "e2p >= 1.42.4" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$E2P_LIBS"; then
+    pkg_cv_E2P_LIBS="$E2P_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"e2p >= 1.42.4\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "e2p >= 1.42.4") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_E2P_LIBS=`$PKG_CONFIG --libs "e2p >= 1.42.4" 2>/dev/null`
+		      test "x$?" != "x0" && pkg_failed=yes
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+   	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        E2P_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors --cflags --libs "e2p >= 1.42.4" 2>&1`
+        else
+	        E2P_PKG_ERRORS=`$PKG_CONFIG --print-errors --cflags --libs "e2p >= 1.42.4" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$E2P_PKG_ERRORS" >&5
+
+	:
+elif test $pkg_failed = untried; then
+     	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+	:
+else
+	E2P_CFLAGS=$pkg_cv_E2P_CFLAGS
+	E2P_LIBS=$pkg_cv_E2P_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	found_e2p=yes
+fi
+
+        if test x"$found_e2p" = "xyes"; then
+
+$as_echo "#define ENABLE_EXT2FS_ATTR 1" >>confdefs.h
+
+
+
+            MCLIBS="$MCLIBS $E2P_LIBS"
+            ext2fs_attr_msg="yes"
+        else
+            { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: e2p library not found or version too old (must be >= 1.42.4)" >&5
+$as_echo "$as_me: WARNING: e2p library not found or version too old (must be >= 1.42.4)" >&2;}
+            ext2fs_attr_msg="no"
+        fi
+    else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: ext2fs library not found or version too old (must be >= 1.42.4)" >&5
+$as_echo "$as_me: WARNING: ext2fs library not found or version too old (must be >= 1.42.4)" >&2;}
+        ext2fs_attr_msg="no"
+    fi
+
+     if test "x$ext2fs_attr_msg" = "xyes"; then
+  ENABLE_EXT2FS_ATTR_TRUE=
+  ENABLE_EXT2FS_ATTR_FALSE='#'
+else
+  ENABLE_EXT2FS_ATTR_TRUE='#'
+  ENABLE_EXT2FS_ATTR_FALSE=
+fi
+
+
+
 
 
     vfs_type="normal"
@@ -27227,6 +27418,10 @@ if test -z "${ENABLE_BACKGROUND_TRUE}" && test -z "${ENABLE_BACKGROUND_FALSE}"; 
   as_fn_error $? "conditional \"ENABLE_BACKGROUND\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${ENABLE_EXT2FS_ATTR_TRUE}" && test -z "${ENABLE_EXT2FS_ATTR_FALSE}"; then
+  as_fn_error $? "conditional \"ENABLE_EXT2FS_ATTR\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${ENABLE_VFS_CPIO_TRUE}" && test -z "${ENABLE_VFS_CPIO_FALSE}"; then
   as_fn_error $? "conditional \"ENABLE_VFS_CPIO\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -29935,43 +30130,45 @@ fi
 
 Configuration:
 
-  Source code location:       ${srcdir}
-  Compiler:                   ${CC}
-  Compiler flags:             ${CFLAGS}
-  Assertions:                 ${enable_assert}
-  Unit tests:                 ${tests_msg}
-  File system:                ${vfs_type}
-                              ${vfs_flags}
-  Screen library:             ${screen_msg}
-  Mouse support:              ${mouse_lib}
-  X11 events support:         ${textmode_x11_support}
-  With subshell support:      ${subshell}
-  With background operations: ${enable_background}
-  Internal editor:            ${edit_msg}
-  Diff viewer:                ${diff_msg}
-  Support for charset:        ${charset_msg}
-  Search type:                ${SEARCH_TYPE}
+  Source code location:           ${srcdir}
+  Compiler:                       ${CC}
+  Compiler flags:                 ${CFLAGS}
+  Assertions:                     ${enable_assert}
+  Unit tests:                     ${tests_msg}
+  File system:                    ${vfs_type}
+                                  ${vfs_flags}
+  Screen library:                 ${screen_msg}
+  Mouse support:                  ${mouse_lib}
+  X11 events support:             ${textmode_x11_support}
+  With subshell support:          ${subshell}
+  With background operations:     ${enable_background}
+  With ext2fs attributes support: ${ext2fs_attr_msg}
+  Internal editor:                ${edit_msg}
+  Diff viewer:                    ${diff_msg}
+  Support for charset:            ${charset_msg}
+  Search type:                    ${SEARCH_TYPE}
 " >&5
 $as_echo "$as_me:
 
 Configuration:
 
-  Source code location:       ${srcdir}
-  Compiler:                   ${CC}
-  Compiler flags:             ${CFLAGS}
-  Assertions:                 ${enable_assert}
-  Unit tests:                 ${tests_msg}
-  File system:                ${vfs_type}
-                              ${vfs_flags}
-  Screen library:             ${screen_msg}
-  Mouse support:              ${mouse_lib}
-  X11 events support:         ${textmode_x11_support}
-  With subshell support:      ${subshell}
-  With background operations: ${enable_background}
-  Internal editor:            ${edit_msg}
-  Diff viewer:                ${diff_msg}
-  Support for charset:        ${charset_msg}
-  Search type:                ${SEARCH_TYPE}
+  Source code location:           ${srcdir}
+  Compiler:                       ${CC}
+  Compiler flags:                 ${CFLAGS}
+  Assertions:                     ${enable_assert}
+  Unit tests:                     ${tests_msg}
+  File system:                    ${vfs_type}
+                                  ${vfs_flags}
+  Screen library:                 ${screen_msg}
+  Mouse support:                  ${mouse_lib}
+  X11 events support:             ${textmode_x11_support}
+  With subshell support:          ${subshell}
+  With background operations:     ${enable_background}
+  With ext2fs attributes support: ${ext2fs_attr_msg}
+  Internal editor:                ${edit_msg}
+  Diff viewer:                    ${diff_msg}
+  Support for charset:            ${charset_msg}
+  Search type:                    ${SEARCH_TYPE}
 " >&6;}
 
 if test -n "$ac_unrecognized_opts"; then

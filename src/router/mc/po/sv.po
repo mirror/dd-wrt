@@ -9,15 +9,15 @@
 # Jonas Hultén <jonas@kollektivet.nu>, 2017
 # MagnusHerrlin <m8618@abc.se>, 2016
 # MagnusHerrlin <m8618@abc.se>, 2016
-# Sebastian Rasmussen <sebras@gmail.com>, 2019
+# Sebastian Rasmussen <sebras@gmail.com>, 2019-2020
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Swedish (http://www.transifex.com/mc/mc/language/sv/)\n"
 "Language: sv\n"
 "MIME-Version: 1.0\n"
@@ -490,15 +490,24 @@ msgid "The TERM environment variable is unset!\n"
 msgstr "Omgivningsvariablen TERM är inte satt!\n"
 
 msgid "Cannot check SIGWINCH pipe"
+msgstr "Kan inte kontrollera SIGWINCH-tunnel"
+
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr ""
-
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1135,9 +1144,6 @@ msgstr "Ändra radbrytningar till:"
 msgid "Save As"
 msgstr "Spara som"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Stort block, du kanske inte kan ångra denna åtgärd"
-
 msgid "Collect completions"
 msgstr "Samlar in kompletteringar"
 
@@ -1336,10 +1342,10 @@ msgstr "Tryck på valfri tangent:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Nuvarande text har modifierats utan att sparas.\n"
-"Fortsätt kastar bort dessa ändringar"
+"Fortsätt kastar bort dessa ändringar."
 
 msgid "In se&lection"
 msgstr "&I markerat"
@@ -1368,13 +1374,6 @@ msgstr "Bekräfta ersätt"
 msgid "Cancel"
 msgstr "Avbryt"
 
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Nuvarande text har modifierats utan att sparas.\n"
-"Fortsätt kastar bort dessa ändringar."
-
 msgid "NoName"
 msgstr "Namnlös"
 
@@ -1388,7 +1387,7 @@ msgid "&Close"
 msgstr "S&täng"
 
 msgid "&History..."
-msgstr ""
+msgstr "&Historik…"
 
 msgid "Save &as..."
 msgstr "Spa&ra som..."
@@ -1673,8 +1672,8 @@ msgstr ""
 "En användarvänlig texteditor\n"
 "skriven för Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2019 Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Om"
@@ -1828,10 +1827,8 @@ msgstr "Skalet kör redan ett kommando"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Inte en xterm- eller linuxterminal;\n"
-"panelerna kan inte slås av/på."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Skriv 'exit' för att återvända till Midnight Commander"
@@ -1856,6 +1853,10 @@ msgstr "andra"
 
 msgid "Flag"
 msgstr "Flagga"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Avancerat chown-kommando"
@@ -2204,6 +2205,105 @@ msgstr "Användarnamn:"
 msgid "SMB authentication"
 msgstr "SMB-autentisering"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "Skriv &markerade"
+
+msgid "S&et marked"
+msgstr "Sä&tt markerade"
+
+msgid "C&lear marked"
+msgstr "N&ollställ markerade"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "sätt användar-I&D vid exekvering"
 
@@ -2251,15 +2351,6 @@ msgstr "Ägarnamn:"
 
 msgid "Group name:"
 msgstr "Gruppnamn:"
-
-msgid "&Marked all"
-msgstr "Skriv &markerade"
-
-msgid "S&et marked"
-msgstr "Sä&tt markerade"
-
-msgid "C&lear marked"
-msgstr "N&ollställ markerade"
 
 msgid "Chmod command"
 msgstr "Chmod kommandot"
@@ -3242,6 +3333,16 @@ msgstr "Ägare:      %s/%s"
 msgid "Links:      %d"
 msgstr "Länkar:     %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Läge:       %s (%04o)"
@@ -3361,6 +3462,9 @@ msgstr "Ch&own"
 msgid "&Advanced chown"
 msgstr "Ava&ncerad chown"
 
+msgid "Cha&ttr"
+msgstr ""
+
 msgid "&Rename/Move"
 msgstr "&Döp om/flytta"
 
@@ -3413,7 +3517,7 @@ msgid "Command &history"
 msgstr "Kommando-&historik"
 
 msgid "Viewed/edited files hi&story"
-msgstr ""
+msgstr "Hi&storik över visade/redigerade filer"
 
 msgid "Di&rectory hotlist"
 msgstr "Katalog&favoriter"
@@ -3829,6 +3933,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Hemkatalogsökvägen är inte absolut"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3859,15 +3969,6 @@ msgstr ""
 "Sparning av filen %s misslyckades:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander körs redan\n"
-"i den här terminalen. Underskal-\n"
-"support kommer att inaktiveras."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Kan inte öppna namngiven tunnel %s\n"
@@ -3879,54 +3980,64 @@ msgstr "Skalet är fortfarande aktivt. Avsluta ändå?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Varning: Kan inte byta till %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Använder S-Lang-biblioteket med terminfo-databas\n"
+msgid "With builtin Editor and Aspell support"
+msgstr ""
 
-msgid "Using the ncurses library\n"
-msgstr "Använder ncurses-biblioteket\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "Using the ncursesw library\n"
-msgstr "Använder ncursesw-biblioteket\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Med inbyggd redigerare och stöd för aspell\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "Med inbyggd editor\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "Med valbar underskalsupport\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Med underskalsupport förvalt\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Med stöd för bakgrundsoperationer\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Med stöd för mus på xterm och linuxkonsoll\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "Med stöd för mus på xterm\n"
+msgid "With multiple codepages support"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "Med stöd för X11-händelser\n"
-
-msgid "With internationalization support\n"
-msgstr "Med internationaliseringsstöd\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Med stöd för flera teckenöversättningar\n"
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Byggd med GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Virtuella filsystem:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Datatyper:"
 

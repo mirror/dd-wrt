@@ -10,7 +10,7 @@
    Janne Kukonlehto added much error recovery to them for being used
    in an interactive program.
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -93,7 +93,7 @@
 #define STRUCT_STATVFS struct statvfs
 #define STATFS statvfs
 
-#if __linux__ && (__GLIBC__ || __UCLIBC__)
+#if defined __linux__ && (defined __GLIBC__ || defined __UCLIBC__)
 #include <sys/utsname.h>
 #include <sys/statfs.h>
 #define STAT_STATFS2_BSIZE 1
@@ -272,7 +272,7 @@ static struct
 static int
 statvfs_works (void)
 {
-#if ! (__linux__ && (__GLIBC__ || __UCLIBC__))
+#if ! (defined __linux__ && (defined __GLIBC__ || defined __UCLIBC__))
     return 1;
 #else
     static int statvfs_works_cache = -1;
@@ -413,16 +413,15 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
     W(i) = WIDGET (label_new (dlg_widgets[i].y, dlg_widgets[i].x, text))
 
 #define ADD_LABEL(i) \
-    add_widget_autopos (ui->replace_dlg, W(i), dlg_widgets[i].pos_flags, \
-                        ui->replace_dlg->current != NULL ? ui->replace_dlg->current->data : NULL)
+    group_add_widget_autopos (g, W(i), dlg_widgets[i].pos_flags, \
+                              g->current != NULL ? g->current->data : NULL)
 
 #define NEW_BUTTON(i) \
     W(i) = WIDGET (button_new (dlg_widgets[i].y, dlg_widgets[i].x, \
                                dlg_widgets[i].value, NORMAL_BUTTON, dlg_widgets[i].text, NULL))
 
 #define ADD_BUTTON(i) \
-    add_widget_autopos (ui->replace_dlg, W(i), dlg_widgets[i].pos_flags, \
-                        ui->replace_dlg->current->data)
+    group_add_widget_autopos (g, W(i), dlg_widgets[i].pos_flags, g->current->data)
 
     /* dialog sizes */
     const int dlg_height = 17;
@@ -491,6 +490,7 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
 
     file_op_context_ui_t *ui = ctx->ui;
     Widget *wd;
+    WGroup *g;
     const char *title;
 
     vfs_path_t *p;
@@ -640,11 +640,12 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
         dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, alarm_colors, NULL, NULL,
                     "[Replace]", title);
     wd = WIDGET (ui->replace_dlg);
+    g = GROUP (ui->replace_dlg);
 
     /* file info */
     for (i = 0; i <= 7; i++)
         ADD_LABEL (i);
-    add_widget (ui->replace_dlg, hline_new (W (7)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (W (7)->y - wd->y + 1, -1, -1));
 
     /* label & buttons */
     ADD_LABEL (8);              /* Overwrite this file? */
@@ -654,18 +655,18 @@ overwrite_query_dialog (file_op_context_t * ctx, enum OperationMode mode)
         ADD_BUTTON (11);        /* Append */
     if (do_reget)
         ADD_BUTTON (12);        /* Reget */
-    add_widget (ui->replace_dlg, hline_new (W (10)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (W (10)->y - wd->y + 1, -1, -1));
 
     /* label & buttons */
     ADD_LABEL (13);             /* Overwrite all files? */
-    add_widget (ui->replace_dlg, dlg_widgets[14].widget);
+    group_add_widget (g, dlg_widgets[14].widget);
     for (i = 15; i <= 19; i++)
         ADD_BUTTON (i);
-    add_widget (ui->replace_dlg, hline_new (W (19)->y - wd->y + 1, -1, -1));
+    group_add_widget (g, hline_new (W (19)->y - wd->y + 1, -1, -1));
 
     ADD_BUTTON (20);            /* Abort */
 
-    dlg_select_by_id (ui->replace_dlg, safe_overwrite ? no_id : yes_id);
+    group_select_widget_by_id (g, safe_overwrite ? no_id : yes_id);
 
     result = dlg_run (ui->replace_dlg);
 
@@ -773,7 +774,7 @@ check_progress_buttons (file_op_context_t * ctx)
         {
             /* redraw dialog in case of Skip after Suspend */
             place_progress_buttons (ui->op_dlg, FALSE);
-            dlg_draw (ui->op_dlg);
+            widget_draw (WIDGET (ui->op_dlg));
         }
         ctx->suspended = FALSE;
         return FILE_SKIP;
@@ -784,7 +785,7 @@ check_progress_buttons (file_op_context_t * ctx)
     case FILE_SUSPEND:
         ctx->suspended = !ctx->suspended;
         place_progress_buttons (ui->op_dlg, ctx->suspended);
-        dlg_draw (ui->op_dlg);
+        widget_draw (WIDGET (ui->op_dlg));
         MC_FALLTHROUGH;
     default:
         if (ctx->suspended)
@@ -801,6 +802,8 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
                            filegui_dialog_type_t dialog_type)
 {
     file_op_context_ui_t *ui;
+    Widget *w;
+    WGroup *g;
     int buttons_width;
     int dlg_width = 58, dlg_height = 17;
     int y = 2, x = 3;
@@ -828,6 +831,8 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     ui->op_dlg =
         dlg_create (TRUE, 0, 0, dlg_height, dlg_width, WPOS_CENTER, FALSE, dialog_colors, NULL,
                     NULL, NULL, op_names[ctx->operation]);
+    w = WIDGET (ui->op_dlg);
+    g = GROUP (ui->op_dlg);
 
     if (dialog_type != FILEGUI_DIALOG_DELETE_ITEM)
     {
@@ -835,30 +840,29 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
         ui->showing_bps = with_eta;
 
         ui->src_file_label = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->src_file_label);
+        group_add_widget (g, ui->src_file_label);
 
         ui->src_file = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->src_file);
+        group_add_widget (g, ui->src_file);
 
         ui->tgt_file_label = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->tgt_file_label);
+        group_add_widget (g, ui->tgt_file_label);
 
         ui->tgt_file = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->tgt_file);
+        group_add_widget (g, ui->tgt_file);
 
         ui->progress_file_gauge = gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
         if (!classic_progressbar && (current_panel == right_panel))
             ui->progress_file_gauge->from_left_to_right = FALSE;
-        add_widget_autopos (ui->op_dlg, ui->progress_file_gauge, WPOS_KEEP_TOP | WPOS_KEEP_HORZ,
-                            NULL);
+        group_add_widget_autopos (g, ui->progress_file_gauge, WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
 
         ui->progress_file_label = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->progress_file_label);
+        group_add_widget (g, ui->progress_file_label);
 
         if (verbose && dialog_type == FILEGUI_DIALOG_MULTI_ITEM)
         {
             ui->total_bytes_label = hline_new (y++, -1, -1);
-            add_widget (ui->op_dlg, ui->total_bytes_label);
+            group_add_widget (g, ui->total_bytes_label);
 
             if (ctx->progress_totals_computed)
             {
@@ -866,27 +870,27 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
                     gauge_new (y++, x + 3, dlg_width - (x + 3) * 2, FALSE, 100, 0);
                 if (!classic_progressbar && (current_panel == right_panel))
                     ui->progress_total_gauge->from_left_to_right = FALSE;
-                add_widget_autopos (ui->op_dlg, ui->progress_total_gauge,
-                                    WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
+                group_add_widget_autopos (g, ui->progress_total_gauge,
+                                          WPOS_KEEP_TOP | WPOS_KEEP_HORZ, NULL);
             }
 
             ui->total_files_processed_label = label_new (y++, x, "");
-            add_widget (ui->op_dlg, ui->total_files_processed_label);
+            group_add_widget (g, ui->total_files_processed_label);
 
             ui->time_label = label_new (y++, x, "");
-            add_widget (ui->op_dlg, ui->time_label);
+            group_add_widget (g, ui->time_label);
         }
     }
     else
     {
         ui->src_file = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->src_file);
+        group_add_widget (g, ui->src_file);
 
         ui->total_files_processed_label = label_new (y++, x, "");
-        add_widget (ui->op_dlg, ui->total_files_processed_label);
+        group_add_widget (g, ui->total_files_processed_label);
     }
 
-    add_widget (ui->op_dlg, hline_new (y++, -1, -1));
+    group_add_widget (g, hline_new (y++, -1, -1));
 
     progress_buttons[0].w = WIDGET (button_new (y, 0, progress_buttons[0].action,
                                                 progress_buttons[0].flags, progress_buttons[0].text,
@@ -918,16 +922,16 @@ file_op_context_create_ui (file_op_context_t * ctx, gboolean with_eta,
     if (progress_buttons[3].len == -1)
         progress_buttons[3].len = button_get_len (BUTTON (progress_buttons[3].w));
 
-    add_widget (ui->op_dlg, progress_buttons[0].w);
-    add_widget (ui->op_dlg, progress_buttons[1].w);
-    add_widget (ui->op_dlg, progress_buttons[3].w);
+    group_add_widget (g, progress_buttons[0].w);
+    group_add_widget (g, progress_buttons[1].w);
+    group_add_widget (g, progress_buttons[3].w);
 
     buttons_width = 2 +
         progress_buttons[0].len + MAX (progress_buttons[1].len, progress_buttons[2].len) +
         progress_buttons[3].len;
 
     /* adjust dialog sizes  */
-    dlg_set_size (ui->op_dlg, y + 3, MAX (COLS * 2 / 3, buttons_width + 6));
+    widget_set_size (w, w->y, w->x, y + 3, MAX (COLS * 2 / 3, buttons_width + 6));
 
     place_progress_buttons (ui->op_dlg, FALSE);
 
@@ -963,7 +967,6 @@ file_progress_show (file_op_context_t * ctx, off_t done, off_t total,
                     const char *stalled_msg, gboolean force_update)
 {
     file_op_context_ui_t *ui;
-    char buffer[BUF_TINY];
 
     if (!verbose || ctx == NULL || ctx->ui == NULL)
         return;
@@ -982,25 +985,24 @@ file_progress_show (file_op_context_t * ctx, off_t done, off_t total,
     if (!force_update)
         return;
 
-    if (ui->showing_eta && ctx->eta_secs > 0.5)
+    if (!ui->showing_eta || ctx->eta_secs <= 0.5)
+        label_set_text (ui->progress_file_label, stalled_msg);
+    else
     {
         char buffer2[BUF_TINY];
 
         file_eta_prepare_for_show (buffer2, ctx->eta_secs, FALSE);
         if (ctx->bps == 0)
-            g_snprintf (buffer, sizeof (buffer), "%s %s", buffer2, stalled_msg);
+            label_set_textv (ui->progress_file_label, "%s %s", buffer2, stalled_msg);
         else
         {
             char buffer3[BUF_TINY];
 
             file_bps_prepare_for_show (buffer3, ctx->bps);
-            g_snprintf (buffer, sizeof (buffer), "%s (%s) %s", buffer2, buffer3, stalled_msg);
+            label_set_textv (ui->progress_file_label, "%s (%s) %s", buffer2, buffer3, stalled_msg);
         }
-    }
-    else
-        g_snprintf (buffer, sizeof (buffer), "%s", stalled_msg);
 
-    label_set_text (ui->progress_file_label, buffer);
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1008,7 +1010,6 @@ file_progress_show (file_op_context_t * ctx, off_t done, off_t total,
 void
 file_progress_show_count (file_op_context_t * ctx, size_t done, size_t total)
 {
-    char buffer[BUF_TINY];
     file_op_context_ui_t *ui;
 
     if (ctx == NULL || ctx->ui == NULL)
@@ -1020,10 +1021,10 @@ file_progress_show_count (file_op_context_t * ctx, size_t done, size_t total)
         return;
 
     if (ctx->progress_totals_computed)
-        g_snprintf (buffer, sizeof (buffer), _("Files processed: %zu/%zu"), done, total);
+        label_set_textv (ui->total_files_processed_label, _("Files processed: %zu/%zu"), done,
+                         total);
     else
-        g_snprintf (buffer, sizeof (buffer), _("Files processed: %zu"), done);
-    label_set_text (ui->total_files_processed_label, buffer);
+        label_set_textv (ui->total_files_processed_label, _("Files processed: %zu"), done);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1032,7 +1033,6 @@ void
 file_progress_show_total (file_op_total_context_t * tctx, file_op_context_t * ctx,
                           uintmax_t copied_bytes, gboolean show_summary)
 {
-    char buffer[BUF_TINY];
     char buffer2[BUF_TINY];
     char buffer3[BUF_TINY];
     file_op_context_ui_t *ui;
@@ -1069,26 +1069,23 @@ file_progress_show_total (file_op_total_context_t * tctx, file_op_context_t * ct
         {
             file_eta_prepare_for_show (buffer3, tctx->eta_secs, TRUE);
             if (tctx->bps == 0)
-                g_snprintf (buffer, sizeof (buffer), _("Time: %s %s"), buffer2, buffer3);
+                label_set_textv (ui->time_label, _("Time: %s %s"), buffer2, buffer3);
             else
             {
                 file_bps_prepare_for_show (buffer4, (long) tctx->bps);
-                g_snprintf (buffer, sizeof (buffer), _("Time: %s %s (%s)"), buffer2, buffer3,
-                            buffer4);
+                label_set_textv (ui->time_label, _("Time: %s %s (%s)"), buffer2, buffer3, buffer4);
             }
         }
         else
         {
             if (tctx->bps == 0)
-                g_snprintf (buffer, sizeof (buffer), _("Time: %s"), buffer2);
+                label_set_textv (ui->time_label, _("Time: %s"), buffer2);
             else
             {
                 file_bps_prepare_for_show (buffer4, (long) tctx->bps);
-                g_snprintf (buffer, sizeof (buffer), _("Time: %s (%s)"), buffer2, buffer4);
+                label_set_textv (ui->time_label, _("Time: %s (%s)"), buffer2, buffer4);
             }
         }
-
-        label_set_text (ui->time_label, buffer);
     }
 
     if (ui->total_bytes_label != NULL)
@@ -1096,14 +1093,12 @@ file_progress_show_total (file_op_total_context_t * tctx, file_op_context_t * ct
         size_trunc_len (buffer2, 5, tctx->copied_bytes, 0, panels_options.kilobyte_si);
 
         if (!ctx->progress_totals_computed)
-            g_snprintf (buffer, sizeof (buffer), _(" Total: %s "), buffer2);
+            hline_set_textv (ui->total_bytes_label, _(" Total: %s "), buffer2);
         else
         {
             size_trunc_len (buffer3, 5, ctx->progress_bytes, 0, panels_options.kilobyte_si);
-            g_snprintf (buffer, sizeof (buffer), _(" Total: %s/%s "), buffer2, buffer3);
+            hline_set_textv (ui->total_bytes_label, _(" Total: %s/%s "), buffer2, buffer3);
         }
-
-        hline_set_text (ui->total_bytes_label, buffer);
     }
 }
 

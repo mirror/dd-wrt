@@ -1,7 +1,7 @@
 /*
    File management.
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -792,7 +792,7 @@ panel_operate_init_totals (const WPanel * panel, const vfs_path_t * source,
         status = FILE_CONT;
         ctx->progress_count = panel->marked;
         ctx->progress_bytes = panel->total;
-        ctx->progress_totals_computed = FALSE;
+        ctx->progress_totals_computed = verbose && dialog_type == FILEGUI_DIALOG_ONE_ITEM;
     }
 
     /* destroy already created UI for single file rename operation */
@@ -3102,6 +3102,7 @@ void
 dirsize_status_init_cb (status_msg_t * sm)
 {
     dirsize_status_msg_t *dsm = (dirsize_status_msg_t *) sm;
+    WGroup *gd = GROUP (sm->dlg);
     Widget *wd = WIDGET (sm->dlg);
 
     const char *b1_name = N_("&Abort");
@@ -3119,17 +3120,17 @@ dirsize_status_init_cb (status_msg_t * sm)
 
     ui_width = MAX (COLS / 2, b_width + 6);
     dsm->dirname = label_new (2, 3, "");
-    add_widget (sm->dlg, dsm->dirname);
+    group_add_widget (gd, dsm->dirname);
     dsm->count_size = label_new (3, 3, "");
-    add_widget (sm->dlg, dsm->count_size);
-    add_widget (sm->dlg, hline_new (4, -1, -1));
+    group_add_widget (gd, dsm->count_size);
+    group_add_widget (gd, hline_new (4, -1, -1));
 
     dsm->abort_button = WIDGET (button_new (5, 3, FILE_ABORT, NORMAL_BUTTON, b1_name, NULL));
-    add_widget (sm->dlg, dsm->abort_button);
+    group_add_widget (gd, dsm->abort_button);
     if (dsm->allow_skip)
     {
         dsm->skip_button = WIDGET (button_new (5, 3, FILE_SKIP, NORMAL_BUTTON, b2_name, NULL));
-        add_widget (sm->dlg, dsm->skip_button);
+        group_add_widget (gd, dsm->skip_button);
         widget_select (dsm->skip_button);
     }
 
@@ -3152,9 +3153,10 @@ dirsize_status_update_cb (status_msg_t * sm)
     /* enlarge dialog if required */
     if (WIDGET (dsm->count_size)->cols + 6 > wd->cols)
     {
-        dlg_set_size (sm->dlg, wd->lines, WIDGET (dsm->count_size)->cols + 6);
+        widget_set_size (wd, wd->y, wd->x, wd->lines, WIDGET (dsm->count_size)->cols + 6);
         dirsize_status_locate_buttons (dsm);
-        dlg_draw (sm->dlg);
+        widget_draw (wd);
+        /* TODO: ret rid of double redraw */
     }
 
     /* adjust first label */

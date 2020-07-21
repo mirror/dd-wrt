@@ -16,8 +16,10 @@
 #define KEYMAP_SECTION_MENU "menu"
 #define KEYMAP_SECTION_INPUT "input"
 #define KEYMAP_SECTION_LISTBOX "listbox"
+#define KEYMAP_SECTION_RADIO "radio"
 #define KEYMAP_SECTION_TREE "tree"
 #define KEYMAP_SECTION_HELP "help"
+#define KEYMAP_SECTION_CHATTR "chattr"
 #define KEYMAP_SECTION_EDITOR "editor"
 #define KEYMAP_SECTION_EDITOR_EXT "editor:xmap"
 #define KEYMAP_SECTION_VIEWER "viewer"
@@ -67,6 +69,7 @@ enum
     CK_ChangeMode,
     CK_ChangeOwn,
     CK_ChangeOwnAdvanced,
+    CK_ChangeAttributes,
     CK_Remove,
     CK_BackSpace,
     CK_Redo,
@@ -228,6 +231,9 @@ enum
 
     /* tree */
     CK_Forget = 450L,
+
+    /* chattr dialog */
+    CK_MarkAndDown = 480L,
 
     /* editor */
     /* cursor movements */
