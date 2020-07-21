@@ -1,7 +1,7 @@
 /*
    lib/vfs - vfs_path_t charset recode functions
 
-   Copyright (C) 2011-2019
+   Copyright (C) 2011-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -65,6 +65,7 @@ teardown (void)
 static void
 test_init_vfs (const char *encoding)
 {
+    mc_global.timer = mc_timer_new ();
     str_init_strings (encoding);
 
     vfs_init ();
@@ -85,6 +86,7 @@ test_deinit_vfs (void)
     free_codepages_list ();
     str_uninit_strings ();
     vfs_shut ();
+    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */

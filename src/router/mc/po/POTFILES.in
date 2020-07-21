@@ -45,6 +45,7 @@ src/editor/syntax.c
 src/execute.c
 src/filemanager/achown.c
 src/filemanager/boxes.c
+src/filemanager/chattr.c
 src/filemanager/chmod.c
 src/filemanager/chown.c
 src/filemanager/cmd.c

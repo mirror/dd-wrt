@@ -10,16 +10,16 @@
 # Effede Effede <g2sainfroc@gmail.com>, 2016
 # Matthieu Crapet <mcrapet@gmail.com>, 2013-2016
 # Slava Zanko <slavazanko@gmail.com>, 2011
-# lkppo, 2012
+# 4a14a73d523224463300dea5e0502458_3dab472, 2012
 # Towinet, 2017
 # Yury V. Zaytsev <yury@shurup.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: French (http://www.transifex.com/mc/mc/language/fr/)\n"
 "Language: fr\n"
 "MIME-Version: 1.0\n"
@@ -497,13 +497,22 @@ msgstr "La variable d'environnement TERM n'est pas définie !\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1142,9 +1151,6 @@ msgstr "Changer la césure vers :"
 msgid "Save As"
 msgstr "Enregistrer sous"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Le bloc est grand, vous ne pourrez pas annuler cette action"
-
 msgid "Collect completions"
 msgstr "Collecter les complétions"
 
@@ -1345,10 +1351,10 @@ msgstr "Appuyez sur une touche:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
-"Le contenu courant a été modifié mais pas enregistré.\n"
-"Ignorer les changements et continuer"
+"Le fichier courant a été modifié mais pas enregistré.\n"
+"Les modifications seront perdues si vous continuez."
 
 msgid "In se&lection"
 msgstr "Dans la sé&lection"
@@ -1376,13 +1382,6 @@ msgstr "Confirmer le remplacement"
 
 msgid "Cancel"
 msgstr "Annuler"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Le fichier courant a été modifié mais pas enregistré.\n"
-"Les modifications seront perdues si vous continuez."
 
 msgid "NoName"
 msgstr "AucunNom"
@@ -1682,7 +1681,7 @@ msgstr ""
 "Un éditeur de text facile d'utilisation.\n"
 "écrit pour Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1837,10 +1836,8 @@ msgstr " Le shell est déjà en train d'exécuter une commande "
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"N'est pas un xterm ou une console Linux;\n"
-"les panneaux ne peuvent pas être activé."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tapez « exit » pour retourner à Midnight Commander"
@@ -1865,6 +1862,10 @@ msgstr "autres"
 
 msgid "Flag"
 msgstr "Drapeau"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr " Commande chown avancée"
@@ -2213,6 +2214,105 @@ msgstr "Nom d'utilisateur :"
 msgid "SMB authentication"
 msgstr "Authentification SMB"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "Tous &Marqués"
+
+msgid "S&et marked"
+msgstr "Défini comme &marqué"
+
+msgid "C&lear marked"
+msgstr "&Supprimer les marqués"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "définir l'ID &utilisateur à l'exécution"
 
@@ -2260,15 +2360,6 @@ msgstr "Nom du propriétaire :"
 
 msgid "Group name:"
 msgstr "Nom du groupe :"
-
-msgid "&Marked all"
-msgstr "Tous &Marqués"
-
-msgid "S&et marked"
-msgstr "Défini comme &marqué"
-
-msgid "C&lear marked"
-msgstr "&Supprimer les marqués"
 
 msgid "Chmod command"
 msgstr "Commande chmod"
@@ -3247,6 +3338,16 @@ msgstr "Propriétaire : %s/%s"
 msgid "Links:      %d"
 msgstr "Liens : %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Mode : %s (%04o)"
@@ -3365,6 +3466,9 @@ msgstr "Ch&own"
 
 msgid "&Advanced chown"
 msgstr "Chown &avancé"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "&Renommer/Déplacer"
@@ -3836,6 +3940,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Le chemin vers le répertoire utilisateur n'est pas absolu"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3866,15 +3976,6 @@ msgstr ""
 "Impossible d'enregistrer le fichier « %s » :\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander est\n"
-"en cours d'exécution sur ce terminal.\n"
-"Le support des sous-shells sera désactivé."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Ne peut ouvrir le tube nommé « %s »\n"
@@ -3886,54 +3987,64 @@ msgstr "Le shell est toujours actif. Quitter tout de même ?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Attention : ne peut aller à %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Utilise la bibliothèque S-Lang avec la base de données terminfo\n"
-
-msgid "Using the ncurses library\n"
-msgstr "Utilisation de la bibliothèque ncurses\n"
-
-msgid "Using the ncursesw library\n"
-msgstr "Utilisation de la bibliothèque ncursesw\n"
-
-msgid "With builtin Editor and Aspell support\n"
+msgid "With builtin Editor and Aspell support"
 msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "Avec l'éditeur intégré\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "Avec support optionnel des sous-shells\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Avec support des sous-shells par défaut\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Avec support des opérations en tâche de fond\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Avec support de la souris pour xterm et la console Linux\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "Avec support de la souris pour xterm\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "Avec support des événements X11\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With internationalization support\n"
-msgstr "Avec support de l'internationalisation\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With multiple codepages support\n"
-msgstr "Avec support de plusieurs codepages\n"
+msgid "With multiple codepages support"
+msgstr ""
+
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Compilé avec GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Systèmes des fichiers virtuels :"
 
-#, c-format
 msgid "Data types:"
 msgstr "Types de données :"
 

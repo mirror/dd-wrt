@@ -1,7 +1,7 @@
 /*
    Widgets for the Midnight Commander
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Authors:
@@ -42,7 +42,6 @@
 #include "lib/skin.h"
 #include "lib/strutil.h"
 #include "lib/util.h"           /* Q_() */
-#include "lib/keybind.h"        /* global_keymap_t */
 #include "lib/widget.h"
 
 /*** global variables ****************************************************************************/
@@ -131,7 +130,7 @@ static void
 listbox_draw (WListbox * l, gboolean focused)
 {
     Widget *w = WIDGET (l);
-    const WDialog *h = w->owner;
+    const int *colors;
     gboolean disabled;
     int normalc, selc;
     int length = 0;
@@ -140,15 +139,11 @@ listbox_draw (WListbox * l, gboolean focused)
     int i;
     int sel_line = -1;
 
+    colors = widget_get_colors (w);
+
     disabled = widget_get_state (w, WST_DISABLED);
-    normalc = disabled ? DISABLED_COLOR : h->color[DLG_COLOR_NORMAL];
-    /* *INDENT-OFF* */
-    selc = disabled
-        ? DISABLED_COLOR
-        : focused
-            ? h->color[DLG_COLOR_HOT_FOCUS] 
-            : h->color[DLG_COLOR_FOCUS];
-    /* *INDENT-ON* */
+    normalc = disabled ? DISABLED_COLOR : colors[DLG_COLOR_NORMAL];
+    selc = disabled ? DISABLED_COLOR : colors[focused ? DLG_COLOR_HOT_FOCUS : DLG_COLOR_FOCUS];
 
     if (l->list != NULL)
     {
@@ -355,7 +350,7 @@ listbox_key (WListbox * l, int key)
         return MSG_HANDLED;
     }
 
-    command = keybind_lookup_keymap_command (listbox_map, key);
+    command = widget_lookup_key (WIDGET (l), key);
     if (command == CK_IgnoreKey)
         return MSG_NOT_HANDLED;
     return listbox_execute_cmd (l, command);
@@ -423,7 +418,7 @@ listbox_do_action (WListbox * l)
 
     if (action == LISTBOX_DONE)
     {
-        WDialog *h = WIDGET (l)->owner;
+        WDialog *h = DIALOG (WIDGET (l)->owner);
 
         h->ret_value = B_ENTER;
         dlg_stop (h);
@@ -454,7 +449,6 @@ static cb_ret_t
 listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
     WListbox *l = LISTBOX (w);
-    cb_ret_t ret_code;
 
     switch (msg)
     {
@@ -472,10 +466,14 @@ listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
         }
 
     case MSG_KEY:
-        ret_code = listbox_key (l, parm);
-        if (ret_code != MSG_NOT_HANDLED)
-            listbox_on_change (l);
-        return ret_code;
+        {
+            cb_ret_t ret_code;
+
+            ret_code = listbox_key (l, parm);
+            if (ret_code != MSG_NOT_HANDLED)
+                listbox_on_change (l);
+            return ret_code;
+        }
 
     case MSG_ACTION:
         return listbox_execute_cmd (l, parm);
@@ -490,9 +488,6 @@ listbox_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void 
 
     case MSG_DESTROY:
         listbox_destroy (l);
-        return MSG_HANDLED;
-
-    case MSG_RESIZE:
         return MSG_HANDLED;
 
     default:
@@ -562,6 +557,7 @@ listbox_new (int y, int x, int height, int width, gboolean deletable, lcback_fn 
     w = WIDGET (l);
     widget_init (w, y, x, height, width, listbox_callback, listbox_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_WANT_HOTKEY;
+    w->keymap = listbox_map;
 
     l->list = NULL;
     l->top = l->pos = 0;
@@ -750,7 +746,7 @@ listbox_remove_current (WListbox * l)
         int length;
 
         current = g_queue_peek_nth_link (l->list, (guint) l->pos);
-        listbox_entry_free (LENTRY (current->data));
+        listbox_entry_free (current->data);
         g_queue_delete_link (l->list, current);
 
         length = g_queue_get_length (l->list);

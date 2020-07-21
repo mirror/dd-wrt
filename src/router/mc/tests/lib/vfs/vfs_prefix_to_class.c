@@ -1,7 +1,7 @@
 /*
    lib/vfs - test vfs_prefix_to_class() functionality
 
-   Copyright (C) 2011-2019
+   Copyright (C) 2011-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -55,6 +55,7 @@ test_which (struct vfs_class *me, const char *path)
 static void
 setup (void)
 {
+    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -80,6 +81,7 @@ teardown (void)
 {
     vfs_shut ();
     str_uninit_strings ();
+    mc_timer_destroy (mc_global.timer);
 }
 
 /* --------------------------------------------------------------------------------------------- */

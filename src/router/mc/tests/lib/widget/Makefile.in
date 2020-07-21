@@ -88,7 +88,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 @ENABLE_MCLIB_TRUE@am__append_1 = $(GLIB_LIBS)
-TESTS = complete_engine$(EXEEXT) hotkey_equal$(EXEEXT)
+TESTS = complete_engine$(EXEEXT) hotkey_equal$(EXEEXT) \
+	group_init_destroy$(EXEEXT) widget_find_by_id$(EXEEXT)
 check_PROGRAMS = $(am__EXEEXT_1)
 subdir = tests/lib/widget
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -122,6 +123,7 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/gettext.m4 \
 	$(top_srcdir)/m4.include/mc-with-internal-edit.m4 \
 	$(top_srcdir)/m4.include/mc-subshell.m4 \
 	$(top_srcdir)/m4.include/mc-background.m4 \
+	$(top_srcdir)/m4.include/mc-ext2fs-attr.m4 \
 	$(top_srcdir)/m4.include/mc-glib.m4 \
 	$(top_srcdir)/m4.include/mc-vfs.m4 \
 	$(top_srcdir)/m4.include/vfs/rpc.m4 \
@@ -147,7 +149,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-am__EXEEXT_1 = complete_engine$(EXEEXT) hotkey_equal$(EXEEXT)
+am__EXEEXT_1 = complete_engine$(EXEEXT) hotkey_equal$(EXEEXT) \
+	group_init_destroy$(EXEEXT) widget_find_by_id$(EXEEXT)
 am_complete_engine_OBJECTS = complete_engine.$(OBJEXT)
 complete_engine_OBJECTS = $(am_complete_engine_OBJECTS)
 complete_engine_LDADD = $(LDADD)
@@ -155,9 +158,15 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_group_init_destroy_OBJECTS = group_init_destroy.$(OBJEXT)
+group_init_destroy_OBJECTS = $(am_group_init_destroy_OBJECTS)
+group_init_destroy_LDADD = $(LDADD)
 am_hotkey_equal_OBJECTS = hotkey_equal.$(OBJEXT)
 hotkey_equal_OBJECTS = $(am_hotkey_equal_OBJECTS)
 hotkey_equal_LDADD = $(LDADD)
+am_widget_find_by_id_OBJECTS = widget_find_by_id.$(OBJEXT)
+widget_find_by_id_OBJECTS = $(am_widget_find_by_id_OBJECTS)
+widget_find_by_id_LDADD = $(LDADD)
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -174,7 +183,8 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/complete_engine.Po \
-	./$(DEPDIR)/hotkey_equal.Po
+	./$(DEPDIR)/group_init_destroy.Po ./$(DEPDIR)/hotkey_equal.Po \
+	./$(DEPDIR)/widget_find_by_id.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -194,8 +204,11 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(complete_engine_SOURCES) $(hotkey_equal_SOURCES)
-DIST_SOURCES = $(complete_engine_SOURCES) $(hotkey_equal_SOURCES)
+SOURCES = $(complete_engine_SOURCES) $(group_init_destroy_SOURCES) \
+	$(hotkey_equal_SOURCES) $(widget_find_by_id_SOURCES)
+DIST_SOURCES = $(complete_engine_SOURCES) \
+	$(group_init_destroy_SOURCES) $(hotkey_equal_SOURCES) \
+	$(widget_find_by_id_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -476,11 +489,15 @@ DX_MAKEINDEX = @DX_MAKEINDEX@
 DX_PDFLATEX = @DX_PDFLATEX@
 DX_PERL = @DX_PERL@
 DX_PROJECT = @DX_PROJECT@
+E2P_CFLAGS = @E2P_CFLAGS@
+E2P_LIBS = @E2P_LIBS@
 ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXT2FS_CFLAGS = @EXT2FS_CFLAGS@
+EXT2FS_LIBS = @EXT2FS_LIBS@
 EXTHELPERSDIR = @EXTHELPERSDIR@
 FGREP = @FGREP@
 GETTEXT_MACRO_VERSION = @GETTEXT_MACRO_VERSION@
@@ -640,6 +657,12 @@ complete_engine_SOURCES = \
 hotkey_equal_SOURCES = \
 	hotkey_equal.c
 
+group_init_destroy_SOURCES = \
+	group_init_destroy.c
+
+widget_find_by_id_SOURCES = \
+	widget_find_by_id.c
+
 all: all-am
 
 .SUFFIXES:
@@ -687,9 +710,17 @@ complete_engine$(EXEEXT): $(complete_engine_OBJECTS) $(complete_engine_DEPENDENC
 	@rm -f complete_engine$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(complete_engine_OBJECTS) $(complete_engine_LDADD) $(LIBS)
 
+group_init_destroy$(EXEEXT): $(group_init_destroy_OBJECTS) $(group_init_destroy_DEPENDENCIES) $(EXTRA_group_init_destroy_DEPENDENCIES) 
+	@rm -f group_init_destroy$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(group_init_destroy_OBJECTS) $(group_init_destroy_LDADD) $(LIBS)
+
 hotkey_equal$(EXEEXT): $(hotkey_equal_OBJECTS) $(hotkey_equal_DEPENDENCIES) $(EXTRA_hotkey_equal_DEPENDENCIES) 
 	@rm -f hotkey_equal$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hotkey_equal_OBJECTS) $(hotkey_equal_LDADD) $(LIBS)
+
+widget_find_by_id$(EXEEXT): $(widget_find_by_id_OBJECTS) $(widget_find_by_id_DEPENDENCIES) $(EXTRA_widget_find_by_id_DEPENDENCIES) 
+	@rm -f widget_find_by_id$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(widget_find_by_id_OBJECTS) $(widget_find_by_id_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -698,7 +729,9 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/complete_engine.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_init_destroy.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hotkey_equal.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/widget_find_by_id.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -940,6 +973,20 @@ hotkey_equal.log: hotkey_equal$(EXEEXT)
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+group_init_destroy.log: group_init_destroy$(EXEEXT)
+	@p='group_init_destroy$(EXEEXT)'; \
+	b='group_init_destroy'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
+widget_find_by_id.log: widget_find_by_id$(EXEEXT)
+	@p='widget_find_by_id$(EXEEXT)'; \
+	b='widget_find_by_id'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 .test.log:
 	@p='$<'; \
 	$(am__set_b); \
@@ -1034,7 +1081,9 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/complete_engine.Po
+	-rm -f ./$(DEPDIR)/group_init_destroy.Po
 	-rm -f ./$(DEPDIR)/hotkey_equal.Po
+	-rm -f ./$(DEPDIR)/widget_find_by_id.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1081,7 +1130,9 @@ installcheck-am:
 
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/complete_engine.Po
+	-rm -f ./$(DEPDIR)/group_init_destroy.Po
 	-rm -f ./$(DEPDIR)/hotkey_equal.Po
+	-rm -f ./$(DEPDIR)/widget_find_by_id.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

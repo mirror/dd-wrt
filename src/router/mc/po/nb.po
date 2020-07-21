@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Kjell Cato Heskjestad <cato@heskjestad.xyz>, 2019
+# Kjell Cato Heskjestad <cato@heskjestad.xyz>, 2019-2020
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-22 05:53+0000\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-19 04:15+0000\n"
 "Last-Translator: Kjell Cato Heskjestad <cato@heskjestad.xyz>\n"
 "Language-Team: Norwegian Bokmål (http://www.transifex.com/mc/mc/language/"
 "nb/)\n"
@@ -487,14 +487,29 @@ msgstr "Miljøvariabelen TERM mangler.\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr "Klarte ikke sjekke SIGWINCH-røret"
 
-msgid "Cannot create pipe for SIGWINCH"
-msgstr "Klarte ikke opprette rør for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
+msgstr ""
+"\n"
+"Klarte ikke opprette rør for SIGWINCH:%s (%d)\n"
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr "Klarte ikke sette opp skriveenden av SIGWINCH-røret"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Klarte ikke sette opp skriveenden av SIGWINCH-røret: %s (%d)\n"
 
-msgid "Cannot configure read end of SIGWINCH pipe"
-msgstr "Klarte ikke sette opp leseenden av SIGWINCH-røret"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Klarte ikke sette opp leseenden av SIGWINCH-røret: %s (%d)\n"
 
 #, c-format
 msgid ""
@@ -1133,9 +1148,6 @@ msgstr "Endre linjeskift til:"
 msgid "Save As"
 msgstr "Lagre som"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Blokka er stor, og du kan kanskje ikke angre handlinga"
-
 msgid "Collect completions"
 msgstr "Samle fullføringer"
 
@@ -1336,7 +1348,7 @@ msgstr "Trykk en vilkårlig tast:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Denne teksten er endret, men ikke lagret.\n"
 "Endringene kasseres hvis du fortsetter."
@@ -1367,13 +1379,6 @@ msgstr "Bekreft erstatning"
 
 msgid "Cancel"
 msgstr "Avbryt"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Denne teksten er endret, men ikke lagret.\n"
-"Endringene kasseres hvis du fortsetter."
 
 msgid "NoName"
 msgstr "Navnløs"
@@ -1673,8 +1678,8 @@ msgstr ""
 "Et brukervennlig skriveprogram\n"
 "skrevet for Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Opphavsrett (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr "Opphavsrett (C) 1996-2020 the Free Software Foundation"
 
 msgid "About"
 msgstr "Om"
@@ -1828,10 +1833,10 @@ msgstr "Skallet kjører allerede en kommando"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
 "Ikke en xterm eller Linux-konsoll;\n"
-"kan ikke bytte om panelene."
+"kan ikke bytte om underskallet."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Skriv «exit» for å gå tilbake til Midnight Commander"
@@ -1856,6 +1861,10 @@ msgstr "andre"
 
 msgid "Flag"
 msgstr "Flagg"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr "Rettigheter (oktale):%o"
 
 msgid "Chown advanced command"
 msgstr "Avansert chown-kommando"
@@ -2204,6 +2213,109 @@ msgstr "Brukernavn:"
 msgid "SMB authentication"
 msgstr "SMB-autentisering"
 
+msgid "Secure deletion"
+msgstr "Sikker sletting"
+
+msgid "Undelete"
+msgstr "Kan gjenopprettes"
+
+msgid "Synchronous updates"
+msgstr "Synkrone oppdateringer"
+
+msgid "Synchronous directory updates"
+msgstr "Synkrone mappeoppdateringer"
+
+msgid "Immutable"
+msgstr "Uforanderlig"
+
+msgid "Append only"
+msgstr "Kun legg til"
+
+msgid "No dump"
+msgstr "Ikke dump"
+
+msgid "No update atime"
+msgstr "Ikke oppdater atime"
+
+msgid "Compress"
+msgstr "Komprimer"
+
+msgid "Compressed clusters"
+msgstr "Komprimerte klynger"
+
+msgid "Compressed dirty file"
+msgstr "Komprimert skitten fil"
+
+msgid "Compression raw access"
+msgstr "Komprimering rå tilgang"
+
+msgid "Encrypted inode"
+msgstr "Kryptert inode"
+
+msgid "Journaled data"
+msgstr "Journalførte data"
+
+msgid "Indexed directory"
+msgstr "Indeksert mappe"
+
+msgid "No tail merging"
+msgstr "Ikke haleflett"
+
+msgid "Top of directory hierarchies"
+msgstr "Øverst i mappehierarkiet"
+
+msgid "Inode uses extents"
+msgstr "Inode bruker extent"
+
+msgid "Huge_file"
+msgstr "Enorm fil"
+
+msgid "No COW"
+msgstr "Ikke COW"
+
+msgid "Casefolded file"
+msgstr "Ikke versalsensitiv"
+
+msgid "Inode has inline data"
+msgstr "Inode har innebygd data"
+
+msgid "Project hierarchy"
+msgstr "Prosjektkvotehierarki"
+
+msgid "Verity protected inode"
+msgstr "Verifiser beskyttet inode"
+
+msgid "&Marked all"
+msgstr "&Markert alle"
+
+msgid "S&et marked"
+msgstr "S&ett markerte"
+
+msgid "C&lear marked"
+msgstr "B&lank ut markerte"
+
+msgid "Chattr command"
+msgstr "Chattr-kommando"
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+"chattr mislyktes for «%s»\n"
+"%s"
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr "Kan ikke endre attributter i eksterne filsystemer"
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+"Klarte ikke hente flaggene til «%s»\n"
+"%s"
+
 msgid "set &user ID on execution"
 msgstr "Kjør med &brukers rettigheter"
 
@@ -2251,15 +2363,6 @@ msgstr "Eiers navn:"
 
 msgid "Group name:"
 msgstr "Gruppens navn:"
-
-msgid "&Marked all"
-msgstr "&Markert alle"
-
-msgid "S&et marked"
-msgstr "S&ett markerte"
-
-msgid "C&lear marked"
-msgstr "B&lank ut markerte"
 
 msgid "Chmod command"
 msgstr "Chmod-kommando"
@@ -3242,6 +3345,16 @@ msgstr "Eier:       %s/%s"
 msgid "Links:      %d"
 msgstr "Lenker:     %d"
 
+msgid "Attributes: not supported"
+msgstr "Attributter: Støttes ikke"
+
+#, c-format
+msgid "Attributes: %s"
+msgstr "Attributter: %s"
+
+msgid "Attributes: unavailable"
+msgstr "Attributter: Utilgjengelig"
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Rettigh.:   %s (%04o)"
@@ -3360,6 +3473,9 @@ msgstr "Cho&wn"
 
 msgid "&Advanced chown"
 msgstr "&Avansert chown"
+
+msgid "Cha&ttr"
+msgstr "Cha&ttr"
 
 msgid "&Rename/Move"
 msgstr "&Endre navn/flytt"
@@ -3828,6 +3944,15 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Stien til hjemmemappa er ikke absolutt"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+"GNU Midnight Commander kjører\n"
+"allerede i denne terminalen.\n"
+"Slår av støtte for underskall."
+
 #, c-format
 msgid ""
 "\n"
@@ -3858,15 +3983,6 @@ msgstr ""
 "Klarte ikke lagre fila %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander kjører\n"
-"allerede i denne terminalen.\n"
-"Slår av støtte for underskall."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Klarte ikke åpne navngitt rør %s\n"
@@ -3878,54 +3994,64 @@ msgstr "Skallet er fortsatt aktivt. Avslutte likevel?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Advarsel: Klarte ikke bytte til %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Bruker S-Lang-biblioteket med terminfo-database\n"
+msgid "With builtin Editor and Aspell support"
+msgstr "Med innebygget tekstprogram og Aspell-støtte"
 
-msgid "Using the ncurses library\n"
-msgstr "Bruker ncurses-biblioteket\n"
+msgid "With builtin Editor"
+msgstr "Med innebygget tekstprogram"
 
-msgid "Using the ncursesw library\n"
-msgstr "Bruker ncursesw-biblioteket\n"
+msgid "With optional subshell support"
+msgstr "Med valgfri underskall-støtte"
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Med innebygget tekstprogram og Aspell-støtte\n"
+msgid "With subshell support as default"
+msgstr "Med forvalgt underskall-støtte"
 
-msgid "With builtin Editor\n"
-msgstr "Med innebygget tekstprogram\n"
+msgid "With support for background operations"
+msgstr "Med støtte for bakgrunnsoperasjoner"
 
-msgid "With optional subshell support\n"
-msgstr "Med valgfri underskall-støtte\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr "Med musestøtte i xterm og Linux-konsollen"
 
-msgid "With subshell support as default\n"
-msgstr "Med forvalgt underskall-støtte\n"
+msgid "With mouse support on xterm"
+msgstr "Med musestøtte i xterm"
 
-msgid "With support for background operations\n"
-msgstr "Med støtte for bakgrunnsoperasjoner\n"
+msgid "With support for X11 events"
+msgstr "Med støtte for X11-hendelser"
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Med musestøtte i xterm og Linux-konsollen\n"
+msgid "With internationalization support"
+msgstr "Med støtte for lokaltilpassing"
 
-msgid "With mouse support on xterm\n"
-msgstr "Med musestøtte i xterm\n"
+msgid "With multiple codepages support"
+msgstr "Med støtte for flere tegnkodinger"
 
-msgid "With support for X11 events\n"
-msgstr "Med støtte for X11-hendelser\n"
-
-msgid "With internationalization support\n"
-msgstr "Med støtte for internasjonalisering\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Med støtte for flere tegnkodinger\n"
+msgid "With ext2fs attributes support"
+msgstr "Støtter ext2fs-attributter"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Bygget med GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr "Bruker S-Lang %s med terminfo-database\n"
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr "Bruker ncurses %s\n"
+
+msgid "Built with ncurses (unknown version)"
+msgstr "Bruker ncurses (ukjent versjon)"
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr "Bruker ncursesw %s\n"
+
+msgid "Built with ncursesw (unknown version)"
+msgstr "Bruker ncursesw (ukjent versjon)"
+
 msgid "Virtual File Systems:"
 msgstr "Virtuelle filsystem:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Datatyper:"
 
