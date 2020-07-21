@@ -954,7 +954,7 @@ static inline int skb_ensure_writable(struct sk_buff *skb, int write_len)
 #include <net/ipv6.h>
 #include <net/icmp.h>
 #include <net/netfilter/nf_conntrack.h>
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0) && !defined(ISRHEL8)
 #include <net/netfilter/nf_nat_core.h>
 #endif
 static inline void __compat_icmp_ndo_send(struct sk_buff *skb_in, int type, int code, __be32 info)
@@ -1053,6 +1053,28 @@ static inline void skb_reset_redirect(struct sk_buff *skb)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 0)
 #define pre_exit exit
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
+#include <linux/skbuff.h>
+static inline __be16 ip_tunnel_parse_protocol(const struct sk_buff *skb)
+{
+	if (skb_network_header(skb) >= skb->head &&
+	    (skb_network_header(skb) + sizeof(struct iphdr)) <= skb_tail_pointer(skb) &&
+	    ip_hdr(skb)->version == 4)
+		return htons(ETH_P_IP);
+	if (skb_network_header(skb) >= skb->head &&
+	    (skb_network_header(skb) + sizeof(struct ipv6hdr)) <= skb_tail_pointer(skb) &&
+	    ipv6_hdr(skb)->version == 6)
+		return htons(ETH_P_IPV6);
+	return 0;
+}
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 1, 0) || defined(ISRHEL8)
+static const struct header_ops ip_tunnel_header_ops = { .parse_protocol = ip_tunnel_parse_protocol };
+#else
+#define header_ops hard_header_len
+#define ip_tunnel_header_ops *(char *)0 - (char *)0
+#endif
 #endif
 
 #if defined(ISUBUNTU1604) || defined(ISRHEL7)

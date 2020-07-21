@@ -392,7 +392,7 @@ static void wg_packet_consume_data_done(struct wg_peer *peer,
 #ifndef COMPAT_CANNOT_USE_CSUM_LEVEL
 	skb->csum_level = ~0; /* All levels */
 #endif
-	skb->protocol = wg_examine_packet_protocol(skb);
+	skb->protocol = ip_tunnel_parse_protocol(skb);
 	if (skb->protocol == htons(ETH_P_IP)) {
 		len = ntohs(ip_hdr(skb)->tot_len);
 		if (unlikely(len < sizeof(struct iphdr)))
