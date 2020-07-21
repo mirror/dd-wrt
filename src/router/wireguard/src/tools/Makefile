@@ -38,7 +38,7 @@ endif
 PLATFORM ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
 
 CFLAGS ?= -O3
-CFLAGS += -std=gnu99 -D_GNU_SOURCE -DNEED_PRINTF
+CFLAGS += -std=gnu99 -D_GNU_SOURCE -DNEED_PRINTF $(LTO)
 CFLAGS += -Wall -Wextra
 CFLAGS += -MMD -MP
 CFLAGS += -DRUNSTATEDIR="\"$(RUNSTATEDIR)\""
@@ -46,7 +46,7 @@ ifeq ($(DEBUG_TOOLS),y)
 CFLAGS += -g
 endif
 CFLAGS += $(LIBMNL_CFLAGS)
-LDLIBS += $(LIBMNL_LDLIBS)
+LDLIBS += $(LIBMNL_LDLIBS)  $(LDLTO)
 
 ifneq ($(V),1)
 BUILT_IN_LINK.o := $(LINK.o)
