@@ -603,7 +603,7 @@ static const int linux_states[12] = { 1, 5, 3, 4, 6, 7, 11, 1, 8, 9, 2, 10 };
 
 #if HAVE_NETLINK_NETLINK_H
 
-#if !defined(HAVE_LIBNL3)
+#if 0 //!defined(HAVE_LIBNL3)
 /* libnl3 API implemented on top of the libnl1 API */
 
 #define nl_sock nl_handle
