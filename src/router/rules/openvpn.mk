@@ -38,7 +38,7 @@ CONFIGURE_ARGS_OVPN += \
 	--with-crypto-library=openssl \
 	$(OPENSSL_SSL_ADDOPT) \
 	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(OPENSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(OPENSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
@@ -66,7 +66,7 @@ CONFIGURE_ARGS_WOLFSSL += \
 	--with-crypto-library=wolfssl \
 	$(WOLFSSL_SSL_ADDOPT) \
 	CFLAGS="$(COPTS) $(LTO) $(MIPS16_OPT) $(LTOFIXUP) -I$(WOLFSSL_SSLPATH)/include  -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread -lrt" \
+	LDFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections  $(LDLTO) $(LTOFIXUP) -L$(WOLFSSL_SSL_LIB_PATH) -L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -ldl -lpthread" \
 	LZO_CFLAGS="-I$(TOP)/lzo/include" \
 	LZO_LIBS="-L$(TOP)/lzo -L$(TOP)/lzo/src/.libs -llzo2" \
 	AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" \
@@ -98,13 +98,13 @@ openvpn-conf-prep:
 openvpn-conf: openssl wolfssl
 	mkdir -p openvpn/openssl
 	mkdir -p openvpn/wolfssl
-	if ! test -e "$(OVPN)/openssl/Makefile"; then cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN); fi 
-	if ! test -e "$(OVPN)/wolfssl/Makefile"; then cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL); fi 
+	cd $(OVPN)/openssl && ../configure $(CONFIGURE_ARGS_OVPN)
+	cd $(OVPN)/wolfssl && ../configure $(CONFIGURE_ARGS_WOLFSSL)
 
 
 openvpn-configure: lzo openvpn-conf-prep openvpn-conf
 
-openvpn: lzo $(SSL_DEP) openvpn-conf
+openvpn: lzo $(SSL_DEP)
 #ifeq ($(CONFIG_NEWMEDIA),y)
 #else
 #	cd $(OVPN) && ./configure --host=$(ARCH)-linux CPPFLAGS="-ffunction-sections -fdata-sections -Wl,--gc-sections -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --enable-http --enable-password-save CFLAGS="$(COPTS)  -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs  -ffunction-sections -fdata-sections -Wl,--gc-sections"
