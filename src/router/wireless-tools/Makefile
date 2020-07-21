@@ -104,7 +104,7 @@ endif
 # Other flags
 #CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
 	-Wpointer-arith -Wcast-qual -Winline -I.
-CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -I. -DNEED_PRINTF
+CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -I. -DNEED_PRINTF 
 DEPFLAGS=-MMD
 XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)  -DNEED_PRINTF
 PICFLAG=-fPIC
@@ -113,11 +113,11 @@ PICFLAG=-fPIC
 all:: $(IWLIB) $(PROGS)
 
 %: %.o
-	$(CC) $(LDFLAGS) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS) 
+	$(CC) $(LDFLAGS) $(LDLTO) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS) 
 %.o: %.c wireless.h
-	$(CC) $(XCFLAGS) -c $<
+	$(CC) $(XCFLAGS) $(LTO) -c $<
 %.so: %.c wireless.h
-	$(CC) $(XCFLAGS) $(PICFLAG) -c -o $@ $<
+	$(CC) $(XCFLAGS) $(PICFLAG) $(LTOMIN) -c -o $@ $<
 
 iwconfig: iwconfig.o $(IWLIB)
 
