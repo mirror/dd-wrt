@@ -1,7 +1,7 @@
 /*
    Interface to the terminal controlling library.
 
-   Copyright (C) 2005-2019
+   Copyright (C) 2005-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -47,6 +47,9 @@
 #ifdef HAVE_SYS_IOCTL_H
 #include <sys/ioctl.h>
 #endif
+
+/* In some systems (like Solaris 11.4 SPARC), TIOCSWINSZ is defined in termios.h */
+#include <termios.h>
 
 #include "lib/global.h"
 #include "lib/strutil.h"
@@ -361,9 +364,16 @@ tty_init_xterm_support (gboolean is_xterm)
         }
     }
 
-    /* No termcap for SGR extended mouse (yet), hardcode it for now */
+    /* There's only one termcap entry "kmous", typically containing "\E[M" or "\E[<".
+     * We need the former in xmouse_seq, the latter in xmouse_extended_seq.
+     * See tickets 2956, 3954, and 4063 for details. */
     if (xmouse_seq != NULL)
+    {
+        if (strcmp (xmouse_seq, ESC_STR "[<") == 0)
+            xmouse_seq = ESC_STR "[M";
+
         xmouse_extended_seq = ESC_STR "[<";
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */

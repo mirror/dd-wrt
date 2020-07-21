@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Basque (http://www.transifex.com/mc/mc/language/eu/)\n"
 "Language: eu\n"
 "MIME-Version: 1.0\n"
@@ -487,13 +487,22 @@ msgstr "TERM ingurune-aldagaia ezarri gabe dago!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1129,9 +1138,6 @@ msgstr "Aldatu lerro hausturak hontara:"
 msgid "Save As"
 msgstr "Gorde honela"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Blokea handia da, agian ezingo duzu ekintza hau desegin"
-
 msgid "Collect completions"
 msgstr "Osatzeak bildu"
 
@@ -1332,10 +1338,10 @@ msgstr "Sakatu edozein tekla:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Uneko testua aldatu da baino ez da fitxategian gorde.\n"
-"Jarraitzeak aldaketa hauek baztertuko ditu"
+"Jarraitzeak aldaketa hauek baztertuko ditu."
 
 msgid "In se&lection"
 msgstr "&Hautapenean"
@@ -1363,13 +1369,6 @@ msgstr "Berretsi ordezkapena"
 
 msgid "Cancel"
 msgstr "Utzi"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Uneko testua aldatu da baino ez da fitxategian gorde.\n"
-"Jarraitzeak aldaketa hauek baztertuko ditu."
 
 msgid "NoName"
 msgstr "Izengabe"
@@ -1669,8 +1668,8 @@ msgstr ""
 "Testu editore lagunkoi bat\n"
 "Midnight Commander-rarentzako idatzia."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Honi buruz"
@@ -1824,10 +1823,8 @@ msgstr "Shell-a dagoeneko komando bat exekutate ari da"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Ez da xterm edo Linux kontsola;\n"
-"panelak ezin dira ezkutatu."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tekleatu «exit» Midnight Commanderrera itzultzeko"
@@ -1852,6 +1849,10 @@ msgstr "bestelakoa"
 
 msgid "Flag"
 msgstr "Bandera"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Chown komando aurreratua"
@@ -2202,6 +2203,105 @@ msgstr "Erabiltzaile izena:"
 msgid "SMB authentication"
 msgstr "SMB autentikazioa"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "Guztiak &markatuta"
+
+msgid "S&et marked"
+msgstr "&Ezarri markatutakoa"
+
+msgid "C&lear marked"
+msgstr "&Garbitu markatutakoa"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "ezarri &erabiltzaile ID exekutatzean"
 
@@ -2249,15 +2349,6 @@ msgstr "Jabearen izena:"
 
 msgid "Group name:"
 msgstr "Taldearen izena:"
-
-msgid "&Marked all"
-msgstr "Guztiak &markatuta"
-
-msgid "S&et marked"
-msgstr "&Ezarri markatutakoa"
-
-msgid "C&lear marked"
-msgstr "&Garbitu markatutakoa"
 
 msgid "Chmod command"
 msgstr "Chmod komandoa"
@@ -3243,6 +3334,16 @@ msgstr "Jabea: %s/%s"
 msgid "Links:      %d"
 msgstr "Estekak: %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Modua: %s (%04o)"
@@ -3361,6 +3462,9 @@ msgstr "&Chown"
 
 msgid "&Advanced chown"
 msgstr "Ch&own aurreratua"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "Berrizendatu/Mu&gitu"
@@ -3831,6 +3935,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Etxeko direktorioaren bide-izena ez da absolutua"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3861,15 +3971,6 @@ msgstr ""
 "%s fitxategia ezin gorde:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander dagoeneko\n"
-"exekutatzen ari da terminal honetan.\n"
-"Azpi-shell euskarria ezgaituko da."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "%s izeneko hodia ezin ireki\n"
@@ -3881,54 +3982,64 @@ msgstr "Shell oraindik jardunean dago. Irten hala ere?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Abisua: %s(e)ra ezin aldatu.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "S-Lang liburutegia terminfo datubasearekin erabiltzen\n"
+msgid "With builtin Editor and Aspell support"
+msgstr ""
 
-msgid "Using the ncurses library\n"
-msgstr "ncurses liburutegia erabiltzen\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "Using the ncursesw library\n"
-msgstr "ncursesw liburutegia erabiltzen\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Barneratutako editorearekin eta Aspell euskarriarekin\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "builtin editorearekin\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "Hautazko azpi-shell euskarriarekin\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Azpi-shell euskarria lehenetsita\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Atzeko planoko eragiketetarako euskarriarekin\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Sagu-euskarriarekin xterm-en eta Linux-en kontsolan\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "Sagu-euskarriarekin xterm-en\n"
+msgid "With multiple codepages support"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "X11 gertaerak onartzen ditu\n"
-
-msgid "With internationalization support\n"
-msgstr "Nazioarteratzea onartzen du\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Kode-orrien euskarri ugarirekin\n"
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "GLib %d.%d.%d erabiliz eraikita\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Alegiazko fitxategi sistemak (VFS):"
 
-#, c-format
 msgid "Data types:"
 msgstr "Datu motak:"
 

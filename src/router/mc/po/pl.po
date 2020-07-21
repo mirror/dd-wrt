@@ -3,14 +3,14 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2019
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2020
 # Slava Zanko <slavazanko@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 16:22+0000\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 20:23+0000\n"
 "Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/mc/mc/language/pl/)\n"
 "Language: pl\n"
@@ -491,14 +491,29 @@ msgstr "Zmienna środowiskowa TERM nie jest ustawiona.\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr "Nie można sprawdzić potoku SIGWINCH"
 
-msgid "Cannot create pipe for SIGWINCH"
-msgstr "Nie można utworzyć potoku dla SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
+msgstr ""
+"\n"
+"Nie można utworzyć potoku dla SIGWINCH: %s (%d)\n"
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr "Nie można skonfigurować końca zapisu potoku SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Nie można skonfigurować końca zapisu potoku SIGWINCH: %s (%d)\n"
 
-msgid "Cannot configure read end of SIGWINCH pipe"
-msgstr "Nie można skonfigurować końca odczytu potoku SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Nie można skonfigurować końca odczytu potoku SIGWINCH: %s (%d)\n"
 
 #, c-format
 msgid ""
@@ -1136,9 +1151,6 @@ msgstr "Zmiana łamania wierszy na:"
 msgid "Save As"
 msgstr "Zapisz jako"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Z powodu wielkości bloku cofnięcie działania może być niemożliwe"
-
 msgid "Collect completions"
 msgstr "Zbierz uzupełnianie"
 
@@ -1339,7 +1351,7 @@ msgstr "Proszę nacisnąć dowolny klawisz:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Bieżący tekst zmodyfikowano bez zapisania pliku.\n"
 "Kontynuacja spowoduje ich odrzucenie."
@@ -1370,13 +1382,6 @@ msgstr "Potwierdź zastąpienie"
 
 msgid "Cancel"
 msgstr "Anuluj"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Bieżący tekst zmodyfikowano bez zapisania pliku.\n"
-"Kontynuacja spowoduje ich odrzucenie."
 
 msgid "NoName"
 msgstr "BezNazwy"
@@ -1676,8 +1681,8 @@ msgstr ""
 "Łatwy w obsłudze edytor tekstu,\n"
 "napisany dla programu Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Copyright © 1996-2019 Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr "Copyright © 1996-2020 Free Software Foundation"
 
 msgid "About"
 msgstr "O programie"
@@ -1830,9 +1835,9 @@ msgstr "Powłoka wykonuje już polecenie"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Panele mogą być przełączane tylko\n"
+"Podpowłoka może być przełączana tylko\n"
 "na konsoli xterm lub Linux."
 
 msgid "Type 'exit' to return to the Midnight Commander"
@@ -1858,6 +1863,10 @@ msgstr "inni"
 
 msgid "Flag"
 msgstr "Flaga"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr "Uprawnienia (ósemkowe): %o"
 
 msgid "Chown advanced command"
 msgstr "Zaawansowane polecenie chown"
@@ -2206,6 +2215,109 @@ msgstr "Nazwa użytkownika:"
 msgid "SMB authentication"
 msgstr "Uwierzytelnianie SMB"
 
+msgid "Secure deletion"
+msgstr "Bezpieczne usunięcie"
+
+msgid "Undelete"
+msgstr "Cofnięcie usunięcia"
+
+msgid "Synchronous updates"
+msgstr "Aktualizacje synchroniczne"
+
+msgid "Synchronous directory updates"
+msgstr "Synchroniczne aktualizacje katalogów"
+
+msgid "Immutable"
+msgstr "Niezmienne"
+
+msgid "Append only"
+msgstr "Tylko dołączanie"
+
+msgid "No dump"
+msgstr "Bez zrzucania"
+
+msgid "No update atime"
+msgstr "Bez atime aktualizacji"
+
+msgid "Compress"
+msgstr "Kompresja"
+
+msgid "Compressed clusters"
+msgstr "Skompresowane klastry"
+
+msgid "Compressed dirty file"
+msgstr "Skompresowany „brudny” plik"
+
+msgid "Compression raw access"
+msgstr "Surowy dostęp do kompresji"
+
+msgid "Encrypted inode"
+msgstr "Zaszyfrowany i-węzeł"
+
+msgid "Journaled data"
+msgstr "Księgowane dane"
+
+msgid "Indexed directory"
+msgstr "Zindeksowany katalog"
+
+msgid "No tail merging"
+msgstr "Bez łączenia końcówek"
+
+msgid "Top of directory hierarchies"
+msgstr "Hierarchie góry katalogów"
+
+msgid "Inode uses extents"
+msgstr "I-węzeł używa „extent”"
+
+msgid "Huge_file"
+msgstr "Wielki_plik"
+
+msgid "No COW"
+msgstr "Bez COW"
+
+msgid "Casefolded file"
+msgstr "Plik bez rozróżniania wielkości znaków"
+
+msgid "Inode has inline data"
+msgstr "I-węzeł ma wstawione dane"
+
+msgid "Project hierarchy"
+msgstr "Hierarchia projektu"
+
+msgid "Verity protected inode"
+msgstr "I-węzeł o chronionej prawdzie"
+
+msgid "&Marked all"
+msgstr "Wszystkie zaz&naczone"
+
+msgid "S&et marked"
+msgstr "Ustaw zaznaczon&e"
+
+msgid "C&lear marked"
+msgstr "&Wyczyść zaznaczone"
+
+msgid "Chattr command"
+msgstr "Polecenie chattr"
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można wykonać polecenia chattr na „%s”\n"
+"%s"
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr "Nie można zmienić atrybutów na nielokalnych systemach plików"
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+"Nie można uzyskać flag „%s”\n"
+"%s"
+
 msgid "set &user ID on execution"
 msgstr "ustaw &UID przy wykonaniu"
 
@@ -2253,15 +2365,6 @@ msgstr "Nazwa właściciela:"
 
 msgid "Group name:"
 msgstr "Nazwa grupy:"
-
-msgid "&Marked all"
-msgstr "Wszystkie zaz&naczone"
-
-msgid "S&et marked"
-msgstr "Ustaw zaznaczon&e"
-
-msgid "C&lear marked"
-msgstr "&Wyczyść zaznaczone"
 
 msgid "Chmod command"
 msgstr "Polecenie chmod"
@@ -3250,6 +3353,16 @@ msgstr "Właściciel:    %s/%s"
 msgid "Links:      %d"
 msgstr "Dowiązania:    %d"
 
+msgid "Attributes: not supported"
+msgstr "Atrybuty: nieobsługiwane"
+
+#, c-format
+msgid "Attributes: %s"
+msgstr "Atrybuty: %s"
+
+msgid "Attributes: unavailable"
+msgstr "Atrybuty: niedostępne"
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Tryb:          %s (%04o)"
@@ -3368,6 +3481,9 @@ msgstr "Zm&ień właściciela"
 
 msgid "&Advanced chown"
 msgstr "Z&aawansowana zmiana właściciela"
+
+msgid "Cha&ttr"
+msgstr "Zmień a&trybuty"
 
 msgid "&Rename/Move"
 msgstr "Zmień nazwę/p&rzenieś"
@@ -3842,6 +3958,15 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Ścieżka do katalogu domowego nie jest bezwzględna"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+"Program GNU Midnight Commander\n"
+"jest już uruchomiony w tym terminalu.\n"
+"Obsługa podpowłoki będzie wyłączona."
+
 #, c-format
 msgid ""
 "\n"
@@ -3872,15 +3997,6 @@ msgstr ""
 "Nie można zapisać pliku %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"Program GNU Midnight Commander jest\n"
-"już uruchomiony w tym terminalu.\n"
-"Obsługa podpowłoki będzie wyłączona."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nie można otworzyć nazwanego potoku %s\n"
@@ -3892,54 +4008,64 @@ msgstr "Powłoka jest wciąż aktywna. Zakończyć mimo to?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Ostrzeżenie: nie można zmienić katalogu na %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Używanie biblioteki S-Lang z bazą danych terminfo\n"
+msgid "With builtin Editor and Aspell support"
+msgstr "Z wbudowanym edytorem i obsługą Aspell"
 
-msgid "Using the ncurses library\n"
-msgstr "Używanie biblioteki ncurses\n"
+msgid "With builtin Editor"
+msgstr "Z wbudowanym edytorem"
 
-msgid "Using the ncursesw library\n"
-msgstr "Używanie biblioteki ncursesw\n"
+msgid "With optional subshell support"
+msgstr "Z opcjonalną obsługą podpowłoki"
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Z wbudowanym edytorem i obsługą Aspell\n"
+msgid "With subshell support as default"
+msgstr "Z domyślną obsługą podpowłoki"
 
-msgid "With builtin Editor\n"
-msgstr "Z wbudowanym edytorem\n"
+msgid "With support for background operations"
+msgstr "Z obsługą wykonywania działań w tle"
 
-msgid "With optional subshell support\n"
-msgstr "Z opcjonalną obsługą podpowłoki\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr "Z obsługą myszy w xterm i konsoli Linuksa"
 
-msgid "With subshell support as default\n"
-msgstr "Z domyślną obsługą podpowłoki\n"
+msgid "With mouse support on xterm"
+msgstr "Z obsługą myszy w xterm"
 
-msgid "With support for background operations\n"
-msgstr "Z obsługą wykonywania działań w tle\n"
+msgid "With support for X11 events"
+msgstr "Z obsługą zdarzeń X11"
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Z obsługą myszy w xterm i konsoli Linux\n"
+msgid "With internationalization support"
+msgstr "Z obsługą wielu języków"
 
-msgid "With mouse support on xterm\n"
-msgstr "Z obsługą myszy w xterm\n"
+msgid "With multiple codepages support"
+msgstr "Z obsługą wielu stron kodowych"
 
-msgid "With support for X11 events\n"
-msgstr "Z obsługą zdarzeń X11\n"
-
-msgid "With internationalization support\n"
-msgstr "Z obsługą wielu języków\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Z obsługą wielu stron kodowych\n"
+msgid "With ext2fs attributes support"
+msgstr "Z obsługą atrybutów ext2fs"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Zbudowano za pomocą biblioteki GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr "Zbudowano za pomocą biblioteki S-Lang %s z bazą danych terminfo\n"
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr "Zbudowano za pomocą biblioteki ncurses %s\n"
+
+msgid "Built with ncurses (unknown version)"
+msgstr "Zbudowano za pomocą biblioteki ncurses (nieznana wersja)"
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr "Zbudowano za pomocą biblioteki ncursesw %s\n"
+
+msgid "Built with ncursesw (unknown version)"
+msgstr "Zbudowano za pomocą biblioteki ncursesw (nieznana wersja)"
+
 msgid "Virtual File Systems:"
 msgstr "Wirtualne systemy plików:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Typy danych:"
 

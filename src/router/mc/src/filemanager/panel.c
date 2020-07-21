@@ -1,7 +1,7 @@
 /*
    Panel managing.
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -353,21 +353,21 @@ static panel_field_t panel_fields[] = {
 };
 /* *INDENT-ON* */
 
-static char *panel_sort_up_sign = NULL;
-static char *panel_sort_down_sign = NULL;
+static char *panel_sort_up_char = NULL;
+static char *panel_sort_down_char = NULL;
 
-static char *panel_hiddenfiles_sign_show = NULL;
-static char *panel_hiddenfiles_sign_hide = NULL;
-static char *panel_history_prev_item_sign = NULL;
-static char *panel_history_next_item_sign = NULL;
-static char *panel_history_show_list_sign = NULL;
+static char *panel_hiddenfiles_show_char = NULL;
+static char *panel_hiddenfiles_hide_char = NULL;
+static char *panel_history_prev_item_char = NULL;
+static char *panel_history_next_item_char = NULL;
+static char *panel_history_show_list_char = NULL;
 static char *panel_filename_scroll_left_char = NULL;
 static char *panel_filename_scroll_right_char = NULL;
 
 /* Panel that selection started */
 static WPanel *mouse_mark_panel = NULL;
 
-static int mouse_marking = 0;
+static gboolean mouse_marking = FALSE;
 static int state_mark = 0;
 
 /* --------------------------------------------------------------------------------------------- */
@@ -1255,7 +1255,6 @@ static void
 show_dir (const WPanel * panel)
 {
     const Widget *w = CONST_WIDGET (panel);
-
     gchar *tmp;
 
     set_colors (panel);
@@ -1274,11 +1273,11 @@ show_dir (const WPanel * panel)
     }
 
     widget_gotoyx (w, 0, 1);
-    tty_print_string (panel_history_prev_item_sign);
+    tty_print_string (panel_history_prev_item_char);
 
-    tmp = panels_options.show_dot_files ? panel_hiddenfiles_sign_show : panel_hiddenfiles_sign_hide;
-    tmp = g_strdup_printf ("%s[%s]%s", tmp, panel_history_show_list_sign,
-                           panel_history_next_item_sign);
+    tmp = panels_options.show_dot_files ? panel_hiddenfiles_show_char : panel_hiddenfiles_hide_char;
+    tmp = g_strdup_printf ("%s[%s]%s", tmp, panel_history_show_list_char,
+                           panel_history_next_item_char);
 
     widget_gotoyx (w, 0, w->cols - 6);
     tty_print_string (tmp);
@@ -1514,7 +1513,7 @@ panel_paint_sort_info (const WPanel * panel)
     if (*panel->sort_field->hotkey != '\0')
     {
         const char *sort_sign =
-            panel->sort_info.reverse ? panel_sort_up_sign : panel_sort_down_sign;
+            panel->sort_info.reverse ? panel_sort_up_char : panel_sort_down_char;
         char *str;
 
         str = g_strdup_printf ("%s%s", sort_sign, Q_ (panel->sort_field->hotkey));
@@ -1580,7 +1579,7 @@ panel_print_header (const WPanel * panel)
                 if (panel->list_format == list_long && strcmp (fi->id, panel->sort_field->id) == 0)
                     g_string_append (format_txt,
                                      panel->sort_info.reverse
-                                     ? panel_sort_up_sign : panel_sort_down_sign);
+                                     ? panel_sort_up_char : panel_sort_down_char);
 
                 g_string_append (format_txt, fi->title);
 
@@ -1620,6 +1619,7 @@ static const char *
 parse_panel_size (WPanel * panel, const char *format, gboolean isstatus)
 {
     panel_display_t frame = frame_half;
+
     format = skip_separators (format);
 
     if (strncmp (format, "full", 4) == 0)
@@ -2041,17 +2041,19 @@ unselect_item (WPanel * panel)
 static void
 panel_select_ext_cmd (void)
 {
-    gboolean do_select = !selection (current_panel)->f.marked;
-    char *filename = selection (current_panel)->fname;
+    char *filename;
+    gboolean do_select;
     char *reg_exp, *cur_file_ext;
     mc_search_t *search;
     int i;
 
+    filename = selection (current_panel)->fname;
     if (filename == NULL)
         return;
 
-    cur_file_ext = strutils_regex_escape (extension (filename));
+    do_select = !selection (current_panel)->f.marked;
 
+    cur_file_ext = strutils_regex_escape (extension (filename));
     if (cur_file_ext[0] != '\0')
         reg_exp = g_strconcat ("^.*\\.", cur_file_ext, "$", (char *) NULL);
     else
@@ -2073,7 +2075,7 @@ panel_select_ext_cmd (void)
         if (!mc_search_run (search, file_entry->fname, 0, file_entry->fnamelen, NULL))
             continue;
 
-        do_file_mark (current_panel, i, do_select);
+        do_file_mark (current_panel, i, do_select ? 1 : 0);
     }
 
     mc_search_free (search);
@@ -2236,7 +2238,7 @@ prev_page (WPanel * panel)
 {
     int items;
 
-    if (!panel->selected && !panel->top_file)
+    if (panel->selected == 0 && panel->top_file == 0)
         return;
 
     unselect_item (panel);
@@ -2377,7 +2379,9 @@ move_home (WPanel * panel)
 
     if (panels_options.torben_fj_mode)
     {
-        int middle_pos = panel->top_file + panel_items (panel) / 2;
+        int middle_pos;
+
+        middle_pos = panel->top_file + panel_items (panel) / 2;
 
         if (panel->selected > middle_pos)
         {
@@ -2438,6 +2442,7 @@ static void
 do_mark_file (WPanel * panel, mark_act_t do_move)
 {
     do_file_mark (panel, panel->selected, selection (panel)->f.marked ? 0 : 1);
+
     if ((panels_options.mark_moves_down && do_move == MARK_DOWN) || do_move == MARK_FORCE_DOWN)
         move_down (panel);
     else if (do_move == MARK_FORCE_UP)
@@ -2564,7 +2569,7 @@ panel_select_unselect_files (WPanel * panel, const char *title, const char *hist
             continue;
 
         if (mc_search_run (search, panel->dir.list[i].fname, 0, panel->dir.list[i].fnamelen, NULL))
-            do_file_mark (panel, i, do_select);
+            do_file_mark (panel, i, do_select ? 1 : 0);
     }
 
     mc_search_free (search);
@@ -2608,7 +2613,7 @@ panel_select_invert_files (WPanel * panel)
         file_entry_t *file = &panel->dir.list[i];
 
         if (!panels_options.reverse_files_only || !S_ISDIR (file->st.st_mode))
-            do_file_mark (panel, i, !file->f.marked);
+            do_file_mark (panel, i, file->f.marked ? 0 : 1);
     }
 }
 
@@ -2662,7 +2667,7 @@ do_search (WPanel * panel, int c_code)
                 {
                     memcpy (panel->search_buffer + l, panel->search_char, panel->search_chpoint);
                     l += panel->search_chpoint;
-                    *(panel->search_buffer + l) = '\0';
+                    panel->search_buffer[l] = '\0';
                     panel->search_chpoint = 0;
                 }
             }
@@ -2734,7 +2739,7 @@ start_search (WPanel * panel)
 {
     if (panel->searching)
     {
-        if (panel->selected + 1 == panel->dir.len)
+        if (panel->selected == panel->dir.len - 1)
             panel->selected = 0;
         else
             move_down (panel);
@@ -3156,7 +3161,9 @@ panel_content_scroll_right (WPanel * panel)
 static void
 panel_set_sort_type_by_id (WPanel * panel, const char *name)
 {
-    if (strcmp (panel->sort_field->id, name) != 0)
+    if (strcmp (panel->sort_field->id, name) == 0)
+        panel->sort_info.reverse = !panel->sort_info.reverse;
+    else
     {
         const panel_field_t *sort_order;
 
@@ -3166,8 +3173,6 @@ panel_set_sort_type_by_id (WPanel * panel, const char *name)
 
         panel->sort_field = sort_order;
     }
-    else
-        panel->sort_info.reverse = !panel->sort_info.reverse;
 
     panel_set_sort_order (panel, panel->sort_field);
 }
@@ -3204,8 +3209,7 @@ get_parent_dir_name (const vfs_path_t * cwd_vpath, const vfs_path_t * lwd_vpath)
 
         p = strrchr (lwd, PATH_SEP);
 
-        if ((p != NULL)
-            && (strncmp (cwd, lwd, (size_t) (p - lwd)) == 0)
+        if (p != NULL && strncmp (cwd, lwd, (size_t) (p - lwd)) == 0
             && (clen == (size_t) (p - lwd) || (p == lwd && IS_PATH_SEP (cwd[0]) && cwd[1] == '\0')))
             return (p + 1);
 
@@ -3264,7 +3268,7 @@ _do_panel_cd (WPanel * panel, const vfs_path_t * new_dir_vpath, enum cd_enum cd_
     /* Success: save previous directory, shutdown status of previous dir */
     olddir_vpath = vfs_path_clone (panel->cwd_vpath);
     panel_set_lwd (panel, panel->cwd_vpath);
-    input_free_completions (cmdline);
+    input_complete_free (cmdline);
 
     vfs_path_free (panel->cwd_vpath);
     vfs_setup_cwd ();
@@ -3589,7 +3593,7 @@ panel_execute_cmd (WPanel * panel, long command)
 static cb_ret_t
 panel_key (WPanel * panel, int key)
 {
-    size_t i;
+    long command;
 
     if (is_abort_char (key))
     {
@@ -3603,9 +3607,9 @@ panel_key (WPanel * panel, int key)
         return MSG_HANDLED;
     }
 
-    for (i = 0; panel_map[i].key != 0; i++)
-        if (key == panel_map[i].key)
-            return panel_execute_cmd (panel, panel_map[i].command);
+    command = widget_lookup_key (WIDGET (panel), key);
+    if (command != CK_IgnoreKey)
+        return panel_execute_cmd (panel, command);
 
     if (panels_options.torben_fj_mode && key == ALT ('h'))
     {
@@ -3629,15 +3633,16 @@ static cb_ret_t
 panel_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
     WPanel *panel = PANEL (w);
+    WDialog *h = DIALOG (w->owner);
     WButtonBar *bb;
 
     switch (msg)
     {
     case MSG_INIT:
         /* subscribe to "history_load" event */
-        mc_event_add (w->owner->event_group, MCEVENT_HISTORY_LOAD, panel_load_history, w, NULL);
+        mc_event_add (h->event_group, MCEVENT_HISTORY_LOAD, panel_load_history, w, NULL);
         /* subscribe to "history_save" event */
-        mc_event_add (w->owner->event_group, MCEVENT_HISTORY_SAVE, panel_save_history, w, NULL);
+        mc_event_add (h->event_group, MCEVENT_HISTORY_SAVE, panel_save_history, w, NULL);
         return MSG_HANDLED;
 
     case MSG_DRAW:
@@ -3672,7 +3677,7 @@ panel_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
         update_xterm_title_path ();
         select_item (panel);
 
-        bb = find_buttonbar (w->owner);
+        bb = find_buttonbar (h);
         midnight_set_buttonbar (bb);
         widget_draw (WIDGET (bb));
         return MSG_HANDLED;
@@ -3693,9 +3698,9 @@ panel_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
     case MSG_DESTROY:
         vfs_stamp_path (panel->cwd_vpath);
         /* unsubscribe from "history_load" event */
-        mc_event_del (w->owner->event_group, MCEVENT_HISTORY_LOAD, panel_load_history, w);
+        mc_event_del (h->event_group, MCEVENT_HISTORY_LOAD, panel_load_history, w);
         /* unsubscribe from "history_save" event */
-        mc_event_del (w->owner->event_group, MCEVENT_HISTORY_SAVE, panel_save_history, w);
+        mc_event_del (h->event_group, MCEVENT_HISTORY_SAVE, panel_save_history, w);
         panel_destroy (panel);
         free_my_statfs ();
         return MSG_HANDLED;
@@ -3725,9 +3730,9 @@ mouse_set_mark (WPanel * panel)
 {
     if (mouse_mark_panel == panel)
     {
-        if (mouse_marking && !(selection (panel)->f.marked))
+        if (mouse_marking && !selection (panel)->f.marked)
             do_mark_file (panel, MARK_DONT_MOVE);
-        else if (!mouse_marking && (selection (panel)->f.marked))
+        else if (!mouse_marking && selection (panel)->f.marked)
             do_mark_file (panel, MARK_DONT_MOVE);
     }
 }
@@ -3759,11 +3764,11 @@ static void
 mouse_sort_col (WPanel * panel, int x)
 {
     int i = 0;
-    GSList *format = panel->format;
+    GSList *format;
     const char *lc_sort_name = NULL;
     panel_field_t *col_sort_format = NULL;
 
-    for (; format != NULL; format = g_slist_next (format))
+    for (format = panel->format; format != NULL; format = g_slist_next (format))
     {
         format_item_t *fi = (format_item_t *) format->data;
 
@@ -3784,27 +3789,52 @@ mouse_sort_col (WPanel * panel, int x)
         const char *title;
 
         title = panel_get_title_without_hotkey (panel_fields[i].title_hotkey);
-        if (strcmp (title, lc_sort_name) == 0 && panel_fields[i].sort_routine != NULL)
+        if (panel_fields[i].sort_routine != NULL && strcmp (title, lc_sort_name) == 0)
         {
             col_sort_format = &panel_fields[i];
             break;
         }
     }
 
-    if (col_sort_format == NULL)
-        return;
+    if (col_sort_format != NULL)
+    {
+        if (panel->sort_field == col_sort_format)
+            /* reverse the sort if clicked column is already the sorted column */
+            panel->sort_info.reverse = !panel->sort_info.reverse;
+        else
+            /* new sort is forced to be ascending */
+            panel->sort_info.reverse = FALSE;
 
-    if (panel->sort_field == col_sort_format)
-    {
-        /* reverse the sort if clicked column is already the sorted column */
-        panel->sort_info.reverse = !panel->sort_info.reverse;
+        panel_set_sort_order (panel, col_sort_format);
     }
-    else
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static int
+panel_mouse_is_on_item (const WPanel * panel, int y, int x)
+{
+    int last;
+
+    if (y < 0)
+        return (-1);
+
+    last = panel->dir.len - 1;
+    y += panel->top_file;
+
+    if (y > last)
+        return (-1);
+
+    if (panel->list_cols > 1)
     {
-        /* new sort is forced to be ascending */
-        panel->sort_info.reverse = FALSE;
+        int width, lines;
+
+        width = (WIDGET (panel)->cols - 2) / panel->list_cols;
+        lines = panel_lines (panel);
+        y += lines * (x / width);
     }
-    panel_set_sort_order (panel, col_sort_format);
+
+    return (y > last ? -1 : y);
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -3858,39 +3888,21 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
 
     case MSG_MOUSE_DRAG:
         {
-            int y, last, my_index;
+            int my_index;
 
-            last = panel->dir.len - 1;
-            y = event->y - 2;
-
-            if (panel->top_file + y > last)
-                my_index = last;
-            else
+            my_index = panel_mouse_is_on_item (panel, event->y - 2, event->x);
+            if (my_index >= 0)
             {
-                my_index = panel->top_file + y;
-
-                if (panel->list_cols > 1)
+                if (my_index != panel->selected)
                 {
-                    int width, lines;
-
-                    width = (w->cols - 2) / panel->list_cols;
-                    lines = panel_lines (panel);
-                    my_index += lines * (event->x / width);
+                    unselect_item (panel);
+                    panel->selected = my_index;
+                    select_item (panel);
                 }
 
-                if (my_index > last)
-                    my_index = last;
+                /* This one is new */
+                mark_if_marking (panel, event);
             }
-
-            if (my_index != panel->selected)
-            {
-                unselect_item (panel);
-                panel->selected = my_index;
-                select_item (panel);
-            }
-
-            /* This one is new */
-            mark_if_marking (panel, event);
         }
         break;
 
@@ -3898,16 +3910,9 @@ panel_mouse_callback (Widget * w, mouse_msg_t msg, mouse_event_t * event)
         break;
 
     case MSG_MOUSE_CLICK:
-        if ((event->count & GPM_DOUBLE) != 0 && (event->buttons & GPM_B_LEFT) != 0)
-        {
-            int y, lines;
-
-            y = event->y - 2;
-            lines = panel_lines (panel);
-
-            if (y >= 0 && y < lines)
-                do_enter (panel);
-        }
+        if ((event->count & GPM_DOUBLE) != 0 && (event->buttons & GPM_B_LEFT) != 0 &&
+            panel_mouse_is_on_item (panel, event->y - 2, event->x) >= 0)
+            do_enter (panel);
         break;
 
     case MSG_MOUSE_MOVE:
@@ -4296,6 +4301,7 @@ panel_sized_empty_new (const char *panel_name, int y, int x, int lines, int cols
     w = WIDGET (panel);
     widget_init (w, y, x, lines, cols, panel_callback, panel_mouse_callback);
     w->options |= WOP_SELECTABLE | WOP_TOP_SELECT;
+    w->keymap = panel_map;
 
     panel->dir.size = DIR_LIST_MIN_SIZE;
     panel->dir.list = g_new (file_entry_t, panel->dir.size);
@@ -4534,17 +4540,17 @@ select_item (WPanel * panel)
 void
 unmark_files (WPanel * panel)
 {
-    int i;
+    if (panel->marked != 0)
+    {
+        int i;
 
-    if (panel->marked == 0)
-        return;
+        for (i = 0; i < panel->dir.len; i++)
+            file_mark (panel, i, 0);
 
-    for (i = 0; i < panel->dir.len; i++)
-        file_mark (panel, i, 0);
-
-    panel->dirs_marked = 0;
-    panel->marked = 0;
-    panel->total = 0;
+        panel->dirs_marked = 0;
+        panel->marked = 0;
+        panel->total = 0;
+    }
 }
 
 /* --------------------------------------------------------------------------------------------- */
@@ -4973,14 +4979,13 @@ panel_get_user_possible_fields (gsize * array_size)
 void
 panel_init (void)
 {
-    panel_sort_up_sign = mc_skin_get ("widget-common", "sort-sign-up", "'");
-    panel_sort_down_sign = mc_skin_get ("widget-common", "sort-sign-down", ".");
-
-    panel_hiddenfiles_sign_show = mc_skin_get ("widget-panel", "hiddenfiles-sign-show", ".");
-    panel_hiddenfiles_sign_hide = mc_skin_get ("widget-panel", "hiddenfiles-sign-hide", ".");
-    panel_history_prev_item_sign = mc_skin_get ("widget-panel", "history-prev-item-sign", "<");
-    panel_history_next_item_sign = mc_skin_get ("widget-panel", "history-next-item-sign", ">");
-    panel_history_show_list_sign = mc_skin_get ("widget-panel", "history-show-list-sign", "^");
+    panel_sort_up_char = mc_skin_get ("widget-panel", "sort-up-char", "'");
+    panel_sort_down_char = mc_skin_get ("widget-panel", "sort-down-char", ".");
+    panel_hiddenfiles_show_char = mc_skin_get ("widget-panel", "hiddenfiles-show-char", ".");
+    panel_hiddenfiles_hide_char = mc_skin_get ("widget-panel", "hiddenfiles-hide-char", ".");
+    panel_history_prev_item_char = mc_skin_get ("widget-panel", "history-prev-item-char", "<");
+    panel_history_next_item_char = mc_skin_get ("widget-panel", "history-next-item-char", ">");
+    panel_history_show_list_char = mc_skin_get ("widget-panel", "history-show-list-char", "^");
     panel_filename_scroll_left_char =
         mc_skin_get ("widget-panel", "filename-scroll-left-char", "{");
     panel_filename_scroll_right_char =
@@ -4996,14 +5001,13 @@ panel_init (void)
 void
 panel_deinit (void)
 {
-    g_free (panel_sort_up_sign);
-    g_free (panel_sort_down_sign);
-
-    g_free (panel_hiddenfiles_sign_show);
-    g_free (panel_hiddenfiles_sign_hide);
-    g_free (panel_history_prev_item_sign);
-    g_free (panel_history_next_item_sign);
-    g_free (panel_history_show_list_sign);
+    g_free (panel_sort_up_char);
+    g_free (panel_sort_down_char);
+    g_free (panel_hiddenfiles_show_char);
+    g_free (panel_hiddenfiles_hide_char);
+    g_free (panel_history_prev_item_char);
+    g_free (panel_history_next_item_char);
+    g_free (panel_history_show_list_char);
     g_free (panel_filename_scroll_left_char);
     g_free (panel_filename_scroll_right_char);
 }

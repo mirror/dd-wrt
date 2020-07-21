@@ -3,6 +3,7 @@
 # This file is distributed under the same license as the mc package.
 #
 # Translators:
+# András Tőrös <toros.andras04@gmail.com>, 2020
 # Mátyás Demeter <mathias.demeter@gmail.com>, 2014
 # Rezső Páder <rezso@rezso.net>, 2012-2017,2019
 # Slava Zanko <slavazanko@gmail.com>, 2011
@@ -11,9 +12,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-16 01:49+0000\n"
-"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Hungarian (http://www.transifex.com/mc/mc/language/hu/)\n"
 "Language: hu\n"
 "MIME-Version: 1.0\n"
@@ -481,13 +482,22 @@ msgstr "Nincs beállítva a TERM környezeti változó.\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1119,9 +1129,6 @@ msgstr "Sortörés formátum:"
 msgid "Save As"
 msgstr "Mentés másként"
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Nagy blokk, a művelet nem biztos hogy visszavonható."
-
 msgid "Collect completions"
 msgstr ""
 
@@ -1320,9 +1327,9 @@ msgstr "Nyomjon meg egy billentyűt:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
-"A szöveg módosult a legutóbbi mentés óta.\n"
+"A szöveg módosult a legutóbbi mentés óta. \n"
 "Ha továbblép, ezek a változások elvesznek."
 
 msgid "In se&lection"
@@ -1351,13 +1358,6 @@ msgstr "Csere megerősítése"
 
 msgid "Cancel"
 msgstr "Mégsem"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"A szöveg módosult a legutóbbi mentés óta. \n"
-"Ha továbblép, ezek a változások elvesznek."
 
 msgid "NoName"
 msgstr "Névtelen"
@@ -1657,7 +1657,7 @@ msgstr ""
 "Felhasználóbarát szövegszerkesztő\n"
 "a Midnight Commander-hez készítve"
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
 msgstr ""
 
 msgid "About"
@@ -1812,10 +1812,8 @@ msgstr "A parancsértelmező már futtat egy parancsot."
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Nem Xterm vagy Linux-konzol;\n"
-"a paneleket nem lehet kikapcsolni."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Írjon \"exit\"-et a Midnight Commanderbe való visszatéréshez."
@@ -1840,6 +1838,10 @@ msgstr "Mások"
 
 msgid "Flag"
 msgstr "Jel"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Chmod-Chown parancs"
@@ -1954,7 +1956,7 @@ msgid "Sa&fe delete"
 msgstr "\"Ó&vatos\" törlés"
 
 msgid "Safe overwrite"
-msgstr ""
+msgstr "Biztonságos felülírás"
 
 msgid "A&uto save setup"
 msgstr "Auto &Beállításmentés"
@@ -2187,6 +2189,105 @@ msgstr "Felhasználónév:"
 msgid "SMB authentication"
 msgstr "SMB hitelesítés"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "&Jelölteket"
+
+msgid "S&et marked"
+msgstr "Jel. b&e"
+
+msgid "C&lear marked"
+msgstr "Jel. &ki"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "&felhasználó-azonosító beállítása végrehajtáskor"
 
@@ -2234,15 +2335,6 @@ msgstr "Tulajdonos:"
 
 msgid "Group name:"
 msgstr "Csoport:"
-
-msgid "&Marked all"
-msgstr "&Jelölteket"
-
-msgid "S&et marked"
-msgstr "Jel. b&e"
-
-msgid "C&lear marked"
-msgstr "Jel. &ki"
 
 msgid "Chmod command"
 msgstr "Jogosultságok beállítása (Chmod)"
@@ -3220,6 +3312,16 @@ msgstr "Tulajdonos: %s/%s"
 msgid "Links:      %d"
 msgstr "Linkek száma: %d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Típus+jogok:  %s (%04o)"
@@ -3338,6 +3440,9 @@ msgstr "Ch&own"
 
 msgid "&Advanced chown"
 msgstr "Chmod-Chown (tul&aj)"
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "Át&nevez/Áthelyez"
@@ -3810,6 +3915,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "A Home könyvtár elérési útja nem abszolút"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3840,15 +3951,6 @@ msgstr ""
 "Az %s fájl nem menthető:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"A Midnight Commander már fut ezen\n"
-"a terminálon.\n"
-"Háttér-shell használata nem lesz lehetséges."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Nem sikerült megnyitni a(z) \"%s\" csőfájlt.\n"
@@ -3860,54 +3962,64 @@ msgstr "A háttér-shell még aktív. Mégis kilép?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Nem sikerült belépni a(z) \"%s\" könyvtárba.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Az S-Lang könyvtár használata Terminfo adatbázissal\n"
-
-msgid "Using the ncurses library\n"
-msgstr "Az ncurses könyvtár használata\n"
-
-msgid "Using the ncursesw library\n"
-msgstr "Az ncursesw könyvtár használata\n"
-
-msgid "With builtin Editor and Aspell support\n"
+msgid "With builtin Editor and Aspell support"
 msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "Beépített szövegszerkesztővel\n"
+msgid "With builtin Editor"
+msgstr "Beépített szerkesztővel"
 
-msgid "With optional subshell support\n"
-msgstr "Opcionális háttér-shell-támogatással\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Alapértelmezésben háttér-shell-támogatással\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Háttérműveletek támogatása\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Egérhasználat Xterm alatt és Linux-konzolon\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "Egérhasználat Xterm alatt\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "X11-események támogatása\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With internationalization support\n"
-msgstr "Nyelvi lokalizálás támogatása\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With multiple codepages support\n"
-msgstr "Több kódlap támogatása\n"
+msgid "With multiple codepages support"
+msgstr ""
+
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "GLib %d.%d.%d verzióval fordíva\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Virtuális fájlrendszerek:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Adattípusok:"
 

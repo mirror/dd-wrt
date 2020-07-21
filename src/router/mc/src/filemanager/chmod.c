@@ -1,7 +1,7 @@
 /*
    Chmod command -- for the Midnight Commander
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    This file is part of the Midnight Commander.
@@ -132,10 +132,13 @@ static WGroupbox *file_gb;
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-chmod_i18n (void)
+chmod_init (void)
 {
     static gboolean i18n = FALSE;
     int i, len;
+
+    for (i = 0; i < BUTTONS_PERM; i++)
+        check_perm[i].selected = FALSE;
 
     if (i18n)
         return;
@@ -178,11 +181,8 @@ chmod_i18n (void)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-chmod_toggle_select (WDialog * h, int Id)
+chmod_draw_select (const WDialog * h, int Id)
 {
-    tty_setcolor (COLOR_NORMAL);
-    check_perm[Id].selected = !check_perm[Id].selected;
-
     widget_gotoyx (h, PY + Id + 1, PX + 1);
     tty_print_char (check_perm[Id].selected ? '*' : ' ');
     widget_gotoyx (h, PY + Id + 1, PX + 3);
@@ -191,14 +191,28 @@ chmod_toggle_select (WDialog * h, int Id)
 /* --------------------------------------------------------------------------------------------- */
 
 static void
-chmod_refresh (WDialog * h)
+chmod_toggle_select (const WDialog * h, int Id)
 {
-    int y = WIDGET (file_gb)->y + 1;
-    int x = WIDGET (file_gb)->x + 2;
+    check_perm[Id].selected = !check_perm[Id].selected;
+    tty_setcolor (COLOR_NORMAL);
+    chmod_draw_select (h, Id);
+}
 
-    dlg_default_repaint (h);
+/* --------------------------------------------------------------------------------------------- */
+
+static void
+chmod_refresh (const WDialog * h)
+{
+    int i;
+    int y, x;
 
     tty_setcolor (COLOR_NORMAL);
+
+    for (i = 0; i < BUTTONS_PERM; i++)
+        chmod_draw_select (h, i);
+
+    y = WIDGET (file_gb)->y + 1;
+    x = WIDGET (file_gb)->x + 2;
 
     tty_gotoyx (y, x);
     tty_print_string (file_info_labels[0]);
@@ -213,16 +227,30 @@ chmod_refresh (WDialog * h)
 /* --------------------------------------------------------------------------------------------- */
 
 static cb_ret_t
+chmod_bg_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
+{
+    switch (msg)
+    {
+    case MSG_DRAW:
+        frame_callback (w, NULL, MSG_DRAW, 0, NULL);
+        chmod_refresh (CONST_DIALOG (w->owner));
+        return MSG_HANDLED;
+
+    default:
+        return frame_callback (w, sender, msg, parm, data);
+    }
+}
+
+/* --------------------------------------------------------------------------------------------- */
+
+static cb_ret_t
 chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *data)
 {
+    WGroup *g = GROUP (w);
     WDialog *h = DIALOG (w);
 
     switch (msg)
     {
-    case MSG_DRAW:
-        chmod_refresh (h);
-        return MSG_HANDLED;
-
     case MSG_NOTIFY:
         {
             /* handle checkboxes */
@@ -235,11 +263,8 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 
             if (i < BUTTONS_PERM)
             {
-                char buffer[BUF_TINY];
-
                 ch_mode ^= check_perm[i].mode;
-                g_snprintf (buffer, sizeof (buffer), "%o", (unsigned int) ch_mode);
-                label_set_text (statl, buffer);
+                label_set_textv (statl, "%o", (unsigned int) ch_mode);
                 chmod_toggle_select (h, i);
                 mode_change = TRUE;
                 return MSG_HANDLED;
@@ -254,7 +279,7 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             int i;
             unsigned long id;
 
-            id = dlg_get_current_widget_id (h);
+            id = group_get_current_widget_id (g);
             for (i = 0; i < BUTTONS_PERM; i++)
                 if (id == WIDGET (check_perm[i].check)->id)
                     break;
@@ -263,7 +288,7 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
             {
                 chmod_toggle_select (h, i);
                 if (parm == KEY_IC)
-                    dlg_select_next_widget (h);
+                    group_select_next_widget (g);
                 return MSG_HANDLED;
             }
         }
@@ -277,10 +302,11 @@ chmod_callback (Widget * w, Widget * sender, widget_msg_t msg, int parm, void *d
 /* --------------------------------------------------------------------------------------------- */
 
 static WDialog *
-chmod_init (const char *fname, const struct stat *sf_stat)
+chmod_dlg_create (const char *fname, const struct stat *sf_stat)
 {
     gboolean single_set;
     WDialog *ch_dlg;
+    WGroup *g;
     int lines, cols;
     int i, y;
     int perm_gb_len;
@@ -309,61 +335,64 @@ chmod_init (const char *fname, const struct stat *sf_stat)
     ch_dlg =
         dlg_create (TRUE, 0, 0, lines, cols, WPOS_CENTER, FALSE, dialog_colors,
                     chmod_callback, NULL, "[Chmod]", _("Chmod command"));
+    g = GROUP (ch_dlg);
 
-    add_widget (ch_dlg, groupbox_new (PY, PX, BUTTONS_PERM + 2, perm_gb_len, _("Permission")));
+    /* draw background */
+    ch_dlg->bg->callback = chmod_bg_callback;
+
+    group_add_widget (g, groupbox_new (PY, PX, BUTTONS_PERM + 2, perm_gb_len, _("Permission")));
 
     for (i = 0; i < BUTTONS_PERM; i++)
     {
         check_perm[i].check = check_new (PY + i + 1, PX + 2, (ch_mode & check_perm[i].mode) != 0,
                                          check_perm[i].text);
-        add_widget (ch_dlg, check_perm[i].check);
+        group_add_widget (g, check_perm[i].check);
     }
 
     file_gb = groupbox_new (PY, PX + perm_gb_len + 1, BUTTONS_PERM + 2, file_gb_len, _("File"));
-    add_widget (ch_dlg, file_gb);
+    group_add_widget (g, file_gb);
 
     /* Set the labels */
     y = PY + 2;
     cols = PX + perm_gb_len + 3;
     c_fname = str_trunc (fname, file_gb_len - 3);
-    add_widget (ch_dlg, label_new (y, cols, c_fname));
+    group_add_widget (g, label_new (y, cols, c_fname));
     g_snprintf (buffer, sizeof (buffer), "%o", (unsigned int) ch_mode);
     statl = label_new (y + 2, cols, buffer);
-    add_widget (ch_dlg, statl);
+    group_add_widget (g, statl);
     c_fown = str_trunc (get_owner (sf_stat->st_uid), file_gb_len - 3);
-    add_widget (ch_dlg, label_new (y + 4, cols, c_fown));
+    group_add_widget (g, label_new (y + 4, cols, c_fown));
     c_fgrp = str_trunc (get_group (sf_stat->st_gid), file_gb_len - 3);
-    add_widget (ch_dlg, label_new (y + 6, cols, c_fgrp));
+    group_add_widget (g, label_new (y + 6, cols, c_fgrp));
 
     if (!single_set)
     {
         i = 0;
-        add_widget (ch_dlg, hline_new (lines - chmod_but[i].y - 1, -1, -1));
+
+        group_add_widget (g, hline_new (lines - chmod_but[i].y - 1, -1, -1));
+
         for (; i < BUTTONS - 2; i++)
         {
             y = lines - chmod_but[i].y;
-            add_widget (ch_dlg,
-                        button_new (y, WIDGET (ch_dlg)->cols / 2 - chmod_but[i].len,
-                                    chmod_but[i].ret_cmd, chmod_but[i].flags, chmod_but[i].text,
-                                    NULL));
+            group_add_widget (g, button_new (y, WIDGET (ch_dlg)->cols / 2 - chmod_but[i].len,
+                                             chmod_but[i].ret_cmd, chmod_but[i].flags,
+                                             chmod_but[i].text, NULL));
             i++;
-            add_widget (ch_dlg,
-                        button_new (y, WIDGET (ch_dlg)->cols / 2 + 1,
-                                    chmod_but[i].ret_cmd, chmod_but[i].flags, chmod_but[i].text,
-                                    NULL));
+            group_add_widget (g, button_new (y, WIDGET (ch_dlg)->cols / 2 + 1,
+                                             chmod_but[i].ret_cmd, chmod_but[i].flags,
+                                             chmod_but[i].text, NULL));
         }
     }
 
     i = BUTTONS - 2;
     y = lines - chmod_but[i].y;
-    add_widget (ch_dlg, hline_new (y - 1, -1, -1));
-    add_widget (ch_dlg,
-                button_new (y, WIDGET (ch_dlg)->cols / 2 - chmod_but[i].len, chmod_but[i].ret_cmd,
-                            chmod_but[i].flags, chmod_but[i].text, NULL));
+    group_add_widget (g, hline_new (y - 1, -1, -1));
+    group_add_widget (g, button_new (y, WIDGET (ch_dlg)->cols / 2 - chmod_but[i].len,
+                                     chmod_but[i].ret_cmd, chmod_but[i].flags, chmod_but[i].text,
+                                     NULL));
     i++;
-    add_widget (ch_dlg,
-                button_new (y, WIDGET (ch_dlg)->cols / 2 + 1, chmod_but[i].ret_cmd,
-                            chmod_but[i].flags, chmod_but[i].text, NULL));
+    group_add_widget (g, button_new (y, WIDGET (ch_dlg)->cols / 2 + 1, chmod_but[i].ret_cmd,
+                                     chmod_but[i].flags, chmod_but[i].text, NULL));
 
     /* select first checkbox */
     widget_select (WIDGET (check_perm[0].check));
@@ -502,7 +531,7 @@ chmod_cmd (void)
     gboolean need_update;
     gboolean end_chmod;
 
-    chmod_i18n ();
+    chmod_init ();
 
     current_file = 0;
     ignore_all = FALSE;
@@ -535,8 +564,7 @@ chmod_cmd (void)
 
         ch_mode = sf_stat.st_mode;
 
-        ch_dlg = chmod_init (fname, &sf_stat);
-
+        ch_dlg = chmod_dlg_create (fname, &sf_stat);
         result = dlg_run (ch_dlg);
 
         switch (result)

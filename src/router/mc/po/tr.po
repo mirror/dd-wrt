@@ -14,9 +14,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2020-01-18 12:57+0000\n"
-"Last-Translator: Serdar Sağlam <teknomobil@msn.com>\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-17 17:42+0000\n"
+"Last-Translator: Transifex Bot <>\n"
 "Language-Team: Turkish (http://www.transifex.com/mc/mc/language/tr/)\n"
 "Language: tr\n"
 "MIME-Version: 1.0\n"
@@ -484,13 +484,22 @@ msgstr "TERM çevre değişkeni atanmamış!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr ""
 
-msgid "Cannot create pipe for SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure write end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
-msgid "Cannot configure read end of SIGWINCH pipe"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
 msgstr ""
 
 #, c-format
@@ -1125,9 +1134,6 @@ msgstr "Satır sonu şunla değiştiriliyor:"
 msgid "Save As"
 msgstr "Farklı kaydet..."
 
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Blok çok büyük, bu eylem geri alınamayabilir"
-
 msgid "Collect completions"
 msgstr "Tamamlamaları topla"
 
@@ -1329,10 +1335,10 @@ msgstr "Bir tuşa basınız:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
 "Mevcut metin kaydedilmemiş değişiklikler içeriyor\n"
-"Bu değişiklikler yoksayılarak devam edilsin mi?"
+"Bu değişiklikler yoksayılarak devam edilsin mi?."
 
 msgid "In se&lection"
 msgstr "Seçi&li kısımda"
@@ -1360,13 +1366,6 @@ msgstr "Yer değişikliğini onaylat"
 
 msgid "Cancel"
 msgstr "Vazgeç"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Mevcut metin kaydedilmemiş değişiklikler içeriyor\n"
-"Bu değişiklikler yoksayılarak devam edilsin mi?."
 
 msgid "NoName"
 msgstr "İsimsiz"
@@ -1666,8 +1665,8 @@ msgstr ""
 "Kullanıcı dostu bir metin düzenleyici\n"
 "Midnight Commander için yazıldı"
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Telif hakkı (C) 1996-2019 Özgür Yazılım Vakfı"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr ""
 
 msgid "About"
 msgstr "Hakkında"
@@ -1823,10 +1822,8 @@ msgstr "Kabukta halen bir komut etkin"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
-"Bir xterm ya da Linux konsolu değil;\n"
-" Paneller değiştirilemez."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Midnight Commander'a dönmek için 'exit' yazın"
@@ -1851,6 +1848,10 @@ msgstr "diğer"
 
 msgid "Flag"
 msgstr "İm"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr ""
 
 msgid "Chown advanced command"
 msgstr "Dosya özellikleri"
@@ -2200,6 +2201,105 @@ msgstr "Kullanıcı: "
 msgid "SMB authentication"
 msgstr "SMB kimlik doğrulama"
 
+msgid "Secure deletion"
+msgstr ""
+
+msgid "Undelete"
+msgstr ""
+
+msgid "Synchronous updates"
+msgstr ""
+
+msgid "Synchronous directory updates"
+msgstr ""
+
+msgid "Immutable"
+msgstr ""
+
+msgid "Append only"
+msgstr ""
+
+msgid "No dump"
+msgstr ""
+
+msgid "No update atime"
+msgstr ""
+
+msgid "Compress"
+msgstr ""
+
+msgid "Compressed clusters"
+msgstr ""
+
+msgid "Compressed dirty file"
+msgstr ""
+
+msgid "Compression raw access"
+msgstr ""
+
+msgid "Encrypted inode"
+msgstr ""
+
+msgid "Journaled data"
+msgstr ""
+
+msgid "Indexed directory"
+msgstr ""
+
+msgid "No tail merging"
+msgstr ""
+
+msgid "Top of directory hierarchies"
+msgstr ""
+
+msgid "Inode uses extents"
+msgstr ""
+
+msgid "Huge_file"
+msgstr ""
+
+msgid "No COW"
+msgstr ""
+
+msgid "Casefolded file"
+msgstr ""
+
+msgid "Inode has inline data"
+msgstr ""
+
+msgid "Project hierarchy"
+msgstr ""
+
+msgid "Verity protected inode"
+msgstr ""
+
+msgid "&Marked all"
+msgstr "Tü&münü seç"
+
+msgid "S&et marked"
+msgstr "S&eçimi başlat"
+
+msgid "C&lear marked"
+msgstr "İşa&retlenenleri Temizle"
+
+msgid "Chattr command"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr ""
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+
 msgid "set &user ID on execution"
 msgstr "kullanıcı çalıştırabilir"
 
@@ -2247,15 +2347,6 @@ msgstr "Sahibi:"
 
 msgid "Group name:"
 msgstr "Grup ismi:"
-
-msgid "&Marked all"
-msgstr "Tü&münü seç"
-
-msgid "S&et marked"
-msgstr "S&eçimi başlat"
-
-msgid "C&lear marked"
-msgstr "İşa&retlenenleri Temizle"
 
 msgid "Chmod command"
 msgstr "Chmod komutu"
@@ -3233,6 +3324,16 @@ msgstr "Sahibi:     %s/%s"
 msgid "Links:      %d"
 msgstr "Bağlantılar:%d"
 
+msgid "Attributes: not supported"
+msgstr ""
+
+#, c-format
+msgid "Attributes: %s"
+msgstr ""
+
+msgid "Attributes: unavailable"
+msgstr ""
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Kip:       %s (%04o)"
@@ -3351,6 +3452,9 @@ msgstr "Sa&hip/Grup değiştir"
 
 msgid "&Advanced chown"
 msgstr "&Dosya Özelliklerini Değiştir   "
+
+msgid "Cha&ttr"
+msgstr ""
 
 msgid "&Rename/Move"
 msgstr "Taşıma / &Ad Değiştirme F6"
@@ -3821,6 +3925,12 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Ev dizini yolu mutlak değil"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+
 #, c-format
 msgid ""
 "\n"
@@ -3851,15 +3961,6 @@ msgstr ""
 "%s dosyası kaydedilemedi:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"GNU Midnight Commander zaten\n"
-"bu terminalde çalışıyoryor.\n"
-"Altkabuk desteği kapatılacak."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr " %s isimli veri yolu açılamadı\n"
@@ -3871,54 +3972,64 @@ msgstr "Kabuk hala etkin. Yine de çıkılsın mı?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Uyarı: %s'e geçilemedi.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Terim bilgisi veritabanı ile S-Lang kütüphanesi kullanılarak\n"
+msgid "With builtin Editor and Aspell support"
+msgstr ""
 
-msgid "Using the ncurses library\n"
-msgstr "Ncurses kütüphanesini kullanılarak\n"
+msgid "With builtin Editor"
+msgstr ""
 
-msgid "Using the ncursesw library\n"
-msgstr "ncursesw kitaplığı kullanılarak\n"
+msgid "With optional subshell support"
+msgstr ""
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Yerleşik düzenleyici ve Aspell desteği ile\n"
+msgid "With subshell support as default"
+msgstr ""
 
-msgid "With builtin Editor\n"
-msgstr "Yerleşik Düzenleyiciyle\n"
+msgid "With support for background operations"
+msgstr ""
 
-msgid "With optional subshell support\n"
-msgstr "Seçimlik altkabuk desteğiyle\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr ""
 
-msgid "With subshell support as default\n"
-msgstr "Öntanımlı olarak altkabuk desteğiyle\n"
+msgid "With mouse support on xterm"
+msgstr ""
 
-msgid "With support for background operations\n"
-msgstr "Ardalan işlemleri desteğiyle\n"
+msgid "With support for X11 events"
+msgstr ""
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "xterm ve Linux konsolunda fare desteği ile\n"
+msgid "With internationalization support"
+msgstr ""
 
-msgid "With mouse support on xterm\n"
-msgstr "xterm üzerinde fare desteği ile\n"
+msgid "With multiple codepages support"
+msgstr ""
 
-msgid "With support for X11 events\n"
-msgstr "X11 eylemleri desteğiyle\n"
-
-msgid "With internationalization support\n"
-msgstr "i18n desteğiyle\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Çoklu karakter kümesi desteğiyle\n"
+msgid "With ext2fs attributes support"
+msgstr ""
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Glib ile yapılandır %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr ""
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr ""
+
+msgid "Built with ncurses (unknown version)"
+msgstr ""
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr ""
+
+msgid "Built with ncursesw (unknown version)"
+msgstr ""
+
 msgid "Virtual File Systems:"
 msgstr "Sanal Dosya Sistemleri:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Veri tipleri:"
 

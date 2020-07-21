@@ -40,8 +40,8 @@ context default
 
     keyword $ brightgreen
 
-    keyword wholeleft linestart \[\s\]*function*() brightmagenta
-    keyword wholeleft linestart \[\s\]*function\[\s\]+ brightmagenta
+    keyword wholeleft linestart function*() brightmagenta
+    keyword wholeleft linestart function\[\s\]+ brightmagenta
     keyword wholeright +() brightmagenta
 
 wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._
@@ -567,6 +567,9 @@ wholechars abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._
     keyword whole ogginfo cyan
     keyword whole open cyan
     keyword whole openvt cyan
+    keyword whole opusdec cyan
+    keyword whole opusenc cyan
+    keyword whole opusinfo cyan
     keyword whole pager cyan
     keyword whole pam_getenv cyan
     keyword whole paperconf cyan

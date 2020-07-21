@@ -2,7 +2,7 @@
    Routines invoked by a function key
    They normally operate on the current panel.
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -81,7 +81,6 @@
 
 #include "fileopctx.h"
 #include "file.h"               /* file operation routines */
-#include "find.h"               /* find_file() */
 #include "filenot.h"
 #include "hotlist.h"            /* hotlist_show() */
 #include "panel.h"              /* WPanel */
@@ -905,14 +904,6 @@ delete_cmd_local (void)
         update_panels (UP_OPTIMIZE, UP_KEEPSEL);
         repaint_screen ();
     }
-}
-
-/* --------------------------------------------------------------------------------------------- */
-
-void
-find_cmd (void)
-{
-    find_file ();
 }
 
 /* --------------------------------------------------------------------------------------------- */

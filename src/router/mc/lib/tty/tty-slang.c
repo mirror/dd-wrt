@@ -2,7 +2,7 @@
    Interface to the terminal controlling library.
    Slang wrapper.
 
-   Copyright (C) 2005-2019
+   Copyright (C) 2005-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -343,6 +343,7 @@ tty_shutdown (void)
 {
     char *op_cap;
 
+    tty_destroy_winch_pipe ();
     tty_reset_shell_mode ();
     tty_noraw_mode ();
     tty_keypad (FALSE);

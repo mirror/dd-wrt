@@ -20,8 +20,12 @@ extern GArray *dialog_keymap;
 extern GArray *menu_keymap;
 extern GArray *input_keymap;
 extern GArray *listbox_keymap;
+extern GArray *radio_keymap;
 extern GArray *tree_keymap;
 extern GArray *help_keymap;
+#ifdef ENABLE_EXT2FS_ATTR
+extern GArray *chattr_keymap;
+#endif
 #ifdef USE_INTERNAL_EDIT
 extern GArray *editor_keymap;
 extern GArray *editor_x_keymap;
@@ -37,7 +41,9 @@ extern const global_keymap_t *main_x_map;
 extern const global_keymap_t *panel_map;
 extern const global_keymap_t *tree_map;
 extern const global_keymap_t *help_map;
-
+#ifdef ENABLE_EXT2FS_ATTR
+extern const global_keymap_t *chattr_map;
+#endif
 #ifdef USE_INTERNAL_EDIT
 extern const global_keymap_t *editor_map;
 extern const global_keymap_t *editor_x_map;

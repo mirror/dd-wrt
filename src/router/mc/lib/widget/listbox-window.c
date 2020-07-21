@@ -1,7 +1,7 @@
 /*
    Widget based utility functions.
 
-   Copyright (C) 1994-2019
+   Copyright (C) 1994-2020
    Free Software Foundation, Inc.
 
    Authors:
@@ -109,7 +109,7 @@ create_listbox_window_centered (int center_y, int center_x, int lines, int cols,
                     NULL, NULL, help, title);
 
     listbox->list = listbox_new (2, 2, lines, cols, FALSE, NULL);
-    add_widget (listbox->dlg, listbox->list);
+    group_add_widget (GROUP (listbox->dlg), listbox->list);
 
     return listbox;
 }

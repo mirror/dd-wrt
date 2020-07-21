@@ -6,6 +6,9 @@
 /* Define to enable showing configure arguments in help */
 #undef ENABLE_CONFIGURE_ARGS
 
+/* Define to enable support for ext2fs attributes */
+#undef ENABLE_EXT2FS_ATTR
+
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS

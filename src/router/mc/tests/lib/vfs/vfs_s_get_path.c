@@ -1,7 +1,7 @@
 /*
    lib/vfs - test vfs_s_get_path() function
 
-   Copyright (C) 2011-2019
+   Copyright (C) 2011-2020
    Free Software Foundation, Inc.
 
    Written by:
@@ -82,6 +82,7 @@ test1_mock_archive_same (const vfs_path_element_t * vpath_element, struct vfs_s_
 static void
 setup (void)
 {
+    mc_global.timer = mc_timer_new ();
     str_init_strings (NULL);
 
     vfs_init ();
@@ -109,6 +110,7 @@ teardown (void)
 {
     vfs_shut ();
     str_uninit_strings ();
+    mc_timer_destroy (mc_global.timer);
 }
 
 

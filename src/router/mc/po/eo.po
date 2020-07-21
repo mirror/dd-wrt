@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Midnight Commander\n"
 "Report-Msgid-Bugs-To: http://www.midnight-commander.org/\n"
-"POT-Creation-Date: 2020-01-19 02:04+0400\n"
-"PO-Revision-Date: 2019-12-25 01:49+0000\n"
+"POT-Creation-Date: 2020-07-13 00:21+0400\n"
+"PO-Revision-Date: 2020-05-22 15:31+0000\n"
 "Last-Translator: Keith Bowes <zooplah@gmail.com>\n"
 "Language-Team: Esperanto (http://www.transifex.com/mc/mc/language/eo/)\n"
 "Language: eo\n"
@@ -124,7 +124,7 @@ msgid "Search string not found"
 msgstr "Serĉita ĉeno ne trovita"
 
 msgid "Not implemented yet"
-msgstr "Ne jam realigita"
+msgstr "Ankoraŭ ne realigita"
 
 msgid "Num of replace tokens not equal to num of found tokens"
 msgstr "Nombro da anstataŭotaj eroj ne egalas nombron da trovitaj eroj"
@@ -486,14 +486,29 @@ msgstr "La medivariablo TERM ne estas valorizita!\n"
 msgid "Cannot check SIGWINCH pipe"
 msgstr "Ne eblas kontroli SIGWINCH-dukton"
 
-msgid "Cannot create pipe for SIGWINCH"
-msgstr "Ne eblas krei duktajn por SIGWINCH"
+#, c-format
+msgid ""
+"\n"
+"Cannot create pipe for SIGWINCH: %s (%d)\n"
+msgstr ""
+"\n"
+"Ne eblas krei duktajn por SIGWINCH: %s (%d)\n"
 
-msgid "Cannot configure write end of SIGWINCH pipe"
-msgstr "Ne eblas agordi skribfinon de SIGWINCH-dukto"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure write end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Ne eblas agordi skribfinon de SIGWINCH-dukto: %s (%d)\n"
 
-msgid "Cannot configure read end of SIGWINCH pipe"
-msgstr "Ne eblas agordi legfinon de SIGWINCH-dukton"
+#, c-format
+msgid ""
+"\n"
+"Cannot configure read end of SIGWINCH pipe: %s (%d)\n"
+msgstr ""
+"\n"
+"Ne eblas agordi legfinon de SIGWINCH-dukton: %s (%d)\n"
 
 #, c-format
 msgid ""
@@ -822,7 +837,7 @@ msgid "file1 file2"
 msgstr "dosiero1 dosiero2"
 
 msgid "[this_dir] [other_panel_dir]"
-msgstr "[maldekstra_flanko] [dekstra_flanko]"
+msgstr "[ĉi_tiu_flanko] [alia_flanko]"
 
 msgid ""
 "\n"
@@ -1111,10 +1126,10 @@ msgid "&Do not change"
 msgstr "&Ne ŝanĝu"
 
 msgid "&Unix format (LF)"
-msgstr "&Uniksa formato"
+msgstr "Uniksa &formato"
 
 msgid "&Windows/DOS format (CR LF)"
-msgstr "&Vindozo/DOS-a formato"
+msgstr "&Vindoza/DOS-a formato"
 
 msgid "&Macintosh format (CR)"
 msgstr "&Makintoŝa formato"
@@ -1127,9 +1142,6 @@ msgstr "ŝanĝi linirompojn al:"
 
 msgid "Save As"
 msgstr "Konservi kiel"
-
-msgid "Block is large, you may not be able to undo this action"
-msgstr "Bloko estas tra granda, do vi eble ne povos malfari tiun agon"
 
 msgid "Collect completions"
 msgstr "Kolekti kompletigojn"
@@ -1330,10 +1342,10 @@ msgstr "Premu iun klavon:"
 
 msgid ""
 "Current text was modified without a file save.\n"
-"Continue discards these changes"
+"Continue discards these changes."
 msgstr ""
-"Aktuala teksto estis modifita sen dosiera konservado.\n"
-"Daŭrigi forviŝos tiujn ŝanĝojn"
+"Nuna teksto estis modifita sen dosiera konservado.\n"
+"Daŭri forviŝos tiujn ŝanĝojn."
 
 msgid "In se&lection"
 msgstr "En e&lekto"
@@ -1361,13 +1373,6 @@ msgstr "Konfirmi anstataŭigon"
 
 msgid "Cancel"
 msgstr "Nuligi"
-
-msgid ""
-"Current text was modified without a file save.\n"
-"Continue discards these changes."
-msgstr ""
-"Aktuala teksto estis modifita sen dosiera konservado.\n"
-"Daŭri forviŝos tiujn ŝanĝojn."
 
 msgid "NoName"
 msgstr "Sennoma"
@@ -1439,7 +1444,7 @@ msgid "&Cut to clipfile"
 msgstr "El&tranĉi al poŝa dosiero"
 
 msgid "Pa&ste from clipfile"
-msgstr "Alglui al poŝa do&siero"
+msgstr "Alglui el poŝa do&siero"
 
 msgid "&Beginning"
 msgstr "Komen&co"
@@ -1667,8 +1672,8 @@ msgstr ""
 "Afabla tekstoredaktilo\n"
 "verkita por Midnight Commander."
 
-msgid "Copyright (C) 1996-2019 the Free Software Foundation"
-msgstr "Kopirajto (C) 1996–2019 la Fondaĵo pri liberaj programoj"
+msgid "Copyright (C) 1996-2020 the Free Software Foundation"
+msgstr "Kopirajto (C) 1996–2020 la Fondaĵo pri liberaj programoj"
 
 msgid "About"
 msgstr "Pri"
@@ -1822,10 +1827,10 @@ msgstr "La ŝelo jam plenumas komandon"
 
 msgid ""
 "Not an xterm or Linux console;\n"
-"the panels cannot be toggled."
+"the subshell cannot be toggled."
 msgstr ""
 "Ne xterm-fenestron aŭ linuksan terminalon;\n"
-"la flankojn oni ne povis inversigi."
+"la subŝelon oni ne ne povas baskuligi."
 
 msgid "Type 'exit' to return to the Midnight Commander"
 msgstr "Tajpu \"exit\" por reiri al Midnight Commander"
@@ -1850,6 +1855,10 @@ msgstr "aliaj"
 
 msgid "Flag"
 msgstr "Markoj"
+
+#, c-format
+msgid "Permissions (octal): %o"
+msgstr "Permesoj (Okuma): %o"
 
 msgid "Chown advanced command"
 msgstr "[chown] altnivelaj komandoj"
@@ -2198,6 +2207,109 @@ msgstr "Salutnomo:"
 msgid "SMB authentication"
 msgstr "SMB-atestado"
 
+msgid "Secure deletion"
+msgstr "Sekura forigo"
+
+msgid "Undelete"
+msgstr "Malforigi"
+
+msgid "Synchronous updates"
+msgstr "Sinkronaj ĝisdatigoj"
+
+msgid "Synchronous directory updates"
+msgstr "Sinkronaj dosierujo-ĝisdatigoj"
+
+msgid "Immutable"
+msgstr "Neŝanĝebla"
+
+msgid "Append only"
+msgstr "Nur Almeti"
+
+msgid "No dump"
+msgstr "Neniu ŝuto"
+
+msgid "No update atime"
+msgstr "Ne ĝisdatigi atingo-tempon"
+
+msgid "Compress"
+msgstr "Kunpremi"
+
+msgid "Compressed clusters"
+msgstr "Kunpremitaj sektoroj"
+
+msgid "Compressed dirty file"
+msgstr "Kunpremita malneto"
+
+msgid "Compression raw access"
+msgstr "Kruda atingo de kunpremitaj datumoj"
+
+msgid "Encrypted inode"
+msgstr "Ĉifrita inodo"
+
+msgid "Journaled data"
+msgstr "Protokolitaj datumoj"
+
+msgid "Indexed directory"
+msgstr "Indicitaj dosierujon"
+
+msgid "No tail merging"
+msgstr "Neniu kunfandigo de vosto-datumoj"
+
+msgid "Top of directory hierarchies"
+msgstr "Supro de dosierujaj hierarkioj"
+
+msgid "Inode uses extents"
+msgstr "Inodo uzas etendaĵojn"
+
+msgid "Huge_file"
+msgstr "Grandega_dosieron"
+
+msgid "No COW"
+msgstr "Neniu COW"
+
+msgid "Casefolded file"
+msgstr "Dosiero kun faldita uskleco"
+
+msgid "Inode has inline data"
+msgstr "Inodo havas enliniajn datumojn"
+
+msgid "Project hierarchy"
+msgstr "Projekta hierarkio"
+
+msgid "Verity protected inode"
+msgstr "Vere protektita inodo"
+
+msgid "&Marked all"
+msgstr "&Marki ĉion"
+
+msgid "S&et marked"
+msgstr "&Elekti markitajn"
+
+msgid "C&lear marked"
+msgstr "&Forviŝi markitajn"
+
+msgid "Chattr command"
+msgstr "Chattr-komando"
+
+#, c-format
+msgid ""
+"Cannot chattr \"%s\"\n"
+"%s"
+msgstr ""
+"Ne eblas plenumi la komandon chattr por \"%s\"\n"
+"%s"
+
+msgid "Cannot change attributes on non-local filesystems"
+msgstr "Ne eblas ŝanĝi atributojn en foraj dosiersistemoj"
+
+#, c-format
+msgid ""
+"Cannot get flags of \"%s\"\n"
+"%s"
+msgstr ""
+"Ne eblas akiri flagojn de \"%s\"\n"
+"%s"
+
 msgid "set &user ID on execution"
 msgstr "agordi &uzantan identigilon dum plenumigo"
 
@@ -2245,15 +2357,6 @@ msgstr "Estra nomo:"
 
 msgid "Group name:"
 msgstr "Grupa nomo:"
-
-msgid "&Marked all"
-msgstr "&Marki ĉion"
-
-msgid "S&et marked"
-msgstr "&Elekti markitajn"
-
-msgid "C&lear marked"
-msgstr "&Forviŝi markitajn"
 
 msgid "Chmod command"
 msgstr "Komando chmod"
@@ -3236,6 +3339,16 @@ msgstr "Estro:          %s/%s"
 msgid "Links:      %d"
 msgstr "Ligiloj:        %d"
 
+msgid "Attributes: not supported"
+msgstr "Atributoj: ne komprenitaj"
+
+#, c-format
+msgid "Attributes: %s"
+msgstr "Atributoj: %s"
+
+msgid "Attributes: unavailable"
+msgstr "Atributoj: nedisponeblaj"
+
 #, c-format
 msgid "Mode:       %s (%04o)"
 msgstr "Permesoj:       %s (%04o)"
@@ -3354,6 +3467,9 @@ msgstr "Ŝanĝi estre&con"
 
 msgid "&Advanced chown"
 msgstr "&Altnivele ŝanĝi estrecon"
+
+msgid "Cha&ttr"
+msgstr "Ŝanĝi atri&buton"
 
 msgid "&Rename/Move"
 msgstr "Al&inomi/Movi"
@@ -3823,6 +3939,15 @@ msgstr ""
 msgid "Home directory path is not absolute"
 msgstr "Hejma-dosieruja vojo ne estas absoluta"
 
+msgid ""
+"GNU Midnight Commander\n"
+"is already running on this terminal.\n"
+"Subshell support will be disabled."
+msgstr ""
+"Midnight Commander de GNU\n"
+"jam plenumiĝas en ĉi tiu terminalo.\n"
+"Subŝelo estos malaktivigita."
+
 #, c-format
 msgid ""
 "\n"
@@ -3853,15 +3978,6 @@ msgstr ""
 "Ne eblas konservi dosieron %s:\n"
 "%s"
 
-msgid ""
-"GNU Midnight Commander is already\n"
-"running on this terminal.\n"
-"Subshell support will be disabled."
-msgstr ""
-"Midnight Commander de GNU jam estas\n"
-"plenumiĝi en ĉi tiu terminalo.\n"
-"Subŝelo estos malebligita."
-
 #, c-format
 msgid "Cannot open named pipe %s\n"
 msgstr "Ne eblas malfermi nomitan dukton %s\n"
@@ -3873,54 +3989,64 @@ msgstr "La ŝelo estas aktiva. Ĉu senkonsidere eliri?"
 msgid "Warning: Cannot change to %s.\n"
 msgstr "Averto: Ne eblas ŝanĝi al %s.\n"
 
-msgid "Using the S-Lang library with terminfo database\n"
-msgstr "Uzanta la bibliotekon S-Lang kun terminfo-datumbazo\n"
+msgid "With builtin Editor and Aspell support"
+msgstr "Kun interna tekstoredaktilo kaj literumilo"
 
-msgid "Using the ncurses library\n"
-msgstr "Uzanta la bibliotekon ncurses\n"
+msgid "With builtin Editor"
+msgstr "Kun interna tekstoredaktilo"
 
-msgid "Using the ncursesw library\n"
-msgstr "Uzanta la bibliotekon ncursesw\n"
+msgid "With optional subshell support"
+msgstr "Kun laŭvola subŝelo"
 
-msgid "With builtin Editor and Aspell support\n"
-msgstr "Kun interna tekstoredaktilo kaj literumilo\n"
+msgid "With subshell support as default"
+msgstr "Kun aŭtomata subŝelo"
 
-msgid "With builtin Editor\n"
-msgstr "Kun interna tekstoredaktilo\n"
+msgid "With support for background operations"
+msgstr "Kun rego de fonaj operacioj"
 
-msgid "With optional subshell support\n"
-msgstr "Kun laŭvola subŝelo\n"
+msgid "With mouse support on xterm and Linux console"
+msgstr "Kun musa rego ĉe terminaloj xterm-aj kaj linuksaj"
 
-msgid "With subshell support as default\n"
-msgstr "Kun aŭtomata subŝelo\n"
+msgid "With mouse support on xterm"
+msgstr "Kun musa rego ĉe xterm"
 
-msgid "With support for background operations\n"
-msgstr "Kun rego de fonaj operacioj\n"
+msgid "With support for X11 events"
+msgstr "Kun rego de X11-eventoj"
 
-msgid "With mouse support on xterm and Linux console\n"
-msgstr "Kun musa rego ĉe terminaloj xterm-aj kaj linuksaj\n"
+msgid "With internationalization support"
+msgstr "Kun internaciiga rego"
 
-msgid "With mouse support on xterm\n"
-msgstr "Kun musa rego ĉe xterm\n"
+msgid "With multiple codepages support"
+msgstr "Kun rego de pluraj kodpaĝoj"
 
-msgid "With support for X11 events\n"
-msgstr "Kun rego de X11-eventoj\n"
-
-msgid "With internationalization support\n"
-msgstr "Kun internaciiga rego\n"
-
-msgid "With multiple codepages support\n"
-msgstr "Kun rego de pluraj kodpaĝoj\n"
+msgid "With ext2fs attributes support"
+msgstr "Kun rego de ext2fs-atributoj"
 
 #, c-format
 msgid "Built with GLib %d.%d.%d\n"
 msgstr "Muntita kun GLib %d.%d.%d\n"
 
 #, c-format
+msgid "Built with S-Lang %s with terminfo database\n"
+msgstr "Muntita kun S-Lang %s kun terminfo-datumbazo\n"
+
+#, c-format
+msgid "Built with ncurses %s\n"
+msgstr "Muntita kun ncurses %s\n"
+
+msgid "Built with ncurses (unknown version)"
+msgstr "Muntita kun ncurses (nekonata eldono)"
+
+#, c-format
+msgid "Built with ncursesw %s\n"
+msgstr "Muntita kun ncursesw %s\n"
+
+msgid "Built with ncursesw (unknown version)"
+msgstr "Muntita kun ncursesw (nekonata eldono)"
+
 msgid "Virtual File Systems:"
 msgstr "Virtualaj dosiersistemoj:"
 
-#, c-format
 msgid "Data types:"
 msgstr "Datumtipoj:"
 
