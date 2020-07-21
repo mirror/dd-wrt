@@ -200,9 +200,6 @@ install-iwmulticall:: iwmulticall
 
 clean::
 	$(RM_CMD) 
-
-realclean::
-	$(RM_CMD) 
 	$(RM) $(STATIC) $(DYNAMIC) $(PROGS) $(EXTRAPROGS) libiw* wireless.h
 
 uninstall::
