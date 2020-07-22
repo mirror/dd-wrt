@@ -8154,7 +8154,7 @@ bool smb3_11_final_sess_setup_resp(struct ksmbd_work *work)
 	struct ksmbd_conn *conn = work->conn;
 	struct smb2_hdr *rsp = RESPONSE_BUF(work);
 
-	if (conn->dialect < SMB302_PROT_ID)
+	if (conn->dialect < SMB30_PROT_ID)
 		return false;
 
 	if (work->next_smb2_rcv_hdr_off)
