@@ -349,8 +349,10 @@ int ksmbd_crypto_create(void)
 	ctx_list.avail_ctx = 1;
 
 	ctx = ctx_alloc();
-	if (!ctx)
+	if (!ctx) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	list_add(&ctx->list, &ctx_list.idle_ctx);
 	return 0;
 }

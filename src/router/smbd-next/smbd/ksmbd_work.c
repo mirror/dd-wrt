@@ -65,16 +65,20 @@ int ksmbd_work_pool_init(void)
 	work_cache = kmem_cache_create("ksmbd_work_cache",
 					sizeof(struct ksmbd_work), 0,
 					SLAB_HWCACHE_ALIGN, NULL);
-	if (!work_cache)
+	if (!work_cache) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	return 0;
 }
 
 int ksmbd_workqueue_init(void)
 {
 	ksmbd_wq = alloc_workqueue("ksmbd-io", 0, 0);
-	if (!ksmbd_wq)
+	if (!ksmbd_wq) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	return 0;
 }
 

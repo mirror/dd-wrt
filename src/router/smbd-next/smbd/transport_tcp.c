@@ -225,8 +225,10 @@ static int ksmbd_tcp_new_connection(struct socket *client_sk)
 	struct tcp_transport *t;
 
 	t = alloc_transport(client_sk);
-	if (!t)
+	if (!t) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	csin = KSMBD_TCP_PEER_SOCKADDR(KSMBD_TRANS(t)->conn);
 
@@ -346,8 +348,10 @@ static int ksmbd_tcp_readv(struct tcp_transport *t,
 	struct ksmbd_conn *conn = KSMBD_TRANS(t)->conn;
 
 	iov = get_conn_iovec(t, nr_segs);
-	if (!iov)
+	if (!iov) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	ksmbd_msg.msg_control = NULL;
 	ksmbd_msg.msg_controllen = 0;
@@ -592,11 +596,14 @@ static int alloc_iface(char *ifname)
 {
 	struct interface *iface;
 
-	if (!ifname)
+	if (!ifname) {
+		printk(KERN_ERR "Bad Interface in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	iface = ksmbd_zalloc(sizeof(struct interface));
 	if (!iface) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		kfree(ifname);
 		return -ENOMEM;
 	}
@@ -621,8 +628,10 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 			if (netdev->type != ARPHRD_ETHER || netdev->addr_len != ETH_ALEN ||
 			    !is_valid_ether_addr(netdev->dev_addr))
 				continue;
-			if (alloc_iface(kstrdup(netdev->name, GFP_KERNEL)))
+			if (alloc_iface(kstrdup(netdev->name, GFP_KERNEL))) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				return -ENOMEM;
+			}
 		}
 		rtnl_unlock();
 		return 0;
@@ -630,8 +639,10 @@ int ksmbd_tcp_set_interfaces(char *ifc_list, int ifc_list_sz)
 
 	while (ifc_list_sz > 0) {
 		if (iface_exists(ifc_list)) {
-			if (alloc_iface(kstrdup(ifc_list, GFP_KERNEL)))
+			if (alloc_iface(kstrdup(ifc_list, GFP_KERNEL))){
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				return -ENOMEM;
+			}
 		} else {
 			ksmbd_err("Unknown interface: %s\n", ifc_list);
 		}

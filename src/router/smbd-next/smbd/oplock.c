@@ -93,8 +93,10 @@ static int alloc_lease(struct oplock_info *opinfo,
 	struct lease *lease;
 
 	lease = kmalloc(sizeof(struct lease), GFP_KERNEL);
-	if (!lease)
+	if (!lease) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	memcpy(lease->lease_key, lctx->lease_key, SMB2_LEASE_KEY_SIZE);
 	lease->state = lctx->req_state;
@@ -713,8 +715,10 @@ static void wake_up_oplock_break(struct oplock_info *opinfo)
 static inline int allocate_oplock_break_buf(struct ksmbd_work *work)
 {
 	work->response_buf = ksmbd_alloc_response(MAX_CIFS_SMALL_BUFFER_SIZE);
-	if (!work->response_buf)
+	if (!work->response_buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	work->response_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 	return 0;
 }
@@ -803,8 +807,10 @@ static int smb1_oplock_break_noti(struct oplock_info *opinfo)
 	struct ksmbd_conn *conn = opinfo->conn;
 	struct ksmbd_work *work = ksmbd_alloc_work_struct();
 
-	if (!work)
+	if (!work){
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	work->request_buf = (char *)opinfo;
 	work->conn = conn;
@@ -915,12 +921,15 @@ static int smb2_oplock_break_noti(struct oplock_info *opinfo)
 	int ret = 0;
 	struct ksmbd_work *work = ksmbd_alloc_work_struct();
 
-	if (!work)
+	if (!work) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	br_info = kmalloc(sizeof(struct oplock_break_info), GFP_KERNEL);
 	if (!br_info) {
 		ksmbd_free_work_struct(work);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -1021,11 +1030,14 @@ static int smb2_lease_break_noti(struct oplock_info *opinfo)
 	struct lease *lease = opinfo->o_lease;
 
 	work = ksmbd_alloc_work_struct();
-	if (!work)
+	if (!work) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	br_info = kmalloc(sizeof(struct lease_break_info), GFP_KERNEL);
 	if (!br_info) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		ksmbd_free_work_struct(work);
 		return -ENOMEM;
 	}
@@ -1280,8 +1292,10 @@ static int add_lease_global_list(struct oplock_info *opinfo)
 	read_unlock(&lease_list_lock);
 
 	lb = kmalloc(sizeof(struct lease_table), GFP_KERNEL);
-	if (!lb)
+	if (!lb) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	memcpy(lb->client_guid, opinfo->conn->ClientGUID,
 			SMB2_CLIENT_GUID_SIZE);
@@ -1349,8 +1363,10 @@ int smb_grant_oplock(struct ksmbd_work *work,
 	}
 
 	opinfo = alloc_opinfo(work, pid, tid);
-	if (!opinfo)
+	if (!opinfo) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	if (lctx) {
 		err = alloc_lease(opinfo, lctx);

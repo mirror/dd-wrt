@@ -199,8 +199,10 @@ int ksmbd_vfs_mkdir(struct ksmbd_work *work,
 	struct dentry *dentry;
 	int err;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	dentry = kern_path_create(AT_FDCWD, name, &path, LOOKUP_DIRECTORY);
 	if (IS_ERR(dentry)) {
@@ -483,6 +485,7 @@ static int ksmbd_vfs_stream_write(struct ksmbd_file *fp, char *buf, loff_t *pos,
 	if (v_len < size) {
 		wbuf = ksmbd_alloc(size);
 		if (!wbuf) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			err = -ENOMEM;
 			goto out;
 		}
@@ -698,8 +701,10 @@ int ksmbd_vfs_setattr(struct ksmbd_work *work, const char *name,
 	int err = 0;
 	struct ksmbd_file *fp = NULL;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	if (name) {
 		err = kern_path(name, 0, &path);
@@ -836,8 +841,10 @@ int ksmbd_vfs_symlink(struct ksmbd_work *work,
 	struct dentry *dentry;
 	int err;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	dentry = kern_path_create(AT_FDCWD, symname, &path, 0);
 	if (IS_ERR(dentry)) {
@@ -915,8 +922,10 @@ int ksmbd_vfs_readdir_name(struct ksmbd_work *work,
 	/* 1 for '/'*/
 	file_pathlen = dir_pathlen +  de_name_len + 1;
 	name = kmalloc(file_pathlen + 1, GFP_KERNEL);
-	if (!name)
+	if (!name) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	memcpy(name, dir_path, dir_pathlen);
 	memset(name + dir_pathlen, '/', 1);
@@ -980,8 +989,10 @@ int ksmbd_vfs_remove_file(struct ksmbd_work *work, char *name)
 	if (!last)
 		return -ENOENT;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	err = kern_path(name, LOOKUP_FOLLOW | LOOKUP_DIRECTORY, &parent);
 	if (err) {
@@ -1057,8 +1068,10 @@ int ksmbd_vfs_link(struct ksmbd_work *work,
 	struct dentry *dentry;
 	int err;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	err = kern_path(oldname, LOOKUP_FOLLOW, &oldpath);
 	if (err) {
@@ -1133,8 +1146,10 @@ static int __ksmbd_vfs_rename(struct ksmbd_work *work,
 	if (src_dent == trap_dent)
 		return -EINVAL;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	dst_dent = lookup_one_len(dst_name, dst_dent_parent, strlen(dst_name));
 	err = PTR_ERR(dst_dent);
@@ -1355,8 +1370,10 @@ ssize_t ksmbd_vfs_listxattr(struct dentry *dentry, char **list)
 		return size;
 
 	vlist = ksmbd_alloc(size);
-	if (!vlist)
+	if (!vlist) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	*list = vlist;
 	size = vfs_listxattr(dentry, vlist, size);
@@ -1396,8 +1413,10 @@ ssize_t ksmbd_vfs_getxattr(struct dentry *dentry,
 		return xattr_len;
 
 	buf = kmalloc(xattr_len + 1, GFP_KERNEL);
-	if (!buf)
+	if (!buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	xattr_len = vfs_getxattr(dentry, xattr_name, (void *)buf, xattr_len);
 	if (xattr_len > 0)
@@ -1446,8 +1465,10 @@ int ksmbd_vfs_fsetxattr(struct ksmbd_work *work,
 	struct path path;
 	int err;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	err = kern_path(filename, 0, &path);
 	if (err) {
@@ -2056,8 +2077,10 @@ int ksmbd_vfs_xattr_stream_name(char *stream_name,
 	stream_name_size = strlen(stream_name);
 	*xattr_stream_name_size = stream_name_size + XATTR_NAME_STREAM_LEN + 1;
 	xattr_stream_name_buf = kmalloc(*xattr_stream_name_size, GFP_KERNEL);
-	if (!xattr_stream_name_buf)
+	if (!xattr_stream_name_buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	memcpy(xattr_stream_name_buf,
 		XATTR_NAME_STREAM,

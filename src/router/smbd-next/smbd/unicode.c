@@ -302,8 +302,10 @@ smb_strndup_from_utf16(const char *src, const int maxlen,
 		len = smb_utf16_bytes((__le16 *) src, maxlen, codepage);
 		len += nls_nullsize(codepage);
 		dst = kmalloc(len, GFP_KERNEL);
-		if (!dst)
+		if (!dst) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return ERR_PTR(-ENOMEM);
+		}
 		ret = smb_from_utf16(dst, (__le16 *) src, len, maxlen, codepage,
 			       false);
 		if (ret < 0) {
@@ -314,8 +316,10 @@ smb_strndup_from_utf16(const char *src, const int maxlen,
 		len = strnlen(src, maxlen);
 		len++;
 		dst = kmalloc(len, GFP_KERNEL);
-		if (!dst)
+		if (!dst) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return ERR_PTR(-ENOMEM);
+		}
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 3, 0)
 		strlcpy(dst, src, len);
 #else

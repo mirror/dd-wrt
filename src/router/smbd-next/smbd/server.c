@@ -50,8 +50,10 @@ static int ___server_conf_set(int idx, char *val)
 
 	kfree(server_conf.conf[idx]);
 	server_conf.conf[idx] = kstrdup(val, GFP_KERNEL);
-	if (!server_conf.conf[idx])
+	if (!server_conf.conf[idx]) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	return 0;
 }
 
@@ -394,8 +396,10 @@ static int __queue_ctrl_work(int type)
 	struct server_ctrl_struct *ctrl;
 
 	ctrl = kmalloc(sizeof(struct server_ctrl_struct), GFP_KERNEL);
-	if (!ctrl)
+	if (!ctrl) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	__module_get(THIS_MODULE);
 	ctrl->type = type;

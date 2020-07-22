@@ -239,8 +239,10 @@ char *extract_sharename(char *treename)
 
 	/* caller has to free the memory */
 	dst = kstrdup(name, GFP_KERNEL);
-	if (!dst)
+	if (!dst) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return ERR_PTR(-ENOMEM);
+	}
 	return dst;
 }
 

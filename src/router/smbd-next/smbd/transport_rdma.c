@@ -451,8 +451,10 @@ static struct smb_direct_sendmsg
 	struct smb_direct_sendmsg *msg;
 
 	msg = mempool_alloc(t->sendmsg_mempool, GFP_KERNEL);
-	if (!msg)
+	if (!msg) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return ERR_PTR(-ENOMEM);
+	}
 	msg->transport = t;
 	INIT_LIST_HEAD(&msg->list);
 	msg->num_sge = 0;
@@ -997,8 +999,10 @@ static int smb_direct_create_header(struct smb_direct_transport *t,
 	int ret;
 
 	sendmsg = smb_direct_alloc_sendmsg(t);
-	if (!sendmsg)
+	if (!sendmsg) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	/* Fill in the packet header */
 	packet = (struct smb_direct_data_transfer *)sendmsg->packet;
@@ -1344,6 +1348,7 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 		sizeof(struct scatterlist) * SG_CHUNK_SIZE, GFP_KERNEL);
 	if (!msg) {
 		atomic_inc(&t->rw_avail_ops);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -1360,6 +1365,7 @@ static int smb_direct_rdma_xmit(struct smb_direct_transport *t, void *buf,
 	if (ret) {
 		atomic_inc(&t->rw_avail_ops);
 		kfree(msg);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -1502,8 +1508,10 @@ static int smb_direct_send_negotiate_response(struct smb_direct_transport *t,
 	int ret;
 
 	sendmsg = smb_direct_alloc_sendmsg(t);
-	if (IS_ERR(sendmsg))
+	if (IS_ERR(sendmsg)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	resp = (struct smb_direct_negotiate_resp *)sendmsg->packet;
 	if (failed) {
@@ -1605,8 +1613,10 @@ static int smb_direct_negotiate(struct smb_direct_transport *t)
 	struct smb_direct_negotiate_req *req;
 
 	recvmsg = get_free_recvmsg(t);
-	if (!recvmsg)
+	if (!recvmsg) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	recvmsg->type = SMB_DIRECT_MSG_NEGOTIATE_REQ;
 
 	ret = smb_direct_post_recv(t, recvmsg);
@@ -1778,8 +1788,10 @@ static int smb_direct_create_pools(struct smb_direct_transport *t)
 			sizeof(struct smb_direct_sendmsg) +
 			sizeof(struct smb_direct_negotiate_resp),
 			0, SLAB_HWCACHE_ALIGN, NULL);
-	if (!t->sendmsg_cache)
+	if (!t->sendmsg_cache) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	t->sendmsg_mempool = mempool_create(t->send_credit_target,
 			mempool_alloc_slab, mempool_free_slab,
@@ -1815,6 +1827,7 @@ static int smb_direct_create_pools(struct smb_direct_transport *t)
 	return 0;
 err:
 	smb_direct_destroy_pools(t);
+	printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 	return -ENOMEM;
 }
 
@@ -1946,8 +1959,10 @@ static int smb_direct_handle_connect_request(struct rdma_cm_id *new_cm_id)
 	}
 
 	t = alloc_transport(new_cm_id);
-	if (!t)
+	if (!t) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	KSMBD_TRANS(t)->handler = kthread_run(ksmbd_conn_handler_loop,
 			KSMBD_TRANS(t)->conn, "ksmbd:r%u", SMB_DIRECT_PORT);
@@ -2038,8 +2053,10 @@ int ksmbd_rdma_init(void)
 	 */
 	smb_direct_wq = alloc_workqueue("ksmbd-smb_direct-wq",
 				WQ_HIGHPRI|WQ_MEM_RECLAIM, 0);
-	if (!smb_direct_wq)
+	if (!smb_direct_wq) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	ret = smb_direct_listen(SMB_DIRECT_PORT);
 	if (ret) {

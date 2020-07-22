@@ -639,8 +639,10 @@ int build_spnego_ntlmssp_neg_blob(unsigned char **pbuffer, u16 *buflen,
 			neg_result_len + oid_len + ntlmssp_len;
 
 	buf = kmalloc(total_len, GFP_KERNEL);
-	if (!buf)
+	if (!buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	/* insert main gss header */
 	encode_asn_tag(buf, &ofs, 0xa1, 0x30, neg_result_len + oid_len +
@@ -675,8 +677,10 @@ int build_spnego_ntlmssp_auth_blob(unsigned char **pbuffer, u16 *buflen,
 		neg_result_len;
 
 	buf = kmalloc(total_len, GFP_KERNEL);
-	if (!buf)
+	if (!buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	/* insert main gss header */
 	encode_asn_tag(buf, &ofs, 0xa1, 0x30, neg_result_len);
