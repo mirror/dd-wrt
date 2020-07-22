@@ -398,15 +398,15 @@ static void detect_wireless_devices(int mask)
 		insmod("mt76-usb");
 		insmod("mt76-sdio");
 		insmod("mt7615-common");
-		insmod("mt76-usb-sdio-common");
+		insmod("mt7663-usb-sdio-common");
 		wificnt += detectchange("mt7615e");
 		wificnt += detectchange("mt7663u");
 		wificnt += detectchange("mt7663s");
 		if (!wificnt) {
 			rmmod("mt7615_common");
 			rmmod("mt7615-common");
-			rmmod("mt76-usb-sdio-common");
-			rmmod("mt76_usb_sdio_common");
+			rmmod("mt7663-usb-sdio-common");
+			rmmod("mt7663_usb_sdio_common");
 			rmmod("mt76-sdio");
 		}
 		total += wificnt;
