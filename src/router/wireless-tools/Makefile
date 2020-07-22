@@ -113,9 +113,9 @@ PICFLAG=-fPIC
 all:: $(IWLIB) $(PROGS)
 
 %: %.o
-	$(CC) $(LDFLAGS) $(LDLTO) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS) 
+	$(CC) $(LDFLAGS) $(PICFLAG) $(LDLTO) $(STRIPFLAGS) $(XCFLAGS) -o $@ $^ $(LIBS) 
 %.o: %.c wireless.h
-	$(CC) $(XCFLAGS) $(LTO) -c $<
+	$(CC) $(XCFLAGS) $(PICFLAG) $(LTO) -c $<
 %.so: %.c wireless.h
 	$(CC) $(XCFLAGS) $(PICFLAG) $(LTOMIN) -c -o $@ $<
 
@@ -144,7 +144,7 @@ wireless.h:
 
 # Compilation of the dynamic library
 $(DYNAMIC): $(OBJS:.o=.so)
-	$(CC) $(CFLAGS) -shared -o $@ $(LIBS) -lc $^
+	$(CC) $(CFLAGS)  $(PICFLAG) -shared -o $@ $(LIBS) $^
 
 # Compilation of the static library
 $(STATIC): $(OBJS:.o=.so)
