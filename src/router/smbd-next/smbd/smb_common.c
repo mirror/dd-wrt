@@ -678,8 +678,10 @@ int ksmbd_override_fsids(struct ksmbd_work *work)
 		gid = share->force_gid;
 
 	cred = prepare_kernel_cred(NULL);
-	if (!cred)
+	if (!cred) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	cred->fsuid = make_kuid(current_user_ns(), uid);
 	cred->fsgid = make_kgid(current_user_ns(), gid);

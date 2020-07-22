@@ -133,8 +133,10 @@ static int register_wm_size_class(size_t sz)
 #else
 	nl = kvmalloc(sizeof(struct wm_list), GFP_KERNEL);
 #endif
-	if (!nl)
+	if (!nl) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	nl->sz = sz;
 	spin_lock_init(&nl->wm_lock);

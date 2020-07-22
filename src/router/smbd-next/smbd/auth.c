@@ -324,6 +324,7 @@ static int calc_ntlmv2_hash(struct ksmbd_session *sess, char *ntlmv2_hash,
 	len = strlen(user_name(sess->user));
 	uniname = kzalloc(2 + UNICODE_LEN(len), GFP_KERNEL);
 	if (!uniname) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -347,6 +348,7 @@ static int calc_ntlmv2_hash(struct ksmbd_session *sess, char *ntlmv2_hash,
 	len = strlen(dname);
 	domain = kzalloc(2 + UNICODE_LEN(len), GFP_KERNEL);
 	if (!domain) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		ret = -ENOMEM;
 		goto out;
 	}
@@ -460,6 +462,7 @@ int ksmbd_auth_ntlmv2(struct ksmbd_session *sess,
 	len = CIFS_CRYPTO_KEY_SIZE + blen;
 	construct = kzalloc(len, GFP_KERNEL);
 	if (!construct) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -668,8 +671,10 @@ ksmbd_build_ntlmssp_challenge_blob(struct challenge_message *chgblob,
 	chgblob->NegotiateFlags = cpu_to_le32(flags);
 	len = strlen(ksmbd_netbios_name());
 	name = kmalloc(2 + (len * 2), GFP_KERNEL);
-	if (!name)
+	if (!name) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	len = smb_strtoUTF16((__le16 *)name, ksmbd_netbios_name(), len,
 			sess->conn->local_nls);
