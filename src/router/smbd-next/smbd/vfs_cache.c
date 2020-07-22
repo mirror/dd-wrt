@@ -232,8 +232,10 @@ int __init ksmbd_inode_hash_init(void)
 
 	/* init master fp hash table */
 	inode_hashtable = vmalloc(size);
-	if (!inode_hashtable)
+	if (!inode_hashtable) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	for (loop = 0; loop < (1U << inode_hash_shift); loop++)
 		INIT_HLIST_HEAD(&inode_hashtable[loop]);
@@ -631,6 +633,7 @@ struct ksmbd_file *ksmbd_open_fd(struct ksmbd_work *work,
 
 	if (!fp->f_ci) {
 		ksmbd_free_file_struct(fp);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return ERR_PTR(-ENOMEM);
 	}
 
@@ -839,8 +842,10 @@ int ksmbd_file_table_flush(struct ksmbd_work *work)
 int ksmbd_init_file_table(struct ksmbd_file_table *ft)
 {
 	ft->idr = ksmbd_alloc(sizeof(struct idr));
-	if (!ft->idr)
+	if (!ft->idr) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	idr_init(ft->idr);
 	rwlock_init(&ft->lock);

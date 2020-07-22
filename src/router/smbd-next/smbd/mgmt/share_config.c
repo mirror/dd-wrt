@@ -94,8 +94,10 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 		struct ksmbd_veto_pattern *p;
 
 		p = ksmbd_zalloc(sizeof(struct ksmbd_veto_pattern));
-		if (!p)
+		if (!p) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return -ENOMEM;
+		}
 
 		sz = strlen(veto_list);
 		if (!sz)
@@ -103,6 +105,7 @@ static int parse_veto_list(struct ksmbd_share_config *share,
 
 		p->pattern = kstrdup(veto_list, GFP_KERNEL);
 		if (!p->pattern) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			ksmbd_free(p);
 			return -ENOMEM;
 		}

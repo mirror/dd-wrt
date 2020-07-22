@@ -31,6 +31,7 @@ ksmbd_tree_conn_connect(struct ksmbd_session *sess, char *share_name)
 
 	tree_conn = ksmbd_zalloc(sizeof(struct ksmbd_tree_connect));
 	if (!tree_conn) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		status.ret = -ENOMEM;
 		goto out_error;
 	}

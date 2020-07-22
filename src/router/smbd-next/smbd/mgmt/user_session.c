@@ -337,8 +337,10 @@ void ksmbd_release_tree_conn_id(struct ksmbd_session *sess, int id)
 int ksmbd_init_session_table(void)
 {
 	session_ida = ksmbd_ida_alloc();
-	if (!session_ida)
+	if (!session_ida) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	return 0;
 }
 

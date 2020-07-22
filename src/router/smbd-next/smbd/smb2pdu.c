@@ -1026,6 +1026,7 @@ int smb2_handle_negotiate(struct ksmbd_work *work)
 			kzalloc(sizeof(struct preauth_integrity_info),
 			GFP_KERNEL);
 		if (!conn->preauth_info) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			rsp->hdr.Status = STATUS_INVALID_PARAMETER;
 			goto err_out;
@@ -1144,8 +1145,10 @@ static int alloc_preauth_hash(struct ksmbd_session *sess,
 		return 0;
 
 	sess->Preauth_HashValue = ksmbd_alloc(PREAUTH_HASHVALUE_SIZE);
-	if (!sess->Preauth_HashValue)
+	if (!sess->Preauth_HashValue){
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	memcpy(sess->Preauth_HashValue,
 	       conn->preauth_info->Preauth_HashValue,
@@ -1163,8 +1166,10 @@ static int generate_preauth_hash(struct ksmbd_work *work,
 		return 0;
 
 	if (negblob->MessageType == NtLmNegotiate) {
-		if (alloc_preauth_hash(sess, conn))
+		if (alloc_preauth_hash(sess, conn)) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return -ENOMEM;
+		}
 	}
 
 	ksmbd_gen_preauth_integrity_hash(conn,
@@ -1217,8 +1222,10 @@ static int ntlm_negotiate(struct ksmbd_work *work,
 
 	if (!work->conn->use_spnego) {
 		sz = ksmbd_build_ntlmssp_challenge_blob(chgblob, work->sess);
-		if (sz < 0)
+		if (sz < 0) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return -ENOMEM;
+		}
 
 		rsp->SecurityBufferLength = cpu_to_le16(sz);
 		return 0;
@@ -1228,12 +1235,15 @@ static int ntlm_negotiate(struct ksmbd_work *work,
 	sz += (strlen(ksmbd_netbios_name()) * 2 + 1 + 4) * 6;
 
 	neg_blob = kzalloc(sz, GFP_KERNEL);
-	if (!neg_blob)
+	if (!neg_blob) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	chgblob = (struct challenge_message *)neg_blob;
 	sz = ksmbd_build_ntlmssp_challenge_blob(chgblob, work->sess);
 	if (sz < 0) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -1243,6 +1253,7 @@ static int ntlm_negotiate(struct ksmbd_work *work,
 					  neg_blob,
 					  sz);
 	if (rc) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -1314,8 +1325,10 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 		rc = build_spnego_ntlmssp_auth_blob(&spnego_blob,
 						    &spnego_blob_len,
 						    0);
-		if (rc)
+		if (rc) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			return -ENOMEM;
+		}
 
 		sz = le16_to_cpu(rsp->SecurityBufferOffset);
 		memcpy((char *)&rsp->hdr.ProtocolId + sz,
@@ -1408,8 +1421,10 @@ static int ntlm_authenticate(struct ksmbd_work *work)
 		chann = lookup_chann_list(sess);
 		if (!chann) {
 			chann = kmalloc(sizeof(struct channel), GFP_KERNEL);
-			if (!chann)
+			if (!chann) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				return -ENOMEM;
+			}
 
 			chann->conn = conn;
 			INIT_LIST_HEAD(&chann->chann_list);
@@ -1457,6 +1472,7 @@ int smb2_sess_setup(struct ksmbd_work *work)
 	if (!req->hdr.SessionId) {
 		sess = ksmbd_smb2_session_create();
 		if (!sess) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto out_err;
 		}
@@ -1621,6 +1637,7 @@ out_err1:
 		break;
 	case -ENOMEM:
 	case KSMBD_TREE_CONN_STATUS_NOMEM:
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rsp->hdr.Status = STATUS_NO_MEMORY;
 		break;
 	case KSMBD_TREE_CONN_STATUS_ERROR:
@@ -2005,8 +2022,10 @@ static int smb2_set_ea(struct smb2_ea_info *eabuf, struct path *path)
 	int next = 0;
 
 	attr_name = kmalloc(XATTR_NAME_MAX + 1, GFP_KERNEL);
-	if (!attr_name)
+	if (!attr_name) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	do {
 		if (!eabuf->EaNameLength)
@@ -2383,6 +2402,7 @@ int smb2_open(struct ksmbd_work *work)
 		name = kmalloc(len + 1, GFP_KERNEL);
 		if (!name) {
 			rsp->hdr.Status = STATUS_NO_MEMORY;
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto err_out1;
 		}
@@ -2542,6 +2562,7 @@ int smb2_open(struct ksmbd_work *work)
 	}
 
 	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto err_out1;
 	}
@@ -2738,6 +2759,7 @@ int smb2_open(struct ksmbd_work *work)
 	/* Get Persistent-ID */
 	ksmbd_open_durable_fd(fp);
 	if (!HAS_FILE_ID(fp->persistent_id)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto err_out;
 	}
@@ -3154,8 +3176,10 @@ static int smb2_populate_readdir_entry(struct ksmbd_conn *conn,
 	conv_name = ksmbd_convert_dir_info_name(d_info,
 						conn->local_nls,
 						&conv_len);
-	if (!conv_name)
+	if (!conv_name) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	/* Somehow the name has only terminating NULL bytes */
 	if (conv_len < 0) {
@@ -3558,6 +3582,7 @@ int smb2_query_dir(struct ksmbd_work *work)
 	WORK_BUFFERS(work, req, rsp);
 
 	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rsp->hdr.Status = STATUS_NO_MEMORY;
 		smb2_set_err_rsp(work);
 		return -ENOMEM;
@@ -4123,8 +4148,10 @@ static int get_file_all_info(struct ksmbd_work *work,
 
 	filename = convert_to_nt_pathname(fp->filename,
 					  work->tcon->share_conf->path);
-	if (!filename)
+	if (!filename) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	inode = FP_INODE(fp);
 	generic_fillattr(inode, &stat);
@@ -5056,8 +5083,10 @@ static int smb2_rename(struct ksmbd_work *work, struct ksmbd_file *fp,
 
 	ksmbd_debug(SMB, "setting FILE_RENAME_INFO\n");
 	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
-	if (!pathname)
+	if (!pathname) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	abs_oldname = d_path(&fp->filp->f_path, pathname, PATH_MAX);
 	if (IS_ERR(abs_oldname)) {
@@ -5183,8 +5212,10 @@ static int smb2_create_link(struct ksmbd_work *work,
 
 	ksmbd_debug(SMB, "setting FILE_LINK_INFORMATION\n");
 	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
-	if (!pathname)
+	if (!pathname) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	link_name = smb2_get_name(share,
 				  file_info->FileName,
@@ -5774,6 +5805,7 @@ static noinline int smb2_read_pipe(struct ksmbd_work *work)
 			work->aux_payload_buf =
 				ksmbd_alloc_response(rpc_resp->payload_sz);
 		if (!work->aux_payload_buf) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			err = -ENOMEM;
 			goto out;
 		}
@@ -6073,8 +6105,10 @@ static ssize_t smb2_write_rdma_channel(struct ksmbd_work *work,
 	work->remote_key = le32_to_cpu(desc->token);
 
 	data_buf = ksmbd_alloc_response(length);
-	if (!data_buf)
+	if (!data_buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	ret = ksmbd_conn_rdma_read(work->conn, data_buf, length,
 				le32_to_cpu(desc->token),
@@ -6675,6 +6709,7 @@ skip:
 
 				argv = kmalloc(sizeof(void *), GFP_KERNEL);
 				if (!argv) {
+					printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 					err = -ENOMEM;
 					goto out;
 				}
@@ -8020,8 +8055,10 @@ int smb3_encrypt_resp(struct ksmbd_work *work)
 	int rc = -ENOMEM;
 	int buf_size = 0, rq_nvec = 2 + (HAS_AUX_PAYLOAD(work) ? 1 : 0);
 
-	if (ARRAY_SIZE(iov) < rq_nvec)
+	if (ARRAY_SIZE(iov) < rq_nvec) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	tr_hdr = ksmbd_alloc_response(sizeof(struct smb2_transform_hdr));
 	if (!tr_hdr)

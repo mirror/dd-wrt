@@ -273,6 +273,7 @@ static int handle_response(int type, void *payload, size_t sz)
 
 		entry->response = ksmbd_alloc(sz);
 		if (!entry->response) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			ret = -ENOMEM;
 			break;
 		}
@@ -430,8 +431,10 @@ static int ipc_msg_send(struct ksmbd_ipc_msg *msg)
 		return ret;
 
 	skb = genlmsg_new(msg->sz, GFP_KERNEL);
-	if (!skb)
+	if (!skb) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	nlh = genlmsg_put(skb, 0, 0, &ksmbd_genl_family, 0, msg->type);
 	if (!nlh)
@@ -566,8 +569,10 @@ int ksmbd_ipc_tree_disconnect_request(unsigned long long session_id,
 	int ret;
 
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_tree_disconnect_request));
-	if (!msg)
+	if (!msg) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	msg->type = KSMBD_EVENT_TREE_DISCONNECT_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
@@ -586,8 +591,10 @@ int ksmbd_ipc_logout_request(const char *account)
 	int ret;
 
 	msg = ipc_msg_alloc(sizeof(struct ksmbd_logout_request));
-	if (!msg)
+	if (!msg) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	msg->type = KSMBD_EVENT_LOGOUT_REQUEST;
 	req = KSMBD_IPC_MSG_PAYLOAD(msg);
@@ -861,7 +868,9 @@ int ksmbd_ipc_init(void)
 	}
 #endif
 	ida = ksmbd_ida_alloc();
-	if (!ida)
+	if (!ida) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 	return 0;
 }

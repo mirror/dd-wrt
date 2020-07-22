@@ -555,6 +555,7 @@ out_err:
 		break;
 	case -ENOMEM:
 	case KSMBD_TREE_CONN_STATUS_NOMEM:
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rsp_hdr->Status.CifsError = STATUS_NO_MEMORY;
 		break;
 	case KSMBD_TREE_CONN_STATUS_TOO_MANY_CONNS:
@@ -619,9 +620,10 @@ smb_get_name(struct ksmbd_share_config *share, const char *src,
 		if (IS_ERR(name)) {
 			ksmbd_debug(SMB, "failed to get name %ld\n",
 				PTR_ERR(name));
-			if (PTR_ERR(name) == -ENOMEM)
+			if (PTR_ERR(name) == -ENOMEM) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				rsp_hdr->Status.CifsError = STATUS_NO_MEMORY;
-			else
+			} else
 				rsp_hdr->Status.CifsError =
 					STATUS_OBJECT_NAME_INVALID;
 			return name;
@@ -713,6 +715,7 @@ static char *smb_get_dir_name(struct ksmbd_share_config *share, const char *src,
 			pattern_pos, pattern_len);
 	pattern = kmalloc(pattern_len + 1, GFP_KERNEL);
 	if (!pattern) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rsp_hdr->Status.CifsError = STATUS_NO_MEMORY;
 		kfree(name);
 		return ERR_PTR(-ENOMEM);
@@ -884,6 +887,7 @@ int smb_handle_negotiate(struct ksmbd_work *work)
 		conn->ntlmssp_cryptkey = kmalloc(CIFS_CRYPTO_KEY_SIZE,
 			GFP_KERNEL);
 		if (!conn->ntlmssp_cryptkey) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			neg_rsp->hdr.Status.CifsError = STATUS_LOGON_FAILURE;
 			goto err_out;
@@ -1084,6 +1088,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 				(strlen(ksmbd_netbios_name()) * 2 + 1 + 4) * 6;
 			neg_blob = kmalloc(sz, GFP_KERNEL);
 			if (!neg_blob) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				err = -ENOMEM;
 				goto out_err;
 			}
@@ -1093,6 +1098,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 					sess);
 			if (neg_blob_len < 0) {
 				kfree(neg_blob);
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				err = -ENOMEM;
 				goto out_err;
 			}
@@ -1101,6 +1107,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 						&spnego_blob_len,
 						neg_blob, neg_blob_len)) {
 				kfree(neg_blob);
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				err = -ENOMEM;
 				goto out_err;
 			}
@@ -1116,6 +1123,7 @@ static int build_sess_rsp_extsec(struct ksmbd_session *sess,
 					chgblob,
 					sess);
 			if (neg_blob_len < 0) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				err = -ENOMEM;
 				goto out_err;
 			}
@@ -1182,6 +1190,7 @@ no_password_check:
 		if (conn->use_spnego) {
 			if (build_spnego_ntlmssp_auth_blob(&spnego_blob,
 						&spnego_blob_len, 0)) {
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				err = -ENOMEM;
 				goto out_err;
 			}
@@ -1257,6 +1266,7 @@ int smb_session_setup_andx(struct ksmbd_work *work)
 	} else {
 		sess = ksmbd_smb1_session_create();
 		if (!sess) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto out_err;
 		}
@@ -2080,6 +2090,7 @@ static int create_andx_pipe(struct ksmbd_work *work)
 				work->conn->local_nls);
 
 	if (IS_ERR(name)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -2231,6 +2242,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 	if (!src) {
 		rsp->hdr.Status.CifsError =
 			STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 
 		return -ENOMEM;
 	}
@@ -2267,6 +2279,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 		/* +3 for: '\'<root>'\' & '\0' */
 		full_name = kzalloc(org_len + add_len + 3, GFP_KERNEL);
 		if (!full_name) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			kfree(name);
 			rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 			return -ENOMEM;
@@ -2302,6 +2315,7 @@ int smb_nt_create_andx(struct ksmbd_work *work)
 		flags = 0;
 
 	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		err = -ENOMEM;
 		goto out1;
 	}
@@ -2870,6 +2884,7 @@ int smb_read_andx(struct ksmbd_work *work)
 	else
 		work->aux_payload_buf = ksmbd_alloc_response(count);
 	if (!work->aux_payload_buf) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		err = -ENOMEM;
 		goto out;
 	}
@@ -3685,6 +3700,7 @@ static int smb_set_acl(struct ksmbd_work *work)
 	buf = vmalloc(XATTR_SIZE_MAX);
 	if (!buf) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto out;
 	}
@@ -3772,6 +3788,7 @@ static int smb_readlink(struct ksmbd_work *work, struct path *path)
 	buf = kzalloc((CIFS_MF_SYMLINK_LINK_MAXLEN), GFP_KERNEL);
 	if (!buf) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -3796,6 +3813,7 @@ static int smb_readlink(struct ksmbd_work *work, struct path *path)
 					      nsz);
 		if (nptr == RESPONSE_BUF(work)) {
 			rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			err = -ENOMEM;
 			goto out;
 		}
@@ -3991,6 +4009,7 @@ static int query_path_info(struct ksmbd_work *work)
 	if (ksmbd_override_fsids(work)) {
 		smb_put_name(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -4210,6 +4229,7 @@ static int query_path_info(struct ksmbd_work *work)
 		filename = convert_to_nt_pathname(name,
 				work->tcon->share_conf->path);
 		if (!filename) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto err_out;
 		}
@@ -4257,6 +4277,7 @@ static int query_path_info(struct ksmbd_work *work)
 		filename = convert_to_nt_pathname(name,
 				work->tcon->share_conf->path);
 		if (!filename) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto err_out;
 		}
@@ -4569,8 +4590,10 @@ static int query_fs_info(struct ksmbd_work *work)
 	if (test_share_config_flag(share, KSMBD_SHARE_FLAG_PIPE))
 		return -ENOENT;
 
-	if (ksmbd_override_fsids(work))
+	if (ksmbd_override_fsids(work)) {
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
+	}
 
 	rc = ksmbd_vfs_kern_path(share->path, LOOKUP_FOLLOW, &path, 0);
 	if (rc) {
@@ -4826,6 +4849,7 @@ static int smb_posix_open(struct ksmbd_work *work)
 	if (ksmbd_override_fsids(work)) {
 		pSMB_rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		smb_put_name(name);
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -5292,6 +5316,7 @@ static int smb_set_ea(struct ksmbd_work *work)
 
 		attr_name = kmalloc(XATTR_NAME_MAX + 1, GFP_KERNEL);
 		if (!attr_name) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto out;
 		}
@@ -5932,6 +5957,7 @@ static int find_first(struct ksmbd_work *work)
 
 	if (ksmbd_override_fsids(work)) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
@@ -6248,6 +6274,7 @@ static int find_next(struct ksmbd_work *work)
 	pathname = kmalloc(PATH_MAX, GFP_KERNEL);
 	if (!pathname) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		rc = -ENOMEM;
 		goto err_out;
 	}
@@ -6816,6 +6843,7 @@ static int query_file_info(struct ksmbd_work *work)
 		filename = convert_to_nt_pathname(fp->filename,
 			work->tcon->share_conf->path);
 		if (!filename) {
+			printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 			rc = -ENOMEM;
 			goto err_out;
 		}
@@ -7548,6 +7576,7 @@ int smb_checkdir(struct ksmbd_work *work)
 				STATUS_OBJECT_NAME_NOT_FOUND;
 				break;
 			case -ENOMEM:
+				printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 				rsp->hdr.Status.CifsError =
 				STATUS_INSUFFICIENT_RESOURCES;
 				break;
@@ -8045,6 +8074,7 @@ int smb_open_andx(struct ksmbd_work *work)
 	if (ksmbd_override_fsids(work)) {
 		smb_put_name(name);
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
+		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
 		return -ENOMEM;
 	}
 
