@@ -708,6 +708,7 @@ static int emac_probe(struct platform_device *pdev)
 
 	netif_napi_add(netdev, &adpt->rx_q.napi, emac_napi_rtx,
 		       NAPI_POLL_WEIGHT);
+	napi_set_threaded(&adpt->rx_q.napi, true);
 
 	ret = register_netdev(netdev);
 	if (ret) {
