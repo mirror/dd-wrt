@@ -326,6 +326,7 @@ struct napi_struct {
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
+	struct task_struct	*thread;
 };
 
 enum {
@@ -334,6 +335,7 @@ enum {
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash (busy polling possible) */
 	NAPI_STATE_NO_BUSY_POLL,/* Do not add in napi_hash, no busy polling */
+	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
 };
 
 enum gro_result {
@@ -477,6 +479,8 @@ static inline void napi_complete(struct napi_struct *n)
  * so might disappear in a future Linux version.
  */
 void napi_hash_add(struct napi_struct *napi);
+
+int napi_set_threaded(struct napi_struct *n, bool threded);
 
 /**
  *	napi_hash_del - remove a NAPI from global table
