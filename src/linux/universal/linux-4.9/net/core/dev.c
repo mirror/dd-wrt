@@ -5445,7 +5445,7 @@ int napi_set_threaded(struct napi_struct *n, bool threaded)
 
 	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* if the device is initializing, nothing todo */
-	if (test_bit(__LINK_STATE_START, &n->dev->state) && dev->reg_state != NETREG_DUMMY)
+	if (test_bit(__LINK_STATE_START, &n->dev->state) && n->dev->reg_state != NETREG_DUMMY)
 		return 0;
 
 	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
