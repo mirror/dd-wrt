@@ -5092,7 +5092,7 @@ int napi_set_threaded(struct napi_struct *n, bool threaded)
 		clear_bit(NAPI_STATE_THREADED, &n->state);
 
 	/* if the device is initializing, nothing todo */
-	if (test_bit(__LINK_STATE_START, &n->dev->state))
+	if (test_bit(__LINK_STATE_START, &n->dev->state) && n->dev->reg_state != NETREG_DUMMY)
 		return 0;
 
 	napi_thread_stop(n);
