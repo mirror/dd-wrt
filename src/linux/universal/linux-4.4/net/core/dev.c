@@ -5063,7 +5063,6 @@ static int napi_threaded_poll(void *data)
 
 				/* refresh the budget */
 				budget = netdev_budget;
-				__kfree_skb_flush();
 				time_limit = jiffies + 2;
 			}
 
@@ -5073,7 +5072,6 @@ static int napi_threaded_poll(void *data)
 				again = false;
 		} while (again);
 
-		__kfree_skb_flush();
 		local_bh_enable();
 	}
 	return 0;
