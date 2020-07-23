@@ -1317,9 +1317,11 @@ static int napi_threaded_poll(void *data);
 
 static inline void napi_thread_start(struct napi_struct *n)
 {
-	if (test_bit(NAPI_STATE_THREADED, &n->state) && !n->thread)
+	if (test_bit(NAPI_STATE_THREADED, &n->state) && !n->thread) {
+		printk(KERN_INFO "Start Thread: %s-%d\n", n->dev->name, n->napi_id);
 		n->thread = kthread_create(napi_threaded_poll, n, "%s-%d",
 					   n->dev->name, n->napi_id);
+	}
 }
 
 static int __dev_open(struct net_device *dev)
@@ -1403,6 +1405,7 @@ static inline void napi_thread_stop(struct napi_struct *n)
 {
 	if (!n->thread)
 		return;
+	printk(KERN_INFO "Stop Thread: %s-%d\n", n->dev->name, n->napi_id);
 	kthread_stop(n->thread);
 	n->thread = NULL;
 }
