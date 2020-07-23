@@ -350,12 +350,14 @@ struct napi_struct {
 	struct list_head	dev_list;
 	struct sk_buff		*gro_list;
 	struct sk_buff		*skb;
+	struct task_struct	*thread;
 };
 
 enum {
 	NAPI_STATE_SCHED,	/* Poll is scheduled */
 	NAPI_STATE_DISABLE,	/* Disable pending */
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
+	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
 };
 
 enum gro_result {
@@ -485,6 +487,8 @@ static inline void napi_disable(struct napi_struct *n)
 		msleep(1);
 	clear_bit(NAPI_STATE_DISABLE, &n->state);
 }
+
+int napi_set_threaded(struct napi_struct *n, bool threded);
 
 /**
  *	napi_enable - enable NAPI scheduling
