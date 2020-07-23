@@ -5430,25 +5430,20 @@ static int napi_threaded_poll(void *data)
 int napi_set_threaded(struct napi_struct *n, bool threaded)
 {
 	ASSERT_RTNL();
-	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (n->dev->flags & IFF_UP)
 		return -EBUSY;
 
-	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (threaded == !!test_bit(NAPI_STATE_THREADED, &n->state))
 		return 0;
-	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	if (threaded)
 		set_bit(NAPI_STATE_THREADED, &n->state);
 	else
 		clear_bit(NAPI_STATE_THREADED, &n->state);
 
-	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	/* if the device is initializing, nothing todo */
 	if (test_bit(__LINK_STATE_START, &n->dev->state) && n->dev->reg_state != NETREG_DUMMY)
 		return 0;
 
-	printk(KERN_INFO "%s:%d\n", __func__, __LINE__);
 	napi_thread_stop(n);
 	napi_thread_start(n);
 	return 0;
