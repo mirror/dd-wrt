@@ -3382,7 +3382,8 @@ int stmmac_dvr_probe(struct device *device,
 	}
 
 	netif_napi_add(ndev, &priv->napi, stmmac_poll, 64);
-
+	napi_set_threaded(&priv->napi, true);
+	
 	spin_lock_init(&priv->lock);
 	spin_lock_init(&priv->tx_lock);
 
