@@ -510,7 +510,6 @@ unsigned long *__alloc_thread_bitmap(struct net_device *netdev, int *bits)
 	*bits = 0;
 	list_for_each_entry(n, &netdev->napi_list, dev_list)
 		(*bits)++;
-
 	return kmalloc_array(BITS_TO_LONGS(*bits), sizeof(unsigned long),
 			     GFP_ATOMIC | __GFP_ZERO);
 }
@@ -538,11 +537,16 @@ static ssize_t threaded_show(struct device *dev,
 
 	i = 0;
 	list_for_each_entry(n, &netdev->napi_list, dev_list) {
-		if (test_bit(NAPI_STATE_THREADED, &n->state))
+		if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+			printk(KERN_INFO "napi dev %d: 1\n",i);
 			set_bit(i, bmap);
+		} else
+			printk(KERN_INFO "napi dev %d: 0\n",i);
+		
 		i++;
 	}
-
+	if (!i)
+			printk(KERN_INFO "no napi dev found\n");
 	count = bitmap_print_to_pagebuf(true, buf, bmap, bits);
 	kfree(bmap);
 
