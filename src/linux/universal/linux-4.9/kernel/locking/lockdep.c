@@ -3804,7 +3804,7 @@ int lock_is_held(struct lockdep_map *lock)
 
 	return ret;
 }
-EXPORT_SYMBOL_GPL(lock_is_held);
+EXPORT_SYMBOL(lock_is_held);
 
 struct pin_cookie lock_pin_lock(struct lockdep_map *lock)
 {
