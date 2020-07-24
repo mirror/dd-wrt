@@ -1464,6 +1464,7 @@ static int i40evf_alloc_q_vectors(struct i40evf_adapter *adapter)
 		cpumask_copy(&q_vector->affinity_mask, cpu_possible_mask);
 		netif_napi_add(adapter->netdev, &q_vector->napi,
 			       i40evf_napi_poll, NAPI_POLL_WEIGHT);
+		napi_set_threaded(&q_vector->napi, true);
 	}
 
 	return 0;

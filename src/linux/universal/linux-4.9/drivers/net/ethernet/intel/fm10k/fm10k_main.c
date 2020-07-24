@@ -1633,6 +1633,7 @@ static int fm10k_alloc_q_vector(struct fm10k_intfc *interface,
 	/* initialize NAPI */
 	netif_napi_add(interface->netdev, &q_vector->napi,
 		       fm10k_poll, NAPI_POLL_WEIGHT);
+	napi_set_threaded(&q_vector->napi, true);
 
 	/* tie q_vector and interface together */
 	interface->q_vector[v_idx] = q_vector;
