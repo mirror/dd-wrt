@@ -7830,9 +7830,11 @@ static int i40e_vsi_alloc_q_vector(struct i40e_vsi *vsi, int v_idx, int cpu)
 	q_vector->v_idx = v_idx;
 	cpumask_set_cpu(cpu, &q_vector->affinity_mask);
 
-	if (vsi->netdev)
+	if (vsi->netdev) {
 		netif_napi_add(vsi->netdev, &q_vector->napi,
 			       i40e_napi_poll, NAPI_POLL_WEIGHT);
+	napi_set_threaded(&q_vector->napi, true);
+	}
 
 	q_vector->rx.latency_range = I40E_LOW_LATENCY;
 	q_vector->tx.latency_range = I40E_LOW_LATENCY;
