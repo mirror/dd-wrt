@@ -144,9 +144,11 @@ void start_sysinit(void)
 	} else if (brand == ROUTER_DIR882) {
 		insmod("compat");
 		insmod("mac80211");
-		insmod("mt76");
-		insmod("mt7615-common");
-		insmod("mt7615e");
+		if (!nvram_match("no_mt76","1")) {
+			insmod("mt76");
+			insmod("mt7615-common");
+			insmod("mt7615e");
+		}
 		eval("swconfig", "dev", "eth0", "set", "reset", "1");
 		eval("swconfig", "dev", "eth0", "set", "enable_vlan", "1");
 		eval("swconfig", "dev", "eth0", "vlan", "1", "set", "ports", "0 1 2 3 6t");

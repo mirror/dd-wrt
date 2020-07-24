@@ -330,6 +330,8 @@ static int notify_nas(char *type, char *ifname, char *action);
 void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig)
 {
 	char temp[12];
+	
+	pid_t pid;
 
 	char *wan_hostname = nvram_safe_get("wan_hostname");
 #ifdef HAVE_FREECWMP
@@ -485,7 +487,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 
 	}
 #endif
-	_evalpid(dhcp_argv, NULL, 0, NULL);
+	_evalpid(dhcp_argv, NULL, 0, &pid);
 
 	if (s_auth)
 		free(s_auth);
