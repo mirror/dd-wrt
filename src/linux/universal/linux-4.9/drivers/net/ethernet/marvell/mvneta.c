@@ -4290,7 +4290,7 @@ static int mvneta_probe(struct platform_device *pdev)
 		struct mvneta_pcpu_port *port = per_cpu_ptr(pp->ports, cpu);
 
 		netif_napi_add(dev, &port->napi, mvneta_poll, NAPI_POLL_WEIGHT);
-		napi_set_threaded(&port->napi, true);
+//		napi_set_threaded(&port->napi, true);
 		port->pp = pp;
 	}
 
