@@ -5079,7 +5079,7 @@ static int napi_threaded_poll(void *data)
 
 int napi_set_threaded(struct napi_struct *n, bool threaded)
 {
-	ASSERT_RTNL();
+//	ASSERT_RTNL();
 
 	if (n->dev->flags & IFF_UP)
 		return -EBUSY;
