@@ -5429,6 +5429,9 @@ static int napi_threaded_poll(void *data)
 
 int napi_set_threaded(struct napi_struct *n, bool threaded)
 {
+//#ifdef CONFIG_ARCH_ALPINE
+//	return 0;
+//#endif
 //	ASSERT_RTNL();
 	if (n->dev->flags & IFF_UP)
 		return -EBUSY;
