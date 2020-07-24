@@ -592,6 +592,7 @@ static int sk98lin_init_device(struct pci_dev *pdev,
 #ifdef CONFIG_SK98LIN_NAPI
 #ifdef SK_NEW_NAPI_HANDLING
 		netif_napi_add(dev, &pNet->napi, SkY2Poll, 64);
+		napi_set_threaded(&pNet->napi, true);
 #else
 		dev->poll =  &SkY2Poll;
 		dev->weight = 64;
@@ -605,6 +606,7 @@ static int sk98lin_init_device(struct pci_dev *pdev,
 #ifdef CONFIG_SK98LIN_NAPI
 #ifdef SK_NEW_NAPI_HANDLING
 		netif_napi_add(dev, &pNet->napi, SkGePoll, 64);
+		napi_set_threaded(&pNet->napi, true);
 #else
 		dev->poll =  &SkGePoll;
 		dev->weight = 64;
