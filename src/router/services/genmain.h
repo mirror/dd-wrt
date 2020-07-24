@@ -128,10 +128,10 @@ int check_arguments(int argc, char *argv[])
 {
 	airbag_init();
 	if (argc < 3) {
-		fprintf(stderr, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
-		fprintf(stderr, "options:\n");
-		fprintf(stderr, "-f : force start of service, no matter if neccessary\n");
-		fprintf(stderr, "list of services:\n");
+		fprintf(stdout, "%s servicename start|stop|restart|main args... [-f]\n", argv[0]);
+		fprintf(stdout, "options:\n");
+		fprintf(stdout, "-f : force start of service, no matter if neccessary\n");
+		fprintf(stdout, "list of services:\n");
 		int i;
 		for (i = 0; i < sizeof(functiontable) / sizeof(struct fn); i++) {
 			char feature[128] = { 0 };
@@ -148,11 +148,11 @@ int check_arguments(int argc, char *argv[])
 				strcat(feature, "[main]");
 			}
 			if (strlen(functiontable[i].name) > 15)
-				fprintf(stderr, "\t%s\t%s\n", functiontable[i].name, feature);
+				fprintf(stdout, "\t%s\t%s\n", functiontable[i].name, feature);
 			else if (strlen(functiontable[i].name) > 7)
-				fprintf(stderr, "\t%s\t\t%s\n", functiontable[i].name, feature);
+				fprintf(stdout, "\t%s\t\t%s\n", functiontable[i].name, feature);
 			else
-				fprintf(stderr, "\t%s\t\t\t%s\n", functiontable[i].name, feature);
+				fprintf(stdout, "\t%s\t\t\t%s\n", functiontable[i].name, feature);
 		}
 		return -1;
 	}
