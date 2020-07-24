@@ -481,6 +481,7 @@ void cvm_oct_rx_initialize(void)
 
 		netif_napi_add(dev_for_napi, &oct_rx_group[i].napi,
 			       cvm_oct_napi_poll, rx_napi_weight);
+		napi_set_threaded(&oct_rx_group[i].napi, true);
 		napi_enable(&oct_rx_group[i].napi);
 
 		oct_rx_group[i].irq = OCTEON_IRQ_WORKQ0 + i;
