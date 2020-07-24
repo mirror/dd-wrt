@@ -1315,12 +1315,11 @@ EXPORT_SYMBOL(netdev_notify_peers);
 
 static int napi_threaded_poll(void *data);
 
-static inline void napi_thread_start(struct napi_struct *n)
+static inline void napi_thread_start(struct napi_struct *n, const char *threadname)
 {
 	if (test_bit(NAPI_STATE_THREADED, &n->state) && !n->thread) {
-		printk(KERN_INFO "Start Thread: %s-%d\n", n->dev->name, n->napi_id);
 		n->thread = kthread_create(napi_threaded_poll, n, "%s-%d",
-					   n->dev->name, n->napi_id);
+					   threadname? threadname : n->dev->name, n->napi_id);
 	}
 }
 
@@ -1355,7 +1354,7 @@ static int __dev_open(struct net_device *dev)
 		ret = ops->ndo_open(dev);
 
 	list_for_each_entry(n, &dev->napi_list, dev_list)
-		napi_thread_start(n);
+		napi_thread_start(n, NULL);
 
 	netpoll_poll_enable(dev);
 
@@ -1405,7 +1404,6 @@ static inline void napi_thread_stop(struct napi_struct *n)
 {
 	if (!n->thread)
 		return;
-	printk(KERN_INFO "Stop Thread: %s-%d\n", n->dev->name, n->napi_id);
 	kthread_stop(n->thread);
 	n->thread = NULL;
 }
@@ -5427,7 +5425,7 @@ static int napi_threaded_poll(void *data)
 	return 0;
 }
 
-int napi_set_threaded(struct napi_struct *n, bool threaded)
+int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname)
 {
 //#ifdef CONFIG_ARCH_ALPINE
 //	return 0;
@@ -5448,10 +5446,18 @@ int napi_set_threaded(struct napi_struct *n, bool threaded)
 		return 0;
 
 	napi_thread_stop(n);
-	napi_thread_start(n);
+	napi_thread_start(n, threadname);
 	return 0;
 }
+EXPORT_SYMBOL(napi_set_threaded_named);
+
+int napi_set_threaded(struct napi_struct *n, bool threaded)
+{
+	return napi_set_threaded_named(n, threaded, NULL);
+}
 EXPORT_SYMBOL(napi_set_threaded);
+
+
 
 static __latent_entropy void net_rx_action(struct softirq_action *h)
 {

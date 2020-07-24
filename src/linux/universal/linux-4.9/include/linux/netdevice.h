@@ -480,7 +480,9 @@ static inline void napi_complete(struct napi_struct *n)
  */
 void napi_hash_add(struct napi_struct *napi);
 
-int napi_set_threaded(struct napi_struct *n, bool threded);
+int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname);
+
+int napi_set_threaded(struct napi_struct *n, bool threaded);
 
 /**
  *	napi_hash_del - remove a NAPI from global table
