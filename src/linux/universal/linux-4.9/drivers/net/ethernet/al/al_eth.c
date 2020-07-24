@@ -2609,6 +2609,7 @@ al_eth_init_napi(struct al_eth_adapter *adapter)
 			napi->qid = i - adapter->num_rx_queues;
 		}
 		netif_napi_add(adapter->netdev, &adapter->al_napi[i].napi, poll, 64);
+		napi_set_threaded(&adapter->al_napi[i].napi, true);
 		napi->adapter = adapter;
 	}
 }
