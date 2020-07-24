@@ -483,7 +483,9 @@ static inline bool napi_complete(struct napi_struct *n)
  */
 bool napi_hash_del(struct napi_struct *napi);
 
-int napi_set_threaded(struct napi_struct *n, bool threded);
+int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname);
+
+int napi_set_threaded(struct napi_struct *n, bool threaded);
 
 /**
  *	napi_disable - prevent NAPI from scheduling
