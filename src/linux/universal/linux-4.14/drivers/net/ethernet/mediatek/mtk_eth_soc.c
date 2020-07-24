@@ -1647,6 +1647,8 @@ static int fe_probe(struct platform_device *pdev)
 		priv->rx_ring.rx_ring_size *= 4;
 	}
 	netif_napi_add(netdev, &priv->rx_napi, fe_poll, napi_weight);
+	napi_set_threaded(&priv->rx_napi, true);
+
 	fe_set_ethtool_ops(netdev);
 
 	err = register_netdev(netdev);
