@@ -354,7 +354,7 @@ static inline void invoke_softirq(void)
 static inline void invoke_softirq(void)
 {
 #ifndef __ARCH_HAS_DO_SOFTIRQ
-	if (ksoftirqd_running())
+	if (ksoftirqd_running(local_softirq_pending()))
 		return;
 #endif
 
