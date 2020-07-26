@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5236 | brainslayer | 2020-07-27 02:30:28 +0400 (Mon, 27 Jul 2020) | 1 line
+
+some performanc improvements in mac80211
+------------------------------------------------------------------------
 r5235 | brainslayer | 2020-07-25 14:30:54 +0400 (Sat, 25 Jul 2020) | 1 line
 
 mac80211: remove STA txq pending airtime underflow warning
