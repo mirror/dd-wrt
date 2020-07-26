@@ -155,6 +155,7 @@ static DEFINE_SPINLOCK(offload_lock);
 struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head ptype_all __read_mostly;	/* Taps */
 static struct list_head offload_base __read_mostly;
+static struct workqueue_struct *napi_workq __read_mostly;
 
 static int netif_rx_internal(struct sk_buff *skb);
 static int call_netdevice_notifiers_info(unsigned long val,
@@ -4459,6 +4460,11 @@ void __napi_schedule(struct napi_struct *n)
 {
 	unsigned long flags;
 
+	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+		queue_work(napi_workq, &n->work);
+		return;
+	}
+
 	local_irq_save(flags);
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	local_irq_restore(flags);
@@ -4546,6 +4552,30 @@ void napi_hash_del(struct napi_struct *napi)
 }
 EXPORT_SYMBOL_GPL(napi_hash_del);
 
+static void napi_workfn(struct work_struct *work)
+{
+	struct napi_struct *n = container_of(work, struct napi_struct, work);
+
+	for (;;) {
+		if (!test_bit(NAPI_STATE_SCHED, &n->state))
+			return;
+
+		if (n->poll(n, n->weight) < n->weight)
+			return;
+
+		if (!need_resched())
+			continue;
+
+		/*
+		 * have to pay for the latency of task switch even if
+		 * napi is scheduled
+		 */
+		if (test_bit(NAPI_STATE_SCHED, &n->state))
+			queue_work(napi_workq, work);
+		return;
+	}
+}
+
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight)
 {
@@ -4564,6 +4594,7 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	spin_lock_init(&napi->poll_lock);
 	napi->poll_owner = -1;
 #endif
+	INIT_WORK(&napi->work, napi_workfn);
 	set_bit(NAPI_STATE_SCHED, &napi->state);
 }
 EXPORT_SYMBOL(netif_napi_add);
@@ -7464,6 +7495,10 @@ static int __init net_dev_init(void)
 		sd->backlog.poll = process_backlog;
 		sd->backlog.weight = weight_p;
 	}
+
+	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_HIGHPRI,
+				     WQ_UNBOUND_MAX_ACTIVE);
+	BUG_ON(!napi_workq);
 
 	dev_boot_phase = 0;
 
