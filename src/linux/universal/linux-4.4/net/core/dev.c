@@ -160,6 +160,7 @@ static DEFINE_SPINLOCK(offload_lock);
 struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head ptype_all __read_mostly;	/* Taps */
 static struct list_head offload_base __read_mostly;
+static struct workqueue_struct *napi_workq __read_mostly;
 
 static int netif_rx_internal(struct sk_buff *skb);
 static int call_netdevice_notifiers_info(unsigned long val,
@@ -1309,19 +1310,9 @@ void netdev_notify_peers(struct net_device *dev)
 }
 EXPORT_SYMBOL(netdev_notify_peers);
 
-static int napi_threaded_poll(void *data);
-
-static inline void napi_thread_start(struct napi_struct *n, const char *threadname)
-{
-	if (test_bit(NAPI_STATE_THREADED, &n->state) && !n->thread)
-		n->thread = kthread_create(napi_threaded_poll, n, "%s-%d",
-					   threadname? threadname : n->dev->name, n->napi_id);
-}
-
 static int __dev_open(struct net_device *dev)
 {
 	const struct net_device_ops *ops = dev->netdev_ops;
-	struct napi_struct *n;
 	int ret;
 
 	ASSERT_RTNL();
@@ -1347,9 +1338,6 @@ static int __dev_open(struct net_device *dev)
 
 	if (!ret && ops->ndo_open)
 		ret = ops->ndo_open(dev);
-
-	list_for_each_entry(n, &dev->napi_list, dev_list)
-		napi_thread_start(n, NULL);
 
 	netpoll_poll_enable(dev);
 
@@ -1395,14 +1383,6 @@ int dev_open(struct net_device *dev)
 }
 EXPORT_SYMBOL(dev_open);
 
-static inline void napi_thread_stop(struct napi_struct *n)
-{
-	if (!n->thread)
-		return;
-	kthread_stop(n->thread);
-	n->thread = NULL;
-}
-
 static int __dev_close_many(struct list_head *head)
 {
 	struct net_device *dev;
@@ -1431,7 +1411,6 @@ static int __dev_close_many(struct list_head *head)
 
 	list_for_each_entry(dev, head, close_list) {
 		const struct net_device_ops *ops = dev->netdev_ops;
-		struct napi_struct *n;
 
 		/*
 		 *	Call the device specific close. This cannot fail.
@@ -1442,9 +1421,6 @@ static int __dev_close_many(struct list_head *head)
 		 */
 		if (ops->ndo_stop)
 			ops->ndo_stop(dev);
-
-		list_for_each_entry(n, &dev->napi_list, dev_list)
-			napi_thread_stop(n);
 
 		dev->flags &= ~IFF_UP;
 		netpoll_poll_enable(dev);
@@ -3335,11 +3311,6 @@ int weight_p __read_mostly = 64;            /* old backlog weight */
 static inline void ____napi_schedule(struct softnet_data *sd,
 				     struct napi_struct *napi)
 {
-	if (napi->thread) {
-		wake_up_process(napi->thread);
-		return;
-	}
-
 	list_add_tail(&napi->poll_list, &sd->poll_list);
 	__raise_softirq_irqoff(NET_RX_SOFTIRQ);
 }
@@ -4786,6 +4757,11 @@ void __napi_schedule(struct napi_struct *n)
 {
 	unsigned long flags;
 
+	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+		queue_work(napi_workq, &n->work);
+		return;
+	}
+
 	local_irq_save(flags);
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	local_irq_restore(flags);
@@ -4800,6 +4776,11 @@ EXPORT_SYMBOL(__napi_schedule);
  */
 void __napi_schedule_irqoff(struct napi_struct *n)
 {
+	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
+		queue_work(napi_workq, &n->work);
+		return;
+	}
+
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 }
 EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -4908,6 +4889,30 @@ static enum hrtimer_restart napi_watchdog(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+static void napi_workfn(struct work_struct *work)
+{
+	struct napi_struct *n = container_of(work, struct napi_struct, work);
+
+	for (;;) {
+		if (!test_bit(NAPI_STATE_SCHED, &n->state))
+			return;
+
+		if (n->poll(n, n->weight) < n->weight)
+			return;
+
+		if (!need_resched())
+			continue;
+
+		/*
+		 * have to pay for the latency of task switch even if
+		 * napi is scheduled
+		 */
+		if (test_bit(NAPI_STATE_SCHED, &n->state))
+			queue_work(napi_workq, work);
+		return;
+	}
+}
+
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight)
 {
@@ -4928,6 +4933,7 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	spin_lock_init(&napi->poll_lock);
 	napi->poll_owner = -1;
 #endif
+	INIT_WORK(&napi->work, napi_workfn);
 	set_bit(NAPI_STATE_SCHED, &napi->state);
 }
 EXPORT_SYMBOL(netif_napi_add);
@@ -5020,92 +5026,6 @@ out_unlock:
 
 	return work;
 }
-
-static int napi_thread_wait(struct napi_struct *napi)
-{
-	set_current_state(TASK_INTERRUPTIBLE);
-
-	while (!kthread_should_stop() && !napi_disable_pending(napi)) {
-		if (test_bit(NAPI_STATE_SCHED, &napi->state)) {
-			__set_current_state(TASK_RUNNING);
-			return 0;
-		}
-
-		schedule();
-		set_current_state(TASK_INTERRUPTIBLE);
-	}
-	__set_current_state(TASK_RUNNING);
-	return -1;
-}
-
-static int napi_threaded_poll(void *data)
-{
-	struct napi_struct *napi = data;
-
-	while (!napi_thread_wait(napi)) {
-		struct list_head dummy_repoll;
-		int budget = netdev_budget;
-		unsigned long time_limit;
-		bool again = true;
-
-		INIT_LIST_HEAD(&dummy_repoll);
-		local_bh_disable();
-		time_limit = jiffies + 2;
-		do {
-			/* ensure that the poll list is not empty */
-			if (list_empty(&dummy_repoll))
-				list_add(&napi->poll_list, &dummy_repoll);
-
-			budget -= napi_poll(napi, &dummy_repoll);
-			if (unlikely(budget <= 0 ||
-				     time_after_eq(jiffies, time_limit))) {
-				cond_resched_softirq();
-
-				/* refresh the budget */
-				budget = netdev_budget;
-				time_limit = jiffies + 2;
-			}
-
-			if (napi_disable_pending(napi))
-				again = false;
-			else if (!test_bit(NAPI_STATE_SCHED, &napi->state))
-				again = false;
-		} while (again);
-
-		local_bh_enable();
-	}
-	return 0;
-}
-
-int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname)
-{
-//	ASSERT_RTNL();
-
-	if (n->dev->flags & IFF_UP)
-		return -EBUSY;
-
-	if (threaded == !!test_bit(NAPI_STATE_THREADED, &n->state))
-		return 0;
-	if (threaded)
-		set_bit(NAPI_STATE_THREADED, &n->state);
-	else
-		clear_bit(NAPI_STATE_THREADED, &n->state);
-
-	/* if the device is initializing, nothing todo */
-	if (test_bit(__LINK_STATE_START, &n->dev->state) && n->dev->reg_state != NETREG_DUMMY)
-		return 0;
-
-	napi_thread_stop(n);
-	napi_thread_start(n, threadname);
-	return 0;
-}
-EXPORT_SYMBOL(napi_set_threaded_named);
-
-int napi_set_threaded(struct napi_struct *n, bool threaded)
-{
-	return napi_set_threaded_named(n, threaded, NULL);
-}
-EXPORT_SYMBOL(napi_set_threaded);
 
 static void net_rx_action(struct softirq_action *h)
 {
@@ -8114,6 +8034,10 @@ static int __init net_dev_init(void)
 		sd->backlog.poll = process_backlog;
 		sd->backlog.weight = weight_p;
 	}
+
+	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_HIGHPRI,
+				     WQ_UNBOUND_MAX_ACTIVE);
+	BUG_ON(!napi_workq);
 
 	dev_boot_phase = 0;
 

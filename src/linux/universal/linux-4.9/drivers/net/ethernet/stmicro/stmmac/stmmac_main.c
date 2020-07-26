@@ -3381,8 +3381,7 @@ int stmmac_dvr_probe(struct device *device,
 		pr_info(" Enable RX Mitigation via HW Watchdog Timer\n");
 	}
 
-	netif_napi_add(ndev, &priv->napi, stmmac_poll, 64);
-	napi_set_threaded(&priv->napi, true);
+	netif_threaded_napi_add(ndev, &priv->napi, stmmac_poll, 64);
 	
 	spin_lock_init(&priv->lock);
 	spin_lock_init(&priv->tx_lock);

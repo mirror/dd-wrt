@@ -4278,9 +4278,8 @@ int stmmac_dvr_probe(struct device *device,
 	for (queue = 0; queue < priv->plat->rx_queues_to_use; queue++) {
 		struct stmmac_rx_queue *rx_q = &priv->rx_queue[queue];
 
-		netif_napi_add(ndev, &rx_q->napi, stmmac_poll,
+		netif_threaded_napi_add(ndev, &rx_q->napi, stmmac_poll,
 			       (8 * priv->plat->rx_queues_to_use));
-		napi_set_threaded(&rx_q->napi, true);
 	}
 
 	mutex_init(&priv->lock);
