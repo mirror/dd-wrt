@@ -978,11 +978,9 @@ static int edma_axi_probe(struct platform_device *pdev)
 
 		edma_cinfo->edma_percpu_info[i].napi.state = 0;
 
-		netif_napi_add(edma_netdev[0],
+		netif_threaded_napi_add(edma_netdev[0],
 			       &edma_cinfo->edma_percpu_info[i].napi,
 			       edma_poll, 64);
-		napi_set_threaded(&edma_cinfo->edma_percpu_info[i].napi, true);
-		napi_enable(&edma_cinfo->edma_percpu_info[i].napi);
 		edma_cinfo->edma_percpu_info[i].tx_mask = tx_mask[i];
 		edma_cinfo->edma_percpu_info[i].rx_mask = EDMA_RX_PER_CPU_MASK
 				<< (i << EDMA_RX_PER_CPU_MASK_SHIFT);

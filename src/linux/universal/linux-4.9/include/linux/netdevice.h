@@ -326,7 +326,7 @@ struct napi_struct {
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
-	struct task_struct	*thread;
+	struct work_struct	work;
 };
 
 enum {
@@ -479,10 +479,6 @@ static inline void napi_complete(struct napi_struct *n)
  * so might disappear in a future Linux version.
  */
 void napi_hash_add(struct napi_struct *napi);
-
-int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname);
-
-int napi_set_threaded(struct napi_struct *n, bool threaded);
 
 /**
  *	napi_hash_del - remove a NAPI from global table
@@ -2133,6 +2129,26 @@ static inline void *netdev_priv(const struct net_device *dev)
  */
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight);
+
+/**
+ *	netif_threaded_napi_add - initialize a NAPI context
+ *	@dev:  network device
+ *	@napi: NAPI context
+ *	@poll: polling function
+ *	@weight: default weight
+ *
+ * This variant of netif_napi_add() should be used from drivers using NAPI
+ * with CPU intensive poll functions.
+ * This will schedule polling from a high priority workqueue that
+ */
+static inline void netif_threaded_napi_add(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int),
+					   int weight)
+{
+	set_bit(NAPI_STATE_THREADED, &napi->state);
+	netif_napi_add(dev, napi, poll, weight);
+}
 
 /**
  *	netif_tx_napi_add - initialize a NAPI context

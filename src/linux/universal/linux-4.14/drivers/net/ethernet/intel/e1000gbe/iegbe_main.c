@@ -824,8 +824,7 @@ static int iegbe_probe(struct pci_dev *pdev,
 	netdev->netdev_ops = &iegbe_netdev_ops;
 	set_ethtool_ops(netdev);
 	netdev->watchdog_timeo = 5 * HZ;
-	netif_napi_add(netdev, &adapter->napi, iegbe_clean, 64);
-	napi_set_threaded(&adapter->napi, true);
+	netif_threaded_napi_add(netdev, &adapter->napi, iegbe_clean, 64);
 
 	strncpy(netdev->name, pci_name(pdev), sizeof(netdev->name) - 1);
 

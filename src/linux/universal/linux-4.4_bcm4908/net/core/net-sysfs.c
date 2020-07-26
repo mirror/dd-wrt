@@ -486,107 +486,6 @@ static ssize_t phys_switch_id_show(struct device *dev,
 }
 static DEVICE_ATTR_RO(phys_switch_id);
 
-unsigned long *__alloc_thread_bitmap(struct net_device *netdev, int *bits)
-{
-	struct napi_struct *n;
-
-	*bits = 0;
-	list_for_each_entry(n, &netdev->napi_list, dev_list)
-		(*bits)++;
-
-	return kmalloc_array(BITS_TO_LONGS(*bits), sizeof(unsigned long),
-			     GFP_ATOMIC | __GFP_ZERO);
-}
-
-static ssize_t threaded_show(struct device *dev,
-			     struct device_attribute *attr, char *buf)
-{
-	struct net_device *netdev = to_net_dev(dev);
-	struct napi_struct *n;
-	unsigned long *bmap;
-	size_t count = 0;
-	int i, bits;
-
-	if (!rtnl_trylock())
-		return restart_syscall();
-
-	if (!dev_isalive(netdev))
-		goto unlock;
-
-	bmap = __alloc_thread_bitmap(netdev, &bits);
-	if (!bmap) {
-		count = -ENOMEM;
-		goto unlock;
-	}
-
-	i = 0;
-	list_for_each_entry(n, &netdev->napi_list, dev_list) {
-		if (test_bit(NAPI_STATE_THREADED, &n->state))
-			set_bit(i, bmap);
-		i++;
-	}
-
-	count = bitmap_print_to_pagebuf(true, buf, bmap, bits);
-	kfree(bmap);
-
-unlock:
-	rtnl_unlock();
-
-	return count;
-}
-
-static ssize_t threaded_store(struct device *dev,
-			      struct device_attribute *attr,
-			      const char *buf, size_t len)
-{
-	struct net_device *netdev = to_net_dev(dev);
-	struct napi_struct *n;
-	unsigned long *bmap;
-	int i, bits;
-	size_t ret;
-
-	if (!capable(CAP_NET_ADMIN))
-		return -EPERM;
-
-	if (!rtnl_trylock())
-		return restart_syscall();
-
-	if (!dev_isalive(netdev)) {
-		ret = len;
-		goto unlock;
-	}
-
-	if (netdev->flags & IFF_UP) {
-		ret = -EBUSY;
-		goto unlock;
-	}
-
-	bmap = __alloc_thread_bitmap(netdev, &bits);
-	if (!bmap) {
-		ret = -ENOMEM;
-		goto unlock;
-	}
-
-	ret = bitmap_parselist(buf, bmap, bits);
-	if (ret)
-		goto free_unlock;
-
-	i = 0;
-	list_for_each_entry(n, &netdev->napi_list, dev_list) {
-		napi_set_threaded(n, test_bit(i, bmap));
-		i++;
-	}
-	ret = len;
-
-free_unlock:
-	kfree(bmap);
-
-unlock:
-	rtnl_unlock();
-	return ret;
-}
-static DEVICE_ATTR_RW(threaded);
-
 static struct attribute *net_class_attrs[] = {
 	&dev_attr_netdev_group.attr,
 	&dev_attr_type.attr,
@@ -615,7 +514,6 @@ static struct attribute *net_class_attrs[] = {
 	&dev_attr_phys_port_name.attr,
 	&dev_attr_phys_switch_id.attr,
 	&dev_attr_proto_down.attr,
-	&dev_attr_threaded.attr,
 	NULL,
 };
 ATTRIBUTE_GROUPS(net_class);
