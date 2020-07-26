@@ -5098,8 +5098,7 @@ static int sky2_probe(struct pci_dev *pdev, const struct pci_device_id *ent)
 		}
  	}
 
-	netif_napi_add(dev, &hw->napi, sky2_poll, NAPI_WEIGHT);
-	napi_set_threading_named(&hw->napi, true, "sky2-napi");
+	netif_threaded_napi_add(dev, &hw->napi, sky2_poll, NAPI_WEIGHT);
 	err = register_netdev(dev);
 	if (err) {
 		dev_err(&pdev->dev, "cannot register net device\n");
