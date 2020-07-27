@@ -1,3 +1,7 @@
+<div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
 <% ifndef("WANVLAN", "<!--"); %>
 <div class="setting">
 <div class="label">

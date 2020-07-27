@@ -251,6 +251,10 @@ function submitcheck(F) {
 		if(F._ppp_mlppp) {
 			F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 		}
+
+		if(F._ignore_wan_dns) {
+			F.ignore_wan_dns.value = F._ignore_wan_dns.checked ? 1 : 0;
+		}
 		
 		F.submit_type.value = "";
 		F.change_action.value = "";
@@ -342,6 +346,7 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="recursive_dns" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="ppp_mlppp" value="0" />
+							<input type="hidden" name="ignore_wan_dns" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							<input type="hidden" name="dhcp_start" value="4" />
 						

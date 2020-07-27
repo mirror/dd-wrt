@@ -12,6 +12,10 @@
 	<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% nvc("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
 	<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% nvc("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
 </div>
+<div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
 <div id="idreconnect">
 	<div class="setting">
 		<div class="label"><% tran("share.time"); %></div>
@@ -22,10 +26,10 @@
 			</select>
 		</div>
 	</div>
-<div class="setting">
-	<div class="label"><% tran("share.advanced"); %></div>
-	<input type="checkbox" name="pppoaadv" value="1" <% selchecked("pppoaadv","1"); %> onclick="toggle_layer(this, 'pppoa_advanced')" />
-</div>
+	<div class="setting">
+		<div class="label"><% tran("share.advanced"); %></div>
+		<input type="checkbox" name="pppoaadv" value="1" <% selchecked("pppoaadv","1"); %> onclick="toggle_layer(this, 'pppoa_advanced')" />
+	</div>
 	<div id="pppoa_advanced">
 	<div class="setting">
 		<div class="label"><% tran("share.compression"); %></div>
@@ -42,8 +46,3 @@
 	</div>
 	<% atmsettings("pppoa"); %>
 </div>
-<script>
-//<![CDATA
-	show_layer_ext(document.setup.pppoaadv, 'pppoa_advanced', <% else_selmatch("pppoaadv", "1", "1", "0"); %> == 1);
-//]]>
-</script>
