@@ -457,9 +457,15 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		target |= atoi(tmp) << ((3 - i) * 8);
 	}
 	if (netmask) {
+		fprintf(stderr, "web: %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
+		fprintf(stderr, "netmask: %d.%d.%d.%d\n", (_nm >> 24) & 0xff, (_nm >> 16) & 0xff, (_nm >> 8) & 0xff, _nm & 0xff);
 		target &= ~_nm;
+		fprintf(stderr, "masked target ip : %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
+		fprintf(stderr, "source ip : %d.%d.%d.%d\n", (_ip >> 24) & 0xff, (_ip >> 16) & 0xff, (_ip >> 8) & 0xff, _ip & 0xff);
 		_ip &= _nm;
+		fprintf(stderr, "masked source ip : %d.%d.%d.%d\n", (_ip >> 24) & 0xff, (_ip >> 16) & 0xff, (_ip >> 8) & 0xff, _ip & 0xff);
 		target |= _ip;
+		fprintf(stderr, "masked final ip : %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
 	}
 
 	for (i = 0; i < 4; i++) {
