@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2019, The Tor Project, Inc. */
+ * Copyright (c) 2007-2020, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -82,7 +82,7 @@
 #if defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && \
   defined(HAVE_BACKTRACE_SYMBOLS_FD) && defined(HAVE_SIGACTION)
 #define USE_BACKTRACE
-#define EXPOSE_CLEAN_BACKTRACE
+#define BACKTRACE_PRIVATE
 #include "lib/err/backtrace.h"
 #endif /* defined(HAVE_EXECINFO_H) && defined(HAVE_BACKTRACE) && ... */
 
@@ -166,6 +166,7 @@ static int filter_nopar_gen[] = {
 #ifdef __NR_fstat64
     SCMP_SYS(fstat64),
 #endif
+    SCMP_SYS(fsync),
     SCMP_SYS(futex),
     SCMP_SYS(getdents),
     SCMP_SYS(getdents64),
@@ -265,6 +266,11 @@ static int filter_nopar_gen[] = {
     SCMP_SYS(listen),
     SCMP_SYS(connect),
     SCMP_SYS(getsockname),
+#ifdef ENABLE_NSS
+#ifdef __NR_getpeername
+    SCMP_SYS(getpeername),
+#endif
+#endif
     SCMP_SYS(recvmsg),
     SCMP_SYS(recvfrom),
     SCMP_SYS(sendto),
@@ -647,6 +653,15 @@ sb_socket(scmp_filter_ctx ctx, sandbox_cfg_t *filter)
         return rc;
     }
   }
+
+#ifdef ENABLE_NSS
+  rc = seccomp_rule_add_3(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket),
+    SCMP_CMP(0, SCMP_CMP_EQ, PF_INET),
+    SCMP_CMP(1, SCMP_CMP_EQ, SOCK_STREAM),
+    SCMP_CMP(2, SCMP_CMP_EQ, IPPROTO_IP));
+  if (rc)
+    return rc;
+#endif
 
   rc = seccomp_rule_add_3(ctx, SCMP_ACT_ALLOW, SCMP_SYS(socket),
       SCMP_CMP(0, SCMP_CMP_EQ, PF_UNIX),
