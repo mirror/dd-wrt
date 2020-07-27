@@ -12,6 +12,10 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<% tran("share.unmask"); %></input>
 </div>
 <div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
+<div class="setting">
 	<div class="label"><% tran("idx_pptp.srv"); %></div>
 	<input class="spaceradio" type="radio" value="1" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","1"); %> onchange="show_layer_ext(this, 'idpptpdhcp', false); dhcp_show_static_dns(1);" /><% tran("share.yes"); %>&nbsp;
 	<input class="spaceradio" type="radio" value="0" name="pptp_use_dhcp" <% nvc("pptp_use_dhcp","0"); %> onchange="show_layer_ext(this, 'idpptpdhcp', true); dhcp_show_static_dns();" /><% tran("share.no"); %>

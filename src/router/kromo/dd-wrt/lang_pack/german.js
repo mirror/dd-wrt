@@ -1053,6 +1053,7 @@ idx.summt_opt10="dritter Son Okt - dritter Son Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Zuweisung";
 idx.ntp_client="NTP-Client";
+idx.ignore_wan_dns="Ignoriere WAN DNS";
 
 //help container
 

@@ -40,3 +40,7 @@
 		<option value="1" <% nvsm("atm_payld", "1", "selected"); %>>Bridged</option>
 	</select>
 </div>
+<div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
