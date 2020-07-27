@@ -83,7 +83,8 @@ void start_smartdns(void)
 		}
 	}
 	fclose(fp);
-	eval("smartdns", "-c", "/tmp/smartdns.conf");
+
+	eval("smartdns", "-c", getdefaultconfig("smartdns.conf"));
 	dd_loginfo("smartdns", "daemon successfully started\n");
 }
 
