@@ -15,7 +15,7 @@ frr-configure: ncurses json-c readline libyang libcap
 	cd frr && autoreconf --force --install
 	rm -rf frr/build
 	-mkdir -p frr/build
-	cd frr/build && ../configure CC="" CFLAGS="" LDFLAGS="" LD="" --with-vtysh-pager=less --disable-eigrpd --disable-ldpd --enable-shared --disable-pbrd --disable-rfptest --disable-ssd  --disable-doc --enable-clippy-only --enable-shared --disable-zeromq --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --disable-staticd --disable-bfdd --disable-babeld --enable-pie=no
+	cd frr/build && ../configure CC="" CFLAGS="" LDFLAGS="" LD="" --with-vtysh-pager=less --disable-eigrpd --disable-ldpd --enable-shared --disable-pbrd --disable-rfptest --disable-ssd  --disable-doc --enable-clippy-only --enable-shared --disable-zeromq --enable-opaque-lsa --disable-nhrpd --enable-ospf-te --disable-ospfclient --enable-multipath=64  --enable-ipv6 --prefix=/usr --sysconfdir=/tmp --disable-ospf6d  --enable-vtysh --enable-user=root --enable-group=root --disable-ospfapi --disable-isisd --disable-pimd --disable-nhrpd --disable-staticd --disable-bfdd --disable-babeld --enable-pie=no PYTHON=/usr/bin/python3
 	make -C frr/build lib/clippy
 	-mkdir -p frr/build/hosttools/lib
 	cd frr/build && cp -vR lib/* hosttools/lib
@@ -44,7 +44,8 @@ frr-configure: ncurses json-c readline libyang libcap
 		CPPFLAGS="-fno-strict-aliasing -I$(TOP)/libcap/libcap/include -DNEED_PRINTF $(COPTS) $(MIPS16_OPT) -I$(TOP)/ -Drpl_malloc=malloc -Drpl_realloc=realloc -I$(TOP)/_staging/usr/include -I$(TOP)/frr/build -I$(TOP)/libyang/src" \
 		LDFLAGS="-L$(TOP)/readline/shlib -L$(TOP)/ncurses/lib -lncurses -L$(TOP)/json-c/.libs -ljson-c -L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre -L$(TOP)/libcap/libcap -lcap" \
 		LIBYANG_CFLAGS="-I$(TOP)/libyang/src" \
-		LIBYANG_LIBS="-L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre"
+		LIBYANG_LIBS="-L$(TOP)/libyang -lyang -L$(TOP)/pcre/.libs -lpcre" \
+		PYTHON=/usr/bin/python3
 
 frr: ncurses json-c libyang libcap
 	make -C frr/build
