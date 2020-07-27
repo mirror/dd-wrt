@@ -509,13 +509,18 @@ static inline u32 skb_mstamp_us_delta(const struct skb_mstamp *t1,
  */
 
 struct sk_buff {
-	/* These two members must be first. */
-	struct sk_buff		*next;
-	struct sk_buff		*prev;
-
 	union {
-		ktime_t		tstamp;
-		struct skb_mstamp skb_mstamp;
+		struct {
+			/* These two members must be first. */
+			struct sk_buff		*next;
+			struct sk_buff		*prev;
+
+			union {
+				ktime_t			tstamp;
+				struct skb_mstamp	skb_mstamp;
+			};
+		};
+		struct list_head	list;
 	};
 
 	struct sock		*sk;
