@@ -475,7 +475,7 @@ void free_dns_list(struct dns_lists *dns_list)
 		free(dns_list->dns_server[i].ip);
 	}
 	free(dns_list->dns_server);
-	
+
 	free(dns_list);
 
 }
@@ -515,11 +515,13 @@ struct dns_lists *get_dns_list(int v6)
 	}
 	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns, 0, 0);
-	if (*wan_dns) {
-		add_dnslist(dns_list, wan_dns, 0, 0);
-	}
-	if (*wan_get_dns) {
-		add_dnslist(dns_list, wan_get_dns, 0, 0);
+	if (nvram_invmatch("wan_ignore_dns", "1")) {
+		if (*wan_dns) {
+			add_dnslist(dns_list, wan_dns, 0, 0);
+		}
+		if (*wan_get_dns) {
+			add_dnslist(dns_list, wan_get_dns, 0, 0);
+		}
 	}
 #ifdef HAVE_IPV6
 	if (v6 && nvram_matchi("ipv6_enable", 1)) {
@@ -530,10 +532,12 @@ struct dns_lists *get_dns_list(int v6)
 		if (*a2)
 			add_dnslist(dns_list, a2, 1, 1);
 
-		char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
-		char word[64];
-		foreach(word, wordlist, next) {
-			add_dnslist(dns_list, word, 0, 1);
+		if (nvram_invmatch("wan_ignore_dns", "1")) {
+			char *next, *wordlist = nvram_safe_get("ipv6_get_dns");
+			char word[64];
+			foreach(word, wordlist, next) {
+				add_dnslist(dns_list, word, 0, 1);
+			}
 		}
 	}
 #endif
@@ -1681,7 +1685,7 @@ char *get_filter_services(void)
 		services = realloc(services, strlen(services) + strlen(nvram_safe_get("filter_services")) + 1);
 	else
 		services = malloc(strlen(nvram_safe_get("filter_services")) + 1);
-	
+
 	strcat(services, nvram_safe_get("filter_services"));	// this is
 	// user
 	// defined
