@@ -4921,7 +4921,7 @@ static int __napi_poll(struct napi_struct *n, bool *repoll)
 		return work;
 	}
 
-	if (n->gro_bitmask) {
+	if (!list_empty(&n->gro_list)) {
 		/* flush too old packets
 		 * If HZ < 1000, flush all packets.
 		 */
