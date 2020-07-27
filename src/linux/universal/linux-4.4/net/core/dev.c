@@ -4888,15 +4888,78 @@ static enum hrtimer_restart napi_watchdog(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+static int __napi_poll(struct napi_struct *n, bool *repoll)
+{
+	int work, weight;
+
+	weight = n->weight;
+
+	/* This NAPI_STATE_SCHED test is for avoiding a race
+	 * with netpoll's poll_napi().  Only the entity which
+	 * obtains the lock and sees NAPI_STATE_SCHED set will
+	 * actually make the ->poll() call.  Therefore we avoid
+	 * accidentally calling ->poll() when NAPI is not scheduled.
+	 */
+	work = 0;
+	if (test_bit(NAPI_STATE_SCHED, &n->state)) {
+		work = n->poll(n, weight);
+		trace_napi_poll(n, work, weight);
+	}
+
+	WARN_ON_ONCE(work > weight);
+
+	if (likely(work < weight))
+		return work;
+
+	/* Drivers must not modify the NAPI state if they
+	 * consume the entire weight.  In such cases this code
+	 * still "owns" the NAPI instance and therefore can
+	 * move the instance around on the list at-will.
+	 */
+	if (unlikely(napi_disable_pending(n))) {
+		napi_complete(n);
+		return work;
+	}
+
+	if (n->gro_bitmask) {
+		/* flush too old packets
+		 * If HZ < 1000, flush all packets.
+		 */
+		napi_gro_flush(n, HZ >= 1000);
+	}
+
+	/* Some drivers may have called napi_schedule
+	 * prior to exhausting their budget.
+	 */
+	if (unlikely(!list_empty(&n->poll_list))) {
+		pr_warn_once("%s: Budget exhausted after napi rescheduled\n",
+			     n->dev ? n->dev->name : "backlog");
+		return work;
+	}
+
+	*repoll = true;
+
+	return work;
+}
+
 static void napi_workfn(struct work_struct *work)
 {
 	struct napi_struct *n = container_of(work, struct napi_struct, work);
+	void *have;
 
 	for (;;) {
-		if (!test_bit(NAPI_STATE_SCHED, &n->state))
-			return;
+		int work_done;
+		bool repoll = false;
 
-		if (n->poll(n, n->weight) < n->weight)
+		local_bh_disable();
+
+		have = netpoll_poll_lock(n);
+		work_done = __napi_poll(n, &repoll);
+		netpoll_poll_unlock(have);
+
+		local_bh_enable();
+
+		if (!repoll)
 			return;
 
 		if (!need_resched())
@@ -4906,8 +4969,7 @@ static void napi_workfn(struct work_struct *work)
 		 * have to pay for the latency of task switch even if
 		 * napi is scheduled
 		 */
-		if (test_bit(NAPI_STATE_SCHED, &n->state))
-			queue_work(napi_workq, work);
+		queue_work(napi_workq, work);
 		return;
 	}
 }
@@ -4974,61 +5036,18 @@ EXPORT_SYMBOL(netif_napi_del);
 
 static int napi_poll(struct napi_struct *n, struct list_head *repoll)
 {
+	bool do_repoll = false;
 	void *have;
-	int work, weight;
+	int work;
 
 	list_del_init(&n->poll_list);
 
 	have = netpoll_poll_lock(n);
 
-	weight = n->weight;
+	work = __napi_poll(n, &do_repoll);
+	if (do_repoll)
+		list_add_tail(&n->poll_list, repoll);
 
-	/* This NAPI_STATE_SCHED test is for avoiding a race
-	 * with netpoll's poll_napi().  Only the entity which
-	 * obtains the lock and sees NAPI_STATE_SCHED set will
-	 * actually make the ->poll() call.  Therefore we avoid
-	 * accidentally calling ->poll() when NAPI is not scheduled.
-	 */
-	work = 0;
-	if (test_bit(NAPI_STATE_SCHED, &n->state)) {
-		work = n->poll(n, weight);
-		trace_napi_poll(n);
-	}
-
-	WARN_ON_ONCE(work > weight);
-
-	if (likely(work < weight))
-		goto out_unlock;
-
-	/* Drivers must not modify the NAPI state if they
-	 * consume the entire weight.  In such cases this code
-	 * still "owns" the NAPI instance and therefore can
-	 * move the instance around on the list at-will.
-	 */
-	if (unlikely(napi_disable_pending(n))) {
-		napi_complete(n);
-		goto out_unlock;
-	}
-
-	if (!list_empty(&n->gro_list)) {
-		/* flush too old packets
-		 * If HZ < 1000, flush all packets.
-		 */
-		napi_gro_flush(n, HZ >= 1000);
-	}
-
-	/* Some drivers may have called napi_schedule
-	 * prior to exhausting their budget.
-	 */
-	if (unlikely(!list_empty(&n->poll_list))) {
-		pr_warn_once("%s: Budget exhausted after napi rescheduled\n",
-			     n->dev ? n->dev->name : "backlog");
-		goto out_unlock;
-	}
-
-	list_add_tail(&n->poll_list, repoll);
-
-out_unlock:
 	netpoll_poll_unlock(have);
 
 	return work;
