@@ -22,6 +22,7 @@
  "ppp_service"  "Service Name"  "NAME"  "63"  "TRUE" "0"  	// 2003-03-19 by honor
  "ppp_static"  "Enable /Disable Static IP"  "CHOICE" "2" "0"  "1"  "TRUE" "0"  
  "ppp_static_ip"  "Static IP"  "MERGEIPADDRS" "FALSE" "0"  
+ "ignore_wan_dns"  "ignore wan dns"  "CHOICE" "2" "0"  "1"  "TRUE" "0"
  "wan_dns"  "WAN DNS Server"  "DNS"  "FALSE" "3"   
  "lan_proto"  "LAN Protocol"  "CHOICE" "2"  "dhcp"  "static"  "FALSE" "3"   
  "dhcp_check"  "DHCP check"  "DHCP"  "FALSE" "0"  
