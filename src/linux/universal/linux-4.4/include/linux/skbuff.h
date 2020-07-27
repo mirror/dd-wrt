@@ -559,7 +559,8 @@ struct sk_buff {
 				struct skb_mstamp skb_mstamp;
 			};
 		};
-		struct rb_node		rbnode; /* used in netem, ip4 defrag, and tcp stack */
+		struct rb_node		rbnode; /* used in netem & tcp stack */
+		struct list_head	list;
 	};
 
 	union {
