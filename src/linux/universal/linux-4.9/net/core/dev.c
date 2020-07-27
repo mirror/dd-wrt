@@ -4662,7 +4662,7 @@ static void gro_flush_oldest(struct napi_struct *napi)
 }
 
 static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
-
+{
 	struct list_head *head = &offload_base;
 	struct packet_offload *ptype;
 	__be16 type = skb->protocol;
