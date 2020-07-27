@@ -154,15 +154,7 @@ void start_unbound(void)
 	if (nvram_matchi("recursive_dns", 1)) {
 		update_timezone();
 		unbound_config();
-
-		fp = fopen("/jffs/etc/unbound.conf", "r");	//test if custom config is available
-
-		if (fp != NULL) {
-			fclose(fp);
-			eval("unbound", "-c", "/jffs/etc/unbound.conf");
-		} else {
-			eval("unbound", "-c", "/tmp/unbound.conf");
-		}
+		eval("unbound", "-c", getdefaultconfig("unbound.conf"));
 
 		dd_loginfo("unbound", "recursive dns resolver daemon successfully started\n");
 	}

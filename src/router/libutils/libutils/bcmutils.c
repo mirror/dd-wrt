@@ -384,6 +384,17 @@ int weekday(int month, int day, int year)
 
 }
 
+const char *_getdefaultconfig(char *path, char *configname) {
+	sprintf(path, "/jffs/etc/%s", configname);
+	FILE *fp = fopen(path, "r");	//test if custom config is available
+	if (fp != NULL) {
+		fclose(fp);
+	} else {
+		sprintf(path, "/tmp/%s", configname);
+	}
+	return path;
+}
+
 char *get_ipfrominterface(char *ifname, char *ip)
 {
 	int fd;

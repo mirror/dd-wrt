@@ -967,8 +967,8 @@ enum { FIRST, SECOND };
 
 #define ACTION(cmd)	buf_to_file(ACTION_FILE, cmd)
 struct dns_entry {
-	int type; //0 = isp, 1 = user defined
-	int ipv6; // 0 = ipv4, 1 = ipv6
+	int type;		//0 = isp, 1 = user defined
+	int ipv6;		// 0 = ipv4, 1 = ipv6
 	char *ip;
 };
 
@@ -1139,10 +1139,12 @@ static inline int is_ath5k(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_ath5k_pci(const char *prefix)
 {
 	return 0;
 }
+
 static inline int is_ath5k_ahb(const char *prefix)
 {
 	return 0;
@@ -1182,22 +1184,27 @@ static inline int has_spectralscanning(char *prefix)
 {
 	return 0;
 }
+
 static inline int has_qboost(char *prefix)
 {
 	return 0;
 }
+
 static inline int has_nolivesurvey(char *prefix)
 {
 	return 0;
 }
+
 static inline int has_qboost_tdma(char *prefix)
 {
 	return 0;
 }
+
 static inline int has_beacon_limit(char *prefix)
 {
 	return 0;
 }
+
 static inline int has_channelsurvey(char *prefix)
 {
 	return 0;
@@ -1346,6 +1353,18 @@ int writestr(char *path, char *a);
 int nvram_backup(char *filename);
 
 int nvram_restore(char *filename, int force);
+
+const char *_getdefaultconfig(char *path, char *configname);
+
+#define getdefaultconfig(configname) \
+	({ \
+	const char *__ret = NULL; \
+	do { \
+		char def_path[64]; \
+		__ret = _getdefaultconfig(def_path, configname); \
+	} while(0); \
+	__ret; \
+	})
 
 void nvram_clear(void);
 int nvram_critical(char *name);
