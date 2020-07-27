@@ -503,15 +503,7 @@ void start_dnsmasq(void)
 
 	chmod("/etc/lease_update.sh", 0700);
 
-	FILE *conf = NULL;
-	conf = fopen("/jffs/etc/dnsmasq.conf", "r");	//test if custom config is available
-
-	if (conf != NULL) {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/jffs/etc/dnsmasq.conf");
-		fclose(conf);
-	} else {
-		eval("dnsmasq", "-u", "root", "-g", "root", "--conf-file=/tmp/dnsmasq.conf");
-	}
+	eval("dnsmasq", "-u", "root", "-g", "root", "-C", getdefaultconfig("dnsmasq.conf"));
 
 	dd_loginfo("dnsmasq", "daemon successfully started\n");
 

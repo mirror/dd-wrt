@@ -227,30 +227,22 @@ void start_samba3(void)
 #ifndef HAVE_SMBD
 	char conffile[64];
 
-	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
-	if (fp != NULL) {
-		strcpy(conffile, "--configfile=/jffs/etc/smb.conf");
-		fclose(fp);
-	} else {
-		strcpy(conffile, "--configfile=/tmp/smb.conf");
-	}
-
 #ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
+	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf")))
 #endif
-		eval("/usr/sbin/smbd", "-D", conffile);
-	eval("/usr/sbin/nmbd", "-D", conffile);
+		eval("/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf"));
+	eval("/usr/sbin/nmbd", "-D", "-s",getdefaultconfig("smb.conf"));
 	if (pidof("nmbd") <= 0) {
-		eval("/usr/sbin/nmbd", "-D", conffile);
+		eval("/usr/sbin/nmbd", "-D", "-s",getdefaultconfig("smb.conf"));
 	}
 	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", conffile))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf")))
 #endif
-			eval("/usr/sbin/smbd", "-D", conffile);
+			eval("/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf"));
 	}
 #ifdef HAVE_SAMBA4
-	eval("/usr/sbin/winbindd", "-D", conffile);
+	eval("/usr/sbin/winbindd", "-D",  "-s",getdefaultconfig("smb.conf"));
 #endif
 #else
 	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//
@@ -270,12 +262,7 @@ void start_samba3(void)
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
-	fp = fopen("/jffs/etc/smb.conf", "r");	//test if custom config is available
-	if (fp != NULL) {
-		fclose(fp);
-		eval("ksmbd.mountd", "-c", "/jffs/etc/smb.conf", "-u", "/jffs/etc/smb.db");
-	} else
-		eval("ksmbd.mountd", "-c", "/tmp/smb.conf", "-u", "/tmp/smb.db");
+		eval("ksmbd.mountd", "-c", getdefaultconfig("smb.conf"), "-u", getdefaultconfig("smb.db"));
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
