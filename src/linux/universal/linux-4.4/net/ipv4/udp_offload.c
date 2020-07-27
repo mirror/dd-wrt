@@ -290,7 +290,7 @@ unlock:
 }
 EXPORT_SYMBOL(udp_del_offload);
 
-struct sk_buff **udp_gro_receive(struct list_head *head, struct sk_buff *skb,
+struct sk_buff *udp_gro_receive(struct list_head *head, struct sk_buff *skb,
 				 struct udphdr *uh)
 {
 	struct udp_offload_priv *uo_priv;
