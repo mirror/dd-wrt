@@ -407,7 +407,7 @@ int valid_merge_ip_4(webs_t wp, char *value, struct variable *v)
  * lan_ipaddr_3 = 1 get_merge_ipaddr("lan_ipaddr", ipaddr); produces
  * ipaddr="192.168.1.1" 
  */
-int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value)
+int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *netmask)
 {
 	char ipname[30];
 	int i;
@@ -434,13 +434,37 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value)
 	ip[1] = strsep(&b, ".");
 	ip[2] = strsep(&b, ".");
 	ip[3] = b;
-
+	unsigned int _ip = (atoi(ip[0]) << 24) | (atoi(ip[1]) << 16) | (atoi(ip[2]) << 8) | atoi(ip[0]);
+	unsigned int _nm;
+	if (netmask) {
+		char *nm[4];
+		char _n[50];
+		char *n = (char *)&_n;
+		strcpy(n, netmask);
+		nm[0] = strsep(&n, ".");
+		nm[1] = strsep(&n, ".");
+		nm[2] = strsep(&n, ".");
+		nm[3] = n;
+		_nm = (atoi(nm[0]) << 24) | (atoi(nm[1]) << 16) | (atoi(nm[2]) << 8) | atoi(nm[0]);
+	}
+	unsigned int target;
 	for (i = 0; i < 4; i++) {
 		// cprintf("merge %s_%d\n",name,i);
 		snprintf(ipname, sizeof(ipname), "%s_%d", name, i);
 		tmp = websGetVar(wp, ipname, ip[i]);
 		if (tmp == NULL)
 			return 0;
+		target |= atoi(tmp) << ((3 - i) * 8);
+	}
+	if (netmask) {
+		target &= ~_nm;
+		_ip &= _nm;
+		target |= _ip;
+	}
+
+	for (i = 0; i < 4; i++) {
+		char t[50];
+		sprintf(t, "%d", (target >> ((3 - i) * 8)) && 0xff);
 		strcat(ipaddr, tmp);
 		if (i < 3)
 			strcat(ipaddr, ".");
@@ -454,7 +478,7 @@ void validate_merge_ipaddrs(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
 
-	get_merge_ipaddr(wp, v->name, ipaddr, NULL);
+	get_merge_ipaddr(wp, v->name, ipaddr, NULL, NULL);
 
 	if (valid_ipaddr(wp, ipaddr, v))
 		nvram_set(v->name, ipaddr);
@@ -464,7 +488,7 @@ void validate_merge_dhcpstart(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
 
-	get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("lan_ipaddr"));
+	get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 	if (valid_ipaddr(wp, ipaddr, v))
 		nvram_set(v->name, ipaddr);
@@ -713,13 +737,13 @@ void validate_wan_ipaddr(webs_t wp, char *value, struct variable *v)
 
 	which = &wan_variables[0];
 
-	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr, NULL);
-	get_merge_ipaddr(wp, "wan_netmask", wan_netmask, NULL);
-	get_merge_ipaddr(wp, "wan_gateway", wan_gateway, NULL);
-	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway, NULL);
-	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway, NULL);
-	get_merge_ipaddr(wp, "wan_ipaddr_static", wan_ipaddr_static, NULL);
-	get_merge_ipaddr(wp, "wan_netmask_static", wan_netmask_static, NULL);
+	get_merge_ipaddr(wp, "wan_ipaddr", wan_ipaddr, NULL, NULL);
+	get_merge_ipaddr(wp, "wan_netmask", wan_netmask, NULL, NULL);
+	get_merge_ipaddr(wp, "wan_gateway", wan_gateway, NULL, NULL);
+	get_merge_ipaddr(wp, "pptp_wan_gateway", pptp_wan_gateway, NULL, NULL);
+	get_merge_ipaddr(wp, "l2tp_wan_gateway", l2tp_wan_gateway, NULL, NULL);
+	get_merge_ipaddr(wp, "wan_ipaddr_static", wan_ipaddr_static, NULL, NULL);
+	get_merge_ipaddr(wp, "wan_netmask_static", wan_netmask_static, NULL, NULL);
 
 	if (!strcmp(wan_proto, "pptp")) {
 		nvram_seti("pptp_pass", 0);	// disable pptp passthrough
@@ -851,8 +875,8 @@ void validate_lan_ipaddr(webs_t wp, char *value, struct variable *v)
 {
 	char lan_ipaddr[20], lan_netmask[20];
 
-	get_merge_ipaddr(wp, "lan_netmask", lan_netmask, NULL);
-	get_merge_ipaddr(wp, v->name, lan_ipaddr, NULL);
+	get_merge_ipaddr(wp, "lan_netmask", lan_netmask, NULL, NULL);
+	get_merge_ipaddr(wp, v->name, lan_ipaddr, NULL, NULL);
 
 	if (!valid_ipaddr(wp, lan_ipaddr, v))
 		return;
@@ -886,7 +910,7 @@ void validate_remote_ip(webs_t wp, char *value, struct variable *v)
 	char remote_ip[254];
 	char name[32];
 
-	get_merge_ipaddr(wp, v->name, from, NULL);
+	get_merge_ipaddr(wp, v->name, from, NULL, NULL);
 
 	snprintf(name, sizeof(name), "%s_4", v->name);
 	to = websGetVar(wp, name, NULL);
