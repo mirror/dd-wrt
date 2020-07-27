@@ -247,7 +247,7 @@ found:
 	flush |= (len - 1) >= mss;
 	flush |= (ntohl(th2->seq) + skb_gro_len(p)) ^ ntohl(th->seq);
 
-	if (flush || skb_gro_receive(p, skb)) {
+	if (flush || skb_gro_receive(&p, skb)) {
 		mss = 1;
 		goto out_check_final;
 	}
