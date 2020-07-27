@@ -4903,7 +4903,7 @@ static int __napi_poll(struct napi_struct *n, bool *repoll)
 	work = 0;
 	if (test_bit(NAPI_STATE_SCHED, &n->state)) {
 		work = n->poll(n, weight);
-		trace_napi_poll(n, work, weight);
+		trace_napi_poll(n);
 	}
 
 	WARN_ON_ONCE(work > weight);
