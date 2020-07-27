@@ -545,9 +545,9 @@ static int vxlan_fdb_append(struct vxlan_fdb *f,
 	return 1;
 }
 
-static struct sk_buff **vxlan_gro_receive(struct sk_buff **head, struct sk_buff *skb)
+static struct sk_buff *vxlan_gro_receive(struct list_head *head, struct sk_buff *skb)
 {
-	struct sk_buff *p, **pp = NULL;
+	struct sk_buff *p, *pp = NULL;
 	struct vxlanhdr *vh, *vh2;
 	struct ethhdr *eh, *eh2;
 	unsigned int hlen, off_vx, off_eth;
@@ -577,7 +577,7 @@ static struct sk_buff **vxlan_gro_receive(struct sk_buff **head, struct sk_buff 
 
 	flush = 0;
 
-	for (p = *head; p; p = p->next) {
+	list_for_each_entry(p, head, list) {
 		if (!NAPI_GRO_CB(p)->same_flow)
 			continue;
 

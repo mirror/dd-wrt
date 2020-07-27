@@ -3239,12 +3239,12 @@ err:
 }
 EXPORT_SYMBOL_GPL(skb_segment);
 
-int BCMFASTPATH_HOST skb_gro_receive(struct sk_buff **head, struct sk_buff *skb)
+int skb_gro_receive(struct sk_buff *head, struct sk_buff *skb)
 {
 	struct skb_shared_info *pinfo, *skbinfo = skb_shinfo(skb);
 	unsigned int offset = skb_gro_offset(skb);
 	unsigned int headlen = skb_headlen(skb);
-	struct sk_buff *nskb, *lp, *p = *head;
+	struct sk_buff *nskb, *lp;
 	unsigned int len = skb_gro_len(skb);
 	unsigned int delta_truesize;
 	unsigned int headroom;
