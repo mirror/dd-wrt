@@ -429,7 +429,6 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		strcpy(buf, ipa);
 	// cprintf("strsep\n");
 	char *b = (char *)&buf;
-
 	ip[0] = strsep(&b, ".");
 	ip[1] = strsep(&b, ".");
 	ip[2] = strsep(&b, ".");
@@ -445,7 +444,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		nm[1] = strsep(&n, ".");
 		nm[2] = strsep(&n, ".");
 		nm[3] = n;
-		_nm = (atoi(nm[0]) << 24) | (atoi(nm[1]) << 16) | (atoi(nm[2]) << 8) | atoi(nm[0]);
+		_nm = (atoi(nm[0]) << 24) | (atoi(nm[1]) << 16) | (atoi(nm[2]) << 8) | atoi(nm[3]);
 	}
 	unsigned int target = 0;
 	for (i = 0; i < 4; i++) {
@@ -457,25 +456,18 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		target |= atoi(tmp) << ((3 - i) * 8);
 	}
 	if (netmask) {
-		fprintf(stderr, "web: %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
-		fprintf(stderr, "netmask: %d.%d.%d.%d\n", (_nm >> 24) & 0xff, (_nm >> 16) & 0xff, (_nm >> 8) & 0xff, _nm & 0xff);
 		target &= ~_nm;
-		fprintf(stderr, "masked target ip : %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
-		fprintf(stderr, "source ip : %d.%d.%d.%d\n", (_ip >> 24) & 0xff, (_ip >> 16) & 0xff, (_ip >> 8) & 0xff, _ip & 0xff);
 		_ip &= _nm;
-		fprintf(stderr, "masked source ip : %d.%d.%d.%d\n", (_ip >> 24) & 0xff, (_ip >> 16) & 0xff, (_ip >> 8) & 0xff, _ip & 0xff);
 		target |= _ip;
-		fprintf(stderr, "masked final ip : %d.%d.%d.%d\n", (target >> 24) & 0xff, (target >> 16) & 0xff, (target >> 8) & 0xff, target & 0xff);
 	}
 
 	for (i = 0; i < 4; i++) {
 		char t[50];
-		sprintf(t, "%d", (target >> ((3 - i) * 8)) && 0xff);
+		sprintf(t, "%d", (target >> ((3 - i) * 8)) & 0xff);
 		strcat(ipaddr, t);
 		if (i < 3)
 			strcat(ipaddr, ".");
 	}
-
 	return 1;
 
 }
@@ -494,7 +486,11 @@ void validate_merge_dhcpstart(webs_t wp, char *value, struct variable *v)
 {
 	char ipaddr[20];
 
-	get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
+	char *tmp = websGetVar(wp, "lan_proto", "static");
+	if (!strcmp(tmp, "static"))
+		get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("dhcp_start"), nvram_safe_get("lan_netmask"));
+	else
+		get_merge_ipaddr(wp, v->name, ipaddr, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"));
 
 	if (valid_ipaddr(wp, ipaddr, v))
 		nvram_set(v->name, ipaddr);
