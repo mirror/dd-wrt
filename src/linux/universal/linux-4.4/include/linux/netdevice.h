@@ -329,7 +329,7 @@ enum {
 	NAPI_STATE_DISABLE,	/* Disable pending */
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash */
-	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
+	NAPI_STATE_THREADED,	/* Use threaded NAPI */
 };
 
 enum gro_result {
