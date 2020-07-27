@@ -335,7 +335,7 @@ enum {
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash (busy polling possible) */
 	NAPI_STATE_NO_BUSY_POLL,/* Do not add in napi_hash, no busy polling */
-	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
+	NAPI_STATE_THREADED,	/* Use threaded NAPI */
 };
 
 enum gro_result {
