@@ -1,7 +1,7 @@
 /* Copyright (c) 2001 Matej Pfajfar.
  * Copyright (c) 2001-2004, Roger Dingledine.
  * Copyright (c) 2004-2006, Roger Dingledine, Nick Mathewson.
- * Copyright (c) 2007-2019, The Tor Project, Inc. */
+ * Copyright (c) 2007-2020, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
 /**
@@ -28,7 +28,13 @@ struct ed25519_keypair_t;
 MOCK_DECL(crypto_pk_t *,get_onion_key,(void));
 time_t get_onion_key_set_at(void);
 void set_server_identity_key(crypto_pk_t *k);
+/* Some compilers are clever enough to know that when relay mode is disabled,
+ * this function never returns. */
+#ifdef HAVE_MODULE_RELAY
 MOCK_DECL(crypto_pk_t *,get_server_identity_key,(void));
+#else
+#define get_server_identity_key() (tor_abort_(),NULL)
+#endif
 int server_identity_key_is_set(void);
 void set_client_identity_key(crypto_pk_t *k);
 crypto_pk_t *get_tlsclient_identity_key(void);
@@ -60,6 +66,8 @@ int init_keys_client(void);
 uint16_t router_get_active_listener_port_by_type_af(int listener_type,
                                                     sa_family_t family);
 uint16_t router_get_advertised_or_port(const or_options_t *options);
+void router_get_advertised_ipv6_or_ap(const or_options_t *options,
+                                      tor_addr_port_t *ipv6_ap_out);
 uint16_t router_get_advertised_or_port_by_af(const or_options_t *options,
                                              sa_family_t family);
 uint16_t router_get_advertised_dir_port(const or_options_t *options,
