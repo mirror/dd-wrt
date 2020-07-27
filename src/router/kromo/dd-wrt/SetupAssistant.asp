@@ -410,6 +410,9 @@ function submitcheck(F) {
 				if(F._ppp_mlppp) {
 					F.ppp_mlppp.value = F._ppp_mlppp.checked ? 1 : 0;
 				}
+				if(F._ignore_wan_dns) {
+					F.ignore_wan_dns.value = F._ignore_wan_dns.checked ? 1 : 0;
+				}
 			} else {
 				return false;
 			}

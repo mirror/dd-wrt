@@ -26,10 +26,14 @@
 	<div class="label"><% tran("share.advanced"); %></div>
 	<input type="checkbox" name="pppoeadv" value="1" <% selchecked("pppoeadv","1"); %> onclick="toggle_layer(this, 'pppoe_advanced')" />
 </div>
+<div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
 <div id="pppoe_advanced">
 	<div class="setting">
-	<div class="label"><% tran("share.srv"); %></div>
-	<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvg("ppp_service"); %>" />
+		<div class="label"><% tran("share.srv"); %></div>
+		<input name="ppp_service" size="30" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvg("ppp_service"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("share.vdslvlan7"); %></div>

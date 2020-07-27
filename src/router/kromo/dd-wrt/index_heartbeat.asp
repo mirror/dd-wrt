@@ -13,6 +13,10 @@
 	<input class="num" maxlength="3" size="3" name="hb_server_ip_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("hb_server_ip","0"); %>" />.<input class="num" maxlength="3" size="3" name="hb_server_ip_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("hb_server_ip","1"); %>" />.<input class="num" maxlength="3" size="3" name="hb_server_ip_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("hb_server_ip","2"); %>" />.<input class="num" maxlength="3" size="3" name="hb_server_ip_3" onblur="valid_range(this,1,254,'IP')" value="<% get_single_ip("hb_server_ip","3"); %>" />
 </div>
 <div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
+<div class="setting">
 	<div class="label"><% tran("idx_h.con_strgy"); %><br />&nbsp;</div>
 	<input class="spaceradio" type="radio" name="ppp_demand" value="1" onclick="ppp_enable_disable(this.form,1)" <% nvc("ppp_demand","1"); %> /><% tran("idx_h.max_idle"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_idletime" onblur="valid_range(this,1,9999,idx_h.max_idle)" value="<% nvg("ppp_idletime"); %>" />&nbsp;<% tran("share.mins"); %><br />
 	<input class="spaceradio" type="radio" name="ppp_demand" value="0" onclick="ppp_enable_disable(this.form,0)" <% nvc("ppp_demand","0"); %> /><% tran("idx_h.alive"); %>&nbsp;<input class="num" size="4" maxlength="4" name="ppp_redialperiod" onblur="valid_range(this,20,180,idx_h.alive)" value="<% nvg("ppp_redialperiod"); %>" />&nbsp;<% tran("share.secs"); %>

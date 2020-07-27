@@ -185,6 +185,10 @@
 		<input class="spaceradio" type="radio" value="1" name="reconnect_enable" <% nvc("reconnect_enable","1"); %> onclick="show_layer_ext(this, 'idreconnect', true)" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="reconnect_enable" <% nvc("reconnect_enable","0"); %> onclick="show_layer_ext(this, 'idreconnect', false)" /><% tran("share.disable"); %>
 </div>
+<div class="setting">
+	<div class="label"><% tran("idx.ignore_wan_dns"); %></div>
+	<input type="checkbox" value="1" name="_ignore_wan_dns" <% nvc("ignore_wan_dns", "1"); %> />
+</div>
 <div id="idreconnect">
 	<div class="setting">
 		<div class="label"><% tran("share.time"); %></div>

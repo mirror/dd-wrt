@@ -1200,7 +1200,7 @@ idx.summt_opt10="3rd Sun Oct - 3rd Sun Feb";
 idx.portsetup="Port Setup";
 idx.wanport="WAN Port Assignment";
 idx.ntp_client="NTP Client";
-
+idx.ignore_wan_dns="Ignore WAN DNS";
 //help container
 var hidx=new Object();
 hidx.right2="This setting is most commonly used by cable operators.";
