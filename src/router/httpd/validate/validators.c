@@ -447,7 +447,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		nm[3] = n;
 		_nm = (atoi(nm[0]) << 24) | (atoi(nm[1]) << 16) | (atoi(nm[2]) << 8) | atoi(nm[0]);
 	}
-	unsigned int target;
+	unsigned int target = 0;
 	for (i = 0; i < 4; i++) {
 		// cprintf("merge %s_%d\n",name,i);
 		snprintf(ipname, sizeof(ipname), "%s_%d", name, i);
@@ -465,7 +465,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 	for (i = 0; i < 4; i++) {
 		char t[50];
 		sprintf(t, "%d", (target >> ((3 - i) * 8)) && 0xff);
-		strcat(ipaddr, tmp);
+		strcat(ipaddr, t);
 		if (i < 3)
 			strcat(ipaddr, ".");
 	}
