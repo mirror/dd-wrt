@@ -526,7 +526,7 @@ struct dns_lists *get_dns_list(int v6)
 	}
 	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns, 0, 0);
-	if (nvram_invmatch("ignore_wan_dns", "1")) {
+	if (!nvram_match("ignore_wan_dns", "0")) {
 		if (*wan_dns) {
 			add_dnslist(dns_list, wan_dns, 0, 0);
 		}
