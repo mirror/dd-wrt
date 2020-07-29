@@ -1074,10 +1074,15 @@ void ej_calcendip(webs_t wp, int argc, char_t ** argv)
 	unsigned int ip2 = get_single_ip(ip, 1);
 	unsigned int ip3 = get_single_ip(ip, 2);
 	unsigned int ip4 = get_single_ip(ip, 3);
-	unsigned int im1 = get_single_ip(netmask, 0);
-	unsigned int im2 = get_single_ip(netmask, 1);
-	unsigned int im3 = get_single_ip(netmask, 2);
-	unsigned int im4 = get_single_ip(netmask, 3);
+//	unsigned int im1 = get_single_ip(netmask, 0);
+//	unsigned int im2 = get_single_ip(netmask, 1);
+//	unsigned int im3 = get_single_ip(netmask, 2);
+//	unsigned int im4 = get_single_ip(netmask, 3);
+
+	unsigned int im1 = 255;
+	unsigned int im2 = 255;
+	unsigned int im3 = 255;
+	unsigned int im4 = 255;
 	unsigned int sip = ((ip1 & im1) << 24) + ((ip2 & im2) << 16) + ((ip3 & im3) << 8) + ip4;
 	unsigned int eip = sip + dhcpnum - 1;
 
