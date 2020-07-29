@@ -228,21 +228,21 @@ void start_samba3(void)
 	char conffile[64];
 
 #ifdef HAVE_SMP
-	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf")))
+	if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf")))
 #endif
-		eval("/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf"));
-	eval("/usr/sbin/nmbd", "-D", "-s",getdefaultconfig("smb.conf"));
+		eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf"));
+	eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig("smb.conf"));
 	if (pidof("nmbd") <= 0) {
-		eval("/usr/sbin/nmbd", "-D", "-s",getdefaultconfig("smb.conf"));
+		eval("/usr/sbin/nmbd", "-D", "-s", getdefaultconfig("smb.conf"));
 	}
 	if (pidof("smbd") <= 0) {
 #ifdef HAVE_SMP
-		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf")))
+		if (eval("/usr/bin/taskset", "0x2", "/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf")))
 #endif
-			eval("/usr/sbin/smbd", "-D", "-s",getdefaultconfig("smb.conf"));
+			eval("/usr/sbin/smbd", "-D", "-s", getdefaultconfig("smb.conf"));
 	}
 #ifdef HAVE_SAMBA4
-	eval("/usr/sbin/winbindd", "-D",  "-s",getdefaultconfig("smb.conf"));
+	eval("/usr/sbin/winbindd", "-D", "-s", getdefaultconfig("smb.conf"));
 #endif
 #else
 	insmod("nls_base nls_utf8 crypto_hash crypto_null aead aead2 sha256_generic sha512_generic seqiv arc4 ecb"	//
@@ -262,7 +262,9 @@ void start_samba3(void)
 		sprintf(parm, "vendor:dd-wrt,model:%s,sku:%s", nvram_safe_get("DD_BOARD"), nvram_safe_get("os_version"));
 		eval("wsdd2", "-d", "-N", nbname, "-G", wgname, "-b", parm);
 	}
-		eval("ksmbd.mountd", "-c", getdefaultconfig("smb.conf"), "-u", getdefaultconfig("smb.db"));
+	char c1[64];
+	char c2[64];
+	eval("ksmbd.mountd", "-c", _getdefaultconfig(c1, "smb.conf"), "-u", _getdefaultconfig(c2, "smb.db"));
 #endif
 
 	dd_loginfo("smbd", "samba started\n");
