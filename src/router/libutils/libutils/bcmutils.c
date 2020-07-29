@@ -384,7 +384,8 @@ int weekday(int month, int day, int year)
 
 }
 
-const char *_getdefaultconfig(char *path, char *configname) {
+const char *_getdefaultconfig(char *path, char *configname)
+{
 	sprintf(path, "/jffs/etc/%s", configname);
 	FILE *fp = fopen(path, "r");	//test if custom config is available
 	if (fp != NULL) {
@@ -526,10 +527,10 @@ struct dns_lists *get_dns_list(int v6)
 	}
 	if (*sv_localdns)
 		add_dnslist(dns_list, sv_localdns, 0, 0);
+	if (*wan_dns) {
+		add_dnslist(dns_list, wan_dns, 0, 0);
+	}
 	if (nvram_match("ignore_wan_dns", "1")) {
-		if (*wan_dns) {
-			add_dnslist(dns_list, wan_dns, 0, 0);
-		}
 		if (*wan_get_dns) {
 			add_dnslist(dns_list, wan_get_dns, 0, 0);
 		}
