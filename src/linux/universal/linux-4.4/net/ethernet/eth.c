@@ -421,13 +421,13 @@ ssize_t sysfs_format_mac(char *buf, const unsigned char *addr, int len)
 }
 EXPORT_SYMBOL(sysfs_format_mac);
 
-struct sk_buff *eth_gro_receive(struct list_head *head, struct sk_buff *skb)
+struct sk_buff **eth_gro_receive(struct sk_buff **head,
+				 struct sk_buff *skb)
 {
-	const struct packet_offload *ptype;
-	unsigned int hlen, off_eth;
-	struct sk_buff *pp = NULL;
+	struct sk_buff *p, **pp = NULL;
 	struct ethhdr *eh, *eh2;
-	struct sk_buff *p;
+	unsigned int hlen, off_eth;
+	const struct packet_offload *ptype;
 	__be16 type;
 	int flush = 1;
 
@@ -442,7 +442,7 @@ struct sk_buff *eth_gro_receive(struct list_head *head, struct sk_buff *skb)
 
 	flush = 0;
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		if (!NAPI_GRO_CB(p)->same_flow)
 			continue;
 

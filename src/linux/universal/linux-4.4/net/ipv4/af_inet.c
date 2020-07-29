@@ -1290,13 +1290,13 @@ out:
 	return segs;
 }
 
-static struct sk_buff *inet_gro_receive(struct list_head *head,
+static struct sk_buff ** BCMFASTPATH_HOST inet_gro_receive(struct sk_buff **head,
 					 struct sk_buff *skb)
 {
 	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
-	const struct iphdr *iph;
+	struct sk_buff **pp = NULL;
 	struct sk_buff *p;
+	const struct iphdr *iph;
 	unsigned int hlen;
 	unsigned int off;
 	unsigned int id;
@@ -1329,7 +1329,7 @@ static struct sk_buff *inet_gro_receive(struct list_head *head,
 	flush = (u16)((ntohl(net_hdr_word(iph)) ^ skb_gro_len(skb)) | (id & ~IP_DF));
 	id >>= 16;
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		struct iphdr *iph2;
 
 		if (!NAPI_GRO_CB(p)->same_flow)
@@ -1387,8 +1387,8 @@ out:
 	return pp;
 }
 
-static struct sk_buff *ipip_gro_receive(struct list_head *head,
-					struct sk_buff *skb)
+static struct sk_buff **ipip_gro_receive(struct sk_buff **head,
+					 struct sk_buff *skb)
 {
 	if (NAPI_GRO_CB(skb)->encap_mark) {
 		NAPI_GRO_CB(skb)->flush = 1;

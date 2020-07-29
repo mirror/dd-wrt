@@ -188,14 +188,14 @@ drop:
 	return 0;
 }
 
-static struct sk_buff *fou_gro_receive(struct list_head *head,
+static struct sk_buff **fou_gro_receive(struct sk_buff **head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {
+	const struct net_offload *ops;
+	struct sk_buff **pp = NULL;
 	u8 proto = NAPI_GRO_CB(skb)->proto;
 	const struct net_offload **offloads;
-	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
 
 	/* We can clear the encap_mark for FOU as we are essentially doing
 	 * one of two possible things.  We are either adding an L4 tunnel
@@ -269,13 +269,13 @@ static struct guehdr *gue_gro_remcsum(struct sk_buff *skb, unsigned int off,
 	return guehdr;
 }
 
-static struct sk_buff *gue_gro_receive(struct list_head *head,
+static struct sk_buff **gue_gro_receive(struct sk_buff **head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {
 	const struct net_offload **offloads;
 	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
+	struct sk_buff **pp = NULL;
 	struct sk_buff *p;
 	struct guehdr *guehdr;
 	size_t len, optlen, hdrlen, off;
@@ -343,7 +343,7 @@ static struct sk_buff *gue_gro_receive(struct list_head *head,
 
 	flush = 0;
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		const struct guehdr *guehdr2;
 
 		if (!NAPI_GRO_CB(p)->same_flow)
