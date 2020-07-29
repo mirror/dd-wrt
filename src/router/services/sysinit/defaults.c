@@ -169,8 +169,8 @@ struct nvram_param srouter_defaults[] = {
 	 */
 	// {"router_disable", "0"}, /* lan_proto=static lan_stp=0
 	// wan_proto=disabled */
-	{ "fw_disable", "0" },	/* Disable firewall (allow new connections
-				 * from the WAN) */
+	{ "fw_disable", "0" },	/* Disable firewall (allow new connections from the WAN) */
+
 
 	/*
 	 * TCP/IP parameters 
@@ -511,6 +511,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "wan_proto", "dhcp" },	/* [static|dhcp|pppoe|disabled] */
 
 #endif
+	{ "ignore_wan_dns", "0" },
 	{ "wan_ipaddr", "0.0.0.0" },	/* WAN IP address */
 	{ "wan_netmask", "0.0.0.0" },	/* WAN netmask */
 	{ "wan_gateway", "0.0.0.0" },	/* WAN gateway */
