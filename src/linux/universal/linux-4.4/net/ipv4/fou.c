@@ -188,7 +188,7 @@ drop:
 	return 0;
 }
 
-static struct sk_buff **fou_gro_receive(struct list_head *head,
+static struct sk_buff *fou_gro_receive(struct list_head *head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {
@@ -269,7 +269,7 @@ static struct guehdr *gue_gro_remcsum(struct sk_buff *skb, unsigned int off,
 	return guehdr;
 }
 
-static struct sk_buff **gue_gro_receive(struct list_head *head,
+static struct sk_buff *gue_gro_receive(struct list_head *head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {

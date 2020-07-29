@@ -263,7 +263,7 @@ out:
 	return pp;
 }
 
-static struct sk_buff **sit_gro_receive(struct list_head *head,
+static struct sk_buff *sit_gro_receive(struct list_head *head,
 					struct sk_buff *skb)
 {
 	if (NAPI_GRO_CB(skb)->encap_mark) {
