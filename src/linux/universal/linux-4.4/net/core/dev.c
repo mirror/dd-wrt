@@ -4256,9 +4256,11 @@ static void __napi_gro_flush_chain(struct napi_struct *napi, u32 index,
 		list_del(&skb->list);
 		skb->next = NULL;
 		napi_gro_complete(skb);
-		napi->gro_count--;
 		napi->gro_hash[index].count--;
 	}
+
+	if (!napi->gro_hash[index].count)
+		__clear_bit(index, &napi->gro_bitmask);
 }
 
 /* napi->gro_hash[].list contains packets ordered by age.
@@ -4269,8 +4271,10 @@ void napi_gro_flush(struct napi_struct *napi, bool flush_old)
 {
 	u32 i;
 
-	for (i = 0; i < GRO_HASH_BUCKETS; i++)
-		__napi_gro_flush_chain(napi, i, flush_old);
+	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
+		if (test_bit(i, &napi->gro_bitmask))
+			__napi_gro_flush_chain(napi, i, flush_old);
+	}
 }
 EXPORT_SYMBOL(napi_gro_flush);
 
@@ -4361,8 +4365,8 @@ static void gro_flush_oldest(struct list_head *head)
 	if (WARN_ON_ONCE(!oldest))
 		return;
 
-	/* Do not adjust napi->gro_count, caller is adding a new SKB to
-	 * the chain.
+	/* Do not adjust napi->gro_hash[].count, caller is adding a new
+	 * SKB to the chain.
 	 */
 	list_del(&oldest->list);
 	napi_gro_complete(oldest);
@@ -4437,7 +4441,6 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 		list_del(&pp->list);
 		pp->next = NULL;
 		napi_gro_complete(pp);
-		napi->gro_count--;
 		napi->gro_hash[hash].count--;
 	}
 
@@ -4450,7 +4453,6 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	if (unlikely(napi->gro_hash[hash].count >= MAX_GRO_SKBS)) {
 		gro_flush_oldest(gro_head);
 	} else {
-		napi->gro_count++;
 		napi->gro_hash[hash].count++;
 	}
 	NAPI_GRO_CB(skb)->count = 1;
@@ -4465,6 +4467,13 @@ pull:
 	if (grow > 0)
 		gro_pull_from_frag0(skb, grow);
 ok:
+	if (napi->gro_hash[hash].count) {
+		if (!test_bit(hash, &napi->gro_bitmask))
+			__set_bit(hash, &napi->gro_bitmask);
+	} else if (test_bit(hash, &napi->gro_bitmask)) {
+		__clear_bit(hash, &napi->gro_bitmask);
+	}
+
 	return ret;
 
 normal:
@@ -4840,7 +4849,7 @@ void napi_complete_done(struct napi_struct *n, int work_done)
 	if (unlikely(test_bit(NAPI_STATE_NPSVC, &n->state)))
 		return;
 
-	if (n->gro_count) {
+	if (n->gro_bitmask) {
 		unsigned long timeout = 0;
 
 		if (work_done)
@@ -4917,7 +4926,7 @@ static enum hrtimer_restart napi_watchdog(struct hrtimer *timer)
 	struct napi_struct *napi;
 
 	napi = container_of(timer, struct napi_struct, timer);
-	if (napi->gro_count)
+	if (napi->gro_bitmask)
 		napi_schedule(napi);
 
 	return HRTIMER_NORESTART;
@@ -4956,7 +4965,7 @@ static int __napi_poll(struct napi_struct *n, bool *repoll)
 		return work;
 	}
 
-	if (n->gro_count) {
+	if (n->gro_bitmask) {
 		/* flush too old packets
 		 * If HZ < 1000, flush all packets.
 		 */
@@ -5017,7 +5026,7 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	INIT_LIST_HEAD(&napi->poll_list);
 	hrtimer_init(&napi->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_PINNED);
 	napi->timer.function = napi_watchdog;
-	napi->gro_count = 0;
+	napi->gro_bitmask = 0;
 	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
 		INIT_LIST_HEAD(&napi->gro_hash[i].list);
 		napi->gro_hash[i].count = 0;
@@ -5074,7 +5083,7 @@ void netif_napi_del(struct napi_struct *napi)
 	napi_free_frags(napi);
 
 	flush_gro_hash(napi);
-	napi->gro_count = 0;
+	napi->gro_bitmask = 0;
 }
 EXPORT_SYMBOL(netif_napi_del);
 
@@ -7837,6 +7846,9 @@ static struct hlist_head * __net_init netdev_create_hash(void)
 /* Initialize per network namespace state */
 static int __net_init netdev_init(struct net *net)
 {
+	BUILD_BUG_ON(GRO_HASH_BUCKETS >
+			FIELD_SIZEOF(struct napi_struct, gro_bitmask));
+
 	if (net != &init_net)
 		INIT_LIST_HEAD(&net->dev_base_head);
 
