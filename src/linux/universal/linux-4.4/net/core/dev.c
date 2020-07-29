@@ -4369,6 +4369,7 @@ static void gro_flush_oldest(struct list_head *head)
 	 * SKB to the chain.
 	 */
 	list_del(&oldest->list);
+	oldest->next = NULL;
 	napi_gro_complete(oldest);
 }
 
