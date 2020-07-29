@@ -167,11 +167,11 @@ static int ipv6_exthdrs_len(struct ipv6hdr *iph,
 	return len;
 }
 
-static struct sk_buff *ipv6_gro_receive(struct list_head *head,
-					struct sk_buff *skb)
+static struct sk_buff **ipv6_gro_receive(struct sk_buff **head,
+					 struct sk_buff *skb)
 {
 	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
+	struct sk_buff **pp = NULL;
 	struct sk_buff *p;
 	struct ipv6hdr *iph;
 	unsigned int nlen;
@@ -218,7 +218,7 @@ static struct sk_buff *ipv6_gro_receive(struct list_head *head,
 	flush--;
 	nlen = skb_network_header_len(skb);
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		const struct ipv6hdr *iph2;
 		__be32 first_word; /* <Version:4><Traffic_Class:8><Flow_Label:20> */
 
@@ -263,7 +263,7 @@ out:
 	return pp;
 }
 
-static struct sk_buff *sit_gro_receive(struct list_head *head,
+static struct sk_buff **sit_gro_receive(struct sk_buff **head,
 					struct sk_buff *skb)
 {
 	if (NAPI_GRO_CB(skb)->encap_mark) {
