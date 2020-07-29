@@ -294,6 +294,11 @@ struct netdev_boot_setup {
 
 int __init netdev_boot_setup(char *str);
 
+struct gro_list {
+	struct list_head	list;
+	int			count;
+};
+
 /*
  * Structure for NAPI scheduling similar to tasklet but with weighting
  */
@@ -316,7 +321,7 @@ struct napi_struct {
 	int			poll_owner;
 #endif
 	struct net_device	*dev;
-	struct list_head	gro_hash[GRO_HASH_BUCKETS];
+	struct gro_list		gro_hash[GRO_HASH_BUCKETS];
 	struct sk_buff		*skb;
 	struct hrtimer		timer;
 	struct list_head	dev_list;
