@@ -315,13 +315,13 @@ struct napi_struct {
 	int			poll_owner;
 #endif
 	struct net_device	*dev;
-	struct list_head	gro_list;
+	struct sk_buff		*gro_list;
 	struct sk_buff		*skb;
 	struct hrtimer		timer;
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
-	struct work_struct	work;
+	struct task_struct	*thread;
 };
 
 enum {
@@ -329,7 +329,7 @@ enum {
 	NAPI_STATE_DISABLE,	/* Disable pending */
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash */
-	NAPI_STATE_THREADED,	/* Use threaded NAPI */
+	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
 };
 
 enum gro_result {
@@ -479,6 +479,10 @@ struct napi_struct *napi_by_id(unsigned int napi_id);
  * generate a new napi_id and store a @napi under it in napi_hash
  */
 void napi_hash_add(struct napi_struct *napi);
+
+int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname);
+
+int napi_set_threaded(struct napi_struct *n, bool threaded);
 
 /**
  *	napi_hash_del - remove a NAPI from global table
@@ -1970,26 +1974,6 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight);
 
 /**
- *	netif_threaded_napi_add - initialize a NAPI context
- *	@dev:  network device
- *	@napi: NAPI context
- *	@poll: polling function
- *	@weight: default weight
- *
- * This variant of netif_napi_add() should be used from drivers using NAPI
- * with CPU intensive poll functions.
- * This will schedule polling from a high priority workqueue that
- */
-static inline void netif_threaded_napi_add(struct net_device *dev,
-					   struct napi_struct *napi,
-					   int (*poll)(struct napi_struct *, int),
-					   int weight)
-{
-	set_bit(NAPI_STATE_THREADED, &napi->state);
-	netif_napi_add(dev, napi, poll, weight);
-}
-
-/**
  *  netif_napi_del - remove a napi context
  *  @napi: napi context
  *
@@ -2068,10 +2052,10 @@ static inline int gro_recursion_inc_test(struct sk_buff *skb)
 	return ++NAPI_GRO_CB(skb)->recursion_counter == GRO_RECURSION_LIMIT;
 }
 
-typedef struct sk_buff *(*gro_receive_t)(struct list_head *, struct sk_buff *);
-static inline struct sk_buff *call_gro_receive(gro_receive_t cb,
-					       struct list_head *head,
-					       struct sk_buff *skb)
+typedef struct sk_buff **(*gro_receive_t)(struct sk_buff **, struct sk_buff *);
+static inline struct sk_buff **call_gro_receive(gro_receive_t cb,
+						struct sk_buff **head,
+						struct sk_buff *skb)
 {
 	if (unlikely(gro_recursion_inc_test(skb))) {
 		NAPI_GRO_CB(skb)->flush |= 1;
@@ -2097,8 +2081,8 @@ struct packet_type {
 struct offload_callbacks {
 	struct sk_buff		*(*gso_segment)(struct sk_buff *skb,
 						netdev_features_t features);
-	struct sk_buff		*(*gro_receive)(struct list_head *head,
-						struct sk_buff *skb);
+	struct sk_buff		**(*gro_receive)(struct sk_buff **head,
+						 struct sk_buff *skb);
 	int			(*gro_complete)(struct sk_buff *skb, int nhoff);
 };
 
@@ -2112,7 +2096,7 @@ struct packet_offload {
 struct udp_offload;
 
 struct udp_offload_callbacks {
-	struct sk_buff		*(*gro_receive)(struct list_head *head,
+	struct sk_buff		**(*gro_receive)(struct sk_buff **head,
 						 struct sk_buff *skb,
 						 struct udp_offload *uoff);
 	int			(*gro_complete)(struct sk_buff *skb,
@@ -2126,11 +2110,11 @@ struct udp_offload {
 	struct udp_offload_callbacks callbacks;
 };
 
-typedef struct sk_buff *(*gro_receive_udp_t)(struct list_head *,
+typedef struct sk_buff **(*gro_receive_udp_t)(struct sk_buff **,
 					      struct sk_buff *,
 					      struct udp_offload *);
-static inline struct sk_buff *call_gro_receive_udp(gro_receive_udp_t cb,
-						    struct list_head *head,
+static inline struct sk_buff **call_gro_receive_udp(gro_receive_udp_t cb,
+						    struct sk_buff **head,
 						    struct sk_buff *skb,
 						    struct udp_offload *uoff)
 {
@@ -2349,7 +2333,7 @@ struct net_device *__dev_get_by_index(struct net *net, int ifindex);
 struct net_device *dev_get_by_index_rcu(struct net *net, int ifindex);
 int netdev_get_name(struct net *net, char *name, int ifindex);
 int dev_restart(struct net_device *dev);
-int skb_gro_receive(struct sk_buff *p, struct sk_buff *skb);
+int skb_gro_receive(struct sk_buff **head, struct sk_buff *skb);
 
 static inline unsigned int skb_gro_offset(const struct sk_buff *skb)
 {
@@ -3120,7 +3104,6 @@ static inline void dev_consume_skb_any(struct sk_buff *skb)
 int netif_rx(struct sk_buff *skb);
 int netif_rx_ni(struct sk_buff *skb);
 int netif_receive_skb(struct sk_buff *skb);
-void netif_receive_skb_list(struct list_head *head);
 gro_result_t napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb);
 void napi_gro_flush(struct napi_struct *napi, bool flush_old);
 struct sk_buff *napi_get_frags(struct napi_struct *napi);
