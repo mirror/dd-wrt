@@ -1290,7 +1290,7 @@ out:
 	return segs;
 }
 
-static struct sk_buff * BCMFASTPATH_HOST inet_gro_receive(struct list_head *head,
+static struct sk_buff *inet_gro_receive(struct list_head *head,
 					 struct sk_buff *skb)
 {
 	const struct net_offload *ops;
