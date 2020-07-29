@@ -322,7 +322,7 @@ struct napi_struct {
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
-	struct task_struct	*thread;
+	struct work_struct	work;
 };
 
 enum {
@@ -330,7 +330,7 @@ enum {
 	NAPI_STATE_DISABLE,	/* Disable pending */
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash */
-	NAPI_STATE_THREADED,	/* The poll is performed inside its own thread*/
+	NAPI_STATE_THREADED,	/* Use threaded NAPI */
 };
 
 enum gro_result {
@@ -480,10 +480,6 @@ struct napi_struct *napi_by_id(unsigned int napi_id);
  * generate a new napi_id and store a @napi under it in napi_hash
  */
 void napi_hash_add(struct napi_struct *napi);
-
-int napi_set_threaded_named(struct napi_struct *n, bool threaded, const char *threadname);
-
-int napi_set_threaded(struct napi_struct *n, bool threaded);
 
 /**
  *	napi_hash_del - remove a NAPI from global table
@@ -1973,6 +1969,26 @@ static inline void *netdev_priv(const struct net_device *dev)
  */
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight);
+
+/**
+ *	netif_threaded_napi_add - initialize a NAPI context
+ *	@dev:  network device
+ *	@napi: NAPI context
+ *	@poll: polling function
+ *	@weight: default weight
+ *
+ * This variant of netif_napi_add() should be used from drivers using NAPI
+ * with CPU intensive poll functions.
+ * This will schedule polling from a high priority workqueue that
+ */
+static inline void netif_threaded_napi_add(struct net_device *dev,
+					   struct napi_struct *napi,
+					   int (*poll)(struct napi_struct *, int),
+					   int weight)
+{
+	set_bit(NAPI_STATE_THREADED, &napi->state);
+	netif_napi_add(dev, napi, poll, weight);
+}
 
 /**
  *  netif_napi_del - remove a napi context
