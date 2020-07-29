@@ -560,6 +560,7 @@ struct sk_buff {
 			};
 		};
 		struct rb_node		rbnode; /* used in netem, ip4 defrag, and tcp stack */
+		struct list_head	list;
 	};
 
 	union {

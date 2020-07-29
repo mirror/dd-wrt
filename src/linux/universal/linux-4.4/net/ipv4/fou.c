@@ -188,12 +188,12 @@ drop:
 	return 0;
 }
 
-static struct sk_buff **fou_gro_receive(struct sk_buff **head,
+static struct sk_buff *fou_gro_receive(struct list_head *head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {
 	const struct net_offload *ops;
-	struct sk_buff **pp = NULL;
+	struct sk_buff *pp = NULL;
 	u8 proto = NAPI_GRO_CB(skb)->proto;
 	const struct net_offload **offloads;
 
@@ -269,13 +269,13 @@ static struct guehdr *gue_gro_remcsum(struct sk_buff *skb, unsigned int off,
 	return guehdr;
 }
 
-static struct sk_buff **gue_gro_receive(struct sk_buff **head,
+static struct sk_buff *gue_gro_receive(struct list_head *head,
 					struct sk_buff *skb,
 					struct udp_offload *uoff)
 {
 	const struct net_offload **offloads;
 	const struct net_offload *ops;
-	struct sk_buff **pp = NULL;
+	struct sk_buff *pp = NULL;
 	struct sk_buff *p;
 	struct guehdr *guehdr;
 	size_t len, optlen, hdrlen, off;
@@ -343,7 +343,7 @@ static struct sk_buff **gue_gro_receive(struct sk_buff **head,
 
 	flush = 0;
 
-	for (p = *head; p; p = p->next) {
+	list_for_each_entry(p, head, list) {
 		const struct guehdr *guehdr2;
 
 		if (!NAPI_GRO_CB(p)->same_flow)
