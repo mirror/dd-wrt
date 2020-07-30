@@ -105,11 +105,11 @@ drop:
 	return 0;
 }
 
-static struct sk_buff *fou_gro_receive(struct list_head *head,
+static struct sk_buff **fou_gro_receive(struct sk_buff **head,
 					struct sk_buff *skb)
 {
 	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
+	struct sk_buff **pp = NULL;
 	u8 proto = NAPI_GRO_CB(skb)->proto;
 	const struct net_offload **offloads;
 
@@ -158,12 +158,12 @@ out_unlock:
 	return err;
 }
 
-static struct sk_buff *gue_gro_receive(struct list_head *head,
+static struct sk_buff **gue_gro_receive(struct sk_buff **head,
 					struct sk_buff *skb)
 {
 	const struct net_offload **offloads;
 	const struct net_offload *ops;
-	struct sk_buff *pp = NULL;
+	struct sk_buff **pp = NULL;
 	struct sk_buff *p;
 	u8 proto;
 	struct guehdr *guehdr;
@@ -199,7 +199,7 @@ static struct sk_buff *gue_gro_receive(struct list_head *head,
 
 	flush = 0;
 
-	list_for_each_entry(p, head, list) {
+	for (p = *head; p; p = p->next) {
 		const struct guehdr *guehdr2;
 
 		if (!NAPI_GRO_CB(p)->same_flow)

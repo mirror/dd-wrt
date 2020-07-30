@@ -291,17 +291,6 @@ struct netdev_boot_setup {
 
 int __init netdev_boot_setup(char *str);
 
-struct gro_list {
-	struct list_head	list;
-	int			count;
-};
-
-/*
- * size of gro hash buckets, must less than bit number of
- * napi_struct::gro_bitmask
- */
-#define GRO_HASH_BUCKETS	8
-
 /*
  * Structure for NAPI scheduling similar to tasklet but with weighting
  */
@@ -316,19 +305,18 @@ struct napi_struct {
 
 	unsigned long		state;
 	int			weight;
-	unsigned long		gro_bitmask;
+	unsigned int		gro_count;
 	int			(*poll)(struct napi_struct *, int);
 #ifdef CONFIG_NETPOLL
 	spinlock_t		poll_lock;
 	int			poll_owner;
 #endif
 	struct net_device	*dev;
-	struct gro_list		gro_hash[GRO_HASH_BUCKETS];
+	struct sk_buff		*gro_list;
 	struct sk_buff		*skb;
 	struct list_head	dev_list;
 	struct hlist_node	napi_hash_node;
 	unsigned int		napi_id;
-	struct work_struct	work;
 };
 
 enum {
@@ -336,7 +324,6 @@ enum {
 	NAPI_STATE_DISABLE,	/* Disable pending */
 	NAPI_STATE_NPSVC,	/* Netpoll - don't dequeue from poll_list */
 	NAPI_STATE_HASHED,	/* In NAPI hash */
-	NAPI_STATE_THREADED,	/* Use threaded NAPI */
 };
 
 enum gro_result {
@@ -1887,26 +1874,6 @@ static inline void *netdev_priv(const struct net_device *dev)
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight);
 
- /**
- *	netif_threaded_napi_add - initialize a NAPI context
- *	@dev:  network device
- *	@napi: NAPI context
- *	@poll: polling function
- *	@weight: default weight
- *
- * This variant of netif_napi_add() should be used from drivers using NAPI
- * with CPU intensive poll functions.
- * This will schedule polling from a high priority workqueue that
- */
-static inline void netif_threaded_napi_add(struct net_device *dev,
-					   struct napi_struct *napi,
-					   int (*poll)(struct napi_struct *, int),
-					   int weight)
-{
-	set_bit(NAPI_STATE_THREADED, &napi->state);
-	netif_napi_add(dev, napi, poll, weight);
-}
-
 /**
  *  netif_napi_del - remove a napi context
  *  @napi: napi context
@@ -1987,7 +1954,7 @@ struct packet_type {
 struct offload_callbacks {
 	struct sk_buff		*(*gso_segment)(struct sk_buff *skb,
 						netdev_features_t features);
-	struct sk_buff		*(*gro_receive)(struct list_head *head,
+	struct sk_buff		**(*gro_receive)(struct sk_buff **head,
 					       struct sk_buff *skb);
 	int			(*gro_complete)(struct sk_buff *skb, int nhoff);
 };
@@ -2896,7 +2863,6 @@ static inline void dev_consume_skb_any(struct sk_buff *skb)
 int netif_rx(struct sk_buff *skb);
 int netif_rx_ni(struct sk_buff *skb);
 int netif_receive_skb(struct sk_buff *skb);
-void netif_receive_skb_list(struct list_head *head);
 gro_result_t napi_gro_receive(struct napi_struct *napi, struct sk_buff *skb);
 void napi_gro_flush(struct napi_struct *napi, bool flush_old);
 struct sk_buff *napi_get_frags(struct napi_struct *napi);

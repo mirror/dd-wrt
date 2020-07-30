@@ -144,6 +144,7 @@
 #define BCMFASTPATH
 #define BCMFASTPATH_HOST
 
+/* Instead of increasing this, you should create a hash table. */
 #define MAX_GRO_SKBS 8
 
 /* This should be increased if a protocol with a bigger head is added. */
@@ -154,7 +155,6 @@ static DEFINE_SPINLOCK(offload_lock);
 struct list_head ptype_base[PTYPE_HASH_SIZE] __read_mostly;
 struct list_head ptype_all __read_mostly;	/* Taps */
 static struct list_head offload_base __read_mostly;
-static struct workqueue_struct *napi_workq __read_mostly;
 
 static int netif_rx_internal(struct sk_buff *skb);
 static int call_netdevice_notifiers_info(unsigned long val,
@@ -3893,25 +3893,6 @@ int netif_receive_skb(struct sk_buff *skb)
 }
 EXPORT_SYMBOL(netif_receive_skb);
 
-/**
- *	netif_receive_skb_list - process many receive buffers from network
- *	@head: list of skbs to process.
- *
- *	For now, just calls netif_receive_skb() in a loop, ignoring the
- *	return value.
- *
- *	This function may only be called from softirq context and interrupts
- *	should be enabled.
- */
-void netif_receive_skb_list(struct list_head *head)
-{
-	struct sk_buff *skb, *next;
-
-	list_for_each_entry_safe(skb, next, head, list)
-		netif_receive_skb(skb);
-}
-EXPORT_SYMBOL(netif_receive_skb_list);
-
 /* Network device is going away, flush any packets still pending
  * Called with irqs disabled.
  */
@@ -3978,50 +3959,38 @@ out:
  * youngest packets at the head of it.
  * Complete skbs in reverse order to reduce latencies.
  */
-static void __napi_gro_flush_chain(struct napi_struct *napi, u32 index,
-				   bool flush_old)
+void BCMFASTPATH_HOST napi_gro_flush(struct napi_struct *napi, bool flush_old)
 {
-	struct list_head *head = &napi->gro_hash[index].list;
-	struct sk_buff *skb, *p;
+	struct sk_buff *skb, *prev = NULL;
 
-	list_for_each_entry_safe_reverse(skb, p, head, list) {
+	/* scan list and build reverse chain */
+	for (skb = napi->gro_list; skb != NULL; skb = skb->next) {
+		skb->prev = prev;
+		prev = skb;
+	}
+
+	for (skb = prev; skb; skb = prev) {
+		skb->next = NULL;
+
 		if (flush_old && NAPI_GRO_CB(skb)->age == jiffies)
 			return;
-		list_del(&skb->list);
-		skb->next = NULL;
+
+		prev = skb->prev;
 		napi_gro_complete(skb);
-		napi->gro_hash[index].count--;
+		napi->gro_count--;
 	}
 
-	if (!napi->gro_hash[index].count)
-		__clear_bit(index, &napi->gro_bitmask);
-}
-
-/* napi->gro_hash[].list contains packets ordered by age.
- * youngest packets at the head of it.
- * Complete skbs in reverse order to reduce latencies.
- */
-void napi_gro_flush(struct napi_struct *napi, bool flush_old)
-{
-	u32 i;
-
-	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
-		if (test_bit(i, &napi->gro_bitmask))
-			__napi_gro_flush_chain(napi, i, flush_old);
-	}
+	napi->gro_list = NULL;
 }
 EXPORT_SYMBOL(napi_gro_flush);
 
-static struct list_head *gro_list_prepare(struct napi_struct *napi,
-					  struct sk_buff *skb)
+static void gro_list_prepare(struct napi_struct *napi, struct sk_buff *skb)
 {
+	struct sk_buff *p;
 	unsigned int maclen = skb->dev->hard_header_len;
 	u32 hash = skb_get_hash_raw(skb);
-	struct list_head *head;
-	struct sk_buff *p;
 
-	head = &napi->gro_hash[hash & (GRO_HASH_BUCKETS - 1)].list;
-	list_for_each_entry(p, head, list) {
+	for (p = napi->gro_list; p; p = p->next) {
 		unsigned long diffs;
 
 		NAPI_GRO_CB(p)->flush = 0;
@@ -4042,8 +4011,6 @@ static struct list_head *gro_list_prepare(struct napi_struct *napi,
 				       maclen);
 		NAPI_GRO_CB(p)->same_flow = !diffs;
 	}
-
-	return head;
 }
 
 static void skb_gro_reset_offset(struct sk_buff *skb)
@@ -4084,36 +4051,14 @@ static void gro_pull_from_frag0(struct sk_buff *skb, int grow)
 	}
 }
 
-static void gro_flush_oldest(struct list_head *head)
+static enum gro_result BCMFASTPATH_HOST dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
 {
-	struct sk_buff *oldest;
-
-	oldest = list_last_entry(head, struct sk_buff, list);
-
-	/* We are called with head length >= MAX_GRO_SKBS, so this is
-	 * impossible.
-	 */
-	if (WARN_ON_ONCE(!oldest))
-		return;
-
-	/* Do not adjust napi->gro_hash[].count, caller is adding a new
-	 * SKB to the chain.
-	 */
-	list_del(&oldest->list);
-	oldest->next = NULL;
-	napi_gro_complete(oldest);
-}
-
-static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff *skb)
-{
-	u32 hash = skb_get_hash_raw(skb) & (GRO_HASH_BUCKETS - 1);
-	struct list_head *head = &offload_base;
+	struct sk_buff **pp = NULL;
 	struct packet_offload *ptype;
 	__be16 type = skb->protocol;
-	struct list_head *gro_head;
-	struct sk_buff *pp = NULL;
-	enum gro_result ret;
+	struct list_head *head = &offload_base;
 	int same_flow;
+	enum gro_result ret;
 	int grow;
 
 	if (skb->gro_skip)
@@ -4125,7 +4070,7 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	if (skb_is_gso(skb) || skb_has_frag_list(skb) || skb->csum_bad)
 		goto normal;
 
-	gro_head = gro_list_prepare(napi, skb);
+	gro_list_prepare(napi, skb);
 
 	rcu_read_lock();
 	list_for_each_entry_rcu(ptype, head, list) {
@@ -4155,7 +4100,7 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 			NAPI_GRO_CB(skb)->csum_valid = 0;
 		}
 
-		pp = ptype->callbacks.gro_receive(gro_head, skb);
+		pp = ptype->callbacks.gro_receive(&napi->gro_list, skb);
 		break;
 	}
 	rcu_read_unlock();
@@ -4167,10 +4112,12 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	ret = NAPI_GRO_CB(skb)->free ? GRO_MERGED_FREE : GRO_MERGED;
 
 	if (pp) {
-		list_del(&pp->list);
-		pp->next = NULL;
-		napi_gro_complete(pp);
-		napi->gro_hash[hash].count--;
+		struct sk_buff *nskb = *pp;
+
+		*pp = nskb->next;
+		nskb->next = NULL;
+		napi_gro_complete(nskb);
+		napi->gro_count--;
 	}
 
 	if (same_flow)
@@ -4179,16 +4126,26 @@ static enum gro_result dev_gro_receive(struct napi_struct *napi, struct sk_buff 
 	if (NAPI_GRO_CB(skb)->flush)
 		goto normal;
 
-	if (unlikely(napi->gro_hash[hash].count >= MAX_GRO_SKBS)) {
-		gro_flush_oldest(gro_head);
+	if (unlikely(napi->gro_count >= MAX_GRO_SKBS)) {
+		struct sk_buff *nskb = napi->gro_list;
+
+		/* locate the end of the list to select the 'oldest' flow */
+		while (nskb->next) {
+			pp = &nskb->next;
+			nskb = *pp;
+		}
+		*pp = NULL;
+		nskb->next = NULL;
+		napi_gro_complete(nskb);
 	} else {
-		napi->gro_hash[hash].count++;
+		napi->gro_count++;
 	}
 	NAPI_GRO_CB(skb)->count = 1;
 	NAPI_GRO_CB(skb)->age = jiffies;
 	NAPI_GRO_CB(skb)->last = skb;
 	skb_shinfo(skb)->gso_size = skb_gro_len(skb);
-	list_add(&skb->list, gro_head);
+	skb->next = napi->gro_list;
+	napi->gro_list = skb;
 	ret = GRO_HELD;
 
 pull:
@@ -4196,13 +4153,6 @@ pull:
 	if (grow > 0)
 		gro_pull_from_frag0(skb, grow);
 ok:
-	if (napi->gro_hash[hash].count) {
-		if (!test_bit(hash, &napi->gro_bitmask))
-			__set_bit(hash, &napi->gro_bitmask);
-	} else if (test_bit(hash, &napi->gro_bitmask)) {
-		__clear_bit(hash, &napi->gro_bitmask);
-	}
-
 	return ret;
 
 normal:
@@ -4509,11 +4459,6 @@ void __napi_schedule(struct napi_struct *n)
 {
 	unsigned long flags;
 
-	if (test_bit(NAPI_STATE_THREADED, &n->state)) {
-		queue_work(napi_workq, &n->work);
-		return;
-	}
-
 	local_irq_save(flags);
 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
 	local_irq_restore(flags);
@@ -4523,6 +4468,7 @@ EXPORT_SYMBOL(__napi_schedule);
 void __napi_complete(struct napi_struct *n)
 {
 	BUG_ON(!test_bit(NAPI_STATE_SCHED, &n->state));
+	BUG_ON(n->gro_list);
 
 	list_del(&n->poll_list);
 	smp_mb__before_atomic();
@@ -4541,13 +4487,10 @@ void napi_complete(struct napi_struct *n)
 	if (unlikely(test_bit(NAPI_STATE_NPSVC, &n->state)))
 		return;
 
-	if (n->gro_bitmask) {
-		napi_gro_flush(n, false);
-		local_irq_save(flags);
-		__napi_complete(n);
-		local_irq_restore(flags);
-	} else 
-		WARN_ON_ONCE(!test_and_clear_bit(NAPI_STATE_SCHED, &n->state));
+	napi_gro_flush(n, false);
+	local_irq_save(flags);
+	__napi_complete(n);
+	local_irq_restore(flags);
 }
 EXPORT_SYMBOL(napi_complete);
 
@@ -4603,40 +4546,12 @@ void napi_hash_del(struct napi_struct *napi)
 }
 EXPORT_SYMBOL_GPL(napi_hash_del);
 
-static void napi_workfn(struct work_struct *work)
-{
-	struct napi_struct *n = container_of(work, struct napi_struct, work);
-
-	for (;;) {
-		if (!test_bit(NAPI_STATE_SCHED, &n->state))
-			return;
-
-		if (n->poll(n, n->weight) < n->weight)
-			return;
-
-		if (!need_resched())
-			continue;
-
-		/*
-		 * have to pay for the latency of task switch even if
-		 * napi is scheduled
-		 */
-		if (test_bit(NAPI_STATE_SCHED, &n->state))
-			queue_work(napi_workq, work);
-		return;
-	}
-}
-
 void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 		    int (*poll)(struct napi_struct *, int), int weight)
 {
-	int i;
 	INIT_LIST_HEAD(&napi->poll_list);
-	napi->gro_bitmask = 0;
-	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
-		INIT_LIST_HEAD(&napi->gro_hash[i].list);
-		napi->gro_hash[i].count = 0;
-	}
+	napi->gro_count = 0;
+	napi->gro_list = NULL;
 	napi->skb = NULL;
 	napi->poll = poll;
 	if (weight > NAPI_POLL_WEIGHT)
@@ -4649,31 +4564,18 @@ void netif_napi_add(struct net_device *dev, struct napi_struct *napi,
 	spin_lock_init(&napi->poll_lock);
 	napi->poll_owner = -1;
 #endif
-	INIT_WORK(&napi->work, napi_workfn);
 	set_bit(NAPI_STATE_SCHED, &napi->state);
 }
 EXPORT_SYMBOL(netif_napi_add);
-
-static void flush_gro_hash(struct napi_struct *napi)
-{
-	int i;
-
-	for (i = 0; i < GRO_HASH_BUCKETS; i++) {
-		struct sk_buff *skb, *n;
-
-		list_for_each_entry_safe(skb, n, &napi->gro_hash[i].list, list)
-			kfree_skb(skb);
-		napi->gro_hash[i].count = 0;
-	}
-}
 
 void netif_napi_del(struct napi_struct *napi)
 {
 	list_del_init(&napi->dev_list);
 	napi_free_frags(napi);
 
-	flush_gro_hash(napi);
-	napi->gro_bitmask = 0;
+	kfree_skb_list(napi->gro_list);
+	napi->gro_list = NULL;
+	napi->gro_count = 0;
 }
 EXPORT_SYMBOL(netif_napi_del);
 
@@ -4739,7 +4641,7 @@ static void net_rx_action(struct softirq_action *h)
 				napi_complete(n);
 				local_irq_disable();
 			} else {
-				if (n->gro_bitmask) {
+				if (n->gro_list) {
 					/* flush too old packets
 					 * If HZ < 1000, flush all packets.
 					 */
@@ -7295,9 +7197,6 @@ static struct hlist_head * __net_init netdev_create_hash(void)
 /* Initialize per network namespace state */
 static int __net_init netdev_init(struct net *net)
 {
-	BUILD_BUG_ON(GRO_HASH_BUCKETS >
-		     8 * FIELD_SIZEOF(struct napi_struct, gro_bitmask));
-
 	if (net != &init_net)
 		INIT_LIST_HEAD(&net->dev_base_head);
 
@@ -7565,10 +7464,6 @@ static int __init net_dev_init(void)
 		sd->backlog.poll = process_backlog;
 		sd->backlog.weight = weight_p;
 	}
-
-	napi_workq = alloc_workqueue("napi_workq", WQ_UNBOUND | WQ_HIGHPRI,
-				     WQ_UNBOUND_MAX_ACTIVE);
-	BUG_ON(!napi_workq);
 
 	dev_boot_phase = 0;
 
