@@ -5296,7 +5296,9 @@ static int __napi_poll(struct napi_struct *n, bool *repoll)
 		trace_napi_poll(n, work, weight);
 	}
 
-	WARN_ON_ONCE(work > weight);
+	if (unlikely(work > weight))
+		pr_err_once("NAPI poll function %pS returned %d, exceeding its budget of %d.\n",
+			    n->poll, work, weight);
 
 	if (likely(work < weight))
 		return work;
@@ -5338,13 +5340,12 @@ static void napi_workfn(struct work_struct *work)
 	void *have;
 
 	for (;;) {
-		int work_done;
 		bool repoll = false;
 
 		local_bh_disable();
 
 		have = netpoll_poll_lock(n);
-		work_done = __napi_poll(n, &repoll);
+		__napi_poll(n, &repoll);
 		netpoll_poll_unlock(have);
 
 		local_bh_enable();
