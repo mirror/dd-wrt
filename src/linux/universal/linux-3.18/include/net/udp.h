@@ -158,7 +158,7 @@ static inline __sum16 udp_v4_check(int len, __be32 saddr,
 void udp_set_csum(bool nocheck, struct sk_buff *skb,
 		  __be32 saddr, __be32 daddr, int len);
 
-struct sk_buff *udp_gro_receive(struct list_head *head, struct sk_buff *skb,
+struct sk_buff **udp_gro_receive(struct sk_buff **head, struct sk_buff *skb,
 				 struct udphdr *uh);
 int udp_gro_complete(struct sk_buff *skb, int nhoff);
 
