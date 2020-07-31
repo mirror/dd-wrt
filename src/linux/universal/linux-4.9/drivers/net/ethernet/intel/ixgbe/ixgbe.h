@@ -439,7 +439,7 @@ static inline void ixgbe_qv_unlock_napi(struct ixgbe_q_vector *q_vector)
 	WARN_ON(atomic_read(&q_vector->state) != IXGBE_QV_STATE_NAPI);
 
 	/* flush any outstanding Rx frames */
-	if (q_vector->napi.gro_count)
+	if (q_vector->napi.gro_bitmask)
 		napi_gro_flush(&q_vector->napi, false);
 
 	/* reset state to idle */
