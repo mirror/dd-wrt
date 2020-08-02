@@ -723,6 +723,10 @@ broken_combination:
 			pat->max_pattern_len, pat->max_pkt_offset, rule->max_delay);
 	}
 
+	if (tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA])
+		printf("\tMaximum associated stations in AP mode: %u\n",
+		       nla_get_u16(tb_msg[NL80211_ATTR_MAX_AP_ASSOC_STA]));
+
 	return NL_SKIP;
 }
 
