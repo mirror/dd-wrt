@@ -177,6 +177,9 @@ ifeq ($(CPTCFG_ATH10K_PCI),y)
 	echo "CPTCFG_ATH10K_PCI=y" >>$(MAC80211_PATH)/.config_temp
 endif
 endif
+ifeq ($(CONFIG_IWLWIFI),y)
+	cat $(TOP)/mac80211-rules/configs/iwlwifi.config >> $(MAC80211_PATH)/.config_temp
+endif
 ifeq ($(CONFIG_BRCMFMAC),y)
 	cat $(TOP)/mac80211-rules/configs/brcmfmac.config >> $(MAC80211_PATH)/.config_temp
 endif
@@ -314,6 +317,10 @@ endif
 ifeq ($(CONFIG_BRCMSMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/brcm/brcm43* $(INSTALLDIR)/ath9k/lib/firmware/brcm
+endif
+ifeq ($(CONFIG_IWLWIFI),y)	
+	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/iwl* $(INSTALLDIR)/ath9k/lib/firmware/
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
