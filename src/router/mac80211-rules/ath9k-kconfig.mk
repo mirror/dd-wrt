@@ -321,6 +321,7 @@ endif
 ifeq ($(CONFIG_IWLWIFI),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware
 	-cp -av $(MAC80211_PATH)/ath10k-firmware*/iwl* $(INSTALLDIR)/ath9k/lib/firmware/
+	-cp -av $(MAC80211_PATH)/ath10k-firmware*/ipw* $(INSTALLDIR)/ath9k/lib/firmware/
 endif
 ifeq ($(CONFIG_BRCMFMAC),y)	
 	-mkdir -p $(INSTALLDIR)/ath9k/lib/firmware/brcm/
