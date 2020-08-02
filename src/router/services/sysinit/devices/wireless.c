@@ -130,6 +130,7 @@ static void load_mac80211(void)
 #define RADIO_WIL6210 0x10
 #define RADIO_RTLWIFI 0x20
 #define RADIO_MT76 0x40
+#define RADIO_IWLWIFI 0x80
 
 static void detect_wireless_devices(int mask)
 {
@@ -449,6 +450,20 @@ static void detect_wireless_devices(int mask)
 			rmmod("rt2x00pci");
 			rmmod("rt2x00mmio");
 			rmmod("rt2x00lib");
+		}
+
+	}
+	if ((mask & RADIO_IWLWIFI)) {
+		insmod("libipw");
+		if (!detectchange("ipw2100") && !detectchange("ipw2200"))
+			rmmod("libipw");
+		insmod("iwlegacy");
+		if (!detectchange("iwl3945") && !detectchange("iwl4965")) {
+			rmmod("iwlegacy");
+		}
+		insmod("iwlwifi");
+		if (!detectchange("iwldwm") && !detectchange("iwlmvm")) {
+			rmmod("iwlwifi");
 		}
 
 	}
