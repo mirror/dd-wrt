@@ -3010,8 +3010,12 @@ static struct wifidevices wdevices[] = {
 	{ "Intel Wireless 8265", NONE, 0x8086, 0x24FD, 0, 0x9074, NULL },
 
 /* 9000 Series */
-	{ "Intel Wireless 9000", NONE, 0x8086, 0x2526, 0, 0, NULL },
+	{ "Intel Wireless 9260", NONE, 0x8086, 0x2526, 0, 0x1550, NULL },
+	{ "Intel Wireless 9560", NONE, 0x8086, 0x2526, 0, 0x1551, NULL },
+	{ "Intel Wireless 9560", NONE, 0x8086, 0x2526, 0, 0x1552, NULL },
+	{ "Intel Wireless 9xxx", NONE, 0x8086, 0x2526, 0, 0, NULL },
 	{ "Intel Wireless 9560", NONE, 0x8086, 0x271B, 0, 0, NULL },
+	{ "Intel Wireless 9260", NONE, 0x8086, 0x271C, 0, 0x0214, NULL },
 	{ "Intel Wireless 9560", NONE, 0x8086, 0x271C, 0, 0, NULL },
 	{ "Intel Wireless 9560", NONE, 0x8086, 0x30DC, 0, 0, NULL },
 	{ "Intel Wireless 9560", NONE, 0x8086, 0x31DC, 0, 0, NULL },
