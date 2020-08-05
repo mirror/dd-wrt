@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_site_misc -- a module implementing miscellaneous SITE commands
- * Copyright (c) 2004-2017 The ProFTPD Project
+ * Copyright (c) 2004-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
   pr_regex_t *pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) != 0) {
-    pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_SITE_MISC_VERSION
       ": 'SITE %s' denied by PathAllowFilter", cmd->arg);
     return -1;
   }
@@ -48,7 +48,7 @@ static int site_misc_check_filters(cmd_rec *cmd, const char *path) {
   pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) == 0) {
-    pr_log_debug(DEBUG2, MOD_SITE_MISC_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_SITE_MISC_VERSION
       ": 'SITE %s' denied by PathDenyFilter", cmd->arg);
     return -1;
   }
@@ -1258,7 +1258,7 @@ MODRET site_misc_utime(cmd_rec *cmd) {
       return PR_DECLINED(cmd);
     }
 
-    /* If we have at least 7 parameters, AND the last paramter is "UTC"
+    /* If we have at least 7 parameters, AND the last parameter is "UTC"
      * (case-insensitive), then it's a candidate for the atime/mtime/ctime
      * variant.
      */

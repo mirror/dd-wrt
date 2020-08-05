@@ -610,7 +610,6 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
   modret_t *sql_res;
   array_header *sql_data;
   char **values;
-  int res;
 
   store_data = store->keystore_data;
 
@@ -650,15 +649,15 @@ static int sqlstore_verify_user_key(sftp_keystore_t *store, pool *p,
     destroy_pool(tmp_pool);
     errno = ENOENT;
     return -1;
-
-  } else {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
-      "SQLNamedQuery '%s' returned %d %s", store_data->select_query,
-      sql_data->nelts, sql_data->nelts != 1 ? "rows" : "row");
   }
+
+  (void) pr_log_writefile(sftp_logfd, MOD_SFTP_SQL_VERSION,
+    "SQLNamedQuery '%s' returned %d %s", store_data->select_query,
+    sql_data->nelts, sql_data->nelts != 1 ? "rows" : "row");
 
   values = (char **) sql_data->elts;
   for (i = 0; i < sql_data->nelts; i++) {
+    int res;
     char *col_data;
     size_t col_datalen;
 

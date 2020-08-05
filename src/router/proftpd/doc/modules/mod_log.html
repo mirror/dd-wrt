@@ -21,6 +21,7 @@ ProFTPD 1.3.<i>x</i>, and is compiled by default.
   <li><a href="#AllowLogSymlinks">AllowLogSymlinks</a>
   <li><a href="#ExtendedLog">ExtendedLog</a>
   <li><a href="#LogFormat">LogFormat</a>
+  <li><a href="#LogOptions">LogOptions</a>
   <li><a href="#ServerLog">ServerLog</a>
   <li><a href="#SystemLog">SystemLog</a>
 </ul>
@@ -429,6 +430,11 @@ indicated when logging.
   </tr>
 
   <tr>
+    <td>&nbsp;<code>%{transfer-port}</code>&nbsp;</td>
+    <td>Remote port used for data transfer</td>
+  </tr>
+
+  <tr>
     <td>&nbsp;<code>%{transfer-status}</code>&nbsp;</td>
     <td>Status of data transfer: "success", "failed", "cancelled", "timeout", or "-"</td>
   </tr>
@@ -477,6 +483,58 @@ indicated when logging.
 <p>
 See also: <a href="#ExtendedLog"><code>ExtendedLog</code></a>,
 <a href="mod_core.html#TransferLog"><code>TransferLog</code></a>
+
+<p>
+<hr>
+<h3><a name="LogOptions">LogOptions</a></h3>
+<strong>Syntax:</strong> LogOptions <em>opt1 ... optN</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, &lt;VirtualHost&gt;, &lt;Global&gt;<br>
+<strong>Module:</strong> mod_core<br>
+<strong>Compatibility:</strong> 1.3.7rc4 and later
+
+<p>
+The <code>LogOptions</code> directive can be used to change the format
+of the <a href="#SystemLog"><code>SystemLog</code></a> messages, <i>e.g.</i>
+adding/remove certain fields of data.  These options <i>also</i> apply to
+all module logging; ProFTPD logging is centralized, and the
+<code>LogOptions</code> are applied to any/all logging.
+
+<p>
+The options supported by the <code>LogOptions</code> directive are:
+<ul>
+  <li>Hostname
+  <li>RoleBasedProcessLabels
+  <li>Timestamp
+  <li>VirtualHost
+</ul>
+All of these options are <em>enabled</em> by default, <i>except</i> for the
+<code>RoleBasedProcessLabels</code> option.
+
+<p>
+To enable an option, preface the option name with a '+' (plus) character;
+to disable the option, use a '-' (minus) character prefix.  For example:
+<pre>
+  # Log messages without timestamps or hostname
+  LogOptions -Hostname -Timestamp
+</pre>
+
+<p>
+The <code>RoleBasedProcessLabels</code> option changes the <em>label</em>
+just for the PID, from <i>e.g.</i>:
+<pre>
+  proftpd[1234]
+</pre>
+to one of the following, depending on whether the process is the master
+<em>daemon</em> process, or a forked <em>session</em> process:
+<pre>
+  daemon[2345]
+  session[34567]
+</pre>
+This is useful, for example, when relying on <code>systemd</code> logging:
+<pre>
+  LogOptions -Timestamp -Hostname +RoleBasedProcessLabels
+</pre>
 
 <p>
 <hr>
@@ -624,7 +682,7 @@ your log would have a line like:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2017 The ProFTPD Project<br>
+&copy; Copyright 2002-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 

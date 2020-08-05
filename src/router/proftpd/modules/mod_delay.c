@@ -564,7 +564,7 @@ static int delay_table_init(void) {
    *
    * If the ServerType is inetd, we want to leave the current contents
    * alone (don't we want to check to see that it's appropriate, sid-wise,
-   * for the current server_list?), otherwse, we reset the table.
+   * for the current server_list?), otherwise, we reset the table.
    *
    * The size of the table should be:
    *

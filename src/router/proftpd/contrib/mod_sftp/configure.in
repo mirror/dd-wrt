@@ -1,5 +1,5 @@
 dnl ProFTPD - mod_sftp
-dnl Copyright (c) 2012-2016 TJ Saunders <tj@castaglia.org>
+dnl Copyright (c) 2012-2019 TJ Saunders <tj@castaglia.org>
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -194,6 +194,30 @@ AC_TRY_LINK(
   [
     AC_MSG_RESULT(yes)
     AC_DEFINE(HAVE_SHA512_OPENSSL, 1, [OpenSSL supports SHA384/SHA512])
+    LIBS="$saved_libs"
+  ],
+  [
+    AC_MSG_RESULT(no)
+    LIBS="$saved_libs"
+  ]
+)
+
+dnl Splice out -lsupp, since that library hasn't been built yet
+LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+LIBS="-lcrypto $LIBS"
+
+AC_MSG_CHECKING([whether OpenSSL supports EVP_aes_256_ctr])
+AC_TRY_LINK(
+  [
+    #include <openssl/evp.h>
+  ],
+  [
+    EVP_CIPHER *cipher;
+    cipher = EVP_aes_256_ctr();
+  ],
+  [
+    AC_MSG_RESULT(yes)
+    AC_DEFINE(HAVE_EVP_AES_256_CTR_OPENSSL, 1, [OpenSSL supports EVP_aes_256_ctr])
     LIBS="$saved_libs"
   ],
   [

@@ -188,7 +188,7 @@ extern int			ServerUseReverseDNS;
 
 /* KLUDGE: disable umask() for not G_WRITE operations.  Config/
  * Directory walking code will be completely redesigned in 1.3,
- * this is only necessary for perfomance reasons in 1.1/1.2
+ * this is only necessary for performance reasons in 1.1/1.2
  */
 void kludge_disable_umask(void);
 void kludge_enable_umask(void);

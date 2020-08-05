@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp
- * Copyright (c) 2008-2018 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,6 +70,7 @@ static const char *sftp_server_version = SFTP_ID_DEFAULT_STRING;
 #define SFTP_HOSTKEY_FL_CLEAR_RSA_KEY		0x001
 #define SFTP_HOSTKEY_FL_CLEAR_DSA_KEY		0x002
 #define SFTP_HOSTKEY_FL_CLEAR_ECDSA_KEY		0x004
+#define SFTP_HOSTKEY_FL_CLEAR_ED25519_KEY	0x008
 
 static const char *trace_channel = "ssh2";
 
@@ -1156,7 +1157,7 @@ MODRET set_sftpextensions(cmd_rec *cmd) {
   return PR_HANDLED(cmd);
 }
 
-/* usage: SFTPHostKey path|"agent:/..."|"NoRSA"|"NoDSA"|"NoECDSA"" */
+/* usage: SFTPHostKey path|"agent:/..."|"NoRSA"|"NoDSA"|"NoECDSA"|"NoED25519" */
 MODRET set_sftphostkey(cmd_rec *cmd) {
   struct stat st;
   int flags = 0;
@@ -1174,6 +1175,9 @@ MODRET set_sftphostkey(cmd_rec *cmd) {
 
   } else if (strncasecmp(cmd->argv[1], "NoECDSA", 8) == 0) {
     flags |= SFTP_HOSTKEY_FL_CLEAR_ECDSA_KEY;
+
+  } else if (strncasecmp(cmd->argv[1], "NoED25519", 10) == 0) {
+    flags |= SFTP_HOSTKEY_FL_CLEAR_ED25519_KEY;
   }
 
   if (strncmp(cmd->argv[1], "agent:", 6) != 0 &&
@@ -1465,6 +1469,9 @@ MODRET set_sftpoptions(cmd_rec *cmd) {
     } else if (strcmp(cmd->argv[i], "IncludeSFTPTimes") == 0) {
       opts |= SFTP_OPT_INCLUDE_SFTP_TIMES;
 
+    } else if (strcmp(cmd->argv[i], "NoExtensionNegotiation") == 0) {
+      opts |= SFTP_OPT_NO_EXT_INFO;
+
     } else {
       CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, ": unknown SFTPOption '",
         cmd->argv[i], "'", NULL));
@@ -1754,9 +1761,22 @@ static void sftp_postparse_ev(const void *event_data, void *user_data) {
    *
    * without also configuring SFTPAuthorizedHostKeys means that authentication
    * will never succeed.
+   *
+   * While here, we also check for unsupported configuration directives, and
+   * warn if found.
    */
   for (s = (server_rec *) server_list->xas_list; s; s = s->next) {
-    int supports_hostbased = FALSE, supports_publickey = FALSE;
+    int supports_hostbased = FALSE, supports_publickey = FALSE, use_sftp = FALSE;
+
+    c = find_config(s->conf, CONF_PARAM, "SFTPEngine", FALSE);
+    if (c != NULL) {
+      use_sftp = *((int *) c->argv[0]);
+    }
+
+    if (use_sftp == FALSE) {
+      /* No need to check further if mod_sftp is not enabled. */
+      continue;
+    }
 
     c = find_config(s->conf, CONF_PARAM, "SFTPAuthorizedHostKeys", FALSE);
     if (c != NULL) {
@@ -1788,8 +1808,8 @@ static void sftp_postparse_ev(const void *event_data, void *user_data) {
           if (meth->method_id == SFTP_AUTH_FL_METH_HOSTBASED &&
               supports_hostbased == FALSE) {
             pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
-              ": Server %s: cannot support authentication method '%s' "
-              "without SFTPAuthorizedHostKeys configuraion", s->ServerName,
+              ": Server '%s': cannot support authentication method '%s' "
+              "without SFTPAuthorizedHostKeys configuration", s->ServerName,
               meth->method_name);
             pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BAD_CONFIG,
               NULL);
@@ -1798,14 +1818,41 @@ static void sftp_postparse_ev(const void *event_data, void *user_data) {
           if (meth->method_id == SFTP_AUTH_FL_METH_PUBLICKEY &&
               supports_publickey == FALSE) {
             pr_log_pri(PR_LOG_NOTICE, MOD_SFTP_VERSION
-              ": Server %s: cannot support authentication method '%s' "
-              "without SFTPAuthorizedUserKeys configuraion", s->ServerName,
+              ": Server '%s': cannot support authentication method '%s' "
+              "without SFTPAuthorizedUserKeys configuration", s->ServerName,
               meth->method_name);
             pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_BAD_CONFIG,
               NULL);
           }
         }
       }
+    }
+
+    /* The following directives are documented as not supported:
+     *   <Anonymous>
+     *   ListOptions
+     *   MaxRetrieveFileSize
+     */
+
+    c = find_config(s->conf, CONF_ANON, NULL, FALSE);
+    if (c != NULL) {
+      pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+        ": Server '%s': <Anonymous> configuration is not supported by "
+        "mod_sftp, and will be ignored", s->ServerName);
+    }
+
+    c = find_config(s->conf, CONF_PARAM, "ListOptions", TRUE);
+    if (c != NULL) {
+      pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+        ": Server '%s': ListOptions directive is not supported by mod_sftp, "
+        "and will be ignored", s->ServerName);
+    }
+
+    c = find_config(s->conf, CONF_PARAM, "MaxRetrieveFileSize", TRUE);
+    if (c != NULL) {
+      pr_log_pri(PR_LOG_WARNING, MOD_SFTP_VERSION
+        ": Server '%s': MaxRetrieveFileSize directive is not supported by "
+        "mod_sftp, and will be ignored", s->ServerName);
     }
   }
 }
@@ -2128,6 +2175,9 @@ static int sftp_sess_init(void) {
   sftp_pool = make_sub_pool(session.pool);
   pr_pool_tag(sftp_pool, MOD_SFTP_VERSION);
 
+  /* Clear out FTP-isms. */
+  session.data_port = 0;
+
   c = find_config(main_server->conf, CONF_PARAM, "SFTPOptions", FALSE);
   while (c != NULL) {
     unsigned long opts;
@@ -2198,6 +2248,15 @@ static int sftp_sess_init(void) {
         } else {
           pr_trace_msg(trace_channel, 9, "cleared ECDSA hostkey(s)");
         }
+
+      } else if (flags & SFTP_HOSTKEY_FL_CLEAR_ED25519_KEY) {
+        if (sftp_keys_clear_ed25519_hostkey() < 0) {
+          pr_trace_msg(trace_channel, 13,
+            "error clearing ED25519 hostkey(s): %s", strerror(errno));
+
+        } else {
+          pr_trace_msg(trace_channel, 9, "cleared ED25519 hostkey(s)");
+        }
       }
     }
 
@@ -2205,11 +2264,13 @@ static int sftp_sess_init(void) {
   }
 
   /* Support having either an RSA hostkey, a DSA hostkey, an ECDSA hostkey,
-   * or any combination thereof.  But we have to have at least one hostkey.
+   * an ED25519 hostkey, or any combination thereof.  But we have to have at
+   * least one hostkey.
    */
   if (sftp_keys_have_dsa_hostkey() < 0 &&
       sftp_keys_have_rsa_hostkey() < 0 &&
-      sftp_keys_have_ecdsa_hostkey(sftp_pool, NULL) < 0) {
+      sftp_keys_have_ecdsa_hostkey(sftp_pool, NULL) < 0 &&
+      sftp_keys_have_ed25519_hostkey()) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "no available host keys, unable to handle session");
     errno = EACCES;

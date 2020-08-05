@@ -268,10 +268,10 @@ control action by name, except for the actions registered by
 <code>mod_ctrls</code>: &quot;insctrl&quot;, &quot;lsctrl&quot;, and
 &quot;rmctrl&quot;.  The exception to this is the special &quot;<code>rmctrl
 all</code>&quot;, which disables <b>all</b> actions and effectively turns
-<code>mod_ctrls</code> off.  A daemon restart is then necessary to reenable
+<code>mod_ctrls</code> off.  A daemon restart is then necessary to re-enable
 actions.  Once a specific action has been disabled, the
 &quot;<a href="#insctrl">insctrl</a>&quot; control action can be used to
-reenable it.
+re-enable it.
 
 <p>
 Example:
@@ -280,7 +280,7 @@ Example:
 </pre>
 This disables all actions registered under the name &quot;memory&quot;.  If
 there was such an action registered by a specific module,
-<code>mod_ctrls_common</code> for example, that the administor wished to
+<code>mod_ctrls_common</code> for example, that the administrator wished to
 disable, but to leave the &quot;memory&quot; actions of other modules enabled:
 <pre>
   ftpdctl rmctrl memory mod_ctrls_common.c

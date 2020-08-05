@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2017 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -147,6 +147,24 @@ START_TEST (netacl_create_test) {
   res = pr_netacl_create(p, acl_str);
   fail_unless(res == NULL, "Failed to handle bad ACL string '%s': %s", acl_str,
     strerror(errno));
+
+  acl_str = pstrdup(p, "::1");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_type = pr_netacl_get_type(res);
+  fail_unless(acl_type == PR_NETACL_TYPE_IPMATCH,
+    "Failed to have IPMATCH type for ACL string '%s'", acl_str);
+
+  acl_str = pstrdup(p, "!::1");
+  res = pr_netacl_create(p, acl_str);
+  fail_unless(res != NULL, "Failed to handle ACL string '%s': %s", acl_str,
+    strerror(errno));
+
+  acl_type = pr_netacl_get_type(res);
+  fail_unless(acl_type == PR_NETACL_TYPE_IPMATCH,
+    "Failed to have IPMATCH type for ACL string '%s'", acl_str);
 #endif
 
   acl_str = pstrdup(p, "127.0.0.1/0");

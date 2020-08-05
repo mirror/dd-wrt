@@ -564,7 +564,7 @@ int snmp_smi_write_vars(pool *p, unsigned char **buf, size_t *buflen,
 
     pr_signals_handle();
 
-    /* Write the header for this varible. */
+    /* Write the header for this variable. */
     asn1_type = (SNMP_ASN1_TYPE_SEQUENCE|SNMP_ASN1_CONSTRUCT);
     asn1_len = 0;
 

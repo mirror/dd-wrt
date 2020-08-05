@@ -361,7 +361,7 @@ To use <code>mod_wrap2</code>'s functionality, you must first define the tables
 that together contain the access rules.  Access rules are composed of
 <b>daemon lists</b>, <b>client lists</b>, and optional <b>options lists</b>.
 <b>daemon lists</b> are used so that the access rules can be configured for
-mulitple daemons; <code>mod_wrap2</code> ignores all daemons except that
+multiple daemons; <code>mod_wrap2</code> ignores all daemons except that
 configured for <code>proftpd</code>.  <b>client lists</b> are the heart of
 the access rules, specifying the host names, IP addresses, <i>etc</i> to
 be allowed or denied.  The handling of <b>options lists</b> is done only if
@@ -386,7 +386,7 @@ table first.  If the client has been explicitly allowed by the rules in
 that table, processing stops and <code>mod_wrap2</code> allows the client
 to continue the session.  If not explicitly allowed, <code>mod_wrap2</code>
 will then check the deny table's access rules.  If the client has been
-explicity denied by rules in that table, <code>mod_wrap2</code> will
+explicitly denied by rules in that table, <code>mod_wrap2</code> will
 disconnect the client.  By default, if neither explicitly allowed or
 explicitly denied, <code>mod_wrap2</code> will allow the client to continue.
 

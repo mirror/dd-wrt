@@ -1,0 +1,52 @@
+---
+task:
+  name: build
+  freebsd_instance:
+    matrix:
+      # NOTE: Currently disabled due to this error:
+      #  pkg: repository FreeBSD contains packages for wrong OS version: FreeBSD:13:amd64
+      # image_family: freebsd-13-0-snap
+      image_family: freebsd-12-1
+      image_family: freebsd-11-3-snap
+
+  env:
+    CIRRUS_CLONE_DEPTH: 10
+
+  pkginstall_script:
+    - pkg update -f
+    - pkg install -y check
+    - pkg install -y cyrus-sasl
+    - pkg install -y gcc
+    - pkg install -y gettext
+    - pkg install -y gmake
+    - pkg install -y hiredis
+    - pkg install -y libsodium
+    - pkg install -y libmaxminddb
+    - pkg install -y libmemcached
+    - pkg install -y mysql57-client
+    - pkg install -y ncurses
+    - pkg install -y openldap-client
+    - pkg install -y openssl
+    - pkg install -y pcre
+    - pkg install -y postgresql10-client
+    - pkg install -y sqlite3
+    - pkg install -y unixODBC
+    # For the Redis unit tests
+    - pkg install -y redis
+    - service redis onestart
+
+  # Note the following modules are NOT built:
+  #
+  #  - mod_geoip (no GeoIP package available)
+  #  - mod_wrap (no libwrap package available)
+  configure_script:
+    - ./configure LDFLAGS="-L/usr/local/lib" LIBS="-lodbc -lm -lrt -pthread" --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-redis --enable-tests --with-modules=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession
+
+  compile_script:
+    - gmake
+
+  test_script:
+    - gmake TEST_VERBOSE=1 check-api
+
+  install_script:
+    - gmake install

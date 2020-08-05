@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,7 @@ static int logged_in = FALSE;
 static int auth_anon_allow_robots = FALSE;
 static int auth_anon_allow_robots_enabled = FALSE;
 static int auth_client_connected = FALSE;
-static unsigned int auth_tries = 0;
+static int auth_tries = 0;
 static char *auth_pass_resp_code = R_230;
 static pr_fh_t *displaylogin_fh = NULL;
 static int TimeoutSession = 0;
@@ -265,7 +265,7 @@ static int auth_sess_init(void) {
     }
 
   } else {
-    /* We're probably handling a HOST comand, and the server changed; just
+    /* We're probably handling a HOST command, and the server changed; just
      * update the SERVER_LABEL field.
      */
     pr_scoreboard_entry_update(session.pid,
@@ -345,13 +345,17 @@ static int do_auth(pool *p, xaset_t *conf, const char *u, char *pw) {
  */
 
 static void login_failed(pool *p, const char *user) {
-#ifdef HAVE_LOGINFAILED
   const char *host, *sess_ttyname;
+#if defined(HAVE_LOGINFAILED)
   int res, xerrno;
+#endif /* HAVE_LOGINFAILED */
 
   host = pr_netaddr_get_dnsstr(session.c->remote_addr);
   sess_ttyname = pr_session_get_ttyname(p);
 
+  pr_trace_msg("auth", 19, "mod_auth handling failed login for "
+    "user = '%s', host = '%s', tty = '%s'", user, host, sess_ttyname);
+#if defined(HAVE_LOGINFAILED)
   PRIVS_ROOT
   res = loginfailed((char *) user, (char *) host, (char *) sess_ttyname,
     AUDIT_FAIL);
@@ -383,6 +387,14 @@ MODRET auth_err_pass(cmd_rec *cmd) {
    */
   pr_table_remove(session.notes, "mod_auth.orig-user", NULL);
 
+  /* If auth_tries = -1, that means we reached the max login attempts and
+   * should disconnect the session.
+   */
+  if (auth_tries == -1) {
+    pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
+      "Denied by MaxLoginAttempts");
+  }
+  
   return PR_HANDLED(cmd);
 }
 
@@ -408,14 +420,19 @@ MODRET auth_log_pass(cmd_rec *cmd) {
 }
 
 static void login_succeeded(pool *p, const char *user) {
-#ifdef HAVE_LOGINSUCCESS
   const char *host, *sess_ttyname;
+#if defined(HAVE_LOGINSUCCESS)
   char *msg = NULL;
   int res, xerrno;
+#endif /* HAVE_LOGINSUCCESS */
 
   host = pr_netaddr_get_dnsstr(session.c->remote_addr);
   sess_ttyname = pr_session_get_ttyname(p);
 
+  pr_trace_msg("auth", 19, "mod_auth handling successful login for "
+    "user = '%s', host = '%s', tty = '%s'", user, host, sess_ttyname);
+
+#if defined(HAVE_LOGINSUCCESS)
   PRIVS_ROOT
   res = loginsuccess((char *) user, (char *) host, (char *) sess_ttyname, &msg);
   xerrno = errno;
@@ -446,7 +463,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   int root_revoke = TRUE;
   struct stat st;
 
-  /* Was there a precending USER command? Was the client successfully
+  /* Was there a preceding USER command? Was the client successfully
    * authenticated?
    */
   authenticated = get_param_ptr(cmd->server->conf, "authenticated", FALSE);
@@ -463,7 +480,6 @@ MODRET auth_post_pass(cmd_rec *cmd) {
      */
     c = find_config(main_server->conf, CONF_PARAM, "Protocols", FALSE);
     if (c != NULL) {
-      register unsigned int i;
       array_header *protocols;
       char **elts;
       const char *protocol;
@@ -479,6 +495,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
        */
       if (session.rfc2228_mech == NULL &&
           strncmp(protocol, "SSH2", 5) != 0) {
+        register unsigned int i;
         int allow_ftp = FALSE;
 
         for (i = 0; i < protocols->nelts; i++) {
@@ -493,7 +510,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
           }
         }
 
-        if (!allow_ftp) {
+        if (allow_ftp == FALSE) {
           pr_log_debug(DEBUG0, "%s", "ftp protocol denied by Protocols config");
           pr_response_send(R_530, "%s", _("Login incorrect."));
           pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
@@ -515,8 +532,9 @@ MODRET auth_post_pass(cmd_rec *cmd) {
    * setting of any possible anon_config, as that context may be allowed
    * or denied .ftpaccess-parsing separately from the containing server.
    */
-  if (pr_fsio_stat(session.cwd, &st) != -1)
+  if (pr_fsio_stat(session.cwd, &st) != -1) {
     build_dyn_config(cmd->tmp_pool, session.cwd, &st, TRUE);
+  }
 
   have_user_timeout = have_group_timeout = have_class_timeout =
     have_all_timeout = FALSE;
@@ -607,7 +625,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
   }
 
   /* Handle a DisplayLogin file. */
-  if (displaylogin_fh) {
+  if (displaylogin_fh != NULL) {
     if (!(session.sf_flags & SF_ANON)) {
       if (pr_display_fh(displaylogin_fh, NULL, auth_pass_resp_code, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
@@ -628,7 +646,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
       displaylogin_fh = NULL;
 
       displaylogin = get_param_ptr(TOPLEVEL_CONF, "DisplayLogin", FALSE);
-      if (displaylogin) {
+      if (displaylogin != NULL) {
         if (pr_display_file(displaylogin, NULL, auth_pass_resp_code, 0) < 0) {
           pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
             displaylogin, strerror(errno));
@@ -637,8 +655,10 @@ MODRET auth_post_pass(cmd_rec *cmd) {
     }
 
   } else {
-    char *displaylogin = get_param_ptr(TOPLEVEL_CONF, "DisplayLogin", FALSE);
-    if (displaylogin) {
+    char *displaylogin;
+
+    displaylogin = get_param_ptr(TOPLEVEL_CONF, "DisplayLogin", FALSE);
+    if (displaylogin != NULL) {
       if (pr_display_file(displaylogin, NULL, auth_pass_resp_code, 0) < 0) {
         pr_log_debug(DEBUG6, "unable to display DisplayLogin file '%s': %s",
           displaylogin, strerror(errno));
@@ -694,7 +714,7 @@ MODRET auth_post_pass(cmd_rec *cmd) {
     /* Disable future attempts at UID/GID manipulation. */
     session.disable_id_switching = TRUE;
 
-    pr_log_debug(DEBUG0, "RootRevoke in effect, dropped root privs");
+    pr_log_debug(DEBUG2, "RootRevoke in effect, dropped root privs");
   }
 
   c = find_config(TOPLEVEL_CONF, CONF_PARAM, "AnonAllowRobots", FALSE);
@@ -2643,7 +2663,7 @@ MODRET auth_pass(cmd_rec *cmd) {
     }
 
     if (max_logins > 0 &&
-        ++auth_tries >= max_logins) {
+        ((unsigned int) ++auth_tries) >= max_logins) {
       if (denymsg) {
         pr_response_send(R_530, "%s", denymsg);
 
@@ -2657,8 +2677,10 @@ MODRET auth_pass(cmd_rec *cmd) {
       /* Generate an event about this limit being exceeded. */
       pr_event_generate("mod_auth.max-login-attempts", session.c);
 
-      pr_session_disconnect(&auth_module, PR_SESS_DISCONNECT_CONFIG_ACL,
-        "Denied by MaxLoginAttempts");
+      /* Set auth_tries to -1 so that the session is disconnected after
+       * POST_CMD_ERR and LOG_CMD_ERR events are processed.
+       */
+      auth_tries = -1;
     }
 
     return PR_ERROR_MSG(cmd, R_530, denymsg ? denymsg : _("Login incorrect."));

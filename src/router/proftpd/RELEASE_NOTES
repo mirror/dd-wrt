@@ -6,6 +6,142 @@ This file contains a description of the major changes to ProFTPD for the
 releases.  More information on these changes can be found in the NEWS and
 ChangeLog files.
 
+1.3.7a
+---------
+
+  + Fix build-time regression when using the --localstatedir configure option.
+
+1.3.7
+---------
+
+  + Support the SOURCE_DATE_EPOCH environment variable, for reproducible
+    builds (Issue #1038).
+
+
+1.3.7rc4
+---------
+
+  + Implemented support for configuring certificate options for LDAP
+    connections using SSL/TLS.
+
+  + Fixed issue with FTPS uploads of large files using TLSv1.3 (Issue #959).
+
+  + Fixed handling of IPv6 addresses in From directives (Issue #682).
+
+  + Added -b and -n command-line options to ftptop.
+
+  + Ignore supplemental groups when run as non-root user (Issue #808).
+
+  + Use re-entrant versions of time functions where available (Issue #983).
+
+  + New Configuration Directives
+
+    BanOptions
+
+      The BanOptions directive is used to tune mod_ban behavior, such as
+      creating ban entries that match/apply to all <VirtualHost> sections.
+      See doc/contrib/mod_ban.html#BanOptions for more details.
+
+    LDAPUseSASL
+
+      The LDAPUseSASL directive configures a list of SASL authentication
+      mechanisms to use, when using the LDAPBindDN to bind to the LDAP
+      server.  See doc/contrib/mod_ldap.html#LDAPUseSASL for details.
+
+    LogOptions
+
+      The LogOptions directive is used to modify the default logging format
+      for ProFTPD syslog, debug, and module logging.  See
+      doc/modules/mod_log.html#LogOptions for more information.
+
+    SQLKeepAlive
+
+      The SQLKeepAlive directive configures a periodic "keepalive" query
+      for ensuring the connection between mod_sql and the backend database
+      server.  See doc/contrib/mod_sql.html#SQLKeepAlive for more information.
+
+  + Changed Configuration Directives
+
+    LDAPServer
+      The LDAPServer directive now supports configuring the trusted CA
+      file, client certificate and key files, SSL ciphers, and verification
+      policies for LDAP connections.  See doc/contrib/mod_ldap.html#LDAPServer
+      for more details.
+
+    TraceOptions
+      The TraceOptions directive now supports a "Timestamp" option, for
+      disabling inclusion of timestamps in Trace logs.
+
+  + Developer notes
+
+    When MaxLoginAttempts is reach, the POST_CMD_ERR/LOG_CMD_ERR command
+    handler phases will now run.  This allows interested modules, such
+    as mod_exec and others, to react to these events (Issue #718).
+
+
+1.3.7rc3
+---------
+
+  + Fixed regression in directory listing latency (Issue #863).
+
+  + Fixed use-after-free vulnerability during data transfers (Issue #903).
+
+  + Addressed out-of-bounds read in mod_cap by removing bundled libcap, and
+    relying solely on the system-provided libcap (Issue #902).  Note that
+    building ProFTPD from source will *not* automatically include the
+    mod_cap module, unless the libcap library is available.
+
+  + mod_sftp now supports OpenSSH-specific private host keys (Issue #793).
+    Newer versions of OpenSSH ssh-keygen(1) automatically generate private
+    keys formatted with this OpenSSH-specific format.
+
+  + mod_sftp now supports Ed25519 keys (Bug #4221).
+
+  + mod_sftp now supports RSA SHA-2 publickey signatures, per RFC 8332
+    (Issue #907).
+
+  + mod_tls now honors client-provided SNI as part of the TLS handshake,
+    for implementing name-based virtual hosts via TLS SNI.
+
+  + Changed Configuration Directives
+
+    LogFormat %{transfer-port}
+      The LogFormat directive supports a %{transfer-port} variable for
+      logging the selected data transfer port.
+
+    SFTPOptions NoExtensionNegotiation
+      The mod_sftp module now supports SSH extension negotations (RFC 8332).
+      If there any issues with this support, it can be disabled using:
+
+        SFTPOptions NoExtensionNegotiation
+
+    SQLAuthTypes bcrypt
+      The mod_sql_passwd module now supports bcrypt-encrypted passwords.
+      This can be enabled using:
+
+        SQLAuthTypes bcrypt
+
+      in your mod_sql configuration.  See doc/contrib/mod_sql_password.html
+      for more information.
+
+    TLSOption IgnoreSNI
+      The TLSOption directive now supports an "IgnoreSNI" setting, to
+      tell mod_tls to ignore/not use any SNI, provided by the client in the
+      TLS handshake, for determining any name-based virtual hosts.  See
+      doc/contrib/mod_tls.html#TLSOption for more details.
+
+
+  + Added API
+
+    FSIO pread(2), pwrite(2) (Issue#317)
+
+
+1.3.7rc2
+---------
+
+  + Fixed pre-authentication remote denial-of-service issue (Issue #846,
+    CVE-2019-18217).
+
 1.3.7rc1
 ---------
 
@@ -47,44 +183,92 @@ ChangeLog files.
 
   + New Configuration Directives
 
-    AuthFileOptions InsecurePerms
+    AuthFileOptions
+      The mod_auth_file module supports a configuration directive for disabling
+      its requirement for secure permissions on configured
+      AuthUserFile/AuthGroupFile.  See
+      doc/modules/mod_auth_file.html#AuthFileOptions for information.
 
-    RedisLogOnEvent (Issue#392)
+    RedisLogOnEvent
+      The mod_redis module can be configured to log JSON messages based on
+      specified events (Issue#392).  See the
+      doc/modules/mod_redis.html#RedisLogOnEvent documentation for details.
 
-    RedisOptions (Issue#477)
+    RedisOptions
+      The mod_redis module now implements a RedisOptions directive, for tuning
+      some of the module behavior (Issue#477).  The
+      doc/modules/mod_redis.html#RedisOptions documentation has more details.
 
-    RedisSentinel (Issue#396)
+    RedisSentinel
+      The mod_redis module now supports use of Redis Sentinels (Issue#396);
+      see doc/modules/mod_redis.html#RedisSentinel.
 
 
   + Changed Configuration Directives
 
     AllowForeignAddress class-name
+      The AllowForeignAddress directive supports a Class name, for finer-grained
+      control over which clients are allowed to use foreign/mismatching IP
+      addresses for transfers.  See
+      doc/modules/mod_core.html#AllowForeignAddress for more information.
 
-    ExecEnviron %b (Issue#515)
+    ExecEnviron %b
+      The ExecEnviron directive has been fixed to properly resolve the %b
+      LogFormat variable (Issue#515).
 
     RedisServer db-index (Issue#550)
+      The mod_redis module can now be configured to select a database index
+      via the RedisServer directive (Issue#550).  See the
+      doc/modules/mod_redis.html#RedisServer documentation for details.
 
-    RewriteMap idnatrans (Issue#231)
+    RewriteMap idnatrans
+      The mod_rewrite module can now support rewriting `idn` to `idna`
+      formats (Issue#231).  See the doc/modules/mod_rewrite#RewriteMap for
+      details on how to do so.
 
-    RootRevoke on (Bug#4241)
+    RootRevoke on
+      The RootRevoke directive is now enabled by default (Bug#4241).  This
+      makes for more secure configurations/sessions out-of-the-box.  See
+      doc/modules/mod_auth.html#RootRevoke for more information.
 
-    SFTPCipher, SFTPDigest
-      Weak algorithms now disabled by default (Bug#4279)
+    SFTPCiphers, SFTPDigests
+      Some weak algorithms are now disabled by default in mod_sftp (Bug#4279).
+      These algorithms, if need be, can be explicitly enabled by configuration;
+      they are just not enabled automatically.  For list of the algorithms
+      affected, see doc/contrib/mod_sftp.html#SFTPCiphers,
+      doc/contrib/mod_sftp.html#SFTPDigests.
 
-    SFTPOptions IncludeSFTPTimes (Rebex lib bug)
+    SFTPOptions IncludeSFTPTimes
+      The SFTOptions directive of mod_sftp now supports an option for explicitly
+      including the timestamps of files when SFTP protocol 4 and higher are
+      used, even if the SFTP client did not request these timestamps.  This
+      works around a bug in the popular Rebex SFTP library; see
+      doc/contrib/mod_sftp.html#SFTPOptions for details.
 
-    TLSProtocol TLSv1.3 (Issue#536)
+    TLSProtocol TLSv1.3
+      The mod_tls module, and its TLSProtocol directive, now support TLSv1.3
+      (Issue#536).  See doc/contrib/mod_tls.html#TLSProtocol for more
+      information.
 
     TLSServerCipherPreference
       The TLSServerCipherPreference directive is now enabled by default.
+      See doc/contrib/mod_tls.html#TLSServerCipherPrefrence.
 
-    TLSStaplingOptions NoFakeTryLater (Issue#518)
+    TLSStaplingOptions NoFakeTryLater
+      Some TLS clients have trouble with the "fake" OCSP response that mod_tls
+      might stable, when the client requested stapled OCSP responses and
+      mod_tls is unable to contact the OCSP responder.  Use this option to
+      disable such fake responses (Issue#518):
+
+        TLSStaplingOptions NoFakeTryLater
+
+      See doc/contrib/mod_tls.html#TLSStaplingOptions for details.
 
 
   + Removed Configuration Directives
 
-    GroupPassword
+    The following directives have been removed:
 
-    LoginPasswordPrompt
-
-    TransferPriority (Issue#445)
+      GroupPassword
+      LoginPasswordPrompt
+      TransferPriority

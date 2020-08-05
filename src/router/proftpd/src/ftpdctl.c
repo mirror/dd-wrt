@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ static const char *program = "ftpdctl";
 
 /* NOTE: these empty stubs are needed for proper linking.  What a mess. */
 
+unsigned char is_master;
 session_t session;
 server_rec *main_server = NULL;
 
@@ -73,7 +74,20 @@ int pr_fs_get_usable_fd(int fd) {
 }
 
 struct tm *pr_localtime(pool *p, const time_t *t) {
-  return localtime(t);
+  struct tm *tm;
+
+#if defined(HAVE_LOCALTIME_R)
+  if (p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  tm = localtime_r(t, pcalloc(p, sizeof(struct tm)));
+#else
+  tm = localtime(t);
+#endif /* HAVE_LOCALTIME_R */
+
+  return tm;
 }
 
 int pr_privs_root(const char *file, int lineno) {

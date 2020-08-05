@@ -141,6 +141,7 @@ if (scalar(@ARGV) > 0) {
     t/config/ifdefine.t
     t/config/include.t
     t/config/listoptions.t
+    t/config/logoptions.t
     t/config/masqueradeaddress.t
     t/config/maxclients.t
     t/config/maxclientsperclass.t
@@ -160,6 +161,7 @@ if (scalar(@ARGV) > 0) {
     t/config/passiveports.t
     t/config/pathallowfilter.t
     t/config/pathdenyfilter.t
+    t/config/pidfile.t
     t/config/protocols.t
     t/config/requirevalidshell.t
     t/config/rewritehome.t
@@ -291,6 +293,11 @@ if (scalar(@ARGV) > 0) {
     't/modules/mod_facl.t' => {
       order => ++$order,
       test_class => [qw(mod_facl)],
+    },
+
+    't/modules/mod_facts.t' => {
+      order => ++$order,
+      test_class => [qw(mod_facts)],
     },
 
     't/modules/mod_geoip.t' => {
@@ -464,7 +471,17 @@ if (scalar(@ARGV) > 0) {
       test_class => [qw(mod_statcache)],
     },
 
+    't/modules/mod_statcache/sftp.t' => {
+      order => ++$order,
+      test_class => [qw(mod_sftp mod_statcache)],
+    },
+
     't/modules/mod_tls.t' => {
+      order => ++$order,
+      test_class => [qw(mod_tls)],
+    },
+
+    't/modules/mod_tls/sni.t' => {
       order => ++$order,
       test_class => [qw(mod_tls)],
     },

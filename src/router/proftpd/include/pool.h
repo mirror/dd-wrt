@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,6 +50,7 @@ void *pallocsz(struct pool_rec *, size_t);
 void *pcalloc(struct pool_rec *, size_t);
 void *pcallocsz(struct pool_rec *, size_t);
 void pr_pool_tag(struct pool_rec *, const char *);
+const char *pr_pool_get_tag(struct pool_rec *);
 
 #ifdef PR_USE_DEVEL
 void pr_pool_debug_memory(void (*)(const char *, ...));
@@ -91,6 +92,8 @@ extern void pr_alarms_block(void);
 extern void pr_alarms_unblock(void);
 
 void register_cleanup(pool *, void *, void (*)(void *), void (*)(void *));
+void register_cleanup2(pool *, void *, void (*)(void *));
+
 void unregister_cleanup(pool *, void *, void (*)(void *));
 
 /* minimum free bytes in a new block pool */

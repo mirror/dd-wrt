@@ -248,7 +248,7 @@ sub size_abs_symlink_file {
 
       $expected = -s $test_file;
       $self->assert($expected == $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -351,7 +351,7 @@ sub size_abs_symlink_file_chrooted_bug4219 {
 
       $expected = -s $test_file;
       $self->assert($expected == $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -453,7 +453,7 @@ sub size_rel_symlink_file {
 
       $expected = -s $test_file;
       $self->assert($expected == $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -557,7 +557,7 @@ sub size_rel_symlink_file_chrooted_bug4219 {
 
       $expected = -s $test_file;
       $self->assert($expected == $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -658,7 +658,7 @@ sub size_abs_symlink_dir {
 
       $expected = "$path: not a regular file";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -762,7 +762,7 @@ sub size_abs_symlink_dir_chrooted_bug4219 {
 
       $expected = "$path: not a regular file";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -865,7 +865,7 @@ sub size_rel_symlink_dir {
 
       $expected = "$path: not a regular file";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;
@@ -970,7 +970,7 @@ sub size_rel_symlink_dir_chrooted_bug4219 {
 
       $expected = "$path: not a regular file";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected response messsage $expected, got $resp_msg"));
+        test_msg("Expected response message $expected, got $resp_msg"));
     };
     if ($@) {
       $ex = $@;

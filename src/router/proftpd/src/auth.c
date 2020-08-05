@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@
 #include "conf.h"
 #include "privs.h"
 #include "error.h"
+#include "openbsd-blowfish.h"
 
 static pool *auth_pool = NULL;
 static size_t auth_max_passwd_len = PR_TUNABLE_PASSWORD_MAX;
@@ -1583,7 +1584,7 @@ config_rec *pr_auth_get_anon_config(pool *p, const char **login_user,
   unsigned char is_alias = FALSE, *auth_alias_only = NULL;
   unsigned long config_flags = (PR_CONFIG_FIND_FL_SKIP_DIR|PR_CONFIG_FIND_FL_SKIP_LIMIT|PR_CONFIG_FIND_FL_SKIP_DYNDIR);
 
-  /* Precendence rules:
+  /* Precedence rules:
    *   1. Search for UserAlias directive.
    *   2. Search for Anonymous directive.
    *   3. Normal user login
@@ -1945,7 +1946,7 @@ int pr_auth_chroot(const char *path) {
    */
   tmp_pool = make_sub_pool(session.pool);
   now = time(NULL);
-  (void) pr_localtime(NULL, &now);
+  (void) pr_localtime(tmp_pool, &now);
 
   pr_event_generate("core.chroot", path);
 
@@ -2431,6 +2432,29 @@ size_t pr_auth_set_max_password_len(pool *p, size_t len) {
   }
 
   return prev_len;
+}
+
+char *pr_auth_bcrypt(pool *p, const char *key, const char *salt,
+    size_t *hashed_len) {
+  char hashed[128], *res;
+
+  if (p == NULL ||
+      key == NULL ||
+      salt == NULL ||
+      hashed_len == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  if (bcrypt_hashpass(key, salt, hashed, sizeof(hashed)) != 0) {
+    return NULL;
+  }
+
+  res = palloc(p, sizeof(hashed));
+  memcpy(res, hashed, sizeof(hashed));
+  *hashed_len = sizeof(hashed);
+
+  return res;
 }
 
 /* Internal use only.  To be called in the session process. */

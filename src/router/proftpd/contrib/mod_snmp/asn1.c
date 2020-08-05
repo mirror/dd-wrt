@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp ASN.1 support
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -159,7 +159,7 @@ static int asn1_read_byte(pool *p, unsigned char **buf, size_t *buflen,
 
 static int asn1_read_type(pool *p, unsigned char **buf, size_t *buflen,
     unsigned char *asn1_type, int flags) {
-  unsigned char byte;
+  unsigned char byte = 0;
   int res;
 
   res = asn1_read_byte(p, buf, buflen, &byte);
@@ -182,7 +182,7 @@ static int asn1_read_type(pool *p, unsigned char **buf, size_t *buflen,
 
 static int asn1_read_len(pool *p, unsigned char **buf, size_t *buflen,
     unsigned int *asn1_len) {
-  unsigned char byte;
+  unsigned char byte = 0;
 
   if (*buflen < sizeof(unsigned char)) {
     (void) pr_log_writefile(snmp_logfd, MOD_SNMP_VERSION,
@@ -342,7 +342,7 @@ int snmp_asn1_read_int(pool *p, unsigned char **buf, size_t *buflen,
 
   /* Pull objlen bytes out of the buffer, building up the value. */
   while (objlen--) {
-    unsigned char byte;
+    unsigned char byte = 0;
 
     pr_signals_handle();
 
@@ -484,7 +484,7 @@ int snmp_asn1_read_oid(pool *p, unsigned char **buf, size_t *buflen,
   len = objlen;
   (*asn1_oidlen)--;		/* account for expansion of first byte */
   while (len > 0 && (*asn1_oidlen)-- > 0) {
-    unsigned char byte;
+    unsigned char byte = 0;
 
     pr_signals_handle();
 
@@ -823,7 +823,7 @@ int snmp_asn1_write_int(pool *p, unsigned char **buf, size_t *buflen,
   bitmask = (unsigned long) 0xff << (8 * (sizeof(long) - 1));
 
   while (asn1_intsz--) {
-    unsigned char byte;
+    unsigned char byte = 0;
 
     pr_signals_handle();
 
@@ -908,7 +908,7 @@ int snmp_asn1_write_uint(pool *p, unsigned char **buf, size_t *buflen,
   /* At this point, bitmask is 0xff000000 on a big-endian machine. */
   bitmask = (unsigned int) 0xff << (8 * (sizeof(unsigned int) - 1));
   while (asn1_uintsz--) {
-    unsigned char byte;
+    unsigned char byte = 0;
 
     pr_signals_handle();
 
@@ -1065,16 +1065,10 @@ int snmp_asn1_write_oid(pool *p, unsigned char **buf, size_t *buflen,
   /* Write in the encoded OID value. */
   for (i = 1, sub_id = first_sub_id, oid_ptr = asn1_oid + 2;
        i < asn1_oidlen; i++) {
-    unsigned char byte;
+    unsigned char byte = 0;
 
     if (i != 1) {
       sub_id = *oid_ptr++;
-
-#if SIZEOF_LONG != 4
-      if (sub_id > 0xffffffff) {
-        sub_id &= 0xffffffff;
-      }
-#endif
     }
 
     switch (oid_lens[i]) {

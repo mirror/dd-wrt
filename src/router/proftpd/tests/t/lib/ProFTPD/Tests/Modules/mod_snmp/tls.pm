@@ -545,7 +545,6 @@ sub snmp_tls_v1_get_sess_counts {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -735,7 +734,6 @@ sub snmp_tls_v1_get_xfer_dirlist_counts {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -926,7 +924,6 @@ sub snmp_tls_v1_get_xfer_download_counts {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -1162,7 +1159,6 @@ sub snmp_tls_v1_get_xfer_upload_counts {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,

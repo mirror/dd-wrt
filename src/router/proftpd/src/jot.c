@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2019 The ProFTPD Project team
+ * Copyright (c) 2017-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -275,6 +275,10 @@ const char *pr_jot_get_logfmt_id_name(unsigned char logfmt_id) {
       name = "FILE_SIZE";
       break;
 
+    case LOGFMT_META_XFER_PORT:
+      name = "XFER_PORT";
+      break;
+
     case LOGFMT_META_XFER_TYPE:
       name = "XFER_TYPE";
       break;
@@ -406,6 +410,8 @@ pr_table_t *pr_jot_get_logfmt2json(pool *p) {
     PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_XFER_FAILURE,
     PR_JOT_LOGFMT_XFER_FAILURE_KEY, PR_JSON_TYPE_STRING);
+  add_json_info(p, map, LOGFMT_META_XFER_PORT, PR_JOT_LOGFMT_XFER_PORT_KEY,
+    PR_JSON_TYPE_NUMBER);
   add_json_info(p, map, LOGFMT_META_XFER_TYPE, PR_JOT_LOGFMT_XFER_TYPE_KEY,
     PR_JSON_TYPE_STRING);
   add_json_info(p, map, LOGFMT_META_MICROSECS, PR_JOT_LOGFMT_MICROSECS_KEY,
@@ -1026,6 +1032,26 @@ static const char *get_meta_transfer_status(cmd_rec *cmd) {
   return transfer_status;
 }
 
+static int get_meta_transfer_port(cmd_rec *cmd) {
+  int transfer_port = 0;
+
+  if (pr_cmd_cmp(cmd, PR_CMD_PASV_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_PORT_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_EPRT_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_EPSV_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_APPE_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_LIST_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_MLSD_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_NLST_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_RETR_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_STOR_ID) == 0 ||
+      pr_cmd_cmp(cmd, PR_CMD_STOU_ID) == 0) {
+    transfer_port = session.data_port;
+  }
+
+  return transfer_port;
+}
+
 static const char *get_meta_transfer_type(cmd_rec *cmd) {
   const char *transfer_type = NULL;
 
@@ -1225,7 +1251,7 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
     case LOGFMT_META_REMOTE_IP: {
       const char *ipstr;
 
-      ipstr = pr_netaddr_get_ipstr(pr_netaddr_get_sess_local_addr());
+      ipstr = pr_netaddr_get_ipstr(pr_netaddr_get_sess_remote_addr());
       res = (on_meta)(p, ctx, logfmt_id, NULL, ipstr);
       break;
     }
@@ -1269,20 +1295,26 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
     }
 
     case LOGFMT_META_TIME: {
-      const char *time_fmt = "%Y-%m-%d %H:%M:%S %z";
-      char ts[128];
       struct tm *tm;
       time_t now;
 
       now = time(NULL);
-      tm = pr_gmtime(NULL, &now);
+      tm = pr_gmtime(p, &now);
+      if (tm != NULL) {
+        char ts[128];
+        const char *time_fmt = "%Y-%m-%d %H:%M:%S %z";
 
-      if (logfmt_data != NULL) {
-        time_fmt = logfmt_data;
+        if (logfmt_data != NULL) {
+          time_fmt = logfmt_data;
+        }
+
+        strftime(ts, sizeof(ts)-1, time_fmt, tm);
+        res = (on_meta)(p, ctx, logfmt_id, logfmt_data, ts);
+
+      } else {
+        res = (on_default)(p, ctx, logfmt_id);
       }
 
-      strftime(ts, sizeof(ts)-1, time_fmt, tm);
-      res = (on_meta)(p, ctx, logfmt_id, logfmt_data, ts);
       break;
     }
 
@@ -1805,6 +1837,23 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
       break;
     }
 
+    case LOGFMT_META_XFER_PORT: {
+      int transfer_port;
+
+      transfer_port = get_meta_transfer_port(cmd);
+      if (transfer_port > 0) {
+        double xfer_port;
+
+        xfer_port = (double) transfer_port;
+        res = (on_meta)(p, ctx, logfmt_id, NULL, &xfer_port);
+
+      } else {
+        res = (on_default)(p, ctx, logfmt_id);
+      }
+
+      break;
+    }
+
     case LOGFMT_META_XFER_TYPE: {
       const char *transfer_type;
 
@@ -1844,22 +1893,28 @@ static int resolve_logfmt_id(pool *p, unsigned char logfmt_id,
     }
 
     case LOGFMT_META_ISO8601: {
-      char ts[128];
       struct tm *tm;
       struct timeval now;
-      unsigned long millis;
-      size_t len;
 
       gettimeofday(&now, NULL);
-      tm = pr_localtime(NULL, (const time_t *) &(now.tv_sec));
+      tm = pr_localtime(p, (const time_t *) &(now.tv_sec));
+      if (tm != NULL) {
+        char ts[128];
+        size_t len;
+        unsigned long millis;
 
-      len = strftime(ts, sizeof(ts)-1, "%Y-%m-%d %H:%M:%S", tm);
+        len = strftime(ts, sizeof(ts)-1, "%Y-%m-%d %H:%M:%S", tm);
 
-      /* Convert microsecs to millisecs. */
-      millis = now.tv_usec / 1000;
+        /* Convert microsecs to millisecs. */
+        millis = now.tv_usec / 1000;
 
-      pr_snprintf(ts + len, sizeof(ts) - len - 1, ",%03lu", millis);
-      res = (on_meta)(p, ctx, logfmt_id, NULL, ts);
+        pr_snprintf(ts + len, sizeof(ts) - len - 1, ",%03lu", millis);
+        res = (on_meta)(p, ctx, logfmt_id, NULL, ts);
+
+      } else {
+        res = (on_default)(p, ctx, logfmt_id);
+      }
+
       break;
     }
 
@@ -2490,6 +2545,11 @@ static int parse_long_id(const char *text, unsigned char *logfmt_id,
   if (strncmp(text, "{transfer-millisecs}", 20) == 0) {
     *logfmt_id = LOGFMT_META_XFER_MS;
     return 20;
+  }
+
+  if (strncmp(text, "{transfer-port}", 15) == 0) {
+    *logfmt_id = LOGFMT_META_XFER_PORT;
+    return 15;
   }
 
   if (strncmp(text, "{transfer-status}", 17) == 0) {

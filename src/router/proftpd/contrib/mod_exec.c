@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_exec -- a module for executing external scripts
- * Copyright (c) 2002-2017 TJ Saunders
+ * Copyright (c) 2002-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1140,7 +1140,7 @@ static const char *exec_subst_var(pool *tmp_pool, const char *varstr,
       now = time(NULL);
       memset(time_str, 0, sizeof(time_str));
 
-      tm = pr_localtime(NULL, &now);
+      tm = pr_localtime(tmp_pool, &now);
       if (tm != NULL) {
         strftime(time_str, sizeof(time_str), fmt, tm);
       }

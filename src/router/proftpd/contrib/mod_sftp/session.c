@@ -38,7 +38,7 @@ uint32_t sftp_session_get_id(const unsigned char **buf) {
 }
 
 int sftp_session_set_id(const unsigned char *hash, uint32_t hashlen) {
-  /* The sesssion ID is only set once, regardless of how many times
+  /* The session ID is only set once, regardless of how many times
    * (re)keying occurs during the course of a session.
    */
 

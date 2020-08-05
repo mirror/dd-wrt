@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2018 The ProFTPD Project team
+ * Copyright (c) 2014-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -523,10 +523,17 @@ START_TEST (inet_connect_ipv4_test) {
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   addr = pr_netaddr_get_addr(p, "127.0.0.1", NULL);
   fail_unless(addr != NULL, "Failed to resolve '127.0.0.1': %s",
     strerror(errno));
 
+  /* On CirrusCI VMs, attempting to connect causes test timeouts. */
+  if (getenv("CIRRUS_CLONE_DEPTH") != NULL) {
+    return;
+  }
+
+  mark_point();
   res = pr_inet_connect(p, conn, addr, 180);
   fail_unless(res < 0, "Connected to 127.0.0.1#180 unexpectedly");
   fail_unless(errno == ECONNREFUSED, "Expected ECONNREFUSED (%d), got %s (%d)",
@@ -580,10 +587,17 @@ START_TEST (inet_connect_ipv6_test) {
   conn = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
   fail_unless(conn != NULL, "Failed to create conn: %s", strerror(errno));
 
+  mark_point();
   addr = pr_netaddr_get_addr(p, "::1", NULL);
   fail_unless(addr != NULL, "Failed to resolve '::1': %s",
     strerror(errno));
 
+  /* On CirrusCI VMs, attempting to connect causes test timeouts. */
+  if (getenv("CIRRUS_CLONE_DEPTH") != NULL) {
+    return;
+  }
+
+  mark_point();
   res = pr_inet_connect(p, conn, addr, 180);
   fail_unless(res < 0, "Connected to ::1#180 unexpectedly");
   fail_unless(errno == ECONNREFUSED || errno == ENETUNREACH || errno == EADDRNOTAVAIL,

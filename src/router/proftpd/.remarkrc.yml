@@ -1,0 +1,12 @@
+---
+# Validating/maintained using:
+#   docker run --rm=true -it -v $(PWD):/lint/input:ro zemanlx/remark-lint .
+plugins:
+  preset-lint-consistent:
+  preset-lint-markdown-style-guide:
+  preset-lint-recommended:
+  validate-links:
+  lint-emphasis-marker: '_'
+  lint-list-item-indent: false
+  lint-maximum-line-length: 240
+  lint-no-file-name-irregular-characters: false

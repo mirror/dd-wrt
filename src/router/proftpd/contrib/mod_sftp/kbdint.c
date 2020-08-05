@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp keyboard-interactive driver mgmt
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -254,6 +254,77 @@ int sftp_kbdint_send_challenge(const char *user, const char *instruction,
   return res;
 }
 
+static struct ssh2_packet *read_response_packet(pool *p) {
+  struct ssh2_packet *pkt = NULL;
+
+  /* Keep looping until we get the desired message, or we time out. */
+  while (pkt == NULL) {
+    int res;
+    char mesg_type;
+
+    pr_signals_handle();
+
+    pkt = sftp_ssh2_packet_create(kbdint_pool);
+    res = sftp_ssh2_packet_read(sftp_conn->rfd, pkt);
+    if (res < 0) {
+      int xerrno = errno;
+
+      destroy_pool(pkt->pool);
+
+      errno = xerrno;
+      return NULL;
+    }
+
+    pr_response_clear(&resp_list);
+    pr_response_clear(&resp_err_list);
+
+    /* Per RFC 4253, Section 11, DEBUG, DISCONNECT, IGNORE, and UNIMPLEMENTED
+     * messages can occur at any time, even during KEX.  We have to be prepared
+     * for this, and Do The Right Thing(tm).
+     */
+
+    mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
+
+    switch (mesg_type) {
+      case SFTP_SSH2_MSG_DEBUG:
+        sftp_ssh2_packet_handle_debug(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_DISCONNECT:
+        sftp_ssh2_packet_handle_disconnect(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_IGNORE:
+        sftp_ssh2_packet_handle_ignore(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_UNIMPLEMENTED:
+        sftp_ssh2_packet_handle_unimplemented(pkt);
+        pkt = NULL;
+        break;
+
+      case SFTP_SSH2_MSG_USER_AUTH_INFO_RESP:
+        pr_trace_msg(trace_channel, 13,
+          "received expected %s message",
+          sftp_ssh2_packet_get_mesg_type_desc(mesg_type));
+        break;
+
+      default:
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "expecting USER_AUTH_INFO_RESP message, received %s (%d)",
+          sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+        destroy_pool(pkt->pool);
+        errno = EPERM;
+        return NULL;
+    }
+  }
+
+  return pkt;
+}
+
 int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
     uint32_t *rcvd_count, const char ***responses) {
   register unsigned int i;
@@ -261,9 +332,7 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
   cmd_rec *cmd;
   array_header *list;
   uint32_t buflen, resp_count;
-  struct ssh2_packet *pkt;
-  char mesg_type;
-  int res;
+  struct ssh2_packet *pkt = NULL;
   pool *resp_pool = NULL;
 
   if (p == NULL ||
@@ -273,31 +342,14 @@ int sftp_kbdint_recv_response(pool *p, uint32_t expected_count,
     return -1;
   }
 
-  pkt = sftp_ssh2_packet_create(kbdint_pool);
-
-  res = sftp_ssh2_packet_read(sftp_conn->rfd, pkt);
-  if (res < 0) {
-    destroy_pool(pkt->pool);
-    return res;
+  pkt = read_response_packet(p);
+  if (pkt == NULL) {
+    return -1;
   }
-
-  pr_response_clear(&resp_list);
-  pr_response_clear(&resp_err_list);
 
   /* Cache a reference to the current response pool used. */
   resp_pool = pr_response_get_pool();
   pr_response_set_pool(pkt->pool);
-
-  mesg_type = sftp_ssh2_packet_get_mesg_type(pkt);
-  if (mesg_type != SFTP_SSH2_MSG_USER_AUTH_INFO_RESP) {
-    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-      "expecting USER_AUTH_INFO_RESP message, received %s (%d)",
-      sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
-    destroy_pool(pkt->pool);
-    pr_response_set_pool(resp_pool);
-    errno = EPERM;
-    return -1;
-  }
 
   cmd = pr_cmd_alloc(pkt->pool, 2, pstrdup(pkt->pool, "USER_AUTH_INFO_RESP"));
   cmd->arg = "(data)";

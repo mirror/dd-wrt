@@ -377,9 +377,12 @@ sub config_write {
     unless (defined($config->{Port})) {
       my $dynport = get_high_numbered_port();
       $config->{Port} = $dynport;
-    }
+      $port = $dynport;
 
-    $port = $config->{Port};
+    } elsif ($config->{Port} == 0 || $config->{Port} eq '0') {
+      my $dynport = get_high_numbered_port();
+      $port = $dynport;
+   }
 
     unless (defined($config->{User})) {
       # Handle User names that may contain embedded backslashes and spaces
@@ -403,12 +406,16 @@ sub config_write {
       }
     }
 
-    unless (defined($config->{DefaultAddress})) {
-      $config->{DefaultAddress} = '127.0.0.1';
+    unless ($opts->{NoDefaultAddress}) {
+      unless (defined($config->{DefaultAddress})) {
+        $config->{DefaultAddress} = '127.0.0.1';
+      }
     }
 
-    unless (defined($config->{DefaultServer})) {
-      $config->{DefaultServer} = 'on';
+    unless ($opts->{NoDefaultServer}) {
+      unless (defined($config->{DefaultServer})) {
+        $config->{DefaultServer} = 'on';
+      }
     }
 
     unless (defined($config->{RequireValidShell})) {
@@ -467,7 +474,7 @@ sub config_write {
       push(@$config, "Group $group_name");
     }
 
-    unless (grep(/^AlloOverride/, @$config) > 0) {
+    unless (grep(/^AllowOverride/, @$config) > 0) {
       push(@$config, "AllowOverride off");
     }
 
@@ -527,6 +534,18 @@ sub config_write {
     print $fh "# Written on: $timestamp\n\n";
 
     if (ref($config) eq 'HASH') {
+      # Write TraceLog, Trace directives at the top of the file, to aid in
+      # debugging.
+      if (defined($config->{TraceLog})) {
+        print $fh "TraceLog $config->{TraceLog}\n";
+        delete($config->{TraceLog});
+      }
+
+      if (defined($config->{Trace})) {
+        print $fh "Trace $config->{Trace}\n";
+        delete($config->{Trace});
+      }
+
       while (my ($k, $v) = each(%$config)) {
         if ($k eq 'IfModules') {
           my $modules = $v;

@@ -1271,7 +1271,7 @@ sub abor_with_cyrillic_encoding_ok {
       # We expect the ABOR command to be misunderstood here, since it will
       # be prefaced by the Telnet IAC/IP, IAC/DM sequences.  With Cyrillic
       # charsets, the Telnet sequences are not stripped out (since the values
-      # collide with some of the Cyrllic charset values); this means that
+      # collide with some of the Cyrillic charset values); this means that
       # rather than seeing an "ABOR" string, the server sees a string like
       # "<FF><F4><FF><F2>ABOR", which it clearly will not handle.
 

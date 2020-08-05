@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp agent
- * Copyright (c) 2012-2016 TJ Saunders
+ * Copyright (c) 2012-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,8 +28,7 @@
 
 const char *trace_channel = "ssh2";
 
-/* These values from OpenSSH's PROTOCOL.agent file, with some from the
- * OpenSSH authfd.h header.
+/* These values from https://tools.ietf.org/html/draft-miller-ssh-agent-04
  */
 #define SFTP_SSH_AGENT_FAILURE			5
 #define SFTP_SSH_AGENT_SUCCESS			6
@@ -44,6 +43,10 @@ const char *trace_channel = "ssh2";
 
 /* Error code for ssh.com's ssh-agent2 process. */
 #define SFTP_SSHCOM_AGENT_FAILURE		102
+
+/* For RFC 8332 support. */
+#define SFTP_SSH_AGENT_SIGN_RSA_SHA256		2
+#define SFTP_SSH_AGENT_SIGN_RSA_SHA512		4
 
 /* Size of the buffer we use to talk to the agent. */
 #define AGENT_REQUEST_MSGSZ		1024
@@ -333,10 +336,11 @@ int sftp_agent_get_keys(pool *p, const char *agent_path,
 
 const unsigned char *sftp_agent_sign_data(pool *p, const char *agent_path,
     const unsigned char *key_data, uint32_t key_datalen,
-    const unsigned char *data, uint32_t datalen, uint32_t *sig_datalen) {
+    const unsigned char *data, uint32_t datalen, uint32_t *sig_datalen,
+    int flags) {
   int fd;
   unsigned char *buf, *req, *resp, *sig_data;
-  uint32_t buflen, flags, reqlen, reqsz, resplen;
+  uint32_t buflen, sig_flags, reqlen, reqsz, resplen;
   char resp_status;
 
   fd = agent_connect(agent_path);
@@ -345,7 +349,15 @@ const unsigned char *sftp_agent_sign_data(pool *p, const char *agent_path,
   }
 
   /* XXX When to set flags to OLD_SIGNATURE? */
-  flags = 0;
+  sig_flags = 0;
+
+  if (flags & SFTP_AGENT_SIGN_FL_USE_RSA_SHA256) {
+    sig_flags |= SFTP_SSH_AGENT_SIGN_RSA_SHA256;
+  }
+
+  if (flags & SFTP_AGENT_SIGN_FL_USE_RSA_SHA512) {
+    sig_flags |= SFTP_SSH_AGENT_SIGN_RSA_SHA512;
+  }
 
   /* Write out the request for signing the given data. */
   reqsz = buflen = 1 + key_datalen + 4 + datalen + 4 + 4;
@@ -354,7 +366,7 @@ const unsigned char *sftp_agent_sign_data(pool *p, const char *agent_path,
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH_AGENT_REQ_SIGN_DATA);
   sftp_msg_write_data(&buf, &buflen, key_data, key_datalen, TRUE);
   sftp_msg_write_data(&buf, &buflen, data, datalen, TRUE);
-  sftp_msg_write_int(&buf, &buflen, flags);
+  sftp_msg_write_int(&buf, &buflen, sig_flags);
 
   reqlen = reqsz - buflen;
   resp = agent_request(p, fd, agent_path, req, reqlen, &resplen);

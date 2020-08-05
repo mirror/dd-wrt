@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,9 +44,9 @@ xaset_t *xaset_create(pool *p, XASET_COMPARE cmpfunc) {
   p = p ? p : permanent_pool;
 
   new_set = palloc(p, sizeof(xaset_t));
-
-  if (!new_set)
+  if (new_set == NULL) {
     return NULL;
+  }
 
   new_set->xas_list = NULL;
   new_set->pool = p;
@@ -60,7 +60,6 @@ xaset_t *xaset_create(pool *p, XASET_COMPARE cmpfunc) {
  * errno set appropriately).
  */
 int xaset_insert(xaset_t *set, xasetmember_t *member) {
-
   if (set == NULL ||
       member == NULL) {
     errno = EINVAL;
@@ -69,8 +68,9 @@ int xaset_insert(xaset_t *set, xasetmember_t *member) {
 
   member->next = set->xas_list;
 
-  if (set->xas_list)
+  if (set->xas_list != NULL) {
     set->xas_list->prev = member;
+  }
 
   set->xas_list = member;
   return 0;
@@ -94,8 +94,9 @@ int xaset_insert_end(xaset_t *set, xasetmember_t *member) {
   member->prev = prev;
   member->next = NULL;
 
-  if (prev)
+  if (prev != NULL) {
     prev->next = member;
+  }
 
   return 0;
 }
@@ -109,7 +110,9 @@ int xaset_insert_end(xaset_t *set, xasetmember_t *member) {
 int xaset_insert_sort(xaset_t *set, xasetmember_t *member, int dups_allowed) {
   xasetmember_t **setp = NULL, *mprev = NULL;
 
-  if (!set || !member || !set->xas_compare) {
+  if (set == NULL ||
+      member == NULL ||
+      set->xas_compare == NULL) {
     errno = EINVAL;
     return -1;
   }
@@ -120,16 +123,19 @@ int xaset_insert_sort(xaset_t *set, xasetmember_t *member, int dups_allowed) {
     res = set->xas_compare(member, *setp);
     if (res <= 0) {
       if (res == 0 &&
-          !dups_allowed)
+          !dups_allowed) {
         return 0;
+      }
+
       break;
     }
 
     mprev = *setp;
   }
 
-  if (*setp)
+  if (*setp) {
     (*setp)->prev = member;
+  }
 
   member->prev = mprev;
   member->next = *setp;
@@ -153,8 +159,9 @@ int xaset_remove(xaset_t *set, xasetmember_t *member) {
 
   /* Check if member is actually a member of set. */
   for (m = set->xas_list; m; m = m->next) {
-    if (m == member)
+    if (m == member) {
       break;
+    }
   }
 
   if (m == NULL) {
@@ -162,14 +169,16 @@ int xaset_remove(xaset_t *set, xasetmember_t *member) {
     return -1;  
   }
 
-  if (member->prev)
+  if (member->prev != NULL) {
     member->prev->next = member->next;
 
-  else /* assume that member is first in the list */
+  } else { /* assume that member is first in the list */
     set->xas_list = member->next;
+  }
 
-  if (member->next)
+  if (member->next != NULL) {
     member->next->prev = member->prev;
+  }
 
   member->next = member->prev = NULL;
   return 0;
@@ -189,7 +198,8 @@ xaset_t *xaset_copy(pool *p, xaset_t *set, size_t msize, XASET_MCOPY copyfunc) {
     return NULL;
   }
 
-  if (!copyfunc && !msize) {
+  if (copyfunc == NULL &&
+      msize == 0) {
     errno = EINVAL;
     return NULL;
   }
@@ -197,8 +207,9 @@ xaset_t *xaset_copy(pool *p, xaset_t *set, size_t msize, XASET_MCOPY copyfunc) {
   p = (p ? p : set->pool);
 
   new_set = xaset_create(p, set->xas_compare);
-  if (new_set == NULL)
+  if (new_set == NULL) {
     return NULL;
+  }
 
   pos = &new_set->xas_list;
 
@@ -206,17 +217,22 @@ xaset_t *xaset_copy(pool *p, xaset_t *set, size_t msize, XASET_MCOPY copyfunc) {
 
   for (m = set->xas_list; m; m = m->next) {
     n = copyfunc ? copyfunc(m) : (xasetmember_t *) palloc(p, msize);
-    if (!n)
-      return NULL;			/* Could clean up here */
+    if (n == NULL) {
+      /* Note that we could clean up here. */
+      return NULL;
+    }
 
-    if (!copyfunc)
+    if (copyfunc == NULL) {
       memcpy(n, m, msize);
+    }
 
     /* Create links */
     n->prev = *pos;
     n->next = NULL;
-    if (*pos)
+    if (*pos) {
       pos = &(*pos)->next;
+    }
+
     *pos = n;
   }
 

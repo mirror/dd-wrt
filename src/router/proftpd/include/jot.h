@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017 The ProFTPD Project team
+ * Copyright (c) 2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,6 +83,7 @@
 #define PR_JOT_LOGFMT_XFER_FAILURE_KEY	"transfer_failure"
 #define PR_JOT_LOGFMT_XFER_STATUS_KEY	"transfer_status"
 #define PR_JOT_LOGFMT_XFER_TYPE_KEY	"transfer_type"
+#define PR_JOT_LOGFMT_XFER_PORT_KEY	"transfer_port"
 
 /* This opaque structure is used for tracking filters for events. */
 typedef struct jot_filters_rec pr_jot_filters_t;
@@ -189,7 +190,7 @@ int pr_jot_on_json(pool *p, pr_jot_ctx_t *ctx, unsigned char logfmt_id,
   const char *key, const void *val);
 
 /* Scans the given parsed LogFormat buffer for the given LogFormat ID, and
- * invokes the `on_meta` callback for each occurence found.
+ * invokes the `on_meta` callback for each occurrence found.
  */
 int pr_jot_scan_logfmt(pool *p, unsigned char *logfmt, unsigned char logfmt_id,
   pr_jot_ctx_t *ctx,

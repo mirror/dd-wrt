@@ -456,7 +456,7 @@ void pr_netaddr_disable_ipv6(void);
 void pr_netaddr_enable_ipv6(void);
 
 /* Return pointers to static memory which contains the local and remote
- * netaddr information for the sesssion.  DO NOT MODIFY the pointed-to
+ * netaddr information for the session.  DO NOT MODIFY the pointed-to
  * memory!  Returns NULL if no such session information exists.
  */
 const pr_netaddr_t *pr_netaddr_get_sess_local_addr(void);

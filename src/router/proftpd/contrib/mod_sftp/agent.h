@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SSH agent interaction
- * Copyright (c) 2012-2016 TJ Saunders
+ * Copyright (c) 2012-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,10 @@ struct agent_key {
 
 int sftp_agent_get_keys(pool *p, const char *, array_header *);
 const unsigned char *sftp_agent_sign_data(pool *, const char *,
-  const unsigned char *, uint32_t, const unsigned char *, uint32_t, uint32_t *);
+  const unsigned char *, uint32_t, const unsigned char *, uint32_t, uint32_t *,
+  int);
+
+#define SFTP_AGENT_SIGN_FL_USE_RSA_SHA256	0x001
+#define SFTP_AGENT_SIGN_FL_USE_RSA_SHA512	0x002
 
 #endif /* MOD_SFTP_AGENT_H */

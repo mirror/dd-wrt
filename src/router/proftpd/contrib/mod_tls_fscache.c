@@ -294,7 +294,7 @@ static int ocsp_cache_add(tls_ocsp_cache_t *cache, const char *fingerprint,
   /* We ASSUME that rename(2) does not modify the mtime of the file.  Ideally
    * we would futimes(2) on the file descriptor, but calling close(2) on that
    * fd might also change the mtime (due to close flushing out buffered data),
-   * thus we use tha path.
+   * thus we use the path.
    */
   tvs[0].tv_sec = tvs[1].tv_sec = resp_age;
   tvs[0].tv_usec = tvs[1].tv_usec = 0;

@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_copy -- a module supporting copying of files on the server
  *                      without transferring the data to the client and back
- * Copyright (c) 2009-2019 TJ Saunders
+ * Copyright (c) 2009-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -351,13 +351,13 @@ static int copy_paths(pool *p, const char *from, const char *to) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG7, MOD_COPY_VERSION
+      pr_log_pri(PR_LOG_NOTICE, MOD_COPY_VERSION
         ": path '%s' denied by PathAllowFilter", to);
       errno = EPERM;
       return -1;
 
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG7, MOD_COPY_VERSION
+      pr_log_pri(PR_LOG_NOTICE, MOD_COPY_VERSION
         ": path '%s' denied by PathDenyFilter", to);
       errno = EPERM;
       return -1;
@@ -726,7 +726,7 @@ MODRET copy_cpfr(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, MOD_COPY_VERSION
+      pr_log_pri(PR_LOG_NOTICE, MOD_COPY_VERSION
         ": 'CPFR %s' denied by PathAllowFilter", path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), path);
 
@@ -735,7 +735,7 @@ MODRET copy_cpfr(cmd_rec *cmd) {
       return PR_ERROR(cmd);
 
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, MOD_COPY_VERSION
+      pr_log_pri(PR_LOG_NOTICE, MOD_COPY_VERSION
         ": 'CPFR %s' denied by PathDenyFilter", path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), path);
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env perl
 # ---------------------------------------------------------------------------
-# Copyright (C) 2000-2019 TJ Saunders <tj@castaglia.org>
+# Copyright (C) 2000-2020 TJ Saunders <tj@castaglia.org>
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -449,6 +449,12 @@ sub find_passwd_entry {
 
   unless ($found) {
     print STDOUT "$program: error: no such user $name in $output_file\n";
+
+    # Restore the file permissions.
+    unless (chmod(0440, $output_file)) {
+      print STDERR "$program: unable to set permissions on $output_file: $!";
+    }
+
     exit 1;
   }
 
@@ -567,12 +573,16 @@ sub get_passwd {
     my $hash = crypt($passwd, $curpasswd);
 
     if ($hash eq $curpasswd) {
-
       if (defined($opts{'stdin'})) {
-
         # cannot prompt again if automated.  Simply print an error message
         # and exit.
         print STDOUT "$program: error: password matches current password\n";
+
+        # Restore the file permissions.
+        unless (chmod(0440, $output_file)) {
+          print STDERR "$program: unable to set permissions on $output_file: $!";
+        }
+
         exit 2;
 
       } else {
@@ -594,6 +604,12 @@ sub get_passwd {
         # cannot prompt again if automated.  Simply print an error message
         # and exit.
         print STDOUT "$program: error: password matches previous password\n";
+
+        # Restore the file permissions.
+        unless (chmod(0440, $output_file)) {
+          print STDERR "$program: unable to set permissions on $output_file: $!";
+        }
+
         exit 4;
 
       } else {
@@ -604,19 +620,22 @@ sub get_passwd {
   }
 
   if (defined($name) && defined($opts{'not-system-password'})) {
-
     # retrieve the user's system passwd (from /etc/shadow) and compare
     my $syspasswd = get_syspasswd(user => $name);
 
     my $hash = crypt($passwd, $syspasswd);
 
     if (($hash && $syspasswd) && $hash eq $syspasswd) {
-
       if (defined($opts{'stdin'})) {
-
-        # cannot prompt again if automated.  Simply print an error message
+        # Cannot prompt again if automated.  Simply print an error message
         # and exit.
         print STDOUT "$program: error: password matches system password\n";
+
+        # Restore the file permissions.
+        unless (chmod(0440, $output_file)) {
+          print STDERR "$program: unable to set permissions on $output_file: $!";
+        }
+
         exit 4;
 
       } else {

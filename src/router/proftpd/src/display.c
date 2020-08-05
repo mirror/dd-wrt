@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2017 The ProFTPD Project team
+ * Copyright (c) 2004-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -181,7 +181,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
 
   s = (session.anon_config ? session.anon_config->subset : main_server->conf);
 
-  mg_time = pr_strtime(time(NULL));
+  mg_time = pr_strtime3(p, time(NULL), FALSE);
 
   max_clients = get_param_ptr(s, "MaxClients", FALSE);
 
@@ -349,7 +349,7 @@ static int display_fh(pr_fh_t *fh, const char *fs, const char *resp_code,
         time(&now);
         memset(time_str, 0, sizeof(time_str));
 
-        tm = pr_localtime(NULL, &now);
+        tm = pr_localtime(p, &now);
         if (tm != NULL) {
           strftime(time_str, sizeof(time_str), fmt, tm);
         }

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -177,7 +177,7 @@ conn_t *pr_inet_copy_conn(pool *p, conn_t *c) {
     res->remote_name = pstrdup(res->pool, c->remote_name);
   }
 
-  register_cleanup(res->pool, (void *) res, conn_cleanup_cb, conn_cleanup_cb);
+  register_cleanup2(res->pool, (void *) res, conn_cleanup_cb);
   return res;
 }
 
@@ -190,14 +190,14 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
   conn_t *c;
   pr_netaddr_t na;
   int addr_family;
-  int res = 0, one = 1, hold_errno;
+  int res = 0, on = 1, off = 0, hold_errno;
 
   if (p == NULL) {
     errno = inet_errno = EINVAL;
     return NULL;
   }
 
-  if (!inet_pool) {
+  if (inet_pool == NULL) {
     inet_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(inet_pool, "Inet Pool");
   }
@@ -214,7 +214,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
   c->local_port = port;
   c->rfd = c->wfd = -1;
 
-  if (bind_addr) {
+  if (bind_addr != NULL) {
     addr_family = pr_netaddr_get_family(bind_addr);
 
   } else if (inet_family) {
@@ -318,8 +318,8 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     }
 
     /* Allow address reuse. */
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &one,
-        sizeof(one)) < 0) {
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void *) &on,
+        sizeof(on)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEADDR: %s",
         strerror(errno));
     }
@@ -331,25 +331,41 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
      * and madness (see Issue #622).
      */
     if (!is_master) {
-      if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (void *) &one,
-          sizeof(one)) < 0) {
+      if (setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, (void *) &on,
+          sizeof(on)) < 0) {
         pr_log_pri(PR_LOG_NOTICE, "error setting SO_REUSEPORT: %s",
           strerror(errno));
       }
     }
 #endif /* SO_REUSEPORT */
 
-    /* Allow socket keep-alive messages. */
-    if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &one,
-        sizeof(one)) < 0) {
-      pr_log_pri(PR_LOG_NOTICE, "error setting SO_KEEPALIVE: %s",
-        strerror(errno));
+    /* Allow socket keepalive messages by default.  However, if
+     * "SocketOptions keepalive off" is in effect, then explicitly
+     * disable keepalives.
+     */
+    if (main_server != NULL &&
+        main_server->tcp_keepalive != NULL &&
+        main_server->tcp_keepalive->keepalive_enabled == FALSE) {
+      pr_trace_msg(trace_channel, 17, "disabling SO_KEEPALIVE on socket fd %d",
+        fd);
+      res = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &off,
+        sizeof(off));
+
+    } else {
+      pr_trace_msg(trace_channel, 17, "enabling SO_KEEPALIVE on socket fd %d",
+        fd);
+      res = setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, (void *) &on, sizeof(on));
+    }
+
+    if (res < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "error setting SO_KEEPALIVE on socket fd %d: %s", fd, strerror(errno));
     }
 
 #if defined(IP_FREEBIND)
     /* Allow binding to an as-yet-nonexistent address. */
-    if (setsockopt(fd, SOL_IP, IP_FREEBIND, (void *) &one,
-        sizeof(one)) < 0) {
+    if (setsockopt(fd, SOL_IP, IP_FREEBIND, (void *) &on,
+        sizeof(on)) < 0) {
       if (errno != ENOSYS) {
         pr_log_pri(PR_LOG_INFO, "error setting IP_FREEBIND: %s",
           strerror(errno));
@@ -379,7 +395,6 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
     if (pr_netaddr_use_ipv6() &&
         addr_family == AF_INET6) {
       int level = ipv6_proto;
-      int off;
       socklen_t len = sizeof(off);
 
       /* If creating a wildcard socket IPv6 socket, make sure that it
@@ -396,7 +411,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
           off = 0;
 
           pr_trace_msg(trace_channel, 5,
-            "disabling IPV6_V6ONLY on server socket %d", fd);
+            "disabling IPV6_V6ONLY on server socket fd %d", fd);
 
           res = setsockopt(fd, level, IPV6_V6ONLY, (void *) &off, len);
 
@@ -418,7 +433,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 
       } else {
         pr_trace_msg(trace_channel, 3,
-          "error getting IPV6_V6ONLY setting on socket %d: %s", fd,
+          "error getting IPV6_V6ONLY setting on socket fd %d: %s", fd,
           strerror(errno));
       }
     }
@@ -439,7 +454,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
 
     /* According to one expert, the very nature of the FTP protocol, and it's
      * multiple data-connections creates problems with "rapid-fire" connections
-     * (transfering lots of files) causing an eventual "Address already in use"
+     * (transferring lots of files) causing an eventual "Address already in use"
      * error.  As a result, this nasty kludge retries ten times (once per
      * second) if the port being bound to is INPORT_ANY.
      */
@@ -540,7 +555,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
       }
 
     } else {
-      pr_log_debug(DEBUG3, "getsockname error on socket %d: %s", fd,
+      pr_log_debug(DEBUG3, "getsockname error on socket fd %d: %s", fd,
         strerror(errno));
     }
 
@@ -552,7 +567,7 @@ static conn_t *init_conn(pool *p, int fd, const pr_netaddr_t *bind_addr,
   }
 
   c->listen_fd = fd;
-  register_cleanup(c->pool, (void *) c, conn_cleanup_cb, conn_cleanup_cb);
+  register_cleanup2(c->pool, (void *) c, conn_cleanup_cb);
 
   pr_trace_msg("binding", 4, "bound address %s, port %d to socket fd %d",
     pr_netaddr_get_ipstr(&na), c->local_port, fd);
@@ -631,9 +646,17 @@ conn_t *pr_inet_create_conn_portrange(pool *p, const pr_netaddr_t *bind_addr,
       }
 
       c = init_conn(p, -1, bind_addr, ports[i], FALSE, FALSE);
-
-      if (!c &&
+      if (c == NULL &&
+        /* Note that on Solaris, bind(2) might fail with EACCES if the
+         * randomly selected port for e.g. passive transfers is used by
+         * NFS.  Thus, for Solaris only, we treat EACCES as the same as
+         * EADDRINUSE.  Silly Solaris.
+         */
+#ifdef SOLARIS2
+          (inet_errno != EADDRINUSE && inet_errno != EACCES)) {
+#else
           inet_errno != EADDRINUSE) {
+#endif /* SOLARIS2 */
         pr_log_pri(PR_LOG_WARNING, "error initializing connection: %s",
           strerror(inet_errno));
         pr_session_disconnect(NULL, PR_SESS_DISCONNECT_BY_APPLICATION, NULL);
@@ -942,6 +965,8 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
       keepalive = tcp_keepalive->keepalive_enabled;
     }
 
+    pr_trace_msg(trace_channel, 17, "%s SO_KEEPALIVE on socket fd %d",
+      keepalive ? "enabling" : "disabling", c->listen_fd);
     if (setsockopt(c->listen_fd, SOL_SOCKET, SO_KEEPALIVE, (void *)
         &keepalive, sizeof(int)) < 0) {
       pr_log_pri(PR_LOG_NOTICE, "error setting listen fd SO_KEEPALIVE: %s",
@@ -1037,7 +1062,7 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 
         } else {
           pr_trace_msg("data", 8,
-            "socket %d has sndbuf of %lu bytes, ignoring "
+            "socket fd %d has sndbuf of %lu bytes, ignoring "
             "requested %lu bytes sndbuf", c->listen_fd, (unsigned long) csndbuf,
             (unsigned long) sndbuf);
         }
@@ -1068,7 +1093,7 @@ int pr_inet_set_socket_opts(pool *p, conn_t *c, int rcvbuf, int sndbuf,
 
         } else {
           pr_trace_msg("data", 8,
-           "socket %d has rcvbuf of %lu bytes, ignoring "
+           "socket fd %d has rcvbuf of %lu bytes, ignoring "
             "requested %lu bytes rcvbuf", c->listen_fd, (unsigned long) crcvbuf,
             (unsigned long) rcvbuf);
         }
@@ -1124,15 +1149,15 @@ int pr_inet_set_async(pool *p, conn_t *c) {
 
 #ifdef SO_OOBINLINE
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for listening socket %d", c->listen_fd);
+    "setting SO_OOBINLINE for listening socket fd %d", c->listen_fd);
   set_oobinline(c->listen_fd);
 
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for reading socket %d", c->rfd);
+    "setting SO_OOBINLINE for reading socket fd %d", c->rfd);
   set_oobinline(c->rfd);
 
   pr_trace_msg(trace_channel, 7,
-    "setting SO_OOBINLINE for writing socket %d", c->wfd);
+    "setting SO_OOBINLINE for writing socket fd %d", c->wfd);
   set_oobinline(c->wfd);
 #endif
 
@@ -1737,7 +1762,7 @@ conn_t *pr_inet_openrw(pool *p, conn_t *c, const pr_netaddr_t *addr,
       int xerrno = errno;
 
       /* If we can't even get the IP address as a string, then something
-       * is very wrong, and we should not contine to handle this connection.
+       * is very wrong, and we should not continue to handle this connection.
        */
 
       pr_trace_msg(trace_channel, 3,

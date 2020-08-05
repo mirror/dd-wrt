@@ -86,7 +86,7 @@ int log_lastlog(uid_t uid, const char *user_name, const char *tty,
       return -1;
     }
 
-    /* Seek to the offet in the lastlog file for this UID. */
+    /* Seek to the offset in the lastlog file for this UID. */
     offset = (off_t) ((long) uid * sizeof(ll));
 
     if (lseek(fd, offset, SEEK_SET) != offset) {

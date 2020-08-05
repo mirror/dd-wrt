@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_tls_redis -- a module which provides shared SSL session
  *                           and OCSP response caches using Redis servers
- * Copyright (c) 2017 TJ Saunders
+ * Copyright (c) 2017-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1058,25 +1058,33 @@ static int sess_cache_status(tls_sess_cache_t *cache,
             statusf(arg, "    Protocol: %s", "TLSv1");
             break;
 
-#if OPENSSL_VERSION_NUMBER >= 0x10001000L
+#if defined(TLS1_1_VERSION)
           case TLS1_1_VERSION:
             statusf(arg, "    Protocol: %s", "TLSv1.1");
             break;
+#endif /* TLS1_1_VERSION */
 
+#if defined(TLS1_2_VERSION)
           case TLS1_2_VERSION:
             statusf(arg, "    Protocol: %s", "TLSv1.2");
             break;
-#endif
+#endif /* TLS1_2_VERSION */
+
+#if defined(TLS1_3_VERSION)
+          case TLS1_3_VERSION:
+            statusf(arg, "    Protocol: %s", "TLSv1.3");
+            break;
+#endif /* TLS1_3_VERSION */
 
           default:
             statusf(arg, "    Protocol: %s", "unknown");
         }
 
         ts = SSL_SESSION_get_time(sess);
-        statusf(arg, "    Started: %s", pr_strtime(ts));
+        statusf(arg, "    Started: %s", pr_strtime3(tmp_pool, ts, FALSE));
         ts = entry->expires;
-        statusf(arg, "    Expires: %s (%u secs)", pr_strtime(ts),
-          SSL_SESSION_get_timeout(sess));
+        statusf(arg, "    Expires: %s (%u secs)",
+          pr_strtime3(tmp_pool, ts, FALSE), SSL_SESSION_get_timeout(sess));
 
         SSL_SESSION_free(sess);
         statusf(arg, "%s", "  -----END SSL SESSION PARAMETERS-----");

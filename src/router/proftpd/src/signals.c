@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2014-2017 The ProFTPD Project team
+ * Copyright (c) 2014-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ extern int nodaemon;
 
 int have_dead_child = FALSE;
 volatile unsigned int recvd_signal_flags = 0;
+
+static const char *trace_channel = "signal";
 
 static RETSIGTYPE sig_terminate(int);
 static void install_stacktrace_handler(void);
@@ -326,6 +328,7 @@ static RETSIGTYPE sig_terminate(int signo) {
       break;
 
 #ifdef SIGXFSZ
+    case SIGXFSZ:
       recvd_signal_flags |= RECEIVED_SIG_XFSZ;
       signame = "SIGXFSZ";
       break;
@@ -370,7 +373,7 @@ static RETSIGTYPE sig_terminate(int signo) {
      * process is terminating anyway, why not?  It helps when knowing/logging
      * that a segfault (or other unusual event) happened.
      */
-    pr_trace_msg("signal", 9, "handling %s (signal %d)", signame, signo);
+    pr_trace_msg(trace_channel, 9, "handling %s (signal %d)", signame, signo);
     pr_log_pri(PR_LOG_NOTICE, "ProFTPD terminating (signal %d)", signo);
 
     if (!is_master) {
@@ -431,7 +434,7 @@ void pr_signals_handle(void) {
     tv.tv_sec = (interval_usecs / 1000000);
     tv.tv_usec = (interval_usecs - (tv.tv_sec * 1000000));
 
-    pr_trace_msg("signal", 18, "interrupted system call, "
+    pr_trace_msg(trace_channel, 18, "interrupted system call, "
       "delaying for %lu %s, %lu %s",
       (unsigned long) tv.tv_sec, tv.tv_sec != 1 ? "secs" : "sec",
       (unsigned long) tv.tv_usec, tv.tv_usec != 1 ? "microsecs" : "microsec");
@@ -445,13 +448,13 @@ void pr_signals_handle(void) {
   while (recvd_signal_flags) {
     if (recvd_signal_flags & RECEIVED_SIG_ALRM) {
       recvd_signal_flags &= ~RECEIVED_SIG_ALRM;
-      pr_trace_msg("signal", 9, "handling SIGALRM (signal %d)", SIGALRM);
+      pr_trace_msg(trace_channel, 9, "handling SIGALRM (signal %d)", SIGALRM);
       handle_alarm();
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_CHLD) {
       recvd_signal_flags &= ~RECEIVED_SIG_CHLD;
-      pr_trace_msg("signal", 9, "handling SIGCHLD (signal %d)", SIGCHLD);
+      pr_trace_msg(trace_channel, 9, "handling SIGCHLD (signal %d)", SIGCHLD);
       handle_chld();
     }
 
@@ -459,45 +462,45 @@ void pr_signals_handle(void) {
       recvd_signal_flags &= ~RECEIVED_SIG_EVENT;
 
       /* The "event" signal is SIGUSR2 in proftpd. */
-      pr_trace_msg("signal", 9, "handling SIGUSR2 (signal %d)", SIGUSR2);
+      pr_trace_msg(trace_channel, 9, "handling SIGUSR2 (signal %d)", SIGUSR2);
       handle_evnt();
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_SEGV) {
       recvd_signal_flags &= ~RECEIVED_SIG_SEGV;
-      pr_trace_msg("signal", 9, "handling SIGSEGV (signal %d)", SIGSEGV);
+      pr_trace_msg(trace_channel, 9, "handling SIGSEGV (signal %d)", SIGSEGV);
       handle_terminate_without_kids();
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_TERMINATE) {
       recvd_signal_flags &= ~RECEIVED_SIG_TERMINATE;
-      pr_trace_msg("signal", 9, "handling signal %d", term_signo);
+      pr_trace_msg(trace_channel, 9, "handling signal %d", term_signo);
       handle_terminate_with_kids();
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_XCPU) {
       recvd_signal_flags &= ~RECEIVED_SIG_XCPU;
-      pr_trace_msg("signal", 9, "handling SIGXCPU (signal %d)", SIGXCPU);
+      pr_trace_msg(trace_channel, 9, "handling SIGXCPU (signal %d)", SIGXCPU);
       handle_xcpu();
     }
 
 #ifdef SIGXFSZ
     if (recvd_signal_flags & RECEIVED_SIG_XFSZ) {
       recvd_signal_flags &= ~RECEIVED_SIG_XFSZ;
-      pr_trace_msg("signal", 9, "handling SIGXFSZ (signal %d)", SIGXFSZ);
+      pr_trace_msg(trace_channel, 9, "handling SIGXFSZ (signal %d)", SIGXFSZ);
       handle_xfsz();
     }
 #endif /* SIGXFSZ */
 
     if (recvd_signal_flags & RECEIVED_SIG_ABORT) {
       recvd_signal_flags &= ~RECEIVED_SIG_ABORT;
-      pr_trace_msg("signal", 9, "handling SIGABRT (signal %d)", SIGABRT);
+      pr_trace_msg(trace_channel, 9, "handling SIGABRT (signal %d)", SIGABRT);
       handle_abort();
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_RESTART) {
       recvd_signal_flags &= ~RECEIVED_SIG_RESTART;
-      pr_trace_msg("signal", 9, "handling SIGHUP (signal %d)", SIGHUP);
+      pr_trace_msg(trace_channel, 9, "handling SIGHUP (signal %d)", SIGHUP);
 
       /* NOTE: should this be done here, rather than using a schedule? */
       schedule(restart_daemon, 0, NULL, NULL, NULL, NULL);
@@ -505,14 +508,14 @@ void pr_signals_handle(void) {
 
     if (recvd_signal_flags & RECEIVED_SIG_EXIT) {
       recvd_signal_flags &= ~RECEIVED_SIG_EXIT;
-      pr_trace_msg("signal", 9, "handling SIGUSR1 (signal %d)", SIGUSR1);
+      pr_trace_msg(trace_channel, 9, "handling SIGUSR1 (signal %d)", SIGUSR1);
       pr_log_pri(PR_LOG_NOTICE, "%s", "Parent process requested shutdown");
       pr_session_disconnect(NULL, PR_SESS_DISCONNECT_SERVER_SHUTDOWN, NULL);
     }
 
     if (recvd_signal_flags & RECEIVED_SIG_SHUTDOWN) {
       recvd_signal_flags &= ~RECEIVED_SIG_SHUTDOWN;
-      pr_trace_msg("signal", 9, "handling SIGUSR1 (signal %d)", SIGUSR1);
+      pr_trace_msg(trace_channel, 9, "handling SIGUSR1 (signal %d)", SIGUSR1);
 
       /* NOTE: should this be done here, rather than using a schedule? */
       schedule(shutdown_end_session, 0, NULL, NULL, NULL, NULL);

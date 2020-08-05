@@ -2050,7 +2050,6 @@ sub ifuser_no_pass_bug4199 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,

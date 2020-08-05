@@ -497,7 +497,7 @@ configuration directives to set these limits lower as needed.
 
 <p>
 This problem also presents itself in terms of queries using UID/GID of 65533,
-<i>e.g.</i> when you see queries like this againt your database:
+<i>e.g.</i> when you see queries like this against your database:
 <pre>
   SELECT groupname FROM ftp_groups WHERE (gid = 65533) LIMIT 1
 </pre>
@@ -509,7 +509,7 @@ These defaults can be changed using <a href="../contrib/mod_sql.html#SQLDefaultU
 <font color=red>Question</font>: Do I have to configure a real shell for my
 SQL-defined users?<br>
 <font color=blue>Answer</font>: No. The <code>proftpd</code> daemon only checks
-the shell for a user in order to provide compatibilty with other FTP daemons,
+the shell for a user in order to provide compatibility with other FTP daemons,
 which do the same check; <code>proftpd</code> itself does not spawn the shell.
 See the <a href="../modules/mod_auth.html#RequireValidShell"><code>RequireValidShell</code></a> configuration directive for turning this check off.
 
@@ -808,6 +808,37 @@ types.  The "Plaintext" and "Empty" <code>SQLAuthTypes</code> should <b>never
 be used</b> <em>except</em> for debugging/development; they are too insecure
 for production systems.
 
+<p><a name="SQLSSLUnableToUseRandomDevice"></a>
+<font color=red>Question</font>: I see the following SSL-related error message
+in my <code>SQLLogFile</code> recently; what happened?
+<pre>
+  mod_sql/4.3[30]: unrecoverable backend error
+  mod_sql/4.3[30]: error: '2026'
+  mod_sql/4.3[30]: message: 'SSL connection error: unable to use random device'
+</pre>
+<font color=blue>Answer</font>: This mostly likely occurs for MySQL connections,
+but can occur for <i>any</i> database connection that uses TLS.  And
+specifically, it can happen when the <code>DefaultRoot</code> directive is
+used to <code>chroot</code> the sessions.
+
+<p>
+Newer database client libraries, such as for MySQL, now automatically try
+to use SSL/TLS for connecting to the database server whenever possible.  When
+a session is <code>chrooted</code>, however, any SSL/TLS reconnects or
+renegotiations can fail with the above "unable to use random device" error.
+Why?  The SSL/TLS library in use, such as OpenSSL, needs a source of randomness
+for its cryptographic needs; it usually uses a device such as
+<code>/dev/random</code> or <code>/dev/urandom</code>, provided by most Unix
+platforms.  However, the <code>chroot</code> means that those devices are
+no longer accessible from within the chrooted filesystem.
+
+<p>
+To prevent this, you can disable use of SSL/TLS (not preferable), or use
+something like
+<a href="../contrib/mod_sql.html#SQLKeepAlive"><code>SQLKeepAlive</code> to
+help ensure that your database connections stay alive, and thus avoid
+reconnects.
+
 <p><a name="SQLScoreboardError"></a>
 <font color=red>Question</font>: Why do I see &quot;error deleting scoreboard entry: Invalid argument&quot;?<br>
 <font color=blue>Answer</font>: This log message almost always denotes use
@@ -911,7 +942,7 @@ compiled with SSL support.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

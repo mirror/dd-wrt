@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SSH2 constants
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,7 +32,7 @@
  */
 #define SFTP_MAX_PACKET_LEN             (1024 * 256)
 
-/* SSH2 package message types */
+/* SSH2 message types */
 
 #define SFTP_SSH2_MSG_DISCONNECT		1
 #define SFTP_SSH2_MSG_IGNORE			2
@@ -40,6 +40,7 @@
 #define SFTP_SSH2_MSG_DEBUG			4
 #define SFTP_SSH2_MSG_SERVICE_REQUEST		5
 #define SFTP_SSH2_MSG_SERVICE_ACCEPT		6
+#define SFTP_SSH2_MSG_EXT_INFO			7
 #define SFTP_SSH2_MSG_KEXINIT			20
 #define SFTP_SSH2_MSG_NEWKEYS			21
 

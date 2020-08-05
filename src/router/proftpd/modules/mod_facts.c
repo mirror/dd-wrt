@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_facts -- a module for handling "facts" [RFC3659]
- * Copyright (c) 2007-2019 The ProFTPD Project
+ * Copyright (c) 2007-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -79,7 +79,7 @@ static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
   pr_regex_t *pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) != 0) {
-    pr_log_debug(DEBUG2, MOD_FACTS_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_FACTS_VERSION
       ": %s denied by PathAllowFilter on '%s'", (char *) cmd->argv[0],
       cmd->arg);
     return -1;
@@ -88,7 +88,7 @@ static int facts_filters_allow_path(cmd_rec *cmd, const char *path) {
   pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, path, 0, NULL, 0, 0, 0) == 0) {
-    pr_log_debug(DEBUG2, MOD_FACTS_VERSION
+    pr_log_pri(PR_LOG_NOTICE, MOD_FACTS_VERSION
       ": %s denied by PathDenyFilter on '%s'", (char *) cmd->argv[0], cmd->arg);
     return -1;
   }
@@ -353,7 +353,7 @@ static size_t facts_mlinfo_fmt(struct mlinfo *info, char *buf, size_t bufsz,
  *
  * This handling is different from the MLST handler's use of
  * facts_mlinfo_add() because MLST gets to send its line back on the control
- * channel, wherease MLSD's output is sent via a data transfer, much like
+ * channel, whereas MLSD's output is sent via a data transfer, much like
  * LIST or NLST.
  */
 static pool *mlinfo_pool = NULL;
@@ -1512,9 +1512,6 @@ MODRET facts_mlsd(cmd_rec *cmd) {
 
     pr_fsio_closedir(dirh);
 
-    pr_response_add_err(R_550, "%s: %s", (char *) cmd->argv[0],
-      strerror(xerrno));
-
     pr_cmd_set_errno(cmd, xerrno);
     errno = xerrno;
     return PR_ERROR(cmd);
@@ -1583,11 +1580,12 @@ MODRET facts_mlsd(cmd_rec *cmd) {
   pr_fsio_closedir(dirh);
 
   if (XFER_ABORTED) {
-    pr_data_close(TRUE);
+    pr_data_close2();
 
   } else {
     facts_mlinfobuf_flush();
-    pr_data_close(FALSE);
+    pr_data_close2();
+    pr_response_add(R_226, _("Transfer complete"));
   }
 
   return PR_HANDLED(cmd);
@@ -1987,8 +1985,14 @@ static int facts_sess_init(void) {
   pr_event_register(&facts_module, "core.session-reinit",
     facts_sess_reinit_ev, NULL);
 
+  facts_opts = FACTS_OPT_SHOW_MODIFY|FACTS_OPT_SHOW_PERM|FACTS_OPT_SHOW_SIZE|
+    FACTS_OPT_SHOW_TYPE|FACTS_OPT_SHOW_UNIQUE|
+    FACTS_OPT_SHOW_UNIX_GROUP|FACTS_OPT_SHOW_UNIX_GROUP_NAME|
+    FACTS_OPT_SHOW_UNIX_MODE|FACTS_OPT_SHOW_UNIX_OWNER|
+    FACTS_OPT_SHOW_UNIX_OWNER_NAME;
+
   c = find_config(main_server->conf, CONF_PARAM, "FactsAdvertise", FALSE);
-  if (c) {
+  if (c != NULL) {
     advertise = *((int *) c->argv[0]);
   }
 
@@ -2007,12 +2011,6 @@ static int facts_sess_init(void) {
 
     c = find_config_next(c, c->next, CONF_PARAM, "FactsOptions", FALSE);
   }
-
-  facts_opts = FACTS_OPT_SHOW_MODIFY|FACTS_OPT_SHOW_PERM|FACTS_OPT_SHOW_SIZE|
-    FACTS_OPT_SHOW_TYPE|FACTS_OPT_SHOW_UNIQUE|
-    FACTS_OPT_SHOW_UNIX_GROUP|FACTS_OPT_SHOW_UNIX_GROUP_NAME|
-    FACTS_OPT_SHOW_UNIX_MODE|FACTS_OPT_SHOW_UNIX_OWNER|
-    FACTS_OPT_SHOW_UNIX_OWNER_NAME;
 
   if (pr_module_exists("mod_mime.c") == TRUE) {
     /* Check to see if MIMEEngine is enabled.  Yes, this is slightly

@@ -91,6 +91,7 @@ static Suite *tests_get_suite(const char *suite) {
 
 int main(int argc, char *argv[]) {
   const char *log_file = "api-tests.log";
+  const char *xml_file = "api-tests.xml";
   int nfailed = 0;
   SRunner *runner = NULL;
   char *requested = NULL;
@@ -101,6 +102,9 @@ int main(int argc, char *argv[]) {
    * variable or command-line option.
    */
   srunner_set_log(runner, log_file);
+  if (getenv("PR_XML_TEST_OUTPUT")) {
+    srunner_set_xml(runner, xml_file);
+  }
 
   requested = getenv("PR_TEST_SUITE");
   if (requested) {

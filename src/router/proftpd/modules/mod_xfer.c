@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -500,7 +500,17 @@ static int transmit_normal(pool *p, char *buf, size_t bufsz) {
   nread = pr_fsio_read_with_error(p, retr_fh, buf, read_len, &err);
   xerrno = errno;
 
-  if (nread < 0) {
+  while (nread < 0) {
+    if (xerrno == EINTR) {
+      /* Interrupted by signal; handle it, and try again. */
+      errno = EINTR;
+      pr_signals_handle();
+
+      nread = pr_fsio_read_with_error(p, retr_fh, buf, read_len, &err);
+      xerrno = errno;
+      continue;
+    }
+
     pr_error_set_where(err, &xfer_module, __FILE__, __LINE__ - 4);
     pr_error_set_why(err, pstrcat(p, "normal download of '", retr_fh->fh_path,
       "'", NULL));
@@ -517,7 +527,7 @@ static int transmit_normal(pool *p, char *buf, size_t bufsz) {
     }
 
     errno = xerrno;
-    return 0;
+    return -1;
   }
 
   if (nread == 0) {
@@ -1328,7 +1338,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -1337,7 +1347,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
       return PR_ERROR(cmd);
 
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -1437,7 +1447,7 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
     }
   }
 
-  /* Otherwise everthing is good */
+  /* Otherwise everything is good */
   if (pr_table_add(cmd->notes, "mod_xfer.store-path",
       pstrdup(cmd->pool, path), 0) < 0) {
     if (errno != EEXIST) {
@@ -1449,7 +1459,6 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
   c = find_config(CURRENT_CONF, CONF_PARAM, "HiddenStores", FALSE);
   if (c != NULL &&
       *((int *) c->argv[0]) == TRUE) {
-    const char *prefix, *suffix;
 
     /* If we're using HiddenStores, then RANG/REST won't work. */
     if (session.restart_pos > 0 ||
@@ -1479,6 +1488,8 @@ MODRET xfer_pre_stor(cmd_rec *cmd) {
      * functionality.
      */
     if (session.xfer.xfer_type != STOR_APPEND) {
+      const char *prefix, *suffix;
+
       prefix = c->argv[1];
       suffix = c->argv[2];
 
@@ -1656,7 +1667,7 @@ MODRET xfer_pre_stou(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  /* Otherwise everthing is good */
+  /* Otherwise everything is good */
   if (pr_table_add(cmd->notes, "mod_xfer.store-path",
       pstrdup(cmd->pool, filename), 0) < 0) {
     if (errno != EEXIST) {
@@ -2071,6 +2082,16 @@ MODRET xfer_stor(cmd_rec *cmd) {
     res = pr_fsio_write_with_error(cmd->pool, stor_fh, lbuf, len, &err);
     xerrno = errno;
 
+    while (res < 0 &&
+           xerrno == EINTR) {
+      /* Interrupted by signal; handle it, and try again. */
+      errno = EINTR;
+      pr_signals_handle();
+
+      res = pr_fsio_write_with_error(cmd->pool, stor_fh, lbuf, len, &err);
+      xerrno = errno;
+    }
+
     if (res != len) {
       xerrno = EIO;
 
@@ -2243,7 +2264,8 @@ MODRET xfer_stor(cmd_rec *cmd) {
   }
 
   xfer_displayfile();
-  pr_data_close(FALSE);
+  pr_data_close2();
+  pr_response_add(R_226, _("Transfer complete"));
 
   return PR_HANDLED(cmd);
 }
@@ -2541,7 +2563,7 @@ MODRET xfer_pre_retr(cmd_rec *cmd) {
     return PR_ERROR(cmd);
   }
 
-  /* Otherwise everthing is good */
+  /* Otherwise everything is good */
   if (pr_table_add(cmd->notes, "mod_xfer.retr-path",
       pstrdup(cmd->pool, dir), 0) < 0) {
     if (errno != EEXIST) {
@@ -2933,7 +2955,8 @@ MODRET xfer_retr(cmd_rec *cmd) {
 
     retr_complete(cmd->pool);
     xfer_displayfile();
-    pr_data_close(FALSE);
+    pr_data_close2();
+    pr_response_add(R_226, _("Transfer complete"));
   }
 
   return PR_HANDLED(cmd);
@@ -4082,6 +4105,7 @@ static void xfer_exit_ev(const void *event_data, void *user_data) {
 
   if (session.sf_flags & SF_XFER) {
     cmd_rec *cmd;
+
     pr_data_abort(0, FALSE);
 
     cmd = session.curr_cmd_rec;

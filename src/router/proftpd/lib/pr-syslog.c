@@ -112,6 +112,9 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
   struct strbuf ctl, dat;
   struct log_ctl lc;
 #else
+# ifdef HAVE_CTIME_R
+  char timebuf[32];
+# endif /* HAVE_CTIME_R */
   char *timestr = NULL;
 
 # ifdef HAVE_TZNAME
@@ -148,7 +151,12 @@ static void pr_vsyslog(int sockfd, int pri, register const char *fmt,
 # endif /* HAVE_TZNAME */
 
   time(&now);
+# ifdef HAVE_CTIME_R
+  memset(timebuf, '\0', sizeof(timebuf));
+  timestr = ctime_r(&now, timebuf);
+# else
   timestr = ctime(&now);
+# endif /* HAVE_CTIME_R */
 
 # ifdef HAVE_TZNAME
   /* Restore the old tzname setting, to prevent ctime(3) from inadvertently

@@ -128,7 +128,6 @@ sub tls_sess_cache_memcache {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $setup->{log_file},
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -364,7 +363,6 @@ sub tls_sess_cache_memcache_json_bug4057 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $setup->{log_file},
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -659,7 +657,6 @@ sub tls_stapling_on_memcache_bug4175 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $setup->{log_file},
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,

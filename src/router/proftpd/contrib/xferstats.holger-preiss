@@ -275,7 +275,7 @@ $- = 0;
 $^ = top2;
 $~ = line2;
 
-# sort total transfer for each archive by # files transfered
+# sort total transfer for each archive by # files transferred
 foreach $section (sort bytecompare keys(%groupfiles)) {
 
    $files = $groupfiles{$section};

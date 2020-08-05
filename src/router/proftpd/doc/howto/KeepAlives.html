@@ -109,7 +109,7 @@ middle, then TCP keepalives may prevent the timeout.
 Consider what happens for FTP transfers which take a long time (either due to
 very large file(s) being transferred, or a slow connection): you have one TCP
 connection for the control connection, and a <i>separate</i> TCP connection for
-the data transfer conenction.  All of the bytes are being transferred over the
+the data transfer connection.  All of the bytes are being transferred over the
 data connection, so that data connection is certainly not idle -- but while the
 data transfer is occurring, the <i>control</i> connection is idle!  And let's
 assume that your FTP connections are going through some NAT device in between
@@ -369,7 +369,7 @@ bytes (think satellite links), so on such links, keeping the number of bytes
 transferred down amounts to cost savings.  Tuning TCP keepalive to use shorter
 times on such links means <i>more</i> data transferred, thus higher costs.
 On other links, where data transfer rates are cheap, the additional bytes
-transferred due to shorter TCP keepalive settings may be neglible.
+transferred due to shorter TCP keepalive settings may be negligible.
 
 <p>
 Last, many people argue that use of TCP keepalives may consume unnecessary

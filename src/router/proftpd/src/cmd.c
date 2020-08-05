@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2017 The ProFTPD Project team
+ * Copyright (c) 2009-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -180,6 +180,8 @@ cmd_rec *pr_cmd_alloc(pool *p, unsigned int argc, ...) {
 
     va_end(args);
     cmd->argv[argc] = NULL;
+
+    pr_pool_tag(cmd->pool, cmd->argv[0]);
   }
 
   /* This table will not contain that many entries, so a low number
@@ -292,7 +294,7 @@ int pr_cmd_set_name(cmd_rec *cmd, const char *cmd_name) {
 }
 
 int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {
-  int cmd_id, res;
+  int cmd_id;
   size_t cmd_namelen;
 
   if (cmd == NULL ||
@@ -312,6 +314,8 @@ int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {
   }
 
   if (cmd->cmd_id > 0) {
+    int res;
+
     cmd_id = pr_cmd_get_id(cmd_name); 
 
     res = pr_cmd_cmp(cmd, cmd_id);
@@ -319,7 +323,7 @@ int pr_cmd_strcmp(cmd_rec *cmd, const char *cmd_name) {
       return 0;
     }
 
-    return strncmp(cmd_name, cmd->argv[0],
+    return strncasecmp(cmd_name, cmd->argv[0],
       cmd_ids[cmd->cmd_id].cmd_namelen + 1);
   }
 
@@ -388,6 +392,7 @@ const char *pr_cmd_get_displayable_str(cmd_rec *cmd, size_t *str_len) {
 int pr_cmd_get_id(const char *cmd_name) {
   register unsigned int i;
   size_t cmd_namelen;
+  char first_letter;
 
   if (cmd_name == NULL) {
     errno = EINVAL;
@@ -407,16 +412,18 @@ int pr_cmd_get_id(const char *cmd_name) {
     return -1;
   }
 
+  first_letter = toupper(cmd_name[0]);
+
   for (i = 1; cmd_ids[i].cmd_name != NULL; i++) {
     if (cmd_ids[i].cmd_namelen != cmd_namelen) {
       continue;
     }
 
-    if (cmd_ids[i].cmd_name[0] != cmd_name[0]) {
+    if (cmd_ids[i].cmd_name[0] != first_letter) {
       continue;
     }
 
-    if (strcmp(cmd_ids[i].cmd_name, cmd_name) == 0) {
+    if (strcasecmp(cmd_ids[i].cmd_name, cmd_name) == 0) {
       return i;
     }
   }

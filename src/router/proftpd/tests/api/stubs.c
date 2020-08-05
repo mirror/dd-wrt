@@ -39,6 +39,8 @@ xaset_t *server_list = NULL;
 
 static cmd_rec *next_cmd = NULL;
 
+volatile unsigned int recvd_signal_flags = 0;
+
 int tests_stubs_set_next_cmd(cmd_rec *cmd) {
   next_cmd = cmd;
   return 0;

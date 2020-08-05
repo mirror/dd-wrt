@@ -63,7 +63,12 @@ For those wishing to learn more about the SSH2 and SFTP protocols, see:
   <li><a href="http://www.faqs.org/rfcs/rfc4716.html">SSH Public Key File Format (RFC 4716)</a>
   <li><a href="http://www.vandyke.com/technology/draft-ietf-secsh-filexfer.txt">SFTP Draft</a>
   <li><a href="http://tools.ietf.org/html/draft-ietf-secsh-filexfer-extensions-00">SFTP Extensions Draft</a>
-  <li><a href="http://www.faqs.org/rfcs/rfc5656.html">SSH Elliptic Curve Algorithms (RF C5656)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc5656.html">SSH Elliptic Curve Algorithms (RFC 5656)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc6668.html">SSH SHA-2 HMACs (RFC 6668)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc8270.html">SSH Increased Minimum DH Group Size (RFC 8270)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc8308.html">SSH Extension Negotiation (RFC 8308)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc8332.html">Use of RSA Keys with SHA-256 and SHA-512 in the SSH Protocol (RFC 8332)</a>
+  <li><a href="http://www.faqs.org/rfcs/rfc8731.html">SSH Key Exchange Method Using Curve25519 and Curve448 (RFC 8731)</a>
 </ul>
 
 <p>
@@ -748,6 +753,7 @@ can use either an RSA key, a DSA key, and/or ECDSA keys.  These should be the
   SFTPHostKey /etc/ssh_host_dsa_key
   SFTPHostKey /etc/ssh_host_rsa_key
   SFTPHostKey /etc/ssh_host_ecdsa_key
+  SFTPHostKey /etc/ssh_host_ed25519_key
 </pre>
 or the equivalents in the <code>/usr/local/etc/</code> directory.  Using
 different host keys between your SSH2 server and <code>mod_sftp</code> will
@@ -852,8 +858,19 @@ of supported key exchange algorithms is:
   <li>diffie-hellman-group1-sha1
   <li>rsa1024-sha1
 </ul>
-By default, all of the above key exchange algorithms are presented to the
-client, in the above order, during the key exchange.
+By default, all of the above key exchange algorithms <i>except
+<code>diffie-hellman-group1-sha1</code></i> are presented to the client, in
+the above order, during the key exchange.
+
+<p>
+<b>Note</b> that the <code>diffie-hellman-group1-sha1</code> key exchange
+algorithm uses a weak hardcoded Diffie-Hellman group, and thus is <b>not</b>
+enabled by default.  To enable this key exchange algorithm, you must
+configure the <code>SFTPKeyExchanges</code> list to <b>explicitly</b> include
+this algorithm, <i>or</i> use the following in your configuration:
+<pre>
+  SFTPOptions AllowWeakDH
+</pre>
 
 <p>
 In general, there is no need to use this directive unless only one specific
@@ -1111,7 +1128,9 @@ The currently implemented options are:
     <p>
     When this option is used, <code>mod_sftp</code> will ignore insecure
     permissions (<i>i.e.</i> group- or world-readable) on
-    <code>SFTPHostKey</code> files.
+    <code>SFTPHostKey</code> files.  This option should appear <em>before</em>
+    any <code>SFTPHostKey</code> directives in the configuration, as hostkey
+    permissions are checked at configuration parse time.
 
     <p>
     <b>Note</b> that this option first appeared in
@@ -1129,6 +1148,19 @@ The currently implemented options are:
     <p>
     <b>Note</b> that this option first appeared in
     <code>proftpd-1.3.4rc1</code>.
+  </li>
+
+  <p>
+  <li><code>NoExtensionNegotiation</code><br>
+    <p>
+    By default, <code>mod_sftp</code> will offer/support the SSH extension
+    negotiation, defined by
+    <a href="https://tools.ietf.org/html/rfc8308">RFC 8308</a>.  Use this
+    option to disable support for extension negotiations.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.7rc4</code>.
   </li>
 
   <p>
@@ -1230,7 +1262,7 @@ To prevent <code>mod_sftp</code> from attempting rekeying, use:
   SFTPRekey none
 </pre>
 Note that disabling rekeying altogether is a Very Bad Idea.  While rekeying 
-can cause delays in the SSH2 sesssion, it is intended to guard against certain
+can cause delays in the SSH2 session, it is intended to guard against certain
 attacks.  You should therefore <b>only</b> disable rekeying for certain
 SSH2 clients which cannot support rekeying.  Please report those clients
 (<b>including</b> the client version) to the mod_sftp maintainer, so that that
@@ -1353,7 +1385,7 @@ a <code>SFTPTrafficPolicy</code> setting in your configuration, <i>e.g.</i>
 <hr>
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_sftp</code> module is distributed with ProFTPD.  For including
-<code>mod_sftp</code> as a staticly linked module, use:
+<code>mod_sftp</code> as a statically linked module, use:
 <pre>
   $ ./configure --enable-openssl --with-modules=mod_sftp ...
 </pre>
@@ -1656,7 +1688,7 @@ log message:
   client sent buggy/malicious packet payload length, ignoring
 </pre>
 <b>However</b>, this log message can also be caused by other factors.  It
-is the combination of this error message, <b>and</b> the negotation of
+is the combination of this error message, <b>and</b> the negotiation of
 the <code>blowfish-ctr</code> cipher, that indicates the use of these
 buggy clients.
 
@@ -2164,7 +2196,7 @@ then why do my SFTP uploads fail, when the same configuration allows uploads to 
 <font color=blue>Answer</font>: When a file is uploaded using FTP, the only
 parts of the file uploaded are its <i>contents</i> but <b>not</b> the file
 <i>metadata</i> (<i>e.g.</i> not the file timestamps or permissions).  Separate
-FTP commands are used to sent the file metadata to the server.
+FTP commands are used to send the file metadata to the server.
 
 <p>
 However, the SFTP protocol sends the file metadata <i>as part of the normal upload</i>.  In the configuration above, the limit on <code>SITE CHMOD</code>
@@ -2224,6 +2256,31 @@ file transfers via SFTP and SCP.  It does <b>not</b> support shell access,
 which is what the <code>ssh</code> command-line client tries to use.  The
 above error messages from <code>ssh</code> show that <code>mod_sftp</code>
 refused the shell access requests.
+
+<p><a name="SFTPDirFakeUserGroup">
+<font color=red>Question</font>: I am using <code>DirFakeUser</code> and
+<code>DirFakeGroup</code> in my <code>mod_sftp</code> configuration, but
+they do not work when I run the <code>ls -lh</code> command in the
+<code>sftp</code> command-line client.  Is this a bug?<br><br>
+<font color=blue>Answer</font>: This is unfortunately an issue with OpenSSH's
+<code>sftp</code> command-line client.
+
+<p>
+The <code>mod_sftp</code> module always sends the same information for an
+SFTP directory listing, assuming SFTP protocol version 3 or lower (which is
+what OpenSSH uses); see <a href="https://github.com/proftpd/proftpd/blob/master/contrib/mod_sftp/fxp.c#L2801">here</a>.  The <code>DirFakeUser</code> and
+<code>DirFakeGroup</code> directives will affect the user/group names in that
+"longname" string, which is defined for the <code>SSH_FXP_NAME</code> packet
+described in <a href="https://tools.ietf.org/html/draft-ietf-secsh-filexfer-02#section-7">draft-ietf-secsh-filexfer-02</a>.
+
+<p>
+In looking at the OpenSSH 7.9p1 implementation, we can see the issue in its
+code.  When <code>ls -l</code> is used, the <code>sftp</code> command-line
+client will display the "longname" sent by mod_sftp as-is.  But when
+<code>ls -lh</code> is used, that <code>-h</code> flag causes <code>sftp</code>
+to <b>ignore the "longname"</b>, and try to use only the UID/GID <i>numeric
+values</i> (which are <b>not</b> affected by the
+<code>DirFakeUser/DirFakeGroup</code> directives).
 
 <p><a name="SFTPTectiaHostKey">
 <font color=red>Question</font>: When I try to start proftpd with
@@ -2455,6 +2512,18 @@ module, or configure it to preserve the SGID bit (<i>e.g.</i> via the
 <a href="../modules/mod_cap.html#CapabilitiesSet"><code>CAP_FSETID</code></a>
 capability).
 
+<p><a name="SFTPEd25519">
+<font color=red>Question</font>: I see that Ed25519 SSH keys are supported
+as of ProFTPD 1.3.7rc3 (see <a href="http://bugs.proftpd.org/show_bug.cgi?id=4221">Bug #4221</a>), but when I try to use one with <code>mod_sftp</code>, my
+login fails.  The <code>SFTPLog</code> shows this error; why?
+<pre>
+  USER user1 (Login failed): unsupported public key algorithm 'ssh-ed25519' requested
+</pre>
+<font color=blue>Answer</font>: Support for the Ed25519 algorithm requires
+the <a href="https://github.com/jedisct1/libsodium">libsodium</a> library.
+You may need to install this library, and recompile ProFTPD with
+<code>mod_sftp</code> in order for the library to be detected and used.
+
 <p><a name="SFTPWarnings">
 <font color=red>Question</font>: In my SFTP logs, I see these warnings:
 <pre>
@@ -2548,7 +2617,7 @@ deal with this issue, then, you can hopefully upgrade to ProFTPD 1.3.6 or later,
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2008-2017 TJ Saunders<br>
+&copy; Copyright 2008-2020 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

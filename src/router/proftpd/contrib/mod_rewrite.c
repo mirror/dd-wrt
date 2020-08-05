@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_rewrite -- a module for rewriting FTP commands
- * Copyright (c) 2001-2017 TJ Saunders
+ * Copyright (c) 2001-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1302,7 +1302,7 @@ static const char *rewrite_subst_maps(cmd_rec *cmd, const char *pattern) {
          * if indeed a map (and value) have been found.
          */
         rewrite_log("rewrite_subst_maps(): substituting '%s' for '%s'",
-          lookup_value, map.map_string);
+          lookup_value, (char *) map.map_string);
 
         if (new_pattern == NULL) {
           new_pattern = pstrdup(cmd->pool, pattern);
@@ -2005,8 +2005,8 @@ static char *rewrite_map_int_utf8trans(pool *map_pool, char *key) {
   }
 
   /* Always make sure the buffers are clear for this run. */
-  memset(utf8_val, '\0', PR_TUNABLE_BUFFER_SIZE);
-  memset(ucs4_longs, 0, PR_TUNABLE_BUFFER_SIZE);
+  memset(utf8_val, '\0', sizeof(utf8_val));
+  memset(ucs4_longs, 0, sizeof(ucs4_longs));
 
   ucs4strlen = rewrite_utf8_to_ucs4(ucs4_longs, strlen(key),
     (unsigned char *) key);
@@ -2567,7 +2567,7 @@ MODRET set_rewriterule(cmd_rec *cmd) {
     pattern++;
   }
 
-  res = pr_regexp_compile_posix(pre, pattern, regex_flags);
+  res = pr_regexp_compile(pre, pattern, regex_flags);
   if (res != 0) {
     char errstr[200] = {'\0'};
 
@@ -2644,7 +2644,7 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
    * operate.
    */
   if (cmd->argc == 1) {
-    rewrite_log("rewrite_fixup(): skipping %s (no arg)", cmd->argv[0]);
+    rewrite_log("rewrite_fixup(): skipping %s (no arg)", (char *) cmd->argv[0]);
     return PR_DECLINED(cmd);
   }
 
@@ -2662,8 +2662,8 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
       char *tmp = "";
 
       if (cmd->argc < 3) {
-        rewrite_log("%s %s has too few parameters (%d)", cmd->argv[0],
-          cmd->argv[1], cmd->argc);
+        rewrite_log("%s %s has too few parameters (%d)", (char *) cmd->argv[0],
+          (char *) cmd->argv[1], cmd->argc);
         return PR_DECLINED(cmd);
       }
 
@@ -2837,7 +2837,8 @@ MODRET rewrite_fixup(cmd_rec *cmd) {
         pr_cmd_clear_cache(cmd);
 
       } else {
-        rewrite_log("rewrite_fixup(): error processing RewriteRule");
+        rewrite_log("rewrite_fixup(): error processing RewriteRule: generated "
+          "empty command argument, which is not allowed");
       }
 
       /* If this Rule is marked as "last", break out of the loop. */

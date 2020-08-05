@@ -2,7 +2,7 @@
  * ProFTPD: mod_sql_postgres -- Support for connecting to Postgres databases.
  * Time-stamp: <1999-10-04 03:21:21 root>
  * Copyright (c) 2001 Andrew Houghton
- * Copyright (c) 2004-2017 TJ Saunders
+ * Copyright (c) 2004-2020 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -810,10 +810,23 @@ MODRET cmd_defineconnection(cmd_rec *cmd) {
 
   /* insert the new conn_info into the connection hash */
   entry = sql_add_connection(conn_pool, name, (void *) conn);
+  if (entry == NULL &&
+      errno == EEXIST) {
+    /* Log only connections named other than "default", for debugging
+     * misconfigurations with multiple different SQLNamedConnectInfo
+     * directives using the same name.
+     */
+    if (strcmp(name, "default") != 0) {
+      sql_log(DEBUG_FUNC, "named connection '%s' already exists", name);
+    }
+
+    entry = sql_get_connection(name);
+  }
+
   if (entry == NULL) {
     sql_log(DEBUG_FUNC, "%s", "exiting \tpostgres cmd_defineconnection");
     return PR_ERROR_MSG(cmd, MOD_SQL_POSTGRES_VERSION,
-      "named connection already exists");
+      "error adding named connection");
   }
 
   if (cmd->argc >= 5) {
@@ -936,7 +949,6 @@ MODRET cmd_select(cmd_rec *cmd) {
   modret_t *cmr = NULL;
   modret_t *dmr = NULL;
   char *query = NULL;
-  unsigned long cnt = 0;
   cmd_rec *close_cmd;
 
   sql_log(DEBUG_FUNC, "%s", "entering \tpostgres cmd_select");
@@ -980,14 +992,17 @@ MODRET cmd_select(cmd_rec *cmd) {
     }
 
     if (cmd->argc > 5) {
+      register unsigned int i;
+
       /* Handle the optional arguments -- they're rare, so in this case
        * we'll play with the already constructed query string, but in 
        * general we should probably take optional arguments into account 
        * and put the query string together later once we know what they are.
        */
     
-      for (cnt = 5; cnt < cmd->argc; cnt++) {
-	if ((cmd->argv[cnt]) && !strcasecmp("DISTINCT", cmd->argv[cnt])) {
+      for (i = 5; i < cmd->argc; i++) {
+	if (cmd->argv[i] != NULL &&
+            strcasecmp("DISTINCT", cmd->argv[i]) == 0) {
 	  query = pstrcat(cmd->tmp_pool, "DISTINCT ", query, NULL);
 	}
       }
@@ -1643,13 +1658,16 @@ static int sql_postgres_init(void) {
 }
 
 static int sql_postgres_sess_init(void) {
-  if (conn_pool == NULL) {
-    conn_pool = make_sub_pool(session.pool);
-    pr_pool_tag(conn_pool, "Postgres connection pool");
+  if (conn_pool != NULL) {
+    destroy_pool(conn_pool);
+    conn_cache = NULL;
   }
 
+  conn_pool = make_sub_pool(session.pool);
+  pr_pool_tag(conn_pool, "Postgres connection pool");
+
   if (conn_cache == NULL) {
-    conn_cache = make_array(make_sub_pool(session.pool), DEF_CONN_POOL_SIZE,
+    conn_cache = make_array(conn_pool, DEF_CONN_POOL_SIZE,
       sizeof(conn_entry_t *));
   }
 

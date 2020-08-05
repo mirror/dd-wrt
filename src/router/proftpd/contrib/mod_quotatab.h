@@ -188,7 +188,7 @@ typedef struct table_obj {
 #define QUOTATAB_TALLY_SRC      0x0002
 
 /* Quota objects for the current session. */
-quota_deltas_t quotatab_deltas;
+extern quota_deltas_t quotatab_deltas;
 
 /* Function prototypes necessary for quotatab sub-modules */
 int quotatab_log(const char *, ...)

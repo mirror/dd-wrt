@@ -128,6 +128,11 @@ my $TESTS = {
     test_class => [qw(bug forking rootprivs)],
   },
 
+  list_symlink_issue940 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
   list_symlink_rel_with_double_slash_bug3719 => {
     order => ++$order,
     test_class => [qw(bug forking rootprivs)],
@@ -3422,6 +3427,164 @@ sub list_symlink_issue697 {
   }
 
   unlink($log_file);
+}
+
+sub list_symlink_issue940 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'list');
+
+  my $test_dir = File::Spec->rel2abs("$tmpdir/test.d");
+  mkpath($test_dir);
+
+  my $dst_dir = File::Spec->rel2abs("$test_dir/dst.d");
+  my $src_symlink = File::Spec->rel2abs("$test_dir/src.lnk");
+  mkpath($dst_dir);
+
+  my $cwd = getcwd();
+  unless (chdir($test_dir)) {
+    die("Can't chdir to $test_dir: $!");
+  }
+
+  unless (symlink('dst.d', 'src.link')) {
+    die("Can't symlink 'dst.d' to 'src.lnk': $!");
+  }
+
+  unless (chdir($cwd)) {
+    die("Can't chdir to $cwd: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    ListOptions => '-la',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+  my $ex;
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $list_target = 'test.d';
+      my $conn = $client->list_raw($list_target);
+      unless ($conn) {
+        die("Failed to LIST: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      my $buf;
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# RESPONSE:\n$buf\n";
+      }
+
+      # We have to be careful of the fact that readdir returns directory
+      # entries in an unordered fashion.
+      my $res = {};
+      my $lines = [split(/\n/, $buf)];
+      foreach my $line (@$lines) {
+        if ($line =~ /^(\S+)\s+\d+\s+\S+\s+\S+\s+.*?:\d+\s+(.*?)$/) {
+          my $file_info = $1;
+          my $file = $2;
+          $res->{$2} = $1;
+        }
+      }
+
+      my $file = 'src.link -> dst.d';
+      my $expected = 'lrwxr-xr-x';
+      $self->assert($res->{$file} eq $expected,
+        test_msg("Expected '$expected', got '$res->{$file}' for '$file'"));
+
+      # Per the issue, we need to do the LIST command again, to see that
+      # symlink is still reported the same way.
+
+      $conn = $client->list_raw($list_target);
+      unless ($conn) {
+        die("Failed to LIST: " . $client->response_code() . " " .
+          $client->response_msg());
+      }
+
+      $buf = '';
+      $conn->read($buf, 8192, 30);
+      eval { $conn->close() };
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# RESPONSE:\n$buf\n";
+      }
+
+      # We have to be careful of the fact that readdir returns directory
+      # entries in an unordered fashion.
+      $res = {};
+      $lines = [split(/\n/, $buf)];
+      foreach my $line (@$lines) {
+        if ($line =~ /^(\S+)\s+\d+\s+\S+\s+\S+\s+.*?:\d+\s+(.*?)$/) {
+          my $file_info = $1;
+          my $file = $2;
+          $res->{$2} = $1;
+        }
+      }
+
+      $self->assert($res->{$file} eq $expected,
+        test_msg("Expected '$expected', got '$res->{$file}' for '$file'"));
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub list_symlink_rel_with_double_slash_bug3719 {
