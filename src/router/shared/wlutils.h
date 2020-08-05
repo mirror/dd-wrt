@@ -238,7 +238,7 @@ static inline int has_mesh(const char *prefix)
 
 static inline int has_ibss(const char *prefix)
 {
-	return 0;
+	return 1;
 }
 
 static inline int has_tdma(const char *prefix)
