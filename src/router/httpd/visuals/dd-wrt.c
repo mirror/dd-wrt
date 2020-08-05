@@ -3086,8 +3086,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n", wl_mode);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			if(!has_no_apmode(prefix)) {
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
+			}
 			}
 #if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
@@ -3112,8 +3114,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			if(!has_no_apmode(prefix)) {
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+			}
 			}
 #endif
 			if (has_mesh(prefix)) {
@@ -3774,8 +3778,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 			websWrite(wp, "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n", wl_mode);
 			websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
+			if(!has_no_apmode(prefix)) {
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");\n", nvram_match(wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
+			}
 			}
 #if (!defined(HAVE_RT61) && !defined(HAVE_DIR860)) || defined(HAVE_MT76)
 			websWrite(wp, "document.write(\"<option value=\\\"sta\\\" %s >\" + wl_basic.client + \"</option>\");\n", nvram_match(wl_mode, "sta") ? "selected=\\\"selected\\\"" : "");
@@ -3804,8 +3810,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");\n", nvram_match(wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
 			websWrite(wp, "document.write(\"<option value=\\\"wdssta_mtik\\\" %s >\" + wl_basic.wdssta_mtik + \"</option>\");\n", nvram_match(wl_mode, "wdssta_mtik") ? "selected=\\\"selected\\\"" : "");
+			if(!has_no_apmode(prefix)) {
 			if (!cpeonly) {
 				websWrite(wp, "document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");\n", nvram_match(wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
+			}
 			}
 			if (has_mesh(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"mesh\\\" %s >\" + wl_basic.mesh + \"</option>\");\n", nvram_match(wl_mode, "mesh") ? "selected=\\\"selected\\\"" : "");
@@ -4590,10 +4598,12 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	websWrite(wp,
 		  "<script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"<input class=\\\"button\\\" type=\\\"button\\\" value=\\\"\" + share.paste + \"\\\" onclick=\\\"paste_submit(this.form,'%s')\\\" />\");\n//]]>\n</script>\n",
 		  prefix);
+if(!has_no_apmode(prefix)) {
 #ifdef HAVE_REGISTER
 	if (!iscpe())
 #endif
 		show_virtualssid(wp, prefix);
+}
 }
 
 void ej_gen_timer_compute(webs_t wp, int argc, char_t ** argv)

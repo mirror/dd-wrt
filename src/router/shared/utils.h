@@ -1165,6 +1165,7 @@ extern int is_ap8x(void);
 extern int has_channelsurvey(const char *prefix);
 extern int has_nolivesurvey(const char *prefix);
 extern int has_qboost(const char *prefix);
+extern int has_no_apmode(const char *prefix);
 extern int has_qboost_tdma(const char *prefix);
 extern int has_beacon_limit(const char *prefix);
 extern int has_spectralscanning(const char *prefix);
@@ -1186,6 +1187,11 @@ static inline int has_spectralscanning(char *prefix)
 }
 
 static inline int has_qboost(char *prefix)
+{
+	return 0;
+}
+
+static inline int has_no_apmode(char *prefix)
 {
 	return 0;
 }
