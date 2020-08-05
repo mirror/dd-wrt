@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -400,7 +400,7 @@ static int regexp_exec_pcre(pr_regex_t *pre, const char *str,
 
       } else {
         pr_trace_msg(trace_channel, 9,
-          "PCRE regex '%s' successfully match subject '%s'",
+          "PCRE regex '%s' successfully matched subject '%s'",
           pr_regexp_get_pattern(pre), str);
       }
     }
@@ -421,6 +421,50 @@ static int regexp_exec_posix(pr_regex_t *pre, const char *str,
     "executing POSIX regex '%s' against subject '%s'",
     pr_regexp_get_pattern(pre), str);
   res = regexec(pre->re, str, nmatches, matches, flags);
+  if (res == 0) {
+    pr_trace_msg(trace_channel, 9,
+      "POSIX regex '%s' successfully matched subject '%s'",
+      pr_regexp_get_pattern(pre), str);
+
+     if (matches != NULL &&
+         pr_trace_get_level(trace_channel) >= 20) {
+       register unsigned int i;
+
+       for (i = 0; i < nmatches; i++) {
+         int match_len;
+         const char *match_text;
+
+         if (matches[i].rm_so == -1 ||
+             matches[i].rm_eo == -1) {
+           break;
+         }
+
+         match_text = &(str[matches[i].rm_so]);
+         match_len = matches[i].rm_eo - matches[i].rm_so;
+
+         pr_trace_msg(trace_channel, 20,
+           "POSIX regex '%s' match #%u: %.*s (start %ld, len %d)",
+           pr_regexp_get_pattern(pre), i, (int) match_len, match_text,
+           (long) matches[i].rm_so, match_len);
+       }
+     }
+
+  } else {
+    const char *reason = "unknown";
+
+    if (pr_trace_get_level(trace_channel) >= 9) {
+      switch (res) {
+        case REG_NOMATCH:
+          reason = "subject did not match pattern";
+          break;
+      }
+    }
+
+    pr_trace_msg(trace_channel, 9,
+      "POSIX regex '%s' failed to match subject '%s': %s",
+       pr_regexp_get_pattern(pre), str, reason);
+  }
+
   return res;
 }
 

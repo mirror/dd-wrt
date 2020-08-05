@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SCP
- * Copyright (c) 2008-2018 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1120,7 +1120,7 @@ static int recv_data(pool *p, uint32_t channel_id, struct scp_path *sp,
 #elif defined(ENOSPC)
         int xerrno = ENOSPC;
 #else
-        int xerno = EIO;
+        int xerrno = EIO;
 #endif
 
         pr_log_pri(PR_LOG_NOTICE, "MaxStoreFileSize (%" PR_LU " %s) reached: "
@@ -1796,10 +1796,8 @@ static int send_finfo(pool *p, uint32_t channel_id, struct scp_path *sp,
 
 static int send_data(pool *p, uint32_t channel_id, struct scp_path *sp,
     struct stat *st) {
-  int res;
   unsigned char *chunk;
   size_t chunksz;
-  long chunklen;
 
   /* Include space for one more character, i.e. for the terminating NUL
    * character that indicates the last chunk of the file.
@@ -1810,7 +1808,9 @@ static int send_data(pool *p, uint32_t channel_id, struct scp_path *sp,
   /* Keep sending chunks until we have sent the entire file, or until the
    * channel window closes.
    */
-  while (1) {
+  while (TRUE) {
+    int res, chunklen;
+
     pr_signals_handle();
 
     if (S_ISREG(st->st_mode)) {
@@ -2485,7 +2485,6 @@ int sftp_scp_set_params(pool *p, uint32_t channel_id, array_header *req) {
   pr_getopt_reset();
 
   reqargv = (char **) req->elts;
-
   for (i = 0; i < req->nelts; i++) {
     if (reqargv[i]) {
       pr_trace_msg(trace_channel, 5, "reqargv[%u] = '%s'", i, reqargv[i]);
@@ -2501,7 +2500,7 @@ int sftp_scp_set_params(pool *p, uint32_t channel_id, array_header *req) {
   scp_pool = make_sub_pool(sftp_pool);
   pr_pool_tag(scp_pool, "SSH2 SCP Pool");
 
-  while ((optc = getopt(req->nelts, reqargv, opts)) != -1) {
+  while ((optc = getopt(req->nelts-1, reqargv, opts)) != -1) {
     switch (optc) {
       case 'd':
         scp_opts |= SFTP_SCP_OPT_DIR;
@@ -2535,6 +2534,7 @@ int sftp_scp_set_params(pool *p, uint32_t channel_id, array_header *req) {
   if (reqargv[optind] == NULL) {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
       "'scp' request provided no paths, ignoring");
+    errno = EINVAL;
     return -1;
   }
 

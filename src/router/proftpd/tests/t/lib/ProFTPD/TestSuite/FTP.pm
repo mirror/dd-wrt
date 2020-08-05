@@ -1437,6 +1437,35 @@ sub quote {
   }
 }
 
+sub quote_raw {
+  my $self = shift;
+  my $cmd = shift;
+  $cmd = '' unless defined($cmd);
+  my $code;
+
+  # Net::FTP::quot() calls uc() on the command; we want to send the "raw"
+  # command here.
+  $self->{ftp}->command($cmd, @_);
+  $code = $self->{ftp}->response();
+  unless ($code) {
+    croak("Raw command '$cmd' failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  if ($code == 4 || $code == 5) {
+    croak("Raw command '$cmd' failed: " .  $self->{ftp}->code . ' ' .
+      $self->response_msg());
+  }
+
+  my $msg = $self->response_msg();
+  if (wantarray()) {
+    return ($self->{ftp}->code, $msg);
+
+  } else {
+    return $msg;
+  }
+}
+
 sub mlsd {
   my $self = shift;
   my $path = shift;

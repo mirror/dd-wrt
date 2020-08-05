@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_redis -- a module for managing Redis data
- * Copyright (c) 2017 The ProFTPD Project
+ * Copyright (c) 2017-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,7 +116,8 @@ static int resolve_on_meta(pool *p, pr_jot_ctx_t *jot_ctx,
 
       case LOGFMT_META_LOCAL_PORT:
       case LOGFMT_META_REMOTE_PORT:
-      case LOGFMT_META_RESPONSE_CODE: {
+      case LOGFMT_META_RESPONSE_CODE:
+      case LOGFMT_META_XFER_PORT: {
         int num;
 
         num = *((double *) val);

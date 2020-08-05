@@ -57,6 +57,6 @@ install-headers: $(DESTDIR)$(includedir)/proftpd
 clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).la *.o *.lo .libs/*.o
 
-dist: clean
+distclean: clean
 	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log *.gcda *.gcno
 	-$(RM) -r CVS/ RCS/

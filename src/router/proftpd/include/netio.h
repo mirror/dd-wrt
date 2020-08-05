@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@
 
 /* Network I/O stream session flags */
 
-/* This indicates that netio functions are allowed to be interruped by
+/* This indicates that netio functions are allowed to be interrupted by
  * EINTR, and to return -2.
  */
 #define PR_NETIO_SESS_INTR		(1 << 1)
@@ -83,6 +83,8 @@ typedef struct {
   size_t remaining;
 
 } pr_buffer_t;
+
+typedef struct netio_rec pr_netio_t;
 
 typedef struct {
 
@@ -118,12 +120,15 @@ typedef struct {
   /* Private data for passing/retaining among modules. */
   pr_table_t *notes;
 
+  /* Pointer to the NetIO which opened this stream. */
+  pr_netio_t *strm_netio;
+
 } pr_netio_stream_t;
 
 #define PR_NETIO_ERRNO(s)	((s)->strm_errno)
 #define PR_NETIO_FD(s)		((s)->strm_fd)
 
-typedef struct {
+struct netio_rec {
   /* Memory pool for this object. */
   struct pool_rec *pool;
 
@@ -141,8 +146,7 @@ typedef struct {
   /* Registering/owning module */
   module *owner;
   const char *owner_name;
-
-} pr_netio_t;
+};
 
 /* Network IO function prototypes */
 pr_buffer_t *pr_netio_buffer_alloc(pr_netio_stream_t *nstrm);

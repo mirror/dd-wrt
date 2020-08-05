@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_digest - File hashing/checksumming module
  * Copyright (c) Mathias Berchtold <mb@smartftp.com>
- * Copyright (c) 2016-2018 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2016-2019 TJ Saunders <tj@castaglia.org>
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1531,7 +1531,7 @@ static int add_cached_digest(pool *p, cmd_rec *cmd, unsigned long algo,
 
   cache_key = create_cache_key(p, algo, path, mtime, start, len, hex_digest);
 
-  /* Stash the algorith name, and digest, as notes. */
+  /* Stash the algorithm name, and digest, as notes. */
   algo_name = get_algo_name(algo, 0);
   if (pr_table_add(cmd->notes, "mod_digest.algo",
       pstrdup(cmd->pool, algo_name), 0) <  0) {
@@ -1710,8 +1710,7 @@ static char *get_digest(cmd_rec *cmd, unsigned long algo, const char *path,
   }
 
   if (hex_digest != NULL) {
-    /* Stash the algorith name, and digest, as notes. */
-
+    /* Stash the algorithm name, and digest, as notes. */
     algo_name = get_algo_name(algo, 0);
     if (pr_table_add(cmd->notes, "mod_digest.algo",
         pstrdup(cmd->pool, algo_name), 0) <  0) {
@@ -1756,8 +1755,7 @@ static char *get_digest(cmd_rec *cmd, unsigned long algo, const char *path,
       path, strerror(errno));
   }
 
-  /* Stash the algorith name, and digest, as notes. */
-
+  /* Stash the algorithm name, and digest, as notes. */
   algo_name = get_algo_name(algo, 0);
   if (pr_table_add(cmd->notes, "mod_digest.algo",
       pstrdup(cmd->pool, algo_name), 0) <  0) {
@@ -2953,7 +2951,7 @@ static cmdtable digest_cmdtab[] = {
   { CMD, C_XSHA256,	G_READ, digest_xsha256,	TRUE, FALSE, CL_READ|CL_INFO },
   { CMD, C_XSHA512,	G_READ, digest_xsha512,	TRUE, FALSE, CL_READ|CL_INFO },
 
-  { POST_CMD,	C_PASS, G_NONE,	digest_post_pass, TRUE, FALSE },
+  { POST_CMD,	C_PASS, G_NONE,	digest_post_pass, FALSE, FALSE },
 
   /* Command handlers for opportunistic digest computation/caching.
    * Note that we use C_ANY for better interoperability with e.g.

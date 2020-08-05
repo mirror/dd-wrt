@@ -465,7 +465,7 @@ config_rec *find_config_next2(config_rec *prev, config_rec *c, int type,
    * level first.
    *
    * The `recurse` argument tells us HOW to perform that search, e.g.
-   * how to do our DFS (depth-first search) approch:
+   * how to do our DFS (depth-first search) approach:
    *
    *  recurse = 0:
    *    Start at c, search all `next` nodes in list, i.e. all nodes at
@@ -690,7 +690,6 @@ int pr_config_remove(xaset_t *set, const char *name, int flags, int recurse) {
   server_rec *s;
   config_rec *c;
   int found = 0;
-  xaset_t *found_set;
 
   s = pr_parser_server_ctxt_get();
   if (s == NULL) {
@@ -698,6 +697,8 @@ int pr_config_remove(xaset_t *set, const char *name, int flags, int recurse) {
   }
 
   while ((c = find_config(set, -1, name, recurse)) != NULL) {
+    xaset_t *found_set;
+
     pr_signals_handle();
 
     found++;

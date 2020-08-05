@@ -158,7 +158,7 @@ The currently implemented options are:
     <code>AuthOTPTable</code> and no information is found, it will normally
     allow other auth modules to handle the login attempt, <b>even if
     <code>mod_auth_otp</code> is authoritative</b>.  This behavior allows
-    for a seemless transition of your user base, provisioning users with
+    for a seamless transition of your user base, provisioning users with
     shared keys/secrets for their one-time passwords as time allows.
 
     <p>
@@ -317,7 +317,7 @@ To get the base32-encoded shared key using <code>google-authenticator</code>:
 
 <p>
 <b>Secure/Paranoid Configurations</b><br>
-Security-conscious adminstrators may not want users to notice if/when they
+Security-conscious administrators may not want users to notice if/when they
 have started expecting one-time passwords for their logins; not all users may
 have been provisioned with the necessary shared key.  To prevent
 <code>mod_auth_otp</code> from "leaking" its presence/usage and instead to
@@ -443,12 +443,12 @@ according to need, demand, inclination, and time:
 <h2><a name="Installation">Installation</a></h2>
 The <code>mod_auth_otp</code> module is distributed with ProFTPD.  Simply follow
 the normal steps for using third-party modules in ProFTPD.  For including
-<code>mod_auth_otp</code> as a staticly linked module:
+<code>mod_auth_otp</code> as a statically linked module:
 <pre>
   $ ./configure --enable-openssl --with-modules=mod_sql:mod_sql_sqlite:mod_auth_otp:...
 </pre>
 <b>Note</b> the ordering of modules in the above <code>--with-modules</code>
-list; <code>mod_sql</code> <b>must</b> preceed <code>mod_auth_otp</code>,
+list; <code>mod_sql</code> <b>must</b> precede <code>mod_auth_otp</code>,
 otherwise you will see errors like this:
 <pre>
   mod_auth_otp/0.2: Missing required 'mod_sql.c'; HOTP/TOTP logins will FAIL

@@ -38,7 +38,7 @@
   * at http://www.esat.kuleuven.ac.be/~rijmen/rijndael/ (search for
   * "Barreto"). The only two files needed are rijndael-alg-fst.c and
   * rijndael-alg-fst.h.
-  * Brian Gladman's version is distributed with GNU Public lisence
+  * Brian Gladman's version is distributed with GNU Public License
   * and can be found at http://fp.gladman.plus.com/AES/index.htm. It
   * includes a fast IA-32 assembly version.
   *
@@ -62,7 +62,7 @@ void umac_init(struct umac_ctx *ctx, unsigned char key[]);
 /* Initialize a previously allocated umac_ctx struct. */
 
 int umac_reset(struct umac_ctx *ctx);
-/* Reset a umac_ctx to begin authenicating a new message */
+/* Reset a umac_ctx to begin authenticating a new message */
 
 int umac_update(struct umac_ctx *ctx, unsigned char *input, long len);
 /* Incorporate len bytes pointed to by input into context ctx */

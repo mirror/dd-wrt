@@ -865,7 +865,7 @@ The currently implemented options are:
   <p>
   <li><code>EnableDiags</code><br>
     Sets callbacks in the OpenSSL library such that <b>a lot</b> of
-    SSL/TLS protcol information is logged to the
+    SSL/TLS protocol information is logged to the
     <a href="#TLSLog"><code>TLSLog</code></a> file.  This option is very
     useful when debugging strange interactions with FTPS clients.
 
@@ -890,6 +890,19 @@ The currently implemented options are:
         <td>PEM-encoded certificates in client certificate chain</td>
       </tr>
     </table>
+
+  <p>
+  <li><code>IgnoreSNI</code><br>
+    <p>
+    If the TLS client use the <a href="https://en.wikipedia.org/wiki/Server_Name_Indication">SNI</a> (Server Name Indication) as part of the TLS handshake,
+    then <code>mod_tls</code> will attempt to use a name-based
+    <code>&lt;VirtualHost&gt;</code> matching that name, if found.  Use this
+    option to disable this behavior for any reason.
+
+    <p>
+    <b>Note</b> that this option first appeared in
+    <code>proftpd-1.3.7rc3</code>.
+  </li>
 
   <p>
   <li><code>NoAutoECDH</code><br>
@@ -954,7 +967,7 @@ The currently implemented options are:
   <li><code>StdEnvVars</code><br>
     <p>
     Sets the following environment variables, if applicable.  These environment
-    variables are then avaiable for use, such as in <code>LogFormat</code>s.
+    variables are then available for use, such as in <code>LogFormat</code>s.
     Note that doing so may increase the memory size of the process quite a bit:
     <table border=1 summary="Standard Environment Variables">
       <tr>
@@ -1418,7 +1431,7 @@ requested, the client is given a timeout of 30 seconds, by default, to perform
 the renegotiation.  To change the default control channel renegotiation
 timeout, use <em>ctrl</em> followed by a number, greater than zero, in seconds.
 Use <em>data</em> followed by a number, greater than zero, of kilobytes to
-change the default data channel renegotiation threshhold.  The <em>timeout</em>
+change the default data channel renegotiation threshold.  The <em>timeout</em>
 parameter, followed by a positive number of seconds, is used to change the
 length of time given to a client to complete a requested renegotiation, after
 which the SSL session will be shutdown.  By default, <code>mod_tls</code>
@@ -1451,7 +1464,7 @@ Examples:
     # Change only the timeout for renegotiations to be 5 minutes
     TLSRenegotiate timeout 300
 
-    # Change all of the above renegotiation threshholds using one directive
+    # Change all of the above renegotiation thresholds using one directive
     TLSRenegotiate ctrl 3600 data 512000 required off timeout 300
 
     # To disable renegotiations entirely
@@ -1714,7 +1727,7 @@ age.  <b>Note</b> that the <i>minimum</i> key age is 60 seconds.
 Only a maximum of 25 session ticket keys will be kept in memory by default;
 older/expired keys will be destroyed.  This maximum count of keys can
 be changed using the <em>count</em> parameter.  <b>Note</b> that there is a
-minimum count (1) of ticket keys; attemping to specify a smaller <em>count</em>
+minimum count (1) of ticket keys; attempting to specify a smaller <em>count</em>
 is a configuration error.
 
 <p>
@@ -1749,6 +1762,13 @@ handshake will occur.
 For control over the key expiration and generation schedule, use the
 <a href="#TLSSessionTicketKeys"><code>TLSSessionTicketKeys</code></a>
 directive.
+
+<p>
+<b>Note</b>: TLSv1.3 sessions <b>require</b> the use of session tickets,
+as the protocol favors stateless tickets <i>versus</i> stateful server-side
+session IDs for session resumption.  Thus for TLSv1.3 sessions, the
+<code>TLSSessionTickets</code> directive is <i>ignored</i>, and session
+tickets are supported.
 
 <p>
 <hr>
@@ -2304,7 +2324,7 @@ in your <code>configure</code> command, <i>e.g.</i>:
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2002-2017 TJ Saunders<br>
+&copy; Copyright 2002-2020 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

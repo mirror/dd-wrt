@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -767,9 +767,9 @@ MODRET pw_authz(cmd_rec *cmd) {
   cleartxt_passwd = get_pwd_info(cmd->tmp_pool, user, &lstchg, NULL, &max,
     NULL, &inact, &expire);
   if (cleartxt_passwd == NULL) {
-    pr_log_auth(LOG_WARNING, "no password information found for user '%.100s'",
-      user);
-    return PR_ERROR_INT(cmd, PR_AUTH_NOPWD);
+    pr_trace_msg(trace_channel, 3,
+      "no password information found for user '%.100s'", user);
+    return PR_DECLINED(cmd);
   }
 
   cleartxt_passwdlen = strlen(cleartxt_passwd);
@@ -1002,6 +1002,25 @@ MODRET pw_check(cmd_rec *cmd) {
         "AIX authenticate result: %d (msg '%.100s')", res, msg);
 
     } while (reenter != 0);
+# if defined(HAVE_LOGINSUCCESS)
+    if (res == 0) {
+      const char *host, *sess_ttyname;
+      char *msg = NULL;
+
+      host = pr_netaddr_get_dnsstr(session.c->remote_addr);
+      sess_ttyname = pr_session_get_ttyname(cmd->tmp_pool);
+
+      if (loginsuccess(user, (char *) host, (char *) sess_ttyname, &msg) == 0) {
+        if (msg != NULL) {
+          pr_trace_msg("auth", 14, "AIX loginsuccess() report: %s", msg);
+        }
+
+      } else {
+        pr_trace_msg("auth", 3, "AIX loginsuccess() error for user '%s', "
+          "host '%s', tty '%s': %s", user, host, sess_ttyname, strerror(errno));
+      }
+    }
+# endif /* HAVE_LOGINSUCCESS */
     PRIVS_RELINQUISH
 
     /* AIX indicates failure with a return value of 1. */

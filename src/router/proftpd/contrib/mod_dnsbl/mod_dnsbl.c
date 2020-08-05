@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_dnsbl -- a module for checking DNSBL (DNS Black Lists)
  *                       servers before allowing a connection
- * Copyright (c) 2007-2016 TJ Saunders
+ * Copyright (c) 2007-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,15 @@ typedef enum {
 
 static const char *reverse_ip_addr(pool *p, const char *ip_addr) {
   char *addr2, *res, *tmp;
-  size_t addrlen = strlen(ip_addr) +1;
+  size_t addrlen;
+
+  if (p == NULL ||
+      ip_addr == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  addrlen = strlen(ip_addr) +1;
 
   res = pcalloc(p, addrlen);
   addr2 = pstrdup(p, ip_addr);
@@ -341,7 +349,7 @@ MODRET set_dnsbllog(cmd_rec *cmd) {
 
 /* usage: DNSBLPolicy "allow,deny"|"deny,allow" */
 MODRET set_dnsblpolicy(cmd_rec *cmd) {
-  dnsbl_policy_e policy;
+  dnsbl_policy_e policy = DNSBL_POLICY_ALLOW_DENY;
   config_rec *c;
 
   CHECK_ARGS(cmd, 1);

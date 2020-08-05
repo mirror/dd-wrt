@@ -38,33 +38,18 @@ sub list_tests {
 sub maxloginattempts_one {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/config.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-
-  auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', 500, $user);
+  my $setup = test_setup($tmpdir, 'config');
 
   my $max_logins = 1;
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
     MaxLoginAttempts => $max_logins,
 
     IfModules => {
@@ -74,7 +59,8 @@ sub maxloginattempts_one {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -93,43 +79,37 @@ sub maxloginattempts_one {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
-      eval { ($resp_code, $resp_msg) = $client->login($user, 'foo') };
+      eval { $client->login($setup->{user}, 'foo') };
       unless ($@) {
-        die("Logged in unexpectedly ($resp_code $resp_msg)");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg(0);
+        die("Logged in unexpectedly");
       }
 
-      my $expected;
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg(0);
 
-      $expected = 530;
+      my $expected = 530;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
 
       $expected = "Login incorrect.";
       $self->assert($expected eq $resp_msg,
-        test_msg("Expected '$expected', got '$resp_msg'"));
+        test_msg("Expected response message '$expected', got '$resp_msg'"));
 
       # A MaxLoginAttempts of one should have caused our connection to be
       # closed above.
 
-      eval { ($resp_code, $resp_msg) = $client->login($user, 'foo') };
+      eval { ($resp_code, $resp_msg) = $client->login($setup->{user}, 'foo') };
       unless ($@) {
         die("Logged in unexpectedly ($resp_code $resp_msg)");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg(0);
       }
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg(0);
 
       $expected = 599;
       $self->assert($expected == $resp_code,
-        test_msg("Expected $expected, got $resp_code"));
+        test_msg("Expected response code $expected, got $resp_code"));
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -138,7 +118,7 @@ sub maxloginattempts_one {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -148,45 +128,67 @@ sub maxloginattempts_one {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
+  # We can peruse the generated debug log messages for what we want, but
+  # only if the TEST_VERBOSE environment variable is true.
+  unless ($ENV{TEST_VERBOSE}) {
+    test_cleanup($setup->{log_file}, $ex);
+    return;
   }
 
-  unlink($log_file);
+  eval {
+    if (open(my $fh, "< $setup->{log_file}")) {
+      my $expected_post_cmd_err = 0;
+      my $expected_log_cmd_err = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /POST_CMD_ERR command 'PASS/) {
+          $expected_post_cmd_err = 1;
+          next;
+        }
+
+        if ($line =~ /LOG_CMD_ERR command 'PASS/) {
+          $expected_log_cmd_err = 1;
+          next;
+        }
+      }
+
+      close($fh);
+
+      $self->assert($expected_post_cmd_err && $expected_log_cmd_err,
+        test_msg("Did not see expected PASS POST_CMD_ERR and LOG_CMD_ERR log messages"));
+
+    } else {
+      die("Can't read $setup->{log_file}: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub maxloginattempts_absent {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/config.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/config.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/config.scoreboard");
-
-  my $log_file = File::Spec->rel2abs('tests.log');
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/config.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/config.group");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-
-  auth_user_write($auth_user_file, $user, $passwd, 500, 500, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, 'ftpd', 500, $user);
+  my $setup = test_setup($tmpdir, 'config');
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     IfModules => {
       'mod_delay.c' => {
@@ -195,7 +197,8 @@ sub maxloginattempts_absent {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -214,44 +217,36 @@ sub maxloginattempts_absent {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
 
-      my ($resp_code, $resp_msg);
       for (my $i = 0; $i < 3; $i++) {
-        eval { ($resp_code, $resp_msg) = $client->login($user, 'foo') };
+        eval { $client->login($setup->{user}, 'foo') };
         unless ($@) {
-          die("Logged in unexpectedly ($resp_code $resp_msg)");
+          die("Logged in unexpectedly");
+        }
 
-        } else {
-          $resp_code = $client->response_code();
-          $resp_msg = $client->response_msg(0);
-        } 
+        my $resp_code = $client->response_code();
+        my $resp_msg = $client->response_msg(0);
 
-        my $expected;
-
-        $expected = 530;
+        my $expected = 530;
         $self->assert($expected == $resp_code,
-          test_msg("Expected $expected, got $resp_code"));
+          test_msg("Expected response code $expected, got $resp_code"));
 
         $expected = "Login incorrect.";
         $self->assert($expected eq $resp_msg,
-          test_msg("Expected '$expected', got '$resp_msg'"));
+          test_msg("Expected response message '$expected', got '$resp_msg'"));
       }
 
-      eval { ($resp_code, $resp_msg) = $client->login($user, 'foo') };
+      eval { $client->login($setup->{user}, 'foo') };
       unless ($@) {
-        die("Logged in unexpectedly ($resp_code $resp_msg)");
-
-      } else {
-        $resp_code = $client->response_code();
-        $resp_msg = $client->response_msg(0);
-
-        my $expected;
-
-        $expected = 599;
-        $self->assert($expected == $resp_code,
-          test_msg("Expected $expected, got $resp_code"));
+        die("Logged in unexpectedly");
       }
-    };
 
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg(0);
+
+      my $expected = 599;
+      $self->assert($expected == $resp_code,
+        test_msg("Expected response code $expected, got $resp_code"));
+    };
     if ($@) {
       $ex = $@;
     }
@@ -260,7 +255,7 @@ sub maxloginattempts_absent {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -270,15 +265,10 @@ sub maxloginattempts_absent {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if ($ex) {
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 1;

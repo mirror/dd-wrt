@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp SFTP
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,14 +22,14 @@
  * source distribution.
  */
 
+#ifndef MOD_SFTP_FXP_H
+#define MOD_SFTP_FXP_H
+
 #include "mod_sftp.h"
 
 #ifdef HAVE_SYS_STATVFS_H
 # include <sys/statvfs.h>
 #endif
-
-#ifndef MOD_SFTP_FXP_H
-#define MOD_SFTP_FXP_H
 
 /* SFTP Packet Types */
 #define SFTP_SSH2_FXP_INIT		1

@@ -2,7 +2,7 @@
  * ProFTPD: mod_auth_pam -- Support for PAM-style authentication.
  * Copyright (c) 1998, 1999, 2000 Habeeb J. Dihu aka
  *   MacGyver <macgyver@tos.net>, All Rights Reserved.
- * Copyright 2000-2017 The ProFTPD Project
+ * Copyright 2000-2019 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -218,7 +218,7 @@ static void auth_pam_exit_ev(const void *event_data, void *user_data) {
   }
 
   pr_trace_msg(trace_channel, 17, "freeing PAM handle");
-  res = pam_end(pamh, 0);
+  res = pam_end(pamh, PAM_SUCCESS);
   if (res != PAM_SUCCESS) {
     pr_trace_msg(trace_channel, 1, "error freeing PAM handle: %s",
       pam_strerror(pamh, res));
@@ -565,6 +565,18 @@ MODRET pam_auth(cmd_rec *cmd) {
     free(pam_pass);
     pam_pass = NULL;
     pam_pass_len = 0;
+  }
+
+  if (!success) {
+    /* Free pam handle since we will not start user session.  */
+    pr_trace_msg(trace_channel, 17, "freeing PAM handle");
+    res = pam_end(pamh, PAM_AUTH_ERR);
+    if (res != PAM_SUCCESS) {
+      pr_trace_msg(trace_channel, 1, "error freeing PAM handle: %s",
+        pam_strerror(pamh, res));
+    }
+
+    pamh = NULL;
   }
 
   PRIVS_RELINQUISH

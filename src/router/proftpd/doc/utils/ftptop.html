@@ -31,17 +31,16 @@ Filter the display to show sessions that are authenticating.
 
 <DD>
 Filter the display to hide sessions that are authenticating.
+<DT><B>-b</B>
+
+<DD>
+Batch mode.  In this mode, <I>ftptop</I> will not accept input,
+and runs until the iterations limit set via <CODE>-n</CODE> or
+until killed.
 <DT><B>-D</B>
 
 <DD>
 Filter the display to show sessions that are downloading.
-<DT><B>-S</B>
-
-<DD>
-Specify the ServerName for a specific virtual host.  If used,
-<I>ftptop</I>
-
-will only show sessions for the given virtual host.
 <DT><B>-d</B>
 
 <DD>
@@ -54,7 +53,7 @@ Specify the full path to proftpd's run-time scoreboard file (configured
 via the <B>ScoreboardFile</B> directive in proftpd.conf).  If proftpd's
 default directory has been changed via this directive, <I>ftptop</I>
 must either be recompiled or this option must be used in order to find
-proftpd's scoreboard.
+ProFTPD's scoreboard.
 <B>-h</B>
 
 Display a short usage description, including all available options.
@@ -66,6 +65,18 @@ Filter the display to show sessions that are idle.
 
 <DD>
 Filter the display to hide sessions that are idle.
+<DT><B>-n</B>
+
+<DD>
+Specify the number of iterations that <I>ftptop</I> should
+produce before ending.
+<DT><B>-S</B>
+
+<DD>
+Specify the ServerName for a specific virtual host.  If used,
+<I>ftptop</I>
+
+will only show sessions for the given virtual host.
 <DT><B>-U</B>
 
 <DD>
@@ -132,7 +143,7 @@ Report bugs at
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

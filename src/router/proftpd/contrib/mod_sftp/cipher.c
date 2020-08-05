@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp ciphers
- * Copyright (c) 2008-2018 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -512,7 +512,6 @@ int sftp_cipher_read_data(pool *p, unsigned char *data, uint32_t data_len,
   if (cipher->key) {
     int res;
     unsigned char *ptr = NULL;
-    size_t bufsz;
 
     if (*buflen % cipher_blocksz != 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -522,6 +521,8 @@ int sftp_cipher_read_data(pool *p, unsigned char *data, uint32_t data_len,
     }
 
     if (*buf == NULL) {
+      size_t bufsz;
+
       /* Allocate a buffer that's large enough. */
       bufsz = (data_len + cipher_blocksz - 1);
       ptr = palloc(p, bufsz);

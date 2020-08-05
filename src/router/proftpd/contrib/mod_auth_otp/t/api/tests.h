@@ -45,10 +45,10 @@ Suite *tests_get_base32_suite(void);
 Suite *tests_get_hotp_suite(void);
 Suite *tests_get_totp_suite(void);
 
-/* Temporary hack/placement for this variable, until we get to testing
- * the Signals API.
+/* Temporary hack/placement (in stubs.c) for this variable,
+ * until we get to testing the Signals API.
  */
-unsigned int recvd_signal_flags;
+extern volatile unsigned int recvd_signal_flags;
 
 extern pool *auth_otp_pool;
 extern int auth_otp_logfd;

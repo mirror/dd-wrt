@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2017 The ProFTPD Project team
+ * Copyright (c) 2003-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -122,7 +122,7 @@ int pr_class_satisfied(pool *p, const pr_class_t *cls,
 }
 
 const pr_class_t *pr_class_match_addr(const pr_netaddr_t *addr) {
-  pr_class_t *cls;
+  pr_class_t *cls = NULL, *iter;
   pool *tmp_pool;
 
   if (addr == NULL) {
@@ -132,19 +132,23 @@ const pr_class_t *pr_class_match_addr(const pr_netaddr_t *addr) {
 
   tmp_pool = make_sub_pool(permanent_pool);
 
-  for (cls = class_list; cls; cls = cls->cls_next) {
+  for (iter = class_list; iter; iter = iter->cls_next) {
     int res;
 
-    res = pr_class_satisfied(tmp_pool, cls, addr);
+    res = pr_class_satisfied(tmp_pool, iter, addr);
     if (res == TRUE) {
-      destroy_pool(tmp_pool);
-      return cls;
+      cls = iter;
+      break;
     }
   }
 
   destroy_pool(tmp_pool);
-  errno = ENOENT;
-  return NULL;
+
+  if (cls == NULL) {
+    errno = ENOENT;
+  }
+
+  return cls;
 }
 
 const pr_class_t *pr_class_find(const char *name) {

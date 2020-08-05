@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -164,7 +164,7 @@ typedef struct {
 
     struct timeval start_time;		/* Time current transfer started */
     off_t file_size;			/* Total size of file (if known) */
-    off_t total_bytes;			/* Total bytes transfered */
+    off_t total_bytes;			/* Total bytes transferred */
 
     char *bufstart, *buf;
   } xfer;
@@ -175,7 +175,7 @@ typedef struct {
   /* Total number of bytes downloaded in this session. */
   off_t total_bytes_out;
 
-  /* Total number of bytes transfered in this session. */
+  /* Total number of bytes transferred in this session. */
   off_t total_bytes;
 
   /* Total number of files uploaded in this session. */
@@ -184,7 +184,7 @@ typedef struct {
   /* Total number of files downloaded in this session. */
   unsigned int total_files_out;
 
-  /* Total number of files transfered (both uploaded and downloaded) in
+  /* Total number of files transferred (both uploaded and downloaded) in
    * this session.
    */
   unsigned int total_files_xfer;
@@ -230,12 +230,12 @@ extern char ServerType;
 /* Session/State flags */
 
 #define SF_PASSIVE		0x0001	/* Data connection is in passive mode */
-#define SF_ABORT		0x0002	/* Abort in progess */
+#define SF_ABORT		0x0002	/* Abort in progress */
 #define SF_XFER			0x0004	/* Transfer in progress */
 #define SF_ASCII		0x0010	/* ASCII mode transfer */
 #define SF_ASCII_OVERRIDE 	0x0020	/* ASCII override this xfer only */
 #define SF_ANON			0x0040	/* Anonymous (chroot) login */
-#define SF_POST_ABORT		0x0100	/* After abort has occured */
+#define SF_POST_ABORT		0x0100	/* After abort has occurred */
 #define SF_PORT			0x0200	/* Port command given */
 #define	SF_EPSV_ALL		0x0400	/* EPSV ALL in effect */
 

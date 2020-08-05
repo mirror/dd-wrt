@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project
+ * Copyright (c) 2001-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -205,9 +205,8 @@ static void push_cwd(char *_cwd, unsigned char *symhold) {
   if (!_cwd)
     _cwd = cwd;
 
-  *symhold = show_symlinks_hold;
   sstrncpy(_cwd, pr_fs_getcwd(), PR_TUNABLE_PATH_MAX + 1);
-  *symhold = list_show_symlinks;
+  *symhold = show_symlinks_hold = list_show_symlinks;
 }
 
 static void pop_cwd(char *_cwd, unsigned char *symhold) {
@@ -420,13 +419,12 @@ static int sendline(int flags, char *fmt, ...) {
 }
 
 static void ls_done(cmd_rec *cmd) {
-  int quiet = FALSE;
+  pr_data_close2();
 
-  if (session.sf_flags & SF_ABORT) {
-    quiet = TRUE;
+  if (!(session.sf_flags & SF_ABORT)) {
+    /* If the transfer was not aborted, consider it a success. */
+    pr_response_add(R_226, _("Transfer complete"));
   }
-
-  pr_data_close(quiet);
 }
 
 static char units[6][2] = 
@@ -1529,7 +1527,7 @@ static void ls_terminate(void) {
     discard_output();
 
     if (!XFER_ABORTED) {
-      /* An error has occured, other than client ABOR */
+      /* An error has occurred, other than client ABOR */
       if (ls_errno) {
         pr_data_abort(ls_errno,FALSE);
 
@@ -1960,9 +1958,6 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
         int xerrno = errno;
 
-        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-          strerror(xerrno));
-
         pr_cmd_set_errno(cmd, xerrno);
         errno = xerrno;
         return -1;
@@ -2131,7 +2126,7 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
           /* Recurse into the directory. */
           push_cwd(cwd_buf, &symhold);
 
-          if (!pr_fsio_chdir_canon(*path, !opt_L && list_show_symlinks)) {
+          if (pr_fsio_chdir_canon(*path, !opt_L && list_show_symlinks) == 0) {
             int res = 0;
 
             list_ndepth.curr++;
@@ -2150,6 +2145,9 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
               }
               return -1;
             }
+
+          } else {
+            pop_cwd(cwd_buf, &symhold);
           }
         }
 
@@ -2202,9 +2200,6 @@ static int dolist(cmd_rec *cmd, const char *opt, const char *resp_code,
     if (!opt_STAT) {
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
         int xerrno = errno;
-
-        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0], 
-          strerror(xerrno));
 
         pr_cmd_set_errno(cmd, xerrno);
         errno = xerrno;
@@ -3104,9 +3099,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
             if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
               int xerrno = errno;
 
-              pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0], 
-                strerror(xerrno));
-
               pr_cmd_set_errno(cmd, xerrno);
               errno = xerrno;
               return PR_ERROR(cmd);
@@ -3131,9 +3123,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
           if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
             int xerrno = errno;
 
-            pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-              strerror(xerrno));
-
             pr_cmd_set_errno(cmd, xerrno);
             errno = xerrno;
             return PR_ERROR(cmd);
@@ -3156,9 +3145,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
 
     if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
       int xerrno = errno;
-
-      pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-        strerror(xerrno));
 
       pr_cmd_set_errno(cmd, xerrno);
       errno = xerrno;
@@ -3250,9 +3236,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
         if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
           xerrno = errno;
 
-          pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-            strerror(xerrno));
-
           pr_cmd_set_errno(cmd, xerrno);
           errno = xerrno;
           return PR_ERROR(cmd);
@@ -3286,9 +3269,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
           if (list_flags & LS_FL_NO_ERROR_IF_ABSENT) {
             if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
               xerrno = errno;
-
-              pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-                strerror(xerrno));
 
               pr_cmd_set_errno(cmd, xerrno);
               errno = xerrno;
@@ -3328,9 +3308,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
         if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
           xerrno = errno;
 
-          pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-            strerror(xerrno));
-
           pr_cmd_set_errno(cmd, xerrno);
           errno = xerrno;
           return PR_ERROR(cmd);
@@ -3352,9 +3329,6 @@ MODRET ls_nlst(cmd_rec *cmd) {
     if (S_ISREG(st.st_mode)) {
       if (pr_data_open(NULL, "file list", PR_NETIO_IO_WR, 0) < 0) {
         int xerrno = errno;
-
-        pr_response_add_err(R_450, "%s: %s", (char *) cmd->argv[0],
-          strerror(xerrno));
 
         pr_cmd_set_errno(cmd, xerrno);
         errno = xerrno;

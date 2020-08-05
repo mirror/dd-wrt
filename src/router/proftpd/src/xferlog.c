@@ -67,6 +67,7 @@ int xferlog_open(const char *path) {
 int xferlog_write(long xfertime, const char *remhost, off_t fsize,
     const char *fname, char xfertype, char direction, char access_mode,
     const char *user, char abort_flag, const char *action_flags) {
+  pool *tmp_pool;
   const char *rfc1413_ident = NULL, *xfer_proto;
   char buf[LOGBUFFER_SIZE] = {'\0'}, fbuf[LOGBUFFER_SIZE] = {'\0'};
   int have_ident = FALSE, len;
@@ -105,10 +106,12 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize,
   }
 
   xfer_proto = pr_session_get_protocol(0);
+  tmp_pool = make_sub_pool(session.pool);
+  pr_pool_tag(tmp_pool, "TransferLog message pool");
 
   len = pr_snprintf(buf, sizeof(buf),
     "%s %ld %s %" PR_LU " %s %c %s %c %c %s %s %c %s %c\n",
-      pr_strtime(time(NULL)),
+      pr_strtime3(tmp_pool, time(NULL), FALSE),
       xfertime,
       remhost,
       (pr_off_t) fsize,
@@ -122,9 +125,10 @@ int xferlog_write(long xfertime, const char *remhost, off_t fsize,
       have_ident ? '1' : '0',
       rfc1413_ident,
       abort_flag);
-
   buf[sizeof(buf)-1] = '\0';
 
   pr_log_event_generate(PR_LOG_TYPE_XFERLOG, xferlogfd, -1, buf, len);
+  destroy_pool(tmp_pool);
+
   return write(xferlogfd, buf, len);
 }

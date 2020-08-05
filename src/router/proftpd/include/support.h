@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -96,7 +96,8 @@ int exists(const char *);
 int exists2(pool *, const char *);
 
 char *safe_token(char **);
-int check_shutmsg(const char *, time_t *, time_t *, time_t *, char *, size_t);
+int check_shutmsg(pool *, const char *, time_t *, time_t *, time_t *, char *,
+  size_t);
 
 void pr_memscrub(void *, size_t);
 
@@ -105,6 +106,9 @@ struct tm *pr_gmtime(pool *, const time_t *);
 struct tm *pr_localtime(pool *, const time_t *);
 const char *pr_strtime(time_t);
 const char *pr_strtime2(time_t, int);
+
+/* Preferred version.  Allocates the returned string out of the given pool. */
+const char *pr_strtime3(pool *, time_t, int);
 
 int pr_gettimeofday_millis(uint64_t *);
 int pr_timeval2millis(struct timeval *, uint64_t *);

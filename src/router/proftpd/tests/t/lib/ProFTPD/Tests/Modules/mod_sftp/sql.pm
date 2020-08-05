@@ -58,6 +58,21 @@ my $TESTS = {
   },
 
   # XXX Need to support xfer_status_timeout, xfer_failure_reason
+
+  sftp_sql_sqllog_var_xfer_path_uploads_bug4382 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_sql_sqlite rootprivs)],
+  },
+
+  sftp_sql_sqllog_var_filename_uploads_bug4382 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_sql_sqlite rootprivs)],
+  },
+
+  sftp_sql_env_var_issue857 => {
+    order => ++$order,
+    test_class => [qw(bug forking mod_sql_sqlite)],
+  },
 };
 
 sub new {
@@ -274,9 +289,7 @@ EOS
         die("Can't get real path for '.': [$err_name] ($err_code)");
       }
 
-      my $expected;
-
-      $expected = $home_dir;
+      my $expected = $home_dir;
 
       if ($^O eq 'darwin') {
         # MacOSX hack
@@ -289,7 +302,6 @@ EOS
       $sftp = undef;
       $ssh2->disconnect();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1236,7 +1248,9 @@ EOS
       my $buf = "ABCDefgh" x 16382;
       unless ($fh->write($buf)) {
         my ($err_code, $err_name) = $sftp->error();
-        die("Can't write test.txt: [$err_name] ($err_code)");
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# Expected error: can't write test.txt: [$err_name] ($err_code)\n";
+        }
       }
 
       # Explicitly close the channel before we have closed the file, to
@@ -1247,7 +1261,6 @@ EOS
       # Give the server a little time to do its end-of-session thing.
       sleep(1);
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1876,6 +1889,597 @@ EOS
     eval {
       my $ssh2 = Net::SSH2->new();
 
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($setup->{user}, $setup->{passwd})) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_cleanup($setup->{log_file}, $ex);
+  }
+
+  eval {
+    my ($login, $ip_addr, $auth_method) = get_auth_methods($db_file,
+      "user = \'$setup->{user}\'");
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login,
+      "Expected user '$expected', got '$login'");
+
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected IP address '$expected', got '$ip_addr'");
+
+    $expected = 'password';
+    $self->assert($expected eq $auth_method,
+      "Expected method '$expected', got '$auth_method'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub get_upload_paths {
+  my $db_file = shift;
+  my $where = shift;
+
+  my $sql = "SELECT user, ip_addr, path FROM sftplog";
+  if ($where) {
+    $sql .= " WHERE $where";
+  }
+  $sql .= " LIMIT 1";
+
+  my $cmd = "sqlite3 $db_file \"$sql\"";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my $res = join('', `$cmd`);
+  chomp($res);
+
+  # The default sqlite3 delimiter is '|'
+  return split(/\|/, $res);
+}
+
+sub sftp_sql_sqllog_var_xfer_path_uploads_bug4382 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $expected_path = 'test.txt';
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE sftplog (
+  user TEXT,
+  ip_addr TEXT,
+  path TEXT
+);
+EOS
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20 command:20 jot:20 netio:20 response:20 ssh2:20 sftp:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $setup->{log_file}",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+
+      'mod_sql.c' => {
+        SQLEngine => 'log',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => "$db_file foo bar PERCONNECTION",
+        SQLLogFile => $setup->{log_file},
+        SQLNamedQuery => 'sftp_upload FREEFORM "INSERT INTO sftplog (user, ip_addr, path) VALUES (\'%u\', \'%L\', \'%F\')"',
+        SQLLog => 'STOR sftp_upload',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($setup->{user}, $setup->{passwd})) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_CREAT|O_WRONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf = "Hello, World!\n";
+      my $res= $fh->write($buf);
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_cleanup($setup->{log_file}, $ex);
+  }
+
+  eval {
+    my ($login, $ip_addr, $path) = get_upload_paths($db_file,
+      "user = \'$setup->{user}\'");
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login,
+      "Expected user '$expected', got '$login'");
+
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected IP address '$expected', got '$ip_addr'");
+
+    $expected = $expected_path;
+    $self->assert($expected eq $path,
+      "Expected path '$expected', got '$path'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub sftp_sql_sqllog_var_filename_uploads_bug4382 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $expected_path = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE sftplog (
+  user TEXT,
+  ip_addr TEXT,
+  path TEXT
+);
+EOS
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20 command:20 jot:20 netio:20 response:20 ssh2:20 sftp:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+    DefaultRoot => '~',
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $setup->{log_file}",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+
+      'mod_sql.c' => {
+        SQLEngine => 'log',
+        SQLBackend => 'sqlite3',
+        SQLConnectInfo => "$db_file foo bar PERCONNECTION",
+        SQLLogFile => $setup->{log_file},
+        SQLNamedQuery => 'sftp_upload FREEFORM "INSERT INTO sftplog (user, ip_addr, path) VALUES (\'%u\', \'%L\', \'%f\')"',
+        SQLLog => 'STOR sftp_upload',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(1);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($setup->{user}, $setup->{passwd})) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_CREAT|O_WRONLY);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      my $buf = "Hello, World!\n";
+      my $res= $fh->write($buf);
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To close the SFTP channel, we have to explicitly destroy the object
+      $sftp = undef;
+
+      $ssh2->disconnect();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  if ($ex) {
+    test_cleanup($setup->{log_file}, $ex);
+  }
+
+  eval {
+    my ($login, $ip_addr, $path) = get_upload_paths($db_file,
+      "user = \'$setup->{user}\'");
+
+    my $expected = $setup->{user};
+    $self->assert($expected eq $login,
+      "Expected user '$expected', got '$login'");
+
+    $expected = '127.0.0.1';
+    $self->assert($expected eq $ip_addr,
+      "Expected IP address '$expected', got '$ip_addr'");
+
+    if ($^O eq 'darwin') {
+      # MacOSX-specific hack
+      $expected_path = '/private' . $expected_path;
+    }
+
+    $expected = $expected_path;
+    $self->assert($expected eq $path,
+      "Expected path '$expected', got '$path'");
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub sftp_sql_env_var_issue857 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'sqlite');
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $db_file = File::Spec->rel2abs("$tmpdir/proftpd.db");
+
+  # Build up sqlite3 command to create users, groups tables and populate them
+  my $db_script = File::Spec->rel2abs("$tmpdir/proftpd.sql");
+
+  if (open(my $fh, "> $db_script")) {
+    print $fh <<EOS;
+CREATE TABLE sftpauth (
+  user TEXT,
+  ip_addr TEXT,
+  auth_method TEXT
+);
+EOS
+    unless (close($fh)) {
+      die("Can't write $db_script: $!");
+    }
+
+  } else {
+    die("Can't open $db_script: $!");
+  }
+
+  my $cmd = "sqlite3 $db_file < $db_script";
+
+  if ($ENV{TEST_VERBOSE}) {
+    print STDERR "Executing sqlite3: $cmd\n";
+  }
+
+  my @output = `$cmd`;
+  if (scalar(@output) &&
+      $ENV{TEST_VERBOSE}) {
+    print STDERR "Output: ", join('', @output), "\n";
+  }
+
+  # Make sure that, if we're running as root, the database file has
+  # the permissions/privs set for use by proftpd
+  if ($< == 0) {
+    unless (chmod(0666, $db_file)) {
+      die("Can't set perms on $db_file to 0666: $!");
+    }
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'sql:20 command:20 config:20 netio:20 response:20 ssh2:20 sftp:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $setup->{log_file}",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+
+      'mod_sql.c' => {
+        SQLLogFile => $setup->{log_file},
+        SQLNamedQuery => 'auth_method FREEFORM "INSERT INTO sftpauth (user, ip_addr, auth_method) VALUES (\'%u\', \'%L\', \'%{env:SFTP_USER_AUTH_METHOD}\')"',
+        SQLLog => 'PASS auth_method',
+      },
+    },
+
+    Global => {
+      AuthOrder => 'mod_auth_file.c',
+      SQLBackend => 'sqlite3',
+      SQLEngine => 'log',
+      SQLConnectInfo => "%{env:PR_ENV_DB_INFO} %{env:PR_ENV_DB_USERNAME} %{env:PR_ENV_DB_PASSWORD} %{env:PR_ENV_DB_POLICY}"
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+  require Net::SSH2;
+
+  my $ex;
+
+  # Set the required environment variables
+  $ENV{PR_ENV_DB_INFO} = $db_file;
+  $ENV{PR_ENV_DB_USERNAME} = 'foo';
+  $ENV{PR_ENV_DB_PASSWORD} = 'bar';
+  $ENV{PR_ENV_DB_POLICY} = 'PERCONNECTION';
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
       sleep(1);
 
       unless ($ssh2->connect('127.0.0.1', $port)) {

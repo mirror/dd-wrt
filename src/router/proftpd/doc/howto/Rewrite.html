@@ -101,6 +101,26 @@ file is actually "/dir/dir2/file"; it works for uploads, too. (This works
 especially well for Windows clients.)
 
 <p>
+<b>Trimming Whitespace</b><br>
+Some FTP clients can properly handle files whose names start with spaces,
+but other FTP clients cannot.  If your users use whatever FTP clients they
+wish, you need may need to deal with this situation on the server side of
+things.  The <code>mod_rewrite</code> module can help with this, by
+automatically trimming leading/trailing whitespace from commands.
+<pre>
+  &lt;IfModule mod_rewrite.c&gt;
+    RewriteEngine on
+
+    # Trim whitespace for commands dealing with files
+    RewriteCondition %m LIST|MLST|NLST|RETR|STAT|STOR
+
+    # Only the portion of the command that matches our rule is used.
+    # This works by saying "match all non-space characters".
+    RewriteRule [^[:space:]]+ $0
+  &lt;/IfModule&gt;
+</pre>
+
+<p>
 <b>Changing the Filenames</b><br>
 One user had the following problem: Files uploaded via a web browser had their
 filenames changed by the browser.  Specifically, the web browser changed
@@ -260,7 +280,7 @@ of an unusable (to the FTP server) IP address?  Yes!
 The solution was to use <code>mod_rewrite</code> to rewrite the address in
 the sent <code>PORT</code> command, replacing the internal LAN address with
 the IP address of the client that <code>proftpd</code> saw.  Below is the
-configuation used to make this work:
+configuration used to make this work:
 <pre>
   # This is necessary, to keep proftpd from complaining about mismatched
   # addresses in this situation
@@ -454,7 +474,7 @@ on disk, and the download will fail.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

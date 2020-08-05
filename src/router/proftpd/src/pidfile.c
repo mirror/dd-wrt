@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2007-2016 The ProFTPD Project team
+ * Copyright (c) 2007-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,21 +50,32 @@ int pr_pidfile_set(const char *path) {
 }
 
 int pr_pidfile_write(void) {
-  int xerrno;
-  FILE *fh = NULL;
+  int fd, res, xerrno;
+  mode_t mode = 0644;
 
   PRIVS_ROOT
-  fh = fopen(pidfile_path, "w");
+  fd = open(pidfile_path, O_WRONLY|O_CREAT|O_TRUNC, mode);
   xerrno = errno;
   PRIVS_RELINQUISH
 
-  if (fh == NULL) {
+  if (fd < 0) {
     errno = xerrno;
     return -1;
   }
 
-  fprintf(fh, "%lu\n", (unsigned long) getpid());
-  if (fclose(fh) < 0) {
+  /* Ensure that our permissions are as desired, regardless of umask. */
+  PRIVS_ROOT
+  res = fchmod(fd, mode);
+  xerrno = errno;
+  PRIVS_RELINQUISH
+
+  if (res < 0) {
+    fprintf(stderr, "error setting permissions for PidFile '%s': %s\n",
+      pidfile_path, strerror(xerrno));
+  }
+
+  dprintf(fd, "%lu\n", (unsigned long) getpid());
+  if (close(fd) < 0) {
     fprintf(stderr, "error writing PidFile '%s': %s\n", pidfile_path,
       strerror(errno));
   }

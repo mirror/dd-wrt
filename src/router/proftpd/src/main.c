@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,7 +149,9 @@ void session_exit(int pri, void *lv, int exitval, void *dummy) {
 }
 
 void shutdown_end_session(void *d1, void *d2, void *d3, void *d4) {
-  if (check_shutmsg(PR_SHUTMSG_PATH, &shut, &deny, &disc, shutmsg,
+  pool *p = permanent_pool;
+
+  if (check_shutmsg(p, PR_SHUTMSG_PATH, &shut, &deny, &disc, shutmsg,
       sizeof(shutmsg)) == 1) {
     const char *user;
     time_t now;
@@ -183,15 +185,15 @@ void shutdown_end_session(void *d1, void *d2, void *d3, void *d4) {
       user = "NONE";
     }
 
-    msg = sreplace(permanent_pool, shutmsg,
-                   "%s", pstrdup(permanent_pool, pr_strtime(shut)),
-                   "%r", pstrdup(permanent_pool, pr_strtime(deny)),
-                   "%d", pstrdup(permanent_pool, pr_strtime(disc)),
+    msg = sreplace(p, shutmsg,
+                   "%s", pstrdup(p, pr_strtime3(p, shut, FALSE)),
+                   "%r", pstrdup(p, pr_strtime3(p, deny, FALSE)),
+                   "%d", pstrdup(p, pr_strtime3(p, disc, FALSE)),
 		   "%C", (session.cwd[0] ? session.cwd : "(none)"),
 		   "%L", serveraddress,
 		   "%R", (session.c && session.c->remote_name ?
                          session.c->remote_name : "(unknown)"),
-		   "%T", pstrdup(permanent_pool, pr_strtime(now)),
+		   "%T", pstrdup(p, pr_strtime3(p, now, FALSE)),
 		   "%U", user,
 		   "%V", main_server->ServerName,
                    NULL );
@@ -352,7 +354,7 @@ static int _dispatch(cmd_rec *cmd, int cmd_type, int validate, char *match) {
 
       /* KLUDGE: disable umask() for not G_WRITE operations.  Config/
        * Directory walking code will be completely redesigned in 1.3,
-       * this is only necessary for perfomance reasons in 1.1/1.2
+       * this is only necessary for performance reasons in 1.1/1.2
        */
 
       if (!c->group || strcmp(c->group, G_WRITE) != 0)
@@ -471,6 +473,7 @@ int pr_cmd_read(cmd_rec **res) {
   static long cmd_bufsz = -1;
   static char *cmd_buf = NULL;
   int cmd_buflen;
+  unsigned int too_large_count = 0;
   char *ptr;
 
   if (res == NULL) {
@@ -496,8 +499,15 @@ int pr_cmd_read(cmd_rec **res) {
     if (cmd_buflen < 0) {
       if (errno == E2BIG) {
         /* The client sent a too-long command which was ignored; give
-         * them another chance?
+         * them a few more chances, with minor delays?
          */
+        too_large_count++;
+        pr_timer_usleep(250 * 1000);
+
+        if (too_large_count > 3) {
+          return -1;
+        }
+
         continue;
       }
 
@@ -869,11 +879,13 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {
 
   *((char **) push_array(tarr)) = NULL;
   cmd->argv = tarr->elts;
+  pr_pool_tag(cmd->pool, cmd->argv[0]);
 
   /* This table will not contain that many entries, so a low number
    * of chains should suffice.
    */
   cmd->notes = pr_table_nalloc(cmd->pool, 0, 8);
+
   return cmd;
 }
 
@@ -905,8 +917,7 @@ static void cmd_loop(server_rec *server, conn_t *c) {
       pr_timer_reset(PR_TIMER_IDLE, ANY_MODULE);
     }
 
-    if (cmd) {
-
+    if (cmd != NULL) {
       /* Detect known commands for other protocols; if found, drop the
        * connection, lest we be used as part of an attack on a different
        * protocol server (Bug#4143).
@@ -922,6 +933,9 @@ static void cmd_loop(server_rec *server, conn_t *c) {
  
       pr_cmd_dispatch(cmd);
       destroy_pool(cmd->pool);
+      session.curr_cmd = NULL;
+      session.curr_cmd_id = 0;
+      session.curr_cmd_rec = NULL;
 
     } else {
       pr_event_generate("core.invalid-command", NULL);
@@ -1364,6 +1378,7 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
 
     time(&now);
     if (!deny || deny <= now) {
+      pool *tmp_pool;
       config_rec *c = NULL;
       const char *reason = NULL, *serveraddress;
 
@@ -1385,25 +1400,29 @@ static void fork_server(int fd, conn_t *l, unsigned char no_fork) {
         }
       }
 
-      reason = sreplace(permanent_pool, shutmsg,
-                   "%s", pstrdup(permanent_pool, pr_strtime(shut)),
-                   "%r", pstrdup(permanent_pool, pr_strtime(deny)),
-                   "%d", pstrdup(permanent_pool, pr_strtime(disc)),
+      tmp_pool = make_sub_pool(permanent_pool);
+      pr_pool_tag(tmp_pool, "shutmsg check pool");
+
+      reason = sreplace(tmp_pool, shutmsg,
+                   "%s", pstrdup(tmp_pool, pr_strtime3(tmp_pool, shut, FALSE)),
+                   "%r", pstrdup(tmp_pool, pr_strtime3(tmp_pool, deny, FALSE)),
+                   "%d", pstrdup(tmp_pool, pr_strtime3(tmp_pool, disc, FALSE)),
 		   "%C", (session.cwd[0] ? session.cwd : "(none)"),
 		   "%L", serveraddress,
 		   "%R", (session.c && session.c->remote_name ?
                          session.c->remote_name : "(unknown)"),
-		   "%T", pstrdup(permanent_pool, pr_strtime(now)),
+		   "%T", pstrdup(tmp_pool, pr_strtime3(tmp_pool, now, FALSE)),
 		   "%U", "NONE",
 		   "%V", main_server->ServerName,
                    NULL );
 
       pr_log_auth(PR_LOG_NOTICE, "connection refused (%s) from %s [%s]",
-               reason, session.c->remote_name,
-               pr_netaddr_get_ipstr(session.c->remote_addr));
-
+        reason, session.c->remote_name,
+        pr_netaddr_get_ipstr(session.c->remote_addr));
       pr_response_send(R_500,
         _("FTP server shut down (%s) -- please try again later"), reason);
+
+      destroy_pool(tmp_pool);
       exit(0);
     }
   }
@@ -1524,8 +1543,7 @@ static void disc_children(void) {
 static void daemon_loop(void) {
   fd_set listenfds;
   conn_t *listen_conn;
-  int fd, maxfd;
-  int i, err_count = 0, xerrno = 0;
+  int i, err_count = 0, fd, xerrno = 0;
   unsigned long nconnects = 0UL;
   time_t last_error;
   struct timeval tv;
@@ -1536,6 +1554,8 @@ static void daemon_loop(void) {
   time(&last_error);
 
   while (TRUE) {
+    int maxfd;
+
     run_schedule();
 
     FD_ZERO(&listenfds);
@@ -1545,8 +1565,8 @@ static void daemon_loop(void) {
     maxfd = semaphore_fds(&listenfds, maxfd);
 
     /* Check for ftp shutdown message file */
-    switch (check_shutmsg(PR_SHUTMSG_PATH, &shut, &deny, &disc, shutmsg,
-        sizeof(shutmsg))) {
+    switch (check_shutmsg(permanent_pool, PR_SHUTMSG_PATH, &shut, &deny,
+        &disc, shutmsg, sizeof(shutmsg))) {
       case 1:
         if (!shutting_down) {
           disc_children();
@@ -1588,9 +1608,19 @@ static void daemon_loop(void) {
           " present: all incoming connections will be refused");
 
       } else {
+#if defined(HAVE_CTIME_R)
+        char deny_ts[32];
+
+        memset(deny_ts, '\0', sizeof(deny_ts));
+        (void) ctime_r(&deny, deny_ts);
+#else
+        char *deny_ts = NULL;
+        deny_ts = ctime(&deny);
+#endif /* HAVE_CTIME_R */
+
         pr_log_pri(PR_LOG_NOTICE,
           PR_SHUTMSG_PATH " present: incoming connections "
-          "will be denied starting %s", CHOP(ctime(&deny)));
+          "will be denied starting %s", CHOP(deny_ts));
       }
     }
 
@@ -1654,8 +1684,9 @@ static void daemon_loop(void) {
         strerror(xerrno));
     }
 
-    if (i == 0)
+    if (i == 0) {
       continue;
+    }
 
     /* Reset the connection counter.  Take into account this current
      * connection, which does not (yet) have an entry in the child list.
@@ -1693,11 +1724,11 @@ static void daemon_loop(void) {
     listen_conn = pr_ipbind_accept_conn(&listenfds, &fd);
 
     /* Fork off servers to handle each connection our job is to get back to
-     * answering connections asap, so leave the work of determining which
+     * answering connections ASAP, so leave the work of determining which
      * server the connection is for to our child.
      */
 
-    if (listen_conn) {
+    if (listen_conn != NULL) {
 
       /* Check for exceeded MaxInstances. */
       if (ServerMaxInstances > 0 &&
@@ -1838,8 +1869,8 @@ static void inetd_main(void) {
   init_bindings();
 
   /* Check our shutdown status */
-  if (check_shutmsg(PR_SHUTMSG_PATH, &shut, &deny, &disc, shutmsg,
-      sizeof(shutmsg)) == 1) {
+  if (check_shutmsg(permanent_pool, PR_SHUTMSG_PATH, &shut, &deny, &disc,
+      shutmsg, sizeof(shutmsg)) == 1) {
     shutting_down = TRUE;
   }
 
@@ -2067,18 +2098,6 @@ static void show_settings(void) {
   printf("%s", "    - NLS support\n");
 #endif /* PR_USE_NLS */
 
-#ifdef PR_USE_REDIS
-  printf("%s", "    + Redis support\n");
-#else
-  printf("%s", "    - Redis support\n");
-#endif /* PR_USE_REDIS */
-
-#ifdef PR_USE_SODIUM
-  printf("%s", "    + Sodium support\n");
-#else
-  printf("%s", "    - Sodium support\n");
-#endif /* PR_USE_SODIUM */
-
 #ifdef PR_USE_OPENSSL
 # ifdef PR_USE_OPENSSL_FIPS
     printf("    + OpenSSL support (%s, FIPS enabled)\n", OPENSSL_VERSION_TEXT);
@@ -2101,17 +2120,29 @@ static void show_settings(void) {
   printf("%s", "    - POSIX ACL support\n");
 #endif /* PR_USE_FACL */
 
-#ifdef PR_USE_SHADOW
-  printf("%s", "    + Shadow file support\n");
+#ifdef PR_USE_REDIS
+  printf("%s", "    + Redis support\n");
 #else
-  printf("%s", "    - Shadow file suppport\n");
-#endif /* PR_USE_SHADOW */
+  printf("%s", "    - Redis support\n");
+#endif /* PR_USE_REDIS */
 
 #ifdef PR_USE_SENDFILE
   printf("%s", "    + Sendfile support\n");
 #else
   printf("%s", "    - Sendfile support\n");
 #endif /* PR_USE_SENDFILE */
+
+#ifdef PR_USE_SHADOW
+  printf("%s", "    + Shadow file support\n");
+#else
+  printf("%s", "    - Shadow file support\n");
+#endif /* PR_USE_SHADOW */
+
+#ifdef PR_USE_SODIUM
+  printf("%s", "    + Sodium support\n");
+#else
+  printf("%s", "    - Sodium support\n");
+#endif /* PR_USE_SODIUM */
 
 #ifdef PR_USE_TRACE
   printf("%s", "    + Trace support\n");
@@ -2532,9 +2563,7 @@ int main(int argc, char *argv[], char **envp) {
 
   pr_event_generate("core.postparse", NULL);
 
-  if (show_version &&
-      show_version == 2) {
-
+  if (show_version == 2) {
     printf("ProFTPD Version: %s", PROFTPD_VERSION_TEXT " " PR_STATUS "\n");
     printf("  Scoreboard Version: %08x\n", PR_SCOREBOARD_VERSION); 
     printf("  Built: %s\n\n", BUILD_STAMP);
@@ -2559,20 +2588,8 @@ int main(int argc, char *argv[], char **envp) {
   }
 
   if (daemon_uid != PR_ROOT_UID) {
-    /* Allocate space for daemon supplemental groups. */
-    daemon_gids = make_array(permanent_pool, 2, sizeof(gid_t));
-
-    if (pr_auth_getgroups(permanent_pool, (const char *) get_param_ptr(
-        main_server->conf, "UserName", FALSE), &daemon_gids, NULL) < 0) {
-      pr_log_debug(DEBUG2, "unable to retrieve daemon supplemental groups");
-    }
-
-    if (set_groups(permanent_pool, daemon_gid, daemon_gids) < 0) {
-      if (errno != ENOSYS) {
-        pr_log_pri(PR_LOG_WARNING, "unable to set daemon groups: %s",
-          strerror(errno));
-      }
-    }
+    pr_log_debug(DEBUG9, "ignoring supplemental groups for non-root UID %lu",
+      (unsigned long) daemon_uid);
   }
 
   /* After configuration is complete, make sure that passwd, group

@@ -15,7 +15,102 @@
   where `N' is the issue number.
 -----------------------------------------------------------------------------
 
-1.3.7rc1
+1.3.7a - Released 21-Jul-2020
+--------------------------------
+- Issue 1055 - Fix build-time regression when using the --localstatedir
+  configure option.
+
+1.3.7 - Released 20-Jul-2020
+--------------------------------
+- Issue 1027 - mod_ldap crashes at ldap_mod_init().
+- Issue 1038 - Support the SOURCE_DATE_EPOCH environment variable, for
+  reproducible builds.
+- Issue 1043 - Invalid SCP command leads to null pointer dereference.
+
+1.3.7rc4 - Released 30-May-2020
+--------------------------------
+- Bug 4376 - mod_sftp incorrectly handles SFTP protocol version 5/6
+  disposition flag.
+- Issue 908 - mod_sql_passwd fails to compile on FreeBSD due to timingsafe_bcmp
+  function.
+- Issue 907 - Implemented support for RSA SHA-2 publickey signatures in
+  mod_sftp, per RFC 8332.
+- Issue 912 - Support logging of data transfer remote ports in ExtendedLog.
+- Issue 317 - Implement pread(2), pwrite(2) FSIO API.
+- Issue 857 - Fixed regression in the handling of `%{env:...}` configuration
+  variables when the environment variable is not present.
+- Issue 940 - Second LIST of the same symlink shows different results.
+- Bug 4394 - LogFormat %a gives local server IP address instead of remote
+  client IP address.
+- Issue 946 - Improve handling of ldaps URLs, LDAPUseTLS directive in mod_ldap.
+- Issue 82 - Support configurable certificate settings in LDAP SSL/TLS
+  connections.
+- Issue 947 - Support use of SASL auth mechanisms for LDAPBindDN binds.
+- Issue 954 - Support buggy/ill-behaved FTPS client shutdown behavior for CCC
+  command.
+- Issue 959 - FTPS uploads using TLSv1.3 are likely to fail unexpectedly.
+- Issue 682 - IPv6 addresses not properly parsed in From directives, causing
+  unexpected <IfClass> mismatches.
+- Issue 964 - Unable to load mod_sftp, mod_sql_passwd as shared modules on
+  Alpine.
+- Issue 968 - Require TLSv1.3 data connection sessions to reuse same session as
+  control connection for TLSv1.3 session tickets.
+- Issue 366 - ftptop should support batch mode.  ftptop now supports -b and -n
+  command-line options, like top(1).
+- Issue 808 - ProFTPD should ignore supplemental groups when run as a non-root
+  user.
+- Issue 980 - mod_sftp sends broken response when CREATETIME attribute is
+  requested.
+- Bug 4390 - Implement keepalive support for mod_sql/database connections.
+- Issue 693 - mod_sftp unsuccessful login count issues on AIX.
+- Issue 984 - Do not send EXT_INFO messages to SSH clients which did not
+  signal "ext-info-c".
+- Issue 983 - Use re-entrant versions of time functions where available.
+- Bug 4398 - Handle zero-length SFTP WRITE requests without error.
+- Bug 4185 - Implement options for tuning fields used in syslog/module logging.
+- Issue 1010 - Allow ban entries to apply to all <VirtualHost> sections.
+- Issue 1018 - PidFile should not be world-writable.
+- Issue 1014 - TLSv1.3 handshake fails due to missing session ticket key on
+  some systems.
+- Issue 1023 - Lowercased FTP commands not properly identified.
+
+1.3.7rc3 - Released 20-Feb-2020
+--------------------------------
+- Issue 810 - mod_tls does not compile with LibreSSL 2.9.x.
+- Issue 750 - MaxClientsPerUser not enforced for SFTP logins when mod_digest
+  enabled.
+- Issue 850 - mod_tls should honor SNI in TLS handshake.
+- Issue 692 - Support bcrypt passwords in mod_sql_passwd.
+- Issue 793 - mod_sftp does not support OpenSSH-specific private key format.
+- Bug 4221 - Add support for ssh-ed25519 keys.
+- Issue 863 - Directory listing is slower compared to previous ProFTPD versions.
+- Issue 859 - Improper handling of TLS CRL lookups.
+- Bug 4340 - "SocketOptions keepalive off" does not disable TCP keepalive on
+  control connection.
+- Issue 870 - Leaking PAM handler and data in case of unsuccessful
+  authentication.
+- Bug 4385 - SSH authentication fails for many clients due to receiving of
+  SSH_MSG_IGNORE packet.
+- Issue 872 - Show PathAllowFilter, PathDenyFilter failure in system logging.
+  Commands denied by these Filter directives are now logged at the NOTICE
+  level in the system logging.
+- Bug 4382 - Incorrect %F SQLLog with SFTP, not FTP, uploads.
+- Issue 882 - mod_sql "named connection already exists" error when using
+  name-based virtual hosts.
+- Issue 890 - SFTP publickey authentication fails unexpectedly when user has
+  no shadow password info.
+- Issue 898 - ftpasswd fails to restore password file permissions in some cases.
+- Issue 903 - Use-after-free vulnerability in memory pools during data transfer.
+- Issue 902 - Out-of-bounds read in mod_cap getstateflags() function.  This
+  happens because of an out-of-date libcap version; we now rely solely on the
+  system-provided libcap library.
+
+1.3.7rc2 - Released 19-Oct-2019
+--------------------------------
+- Issue 846 - Remote denial-of-service due to issue in network IO handling
+  (CVE-2019-18217).
+
+1.3.7rc1 - Released 12-Oct-2019
 --------------------------------
 - Bug 4304 - Configure script wrongly detects AIX lastlog functions.
 - Bug 3127 - ProFTPD does not build when configure is run from directory other
@@ -1215,7 +1310,7 @@
 - Bug 3249 - mod_ban support for TimeoutLogin.
 - Bug 3253 - Support for %S variable in SQL queries.
 - Bug 3247 - "TLSRequired auth" and "TLSOptions AllowPerUser" are incompatible.
-- Bug 3256 - "SO_OOBINLINE" error occuring again.  This is a regression of
+- Bug 3256 - "SO_OOBINLINE" error occurring again.  This is a regression of
   Bug 2332 caused by code movement in 1.3.2.
 - Bug 3258 - Log cluttered with "using sendfile capability" messages.
 - Bug 3261 - Badly formatted TLSRenegotiate directive causes proftpd to hang.
@@ -1702,7 +1797,7 @@
   on Solaris.  This happens because of the default permissions on /dev/log
   on Solaris.
 - Portability tweaks for Mac OS 10.4.
-- Bug 2729 - Authorative PAM authentication doesn't work.  The mod_auth_pam
+- Bug 2729 - Authoritative PAM authentication doesn't work.  The mod_auth_pam
   module still had code for supporting the deprecated AuthPAMAuthoritative
   directive.  As per Bug #2440, however, the AuthOrder directive should
   be used for configuring authoritativeness.  This fixes mod_auth_pam
@@ -1736,7 +1831,7 @@
 - Bug 2587 - HideNoAccess does not work for DefaultRoot/<Anonymous> logins.
 - Bug 2590 - AIX uses unsigned int for ULONG_MAX, causing printf format warning.
 - Bug 2591 - wrong argument type in call to pr_log_debug in mod_delay.c on AIX.
-- Bug 2593 - `make install-modules' does not honour DESTDIR enviroment variable.
+- Bug 2593 - `make install-modules' does not honour DESTDIR environment variable.
 - Bug 2596 - STAT command can cause segfault.
 - Bug 2588 - AIX requires _USE_IRS #define to use hstrerror().
 - Bug 2582 - ProFTPD on Tru64 with SIA does not call sia_ses_estab().
@@ -2712,7 +2807,7 @@
 - Bug 1432 - Pedantic handling of leading whitespace in FTP commands
 - Bug 1652 - Add connection-rate limiting mechanism
 - Bug 1662 - Define _GNU_SOURCE
-- Bug 1486 - mod_ls is extremly slow
+- Bug 1486 - mod_ls is extremely slow
 - Bug 1669 - Filename meta (%f) not correctly expanded for some commands
              in WRITE logging class
 - Bug 1065 - New directives to limit file size on upload and download
@@ -2999,7 +3094,7 @@ new mod_sql from author
 1.2.2rc2 - Released 20-Apr-2001
 -------------------------------
 The `AllowChmod' directive has been deprecated, and will not work
-consistantly.  Use <Limit SITE_CHMOD> instead.
+consistently.  Use <Limit SITE_CHMOD> instead.
 
 - Bug 1112 - Compilation fix for IRIX 6.2.
 - Bug 1128 - Fixed possibled Linux sendfile() corruption issue.
@@ -3193,7 +3288,7 @@ consistantly.  Use <Limit SITE_CHMOD> instead.
     <virtualhost> (remote host[remote ip]).
 - mod_ldap for authentication against LDAP directories is now in place.
 - ftpwho/ftpcount -- a grammatical error corrected, and they now build
-    as seperate binaries.
+    as separate binaries.
 - Fixed the 'no names, just UIDs' bug.
 - Added genuser.pl to facilitate AuthUserFile entry creation.
 - Umask now takes an optional second argument, specifying a directory umask.

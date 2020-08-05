@@ -1161,6 +1161,10 @@ same directive, <i>e.g.</i>:
   FSCachePolicy size 128 maxAge 120
 </pre>
 
+<p>
+The default maximum number of entries is 3000, and the default maximum age is
+3 seconds.
+
 <hr>
 <h3><a name="FSOptions">FSOptions</a></h3>
 <strong>Syntax:</strong> FSOptions <em>opt1 ...</em><br>
@@ -1529,7 +1533,7 @@ the configuration section is skipped.
 Example:
 <pre>
   &lt;IfModule mod_load.c&gt;
-    MaxLoad 10 "Acces denied, server too busy"
+    MaxLoad 10 "Access denied, server too busy"
   &lt;/IfModule&gt;
 </pre>
 
@@ -2188,7 +2192,7 @@ recursion limit</em> values do.
 <p>
 Note, however, that these limits are only used when
 <a href="http://pcre.org/">PCRE</a> support is enabled (via the
-<code>--enable-pcre</code> built-time option).  If PCRE support is <em>not</em>
+<code>--enable-pcre</code> build-time option).  If PCRE support is <em>not</em>
 enabled, this directive has no effect.
 
 <p>
@@ -2984,9 +2988,11 @@ adding/remove certain fields of data.
 The options supported by the <code>TraceOptions</code> directive are:
 <ul>
   <li>ConnIPs
+  <li>Timestamp
   <li>TimestampMillis
 </ul>
-These options are all <em>disabled</em> by default.
+The <code>Timestamp</code> option is <em>enabled</em> by default; the others
+are <em>disabled</em> by default.
 
 <p>
 To enable an option, preface the option name with a '+' (plus) character;
@@ -3008,7 +3014,7 @@ to disable the option, use a '-' (minus) character prefix.  For example:
 
 <p>
 The <code>TransferLog</code> directive configures the full <em>path</em> to the
-"wu-ftpd style" file transfer log; see the <a href="../docs/howto/Logging.html#TransferLog"><code>xferlog(5)</code></a> man page for a description of this log
+"wu-ftpd style" file transfer log; see the <a href="../howto/Logging.html#TransferLog"><code>xferlog(5)</code></a> man page for a description of this log
 file format.  Separate log files can be created for each
 <code>&lt;Anonymous&gt;</code> and/or <code>&lt;VirtualHost&gt;</code>.
 Additionally, the special keyword "none" (available in proftpd-1.1.7 and later)
@@ -3341,7 +3347,7 @@ in your <code>proftpd.conf</code> (or simply remove that directive entirely).
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 The ProFTPD Project<br>
+&copy; Copyright 2000-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

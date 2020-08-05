@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -254,7 +254,6 @@ long get_name_max(char *dir_name, int dir_fd) {
 /* Interpolates a pathname, expanding ~ notation if necessary
  */
 char *dir_interpolate(pool *p, const char *path) {
-  struct passwd *pw;
   char *res = NULL;
 
   if (p == NULL ||
@@ -265,6 +264,7 @@ char *dir_interpolate(pool *p, const char *path) {
 
   if (*path == '~') {
     char *ptr, *user;
+    struct passwd *pw;
 
     user = pstrdup(p, path + 1);
     ptr = strchr(user, '/');
@@ -857,12 +857,13 @@ char *safe_token(char **s) {
  * filled with the times to deny new connections and disconnect
  * existing ones.
  */
-int check_shutmsg(const char *path, time_t *shut, time_t *deny, time_t *disc,
-    char *msg, size_t msg_size) {
+int check_shutmsg(pool *p, const char *path, time_t *shut, time_t *deny,
+    time_t *disc, char *msg, size_t msg_size) {
   FILE *fp;
   char *deny_str, *disc_str, *cp, buf[PR_TUNABLE_BUFFER_SIZE+1] = {'\0'};
   char hr[3] = {'\0'}, mn[3] = {'\0'};
   time_t now, shuttime = (time_t) 0;
+  struct stat st;
   struct tm *tm;
 
   if (path == NULL) {
@@ -871,85 +872,92 @@ int check_shutmsg(const char *path, time_t *shut, time_t *deny, time_t *disc,
   }
 
   fp = fopen(path, "r");
-  if (fp != NULL) {
-    struct stat st;
-
-    if (fstat(fileno(fp), &st) == 0) {
-      if (S_ISDIR(st.st_mode)) {
-        fclose(fp);
-        errno = EISDIR;
-        return -1;
-      }
-    }
-
-    cp = fgets(buf, sizeof(buf), fp);
-    if (cp != NULL) {
-      buf[sizeof(buf)-1] = '\0'; CHOP(cp);
-
-      /* We use this to fill in dst, timezone, etc */
-      time(&now);
-      tm = pr_localtime(NULL, &now);
-      if (tm == NULL) {
-        fclose(fp);
-        return 0;
-      }
-
-      tm->tm_year = atoi(safe_token(&cp)) - 1900;
-      tm->tm_mon = atoi(safe_token(&cp)) - 1;
-      tm->tm_mday = atoi(safe_token(&cp));
-      tm->tm_hour = atoi(safe_token(&cp));
-      tm->tm_min = atoi(safe_token(&cp));
-      tm->tm_sec = atoi(safe_token(&cp));
-
-      deny_str = safe_token(&cp);
-      disc_str = safe_token(&cp);
-
-      shuttime = mktime(tm);
-      if (shuttime == (time_t) -1) {
-        fclose(fp);
-        return 0;
-      }
-
-      if (deny != NULL) {
-        if (strlen(deny_str) == 4) {
-          sstrncpy(hr, deny_str, sizeof(hr)); hr[2] = '\0'; deny_str += 2;
-          sstrncpy(mn, deny_str, sizeof(mn)); mn[2] = '\0';
-
-          *deny = shuttime - ((atoi(hr) * 3600) + (atoi(mn) * 60));
-
-        } else {
-          *deny = shuttime;
-        }
-      }
-
-      if (disc != NULL) {
-        if (strlen(disc_str) == 4) {
-          sstrncpy(hr, disc_str, sizeof(hr)); hr[2] = '\0'; disc_str += 2;
-          sstrncpy(mn, disc_str, sizeof(mn)); mn[2] = '\0';
-
-          *disc = shuttime - ((atoi(hr) * 3600) + (atoi(mn) * 60));
-
-        } else {
-          *disc = shuttime;
-        }
-      }
-
-      if (fgets(buf, sizeof(buf), fp) && msg) {
-        buf[sizeof(buf)-1] = '\0';
-	CHOP(buf);
-        sstrncpy(msg, buf, msg_size-1);
-      }
-    }
-
-    fclose(fp);
-    if (shut != NULL) {
-      *shut = shuttime;
-    }
-
-    return 1;
+  if (fp == NULL) {
+    return -1;
   }
 
-  return -1;
+  if (fstat(fileno(fp), &st) == 0) {
+    if (S_ISDIR(st.st_mode)) {
+      fclose(fp);
+      errno = EISDIR;
+      return -1;
+    }
+  }
+
+  cp = fgets(buf, sizeof(buf), fp);
+  if (cp != NULL) {
+    buf[sizeof(buf)-1] = '\0'; CHOP(cp);
+
+    /* We use this to fill in dst, timezone, etc */
+    time(&now);
+    tm = pr_localtime(p, &now);
+    if (tm == NULL) {
+      fclose(fp);
+      return 0;
+    }
+
+    tm->tm_year = atoi(safe_token(&cp)) - 1900;
+    tm->tm_mon = atoi(safe_token(&cp)) - 1;
+    tm->tm_mday = atoi(safe_token(&cp));
+    tm->tm_hour = atoi(safe_token(&cp));
+    tm->tm_min = atoi(safe_token(&cp));
+    tm->tm_sec = atoi(safe_token(&cp));
+
+    deny_str = safe_token(&cp);
+    disc_str = safe_token(&cp);
+
+    shuttime = mktime(tm);
+    if (shuttime == (time_t) -1) {
+      fclose(fp);
+      return 0;
+    }
+
+    if (deny != NULL) {
+      if (strlen(deny_str) == 4) {
+        sstrncpy(hr, deny_str, sizeof(hr));
+        hr[2] = '\0';
+        deny_str += 2;
+
+        sstrncpy(mn, deny_str, sizeof(mn));
+        mn[2] = '\0';
+
+        *deny = shuttime - ((atoi(hr) * 3600) + (atoi(mn) * 60));
+
+      } else {
+        *deny = shuttime;
+      }
+    }
+
+    if (disc != NULL) {
+      if (strlen(disc_str) == 4) {
+        sstrncpy(hr, disc_str, sizeof(hr));
+        hr[2] = '\0';
+        disc_str += 2;
+
+        sstrncpy(mn, disc_str, sizeof(mn));
+        mn[2] = '\0';
+
+        *disc = shuttime - ((atoi(hr) * 3600) + (atoi(mn) * 60));
+
+      } else {
+        *disc = shuttime;
+      }
+    }
+
+    if (fgets(buf, sizeof(buf), fp) && msg) {
+      buf[sizeof(buf)-1] = '\0';
+      CHOP(buf);
+      sstrncpy(msg, buf, msg_size-1);
+    }
+  }
+
+  fclose(fp);
+
+  if (shut != NULL) {
+    *shut = shuttime;
+  }
+
+  return 1;
 }
 
 #if !defined(PR_USE_OPENSSL) || OPENSSL_VERSION_NUMBER <= 0x000907000L
@@ -1032,7 +1040,16 @@ struct tm *pr_gmtime(pool *p, const time_t *now) {
     return NULL;
   }
 
+#if defined(HAVE_GMTIME_R)
+  if (p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  sys_tm = gmtime_r(now, pcalloc(p, sizeof(struct tm)));
+#else
   sys_tm = gmtime(now);
+#endif /* HAVE_GMTIME_R */
   if (sys_tm == NULL) {
     return NULL;
   }
@@ -1040,7 +1057,7 @@ struct tm *pr_gmtime(pool *p, const time_t *now) {
   /* If the caller provided a pool, make a copy of the struct tm using that
    * pool.  Otherwise, return the struct tm as is.
    */
-  if (p) {
+  if (p != NULL) {
     dup_tm = pcalloc(p, sizeof(struct tm));
     memcpy(dup_tm, sys_tm, sizeof(struct tm));
 
@@ -1090,12 +1107,21 @@ struct tm *pr_localtime(pool *p, const time_t *now) {
     return NULL;
   }
 
+#if defined(HAVE_LOCALTIME_R)
+  if (p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  sys_tm = localtime_r(now, pcalloc(p, sizeof(struct tm)));
+#else
   sys_tm = localtime(now);
+#endif /* HAVE_LOCALTIME_R */
   if (sys_tm == NULL) {
     return NULL;
   }
 
-  if (p) {
+  if (p != NULL) {
     /* If the caller provided a pool, make a copy of the returned
      * struct tm, allocated out of that pool.
      */
@@ -1110,7 +1136,7 @@ struct tm *pr_localtime(pool *p, const time_t *now) {
     dup_tm = sys_tm;
   }
 
-#ifdef HAVE_TZNAME
+#if defined(HAVE_TZNAME)
   /* Restore the old tzname values prior to returning. */
   memcpy(tzname, tzname_dup, sizeof(tzname_dup));
 #endif /* HAVE_TZNAME */
@@ -1123,6 +1149,10 @@ const char *pr_strtime(time_t t) {
 }
 
 const char *pr_strtime2(time_t t, int use_gmtime) {
+  return pr_strtime3(NULL, t, use_gmtime);
+}
+
+const char *pr_strtime3(pool *p, time_t t, int use_gmtime) {
   static char buf[64];
   static char *mons[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
     "Aug", "Sep", "Oct", "Nov", "Dec" };
@@ -1132,19 +1162,25 @@ const char *pr_strtime2(time_t t, int use_gmtime) {
   memset(buf, '\0', sizeof(buf));
 
   if (use_gmtime) {
-    tr = pr_gmtime(NULL, &t);
+    tr = pr_gmtime(p, &t);
 
   } else {
-    tr = pr_localtime(NULL, &t);
+    tr = pr_localtime(p, &t);
   }
 
-  if (tr != NULL) {
-    pr_snprintfl(__FILE__, __LINE__, buf, sizeof(buf),
-      "%s %s %02d %02d:%02d:%02d %d", days[tr->tm_wday], mons[tr->tm_mon],
-      tr->tm_mday, tr->tm_hour, tr->tm_min, tr->tm_sec, tr->tm_year + 1900);
+  if (tr == NULL) {
+    return NULL;
   }
 
+  pr_snprintfl(__FILE__, __LINE__, buf, sizeof(buf),
+    "%s %s %02d %02d:%02d:%02d %d", days[tr->tm_wday], mons[tr->tm_mon],
+    tr->tm_mday, tr->tm_hour, tr->tm_min, tr->tm_sec, tr->tm_year + 1900);
   buf[sizeof(buf)-1] = '\0';
+
+  if (p != NULL) {
+    return pstrdup(p, buf);
+  }
+
   return buf;
 }
 

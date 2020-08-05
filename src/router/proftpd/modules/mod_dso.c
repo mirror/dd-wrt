@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_dso -- support for loading/unloading modules at run-time
- * Copyright (c) 2004-2017 TJ Saunders <tj@castaglia.org>
+ * Copyright (c) 2004-2020 TJ Saunders <tj@castaglia.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ static int dso_load_file(char *path) {
   return 0;
 }
 
-static int dso_load_module(char *name) {
+static int dso_load_module(pool *p, char *name) {
   int module_load_errno = 0, res;
   char *symbol_name, *path, *ptr;
   size_t namelen;
@@ -176,7 +176,7 @@ static int dso_load_module(char *name) {
     if (res == 0) {
       pr_log_debug(DEBUG7, MOD_DSO_VERSION
         ": loaded module '%s' (from '%s', last modified on %s)", info->name,
-        info->filename, pr_strtime(st.st_mtime));
+        info->filename, pr_strtime3(p, st.st_mtime, FALSE));
     }
   }
 
@@ -350,7 +350,7 @@ static int dso_handle_insmod(pr_ctrls_t *ctrl, int reqargc,
   }
 
   for (i = 0; i < reqargc; i++) {
-    if (dso_load_module(reqargv[i]) < 0) {
+    if (dso_load_module(ctrl->ctrls_tmp_pool, reqargv[i]) < 0) {
       int xerrno = errno;
 
       /* Make the error messages a little more relevant. */
@@ -481,7 +481,7 @@ MODRET set_loadmodule(cmd_rec *cmd) {
   CHECK_ARGS(cmd, 1);
   CHECK_CONF(cmd, CONF_ROOT);
 
-  if (dso_load_module(cmd->argv[1]) < 0) {
+  if (dso_load_module(cmd->tmp_pool, cmd->argv[1]) < 0) {
     int xerrno = errno;
 
     if (xerrno != EEXIST) {

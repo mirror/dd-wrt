@@ -48,6 +48,7 @@ questions, concerns, or suggestions regarding this module.
   <li><a href="#LDAPSearchScope">LDAPSearchScope</a>
   <li><a href="#LDAPServer">LDAPServer</a>
   <li><a href="#LDAPUsers">LDAPUsers</a>
+  <li><a href="#LDAPUseSASL">LDAPUseSASL</a>
   <li><a href="#LDAPUseTLS">LDAPUseTLS</a>
 </ul>
 
@@ -136,7 +137,7 @@ The following LDAP attributes can be renamed in this manner:
 
 <p>
 By default, the DN specified by the
-<a href="#LDAPBindDNo"><code>LDAPBindDN</code></a> will be used to bind to the
+<a href="#LDAPBindDN"><code>LDAPBindDN</code></a> will be used to bind to the
 LDAP server to obtain user information, including the <code>userPassword</code>
 attribute.  If <code>LDAPAuthBinds</code> is set to <em>on</em>, the DN
 specified by <code>LDAPDNInfo</code> will be used to fetch all user information
@@ -177,13 +178,13 @@ The default is:
 </pre>
 
 <p>
-See also: <a href="#LDAPServer"><code>LDAPServer</code></a>
+See also: <a href="#LDAPServer"><code>LDAPServer</code></a>, <a href="#LDAPUseSASL"><code>LDAPUseSASL</code></a>
 
 <p>
 <hr>
 <h3><a name="LDAPDefaultAuthScheme">LDAPDefaultAuthScheme</a></h3>
-<strong>Syntax:</strong> LDAPDefaultAuthScheme <em>crypt|clear</em><br>
-<strong>Default:</strong> None<br>
+<strong>Syntax:</strong> LDAPDefaultAuthScheme <em>"crypt"|"clear"</em><br>
+<strong>Default:</strong> crypt<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ldap<br>
 <strong>Compatibility:</strong> 1.2.7rc1 and later
@@ -191,15 +192,18 @@ See also: <a href="#LDAPServer"><code>LDAPServer</code></a>
 <p>
 The <code>LDAPDefaultAuthScheme</code> directive specifies the authentication
 scheme used for passwords which have no "{hashname}" prefix in the LDAP
-directory.  For example, if you are:
+directory.  For example, if you have:
 <pre>
   userPassword <em>mypass</em>
 </pre>
 in your directory, you would want to set <code>LDAPDefaultAuthScheme</code>
-to <em>clear</em>.
+to <em>"clear"</em>, <i>e.g.</i>:
+<pre>
+  LDAPDefaultAuthScheme clear
+<pre>
 
 <p>
-The default value is <em>crypt</em>.
+The default value is <em>"crypt"</em>.
 
 <p>
 <hr>
@@ -604,7 +608,7 @@ optional parameters <b>is required</b>.
 <p>
 <hr>
 <h3><a name="LDAPServer">LDAPServer</a></h3>
-<strong>Syntax:</strong> LDAPServer <em>&quot;url1|host1:port1 url2|host2:port2&quot;</em><br>
+<strong>Syntax:</strong> LDAPServer <em>url1|host1:port1 url2|host2:port2 [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&lt;path&gt;] [ssl-ciphers:&lt;list&gt;] [ssl-verify:boolean]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_ldap<br>
@@ -618,33 +622,84 @@ servers specified by your LDAP library will be used.  Note that the LDAP
 URL syntax may also be used.
 
 <p>
-To specify multiple LDAP servers, enclose the entire list of servers in
-quotation marks.  For example:
+To specify multiple LDAP servers, you can configure the entire list of servers
+on one line:
 <pre>
-  LDAPServer &quot;host1:port1 host2:port2&quot;
+  # Using just hostname/port
+  LDAPServer host1:port1 host2:port2
 </pre>
 or:
 <pre>
-  LDAPServer &quot;url1 url2&quot;
+  # Using the URL syntax
+  LDAPServer url1 url2
 </pre>
-Th default search scope for LDAP URLs is "base" (unless a scope is explicitly
+In ProFTPD 1.3.7rc4 and later, you can also use multiple <code>LDAPServer</code>
+directives as well, <i>e.g.</i>:
+<pre>
+  LDAPServer host1:port1
+  LDAPServer url1
+  LDAPServer host2
+  LDAPServer url2
+</pre>
+
+<p>
+The default search scope for LDAP URLs is "base" (unless a scope is explicitly
 provided in the URL). This behavior differs from the
 <a href="#LDAPSearchScope"><code>LDAPSearchScope</code></a> directive, which
 defaults to "subtree".
 
 <p>
-<b>Note</b> that to use LDAPS (LDAP over SSL), use the <em>URL</em> format,
-<i>e.g.</i>:
+<b>Note</b> that to use LDAPS (LDAP over SSL), you <b>must</b> use the
+<em>URL</em> format, <i>e.g.</i>:
 <pre>
   LDAPServer ldaps://host1:port1 ldaps://host2:port2
 </pre>
-Alternatively, you can use the <a href="#LDAPUseTLS"><code>LDAPUseTLS</code></a>
-directive, <i>e.g.</i>:
+
+<p>
+However, LDAPS is deprecated.  Instead, LDAP prefers the
+<a href="https://en.wikipedia.org/wiki/STARTTLS">STARTTLS</a> mechanism. To
+enable use of STARTTLS for your LDAP connections, use the
+<a href="#LDAPUseTLS"><code>LDAPUseTLS</code></a> directive, <i>e.g.</i>:
 <pre>
   LDAPServer ldap://host1:port1 ldap://host2:port2
   LDAPUseTLS on
 </pre>
-to tell <code>mod_ldap</code> to use LDAP's <a href="https://en.wikipedia.org/wiki/STARTTLS">STARTTLS</a> mechanism.
+
+<p>
+In ProFTPD 1.3.7rc4 and later, it is possible to configure SSL/TLS parameters
+for a given connection.  Most of the time, all that is needed for the SSL
+session is the CA (Certificate Authority) to use, for verifying the
+certificate presented by the LDAP server, using the <em>ssl-ca:</em> parameter.
+Thus:
+<pre>
+  LDAPServer ... ssl-ca:/path/to/cacert.pem
+</pre>
+If your LDAP server is configured to require SSL/TLS mutual authentication
+(also called "client auth"), you may need the <em>ssl-cert:</em> and
+<em>ssl-key:</em> parameters as well:
+<pre>
+  LDAPServer ... ssl-ca:/path/to/cacert.pem \
+    ssl-cert:/path/to/client-cert.pem \
+    ssl-key:/path/to/client-key.pem
+</pre>
+Finally, you may want to configure the specific SSL/TLS ciphersuites that
+should be used; the <em>ssl-ciphers:</em> parameter can be used for this:
+<pre>
+  LDAPServer ... ssl-ca:/path/to/cacert.pem \
+    ssl-cert:/path/to/client-cert.pem \
+    ssl-key:/path/to/client-key.pem \
+    ssl-ciphers:DEFAULT:!EXPORT:!DES
+</pre>
+
+<p>
+If there is an issue with the server certificate presented by your LDAP
+server, <b>but</b> you need to create the SSL/TLS session anyway, you can
+relax the certificate verification requirements using the <em>ssl-verify:</em>
+parameter, <i>e.g.</i>:
+<pre>
+  LDAPServer ... ssl-ca:/path/to/cacert.pem \
+    ssl-verify:off
+</pre>
 
 <p>
 <hr>
@@ -677,6 +732,54 @@ The <em>uidNumber</em> attribute name used in the search filter comes from
 the <a href="#LDAPAttr"><code>LDAPAttr</code></a> directive.
 Note that filter templates are only supported in <code>mod_ldap</code>
 version 2.7 and later.
+
+<p>
+<hr>
+<h3><a name="LDAPUseSASL">LDAPUseSASL</a></h3>
+<strong>Syntax:</strong> LDAPUseSASL <em>mech1 ...</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_ldap<br>
+<strong>Compatibility:</strong> 1.3.7rc4 and later
+
+<p>
+The <code>LDAPUseSASL</code> directive tells the <code>mod_ldap</code> module
+to use the configured space-separated list of
+<a href="https://ldapwiki.com/wiki/SASL">SASL</a> (Simple Authentication and
+Security Layer) mechanisms, when using the
+<a href="#LDAPBindDN"><code>LDAPBindDN</code></a> to talk to the LDAP server.
+By default, <em>simple</em> binds are done to the LDAP server.
+
+<p>
+The currently supported mechanisms are:
+<ul>
+  <li>ANONYMOUS
+  <li>CRAM-MD5
+  <li>DIGEST-MD5
+  <li>LOGIN
+  <li>PLAIN
+  <li>SCRAM-SHA-1
+</ul>
+The order in which the mechanisms are configured matters; the first one
+selected by the LDAP server wins.
+
+<p>
+<b>Note</b> that a SASL mechanism configured here may still be rejected by
+the LDAP server, if the server-side policies for authentication are not met.
+Indeed, some SASL mechanisms may only be allowed by the server <i>if</i> used
+in conjunction with SSL/TLS; this is a common requirement for using the
+<code>LOGIN</code> and <code>PLAIN</code> mechanisms.
+
+<p>
+Thus a good default configuration, using TLS <i>and</i> SASL, might be:
+<pre>
+  &lt;IfModule mod_ldap.c&gt;
+    LDAPServer ldap.example.com
+    LDAPBindDN CN=readonly,DC=example,DC=com ...
+    LDAPUseSASL SCRAM-SHA-1 DIGEST-MD5
+    LDAPUseTLS on
+  &lt;/IfModule&gt;
+</pre>
 
 <p>
 <hr>
@@ -840,9 +943,13 @@ See the <a href="#LDAPAuthBinds"><code>LDAPAuthBinds</code></a> directive
 for details.
 
 <p>
+<b>Note</b> that you may see <i>additional</i> binds when other modules, such
+as <code>mod_ifsession</code>, are present in your <code>proftpd</code> build.
+
+<p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2013-2017 TJ Saunders<br>
+&copy; Copyright 2013-2020 TJ Saunders<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

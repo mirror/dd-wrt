@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2018 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -204,8 +204,7 @@ static int data_passive_open(const char *reason, off_t size) {
   xerrno = session.d->xerrno;
   pr_response_add_err(R_425, _("Unable to build data connection: %s"),
     strerror(xerrno));
-  destroy_pool(session.d->pool);
-  session.d = NULL;
+  pr_data_close2();
 
   errno = xerrno;
   return -1;
@@ -213,7 +212,7 @@ static int data_passive_open(const char *reason, off_t size) {
 
 static int data_active_open(const char *reason, off_t size) {
   conn_t *c;
-  int bind_port, rev, *root_revoke = NULL;
+  int bind_port, rev, *root_revoke = NULL, xerrno;
   const pr_netaddr_t *bind_addr = NULL;
 
   if (session.c->remote_addr == NULL) {
@@ -277,11 +276,10 @@ static int data_active_open(const char *reason, off_t size) {
 
   session.d = pr_inet_create_conn(session.pool, -1, bind_addr, bind_port, TRUE);
   if (session.d == NULL) {
-    int xerrno = errno;
+    xerrno = errno;
 
     pr_response_add_err(R_425, _("Unable to build data connection: %s"),
       strerror(xerrno));
-    session.d = NULL;
 
     errno = xerrno;
     return -1;
@@ -333,7 +331,7 @@ static int data_active_open(const char *reason, off_t size) {
 
   if (pr_inet_connect(session.d->pool, session.d, &session.data_addr,
       session.data_port) < 0) {
-    int xerrno = session.d->xerrno;
+    xerrno = session.d->xerrno;
 
     pr_log_debug(DEBUG6,
       "Error connecting to %s#%u for active data transfer: %s",
@@ -341,9 +339,7 @@ static int data_active_open(const char *reason, off_t size) {
       strerror(xerrno));
     pr_response_add_err(R_425, _("Unable to build data connection: %s"),
       strerror(xerrno));
-
-    destroy_pool(session.d->pool);
-    session.d = NULL;
+    pr_data_close2();
 
     errno = xerrno;
     return -1;
@@ -403,10 +399,10 @@ static int data_active_open(const char *reason, off_t size) {
 
   pr_response_add_err(R_425, _("Unable to build data connection: %s"),
     strerror(session.d->xerrno));
-  errno = session.d->xerrno;
+  xerrno = session.d->xerrno;
+  pr_data_close2();
 
-  destroy_pool(session.d->pool);
-  session.d = NULL;
+  errno = xerrno;
   return -1;
 }
 
@@ -575,20 +571,26 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
     struct sigaction act;
 
     if (pr_netio_postopen(session.d->instrm) < 0) {
+      int xerrno;
+
       pr_response_add_err(R_425, _("Unable to build data connection: %s"),
         strerror(session.d->xerrno));
-      destroy_pool(session.d->pool);
-      errno = session.d->xerrno;
-      session.d = NULL;
+      xerrno = session.d->xerrno;
+      pr_data_close2();
+
+      errno = xerrno;
       return -1;
     }
 
     if (pr_netio_postopen(session.d->outstrm) < 0) {
+      int xerrno;
+
       pr_response_add_err(R_425, _("Unable to build data connection: %s"),
         strerror(session.d->xerrno));
-      destroy_pool(session.d->pool);
-      errno = session.d->xerrno;
-      session.d = NULL;
+      xerrno = session.d->xerrno;
+      pr_data_close2();
+
+      errno = xerrno;
       return -1;
     }
 
@@ -652,11 +654,10 @@ int pr_data_open(char *filename, char *reason, int direction, off_t size) {
   return res;
 }
 
-/* close == successful transfer */
-void pr_data_close(int quiet) {
+void pr_data_close2(void) {
   nstrm = NULL;
 
-  if (session.d) {
+  if (session.d != NULL) {
     pr_inet_lingering_close(session.pool, session.d, timeout_linger);
     session.d = NULL;
   }
@@ -675,8 +676,13 @@ void pr_data_close(int quiet) {
   session.sf_flags &= (SF_ALL^SF_PASSIVE);
   session.sf_flags &= (SF_ALL^(SF_ABORT|SF_XFER|SF_PASSIVE|SF_ASCII_OVERRIDE));
   pr_session_set_idle();
+}
 
-  if (!quiet) {
+/* close == successful transfer */
+void pr_data_close(int quiet) {
+  pr_data_close2();
+
+  if (quiet == FALSE) {
     pr_response_add(R_226, _("Transfer complete"));
   }
 }
@@ -692,7 +698,7 @@ void pr_data_close(int quiet) {
  */
 void pr_data_cleanup(void) {
   /* sanity check */
-  if (session.d) {
+  if (session.d != NULL) {
     pr_inet_lingering_close(session.pool, session.d, timeout_linger);
     session.d = NULL;
   }
@@ -719,7 +725,7 @@ void pr_data_abort(int err, int quiet) {
     strerror(err), err, quiet ? "true" : "false",
     true_abort ? "true" : "false");
 
-  if (session.d) {
+  if (session.d != NULL) {
     if (true_abort == FALSE) {
       pr_inet_lingering_close(session.pool, session.d, timeout_linger);
 
@@ -901,6 +907,11 @@ void pr_data_abort(int err, int quiet) {
     if (true_abort == FALSE) {
       pr_response_add_err(respcode, _("Transfer aborted. %s"), msg ? msg : "");
     }
+
+    /* Forcibly clear the data-transfer instigating command pool from the
+     * Response API.
+     */
+    pr_response_set_pool(session.pool);
   }
 
   if (true_abort) {
@@ -933,6 +944,7 @@ static void poll_ctrl(void) {
     res = pr_cmd_read(&cmd);
     if (res < 0) {
       int xerrno;
+
 #if defined(ECONNABORTED)
       xerrno = ECONNABORTED;
 #elif defined(ENOTCONN)
@@ -1001,8 +1013,8 @@ static void poll_ctrl(void) {
 
         pr_response_flush(&resp_err_list);
 
-        destroy_pool(cmd->pool);
         pr_response_set_pool(resp_pool);
+        destroy_pool(cmd->pool);
 
       /* We don't want to actually dispatch the NOOP command, since that
        * would overwrite the scoreboard with the NOOP state; admins probably
@@ -1027,13 +1039,14 @@ static void poll_ctrl(void) {
 
         pr_response_flush(&resp_list);
 
-        destroy_pool(cmd->pool);
         pr_response_set_pool(resp_pool);
+        destroy_pool(cmd->pool);
 
       } else {
         char *title_buf = NULL;
-        int title_len = -1;
-        const char *sce_cmd = NULL, *sce_cmd_arg = NULL;
+        int curr_cmd_id = 0, title_len = -1;
+        const char *curr_cmd = NULL, *sce_cmd = NULL, *sce_cmd_arg = NULL;
+        cmd_rec *curr_cmd_rec = NULL;
 
         pr_trace_msg(trace_channel, 5,
           "client sent '%s' command during data transfer, dispatching",
@@ -1045,6 +1058,9 @@ static void poll_ctrl(void) {
           pr_proctitle_get(title_buf, title_len + 1); 
         }
 
+        curr_cmd = session.curr_cmd;
+        curr_cmd_id = session.curr_cmd_id;
+        curr_cmd_rec = session.curr_cmd_rec;
         sce_cmd = pr_scoreboard_entry_get(PR_SCORE_CMD);
         sce_cmd_arg = pr_scoreboard_entry_get(PR_SCORE_CMD_ARG);
 
@@ -1060,6 +1076,9 @@ static void poll_ctrl(void) {
         }
 
         destroy_pool(cmd->pool);
+        session.curr_cmd = curr_cmd;
+        session.curr_cmd_id = curr_cmd_id;
+        session.curr_cmd_rec = curr_cmd_rec;
       }
 
     } else {
@@ -1448,7 +1467,7 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
   return (len < 0 ? -1 : len);
 }
 
-#ifdef HAVE_SENDFILE
+#if defined(HAVE_SENDFILE)
 /* pr_data_sendfile() actually transfers the data on the data connection.
  * ASCII translation is not performed.
  * return 0 if reading and data connection closes, or -1 if error
@@ -1456,10 +1475,10 @@ int pr_data_xfer(char *cl_buf, size_t cl_size) {
 pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
   int flags, error;
   pr_sendfile_t len = 0, total = 0;
-#if defined(HAVE_AIX_SENDFILE)
+# if defined(HAVE_AIX_SENDFILE)
   struct sf_parms parms;
   int rc;
-#endif /* HAVE_AIX_SENDFILE */
+# endif /* HAVE_AIX_SENDFILE */
 
   if (offset == NULL ||
       count == 0) {
@@ -1490,7 +1509,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
   }
 
   for (;;) {
-#if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
+# if defined(HAVE_LINUX_SENDFILE) || defined(HAVE_SOLARIS_SENDFILE)
     off_t orig_offset = *offset;
 
     /* Linux semantics are fairly straightforward in a glibc 2.x world:
@@ -1508,25 +1527,25 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
      * times.  How annoying.
      */
 
-#if defined(HAVE_LINUX_SENDFILE)
+#  if defined(HAVE_LINUX_SENDFILE)
     if (count > INT_MAX) {
       count = INT_MAX;
     }
-#elif defined(HAVE_SOLARIS_SENDFILE)
-# if SIZEOF_SIZE_T == SIZEOF_INT
+#  elif defined(HAVE_SOLARIS_SENDFILE)
+#   if SIZEOF_SIZE_T == SIZEOF_INT
     if (count > INT_MAX) {
       count = INT_MAX;
     }
-# elif SIZEOF_SIZE_T == SIZEOF_LONG
+#   elif SIZEOF_SIZE_T == SIZEOF_LONG
     if (count > LONG_MAX) {
       count = LONG_MAX;
     }
-# elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#   elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
     if (count > LLONG_MAX) {
       count = LLONG_MAX;
     }
-# endif
-#endif /* !HAVE_SOLARIS_SENDFILE */
+#   endif
+#  endif /* !HAVE_SOLARIS_SENDFILE */
 
     errno = 0;
     len = sendfile(PR_NETIO_FD(session.d->outstrm), retr_fd, offset, count);
@@ -1589,7 +1608,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
       len = *offset - orig_offset;
       *offset = orig_offset;
 
-#elif defined(HAVE_BSD_SENDFILE)
+# elif defined(HAVE_BSD_SENDFILE)
     /* BSD semantics for sendfile are flexible...it'd be nice if we could
      * standardize on something like it.  The semantics are:
      *
@@ -1606,24 +1625,24 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
      *  value.
      */
 
-#if SIZEOF_SIZE_T == SIZEOF_INT
+#  if SIZEOF_SIZE_T == SIZEOF_INT
     if (count > UINT_MAX) {
       count = UINT_MAX;
     }
-#elif SIZEOF_SIZE_T == SIZEOF_LONG
+#  elif SIZEOF_SIZE_T == SIZEOF_LONG
     if (count > ULONG_MAX) {
       count = ULONG_MAX;
     }
-#elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
+#  elif SIZEOF_SIZE_T == SIZEOF_LONG_LONG
     if (count > ULLONG_MAX) {
       count = ULLONG_MAX;
     }
-#endif
+#  endif
 
     if (sendfile(retr_fd, PR_NETIO_FD(session.d->outstrm), *offset, count,
         NULL, &len, 0) == -1) {
 
-#elif defined(HAVE_MACOSX_SENDFILE)
+# elif defined(HAVE_MACOSX_SENDFILE)
     off_t orig_len = count;
     int res;
 
@@ -1637,7 +1656,7 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
     len = orig_len;
 
     if (res < 0) {
-#elif defined(HAVE_AIX_SENDFILE)
+# elif defined(HAVE_AIX_SENDFILE)
 
     memset(&parms, 0, sizeof(parms));
 
@@ -1649,7 +1668,9 @@ pr_sendfile_t pr_data_sendfile(int retr_fd, off_t *offset, off_t count) {
     len = (int) parms.bytes_sent;
 
     if (rc < -1 || rc == 1) {
-#endif /* HAVE_AIX_SENDFILE */
+# else
+    if (FALSE) {
+# endif /* HAVE_AIX_SENDFILE */
 
       /* IMO, BSD's semantics are warped.  Apparently, since we have our
        * alarms tagged SA_INTERRUPT (allowing system calls to be

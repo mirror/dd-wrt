@@ -24,7 +24,7 @@
  * the source code for OpenSSL in the source distribution.
  */
 
-/* ProFTPD internal implemenation of syslog(3) routines */
+/* ProFTPD internal implementation of syslog(3) routines */
 
 #include "conf.h"
 
@@ -73,7 +73,7 @@
 # endif /* !Solaris */
 #endif
 
-/* Close desriptor used to write to system logger. */
+/* Close descriptor used to write to system logger. */
 void pr_closelog(int sockfd);
 
 /* Open a connection to system logger.  Returns a file descriptor to the socket

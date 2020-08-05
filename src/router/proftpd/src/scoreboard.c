@@ -1117,15 +1117,15 @@ static size_t str_getlen(const char *str, size_t maxsz) {
 #ifdef PR_USE_NLS
   register unsigned int i = 0;
 
-  while (str[i] > 0 &&
-         i < maxsz) {
+  while (i < maxsz &&
+         str[i] > 0) {
 ascii:
     pr_signals_handle();
     i++;
   }
 
-  while (str[i] &&
-         i < maxsz) {
+  while (i < maxsz &&
+         str[i]) {
     size_t len;
 
     if (str[i] > 0) {

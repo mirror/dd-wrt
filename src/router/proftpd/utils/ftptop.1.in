@@ -20,13 +20,14 @@ Filter the display to show sessions that are authenticating.
 .B \-a
 Filter the display to hide sessions that are authenticating.
 .TP
+.B \-b
+Batch mode.  In this mode,
+.I ftptop
+will not accept input, and runs until the iterations limit set via \-n option,
+or until killed.
+.TP
 .B \-D
 Filter the display to show sessions that are downloading.
-.TP
-.B \-S
-Specify the ServerName for a specific virtual host.  If used,
-.I ftptop
-will only show sessions for the given virtual host.
 .TP
 .B \-d
 Specify the delay, in seconds, between display refreshes.  The default is 2
@@ -46,6 +47,16 @@ Filter the display to show sessions that are idle.
 .TP
 .B \-i
 Filter the display to hide sessions that are idle.
+.TP
+.B \-n
+Specify the number of interations that
+.I ftptop
+should produce before ending.
+.TP
+.B \-S
+Specify the ServerName for a specific virtual host.  If used,
+.I ftptop
+will only show sessions for the given virtual host.
 .TP
 .B \-U
 Filter the display to show sessions that are uploading.

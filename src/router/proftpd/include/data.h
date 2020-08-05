@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,10 @@ void pr_data_init(char *, int);
 void pr_data_cleanup(void);
 int pr_data_open(char *, char *, int, off_t);
 void pr_data_close(int);
+
+/* Like `pr_data_close()`, but will never add any response. */
+void pr_data_close2(void);
+
 void pr_data_abort(int, int);
 int pr_data_xfer(char *, size_t);
 void pr_data_reset(void);

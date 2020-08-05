@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2016 The ProFTPD Project team
+ * Copyright (c) 2006-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,8 +50,9 @@ int pr_trace_use_stderr(int);
 
 int pr_trace_set_options(unsigned long trace_opts);
 #define PR_TRACE_OPT_LOG_CONN_IPS		0x0001
-#define PR_TRACE_OPT_USE_TIMESTAMP_MILLIS	0x0002
-#define PR_TRACE_OPT_DEFAULT			PR_TRACE_OPT_USE_TIMESTAMP_MILLIS
+#define PR_TRACE_OPT_USE_TIMESTAMP		0x0002
+#define PR_TRACE_OPT_USE_TIMESTAMP_MILLIS	0x0004
+#define PR_TRACE_OPT_DEFAULT			(PR_TRACE_OPT_USE_TIMESTAMP|PR_TRACE_OPT_USE_TIMESTAMP_MILLIS)
 
 int pr_trace_msg(const char *, int, const char *, ...)
 #ifdef __GNUC__

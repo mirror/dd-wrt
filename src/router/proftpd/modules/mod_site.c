@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ MODRET site_chgrp(cmd_rec *cmd) {
   pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) != 0) {
-    pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+    pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
       (char *) cmd->argv[0], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -118,7 +118,7 @@ MODRET site_chgrp(cmd_rec *cmd) {
   pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) == 0) {
-    pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+    pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
       (char *) cmd->argv[0], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -229,7 +229,7 @@ MODRET site_chmod(cmd_rec *cmd) {
   pre = get_param_ptr(CURRENT_CONF, "PathAllowFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) != 0) {
-    pr_log_debug(DEBUG2, "'%s %s %s' denied by PathAllowFilter",
+    pr_log_pri(PR_LOG_NOTICE, "'%s %s %s' denied by PathAllowFilter",
       (char *) cmd->argv[0], (char *) cmd->argv[1], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -241,7 +241,7 @@ MODRET site_chmod(cmd_rec *cmd) {
   pre = get_param_ptr(CURRENT_CONF, "PathDenyFilter", FALSE);
   if (pre != NULL &&
       pr_regexp_exec(pre, arg, 0, NULL, 0, 0, 0) == 0) {
-    pr_log_debug(DEBUG2, "'%s %s %s' denied by PathDenyFilter",
+    pr_log_pri(PR_LOG_NOTICE, "'%s %s %s' denied by PathDenyFilter",
       (char *) cmd->argv[0], (char *) cmd->argv[1], arg);
     pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 

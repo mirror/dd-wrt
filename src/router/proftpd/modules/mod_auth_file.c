@@ -1238,7 +1238,7 @@ static void check_unsupported_algo(const char *user,
 
   if (strcmp(fips_enabled, "0") != 0) {
     /* FIPS mode enabled on this system.  If our salt string doesn't start
-     * with a '$', it uses DES; if it starts wit '$1$', it uses MD5.  Either
+     * with a '$', it uses DES; if it starts with '$1$', it uses MD5.  Either
      * way, on a FIPS-enabled system, those algorithms aren't supported.
      */
     if (ciphertxt_pass[0] != '$') {

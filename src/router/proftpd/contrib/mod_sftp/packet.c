@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp packet IO
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -331,7 +331,7 @@ static char peek_mesg_type(struct ssh2_packet *pkt) {
 
 static void handle_global_request_mesg(struct ssh2_packet *pkt) {
   unsigned char *buf, *ptr;
-  uint32_t buflen, bufsz;
+  uint32_t buflen;
   char *request_name;
   int want_reply;
 
@@ -346,6 +346,7 @@ static void handle_global_request_mesg(struct ssh2_packet *pkt) {
 
   if (want_reply) {
     struct ssh2_packet *pkt2;
+    uint32_t bufsz;
     int res;
 
     buflen = bufsz = 1024;
@@ -442,7 +443,6 @@ static void is_client_alive(void) {
  * disconnect the client after reading this data anyway.
  */
 static void read_packet_discard(int sockfd) {
-  char buf[SFTP_MAX_PACKET_LEN];
   size_t buflen;
 
   buflen = SFTP_MAX_PACKET_LEN -
@@ -452,11 +452,13 @@ static void read_packet_discard(int sockfd) {
     (unsigned long) buflen);
 
   if (buflen > 0) {
-    int flags = SFTP_PACKET_READ_FL_PESSIMISTIC;
+    char buf[SFTP_MAX_PACKET_LEN];
+    int flags;
 
     /* We don't necessarily want to wait for the entire random amount of data
      * to be read in.
      */
+    flags = SFTP_PACKET_READ_FL_PESSIMISTIC;
     sftp_ssh2_packet_sock_read(sockfd, buf, buflen, flags);
   }
 
@@ -508,7 +510,7 @@ static int read_packet_padding_len(int sockfd, struct ssh2_packet *pkt,
     unsigned char *buf, size_t *offset, size_t *buflen, size_t bufsz) {
 
   if (*buflen > sizeof(char)) {
-    /* XXX Assume the data in the buffer is unecrypted, and thus usable. */
+    /* XXX Assume the data in the buffer is unencrypted, and thus usable. */
     memmove(&pkt->padding_len, buf + *offset, sizeof(char));
 
     /* Advance the buffer past the byte we just read off. */
@@ -719,6 +721,9 @@ const char *sftp_ssh2_packet_get_mesg_type_desc(unsigned char mesg_type) {
 
     case SFTP_SSH2_MSG_SERVICE_ACCEPT:
       return "SSH_MSG_SERVICE_ACCEPT";
+
+    case SFTP_SSH2_MSG_EXT_INFO:
+      return "SSH_MSG_EXT_INFO";
 
     case SFTP_SSH2_MSG_KEXINIT:
       return "SSH_MSG_KEXINIT";
@@ -1167,7 +1172,7 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
 
   if (buflen > 0) {
     /* We have encrypted data, which means we don't need as many of the
-     * iovec slots as for unecrypted data.
+     * iovec slots as for unencrypted data.
      */
 
     if (!sent_version_id) {
@@ -1340,8 +1345,6 @@ int sftp_ssh2_packet_send(int sockfd, struct ssh2_packet *pkt) {
 }
 
 int sftp_ssh2_packet_write(int sockfd, struct ssh2_packet *pkt) {
-  int res;
-
   /* For future reference, I tried buffering up the possible TAP message
    * and the given message using TCP_CORK/TCP_NOPUSH.  I tried this test
    * on a Mac OSX 10.5 box.  It was for this test that I refactored the
@@ -1360,6 +1363,8 @@ int sftp_ssh2_packet_write(int sockfd, struct ssh2_packet *pkt) {
    */
 
   if (sent_version_id) {
+    int res;
+
     res = sftp_tap_send_packet();
     if (res < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1442,6 +1447,37 @@ void sftp_ssh2_packet_handle_disconnect(struct ssh2_packet *pkt) {
     "client at %s sent SSH_DISCONNECT message: %s (%s)",
     pr_netaddr_get_ipstr(session.c->remote_addr), explain, reason_str);
   pr_session_disconnect(&sftp_module, PR_SESS_DISCONNECT_CLIENT_QUIT, explain);
+}
+
+void sftp_ssh2_packet_handle_ext_info(struct ssh2_packet *pkt) {
+  register unsigned int i;
+  uint32_t ext_count;
+
+  ext_count = sftp_msg_read_int(pkt->pool, &pkt->payload, &pkt->payload_len);
+  pr_trace_msg(trace_channel, 9, "client sent EXT_INFO with %lu %s",
+    (unsigned long) ext_count, ext_count != 1 ? "extensions" : "extension");
+
+  for (i = 0; i < ext_count; i++) {
+    char *ext_name = NULL;
+    uint32_t ext_datalen = 0;
+
+    ext_name = sftp_msg_read_string(pkt->pool, &pkt->payload,
+      &pkt->payload_len);
+    ext_datalen = sftp_msg_read_int(pkt->pool, &pkt->payload,
+      &pkt->payload_len);
+    (void) sftp_msg_read_data(pkt->pool, &pkt->payload,
+      &pkt->payload_len, ext_datalen);
+
+    pr_trace_msg(trace_channel, 9,
+      "client extension: %s (value %lu bytes)", ext_name,
+      (unsigned long) ext_datalen);
+
+    /* TODO: Consider supporting the "no-flow-control" extension from
+     * clients.
+     */
+  }
+
+  destroy_pool(pkt->pool);
 }
 
 void sftp_ssh2_packet_handle_ignore(struct ssh2_packet *pkt) {
@@ -1574,6 +1610,23 @@ int sftp_ssh2_packet_handle(void) {
       }
       break;
     }
+
+    case SFTP_SSH2_MSG_EXT_INFO:
+      /* We expect any possible EXT_INFO message after NEWKEYS, and before
+       * anything else.
+       */
+      if ((sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) &&
+          !(sftp_sess_state & SFTP_SESS_STATE_HAVE_SERVICE) &&
+          !(sftp_sess_state & SFTP_SESS_STATE_HAVE_EXT_INFO)) {
+        sftp_ssh2_packet_handle_ext_info(pkt);
+        sftp_sess_state |= SFTP_SESS_STATE_HAVE_EXT_INFO;
+        break;
+
+      } else {
+        (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+          "unable to handle %s (%d) message: wrong message order",
+          sftp_ssh2_packet_get_mesg_type_desc(mesg_type), mesg_type);
+      }
 
     case SFTP_SSH2_MSG_SERVICE_REQUEST:
       if (sftp_sess_state & SFTP_SESS_STATE_HAVE_KEX) {

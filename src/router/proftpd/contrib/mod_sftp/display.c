@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp Display files
- * Copyright (c) 2010-2017 TJ Saunders
+ * Copyright (c) 2010-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,7 +93,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
   pr_snprintf(mg_size, sizeof(mg_size), "%" PR_LU, (pr_off_t) fs_size);
   format_size_str(mg_size_units, sizeof(mg_size_units), fs_size);
 
-  mg_time = pr_strtime(time(NULL));
+  mg_time = pr_strtime3(p, time(NULL), FALSE);
 
   max_clients = get_param_ptr(main_server->conf, "MaxClients", FALSE);
 
@@ -194,7 +194,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
       tmp2 = strchr(tmp, '}');
       if (tmp2 == NULL) {
         /* No closing '}' found in this string, so no need to look for any
-         * aother '%{' opening sequence.  Just move on.
+         * another '%{' opening sequence.  Just move on.
          */
         tmp = NULL;
         break;
@@ -222,7 +222,7 @@ const char *sftp_display_fh_get_msg(pool *p, pr_fh_t *fh) {
         now = time(NULL);
         memset(time_str, 0, sizeof(time_str));
 
-        tm = pr_localtime(NULL, &now);
+        tm = pr_localtime(p, &now);
         if (tm != NULL) {
           strftime(time_str, sizeof(time_str), fmt, tm);
         }

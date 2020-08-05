@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -397,6 +397,15 @@ void pr_pool_tag(pool *p, const char *tag) {
   p->tag = tag;
 }
 
+const char *pr_pool_get_tag(pool *p) {
+  if (p == NULL) {
+    errno = EINVAL;
+    return NULL;
+  }
+
+  return p->tag;
+}
+
 /* Release the entire free block list */
 static void pool_release_free_block_list(void) {
   union block_hdr *blok = NULL, *next = NULL;
@@ -514,6 +523,7 @@ static void clear_pool(struct pool_rec *p) {
   p->last = p->first;
   p->first->h.first_avail = p->free_first_avail;
 
+  p->tag = NULL;
   pr_alarms_unblock();
 }
 
@@ -800,15 +810,13 @@ array_header *append_arrays(pool *p, const array_header *first,
 /* Generic cleanups */
 
 typedef struct cleanup {
-  void *data;
-  void (*plain_cleanup_cb)(void *);
-  void (*child_cleanup_cb)(void *);
+  void *user_data;
+  void (*cleanup_cb)(void *);
   struct cleanup *next;
 
 } cleanup_t;
 
-void register_cleanup(pool *p, void *data, void (*plain_cleanup_cb)(void*),
-    void (*child_cleanup_cb)(void *)) {
+void register_cleanup2(pool *p, void *user_data, void (*cleanup_cb)(void*)) {
   cleanup_t *c;
 
   if (p == NULL) {
@@ -816,16 +824,21 @@ void register_cleanup(pool *p, void *data, void (*plain_cleanup_cb)(void*),
   }
 
   c = pcalloc(p, sizeof(cleanup_t));
-  c->data = data;
-  c->plain_cleanup_cb = plain_cleanup_cb;
-  c->child_cleanup_cb = child_cleanup_cb;
+  c->user_data = user_data;
+  c->cleanup_cb = cleanup_cb;
 
   /* Add this cleanup to the given pool's list of cleanups. */
   c->next = p->cleanups;
   p->cleanups = c;
 }
 
-void unregister_cleanup(pool *p, void *data, void (*cleanup_cb)(void *)) {
+void register_cleanup(pool *p, void *user_data, void (*plain_cleanup_cb)(void*),
+    void (*child_cleanup_cb)(void *)) {
+  (void) child_cleanup_cb;
+  register_cleanup2(p, user_data, plain_cleanup_cb);
+}
+
+void unregister_cleanup(pool *p, void *user_data, void (*cleanup_cb)(void *)) {
   cleanup_t *c, **lastp;
 
   if (p == NULL) {
@@ -835,9 +848,9 @@ void unregister_cleanup(pool *p, void *data, void (*cleanup_cb)(void *)) {
   c = p->cleanups;
   lastp = &p->cleanups;
 
-  while (c) {
-    if (c->data == data &&
-        (c->plain_cleanup_cb == cleanup_cb || cleanup_cb == NULL)) {
+  while (c != NULL) {
+    if (c->user_data == user_data &&
+        (c->cleanup_cb == cleanup_cb || cleanup_cb == NULL)) {
 
       /* Remove the given cleanup by pointing the previous next pointer to
        * the matching cleanup's next pointer.
@@ -852,9 +865,9 @@ void unregister_cleanup(pool *p, void *data, void (*cleanup_cb)(void *)) {
 }
 
 static void run_cleanups(cleanup_t *c) {
-  while (c) {
-    if (c->plain_cleanup_cb) {
-      (*c->plain_cleanup_cb)(c->data);
+  while (c != NULL) {
+    if (c->cleanup_cb) {
+      (*c->cleanup_cb)(c->user_data);
     }
 
     c = c->next;

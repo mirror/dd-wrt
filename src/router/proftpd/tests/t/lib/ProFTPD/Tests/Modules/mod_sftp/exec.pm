@@ -1102,7 +1102,7 @@ sub sftp_exec_on_error {
 
       my $expected = 'SSH_FX_PERMISSION_DENIED';
       $self->assert($expected eq $err_name,
-        test_msg("Epected '$expected', got '$err_name'"));
+        test_msg("Expected '$expected', got '$err_name'"));
 
       $sftp = undef;
       $ssh2->disconnect();

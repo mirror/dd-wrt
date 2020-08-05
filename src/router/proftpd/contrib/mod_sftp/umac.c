@@ -38,7 +38,7 @@
   * at http://www.esat.kuleuven.ac.be/~rijmen/rijndael/ (search for
   * "Barreto"). The only two files needed are rijndael-alg-fst.c and
   * rijndael-alg-fst.h. Brian Gladman's version is distributed with the GNU
-  * Public lisence at http://fp.gladman.plus.com/AES/index.htm. It
+  * Public Licence at http://fp.gladman.plus.com/AES/index.htm. It
   * includes a fast IA-32 assembly version. The OpenSSL crypo library is
   * the third.
   *
@@ -64,7 +64,7 @@
 /* #define AES_IMPLEMENTAION   1  1 = OpenSSL, 2 = Barreto, 3 = Gladman   */
 /* #define SSE2                0  Is SSE2 is available?                   */
 /* #define RUN_TESTS           0  Run basic correctness/speed tests       */
-/* #define UMAC_AE_SUPPORT     0  Enable auhthenticated encrytion         */
+/* #define UMAC_AE_SUPPORT     0  Enable auhthenticated encryption        */
 
 /* ---------------------------------------------------------------------- */
 /* -- Global Includes --------------------------------------------------- */
@@ -300,9 +300,9 @@ static void pdf_gen_xor(pdf_ctx *pc, UINT8 nonce[8], UINT8 buf[8])
  * Before beginning another hash calculation the nh_reset() routine       
  * must be called. The single-buffer routine, nh(), is equivalent to  
  * the sequence of calls nh_update() and nh_final(); however it is        
- * optimized and should be prefered whenever the multiple-buffer interface
+ * optimized and should be preferred whenever the multiple-buffer interface
  * is not necessary. When using either interface, it is the client's         
- * responsability to pass no more than L1_KEY_LEN bytes per hash result.            
+ * responsibility to pass no more than L1_KEY_LEN bytes per hash result.
  *                                                                        
  * The routine nh_init() initializes the nh_ctx data structure and        
  * must be called once, before any other PDF routine.                     
@@ -322,10 +322,10 @@ static void pdf_gen_xor(pdf_ctx *pc, UINT8 nonce[8], UINT8 buf[8])
 #define HASH_BUF_BYTES       64     /* nh_aux_hb buffer multiple          */
 
 typedef struct {
-    UINT8  nh_key [L1_KEY_LEN + L1_KEY_SHIFT * (STREAMS - 1)]; /* NH Key */
-    UINT8  data   [HASH_BUF_BYTES];    /* Incomming data buffer           */
-    int next_data_empty;    /* Bookeeping variable for data buffer.       */
-    int bytes_hashed;        /* Bytes (out of L1_KEY_LEN) incorperated.   */
+    UINT8  nh_key [L1_KEY_LEN + L1_KEY_SHIFT * (STREAMS - 1)]; /* NH Key  */
+    UINT8  data   [HASH_BUF_BYTES];    /* Incoming data buffer            */
+    int next_data_empty;    /* Bookkeeping variable for data buffer.      */
+    int bytes_hashed;        /* Bytes (out of L1_KEY_LEN) incorporated.   */
     UINT64 state[STREAMS];               /* on-line state     */
 } nh_ctx;
 
@@ -856,7 +856,7 @@ static void poly_hash(uhash_ctx_t hc, UINT32 data_in[])
 
 
 /* The final step in UHASH is an inner-product hash. The poly hash
- * produces a result not neccesarily WORD_LEN bytes long. The inner-
+ * produces a result not necessarily WORD_LEN bytes long. The inner-
  * product hash breaks the polyhash output into 16-bit chunks and
  * multiplies each with a 36 bit key.
  */

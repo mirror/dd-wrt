@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,8 +100,9 @@ int main(int argc, char **argv) {
   memset(classes, 0, MAX_CLASSES * sizeof(struct scoreboard_class));
 
   cp = strrchr(progname, '/');
-  if (cp != NULL)
+  if (cp != NULL) {
     progname = cp + 1;
+  }
 
   opterr = 0;
   while ((c =
@@ -142,7 +143,7 @@ int main(int argc, char **argv) {
     char *path;
 
     path = util_scan_config(config_filename, "ScoreboardFile");
-    if (path) {
+    if (path != NULL) {
       util_set_scoreboard(path);
       free(path);
     }
@@ -158,6 +159,10 @@ int main(int argc, char **argv) {
   count = 0;
   res = util_open_scoreboard(O_RDONLY);
   if (res < 0) {
+    if (server_name != NULL) {
+      free(server_name);
+    }
+
     switch (res) {
       case UTIL_SCORE_ERR_BAD_MAGIC:
         fprintf(stderr, "error opening scoreboard: bad/corrupted file\n");
@@ -181,15 +186,14 @@ int main(int argc, char **argv) {
 
   errno = 0;
   while ((score = util_scoreboard_entry_read()) != NULL) {
-
     if (errno) {
       break;
     }
 
     if (!count++ ||
         oldpid != mpid) {
-      if (total) {
-        printf("   -  %d user%s\n\n", total, total > 1 ? "s" : "");
+      if (total > 0) {
+        printf("   -  %u user%s\n\n", total, total > 1 ? "s" : "");
       }
 
       if (!mpid) {
@@ -199,7 +203,7 @@ int main(int argc, char **argv) {
         printf("Master proftpd process %u:\n", (unsigned int) mpid);
       }
 
-      if (server_name) {
+      if (server_name != NULL) {
         printf("ProFTPD Server '%s'\n", server_name);
       }
 
@@ -208,7 +212,7 @@ int main(int argc, char **argv) {
     }
 
     /* If a ServerName was given, skip unless the scoreboard entry matches. */
-    if (server_name &&
+    if (server_name != NULL &&
         strcmp(server_name, score->sce_server_label) != 0) {
       continue;
     }
@@ -231,7 +235,7 @@ int main(int argc, char **argv) {
   util_close_scoreboard();
 
   /* Print out the total. */
-  if (total) {
+  if (total > 0) {
     for (i = 0; i != MAX_CLASSES; i++) {
       if (classes[i].score_class == NULL) {
         break;
@@ -256,7 +260,7 @@ int main(int argc, char **argv) {
     printf("0 users\n");
   }
 
-  if (server_name) {
+  if (server_name != NULL) {
     free(server_name);
   }
 

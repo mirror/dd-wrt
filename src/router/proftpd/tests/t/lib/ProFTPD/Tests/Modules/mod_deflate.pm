@@ -2142,7 +2142,6 @@ sub deflate_tls_mode_z {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,

@@ -58,6 +58,6 @@ install-misc:
 clean:
 	$(LIBTOOL) --mode=clean $(RM) $(MODULE_NAME).a $(MODULE_NAME).la *.o *.lo .libs/*.o
 
-dist: clean
+distclean: clean
 	$(RM) Makefile $(MODULE_NAME).h config.status config.cache config.log *.gcda *.gcno
 	-$(RM) -r .git/ CVS/ RCS/

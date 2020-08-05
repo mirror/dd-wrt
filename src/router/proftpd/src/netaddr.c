@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2017 The ProFTPD Project team
+ * Copyright (c) 2003-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -276,20 +276,22 @@ int pr_getnameinfo(const struct sockaddr *sa, socklen_t salen, char *host,
 #if !defined(HAVE_GETADDRINFO) || defined(PR_USE_GETADDRINFO)
 int pr_getaddrinfo(const char *node, const char *service,
     const struct addrinfo *hints, struct addrinfo **res) {
-
   struct addrinfo *ans = NULL;
   struct sockaddr_in *saddr = NULL;
   const char *proto_name = "tcp";
   int socktype = SOCK_STREAM;
   unsigned short port = 0;
 
-  if (!res)
+  if (res == NULL) {
     return EAI_FAIL;
+  }
+
   *res = NULL;
 
   ans = malloc(sizeof(struct addrinfo));
-  if (ans == NULL)
+  if (ans == NULL) {
     return EAI_MEMORY;
+  }
 
   saddr = malloc(sizeof(struct sockaddr_in));
   if (saddr == NULL) {
@@ -324,12 +326,13 @@ int pr_getaddrinfo(const char *node, const char *service,
     struct servent *se = NULL;
 
     if ((se = getservbyname(service, proto_name)) != NULL &&
-        se->s_port > 0)
+        se->s_port > 0) {
       port = se->s_port;
 
-    else if ((port = (unsigned short) strtoul(service, NULL, 0)) <= 0 ||
-        port > 65535)
+    } else if ((port = (unsigned short) strtoul(service, NULL, 0)) <= 0 ||
+        port > 65535) {
       port = 0;
+    }
   }
 
   if (hints != NULL &&
@@ -355,13 +358,15 @@ int pr_getaddrinfo(const char *node, const char *service,
 }
 
 void pr_freeaddrinfo(struct addrinfo *ai) {
-  if (!ai)
+  if (ai == NULL) {
     return;
+  }
 
   if (ai->ai_addr != NULL) {
     free(ai->ai_addr);
     ai->ai_addr = NULL;
   }
+
   free(ai);
 }
 #endif /* HAVE_GETADDRINFO or PR_USE_GETADDRINFO */
@@ -585,7 +590,7 @@ static pr_netaddr_t *get_addr_by_ip(pool *p, const char *name,
 static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
     array_header **addrs) {
   pr_netaddr_t *na = NULL;
-  int res;
+  int res, xerrno;
   struct addrinfo hints, *info = NULL;
 
   memset(&hints, 0, sizeof(hints));
@@ -594,11 +599,13 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_protocol = IPPROTO_TCP;
 
+  xerrno = errno;
   pr_trace_msg(trace_channel, 7,
     "attempting to resolve '%s' to IPv4 address via DNS", name);
+  errno = xerrno;
   res = pr_getaddrinfo(name, NULL, &hints, &info);
   if (res != 0) {
-    int xerrno = errno;
+    xerrno = errno;
 
     if (res != EAI_SYSTEM) {
 #ifdef PR_USE_IPV6
@@ -616,6 +623,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 
         pr_trace_msg(trace_channel, 7,
           "attempting to resolve '%s' to IPv6 address via DNS", name);
+        errno = xerrno;
         res = pr_getaddrinfo(name, NULL, &hints, &info);
         if (res != 0) {
           xerrno = errno;
@@ -627,6 +635,10 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
 
             if (res == EAI_NONAME) {
               xerrno = ENOENT;
+# if defined(EAFNOSUPPORT)
+            } else if (res == EAI_FAMILY) {
+              xerrno = EAFNOSUPPORT;
+# endif /* EAFNOSUPPORT */
             }
 
           } else {
@@ -637,11 +649,26 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
         }
 
       } else {
+        const char *errstr;
+
+        errstr = pr_gai_strerror(res);
         pr_trace_msg(trace_channel, 1, "IPv4 getaddrinfo '%s' error: %s",
-          name, pr_gai_strerror(res));
+          name, errstr);
 
         if (res == EAI_NONAME) {
           xerrno = ENOENT;
+# if defined(EAFNOSUPPORT)
+        } else if (res == EAI_FAMILY) {
+          xerrno = EAFNOSUPPORT;
+# endif /* EAFNOSUPPORT */
+        } else {
+          /* Note that this is a hack, to deal with GNU/Linux custom
+           * gai_strerror(3) values which are not exported in the <netdb.h>
+           * header by default.
+           */
+          if (strcmp(errstr, "Address family for hostname not supported") == 0) {
+            xerrno = EAFNOSUPPORT;
+          }
         }
       }
 #else
@@ -649,6 +676,10 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
         name, pr_gai_strerror(res));
       if (res == EAI_NONAME) {
         xerrno = ENOENT;
+# if defined(EAFNOSUPPORT)
+      } else if (res == EAI_FAMILY) {
+        xerrno = EAFNOSUPPORT;
+# endif /* EAFNOSUPPORT */
       }
 #endif /* PR_USE_IPV6 */
 
@@ -738,7 +769,7 @@ static pr_netaddr_t *get_addr_by_name(pool *p, const char *name,
       "attempting to resolve '%s' to IPv6 address via DNS", name);
     res = pr_getaddrinfo(name, NULL, &hints, &info);
     if (res != 0) {
-      int xerrno = errno;
+      xerrno = errno;
 
       if (res != EAI_SYSTEM) {
         pr_trace_msg(trace_channel, 1, "IPv6 getaddrinfo '%s' error: %s",
@@ -895,6 +926,7 @@ static pr_netaddr_t *get_addr_by_device(pool *p, const char *name,
 const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
     array_header **addrs, unsigned int flags) {
   pr_netaddr_t *na = NULL;
+  int xerrno = ENOENT;
 
   if (p == NULL ||
       name == NULL) {
@@ -930,6 +962,8 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
    */
 
   na = get_addr_by_ip(p, name, addrs);
+  xerrno = errno;
+
   if (na != NULL) {
     return na;
   }
@@ -945,6 +979,8 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
 
   if (!(flags & PR_NETADDR_GET_ADDR_FL_EXCL_DNS)) {
     na = get_addr_by_name(p, name, addrs);
+    xerrno = errno;
+
     if (na != NULL) {
       return na;
     }
@@ -952,6 +988,8 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
 
   if (flags & PR_NETADDR_GET_ADDR_FL_INCL_DEVICE) {
     na = get_addr_by_device(p, name, addrs);
+    xerrno = errno;
+
     if (na != NULL) {
       return na;
     }
@@ -959,7 +997,7 @@ const pr_netaddr_t *pr_netaddr_get_addr2(pool *p, const char *name,
 
   pr_trace_msg(trace_channel, 8, "failed to resolve '%s' to an IP address",
     name);
-  errno = ENOENT;
+  errno = xerrno;
   return NULL;
 }
 
@@ -1771,7 +1809,6 @@ static int netaddr_get_dnsstr_getaddrinfo(const pr_netaddr_t *na,
 #ifdef HAVE_GETHOSTBYNAME2
 static int netaddr_get_dnsstr_gethostbyname(const pr_netaddr_t *na,
     const char *name) {
-  char **checkaddr;
   struct hostent *hent = NULL;
   int family, ok = FALSE;
   void *inaddr;
@@ -1791,6 +1828,8 @@ static int netaddr_get_dnsstr_gethostbyname(const pr_netaddr_t *na,
   hent = gethostbyname2(name, family);
 
   if (hent != NULL) {
+    char **checkaddr;
+
     if (hent->h_name != NULL) {
       netaddr_dnscache_set(pr_netaddr_get_ipstr(na), hent->h_name);
     }

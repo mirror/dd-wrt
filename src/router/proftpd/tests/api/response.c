@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2011-2016 The ProFTPD Project team
+ * Copyright (c) 2011-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -87,6 +87,11 @@ START_TEST (response_add_test) {
   const char *last_resp_code = NULL, *last_resp_msg = NULL;
   char *resp_code = R_200, *resp_msg = "OK";
 
+  pr_response_set_pool(NULL);
+
+  mark_point();
+  pr_response_add(resp_code, "%s", resp_msg);
+
   pr_response_set_pool(p);
 
   mark_point();
@@ -117,6 +122,11 @@ START_TEST (response_add_err_test) {
   int res;
   const char *last_resp_code = NULL, *last_resp_msg = NULL;
   char *resp_code = R_450, *resp_msg = "Busy";
+
+  pr_response_set_pool(NULL);
+
+  mark_point();
+  pr_response_add(resp_code, "%s", resp_msg);
 
   pr_response_set_pool(p);
 
@@ -178,6 +188,19 @@ START_TEST (response_block_test) {
 
   res = pr_response_block(FALSE);
   fail_unless(res == 0, "Failed to unblock responses: %s", strerror(errno));
+}
+END_TEST
+
+START_TEST (response_blocked_test) {
+  int res;
+
+  (void) pr_response_block(TRUE);
+  res = pr_response_blocked();
+  fail_unless(res == TRUE, "Failed to detect blocked responses");
+
+  (void) pr_response_block(FALSE);
+  res = pr_response_blocked();
+  fail_unless(res == FALSE, "Failed to detect unblocked responses");
 }
 END_TEST
 
@@ -430,6 +453,7 @@ Suite *tests_get_response_suite(void) {
   tcase_add_test(testcase, response_get_last_test);
 
   tcase_add_test(testcase, response_block_test);
+  tcase_add_test(testcase, response_blocked_test);
   tcase_add_test(testcase, response_clear_test);
   tcase_add_test(testcase, response_flush_test);
   tcase_add_test(testcase, response_send_test);
