@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2017-2018 The ProFTPD Project team
+ * Copyright (c) 2017-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -261,6 +261,14 @@ static int can_set_member(pool *p, const pr_json_object_t *json,
 }
 
 static int get_val_from_node(pool *p, JsonNode *node, JsonTag tag, void *val) {
+
+  /* For any tag except JSON_NULL, we expect val to not be a NULL. */
+  if (tag != JSON_NULL &&
+      val == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
   switch (tag) {
     case JSON_NULL:
       break;

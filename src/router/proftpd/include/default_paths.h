@@ -53,7 +53,7 @@
 #endif
 
 /* The default location of the proftpd configuration file.  Can be
- * overriden at runtime with the '-c' switch
+ * overridden at runtime with the '-c' switch
  */
 #ifndef PR_CONFIG_FILE_PATH
 # define PR_CONFIG_FILE_PATH	"/etc/proftpd.conf"

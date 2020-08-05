@@ -32,7 +32,7 @@ mod_dso.o: mod_dso.c
 
 .c.la:
 	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) $(SHARED_CFLAGS) -c $(top_srcdir)/modules/$*.c
-	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $@ -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $*.lo `cat $(top_srcdir)/modules/$*.c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
+	$(LIBTOOL) --mode=link --tag=CC $(CC) -o $@ -rpath $(LIBEXECDIR) $(LDFLAGS) $(SHARED_LDFLAGS) $(SHARED_MODULE_LIBS) $*.lo `cat $(top_srcdir)/modules/$*.c | grep '$$Libraries:' | sed -e 's/^.*\$$Libraries: \(.*\)\\$$/\1/'`
 
 module_glue.c: module_glue.c.tmpl $(STATIC_MODULE_OBJS)
 	srcdir=$(srcdir) $(srcdir)/glue.sh $(GLUE_MODULE_OBJS)
@@ -74,3 +74,7 @@ depend:
 
 distclean: clean
 	-$(RM) *.gcda *.gcno
+	@dirs="$(SHARED_MODULE_DIRS) $(STATIC_MODULE_DIRS)"; \
+	for dir in $$dirs; do \
+		(cd $(top_builddir)/$$dir/ && $(MAKE) distclean); \
+	done

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2019 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,7 +111,7 @@
 
 /* Maximum path length.  GNU HURD (and some others) do not define
  * MAXPATHLEN.  POSIX' PATH_MAX is mandated to be at least 256 
- * (according to some), so 1K, in the absense of MAXPATHLEN, should be
+ * (according to some), so 1K, in the absence of MAXPATHLEN, should be
  * a reasonable default.
  */
 
@@ -247,11 +247,11 @@
 
 /* FS Statcache tuning. */
 #ifndef PR_TUNABLE_FS_STATCACHE_SIZE
-# define PR_TUNABLE_FS_STATCACHE_SIZE		32
+# define PR_TUNABLE_FS_STATCACHE_SIZE		30000
 #endif
 
 #ifndef PR_TUNABLE_FS_STATCACHE_MAX_AGE
-# define PR_TUNABLE_FS_STATCACHE_MAX_AGE	30
+# define PR_TUNABLE_FS_STATCACHE_MAX_AGE	3
 #endif
 
 #endif /* PR_OPTIONS_H */

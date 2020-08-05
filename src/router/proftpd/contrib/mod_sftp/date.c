@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp date(1) simulation
- * Copyright (c) 2012-2016 TJ Saunders
+ * Copyright (c) 2012-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -151,13 +151,13 @@ int sftp_date_postopen_session(uint32_t channel_id) {
   }
 
   time(&now);
-  date_str = pr_strtime2(now, sess->use_gmt);
+  date_str = pr_strtime3(sess->pool, now, sess->use_gmt);
 
   /* XXX Is this big enough?  Too big? */
   buflen = bufsz = 128;
   buf = ptr = palloc(sess->pool, bufsz);
 
-  /* pr_strtime() trims off the trailing newline, so add it back in. */
+  /* pr_strtime3() trims off the trailing newline, so add it back in. */
   sftp_msg_write_string(&buf, &buflen,
     pstrcat(sess->pool, date_str, "\n", NULL));
 
@@ -178,7 +178,7 @@ int sftp_date_open_session(uint32_t channel_id) {
    * channel ID.
    */
   sess = last = date_sessions;
-  while (sess) {
+  while (sess != NULL) {
     pr_signals_handle();
 
     if (sess->channel_id == channel_id) {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp key exchange (kex)
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -99,9 +99,12 @@ struct sftp_kex {
 
   /* Client-preferred hostkey type, based on algorithm:
    *
-   *  "ssh-dss"      --> KEX_HOSTKEY_DSA
-   *  "ssh-rsa"      --> KEX_HOSTKEY_RSA
-   *  "ecdsa-sha2-*" --> KEX_HOSTKEY_ECDSA_*
+   *  "ssh-dss"      --> SFTP_KEY_DSA
+   *  "ssh-rsa"      --> SFTP_KEY_RSA
+   *  "ecdsa-sha2-*" --> SFTP_KEY_ECDSA_*
+   *  "ssh-ed25519"  --> SFTP_KEY_ED25519
+   *  "rsa-sha2-256" --> SFTP_KEY_RSA_SHA256
+   *  "rsa-sha2-512" --> SFTP_KEY_RSA_SHA512
    */
   enum sftp_key_type_e use_hostkey_type;
 
@@ -116,6 +119,9 @@ struct sftp_kex {
 
   /* Using Curve25519? */
   int use_curve25519;
+
+  /* Using extension negotiations? */
+  int use_ext_info;
 
   /* For generating the session ID */
   DH *dh;
@@ -1112,14 +1118,14 @@ static int create_dh(struct sftp_kex *kex, int type) {
     kex->dh = dh;
 
     switch (type) {
-#ifdef HAVE_SHA512_OPENSSL
+#if defined(HAVE_SHA512_OPENSSL)
       case SFTP_DH_GROUP16_SHA512:
       case SFTP_DH_GROUP18_SHA512:
         kex->hash = EVP_sha512();
         break;
 #endif /* HAVE_SHA512_OPENSSL */
 
-#ifdef HAVE_SHA256_OPENSSL
+#if defined(HAVE_SHA256_OPENSSL)
       case SFTP_DH_GROUP14_SHA256:
         kex->hash = EVP_sha256();
         break;
@@ -1515,6 +1521,7 @@ static const char *get_preferred_name(pool *p, const char *names) {
  */
 static const char *kex_exchanges[] = {
 #if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
+  "curve25519-sha256",
   "curve25519-sha256@libssh.org",
 #endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
 #ifdef PR_USE_OPENSSL_ECC
@@ -1581,6 +1588,11 @@ static const char *get_kexinit_exchange_list(pool *p) {
     }
   }
 
+  if (!(sftp_opts & SFTP_OPT_NO_EXT_INFO)) {
+    /* Indicate support for RFC 8308's extension negotiation mechanism. */
+    res = pstrcat(p, res, *res ? "," : "", pstrdup(p, "ext-info-s"), NULL);
+  }
+
   return res;
 }
 
@@ -1592,10 +1604,14 @@ static const char *get_kexinit_hostkey_algo_list(pool *p) {
 
   /* Our list of supported hostkey algorithms depends on the hostkeys
    * that have been configured.  Show a preference for RSA over DSA,
-   * and ECDSA over both RSA and DSA.
+   * and ECDSA over both RSA and DSA, and ED25519 over all.
    *
    * XXX Should this be configurable later?
    */
+
+  if (sftp_keys_have_ed25519_hostkey() == 0) {
+    list = pstrcat(p, list, *list ? "," : "", "ssh-ed25519", NULL);
+  }
 
 #ifdef PR_USE_OPENSSL_ECC
   res = sftp_keys_have_ecdsa_hostkey(p, &nids);
@@ -1632,6 +1648,14 @@ static const char *get_kexinit_hostkey_algo_list(pool *p) {
 #endif /* PR_USE_OPENSSL_ECC */
 
   if (sftp_keys_have_rsa_hostkey() == 0) {
+#if defined(HAVE_SHA512_OPENSSL)
+    list = pstrcat(p, list, *list ? "," : "", "rsa-sha2-512", NULL);
+#endif /* HAVE_SHA512_OPENSSL */
+
+#if defined(HAVE_SHA256_OPENSSL)
+    list = pstrcat(p, list, *list ? "," : "", "rsa-sha2-256", NULL);
+#endif /* HAVE_SHA256_OPENSSL */
+
     list = pstrcat(p, list, *list ? "," : "", "ssh-rsa", NULL);
   }
 
@@ -1795,8 +1819,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
     kex->session_names->kex_algo = algo;
     return 0;
+  }
 
-  } else if (strncmp(algo, "diffie-hellman-group14-sha1", 28) == 0) {
+  if (strncmp(algo, "diffie-hellman-group14-sha1", 28) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP14_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1806,8 +1831,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
     kex->session_names->kex_algo = algo;
     return 0;
+  }
 
-  } else if (strncmp(algo, "diffie-hellman-group14-sha256", 30) == 0) {
+  if (strncmp(algo, "diffie-hellman-group14-sha256", 30) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP14_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1817,8 +1843,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
     kex->session_names->kex_algo = algo;
     return 0;
+  }
 
-  } else if (strncmp(algo, "diffie-hellman-group16-sha512", 30) == 0) {
+  if (strncmp(algo, "diffie-hellman-group16-sha512", 30) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP16_SHA512) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1828,8 +1855,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
     kex->session_names->kex_algo = algo;
     return 0;
+  }
 
-  } else if (strncmp(algo, "diffie-hellman-group18-sha512", 30) == 0) {
+  if (strncmp(algo, "diffie-hellman-group18-sha512", 30) == 0) {
     if (create_dh(kex, SFTP_DH_GROUP18_SHA512) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1839,8 +1867,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
 
     kex->session_names->kex_algo = algo;
     return 0;
+  }
 
-  } else if (strncmp(algo, "diffie-hellman-group-exchange-sha1", 35) == 0) {
+  if (strncmp(algo, "diffie-hellman-group-exchange-sha1", 35) == 0) {
     if (prepare_dh(kex, SFTP_DH_GEX_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1851,8 +1880,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_gex = TRUE;
     return 0;
+  }
 
-  } else if (strncmp(algo, "rsa1024-sha1", 13) == 0) {
+  if (strncmp(algo, "rsa1024-sha1", 13) == 0) {
     if (create_kexrsa(kex, SFTP_KEXRSA_SHA1) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1863,11 +1893,12 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_kexrsa = TRUE;
     return 0;
+  }
 
 #if ((OPENSSL_VERSION_NUMBER > 0x000907000L && defined(OPENSSL_FIPS)) || \
      (OPENSSL_VERSION_NUMBER > 0x000908000L)) && \
      defined(HAVE_SHA256_OPENSSL)
-  } else if (strncmp(algo, "diffie-hellman-group-exchange-sha256", 37) == 0) {
+  if (strncmp(algo, "diffie-hellman-group-exchange-sha256", 37) == 0) {
     if (prepare_dh(kex, SFTP_DH_GEX_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1878,8 +1909,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_gex = TRUE;
     return 0;
+  }
 
-  } else if (strncmp(algo, "rsa2048-sha256", 15) == 0) {
+  if (strncmp(algo, "rsa2048-sha256", 15) == 0) {
     if (create_kexrsa(kex, SFTP_KEXRSA_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1890,10 +1922,11 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_kexrsa = TRUE;
     return 0;
+  }
 #endif
 
 #ifdef PR_USE_OPENSSL_ECC
-  } else if (strncmp(algo, "ecdh-sha2-nistp256", 19) == 0) {
+  if (strncmp(algo, "ecdh-sha2-nistp256", 19) == 0) {
     if (create_ecdh(kex, SFTP_ECDH_SHA256) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1904,8 +1937,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_ecdh = TRUE;
     return 0;
+  }
 
-  } else if (strncmp(algo, "ecdh-sha2-nistp384", 19) == 0) {
+  if (strncmp(algo, "ecdh-sha2-nistp384", 19) == 0) {
     if (create_ecdh(kex, SFTP_ECDH_SHA384) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1916,8 +1950,9 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_ecdh = TRUE;
     return 0;
+  }
 
-  } else if (strncmp(algo, "ecdh-sha2-nistp521", 19) == 0) {
+  if (strncmp(algo, "ecdh-sha2-nistp521", 19) == 0) {
     if (create_ecdh(kex, SFTP_ECDH_SHA512) < 0) {
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "error using '%s' as the key exchange algorithm: %s", algo,
@@ -1928,15 +1963,26 @@ static int setup_kex_algo(struct sftp_kex *kex, const char *algo) {
     kex->session_names->kex_algo = algo;
     kex->use_ecdh = TRUE;
     return 0;
+  }
 #endif /* PR_USE_OPENSSL_ECC */
 
 #if defined(PR_USE_SODIUM) && defined(HAVE_SHA256_OPENSSL)
-  } else if (strncmp(algo, "curve25519-sha256@libssh.org", 22) == 0) {
+  if (strncmp(algo, "curve25519-sha256", 18) == 0 ||
+      strncmp(algo, "curve25519-sha256@libssh.org", 29) == 0) {
     kex->hash = EVP_sha256();
     kex->session_names->kex_algo = algo;
     kex->use_curve25519 = TRUE;
     return 0;
+  }
 #endif /* PR_USE_SODIUM and HAVE_SHA256_OPENSSL */
+
+  if (strcmp(algo, "ext-info-c") == 0 ||
+      strcmp(algo, "ext-info-s") == 0) {
+    (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
+      "unable to use extension negotiation algorithm '%s' for key exchange",
+      algo);
+    errno = EINVAL;
+    return -1;
   }
 
   (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -1958,6 +2004,20 @@ static int setup_hostkey_algo(struct sftp_kex *kex, const char *algo) {
     return 0;
   }
 
+#if defined(HAVE_SHA256_OPENSSL)
+  if (strncmp(algo, "rsa-sha2-256", 12) == 0) {
+    kex->use_hostkey_type = SFTP_KEY_RSA_SHA256;
+    return 0;
+  }
+#endif /* HAVE_SHA256_OPENSSL */
+
+#if defined(HAVE_SHA512_OPENSSL)
+  if (strncmp(algo, "rsa-sha2-512", 12) == 0) {
+    kex->use_hostkey_type = SFTP_KEY_RSA_SHA512;
+    return 0;
+  }
+#endif /* HAVE_SHA512_OPENSSL */
+
 #ifdef PR_USE_OPENSSL_ECC
   if (strncmp(algo, "ecdsa-sha2-nistp256", 20) == 0) {
     kex->use_hostkey_type = SFTP_KEY_ECDSA_256;
@@ -1974,6 +2034,13 @@ static int setup_hostkey_algo(struct sftp_kex *kex, const char *algo) {
     return 0;
   }
 #endif /* PR_USE_OPENSSL_ECC */
+
+#ifdef PR_USE_SODIUM
+  if (strncmp(algo, "ssh-ed25519", 12) == 0) {
+    kex->use_hostkey_type = SFTP_KEY_ED25519;
+    return 0;
+  }
+#endif /* PR_USE_SODIUM */
 
   /* XXX Need to handle "x509v3-ssh-dss", "x509v3-ssh-rsa", "x509v3-sign"
    * algorithms here.
@@ -2100,6 +2167,12 @@ static int get_session_names(struct sftp_kex *kex, int *correct_guess) {
       " + Session key exchange: %s", kex_algo);
     pr_trace_msg(trace_channel, 20, "session key exchange algorithm: %s",
       kex_algo);
+
+    /* Did the client indicate EXT_INFO support (Issue #984)? */
+    kex->use_ext_info = sftp_misc_namelist_contains(kex->pool, client_list,
+      "ext-info-c");
+    pr_trace_msg(trace_channel, 20, "client %s EXT_INFO support",
+      kex->use_ext_info ? "signaled" : "did not signal" );
 
   } else {
     (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
@@ -2784,6 +2857,67 @@ static int write_newkeys_reply(struct ssh2_packet *pkt) {
   ptr = buf = palloc(pkt->pool, bufsz);
 
   sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_NEWKEYS);
+
+  pkt->payload = ptr;
+  pkt->payload_len = (bufsz - buflen);
+
+  return 0;
+}
+
+static int write_ext_info_server_sig_algs(struct ssh2_packet *pkt, char **buf,
+    uint32_t *buflen) {
+  char *sig_algs = "";
+
+#if defined(PR_USE_SODIUM)
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "ssh-ec25519",
+    NULL);
+#endif /* PR_USE_SODIUM */
+
+#if defined(HAVE_SHA256_OPENSSL)
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "rsa-sha2-256",
+    NULL);
+#endif /* HAVE_SHA256_OPENSSL */
+
+#if defined(HAVE_SHA512_OPENSSL)
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "rsa-sha2-512",
+    NULL);
+#endif /* HAVE_SHA512_OPENSSL */
+
+#if defined(PR_USE_OPENSSL_ECC)
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "",
+    "ecdsa-sha2-nistp256,ecdsa-sha2-nistp384,ecdsa-sha2-nistp521", NULL);
+#endif /* PR_USE_OPENSSL_ECC */
+
+  sig_algs = pstrcat(pkt->pool, sig_algs, *sig_algs ? "," : "", "ssh-rsa",
+    NULL);
+#if !defined(OPENSSL_NO_DSA)
+  sig_algs = pstrcat(pkt->pool, sig_algs, ",", "ssh-dss", NULL);
+#endif /* OPENSSL_NO_DSA */
+
+  pr_trace_msg(trace_channel, 11,
+    "writing 'server-sig-algs' EXT_INFO extension: %s", sig_algs);
+
+  sftp_msg_write_string(buf, buflen, "server-sig-algs");
+  sftp_msg_write_string(buf, buflen, sig_algs);
+
+  return 0;
+}
+
+static int write_ext_info(struct ssh2_packet *pkt) {
+  unsigned char *buf, *ptr;
+  uint32_t bufsz, buflen, ext_count = 1;
+
+  /* XXX Is this large enough?  Too large? */
+  buflen = bufsz = 8192;
+  ptr = buf = palloc(pkt->pool, bufsz);
+
+  sftp_msg_write_byte(&buf, &buflen, SFTP_SSH2_MSG_EXT_INFO);
+
+  /* TODO: Consider supporting the "no-flow-control" extension. */
+
+  ext_count = 1;
+  sftp_msg_write_int(&buf, &buflen, ext_count);
+  write_ext_info_server_sig_algs(pkt, &buf, &buflen);
 
   pkt->payload = ptr;
   pkt->payload_len = (bufsz - buflen);
@@ -4694,6 +4828,42 @@ int sftp_kex_handle(struct ssh2_packet *pkt) {
   destroy_pool(pkt->pool);
   cmd = NULL;
 
+  /* If extension negotiation has not been disabled, AND if we have not
+   * received a service request, AND if the client sent "ext-info-c", THEN
+   * send our EXT_INFO.  We do not want send this during rekeys.
+   */
+  if (!(sftp_opts & SFTP_OPT_NO_EXT_INFO) &&
+      kex->use_ext_info == TRUE &&
+      !(sftp_sess_state & SFTP_SESS_STATE_HAVE_SERVICE)) {
+    struct ssh2_packet *pkt2;
+
+    pr_trace_msg(trace_channel, 9, "sending EXT_INFO message to client");
+
+    pkt2 = sftp_ssh2_packet_create(kex_pool);
+    res = write_ext_info(pkt2);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt2->pool);
+      return -1;
+    }
+
+    res = sftp_ssh2_packet_write(sftp_conn->wfd, pkt2);
+    if (res < 0) {
+      destroy_kex(kex);
+      destroy_pool(pkt2->pool);
+      return -1;
+    }
+
+    cmd = pr_cmd_alloc(pkt2->pool, 1, pstrdup(pkt->pool, "EXT_INFO"));
+    cmd->arg = "";
+    cmd->cmd_class = CL_AUTH|CL_SSH;
+
+    pr_cmd_dispatch_phase(cmd, LOG_CMD, 0);
+
+    destroy_pool(pkt2->pool);
+    cmd = NULL;
+  }
+
   /* Reset this flag for the next time through. */
   kex_sent_kexinit = FALSE;
 
@@ -4744,7 +4914,7 @@ int sftp_kex_init(const char *client_version, const char *server_version) {
     }
   }
 
-  if (!kex_pool) {
+  if (kex_pool == NULL) {
     kex_pool = make_sub_pool(sftp_pool);
     pr_pool_tag(kex_pool, "Kex Pool");
   }

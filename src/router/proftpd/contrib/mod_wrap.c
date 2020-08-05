@@ -1,7 +1,7 @@
 /*
  * ProFTPD: mod_wrap -- use Wietse Venema's TCP wrappers library for
  *                      access control
- * Copyright (c) 2000-2017 TJ Saunders
+ * Copyright (c) 2000-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -210,7 +210,7 @@ static config_rec *wrap_resolve_user(pool *p, const char **user) {
   char *ourname = NULL, *anonname = NULL;
   unsigned char is_alias = FALSE, force_anon = FALSE;
 
-  /* Precendence rules:
+  /* Precedence rules:
    *   1. Search for UserAlias directive.
    *   2. Search for Anonymous directive.
    *   3. Normal user login
@@ -642,7 +642,7 @@ MODRET set_tcpuseraccessfiles(cmd_rec *cmd) {
  */
 MODRET set_tcpaccesssysloglevels(cmd_rec *cmd) {
   config_rec *c = NULL;
-  int allow_level, deny_level;
+  int allow_level = PR_LOG_DEBUG, deny_level = PR_LOG_DEBUG;
 
   CHECK_ARGS(cmd, 2);
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_ANON|CONF_GLOBAL);

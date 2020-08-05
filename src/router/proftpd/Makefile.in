@@ -17,15 +17,33 @@ LIBLTDL=@LIBLTDL@
 MAIN_LDFLAGS=@MAIN_LDFLAGS@
 MAIN_LIBS=@MAIN_LIBS@
 
-BUILD_PROFTPD_OBJS=$(BUILD_OBJS) $(BUILD_STATIC_MODULE_OBJS)
-BUILD_PROFTPD_ARCHIVES=$(BUILD_STATIC_MODULE_ARCHIVES)
-BUILD_BIN=proftpd$(EXEEXT) ftpcount$(EXEEXT) ftpdctl$(EXEEXT) ftpscrub$(EXEEXT) ftpshut$(EXEEXT) ftptop$(EXEEXT) ftpwho$(EXEEXT)
+BUILD_PROFTPD_OBJS=$(BUILD_OBJS) \
+  $(BUILD_STATIC_MODULE_OBJS)
 
+BUILD_PROFTPD_ARCHIVES=$(BUILD_STATIC_MODULE_ARCHIVES)
+
+BUILD_BIN=proftpd$(EXEEXT) \
+  ftpcount$(EXEEXT) \
+  ftpdctl$(EXEEXT) \
+  ftpscrub$(EXEEXT) \
+  ftpshut$(EXEEXT) \
+  ftptop$(EXEEXT) \
+  ftpwho$(EXEEXT)
+
+# Note that this value MUST NOT be quoted, for it to be handled properly.
+BUILD_STAMP_FMT = %a %b %e %Y %H:%M:%S %Z
+
+# See https://reproducible-builds.org/docs/source-date-epoch/
+ifdef SOURCE_DATE_EPOCH
+	BUILD_STAMP ?= $(shell LC_ALL=C date --utc --date="@$(SOURCE_DATE_EPOCH)" "+$(BUILD_STAMP_FMT)")
+else
+	BUILD_STAMP ?= $(shell date "+$(BUILD_STAMP_FMT)")
+endif
 
 all: $(BUILD_BIN)
 
 include/buildstamp.h:
-	echo \#define BUILD_STAMP \"`date +"%a %b %e %Y %H:%M:%S %Z"`\" > include/buildstamp.h
+	echo \#define BUILD_STAMP \"$(BUILD_STAMP)\" > include/buildstamp.h
 
 dummy:
 

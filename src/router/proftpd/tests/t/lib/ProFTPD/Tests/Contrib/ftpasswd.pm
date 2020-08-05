@@ -55,6 +55,17 @@ my $TESTS = {
     order => ++$order,
     test_class => [qw(bug forking)],
   },
+
+  ftpasswd_change_password_same_password_issue898 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  ftpasswd_delete_user_no_such_user_issue898 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
 };
 
 sub new {
@@ -833,6 +844,110 @@ sub ftpasswd_home_not_directory {
       unless ($exit_status != 0) {
         die('Non-directory --home directory succeeded unexpectedly');
       }
+
+    } else {
+      die("Can't execute '$cmd': $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub ftpasswd_change_password_same_password_issue898 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'contrib');
+
+  my $ftpasswd = get_ftpasswd_bin();
+
+  # Change the password of a user to be the same password, and ensure that
+  # the permissions on the passwd file are restored properly.
+
+  my $cmd = "echo $setup->{passwd} | $ftpasswd --passwd --file=$setup->{auth_user_file} --name=$setup->{user} --stdin --change-password";
+
+  my $ex;
+  eval {
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Executing ftpasswd: $cmd\n";
+    }
+
+    if (open(my $cmdh, "$cmd |")) {
+      while (my $line = <$cmdh>) {
+        chomp($line);
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "OUT: $line\n";
+        }
+      }
+
+      if (close($cmdh)) {
+        die("ftpasswd command succeeded unexpectedly changing password to same value");
+      }
+
+      my $exit_status = $? >> 8;
+      unless ($exit_status != 0) {
+        die('Using existing password for --change-password succeeded unexpectedly');
+      }
+
+      # Make sure the permissions on the passwd file are as expected
+      my $file_mode = sprintf("%lo", (stat($setup->{auth_user_file}))[2] & 07777);
+      my $expected = '440';
+      $self->assert($expected eq $file_mode,
+        test_msg("Expected perms '$expected', got '$file_mode'"));
+
+    } else {
+      die("Can't execute '$cmd': $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub ftpasswd_delete_user_no_such_user_issue898 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'contrib');
+
+  my $ftpasswd = get_ftpasswd_bin();
+
+  # Attempt to delete a user which does not exist, and ensure that
+  # the permissions on the passwd file are restored properly.
+
+  my $cmd = "$ftpasswd --passwd --file=$setup->{auth_user_file} --name=foo --delete-user";
+
+  my $ex;
+  eval {
+    if ($ENV{TEST_VERBOSE}) {
+      print STDERR "Executing ftpasswd: $cmd\n";
+    }
+
+    if (open(my $cmdh, "$cmd |")) {
+      while (my $line = <$cmdh>) {
+        chomp($line);
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "OUT: $line\n";
+        }
+      }
+
+      if (close($cmdh)) {
+        die("ftpasswd command succeeded unexpectedly deleting nonexistent user");
+      }
+
+      my $exit_status = $? >> 8;
+      unless ($exit_status != 0) {
+        die('Deleting user which does not exist succeeded unexpectedly');
+      }
+
+      # Make sure the permissions on the passwd file are as expected
+      my $file_mode = sprintf("%lo", (stat($setup->{auth_user_file}))[2] & 07777);
+      my $expected = '440';
+      $self->assert($expected eq $file_mode,
+        test_msg("Expected perms '$expected', got '$file_mode'"));
 
     } else {
       die("Can't execute '$cmd': $!");

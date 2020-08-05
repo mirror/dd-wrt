@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_wrap2 -- tcpwrappers-like access control
- * Copyright (c) 2000-2017 TJ Saunders
+ * Copyright (c) 2000-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -332,10 +332,10 @@ static char *wrap2_get_hostname(wrap2_host_t *host) {
 
   if (*host->name == '\0') {
     int reverse_dns;
-    size_t namelen;
 
     reverse_dns = pr_netaddr_set_reverse_dns(TRUE);
     if (reverse_dns) {
+      size_t namelen;
       pr_netaddr_t *remote_addr;
 
       /* If UseReverseDNS is on, then clear any caches, so that we really do
@@ -692,7 +692,6 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
     }
 
     if (WRAP2_IS_NOT_INADDR(tok)) {
-      register unsigned int i;
       char *primary_name;
       array_header *dns_names;
 
@@ -712,6 +711,7 @@ static unsigned char wrap2_match_host(char *tok, wrap2_host_t *host) {
         session.c->remote_addr);
       if (dns_names != NULL &&
           dns_names->nelts > 0) {
+        register unsigned int i;
         char **names;
 
         names = dns_names->elts;
@@ -871,7 +871,7 @@ static char *wrap2_opt_trim_string(char *string) {
 
   for (cp = string; *cp; cp++) {
     if (!PR_ISSPACE(*cp)) {
-      if (start == '\0') {
+      if (*start == '\0') {
         start = cp;
       }
       end = cp;
@@ -902,26 +902,30 @@ static char *wrap2_opt_get_field(array_header *opts, unsigned int *opt_idx) {
 
   src = dst = res = (string ? string : last);
 
-  if (*src == '\0')
+  if (*src == '\0') {
     return NULL;
+  }
 
   while ((c = *src)) {
     if (c == ':') {
-      if (*++src == '\0')
+      if (*++src == '\0') {
         wrap2_log("option rule ends in ':'");
+      }
 
       break;
     }
 
-    if (c == '\\' && src[1] == ':')
+    if (c == '\\' && src[1] == ':') {
       src++;
+    }
+
     *dst++ = *src++;
   }
 
   last = src;
   *dst = '\0';
 
-  *opt_idx++;
+  (*opt_idx)++;
   return res;
 }
 

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -137,6 +137,10 @@ int pr_response_block(int bool) {
   return -1;
 }
 
+int pr_response_blocked(void) {
+  return resp_blocked;
+}
+
 void pr_response_clear(pr_response_t **head) {
   reset_last_response();
 
@@ -150,7 +154,8 @@ void pr_response_flush(pr_response_t **head) {
   const char *last_numeric = NULL;
   pr_response_t *resp = NULL;
 
-  if (head == NULL) {
+  if (head == NULL ||
+      *head == NULL) {
     return;
   }
 
@@ -219,6 +224,12 @@ void pr_response_add_err(const char *numeric, const char *fmt, ...) {
     return;
   }
 
+  if (resp_pool == NULL) {
+    pr_trace_msg(trace_channel, 1,
+      "no response pool set, ignoring added %s error response", numeric);
+    return;
+  }
+
   va_start(msg, fmt);
   res = pr_vsnprintf(resp_buf, sizeof(resp_buf), fmt, msg);
   va_end(msg);
@@ -269,6 +280,12 @@ void pr_response_add(const char *numeric, const char *fmt, ...) {
   va_list msg;
 
   if (fmt == NULL) {
+    return;
+  }
+
+  if (resp_pool == NULL) {
+    pr_trace_msg(trace_channel, 1,
+      "no response pool set, ignoring added %s response", numeric);
     return;
   }
 

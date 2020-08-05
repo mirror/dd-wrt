@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -109,28 +109,31 @@ START_TEST (netio_open_test) {
 
   nstrm = pr_netio_open(p, 7777, fd, PR_NETIO_IO_RD);
   fail_unless(nstrm == NULL, "Failed to handle unknown stream type argument");
-  fail_unless(errno == EPERM, "Failed to set errno to EPERM, got %s (%d)",
+  fail_unless(errno == EINVAL, "Failed to set errno to EINVAL, got %s (%d)",
     strerror(errno), errno);
 
   /* open/close CTRL stream */
   nstrm = pr_netio_open(p, PR_NETIO_STRM_CTRL, fd, PR_NETIO_IO_RD);
   fail_unless(nstrm != NULL, "Failed to open ctrl stream on fd %d: %s", fd,
     strerror(errno));
-
+  fail_unless(nstrm->strm_netio != NULL,
+    "Failed to assign owning NetIO to stream");
   pr_netio_close(nstrm);
 
   /* open/close DATA stream */
   nstrm = pr_netio_open(p, PR_NETIO_STRM_DATA, fd, PR_NETIO_IO_WR);
   fail_unless(nstrm != NULL, "Failed to open data stream on fd %d: %s", fd,
     strerror(errno));
-
+  fail_unless(nstrm->strm_netio != NULL,
+    "Failed to assign owning NetIO to stream");
   pr_netio_close(nstrm);
 
   /* open/close OTHR stream */
   nstrm = pr_netio_open(p, PR_NETIO_STRM_OTHR, fd, PR_NETIO_IO_WR);
   fail_unless(nstrm != NULL, "Failed to open othr stream on fd %d: %s", fd,
     strerror(errno));
-
+  fail_unless(nstrm->strm_netio != NULL,
+    "Failed to assign owning NetIO to stream");
   pr_netio_close(nstrm);
 }
 END_TEST
@@ -369,9 +372,6 @@ START_TEST (netio_telnet_gets_single_line_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
@@ -379,6 +379,9 @@ START_TEST (netio_telnet_gets_single_line_test) {
   fail_unless(pbuf->remaining == (size_t) xfer_bufsz,
     "Expected %d remaining bytes, got %lu", xfer_bufsz,
     (unsigned long) pbuf->remaining);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -421,12 +424,12 @@ START_TEST (netio_telnet_gets_multi_line_test) {
   fail_unless(strcmp(buf, second_cmd) == 0, "Expected string '%s', got '%s'",
     second_cmd, buf);
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(pbuf->remaining == (size_t) xfer_bufsz,
     "Expected %d remaining bytes, got %lu", xfer_bufsz,
     (unsigned long) pbuf->remaining);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -452,12 +455,12 @@ START_TEST (netio_telnet_gets_no_newline_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res == NULL, "Read in string unexpectedly, got '%s'", buf);
   fail_unless(xerrno == E2BIG, "Failed to set errno to E2BIG, got (%d) %s",
     xerrno, strerror(xerrno));
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -538,9 +541,6 @@ START_TEST (netio_telnet_gets_telnet_bare_will_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -551,6 +551,9 @@ START_TEST (netio_telnet_gets_telnet_bare_will_test) {
     telnet_opt, buf[8]);
   fail_unless(strcmp(buf + 9, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 9);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -701,9 +704,6 @@ START_TEST (netio_telnet_gets_telnet_bare_wont_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -714,6 +714,9 @@ START_TEST (netio_telnet_gets_telnet_bare_wont_test) {
     telnet_opt, buf[8]);
   fail_unless(strcmp(buf + 9, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 9);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -794,9 +797,6 @@ START_TEST (netio_telnet_gets_telnet_bare_do_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -807,6 +807,9 @@ START_TEST (netio_telnet_gets_telnet_bare_do_test) {
     telnet_opt, buf[8]);
   fail_unless(strcmp(buf + 9, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 9);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -887,9 +890,6 @@ START_TEST (netio_telnet_gets_telnet_bare_dont_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -900,6 +900,9 @@ START_TEST (netio_telnet_gets_telnet_bare_dont_test) {
     telnet_opt, buf[8]);
   fail_unless(strcmp(buf + 9, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 9);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -927,13 +930,13 @@ START_TEST (netio_telnet_gets_telnet_ip_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
     buf);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -960,9 +963,6 @@ START_TEST (netio_telnet_gets_telnet_bare_ip_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -971,6 +971,9 @@ START_TEST (netio_telnet_gets_telnet_bare_ip_test) {
     buf[7]);
   fail_unless(strcmp(buf + 8, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 8);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -998,13 +1001,13 @@ START_TEST (netio_telnet_gets_telnet_dm_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
     buf);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1031,9 +1034,6 @@ START_TEST (netio_telnet_gets_telnet_bare_dm_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -1042,6 +1042,9 @@ START_TEST (netio_telnet_gets_telnet_bare_dm_test) {
     buf[7]);
   fail_unless(strcmp(buf + 8, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 8);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1068,9 +1071,6 @@ START_TEST (netio_telnet_gets_telnet_single_iac_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -1079,6 +1079,9 @@ START_TEST (netio_telnet_gets_telnet_single_iac_test) {
     buf[7]);
   fail_unless(strcmp(buf + 8, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 8);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1105,12 +1108,12 @@ START_TEST (netio_telnet_gets_bug3521_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res == NULL, "Expected null");
   fail_unless(xerrno == E2BIG, "Failed to set errno to E2BIG, got %s (%d)",
     strerror(xerrno), xerrno);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1138,9 +1141,6 @@ START_TEST (netio_telnet_gets_bug3697_test) {
   res = pr_netio_telnet_gets(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strncmp(buf, cmd, 7) == 0, "Expected string '%*s', got '%*s'",
@@ -1149,6 +1149,9 @@ START_TEST (netio_telnet_gets_bug3697_test) {
     buf[7]);
   fail_unless(strcmp(buf + 8, cmd + 7) == 0, "Expected string '%s', got '%s'",
     cmd + 7, buf + 8);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1180,13 +1183,13 @@ START_TEST (netio_telnet_gets_eof_test) {
   res = pr_netio_telnet_gets(buf, strlen(cmd) + 2, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res != NULL, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
     buf);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1215,9 +1218,6 @@ START_TEST (netio_telnet_gets2_single_line_test) {
   res = pr_netio_telnet_gets2(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res > 0, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
@@ -1228,6 +1228,9 @@ START_TEST (netio_telnet_gets2_single_line_test) {
   fail_unless(pbuf->remaining == (size_t) xfer_bufsz,
     "Expected %d remaining bytes, got %lu", xfer_bufsz,
     (unsigned long) pbuf->remaining);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1257,9 +1260,6 @@ START_TEST (netio_telnet_gets2_single_line_crnul_test) {
   res = pr_netio_telnet_gets2(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res > 0, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
@@ -1270,6 +1270,9 @@ START_TEST (netio_telnet_gets2_single_line_crnul_test) {
   fail_unless(pbuf->remaining == (size_t) xfer_bufsz,
     "Expected %d remaining bytes, got %lu", xfer_bufsz,
     (unsigned long) pbuf->remaining);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 
@@ -1298,9 +1301,6 @@ START_TEST (netio_telnet_gets2_single_line_lf_test) {
   res = pr_netio_telnet_gets2(buf, sizeof(buf)-1, in, out);
   xerrno = errno;
 
-  pr_netio_close(in);
-  pr_netio_close(out);
-
   fail_unless(res > 0, "Failed to get string from stream: (%d) %s",
     xerrno, strerror(xerrno));
   fail_unless(strcmp(buf, cmd) == 0, "Expected string '%s', got '%s'", cmd,
@@ -1311,6 +1311,9 @@ START_TEST (netio_telnet_gets2_single_line_lf_test) {
   fail_unless(pbuf->remaining == (size_t) xfer_bufsz,
     "Expected %d remaining bytes, got %lu", xfer_bufsz,
     (unsigned long) pbuf->remaining);
+
+  pr_netio_close(in);
+  pr_netio_close(out);
 }
 END_TEST
 

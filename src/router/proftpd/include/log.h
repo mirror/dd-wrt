@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -98,7 +98,6 @@
 #   endif
 # endif
 #endif
-
 
 int log_lastlog(uid_t uid, const char *user_name, const char *tty,
   const pr_netaddr_t *remote_addr);
@@ -238,5 +237,13 @@ void pr_log_stacktrace(int fd, const char *name);
 #else
 #define pr_log_stacktrace(a,b) do { } while(0)
 #endif
+
+/* Set options that affect the format of the logged messages. */
+int pr_log_set_options(unsigned long log_opts);
+#define PR_LOG_OPT_USE_TIMESTAMP			0x0001
+#define PR_LOG_OPT_USE_HOSTNAME				0x0002
+#define PR_LOG_OPT_USE_VHOST				0x0004
+#define PR_LOG_OPT_USE_ROLE_BASED_PROCESS_LABELS	0x0008
+#define PR_LOG_OPT_DEFAULT		(PR_LOG_OPT_USE_TIMESTAMP|PR_LOG_OPT_USE_HOSTNAME|PR_LOG_OPT_USE_VHOST)
 
 #endif /* PR_LOG_H */

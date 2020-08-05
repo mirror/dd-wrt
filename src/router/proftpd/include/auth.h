@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2016 The ProFTPD Project team
+ * Copyright (c) 2004-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -170,6 +170,10 @@ const char *pr_auth_get_home(pool *, const char *pw_dir);
  * crypt(3) function.
  */
 size_t pr_auth_set_max_password_len(pool *p, size_t len);
+
+/* Pool-using convenience wrapper for the bcrypt() function. */
+char *pr_auth_bcrypt(pool *p, const char *key, const char *salt,
+  size_t *hashed_len);
 
 /* For internal use only. */
 int init_auth(void);

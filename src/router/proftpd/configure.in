@@ -1,7 +1,7 @@
 dnl ProFTPD - FTP server daemon
 dnl Copyright (c) 1997, 1998 Public Flood Software
 dnl Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
-dnl Copyright (c) 2001-2018 The ProFTPD Project team
+dnl Copyright (c) 2001-2020 The ProFTPD Project team
 dnl
 dnl This program is free software; you can redistribute it and/or modify
 dnl it under the terms of the GNU General Public License as published by
@@ -89,7 +89,9 @@ fi
 
 LDFLAGS="-L\$(top_srcdir)/lib -L\$(top_builddir)/lib $LDFLAGS"
 
-if test $ac_cv_prog_gcc = yes; then
+# AIX has issues with the -rdynamic linker flag.  How many different AIX
+# versions should we support here?
+if test $ac_cv_prog_gcc = yes && test "$OSTYPE" != "-DAIX7"; then
   dnl Make sure to use the -rdynamic linker flag, for stacktraces
   LDFLAGS="$LDFLAGS -rdynamic"
 fi
@@ -157,6 +159,8 @@ LIBEXECDIR=`eval echo $libexecdir`
 AC_SUBST(LIBEXECDIR)
 LOCALSTATEDIR=`eval echo $localstatedir`
 AC_SUBST(LOCALSTATEDIR)
+RUNSTATEDIR=`eval echo $runstatedir`
+AC_SUBST(RUNSTATEDIR)
 PREFIX=`eval echo $prefix`
 AC_SUBST(PREFIX)
 SBINDIR=`eval echo $sbindir`
@@ -178,7 +182,7 @@ dnl problems for certain builds of proftpd, e.g. ProFTPD and MySQL (which
 dnl itself similarly bundles a getopt implementation).  Thus, we need to
 dnl support/handle --without-getopt, to disable use of ProFTPD's getopt.
 dnl I don't know if MySQL supports any similar option.
-LIB_OBJS="pr_fnmatch.o sstrncpy.o strsep.o vsnprintf.o glibc-glob.o glibc-hstrerror.o glibc-mkstemp.o pr-syslog.o pwgrent.o hanson-tpl.o ccan-json.o"
+LIB_OBJS="pr_fnmatch.o sstrncpy.o strsep.o vsnprintf.o glibc-glob.o glibc-hstrerror.o glibc-mkstemp.o pr-syslog.o pwgrent.o hanson-tpl.o ccan-json.o openbsd-blowfish.o openbsd-bcrypt.o"
 
 AC_ARG_WITH(getopt,
   [AC_HELP_STRING(
@@ -1036,7 +1040,7 @@ AC_ARG_ENABLE(tests,
     [enable unit tests (default=no)])
   ],
   [
-    if test "$enableval" != xno ; then
+    if test x"$enableval" != xno ; then
       AC_CHECK_HEADERS(check.h)
 
       AC_CHECK_LIB(check, tcase_create,
@@ -1459,7 +1463,6 @@ AC_TRY_LINK([
   ]
 )
 
-
 AC_MSG_CHECKING(for AIX loginfailed)
 AC_TRY_LINK([
   #include <sys/types.h>
@@ -1587,9 +1590,9 @@ if test x"$enable_cap" != xno; then
       rev=`uname -r | awk -F'[[.-]]' '{printf "%03d%03d%03d", $1, $2, $3}'`
 
       if test $rev -ge 002001097; then
-        AC_CHECK_HEADERS(linux/capability.h)
+        AC_CHECK_HEADERS(linux/capability.h sys/capability.h)
  
-        if test $ac_cv_header_linux_capability_h = "yes"; then
+        if test x"$ac_cv_header_linux_capability_h" = "xyes" && test x"$ac_cv_header_sys_capability_h" = "xyes"; then
           ac_add_mod_cap="yes"
         fi
 
@@ -1626,7 +1629,7 @@ if test x"$ac_add_mod_cap" = xyes; then
   fi
 fi
 
-AC_CHECK_HEADERS(bstring.h crypt.h ctype.h execinfo.h iconv.h inttypes.h langinfo.h limits.h locale.h)
+AC_CHECK_HEADERS(bstring.h crypt.h ctype.h execinfo.h iconv.h inttypes.h langinfo.h limits.h locale.h sasl/sasl.h)
 AC_CHECK_HEADERS(string.h strings.h stropts.h)
 AC_CHECK_HEADERS(sys/file.h sys/mman.h sys/types.h sys/ucred.h sys/uio.h sys/socket.h)
 AC_MSG_CHECKING(for net/if.h)
@@ -1900,7 +1903,8 @@ AC_PROG_GCC_TRADITIONAL
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 
-AC_CHECK_FUNCS(bcopy crypt fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp mkdtemp nl_langinfo)
+AC_CHECK_FUNCS(bcopy crypt ctime_r fdatasync fgetgrent fgetpwent fgetspent flock fpathconf freeaddrinfo fsync futimes getifaddrs getpgid getpgrp gmtime_r localtime_r mkdtemp nl_langinfo)
+
 AC_CHECK_FUNC(gai_strerror,
   AC_DEFINE(HAVE_GAI_STRERROR, 1,
     [Define if you have the gai_strerror() function]),
@@ -2031,8 +2035,8 @@ AC_TRY_LINK(
 AC_CHECK_FUNCS(getcwd getenv getgrouplist getgroups getgrset gethostbyname2 gethostname getnameinfo)
 AC_CHECK_FUNCS(gettimeofday hstrerror inet_aton inet_ntop inet_pton initgroups)
 AC_CHECK_FUNCS(loginrestrictions)
-AC_CHECK_FUNCS(memcpy mempcpy memset_s mkdir mkstemp mlock mlockall munlock munlockall)
-AC_CHECK_FUNCS(pathconf posix_fadvise pread prctl putenv pwrite random regcomp rmdir select setgroups socket srandom statfs strchr strcoll strerror)
+AC_CHECK_FUNCS(explicit_bzero memcpy mempcpy memset_s mkdir mkstemp mlock mlockall munlock munlockall)
+AC_CHECK_FUNCS(pathconf posix_fadvise pread prctl putenv pwrite random regcomp rmdir select setgroups socket srandom statfs strchr strcoll strerror timingsafe_bcmp)
 AC_CHECK_FUNCS(strlcat strlcpy strsep strtod strtof strtol strtoll strtoull setprotoent setspent endprotoent)
 # __snprintf and __vsnprintf are only on solaris and _really_ broken there.
 AC_CHECK_FUNCS(vsnprintf snprintf)
@@ -3562,6 +3566,103 @@ if test x"$pr_use_openssl" = xyes; then
   )
   LIBS="$saved_libs"
 
+  AC_MSG_CHECKING([whether OpenSSL has SSL num tickets support])
+  saved_libs="$LIBS"
+
+  dnl Splice out -lsupp, since that library hasn't been built yet
+  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+  LIBS="-lcrypto -lssl $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/ssl.h>
+    ],
+    [
+      (void) SSL_set_num_tickets(NULL, 0);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_SSL_NUM_TICKETS, 1, [Define if your OpenSSL supports SSL num tickets])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has SSL read ahead support])
+  saved_libs="$LIBS"
+
+  dnl Splice out -lsupp, since that library hasn't been built yet
+  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+  LIBS="-lcrypto -lssl $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/ssl.h>
+    ],
+    [
+      (void) SSL_set_read_ahead(NULL, 1);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_SSL_READ_AHEAD, 1, [Define if your OpenSSL supports SSL read ahead])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has SSL session ID context set support])
+  saved_libs="$LIBS"
+
+  dnl Splice out -lsupp, since that library hasn't been built yet
+  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+  LIBS="-lcrypto -lssl $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/ssl.h>
+    ],
+    [
+      (void) SSL_SESSION_set1_id_context(NULL, NULL, 0);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_SSL_SESSION_SET1_ID_CONTEXT, 1, [Define if your OpenSSL supports setting SSL session ID context])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
+  AC_MSG_CHECKING([whether OpenSSL has SSL session ticket callback support])
+  saved_libs="$LIBS"
+
+  dnl Splice out -lsupp, since that library hasn't been built yet
+  LIBS=`echo "$LIBS" | sed -e 's/-lsupp//g'`;
+  LIBS="-lcrypto -lssl $LIBS"
+
+  AC_TRY_LINK(
+    [
+      #include <openssl/ssl.h>
+    ],
+    [
+
+      (void) SSL_CTX_set_session_ticket_cb(NULL, NULL, NULL, NULL);
+    ],
+    [
+      AC_MSG_RESULT(yes)
+      AC_DEFINE(PR_USE_OPENSSL_SSL_SESSION_TICKET_CALLBACK, 1, [Define if your OpenSSL supports SSL session ticket callbacks])
+    ],
+    [
+      AC_MSG_RESULT(no)
+    ]
+  )
+  LIBS="$saved_libs"
+
   pr_use_pthread_for_openssl="no"
   if test x"$openssl_cmdline" != xno; then
     if `$openssl_cmdline version 2>/dev/null 1>&2`; then
@@ -3706,6 +3807,8 @@ if test x"$pr_use_sodium" = xyes; then
     [AC_DEFINE(HAVE_SODIUM_H, 1, [Define if sodium.h is present.])
      AC_DEFINE(PR_USE_SODIUM, 1, [Define if using Sodium support.])
      ac_build_addl_libs="$ac_build_addl_libs -lsodium"
+     ac_orig_libs="$ac_orig_libs -lsodium"
+     SHARED_MODULE_LIBS="$SHARED_MODULE_LIBS -lsodium"
     ])
 fi
 
@@ -3892,9 +3995,6 @@ for module in $ac_static_modules; do
 
     test x"$addonlibs" = x || ac_addl_libs="$addonlibs $ac_addl_libs"
 
-    adir=`cat $srcdir/modules/$src | grep "\\\$Directories:" | sed -e 's/^.*\$Directories: \(.*\)\\$/\1/'`
-    test x"$adir" = x || ac_addl_dirs="$adir $ac_addl_dirs"
-
   elif test -d $srcdir/modules/$moduledir -o -d $srcdir/contrib/$moduledir; then
     continue
 
@@ -3902,14 +4002,6 @@ for module in $ac_static_modules; do
     AC_MSG_ERROR([source file '$srcdir/modules/$src' cannot be found -- aborting])
   fi
 done
-
-dnl This is a nasty, cap-specific hack.  If we will be using the system
-dnl libcap (i.e. ac_have_libcap is "yes"), then we want to remove the
-dnl hackish stuff that mod_cap added to the library and directory strings.
-if test x"$ac_have_libcap" = xyes; then
-  ac_addl_libs=`echo "$ac_addl_libs" | sed -e 's/-L\$(top_srcdir)\/lib\/libcap//g'`
-  ac_addl_dirs=`echo "$ac_addl_dirs" | sed -e 's/\$(top_srcdir)\/lib\/libcap//g'`
-fi
 
 ac_addl_libs=`echo "$ac_addl_libs" | sed -e 's/ *\$//'`
 ac_addl_libs=`echo "$ac_addl_libs" | sed -e 's/^ *//'`
@@ -3994,20 +4086,26 @@ if test x"$devel" = xyes ; then
     dnl options.  Check if they are supported.  They will be added to
     dnl CFLAGS if supported.
     PR_CHECK_CC_OPT(Wcomment)
+    PR_CHECK_CC_OPT(Wdangling-else)
     PR_CHECK_CC_OPT(Wdeclaration-after-statement)
+    PR_CHECK_CC_OPT(Wduplicated-branches)
     PR_CHECK_CC_OPT(Wfloat-equal)
     PR_CHECK_CC_OPT(Wformat)
     PR_CHECK_CC_OPT(Wformat-security)
     PR_CHECK_CC_OPT(Wimplicit-function-declaration)
     PR_CHECK_CC_OPT(Wmaybe-uninitialized)
     PR_CHECK_CC_OPT(Wmissing-braces)
+    PR_CHECK_CC_OPT(Wparentheses)
     PR_CHECK_CC_OPT(Wpointer-to-int-cast)
+    PR_CHECK_CC_OPT(Wreturn-local-addr)
     PR_CHECK_CC_OPT(Wstack-protector)
     PR_CHECK_CC_OPT(Wstrict-overflow)
     PR_CHECK_CC_OPT(Wswitch)
     PR_CHECK_CC_OPT(Wunreachable-code)
+    PR_CHECK_CC_OPT(Wunused-variable)
     PR_CHECK_CC_OPT(fstack-protector)
     PR_CHECK_CC_OPT(fstack-protector-all)
+    PR_CHECK_CC_OPT(fno-common)
   fi
 
   dnl Do not strip symbols from developer object files.

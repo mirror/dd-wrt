@@ -462,6 +462,21 @@ my $TESTS = {
     test_class => [qw(bug forking)],
   },
 
+  extlog_xfer_port_nonxfer_issue912 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  extlog_xfer_port_success_issue912 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  extlog_sftp_xfer_port_issue912 => {
+    order => ++$order,
+    test_class => [qw(forking mod_sftp)],
+  },
+
   # XXX Need unit tests for all LogFormat variables
 };
 
@@ -4890,7 +4905,6 @@ sub extlog_ftps_raw_bytes_bug3554 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10071,6 +10085,10 @@ EOC
       while (my $line = <$fh>) {
         chomp($line);
 
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
         if ($line =~ /^(\S+) (.*)?$/) {
           my $cmd = $1;
           my $xfer_failure = $2;
@@ -10205,7 +10223,6 @@ sub extlog_ftps_xfer_status_cancelled {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10452,7 +10469,6 @@ sub extlog_ftps_xfer_status_failed {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -15018,6 +15034,471 @@ sub extlog_write_invalid_cmd_bug4313 {
 
       close($fh);
       $self->assert($ok, "Unexpected ExtendedLog messages appeared");
+
+    } else {
+      die("Can't read $ext_log: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub extlog_xfer_port_nonxfer_issue912 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'extlog');
+
+  my $ext_log = File::Spec->rel2abs("$tmpdir/custom.log");
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "A" x 1024;
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+LogFormat custom "%m %{transfer-port}"
+ExtendedLog $ext_log ALL custom
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+      $client->pwd();
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  # Now, read in the ExtendedLog, and see whether the %{transfer-port}
+  # variable was properly written out.
+  eval {
+    if (open(my $fh, "< $ext_log")) {
+      my $unexpected_xfer_port = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /^(\S+) (.*)?$/) {
+          my $cmd = $1;
+          my $xfer_port = $2;
+
+          if ($xfer_port ne '-') {
+            $unexpected_xfer_port = 1;
+            last;
+          }
+        }
+      }
+
+      close($fh);
+
+      $self->assert(!$unexpected_xfer_port,
+        test_msg("Saw unexpected transfer port in ExtendedLog"));
+
+    } else {
+      die("Can't read $ext_log: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub extlog_xfer_port_success_issue912 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'extlog');
+
+  my $ext_log = File::Spec->rel2abs("$tmpdir/custom.log");
+
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+  if (open(my $fh, "> $test_file")) {
+    print $fh "A" x 1024;
+
+    unless (close($fh)) {
+      die("Can't write $test_file: $!");
+    }
+
+  } else {
+    die("Can't open $test_file: $!");
+  }
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+LogFormat custom "%m %{transfer-port}"
+ExtendedLog $ext_log ALL custom
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      my $conn = $client->retr_raw('test.txt');
+      unless ($conn) {
+        die("RETR test.txt failed: " . $client->response_code() . " " .
+          $client->response_code());
+      }
+
+      my $buf;
+      while ($conn->read($buf, 16382, 25)) {
+      }
+      eval { $conn->close() };
+
+      my $resp_code = $client->response_code();
+      my $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+
+      # Now use an active transfer
+      $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port, 1);
+      $client->login($setup->{user}, $setup->{passwd});
+
+      $conn = $client->retr_raw('test.txt');
+      unless ($conn) {
+        die("RETR test.txt failed: " . $client->response_code() . " " .
+          $client->response_code());
+      }
+
+      $buf = '';
+      while ($conn->read($buf, 16382, 25)) {
+      }
+      eval { $conn->close() };
+
+      $resp_code = $client->response_code();
+      $resp_msg = $client->response_msg();
+
+      $self->assert_transfer_ok($resp_code, $resp_msg);
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  # Now, read in the ExtendedLog, and see whether the %{transfer-port}
+  # variable was properly written out.
+  eval {
+    if (open(my $fh, "< $ext_log")) {
+      my $expected_xfer_port = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /^(\S+) (.*)?$/) {
+          my $cmd = $1;
+          my $xfer_port = $2;
+
+          if ($cmd eq 'RETR') {
+            if ($xfer_port =~ /\d+/) {
+              $expected_xfer_port = 1;
+
+            } else {
+              $expected_xfer_port = 0;
+            }
+          }
+        }
+      }
+
+      close($fh);
+
+      $self->assert($expected_xfer_port,
+        test_msg("Did not see expected transfer port in ExtendedLog"));
+
+    } else {
+      die("Can't read $ext_log: $!");
+    }
+  };
+  if ($@) {
+    $ex = $@;
+  }
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub extlog_sftp_xfer_port_issue912 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'extlog');
+
+  my $rsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_rsa_key');
+  my $dsa_host_key = File::Spec->rel2abs('t/etc/modules/mod_sftp/ssh_host_dsa_key');
+
+  my $ext_log = File::Spec->rel2abs("$tmpdir/custom.log");
+  my $test_file = File::Spec->rel2abs("$tmpdir/test.txt");
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'DEFAULT:10 ssh2:20 sftp:20 scp:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    LogFormat => 'custom "%m %{transfer-port}"',
+    ExtendedLog => "$ext_log ALL custom",
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_sftp.c' => [
+        "SFTPEngine on",
+        "SFTPLog $setup->{log_file}",
+        "SFTPHostKey $rsa_host_key",
+        "SFTPHostKey $dsa_host_key",
+      ],
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::SSH2;
+
+  my $ex;
+
+  # Ignore SIGPIPE
+  local $SIG{PIPE} = sub { };
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      my $ssh2 = Net::SSH2->new();
+
+      sleep(2);
+
+      unless ($ssh2->connect('127.0.0.1', $port)) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't connect to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      unless ($ssh2->auth_password($setup->{user}, $setup->{passwd})) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't login to SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $sftp = $ssh2->sftp();
+      unless ($sftp) {
+        my ($err_code, $err_name, $err_str) = $ssh2->error();
+        die("Can't use SFTP on SSH2 server: [$err_name] ($err_code) $err_str");
+      }
+
+      my $fh = $sftp->open('test.txt', O_WRONLY|O_CREAT|O_TRUNC, 0644);
+      unless ($fh) {
+        my ($err_code, $err_name) = $sftp->error();
+        die("Can't open test.txt: [$err_name] ($err_code)");
+      }
+
+      print $fh "ABCD\n" x 8;
+
+      # To issue the FXP_CLOSE, we have to explicitly destroy the filehandle
+      $fh = undef;
+
+      # To issue the CHANNEL_CLOSE, we have to explicitly destroy the sftp
+      # object.  Sigh.
+      $sftp = undef;
+
+      $ssh2->disconnect();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  # Now, read in the ExtendedLog, and see whether the %{transfer-port} variable
+  # was properly written out.
+  eval {
+    if (open(my $fh, "< $ext_log")) {
+      my $expected_xfer_port = 0;
+
+      while (my $line = <$fh>) {
+        chomp($line);
+
+        if ($ENV{TEST_VERBOSE}) {
+          print STDERR "# $line\n";
+        }
+
+        if ($line =~ /^(\S+) (.*)?$/) {
+          my $cmd = $1;
+          my $xfer_port = $2;
+
+          if ($cmd eq 'STOR') {
+            if ($xfer_port == '-') {
+              $expected_xfer_port = 1;
+
+            } else {
+              $expected_xfer_port = 0;
+            }
+          }
+        }
+      }
+
+      close($fh);
+
+      $self->assert($expected_xfer_port,
+        test_msg("Did not see expected transfer port in ExtendedLog"));
 
     } else {
       die("Can't read $ext_log: $!");

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project
+ * Copyright (c) 2001-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,6 +67,8 @@
 #define FSIO_FILE_CHMOD		(1 << 13)
 #define FSIO_FILE_CHOWN		(1 << 14)
 #define FSIO_FILE_ACCESS	(1 << 15)
+#define FSIO_FILE_PREAD		(1 << 16)
+#define FSIO_FILE_PWRITE	(1 << 17)
 #define FSIO_FILE_UTIMES	(1 << 23)
 #define FSIO_FILE_GETXATTR	(1 << 24)
 #define FSIO_FILE_LGETXATTR	(1 << 25)
@@ -130,7 +132,9 @@ struct fs_rec {
   int (*open)(pr_fh_t *, const char *, int);
   int (*close)(pr_fh_t *, int);
   int (*read)(pr_fh_t *, int, char *, size_t);
+  ssize_t (*pread)(pr_fh_t *, int, void *, size_t, off_t);
   int (*write)(pr_fh_t *, int, const char *, size_t);
+  ssize_t (*pwrite)(pr_fh_t *, int, const void *, size_t, off_t);
   off_t (*lseek)(pr_fh_t *, int, off_t, int);
   int (*link)(pr_fs_t *, const char *, const char *);
   int (*readlink)(pr_fs_t *, const char *, char *, size_t);
@@ -256,7 +260,9 @@ pr_fh_t *pr_fsio_open(const char *, int);
 pr_fh_t *pr_fsio_open_canon(const char *, int);
 int pr_fsio_close(pr_fh_t *);
 int pr_fsio_read(pr_fh_t *, char *, size_t);
+ssize_t pr_fsio_pread(pr_fh_t *, void *, size_t, off_t);
 int pr_fsio_write(pr_fh_t *, const char *, size_t);
+ssize_t pr_fsio_pwrite(pr_fh_t *, const void *, size_t, off_t);
 int pr_fsio_link(const char *, const char *);
 int pr_fsio_symlink(const char *, const char *);
 int pr_fsio_ftruncate(pr_fh_t *, off_t);

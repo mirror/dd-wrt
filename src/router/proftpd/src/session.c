@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2009-2017 The ProFTPD Project team
+ * Copyright (c) 2009-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,12 +56,12 @@ static void sess_cleanup(int flags) {
   }
 
   /* If session.user is set, we have a valid login. */
-  if (session.user &&
+  if (session.user != NULL &&
       session.wtmp_log) {
-    const char *sess_ttyname;
+    const char *tty_name;
 
-    sess_ttyname = pr_session_get_ttyname(session.pool);
-    log_wtmp(sess_ttyname, "", pr_netaddr_get_sess_remote_name(),
+    tty_name = pr_session_get_ttyname(session.pool);
+    log_wtmp(tty_name, "", pr_netaddr_get_sess_remote_name(),
       pr_netaddr_get_sess_remote_addr());
   }
 

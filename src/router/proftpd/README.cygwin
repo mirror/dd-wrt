@@ -26,7 +26,7 @@ The rest of the installation process is as usual:
 
 Note: Cygwin does not currently support large files (e.g. files larger than
 2 GB).  Also, Cygwin 1.3.22 or later should be installed. Earlier versions
-of Cygwin would result in error messsages like:
+of Cygwin would result in error messages like:
 
   426 Transfer aborted.  Socket operation on non-socket
 

@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project
+ * Copyright (c) 2001-2020 The ProFTPD Project
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -273,8 +273,30 @@ static int sys_close(pr_fh_t *fh, int fd) {
   return close(fd);
 }
 
+static ssize_t sys_pread(pr_fh_t *fh, int fd, void *buf, size_t sz,
+    off_t offset) {
+#if defined(HAVE_PREAD)
+  return pread(fd, buf, sz, offset);
+#else
+  /* XXX Provide an implementation using lseek+read+lseek */
+  errno = ENOSYS;
+  return -1;
+#endif /* HAVE_PREAD */
+}
+
 static int sys_read(pr_fh_t *fh, int fd, char *buf, size_t size) {
   return read(fd, buf, size);
+}
+
+static ssize_t sys_pwrite(pr_fh_t *fh, int fd, const void *buf, size_t sz,
+    off_t offset) {
+#if defined(HAVE_PWRITE)
+  return pwrite(fd, buf, sz, offset);
+#else
+  /* XXX Provide an implementation using lseek+write+lseek */
+  errno = ENOSYS;
+  return -1;
+#endif /* HAVE_PWRITE */
 }
 
 static int sys_write(pr_fh_t *fh, int fd, const char *buf, size_t size) {
@@ -457,11 +479,11 @@ static int sys_fsync(pr_fh_t *fh, int fd) {
 
 static ssize_t sys_getxattr(pool *p, pr_fs_t *fs, const char *path,
     const char *name, void *val, size_t valsz) {
-  ssize_t res;
+  ssize_t res = -1;
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_get_file(path, EXTATTR_NAMESPACE_USER, name, val, valsz);
 # elif defined(HAVE_SYS_XATTR_H)
@@ -470,6 +492,9 @@ static ssize_t sys_getxattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = getxattr(path, name, val, valsz);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = NOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
@@ -477,6 +502,7 @@ static ssize_t sys_getxattr(pool *p, pr_fs_t *fs, const char *path,
   (void) name;
   (void) val;
   (void) valsz;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -486,11 +512,11 @@ static ssize_t sys_getxattr(pool *p, pr_fs_t *fs, const char *path,
 
 static ssize_t sys_lgetxattr(pool *p, pr_fs_t *fs, const char *path,
     const char *name, void *val, size_t valsz) {
-  ssize_t res;
+  ssize_t res = -1;
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
 #  if defined(HAVE_EXTATTR_GET_LINK)
   res = extattr_get_link(path, EXTATTR_NAMESPACE_USER, name, val, valsz);
@@ -505,6 +531,9 @@ static ssize_t sys_lgetxattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = getxattr(path, name, val, valsz);
 #  endif /* HAVE_LGETXATTR */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
@@ -512,6 +541,7 @@ static ssize_t sys_lgetxattr(pool *p, pr_fs_t *fs, const char *path,
   (void) name;
   (void) val;
   (void) valsz;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -521,11 +551,11 @@ static ssize_t sys_lgetxattr(pool *p, pr_fs_t *fs, const char *path,
 
 static ssize_t sys_fgetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
     void *val, size_t valsz) {
-  ssize_t res;
+  ssize_t res = -1;
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_get_fd(fd, EXTATTR_NAMESPACE_USER, name, val, valsz);
 # elif defined(HAVE_SYS_XATTR_H)
@@ -534,6 +564,9 @@ static ssize_t sys_fgetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
 #  else
   res = fgetxattr(fd, name, val, valsz);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fh;
@@ -541,6 +574,7 @@ static ssize_t sys_fgetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
   (void) name;
   (void) val;
   (void) valsz;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -548,7 +582,7 @@ static ssize_t sys_fgetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
   return res;
 }
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 static array_header *parse_xattr_namelist(pool *p, char *namelist, size_t sz) {
   array_header *names;
   char *ptr;
@@ -597,7 +631,7 @@ static array_header *parse_xattr_namelist(pool *p, char *namelist, size_t sz) {
 }
 
 static ssize_t unix_listxattr(const char *path, char *namelist, size_t len) {
-  ssize_t res;
+  ssize_t res = -1;
 
 #if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_list_file(path, EXTATTR_NAMESPACE_USER, namelist, len);
@@ -607,13 +641,16 @@ static ssize_t unix_listxattr(const char *path, char *namelist, size_t len) {
 # else
   res = listxattr(path, namelist, len);
 # endif /* XATTR_NOFOLLOW */
+#else
+  errno = ENOSYS;
+  res = -1;
 #endif /* HAVE_SYS_XATTR_H */
 
   return res;
 }
 
 static ssize_t unix_llistxattr(const char *path, char *namelist, size_t len) {
-  ssize_t res;
+  ssize_t res = -1;
 
 # if defined(HAVE_SYS_EXTATTR_H)
 #  if defined(HAVE_EXTATTR_LIST_LINK)
@@ -629,13 +666,16 @@ static ssize_t unix_llistxattr(const char *path, char *namelist, size_t len) {
 #  else
   res = listxattr(path, namelist, len);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 
   return res;
 }
 
 static ssize_t unix_flistxattr(int fd, char *namelist, size_t len) {
-  ssize_t res;
+  ssize_t res = -1;
 
 # if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_list_fd(fd, EXTATTR_NAMESPACE_USER, namelist, len);
@@ -645,6 +685,9 @@ static ssize_t unix_flistxattr(int fd, char *namelist, size_t len) {
 #  else
   res = flistxattr(fd, namelist, len);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 
   return res;
@@ -818,11 +861,11 @@ static int sys_flistxattr(pool *p, pr_fh_t *fh, int fd, array_header **names) {
 
 static int sys_removexattr(pool *p, pr_fs_t *fs, const char *path,
     const char *name) {
-  int res;
+  int res = -1;
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_delete_file(path, EXTATTR_NAMESPACE_USER, name);
 # elif defined(HAVE_SYS_XATTR_H)
@@ -831,11 +874,15 @@ static int sys_removexattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = removexattr(path, name);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
   (void) path;
   (void) name;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -849,7 +896,7 @@ static int sys_lremovexattr(pool *p, pr_fs_t *fs, const char *path,
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
 #  if defined(HAVE_EXTATTR_DELETE_LINK)
   res = extattr_delete_link(path, EXTATTR_NAMESPACE_USER, name);
@@ -864,11 +911,15 @@ static int sys_lremovexattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = removexattr(path, name);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
   (void) path;
   (void) name;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -881,7 +932,7 @@ static int sys_fremovexattr(pool *p, pr_fh_t *fh, int fd, const char *name) {
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   res = extattr_delete_fd(fd, EXTATTR_NAMESPACE_USER, name);
 # elif defined(HAVE_SYS_XATTR_H)
@@ -890,11 +941,15 @@ static int sys_fremovexattr(pool *p, pr_fh_t *fh, int fd, const char *name) {
 #  else
   res = fremovexattr(fd, name);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fh;
   (void) fd;
   (void) name;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -937,7 +992,7 @@ static int sys_setxattr(pool *p, pr_fs_t *fs, const char *path,
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   (void) xattr_flags;
   res = extattr_set_file(path, EXTATTR_NAMESPACE_USER, name, val, valsz);
@@ -950,6 +1005,9 @@ static int sys_setxattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = setxattr(path, name, val, valsz, xattr_flags);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = NOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
@@ -959,6 +1017,7 @@ static int sys_setxattr(pool *p, pr_fs_t *fs, const char *path,
   (void) valsz;
   (void) flags;
   (void) xattr_flags;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -972,7 +1031,7 @@ static int sys_lsetxattr(pool *p, pr_fs_t *fs, const char *path,
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   (void) xattr_flags;
 #  if defined(HAVE_EXTATTR_SET_LINK)
@@ -991,6 +1050,9 @@ static int sys_lsetxattr(pool *p, pr_fs_t *fs, const char *path,
 #  else
   res = setxattr(path, name, val, valsz, xattr_flags);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fs;
@@ -1000,6 +1062,7 @@ static int sys_lsetxattr(pool *p, pr_fs_t *fs, const char *path,
   (void) valsz;
   (void) flags;
   (void) xattr_flags;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -1013,7 +1076,7 @@ static int sys_fsetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
 
   (void) p;
 
-#ifdef PR_USE_XATTR
+#if defined(PR_USE_XATTR)
 # if defined(HAVE_SYS_EXTATTR_H)
   (void) xattr_flags;
   res = extattr_set_fd(fd, EXTATTR_NAMESPACE_USER, name, val, valsz);
@@ -1026,6 +1089,9 @@ static int sys_fsetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
 #  else
   res = fsetxattr(fd, name, val, valsz, xattr_flags);
 #  endif /* XATTR_NOFOLLOW */
+# else
+  errno = ENOSYS;
+  res = -1;
 # endif /* HAVE_SYS_XATTR_H */
 #else
   (void) fh;
@@ -1035,6 +1101,7 @@ static int sys_fsetxattr(pool *p, pr_fh_t *fh, int fd, const char *name,
   (void) valsz;
   (void) flags;
   (void) xattr_flags;
+
   errno = ENOSYS;
   res = -1;
 #endif /* PR_USE_XATTR */
@@ -1124,17 +1191,13 @@ static int fs_cmp(const void *a, const void *b) {
 
 /* Statcache stuff */
 struct fs_statcache {
+  xasetmember_t *next, *prev;
   pool *sc_pool;
+  const char *sc_path;
   struct stat sc_stat;
   int sc_errno;
   int sc_retval;
   time_t sc_cached_ts;
-};
-
-struct fs_statcache_evict_data {
-  time_t now;
-  time_t max_age;
-  pr_table_t *cache_tab;
 };
 
 static const char *statcache_channel = "fs.statcache";
@@ -1148,13 +1211,15 @@ static unsigned int statcache_flags = 0;
  * for the same path will be different for the two system calls.
  */
 static pr_table_t *stat_statcache_tab = NULL;
+static xaset_t *stat_statcache_set = NULL;
 static pr_table_t *lstat_statcache_tab = NULL;
+static xaset_t *lstat_statcache_set = NULL;
 
 #define fs_cache_lstat(f, p, s) cache_stat((f), (p), (s), FSIO_FILE_LSTAT)
 #define fs_cache_stat(f, p, s) cache_stat((f), (p), (s), FSIO_FILE_STAT)
 
 static const struct fs_statcache *fs_statcache_get(pr_table_t *cache_tab,
-    const char *path, size_t path_len, time_t now) {
+    xaset_t *cache_set, const char *path, size_t path_len, time_t now) {
   const struct fs_statcache *sc = NULL;
 
   if (pr_table_count(cache_tab) == 0) {
@@ -1180,6 +1245,7 @@ static const struct fs_statcache *fs_statcache_get(pr_table_t *cache_tab,
       (unsigned long) age, age != 1 ? "secs" : "sec",
       (unsigned long) statcache_max_age);
     (void) pr_table_remove(cache_tab, path, NULL);
+    (void) xaset_remove(cache_set, (xasetmember_t *) sc);
     destroy_pool(sc->sc_pool);
   }
 
@@ -1187,86 +1253,49 @@ static const struct fs_statcache *fs_statcache_get(pr_table_t *cache_tab,
   return NULL;
 }
 
-static int fs_statcache_evict_expired(const void *key_data, size_t key_datasz,
-    const void *value_data, size_t value_datasz, void *user_data) {
-  const struct fs_statcache *sc;
-  struct fs_statcache_evict_data *evict_data;
+static int fs_statcache_evict(pr_table_t *cache_tab, xaset_t *cache_set,
+    time_t now) {
   time_t age;
-  pr_table_t *cache_tab = NULL;
+  xasetmember_t *item;
+  struct fs_statcache *sc;
 
-  sc = value_data;
-  evict_data = user_data;
-
-  cache_tab = evict_data->cache_tab;
-  age = evict_data->now - sc->sc_cached_ts;
-  if (age > evict_data->max_age) {
-    pr_trace_msg(statcache_channel, 14,
-      "entry for '%s' expired (age %lu %s > max age %lu), evicting",
-      (char *) key_data, (unsigned long) age, age != 1 ? "secs" : "sec",
-      (unsigned long) evict_data->max_age);
-    (void) pr_table_kremove(cache_tab, key_data, key_datasz, NULL);
-    destroy_pool(sc->sc_pool);
+  if (cache_set->xas_list == NULL) {
+    /* Should never happen. */
+    errno = EPERM;
+    return -1;
   }
 
-  return 0;
-}
-
-static int fs_statcache_evict(pr_table_t *cache_tab, time_t now) {
-  int res, table_count;
-  struct fs_statcache_evict_data evict_data;
-
-  /* We try to make room in two passes.  First, evict any item that has
-   * exceeded the maximum age.  After that, if we are still not low enough,
-   * lower the maximum age, and try again.  If not enough room by then, then
-   * we'll try again on the next stat.
+  /* We only need to remove the FIRST expired item; it should be the first
+   * item in the list, since we keep the list in insert (and thus expiry)
+   * order.
    */
 
-  evict_data.now = now;
-  evict_data.max_age = statcache_max_age;
-  evict_data.cache_tab = cache_tab;
+  item = cache_set->xas_list;
+  sc = (struct fs_statcache *) item;
+  age = now - sc->sc_cached_ts;
 
-  res = pr_table_do(cache_tab, fs_statcache_evict_expired, &evict_data,
-    PR_TABLE_DO_FL_ALL);
-  if (res < 0) {
-    pr_trace_msg(statcache_channel, 4,
-      "error evicting expired items: %s", strerror(errno));
-  }
-
-  table_count = pr_table_count(cache_tab);
-  if (table_count < 0 ||
-      (unsigned int) table_count < statcache_size) {
-    return 0;
-  }
-
-  /* Try for a shorter max age. */
-  if (statcache_max_age > 10) {
-    evict_data.max_age = (statcache_max_age - 10);
-    res = pr_table_do(cache_tab, fs_statcache_evict_expired, &evict_data,
-      PR_TABLE_DO_FL_ALL);
-    if (res < 0) {
-      pr_trace_msg(statcache_channel, 4,
-        "error evicting expired items: %s", strerror(errno));
-    }
-  }
-
-  table_count = pr_table_count(cache_tab);
-  if (table_count < 0 ||
-      (unsigned int) table_count < statcache_size) {
-    return 0;
+  if (age < statcache_max_age) {
+    errno = ENOENT;
+    return -1;
   }
 
   pr_trace_msg(statcache_channel, 14,
-    "still not enough room in cache (size %d >= max %d)",
-    pr_table_count(cache_tab), statcache_size);
-  errno = EPERM;
-  return -1;
+    "entry for '%s' expired (age %lu %s > max age %lu), evicting",
+    sc->sc_path, (unsigned long) age, age != 1 ? "secs" : "sec",
+    (unsigned long) statcache_max_age);
+
+  (void) pr_table_remove(cache_tab, sc->sc_path, NULL);
+  (void) xaset_remove(cache_set, (xasetmember_t *) sc);
+  destroy_pool(sc->sc_pool);
+  return 0;
 }
 
 /* Returns 1 if we successfully added a cache entry, 0 if not, and -1 if
  * there was an error.
  */
-static int fs_statcache_add(pr_table_t *cache_tab, const char *path,
-    size_t path_len, struct stat *st, int xerrno, int retval, time_t now) {
+static int fs_statcache_add(pr_table_t *cache_tab, xaset_t *cache_set,
+    const char *path, size_t path_len, struct stat *st, int xerrno,
+    int retval, time_t now) {
   int res, table_count;
   pool *sc_pool;
   struct fs_statcache *sc;
@@ -1280,24 +1309,27 @@ static int fs_statcache_add(pr_table_t *cache_tab, const char *path,
   table_count = pr_table_count(cache_tab);
   if (table_count > 0 &&
       (unsigned int) table_count >= statcache_size) {
-    /* We've reached capacity, and need to evict some items to make room. */
-    if (fs_statcache_evict(cache_tab, now) < 0) {
+    /* We've reached capacity, and need to evict an item to make room. */
+    if (fs_statcache_evict(cache_tab, cache_set, now) < 0) {
       pr_trace_msg(statcache_channel, 8,
         "unable to evict enough items from the cache: %s", strerror(errno));
     }
+
+    /* We did not evict any items, and so are at capacity. */
+    return 0;
   }
 
   sc_pool = make_sub_pool(statcache_pool);
   pr_pool_tag(sc_pool, "FS statcache entry pool");
   sc = pcalloc(sc_pool, sizeof(struct fs_statcache));
   sc->sc_pool = sc_pool;
+  sc->sc_path = pstrndup(sc_pool, path, path_len);
   memcpy(&(sc->sc_stat), st, sizeof(struct stat));
   sc->sc_errno = xerrno;
   sc->sc_retval = retval;
   sc->sc_cached_ts = now;
 
-  res = pr_table_add(cache_tab, pstrndup(sc_pool, path, path_len), sc,
-    sizeof(struct fs_statcache *));
+  res = pr_table_add(cache_tab, sc->sc_path, sc, sizeof(struct fs_statcache *));
   if (res < 0) {
     int tmp_errno = errno;
 
@@ -1307,6 +1339,9 @@ static int fs_statcache_add(pr_table_t *cache_tab, const char *path,
 
     destroy_pool(sc->sc_pool);
     errno = tmp_errno;
+
+  } else {
+    xaset_insert_end(cache_set, (xasetmember_t *) sc);
   }
 
   return (res == 0 ? 1 : res);
@@ -1319,6 +1354,7 @@ static int cache_stat(pr_fs_t *fs, const char *path, struct stat *st,
   int (*mystat)(pr_fs_t *, const char *, struct stat *) = NULL;
   size_t path_len;
   pr_table_t *cache_tab = NULL;
+  xaset_t *cache_set = NULL;
   const struct fs_statcache *sc = NULL;
   time_t now;
 
@@ -1365,15 +1401,17 @@ static int cache_stat(pr_fs_t *fs, const char *path, struct stat *st,
   if (op == FSIO_FILE_STAT) {
     mystat = fs->stat ? fs->stat : sys_stat;
     cache_tab = stat_statcache_tab;
+    cache_set = stat_statcache_set;
 
   } else {
     mystat = fs->lstat ? fs->lstat : sys_lstat;
     cache_tab = lstat_statcache_tab;
+    cache_set = lstat_statcache_set;
   }
 
   path_len = strlen(cleaned_path);
 
-  sc = fs_statcache_get(cache_tab, cleaned_path, path_len, now);
+  sc = fs_statcache_get(cache_tab, cache_set, cleaned_path, path_len, now);
   if (sc != NULL) {
 
     /* Update the given struct stat pointer with the cached info */
@@ -1400,7 +1438,8 @@ static int cache_stat(pr_fs_t *fs, const char *path, struct stat *st,
   }
 
   /* Update the cache */
-  res = fs_statcache_add(cache_tab, cleaned_path, path_len, st, xerrno, retval,     now);
+  res = fs_statcache_add(cache_tab, cache_set, cleaned_path, path_len, st,
+    xerrno, retval, now);
   if (res < 0) {
     pr_trace_msg(trace_channel, 8,
       "error adding cached stat for '%s': %s", cleaned_path, strerror(errno));
@@ -1610,6 +1649,7 @@ void pr_fs_statcache_free(void) {
     pr_table_empty(stat_statcache_tab);
     pr_table_free(stat_statcache_tab);
     stat_statcache_tab = NULL;
+    stat_statcache_set = NULL;
   }
 
   if (lstat_statcache_tab != NULL) {
@@ -1622,6 +1662,7 @@ void pr_fs_statcache_free(void) {
     pr_table_empty(lstat_statcache_tab);
     pr_table_free(lstat_statcache_tab);
     lstat_statcache_tab = NULL;
+    lstat_statcache_set = NULL;
   }
 
   /* Note: we do not need to explicitly destroy each entry in the statcache
@@ -1643,7 +1684,10 @@ void pr_fs_statcache_reset(void) {
   }
 
   stat_statcache_tab = pr_table_alloc(statcache_pool, 0);
+  stat_statcache_set = xaset_create(statcache_pool, NULL);
+
   lstat_statcache_tab = pr_table_alloc(statcache_pool, 0);
+  lstat_statcache_set = xaset_create(statcache_pool, NULL);
 }
 
 int pr_fs_statcache_set_policy(unsigned int size, unsigned int max_age,
@@ -1702,6 +1746,7 @@ int pr_fs_clear_cache2(const char *path) {
 
       sc = pr_table_remove(stat_statcache_tab, cleaned_path, NULL);
       if (sc != NULL) {
+        (void) xaset_remove(stat_statcache_set, (xasetmember_t *) sc);
         destroy_pool(sc->sc_pool);
       }
 
@@ -1716,6 +1761,7 @@ int pr_fs_clear_cache2(const char *path) {
 
       sc = pr_table_remove(lstat_statcache_tab, cleaned_path, NULL);
       if (sc != NULL) {
+        (void) xaset_remove(lstat_statcache_set, (xasetmember_t *) sc);
         destroy_pool(sc->sc_pool);
       }
 
@@ -5102,6 +5148,33 @@ int pr_fsio_close_with_error(pool *p, pr_fh_t *fh, pr_error_t **err) {
   return res;
 }
 
+ssize_t pr_fsio_pread(pr_fh_t *fh, void *buf, size_t size, off_t offset) {
+  ssize_t res;
+  pr_fs_t *fs;
+
+  if (fh == NULL ||
+      buf == NULL ||
+      size == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Find the first non-NULL custom pread handler.  If there are none,
+   * use the system pread.
+   */
+  fs = fh->fh_fs;
+  while (fs && fs->fs_next && !fs->pread) {
+    fs = fs->fs_next;
+  }
+
+  pr_trace_msg(trace_channel, 8, "using %s pread() for path '%s' (%lu bytes, %"
+    PR_LU " offset)", fs->fs_name, fh->fh_path, (unsigned long) size,
+    (pr_off_t) offset);
+  res = (fs->pread)(fh, fh->fh_fd, buf, size, offset);
+
+  return res;
+}
+
 int pr_fsio_read(pr_fh_t *fh, char *buf, size_t size) {
   int res;
   pr_fs_t *fs;
@@ -5153,6 +5226,33 @@ int pr_fsio_read_with_error(pool *p, pr_fh_t *fh, char *buf, size_t sz,
 
     errno = xerrno;
   }
+
+  return res;
+}
+
+ssize_t pr_fsio_pwrite(pr_fh_t *fh, const void *buf, size_t size,
+    off_t offset) {
+  ssize_t res;
+  pr_fs_t *fs;
+
+  if (fh == NULL ||
+      buf == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  /* Find the first non-NULL custom pwrite handler.  If there are none,
+   * use the system pwrite.
+   */
+  fs = fh->fh_fs;
+  while (fs && fs->fs_next && !fs->pwrite) {
+    fs = fs->fs_next;
+  }
+
+  pr_trace_msg(trace_channel, 8, "using %s pwrite() for path '%s' (%lu bytes, %"
+    PR_LU " offset)", fs->fs_name, fh->fh_path, (unsigned long) size,
+    (pr_off_t) offset);
+  res = (fs->pwrite)(fh, fh->fh_fd, buf, size, offset);
 
   return res;
 }
@@ -6252,7 +6352,7 @@ int pr_fsio_fsetxattr(pool *p, pr_fh_t *fh, const char *name, void *val,
   return res;
 }
 
-/* If the wrapped chroot() function suceeds (eg returns 0), then all
+/* If the wrapped chroot() function succeeds (e.g. returns 0), then all
  * pr_fs_ts currently registered in the fs_map will have their paths
  * rewritten to reflect the new root.
  */
@@ -7036,8 +7136,9 @@ int pr_fs_have_access(struct stat *st, int mode, uid_t uid, gid_t gid,
     return -1;
   }
 
-  /* Root always succeeds. */
-  if (uid == PR_ROOT_UID) {
+  /* Root always succeeds for reads/writes. */
+  if (uid == PR_ROOT_UID &&
+      mode != X_OK) {
     return 0;
   }
 
@@ -7257,7 +7358,9 @@ int init_fs(void) {
   root_fs->unlink = sys_unlink;
   root_fs->open = sys_open;
   root_fs->close = sys_close;
+  root_fs->pread = sys_pread;
   root_fs->read = sys_read;
+  root_fs->pwrite = sys_pwrite;
   root_fs->write = sys_write;
   root_fs->lseek = sys_lseek;
   root_fs->link = sys_link;
@@ -7310,7 +7413,9 @@ int init_fs(void) {
   statcache_pool = make_sub_pool(permanent_pool);
   pr_pool_tag(statcache_pool, "FS Statcache Pool");
   stat_statcache_tab = pr_table_alloc(statcache_pool, 0);
+  stat_statcache_set = xaset_create(statcache_pool, NULL);
   lstat_statcache_tab = pr_table_alloc(statcache_pool, 0);
+  lstat_statcache_set = xaset_create(statcache_pool, NULL);
 
   return 0;
 }

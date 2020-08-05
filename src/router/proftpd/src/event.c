@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2016 The ProFTPD Project team
+ * Copyright (c) 2003-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,15 @@ static const char *trace_channel = "event";
 
 #define EVENT_POOL_SZ	256
 
+static void event_cleanup_cb(void *user_data) {
+  event_pool = NULL;
+  events = NULL;
+
+  curr_event = NULL;
+  curr_evl = NULL;
+  curr_evh = NULL;
+}
+
 int pr_event_register(module *m, const char *event,
     void (*cb)(const void *, void *), void *user_data) {
   register unsigned int i;
@@ -90,6 +99,8 @@ int pr_event_register(module *m, const char *event,
   if (event_pool == NULL) {
     event_pool = make_sub_pool(permanent_pool);
     pr_pool_tag(event_pool, "Event Pool");
+
+    register_cleanup2(event_pool, NULL, event_cleanup_cb);
   }
 
   pr_trace_msg(trace_channel, 3,
@@ -196,8 +207,9 @@ int pr_event_unregister(module *m, const char *event,
   struct event_list *evl;
   int unregistered = FALSE;
 
-  if (!events)
+  if (events == NULL) {
     return 0;
+  }
 
   pr_trace_msg(trace_channel, 3,
     "module '%s' (%p) unregistering handler for event '%s'",
@@ -219,7 +231,7 @@ int pr_event_unregister(module *m, const char *event,
       /* If there are no handlers for this event, there is nothing to
        * unregister.  Skip on to the next list.
        */
-      if (!evl->handlers) {
+      if (evl->handlers == NULL) {
         continue;
       }
 
@@ -305,15 +317,17 @@ void pr_event_generate(const char *event, const void *event_data) {
   int use_cache = FALSE;
   struct event_list *evl;
 
-  if (!event)
+  if (event == NULL) {
     return;
+  }
 
   /* If there are no registered callbacks, be done. */
-  if (!events)
+  if (events == NULL) {
     return;
+  }
 
   /* If there is a cached event, see if the given event matches. */
-  if (curr_event &&
+  if (curr_event != NULL &&
       strcmp(curr_event, event) == 0) {
     use_cache = TRUE;
   }
@@ -374,11 +388,11 @@ void pr_event_generate(const char *event, const void *event_data) {
 void pr_event_dump(void (*dumpf)(const char *, ...)) {
   struct event_list *evl;
 
-  if (!dumpf) {
+  if (dumpf == NULL) {
     return;
   }
 
-  if (!events) {
+  if (events == NULL) {
     dumpf("%s", "No events registered");
     return;
   }

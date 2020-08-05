@@ -22,7 +22,7 @@ Makefile: Makefile.in ../config.status
 	cd ../ && ./config.status
 
 .c.o:
-	$(CC) $(CPPFLAGS) $(CFLAGS) -c $<
+	$(LIBTOOL) --mode=compile --tag=CC $(CC) $(CPPFLAGS) $(CFLAGS) -c $<
 
 libltdl: dummy
 	cd libltdl/ && $(MAKE)
@@ -37,6 +37,7 @@ install:
 
 clean:
 	$(RM) *.o libsupp.a
+	$(LIBTOOL) --mode=clean $(RM) `echo $(LIB_OBJS) | sed 's/\.o$\/.lo/g'`
 	test -z $(LIB_DEPS) || (cd libltdl/ && $(MAKE) clean)
 
 depend:

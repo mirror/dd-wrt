@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_sql_passwd -- Various SQL password handlers
- * Copyright (c) 2009-2017 TJ Saunders
+ * Copyright (c) 2009-2020 TJ Saunders
  *  
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,13 +20,16 @@
  * give permission to link this program with OpenSSL, and distribute the
  * resulting executable, without including the source code for OpenSSL in
  * the source distribution.
+ *
+ * -----DO NOT EDIT BELOW THIS LINE-----
+ * $Libraries: -lcrypto$
  */
 
 #include "conf.h"
 #include "privs.h"
 #include "mod_sql.h"
 
-#define MOD_SQL_PASSWD_VERSION		"mod_sql_passwd/1.1"
+#define MOD_SQL_PASSWD_VERSION		"mod_sql_passwd/1.2"
 
 #ifdef PR_USE_SODIUM
 # include <sodium.h>
@@ -39,8 +42,8 @@
 #endif /* PR_USE_SODIUM */
 
 /* Make sure the version of proftpd is as necessary. */
-#if PROFTPD_VERSION_NUMBER < 0x0001030302 
-# error "ProFTPD 1.3.3rc2 or later required"
+#if PROFTPD_VERSION_NUMBER < 0x0001030703
+# error "ProFTPD 1.3.7rc3 or later required"
 #endif
 
 #if !defined(HAVE_OPENSSL) && !defined(PR_USE_OPENSSL)
@@ -478,6 +481,19 @@ static unsigned char *sql_passwd_hash(pool *p, const EVP_MD *md,
   return hash;
 }
 
+#if !defined(HAVE_TIMINGSAFE_BCMP)
+static int timingsafe_bcmp(const void *b1, const void *b2, size_t n) {
+  const unsigned char *p1 = b1, *p2 = b2;
+  int ret = 0;
+
+  for (; n > 0; n--) {
+    ret |= *p1++ ^ *p2++;
+  }
+
+  return (ret != 0);
+}
+#endif /* HAVE_TIMINGSAFE_BCMP */
+
 static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
     const char *ciphertext, const char *digest) {
   const EVP_MD *md;
@@ -489,12 +505,9 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
   char *copytext;
   const char *encodedtext;
 
-  if (!sql_passwd_engine) {
+  if (sql_passwd_engine == FALSE) {
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
-
-  /* We need a copy of the ciphertext. */
-  copytext = pstrdup(cmd->tmp_pool, ciphertext);
 
   md = EVP_get_digestbyname(digest);
   if (md == NULL) {
@@ -502,6 +515,9 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
       ": no such digest '%s' supported", digest);
     return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
   }
+
+  /* We need a copy of the ciphertext. */
+  copytext = pstrdup(cmd->tmp_pool, ciphertext);
 
   /* If a salt is configured, do we prepend the salt as a prefix (i.e. throw
    * it into the digest before the user-supplied password) or append it as a
@@ -709,16 +725,44 @@ static modret_t *sql_passwd_auth(cmd_rec *cmd, const char *plaintext,
     }
   }
 
-  if (strcmp((char *) encodedtext, copytext) == 0) {
+  if (timingsafe_bcmp(encodedtext, copytext, strlen(copytext)) == 0) {
     return PR_HANDLED(cmd);
-
-  } else {
-    pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", copytext,
-      encodedtext);
-
-    pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
-      copytext, encodedtext);
   }
+
+  pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", copytext,
+    encodedtext);
+  pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
+    copytext, encodedtext);
+
+  return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+}
+
+static modret_t *sql_passwd_bcrypt(cmd_rec *cmd, const char *plaintext,
+    const char *ciphertext) {
+  char *hashed;
+  size_t hashed_len = 0;
+
+  if (sql_passwd_engine == FALSE) {
+    return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
+  }
+
+  /* OpenSSL does not implement the bcrypt algorithm, so we handle it
+   * ourselves.
+   */
+
+  hashed = pr_auth_bcrypt(cmd->tmp_pool, plaintext, ciphertext, &hashed_len);
+  if (hashed == NULL) {
+    pr_trace_msg(trace_channel, 3, "error using 'bcrypt': %s", strerror(errno));
+    return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
+  }
+
+  if (timingsafe_bcmp(hashed, ciphertext, strlen(ciphertext)) == 0) {
+    return PR_HANDLED(cmd);
+  }
+
+  pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext, hashed);
+  pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
+    ciphertext, hashed);
 
   return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
@@ -812,16 +856,14 @@ static modret_t *sql_passwd_pbkdf2(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (strcmp((char *) encodedtext, ciphertext) == 0) {
+  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
     return PR_HANDLED(cmd);
-
-  } else {
-    pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
-      encodedtext);
-
-    pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
-      ciphertext, encodedtext);
   }
+
+  pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
+    encodedtext);
+  pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
+    ciphertext, encodedtext);
 
   return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
@@ -903,16 +945,14 @@ static modret_t *sql_passwd_scrypt(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (strcmp((char *) encodedtext, ciphertext) == 0) {
+  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
     return PR_HANDLED(cmd);
-
-  } else {
-    pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
-      encodedtext);
-
-    pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
-      ciphertext, encodedtext);
   }
+
+  pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
+    encodedtext);
+  pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
+    ciphertext, encodedtext);
 
   return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 }
@@ -996,16 +1036,14 @@ static modret_t *sql_passwd_argon2(cmd_rec *cmd, const char *plaintext,
     return PR_ERROR_INT(cmd, PR_AUTH_ERROR);
   }
 
-  if (strcmp((char *) encodedtext, ciphertext) == 0) {
+  if (timingsafe_bcmp(encodedtext, ciphertext, strlen(ciphertext)) == 0) {
     return PR_HANDLED(cmd);
-
-  } else {
-    pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
-      encodedtext);
-
-    pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
-      ciphertext, encodedtext);
   }
+
+  pr_trace_msg(trace_channel, 9, "expected '%s', got '%s'", ciphertext,
+    encodedtext);
+  pr_log_debug(DEBUG9, MOD_SQL_PASSWD_VERSION ": expected '%s', got '%s'",
+    ciphertext, encodedtext);
 
   return PR_ERROR_INT(cmd, PR_AUTH_BADPWD);
 # else
@@ -1023,6 +1061,7 @@ static modret_t *sql_passwd_argon2(cmd_rec *cmd, const char *plaintext,
 #if defined(PR_SHARED_MODULE)
 static void sql_passwd_mod_unload_ev(const void *event_data, void *user_data) {
   if (strcmp("mod_sql_passwd.c", (const char *) event_data) == 0) {
+    sql_unregister_authtype("bcrypt");
     sql_unregister_authtype("md5");
     sql_unregister_authtype("sha1");
     sql_unregister_authtype("sha256");
@@ -1649,6 +1688,15 @@ static int sql_passwd_init(void) {
       sodium_version);
   }
 #endif /* PR_USE_SODIUM */
+
+  if (sql_register_authtype("bcrypt", sql_passwd_bcrypt) < 0) {
+    pr_log_pri(PR_LOG_WARNING, MOD_SQL_PASSWD_VERSION
+      ": unable to register 'bcrypt' SQLAuthType handler: %s", strerror(errno));
+
+  } else {
+    pr_log_debug(DEBUG6, MOD_SQL_PASSWD_VERSION
+      ": registered 'bcrypt' SQLAuthType handler");
+  }
 
   if (sql_register_authtype("md5", sql_passwd_md5) < 0) {
     pr_log_pri(PR_LOG_WARNING, MOD_SQL_PASSWD_VERSION

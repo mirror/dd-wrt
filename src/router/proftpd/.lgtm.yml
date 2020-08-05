@@ -1,0 +1,44 @@
+---
+path_classifiers:
+  3rdparty:
+    - "lib/ccan-*.c"
+    - "lib/getopt*"
+    - "lib/glibc-*.c"
+    - "lib/hanson-*.c"
+    - "lib/libltdl/"
+    - "lib/openbsd-*.c"
+    - "lib/pr_fnmatch*.c"
+  docs:
+    - doc
+  test:
+    - test
+
+queries:
+  exclude: 3rdparty
+
+extraction:
+  cpp:
+    prepare:
+      packages:
+        - gettext
+        - libattr1-dev
+        - libcap-dev
+        - libgeoip-dev
+        - libhiredis-dev
+        - libldap2-dev
+        - libmemcached-dev
+        - libmysqlclient-dev
+        - libpam-dev
+        - libpcre3-dev
+        - libpq-dev
+        - libsasl2-dev
+        - libsqlite3-dev
+        - libssl-dev
+        - libsodium-dev
+        - libwrap0-dev
+        - ncurses-dev
+        - unixodbc-dev
+        - zlib1g-dev
+
+    configure:
+      command: ./configure LIBS="-lodbc" --enable-ctrls --enable-facl --enable-memcache --enable-nls --enable-pcre --enable-redis --with-modules=mod_sql:mod_sql_mysql:mod_sql_odbc:mod_sql_postgres:mod_sql_sqlite:mod_sql_passwd:mod_sftp:mod_sftp_sql:mod_sftp_pam:mod_tls:mod_tls_fscache:mod_tls_shmcache:mod_tls_memcache:mod_tls_redis:mod_ban:mod_copy:mod_ctrls_admin:mod_deflate:mod_dnsbl:mod_dynmasq:mod_exec:mod_facl:mod_geoip:mod_ifversion:mod_ldap:mod_load:mod_log_forensic:mod_qos:mod_quotatab:mod_quotatab_file:mod_quotatab_ldap:mod_quotatab_radius:mod_quotatab_sql:mod_radius:mod_readme:mod_rewrite:mod_shaper:mod_site_misc:mod_snmp:mod_wrap:mod_wrap2:mod_wrap2_file:mod_wrap2_redis:mod_wrap2_sql:mod_digest:mod_auth_otp:mod_statcache:mod_unique_id:mod_ifsession

@@ -62,8 +62,10 @@ The most current version of <code>mod_sql</code> is distributed with ProFTPD.
   <li><a href="#SQLGroupInfo">SQLGroupInfo</a>
   <li><a href="#SQLGroupPrimaryKey">SQLGroupPrimaryKey</a>
   <li><a href="#SQLGroupWhereClause">SQLGroupWhereClause</a>
+  <li><a href="#SQLKeepAlive">SQLKeepAlive</a>
   <li><a href="#SQLLog">SQLLog</a>
   <li><a href="#SQLLogFile">SQLLogFile</a>
+  <li><a href="#SQLLogOnEvent">SQLLogOnEvent</a>
   <li><a href="#SQLMinID">SQLMinID</a>
   <li><a href="#SQLMinUserGID">SQLMinUserGID</a>
   <li><a href="#SQLMinUserUID">SQLMinUserUID</a>
@@ -332,7 +334,7 @@ Use &quot;mysql&quot; for the <code>mod_sql_mysql</code> module, and
 <p>
 <hr>
 <h3><a name="SQLConnectInfo">SQLConnectInfo</a></h3>
-<strong>Syntax:</strong> SQLConnectInfo <em>connection-info [username] [password] [policy] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&gt;path&lt;] [ssl-ciphers:&lt;list&gt;]</em><br>
+<strong>Syntax:</strong> SQLConnectInfo <em>connection-info [username] [password] [policy] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&lt;path&gt;] [ssl-ciphers:&lt;list&gt;]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sql<br>
@@ -758,6 +760,42 @@ parameter can use the same set of variables as supported by the
 
 <p>
 <hr>
+<h3><a name="SQLKeepAlive">SQLKeepAlive</a></h3>
+<strong>Syntax:</strong> SQLKeepAlive <em>interval [stmt]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
+<strong>Module:</strong> mod_sql<br>
+<strong>Compatibility:</strong> 1.3.7rc4 and later
+
+<p>
+The <code>SQLKeepAlive</code> directive configures a periodic <em>stmt</em> to
+be executed on a timer, every <em>interval</em> seconds, as way of keeping
+the connection between <code>mod_sql</code> and the backend database server
+alive.
+
+<p>
+Note that the default <em>stmt</em> used is:
+<pre>
+  SELECT 1
+</pre>
+This SQL statement works for MySQL, Postgres, and SQLite.
+
+<p>
+Examples:
+<pre>
+  # Schedule a "keepalive" query every 30 seconds
+  SQLKeepAlive 30
+
+  # Schedule a "keepalive" query every 30 seconds, using our custom SQL
+  SQLKeepAlive 30 "SELECT foo FROM bar"
+</pre>
+The <em>stmt</em> used does <b>not</b> have to suceed; the important behavior
+is the sending (and receiving) of bytes across the network to the database
+server, so that any networking gear in between, such as firewalls and load
+balancers, know that the connection is not idle, is still in use.
+
+<p>
+<hr>
 <h3><a name="SQLLog">SQLLog</a></h3>
 <strong>Syntax:</strong> SQLLog <em>cmd-set query-name [&quot;IGNORE_ERRORS&quot;]</em><br>
 <strong>Default:</strong> None<br>
@@ -871,6 +909,54 @@ a <code>&lt;Global&gt;</code> context.
 
 <p>
 <hr>
+<h3><a name="SQLLogOnEvent">SQLLogOnEvent</a></h3>
+<strong>Syntax:</strong> SQLLogOnEvent <em>event query-name ["IGNORE_ERRORS"]</em><br>
+<strong>Default:</strong> None<br>
+<strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code>
+<strong>Module:</strong> mod_sql<br>
+<strong>Compatibility:</strong> 1.3.5rc2 and later
+
+<p>
+The <code>SQLLogOnEvent</code> directive is used to log information to database
+tables via <em>query-name</em>.  Multiple <code>SQLLogOnEvent</code> directives
+can be in effect for any event.
+
+<p>
+The first parameter is the name of an <em>event</em>.
+
+<p>
+The second parameter is the name of a query defined by a
+<code>SQLNamedQuery</code> directive.  The query must be an
+<code>UPDATE</code>, <code>INSERT</code>, or <code>FREEFORM</code> type
+query; explicit <code>SELECT</code> queries will not be processed.
+
+<p>
+The third parameter is optional.  If you add &quot;IGNORE_ERRORS&quot; as the
+third parameter, <code>SQLLogOnEvent</code> <b><i>will not</i></b> check for
+errors in the processing of the named query.  Any value for this parameter
+other than the string &quot;IGNORE_ERRORS&quot; (case-insensitive) will not
+cause errors to be ignored.
+
+<p>
+Examples:
+<pre>
+  SQLNamedQuery update_max_logins UPDATE "max_login_attempts=max_login_attempts+1 WHERE userid='%u'" users
+  SQLLogOnEvent mod_auth.max-login-attempts update_max_logins
+</pre>
+In this example, a <code>users.max_login_attempts</code> column is updated
+for the user trying to login, whenever that user exceeds a
+<code>MaxLoginAttempts</code> limit.
+
+<p>
+<pre>
+  SQLNamedQuery add_banned_host INSERT "host = '%a'" bans
+  SQLLogOnEvent mod_ban.ban-host add_banned_host
+</pre>
+Here, whenever <code>mod_ban</code> bans a host, we add a row to a
+<code>bans</code> table.
+
+<p>
+<hr>
 <h3><a name="SQLMinID">SQLMinID</a></h3>
 <strong>Syntax:</strong> SQLMinID <em>minimum-id</em><br>
 <strong>Default:</strong> 999<br>
@@ -924,7 +1010,7 @@ See also: <a href="#SQLDefaultUID"><code>SQLDefaultUID</code></a>
 <p>
 <hr>
 <h3><a name="SQLNamedConnectInfo">SQLNamedConnectInfo</a></h3>
-<strong>Syntax:</strong> SQLConnectInfo <em>connection-name</em> <em>sql-backend</em> <em>connection-info [username] [password] [policy] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&gt;path&lt;] [ssl-ciphers:&lt;list&gt;]</em><br>
+<strong>Syntax:</strong> SQLNamedConnectInfo <em>connection-name</em> <em>sql-backend</em> <em>connection-info [username] [password] [policy] [ssl-ca:&lt;path&gt;] [ssl-cert:&lt;path&gt;] [ssl-key:&lt;path&gt;] [ssl-ciphers:&lt;list&gt;]</em><br>
 <strong>Default:</strong> None<br>
 <strong>Context:</strong> server config, <code>&lt;VirtualHost&gt;</code>, <code>&lt;Global&gt;</code><br>
 <strong>Module:</strong> mod_sql<br>
@@ -1228,7 +1314,7 @@ more.  For the complete list check the FTP RFCs.
 FTP commands in the command set will only be triggered if they complete
 successfully.  Prefixing any command with &quot;ERR_&quot; will show
 information only if there was an error in command processing.  To send a
-message on both errors and successfull completion of a given command <i>X</i>,
+message on both errors and successful completion of a given command <i>X</i>,
 therefore, you'll need both &quot;<i>X</i>&quot; and &quot;ERR_<i>X</i>&quot;
 in your <em>cmd-set</em>.
 
@@ -1516,7 +1602,7 @@ only, and should be removed from any production configuration.
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2000-2017 The ProFTPD Project<br>
+&copy; Copyright 2000-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

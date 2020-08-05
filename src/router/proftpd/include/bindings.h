@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2001-2016 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -74,6 +74,7 @@ typedef struct namebind_rec {
   unsigned char nb_iswildcard;
   unsigned char nb_isactive;
   server_rec *nb_server;
+  unsigned int nb_server_port;
 
 } pr_namebind_t;
 
@@ -173,7 +174,8 @@ server_rec *pr_namebind_get_server(const char *name, const pr_netaddr_t *addr,
   unsigned int port);
 
 /* Opens the pr_namebind_t with the given name. */
-int pr_namebind_open(const char *name, const pr_netaddr_t *addr);
+int pr_namebind_open(const char *name, const pr_netaddr_t *addr,
+  unsigned int port);
 
 /* Provides a count of the number of namebinds associated with this
  * server_rec.

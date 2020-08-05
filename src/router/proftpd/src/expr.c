@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2008-2016 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -278,7 +278,6 @@ int pr_expr_eval_user_and(char **expr) {
  * evaluates to TRUE.
  */
 int pr_expr_eval_user_or(char **expr) {
-  int found;
   char *user;
 
   if (expr == NULL ||
@@ -288,20 +287,22 @@ int pr_expr_eval_user_or(char **expr) {
   }
 
   for (; *expr; expr++) {
-    user = *expr;
-    found = FALSE;
+    int found = FALSE;
 
+    user = *expr;
     if (*user == '!') {
       found = !found;
       user++;
     }
 
-    if (session.user &&
-        strcmp(session.user, user) == 0)
+    if (session.user != NULL &&
+        strcmp(session.user, user) == 0) {
       found = !found;
+    }
 
-    if (found)
+    if (found) {
       return TRUE;
+    }
   }
 
   return FALSE;

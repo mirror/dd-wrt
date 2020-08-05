@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2004-2017 The ProFTPD Project team
+ * Copyright (c) 2004-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,9 +97,11 @@ static char *get_config_word(pool *p, char *word) {
    */
 
   wordlen = strlen(word);
-
   if (wordlen > 7) {
     char *ptr = NULL;
+
+    pr_trace_msg(trace_channel, 27, "word '%s' long enough for environment "
+      "variable (%lu > minimum required 7)", word, (unsigned long) wordlen);
 
     /* Does the given word use the environment syntax? We handle this in a
      * while loop in order to handle a) multiple different variables, and b)
@@ -128,18 +130,32 @@ static char *get_config_word(pool *p, char *word) {
 
       key = pstrndup(p, ptr + 6, keylen);
 
+      pr_trace_msg(trace_channel, 17,
+        "word '%s' uses environment variable '%s'", word, key);
       env = pr_env_get(p, key);
       if (env == NULL) {
         /* No value in the environment; continue on to the next potential
          * variable in the word.
          */
-        ptr = strstr(ptr2, "%{env:");
+        pr_trace_msg(trace_channel, 17, "no value found for environment "
+          "variable '%s' for word '%s', ignoring", key, word);
+
+        word = (char *) sreplace(p, word, var, "", NULL);
+        ptr = strstr(word, "%{env:");
         continue;
       }
+
+      pr_trace_msg(trace_channel, 17,
+        "resolved environment variable '%s' to value '%s' for word '%s'", key,
+        env, word);
 
       word = (char *) sreplace(p, word, var, env, NULL);
       ptr = strstr(word, "%{env:");
     }
+
+  } else {
+    pr_trace_msg(trace_channel, 27, "word '%s' not long enough for environment "
+      "variable (%lu < minimum required 7)", word, (unsigned long) wordlen);
   }
 
   return pstrdup(p, word);
@@ -1015,9 +1031,10 @@ static int parse_wildcard_config_path(pool *p, const char *path,
   }
 
   pr_fs_clear_cache2(parent_path);
-  if (pr_fsio_lstat(parent_path, &st) < 0) {
-    xerrno = errno;
+  res = pr_fsio_lstat(parent_path, &st);
+  xerrno = errno;
 
+  if (res < 0) {
     pr_log_pri(PR_LOG_WARNING,
       "error: failed to check configuration path '%s': %s", parent_path,
       strerror(xerrno));

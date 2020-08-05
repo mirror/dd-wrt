@@ -3,6 +3,7 @@
 # Dynamic modules with no/minimal additional build or runtime dependencies, always built
 #   mod_auth_pam
 #   mod_ban
+#   mod_copy
 #   mod_ctrls_admin
 #   mod_deflate
 #   mod_dnsbl
@@ -37,7 +38,7 @@
 #   mod_geoip (needs geoip [--with geoip])
 #   mod_ldap (needs openldap [--with ldap])
 #   mod_quotatab_ldap (needs openldap [--with ldap])
-#   mod_sftp (needs openssl [--with ssl])
+#   mod_sftp (needs openssl [--with ssl], sodium [--with sodium])
 #   mod_sftp_pam (needs openssl [--with ssl])
 #   mod_sftp_sql (needs openssl [--with ssl])
 #   mod_sql_mysql (needs mysql client libraries [--with mysql])
@@ -52,7 +53,7 @@
 # RHEL5 and clones don't have suitably recent versions of pcre/libmemcached
 # so use --with rhel5 to inhibit those features when using --with everything
 
-%global proftpd_version			1.3.7rc1
+%global proftpd_version			1.3.7
 
 # rc_version should be incremented for each RC release, and reset back to 1
 # AFTER each stable release.
@@ -60,7 +61,7 @@
 
 # release_version should be incremented for each maint release, and reset back
 # to 1 BEFORE starting new release cycle.
-%global release_version			1
+%global release_version			2
 
 %if %(echo %{proftpd_version} | grep rc >/dev/null 2>&1 && echo 1 || echo 0)
 %global rpm_version %(echo %{proftpd_version} | sed -e 's/rc.*//')
@@ -100,6 +101,7 @@
 %global _with_sqlite 1
 %global _with_postgresql 1
 %global _with_ssl 1
+%global _with_sodium 1
 %global _with_wrap 1
 %endif
 #
@@ -110,7 +112,7 @@ BuildRequires: geoip-devel
 #
 # --with ldap (for mod_ldap, mod_quotatab_ldap)
 %if 0%{?_with_ldap:1}
-BuildRequires: openldap-devel
+BuildRequires: cyrus-sasl-devel, openldap-devel
 %endif
 #
 # --with memcache (for mod_memcache, mod_tls_memcache)
@@ -140,6 +142,11 @@ BuildRequires: hiredis
 # --with ssl (for mod_auth_otp, mod_digest, mod_sftp, mod_sftp_pam, mod_sftp_sql, mod_sql_passwd, mod_tls, mod_tls_fscache, mod_tls_shmcache)
 %if 0%{?_with_ssl:1}
 BuildRequires: openssl-devel
+%endif
+#
+# --with sodium (for mod_sftp)
+%if 0%{?_with_sodium:1}
+BuildRequires: epel-release, libsodium-devel
 %endif
 #
 # --with-sqlite (for mod_sql_sqlite)
@@ -287,13 +294,14 @@ Requires:       pam-devel
 Requires:       ncurses-devel
 Requires:       zlib-devel
 %{?_with_geoip:Requires:      geoip-devel}
-%{?_with_ldap:Requires:       openldap-devel}
+%{?_with_ldap:Requires:       cyrus-sasl-devel, openldap-devel}
 %{?_with_memcache:Requires:   libmemcached-devel >= 0.41}
 %{?_with_mysql:Requires:      mysql-devel}
 %{?_with_pcre:Requires:       pcre-devel >= 7.0}
 %{?_with_postgresql:Requires: postgresql-devel}
 %{?_with_redis:Requires:      hiredis}
 %{?_with_ssl:Requires:        openssl-devel}
+%{?_with_sodium:Requires:     epel-release, libsodium-devel}
 %{?_with_sqlite:Requires:     sqlite-devel}
 %{?_with_wrap:Requires:       /usr/include/tcpd.h}
 
@@ -340,6 +348,7 @@ fi
 # Compile the module list (note: mod_ifsession is always included - last)
 STANDARD_MODULE_LIST="  mod_auth_pam            \
                         mod_ban                 \
+                        mod_copy                \
                         mod_ctrls_admin         \
                         mod_deflate             \
                         mod_dnsbl               \
@@ -523,6 +532,7 @@ rm -rf %{_builddir}/%{name}-%{version}
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_auth_otp.so}
 %{_libexecdir}/proftpd/mod_auth_pam.so
 %{_libexecdir}/proftpd/mod_ban.so
+%{_libexecdir}/proftpd/mod_copy.so
 %{_libexecdir}/proftpd/mod_ctrls_admin.so
 %{_libexecdir}/proftpd/mod_deflate.so
 %{?_with_ssl:%{_libexecdir}/proftpd/mod_digest.so}

@@ -365,10 +365,11 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
     }
 
   } else if (flags & SFTP_MAC_FL_WRITE_MAC) {
-    unsigned int i = 0;
+    /* Debugging. */
 #ifdef SFTP_DEBUG_PACKET
-
     if (pkt->mac_len > 0) {
+      unsigned int i = 0;
+
       (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
         "server MAC (len %lu, seqno %lu):",
         (unsigned long) pkt->mac_len, (unsigned long) pkt->seqno);
@@ -382,9 +383,6 @@ static int get_mac(struct ssh2_packet *pkt, struct sftp_mac *mac,
         i += 8;
       }
     }
-#else
-    /* Avoid compiler warning. */
-    (void) i;
 #endif
   }
 

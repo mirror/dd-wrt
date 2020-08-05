@@ -78,50 +78,18 @@ sub list_tests {
 sub xferlog_retr_ascii_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'xferlog');
 
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
-
-  my $test_file = File::Spec->rel2abs($config_file);
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
+  my $test_file = File::Spec->rel2abs($setup->{config_file});
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -132,7 +100,8 @@ sub xferlog_retr_ascii_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -150,7 +119,7 @@ sub xferlog_retr_ascii_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('ascii');
 
       my $conn = $client->retr_raw($test_file);
@@ -169,7 +138,6 @@ sub xferlog_retr_ascii_ok {
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -178,7 +146,7 @@ sub xferlog_retr_ascii_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -188,109 +156,78 @@ sub xferlog_retr_ascii_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = -s $test_file;
-      $self->assert($expected == $filesz,
-        test_msg("Expected '$expected', got '$filesz'"));
+        $expected = -s $test_file;
+        $self->assert($expected == $filesz,
+          test_msg("Expected file size '$expected', got '$filesz'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'a';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'a';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_retr_binary_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'xferlog');
 
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
-
-  my $test_file = File::Spec->rel2abs($config_file);
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
+  my $test_file = File::Spec->rel2abs($setup->{config_file});
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -301,7 +238,8 @@ sub xferlog_retr_binary_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -319,7 +257,7 @@ sub xferlog_retr_binary_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
 
       my $conn = $client->retr_raw($test_file);
@@ -338,7 +276,6 @@ sub xferlog_retr_binary_ok {
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -347,7 +284,7 @@ sub xferlog_retr_binary_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -357,74 +294,67 @@ sub xferlog_retr_binary_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = -s $test_file;
-      $self->assert($expected == $filesz,
-        test_msg("Expected '$expected', got '$filesz'"));
+        $expected = -s $test_file;
+        $self->assert($expected == $filesz,
+          test_msg("Expected file size '$expected', got '$filesz'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'b';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'b';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_retr_aborted {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
+  my $setup = test_setup($tmpdir, 'xferlog');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo");
   if (open(my $fh, "> $test_file")) {
@@ -438,38 +368,15 @@ sub xferlog_retr_aborted {
     die("Can't open $test_file: $!");
   }
 
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     # Have the file being downloaded be sent in 1KB chunks, to slow the
     # download down
@@ -488,7 +395,8 @@ sub xferlog_retr_aborted {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -506,7 +414,7 @@ sub xferlog_retr_aborted {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
 
       my $conn = $client->retr_raw($test_file);
@@ -519,7 +427,6 @@ sub xferlog_retr_aborted {
       $conn->read($buf, 1, 30);
       $conn->abort();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -528,7 +435,7 @@ sub xferlog_retr_aborted {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -538,105 +445,74 @@ sub xferlog_retr_aborted {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+i$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+o\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+i$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'b';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'b';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_stor_ascii_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
+  my $setup = test_setup($tmpdir, 'xferlog');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -647,7 +523,8 @@ sub xferlog_stor_ascii_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -665,7 +542,7 @@ sub xferlog_stor_ascii_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('ascii');
 
       my $conn = $client->stor_raw('foo');
@@ -684,7 +561,6 @@ sub xferlog_stor_ascii_ok {
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -693,7 +569,7 @@ sub xferlog_stor_ascii_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -703,109 +579,78 @@ sub xferlog_stor_ascii_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = -s $test_file;
-      $self->assert($expected == $filesz,
-        test_msg("Expected '$expected', got '$filesz'"));
+        $expected = -s $test_file;
+        $self->assert($expected == $filesz,
+          test_msg("Expected file size '$expected', got '$filesz'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'a';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'a';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_stor_binary_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
+  my $setup = test_setup($tmpdir, 'xferlog');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -816,7 +661,8 @@ sub xferlog_stor_binary_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -834,7 +680,7 @@ sub xferlog_stor_binary_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
 
       my $conn = $client->stor_raw('foo');
@@ -853,7 +699,6 @@ sub xferlog_stor_binary_ok {
 
       $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -862,7 +707,7 @@ sub xferlog_stor_binary_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -872,109 +717,78 @@ sub xferlog_stor_binary_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = -s $test_file;
-      $self->assert($expected == $filesz,
-        test_msg("Expected '$expected', got '$filesz'"));
+        $expected = -s $test_file;
+        $self->assert($expected == $filesz,
+          test_msg("Expected file size '$expected', got '$filesz'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'b';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'b';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_stor_aborted {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
+  my $setup = test_setup($tmpdir, 'xferlog');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo");
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -985,7 +799,8 @@ sub xferlog_stor_aborted {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1003,7 +818,7 @@ sub xferlog_stor_aborted {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
 
       my $conn = $client->stor_raw('foo');
@@ -1016,7 +831,6 @@ sub xferlog_stor_aborted {
       $conn->write($buf, 3);
       $conn->abort();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1025,7 +839,7 @@ sub xferlog_stor_aborted {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1035,56 +849,57 @@ sub xferlog_stor_aborted {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+i$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+i\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+i$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        if ($^O eq 'darwin') {
+          $expected = '/private' . $test_file;
+        }
 
-      $expected = 'b';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = 'b';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
+
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_stor_enospc_bug3895 {
@@ -1272,15 +1087,7 @@ sub xferlog_stor_enospc_bug3895 {
 sub xferlog_dele_ok {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
-
-  my $config_file = "$tmpdir/xferlog.conf";
-  my $pid_file = File::Spec->rel2abs("$tmpdir/xferlog.pid");
-  my $scoreboard_file = File::Spec->rel2abs("$tmpdir/xferlog.scoreboard");
-
-  my $log_file = test_get_logfile();
-
-  my $auth_user_file = File::Spec->rel2abs("$tmpdir/xferlog.passwd");
-  my $auth_group_file = File::Spec->rel2abs("$tmpdir/xferlog.group");
+  my $setup = test_setup($tmpdir, 'xferlog');
 
   my $test_file = File::Spec->rel2abs("$tmpdir/foo");
   if (open(my $fh, "> $test_file")) {
@@ -1295,39 +1102,15 @@ sub xferlog_dele_ok {
   }
 
   my $test_filesz = -s $test_file;
-
-  my $user = 'proftpd';
-  my $passwd = 'test';
-  my $group = 'ftpd';
-  my $home_dir = File::Spec->rel2abs($tmpdir);
-  my $uid = 500;
-  my $gid = 500;
-
-  # Make sure that, if we're running as root, that the home directory has
-  # permissions/privs set for the account we create
-  if ($< == 0) {
-    unless (chmod(0755, $home_dir)) {
-      die("Can't set perms on $home_dir to 0755: $!");
-    }
-
-    unless (chown($uid, $gid, $home_dir)) {
-      die("Can't set owner of $home_dir to $uid/$gid: $!");
-    }
-  }
-
-  auth_user_write($auth_user_file, $user, $passwd, $uid, $gid, $home_dir,
-    '/bin/bash');
-  auth_group_write($auth_group_file, $group, $gid, $user);
-
   my $xfer_log = File::Spec->rel2abs("$tmpdir/xfer.log");
 
   my $config = {
-    PidFile => $pid_file,
-    ScoreboardFile => $scoreboard_file,
-    SystemLog => $log_file,
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
 
-    AuthUserFile => $auth_user_file,
-    AuthGroupFile => $auth_group_file,
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
 
     TransferLog => $xfer_log,
 
@@ -1338,7 +1121,8 @@ sub xferlog_dele_ok {
     },
   };
 
-  my ($port, $config_user, $config_group) = config_write($config_file, $config);
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
 
   # Open pipes, for use between the parent and child processes.  Specifically,
   # the child will indicate when it's done with its test by writing a message
@@ -1356,12 +1140,11 @@ sub xferlog_dele_ok {
   if ($pid) {
     eval {
       my $client = ProFTPD::TestSuite::FTP->new('127.0.0.1', $port);
-      $client->login($user, $passwd);
+      $client->login($setup->{user}, $setup->{passwd});
       $client->type('binary');
-
       $client->dele($test_file);
+      $client->quit();
     };
-
     if ($@) {
       $ex = $@;
     }
@@ -1370,7 +1153,7 @@ sub xferlog_dele_ok {
     $wfh->flush();
 
   } else {
-    eval { server_wait($config_file, $rfh) };
+    eval { server_wait($setup->{config_file}, $rfh) };
     if ($@) {
       warn($@);
       exit 1;
@@ -1380,61 +1163,57 @@ sub xferlog_dele_ok {
   }
 
   # Stop server
-  server_stop($pid_file);
-
+  server_stop($setup->{pid_file});
   $self->assert_child_ok($pid);
 
-  if (open(my $fh, "< $xfer_log")) {
-    my $line = <$fh>;
-    chomp($line);
-    close($fh);
+  eval {
+    if (open(my $fh, "< $xfer_log")) {
+      my $line = <$fh>;
+      chomp($line);
+      close($fh);
 
-    my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+d\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
+      my $expected = '^\S+\s+\S+\s+\d+\s+\d+:\d+:\d+\s+\d+\s+\d+\s+(\S+)\s+(\d+)\s+(\S+)\s+(\S+)\s+_\s+d\s+r\s+(\S+)\s+ftp\s+0\s+\*\s+c$';
 
-    $self->assert(qr/$expected/, $line,
-      test_msg("Expected '$expected', got '$line'"));
+      $self->assert(qr/$expected/, $line,
+        test_msg("Expected '$expected', got '$line'"));
 
-    if ($line =~ /$expected/) {
-      my $remote_host = $1;
-      my $filesz = $2;
-      my $filename = $3;
-      my $xfer_type = $4;
-      my $user_name = $5;
+      if ($line =~ /$expected/) {
+        my $remote_host = $1;
+        my $filesz = $2;
+        my $filename = $3;
+        my $xfer_type = $4;
+        my $user_name = $5;
 
-      $expected = '127.0.0.1';
-      $self->assert($expected eq $remote_host,
-        test_msg("Expected '$expected', got '$remote_host'"));
+        $expected = '127.0.0.1';
+        $self->assert($expected eq $remote_host,
+          test_msg("Expected remote host '$expected', got '$remote_host'"));
 
-      $expected = $test_filesz;
-      $self->assert($expected == $filesz,
-        test_msg("Expected '$expected', got '$test_filesz'"));
+        $expected = $test_filesz;
+        $self->assert($expected == $filesz,
+          test_msg("Expected file size '$expected', got '$test_filesz'"));
 
-      $expected = $test_file;
-      $expected = $test_file;
-      $self->assert($expected eq $filename,
-        test_msg("Expected '$expected', got '$filename'"));
+        $expected = $test_file;
+        $self->assert($expected eq $filename,
+          test_msg("Expected file name '$expected', got '$filename'"));
 
-      $expected = 'b';
-      $self->assert($expected eq $xfer_type,
-        test_msg("Expected '$expected', got '$xfer_type'"));
+        $expected = 'b';
+        $self->assert($expected eq $xfer_type,
+          test_msg("Expected transfer type '$expected', got '$xfer_type'"));
 
-      $expected = $user;
-      $self->assert($expected eq $user_name,
-        test_msg("Expected '$expected', got '$user_name'"));
+        $expected = $setup->{user};
+        $self->assert($expected eq $user_name,
+          test_msg("Expected user '$expected', got '$user_name'"));
+      }
+
+    } else {
+      die("Can't read $xfer_log: $!");
     }
-
-  } else {
-    die("Can't read $xfer_log: $!");
+  };
+  if ($@) {
+    $ex = $@;
   }
 
-  if ($ex) {
-    test_append_logfile($log_file, $ex);
-    unlink($log_file);
-
-    die($ex);
-  }
-
-  unlink($log_file);
+  test_cleanup($setup->{log_file}, $ex);
 }
 
 sub xferlog_device_full_for_log {

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp
- * Copyright (c) 2008-2016 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -3372,10 +3372,11 @@ static void snmp_max_inst_ev(const void *event_data, void *user_data) {
     register unsigned int i;
     pr_netaddr_t **dst_addrs;
     unsigned int notify_id = SNMP_NOTIFY_DAEMON_MAX_INSTANCES;
-    int res;
 
     dst_addrs = snmp_notifys->elts;
     for (i = 0; i < snmp_notifys->nelts; i++) {
+      int res;
+
       res = snmp_notify_generate(snmp_pool, -1, snmp_community,
         session.c->local_addr, dst_addrs[i], notify_id);
       if (res < 0) {

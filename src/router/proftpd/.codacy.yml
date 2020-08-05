@@ -1,0 +1,10 @@
+---
+exclude_paths:
+  - "lib/ccan-*.c"
+  - "lib/getopt*"
+  - "lib/glibc-*.c"
+  - "lib/libltdl/**"
+  - "lib/hanson-*.c"
+  - "lib/openbsd-*.c"
+  - "lib/pr_fnmatch*.c"
+  - "tests/**"

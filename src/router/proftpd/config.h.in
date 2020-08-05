@@ -273,8 +273,14 @@
 /* Define if you have the crypt function.  */
 #undef HAVE_CRYPT
 
+/* Define if you have the ctime_r function.  */
+#undef HAVE_CTIME_R
+
 /* Define if you have the dirfd function.  */
 #undef HAVE_DIRFD
+
+/* Define if you have the explicit_bzero function.  */
+#undef HAVE_EXPLICIT_BZERO
 
 /* Define if you have the endprotoent function.  */
 #undef HAVE_ENDPROTOENT
@@ -384,6 +390,9 @@
 /* Define if you have the gettimeofday function.  */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define if you have the gmtime_r function.  */
+#undef HAVE_GMTIME_R
+
 /* Define if you have the Hiredis redisReconnect function.  */
 #undef HAVE_HIREDIS_REDISRECONNECT
 
@@ -413,6 +422,9 @@
 
 /* Define if you have the llistxattr function.  */
 #undef HAVE_LLISTXATTR
+
+/* Define if you have the localtime_r function.  */
+#undef HAVE_LOCALTIME_R
 
 /* Define if you have the loginfailed function.  */
 #undef HAVE_LOGINFAILED
@@ -615,6 +627,9 @@
 /* Define if you have the strtoull function.  */
 #undef HAVE_STRTOULL
 
+/* Define if you have the timingsafe_bcmp function.  */
+#undef HAVE_TIMINGSAFE_BCMP
+
 /* Define if you have the tzset function.  */
 #undef HAVE_TZSET
 
@@ -753,6 +768,9 @@
 /* Define if you have the <regex.h> header file.  */
 #undef HAVE_REGEX_H
 
+/* Define if you have the <sasl/sasl.h> header file.  */
+#undef HAVE_SASL_SASL_H
+
 /* Define if you have the <security/pam_appl.h> header file.  */
 #undef HAVE_SECURITY_PAM_APPL_H
 
@@ -791,6 +809,9 @@
 
 /* Define if you have the <sys/audit.h> header file.  */
 #undef HAVE_SYS_AUDIT_H
+
+/* Define if you have the <sys/capability.h> header file.  */
+#undef HAVE_SYS_CAPABILITY_H
 
 /* Define if you have the <sys/dir.h> header file.  */
 #undef HAVE_SYS_DIR_H
@@ -1121,6 +1142,20 @@
 
 /* Define if OpenSSL OCSP support, if available, should be used.  */
 #undef PR_USE_OPENSSL_OCSP
+
+/* Define if OpenSSL SSL num ticket support, if available, should be used.  */
+#undef PR_USE_OPENSSL_SSL_NUM_TICKETS
+
+/* Define if OpenSSL SSL read ahead support, if available, should be used.  */
+#undef PR_USE_OPENSSL_SSL_READ_AHEAD
+
+/* Define if OpenSSL SSL session ID context set support, if available, should
+   be used.  */
+#undef PR_USE_OPENSSL_SSL_SESSION_SET1_ID_CONTEXT
+
+/* Define if OpenSSL SSL session ticket callback support, if available,
+ * should be used.  */
+#undef PR_USE_OPENSSL_SSL_SESSION_TICKET_CALLBACK
 
 /* Define if using PCRE support.  */
 #undef PR_USE_PCRE

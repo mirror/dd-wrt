@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2006-2019 The ProFTPD Project team
+ * Copyright (c) 2006-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,8 @@
 #include "privs.h"
 
 #ifdef PR_USE_TRACE
+
+#define TRACE_BUFFER_SIZE		(PR_TUNABLE_BUFFER_SIZE * 4)
 
 static int trace_logfd = -1;
 static unsigned long trace_opts = PR_TRACE_OPT_DEFAULT;
@@ -92,8 +94,9 @@ static void trace_restart_ev(const void *event_data, void *user_data) {
 
 static int trace_write(const char *channel, int level, const char *msg,
     int discard) {
-  char buf[PR_TUNABLE_BUFFER_SIZE * 2];
-  size_t buflen, len;
+  pool *tmp_pool;
+  char buf[TRACE_BUFFER_SIZE];
+  size_t buflen = 0, len = 0;
   struct tm *tm;
   int use_conn_ips = FALSE;
 
@@ -102,32 +105,35 @@ static int trace_write(const char *channel, int level, const char *msg,
   }
 
   memset(buf, '\0', sizeof(buf));
+  tmp_pool = make_sub_pool(trace_pool);
+  pr_pool_tag(tmp_pool, "Trace message pool");
 
-  if (!(trace_opts & PR_TRACE_OPT_USE_TIMESTAMP_MILLIS)) {
-    time_t now;
+  if (trace_opts & PR_TRACE_OPT_USE_TIMESTAMP) {
+    if (trace_opts & PR_TRACE_OPT_USE_TIMESTAMP_MILLIS) {
+      struct timeval now;
+      unsigned long millis;
 
-    now = time(NULL);
-    tm = pr_localtime(NULL, &now);
+      gettimeofday(&now, NULL);
+      tm = pr_localtime(tmp_pool, (const time_t *) &(now.tv_sec));
 
-    len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
-    buflen = len;
+      len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
+      buflen = len;
 
-  } else {
-    struct timeval now;
-    unsigned long millis;
+      /* Convert microsecs to millisecs. */
+      millis = now.tv_usec / 1000;
 
-    gettimeofday(&now, NULL);
+      len = pr_snprintf(buf + buflen, sizeof(buf) - buflen, ",%03lu ", millis);
+      buflen += len;
 
-    tm = pr_localtime(NULL, (const time_t *) &(now.tv_sec));
+    } else {
+      time_t now;
 
-    len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S", tm);
-    buflen = len;
+      now = time(NULL);
+      tm = pr_localtime(tmp_pool, &now);
 
-    /* Convert microsecs to millisecs. */
-    millis = now.tv_usec / 1000;
-
-    len = pr_snprintf(buf + buflen, sizeof(buf) - buflen, ",%03lu", millis);
-    buflen += len;
+      len = strftime(buf, sizeof(buf)-1, "%Y-%m-%d %H:%M:%S ", tm);
+      buflen = len;
+    }
   }
 
   if ((trace_opts & PR_TRACE_OPT_LOG_CONN_IPS) &&
@@ -140,7 +146,7 @@ static int trace_write(const char *channel, int level, const char *msg,
   }
 
   if (use_conn_ips == FALSE) {
-    len = pr_snprintf(buf + buflen, sizeof(buf) - buflen, " [%u] <%s:%d>: %s",
+    len = pr_snprintf(buf + buflen, sizeof(buf) - buflen, "[%u] <%s:%d>: %s",
       (unsigned int) (session.pid ? session.pid : getpid()), channel, level,
       msg);
     buflen += len;
@@ -154,7 +160,7 @@ static int trace_write(const char *channel, int level, const char *msg,
     server_port = pr_netaddr_get_port(session.c->local_addr);
 
     len = pr_snprintf(buf + buflen, sizeof(buf) - buflen,
-      " [%u] (client %s, server %s:%d) <%s:%d>: %s",
+      "[%u] (client %s, server %s:%d) <%s:%d>: %s",
       (unsigned int) (session.pid ? session.pid : getpid()),
       client_ip != NULL ? client_ip : "none",
       server_ip != NULL ? server_ip : "none", server_port, channel, level, msg);
@@ -186,6 +192,7 @@ static int trace_write(const char *channel, int level, const char *msg,
     return 0;
   }
 
+  destroy_pool(tmp_pool);
   return write(trace_logfd, buf, buflen);
 }
 
@@ -437,8 +444,9 @@ int pr_trace_set_levels(const char *channel, int min_level, int max_level) {
     levels->max_level = max_level;
 
     if (strcmp(channel, PR_TRACE_DEFAULT_CHANNEL) != 0) {
-      int count = pr_table_exists(trace_tab, channel);
+      int count;
 
+      count = pr_table_exists(trace_tab, channel);
       if (count <= 0) {
         if (pr_table_add(trace_tab, pstrdup(trace_pool, channel), levels,
             sizeof(struct trace_levels)) < 0) {
@@ -447,8 +455,9 @@ int pr_trace_set_levels(const char *channel, int min_level, int max_level) {
 
       } else {
         if (pr_table_set(trace_tab, pstrdup(trace_pool, channel), levels,
-            sizeof(struct trace_levels)) < 0)
+            sizeof(struct trace_levels)) < 0) {
           return -1;
+        }
       }
 
     } else {
@@ -527,10 +536,9 @@ int pr_trace_msg(const char *channel, int level, const char *fmt, ...) {
 
 int pr_trace_vmsg(const char *channel, int level, const char *fmt,
     va_list msg) {
-  char buf[PR_TUNABLE_BUFFER_SIZE * 2];
-  size_t buflen;
+  char buf[TRACE_BUFFER_SIZE];
   const struct trace_levels *levels;
-  int discard = FALSE, listening;
+  int buflen, discard = FALSE, listening;
 
   /* Writing a trace message at level zero is NOT helpful; this makes it
    * impossible to quell messages to that trace channel by setting the level
@@ -589,7 +597,8 @@ int pr_trace_vmsg(const char *channel, int level, const char *fmt,
   /* Always make sure the buffer is NUL-terminated. */
   buf[sizeof(buf)-1] = '\0';
 
-  if (buflen < sizeof(buf)) {
+  if (buflen > 0 &&
+      buflen < sizeof(buf)) {
     buf[buflen] = '\0';
 
   } else {

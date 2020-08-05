@@ -83,10 +83,10 @@ Suite *tests_get_jot_suite(void);
 Suite *tests_get_redis_suite(void);
 Suite *tests_get_error_suite(void);
 
-/* Temporary hack/placement for this variable, until we get to testing
- * the Signals API.
+/* Temporary hack/placement (in stubs.c) for this variable,
+ * until we get to testing the Signals API.
  */
-unsigned int recvd_signal_flags;
+extern volatile unsigned int recvd_signal_flags;
 
 extern char ServerType;
 extern int ServerUseReverseDNS;

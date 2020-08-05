@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_snmp notification routines
- * Copyright (c) 2008-2017 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -156,7 +156,6 @@ static int get_notify_varlist(pool *p, unsigned int notify_id,
 
   switch (notify_id) {
     case SNMP_NOTIFY_DAEMON_MAX_INSTANCES: {
-      struct snmp_var *var;
       int32_t int_value = 0;
       char *str_value = NULL;
       size_t str_valuelen = 0;
@@ -181,6 +180,7 @@ static int get_notify_varlist(pool *p, unsigned int notify_id,
       } else {
         oid_t oid[] = { SNMP_MIB_DAEMON_OID_MAXINST_CONF, 0 };
         unsigned int oidlen = SNMP_MIB_DAEMON_OIDLEN_MAXINST_CONF + 1;
+        struct snmp_var *var;
 
         var = snmp_smi_create_var(p, oid, oidlen, SNMP_SMI_INTEGER, int_value,
           str_value, str_valuelen);

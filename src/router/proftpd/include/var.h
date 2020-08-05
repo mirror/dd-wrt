@@ -34,7 +34,7 @@ int pr_var_delete(const char *name);
 
 /* Returns TRUE if the given variable name exists in the Variables table,
  * FALSE if not.  A return value of -1 indicates an error, in which case
- * errno will be set appropiately.
+ * errno will be set appropriately.
  */
 int pr_var_exists(const char *name);
 

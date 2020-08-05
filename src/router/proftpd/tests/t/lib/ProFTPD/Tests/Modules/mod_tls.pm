@@ -12,7 +12,7 @@ use IO::Handle;
 use Socket;
 
 use ProFTPD::TestSuite::FTP;
-use ProFTPD::TestSuite::Utils qw(:auth :config :running :test :testsuite);
+use ProFTPD::TestSuite::Utils qw(:auth :config :features :running :test :testsuite);
 
 $| = 1;
 
@@ -47,6 +47,76 @@ my $TESTS = {
   tls_crl_file_ok => {
     order => ++$order,
     test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_unknown_host_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_unknown_host_no_serveraliases_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_tlsengine_off_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_different_certs_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_ignored_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_mismatched_host_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_matching_host_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_matching_host_case_insensitive_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_mismatched_protocol_version_issue850 => {
+    order => ++$order,
+    test_class => [qw(forking)],
+  },
+
+  tls_login_with_sni_port_zero_issue932 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_login_with_sni_port_nonzero_issue932 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_login_with_sni_port_zero_socketbindtight_on_issue932 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
+  },
+
+  tls_login_with_sni_port_zero_multi_ports_issue932 => {
+    order => ++$order,
+    test_class => [qw(bug forking)],
   },
 
   tls_list_no_session_reuse => {
@@ -477,6 +547,8 @@ sub tls_login_rsa {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'binding:20 tls:20',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -489,7 +561,6 @@ sub tls_login_rsa {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -620,7 +691,6 @@ sub tls_login_dsa {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSDSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -751,7 +821,6 @@ sub tls_double_auth {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -888,7 +957,6 @@ sub tls_login_pkcs12 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSPKCS12File => $pkcs12_file,
         TLSCACertificateFile => $ca_file,
@@ -1019,7 +1087,6 @@ sub tls_dh_ciphersuite {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -1161,7 +1228,6 @@ sub tls_crl_file_ok {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -1259,6 +1325,2024 @@ sub tls_crl_file_ok {
   unlink($log_file);
 }
 
+sub tls_login_with_sni_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure a name-based <VirtualHost> for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      );
+
+      # The named vhost does not have any certs configured, so the handshake
+      # should fail.
+      if ($client) {
+        die("Connected to FTPS server unexpectedly");
+      }
+
+      my $errstr = IO::Socket::SSL::errstr();
+      my $expected = 'handshake failure|unrecognized name';
+      $self->assert(qr/$expected/, $errstr,
+        test_msg("Expected '$expected', got '$errstr'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_tlsengine_off_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure a name-based <VirtualHost> for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine off
+    TLSRSACertificateFile $cert_file
+    TLSCACertificateFile $ca_file
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      );
+
+      # The named vhost has mod_tls disabled, so the handshake should fail.
+      if ($client) {
+        die("Connected to FTPS server unexpectedly");
+      }
+
+      my $errstr = IO::Socket::SSL::errstr();
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# TLS Handshake failed: $errstr\n";
+      }
+
+      my $expected = 'handshake failure|unrecognized name';
+      $self->assert(qr/$expected/, $errstr,
+        test_msg("Expected '$expected', got '$errstr'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_unknown_host_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure a name-based <VirtualHost> for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias ftp.example.com
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine off
+    TLSRSACertificateFile $cert_file
+    TLSCACertificateFile $ca_file
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      );
+
+      # The named vhost has does not exist, so the handshake should fail.
+      if ($client) {
+        die("Connected to FTPS server unexpectedly");
+      }
+
+      my $errstr = IO::Socket::SSL::errstr();
+      if ($ENV{TEST_VERBOSE}) {
+        print STDERR "# TLS Handshake failed: $errstr\n";
+      }
+
+      my $expected = 'handshake failure|unrecognized name';
+      $self->assert(qr/$expected/, $errstr,
+        test_msg("Expected '$expected', got '$errstr'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_unknown_host_no_serveraliases_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $host = 'castaglia';
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      );
+
+      # The named vhost has does not exist, but we have no ServerAliases at
+      # all, so the handshake should succeed.
+      unless ($client) {
+        my $errstr = IO::Socket::SSL::errstr();
+        die("Failed to connect to FTPS server: $errstr");
+      }
+
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_different_certs_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $ec_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-server-cert.pem');
+  my $ec_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-ca.pem');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSECCertificateFile => $ec_cert_file,
+        TLSCACertificateFile => $ec_ca_file,
+        TLSProtocol => 'TLSv1.0'
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure a name-based <VirtualHost> for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSOptions EnableDiags
+    TLSProtocol TLSv1.0
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      if ($client->login($setup->{user}, $setup->{passwd})) {
+        die("Login succeeded unexpectedly");
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_ignored_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $cert_file,
+        TLSCACertificateFile => $ca_file,
+        TLSOptions => 'IgnoreSNI',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure a name-based <VirtualHost> for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $client = Net::FTPSSL->new('127.0.0.1',
+        Encryption => 'E',
+        Port => $port,
+        SSL_hostname => $host,
+      );
+
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      unless ($client->login($setup->{user}, $setup->{passwd})) {
+        die("Can't login: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_mismatched_host_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $ec_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-server-cert.pem');
+  my $ec_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-ca.pem');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSECCertificateFile => $ec_cert_file,
+        TLSCACertificateFile => $ec_ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+  my $other_host = 'ftp.nospam.org';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSOptions EnableDiags
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+
+<VirtualHost 127.0.0.1>
+  ServerAlias $other_host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine off
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      # Deliberately send a HOST command with a name different than our SNI.
+      my $resp_code = $client->quot('HOST', $other_host);
+      if ($resp_code != '5') {
+        die("HOST succeeded unexpectedly");
+      }
+
+      my $resp_msg = $client->last_message();
+      my $expected = 'Unknown hostname provided';
+      $self->assert(qr/$expected/, $resp_msg,
+        test_msg("Expected '$expected', got '$resp_msg'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_matching_host_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $ec_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-server-cert.pem');
+  my $ec_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-ca.pem');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSECCertificateFile => $ec_cert_file,
+        TLSCACertificateFile => $ec_ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSOptions EnableDiags
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      # Deliberately send a HOST command with the same name as our SNI.
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_matching_host_case_insensitive_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSRSACertificateFile => $rsa_cert_file,
+        TLSCACertificateFile => $rsa_ca_file,
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  # Per the SNI spec:
+  #  https://tools.ietf.org/html/rfc6066#section-3
+  #
+  # the comparison of SNI hostnames (like any other DNS name) should be
+  # case-INSENSITVE.  So verify that that is the case.
+
+  my $host = 'Castaglia';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSOptions EnableDiags
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => uc($host),
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      # Deliberately send a HOST command with the same name as our SNI.
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_mismatched_protocol_version_issue850 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  my $ec_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-server-cert.pem');
+  my $ec_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ec-ca.pem');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'tls:20',
+
+    AuthUserFile => $setup->{auth_user_file},
+    AuthGroupFile => $setup->{auth_group_file},
+
+    IfModules => {
+      'mod_delay.c' => {
+        DelayEngine => 'off',
+      },
+
+      'mod_tls.c' => {
+        TLSEngine => 'on',
+        TLSLog => $setup->{log_file},
+        TLSRequired => 'on',
+        TLSECCertificateFile => $ec_cert_file,
+        TLSCACertificateFile => $ec_ca_file,
+        TLSOptions => 'EnableDiags',
+        TLSProtocol => 'SSLv3 TLSv1.0',
+      },
+    },
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<VirtualHost 127.0.0.1>
+  ServerAlias $host
+  Port $port
+
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+  AuthOrder mod_auth_file.c
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSOptions EnableDiags
+    TLSProtocol TLSv1.2 TLSv1.3
+  </IfModule>
+
+  <Limit LOGIN>
+    DenyAll
+  </Limit>
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+        SSL_version => 'TLSv1',
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+
+      # The named vhost has does not support the specified TLS protocol
+      # version, so the handshake should fail.
+      if ($client) {
+        die("Connected to FTPS server unexpectedly");
+      }
+
+      my $errstr = IO::Socket::SSL::errstr();
+      my $expected = 'handshake failure|protocol version';
+      $self->assert(qr/$expected/, $errstr,
+        test_msg("Expected '$expected', got '$errstr'"));
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_port_zero_issue932 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  # The key for this issue is the use of:
+  #
+  #   DefaultServer off
+  #   Port 0
+  #
+  # So that the default vhost is DISABLED.
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'binding:20 tls:20',
+    DefaultServer => 'off',
+    Port => 0,
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+  my $other_host = 'ftp.nospam.org';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Global>
+  AuthOrder mod_auth_file.c
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSProtocol TLSv1.0
+    TLSOptions EnableDiags
+  </IfModule>
+</Global>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $host
+</VirtualHost>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $other_host
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_port_nonzero_issue932 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'binding:20 tls:20',
+    DefaultServer => 'off',
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+  my $other_host = 'ftp.nospam.org';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Global>
+  AuthOrder mod_auth_file.c
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSProtocol TLSv1.0
+    TLSOptions EnableDiags
+  </IfModule>
+</Global>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $host
+</VirtualHost>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $other_host
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_port_zero_socketbindtight_on_issue932 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  # The key for this issue is the use of:
+  #
+  #   DefaultServer off
+  #   Port 0
+  #
+  # So that the default vhost is DISABLED.
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'binding:20 tls:20',
+    DefaultServer => 'off',
+    Port => 0,
+    SocketBindTight => 'on',
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config);
+
+  my $host = 'castaglia';
+  my $other_host = 'ftp.nospam.org';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Global>
+  AuthOrder mod_auth_file.c
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSProtocol TLSv1.0
+    TLSOptions EnableDiags
+  </IfModule>
+</Global>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $host
+</VirtualHost>
+
+<VirtualHost 127.0.0.1>
+  Port $port
+  ServerAlias $other_host
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
+sub tls_login_with_sni_port_zero_multi_ports_issue932 {
+  my $self = shift;
+  my $tmpdir = $self->{tmpdir};
+  my $setup = test_setup($tmpdir, 'tls');
+
+  # Use RSA certs for our name-based vhost, to test that the SNI vhost switching
+  # is working as expected.
+  my $rsa_cert_file = File::Spec->rel2abs('t/etc/modules/mod_tls/server-cert.pem');
+  my $rsa_ca_file = File::Spec->rel2abs('t/etc/modules/mod_tls/ca-cert.pem');
+
+  # The key for this issue is the use of:
+  #
+  #   DefaultServer off
+  #   Port 0
+  #
+  # So that the default vhost is DISABLED.
+
+  my $config = {
+    PidFile => $setup->{pid_file},
+    ScoreboardFile => $setup->{scoreboard_file},
+    SystemLog => $setup->{log_file},
+    TraceLog => $setup->{log_file},
+    Trace => 'binding:20 tls:20',
+    Port => 0,
+  };
+
+  if (feature_have_feature_enabled('ipv6')) {
+    $config->{UseIPv6} = 'on';
+  }
+
+  my $config_opts = {
+    NoDefaultAddress => 1,
+    NoDefaultServer => 1,
+  };
+
+  my ($port, $config_user, $config_group) = config_write($setup->{config_file},
+    $config, $config_opts);
+
+  my $address = '0.0.0.0';
+  my $host = 'castaglia';
+  my $other_host = 'ftp.nospam.org';
+  my $other_port = $port + 19;
+  my $last_host = 'ftp3.example.com';
+
+  # Configure name-based <VirtualHost> sections for our testing.
+  if (open(my $fh, ">> $setup->{config_file}")) {
+    print $fh <<EOC;
+<Global>
+  AuthOrder mod_auth_file.c
+  AuthUserFile $setup->{auth_user_file}
+  AuthGroupFile $setup->{auth_group_file}
+
+  <IfModule mod_delay.c>
+    DelayEngine off
+  </IfModule>
+
+  <IfModule mod_tls.c>
+    TLSEngine on
+    TLSLog $setup->{log_file}
+    TLSRequired on
+    TLSRSACertificateFile $rsa_cert_file
+    TLSCACertificateFile $rsa_ca_file
+    TLSProtocol TLSv1.0
+    TLSOptions EnableDiags
+  </IfModule>
+</Global>
+
+<VirtualHost $address>
+  Port $port
+  ServerAlias $host
+</VirtualHost>
+
+<VirtualHost $address>
+  Port $port
+  ServerAlias $other_host
+</VirtualHost>
+
+<VirtualHost $address>
+  Port $other_port
+  ServerAlias $host
+</VirtualHost>
+
+<VirtualHost $address>
+  Port $other_port
+  ServerAlias $other_host
+</VirtualHost>
+
+<VirtualHost $address>
+  Port $port
+  ServerAlias $last_host
+</VirtualHost>
+
+<VirtualHost $address>
+  Port $other_port
+  ServerAlias $last_host
+</VirtualHost>
+EOC
+    unless (close($fh)) {
+      die("Can't write $setup->{config_file}: $!");
+    }
+
+  } else {
+    die("Can't open $setup->{config_file}: $!");
+  }
+
+  # Open pipes, for use between the parent and child processes.  Specifically,
+  # the child will indicate when it's done with its test by writing a message
+  # to the parent.
+  my ($rfh, $wfh);
+  unless (pipe($rfh, $wfh)) {
+    die("Can't open pipe: $!");
+  }
+
+  require Net::FTPSSL;
+
+  my $ex;
+
+  # Fork child
+  $self->handle_sigchld();
+  defined(my $pid = fork()) or die("Can't fork: $!");
+  if ($pid) {
+    eval {
+      # Give the server a chance to start up
+      sleep(2);
+
+      my $ssl_opts = {
+        Encryption => 'E',
+        Port => $port,
+        SSL_ca_file => $rsa_ca_file,
+        SSL_hostname => $host,
+        SSL_verify_mode => IO::Socket::SSL::SSL_VERIFY_PEER(),
+      };
+
+      if ($ENV{TEST_VERBOSE}) {
+        $ssl_opts->{Debug} = 2;
+      }
+
+      my $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      my $resp_code = $client->quot('HOST', $host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+
+      $ssl_opts->{Port} = $other_port;
+      $ssl_opts->{SSL_hostname} = $last_host;
+
+      $client = Net::FTPSSL->new('127.0.0.1', $ssl_opts);
+      unless ($client) {
+        die("Can't connect to FTPS server: " . IO::Socket::SSL::errstr());
+      }
+
+      $resp_code = $client->quot('HOST', $last_host);
+      if ($resp_code != '2') {
+        die("HOST failed: " . $client->last_message());
+      }
+
+      $client->quit();
+    };
+    if ($@) {
+      $ex = $@;
+    }
+
+    $wfh->print("done\n");
+    $wfh->flush();
+
+  } else {
+    eval { server_wait($setup->{config_file}, $rfh) };
+    if ($@) {
+      warn($@);
+      exit 1;
+    }
+
+    exit 0;
+  }
+
+  # Stop server
+  server_stop($setup->{pid_file});
+  $self->assert_child_ok($pid);
+
+  test_cleanup($setup->{log_file}, $ex);
+}
+
 sub tls_list_no_session_reuse {
   my $self = shift;
   my $tmpdir = $self->{tmpdir};
@@ -1314,7 +3398,6 @@ sub tls_list_no_session_reuse {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -1354,7 +3437,7 @@ sub tls_list_no_session_reuse {
         die("Can't login: " . $client->last_message());
       }
 
-      # Since we are requiring SSL session resuse for data transfers,
+      # Since we are requiring SSL session reuse for data transfers,
       # and this client is not using SSL session resumption, I expect
       # this data transfer to fail.
       eval { 
@@ -1461,7 +3544,6 @@ sub tls_list_with_no_session_reuse_required_opt {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -1503,7 +3585,7 @@ sub tls_list_with_no_session_reuse_required_opt {
         die("Can't login: " . $client->last_message());
       }
 
-      # Since we are NOT requiring SSL session resuse for data transfers,
+      # Since we are NOT requiring SSL session reuse for data transfers,
       # and this client is not using SSL session resumption, I expect
       # this data transfer to succeed.
       my $res = $client->list('.');
@@ -1606,7 +3688,6 @@ sub tls_list_fails_tls_required_by_dir_bug2178 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -1767,7 +3848,6 @@ sub tls_list_ok_tls_required_by_dir_bug2178 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -1938,7 +4018,6 @@ sub tls_list_fails_tls_required_by_ftpaccess_bug2178 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -2109,7 +4188,6 @@ sub tls_list_ok_tls_required_by_ftpaccess_bug2178 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -2235,7 +4313,6 @@ sub tls_incompatible_config_bug3247 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'auth',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -2320,7 +4397,6 @@ sub tls_implicit_ssl_bug3266 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSOptions => 'UseImplicitSSL',
         TLSRSACertificateFile => $cert_file,
@@ -2467,7 +4543,6 @@ sub tls_client_cert_verify_failed_embedded_nul_bug3275 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -2640,6 +4715,8 @@ sub tls_opts_std_env_vars {
     PidFile => $pid_file,
     ScoreboardFile => $scoreboard_file,
     SystemLog => $log_file,
+    TraceLog => $log_file,
+    Trace => 'tls:20',
 
     AuthUserFile => $auth_user_file,
     AuthGroupFile => $auth_group_file,
@@ -2658,11 +4735,10 @@ sub tls_opts_std_env_vars {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
-        TLSOptions => 'StdEnvVars',
+        TLSOptions => 'EnableDiags StdEnvVars',
       },
     },
   };
@@ -2838,7 +4914,6 @@ sub tls_opts_std_env_vars_client_vars {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3015,7 +5090,6 @@ sub tls_opts_ipaddr_required_ipv4 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3172,7 +5246,6 @@ sub tls_opts_ipaddr_required_ipv6 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3327,7 +5400,6 @@ sub tls_opts_allow_per_user_tlsrequired_on_anon_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3485,7 +5557,6 @@ sub tls_opts_allow_per_user_tlsrequired_on_user_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3646,7 +5717,6 @@ sub tls_opts_allow_per_user_tlsrequired_auth_user_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'auth',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3807,7 +5877,6 @@ sub tls_opts_allow_per_user_tlsrequired_ctrl_user_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'ctrl',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -3968,7 +6037,6 @@ sub tls_opts_allow_per_user_tlsrequired_data_user_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'data',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -4123,7 +6191,6 @@ sub tls_opts_allow_per_user_tlsrequired_on_ifsess_login_bug3325 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -4313,7 +6380,6 @@ sub tls_rest_2gb_last_byte {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -4526,7 +6592,6 @@ sub tls_rest_4gb_last_byte {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -4703,7 +6768,6 @@ sub tls_stor_empty_file {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -4865,7 +6929,6 @@ sub tls_retr_empty_file {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -5027,7 +7090,6 @@ sub tls_required_on_feat_allowed_bug3420 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -5164,7 +7226,6 @@ sub tls_implicit_ssl_bug3437 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSOptions => 'UseImplicitSSL',
         TLSRSACertificateFile => $cert_file,
@@ -5310,7 +7371,6 @@ sub tls_ccc_list_bug3465 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'off',
         TLSOptions => 'NoSessionReuseRequired',
         TLSRSACertificateFile => $cert_file,
@@ -5637,7 +7697,6 @@ sub tls_opts_commonname_required_bug3512 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -5804,7 +7863,6 @@ sub tls_opts_dns_name_required {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -5971,7 +8029,6 @@ sub tls_opts_ip_addr_dns_name_cn_required {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -6142,7 +8199,6 @@ sub tls_site_chmod_ok {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -6293,7 +8349,6 @@ sub tls_default_tlsrequired {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
       },
@@ -6431,7 +8486,6 @@ sub tls_protocols_default {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -6570,7 +8624,6 @@ sub tls_protocols_with_ftps {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -6709,7 +8762,6 @@ sub tls_protocols_without_ftps {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -6846,7 +8898,6 @@ sub tls_ifsess_protocols_with_ftps {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -7004,7 +9055,6 @@ sub tls_ifsess_protocols_without_ftps {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -7162,7 +9212,6 @@ sub tls_sess_cache_internal_bug3580 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -7298,7 +9347,6 @@ sub tls_passphraseprovider {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -7433,7 +9481,6 @@ sub tls_verify_order_crl_bug3658 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -7599,7 +9646,6 @@ sub tls_verify_order_ocsp {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -7770,7 +9816,6 @@ sub tls_verify_order_ocsp_https {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -7936,7 +9981,6 @@ sub tls_client_cert_verify_failed_selfsigned_cert_only_bug3742 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -8137,7 +10181,6 @@ sub tls_client_cert_verify_failed_selfsigned_cert_in_chain_bug3742 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -8338,7 +10381,6 @@ sub tls_client_cert_verify_ok_server_selfsigned_cert_in_chain_bug3742 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -8487,7 +10529,6 @@ sub tls_opts_allow_dot_login {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -8644,7 +10685,6 @@ sub tls_opts_multiple_lines_bug3800 {
       'mod_tls.c' => [
         "TLSEngine on",
         "TLSLog $log_file",
-        "TLSProtocol SSLv3 TLSv1",
         "TLSRequired on",
         "TLSRSACertificateFile $cert_file",
         "TLSCACertificateFile $ca_file",
@@ -8687,7 +10727,7 @@ sub tls_opts_multiple_lines_bug3800 {
         die("Can't login: " . $client->last_message());
       }
 
-      # Since we are NOT requiring SSL session resuse for data transfers,
+      # Since we are NOT requiring SSL session reuse for data transfers,
       # and this client is not using SSL session resumption, I expect
       # this data transfer to succeed.
       my $res = $client->list('.');
@@ -8785,7 +10825,6 @@ sub tls_config_tlsmasqueradeaddress_bug3862 {
       'mod_tls.c' => [
         "TLSEngine on",
         "TLSLog $log_file",
-        "TLSProtocol SSLv3 TLSv1",
         "TLSRequired on",
         "TLSRSACertificateFile $cert_file",
         "TLSCACertificateFile $ca_file",
@@ -8937,7 +10976,6 @@ sub tls_config_tlsdhparamfile_bug3868 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -9478,7 +11516,6 @@ sub tls_session_cache_off_bug3869 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -9528,7 +11565,7 @@ sub tls_session_cache_off_bug3869 {
         die("Can't login: " . $client->last_message());
       }
 
-      # Since we are NOT requiring SSL session resuse for data transfers,
+      # Since we are NOT requiring SSL session reuse for data transfers,
       # and this client is not using SSL session resumption, I expect
       # this data transfer to succeed.
       my $res = $client->list('.');
@@ -9625,7 +11662,6 @@ sub tls_limit_prot_bug3887 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -9821,7 +11857,6 @@ sub tls_config_tlsusername_bug3899 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $server_cert,
         TLSCACertificateFile => $ca_cert,
@@ -9970,7 +12005,6 @@ sub tls_sscn_no_args_bug3955 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10114,7 +12148,6 @@ sub tls_sscn_too_many_args_bug3955 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10258,7 +12291,6 @@ sub tls_sscn_bad_arg_bug3955 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10411,7 +12443,6 @@ sub tls_sscn_toggle_bug3955 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10605,7 +12636,6 @@ sub tls_config_limit_sscn_bug3955 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $log_file,
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10732,7 +12762,6 @@ sub tls_config_missing_certs {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $setup->{log_file},
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSOptions => 'EnableDiags',
       },
@@ -10892,7 +12921,6 @@ sub tls_stapling_on_bug4175 {
       'mod_tls.c' => {
         TLSEngine => 'on',
         TLSLog => $setup->{log_file},
-        TLSProtocol => 'SSLv3 TLSv1',
         TLSRequired => 'on',
         TLSRSACertificateFile => $cert_file,
         TLSCACertificateFile => $ca_file,
@@ -10992,7 +13020,7 @@ sub tls_session_tickets_on_bug4176 {
         TLSCACertificateFile => $ca_file,
         TLSOptions => 'EnableDiags',
         TLSSessionTickets => 'on',
-        TLSSessionTicketKeys => 'age 3sec count 2',
+        TLSSessionTicketKeys => 'age 60sec count 2',
       },
     },
   };

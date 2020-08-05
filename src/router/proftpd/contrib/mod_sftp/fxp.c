@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp sftp
- * Copyright (c) 2008-2019 TJ Saunders
+ * Copyright (c) 2008-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1011,30 +1011,8 @@ static int fxp_get_v5_open_flags(uint32_t desired_access, uint32_t flags) {
   return res;
 }
 
-/* Like pr_strtime(), except that it uses pr_gmtime() rather than
- * pr_localtime().
- */
 static const char *fxp_strtime(pool *p, time_t t) {
-  static char buf[64];
-  static char *mons[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
-    "Aug", "Sep", "Oct", "Nov", "Dec" };
-  static char *days[] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-  struct tm *tm;
-
-  memset(buf, '\0', sizeof(buf));
-
-  tm = pr_gmtime(p, &t);
-  if (tm != NULL) {
-    pr_snprintf(buf, sizeof(buf), "%s %s %2d %02d:%02d:%02d %d",
-      days[tm->tm_wday], mons[tm->tm_mon], tm->tm_mday, tm->tm_hour,
-      tm->tm_min, tm->tm_sec, tm->tm_year + 1900);
-
-  } else {
-    buf[0] = '\0';
-  }
-
-  buf[sizeof(buf)-1] = '\0';
-  return buf;
+  return pr_strtime3(p, t, TRUE);
 }
 
 static void fxp_cmd_dispatch(cmd_rec *cmd) {
@@ -1331,7 +1309,8 @@ static void fxp_msg_write_extpair(unsigned char **buf, uint32_t *buflen,
 
 static uint32_t fxp_attrs_clear_unsupported(uint32_t attr_flags) {
 
-  /* Clear any unsupported flags. */
+  /* Clear any unsupported/ignored flags. */
+
   if (attr_flags & SSH2_FX_ATTR_ALLOCATION_SIZE) {
     pr_trace_msg(trace_channel, 17,
       "clearing unsupported ALLOCATION_SIZE attribute flag");
@@ -1342,6 +1321,12 @@ static uint32_t fxp_attrs_clear_unsupported(uint32_t attr_flags) {
     pr_trace_msg(trace_channel, 17,
       "clearing unsupported SUBSECOND_TIMES attribute flag");
     attr_flags &= ~SSH2_FX_ATTR_SUBSECOND_TIMES;
+  }
+
+  if (attr_flags & SSH2_FX_ATTR_CREATETIME) {
+    pr_trace_msg(trace_channel, 17,
+      "clearing unsupported CREATETIME attribute flag");
+    attr_flags &= ~SSH2_FX_ATTR_CREATETIME;
   }
 
   if (attr_flags & SSH2_FX_ATTR_ACL) {
@@ -2397,7 +2382,6 @@ static struct stat *fxp_attrs_read(struct fxp_packet *fxp, unsigned char **buf,
     }
 
     if (*flags & SSH2_FX_ATTR_LINK_COUNT) {
-      /* Read (and ignore) the LINK_COUNT attribute. */
       uint32_t link_count;
 
       link_count = sftp_msg_read_int(fxp->pool, buf, buflen);
@@ -3749,8 +3733,8 @@ static void fxp_version_add_newline_ext(pool *p, unsigned char **buf,
 static void fxp_version_add_supported_ext(pool *p, unsigned char **buf,
     uint32_t *buflen) {
   struct fxp_extpair ext;
-  uint32_t attrs_len, attrs_sz;
-  unsigned char *attrs_buf, *attrs_ptr;
+  uint32_t attrs_len, attrs_sz, exts_len, exts_sz;
+  unsigned char *attrs_buf, *attrs_ptr, *exts_buf, *exts_ptr;
   uint32_t file_mask, bits_mask, open_mask, access_mask, max_read_size;
   unsigned int ext_count;
 
@@ -3808,38 +3792,33 @@ static void fxp_version_add_supported_ext(pool *p, unsigned char **buf,
    * telling the client that it can send us its vendor information.
    */
 
-  if (ext_count > 0) {
-    unsigned char *exts_buf, *exts_ptr;
-    uint32_t exts_len, exts_sz;
+  exts_len = exts_sz = 256;
+  exts_buf = exts_ptr = palloc(p, exts_sz);
 
-    exts_len = exts_sz = 256;
-    exts_buf = exts_ptr = palloc(p, exts_sz);
-
-    if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
-      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
-      sftp_msg_write_string(&exts_buf, &exts_len, "check-file");
-    }
-
-    if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
-      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
-      sftp_msg_write_string(&exts_buf, &exts_len, "copy-file");
-    }
-
-    if (fxp_ext_flags & SFTP_FXP_EXT_SPACE_AVAIL) {
-      pr_trace_msg(trace_channel, 11, "%s",
-        "+ SFTP extension: space-available");
-      sftp_msg_write_string(&exts_buf, &exts_len, "space-available");
-    }
-
-    /* We always send the 'vendor-id' extension; it lets the client know
-     * that it can send its vendor information to us.
-     */
-    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
-    sftp_msg_write_string(&exts_buf, &exts_len, "vendor-id");
-
-    sftp_msg_write_data(&attrs_buf, &attrs_len, exts_ptr,
-      (exts_sz - exts_len), FALSE);
+  if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
+    sftp_msg_write_string(&exts_buf, &exts_len, "check-file");
   }
+
+  if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
+    sftp_msg_write_string(&exts_buf, &exts_len, "copy-file");
+  }
+
+  if (fxp_ext_flags & SFTP_FXP_EXT_SPACE_AVAIL) {
+    pr_trace_msg(trace_channel, 11, "%s",
+      "+ SFTP extension: space-available");
+    sftp_msg_write_string(&exts_buf, &exts_len, "space-available");
+  }
+
+  /* We always send the 'vendor-id' extension; it lets the client know
+   * that it can send its vendor information to us.
+   */
+  pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
+  sftp_msg_write_string(&exts_buf, &exts_len, "vendor-id");
+
+  sftp_msg_write_data(&attrs_buf, &attrs_len, exts_ptr, (exts_sz - exts_len),
+    FALSE);
 
   ext.ext_data = attrs_ptr;
   ext.ext_datalen = (attrs_sz - attrs_len);
@@ -3940,29 +3919,27 @@ static void fxp_version_add_supported2_ext(pool *p, unsigned char **buf,
    */
   sftp_msg_write_int(&attrs_buf, &attrs_len, ext_count);
 
-  if (ext_count > 0) {
-    if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
-      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
-      sftp_msg_write_string(&attrs_buf, &attrs_len, "check-file");
-    }
-
-    if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
-      pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
-      sftp_msg_write_string(&attrs_buf, &attrs_len, "copy-file");
-    }
-
-    if (fxp_ext_flags & SFTP_FXP_EXT_SPACE_AVAIL) {
-      pr_trace_msg(trace_channel, 11, "%s",
-        "+ SFTP extension: space-available");
-      sftp_msg_write_string(&attrs_buf, &attrs_len, "space-available");
-    }
-
-    /* We always send the 'vendor-id' extension; it lets the client know
-     * that it can send its vendor information to us.
-     */
-    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
-    sftp_msg_write_string(&attrs_buf, &attrs_len, "vendor-id");
+  if (fxp_ext_flags & SFTP_FXP_EXT_CHECK_FILE) {
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: check-file");
+    sftp_msg_write_string(&attrs_buf, &attrs_len, "check-file");
   }
+
+  if (fxp_ext_flags & SFTP_FXP_EXT_COPY_FILE) {
+    pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: copy-file");
+    sftp_msg_write_string(&attrs_buf, &attrs_len, "copy-file");
+  }
+
+  if (fxp_ext_flags & SFTP_FXP_EXT_SPACE_AVAIL) {
+    pr_trace_msg(trace_channel, 11, "%s",
+      "+ SFTP extension: space-available");
+    sftp_msg_write_string(&attrs_buf, &attrs_len, "space-available");
+  }
+
+  /* We always send the 'vendor-id' extension; it lets the client know
+   * that it can send its vendor information to us.
+   */
+  pr_trace_msg(trace_channel, 11, "%s", "+ SFTP extension: vendor-id");
+  sftp_msg_write_string(&attrs_buf, &attrs_len, "vendor-id");
  
   ext.ext_data = attrs_ptr;
   ext.ext_datalen = (attrs_sz - attrs_len);
@@ -6630,8 +6607,6 @@ static int fxp_handle_close(struct fxp_packet *fxp) {
 
       } else {
         pr_response_add(R_226, "%s", "Transfer complete");
-        session.xfer.path = sftp_misc_vroot_abs_path(cmd2->pool,
-          session.xfer.path, FALSE);
         fxp_cmd_dispatch(cmd2);
       }
     }
@@ -8159,7 +8134,7 @@ static int fxp_handle_lock(struct fxp_packet *fxp) {
       lock_type_str, fxh->fh->fh_path, (pr_off_t) offset);
   }
 
-  pr_trace_msg("lock", 9, "attemping to %s lock file '%s'", lock_type_str,
+  pr_trace_msg("lock", 9, "attempting to %s lock file '%s'", lock_type_str,
     fxh->fh->fh_path);
 
   while (fcntl(fxh->fh->fh_fd, F_SETLKW, &lock) < 0) {
@@ -8895,7 +8870,8 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
 
     /* Make sure the requested path exists. */
     pr_fs_clear_cache2(path);
-    if ((flags & SSH2_FXF_OPEN_EXISTING) &&
+    if (((flags & SSH2_FXF_OPEN_EXISTING) &&
+         !(flags & SSH2_FXF_CREATE_TRUNCATE)) &&
         !exists2(fxp->pool, path)) {
       uint32_t status_code;
 
@@ -9443,9 +9419,19 @@ static int fxp_handle_open(struct fxp_packet *fxp) {
   if ((open_flags & O_APPEND) ||
       (open_flags & O_WRONLY) ||
       (open_flags & O_RDWR)) {
+
+    /* Advise the platform that we will be only writing this file. */
+    pr_fs_fadvise(PR_FH_FD(fxh->fh), 0, 0, PR_FS_FADVISE_DONTNEED);
+
     session.xfer.direction = PR_NETIO_IO_RD;
 
   } else if (open_flags == O_RDONLY) {
+    /* Advise the platform that we will be only reading this file, and that
+     * we will be accessing the data soon.
+     */
+    pr_fs_fadvise(PR_FH_FD(fxh->fh), 0, 0, PR_FS_FADVISE_SEQUENTIAL);
+    pr_fs_fadvise(PR_FH_FD(fxh->fh), 0, 0, PR_FS_FADVISE_WILLNEED);
+
     session.xfer.direction = PR_NETIO_IO_WR;
   }
 
@@ -9825,7 +9811,7 @@ static int fxp_handle_opendir(struct fxp_packet *fxp) {
 static int fxp_handle_read(struct fxp_packet *fxp) {
   unsigned char *buf, *data = NULL, *ptr;
   char *file, *name, *ptr2;
-  int res;
+  ssize_t res;
   uint32_t buflen, bufsz, datalen;
   uint64_t offset;
   struct fxp_handle *fxh;
@@ -10006,54 +9992,25 @@ static int fxp_handle_read(struct fxp_packet *fxp) {
   }
 
   if (S_ISREG(fxh->fh_st->st_mode)) {
-    if (pr_fsio_lseek(fxh->fh, offset, SEEK_SET) < 0) {
-      uint32_t status_code;
-      const char *reason;
-      int xerrno = errno;
+    off_t *file_offset;
 
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error seeking to offset (%" PR_LU " bytes) for '%s': %s",
-        (pr_off_t) offset, fxh->fh->fh_path, strerror(xerrno));
-
-      status_code = fxp_errno2status(xerrno, &reason);
-
-      pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s' "
-        "('%s' [%d])", (unsigned long) status_code, reason,
-        xerrno != EOF ? strerror(xerrno) : "End of file", xerrno);
-
-      fxp_status_write(fxp->pool, &buf, &buflen, fxp->request_id, status_code,
-        reason, NULL);
-
-      fxp_cmd_dispatch_err(cmd);
-
-      resp = fxp_packet_create(fxp->pool, fxp->channel_id);
-      resp->payload = ptr;
-      resp->payload_sz = (bufsz - buflen);
-  
-      return fxp_packet_write(resp);
-
-    } else {
-      off_t *file_offset;
-
-      /* Stash the offset at which we're reading from this file. */
-      file_offset = palloc(cmd->pool, sizeof(off_t));
-      *file_offset = (off_t) offset;
-      (void) pr_table_add(cmd->notes, "mod_xfer.file-offset", file_offset,
-        sizeof(off_t));
-
-      /* No error. */
-      errno = 0;
-    }
+    /* Stash the offset at which we're reading from this file. */
+    file_offset = palloc(cmd->pool, sizeof(off_t));
+    *file_offset = (off_t) offset;
+    (void) pr_table_add(cmd->notes, "mod_xfer.file-offset", file_offset,
+      sizeof(off_t));
   }
 
   cmd2 = fxp_cmd_alloc(fxp->pool, C_RETR, NULL);
   pr_throttle_init(cmd2);
 
-  if (datalen) {
+  if (datalen > 0) {
     data = palloc(fxp->pool, datalen);
-  }
+    res = pr_fsio_pread(fxh->fh, data, datalen, offset);
 
-  res = pr_fsio_read(fxh->fh, (char *) data, datalen);
+  } else {
+    res = 0;
+  }
 
   if (pr_data_get_timeout(PR_DATA_TIMEOUT_NO_TRANSFER) > 0) {
     pr_timer_reset(PR_TIMER_NOXFER, ANY_MODULE);
@@ -12793,7 +12750,8 @@ static int fxp_handle_symlink(struct fxp_packet *fxp) {
 static int fxp_handle_write(struct fxp_packet *fxp) {
   unsigned char *buf, *data, *ptr;
   char cmd_arg[256], *file, *name, *ptr2;
-  int res, xerrno = 0;
+  ssize_t res;
+  int xerrno = 0;
   uint32_t buflen, bufsz, datalen, status_code;
   uint64_t offset;
   struct fxp_handle *fxh;
@@ -12962,40 +12920,13 @@ static int fxp_handle_write(struct fxp_packet *fxp) {
   }
 
   if (S_ISREG(fxh->fh_st->st_mode)) {
-    if (pr_fsio_lseek(fxh->fh, offset, SEEK_SET) < 0) {
-      const char *reason;
-      xerrno = errno;
+    off_t *file_offset;
 
-      (void) pr_log_writefile(sftp_logfd, MOD_SFTP_VERSION,
-        "error seeking to offset (%" PR_LU " bytes) for '%s': %s",
-        (pr_off_t) offset, fxh->fh->fh_path, strerror(xerrno));
-
-      status_code = fxp_errno2status(xerrno, &reason);
-
-      pr_trace_msg(trace_channel, 8, "sending response: STATUS %lu '%s' "
-        "('%s' [%d])", (unsigned long) status_code, reason,
-        xerrno != EOF ? strerror(xerrno) : "End of file", xerrno);
-
-      fxp_status_write(fxp->pool, &buf, &buflen, fxp->request_id, status_code,
-        reason, NULL);
-
-      fxp_cmd_dispatch_err(cmd);
-
-      resp = fxp_packet_create(fxp->pool, fxp->channel_id);
-      resp->payload = ptr;
-      resp->payload_sz = (bufsz - buflen);
-  
-      return fxp_packet_write(resp);
-
-    } else {
-      off_t *file_offset;
-
-      /* Stash the offset at which we're writing to this file. */
-      file_offset = palloc(cmd->pool, sizeof(off_t));
-      *file_offset = (off_t) offset;
-      (void) pr_table_add(cmd->notes, "mod_xfer.file-offset", file_offset,
-        sizeof(off_t));
-    }
+    /* Stash the offset at which we're writing to this file. */
+    file_offset = palloc(cmd->pool, sizeof(off_t));
+    *file_offset = (off_t) offset;
+    (void) pr_table_add(cmd->notes, "mod_xfer.file-offset", file_offset,
+      sizeof(off_t));
   }
 
   /* If the open flags have O_APPEND, treat this as an APPE command, rather
@@ -13017,7 +12948,14 @@ static int fxp_handle_write(struct fxp_packet *fxp) {
 
   pr_throttle_init(cmd2);
   
-  res = pr_fsio_write(fxh->fh, (char *) data, datalen);
+  /* Handle zero-length writes as a special case; see Bug#4398. */
+  if (datalen > 0) {
+    res = pr_fsio_pwrite(fxh->fh, data, datalen, offset);
+
+  } else {
+    res = 0;
+  }
+
   xerrno = errno;
 
   /* Increment the "on-disk" file size with the number of bytes written.
@@ -13297,7 +13235,7 @@ static int fxp_handle_unlock(struct fxp_packet *fxp) {
       fxh->fh->fh_path, (pr_off_t) offset);
   }
 
-  pr_trace_msg("lock", 9, "attemping to unlock file '%s'", fxh->fh->fh_path);
+  pr_trace_msg("lock", 9, "attempting to unlock file '%s'", fxh->fh->fh_path);
 
   while (fcntl(fxh->fh->fh_fd, F_SETLK, &lock) < 0) {
     int xerrno;

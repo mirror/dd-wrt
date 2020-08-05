@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2017 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -479,8 +479,7 @@ static config_rec *recur_match_path(pool *p, xaset_t *s, char *path) {
           !(tmp_path[path_len-2] == '/' && tmp_path[path_len-1] == '*')) {
 
         /* Trim a trailing path separator, if present. */
-        if (path_len > 1 &&
-            *tmp_path && 
+        if (*tmp_path &&
             *(tmp_path + path_len - 1) == '/') {
           *(tmp_path + path_len - 1) = '\0';
           path_len--;
@@ -1133,12 +1132,11 @@ static int check_ip_access(xaset_t *set, char *name) {
 static int check_limit_allow(config_rec *c, cmd_rec *cmd) {
   unsigned char *allow_all = NULL;
 
-  /* If session.groups is null, this means no authentication
-   * attempt has been made, so we simply check for the
-   * very existance of an AllowGroup, and assume (for now) it's
-   * allowed.  This works because later calls to check_limit_allow()
-   * WILL have filled in the group members and we can truely check
-   * group membership at that time.  Same goes for AllowUser.
+  /* If session.groups is null, this means no authentication attempt has been
+   * made, so we simply check for the very existence of an AllowGroup, and
+   * assume (for now) it's allowed.  This works because later calls to
+   * check_limit_allow() WILL have filled in the group members and we can
+   * truly check group membership at that time.  Same goes for AllowUser.
    */
 
   if (!session.user) {

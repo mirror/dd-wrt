@@ -1,7 +1,7 @@
 /*
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
- * Copyright (c) 2001-2015 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,12 +56,15 @@ static int isnumeric(char *str) {
 }
 
 int main(int argc, char *argv[]) {
-  int deny = 10,disc = 5,c;
+  int deny = 10, disc = 5, c;
   FILE *outf;
-  char *shut,*msg,*progname = argv[0];
+  char *shut, *msg, *progname = argv[0];
   time_t now;
+#if defined(HAVE_LOCALTIME_R)
+  struct tm ltm;
+#endif /* HAVE_LOCALTIME_R */
   struct tm *tm;
-  int mn = 0,hr = 0;
+  int mn = 0, hr = 0;
 
   opterr = 0;
 
@@ -123,10 +126,14 @@ int main(int argc, char *argv[]) {
   }
 
   time(&now);
+#if defined(HAVE_LOCALTIME_R)
+  tm = localtime_r(&now, &ltm);
+#else
   tm = localtime(&now);
+#endif /* HAVE_LOCALTIME_R */
 
   /* shut must be either 'now', '+number' or 'HHMM' */
-  if (strcasecmp(shut,"now") != 0) {
+  if (strcasecmp(shut, "now") != 0) {
     if (*shut == '+') {
       shut++;
       while (shut && *shut && PR_ISSPACE(*shut)) shut++;
@@ -137,22 +144,32 @@ int main(int argc, char *argv[]) {
       }
 
       now += (60 * atoi(shut));
+
+#if defined(HAVE_LOCALTIME_R)
+      tm = localtime_r(&now, &ltm);
+#else
       tm = localtime(&now);
+#endif /* HAVE_LOCALTIME_R */
 
     } else {
-      if ((strlen(shut) != 4 && strlen(shut) != 2) || !isnumeric(shut)) {
+      size_t shut_len;
+
+      shut_len = strlen(shut);
+
+      if ((shut_len != 4 &&
+           shut_len != 2) || !isnumeric(shut)) {
         fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
         show_usage(progname);
       }
 
-      if (strlen(shut) > 2) {
-        mn = atoi((shut + strlen(shut) - 2));
+      if (shut_len > 2) {
+        mn = atoi(shut + shut_len - 2);
         if (mn > 59) {
           fprintf(stderr, "%s: Invalid time interval specified.\n", progname);
           show_usage(progname);
         }
 
-        *(shut + strlen(shut) - 2) = '\0';
+        *(shut + shut_len- 2) = '\0';
       }
 
       hr = atoi(shut);
@@ -165,8 +182,14 @@ int main(int argc, char *argv[]) {
           (hr == tm->tm_hour &&
            mn <= tm->tm_min)) {
         now += 86400;		/* one day forward */
+
+#if defined(HAVE_LOCALTIME_R)
+        tm = localtime_r(&now, &ltm);
+#else
         tm = localtime(&now);
+#endif /* HAVE_LOCALTIME_R */
       }
+
       tm->tm_hour = hr;
       tm->tm_min = mn;
     }

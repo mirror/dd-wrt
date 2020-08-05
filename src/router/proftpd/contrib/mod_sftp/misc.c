@@ -1,6 +1,6 @@
 /*
  * ProFTPD - mod_sftp miscellaneous
- * Copyright (c) 2010-2017 TJ Saunders
+ * Copyright (c) 2010-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -289,6 +289,31 @@ int sftp_misc_chown_path(pool *p, const char *path) {
 
 const char *sftp_misc_get_chroot(pool *p) {
   return pr_table_get(session.notes, "mod_sftp.chroot-path", NULL);
+}
+
+int sftp_misc_namelist_contains(pool *p, const char *namelist,
+    const char *name) {
+  register unsigned int i;
+  int res = FALSE;
+  pool *tmp_pool;
+  array_header *list;
+  const char **elts;
+
+  tmp_pool = make_sub_pool(p);
+  pr_pool_tag(tmp_pool, "Contains name pool");
+
+  list = pr_str_text_to_array(tmp_pool, namelist, ',');
+  elts = (const char **) list->elts;
+
+  for (i = 0; i < list->nelts; i++) {
+    if (strcmp(elts[i], name) == 0) {
+      res = TRUE;
+      break;
+    }
+  }
+
+  destroy_pool(tmp_pool);
+  return res;
 }
 
 const char *sftp_misc_namelist_shared(pool *p, const char *c2s_names,

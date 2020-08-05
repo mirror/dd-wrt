@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server daemon
- * Copyright (c) 2003-2017 The ProFTPD Project team
+ * Copyright (c) 2003-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,6 +89,10 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
         }
 
       } else {
+        pr_trace_msg(trace_channel, 10,
+          "addr '%s' did NOT match IP mask rule '%s'",
+          pr_netaddr_get_ipstr(addr), acl->aclstr);
+
         if (acl->negated) {
           res = 1;
         }
@@ -113,6 +117,10 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
         }
 
       } else {
+        pr_trace_msg(trace_channel, 10,
+          "addr '%s' did NOT match IP address rule '%s'",
+          pr_netaddr_get_ipstr(addr), acl->aclstr);
+
         if (acl->negated) {
           res = 1;
         }
@@ -138,6 +146,11 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
         }
 
       } else {
+        pr_trace_msg(trace_channel, 10,
+          "addr '%s' (%s) did NOT match DNS name rule '%s'",
+          pr_netaddr_get_ipstr(addr), pr_netaddr_get_dnsstr(addr),
+          acl->aclstr);
+
         if (acl->negated) {
           res = 1;
         }
@@ -163,6 +176,10 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
         }
 
       } else {
+        pr_trace_msg(trace_channel, 10,
+          "addr '%s' did NOT match IP glob rule '%s'",
+          pr_netaddr_get_ipstr(addr), acl->aclstr);
+
         if (acl->negated) {
           res = 1;
         }
@@ -190,6 +207,11 @@ int pr_netacl_match(const pr_netacl_t *acl, const pr_netaddr_t *addr) {
           }
 
         } else {
+          pr_trace_msg(trace_channel, 10,
+            "addr '%s' (%s) did NOT match DNS glob rule '%s'",
+            pr_netaddr_get_ipstr(addr), pr_netaddr_get_dnsstr(addr),
+            acl->aclstr);
+
           if (acl->negated) {
             res = 1;
           }
@@ -378,6 +400,9 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
     }
 
   } else if (strchr(aclstr, '.') == NULL) {
+    int use_glob = FALSE, use_dns = FALSE;
+
+    /* Is this a DNS glob, DNS match, or an IPv6 glob/match? */
 
     /* Check if the given rule is negated. */
     if (*aclstr == '!') {
@@ -389,12 +414,53 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
      * first character is a '.', then treat the rule as a glob.
      */
     if (strpbrk(aclstr, "{[*?")) {
-      acl->type = PR_NETACL_TYPE_DNSGLOB;
-      acl->pattern = pstrdup(p, aclstr);
+      use_glob = TRUE;
+    }
+
+    /* IPv6 addresses use colons, thus if we do not see any, it's a good
+     * bet that this is a DNS glob/match.
+     */
+    if (strchr(aclstr, ':') == NULL) {
+      use_dns = TRUE;
 
     } else {
-      acl->type = PR_NETACL_TYPE_DNSMATCH;
+#ifdef PR_USE_IPV6
+      if (pr_netaddr_use_ipv6() == FALSE) {
+        pr_trace_msg(trace_channel, 1, "possibly using IPv6 %s '%s' when "
+          "IPv6 support is disabled, which will not work as expected",
+          use_glob ? "glob" : "match", aclstr);
+        pr_log_pri(PR_LOG_WARNING, "warning: possibly using IPv6 %s '%s' when "
+          "IPv6 support is disabled, which will not work as expected",
+          use_glob ? "glob" : "match", aclstr);
+      }
+#else
+      pr_trace_msg(trace_channel, 1, "possibly using IPv6 %s '%s' when "
+        "IPv6 support is disabled, which will not work as expected",
+        use_glob ? "glob" : "match", aclstr);
+      pr_log_pri(PR_LOG_WARNING, "warning: possibly using IPv6 %s '%s' when "
+        "IPv6 support is disabled, which will not work as expected",
+        use_glob ? "glob" : "match", aclstr);
+#endif /* PR_USE_IPV6 */
+    }
+
+    if (use_dns == TRUE) {
       acl->pattern = pstrdup(p, aclstr);
+      acl->type = use_glob ? PR_NETACL_TYPE_DNSGLOB : PR_NETACL_TYPE_DNSMATCH;
+
+    } else {
+      acl->addr = pr_netaddr_get_addr(p, aclstr, NULL);
+      if (acl->addr == NULL) {
+        int xerrno = errno;
+
+        pr_trace_msg(trace_channel, 3, "unable to resolve '%s': %s", aclstr,
+          strerror(xerrno));
+
+        errno = xerrno;
+        return NULL;
+      }
+
+      acl->pattern = pstrdup(p, aclstr);
+      acl->type = use_glob ? PR_NETACL_TYPE_IPGLOB : PR_NETACL_TYPE_IPMATCH;
     }
 
   } else {
@@ -457,9 +523,8 @@ pr_netacl_t *pr_netacl_create(pool *p, char *aclstr) {
       if (!use_dns) {
         acl->type = use_glob ? PR_NETACL_TYPE_IPGLOB : PR_NETACL_TYPE_IPMATCH;
         acl->addr = pr_netaddr_get_addr(p, aclstr, NULL);
-
         if (acl->addr == NULL) {
-           return NULL;
+          return NULL;
         }
 
       } else {
@@ -539,7 +604,6 @@ const char *pr_netacl_get_str2(pool *p, const pr_netacl_t *acl, int flags) {
     errno = EINVAL;
     return NULL;
   }
-
 
   switch (acl->type) {
     case PR_NETACL_TYPE_ALL:

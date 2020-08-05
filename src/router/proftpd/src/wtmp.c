@@ -38,7 +38,7 @@ int log_wtmp(const char *line, const char *name, const char *host,
     (defined(__NetBSD__) && defined(HAVE_UTMPX_H)) || \
     (defined(__FreeBSD_version) && __FreeBSD_version >= 900007 && defined(HAVE_UTMPX_H))) && \
     !(defined(LINUX) || defined(__hpux) || defined (_AIX))
-  /* This "auxilliary" utmp doesn't exist under linux. */
+  /* This "auxiliary" utmp doesn't exist under linux. */
 
 #if (defined(__sparcv9) || defined(__sun)) && !defined(__NetBSD__) && !defined(__FreeBSD__)
   struct futmpx utx;

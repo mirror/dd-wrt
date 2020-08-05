@@ -42,7 +42,7 @@ void pr_proctitle_set(const char *, ...)
 
 void pr_proctitle_set_str(const char *);
 
-/* If this function is used, all subsquent calls to pr_proctitle_set() and
+/* If this function is used, all subsequent calls to pr_proctitle_set() and
  * pr_proctitle_set_str() will effectively be ignored.
  */
 void pr_proctitle_set_static_str(const char *);

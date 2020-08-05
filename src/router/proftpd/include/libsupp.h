@@ -29,6 +29,9 @@
 
 /* ProFTPD support library definitions. */
 
+#ifndef PR_LIBSUPP_H
+#define PR_LIBSUPP_H
+
 #include <glibc-glob.h>
 
 /* Bits set in the FLAGS argument to `pr_fnmatch'.  */
@@ -98,3 +101,5 @@ void pr_os_already_has_vsnprintf(void);
 #if defined(HAVE_VSNPRINTF) && defined(HAVE_SNPRINTF)
 void pr_os_already_has_snprintf_and_vsnprintf(void);
 #endif /* !HAVE_VSNPRINTF || !HAVE_SNPRINTF */
+
+#endif /* PR_LIBSUPP_H */

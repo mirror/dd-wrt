@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2018 The ProFTPD Project team
+ * Copyright (c) 2015-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -309,6 +309,7 @@ START_TEST (dir_readlink_test) {
     res = dir_readlink(p, path, buf, bufsz, flags);
     fail_unless(res == 0, "Failed to handle empty symlink");
   }
+  (void) unlink(path);
 
   /* Not chrooted, absolute dst path */
   memset(buf, '\0', bufsz);
@@ -622,7 +623,7 @@ START_TEST (dir_readlink_test) {
     expected_path, buf);
 
   /* Now use a relative path that does not start with '.', and a chroot
-   * deeper down than one diretory.
+   * deeper down than one directory.
    */
   memset(buf, '\0', bufsz);
   dst_path = "file.txt";
@@ -645,7 +646,7 @@ START_TEST (dir_readlink_test) {
   fail_unless(strcmp(buf, expected_path) == 0, "Expected '%s', got '%s'",
     expected_path, buf);
 
-  /* Now use a relative path, and a chroot deeper down than one diretory, and
+  /* Now use a relative path, and a chroot deeper down than one directory, and
    * a deeper/longer source path.
    */
   memset(buf, '\0', bufsz);
@@ -673,7 +674,7 @@ START_TEST (dir_readlink_test) {
     expected_path, buf);
 
   /* Now use a relative path that does not start with '.', and a chroot
-   * deeper down than one diretory, and a deeper/longer source path.
+   * deeper down than one directory, and a deeper/longer source path.
    */
   memset(buf, '\0', bufsz);
   dst_path = "file.txt";
@@ -826,19 +827,19 @@ START_TEST (check_shutmsg_test) {
   time_t when_shutdown = 0, when_deny = 0, when_disconnect = 0;
   char shutdown_msg[PR_TUNABLE_BUFFER_SIZE];
 
-  res = check_shutmsg(NULL, NULL, NULL, NULL, NULL, 0);
+  res = check_shutmsg(NULL, NULL, NULL, NULL, NULL, NULL, 0);
   fail_unless(res < 0, "Failed to handle null arguments");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   path = "/foo/bar/baz/quxx/quzz";
-  res = check_shutmsg(path, NULL, NULL, NULL, NULL, 0);
+  res = check_shutmsg(p, path, NULL, NULL, NULL, NULL, 0);
   fail_unless(res < 0, "Failed to handle nonexistent path");
   fail_unless(errno == ENOENT, "Expected ENOENT (%d), got %s (%d)", ENOENT,
     strerror(errno), errno);
 
   path = "/";
-  res = check_shutmsg(path, NULL, NULL, NULL, NULL, 0);
+  res = check_shutmsg(p, path, NULL, NULL, NULL, NULL, 0);
   fail_unless(res < 0, "Failed to handle directory path");
   fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
@@ -856,7 +857,7 @@ START_TEST (check_shutmsg_test) {
   pr_env_set(p, "TZ", "GMT");
 
   mark_point();
-  res = check_shutmsg(path, &when_shutdown, &when_deny, &when_disconnect,
+  res = check_shutmsg(p, path, &when_shutdown, &when_deny, &when_disconnect,
     shutdown_msg, sizeof(shutdown_msg));
   fail_unless(res == 1, "Expected 1, got %d", res);
   fail_unless(when_shutdown == (time_t) 0, "Expected 0, got %lu",
@@ -874,7 +875,7 @@ START_TEST (check_shutmsg_test) {
   fail_unless(res == 0, "Failed to write '%s': %s", path, strerror(errno));
 
   mark_point();
-  res = check_shutmsg(path, NULL, NULL, NULL, NULL, 0);
+  res = check_shutmsg(p, path, NULL, NULL, NULL, NULL, 0);
   fail_unless(res == 1, "Expected 1, got %d", res);
 
   (void) unlink(path);
@@ -883,7 +884,7 @@ START_TEST (check_shutmsg_test) {
   fail_unless(res == 0, "Failed to write '%s': %s", path, strerror(errno));
 
   mark_point();
-  res = check_shutmsg(path, NULL, NULL, NULL, NULL, 0);
+  res = check_shutmsg(p, path, NULL, NULL, NULL, NULL, 0);
 
   (void) unlink(misc_test_shutmsg);
 }
@@ -1106,8 +1107,14 @@ START_TEST (gmtime_test) {
 
   mark_point();
   res = pr_gmtime(NULL, &now);
+#if defined(HAVE_GMTIME_R)
+  fail_unless(res == NULL, "Failed to handle null pool");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+#else
   fail_unless(res != NULL, "Failed to handle %lu: %s", (unsigned long) now,
     strerror(errno));
+#endif /* HAVE_GMTIME_R */
 
   mark_point();
   res = pr_gmtime(p, &now);
@@ -1130,8 +1137,14 @@ START_TEST (localtime_test) {
 
   mark_point();
   res = pr_localtime(NULL, &now);
+#if defined(HAVE_LOCALTIME_R)
+  fail_unless(res == NULL, "Failed to handle null pool");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+#else
   fail_unless(res != NULL, "Failed to handle %lu: %s", (unsigned long) now,
     strerror(errno));
+#endif /* HAVE_LOCALTIME_R */
 
   mark_point();
   res = pr_localtime(p, &now);
@@ -1147,8 +1160,14 @@ START_TEST (strtime_test) {
   mark_point();
   now = 0;
   res = pr_strtime(now);
+#if defined(HAVE_LOCALTIME_R)
+  fail_unless(res == NULL, "Failed to handle null pool");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+#else
   fail_unless(res != NULL, "Failed to convert time %lu: %s",
     (unsigned long) now, strerror(errno));
+#endif /* HAVE_LOCALTIME_R */
 }
 END_TEST
 
@@ -1161,6 +1180,36 @@ START_TEST (strtime2_test) {
   now = 0;
   expected = "Thu Jan 01 00:00:00 1970";
   res = pr_strtime2(now, TRUE);
+#if defined(HAVE_GMTIME_R)
+  fail_unless(res == NULL, "Failed to handle null pool");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
+    strerror(errno), errno);
+#else
+  fail_unless(res != NULL, "Failed to convert time %lu: %s",
+    (unsigned long) now, strerror(errno));
+  fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
+    res);
+#endif /* HAVE_GMTIME_R */
+}
+END_TEST
+
+START_TEST (strtime3_test) {
+  const char *res;
+  char *expected;
+  time_t now;
+
+  mark_point();
+  now = 0;
+#if defined(HAVE_GMTIME_R)
+  res = pr_strtime3(NULL, now, TRUE);
+  fail_unless(res == NULL, "Failed to handle null pool argument");
+  fail_unless(errno == EINVAL, "Expected EINVAL (%s), got %s (%d)",
+    strerror(EINVAL), strerror(errno), errno);
+#endif /* HAVE_GMTIME_R */
+
+  mark_point();
+  expected = "Thu Jan 01 00:00:00 1970";
+  res = pr_strtime3(p, now, TRUE);
   fail_unless(res != NULL, "Failed to convert time %lu: %s",
     (unsigned long) now, strerror(errno));
   fail_unless(strcmp(res, expected) == 0, "Expected '%s', got '%s'", expected,
@@ -1432,6 +1481,7 @@ Suite *tests_get_misc_suite(void) {
   tcase_add_test(testcase, localtime_test);
   tcase_add_test(testcase, strtime_test);
   tcase_add_test(testcase, strtime2_test);
+  tcase_add_test(testcase, strtime3_test);
   tcase_add_test(testcase, timeval2millis_test);
   tcase_add_test(testcase, gettimeofday_millis_test);
   tcase_add_test(testcase, snprintf_test);

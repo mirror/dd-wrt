@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2015-2018 The ProFTPD Project team
+ * Copyright (c) 2015-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -452,6 +452,9 @@ START_TEST (data_open_passive_test) {
   session.d = pr_inet_create_conn(p, sockfd, NULL, port, FALSE);
   fail_unless(session.d != NULL, "Failed to create conn: %s", strerror(errno));
 
+  /* Reset the session flags after every failed open. */
+  session.sf_flags |= SF_PASSIVE;
+
   /* Open a READing data transfer connection...*/
 
   mark_point();
@@ -466,6 +469,7 @@ START_TEST (data_open_passive_test) {
     strerror(errno));
 
   mark_point();
+  session.sf_flags |= SF_PASSIVE;
   res = pr_data_open(NULL, NULL, dir, 0);
   fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
@@ -475,12 +479,14 @@ START_TEST (data_open_passive_test) {
   dir = PR_NETIO_IO_WR;
 
   mark_point();
+  session.sf_flags |= SF_PASSIVE;
   res = pr_data_open(NULL, NULL, dir, 0);
   fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
   mark_point();
+  session.sf_flags |= SF_PASSIVE;
   session.xfer.p = NULL;
   res = pr_data_open(NULL, NULL, dir, 0);
   fail_unless(res < 0, "Opened passive READ data connection unexpectedly");
@@ -616,7 +622,7 @@ START_TEST (data_xfer_read_binary_test) {
 
   mark_point();
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
@@ -639,7 +645,7 @@ START_TEST (data_xfer_read_binary_test) {
   session.xfer.buflen = 0;
 
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
@@ -712,7 +718,7 @@ START_TEST (data_xfer_write_binary_test) {
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
@@ -729,7 +735,7 @@ START_TEST (data_xfer_write_binary_test) {
   mark_point();
   data_write_eagain = TRUE;
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
@@ -782,7 +788,7 @@ START_TEST (data_xfer_read_ascii_test) {
 
   mark_point();
   res = pr_data_xfer(buf, bufsz);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
@@ -811,7 +817,7 @@ START_TEST (data_xfer_read_ascii_test) {
   res = pr_data_xfer(buf, bufsz);
   session.sf_flags &= ~SF_ASCII;
 
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
@@ -947,7 +953,7 @@ START_TEST (data_xfer_write_ascii_test) {
 
   mark_point();
   res = pr_data_xfer(buf, buflen);
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == ECONNABORTED,
     "Expected ECONNABORTED (%d), got %s (%d)", ECONNABORTED,
     strerror(errno), errno);
@@ -968,7 +974,7 @@ START_TEST (data_xfer_write_ascii_test) {
   res = pr_data_xfer(buf, buflen);
   session.sf_flags &= ~SF_ASCII_OVERRIDE;
 
-  fail_unless(res < 0, "Transfered data unexpectedly");
+  fail_unless(res < 0, "Transferred data unexpectedly");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 

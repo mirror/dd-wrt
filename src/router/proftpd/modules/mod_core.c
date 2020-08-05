@@ -2,7 +2,7 @@
  * ProFTPD - FTP server daemon
  * Copyright (c) 1997, 1998 Public Flood Software
  * Copyright (c) 1999, 2000 MacGyver aka Habeeb J. Dihu <macgyver@tos.net>
- * Copyright (c) 2001-2019 The ProFTPD Project team
+ * Copyright (c) 2001-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1336,7 +1336,7 @@ MODRET set_user(cmd_rec *cmd) {
   CHECK_CONF(cmd, CONF_ROOT|CONF_VIRTUAL|CONF_GLOBAL|CONF_ANON);
 
   /* 1.1.7, no longer force user/group lookup inside <Anonymous>
-   * it's now defered until authentication occurs.
+   * it's now deferred until authentication occurs.
    */
 
   if (!cmd->config || cmd->config->config_type != CONF_ANON) {
@@ -1367,21 +1367,24 @@ MODRET add_from(cmd_rec *cmd) {
   cargv = cmd->argv;
 
   while (cargc && *(cargv + 1)) {
-    if (strcasecmp("all", *(((char **) cargv) + 1)) == 0 ||
-        strcasecmp("none", *(((char **) cargv) + 1)) == 0) {
-      pr_netacl_t *acl = pr_netacl_create(cmd->tmp_pool,
-        *(((char **) cargv) + 1));
+    char *from;
+
+    from = *(((char **) cargv) + 1);
+
+    if (strcasecmp(from, "all") == 0 ||
+        strcasecmp(from, "none") == 0) {
+      pr_netacl_t *acl = pr_netacl_create(cmd->tmp_pool, from);
       if (acl == NULL) {
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad ACL definition '",
-          *(((char **) cargv) + 1), "': ", strerror(errno), NULL));
+        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad ACL definition '", from,
+          "': ", strerror(errno), NULL));
       }
 
-      pr_trace_msg("netacl", 9, "'%s' parsed into netacl '%s'",
-        *(((char **) cargv) + 1), pr_netacl_get_str(cmd->tmp_pool, acl));
+      pr_trace_msg("netacl", 9, "'%s' parsed into netacl '%s'", from,
+        pr_netacl_get_str(cmd->tmp_pool, acl));
 
       if (pr_class_add_acl(acl) < 0) {
-        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error adding rule '",
-          *(((char **) cargv) + 1), "': ", strerror(errno), NULL));
+        CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "error adding rule '", from,
+          "': ", strerror(errno), NULL));
       }
 
       cargc = 0;
@@ -1400,6 +1403,8 @@ MODRET add_from(cmd_rec *cmd) {
       if (*ent) {
         pr_netacl_t *acl;
 
+        pr_signals_handle();
+
         if (strcasecmp(ent, "all") == 0 ||
             strcasecmp(ent, "none") == 0) {
            cargc = 0;
@@ -1409,7 +1414,7 @@ MODRET add_from(cmd_rec *cmd) {
         acl = pr_netacl_create(cmd->tmp_pool, ent);
         if (acl == NULL) {
           CONF_ERROR(cmd, pstrcat(cmd->tmp_pool, "bad ACL definition '",
-            *(((char **) cargv) + 1), "': ", strerror(errno), NULL));
+            ent, "': ", strerror(errno), NULL));
         }
 
         pr_trace_msg("netacl", 9, "'%s' parsed into netacl '%s'", ent,
@@ -1467,7 +1472,8 @@ MODRET set_fscachepolicy(cmd_rec *cmd) {
     if (strncasecmp(cmd->argv[i], "size", 5) == 0) {
       int size;
 
-      size = atoi(cmd->argv[i++]);
+      i++;
+      size = atoi(cmd->argv[i]);
       if (size < 1) {
         CONF_ERROR(cmd, "size parameter must be greater than 1");
       }
@@ -1477,7 +1483,8 @@ MODRET set_fscachepolicy(cmd_rec *cmd) {
     } else if (strncasecmp(cmd->argv[i], "maxAge", 7) == 0) {
       int max_age;
 
-      max_age = atoi(cmd->argv[i++]);
+      i++;
+      max_age = atoi(cmd->argv[i]);
       if (max_age < 1) {
         CONF_ERROR(cmd, "maxAge parameter must be greater than 1");
       }
@@ -1693,7 +1700,7 @@ MODRET set_traceoptions(cmd_rec *cmd) {
 
     opt++;
 
-    if (strncasecmp(opt, "ConnIPs", 8) == 0) {
+    if (strcasecmp(opt, "ConnIPs") == 0) {
       switch (action) {
         case '-':
           trace_opts &= ~PR_TRACE_OPT_LOG_CONN_IPS;
@@ -1704,7 +1711,18 @@ MODRET set_traceoptions(cmd_rec *cmd) {
           break;
       }
 
-    } else if (strncasecmp(opt, "TimestampMillis", 16) == 0) {
+    } else if (strcasecmp(opt, "Timestamp") == 0) {
+      switch (action) {
+        case '-':
+          trace_opts &= ~PR_TRACE_OPT_USE_TIMESTAMP;
+          break;
+
+        case '+':
+          trace_opts |= PR_TRACE_OPT_USE_TIMESTAMP;
+          break;
+      }
+
+    } else if (strcasecmp(opt, "TimestampMillis") == 0) {
       switch (action) {
         case '-':
           trace_opts &= ~PR_TRACE_OPT_USE_TIMESTAMP_MILLIS;
@@ -5060,8 +5078,13 @@ MODRET core_post_host(cmd_rec *cmd) {
     /* Restore the original TimeoutLinger value. */
     pr_data_set_linger(PR_TUNABLE_TIMEOUTLINGER);
 
-    /* Restore original DebugLevel. */
-    pr_log_setdebuglevel(DEBUG0);
+    /* Restore original DebugLevel, but only if set via directive, not
+     * via the command-line.
+     */
+    c = find_config(session.prev_server->conf, CONF_PARAM, "DebugLevel", FALSE);
+    if (c != NULL) {
+      pr_log_setdebuglevel(DEBUG0);
+    }
 
     /* Restore the original RegexOptions values. */
     pr_regexp_set_limits(0, 0);
@@ -5083,7 +5106,7 @@ MODRET core_post_host(cmd_rec *cmd) {
     reset_server_auth_order();
 
 #ifdef PR_USE_TRACE
-    /* XXX Restore orginal Trace settings. */
+    /* XXX Restore original Trace settings. */
 
     /* Restore original TraceOptions settings. */
     (void) pr_trace_set_options(PR_TRACE_OPT_DEFAULT);
@@ -5386,7 +5409,7 @@ MODRET core_rmd(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], dir);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5395,7 +5418,7 @@ MODRET core_rmd(cmd_rec *cmd) {
       return PR_ERROR(cmd); 
  
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], dir);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5499,7 +5522,7 @@ MODRET core_mkd(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], dir);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5508,7 +5531,7 @@ MODRET core_mkd(cmd_rec *cmd) {
       return PR_ERROR(cmd); 
  
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], dir);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5767,7 +5790,7 @@ MODRET core_dele(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5776,7 +5799,7 @@ MODRET core_dele(cmd_rec *cmd) {
       return PR_ERROR(cmd); 
  
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5948,7 +5971,7 @@ MODRET core_rnto(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -5957,7 +5980,7 @@ MODRET core_rnto(cmd_rec *cmd) {
       return PR_ERROR(cmd); 
  
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -6146,7 +6169,7 @@ MODRET core_rnfr(cmd_rec *cmd) {
       break;
 
     case PR_FILTER_ERR_FAILS_ALLOW_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathAllowFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathAllowFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -6155,7 +6178,7 @@ MODRET core_rnfr(cmd_rec *cmd) {
       return PR_ERROR(cmd); 
  
     case PR_FILTER_ERR_FAILS_DENY_FILTER:
-      pr_log_debug(DEBUG2, "'%s %s' denied by PathDenyFilter",
+      pr_log_pri(PR_LOG_NOTICE, "'%s %s' denied by PathDenyFilter",
         (char *) cmd->argv[0], path);
       pr_response_add_err(R_550, _("%s: Forbidden filename"), cmd->arg);
 
@@ -6397,6 +6420,26 @@ MODRET core_post_pass(cmd_rec *cmd) {
     }
   }
 #endif /* PR_USE_TRACE */
+
+  /* If "SocketOptions keepalive off" is in effect, disable TCP keepalives
+   * for the control connection as well (Bug#4340).
+   */
+  if (main_server->tcp_keepalive->keepalive_enabled == FALSE) {
+    int keepalive = 0;
+
+    pr_trace_msg("inet", 17, "disabling SO_KEEPALIVE on socket fd %d",
+      session.c->wfd);
+    if (setsockopt(session.c->wfd, SOL_SOCKET, SO_KEEPALIVE, (void *)
+        &keepalive, sizeof(int)) < 0) {
+      pr_log_pri(PR_LOG_NOTICE,
+        "error setting SO_KEEPALIVE on socket fd %d: %s", session.c->wfd,
+        strerror(errno));
+
+    } else {
+      pr_trace_msg("inet", 15, "disabled SO_KEEPALIVE on socket fd %d",
+        session.c->wfd);
+    }
+  }
 
   /* Look for a configured MaxCommandRate. */
   c = find_config(main_server->conf, CONF_PARAM, "MaxCommandRate", FALSE);
@@ -6907,7 +6950,7 @@ static int core_sess_init(void) {
   /* Set some Variable entries for Display files. */
 
   if (pr_var_set(session.pool, "%{bytes_xfer}", 
-      "Number of bytes transfered in this transfer", PR_VAR_TYPE_FUNC,
+      "Number of bytes transferred in this transfer", PR_VAR_TYPE_FUNC,
       (void *) core_get_xfer_bytes_str, &session.xfer.total_bytes,
       sizeof(off_t *)) < 0) {
     pr_log_debug(DEBUG6, "error setting %%{bytes_fer} variable: %s",
@@ -6931,7 +6974,7 @@ static int core_sess_init(void) {
   }
 
   if (pr_var_set(session.pool, "%{total_bytes_xfer}", 
-      "Number of bytes transfered during a session", PR_VAR_TYPE_FUNC,
+      "Number of bytes transferred during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_bytes_str, &session.total_bytes,
       sizeof(off_t *)) < 0) {
     pr_log_debug(DEBUG6, "error setting %%{total_bytes_fer} variable: %s",
@@ -6955,7 +6998,7 @@ static int core_sess_init(void) {
   }
 
   if (pr_var_set(session.pool, "%{total_files_xfer}", 
-      "Number of files transfered during a session", PR_VAR_TYPE_FUNC,
+      "Number of files transferred during a session", PR_VAR_TYPE_FUNC,
       (void *) core_get_sess_files_str, &session.total_files_xfer,
       sizeof(unsigned int *)) < 0) {
     pr_log_debug(DEBUG6, "error setting %%{total_files_xfer} variable: %s",

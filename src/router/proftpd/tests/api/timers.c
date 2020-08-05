@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2008-2015 The ProFTPD Project team
+ * Copyright (c) 2008-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,7 +55,7 @@ static void tear_down(void) {
     pr_trace_set_levels("timers", 0, 0);
   }
 
-  if (p) {
+  if (p != NULL) {
     destroy_pool(p);
     p = permanent_pool = NULL;
   } 
@@ -73,8 +73,9 @@ static void timers_handle_signals(void) {
 static int timers_test_cb(CALLBACK_FRAME) {
   timer_triggered_count++;
 
-  if (repeat_cb)
+  if (repeat_cb) {
     return 1;
+  }
 
   return 0;
 }
@@ -134,7 +135,9 @@ START_TEST (timer_add_test) {
    */
 
   ok = 2;
-  fail_unless(timer_triggered_count == ok || timer_triggered_count == (ok + 1),
+  fail_unless(timer_triggered_count == ok ||
+              timer_triggered_count == (ok + 1) ||
+              timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
 
@@ -142,7 +145,9 @@ START_TEST (timer_add_test) {
   timers_handle_signals();
 
   ok = 3;
-  fail_unless(timer_triggered_count == ok || timer_triggered_count == (ok + 1),
+  fail_unless(timer_triggered_count == ok ||
+              timer_triggered_count == (ok + 1) ||
+              timer_triggered_count == (ok - 1),
     "Timer failed to fire (expected count %u, got %u)", ok,
     timer_triggered_count);
 }
@@ -232,7 +237,7 @@ START_TEST (timer_reset_test) {
     "Timer fired unexpectedly (expected count %u, got %u)", ok,
     timer_triggered_count);
 
-  sleep(1);
+  sleep(2);
   timers_handle_signals();
 
   ok = 1;

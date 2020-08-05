@@ -61,7 +61,7 @@ An example <code>xinetd</code> configuration is:
   service ftp
   {
         disable = no
-        flags			= REUSE
+        flags			= IPv4
         socket_type             = stream
         wait                    = no
         user                    = root
@@ -204,7 +204,10 @@ is there.
 
 <font color=red>Question</font>: I have configured:
 <pre>
-  IdentLookups off
+  <IfModule mod_ident.c>
+    IdentLookups off
+  </IfModule>
+
   ServerIdent off
 </pre>
 in my <code>proftpd.conf</code>, but my logins are still slow.  Why?<br>
@@ -240,7 +243,7 @@ Another solution is simply to <a href="#Switching">switch</a> your
 <p>
 <hr>
 <font size=2><b><i>
-&copy; Copyright 2017 The ProFTPD Project<br>
+&copy; Copyright 2017-2020 The ProFTPD Project<br>
  All Rights Reserved<br>
 </i></b></font>
 <hr>

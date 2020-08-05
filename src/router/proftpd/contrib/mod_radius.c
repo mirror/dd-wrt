@@ -1,6 +1,6 @@
 /*
  * ProFTPD: mod_radius -- a module for RADIUS authentication and accounting
- * Copyright (c) 2001-2017 TJ Saunders
+ * Copyright (c) 2001-2020 TJ Saunders
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -2421,7 +2421,7 @@ static void radius_get_rnd_digest(radius_packet_t *packet) {
   gettimeofday(&tv, &tz);
 
   /* Add in some (possibly) hard to guess information. */      
-  tv.tv_sec ^= getpid() * getppid();
+  tv.tv_sec ^= (long) (getpid() * getppid());
       
   /* Use MD5 to obtain (hopefully) cryptographically strong pseudo-random
    * numbers

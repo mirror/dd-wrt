@@ -37,6 +37,8 @@ src/*.[0-9]
 stamp-h
 tests/api-tests
 tests/api-tests.log
+tests/api-tests.xml
+tests/tests.log
 utils/*.[0-9]
 *.a
 *.gcda

@@ -1,6 +1,6 @@
 /*
  * ProFTPD - FTP server testsuite
- * Copyright (c) 2014-2015 The ProFTPD Project team
+ * Copyright (c) 2014-2020 The ProFTPD Project team
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -309,27 +309,33 @@ START_TEST (trace_msg_test) {
 
   channel = "testsuite";
 
+  mark_point();
   res = pr_trace_msg(channel, -1, NULL);
   fail_unless(res < 0, "Failed to handle bad level");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   res = pr_trace_msg(channel, 1, NULL);
   fail_unless(res < 0, "Failed to handle null message");
   fail_unless(errno == EINVAL, "Expected EINVAL (%d), got %s (%d)", EINVAL,
     strerror(errno), errno);
 
+  mark_point();
   pr_trace_set_levels(channel, 1, 10);
 
+  mark_point();
   memset(msg, 'A', sizeof(msg)-1);
   msg[sizeof(msg)-1] = '\0';
   pr_trace_msg(channel, 5, "%s", msg);
 
+  mark_point();
   session.c = pr_inet_create_conn(p, -1, NULL, INPORT_ANY, FALSE);
   fail_unless(session.c != NULL, "Failed to create conn: %s", strerror(errno));
   session.c->local_addr = session.c->remote_addr =
     pr_netaddr_get_addr(p, "127.0.0.1", NULL);
 
+  mark_point();
   res = pr_trace_set_options(PR_TRACE_OPT_LOG_CONN_IPS|PR_TRACE_OPT_USE_TIMESTAMP_MILLIS);
   fail_unless(res == 0, "Failed to set options: %s", strerror(errno));
   pr_trace_msg(channel, 5, "%s", "alef bet vet?");
@@ -361,15 +367,18 @@ START_TEST (trace_set_file_test) {
   fail_unless(errno == EISDIR, "Expected EISDIR (%d), got %s (%d)", EISDIR,
     strerror(errno), errno);
 
+  mark_point();
   path = trace_path;
   res = pr_trace_set_file(path);
   fail_unless(res == 0, "Failed to set trace file '%s': %s", path,
     strerror(errno));
   pr_trace_set_levels("foo", 1, 20);
 
+  mark_point();
   pr_trace_msg("foo", 1, "bar?");
   pr_trace_msg("foo", 1, "baz!");
 
+  mark_point();
   res = pr_trace_set_options(PR_TRACE_OPT_LOG_CONN_IPS|PR_TRACE_OPT_USE_TIMESTAMP_MILLIS);
   fail_unless(res == 0, "Failed to set options: %s", strerror(errno));
 
