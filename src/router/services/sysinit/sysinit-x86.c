@@ -102,6 +102,7 @@ void start_sysinit(void)
 				fclose(in);
 				eval("sync");
 				sleep(5);
+				nvram_set("shutdown","fast");
 				eval("event", "5", "1", "15");
 			}
 		}
