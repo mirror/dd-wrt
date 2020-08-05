@@ -4,7 +4,7 @@
  */
 
 #include <linux/version.h>
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 #include <linux/fs_context.h>
 #include <linux/fs_parser.h>
 #else
@@ -237,7 +237,7 @@ static const struct super_operations exfat_sops = {
 	.show_options	= exfat_show_options,
 };
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 enum {
 	Opt_uid,
 	Opt_gid,
@@ -303,7 +303,7 @@ static const struct fs_parameter_spec exfat_param_specs[] = {
 	{}
 };
 
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 5, 0)
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(5, 6, 0)
 static const struct fs_parameter_description exfat_parameters = {
 	.name		= "exfat",
 	.specs		= exfat_param_specs,
@@ -824,7 +824,7 @@ free_bh:
 	return ret;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 static int exfat_fill_super(struct super_block *sb, struct fs_context *fc)
 #else
 static int exfat_fill_super(struct super_block *sb, void *data, int silent)
@@ -832,7 +832,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 {
 	struct inode *root_inode;
 	int err;
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 	struct exfat_sb_info *sbi = sb->s_fs_info;
 	struct exfat_mount_options *opts = &sbi->options;
 
@@ -895,7 +895,7 @@ static int exfat_fill_super(struct super_block *sb, void *data, int silent)
 	exfat_hash_init(sb);
 
 	if (!strcmp(sbi->options.iocharset, "utf8"))
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 		opts->utf8 = 1;
 #else
 		sbi->options.utf8 = 1;
@@ -964,7 +964,7 @@ check_nls_io:
 	return err;
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
 static int exfat_get_tree(struct fs_context *fc)
 {
 	return get_tree_bdev(fc, exfat_fill_super);
@@ -1031,13 +1031,9 @@ static struct dentry *exfat_fs_mount(struct file_system_type *fs_type,
 static struct file_system_type exfat_fs_type = {
 	.owner			= THIS_MODULE,
 	.name			= "exfat",
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)
-	.init_fs_context	= exfat_init_fs_context,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0)
+	.init_fs_context	= exfat_init_fs_context,
 	.parameters		= exfat_parameters,
-#else
-	.parameters		= &exfat_parameters,
-#endif
 #else
 	.mount			= exfat_fs_mount,
 #endif
