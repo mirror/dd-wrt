@@ -11,7 +11,7 @@
 #include <linux/ratelimit.h>
 #include <linux/nls.h>
 
-#define EXFAT_VERSION		"5.8.1"
+#define EXFAT_VERSION		"5.8.7"
 
 #define EXFAT_SUPER_MAGIC       0x2011BAB0UL
 #define EXFAT_ROOT_INO		1
