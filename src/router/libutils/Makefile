@@ -639,6 +639,9 @@ endif
 ifeq ($(CONFIG_HAMEA15),y)
   CFLAGS += -DHAVE_HAMEA15
 endif
+ifeq ($(CONFIG_IWLWIFI),y)
+  CFLAGS += -DHAVE_IWLWIFI
+endif
 ifeq ($(CONFIG_WCRGN),y)
   CFLAGS += -DHAVE_WCRGN
 endif
