@@ -183,4 +183,4 @@ script:
  - sudo ./check generic/448
  - sudo ./check generic/450
  - sudo ./check generic/451
-   # - sudo ./check generic/452
+ - sudo ./check generic/452
