@@ -3147,8 +3147,8 @@ char *getWifiDeviceName(const char *prefix, int *flags)
 	for (i = 0; i < sizeof(wdevices) / sizeof(wdevices[0]); i++) {
 		if (wdevices[i].vendor == vendor &&	//
 		    wdevices[i].device == device &&	//
-		    ((wdevices[i].subvendor == subvendor) || !subvendor) &&	//
-		    ((wdevices[i].subdevice == subdevice) || !subdevice)) {
+		    ((wdevices[i].subvendor == subvendor) || !wdevices[i].subvendor==0) &&	//
+		    ((wdevices[i].subdevice == subdevice) || !wdevices[i].subdevice==0)) {
 			if (flags)
 				*flags = wdevices[i].flags;
 			return wdevices[i].name;
