@@ -1557,7 +1557,7 @@ wl_basic.radio="WLAN rádió";
 wl_basic.radio_on="WLAN bekapcsolva";
 wl_basic.radio_off="WLAN kikapcsolva";
 
-wl_basic.h2_v24="Vezetéknélküli fizikai interfész";
+wl_basic.h2_v24="Vezetéknélküli interfész";
 wl_basic.regdom="Felügyeleti tartomány";
 wl_basic.TXpower="TX Power";
 wl_basic.diversity="Kétantennás adatátvitel (diversity)";
