@@ -5764,6 +5764,7 @@ static void flush_gro_hash(struct napi_struct *napi)
 void netif_napi_del(struct napi_struct *napi)
 {
 	might_sleep();
+	cancel_work_sync(&napi->work);
 	if (napi_hash_del(napi))
 		synchronize_net();
 	list_del_init(&napi->dev_list);
