@@ -190,8 +190,38 @@ int main(int argc, char *argv[])
 			if (p) {
 				*p = 0;
 				if (sym(copy, NULL, "main")) {
-					if (inlist(copy) == -1)
-						fprintf(out, "{\"%s\",\tNULL,\tNULL,\tNULL,\tNULL,\t%s_main},\n", copy, copy);
+					if (inlist(copy) == -1) {
+
+						fprintf(out, "{\"%s\"", copy);
+
+						int start = sym(copy, "start", NULL);
+						int stop = sym(copy, "stop", NULL);
+						int main = sym(copy, NULL, "main");
+						int proc = sym(copy, NULL, "proc");
+						int deps = sym(copy, NULL, "deps");
+						if (start)
+							fprintf(out, ",\tstart_%s", copy);
+						else
+							fprintf(out, ",\tNULL");
+						if (deps)
+							fprintf(out, ",\t%s_deps", copy);
+						else
+							fprintf(out, ",\tNULL");
+						if (proc)
+							fprintf(out, ",\t%s_proc", copy);
+						else
+							fprintf(out, ",\tNULL");
+						if (stop)
+							fprintf(out, ",\tstop_%s", copy);
+						else
+							fprintf(out, ",\tNULL");
+						if (main)
+							fprintf(out, ",\t%s_main", copy);
+						else
+							fprintf(out, ",\tNULL");
+						fprintf(out, "},\n");
+
+					}
 				}
 			}
 		}
