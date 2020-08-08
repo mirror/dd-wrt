@@ -127,7 +127,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			sprintf(cstatus, "status_green");
 		else
 			sprintf(cstatus, "status_red");
-		if (status>=10)
+		if (status >= 10)
 			websWrite(wp, "<td class=\"%s\">%d</td>\n", cstatus, status);
 		else
 			websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", cstatus);
@@ -181,16 +181,23 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 				fgets(cstatus, 31, fp);
 				fclose(fp);
 			}
+			int speed = 0;
 			if (!strncmp(cstatus, "disc", 4))
 				sprintf(status, "status_red");
 
-			if (!strncmp(cstatus, "100", 3))
+			if (!strncmp(cstatus, "100", 3)) {
+				speed = 100;
 				sprintf(status, "status_yellow");
+			}
 
-			if (!strncmp(cstatus, "1000", 4))
+			if (!strncmp(cstatus, "1000", 4)) {
+				speed = 1000;
 				sprintf(status, "status_green");
-
-			websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
+			}
+			if (speed)
+				websWrite(wp, "<td class=\"%s\">%d</td>\n", status, speed);
+			else
+				websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
 		}
 		websWrite(wp, "<td></td>\n");
 		websWrite(wp, "              </tr>\n");
