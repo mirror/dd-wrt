@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.215 Kernel Configuration
+# Linux/mips 4.9.232 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -1333,6 +1333,7 @@ CONFIG_GPIO_SYSFS=y
 #
 # MFD GPIO expanders
 #
+# CONFIG_GPIO_ANTAIRA is not set
 
 #
 # PCI GPIO expanders
