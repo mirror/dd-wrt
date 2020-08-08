@@ -130,7 +130,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 		if (status >= 10)
 			websWrite(wp, "<td class=\"%s\">%d</td>\n", cstatus, status);
 		else
-			websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", cstatus);
+			websWrite(wp, "<td class=\"%s\">down</td>\n", cstatus);
 	}
 
 	websWrite(wp, "<td></td>\n");
@@ -202,7 +202,7 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			if (speed)
 				websWrite(wp, "<td class=\"%s\">%d</td>\n", status, speed);
 			else
-				websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", status);
+				websWrite(wp, "<td class=\"%s\">down</td>\n", status);
 		}
 		websWrite(wp, "<td></td>\n");
 		websWrite(wp, "              </tr>\n");
