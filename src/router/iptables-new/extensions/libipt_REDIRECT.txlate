@@ -1,0 +1,5 @@
+iptables-translate -t nat -A prerouting -p tcp --dport 80 -j REDIRECT --to-ports 8080
+nft add rule ip nat prerouting tcp dport 80 counter redirect to :8080
+
+iptables-translate -t nat -A prerouting -p tcp --dport 80 -j REDIRECT --to-ports 8080 --random
+nft add rule ip nat prerouting tcp dport 80 counter redirect to :8080 random

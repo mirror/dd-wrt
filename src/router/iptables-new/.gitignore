@@ -1,0 +1,27 @@
+*.a
+*.la
+*.lo
+*.so
+*.o
+.deps/
+.dirstamp
+.libs/
+Makefile
+Makefile.in
+
+/include/xtables-version.h
+
+/aclocal.m4
+/autom4te.cache/
+/build-aux/
+/config.*
+/configure
+/libtool
+/stamp-h1
+/iptables/iptables-apply.8
+
+/iptables/xtables-multi
+/iptables/xtables-compat-multi
+
+# vim/nano swap file
+*.swp

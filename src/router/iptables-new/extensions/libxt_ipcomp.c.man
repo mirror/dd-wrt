@@ -1,0 +1,7 @@
+This module matches the parameters in IPcomp header of IPsec packets.
+.TP
+[\fB!\fP] \fB\-\-ipcompspi\fP \fIspi\fP[\fB:\fP\fIspi\fP]
+Matches IPcomp header CPI value.
+.TP
+\fB\-\-compres\fP
+Matches if the reserved field is filled with zero.

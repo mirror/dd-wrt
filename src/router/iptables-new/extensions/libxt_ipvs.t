@@ -1,0 +1,20 @@
+:INPUT,FORWARD,OUTPUT
+-m ipvs --ipvs;=;OK
+-m ipvs ! --ipvs;=;OK
+-m ipvs --vproto tcp;-m ipvs --vproto 6;OK
+-m ipvs ! --vproto TCP;-m ipvs ! --vproto 6;OK
+-m ipvs --vproto 23;=;OK
+-m ipvs --vaddr 1.2.3.4;=;OK
+-m ipvs ! --vaddr 1.2.3.4/255.255.255.0;-m ipvs ! --vaddr 1.2.3.4/24;OK
+-m ipvs --vport http;-m ipvs --vport 80;OK
+-m ipvs ! --vport ssh;-m ipvs ! --vport 22;OK
+-m ipvs --vport 22;=;OK
+-m ipvs ! --vport 443;=;OK
+-m ipvs --vdir ORIGINAL;=;OK
+-m ipvs --vdir REPLY;=;OK
+-m ipvs --vmethod GATE;=;OK
+-m ipvs ! --vmethod IPIP;=;OK
+-m ipvs --vmethod MASQ;=;OK
+-m ipvs --vportctl 21;=;OK
+-m ipvs ! --vportctl 21;=;OK
+-m ipvs --vproto 6 --vaddr 1.2.3.4/16 --vport 22 --vdir ORIGINAL --vmethod GATE;=;OK
