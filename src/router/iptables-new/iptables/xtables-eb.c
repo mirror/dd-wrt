@@ -391,7 +391,7 @@ static void print_help(const struct xtables_target *t,
 "Environment variable:\n"
 /*ATOMIC_ENV_VARIABLE "          : if set <FILE> (see above) will equal its value"*/
 "\n\n");
-	for (; m != NULL; m = m->next) {
+/*	for (; m != NULL; m = m->next) {
 		printf("\n");
 		m->match->help();
 	}
@@ -399,7 +399,7 @@ static void print_help(const struct xtables_target *t,
 		printf("\n");
 		t->help();
 	}
-
+*/
 //	if (table->help)
 //		table->help(ebt_hooknames);
 }
