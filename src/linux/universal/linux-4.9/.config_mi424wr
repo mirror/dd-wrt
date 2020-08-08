@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm 4.9.215 Kernel Configuration
+# Linux/arm 4.9.232 Kernel Configuration
 #
 CONFIG_ARM=y
 # CONFIG_ARM_HWCC_FLAG is not set
@@ -1650,6 +1650,7 @@ CONFIG_GPIO_SYSFS=y
 # MFD GPIO expanders
 #
 # CONFIG_HTC_EGPIO is not set
+# CONFIG_GPIO_ANTAIRA is not set
 
 #
 # PCI GPIO expanders
