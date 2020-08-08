@@ -2209,7 +2209,7 @@ void validate_userlist(webs_t wp, char *value, struct variable *v)
 	for (i = 0; i < leasenum; i++) {
 		snprintf(username, sizeof(username), "fon_user%d_name", i);
 		strcat(leases, websGetVar(wp, username, ""));
-		strcat(leases, "=");
+		strcat(leases, ":");
 		snprintf(password, sizeof(password), "fon_user%d_password", i);
 		strcat(leases, websGetVar(wp, password, ""));
 		strcat(leases, " ");

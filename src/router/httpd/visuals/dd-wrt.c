@@ -710,7 +710,7 @@ void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 
 	for (i = 0; i < leasenum; i++) {
 		snprintf(username, 31, "fon_user%d_name", i);
-		char *sep = strsep(&userlist, "=");
+		char *sep = strsep(&userlist, ":");
 
 		websWrite(wp, "<tr><td>\n");
 		websWrite(wp, "<input name=\"%s\" autocomplete=\"new-password\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n", username, sep != NULL ? sep : "");
