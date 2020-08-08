@@ -53,6 +53,7 @@ void start_pptpd(void)
 		&& nvram_matchi("sys_enable_jffs2", 1)))
 		jffs = 1;
 
+	insmod("gre");
 	insmod("pptp");
 
 	// cprintf("stop vpn modules\n");
