@@ -1,0 +1,13 @@
+#!/bin/bash
+
+case "$(basename $XT_MULTI)" in
+	xtables-legacy-multi)
+		;;
+	*)
+		echo "skip $XT_MULTI"
+		exit 0
+		;;
+esac
+
+dump=$(dirname $0)/dumps/fedora27-iptables
+diff -u -Z <(cat ${dump}.xml) <($XT_MULTI iptables-xml <$dump)

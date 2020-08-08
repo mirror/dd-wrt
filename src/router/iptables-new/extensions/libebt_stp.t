@@ -1,0 +1,13 @@
+:INPUT,FORWARD,OUTPUT
+--stp-type 1;=;OK
+--stp-flags 0x1;--stp-flags topology-change -j CONTINUE;OK
+--stp-root-prio 1  -j ACCEPT;=;OK
+--stp-root-addr 0d:ea:d0:0b:ee:f0;=;OK
+--stp-root-cost 1;=;OK
+--stp-sender-prio 1;=;OK
+--stp-sender-addr de:ad:be:ef:00:00;=;OK
+--stp-port 1;=;OK
+--stp-msg-age 1;=;OK
+--stp-max-age 1;=;OK
+--stp-hello-time 1;=;OK
+--stp-forward-delay 1;=;OK

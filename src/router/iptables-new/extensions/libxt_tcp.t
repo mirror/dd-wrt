@@ -1,0 +1,26 @@
+:INPUT,FORWARD,OUTPUT
+-p tcp -m tcp --sport 1;=;OK
+-p tcp -m tcp --sport 65535;=;OK
+-p tcp -m tcp --dport 1;=;OK
+-p tcp -m tcp --dport 65535;=;OK
+-p tcp -m tcp --sport 1:1023;=;OK
+-p tcp -m tcp --sport 1024:65535;=;OK
+-p tcp -m tcp --sport 1024:;-p tcp -m tcp --sport 1024:65535;OK
+-p tcp -m tcp ! --sport 1;=;OK
+-p tcp -m tcp ! --sport 65535;=;OK
+-p tcp -m tcp ! --dport 1;=;OK
+-p tcp -m tcp ! --dport 65535;=;OK
+-p tcp -m tcp --sport 1 --dport 65535;=;OK
+-p tcp -m tcp --sport 65535 --dport 1;=;OK
+-p tcp -m tcp ! --sport 1 --dport 65535;=;OK
+-p tcp -m tcp ! --sport 65535 --dport 1;=;OK
+-p tcp -m tcp --sport 65536;;FAIL
+-p tcp -m tcp --sport -1;;FAIL
+-p tcp -m tcp --dport -1;;FAIL
+-p tcp -m tcp --syn;-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN;OK
+-p tcp -m tcp --tcp-flags FIN,SYN,RST,ACK SYN;=;OK
+-p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG SYN;=;OK
+-p tcp -m tcp ! --tcp-flags FIN,SYN,RST,PSH,ACK,URG SYN;=;OK
+-p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG RST;=;OK
+# should we accept this below?
+-p tcp -m tcp;=;OK

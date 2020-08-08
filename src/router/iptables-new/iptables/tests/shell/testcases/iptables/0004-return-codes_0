@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# make sure error return codes are as expected useful cases
+# (e.g. commands to check ruleset state)
+
+global_rc=0
+
+cmd() { # (rc, msg, cmd, [args ...])
+	rc_exp=$1; shift
+
+	msg_exp=""
+	[ $rc_exp != 0 ] && {
+		msg_exp="$1"; shift
+	}
+
+	msg="$($XT_MULTI "$@" 2>&1 >/dev/null)"
+	rc=$?
+
+	[ $rc -eq $rc_exp ] || {
+		echo "---> expected return code $rc_exp, got $rc for command '$@'"
+		global_rc=1
+	}
+
+	[ -n "$msg_exp" ] || return
+	grep -q "$msg_exp" <<< $msg || {
+		echo "---> expected error message '$msg_exp', got '$msg' for command '$@'"
+		global_rc=1
+	}
+}
+
+EEXIST_F="File exists."
+EEXIST="Chain already exists."
+ENOENT="No chain/target/match by that name."
+E2BIG_I="Index of insertion too big."
+E2BIG_D="Index of deletion too big."
+E2BIG_R="Index of replacement too big."
+EBADRULE="Bad rule (does a matching rule exist in that chain?)."
+ENOTGT="Couldn't load target \`foobar':No such file or directory"
+ENOMTH="Couldn't load match \`foobar':No such file or directory"
+ENOTBL="can't initialize iptables table \`foobar': Table does not exist"
+
+# test chain creation
+cmd 0 iptables -N foo
+cmd 1 "$EEXIST" iptables -N foo
+# iptables-nft allows this - bug or feature?
+#cmd 2 iptables -N "invalid name"
+
+# test chain flushing/zeroing
+cmd 0 iptables -F foo
+cmd 0 iptables -Z foo
+cmd 1 "$ENOENT" iptables -F bar
+cmd 1 "$ENOENT" iptables -Z bar
+
+# test chain rename
+cmd 0 iptables -E foo bar
+cmd 1 "$EEXIST_F" iptables -E foo bar
+cmd 1 "$ENOENT" iptables -E foo bar2
+cmd 0 iptables -N foo2
+cmd 1 "$EEXIST_F" iptables -E foo2 bar
+
+# test rule adding
+cmd 0 iptables -A INPUT -j ACCEPT
+cmd 1 "$ENOENT" iptables -A noexist -j ACCEPT
+cmd 2 "" iptables -I INPUT -j foobar
+cmd 2 "" iptables -R INPUT 1 -j foobar
+cmd 2 "" iptables -D INPUT -j foobar
+
+# test rulenum commands
+cmd 1 "$E2BIG_I" iptables -I INPUT 23 -j ACCEPT
+cmd 1 "$E2BIG_D" iptables -D INPUT 23
+cmd 1 "$E2BIG_R" iptables -R INPUT 23 -j ACCEPT
+cmd 1 "$ENOENT" iptables -I nonexist 23 -j ACCEPT
+cmd 1 "$ENOENT" iptables -D nonexist 23
+cmd 1 "$ENOENT" iptables -R nonexist 23 -j ACCEPT
+
+# test rule checking
+cmd 0 iptables -C INPUT -j ACCEPT
+cmd 1 "$EBADRULE" iptables -C FORWARD -j ACCEPT
+cmd 1 "$BADRULE" iptables -C nonexist -j ACCEPT
+cmd 2 "$ENOMTH" iptables -C INPUT -m foobar -j ACCEPT
+# messages of those don't match, but iptables-nft ones are actually nicer.
+#cmd 2 "$ENOTGT" iptables -C INPUT -j foobar
+#cmd 3 "$ENOTBL" iptables -t foobar -C INPUT -j ACCEPT
+cmd 2 "" iptables -C INPUT -j foobar
+cmd 3 "" iptables -t foobar -C INPUT -j ACCEPT
+
+exit $global_rc

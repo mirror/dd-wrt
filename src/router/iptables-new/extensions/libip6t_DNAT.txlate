@@ -1,0 +1,11 @@
+ip6tables-translate -t nat -A prerouting -i eth1 -p tcp --dport 8080 -j DNAT --to-destination [fec0::1234]:80
+nft add rule ip6 nat prerouting iifname "eth1" tcp dport 8080 counter dnat to [fec0::1234]:80
+
+ip6tables-translate -t nat -A prerouting -p tcp -j DNAT --to-destination [fec0::1234]:1-20
+nft add rule ip6 nat prerouting meta l4proto tcp counter dnat to [fec0::1234]:1-20
+
+ip6tables-translate -t nat -A prerouting -p tcp -j DNAT --to-destination [fec0::1234]:80 --persistent
+nft add rule ip6 nat prerouting meta l4proto tcp counter dnat to [fec0::1234]:80 persistent
+
+ip6tables-translate -t nat -A prerouting -p tcp -j DNAT --to-destination [fec0::1234]:80 --random --persistent
+nft add rule ip6 nat prerouting meta l4proto tcp counter dnat to [fec0::1234]:80 random,persistent
