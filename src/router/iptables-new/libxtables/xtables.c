@@ -21,7 +21,7 @@
 #include <fcntl.h>
 #include <inttypes.h>
 #include <netdb.h>
-#include <spawn.h>
+//#include <spawn.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -397,6 +397,7 @@ static char *get_modprobe(void)
 
 int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 {
+#if 0
 	char *buf = NULL;
 	char *argv[4];
 	int status;
@@ -432,6 +433,8 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return 0;
 	return -1;
+#endif
+	return 0;
 }
 
 /* return true if a given file exists within procfs */
@@ -946,12 +949,6 @@ static void xtables_check_options(const char *name, const struct option *opt)
 
 void xtables_register_match(struct xtables_match *me)
 {
-	if (me->next) {
-		fprintf(stderr, "%s: match \"%s\" already registered\n",
-			xt_params->program_name, me->name);
-		exit(1);
-	}
-
 	if (me->version == NULL) {
 		fprintf(stderr, "%s: match %s<%u> is missing a version\n",
 		        xt_params->program_name, me->name, me->revision);
@@ -1139,12 +1136,6 @@ void xtables_register_matches(struct xtables_match *match, unsigned int n)
 
 void xtables_register_target(struct xtables_target *me)
 {
-	if (me->next) {
-		fprintf(stderr, "%s: target \"%s\" already registered\n",
-			xt_params->program_name, me->name);
-		exit(1);
-	}
-
 	if (me->version == NULL) {
 		fprintf(stderr, "%s: target %s<%u> is missing a version\n",
 		        xt_params->program_name, me->name, me->revision);

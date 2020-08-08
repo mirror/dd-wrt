@@ -27,7 +27,7 @@
 void print_extension_helps(const struct xtables_target *t,
     const struct xtables_rule_match *m)
 {
-	for (; t != NULL; t = t->next) {
+/*	for (; t != NULL; t = t->next) {
 		if (t->used) {
 			printf("\n");
 			if (t->help == NULL)
@@ -44,7 +44,7 @@ void print_extension_helps(const struct xtables_target *t,
 			       m->match->name);
 		else
 			m->match->help();
-	}
+	}*/
 }
 
 const char *

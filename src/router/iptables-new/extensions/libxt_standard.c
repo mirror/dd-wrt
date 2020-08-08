@@ -15,7 +15,7 @@ static struct xtables_target standard_target = {
 	.version	= XTABLES_VERSION,
 	.size		= XT_ALIGN(sizeof(int)),
 	.userspacesize	= XT_ALIGN(sizeof(int)),
-	.help		= standard_help,
+	//.help		= standard_help,
 };
 
 void _init(void)

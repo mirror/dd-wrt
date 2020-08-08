@@ -319,12 +319,12 @@ printhelp(void)
 	/* Print out any special helps. A user might like to be able
 		to add a --help to the commandline, and see expected
 		results. So we call help for all matches & targets */
-	for (t = xtables_targets; t; t = t->next) {
+/*	for (t = xtables_targets; t; t = t->next) {
 		if (strcmp(t->name, "CLASSIFY") && strcmp(t->name, "mangle"))
 			continue;
 		printf("\n");
 		t->help();
-	}
+	}*/
 }
 
 static char

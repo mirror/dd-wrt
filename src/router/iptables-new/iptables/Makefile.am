@@ -5,7 +5,7 @@ AM_CPPFLAGS      = ${regular_CPPFLAGS} -I${top_builddir}/include -I${top_srcdir}
 
 BUILT_SOURCES =
 
-xtables_legacy_multi_SOURCES  = xtables-legacy-multi.c iptables-xml.c
+xtables_legacy_multi_SOURCES  = xtables-legacy-multi.c
 xtables_legacy_multi_CFLAGS   = ${AM_CFLAGS}
 xtables_legacy_multi_LDADD    = ../extensions/libext.a
 if ENABLE_STATIC
@@ -26,7 +26,7 @@ xtables_legacy_multi_LDADD   += ../libxtables/libxtables.la -lm
 
 # iptables using nf_tables api
 if ENABLE_NFTABLES
-xtables_nft_multi_SOURCES  = xtables-nft-multi.c iptables-xml.c
+xtables_nft_multi_SOURCES  = xtables-nft-multi.c
 xtables_nft_multi_CFLAGS   = ${AM_CFLAGS}
 xtables_nft_multi_LDADD    = ../extensions/libext.a ../extensions/libext_ebt.a
 if ENABLE_STATIC
@@ -69,7 +69,6 @@ endif
 CLEANFILES       = iptables.8 xtables-monitor.8 \
 		   iptables-translate.8 ip6tables-translate.8
 
-vx_bin_links   = iptables-xml
 if ENABLE_IPV4
 v4_sbin_links  = iptables-legacy iptables-legacy-restore iptables-legacy-save \
 		 iptables iptables-restore iptables-save

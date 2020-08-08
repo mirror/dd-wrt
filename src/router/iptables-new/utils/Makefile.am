@@ -9,11 +9,11 @@ pkgdata_DATA =
 man_MANS =
 
 if HAVE_LIBNFNETLINK
-man_MANS += nfnl_osf.8
-sbin_PROGRAMS += nfnl_osf
-pkgdata_DATA += pf.os
+#man_MANS += nfnl_osf.8
+#sbin_PROGRAMS += nfnl_osf
+#pkgdata_DATA += pf.os
 
-nfnl_osf_LDADD = ${libnfnetlink_LIBS}
+#nfnl_osf_LDADD = ${libnfnetlink_LIBS}
 endif
 
 if ENABLE_BPFC
