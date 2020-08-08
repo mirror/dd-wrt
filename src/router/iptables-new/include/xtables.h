@@ -249,7 +249,7 @@ struct xtables_match {
 	size_t userspacesize;
 
 	/* Function which prints out usage message. */
-	void (*help)(void);
+//	void (*help)(void);
 
 	/* Initialize the match. */
 	void (*init)(struct xt_entry_match *m);
@@ -330,7 +330,7 @@ struct xtables_target {
 	size_t userspacesize;
 
 	/* Function which prints out usage message. */
-	void (*help)(void);
+//	void (*help)(void);
 
 	/* Initialize the target. */
 	void (*init)(struct xt_entry_target *t);
