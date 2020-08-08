@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/i386 4.9.215 Kernel Configuration
+# Linux/i386 4.9.232 Kernel Configuration
 #
 # CONFIG_64BIT is not set
 CONFIG_X86_32=y
@@ -2537,6 +2537,7 @@ CONFIG_GPIO_SYSFS=y
 # MFD GPIO expanders
 #
 # CONFIG_GPIO_MSIC is not set
+# CONFIG_GPIO_ANTAIRA is not set
 
 #
 # PCI GPIO expanders
