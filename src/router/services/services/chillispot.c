@@ -290,20 +290,14 @@ void chilli_config(void)
 		return;
 	}
 	char *users = nvram_safe_get("fon_userlist");
-	char *u = (char *)malloc(strlen(users) + 1);
-	char *o = u;
-
-	strcpy(u, users);
-	char *sep = strsep(&u, "=");
-
-	while (sep != NULL) {
-		fprintf(fp, "%s ", sep);
-		char *pass = strsep(&u, ":");
-
-		fprintf(fp, "%s \n", pass != NULL ? pass : "");
-		sep = strsep(&u, "=");
+	char word[128];
+	char *next;
+	foreach(word, users, next) {
+		char *user = word; 
+		char *pass = strsep(&user, "=");
+		if (user && pass)
+			fprintf(fp, "%s:%s", user, pass);
 	}
-	free(o);
 	fclose(fp);
 #endif
 
