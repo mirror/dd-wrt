@@ -293,7 +293,7 @@ void chilli_config(void)
 	char word[128];
 	foreach(word, users, next) {
 		char *pass = word; 
-		char *user = strsep(&user, "=");
+		char *user = strsep(&pass, "=");
 		if (user && pass)
 			fprintf(fp, "%s:%s\n", user, pass);
 	}
