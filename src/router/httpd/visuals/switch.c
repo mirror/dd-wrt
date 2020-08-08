@@ -127,7 +127,10 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			sprintf(cstatus, "status_green");
 		else
 			sprintf(cstatus, "status_red");
-		websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", cstatus);
+		if (status>=10)
+			websWrite(wp, "<td class=\"%s\">%d</td>\n", cstatus, status);
+		else
+			websWrite(wp, "<td class=\"%s\">&nbsp;</td>\n", cstatus);
 	}
 
 	websWrite(wp, "<td></td>\n");
