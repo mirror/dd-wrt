@@ -291,7 +291,6 @@ void chilli_config(void)
 	}
 	char *users = nvram_safe_get("fon_userlist");
 	char word[128];
-	char *next;
 	foreach(word, users, next) {
 		char *user = word; 
 		char *pass = strsep(&user, "=");
