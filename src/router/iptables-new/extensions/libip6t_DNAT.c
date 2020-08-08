@@ -10,7 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <xtables.h>
-#include <iptables.h>
+#include <xtables.h>
 #include <limits.h> /* INT_MAX in ip_tables.h */
 #include <linux/netfilter_ipv6/ip6_tables.h>
 #include <linux/netfilter/nf_nat.h>

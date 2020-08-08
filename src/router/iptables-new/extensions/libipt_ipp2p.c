@@ -6,7 +6,7 @@
 #include <getopt.h>
 #include <ctype.h>
 
-#include <iptables.h>
+#include <xtables.h>
 
 #include "ipt_ipp2p.h"
 
