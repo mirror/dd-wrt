@@ -439,15 +439,19 @@ td.bulle {
  
 .status_red {
 	background: #f00;
+	text-align:center;
 }
 .status_green {
 	background: #0f0;
+	text-align:center;
 }
 .status_yellow {
 	background: #ff0;
+	text-align:center;
 }
 .status_orange {
 	background: #f80;
+	text-align:center;
 }
  
 .off {
