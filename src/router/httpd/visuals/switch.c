@@ -185,6 +185,11 @@ void ej_port_vlan_table(webs_t wp, int argc, char_t ** argv)
 			if (!strncmp(cstatus, "disc", 4))
 				sprintf(status, "status_red");
 
+			if (!strncmp(cstatus, "10", 3)) {
+				speed = 10;
+				sprintf(status, "status_orange");
+			}
+			
 			if (!strncmp(cstatus, "100", 3)) {
 				speed = 100;
 				sprintf(status, "status_yellow");
