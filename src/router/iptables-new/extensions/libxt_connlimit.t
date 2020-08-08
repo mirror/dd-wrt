@@ -1,0 +1,16 @@
+:INPUT,FORWARD,OUTPUT
+-m connlimit --connlimit-upto 0;=;OK
+-m connlimit --connlimit-upto 4294967295;=;OK
+-m connlimit --connlimit-upto 4294967296;;FAIL
+-m connlimit --connlimit-upto -1;;FAIL
+-m connlimit --connlimit-above 0;=;OK
+-m connlimit --connlimit-above 4294967295;=;OK
+-m connlimit --connlimit-above 4294967296;;FAIL
+-m connlimit --connlimit-above -1;;FAIL
+-m connlimit --connlimit-upto 1 --conlimit-above 1;;FAIL
+-m connlimit --connlimit-above 10 --connlimit-saddr;-m connlimit --connlimit-above 10 --connlimit-mask 32 --connlimit-saddr;OK
+-m connlimit --connlimit-above 10 --connlimit-daddr;-m connlimit --connlimit-above 10 --connlimit-mask 32 --connlimit-daddr;OK
+-m connlimit --connlimit-above 10 --connlimit-saddr --connlimit-daddr;;FAIL
+-m connlimit --connlimit-above 10 --connlimit-mask 32 --connlimit-saddr;=;OK
+-m connlimit --connlimit-above 10 --connlimit-mask 32 --connlimit-daddr;=;OK
+-m connlimit;;FAIL

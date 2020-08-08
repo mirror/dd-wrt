@@ -1,0 +1,39 @@
+#!/bin/sh
+
+# make sure error return codes are as expected useful cases
+# (e.g. commands to check ruleset state)
+
+global_rc=0
+
+cmd() { # (rc, cmd, [args ...])
+	rc_exp=$1; shift
+
+	$XT_MULTI "$@"
+	rc=$?
+
+	[ $rc -eq $rc_exp ] || {
+		echo "---> expected $rc_exp, got $rc for command '$@'"
+		global_rc=1
+	}
+}
+
+# test chain creation
+cmd 0 ip6tables -N foo
+cmd 1 ip6tables -N foo
+# iptables-nft allows this - bug or feature?
+#cmd 2 ip6tables -N "invalid name"
+
+# test rule adding
+cmd 0 ip6tables -A INPUT -j ACCEPT
+cmd 1 ip6tables -A noexist -j ACCEPT
+cmd 2 ip6tables -I INPUT -j foobar
+
+# test rule checking
+cmd 0 ip6tables -C INPUT -j ACCEPT
+cmd 1 ip6tables -C FORWARD -j ACCEPT
+cmd 1 ip6tables -C nonexist -j ACCEPT
+cmd 2 ip6tables -C INPUT -j foobar
+cmd 2 ip6tables -C INPUT -m foobar -j ACCEPT
+cmd 3 ip6tables -t foobar -C INPUT -j ACCEPT
+
+exit $global_rc

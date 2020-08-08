@@ -1,0 +1,12 @@
+#!/bin/bash
+
+$XT_MULTI iptables -N c1 || exit 0
+$XT_MULTI iptables -N c2 || exit 0
+$XT_MULTI iptables -E c1 c2 || exit 1
+
+$XT_MULTI ip6tables -N c1 || exit 0
+$XT_MULTI ip6tables -N c2 || exit 0
+$XT_MULTI ip6tables -E c1 c2 || exit 1
+
+echo "E: Renamed with existing chain" >&2
+exit 0
