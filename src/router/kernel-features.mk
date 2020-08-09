@@ -144,6 +144,12 @@ define kernelfeatures
 		echo "# CONFIG_IP6_NF_MATCH_EUI64 is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MATCH_FRAG=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_OWNER is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_LIMIT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_MAC is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_MULTIPORT is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_MARK is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_AHESP is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_MATCH_LENGTH is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_OPTS is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_HL is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MATCH_IPV6HEADER=m" >> $(LINUXDIR)/.config; \
@@ -156,6 +162,7 @@ define kernelfeatures
 		echo "# CONFIG_IP6_NF_TARGET_SYNPROXY is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_TARGET_IMQ is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_TARGET_LOG is not set" >> $(LINUXDIR)/.config; \
+		echo "# CONFIG_IP6_NF_TARGET_MARK is not set" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_TARGET_MASQUERADE=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_TARGET_NPT=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MANGLE=m" >> $(LINUXDIR)/.config; \
