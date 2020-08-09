@@ -2477,10 +2477,14 @@ static int mtk_probe(struct platform_device *pdev)
 	 * for NAPI to work
 	 */
 	init_dummy_netdev(&eth->dummy_dev);
+	strcpy(eth->dummy_dev.name, "mediatek-eth");
 	netif_napi_add(&eth->dummy_dev, &eth->tx_napi, mtk_napi_tx,
 		       MTK_NAPI_WEIGHT);
 	netif_napi_add(&eth->dummy_dev, &eth->rx_napi, mtk_napi_rx,
 		       MTK_NAPI_WEIGHT);
+	napi_set_threaded(&eth->tx_napi, true);
+	napi_set_threaded(&eth->rx_napi, true);
+
 
 	platform_set_drvdata(pdev, eth);
 

@@ -129,7 +129,7 @@ static ssize_t stp_state_show(struct device *d,
 
 static int set_stp_state(struct net_bridge *br, unsigned long val)
 {
-	return br_stp_set_enabled(br, val, NULL);
+	return br_stp_set_enabled(br, val);
 }
 
 static ssize_t stp_state_store(struct device *d,
