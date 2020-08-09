@@ -204,8 +204,8 @@ int rtnl_open_byproto(struct rtnl_handle *rth, unsigned int subscriptions,
 	}
 
 	/* Older kernels may no support extended ACK reporting */
-	setsockopt(rth->fd, SOL_NETLINK, NETLINK_EXT_ACK,
-		   &one, sizeof(one));
+//	setsockopt(rth->fd, SOL_NETLINK, NETLINK_EXT_ACK,
+//		   &one, sizeof(one));
 
 	memset(&rth->local, 0, sizeof(rth->local));
 	rth->local.nl_family = AF_NETLINK;
@@ -665,6 +665,7 @@ static int rtnl_dump_done(struct nlmsghdr *h)
 
 	return 0;
 }
+#define NETLINK_SOCK_DIAG	4	/* socket monitoring				*/
 
 static void rtnl_dump_error(const struct rtnl_handle *rth,
 			    struct nlmsghdr *h)
@@ -745,6 +746,7 @@ static int rtnl_recvmsg(int fd, struct msghdr *msg, char **answer)
 
 	return len;
 }
+#define NLM_F_DUMP_INTR		16	/* Dump was inconsistent due to sequence change */
 
 static int rtnl_dump_filter_l(struct rtnl_handle *rth,
 			      const struct rtnl_dump_filter_arg *arg)
@@ -1020,6 +1022,7 @@ int rtnl_talk_suppress_rtnl_errmsg(struct rtnl_handle *rtnl, struct nlmsghdr *n,
 {
 	return __rtnl_talk(rtnl, n, answer, false, NULL);
 }
+#define NETLINK_LISTEN_ALL_NSID		8
 
 int rtnl_listen_all_nsid(struct rtnl_handle *rth)
 {

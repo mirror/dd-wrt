@@ -86,6 +86,8 @@ static struct sock_filter mrp_filter[] = {
 	{ 0x6, 0, 0, 0x00000000 },
 };
 
+#define PACKET_IGNORE_OUTGOING		24
+
 /*
  * Open up a raw packet socket to catch all MRP packets
  */
