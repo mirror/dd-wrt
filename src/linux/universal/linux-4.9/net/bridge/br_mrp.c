@@ -26,8 +26,7 @@ static struct br_mrp *br_mrp_find_id(struct net_bridge *br, u32 ring_id)
 	struct br_mrp *res = NULL;
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		if (mrp->ring_id == ring_id) {
 			res = mrp;
 			break;
@@ -41,8 +40,7 @@ static bool br_mrp_unique_ifindex(struct net_bridge *br, u32 ifindex)
 {
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		struct net_bridge_port *p;
 
 		p = rtnl_dereference(mrp->p_port);
@@ -63,8 +61,7 @@ static struct br_mrp *br_mrp_find_port(struct net_bridge *br,
 	struct br_mrp *res = NULL;
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		if (rcu_access_pointer(mrp->p_port) == p ||
 		    rcu_access_pointer(mrp->s_port) == p) {
 			res = mrp;
@@ -97,12 +94,12 @@ static struct sk_buff *br_mrp_skb_alloc(struct net_bridge_port *p,
 	skb->priority = MRP_FRAME_PRIO;
 	skb_reserve(skb, sizeof(*eth_hdr));
 
-	eth_hdr = skb_push(skb, sizeof(*eth_hdr));
+	eth_hdr = (void*)skb_push(skb, sizeof(*eth_hdr));
 	ether_addr_copy(eth_hdr->h_dest, dst);
 	ether_addr_copy(eth_hdr->h_source, src);
 	eth_hdr->h_proto = htons(ETH_P_MRP);
 
-	version = skb_put(skb, sizeof(*version));
+	version = (void*)skb_put(skb, sizeof(*version));
 	*version = cpu_to_be16(MRP_VERSION);
 
 	return skb;
@@ -114,7 +111,7 @@ static void br_mrp_skb_tlv(struct sk_buff *skb,
 {
 	struct br_mrp_tlv_hdr *hdr;
 
-	hdr = skb_put(skb, sizeof(*hdr));
+	hdr = (void*)skb_put(skb, sizeof(*hdr));
 	hdr->type = type;
 	hdr->length = length;
 }
@@ -125,7 +122,7 @@ static void br_mrp_skb_common(struct sk_buff *skb, struct br_mrp *mrp)
 
 	br_mrp_skb_tlv(skb, BR_MRP_TLV_HEADER_COMMON, sizeof(*hdr));
 
-	hdr = skb_put(skb, sizeof(*hdr));
+	hdr = (void*)skb_put(skb, sizeof(*hdr));
 	hdr->seq_id = cpu_to_be16(br_mrp_next_seq(mrp));
 	memset(hdr->domain, 0xff, MRP_DOMAIN_UUID_LENGTH);
 }
@@ -145,7 +142,7 @@ static struct sk_buff *br_mrp_alloc_test_skb(struct br_mrp *mrp,
 		return NULL;
 
 	br_mrp_skb_tlv(skb, BR_MRP_TLV_HEADER_RING_TEST, sizeof(*hdr));
-	hdr = skb_put(skb, sizeof(*hdr));
+	hdr = (void*)skb_put(skb, sizeof(*hdr));
 
 	hdr->prio = cpu_to_be16(mrp->prio);
 	ether_addr_copy(hdr->sa, p->br->dev->dev_addr);

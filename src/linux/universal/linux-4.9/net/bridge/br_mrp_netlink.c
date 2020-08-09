@@ -26,22 +26,22 @@ br_mrp_instance_policy[IFLA_BRIDGE_MRP_INSTANCE_MAX + 1] = {
 };
 
 static int br_mrp_instance_parse(struct net_bridge *br, struct nlattr *attr,
-				 int cmd, struct netlink_ext_ack *extack)
+				 int cmd)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_INSTANCE_MAX + 1];
 	struct br_mrp_instance inst;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_INSTANCE_MAX, attr,
-			       br_mrp_instance_policy, extack);
+			       br_mrp_instance_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_INSTANCE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_INSTANCE_P_IFINDEX] ||
 	    !tb[IFLA_BRIDGE_MRP_INSTANCE_S_IFINDEX]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or P_IFINDEX or S_IFINDEX");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or P_IFINDEX or S_IFINDEX");
 		return -EINVAL;
 	}
 
@@ -70,20 +70,19 @@ br_mrp_port_state_policy[IFLA_BRIDGE_MRP_PORT_STATE_MAX + 1] = {
 };
 
 static int br_mrp_port_state_parse(struct net_bridge_port *p,
-				   struct nlattr *attr,
-				   struct netlink_ext_ack *extack)
+				   struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_PORT_STATE_MAX + 1];
 	enum br_mrp_port_state_type state;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_PORT_STATE_MAX, attr,
-			       br_mrp_port_state_policy, extack);
+			       br_mrp_port_state_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_PORT_STATE_STATE]) {
-		NL_SET_ERR_MSG_MOD(extack, "Missing attribute: STATE");
+//		NL_SET_ERR_MSG_MOD(extack, "Missing attribute: STATE");
 		return -EINVAL;
 	}
 
@@ -99,20 +98,19 @@ br_mrp_port_role_policy[IFLA_BRIDGE_MRP_PORT_ROLE_MAX + 1] = {
 };
 
 static int br_mrp_port_role_parse(struct net_bridge_port *p,
-				  struct nlattr *attr,
-				  struct netlink_ext_ack *extack)
+				  struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_PORT_ROLE_MAX + 1];
 	enum br_mrp_port_role_type role;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_PORT_ROLE_MAX, attr,
-			       br_mrp_port_role_policy, extack);
+			       br_mrp_port_role_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_PORT_ROLE_ROLE]) {
-		NL_SET_ERR_MSG_MOD(extack, "Missing attribute: ROLE");
+//		NL_SET_ERR_MSG_MOD(extack, "Missing attribute: ROLE");
 		return -EINVAL;
 	}
 
@@ -128,22 +126,21 @@ br_mrp_ring_state_policy[IFLA_BRIDGE_MRP_RING_STATE_MAX + 1] = {
 	[IFLA_BRIDGE_MRP_RING_STATE_STATE]	= { .type = NLA_U32 },
 };
 
-static int br_mrp_ring_state_parse(struct net_bridge *br, struct nlattr *attr,
-				   struct netlink_ext_ack *extack)
+static int br_mrp_ring_state_parse(struct net_bridge *br, struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_RING_STATE_MAX + 1];
 	struct br_mrp_ring_state state;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_RING_STATE_MAX, attr,
-			       br_mrp_ring_state_policy, extack);
+			       br_mrp_ring_state_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_RING_STATE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_RING_STATE_STATE]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or STATE");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or STATE");
 		return -EINVAL;
 	}
 
@@ -162,22 +159,21 @@ br_mrp_ring_role_policy[IFLA_BRIDGE_MRP_RING_ROLE_MAX + 1] = {
 	[IFLA_BRIDGE_MRP_RING_ROLE_ROLE]	= { .type = NLA_U32 },
 };
 
-static int br_mrp_ring_role_parse(struct net_bridge *br, struct nlattr *attr,
-				  struct netlink_ext_ack *extack)
+static int br_mrp_ring_role_parse(struct net_bridge *br, struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_RING_ROLE_MAX + 1];
 	struct br_mrp_ring_role role;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_RING_ROLE_MAX, attr,
-			       br_mrp_ring_role_policy, extack);
+			       br_mrp_ring_role_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_RING_ROLE_RING_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_RING_ROLE_ROLE]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or ROLE");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or ROLE");
 		return -EINVAL;
 	}
 
@@ -199,15 +195,14 @@ br_mrp_start_test_policy[IFLA_BRIDGE_MRP_START_TEST_MAX + 1] = {
 	[IFLA_BRIDGE_MRP_START_TEST_MONITOR]	= { .type = NLA_U32 },
 };
 
-static int br_mrp_start_test_parse(struct net_bridge *br, struct nlattr *attr,
-				   struct netlink_ext_ack *extack)
+static int br_mrp_start_test_parse(struct net_bridge *br, struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_START_TEST_MAX + 1];
 	struct br_mrp_start_test test;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_START_TEST_MAX, attr,
-			       br_mrp_start_test_policy, extack);
+			       br_mrp_start_test_policy);
 	if (err)
 		return err;
 
@@ -215,8 +210,8 @@ static int br_mrp_start_test_parse(struct net_bridge *br, struct nlattr *attr,
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_INTERVAL] ||
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_MAX_MISS] ||
 	    !tb[IFLA_BRIDGE_MRP_START_TEST_PERIOD]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
 		return -EINVAL;
 	}
 
@@ -259,44 +254,39 @@ int br_mrp_parse(struct net_bridge *br, struct net_bridge_port *p,
 
 	if (tb[IFLA_BRIDGE_MRP_INSTANCE]) {
 		err = br_mrp_instance_parse(br, tb[IFLA_BRIDGE_MRP_INSTANCE],
-					    cmd, extack);
+					    cmd);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_PORT_STATE]) {
-		err = br_mrp_port_state_parse(p, tb[IFLA_BRIDGE_MRP_PORT_STATE],
-					      extack);
+		err = br_mrp_port_state_parse(p, tb[IFLA_BRIDGE_MRP_PORT_STATE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_PORT_ROLE]) {
-		err = br_mrp_port_role_parse(p, tb[IFLA_BRIDGE_MRP_PORT_ROLE],
-					     extack);
+		err = br_mrp_port_role_parse(p, tb[IFLA_BRIDGE_MRP_PORT_ROLE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_RING_STATE]) {
 		err = br_mrp_ring_state_parse(br,
-					      tb[IFLA_BRIDGE_MRP_RING_STATE],
-					      extack);
+					      tb[IFLA_BRIDGE_MRP_RING_STATE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_RING_ROLE]) {
-		err = br_mrp_ring_role_parse(br, tb[IFLA_BRIDGE_MRP_RING_ROLE],
-					     extack);
+		err = br_mrp_ring_role_parse(br, tb[IFLA_BRIDGE_MRP_RING_ROLE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_START_TEST]) {
 		err = br_mrp_start_test_parse(br,
-					      tb[IFLA_BRIDGE_MRP_START_TEST],
-					      extack);
+					      tb[IFLA_BRIDGE_MRP_START_TEST]);
 		if (err)
 			return err;
 	}
@@ -320,7 +310,7 @@ int br_mrp_port_open(struct net_device *dev, u8 loc)
 	else
 		p->flags &= ~BR_MRP_LOST_CONT;
 
-	br_ifinfo_notify(RTM_NEWLINK, NULL, p);
+	br_ifinfo_notify(RTM_NEWLINK, p);
 
 out:
 	return err;

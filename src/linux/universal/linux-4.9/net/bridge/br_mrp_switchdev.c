@@ -16,7 +16,7 @@ int br_mrp_switchdev_add(struct net_bridge *br, struct br_mrp *mrp)
 	};
 	int err;
 
-	err = switchdev_port_obj_add(br->dev, &mrp_obj.obj, NULL);
+	err = switchdev_port_obj_add(br->dev, &mrp_obj.obj);
 
 	if (err && err != -EOPNOTSUPP)
 		return err;
@@ -58,7 +58,7 @@ int br_mrp_switchdev_set_ring_role(struct net_bridge *br,
 	if (role == BR_MRP_RING_ROLE_DISABLED)
 		err = switchdev_port_obj_del(br->dev, &mrp_role.obj);
 	else
-		err = switchdev_port_obj_add(br->dev, &mrp_role.obj, NULL);
+		err = switchdev_port_obj_add(br->dev, &mrp_role.obj);
 
 	return err;
 }
@@ -82,7 +82,7 @@ int br_mrp_switchdev_send_ring_test(struct net_bridge *br,
 	if (interval == 0)
 		err = switchdev_port_obj_del(br->dev, &test.obj);
 	else
-		err = switchdev_port_obj_add(br->dev, &test.obj, NULL);
+		err = switchdev_port_obj_add(br->dev, &test.obj);
 
 	return err;
 }
@@ -99,7 +99,7 @@ int br_mrp_switchdev_set_ring_state(struct net_bridge *br,
 	};
 	int err;
 
-	err = switchdev_port_obj_add(br->dev, &mrp_state.obj, NULL);
+	err = switchdev_port_obj_add(br->dev, &mrp_state.obj);
 
 	if (err && err != -EOPNOTSUPP)
 		return err;
