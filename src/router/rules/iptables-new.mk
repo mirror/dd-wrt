@@ -16,17 +16,17 @@ iptables-new:
 
 iptables-new-install:
 ifeq ($(CONFIG_IPTABLES),y)
-	-$(MAKE) -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables
-	rm -rf $(INSTALLDIR)/iptables/usr/include
-	rm -rf $(INSTALLDIR)/iptables/usr/lib
-	rm -rf $(INSTALLDIR)/iptables/usr/share
+	-$(MAKE) -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables-new
+	rm -rf $(INSTALLDIR)/iptables-new/usr/include
+	rm -rf $(INSTALLDIR)/iptables-new/usr/lib
+	rm -rf $(INSTALLDIR)/iptables-new/usr/share
         ifeq ($(CONFIG_L7),y)
-		  install -d $(INSTALLDIR)/iptables/etc/l7-protocols
-		  cp -rp l7/* $(INSTALLDIR)/iptables/etc/l7-protocols/
-		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/CHANGELOG
-		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/LICENSE
-		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/README
-		  rm -f $(INSTALLDIR)/iptables/etc/l7-protocols/HOWTO
+		  install -d $(INSTALLDIR)/iptables-new/etc/l7-protocols
+		  cp -rp l7/* $(INSTALLDIR)/iptables-new/etc/l7-protocols/
+		  rm -f $(INSTALLDIR)/iptables-new/etc/l7-protocols/CHANGELOG
+		  rm -f $(INSTALLDIR)/iptables-new/etc/l7-protocols/LICENSE
+		  rm -f $(INSTALLDIR)/iptables-new/etc/l7-protocols/README
+		  rm -f $(INSTALLDIR)/iptables-new/etc/l7-protocols/HOWTO
         endif
 else
         # So that generic rule does not take precedence
