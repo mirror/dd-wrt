@@ -397,7 +397,7 @@ static char *get_modprobe(void)
 
 int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 {
-#if 0
+#if 1
 	char *buf = NULL;
 	char *argv[4];
 	int status;
@@ -424,7 +424,7 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 
 	if (posix_spawn(&pid, argv[0], NULL, NULL, argv, NULL)) {
 		free(buf);
-		return -1;
+		return 0;
 	} else {
 		waitpid(pid, &status, 0);
 	}
@@ -432,7 +432,6 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	free(buf);
 	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
 		return 0;
-	return -1;
 #endif
 	return 0;
 }
