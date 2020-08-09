@@ -54,7 +54,7 @@ struct tcphdr {
 	__be16	window;
 	__sum16	check;
 	__be16	urg_ptr;
-} MIPS_ENABLED(__packed __attribute__((aligned(2))));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 /*
  *	The union cast uses a gcc extension to avoid aliasing problems
