@@ -102,7 +102,7 @@ struct iphdr {
 	__be32	saddr;
 	__be32	daddr;
 	/*The options start here. */
-} MIPS_ENABLED(__packed __attribute__((aligned(2))));
+} MIPS_ENABLED(__attribute__((packed, aligned(2))));
 
 
 struct ip_auth_hdr {
