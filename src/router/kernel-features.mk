@@ -98,6 +98,9 @@ define kernelfeatures
 	if [ "$(CONFIG_IPETH)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_IPHETH is not set/CONFIG_USB_IPHETH=m/g' $(LINUXDIR)/.config; \
 	fi
+	if [ "$(CONFIG_MRP)" = "y" ]; then \
+		sed -i 's/\# CONFIG_BRIDGE_MRP is not set/CONFIG_BRIDGE_MRP=y/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_OPENVPN)" = "y" ]; then \
 		sed -i 's/\# CONFIG_TUN is not set/CONFIG_TUN=m/g' $(LINUXDIR)/.config; \
 	fi
