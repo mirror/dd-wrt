@@ -1420,7 +1420,7 @@ install-exec-hook:
 	for i in ${v4_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${v6_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${x_sbin_links}; do ${LN_S} -f xtables-nft-multi "${DESTDIR}${sbindir}/$$i"; done;
-	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
+#	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

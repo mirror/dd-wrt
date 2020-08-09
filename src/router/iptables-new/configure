@@ -12515,7 +12515,7 @@ fi
 if test "${with_xt_lock_name+set}" = set; then :
   withval=$with_xt_lock_name; xt_lock_name="$withval"
 else
-  xt_lock_name="/run/xtables.lock"
+  xt_lock_name="/var/run/xtables.lock"
 fi
 
 

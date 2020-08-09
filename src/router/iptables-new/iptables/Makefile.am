@@ -109,4 +109,4 @@ install-exec-hook:
 	for i in ${v4_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${v6_sbin_links}; do ${LN_S} -f xtables-legacy-multi "${DESTDIR}${sbindir}/$$i"; done;
 	for i in ${x_sbin_links}; do ${LN_S} -f xtables-nft-multi "${DESTDIR}${sbindir}/$$i"; done;
-	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
+#	${LN_S} -f iptables-apply "${DESTDIR}${sbindir}/ip6tables-apply"
