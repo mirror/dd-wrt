@@ -32,10 +32,11 @@ obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_MOXA) += moxa
 ifeq ($(CONFIG_IPV6),y)
 obj-$(CONFIG_IPTABLES) += iptables-new
+obj-$(CONFIG_LIBIPT) += iptables-new
 else
 obj-$(CONFIG_IPTABLES) += iptables
-endif
 obj-$(CONFIG_LIBIPT) += iptables
+endif
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap
 obj-$(CONFIG_WIVIZ) += wiviz2
