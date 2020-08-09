@@ -71,7 +71,7 @@ AC_ARG_ENABLE([connlabel],
 AC_ARG_WITH([xt-lock-name], AS_HELP_STRING([--with-xt-lock-name=PATH],
 	[Path to the xtables lock [[/run/xtables.lock]]]),
 	[xt_lock_name="$withval"],
-	[xt_lock_name="/run/xtables.lock"])
+	[xt_lock_name="/var/run/xtables.lock"])
 
 AC_MSG_CHECKING([whether $LD knows -Wl,--no-undefined])
 saved_LDFLAGS="$LDFLAGS";
