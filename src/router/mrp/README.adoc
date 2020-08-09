@@ -1,0 +1,103 @@
+# Media Redundancy Protocol(MRP)
+
+This application is used to configure the kernel via netlink interface to
+offload to HW the transmition of MRP_Test frames and the detection when the ring
+becomes open or closed.
+
+## MRP
+
+This is the first proposal of implementing a subset of the standard. It supports
+only 3 roles of an MRP node. It supports Media Redundancy Manager(MRM), Media
+Redundancy Client(MRC) and Media Redundancy Auto-Manager(MRA) In a MRP ring,
+each node needs to support MRP and in a ring can be only one MRM and multiple
+MRC. It is possible to have multiple instances of MRP on a single node. But a
+port can be part of only one MRP instance.
+
+The MRM is responsible for detecting when there is a loop in the ring. It is
+sending the frame MRP_Test to detect the loops. It would send MRP_Test on both
+ports in the ring and if the frame is received at the other end, then the ring
+is closed. Meaning that there is a loop. In this case it sets the port state to
+BLOCKED, not allowing traffic to pass through except MRP frames. In case it
+stops receiving MRP_Test frames from itself then the MRM will detect that the
+ring is open, therefor it would notify the other nodes of this change and will
+set the state of the port to be FORWARDING.
+
+The MRC is responsible for forwarding MRP_Test frames between the ring ports
+(and not to flood on other ports) and to listen when there is a change in the
+network to clear the FDB.
+
+## Depedencies
+
+It depens on the following libs Linux 5.8, 'libnl', 'libev' and 'libmnl'
+
+## Build
+
+```bash
+mkdir build
+cd build
+cmake ..
+make -j12
+```
+
+## Usage
+
+First the server needs to be start. Using the command
+
+```bash
+mrp_server &
+```
+
+If the kernel doesn't support MRP, then the server will print an error message
+and will exit. It is required for the kernel to be compiled with the config
+CONFIG_BRIDGE_MRP.
+
+Before configuring the mrp instance it is required to create a bridge and add at
+least 2 ports to the bridge.
+
+```bash
+ip link set dev eth0 up
+ip link set dev eth1 up
+ip link set dev eth2 up
+ip link set dev eth3 up
+ip link add name br0 type bridge
+ip link set dev eth0 master br0
+ip link set dev eth1 master br0
+ip link set dev eth2 master br0
+ip link set dev eth3 master br0
+ip link set dev br0 up
+```
+Now that the bridge is created, it is possible to add an MRP instance to the
+bridge. The client will communicate with the server and the server will notify
+the kernel via netlink interface.
+
+```bash
+mrp addmrp bridge br0 ring_nr 1 pport eth0 sport eth1 ring_role mrm
+```
+
+It is possible to create multiple MRP instances on a bridge but, a port can't be
+in multiple MRP instances.
+
+```bash
+mrp addmrp bridge br0 ring_nr 2 pport eth2 sport eth3 ring_role mrm
+```
+To see the current status of the MRP instances:
+
+```bash
+mrp getmrp
+bridge: br0 ring_nr: 1 pport: eth0 sport: eth1 ring_role: MRM ring_state: CHK_RO
+bridge: br0 ring_nr: 2 pport: eth2 sport: eth3 ring_role: MRM ring_state: CHK_RC
+```
+
+To delete one of the instances is required to pass the bridge and the ring
+instance number:
+```bash
+mrp delmrp bridge br0 ring_nr 1
+bridge: br0 ring_nr: 2 pport: eth2 sport: eth3 ring_role: MRM ring_state: CHK_RC
+```
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to
+discuss what you would like to change.
+
+## License
+[GPLv2](https://choosealicense.com/licenses/gpl-2.0/)
