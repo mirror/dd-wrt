@@ -26,8 +26,7 @@ static struct br_mrp *br_mrp_find_id(struct net_bridge *br, u32 ring_id)
 	struct br_mrp *res = NULL;
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		if (mrp->ring_id == ring_id) {
 			res = mrp;
 			break;
@@ -41,8 +40,7 @@ static bool br_mrp_unique_ifindex(struct net_bridge *br, u32 ifindex)
 {
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		struct net_bridge_port *p;
 
 		p = rtnl_dereference(mrp->p_port);
@@ -63,8 +61,7 @@ static struct br_mrp *br_mrp_find_port(struct net_bridge *br,
 	struct br_mrp *res = NULL;
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		if (rcu_access_pointer(mrp->p_port) == p ||
 		    rcu_access_pointer(mrp->s_port) == p) {
 			res = mrp;

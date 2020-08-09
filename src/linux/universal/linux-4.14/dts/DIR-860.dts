@@ -1,32 +1,32 @@
 /dts-v1/;
 
-/include/ "mt7621.dtsi"
+#include "mt7621.dtsi"
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/input.h>
 
 / {
-	compatible = "ralink,mt7621-eval-board", "ralink,mt7621-soc";
-	model = "Dlink DIR860L B1";
+	compatible = "dlink,dir-860l-b1", "mediatek,mt7621-soc";
+	model = "D-Link DIR-860L B1";
 
-	memory@0 {
-		reg = <0x0 0x8000000>;
-	};
-	
 	chosen {
 		bootargs = "console=ttyS0,57600";
 	};
+};
 
-	palmbus@1E000000 {
+&spi0 {
+	status = "okay";
 
-		spi@b00 {
-			status = "okay";
+	m25p80@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
 
-			m25p80@0 {
-				#address-cells = <1>;
-				#size-cells = <1>;
-				compatible = "mx25l12805d";
-				reg = <0 0>;
-				linux,modalias = "m25p80";
-				spi-max-frequency = <10000000>;
 
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
 				partition@0 {
 					label = "u-boot";
 					reg = <0x0 0x30000>;
@@ -43,6 +43,7 @@
 				};
 
 				partition@50000 {
+					compatible = "seama";
 					label = "linux";
 					reg = <0x50000 0xfa0000>;
 				};
@@ -51,21 +52,34 @@
 					label = "nvram";
 					reg = <0xff0000 0x10000>;
 				};
-			};
 		};
-	};
 
-	pinctrl {
-		state_default: pinctrl0 {
-			gpio {
-				ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
-				ralink,function = "gpio";
-			};
-		};
 	};
+};
 
-	xhci@1E1C0000 {
-		status = "okay";
+&pcie {
+	status = "okay";
+};
+
+&pcie0 {
+	wifi0: mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0x2000>;
+		ieee80211-freq-limit = <5000000 6000000>;
 	};
+};
 
+&pcie1 {
+	wifi1: mt76@0,0 {
+		reg = <0x0000 0 0 0 0>;
+		mediatek,mtd-eeprom = <&factory 0>;
+		ieee80211-freq-limit = <2400000 2500000>;
+	};
+};
+
+&state_default {
+	gpio {
+		ralink,group = "i2c", "uart2", "uart3", "rgmii2", "sdhci";
+		ralink,function = "gpio";
+	};
 };
