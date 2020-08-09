@@ -43,7 +43,6 @@
 				label = "factory";
 				reg = <0x40000 0x20000>;
 			};
-
 			partition@60000 {
 				compatible = "denx,uimage";
 				label = "linux";
@@ -58,6 +57,7 @@
 				label = "fullflash";
 				reg = <0x000000 0x1000000>;
 			};
+
 		};
 	};
 };
