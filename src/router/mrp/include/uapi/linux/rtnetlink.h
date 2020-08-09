@@ -8,6 +8,7 @@
 #include <linux/if_addr.h>
 #include <linux/neighbour.h>
 
+
 /* rtnetlink families. Values up to 127 are reserved for real address
  * families, values above 128 may be used arbitrarily.
  */
@@ -412,6 +413,7 @@ struct rtnexthop {
 #define RTNH_LENGTH(len) (RTNH_ALIGN(sizeof(struct rtnexthop)) + (len))
 #define RTNH_SPACE(len)	RTNH_ALIGN(RTNH_LENGTH(len))
 #define RTNH_DATA(rtnh)   ((struct rtattr*)(((char*)(rtnh)) + RTNH_LENGTH(0)))
+typedef unsigned short __kernel_sa_family_t;
 
 /* RTA_VIA */
 struct rtvia {
