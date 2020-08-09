@@ -361,6 +361,7 @@ obj-$(CONFIG_APFS) += apfs apfsprogs
 obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre openssl zlib nginx
 obj-$(CONFIG_X86) += yukon bootconfig
+obj-$(CONFIG_MRP) += mrp
 
 obj-y+=configs
 
