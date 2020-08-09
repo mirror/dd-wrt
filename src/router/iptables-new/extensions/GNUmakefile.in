@@ -135,19 +135,19 @@ lib%.o: ${srcdir}/lib%.c
 	${AM_VERBOSE_CC} ${CC} ${AM_CPPFLAGS} ${AM_DEPFLAGS} ${AM_CFLAGS} -DNO_SHARED_LIBS=1 -D_INIT=lib$*_init ${CFLAGS} -o $@ -c $<;
 
 libext.a: initext.o ${libext_objs}
-	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
 
 libext_ebt.a: initextb.o ${libext_ebt_objs}
-	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
 
 libext_arpt.a: initexta.o ${libext_arpt_objs}
-	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
 
 libext4.a: initext4.o ${libext4_objs}
-	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
 
 libext6.a: initext6.o ${libext6_objs}
-	${AM_VERBOSE_AR} ${AR} crs $@ $^;
+	${AM_VERBOSE_AR} ${AR} crs $(LTOPLUGIN) $@ $^;
 
 initext_func  := $(addprefix xt_,${pfx_build_mod})
 initextb_func := $(addprefix ebt_,${pfb_build_mod})
