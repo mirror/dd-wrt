@@ -401,6 +401,7 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	char *buf = NULL;
 	char *argv[4];
 	int status;
+	int sig;
 	pid_t pid;
 
 	/* If they don't explicitly set it, read out of kernel */
@@ -422,16 +423,23 @@ int xtables_insmod(const char *modname, const char *modprobe, bool quiet)
 	 */
 	fflush(stdout);
 
-	if (posix_spawn(&pid, argv[0], NULL, NULL, argv, NULL)) {
-		free(buf);
-		return 0;
-	} else {
+	switch (pid = fork()) {
+	case -1:		/* error */
+		perror("fork");
+		return errno;
+	case 0:		/* child */
+		for (sig = 0; sig < (_NSIG - 1); sig++)
+			signal(sig, SIG_DFL);
+		execvp(argv[0], argv);
+		perror(argv[0]);
+		exit(errno);
+	default:		/* parent */
 		waitpid(pid, &status, 0);
+		if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
+			return 0;
 	}
 
 	free(buf);
-	if (WIFEXITED(status) && WEXITSTATUS(status) == 0)
-		return 0;
 #endif
 	return 0;
 }
