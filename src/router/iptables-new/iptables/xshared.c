@@ -410,7 +410,7 @@ bool tokenize_rule_counters(char **bufferp, char **pcntp, char **bcntp, int line
 	return true;
 }
 
-inline bool xs_has_arg(int argc, char *argv[])
+bool xs_has_arg(int argc, char *argv[])
 {
 	return optind < argc &&
 	       argv[optind][0] != '-' &&
