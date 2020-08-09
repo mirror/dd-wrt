@@ -1879,7 +1879,7 @@ TC_APPEND_ENTRY(const IPT_CHAINLABEL chain,
 	return 1;
 }
 
-static inline int
+static int
 match_different(const STRUCT_ENTRY_MATCH *a,
 		const unsigned char *a_elems,
 		const unsigned char *b_elems,
