@@ -894,7 +894,7 @@ static int br_changelink(struct net_device *brdev, struct nlattr *tb[],
 	if (data[IFLA_BR_STP_STATE]) {
 		u32 stp_enabled = nla_get_u32(data[IFLA_BR_STP_STATE]);
 
-		err = br_stp_set_enabled(br, stp_enabled, extack);
+		err = br_stp_set_enabled(br, stp_enabled);
 		if (err)
 			return err;
 	}

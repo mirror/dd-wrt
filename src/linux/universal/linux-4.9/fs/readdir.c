@@ -50,10 +50,17 @@ int iterate_dir(struct file *file, struct dir_context *ctx)
 			res = file->f_op->iterate_shared(file, ctx);
 		else
 			res = file->f_op->iterate(file, ctx);
+//		if (file->f_path.dentry)
+//		printk(KERN_INFO "file %s ret: %d\n",file->f_path.dentry->d_iname, res);
+//		else
+//		printk(KERN_INFO "%s: %d\n",__func__, res);
 		file->f_pos = ctx->pos;
 		fsnotify_access(file);
 		file_accessed(file);
-	}
+	} 
+//	else {
+//	    printk(KERN_INFO "IS_DEADDIR returns true\n");
+//	}
 	if (shared)
 		inode_unlock_shared(inode);
 	else
