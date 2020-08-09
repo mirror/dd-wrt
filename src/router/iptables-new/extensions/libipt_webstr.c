@@ -39,7 +39,7 @@ help(void)
 "--webstr [!] host            Match a http string in a packet\n"
 "--webstr [!] url             Match a http string in a packet\n"
 "--webstr [!] content         Match a http string in a packet\n",
-IPTABLES_VERSION);
+XTABLES_VERSION);
 
 	fputc('\n', stdout);
 }

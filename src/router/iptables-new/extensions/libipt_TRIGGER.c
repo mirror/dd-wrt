@@ -30,7 +30,7 @@ help(void)
 "				Trigger destination port range\n"
 " --trigger-relate port[-port]\n"
 "				Port range to map related destination port range to.\n\n",
-IPTABLES_VERSION);
+XTABLES_VERSION);
 }
 
 static struct option opts[] = {
