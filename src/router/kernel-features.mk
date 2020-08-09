@@ -131,10 +131,14 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_IP6_NF_FILTER is not set/CONFIG_IP6_NF_FILTER=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP6_NF_TARGET_REJECT is not set/CONFIG_IP6_NF_TARGET_REJECT=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP6_NF_MANGLE is not set/CONFIG_IP6_NF_MANGLE=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_NAT is not set/CONFIG_IP6_NF_NAT=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_NF_NAT_MASQUERADE_IPV6 is not set/CONFIG_NF_NAT_MASQUERADE_IPV6=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_TARGET_MASQUERADE is not set/CONFIG_IP6_NF_TARGET_MASQUERADE=m/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP6_NF_TARGET_NPT is not set/CONFIG_IP6_NF_TARGET_NPT=m/g' $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_REJECT_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_LOG_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_NF_NAT_IPV6=m" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_NF_NAT_MASQUERADE_IPV6 is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_NF_NAT_MASQUERADE_IPV6=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_IPTABLES=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MATCH_AH=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_MATCH_EUI64 is not set" >> $(LINUXDIR)/.config; \
@@ -152,9 +156,11 @@ define kernelfeatures
 		echo "# CONFIG_IP6_NF_TARGET_SYNPROXY is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_TARGET_IMQ is not set" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_TARGET_LOG is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_TARGET_MASQUERADE=m" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_TARGET_NPT=m" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP6_NF_MANGLE=m" >> $(LINUXDIR)/.config; \
 		echo "# CONFIG_IP6_NF_RAW is not set" >> $(LINUXDIR)/.config; \
-		echo "# CONFIG_IP6_NF_NAT is not set" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP6_NF_NAT=m" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_JFFS2)" != "y" ]; then \
 		sed -i 's/\CONFIG_JFFS2=m/# CONFIG_JFFS2 is not set/g' $(LINUXDIR)/.config; \
