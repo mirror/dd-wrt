@@ -236,7 +236,7 @@ static int br_mrp_start_test_parse(struct net_bridge *br, struct nlattr *attr,
 }
 
 int br_mrp_parse(struct net_bridge *br, struct net_bridge_port *p,
-		 struct nlattr *attr, int cmd)
+		 struct nlattr *attr, int cmd, struct netlink_ext_ack *extack)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_MAX + 1];
 	int err;
@@ -248,12 +248,12 @@ int br_mrp_parse(struct net_bridge *br, struct net_bridge_port *p,
 		br = p->br;
 
 	if (br->stp_enabled != BR_NO_STP) {
-//		NL_SET_ERR_MSG_MOD("MRP can't be enabled if STP is already enabled\n");
+		NL_SET_ERR_MSG_MOD(extack, "MRP can't be enabled if STP is already enabled\n");
 		return -EINVAL;
 	}
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_MAX, attr,
-			       br_mrp_policy);
+			       br_mrp_policy, extack);
 	if (err)
 		return err;
 
@@ -320,7 +320,7 @@ int br_mrp_port_open(struct net_device *dev, u8 loc)
 	else
 		p->flags &= ~BR_MRP_LOST_CONT;
 
-	br_ifinfo_notify(RTM_NEWLINK, NULL, p);
+	br_ifinfo_notify(RTM_NEWLINK, p);
 
 out:
 	return err;
