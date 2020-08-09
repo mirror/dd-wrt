@@ -37,7 +37,7 @@ help(void)
 "				Related destination port range\n"
 " --related-to port[-port]\n"
 "				Port range to map related destination port range to.\n\n",
-IPTABLES_VERSION);
+XTABLES_VERSION);
 }
 
 static struct option opts[] = {
