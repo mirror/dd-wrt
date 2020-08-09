@@ -526,6 +526,11 @@ static int br_afspec(struct net_bridge *br,
 	int rem;
 
 	nla_for_each_nested(attr, af_spec, rem) {
+		if (nla_type(attr) == IFLA_BRIDGE_MRP) {
+			err = br_mrp_parse(br, p, attr, cmd);
+			if (err)
+				return err;
+		}
 		if (nla_type(attr) != IFLA_BRIDGE_VLAN_INFO)
 			continue;
 		if (nla_len(attr) != sizeof(struct bridge_vlan_info))
@@ -889,7 +894,9 @@ static int br_changelink(struct net_device *brdev, struct nlattr *tb[],
 	if (data[IFLA_BR_STP_STATE]) {
 		u32 stp_enabled = nla_get_u32(data[IFLA_BR_STP_STATE]);
 
-		br_stp_set_enabled(br, stp_enabled);
+		err = br_stp_set_enabled(br, stp_enabled, extack);
+		if (err)
+			return err;
 	}
 
 	if (data[IFLA_BR_PRIORITY]) {
