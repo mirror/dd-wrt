@@ -35,3 +35,14 @@ endif
 
 iptables-distclean:
 	-$(MAKE) -C iptables-new distclean
+
+
+
+iptables-ipt-clean:
+	-$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1 clean
+
+iptables-ipt:
+	$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) DO_IPV6=1
+
+iptables-ipt-install:
+	@true
