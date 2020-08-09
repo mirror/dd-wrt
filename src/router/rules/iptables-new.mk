@@ -1,4 +1,4 @@
-iptables-configure:
+iptables-new-configure:
 	cd iptables-new && ./autogen.sh
 	cd iptables-new && ./configure --host=$(ARCH)-linux-elf --prefix=/usr --libdir=/usr/lib --with-kernel=$(LINUXDIR) --disable-nftables \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections -DNEED_PRINTF" \
@@ -6,15 +6,15 @@ iptables-configure:
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-iptables-clean:
+iptables-new-clean:
 	-$(MAKE) -C iptables-new clean
 
-iptables:
+iptables-new:
 	-$(MAKE) -C iptables-new
 
 
 
-iptables-install:
+iptables-new-install:
 ifeq ($(CONFIG_IPTABLES),y)
 	-$(MAKE) -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables
 	rm -rf $(INSTALLDIR)/iptables/usr/include
@@ -34,4 +34,4 @@ else
 endif
 
 iptables-distclean:
-	-$(MAKE) -C iptables KERNEL_DIR=$(LINUXDIR) distclean
+	-$(MAKE) -C iptables-new distclean

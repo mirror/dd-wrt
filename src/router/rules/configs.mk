@@ -30,7 +30,11 @@ obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_DNSCRYPT) += libsodium dnscrypt
 obj-$(CONFIG_ETHTOOL) += ethtool
 obj-$(CONFIG_MOXA) += moxa
+ifeq ($(CONFIG_IPV6),y)
+obj-$(CONFIG_IPTABLES) += iptables-new
+else
 obj-$(CONFIG_IPTABLES) += iptables
+endif
 obj-$(CONFIG_LIBIPT) += iptables
 obj-$(CONFIG_IPSEC) += ipsec
 #obj-$(CONFIG_LIBPCAP) += libpcap

@@ -110,6 +110,7 @@ include rules/busybox.mk
 include rules/dnsmasq.mk
 include rules/nettle.mk
 include rules/dnscrypt.mk
+include rules/iptables-new.mk
 include rules/iptables.mk
 include rules/netconf.mk
 include rules/pptpd.mk
