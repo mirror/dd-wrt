@@ -1238,7 +1238,6 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc stop_running
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 	cd $(INSTALLDIR)/sbin && ln -sf rc get_nfmark
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /usr/sbin/iptables iptables-restore
 ifeq ($(CONFIG_PPTPD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc poptop
 endif
