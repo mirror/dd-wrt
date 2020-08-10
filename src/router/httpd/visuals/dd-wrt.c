@@ -718,7 +718,7 @@ void ej_show_userlist(webs_t wp, int argc, char_t ** argv)
 		sep = strsep(&userlist, " ");
 		snprintf(password, 31, "fon_user%d_password", i);
 		websWrite(wp, "<td>\n");
-		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"%s\" value=\"blahblahblah\" size=\"25\" maxlength=\"63\" />\n", password);
+		websWrite(wp, "<input type=\"password\" autocomplete=\"new-password\" name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n", password, userlist);
 		websWrite(wp, "</td></tr>\n");
 	}
 	free(o);
