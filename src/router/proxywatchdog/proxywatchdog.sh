@@ -15,7 +15,7 @@ do
       if [ -z "$(nvram get transparent_proxy)" ]; then
         /usr/sbin/iptables -t nat -A PREROUTING -i br0 -s $ROUTER_IP/$ROUTER_NETMASK \
           -d $ROUTER_IP/$ROUTER_NETMASK -p tcp --dport 80 -j ACCEPT
-        /usr/sbin/iptables -t nat -A PREROUTING -i br0 -s ! $PROXY_SERVER -p tcp --dport 80 \
+        /usr/sbin/iptables -t nat -A PREROUTING -i br0 ! -s $PROXY_SERVER -p tcp --dport 80 \
           -j DNAT --to $PROXY_SERVER:$PROXY_PORT
         /usr/sbin/iptables -t nat -A POSTROUTING -o br0 -s $ROUTER_IP/$ROUTER_NETMASK -p tcp -d \
           $PROXY_SERVER -j SNAT --to $ROUTER_IP
@@ -29,7 +29,7 @@ do
       if [ "$(/usr/sbin/nvram get transparent_proxy)" = "1" ]; then
         /usr/sbin/iptables -t nat -D PREROUTING -i br0 -s $ROUTER_IP/$ROUTER_NETMASK \
           -d $ROUTER_IP/$ROUTER_NETMASK -p tcp --dport 80 -j ACCEPT
-        /usr/sbin/iptables -t nat -D PREROUTING -i br0 -s ! $PROXY_SERVER -p tcp --dport 80 \
+        /usr/sbin/iptables -t nat -D PREROUTING -i br0 ! -s $PROXY_SERVER -p tcp --dport 80 \
           -j DNAT --to $PROXY_SERVER:$PROXY_PORT
         /usr/sbin/iptables -t nat -D POSTROUTING -o br0 -s $ROUTER_IP/$ROUTER_NETMASK -p tcp -d \
           $PROXY_SERVER -j SNAT --to $ROUTER_IP
