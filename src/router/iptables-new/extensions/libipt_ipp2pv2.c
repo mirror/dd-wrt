@@ -1,89 +1,71 @@
-
+/*
+ *	"ipp2p" match extension for iptables
+ *	Eicke Friedrich/Klaus Degner <ipp2p@ipp2p.org>, 2005 - 2006
+ *	Jan Engelhardt <jengelh [at] medozas de>, 2008 - 2009
+ *
+ *	This program is free software; you can redistribute it and/or
+ *	modify it under the terms of the GNU General Public License; either
+ *	version 2 of the License, or any later version, as published by the
+ *	Free Software Foundation.
+ */
+#include <stdbool.h>
 #include <stdio.h>
 #include <netdb.h>
 #include <string.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <ctype.h>
+#include <iptables.h>
+#include "xt_ipp2p.h"
 
-#include <xtables.h>
+#define param_act(t, s, f) xtables_param_act((t), "ipp2p", (s), (f))
 
-#include "ipt_ipp2p.h"
-
-static void
-help(void)
+static void ipp2p_mt_help(void)
 {
-    printf(
-    "IPP2P v%s options:\n"
-    " --ipp2p	Grab all known p2p packets\n"
-    " --edk		[TCP&UDP]	All known eDonkey/eMule/Overnet packets\n"
-    " --dc		[TCP] 		All known Direct Connect packets\n"
-    " --kazaa	[TCP&UDP] 	All known KaZaA packets\n"
-    " --gnu		[TCP&UDP]	All known Gnutella packets\n"
-    " --bit		[TCP&UDP]	All known BitTorrent packets\n"
-    " --apple	[TCP] 		All known AppleJuice packets\n"
-    " --winmx	[TCP] 		All known WinMX\n"
-    " --soul		[TCP] 		All known SoulSeek\n"
-    " --ares		[TCP] 		All known Ares\n\n"
-    " EXPERIMENTAL protocols (please send feedback to: ipp2p@ipp2p.org) :\n"
-    " --mute		[TCP]		All known Mute packets\n"
-    " --waste	[TCP]		All known Waste packets\n"
-    " --xdcc		[TCP]		All known XDCC packets (only xdcc login)\n\n"
-    " DEBUG SUPPPORT, use only if you know why\n"
-    " --debug		Generate kernel debug output, THIS WILL SLOW DOWN THE FILTER\n"
-    "\nNote that the follwing options will have the same meaning:\n"
-    " '--ipp2p' is equal to '--edk --dc --kazaa --gnu --bit --apple --winmx --soul --ares'\n"
-    "\nIPP2P was intended for TCP only. Due to increasing usage of UDP we needed to change this.\n"
-    "You can now use -p udp to search UDP packets only or without -p switch to search UDP and TCP packets.\n"
-    "\nSee README included with this package for more details or visit http://www.ipp2p.org\n"
-    "\nExamples:\n"
-    " iptables -A FORWARD -m ipp2p --ipp2p -j MARK --set-mark 0x01\n"
-    " iptables -A FORWARD -p udp -m ipp2p --kazaa --bit -j DROP\n"
-    " iptables -A FORWARD -p tcp -m ipp2p --edk --soul -j DROP\n\n"
-    , IPP2P_VERSION);
+	printf(
+	"ipp2p v%s match options:\n"
+	"  --edk    [tcp,udp]  All known eDonkey/eMule/Overnet packets\n"
+	"  --dc     [tcp]      All known Direct Connect packets\n"
+	"  --kazaa  [tcp,udp]  All known KaZaA packets\n"
+	"  --gnu    [tcp,udp]  All known Gnutella packets\n"
+	"  --bit    [tcp,udp]  All known BitTorrent packets\n"
+	"  --apple  [tcp]      All known AppleJuice packets\n"
+	"  --winmx  [tcp]      All known WinMX\n"
+	"  --soul   [tcp]      All known SoulSeek\n"
+	"  --ares   [tcp]      All known Ares\n\n"
+	"EXPERIMENTAL protocols:\n"
+	"  --mute   [tcp]      All known Mute packets\n"
+	"  --waste  [tcp]      All known Waste packets\n"
+	"  --xdcc   [tcp]      All known XDCC packets (only xdcc login)\n\n"
+	, IPP2P_VERSION);
 }
-
-static struct option opts[] = {
-        { "ipp2p", 0, 0, '1' },
-        { "edk", 0, 0, '2' },	
-	{ "dc", 0, 0, '7' },
-	{ "gnu", 0, 0, '9' },
-	{ "kazaa", 0, 0, 'a' },
-	{ "bit", 0, 0, 'b' },
-	{ "apple", 0, 0, 'c' },	
-	{ "soul", 0, 0, 'd' },	
-	{ "winmx", 0, 0, 'e' },	
-	{ "ares", 0, 0, 'f' },
-	{ "mute", 0, 0, 'g' },
-	{ "waste", 0, 0, 'h' },
-	{ "xdcc", 0, 0, 'i' },
-	{ "debug", 0, 0, 'j' },
-        {0}
+#define SHORT_HAND_IPP2P 0x1
+static const struct option ipp2p_mt_opts[] = {
+	{.name = "ipp2p", .has_arg = false, .val = '1'},
+	{.name = "edk",   .has_arg = false, .val = '2'},
+	{.name = "dc",    .has_arg = false, .val = '7'},
+	{.name = "gnu",   .has_arg = false, .val = '9'},
+	{.name = "kazaa", .has_arg = false, .val = 'a'},
+	{.name = "bit",   .has_arg = false, .val = 'b'},
+	{.name = "apple", .has_arg = false, .val = 'c'},
+	{.name = "soul",  .has_arg = false, .val = 'd'},
+	{.name = "winmx", .has_arg = false, .val = 'e'},
+	{.name = "ares",  .has_arg = false, .val = 'f'},
+	{.name = "mute",  .has_arg = false, .val = 'g'},
+	{.name = "waste", .has_arg = false, .val = 'h'},
+	{.name = "xdcc",  .has_arg = false, .val = 'i'},
+	{.name = "debug", .has_arg = false, .val = 'j'},
+	{NULL},
 };
 
-	
-
-static void init(struct xt_entry_match *m)
-{
-    struct ipt_p2p_info *info = (struct ipt_p2p_info *)m->data;
-
-//    *nfcache |= NFC_UNKNOWN;
-
-    /*init the module with default values*/
-    info->cmd = 0;
-    info->debug = 0;
-
-}
-	
-
-static int parse(int c, char **argv, int invert, unsigned int *flags,
+static int ipp2p_mt_parse(int c, char **argv, int invert, unsigned int *flags,
 	     const void *entry, struct xt_entry_match **match)
 {
     struct ipt_p2p_info *info = (struct ipt_p2p_info *)(*match)->data;
     
     switch (c) {
 	case '1':		/*cmd: ipp2p*/
-	    if ((*flags & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P)
+	    if ((*flags & 1) == 1)
 		    xtables_error(PARAMETER_PROBLEM,
 				"ipp2p: `--ipp2p' may only be "
 				"specified once!");
@@ -96,8 +78,17 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
 				"ipp2p: `--ipp2p' may only be "
 				"specified alone!");
 	    if (invert) xtables_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
-	    *flags += SHORT_HAND_IPP2P;
+	    *flags = IPP2P_EDK;
+	    *flags += IPP2P_DC;
+	    *flags += IPP2P_GNU;
+	    *flags += IPP2P_KAZAA;
+	    *flags += IPP2P_BIT;
+	    *flags += IPP2P_APPLE;
+	    *flags += IPP2P_SOUL;
+	    *flags += IPP2P_WINMX;
+	    *flags += IPP2P_ARES;
 	    info->cmd = *flags;
+	    *flags = 1;
 	    break;
 	    
 	case '2':		/*cmd: edk*/
@@ -299,94 +290,74 @@ static int parse(int c, char **argv, int invert, unsigned int *flags,
     return 1;
 }
 
-
-static void
-final_check(unsigned int flags)
+static void ipp2p_mt_check(unsigned int flags)
 {
     if (!flags)
             xtables_error(PARAMETER_PROBLEM,
 	    "\nipp2p-parameter problem: for ipp2p usage type: iptables -m ipp2p --help\n");
 }
 
+static const char *const ipp2p_cmds[] = {
+	[IPP2N_EDK]        = "--edk",
+	[IPP2N_DATA_KAZAA] = "--kazaa-data",
+	[IPP2N_DATA_EDK]   = "--edk-data",
+	[IPP2N_DATA_DC]    = "--dc-data",
+	[IPP2N_DC]         = "--dc",
+	[IPP2N_DATA_GNU]   = "--gnu-data",
+	[IPP2N_GNU]        = "--gnu",
+	[IPP2N_KAZAA]      = "--kazaa",
+	[IPP2N_BIT]        = "--bit",
+	[IPP2N_APPLE]      = "--apple",
+	[IPP2N_SOUL]       = "--soul",
+	[IPP2N_WINMX]      = "--winmx",
+	[IPP2N_ARES]       = "--ares",
+	[IPP2N_MUTE]       = "--mute",
+	[IPP2N_WASTE]      = "--waste",
+	[IPP2N_XDCC]       = "--xdcc",
+};
 
+static void
+ipp2p_mt_print1(const struct ipt_ip *ip, const struct xt_entry_match *match,
+               int numeric)
+{
+	const struct ipt_p2p_info *info = (const void *)match->data;
+	unsigned int i;
 
-static void print(const void *ip, const struct xt_entry_match *match,
+	for (i = IPP2N_EDK; i <= IPP2N_XDCC; ++i)
+		if (info->cmd & (1 << i))
+			printf(" %s ", ipp2p_cmds[i]);
+
+	if (info->debug != 0)
+		printf(" --debug ");
+}
+
+static void ipp2p_mt_print(const void *ip, const struct xt_entry_match *match,
                        int numeric)
 {
-    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
-    
-    printf("ipp2p v%s", IPP2P_VERSION);
-    if ((info->cmd & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P) printf(" --ipp2p");
-//    if ((info->cmd & SHORT_HAND_DATA) == SHORT_HAND_DATA) printf(" --ipp2p-data");
-    if ((info->cmd & IPP2P_KAZAA) == IPP2P_KAZAA) printf(" --kazaa");
-//    if ((info->cmd & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA) printf(" --kazaa-data");
-//    if ((info->cmd & IPP2P_DATA_GNU) == IPP2P_DATA_GNU) printf(" --gnu-data");
-    if ((info->cmd & IPP2P_GNU) == IPP2P_GNU) printf(" --gnu");
-    if ((info->cmd & IPP2P_EDK) == IPP2P_EDK) printf(" --edk");
-//    if ((info->cmd & IPP2P_DATA_EDK) == IPP2P_DATA_EDK) printf(" --edk-data");
-//    if ((info->cmd & IPP2P_DATA_DC) == IPP2P_DATA_DC) printf(" --dc-data");
-    if ((info->cmd & IPP2P_DC) == IPP2P_DC) printf(" --dc");
-    if ((info->cmd & IPP2P_BIT) == IPP2P_BIT) printf(" --bit");
-    if ((info->cmd & IPP2P_APPLE) == IPP2P_APPLE) printf(" --apple");
-    if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf(" --soul");
-    if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf(" --winmx");
-    if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf(" --ares");
-    if ((info->cmd & IPP2P_MUTE) == IPP2P_MUTE) printf(" --mute");
-    if ((info->cmd & IPP2P_WASTE) == IPP2P_WASTE) printf(" --waste");
-    if ((info->cmd & IPP2P_XDCC) == IPP2P_XDCC) printf(" --xdcc");
-    if (info->debug != 0) printf(" --debug");
-    printf(" ");
+	printf(" ipp2p ");
+	ipp2p_mt_print1(ip, match, true);
 }
-			    						   
 
-
-static void save(const void *ip, const struct xt_entry_match *match)
+static void ipp2p_mt_save(const void *ip, const struct xt_entry_match *match)
 {
-    struct ipt_p2p_info *info = (struct ipt_p2p_info *)match->data;
-    
-    if ((info->cmd & SHORT_HAND_IPP2P) == SHORT_HAND_IPP2P) printf("--ipp2p ");
-//    if ((info->cmd & SHORT_HAND_DATA) == SHORT_HAND_DATA) printf("--ipp2p-data ");
-    if ((info->cmd & IPP2P_KAZAA) == IPP2P_KAZAA) printf("--kazaa ");
-//    if ((info->cmd & IPP2P_DATA_KAZAA) == IPP2P_DATA_KAZAA) printf("--kazaa-data ");
-//    if ((info->cmd & IPP2P_DATA_GNU) == IPP2P_DATA_GNU) printf("--gnu-data ");
-    if ((info->cmd & IPP2P_GNU) == IPP2P_GNU) printf("--gnu ");
-    if ((info->cmd & IPP2P_EDK) == IPP2P_EDK) printf("--edk ");
-//    if ((info->cmd & IPP2P_DATA_EDK) == IPP2P_DATA_EDK) printf("--edk-data ");
-//    if ((info->cmd & IPP2P_DATA_DC) == IPP2P_DATA_DC) printf("--dc-data ");
-    if ((info->cmd & IPP2P_DC) == IPP2P_DC) printf("--dc ");
-    if ((info->cmd & IPP2P_BIT) == IPP2P_BIT) printf("--bit ");
-    if ((info->cmd & IPP2P_APPLE) == IPP2P_APPLE) printf("--apple ");
-    if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf("--soul ");
-    if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf("--winmx ");
-    if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf("--ares ");
-    if ((info->cmd & IPP2P_MUTE) == IPP2P_MUTE) printf(" --mute");
-    if ((info->cmd & IPP2P_WASTE) == IPP2P_WASTE) printf(" --waste");
-    if ((info->cmd & IPP2P_XDCC) == IPP2P_XDCC) printf(" --xdcc");
-    if (info->debug != 0) printf("--debug ");
+	ipp2p_mt_print1(ip, match, true);
 }
 
-		
-
-
-static struct xtables_match ipp2p = { 
-    .next           = NULL,
-    .name           = "ipp2p",
-    .version        = XTABLES_VERSION,
-    .size           = XT_ALIGN(sizeof(struct ipt_p2p_info)),
-    .userspacesize  = XT_ALIGN(sizeof(struct ipt_p2p_info)),
-    //.help           = &help,
-    .init           = &init,
-    .parse          = &parse,
-    .final_check    = &final_check,
-    .print          = &print,
-    .save           = &save,
-    .extra_opts     = opts
+static struct xtables_match ipp2p_mt_reg = {
+	.version       = XTABLES_VERSION,
+	.name          = "ipp2p",
+	.revision      = 1,
+	.size          = XT_ALIGN(sizeof(struct ipt_p2p_info)),
+	.userspacesize = XT_ALIGN(sizeof(struct ipt_p2p_info)),
+//	.help          = ipp2p_mt_help,
+	.parse         = ipp2p_mt_parse,
+	.final_check   = ipp2p_mt_check,
+	.print         = ipp2p_mt_print,
+	.save          = ipp2p_mt_save,
+	.extra_opts    = ipp2p_mt_opts,
 };
-					    
-
 
 void _init(void)
 {
-    xtables_register_match(&ipp2p);
+    xtables_register_match(&ipp2p_mt_reg);
 }
-
