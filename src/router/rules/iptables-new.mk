@@ -10,13 +10,13 @@ iptables-new-clean:
 	-$(MAKE) -C iptables-new clean
 
 iptables-new:
-	-$(MAKE) -C iptables-new
+	$(MAKE) -C iptables-new
 
 
 
 iptables-new-install:
 ifeq ($(CONFIG_IPTABLES),y)
-	-$(MAKE) -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables-new
+	$(MAKE) -C iptables-new install DESTDIR=$(INSTALLDIR)/iptables-new
 	rm -rf $(INSTALLDIR)/iptables-new/usr/include
 	rm -rf $(INSTALLDIR)/iptables-new/usr/lib
 	rm -rf $(INSTALLDIR)/iptables-new/usr/share
