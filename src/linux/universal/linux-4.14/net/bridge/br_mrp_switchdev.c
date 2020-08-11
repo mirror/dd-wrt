@@ -124,7 +124,7 @@ int br_mrp_switchdev_set_in_role(struct net_bridge *br, struct br_mrp *mrp,
 	if (role == BR_MRP_IN_ROLE_DISABLED)
 		err = switchdev_port_obj_del(br->dev, &mrp_role.obj);
 	else
-		err = switchdev_port_obj_add(br->dev, &mrp_role.obj, NULL);
+		err = switchdev_port_obj_add(br->dev, &mrp_role.obj);
 
 	return err;
 }
@@ -140,7 +140,7 @@ int br_mrp_switchdev_set_in_state(struct net_bridge *br, struct br_mrp *mrp,
 	};
 	int err;
 
-	err = switchdev_port_obj_add(br->dev, &mrp_state.obj, NULL);
+	err = switchdev_port_obj_add(br->dev, &mrp_state.obj);
 
 	if (err && err != -EOPNOTSUPP)
 		return err;
@@ -164,7 +164,7 @@ int br_mrp_switchdev_send_in_test(struct net_bridge *br, struct br_mrp *mrp,
 	if (interval == 0)
 		err = switchdev_port_obj_del(br->dev, &test.obj);
 	else
-		err = switchdev_port_obj_add(br->dev, &test.obj, NULL);
+		err = switchdev_port_obj_add(br->dev, &test.obj);
 
 	return err;
 }
