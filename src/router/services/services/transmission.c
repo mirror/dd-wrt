@@ -114,8 +114,8 @@ static struct config_val config[] = {
 	{ "upload-limit", "100", 0, 0 },
 	{ "upload-limit-enabled", "0", 0, 0 },
 	{ "upload-slots-per-torrent", "14", 0, 0 },
-	{ "utp-enabled", "true", 0, 0 }
-	{ "watch-dir", "", 0, 0 }
+	{ "utp-enabled", "true", 0, 0 },
+	{ "watch-dir", "", 0, 0 },
 	{ "watch-dir-enabled", "false", 0, 0 }
 };
 
