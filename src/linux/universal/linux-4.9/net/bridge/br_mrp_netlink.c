@@ -322,7 +322,7 @@ static int br_mrp_start_in_test_parse(struct net_bridge *br,
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_START_IN_TEST_MAX, attr,
-			       br_mrp_start_in_test_policy, extack);
+			       br_mrp_start_in_test_policy);
 	if (err)
 		return err;
 
@@ -407,23 +407,20 @@ int br_mrp_parse(struct net_bridge *br, struct net_bridge_port *p,
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_IN_STATE]) {
-		err = br_mrp_in_state_parse(br, tb[IFLA_BRIDGE_MRP_IN_STATE],
-					    extack);
+		err = br_mrp_in_state_parse(br, tb[IFLA_BRIDGE_MRP_IN_STATE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_IN_ROLE]) {
-		err = br_mrp_in_role_parse(br, tb[IFLA_BRIDGE_MRP_IN_ROLE],
-					   extack);
+		err = br_mrp_in_role_parse(br, tb[IFLA_BRIDGE_MRP_IN_ROLE]);
 		if (err)
 			return err;
 	}
 
 	if (tb[IFLA_BRIDGE_MRP_START_IN_TEST]) {
 		err = br_mrp_start_in_test_parse(br,
-						 tb[IFLA_BRIDGE_MRP_START_IN_TEST],
-						 extack);
+						 tb[IFLA_BRIDGE_MRP_START_IN_TEST]);
 		if (err)
 			return err;
 	}
