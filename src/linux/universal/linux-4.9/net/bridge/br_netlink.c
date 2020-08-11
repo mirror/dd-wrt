@@ -437,7 +437,7 @@ static int br_fill_ifinfo(struct sk_buff *skb,
 		if (!br_mrp_enabled(br) || port)
 			goto done;
 
-		af = nla_nest_start_noflag(skb, IFLA_AF_SPEC);
+		af = nla_nest_start(skb, IFLA_AF_SPEC);
 		if (!af)
 			goto nla_put_failure;
 
