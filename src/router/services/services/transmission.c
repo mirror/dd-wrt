@@ -115,6 +115,8 @@ static struct config_val config[] = {
 	{ "upload-limit-enabled", "0", 0, 0 },
 	{ "upload-slots-per-torrent", "14", 0, 0 },
 	{ "utp-enabled", "true", 0, 0 }
+	{ "watch-dir", "", 0, 0 }
+	{ "watch-dir-enabled", "false", 0, 0 }
 };
 
 static int isnum(char *str)
