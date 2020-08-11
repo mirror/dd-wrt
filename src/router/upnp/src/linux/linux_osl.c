@@ -30,7 +30,7 @@
 #include <arpa/inet.h>
 #include <net/if_arp.h>
 
-#define __KERNEL__
+//#define __KERNEL__
 #include <asm/types.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
@@ -632,7 +632,7 @@ static void delete_nat_entry(netconf_nat_t *entry);
 static void
 add_nat_entry(netconf_nat_t *entry)
 {
-	int dir = NETCONF_FORWARD;
+	int dir = NETCONF_UPNP;
 	int log_level = atoi(nvram_safe_get("log_level"));
 	int target = (log_level & 2) ? NETCONF_LOG_ACCEPT : NETCONF_ACCEPT;
 	netconf_filter_t filter;
@@ -689,7 +689,7 @@ add_nat_entry(netconf_nat_t *entry)
 static void
 delete_nat_entry(netconf_nat_t *entry)
 {
-	int dir = NETCONF_FORWARD;
+	int dir = NETCONF_UPNP;
 	int log_level = atoi(nvram_safe_get("log_level"));
 	int target = (log_level & 2) ? NETCONF_LOG_ACCEPT : NETCONF_ACCEPT;
 	netconf_filter_t filter;
