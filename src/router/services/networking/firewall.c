@@ -2211,7 +2211,10 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 			filter_host_url = 1;
 		}
 	}
+	if (!filter_host_url)
+		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
+	save2file_A_forward("-j upnp", log_accept);
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_forward("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
 		save2file_A_forward("-o %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
@@ -2419,8 +2422,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	/*
 	 * If webfilter is not used we can put this rule on top in order to increase WAN<->LAN throughput
 	 */
-	if (!filter_host_url)
-		save2file_I_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 }
 
 /*
@@ -2514,7 +2515,9 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifdef FLOOD_PROTECT
 		  ":limaccept - [0:0]"
 #endif
-		  ":trigger_out - [0:0]\n:lan2wan - [0:0]");
+		  ":trigger_out - [0:0]\n"
+		  ":upnp - [0:0]\n"
+		  ":lan2wan - [0:0]");
 	int seq;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		save2file(":grp_%d - [0:0]", seq);
