@@ -62,7 +62,7 @@ static const size_t ipt_target_size[] = {
 
 /* ipt filter chain name appropriate for direction (indexed by netconf_filter_t.dir) */
 static const char * ipt_filter_chain_name[] = { 
-	"INPUT", "FORWARD", "OUTPUT"
+	"INPUT", "FORWARD", "OUTPUT", "upnp"
 };
 
 /* ipt nat chain name appropriate for target (indexed by netconf_nat_t.target) */
