@@ -215,11 +215,11 @@ static int br_port_fill_attrs(struct sk_buff *skb,
 		return -EMSGSIZE;
 #endif
 	if (nla_put_u8(skb, IFLA_BRPORT_MRP_RING_OPEN, !!(p->flags &
-							  BR_MRP_LOST_CONT))
+							  BR_MRP_LOST_CONT)))
 		return -EMSGSIZE;
 
 	if (nla_put_u8(skb, IFLA_BRPORT_MRP_IN_OPEN,
-		       !!(p->flags & BR_MRP_LOST_IN_CONT))
+		       !!(p->flags & BR_MRP_LOST_IN_CONT)))
 		return -EMSGSIZE;
 
 	return 0;
