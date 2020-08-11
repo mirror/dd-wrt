@@ -213,7 +213,7 @@ static struct sk_buff *br_mrp_alloc_in_test_skb(struct br_mrp *mrp,
 		return NULL;
 
 	br_mrp_skb_tlv(skb, BR_MRP_TLV_HEADER_IN_TEST, sizeof(*hdr));
-	hdr = skb_put(skb, sizeof(*hdr));
+	hdr = (void*)skb_put(skb, sizeof(*hdr));
 
 	hdr->id = cpu_to_be16(mrp->in_id);
 	ether_addr_copy(hdr->sa, p->br->dev->dev_addr);
