@@ -240,22 +240,21 @@ br_mrp_in_state_policy[IFLA_BRIDGE_MRP_IN_STATE_MAX + 1] = {
 	[IFLA_BRIDGE_MRP_IN_STATE_STATE]	= { .type = NLA_U32 },
 };
 
-static int br_mrp_in_state_parse(struct net_bridge *br, struct nlattr *attr,
-				 struct netlink_ext_ack *extack)
+static int br_mrp_in_state_parse(struct net_bridge *br, struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_IN_STATE_MAX + 1];
 	struct br_mrp_in_state state;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_IN_STATE_MAX, attr,
-			       br_mrp_in_state_policy, extack);
+			       br_mrp_in_state_policy);
 	if (err)
 		return err;
 
 	if (!tb[IFLA_BRIDGE_MRP_IN_STATE_IN_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_STATE_STATE]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: IN_ID or STATE");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: IN_ID or STATE");
 		return -EINVAL;
 	}
 
@@ -276,15 +275,14 @@ br_mrp_in_role_policy[IFLA_BRIDGE_MRP_IN_ROLE_MAX + 1] = {
 	[IFLA_BRIDGE_MRP_IN_ROLE_I_IFINDEX]	= { .type = NLA_U32 },
 };
 
-static int br_mrp_in_role_parse(struct net_bridge *br, struct nlattr *attr,
-				struct netlink_ext_ack *extack)
+static int br_mrp_in_role_parse(struct net_bridge *br, struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_IN_ROLE_MAX + 1];
 	struct br_mrp_in_role role;
 	int err;
 
 	err = nla_parse_nested(tb, IFLA_BRIDGE_MRP_IN_ROLE_MAX, attr,
-			       br_mrp_in_role_policy, extack);
+			       br_mrp_in_role_policy);
 	if (err)
 		return err;
 
@@ -292,8 +290,8 @@ static int br_mrp_in_role_parse(struct net_bridge *br, struct nlattr *attr,
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_IN_ID] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_I_IFINDEX] ||
 	    !tb[IFLA_BRIDGE_MRP_IN_ROLE_ROLE]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or ROLE or IN_ID or I_IFINDEX");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or ROLE or IN_ID or I_IFINDEX");
 		return -EINVAL;
 	}
 
@@ -317,8 +315,7 @@ br_mrp_start_in_test_policy[IFLA_BRIDGE_MRP_START_IN_TEST_MAX + 1] = {
 };
 
 static int br_mrp_start_in_test_parse(struct net_bridge *br,
-				      struct nlattr *attr,
-				      struct netlink_ext_ack *extack)
+				      struct nlattr *attr)
 {
 	struct nlattr *tb[IFLA_BRIDGE_MRP_START_IN_TEST_MAX + 1];
 	struct br_mrp_start_in_test test;
@@ -333,8 +330,8 @@ static int br_mrp_start_in_test_parse(struct net_bridge *br,
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_INTERVAL] ||
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_MAX_MISS] ||
 	    !tb[IFLA_BRIDGE_MRP_START_IN_TEST_PERIOD]) {
-		NL_SET_ERR_MSG_MOD(extack,
-				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
+//		NL_SET_ERR_MSG_MOD(extack,
+//				   "Missing attribute: RING_ID or INTERVAL or MAX_MISS or PERIOD");
 		return -EINVAL;
 	}
 
