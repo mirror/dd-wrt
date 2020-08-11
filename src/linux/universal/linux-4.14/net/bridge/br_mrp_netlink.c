@@ -564,7 +564,7 @@ int br_mrp_in_port_open(struct net_device *dev, u8 loc)
 	else
 		p->flags &= ~BR_MRP_LOST_IN_CONT;
 
-	br_ifinfo_notify(RTM_NEWLINK, NULL, p);
+	br_ifinfo_notify(RTM_NEWLINK, p);
 
 out:
 	return err;
