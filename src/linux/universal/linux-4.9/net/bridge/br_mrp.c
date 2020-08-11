@@ -62,8 +62,7 @@ static struct br_mrp *br_mrp_find_in_id(struct net_bridge *br, u32 in_id)
 	struct br_mrp *res = NULL;
 	struct br_mrp *mrp;
 
-	list_for_each_entry_rcu(mrp, &br->mrp_list, list,
-				lockdep_rtnl_is_held()) {
+	list_for_each_entry_rcu(mrp, &br->mrp_list, list) {
 		if (mrp->in_id == in_id) {
 			res = mrp;
 			break;
