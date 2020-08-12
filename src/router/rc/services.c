@@ -627,8 +627,7 @@ static void handle_hotspot(void)
 	restart_f("samba3");
 #endif
 
-	FORK(eval("/etc/config/http-redirect.firewall"));
-	FORK(eval("/etc/config/smtp-redirect.firewall"));
+	restart("firewall");
 #ifdef HAVE_ZEROIP
 	FORK(eval("/etc/config/shat.startup"));
 #endif
