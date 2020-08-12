@@ -33,6 +33,8 @@ extern int preserve_uid;
 extern int preserve_gid;
 extern int preserve_acls;
 extern int numeric_ids;
+extern int xmit_id0_names;
+extern pid_t namecvt_pid;
 extern gid_t our_gid;
 extern char *usermap;
 extern char *groupmap;
@@ -95,52 +97,88 @@ static struct idlist *add_to_list(struct idlist **root, id_t id, union name_or_i
 }
 
 /* turn a uid into a user name */
-char *uid_to_user(uid_t uid)
+const char *uid_to_user(uid_t uid)
 {
-	struct passwd *pass = getpwuid(uid);
-	if (pass)
-		return strdup(pass->pw_name);
-	return NULL;
+	const char *name = NULL;
+
+	if (namecvt_pid) {
+		id_t id = uid;
+		namecvt_call("uid", &name, &id);
+	} else {
+		struct passwd *pass = getpwuid(uid);
+		if (pass)
+			name = strdup(pass->pw_name);
+	}
+
+	return name;
 }
 
 /* turn a gid into a group name */
-char *gid_to_group(gid_t gid)
+const char *gid_to_group(gid_t gid)
 {
-	struct group *grp = getgrgid(gid);
-	if (grp)
-		return strdup(grp->gr_name);
-	return NULL;
+	const char *name = NULL;
+
+	if (namecvt_pid) {
+		id_t id = gid;
+		namecvt_call("gid", &name, &id);
+	} else {
+		struct group *grp = getgrgid(gid);
+		if (grp)
+			name = strdup(grp->gr_name);
+	}
+
+	return name;
 }
 
 /* Parse a user name or (optionally) a number into a uid */
 int user_to_uid(const char *name, uid_t *uid_p, BOOL num_ok)
 {
-	struct passwd *pass;
 	if (!name || !*name)
 		return 0;
+
 	if (num_ok && name[strspn(name, "0123456789")] == '\0') {
 		*uid_p = id_parse(name);
 		return 1;
 	}
-	if (!(pass = getpwnam(name)))
-		return 0;
-	*uid_p = pass->pw_uid;
+
+	if (namecvt_pid) {
+		id_t id;
+		if (!namecvt_call("usr", &name, &id))
+			return 0;
+		*uid_p = id;
+	} else {
+		struct passwd *pass = getpwnam(name);
+		if (!pass)
+			return 0;
+		*uid_p = pass->pw_uid;
+	}
+
 	return 1;
 }
 
 /* Parse a group name or (optionally) a number into a gid */
 int group_to_gid(const char *name, gid_t *gid_p, BOOL num_ok)
 {
-	struct group *grp;
 	if (!name || !*name)
 		return 0;
+
 	if (num_ok && name[strspn(name, "0123456789")] == '\0') {
 		*gid_p = id_parse(name);
 		return 1;
 	}
-	if (!(grp = getgrnam(name)))
-		return 0;
-	*gid_p = grp->gr_gid;
+
+	if (namecvt_pid) {
+		id_t id;
+		if (!namecvt_call("grp", &name, &id))
+			return 0;
+		*gid_p = id;
+	} else {
+		struct group *grp = getgrnam(name);
+		if (!grp)
+			return 0;
+		*gid_p = grp->gr_gid;
+	}
+
 	return 1;
 }
 
@@ -295,9 +333,6 @@ const char *add_uid(uid_t uid)
 	struct idlist *node;
 	union name_or_id noiu;
 
-	if (uid == 0)	/* don't map root */
-		return NULL;
-
 	for (list = uidlist; list; list = list->next) {
 		if (list->id == uid)
 			return NULL;
@@ -315,9 +350,6 @@ const char *add_gid(gid_t gid)
 	struct idlist *node;
 	union name_or_id noiu;
 
-	if (gid == 0)	/* don't map root */
-		return NULL;
-
 	for (list = gidlist; list; list = list->next) {
 		if (list->id == gid)
 			return NULL;
@@ -328,52 +360,65 @@ const char *add_gid(gid_t gid)
 	return node->u.name;
 }
 
-/* send a complete uid/gid mapping to the peer */
-void send_id_list(int f)
+static void send_one_name(int f, id_t id, const char *name)
+{
+	int len;
+
+	if (!name)
+		name = "";
+	if ((len = strlen(name)) > 255) /* Impossible? */
+		len = 255;
+
+	write_varint30(f, id);
+	write_byte(f, len);
+	if (len)
+		write_buf(f, name, len);
+}
+
+static void send_one_list(int f, struct idlist *idlist, int usernames)
 {
 	struct idlist *list;
 
-	if (preserve_uid || preserve_acls) {
-		int len;
-		/* we send sequences of uid/byte-length/name */
-		for (list = uidlist; list; list = list->next) {
-			if (!list->u.name)
-				continue;
-			len = strlen(list->u.name);
-			write_varint30(f, list->id);
-			write_byte(f, len);
-			write_buf(f, list->u.name, len);
-		}
-
-		/* terminate the uid list with a 0 uid. We explicitly exclude
-		 * 0 from the list */
-		write_varint30(f, 0);
+	/* we send sequences of id/byte-len/name */
+	for (list = idlist; list; list = list->next) {
+		if (list->id && list->u.name)
+			send_one_name(f, list->id, list->u.name);
 	}
 
-	if (preserve_gid || preserve_acls) {
-		int len;
-		for (list = gidlist; list; list = list->next) {
-			if (!list->u.name)
-				continue;
-			len = strlen(list->u.name);
-			write_varint30(f, list->id);
-			write_byte(f, len);
-			write_buf(f, list->u.name, len);
-		}
+	/* Terminate the uid list with 0 (which was excluded above).
+	 * A modern rsync also sends the name of id 0. */
+	if (xmit_id0_names)
+		send_one_name(f, 0, usernames ? uid_to_user(0) : gid_to_group(0));
+	else
 		write_varint30(f, 0);
-	}
+}
+
+/* send a complete uid/gid mapping to the peer */
+void send_id_lists(int f)
+{
+	if (preserve_uid || preserve_acls)
+		send_one_list(f, uidlist, 1);
+
+	if (preserve_gid || preserve_acls)
+		send_one_list(f, gidlist, 0);
 }
 
 uid_t recv_user_name(int f, uid_t uid)
 {
 	struct idlist *node;
 	int len = read_byte(f);
-	char *name = new_array(char, len+1);
-	read_sbuf(f, name, len);
-	if (numeric_ids < 0) {
-		free(name);
+	char *name;
+
+	if (len) {
+		name = new_array(char, len+1);
+		read_sbuf(f, name, len);
+		if (numeric_ids < 0) {
+			free(name);
+			name = NULL;
+		}
+	} else
 		name = NULL;
-	}
+
 	node = recv_add_id(&uidlist, uidmap, uid, name); /* node keeps name's memory */
 	return node->id2;
 }
@@ -382,12 +427,18 @@ gid_t recv_group_name(int f, gid_t gid, uint16 *flags_ptr)
 {
 	struct idlist *node;
 	int len = read_byte(f);
-	char *name = new_array(char, len+1);
-	read_sbuf(f, name, len);
-	if (numeric_ids < 0) {
-		free(name);
+	char *name;
+
+	if (len) {
+		name = new_array(char, len+1);
+		read_sbuf(f, name, len);
+		if (numeric_ids < 0) {
+			free(name);
+			name = NULL;
+		}
+	} else
 		name = NULL;
-	}
+
 	node = recv_add_id(&gidlist, gidmap, gid, name); /* node keeps name's memory */
 	if (flags_ptr && node->flags & FLAG_SKIP_GROUP)
 		*flags_ptr |= FLAG_SKIP_GROUP;
@@ -405,12 +456,16 @@ void recv_id_list(int f, struct file_list *flist)
 		/* read the uid list */
 		while ((id = read_varint30(f)) != 0)
 			recv_user_name(f, id);
+		if (xmit_id0_names)
+			recv_user_name(f, 0);
 	}
 
 	if ((preserve_gid || preserve_acls) && numeric_ids <= 0) {
 		/* read the gid list */
 		while ((id = read_varint30(f)) != 0)
 			recv_group_name(f, id, NULL);
+		if (xmit_id0_names)
+			recv_group_name(f, 0, NULL);
 	}
 
 	/* Now convert all the uids/gids from sender values to our values. */
@@ -502,8 +557,9 @@ void parse_name_map(char *map, BOOL usernames)
 		*--cp = '\0'; /* replace comma */
 	}
 
-	/* The 0 user/group doesn't get its name sent, so add it explicitly. */
-	recv_add_id(idlist_ptr, *idmap_ptr, 0, numeric_ids ? NULL : usernames ? uid_to_user(0) : gid_to_group(0));
+	/* If the sender isn't going to xmit the id0 name, we assume it's "root". */
+	if (!xmit_id0_names)
+		recv_add_id(idlist_ptr, *idmap_ptr, 0, numeric_ids ? NULL : "root");
 }
 
 #ifdef HAVE_GETGROUPLIST

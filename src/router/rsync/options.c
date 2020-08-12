@@ -22,16 +22,12 @@
 #include "rsync.h"
 #include "itypes.h"
 #include "ifuncs.h"
-#include "latest-year.h"
 #include <popt.h>
 
 extern int module_id;
 extern int local_server;
 extern int sanitize_paths;
-extern int daemon_over_rsh;
 extern unsigned int module_dirlen;
-extern struct name_num_obj valid_checksums;
-extern struct name_num_obj valid_compressions;
 extern filter_rule_list filter_list;
 extern filter_rule_list daemon_filter_list;
 
@@ -64,6 +60,7 @@ int preserve_uid = 0;
 int preserve_gid = 0;
 int preserve_times = 0;
 int preserve_atimes = 0;
+int preserve_crtimes = 0;
 int update_only = 0;
 int open_noatime = 0;
 int cvs_exclude = 0;
@@ -90,7 +87,7 @@ int relative_paths = -1;
 int implied_dirs = 1;
 int missing_args = 0; /* 0 = FERROR_XFER, 1 = ignore, 2 = delete */
 int numeric_ids = 0;
-int msgs2stderr = 0;
+int msgs2stderr = 2; /* Default: send errors to stderr for local & remote-shell transfers */
 int allow_8bit_chars = 0;
 int force_delete = 0;
 int io_timeout = 0;
@@ -103,6 +100,7 @@ int eol_nulls = 0;
 int protect_args = -1;
 int human_readable = 1;
 int recurse = 0;
+int mkpath_dest_arg = 0;
 int allow_inc_recurse = 1;
 int xfer_dirs = -1;
 int am_daemon = 0;
@@ -128,7 +126,8 @@ int blocking_io = -1;
 int checksum_seed = 0;
 int inplace = 0;
 int delay_updates = 0;
-long block_size = 0; /* "long" because popt can't set an int32. */
+int32 block_size = 0;
+time_t stop_at_utime = 0;
 char *skip_compress = NULL;
 char *copy_as = NULL;
 item_list dparam_list = EMPTY_ITEM_LIST;
@@ -192,10 +191,6 @@ int remote_option_cnt = 0;
 const char **remote_options = NULL;
 const char *checksum_choice = NULL;
 const char *compress_choice = NULL;
-
-#ifndef __APPLE__ /* Do we need a configure check for this? */
-#define SUPPORT_ATIMES 1
-#endif
 
 int quiet = 0;
 int output_motd = 1;
@@ -573,212 +568,14 @@ void negate_output_levels(void)
 		debug_levels[j] *= -1;
 }
 
-static char *istring(const char *fmt, int val)
-{
-	char *str;
-	if (asprintf(&str, fmt, val) < 0)
-		out_of_memory("istring");
-	return str;
-}
-
-static void print_info_flags(enum logcode f)
-{
-	STRUCT_STAT *dumstat;
-	char line_buf[75];
-	int line_len, j;
-	char *capabilities[] = {
-
-	"*Capabilities",
-
-		istring("%d-bit files", (int)(sizeof (OFF_T) * 8)),
-		istring("%d-bit inums", (int)(sizeof dumstat->st_ino * 8)), /* Don't check ino_t! */
-		istring("%d-bit timestamps", (int)(sizeof (time_t) * 8)),
-		istring("%d-bit long ints", (int)(sizeof (int64) * 8)),
-
-#ifndef HAVE_SOCKETPAIR
-		"no "
-#endif
-			"socketpairs",
-
-#ifndef SUPPORT_HARD_LINKS
-		"no "
-#endif
-			"hardlinks",
-
-#ifndef SUPPORT_LINKS
-		"no "
-#endif
-			"symlinks",
-
-#ifndef INET6
-		"no "
-#endif
-			"IPv6",
-
-#ifndef SUPPORT_ATIMES
-		"no "
-#endif
-			"atimes",
-
-		"batchfiles",
-
-#ifndef HAVE_FTRUNCATE
-		"no "
-#endif
-			"inplace",
-
-#ifndef HAVE_FTRUNCATE
-		"no "
-#endif
-			"append",
-
-#ifndef SUPPORT_ACLS
-		"no "
-#endif
-			"ACLs",
-
-#ifndef SUPPORT_XATTRS
-		"no "
-#endif
-			"xattrs",
-
-#ifdef RSYNC_USE_PROTECTED_ARGS
-		"default "
-#else
-		"optional "
-#endif
-			"protect-args",
-
-#ifndef ICONV_OPTION
-		"no "
-#endif
-			"iconv",
-
-#ifndef CAN_SET_SYMLINK_TIMES
-		"no "
-#endif
-			"symtimes",
-
-#ifndef SUPPORT_PREALLOCATION
-		"no "
-#endif
-			"prealloc",
-
-	"*Optimizations",
-
-#ifndef HAVE_SIMD
-		"no "
-#endif
-			"SIMD",
-
-#ifndef HAVE_ASM
-		"no "
-#endif
-			"asm",
-
-#ifndef USE_OPENSSL
-		"no "
-#endif
-			"openssl-crypto",
-
-		NULL
-	};
-
-	for (line_len = 0, j = 0; ; j++) {
-		char *cap = capabilities[j], *next_cap = cap ? capabilities[j+1] : NULL;
-		int cap_len = cap && *cap != '*' ? strlen(cap) : 1000;
-		int need_comma = next_cap && *next_cap != '*' ? 1 : 0;
-		if (line_len && line_len + 1 + cap_len + need_comma >= (int)sizeof line_buf) {
-			rprintf(f, "   %s\n", line_buf);
-			line_len = 0;
-		}
-		if (!cap)
-			break;
-		if (*cap == '*') {
-			rprintf(f, "%s:\n", cap+1);
-			continue;
-		}
-		line_len += snprintf(line_buf+line_len, sizeof line_buf - line_len, " %s%s", cap, need_comma ? "," : "");
-	}
-}
-
-static void print_rsync_version(enum logcode f)
-{
-	char tmpbuf[256], *subprotocol = "";
-
-#if SUBPROTOCOL_VERSION != 0
-	subprotocol = istring(".PR%d", SUBPROTOCOL_VERSION);
-#endif
-	rprintf(f, "%s  version %s  protocol version %d%s\n",
-		RSYNC_NAME, RSYNC_VERSION, PROTOCOL_VERSION, subprotocol);
-
-	rprintf(f, "Copyright (C) 1996-" LATEST_YEAR " by Andrew Tridgell, Wayne Davison, and others.\n");
-	rprintf(f, "Web site: https://rsync.samba.org/\n");
-
-	print_info_flags(f);
-
-	rprintf(f, "Checksum list:\n");
-	get_default_nno_list(&valid_checksums, tmpbuf, sizeof tmpbuf, '(');
-	rprintf(f, "    %s\n", tmpbuf);
-
-	rprintf(f, "Compress list:\n");
-	get_default_nno_list(&valid_compressions, tmpbuf, sizeof tmpbuf, '(');
-	rprintf(f, "    %s\n", tmpbuf);
-
-#ifdef MAINTAINER_MODE
-	rprintf(f, "Panic Action: \"%s\"\n", get_panic_action());
-#endif
-
-#if SIZEOF_INT64 < 8
-	rprintf(f, "WARNING: no 64-bit integers on this platform!\n");
-#endif
-	if (sizeof (int64) != SIZEOF_INT64) {
-		rprintf(f,
-			"WARNING: size mismatch in SIZEOF_INT64 define (%d != %d)\n",
-			(int) SIZEOF_INT64, (int) sizeof (int64));
-	}
-
-	rprintf(f,"\n");
-	rprintf(f,"rsync comes with ABSOLUTELY NO WARRANTY.  This is free software, and you\n");
-	rprintf(f,"are welcome to redistribute it under certain conditions.  See the GNU\n");
-	rprintf(f,"General Public Licence for details.\n");
-}
-
-
-void usage(enum logcode F)
-{
-  print_rsync_version(F);
-
-  rprintf(F,"\n");
-  rprintf(F,"rsync is a file transfer program capable of efficient remote update\n");
-  rprintf(F,"via a fast differencing algorithm.\n");
-
-  rprintf(F,"\n");
-  rprintf(F,"Usage: rsync [OPTION]... SRC [SRC]... DEST\n");
-  rprintf(F,"  or   rsync [OPTION]... SRC [SRC]... [USER@]HOST:DEST\n");
-  rprintf(F,"  or   rsync [OPTION]... SRC [SRC]... [USER@]HOST::DEST\n");
-  rprintf(F,"  or   rsync [OPTION]... SRC [SRC]... rsync://[USER@]HOST[:PORT]/DEST\n");
-  rprintf(F,"  or   rsync [OPTION]... [USER@]HOST:SRC [DEST]\n");
-  rprintf(F,"  or   rsync [OPTION]... [USER@]HOST::SRC [DEST]\n");
-  rprintf(F,"  or   rsync [OPTION]... rsync://[USER@]HOST[:PORT]/SRC [DEST]\n");
-  rprintf(F,"The ':' usages connect via remote shell, while '::' & 'rsync://' usages connect\n");
-  rprintf(F,"to an rsync daemon, and require SRC or DEST to start with a module name.\n");
-  rprintf(F,"\n");
-  rprintf(F,"Options\n");
-#include "help-rsync.h"
-  rprintf(F,"\n");
-  rprintf(F,"Use \"rsync --daemon --help\" to see the daemon-mode command-line options.\n");
-  rprintf(F,"Please see the rsync(1) and rsyncd.conf(5) man pages for full documentation.\n");
-  rprintf(F,"See https://rsync.samba.org/ for updates, bug reports, and answers\n");
-}
-
 enum {OPT_SERVER = 1000, OPT_DAEMON, OPT_SENDER, OPT_EXCLUDE, OPT_EXCLUDE_FROM,
       OPT_FILTER, OPT_COMPARE_DEST, OPT_COPY_DEST, OPT_LINK_DEST, OPT_HELP,
       OPT_INCLUDE, OPT_INCLUDE_FROM, OPT_MODIFY_WINDOW, OPT_MIN_SIZE, OPT_CHMOD,
       OPT_READ_BATCH, OPT_WRITE_BATCH, OPT_ONLY_WRITE_BATCH, OPT_MAX_SIZE,
-      OPT_NO_D, OPT_APPEND, OPT_NO_ICONV, OPT_INFO, OPT_DEBUG,
-      OPT_USERMAP, OPT_GROUPMAP, OPT_CHOWN, OPT_BWLIMIT,
+      OPT_NO_D, OPT_APPEND, OPT_NO_ICONV, OPT_INFO, OPT_DEBUG, OPT_BLOCK_SIZE,
+      OPT_USERMAP, OPT_GROUPMAP, OPT_CHOWN, OPT_BWLIMIT, OPT_STDERR,
       OPT_OLD_COMPRESS, OPT_NEW_COMPRESS, OPT_NO_COMPRESS,
+      OPT_STOP_AFTER, OPT_STOP_AT,
       OPT_REFUSED_BASE = 9000};
 
 static struct poptOption long_options[] = {
@@ -790,7 +587,8 @@ static struct poptOption long_options[] = {
   {"no-v",             0,  POPT_ARG_VAL,    &verbose, 0, 0, 0 },
   {"info",             0,  POPT_ARG_STRING, 0, OPT_INFO, 0, 0 },
   {"debug",            0,  POPT_ARG_STRING, 0, OPT_DEBUG, 0, 0 },
-  {"msgs2stderr",      0,  POPT_ARG_NONE,   &msgs2stderr, 0, 0, 0 },
+  {"stderr",           0,  POPT_ARG_STRING, 0, OPT_STDERR, 0, 0 },
+  {"msgs2stderr",      0,  POPT_ARG_VAL,    &msgs2stderr, 1, 0, 0 },
   {"no-msgs2stderr",   0,  POPT_ARG_VAL,    &msgs2stderr, 0, 0, 0 },
   {"quiet",           'q', POPT_ARG_NONE,   0, 'q', 0, 0 },
   {"motd",             0,  POPT_ARG_VAL,    &output_motd, 1, 0, 0 },
@@ -831,6 +629,9 @@ static struct poptOption long_options[] = {
   {"no-U",             0,  POPT_ARG_VAL,    &preserve_atimes, 0, 0, 0 },
   {"open-noatime",     0,  POPT_ARG_VAL,    &open_noatime, 1, 0, 0 },
   {"no-open-noatime",  0,  POPT_ARG_VAL,    &open_noatime, 0, 0, 0 },
+  {"crtimes",         'N', POPT_ARG_VAL,    &preserve_crtimes, 1, 0, 0 },
+  {"no-crtimes",       0,  POPT_ARG_VAL,    &preserve_crtimes, 0, 0, 0 },
+  {"no-N",             0,  POPT_ARG_VAL,    &preserve_crtimes, 0, 0, 0 },
   {"omit-dir-times",  'O', POPT_ARG_VAL,    &omit_dir_times, 1, 0, 0 },
   {"no-omit-dir-times",0,  POPT_ARG_VAL,    &omit_dir_times, 0, 0, 0 },
   {"no-O",             0,  POPT_ARG_VAL,    &omit_dir_times, 0, 0, 0 },
@@ -928,7 +729,7 @@ static struct poptOption long_options[] = {
   {"no-c",             0,  POPT_ARG_VAL,    &always_checksum, 0, 0, 0 },
   {"checksum-choice",  0,  POPT_ARG_STRING, &checksum_choice, 0, 0, 0 },
   {"cc",               0,  POPT_ARG_STRING, &checksum_choice, 0, 0, 0 },
-  {"block-size",      'B', POPT_ARG_LONG,   &block_size, 0, 0, 0 },
+  {"block-size",      'B', POPT_ARG_STRING, 0, OPT_BLOCK_SIZE, 0, 0 },
   {"compare-dest",     0,  POPT_ARG_STRING, 0, OPT_COMPARE_DEST, 0, 0 },
   {"copy-dest",        0,  POPT_ARG_STRING, 0, OPT_COPY_DEST, 0, 0 },
   {"link-dest",        0,  POPT_ARG_STRING, 0, OPT_LINK_DEST, 0, 0 },
@@ -988,6 +789,9 @@ static struct poptOption long_options[] = {
   {"no-timeout",       0,  POPT_ARG_VAL,    &io_timeout, 0, 0, 0 },
   {"contimeout",       0,  POPT_ARG_INT,    &connect_timeout, 0, 0, 0 },
   {"no-contimeout",    0,  POPT_ARG_VAL,    &connect_timeout, 0, 0, 0 },
+  {"stop-after",       0,  POPT_ARG_STRING, 0, OPT_STOP_AFTER, 0, 0 },
+  {"time-limit",       0,  POPT_ARG_STRING, 0, OPT_STOP_AFTER, 0, 0 }, /* earlier stop-after name */
+  {"stop-at",          0,  POPT_ARG_STRING, 0, OPT_STOP_AT, 0, 0 },
   {"rsh",             'e', POPT_ARG_STRING, &shell_cmd, 0, 0, 0 },
   {"rsync-path",       0,  POPT_ARG_STRING, &rsync_path, 0, 0, 0 },
   {"temp-dir",        'T', POPT_ARG_STRING, &tmpdir, 0, 0, 0 },
@@ -998,6 +802,8 @@ static struct poptOption long_options[] = {
   {"8-bit-output",    '8', POPT_ARG_VAL,    &allow_8bit_chars, 1, 0, 0 },
   {"no-8-bit-output",  0,  POPT_ARG_VAL,    &allow_8bit_chars, 0, 0, 0 },
   {"no-8",             0,  POPT_ARG_VAL,    &allow_8bit_chars, 0, 0, 0 },
+  {"mkpath",           0,  POPT_ARG_VAL,    &mkpath_dest_arg, 1, 0, 0 },
+  {"no-mkpath",        0,  POPT_ARG_VAL,    &mkpath_dest_arg, 0, 0, 0 },
   {"qsort",            0,  POPT_ARG_NONE,   &use_qsort, 0, 0, 0 },
   {"copy-as",          0,  POPT_ARG_STRING, &copy_as, 0, 0, 0 },
   {"address",          0,  POPT_ARG_STRING, &bind_address, 0, 0, 0 },
@@ -1021,18 +827,6 @@ static struct poptOption long_options[] = {
   {"no-detach",        0,  POPT_ARG_NONE,   0, OPT_DAEMON, 0, 0 },
   {0,0,0,0, 0, 0, 0}
 };
-
-static void daemon_usage(enum logcode F)
-{
-  print_rsync_version(F);
-
-  rprintf(F,"\n");
-  rprintf(F,"Usage: rsync --daemon [OPTION]...\n");
-#include "help-rsyncd.h"
-  rprintf(F,"\n");
-  rprintf(F,"If you were not trying to invoke rsync as a daemon, avoid using any of the\n");
-  rprintf(F,"daemon-specific rsync options.  See also the rsyncd.conf(5) man page.\n");
-}
 
 static struct poptOption long_daemon_options[] = {
   /* longName, shortName, argInfo, argPtr, value, descrip, argDesc */
@@ -1192,11 +986,17 @@ static void set_refuse_options(void)
 #ifndef SUPPORT_HARD_LINKS
 	parse_one_refuse_match(0, "link-dest", list_end);
 #endif
+#ifndef HAVE_MKTIME
+	parse_one_refuse_match(0, "stop-at", list_end);
+#endif
 #ifndef ICONV_OPTION
 	parse_one_refuse_match(0, "iconv", list_end);
 #endif
 #ifndef HAVE_SETVBUF
 	parse_one_refuse_match(0, "outbuf", list_end);
+#endif
+#ifndef SUPPORT_CRTIMES
+	parse_one_refuse_match(0, "crtimes", list_end);
 #endif
 
 	/* Now we use the descrip values to actually mark the options for refusal. */
@@ -1253,14 +1053,15 @@ static int count_args(const char **argv)
 /* If the size_arg is an invalid string or the value is < min_value, an error
  * is put into err_buf & the return is -1.  Note that this parser does NOT
  * support negative numbers, so a min_value < 0 doesn't make any sense. */
-static ssize_t parse_size_arg(char *size_arg, char def_suf, const char *opt_name, ssize_t min_value)
+static ssize_t parse_size_arg(const char *size_arg, char def_suf, const char *opt_name,
+			      ssize_t min_value, ssize_t max_value, BOOL unlimited_0)
 {
-	int reps, mult;
-	const char *arg, *err = "invalid";
-	ssize_t size = 1;
+	int reps, mult, len;
+	const char *arg, *err = "invalid", *min_max = NULL;
+	ssize_t limit = -1, size = 1;
 
 	for (arg = size_arg; isDigit(arg); arg++) {}
-	if (*arg == '.')
+	if (*arg == '.' || *arg == get_decimal_point()) /* backward compatibility: always allow '.' */
 		for (arg++; isDigit(arg); arg++) {}
 	switch (*arg && *arg != '+' && *arg != '-' ? *arg++ : def_suf) {
 	case 'b': case 'B':
@@ -1299,16 +1100,173 @@ static ssize_t parse_size_arg(char *size_arg, char def_suf, const char *opt_name
 		size += atoi(arg), arg += 2;
 	if (*arg)
 		goto failure;
-	if (size < min_value) {
-		err = size < 0 ? "too big" : "too small";
+	if (size < 0 || (max_value >= 0 && size > max_value)) {
+		err = "too large";
+		min_max = "max";
+		limit = max_value;
+		goto failure;
+	}
+	if (size < min_value && (!unlimited_0 || size != 0)) {
+		err = "too small";
+		min_max = "min";
+		limit = min_value;
 		goto failure;
 	}
 	return size;
 
 failure:
-	snprintf(err_buf, sizeof err_buf, "--%s value is %s: %s\n", opt_name, err, size_arg);
+	len = snprintf(err_buf, sizeof err_buf - 1, "--%s=%s is %s", opt_name, size_arg, err);
+	if (min_max && limit >= 0 && len < (int)sizeof err_buf - 10) {
+		len += snprintf(err_buf + len, sizeof err_buf - len - 1, " (%s: %s%s)",
+			min_max, do_big_num(limit, 3, NULL),
+			unlimited_0 && min_max[1] == 'i' ? " or 0 for unlimited" : "");
+	}
+	err_buf[len] = '\n';
+	err_buf[len+1] = '\0';
 	return -1;
 }
+
+#ifdef HAVE_MKTIME
+/* Allow the user to specify a time in the format yyyy-mm-ddThh:mm while
+ * also allowing abbreviated data.  For instance, if the time is omitted,
+ * it defaults to midnight.  If the date is omitted, it defaults to the
+ * next possible date in the future with the specified time.  Even the
+ * year or year-month can be omitted, again defaulting to the next date
+ * in the future that matches the specified information.  A 2-digit year
+ * is also OK, as is using '/' instead of '-'. */
+static time_t parse_time(const char *arg)
+{
+	const char *cp;
+	time_t val, now = time(NULL);
+	struct tm t, *today = localtime(&now);
+	int in_date, old_mday, n;
+
+	memset(&t, 0, sizeof t);
+	t.tm_year = t.tm_mon = t.tm_mday = -1;
+	t.tm_hour = t.tm_min = t.tm_isdst = -1;
+	cp = arg;
+	if (*cp == 'T' || *cp == 't' || *cp == ':') {
+		in_date = *cp == ':' ? 0 : -1;
+		cp++;
+	} else
+		in_date = 1;
+	for ( ; ; cp++) {
+		if (!isDigit(cp))
+			return (time_t)-1;
+		n = 0;
+		do {
+			n = n * 10 + *cp++ - '0';
+		} while (isDigit(cp));
+		if (*cp == ':')
+			in_date = 0;
+		if (in_date > 0) {
+			if (t.tm_year != -1)
+				return (time_t)-1;
+			t.tm_year = t.tm_mon;
+			t.tm_mon = t.tm_mday;
+			t.tm_mday = n;
+			if (!*cp)
+				break;
+			if (*cp == 'T' || *cp == 't') {
+				if (!cp[1])
+					break;
+				in_date = -1;
+			} else if (*cp != '-' && *cp != '/')
+				return (time_t)-1;
+			continue;
+		}
+		if (t.tm_hour != -1)
+			return (time_t)-1;
+		t.tm_hour = t.tm_min;
+		t.tm_min = n;
+		if (!*cp) {
+			if (in_date < 0)
+				return (time_t)-1;
+			break;
+		}
+		if (*cp != ':')
+			return (time_t)-1;
+		in_date = 0;
+	}
+
+	in_date = 0;
+	if (t.tm_year < 0) {
+		t.tm_year = today->tm_year;
+		in_date = 1;
+	} else if (t.tm_year < 100) {
+		while (t.tm_year < today->tm_year)
+			t.tm_year += 100;
+	} else
+		t.tm_year -= 1900;
+	if (t.tm_mon < 0) {
+		t.tm_mon = today->tm_mon;
+		in_date = 2;
+	} else
+		t.tm_mon--;
+	if (t.tm_mday < 0) {
+		t.tm_mday = today->tm_mday;
+		in_date = 3;
+	}
+
+	n = 0;
+	if (t.tm_min < 0) {
+		t.tm_hour = t.tm_min = 0;
+	} else if (t.tm_hour < 0) {
+		if (in_date != 3)
+			return (time_t)-1;
+		in_date = 0;
+		t.tm_hour = today->tm_hour;
+		n = 60*60;
+	}
+
+	/* Note that mktime() might change a too-large tm_mday into the start of
+	 * the following month which we need to undo in the following code! */
+	old_mday = t.tm_mday;
+	if (t.tm_hour > 23 || t.tm_min > 59
+	    || t.tm_mon < 0 || t.tm_mon >= 12
+	    || t.tm_mday < 1 || t.tm_mday > 31
+	    || (val = mktime(&t)) == (time_t)-1)
+		return (time_t)-1;
+
+	while (in_date && (val <= now || t.tm_mday < old_mday)) {
+		switch (in_date) {
+		case 3:
+			old_mday = ++t.tm_mday;
+			break;
+		case 2:
+			if (t.tm_mday < old_mday)
+				t.tm_mday = old_mday; /* The month already got bumped forward */
+			else if (++t.tm_mon == 12) {
+				t.tm_mon = 0;
+				t.tm_year++;
+			}
+			break;
+		case 1:
+			if (t.tm_mday < old_mday) {
+				/* mon==1 mday==29 got bumped to mon==2 */
+				if (t.tm_mon != 2 || old_mday != 29)
+					return (time_t)-1;
+				t.tm_mon = 1;
+				t.tm_mday = 29;
+			}
+			t.tm_year++;
+			break;
+		}
+		if ((val = mktime(&t)) == (time_t)-1) {
+			/* This code shouldn't be needed, as mktime() should auto-round to the next month. */
+			if (in_date != 3 || t.tm_mday <= 28)
+				return (time_t)-1;
+			t.tm_mday = old_mday = 1;
+			in_date = 2;
+		}
+	}
+	if (n) {
+		while (val <= now)
+			val += n;
+	}
+	return val;
+}
+#endif
 
 static void create_refuse_error(int which)
 {
@@ -1358,7 +1316,7 @@ char *alt_dest_opt(int type)
 	case LINK_DEST:
 		return "--link-dest";
 	default:
-		assert(0);
+		NOISY_DEATH("Unknown alt_dest_opt type");
 	}
 }
 
@@ -1682,23 +1640,36 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 #endif
 			break;
 
-		case OPT_MAX_SIZE:
-			if ((max_size = parse_size_arg(max_size_arg, 'b', "max-size", 0)) < 0)
+		case OPT_BLOCK_SIZE: {
+			/* We may not know the real protocol_version at this point if this is the client
+			 * option parsing, but we still want to check it so that the client can specify
+			 * a --protocol=29 option with a larger block size. */
+			int max_blength = protocol_version < 30 ? OLD_MAX_BLOCK_SIZE : MAX_BLOCK_SIZE;
+			ssize_t size;
+			arg = poptGetOptArg(pc);
+			if ((size = parse_size_arg(arg, 'b', "block-size", 0, max_blength, False)) < 0)
 				return 0;
-			max_size_arg = num_to_byte_string(max_size);
+			block_size = (int32)size;
+			break;
+		}
+
+		case OPT_MAX_SIZE:
+			if ((max_size = parse_size_arg(max_size_arg, 'b', "max-size", 0, -1, False)) < 0)
+				return 0;
+			max_size_arg = strdup(do_big_num(max_size, 0, NULL));
 			break;
 
 		case OPT_MIN_SIZE:
-			if ((min_size = parse_size_arg(min_size_arg, 'b', "min-size", 0)) < 0)
+			if ((min_size = parse_size_arg(min_size_arg, 'b', "min-size", 0, -1, False)) < 0)
 				return 0;
-			min_size_arg = num_to_byte_string(min_size);
+			min_size_arg = strdup(do_big_num(min_size, 0, NULL));
 			break;
 
 		case OPT_BWLIMIT: {
-			ssize_t size = parse_size_arg(bwlimit_arg, 'K', "bwlimit", 512);
+			ssize_t size = parse_size_arg(bwlimit_arg, 'K', "bwlimit", 512, -1, True);
 			if (size < 0)
 				return 0;
-			bwlimit_arg = num_to_byte_string(size);
+			bwlimit_arg = strdup(do_big_num(size, 0, NULL));
 			bwlimit = (size + 512) / 1024;
 			break;
 		}
@@ -1863,6 +1834,50 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			return 0;
 #endif
 
+		case OPT_STOP_AFTER: {
+			long val;
+			arg = poptGetOptArg(pc);
+			stop_at_utime = time(NULL);
+			if ((val = atol(arg) * 60) <= 0 || LONG_MAX - val < stop_at_utime || (long)(time_t)val != val) {
+				snprintf(err_buf, sizeof err_buf, "invalid --stop-after value: %s\n", arg);
+				return 0;
+			}
+			stop_at_utime += val;
+			break;
+		}
+
+#ifdef HAVE_MKTIME
+		case OPT_STOP_AT:
+			arg = poptGetOptArg(pc);
+			if ((stop_at_utime = parse_time(arg)) == (time_t)-1) {
+				snprintf(err_buf, sizeof err_buf, "invalid --stop-at format: %s\n", arg);
+				return 0;
+			}
+			if (stop_at_utime <= time(NULL)) {
+				snprintf(err_buf, sizeof err_buf, "--stop-at time is not in the future: %s\n", arg);
+				return 0;
+			}
+			break;
+#endif
+
+		case OPT_STDERR: {
+			int len;
+			arg = poptGetOptArg(pc);
+			len = strlen(arg);
+			if (len && strncmp("errors", arg, len) == 0)
+				msgs2stderr = 2;
+			else if (len && strncmp("all", arg, len) == 0)
+				msgs2stderr = 1;
+			else if (len && strncmp("client", arg, len) == 0)
+				msgs2stderr = 0;
+			else {
+				snprintf(err_buf, sizeof err_buf,
+					"--stderr mode \"%s\" is not one of errors, all, or client\n", arg);
+				return 0;
+			}
+			break;
+		}
+
 		default:
 			/* A large opt value means that set_refuse_options()
 			 * turned this option off. */
@@ -1889,7 +1904,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 			max_alloc_arg = NULL;
 	}
 	if (max_alloc_arg) {
-		ssize_t size = parse_size_arg(max_alloc_arg, 'B', "max-alloc", 1024*1024);
+		ssize_t size = parse_size_arg(max_alloc_arg, 'B', "max-alloc", 1024*1024, -1, True);
 		if (size < 0)
 			return 0;
 		max_alloc = size;
@@ -1965,7 +1980,7 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		setvbuf(stdout, (char *)NULL, mode, 0);
 	}
 
-	if (msgs2stderr) {
+	if (msgs2stderr == 1) { /* Are all messages going to stderr? */
 		/* Make stderr line buffered for better sharing of the stream. */
 		fflush(stderr); /* Just in case... */
 		setvbuf(stderr, (char *)NULL, _IOLBF, 0);
@@ -2036,19 +2051,6 @@ int parse_arguments(int *argc_p, const char ***argv_p)
 		return 0;
 	}
 #endif
-
-	if (block_size) {
-		/* We may not know the real protocol_version at this point if this is the client
-		 * option parsing, but we still want to check it so that the client can specify
-		 * a --protocol=29 option with a larger block size. */
-		int32 max_blength = protocol_version < 30 ? OLD_MAX_BLOCK_SIZE : MAX_BLOCK_SIZE;
-
-		if (block_size > max_blength) {
-			snprintf(err_buf, sizeof err_buf,
-				 "--block-size=%lu is too large (max: %u)\n", block_size, max_blength);
-			return 0;
-		}
-	}
 
 	if (write_batch && read_batch) {
 		snprintf(err_buf, sizeof err_buf,
@@ -2464,13 +2466,6 @@ void server_options(char **args, int *argc_p)
 	/* This should always remain first on the server's command-line. */
 	args[ac++] = "--server";
 
-	if (daemon_over_rsh > 0) {
-		args[ac++] = "--daemon";
-		*argc_p = ac;
-		/* if we're passing --daemon, we're done */
-		return;
-	}
-
 	if (!am_sender)
 		args[ac++] = "--sender";
 
@@ -2541,6 +2536,10 @@ void server_options(char **args, int *argc_p)
 		if (preserve_atimes > 1)
 			argstr[x++] = 'U';
 	}
+#ifdef SUPPORT_CRTIMES
+	if (preserve_crtimes)
+		argstr[x++] = 'N';
+#endif
 	if (preserve_perms)
 		argstr[x++] = 'p';
 	else if (preserve_executability && am_sender)
@@ -2608,6 +2607,7 @@ void server_options(char **args, int *argc_p)
 		eFlags[x++] = 'C'; /* support checksum seed order fix */
 		eFlags[x++] = 'I'; /* support inplace_partial behavior */
 		eFlags[x++] = 'v'; /* use varint for flist & compat flags; negotiate checksum */
+		eFlags[x++] = 'u'; /* include name of uid 0 & gid 0 in the id map */
 		/* NOTE: Avoid using 'V' -- it was the high bit of a write_byte() that became write_varint(). */
 #undef eFlags
 	}
@@ -2673,8 +2673,13 @@ void server_options(char **args, int *argc_p)
 			args[ac++] = "--log-format=X";
 	}
 
+	if (msgs2stderr == 1)
+		args[ac++] = "--msgs2stderr";
+	else if (msgs2stderr == 0)
+		args[ac++] = "--no-msgs2stderr";
+
 	if (block_size) {
-		if (asprintf(&arg, "-B%lu", block_size) < 0)
+		if (asprintf(&arg, "-B%u", (int)block_size) < 0)
 			goto oom;
 		args[ac++] = arg;
 	}
@@ -2895,6 +2900,9 @@ void server_options(char **args, int *argc_p)
 
 	if (open_noatime && preserve_atimes <= 1)
 		args[ac++] = "--open-noatime";
+
+	if (mkpath_dest_arg && am_sender)
+		args[ac++] = "--mkpath";
 
 	if (ac > MAX_SERVER_ARGS) { /* Not possible... */
 		rprintf(FERROR, "argc overflow in server_options().\n");

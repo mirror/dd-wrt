@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 
-AC_INIT([rsync],[ ],[https://rsync.samba.org/bugtracking.html])
+AC_INIT([rsync],[ ],[https://rsync.samba.org/bug-tracking.html])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([byteorder.h])
@@ -57,6 +57,11 @@ if test x"$ac_cv_prog_cc_stdc" = x"no"; then
 	AC_MSG_WARN([rsync requires an ANSI C compiler and you do not seem to have one])
 fi
 
+no_lib=''
+err_msg=''
+nl='
+'
+
 AC_ARG_ENABLE(profile,
 	AS_HELP_STRING([--enable-profile],[turn on CPU profiling]))
 if test x"$enable_profile" = x"yes"; then
@@ -88,8 +93,10 @@ if test x"$enable_md2man" != x"no"; then
     else
 	AC_MSG_RESULT(required)
 	if test x"$md2man_works" = x"no"; then
-	    AC_MSG_ERROR(You need python3 and the cmarkgfm OR commonmark python3 lib in order to build man pages.
-You can specify --disable-md2man if you want to skip building them.)
+	    err_msg="$err_msg$nl- You need python3 and either the cmarkgfm OR commonmark python3 lib in order"
+	    err_msg="$err_msg$nl  to build man pages based on the git source (man pages are included in the"
+	    err_msg="$err_msg$nl  official release tar files)."
+	    no_lib="$no_lib md2man"
 	fi
     fi
     MAKE_MAN=man
@@ -346,7 +353,7 @@ AC_ARG_ENABLE(ipv6,
 	AS_HELP_STRING([--disable-ipv6],[turn off IPv6 support]))
 if test x"$enable_ipv6" != x"no"; then
 	AC_MSG_CHECKING([ipv6 stack type])
-	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta cygwin; do
+	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta cygwin TANDEM; do
 		case $i in
 		inria)
 			# http://www.kame.net/
@@ -442,6 +449,15 @@ yes
 				[ipv6type=$i;
 				AC_DEFINE(INET6, 1, [true if you have IPv6])])
 			;;
+		TANDEM)
+			AC_EGREP_CPP(yes, [
+#include <netinet/ip6.h>
+#ifdef __TANDEM
+yes
+#endif],
+				[ipv6type=$i;
+				AC_DEFINE(INET6, 1, [true if you have IPv6])])
+			;;
 		esac
 		if test "$ipv6type" != "unknown"; then
 			break
@@ -479,9 +495,9 @@ AC_CHECK_HEADERS(sys/fcntl.h sys/select.h fcntl.h sys/time.h sys/unistd.h \
     sys/ioctl.h sys/filio.h string.h stdlib.h sys/socket.h sys/mode.h \
     sys/un.h sys/attr.h mcheck.h arpa/inet.h arpa/nameser.h locale.h \
     netdb.h malloc.h float.h limits.h iconv.h libcharset.h langinfo.h \
-    sys/acl.h acl/libacl.h attr/xattr.h sys/xattr.h sys/extattr.h \
+    sys/acl.h acl/libacl.h attr/xattr.h sys/xattr.h sys/extattr.h dl.h \
     popt.h popt/popt.h linux/falloc.h netinet/in_systm.h netinet/ip.h \
-    zlib.h xxhash.h openssl/md4.h openssl/md5.h zstd.h lz4.h)
+    zlib.h xxhash.h openssl/md4.h openssl/md5.h zstd.h lz4.h sys/file.h)
 AC_HEADER_MAJOR_FIXED
 
 AC_MSG_CHECKING([whether to enable use of openssl crypto library])
@@ -494,12 +510,12 @@ if test x"$enable_openssl" != x"no"; then
       AC_MSG_RESULT(yes)
       AC_SEARCH_LIBS(MD5_Init, crypto,
           [AC_DEFINE(USE_OPENSSL)],
-          [AC_MSG_ERROR(Failed to find MD5_Init function in openssl crypto lib.
-Use --disable-openssl to continue without openssl crypto lib support.)])
+          [err_msg="$err_msg$nl- Failed to find MD5_Init function in openssl crypto lib.";
+	   no_lib="$no_lib openssl"])
     else
         AC_MSG_RESULT(no)
-        AC_MSG_ERROR(Failed to find openssl/md4.h and openssl/md5.h for openssl crypto lib support.
-Use --disable-openssl to continue without it.)
+	err_msg="$err_msg$nl- Failed to find openssl/md4.h and openssl/md5.h for openssl crypto lib support."
+	no_lib="$no_lib openssl"
     fi
 else
     AC_MSG_RESULT(no)
@@ -515,12 +531,12 @@ if test x"$enable_xxhash" != x"no"; then
 	AC_MSG_RESULT(yes)
 	AC_SEARCH_LIBS(XXH64_createState, xxhash,
 	    [AC_DEFINE(SUPPORT_XXHASH)],
-	    [AC_MSG_ERROR(Failed to find XXH64_createState function in xxhash lib.
-Use --disable-xxhash to continue without xxhash checksums.)])
+	    [err_msg="$err_msg$nl- Failed to find XXH64_createState function in xxhash lib.";
+	     no_lib="$no_lib xxhash"])
     else
 	AC_MSG_RESULT(no)
-	AC_MSG_ERROR(Failed to find xxhash.h for xxhash checksum support.
-Use --disable-xxhash to continue without it.)
+	err_msg="$err_msg$nl- Failed to find xxhash.h for xxhash checksum support.";
+	no_lib="$no_lib xxhash"
     fi
 else
     AC_MSG_RESULT(no)
@@ -536,12 +552,12 @@ if test x"$enable_zstd" != x"no"; then
 	AC_MSG_RESULT(yes)
 	AC_SEARCH_LIBS(ZSTD_minCLevel, zstd,
 	    [AC_DEFINE(SUPPORT_ZSTD)],
-	    [AC_MSG_ERROR(Failed to find ZSTD_minCLevel function in zstd lib.
-Use --disable-zstd to continue without zstd compression.)])
+	    [err_msg="$err_msg$nl- Failed to find ZSTD_minCLevel function in zstd lib.";
+	     no_lib="$no_lib zstd"])
     else
 	AC_MSG_RESULT(no)
-	AC_MSG_ERROR(Failed to find zstd.h for zstd compression support.
-Use --disable-zstd to continue without it.)
+	err_msg="$err_msg$nl- Failed to find zstd.h for zstd compression support.";
+	no_lib="$no_lib zstd"
     fi
 else
     AC_MSG_RESULT(no)
@@ -557,15 +573,32 @@ if test x"$enable_lz4" != x"no"; then
 	AC_MSG_RESULT(yes)
 	AC_SEARCH_LIBS(LZ4_compress_default, lz4,
 	    [AC_DEFINE(SUPPORT_LZ4)],
-	    [AC_MSG_ERROR(Failed to find LZ4_compress_default function in lz4 lib.
-Use --disable-lz4 to continue without lz4 compression.)])
+	    [err_msg="$err_msg$nl- Failed to find LZ4_compress_default function in lz4 lib.";
+	     no_lib="$no_lib lz4"])
     else
 	AC_MSG_RESULT(no)
-	AC_MSG_ERROR(Failed to find lz4.h for lz4 compression support.
-Use --disable-lz4 to continue without it.)
+	err_msg="$err_msg$nl- Failed to find lz4.h for lz4 compression support."
+	no_lib="$no_lib lz4"
     fi
 else
     AC_MSG_RESULT(no)
+fi
+
+if test x"$no_lib" != x; then
+    echo ""
+    echo "Configure found the following issues:"
+    echo "$err_msg"
+    echo ""
+    echo "See the INSTALL file for hints on how to install the missing libraries and/or"
+    echo "how to generate (or fetch) man pages:"
+    echo "    https://github.com/WayneD/rsync/blob/master/INSTALL.md"
+    echo ""
+    echo "To disable one or more features, the relevant configure options are:"
+    for lib in $no_lib; do
+	echo "    --disable-$lib"
+    done
+    echo ""
+    AC_MSG_ERROR(Aborting configure run)
 fi
 
 AC_CACHE_CHECK([if makedev takes 3 args],rsync_cv_MAKEDEV_TAKES_3_ARGS,[
@@ -811,9 +844,9 @@ dnl AC_FUNC_MEMCMP
 
 AC_FUNC_UTIME_NULL
 AC_FUNC_ALLOCA
-AC_CHECK_FUNCS(waitpid wait4 getcwd strdup chown chmod lchmod mknod mkfifo \
+AC_CHECK_FUNCS(waitpid wait4 getcwd chown chmod lchmod mknod mkfifo \
     fchmod fstat ftruncate strchr readlink link utime utimes lutimes strftime \
-    chflags getattrlist \
+    chflags getattrlist mktime innetgr linkat \
     memmove lchown vsnprintf snprintf vasprintf asprintf setsid strpbrk \
     strlcat strlcpy strtol mallinfo getgroups setgroups geteuid getegid \
     setlocale setmode open64 lseek64 mkstemp64 mtrace va_copy __va_copy \
@@ -937,6 +970,11 @@ fi
 
 AC_CACHE_CHECK([whether link() can hard-link symlinks],rsync_cv_can_hardlink_symlink,[
   AC_RUN_IFELSE([AC_LANG_SOURCE([[
+#ifdef HAVE_FCNTL_H
+# include <fcntl.h>
+#elif defined HAVE_SYS_FCNTL_H
+# include <sys/fcntl.h>
+#endif
 #if HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -947,7 +985,11 @@ int main(void) {
 	unlink(FILENAME);
 	if (symlink("conftest.no-such", FILENAME) < 0) abort();
 	unlink(FILENAME "2");
+#ifdef HAVE_LINKAT
+	if (linkat(AT_FDCWD, FILENAME, AT_FDCWD, FILENAME "2", 0) < 0) return 1;
+#else
 	if (link(FILENAME, FILENAME "2") < 0) return 1;
+#endif
 	return 0;
     }]])],[rsync_cv_can_hardlink_symlink=yes],[rsync_cv_can_hardlink_symlink=no],[rsync_cv_can_hardlink_symlink=no])])
 if test $rsync_cv_can_hardlink_symlink = yes; then
@@ -1212,11 +1254,6 @@ else
 	AC_DEFINE(HAVE_SOLARIS_ACLS, 1, [true if you have solaris ACLs])
 	AC_DEFINE(SUPPORT_ACLS, 1)
 	;;
-    *hpux*)
-	AC_MSG_RESULT(Using HPUX ACLs)
-	AC_DEFINE(HAVE_HPUX_ACLS, 1, [true if you have HPUX ACLs])
-	AC_DEFINE(SUPPORT_ACLS, 1)
-	;;
     *irix*)
 	AC_MSG_RESULT(Using IRIX ACLs)
 	AC_DEFINE(HAVE_IRIX_ACLS, 1, [true if you have IRIX ACLs])
@@ -1236,6 +1273,11 @@ else
     darwin*)
 	AC_MSG_RESULT(Using OS X ACLs)
 	AC_DEFINE(HAVE_OSX_ACLS, 1, [true if you have Mac OS X ACLs])
+	AC_DEFINE(SUPPORT_ACLS, 1)
+	;;
+    *hpux*|*nsk*)
+	AC_MSG_RESULT(Using HPUX ACLs)
+	AC_DEFINE(HAVE_HPUX_ACLS, 1, [true if you have HPUX ACLs])
 	AC_DEFINE(SUPPORT_ACLS, 1)
 	;;
     *)
@@ -1281,7 +1323,7 @@ if test x"$enable_xattr_support" = x"no"; then
     AC_MSG_RESULT(no)
 else
     case "$host_os" in
-    *linux*|*netbsd*)
+    *linux*|*netbsd*|*cygwin*)
 	AC_MSG_RESULT(Using Linux xattrs)
 	AC_DEFINE(HAVE_LINUX_XATTRS, 1, [True if you have Linux xattrs (or equivalent)])
 	AC_DEFINE(SUPPORT_XATTRS, 1)

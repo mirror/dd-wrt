@@ -207,21 +207,18 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     they would escape the module hierarchy.  The default for "use chroot" is
     true, and is the safer choice (especially if the module is not read-only).
 
-    When this parameter is enabled, the "numeric-ids" option will also default
-    to being enabled (disabling name lookups).  See below for what a chroot
-    needs in order for name lookups to succeed.
+    When this parameter is enabled *and* the "name converter" parameter is
+    *not* set, the "numeric ids" parameter will default to being enabled
+    (disabling name lookups).  This means that if you manually setup
+    name-lookup libraries in your chroot (instead of using a name converter)
+    that you need to explicitly set `numeric ids = false` for rsync to do name
+    lookups.
 
     If you copy library resources into the module's chroot area, you should
     protect them through your OS's normal user/group or ACL settings (to
     prevent the rsync module's user from being able to change them), and then
     hide them from the user's view via "exclude" (see how in the discussion of
-    that parameter).  At that point it will be safe to enable the mapping of
-    users and groups by name using the "numeric ids" daemon parameter (see
-    below).
-
-    Note also that you are free to setup custom user/group information in the
-    chroot area that is different from your normal system.  For example, you
-    could abbreviate the list of users and groups.
+    that parameter).  However, it's easier and safer to setup a name converter.
 
 0.  `daemon chroot`
 
@@ -258,6 +255,27 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     others, then you will need to setup multiple rsync daemon processes on
     different ports.
 
+0.  `name converter`
+
+    This parameter lets you specify a program that will be run by the rsync
+    daemon to do user & group conversions between names & ids.  This script
+    is started prior to any chroot being setup, and runs as the daemon user
+    (not the transfer user).  You can specify a fully qualified pathname or
+    a program name that is on the $PATH.
+
+    The program can be used to do normal user & group lookups without having to
+    put any extra files into the chroot area of the module *or* you can do
+    customized conversions.
+
+    The nameconvert program has access to all of the environment variables that
+    are described in the section on `pre-xfer exec`.  This is useful if you
+    want to customize the conversion using information about the module and/or
+    the copy request.
+
+    There is a sample python script in the support dir named "nameconvert" that
+    implements the normal user & group lookups.  Feel free to customize it or
+    just use it as documentation to implement your own.
+
 0.  `numeric ids`
 
     Enabling this parameter disables the mapping of users and groups by name
@@ -269,13 +287,10 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     uid/gid preservation requires the module to be running as root (see "uid")
     or for "fake super" to be configured.
 
-    A chroot-enabled module should not have this parameter enabled unless
-    you've taken steps to ensure that the module has the necessary resources it
-    needs to translate names, and that it is not possible for a user to change
-    those resources.  That includes being the code being able to call functions
-    like **getpwuid()**, **getgrgid()**, **getpwname()**, and **getgrnam()**.
-    You should test what libraries and config files are required for your OS
-    and get those setup before starting to test name mapping in rsync.
+    A chroot-enabled module should not have this parameter set to false unless
+    you're using a "name converter" program *or* you've taken steps to ensure
+    that the module has the necessary resources it needs to translate names and
+    that it is not possible for a user to change those resources.
 
 0.  `munge symlinks`
 
@@ -685,7 +700,7 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     client's hostname and IP address.  If none of the patterns match, then the
     connection is rejected.
 
-    Each pattern can be in one of five forms:
+    Each pattern can be in one of six forms:
 
     - a dotted decimal IPv4 address of the form a.b.c.d, or an IPv6 address of
       the form a:b:c::d:e:f. In this case the incoming machine's IP address
@@ -705,6 +720,8 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
       connecting IP (if "reverse lookup" is enabled), and/or the IP of the
       given hostname is matched against the connecting IP (if "forward lookup"
       is enabled, as it is by default).  Any match will be allowed in.
+    - an '@' followed by a netgroup name, which will match if the reverse DNS
+      of the connecting IP is in the specified netgroup.
 
     Note IPv6 link-local addresses can have a scope in the address
     specification:
@@ -713,12 +730,12 @@ the values of parameters.  See the GLOBAL PARAMETERS section for more details.
     >     fe80::%link1/64
     >     fe80::%link1/ffff:ffff:ffff:ffff::
 
-    You can also combine "hosts allow" with a separate "hosts deny" parameter.
-    If both parameters are specified then the "hosts allow" parameter is
-    checked first and a match results in the client being able to connect. The
-    "hosts deny" parameter is then checked and a match means that the host is
-    rejected. If the host does not match either the "hosts allow" or the
-    "hosts deny" patterns then it is allowed to connect.
+    You can also combine "hosts allow" with "hosts deny" as a way to add
+    exceptions to your deny list.  When both parameters are specified, the
+    "hosts allow" parameter is checked first and a match results in the client
+    being able to connect.  A non-allowed host is then matched against the
+    "hosts deny" list to see if it should be rejected.  A host that does not
+    match either list is allowed to connect.
 
     The default is no "hosts allow" parameter, which means all hosts can
     connect.

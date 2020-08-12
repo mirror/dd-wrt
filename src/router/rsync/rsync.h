@@ -70,7 +70,7 @@
 /* The following XMIT flags require an rsync that uses a varint for the flag values */
 
 #define XMIT_RESERVED_16 (1<<16) 	/* reserved for future fileflags use */
-#define XMIT_RESERVED_17 (1<<17) 	/* reserved for future crtimes use */
+#define XMIT_CRTIME_EQ_MTIME (1<<17)	/* any protocol - restricted by command-line option */
 
 /* These flags are used in the live flist data. */
 
@@ -182,6 +182,7 @@
 #define ATTRS_SKIP_MTIME	(1<<1)
 #define ATTRS_ACCURATE_TIME	(1<<2)
 #define ATTRS_SKIP_ATIME	(1<<3)
+#define ATTRS_SKIP_CRTIME	(1<<5)
 
 #define MSG_FLUSH	2
 #define FULL_FLUSH	1
@@ -209,6 +210,7 @@
 #define ITEM_REPORT_GROUP (1<<6)
 #define ITEM_REPORT_ACL (1<<7)
 #define ITEM_REPORT_XATTR (1<<8)
+#define ITEM_REPORT_CRTIME (1<<10)
 #define ITEM_BASIS_TYPE_FOLLOWS (1<<11)
 #define ITEM_XNAME_FOLLOWS (1<<12)
 #define ITEM_IS_NEW (1<<13)
@@ -442,7 +444,9 @@ enum delret {
 #include <netdb.h>
 #endif
 #include <syslog.h>
+#ifdef HAVE_SYS_FILE_H
 #include <sys/file.h>
+#endif
 
 #ifdef HAVE_DIRENT_H
 # include <dirent.h>
@@ -471,7 +475,23 @@ enum delret {
 #ifdef MAKEDEV_TAKES_3_ARGS
 #define MAKEDEV(devmajor,devminor) makedev(0,devmajor,devminor)
 #else
+#ifndef __TANDEM
 #define MAKEDEV(devmajor,devminor) makedev(devmajor,devminor)
+#else
+# include <sys/stat.h>
+# define major DEV_TO_MAJOR
+# define minor DEV_TO_MINOR
+# define MAKEDEV MAJORMINOR_TO_DEV
+#endif
+#endif
+
+#ifdef __TANDEM
+# include <floss.h(floss_read,floss_write,floss_fork,floss_execvp)>
+# include <floss.h(floss_getpwuid,floss_select,floss_seteuid)>
+# define S_IEXEC S_IXUSR
+# define ROOT_UID 65535
+#else
+# define ROOT_UID 0
 #endif
 
 #ifdef HAVE_COMPAT_H
@@ -548,6 +568,14 @@ typedef unsigned int size_t;
 #else
 # define uint16 unsigned int16
 #endif
+#endif
+
+#ifndef __APPLE__ /* Do we need a configure check for this? */
+#define SUPPORT_ATIMES 1
+#endif
+
+#ifdef HAVE_GETATTRLIST
+#define SUPPORT_CRTIMES 1
 #endif
 
 /* Find a variable that is either exactly 32-bits or longer.
@@ -693,6 +721,10 @@ struct ht_int64_node {
 #define NAME_MAX 255
 #endif
 
+#ifndef SIZE_MAX
+#define SIZE_MAX ((size_t)-1)
+#endif
+
 #ifndef INADDR_NONE
 #define INADDR_NONE 0xffffffff
 #endif
@@ -732,6 +764,10 @@ struct ht_int64_node {
 # error Character pointers are not 4 or 8 bytes.
 #endif
 
+#if defined __STDC_VERSION__ && __STDC_VERSION__ >= 199901L
+#define USE_FLEXIBLE_ARRAY 1
+#endif
+
 union file_extras {
 	int32 num;
 	uint32 unum;
@@ -753,12 +789,17 @@ struct file_struct {
 	uint32 len32;		/* Lowest 32 bits of the file's length */
 	uint16 mode;		/* The item's type and permissions */
 	uint16 flags;		/* The FLAG_* bits for this item */
-	const char basename[1];	/* The basename (AKA filename) follows */
+#ifdef USE_FLEXIBLE_ARRAY
+	const char basename[];	/* The basename (AKA filename) follows */
+#else
+	const char basename[1];	/* A kluge that should work like a flexible array */
+#endif
 };
 
 extern int file_extra_cnt;
 extern int inc_recurse;
 extern int atimes_ndx;
+extern int crtimes_ndx;
 extern int pathname_ndx;
 extern int depth_ndx;
 extern int uid_ndx;
@@ -766,7 +807,11 @@ extern int gid_ndx;
 extern int acls_ndx;
 extern int xattrs_ndx;
 
+#ifdef USE_FLEXIBLE_ARRAY
+#define FILE_STRUCT_LEN (sizeof (struct file_struct))
+#else
 #define FILE_STRUCT_LEN (offsetof(struct file_struct, basename))
+#endif
 #define EXTRA_LEN (sizeof (union file_extras))
 #define DEV_EXTRA_CNT 2
 #define DIRNODE_EXTRA_CNT 3
@@ -817,6 +862,7 @@ extern int xattrs_ndx;
 #define F_XATTR(f) REQ_EXTRA(f, xattrs_ndx)->num
 #define F_NDX(f) REQ_EXTRA(f, unsort_ndx)->num
 #define F_ATIME(f) REQ_EXTRA64(f, atimes_ndx)->num
+#define F_CRTIME(f) REQ_EXTRA64(f, crtimes_ndx)->num
 
 /* These items are per-entry optional: */
 #define F_HL_GNUM(f) OPT_EXTRA(f, START_BUMP(f))->num /* non-dirs */
@@ -1035,8 +1081,18 @@ typedef struct {
 
 typedef struct {
 	char name_type;
-	char fname[1]; /* has variable size */
+#ifdef USE_FLEXIBLE_ARRAY
+	char fname[]; /* has variable size */
+#else
+	char fname[1]; /* A kluge that should work like a flexible array */
+#endif
 } relnamecache;
+
+#ifdef USE_FLEXIBLE_ARRAY
+#define RELNAMECACHE_LEN (sizeof (relnamecache))
+#else
+#define RELNAMECACHE_LEN (offsetof(relnamecache, fname))
+#endif
 
 #include "byteorder.h"
 #include "lib/mdigest.h"
@@ -1059,6 +1115,7 @@ typedef struct {
 
 typedef struct {
     STRUCT_STAT st;
+    time_t crtime;
 #ifdef SUPPORT_ACLS
     struct rsync_acl *acc_acl; /* access ACL */
     struct rsync_acl *def_acl; /* default ACL */
@@ -1094,7 +1151,7 @@ struct name_num_obj {
 	uchar *saw;
 	int saw_len;
 	int negotiated_num;
-	struct name_num_item list[];
+	struct name_num_item list[8]; /* A big-enough len (we'll get a compile error if it is ever too small) */
 };
 
 #ifndef __cplusplus
@@ -1267,19 +1324,22 @@ extern int errno;
 /* handler for null strings in printf format */
 #define NS(s) ((s)?(s):"<NULL>")
 
-extern char *do_malloc;
+extern char *do_calloc;
 
 /* Convenient wrappers for malloc and realloc.  Use them. */
-#define new(type) ((type*)my_alloc(do_malloc, sizeof (type), 1, __FILE__, __LINE__))
-#define new0(type) ((type*)my_alloc(NULL, sizeof (type), 1, __FILE__, __LINE__))
+#define new(type) ((type*)my_alloc(NULL, sizeof (type), 1, __FILE__, __LINE__))
+#define new0(type) ((type*)my_alloc(do_calloc, sizeof (type), 1, __FILE__, __LINE__))
 #define realloc_buf(ptr, num) my_alloc((ptr), (num), 1, __FILE__, __LINE__)
 
-#define new_array(type, num) ((type*)my_alloc(do_malloc, (num), sizeof (type), __FILE__, __LINE__))
-#define new_array0(type, num) ((type*)my_alloc(NULL, (num), sizeof (type), __FILE__, __LINE__))
+#define new_array(type, num) ((type*)my_alloc(NULL, (num), sizeof (type), __FILE__, __LINE__))
+#define new_array0(type, num) ((type*)my_alloc(do_calloc, (num), sizeof (type), __FILE__, __LINE__))
 #define realloc_array(ptr, type, num) ((type*)my_alloc((ptr), (num), sizeof (type), __FILE__, __LINE__))
 
 #undef strdup
 #define strdup(s) my_strdup(s, __FILE__, __LINE__)
+
+#define out_of_memory(msg) _out_of_memory(msg, __FILE__, __LINE__)
+#define overflow_exit(msg) _overflow_exit(msg, __FILE__, __LINE__)
 
 #ifdef NEED_PRINTF
 /* use magic gcc attributes to catch format errors */
@@ -1401,3 +1461,8 @@ char *getpass(const char *prompt);
 #ifdef MAINTAINER_MODE
 const char *get_panic_action(void);
 #endif
+
+#define NOISY_DEATH(msg) do { \
+    fprintf(stderr, "%s in %s at line %d\n", msg, __FILE__, __LINE__); \
+    exit_cleanup(RERR_UNSUPPORTED); \
+} while (0)

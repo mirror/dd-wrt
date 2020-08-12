@@ -54,6 +54,15 @@ extern int open_noatime;
 # endif
 #endif
 
+#ifdef SUPPORT_CRTIMES
+#pragma pack(push, 4)
+struct create_time {
+	uint32 length;
+	struct timespec crtime;
+};
+#pragma pack(pop)
+#endif
+
 #define RETURN_ERROR_IF(x,e) \
 	do { \
 		if (x) { \
@@ -120,12 +129,16 @@ ssize_t do_readlink(const char *path, char *buf, size_t bufsiz)
 #endif
 #endif
 
-#ifdef HAVE_LINK
+#if defined HAVE_LINK || defined HAVE_LINKAT
 int do_link(const char *old_path, const char *new_path)
 {
 	if (dry_run) return 0;
 	RETURN_ERROR_IF_RO_OR_LO;
+#ifdef HAVE_LINKAT
+	return linkat(AT_FDCWD, old_path, AT_FDCWD, new_path, 0);
+#else
 	return link(old_path, new_path);
+#endif
 }
 #endif
 
@@ -385,6 +398,40 @@ int do_setattrlist_times(const char *fname, STRUCT_STAT *stp)
 }
 #endif
 
+#ifdef SUPPORT_CRTIMES
+time_t get_create_time(const char *path)
+{
+	static struct create_time attrBuf;
+	struct attrlist attrList;
+
+	memset(&attrList, 0, sizeof attrList);
+	attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
+	attrList.commonattr = ATTR_CMN_CRTIME;
+	if (getattrlist(path, &attrList, &attrBuf, sizeof attrBuf, FSOPT_NOFOLLOW) < 0)
+		return 0;
+	return attrBuf.crtime.tv_sec;
+}
+#endif
+
+#ifdef SUPPORT_CRTIMES
+int set_create_time(const char *path, time_t crtime)
+{
+	struct attrlist attrList;
+	struct timespec ts;
+
+	if (dry_run) return 0;
+	RETURN_ERROR_IF_RO_OR_LO;
+
+	ts.tv_sec = crtime;
+	ts.tv_nsec = 0;
+
+	memset(&attrList, 0, sizeof attrList);
+	attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
+	attrList.commonattr = ATTR_CMN_CRTIME;
+	return setattrlist(path, &attrList, &ts, sizeof ts, FSOPT_NOFOLLOW);
+}
+#endif
+
 #ifdef HAVE_UTIMENSAT
 int do_utimensat(const char *fname, STRUCT_STAT *stp)
 {
@@ -523,7 +570,7 @@ OFF_T do_fallocate(int fd, OFF_T offset, OFF_T length)
 
 /* Punch a hole at pos for len bytes. The current file position must be at pos and will be
  * changed to be at pos + len. */
-int do_punch_hole(int fd, UNUSED(OFF_T pos), OFF_T len)
+int do_punch_hole(int fd, OFF_T pos, OFF_T len)
 {
 #ifdef HAVE_FALLOCATE
 # ifdef HAVE_FALLOC_FL_PUNCH_HOLE
@@ -540,6 +587,8 @@ int do_punch_hole(int fd, UNUSED(OFF_T pos), OFF_T len)
 		return 0;
 	}
 # endif
+#else
+	(void)pos;
 #endif
 	{
 		char zeros[4096];

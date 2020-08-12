@@ -101,6 +101,9 @@
    */
 #undef HAVE_DIRENT_H
 
+/* Define to 1 if you have the <dl.h> header file. */
+#undef HAVE_DL_H
+
 /* Define if posix_fallocate is efficient (Cygwin) */
 #undef HAVE_EFFICIENT_POSIX_FALLOCATE
 
@@ -195,6 +198,9 @@
 /* Define to 1 if you have the `initgroups' function. */
 #undef HAVE_INITGROUPS
 
+/* Define to 1 if you have the `innetgr' function. */
+#undef HAVE_INNETGR
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -249,6 +255,9 @@
 /* Define to 1 if you have the `link' function. */
 #undef HAVE_LINK
 
+/* Define to 1 if you have the `linkat' function. */
+#undef HAVE_LINKAT
+
 /* Define to 1 if you have the <linux/falloc.h> header file. */
 #undef HAVE_LINUX_FALLOC_H
 
@@ -301,6 +310,9 @@
 
 /* Define to 1 if you have the `mkstemp64' function. */
 #undef HAVE_MKSTEMP64
+
+/* Define to 1 if you have the `mktime' function. */
+#undef HAVE_MKTIME
 
 /* Define to 1 if the system has the type `mode_t'. */
 #undef HAVE_MODE_T
@@ -440,9 +452,6 @@
 /* Define to 1 if you have the `strchr' function. */
 #undef HAVE_STRCHR
 
-/* Define to 1 if you have the `strdup' function. */
-#undef HAVE_STRDUP
-
 /* Define to 1 if you have the `strerror' function. */
 #undef HAVE_STRERROR
 
@@ -509,6 +518,9 @@
 
 /* Define to 1 if you have the <sys/fcntl.h> header file. */
 #undef HAVE_SYS_FCNTL_H
+
+/* Define to 1 if you have the <sys/file.h> header file. */
+#undef HAVE_SYS_FILE_H
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
 #undef HAVE_SYS_FILIO_H
