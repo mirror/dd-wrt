@@ -91,6 +91,7 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
 		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
+		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -643,7 +644,7 @@ void start_openvpn(void)
 		fprintf(fp, "while ip rule delete from 0/0 to 0/0 table 10; do true; done\n");	//egc: added to delete ip rules
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq\n");
+		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
@@ -668,6 +669,7 @@ void start_openvpn(void)
 
 void stop_openvpn(void)
 {
+	nvram_unset("openvpn_get_dns");
 	if (stop_process("openvpn", "OpenVPN daemon (Client)")) {
 /*              if (nvram_matchi("wshaper_enable",1)) {disable wshaper, causes fw race condition
                         stop_wshaper();

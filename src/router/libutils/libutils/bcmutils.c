@@ -509,7 +509,11 @@ struct dns_lists *get_dns_list(int v6)
 	char *sv_localdns = nvram_safe_get("sv_localdns");
 	char *wan_dns = nvram_safe_get("wan_dns");
 	char *wan_get_dns = nvram_safe_get("wan_get_dns");
+	char *openvpn_get_dns = nvram_safe_get("openvpn_get_dns");
 
+	if (*openvpn_get_dns) {	
+		add_dnslist(dns_list, openvpn_get_dns, 0, 0);
+	}
 	/*
 	 * if < 3 DNS servers found, try to insert alternates 
 	 */
