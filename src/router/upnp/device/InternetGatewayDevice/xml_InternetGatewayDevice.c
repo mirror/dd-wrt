@@ -48,7 +48,7 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<friendlyName>%s:%s</friendlyName>\r\n"
 	"\t\t<modelName>%s</modelName>\r\n"
 #endif
-	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<modelNumber>V30</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.buffalo.jp</modelURL>\r\n"
 #elif HAVE_ANTAIRA
@@ -57,7 +57,7 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t<friendlyName>Industrial Router</friendlyName>\r\n"
 	"\t\t<modelName>Industrial Router</modelName>\r\n"
-	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<modelNumber>V30</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.antaira.com</modelURL>\r\n"
 #else
@@ -66,7 +66,7 @@ char xml_InternetGatewayDevice[] =
 	"\t\t<modelDescription>Gateway</modelDescription>\r\n"
 	"\t\t<friendlyName>%s:%s</friendlyName>\r\n"
 	"\t\t<modelName>%s</modelName>\r\n"
-	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<modelNumber>V30</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<modelURL>http://www.dd-wrt.com</modelURL>\r\n"
 #endif
