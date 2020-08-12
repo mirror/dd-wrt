@@ -27,7 +27,7 @@ char xml_WFADevice[] =
 	"\t\t<manufacturerURL>http://www.dd-wrt.com</manufacturerURL>\r\n"
 	"\t\t<modelDescription>Wireless Device</modelDescription>\r\n"
 	"\t\t<modelName>DD-WRT Router</modelName>\r\n"
-	"\t\t<modelNumber>V24</modelNumber>\r\n"
+	"\t\t<modelNumber>V30</modelNumber>\r\n"
 	"\t\t<serialNumber>0000001</serialNumber>\r\n"
 	"\t\t<UDN>uuid:00010203-0405-0607-0809-0a0b0c0d0ebb</UDN>\r\n"
 	"\t\t<serviceList>\r\n"

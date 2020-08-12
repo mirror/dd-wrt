@@ -78,7 +78,7 @@ upnp_osl_read_config(UPNP_CONFIG *config)
 	/* Get OS/VER */
 	strcpy(config->os_name, "DD-WRT Linux");
 
-	strcpy(config->os_ver, "V24");
+	strcpy(config->os_ver, "V30");
 
 	/* initialize upnp_config to default values */
 	if ((value = nvram_get("upnp_port")))
