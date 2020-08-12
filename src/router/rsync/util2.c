@@ -21,13 +21,12 @@
  */
 
 #include "rsync.h"
-#include "ifuncs.h"
 #include "itypes.h"
 #include "inums.h"
 
 extern size_t max_alloc;
 
-char *do_malloc = "42";
+char *do_calloc = "42";
 
 /**
  * Sleep for a specified number of milliseconds.
@@ -71,38 +70,23 @@ int msleep(int t)
 	return True;
 }
 
-/* Convert a num manually because the needed %lld precision is not a portable sprintf() escape. */
-char *num_to_byte_string(ssize_t num)
-{
-	char buf[128], *s = buf + sizeof buf - 1;
-
-	*s = '\0';
-	while (num) {
-		*--s = (char)(num % 10) + '0';
-		num /= 10;
-	}
-	return strdup(s);
-}
-
 void *my_alloc(void *ptr, size_t num, size_t size, const char *file, int line)
 {
-	if (num >= max_alloc/size) {
+	if (max_alloc && num >= max_alloc/size) {
 		if (!file)
 			return NULL;
 		rprintf(FERROR, "[%s] exceeded --max-alloc=%s setting (file=%s, line=%d)\n",
-			who_am_i(), num_to_byte_string(max_alloc), file, line);
+			who_am_i(), do_big_num(max_alloc, 0, NULL), src_file(file), line);
 		exit_cleanup(RERR_MALLOC);
 	}
 	if (!ptr)
-		ptr = calloc(num, size);
-	else if (ptr == do_malloc)
 		ptr = malloc(num * size);
+	else if (ptr == do_calloc)
+		ptr = calloc(num, size);
 	else
 		ptr = realloc(ptr, num * size);
-	if (!ptr && file) {
-		rprintf(FERROR, "[%s] out of memory (file=%s, line=%d)\n", who_am_i(), file, line);
-		exit_cleanup(RERR_MALLOC);
-	}
+	if (!ptr && file)
+		_out_of_memory("my_alloc caller", file, line);
 	return ptr;
 }
 
@@ -133,14 +117,29 @@ const char *sum_as_hex(int csum_type, const char *sum, int flist_csum)
 	return buf;
 }
 
-NORETURN void out_of_memory(const char *str)
+NORETURN void _out_of_memory(const char *msg, const char *file, int line)
 {
-	rprintf(FERROR, "ERROR: out of memory in %s [%s]\n", str, who_am_i());
+	rprintf(FERROR, "[%s] out of memory: %s (file=%s, line=%d)\n", who_am_i(), msg, src_file(file), line);
 	exit_cleanup(RERR_MALLOC);
 }
 
-NORETURN void overflow_exit(const char *str)
+NORETURN void _overflow_exit(const char *msg, const char *file, int line)
 {
-	rprintf(FERROR, "ERROR: buffer overflow in %s [%s]\n", str, who_am_i());
+	rprintf(FERROR, "[%s] buffer overflow: %s (file=%s, line=%d)\n", who_am_i(), msg, src_file(file), line);
 	exit_cleanup(RERR_MALLOC);
+}
+
+const char *src_file(const char *file)
+{
+	static const char *util2 = __FILE__;
+	static int prefix = -1;
+
+	if (prefix < 0) {
+		const char *cp = strrchr(util2, '/');
+		prefix = cp ? cp - util2 + 1 : 0;
+	}
+
+	if (prefix && strncmp(file, util2, prefix) == 0)
+		return file + prefix;
+	return file;
 }

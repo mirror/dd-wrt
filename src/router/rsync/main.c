@@ -28,6 +28,9 @@
 #include <locale.h>
 #endif
 #include <popt.h>
+#ifdef __TANDEM
+#include <floss.h(floss_execlp)>
+#endif
 
 extern int dry_run;
 extern int list_only;
@@ -54,6 +57,7 @@ extern int copy_unsafe_links;
 extern int keep_dirlinks;
 extern int preserve_hard_links;
 extern int protocol_version;
+extern int mkpath_dest_arg;
 extern int file_total;
 extern int recurse;
 extern int xfer_dirs;
@@ -93,6 +97,7 @@ extern char *shell_cmd;
 extern char *password_file;
 extern char *backup_dir;
 extern char *copy_as;
+extern char *tmpdir;
 extern char curr_dir[MAXPATHLEN];
 extern char backup_dir_buf[MAXPATHLEN];
 extern char *basis_dir[MAX_BASIS_DIRS+1];
@@ -104,7 +109,7 @@ gid_t our_gid;
 int am_receiver = 0;  /* Only set to 1 after the receiver/generator fork. */
 int am_generator = 0; /* Only set to 1 after the receiver/generator fork. */
 int local_server = 0;
-int daemon_over_rsh = 0;
+int daemon_connection = 0; /* 0 = no daemon, 1 = daemon via remote shell, -1 = daemon via socket */
 mode_t orig_umask = 0;
 int batch_gen_fd = -1;
 int sender_keeps_checksum = 0;
@@ -299,7 +304,7 @@ static void become_copy_as_user()
 
 	our_uid = MY_UID();
 	our_gid = MY_GID();
-	am_root = (our_uid == 0);
+	am_root = (our_uid == ROOT_UID);
 
 	if (gname)
 		gname[-1] = ':';
@@ -562,12 +567,12 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 #ifdef HAVE_REMSH
 		/* remsh (on HPUX) takes the arguments the other way around */
 		args[argc++] = machine;
-		if (user && !(daemon_over_rsh && dash_l_set)) {
+		if (user && !(daemon_connection && dash_l_set)) {
 			args[argc++] = "-l";
 			args[argc++] = user;
 		}
 #else
-		if (user && !(daemon_over_rsh && dash_l_set)) {
+		if (user && !(daemon_connection && dash_l_set)) {
 			args[argc++] = "-l";
 			args[argc++] = user;
 		}
@@ -587,7 +592,11 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 		if (blocking_io < 0 && (strcmp(t, "rsh") == 0 || strcmp(t, "remsh") == 0))
 			blocking_io = 1;
 
-		server_options(args, &argc);
+		if (daemon_connection > 0) {
+			args[argc++] = "--server";
+			args[argc++] = "--daemon";
+		} else
+			server_options(args, &argc);
 
 		if (argc >= MAX_ARGS - 2)
 			goto arg_overflow;
@@ -595,7 +604,7 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 
 	args[argc++] = ".";
 
-	if (!daemon_over_rsh) {
+	if (!daemon_connection) {
 		while (remote_argc > 0) {
 			if (argc >= MAX_ARGS - 1) {
 			  arg_overflow:
@@ -648,7 +657,7 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 #ifdef ICONV_CONST
 		setup_iconv();
 #endif
-		if (protect_args && !daemon_over_rsh)
+		if (protect_args && !daemon_connection)
 			send_protected_args(*f_out_p, args);
 	}
 
@@ -674,7 +683,7 @@ static pid_t do_cmd(char *cmd, char *machine, char *user, char **remote_argv, in
 static char *get_local_name(struct file_list *flist, char *dest_path)
 {
 	STRUCT_STAT st;
-	int statret;
+	int statret, trailing_slash;
 	char *cp;
 
 	if (DEBUG_GTE(RECV, 1)) {
@@ -707,7 +716,26 @@ static char *get_local_name(struct file_list *flist, char *dest_path)
 	}
 
 	/* See what currently exists at the destination. */
-	if ((statret = do_stat(dest_path, &st)) == 0) {
+	statret = do_stat(dest_path, &st);
+	cp = strrchr(dest_path, '/');
+	trailing_slash = cp && !cp[1];
+
+	if (mkpath_dest_arg && statret < 0 && (cp || file_total > 1)) {
+		int ret = make_path(dest_path, file_total > 1 && !trailing_slash ? 0 : MKP_DROP_NAME);
+		if (ret < 0)
+			goto mkdir_error;
+		if (INFO_GTE(NAME, 1)) {
+			if (file_total == 1 || trailing_slash)
+				*cp = '\0';
+			rprintf(FINFO, "created %d director%s for %s\n", ret, ret == 1 ? "y" : "ies", dest_path);
+			if (file_total == 1 || trailing_slash)
+				*cp = '/';
+		}
+		if (file_total > 1 || trailing_slash)
+			statret = do_stat(dest_path, &st);
+	}
+
+	if (statret == 0) {
 		/* If the destination is a dir, enter it and use mode 1. */
 		if (S_ISDIR(st.st_mode)) {
 			if (!change_dir(dest_path, CD_NORMAL)) {
@@ -737,15 +765,12 @@ static char *get_local_name(struct file_list *flist, char *dest_path)
 		exit_cleanup(RERR_FILESELECT);
 	}
 
-	cp = strrchr(dest_path, '/');
-
 	/* If we need a destination directory because the transfer is not
 	 * of a single non-directory or the user has requested one via a
 	 * destination path ending in a slash, create one and use mode 1. */
-	if (file_total > 1 || (cp && !cp[1])) {
-		/* Lop off the final slash (if any). */
-		if (cp && !cp[1])
-			*cp = '\0';
+	if (file_total > 1 || trailing_slash) {
+		if (trailing_slash)
+			*cp = '\0'; /* Lop off the final slash (if any). */
 
 		if (statret == 0) {
 			rprintf(FERROR, "ERROR: destination path is not a directory\n");
@@ -753,6 +778,7 @@ static char *get_local_name(struct file_list *flist, char *dest_path)
 		}
 
 		if (do_mkdir(dest_path, ACCESSPERMS) != 0) {
+		    mkdir_error:
 			rsyserr(FERROR, errno, "mkdir %s failed",
 				full_fname(dest_path));
 			exit_cleanup(RERR_FILEIO);
@@ -977,6 +1003,23 @@ static int do_recv(int f_in, int f_out, char *local_name)
 			backup_dir_buf[backup_dir_len-1] = '/';
 	}
 
+	if (tmpdir) {
+		STRUCT_STAT st;
+		int ret = do_stat(tmpdir, &st);
+		if (ret < 0 || !S_ISDIR(st.st_mode)) {
+			if (ret == 0) {
+				rprintf(FERROR, "The temp-dir is not a directory: %s\n", tmpdir);
+				exit_cleanup(RERR_SYNTAX);
+			}
+			if (errno == ENOENT) {
+				rprintf(FERROR, "The temp-dir does not exist: %s\n", tmpdir);
+				exit_cleanup(RERR_SYNTAX);
+			}
+			rprintf(FERROR, "Failed to stat temp-dir %s: %s\n", tmpdir, strerror(errno));
+			exit_cleanup(RERR_FILEIO);
+		}
+	}
+
 	io_flush(FULL_FLUSH);
 
 	if ((pid = do_fork()) == -1) {
@@ -1083,7 +1126,7 @@ static void do_server_recv(int f_in, int f_out, int argc, char *argv[])
 	char *local_name = NULL;
 	int negated_levels;
 
-	if (filesfrom_fd >= 0 && !msgs2stderr && protocol_version < 31) {
+	if (filesfrom_fd >= 0 && msgs2stderr != 1 && protocol_version < 31) {
 		/* We can't mix messages with files-from data on the socket,
 		 * so temporarily turn off info/debug messages. */
 		negate_output_levels();
@@ -1386,7 +1429,7 @@ static int start_client(int argc, char *argv[])
 			}
 			am_sender = 0;
 			if (rsync_port)
-				daemon_over_rsh = shell_cmd ? 1 : -1;
+				daemon_connection = shell_cmd ? 1 : -1;
 		} else { /* source is local, check dest arg */
 			am_sender = 1;
 
@@ -1418,7 +1461,7 @@ static int start_client(int argc, char *argv[])
 			} else { /* hostspec was found, so dest is remote */
 				argv[argc] = path;
 				if (rsync_port)
-					daemon_over_rsh = shell_cmd ? 1 : -1;
+					daemon_connection = shell_cmd ? 1 : -1;
 			}
 		}
 	} else {  /* read_batch */
@@ -1439,8 +1482,15 @@ static int start_client(int argc, char *argv[])
 		char *dummy_host;
 		int dummy_port = rsync_port;
 		int i;
+		if (!argv[0][0])
+			goto invalid_empty;
 		/* For local source, extra source args must not have hostspec. */
 		for (i = 1; i < argc; i++) {
+			if (!argv[i][0]) {
+			    invalid_empty:
+				rprintf(FERROR, "Empty source arg specified.\n");
+				exit_cleanup(RERR_SYNTAX);
+			}
 			if (check_for_hostspec(argv[i], &dummy_host, &dummy_port)) {
 				rprintf(FERROR, "Unexpected remote arg: %s\n", argv[i]);
 				exit_cleanup(RERR_SYNTAX);
@@ -1481,10 +1531,10 @@ static int start_client(int argc, char *argv[])
 	else
 		env_port = rsync_port;
 
-	if (daemon_over_rsh < 0)
+	if (daemon_connection < 0)
 		return start_socket_client(shell_machine, remote_argc, remote_argv, argc, argv);
 
-	if (password_file && !daemon_over_rsh) {
+	if (password_file && !daemon_connection) {
 		rprintf(FERROR, "The --password-file option may only be "
 				"used when accessing an rsync daemon.\n");
 		exit_cleanup(RERR_SYNTAX);
@@ -1512,7 +1562,7 @@ static int start_client(int argc, char *argv[])
 	}
 
 #ifdef HAVE_PUTENV
-	if (daemon_over_rsh)
+	if (daemon_connection)
 		set_env_num("RSYNC_PORT", env_port);
 #endif
 
@@ -1520,7 +1570,7 @@ static int start_client(int argc, char *argv[])
 
 	/* if we're running an rsync server on the remote host over a
 	 * remote shell command, we need to do the RSYNCD protocol first */
-	if (daemon_over_rsh) {
+	if (daemon_connection) {
 		int tmpret;
 		tmpret = start_inband_exchange(f_in, f_out, shell_user, remote_argc, remote_argv);
 		if (tmpret < 0)
@@ -1552,11 +1602,13 @@ static void sigusr2_handler(UNUSED(int val))
 	_exit(0);
 }
 
+#if defined SIGINFO || defined SIGVTALRM
 static void siginfo_handler(UNUSED(int val))
 {
 	if (!am_server && !INFO_GTE(PROGRESS, 1))
 		want_progress_now = True;
 }
+#endif
 
 void remember_children(UNUSED(int val))
 {
@@ -1667,7 +1719,7 @@ int main(int argc,char *argv[])
 	starttime = time(NULL);
 	our_uid = MY_UID();
 	our_gid = MY_GID();
-	am_root = our_uid == 0;
+	am_root = our_uid == ROOT_UID;
 
 	memset(&stats, 0, sizeof(stats));
 

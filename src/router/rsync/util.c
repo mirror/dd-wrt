@@ -1510,7 +1510,7 @@ struct bitbag *bitbag_create(int max_ndx)
 	struct bitbag *bb = new(struct bitbag);
 	bb->slot_cnt = (max_ndx + BB_PER_SLOT_BITS - 1) / BB_PER_SLOT_BITS;
 
-	bb->bits = (uint32**)calloc(bb->slot_cnt, sizeof (uint32*));
+	bb->bits = new_array0(uint32*, bb->slot_cnt);
 
 	return bb;
 }
@@ -1520,10 +1520,8 @@ void bitbag_set_bit(struct bitbag *bb, int ndx)
 	int slot = ndx / BB_PER_SLOT_BITS;
 	ndx %= BB_PER_SLOT_BITS;
 
-	if (!bb->bits[slot]) {
-		if (!(bb->bits[slot] = (uint32*)calloc(BB_PER_SLOT_INTS, 4)))
-			out_of_memory("bitbag_set_bit");
-	}
+	if (!bb->bits[slot])
+		bb->bits[slot] = new_array0(uint32, BB_PER_SLOT_INTS);
 
 	bb->bits[slot][ndx/32] |= 1u << (ndx % 32);
 }
@@ -1632,28 +1630,27 @@ void *expand_item_list(item_list *lp, size_t item_size, const char *desc, int in
 	/* First time through, 0 <= 0, so list is expanded. */
 	if (lp->malloced <= lp->count) {
 		void *new_ptr;
-		size_t new_size = lp->malloced;
+		size_t expand_size;
 		if (incr < 0)
-			new_size += -incr; /* increase slowly */
-		else if (new_size < (size_t)incr)
-			new_size = incr;
-		else if (new_size)
-			new_size *= 2;
+			expand_size = -incr; /* increase slowly */
+		else if (lp->malloced < (size_t)incr)
+			expand_size = incr - lp->malloced;
+		else if (lp->malloced)
+			expand_size = lp->malloced; /* double in size */
 		else
-			new_size = 1;
-		if (new_size <= lp->malloced)
+			expand_size = 1;
+		if (SIZE_MAX/item_size - expand_size < lp->malloced)
 			overflow_exit("expand_item_list");
-		new_ptr = realloc_buf(lp->items, new_size * item_size);
+		expand_size += lp->malloced;
+		new_ptr = realloc_buf(lp->items, expand_size * item_size);
 		if (DEBUG_GTE(FLIST, 3)) {
 			rprintf(FINFO, "[%s] expand %s to %s bytes, did%s move\n",
-				who_am_i(), desc, big_num(new_size * item_size),
+				who_am_i(), desc, big_num(expand_size * item_size),
 				new_ptr == lp->items ? " not" : "");
 		}
-		if (!new_ptr)
-			out_of_memory("expand_item_list");
 
 		lp->items = new_ptr;
-		lp->malloced = new_size;
+		lp->malloced = expand_size;
 	}
 	return (char*)lp->items + (lp->count++ * item_size);
 }
