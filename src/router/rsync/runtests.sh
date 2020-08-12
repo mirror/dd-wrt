@@ -249,7 +249,7 @@ prep_scratch() {
     [ -d "$scratchdir" ] && chmod -R u+rwX "$scratchdir" && rm -rf "$scratchdir"
     mkdir "$scratchdir"
     # Get rid of default ACLs and dir-setgid to avoid confusing some tests.
-    $setfacl_nodef "$scratchdir" || true
+    $setfacl_nodef "$scratchdir" 2>/dev/null || true
     chmod g-s "$scratchdir"
     case "$srcdir" in
     /*) ln -s "$srcdir" "$scratchdir/src" ;;
@@ -339,5 +339,8 @@ echo '------------------------------------------------------------'
 # because -e is set.
 
 result=`expr $failed + $missing || true`
+if [ "$result" = 0 -a "$skipped" -gt "${RSYNC_MAX_SKIPPED:-9999}" ]; then
+    result=1
+fi
 echo "overall result is $result"
 exit $result

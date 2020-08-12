@@ -114,9 +114,9 @@ destination, one of which may be remote.</p>
 directory to the directory src on the machine foo.  If any of the files already
 exist on the remote system then the rsync remote-update protocol is used to
 update the file by sending only the differences in the data.  Note that the
-expansion of wildcards on the commandline (<code>*.c</code>) into a list of files is
+expansion of wildcards on the command-line (<code>*.c</code>) into a list of files is
 handled by the shell before it runs rsync and not by rsync itself (exactly the
-same as all other posix-style programs).</p>
+same as all other Posix-style programs).</p>
 <blockquote>
 <pre><code>rsync -avz foo:src/bar /data/tmp
 </code></pre>
@@ -325,7 +325,7 @@ detailed description below for a complete description.</p>
 <pre><code>--verbose, -v            increase verbosity
 --info=FLAGS             fine-grained informational verbosity
 --debug=FLAGS            fine-grained debug verbosity
---msgs2stderr            output messages directly to stderr
+--stderr=e|a|c           change stderr output mode (default: errors)
 --quiet, -q              suppress non-error messages
 --no-motd                suppress daemon-mode MOTD
 --checksum, -c           skip based on checksum, not mod-time &amp; size
@@ -342,6 +342,7 @@ detailed description below for a complete description.</p>
 --append                 append data onto shorter files
 --append-verify          --append w/old data in file checksum
 --dirs, -d               transfer directories without recursing
+--mkpath                 create the destination's path component
 --links, -l              copy symlinks as symlinks
 --copy-links, -L         transform symlink into referent file/dir
 --copy-unsafe-links      only &quot;unsafe&quot; symlinks are transformed
@@ -363,6 +364,7 @@ detailed description below for a complete description.</p>
 --times, -t              preserve modification times
 --atimes, -U             preserve access (use) times
 --open-noatime           avoid changing the atime on opened files
+--crtimes, -N            preserve create times (newness)
 --omit-dir-times, -O     omit directories from --times
 --omit-link-times, -J    omit symlinks from --times
 --super                  receiver attempts super-user activities
@@ -448,6 +450,8 @@ detailed description below for a complete description.</p>
 --early-input=FILE       use FILE for daemon's early exec input
 --list-only              list the files instead of copying them
 --bwlimit=RATE           limit socket I/O bandwidth
+--stop-after=MINS        Stop rsync after MINS minutes have elapsed
+--stop-at=y-m-dTh:m      Stop rsync at the specified point in time
 --write-batch=FILE       write a batched update to FILE
 --only-write-batch=FILE  like --write-batch but w/o updating dest
 --read-batch=FILE        read a batched update from FILE
@@ -558,9 +562,9 @@ the verbose level.  Some examples:</p>
 rsync -avA --del --debug=del2,acl src/ dest/
 </code></pre>
 </blockquote>
-<p>Note that some debug messages will only be output when <code>--msgs2stderr</code> is
+<p>Note that some debug messages will only be output when <code>--stderr=all</code> is
 specified, especially those pertaining to I/O and buffer debugging.</p>
-<p>Beginning in 3.2.0, this option is no longer auto-forwared to the server
+<p>Beginning in 3.2.0, this option is no longer auto-forwarded to the server
 side in order to allow you to specify different debug values for each side
 of the transfer, as well as to specify a new debug option that is only
 present in one of the rsync versions.  If you want to duplicate the same
@@ -572,23 +576,44 @@ typing.  This works in zsh and bash:</p>
 </blockquote>
 </dd>
 
-<dt><code>--msgs2stderr</code></dt><dd>
-<p>This option changes rsync to send all its output directly to stderr rather
-than to send messages to the client side via the protocol.  The protocol
-allows rsync to output normal messages via stdout and errors via stderr,
-but it can delay messages behind a slew of data.</p>
-<p>One case where this is helpful is when sending really large files, since
-errors that happen on a remote receiver tend to get delayed until after the
-file's data is fully sent.  It is also helpful for debugging, since it
-helps to avoid overpopulating the protocol data with extra message data.</p>
-<p>The option does not affect the remote side of a transfer without using
-<code>--remote-option</code>, e.g. <code>-M--msgs2stderr</code> or <code>{-M,}--msgs2stderr</code>.</p>
-<p>Also keep in mind that connecting to a normal (non-remote-shell) daemon
-does not have a stderr channel to send messages back to the client side, so
-a modern rsync only allows the option on a remote-shell-run daemon.</p>
-<p>This option has the side-effect of making stderr output get line-buffered
-so that the merging of the output of 3 programs happens in a more readable
-manner.</p>
+<dt><code>--stderr=errors|all|client</code></dt><dd>
+<p>This option controls which processes output to stderr and if info messages
+are also changed to stderr.  The mode strings can be abbreviated, so feel
+free to use a single letter value.  The 3 possible choices are:</p>
+<ul>
+<li>
+<p><code>errors</code> -&#8288; (the default) causes all the rsync processes to send an
+error directly to stderr, even if the process is on the remote side of
+the transfer.  Info messages are sent to the client side via the protocol
+stream.  If stderr is not available (i.e. when directly connecting with a
+daemon via a socket) errors fall back to being sent via the protocol
+stream.</p>
+</li>
+<li>
+<p><code>all</code> -&#8288; causes all rsync messages (info and error) to get written
+directly to stderr from all (possible) processes.  This causes stderr to
+become line-buffered (instead of raw) and eliminates the ability to
+divide up the info and error messages by file handle.  For those doing
+debugging or using several levels of verbosity, this option can help to
+avoid clogging up the transfer stream (which should prevent any chance of
+a deadlock bug hanging things up).  It also enables the outputting of some
+I/O related debug messages.</p>
+</li>
+<li>
+<p><code>client</code> -&#8288; causes all rsync messages to be sent to the client side
+via the protocol stream.  One client process outputs all messages, with
+errors on stderr and info messages on stdout.  This <strong>was</strong> the default
+in older rsync versions, but can cause error delays when a lot of
+transfer data is ahead of the messages.  If you're pushing files to an
+older rsync, you may want to use <code>--stderr=all</code> since that idiom has
+been around for several releases.</p>
+</li>
+</ul>
+<p>This option was added in rsync 3.2.3.  This version also began the
+forwarding of a non-default setting to the remote side, though rsync uses
+the backward-compatible options <code>--msgs2stderr</code> and <code>--no-msgs2stderr</code> to
+represent the <code>all</code> and <code>client</code> settings, respectively.  A newer rsync
+will continue to accept these older option names to maintain compatibility.</p>
 </dd>
 
 <dt><code>--quiet</code>, <code>-q</code></dt><dd>
@@ -884,29 +909,29 @@ Prior to rsync 2.6.4 <code>--inplace</code> was also incompatible with
 </dd>
 
 <dt><code>--append</code></dt><dd>
-<p>This causes rsync to update a file by appending data onto the end of the
-file, which presumes that the data that already exists on the receiving
-side is identical with the start of the file on the sending side.  If a
-file needs to be transferred and its size on the receiver is the same or
-longer than the size on the sender, the file is skipped.  This does not
-interfere with the updating of a file's non-content attributes (e.g.
-permissions, ownership, etc.) when the file does not need to be
-transferred, nor does it affect the updating of any non-regular files.
-Implies <code>--inplace</code>.</p>
-<p>The use of <code>--append</code> can be dangerous if you aren't 100% sure that the
-files that are longer have only grown by the appending of data onto the
-end.  You should thus use include/exclude/filter rules to ensure that such
-a transfer is only affecting files that you know to be growing via appended
-data.</p>
+<p>This special copy mode only works to efficiently update files that are
+known to be growing larger where any existing content on the receiving side
+is also known to be the same as the content on the sender.  The use of
+<code>--append</code> <strong>can be dangerous</strong> if you aren't 100% sure that all the files
+in the transfer are shared, growing files.  You should thus use filter
+rules to ensure that you weed out any files that do not fit this criteria.</p>
+<p>Rsync updates these growing file in-place without verifying any of the
+existing content in the file (it only verifies the content that it is
+appending).  Rsync skips any files that exist on the receiving side that
+are not shorter than the associated file on the sending side (which means
+that new files are trasnferred).</p>
+<p>This does not interfere with the updating of a file's non-content
+attributes (e.g.  permissions, ownership, etc.) when the file does not need
+to be transferred, nor does it affect the updating of any directories or
+non-regular files.</p>
 </dd>
 
 <dt><code>--append-verify</code></dt><dd>
-<p>This works just like the <code>--append</code> option, but the existing data on the
-receiving side is included in the full-file checksum verification step,
-which will cause a file to be resent if the final verification step fails
-(rsync uses a normal, non-appending <code>--inplace</code> transfer for the resend).
-It otherwise has the exact same caveats for files that have not grown
-larger, so don't use this for a general copy.</p>
+<p>This special copy mode works like <code>--append</code> except that all the data in
+the file is included in the checksum verification (making it much less
+efficient but also potentially safer).  This option <strong>can be dangerous</strong> if
+you aren't 100% sure that all the files in the transfer are shared, growing
+files.  See the <code>--append</code> option for more details.</p>
 <p>Note: prior to rsync 3.0.0, the <code>--append</code> option worked like
 <code>--append-verify</code>, so if you are interacting with an older rsync (or the
 transfer is using a protocol prior to 30), specifying either append option
@@ -928,6 +953,28 @@ listing).  Specify <code>--no-dirs</code> (or <code>--no-d</code>) if you want t
 <p>There is also a backward-compatibility helper option, <code>--old-dirs</code> (or
 <code>--old-d</code>) that tells rsync to use a hack of <code>-r --exclude='/*/*'</code> to get
 an older rsync to list a single directory without recursing.</p>
+</dd>
+
+<dt><code>--mkpath</code></dt><dd>
+<p>Create a missing path component of the destination arg.  This allows rsync
+to create multiple levels of missing destination dirs and to create a path
+in which to put a single renamed file.  Keep in mind that you'll need to
+supply a trailing slash if you want the entire destination path to be
+treated as a directory when copying a single arg (making rsync behave the
+same way that it would if the path component of the destination had already
+existed).</p>
+<p>For example, the following creates a copy of file foo as bar in the sub/dir
+directory, creating dirs &quot;sub&quot; and &quot;sub/dir&quot; if either do not yet exist:</p>
+<blockquote>
+<pre><code>rsync -ai --mkpath foo sub/dir/bar
+</code></pre>
+</blockquote>
+<p>If you instead ran the following, it would have created file foo in the
+sub/dir/bar directory:</p>
+<blockquote>
+<pre><code>rsync -ai --mkpath foo sub/dir/bar/
+</code></pre>
+</blockquote>
 </dd>
 
 <dt><code>--links</code>, <code>-l</code></dt><dd>
@@ -1278,6 +1325,11 @@ transferred.  If your OS does not support the O_NOATIME flag then rsync
 will silently ignore this option.  Note also that some filesystems are
 mounted to avoid updating the atime on read access even without the
 O_NOATIME flag being set.</p>
+</dd>
+
+<dt><code>--crtimes</code>, <code>-N,</code></dt><dd>
+<p>This tells rsync to set the create times (newness) of the destination
+files to the same value as the source files.</p>
 </dd>
 
 <dt><code>--omit-dir-times</code>, <code>-O</code></dt><dd>
@@ -1636,20 +1688,21 @@ really old versions didn't warn when the limit was exceeded).</p>
 
 <dt><code>--max-size=SIZE</code></dt><dd>
 <p>This tells rsync to avoid transferring any file that is larger than the
-specified SIZE.  The SIZE value can be suffixed with a string to indicate a
-size multiplier, and may be a fractional value (e.g. <code>--max-size=1.5m</code>).</p>
+specified SIZE.  A numeric value can be suffixed with a string to indicate
+the numeric units or left unqualified to specify bytes.  Feel free to use a
+fractional value along with the units, such as <code>--max-size=1.5m</code>.</p>
 <p>This option is a transfer rule, not an exclude, so it doesn't affect the
 data that goes into the file-lists, and thus it doesn't affect deletions.
 It just limits the files that the receiver requests to be transferred.</p>
-<p>The accepted suffix letters are: <code>B</code>, <code>K</code>, <code>G</code>, <code>T</code>, and <code>P</code> for bytes,
-kilobytes/kibibytes, megabytes/mebibytes, gigabytes/gibibytes,
-terabytes/tebibytes, and petabytes/pebibytes.  If you use a single-char
-suffix or add-on &quot;ib&quot; to it (e.g. &quot;G&quot; or &quot;GiB&quot;) then you get units that are
+<p>The first letter of a units string can be <code>B</code> (bytes), <code>K</code> (kilo), <code>M</code>
+(mega), <code>G</code> (giga), <code>T</code> (tera), or <code>P</code> (peta).  If the string is a single
+char or has &quot;ib&quot; added to it (e.g. &quot;G&quot; or &quot;GiB&quot;) then the units are
 multiples of 1024.  If you use a two-letter suffix that ends with a &quot;B&quot;
-(e.g. &quot;kb&quot;) then you get units that are multiples of 1000.  The suffix
+(e.g. &quot;kb&quot;) then you get units that are multiples of 1000.  The string's
 letters can be any mix of upper and lower-case that you want to use.</p>
 <p>Finally, if the string ends with either &quot;+1&quot; or &quot;-&#8288;1&quot;, it is offset by one
-byte in the indicated direction.  The largest possible value is <code>8192P-1</code>.</p>
+byte in the indicated direction.  The largest possible value is usually
+<code>8192P-1</code>.</p>
 <p>Examples: <code>--max-size=1.5mb-1</code> is 1499999 bytes, and <code>--max-size=2g+1</code> is
 2147483649 bytes.</p>
 <p>Note that rsync versions prior to 3.1.0 did not allow <code>--max-size=0</code>.</p>
@@ -1674,6 +1727,7 @@ consume more memory.</p>
 memory.  It is a sanity-check value for each individual allocation.</p>
 <p>See the <code>--max-size</code> option for a description of how SIZE can be specified.
 The default suffix if none is given is bytes.</p>
+<p>Beginning in 3.2.3, a value of 0 specifies no limit.</p>
 <p>You can set a default value using the environment variable RSYNC_MAX_ALLOC
 using the same SIZE values as supported by this option.  If the remote
 rsync doesn't understand the <code>--max-alloc</code> option, you can override an
@@ -1685,6 +1739,8 @@ avoid sending the option to the remote side (because &quot;1G&quot; is the defau
 <p>This forces the block size used in rsync's delta-transfer algorithm to a
 fixed value.  It is normally selected based on the size of each file being
 updated.  See the technical report for details.</p>
+<p>Beginning in 3.2.3 the SIZE can be specified with a suffix as detailed in
+the <code>--max-size</code> option.  Older versions only accepted a byte count.</p>
 </dd>
 
 <dt><code>--rsh=COMMAND</code>, <code>-e</code></dt><dd>
@@ -2024,7 +2080,7 @@ are available to that user, and makes it impossible for the joe user to do
 a timed exploit of the path to induce a change to a file that the joe user
 has no permissions to change.</p>
 <p>The following command does a local copy into the &quot;dest/&quot; dir as user &quot;joe&quot;
-(assumimg you've installed support/lsh into a dir on your $PATH):</p>
+(assuming you've installed support/lsh into a dir on your $PATH):</p>
 <blockquote>
 <pre><code>sudo rsync -aive lsh -M--copy-as=joe src/ lh:dest/
 </code></pre>
@@ -2181,7 +2237,7 @@ not compatible with the default zlib compression method.  You can usually
 ignore this weirdness unless the rsync server complains and tells you to
 specify <code>-zz</code>.</p>
 <p>See also the <code>--skip-compress</code> option for the default list of file suffixes
-that will trasnferred with no (or minimal) compression.</p>
+that will be transferred with no (or minimal) compression.</p>
 </dd>
 
 <dt><code>--compress-choice=STR</code>, <code>--zc=STR</code></dt><dd>
@@ -2264,27 +2320,53 @@ matches 2 suffixes):</p>
 <p>The default file suffixes in the skip-compress list in this version of
 rsync are:</p>
 <blockquote>
-<p>7z
+<p>3g2
+3gp
+7z
+aac
 ace
 apk
 avi
 bz2
 deb
+dmg
+ear
+f4v
 flac
+flv
 gpg
 gz
 iso
 jar
 jpeg
 jpg
+lrz
 lz
 lz4
 lzma
 lzo
+m1a
+m1v
+m2a
+m2ts
+m2v
+m4a
+m4b
+m4p
+m4r
+m4v
+mka
 mkv
 mov
+mp1
+mp2
 mp3
 mp4
+mpa
+mpeg
+mpg
+mpv
+mts
 odb
 odf
 odg
@@ -2293,8 +2375,11 @@ odm
 odp
 ods
 odt
+oga
 ogg
+ogm
 ogv
+ogx
 opus
 otg
 oth
@@ -2303,21 +2388,28 @@ ots
 ott
 oxt
 png
+qt
 rar
 rpm
 rz
 rzip
+spx
 squashfs
 sxc
 sxd
 sxg
 sxm
 sxw
+sz
 tbz
+tbz2
 tgz
 tlz
+ts
 txz
 tzo
+vob
+war
 webm
 webp
 xz
@@ -2385,6 +2477,7 @@ must be used (or implied), and the receiver will need to be running as a
 super-user (see also the <code>--fake-super</code> option).  For the <code>--groupmap</code>
 option to have any effect, the <code>-g</code> (<code>--groups</code>) option must be used (or
 implied), and the receiver will need to have permissions to set that group.</p>
+<p>If your shell complains about the wildcards, use <code>--protect-args</code> (<code>-s</code>).</p>
 </dd>
 
 <dt><code>--chown=USER:GROUP</code></dt><dd>
@@ -2395,7 +2488,8 @@ If either the USER or GROUP is empty, no mapping for the omitted user/group
 will occur.  If GROUP is empty, the trailing colon may be omitted, but if
 USER is empty, a leading colon must be supplied.</p>
 <p>If you specify &quot;<code>--chown=foo:bar</code>&quot;, this is exactly the same as specifying
-&quot;<code>--usermap=*:foo --groupmap=*:bar</code>&quot;, only easier.</p>
+&quot;<code>--usermap=*:foo --groupmap=*:bar</code>&quot;, only easier.  If your shell complains
+about the wildcards, use <code>--protect-args</code> (<code>-s</code>).</p>
 </dd>
 
 <dt><code>--timeout=SECONDS</code></dt><dd>
@@ -2478,12 +2572,15 @@ attributes that are being modified).</li>
 <p>The file-types that replace the <strong>X</strong> are: <code>f</code> for a file, a <code>d</code> for a
 directory, an <code>L</code> for a symlink, a <code>D</code> for a device, and a <code>S</code> for a
 special file (e.g. named sockets and fifos).</p>
-<p>The other letters in the string above are the actual letters that will be
-output if the associated attribute for the item is being updated or a &quot;.&quot;
-for no change.  Three exceptions to this are: (1) a newly created item
-replaces each letter with a &quot;+&quot;, (2) an identical item replaces the dots
-with spaces, and (3) an unknown attribute replaces each letter with a &quot;?&quot;
-(this can happen when talking to an older rsync).</p>
+<p>The other letters in the string indicate if some attributes of the file
+have changed, as follows:</p>
+<ul>
+<li>&quot;<code>.</code>&quot; -&#8288; the attribute is unchanged.</li>
+<li>&quot;<code>+</code>&quot; -&#8288; the file is newly created.</li>
+<li>&quot;<code> </code>&quot; -&#8288; all the attributes are unchanged (all dots turn to spaces).</li>
+<li>&quot;<code>?</code>&quot; -&#8288; the change is unknown (when the remote rsync is old).</li>
+<li>A letter indicates an attribute is being updated.</li>
+</ul>
 <p>The attribute that is associated with each letter is as follows:</p>
 <ul>
 <li>A <code>c</code> means either that a regular file has a different checksum (requires
@@ -2506,12 +2603,13 @@ sender's value (requires <code>--perms</code>).</li>
 value (requires <code>--owner</code> and super-user privileges).</li>
 <li>A <code>g</code> means the group is different and is being updated to the sender's
 value (requires <code>--group</code> and the authority to set the group).</li>
-<li>A <code>u</code> means the access (use) time is different and is being updated to
-the sender's value (requires <code>--atimes</code>).  An alternate value of <code>U</code>
-means that the access time will be set to the transfer time, which
-happens when a symlink or directory is updated.</li>
-<li>The <code>a</code> means that the ACL information changed.</li>
-<li>The <code>x</code> means that the extended attribute information changed.</li>
+<li>A <code>u</code>|<code>n</code>|<code>b</code> indicates the following information: <code>u</code>  means the access
+(use) time is different and is being updated to the sender's value
+(requires <code>--atimes</code>); <code>n</code> means the create time (newness) is different
+and is being updated to the sender's value (requires <code>--crtimes</code>); <code>b</code>
+means that both the access and create times are being updated.</li>
+<li>The <code>a</code> means that the ACL information is being changed.</li>
+<li>The <code>x</code> means that the extended attribute information is being changed.</li>
 </ul>
 <p>One other output is possible: when deleting files, the &quot;%i&quot; will output the
 string &quot;<code>*deleting</code>&quot; for each item that is being removed (assuming that you
@@ -2644,10 +2742,10 @@ numbers in units of 1024.</p>
 <p>The default is human-readable level 1.  Each <code>-h</code> option increases the
 level by one.  You can take the level down to 0 (to output numbers as pure
 digits) by specifying the <code>--no-human-readable</code> (<code>--no-h</code>) option.</p>
-<p>The unit letters that are appended in levels 2 and 3 are: K (kilo), M
-(mega), G (giga), or T (tera).  For example, a 1234567-byte file would
-output as 1.23M in level-2 (assuming that a period is your local decimal
-point).</p>
+<p>The unit letters that are appended in levels 2 and 3 are: <code>K</code> (kilo), <code>M</code>
+(mega), <code>G</code> (giga), <code>T</code> (tera), or <code>P</code> (peta).  For example, a 1234567-byte
+file would output as 1.23M in level-2 (assuming that a period is your local
+decimal point).</p>
 <p>Backward compatibility note: versions of rsync prior to 3.1.0 do not
 support human-readable level 1, and they default to level 0.  Thus,
 specifying one or two <code>-h</code> options will behave in a comparable manner in
@@ -2732,6 +2830,8 @@ instead.  See the comments in the <code>--partial-dir</code> section for a discu
 of how this <code>.~tmp~</code> dir will be excluded from the transfer, and what you
 can do if you want rsync to cleanup old <code>.~tmp~</code> dirs that might be lying
 around.  Conflicts with <code>--inplace</code> and <code>--append</code>.</p>
+<p>This option implies <code>--no-inc-recursive</code> since it needs the full file list
+in memory in order to be able to iterate over it at the end.</p>
 <p>This option uses more memory on the receiving side (one bit per file
 transferred) and also requires enough free disk space on the receiving side
 to hold an additional copy of all the updated files.  Note also that you
@@ -2907,7 +3007,7 @@ suffixed with a string to indicate a size multiplier, and may be a
 fractional value (e.g. &quot;<code>--bwlimit=1.5m</code>&quot;).  If no suffix is specified, the
 value will be assumed to be in units of 1024 bytes (as if &quot;K&quot; or &quot;KiB&quot; had
 been appended).  See the <code>--max-size</code> option for a description of all the
-available suffixes.  A value of zero specifies no limit.</p>
+available suffixes.  A value of 0 specifies no limit.</p>
 <p>For backward-compatibility reasons, the rate limit will be rounded to the
 nearest KiB unit, so no rate smaller than 1024 bytes per second is
 possible.</p>
@@ -2921,6 +3021,41 @@ an accurate reflection on how fast the data is being sent.  This is because
 some files can show up as being rapidly sent when the data is quickly
 buffered, while other can show up as very slow when the flushing of the
 output buffer occurs.  This may be fixed in a future version.</p>
+</dd>
+
+<dt>`-&#8288;-&#8288;stop-after=MINS</dt><dd>
+<p>This option tells rsync to stop copying when the specified number of
+minutes has elapsed.</p>
+<p>Rsync also accepts an earlier version of this option: <code>--time-limit=MINS</code>.</p>
+<p>For maximal flexibility, rsync does not communicate this option to the
+remote rsync since it is usually enough that one side of the connection
+quits as specified.  This allows the option's use even when only one side
+of the connection supports it.  You can tell the remote side about the time
+limit using <code>--remote-option</code> (<code>-M</code>), should the need arise.</p>
+</dd>
+
+<dt>`-&#8288;-&#8288;stop-at=y-m-dTh:m</dt><dd>
+<p>This option tells rsync to stop copying when the specified point in time
+has been reached. The date &amp; time can be fully specified in a numeric
+format of year-month-dayThour:minute (e.g. 2000-12-31T23:59) in the local
+timezone.  You may choose to separate the date numbers using slashes
+instead of dashes.</p>
+<p>The value can also be abbreviated in a variety of ways, such as specifying
+a 2-digit year and/or leaving off various values.  In all cases, the value
+will be taken to be the next possible point in time where the supplied
+information matches.  If the value specifies the current time or a past
+time, rsync exits with an error.</p>
+<p>For example, &quot;1-30&quot; specifies the next January 30th (at midnight local
+time), &quot;14:00&quot; specifies the next 2 P.M., &quot;1&quot; specifies the next 1st of the
+month at midnight, &quot;31&quot; specifies the next month where we can stop on its
+31st day, and &quot;:59&quot; specifies the next 59th minute after the hour.</p>
+<p>For maximal flexibility, rsync does not communicate this option to the
+remote rsync since it is usually enough that one side of the connection
+quits as specified.  This allows the option's use even when only one side
+of the connection supports it.  You can tell the remote side about the time
+limit using <code>--remote-option</code> (<code>-M</code>), should the need arise.  Do keep in
+mind that the remote host may have a different default timezone than your
+local host.</p>
 </dd>
 
 <dt><code>--write-batch=FILE</code></dt><dd>
@@ -3762,7 +3897,7 @@ values</p>
 <p>see also the comments on the <code>--delete</code> option</p>
 <p>Please report bugs! See the web site at <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h1>VERSION</h1>
-<p>This man page is current for version 3.2.2 of rsync.</p>
+<p>This man page is current for version 3.2.3 of rsync.</p>
 <h1>INTERNAL OPTIONS</h1>
 <p>The options <code>--server</code> and <code>--sender</code> are used internally by rsync, and should
 never be typed by a user under normal circumstances.  Some awareness of these
@@ -3791,5 +3926,5 @@ people have later contributed to it. It is currently maintained by Wayne
 Davison.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>04 Jul 2020</i></p></div>
+<div style="float: right"><p><i>06 Aug 2020</i></p></div>
 </body></html>

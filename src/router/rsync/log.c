@@ -251,7 +251,7 @@ static void filtered_fwrite(FILE *f, const char *in_buf, int in_len, int use_isp
 void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 {
 	char trailing_CR_or_NL;
-	FILE *f = msgs2stderr ? stderr : stdout;
+	FILE *f = msgs2stderr == 1 ? stderr : stdout;
 #ifdef ICONV_OPTION
 	iconv_t ic = is_utf8 && ic_recv != (iconv_t)-1 ? ic_recv : ic_chck;
 #else
@@ -263,7 +263,7 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 	if (len < 0)
 		exit_cleanup(RERR_MESSAGEIO);
 
-	if (msgs2stderr) {
+	if (msgs2stderr == 1) {
 		/* A normal daemon can get msgs2stderr set if the socket is busted, so we
 		 * change the message destination into an FLOG message in order to try to
 		 * get some info about an abnormal-exit into the log file. An rsh daemon
@@ -327,7 +327,7 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 		exit_cleanup(RERR_MESSAGEIO);
 	}
 
-	if (am_server && !msgs2stderr) {
+	if (am_server && msgs2stderr != 1 && (msgs2stderr != 2 || f != stderr)) {
 		enum msgcode msg = (enum msgcode)code;
 		if (protocol_version < 30) {
 			if (msg == MSG_ERROR)
@@ -350,8 +350,7 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 		output_needs_newline = 0;
 	}
 
-	trailing_CR_or_NL = len && (buf[len-1] == '\n' || buf[len-1] == '\r')
-			  ? buf[--len] : 0;
+	trailing_CR_or_NL = len && (buf[len-1] == '\n' || buf[len-1] == '\r') ? buf[--len] : '\0';
 
 	if (len && buf[0] == '\r') {
 		fputc('\r', f);
@@ -372,7 +371,12 @@ void rwrite(enum logcode code, const char *buf, int len, int is_utf8)
 			iconvbufs(ic, &inbuf, &outbuf, inbuf.pos ? 0 : ICB_INIT);
 			ierrno = errno;
 			if (outbuf.len) {
-				filtered_fwrite(f, convbuf, outbuf.len, 0, 0);
+				char trailing = inbuf.len ? '\0' : trailing_CR_or_NL;
+				filtered_fwrite(f, convbuf, outbuf.len, 0, trailing);
+				if (trailing) {
+					trailing_CR_or_NL = '\0';
+					fflush(f);
+				}
 				outbuf.len = 0;
 			}
 			/* Log one byte of illegal/incomplete sequence and continue with
@@ -717,8 +721,9 @@ static void log_formatted(enum logcode code, const char *format, const char *op,
 			c[5] = !(iflags & ITEM_REPORT_PERMS) ? '.' : 'p';
 			c[6] = !(iflags & ITEM_REPORT_OWNER) ? '.' : 'o';
 			c[7] = !(iflags & ITEM_REPORT_GROUP) ? '.' : 'g';
-			c[8] = !(iflags & ITEM_REPORT_ATIME) ? '.'
-			     : S_ISLNK(file->mode) ? 'U' : 'u';
+			c[8] = !(iflags & (ITEM_REPORT_ATIME|ITEM_REPORT_CRTIME)) ? '.'
+			     : BITS_SET(iflags, ITEM_REPORT_ATIME|ITEM_REPORT_CRTIME) ? 'b'
+			     : iflags & ITEM_REPORT_ATIME ? 'u' : 'n';
 			c[9] = !(iflags & ITEM_REPORT_ACL) ? '.' : 'a';
 			c[10] = !(iflags & ITEM_REPORT_XATTR) ? '.' : 'x';
 			c[11] = '\0';
@@ -887,10 +892,10 @@ void log_exit(int code, const char *file, int line)
 		/* VANISHED is not an error, only a warning */
 		if (code == RERR_VANISHED) {
 			rprintf(FWARNING, "rsync warning: %s (code %d) at %s(%d) [%s=%s]\n",
-				name, code, file, line, who_am_i(), RSYNC_VERSION);
+				name, code, src_file(file), line, who_am_i(), rsync_version());
 		} else {
 			rprintf(FERROR, "rsync error: %s (code %d) at %s(%d) [%s=%s]\n",
-				name, code, file, line, who_am_i(), RSYNC_VERSION);
+				name, code, src_file(file), line, who_am_i(), rsync_version());
 		}
 	}
 }

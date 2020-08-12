@@ -207,19 +207,17 @@ paths with the module's path (so that options such as <code>--backup-dir</code>,
 &quot;path&quot; dir), and (3) trim &quot;..&quot; path elements from args if rsync believes
 they would escape the module hierarchy.  The default for &quot;use chroot&quot; is
 true, and is the safer choice (especially if the module is not read-only).</p>
-<p>When this parameter is enabled, the &quot;numeric-ids&quot; option will also default
-to being enabled (disabling name lookups).  See below for what a chroot
-needs in order for name lookups to succeed.</p>
+<p>When this parameter is enabled <u>and</u> the &quot;name converter&quot; parameter is
+<u>not</u> set, the &quot;numeric ids&quot; parameter will default to being enabled
+(disabling name lookups).  This means that if you manually setup
+name-lookup libraries in your chroot (instead of using a name converter)
+that you need to explicitly set <code>numeric ids = false</code> for rsync to do name
+lookups.</p>
 <p>If you copy library resources into the module's chroot area, you should
 protect them through your OS's normal user/group or ACL settings (to
 prevent the rsync module's user from being able to change them), and then
 hide them from the user's view via &quot;exclude&quot; (see how in the discussion of
-that parameter).  At that point it will be safe to enable the mapping of
-users and groups by name using the &quot;numeric ids&quot; daemon parameter (see
-below).</p>
-<p>Note also that you are free to setup custom user/group information in the
-chroot area that is different from your normal system.  For example, you
-could abbreviate the list of users and groups.</p>
+that parameter).  However, it's easier and safer to setup a name converter.</p>
 </dd>
 
 <dt><code>daemon chroot</code></dt><dd>
@@ -254,6 +252,24 @@ others, then you will need to setup multiple rsync daemon processes on
 different ports.</p>
 </dd>
 
+<dt><code>name converter</code></dt><dd>
+<p>This parameter lets you specify a program that will be run by the rsync
+daemon to do user &amp; group conversions between names &amp; ids.  This script
+is started prior to any chroot being setup, and runs as the daemon user
+(not the transfer user).  You can specify a fully qualified pathname or
+a program name that is on the $PATH.</p>
+<p>The program can be used to do normal user &amp; group lookups without having to
+put any extra files into the chroot area of the module <u>or</u> you can do
+customized conversions.</p>
+<p>The nameconvert program has access to all of the environment variables that
+are described in the section on <code>pre-xfer exec</code>.  This is useful if you
+want to customize the conversion using information about the module and/or
+the copy request.</p>
+<p>There is a sample python script in the support dir named &quot;nameconvert&quot; that
+implements the normal user &amp; group lookups.  Feel free to customize it or
+just use it as documentation to implement your own.</p>
+</dd>
+
 <dt><code>numeric ids</code></dt><dd>
 <p>Enabling this parameter disables the mapping of users and groups by name
 for the current daemon module.  This prevents the daemon from trying to
@@ -263,13 +279,10 @@ command-line option.  By default, this parameter is enabled for chroot
 modules and disabled for non-chroot modules.  Also keep in mind that
 uid/gid preservation requires the module to be running as root (see &quot;uid&quot;)
 or for &quot;fake super&quot; to be configured.</p>
-<p>A chroot-enabled module should not have this parameter enabled unless
-you've taken steps to ensure that the module has the necessary resources it
-needs to translate names, and that it is not possible for a user to change
-those resources.  That includes being the code being able to call functions
-like <strong>getpwuid()</strong>, <strong>getgrgid()</strong>, <strong>getpwname()</strong>, and <strong>getgrnam()</strong>.
-You should test what libraries and config files are required for your OS
-and get those setup before starting to test name mapping in rsync.</p>
+<p>A chroot-enabled module should not have this parameter set to false unless
+you're using a &quot;name converter&quot; program <u>or</u> you've taken steps to ensure
+that the module has the necessary resources it needs to translate names and
+that it is not possible for a user to change those resources.</p>
 </dd>
 
 <dt><code>munge symlinks</code></dt><dd>
@@ -659,7 +672,7 @@ rsync running on the Windows operating system.</p>
 whitespace-separated patterns that are matched against a connecting
 client's hostname and IP address.  If none of the patterns match, then the
 connection is rejected.</p>
-<p>Each pattern can be in one of five forms:</p>
+<p>Each pattern can be in one of six forms:</p>
 <ul>
 <li>a dotted decimal IPv4 address of the form a.b.c.d, or an IPv6 address of
 the form a:b:c::d:e:f. In this case the incoming machine's IP address
@@ -679,6 +692,8 @@ in.  This only works if &quot;reverse lookup&quot; is enabled (the default).</li
 connecting IP (if &quot;reverse lookup&quot; is enabled), and/or the IP of the
 given hostname is matched against the connecting IP (if &quot;forward lookup&quot;
 is enabled, as it is by default).  Any match will be allowed in.</li>
+<li>an '@' followed by a netgroup name, which will match if the reverse DNS
+of the connecting IP is in the specified netgroup.</li>
 </ul>
 <p>Note IPv6 link-local addresses can have a scope in the address
 specification:</p>
@@ -688,12 +703,12 @@ fe80::%link1/64
 fe80::%link1/ffff:ffff:ffff:ffff::
 </code></pre>
 </blockquote>
-<p>You can also combine &quot;hosts allow&quot; with a separate &quot;hosts deny&quot; parameter.
-If both parameters are specified then the &quot;hosts allow&quot; parameter is
-checked first and a match results in the client being able to connect. The
-&quot;hosts deny&quot; parameter is then checked and a match means that the host is
-rejected. If the host does not match either the &quot;hosts allow&quot; or the
-&quot;hosts deny&quot; patterns then it is allowed to connect.</p>
+<p>You can also combine &quot;hosts allow&quot; with &quot;hosts deny&quot; as a way to add
+exceptions to your deny list.  When both parameters are specified, the
+&quot;hosts allow&quot; parameter is checked first and a match results in the client
+being able to connect.  A non-allowed host is then matched against the
+&quot;hosts deny&quot; list to see if it should be rejected.  A host that does not
+match either list is allowed to connect.</p>
 <p>The default is no &quot;hosts allow&quot; parameter, which means all hosts can
 connect.</p>
 </dd>
@@ -1136,7 +1151,7 @@ susan:herpass
 <p>Please report bugs! The rsync bug tracking system is online at
 <a href="https://rsync.samba.org/">https://rsync.samba.org/</a>.</p>
 <h1>VERSION</h1>
-<p>This man page is current for version 3.2.2 of rsync.</p>
+<p>This man page is current for version 3.2.3 of rsync.</p>
 <h1>CREDITS</h1>
 <p>rsync is distributed under the GNU General Public License.  See the file
 COPYING for details.</p>
@@ -1153,5 +1168,5 @@ Thanks to Karsten Thygesen for his many suggestions and documentation!</p>
 later contributed to it.</p>
 <p>Mailing lists for support and development are available at
 <a href="https://lists.samba.org/">https://lists.samba.org/</a>.</p>
-<div style="float: right"><p><i>04 Jul 2020</i></p></div>
+<div style="float: right"><p><i>06 Aug 2020</i></p></div>
 </body></html>

@@ -1,0 +1,22 @@
+freebsd_task:
+  name: FreeBSD
+  freebsd_instance:
+    image: freebsd-12-1-release-amd64
+  env:
+    PATH: /usr/local/bin:$PATH
+  prep_script:
+    - dd if=/dev/zero of=/tmp/zpool bs=1M count=1024
+    - zpool create -m `pwd`/testtmp zpool /tmp/zpool
+    - pkg install -y autotools xxhash zstd liblz4
+  configure_script:
+    - CPPFLAGS=-I/usr/local/include/ LDFLAGS=-L/usr/local/lib/ ./configure --disable-md2man
+  make_script:
+    - make
+  install_script:
+    - make install
+  info_script:
+    - rsync --version
+  test_script:
+    - RSYNC_MAX_SKIPPED=3 make check
+  ssl_file_list_script:
+    - rsync-ssl --no-motd download.samba.org::rsyncftp/ || true

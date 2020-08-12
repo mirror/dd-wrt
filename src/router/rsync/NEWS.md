@@ -1,3 +1,104 @@
+<a name="3.2.3"></a>
+
+# NEWS for rsync 3.2.3 (6 Aug 2020)
+
+## Changes in this version:
+
+### BUG FIXES:
+
+ - Fixed a bug in the xattr code that was freeing the wrong object when trying
+   to cleanup the xattr list.
+
+ - Fixed a bug in the xattr code that was not leaving room for the "rsync."
+   prefix in some instances where it needed to be added.
+
+ - Restored the ability to use `--bwlimit=0` to specify no bandwidth limit.  (It
+   was accidentally broken in 3.2.2.)
+
+ - Fix a bug when combining `--delete-missing-args` with `--no-implied-dirs` &
+   `-R` where rsync might create the destination path of a missing arg.  The
+   code also avoids some superfluous warnings for nested paths of removed args.
+
+ - Fixed an issue where hard-linked devices could cause the rdev_major value to
+   get out of sync between the sender and the receiver, which could cause a
+   device to get created with the wrong major value in its major,minor pair.
+
+ - Rsync now complains about a missing `--temp-dir` before starting any file
+   transfers.
+
+ - A completely empty source arg is now a fatal error.  This doesn't change
+   the handling of implied dot-dir args such as "localhost:" and such.
+
+### ENHANCEMENTS:
+
+ - Allow `--max-alloc=0` to specify no limit to the alloc sanity check.
+
+ - Allow `--block-size=SIZE` to specify the size using units (e.g. "100K").
+
+ - The name of the id-0 user & group are now sent to the receiver along with
+   the other user/group names in the transfer (instead of assuming that both
+   sides have the same id-0 names).
+
+ - Added the `--stop-after=MINS` and `--stop-at=DATE_TIME` options (with the
+   `--time-limit=MINS` option accepted as an alias for `--stop-after`).  This
+   is an enhanced version of the time-limit patch from the patches repo.
+
+ - Added the `name converter` daemon parameter to make it easier to convert
+   user & group names inside a chrooted daemon module.  This is based on the
+   nameconverter patch with some improvements, including a tweak to the request
+   protocol (so if you used this patch in the past, be sure to update your
+   converter script to use newlines instead of null chars).
+
+ - Added `--crtimes` (`-N`) option for preserving the file's create time (I
+   believe that this is macOS only at the moment).
+
+ - Added `--mkpath` option to tell rsync that it should create a non-existing
+   path component of the destination arg.
+
+ - Added `--stderr=errors|all|client` to replace the `--msgs2stderr` and
+   `--no-msgs2stderr` options (which are still accepted).  The default use of
+   stderr was changed to be `--stderr=errors` where all the processes that have
+   stderr available output directly to stderr, which should help error messages
+   get to the user more quickly, especially when doing a push (which includes
+   local copying).  This also allows rsync to exit quickly when a receiver
+   failure occurs, since rsync doesn't need to try to keep the connection alive
+   long enough for the fatal error to go from the receiver to the generator to
+   the sender.  The old default can be requested via `--stderr=client`.  Also
+   changed is that a non-default stderr mode is conveyed to the remote rsync
+   (using the older option names) instead of requiring the user to use
+   `--remote-option` (`-M`) to tell the remote rsync what to do.
+
+ - Added the ability to specify "@netgroup" names to the `hosts allow` and
+   `hosts deny` daemon parameters.  This is a finalized version of the
+   netgroup-auth patch from the patches repo.
+
+ - Rsync can now hard-link symlinks on FreeBSD due to it making ues of the
+   linkat() function when it is available.
+
+ - Output file+line info on out-of-memory & overflow errors while also avoiding
+   the output of alternate build-dir path info that is not useful to the user.
+
+ - Change configure to know that Cygwin supports Linux xattrs.
+
+ - Improved the testsuite on FreeBSD & Cygwin.
+
+ - Added some compatibility code for HPE NonStop platforms.
+
+ - Improved the INSTALL.md info.
+
+ - Added a few more suffixes to the default skip-compress list.
+
+ - Improved configure's error handling to notify about several issues at once
+   instead of one by one (for the newest optional features).
+
+### INTERNAL:
+
+ - Use a simpler overflow check idiom in a few spots.
+
+ - Use a C99 Flexible Array for a trailing variable-size filename in a struct
+   (with a fallback to the old 1-char string kluge for older compilers).
+
+------------------------------------------------------------------------------
 <a name="3.2.2"></a>
 
 # NEWS for rsync 3.2.2 (4 Jul 2020)
@@ -15,7 +116,7 @@
 
  - Apple requires the asm function name to begin with an underscore.
 
- - Avoid a test failure in the daemon test when --atimes is disabled.
+ - Avoid a test failure in the daemon test when `--atimes` is disabled.
 
 ### ENHANCEMENTS:
 
@@ -296,7 +397,7 @@
 
 ### PACKAGING RELATED:
 
- - Add installed binary: /usr/bin/rsync-ssl
+ - Add installed bash script: /usr/bin/rsync-ssl
 
  - Add installed man page: /usr/man/man1/rsync-ssl.1
 
@@ -336,7 +437,7 @@
 
  - Converted the man pages from yodl to markdown. They are now processed via a
    simple python3 script using the cmarkgfm **or** commonmark library.  This
-   should make it easier to package rsync, since yodl has gotten obscure.
+   should make it easier to package rsync, since yodl is rather obscure.
 
  - Improved some configure checks to work better with strict C99 compilers.
 
@@ -385,7 +486,7 @@
    disallowing transfers.
 
  - Don't force nanoseconds to match if a non-transferred, non-checksummed file
-   only passed the quick-check w/o comparing nanosecods.
+   only passed the quick-check w/o comparing nanoseconds.
 
 ### ENHANCEMENTS:
 
@@ -467,7 +568,7 @@
  - Added a few extra long-option names to rrsync script, which will make
    BackupPC happier.
 
- - Made configure choose to use linux xattrs on netbsd (rather than not
+ - Made configure choose to use Linux xattrs on NetBSD (rather than not
    supporting xattrs).
 
  - Added `-wo` (write-only) option to rrsync support script.
@@ -829,7 +930,7 @@
  - A daemon can now inform a client about a daemon-configured timeout value so
    that the client can assist in the keep-alive activity (protocol 31).
 
- - The filter code received some refactoring to make it more extendible, to
+ - The filter code received some refactoring to make it more extendable, to
    read better, and do better sanity checking.
 
  - Really big numbers are now output using our own big-num routine rather than
@@ -853,7 +954,7 @@
 
  - Added more conditional debug output.
 
- - Fixed some build issues for android and minix.
+ - Fixed some build issues for Android and Minix.
 
 ------------------------------------------------------------------------------
 <a name="3.0.9"></a>
@@ -905,7 +1006,7 @@
  - Fix a compilation issue on older C compilers (due to a misplaced var
    declaration).
 
- - Make configure avoid finding socketpair on cygwin.
+ - Make configure avoid finding socketpair on Cygwin.
 
  - Avoid trying to reference `SO_BROADCAST` if the OS doesn't support it.
 
@@ -1104,7 +1205,7 @@
  - Improved the error-exit reporting when rsync gets an error trying to cleanup
    after an error: the initial error is reported.
 
- - Improved configure's detection of IPv6 for solaris and cygwin.
+ - Improved configure's detection of IPv6 for Solaris and Cygwin.
 
  - The AIX sysacls routines will now return ENOSYS if ENOTSUP is missing.
 
@@ -1120,7 +1221,7 @@
 
  - The Makefile now ensures that proto.h will be rebuilt if config.h changes.
 
- - The testsuite no longer uses `id -u`, so it works better on solaris.
+ - The testsuite no longer uses `id -u`, so it works better on Solaris.
 
 ------------------------------------------------------------------------------
 <a name="3.0.6"></a>
@@ -1336,7 +1437,7 @@
 
  - Fixed the combination of `--xattrs` and `--backup`.
 
- - The generator no longer allows a '.' dir to be excluded by a daemon- exclude
+ - The generator no longer allows a '.' dir to be excluded by a daemon-exclude
    rule.
 
  - Fixed deletion handling when copying a single, empty directory (with no
@@ -1496,7 +1597,7 @@
  - Fixed a glitch in the itemizing of permissions with the `-E` option.
 
  - The `--append` option's restricting of transfers to those that add data no
-   longer prevents the updating of non-content changes to otherwise up-to- date
+   longer prevents the updating of non-content changes to otherwise up-to-date
    files (i.e. those with the same content but differing permissions,
    ownership, xattrs, etc.).
 
@@ -1620,7 +1721,7 @@
    a per-module basis. This avoids a potential problem with a writable daemon
    module that has `use chroot` enabled -- if precautions weren't taken, a user
    could try to add a missing library and get rsync to use it. This makes rsync
-   safer by default, and more configurable when id- translation is not desired.
+   safer by default, and more configurable when id-translation is not desired.
    See the daemon's `numeric ids` parameter for full details.
 
  - A chroot daemon can now indicate which part of its path should affect the
@@ -1830,7 +1931,7 @@
 
 ### INTERNAL:
 
- - The file-list sorting algorithm now uses a sort that keeps any same- named
+ - The file-list sorting algorithm now uses a sort that keeps any same-named
    items in the same order as they were specified. This allows rsync to always
    ensure that the first of the duplicates is the one that will be included in
    the copy. The new sort is also faster than the glibc version of qsort() and
@@ -2267,7 +2368,7 @@
  - Fixed a bug in the debug output (`-vvvvv`) that could mention the wrong
    checksum for the current file offset.
 
- - Rsync no longer allows a single directory to be copied over a non- directory
+ - Rsync no longer allows a single directory to be copied over a non-directory
    destination arg.
 
 ### ENHANCEMENTS:
@@ -2426,7 +2527,7 @@
    signals that it needs, just in case it was started in a masked state.
 
  - Some buffer sizes were expanded a bit, particularly on systems where
-   MAXPATHLEN is overly small (e.g. cygwin).
+   MAXPATHLEN is overly small (e.g. Cygwin).
 
  - If `io_printf()` tries to format more data than fits in the buffer, exit
    with an error instead of transmitting a truncated buffer.
@@ -2500,7 +2601,7 @@
  - When backing up a changed symlink or device, get rid of any old backup item
    so that we don't get an `already exists` error.
 
- - A couple places that were comparing a local and a remote modification- time
+ - A couple places that were comparing a local and a remote modification-time
    were not honoring the `--modify-window` option.
 
  - Fixed a bug where the 'p' (permissions) itemized-changes flag might get set
@@ -2545,7 +2646,7 @@
 
 ### OUTPUT CHANGES:
 
- - Non-printable chars in filenames are now output using backslash- escaped
+ - Non-printable chars in filenames are now output using backslash-escaped
    characters rather than '?'s. Any non-printable character is output using 3
    digits of octal (e.g. `\n` -> `\012`), and a backslash is now output as
    `\\`. Rsync also uses your locale setting, which can make it treat fewer
@@ -2767,9 +2868,9 @@
  - Avoid a mkdir warning when removing a directory in the destination that
    already exists in the `--backup-dir`.
 
- - An OS that has a binary mode for its files (such as cygwin) needed
+ - An OS that has a binary mode for its files (such as Cygwin) needed
    `setmode(fd, O_BINARY)` called on the temp-file we opened with mkstemp().
-   (Fix derived from cygwin's 2.6.3 rsync package.)
+   (Fix derived from Cygwin's 2.6.3 rsync package.)
 
  - Fixed a potential hang when verbosity is high, the client side is the
    sender, and the file-list is large.
@@ -3227,7 +3328,7 @@
 ### ENHANCEMENTS:
 
  - Added the `--partial-dir=DIR` option that lets you specify where to
-   (temporarily) put a partially transferred file (instead of over- writing the
+   (temporarily) put a partially transferred file (instead of overwriting the
    destination file). E.g. `--partial-dir=.rsync-partial` Also added support
    for the `RSYNC_PARTIAL_DIR` environment variable that, when found,
    transforms a regular `--partial` option (such as the convenient `-P` option)
@@ -3416,7 +3517,7 @@
    file-count that we've processed. It also shows better
    current-rate-of-transfer and remaining-transfer-time values.
 
- - Documentation changes now attempt to describe some often mis- understood
+ - Documentation changes now attempt to describe some often misunderstood
    features more clearly.
 
 ### BUG FIXES:
@@ -3459,9 +3560,9 @@
 
  - Fixed the `refuse options` setting in the rsyncd.conf file.
 
- - Improved the `-x` (`--one-file-system`) flag's handling of any mount- point
+ - Improved the `-x` (`--one-file-system`) flag's handling of any mount-point
    directories we encounter. It is both more optimal (in that it no longer does
-   a useless scan of the contents of the mount- point dirs) and also fixes a
+   a useless scan of the contents of the mount-point dirs) and also fixes a
    bug where a remapped mount of the original filesystem could get discovered
    in a subdir we should be ignoring.
 
@@ -4143,6 +4244,7 @@
 
 | RELEASE DATE | VER.   | DATE OF COMMIT\* | PROTOCOL    |
 |--------------|--------|------------------|-------------|
+| 06 Aug 2020  | 3.2.3  |                  | 31          |
 | 04 Jul 2020  | 3.2.2  |                  | 31          |
 | 22 Jun 2020  | 3.2.1  |                  | 31          |
 | 19 Jun 2020  | 3.2.0  |                  | 31          |
