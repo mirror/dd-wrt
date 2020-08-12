@@ -3387,6 +3387,7 @@ void start_nvram(void)
 	// null wireless mac */
 
 	nvram_set("wan_get_dns", "");
+	nvram_set("openvpn_get_dns", "");
 	nvram_seti("filter_id", 1);
 	nvram_seti("wl_active_add_mac", 0);
 	nvram_set("ddns_change", "");
