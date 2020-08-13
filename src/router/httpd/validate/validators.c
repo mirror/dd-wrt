@@ -444,7 +444,7 @@ int get_merge_ipaddr(webs_t wp, char *name, char *ipaddr, char *value, char *net
 		nm[1] = strsep(&n, ".");
 		nm[2] = strsep(&n, ".");
 		nm[3] = n;
-		_ip = (atoi(ip[0]) << 24) | (atoi(ip[1]) << 16) | (atoi(ip[2]) << 8) | atoi(ip[0]);
+		_ip = (atoi(ip[0]) << 24) | (atoi(ip[1]) << 16) | (atoi(ip[2]) << 8) | atoi(ip[3]);
 		_nm = (atoi(nm[0]) << 24) | (atoi(nm[1]) << 16) | (atoi(nm[2]) << 8) | atoi(nm[3]);
 	}
 	unsigned int target = 0;
