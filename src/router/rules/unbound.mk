@@ -46,7 +46,7 @@ unbound-install:
 	rm -f $(INSTALLDIR)/unbound/usr/lib/*.a
 	rm -rf $(INSTALLDIR)/unbound/usr/lib/pkgconfig
 	rm -f $(INSTALLDIR)/unbound/usr/lib/*.la
-	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-checkconf
+#	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-checkconf
 #	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-control-setup
 	rm -f $(INSTALLDIR)/unbound/usr/sbin/unbound-host
