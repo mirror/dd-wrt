@@ -589,7 +589,7 @@ static void handle_hotspot(void)
 #ifdef HAVE_BONDING
 	start_service("bonding");
 #endif
-	start_service_force("wan");
+	start_service_force("wan_boot");
 	start_service_f("ttraff");
 #ifdef HAVE_MADWIFI
 	start_service_f("stabridge");
