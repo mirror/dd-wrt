@@ -1357,6 +1357,12 @@ static inline void skb_zcopy_abort(struct sk_buff *skb)
 	}
 }
 
+static inline void skb_list_del_init(struct sk_buff *skb)
+{
+	__list_del_entry(&skb->list);
+	skb->next = NULL;
+}
+
 /**
  *	skb_queue_empty - check if a queue is empty
  *	@list: queue head
