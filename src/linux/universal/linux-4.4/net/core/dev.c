@@ -4177,8 +4177,10 @@ void netif_receive_skb_list(struct list_head *head)
 {
 	struct sk_buff *skb, *next;
 
-	list_for_each_entry_safe(skb, next, head, list)
+	list_for_each_entry_safe(skb, next, head, list) {
+		skb_list_del_init(skb);
 		netif_receive_skb(skb);
+	}
 }
 EXPORT_SYMBOL(netif_receive_skb_list);
 
