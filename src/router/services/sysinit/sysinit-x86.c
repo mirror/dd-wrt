@@ -101,9 +101,10 @@ void start_sysinit(void)
 				fwrite(mem, size, 1, in);
 				fclose(in);
 				eval("sync");
+				eval("mount", "-o", "remount,ro", "/usr/local");
+				eval("mount", "-o", "remount,ro", "/");
 				sleep(5);
-				nvram_set("shutdown","fast");
-				eval("event", "5", "1", "15");
+				writeproc("/proc/sysrq-trigger", "b");
 			}
 		}
 		free(mem);
