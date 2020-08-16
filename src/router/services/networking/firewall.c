@@ -892,9 +892,18 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 				}
 			}
 		}
+
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
-			save2file_A_postrouting("-m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
+			if (nvram_matchi("wshaper_enable", "0"))
+				save2file_A_postrouting("-m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
+			else {
+				save2file_A_postrouting("! -o %s -m pkttype --pkt-type broadcast -j RETURN", wanface);
+				save2file_A_postrouting("! -i %s -d %s -j MASQUERADE", wanface, wanaddr);
+			}
+		} else {
+			save2file_A_postrouting("! -i %s -d %s -j DROP", wanface, wanaddr);
 		}
+
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 			writeprocsysnet("ipv4/conf/br0/loop", "1");
 		else
@@ -2522,9 +2531,7 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 #ifdef FLOOD_PROTECT
 		  ":limaccept - [0:0]"
 #endif
-		  ":trigger_out - [0:0]\n"
-		  ":upnp - [0:0]\n"
-		  ":lan2wan - [0:0]");
+		  ":trigger_out - [0:0]\n" ":upnp - [0:0]\n" ":lan2wan - [0:0]");
 	int seq;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		save2file(":grp_%d - [0:0]", seq);
