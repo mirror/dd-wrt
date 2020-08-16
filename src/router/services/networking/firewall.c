@@ -897,6 +897,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		}
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 			writeprocsysnet("ipv4/conf/br0/loop", "1");
+		else
+			writeprocsysnet("ipv4/conf/br0/loop", "0");
 
 //              if (!nvram_match("wan_proto", "pptp") && !nvram_match("wan_proto", "l2tp") && nvram_matchi("wshaper_enable", 0)) {
 		//eval("iptables", "-t", "raw", "-A", "PREROUTING", "-p", "tcp", "-j", "CT", "--helper", "ddtb");       //this speeds up networking alot on slow systems 
@@ -2214,6 +2216,15 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 	if (!filter_host_url)
 		save2file_A_forward("-m state --state RELATED,ESTABLISHED -j %s", log_accept);
 
+	foreach(var, vifs, next) {
+		if (strcmp(get_wan_face(), var)
+		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
+			if (nvram_nmatch("1", "%s_isolation", var)) {
+				save2file_A_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
+			}
+		}
+	}
+
 	save2file_A_forward("-j upnp");
 	if (nvram_matchi("dtag_vlan8", 1) && nvram_matchi("wan_vdsl", 1)) {
 		save2file_A_forward("-i %s -j %s", nvram_safe_get("tvnicfrom"), log_accept);
@@ -2314,8 +2325,16 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 #ifdef HAVE_VLANTAGGING
 	add_bridges(wanface, "FORWARD", 1);
 #endif
-	// unload_vpn_modules ();
+	if (nvram_states(vpn_modules_deps()))
+		start_vpn_modules();
+
 	if (nvram_invmatch("filter", "off") && *wanface) {
+		if (nvram_matchi("pptp_pass", 1)) {
+			if (*wanface) {
+				save2file_A_forward("-o %s -s %s/%d -p tcp --dport %d -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
+				save2file_A_forward("-o %s -s %s/%d -p gre -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
+			}
+		}
 
 		/*
 		 * DROP packets for PPTP pass through. 
@@ -2332,17 +2351,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		 */
 		if (nvram_matchi("ipsec_pass", 0))
 			save2file_A_forward("-o %s -p udp --dport %d -j %s", wanface, ISAKMP_PORT, log_drop);
-	}
-	if (nvram_states(vpn_modules_deps()))
-		start_vpn_modules();
-	// load_vpn_modules ();
-	if (nvram_invmatch("filter", "off")) {
-		if (nvram_matchi("pptp_pass", 1)) {
-			if (*wanface) {
-				save2file_I_forward("-o %s -s %s/%d -p tcp --dport %d -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), PPTP_PORT, log_accept);
-				save2file_I_forward("-o %s -s %s/%d -p gre -j %s", wanface, nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), log_accept);
-			}
-		}
 	}
 	/*
 	 * ACCEPT packets for Multicast pass through 
@@ -2394,7 +2402,6 @@ static void filter_forward(char *wanface, char *lanface, char *lan_cclass, int d
 		if (strcmp(get_wan_face(), var)
 		    && strcmp(nvram_safe_get("lan_ifname"), var)) {
 			if (nvram_nmatch("1", "%s_isolation", var)) {
-				save2file_I_forward("-i %s -d %s/%s -m state --state NEW -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_drop);
 				save2file_A_forward("-i br0 -o %s -m state --state NEW -j %s", var, log_drop);
 				if (nvram_matchi("privoxy_transp_enable", 1)) {
 					save2file("-I INPUT -i %s -d %s/%s -p tcp --dport 8118 -j %s", var, nvram_safe_get("lan_ipaddr"), nvram_safe_get("lan_netmask"), log_accept);
@@ -2471,7 +2478,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
-	save2file_I_forward("-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
+	save2file_A_forward("-p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu");
 #ifdef HAVE_PRIVOXY
 	if ((nvram_matchi("privoxy_enable", 1)) && (nvram_matchi("wshaper_enable", 1))) {
 		save2file("-I OUTPUT -p tcp --sport 8118 -j IMQ --todev 0");
