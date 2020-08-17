@@ -54,6 +54,7 @@ static void run_openvpn(char *prg, char *path)
 
 void create_openvpnrules(FILE * fp)
 {
+	fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
 	fprintf(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n");	// write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
@@ -72,7 +73,7 @@ void create_openvpnrules(FILE * fp)
 				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
 	    && nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_matchi("openvpncl_bridge", 1)) {
@@ -647,7 +648,8 @@ void start_openvpn(void)
 		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$route_netmask_1 -j DROP\n");
+		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
