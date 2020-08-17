@@ -2,12 +2,12 @@
 .\"     Title: pam_winbind
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/19/2020
+.\"      Date: 08/13/2020
 .\"    Manual: 8
-.\"    Source: Samba 4.12.3
+.\"    Source: Samba 4.12.6
 .\"  Language: English
 .\"
-.TH "PAM_WINBIND" "8" "05/19/2020" "Samba 4\&.12\&.3" "8"
+.TH "PAM_WINBIND" "8" "08/13/2020" "Samba 4\&.12\&.6" "8"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -85,7 +85,13 @@ require_membership_of=[SID or NAME]
 If this option is set, pam_winbind will only succeed if the user is a member of the given SID or NAME\&. A SID can be either a group\-SID, an alias\-SID or even an user\-SID\&. It is also possible to give a NAME instead of the SID\&. That name must have the form:
 \fIMYDOMAIN\emygroup\fR
 or
-\fIMYDOMAIN\emyuser\fR\&. pam_winbind will, in that case, lookup the SID internally\&. Note that NAME may not contain any spaces\&. It is thus recommended to only use SIDs\&. You can verify the list of SIDs a user is a member of with
+\fIMYDOMAIN\emyuser\fR
+(where \*(Aq\e\*(Aq character corresponds to the value of
+\fIwinbind separator\fR
+parameter)\&. It is also possible to use a UPN in the form
+\fIuser@REALM\fR
+or
+\fIgroup@REALM\fR\&. pam_winbind will, in that case, lookup the SID internally\&. Note that NAME may not contain any spaces\&. It is thus recommended to only use SIDs\&. You can verify the list of SIDs a user is a member of with
 wbinfo \-\-user\-sids=SID\&.
 .sp
 This option must only be specified on a auth module declaration, as it only operates in conjunction with password authentication\&.
@@ -204,7 +210,7 @@ This is the profile path set in the profile tab in the user settings\&. Normally
 \fBsmb.conf\fR(5)
 .SH "VERSION"
 .PP
-This man page is part of version 4\&.12\&.3 of Samba\&.
+This man page is part of version 4\&.12\&.6 of Samba\&.
 .SH "AUTHOR"
 .PP
 The original Samba software and related utilities were created by Andrew Tridgell\&. Samba is now developed by the Samba Team as an Open Source project similar to the way the Linux kernel is developed\&.

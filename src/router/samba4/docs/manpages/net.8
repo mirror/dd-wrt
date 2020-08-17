@@ -2,12 +2,12 @@
 .\"     Title: net
 .\"    Author: [see the "AUTHOR" section]
 .\" Generator: DocBook XSL Stylesheets v1.79.1 <http://docbook.sf.net/>
-.\"      Date: 05/19/2020
+.\"      Date: 08/13/2020
 .\"    Manual: System Administration tools
-.\"    Source: Samba 4.12.3
+.\"    Source: Samba 4.12.6
 .\"  Language: English
 .\"
-.TH "NET" "8" "05/19/2020" "Samba 4\&.12\&.3" "System Administration tools"
+.TH "NET" "8" "08/13/2020" "Samba 4\&.12\&.6" "System Administration tools"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -372,11 +372,13 @@ Tries to set the date and time of the local server to that on the remote server 
 .SS "TIME ZONE"
 .PP
 Displays the timezone in hours from GMT on the remote server\&. The remote server must be specified with the \-S option\&.
-.SS "[RPC|ADS] JOIN [TYPE] [\-\-no\-dns\-updates] [\-U username[%password]] [createupn=UPN] [createcomputer=OU] [machinepass=PASS] [osName=string osVer=string] [options]"
+.SS "[RPC|ADS] JOIN [TYPE] [\-\-no\-dns\-updates] [\-U username[%password]] [dnshostname=FQDN] [createupn=UPN] [createcomputer=OU] [machinepass=PASS] [osName=string osVer=string] [options]"
 .PP
 Join a domain\&. If the account already exists on the server, and [TYPE] is MEMBER, the machine will attempt to join automatically\&. (Assuming that the machine has been created in server manager) Otherwise, a password will be prompted for, and a new account may be created\&.
 .PP
 [TYPE] may be PDC, BDC or MEMBER to specify the type of server joining the domain\&.
+.PP
+[FQDN] (ADS only) set the dnsHostName attribute during the join\&. The default format is netbiosname\&.dnsdomain\&.
 .PP
 [UPN] (ADS only) set the principalname attribute during the join\&. The default format is host/netbiosname@REALM\&.
 .PP

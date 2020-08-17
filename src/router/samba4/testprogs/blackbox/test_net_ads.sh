@@ -41,6 +41,11 @@ if [ -x "$BINDIR/ldbdel" ]; then
 	ldbdel="$BINDIR/ldbdel"
 fi
 
+ldbmodify="ldbmodify"
+if [ -x "$BINDIR/ldbmodify" ]; then
+	ldbmodify="$BINDIR/ldbmodify"
+fi
+
 # Load test functions
 . `dirname $0`/subunit.sh
 
@@ -217,6 +222,46 @@ testit_grep "dns alias SPN" $dns_alias2 $VALGRIND $net_tool ads search -P samacc
 testit_grep "dns alias addl" $dns_alias1 $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ msDS-AdditionalDnsHostName || failed=`expr $failed + 1`
 testit_grep "dns alias addl" $dns_alias2 $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ msDS-AdditionalDnsHostName || failed=`expr $failed + 1`
 
+# Test binary msDS-AdditionalDnsHostName like ones added by Windows DC
+short_alias_file="$PREFIX_ABS/short_alias_file"
+printf 'short_alias\0$' > $short_alias_file
+cat > $PREFIX_ABS/tmpldbmodify <<EOF
+dn: CN=$HOSTNAME,$computers_dn
+changetype: modify
+add: msDS-AdditionalDnsHostName
+msDS-AdditionalDnsHostName:< file://$short_alias_file
+EOF
+
+testit "add binary msDS-AdditionalDnsHostName" $VALGRIND $ldbmodify -k yes -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM $PREFIX_ABS/tmpldbmodify || failed=`expr $failed + 1`
+
+testit_grep "addl short alias" short_alias $ldbsearch --show-binary -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "CN=$HOSTNAME,CN=Computers,$base_dn" msDS-AdditionalDnsHostName || failed=`expr $failed + 1`
+
+rm -f $PREFIX_ABS/tmpldbmodify $short_alias_file
+
+dedicated_keytab_file="$PREFIX_ABS/test_dns_aliases_dedicated_krb5.keytab"
+
+testit "dns alias create_keytab" $VALGRIND $net_tool ads keytab create --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+
+testit_grep "dns alias1 check keytab" "host/${dns_alias1}@$REALM" $net_tool ads keytab list --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+testit_grep "dns alias2 check keytab" "host/${dns_alias2}@$REALM" $net_tool ads keytab list --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+testit_grep "addl short check keytab" "host/short_alias@$REALM" $net_tool ads keytab list --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+
+rm -f $dedicated_keytab_file
+
+##Goodbye...
+testit "leave" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
+
+# netbios aliases tests
+testit "join nb_alias" $VALGRIND $net_tool --option=netbiosaliases=nb_alias1,nb_alias2 ads join -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
+
+testit "testjoin nb_alias" $VALGRIND $net_tool ads testjoin || failed=`expr $failed + 1`
+
+testit_grep "nb_alias check dNSHostName" $fqdn $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ dNSHostName || failed=`expr $failed + 1`
+testit_grep "nb_alias check main SPN" ${uc_netbios}.${lc_realm} $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ servicePrincipalName || failed=`expr $failed + 1`
+
+testit_grep "nb_alias1 SPN" nb_alias1 $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ servicePrincipalName || failed=`expr $failed + 1`
+testit_grep "nb_alias2 SPN" nb_alias2 $VALGRIND $net_tool ads search -P samaccountname=$netbios\$ servicePrincipalName || failed=`expr $failed + 1`
+
 ##Goodbye...
 testit "leave" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
 
@@ -253,6 +298,21 @@ testit_grep "checkupn+keytab" "host/test-$HOSTNAME@$REALM" $net_tool ads keytab 
 rm -f $dedicated_keytab_file
 
 testit "leave+createupn" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
+
+#
+# Test dnshostname option of 'net ads join'
+#
+testit "join+dnshostname" $VALGRIND $net_tool ads join -U$DC_USERNAME%$DC_PASSWORD dnshostname="alt.hostname.$HOSTNAME" || failed=`expr $failed + 1`
+
+testit_grep "check dnshostname opt" "dNSHostName: alt.hostname.$HOSTNAME" $ldbsearch -U$DC_USERNAME%$DC_PASSWORD -H ldap://$SERVER.$REALM -s base -b "CN=$HOSTNAME,CN=Computers,$base_dn" || failed=`expr $failed + 1`
+
+testit "create_keytab+dnshostname" $VALGRIND $net_tool ads keytab create --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+
+testit_grep "check dnshostname+keytab" "host/alt.hostname.$HOSTNAME@$REALM" $net_tool ads keytab list --option="kerberosmethod=dedicatedkeytab" --option="dedicatedkeytabfile=$dedicated_keytab_file" || failed=`expr $failed + 1`
+
+rm -f $dedicated_keytab_file
+
+testit "leave+dnshostname" $VALGRIND $net_tool ads leave -U$DC_USERNAME%$DC_PASSWORD || failed=`expr $failed + 1`
 
 rm -rf $BASEDIR/$WORKDIR
 
