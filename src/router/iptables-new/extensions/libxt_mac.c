@@ -9,6 +9,7 @@
 
 enum {
 	O_MAC = 0,
+	D_MAC = 1,
 };
 
 static void mac_help(void)
@@ -24,6 +25,9 @@ static const struct xt_option_entry mac_opts[] = {
 	{.name = "mac-source", .id = O_MAC, .type = XTTYPE_ETHERMAC,
 	 .flags = XTOPT_MAND | XTOPT_INVERT | XTOPT_PUT,
 	 XTOPT_POINTER(s, srcaddr)},
+	{.name = "mac-destination", .id = D_MAC, .type = XTTYPE_ETHERMAC,
+	 .flags = XTOPT_MAND | XTOPT_INVERT | XTOPT_PUT,
+	 XTOPT_POINTER(s, srcaddr)},
 	XTOPT_TABLEEND,
 };
 #undef s
@@ -35,6 +39,10 @@ static void mac_parse(struct xt_option_call *cb)
 	xtables_option_parse(cb);
 	if (cb->invert)
 		macinfo->invert = 1;
+	if (cb->entry->id == D_MAC)
+	    macinfo->type = 1;
+	else
+	    macinfo->type = 0;
 }
 
 static void print_mac(const unsigned char *macaddress)
