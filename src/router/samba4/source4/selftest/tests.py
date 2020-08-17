@@ -431,6 +431,16 @@ plantestsuite_loadlist("samba.tests.dns_wildcard", "ad_dc", [python, os.path.joi
 
 plantestsuite_loadlist("samba.tests.dns_invalid", "ad_dc", [python, os.path.join(srcdir(), "python/samba/tests/dns_invalid.py"), '$SERVER_IP', '--machine-pass', '-U"$USERNAME%$PASSWORD"', '--workgroup=$DOMAIN', '$LOADLIST', '$LISTOPT'])
 
+plantestsuite_loadlist("samba.tests.dns_packet",
+                       "ad_dc",
+                       [python,
+                        '-msamba.subunit.run',
+                        '$LOADLIST',
+                        "$LISTOPT"
+                        "samba.tests.dns_packet"
+                       ])
+
+
 for t in smbtorture4_testsuites("dns_internal."):
     plansmbtorture4testsuite(t, "ad_dc_default:local", '//$SERVER/whavever')
 
@@ -453,6 +463,8 @@ plantestsuite("samba4.blackbox.samba_tool(ad_dc_default:local)", "ad_dc_default:
 plantestsuite("samba4.blackbox.net_rpc_user(ad_dc)", "ad_dc", [os.path.join(bbdir, "test_net_rpc_user.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$DOMAIN'])
 
 plantestsuite("samba4.blackbox.test_primary_group", "ad_dc:local", [os.path.join(bbdir, "test_primary_group.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$DOMAIN', '$PREFIX_ABS'])
+
+plantestsuite("samba4.blackbox.test_old_enctypes", "fl2003dc:local", [os.path.join(bbdir, "test_old_enctypes.sh"), '$SERVER', '$USERNAME', '$PASSWORD', '$NETBIOSNAME', '$PREFIX_ABS'])
 
 if have_heimdal_support:
     for env in ["ad_dc_ntvfs", "ad_dc"]:
@@ -695,7 +707,8 @@ planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.processes")
 planpythontestsuite("ad_dc_ntvfs:local", "samba.tests.samba_tool.user")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.user_wdigest")
 planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user")
-planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user_virtualCryptSHA")
+planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user_virtualCryptSHA_userPassword")
+planpythontestsuite("ad_dc:local", "samba.tests.samba_tool.user_virtualCryptSHA_gpg")
 planpythontestsuite("chgdcpass:local", "samba.tests.samba_tool.user_check_password_script")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.group")
 planpythontestsuite("ad_dc_default:local", "samba.tests.samba_tool.ou")
@@ -1340,6 +1353,8 @@ plantestsuite("libcli.drsuapi.repl_decrypt", "none",
               [os.path.join(bindir(), "test_repl_decrypt")])
 plantestsuite("librpc.ndr.ndr_string", "none",
               [os.path.join(bindir(), "test_ndr_string")])
+plantestsuite("librpc.ndr.ndr_dns_nbt", "none",
+              [os.path.join(bindir(), "test_ndr_dns_nbt")])
 plantestsuite("libcli.ldap.ldap_message", "none",
               [os.path.join(bindir(), "test_ldap_message")])
 

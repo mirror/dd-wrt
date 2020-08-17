@@ -53,6 +53,7 @@ struct file_enum_count {
 	TALLOC_CTX *ctx;
 	const char *username;
 	struct srvsvc_NetFileCtr3 *ctr3;
+	struct file_id *fids;
 };
 
 struct sess_file_info {
@@ -87,12 +88,9 @@ static int enum_file_fn(struct file_id id,
 {
 	struct file_enum_count *fenum =
 		(struct file_enum_count *)private_data;
-
+	struct srvsvc_NetFileCtr3 *ctr3 = fenum->ctr3;
 	struct srvsvc_NetFileInfo3 *f;
-	int i = fenum->ctr3->count;
-	files_struct fsp;
-	struct byte_range_lock *brl;
-	int num_locks = 0;
+	struct file_id *fids = NULL;
 	char *fullpath = NULL;
 	uint32_t permissions;
 	const char *username;
@@ -110,23 +108,25 @@ static int enum_file_fn(struct file_id id,
 		return 0;
 	}
 
-	f = talloc_realloc(fenum->ctx, fenum->ctr3->array,
-				 struct srvsvc_NetFileInfo3, i+1);
+	f = talloc_realloc(
+		fenum->ctx,
+		ctr3->array,
+		struct srvsvc_NetFileInfo3,
+		ctr3->count+1);
 	if ( !f ) {
-		DEBUG(0,("conn_enum_fn: realloc failed for %d items\n", i+1));
+		DBG_ERR("realloc failed for %"PRIu32" items\n", ctr3->count+1);
 		return 0;
 	}
-	fenum->ctr3->array = f;
+	ctr3->array = f;
 
-	/* need to count the number of locks on a file */
-
-	ZERO_STRUCT( fsp );
-	fsp.file_id = id;
-
-	if ( (brl = brl_get_locks(talloc_tos(), &fsp)) != NULL ) {
-		num_locks = brl_num_locks(brl);
-		TALLOC_FREE(brl);
+	fids = talloc_realloc(
+		fenum->ctx, fenum->fids, struct file_id, ctr3->count+1);
+	if (fids == NULL) {
+		DBG_ERR("realloc failed for %"PRIu32" items\n", ctr3->count+1);
+		return 0;
 	}
+	fids[ctr3->count] = id;
+	fenum->fids = fids;
 
 	if ( strcmp(d->base_name, "." ) == 0 ) {
 		fullpath = talloc_asprintf(
@@ -151,14 +151,15 @@ static int enum_file_fn(struct file_id id,
 
 	/* now fill in the srvsvc_NetFileInfo3 struct */
 
-	fenum->ctr3->array[i].fid		=
-		(((uint32_t)(procid_to_pid(&e->pid))<<16) | e->share_file_id);
-	fenum->ctr3->array[i].permissions	= permissions;
-	fenum->ctr3->array[i].num_locks		= num_locks;
-	fenum->ctr3->array[i].path		= fullpath;
-	fenum->ctr3->array[i].user		= username;
+	ctr3->array[ctr3->count] = (struct srvsvc_NetFileInfo3) {
+		.fid	 	= (((uint32_t)(procid_to_pid(&e->pid))<<16) |
+				   e->share_file_id),
+		.permissions 	= permissions,
+		.path		= fullpath,
+		.user		= username,
+	};
 
-	fenum->ctr3->count++;
+	ctr3->count++;
 
 	return 0;
 }
@@ -171,15 +172,30 @@ static WERROR net_enum_files(TALLOC_CTX *ctx,
 			     struct srvsvc_NetFileCtr3 **ctr3,
 			     uint32_t resume)
 {
-	struct file_enum_count f_enum_cnt;
-
-	f_enum_cnt.ctx = ctx;
-	f_enum_cnt.username = username;
-	f_enum_cnt.ctr3 = *ctr3;
+	struct file_enum_count f_enum_cnt = {
+		.ctx = ctx, .username = username, .ctr3 = *ctr3,
+	};
+	uint32_t i;
 
 	share_entry_forall(enum_file_fn, (void *)&f_enum_cnt );
 
 	*ctr3 = f_enum_cnt.ctr3;
+
+	/* need to count the number of locks on a file */
+
+	for (i=0; i<(*ctr3)->count; i++) {
+		struct files_struct fsp = { .file_id = f_enum_cnt.fids[i], };
+		struct byte_range_lock *brl = NULL;
+
+		brl = brl_get_locks(ctx, &fsp);
+		if (brl == NULL) {
+			continue;
+		}
+
+		(*ctr3)->array[i].num_locks = brl_num_locks(brl);
+
+		TALLOC_FREE(brl);
+	}
 
 	return WERR_OK;
 }

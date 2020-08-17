@@ -1236,7 +1236,8 @@ static NTSTATUS parse_finfo_id_both_directory_info(uint8_t *dir_data,
 	finfo->ctime_ts = interpret_long_date((const char *)dir_data + 32);
 	finfo->size = IVAL2_TO_SMB_BIG_UINT(dir_data + 40, 0);
 	finfo->allocated_size = IVAL2_TO_SMB_BIG_UINT(dir_data + 48, 0);
-	finfo->mode = CVAL(dir_data + 56, 0);
+	/* NB. We need to enlarge finfo->mode to be 32-bits. */
+	finfo->mode = (uint16_t)IVAL(dir_data + 56, 0);
 	finfo->ino = IVAL2_TO_SMB_BIG_UINT(dir_data + 96, 0);
 	namelen = IVAL(dir_data + 60,0);
 	if (namelen > (dir_data_length - 104)) {
@@ -1269,6 +1270,12 @@ static NTSTATUS parse_finfo_id_both_directory_info(uint8_t *dir_data,
 		/* Bad conversion. */
 		return NT_STATUS_INVALID_NETWORK_RESPONSE;
 	}
+
+	if (finfo->name == NULL) {
+		/* Bad conversion. */
+		return NT_STATUS_INVALID_NETWORK_RESPONSE;
+	}
+
 	return NT_STATUS_OK;
 }
 
@@ -3245,6 +3252,7 @@ NTSTATUS cli_smb2_rename(struct cli_state *cli,
 	smb_ucs2_t *converted_str = NULL;
 	size_t converted_size_bytes = 0;
 	size_t namelen = 0;
+	size_t inbuf_size;
 	TALLOC_CTX *frame = talloc_stackframe();
 
 	if (smbXcli_conn_has_async_calls(cli->conn)) {
@@ -3302,8 +3310,29 @@ NTSTATUS cli_smb2_rename(struct cli_state *cli,
 	}
 	converted_size_bytes -= 2;
 
-	inbuf = data_blob_talloc_zero(frame,
-				20 + converted_size_bytes);
+	inbuf_size = 20 + converted_size_bytes;
+	if (inbuf_size < 20) {
+		/* Integer wrap check. */
+		status = NT_STATUS_INVALID_PARAMETER;
+		goto fail;
+	}
+
+	/*
+	 * The Windows 10 SMB2 server has a minimum length
+	 * for a SMB2_FILE_RENAME_INFORMATION buffer of
+	 * 24 bytes. It returns NT_STATUS_INFO_LENGTH_MISMATCH
+	 * if the length is less. This isn't an alignment
+	 * issue as Windows client happily 2-byte align
+	 * for larget target name sizes. Also the Windows 10
+	 * SMB1 server doesn't have this restriction.
+	 *
+	 * BUG: https://bugzilla.samba.org/show_bug.cgi?id=14403
+	 */
+	if (inbuf_size < 24) {
+		inbuf_size = 24;
+	}
+
+	inbuf = data_blob_talloc_zero(frame, inbuf_size);
 	if (inbuf.data == NULL) {
 		status = NT_STATUS_NO_MEMORY;
 		goto fail;

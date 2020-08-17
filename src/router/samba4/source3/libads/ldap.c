@@ -1377,6 +1377,7 @@ char *ads_parent_dn(const char *dn)
 		"unicodePwd",
 
 		/* Additional attributes Samba checks */
+		"msDS-AdditionalDnsHostName",
 		"msDS-SupportedEncryptionTypes",
 		"nTSecurityDescriptor",
 
@@ -3663,6 +3664,86 @@ out:
 	ads_msgfree(ads, res);
 
 	return name;
+}
+
+/********************************************************************
+********************************************************************/
+
+static char **get_addl_hosts(ADS_STRUCT *ads, TALLOC_CTX *mem_ctx,
+			      LDAPMessage *msg, size_t *num_values)
+{
+	const char *field = "msDS-AdditionalDnsHostName";
+	struct berval **values = NULL;
+	char **ret = NULL;
+	size_t i, converted_size;
+
+	values = ldap_get_values_len(ads->ldap.ld, msg, field);
+	if (values == NULL) {
+		return NULL;
+	}
+
+	*num_values = ldap_count_values_len(values);
+
+	ret = talloc_array(mem_ctx, char *, *num_values + 1);
+	if (ret == NULL) {
+		ldap_value_free_len(values);
+		return NULL;
+	}
+
+	for (i = 0; i < *num_values; i++) {
+		ret[i] = NULL;
+		if (!convert_string_talloc(mem_ctx, CH_UTF8, CH_UNIX,
+					   values[i]->bv_val,
+					   strnlen(values[i]->bv_val,
+						   values[i]->bv_len),
+					   &ret[i], &converted_size)) {
+			ldap_value_free_len(values);
+			return NULL;
+		}
+	}
+	ret[i] = NULL;
+
+	ldap_value_free_len(values);
+	return ret;
+}
+
+ADS_STATUS ads_get_additional_dns_hostnames(TALLOC_CTX *mem_ctx,
+					    ADS_STRUCT *ads,
+					    const char *machine_name,
+					    char ***hostnames_array,
+					    size_t *num_hostnames)
+{
+	ADS_STATUS status;
+	LDAPMessage *res = NULL;
+	int count;
+
+	status = ads_find_machine_acct(ads,
+				       &res,
+				       machine_name);
+	if (!ADS_ERR_OK(status)) {
+		DEBUG(1,("Host Account for %s not found... skipping operation.\n",
+			 machine_name));
+		return status;
+	}
+
+	count = ads_count_replies(ads, res);
+	if (count != 1) {
+		status = ADS_ERROR(LDAP_NO_SUCH_OBJECT);
+		goto done;
+	}
+
+	*hostnames_array = get_addl_hosts(ads, mem_ctx, res, num_hostnames);
+	if (*hostnames_array == NULL) {
+		DEBUG(1, ("Host account for %s does not have msDS-AdditionalDnsHostName.\n",
+			  machine_name));
+		status = ADS_ERROR(LDAP_NO_SUCH_OBJECT);
+		goto done;
+	}
+
+done:
+	ads_msgfree(ads, res);
+
+	return status;
 }
 
 /********************************************************************
