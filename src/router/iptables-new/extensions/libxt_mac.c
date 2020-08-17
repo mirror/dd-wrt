@@ -23,10 +23,10 @@ static void mac_help(void)
 #define s struct xt_mac_info
 static const struct xt_option_entry mac_opts[] = {
 	{.name = "mac-source", .id = O_MAC, .type = XTTYPE_ETHERMAC,
-	 .flags = XTOPT_MAND | XTOPT_INVERT | XTOPT_PUT,
+	 .flags = XTOPT_INVERT | XTOPT_PUT,
 	 XTOPT_POINTER(s, srcaddr)},
 	{.name = "mac-destination", .id = D_MAC, .type = XTTYPE_ETHERMAC,
-	 .flags = XTOPT_MAND | XTOPT_INVERT | XTOPT_PUT,
+	 .flags = XTOPT_INVERT | XTOPT_PUT,
 	 XTOPT_POINTER(s, srcaddr)},
 	XTOPT_TABLEEND,
 };
