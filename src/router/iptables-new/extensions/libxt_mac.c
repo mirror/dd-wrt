@@ -64,6 +64,12 @@ mac_print(const void *ip, const struct xt_entry_match *match, int numeric)
 	if (info->invert)
 		printf(" !");
 
+	if (info->type == 0) {
+		printf("--mac-source");
+	} else {
+		printf("--mac-destination");
+	}
+
 	print_mac(info->srcaddr);
 }
 
@@ -74,7 +80,11 @@ static void mac_save(const void *ip, const struct xt_entry_match *match)
 	if (info->invert)
 		printf(" !");
 
-	printf(" --mac-source");
+	if (info->type == 0) {
+		printf("--mac-source");
+	} else {
+		printf("--mac-destination");
+	}
 	print_mac(info->srcaddr);
 }
 
