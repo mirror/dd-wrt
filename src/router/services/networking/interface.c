@@ -165,8 +165,8 @@ void start_setup_vlans(void)
 	eval("swconfig", "dev", "switch0", "set", "enable_vlan", "1");
 	eval("swconfig", "dev", "switch0", "set", "igmp_v3", "1");
 #endif
-	char buildports[16][32];
-	char tagged[16];
+	char buildports[18][32];
+	char tagged[18];
 	char snoop[5];
 	memset(&tagged[0], 0, sizeof(tagged));
 	memset(&snoop[0], 0, sizeof(snoop));
@@ -303,8 +303,8 @@ void start_setup_vlans(void)
 	int i, j, ret = 0, tmp, workaround = 0, found;
 	char *vlans, *next, vlan[4], buff[70], buff2[16];
 	FILE *fp;
-	char portsettings[16][64];
-	char tagged[16];
+	char portsettings[18][64];
+	char tagged[18];
 	unsigned char mac[20];;
 	struct ifreq ifr;
 	char *phy = getPhyDev();
@@ -334,8 +334,8 @@ void start_setup_vlans(void)
 	if (strstr(asttemp, "7u"))
 		ast = 7;
 
-	bzero(&portsettings[0][0], 16 * 64);
-	bzero(&tagged[0], 16);
+	bzero(&portsettings[0][0], 18 * 64);
+	bzero(&tagged[0], sizeof(tagged));
 	for (i = 0; i < 6; i++) {
 		vlans = nvram_nget("port%dvlans", i);
 		int use = vlanmap[i];
