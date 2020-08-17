@@ -17,6 +17,7 @@ static void mac_help(void)
 	printf(
 "mac match options:\n"
 "[!] --mac-source XX:XX:XX:XX:XX:XX\n"
+"[!] --mac-destination XX:XX:XX:XX:XX:XX\n"
 "				Match source MAC address\n");
 }
 
