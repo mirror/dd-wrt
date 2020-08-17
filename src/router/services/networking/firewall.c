@@ -912,8 +912,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 							}
 							writeprocsysnet(loopif, "1");
 						} else {
-							save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), nvram_nget("%s_ipaddr", var),
-										getmask(nvram_nget("%s_netmask", var)));
+//							save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), nvram_nget("%s_ipaddr", var),
+//										getmask(nvram_nget("%s_netmask", var)));
 							writeprocsysnet(loopif, "0");
 						}
 
@@ -926,17 +926,18 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if (nvram_matchi("wshaper_enable", 0)) {
 			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 				save2file_A_postrouting("-m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
-			else {
-				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-							getmask(nvram_safe_get("lan_netmask")));
-			}
+//			else {
+//				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
+//							getmask(nvram_safe_get("lan_netmask")));
+//			}
 		} else {
 			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
 				save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", nvram_safe_get("lan_ifname"));
 				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
-			} else
-				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-							getmask(nvram_safe_get("lan_netmask")));
+			} 
+//			else
+//				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
+//							getmask(nvram_safe_get("lan_netmask")));
 		}
 
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
