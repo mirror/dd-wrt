@@ -152,7 +152,7 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->mtime_ts = convert_time_t_to_timespec(
 				make_unix_date2(p+12, smb1cli_conn_server_time_zone(cli->conn)));
 			finfo->size = IVAL(p,16);
-			finfo->mode = CVAL(p,24);
+			finfo->mode = SVAL(p,24);
 			len = CVAL(p, 26);
 			p += 27;
 			if (recv_flags2 & FLAGS2_UNICODE_STRINGS) {
@@ -211,7 +211,7 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->mtime_ts = convert_time_t_to_timespec(
 				make_unix_date2(p+12, smb1cli_conn_server_time_zone(cli->conn)));
 			finfo->size = IVAL(p,16);
-			finfo->mode = CVAL(p,24);
+			finfo->mode = SVAL(p,24);
 			len = CVAL(p, 30);
 			p += 31;
 			/* check for unisys! */
@@ -257,7 +257,8 @@ static size_t interpret_long_filename(TALLOC_CTX *ctx,
 			finfo->size = IVAL2_TO_SMB_BIG_UINT(p,0);
 			p += 8;
 			p += 8; /* alloc size */
-			finfo->mode = CVAL(p,0);
+			/* NB. We need to enlarge finfo->mode to be 32-bits. */
+			finfo->mode = (uint16_t)IVAL(p,0);
 			p += 4;
 			namelen = IVAL(p,0);
 			p += 4;
@@ -552,7 +553,10 @@ static NTSTATUS cli_list_old_recv(struct tevent_req *req, TALLOC_CTX *mem_ctx,
 			TALLOC_FREE(finfo);
 			return NT_STATUS_NO_MEMORY;
 		}
-
+		if (finfo->name == NULL) {
+			TALLOC_FREE(finfo);
+			return NT_STATUS_INVALID_NETWORK_RESPONSE;
+		}
 		status = is_bad_finfo_name(state->cli, finfo);
 		if (!NT_STATUS_IS_OK(status)) {
 			smbXcli_conn_disconnect(state->cli->conn, status);
@@ -791,8 +795,9 @@ static void cli_list_trans_done(struct tevent_req *subreq)
 		if (finfo->name == NULL) {
 			DEBUG(1, ("cli_list: Error: unable to parse name from "
 				  "info level %d\n", state->info_level));
-			ff_eos = true;
-			break;
+			tevent_req_nterror(req,
+				NT_STATUS_INVALID_NETWORK_RESPONSE);
+			return;
 		}
 
 		status = is_bad_finfo_name(state->cli, finfo);

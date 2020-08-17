@@ -162,6 +162,33 @@ plantestsuite("samba3.smbtorture_s3.hidenewfiles(simpleserver)",
                "",
                "-l $LOCAL_PATH"])
 
+#
+# MSDFS attribute tests.
+#
+plantestsuite("samba3.smbtorture_s3.smb2.MSDFS-ATTRIBUTE",
+                "fileserver",
+                [os.path.join(samba3srcdir,
+                              "script/tests/test_smbtorture_s3.sh"),
+                'MSDFS-ATTRIBUTE',
+                '//$SERVER_IP/msdfs-share',
+                '$USERNAME',
+                '$PASSWORD',
+                smbtorture3,
+                "-mSMB2",
+                "-f msdfs-src1"])
+
+plantestsuite("samba3.smbtorture_s3.smb1.MSDFS-ATTRIBUTE",
+                "fileserver",
+                [os.path.join(samba3srcdir,
+                              "script/tests/test_smbtorture_s3.sh"),
+                'MSDFS-ATTRIBUTE',
+                '//$SERVER_IP/msdfs-share',
+                '$USERNAME',
+                '$PASSWORD',
+                smbtorture3,
+                "-mNT1",
+                "-f msdfs-src1"])
+
 shares = [
     "vfs_aio_pthread_async_dosmode_default1",
     "vfs_aio_pthread_async_dosmode_default2",
@@ -379,6 +406,12 @@ for env in ["fileserver"]:
     plantestsuite("samba3.blackbox.timestamps", env,
                   [os.path.join(samba3srcdir, "script/tests/test_timestamps.sh"),
                    '$SERVER_IP', '$USERNAME', '$PASSWORD', '$LOCAL_PATH', smbclient3])
+    plantestsuite("samba3.blackbox.smbclient_iconv.SMB2", env,
+                  [os.path.join(samba3srcdir, "script/tests/test_smbclient_iconv.sh"),
+                   '$SERVER', '$SERVER_IP', 'bad_iconv', '$USERNAME', '$PASSWORD', smbclient3])
+    plantestsuite("samba3.blackbox.smbclient_iconv.NT1", env,
+                  [os.path.join(samba3srcdir, "script/tests/test_smbclient_iconv.sh"),
+                   '$SERVER', '$SERVER_IP', 'bad_iconv', '$USERNAME', '$PASSWORD', smbclient3, '-mNT1'])
 
     #
     # tar command tests
@@ -827,10 +860,27 @@ plantestsuite("samba3.blackbox.open-eintr", "simpleserver:local",
                '$SERVER_IP',
                "error_inject"])
 
+plantestsuite("samba3.blackbox.netfileenum", "simpleserver:local",
+              [os.path.join(samba3srcdir,
+                            "script/tests/test_netfileenum.sh"),
+               os.path.join(bindir(), "smbclient"),
+               os.path.join(bindir(), "rpcclient"),
+               os.path.join(bindir(), "net"),
+               '$SERVER_IP',
+               'tmp'])
+
 plantestsuite("samba3.blackbox.net_tdb", "simpleserver:local",
               [os.path.join(samba3srcdir, "script/tests/test_net_tdb.sh"),
                smbclient3, '$SERVER', 'tmp', '$USERNAME', '$PASSWORD',
                configuration, '$LOCAL_PATH', '$LOCK_DIR'])
+
+plantestsuite("samba3.blackbox.aio-outstanding", "simpleserver:local",
+              [os.path.join(samba3srcdir,
+                            "script/tests/test_aio_outstanding.sh"),
+               configuration,
+               os.path.join(bindir(), "smbclient"),
+               '$SERVER_IP',
+               "aio_delay_inject"])
 
 plantestsuite("samba3.blackbox.smbd_error", "simpleserver:local",
               [os.path.join(samba3srcdir, "script/tests/test_smbd_error.sh")])
