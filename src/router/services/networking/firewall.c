@@ -905,7 +905,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 						char loopif[64];
 						sprintf(loopif, "ipv4/conf/%s/loop", var);
 						if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
-							if (nvram_matchi("wshaper_enable", 0)) {
+							if (nvram_matchi("wshaper_enable", 1)) {
 								save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", var);
 								save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)),
 											nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)));
