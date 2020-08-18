@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5303 | brainslayer | 2020-08-18 13:48:46 +0400 (Tue, 18 Aug 2020) | 1 line
+
+mwlwifi: Increase A-MSDU to 7.9K to increase interoperability with Intel 9260
+------------------------------------------------------------------------
 r5302 | brainslayer | 2020-08-18 01:45:18 +0400 (Tue, 18 Aug 2020) | 1 line
 
 update 10k codes
