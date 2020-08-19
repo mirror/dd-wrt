@@ -18,6 +18,7 @@ extern void ctrl_init(void);
 static int unl_init(struct unl *unl)
 {
 	ctrl_init();
+	memset(unl, 0, sizeof(*unl));
 	unl->sock = nl_socket_alloc();
 	if (!unl->sock) {
 		    return -1;
@@ -28,8 +29,6 @@ static int unl_init(struct unl *unl)
 
 int unl_genl_init(struct unl *unl, const char *family)
 {
-	memset(unl, 0, sizeof(*unl));
-
 	if (unl_init(unl))
 		goto error_out;
 
@@ -46,6 +45,23 @@ int unl_genl_init(struct unl *unl, const char *family)
 
 	unl->family = genl_ctrl_search_by_name(unl->cache, family);
 	if (!unl->family)
+		goto error;
+
+	return 0;
+
+error:
+	unl_free(unl);
+error_out:
+	return -1;
+}
+
+int unl_rtnl_init(struct unl *unl)
+{
+	if (unl_init(unl))
+		goto error_out;
+
+	unl->hdrlen = 0;
+	if (nl_connect(unl->sock, NETLINK_ROUTE))
 		goto error;
 
 	return 0;
@@ -113,7 +129,25 @@ out:
 	return msg;
 }
 
-int unl_genl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg)
+struct nl_msg *unl_rtnl_msg(struct unl *unl, int cmd, bool dump)
+{
+	struct nl_msg *msg;
+	int flags = 0;
+
+	msg = nlmsg_alloc();
+	if (!msg)
+		goto out;
+
+	if (dump)
+		flags |= NLM_F_DUMP;
+
+	nlmsg_put(msg, NL_AUTO_PID, NL_AUTO_SEQ, cmd, 0, flags);
+
+out:
+	return msg;
+}
+
+int unl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg)
 {
 	struct nl_cb *cb;
 	int err;
@@ -150,10 +184,10 @@ static int request_single_cb(struct nl_msg *msg, void *arg)
 	return NL_SKIP;
 }
 
-int unl_genl_request_single(struct unl *unl, struct nl_msg *msg, struct nl_msg **dest)
+int unl_request_single(struct unl *unl, struct nl_msg *msg, struct nl_msg **dest)
 {
 	*dest = NULL;
-	return unl_genl_request(unl, msg, request_single_cb, dest);
+	return unl_request(unl, msg, request_single_cb, dest);
 }
 
 static int no_seq_check(struct nl_msg *msg, void *arg)
@@ -161,7 +195,7 @@ static int no_seq_check(struct nl_msg *msg, void *arg)
 	return NL_OK;
 }
 
-void unl_genl_loop(struct unl *unl, unl_cb handler, void *arg)
+void unl_loop(struct unl *unl, unl_cb handler, void *arg)
 {
 	struct nl_cb *cb;
 
@@ -192,7 +226,7 @@ int unl_genl_multicast_id(struct unl *unl, const char *name)
 	ctrlid = genl_ctrl_resolve(unl->sock, "nlctrl");
 	genlmsg_put(msg, 0, 0, ctrlid, 0, 0, CTRL_CMD_GETFAMILY, 0);
 	NLA_PUT_STRING(msg, CTRL_ATTR_FAMILY_NAME, unl->family_name);
-	unl_genl_request_single(unl, msg, &msg);
+	unl_request_single(unl, msg, &msg);
 	if (!msg)
 		return -1;
 
@@ -276,7 +310,7 @@ int unl_nl80211_wdev_to_phy(struct unl *unl, int wdev)
 		return -1;
 
 	NLA_PUT_U32(msg, NL80211_ATTR_IFINDEX, wdev);
-	if (unl_genl_request_single(unl, msg, &msg) < 0)
+	if (unl_request_single(unl, msg, &msg) < 0)
 		return -1;
 
 	attr = unl_find_attr(unl, msg, NL80211_ATTR_WIPHY);
