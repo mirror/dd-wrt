@@ -149,7 +149,7 @@ void start_chilli(void)
 
 void stop_chilli(void)
 {
-	if (stop_process("chillispot", "daemon")) {
+	if (stop_process("chilli", "daemon")) {
 		unlink("/tmp/chilli/chilli.conf");
 		unlink("/tmp/chilli/hotss.conf");
 		unlink("/tmp/chilli/ip-up.sh");
