@@ -16,14 +16,22 @@ struct unl {
 };
 
 int unl_genl_init(struct unl *unl, const char *family);
+int unl_rtnl_init(struct unl *unl);
 void unl_free(struct unl *unl);
 
 typedef int (*unl_cb)(struct nl_msg *, void *);
 
 struct nl_msg *unl_genl_msg(struct unl *unl, int cmd, bool dump);
-int unl_genl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg);
-int unl_genl_request_single(struct unl *unl, struct nl_msg *msg, struct nl_msg **dest);
-void unl_genl_loop(struct unl *unl, unl_cb handler, void *arg);
+struct nl_msg *unl_rtnl_msg(struct unl *unl, int cmd, bool dump);
+
+int unl_request(struct unl *unl, struct nl_msg *msg, unl_cb handler, void *arg);
+int unl_request_single(struct unl *unl, struct nl_msg *msg, struct nl_msg **dest);
+void unl_loop(struct unl *unl, unl_cb handler, void *arg);
+
+/* compat */
+#define unl_genl_request unl_request
+#define unl_genl_request_single unl_request_single
+#define unl_genl_loop unl_loop
 
 int unl_genl_multicast_id(struct unl *unl, const char *name);
 int unl_genl_subscribe(struct unl *unl, const char *name);
