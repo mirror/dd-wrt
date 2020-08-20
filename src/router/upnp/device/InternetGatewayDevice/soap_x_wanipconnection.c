@@ -562,13 +562,12 @@ action_DeletePortMapping
 	UPNP_STATE_VAR *statevar;
 	UPNP_VALUE value = {UPNP_TYPE_UI2, 2};
 
-    if (upnp_portmap_del(context,
+    int error = upnp_portmap_del(context,
 						ARG_STR(in_NewRemoteHost),
 						ARG_UI2(in_NewExternalPort),
-						ARG_STR(in_NewProtocol))
-		!= 0)
-	{
-        return SOAP_INVALID_ARGS;
+						ARG_STR(in_NewProtocol));
+    if (error) {
+        return error;
     }
 
 	/* Update "PortMappingNumberOfEntries" */
