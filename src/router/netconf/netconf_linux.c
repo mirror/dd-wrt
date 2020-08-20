@@ -146,7 +146,7 @@ netconf_get_fw(netconf_fw_t *fw_list)
 		/* Search all default chains */
 		for (chain = iptc_first_chain(&handle); chain; chain = iptc_next_chain(&handle)) {
 
-			if (strcmp(chain, "INPUT") && strcmp(chain, "FORWARD") && strcmp(chain, "OUTPUT") &&
+			if (strcmp(chain, "INPUT") && strcmp(chain, "upnp") && strcmp(chain, "FORWARD") && strcmp(chain, "OUTPUT") &&
 			    strcmp(chain, "PREROUTING") && strcmp(chain, "POSTROUTING"))
 				continue;		
 
@@ -1301,6 +1301,7 @@ netconf_reset_fw(void)
 	if ((ret = netconf_reset_chain("filter", "INPUT")) ||
 	    (ret = netconf_reset_chain("filter", "FORWARD")) ||
 	    (ret = netconf_reset_chain("filter", "OUTPUT")) ||
+	    (ret = netconf_reset_chain("filter", "upnp")) ||
 	    (ret = netconf_reset_chain("nat", "PREROUTING")) ||
 	    (ret = netconf_reset_chain("nat", "POSTROUTING")) ||
 	    (ret = netconf_reset_chain("nat", "OUTPUT")))
