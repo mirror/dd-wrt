@@ -517,7 +517,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 		if (!strcmp(proto, "tcp") || !strcmp(proto, "both")) {
 			save2file_A_prerouting("-i %s -p tcp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
-			snprintf(buff, sizeof(buff), "-A FORWARD -p tcp -m tcp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
+			snprintf(buff, sizeof(buff), "-A upnp -p tcp -m tcp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
@@ -526,7 +526,7 @@ static void parse_upnp_forward(char *wanface, char *wanaddr, char *lan_cclass)
 		if (!strcmp(proto, "udp") || !strcmp(proto, "both")) {
 			save2file_A_prerouting("-i %s -p udp -d %s --dport %s -j DNAT --to-destination %s%d:%s", wanface, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0);
 
-			snprintf(buff, sizeof(buff), "-A FORWARD -p udp -m udp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
+			snprintf(buff, sizeof(buff), "-A upnp -p udp -m udp -d %s%d --dport %s -j %s\n", lan_cclass, get_single_ip(lan_ipaddr, 3), lan_port0, log_accept);
 
 			count += strlen(buff) + 1;
 			suspense = realloc(suspense, count);
