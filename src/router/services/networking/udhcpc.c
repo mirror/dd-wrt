@@ -260,16 +260,15 @@ static int bound(void)
 		expires(atoi(value));
 	}
 	if (!changed) {
-		dd_loginfo("dhcp lease info hasn't changed, do nothing\n");
+		dd_loginfo("udhcpc", "dhcp lease info hasn't changed, do nothing\n");
 #ifdef HAVE_MULTICAST
-		dd_loginfo("restart multicast forwarder, in case the peer broke the connection on renew");
+		dd_loginfo("udhcpc", "restart multicast forwarder, in case the peer broke the connection on renew");
 		stop_igmprt();
 		start_igmprt();
 #endif
 		return 0;
 	}
 	stop_firewall();
-	cprintf("configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname, nvram_safe_get("wan_ipaddr"), nvram_safe_get("wan_netmask"));
 
 	if (nvram_match("wan_proto", "pptp")
 	    && nvram_matchi("pptp_use_dhcp", 1))
