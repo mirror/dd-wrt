@@ -115,7 +115,7 @@ upnp_portmap_del(UPNP_CONTEXT *context, char *remote_host,
 
 	map = upnp_portmap_find(context, remote_host, external_port, protocol);
 	if (map == 0)
-		return -1;
+		return SOAP_NO_SUCH_ENTRY_IN_ARRAY;
 
 	/* Purge this entry */
 	upnp_portmap_purge(context, map);
