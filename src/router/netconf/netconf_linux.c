@@ -81,6 +81,8 @@ filter_dir(const char *name)
 		return NETCONF_FORWARD;
 	else if (strncmp(name, "OUTPUT", IPT_FUNCTION_MAXNAMELEN) == 0)
 		return NETCONF_OUT;
+	else if (strncmp(name, "upnp", IPT_FUNCTION_MAXNAMELEN) == 0)
+		return NETCONF_UPNP;
 	else
 		return -1;
 }
