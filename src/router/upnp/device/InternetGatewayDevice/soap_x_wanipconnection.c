@@ -511,7 +511,7 @@ action_AddPortMapping
 	UPNP_STATE_VAR *statevar;
 	UPNP_VALUE value = {UPNP_TYPE_UI2, 2};
 
-    if (upnp_portmap_add(context,
+       int error = upnp_portmap_add(context,
 						ARG_STR(in_NewRemoteHost),
 						ARG_UI2(in_NewExternalPort), 
 						ARG_STR(in_NewProtocol),
@@ -519,11 +519,11 @@ action_AddPortMapping
 						ARG_STR(in_NewInternalClient),
 						ARG_BOOL(in_NewEnabled),
 						ARG_STR(in_NewPortMappingDescription),
-						ARG_UI4(in_NewLeaseDuration))
-		!= 0)
+						ARG_UI4(in_NewLeaseDuration));
+	if (error)
 	{
-        return SOAP_INVALID_ARGS;
-    }
+    	    return error;
+	}
 
 	/* Update "PortMappingNumberOfEntries" */
 	statevar = find_event_var(context, service, "PortMappingNumberOfEntries");

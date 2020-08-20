@@ -12,6 +12,7 @@
  * $Id: InternetGatewayDevice.c,v 1.9 2008/08/25 08:16:14 Exp $
  */
 #include <upnp.h>
+#include <soap.h>
 #include <InternetGatewayDevice.h>
 
 void
@@ -146,14 +147,14 @@ upnp_portmap_add
 	if (strcasecmp(protocol, "TCP") != 0 &&
 		strcasecmp(protocol, "UDP") != 0) {
 		upnp_syslog(LOG_ERR, "add_portmap:: Invalid protocol");
-		return -1;
+		return SOAP_ARGUMENT_VALUE_INVALID;
 	}
 
 	/* check duplication */
 	map = upnp_portmap_find(context, remote_host, external_port, protocol);
 	if (map) {
 		if (strcmp(internal_client, map->internal_client) != 0)
-			return -1;
+			return SOAP_CONFLICT_IN_MAPPING_ENTRY;
 
 		/* Argus, make it looked like shutdown */
 		if (enable != map->enable ||
@@ -183,7 +184,7 @@ upnp_portmap_add
 			 */
 			new_portmap_ctrl = (UPNP_PORTMAP_CTRL *)malloc(new_size);
 			if (new_portmap_ctrl == 0)
-				return -1;
+				return SOAP_OUT_OF_MEMORY;
 
 			/* Copy the old to the new one, and free it */
 			memcpy(new_portmap_ctrl, portmap_ctrl, old_size);
