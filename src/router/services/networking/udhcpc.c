@@ -260,7 +260,12 @@ static int bound(void)
 		expires(atoi(value));
 	}
 	if (!changed) {
-		cprintf("interface hasnt changed, do nothing\n");
+		dd_loginfo("interface hasnt changed, do nothing\n");
+#ifdef HAVE_MULTICAST
+		dd_loginfo("restart multicast forwarder, in case the peer broke the connection on renew");
+		stop_igmprt();
+		start_igmprt();
+#endif
 		return 0;
 	}
 	stop_firewall();
