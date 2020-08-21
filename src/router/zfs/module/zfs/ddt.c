@@ -253,7 +253,7 @@ void
 ddt_object_name(ddt_t *ddt, enum ddt_type type, enum ddt_class class,
     char *name)
 {
-	(void) sprintf(name, DMU_POOL_DDT,
+	(void) snprintf(name, DDT_NAMELEN, DMU_POOL_DDT,
 	    zio_checksum_table[ddt->ddt_checksum].ci_name,
 	    ddt_ops[type]->ddt_op_name, ddt_class_name[class]);
 }
@@ -592,12 +592,6 @@ ddt_decompress(uchar_t *src, void *dst, size_t s_len, size_t d_len)
 	if (((version & DDT_COMPRESS_BYTEORDER_MASK) != 0) !=
 	    (ZFS_HOST_BYTEORDER != 0))
 		byteswap_uint64_array(dst, d_len);
-}
-
-ddt_t *
-ddt_select_by_checksum(spa_t *spa, enum zio_checksum c)
-{
-	return (spa->spa_ddt[c]);
 }
 
 ddt_t *

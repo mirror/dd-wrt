@@ -36,8 +36,12 @@
 #include <sys/sysmacros.h>
 #include <sys/resource.h>
 #include <sys/vfs.h>
+#include <sys/endian.h>
 #include <sys/vm.h>
 #include <sys/vnode.h>
+#if __FreeBSD_version >= 1300102
+#include <sys/smr.h>
+#endif
 #include <sys/dirent.h>
 #include <sys/file.h>
 #include <sys/stat.h>
@@ -89,6 +93,8 @@
 #ifndef VN_OPEN_INVFS
 #define	VN_OPEN_INVFS	0x0
 #endif
+
+VFS_SMR_DECLARE;
 
 #if __FreeBSD_version >= 1300047
 #define	vm_page_wire_lock(pp)
@@ -385,7 +391,8 @@ page_busy(vnode_t *vp, int64_t start, int64_t off, int64_t nbytes)
 	 * aligned boundaries, if the range is not aligned.  As a result a
 	 * DEV_BSIZE subrange with partially dirty data may get marked as clean.
 	 * It may happen that all DEV_BSIZE subranges are marked clean and thus
-	 * the whole page would be considred clean despite have some dirty data.
+	 * the whole page would be considered clean despite have some
+	 * dirty data.
 	 * For this reason we should shrink the range to DEV_BSIZE aligned
 	 * boundaries before calling vm_page_clear_dirty.
 	 */
@@ -1139,7 +1146,7 @@ zfs_write(vnode_t *vp, uio_t *uio, int ioflag, cred_t *cr)
 
 		/*
 		 * Clear Set-UID/Set-GID bits on successful write if not
-		 * privileged and at least one of the excute bits is set.
+		 * privileged and at least one of the execute bits is set.
 		 *
 		 * It would be nice to to this after all writes have
 		 * been done, but that would still expose the ISUID/ISGID
@@ -1250,7 +1257,7 @@ zfs_write_simple(znode_t *zp, const void *data, size_t len,
 	return (error);
 }
 
-void
+static void
 zfs_get_done(zgd_t *zgd, int error)
 {
 	znode_t *zp = zgd->zgd_private;
@@ -1270,7 +1277,7 @@ zfs_get_done(zgd_t *zgd, int error)
 	kmem_free(zgd, sizeof (zgd_t));
 }
 
-#ifdef DEBUG
+#ifdef ZFS_DEBUG
 static int zil_fault_io = 0;
 #endif
 
@@ -1353,7 +1360,7 @@ zfs_get_data(void *arg, lr_write_t *lr, char *buf, struct lwb *lwb, zio_t *zio)
 		/* test for truncation needs to be done while range locked */
 		if (lr->lr_offset >= zp->z_size)
 			error = SET_ERROR(ENOENT);
-#ifdef DEBUG
+#ifdef ZFS_DEBUG
 		if (zil_fault_io) {
 			error = SET_ERROR(EIO);
 			zil_fault_io = 0;
@@ -2051,7 +2058,7 @@ out:
 }
 
 
-int
+static int
 zfs_lookup_internal(znode_t *dzp, char *name, vnode_t **vpp,
     struct componentname *cnp, int nameiop)
 {
@@ -3930,6 +3937,7 @@ zfs_rename_(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 	char		*snm = scnp->cn_nameptr;
 	char		*tnm = tcnp->cn_nameptr;
 	int		error = 0;
+	bool	want_seqc_end __maybe_unused = false;
 
 	/* Reject renames across filesystems. */
 	if ((*svpp)->v_mount != tdvp->v_mount ||
@@ -4073,6 +4081,15 @@ zfs_rename_(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 		}
 	}
 
+	vn_seqc_write_begin(*svpp);
+	vn_seqc_write_begin(sdvp);
+	if (*tvpp != NULL)
+		vn_seqc_write_begin(*tvpp);
+	if (tdvp != *tvpp)
+		vn_seqc_write_begin(tdvp);
+#if	__FreeBSD_version >= 1300102
+	want_seqc_end = true;
+#endif
 	vnevent_rename_src(*svpp, sdvp, scnp->cn_nameptr, ct);
 	if (tzp)
 		vnevent_rename_dest(*tvpp, tdvp, tnm, ct);
@@ -4159,10 +4176,20 @@ zfs_rename_(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 
 unlockout:			/* all 4 vnodes are locked, ZFS_ENTER called */
 	ZFS_EXIT(zfsvfs);
+	if (want_seqc_end) {
+		vn_seqc_write_end(*svpp);
+		vn_seqc_write_end(sdvp);
+		if (*tvpp != NULL)
+			vn_seqc_write_end(*tvpp);
+		if (tdvp != *tvpp)
+			vn_seqc_write_end(tdvp);
+		want_seqc_end = false;
+	}
 	VOP_UNLOCK1(*svpp);
 	VOP_UNLOCK1(sdvp);
 
 out:				/* original two vnodes are locked */
+	MPASS(!want_seqc_end);
 	if (error == 0 && zfsvfs->z_os->os_sync == ZFS_SYNC_ALWAYS)
 		zil_commit(zilog, 0);
 
@@ -4604,7 +4631,7 @@ zfs_space(znode_t *zp, int cmd, flock64_t *bfp, int flag,
 }
 
 /*ARGSUSED*/
-void
+static void
 zfs_inactive(vnode_t *vp, cred_t *cr, caller_context_t *ct)
 {
 	znode_t	*zp = VTOZ(vp);
@@ -4808,9 +4835,20 @@ zfs_getpages(struct vnode *vp, vm_page_t *ma, int count, int *rbehind,
 	 */
 	for (;;) {
 		blksz = zp->z_blksz;
-		lr = zfs_rangelock_enter(&zp->z_rangelock,
+		lr = zfs_rangelock_tryenter(&zp->z_rangelock,
 		    rounddown(start, blksz),
 		    roundup(end, blksz) - rounddown(start, blksz), RL_READER);
+		if (lr == NULL) {
+			if (rahead != NULL) {
+				*rahead = 0;
+				rahead = NULL;
+			}
+			if (rbehind != NULL) {
+				*rbehind = 0;
+				rbehind = NULL;
+			}
+			break;
+		}
 		if (blksz == zp->z_blksz)
 			break;
 		zfs_rangelock_exit(lr);
@@ -5042,7 +5080,7 @@ struct vop_putpages_args {
 };
 #endif
 
-int
+static int
 zfs_freebsd_putpages(struct vop_putpages_args *ap)
 {
 
@@ -5183,6 +5221,33 @@ zfs_freebsd_write(struct vop_write_args *ap)
 	    ap->a_cred));
 }
 
+#if __FreeBSD_version >= 1300102
+/*
+ * VOP_FPLOOKUP_VEXEC routines are subject to special circumstances, see
+ * the comment above cache_fplookup for details.
+ */
+static int
+zfs_freebsd_fplookup_vexec(struct vop_fplookup_vexec_args *v)
+{
+	vnode_t *vp;
+	znode_t *zp;
+	uint64_t pflags;
+
+	vp = v->a_vp;
+	zp = VTOZ_SMR(vp);
+	if (__predict_false(zp == NULL))
+		return (EAGAIN);
+	pflags = atomic_load_64(&zp->z_pflags);
+	if (pflags & ZFS_AV_QUARANTINED)
+		return (EAGAIN);
+	if (pflags & ZFS_XATTR)
+		return (EAGAIN);
+	if ((pflags & ZFS_NO_EXECS_DENIED) == 0)
+		return (EAGAIN);
+	return (0);
+}
+#endif
+
 #ifndef _SYS_SYSPROTO_H_
 struct vop_access_args {
 	struct vnode *a_vp;
@@ -5219,8 +5284,13 @@ zfs_freebsd_access(struct vop_access_args *ap)
 	if (error == 0) {
 		accmode = ap->a_accmode & ~(VREAD|VWRITE|VEXEC|VAPPEND);
 		if (accmode != 0) {
+#if __FreeBSD_version >= 1300105
+			error = vaccess(vp->v_type, zp->z_mode, zp->z_uid,
+			    zp->z_gid, accmode, ap->a_cred);
+#else
 			error = vaccess(vp->v_type, zp->z_mode, zp->z_uid,
 			    zp->z_gid, accmode, ap->a_cred, NULL);
+#endif
 		}
 	}
 
@@ -5748,10 +5818,13 @@ zfs_freebsd_need_inactive(struct vop_need_inactive_args *ap)
 	vnode_t *vp = ap->a_vp;
 	znode_t	*zp = VTOZ(vp);
 	zfsvfs_t *zfsvfs = zp->z_zfsvfs;
-	bool need;
+	int need;
+
+	if (vn_need_pageq_flush(vp))
+		return (1);
 
 	if (!rw_tryenter(&zfsvfs->z_teardown_inactive_lock, RW_READER))
-		return (true);
+		return (1);
 	need = (zp->z_sa_hdl == NULL || zp->z_unlinked || zp->z_atime_dirty);
 	rw_exit(&zfsvfs->z_teardown_inactive_lock);
 
@@ -5993,7 +6066,7 @@ struct vop_deleteextattr {
 /*
  * Vnode operation to remove a named attribute.
  */
-int
+static int
 zfs_deleteextattr(struct vop_deleteextattr_args *ap)
 {
 	zfsvfs_t *zfsvfs = VTOZ(ap->a_vp)->z_zfsvfs;
@@ -6270,7 +6343,7 @@ struct vop_getacl_args {
 };
 #endif
 
-int
+static int
 zfs_freebsd_getacl(struct vop_getacl_args *ap)
 {
 	int		error;
@@ -6301,7 +6374,7 @@ struct vop_setacl_args {
 };
 #endif
 
-int
+static int
 zfs_freebsd_setacl(struct vop_setacl_args *ap)
 {
 	int		error;
@@ -6354,7 +6427,7 @@ struct vop_aclcheck_args {
 };
 #endif
 
-int
+static int
 zfs_freebsd_aclcheck(struct vop_aclcheck_args *ap)
 {
 
@@ -6467,6 +6540,9 @@ struct vop_vector zfs_vnodeops = {
 	.vop_need_inactive =	zfs_freebsd_need_inactive,
 #endif
 	.vop_reclaim =		zfs_freebsd_reclaim,
+#if __FreeBSD_version >= 1300102
+	.vop_fplookup_vexec = zfs_freebsd_fplookup_vexec,
+#endif
 	.vop_access =		zfs_freebsd_access,
 	.vop_allocate =		VOP_EINVAL,
 	.vop_lookup =		zfs_cache_lookup,
@@ -6521,6 +6597,9 @@ VFS_VOP_VECTOR_REGISTER(zfs_vnodeops);
 struct vop_vector zfs_fifoops = {
 	.vop_default =		&fifo_specops,
 	.vop_fsync =		zfs_freebsd_fsync,
+#if __FreeBSD_version >= 1300102
+	.vop_fplookup_vexec = zfs_freebsd_fplookup_vexec,
+#endif
 	.vop_access =		zfs_freebsd_access,
 	.vop_getattr =		zfs_freebsd_getattr,
 	.vop_inactive =		zfs_freebsd_inactive,

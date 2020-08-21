@@ -20,11 +20,11 @@
  */
 
 /*
- * Copyright (c) 2009, Sun Microsystems Inc. All rights reserved.
- * Copyright (c) 2015, 2016, Delphix. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
+ * Copyright (c) 2019, Allan Jude
+ * Copyright (c) 2019, Klara Inc.
  * Use is subject to license terms.
+ * Copyright (c) 2015, 2016 by Delphix. All rights reserved.
  */
 
 #ifndef _SYS_ZIO_COMPRESS_H
@@ -56,6 +56,11 @@ enum zio_compress {
 	ZIO_COMPRESS_ZSTD,
 	ZIO_COMPRESS_FUNCTIONS
 };
+
+/* Compression algorithms that have levels */
+#define	ZIO_COMPRESS_HASLEVEL(compress)	((compress == ZIO_COMPRESS_ZSTD || \
+					(compress >= ZIO_COMPRESS_GZIP_1 && \
+					compress <= ZIO_COMPRESS_GZIP_9)))
 
 #define	ZIO_COMPLEVEL_INHERIT	0
 #define	ZIO_COMPLEVEL_DEFAULT	255

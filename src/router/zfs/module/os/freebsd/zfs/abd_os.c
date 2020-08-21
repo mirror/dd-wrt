@@ -28,6 +28,7 @@
 
 #include <sys/abd_impl.h>
 #include <sys/param.h>
+#include <sys/types.h>
 #include <sys/zio.h>
 #include <sys/zfs_context.h>
 #include <sys/zfs_znode.h>
@@ -130,16 +131,17 @@ abd_update_scatter_stats(abd_t *abd, abd_stats_op_t op)
 {
 	size_t n = abd_scatter_chunkcnt(abd);
 	ASSERT(op == ABDSTAT_INCR || op == ABDSTAT_DECR);
+	int waste = n * zfs_abd_chunk_size - abd->abd_size;
 	if (op == ABDSTAT_INCR) {
 		ABDSTAT_BUMP(abdstat_scatter_cnt);
 		ABDSTAT_INCR(abdstat_scatter_data_size, abd->abd_size);
-		ABDSTAT_INCR(abdstat_scatter_chunk_waste,
-		    n * zfs_abd_chunk_size - abd->abd_size);
+		ABDSTAT_INCR(abdstat_scatter_chunk_waste, waste);
+		arc_space_consume(waste, ARC_SPACE_ABD_CHUNK_WASTE);
 	} else {
 		ABDSTAT_BUMPDOWN(abdstat_scatter_cnt);
 		ABDSTAT_INCR(abdstat_scatter_data_size, -(int)abd->abd_size);
-		ABDSTAT_INCR(abdstat_scatter_chunk_waste,
-		    abd->abd_size - n * zfs_abd_chunk_size);
+		ABDSTAT_INCR(abdstat_scatter_chunk_waste, -waste);
+		arc_space_return(waste, ARC_SPACE_ABD_CHUNK_WASTE);
 	}
 }
 
@@ -198,8 +200,15 @@ abd_t *
 abd_alloc_struct(size_t size)
 {
 	size_t chunkcnt = abd_chunkcnt_for_bytes(size);
-	size_t abd_size = offsetof(abd_t,
-	    abd_u.abd_scatter.abd_chunks[chunkcnt]);
+	/*
+	 * In the event we are allocating a gang ABD, the size passed in
+	 * will be 0. We must make sure to set abd_size to the size of an
+	 * ABD struct as opposed to an ABD scatter with 0 chunks. The gang
+	 * ABD struct allocation accounts for an additional 24 bytes over
+	 * a scatter ABD with 0 chunks.
+	 */
+	size_t abd_size = MAX(sizeof (abd_t),
+	    offsetof(abd_t, abd_u.abd_scatter.abd_chunks[chunkcnt]));
 	abd_t *abd = kmem_alloc(abd_size, KM_PUSHPAGE);
 	ASSERT3P(abd, !=, NULL);
 	list_link_init(&abd->abd_gang_link);
@@ -212,8 +221,10 @@ abd_alloc_struct(size_t size)
 void
 abd_free_struct(abd_t *abd)
 {
-	size_t chunkcnt = abd_is_linear(abd) ? 0 : abd_scatter_chunkcnt(abd);
-	int size = offsetof(abd_t, abd_u.abd_scatter.abd_chunks[chunkcnt]);
+	size_t chunkcnt = abd_is_linear(abd) || abd_is_gang(abd) ? 0 :
+	    abd_scatter_chunkcnt(abd);
+	int size = MAX(sizeof (abd_t),
+	    offsetof(abd_t, abd_u.abd_scatter.abd_chunks[chunkcnt]));
 	mutex_destroy(&abd->abd_mtx);
 	ASSERT(!list_link_active(&abd->abd_gang_link));
 	kmem_free(abd, size);
@@ -265,7 +276,7 @@ void
 abd_init(void)
 {
 	abd_chunk_cache = kmem_cache_create("abd_chunk", zfs_abd_chunk_size, 0,
-	    NULL, NULL, NULL, NULL, 0, KMC_NOTOUCH | KMC_NODEBUG);
+	    NULL, NULL, NULL, NULL, 0, KMC_NODEBUG);
 
 	abd_ksp = kstat_create("zfs", 0, "abdstats", "misc", KSTAT_TYPE_NAMED,
 	    sizeof (abd_stats) / sizeof (kstat_named_t), KSTAT_FLAG_VIRTUAL);
@@ -478,4 +489,10 @@ abd_iter_unmap(struct abd_iter *aiter)
 
 	aiter->iter_mapaddr = NULL;
 	aiter->iter_mapsize = 0;
+}
+
+void
+abd_cache_reap_now(void)
+{
+	kmem_cache_reap_soon(abd_chunk_cache);
 }

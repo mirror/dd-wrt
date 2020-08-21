@@ -28,11 +28,14 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <sys/types.h>
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/malloc.h>
 #include <sys/kmem.h>
+#include <sys/list.h>
+#include <sys/proc.h>
 #include <sys/sbuf.h>
 #include <sys/nvpair.h>
 #include <sys/sunddi.h>
@@ -254,6 +257,6 @@ sysevent_worker(void *arg __unused)
 void
 ddi_sysevent_init(void)
 {
-	kproc_kthread_add(sysevent_worker, NULL, &zfsproc, NULL, 0, 0,
+	kproc_kthread_add(sysevent_worker, NULL, &system_proc, NULL, 0, 0,
 	    "zfskern", "sysevent");
 }

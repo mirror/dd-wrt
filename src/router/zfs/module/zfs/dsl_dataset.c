@@ -21,16 +21,19 @@
 
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2018, Delphix. All rights reserved.
- * Copyright (c) 2014, Joyent Inc. All rights reserved.
- * Copyright (c) 2014, RackTop Systems. All rights reserved.
- * Copyright (c) 2014, Spectra Logic Corporation. All rights reserved.
- * Copyright (c) 2016, Actifio Inc. All rights reserved.
- * Copyright (c) 2016, OmniTI Computer Consulting Inc. All rights reserved.
- * Copyright (c) 2017, Nexenta Systems Inc. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2011, 2020 by Delphix. All rights reserved.
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ * Copyright (c) 2014 RackTop Systems.
+ * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+ * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+ * Copyright 2016, OmniTI Computer Consulting, Inc. All rights reserved.
+ * Copyright 2017 Nexenta Systems, Inc.
+ * Copyright (c) 2019, Klara Inc.
+ * Copyright (c) 2019, Allan Jude
+ * Copyright (c) 2020 The FreeBSD Foundation [1]
+ *
+ * [1] Portions of this software were developed by Allan Jude
+ *     under sponsorship from the FreeBSD Foundation.
  */
 
 #include <sys/dmu_objset.h>
@@ -918,7 +921,7 @@ void
 dsl_dataset_name(dsl_dataset_t *ds, char *name)
 {
 	if (ds == NULL) {
-		(void) strcpy(name, "mos");
+		(void) strlcpy(name, "mos", ZFS_MAX_DATASET_NAME_LEN);
 	} else {
 		dsl_dir_name(ds->ds_dir, name);
 		VERIFY0(dsl_dataset_get_snapname(ds));
@@ -1032,7 +1035,7 @@ zfeature_active(spa_feature_t f, void *arg)
 {
 	switch (spa_feature_table[f].fi_type) {
 	case ZFEATURE_TYPE_BOOLEAN: {
-		boolean_t val = (boolean_t)arg;
+		boolean_t val = (boolean_t)(uintptr_t)arg;
 		ASSERT(val == B_FALSE || val == B_TRUE);
 		return (val);
 	}
@@ -1088,7 +1091,7 @@ dsl_dataset_activate_feature(uint64_t dsobj, spa_feature_t f, void *arg,
 
 	switch (spa_feature_table[f].fi_type) {
 	case ZFEATURE_TYPE_BOOLEAN:
-		ASSERT3S((boolean_t)arg, ==, B_TRUE);
+		ASSERT3S((boolean_t)(uintptr_t)arg, ==, B_TRUE);
 		VERIFY0(zap_add(mos, dsobj, spa_feature_table[f].fi_guid,
 		    sizeof (zero), 1, &zero, tx));
 		break;
@@ -1477,7 +1480,7 @@ dsl_dataset_snapshot_reserve_space(dsl_dataset_t *ds, dmu_tx_t *tx)
 
 int
 dsl_dataset_snapshot_check_impl(dsl_dataset_t *ds, const char *snapname,
-    dmu_tx_t *tx, boolean_t recv, uint64_t cnt, cred_t *cr)
+    dmu_tx_t *tx, boolean_t recv, uint64_t cnt, cred_t *cr, proc_t *proc)
 {
 	int error;
 	uint64_t value;
@@ -1522,7 +1525,7 @@ dsl_dataset_snapshot_check_impl(dsl_dataset_t *ds, const char *snapname,
 	 */
 	if (cnt != 0 && cr != NULL) {
 		error = dsl_fs_ss_limit_check(ds->ds_dir, cnt,
-		    ZFS_PROP_SNAPSHOT_LIMIT, NULL, cr);
+		    ZFS_PROP_SNAPSHOT_LIMIT, NULL, cr, proc);
 		if (error != 0)
 			return (error);
 	}
@@ -1623,7 +1626,7 @@ dsl_dataset_snapshot_check(void *arg, dmu_tx_t *tx)
 			if (error == 0) {
 				error = dsl_fs_ss_limit_check(ds->ds_dir, cnt,
 				    ZFS_PROP_SNAPSHOT_LIMIT, NULL,
-				    ddsa->ddsa_cr);
+				    ddsa->ddsa_cr, ddsa->ddsa_proc);
 				dsl_dataset_rele(ds, FTAG);
 			}
 
@@ -1661,7 +1664,7 @@ dsl_dataset_snapshot_check(void *arg, dmu_tx_t *tx)
 		if (error == 0) {
 			/* passing 0/NULL skips dsl_fs_ss_limit_check */
 			error = dsl_dataset_snapshot_check_impl(ds,
-			    atp + 1, tx, B_FALSE, 0, NULL);
+			    atp + 1, tx, B_FALSE, 0, NULL, NULL);
 			dsl_dataset_rele(ds, FTAG);
 		}
 
@@ -1939,6 +1942,7 @@ dsl_dataset_snapshot(nvlist_t *snaps, nvlist_t *props, nvlist_t *errors)
 	ddsa.ddsa_props = props;
 	ddsa.ddsa_errors = errors;
 	ddsa.ddsa_cr = CRED();
+	ddsa.ddsa_proc = curproc;
 
 	if (error == 0) {
 		error = dsl_sync_task(firstname, dsl_dataset_snapshot_check,
@@ -1986,7 +1990,7 @@ dsl_dataset_snapshot_tmp_check(void *arg, dmu_tx_t *tx)
 
 	/* NULL cred means no limit check for tmp snapshot */
 	error = dsl_dataset_snapshot_check_impl(ds, ddsta->ddsta_snapname,
-	    tx, B_FALSE, 0, NULL);
+	    tx, B_FALSE, 0, NULL, NULL);
 	if (error != 0) {
 		dsl_dataset_rele(ds, FTAG);
 		return (error);
@@ -2439,9 +2443,12 @@ get_receive_resume_stats_impl(dsl_dataset_t *ds)
 		zio_cksum_t cksum;
 		fletcher_4_native_varsize(compressed, compressed_size, &cksum);
 
-		str = kmem_alloc(compressed_size * 2 + 1, KM_SLEEP);
+		size_t alloc_size = compressed_size * 2 + 1;
+		str = kmem_alloc(alloc_size, KM_SLEEP);
 		for (int i = 0; i < compressed_size; i++) {
-			(void) sprintf(str + i * 2, "%02x", compressed[i]);
+			size_t offset = i * 2;
+			(void) snprintf(str + offset, alloc_size - offset,
+		    "%02x", compressed[i]);
 		}
 		str[compressed_size * 2] = '\0';
 		char *propval = kmem_asprintf("%u-%llx-%llx-%s",
@@ -2449,7 +2456,7 @@ get_receive_resume_stats_impl(dsl_dataset_t *ds)
 		    (longlong_t)cksum.zc_word[0],
 		    (longlong_t)packed_size, str);
 		kmem_free(packed, packed_size);
-		kmem_free(str, compressed_size * 2 + 1);
+		kmem_free(str, alloc_size);
 		kmem_free(compressed, packed_size);
 		return (propval);
 	}
@@ -3486,7 +3493,7 @@ dsl_dataset_promote_check(void *arg, dmu_tx_t *tx)
 
 	/* Check that there is enough space and limit headroom here */
 	err = dsl_dir_transfer_possible(origin_ds->ds_dir, hds->ds_dir,
-	    0, ss_mv_cnt, ddpa->used, ddpa->cr);
+	    0, ss_mv_cnt, ddpa->used, ddpa->cr, ddpa->proc);
 	if (err != 0)
 		goto out;
 
@@ -3743,7 +3750,7 @@ dsl_dataset_promote_sync(void *arg, dmu_tx_t *tx)
 	 * as well.
 	 */
 	dsl_dir_remove_livelist(dd, tx, B_TRUE);
-	dsl_dir_remove_livelist(origin_ds->ds_dir, tx, B_TRUE);
+	dsl_dir_remove_livelist(odd, tx, B_TRUE);
 
 	/* log history record */
 	spa_history_log_internal_ds(hds, "promote", tx, " ");
@@ -3913,6 +3920,7 @@ dsl_dataset_promote(const char *name, char *conflsnap)
 	ddpa.ddpa_clonename = name;
 	ddpa.err_ds = fnvlist_alloc();
 	ddpa.cr = CRED();
+	ddpa.proc = curproc;
 
 	error = dsl_sync_task(name, dsl_dataset_promote_check,
 	    dsl_dataset_promote_sync, &ddpa,
@@ -3923,7 +3931,8 @@ dsl_dataset_promote(const char *name, char *conflsnap)
 	 */
 	snap_pair = nvlist_next_nvpair(ddpa.err_ds, NULL);
 	if (snap_pair != NULL && conflsnap != NULL)
-		(void) strcpy(conflsnap, nvpair_name(snap_pair));
+		(void) strlcpy(conflsnap, nvpair_name(snap_pair),
+		    ZFS_MAX_DATASET_NAME_LEN);
 
 	fnvlist_free(ddpa.err_ds);
 	return (error);
@@ -4510,6 +4519,74 @@ dsl_dataset_set_refreservation(const char *dsname, zprop_source_t source,
 
 	return (dsl_sync_task(dsname, dsl_dataset_set_refreservation_check,
 	    dsl_dataset_set_refreservation_sync, &ddsqra, 0,
+	    ZFS_SPACE_CHECK_EXTRA_RESERVED));
+}
+
+typedef struct dsl_dataset_set_compression_arg {
+	const char *ddsca_name;
+	zprop_source_t ddsca_source;
+	uint64_t ddsca_value;
+} dsl_dataset_set_compression_arg_t;
+
+/* ARGSUSED */
+static int
+dsl_dataset_set_compression_check(void *arg, dmu_tx_t *tx)
+{
+	dsl_dataset_set_compression_arg_t *ddsca = arg;
+	dsl_pool_t *dp = dmu_tx_pool(tx);
+
+	uint64_t compval = ZIO_COMPRESS_ALGO(ddsca->ddsca_value);
+	spa_feature_t f = zio_compress_to_feature(compval);
+
+	if (f == SPA_FEATURE_NONE)
+		return (SET_ERROR(EINVAL));
+
+	if (!spa_feature_is_enabled(dp->dp_spa, f))
+		return (SET_ERROR(ENOTSUP));
+
+	return (0);
+}
+
+static void
+dsl_dataset_set_compression_sync(void *arg, dmu_tx_t *tx)
+{
+	dsl_dataset_set_compression_arg_t *ddsca = arg;
+	dsl_pool_t *dp = dmu_tx_pool(tx);
+	dsl_dataset_t *ds = NULL;
+
+	uint64_t compval = ZIO_COMPRESS_ALGO(ddsca->ddsca_value);
+	spa_feature_t f = zio_compress_to_feature(compval);
+	ASSERT3S(spa_feature_table[f].fi_type, ==, ZFEATURE_TYPE_BOOLEAN);
+
+	VERIFY0(dsl_dataset_hold(dp, ddsca->ddsca_name, FTAG, &ds));
+	if (zfeature_active(f, ds->ds_feature[f]) != B_TRUE) {
+		ds->ds_feature_activation[f] = (void *)B_TRUE;
+		dsl_dataset_activate_feature(ds->ds_object, f,
+		    ds->ds_feature_activation[f], tx);
+		ds->ds_feature[f] = ds->ds_feature_activation[f];
+	}
+	dsl_dataset_rele(ds, FTAG);
+}
+
+int
+dsl_dataset_set_compression(const char *dsname, zprop_source_t source,
+    uint64_t compression)
+{
+	dsl_dataset_set_compression_arg_t ddsca;
+
+	/*
+	 * The sync task is only required for zstd in order to activate
+	 * the feature flag when the property is first set.
+	 */
+	if (ZIO_COMPRESS_ALGO(compression) != ZIO_COMPRESS_ZSTD)
+		return (0);
+
+	ddsca.ddsca_name = dsname;
+	ddsca.ddsca_source = source;
+	ddsca.ddsca_value = compression;
+
+	return (dsl_sync_task(dsname, dsl_dataset_set_compression_check,
+	    dsl_dataset_set_compression_sync, &ddsca, 0,
 	    ZFS_SPACE_CHECK_EXTRA_RESERVED));
 }
 

@@ -14,10 +14,7 @@
  */
 
 /*
- * Copyright (c) 2016, Delphix. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2016 by Delphix. All rights reserved.
  */
 
 #include <sys/lua/lua.h>
@@ -37,6 +34,7 @@
 #include <sys/zcp.h>
 #include <sys/zcp_iter.h>
 #include <sys/zcp_global.h>
+#include <sys/zcp_prop.h>
 #include <sys/zfs_ioctl.h>
 #include <sys/zfs_znode.h>
 #include <sys/zvol.h>
@@ -85,13 +83,13 @@ get_objset_type_name(dsl_dataset_t *ds, char *str)
 		return (error);
 	switch (type) {
 	case ZFS_TYPE_SNAPSHOT:
-		(void) strcpy(str, "snapshot");
+		(void) strlcpy(str, "snapshot", ZAP_MAXVALUELEN);
 		break;
 	case ZFS_TYPE_FILESYSTEM:
-		(void) strcpy(str, "filesystem");
+		(void) strlcpy(str, "filesystem", ZAP_MAXVALUELEN);
 		break;
 	case ZFS_TYPE_VOLUME:
-		(void) strcpy(str, "volume");
+		(void) strlcpy(str, "volume", ZAP_MAXVALUELEN);
 		break;
 	default:
 		return (EINVAL);
@@ -233,7 +231,6 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 	char setpoint[ZFS_MAX_DATASET_NAME_LEN] =
 	    "Internal error - setpoint not determined";
 	zfs_type_t ds_type;
-	const char *prop_name = zfs_prop_to_name(zfs_prop);
 	zprop_type_t prop_type = zfs_prop_get_type(zfs_prop);
 	(void) get_objset_type(ds, &ds_type);
 
@@ -325,11 +322,11 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 		break;
 	case ZFS_PROP_FILESYSTEM_COUNT:
 		error = dsl_dir_get_filesystem_count(ds->ds_dir, &numval);
-		(void) strcpy(setpoint, "");
+		(void) strlcpy(setpoint, "", ZFS_MAX_DATASET_NAME_LEN);
 		break;
 	case ZFS_PROP_SNAPSHOT_COUNT:
 		error = dsl_dir_get_snapshot_count(ds->ds_dir, &numval);
-		(void) strcpy(setpoint, "");
+		(void) strlcpy(setpoint, "", ZFS_MAX_DATASET_NAME_LEN);
 		break;
 	case ZFS_PROP_NUMCLONES:
 		numval = dsl_get_numclones(ds);
@@ -371,7 +368,8 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 			    sizeof (numval), 1, &numval);
 		}
 		if (error == 0)
-			(void) strcpy(setpoint, dsname);
+			(void) strlcpy(setpoint, dsname,
+			    ZFS_MAX_DATASET_NAME_LEN);
 
 		break;
 	case ZFS_PROP_VOLBLOCKSIZE: {
@@ -411,25 +409,7 @@ get_special_prop(lua_State *state, dsl_dataset_t *ds, const char *dsname,
 		nvlist_free(nvl);
 		break;
 	}
-	case ZFS_PROP_COMPRESSION:
-		error = dsl_prop_get_ds(ds, prop_name, sizeof (numval), 1,
-		    &numval, setpoint);
-		/* Special handling is only required for ZSTD */
-		if (error || numval != ZIO_COMPRESS_ZSTD)
-			break;
 
-		uint64_t levelval;
-		const char *complevel_name =
-		    zfs_prop_to_name(ZFS_PROP_COMPRESS_LEVEL);
-
-		error = dsl_prop_get_ds(ds, complevel_name, sizeof (levelval),
-		    1, &levelval, setpoint);
-		if (error == 0) {
-			if (levelval == ZIO_COMPLEVEL_DEFAULT)
-				break;
-			numval |= levelval << SPA_COMPRESSBITS;
-		}
-		break;
 	default:
 		/* Did not match these props, check in the dsl_dir */
 		error = get_dsl_dir_prop(ds, zfs_prop, &numval);
@@ -715,9 +695,10 @@ parse_written_prop(const char *dataset_name, const char *prop_name,
 	ASSERT(zfs_prop_written(prop_name));
 	const char *name = prop_name + ZFS_WRITTEN_PROP_PREFIX_LEN;
 	if (strchr(name, '@') == NULL) {
-		(void) sprintf(snap_name, "%s@%s", dataset_name, name);
+		(void) snprintf(snap_name, ZFS_MAX_DATASET_NAME_LEN, "%s@%s",
+		    dataset_name, name);
 	} else {
-		(void) strcpy(snap_name, name);
+		(void) strlcpy(snap_name, name, ZFS_MAX_DATASET_NAME_LEN);
 	}
 }
 

@@ -32,7 +32,7 @@
 #include <sys/param.h>
 #include <sys/malloc.h>
 #include <sys/vmem.h>
-#include <sys/vmmeter.h>
+#include <sys/counter.h>
 
 #include <vm/uma.h>
 #include <vm/vm.h>
@@ -46,10 +46,8 @@ MALLOC_DECLARE(M_SOLARIS);
 #define	KM_SLEEP		M_WAITOK
 #define	KM_PUSHPAGE		M_WAITOK
 #define	KM_NOSLEEP		M_NOWAIT
-#define	KM_NODEBUG		M_NODUMP
 #define	KM_NORMALPRI		0
 #define	KMC_NODEBUG		UMA_ZONE_NODUMP
-#define	KMC_NOTOUCH		0
 
 typedef struct vmem vmem_t;
 
@@ -90,13 +88,10 @@ void *calloc(size_t n, size_t s);
 #define	kmem_cache_reap_now kmem_cache_reap_soon
 #define	freemem				vm_free_count()
 #define	minfree				vm_cnt.v_free_min
-#define	heap_arena			kernel_arena
-#define	zio_arena			NULL
 #define	kmem_alloc(size, kmflags)	zfs_kmem_alloc((size), (kmflags))
 #define	kmem_zalloc(size, kmflags)				\
 	zfs_kmem_alloc((size), (kmflags) | M_ZERO)
 #define	kmem_free(buf, size)		zfs_kmem_free((buf), (size))
-#define	vmem_qcache_reap(ptr)	((void)0)
 
 
 #endif	/* _OPENSOLARIS_SYS_KMEM_H_ */

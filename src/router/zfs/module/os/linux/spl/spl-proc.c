@@ -446,16 +446,18 @@ slab_seq_show(struct seq_file *f, void *p)
 		 * the underlying Linux cache please refer to /proc/slabinfo.
 		 */
 		spin_lock(&skc->skc_lock);
+		uint64_t objs_allocated =
+		    percpu_counter_sum(&skc->skc_linux_alloc);
 		seq_printf(f, "%-36s  ", skc->skc_name);
 		seq_printf(f, "0x%05lx %9s %9lu %8s %8u  "
 		    "%5s %5s %5s  %5s %5lu %5s  %5s %5s %5s\n",
 		    (long unsigned)skc->skc_flags,
 		    "-",
-		    (long unsigned)(skc->skc_obj_size * skc->skc_obj_alloc),
+		    (long unsigned)(skc->skc_obj_size * objs_allocated),
 		    "-",
 		    (unsigned)skc->skc_obj_size,
 		    "-", "-", "-", "-",
-		    (long unsigned)skc->skc_obj_alloc,
+		    (long unsigned)objs_allocated,
 		    "-", "-", "-", "-");
 		spin_unlock(&skc->skc_lock);
 		return (0);
@@ -629,60 +631,6 @@ static struct ctl_table spl_kmem_table[] = {
 		.proc_handler	= &proc_doulongvec_minmax,
 	},
 #endif /* DEBUG_KMEM */
-	{
-		.procname	= "slab_kmem_total",
-		.data		= (void *)(KMC_KMEM | KMC_TOTAL),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler = &proc_doslab,
-	},
-	{
-		.procname	= "slab_kmem_alloc",
-		.data		= (void *)(KMC_KMEM | KMC_ALLOC),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler	= &proc_doslab,
-	},
-	{
-		.procname	= "slab_kmem_max",
-		.data		= (void *)(KMC_KMEM | KMC_MAX),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler	= &proc_doslab,
-	},
-	{
-		.procname	= "slab_vmem_total",
-		.data		= (void *)(KMC_VMEM | KMC_TOTAL),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler	= &proc_doslab,
-	},
-	{
-		.procname	= "slab_vmem_alloc",
-		.data		= (void *)(KMC_VMEM | KMC_ALLOC),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler	= &proc_doslab,
-	},
-	{
-		.procname	= "slab_vmem_max",
-		.data		= (void *)(KMC_VMEM | KMC_MAX),
-		.maxlen		= sizeof (unsigned long),
-		.extra1		= &table_min,
-		.extra2		= &table_max,
-		.mode		= 0444,
-		.proc_handler	= &proc_doslab,
-	},
 	{
 		.procname	= "slab_kvmem_total",
 		.data		= (void *)(KMC_KVMEM | KMC_TOTAL),
