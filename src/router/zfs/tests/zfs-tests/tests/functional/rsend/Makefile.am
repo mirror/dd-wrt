@@ -18,6 +18,7 @@ dist_pkgdata_SCRIPTS = \
 	rsend_012_pos.ksh \
 	rsend_013_pos.ksh \
 	rsend_014_pos.ksh \
+	rsend_016_neg.ksh \
 	rsend_019_pos.ksh \
 	rsend_020_pos.ksh \
 	rsend_021_pos.ksh \
@@ -41,6 +42,7 @@ dist_pkgdata_SCRIPTS = \
 	send-c_volume.ksh \
 	send-c_zstreamdump.ksh \
 	send-cpL_varied_recsize.ksh \
+	send-L_toggle.ksh \
 	send_freeobjects.ksh \
 	send_partial_dataset.ksh \
 	send_realloc_dnode_size.ksh \

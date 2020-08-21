@@ -648,7 +648,7 @@ zfs_ace_walk(void *datap, uint64_t cookie, int aclcnt,
  * While processing the ACL each ACE will be validated for correctness.
  * ACE FUIDs will be created later.
  */
-int
+static int
 zfs_copy_ace_2_fuid(zfsvfs_t *zfsvfs, vtype_t obj_type, zfs_acl_t *aclp,
     void *datap, zfs_ace_t *z_acl, uint64_t aclcnt, size_t *size,
     zfs_fuid_info_t **fuidp, cred_t *cr)
@@ -1144,6 +1144,7 @@ zfs_acl_chown_setattr(znode_t *zp)
 	if (zp->z_zfsvfs->z_replay == B_FALSE)
 		ASSERT_VOP_ELOCKED(ZTOV(zp), __func__);
 	ASSERT(MUTEX_HELD(&zp->z_acl_lock));
+	ASSERT_VOP_IN_SEQC(ZTOV(zp));
 
 	if ((error = zfs_acl_node_read(zp, B_TRUE, &aclp, B_FALSE)) == 0)
 		zp->z_mode = zfs_mode_compute(zp->z_mode, aclp,
@@ -1170,6 +1171,8 @@ zfs_aclset_common(znode_t *zp, zfs_acl_t *aclp, cred_t *cr, dmu_tx_t *tx)
 	uint64_t		ctime[2];
 	int			count = 0;
 	zfs_acl_phys_t		acl_phys;
+
+	ASSERT_VOP_IN_SEQC(ZTOV(zp));
 
 	mode = zp->z_mode;
 
@@ -1655,33 +1658,22 @@ zfs_acl_ids_create(znode_t *dzp, int flag, vattr_t *vap, cred_t *cr,
 				acl_ids->z_fgid = 0;
 		}
 		if (acl_ids->z_fgid == 0) {
-			if (dzp->z_mode & S_ISGID) {
-				char		*domain;
-				uint32_t	rid;
+			char		*domain;
+			uint32_t	rid;
 
-				acl_ids->z_fgid = dzp->z_gid;
-				gid = zfs_fuid_map_id(zfsvfs, acl_ids->z_fgid,
-				    cr, ZFS_GROUP);
+			acl_ids->z_fgid = dzp->z_gid;
+			gid = zfs_fuid_map_id(zfsvfs, acl_ids->z_fgid,
+			    cr, ZFS_GROUP);
 
-				if (zfsvfs->z_use_fuids &&
-				    IS_EPHEMERAL(acl_ids->z_fgid)) {
-					domain = zfs_fuid_idx_domain(
-					    &zfsvfs->z_fuid_idx,
-					    FUID_INDEX(acl_ids->z_fgid));
-					rid = FUID_RID(acl_ids->z_fgid);
-					zfs_fuid_node_add(&acl_ids->z_fuidp,
-					    domain, rid,
-					    FUID_INDEX(acl_ids->z_fgid),
-					    acl_ids->z_fgid, ZFS_GROUP);
-				}
-			} else {
-				acl_ids->z_fgid = zfs_fuid_create_cred(zfsvfs,
-				    ZFS_GROUP, cr, &acl_ids->z_fuidp);
-#ifdef __FreeBSD_kernel__
-				gid = acl_ids->z_fgid = dzp->z_gid;
-#else
-				gid = crgetgid(cr);
-#endif
+			if (zfsvfs->z_use_fuids &&
+			    IS_EPHEMERAL(acl_ids->z_fgid)) {
+				domain =
+				    zfs_fuid_idx_domain(&zfsvfs->z_fuid_idx,
+				    FUID_INDEX(acl_ids->z_fgid));
+				rid = FUID_RID(acl_ids->z_fgid);
+				zfs_fuid_node_add(&acl_ids->z_fuidp,
+				    domain, rid, FUID_INDEX(acl_ids->z_fgid),
+				    acl_ids->z_fgid, ZFS_GROUP);
 			}
 		}
 	}
@@ -2313,10 +2305,7 @@ zfs_zaccess_append(znode_t *zp, uint32_t *working_mode, boolean_t *check_privs,
 int
 zfs_fastaccesschk_execute(znode_t *zdp, cred_t *cr)
 {
-	boolean_t owner = B_FALSE;
-	boolean_t groupmbr = B_FALSE;
 	boolean_t is_attr;
-	uid_t uid = crgetuid(cr);
 
 	if (zdp->z_pflags & ZFS_AV_QUARANTINED)
 		return (1);
@@ -2329,37 +2318,6 @@ zfs_fastaccesschk_execute(znode_t *zdp, cred_t *cr)
 	if (zdp->z_pflags & ZFS_NO_EXECS_DENIED)
 		return (0);
 
-	mutex_enter(&zdp->z_acl_lock);
-	if (FUID_INDEX(zdp->z_uid) != 0 || FUID_INDEX(zdp->z_gid) != 0) {
-		goto out_slow;
-	}
-
-	if (uid == zdp->z_uid) {
-		owner = B_TRUE;
-		if (zdp->z_mode & S_IXUSR) {
-			goto out;
-		} else {
-			goto out_slow;
-		}
-	}
-	if (groupmember(zdp->z_gid, cr)) {
-		groupmbr = B_TRUE;
-		if (zdp->z_mode & S_IXGRP) {
-			goto out;
-		} else {
-			goto out_slow;
-		}
-	}
-	if (!owner && !groupmbr) {
-		if (zdp->z_mode & S_IXOTH) {
-			goto out;
-		}
-	}
-out:
-	mutex_exit(&zdp->z_acl_lock);
-	return (0);
-out_slow:
-	mutex_exit(&zdp->z_acl_lock);
 	return (1);
 }
 

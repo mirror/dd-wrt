@@ -54,6 +54,7 @@
 #include <sys/abd_impl.h>
 #include <sys/param.h>
 #include <sys/zio.h>
+#include <sys/arc.h>
 #include <sys/zfs_context.h>
 #include <sys/zfs_znode.h>
 #ifdef _KERNEL
@@ -166,6 +167,13 @@ int zfs_abd_scatter_min_size = 512 * 3;
  * only using a single zero page for the scatterlist.
  */
 abd_t *abd_zero_scatter = NULL;
+
+struct page;
+/*
+ * abd_zero_page we will be an allocated zero'd PAGESIZE buffer, which is
+ * assigned to set each of the pages of abd_zero_scatter.
+ */
+static struct page *abd_zero_page = NULL;
 
 static kmem_cache_t *abd_cache = NULL;
 static kstat_t *abd_ksp;
@@ -439,8 +447,7 @@ abd_free_chunks(abd_t *abd)
 
 /*
  * Allocate scatter ABD of size SPA_MAXBLOCKSIZE, where each page in
- * the scatterlist will be set to ZERO_PAGE(0). ZERO_PAGE(0) returns
- * a global shared page that is always zero'd out.
+ * the scatterlist will be set to the zero'd out buffer abd_zero_page.
  */
 static void
 abd_alloc_zero_scatter(void)
@@ -448,8 +455,15 @@ abd_alloc_zero_scatter(void)
 	struct scatterlist *sg = NULL;
 	struct sg_table table;
 	gfp_t gfp = __GFP_NOWARN | GFP_NOIO;
+	gfp_t gfp_zero_page = gfp | __GFP_ZERO;
 	int nr_pages = abd_chunkcnt_for_bytes(SPA_MAXBLOCKSIZE);
 	int i = 0;
+
+	while ((abd_zero_page = __page_cache_alloc(gfp_zero_page)) == NULL) {
+		ABDSTAT_BUMP(abdstat_scatter_page_alloc_retry);
+		schedule_timeout_interruptible(1);
+	}
+	abd_mark_zfs_page(abd_zero_page);
 
 	while (sg_alloc_table(&table, nr_pages, gfp)) {
 		ABDSTAT_BUMP(abdstat_scatter_sg_table_retry);
@@ -468,7 +482,7 @@ abd_alloc_zero_scatter(void)
 	zfs_refcount_create(&abd_zero_scatter->abd_children);
 
 	abd_for_each_sg(abd_zero_scatter, sg, nr_pages, i) {
-		sg_set_page(sg, ZERO_PAGE(0), PAGESIZE, 0);
+		sg_set_page(sg, abd_zero_page, PAGESIZE, 0);
 	}
 
 	ABDSTAT_BUMP(abdstat_scatter_cnt);
@@ -477,14 +491,6 @@ abd_alloc_zero_scatter(void)
 }
 
 #else /* _KERNEL */
-
-struct page;
-
-/*
- * In user space abd_zero_page we will be an allocated zero'd PAGESIZE
- * buffer, which is assigned to set each of the pages of abd_zero_scatter.
- */
-static struct page *abd_zero_page = NULL;
 
 #ifndef PAGE_SHIFT
 #define	PAGE_SHIFT (highbit64(PAGESIZE)-1)
@@ -626,17 +632,17 @@ void
 abd_update_scatter_stats(abd_t *abd, abd_stats_op_t op)
 {
 	ASSERT(op == ABDSTAT_INCR || op == ABDSTAT_DECR);
+	int waste = P2ROUNDUP(abd->abd_size, PAGESIZE) - abd->abd_size;
 	if (op == ABDSTAT_INCR) {
 		ABDSTAT_BUMP(abdstat_scatter_cnt);
 		ABDSTAT_INCR(abdstat_scatter_data_size, abd->abd_size);
-		ABDSTAT_INCR(abdstat_scatter_chunk_waste,
-		    P2ROUNDUP(abd->abd_size, PAGESIZE) - abd->abd_size);
+		ABDSTAT_INCR(abdstat_scatter_chunk_waste, waste);
+		arc_space_consume(waste, ARC_SPACE_ABD_CHUNK_WASTE);
 	} else {
 		ABDSTAT_BUMPDOWN(abdstat_scatter_cnt);
 		ABDSTAT_INCR(abdstat_scatter_data_size, -(int)abd->abd_size);
-		ABDSTAT_INCR(abdstat_scatter_chunk_waste,
-		    (int)abd->abd_size
-		    -(int)P2ROUNDUP(abd->abd_size, PAGESIZE));
+		ABDSTAT_INCR(abdstat_scatter_chunk_waste, -waste);
+		arc_space_return(waste, ARC_SPACE_ABD_CHUNK_WASTE);
 	}
 }
 
@@ -680,7 +686,11 @@ abd_free_zero_scatter(void)
 	abd_free_sg_table(abd_zero_scatter);
 	abd_free_struct(abd_zero_scatter);
 	abd_zero_scatter = NULL;
-#if !defined(_KERNEL)
+	ASSERT3P(abd_zero_page, !=, NULL);
+#if defined(_KERNEL)
+	abd_unmark_zfs_page(abd_zero_page);
+	__free_page(abd_zero_page);
+#else
 	umem_free(abd_zero_page, PAGESIZE);
 #endif /* _KERNEL */
 }
@@ -909,6 +919,11 @@ abd_iter_unmap(struct abd_iter *aiter)
 
 	aiter->iter_mapaddr = NULL;
 	aiter->iter_mapsize = 0;
+}
+
+void
+abd_cache_reap_now(void)
+{
 }
 
 #if defined(_KERNEL)

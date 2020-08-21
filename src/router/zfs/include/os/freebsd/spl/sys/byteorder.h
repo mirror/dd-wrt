@@ -60,7 +60,7 @@
 /*
  * Macros to convert from a specific byte order to/from native byte order
  */
-#if BYTE_ORDER == BIG_ENDIAN
+#if BYTE_ORDER == _BIG_ENDIAN
 #define	BE_8(x)		BMASK_8(x)
 #define	BE_16(x)	BMASK_16(x)
 #define	BE_32(x)	BMASK_32(x)
@@ -80,12 +80,26 @@
 #define	BE_64(x)	BSWAP_64(x)
 #endif
 
-#if BYTE_ORDER == BIG_ENDIAN
+#if BYTE_ORDER == _BIG_ENDIAN
 #define	htonll(x)	BMASK_64(x)
 #define	ntohll(x)	BMASK_64(x)
 #else
+#ifndef __LP64__
+static __inline__ uint64_t
+htonll(uint64_t n)
+{
+	return ((((uint64_t)htonl(n)) << 32) + htonl(n >> 32));
+}
+
+static __inline__ uint64_t
+ntohll(uint64_t n)
+{
+	return ((((uint64_t)ntohl(n)) << 32) + ntohl(n >> 32));
+}
+#else
 #define	htonll(x)	BSWAP_64(x)
 #define	ntohll(x)	BSWAP_64(x)
+#endif
 #endif
 
 #define	BE_IN32(xa)	htonl(*((uint32_t *)(void *)(xa)))

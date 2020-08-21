@@ -19,22 +19,24 @@
 .\" CDDL HEADER END
 .\"
 .\"
-.\" Copyright (c) 2009, Sun Microsystems, Inc. All Rights Reserved.
-.\" Copyright (c) 2011, Joshua M. Clulow. All Rights Reserved.
-.\" Copyright (c) 2011, 2019, Delphix. All rights reserved.
-.\" Copyright (c) 2011, Pawel Jakub Dawidek. All rights reserved.
-.\" Copyright (c) 2012, Glen Barber. All rights reserved.
-.\" Copyright (c) 2012, Bryan Drewery. All rights reserved.
-.\" Copyright (c) 2013, Steven Hartland. All rights reserved.
-.\" Copyright (c) 2013, Saso Kiselkov. All rights reserved.
-.\" Copyright (c) 2014, 2019, Joyent, Inc. All rights reserved.
-.\" Copyright (c) 2014, Adam Stevko. All rights reserved.
-.\" Copyright (c) 2014, Integros. All rights reserved.
-.\" Copyright (c) 2014, Xin LI. All rights reserved.
-.\" Copyright (c) 2014-2015, The FreeBSD Foundation. All Rights Reserved.
-.\" Copyright (c) 2016, 2018, Nexenta Systems, Inc. All rights reserved.
-.\" Copyright (c) 2019, Richard Laager. All rights reserved.
-.\" Copyright (c) 2019, Kjeld Schouten-Lebbing. All rights reserved.
+.\" Copyright (c) 2009 Sun Microsystems, Inc. All Rights Reserved.
+.\" Copyright 2011 Joshua M. Clulow <josh@sysmgr.org>
+.\" Copyright (c) 2011, 2019 by Delphix. All rights reserved.
+.\" Copyright (c) 2011, Pawel Jakub Dawidek <pjd@FreeBSD.org>
+.\" Copyright (c) 2012, Glen Barber <gjb@FreeBSD.org>
+.\" Copyright (c) 2012, Bryan Drewery <bdrewery@FreeBSD.org>
+.\" Copyright (c) 2013, Steven Hartland <smh@FreeBSD.org>
+.\" Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
+.\" Copyright (c) 2014, Joyent, Inc. All rights reserved.
+.\" Copyright (c) 2014 by Adam Stevko. All rights reserved.
+.\" Copyright (c) 2014 Integros [integros.com]
+.\" Copyright (c) 2016 Nexenta Systems, Inc. All Rights Reserved.
+.\" Copyright (c) 2014, Xin LI <delphij@FreeBSD.org>
+.\" Copyright (c) 2014-2015, The FreeBSD Foundation, All Rights Reserved.
+.\" Copyright 2019 Richard Laager. All rights reserved.
+.\" Copyright 2018 Nexenta Systems, Inc.
+.\" Copyright 2019 Joyent, Inc.
+.\" Copyright (c) 2019, Kjeld Schouten-Lebbing
 .\"
 .Dd January 30, 2020
 .Dt ZFSPROPS 8
@@ -281,8 +283,9 @@ has been set somewhere in the tree under which the dataset resides.
 The type of dataset:
 .Sy filesystem ,
 .Sy volume ,
+.Sy snapshot ,
 or
-.Sy snapshot .
+.Sy bookmark .
 .It Sy used
 The amount of space consumed by this dataset and all its descendents.
 This is the value that is checked against this dataset's quota and reservation.
@@ -760,8 +763,6 @@ The
 and
 .Sy edonr
 checksum algorithms require enabling the appropriate features on the pool.
-These pool features are not supported by GRUB and must not be used on the
-pool if GRUB needs to access the pool (e.g. for /boot).
 FreeBSD does not support the
 .Sy edonr
 algorithm.
@@ -774,7 +775,7 @@ Changing this property affects only newly-written data.
 .It Xo
 .Sy compression Ns = Ns Sy on Ns | Ns Sy off Ns | Ns Sy gzip Ns | Ns
 .Sy gzip- Ns Em N Ns | Ns Sy lz4 Ns | Ns Sy lzjb Ns | Ns Sy zle Ns | Ns Sy zstd Ns | Ns
-.Sy zstd- Ns Em N Ns | Ns Sy zstd-fast- Ns Em N
+.Sy zstd- Ns Em N Ns | Ns Sy zstd-fast Ns | Ns Sy zstd-fast- Ns Em N
 .Xc
 Controls the compression algorithm used for this dataset.
 .Pp
@@ -843,8 +844,8 @@ is equivalent to
 .Pp
 The
 .Sy zstd
-compression using the zstd algorithm ,
-You can specify the
+compression algorithm provides both high compression ratios and good
+performance. You can specify the
 .Sy zstd
 level by using the value
 .Sy zstd- Ns Em N ,
@@ -855,20 +856,23 @@ is an integer from 1
 to 19
 .Pq best compression ratio .
 .Sy zstd
-You can also specify a negative
+is equivalent to
+.Sy zstd-3 .
+.Pp
+Faster speeds at the cost of the compression ratio can be requested by
+setting a negative
 .Sy zstd
-level by using the value
-.Sy zstd- Ns Em N ,
+level.  This is done using
+.Sy zstd-fast- Ns Em N ,
 where
 .Em N
-is an integer from 100
-.Pq fastest
-to 1
-.Pq best compression ratio .
+is an integer in [1-9,10,20,30,...,100,500,1000] which maps to a negative
 .Sy zstd
+level. The lower the level the faster the compression - 1000 provides
+the fastest compression and lowest compression ratio.
+.Sy zstd-fast
 is equivalent to
-.Sy zstd-3
-.Pc .
+.Sy zstd-fast-1 .
 .Pp
 The
 .Sy zle

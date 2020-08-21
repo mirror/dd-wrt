@@ -218,6 +218,9 @@ typedef pthread_t	kthread_t;
 #define	kpreempt(x)	yield()
 #define	getcomm()	"unknown"
 
+#define	thread_create_named(name, stk, stksize, func, arg, len, \
+    pp, state, pri)	\
+	zk_thread_create(func, arg, stksize, state)
 #define	thread_create(stk, stksize, func, arg, len, pp, state, pri)	\
 	zk_thread_create(func, arg, stksize, state)
 #define	thread_exit()	pthread_exit(NULL)
@@ -315,8 +318,8 @@ extern void cv_init(kcondvar_t *cv, char *name, int type, void *arg);
 extern void cv_destroy(kcondvar_t *cv);
 extern void cv_wait(kcondvar_t *cv, kmutex_t *mp);
 extern int cv_wait_sig(kcondvar_t *cv, kmutex_t *mp);
-extern clock_t cv_timedwait(kcondvar_t *cv, kmutex_t *mp, clock_t abstime);
-extern clock_t cv_timedwait_hires(kcondvar_t *cvp, kmutex_t *mp, hrtime_t tim,
+extern int cv_timedwait(kcondvar_t *cv, kmutex_t *mp, clock_t abstime);
+extern int cv_timedwait_hires(kcondvar_t *cvp, kmutex_t *mp, hrtime_t tim,
     hrtime_t res, int flag);
 extern void cv_signal(kcondvar_t *cv);
 extern void cv_broadcast(kcondvar_t *cv);
@@ -335,13 +338,15 @@ extern void cv_broadcast(kcondvar_t *cv);
 #define	tsd_set(k, v) pthread_setspecific(k, v)
 #define	tsd_create(kp, d) pthread_key_create((pthread_key_t *)kp, d)
 #define	tsd_destroy(kp) /* nothing */
+#ifdef __FreeBSD__
+typedef off_t loff_t;
+#endif
 
 /*
  * kstat creation, installation and deletion
  */
 extern kstat_t *kstat_create(const char *, int,
     const char *, const char *, uchar_t, ulong_t, uchar_t);
-extern void kstat_named_init(kstat_named_t *, const char *, uchar_t);
 extern void kstat_install(kstat_t *);
 extern void kstat_delete(kstat_t *);
 extern void kstat_waitq_enter(kstat_io_t *);
@@ -397,8 +402,6 @@ void procfs_list_add(procfs_list_t *procfs_list, void *p);
 #define	KM_NOSLEEP		UMEM_DEFAULT
 #define	KM_NORMALPRI		0	/* not needed with UMEM_DEFAULT */
 #define	KMC_NODEBUG		UMC_NODEBUG
-#define	KMC_KMEM		0x0
-#define	KMC_VMEM		0x0
 #define	KMC_KVMEM		0x0
 #define	kmem_alloc(_s, _f)	umem_alloc(_s, _f)
 #define	kmem_zalloc(_s, _f)	umem_zalloc(_s, _f)
@@ -414,11 +417,8 @@ void procfs_list_add(procfs_list_t *procfs_list, void *p);
 #define	kmem_debugging()	0
 #define	kmem_cache_reap_now(_c)	umem_cache_reap_now(_c);
 #define	kmem_cache_set_move(_c, _cb)	/* nothing */
-#define	vmem_qcache_reap(_v)		/* nothing */
 #define	POINTER_INVALIDATE(_pp)		/* nothing */
 #define	POINTER_IS_VALID(_p)	0
-
-extern vmem_t *zio_arena;
 
 typedef umem_cache_t kmem_cache_t;
 
@@ -713,6 +713,7 @@ extern int zfs_secpolicy_rename_perms(const char *from, const char *to,
     cred_t *cr);
 extern int zfs_secpolicy_destroy_perms(const char *name, cred_t *cr);
 extern int secpolicy_zfs(const cred_t *cr);
+extern int secpolicy_zfs_proc(const cred_t *cr, proc_t *proc);
 extern zoneid_t getzoneid(void);
 
 /* SID stuff */
@@ -746,6 +747,12 @@ extern int __spl_pf_fstrans_check(void);
 extern int kmem_cache_reap_active(void);
 
 #define	____cacheline_aligned
+
+/*
+ * Kernel modules
+ */
+#define	__init
+#define	__exit
 
 #endif /* _KERNEL */
 

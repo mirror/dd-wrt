@@ -38,7 +38,7 @@
  * module/zfs/vdev_removal.c including trace_vdev.h, DTRACE_PROBE calls
  * are mapped to stub functions calls and prototypes for those calls are
  * declared via DEFINE_DTRACE_PROBE*.  Only module/zfs/trace.c defines
- * CREATE_TRACE_POINTS.  That is follwed by includes of all the general
+ * CREATE_TRACE_POINTS.  That is followed by includes of all the general
  * tracing headers thereby defining all stub functions in one place via
  * the DEFINE_DTRACE_PROBE macros.
  *
@@ -104,27 +104,45 @@
 	trace_zfs_##name((uintptr_t)(arg1), (uintptr_t)(arg2), \
 	(uintptr_t)(arg3), (uintptr_t)(arg4))
 
+#define	PROTO_DTRACE_PROBE(name)				\
+	noinline void trace_zfs_##name(void)
+#define	PROTO_DTRACE_PROBE1(name)				\
+	noinline void trace_zfs_##name(uintptr_t)
+#define	PROTO_DTRACE_PROBE2(name)				\
+	noinline void trace_zfs_##name(uintptr_t, uintptr_t)
+#define	PROTO_DTRACE_PROBE3(name)				\
+	noinline void trace_zfs_##name(uintptr_t, uintptr_t,	\
+	uintptr_t)
+#define	PROTO_DTRACE_PROBE4(name)				\
+	noinline void trace_zfs_##name(uintptr_t, uintptr_t,	\
+	uintptr_t, uintptr_t)
+
 #if defined(CREATE_TRACE_POINTS)
 
 #define	FUNC_DTRACE_PROBE(name)					\
+PROTO_DTRACE_PROBE(name);					\
 noinline void trace_zfs_##name(void) { }			\
 EXPORT_SYMBOL(trace_zfs_##name)
 
 #define	FUNC_DTRACE_PROBE1(name)				\
+PROTO_DTRACE_PROBE1(name);					\
 noinline void trace_zfs_##name(uintptr_t arg1) { }		\
 EXPORT_SYMBOL(trace_zfs_##name)
 
 #define	FUNC_DTRACE_PROBE2(name)				\
+PROTO_DTRACE_PROBE2(name);					\
 noinline void trace_zfs_##name(uintptr_t arg1,			\
     uintptr_t arg2) { }						\
 EXPORT_SYMBOL(trace_zfs_##name)
 
 #define	FUNC_DTRACE_PROBE3(name)				\
+PROTO_DTRACE_PROBE3(name);					\
 noinline void trace_zfs_##name(uintptr_t arg1,			\
     uintptr_t arg2, uintptr_t arg3) { }				\
 EXPORT_SYMBOL(trace_zfs_##name)
 
 #define	FUNC_DTRACE_PROBE4(name)				\
+PROTO_DTRACE_PROBE4(name);					\
 noinline void trace_zfs_##name(uintptr_t arg1,			\
     uintptr_t arg2, uintptr_t arg3, uintptr_t arg4) { }		\
 EXPORT_SYMBOL(trace_zfs_##name)
@@ -145,19 +163,6 @@ EXPORT_SYMBOL(trace_zfs_##name)
 #define	DEFINE_DTRACE_PROBE4(name)	FUNC_DTRACE_PROBE4(name)
 
 #else /* CREATE_TRACE_POINTS */
-
-#define	PROTO_DTRACE_PROBE(name)				\
-	noinline void trace_zfs_##name(void)
-#define	PROTO_DTRACE_PROBE1(name)				\
-	noinline void trace_zfs_##name(uintptr_t)
-#define	PROTO_DTRACE_PROBE2(name)				\
-	noinline void trace_zfs_##name(uintptr_t, uintptr_t)
-#define	PROTO_DTRACE_PROBE3(name)				\
-	noinline void trace_zfs_##name(uintptr_t, uintptr_t,	\
-	uintptr_t)
-#define	PROTO_DTRACE_PROBE4(name)				\
-	noinline void trace_zfs_##name(uintptr_t, uintptr_t,	\
-	uintptr_t, uintptr_t)
 
 #define	DEFINE_DTRACE_PROBE(name)	PROTO_DTRACE_PROBE(name)
 #define	DEFINE_DTRACE_PROBE1(name)	PROTO_DTRACE_PROBE1(name)
