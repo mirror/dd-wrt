@@ -461,7 +461,7 @@ static int start_logging(void)
 		return -1;
 	}
 
-	fprintf(stdout, "[connected]\n");
+	fprintf(stdout, "[connected:%s]\n", udid);
 	fflush(stdout);
 
 	return 0;
@@ -484,6 +484,11 @@ static void stop_logging(void)
 
 static void device_event_cb(const idevice_event_t* event, void* userdata)
 {
+	if (use_network && event->conn_type != CONNECTION_NETWORK) {
+		return;
+	} else if (!use_network && event->conn_type != CONNECTION_USBMUXD) {
+		return;
+	}
 	if (event->event == IDEVICE_DEVICE_ADD) {
 		if (!syslog) {
 			if (!udid) {
@@ -498,7 +503,7 @@ static void device_event_cb(const idevice_event_t* event, void* userdata)
 	} else if (event->event == IDEVICE_DEVICE_REMOVE) {
 		if (syslog && (strcmp(udid, event->udid) == 0)) {
 			stop_logging();
-			fprintf(stdout, "[disconnected]\n");
+			fprintf(stdout, "[disconnected:%s]\n", udid);
 			if (exit_on_disconnect) {
 				quit_flag++;
 			}
