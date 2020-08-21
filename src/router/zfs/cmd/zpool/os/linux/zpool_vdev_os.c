@@ -86,8 +86,8 @@
 #include <sys/stat.h>
 #include <sys/vtoc.h>
 #include <sys/mntent.h>
-#include <uuid/uuid.h>
-#include <blkid/blkid.h>
+#include <uuid.h>
+#include <blkid.h>
 
 typedef struct vdev_disk_db_entry
 {
