@@ -251,6 +251,20 @@ int client_accept(int listenfd)
 
 void client_close(struct mux_client *client)
 {
+	int found = 0;
+	pthread_mutex_lock(&client_list_mutex);
+	FOREACH(struct mux_client *lc, &client_list) {
+		if (client == lc) {
+			found = 1;
+			break;
+		}
+	} ENDFOREACH
+	if (!found) {
+		// in case we get called again but client was already freed
+		usbmuxd_log(LL_DEBUG, "%s: ignoring for non-existing client %p", __func__, client);
+		pthread_mutex_unlock(&client_list_mutex);
+		return;
+	}
 #ifdef SO_PEERCRED
 	if (log_level >= LL_INFO) {
 		struct ucred cr;
@@ -278,7 +292,6 @@ void client_close(struct mux_client *client)
 	free(client->ib_buf);
 	plist_free(client->info);
 
-	pthread_mutex_lock(&client_list_mutex);
 	collection_remove(&client_list, client);
 	pthread_mutex_unlock(&client_list_mutex);
 	free(client);
@@ -293,7 +306,7 @@ void client_get_fds(struct fdlist *list)
 	pthread_mutex_unlock(&client_list_mutex);
 }
 
-static int send_pkt(struct mux_client *client, uint32_t tag, enum usbmuxd_msgtype msg, void *payload, int payload_length)
+static int output_buffer_add_message(struct mux_client *client, uint32_t tag, enum usbmuxd_msgtype msg, void *payload, int payload_length)
 {
 	struct usbmuxd_header hdr;
 	hdr.version = client->proto_version;
@@ -324,14 +337,14 @@ static int send_pkt(struct mux_client *client, uint32_t tag, enum usbmuxd_msgtyp
 	return hdr.length;
 }
 
-static int send_plist_pkt(struct mux_client *client, uint32_t tag, plist_t plist)
+static int send_plist(struct mux_client *client, uint32_t tag, plist_t plist)
 {
 	int res = -1;
 	char *xml = NULL;
 	uint32_t xmlsize = 0;
 	plist_to_xml(plist, &xml, &xmlsize);
 	if (xml) {
-		res = send_pkt(client, tag, MESSAGE_PLIST, xml, xmlsize);
+		res = output_buffer_add_message(client, tag, MESSAGE_PLIST, xml, xmlsize);
 		free(xml);
 	} else {
 		usbmuxd_log(LL_ERROR, "%s: Could not convert plist to xml", __func__);
@@ -347,11 +360,11 @@ static int send_result(struct mux_client *client, uint32_t tag, uint32_t result)
 		plist_t dict = plist_new_dict();
 		plist_dict_set_item(dict, "MessageType", plist_new_string("Result"));
 		plist_dict_set_item(dict, "Number", plist_new_uint(result));
-		res = send_plist_pkt(client, tag, dict);
+		res = send_plist(client, tag, dict);
 		plist_free(dict);
 	} else {
 		/* binary packet */
-		res = send_pkt(client, tag, MESSAGE_RESULT, &result, sizeof(uint32_t));
+		res = output_buffer_add_message(client, tag, MESSAGE_RESULT, &result, sizeof(uint32_t));
 	}
 	return res;
 }
@@ -417,7 +430,7 @@ static int send_device_list(struct mux_client *client, uint32_t tag)
 		free(devs);
 
 	plist_dict_set_item(dict, "DeviceList", devices);
-	res = send_plist_pkt(client, tag, dict);
+	res = send_plist(client, tag, dict);
 	plist_free(dict);
 	return res;
 }
@@ -479,7 +492,7 @@ static int send_listener_list(struct mux_client *client, uint32_t tag)
 	pthread_mutex_unlock(&client_list_mutex);
 
 	plist_dict_set_item(dict, "ListenerList", listeners);
-	res = send_plist_pkt(client, tag, dict);
+	res = send_plist(client, tag, dict);
 	plist_free(dict);
 
 	return res;
@@ -495,7 +508,7 @@ static int send_system_buid(struct mux_client *client, uint32_t tag)
 	plist_t dict = plist_new_dict();
 	plist_dict_set_item(dict, "BUID", plist_new_string(buid));
 	free(buid);
-	res = send_plist_pkt(client, tag, dict);
+	res = send_plist(client, tag, dict);
 	plist_free(dict);
 	return res;
 }
@@ -516,7 +529,7 @@ static int send_pair_record(struct mux_client *client, uint32_t tag, const char*
 		plist_t dict = plist_new_dict();
 		plist_dict_set_item(dict, "PairRecordData", plist_new_data(record_data, record_size));
 		free(record_data);
-		res = send_plist_pkt(client, tag, dict);
+		res = send_plist(client, tag, dict);
 		plist_free(dict);
 	} else {
 		res = send_result(client, tag, ENOENT);
@@ -524,13 +537,13 @@ static int send_pair_record(struct mux_client *client, uint32_t tag, const char*
 	return res;
 }
 
-static int notify_device_add(struct mux_client *client, struct device_info *dev)
+static int send_device_add(struct mux_client *client, struct device_info *dev)
 {
 	int res = -1;
 	if (client->proto_version == 1) {
 		/* XML plist packet */
 		plist_t dict = create_device_attached_plist(dev);
-		res = send_plist_pkt(client, 0, dict);
+		res = send_plist(client, 0, dict);
 		plist_free(dict);
 	} else {
 		/* binary packet */
@@ -541,12 +554,12 @@ static int notify_device_add(struct mux_client *client, struct device_info *dev)
 		dmsg.serial_number[255] = 0;
 		dmsg.location = dev->location;
 		dmsg.product_id = dev->pid;
-		res = send_pkt(client, 0, MESSAGE_DEVICE_ADD, &dmsg, sizeof(dmsg));
+		res = output_buffer_add_message(client, 0, MESSAGE_DEVICE_ADD, &dmsg, sizeof(dmsg));
 	}
 	return res;
 }
 
-static int notify_device_remove(struct mux_client *client, uint32_t device_id)
+static int send_device_remove(struct mux_client *client, uint32_t device_id)
 {
 	int res = -1;
 	if (client->proto_version == 1) {
@@ -554,16 +567,16 @@ static int notify_device_remove(struct mux_client *client, uint32_t device_id)
 		plist_t dict = plist_new_dict();
 		plist_dict_set_item(dict, "MessageType", plist_new_string("Detached"));
 		plist_dict_set_item(dict, "DeviceID", plist_new_uint(device_id));
-		res = send_plist_pkt(client, 0, dict);
+		res = send_plist(client, 0, dict);
 		plist_free(dict);
 	} else {
 		/* binary packet */
-		res = send_pkt(client, 0, MESSAGE_DEVICE_REMOVE, &device_id, sizeof(uint32_t));
+		res = output_buffer_add_message(client, 0, MESSAGE_DEVICE_REMOVE, &device_id, sizeof(uint32_t));
 	}
 	return res;
 }
 
-static int notify_device_paired(struct mux_client *client, uint32_t device_id)
+static int send_device_paired(struct mux_client *client, uint32_t device_id)
 {
 	int res = -1;
 	if (client->proto_version == 1) {
@@ -571,12 +584,12 @@ static int notify_device_paired(struct mux_client *client, uint32_t device_id)
 		plist_t dict = plist_new_dict();
 		plist_dict_set_item(dict, "MessageType", plist_new_string("Paired"));
 		plist_dict_set_item(dict, "DeviceID", plist_new_uint(device_id));
-		res = send_plist_pkt(client, 0, dict);
+		res = send_plist(client, 0, dict);
 		plist_free(dict);
 	}
 	else {
 		/* binary packet */
-		res = send_pkt(client, 0, MESSAGE_DEVICE_PAIRED, &device_id, sizeof(uint32_t));
+		res = output_buffer_add_message(client, 0, MESSAGE_DEVICE_PAIRED, &device_id, sizeof(uint32_t));
 	}
 	return res;
 }
@@ -592,7 +605,7 @@ static int start_listen(struct mux_client *client)
 	count = device_get_list(0, &devs);
 	dev = devs;
 	for(i=0; devs && i < count; i++) {
-		if(notify_device_add(client, dev++) < 0) {
+		if(send_device_add(client, dev++) < 0) {
 			free(devs);
 			return -1;
 		}
@@ -643,7 +656,7 @@ static void update_client_info(struct mux_client *client, plist_t dict)
 	client->info = info;
 }
 
-static int client_command(struct mux_client *client, struct usbmuxd_header *hdr)
+static int handle_command(struct mux_client *client, struct usbmuxd_header *hdr)
 {
 	int res;
 	usbmuxd_log(LL_DEBUG, "Client %d command len %d ver %d msg %d tag %d", client->fd, hdr->length, hdr->version, hdr->message, hdr->tag);
@@ -878,7 +891,7 @@ static int client_command(struct mux_client *client, struct usbmuxd_header *hdr)
 	return -1;
 }
 
-static void process_send(struct mux_client *client)
+static void output_buffer_process(struct mux_client *client)
 {
 	int res;
 	if(!client->ob_size) {
@@ -908,7 +921,7 @@ static void process_send(struct mux_client *client)
 		memmove(client->ob_buf, client->ob_buf + res, client->ob_size);
 	}
 }
-static void process_recv(struct mux_client *client)
+static void input_buffer_process(struct mux_client *client)
 {
 	int res;
 	int did_read = 0;
@@ -955,7 +968,7 @@ static void process_recv(struct mux_client *client)
 		if(client->ib_size < hdr->length)
 			return;
 	}
-	client_command(client, hdr);
+	handle_command(client, hdr);
 	client->ib_size = 0;
 }
 
@@ -981,9 +994,9 @@ void client_process(int fd, short events)
 		device_client_process(client->connect_device, client, events);
 	} else {
 		if(events & POLLIN) {
-			process_recv(client);
+			input_buffer_process(client);
 		} else if(events & POLLOUT) { //not both in case client died as part of process_recv
-			process_send(client);
+			output_buffer_process(client);
 		}
 	}
 
@@ -996,7 +1009,7 @@ void client_device_add(struct device_info *dev)
 	device_set_visible(dev->id);
 	FOREACH(struct mux_client *client, &client_list) {
 		if(client->state == CLIENT_LISTEN)
-			notify_device_add(client, dev);
+			send_device_add(client, dev);
 	} ENDFOREACH
 	pthread_mutex_unlock(&client_list_mutex);
 }
@@ -1008,7 +1021,7 @@ void client_device_remove(int device_id)
 	usbmuxd_log(LL_DEBUG, "client_device_remove: id %d", device_id);
 	FOREACH(struct mux_client *client, &client_list) {
 		if(client->state == CLIENT_LISTEN)
-			notify_device_remove(client, id);
+			send_device_remove(client, id);
 	} ENDFOREACH
 	pthread_mutex_unlock(&client_list_mutex);
 }
@@ -1020,7 +1033,7 @@ void client_device_paired(int device_id)
 	usbmuxd_log(LL_DEBUG, "client_device_paired: id %d", device_id);
 	FOREACH(struct mux_client *client, &client_list) {
 		if (client->state == CLIENT_LISTEN)
-			notify_device_paired(client, id);
+			send_device_paired(client, id);
 	} ENDFOREACH
 	pthread_mutex_unlock(&client_list_mutex);
 }
