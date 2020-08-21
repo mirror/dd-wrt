@@ -1,8 +1,8 @@
 include $(top_srcdir)/config/Rules.am
 
-AM_CFLAGS += $(NO_STRINGOP_TRUNCATION)
+AM_CFLAGS += $(LIBBLKID_CFLAGS) $(LIBUUID_CFLAGS)
 
-DEFAULT_INCLUDES += -I.
+DEFAULT_INCLUDES += -I$(srcdir)
 
 sbin_PROGRAMS = zpool
 
@@ -22,15 +22,17 @@ zpool_SOURCES += os/linux/zpool_vdev_os.c
 endif
 
 zpool_LDADD = \
-	$(top_builddir)/lib/libnvpair/libnvpair.la \
-	$(top_builddir)/lib/libuutil/libuutil.la \
-	$(top_builddir)/lib/libzfs_core/libzfs_core.la \
-	$(top_builddir)/lib/libzfs/libzfs.la
+	$(abs_top_builddir)/lib/libzfs/libzfs.la \
+	$(abs_top_builddir)/lib/libzfs_core/libzfs_core.la \
+	$(abs_top_builddir)/lib/libnvpair/libnvpair.la \
+	$(abs_top_builddir)/lib/libuutil/libuutil.la
+
+zpool_LDADD += $(LTLIBINTL)
 
 if BUILD_FREEBSD
-zpool_LDADD += -L/usr/local/lib -lintl -lgeom
+zpool_LDADD += -lgeom
 endif
-zpool_LDADD += -lm $(LIBBLKID)
+zpool_LDADD += -lm $(LIBBLKID_LIBS) $(LIBUUID_LIBS)
 
 zpoolconfdir = $(sysconfdir)/zfs/zpool.d
 zpoolexecdir = $(zfsexecdir)/zpool.d
@@ -38,6 +40,7 @@ zpoolexecdir = $(zfsexecdir)/zpool.d
 EXTRA_DIST = zpool.d/README
 
 dist_zpoolexec_SCRIPTS = \
+	zpool.d/dm-deps \
 	zpool.d/enc \
 	zpool.d/encdev \
 	zpool.d/fault_led \
@@ -52,7 +55,6 @@ dist_zpoolexec_SCRIPTS = \
 	zpool.d/serial \
 	zpool.d/ses \
 	zpool.d/size \
-	zpool.d/slaves \
 	zpool.d/slot \
 	zpool.d/smart \
 	zpool.d/smartx \
@@ -82,6 +84,7 @@ dist_zpoolexec_SCRIPTS = \
 	zpool.d/test_ended
 
 zpoolconfdefaults = \
+	dm-deps \
 	enc \
 	encdev \
 	fault_led \
@@ -96,7 +99,6 @@ zpoolconfdefaults = \
 	serial \
 	ses \
 	size \
-	slaves \
 	slot \
 	smart \
 	smartx \

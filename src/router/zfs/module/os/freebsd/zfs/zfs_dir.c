@@ -60,8 +60,10 @@
 #include <sys/dmu_objset.h>
 #include <sys/dsl_dir.h>
 
+#include <sys/ccompat.h>
+
 /*
- * zfs_match_find() is used by zfs_dirent_lookup() to peform zap lookups
+ * zfs_match_find() is used by zfs_dirent_lookup() to perform zap lookups
  * of names after deciding which is the appropriate lookup interface.
  */
 static int
@@ -295,7 +297,7 @@ zfs_unlinked_drain(zfsvfs_t *zfsvfs)
 	int		error;
 
 	/*
-	 * Interate over the contents of the unlinked set.
+	 * Iterate over the contents of the unlinked set.
 	 */
 	for (zap_cursor_init(&zc, zfsvfs->z_os, zfsvfs->z_unlinkedobj);
 	    zap_cursor_retrieve(&zc, &zap) == 0;
@@ -508,7 +510,7 @@ zfs_rmnode(znode_t *zp)
 	}
 
 	/*
-	 * FreeBSD's implemention of zfs_zget requires a vnode to back it.
+	 * FreeBSD's implementation of zfs_zget requires a vnode to back it.
 	 * This means that we could end up calling into getnewvnode while
 	 * calling zfs_rmnode as a result of a prior call to getnewvnode
 	 * trying to clear vnodes out of the cache. If this repeats we can
@@ -839,7 +841,7 @@ zfs_make_xattrdir(znode_t *zp, vattr_t *vap, znode_t **xvpp, cred_t *cr)
 	if (fuid_dirtied)
 		zfs_fuid_sync(zfsvfs, tx);
 
-#ifdef DEBUG
+#ifdef ZFS_DEBUG
 	error = sa_lookup(xzp->z_sa_hdl, SA_ZPL_PARENT(zfsvfs),
 	    &parent, sizeof (parent));
 	ASSERT(error == 0 && parent == zp->z_id);

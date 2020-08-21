@@ -18,18 +18,16 @@
  *
  * CDDL HEADER END
  */
-
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, Nexenta Systems, Inc. All rights reserved.
- * Copyright (c) 2011, 2018, Delphix. All rights reserved.
- * Copyright (c) 2014, Joyent Inc. All rights reserved.
- * Copyright (c) 2014, HybridCluster. All rights reserved.
- * Copyright (c) 2016, RackTop Systems. All rights reserved.
- * Copyright (c) 2016, Actifio Inc. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Use is subject to license terms.
+ * Copyright 2011 Nexenta Systems, Inc. All rights reserved.
+ * Copyright (c) 2011, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2014, Joyent, Inc. All rights reserved.
+ * Copyright 2014 HybridCluster. All rights reserved.
+ * Copyright 2016 RackTop Systems.
+ * Copyright (c) 2016 Actifio, Inc. All rights reserved.
+ * Copyright (c) 2019, Klara Inc.
+ * Copyright (c) 2019, Allan Jude
  */
 
 #include <sys/dmu.h>
@@ -864,6 +862,14 @@ send_do_embed(const blkptr_t *bp, uint64_t featureflags)
 	 */
 	if ((BP_GET_COMPRESS(bp) >= ZIO_COMPRESS_LEGACY_FUNCTIONS &&
 	    !(featureflags & DMU_BACKUP_FEATURE_LZ4)))
+		return (B_FALSE);
+
+	/*
+	 * If we have not set the ZSTD feature flag, we can't send ZSTD
+	 * compressed embedded blocks, as the receiver may not support them.
+	 */
+	if ((BP_GET_COMPRESS(bp) == ZIO_COMPRESS_ZSTD &&
+	    !(featureflags & DMU_BACKUP_FEATURE_ZSTD)))
 		return (B_FALSE);
 
 	/*
@@ -1969,9 +1975,13 @@ setup_featureflags(struct dmu_send_params *dspp, objset_t *os,
 		*featureflags |= DMU_BACKUP_FEATURE_LZ4;
 	}
 
+	/*
+	 * We specifically do not include DMU_BACKUP_FEATURE_EMBED_DATA here to
+	 * allow sending ZSTD compressed datasets to a receiver that does not
+	 * support ZSTD
+	 */
 	if ((*featureflags &
-	    (DMU_BACKUP_FEATURE_EMBED_DATA | DMU_BACKUP_FEATURE_COMPRESSED |
-	    DMU_BACKUP_FEATURE_RAW)) != 0 &&
+	    (DMU_BACKUP_FEATURE_COMPRESSED | DMU_BACKUP_FEATURE_RAW)) != 0 &&
 	    dsl_dataset_feature_is_active(to_ds, SPA_FEATURE_ZSTD_COMPRESS)) {
 		*featureflags |= DMU_BACKUP_FEATURE_ZSTD;
 	}
@@ -2020,7 +2030,8 @@ create_begin_record(struct dmu_send_params *dspp, objset_t *os,
 
 	if (dspp->savedok) {
 		drrb->drr_toguid = dspp->saved_guid;
-		strcpy(drrb->drr_toname, dspp->saved_toname);
+		strlcpy(drrb->drr_toname, dspp->saved_toname,
+		    sizeof (drrb->drr_toname));
 	} else {
 		dsl_dataset_name(to_ds, drrb->drr_toname);
 		if (!to_ds->ds_is_snapshot) {

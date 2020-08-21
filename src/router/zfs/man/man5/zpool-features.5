@@ -1,4 +1,7 @@
 '\" te
+.\" Copyright (c) 2012, 2018 by Delphix. All rights reserved.
+.\" Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
+.\" Copyright (c) 2014, Joyent, Inc. All rights reserved.
 .\" The contents of this file are subject to the terms of the Common Development
 .\" and Distribution License (the "License").  You may not use this file except
 .\" in compliance with the License. You can obtain a copy of the license at
@@ -11,11 +14,8 @@
 .\" CDDL HEADER, with the fields enclosed by brackets "[]" replaced with your
 .\" own identifying information:
 .\" Portions Copyright [yyyy] [name of copyright owner]
-.\" Copyright (c) 2012, 2018, Delphix. All rights reserved.
-.\" Copyright (c) 2013, Saso Kiselkov. All rights reserved.
-.\" Copyright (c) 2014, Joyent Inc. All rights reserved.
-.\" Copyright (c) 2019, Klara Inc. All rights reserved.
-.\" Copyright (c) 2019, Allan Jude. All rights reserved.
+.\" Copyright (c) 2019, Klara Inc.
+.\" Copyright (c) 2019, Allan Jude
 .TH ZPOOL-FEATURES 5 "Jun 8, 2018"
 .SH NAME
 zpool\-features \- ZFS pool feature descriptions
@@ -260,6 +260,35 @@ returned to the \fBenabled\fR state when all bookmarks with these fields are des
 .sp
 .ne 2
 .na
+\fBdevice_rebuild\fR
+.ad
+.RS 4n
+.TS
+l l .
+GUID	org.openzfs:device_rebuild
+READ\-ONLY COMPATIBLE	yes
+DEPENDENCIES	none
+.TE
+
+This feature enables the ability for the \fBzpool attach\fR and \fBzpool
+replace\fR subcommands to perform sequential reconstruction (instead of
+healing reconstruction) when resilvering.
+
+Sequential reconstruction resilvers a device in LBA order without immediately
+verifying the checksums.  Once complete a scrub is started which then verifies
+the checksums.  This approach allows full redundancy to be restored to the pool
+in the minimum amount of time.  This two phase approach will take longer than a
+healing resilver when the time to verify the checksums is included.  However,
+unless there is additional pool damage no checksum errors should be reported
+by the scrub.  This feature is incompatible with raidz configurations.
+
+This feature becomes \fBactive\fR while a sequential resilver is in progress,
+and returns to \fBenabled\fR when the resilver completes.
+.RE
+
+.sp
+.ne 2
+.na
 \fBdevice_removal\fR
 .ad
 .RS 4n
@@ -312,9 +341,6 @@ can turn on the \fBedonr\fR checksum on any dataset using the
 \fBactive\fR once a \fBchecksum\fR property has been set to \fBedonr\fR,
 and will return to being \fBenabled\fR once all filesystems that have
 ever had their checksum set to \fBedonr\fR are destroyed.
-
-The \fBedonr\fR feature is not supported by GRUB and must not be used on
-the pool if GRUB needs to access the pool (e.g. for /boot).
 
 FreeBSD does not support the \fBedonr\fR feature.
 .RE
@@ -800,9 +826,6 @@ can turn on the \fBsha512\fR checksum on any dataset using
 \fBactive\fR once a \fBchecksum\fR property has been set to \fBsha512\fR,
 and will return to being \fBenabled\fR once all filesystems that have
 ever had their checksum set to \fBsha512\fR are destroyed.
-
-The \fBsha512\fR feature is not supported by GRUB and must not be used on
-the pool if GRUB needs to access the pool (e.g. for /boot).
 .RE
 
 .sp
@@ -834,9 +857,6 @@ can turn on the \fBskein\fR checksum on any dataset using
 \fBactive\fR once a \fBchecksum\fR property has been set to \fBskein\fR,
 and will return to being \fBenabled\fR once all filesystems that have
 ever had their checksum set to \fBskein\fR are destroyed.
-
-The \fBskein\fR feature is not supported by GRUB and must not be used on
-the pool if GRUB needs to access the pool (e.g. for /boot).
 .RE
 
 .sp
@@ -940,7 +960,7 @@ is rewound or the checkpoint has been discarded.
 l l .
 GUID	org.freebsd:zstd_compress
 READ\-ONLY COMPATIBLE	no
-DEPENDENCIES	none
+DEPENDENCIES	extensible_dataset
 .TE
 
 \fBzstd\fR is a high-performance compression algorithm that features a
@@ -959,10 +979,6 @@ This feature becomes \fBactive\fR once a \fBcompress\fR property has been set to
 have ever had their compress property set to \fBzstd\fR are destroyed.
 
 Booting off of \fBzstd\fR-compressed root pools is not yet supported.
-
-Sending a \fBzstd\fR dataset to a non-\fBzstd zpool\fR by \fBzfs send -e\fR is
-not possible and will result in an error. Either drop the \fB-e\fR option or
-enable \fBzstd\fR on the receiver \fBzpool\fR.
 .RE
 
 .SH "SEE ALSO"

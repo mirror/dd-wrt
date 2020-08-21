@@ -20,11 +20,10 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2016, Delphix. All rights reserved.
- * Copyright (c) 2013, Saso Kiselkov. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2012, 2016 by Delphix. All rights reserved.
+ * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
+ * Copyright (c) 2019, Allan Jude
+ * Copyright (c) 2019, Klara Inc.
  */
 
 #ifndef	_SYS_ARC_H
@@ -39,7 +38,7 @@ extern "C" {
 #include <sys/zio.h>
 #include <sys/dmu.h>
 #include <sys/spa.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 
 /*
  * Used by arc_flush() to inform arc_evict_state() that it should evict
@@ -206,6 +205,7 @@ typedef enum arc_space_type {
 	ARC_SPACE_DBUF,
 	ARC_SPACE_DNODE,
 	ARC_SPACE_BONUS,
+	ARC_SPACE_ABD_CHUNK_WASTE,
 	ARC_SPACE_NUMTYPES
 } arc_space_type_t;
 

@@ -65,6 +65,9 @@
  * so that it cannot be freed until all snapshots have been unmounted.
  */
 
+#include <sys/types.h>
+#include <sys/param.h>
+#include <sys/libkern.h>
 #include <sys/dirent.h>
 #include <sys/zfs_context.h>
 #include <sys/zfs_ctldir.h>
@@ -83,6 +86,7 @@
 #include "zfs_namecheck.h"
 
 #include <sys/kernel.h>
+#include <sys/ccompat.h>
 
 /* Common access mode for all virtual directories under the ctldir */
 const uint16_t zfsctl_ctldir_mode = S_IRUSR | S_IXUSR | S_IRGRP | S_IXGRP |
@@ -107,7 +111,7 @@ typedef struct sfs_node {
 
 /*
  * Check the parent's ID as well as the node's to account for a chance
- * that IDs originating from different domains (snapshot IDs, artifical
+ * that IDs originating from different domains (snapshot IDs, artificial
  * IDs, znode IDs) may clash.
  */
 static int
@@ -602,7 +606,7 @@ zfsctl_root_getattr(struct vop_getattr_args *ap)
  * When we lookup "." we still can be asked to lock it
  * differently, can't we?
  */
-int
+static int
 zfsctl_relock_dot(vnode_t *dvp, int ltype)
 {
 	vref(dvp);
@@ -624,7 +628,7 @@ zfsctl_relock_dot(vnode_t *dvp, int ltype)
 /*
  * Special case the handling of "..".
  */
-int
+static int
 zfsctl_root_lookup(struct vop_lookup_args *ap)
 {
 	struct componentname *cnp = ap->a_cnp;
@@ -766,7 +770,7 @@ zfsctl_common_pathconf(struct vop_pathconf_args *ap)
 /*
  * Returns a trivial ACL
  */
-int
+static int
 zfsctl_common_getacl(struct vop_getacl_args *ap)
 {
 	int i;
@@ -894,7 +898,7 @@ zfsctl_snapshot_vnode_setup(vnode_t *vp, void *arg)
  * - the snapshot vnode is not covered, because the snapshot has been unmounted
  * The last two states are transient and should be relatively short-lived.
  */
-int
+static int
 zfsctl_snapdir_lookup(struct vop_lookup_args *ap)
 {
 	vnode_t *dvp = ap->a_dvp;
@@ -1084,11 +1088,12 @@ zfsctl_snapdir_getattr(struct vop_getattr_args *ap)
 	vnode_t *vp = ap->a_vp;
 	vattr_t *vap = ap->a_vap;
 	zfsvfs_t *zfsvfs = vp->v_vfsp->vfs_data;
-	dsl_dataset_t *ds = dmu_objset_ds(zfsvfs->z_os);
+	dsl_dataset_t *ds;
 	uint64_t snap_count;
 	int err;
 
 	ZFS_ENTER(zfsvfs);
+	ds = dmu_objset_ds(zfsvfs->z_os);
 	zfsctl_common_getattr(vp, vap);
 	vap->va_ctime = dmu_objset_snap_cmtime(zfsvfs->z_os);
 	vap->va_mtime = vap->va_ctime;

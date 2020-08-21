@@ -36,7 +36,7 @@
 #include <sys/dsl_synctask.h>
 #include <sys/zfs_context.h>
 #include <sys/dsl_deadlist.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 #include <sys/rrwlock.h>
 #include <sys/dsl_crypt.h>
 #include <zfeature_common.h>
@@ -284,6 +284,7 @@ typedef struct dsl_dataset_promote_arg {
 	uint64_t used, comp, uncomp, unique, cloneusedsnap, originusedsnap;
 	nvlist_t *err_ds;
 	cred_t *cr;
+	proc_t *proc;
 } dsl_dataset_promote_arg_t;
 
 typedef struct dsl_dataset_rollback_arg {
@@ -298,6 +299,7 @@ typedef struct dsl_dataset_snapshot_arg {
 	nvlist_t *ddsa_props;
 	nvlist_t *ddsa_errors;
 	cred_t *ddsa_cr;
+	proc_t *ddsa_proc;
 } dsl_dataset_snapshot_arg_t;
 
 /*
@@ -433,6 +435,8 @@ int dsl_dataset_set_refquota(const char *dsname, zprop_source_t source,
     uint64_t quota);
 int dsl_dataset_set_refreservation(const char *dsname, zprop_source_t source,
     uint64_t reservation);
+int dsl_dataset_set_compression(const char *dsname, zprop_source_t source,
+    uint64_t compression);
 
 boolean_t dsl_dataset_is_before(dsl_dataset_t *later, dsl_dataset_t *earlier,
     uint64_t earlier_txg);
@@ -445,7 +449,7 @@ int dsl_dataset_clone_swap_check_impl(dsl_dataset_t *clone,
 void dsl_dataset_clone_swap_sync_impl(dsl_dataset_t *clone,
     dsl_dataset_t *origin_head, dmu_tx_t *tx);
 int dsl_dataset_snapshot_check_impl(dsl_dataset_t *ds, const char *snapname,
-    dmu_tx_t *tx, boolean_t recv, uint64_t cnt, cred_t *cr);
+    dmu_tx_t *tx, boolean_t recv, uint64_t cnt, cred_t *cr, proc_t *proc);
 void dsl_dataset_snapshot_sync_impl(dsl_dataset_t *ds, const char *snapname,
     dmu_tx_t *tx);
 

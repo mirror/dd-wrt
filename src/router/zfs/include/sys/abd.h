@@ -28,7 +28,7 @@
 
 #include <sys/isa_defs.h>
 #include <sys/debug.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 #include <sys/uio.h>
 
 #ifdef __cplusplus
@@ -42,7 +42,6 @@ typedef int abd_iter_func_t(void *buf, size_t len, void *priv);
 typedef int abd_iter_func2_t(void *bufa, void *bufb, size_t len, void *priv);
 
 extern int zfs_abd_scatter_enabled;
-extern abd_t *abd_zero_scatter;
 
 /*
  * Allocations and deallocations
@@ -60,6 +59,7 @@ abd_t *abd_get_offset(abd_t *, size_t);
 abd_t *abd_get_offset_size(abd_t *, size_t, size_t);
 abd_t *abd_get_zeros(size_t);
 abd_t *abd_get_from_buf(void *, size_t);
+void abd_cache_reap_now(void);
 
 /*
  * Conversion to and from a normal buffer

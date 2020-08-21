@@ -60,6 +60,7 @@
 #include <sys/conf.h>
 #include <sys/cmn_err.h>
 #include <sys/stat.h>
+#include <sys/proc.h>
 #include <sys/zap.h>
 #include <sys/spa.h>
 #include <sys/spa_impl.h>
@@ -78,7 +79,6 @@
 #include <sys/fs/zfs.h>
 #include <sys/zfs_ioctl.h>
 #include <sys/zil.h>
-#include <sys/refcount.h>
 #include <sys/zfs_znode.h>
 #include <sys/zfs_rlock.h>
 #include <sys/vdev_impl.h>
@@ -99,7 +99,6 @@
 
 #include "zfs_namecheck.h"
 
-#define	ZVOL_DIR		"/dev/zvol/"
 #define	ZVOL_DUMPSIZE		"dumpsize"
 
 #ifdef ZVOL_LOCK_DEBUG
@@ -136,8 +135,6 @@ struct zvol_state_os {
 		} _zso_geom;
 	} _zso_state;
 };
-
-struct proc *zfsproc;
 
 static uint32_t zvol_minors;
 
@@ -387,7 +384,7 @@ zvol_geom_run(zvol_state_t *zv)
 
 	g_error_provider(pp, 0);
 
-	kproc_kthread_add(zvol_geom_worker, zv, &zfsproc, NULL, 0, 0,
+	kproc_kthread_add(zvol_geom_worker, zv, &system_proc, NULL, 0, 0,
 	    "zfskern", "zvol %s", pp->name + sizeof (ZVOL_DRIVER));
 }
 

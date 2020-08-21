@@ -9,6 +9,7 @@ After=multipathd.target
 After=systemd-remount-fs.service
 Before=zfs-import.target
 ConditionPathExists=@sysconfdir@/zfs/zpool.cache
+ConditionPathIsDirectory=/sys/module/zfs
 
 [Service]
 Type=oneshot

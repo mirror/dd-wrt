@@ -20,17 +20,16 @@
  */
 /*
  * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2011, 2019, Delphix. All rights reserved.
- * Copyright (c) 2011, Nexenta Systems Inc. All rights reserved.
- * Copyright (c) 2014, Spectra Logic Corporation. All rights reserved.
- * Copyright (c) 2013, Saso Kiselkov. All rights reserved.
- * Copyright (c) 2014, Integros. All rights reserved.
- * Copyright (c) 2017, Joyent, Inc. All rights reserved.
- * Copyright (c) 2017, Datto Inc. All rights reserved.
- * Copyright (c) 2017, Intel Corporation. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Use is subject to license terms.
+ * Copyright (c) 2011, 2019 by Delphix. All rights reserved.
+ * Copyright 2011 Nexenta Systems, Inc.  All rights reserved.
+ * Copyright (c) 2014 Spectra Logic Corporation, All rights reserved.
+ * Copyright 2013 Saso Kiselkov. All rights reserved.
+ * Copyright (c) 2014 Integros [integros.com]
+ * Copyright 2017 Joyent, Inc.
+ * Copyright (c) 2017, 2019, Datto Inc. All rights reserved.
+ * Copyright (c) 2017, Intel Corporation.
+ * Copyright (c) 2019, Allan Jude
+ * Copyright (c) 2019, Klara Inc.
  */
 
 #ifndef _SYS_SPA_H
@@ -604,7 +603,7 @@ _NOTE(CONSTCOND) } while (0)
 	ZIO_SET_CHECKSUM(&(bp)->blk_cksum, 0, 0, 0, 0);	\
 }
 
-#ifdef _BIG_ENDIAN
+#ifdef _ZFS_BIG_ENDIAN
 #define	ZFS_HOST_BYTEORDER	(0ULL)
 #else
 #define	ZFS_HOST_BYTEORDER	(1ULL)
@@ -737,10 +736,16 @@ typedef enum spa_mode {
  * Send TRIM commands in-line during normal pool operation while deleting.
  *	OFF: no
  *	ON: yes
+ * NB: IN_FREEBSD_BASE is defined within the FreeBSD sources.
  */
 typedef enum {
 	SPA_AUTOTRIM_OFF = 0,	/* default */
-	SPA_AUTOTRIM_ON
+	SPA_AUTOTRIM_ON,
+#ifdef IN_FREEBSD_BASE
+	SPA_AUTOTRIM_DEFAULT = SPA_AUTOTRIM_ON,
+#else
+	SPA_AUTOTRIM_DEFAULT = SPA_AUTOTRIM_OFF,
+#endif
 } spa_autotrim_t;
 
 /*
@@ -749,6 +754,7 @@ typedef enum {
 typedef enum trim_type {
 	TRIM_TYPE_MANUAL = 0,
 	TRIM_TYPE_AUTO = 1,
+	TRIM_TYPE_SIMPLE = 2
 } trim_type_t;
 
 /* state manipulation functions */
@@ -792,17 +798,13 @@ extern int bpobj_enqueue_free_cb(void *arg, const blkptr_t *bp, dmu_tx_t *tx);
 #define	SPA_ASYNC_TRIM_RESTART			0x200
 #define	SPA_ASYNC_AUTOTRIM_RESTART		0x400
 #define	SPA_ASYNC_L2CACHE_REBUILD		0x800
-
-/*
- * Controls the behavior of spa_vdev_remove().
- */
-#define	SPA_REMOVE_UNSPARE	0x01
-#define	SPA_REMOVE_DONE		0x02
+#define	SPA_ASYNC_L2CACHE_TRIM			0x1000
+#define	SPA_ASYNC_REBUILD_DONE			0x2000
 
 /* device manipulation */
 extern int spa_vdev_add(spa_t *spa, nvlist_t *nvroot);
 extern int spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot,
-    int replacing);
+    int replacing, int rebuild);
 extern int spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid,
     int replace_done);
 extern int spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare);
@@ -944,6 +946,12 @@ typedef struct spa_iostats {
 	kstat_named_t	autotrim_bytes_skipped;
 	kstat_named_t	autotrim_extents_failed;
 	kstat_named_t	autotrim_bytes_failed;
+	kstat_named_t	simple_trim_extents_written;
+	kstat_named_t	simple_trim_bytes_written;
+	kstat_named_t	simple_trim_extents_skipped;
+	kstat_named_t	simple_trim_bytes_skipped;
+	kstat_named_t	simple_trim_extents_failed;
+	kstat_named_t	simple_trim_bytes_failed;
 } spa_iostats_t;
 
 extern void spa_stats_init(spa_t *spa);
@@ -984,6 +992,7 @@ extern int spa_config_held(spa_t *spa, int locks, krw_t rw);
 
 /* Pool vdev add/remove lock */
 extern uint64_t spa_vdev_enter(spa_t *spa);
+extern uint64_t spa_vdev_detach_enter(spa_t *spa, uint64_t guid);
 extern uint64_t spa_vdev_config_enter(spa_t *spa);
 extern void spa_vdev_config_exit(spa_t *spa, vdev_t *vd, uint64_t txg,
     int error, char *tag);

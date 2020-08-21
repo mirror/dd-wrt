@@ -445,17 +445,6 @@ bootfs_name_valid(const char *pool, const char *bootfs)
 	return (B_FALSE);
 }
 
-boolean_t
-zpool_is_bootable(zpool_handle_t *zhp)
-{
-	char bootfs[ZFS_MAX_DATASET_NAME_LEN];
-
-	return (zpool_get_prop(zhp, ZPOOL_PROP_BOOTFS, bootfs,
-	    sizeof (bootfs), NULL, B_FALSE) == 0 && strncmp(bootfs, "-",
-	    sizeof (bootfs)) != 0);
-}
-
-
 /*
  * Given an nvlist of zpool properties to be set, validate that they are
  * correct, and parse any numeric properties (index, boolean, etc) if they are
@@ -2141,7 +2130,7 @@ xlate_init_err(int err)
  * Begin, suspend, or cancel the initialization (initializing of all free
  * blocks) for the given vdevs in the given pool.
  */
-int
+static int
 zpool_initialize_impl(zpool_handle_t *zhp, pool_initialize_func_t cmd_type,
     nvlist_t *vds, boolean_t wait)
 {
@@ -2446,7 +2435,8 @@ zpool_scan(zpool_handle_t *zhp, pool_scan_func_t func, pool_scrub_cmd_t cmd)
 		    ZPOOL_CONFIG_VDEV_TREE, &nvroot) == 0);
 		(void) nvlist_lookup_uint64_array(nvroot,
 		    ZPOOL_CONFIG_SCAN_STATS, (uint64_t **)&ps, &psc);
-		if (ps && ps->pss_func == POOL_SCAN_SCRUB) {
+		if (ps && ps->pss_func == POOL_SCAN_SCRUB &&
+		    ps->pss_state == DSS_SCANNING) {
 			if (cmd == POOL_SCRUB_PAUSE)
 				return (zfs_error(hdl, EZFS_SCRUB_PAUSED, msg));
 			else
@@ -3128,8 +3118,8 @@ is_replacing_spare(nvlist_t *search, nvlist_t *tgt, int which)
  * If 'replacing' is specified, the new disk will replace the old one.
  */
 int
-zpool_vdev_attach(zpool_handle_t *zhp,
-    const char *old_disk, const char *new_disk, nvlist_t *nvroot, int replacing)
+zpool_vdev_attach(zpool_handle_t *zhp, const char *old_disk,
+    const char *new_disk, nvlist_t *nvroot, int replacing, boolean_t rebuild)
 {
 	zfs_cmd_t zc = {"\0"};
 	char msg[1024];
@@ -3142,7 +3132,6 @@ zpool_vdev_attach(zpool_handle_t *zhp,
 	uint_t children;
 	nvlist_t *config_root;
 	libzfs_handle_t *hdl = zhp->zpool_hdl;
-	boolean_t rootpool = zpool_is_bootable(zhp);
 
 	if (replacing)
 		(void) snprintf(msg, sizeof (msg), dgettext(TEXT_DOMAIN,
@@ -3164,6 +3153,14 @@ zpool_vdev_attach(zpool_handle_t *zhp,
 
 	verify(nvlist_lookup_uint64(tgt, ZPOOL_CONFIG_GUID, &zc.zc_guid) == 0);
 	zc.zc_cookie = replacing;
+	zc.zc_simple = rebuild;
+
+	if (rebuild &&
+	    zfeature_lookup_guid("org.openzfs:device_rebuild", NULL) != 0) {
+		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+		    "the loaded zfs module doesn't support device rebuilds"));
+		return (zfs_error(hdl, EZFS_POOL_NOTSUP, msg));
+	}
 
 	if (nvlist_lookup_nvlist_array(nvroot, ZPOOL_CONFIG_CHILDREN,
 	    &child, &children) != 0 || children != 1) {
@@ -3202,18 +3199,8 @@ zpool_vdev_attach(zpool_handle_t *zhp,
 
 	zcmd_free_nvlists(&zc);
 
-	if (ret == 0) {
-		if (rootpool) {
-			/*
-			 * XXX need a better way to prevent user from
-			 * booting up a half-baked vdev.
-			 */
-			(void) fprintf(stderr, dgettext(TEXT_DOMAIN, "Make "
-			    "sure to wait until resilver is done "
-			    "before rebooting.\n"));
-		}
+	if (ret == 0)
 		return (0);
-	}
 
 	switch (errno) {
 	case ENOTSUP:
@@ -3224,16 +3211,21 @@ zpool_vdev_attach(zpool_handle_t *zhp,
 			uint64_t version = zpool_get_prop_int(zhp,
 			    ZPOOL_PROP_VERSION, NULL);
 
-			if (islog)
+			if (islog) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "cannot replace a log with a spare"));
-			else if (version >= SPA_VERSION_MULTI_REPLACE)
+			} else if (rebuild) {
+				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
+				    "only mirror vdevs support sequential "
+				    "reconstruction"));
+			} else if (version >= SPA_VERSION_MULTI_REPLACE) {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "already in replacing/spare config; wait "
 				    "for completion or use 'zpool detach'"));
-			else
+			} else {
 				zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 				    "cannot replace a replacing device"));
+			}
 		} else {
 			zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 			    "can only attach to mirrors and top-level "
@@ -3636,13 +3628,6 @@ zpool_vdev_remove(zpool_handle_t *zhp, const char *path)
 		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
 		    "pool must be upgraded to support log removal"));
 		return (zfs_error(hdl, EZFS_BADVERSION, msg));
-	}
-
-	if (!islog && !avail_spare && !l2cache && zpool_is_bootable(zhp)) {
-		zfs_error_aux(hdl, dgettext(TEXT_DOMAIN,
-		    "root pool can not have removed devices, "
-		    "because GRUB does not understand them"));
-		return (zfs_error(hdl, EINVAL, msg));
 	}
 
 	zc.zc_guid = fnvlist_lookup_uint64(tgt, ZPOOL_CONFIG_GUID);
@@ -4539,7 +4524,7 @@ zpool_get_bootenv(zpool_handle_t *zhp, char *outbuf, size_t size, off_t offset)
 		return (0);
 	}
 
-	strlcpy(outbuf, envmap + offset, size);
+	strncpy(outbuf, envmap + offset, size);
 	int bytes = MIN(strlen(envmap + offset), size);
 	fnvlist_free(nvl);
 	return (bytes);

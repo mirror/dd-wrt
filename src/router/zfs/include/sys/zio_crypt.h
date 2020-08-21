@@ -21,7 +21,7 @@
 #define	_SYS_ZIO_CRYPT_H
 
 #include <sys/dmu.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 #if defined(__FreeBSD__) && defined(_KERNEL)
 #include <sys/freebsd_crypto.h>
 #else
@@ -102,7 +102,7 @@ typedef struct zio_crypt_key {
 	crypto_key_t zk_current_key;
 
 #if defined(__FreeBSD__) && defined(_KERNEL)
-	/* Session for current encrpytion key.  Must always be set */
+	/* Session for current encryption key.  Must always be set */
 	freebsd_crypt_session_t	zk_session;
 #else
 	/* template of current encryption key for illumos crypto api */

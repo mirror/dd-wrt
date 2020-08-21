@@ -148,6 +148,8 @@ zfsdev_state_destroy(struct file *filp)
 	zs->zs_minor = -1;
 	zfs_onexit_destroy(zs->zs_onexit);
 	zfs_zevent_destroy(zs->zs_zevent);
+	zs->zs_onexit = NULL;
+	zs->zs_zevent = NULL;
 
 	return (0);
 }
@@ -191,7 +193,7 @@ zfsdev_ioctl(struct file *filp, unsigned cmd, unsigned long arg)
 		error = -SET_ERROR(EFAULT);
 		goto out;
 	}
-	error = -zfsdev_ioctl_common(vecnum, zc);
+	error = -zfsdev_ioctl_common(vecnum, zc, 0);
 	rc = ddi_copyout(zc, (void *)(uintptr_t)arg, sizeof (zfs_cmd_t), 0);
 	if (error == 0 && rc != 0)
 		error = -SET_ERROR(EFAULT);
@@ -199,6 +201,15 @@ out:
 	kmem_free(zc, sizeof (zfs_cmd_t));
 	return (error);
 
+}
+
+uint64_t
+zfs_max_nvlist_src_size_os(void)
+{
+	if (zfs_max_nvlist_src_size != 0)
+		return (zfs_max_nvlist_src_size);
+
+	return (KMALLOC_MAX_SIZE);
 }
 
 void
@@ -265,7 +276,7 @@ zfsdev_detach(void)
 	misc_deregister(&zfs_misc);
 }
 
-#ifdef DEBUG
+#ifdef ZFS_DEBUG
 #define	ZFS_DEBUG_STR	" (DEBUG mode)"
 #else
 #define	ZFS_DEBUG_STR	""

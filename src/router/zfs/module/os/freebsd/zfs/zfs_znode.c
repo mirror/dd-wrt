@@ -56,14 +56,13 @@
 #include <sys/dmu.h>
 #include <sys/dmu_objset.h>
 #include <sys/dmu_tx.h>
-#include <sys/refcount.h>
+#include <sys/zfs_refcount.h>
 #include <sys/stat.h>
 #include <sys/zap.h>
 #include <sys/zfs_znode.h>
 #include <sys/sa.h>
 #include <sys/zfs_sa.h>
 #include <sys/zfs_stat.h>
-#include <sys/refcount.h>
 
 #include "zfs_prop.h"
 #include "zfs_comutil.h"
@@ -76,7 +75,7 @@ SYSCTL_INT(_debug_sizeof, OID_AUTO, znode, CTLFLAG_RD,
  * Define ZNODE_STATS to turn on statistic gathering. By default, it is only
  * turned on when DEBUG is also defined.
  */
-#ifdef	DEBUG
+#ifdef	ZFS_DEBUG
 #define	ZNODE_STATS
 #endif	/* DEBUG */
 
@@ -98,7 +97,13 @@ SYSCTL_INT(_debug_sizeof, OID_AUTO, znode, CTLFLAG_RD,
  */
 krwlock_t zfsvfs_lock;
 
+#if defined(_KERNEL) && !defined(KMEM_DEBUG) && \
+    __FreeBSD_version >= 1300102
+#define	_ZFS_USE_SMR
+static uma_zone_t znode_uma_zone;
+#else
 static kmem_cache_t *znode_cache = NULL;
+#endif
 
 extern struct vop_vector zfs_vnodeops;
 extern struct vop_vector zfs_fifoops;
@@ -170,6 +175,53 @@ zfs_znode_cache_destructor(void *buf, void *arg)
 	ASSERT(zp->z_acl_cached == NULL);
 }
 
+
+#ifdef _ZFS_USE_SMR
+VFS_SMR_DECLARE;
+
+static int
+zfs_znode_cache_constructor_smr(void *mem, int size __unused, void *private,
+    int flags)
+{
+
+	return (zfs_znode_cache_constructor(mem, private, flags));
+}
+
+static void
+zfs_znode_cache_destructor_smr(void *mem, int size __unused, void *private)
+{
+
+	zfs_znode_cache_destructor(mem, private);
+}
+
+void
+zfs_znode_init(void)
+{
+	/*
+	 * Initialize zcache
+	 */
+	rw_init(&zfsvfs_lock, NULL, RW_DEFAULT, NULL);
+	ASSERT(znode_uma_zone == NULL);
+	znode_uma_zone = uma_zcreate("zfs_znode_cache",
+	    sizeof (znode_t), zfs_znode_cache_constructor_smr,
+	    zfs_znode_cache_destructor_smr, NULL, NULL, 0, 0);
+	VFS_SMR_ZONE_SET(znode_uma_zone);
+}
+
+static znode_t *
+zfs_znode_alloc_kmem(int flags)
+{
+
+	return (uma_zalloc_smr(znode_uma_zone, flags));
+}
+
+static void
+zfs_znode_free_kmem(znode_t *zp)
+{
+
+	uma_zfree_smr(znode_uma_zone, zp);
+}
+#else
 void
 zfs_znode_init(void)
 {
@@ -181,8 +233,22 @@ zfs_znode_init(void)
 	znode_cache = kmem_cache_create("zfs_znode_cache",
 	    sizeof (znode_t), 0, zfs_znode_cache_constructor,
 	    zfs_znode_cache_destructor, NULL, NULL, NULL, 0);
-	// kmem_cache_set_move(znode_cache, zfs_znode_move);
 }
+
+static znode_t *
+zfs_znode_alloc_kmem(int flags)
+{
+
+	return (kmem_cache_alloc(znode_cache, flags));
+}
+
+static void
+zfs_znode_free_kmem(znode_t *zp)
+{
+
+	kmem_cache_free(znode_cache, zp);
+}
+#endif
 
 void
 zfs_znode_fini(void)
@@ -190,9 +256,17 @@ zfs_znode_fini(void)
 	/*
 	 * Cleanup zcache
 	 */
-	if (znode_cache)
+#ifdef _ZFS_USE_SMR
+	if (znode_uma_zone) {
+		uma_zdestroy(znode_uma_zone);
+		znode_uma_zone = NULL;
+	}
+#else
+	if (znode_cache) {
 		kmem_cache_destroy(znode_cache);
-	znode_cache = NULL;
+		znode_cache = NULL;
+	}
+#endif
 	rw_destroy(&zfsvfs_lock);
 }
 
@@ -212,7 +286,7 @@ zfs_create_share_dir(zfsvfs_t *zfsvfs, dmu_tx_t *tx)
 	vattr.va_uid = crgetuid(kcred);
 	vattr.va_gid = crgetgid(kcred);
 
-	sharezp = kmem_cache_alloc(znode_cache, KM_SLEEP);
+	sharezp = zfs_znode_alloc_kmem(KM_SLEEP);
 	ASSERT(!POINTER_IS_VALID(sharezp->z_zfsvfs));
 	sharezp->z_moved = 0;
 	sharezp->z_unlinked = 0;
@@ -231,7 +305,7 @@ zfs_create_share_dir(zfsvfs_t *zfsvfs, dmu_tx_t *tx)
 
 	zfs_acl_ids_free(&acl_ids);
 	sa_handle_destroy(sharezp->z_sa_hdl);
-	kmem_cache_free(znode_cache, sharezp);
+	zfs_znode_free_kmem(sharezp);
 
 	return (error);
 }
@@ -328,7 +402,7 @@ zfs_vnode_forget(vnode_t *vp)
 }
 
 /*
- * Construct a new znode/vnode and intialize.
+ * Construct a new znode/vnode and initialize.
  *
  * This does not do a call to dmu_set_user() that is
  * up to the caller to do, in case you don't want to
@@ -350,7 +424,12 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 	int count = 0;
 	int error;
 
-	zp = kmem_cache_alloc(znode_cache, KM_SLEEP);
+	zp = zfs_znode_alloc_kmem(KM_SLEEP);
+
+#ifndef _ZFS_USE_SMR
+	KASSERT((zfsvfs->z_parent->z_vfs->mnt_kern_flag & MNTK_FPLOOKUP) == 0,
+	    ("%s: fast path lookup enabled without smr", __func__));
+#endif
 
 #if __FreeBSD_version >= 1300076
 	KASSERT(curthread->td_vp_reserved != NULL,
@@ -361,7 +440,7 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 #endif
 	error = getnewvnode("zfs", zfsvfs->z_parent->z_vfs, &zfs_vnodeops, &vp);
 	if (error != 0) {
-		kmem_cache_free(znode_cache, zp);
+		zfs_znode_free_kmem(zp);
 		return (NULL);
 	}
 	zp->z_vnode = vp;
@@ -417,7 +496,7 @@ zfs_znode_alloc(zfsvfs_t *zfsvfs, dmu_buf_t *db, int blksz,
 			sa_handle_destroy(zp->z_sa_hdl);
 		zfs_vnode_forget(vp);
 		zp->z_vnode = NULL;
-		kmem_cache_free(znode_cache, zp);
+		zfs_znode_free_kmem(zp);
 		return (NULL);
 	}
 
@@ -604,7 +683,7 @@ zfs_mknode(znode_t *dzp, vattr_t *vap, dmu_tx_t *tx, cred_t *cr,
 		pflags |= ZFS_XATTR;
 
 	/*
-	 * No execs denied will be deterimed when zfs_mode_compute() is called.
+	 * No execs denied will be determined when zfs_mode_compute() is called.
 	 */
 	pflags |= acl_ids->z_aclp->z_hints &
 	    (ZFS_ACL_TRIVIAL|ZFS_INHERIT_ACE|ZFS_ACL_AUTO_INHERIT|
@@ -763,6 +842,8 @@ zfs_xvattr_set(znode_t *zp, xvattr_t *xvap, dmu_tx_t *tx)
 
 	xoap = xva_getxoptattr(xvap);
 	ASSERT(xoap);
+
+	ASSERT_VOP_IN_SEQC(ZTOV(zp));
 
 	if (XVA_ISSET_REQ(xvap, XAT_CREATETIME)) {
 		uint64_t times[2];
@@ -938,7 +1019,7 @@ again:
 			 * But that is only possible if the other thread peforms
 			 * a ZFS vnode operation on the vnode.  That either
 			 * should not happen if the vnode is dead or the thread
-			 * should also have a refrence to the vnode and thus
+			 * should also have a reference to the vnode and thus
 			 * our reference is not last.
 			 */
 			VN_RELE(vp);
@@ -1099,7 +1180,7 @@ zfs_rezget(znode_t *zp)
 	 * If the file has zero links, then it has been unlinked on the send
 	 * side and it must be in the received unlinked set.
 	 * We call zfs_znode_dmu_fini() now to prevent any accesses to the
-	 * stale data and to prevent automatical removal of the file in
+	 * stale data and to prevent automatically removal of the file in
 	 * zfs_zinactive().  The file will be removed either when it is removed
 	 * on the send side and the next incremental stream is received or
 	 * when the unlinked set gets processed.
@@ -1192,8 +1273,7 @@ zfs_znode_free(znode_t *zp)
 		zp->z_acl_cached = NULL;
 	}
 
-	kmem_cache_free(znode_cache, zp);
-
+	zfs_znode_free_kmem(zp);
 }
 
 void
@@ -1629,7 +1709,7 @@ zfs_create_fs(objset_t *os, cred_t *cr, nvlist_t *zplprops, dmu_tx_t *tx)
 
 	zfsvfs = kmem_zalloc(sizeof (zfsvfs_t), KM_SLEEP);
 
-	rootzp = kmem_cache_alloc(znode_cache, KM_SLEEP);
+	rootzp = zfs_znode_alloc_kmem(KM_SLEEP);
 	ASSERT(!POINTER_IS_VALID(rootzp->z_zfsvfs));
 	rootzp->z_moved = 0;
 	rootzp->z_unlinked = 0;
@@ -1673,7 +1753,7 @@ zfs_create_fs(objset_t *os, cred_t *cr, nvlist_t *zplprops, dmu_tx_t *tx)
 	POINTER_INVALIDATE(&rootzp->z_zfsvfs);
 
 	sa_handle_destroy(rootzp->z_sa_hdl);
-	kmem_cache_free(znode_cache, rootzp);
+	zfs_znode_free_kmem(rootzp);
 
 	/*
 	 * Create shares directory
@@ -1731,7 +1811,7 @@ zfs_grab_sa_handle(objset_t *osp, uint64_t obj, sa_handle_t **hdlp,
 	return (0);
 }
 
-void
+static void
 zfs_release_sa_handle(sa_handle_t *hdl, dmu_buf_t *db, void *tag)
 {
 	sa_handle_destroy(hdl);

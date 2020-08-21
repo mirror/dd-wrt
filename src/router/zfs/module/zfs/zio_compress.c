@@ -20,12 +20,17 @@
  */
 
 /*
- * Copyright (c) 2009, Sun Microsystems Inc. All rights reserved.
- * Copyright (c) 2013, Saso Kiselkov. All rights reserved.
- * Copyright (c) 2013, 2018, Delphix. All rights reserved.
- * Copyright (c) 2019, Klara Inc. All rights reserved.
- * Copyright (c) 2019, Allan Jude. All rights reserved.
+ * Copyright 2009 Sun Microsystems, Inc.  All rights reserved.
  * Use is subject to license terms.
+ */
+/*
+ * Copyright (c) 2013 by Saso Kiselkov. All rights reserved.
+ */
+
+/*
+ * Copyright (c) 2013, 2018 by Delphix. All rights reserved.
+ * Copyright (c) 2019, Klara Inc.
+ * Copyright (c) 2019, Allan Jude
  */
 
 #include <sys/zfs_context.h>
@@ -71,8 +76,11 @@ zio_complevel_select(spa_t *spa, enum zio_compress compress, uint8_t child,
 {
 	uint8_t result;
 
+	if (!ZIO_COMPRESS_HASLEVEL(compress))
+		return (0);
+
 	result = child;
-	if (result == ZIO_ZSTD_LEVEL_INHERIT)
+	if (result == ZIO_COMPLEVEL_INHERIT)
 		result = parent;
 
 	return (result);
@@ -142,7 +150,7 @@ zio_compress_data(enum zio_compress c, abd_t *src, void *dst, size_t s_len,
 
 	if (c == ZIO_COMPRESS_ZSTD) {
 		/* If we don't know the level, we can't compress it */
-		if (level == ZIO_ZSTD_LEVEL_INHERIT)
+		if (level == ZIO_COMPLEVEL_INHERIT)
 			return (s_len);
 
 		if (level == ZIO_COMPLEVEL_DEFAULT)

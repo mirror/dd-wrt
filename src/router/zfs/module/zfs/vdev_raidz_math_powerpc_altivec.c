@@ -225,7 +225,7 @@ const raidz_impl_ops_t vdev_raidz_powerpc_altivec_impl = {
 
 
 #if defined(__powerpc__)
-#if defined(_LITTLE_ENDIAN) && _LITTLE_ENDIAN
+#if defined(_ZFS_LITTLE_ENDIAN) && _LITTLE_ENDIAN
 /* BEGIN CSTYLED */
 const uint8_t
 __attribute__((aligned(256))) gf_clmul_mod_lt[4*256][16] = {
@@ -4333,5 +4333,5 @@ __attribute__((aligned(256))) gf_clmul_mod_lt[4*256][16] = {
 		0xf8, 0x07, 0x06, 0xf9, 0x04, 0xfb, 0xfa, 0x05  }
 };
 /* END CSTYLED */
-#endif // ENDIANESS
+#endif // ENDIANNESS
 #endif /* defined(__powerpc__) */

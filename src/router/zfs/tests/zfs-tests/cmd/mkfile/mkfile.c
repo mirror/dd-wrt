@@ -34,7 +34,8 @@
 #include <string.h>
 #include <libintl.h>
 #include <errno.h>
-#include <sys/param.h>
+#include <sys/stdtypes.h>
+#include <sys/sysmacros.h>
 
 #define	BLOCKSIZE	512		/* bytes */
 #define	KILOBYTE	1024
@@ -127,7 +128,7 @@ main(int argc, char **argv)
 
 		if (verbose)
 			(void) fprintf(stdout, gettext("%s %lld bytes\n"),
-			    argv[1], (off_t)size);
+			    argv[1], (offset_t)size);
 		fd = open(argv[1], O_CREAT|O_TRUNC|O_RDWR, FILE_MODE);
 		if (fd < 0) {
 			saverr = errno;
