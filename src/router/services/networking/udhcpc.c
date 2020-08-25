@@ -261,11 +261,6 @@ static int bound(void)
 	}
 	if (!changed) {
 		dd_loginfo("udhcpc", "dhcp lease info hasn't changed, do nothing\n");
-#ifdef HAVE_MULTICAST
-		dd_loginfo("udhcpc", "restart multicast forwarder, in case the peer broke the connection on renew");
-		stop_igmprt();
-		start_igmprt();
-#endif
 		return 0;
 	}
 	stop_firewall();
