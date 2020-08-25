@@ -176,11 +176,6 @@ void save_wifi(webs_t wp)
 	}
 }
 
-void dhcp_renew(webs_t wp)
-{
-	killall("igmprt", SIGTERM);
-	killall("udhcpc", SIGUSR1);
-}
 
 void dhcp_release(webs_t wp)
 {
@@ -195,6 +190,12 @@ void dhcp_release(webs_t wp)
 	unlink("/tmp/get_lease_time");
 	unlink("/tmp/lease_time");
 
+}
+
+void dhcp_renew(webs_t wp)
+{
+	dhcp_release(wp);
+	killall("udhcpc", SIGUSR1);
 }
 
 void stop_ppp(webs_t wp)
