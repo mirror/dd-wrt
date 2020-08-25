@@ -1685,7 +1685,7 @@ static int fe_remove(struct platform_device *pdev)
 	free_netdev(dev);
 	platform_set_drvdata(pdev, NULL);
 
-	eth->netdev[id]->max_mtu = MAX_RX_LENGTH - FE_RX_ETH_HLEN;
+//	eth->netdev[id]->max_mtu = MAX_RX_LENGTH - FE_RX_ETH_HLEN;
 
 	return 0;
 }
