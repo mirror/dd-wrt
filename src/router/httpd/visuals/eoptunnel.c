@@ -420,7 +420,7 @@ void ej_show_eop_tunnels(webs_t wp, int argc, char_t ** argv)
 								sprintf(buffer, "Unable to retrieve WireGuardStatus oet%d", tun);
 							}
 							show_caption(wp, "label", "eoip.wireguard_oet_status", NULL);
-							websWrite(wp, "<textarea cols=\"32\" rows=\"2\" id=\"oet%d_status%d\" name=\"oet%d_status%d\" disabled=\"disabled\"></textarea>", tun, peer, tun, peer);
+							websWrite(wp, "<textarea cols=\"32\" rows=\"3\" id=\"oet%d_status%d\" name=\"oet%d_status%d\" disabled=\"disabled\"></textarea>", tun, peer, tun, peer);
 							websWrite(wp, "<script type=\"text/javascript\">\n//<![CDATA[\n");
 							websWrite(wp, "document.getElementById(\"oet%d_status%d\").value =\"%s\";\n", tun, peer, buffer);
 							websWrite(wp, "//]]>\n</script>\n");
