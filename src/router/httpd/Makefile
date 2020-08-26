@@ -620,11 +620,11 @@ endif
 ifeq ($(CONFIG_HOBBIT),y)
 CFLAGS += -DHAVE_HOBBIT
 endif
-ifeq ($(CONFIG_MRP),y)
-CFLAGS += -DHAVE_MRP
-VISOBJS += mrp.o
-WEBSOBJS += websmrp.o
-endif
+#ifeq ($(CONFIG_MRP),y)
+#CFLAGS += -DHAVE_MRP
+#VISOBJS += mrp.o
+#WEBSOBJS += websmrp.o
+#endif
 ifeq ($(CONFIG_STATUS_GPIO),y)
 CFLAGS += -DHAVE_STATUS_GPIO
 endif
