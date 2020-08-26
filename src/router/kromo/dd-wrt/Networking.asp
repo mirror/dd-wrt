@@ -184,6 +184,7 @@ addEvent(window, "unload", function() {
 								</table><br />
 							</fieldset>
 							<br />
+							<% show_mrp(); %>
 							<% show_ipvs(); %>
 							<% show_bondings(); %>
 							<% portsetup(); %>
