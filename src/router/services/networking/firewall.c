@@ -892,6 +892,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 				}
 			}
 		}
+		if ((nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) && nvram_matchi("wshaper_enable", 1))
+			insmod("xt_pkttype");
 
 		foreach(var, vifs, next) {
 			if (strcmp(wanface, var)
@@ -2777,12 +2779,16 @@ void start_firewall6(void)
 
 void start_loadfwmodules(void)
 {
-	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"
-	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS"
-	       " xt_connbytes xt_connlimit"
-	       " xt_CLASSIFY xt_recent"
-	       " xt_conntrack xt_state"
-	       " xt_string xt_LOG xt_iprange xt_tcpmss" " xt_NETMAP compat_xtables" " ipt_MASQUERADE iptable_filter nf_reject_ipv4" " ipt_REJECT nf_nat_h323" " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
+	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
+	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
+	       " xt_connbytes xt_connlimit" //
+	       " xt_CLASSIFY xt_recent" //
+	       " xt_conntrack xt_state" //
+	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
+	       " xt_NETMAP compat_xtables" //
+	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
+	       " ipt_REJECT nf_nat_h323" //
+	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 }
 
 int client_bridged_enabled(void);
