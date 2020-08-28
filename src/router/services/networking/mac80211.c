@@ -1787,7 +1787,24 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		FILE *fp = fopen(fstr, "wb");
 		if (!ismesh)
 			fprintf(fp, "ap_scan=1\n");
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
+
+		if (strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed")) {
+			fprintf(fp, "\tdisable_vht=1\n");
+		}
+
+		if (strcmp(netmode, "n-only") && strcmp(netmode, "n2-only")
+		    && strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")
+		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
+		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
+			fprintf(fp, "\tdisable_ht=1\n");
+		} else {
+			if (atoi(channelbw) < 40) {
+				fprintf(fp, "\tdisable_ht40=1\n");
+			}
+		}
 		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
