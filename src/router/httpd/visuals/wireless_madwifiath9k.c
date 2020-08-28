@@ -66,17 +66,11 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	if (is_ath5k(ifname)) {
 		if (channelbw == 40)
 			mul = 2;
-		if (channelbw == 10)
-			div = 2;
-		if (channelbw == 5)
-			div = 4;
 	}
-	if (is_ath10k(ifname) || is_ath9k(ifname)) {
-		if (channelbw == 10)
-			div = 2;
-		if (channelbw == 5)
-			div = 4;
-	}
+	if (channelbw == 10)
+		div = 2;
+	if (channelbw == 5)
+		div = 4;
 	// sprintf(it, "inactivity_time", ifname);
 //      it = nvram_default_geti("inacttime", 300000);
 
