@@ -56,16 +56,22 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 	char mac[32];
 	struct mac80211_info *mac80211_info;
 	struct wifi_client_info *wc;
+	int divider = 1;
 	char nb[32];
 	int bias, qual, div = 1, mul = 1;
 	sprintf(nb, "%s_bias", ifname);
 	bias = nvram_default_geti(nb, 0);
-
+	sprintf(nb, "%s_channelbw", ifname);
+	int channelbw = atoi(nvram_default_get(nb, "0"));
 	if (is_ath5k(ifname)) {
-		sprintf(nb, "%s_channelbw", ifname);
-		int channelbw = atoi(nvram_default_get(nb, "0"));
 		if (channelbw == 40)
 			mul = 2;
+		if (channelbw == 10)
+			div = 2;
+		if (channelbw == 5)
+			div = 4;
+	}
+	if (is_ath10k(ifname) || is_ath9k(ifname)) {
 		if (channelbw == 10)
 			div = 2;
 		if (channelbw == 5)
