@@ -906,6 +906,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 					if (nvram_matchi(nat, 1)) {
 						char loopif[64];
 						sprintf(loopif, "ipv4/conf/%s/loop", var);
+						/* todo: block/allow loopback per interface */
 						if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
 							if (nvram_matchi("wshaper_enable", 1)) {
 								save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", var);
