@@ -229,6 +229,7 @@ void configure_single_ath9k(int count)
 	static int vapcount = 0;
 	int isath5k = 0;
 	int isath10k = 0;
+	int ismt7615 = 0;
 	char *apm;
 	char isolate[32];
 	char primary[32] = { 0 };
@@ -239,6 +240,7 @@ void configure_single_ath9k(int count)
 	sprintf(dev, "ath%d", count);
 	isath5k = is_ath5k(dev);
 	isath10k = is_ath10k(dev);
+	ismt7615 = is_mt7615(dev);
 	// sprintf(regdomain, "%s_regdomain", dev);
 	// country = nvram_default_get(regdomain, "US");
 	// sysprintf("iw reg set %s", getIsoName(country));
@@ -283,6 +285,13 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
+	} if (ismt7615) {
+		if (nvram_matchi(bw, 5))
+			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
+		else if (nvram_matchi(bw, 10))
+			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
+		else
+			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
 	} else {
 		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
