@@ -3201,7 +3201,8 @@ spa_verify_host(spa_t *spa, nvlist_t *mos_config)
 			cmn_err(CE_WARN, "pool '%s' could not be "
 			    "loaded as it was last accessed by "
 			    "another system (host: %s hostid: 0x%llx). "
-			    "See: http://illumos.org/msg/ZFS-8000-EY",
+			    "See: https://openzfs.github.io/openzfs-docs/msg/"
+			    "ZFS-8000-EY",
 			    spa_name(spa), hostname, (u_longlong_t)hostid);
 			spa_load_failed(spa, "hostid verification failed: pool "
 			    "last accessed by host: %s (hostid: 0x%llx)",
@@ -5747,6 +5748,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 		for (int c = 0; error == 0 && c < rvd->vdev_children; c++) {
 			vdev_t *vd = rvd->vdev_child[c];
 
+			vdev_ashift_optimize(vd);
 			vdev_metaslab_set_size(vd);
 			vdev_expand(vd, txg);
 		}
