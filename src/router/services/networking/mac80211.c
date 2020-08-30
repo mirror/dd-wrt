@@ -321,6 +321,7 @@ void configure_single_ath9k(int count)
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath10k/ani_enable", nvram_default_get(wl_intmit, "0"), wif);
 	} else
 #endif
+	if (is_ath9k(dev))
 		sysprintf("echo %s > /sys/kernel/debug/ieee80211/%s/ath9k/ani", nvram_default_get(wl_intmit, "1"), wif);
 #ifdef HAVE_REGISTER
 	int cpeonly = iscpe();

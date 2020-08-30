@@ -913,6 +913,9 @@ ATH9KOBJS += mac80211.o site_survey_mac80211.o
 ATH9KFILES += networking/mac80211.c tools/site_survey_mac80211.c
 ATH9KCFLAGS += -I. -I$(LINUXDIR)/brcm/$(ARCH)/include -Wall -I$(TOP)/shared
 ATH9KCFLAGS += -DNDEBUG -I$(LINUXDIR)/brcm/$(ARCH)/shared/bcmwifi/include
+ifeq ($(CONFIG_MT76),y)
+ATH9KCFLAGS += -DHAVE_MT76
+endif
 
 ifeq ($(CONFIG_UNIWIP),y)
 ATH9KCFLAGS += -DHAVE_UNIWIP
