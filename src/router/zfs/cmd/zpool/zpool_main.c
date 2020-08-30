@@ -2082,7 +2082,7 @@ print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
     nvlist_t *nv, int depth, boolean_t isspare, vdev_rebuild_stat_t *vrs)
 {
 	nvlist_t **child, *root;
-	uint_t c, i, children;
+	uint_t c, i, vsc, children;
 	pool_scan_stat_t *ps = NULL;
 	vdev_stat_t *vs;
 	char rbuf[6], wbuf[6], cbuf[6];
@@ -2099,7 +2099,7 @@ print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
 		children = 0;
 
 	verify(nvlist_lookup_uint64_array(nv, ZPOOL_CONFIG_VDEV_STATS,
-	    (uint64_t **)&vs, &c) == 0);
+	    (uint64_t **)&vs, &vsc) == 0);
 
 	verify(nvlist_lookup_string(nv, ZPOOL_CONFIG_TYPE, &type) == 0);
 
@@ -2197,6 +2197,10 @@ print_status_config(zpool_handle_t *zhp, status_cbdata_t *cb, const char *name,
 
 		case VDEV_AUX_UNSUP_FEAT:
 			(void) printf(gettext("unsupported feature(s)"));
+			break;
+
+		case VDEV_AUX_ASHIFT_TOO_BIG:
+			(void) printf(gettext("unsupported minimum blocksize"));
 			break;
 
 		case VDEV_AUX_SPARED:
@@ -2812,7 +2816,8 @@ show_import(nvlist_t *config)
 
 	if (msgid != NULL) {
 		(void) printf(gettext(
-		    "   see: https://zfsonlinux.org/msg/%s\n"), msgid);
+		    "   see: https://openzfs.github.io/openzfs-docs/msg/%s\n"),
+		    msgid);
 	}
 
 	(void) printf(gettext(" config:\n\n"));
@@ -7800,7 +7805,7 @@ print_dedup_stats(nvlist_t *config)
  *        pool: tank
  *	status: DEGRADED
  *	reason: One or more devices ...
- *         see: https://zfsonlinux.org/msg/ZFS-xxxx-01
+ *         see: https://openzfs.github.io/openzfs-docs/msg/ZFS-xxxx-01
  *	config:
  *		mirror		DEGRADED
  *                c1t0d0	OK
@@ -8105,6 +8110,15 @@ status_callback(zpool_handle_t *zhp, void *data)
 		    "'zpool clear'.\n"));
 		break;
 
+	case ZPOOL_STATUS_NON_NATIVE_ASHIFT:
+		(void) printf(gettext("status: One or more devices are "
+		    "configured to use a non-native block size.\n"
+		    "\tExpect reduced performance.\n"));
+		(void) printf(gettext("action: Replace affected devices with "
+		    "devices that support the\n\tconfigured block size, or "
+		    "migrate data to a properly configured\n\tpool.\n"));
+		break;
+
 	case ZPOOL_STATUS_HOSTID_MISMATCH:
 		printf_color(ANSI_BOLD, gettext("status: "));
 		printf_color(ANSI_YELLOW, gettext("Mismatch between pool hostid"
@@ -8180,7 +8194,9 @@ status_callback(zpool_handle_t *zhp, void *data)
 	if (msgid != NULL) {
 		printf("   ");
 		printf_color(ANSI_BOLD, gettext("see:"));
-		printf(gettext(" https://zfsonlinux.org/msg/%s\n"), msgid);
+		printf(gettext(
+		    " https://openzfs.github.io/openzfs-docs/msg/%s\n"),
+		    msgid);
 	}
 
 	if (config != NULL) {
