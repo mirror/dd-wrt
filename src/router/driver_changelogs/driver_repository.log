@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5331 | brainslayer | 2020-08-31 00:03:28 +0400 (Mon, 31 Aug 2020) | 1 line
+
+shift 5 mhz channel as workaround
+------------------------------------------------------------------------
 r5330 | brainslayer | 2020-08-30 21:53:09 +0400 (Sun, 30 Aug 2020) | 1 line
 
 adjust mac clock for quarter and half channel
