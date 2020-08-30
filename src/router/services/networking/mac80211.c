@@ -270,7 +270,9 @@ void configure_single_ath9k(int count)
 	// set channelbw ht40 is also 20!
 	sprintf(bw, "%s_channelbw", dev);
 	if (isath5k) {
-		if (nvram_matchi(bw, 5))
+		if (nvram_matchi(bw, 2))
+			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
+		else if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
@@ -293,7 +295,9 @@ void configure_single_ath9k(int count)
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
 	} else {
-		if (nvram_matchi(bw, 5))
+		if (nvram_matchi(bw, 2))
+			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
+		else if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath9k/chanbw", wif);
