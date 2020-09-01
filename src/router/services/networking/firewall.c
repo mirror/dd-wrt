@@ -906,8 +906,11 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 					if (nvram_matchi(nat, 1)) {
 						char loopif[64];
 						sprintf(loopif, "ipv4/conf/%s/loop", var);
+						char bl[32];
+						sprintf(bl, "%s_bloop", var);
+						char *block_loopback = nvram_default_get(bl, nvram_safe_get("block_loopback"));
 						/* todo: block/allow loopback per interface */
-						if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
+						if (!strcmp(block_loopback, "0") || nvram_match("filter", "off")) {
 							if (nvram_matchi("wshaper_enable", 1)) {
 								save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", var);
 								save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)),
@@ -915,8 +918,8 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 							}
 							writeprocsysnet(loopif, "1");
 						} else {
-//							save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), nvram_nget("%s_ipaddr", var),
-//										getmask(nvram_nget("%s_netmask", var)));
+//                                                      save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), nvram_nget("%s_ipaddr", var),
+//                                                                              getmask(nvram_nget("%s_netmask", var)));
 							writeprocsysnet(loopif, "0");
 						}
 
@@ -929,18 +932,19 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 		if (nvram_matchi("wshaper_enable", 0)) {
 			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
 				save2file_A_postrouting("-m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
-//			else {
-//				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-//							getmask(nvram_safe_get("lan_netmask")));
-//			}
+//                      else {
+//                              save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
+//                                                      getmask(nvram_safe_get("lan_netmask")));
+//                      }
 		} else {
 			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
 				save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", nvram_safe_get("lan_ifname"));
-				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
-			} 
-//			else
-//				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-//							getmask(nvram_safe_get("lan_netmask")));
+				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),
+							nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
+			}
+//                      else
+//                              save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
+//                                                      getmask(nvram_safe_get("lan_netmask")));
 		}
 
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
@@ -2780,15 +2784,15 @@ void start_firewall6(void)
 
 void start_loadfwmodules(void)
 {
-	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG" //
-	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS" //
-	       " xt_connbytes xt_connlimit" //
-	       " xt_CLASSIFY xt_recent" //
-	       " xt_conntrack xt_state" //
-	       " xt_string xt_LOG xt_iprange xt_tcpmss" //
-	       " xt_NETMAP compat_xtables" //
-	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4" //
-	       " ipt_REJECT nf_nat_h323" //
+	insmod("iptable_raw iptable_mangle nf_conntrack_h323 xt_NFLOG"	//
+	       " xt_length xt_REDIRECT xt_CT xt_limit xt_TCPMSS"	//
+	       " xt_connbytes xt_connlimit"	//
+	       " xt_CLASSIFY xt_recent"	//
+	       " xt_conntrack xt_state"	//
+	       " xt_string xt_LOG xt_iprange xt_tcpmss"	//
+	       " xt_NETMAP compat_xtables"	//
+	       " ipt_MASQUERADE iptable_filter nf_reject_ipv4"	//
+	       " ipt_REJECT nf_nat_h323"	//
 	       " ipt_TRIGGER nf_nat_masquerade_ipv4 ipt_ah");
 }
 
