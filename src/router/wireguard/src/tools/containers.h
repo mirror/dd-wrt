@@ -13,7 +13,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 
-#include "../uapi/wireguard.h"
+#include "uapi/linux/linux/wireguard.h"
 
 /* Cross platform __kernel_timespec */
 struct timespec64 {
