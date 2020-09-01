@@ -2610,6 +2610,8 @@ void add_vifs_single(char *prefix, int device)
 	nvram_seti(v2, 1);
 	sprintf(v2, "%s_nat", v);
 	nvram_seti(v2, 1);
+	sprintf(v2, "%s_bloop", v);
+	nvram_seti(v2, 0);
 	sprintf(v2, "%s_ipaddr", v);
 	nvram_set(v2, "0.0.0.0");
 	sprintf(v2, "%s_netmask", v);
