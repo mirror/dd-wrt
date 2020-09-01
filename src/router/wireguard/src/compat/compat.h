@@ -14,6 +14,9 @@
 #ifdef RHEL_MAJOR
 #if RHEL_MAJOR == 7
 #define ISRHEL7
+#if RHEL_MINOR == 8
+#define ISCENTOS7
+#endif
 #elif RHEL_MAJOR == 8
 #define ISRHEL8
 #if RHEL_MINOR == 2
@@ -94,7 +97,7 @@
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0) && LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 83)
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup_flow(b, c, d)
-#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0) && !defined(ISUBUNTU1904)) || (!defined(ISRHEL8) && !defined(ISDEBIAN) && !defined(ISUBUNTU1804) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 181) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 224) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 224) && !defined(ISUBUNTU1604))
+#elif (LINUX_VERSION_CODE < KERNEL_VERSION(5, 4, 5) && LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(5, 3, 18) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 20, 0) && !defined(ISUBUNTU1904)) || (!defined(ISRHEL8) && !defined(ISDEBIAN) && !defined(ISUBUNTU1804) && LINUX_VERSION_CODE < KERNEL_VERSION(4, 19, 119) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 14, 181) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 10, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 224) && LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)) || (LINUX_VERSION_CODE < KERNEL_VERSION(4, 4, 224) && !defined(ISUBUNTU1604) && (!defined(ISRHEL7) || defined(ISCENTOS7)))
 #define ipv6_dst_lookup_flow(a, b, c, d) ipv6_dst_lookup(a, b, &dst, c) + (void *)0 ?: dst
 #endif
 
@@ -846,10 +849,10 @@ static inline void skb_mark_not_on_list(struct sk_buff *skb)
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 20, 0) && !defined(ISRHEL8)
-#define NLA_EXACT_LEN NLA_UNSPEC
+#define NLA_POLICY_EXACT_LEN(_len) { .type = NLA_UNSPEC, .len = _len }
 #endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 2, 0) && !defined(ISRHEL8)
-#define NLA_MIN_LEN NLA_UNSPEC
+#define NLA_POLICY_MIN_LEN(_len) { .type = NLA_UNSPEC, .len = _len }
 #define COMPAT_CANNOT_INDIVIDUAL_NETLINK_OPS_POLICY
 #endif
 
@@ -1057,6 +1060,8 @@ static inline void skb_reset_redirect(struct sk_buff *skb)
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 #include <linux/skbuff.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 static inline __be16 ip_tunnel_parse_protocol(const struct sk_buff *skb)
 {
 	if (skb_network_header(skb) >= skb->head &&
@@ -1075,6 +1080,10 @@ static const struct header_ops ip_tunnel_header_ops = { .parse_protocol = ip_tun
 #define header_ops hard_header_len
 #define ip_tunnel_header_ops *(char *)0 - (char *)0
 #endif
+#endif
+
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
+#define kfree_sensitive(a) kzfree(a)
 #endif
 
 #if defined(ISUBUNTU1604) || defined(ISRHEL7)
