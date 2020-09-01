@@ -136,6 +136,9 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 			sprintf(mcast, "%s_nat", var);
 			nvram_default_get(mcast, "1");
 			showRadio(wp, "wl_basic.masquerade", mcast);
+			sprintf(natvar, "%s_bloop", var);
+			nvram_default_get(natvar, nvram_safe_get("block_loopback"));
+			showRadio(wp, "filter.nat", natvar);
 		}
 
 		char isolation[32];
