@@ -2293,6 +2293,10 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 		sprintf(natvar, "%s_nat", var);
 		nvram_default_get(natvar, "1");
 		showRadio(wp, "wl_basic.masquerade", natvar);
+
+		sprintf(natvar, "%s_bloop", var);
+		nvram_default_get(natvar, nvram_safe_get("block_loopback"));
+		showRadio(wp, "filter.nat", natvar);
 	}
 
 	char isolation[32];
