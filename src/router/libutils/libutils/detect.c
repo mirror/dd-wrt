@@ -686,6 +686,8 @@ int internal_getRouterBrand()
 			setRouter("Gateworks Ventana GW5410-B");
 		} else if (!strncmp(gwid, "GW5410-C", 8)) {
 			setRouter("Gateworks Ventana GW5410-C");
+		} else if (!strncmp(gwid, "GW5410-E1", 9)) {
+			setRouter("Gateworks Ventana GW5410-E1");
 		} else if (!strncmp(gwid, "GW5410", 6)) {
 			setRouter("Gateworks Ventana GW5410-X");
 		} else if (!strncmp(gwid, "GW5100", 6)) {
