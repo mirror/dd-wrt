@@ -369,7 +369,9 @@ void fatal_signal(int sig)
 	/* 
 	 * Halt on SIGUSR1 
 	 */
+#ifndef HAVE_VENTANA
 	writeproc("/proc/sysrq-trigger", "b");
+#endif
 	reboot(RB_AUTOBOOT);
 	loop_forever();
 }
