@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5345 | brainslayer | 2020-09-02 16:27:32 +0400 (Wed, 02 Sep 2020) | 1 line
+
+quarter and half only for channels in 5 ghz range due a fw restriction
+------------------------------------------------------------------------
 r5344 | brainslayer | 2020-09-02 15:06:22 +0400 (Wed, 02 Sep 2020) | 1 line
 
 fix analog filter settings
