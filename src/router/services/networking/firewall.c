@@ -892,7 +892,7 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 				}
 			}
 		}
-		if ((nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) && nvram_matchi("wshaper_enable", 1))
+		if ((nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")))
 			insmod("xt_pkttype");
 
 		foreach(var, vifs, next) {
@@ -911,11 +911,9 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 						char *block_loopback = nvram_default_get(bl, nvram_safe_get("block_loopback"));
 						/* todo: block/allow loopback per interface */
 						if (!strcmp(block_loopback, "0") || nvram_match("filter", "off")) {
-							if (nvram_matchi("wshaper_enable", 1)) {
-								save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", var);
-								save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)),
-											nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)));
-							}
+							save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", var);
+							save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)),
+										nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)));
 							writeprocsysnet(loopif, "1");
 						} else {
 //                                                      save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", var, nvram_nget("%s_ipaddr", var), getmask(nvram_nget("%s_netmask", var)), nvram_nget("%s_ipaddr", var),
@@ -929,22 +927,10 @@ static void nat_postrouting(char *wanface, char *wanaddr, char *vifs)
 			}
 		}
 
-		if (nvram_matchi("wshaper_enable", 0)) {
-			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
-				save2file_A_postrouting("-m mark --mark %s -j MASQUERADE", get_NFServiceMark("FORWARD", 1));
-//                      else {
-//                              save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-//                                                      getmask(nvram_safe_get("lan_netmask")));
-//                      }
-		} else {
-			if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
-				save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", nvram_safe_get("lan_ifname"));
-				save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),
-							nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
-			}
-//                      else
-//                              save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j DROP", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")), nvram_safe_get("lan_ipaddr"),
-//                                                      getmask(nvram_safe_get("lan_netmask")));
+		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off")) {
+			save2file_A_postrouting("-o %s -m pkttype --pkt-type broadcast -j RETURN", nvram_safe_get("lan_ifname"));
+			save2file_A_postrouting("-o %s -s %s/%d -d %s/%d -j MASQUERADE", nvram_safe_get("lan_ifname"), nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")),
+						nvram_safe_get("lan_ipaddr"), getmask(nvram_safe_get("lan_netmask")));
 		}
 
 		if (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))
@@ -2520,6 +2506,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 		eval("ip6tables", "-t", "mangle", "-A", "POSTROUTING", "-m", "mark", "--mark", "0x100000", "-j", "TOS", "--set-tos", "0x00");
 	}
 #endif
+#if 0
 	if (strcmp(wanface, "wwan0") && nvram_matchi("wshaper_enable", 0)) {
 		if (wanactive(wanaddr) && (nvram_matchi("block_loopback", 0) || nvram_match("filter", "off"))) {
 			insmod("ipt_mark xt_mark ipt_CONNMARK xt_CONNMARK xt_connmark");
@@ -2527,6 +2514,7 @@ static void mangle_table(char *wanface, char *wanaddr, char *vifs)
 			save2file_A_prerouting("-j CONNMARK --save-mark");
 		}
 	}
+#endif
 	/*
 	 * Clamp TCP MSS to PMTU of WAN interface 
 	 */
