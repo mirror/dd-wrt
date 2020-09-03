@@ -69,6 +69,10 @@ static const char *gethtmode(char *prefix)
 	int usebw = 20;
 	if (nvram_matchi(bw, 40))
 		usebw = 40;
+	if (nvram_matchi(bw, 5))
+		usebw = 5;
+	if (nvram_matchi(bw, 10))
+		usebw = 10;
 	if (nvram_matchi(bw, 2040))
 		usebw = 40;
 	if (nvram_matchi(bw, 80))
@@ -106,6 +110,8 @@ static const char *gethtmode(char *prefix)
 			ht = "160";
 			break;
 		case 20:
+		case 10:
+		case 5:
 		default:
 			ht = "HT20";
 			break;
