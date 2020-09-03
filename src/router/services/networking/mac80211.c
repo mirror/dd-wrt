@@ -627,6 +627,10 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 	int usebw = 20;
 	if (nvram_matchi(bw, 40))
 		usebw = 40;
+	if (nvram_matchi(bw, 10))
+		usebw = 10;
+	if (nvram_matchi(bw, 5))
+		usebw = 5;
 	if (nvram_matchi(bw, 2040))
 		usebw = 40;
 	if (nvram_matchi(bw, 80))
@@ -678,6 +682,8 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 			ht = get_channeloffset(prefix, &iht, &channeloffset);
 			break;
 		case 20:
+		case 10:
+		case 5:
 		default:
 			ht = "HT20";
 			break;
@@ -917,7 +923,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
 		sprintf(greenfield, "%s_gf", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0);
+		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0, usebw > 20);
 		if (ht) {
 			if (nvram_nmatch("1", "%s_smps", prefix) && has_static_smps(prefix))
 				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n", ht, caps);
@@ -1178,6 +1184,10 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	int usebw = 20;
 	if (nvram_matchi(bw, 40))
 		usebw = 40;
+	if (nvram_matchi(bw, 10))
+		usebw = 10;
+	if (nvram_matchi(bw, 5))
+		usebw = 5;
 	if (nvram_matchi(bw, 2040))
 		usebw = 40;
 	if (nvram_matchi(bw, 80))
