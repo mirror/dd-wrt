@@ -361,7 +361,7 @@ obj-$(CONFIG_SMARTDNS) += smartdns
 obj-$(CONFIG_NGINX) += pcre openssl zlib nginx
 obj-$(CONFIG_X86) += yukon bootconfig
 obj-$(CONFIG_MRP) += mrp
-obj-$(CONFIG_HTOP) += htop
+obj-$(CONFIG_HTOP) += ncurses libnl htop
 
 obj-y+=configs
 
