@@ -330,6 +330,7 @@ include rules/smartmontools.mk
 include rules/sispmctl.mk
 include rules/samba4.mk
 include rules/gnutls.mk
+include rules/libnl.mk
 include rules/smbd.mk
 include rules/irqbalance.mk
 include rules/smartdns.mk
