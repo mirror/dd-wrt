@@ -335,6 +335,7 @@ include rules/irqbalance.mk
 include rules/smartdns.mk
 include rules/nginx.mk
 include rules/mrp.mk
+include rules/htop.mk
 
 #
 # Generic rules
