@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.232 Kernel Configuration
+# Linux/mips 4.9.234 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -261,7 +261,6 @@ CONFIG_UTS_NS=y
 # CONFIG_USER_NS is not set
 CONFIG_PID_NS=y
 # CONFIG_NET_NS is not set
-# CONFIG_SCHED_AUTOGROUP is not set
 # CONFIG_SYSFS_DEPRECATED is not set
 # CONFIG_RELAY is not set
 # CONFIG_CRASHLOG is not set
@@ -812,6 +811,7 @@ CONFIG_BRIDGE=y
 CONFIG_BRIDGE_IGMP_SNOOPING=y
 # CONFIG_BRIDGE_VLAN_FILTERING is not set
 CONFIG_KERNEL_ARP_SPOOFING_PROTECT=y
+# CONFIG_BRIDGE_MRP is not set
 CONFIG_HAVE_NET_DSA=y
 # CONFIG_NET_DSA is not set
 CONFIG_VLAN_8021Q=y
@@ -2643,5 +2643,3 @@ CONFIG_SG_POOL=y
 CONFIG_SBITMAP=y
 CONFIG_HAVE_KVM=y
 # CONFIG_VIRTUALIZATION is not set
-# CONFIG_GPIO_ANTAIRA is not set
-# CONFIG_BRIDGE_MRP is not set
