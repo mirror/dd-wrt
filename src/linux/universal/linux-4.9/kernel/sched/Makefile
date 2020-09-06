@@ -17,7 +17,7 @@ endif
 
 obj-y += core.o loadavg.o clock.o cputime.o
 obj-y += idle_task.o rt.o deadline.o stop_task.o
-obj-y += wait.o swait.o completion.o idle.o
+obj-y += wait.o swait.o completion.o idle.o pelt.o
 ifdef CONFIG_CACHY_SCHED
 obj-y += cachy.o
 else
