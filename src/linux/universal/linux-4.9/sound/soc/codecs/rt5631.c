@@ -419,7 +419,7 @@ static void onebit_depop_mute_stage(struct snd_soc_codec *codec, int enable)
 	hp_zc = snd_soc_read(codec, RT5631_INT_ST_IRQ_CTRL_2);
 	snd_soc_write(codec, RT5631_INT_ST_IRQ_CTRL_2, hp_zc & 0xf7ff);
 	if (enable) {
-		schedule_timeout_uninterruptible(msecs_to_jiffies(10));
+		schedule_msec_hrtimeout_uninterruptible((10));
 		/* config one-bit depop parameter */
 		rt5631_write_index(codec, RT5631_SPK_INTL_CTRL, 0x307f);
 		snd_soc_update_bits(codec, RT5631_HP_OUT_VOL,
@@ -529,7 +529,7 @@ static void depop_seq_mute_stage(struct snd_soc_codec *codec, int enable)
 	hp_zc = snd_soc_read(codec, RT5631_INT_ST_IRQ_CTRL_2);
 	snd_soc_write(codec, RT5631_INT_ST_IRQ_CTRL_2, hp_zc & 0xf7ff);
 	if (enable) {
-		schedule_timeout_uninterruptible(msecs_to_jiffies(10));
+		schedule_msec_hrtimeout_uninterruptible((10));
 
 		/* config depop sequence parameter */
 		rt5631_write_index(codec, RT5631_SPK_INTL_CTRL, 0x302f);

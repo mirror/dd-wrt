@@ -1218,7 +1218,7 @@ static int ssif_remove(struct i2c_client *client)
 
 	/* make sure the driver is not looking for flags any more. */
 	while (ssif_info->ssif_state != SSIF_NORMAL)
-		schedule_timeout(1);
+		schedule_min_hrtimeout();
 
 	ssif_info->stopping = true;
 	del_timer_sync(&ssif_info->retry_timer);

@@ -1112,7 +1112,7 @@ static int wm8900_set_bias_level(struct snd_soc_codec *codec,
 		/* Need to let things settle before stopping the clock
 		 * to ensure that restart works, see "Stopping the
 		 * master clock" in the datasheet. */
-		schedule_timeout_interruptible(msecs_to_jiffies(1));
+		schedule_msec_hrtimeout_interruptible((1));
 		snd_soc_write(codec, WM8900_REG_POWER2,
 			     WM8900_REG_POWER2_SYSCLK_ENA);
 		break;

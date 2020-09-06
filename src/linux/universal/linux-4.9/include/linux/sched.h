@@ -438,6 +438,34 @@ extern signed long schedule_timeout_interruptible(signed long timeout);
 extern signed long schedule_timeout_killable(signed long timeout);
 extern signed long schedule_timeout_uninterruptible(signed long timeout);
 extern signed long schedule_timeout_idle(signed long timeout);
+
+#ifdef CONFIG_HIGH_RES_TIMERS
+extern long schedule_msec_hrtimeout(long timeout);
+extern long schedule_min_hrtimeout(void);
+extern long schedule_msec_hrtimeout_interruptible(long timeout);
+extern long schedule_msec_hrtimeout_uninterruptible(long timeout);
+#else
+static inline long schedule_msec_hrtimeout(long timeout)
+{
+	return schedule_timeout(msecs_to_jiffies(timeout));
+}
+
+static inline long schedule_min_hrtimeout(void)
+{
+	return schedule_timeout(1);
+}
+
+static inline long schedule_msec_hrtimeout_interruptible(long timeout)
+{
+	return schedule_timeout_interruptible(msecs_to_jiffies(timeout));
+}
+
+static inline long schedule_msec_hrtimeout_uninterruptible(long timeout)
+{
+	return schedule_timeout_uninterruptible(msecs_to_jiffies(timeout));
+}
+#endif
+
 asmlinkage void schedule(void);
 extern void schedule_preempt_disabled(void);
 
