@@ -131,6 +131,7 @@ static int one_hundred = 100;
 static int one_thousand = 1000;
 extern int hrtimer_granularity_us;
 extern int hrtimeout_min_us;
+static int one;
 #if defined(CONFIG_PRINTK)
 static int ten_thousand = 10000;
 #endif
@@ -1024,7 +1025,7 @@ static struct ctl_table kern_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= &proc_dointvec_minmax,
-		.extra1		= SYSCTL_ONE,
+		.extra1		= &one,
 		.extra2		= &ten_thousand,
 	},
 	{
@@ -1033,7 +1034,7 @@ static struct ctl_table kern_table[] = {
 		.maxlen		= sizeof(int),
 		.mode		= 0644,
 		.proc_handler	= &proc_dointvec_minmax,
-		.extra1		= SYSCTL_ONE,
+		.extra1		= &one,
 		.extra2		= &ten_thousand,
 	},
 #if defined(CONFIG_S390) && defined(CONFIG_SMP)
