@@ -196,9 +196,10 @@ int clockevents_tick_resume(struct clock_event_device *dev)
 	return ret;
 }
 
+int __read_mostly hrtimer_granularity_us = 100;
+
 #ifdef CONFIG_GENERIC_CLOCKEVENTS_MIN_ADJUST
 
-int __read_mostly hrtimer_granularity_us = 100;
 /* Limit min_delta to 100us */
 #define MIN_DELTA_LIMIT		(hrtimer_granularity_us * NSEC_PER_USEC)
 
