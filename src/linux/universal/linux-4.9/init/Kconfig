@@ -900,6 +900,7 @@ config NMI_LOG_BUF_SHIFT
 config CACHY_SCHED
 	bool "Cachy CPU scheduler"
 	default y
+	depends on SMP
 	help
 	  The Cachy scheduler that utilizes CPU cache and it is based on Highest
 	  Response Ratio Next (HRRN) policy.
