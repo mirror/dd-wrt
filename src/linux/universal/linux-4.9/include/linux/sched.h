@@ -1377,10 +1377,6 @@ struct sched_statistics {
 struct sched_entity {
 	struct load_weight	load;		/* for load-balancing */
 	struct rb_node		run_node;
-#ifdef CONFIG_CACHY_SCHED
-	struct sched_entity* 		next;
-	struct sched_entity* 		prev;
-#endif
 	struct list_head	group_node;
 	unsigned int		on_rq;
 
