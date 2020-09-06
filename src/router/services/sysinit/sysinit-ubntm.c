@@ -120,6 +120,7 @@ void start_sysinit(void)
 	case ROUTER_UBNT_UAPAC:
 	case ROUTER_UBNT_UAPACPRO:
 	case ROUTER_UBNT_NANOAC:
+	case ROUTER_UBNT_POWERBEAMAC_GEN2:
 		fp = fopen("/dev/mtdblock/5", "rb");
 		FILE *out = fopen("/tmp/archerc7-board.bin", "wb");
 		if (fp) {
@@ -262,6 +263,7 @@ void start_sysinit(void)
 
 	switch (brand) {
 	case ROUTER_UBNT_NANOAC:
+	case ROUTER_UBNT_POWERBEAMAC_GEN2:
 		detect_wireless_devices(RADIO_ATH10K);	// do not load ath9k. the device has a wmac radio which is not connected to any antenna
 		break;
 	default:
