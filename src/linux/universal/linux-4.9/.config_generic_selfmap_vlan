@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/mips 4.9.234 Kernel Configuration
+# Linux/mips 4.9.232 Kernel Configuration
 #
 CONFIG_MIPS=y
 
@@ -205,7 +205,7 @@ CONFIG_GENERIC_CMOS_UPDATE=y
 CONFIG_HZ_PERIODIC=y
 # CONFIG_NO_HZ_IDLE is not set
 # CONFIG_NO_HZ is not set
-# CONFIG_HIGH_RES_TIMERS is not set
+CONFIG_HIGH_RES_TIMERS=y
 
 #
 # CPU/Task time and stats accounting
@@ -238,6 +238,7 @@ CONFIG_UTS_NS=y
 # CONFIG_USER_NS is not set
 CONFIG_PID_NS=y
 # CONFIG_NET_NS is not set
+# CONFIG_SCHED_AUTOGROUP is not set
 # CONFIG_SYSFS_DEPRECATED is not set
 # CONFIG_RELAY is not set
 # CONFIG_CRASHLOG is not set
@@ -743,7 +744,6 @@ CONFIG_BRIDGE=y
 CONFIG_BRIDGE_IGMP_SNOOPING=y
 # CONFIG_BRIDGE_VLAN_FILTERING is not set
 CONFIG_KERNEL_ARP_SPOOFING_PROTECT=y
-# CONFIG_BRIDGE_MRP is not set
 CONFIG_HAVE_NET_DSA=y
 # CONFIG_NET_DSA is not set
 CONFIG_VLAN_8021Q=y
@@ -1972,3 +1972,5 @@ CONFIG_GENERIC_ATOMIC64=y
 # CONFIG_ARCH_HAS_SG_CHAIN is not set
 CONFIG_SBITMAP=y
 # CONFIG_VIRTUALIZATION is not set
+# CONFIG_GPIO_ANTAIRA is not set
+# CONFIG_BRIDGE_MRP is not set

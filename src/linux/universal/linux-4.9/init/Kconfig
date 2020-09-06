@@ -897,19 +897,6 @@ config NMI_LOG_BUF_SHIFT
 		     13 =>   8 KB for each CPU
 		     12 =>   4 KB for each CPU
 
-config CACHY_SCHED
-	bool "Cachy CPU scheduler"
-	default y
-	depends on SMP
-	help
-	  The Cachy scheduler that utilizes CPU cache and it is based on Highest
-	  Response Ratio Next (HRRN) policy.
-
-	  Is designed for desktop usage since it is about responsiveness.
-	  It may be not bad for servers.
-
-	  If unsure, say Y here.
-
 #
 # Architectures with an unreliable sched_clock() should select this:
 #
@@ -970,7 +957,6 @@ config NUMA_BALANCING_DEFAULT_ENABLED
 
 menuconfig CGROUPS
 	bool "Control Group support"
-	depends on !CACHY_SCHED
 	select KERNFS
 	help
 	  This option adds support for grouping sets of processes together, for
@@ -1052,7 +1038,6 @@ config CGROUP_WRITEBACK
 
 menuconfig CGROUP_SCHED
 	bool "CPU controller"
-	depends on !CACHY_SCHED
 	default n
 	help
 	  This feature lets CPU scheduler recognize task groups and control CPU
@@ -1253,7 +1238,9 @@ endif # NAMESPACES
 
 config SCHED_AUTOGROUP
 	bool "Automatic process group scheduling"
-	depends on FAIR_GROUP_SCHED && !CACHY_SCHED
+	select CGROUPS
+	select CGROUP_SCHED
+	select FAIR_GROUP_SCHED
 	help
 	  This option optimizes the scheduler for common desktop workloads by
 	  automatically creating and populating task groups.  This separation

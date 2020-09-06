@@ -1837,10 +1837,11 @@ long __sched schedule_msec_hrtimeout(long timeout)
 	delta = (timeout % 1000) * NSEC_PER_MSEC;
 	expires = ktime_set(0, delta);
 
-	hrtimer_init_sleeper_on_stack(&t, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hrtimer_init_on_stack(&t.timer,  CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hrtimer_init_sleeper(&t, current);
 	hrtimer_set_expires_range_ns(&t.timer, expires, delta);
 
-	hrtimer_sleeper_start_expires(&t, HRTIMER_MODE_REL);
+	hrtimer_start_expires(&t.timer, HRTIMER_MODE_REL);
 
 	if (likely(t.task))
 		schedule();
@@ -1879,10 +1880,11 @@ static inline long schedule_usec_hrtimeout(long timeout)
 	delta = (timeout % USECS_PER_SEC) * NSEC_PER_USEC;
 	expires = ktime_set(0, delta);
 
-	hrtimer_init_sleeper_on_stack(&t, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hrtimer_init_on_stack(&t.timer,  CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	hrtimer_init_sleeper(&t, current);
 	hrtimer_set_expires_range_ns(&t.timer, expires, delta);
 
-	hrtimer_sleeper_start_expires(&t, HRTIMER_MODE_REL);
+	hrtimer_start_expires(&t.timer, HRTIMER_MODE_REL);
 
 	if (likely(t.task))
 		schedule();
