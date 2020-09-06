@@ -1613,6 +1613,7 @@ void start_lan(void)
 	case ROUTER_BOARD_BS5M:
 	case ROUTER_BOARD_R2M:
 	case ROUTER_BOARD_R5M:
+	case ROUTER_UBNT_POWERBEAMAC_GEN2:
 		devnum = 1;
 		break;
 	case ROUTER_BOARD_NS2M:

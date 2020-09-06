@@ -777,6 +777,8 @@
 
 #define ROUTER_HABANERO 0x109108
 
+#define ROUTER_UBNT_POWERBEAMAC_GEN2 0x10a10c
+
 #define NVROUTER "DD_BOARD"
 #define NVROUTER_ALT "alternate_name"
 
