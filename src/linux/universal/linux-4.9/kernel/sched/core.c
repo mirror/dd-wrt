@@ -2795,7 +2795,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	return rq;
 }
 
-#if defined(CONFIG_SMP) && !defined(CONFIG_CACHY_SCHED)
+#ifdef CONFIG_SMP
 
 /* rq->lock is NOT held, but preemption is disabled */
 static void __balance_callback(struct rq *rq)
@@ -3092,9 +3092,8 @@ void scheduler_tick(void)
 
 	perf_event_task_tick();
 
-#if defined(CONFIG_SMP) && defined(CONFIG_CACHY_SCHED)
+#ifdef CONFIG_SMP
 	rq->idle_balance = idle_cpu(cpu);
-#elif CONFIG_SMP
 	trigger_load_balance(rq);
 #endif
 	rq_last_tick_reset(rq);
@@ -7571,9 +7570,6 @@ void __init sched_init(void)
 
 	for (i = 0; i < WAIT_TABLE_SIZE; i++)
 		init_waitqueue_head(bit_wait_table + i);
-#ifdef CONFIG_CACHY_SCHED
-	printk(KERN_INFO "Cachy CPU scheduler v5.6.15 by Hamad Al Marri.");
-#endif
 
 #ifdef CONFIG_FAIR_GROUP_SCHED
 	alloc_size += 2 * nr_cpu_ids * sizeof(void **);
