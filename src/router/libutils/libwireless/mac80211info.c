@@ -807,7 +807,7 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 			 , (((cap >> 8) & 0x3) == 1 ? "[RX-STBC1]" : "")
 			 , (((cap >> 8) & 0x3) == 2 ? "[RX-STBC12]" : "")
 			 , (((cap >> 8) & 0x3) == 3 ? "[RX-STBC123]" : "")
-			 , (cap & HT_CAP_INFO_DSSS_CCK40MHZ ? "[DSSS_CCK-40]" : "")
+			 , ((cap & HT_CAP_INFO_DSSS_CCK40MHZ && ht40) ? "[DSSS_CCK-40]" : "")
 			 , ((cap & HT_CAP_INFO_GREEN_FIELD && greenfield) ? "[GF]" : "")
 			 , (cap & HT_CAP_INFO_DELAYED_BA ? "[DELAYED-BA]" : "")
 			 , ((((cap >> 2) & 0x3) == 0 && !is_brcmfmac(interface)) ? "[SMPS-STATIC]" : "")
