@@ -40,11 +40,6 @@ void start_bootconfig(void)
 
 	insmod("crc16 crc32c_generic crc32_generic mbcache ext2 jbd jbd2 ext3 ext4");
 
-	if (strlen(disc) == 7)	//mmcblk0
-		sprintf(dev, "/dev/%sp1", disc);
-	else
-		sprintf(dev, "/dev/%s1", disc);
-	eval("mount", "-t", "ext2", dev, "/boot");
 	if (nvram_match("boot_disable_msi", "1"))
 		strcat(args, " pci=nomsi");
 	if (nvram_match("boot_noaer", "1"))
@@ -77,23 +72,34 @@ void start_bootconfig(void)
 		strcat(args, " pti=off");
 	if (nvram_match("boot_nospec_store_bypass_disable", "1"))
 		strcat(args, " spec_store_bypass_disable=off");
+	if (strlen(disc) == 7)	//mmcblk0
+		sprintf(dev, "/dev/%sp1", disc);
+	else
+		sprintf(dev, "/dev/%s1", disc);
+	eval("mount", "-t", "ext2", dev, "/boot");
 	FILE *in = fopen("/boot/boot/grub/menu.lst", "rb");
 	char serial[64];
 	fscanf(in, "%s", serial);
 	fclose(in);
 	FILE *out = fopen("/boot/boot/grub/menu.lst", "wb");
-	if (!strcmp(serial, "serial")) {
+	if (!strncmp(serial, "serial",6)) {
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
 	}
 	fprintf(out, "default 0\n");
-	fprintf(out, "timeout 3\n");
+	if (strlen(args)) {
+		fprintf(out, "timeout 3\n");
+	} else {
+		fprintf(out, "timeout 0\n");
+	}
 	fprintf(out, "\n");
-	fprintf(out, "title   DD-WRT\n");
-	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5%s\n", args);
-	fprintf(out, "boot\n");
+	if (strlen(args)) {
+		fprintf(out, "title   DD-WRT\n");
+		fprintf(out, "root    (hd0,0)\n");
+		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5%s\n", args);
+		fprintf(out, "boot\n");
+	}
 	fprintf(out, "title   DD-WRT (default)\n");
 	fprintf(out, "root    (hd0,0)\n");
 	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5\n");
