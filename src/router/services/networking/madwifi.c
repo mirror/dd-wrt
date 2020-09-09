@@ -337,7 +337,8 @@ void addvhtcaps(char *prefix, FILE * fp)
 
 	unsigned int mask;
 #if defined(HAVE_ATH10K) || defined(HAVE_BRCMFMAC)
-	if (has_ac(prefix)) {
+	char *netmode = nvram_nget("%s_net_mode", prefix);
+	if (has_ac(prefix) && !(strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed") && strcmp(netmode, "mixed"))) {
 		char shortgi[32];
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char mubf[32];
