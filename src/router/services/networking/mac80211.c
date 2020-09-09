@@ -1592,11 +1592,11 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		    && strcmp(netmode, "n5-only") && strcmp(netmode, "na-only")
 		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
-		} else {
-			if (atoi(channelbw) < 40 && atoi(channelbw) > 10) {
-				fprintf(fp, "\tdisable_ht40=1\n");
-			}
 		}
+		if (atoi(channelbw) < 40) {
+			fprintf(fp, "\tdisable_ht40=1\n");
+		}
+		
 
 		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
@@ -1831,7 +1831,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		    && strcmp(netmode, "ng-only") && strcmp(netmode, "mixed")) {
 			fprintf(fp, "\tdisable_ht=1\n");
 		} else {
-			if (atoi(channelbw) < 40  && atoi(channelbw) > 10) {
+			if (atoi(channelbw) < 40) {
 				fprintf(fp, "\tdisable_ht40=1\n");
 			}
 		}
