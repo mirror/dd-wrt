@@ -446,6 +446,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 	int channel = wifi_getchannel(prefix);
 	if (channel > 0 && channel < 1000) {
 		struct wifi_interface *interface = wifi_getfreq(prefix);
+		int width = nvram_ngeti("%s_channelbw", prefix);
 		if (!interface) {
 			websWrite(wp, "%s", live_translate(wp, "share.unknown"));
 			return;
@@ -470,7 +471,12 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " NOHT");
 				break;
 			case 20:
-				websWrite(wp, " HT20");
+				if (width == 5)
+					websWrite(wp, " Half");
+				else if (width == 10)
+					websWrite(wp, " Quarter");
+				else
+					websWrite(wp, " HT20");
 				break;
 			case 40:
 				websWrite(wp, " HT40");
