@@ -790,7 +790,7 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
 	if (unl_genl_request_single(&unl, msg, &msg) < 0) {
 		unlock();
-		return "";
+		return strdup("");
 	}
 	bands = unl_find_attr(&unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands)
@@ -1104,6 +1104,19 @@ int has_ac(const char *prefix)
 	return ret;
 }
 #endif
+int has_ht(const char *prefix)
+{
+	INITVALUECACHE();
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1);
+	if (*htcaps) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(htcaps);
+	EXITVALUECACHE();
+	return ret;
+}
 #ifdef HAVE_WIL6210
 int has_ad(const char *prefix)
 {
