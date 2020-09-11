@@ -464,6 +464,7 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 		}
 		websWrite(wp, " (%d MHz", freq);
 		if (is_mac80211(prefix)) {
+			int ht = has_ht(prefix);
 			switch (interface->width) {
 			case 10:
 			case 5:
@@ -471,15 +472,33 @@ void ej_get_curchannel(webs_t wp, int argc, char_t ** argv)
 				websWrite(wp, " NOHT");
 				break;
 			case 20:
-				if (width == 5)
-					websWrite(wp, " Half");
-				else if (width == 10)
-					websWrite(wp, " Quarter");
-				else
-					websWrite(wp, " HT20");
+				if (ht) {
+					if (width == 2)
+						websWrite(wp, " HT2.5");
+					else if (width == 5)
+						websWrite(wp, " HT5");
+					else if (width == 10)
+						websWrite(wp, " HT10");
+					else
+						websWrite(wp, " HT20");
+				} else {
+					/* for legacy chipsets we use the old naming */
+					if (width == 2)
+						websWrite(wp, " Eighth");
+					else if (width == 5)
+						websWrite(wp, " Quarter");
+					else if (width == 10)
+						websWrite(wp, " Half");
+					else
+						websWrite(wp, " LEGACY");
+
+				}
 				break;
 			case 40:
-				websWrite(wp, " HT40");
+				if (ht)
+					websWrite(wp, " HT40");
+				else
+					websWrite(wp, " Turbo");	//ath5k turbo mode
 				break;
 			case 80:
 				websWrite(wp, " VHT80");
