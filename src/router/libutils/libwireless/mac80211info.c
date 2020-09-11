@@ -1107,7 +1107,7 @@ int has_ac(const char *prefix)
 int has_ht(const char *prefix)
 {
 	INITVALUECACHE();
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1);
 	if (*htcaps) {
 		ret = 1;
 	} else {
