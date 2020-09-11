@@ -71,6 +71,8 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
               div = 2;
       if (channelbw == 5)
               div = 4;
+      if (channelbw == 2)
+              div = 8;
 	// sprintf(it, "inactivity_time", ifname);
 //      it = nvram_default_geti("inacttime", 300000);
 
@@ -126,10 +128,16 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			strcpy(info, "LEGACY");
 		else
 			strcpy(info, vht ? "VHT" : "HT");
+		if (div == 2)
+			ht = 7;
+		if (div == 4)
+			ht = 6;
+		if (div == 8)
+			ht = 5;
 		char *bwinfo[] = {
-			"20", "40", "80", "160", "80+80"
+			"20", "40", "80", "160", "80+80", "2.5", "5", "10"
 		};
-		if (ht < 5 && ht >= 0)
+		if (ht < 8 && ht >= 0)
 			sprintf(info, "%s%s", info, bwinfo[ht]);
 		if (sgi)
 			sprintf(info, "%s%s", info, "SGI");
