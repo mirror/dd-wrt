@@ -1,4 +1,30 @@
 define kernelfeatures
+	if [ "$(CONFIG_IPSET)" = "y" ]; then \
+		sed -i 's/\# CONFIG_NETFILTER_XT_SET is not set/CONFIG_NETFILTER_XT_SET=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_SET is not set/CONFIG_IP_SET=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_SET_HASH_IP is not set/CONFIG_IP_SET_HASH_IP=y/g' $(LINUXDIR)/.config; \
+		sed -i 's/\# CONFIG_IP_SET_HASH_NET is not set/CONFIG_IP_SET_HASH_NET=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_MAX=256" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_BITMAP_IP=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_BITMAP_PORT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IP=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IPMARK=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IPPORT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IPPORTIP=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_IPPORTNET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_MAC=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_NETPORTNET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_NET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_NETNET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_NETPORT=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_HASH_NETIFACE=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_LIST_NET=y" >> $(LINUXDIR)/.config; \
+		echo "CONFIG_IP_SET_LIST_SET=y" >> $(LINUXDIR)/.config; \
+	else \
+		sed -i 's/\CONFIG_IP_SET=y/# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
+		sed -i 's/\CONFIG_IP_SET=m/# CONFIG_IP_SET is not set/g' $(LINUXDIR)/.config; \
+	fi
 	if [ "$(CONFIG_LIBMBIM)" = "y" ]; then \
 		sed -i 's/\# CONFIG_USB_NET_CDC_NCM is not set/CONFIG_USB_NET_CDC_NCM=m/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_USB_NET_HUAWEI_CDC_NCM is not set/CONFIG_USB_NET_HUAWEI_CDC_NCM=m/g' $(LINUXDIR)/.config; \
