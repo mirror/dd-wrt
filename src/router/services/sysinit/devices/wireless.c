@@ -462,6 +462,7 @@ static void detect_wireless_devices(int mask)
 			rmmod("iwlegacy");
 		}
 		insmod("iwlwifi");
+		sleep(3); // neet to wait a little bit
 		if (!detectchange("iwldwm") && !detectchange("iwlmvm")) {
 			rmmod("iwlwifi");
 		}
