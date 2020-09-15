@@ -97,12 +97,12 @@ void start_bootconfig(void)
 	if (strlen(args)) {
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
-		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5%s\n", args);
-		fprintf(out, "boot\n");
+		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 console=tty0,115200n8 reboot=bios rootdelay=5%s\n", args);
+		fprintf(out, "boot\n\n");
 	}
-	fprintf(out, "title   DD-WRT (default)\n");
+	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd console=ttyS0,115200n8 reboot=bios rootdelay=5\n");
+	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 console=tty0,115200n8 reboot=bios rootdelay=5\n");
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
 	fclose(out);
