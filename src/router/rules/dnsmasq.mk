@@ -2,6 +2,9 @@ ifneq ($(CONFIG_IPV6),y)
 export DNSMASQ_MAKEFLAGS:=-DNO_IPV6
 endif
 
+ifeq ($(CONFIG_IPSET),y)
+export DNSMASQ_MAKEFLAGS += -DHAVE_IPSET
+endif
 
 DNSMASQ_COPTS += $(MIPS16_OPT) -DNO_AUTH $(LTO)
 ifeq ($(ARCH),armeb)
