@@ -57,7 +57,6 @@ var system = {
 	dictionary: {
 		folders: null
 	},
-	checkUpdateScript: "https://api.github.com/repos/ronggang/transmission-web-control/releases/latest",
 	contextMenus: {},
 	panel: null,
 	lang: null,
@@ -322,8 +321,6 @@ var system = {
 		this.initTorrentTable();
 		this.connect();
 		this.initEvent();
-		// Check for updates
-		this.checkUpdate();
 	},
 	/**
 	 * 初始化相关事件
@@ -3176,51 +3173,6 @@ var system = {
 		} else {
 			alert(system.lang["public"]["text-browsers-not-support-features"]);
 		}
-	},
-	checkUpdate: function () {
-		$.ajax({
-			url: this.checkUpdateScript,
-			dataType: "json",
-			success: function (result) {
-				if (result && result.tag_name) {
-					var update = result.created_at.substr(0,10).replace(/-/g,"");
-					var version = result.tag_name;
-					if ($.inArray(version, system.config.ignoreVersion)!=-1) {
-						return;
-					}
-					if (system.codeupdate < update) {
-						$("#area-update-infos").show();
-						$("#msg-updateInfos").html(update + " -> " + result.name);
-						var content = $("<div/>");
-						var html = result.body.replace(/\r\n/g,"<br/>");
-
-						var toolbar = $("<div style='text-align:right;'/>").appendTo(content);
-						$('<a href="https://github.com/ronggang/transmission-web-control/releases/latest" target="_blank" class="easyui-linkbutton" data-options="iconCls:\'iconfont tr-icon-github\'"/>').html(result.name + " ("+update+")").appendTo(toolbar).linkbutton();
-						$("<span/>").html(" ").appendTo(toolbar);
-						$('<a href="https://github.com/ronggang/transmission-web-control/wiki" target="_blank" class="easyui-linkbutton" data-options="iconCls:\'iconfont tr-icon-help\'"/>').html(system.lang["public"]["text-how-to-update"]).appendTo(toolbar).linkbutton();
-						$("<span/>").html(" ").appendTo(toolbar);
-						$('<button onclick="javascript:system.addIgnoreVersion(\''+version+'\');" class="easyui-linkbutton" data-options="iconCls:\'iconfont tr-icon-cancel-checked\'"/>').html(system.lang["public"]["text-ignore-this-version"]).appendTo(toolbar).linkbutton();
-						$("<hr/>").appendTo(content);
-						$("<div/>").html(html).appendTo(content);
-
-						$('#button-download-update').webuiPopover({
-							content: content.html(),
-							backdrop: true
-						});
-					} else {
-						$("#area-update-infos").hide();
-					}
-				}
-			}
-		});
-	},
-	addIgnoreVersion: function(version) {
-		if ($.inArray(version, system.config.ignoreVersion)==-1) {
-			this.config.ignoreVersion.push(version);
-			this.saveConfig();
-		}
-		$('#button-download-update').webuiPopover("hide");
-		$("#area-update-infos").hide();
 	},
 	// Set the language to reload the page		
 	changeLanguages: function (lang) {
