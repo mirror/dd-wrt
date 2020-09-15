@@ -27,9 +27,9 @@ DNSMASQ_COPTS += -DNEED_PRINTF
 endif
 
 ifeq ($(CONFIG_DNSSEC),y)
-export DNSSEC_MAKEFLAGS:=-DHAVE_DNSSEC -DNO_NETTLE_ECC -I$(TOP) -I$(TOP)/gmp
+export DNSSEC_MAKEFLAGS +=-DHAVE_DNSSEC -DNO_NETTLE_ECC -I$(TOP) -I$(TOP)/gmp
 #export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz -L$(TOP)/nettle/.lib -lnettle -lhogweed -L$(TOP)/gmp/.libs -lgmp
-export DNSSEC_LINKFLAGS:=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz $(TOP)/nettle/libhogweed.a $(TOP)/nettle/libnettle.a $(TOP)/gmp/.libs/libgmp.a
+export DNSSEC_LINKFLAGS=-L$(TOP)/pcre/.libs -lpcre -L$(TOP)/zlib -lz $(TOP)/nettle/libhogweed.a $(TOP)/nettle/libnettle.a $(TOP)/gmp/.libs/libgmp.a
 endif
 
 dnsmasq-clean:
