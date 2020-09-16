@@ -794,8 +794,8 @@ static struct DEVICES devicelist[] = {
 	{ 0x1199, 0x901b, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra MC7770" },	// cdc_mbim in default config2
 	{ 0x1199, 0x901c, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM7700" },	// cdc_mbim in default config2
 	{ 0x1199, 0x901f, qcserial, 2, 0, 1 | QMI, &select_config1, "Sierra EM7355" },	// cdc_mbim in default config2
-	{ 0x1199, 0x9041, sierra, 2, 0, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)" },	//
-	{ 0x1199, 0x9071, sierra, 2, 0, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)" },	//
+	{ 0x1199, 0x9041, sierra, 2, 2, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)" },	//
+	{ 0x1199, 0x9071, sierra, 2, 2, 1 | MBIM, &reset_mc, "Sierra MC74XX (modem)" },	//
 
 	{ 0x1199, 0x9051, qcserial, 2, 0, 1 | QMI, &select_config1, "Netgear AC340U" },	// cdc_mbim in default config2
 	{ 0x1199, 0x9055, qcserial, 2, 0, 1 | QMI, &select_config1, "Netgear AC341U" },	//
