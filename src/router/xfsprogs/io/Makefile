@@ -1,4 +1,4 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2000-2005 Silicon Graphics, Inc.  All Rights Reserved.
 #
 
@@ -9,12 +9,14 @@ LTCOMMAND = xfs_io
 LSRCFILES = xfs_bmap.sh xfs_freeze.sh xfs_mkfile.sh
 HFILES = init.h io.h
 CFILES = init.c \
-	attr.c bmap.c cowextsize.c encrypt.c file.c freeze.c fsync.c \
-	getrusage.c imap.c link.c mmap.c open.c parent.c pread.c prealloc.c \
-	pwrite.c reflink.c seek.c shutdown.c stat.c sync.c truncate.c utimes.c
+	attr.c bmap.c bulkstat.c crc32cselftest.c cowextsize.c encrypt.c \
+	file.c freeze.c fsync.c getrusage.c imap.c inject.c label.c link.c \
+	mmap.c open.c parent.c pread.c prealloc.c pwrite.c reflink.c \
+	resblks.c scrub.c seek.c shutdown.c stat.c swapext.c sync.c \
+	truncate.c utimes.c
 
-LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBXFS) $(LIBPTHREAD) -luuid
-LTDEPENDENCIES = $(LIBXCMD) $(LIBHANDLE)
+LLDLIBS = $(LIBXCMD) $(LIBHANDLE) $(LIBFROG) $(LIBPTHREAD)
+LTDEPENDENCIES = $(LIBXCMD) $(LIBHANDLE) $(LIBFROG)
 LLDFLAGS = -static-libtool-libs
 
 ifeq ($(HAVE_FADVISE),yes)
@@ -52,13 +54,6 @@ else
 LSRCFILES += fiemap.c
 endif
 
-ifeq ($(PKG_PLATFORM),irix)
-LSRCFILES += inject.c resblks.c
-else
-CFILES += inject.c resblks.c
-LCFLAGS += -DHAVE_INJECT -DHAVE_RESBLKS
-endif
-
 ifeq ($(HAVE_COPY_FILE_RANGE),yes)
 CFILES += copy_file_range.c
 LCFLAGS += -DHAVE_COPY_FILE_RANGE
@@ -71,10 +66,6 @@ endif
 
 ifeq ($(HAVE_SYNCFS),yes)
 LCFLAGS += -DHAVE_SYNCFS
-endif
-
-ifeq ($(ENABLE_READLINE),yes)
-LLDLIBS += $(LIBREADLINE) $(LIBTERMCAP)
 endif
 
 ifeq ($(ENABLE_EDITLINE),yes)
@@ -103,12 +94,20 @@ ifeq ($(HAVE_MREMAP),yes)
 LCFLAGS += -DHAVE_MREMAP
 endif
 
-# On linux we get fsmap from the system or define it ourselves
-# so include this based on platform type.  If this reverts to only
-# the autoconf check w/o local definition, change to testing HAVE_GETFSMAP
-ifeq ($(PKG_PLATFORM),linux)
-CFILES += fsmap.c
+ifeq ($(HAVE_MAP_SYNC),yes)
+LCFLAGS += -DHAVE_MAP_SYNC
 endif
+
+ifeq ($(HAVE_DEVMAPPER),yes)
+CFILES += log_writes.c
+LLDLIBS += $(LIBDEVMAPPER)
+LCFLAGS += -DHAVE_DEVMAPPER
+endif
+
+# On linux we get fsmap from the system or define it ourselves
+# so include this unconditionally.  If this reverts to only
+# the autoconf check w/o local definition, test HAVE_GETFSMAP
+CFILES += fsmap.c
 
 ifeq ($(HAVE_STATFS_FLAGS),yes)
 LCFLAGS += -DHAVE_STATFS_FLAGS

@@ -1,26 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2012 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
+#include "libfrog/fsgeom.h"
 #include "command.h"
 #include "input.h"
 #include "init.h"
-#include "path.h"
+#include "libfrog/paths.h"
 #include "space.h"
 
 static cmdinfo_t prealloc_cmd;
@@ -30,11 +19,12 @@ static cmdinfo_t prealloc_cmd;
  */
 static int
 prealloc_f(
-	int	argc,
-	char	**argv)
+	int			argc,
+	char			**argv)
 {
 	struct xfs_fs_eofblocks eofb = {0};
-	int	c;
+	struct xfs_fsop_geom	*fsgeom = &file->xfd.fsgeom;
+	int			c;
 
 	eofb.eof_version = XFS_EOFBLOCKS_VERSION;
 
@@ -63,11 +53,9 @@ prealloc_f(
 			break;
 		case 'm':
 			eofb.eof_flags |= XFS_EOF_FLAGS_MINFILESIZE;
-			eofb.eof_min_file_size = cvtnum(file->geom.blocksize,
-							file->geom.sectsize,
-							optarg);
+			eofb.eof_min_file_size = cvtnum(fsgeom->blocksize,
+					fsgeom->sectsize, optarg);
 			break;
-		case '?':
 		default:
 			return command_usage(&prealloc_cmd);
 		}
@@ -75,7 +63,7 @@ prealloc_f(
 	if (optind != argc)
 		return command_usage(&prealloc_cmd);
 
-	if (ioctl(file->fd, XFS_IOC_FREE_EOFBLOCKS, &eofb) < 0) {
+	if (ioctl(file->xfd.fd, XFS_IOC_FREE_EOFBLOCKS, &eofb) < 0) {
 		fprintf(stderr, _("%s: XFS_IOC_FREE_EOFBLOCKS on %s: %s\n"),
 			progname, file->name, strerror(errno));
 	}

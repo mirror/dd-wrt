@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -67,15 +55,16 @@ ablock_help(void)
 /*ARGSUSED*/
 static int
 ablock_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	bmap_ext_t	bm;
-	xfs_fileoff_t	bno;
-	xfs_fsblock_t	dfsbno;
-	int		haveattr;
-	int		nex;
-	char		*p;
+	bmap_ext_t		bm;
+	xfs_fileoff_t		bno;
+	xfs_fsblock_t		dfsbno;
+	int			haveattr;
+	int			nex;
+	char			*p;
+	struct xfs_dinode	*dip = iocur_top->data;
 
 	bno = (xfs_fileoff_t)strtoull(argv[1], &p, 0);
 	if (*p != '\0') {
@@ -84,7 +73,12 @@ ablock_f(
 	}
 	push_cur();
 	set_cur_inode(iocur_top->ino);
-	haveattr = XFS_DFORK_Q((xfs_dinode_t *)iocur_top->data);
+	if (!dip) {
+		pop_cur();
+		dbprintf(_("no current inode\n"));
+		return 0;
+	}
+	haveattr = dip->di_forkoff;
 	pop_cur();
 	if (!haveattr) {
 		dbprintf(_("no attribute data for file\n"));

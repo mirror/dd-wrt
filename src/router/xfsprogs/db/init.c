@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -35,11 +23,10 @@ char			*fsdevice;
 int			blkbb;
 int			exitcode;
 int			expert_mode;
-int			force;
-struct xfs_mount	xmount;
+static int		force;
+static struct xfs_mount	xmount;
 struct xfs_mount	*mp;
-struct xlog		xlog;
-libxfs_init_t		x;
+static struct xlog	xlog;
 xfs_agnumber_t		cur_agno = NULLAGNUMBER;
 
 static void
@@ -51,7 +38,7 @@ usage(void)
 	exit(1);
 }
 
-void
+static void
 init(
 	int		argc,
 	char		**argv)
@@ -60,6 +47,7 @@ init(
 	struct xfs_buf	*bp;
 	unsigned int	agcount;
 	int		c;
+	int		error;
 
 	setlocale(LC_ALL, "");
 	bindtextdomain(PACKAGE, LOCALEDIR);
@@ -96,15 +84,12 @@ init(
 		case 'V':
 			printf(_("%s version %s\n"), progname, VERSION);
 			exit(0);
-		case '?':
+		default:
 			usage();
-			/*NOTREACHED*/
 		}
 	}
-	if (optind + 1 != argc) {
+	if (optind + 1 != argc)
 		usage();
-		/*NOTREACHED*/
-	}
 
 	fsdevice = argv[optind];
 	if (!x.disfile)
@@ -125,19 +110,17 @@ init(
 	 */
 	memset(&xmount, 0, sizeof(struct xfs_mount));
 	libxfs_buftarg_init(&xmount, x.ddev, x.logdev, x.rtdev);
-	bp = libxfs_readbuf(xmount.m_ddev_targp, XFS_SB_DADDR,
-			    1 << (XFS_MAX_SECTORSIZE_LOG - BBSHIFT), 0, NULL);
-
-	if (!bp || bp->b_error) {
+	error = -libxfs_buf_read_uncached(xmount.m_ddev_targp, XFS_SB_DADDR,
+			1 << (XFS_MAX_SECTORSIZE_LOG - BBSHIFT), 0, &bp, NULL);
+	if (error) {
 		fprintf(stderr, _("%s: %s is invalid (cannot read first 512 "
 			"bytes)\n"), progname, fsdevice);
 		exit(1);
 	}
 
 	/* copy SB from buffer to in-core, converting architecture as we go */
-	libxfs_sb_from_disk(&xmount.m_sb, XFS_BUF_TO_SBP(bp));
-	libxfs_putbuf(bp);
-	libxfs_purgebuf(bp);
+	libxfs_sb_from_disk(&xmount.m_sb, bp->b_addr);
+	libxfs_buf_relse(bp);
 
 	sbp = &xmount.m_sb;
 	if (sbp->sb_magicnum != XFS_SB_MAGIC) {
@@ -230,11 +213,7 @@ close_devices:
 	while (iocur_sp > start_iocur_sp)
 		pop_cur();
 	libxfs_umount(mp);
-	if (x.ddev)
-		libxfs_device_close(x.ddev);
-	if (x.logdev && x.logdev != x.ddev)
-		libxfs_device_close(x.logdev);
-	if (x.rtdev)
-		libxfs_device_close(x.rtdev);
+	libxfs_destroy(&x);
+
 	return exitcode;
 }

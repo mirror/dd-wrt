@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -49,9 +37,10 @@ static struct xflags {
 	{ FS_XFLAG_FILESTREAM,		"S", "filestream"	},
 	{ FS_XFLAG_DAX,			"x", "dax"		},
 	{ FS_XFLAG_COWEXTSIZE,		"C", "cowextsize"	},
+	{ FS_XFLAG_HASATTR,		"X", "has-xattr"	},
 	{ 0, NULL, NULL }
 };
-#define CHATTR_XFLAG_LIST	"r"/*p*/"iasAdtPneEfSxC"
+#define CHATTR_XFLAG_LIST	"r"/*p*/"iasAdtPneEfSxC"/*X*/
 
 static void
 lsattr_help(void)
@@ -77,6 +66,7 @@ lsattr_help(void)
 " S -- enable filestreams allocator for this directory\n"
 " x -- Use direct access (DAX) for data in this file\n"
 " C -- for files with shared blocks, observe the inode CoW extent size value\n"
+" X -- file has extended attributes (cannot be changed using chattr)\n"
 "\n"
 " Options:\n"
 " -R -- recursively descend (useful when current file is a directory)\n"
@@ -172,13 +162,15 @@ lsattr_callback(
 	if (recurse_dir && !S_ISDIR(stat->st_mode))
 		return 0;
 
-	if ((fd = open(path, O_RDONLY)) == -1)
+	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
-	else if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0)
+		exitcode = 1;
+	} else if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
-	else
+		exitcode = 1;
+	} else
 		printxattr(fsx.fsx_xflags, 0, 1, path, 0, 1);
 
 	if (fd != -1)
@@ -199,22 +191,19 @@ lsattr_f(
 	while ((c = getopt(argc, argv, "DRav")) != EOF) {
 		switch (c) {
 		case 'D':
-			recurse_all = 0;
 			recurse_dir = 1;
 			break;
 		case 'R':
 			recurse_all = 1;
-			recurse_dir = 0;
 			break;
 		case 'a':
 			aflag = 1;
-			vflag = 0;
 			break;
 		case 'v':
-			aflag = 0;
 			vflag = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&lsattr_cmd);
 		}
 	}
@@ -225,6 +214,7 @@ lsattr_f(
 	} else if ((xfsctl(name, file->fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, name, strerror(errno));
+		exitcode = 1;
 	} else {
 		printxattr(fsx.fsx_xflags, vflag, !aflag, name, vflag, !aflag);
 		if (aflag) {
@@ -251,15 +241,19 @@ chattr_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &attr) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else {
 		attr.fsx_xflags |= orflags;
 		attr.fsx_xflags &= ~andflags;
-		if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &attr) < 0)
+		if (xfsctl(path, fd, FS_IOC_FSSETXATTR, &attr) < 0) {
 			fprintf(stderr, _("%s: cannot set flags on %s: %s\n"),
 				progname, path, strerror(errno));
+			exitcode = 1;
+		}
 	}
 
 	if (fd != -1)
@@ -295,6 +289,7 @@ chattr_f(
 				if (!p->flag) {
 					fprintf(stderr, _("%s: unknown flag\n"),
 						progname);
+					exitcode = 1;
 					return 0;
 				}
 			}
@@ -309,14 +304,23 @@ chattr_f(
 				if (!p->flag) {
 					fprintf(stderr, _("%s: unknown flag\n"),
 						progname);
+					exitcode = 1;
 					return 0;
 				}
 			}
 		} else {
 			fprintf(stderr, _("%s: bad chattr command, not +/-X\n"),
 				progname);
+			exitcode = 1;
 			return 0;
 		}
+	}
+
+	if (recurse_all && recurse_dir) {
+		fprintf(stderr, _("%s: -R and -D options are mutually exclusive\n"),
+			progname);
+		exitcode = 1;
+		return 0;
 	}
 
 	if (recurse_all || recurse_dir) {
@@ -325,12 +329,15 @@ chattr_f(
 	} else if (xfsctl(name, file->fd, FS_IOC_FSGETXATTR, &attr) < 0) {
 		fprintf(stderr, _("%s: cannot get flags on %s: %s\n"),
 			progname, name, strerror(errno));
+		exitcode = 1;
 	} else {
 		attr.fsx_xflags |= orflags;
 		attr.fsx_xflags &= ~andflags;
-		if (xfsctl(name, file->fd, FS_IOC_FSSETXATTR, &attr) < 0)
+		if (xfsctl(name, file->fd, FS_IOC_FSSETXATTR, &attr) < 0) {
 			fprintf(stderr, _("%s: cannot set flags on %s: %s\n"),
 				progname, name, strerror(errno));
+			exitcode = 1;
+		}
 	}
 	return 0;
 }

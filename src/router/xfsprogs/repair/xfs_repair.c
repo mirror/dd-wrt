@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -21,7 +9,7 @@
 #include <sys/resource.h>
 #include "xfs_multidisk.h"
 #include "avl.h"
-#include "avl64.h"
+#include "libfrog/avl64.h"
 #include "globals.h"
 #include "versions.h"
 #include "agheader.h"
@@ -34,10 +22,10 @@
 #include "dinode.h"
 #include "slab.h"
 #include "rmap.h"
-
-#define	rounddown(x, y)	(((x)/(y))*(y))
-
-#define		XR_MAX_SECT_SIZE	(64 * 1024)
+#include "libfrog/fsgeom.h"
+#include "libfrog/platform.h"
+#include "bulkload.h"
+#include "quotacheck.h"
 
 /*
  * option tables for getsubopt calls
@@ -46,37 +34,50 @@
 /*
  * -o: user-supplied override options
  */
+enum o_opt_nums {
+	ASSUME_XFS = 0,
+	IHASH_SIZE,
+	BHASH_SIZE,
+	AG_STRIDE,
+	FORCE_GEO,
+	PHASE2_THREADS,
+	BLOAD_LEAF_SLACK,
+	BLOAD_NODE_SLACK,
+	NOQUOTA,
+	O_MAX_OPTS,
+};
+
 static char *o_opts[] = {
-#define ASSUME_XFS	0
-	"assume_xfs",
-#define PRE_65_BETA	1
-	"fs_is_pre_65_beta",
-#define	IHASH_SIZE	2
-	"ihash",
-#define	BHASH_SIZE	3
-	"bhash",
-#define	AG_STRIDE	4
-	"ag_stride",
-#define FORCE_GEO	5
-	"force_geometry",
-#define PHASE2_THREADS	6
-	"phase2_threads",
-	NULL
+	[ASSUME_XFS]		= "assume_xfs",
+	[IHASH_SIZE]		= "ihash",
+	[BHASH_SIZE]		= "bhash",
+	[AG_STRIDE]		= "ag_stride",
+	[FORCE_GEO]		= "force_geometry",
+	[PHASE2_THREADS]	= "phase2_threads",
+	[BLOAD_LEAF_SLACK]	= "debug_bload_leaf_slack",
+	[BLOAD_NODE_SLACK]	= "debug_bload_node_slack",
+	[NOQUOTA]		= "noquota",
+	[O_MAX_OPTS]		= NULL,
 };
 
 /*
  * -c: conversion options
  */
+enum c_opt_nums {
+	CONVERT_LAZY_COUNT = 0,
+	C_MAX_OPTS,
+};
+
 static char *c_opts[] = {
-#define CONVERT_LAZY_COUNT	0
-	"lazycount",
-	NULL
+	[CONVERT_LAZY_COUNT]	= "lazycount",
+	[C_MAX_OPTS]		= NULL,
 };
 
 
 static int	bhash_option_used;
 static long	max_mem_specified;	/* in megabytes */
 static int	phase2_threads = 32;
+static bool	report_corrected;
 
 static void
 usage(void)
@@ -90,6 +91,7 @@ usage(void)
 "  -l logdev    Specifies the device where the external log resides.\n"
 "  -m maxmem    Maximum amount of memory to be used in megabytes.\n"
 "  -n           No modify mode, just checks the filesystem for damage.\n"
+"               (Cannot be used together with -e.)\n"
 "  -P           Disables prefetching.\n"
 "  -r rtdev     Specifies the device where the realtime section resides.\n"
 "  -v           Verbose output.\n"
@@ -97,6 +99,8 @@ usage(void)
 "  -o subopts   Override default behaviour, refer to man page.\n"
 "  -t interval  Reporting interval in seconds.\n"
 "  -d           Repair dangerously.\n"
+"  -e           Exit with a non-zero code if any errors were repaired.\n"
+"               (Cannot be used together with -n.)\n"
 "  -V           Reports version and exits.\n"), progname);
 	exit(1);
 }
@@ -145,6 +149,8 @@ err_string(int err_code)
 			_("bad CRC in superblock");
 		err_message[XR_BAD_DIR_SIZE_DATA] =
 			_("inconsistent directory geometry information");
+		err_message[XR_BAD_LOG_GEOMETRY] =
+			_("inconsistent log geometry information");
 		done = 1;
 	}
 
@@ -196,30 +202,22 @@ process_args(int argc, char **argv)
 	zap_log = 0;
 	dumpcore = 0;
 	full_ino_ex_data = 0;
-	delete_attr_ok = 1;
 	force_geo = 0;
 	assume_xfs = 0;
 	copied_sunit = 0;
 	sb_inoalignmt = 0;
 	sb_unit = 0;
 	sb_width = 0;
-	fs_attributes_allowed = 1;
-	fs_attributes2_allowed = 1;
-	fs_quotas_allowed = 1;
-	fs_aligned_inodes_allowed = 1;
-	fs_sb_feature_bits_allowed = 1;
-	fs_has_extflgbit_allowed = 1;
-	pre_65_beta = 0;
-	fs_shared_allowed = 1;
 	ag_stride = 0;
 	thread_count = 1;
 	report_interval = PROG_RPT_DEFAULT;
+	report_corrected = false;
 
 	/*
 	 * XXX have to add suboption processing here
 	 * attributes, quotas, nlinks, aligned_inos, sb_fbits
 	 */
-	while ((c = getopt(argc, argv, "c:o:fl:m:r:LnDvVdPt:")) != EOF)  {
+	while ((c = getopt(argc, argv, "c:o:fl:m:r:LnDvVdPet:")) != EOF)  {
 		switch (c) {
 		case 'D':
 			dumpcore = 1;
@@ -237,14 +235,6 @@ process_args(int argc, char **argv)
 						respec('o', o_opts, ASSUME_XFS);
 					assume_xfs = 1;
 					break;
-				case PRE_65_BETA:
-					if (val)
-						noval('o', o_opts, PRE_65_BETA);
-					if (pre_65_beta)
-						respec('o', o_opts,
-							PRE_65_BETA);
-					pre_65_beta = 1;
-					break;
 				case IHASH_SIZE:
 					do_warn(
 		_("-o ihash option has been removed and will be ignored\n"));
@@ -253,10 +243,16 @@ process_args(int argc, char **argv)
 					if (max_mem_specified)
 						do_abort(
 		_("-o bhash option cannot be used with -m option\n"));
+					if (!val)
+						do_abort(
+		_("-o bhash requires a parameter\n"));
 					libxfs_bhash_size = (int)strtol(val, NULL, 0);
 					bhash_option_used = 1;
 					break;
 				case AG_STRIDE:
+					if (!val)
+						do_abort(
+		_("-o ag_stride requires a parameter\n"));
 					ag_stride = (int)strtol(val, NULL, 0);
 					break;
 				case FORCE_GEO:
@@ -267,7 +263,25 @@ process_args(int argc, char **argv)
 					force_geo = 1;
 					break;
 				case PHASE2_THREADS:
+					if (!val)
+						do_abort(
+		_("-o phase2_threads requires a parameter\n"));
 					phase2_threads = (int)strtol(val, NULL, 0);
+					break;
+				case BLOAD_LEAF_SLACK:
+					if (!val)
+						do_abort(
+		_("-o debug_bload_leaf_slack requires a parameter\n"));
+					bload_leaf_slack = (int)strtol(val, NULL, 0);
+					break;
+				case BLOAD_NODE_SLACK:
+					if (!val)
+						do_abort(
+		_("-o debug_bload_node_slack requires a parameter\n"));
+					bload_node_slack = (int)strtol(val, NULL, 0);
+					break;
+				case NOQUOTA:
+					quotacheck_skip();
 					break;
 				default:
 					unknown('o', val);
@@ -282,6 +296,9 @@ process_args(int argc, char **argv)
 
 				switch (getsubopt(&p, c_opts, &val)) {
 				case CONVERT_LAZY_COUNT:
+					if (!val)
+						do_abort(
+		_("-c lazycount requires a parameter\n"));
 					lazy_count = (int)strtol(val, NULL, 0);
 					convert_lazy_count = 1;
 					break;
@@ -329,7 +346,10 @@ process_args(int argc, char **argv)
 		case 't':
 			report_interval = (int)strtol(optarg, NULL, 0);
 			break;
-		case '?':
+		case 'e':
+			report_corrected = true;
+			break;
+		default:
 			usage();
 		}
 	}
@@ -338,6 +358,9 @@ process_args(int argc, char **argv)
 		usage();
 
 	if ((fs_name = argv[optind]) == NULL)
+		usage();
+
+	if (report_corrected && no_modify)
 		usage();
 }
 
@@ -395,151 +418,178 @@ do_log(char const *msg, ...)
 	va_end(args);
 }
 
+/* Make sure a fixed-location inode is where it should be. */
 static void
-calc_mkfs(xfs_mount_t *mp)
+validate_sb_ino(
+	xfs_ino_t	*ino,
+	xfs_ino_t	expected_ino,
+	const char	*tag)
 {
-	xfs_agblock_t	fino_bno;
-	int		do_inoalign;
+	if (*ino == expected_ino)
+		return;
 
-	do_inoalign = mp->m_sinoalign;
+	do_warn(
+_("sb %s inode value %" PRIu64 " %sinconsistent with calculated value %"PRIu64"\n"),
+		tag, *ino, *ino == NULLFSINO ? "(NULLFSINO) " : "",
+		expected_ino);
 
-	/*
-	 * Pre-calculate the geometry of ag 0. We know what it looks like
-	 * because we know what mkfs does: 2 allocation btree roots (by block
-	 * and by size), the inode allocation btree root, the free inode
-	 * allocation btree root (if enabled) and some number of blocks to
-	 * prefill the agfl.
-	 *
-	 * Because the current shape of the btrees may differ from the current
-	 * shape, we open code the mkfs freelist block count here. mkfs creates
-	 * single level trees, so the calculation is pertty straight forward for
-	 * the trees that use the AGFL.
-	 */
-	bnobt_root = howmany(4 * mp->m_sb.sb_sectsize, mp->m_sb.sb_blocksize);
-	bcntbt_root = bnobt_root + 1;
-	inobt_root = bnobt_root + 2;
-	fino_bno = inobt_root + (2 * min(2, mp->m_ag_maxlevels)) + 1;
-	if (xfs_sb_version_hasfinobt(&mp->m_sb))
-		fino_bno++;
-	if (xfs_sb_version_hasrmapbt(&mp->m_sb)) {
-		fino_bno += min(2, mp->m_rmap_maxlevels); /* agfl blocks */
-		fino_bno++;
-	}
-	if (xfs_sb_version_hasreflink(&mp->m_sb))
-		fino_bno++;
-
-	/*
-	 * If the log is allocated in the first allocation group we need to
-	 * add the number of blocks used by the log to the above calculation.
-	 *
-	 * This can happens with filesystems that only have a single
-	 * allocation group, or very odd geometries created by old mkfs
-	 * versions on very small filesystems.
-	 */
-	if (mp->m_sb.sb_logstart &&
-	    XFS_FSB_TO_AGNO(mp, mp->m_sb.sb_logstart) == 0) {
-
-		/*
-		 * XXX(hch): verify that sb_logstart makes sense?
-		 */
-		 fino_bno += mp->m_sb.sb_logblocks;
-	}
-
-	/*
-	 * ditto the location of the first inode chunks in the fs ('/')
-	 */
-	if (xfs_sb_version_hasdalign(&mp->m_sb) && do_inoalign)  {
-		first_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp, roundup(fino_bno,
-					mp->m_sb.sb_unit), 0);
-	} else if (xfs_sb_version_hasalign(&mp->m_sb) &&
-					mp->m_sb.sb_inoalignmt > 1)  {
-		first_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp,
-					roundup(fino_bno,
-						mp->m_sb.sb_inoalignmt),
-					0);
-	} else  {
-		first_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp, fino_bno, 0);
-	}
-
-	ASSERT(mp->m_ialloc_blks > 0);
-
-	if (mp->m_ialloc_blks > 1)
-		last_prealloc_ino = first_prealloc_ino + XFS_INODES_PER_CHUNK;
+	if (!no_modify)
+		do_warn(
+_("resetting superblock %s inode pointer to %"PRIu64"\n"),
+			tag, expected_ino);
 	else
-		last_prealloc_ino = XFS_OFFBNO_TO_AGINO(mp, fino_bno + 1, 0);
+		do_warn(
+_("would reset superblock %s inode pointer to %"PRIu64"\n"),
+			tag, expected_ino);
 
 	/*
-	 * now the first 3 inodes in the system
+	 * Just set the value -- safe since the superblock doesn't get flushed
+	 * out if no_modify is set.
 	 */
-	if (mp->m_sb.sb_rootino != first_prealloc_ino)  {
-		do_warn(
-_("sb root inode value %" PRIu64 " %sinconsistent with calculated value %u\n"),
-			mp->m_sb.sb_rootino,
-			(mp->m_sb.sb_rootino == NULLFSINO ? "(NULLFSINO) ":""),
-			first_prealloc_ino);
+	*ino = expected_ino;
+}
 
-		if (!no_modify)
-			do_warn(
-		_("resetting superblock root inode pointer to %u\n"),
-				first_prealloc_ino);
-		else
-			do_warn(
-		_("would reset superblock root inode pointer to %u\n"),
-				first_prealloc_ino);
+/* Does the root directory inode look like a plausible root directory? */
+static bool
+has_plausible_rootdir(
+	struct xfs_mount	*mp)
+{
+	struct xfs_inode	*ip;
+	xfs_ino_t		ino;
+	int			error;
+	bool			ret = false;
 
-		/*
-		 * just set the value -- safe since the superblock
-		 * doesn't get flushed out if no_modify is set
-		 */
-		mp->m_sb.sb_rootino = first_prealloc_ino;
+	error = -libxfs_iget(mp, NULL, mp->m_sb.sb_rootino, 0, &ip);
+	if (error)
+		goto out;
+	if (!S_ISDIR(VFS_I(ip)->i_mode))
+		goto out_rele;
+
+	error = -libxfs_dir_lookup(NULL, ip, &xfs_name_dotdot, &ino, NULL);
+	if (error)
+		goto out_rele;
+
+	/* The root directory '..' entry points to the directory. */
+	if (ino == mp->m_sb.sb_rootino)
+		ret = true;
+
+out_rele:
+	libxfs_irele(ip);
+out:
+	return ret;
+}
+
+/*
+ * If any of the secondary SBs contain a *correct* value for sunit, write that
+ * back to the primary superblock.
+ */
+static void
+guess_correct_sunit(
+	struct xfs_mount	*mp)
+{
+	struct xfs_sb		sb;
+	struct xfs_buf		*bp;
+	xfs_ino_t		calc_rootino = NULLFSINO;
+	xfs_agnumber_t		agno;
+	unsigned int		new_sunit;
+	unsigned int		sunit_guess;
+	int			error;
+
+	/* Try reading secondary supers to see if we find a good sb_unit. */
+	for (agno = 1; agno < mp->m_sb.sb_agcount; agno++) {
+		error = -libxfs_sb_read_secondary(mp, NULL, agno, &bp);
+		if (error)
+			continue;
+		libxfs_sb_from_disk(&sb, bp->b_addr);
+		libxfs_buf_relse(bp);
+
+		calc_rootino = libxfs_ialloc_calc_rootino(mp, sb.sb_unit);
+		if (calc_rootino == mp->m_sb.sb_rootino)
+			break;
 	}
 
-	if (mp->m_sb.sb_rbmino != first_prealloc_ino + 1)  {
-		do_warn(
-_("sb realtime bitmap inode %" PRIu64 " %sinconsistent with calculated value %u\n"),
-			mp->m_sb.sb_rbmino,
-			(mp->m_sb.sb_rbmino == NULLFSINO ? "(NULLFSINO) ":""),
-			first_prealloc_ino + 1);
-
-		if (!no_modify)
-			do_warn(
-		_("resetting superblock realtime bitmap ino pointer to %u\n"),
-				first_prealloc_ino + 1);
-		else
-			do_warn(
-		_("would reset superblock realtime bitmap ino pointer to %u\n"),
-				first_prealloc_ino + 1);
-
-		/*
-		 * just set the value -- safe since the superblock
-		 * doesn't get flushed out if no_modify is set
-		 */
-		mp->m_sb.sb_rbmino = first_prealloc_ino + 1;
+	/* If we found a reasonable value, log where we found it. */
+	if (calc_rootino == mp->m_sb.sb_rootino) {
+		do_warn(_("AG %u superblock contains plausible sb_unit value\n"),
+				agno);
+		new_sunit = sb.sb_unit;
+		goto fix;
 	}
 
-	if (mp->m_sb.sb_rsumino != first_prealloc_ino + 2)  {
-		do_warn(
-_("sb realtime summary inode %" PRIu64 " %sinconsistent with calculated value %u\n"),
-			mp->m_sb.sb_rsumino,
-			(mp->m_sb.sb_rsumino == NULLFSINO ? "(NULLFSINO) ":""),
-			first_prealloc_ino + 2);
-
-		if (!no_modify)
-			do_warn(
-		_("resetting superblock realtime summary ino pointer to %u\n"),
-				first_prealloc_ino + 2);
-		else
-			do_warn(
-		_("would reset superblock realtime summary ino pointer to %u\n"),
-				first_prealloc_ino + 2);
-
-		/*
-		 * just set the value -- safe since the superblock
-		 * doesn't get flushed out if no_modify is set
-		 */
-		mp->m_sb.sb_rsumino = first_prealloc_ino + 2;
+	/* Try successive powers of two. */
+	for (sunit_guess = 1;
+	     sunit_guess <= XFS_AG_MAX_BLOCKS(mp->m_sb.sb_blocklog);
+	     sunit_guess *= 2) {
+		calc_rootino = libxfs_ialloc_calc_rootino(mp, sunit_guess);
+		if (calc_rootino == mp->m_sb.sb_rootino)
+			break;
 	}
 
+	/* If we found a reasonable value, log where we found it. */
+	if (calc_rootino == mp->m_sb.sb_rootino) {
+		do_warn(_("Found an sb_unit value that looks plausible\n"));
+		new_sunit = sunit_guess;
+		goto fix;
+	}
+
+	do_warn(_("Could not estimate a plausible sb_unit value\n"));
+	return;
+
+fix:
+	if (!no_modify)
+		do_warn(_("Resetting sb_unit to %u\n"), new_sunit);
+	else
+		do_warn(_("Would reset sb_unit to %u\n"), new_sunit);
+
+	/*
+	 * Just set the value -- safe since the superblock doesn't get flushed
+	 * out if no_modify is set.
+	 */
+	mp->m_sb.sb_unit = new_sunit;
+
+	/* Make sure that swidth is still a multiple of sunit. */
+	if (mp->m_sb.sb_width % mp->m_sb.sb_unit == 0)
+		return;
+
+	if (!no_modify)
+		do_warn(_("Resetting sb_width to %u\n"), new_sunit);
+	else
+		do_warn(_("Would reset sb_width to %u\n"), new_sunit);
+}
+
+/*
+ * Make sure that the first 3 inodes in the filesystem are the root directory,
+ * the realtime bitmap, and the realtime summary, in that order.
+ */
+static void
+calc_mkfs(
+	struct xfs_mount	*mp)
+{
+	xfs_ino_t		rootino;
+
+	rootino = libxfs_ialloc_calc_rootino(mp, mp->m_sb.sb_unit);
+
+	/*
+	 * If the root inode isn't where we think it is, check its plausibility
+	 * as a root directory.  It's possible that somebody changed sunit
+	 * since the filesystem was created, which can change the value of the
+	 * above computation.  Don't blow up the root directory if this is the
+	 * case.
+	 */
+	if (mp->m_sb.sb_rootino != rootino && has_plausible_rootdir(mp)) {
+		do_warn(
+_("sb root inode value %" PRIu64 " valid but in unaligned location (expected %"PRIu64") possibly due to sunit change\n"),
+			mp->m_sb.sb_rootino, rootino);
+		guess_correct_sunit(mp);
+		rootino = mp->m_sb.sb_rootino;
+	}
+
+	validate_sb_ino(&mp->m_sb.sb_rootino, rootino,
+			_("root"));
+	validate_sb_ino(&mp->m_sb.sb_rbmino, rootino + 1,
+			_("realtime bitmap"));
+	validate_sb_ino(&mp->m_sb.sb_rsumino, rootino + 2,
+			_("realtime summary"));
 }
 
 /*
@@ -637,13 +687,14 @@ static void
 check_fs_vs_host_sectsize(
 	struct xfs_sb	*sb)
 {
-	int	fd;
+	int	fd, ret;
 	long	old_flags;
-	struct xfs_fsop_geom_v1 geom = { 0 };
+	struct xfs_fsop_geom	geom = { 0 };
 
 	fd = libxfs_device_to_fd(x.ddev);
 
-	if (ioctl(fd, XFS_IOC_FSGEOMETRY_V1, &geom) < 0) {
+	ret = -xfrog_geometry(fd, &geom);
+	if (ret) {
 		do_log(_("Cannot get host filesystem geometry.\n"
 	"Repair may fail if there is a sector size mismatch between\n"
 	"the image and the host filesystem.\n"));
@@ -673,6 +724,8 @@ main(int argc, char **argv)
 	char		*msgbuf;
 	struct xfs_sb	psb;
 	int		rval;
+	struct xfs_ino_geometry	*igeo;
+	int		error;
 
 	progname = basename(argv[0]);
 	setlocale(LC_ALL, "");
@@ -750,6 +803,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	mp->m_log = &log;
+	igeo = M_IGEO(mp);
 
 	/* Spit out function & line on these corruption macros */
 	if (verbose > 2)
@@ -762,8 +816,6 @@ main(int argc, char **argv)
 
 	chunks_pblock = mp->m_sb.sb_inopblock / XFS_INODES_PER_CHUNK;
 	max_symlink_blocks = libxfs_symlink_blocks(mp, XFS_SYMLINK_MAXLEN);
-	inodes_per_cluster = MAX(mp->m_sb.sb_inopblock,
-			mp->m_inode_cluster_size >> mp->m_sb.sb_inodelog);
 
 	/*
 	 * Automatic striding for high agcount filesystems.
@@ -853,16 +905,16 @@ main(int argc, char **argv)
 					(mp->m_sb.sb_dblocks >> (10 + 1)) +
 					50000;	/* rough estimate of 50MB overhead */
 		max_mem = max_mem_specified ? max_mem_specified * 1024 :
-						libxfs_physmem() * 3 / 4;
+					      platform_physmem() * 3 / 4;
 
 		if (getrlimit(RLIMIT_AS, &rlim) != -1 &&
 					rlim.rlim_cur != RLIM_INFINITY) {
 			rlim.rlim_cur = rlim.rlim_max;
 			setrlimit(RLIMIT_AS, &rlim);
 			/* use approximately 80% of rlimit to avoid overrun */
-			max_mem = MIN(max_mem, rlim.rlim_cur / 1280);
+			max_mem = min(max_mem, rlim.rlim_cur / 1280);
 		} else
-			max_mem = MIN(max_mem, (LONG_MAX >> 10) + 1);
+			max_mem = min(max_mem, (LONG_MAX >> 10) + 1);
 
 		if (verbose > 1)
 			do_log(
@@ -899,7 +951,7 @@ main(int argc, char **argv)
 		if (max_mem >= (1 << 30))
 			max_mem = 1 << 30;
 		libxfs_bhash_size = max_mem / (HASH_CACHE_RATIO *
-				(mp->m_inode_cluster_size >> 10));
+				(igeo->inode_cluster_size >> 10));
 		if (libxfs_bhash_size < 512)
 			libxfs_bhash_size = 512;
 
@@ -1047,16 +1099,19 @@ _("Warning:  project quota information would be cleared.\n"
 	/*
 	 * Clear the quota flags if they're on.
 	 */
-	sbp = libxfs_getsb(mp, 0);
+	sbp = libxfs_getsb(mp);
 	if (!sbp)
 		do_error(_("couldn't get superblock\n"));
 
-	dsb = XFS_BUF_TO_SBP(sbp);
+	dsb = sbp->b_addr;
 
-	if (be16_to_cpu(dsb->sb_qflags) & XFS_ALL_QUOTA_CHKD) {
+	if ((mp->m_sb.sb_qflags & XFS_ALL_QUOTA_CHKD) != quotacheck_results()) {
 		do_warn(_("Note - quota info will be regenerated on next "
 			"quota mount.\n"));
-		dsb->sb_qflags &= cpu_to_be16(~XFS_ALL_QUOTA_CHKD);
+		dsb->sb_qflags &= cpu_to_be16(~(XFS_UQUOTA_CHKD |
+						XFS_GQUOTA_CHKD |
+						XFS_PQUOTA_CHKD |
+						XFS_OQUOTA_CHKD));
 	}
 
 	if (copied_sunit) {
@@ -1066,7 +1121,8 @@ _("Note - stripe unit (%d) and width (%d) were copied from a backup superblock.\
 			be32_to_cpu(dsb->sb_unit), be32_to_cpu(dsb->sb_width));
 	}
 
-	libxfs_writebuf(sbp, 0);
+	libxfs_buf_mark_dirty(sbp);
+	libxfs_buf_relse(sbp);
 
 	/*
 	 * Done. Flush all cached buffers and inodes first to ensure all
@@ -1075,13 +1131,15 @@ _("Note - stripe unit (%d) and width (%d) were copied from a backup superblock.\
 	 */
 	libxfs_bcache_flush();
 	format_log_max_lsn(mp);
-	libxfs_umount(mp);
 
-	if (x.rtdev)
-		libxfs_device_close(x.rtdev);
-	if (x.logdev && x.logdev != x.ddev)
-		libxfs_device_close(x.logdev);
-	libxfs_device_close(x.ddev);
+	/* Report failure if anything failed to get written to our fs. */
+	error = -libxfs_umount(mp);
+	if (error)
+		do_error(
+	_("File system metadata writeout failed, err=%d.  Re-run xfs_repair."),
+				error);
+
+	libxfs_destroy(&x);
 
 	if (verbose)
 		summary_report();
@@ -1095,5 +1153,7 @@ _("Repair of readonly mount complete.  Immediate reboot encouraged.\n"));
 
 	free(msgbuf);
 
+	if (fs_is_dirty && report_corrected)
+		return (4);
 	return (0);
 }

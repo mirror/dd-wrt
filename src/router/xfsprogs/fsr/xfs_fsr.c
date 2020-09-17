@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -22,6 +10,9 @@
 #include "jdm.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_attr_sf.h"
+#include "libfrog/paths.h"
+#include "libfrog/fsgeom.h"
+#include "libfrog/bulkstat.h"
 
 #include <fcntl.h>
 #include <errno.h>
@@ -39,21 +30,21 @@
 
 char *progname;
 
-int vflag;
-int gflag;
+static int vflag;
+static int gflag;
 static int Mflag;
 /* static int nflag; */
-int dflag = 0;
+static int dflag = 0;
 /* static int sflag; */
-int argv_blksz_dio;
+static int argv_blksz_dio;
 extern int max_ext_size;
 static int npasses = 10;
 static int startpass = 0;
 
-struct getbmap  *outmap = NULL;
-int             outmap_size = 0;
-int		RealUid;
-int		tmp_agi;
+static struct getbmap  *outmap = NULL;
+static int		outmap_size = 0;
+static int		RealUid;
+static int		tmp_agi;
 static int64_t		minimumfree = 2048;
 
 #define MNTTYPE_XFS             "xfs"
@@ -63,10 +54,6 @@ static int64_t		minimumfree = 2048;
 #define NULLFD		-1
 #define GRABSZ		64
 #define TARGETRANGE	10
-#define	V_NONE		0
-#define	V_OVERVIEW	1
-#define	V_ALL		2
-#define BUFFER_SIZE	(1<<16)
 #define BUFFER_MAX	(1<<24)
 
 static time_t howlong = 7200;		/* default seconds of reorganizing */
@@ -79,9 +66,9 @@ static int	pagesize;
 void usage(int ret);
 static int  fsrfile(char *fname, xfs_ino_t ino);
 static int  fsrfile_common( char *fname, char *tname, char *mnt,
-                            int fd, xfs_bstat_t *statp);
+                            int fd, struct xfs_bstat *statp);
 static int  packfile(char *fname, char *tname, int fd,
-                     xfs_bstat_t *statp, struct fsxattr *fsxp);
+                     struct xfs_bstat *statp, struct fsxattr *fsxp);
 static void fsrdir(char *dirname);
 static int  fsrfs(char *mntdir, xfs_ino_t ino, int targetrange);
 static void initallfs(char *mtab);
@@ -93,14 +80,13 @@ int xfs_getrt(int fd, struct statvfs *sfbp);
 char * gettmpname(char *fname);
 char * getparent(char *fname);
 int fsrprintf(const char *fmt, ...);
-int read_fd_bmap(int, xfs_bstat_t *, int *);
+int read_fd_bmap(int, struct xfs_bstat *, int *);
 int cmp(const void *, const void *);
 static void tmp_init(char *mnt);
 static char * tmp_next(char *mnt);
 static void tmp_close(char *mnt);
-int xfs_getgeom(int , xfs_fsop_geom_v1_t * );
 
-xfs_fsop_geom_v1_t fsgeom;	/* geometry of active mounted system */
+static struct xfs_fsop_geom fsgeom;	/* geometry of active mounted system */
 
 #define NMOUNT 64
 static int numfs;
@@ -111,120 +97,29 @@ typedef struct fsdesc {
 	int  npass;
 } fsdesc_t;
 
-fsdesc_t	*fs, *fsbase, *fsend;
-int		fsbufsize = 10;	/* A starting value */
-int		nfrags = 0;	/* Debug option: Coerse into specific number
+static fsdesc_t	*fs, *fsbase, *fsend;
+static int	fsbufsize = 10;	/* A starting value */
+static int	nfrags = 0;	/* Debug option: Coerse into specific number
 				 * of extents */
-int		openopts = O_CREAT|O_EXCL|O_RDWR|O_DIRECT;
+static int	openopts = O_CREAT|O_EXCL|O_RDWR|O_DIRECT;
 
-int
-xfs_fsgeometry(int fd, xfs_fsop_geom_v1_t *geom)
-{
-    return ioctl(fd, XFS_IOC_FSGEOMETRY_V1, geom);
-}
-
-int
-xfs_bulkstat_single(int fd, xfs_ino_t *lastip, xfs_bstat_t *ubuffer)
-{
-    xfs_fsop_bulkreq_t  bulkreq;
-
-    bulkreq.lastip = (__u64 *)lastip;
-    bulkreq.icount = 1;
-    bulkreq.ubuffer = ubuffer;
-    bulkreq.ocount = NULL;
-    return ioctl(fd, XFS_IOC_FSBULKSTAT_SINGLE, &bulkreq);
-}
-
-int
-xfs_bulkstat(int fd, xfs_ino_t *lastip, int icount,
-                    xfs_bstat_t *ubuffer, __s32 *ocount)
-{
-    xfs_fsop_bulkreq_t  bulkreq;
-
-    bulkreq.lastip = (__u64 *)lastip;
-    bulkreq.icount = icount;
-    bulkreq.ubuffer = ubuffer;
-    bulkreq.ocount = ocount;
-    return ioctl(fd, XFS_IOC_FSBULKSTAT, &bulkreq);
-}
-
-int
+static int
 xfs_swapext(int fd, xfs_swapext_t *sx)
 {
     return ioctl(fd, XFS_IOC_SWAPEXT, sx);
 }
 
-int
+static int
 xfs_fscounts(int fd, xfs_fsop_counts_t *counts)
 {
     return ioctl(fd, XFS_IOC_FSCOUNTS, counts);
 }
 
-void
+static void
 aborter(int unused)
 {
 	fsrall_cleanup(1);
 	exit(1);
-}
-
-/*
- * Check if the argument is either the device name or mountpoint of an XFS
- * filesystem.  Note that we do not care about bind mounted regular files
- * here - the code that handles defragmentation of invidual files takes care
- * of that.
- */
-static char *
-find_mountpoint_check(struct stat *sb, struct mntent *t)
-{
-	struct stat ms;
-
-	if (S_ISDIR(sb->st_mode)) {		/* mount point */
-		if (stat(t->mnt_dir, &ms) < 0)
-			return NULL;
-		if (sb->st_ino != ms.st_ino)
-			return NULL;
-		if (sb->st_dev != ms.st_dev)
-			return NULL;
-		if (strcmp(t->mnt_type, MNTTYPE_XFS) != 0)
-			return NULL;
-	} else {				/* device */
-		if (stat(t->mnt_fsname, &ms) < 0)
-			return NULL;
-		if (sb->st_rdev != ms.st_rdev)
-			return NULL;
-		if (strcmp(t->mnt_type, MNTTYPE_XFS) != 0)
-			return NULL;
-		/*
-		 * Make sure the mountpoint given by mtab is accessible
-		 * before using it.
-		 */
-		if (stat(t->mnt_dir, &ms) < 0)
-			return NULL;
-	}
-
-	return t->mnt_dir;
-}
-
-static char *
-find_mountpoint(char *mtab, char *argname, struct stat *sb)
-{
-	struct mntent_cursor cursor;
-	struct mntent *t = NULL;
-	char *mntp = NULL;
-
-	if (platform_mntent_open(&cursor, mtab) != 0){
-		fprintf(stderr, "Error: can't get mntent entries.\n");
-		exit(1);
-	}
-
-	while ((t = platform_mntent_next(&cursor)) != NULL) {
-		mntp = find_mountpoint_check(sb, t);
-		if (mntp == NULL)
-			continue;
-		break;
-	}
-	platform_mntent_close(&cursor);
-	return mntp;
 }
 
 int
@@ -233,7 +128,7 @@ main(int argc, char **argv)
 	struct stat sb;
 	char *argname;
 	int c;
-	char *mntp;
+	struct fs_path	*fsp;
 	char *mtab = NULL;
 
 	setlinebuf(stdout);
@@ -316,13 +211,13 @@ main(int argc, char **argv)
 	if (vflag)
 		setbuf(stdout, NULL);
 
-	starttime = time(0);
+	starttime = time(NULL);
 
 	/* Save the caller's real uid */
 	RealUid = getuid();
 
 	pagesize = getpagesize();
-
+	fs_table_initialise(0, NULL, 0, NULL);
 	if (optind < argc) {
 		for (; optind < argc; optind++) {
 			argname = argv[optind];
@@ -343,9 +238,11 @@ main(int argc, char **argv)
 				sb = sb2;
 			}
 
-			mntp = find_mountpoint(mtab, argname, &sb);
-			if (mntp != NULL) {
-				fsrfs(mntp, 0, 100);
+			fsp = fs_table_lookup_mount(argname);
+			if (!fsp)
+				fsp = fs_table_lookup_blkdev(argname);
+			if (fsp != NULL) {
+				fsrfs(fsp->fs_dir, 0, 100);
 			} else if (S_ISCHR(sb.st_mode)) {
 				fprintf(stderr, _(
 					"%s: char special not supported: %s\n"),
@@ -569,6 +466,17 @@ fsrallfs(char *mtab, int howlong, char *leftofffile)
 				ptr = strchr(ptr, ' ');
 				if (ptr) {
 					startino = strtoull(++ptr, NULL, 10);
+					/*
+					 * NOTE: The inode number read in from
+					 * the leftoff file is the last inode
+					 * to have been fsr'd.  Since the v5
+					 * xfrog_bulkstat function wants to be
+					 * passed the first inode that we want
+					 * to examine, increment the value that
+					 * we read in.  The debug message below
+					 * prints the lastoff value.
+					 */
+					startino++;
 				}
 			}
 			if (startpass < 0)
@@ -587,7 +495,7 @@ fsrallfs(char *mtab, int howlong, char *leftofffile)
 
 	if (vflag) {
 		fsrprintf(_("START: pass=%d ino=%llu %s %s\n"),
-			  fs->npass, (unsigned long long)startino,
+			  fs->npass, (unsigned long long)startino - 1,
 			  fs->dev, fs->mnt);
 	}
 
@@ -598,7 +506,7 @@ fsrallfs(char *mtab, int howlong, char *leftofffile)
 	signal(SIGTERM, aborter);
 
 	/* reorg for 'howlong' -- checked in 'fsrfs' */
-	while (endtime > time(0)) {
+	while (endtime > time(NULL)) {
 		pid_t pid;
 
 		if (npasses > 1 && !fs->npass)
@@ -633,7 +541,7 @@ fsrallfs(char *mtab, int howlong, char *leftofffile)
 			break;
 		}
 	}
-	fsrall_cleanup(endtime <= time(0));
+	fsrall_cleanup(endtime <= time(NULL));
 }
 
 /*
@@ -651,7 +559,7 @@ fsrall_cleanup(int timeout)
 	if (timeout) {
 		fsrprintf(_("%s startpass %d, endpass %d, time %d seconds\n"),
 			progname, startpass, fs->npass,
-			time(0) - endtime + howlong);
+			time(NULL) - endtime + howlong);
 
 		/* record where we left off */
 		fd = open(leftofffile, O_WRONLY|O_CREAT|O_EXCL, 0644);
@@ -675,16 +583,14 @@ fsrall_cleanup(int timeout)
 static int
 fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 {
-
-	int	fsfd, fd;
+	struct xfs_fd	fsxfd = XFS_FD_INIT_EMPTY;
+	int	fd;
 	int	count = 0;
 	int	ret;
-	__s32	buflenout;
-	xfs_bstat_t buf[GRABSZ];
 	char	fname[64];
 	char	*tname;
 	jdm_fshandle_t	*fshandlep;
-	xfs_ino_t	lastino = startino;
+	struct xfs_bulkstat_req	*breq;
 
 	fsrprintf(_("%s start inode=%llu\n"), mntdir,
 		(unsigned long long)startino);
@@ -696,27 +602,31 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 		return -1;
 	}
 
-	if ((fsfd = open(mntdir, O_RDONLY)) < 0) {
-		fsrprintf(_("unable to open: %s: %s\n"),
-		          mntdir, strerror( errno ));
+	ret = -xfd_open(&fsxfd, mntdir, O_RDONLY);
+	if (ret) {
+		fsrprintf(_("unable to open XFS file: %s: %s\n"),
+		          mntdir, strerror(ret));
 		free(fshandlep);
 		return -1;
 	}
-
-	if (xfs_getgeom(fsfd, &fsgeom) < 0 ) {
-		fsrprintf(_("Skipping %s: could not get XFS geometry\n"),
-			  mntdir);
-		close(fsfd);
-		free(fshandlep);
-		return -1;
-	}
+	memcpy(&fsgeom, &fsxfd.fsgeom, sizeof(fsgeom));
 
 	tmp_init(mntdir);
 
-	while ((ret = xfs_bulkstat(fsfd,
-				&lastino, GRABSZ, &buf[0], &buflenout)) == 0) {
-		xfs_bstat_t *p;
-		xfs_bstat_t *endp;
+	ret = -xfrog_bulkstat_alloc_req(GRABSZ, startino, &breq);
+	if (ret) {
+		fsrprintf(_("Skipping %s: %s\n"), mntdir, strerror(ret));
+		xfd_close(&fsxfd);
+		free(fshandlep);
+		return -1;
+	}
+
+	while ((ret = -xfrog_bulkstat(&fsxfd, breq) == 0)) {
+		struct xfs_bstat	bs1;
+		struct xfs_bulkstat	*buf = breq->bulkstat;
+		struct xfs_bulkstat	*p;
+		struct xfs_bulkstat	*endp;
+		uint32_t		buflenout = breq->hdr.ocount;
 
 		if (buflenout == 0)
 			goto out0;
@@ -724,7 +634,7 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 		/* Each loop through, defrag targetrange percent of the files */
 		count = (buflenout * targetrange) / 100;
 
-		qsort((char *)buf, buflenout, sizeof(struct xfs_bstat), cmp);
+		qsort((char *)buf, buflenout, sizeof(struct xfs_bulkstat), cmp);
 
 		for (p = buf, endp = (buf + buflenout); p < endp ; p++) {
 			/* Do some obvious checks now */
@@ -732,7 +642,14 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 			     (p->bs_extents < 2))
 				continue;
 
-			fd = jdm_open(fshandlep, p, O_RDWR|O_DIRECT);
+			ret = -xfrog_bulkstat_v5_to_v1(&fsxfd, &bs1, p);
+			if (ret) {
+				fsrprintf(_("bstat conversion error: %s\n"),
+						strerror(ret));
+				continue;
+			}
+
+			fd = jdm_open(fshandlep, &bs1, O_RDWR | O_DIRECT);
 			if (fd < 0) {
 				/* This probably means the file was
 				 * removed while in progress of handling
@@ -750,7 +667,7 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 			/* Get a tmp file name */
 			tname = tmp_next(mntdir);
 
-			ret = fsrfile_common(fname, tname, mntdir, fd, p);
+			ret = fsrfile_common(fname, tname, mntdir, fd, &bs1);
 
 			leftoffino = p->bs_ino;
 
@@ -761,18 +678,20 @@ fsrfs(char *mntdir, xfs_ino_t startino, int targetrange)
 					break;
 			}
 		}
-		if (endtime && endtime < time(0)) {
+		if (endtime && endtime < time(NULL)) {
+			free(breq);
 			tmp_close(mntdir);
-			close(fsfd);
+			xfd_close(&fsxfd);
 			fsrall_cleanup(1);
 			exit(1);
 		}
 	}
-	if (ret < 0)
-		fsrprintf(_("%s: xfs_bulkstat: %s\n"), progname, strerror(errno));
+	if (ret)
+		fsrprintf(_("%s: bulkstat: %s\n"), progname, strerror(ret));
 out0:
+	free(breq);
 	tmp_close(mntdir);
-	close(fsfd);
+	xfd_close(&fsxfd);
 	free(fshandlep);
 	return 0;
 }
@@ -783,8 +702,8 @@ out0:
 int
 cmp(const void *s1, const void *s2)
 {
-	return( ((xfs_bstat_t *)s2)->bs_extents -
-	        ((xfs_bstat_t *)s1)->bs_extents);
+	return( ((struct xfs_bstat *)s2)->bs_extents -
+	        ((struct xfs_bstat *)s1)->bs_extents);
 
 }
 
@@ -805,13 +724,17 @@ fsrdir(char *dirname)
  * an open on the file and passes this all to fsrfile_common.
  */
 static int
-fsrfile(char *fname, xfs_ino_t ino)
+fsrfile(
+	char			*fname,
+	xfs_ino_t		ino)
 {
-	xfs_bstat_t	statbuf;
-	jdm_fshandle_t	*fshandlep;
-	int	fd = -1, fsfd = -1;
-	int	error = -1;
-	char	*tname;
+	struct xfs_fd		fsxfd = XFS_FD_INIT_EMPTY;
+	struct xfs_bulkstat	bulkstat;
+	struct xfs_bstat	statbuf;
+	jdm_fshandle_t		*fshandlep;
+	int			fd = -1;
+	int			error = -1;
+	char			*tname;
 
 	fshandlep = jdm_getfshandle(getparent (fname) );
 	if (!fshandlep) {
@@ -824,16 +747,23 @@ fsrfile(char *fname, xfs_ino_t ino)
 	 * Need to open something on the same filesystem as the
 	 * file.  Open the parent.
 	 */
-	fsfd = open(getparent(fname), O_RDONLY);
-	if (fsfd < 0) {
-		fsrprintf(_("unable to open sys handle for %s: %s\n"),
-			fname, strerror(errno));
+	error = -xfd_open(&fsxfd, getparent(fname), O_RDONLY);
+	if (error) {
+		fsrprintf(_("unable to open sys handle for XFS file %s: %s\n"),
+			fname, strerror(error));
 		goto out;
 	}
 
-	if ((xfs_bulkstat_single(fsfd, &ino, &statbuf)) < 0) {
+	error = -xfrog_bulkstat_single(&fsxfd, ino, 0, &bulkstat);
+	if (error) {
 		fsrprintf(_("unable to get bstat on %s: %s\n"),
-			fname, strerror(errno));
+			fname, strerror(error));
+		goto out;
+	}
+	error = -xfrog_bulkstat_v5_to_v1(&fsxfd, &statbuf, &bulkstat);
+	if (error) {
+		fsrprintf(_("bstat conversion error on %s: %s\n"),
+			fname, strerror(error));
 		goto out;
 	}
 
@@ -844,11 +774,8 @@ fsrfile(char *fname, xfs_ino_t ino)
 		goto out;
 	}
 
-	/* Get the fs geometry */
-	if (xfs_getgeom(fsfd, &fsgeom) < 0 ) {
-		fsrprintf(_("Unable to get geom on fs for: %s\n"), fname);
-		goto out;
-	}
+	/* Stash the fs geometry for general use. */
+	memcpy(&fsgeom, &fsxfd.fsgeom, sizeof(fsgeom));
 
 	tname = gettmpname(fname);
 
@@ -856,8 +783,7 @@ fsrfile(char *fname, xfs_ino_t ino)
 		error = fsrfile_common(fname, tname, NULL, fd, &statbuf);
 
 out:
-	if (fsfd >= 0)
-		close(fsfd);
+	xfd_close(&fsxfd);
 	if (fd >= 0)
 		close(fd);
 	free(fshandlep);
@@ -886,7 +812,7 @@ fsrfile_common(
 	char		*tname,
 	char		*fsname,
 	int		fd,
-	xfs_bstat_t	*statp)
+	struct xfs_bstat *statp)
 {
 	int		error;
 	struct statvfs  vfss;
@@ -1021,9 +947,10 @@ static int
 fsr_setup_attr_fork(
 	int		fd,
 	int		tfd,
-	xfs_bstat_t	*bstatp)
+	struct xfs_bstat *bstatp)
 {
 #ifdef HAVE_FSETXATTR
+	struct xfs_fd	txfd = XFS_FD_INIT(tfd);
 	struct stat	tstatbuf;
 	int		i;
 	int		diff = 0;
@@ -1041,7 +968,7 @@ fsr_setup_attr_fork(
 	if (!(fsgeom.flags & XFS_FSOP_GEOM_FLAGS_ATTR2) ||
 	    bstatp->bs_forkoff == 0) {
 		/* attr1 */
-		ret = fsetxattr(tfd, "user.X", "X", 1, XATTR_CREATE);
+		ret = fsetxattr(txfd.fd, "user.X", "X", 1, XATTR_CREATE);
 		if (ret) {
 			fsrprintf(_("could not set ATTR\n"));
 			return -1;
@@ -1051,7 +978,7 @@ fsr_setup_attr_fork(
 
 	/* attr2 w/ fork offsets */
 
-	if (fstat(tfd, &tstatbuf) < 0) {
+	if (fstat(txfd.fd, &tstatbuf) < 0) {
 		fsrprintf(_("unable to stat temp file: %s\n"),
 					strerror(errno));
 		return -1;
@@ -1059,19 +986,20 @@ fsr_setup_attr_fork(
 
 	i = 0;
 	do {
-		xfs_bstat_t	tbstat;
-		xfs_ino_t	ino;
+		struct xfs_bulkstat	tbstat;
 		char		name[64];
+		int		ret;
 
 		/*
 		 * bulkstat the temp inode to see what the forkoff is.  Use
 		 * this to compare against the target and determine what we
 		 * need to do.
 		 */
-		ino = tstatbuf.st_ino;
-		if ((xfs_bulkstat_single(tfd, &ino, &tbstat)) < 0) {
+		ret = -xfrog_bulkstat_single(&txfd, tstatbuf.st_ino, 0,
+				&tbstat);
+		if (ret) {
 			fsrprintf(_("unable to get bstat on temp file: %s\n"),
-						strerror(errno));
+						strerror(ret));
 			return -1;
 		}
 		if (dflag)
@@ -1091,7 +1019,7 @@ fsr_setup_attr_fork(
 		 */
 		if (!tbstat.bs_forkoff) {
 			ASSERT(i == 0);
-			ret = fsetxattr(tfd, name, "XX", 2, XATTR_CREATE);
+			ret = fsetxattr(txfd.fd, name, "XX", 2, XATTR_CREATE);
 			if (ret) {
 				fsrprintf(_("could not set ATTR\n"));
 				return -1;
@@ -1127,7 +1055,7 @@ fsr_setup_attr_fork(
 			if (diff < 0) {
 				char val[2048];
 				memset(val, 'X', 2048);
-				if (fsetxattr(tfd, name, val, 2048, 0)) {
+				if (fsetxattr(txfd.fd, name, val, 2048, 0)) {
 					fsrprintf(_("big ATTR set failed\n"));
 					return -1;
 				}
@@ -1171,7 +1099,7 @@ fsr_setup_attr_fork(
 		}
 
 		/* we need to grow the attr fork, so create another attr */
-		ret = fsetxattr(tfd, name, "XX", 2, XATTR_CREATE);
+		ret = fsetxattr(txfd.fd, name, "XX", 2, XATTR_CREATE);
 		if (ret) {
 			fsrprintf(_("could not set ATTR\n"));
 			return -1;
@@ -1204,7 +1132,7 @@ out:
  */
 static int
 packfile(char *fname, char *tname, int fd,
-	 xfs_bstat_t *statp, struct fsxattr *fsxp)
+	 struct xfs_bstat *statp, struct fsxattr *fsxp)
 {
 	int 		tfd = -1;
 	int		srval;
@@ -1571,7 +1499,7 @@ getparent(char *fname)
 #define MAPSIZE	128
 #define	OUTMAP_SIZE_INCREMENT	MAPSIZE
 
-int	read_fd_bmap(int fd, xfs_bstat_t *sin, int *cur_nextents)
+int	read_fd_bmap(int fd, struct xfs_bstat *sin, int *cur_nextents)
 {
 	int		i, cnt;
 	struct getbmap	map[MAPSIZE];
@@ -1659,7 +1587,7 @@ int	read_fd_bmap(int fd, xfs_bstat_t *sin, int *cur_nextents)
 /*
  * Read the block map and return the number of extents.
  */
-int
+static int
 getnextents(int fd)
 {
 	int		nextents;
@@ -1683,18 +1611,6 @@ getnextents(int fd)
 	} while (map[0].bmv_entries == (MAPSIZE-1));
 
 	return(nextents);
-}
-
-/*
- * Get the fs geometry
- */
-int
-xfs_getgeom(int fd, xfs_fsop_geom_v1_t * fsgeom)
-{
-	if (xfs_fsgeometry(fd, fsgeom) < 0) {
-		return -1;
-	}
-	return 0;
 }
 
 /*

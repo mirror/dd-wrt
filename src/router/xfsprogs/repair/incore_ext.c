@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -24,7 +12,7 @@
 #include "agheader.h"
 #include "protos.h"
 #include "err_protos.h"
-#include "avl64.h"
+#include "libfrog/avl64.h"
 #include "threads.h"
 
 /*
@@ -156,7 +144,7 @@ release_extent_tree_node(extent_tree_node_t *node)
  * reused.  the duplicate and bno/bcnt extent trees for each AG
  * are recycled after they're no longer needed to save memory
  */
-void
+static void
 release_extent_tree(avltree_desc_t *tree)
 {
 	extent_tree_node_t	*ext;
@@ -265,14 +253,6 @@ get_bno_extent(xfs_agnumber_t agno, extent_tree_node_t *ext)
 
 	return;
 }
-
-/*
- * normalizing constant for bcnt size -> address conversion (see avl ops)
- * used by the AVL tree code to convert sizes and must be used when
- * doing an AVL search in the tree (e.g. avl_findrange(s))
- */
-#define MAXBCNT		0xFFFFFFFF
-#define BCNT_ADDR(cnt)	((unsigned int) MAXBCNT - (cnt))
 
 /*
  * the next 4 routines manage the trees of free extents -- 2 trees
@@ -537,12 +517,12 @@ avl_ext_bcnt_end(avlnode_t *node)
 	return((uintptr_t) ((extent_tree_node_t *)node)->ex_blockcount);
 }
 
-avlops_t avl_extent_bcnt_tree_ops = {
+static avlops_t avl_extent_bcnt_tree_ops = {
 	avl_ext_bcnt_start,
 	avl_ext_bcnt_end
 };
 
-avlops_t avl_extent_tree_ops = {
+static avlops_t avl_extent_tree_ops = {
 	avl_ext_start,
 	avl_ext_end
 };
@@ -734,7 +714,7 @@ avl64_ext_end(avl64node_t *node)
 		((rt_extent_tree_node_t *) node)->rt_blockcount);
 }
 
-avl64ops_t avl64_extent_tree_ops = {
+static avl64ops_t avl64_extent_tree_ops = {
 	avl64_rt_ext_start,
 	avl64_ext_end
 };
@@ -812,7 +792,7 @@ incore_ext_teardown(xfs_mount_t *mp)
 	extent_bno_ptrs = NULL;
 }
 
-int
+static int
 count_extents(xfs_agnumber_t agno, avltree_desc_t *tree, int whichtree)
 {
 	extent_tree_node_t *node;

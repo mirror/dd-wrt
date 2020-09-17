@@ -7,7 +7,11 @@ include $(TOPDIR)/include/builddefs
 
 MAN_SECTION	= 8
 
-MAN_PAGES	= $(shell echo *.$(MAN_SECTION))
+ifneq ("$(ENABLE_SCRUB)","yes")
+  MAN_PAGES = $(filter-out xfs_scrub%,$(shell echo *.$(MAN_SECTION)))
+else
+  MAN_PAGES = $(shell echo *.$(MAN_SECTION))
+endif
 MAN_DEST	= $(PKG_MAN_DIR)/man$(MAN_SECTION)
 LSRCFILES	= $(MAN_PAGES)
 

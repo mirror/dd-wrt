@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -55,7 +43,7 @@ project_help(void)
 " and subdirectories below it (i.e. a tree) can be restricted to using a\n"
 " subset of the available space in the filesystem.\n"
 "\n"
-" A managed tree must be setup initially using the -c option with a project.\n"
+" A managed tree must be setup initially using the -s option with a project.\n"
 " The specified project name or identifier is matched to one or more trees\n"
 " defined in /etc/projects, and these trees are then recursively descended\n"
 " to mark the affected inodes as being part of that tree - which sets inode\n"
@@ -101,7 +89,7 @@ check_project(
 	int			fd;
 
 	if (recurse_depth >= 0 && data->level > recurse_depth)
-		return -1;
+		return 0;
 
 	if (flag == FTW_NS ){
 		exitcode = 1;
@@ -126,7 +114,7 @@ check_project(
 			printf(_("%s - project identifier is not set"
 				 " (inode=%u, tree=%u)\n"),
 				path, fsx.fsx_projid, (unsigned int)prid);
-		if (!(fsx.fsx_xflags & FS_XFLAG_PROJINHERIT))
+		if (!(fsx.fsx_xflags & FS_XFLAG_PROJINHERIT) && S_ISDIR(stat->st_mode))
 			printf(_("%s - project inheritance flag is not set\n"),
 				path);
 	}
@@ -146,7 +134,7 @@ clear_project(
 	int			fd;
 
 	if (recurse_depth >= 0 && data->level > recurse_depth)
-		return -1;
+		return 0;
 
 	if (flag == FTW_NS ){
 		exitcode = 1;
@@ -193,7 +181,7 @@ setup_project(
 	int			fd;
 
 	if (recurse_depth >= 0 && data->level > recurse_depth)
-		return -1;
+		return 0;
 
 	if (flag == FTW_NS ){
 		exitcode = 1;

@@ -1,28 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2017 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "platform_defs.h"
 #include "command.h"
 #include "init.h"
-#include "path.h"
+#include "libfrog/paths.h"
 #include "io.h"
 #include "input.h"
+#include "libfrog/fsgeom.h"
 
 static cmdinfo_t	fsmap_cmd;
 static dev_t		xfs_data_dev;
@@ -184,8 +171,8 @@ dump_map_verbose(
 	off64_t			agoff, bperag;
 	int			foff_w, boff_w, aoff_w, tot_w, agno_w, own_w;
 	int			nr_w, dev_w;
-	char			rbuf[32], bbuf[32], abuf[32], obuf[32];
-	char			nbuf[32], dbuf[32], gbuf[32];
+	char			rbuf[40], bbuf[40], abuf[40], obuf[40];
+	char			nbuf[40], dbuf[40], gbuf[40];
 	char			owner[OWNER_BUF_SZ];
 	int			sunit, swidth;
 	int			flg = 0;
@@ -378,7 +365,7 @@ dump_verbose_key(void)
 		NFLG+1, NFLG+1, FLG_ESW);
 }
 
-int
+static int
 fsmap_f(
 	int			argc,
 	char			**argv)
@@ -430,13 +417,16 @@ fsmap_f(
 			vflag++;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&fsmap_cmd);
 		}
 	}
 
 	if ((dflag + lflag + rflag > 1) || (mflag > 0 && vflag > 0) ||
-	    (argc > optind && dflag + lflag + rflag == 0))
+	    (argc > optind && dflag + lflag + rflag == 0)) {
+		exitcode = 1;
 		return command_usage(&fsmap_cmd);
+	}
 
 	if (argc > optind) {
 		start = cvtnum(fsblocksize, fssectsize, argv[optind]);
@@ -444,6 +434,7 @@ fsmap_f(
 			fprintf(stderr,
 				_("Bad rmap start_bblock %s.\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 		start <<= BBSHIFT;
@@ -455,17 +446,18 @@ fsmap_f(
 			fprintf(stderr,
 				_("Bad rmap end_bblock %s.\n"),
 				argv[optind + 1]);
+			exitcode = 1;
 			return 0;
 		}
 		end <<= BBSHIFT;
 	}
 
 	if (vflag) {
-		c = ioctl(file->fd, XFS_IOC_FSGEOMETRY, &fsgeo);
-		if (c < 0) {
+		c = -xfrog_geometry(file->fd, &fsgeo);
+		if (c) {
 			fprintf(stderr,
 				_("%s: can't get geometry [\"%s\"]: %s\n"),
-				progname, file->name, strerror(errno));
+				progname, file->name, strerror(c));
 			exitcode = 1;
 			return 0;
 		}
@@ -508,8 +500,8 @@ fsmap_f(
 				" iflags=0x%x [\"%s\"]: %s\n"),
 				progname, head->fmh_iflags, file->name,
 				strerror(errno));
-			free(head);
 			exitcode = 1;
+			free(head);
 			return 0;
 		}
 		if (head->fmh_entries > map_size + 2) {

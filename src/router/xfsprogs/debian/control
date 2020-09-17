@@ -3,12 +3,12 @@ Section: admin
 Priority: optional
 Maintainer: XFS Development Team <linux-xfs@vger.kernel.org>
 Uploaders: Nathan Scott <nathans@debian.org>, Anibal Monsalve Salazar <anibal@debian.org>
-Build-Depends: uuid-dev, dh-autoreconf, debhelper (>= 5), gettext, libtool, libreadline-gplv2-dev | libreadline5-dev, libblkid-dev (>= 2.17), linux-libc-dev
-Standards-Version: 3.9.1
-Homepage: http://xfs.org/
+Build-Depends: uuid-dev, dh-autoreconf, debhelper (>= 5), gettext, libtool, libedit-dev, libblkid-dev (>= 2.17), linux-libc-dev, libdevmapper-dev, libattr1-dev, libicu-dev, dh-python, pkg-config
+Standards-Version: 4.0.0
+Homepage: https://xfs.wiki.kernel.org/
 
 Package: xfsprogs
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, python3:any, util-linux
 Provides: fsck-backend
 Suggests: xfsdump, acl, attr, quota
 Breaks: xfsdump (<< 3.0.0)
@@ -24,7 +24,7 @@ Description: Utilities for managing the XFS filesystem
  Btrees (directories, extents, free space) to aid both performance
  and scalability.
  .
- Refer to the documentation at http://oss.sgi.com/projects/xfs/
+ Refer to the documentation at https://xfs.wiki.kernel.org/
  for complete details.
 
 Package: xfslibs-dev
@@ -44,7 +44,7 @@ Description: XFS filesystem-specific static libraries and headers
  Btrees (directories, extents, free space) to aid both performance
  and scalability.
  .
- Refer to the documentation at http://xfs.org/
+ Refer to the documentation at https://xfs.wiki.kernel.org/
  for complete details.
 
 Package: xfsprogs-udeb

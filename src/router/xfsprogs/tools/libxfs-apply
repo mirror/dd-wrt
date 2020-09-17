@@ -1,4 +1,5 @@
 #!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
 
 # 2 args:
 #	libxfs-apply <repo> <commit ID or patchfile>
@@ -8,7 +9,7 @@ usage()
 	echo $*
 	echo
 	echo "Usage:"
-	echo "	libxfs-apply [--verbose] --source <repodir> --commit <commit_id>"
+	echo "	libxfs-apply [--verbose] --sob <name/email> --source <repodir> --commit <commit_id>"
 	echo "	libxfs-apply --patch <patchfile>"
 	echo
 	echo "libxfs-apply should be run in the destination git repository."
@@ -73,6 +74,7 @@ while [ $# -gt 0 ]; do
 	--source)	REPO=$2 ; shift ;;
 	--patch)	PATCH=$2; shift ;;
 	--commit)	COMMIT_ID=$2 ; shift ;;
+	--sob)		SIGNED_OFF_BY=$2 ; shift ;;
 	--verbose)	VERBOSE=true ;;
 	*)		usage ;;
 	esac
@@ -274,6 +276,20 @@ fixup_header_format()
 			print $0
 		}' > $_hdr.new
 
+	# Remove the last line if it contains only whitespace
+	sed -i '${/^[[:space:]]*$/d;}' $_hdr.new
+
+	# Add Signed-off-by: header if specified
+	if [ ! -z ${SIGNED_OFF_BY+x} ]; then 
+		echo "Signed-off-by: $SIGNED_OFF_BY" >> $_hdr.new
+	else	# get it from git config if present
+		SOB_NAME=`git config --get user.name`
+		SOB_EMAIL=`git config --get user.email`
+		if [ ! -z ${SOB_NAME+x} ]; then
+			echo "Signed-off-by: $SOB_NAME <$SOB_EMAIL>" >> $_hdr.new
+		fi
+	fi
+
 	# now output the new patch
 	cat $_hdr.new $_diff
 
@@ -379,8 +395,8 @@ apply_patch()
 			fi
 		fi
 	else
-		echo "Applying with patch utility:"
-		patch -p1 < $_new_patch.2
+		echo "Applying with git am:"
+		git am -s $_new_patch.2
 		echo "Patch was applied in $REPO; check for rejects, etc"
 	fi
 

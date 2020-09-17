@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1
 /*
  * Copyright (c) 1995, 2001-2002, 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "platform_defs.h"
@@ -44,7 +32,7 @@ typedef struct filehandle {
 static void
 jdm_fill_filehandle( filehandle_t *handlep,
 		     fshandle_t *fshandlep,
-		     xfs_bstat_t *statp )
+		     struct xfs_bstat *statp)
 {
 	handlep->fh_fshandle = *fshandlep;
 	handlep->fh_sz_following = FILEHANDLE_SZ_FOLLOWING;
@@ -92,7 +80,7 @@ void
 jdm_new_filehandle( jdm_filehandle_t **handlep,
 		    size_t *hlen,
 		    jdm_fshandle_t *fshandlep,
-		    xfs_bstat_t *statp)
+		    struct xfs_bstat *statp)
 {
 	/* allocate and fill filehandle */
 	*hlen = sizeof(filehandle_t);
@@ -110,7 +98,7 @@ jdm_delete_filehandle( jdm_filehandle_t *handlep, size_t hlen )
 }
 
 intgen_t
-jdm_open( jdm_fshandle_t *fshp, xfs_bstat_t *statp, intgen_t oflags )
+jdm_open( jdm_fshandle_t *fshp, struct xfs_bstat *statp, intgen_t oflags )
 {
 	fshandle_t *fshandlep = ( fshandle_t * )fshp;
 	filehandle_t filehandle;
@@ -125,7 +113,7 @@ jdm_open( jdm_fshandle_t *fshp, xfs_bstat_t *statp, intgen_t oflags )
 
 intgen_t
 jdm_readlink( jdm_fshandle_t *fshp,
-	      xfs_bstat_t *statp,
+	      struct xfs_bstat *statp,
 	      char *bufp, size_t bufsz )
 {
 	fshandle_t *fshandlep = ( fshandle_t * )fshp;
@@ -142,7 +130,7 @@ jdm_readlink( jdm_fshandle_t *fshp,
 
 int
 jdm_attr_multi(	jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		char *bufp, int rtrvcnt, int flags)
 {
 	fshandle_t *fshandlep = ( fshandle_t * )fshp;
@@ -159,7 +147,7 @@ jdm_attr_multi(	jdm_fshandle_t *fshp,
 
 int
 jdm_attr_list(	jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		char *bufp, size_t bufsz, int flags,
 		struct attrlist_cursor *cursor)
 {
@@ -180,7 +168,7 @@ jdm_attr_list(	jdm_fshandle_t *fshp,
 
 int
 jdm_parents( jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		parent_t *bufp, size_t bufsz,
 		unsigned int *count)
 {
@@ -190,7 +178,7 @@ jdm_parents( jdm_fshandle_t *fshp,
 
 int
 jdm_parentpaths( jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		parent_t *bufp, size_t bufsz,
 		unsigned int *count)
 {

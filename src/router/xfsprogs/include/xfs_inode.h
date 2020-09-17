@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #ifndef __XFS_INODE_H__
@@ -26,7 +14,16 @@
 struct xfs_trans;
 struct xfs_mount;
 struct xfs_inode_log_item;
-struct xfs_dir_ops;
+
+/*
+ * These are not actually used, they are only for userspace build
+ * compatibility in code that looks at i_state
+ */
+#define I_DIRTY_TIME		0
+#define I_DIRTY_TIME_EXPIRED	0
+
+#define IS_I_VERSION(inode)			(0)
+#define inode_maybe_inc_iversion(inode,flags)	(0)
 
 /*
  * Inode interface. This fakes up a "VFS inode" to make the xfs_inode appear
@@ -35,13 +32,34 @@ struct xfs_dir_ops;
  */
 struct inode {
 	mode_t		i_mode;
+	uint32_t	i_uid;
+	uint32_t	i_gid;
 	uint32_t	i_nlink;
+	xfs_dev_t	i_rdev;		/* This actually holds xfs_dev_t */
+	unsigned long	i_state;	/* Not actually used in userspace */
 	uint32_t	i_generation;
 	uint64_t	i_version;
 	struct timespec	i_atime;
 	struct timespec	i_mtime;
 	struct timespec	i_ctime;
 };
+
+static inline uint32_t i_uid_read(struct inode *inode)
+{
+	return inode->i_uid;
+}
+static inline uint32_t i_gid_read(struct inode *inode)
+{
+	return inode->i_gid;
+}
+static inline void i_uid_write(struct inode *inode, uint32_t uid)
+{
+	inode->i_uid = uid;
+}
+static inline void i_gid_write(struct inode *inode, uint32_t gid)
+{
+	inode->i_gid = gid;
+}
 
 typedef struct xfs_inode {
 	struct cache_node	i_node;
@@ -52,7 +70,6 @@ typedef struct xfs_inode {
 	struct xfs_ifork	*i_afp;		/* attribute fork pointer */
 	struct xfs_ifork	*i_cowfp;	/* copy on write extents */
 	struct xfs_ifork	i_df;		/* data fork */
-	struct xfs_trans	*i_transp;	/* ptr to owning transaction */
 	struct xfs_inode_log_item *i_itemp;	/* logging information */
 	unsigned int		i_delayed_blks;	/* count of delay alloc blks */
 	struct xfs_icdinode	i_d;		/* most of ondisk inode */
@@ -61,7 +78,6 @@ typedef struct xfs_inode {
 	unsigned int		i_cformat;	/* format of cow fork */
 
 	xfs_fsize_t		i_size;		/* in-memory size */
-	const struct xfs_dir_ops *d_ops;	/* directory ops vector */
 	struct inode		i_vnode;
 } xfs_inode_t;
 
@@ -119,27 +135,6 @@ static inline void inc_nlink(struct inode *inode)
 	inode->i_nlink++;
 }
 
-/*
- * Project quota id helpers (previously projid was 16bit only and using two
- * 16bit values to hold new 32bit projid was chosen to retain compatibility with
- * "old" filesystems).
- *
- * Copied here from xfs_inode.h because it has to be defined after the struct
- * xfs_inode...
- */
-static inline prid_t
-xfs_get_projid(struct xfs_icdinode *id)
-{
-	return (prid_t)id->di_projid_hi << 16 | id->di_projid_lo;
-}
-
-static inline void
-xfs_set_projid(struct xfs_icdinode *id, prid_t projid)
-{
-	id->di_projid_hi = (uint16_t) (projid >> 16);
-	id->di_projid_lo = (uint16_t) (projid & 0xffff);
-}
-
 static inline bool xfs_is_reflink_inode(struct xfs_inode *ip)
 {
 	return ip->i_d.di_flags2 & XFS_DIFLAG2_REFLINK;
@@ -160,11 +155,11 @@ extern void	libxfs_trans_ichgtime(struct xfs_trans *,
 				struct xfs_inode *, int);
 extern int	libxfs_iflush_int (struct xfs_inode *, struct xfs_buf *);
 
+extern struct timespec64 current_time(struct inode *inode);
+
 /* Inode Cache Interfaces */
 extern int	libxfs_iget(struct xfs_mount *, struct xfs_trans *, xfs_ino_t,
 				uint, struct xfs_inode **);
-extern void	libxfs_iput(struct xfs_inode *);
-
-#define IRELE(ip) libxfs_iput(ip)
+extern void	libxfs_irele(struct xfs_inode *ip);
 
 #endif /* __XFS_INODE_H__ */

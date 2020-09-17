@@ -1,0 +1,52 @@
+#!/bin/sh
+
+# Put XFS utilities in initramfs if the root fs is XFS.
+
+PREREQ=""
+
+prereqs()
+{
+	echo "$PREREQ"
+}
+
+case $1 in
+prereqs)
+	prereqs
+	exit 0
+	;;
+esac
+
+fstab_files()
+{
+	echo /etc/fstab
+	if [ -d /etc/fstab.d ]; then
+		ls -1 /etc/fstab.d | grep '\.fstab$' | sed -e 's;^;/etc/fstab.d/;'
+	fi
+}
+
+rootfs_type() {
+	fstab_files | while read file; do
+		test ! -f "$file" && continue
+
+		while read MNT_FSNAME MNT_DIR MNT_TYPE MNT_OPTS MNT_FREQ MNT_PASS MNT_JUNK; do
+			case "$MNT_FSNAME" in
+			""|\#*)
+				continue;
+				;;
+			esac
+			test "$MNT_DIR" != "/" && continue
+			echo "$MNT_TYPE"
+			break;
+		done < "$file"
+	done
+}
+
+. /usr/share/initramfs-tools/scripts/functions
+. /usr/share/initramfs-tools/hook-functions
+
+if [ "$(rootfs_type)" = "xfs" ]; then
+	copy_exec /sbin/xfs_repair
+	copy_exec /usr/sbin/xfs_db
+	copy_exec /usr/sbin/xfs_metadump
+fi
+exit 0

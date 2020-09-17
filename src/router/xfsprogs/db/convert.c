@@ -1,24 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
 #include "command.h"
-#include "convert.h"
 #include "output.h"
 #include "init.h"
 
@@ -213,7 +200,7 @@ convert_f(int argc, char **argv)
 		break;
 	case CT_AGINO:
 		v = (v >> mp->m_sb.sb_inodelog) %
-		    (mp->m_sb.sb_agblocks << mp->m_sb.sb_inopblog);
+		    XFS_AGB_TO_AGINO(mp, mp->m_sb.sb_agblocks);
 		break;
 	case CT_AGNUMBER:
 		v = xfs_daddr_to_agno(mp, v >> BBSHIFT);
@@ -235,7 +222,7 @@ convert_f(int argc, char **argv)
 	case CT_INO:
 		v = XFS_AGINO_TO_INO(mp, xfs_daddr_to_agno(mp, v >> BBSHIFT),
 			(v >> mp->m_sb.sb_inodelog) %
-			(mp->m_sb.sb_agblocks << mp->m_sb.sb_inopblog));
+			XFS_AGB_TO_AGINO(mp, mp->m_sb.sb_agblocks));
 		break;
 	case CT_INOIDX:
 		v = (v >> mp->m_sb.sb_inodelog) & (mp->m_sb.sb_inopblock - 1);

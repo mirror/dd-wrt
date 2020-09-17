@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -37,6 +25,7 @@ sendfile_help(void)
 " Copies data between one file descriptor and another.  Because this copying\n"
 " is done within the kernel, sendfile does not need to transfer data to and\n"
 " from user space.\n"
+" -q -- quiet mode, do not write anything to standard output.\n"
 " -f -- specifies an input file from which to source data to write\n"
 " -i -- specifies an input file name from which to source data to write.\n"
 " An offset and length in the source file can be optionally specified.\n"
@@ -100,6 +89,7 @@ sendfile_f(
 			if (fd < 0 || fd >= filecount) {
 				printf(_("value %d is out of range (0-%d)\n"),
 					fd, filecount-1);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -107,22 +97,28 @@ sendfile_f(
 			infile = optarg;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&sendfile_cmd);
 		}
 	}
-	if (infile && fd != -1)
+	if (infile && fd != -1) {
+		exitcode = 1;
 		return command_usage(&sendfile_cmd);
+	}
 
 	if (!infile)
 		fd = filetable[fd].fd;
-	else if ((fd = openfile(infile, NULL, IO_READONLY, 0, NULL)) < 0)
+	else if ((fd = openfile(infile, NULL, IO_READONLY, 0, NULL)) < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (optind == argc - 2) {
 		offset = cvtnum(blocksize, sectsize, argv[optind]);
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			goto done;
 		}
 		optind++;
@@ -130,6 +126,7 @@ sendfile_f(
 		if (count < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			goto done;
 		}
 	} else {
@@ -137,6 +134,7 @@ sendfile_f(
 
 		if (fstat(fd, &stat) < 0) {
 			perror("fstat");
+			exitcode = 1;
 			goto done;
 		}
 		count = stat.st_size;
@@ -144,8 +142,11 @@ sendfile_f(
 
 	gettimeofday(&t1, NULL);
 	c = send_buffer(offset, count, fd, &total);
-	if (c < 0)
+	if (c < 0) {
+		exitcode = 1;
 		goto done;
+	}
+
 	if (qflag)
 		goto done;
 	gettimeofday(&t2, NULL);
@@ -168,7 +169,7 @@ sendfile_init(void)
 	sendfile_cmd.argmax = -1;
 	sendfile_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	sendfile_cmd.args =
-		_("-i infile | -f N [off len]");
+		_("[-q] -i infile | -f N [off len]");
 	sendfile_cmd.oneline =
 		_("Transfer data directly between file descriptors");
 	sendfile_cmd.help = sendfile_help;

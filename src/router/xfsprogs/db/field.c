@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -301,7 +289,7 @@ const ftattr_t	ftattrtab[] = {
 	{ FLDT_DIRBLOCK, "dirblock", fp_num, "%u", SI(bitsz(uint32_t)), 0,
 	  fa_dirblock, NULL },
 	{ FLDT_DISK_DQUOT, "disk_dquot", NULL, (char *)disk_dquot_flds,
-	  SI(bitsz(xfs_disk_dquot_t)), 0, NULL, disk_dquot_flds },
+	  SI(bitsz(struct xfs_disk_dquot)), 0, NULL, disk_dquot_flds },
 	{ FLDT_DQBLK, "dqblk", NULL, (char *)dqblk_flds, SI(bitsz(xfs_dqblk_t)),
 	  0, NULL, dqblk_flds },
 	{ FLDT_DQID, "dqid", fp_num, "%d", SI(bitsz(xfs_dqid_t)), 0, NULL,

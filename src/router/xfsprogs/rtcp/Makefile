@@ -1,4 +1,4 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2000-2001 Silicon Graphics, Inc.  All Rights Reserved.
 #
 
@@ -8,6 +8,9 @@ include $(TOPDIR)/include/builddefs
 LTCOMMAND = xfs_rtcp
 CFILES = xfs_rtcp.c
 LLDFLAGS = -static
+
+LLDLIBS = $(LIBFROG)
+LTDEPENDENCIES = $(LIBFROG)
 
 default: depend $(LTCOMMAND)
 

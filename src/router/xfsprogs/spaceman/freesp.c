@@ -1,42 +1,31 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * Copyright (c) 2012 Red Hat, Inc.
  * Copyright (c) 2017 Oracle.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
 #include <linux/fiemap.h>
+#include "libfrog/fsgeom.h"
 #include "command.h"
 #include "init.h"
-#include "path.h"
+#include "libfrog/paths.h"
 #include "space.h"
 #include "input.h"
 
-typedef struct histent
+struct histent
 {
 	long long	low;
 	long long	high;
 	long long	count;
 	long long	blocks;
-} histent_t;
+};
 
 static int		agcount;
 static xfs_agnumber_t	*aglist;
-static histent_t	*hist;
+static struct histent	*hist;
 static int		dumpflag;
 static long long	equalsize;
 static long long	multsize;
@@ -94,7 +83,7 @@ hcmp(
 	const void	*a,
 	const void	*b)
 {
-	return ((histent_t *)a)->low - ((histent_t *)b)->low;
+	return ((struct histent *)a)->low - ((struct histent *)b)->low;
 }
 
 static void
@@ -161,16 +150,13 @@ scan_ag(
 	struct fsmap		*extent;
 	struct fsmap		*l, *h;
 	struct fsmap		*p;
-	off64_t			blocksize = file->geom.blocksize;
-	off64_t			bperag;
+	struct xfs_fd		*xfd = &file->xfd;
 	off64_t			aglen;
 	xfs_agblock_t		agbno;
 	unsigned long long	freeblks = 0;
 	unsigned long long	freeexts = 0;
 	int			ret;
 	int			i;
-
-	bperag = (off64_t)file->geom.agblocks * blocksize;
 
 	fsmap = malloc(fsmap_sizeof(NR_EXTENTS));
 	if (!fsmap) {
@@ -184,8 +170,8 @@ scan_ag(
 	l = fsmap->fmh_keys;
 	h = fsmap->fmh_keys + 1;
 	if (agno != NULLAGNUMBER) {
-		l->fmr_physical = agno * bperag;
-		h->fmr_physical = ((agno + 1) * bperag) - 1;
+		l->fmr_physical = cvt_agbno_to_b(xfd, agno, 0);
+		h->fmr_physical = cvt_agbno_to_b(xfd, agno + 1, 0);
 		l->fmr_device = h->fmr_device = file->fs_path.fs_datadev;
 	} else {
 		l->fmr_physical = 0;
@@ -197,7 +183,7 @@ scan_ag(
 	h->fmr_offset = ULLONG_MAX;
 
 	while (true) {
-		ret = ioctl(file->fd, FS_IOC_GETFSMAP, fsmap);
+		ret = ioctl(file->xfd.fd, FS_IOC_GETFSMAP, fsmap);
 		if (ret < 0) {
 			fprintf(stderr, _("%s: FS_IOC_GETFSMAP [\"%s\"]: %s\n"),
 				progname, file->name, strerror(errno));
@@ -216,9 +202,8 @@ scan_ag(
 			if (!(extent->fmr_flags & FMR_OF_SPECIAL_OWNER) ||
 			    extent->fmr_owner != XFS_FMR_OWN_FREE)
 				continue;
-			agbno = (extent->fmr_physical - (bperag * agno)) /
-								blocksize;
-			aglen = extent->fmr_length / blocksize;
+			agbno = cvt_b_to_agbno(xfd, extent->fmr_physical);
+			aglen = cvt_b_to_off_fsbt(xfd, extent->fmr_length);
 			freeblks += aglen;
 			freeexts++;
 
@@ -260,12 +245,13 @@ aglistadd(
 
 static int
 init(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	long long	x;
-	int		c;
-	int		speced = 0;	/* only one of -b -e -h or -m */
+	struct xfs_fsop_geom	*fsgeom = &file->xfd.fsgeom;
+	long long		x;
+	int			c;
+	int			speced = 0;	/* only one of -b -e -h or -m */
 
 	agcount = dumpflag = equalsize = multsize = optind = gflag = 0;
 	histcount = seen1 = summaryflag = 0;
@@ -324,7 +310,6 @@ init(
 		case 's':
 			summaryflag = 1;
 			break;
-		case '?':
 		default:
 			return command_usage(&freesp_cmd);
 		}
@@ -333,7 +318,7 @@ init(
 		return 0;
 	if (!speced)
 		multsize = 2;
-	histinit(file->geom.agblocks);
+	histinit(fsgeom->agblocks);
 	return 1;
 many_spec:
 	return command_usage(&freesp_cmd);
@@ -344,10 +329,11 @@ many_spec:
  */
 static int
 freesp_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	xfs_agnumber_t	agno;
+	struct xfs_fsop_geom	*fsgeom = &file->xfd.fsgeom;
+	xfs_agnumber_t		agno;
 
 	if (!init(argc, argv))
 		return 0;
@@ -355,7 +341,7 @@ freesp_f(
 		printf(_("        AG    extents     blocks\n"));
 	if (rtflag)
 		scan_ag(NULLAGNUMBER);
-	for (agno = 0; !rtflag && agno < file->geom.agcount; agno++)  {
+	for (agno = 0; !rtflag && agno < fsgeom->agcount; agno++) {
 		if (inaglist(agno))
 			scan_ag(agno);
 	}

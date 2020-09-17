@@ -1,4 +1,4 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 1999, 2001-2003 Silicon Graphics, Inc.  All Rights Reserved.
 #
 ifndef _BUILDRULES_INCLUDED_
@@ -36,9 +36,28 @@ $(SUBDIRS):
 	$(Q)$(MAKE) $(MAKEOPTS) -q -C $@ || $(MAKE) $(MAKEOPTS) -C $@
 endif
 
+ifndef CHECK_CMD
+CHECK_CMD = @true
+endif
+
 #
 # Standard targets
 #
+
+ifeq ($(CHECKSRC),2)
+
+# Check every .c file with sparse CHECK_CMD, do not call compiler
+$(LTCOMMAND) $(LTLIBRARY) : $(SUBDIRS) $(OBJECTS)
+.PHONY: $(LTCOMMAND) $(LTLIBRARY)
+
+%.lo %.o : %.c FORCE
+	@echo "    [CHECK]  $<"
+	$(Q)$(CHECK_CMD) $(CFLAGS) $<
+
+FORCE:
+
+else
+# Regular build, possibly calling sparse CHECK_CMD as well
 
 ifdef LTCOMMAND
 $(LTCOMMAND) : $(SUBDIRS) $(OBJECTS) $(LTDEPENDENCIES)
@@ -54,11 +73,15 @@ $(LTLIBRARY) : $(SUBDIRS) $(LTOBJECTS)
 %.lo: %.c
 	@echo "    [CC]     $@"
 	$(Q)$(LTCOMPILE) -c $<
+	$(Q)$(CHECK_CMD) $(CFLAGS) $<
 else
+
 %.o: %.c
 	@echo "    [CC]     $@"
 	$(Q)$(CC) $(CFLAGS) -c $<
+	$(Q)$(CHECK_CMD) $(CFLAGS) $<
 
+endif
 endif
 
 ifdef POTHEAD

@@ -1,20 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * Copyright (c) 2016 Oracle, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "libxfs.h"
 #include "libxlog.h"
@@ -140,7 +128,7 @@ error:
 
 void
 xlog_recover_print_efi(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	xfs_efi_log_format_t	*f, *src_f;
 	xfs_extent_t		*ex;
@@ -195,7 +183,7 @@ xlog_print_trans_efd(char **ptr, uint len)
 	 * memmove to ensure 8-byte alignment for the long longs in
 	 * xfs_efd_log_format_t structure
 	 */
-	memmove(&lbuf, *ptr, MIN(core_size, len));
+	memmove(&lbuf, *ptr, min(core_size, len));
 	f = &lbuf;
 	*ptr += len;
 	if (len >= core_size) {
@@ -214,7 +202,7 @@ xlog_print_trans_efd(char **ptr, uint len)
 
 void
 xlog_recover_print_efd(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	xfs_efd_log_format_t	*f;
 
@@ -352,7 +340,7 @@ xlog_print_trans_rud(
 	 * memmove to ensure 8-byte alignment for the long longs in
 	 * xfs_efd_log_format_t structure
 	 */
-	memmove(&lbuf, *ptr, MIN(core_size, len));
+	memmove(&lbuf, *ptr, min(core_size, len));
 	f = &lbuf;
 	*ptr += len;
 	if (len >= core_size) {
@@ -495,7 +483,7 @@ xlog_print_trans_cud(
 	/* size without extents at end */
 	uint core_size = sizeof(struct xfs_cud_log_format);
 
-	memcpy(&lbuf, *ptr, MIN(core_size, len));
+	memcpy(&lbuf, *ptr, min(core_size, len));
 	f = &lbuf;
 	*ptr += len;
 	if (len >= core_size) {
@@ -639,7 +627,7 @@ xlog_print_trans_bud(
 	/* size without extents at end */
 	uint core_size = sizeof(struct xfs_bud_log_format);
 
-	memcpy(&lbuf, *ptr, MIN(core_size, len));
+	memcpy(&lbuf, *ptr, min(core_size, len));
 	f = &lbuf;
 	*ptr += len;
 	if (len >= core_size) {

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -24,7 +12,7 @@
 
 static cmdinfo_t mincore_cmd;
 
-int
+static int
 mincore_f(
 	int		argc,
 	char		**argv)
@@ -46,36 +34,44 @@ mincore_f(
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[1]);
+			exitcode = 1;
 			return 0;
 		}
 		llength = cvtnum(blocksize, sectsize, argv[2]);
 		if (llength < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[2]);
+			exitcode = 1;
 			return 0;
 		} else if (llength > (size_t)llength) {
 			printf(_("length argument too large -- %lld\n"),
 				(long long)llength);
+			exitcode = 1;
 			return 0;
 		} else
 			length = (size_t)llength;
 	} else {
+		exitcode = 1;
 		return command_usage(&mincore_cmd);
 	}
 
 	start = check_mapping_range(mapping, offset, length, 1);
-	if (!start)
+	if (!start) {
+		exitcode = 1;
 		return 0;
+	}
 
 	vec = calloc(length/pagesize, sizeof(unsigned char));
 	if (!vec) {
 		perror("calloc");
+		exitcode = 1;
 		return 0;
 	}
 
 	if (mincore(start, length, vec) < 0) {
 		perror("mincore");
 		free(vec);
+		exitcode = 1;
 		return 0;
 	}
 

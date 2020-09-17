@@ -1,0 +1,272 @@
+.\" Copyright (c) 2019, Oracle.  All rights reserved.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" SPDX-License-Identifier: GPL-2.0+
+.\" %%%LICENSE_END
+.TH IOCTL-XFS-FSBULKSTAT 2 2019-06-17 "XFS"
+.SH NAME
+ioctl_xfs_fsbulkstat \- query information for a batch of XFS inodes
+.SH SYNOPSIS
+.br
+.B #include <xfs/xfs_fs.h>
+.PP
+.BI "int ioctl(int " fd ", XFS_IOC_FSBULKSTAT, struct xfs_fsop_bulkreq *" arg );
+.br
+.BI "int ioctl(int " fd ", XFS_IOC_FSBULKSTAT_SINGLE, struct xfs_fsop_bulkreq *" arg );
+.SH DESCRIPTION
+Query stat information for a group of XFS inodes.
+.PP
+NOTE: This ioctl has been superseded.
+Please see the
+.BR ioctl_xfs_bulkstat (2)
+manpage for information about its replacement.
+.PP
+These ioctls use
+.B struct xfs_fsop_bulkreq
+to set up a bulk transfer with the kernel:
+.PP
+.in +4n
+.nf
+struct xfs_fsop_bulkreq {
+	__u64             *lastip;
+	__s32             count;
+	void              *ubuffer;
+	__s32             *ocount;
+};
+.fi
+.in
+.PP
+.I lastip
+points to a value that will receive the number of the "last inode."
+This cannot be NULL.
+For
+.BR FSBULKSTAT ,
+this should be set to one less than the number of the first inode for which the
+caller wants information, or zero to start with the first inode in the
+filesystem.
+For
+.BR FSBULKSTAT_SINGLE ,
+this should be set to the number of the inode for which the caller wants
+information.
+After the call, this value will be set to the number of the last inode for
+which information was supplied.
+This field will not be updated if
+.I ocount
+is NULL.
+.PP
+.I count
+is the number of elements in the
+.B ubuffer
+array and therefore the number of inodes for which to return stat information.
+This value must be set to 1 for
+.BR FSBULKSTAT_SINGLE .
+.PP
+.I ocount
+points to a value that will receive the number of records returned.
+If this value is NULL, then neither
+.I ocount
+nor
+.I lastip
+will be updated.
+.PP
+.I ubuffer
+points to a memory buffer into which inode stat information will be copied.
+This buffer must be an array of
+.B struct xfs_bstat
+which is described below.
+The array must have at least
+.I count
+elements.
+.PP
+.in +4n
+.nf
+struct xfs_bstat {
+	__u64             bs_ino;
+	__u16             bs_mode;
+	__u16             bs_nlink;
+	__u32             bs_uid;
+	__u32             bs_gid;
+	__u32             bs_rdev;
+	__s32             bs_blksize;
+	__s64             bs_size;
+	struct xfs_bstime bs_atime;
+	struct xfs_bstime bs_mtime;
+	struct xfs_bstime bs_ctime;
+	int64_t           bs_blocks;
+	__u32             bs_xflags;
+	__s32             bs_extsize;
+	__s32             bs_extents;
+	__u32             bs_gen;
+	__u16             bs_projid_lo;
+	__u16             bs_forkoff;
+	__u16             bs_projid_hi;
+	uint16_t          bs_sick;
+	uint16_t          bs_checked;
+	unsigned char     bs_pad[2];
+	__u32             bs_cowextsize;
+	__u32             bs_dmevmask;
+	__u16             bs_dmstate;
+	__u16             bs_aextents;
+};
+.fi
+.in
+.PP
+The structure members are as follows:
+.PP
+.I bs_ino
+is the inode number for this record.
+.PP
+.I bs_mode
+is the file type and mode.
+.PP
+.I bs_nlink
+is the number of hard links to this inode.
+.PP
+.I bs_uid
+is the user id.
+.PP
+.I bs_gid
+is the group id.
+.PP
+.I bs_rdev
+is the encoded device id if this is a special file.
+.PP
+.I bs_blksize
+is the size of a data block for this file, in units of bytes.
+.PP
+.I bs_size
+is the size of the file, in bytes.
+.PP
+.I bs_atime
+is the last time this file was accessed.
+.PP
+.I bs_mtime
+is the last time the contents of this file were modified.
+.PP
+.I bs_ctime
+is the last time this inode record was modified.
+.PP
+.I bs_blocks
+is the number of filesystem blocks allocated to this file, including metadata.
+.PP
+.I bs_xflags
+contains the extended flags that are set on this inode.
+These flags are the same values as those defined in the
+.B XFS INODE FLAGS
+section of the 
+.BR ioctl_xfs_fsgetxattr (2)
+manpage.
+
+.PD 1
+.PP
+.I bs_extsize
+is the extent size hint for this file, in bytes.
+.PP
+.I bs_extents
+is the number of storage mappings associated with this file's data.
+.PP
+.I bs_gen
+is the generation number of the inode record.
+.PP
+.I bs_projid_lo
+is the lower 16-bits of the project id.
+.PP
+.I bs_forkoff
+is the offset of the attribute fork in the inode record, in bytes.
+.PP
+.I bs_projid_hi
+is the upper 16-bits of the project id.
+.PP
+.I bs_pad[6]
+is zeroed.
+.PP
+.I bs_cowextsize
+is the Copy on Write extent size hint for this file, in bytes.
+.PP
+.I bs_dmevmask
+is unused on Linux.
+.PP
+.I bs_dmstate
+is unused on Linux.
+.PP
+.I bs_aextents
+is the number of storage mappings associated with this file's extended
+attributes.
+.PP
+The fields
+.IR bs_sick " and " bs_checked
+indicate the relative health of various inode metadata:
+.IP \[bu] 2
+If a given sick flag is set in
+.IR bs_sick ,
+then that piece of metadata has been observed to be damaged.
+The same bit should be set in
+.IR bs_checked .
+.IP \[bu]
+If a given sick flag is set in
+.I bs_checked
+but is not set in
+.IR bs_sick ,
+then that piece of metadata has been checked and is not faulty.
+.IP \[bu]
+If a given sick flag is not set in
+.IR bs_checked ,
+then no conclusion can be made.
+.PP
+The following flags apply to these fields:
+.RS 0.4i
+.TP
+.B XFS_BS_SICK_INODE
+The inode's record itself.
+.TP
+.B XFS_BS_SICK_BMBTD
+File data extent mappings.
+.TP
+.B XFS_BS_SICK_BMBTA
+Extended attribute extent mappings.
+.TP
+.B XFS_BS_SICK_BMBTC
+Copy on Write staging extent mappings.
+.TP
+.B XFS_BS_SICK_DIR
+Directory information.
+.TP
+.B XFS_BS_SICK_XATTR
+Extended attribute data.
+.TP
+.B XFS_BS_SICK_SYMLINK
+Symbolic link target.
+.TP
+.B XFS_BS_SICK_PARENT
+Parent pointers.
+.RE
+.SH RETURN VALUE
+On error, \-1 is returned, and
+.I errno
+is set to indicate the error.
+.PP
+.SH ERRORS
+Error codes can be one of, but are not limited to, the following:
+.TP
+.B EFAULT
+The kernel was not able to copy into the userspace buffer.
+.TP
+.B EFSBADCRC
+Metadata checksum validation failed while performing the query.
+.TP
+.B EFSCORRUPTED
+Metadata corruption was encountered while performing the query.
+.TP
+.B EINVAL
+One of the arguments was not valid.
+.TP
+.B EIO
+An I/O error was encountered while performing the query.
+.TP
+.B ENOMEM
+There was insufficient memory to perform the query.
+.SH CONFORMING TO
+This API is specific to XFS filesystem on the Linux kernel.
+.SH SEE ALSO
+.BR ioctl (2),
+.BR ioctl_xfs_fsgetxattr (2)

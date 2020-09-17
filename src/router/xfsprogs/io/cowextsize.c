@@ -1,21 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 /*
  * If configure didn't find a struct fsxattr with fsx_cowextsize,
@@ -28,7 +14,7 @@
 #include "init.h"
 #include "io.h"
 #include "input.h"
-#include "path.h"
+#include "libfrog/paths.h"
 
 static cmdinfo_t cowextsize_cmd;
 static long cowextsize;
@@ -53,6 +39,7 @@ get_cowextsize(const char *path, int fd)
 	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
+		exitcode = 1;
 		return 0;
 	}
 	printf("[%u] %s\n", fsx.fsx_cowextsize, path);
@@ -67,11 +54,13 @@ set_cowextsize(const char *path, int fd, long extsz)
 
 	if (fstat64(fd, &stat) < 0) {
 		perror("fstat64");
+		exitcode = 1;
 		return 0;
 	}
 	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
+		exitcode = 1;
 		return 0;
 	}
 
@@ -86,6 +75,7 @@ set_cowextsize(const char *path, int fd, long extsz)
 	if ((xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx)) < 0) {
 		printf("%s: XFS_IOC_FSSETXATTR %s: %s\n",
 			progname, path, strerror(errno));
+		exitcode = 1;
 		return 0;
 	}
 
@@ -151,12 +141,10 @@ cowextsize_f(
 	while ((c = getopt(argc, argv, "DR")) != EOF) {
 		switch (c) {
 		case 'D':
-			recurse_all = 0;
 			recurse_dir = 1;
 			break;
 		case 'R':
 			recurse_all = 1;
-			recurse_dir = 0;
 			break;
 		default:
 			return command_usage(&cowextsize_cmd);
@@ -168,10 +156,18 @@ cowextsize_f(
 		if (cowextsize < 0) {
 			printf(_("non-numeric cowextsize argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 	} else {
 		cowextsize = -1;
+	}
+
+	if (recurse_all && recurse_dir) {
+		fprintf(stderr, _("%s: -R and -D options are mutually exclusive\n"),
+			progname);
+		exitcode = 1;
+		return 0;
 	}
 
 	if (recurse_all || recurse_dir)

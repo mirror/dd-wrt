@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -27,10 +15,8 @@
 #include "progress.h"
 #include "scan.h"
 
-void	set_mp(xfs_mount_t *mpp);
-
 /* workaround craziness in the xlog routines */
-int xlog_recover_do_trans(struct xlog *log, xlog_recover_t *t, int p)
+int xlog_recover_do_trans(struct xlog *log, struct xlog_recover *t, int p)
 {
 	return 0;
 }
@@ -78,12 +64,13 @@ zero_log(
 		do_warn(
 		_("zero_log: cannot find log head/tail (xlog_find_tail=%d)\n"),
 			error);
-		if (!no_modify && !zap_log)
+		if (!no_modify && !zap_log) {
 			do_warn(_(
 "ERROR: The log head and/or tail cannot be discovered. Attempt to mount the\n"
 "filesystem to replay the log or use the -L option to destroy the log and\n"
 "attempt a repair.\n"));
 			exit(2);
+		}
 	} else {
 		if (verbose) {
 			do_log(
@@ -133,6 +120,9 @@ zero_log(
 			do_error(_("failed to clear log"));
 	}
 
+	/* And we are now magically complete! */
+	PROG_RPT_INC(prog_rpt_done[0], mp->m_sb.sb_logblocks);
+
 	/*
 	 * Finally, seed the max LSN from the current state of the log if this
 	 * is a v5 filesystem.
@@ -173,7 +163,10 @@ phase2(
 
 	/* Zero log if applicable */
 	do_log(_("        - zero log...\n"));
+
+	set_progress_msg(PROG_FMT_ZERO_LOG, (uint64_t)mp->m_sb.sb_logblocks);
 	zero_log(mp);
+	print_final_rpt();
 
 	do_log(_("        - scan filesystem freespace and inode maps...\n"));
 
@@ -208,7 +201,7 @@ phase2(
 		 * also mark blocks
 		 */
 		set_bmap_ext(0, XFS_INO_TO_AGBNO(mp, mp->m_sb.sb_rootino),
-			     mp->m_ialloc_blks, XR_E_INO);
+			     M_IGEO(mp)->ialloc_blks, XR_E_INO);
 	} else  {
 		do_log(_("        - found root inode chunk\n"));
 

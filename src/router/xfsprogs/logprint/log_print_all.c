@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "libxfs.h"
 #include "libxlog.h"
@@ -39,10 +27,10 @@ xlog_print_find_oldest(
 	first_blk = 0;		/* read first block */
 	bp = xlog_get_bp(log, 1);
 	xlog_bread_noalign(log, 0, 1, bp);
-	first_half_cycle = xlog_get_cycle(XFS_BUF_PTR(bp));
+	first_half_cycle = xlog_get_cycle(bp->b_addr);
 	*last_blk = log->l_logBBsize-1;	/* read last block */
 	xlog_bread_noalign(log, *last_blk, 1, bp);
-	last_half_cycle = xlog_get_cycle(XFS_BUF_PTR(bp));
+	last_half_cycle = xlog_get_cycle(bp->b_addr);
 	ASSERT(last_half_cycle != 0);
 
 	if (first_half_cycle == last_half_cycle) /* all cycle nos are same */
@@ -51,7 +39,7 @@ xlog_print_find_oldest(
 		error = xlog_find_cycle_start(log, bp, first_blk,
 					      last_blk, last_half_cycle);
 
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 	return error;
 }
 
@@ -80,7 +68,7 @@ xlog_recover_print_data(
 
 STATIC void
 xlog_recover_print_buffer(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	xfs_agi_t		*agi;
 	xfs_agf_t		*agf;
@@ -88,7 +76,7 @@ xlog_recover_print_buffer(
 	char			*p;
 	int			len, num, i;
 	xfs_daddr_t		blkno;
-	xfs_disk_dquot_t	*ddq;
+	struct xfs_disk_dquot	*ddq;
 
 	f = (xfs_buf_log_format_t *)item->ri_buf[0].i_addr;
 	printf("	");
@@ -177,7 +165,7 @@ xlog_recover_print_buffer(
 				be32_to_cpu(agf->agf_freeblks),
 				be32_to_cpu(agf->agf_longest));
 		} else if (*(uint *)p == XFS_DQUOT_MAGIC) {
-			ddq = (xfs_disk_dquot_t *)p;
+			ddq = (struct xfs_disk_dquot *)p;
 			printf(_("	DQUOT Buffer:\n"));
 			if (!print_buffer)
 				continue;
@@ -195,7 +183,7 @@ xlog_recover_print_buffer(
 
 STATIC void
 xlog_recover_print_quotaoff(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	xfs_qoff_logformat_t	*qoff_f;
 	char			str[32] = { 0 };
@@ -214,15 +202,15 @@ xlog_recover_print_quotaoff(
 
 STATIC void
 xlog_recover_print_dquot(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	xfs_dq_logformat_t	*f;
-	xfs_disk_dquot_t	*d;
+	struct xfs_disk_dquot	*d;
 
 	f = (xfs_dq_logformat_t *)item->ri_buf[0].i_addr;
 	ASSERT(f);
 	ASSERT(f->qlf_len == 1);
-	d = (xfs_disk_dquot_t *)item->ri_buf[1].i_addr;
+	d = (struct xfs_disk_dquot *)item->ri_buf[1].i_addr;
 	printf(_("\tDQUOT: #regs:%d  blkno:%lld  boffset:%u id: %d\n"),
 	       f->qlf_size, (long long)f->qlf_blkno, f->qlf_boffset, f->qlf_id);
 	if (!print_quota)
@@ -273,17 +261,17 @@ xlog_recover_print_inode_core(
 	       (int)di->di_forkoff, di->di_dmevmask, (int)di->di_dmstate,
 	       (int)di->di_flags, di->di_gen);
 	if (di->di_version == 3) {
-		printf(_("flags2 0x%llx cowextsize 0x%x\n"),
+		printf(_("		flags2 0x%llx cowextsize 0x%x\n"),
 			(unsigned long long)di->di_flags2, di->di_cowextsize);
 	}
 }
 
 STATIC void
 xlog_recover_print_inode(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
-	xfs_inode_log_format_t	f_buf;
-	xfs_inode_log_format_t	*f;
+	struct xfs_inode_log_format	f_buf;
+	struct xfs_inode_log_format	*f;
 	int			attr_index;
 	int			hasdata;
 	int			hasattr;
@@ -297,8 +285,10 @@ xlog_recover_print_inode(
 	       f->ilf_dsize);
 
 	/* core inode comes 2nd */
-	ASSERT(item->ri_buf[1].i_len == xfs_log_dinode_size(2) ||
-		item->ri_buf[1].i_len == xfs_log_dinode_size(3));
+	/* ASSERT len vs xfs_log_dinode_size() for V3 or V2 inodes */
+	ASSERT(item->ri_buf[1].i_len ==
+			offsetof(struct xfs_log_dinode, di_next_unlinked) ||
+	       item->ri_buf[1].i_len == sizeof(struct xfs_log_dinode));
 	xlog_recover_print_inode_core((struct xfs_log_dinode *)
 				      item->ri_buf[1].i_addr);
 
@@ -394,7 +384,7 @@ xlog_recover_print_icreate(
 
 void
 xlog_recover_print_logitem(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item	*item)
 {
 	switch (ITEM_TYPE(item)) {
 	case XFS_LI_BUF:
@@ -442,9 +432,9 @@ xlog_recover_print_logitem(
 	}
 }
 
-void
+static void
 xlog_recover_print_item(
-	xlog_recover_item_t	*item)
+	struct xlog_recover_item *item)
 {
 	int			i;
 
@@ -508,11 +498,11 @@ xlog_recover_print_item(
 
 void
 xlog_recover_print_trans(
-	xlog_recover_t		*trans,
+	struct xlog_recover	*trans,
 	struct list_head	*itemq,
 	int			print)
 {
-	xlog_recover_item_t	*item;
+	struct xlog_recover_item *item;
 
 	if (print < 3)
 		return;

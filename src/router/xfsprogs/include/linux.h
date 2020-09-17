@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: LGPL-2.1
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.  All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef __XFS_LINUX_H__
 #define __XFS_LINUX_H__
@@ -32,6 +20,10 @@
 #include <stdio.h>
 #include <asm/types.h>
 #include <mntent.h>
+#include <fcntl.h>
+#if defined(HAVE_FALLOCATE)
+#include <linux/falloc.h>
+#endif
 #ifdef OVERRIDE_SYSTEM_FSXATTR
 # define fsxattr sys_fsxattr
 #endif
@@ -175,6 +167,24 @@ static inline void platform_mntent_close(struct mntent_cursor * cursor)
 {
 	endmntent(cursor->mtabp);
 }
+
+#if defined(FALLOC_FL_ZERO_RANGE)
+static inline int
+platform_zero_range(
+	int		fd,
+	xfs_off_t	start,
+	size_t		len)
+{
+	int ret;
+
+	ret = fallocate(fd, FALLOC_FL_ZERO_RANGE, start, len);
+	if (!ret)
+		return 0;
+	return -errno;
+}
+#else
+#define platform_zero_range(fd, s, l)	(-EOPNOTSUPP)
+#endif
 
 /*
  * Check whether we have to define FS_IOC_FS[GS]ETXATTR ourselves. These
@@ -326,5 +336,13 @@ fsmap_advance(
 
 #define HAVE_GETFSMAP
 #endif /* HAVE_GETFSMAP */
+
+#ifndef HAVE_MAP_SYNC
+#define MAP_SYNC 0
+#define MAP_SHARED_VALIDATE 0
+#else
+#include <asm-generic/mman.h>
+#include <asm-generic/mman-common.h>
+#endif /* HAVE_MAP_SYNC */
 
 #endif	/* __XFS_LINUX_H__ */

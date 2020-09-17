@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -442,7 +430,7 @@ clear_uncertain_ino_cache(xfs_agnumber_t agno)
  * XFS_INODES_PER_CHUNK (64) inode chunk
  *
  * Each inode resides in a 64-inode chunk which can be part one or more chunks
- * (MAX(64, inodes-per-block).  The fs allocates in chunks (as opposed to 1
+ * (max(64, inodes-per-block).  The fs allocates in chunks (as opposed to 1
  * chunk) when a block can hold more than one chunk (inodes per block > 64).
  * Allocating in one chunk pieces causes us problems when it takes more than
  * one fs block to contain an inode chunk because the chunks can start on
@@ -547,7 +535,7 @@ set_inode_free_alloc(struct xfs_mount *mp, xfs_agnumber_t agno, xfs_agino_t ino)
 	return(ino_rec);
 }
 
-void
+static void
 print_inode_list_int(xfs_agnumber_t agno, int uncertain)
 {
 	ino_tree_node_t *ino_rec;
@@ -788,7 +776,7 @@ avl_ino_end(avlnode_t *node)
 		XFS_INODES_PER_CHUNK));
 }
 
-avlops_t avl_ino_tree_ops = {
+static avlops_t avl_ino_tree_ops = {
 	avl_ino_start,
 	avl_ino_end
 };

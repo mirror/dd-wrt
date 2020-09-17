@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #include "libxfs.h"
 #include <pthread.h>
 #include "avl.h"
@@ -111,6 +113,7 @@ pf_queue_io(
 {
 	struct xfs_buf		*bp;
 	xfs_fsblock_t		fsbno = XFS_DADDR_TO_FSB(mp, map[0].bm_bn);
+	int			error;
 
 	/*
 	 * Never block on a buffer lock here, given that the actual repair
@@ -118,19 +121,20 @@ pf_queue_io(
 	 * the lock holder is either reading it from disk himself or
 	 * completely overwriting it this behaviour is perfectly fine.
 	 */
-	bp = libxfs_getbuf_map(mp->m_dev, map, nmaps, LIBXFS_GETBUF_TRYLOCK);
-	if (!bp)
+	error = -libxfs_buf_get_map(mp->m_dev, map, nmaps,
+			LIBXFS_GETBUF_TRYLOCK, &bp);
+	if (error)
 		return;
 
 	if (bp->b_flags & LIBXFS_B_UPTODATE) {
 		if (B_IS_INODE(flag))
 			pf_read_inode_dirs(args, bp);
-		XFS_BUF_SET_PRIORITY(bp, XFS_BUF_PRIORITY(bp) +
+		libxfs_buf_set_priority(bp, libxfs_buf_priority(bp) +
 						CACHE_PREFETCH_PRIORITY);
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 		return;
 	}
-	XFS_BUF_SET_PRIORITY(bp, flag);
+	libxfs_buf_set_priority(bp, flag);
 
 	pthread_mutex_lock(&args->lock);
 
@@ -144,7 +148,7 @@ pf_queue_io(
 		}
 	} else {
 		ASSERT(!B_IS_INODE(flag));
-		XFS_BUF_SET_PRIORITY(bp, B_DIR_META_2);
+		libxfs_buf_set_priority(bp, B_DIR_META_2);
 	}
 
 	pftrace("getbuf %c %p (%llu) in AG %d (fsbno = %lu) added to queue"
@@ -184,8 +188,9 @@ pf_read_bmbt_reclist(
 				(irec.br_startoff >= fs_max_file_offset))
 			goto out_free;
 
-		if (!verify_dfsbno(mp, irec.br_startblock) || !verify_dfsbno(mp,
-				irec.br_startblock + irec.br_blockcount - 1))
+		if (!libxfs_verify_fsbno(mp, irec.br_startblock) ||
+		    !libxfs_verify_fsbno(mp, irec.br_startblock +
+					     irec.br_blockcount - 1))
 			goto out_free;
 
 		if (!args->dirs_only && ((irec.br_startoff +
@@ -268,13 +273,15 @@ pf_scan_lbtree(
 {
 	xfs_buf_t		*bp;
 	int			rc;
+	int			error;
 
-	bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, dbno),
-			XFS_FSB_TO_BB(mp, 1), 0, &xfs_bmbt_buf_ops);
-	if (!bp)
+	error = -libxfs_buf_read(mp->m_dev, XFS_FSB_TO_DADDR(mp, dbno),
+			XFS_FSB_TO_BB(mp, 1), LIBXFS_READBUF_SALVAGE, &bp,
+			&xfs_bmbt_buf_ops);
+	if (error)
 		return 0;
 
-	XFS_BUF_SET_PRIORITY(bp, isadir ? B_DIR_BMAP : B_BMAP);
+	libxfs_buf_set_priority(bp, isadir ? B_DIR_BMAP : B_BMAP);
 
 	/*
 	 * If the verifier flagged a problem with the buffer, we can't trust
@@ -284,13 +291,13 @@ pf_scan_lbtree(
 	 */
 	if (bp->b_error) {
 		bp->b_flags |= LIBXFS_B_UNCHECKED;
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 		return 0;
 	}
 
 	rc = (*func)(XFS_BUF_TO_BLOCK(bp), level - 1, isadir, args);
 
-	libxfs_putbuf(bp);
+	libxfs_buf_relse(bp);
 
 	return rc;
 }
@@ -331,7 +338,7 @@ pf_scanfunc_bmap(
 
 	for (i = 0; i < numrecs; i++) {
 		dbno = get_unaligned_be64(&pp[i]);
-		if (!verify_dfsbno(mp, dbno))
+		if (!libxfs_verify_fsbno(mp, dbno))
 			return 0;
 		if (!pf_scan_lbtree(dbno, level, isadir, args, pf_scanfunc_bmap))
 			return 0;
@@ -373,7 +380,7 @@ pf_read_btinode(
 
 	for (i = 0; i < numrecs; i++) {
 		dbno = get_unaligned_be64(&pp[i]);
-		if (!verify_dfsbno(mp, dbno))
+		if (!libxfs_verify_fsbno(mp, dbno))
 			break;
 		if (!pf_scan_lbtree(dbno, level, isadir, args, pf_scanfunc_bmap))
 			break;
@@ -398,12 +405,13 @@ pf_read_inode_dirs(
 	int			icnt = 0;
 	int			hasdir = 0;
 	int			isadir;
+	int			error;
 
-	libxfs_readbuf_verify(bp, &xfs_inode_buf_ops);
-	if (bp->b_error)
+	error = -libxfs_readbuf_verify(bp, &xfs_inode_buf_ops);
+	if (error)
 		return;
 
-	for (icnt = 0; icnt < (XFS_BUF_COUNT(bp) >> mp->m_sb.sb_inodelog); icnt++) {
+	for (icnt = 0; icnt < (bp->b_bcount >> mp->m_sb.sb_inodelog); icnt++) {
 		dino = xfs_make_iptr(mp, bp, icnt);
 
 		/*
@@ -431,14 +439,14 @@ pf_read_inode_dirs(
 		if (be16_to_cpu(dino->di_magic) != XFS_DINODE_MAGIC)
 			continue;
 
-		if (!libxfs_dinode_good_version(mp, dino->di_version))
+		if (!libxfs_dinode_good_version(&mp->m_sb, dino->di_version))
 			continue;
 
 		if (be64_to_cpu(dino->di_size) <= XFS_DFORK_DSIZE(dino, mp))
 			continue;
 
 		if ((dino->di_forkoff != 0) &&
-		    (dino->di_forkoff >= XFS_LITINO(mp, dino->di_version) >> 3))
+		    (dino->di_forkoff >= XFS_LITINO(mp) >> 3))
 			continue;
 
 		switch (dino->di_format) {
@@ -451,7 +459,7 @@ pf_read_inode_dirs(
 		}
 	}
 	if (hasdir)
-		XFS_BUF_SET_PRIORITY(bp, B_DIR_INODE);
+		libxfs_buf_set_priority(bp, B_DIR_INODE);
 }
 
 /*
@@ -477,7 +485,7 @@ pf_batch_read(
 		num = 0;
 		if (which == PF_SECONDARY) {
 			bplist[0] = btree_find(args->io_queue, 0, &fsbno);
-			max_fsbno = MIN(fsbno + pf_max_fsbs,
+			max_fsbno = min(fsbno + pf_max_fsbs,
 							args->last_bno_read);
 		} else {
 			bplist[0] = btree_find(args->io_queue,
@@ -499,7 +507,7 @@ pf_batch_read(
 			}
 
 			if (which != PF_META_ONLY ||
-				   !B_IS_INODE(XFS_BUF_PRIORITY(bplist[num])))
+				  !B_IS_INODE(libxfs_buf_priority(bplist[num])))
 				num++;
 			if (num == MAX_BUFS)
 				break;
@@ -545,7 +553,7 @@ pf_batch_read(
 
 		if (which == PF_PRIMARY) {
 			for (inode_bufs = 0, i = 0; i < num; i++) {
-				if (B_IS_INODE(XFS_BUF_PRIORITY(bplist[i])))
+				if (B_IS_INODE(libxfs_buf_priority(bplist[i])))
 					inode_bufs++;
 			}
 			args->inode_bufs_queued -= inode_bufs;
@@ -576,7 +584,7 @@ pf_batch_read(
 		if ((bplist[num - 1]->b_flags & LIBXFS_B_DISCONTIG)) {
 			libxfs_readbufr_map(mp->m_ddev_targp, bplist[num - 1], 0);
 			bplist[num - 1]->b_flags |= LIBXFS_B_UNCHECKED;
-			libxfs_putbuf(bplist[num - 1]);
+			libxfs_buf_relse(bplist[num - 1]);
 			num--;
 		}
 
@@ -591,26 +599,27 @@ pf_batch_read(
 				size = XFS_BUF_SIZE(bplist[i]);
 				if (len < size)
 					break;
-				memcpy(XFS_BUF_PTR(bplist[i]), pbuf, size);
+				memcpy(bplist[i]->b_addr, pbuf, size);
 				bplist[i]->b_flags |= (LIBXFS_B_UPTODATE |
 						       LIBXFS_B_UNCHECKED);
 				len -= size;
-				if (B_IS_INODE(XFS_BUF_PRIORITY(bplist[i])))
+				if (B_IS_INODE(libxfs_buf_priority(bplist[i])))
 					pf_read_inode_dirs(args, bplist[i]);
 				else if (which == PF_META_ONLY)
-					XFS_BUF_SET_PRIORITY(bplist[i],
+					libxfs_buf_set_priority(bplist[i],
 								B_DIR_META_H);
 				else if (which == PF_PRIMARY && num == 1)
-					XFS_BUF_SET_PRIORITY(bplist[i],
+					libxfs_buf_set_priority(bplist[i],
 								B_DIR_META_S);
 			}
 		}
 		for (i = 0; i < num; i++) {
 			pftrace("putbuf %c %p (%llu) in AG %d",
-				B_IS_INODE(XFS_BUF_PRIORITY(bplist[i])) ? 'I' : 'M',
+				B_IS_INODE(libxfs_buf_priority(bplist[i])) ?
+								      'I' : 'M',
 				bplist[i], (long long)XFS_BUF_ADDR(bplist[i]),
 				args->agno);
-			libxfs_putbuf(bplist[i]);
+			libxfs_buf_relse(bplist[i]);
 		}
 		pthread_mutex_lock(&args->lock);
 		if (which != PF_SECONDARY) {
@@ -708,15 +717,14 @@ pf_queuing_worker(
 	int			num_inos;
 	ino_tree_node_t		*irec;
 	ino_tree_node_t		*cur_irec;
-	int			blks_per_cluster;
 	xfs_agblock_t		bno;
 	int			i;
 	int			err;
 	uint64_t		sparse;
+	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
+	unsigned long long	cluster_mask;
 
-	blks_per_cluster = mp->m_inode_cluster_size >> mp->m_sb.sb_blocklog;
-	if (blks_per_cluster == 0)
-		blks_per_cluster = 1;
+	cluster_mask = (1ULL << igeo->inodes_per_cluster) - 1;
 
 	for (i = 0; i < PF_THREAD_COUNT; i++) {
 		err = pthread_create(&args->io_threads[i], NULL,
@@ -746,7 +754,7 @@ pf_queuing_worker(
 		cur_irec = irec;
 
 		num_inos = XFS_INODES_PER_CHUNK;
-		while (num_inos < mp->m_ialloc_inos && irec != NULL) {
+		while (num_inos < igeo->ialloc_inos && irec != NULL) {
 			irec = next_ino_rec(irec);
 			num_inos += XFS_INODES_PER_CHUNK;
 		}
@@ -766,8 +774,12 @@ pf_queuing_worker(
 			 * might get stuck on a buffer that has been locked
 			 * and added to the I/O queue but is waiting for
 			 * the thread to be woken.
+			 * Start processing as well, in case everything so
+			 * far was already prefetched and the queue is empty.
 			 */
+			
 			pf_start_io_workers(args);
+			pf_start_processing(args);
 			sem_wait(&args->ra_count);
 		}
 
@@ -779,22 +791,23 @@ pf_queuing_worker(
 			struct xfs_buf_map	map;
 
 			map.bm_bn = XFS_AGB_TO_DADDR(mp, args->agno, bno);
-			map.bm_len = XFS_FSB_TO_BB(mp, blks_per_cluster);
+			map.bm_len = XFS_FSB_TO_BB(mp,
+					igeo->blocks_per_cluster);
 
 			/*
 			 * Queue I/O for each non-sparse cluster. We can check
 			 * sparse state in cluster sized chunks as cluster size
 			 * is the min. granularity of sparse irec regions.
 			 */
-			if ((sparse & ((1ULL << inodes_per_cluster) - 1)) == 0)
+			if ((sparse & cluster_mask) == 0)
 				pf_queue_io(args, &map, 1,
 					    (cur_irec->ino_isa_dir != 0) ?
 					     B_DIR_INODE : B_INODE);
 
-			bno += blks_per_cluster;
-			num_inos += inodes_per_cluster;
-			sparse >>= inodes_per_cluster;
-		} while (num_inos < mp->m_ialloc_inos);
+			bno += igeo->blocks_per_cluster;
+			num_inos += igeo->inodes_per_cluster;
+			sparse >>= igeo->inodes_per_cluster;
+		} while (num_inos < igeo->ialloc_inos);
 	}
 
 	pthread_mutex_lock(&args->lock);
@@ -872,6 +885,7 @@ start_inode_prefetch(
 {
 	prefetch_args_t		*args;
 	long			max_queue;
+	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
 
 	if (!do_prefetch || agno >= mp->m_sb.sb_agcount)
 		return NULL;
@@ -894,10 +908,9 @@ start_inode_prefetch(
 	 */
 
 	max_queue = libxfs_bcache->c_maxcount / thread_count / 8;
-	if (mp->m_inode_cluster_size > mp->m_sb.sb_blocksize)
-		max_queue = max_queue *
-			(mp->m_inode_cluster_size >> mp->m_sb.sb_blocklog) /
-			mp->m_ialloc_blks;
+	if (igeo->inode_cluster_size > mp->m_sb.sb_blocksize)
+		max_queue = max_queue * igeo->blocks_per_cluster /
+				igeo->ialloc_blks;
 
 	sem_init(&args->ra_count, 0, max_queue);
 
@@ -943,11 +956,11 @@ start_inode_prefetch(
  */
 static void
 prefetch_ag_range(
-	struct work_queue	*work,
+	struct workqueue	*work,
 	xfs_agnumber_t		start_ag,
 	xfs_agnumber_t		end_ag,
 	bool			dirs_only,
-	void			(*func)(struct work_queue *,
+	void			(*func)(struct workqueue *,
 					xfs_agnumber_t, void *))
 {
 	int			i;
@@ -967,12 +980,12 @@ struct pf_work_args {
 	xfs_agnumber_t	start_ag;
 	xfs_agnumber_t	end_ag;
 	bool		dirs_only;
-	void		(*func)(struct work_queue *, xfs_agnumber_t, void *);
+	void		(*func)(struct workqueue *, xfs_agnumber_t, void *);
 };
 
 static void
 prefetch_ag_range_work(
-	struct work_queue	*work,
+	struct workqueue	*work,
 	xfs_agnumber_t		unused,
 	void			*args)
 {
@@ -991,14 +1004,14 @@ void
 do_inode_prefetch(
 	struct xfs_mount	*mp,
 	int			stride,
-	void			(*func)(struct work_queue *,
+	void			(*func)(struct workqueue *,
 					xfs_agnumber_t, void *),
 	bool			check_cache,
 	bool			dirs_only)
 {
 	int			i;
-	struct work_queue	queue;
-	struct work_queue	*queues;
+	struct workqueue	queue;
+	struct workqueue	*queues;
 	int			queues_started = 0;
 
 	/*
@@ -1008,8 +1021,8 @@ do_inode_prefetch(
 	 * CPU to maximise parallelism of the queue to be processed.
 	 */
 	if (check_cache && !libxfs_bcache_overflowed()) {
-		queue.mp = mp;
-		create_work_queue(&queue, mp, libxfs_nproc());
+		queue.wq_ctx = mp;
+		create_work_queue(&queue, mp, platform_nproc());
 		for (i = 0; i < mp->m_sb.sb_agcount; i++)
 			queue_work(&queue, func, i, NULL);
 		destroy_work_queue(&queue);
@@ -1021,7 +1034,7 @@ do_inode_prefetch(
 	 * directly after each AG is queued.
 	 */
 	if (!stride) {
-		queue.mp = mp;
+		queue.wq_ctx = mp;
 		prefetch_ag_range(&queue, 0, mp->m_sb.sb_agcount,
 				  dirs_only, func);
 		return;
@@ -1030,7 +1043,7 @@ do_inode_prefetch(
 	/*
 	 * create one worker thread for each segment of the volume
 	 */
-	queues = malloc(thread_count * sizeof(work_queue_t));
+	queues = malloc(thread_count * sizeof(struct workqueue));
 	for (i = 0; i < thread_count; i++) {
 		struct pf_work_args *wargs;
 

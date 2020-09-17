@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #ifndef XFS_REPAIR_INCORE_H
@@ -113,8 +101,6 @@ typedef struct rt_extent_tree_node  {
 /* separate state bit, OR'ed into high (4th) bit of ex_state field */
 
 #define XR_E_WRITTEN	0x8	/* extent has been written out, can't reclaim */
-#define good_state(state)	(((state) & (~XR_E_WRITTEN)) >= XR_E_UNKNOWN && \
-				((state) & (~XR_E_WRITTEN) < XF_E_BAD_STATE))
 #define written(state)		((state) & XR_E_WRITTEN)
 #define set_written(state)	(state) &= XR_E_WRITTEN
 
@@ -229,6 +215,9 @@ int		count_bcnt_extents(xfs_agnumber_t);
 #define XR_INO_SOCK	9		/* socket */
 #define XR_INO_FIFO	10		/* fifo */
 #define XR_INO_MOUNTPOINT 11		/* mountpoint */
+#define XR_INO_UQUOTA	12		/* user quota inode */
+#define XR_INO_GQUOTA	13		/* group quota inode */
+#define XR_INO_PQUOTA	14		/* project quota inode */
 
 /* inode allocation tree */
 

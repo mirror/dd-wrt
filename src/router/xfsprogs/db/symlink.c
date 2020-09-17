@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2013 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -23,7 +11,7 @@
 #include "field.h"
 #include "bit.h"
 #include "init.h"
-
+#include "symlink.h"
 
 /*
  * XXX: no idea how to handle multiple contiguous block symlinks here.
@@ -64,7 +52,6 @@ const struct field	symlink_crc_hfld[] = {
 };
 
 #define	OFF(f)	bitize(offsetof(struct xfs_dsymlink_hdr, sl_ ## f))
-#define	SZOF(f)	bitize(sizeof(struct xfs_dsymlink_hdr))
 const struct field	symlink_crc_flds[] = {
 	{ "magic", FLDT_UINT32X, OI(OFF(magic)), C1, 0, TYP_NONE },
 	{ "offset", FLDT_UINT32D, OI(OFF(offset)), C1, 0, TYP_NONE },

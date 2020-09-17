@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -48,7 +36,7 @@ quotino_check(xfs_mount_t *mp)
 	ino_tree_node_t *irec;
 
 	if (mp->m_sb.sb_uquotino != NULLFSINO && mp->m_sb.sb_uquotino != 0)  {
-		if (verify_inum(mp, mp->m_sb.sb_uquotino))
+		if (!libxfs_verify_ino(mp, mp->m_sb.sb_uquotino))
 			irec = NULL;
 		else
 			irec = find_inode_rec(mp,
@@ -64,7 +52,7 @@ quotino_check(xfs_mount_t *mp)
 	}
 
 	if (mp->m_sb.sb_gquotino != NULLFSINO && mp->m_sb.sb_gquotino != 0)  {
-		if (verify_inum(mp, mp->m_sb.sb_gquotino))
+		if (!libxfs_verify_ino(mp, mp->m_sb.sb_gquotino))
 			irec = NULL;
 		else
 			irec = find_inode_rec(mp,
@@ -80,7 +68,7 @@ quotino_check(xfs_mount_t *mp)
 	}
 
 	if (mp->m_sb.sb_pquotino != NULLFSINO && mp->m_sb.sb_pquotino != 0)  {
-		if (verify_inum(mp, mp->m_sb.sb_pquotino))
+		if (!libxfs_verify_ino(mp, mp->m_sb.sb_pquotino))
 			irec = NULL;
 		else
 			irec = find_inode_rec(mp,
@@ -124,9 +112,9 @@ quota_sb_check(xfs_mount_t *mp)
 	    (mp->m_sb.sb_pquotino == NULLFSINO || mp->m_sb.sb_pquotino == 0))  {
 		lost_quotas = 1;
 		fs_quotas = 0;
-	} else if (!verify_inum(mp, mp->m_sb.sb_uquotino) &&
-			!verify_inum(mp, mp->m_sb.sb_gquotino) &&
-			!verify_inum(mp, mp->m_sb.sb_pquotino)) {
+	} else if (libxfs_verify_ino(mp, mp->m_sb.sb_uquotino) &&
+		   libxfs_verify_ino(mp, mp->m_sb.sb_gquotino) &&
+		   libxfs_verify_ino(mp, mp->m_sb.sb_pquotino)) {
 		fs_quotas = 1;
 	}
 }
@@ -134,13 +122,13 @@ quota_sb_check(xfs_mount_t *mp)
 
 static void
 process_ag_func(
-	work_queue_t		*wq,
+	struct workqueue	*wq,
 	xfs_agnumber_t 		agno,
 	void			*arg)
 {
 	wait_for_inode_prefetch(arg);
 	do_log(_("        - agno = %d\n"), agno);
-	process_aginodes(wq->mp, arg, agno, 0, 1, 0);
+	process_aginodes(wq->wq_ctx, arg, agno, 0, 1, 0);
 	blkmap_free_final();
 	cleanup_inode_prefetch(arg);
 
@@ -169,23 +157,23 @@ _("unable to finish adding attr/data fork reverse-mapping data for AG %u.\n"),
 
 static void
 check_rmap_btrees(
-	work_queue_t	*wq,
+	struct workqueue*wq,
 	xfs_agnumber_t	agno,
 	void		*arg)
 {
 	int		error;
 
-	error = rmap_add_fixed_ag_rec(wq->mp, agno);
+	error = rmap_add_fixed_ag_rec(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("unable to add AG %u metadata reverse-mapping data.\n"), agno);
 
-	error = rmap_fold_raw_recs(wq->mp, agno);
+	error = rmap_fold_raw_recs(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("unable to merge AG %u metadata reverse-mapping data.\n"), agno);
 
-	error = rmaps_verify_btree(wq->mp, agno);
+	error = rmaps_verify_btree(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("%s while checking reverse-mappings"),
@@ -194,13 +182,13 @@ _("%s while checking reverse-mappings"),
 
 static void
 compute_ag_refcounts(
-	work_queue_t	*wq,
+	struct workqueue*wq,
 	xfs_agnumber_t	agno,
 	void		*arg)
 {
 	int		error;
 
-	error = compute_refcounts(wq->mp, agno);
+	error = compute_refcounts(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("%s while computing reference count records.\n"),
@@ -209,13 +197,13 @@ _("%s while computing reference count records.\n"),
 
 static void
 process_inode_reflink_flags(
-	struct work_queue	*wq,
+	struct workqueue	*wq,
 	xfs_agnumber_t		agno,
 	void			*arg)
 {
 	int			error;
 
-	error = fix_inode_reflink_flags(wq->mp, agno);
+	error = fix_inode_reflink_flags(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("%s while fixing inode reflink flags.\n"),
@@ -224,13 +212,13 @@ _("%s while fixing inode reflink flags.\n"),
 
 static void
 check_refcount_btrees(
-	work_queue_t	*wq,
+	struct workqueue*wq,
 	xfs_agnumber_t	agno,
 	void		*arg)
 {
 	int		error;
 
-	error = check_refcounts(wq->mp, agno);
+	error = check_refcounts(wq->wq_ctx, agno);
 	if (error)
 		do_error(
 _("%s while checking reference counts"),
@@ -241,13 +229,13 @@ static void
 process_rmap_data(
 	struct xfs_mount	*mp)
 {
-	struct work_queue	wq;
+	struct workqueue	wq;
 	xfs_agnumber_t		i;
 
 	if (!rmap_needs_work(mp))
 		return;
 
-	create_work_queue(&wq, mp, libxfs_nproc());
+	create_work_queue(&wq, mp, platform_nproc());
 	for (i = 0; i < mp->m_sb.sb_agcount; i++)
 		queue_work(&wq, check_rmap_btrees, i, NULL);
 	destroy_work_queue(&wq);
@@ -255,12 +243,12 @@ process_rmap_data(
 	if (!xfs_sb_version_hasreflink(&mp->m_sb))
 		return;
 
-	create_work_queue(&wq, mp, libxfs_nproc());
+	create_work_queue(&wq, mp, platform_nproc());
 	for (i = 0; i < mp->m_sb.sb_agcount; i++)
 		queue_work(&wq, compute_ag_refcounts, i, NULL);
 	destroy_work_queue(&wq);
 
-	create_work_queue(&wq, mp, libxfs_nproc());
+	create_work_queue(&wq, mp, platform_nproc());
 	for (i = 0; i < mp->m_sb.sb_agcount; i++) {
 		queue_work(&wq, process_inode_reflink_flags, i, NULL);
 		queue_work(&wq, check_refcount_btrees, i, NULL);
@@ -318,14 +306,19 @@ phase4(xfs_mount_t *mp)
 		for (j = ag_hdr_block; j < ag_end; j += blen)  {
 			bstate = get_bmap_ext(i, j, ag_end, &blen);
 			switch (bstate) {
+			case XR_E_FREE1:
+				if (no_modify)
+					do_warn(
+	_("free space (%u,%u-%u) only seen by one free space btree\n"),
+						i, j, j + blen - 1);
+				break;
 			case XR_E_BAD_STATE:
 			default:
 				do_warn(
-				_("unknown block state, ag %d, block %d\n"),
-					i, j);
+				_("unknown block state, ag %d, blocks %u-%u\n"),
+					i, j, j + blen - 1);
 				/* fall through .. */
 			case XR_E_UNKNOWN:
-			case XR_E_FREE1:
 			case XR_E_FREE:
 			case XR_E_INUSE:
 			case XR_E_INUSE_FS:

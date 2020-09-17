@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -35,7 +23,7 @@ print_fileio(
 	int		index,
 	int		braces)
 {
-	printf(_("%c%03d%c %-14s (%s,%s,%s,%s%s%s%s%s)\n"),
+	printf(_("%c%03d%c %-14s (%s,%s,%s,%s%s%s%s%s%s%s)\n"),
 		braces? '[' : ' ', index, braces? ']' : ' ', file->name,
 		file->flags & IO_FOREIGN ? _("foreign") : _("xfs"),
 		file->flags & IO_OSYNC ? _("sync") : _("non-sync"),
@@ -44,7 +32,9 @@ print_fileio(
 		file->flags & IO_REALTIME ? _(",real-time") : "",
 		file->flags & IO_APPEND ? _(",append-only") : "",
 		file->flags & IO_NONBLOCK ? _(",non-block") : "",
-		file->flags & IO_TMPFILE ? _(",tmpfile") : "");
+		file->flags & IO_TMPFILE ? _(",tmpfile") : "",
+		file->flags & IO_PATH ? _(",path") : "",
+		file->flags & IO_NOFOLLOW ? _(",nofollow") : "");
 }
 
 int
@@ -79,6 +69,7 @@ file_f(
 	i = atoi(argv[1]);
 	if (i < 0 || i >= filecount) {
 		printf(_("value %d is out of range (0-%d)\n"), i, filecount-1);
+		exitcode = 1;
 	} else {
 		file = &filetable[i];
 		filelist_f();

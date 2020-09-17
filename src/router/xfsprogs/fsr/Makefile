@@ -1,4 +1,4 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2000-2001 Silicon Graphics, Inc.  All Rights Reserved.
 #
 
@@ -7,14 +7,12 @@ include $(TOPDIR)/include/builddefs
 
 LTCOMMAND = xfs_fsr
 CFILES = xfs_fsr.c
-LLDLIBS = $(LIBHANDLE)
+LLDLIBS = $(LIBHANDLE) $(LIBFROG) $(LIBPTHREAD) $(LIBBLKID)
+LTDEPENDENCIES = $(LIBHANDLE) $(LIBFROG)
+LLDFLAGS = -static-libtool-libs
 
 ifeq ($(HAVE_GETMNTENT),yes)
 LCFLAGS += -DHAVE_GETMNTENT
-endif
-
-ifeq ($(HAVE_GETMNTINFO),yes)
-LCFLAGS += -DHAVE_GETMNTINFO
 endif
 
 default: depend $(LTCOMMAND)

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs_priv.h"
@@ -46,26 +34,26 @@ xfs_trans_buf_item_match(
 	struct xfs_buf_map	*map,
 	int			nmaps)
 {
-        struct xfs_log_item_desc *lidp;
-        struct xfs_buf_log_item *blip;
+	struct xfs_log_item	*lip;
+	struct xfs_buf_log_item *blip;
 	int			len = 0;
 	int			i;
 
 	for (i = 0; i < nmaps; i++)
 		len += map[i].bm_len;
 
-        list_for_each_entry(lidp, &tp->t_items, lid_trans) {
-                blip = (struct xfs_buf_log_item *)lidp->lid_item;
-                if (blip->bli_item.li_type == XFS_LI_BUF &&
+	list_for_each_entry(lip, &tp->t_items, li_trans) {
+		blip = (struct xfs_buf_log_item *)lip;
+		if (blip->bli_item.li_type == XFS_LI_BUF &&
 		    blip->bli_buf->b_target->dev == btp->dev &&
 		    XFS_BUF_ADDR(blip->bli_buf) == map[0].bm_bn &&
 		    blip->bli_buf->b_bcount == BBTOB(len)) {
 			ASSERT(blip->bli_buf->b_map_count == nmaps);
-                        return blip->bli_buf;
+			return blip->bli_buf;
 		}
-        }
+	}
 
-        return NULL;
+	return NULL;
 }
 /*
  * The following are from fs/xfs/xfs_buf_item.c
@@ -73,7 +61,7 @@ xfs_trans_buf_item_match(
 
 /*
  * Allocate a new buf log item to go with the given buffer.
- * Set the buffer's b_fsprivate field to point to the new
+ * Set the buffer's b_log_item field to point to the new
  * buf log item.  If there are other item's attached to the
  * buffer (see xfs_buf_attach_iodone() below), then put the
  * buf log item at the front.
@@ -96,11 +84,8 @@ xfs_buf_item_init(
 	 * the first.  If we do already have one, there is
 	 * nothing to do here so return.
 	 */
-	if (XFS_BUF_FSPRIVATE3(bp, xfs_mount_t *) != mp)
-		XFS_BUF_SET_FSPRIVATE3(bp, mp);
-	XFS_BUF_SET_BDSTRAT_FUNC(bp, xfs_bdstrat_cb);
-	if (XFS_BUF_FSPRIVATE(bp, void *) != NULL) {
-		lip = XFS_BUF_FSPRIVATE(bp, xfs_log_item_t *);
+	if (bp->b_log_item != NULL) {
+		lip = bp->b_log_item;
 		if (lip->li_type == XFS_LI_BUF) {
 #ifdef LI_DEBUG
 			fprintf(stderr,
@@ -111,19 +96,17 @@ xfs_buf_item_init(
 		}
 	}
 
-	bip = (xfs_buf_log_item_t *)kmem_zone_zalloc(xfs_buf_item_zone,
-						    KM_SLEEP);
+	bip = (xfs_buf_log_item_t *)kmem_zone_zalloc(xfs_buf_item_zone, 0);
 #ifdef LI_DEBUG
 	fprintf(stderr, "adding buf item %p for not-logged buffer %p\n",
 		bip, bp);
 #endif
-	bip->bli_item.li_type = XFS_LI_BUF;
-	bip->bli_item.li_mountp = mp;
+	xfs_log_item_init(mp, &bip->bli_item, XFS_LI_BUF);
 	bip->bli_buf = bp;
-	bip->bli_format.blf_type = XFS_LI_BUF;
-	bip->bli_format.blf_blkno = (int64_t)XFS_BUF_ADDR(bp);
-	bip->bli_format.blf_len = (unsigned short)BTOBB(XFS_BUF_COUNT(bp));
-	XFS_BUF_SET_FSPRIVATE(bp, bip);
+	bip->__bli_format.blf_type = XFS_LI_BUF;
+	bip->__bli_format.blf_blkno = (int64_t)XFS_BUF_ADDR(bp);
+	bip->__bli_format.blf_len = (unsigned short)BTOBB(bp->b_bcount);
+	bp->b_log_item = bip;
 }
 
 
@@ -149,25 +132,18 @@ xfs_buf_item_log(
  */
 void
 xfs_inode_item_init(
-	xfs_inode_t		*ip,
-	xfs_mount_t		*mp)
+	xfs_inode_t			*ip,
+	xfs_mount_t			*mp)
 {
-	xfs_inode_log_item_t	*iip;
+	struct xfs_inode_log_item	*iip;
 
 	ASSERT(ip->i_itemp == NULL);
-	iip = ip->i_itemp = (xfs_inode_log_item_t *)
-			kmem_zone_zalloc(xfs_ili_zone, KM_SLEEP);
+	iip = ip->i_itemp = kmem_zone_zalloc(xfs_ili_zone, 0);
 #ifdef LI_DEBUG
 	fprintf(stderr, "inode_item_init for inode %llu, iip=%p\n",
 		ip->i_ino, iip);
 #endif
 
-	iip->ili_item.li_type = XFS_LI_INODE;
-	iip->ili_item.li_mountp = mp;
+	xfs_log_item_init(mp, &iip->ili_item, XFS_LI_INODE);
 	iip->ili_inode = ip;
-	iip->ili_format.ilf_type = XFS_LI_INODE;
-	iip->ili_format.ilf_ino = ip->i_ino;
-	iip->ili_format.ilf_blkno = ip->i_imap.im_blkno;
-	iip->ili_format.ilf_len = ip->i_imap.im_len;
-	iip->ili_format.ilf_boffset = ip->i_imap.im_boffset;
 }

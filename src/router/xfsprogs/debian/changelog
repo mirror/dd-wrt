@@ -1,3 +1,255 @@
+xfsprogs (5.8.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 04 Sep 2020 15:40:01 -0400
+
+xfsprogs (5.8.0-rc1-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 26 Aug 2020 14:06:48 -0500
+
+xfsprogs (5.8.0-rc0-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 10 Aug 2020 14:42:12 -0500
+
+xfsprogs (5.7.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 24 Jul 2020 11:30:00 -0700
+
+xfsprogs (5.7.0-rc1-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 15 Jul 2020 13:05:24 -0700
+
+xfsprogs (5.7.0-rc0-1) unstable; urgency=low
+
+  * New upstream prerelease
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 07 May 2020 13:06:26 -0500
+
+xfsprogs (5.6.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 14 Apr 2020 14:28:51 -0500
+
+xfsprogs (5.6.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 08 Apr 2020 09:42:46 -0400
+
+xfsprogs (5.6.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 18 Mar 2020 11:35:54 -0500
+
+xfsprogs (5.5.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 13 Mar 2020 09:19:11 -0500
+
+xfsprogs (5.5.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Sun, 01 Mar 2020 09:07:07 -0800
+
+xfsprogs (5.5.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 22 Jan 2020 11:12:32 -0500
+
+xfsprogs (5.4.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 20 Dec 2019 15:43:02 -0600
+
+xfsprogs (5.4.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 17 Dec 2019 15:55:17 -0600
+
+xfsprogs (5.4.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 15 Nov 2019 15:00:00 -0500
+
+xfsprogs (5.3.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 15 Nov 2019 14:57:03 -0500
+
+xfsprogs (5.3.0-rc2-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 07 Nov 2019 11:12:30 -0500
+
+xfsprogs (5.3.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 28 Aug 2019 10:59:10 -0500
+
+xfsprogs (5.3.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 16 Aug 2019 12:14:23 -0500
+
+xfsprogs (5.2.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 21 Aug 2019 10:42:23 -0500
+
+xfsprogs (5.2.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 09 Aug 2019 11:39:01 -0500
+
+xfsprogs (5.1.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 19 Jul 2019 12:38:19 -0500
+
+xfsprogs (5.1.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 11 Jul 2019 20:53:37 -0400
+
+xfsprogs (5.1.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Tue, 07 May 2019 21:27:56 -0500
+
+xfsprogs (5.0.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 03 May 2019 11:55:58 -0500
+
+xfsprogs (5.0.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 26 Apr 2019 16:18:28 -0500
+
+xfsprogs (4.20.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 22 Feb 2019 12:04:48 -0600
+
+xfsprogs (4.20.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 08 Feb 2019 12:17:15 -0600
+
+xfsprogs (4.19.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 09 Nov 2018 14:20:39 -0600
+
+xfsprogs (4.19.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 02 Nov 2018 09:40:25 -0500
+
+xfsprogs (4.19.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+  * Merge libxfs changes from kernel-4.19
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 10 Oct 2018 17:52:48 +1100
+
+xfsprogs (4.18.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 24 Aug 2018 14:45:57 -0500
+
+xfsprogs (4.18.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 01 Aug 2018 16:44:08 -0500
+
+xfsprogs (4.18.0-rc0-1) unstable; urgency=low
+
+  * New upstream pre-release
+  * Merge libxfs changes from kernel-4.18
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 05 Jul 2018 15:24:46 -0500
+
+xfsprogs (4.17.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 28 Jun 2018 11:49:17 -0500
+
+xfsprogs (4.17.0-rc1-1) unstable; urgency=low
+
+  * New upstream pre-release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 22 Jun 2018 13:51:30 -0500
+
+xfsprogs (4.16.1-1) unstable; urgency=low
+
+  * New upstream release
+  * Remove bashism in fsck.xfs
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 30 Apr 2018 21:27:59 -0500
+
+xfsprogs (4.16.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Thu, 26 Apr 2018 15:13:07 -0500
+
+xfsprogs (4.15.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Mon, 26 Feb 2018 19:45:12 -0600
+
+xfsprogs (4.15.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Nathan Scott <nathans@debian.org>  Fri, 23 Feb 2018 13:06:35 -0600
+
+xfsprogs (4.15.0-rc1-1) unstable; urgency=low
+  * Use source-only uploads using quilt format (closes: #144876)
+  * Includes copy_file_range patch for xfs_io (closes: #890716)
+  * Drop libreadline5-dev package dependency (closes: #695875)
+  * Includes old metadump CVE-2012-2150 fix (closes: #793495)
+  * New upstream release (closes: #874209)
+
+ -- Nathan Scott <nathans@debian.org>  Wed, 21 Feb 2018 10:52:38 -0600
+
 xfsprogs (4.14.0) unstable; urgency=low
 
   * New upstream release

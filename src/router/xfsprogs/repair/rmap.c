@@ -1,23 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-#include <libxfs.h>
+#include "libxfs.h"
 #include "btree.h"
 #include "err_protos.h"
 #include "libxlog.h"
@@ -26,6 +12,7 @@
 #include "dinode.h"
 #include "slab.h"
 #include "rmap.h"
+#include "libfrog/bitmap.h"
 
 #undef RMAP_DEBUG
 
@@ -463,18 +450,17 @@ rmap_store_ag_btree_rec(
 	struct xfs_buf		*agbp = NULL;
 	struct xfs_buf		*agflbp = NULL;
 	struct xfs_trans	*tp;
-	struct xfs_trans_res tres = {0};
 	__be32			*agfl_bno, *b;
+	struct xfs_ag_rmap	*ag_rmap = &ag_rmaps[agno];
+	struct bitmap		*own_ag_bitmap = NULL;
 	int			error = 0;
-	struct xfs_owner_info	oinfo;
 
 	if (!xfs_sb_version_hasrmapbt(&mp->m_sb))
 		return 0;
 
 	/* Release the ar_rmaps; they were put into the rmapbt during p5. */
-	free_slab(&ag_rmaps[agno].ar_rmaps);
-	error = init_slab(&ag_rmaps[agno].ar_rmaps,
-				  sizeof(struct xfs_rmap_irec));
+	free_slab(&ag_rmap->ar_rmaps);
+	error = init_slab(&ag_rmap->ar_rmaps, sizeof(struct xfs_rmap_irec));
 	if (error)
 		goto err;
 
@@ -494,18 +480,56 @@ rmap_store_ag_btree_rec(
 	 * rmap, we only need to add rmap records for AGFL blocks past
 	 * that point in the AGFL because those blocks are a result of a
 	 * no-rmap no-shrink freelist fixup that we did earlier.
+	 *
+	 * However, some blocks end up on the AGFL because the free space
+	 * btrees shed blocks as a result of allocating space to fix the
+	 * freelist.  We already created in-core rmap records for the free
+	 * space btree blocks, so we must be careful not to create those
+	 * records again.  Create a bitmap of already-recorded OWN_AG rmaps.
 	 */
-	agfl_bno = XFS_BUF_TO_AGFL_BNO(mp, agflbp);
-	b = agfl_bno + ag_rmaps[agno].ar_flcount;
-	while (*b != NULLAGBLOCK && b - agfl_bno < XFS_AGFL_SIZE(mp)) {
-		error = rmap_add_ag_rec(mp, agno, be32_to_cpu(*b), 1,
-				XFS_RMAP_OWN_AG);
-		if (error)
-			goto err;
+	error = init_slab_cursor(ag_rmap->ar_raw_rmaps, rmap_compare, &rm_cur);
+	if (error)
+		goto err;
+	error = -bitmap_alloc(&own_ag_bitmap);
+	if (error)
+		goto err_slab;
+	while ((rm_rec = pop_slab_cursor(rm_cur)) != NULL) {
+		if (rm_rec->rm_owner != XFS_RMAP_OWN_AG)
+			continue;
+		error = -bitmap_set(own_ag_bitmap, rm_rec->rm_startblock,
+					rm_rec->rm_blockcount);
+		if (error) {
+			/*
+			 * If this range is already set, then the incore rmap
+			 * records for the AG free space btrees overlap and
+			 * we're toast because that is not allowed.
+			 */
+			if (error == EEXIST)
+				error = EFSCORRUPTED;
+			goto err_slab;
+		}
+	}
+	free_slab_cursor(&rm_cur);
+
+	/* Create rmaps for any AGFL blocks that aren't already rmapped. */
+	agfl_bno = xfs_buf_to_agfl_bno(agflbp);
+	b = agfl_bno + ag_rmap->ar_flcount;
+	while (*b != cpu_to_be32(NULLAGBLOCK) &&
+	       b - agfl_bno < libxfs_agfl_size(mp)) {
+		xfs_agblock_t	agbno;
+
+		agbno = be32_to_cpu(*b);
+		if (!bitmap_test(own_ag_bitmap, agbno, 1)) {
+			error = rmap_add_ag_rec(mp, agno, agbno, 1,
+					XFS_RMAP_OWN_AG);
+			if (error)
+				goto err;
+		}
 		b++;
 	}
-	libxfs_putbuf(agflbp);
+	libxfs_buf_relse(agflbp);
 	agflbp = NULL;
+	bitmap_free(&own_ag_bitmap);
 
 	/* Merge all the raw rmaps into the main list */
 	error = rmap_fold_raw_recs(mp, agno);
@@ -513,15 +537,16 @@ rmap_store_ag_btree_rec(
 		goto err;
 
 	/* Create cursors to refcount structures */
-	error = init_slab_cursor(ag_rmaps[agno].ar_rmaps, rmap_compare,
-			&rm_cur);
+	error = init_slab_cursor(ag_rmap->ar_rmaps, rmap_compare, &rm_cur);
 	if (error)
 		goto err;
 
 	/* Insert rmaps into the btree one at a time */
 	rm_rec = pop_slab_cursor(rm_cur);
 	while (rm_rec) {
-		error = -libxfs_trans_alloc(mp, &tres, 16, 0, 0, &tp);
+		struct xfs_owner_info	oinfo = {};
+
+		error = -libxfs_trans_alloc_rollable(mp, 16, &tp);
 		if (error)
 			goto err_slab;
 
@@ -530,7 +555,7 @@ rmap_store_ag_btree_rec(
 			goto err_trans;
 
 		ASSERT(XFS_RMAP_NON_INODE_OWNER(rm_rec->rm_owner));
-		libxfs_rmap_ag_owner(&oinfo, rm_rec->rm_owner);
+		oinfo.oi_owner = rm_rec->rm_owner;
 		error = -libxfs_rmap_alloc(tp, agbp, agno, rm_rec->rm_startblock,
 				rm_rec->rm_blockcount, &oinfo);
 		if (error)
@@ -554,7 +579,9 @@ err_slab:
 	free_slab_cursor(&rm_cur);
 err:
 	if (agflbp)
-		libxfs_putbuf(agflbp);
+		libxfs_buf_relse(agflbp);
+	if (own_ag_bitmap)
+		bitmap_free(&own_ag_bitmap);
 	return error;
 }
 
@@ -1055,7 +1082,7 @@ err:
 	if (bt_cur)
 		libxfs_btree_del_cursor(bt_cur, XFS_BTREE_NOERROR);
 	if (agbp)
-		libxfs_putbuf(agbp);
+		libxfs_buf_relse(agbp);
 	free_slab_cursor(&rm_cur);
 	return 0;
 }
@@ -1144,6 +1171,36 @@ record_inode_reflink_flag(
 }
 
 /*
+ * Inform the user that we're clearing the reflink flag on an inode that
+ * doesn't actually share any blocks.  This is an optimization (the kernel
+ * skips refcount checks for non-reflink files) and not a corruption repair,
+ * so we don't need to log every time we clear a flag unless verbose mode is
+ * enabled.
+ */
+static void
+warn_clearing_reflink(
+	xfs_ino_t		ino)
+{
+	static bool		warned = false;
+	static pthread_mutex_t	lock = PTHREAD_MUTEX_INITIALIZER;
+
+	if (verbose) {
+		do_warn(_("clearing reflink flag on inode %"PRIu64"\n"), ino);
+		return;
+	}
+
+	if (warned)
+		return;
+
+	pthread_mutex_lock(&lock);
+	if (!warned) {
+		do_warn(_("clearing reflink flag on inodes when possible\n"));
+		warned = true;
+	}
+	pthread_mutex_unlock(&lock);
+}
+
+/*
  * Fix an inode's reflink flag.
  */
 static int
@@ -1161,9 +1218,7 @@ fix_inode_reflink_flag(
 _("setting reflink flag on inode %"PRIu64"\n"),
 			XFS_AGINO_TO_INO(mp, agno, agino));
 	else if (!no_modify) /* && !set */
-		do_warn(
-_("clearing reflink flag on inode %"PRIu64"\n"),
-			XFS_AGINO_TO_INO(mp, agno, agino));
+		warn_clearing_reflink(XFS_AGINO_TO_INO(mp, agno, agino));
 	if (no_modify)
 		return 0;
 
@@ -1176,7 +1231,8 @@ _("clearing reflink flag on inode %"PRIu64"\n"),
 	else
 		dino->di_flags2 &= cpu_to_be64(~XFS_DIFLAG2_REFLINK);
 	libxfs_dinode_calc_crc(mp, dino);
-	libxfs_writebuf(buf, 0);
+	libxfs_buf_mark_dirty(buf);
+	libxfs_buf_relse(buf);
 
 	return 0;
 }
@@ -1312,7 +1368,7 @@ check_refcounts(
 	pag->pagf_init = 0;
 	libxfs_perag_put(pag);
 
-	bt_cur = libxfs_refcountbt_init_cursor(mp, NULL, agbp, agno, NULL);
+	bt_cur = libxfs_refcountbt_init_cursor(mp, NULL, agbp, agno);
 	if (!bt_cur) {
 		error = -ENOMEM;
 		goto err;
@@ -1362,7 +1418,7 @@ err:
 		libxfs_btree_del_cursor(bt_cur, error ? XFS_BTREE_ERROR :
 							XFS_BTREE_NOERROR);
 	if (agbp)
-		libxfs_putbuf(agbp);
+		libxfs_buf_relse(agbp);
 	free_slab_cursor(&rl_cur);
 	return 0;
 }
@@ -1380,7 +1436,6 @@ fix_freelist(
 {
 	xfs_alloc_arg_t		args;
 	xfs_trans_t		*tp;
-	struct xfs_trans_res	tres = {0};
 	int			flags;
 	int			error;
 
@@ -1389,8 +1444,7 @@ fix_freelist(
 	args.agno = agno;
 	args.alignment = 1;
 	args.pag = libxfs_perag_get(mp, agno);
-	error = -libxfs_trans_alloc(mp, &tres,
-			libxfs_alloc_min_freelist(mp, args.pag), 0, 0, &tp);
+	error = -libxfs_trans_alloc_rollable(mp, 0, &tp);
 	if (error)
 		do_error(_("failed to fix AGFL on AG %d, error %d\n"),
 				agno, error);
@@ -1426,7 +1480,9 @@ fix_freelist(
 		do_error(_("failed to fix AGFL on AG %d, error %d\n"),
 				agno, error);
 	}
-	libxfs_trans_commit(tp);
+	error = -libxfs_trans_commit(tp);
+	if (error)
+		do_error(_("%s: commit failed, error %d\n"), __func__, error);
 }
 
 /*

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -205,9 +193,9 @@ process_rtbitmap(xfs_mount_t	*mp,
 			error = 1;
 			continue;
 		}
-		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1), NULL);
-		if (!bp) {
+		error = -libxfs_buf_read(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
+				XFS_FSB_TO_BB(mp, 1), 0, NULL, &bp);
+		if (error) {
 			do_warn(_("can't read block %d for rtbitmap inode\n"),
 					bmbno);
 			error = 1;
@@ -234,7 +222,7 @@ process_rtbitmap(xfs_mount_t	*mp,
 				prevbit = 0;
 			}
 		}
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 		if (extno == mp->m_sb.sb_rextents)
 			break;
 	}
@@ -267,9 +255,9 @@ process_rtsummary(xfs_mount_t	*mp,
 			error++;
 			continue;
 		}
-		bp = libxfs_readbuf(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
-				XFS_FSB_TO_BB(mp, 1), NULL);
-		if (!bp) {
+		error = -libxfs_buf_read(mp->m_dev, XFS_FSB_TO_DADDR(mp, bno),
+				XFS_FSB_TO_BB(mp, 1), 0, NULL, &bp);
+		if (error) {
 			do_warn(_("can't read block %d for rtsummary inode\n"),
 					sumbno);
 			error++;
@@ -278,7 +266,7 @@ process_rtsummary(xfs_mount_t	*mp,
 		bytes = bp->b_un.b_addr;
 		memmove((char *)sumfile + sumbno * mp->m_sb.sb_blocksize, bytes,
 			mp->m_sb.sb_blocksize);
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 	}
 }
 #endif

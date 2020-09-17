@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #if defined(HAVE_FALLOCATE)
@@ -88,11 +76,14 @@ allocsp_f(
 {
 	xfs_flock64_t	segment;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (xfsctl(file->name, file->fd, XFS_IOC_ALLOCSP64, &segment) < 0) {
 		perror("XFS_IOC_ALLOCSP64");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -105,11 +96,14 @@ freesp_f(
 {
 	xfs_flock64_t	segment;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (xfsctl(file->name, file->fd, XFS_IOC_FREESP64, &segment) < 0) {
 		perror("XFS_IOC_FREESP64");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -122,11 +116,14 @@ resvsp_f(
 {
 	xfs_flock64_t	segment;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (xfsctl(file->name, file->fd, XFS_IOC_RESVSP64, &segment) < 0) {
 		perror("XFS_IOC_RESVSP64");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -139,11 +136,14 @@ unresvsp_f(
 {
 	xfs_flock64_t	segment;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (xfsctl(file->name, file->fd, XFS_IOC_UNRESVSP64, &segment) < 0) {
 		perror("XFS_IOC_UNRESVSP64");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -156,11 +156,14 @@ zero_f(
 {
 	xfs_flock64_t	segment;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (xfsctl(file->name, file->fd, XFS_IOC_ZERO_RANGE, &segment) < 0) {
 		perror("XFS_IOC_ZERO_RANGE");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -216,18 +219,24 @@ fallocate_f(
 			mode = FALLOC_FL_UNSHARE_RANGE;
 			break;
 		default:
+			exitcode = 1;
 			command_usage(&falloc_cmd);
 		}
 	}
-        if (optind != argc - 2)
+        if (optind != argc - 2) {
+		exitcode = 1;
                 return command_usage(&falloc_cmd);
+	}
 
-	if (!offset_length(argv[optind], argv[optind+1], &segment))
+	if (!offset_length(argv[optind], argv[optind+1], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (fallocate(file->fd, mode,
 			segment.l_start, segment.l_len)) {
 		perror("fallocate");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -241,12 +250,15 @@ fpunch_f(
 	xfs_flock64_t	segment;
 	int		mode = FALLOC_FL_PUNCH_HOLE | FALLOC_FL_KEEP_SIZE;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (fallocate(file->fd, mode,
 			segment.l_start, segment.l_len)) {
 		perror("fallocate");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -260,12 +272,15 @@ fcollapse_f(
 	xfs_flock64_t	segment;
 	int		mode = FALLOC_FL_COLLAPSE_RANGE;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (fallocate(file->fd, mode,
 			segment.l_start, segment.l_len)) {
 		perror("fallocate");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -279,12 +294,15 @@ finsert_f(
 	xfs_flock64_t	segment;
 	int		mode = FALLOC_FL_INSERT_RANGE;
 
-	if (!offset_length(argv[1], argv[2], &segment))
+	if (!offset_length(argv[1], argv[2], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (fallocate(file->fd, mode,
 			segment.l_start, segment.l_len)) {
 		perror("fallocate");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -297,18 +315,24 @@ fzero_f(
 {
 	xfs_flock64_t	segment;
 	int		mode = FALLOC_FL_ZERO_RANGE;
-	int		index = 1;
+	int		c;
 
-	if (strncmp(argv[index], "-k", 3) == 0) {
-		mode |= FALLOC_FL_KEEP_SIZE;
-		index++;
+	while ((c = getopt(argc, argv, "k")) != EOF) {
+		switch (c) {
+		case 'k':
+			mode |= FALLOC_FL_KEEP_SIZE;
+			break;
+		default:
+			command_usage(&fzero_cmd);
+		}
 	}
+        if (optind != argc - 2)
+                return command_usage(&fzero_cmd);
 
-	if (!offset_length(argv[index], argv[index + 1], &segment))
+	if (!offset_length(argv[optind], argv[optind + 1], &segment))
 		return 0;
 
-	if (fallocate(file->fd, mode,
-			segment.l_start, segment.l_len)) {
+	if (fallocate(file->fd, mode, segment.l_start, segment.l_len)) {
 		perror("fallocate");
 		return 0;
 	}
@@ -324,12 +348,15 @@ funshare_f(
 	int		mode = FALLOC_FL_UNSHARE_RANGE;
 	int		index = 1;
 
-	if (!offset_length(argv[index], argv[index + 1], &segment))
+	if (!offset_length(argv[index], argv[index + 1], &segment)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (fallocate(file->fd, mode,
 			segment.l_start, segment.l_len)) {
 		perror("fallocate");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;
@@ -407,7 +434,7 @@ prealloc_init(void)
 	fpunch_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	fpunch_cmd.args = _("off len");
 	fpunch_cmd.oneline =
-	_("de-allocates space assocated with part of a file via fallocate");
+	_("de-allocates space associated with part of a file via fallocate");
 	add_command(&fpunch_cmd);
 
 	fcollapse_cmd.name = "fcollapse";
