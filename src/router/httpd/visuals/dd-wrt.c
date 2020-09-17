@@ -3174,7 +3174,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
 	sprintf(wl_ldpc, "%s_ldpc", prefix);
-	showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+	if (has_ldpc(prefix)) {
+		showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+	}
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
@@ -3723,7 +3725,6 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		websWrite(wp, "<span class=\"default\"><script type=\"text/javascript\">\n//<![CDATA[\n document.write(\"(\" + share.deflt + \": 500 \" + share.meters + \")\");\n//]]>\n</script></span>\n");
 		websWrite(wp, "</div>\n");
 	}
-
 #ifdef HAVE_MADWIFI
 	if (nvram_nmatch("ap", "%s_mode", prefix)
 	    || nvram_nmatch("wdsap", "%s_mode", prefix)
@@ -4282,7 +4283,9 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
-	showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+	if (has_ldpc(prefix)) {
+		showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+	}
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
@@ -4768,10 +4771,10 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 typedef struct pair {
 	char *name;
 	char *nvname;
-	int (*valid)(const char *prefix);
-	int (*valid2)(const char *prefix);
-	int (*valid3)(const char *prefix);
-	int (*forcecrypto)(const char *prefix);
+	int (*valid) (const char *prefix);
+	int (*valid2) (const char *prefix);
+	int (*valid3) (const char *prefix);
+	int (*forcecrypto) (const char *prefix);
 };
 
 static int alwaystrue(const char *prefix)
@@ -4923,41 +4926,41 @@ static int owe_possible(const char *prefix)
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue },
-		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
-		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
+		{"wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue},
+		{"wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue},
+		{"wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3},
 //              { "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
-		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
-		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
+		{"wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb},
+		{"wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192},
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2_sha256", "psk2-sha256", wpa3_support, is_mac80211, nomesh },
-		{ "wpa.psk3", "psk3", wpa3_support, is_mac80211, alwaystrue },
-		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
-		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
-		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
-		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible }
+		{"wpa.psk", "psk", alwaystrue, alwaystrue, nomesh},
+		{"wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh},
+		{"wpa.psk2_sha256", "psk2-sha256", wpa3_support, is_mac80211, nomesh},
+		{"wpa.psk3", "psk3", wpa3_support, is_mac80211, alwaystrue},
+		{"wpa.wpa", "wpa", aponly, alwaystrue, nomesh},
+		{"wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh},
+		{"wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh},
+		{"wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh},
+		{"wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh},
+		{"wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh},
+		{"wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible}
 	};
 	struct pair s_authpair_80211x[] = {
-		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", wpa3_support, alwaystrue, alwaystrue },
-		{ "wpa.wpa3", "wpa3", wpa3_support, is_mac80211, alwaystrue },
-		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
-		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
-		{ "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue }
+		{"wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.wpa2_sha256", "wpa2-sha256", wpa3_support, alwaystrue, alwaystrue},
+		{"wpa.wpa3", "wpa3", wpa3_support, is_mac80211, alwaystrue},
+		{"wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue},
+		{"wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue},
+		{"wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue}
 	};
 	struct pair s_authmethod[] = {
-		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.tls", "tls", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.ttls", "ttls", alwaystrue, alwaystrue, alwaystrue },
+		{"wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.tls", "tls", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.ttls", "ttls", alwaystrue, alwaystrue, alwaystrue},
 	};
 	struct pair *cryptopair;
 	struct pair *authpair_wpa;
@@ -6081,8 +6084,7 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 	int index = -1, ip[4] = {
 		0, 0, 0, 0
 	}, netmask[4] = {
-		0, 0, 0, 0
-	};
+	0, 0, 0, 0};
 	char nvramvar[32] = {
 		0
 	};
