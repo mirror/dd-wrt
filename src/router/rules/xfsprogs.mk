@@ -10,6 +10,7 @@ xfsprogs-configure:
 		--enable-shared=yes \
 		--enable-static=no \
 		--enable-lib64=no \
+		--libdir=/usr/lib \
 		root_prefix=$(INSTALLDIR)/xfsprogs \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
