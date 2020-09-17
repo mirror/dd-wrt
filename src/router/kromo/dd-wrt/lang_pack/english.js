@@ -2964,6 +2964,7 @@ wl_basic.mhz="MHz";
 wl_basic.tbqam="TurboQAM";
 wl_basic.upper="upper";
 wl_basic.lower="lower";
+wl_basic.ldpc="Disable LDPC (ESP8266 Workaround)";
 wl_basic.uapsd="U-APSD (Automatic Power Save)";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Add Virtual AP";
