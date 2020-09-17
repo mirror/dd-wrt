@@ -60,6 +60,11 @@
 		</div>
 		<br><hr><br>
 		<div class="setting">
+			<div class="label"><% tran("management.ipv6_dhcp6c_norelease"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="dhcp6c_norelease" <% nvc("dhcp6c_norelease","1"); %>/><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="dhcp6c_norelease" <% nvc("dhcp6c_norelease","0"); %>/><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("management.ipv6_dhcp6c_cust"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="dhcp6c_custom" <% nvc("dhcp6c_custom","1"); %> onclick="show_layer_ext(this, 'iddhcp6c_custom', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="dhcp6c_custom" <% nvc("dhcp6c_custom","0"); %> onclick="show_layer_ext(this, 'iddhcp6c_custom', false)" /><% tran("share.disable"); %>
