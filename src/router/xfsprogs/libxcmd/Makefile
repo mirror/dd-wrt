@@ -10,7 +10,7 @@ LT_CURRENT = 0
 LT_REVISION = 0
 LT_AGE = 0
 # we need a static build even if --disable-static is specified
-LTLDFLAGS += -static
+#LTLDFLAGS += -static
 
 CFILES = command.c input.c help.c quit.c
 
@@ -20,6 +20,7 @@ LTLIBS += $(LIBEDITLINE) $(LIBTERMCAP)
 endif
 
 default: ltdepend $(LTLIBRARY)
+	$(INSTALL_LTLIB)
 
 include $(BUILDRULES)
 
