@@ -1117,6 +1117,20 @@ int has_ht(const char *prefix)
 	EXITVALUECACHE();
 	return ret;
 }
+int has_ldpc(const char *prefix)
+{
+	INITVALUECACHE();
+	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1);
+	if (strstr(vhtcaps, "LDPC")) {
+		ret = 1;
+	} else {
+		ret = 0;
+	}
+	free(htcaps);
+	EXITVALUECACHE();
+	return ret;
+}
+
 #ifdef HAVE_WIL6210
 int has_ad(const char *prefix)
 {
