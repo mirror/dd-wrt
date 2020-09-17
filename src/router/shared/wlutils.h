@@ -378,6 +378,7 @@ static inline int has_airtime_policy(const char *prefix)
 #endif
 extern int has_shortgi(const char *interface);
 extern int has_uapsd(const char *interface);
+extern int has_ldpc(const char *interface);
 extern int has_smps(const char *interface);
 extern int has_dynamic_smps(const char *interface);
 extern int has_static_smps(const char *interface);
@@ -397,6 +398,10 @@ static inline int has_shortgi(const char *prefix)
 	return 0;
 }
 static inline int has_uapsd(const char *prefix)
+{
+	return 0;
+}
+static inline int has_ldpc(const char *prefix)
 {
 	return 0;
 }
