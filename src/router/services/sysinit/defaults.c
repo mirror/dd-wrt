@@ -2328,6 +2328,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "radvd_conf", "" },
 	{ "dhcp6c_custom", "0" },
 	{ "dhcp6c_conf", "" },
+	{ "dhcp6c_norelease", "0" },
 	{ "dhcp6s_enable", "0" },
 	{ "dhcp6s_seq_ips", "0" },
 	{ "dhcp6s_custom", "0" },
