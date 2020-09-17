@@ -3,7 +3,7 @@ Test readlink() and realpath functions: basic functionality - diff. path notatio
 --SKIPIF--
 <?php
 if (substr(PHP_OS, 0, 3) == 'WIN') {
-    die('skip no symlinks on Windows');
+    die('skip not for Windows');
 }
 ?>
 --FILE--

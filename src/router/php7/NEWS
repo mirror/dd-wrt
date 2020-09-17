@@ -1,16 +1,126 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+03 Sep 2020, PHP 7.4.10
+
+- Core:
+  . Fixed bug #79884 (PHP_CONFIG_FILE_PATH is meaningless). (cmb)
+  . Fixed bug #77932 (File extensions are case-sensitive). (cmb)
+  . Fixed bug #79806 (realpath() erroneously resolves link to link). (cmb)
+  . Fixed bug #79895 (PHP_CHECK_GCC_ARG does not allow flags with equal sign).
+    (Santiago M. Mola)
+  . Fixed bug #79919 (Stack use-after-scope in define()). (cmb)
+  . Fixed bug #79934 (CRLF-only line in heredoc causes parsing error).
+    (Pieter van den Ham)
+  . Fixed bug #79947 (Memory leak on invalid offset type in compound
+    assignment). (Nikita)
+
+- COM:
+  . Fixed bug #48585 (com_load_typelib holds reference, fails on second call).
+    (cmb)
+
+- Exif:
+  . Fixed bug #75785 (Many errors from exif_read_data).
+    (Níckolas Daniel da Silva)
+
+- Gettext:
+  . Fixed bug #70574 (Tests fail due to relying on Linux fallback behavior for
+    gettext()). (Florian Engelhardt)
+
+- LDAP:
+  . Fixed memory leaks. (ptomulik)
+
+- OPcache:
+  . Fixed bug #73060 (php failed with error after temp folder cleaned up).
+    (cmb)
+  . Fixed bug #79917 (File cache segfault with a static variable in inherited
+    method). (Nikita)
+
+- PDO:
+  . Fixed bug #64705 (errorInfo property of PDOException is null when
+    PDO::__construct() fails). (Ahmed Abdou)
+
+- Session:
+  . Fixed bug #79724 (Return type does not match in ext/session/mod_mm.c).
+    (Nikita)
+
+- Standard:
+  . Fixed bug #79930 (array_merge_recursive() crashes when called with array
+    with single reference). (Nikita)
+  . Fixed bug #79944 (getmxrr always returns true on Alpine linux). (Nikita)
+  . Fixed bug #79951 (Memory leak in str_replace of empty string). (Nikita)
+
+- XML:
+  . Fixed bug #79922 (Crash after multiple calls to xml_parser_free()). (cmb)
+
+06 Aug 2020, PHP 7.4.9
+
+- Apache:
+  . Fixed bug #79030 (Upgrade apache2handler's php_apache_sapi_get_request_time
+    to return usec). (Herbert256)
+
+- COM:
+  . Fixed bug #63208 (BSTR to PHP string conversion not binary safe). (cmb)
+  . Fixed bug #63527 (DCOM does not work with Username, Password parameter).
+    (cmb)
+
+- Core:
+  . Fixed bug #79877 (getimagesize function silently truncates after a null 
+    byte) (cmb)
+  . Fixed bug #79740 (serialize() and unserialize() methods can not be called
+    statically). (Nikita)
+  . Fixed bug #79783 (Segfault in php_str_replace_common). (Nikita)
+  . Fixed bug #79778 (Assertion failure if dumping closure with unresolved
+    static variable). (Nikita)
+  . Fixed bug #79779 (Assertion failure when assigning property of string
+    offset by reference). (Nikita)
+  . Fixed bug #79792 (HT iterators not removed if empty array is destroyed).
+    (Nikita)
+  . Fixed bug #78598 (Changing array during undef index RW error segfaults).
+    (Nikita)
+  . Fixed bug #79784 (Use after free if changing array during undef var during
+    array write fetch). (Nikita)
+  . Fixed bug #79793 (Use after free if string used in undefined index warning
+    is changed). (Nikita)
+  . Fixed bug #79862 (Public non-static property in child should take priority
+    over private static). (Nikita)
+
+- Fileinfo:
+  . Fixed bug #79756 (finfo_file crash (FILEINFO_MIME)). (cmb)
+
+- FTP:
+  . Fixed bug #55857 (ftp_size on large files). (cmb)
+
+- Mbstring:
+  . Fixed bug #79787 (mb_strimwidth does not trim string). (XXiang)
+
+- OpenSSL:
+  . Fixed bug #79881 (Memory leak in openssl_pkey_get_public()). (Nikita)
+
+- Phar:
+  . Fixed bug #79797 (Use of freed hash key in the phar_parse_zipfile
+    function). (CVE-2020-7068) (cmb)
+
+- Reflection:
+  . Fixed bug #79487 (::getStaticProperties() ignores property modifications).
+    (cmb, Nikita)
+  . Fixed bug #69804 (::getStaticPropertyValue() throws on protected props).
+    (cmb, Nikita)
+  . Fixed bug #79820 (Use after free when type duplicated into
+    ReflectionProperty gets resolved). (Christopher Broadbent)
+
+- Standard:
+  . Fixed bug #70362 (Can't copy() large 'data://' with open_basedir). (cmb)
+  . Fixed bug #78008 (dns_check_record() always return true on Alpine).
+    (Andy Postnikov)
+  . Fixed bug #79839 (array_walk() does not respect property types). (Nikita)
+
 09 Jul 2020, PHP 7.4.8
 
 - Core:
-  . Fixed bug #79649 (Altering disable_functions from module init corrupts
-    memory). (Laruence)
   . Fixed bug #79595 (zend_init_fpu() alters FPU precision). (cmb, Nikita)
   . Fixed bug #79650 (php-win.exe 100% cpu lockup). (cmb)
   . Fixed bug #79668 (get_defined_functions(true) may miss functions). (cmb,
     Nikita)
-  . Fixed bug #79657 ("yield from" hangs when invalid value encountered).
-    (Nikita)
   . Fixed bug #79683 (Fake reflection scope affects __toString()). (Nikita)
   . Fixed possibly unsupported timercmp() usage. (cmb)
 
@@ -59,6 +169,8 @@ PHP                                                                        NEWS
   . Fixed bug #79489 (.user.ini does not inherit). (cmb)
   . Fixed bug #79600 (Regression in 7.4.6 when yielding an array based
     generator). (Nikita)
+  . Fixed bug #79657 ("yield from" hangs when invalid value encountered).
+    (Nikita)
 
 - FFI:
   . Fixed bug #79571 (FFI: var_dumping unions may segfault). (cmb)

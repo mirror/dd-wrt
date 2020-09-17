@@ -238,6 +238,11 @@ static void reflection_free_objects_storage(zend_object *object) /* {{{ */
 		case REF_TYPE_PROPERTY:
 			prop_reference = (property_reference*)intern->ptr;
 			zend_string_release_ex(prop_reference->unmangled_name, 0);
+
+			if (ZEND_TYPE_IS_NAME(prop_reference->prop.type)) {
+				zend_string_release(ZEND_TYPE_NAME(prop_reference->prop.type));
+			}
+
 			efree(intern->ptr);
 			break;
 		case REF_TYPE_GENERATOR:
@@ -1233,6 +1238,11 @@ static void reflection_property_factory(zend_class_entry *ce, zend_string *name,
 	intern = Z_REFLECTION_P(object);
 	reference = (property_reference*) emalloc(sizeof(property_reference));
 	reference->prop = *prop;
+
+	if (ZEND_TYPE_IS_NAME(reference->prop.type)) {
+		zend_string_addref(ZEND_TYPE_NAME(reference->prop.type));
+	}
+
 	reference->unmangled_name = zend_string_copy(name);
 	reference->dynamic = dynamic;
 	intern->ptr = reference;
@@ -3726,9 +3736,7 @@ static void add_class_vars(zend_class_entry *ce, int statics, zval *return_value
 	zend_string *key;
 
 	ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->properties_info, key, prop_info) {
-		if (((prop_info->flags & ZEND_ACC_PROTECTED) &&
-		     !zend_check_protected(prop_info->ce, ce)) ||
-		    ((prop_info->flags & ZEND_ACC_PRIVATE) &&
+		if (((prop_info->flags & ZEND_ACC_PRIVATE) &&
 		     prop_info->ce != ce)) {
 			continue;
 		}
@@ -3766,6 +3774,9 @@ ZEND_METHOD(reflection_class, getStaticProperties)
 {
 	reflection_object *intern;
 	zend_class_entry *ce;
+	zend_property_info *prop_info;
+	zval *prop;
+	zend_string *key;
 
 	if (zend_parse_parameters_none() == FAILURE) {
 		return;
@@ -3777,8 +3788,34 @@ ZEND_METHOD(reflection_class, getStaticProperties)
 		return;
 	}
 
+	if (ce->default_static_members_count && !CE_STATIC_MEMBERS(ce)) {
+		zend_class_init_statics(ce);
+	}
+
 	array_init(return_value);
-	add_class_vars(ce, 1, return_value);
+
+	ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->properties_info, key, prop_info) {
+		if (((prop_info->flags & ZEND_ACC_PRIVATE) &&
+		     prop_info->ce != ce)) {
+			continue;
+		}
+		if ((prop_info->flags & ZEND_ACC_STATIC) == 0) {
+			continue;
+		}
+
+		prop = &CE_STATIC_MEMBERS(ce)[prop_info->offset];
+		ZVAL_DEINDIRECT(prop);
+
+		if (prop_info->type && Z_ISUNDEF_P(prop)) {
+			continue;
+		}
+
+		/* enforce read only access */
+		ZVAL_DEREF(prop);
+		Z_TRY_ADDREF_P(prop);
+
+		zend_hash_update(Z_ARRVAL_P(return_value), key, prop);
+	} ZEND_HASH_FOREACH_END();
 }
 /* }}} */
 
@@ -3787,7 +3824,7 @@ ZEND_METHOD(reflection_class, getStaticProperties)
 ZEND_METHOD(reflection_class, getStaticPropertyValue)
 {
 	reflection_object *intern;
-	zend_class_entry *ce;
+	zend_class_entry *ce, *old_scope;
 	zend_string *name;
 	zval *prop, *def_value = NULL;
 
@@ -3800,7 +3837,12 @@ ZEND_METHOD(reflection_class, getStaticPropertyValue)
 	if (UNEXPECTED(zend_update_class_constants(ce) != SUCCESS)) {
 		return;
 	}
+
+	old_scope = EG(fake_scope);
+	EG(fake_scope) = ce;
 	prop = zend_std_get_static_property(ce, name, BP_VAR_IS);
+	EG(fake_scope) = old_scope;
+
 	if (!prop) {
 		if (def_value) {
 			ZVAL_COPY(return_value, def_value);
@@ -3820,7 +3862,7 @@ ZEND_METHOD(reflection_class, getStaticPropertyValue)
 ZEND_METHOD(reflection_class, setStaticPropertyValue)
 {
 	reflection_object *intern;
-	zend_class_entry *ce;
+	zend_class_entry *ce, *old_scope;
 	zend_property_info *prop_info;
 	zend_string *name;
 	zval *variable_ptr, *value;
@@ -3834,7 +3876,10 @@ ZEND_METHOD(reflection_class, setStaticPropertyValue)
 	if (UNEXPECTED(zend_update_class_constants(ce) != SUCCESS)) {
 		return;
 	}
-	variable_ptr = zend_std_get_static_property_with_info(ce, name, BP_VAR_W, &prop_info);
+	old_scope = EG(fake_scope);
+	EG(fake_scope) = ce;
+	variable_ptr =  zend_std_get_static_property_with_info(ce, name, BP_VAR_W, &prop_info);
+	EG(fake_scope) = old_scope;
 	if (!variable_ptr) {
 		zend_clear_exception();
 		zend_throw_exception_ex(reflection_exception_ptr, 0,
@@ -4223,6 +4268,7 @@ ZEND_METHOD(reflection_class, getProperty)
 			property_info_tmp.name = name;
 			property_info_tmp.doc_comment = NULL;
 			property_info_tmp.ce = ce;
+			property_info_tmp.type = 0;
 
 			reflection_property_factory(ce, name, &property_info_tmp, return_value, 1);
 			return;
@@ -4304,6 +4350,7 @@ static void _adddynproperty(zval *ptr, zend_string *key, zend_class_entry *ce, z
 	property_info.name = key;
 	property_info.ce = ce;
 	property_info.offset = -1;
+	property_info.type = 0;
 	reflection_property_factory(ce, key, &property_info, &property, 1);
 	add_next_index_zval(retval, &property);
 }
@@ -5284,10 +5331,15 @@ ZEND_METHOD(reflection_property, __construct)
 		reference->prop.name = name;
 		reference->prop.doc_comment = NULL;
 		reference->prop.ce = ce;
+		reference->prop.type = 0;
 		reference->dynamic = 1;
 	} else {
 		reference->prop = *property_info;
 		reference->dynamic = 0;
+
+		if (ZEND_TYPE_IS_NAME(reference->prop.type)) {
+			zend_string_addref(ZEND_TYPE_NAME(reference->prop.type));
+		}
 	}
 	reference->unmangled_name = zend_string_copy(name);
 	intern->ptr = reference;

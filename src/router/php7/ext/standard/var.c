@@ -127,21 +127,26 @@ again:
 			break;
 		case IS_ARRAY:
 			myht = Z_ARRVAL_P(struc);
-			if (level > 1 && !(GC_FLAGS(myht) & GC_IMMUTABLE)) {
-				if (GC_IS_RECURSIVE(myht)) {
-					PUTS("*RECURSION*\n");
-					return;
+			if (!(GC_FLAGS(myht) & GC_IMMUTABLE)) {
+				if (level > 1) {
+					if (GC_IS_RECURSIVE(myht)) {
+						PUTS("*RECURSION*\n");
+						return;
+					}
+					GC_PROTECT_RECURSION(myht);
 				}
-				GC_PROTECT_RECURSION(myht);
+				GC_ADDREF(myht);
 			}
 			count = zend_array_count(myht);
 			php_printf("%sarray(%d) {\n", COMMON, count);
-
 			ZEND_HASH_FOREACH_KEY_VAL_IND(myht, num, key, val) {
 				php_array_element_dump(val, num, key, level);
 			} ZEND_HASH_FOREACH_END();
-			if (level > 1 && !(GC_FLAGS(myht) & GC_IMMUTABLE)) {
-				GC_UNPROTECT_RECURSION(myht);
+			if (!(GC_FLAGS(myht) & GC_IMMUTABLE)) {
+				if (level > 1) {
+					GC_UNPROTECT_RECURSION(myht);
+				}
+				GC_DELREF(myht);
 			}
 			if (level > 1) {
 				php_printf("%*c", level-1, ' ');
@@ -311,20 +316,26 @@ again:
 		break;
 	case IS_ARRAY:
 		myht = Z_ARRVAL_P(struc);
-		if (level > 1 && !(GC_FLAGS(myht) & GC_IMMUTABLE)) {
-			if (GC_IS_RECURSIVE(myht)) {
-				PUTS("*RECURSION*\n");
-				return;
+		if (!(GC_FLAGS(myht) & GC_IMMUTABLE)) {
+			if (level > 1) {
+				if (GC_IS_RECURSIVE(myht)) {
+					PUTS("*RECURSION*\n");
+					return;
+				}
+				GC_PROTECT_RECURSION(myht);
 			}
-			GC_PROTECT_RECURSION(myht);
+			GC_ADDREF(myht);
 		}
 		count = zend_array_count(myht);
-		php_printf("%sarray(%d) refcount(%u){\n", COMMON, count, Z_REFCOUNTED_P(struc) ? Z_REFCOUNT_P(struc) : 1);
+		php_printf("%sarray(%d) refcount(%u){\n", COMMON, count, Z_REFCOUNTED_P(struc) ? Z_REFCOUNT_P(struc) - 1 : 1);
 		ZEND_HASH_FOREACH_KEY_VAL_IND(myht, index, key, val) {
 			zval_array_element_dump(val, index, key, level);
 		} ZEND_HASH_FOREACH_END();
-		if (level > 1 && !(GC_FLAGS(myht) & GC_IMMUTABLE)) {
-			GC_UNPROTECT_RECURSION(myht);
+		if (!(GC_FLAGS(myht) & GC_IMMUTABLE)) {
+			if (level > 1) {
+				GC_UNPROTECT_RECURSION(myht);
+			}
+			GC_DELREF(myht);
 		}
 		if (level > 1) {
 			php_printf("%*c", level - 1, ' ');
@@ -528,6 +539,7 @@ again:
 					zend_error(E_WARNING, "var_export does not handle circular references");
 					return;
 				}
+				GC_ADDREF(myht);
 				GC_PROTECT_RECURSION(myht);
 			}
 			if (level > 1) {
@@ -540,6 +552,7 @@ again:
 			} ZEND_HASH_FOREACH_END();
 			if (!(GC_FLAGS(myht) & GC_IMMUTABLE)) {
 				GC_UNPROTECT_RECURSION(myht);
+				GC_DELREF(myht);
 			}
 			if (level > 1) {
 				buffer_append_spaces(buf, level - 1);

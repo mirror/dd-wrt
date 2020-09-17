@@ -24,4 +24,4 @@ try{
 ?>
 --EXPECT--
 string(21) "Undefined variable: b"
-string(21) "Undefined variable: c"
+string(21) "Undefined variable: b"
