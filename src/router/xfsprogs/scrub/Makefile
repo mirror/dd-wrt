@@ -87,10 +87,10 @@ ifeq ($(HAVE_LIBATTR),yes)
 LCFLAGS += -DHAVE_LIBATTR
 endif
 
-ifeq ($(HAVE_LIBICU),yes)
-CFILES += unicrash.c
-LCFLAGS += -DHAVE_LIBICU $(LIBICU_CFLAGS)
-endif
+#ifeq ($(HAVE_LIBICU),yes)
+#CFILES += unicrash.c
+#LCFLAGS += -DHAVE_LIBICU $(LIBICU_CFLAGS)
+#endif
 
 ifeq ($(HAVE_SG_IO),yes)
 LCFLAGS += -DHAVE_SG_IO

@@ -9,7 +9,7 @@
 struct unicrash;
 
 /* Unicode name collision detection. */
-#ifdef HAVE_LIBICU
+#if 0//def HAVE_LIBICU
 
 struct dirent;
 
