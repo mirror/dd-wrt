@@ -2,8 +2,9 @@
 Test fileinode() function: Variations
 --SKIPIF--
 <?php
-if (substr(PHP_OS, 0, 3) == 'WIN') {
-    die('skip no link()/symlink() on Windows');
+if (PHP_OS_FAMILY === 'Windows') {
+    require_once __DIR__ . '/windows_links/common.inc';
+    skipIfSeCreateSymbolicLinkPrivilegeIsDisabled(__FILE__);
 }
 ?>
 --FILE--
@@ -88,24 +89,24 @@ echo "\n*** Done ***";
 --EXPECTF--
 *** Testing fileinode() with files, links and directories ***
 -- Testing with files --
-%d
-%d
+%i
+%i
 -- Testing with links: hard link --
-%d
-%d
+%i
+%i
 -- Testing with links: soft link --
-%d
-%d
+%i
+%i
 -- Testing after copying a file --
-%d
-%d
+%i
+%i
 -- Testing after renaming the file --
-%d
-%d
+%i
+%i
 -- Testing with directories --
-%d
-%d
+%i
+%i
 -- Testing with binary input --
-%d
-%d
+%i
+%i
 *** Done ***

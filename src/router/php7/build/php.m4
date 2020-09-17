@@ -308,8 +308,8 @@ dnl
 dnl PHP_CHECK_GCC_ARG(arg, action-if-found, action-if-not-found)
 dnl
 AC_DEFUN([PHP_CHECK_GCC_ARG],[
-  gcc_arg_name=[ac_cv_gcc_arg]translit($1,A-Z-,a-z_)
-  AC_CACHE_CHECK([whether $CC supports $1], [ac_cv_gcc_arg]translit($1,A-Z-,a-z_), [
+  gcc_arg_name=[ac_cv_gcc_arg]translit($1,A-Z=-,a-z__)
+  AC_CACHE_CHECK([whether $CC supports $1], [ac_cv_gcc_arg]translit($1,A-Z=-,a-z__), [
   echo 'void somefunc() { };' > conftest.c
   cmd='$CC $1 -c conftest.c'
   if eval $cmd 2>&1 | $EGREP -e $1 >/dev/null ; then
@@ -1464,16 +1464,16 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <stdio.h>
 
 struct cookiedata {
-  __off64_t pos;
+  off64_t pos;
 };
 
-__ssize_t reader(void *cookie, char *buffer, size_t size)
+ssize_t reader(void *cookie, char *buffer, size_t size)
 { return size; }
-__ssize_t writer(void *cookie, const char *buffer, size_t size)
+ssize_t writer(void *cookie, const char *buffer, size_t size)
 { return size; }
 int closer(void *cookie)
 { return 0; }
-int seeker(void *cookie, __off64_t *position, int whence)
+int seeker(void *cookie, off64_t *position, int whence)
 { ((struct cookiedata*)cookie)->pos = *position; return 0; }
 
 cookie_io_functions_t funcs = {reader, writer, seeker, closer};
