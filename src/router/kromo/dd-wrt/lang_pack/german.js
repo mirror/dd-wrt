@@ -2519,6 +2519,7 @@ wl_basic.fc="Frame Kompression";
 wl_basic.isolation="Netz Isolierung";
 wl_basic.tor_anon="TOR Anonymisierung";
 wl_basic.country_settings="L&auml;ndereinstellungen";
+wl_basic.ldpc="LDPC Ausschalten (ESP8266 Workaround)";
 wl_basic.uapsd="U-APSD (Automatisches Stromsparen)";
 wl_basic.smps="Spatial Multiplex Power Save";
 wl_basic.add="Virtuellen AP Hinzuf&uuml;gen";
