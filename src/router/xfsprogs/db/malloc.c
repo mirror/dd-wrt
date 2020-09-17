@@ -44,8 +44,7 @@ xmalloc(
 {
 	void	*ptr;
 
-	ptr = valloc(size);
-	if (ptr)
+	if(!posix_memalign(&ptr, sysconf(_SC_PAGESIZE), size))
 		return ptr;
 	badmalloc();
 	/* NOTREACHED */
