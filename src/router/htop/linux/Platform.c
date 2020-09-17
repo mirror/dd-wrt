@@ -32,17 +32,6 @@ in the source distribution for its full text.
 #include <stdio.h>
 #include <stdlib.h>
 
-/*{
-#include "Action.h"
-#include "MainPanel.h"
-#include "BatteryMeter.h"
-#include "LinuxProcess.h"
-#include "SignalsPanel.h"
-}*/
-
-#ifndef CLAMP
-#define CLAMP(x,low,high) (((x)>(high))?(high):(((x)<(low))?(low):(x)))
-#endif
 
 ProcessField Platform_defaultFields[] = { PID, USER, PRIORITY, NICE, M_SIZE, M_RESIDENT, (int)M_SHARE, STATE, PERCENT_CPU, PERCENT_MEM, TIME, COMM, 0 };
 
@@ -248,7 +237,7 @@ char* Platform_getProcessEnv(pid_t pid) {
    if (fd) {
       size_t capacity = 4096, size = 0, bytes;
       env = xMalloc(capacity);
-      while (env && (bytes = fread(env+size, 1, capacity-size, fd)) > 0) {
+      while ((bytes = fread(env+size, 1, capacity-size, fd)) > 0) {
          size += bytes;
          capacity *= 2;
          env = xRealloc(env, capacity);

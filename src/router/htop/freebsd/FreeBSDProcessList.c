@@ -22,53 +22,7 @@ in the source distribution for its full text.
 #include <string.h>
 #include <time.h>
 
-/*{
-
-#include "zfs/ZfsArcStats.h"
-
-#include <kvm.h>
-#include <sys/param.h>
-#include <sys/jail.h>
-#include <sys/uio.h>
-#include <sys/resource.h>
-
-#define JAIL_ERRMSGLEN	1024
 char jail_errmsg[JAIL_ERRMSGLEN];
-
-typedef struct CPUData_ {
-
-   double userPercent;
-   double nicePercent;
-   double systemPercent;
-   double irqPercent;
-   double idlePercent;
-   double systemAllPercent;
-
-} CPUData;
-
-typedef struct FreeBSDProcessList_ {
-   ProcessList super;
-   kvm_t* kd;
-
-   unsigned long long int memWire;
-   unsigned long long int memActive;
-   unsigned long long int memInactive;
-   unsigned long long int memFree;
-
-   ZfsArcStats zfs;
-
-   CPUData* cpus;
-
-   unsigned long   *cp_time_o;
-   unsigned long   *cp_time_n;
-
-   unsigned long  *cp_times_o;
-   unsigned long  *cp_times_n;
-
-} FreeBSDProcessList;
-
-}*/
-
 
 static int MIB_hw_physmem[2];
 static int MIB_vm_stats_vm_v_page_count[4];
@@ -87,12 +41,12 @@ static int MIB_kern_cp_time[2];
 static int MIB_kern_cp_times[2];
 static int kernelFScale;
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId) {
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId) {
    size_t len;
    char errbuf[_POSIX2_LINE_MAX];
    FreeBSDProcessList* fpl = xCalloc(1, sizeof(FreeBSDProcessList));
    ProcessList* pl = (ProcessList*) fpl;
-   ProcessList_init(pl, Class(FreeBSDProcess), usersTable, pidWhiteList, userId);
+   ProcessList_init(pl, Class(FreeBSDProcess), usersTable, pidMatchList, userId);
 
    // physical memory in system: hw.physmem
    // physical page size: hw.pagesize
@@ -157,7 +111,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, ui
       sysctl(MIB_kern_cp_times, 2, fpl->cp_times_o, &len, NULL, 0);
    }
 
-   pl->cpuCount = MAX(cpus, 1);
+   pl->cpuCount = MAXIMUM(cpus, 1);
 
    if (cpus == 1 ) {
      fpl->cpus = xRealloc(fpl->cpus, sizeof(CPUData));

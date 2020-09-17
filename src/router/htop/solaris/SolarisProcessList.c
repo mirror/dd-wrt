@@ -25,45 +25,6 @@ in the source distribution for its full text.
 
 #define MAXCMDLINE 255
 
-#define GZONE	"global    "
-#define UZONE	"unknown   "
-/*{
-
-#include "zfs/ZfsArcStats.h"
-
-#include <kstat.h>
-#include <sys/param.h>
-#include <sys/uio.h>
-#include <sys/resource.h>
-#include <sys/sysconf.h>
-#include <sys/sysinfo.h>
-#include <sys/swap.h>
-
-#define ZONE_ERRMSGLEN 1024
-char zone_errmsg[ZONE_ERRMSGLEN];
-
-typedef struct CPUData_ {
-   double userPercent;
-   double nicePercent;
-   double systemPercent;
-   double irqPercent;
-   double idlePercent;
-   double systemAllPercent;
-   uint64_t luser;
-   uint64_t lkrnl;
-   uint64_t lintr;
-   uint64_t lidle;
-} CPUData;
-
-typedef struct SolarisProcessList_ {
-   ProcessList super;
-   kstat_ctl_t* kd;
-   CPUData* cpus;
-   ZfsArcStats zfs;
-} SolarisProcessList;
-
-}*/
-
 char* SolarisProcessList_readZoneName(kstat_ctl_t* kd, SolarisProcess* sproc) {
   char* zname;
   if ( sproc->zoneid == 0 ) {
@@ -77,10 +38,10 @@ char* SolarisProcessList_readZoneName(kstat_ctl_t* kd, SolarisProcess* sproc) {
   return zname;
 }
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId) {
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId) {
    SolarisProcessList* spl = xCalloc(1, sizeof(SolarisProcessList));
    ProcessList* pl = (ProcessList*) spl;
-   ProcessList_init(pl, Class(SolarisProcess), usersTable, pidWhiteList, userId);
+   ProcessList_init(pl, Class(SolarisProcess), usersTable, pidMatchList, userId);
 
    spl->kd = kstat_open();
 
@@ -323,7 +284,7 @@ int SolarisProcessList_walkproc(psinfo_t *_psinfo, lwpsinfo_t *_lwpsinfo, void *
    sproc->poolid            = _psinfo->pr_poolid;
    sproc->contid            = _psinfo->pr_contract;
    proc->priority           = _lwpsinfo->pr_pri;
-   proc->nice               = _lwpsinfo->pr_nice;
+   proc->nice               = _lwpsinfo->pr_nice - NZERO;
    proc->processor          = _lwpsinfo->pr_onpro;
    proc->state              = _lwpsinfo->pr_sname;
    // NOTE: This 'percentage' is a 16-bit BINARY FRACTIONS where 1.0 = 0x8000

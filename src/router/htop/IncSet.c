@@ -7,45 +7,11 @@ in the source distribution for its full text.
 
 #include "IncSet.h"
 #include "StringUtils.h"
-#include "Panel.h"
 #include "ListItem.h"
 #include "CRT.h"
 #include <string.h>
 #include <stdlib.h>
 
-/*{
-
-#include "FunctionBar.h"
-#include "Panel.h"
-#include <stdbool.h>
-
-#define INCMODE_MAX 40
-
-typedef enum {
-   INC_SEARCH = 0,
-   INC_FILTER = 1
-} IncType;
-
-#define IncSet_filter(inc_) (inc_->filtering ? inc_->modes[INC_FILTER].buffer : NULL)
-
-typedef struct IncMode_ {
-   char buffer[INCMODE_MAX+1];
-   int index;
-   FunctionBar* bar;
-   bool isFilter;
-} IncMode;
-
-typedef struct IncSet_ {
-   IncMode modes[2];
-   IncMode* active;
-   FunctionBar* defaultBar;
-   bool filtering;
-   bool found;
-} IncSet;
-
-typedef const char* (*IncMode_GetPanelValue)(Panel*, int);
-
-}*/
 
 static void IncMode_reset(IncMode* mode) {
    mode->index = 0;
