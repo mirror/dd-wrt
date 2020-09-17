@@ -1121,7 +1121,7 @@ int has_ldpc(const char *prefix)
 {
 	INITVALUECACHE();
 	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1);
-	if (strstr(vhtcaps, "LDPC")) {
+	if (strstr(htcaps, "LDPC")) {
 		ret = 1;
 	} else {
 		ret = 0;
