@@ -1289,6 +1289,19 @@ void showRadio(webs_t wp, char *propname, char *nvname)
 	websWrite(wp, "</div>\n");
 }
 
+void showRadioInv(webs_t wp, char *propname, char *nvname)
+{
+	websWrite(wp, "<div class=\"setting\">\n");
+	show_caption(wp, "label", propname, NULL);
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  nvname, nvram_default_matchi(nvname, 0, 1) ? "checked=\"checked\"" : "");
+	websWrite(wp,
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  nvname, nvram_default_matchi(nvname, 1, 1) ? "checked=\"checked\"" : "");
+	websWrite(wp, "</div>\n");
+}
+
 #define showRadioDefaultOn(wp, propname, nvname) \
 	do { \
 	nvram_default_get(nvname,"1"); \
@@ -2886,6 +2899,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	char wl_ff[16];
 	char wmm[32];
 	char wl_uapsd[16];
+	char wl_ldpc[16];
 	char wl_smps[16];
 	char wl_isolate[32];
 	char wl_intmit[32];
@@ -3159,6 +3173,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	sprintf(wl_ldpc, "%s_ldpc", prefix);
+	showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
@@ -3883,6 +3899,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_noise_immunity, "%s_noise_immunity", prefix);
 	sprintf(wl_ofdm_weak_det, "%s_ofdm_weak_det", prefix);
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
+	sprintf(wl_ldpc, "%s_ldpc", prefix);
 	sprintf(wl_smps, "%s_smps", prefix);
 #if 0
 	showRadio(wp, "wl_basic.csma", wl_csma);
@@ -4265,6 +4282,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	}
 #endif
 #endif
+	showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
 	}
