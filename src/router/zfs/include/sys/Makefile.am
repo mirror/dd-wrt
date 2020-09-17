@@ -102,6 +102,7 @@ COMMON_H = \
 	zcp_set.h \
 	zfeature.h \
 	zfs_acl.h \
+	zfs_bootenv.h \
 	zfs_context.h \
 	zfs_debug.h \
 	zfs_delay.h \
@@ -115,6 +116,7 @@ COMMON_H = \
 	zfs_sa.h \
 	zfs_stat.h \
 	zfs_sysfs.h \
+	zfs_vfsops.h \
 	zfs_znode.h \
 	zil.h \
 	zil_impl.h \
