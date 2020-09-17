@@ -4188,6 +4188,8 @@ dump_l2arc_log_entries(uint64_t log_entries,
 		    (u_longlong_t)L2BLK_GET_PREFETCH((&le[j])->le_prop));
 		(void) printf("|\t\t\t\taddress: %llu\n",
 		    (u_longlong_t)le[j].le_daddr);
+		(void) printf("|\t\t\t\tARC state: %llu\n",
+		    (u_longlong_t)L2BLK_GET_STATE((&le[j])->le_prop));
 		(void) printf("|\n");
 	}
 	(void) printf("\n");
@@ -5340,11 +5342,6 @@ load_unflushed_svr_segs_cb(spa_t *spa, space_map_entry_t *sme,
 	if (txg < metaslab_unflushed_txg(ms))
 		return (0);
 
-	vdev_indirect_mapping_t *vim = vd->vdev_indirect_mapping;
-	ASSERT(vim != NULL);
-	if (offset >= vdev_indirect_mapping_max_offset(vim))
-		return (0);
-
 	if (sme->sme_type == SM_ALLOC)
 		range_tree_add(svr->svr_allocd_segs, offset, size);
 	else
@@ -5406,9 +5403,6 @@ zdb_claim_removing(spa_t *spa, zdb_cb_t *zcb)
 	range_tree_t *allocs = range_tree_create(NULL, RANGE_SEG64, NULL, 0, 0);
 	for (uint64_t msi = 0; msi < vd->vdev_ms_count; msi++) {
 		metaslab_t *msp = vd->vdev_ms[msi];
-
-		if (msp->ms_start >= vdev_indirect_mapping_max_offset(vim))
-			break;
 
 		ASSERT0(range_tree_space(allocs));
 		if (msp->ms_sm != NULL)

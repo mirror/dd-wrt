@@ -183,6 +183,27 @@ zpl_remount_fs(struct super_block *sb, int *flags, char *data)
 }
 
 static int
+__zpl_show_devname(struct seq_file *seq, zfsvfs_t *zfsvfs)
+{
+	char *fsname;
+
+	ZFS_ENTER(zfsvfs);
+	fsname = kmem_alloc(ZFS_MAX_DATASET_NAME_LEN, KM_SLEEP);
+	dmu_objset_name(zfsvfs->z_os, fsname);
+	seq_puts(seq, fsname);
+	kmem_free(fsname, ZFS_MAX_DATASET_NAME_LEN);
+	ZFS_EXIT(zfsvfs);
+
+	return (0);
+}
+
+static int
+zpl_show_devname(struct seq_file *seq, struct dentry *root)
+{
+	return (__zpl_show_devname(seq, root->d_sb->s_fs_info));
+}
+
+static int
 __zpl_show_options(struct seq_file *seq, zfsvfs_t *zfsvfs)
 {
 	seq_printf(seq, ",%s",
@@ -190,7 +211,7 @@ __zpl_show_options(struct seq_file *seq, zfsvfs_t *zfsvfs)
 
 #ifdef CONFIG_FS_POSIX_ACL
 	switch (zfsvfs->z_acl_type) {
-	case ZFS_ACLTYPE_POSIXACL:
+	case ZFS_ACLTYPE_POSIX:
 		seq_puts(seq, ",posixacl");
 		break;
 	default:
@@ -253,8 +274,12 @@ zpl_mount_impl(struct file_system_type *fs_type, int flags, zfs_mnt_t *zm)
 	 * a txg sync.  If the dsl_pool lock is held over sget()
 	 * this can prevent the pool sync and cause a deadlock.
 	 */
+	dsl_dataset_long_hold(dmu_objset_ds(os), FTAG);
 	dsl_pool_rele(dmu_objset_pool(os), FTAG);
+
 	s = sget(fs_type, zpl_test_super, set_anon_super, flags, os);
+
+	dsl_dataset_long_rele(dmu_objset_ds(os), FTAG);
 	dsl_dataset_rele(dmu_objset_ds(os), FTAG);
 
 	if (IS_ERR(s))
@@ -314,6 +339,7 @@ const struct super_operations zpl_super_operations = {
 	.sync_fs		= zpl_sync_fs,
 	.statfs			= zpl_statfs,
 	.remount_fs		= zpl_remount_fs,
+	.show_devname		= zpl_show_devname,
 	.show_options		= zpl_show_options,
 	.show_stats		= NULL,
 };

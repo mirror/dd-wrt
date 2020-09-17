@@ -356,9 +356,9 @@ acltype_changed_cb(void *arg, uint64_t newval)
 		zfsvfs->z_acl_type = ZFS_ACLTYPE_OFF;
 		zfsvfs->z_sb->s_flags &= ~SB_POSIXACL;
 		break;
-	case ZFS_ACLTYPE_POSIXACL:
+	case ZFS_ACLTYPE_POSIX:
 #ifdef CONFIG_FS_POSIX_ACL
-		zfsvfs->z_acl_type = ZFS_ACLTYPE_POSIXACL;
+		zfsvfs->z_acl_type = ZFS_ACLTYPE_POSIX;
 		zfsvfs->z_sb->s_flags |= SB_POSIXACL;
 #else
 		zfsvfs->z_acl_type = ZFS_ACLTYPE_OFF;
@@ -2124,6 +2124,16 @@ zfs_get_vfs_flag_unmounted(objset_t *os)
 	mutex_exit(&os->os_user_ptr_lock);
 
 	return (unmounted);
+}
+
+/*ARGSUSED*/
+void
+zfsvfs_update_fromname(const char *oldname, const char *newname)
+{
+	/*
+	 * We don't need to do anything here, the devname is always current by
+	 * virtue of zfsvfs->z_sb->s_op->show_devname.
+	 */
 }
 
 void
