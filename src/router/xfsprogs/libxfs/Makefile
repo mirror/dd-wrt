@@ -10,7 +10,7 @@ LT_CURRENT = 0
 LT_REVISION = 0
 LT_AGE = 0
 # we need a static build even if --disable-static is specified
-LTLDFLAGS += -static
+#LTLDFLAGS += -static
 
 # headers to install in include/xfs
 PKGHFILES = xfs_fs.h \
@@ -122,7 +122,8 @@ default: ltdepend $(LTLIBRARY)
 include $(BUILDRULES)
 
 install: default
-	$(INSTALL) -m 755 -d $(PKG_INC_DIR)
+	$(INSTALL_LTLIB)
+#	$(INSTALL) -m 755 -d $(PKG_INC_DIR)
 
 install-headers: $(addsuffix -hdrs, $(PKGHFILES))
 
