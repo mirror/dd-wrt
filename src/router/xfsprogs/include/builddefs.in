@@ -154,8 +154,8 @@ ifeq ($(HAVE_FALLOCATE),yes)
 PCFLAGS += -DHAVE_FALLOCATE
 endif
 
-LIBICU_LIBS = @libicu_LIBS@
-LIBICU_CFLAGS = @libicu_CFLAGS@
+#LIBICU_LIBS = @libicu_LIBS@
+#LIBICU_CFLAGS = @libicu_CFLAGS@
 
 SANITIZER_CFLAGS += @addrsan_cflags@ @threadsan_cflags@ @ubsan_cflags@
 SANITIZER_LDFLAGS += @addrsan_ldflags@ @threadsan_ldflags@ @ubsan_ldflags@
