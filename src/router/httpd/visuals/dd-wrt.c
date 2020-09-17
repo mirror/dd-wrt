@@ -1294,10 +1294,10 @@ void showRadioInv(webs_t wp, char *propname, char *nvname)
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
 		  nvname, nvram_default_matchi(nvname, 0, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
+		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
 		  nvname, nvram_default_matchi(nvname, 1, 1) ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 }
