@@ -286,14 +286,16 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-	} if (isath10k) {
+	}
+	if (isath10k) {
 		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-	} if (ismt7615) {
+	}
+	if (ismt7615) {
 		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
@@ -929,7 +931,9 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		sprintf(shortgi, "%s_shortgi", prefix);
 		char greenfield[32];
 		sprintf(greenfield, "%s_gf", prefix);
-		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0, usebw > 20);
+		char ldpc[32];
+		sprintf(ldpc, "%s_ldpc", prefix);
+		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0, usebw > 20, nvram_default_geti(ldpc, 1));
 		if (ht) {
 			if (nvram_nmatch("1", "%s_smps", prefix) && has_static_smps(prefix))
 				fprintf(fp, "ht_capab=[%s]%s[SMPS-STATIC]\n", ht, caps);
@@ -1596,7 +1600,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		if (atoi(channelbw) < 40) {
 			fprintf(fp, "\tdisable_ht40=1\n");
 		}
-		
 
 		addvhtcaps(prefix, fp);
 		if (!ssidoverride)
