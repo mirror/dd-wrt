@@ -17,13 +17,6 @@ in the source distribution for its full text.
 #include <hwloc.h>
 #endif
 
-/*{
-#include "Panel.h"
-#include "Affinity.h"
-#include "ProcessList.h"
-
-}*/
-
 typedef struct MaskItem_ {
    Object super;
    const char* text;
@@ -375,9 +368,9 @@ Panel* AffinityPanel_new(ProcessList* pl, Affinity* affinity, int* width) {
    for (int i = 0; i < pl->cpuCount; i++) {
       char number[16];
       xSnprintf(number, 9, "CPU %d", Settings_cpuId(pl->settings, i));
-      unsigned width = 4 + strlen(number);
-      if (width > this->width)
-         this->width = width;
+      unsigned cpu_width = 4 + strlen(number);
+      if (cpu_width > this->width)
+         this->width = cpu_width;
 
       bool isSet = false;
       if (curCpu < affinity->used && affinity->cpus[curCpu] == i) {

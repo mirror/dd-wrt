@@ -11,13 +11,6 @@
 #include <string.h>
 #include <unistd.h>
 
-/*{
-#include "InfoScreen.h"
-
-typedef struct EnvScreen_ {
-   InfoScreen super;
-} EnvScreen;
-}*/
 
 InfoScreenClass EnvScreen_class = {
    .super = {
@@ -44,7 +37,7 @@ void EnvScreen_draw(InfoScreen* this) {
 
 void EnvScreen_scan(InfoScreen* this) {
    Panel* panel = this->display;
-   int idx = MAX(Panel_getSelectedIndex(panel), 0);
+   int idx = MAXIMUM(Panel_getSelectedIndex(panel), 0);
 
    Panel_prune(panel);
 

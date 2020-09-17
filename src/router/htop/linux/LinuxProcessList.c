@@ -42,99 +42,6 @@ in the source distribution for its full text.
 #include <linux/taskstats.h>
 #endif
 
-/*{
-
-#include "ProcessList.h"
-#include "zfs/ZfsArcStats.h"
-
-extern long long btime;
-
-typedef struct CPUData_ {
-   unsigned long long int totalTime;
-   unsigned long long int userTime;
-   unsigned long long int systemTime;
-   unsigned long long int systemAllTime;
-   unsigned long long int idleAllTime;
-   unsigned long long int idleTime;
-   unsigned long long int niceTime;
-   unsigned long long int ioWaitTime;
-   unsigned long long int irqTime;
-   unsigned long long int softIrqTime;
-   unsigned long long int stealTime;
-   unsigned long long int guestTime;
-
-   unsigned long long int totalPeriod;
-   unsigned long long int userPeriod;
-   unsigned long long int systemPeriod;
-   unsigned long long int systemAllPeriod;
-   unsigned long long int idleAllPeriod;
-   unsigned long long int idlePeriod;
-   unsigned long long int nicePeriod;
-   unsigned long long int ioWaitPeriod;
-   unsigned long long int irqPeriod;
-   unsigned long long int softIrqPeriod;
-   unsigned long long int stealPeriod;
-   unsigned long long int guestPeriod;
-
-   double frequency;
-} CPUData;
-
-typedef struct TtyDriver_ {
-   char* path;
-   unsigned int major;
-   unsigned int minorFrom;
-   unsigned int minorTo;
-} TtyDriver;
-
-typedef struct LinuxProcessList_ {
-   ProcessList super;
-
-   CPUData* cpus;
-   TtyDriver* ttyDrivers;
-   bool haveSmapsRollup;
-
-   #ifdef HAVE_DELAYACCT
-   struct nl_sock *netlink_socket;
-   int netlink_family;
-   #endif
-
-   ZfsArcStats zfs;
-} LinuxProcessList;
-
-#ifndef PROCDIR
-#define PROCDIR "/proc"
-#endif
-
-#ifndef PROCCPUINFOFILE
-#define PROCCPUINFOFILE PROCDIR "/cpuinfo"
-#endif
-
-#ifndef PROCSTATFILE
-#define PROCSTATFILE PROCDIR "/stat"
-#endif
-
-#ifndef PROCMEMINFOFILE
-#define PROCMEMINFOFILE PROCDIR "/meminfo"
-#endif
-
-#ifndef PROCARCSTATSFILE
-#define PROCARCSTATSFILE PROCDIR "/spl/kstat/zfs/arcstats"
-#endif
-
-#ifndef PROCTTYDRIVERSFILE
-#define PROCTTYDRIVERSFILE PROCDIR "/tty/drivers"
-#endif
-
-#ifndef PROC_LINE_LENGTH
-#define PROC_LINE_LENGTH 4096
-#endif
-
-}*/
-
-#ifndef CLAMP
-#define CLAMP(x,low,high) (((x)>(high))?(high):(((x)<(low))?(low):(x)))
-#endif
-
 static ssize_t xread(int fd, void *buf, size_t count) {
   // Read some bytes. Retry on EINTR and when we don't get as many bytes as we requested.
   size_t alreadyRead = 0;
@@ -242,11 +149,11 @@ static void LinuxProcessList_initNetlinkSocket(LinuxProcessList* this) {
 
 #endif
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId) {
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId) {
    LinuxProcessList* this = xCalloc(1, sizeof(LinuxProcessList));
    ProcessList* pl = &(this->super);
 
-   ProcessList_init(pl, Class(LinuxProcess), usersTable, pidWhiteList, userId);
+   ProcessList_init(pl, Class(LinuxProcess), usersTable, pidMatchList, userId);
    LinuxProcessList_initTtyDrivers(this);
 
    #ifdef HAVE_DELAYACCT
@@ -283,7 +190,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, ui
 
    fclose(file);
 
-   pl->cpuCount = MAX(cpus - 1, 1);
+   pl->cpuCount = MAXIMUM(cpus - 1, 1);
    this->cpus = xCalloc(cpus, sizeof(CPUData));
 
    for (int i = 0; i < cpus; i++) {

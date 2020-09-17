@@ -16,33 +16,6 @@ in the source distribution for its full text.
 #include <stdlib.h>
 #include <stdbool.h>
 
-/*{
-#include "FunctionBar.h"
-#include "Vector.h"
-#include "Header.h"
-#include "Settings.h"
-#include "Panel.h"
-
-typedef enum Orientation_ {
-   VERTICAL,
-   HORIZONTAL
-} Orientation;
-
-typedef struct ScreenManager_ {
-   int x1;
-   int y1;
-   int x2;
-   int y2;
-   Orientation orientation;
-   Vector* panels;
-   int panelCount;
-   const Header* header;
-   const Settings* settings;
-   bool owner;
-   bool allowFocusChange;
-} ScreenManager;
-
-}*/
 
 ScreenManager* ScreenManager_new(int x1, int y1, int x2, int y2, Orientation orientation, const Header* header, const Settings* settings, bool owner) {
    ScreenManager* this;
@@ -189,22 +162,6 @@ void ScreenManager_run(ScreenManager* this, Panel** lastFocus, int* lastKey) {
       int prevCh = ch;
       set_escdelay(25);
       ch = getch();
-
-      if (this->settings->vimMode) {
-         switch (ch) {
-            case 'h': ch = KEY_LEFT; break;
-            case 'j': ch = KEY_DOWN; break;
-            case 'k': ch = KEY_UP; break;
-            case 'l': ch = KEY_RIGHT; break;
-            case KEY_LEFT: ch = 'h'; break;
-            case KEY_DOWN: ch = 'j'; break;
-            case KEY_UP: ch = 'k'; break;
-            case KEY_RIGHT: ch = 'l'; break;
-            case 'K': ch = 'k'; break;
-            case 'J': ch = 'K'; break;
-            case 'L': ch = 'l'; break;
-         }
-      }
 
       HandlerResult result = IGNORED;
       if (ch == KEY_MOUSE && this->settings->enableMouse) {

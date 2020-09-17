@@ -14,19 +14,6 @@ in the source distribution for its full text.
 #include <stdlib.h>
 #include <string.h>
 
-/*{
-#include "Panel.h"
-#include "Settings.h"
-#include "ScreenManager.h"
-
-typedef struct DisplayOptionsPanel_ {
-   Panel super;
-
-   Settings* settings;
-   ScreenManager* scr;
-} DisplayOptionsPanel;
-
-}*/
 
 static const char* const DisplayOptionsFunctions[] = {"      ", "      ", "      ", "      ", "      ", "      ", "      ", "      ", "      ", "Done  ", NULL};
 
@@ -100,7 +87,6 @@ DisplayOptionsPanel* DisplayOptionsPanel_new(Settings* settings, ScreenManager* 
    Panel_add(super, (Object*) CheckItem_newByRef(xStrdup("Also show CPU percentage numerically"), &(settings->showCPUUsage)));
    Panel_add(super, (Object*) CheckItem_newByRef(xStrdup("Also show CPU frequency"), &(settings->showCPUFrequency)));
    Panel_add(super, (Object*) CheckItem_newByRef(xStrdup("Enable the mouse"), &(settings->enableMouse)));
-   Panel_add(super, (Object*) CheckItem_newByRef(xStrdup("Enable vim mode"), &(settings->vimMode)));
    #ifdef HAVE_LIBHWLOC
    Panel_add(super, (Object*) CheckItem_newByRef(xStrdup("Show topology when selecting affinity by default"), &(settings->topologyAffinity)));
    #endif

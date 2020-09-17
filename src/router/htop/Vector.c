@@ -12,25 +12,6 @@ in the source distribution for its full text.
 #include <string.h>
 #include <stdbool.h>
 
-/*{
-#include "Object.h"
-
-#define swap(a_,x_,y_) do{ void* tmp_ = a_[x_]; a_[x_] = a_[y_]; a_[y_] = tmp_; }while(0)
-
-#ifndef DEFAULT_SIZE
-#define DEFAULT_SIZE -1
-#endif
-
-typedef struct Vector_ {
-   Object **array;
-   ObjectClass* type;
-   int arraySize;
-   int growthRate;
-   int items;
-   bool owner;
-} Vector;
-
-}*/
 
 Vector* Vector_new(ObjectClass* type, bool owner, int size) {
    Vector* this;
@@ -280,7 +261,7 @@ inline Object* Vector_get(Vector* this, int idx) {
 
 #else
 
-#define Vector_get(v_, idx_) ((v_)->array[idx_])
+// In this case, Vector_get is defined as a macro in vector.h
 
 #endif
 
@@ -293,7 +274,7 @@ inline int Vector_size(Vector* this) {
 
 #else
 
-#define Vector_size(v_) ((v_)->items)
+// In this case, Vector_size is defined as a macro in vector.h
 
 #endif
 
