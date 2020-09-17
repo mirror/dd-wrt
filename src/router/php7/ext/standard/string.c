@@ -2598,7 +2598,7 @@ PHP_FUNCTION(substr_replace)
 
 		from_idx = len_idx = repl_idx = 0;
 
-		ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(str), num_index, str_index, tmp_str) {
+		ZEND_HASH_FOREACH_KEY_VAL_IND(Z_ARRVAL_P(str), num_index, str_index, tmp_str) {
 			zend_string *tmp_orig_str;
 			zend_string *orig_str = zval_get_tmp_string(tmp_str, &tmp_orig_str);
 
@@ -2807,8 +2807,9 @@ PHP_FUNCTION(chr)
    Uppercase the first character of the word in a native string */
 static zend_string* php_ucfirst(zend_string *str)
 {
-	unsigned char r = toupper(ZSTR_VAL(str)[0]);
-	if (r == ZSTR_VAL(str)[0]) {
+	const unsigned char ch = ZSTR_VAL(str)[0];
+	unsigned char r = toupper(ch);
+	if (r == ch) {
 		return zend_string_copy(str);
 	} else {
 		zend_string *s = zend_string_init(ZSTR_VAL(str), ZSTR_LEN(str), 0);
@@ -3046,7 +3047,7 @@ static void php_strtr_array(zval *return_value, zend_string *input, HashTable *p
 		zend_string *key_used;
 		/* we have to rebuild HashTable with numeric keys */
 		zend_hash_init(&str_hash, zend_hash_num_elements(pats), NULL, NULL, 0);
-		ZEND_HASH_FOREACH_KEY_VAL(pats, num_key, str_key, entry) {
+		ZEND_HASH_FOREACH_KEY_VAL_IND(pats, num_key, str_key, entry) {
 			if (UNEXPECTED(!str_key)) {
 				key_used = zend_long_to_str(num_key);
 				len = ZSTR_LEN(key_used);
@@ -3492,7 +3493,7 @@ PHP_FUNCTION(strtr)
 			zend_string *str_key, *tmp_str, *replace, *tmp_replace;
 			zval *entry;
 
-			ZEND_HASH_FOREACH_KEY_VAL(pats, num_key, str_key, entry) {
+			ZEND_HASH_FOREACH_KEY_VAL_IND(pats, num_key, str_key, entry) {
 				tmp_str = NULL;
 				if (UNEXPECTED(!str_key)) {
 					str_key = tmp_str = zend_long_to_str(num_key);
@@ -4356,12 +4357,9 @@ PHPAPI void php_stripslashes(zend_string *str)
  */
 static zend_long php_str_replace_in_subject(zval *search, zval *replace, zval *subject, zval *result, int case_sensitivity)
 {
-	zval		*search_entry,
-				*replace_entry = NULL;
+	zval		*search_entry;
 	zend_string	*tmp_result,
-	            *tmp_subject_str,
-	            *tmp_replace_entry_str = NULL,
-				*replace_entry_str;
+	            *tmp_subject_str;
 	char		*replace_value = NULL;
 	size_t		 replace_len = 0;
 	zend_long	 replace_count = 0;
@@ -4391,14 +4389,16 @@ static zend_long php_str_replace_in_subject(zval *search, zval *replace, zval *s
 		}
 
 		/* For each entry in the search array, get the entry */
-		ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(search), search_entry) {
+		ZEND_HASH_FOREACH_VAL_IND(Z_ARRVAL_P(search), search_entry) {
 			/* Make sure we're dealing with strings. */
 			zend_string *tmp_search_str;
 			zend_string *search_str = zval_get_tmp_string(search_entry, &tmp_search_str);
+			zend_string *replace_entry_str, *tmp_replace_entry_str = NULL;
 
 			/* If replace is an array. */
 			if (Z_TYPE_P(replace) == IS_ARRAY) {
 				/* Get current entry */
+				zval *replace_entry = NULL;
 				while (replace_idx < Z_ARRVAL_P(replace)->nNumUsed) {
 					replace_entry = &Z_ARRVAL_P(replace)->arData[replace_idx].val;
 					if (Z_TYPE_P(replace_entry) != IS_UNDEF) {
@@ -4455,15 +4455,12 @@ static zend_long php_str_replace_in_subject(zval *search, zval *replace, zval *s
 				}
 			} else {
 				zend_tmp_string_release(tmp_search_str);
+				zend_tmp_string_release(tmp_replace_entry_str);
 				continue;
 			}
 
 			zend_tmp_string_release(tmp_search_str);
-
-			if (tmp_replace_entry_str) {
-				zend_string_release_ex(tmp_replace_entry_str, 0);
-				tmp_replace_entry_str = NULL;
-			}
+			zend_tmp_string_release(tmp_replace_entry_str);
 
 			if (subject_str == tmp_result) {
 				zend_string_delref(subject_str);
@@ -4555,7 +4552,7 @@ static void php_str_replace_common(INTERNAL_FUNCTION_PARAMETERS, int case_sensit
 
 		/* For each subject entry, convert it to string, then perform replacement
 		   and add the result to the return_value array. */
-		ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(subject), num_key, string_key, subject_entry) {
+		ZEND_HASH_FOREACH_KEY_VAL_IND(Z_ARRVAL_P(subject), num_key, string_key, subject_entry) {
 			ZVAL_DEREF(subject_entry);
 			if (Z_TYPE_P(subject_entry) != IS_ARRAY && Z_TYPE_P(subject_entry) != IS_OBJECT) {
 				count += php_str_replace_in_subject(search, replace, subject_entry, &result, case_sensitivity);

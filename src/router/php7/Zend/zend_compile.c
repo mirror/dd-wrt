@@ -3009,7 +3009,11 @@ uint32_t zend_compile_args(zend_ast *ast, zend_function *fbc) /* {{{ */
 				zend_compile_var(&arg_node, arg, BP_VAR_R, 0);
 				if (arg_node.op_type & (IS_CONST|IS_TMP_VAR)) {
 					/* Function call was converted into builtin instruction */
-					opcode = ZEND_SEND_VAL;
+					if (!fbc || ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
+						opcode = ZEND_SEND_VAL_EX;
+					} else {
+						opcode = ZEND_SEND_VAL;
+					}
 				} else {
 					if (fbc) {
 						if (ARG_MUST_BE_SENT_BY_REF(fbc, arg_num)) {
@@ -5813,8 +5817,14 @@ void zend_begin_method_decl(zend_op_array *op_array, zend_string *name, zend_boo
 			}
 		} else if (zend_string_equals_literal(lcname, "serialize")) {
 			ce->serialize_func = (zend_function *) op_array;
+			if (!is_static) {
+				op_array->fn_flags |= ZEND_ACC_ALLOW_STATIC;
+			}
 		} else if (zend_string_equals_literal(lcname, "unserialize")) {
 			ce->unserialize_func = (zend_function *) op_array;
+			if (!is_static) {
+				op_array->fn_flags |= ZEND_ACC_ALLOW_STATIC;
+			}
 		} else if (ZSTR_VAL(lcname)[0] != '_' || ZSTR_VAL(lcname)[1] != '_') {
 			if (!is_static) {
 				op_array->fn_flags |= ZEND_ACC_ALLOW_STATIC;
