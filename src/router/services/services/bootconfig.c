@@ -82,7 +82,7 @@ void start_bootconfig(void)
 	fscanf(in, "%s", serial);
 	fclose(in);
 	FILE *out = fopen("/boot/boot/grub/menu.lst", "wb");
-	if (!strncmp(serial, "serial",6)) {
+	if (!strncmp(serial, "serial", 6)) {
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");

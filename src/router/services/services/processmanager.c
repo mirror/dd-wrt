@@ -55,12 +55,12 @@ static int _stop_process(char *name, char *desc, int hard)
 
 int stop_process(char *name, char *desc)
 {
-	    return _stop_process(name, desc, 0);
+	return _stop_process(name, desc, 0);
 }
 
 int stop_process_hard(char *name, char *desc)
 {
-	    return _stop_process(name, desc, 1);
+	return _stop_process(name, desc, 1);
 }
 
 void network_delay(char *service)
