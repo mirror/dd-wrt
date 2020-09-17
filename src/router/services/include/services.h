@@ -251,6 +251,7 @@ void reset_hwaddr(char *ifname);
 void start_force_to_dial(void);
 
 int stop_process(char *name, char *desc);
+int stop_process_hard(char *name, char *desc);
 
 void network_delay(char *service);
 

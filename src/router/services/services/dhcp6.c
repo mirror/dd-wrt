@@ -208,7 +208,10 @@ void start_dhcp6c(void)
 
 void stop_dhcp6c(void)
 {
-	stop_process("dhcp6c", "daemon");
+	if (nvram_match("dhcp6c_norelease","1"))
+		stop_process_hard("dhcp6c", "daemon");
+	else
+		stop_process("dhcp6c", "daemon");
 }
 
 void start_dhcp6s(void)
