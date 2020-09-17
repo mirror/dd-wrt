@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -31,7 +19,7 @@
 /*
  * Definition of the possible btree block layouts.
  */
-struct xfs_db_btree {
+static struct xfs_db_btree {
 	uint32_t		magic;
 	size_t			block_len;
 	size_t			key_len;
@@ -525,7 +513,7 @@ const field_t	inobt_sprec_flds[] = {
 	{ "holemask", FLDT_UINT16X, OI(ROFF(ir_u.sp.ir_holemask)), C1, 0,
 	  TYP_NONE },
 	{ "count", FLDT_UINT8D, OI(ROFF(ir_u.sp.ir_count)), C1, 0, TYP_NONE },
-	{ "freecount", FLDT_INT8D, OI(ROFF(ir_u.sp.ir_freecount)), C1, 0,
+	{ "freecount", FLDT_UINT8D, OI(ROFF(ir_u.sp.ir_freecount)), C1, 0,
 	  TYP_NONE },
 	{ "free", FLDT_INOFREE, OI(ROFF(ir_free)), C1, 0, TYP_NONE },
 	{ NULL }
@@ -728,8 +716,6 @@ const field_t	rmapbt_key_flds[] = {
 #undef HI_KOFF
 #undef KOFF
 
-#define	ROFF(f)	bitize(offsetof(struct xfs_rmap_rec, rm_ ## f))
-
 #define RMAPBT_STARTBLOCK_BITOFF	0
 #define RMAPBT_BLOCKCOUNT_BITOFF	(RMAPBT_STARTBLOCK_BITOFF + RMAPBT_STARTBLOCK_BITLEN)
 #define RMAPBT_OWNER_BITOFF		(RMAPBT_BLOCKCOUNT_BITOFF + RMAPBT_BLOCKCOUNT_BITLEN)
@@ -752,7 +738,6 @@ const field_t	rmapbt_rec_flds[] = {
 	  TYP_NONE },
 	{ NULL }
 };
-#undef ROFF
 
 /* refcount btree blocks */
 const field_t	refcbt_crc_hfld[] = {
@@ -785,13 +770,11 @@ const field_t	refcbt_crc_flds[] = {
 #define REFCNTBT_COWFLAG_BITOFF		0
 #define REFCNTBT_STARTBLOCK_BITOFF	(REFCNTBT_COWFLAG_BITOFF + REFCNTBT_COWFLAG_BITLEN)
 
-#define	KOFF(f)	bitize(offsetof(struct xfs_refcount_key, rc_ ## f))
 const field_t	refcbt_key_flds[] = {
 	{ "startblock", FLDT_CAGBLOCK, OI(REFCNTBT_STARTBLOCK_BITOFF), C1, 0, TYP_DATA },
 	{ "cowflag", FLDT_CCOWFLG, OI(REFCNTBT_COWFLAG_BITOFF), C1, 0, TYP_DATA },
 	{ NULL }
 };
-#undef KOFF
 
 #define	ROFF(f)	bitize(offsetof(struct xfs_refcount_rec, rc_ ## f))
 const field_t	refcbt_rec_flds[] = {

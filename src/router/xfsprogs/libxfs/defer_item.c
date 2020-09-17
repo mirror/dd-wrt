@@ -1,21 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "libxfs_priv.h"
 #include "xfs_fs.h"
@@ -57,28 +43,25 @@ xfs_extent_free_diff_items(
 }
 
 /* Get an EFI. */
-STATIC void *
+static struct xfs_log_item *
 xfs_extent_free_create_intent(
 	struct xfs_trans		*tp,
-	unsigned int			count)
+	struct list_head		*items,
+	unsigned int			count,
+	bool				sort)
 {
+	struct xfs_mount		*mp = tp->t_mountp;
+
+	if (sort)
+		list_sort(mp, items, xfs_extent_free_diff_items);
 	return NULL;
 }
 
-/* Log a free extent to the intent item. */
-STATIC void
-xfs_extent_free_log_item(
-	struct xfs_trans		*tp,
-	void				*intent,
-	struct list_head		*item)
-{
-}
-
 /* Get an EFD so we can process all the free extents. */
-STATIC void *
+static struct xfs_log_item *
 xfs_extent_free_create_done(
 	struct xfs_trans		*tp,
-	void				*intent,
+	struct xfs_log_item		*intent,
 	unsigned int			count)
 {
 	return NULL;
@@ -88,10 +71,9 @@ xfs_extent_free_create_done(
 STATIC int
 xfs_extent_free_finish_item(
 	struct xfs_trans		*tp,
-	struct xfs_defer_ops		*dop,
+	struct xfs_log_item		*done,
 	struct list_head		*item,
-	void				*done_item,
-	void				**state)
+	struct xfs_btree_cur		**state)
 {
 	struct xfs_extent_free_item	*free;
 	int				error;
@@ -107,7 +89,7 @@ xfs_extent_free_finish_item(
 /* Abort all pending EFIs. */
 STATIC void
 xfs_extent_free_abort_intent(
-	void				*intent)
+	struct xfs_log_item		*intent)
 {
 }
 
@@ -122,23 +104,53 @@ xfs_extent_free_cancel_item(
 	kmem_free(free);
 }
 
-static const struct xfs_defer_op_type xfs_extent_free_defer_type = {
-	.type		= XFS_DEFER_OPS_TYPE_FREE,
-	.diff_items	= xfs_extent_free_diff_items,
+const struct xfs_defer_op_type xfs_extent_free_defer_type = {
 	.create_intent	= xfs_extent_free_create_intent,
 	.abort_intent	= xfs_extent_free_abort_intent,
-	.log_item	= xfs_extent_free_log_item,
 	.create_done	= xfs_extent_free_create_done,
 	.finish_item	= xfs_extent_free_finish_item,
 	.cancel_item	= xfs_extent_free_cancel_item,
 };
 
-/* Register the deferred op type. */
-void
-xfs_extent_free_init_defer_op(void)
+/*
+ * AGFL blocks are accounted differently in the reserve pools and are not
+ * inserted into the busy extent list.
+ */
+STATIC int
+xfs_agfl_free_finish_item(
+	struct xfs_trans		*tp,
+	struct xfs_log_item		*done,
+	struct list_head		*item,
+	struct xfs_btree_cur		**state)
 {
-	xfs_defer_init_op_type(&xfs_extent_free_defer_type);
+	struct xfs_mount		*mp = tp->t_mountp;
+	struct xfs_extent_free_item	*free;
+	struct xfs_buf			*agbp;
+	int				error;
+	xfs_agnumber_t			agno;
+	xfs_agblock_t			agbno;
+
+	free = container_of(item, struct xfs_extent_free_item, xefi_list);
+	ASSERT(free->xefi_blockcount == 1);
+	agno = XFS_FSB_TO_AGNO(mp, free->xefi_startblock);
+	agbno = XFS_FSB_TO_AGBNO(mp, free->xefi_startblock);
+
+	error = xfs_alloc_read_agf(mp, tp, agno, 0, &agbp);
+	if (!error)
+		error = xfs_free_agfl_block(tp, agno, agbno, agbp,
+					    &free->xefi_oinfo);
+	kmem_free(free);
+	return error;
 }
+
+/* sub-type with special handling for AGFL deferred frees */
+const struct xfs_defer_op_type xfs_agfl_free_defer_type = {
+	.create_intent	= xfs_extent_free_create_intent,
+	.abort_intent	= xfs_extent_free_abort_intent,
+	.create_done	= xfs_extent_free_create_done,
+	.finish_item	= xfs_agfl_free_finish_item,
+	.cancel_item	= xfs_extent_free_cancel_item,
+};
 
 /* Reverse Mapping */
 
@@ -160,28 +172,25 @@ xfs_rmap_update_diff_items(
 }
 
 /* Get an RUI. */
-STATIC void *
+static struct xfs_log_item *
 xfs_rmap_update_create_intent(
 	struct xfs_trans		*tp,
-	unsigned int			count)
+	struct list_head		*items,
+	unsigned int			count,
+	bool				sort)
 {
+	 struct xfs_mount		*mp = tp->t_mountp;
+
+	if (sort)
+		list_sort(mp, items, xfs_rmap_update_diff_items);
 	return NULL;
 }
 
-/* Log rmap updates in the intent item. */
-STATIC void
-xfs_rmap_update_log_item(
-	struct xfs_trans		*tp,
-	void				*intent,
-	struct list_head		*item)
-{
-}
-
 /* Get an RUD so we can process all the deferred rmap updates. */
-STATIC void *
+static struct xfs_log_item *
 xfs_rmap_update_create_done(
 	struct xfs_trans		*tp,
-	void				*intent,
+	struct xfs_log_item		*intent,
 	unsigned int			count)
 {
 	return NULL;
@@ -191,10 +200,9 @@ xfs_rmap_update_create_done(
 STATIC int
 xfs_rmap_update_finish_item(
 	struct xfs_trans		*tp,
-	struct xfs_defer_ops		*dop,
+	struct xfs_log_item		*done,
 	struct list_head		*item,
-	void				*done_item,
-	void				**state)
+	struct xfs_btree_cur		**state)
 {
 	struct xfs_rmap_intent		*rmap;
 	int				error;
@@ -207,27 +215,15 @@ xfs_rmap_update_finish_item(
 			rmap->ri_bmap.br_startblock,
 			rmap->ri_bmap.br_blockcount,
 			rmap->ri_bmap.br_state,
-			(struct xfs_btree_cur **)state);
+			state);
 	kmem_free(rmap);
 	return error;
-}
-
-/* Clean up after processing deferred rmaps. */
-STATIC void
-xfs_rmap_update_finish_cleanup(
-	struct xfs_trans	*tp,
-	void			*state,
-	int			error)
-{
-	struct xfs_btree_cur	*rcur = state;
-
-	xfs_rmap_finish_one_cleanup(tp, rcur, error);
 }
 
 /* Abort all pending RUIs. */
 STATIC void
 xfs_rmap_update_abort_intent(
-	void				*intent)
+	struct xfs_log_item		*intent)
 {
 }
 
@@ -242,24 +238,14 @@ xfs_rmap_update_cancel_item(
 	kmem_free(rmap);
 }
 
-static const struct xfs_defer_op_type xfs_rmap_update_defer_type = {
-	.type		= XFS_DEFER_OPS_TYPE_RMAP,
-	.diff_items	= xfs_rmap_update_diff_items,
+const struct xfs_defer_op_type xfs_rmap_update_defer_type = {
 	.create_intent	= xfs_rmap_update_create_intent,
 	.abort_intent	= xfs_rmap_update_abort_intent,
-	.log_item	= xfs_rmap_update_log_item,
 	.create_done	= xfs_rmap_update_create_done,
 	.finish_item	= xfs_rmap_update_finish_item,
-	.finish_cleanup = xfs_rmap_update_finish_cleanup,
+	.finish_cleanup = xfs_rmap_finish_one_cleanup,
 	.cancel_item	= xfs_rmap_update_cancel_item,
 };
-
-/* Register the deferred op type. */
-void
-xfs_rmap_update_init_defer_op(void)
-{
-	xfs_defer_init_op_type(&xfs_rmap_update_defer_type);
-}
 
 /* Reference Counting */
 
@@ -281,28 +267,25 @@ xfs_refcount_update_diff_items(
 }
 
 /* Get an CUI. */
-STATIC void *
+static struct xfs_log_item *
 xfs_refcount_update_create_intent(
 	struct xfs_trans		*tp,
-	unsigned int			count)
+	struct list_head		*items,
+	unsigned int			count,
+	bool				sort)
 {
+	struct xfs_mount		*mp = tp->t_mountp;
+
+	if (sort)
+		list_sort(mp, items, xfs_refcount_update_diff_items);
 	return NULL;
 }
 
-/* Log refcount updates in the intent item. */
-STATIC void
-xfs_refcount_update_log_item(
-	struct xfs_trans		*tp,
-	void				*intent,
-	struct list_head		*item)
-{
-}
-
 /* Get an CUD so we can process all the deferred refcount updates. */
-STATIC void *
+static struct xfs_log_item *
 xfs_refcount_update_create_done(
 	struct xfs_trans		*tp,
-	void				*intent,
+	struct xfs_log_item		*intent,
 	unsigned int			count)
 {
 	return NULL;
@@ -312,10 +295,9 @@ xfs_refcount_update_create_done(
 STATIC int
 xfs_refcount_update_finish_item(
 	struct xfs_trans		*tp,
-	struct xfs_defer_ops		*dop,
+	struct xfs_log_item		*done,
 	struct list_head		*item,
-	void				*done_item,
-	void				**state)
+	struct xfs_btree_cur		**state)
 {
 	struct xfs_refcount_intent	*refc;
 	xfs_fsblock_t			new_fsb;
@@ -323,12 +305,12 @@ xfs_refcount_update_finish_item(
 	int				error;
 
 	refc = container_of(item, struct xfs_refcount_intent, ri_list);
-	error = xfs_refcount_finish_one(tp, dop,
+	error = xfs_refcount_finish_one(tp,
 			refc->ri_type,
 			refc->ri_startblock,
 			refc->ri_blockcount,
 			&new_fsb, &new_aglen,
-			(struct xfs_btree_cur **)state);
+			state);
 	/* Did we run out of reservation?  Requeue what we didn't finish. */
 	if (!error && new_aglen > 0) {
 		ASSERT(refc->ri_type == XFS_REFCOUNT_INCREASE ||
@@ -341,22 +323,10 @@ xfs_refcount_update_finish_item(
 	return error;
 }
 
-/* Clean up after processing deferred refcounts. */
-STATIC void
-xfs_refcount_update_finish_cleanup(
-	struct xfs_trans	*tp,
-	void			*state,
-	int			error)
-{
-	struct xfs_btree_cur	*rcur = state;
-
-	xfs_refcount_finish_one_cleanup(tp, rcur, error);
-}
-
 /* Abort all pending CUIs. */
 STATIC void
 xfs_refcount_update_abort_intent(
-	void				*intent)
+	struct xfs_log_item		*intent)
 {
 }
 
@@ -371,24 +341,14 @@ xfs_refcount_update_cancel_item(
 	kmem_free(refc);
 }
 
-static const struct xfs_defer_op_type xfs_refcount_update_defer_type = {
-	.type		= XFS_DEFER_OPS_TYPE_REFCOUNT,
-	.diff_items	= xfs_refcount_update_diff_items,
+const struct xfs_defer_op_type xfs_refcount_update_defer_type = {
 	.create_intent	= xfs_refcount_update_create_intent,
 	.abort_intent	= xfs_refcount_update_abort_intent,
-	.log_item	= xfs_refcount_update_log_item,
 	.create_done	= xfs_refcount_update_create_done,
 	.finish_item	= xfs_refcount_update_finish_item,
-	.finish_cleanup = xfs_refcount_update_finish_cleanup,
+	.finish_cleanup = xfs_refcount_finish_one_cleanup,
 	.cancel_item	= xfs_refcount_update_cancel_item,
 };
-
-/* Register the deferred op type. */
-void
-xfs_refcount_update_init_defer_op(void)
-{
-	xfs_defer_init_op_type(&xfs_refcount_update_defer_type);
-}
 
 /* Inode Block Mapping */
 
@@ -408,28 +368,25 @@ xfs_bmap_update_diff_items(
 }
 
 /* Get an BUI. */
-STATIC void *
+static struct xfs_log_item *
 xfs_bmap_update_create_intent(
 	struct xfs_trans		*tp,
-	unsigned int			count)
+	struct list_head		*items,
+	unsigned int			count,
+	bool				sort)
 {
+	struct xfs_mount		*mp = tp->t_mountp;
+
+	if (sort)
+		list_sort(mp, items, xfs_bmap_update_diff_items);
 	return NULL;
 }
 
-/* Log bmap updates in the intent item. */
-STATIC void
-xfs_bmap_update_log_item(
-	struct xfs_trans		*tp,
-	void				*intent,
-	struct list_head		*item)
-{
-}
-
 /* Get an BUD so we can process all the deferred rmap updates. */
-STATIC void *
+static struct xfs_log_item *
 xfs_bmap_update_create_done(
 	struct xfs_trans		*tp,
-	void				*intent,
+	struct xfs_log_item		*intent,
 	unsigned int			count)
 {
 	return NULL;
@@ -439,10 +396,9 @@ xfs_bmap_update_create_done(
 STATIC int
 xfs_bmap_update_finish_item(
 	struct xfs_trans		*tp,
-	struct xfs_defer_ops		*dop,
+	struct xfs_log_item		*done,
 	struct list_head		*item,
-	void				*done_item,
-	void				**state)
+	struct xfs_btree_cur		**state)
 {
 	struct xfs_bmap_intent		*bmap;
 	xfs_filblks_t			count;
@@ -450,7 +406,7 @@ xfs_bmap_update_finish_item(
 
 	bmap = container_of(item, struct xfs_bmap_intent, bi_list);
 	count = bmap->bi_bmap.br_blockcount;
-	error = xfs_bmap_finish_one(tp, dop,
+	error = xfs_bmap_finish_one(tp,
 			bmap->bi_owner,
 			bmap->bi_type, bmap->bi_whichfork,
 			bmap->bi_bmap.br_startoff,
@@ -469,7 +425,7 @@ xfs_bmap_update_finish_item(
 /* Abort all pending BUIs. */
 STATIC void
 xfs_bmap_update_abort_intent(
-	void				*intent)
+	struct xfs_log_item		*intent)
 {
 }
 
@@ -484,20 +440,10 @@ xfs_bmap_update_cancel_item(
 	kmem_free(bmap);
 }
 
-static const struct xfs_defer_op_type xfs_bmap_update_defer_type = {
-	.type		= XFS_DEFER_OPS_TYPE_BMAP,
-	.diff_items	= xfs_bmap_update_diff_items,
+const struct xfs_defer_op_type xfs_bmap_update_defer_type = {
 	.create_intent	= xfs_bmap_update_create_intent,
 	.abort_intent	= xfs_bmap_update_abort_intent,
-	.log_item	= xfs_bmap_update_log_item,
 	.create_done	= xfs_bmap_update_create_done,
 	.finish_item	= xfs_bmap_update_finish_item,
 	.cancel_item	= xfs_bmap_update_cancel_item,
 };
-
-/* Register the deferred op type. */
-void
-xfs_bmap_update_init_defer_op(void)
-{
-	xfs_defer_init_op_type(&xfs_bmap_update_defer_type);
-}

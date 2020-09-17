@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /*
@@ -33,7 +21,7 @@ typedef struct ag_header  {
 	xfs_dsb_t	*xfs_sb;	/* superblock for filesystem or AG */
 	xfs_agf_t	*xfs_agf;	/* free space info */
 	xfs_agi_t	*xfs_agi;	/* free inode info */
-	xfs_agfl_t	*xfs_agfl;	/* AG freelist */
+	struct xfs_agfl	*xfs_agfl;	/* AG freelist */
 	char		*residue;
 	int		residue_length;
 } ag_header_t;

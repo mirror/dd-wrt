@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "libxfs.h"
 #include "libxlog.h"
@@ -36,7 +24,7 @@ typedef struct xlog_split_item {
 	int			si_skip;
 } xlog_split_item_t;
 
-xlog_split_item_t *split_list = NULL;
+static xlog_split_item_t *split_list = NULL;
 
 void
 print_xlog_op_line(void)
@@ -45,7 +33,7 @@ print_xlog_op_line(void)
 	   "--------------------------------------\n");
 }	/* print_xlog_op_line */
 
-void
+static void
 print_xlog_xhdr_line(void)
 {
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
@@ -70,7 +58,7 @@ print_stars(void)
  * Given a pointer to a data segment, print out the data as if it were
  * a log operation header.
  */
-void
+static void
 xlog_print_op_header(xlog_op_header_t	*op_head,
 		     int		i,
 		     char		**ptr)
@@ -110,7 +98,7 @@ xlog_print_op_header(xlog_op_header_t	*op_head,
 }	/* xlog_print_op_header */
 
 
-void
+static void
 xlog_print_add_to_trans(xlog_tid_t	tid,
 			int		skip)
 {
@@ -127,7 +115,7 @@ xlog_print_add_to_trans(xlog_tid_t	tid,
 }	/* xlog_print_add_to_trans */
 
 
-int
+static int
 xlog_print_find_tid(xlog_tid_t tid, uint was_cont)
 {
     xlog_split_item_t *listp = split_list;
@@ -161,7 +149,7 @@ xlog_print_find_tid(xlog_tid_t tid, uint was_cont)
     return 1;
 }	/* xlog_print_find_tid */
 
-int
+static int
 xlog_print_trans_header(char **ptr, int len)
 {
     xfs_trans_header_t  *h;
@@ -193,7 +181,7 @@ xlog_print_trans_header(char **ptr, int len)
 }	/* xlog_print_trans_header */
 
 
-int
+static int
 xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 {
     xfs_buf_log_format_t *f;
@@ -204,14 +192,13 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
     int64_t			 blkno;
     xfs_buf_log_format_t lbuf;
     int			 size, blen, map_size, struct_size;
-    __be64		 x, y;
     unsigned short	 flags;
 
     /*
      * memmove to ensure 8-byte alignment for the long longs in
      * buf_log_format_t structure
      */
-    memmove(&lbuf, *ptr, MIN(sizeof(xfs_buf_log_format_t), len));
+    memmove(&lbuf, *ptr, min(sizeof(xfs_buf_log_format_t), len));
     f = &lbuf;
     *ptr += len;
 
@@ -259,20 +246,22 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 		if (be32_to_cpu(head->oh_len) < 4*8) {
 			printf(_("Out of space\n"));
 		} else {
+			__be64		 a, b;
+
 			printf("\n");
 			/*
 			 * memmove because *ptr may not be 8-byte aligned
 			 */
-			memmove(&x, *ptr, sizeof(__be64));
-			memmove(&y, *ptr+8, sizeof(__be64));
-		       printf(_("icount: %llu  ifree: %llu  "),
-			       (unsigned long long) be64_to_cpu(x),
-			       (unsigned long long) be64_to_cpu(y));
-			memmove(&x, *ptr+16, sizeof(__be64));
-			memmove(&y, *ptr+24, sizeof(__be64));
-		       printf(_("fdblks: %llu  frext: %llu\n"),
-			       (unsigned long long) be64_to_cpu(x),
-			       (unsigned long long) be64_to_cpu(y));
+			memmove(&a, *ptr, sizeof(__be64));
+			memmove(&b, *ptr+8, sizeof(__be64));
+			printf(_("icount: %llu  ifree: %llu  "),
+			       (unsigned long long) be64_to_cpu(a),
+			       (unsigned long long) be64_to_cpu(b));
+			memmove(&a, *ptr+16, sizeof(__be64));
+			memmove(&b, *ptr+24, sizeof(__be64));
+			printf(_("fdblks: %llu  frext: %llu\n"),
+			       (unsigned long long) be64_to_cpu(a),
+			       (unsigned long long) be64_to_cpu(b));
 		}
 		super_block = 0;
 	} else if (be32_to_cpu(*(__be32 *)(*ptr)) == XFS_AGI_MAGIC) {
@@ -374,7 +363,7 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 		memmove(dq, *ptr, sizeof(struct xfs_disk_dquot));
 		printf(_("DQUOT Buffer: DQ  "));
 		if (be32_to_cpu(head->oh_len) <
-				sizeof(xfs_disk_dquot_t)) {
+				sizeof(struct xfs_disk_dquot)) {
 			printf(_("Out of space\n"));
 		}
 		else {
@@ -406,15 +395,15 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 		if (print_data) {
 			uint *dp  = (uint *)*ptr;
 			int  nums = be32_to_cpu(head->oh_len) >> 2;
-			int  i = 0;
+			int  byte = 0;
 
-			while (i < nums) {
-				if ((i % 8) == 0)
-					printf("%2x ", i);
+			while (byte < nums) {
+				if ((byte % 8) == 0)
+					printf("%2x ", byte);
 				printf("%8x ", *dp);
 				dp++;
-				i++;
-				if ((i % 8) == 0)
+				byte++;
+				if ((byte % 8) == 0)
 					printf("\n");
 			}
 			printf("\n");
@@ -428,13 +417,13 @@ xlog_print_trans_buffer(char **ptr, int len, int *i, int num_ops)
 }	/* xlog_print_trans_buffer */
 
 
-int
+static int
 xlog_print_trans_qoff(char **ptr, uint len)
 {
     xfs_qoff_logformat_t *f;
     xfs_qoff_logformat_t lbuf;
 
-    memmove(&lbuf, *ptr, MIN(sizeof(xfs_qoff_logformat_t), len));
+    memmove(&lbuf, *ptr, min(sizeof(xfs_qoff_logformat_t), len));
     f = &lbuf;
     *ptr += len;
     if (len >= sizeof(xfs_qoff_logformat_t)) {
@@ -447,7 +436,7 @@ xlog_print_trans_qoff(char **ptr, uint len)
 }	/* xlog_print_trans_qoff */
 
 
-void
+static void
 xlog_print_trans_inode_core(
 	struct xfs_log_dinode	*ip)
 {
@@ -473,12 +462,13 @@ xlog_print_trans_inode_core(
     }
 }
 
-void
+static void
 xlog_print_dir2_sf(
 	struct xlog	*log,
 	xfs_dir2_sf_hdr_t *sfp,
 	int		size)
 {
+	__be64		pino;	/* parent inode nr */
 	xfs_ino_t	ino;
 	int		count;
 	int		i;
@@ -493,22 +483,22 @@ xlog_print_dir2_sf(
 
 	printf(_("SHORTFORM DIRECTORY size %d count %d\n"),
 	       size, sfp->count);
-	memmove(&ino, &(sfp->parent), sizeof(ino));
-	printf(_(".. ino 0x%llx\n"), (unsigned long long) be64_to_cpu(ino));
+	memmove(&pino, &(sfp->parent), sizeof(pino));
+	printf(_(".. ino 0x%llx\n"), (unsigned long long) be64_to_cpu(pino));
 
 	count = sfp->count;
 	sfep = xfs_dir2_sf_firstentry(sfp);
 	for (i = 0; i < count; i++) {
-		ino = M_DIROPS(log->l_mp)->sf_get_ino(sfp, sfep);
+		ino = libxfs_dir2_sf_get_ino(log->l_mp, sfp, sfep);
 		memmove(namebuf, (sfep->name), sfep->namelen);
 		namebuf[sfep->namelen] = '\0';
 		printf(_("%s ino 0x%llx namelen %d\n"),
 		       namebuf, (unsigned long long)ino, sfep->namelen);
-		sfep = M_DIROPS(log->l_mp)->sf_nextentry(sfp, sfep);
+		sfep = libxfs_dir2_sf_nextentry(log->l_mp, sfp, sfep);
 	}
 }
 
-int
+static int
 xlog_print_trans_inode(
 	struct xlog		*log,
 	char			**ptr,
@@ -530,12 +520,12 @@ xlog_print_trans_inode(
      * print inode type header region
      *
      * memmove to ensure 8-byte alignment for the long longs in
-     * xfs_inode_log_format_t structure
+     * struct xfs_inode_log_format structure
      *
-     * len can be smaller than xfs_inode_log_format_t
+     * len can be smaller than struct xfs_inode_log_format
      * if format data is split over operations
      */
-    memmove(&src_lbuf, *ptr, MIN(sizeof(src_lbuf), len));
+    memmove(&src_lbuf, *ptr, min(sizeof(src_lbuf), len));
     (*i)++;					/* bump index */
     *ptr += len;
     if (!continued &&
@@ -550,7 +540,7 @@ xlog_print_trans_inode(
 	       (long long)f->ilf_blkno, f->ilf_len, f->ilf_boffset);
     } else {
 	ASSERT(len >= 4);	/* must have at least 4 bytes if != 0 */
-	f = (xfs_inode_log_format_t *)&src_lbuf;
+	f = (struct xfs_inode_log_format *)&src_lbuf;
 	printf(_("INODE: #regs: %d   Not printing rest of data\n"),
 	       f->ilf_size);
 	return f->ilf_size;
@@ -573,7 +563,7 @@ xlog_print_trans_inode(
     mode = dino.di_mode & S_IFMT;
     size = (int)dino.di_size;
     xlog_print_trans_inode_core(&dino);
-    *ptr += xfs_log_dinode_size(dino.di_version);
+    *ptr += xfs_log_dinode_size(log->l_mp);
     skip_count--;
 
     switch (f->ilf_fields & (XFS_ILOG_DEV | XFS_ILOG_UUID)) {
@@ -659,14 +649,14 @@ xlog_print_trans_inode(
 }	/* xlog_print_trans_inode */
 
 
-int
+static int
 xlog_print_trans_dquot(char **ptr, int len, int *i, int num_ops)
 {
-    xfs_dq_logformat_t	*f;
-    xfs_dq_logformat_t	lbuf = {0};
-    xfs_disk_dquot_t	ddq;
-    xlog_op_header_t	*head = NULL;
-    int			num, skip;
+    xfs_dq_logformat_t		*f;
+    xfs_dq_logformat_t		lbuf = {0};
+    struct xfs_disk_dquot	ddq;
+    xlog_op_header_t		*head = NULL;
+    int				num, skip;
 
     /*
      * print dquot header region
@@ -674,7 +664,7 @@ xlog_print_trans_dquot(char **ptr, int len, int *i, int num_ops)
      * memmove to ensure 8-byte alignment for the long longs in
      * xfs_dq_logformat_t structure
      */
-    memmove(&lbuf, *ptr, MIN(sizeof(xfs_dq_logformat_t), len));
+    memmove(&lbuf, *ptr, min(sizeof(xfs_dq_logformat_t), len));
     f = &lbuf;
     (*i)++;					/* bump index */
     *ptr += len;
@@ -702,8 +692,8 @@ xlog_print_trans_dquot(char **ptr, int len, int *i, int num_ops)
     while (num-- > 0) {
 	head = (xlog_op_header_t *)*ptr;
 	xlog_print_op_header(head, *i, ptr);
-	ASSERT(be32_to_cpu(head->oh_len) == sizeof(xfs_disk_dquot_t));
-	memmove(&ddq, *ptr, sizeof(xfs_disk_dquot_t));
+	ASSERT(be32_to_cpu(head->oh_len) == sizeof(struct xfs_disk_dquot));
+	memmove(&ddq, *ptr, sizeof(struct xfs_disk_dquot));
 	printf(_("DQUOT: magic 0x%hx flags 0%ho\n"),
 	       be16_to_cpu(ddq.d_magic), ddq.d_flags);
 	*ptr += be32_to_cpu(head->oh_len);
@@ -724,7 +714,7 @@ xlog_print_trans_icreate(
 	struct xfs_icreate_log	icl_buf = {0};
 	struct xfs_icreate_log	*icl;
 
-	memmove(&icl_buf, *ptr, MIN(sizeof(struct xfs_icreate_log), len));
+	memmove(&icl_buf, *ptr, min(sizeof(struct xfs_icreate_log), len));
 	icl = &icl_buf;
 	*ptr += len;
 
@@ -767,7 +757,7 @@ xlog_print_lseek(struct xlog *log, int fd, xfs_daddr_t blkno, int whence)
 }	/* xlog_print_lseek */
 
 
-void
+static void
 print_lsn(char		*string,
 	  __be64	*lsn)
 {
@@ -776,7 +766,7 @@ print_lsn(char		*string,
 }
 
 
-int
+static int
 xlog_print_record(
 	struct xlog		*log,
 	int			fd,
@@ -1031,7 +1021,7 @@ xlog_print_record(
 }	/* xlog_print_record */
 
 
-int
+static int
 xlog_print_rec_head(xlog_rec_header_t *head, int *len, int bad_hdr_warn)
 {
     int i;
@@ -1073,7 +1063,7 @@ xlog_print_rec_head(xlog_rec_header_t *head, int *len, int bad_hdr_warn)
 
     if (print_overwrite) {
 	printf(_("cycle num overwrites: "));
-	for (i=0; i< MIN(bbs, XLOG_HEADER_CYCLE_SIZE / BBSIZE); i++)
+	for (i=0; i< min(bbs, XLOG_HEADER_CYCLE_SIZE / BBSIZE); i++)
 	    printf("%d - 0x%x  ",
 		    i,
 		    be32_to_cpu(head->h_cycle_data[i]));
@@ -1105,7 +1095,7 @@ xlog_print_rec_head(xlog_rec_header_t *head, int *len, int bad_hdr_warn)
     return(be32_to_cpu(head->h_num_logops));
 }	/* xlog_print_rec_head */
 
-void
+static void
 xlog_print_rec_xhead(xlog_rec_ext_header_t *head, int coverage)
 {
     int i;
@@ -1145,7 +1135,7 @@ print_xlog_bad_header(xfs_daddr_t blkno, char *buf)
 	    xlog_exit("Bad log record header");
 }	/* print_xlog_bad_header */
 
-void
+static void
 print_xlog_bad_data(xfs_daddr_t blkno)
 {
 	print_stars();
@@ -1196,7 +1186,7 @@ xlog_print_extended_headers(
 	int 			num_hdrs;
 	int 			num_required;
 	char			xhbuf[XLOG_HEADER_SIZE];
-	xlog_rec_ext_header_t	*x;
+	xlog_rec_ext_header_t	*xhdr;
 
 	num_required = howmany(len, XLOG_HEADER_CYCLE_SIZE);
 	num_hdrs = be32_to_cpu(hdr->h_size) / XLOG_HEADER_CYCLE_SIZE;
@@ -1221,7 +1211,7 @@ xlog_print_extended_headers(
 	*ret_num_hdrs = num_hdrs;
 
 	/* don't include 1st header */
-	for (i = 1, x = *ret_xhdrs; i < num_hdrs; i++, (*blkno)++, x++) {
+	for (i = 1, xhdr = *ret_xhdrs; i < num_hdrs; i++, (*blkno)++, xhdr++) {
 	    /* read one extra header blk */
 	    if (read(fd, xhbuf, 512) == 0) {
 		printf(_("%s: physical end of log\n"), progname);
@@ -1251,9 +1241,9 @@ xlog_print_extended_headers(
 	     * will look asymmetric with the 1 hdr normal case
 	     * which does endian coversion on access.
 	     */
-	    x->xh_cycle = ((xlog_rec_ext_header_t*)xhbuf)->xh_cycle;
+	    xhdr->xh_cycle = ((xlog_rec_ext_header_t*)xhbuf)->xh_cycle;
 	    for (j = 0; j < XLOG_HEADER_CYCLE_SIZE / BBSIZE; j++) {
-		x->xh_cycle_data[j] =
+		xhdr->xh_cycle_data[j] =
 		    ((xlog_rec_ext_header_t*)xhbuf)->xh_cycle_data[j];
 	    }
 	}
@@ -1480,14 +1470,14 @@ end:
  * if necessary, convert an xfs_inode_log_format struct from the old 32bit version
  * (which can have different field alignments) to the native 64 bit version
  */
-xfs_inode_log_format_t *
-xfs_inode_item_format_convert(char *src_buf, uint len, xfs_inode_log_format_t *in_f)
+struct xfs_inode_log_format *
+xfs_inode_item_format_convert(char *src_buf, uint len, struct xfs_inode_log_format *in_f)
 {
 	struct xfs_inode_log_format_32	*in_f32;
 
 	/* if we have native format then just return buf without copying data */
-	if (len == sizeof(xfs_inode_log_format_t)) {
-		return (xfs_inode_log_format_t *)src_buf;
+	if (len == sizeof(struct xfs_inode_log_format)) {
+		return (struct xfs_inode_log_format *)src_buf;
 	}
 
 	in_f32 = (struct xfs_inode_log_format_32 *)src_buf;
@@ -1498,7 +1488,8 @@ xfs_inode_item_format_convert(char *src_buf, uint len, xfs_inode_log_format_t *i
 	in_f->ilf_dsize = in_f32->ilf_dsize;
 	in_f->ilf_ino = in_f32->ilf_ino;
 	/* copy biggest field of ilf_u */
-	memcpy(&in_f->ilf_u.ilfu_uuid, &in_f32->ilf_u.ilfu_uuid, sizeof(uuid_t));
+	memcpy(&in_f->ilf_u.__pad, &in_f32->ilf_u.__pad,
+					sizeof(in_f->ilf_u.__pad));
 	in_f->ilf_blkno = in_f32->ilf_blkno;
 	in_f->ilf_len = in_f32->ilf_len;
 	in_f->ilf_boffset = in_f32->ilf_boffset;

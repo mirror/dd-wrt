@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -70,8 +58,8 @@ static const typ_t	__typtab[] = {
 	{ TYP_INODATA, "inodata", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_INODE, "inode", handle_struct, inode_hfld, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_LOG, "log", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTBITMAP, "rtbitmap", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTSUMMARY, "rtsummary", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTBITMAP, "rtbitmap", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTSUMMARY, "rtsummary", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_SB, "sb", handle_struct, sb_hfld, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_SYMLINK, "symlink", handle_string, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_TEXT, "text", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
@@ -94,9 +82,9 @@ static const typ_t	__typtab_crc[] = {
 	{ TYP_BMAPBTD, "bmapbtd", handle_struct, bmapbtd_crc_hfld,
 		&xfs_bmbt_buf_ops, XFS_BTREE_LBLOCK_CRC_OFF },
 	{ TYP_BNOBT, "bnobt", handle_struct, bnobt_crc_hfld,
-		&xfs_allocbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+		&xfs_bnobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_CNTBT, "cntbt", handle_struct, cntbt_crc_hfld,
-		&xfs_allocbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+		&xfs_cntbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_RMAPBT, "rmapbt", handle_struct, rmapbt_crc_hfld,
 		&xfs_rmapbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_REFCBT, "refcntbt", handle_struct, refcbt_crc_hfld,
@@ -112,15 +100,15 @@ static const typ_t	__typtab_crc[] = {
 	{ TYP_INODE, "inode", handle_struct, inode_crc_hfld,
 		&xfs_inode_buf_ops, TYP_F_CRC_FUNC, xfs_inode_set_crc },
 	{ TYP_LOG, "log", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTBITMAP, "rtbitmap", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTSUMMARY, "rtsummary", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTBITMAP, "rtbitmap", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTSUMMARY, "rtsummary", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_SB, "sb", handle_struct, sb_hfld, &xfs_sb_buf_ops,
 		XFS_SB_CRC_OFF },
 	{ TYP_SYMLINK, "symlink", handle_struct, symlink_crc_hfld,
 		&xfs_symlink_buf_ops, XFS_SYMLINK_CRC_OFF },
 	{ TYP_TEXT, "text", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_FINOBT, "finobt", handle_struct, inobt_crc_hfld,
-		&xfs_inobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+		&xfs_finobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_NONE, NULL }
 };
 
@@ -138,9 +126,9 @@ static const typ_t	__typtab_spcrc[] = {
 	{ TYP_BMAPBTD, "bmapbtd", handle_struct, bmapbtd_crc_hfld,
 		&xfs_bmbt_buf_ops, XFS_BTREE_LBLOCK_CRC_OFF },
 	{ TYP_BNOBT, "bnobt", handle_struct, bnobt_crc_hfld,
-		&xfs_allocbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+		&xfs_bnobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_CNTBT, "cntbt", handle_struct, cntbt_crc_hfld,
-		&xfs_allocbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+		&xfs_cntbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_RMAPBT, "rmapbt", handle_struct, rmapbt_crc_hfld,
 		&xfs_rmapbt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_REFCBT, "refcntbt", handle_struct, refcbt_crc_hfld,
@@ -156,15 +144,15 @@ static const typ_t	__typtab_spcrc[] = {
 	{ TYP_INODE, "inode", handle_struct, inode_crc_hfld,
 		&xfs_inode_buf_ops, TYP_F_CRC_FUNC, xfs_inode_set_crc },
 	{ TYP_LOG, "log", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTBITMAP, "rtbitmap", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_RTSUMMARY, "rtsummary", NULL, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTBITMAP, "rtbitmap", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
+	{ TYP_RTSUMMARY, "rtsummary", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
 	{ TYP_SB, "sb", handle_struct, sb_hfld, &xfs_sb_buf_ops,
 		XFS_SB_CRC_OFF },
 	{ TYP_SYMLINK, "symlink", handle_struct, symlink_crc_hfld,
 		&xfs_symlink_buf_ops, XFS_SYMLINK_CRC_OFF },
 	{ TYP_TEXT, "text", handle_text, NULL, NULL, TYP_F_NO_CRC_OFF },
-	{ TYP_FINOBT, "finobt", handle_struct, inobt_crc_hfld,
-		&xfs_inobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
+	{ TYP_FINOBT, "finobt", handle_struct, inobt_spcrc_hfld,
+		&xfs_finobt_buf_ops, XFS_BTREE_SBLOCK_CRC_OFF },
 	{ TYP_NONE, NULL }
 };
 
@@ -228,6 +216,8 @@ type_f(
 		tt = findtyp(argv[1]);
 		if (tt == NULL) {
 			dbprintf(_("no such type %s\n"), argv[1]);
+		} else if (iocur_top->typ == tt) {
+			return 0;
 		} else {
 			if (iocur_top->typ == NULL)
 				dbprintf(_("no current object\n"));

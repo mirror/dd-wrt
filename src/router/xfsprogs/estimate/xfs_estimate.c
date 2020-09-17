@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 /*
@@ -25,7 +13,7 @@
 #include <sys/stat.h>
 #include <ftw.h>
 
-unsigned long long
+static unsigned long long
 cvtnum(char *s)
 {
 	unsigned long long i;
@@ -54,24 +42,23 @@ int ffn(const char *, const struct stat *, int, struct FTW *);
 #define LOGSIZE		1000
 
 #define FBLOCKS(n)	((n)/blocksize)
-#define RFBYTES(n)	((n) - (FBLOCKS(n) * blocksize))
 
-unsigned long long dirsize=0;		/* bytes */
-unsigned long long logsize=LOGSIZE*BLOCKSIZE;	/* bytes */
-unsigned long long fullblocks=0;	/* FS blocks */
-unsigned long long isize=0;		/* inodes bytes */
-unsigned long long blocksize=BLOCKSIZE;
-unsigned long long nslinks=0;		/* number of symbolic links */
-unsigned long long nfiles=0;		/* number of regular files */
-unsigned long long ndirs=0;		/* number of directories */
-unsigned long long nspecial=0;		/* number of special files */
-unsigned long long verbose=0;		/* verbose mode TRUE/FALSE */
+static unsigned long long dirsize=0;		/* bytes */
+static unsigned long long logsize=LOGSIZE*BLOCKSIZE;	/* bytes */
+static unsigned long long fullblocks=0;	/* FS blocks */
+static unsigned long long isize=0;		/* inodes bytes */
+static unsigned long long blocksize=BLOCKSIZE;
+static unsigned long long nslinks=0;		/* number of symbolic links */
+static unsigned long long nfiles=0;		/* number of regular files */
+static unsigned long long ndirs=0;		/* number of directories */
+static unsigned long long nspecial=0;		/* number of special files */
+static unsigned long long verbose=0;		/* verbose mode TRUE/FALSE */
 
-int __debug = 0;
-int ilog = 0;
-int elog = 0;
+static int __debug = 0;
+static int ilog = 0;
+static  int elog = 0;
 
-void
+static void
 usage(char *progname)
 {
 	fprintf(stderr,

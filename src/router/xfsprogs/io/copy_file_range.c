@@ -1,19 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  *  Copyright (c) 2016 Netapp, Inc. All rights reserved.
- *
- *  This program is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <sys/syscall.h>
@@ -39,16 +26,23 @@ copy_range_help(void)
 					       file at offset 200\n\
  'copy_range some_file' - copies all bytes from some_file into the open file\n\
                           at position 0\n\
+ 'copy_range -f 2' - copies all bytes from open file 2 into the current open file\n\
+                          at position 0\n\
 "));
 }
 
+/*
+ * Issue a raw copy_file_range syscall; for our test program we don't want the
+ * glibc buffered copy fallback.
+ */
 static loff_t
-copy_file_range2(int fd, loff_t *src, loff_t *dst, size_t len)
+copy_file_range_cmd(int fd, long long *src_off, long long *dst_off, size_t len)
 {
 	loff_t ret;
 
 	do {
-		ret = syscall(__NR_copy_file_range, fd, src, file->fd, dst, len, 0);
+		ret = syscall(__NR_copy_file_range, fd, src_off,
+				file->fd, dst_off, len, 0);
 		if (ret == -1) {
 			perror("copy_range");
 			return errno;
@@ -73,65 +67,109 @@ copy_src_filesize(int fd)
 }
 
 static int
-copy_dst_truncate(void)
-{
-	int ret = ftruncate(file->fd, 0);
-	if (ret < 0)
-		perror("ftruncate");
-	return ret;
-}
-
-static int
 copy_range_f(int argc, char **argv)
 {
-	loff_t src = 0;
-	loff_t dst = 0;
+	long long src_off = 0;
+	long long dst_off = 0;
+	long long llen;
 	size_t len = 0;
-	char *sp;
+	bool len_specified = false;
 	int opt;
 	int ret;
 	int fd;
+	int src_path_arg = 1;
+	int src_file_nr = 0;
+	size_t fsblocksize, fssectsize;
 
-	while ((opt = getopt(argc, argv, "s:d:l:")) != -1) {
+	init_cvtnum(&fsblocksize, &fssectsize);
+
+	while ((opt = getopt(argc, argv, "s:d:l:f:")) != -1) {
 		switch (opt) {
 		case 's':
-			src = strtoull(optarg, &sp, 10);
-			if (!sp || sp == optarg) {
-				printf(_("invalid source offset -- %s\n"), sp);
+			src_off = cvtnum(fsblocksize, fssectsize, optarg);
+			if (src_off < 0) {
+				printf(_("invalid source offset -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
 		case 'd':
-			dst = strtoull(optarg, &sp, 10);
-			if (!sp || sp == optarg) {
-				printf(_("invalid destination offset -- %s\n"), sp);
+			dst_off = cvtnum(fsblocksize, fssectsize, optarg);
+			if (dst_off < 0) {
+				printf(_("invalid destination offset -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
 		case 'l':
-			len = strtoull(optarg, &sp, 10);
-			if (!sp || sp == optarg) {
-				printf(_("invalid length -- %s\n"), sp);
+			llen = cvtnum(fsblocksize, fssectsize, optarg);
+			if (llen == -1LL) {
+				printf(_("invalid length -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
+			/*
+			 * If size_t can't hold what's in llen, report a
+			 * length overflow.
+			 */
+			if ((size_t)llen != llen) {
+				errno = EOVERFLOW;
+				perror("copy_range");
+				exitcode = 1;
+				return 0;
+			}
+			len = llen;
+			len_specified = true;
 			break;
+		case 'f':
+			src_file_nr = atoi(argv[1]);
+			if (src_file_nr < 0 || src_file_nr >= filecount) {
+				printf(_("file value %d is out of range (0-%d)\n"),
+					src_file_nr, filecount - 1);
+				exitcode = 1;
+				return 0;
+			}
+			/* Expect no src_path arg */
+			src_path_arg = 0;
+			break;
+		default:
+			exitcode = 1;
+			return command_usage(&copy_range_cmd);
 		}
 	}
 
-	if (optind != argc - 1)
+	if (optind != argc - src_path_arg) {
+		exitcode = 1;
 		return command_usage(&copy_range_cmd);
-
-	fd = openfile(argv[optind], NULL, IO_READONLY, 0, NULL);
-	if (fd < 0)
-		return 0;
-
-	if (src == 0 && dst == 0 && len == 0) {
-		len = copy_src_filesize(fd);
-		copy_dst_truncate();
 	}
 
-	ret = copy_file_range2(fd, &src, &dst, len);
+	if (src_path_arg) {
+		fd = openfile(argv[optind], NULL, IO_READONLY, 0, NULL);
+		if (fd < 0) {
+			exitcode = 1;
+			return 0;
+		}
+	} else {
+		fd = filetable[src_file_nr].fd;
+	}
+
+	if (!len_specified) {
+		off64_t	sz;
+
+		sz = copy_src_filesize(fd);
+		if (sz < 0 || (unsigned long long)sz > SIZE_MAX) {
+			ret = 1;
+			goto out;
+		}
+		if (sz > src_off)
+			len = sz - src_off;
+	}
+
+	ret = copy_file_range_cmd(fd, &src_off, &dst_off, len);
+out:
 	close(fd);
+	if (ret < 0)
+		exitcode = 1;
 	return ret;
 }
 
@@ -141,9 +179,9 @@ copy_range_init(void)
 	copy_range_cmd.name = "copy_range";
 	copy_range_cmd.cfunc = copy_range_f;
 	copy_range_cmd.argmin = 1;
-	copy_range_cmd.argmax = 7;
+	copy_range_cmd.argmax = 8;
 	copy_range_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	copy_range_cmd.args = _("[-s src_off] [-d dst_off] [-l len] src_file");
+	copy_range_cmd.args = _("[-s src_off] [-d dst_off] [-l len] src_file | -f N");
 	copy_range_cmd.oneline = _("Copy a range of data between two files");
 	copy_range_cmd.help = copy_range_help;
 

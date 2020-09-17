@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2013 SGI
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
 #include "command.h"
@@ -61,7 +49,7 @@ seek_help(void)
 #define	DATA		0
 #define	HOLE		1
 
-struct seekinfo {
+static struct seekinfo {
 	char		*name;		/* display item name */
 	int		seektype;	/* data or hole */
 	int		mask;		/* compared for print and looping */
@@ -71,7 +59,7 @@ struct seekinfo {
 };
 
 /* print item type and offset. catch special cases of eof and error */
-void
+static void
 seek_output(
 	int	startflag,
 	char	*type,
@@ -132,15 +120,20 @@ seek_f(
 			startflag = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&seek_cmd);
 		}
 	}
-	if (!(flag & (SEEK_DFLAG | SEEK_HFLAG)) || optind != argc - 1)
+	if (!(flag & (SEEK_DFLAG | SEEK_HFLAG)) || optind != argc - 1) {
+		exitcode = 1;
 		return command_usage(&seek_cmd);
+	}
 
 	start = offset = cvtnum(fsblocksize, fssectsize, argv[optind]);
-	if (offset < 0)
+	if (offset < 0) {
+		exitcode = 1;
 		return command_usage(&seek_cmd);
+	}
 
 	/*
 	 * check to see if the offset is a data or hole entry and
@@ -186,9 +179,10 @@ found_hole:
 	for (c = 0; flag; c++) {
 		if (offset == -1) {
 			/* print error or eof if the only entry */
-			if (errno != ENXIO || c == 0 )
+			if (errno != ENXIO || c == 0 ) {
 				seek_output(startflag, seekinfo[current].name,
 					    start, offset);
+			}
 			return 0;	/* stop on error or EOF */
 		}
 

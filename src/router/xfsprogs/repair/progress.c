@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0
 
 #include "libxfs.h"
 #include "globals.h"
@@ -48,39 +49,41 @@ typedef struct progress_rpt_s {
 
 static
 progress_rpt_t progress_rpt_reports[] = {
-{FMT1, N_("scanning filesystem freespace"),			/*  0 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("scanning agi unlinked lists"),			/*  1 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT2, N_("check uncertain AG inodes"),				/*  2 */
-	&rpt_fmts[FMT2], &rpt_types[TYPE_AGI_BUCKET]},
-{FMT1, N_("process known inodes and inode discovery"),		/*  3 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_INODE]},
-{FMT1, N_("process newly discovered inodes"),			/*  4 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("setting up duplicate extent list"),			/*  5 */
-	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("initialize realtime bitmap"),			/*  6 */
+{FMT1, N_("zeroing log"),					/*  0 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_BLOCK]},
-{FMT1, N_("reset realtime bitmaps"),				/*  7 */
+{FMT1, N_("scanning filesystem freespace"),			/*  1 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("check for inodes claiming duplicate blocks"),	/*  8 */
+{FMT1, N_("scanning agi unlinked lists"),			/*  2 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
+{FMT2, N_("check uncertain AG inodes"),				/*  3 */
+	&rpt_fmts[FMT2], &rpt_types[TYPE_AGI_BUCKET]},
+{FMT1, N_("process known inodes and inode discovery"),		/*  4 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_INODE]},
-{FMT1, N_("rebuild AG headers and trees"),	 		/*  9 */
+{FMT1, N_("process newly discovered inodes"),			/*  5 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("traversing filesystem"),				/* 10 */
+{FMT1, N_("setting up duplicate extent list"),			/*  6 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT2, N_("traversing all unattached subtrees"),		/* 11 */
+{FMT1, N_("initialize realtime bitmap"),			/*  7 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_BLOCK]},
+{FMT1, N_("reset realtime bitmaps"),				/*  8 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
+{FMT1, N_("check for inodes claiming duplicate blocks"),	/*  9 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_INODE]},
+{FMT1, N_("rebuild AG headers and trees"),	 		/* 10 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
+{FMT1, N_("traversing filesystem"),				/* 12 */
+	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
+{FMT2, N_("traversing all unattached subtrees"),		/* 12 */
 	&rpt_fmts[FMT2], &rpt_types[TYPE_DIR]},
-{FMT2, N_("moving disconnected inodes to lost+found"),		/* 12 */
+{FMT2, N_("moving disconnected inodes to lost+found"),		/* 13 */
 	&rpt_fmts[FMT2], &rpt_types[TYPE_INODE]},
-{FMT1, N_("verify and correct link counts"),			/* 13 */
+{FMT1, N_("verify and correct link counts"),			/* 14 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]},
-{FMT1, N_("verify link counts"),				/* 14 */
+{FMT1, N_("verify link counts"),				/* 15 */
 	&rpt_fmts[FMT1], &rpt_types[TYPE_AG]}
 };
 
-pthread_t	report_thread;
+static pthread_t	report_thread;
 
 typedef struct msg_block_s {
 	pthread_mutex_t	mutex;
@@ -124,7 +127,8 @@ init_progress_rpt (void)
 	 */
 
 	pthread_mutex_init(&global_msgs.mutex, NULL);
-	global_msgs.format = NULL;
+	/* Make sure the format is set to the first phase and not NULL */
+	global_msgs.format = &progress_rpt_reports[PROG_FMT_ZERO_LOG];
 	global_msgs.count = glob_agcount;
 	global_msgs.interval = report_interval;
 	global_msgs.done   = prog_rpt_done;

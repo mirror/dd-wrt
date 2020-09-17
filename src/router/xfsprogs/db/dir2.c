@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -223,7 +211,7 @@ __dir2_data_entries_count(
 			ptr += be16_to_cpu(dup->length);
 		else {
 			dep = (xfs_dir2_data_entry_t *)ptr;
-			ptr += M_DIROPS(mp)->data_entsize(dep->namelen);
+			ptr += libxfs_dir2_data_entsize(mp, dep->namelen);
 		}
 	}
 	return i;
@@ -247,7 +235,7 @@ __dir2_data_entry_offset(
 			ptr += be16_to_cpu(dup->length);
 		else {
 			dep = (xfs_dir2_data_entry_t *)ptr;
-			ptr += M_DIROPS(mp)->data_entsize(dep->namelen);
+			ptr += libxfs_dir2_data_entsize(mp, dep->namelen);
 		}
 	}
 	return ptr;
@@ -362,7 +350,7 @@ dir2_block_u_count(
 
 	btp = xfs_dir2_block_tail_p(mp->m_dir_geo, block);
 	return __dir2_data_entries_count(
-			(char *)M_DIROPS(mp)->data_unused_p(block),
+			(char *)obj + mp->m_dir_geo->data_entry_offset,
 			(char *)xfs_dir2_block_leaf_p(btp));
 }
 
@@ -381,7 +369,7 @@ dir2_block_u_offset(
 	       be32_to_cpu(block->magic) == XFS_DIR3_BLOCK_MAGIC);
 	btp = xfs_dir2_block_tail_p(mp->m_dir_geo, block);
 	ptr = __dir2_data_entry_offset(
-			(char *)M_DIROPS(mp)->data_unused_p(block),
+			(char *)obj + mp->m_dir_geo->data_entry_offset,
 			(char *)xfs_dir2_block_leaf_p(btp), idx);
 	return bitize((int)(ptr - (char *)block));
 }
@@ -498,7 +486,7 @@ dir2_data_union_tag_count(
 		end = (char *)&dep->namelen + sizeof(dep->namelen);
 		if (end > (char *)obj + mp->m_dir_geo->blksize)
 			return 0;
-		tagp = M_DIROPS(mp)->data_entry_tag_p(dep);
+		tagp = libxfs_dir2_data_entry_tag_p(mp, dep);
 	}
 	end = (char *)tagp + sizeof(*tagp);
 	return end <= (char *)obj + mp->m_dir_geo->blksize;
@@ -520,7 +508,7 @@ dir2_data_union_tag_offset(
 		return bitize((int)((char *)xfs_dir2_data_unused_tag_p(dup) -
 				    (char *)dup));
 	dep = (xfs_dir2_data_entry_t *)dup;
-	return bitize((int)((char *)M_DIROPS(mp)->data_entry_tag_p(dep) -
+	return bitize((int)((char *)libxfs_dir2_data_entry_tag_p(mp, dep) -
 			    (char *)dep));
 }
 
@@ -559,7 +547,7 @@ dir2_data_u_count(
 		return 0;
 
 	return __dir2_data_entries_count(
-				(char *)M_DIROPS(mp)->data_unused_p(data),
+				(char *)data + mp->m_dir_geo->data_entry_offset,
 				(char *)data + mp->m_dir_geo->blksize);
 }
 
@@ -576,7 +564,7 @@ dir2_data_u_offset(
 	ASSERT(be32_to_cpu(data->magic) == XFS_DIR2_DATA_MAGIC ||
 	       be32_to_cpu(data->magic) == XFS_DIR3_DATA_MAGIC);
 	ptr = __dir2_data_entry_offset(
-				(char *)M_DIROPS(mp)->data_unused_p(data),
+				(char *)data + mp->m_dir_geo->data_entry_offset,
 				(char *)data + mp->m_dir_geo->blksize, idx);
 	return bitize((int)(ptr - (char *)data));
 }
@@ -597,7 +585,7 @@ dir2_data_union_size(
 		return bitize(be16_to_cpu(dup->length));
 	else {
 		dep = (xfs_dir2_data_entry_t *)dup;
-		return bitize(M_DIROPS(mp)->data_entsize(dep->namelen));
+		return bitize(libxfs_dir2_data_entsize(mp, dep->namelen));
 	}
 }
 
@@ -940,6 +928,7 @@ const field_t	dir3_data_hdr_flds[] = {
 	{ "hdr", FLDT_DIR3_BLKHDR, OI(DH3OFF(hdr)), C1, 0, TYP_NONE },
 	{ "bestfree", FLDT_DIR2_DATA_FREE, OI(DH3OFF(best_free)),
 	  CI(XFS_DIR2_DATA_FD_COUNT), FLD_ARRAY, TYP_NONE },
+	{ "pad", FLDT_UINT32X, OI(DH3OFF(pad)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
 };
 
@@ -948,6 +937,7 @@ const field_t	dir3_leaf_hdr_flds[] = {
 	{ "info", FLDT_DA3_BLKINFO, OI(LH3OFF(info)), C1, 0, TYP_NONE },
 	{ "count", FLDT_UINT16D, OI(LH3OFF(count)), C1, 0, TYP_NONE },
 	{ "stale", FLDT_UINT16D, OI(LH3OFF(stale)), C1, 0, TYP_NONE },
+	{ "pad", FLDT_UINT32X, OI(LH3OFF(pad)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
 };
 
@@ -957,6 +947,7 @@ const field_t	dir3_free_hdr_flds[] = {
 	{ "firstdb", FLDT_INT32D, OI(FH3OFF(firstdb)), C1, 0, TYP_NONE },
 	{ "nvalid", FLDT_INT32D, OI(FH3OFF(nvalid)), C1, 0, TYP_NONE },
 	{ "nused", FLDT_INT32D, OI(FH3OFF(nused)), C1, 0, TYP_NONE },
+	{ "pad", FLDT_UINT32X, OI(FH3OFF(pad)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
 };
 
@@ -977,7 +968,7 @@ const field_t	da3_node_hdr_flds[] = {
 	{ "info", FLDT_DA3_BLKINFO, OI(H3OFF(info)), C1, 0, TYP_NONE },
 	{ "count", FLDT_UINT16D, OI(H3OFF(__count)), C1, 0, TYP_NONE },
 	{ "level", FLDT_UINT16D, OI(H3OFF(__level)), C1, 0, TYP_NONE },
-	{ "pad", FLDT_UINT32D, OI(H3OFF(__pad32)), C1, 0, TYP_NONE },
+	{ "pad", FLDT_UINT32X, OI(H3OFF(__pad32)), C1, FLD_SKIPALL, TYP_NONE },
 	{ NULL }
 };
 

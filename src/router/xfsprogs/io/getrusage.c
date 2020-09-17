@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -21,6 +9,7 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include "init.h"
+#include "io.h"
 
 static cmdinfo_t getrusage_cmd;
 
@@ -62,6 +51,7 @@ getrusage_f(
 
 	if (getrusage(RUSAGE_SELF, &rusage) < 0) {
 		perror("getrusage");
+		exitcode = 1;
 		return 0;
 	}
 

@@ -1,0 +1,69 @@
+.\" Copyright (c) 2019, Oracle.  All rights reserved.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" SPDX-License-Identifier: GPL-2.0+
+.\" %%%LICENSE_END
+.TH IOCTL-XFS-FSCOUNTS 2 2019-06-17 "XFS"
+.SH NAME
+ioctl_xfs_fscounts \- query XFS summary counter information
+.SH SYNOPSIS
+.br
+.B #include <xfs/xfs_fs.h>
+.PP
+.BI "int ioctl(int " fd ", XFS_IOC_FSCOUNTS, struct xfs_fsop_counts *" arg );
+.SH DESCRIPTION
+Query the raw filesystem summary counters.
+Unlike
+.BR statvfs (3),
+the values returned here are the raw values, which do not reflect any
+alterations or limits set by project quotas.
+The counter information is conveyed in a structure of the following form:
+.PP
+.in +4n
+.nf
+struct xfs_fsop_counts {
+	__u64   freedata;
+	__u64   freertx;
+	__u64   freeino;
+	__u64   allocino;
+};
+.fi
+.in
+.PP
+The fields of this structure are as follows:
+.PP
+.I freedata
+is the number of free filesystem blocks on the data device.
+.PP
+.I freertx
+is the number of free extents on the realtime device.
+.PP
+.I freeino
+is the number of inode records that are not in use within the space that has
+been allocated for them.
+.PP
+.I allocino
+is the number of inode records for which space has been allocated.
+.SH RETURN VALUE
+On error, \-1 is returned, and
+.I errno
+is set to indicate the error.
+.PP
+.SH ERRORS
+Error codes can be one of, but are not limited to, the following:
+.TP
+.B EFSBADCRC
+Metadata checksum validation failed while performing the query.
+.TP
+.B EFSCORRUPTED
+Metadata corruption was encountered while performing the query.
+.TP
+.B EINVAL
+The specified allocation group number is not valid for this filesystem.
+.TP
+.B EIO
+An I/O error was encountered while performing the query.
+.SH CONFORMING TO
+This API is specific to XFS filesystem on the Linux kernel.
+.SH SEE ALSO
+.BR ioctl (2)

@@ -1,23 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
-#include <libxfs.h>
+#include "libxfs.h"
 #include "slab.h"
 
 #undef SLAB_DEBUG
@@ -101,7 +87,6 @@ struct xfs_bag {
 	size_t			bg_inuse;	/* number of slots in use */
 	void			**bg_ptrs;	/* pointers */
 };
-#define BAG_SIZE(nr)	(sizeof(struct xfs_bag) + ((nr) * sizeof(void *)))
 #define BAG_END(bag)	(&(bag)->bg_ptrs[(bag)->bg_nr])
 
 /*
@@ -211,7 +196,7 @@ struct qsort_slab {
 
 static void
 qsort_slab_helper(
-	struct work_queue	*wq,
+	struct workqueue	*wq,
 	xfs_agnumber_t		agno,
 	void			*arg)
 {
@@ -231,7 +216,7 @@ qsort_slab(
 	struct xfs_slab		*slab,
 	int (*compare_fn)(const void *, const void *))
 {
-	struct work_queue	wq;
+	struct workqueue	wq;
 	struct xfs_slab_hdr	*hdr;
 	struct qsort_slab	*qs;
 
@@ -249,7 +234,7 @@ qsort_slab(
 		return;
 	}
 
-	create_work_queue(&wq, NULL, libxfs_nproc());
+	create_work_queue(&wq, NULL, platform_nproc());
 	hdr = slab->s_first;
 	while (hdr) {
 		qs = malloc(sizeof(struct qsort_slab));

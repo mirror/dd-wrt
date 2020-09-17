@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2004 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,10 +24,9 @@ int	print_buffer;
 int	print_overwrite;
 int     print_no_data;
 int     print_no_print;
-int     print_exit = 1; /* -e is now default. specify -c to override */
-int	print_operation = OP_PRINT;
+static int	print_operation = OP_PRINT;
 
-void
+static void
 usage(void)
 {
 	fprintf(stderr, _("Usage: %s [options...] <device>\n\n\
@@ -64,7 +51,7 @@ Options:\n\
 	exit(1);
 }
 
-int
+static int
 logstat(xfs_mount_t *mp)
 {
 	int		fd;
@@ -144,6 +131,7 @@ main(int argc, char **argv)
 	bindtextdomain(PACKAGE, LOCALEDIR);
 	textdomain(PACKAGE);
 	memset(&mount, 0, sizeof(mount));
+	print_exit = 1; /* -e is now default. specify -c to override */
 
 	progname = basename(argv[0]);
 	while ((c = getopt(argc, argv, "bC:cdefl:iqnors:tDVv")) != EOF) {
@@ -164,7 +152,7 @@ main(int argc, char **argv)
 			case 'e':
 			    /* -e is now default
 			     */
-				print_exit++;
+				print_exit = 1;
 				break;
 			case 'C':
 				print_operation = OP_COPY;
@@ -205,7 +193,7 @@ main(int argc, char **argv)
 			case 'V':
 				printf(_("%s version %s\n"), progname, VERSION);
 				exit(0);
-			case '?':
+			default:
 				usage();
 		}
 	}

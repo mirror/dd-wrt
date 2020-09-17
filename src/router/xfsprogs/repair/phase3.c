@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -39,15 +27,17 @@ process_agi_unlinked(
 	struct xfs_agi		*agip;
 	xfs_agnumber_t		i;
 	int			agi_dirty = 0;
+	int			error;
 
-	bp = libxfs_readbuf(mp->m_dev,
+	error = -libxfs_buf_read(mp->m_dev,
 			XFS_AG_DADDR(mp, agno, XFS_AGI_DADDR(mp)),
-			mp->m_sb.sb_sectsize/BBSIZE, 0, &xfs_agi_buf_ops);
-	if (!bp)
+			mp->m_sb.sb_sectsize / BBSIZE, LIBXFS_READBUF_SALVAGE,
+			&bp, &xfs_agi_buf_ops);
+	if (error)
 		do_error(_("cannot read agi block %" PRId64 " for ag %u\n"),
 			XFS_AG_DADDR(mp, agno, XFS_AGI_DADDR(mp)), agno);
 
-	agip = XFS_BUF_TO_AGI(bp);
+	agip = bp->b_addr;
 
 	ASSERT(be32_to_cpu(agip->agi_seqno) == agno);
 
@@ -58,15 +48,17 @@ process_agi_unlinked(
 		}
 	}
 
-	if (agi_dirty)
-		libxfs_writebuf(bp, 0);
+	if (agi_dirty) {
+		libxfs_buf_mark_dirty(bp);
+		libxfs_buf_relse(bp);
+	}
 	else
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 }
 
 static void
 process_ag_func(
-	work_queue_t		*wq,
+	struct workqueue	*wq,
 	xfs_agnumber_t 		agno,
 	void			*arg)
 {
@@ -76,7 +68,7 @@ process_ag_func(
 	 */
 	wait_for_inode_prefetch(arg);
 	do_log(_("        - agno = %d\n"), agno);
-	process_aginodes(wq->mp, arg, agno, 1, 0, 1);
+	process_aginodes(wq->wq_ctx, arg, agno, 1, 0, 1);
 	blkmap_free_final();
 	cleanup_inode_prefetch(arg);
 }
@@ -90,13 +82,13 @@ process_ags(
 
 static void
 do_uncertain_aginodes(
-	work_queue_t	*wq,
-	xfs_agnumber_t	agno,
-	void		*arg)
+	struct workqueue	*wq,
+	xfs_agnumber_t		agno,
+	void			*arg)
 {
-	int		*count = arg;
+	int			*count = arg;
 
-	*count = process_uncertain_aginodes(wq->mp, agno);
+	*count = process_uncertain_aginodes(wq->wq_ctx, agno);
 
 #ifdef XR_INODE_TRACE
 	fprintf(stderr,
@@ -114,7 +106,7 @@ phase3(
 {
 	int			i, j;
 	int			*counts;
-	work_queue_t		wq;
+	struct workqueue	wq;
 
 	do_log(_("Phase 3 - for each AG...\n"));
 	if (!no_modify)

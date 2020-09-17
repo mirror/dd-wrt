@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -42,7 +30,7 @@ print_mapping(
 	int		index,
 	int		braces)
 {
-	unsigned char	buffer[8] = { 0 };
+	char		buffer[8] = { 0 };
 	int		i;
 
 	static struct {
@@ -57,6 +45,10 @@ print_mapping(
 
 	for (i = 0, p = pflags; p->prot != PROT_NONE; i++, p++)
 		buffer[i] = (map->prot & p->prot) ? p->mode : '-';
+
+	if (map->map_sync)
+		sprintf(&buffer[i], " S");
+
 	printf("%c%03d%c 0x%lx - 0x%lx %s  %14s (%lld : %ld)\n",
 		braces? '[' : ' ', index, braces? ']' : ' ',
 		(unsigned long)map->addr,
@@ -121,6 +113,7 @@ mapset_f(
 	i = atoi(argv[1]);
 	if (i < 0 || i >= mapcount) {
 		printf("value %d is out of range (0-%d)\n", i, mapcount);
+		exitcode = 1;
 	} else {
 		mapping = &maptable[i];
 		maplist_f();
@@ -146,6 +139,7 @@ mmap_help(void)
 " -r -- map with PROT_READ protection\n"
 " -w -- map with PROT_WRITE protection\n"
 " -x -- map with PROT_EXEC protection\n"
+" -S -- map with MAP_SYNC and MAP_SHARED_VALIDATE flags\n"
 " -s <size> -- first do mmap(size)/munmap(size), try to reserve some free space\n"
 " If no protection mode is specified, all are used by default.\n"
 "\n"));
@@ -161,7 +155,7 @@ mmap_f(
 	void		*address = NULL;
 	char		*filename;
 	size_t		blocksize, sectsize;
-	int		c, prot = 0;
+	int		c, prot = 0, flags = MAP_SHARED;
 
 	if (argc == 1) {
 		if (mapping)
@@ -169,6 +163,7 @@ mmap_f(
 		fprintf(stderr, file ?
 			_("no mapped regions, try 'help mmap'\n") :
 			_("no files are open, try 'help open'\n"));
+		exitcode = 1;
 		return 0;
 	} else if (argc == 2) {
 		if (mapping)
@@ -176,15 +171,17 @@ mmap_f(
 		fprintf(stderr, file ?
 			_("no mapped regions, try 'help mmap'\n") :
 			_("no files are open, try 'help open'\n"));
+		exitcode = 1;
 		return 0;
 	} else if (!file) {
 		fprintf(stderr, _("no files are open, try 'help open'\n"));
+		exitcode = 1;
 		return 0;
 	}
 
 	init_cvtnum(&blocksize, &sectsize);
 
-	while ((c = getopt(argc, argv, "rwxs:")) != EOF) {
+	while ((c = getopt(argc, argv, "rwxSs:")) != EOF) {
 		switch (c) {
 		case 'r':
 			prot |= PROT_READ;
@@ -195,34 +192,53 @@ mmap_f(
 		case 'x':
 			prot |= PROT_EXEC;
 			break;
+		case 'S':
+			flags = MAP_SYNC | MAP_SHARED_VALIDATE;
+
+			/*
+			 * If MAP_SYNC and MAP_SHARED_VALIDATE aren't defined
+			 * in the system headers we will have defined them
+			 * both as 0.
+			 */
+			if (!flags) {
+				printf("MAP_SYNC not supported\n");
+				return 0;
+			}
+			break;
 		case 's':
 			length2 = cvtnum(blocksize, sectsize, optarg);
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&mmap_cmd);
 		}
 	}
 	if (!prot)
 		prot = PROT_READ | PROT_WRITE | PROT_EXEC;
 
-	if (optind != argc - 2)
+	if (optind != argc - 2) {
+		exitcode = 1;
 		return command_usage(&mmap_cmd);
+	}
 
 	offset = cvtnum(blocksize, sectsize, argv[optind]);
 	if (offset < 0) {
 		printf(_("non-numeric offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	length = cvtnum(blocksize, sectsize, argv[optind]);
 	if (length < 0) {
 		printf(_("non-numeric length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
 	filename = strdup(file->name);
 	if (!filename) {
 		perror("strdup");
+		exitcode = 1;
 		return 0;
 	}
 
@@ -238,10 +254,11 @@ mmap_f(
 		               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 		munmap(address, length2);
 	}
-	address = mmap(address, length, prot, MAP_SHARED, file->fd, offset);
+	address = mmap(address, length, prot, flags, file->fd, offset);
 	if (address == MAP_FAILED) {
 		perror("mmap");
 		free(filename);
+		exitcode = 1;
 		return 0;
 	}
 
@@ -253,6 +270,7 @@ mmap_f(
 		mapcount = 0;
 		munmap(address, length);
 		free(filename);
+		exitcode = 1;
 		return 0;
 	}
 
@@ -263,6 +281,7 @@ mmap_f(
 	mapping->offset = offset;
 	mapping->name = filename;
 	mapping->prot = prot;
+	mapping->map_sync = (flags == (MAP_SYNC | MAP_SHARED_VALIDATE));
 	return 0;
 }
 
@@ -283,7 +302,7 @@ msync_help(void)
 "\n"));
 }
 
-int
+static int
 msync_f(
 	int		argc,
 	char		**argv)
@@ -306,6 +325,7 @@ msync_f(
 			flags |= MS_SYNC;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&msync_cmd);
 		}
 	}
@@ -319,6 +339,7 @@ msync_f(
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 		optind++;
@@ -326,18 +347,25 @@ msync_f(
 		if (length < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 	} else {
+		exitcode = 1;
 		return command_usage(&msync_cmd);
 	}
 
 	start = check_mapping_range(mapping, offset, length, 1);
-	if (!start)
+	if (!start) {
+		exitcode = 1;
 		return 0;
+	}
 
-	if (msync(start, length, flags) < 0)
+	if (msync(start, length, flags) < 0) {
 		perror("msync");
+		exitcode = 1;
+		return 0;
+	}
 
 	return 0;
 }
@@ -367,7 +395,7 @@ mread_help(void)
 "\n"));
 }
 
-int
+static int
 mread_f(
 	int		argc,
 	char		**argv)
@@ -392,6 +420,7 @@ mread_f(
 			dump = 1;	/* mapping offset dump */
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&mread_cmd);
 		}
 	}
@@ -405,6 +434,7 @@ mread_f(
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 		optind++;
@@ -412,6 +442,7 @@ mread_f(
 		if (length < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 	} else {
@@ -419,17 +450,21 @@ mread_f(
 	}
 
 	start = check_mapping_range(mapping, offset, length, 0);
-	if (!start)
+	if (!start) {
+		exitcode = 1;
 		return 0;
+	}
 	dumpoffset = offset - mapping->offset;
 	if (dump == 2)
 		printoffset = offset;
 	else
 		printoffset = dumpoffset;
 
-	if (alloc_buffer(pagesize, 0, 0) < 0)
+	if (alloc_buffer(pagesize, 0, 0) < 0) {
+		exitcode = 1;
 		return 0;
-	bp = (char *)buffer;
+	}
+	bp = (char *)io_buffer;
 
 	dumplen = length % pagesize;
 	if (!dumplen)
@@ -444,7 +479,7 @@ mread_f(
 					dump_buffer(printoffset, dumplen);
 					printoffset += dumplen;
 				}
-				bp = (char *)buffer;
+				bp = (char *)io_buffer;
 				dumplen = pagesize;
 				cnt = 0;
 			} else {
@@ -459,7 +494,7 @@ mread_f(
 				if (dump)
 					dump_buffer(printoffset + tmp -
 						(dumplen - 1), dumplen);
-				bp = (char *)buffer;
+				bp = (char *)io_buffer;
 				dumplen = pagesize;
 				cnt = 0;
 			} else {
@@ -470,7 +505,7 @@ mread_f(
 	return 0;
 }
 
-int
+static int
 munmap_f(
 	int		argc,
 	char		**argv)
@@ -480,6 +515,7 @@ munmap_f(
 
 	if (munmap(mapping->addr, mapping->length) < 0) {
 		perror("munmap");
+		exitcode = 1;
 		return 0;
 	}
 	free(mapping->name);
@@ -524,7 +560,7 @@ mwrite_help(void)
 "\n"));
 }
 
-int
+static int
 mwrite_f(
 	int		argc,
 	char		**argv)
@@ -551,6 +587,7 @@ mwrite_f(
 			}
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&mwrite_cmd);
 		}
 	}
@@ -564,6 +601,7 @@ mwrite_f(
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 		optind++;
@@ -571,15 +609,19 @@ mwrite_f(
 		if (length < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 	} else {
+		exitcode = 1;
 		return command_usage(&mwrite_cmd);
 	}
 
 	start = check_mapping_range(mapping, offset, length, 0);
-	if (!start)
+	if (!start) {
+		exitcode = 1;
 		return 0;
+	}
 
 	offset -= mapping->offset;
 	if (rflag) {
@@ -604,14 +646,14 @@ mremap_help(void)
 " Examples:\n"
 " 'mremap 8192' - resizes the current mapping to 8192 bytes.\n"
 "\n"
-" Resizes the mappping, growing or shrinking from the current size.\n"
+" Resizes the mapping, growing or shrinking from the current size.\n"
 " The default stored value is 'X', repeated to fill the range specified.\n"
 " -f <new_address> -- use MREMAP_FIXED flag to mremap on new_address\n"
 " -m -- use the MREMAP_MAYMOVE flag\n"
 "\n"));
 }
 
-int
+static int
 mremap_f(
 	int		argc,
 	char		**argv)
@@ -635,17 +677,21 @@ mremap_f(
 			flags = MREMAP_MAYMOVE;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&mremap_cmd);
 		}
 	}
 
-	if (optind != argc - 1)
+	if (optind != argc - 1) {
+		exitcode = 1;
 		return command_usage(&mremap_cmd);
+	}
 
 	new_length = cvtnum(blocksize, sectsize, argv[optind]);
 	if (new_length < 0) {
 		printf(_("non-numeric offset argument -- %s\n"),
 			argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
@@ -655,13 +701,14 @@ mremap_f(
 	else
 		new_addr = mremap(mapping->addr, mapping->length,
 		                  new_length, flags, new_addr);
-	if (new_addr == MAP_FAILED)
+	if (new_addr == MAP_FAILED) {
 		perror("mremap");
-	else {
-		mapping->addr = new_addr;
-		mapping->length = new_length;
+		exitcode = 1;
+		return 0;
 	}
 
+	mapping->addr = new_addr;
+	mapping->length = new_length;
 	return 0;
 }
 #endif /* HAVE_MREMAP */
@@ -676,7 +723,7 @@ mmap_init(void)
 	mmap_cmd.argmax = -1;
 	mmap_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK |
 			 CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
-	mmap_cmd.args = _("[N] | [-rwx] [-s size] [off len]");
+	mmap_cmd.args = _("[N] | [-rwxS] [-s size] [off len]");
 	mmap_cmd.oneline =
 		_("mmap a range in the current file, show mappings");
 	mmap_cmd.help = mmap_help;

@@ -1,21 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
-
+#include "libfrog/util.h"
 #include "libxfs.h"
 #include "libxcmd.h"
 #include "libxlog.h"
@@ -24,6 +12,7 @@
 #include "protos.h"
 #include "err_protos.h"
 #include "xfs_multidisk.h"
+#include "libfrog/topology.h"
 
 #define BSIZE	(1024 * 1024)
 
@@ -69,8 +58,7 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	 */
 	if (xfs_sb_version_hasdalign(source))
 		dest->sb_versionnum |= XFS_SB_VERSION_DALIGNBIT;
-	if (xfs_sb_version_hasextflgbit(source))
-		dest->sb_versionnum |= XFS_SB_VERSION_EXTFLGBIT;
+	dest->sb_versionnum |= XFS_SB_VERSION_EXTFLGBIT;
 
 	/*
 	 * these are all supposed to be zero or will get reset anyway
@@ -83,16 +71,16 @@ copy_sb(xfs_sb_t *source, xfs_sb_t *dest)
 	memset(source->sb_fname, 0, 12);
 }
 
-int
+static int
 verify_sb_blocksize(xfs_sb_t *sb)
 {
 	/* check to make sure blocksize is legal 2^N, 9 <= N <= 16 */
 	if (sb->sb_blocksize == 0)
 		return XR_BAD_BLOCKSIZE;
-	if (sb->sb_blocksize != (1 << sb->sb_blocklog))
-		return XR_BAD_BLOCKLOG;
 	if (sb->sb_blocklog < XFS_MIN_BLOCKSIZE_LOG ||
 	    sb->sb_blocklog > XFS_MAX_BLOCKSIZE_LOG)
+		return XR_BAD_BLOCKLOG;
+	if (sb->sb_blocksize != (1 << sb->sb_blocklog))
 		return XR_BAD_BLOCKLOG;
 
 	return 0;
@@ -299,6 +287,31 @@ sb_validate_ino_align(struct xfs_sb *sb)
 }
 
 /*
+ * Validate the given log space.  Derived from xfs_log_mount, though we
+ * can't validate the minimum log size until later.  We only do this
+ * validation on V5 filesystems because the kernel doesn't reject malformed
+ * log geometry on older revision filesystems.
+ *
+ * Returns false if the log is garbage.
+ */
+static bool
+verify_sb_loginfo(
+	struct xfs_sb	*sb)
+{
+	if (xfs_sb_version_hascrc(sb) &&
+	    (sb->sb_logblocks == 0 ||
+	     sb->sb_logblocks > XFS_MAX_LOG_BLOCKS ||
+	     ((unsigned long long)sb->sb_logblocks << sb->sb_blocklog) >
+	     XFS_MAX_LOG_BYTES))
+		return false;
+
+	if (sb->sb_logsunit > 1 && sb->sb_logsunit % sb->sb_blocksize)
+		return false;
+
+	return true;
+}
+
+/*
  * verify a superblock -- does not verify root inode #
  *	can only check that geometry info is internally
  *	consistent.  because of growfs, that's no guarantee
@@ -356,8 +369,7 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 		return(XR_BAD_VERSION);
 
 	/* does sb think mkfs really finished ? */
-
-	if (is_primary_sb && sb->sb_inprogress == 1)
+	if (is_primary_sb && sb->sb_inprogress)
 		return(XR_BAD_INPROGRESS);
 
 	/*
@@ -399,7 +411,7 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 		sb->sb_dblocks < XFS_MIN_DBLOCKS(sb))
 		return(XR_BAD_FS_SIZE_DATA);
 
-	if (sb->sb_agblklog != (uint8_t)libxfs_log2_roundup(sb->sb_agblocks))
+	if (sb->sb_agblklog != (uint8_t)log2_roundup(sb->sb_agblocks))
 		return(XR_BAD_FS_SIZE_DATA);
 
 	if (sb->sb_inodesize < XFS_DINODE_MIN_SIZE                     ||
@@ -411,6 +423,9 @@ verify_sb(char *sb_buf, xfs_sb_t *sb, int is_primary_sb)
 	    sb->sb_inopblock != howmany(sb->sb_blocksize, sb->sb_inodesize) ||
 	    (sb->sb_blocklog - sb->sb_inodelog != sb->sb_inopblog))
 		return XR_BAD_INO_SIZE_DATA;
+
+	if (!verify_sb_loginfo(sb))
+		return XR_BAD_LOG_GEOMETRY;
 
 	if (xfs_sb_version_hassector(sb))  {
 
@@ -667,9 +682,7 @@ get_sb_geometry(fs_geometry_t *geo, xfs_sb_t *sbp)
 	if (xfs_sb_version_hasdalign(sbp))
 		geo->sb_salignbit = 1;
 
-	if (xfs_sb_version_hasextflgbit(sbp))
-		geo->sb_extflgbit = 1;
-
+	geo->sb_extflgbit = 1;
 	geo->sb_fully_zeroed = 1;
 }
 

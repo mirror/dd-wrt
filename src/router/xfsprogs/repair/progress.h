@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #ifndef	_XFS_REPAIR_PROGRESS_RPT_H_
 #define	_XFS_REPAIR_PROGRESS_RPT_H_
 
@@ -6,26 +8,27 @@
 #define	PHASE_END		1
 
 
-#define	PROG_FMT_SCAN_AG 	0	/* Phase 2 */
+#define	PROG_FMT_ZERO_LOG	0	/* Phase 2 */
+#define	PROG_FMT_SCAN_AG 	1
 
-#define	PROG_FMT_AGI_UNLINKED 	1	/* Phase 3 */
-#define	PROG_FMT_UNCERTAIN      2
-#define	PROG_FMT_PROCESS_INO	3
-#define	PROG_FMT_NEW_INODES	4
+#define	PROG_FMT_AGI_UNLINKED 	2	/* Phase 3 */
+#define	PROG_FMT_UNCERTAIN      3
+#define	PROG_FMT_PROCESS_INO	4
+#define	PROG_FMT_NEW_INODES	5
 
-#define	PROG_FMT_DUP_EXTENT	5	/* Phase 4 */
-#define	PROG_FMT_INIT_RTEXT	6
-#define	PROG_FMT_RESET_RTBM	7
-#define	PROG_FMT_DUP_BLOCKS	8
+#define	PROG_FMT_DUP_EXTENT	6	/* Phase 4 */
+#define	PROG_FMT_INIT_RTEXT	7
+#define	PROG_FMT_RESET_RTBM	8
+#define	PROG_FMT_DUP_BLOCKS	9
 
-#define	PROG_FMT_REBUILD_AG	9	/* Phase 5 */
+#define	PROG_FMT_REBUILD_AG	10	/* Phase 5 */
 
-#define	PROG_FMT_TRAVERSAL	10	/* Phase 6 */
-#define	PROG_FMT_TRAVERSSUB	11
-#define	PROG_FMT_DISCONINODE	12
+#define	PROG_FMT_TRAVERSAL	11	/* Phase 6 */
+#define	PROG_FMT_TRAVERSSUB	12
+#define	PROG_FMT_DISCONINODE	13
 
-#define	PROGRESS_FMT_CORR_LINK	13	/* Phase 7 */
-#define	PROGRESS_FMT_VRFY_LINK 	14
+#define	PROGRESS_FMT_CORR_LINK	14	/* Phase 7 */
+#define	PROGRESS_FMT_VRFY_LINK 	15
 
 #define	DURATION_BUF_SIZE	512
 

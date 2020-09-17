@@ -1,0 +1,67 @@
+.\" Copyright (c) 2019, Oracle.  All rights reserved.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" SPDX-License-Identifier: GPL-2.0+
+.\" %%%LICENSE_END
+.TH IOCTL-XFS-GETRESBLKS 2 2019-06-17 "XFS"
+.SH NAME
+ioctl_xfs_getresblks \- query and set XFS free space reservation information
+.SH SYNOPSIS
+.br
+.B #include <xfs/xfs_fs.h>
+.PP
+.BI "int ioctl(int " fd ", XFS_IOC_GET_RESBLKS, struct xfs_fsop_resblks *" arg );
+.br
+.BI "int ioctl(int " fd ", XFS_IOC_SET_RESBLKS, struct xfs_fsop_resblks *" arg );
+.SH DESCRIPTION
+Query or set the free space reservation information.
+These blocks are reserved by the filesystem as a final attempt to prevent
+metadata update failures due to insufficient space.
+Only the system administrator can use these ioctls, because overriding the
+defaults is extremely dangerous.
+.PP
+This functionality is intended only for use by XFS filesystem developers.
+.PP
+The reservation information is conveyed in a structure of the following form:
+.PP
+.in +4n
+.nf
+struct xfs_fsop_resblks {
+	__u64  resblks;
+	__u64  resblks_avail;
+};
+.fi
+.in
+.PP
+.I resblks
+is the number of blocks that the filesystem will try to maintain to prevent
+critical out of space situations.
+.PP
+.I resblks_avail
+is the number of reserved blocks remaining.
+.SH RETURN VALUE
+On error, \-1 is returned, and
+.I errno
+is set to indicate the error.
+.PP
+.SH ERRORS
+Error codes can be one of, but are not limited to, the following:
+.TP
+.B EFSBADCRC
+Metadata checksum validation failed while performing the query.
+.TP
+.B EFSCORRUPTED
+Metadata corruption was encountered while performing the query.
+.TP
+.B EINVAL
+The specified allocation group number is not valid for this filesystem.
+.TP
+.B EIO
+An I/O error was encountered while performing the query.
+.TP
+.B EPERM
+Caller does not have permission to call this ioctl.
+.SH CONFORMING TO
+This API is specific to XFS filesystem on the Linux kernel.
+.SH SEE ALSO
+.BR ioctl (2)

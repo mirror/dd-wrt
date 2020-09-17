@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #define _BSD_SOURCE
@@ -42,6 +30,7 @@ pread_help(void)
 " The reads are performed in sequential blocks starting at offset, with the\n"
 " blocksize tunable using the -b option (default blocksize is 4096 bytes),\n"
 " unless a different pattern is requested.\n"
+" -q   -- quiet mode, do not write anything to standard output.\n"
 " -B   -- read backwards through the range from offset (backwards N bytes)\n"
 " -F   -- read forwards through the range of bytes from offset (default)\n"
 " -v   -- be verbose, dump out buffers (used when reading forwards)\n"
@@ -59,9 +48,9 @@ pread_help(void)
 "\n"));
 }
 
-void	*buffer;
+void	*io_buffer;
 size_t	highwater;
-size_t	buffersize;
+size_t	io_buffersize;
 int	vectors;
 struct iovec *iov;
 
@@ -77,7 +66,7 @@ alloc_iovec(
 	if (!iov)
 		return -1;
 
-	buffersize = 0;
+	io_buffersize = 0;
 	for (i = 0; i < vectors; i++) {
 		iov[i].iov_base = memalign(pagesize, bsize);
 		if (!iov[i].iov_base) {
@@ -88,7 +77,7 @@ alloc_iovec(
 		if (!uflag)
 			memset(iov[i].iov_base, seed, bsize);
 	}
-	buffersize = bsize * vectors;
+	io_buffersize = bsize * vectors;
 	return 0;
 unwind:
 	for( ; i >= 0; i--)
@@ -108,19 +97,19 @@ alloc_buffer(
 		return alloc_iovec(bsize, uflag, seed);
 
 	if (bsize > highwater) {
-		if (buffer)
-			free(buffer);
-		buffer = memalign(pagesize, bsize);
-		if (!buffer) {
+		if (io_buffer)
+			free(io_buffer);
+		io_buffer = memalign(pagesize, bsize);
+		if (!io_buffer) {
 			perror("memalign");
-			highwater = buffersize = 0;
+			highwater = io_buffersize = 0;
 			return -1;
 		}
 		highwater = bsize;
 	}
-	buffersize = bsize;
+	io_buffersize = bsize;
 	if (!uflag)
-		memset(buffer, seed, buffersize);
+		memset(io_buffer, seed, io_buffersize);
 	return 0;
 }
 
@@ -158,7 +147,7 @@ dump_buffer(
 	int		i, l;
 
 	if (!vectors) {
-		__dump_buffer(buffer, offset, len);
+		__dump_buffer(io_buffer, offset, len);
 		return;
 	}
 
@@ -176,15 +165,14 @@ static ssize_t
 do_preadv(
 	int		fd,
 	off64_t		offset,
-	size_t		count,
-	size_t		buffer_size)
+	long long	count)
 {
 	int		vecs = 0;
 	ssize_t		oldlen = 0;
 	ssize_t		bytes = 0;
 
 	/* trim the iovec if necessary */
-	if (count < buffersize) {
+	if (count < io_buffersize) {
 		size_t	len = 0;
 		while (len + iov[vecs].iov_len < count) {
 			len += iov[vecs].iov_len;
@@ -205,20 +193,20 @@ do_preadv(
 	return bytes;
 }
 #else
-#define do_preadv(fd, offset, count, buffer_size) (0)
+#define do_preadv(fd, offset, count) (0)
 #endif
 
 static ssize_t
 do_pread(
 	int		fd,
 	off64_t		offset,
-	size_t		count,
+	long long	count,
 	size_t		buffer_size)
 {
 	if (!vectors)
-		return pread(fd, buffer, min(count, buffer_size), offset);
+		return pread(fd, io_buffer, min(count, buffer_size), offset);
 
-	return do_preadv(fd, offset, count, buffer_size);
+	return do_preadv(fd, offset, count);
 }
 
 static int
@@ -237,22 +225,22 @@ read_random(
 	srandom(seed);
 	end = lseek(fd, 0, SEEK_END);
 	offset = (eof || offset > end) ? end : offset;
-	if ((bytes = (offset % buffersize)))
+	if ((bytes = (offset % io_buffersize)))
 		offset -= bytes;
 	offset = max(0, offset);
-	if ((bytes = (count % buffersize)))
+	if ((bytes = (count % io_buffersize)))
 		count += bytes;
-	count = max(buffersize, count);
-	range = count - buffersize;
+	count = max(io_buffersize, count);
+	range = count - io_buffersize;
 
 	*total = 0;
 	while (count > 0) {
 		if (range)
-			off = ((offset + (random() % range)) / buffersize) *
-				buffersize;
+			off = ((offset + (random() % range)) / io_buffersize) *
+				io_buffersize;
 		else
 			off = offset;
-		bytes = do_pread(fd, off, buffersize, buffersize);
+		bytes = do_pread(fd, off, io_buffersize, io_buffersize);
 		if (bytes == 0)
 			break;
 		if (bytes < 0) {
@@ -261,7 +249,7 @@ read_random(
 		}
 		ops++;
 		*total += bytes;
-		if (bytes < buffersize)
+		if (bytes < io_buffersize)
 			break;
 		count -= bytes;
 	}
@@ -292,9 +280,9 @@ read_backward(
 	*offset = off;
 
 	/* Do initial unaligned read if needed */
-	if ((bytes_requested = (off % buffersize))) {
+	if ((bytes_requested = (off % io_buffersize))) {
 		off -= bytes_requested;
-		bytes = do_pread(fd, off, bytes_requested, buffersize);
+		bytes = do_pread(fd, off, bytes_requested, io_buffersize);
 		if (bytes == 0)
 			return ops;
 		if (bytes < 0) {
@@ -310,9 +298,9 @@ read_backward(
 
 	/* Iterate backward through the rest of the range */
 	while (cnt > end) {
-		bytes_requested = min(cnt, buffersize);
+		bytes_requested = min(cnt, io_buffersize);
 		off -= bytes_requested;
-		bytes = do_pread(fd, off, cnt, buffersize);
+		bytes = do_pread(fd, off, cnt, io_buffersize);
 		if (bytes == 0)
 			break;
 		if (bytes < 0) {
@@ -343,7 +331,7 @@ read_forward(
 
 	*total = 0;
 	while (count > 0 || eof) {
-		bytes = do_pread(fd, offset, count, buffersize);
+		bytes = do_pread(fd, offset, count, io_buffersize);
 		if (bytes == 0)
 			break;
 		if (bytes < 0) {
@@ -354,7 +342,7 @@ read_forward(
 		if (verbose)
 			dump_buffer(offset, bytes);
 		*total += bytes;
-		if (onlyone || bytes < min(count, buffersize))
+		if (onlyone || bytes < min(count, io_buffersize))
 			break;
 		offset += bytes;
 		count -= bytes;
@@ -400,6 +388,7 @@ pread_f(
 			tmp = cvtnum(fsblocksize, fssectsize, optarg);
 			if (tmp < 0) {
 				printf(_("non-numeric bsize -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			bsize = tmp;
@@ -431,6 +420,7 @@ pread_f(
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric vector count == %s\n"),
 					optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -439,21 +429,26 @@ pread_f(
 			zeed = strtoul(optarg, &sp, 0);
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric seed -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&pread_cmd);
 		}
 	}
-	if (optind != argc - 2)
+	if (optind != argc - 2) {
+		exitcode = 1;
 		return command_usage(&pread_cmd);
+	}
 
 	offset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (offset < 0 && (direction & (IO_RANDOM|IO_BACKWARD))) {
 		eof = -1;	/* read from EOF */
 	} else if (offset < 0) {
 		printf(_("non-numeric length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
@@ -462,11 +457,14 @@ pread_f(
 		eof = -1;	/* read to EOF */
 	} else if (count < 0) {
 		printf(_("non-numeric length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
-	if (alloc_buffer(bsize, uflag, 0xabababab) < 0)
+	if (alloc_buffer(bsize, uflag, 0xabababab) < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	gettimeofday(&t1, NULL);
 	switch (direction) {
@@ -486,8 +484,11 @@ pread_f(
 	default:
 		ASSERT(0);
 	}
-	if (c < 0)
+	if (c < 0) {
+		exitcode = 1;
 		return 0;
+	}
+
 	if (qflag)
 		return 0;
 	gettimeofday(&t2, NULL);
@@ -506,7 +507,7 @@ pread_init(void)
 	pread_cmd.argmin = 2;
 	pread_cmd.argmax = -1;
 	pread_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	pread_cmd.args = _("[-b bs] [-v] [-i N] [-FBR [-Z N]] off len");
+	pread_cmd.args = _("[-b bs] [-qv] [-i N] [-FBR [-Z N]] off len");
 	pread_cmd.oneline = _("reads a number of bytes at a specified offset");
 	pread_cmd.help = pread_help;
 

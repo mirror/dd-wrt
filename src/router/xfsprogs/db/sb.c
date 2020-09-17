@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -221,7 +209,7 @@ get_sb(xfs_agnumber_t agno, xfs_sb_t *sb)
 }
 
 /* workaround craziness in the xlog routines */
-int xlog_recover_do_trans(struct xlog *log, xlog_recover_t *t, int p)
+int xlog_recover_do_trans(struct xlog *log, struct xlog_recover *t, int p)
 {
 	return 0;
 }
@@ -670,7 +658,8 @@ version_string(
 		strcat(s, ",DALIGN");
 	if (xfs_sb_version_haslogv2(sbp))
 		strcat(s, ",LOGV2");
-	if (xfs_sb_version_hasextflgbit(sbp))
+	/* This feature is required now as well */
+	if (sbp->sb_versionnum & XFS_SB_VERSION_EXTFLGBIT)
 		strcat(s, ",EXTFLG");
 	if (xfs_sb_version_hassector(sbp))
 		strcat(s, ",SECTOR");
@@ -737,7 +726,8 @@ version_f(
 				version = 0x0034 | XFS_SB_VERSION_EXTFLGBIT;
 				break;
 			case XFS_SB_VERSION_4:
-				if (xfs_sb_version_hasextflgbit(&mp->m_sb))
+				if (mp->m_sb.sb_versionnum &
+						XFS_SB_VERSION_EXTFLGBIT)
 					dbprintf(
 		_("unwritten extents flag is already enabled\n"));
 				else

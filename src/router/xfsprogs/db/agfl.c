@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -46,7 +34,7 @@ const field_t	agfl_crc_hfld[] = { {
 	{ NULL }
 };
 
-#define	OFF(f)	bitize(offsetof(xfs_agfl_t, agfl_ ## f))
+#define	OFF(f)	bitize(offsetof(struct xfs_agfl, agfl_ ## f))
 const field_t	agfl_flds[] = {
 	{ "bno", FLDT_AGBLOCKNZ, OI(OFF(magicnum)), agfl_bno_size,
 	  FLD_ARRAY|FLD_COUNT, TYP_DATA },
@@ -59,8 +47,9 @@ const field_t	agfl_crc_flds[] = {
 	{ "uuid", FLDT_UUID, OI(OFF(uuid)), C1, 0, TYP_NONE },
 	{ "lsn", FLDT_UINT64X, OI(OFF(lsn)), C1, 0, TYP_NONE },
 	{ "crc", FLDT_CRC, OI(OFF(crc)), C1, 0, TYP_NONE },
-	{ "bno", FLDT_AGBLOCKNZ, OI(OFF(bno)), agfl_bno_size,
-	  FLD_ARRAY|FLD_COUNT, TYP_DATA },
+	/* the bno array is after the actual structure */
+	{ "bno", FLDT_AGBLOCKNZ, OI(bitize(sizeof(struct xfs_agfl))),
+	  agfl_bno_size, FLD_ARRAY|FLD_COUNT, TYP_DATA },
 	{ NULL }
 };
 
@@ -69,7 +58,7 @@ agfl_bno_size(
 	void	*obj,
 	int	startoff)
 {
-	return XFS_AGFL_SIZE(mp);
+	return libxfs_agfl_size(mp);
 }
 
 static void

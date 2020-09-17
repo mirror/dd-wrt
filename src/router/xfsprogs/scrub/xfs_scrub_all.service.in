@@ -1,0 +1,11 @@
+[Unit]
+Description=Online XFS Metadata Check for All Filesystems
+ConditionACPower=true
+Documentation=man:xfs_scrub_all(8)
+After=paths.target multi-user.target network.target network-online.target systemd-networkd.service NetworkManager.service connman.service
+
+[Service]
+Type=oneshot
+Environment=SERVICE_MODE=1
+ExecStart=@sbindir@/xfs_scrub_all
+SyslogIdentifier=xfs_scrub_all

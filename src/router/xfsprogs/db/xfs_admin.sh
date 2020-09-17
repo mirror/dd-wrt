@@ -1,4 +1,5 @@
 #!/bin/sh -f
+# SPDX-License-Identifier: GPL-2.0
 #
 # Copyright (c) 2000-2001 Silicon Graphics, Inc.  All Rights Reserved.
 #
@@ -6,7 +7,7 @@
 status=0
 DB_OPTS=""
 REPAIR_OPTS=""
-USAGE="Usage: xfs_admin [-efjlpuV] [-c 0|1] [-L label] [-U uuid] device"
+USAGE="Usage: xfs_admin [-efjlpuV] [-c 0|1] [-L label] [-U uuid] device [logdev]"
 
 while getopts "efjlpuc:L:U:V" c
 do
@@ -32,7 +33,15 @@ done
 set -- extra $@
 shift $OPTIND
 case $# in
-	1)	if [ -n "$DB_OPTS" ]
+	1|2)
+		# Pick up the log device, if present
+		if [ -n "$2" ]; then
+			DB_OPTS=$DB_OPTS" -l '$2'"
+			test -n "$REPAIR_OPTS" && \
+				REPAIR_OPTS=$REPAIR_OPTS" -l '$2'"
+		fi
+
+		if [ -n "$DB_OPTS" ]
 		then
 			eval xfs_db -x -p xfs_admin $DB_OPTS $1
 			status=$?

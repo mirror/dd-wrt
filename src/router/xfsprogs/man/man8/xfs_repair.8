@@ -4,7 +4,9 @@ xfs_repair \- repair an XFS filesystem
 .SH SYNOPSIS
 .B xfs_repair
 [
-.B \-dfLnPv
+.B \-dfLPv
+] [
+.BR \-n " | " -e
 ] [
 .B \-m
 .I maxmem
@@ -91,7 +93,9 @@ for a detailed description of the XFS realtime section.
 No modify mode. Specifies that
 .B xfs_repair
 should not modify the filesystem but should only scan the
-filesystem and indicate what repairs would have been made.
+filesystem and indicate what repairs would have been made. This option cannot
+be used together with
+.BR \-e .
 .TP
 .B \-P
 Disable prefetching of inode and directory blocks. Use this option if
@@ -151,6 +155,10 @@ if there are two allocation groups and the two superblocks do not
 agree on the filesystem geometry.  Only use this option if you validated
 the geometry yourself and know what you are doing.  If In doubt run
 in no modify mode first.
+.TP
+.BI noquota
+Don't validate quota counters at all.
+Quotacheck will be run during the next mount to recalculate all values.
 .RE
 .TP
 .B \-t " interval"
@@ -167,6 +175,11 @@ Repair dangerously. Allow
 .B xfs_repair
 to repair an XFS filesystem mounted read only. This is typically done
 on a root filesystem from single user mode, immediately followed by a reboot.
+.TP
+.B \-e
+If any metadata corruption was repaired, the status returned is 4 instead of the
+usual 0. This option cannot be used together with
+.BR \-n .
 .TP
 .B \-V
 Prints the version number and exits.
@@ -512,14 +525,17 @@ will return a status of 1 if filesystem corruption was detected and
 0 if no filesystem corruption was detected.
 .B xfs_repair
 run without the \-n option will always return a status code of 0 if
-it completes without problems.  If a runtime error is encountered
-during operation, it will return a status of 1.  In this case,
+it completes without problems, unless the flag
+.B -e
+is used. If it is used, then status 4 is reported when any issue with the
+filesystem was found, but could be fixed. If a runtime error is encountered during
+operation, it will return a status of 1. In this case,
 .B xfs_repair
 should be restarted.  If
 .B xfs_repair is unable
 to proceed due to a dirty log, it will return a status of 2.  See below.
 .SH DIRTY LOGS
-Due to the design of the XFS log, a dirty log can only be replayed 
+Due to the design of the XFS log, a dirty log can only be replayed
 by the kernel, on a machine having the same CPU architecture as the
 machine which was writing to the log.
 .B xfs_repair

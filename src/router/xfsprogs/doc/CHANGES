@@ -1,3 +1,296 @@
+xfsprogs-5.8.0 (04 Sep 2020)
+	- xfs_db: set b_ops to NULL for types without verifiers (Eric Sandeen)
+
+xfsprogs-5.8.0-rc1 (26 Aug 2020)
+	- mkfs: allow setting dax flag on root directory (Darrick Wong)
+	- xfs_quota: improve reporting and messages (Bill O'Donnell)
+	- xfs_db: use correct inode to set inode type (Zorro Lang)
+	- xfs_db: fix nlink usage in check (Darrick Wong)
+	- xfs_db: report the inode dax flag (Darrick Wong)
+	- man: update mkfs.xfs inode flag option documentation (Darrick Wong)
+	- xfsprogs: move custom interface def'ns to new header (Eric Sandeen)
+
+xfsprogs-5.8.0-rc0 (10 Aug 2020)
+	- xfs_repair: check quota counters (Darrick Wong)
+	- xfs_io: fix -D vs -R handling (Xiao Yang)
+	- libxfs changes merged from kernel 5.8
+
+xfsprogs-5.7.0 (24 Jul 2020)
+	- xfs_io: Document '-q' option for sendfile command (Xiao Yang)
+
+xfsprogs-5.7.0-rc1 (15 Jul 2020)
+	- remove libreadline support (Christoph Hellwig)
+	- xfs_quota: allow individual timer extension (Eric Sandeen)
+	- xfs_quota: fix unsigned int id comparisons (Darrick Wong)
+	- xfs_repair: fix progress reporting (Eric Sandeen)
+	- xfs_repair: fix minrecs error during phase5 btree rebuild (Gao Xiang)
+	- xfs_repair: add missing validations to match xfs_check (Darrick Wong)
+	- xfs_repair: use btree bulk loading (Darrick Wong)
+	- xfs_io: fix copy_range argument parsing (Eric Sandeen)
+	- xfs_io: document -q option for pread/pwrite command (Xiao Yang)
+	- xfs_metadump: man page fixes (Kaixu Xia)
+	- xfs_db: fix crc invalidation segfault (Anthony Iliopoulos)
+
+xfsprogs-5.7.0-rc0 (07 May 2020)
+	- libxfs changes merged from kernel 5.7
+
+xfsprogs-5.6.0 (14 Apr 2020)
+	- xfs_scrub: don't set WorkingDirectory in systemd job (Darrick Wong)
+
+xfsprogs-5.6.0-rc1 (08 Apr 2020)
+	- xfsprogs: fix silently broken option parsing (Dave Chinner)
+	- xfsprogs: various minor Coverity fixes (Darrick Wong)
+	- xfs_repair: fix dir_read_buf use of libxfs_da_read_buf (Darrick Wong)
+	- libxfs: check retval of device flush when closing (Darrick Wong)
+	- xfs_io:  set exitcode on failure appropriately (Dave Chinner)
+	
+xfsprogs-5.6.0-rc0 (18 Mar 2020)
+	- libxfs changes merged from kernel 5.6
+
+xfsprogs-5.5.0 (13 Mar 2020)
+	- xfsprogs: don't warn about packed members (Dave Chinner)
+
+xfsprogs-5.5.0-rc1 (01 Mar 2020)
+	- xfsprogs: don't redeclare globals provided by libraries (Eric Sandeen)
+	- xfsprogs: actually check that writes succeeded (Darrick Wong)
+	- mkfs.xfs: check root inode location (Darrick Wong)
+	- mkfs.xfs: efficient block zeroing (Eric Sandeen)
+	- xfs_repair: fix broken unit conv. in dir invalidation (Darrick Wong)
+	- xfs_repair: fix bad next_unlinked field (Eric Sandeen)
+	- xfs_repair: don't corrupt attr fork clearing forw/back (Darrick Wong)
+	- xfs_repair: check root dir pointer before trashing it (Darrick Wong)
+	- xfs_repair: try to fix sb_unit value from secondaries (Darrick Wong)
+	- xfs_repair: join RT inodes to transaction only once (Eric Sandeen)
+	- xfs_io: fix over/underflow handling in timespecs (Darrick Wong)
+	- xfs_io: fix pwrite/pread length trunc on 32-bit systems (Darrick Wong)
+	- xfs_io: fix copy_file_range length argument overflow (Darrick Wong)
+	- xfs_io: support passing a keyring key to add_enckey (Eric Biggers)
+	- xfs_scrub: fix reporting of EINVAL for online repairs (Darrick Wong)
+	- man: document some missing xfs_db commands (Darrick Wong)
+	- man: document the xfs_db btheight command  (Darrick Wong)
+	- man: list xfs_io lsattr inode flag letters  (Darrick Wong)
+
+xfsprogs-5.5.0-rc0 (22 Jan 2020)
+	- libxfs changes merged from kernel 5.5
+
+xfsprogs-5.4.0 (20 Dec 2019)
+	- No further changes
+
+xfsprogs-5.4.0-rc1 (17 Dec 2019)
+	- mkfs.xfs: Notify about discard & make it interruptable (Pavel Reichl)
+	- xfs_admin: support external log devices (Darrick Wong)
+	- xfs_admin: enable online label getting and setting (Darrick Wong)
+
+xfsprogs-5.4.0-rc0 (15 Nov 2019)
+	- libxfs changes merged from kernel 5.4
+
+xfsprogs-5.3.0 (15 Nov 2019)
+	- No further changes
+
+xfsprogs-5.3.0-rc2 (07 Nov 2019)
+	- mkfs.xfs: use libxfs to write out AGs vs. open-coding (Darrick Wong)
+	- mkfs.xfs: fix incorrect error message during AG init (Darrick Wong)
+	- xfs_repair: better info when metadata updates fail (Darrick Wong)
+	- xfs_growfs: allow mounted device node as argument (Eric Sandeen)
+	- xfs_spaceman: always report sick metadata (Darrick Wong)
+	- xfs_io: add a bulkstat command (Darrick Wong)
+	- xfs_io: encrypt command enhancements (Eric Biggers)
+	- xfs_io: expose FS_XFLAG_HASATTR flag (Amir Goldstein)
+	- xfs_io: copy_file_range fixes (Jianhong Yin)
+	- man: document several new ioctls (Darrick Wong)
+	- xfs_scrub: copious rewriting (Darrick Wong)
+	- libfrog: header moves, refactoring, updates (Darrick Wong)
+	- libxfs: fix buffer refcounting (Darrick Wong)
+
+xfsprogs-5.3.0-rc1 (28 Aug 2019)
+	- rebase 5.3 branch on top of 5.2.1
+
+xfsprogs-5.3.0-rc0 (16 Aug 2019)
+	- libxfs changes merged from kernel 5.3
+
+xfsprogs-5.2.1 (21 Aug 2019)
+	- fix geometry calls for kernels older than 5.2 (Eric Sandeen)
+
+xfsprogs-5.2.0 (09 Aug 2019)
+	- libxfs: cosmetic changes to trans.c to match kernel (Eric Sandeen)
+
+xfsprogs-5.2.0-rc0 (24 Jul 2019)
+	- libxfs changes merged from kernel 5.2
+
+xfsprogs-5.1.0 (19 Jul 2019)
+	- No further changes
+
+xfsprogs-5.1.0-rc1 (11 Jul 2019)
+	- mkfs: enable reflink by default (Darrick Wong)
+	- mkfs: fix stripe unit handling (Allison Collins)
+	- mkfs: remove useless log options in usage() (Yang Xu)
+	- mkfs: validate start and end of aligned logs (Darrick Wong)
+	- xfs_quota: fix built-in help for project setup (Eric Sandeen)
+	- xfs_io: allow passing an open file to copy_range (Amir Goldstein)
+	- xfs_info: limit findmnt to mounted xfs filesystems (Amir Goldstein)
+	- man: break out several ioctl man pages (Darrick Wong)
+	- man: Fix an inconsistency in the mkfs man page (Alvin Zheng)
+	- xfs_scrub: fix background-mode sleep throttling (Darrick Wong)
+	- libxfs: sync up xfs_trans_inode.c with the kernel (Eric Sandeen)
+	- libfrog: fix bitmap return values (Darrick Wong)
+	- libfrog: don't set negative errno in conversion f'ns (Darrick Wong)
+
+xfsprogs-5.1.0-rc0 (07 May 2019)
+	- libxfs changes merged from kernel 5.1
+
+xfsprogs-5.0.0 (03 May 2019)
+	- xfs_db: scan all sparse inodes when using 'frag' (Jorge Guerra)
+	- Fix build with newer statx headers (Eric Sandeen)
+
+xfsprogs-5.0.0-rc1 (26 Apr 2019)
+	- mkfs: validate extent size hint parameters (Darrick Wong)
+	- xfs_repair: bump on-disk nlink when adding lost+found (Darrick Wong)
+	- xfs_repair: reinitialize root directory nlink correctly (Darrick Wong)
+	- xfs_repair: use lenient verifiers for half-fixed inodes (Darrick Wong)
+	- xfs_repair: acct for btree shrinks when fixing freelist (Darrick Wong)
+	- xfs_repair: better cli option parameter checking (Darrick Wong)
+	- xfs_repair: fix deadlock due to failed inode flushes (Dave Chinner)
+	- xfs_info: handle devices, mountpoints, and loop files (Darrick Wong)
+	- xfs_metadump: fix symlink handling (Darrick Wong)
+	- xfs_io: fix label parsing and validation (Darrick Wong)
+	- xfs_io: print attributes_mask in statx (Darrick Wong)
+	- xfs_scrub: fix Make targets which depend on builddefs (Darrick Wong)
+	- xfs_scrub: check label for misleading characters (Darrick Wong)
+	- xfs_scrub: parallelize based on storage not CPUS (Darrick Wong)
+	- xfs_scrub: activate timer only after system is up (Darrick Wong)
+	- libxfs: fix buffer & inode lifetimes (Darrick Wong)
+	- misc: fix strncpy length complaints from gcc (Darrick Wong)
+	- debian build & packaging fixes (Darrick Wong)
+	- Merge libxfs from kernel 5.0
+
+xfsprogs-4.20.0 (22 Feb 2019)
+	- No further changes
+
+xfsprogs-4.20.0-rc1 (08 Feb 2019)
+	- mkfs.xfs: null-terminate symlinks created via protofile (Eric Sandeen)
+	- xfs_repair: allow '/' in attribute names (Eric Sandeen)
+	- xfs_repair: skip block reservation when fixing freelist (Darrick Wong)
+	- xfs_repair: rebuild dir when nonroot blocks corrupt (Darrick Wong)
+	- xfs_repair: int nonleaf finobt blocks with proper magic (Brian Foster)
+	- xfs_repair: fix off by one error rebuilding high keys (Darrick Wong)
+	- xfs_io: allow open file permissions to be changed (Dave Chinner)
+	- xfs_io: open pipes in non-blocking mode (Dave Chinner)
+	- xfs_metadump: multiple stale data zeroing fixes (Stefan Ring)
+	- xfs_quota: allow reg files w/o prjinherit flag (Achilles Gaikwad)
+	- xfs_db: properly decode finobt record w/ sparse inodes (Darrick Wong)
+	- xfs_db: fix frag command to work w/ sparse inodes (Eric Sandeen)
+	- xfs_scrub: move all executables to /usr/sbin (Darrick Wong)
+	- xfs_scrub: handle totally empty inode chunks (Darrick Wong)
+	- xfs.5 manpage: Remove barrier related options (Eric Sandeen)
+	- xfs_io.8 manpage: rearrange command listings by section (Darrick Wong)
+	- Remove generated scrub files under make clean (Eric Sandeen)
+	- Skip scrub manpage install if not configured (Eric Sandeen)
+	- Merge libxfs from kernel 4.20
+
+xfsprogs-4.19.0 (09 Nov 2018)
+	- Fix up debian subdir build w.r.t. CHECK_CMD (Darrick Wong)
+
+xfsprogs-4.19.0-rc1 (02 Nov 2018)
+	- Remove non-linux platforms (Eric Sandeen)
+	- Remove retpoline support (Eric Sandeen)
+	- Add sparse checking & related fixes/cleanups (Eric Sandeen)
+	- Fix cross-platform building w.r.t. crc32selftest
+	- libxfs: add agfl free deferred op type (Darrick Wong)
+	- mkfs.xfs: discard only after all validations (Jan Tulak)
+	- xfs_repair: fix segfault in longform_dir2_entry_check (Eric Sandeen)
+	- xfs_repair: fix ASSERT in xfs_bunmapi (Eric Sandeen)
+	- xfs_repair: fix readahead thread deadlock/stall (Eric Sandeen)
+	- xfs_repair: avoid writing back all inodes (Dave Chinner)
+	- xfs_repair: don't treat directory root LEAFN as corrupt (Dave Chinner)
+	- xfs_io: add crc32 self test (Darrick Wong)
+	- xfs_io: remove useless do_preadv and do_pwritev arguments (Zorro Lang)
+	- xfs_scrub: make scrub build config-optional (Eric Sandeen)
+	- xfs_scrub: lack of kernel support is not a service failure (Darrick Wong)
+	- xfs_scrub_all: fix systemd escaping (Darrick Wong)
+
+xfsprogs-4.19.0-rc0 (10 Oct 2018)
+	- Majority of 4.19 libxfs changes merged from kernel
+	- Big sparse static checker cleanup (Eric Sandeen)
+	- mkfs.xfs discard fixes (Jan Tulak)
+	- xfs_io readv/writev cleanup (Zorro Lang)
+	- libxfs transaction commit error checking (Darrick Wong)
+
+xfsprogs-4.18.0 (24 Aug 2018)
+	- Tweak SPDX license in xfs_cksum.h (Darrick Wong)
+
+xfsprogs-4.18.0-rc1 (01 Aug 2018)
+	- xfs_repair: notify user if free inodes are corrupt (Eric Sandeen)
+	- xfs_repair: use extent size validation helpers (Darrick Wong)
+	- xfs_quota: don't stop the directory tree walk at DEPTH (Kazuya Mio)
+	- xfs_scrub: ongoing updates (Darrick Wong)
+	- xfs_io: document shutdown -f (Carlos Maiolino)
+	- xfs_io: wire up online repair ioctls (Darrick Wong)
+	- misc: adddebian initramfs hook to package (Darrick Wong)
+	- misc: remove unused macros (Eric Sandeen)
+	- misc: remove many XFS_BUF macros (Carlos Maiolino)
+	- misc: convert to SPDX license tags (Dave Chinner)
+
+xfsprogs-4.18.0-rc0 (05 Jul 2018)
+	- Majority of 4.18 libxfs changes merged from kernel
+
+xfsprogs-4.17.0 (28 Jun 2018)
+	- No further changes
+
+xfsprogs-4.17.0-rc1 (22 Jun 2018)
+	- mkfs.xfs: only stat block devices during mkfs init (Eric Sandeen)
+	- xfs_repair: multiple fixes and improvements (Darrick Wong)
+	- xfs_repair: check and repair quota metadata (Eric Sandeen)
+	- xfs_repair: fix shortform root inode parent (Marco Benatto)
+	- xfs_db: don't ASSERT on unrecognized metadata (Carlos Maiolino)
+	- xfs_db: add superblock info command ala xfs_info (Darrick Wong)
+	- xfs_spaceman: add superblock info command ala xfs_info (Darrick Wong)
+	- xfs_info: call xfs_db for unmounted devices (Darrick Wong)
+	- xfs_io: add online label command (Eric Sandeen)
+	- xfs_io: add O_PATH and O_NOFOLLOW options (David Howells)
+	- xfs_io: recognize *iB units in copy_range (Goldwyn Rodrigues)
+
+xfsprogs-4.16.1 (30 Apr 2018)
+	- fsck.xfs: remove bashism which may interfere with boot (Eric Sandeen)
+
+xfsprogs-4.16.0 (25 Apr 2018)
+	- No further changes
+
+xfsprogs-4.16.0-rc1 (12 Apr 2018)
+	- platforms: warn of impending deprecation of irix, freebsd, darwin
+	- mkfs.xfs : enable sparse inodes by default (Darrick Wong)
+	- fsck.xfs: allow forced boot-time repairs using xfs_repair (Jan Tulak)
+	- xfs_repair: new -e flag alters exit code for fixed errors (Jan Tulak)
+	- xfs_repair: fix to allow zeroing of corrupt log (Xiao Yang)
+	- xfs_repair: remove old dead code (Eric Sandeen)
+	- xfs_io: fix operation time reporting (Dave Chinner)
+	- xfs_io: add RWF_DSYNC support to pwrite (Dave Chinner)
+	- xfs_io: support a basic extent swap command (Brian Foster)
+	- xfs_scrub: Many updates, still experimental (Darrick Wong)
+	- xfs_db: print transaction reservation type information
+	- libxfs: framework to detect memory leaks (Eric Sandeen)
+	- misc: Fix up new warnings from gcc 7.3 (Darrick Wong)
+	- misc: enable link time optimization, if requested (Darrick Wong)
+	- misc: enable retpolines across all xfsprogs utilities (Darrick Wong)
+
+xfsprogs-4.15.1 (26 Feb 2018)
+	- debian: add build-depends on pkg-config (Darrick Wong)
+	- debian: don't fail postinst when upgrading chroot (Darrick Wong)
+	- update Polish translation (Jakub Bogusz)
+
+xfsprogs-4.15.0 (23 Feb 2018)
+	- various debian-related packaging fixes (Nathan Scott)
+
+xfsprogs-4.15.0-rc1 (13 Feb 2018)
+	- xfs_scrub: experimental new tool added (Darrick Wong)
+	- xfs_metadump: fix issues with -i flag (Marco Benatto)
+	- mkfs.xfs: don't allow creation of realtime+reflink (Darrick Wong)
+	- mkfs.xfs: don't crash on dswidth overflow (Darrick Wong)
+	- mkfs.xfs: much refactoring (Dave Chinner)
+	- xfs_copy: fix copy of v5 filesystems (Eric Sandeen)
+	- xfs_io: add a new 'log_writes' command (Ross Zwisler)
+	- xfs_io: add MAP_SYNC support to mmap() (Ross Zwisler)
+	- libxfs: memory zone handling cleanups (Eric Sandeen)
+
 xfsprogs-4.14.0 (27 Nov 2017)
 	- no changes from v4.14.0-rc2
 
@@ -84,7 +377,6 @@ xfsprogs-4.11.0-rc1 (4 Apr 2017)
 
 xfsprogs-4.10.0 (6 Feb 2017)
 	- build: fix __bitwise definitions vs kernel headers (Darrick Wong)
-
 xfsprogs-4.10.0-rc1 (15 Feb 2017)
 	- build: fix cross-compile (Gwendal Grignou)
 	- remove old Irix support (Christoph Hellwig)

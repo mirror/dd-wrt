@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: LGPL-2.1
 /*
  * Copyright (c) 2000-2002, 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public License
- * as published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef __JDM_H__
 #define __JDM_H__
@@ -52,24 +40,24 @@ jdm_readlink( jdm_fshandle_t *fshandlep,
 
 extern intgen_t
 jdm_attr_multi(	jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		char *bufp, int rtrvcnt, int flags);
 
 extern intgen_t
 jdm_attr_list(	jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		char *bufp, size_t bufsz, int flags,
 		struct attrlist_cursor *cursor);
 
 extern int
 jdm_parents( jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		struct parent *bufp, size_t bufsz,
 		unsigned int *count);
 
 extern int
 jdm_parentpaths( jdm_fshandle_t *fshp,
-		xfs_bstat_t *statp,
+		struct xfs_bstat *statp,
 		struct parent *bufp, size_t bufsz,
 		unsigned int *count);
 

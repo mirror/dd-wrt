@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -21,6 +9,9 @@
 #include "init.h"
 #include "io.h"
 #include "libxfs.h"
+#include "libfrog/logging.h"
+#include "libfrog/fsgeom.h"
+#include "libfrog/bulkstat.h"
 
 #ifndef __O_TMPFILE
 #if defined __alpha__
@@ -38,24 +29,38 @@
 #define O_TMPFILE (__O_TMPFILE | O_DIRECTORY)
 #endif
 
+#ifndef O_PATH
+#if defined __alpha__
+#define O_PATH          040000000
+#elif defined(__hppa__)
+#define O_PATH          020000000
+#elif defined(__sparc__)
+#define O_PATH          0x1000000
+#else
+#define O_PATH          010000000
+#endif
+#endif /* O_PATH */
+
 static cmdinfo_t open_cmd;
 static cmdinfo_t close_cmd;
 static cmdinfo_t chproj_cmd;
 static cmdinfo_t lsproj_cmd;
 static cmdinfo_t extsize_cmd;
 static cmdinfo_t inode_cmd;
+static cmdinfo_t chmod_cmd;
 static prid_t prid;
 static long extsize;
 
 int
 openfile(
 	char		*path,
-	xfs_fsop_geom_t	*geom,
+	struct xfs_fsop_geom *geom,
 	int		flags,
 	mode_t		mode,
 	struct fs_path	*fs_path)
 {
 	struct fs_path	*fsp;
+	struct stat	st = { 0 };
 	int		fd;
 	int		oflags;
 
@@ -74,6 +79,22 @@ openfile(
 		oflags |= O_NONBLOCK;
 	if (flags & IO_TMPFILE)
 		oflags |= O_TMPFILE;
+	if (flags & IO_PATH)
+		oflags |= O_PATH;
+	if (flags & IO_NOFOLLOW)
+		oflags |= O_NOFOLLOW;
+
+	/*
+	 * if we've been passed a pipe to open, don't block waiting for a
+	 * reader or writer to appear. We want to either succeed or error out
+	 * immediately.
+	 */
+	if (stat(path, &st) < 0 && errno != ENOENT) {
+		perror("stat");
+		return -1;
+	}
+	if (S_ISFIFO(st.st_mode))
+		oflags |= O_NONBLOCK;
 
 	fd = open(path, oflags, mode);
 	if (fd < 0) {
@@ -97,13 +118,21 @@ openfile(
 	if (!geom || !platform_test_xfs_fd(fd))
 		return fd;
 
-	if (xfsctl(path, fd, XFS_IOC_FSGEOMETRY, geom) < 0) {
-		perror("XFS_IOC_FSGEOMETRY");
-		close(fd);
-		return -1;
+	if (flags & IO_PATH) {
+		/* Can't call ioctl() on O_PATH fds */
+		memset(geom, 0, sizeof(*geom));
+	} else {
+		int	ret;
+
+		ret = -xfrog_geometry(fd, geom);
+		if (ret) {
+			xfrog_perror(ret, "XFS_IOC_FSGEOMETRY");
+			close(fd);
+			return -1;
+		}
 	}
 
-	if (!(flags & IO_READONLY) && (flags & IO_REALTIME)) {
+	if (!(flags & (IO_READONLY | IO_PATH)) && (flags & IO_REALTIME)) {
 		struct fsxattr	attr;
 
 		if (xfsctl(path, fd, FS_IOC_FSGETXATTR, &attr) < 0) {
@@ -135,7 +164,7 @@ int
 addfile(
 	char		*name,
 	int		fd,
-	xfs_fsop_geom_t	*geometry,
+	struct xfs_fsop_geom *geometry,
 	int		flags,
 	struct fs_path	*fs_path)
 {
@@ -191,6 +220,8 @@ open_help(void)
 " -t -- open with O_TRUNC (truncate the file to zero length if it exists)\n"
 " -R -- mark the file as a realtime XFS file immediately after opening it\n"
 " -T -- open with O_TMPFILE (create a file not visible in the namespace)\n"
+" -P -- open with O_PATH (create an fd that is merely a location reference)\n"
+" -L -- open with O_NOFOLLOW (don't follow symlink)\n"
 " Note1: usually read/write direct IO requests must be blocksize aligned;\n"
 "        some kernels, however, allow sectorsize alignment for direct IO.\n"
 " Note2: the bmap for non-regular files can be obtained provided the file\n"
@@ -206,17 +237,18 @@ open_f(
 	int		c, fd, flags = 0;
 	char		*sp;
 	mode_t		mode = 0600;
-	xfs_fsop_geom_t	geometry = { 0 };
+	struct xfs_fsop_geom geometry = { 0 };
 	struct fs_path	fsp;
 
 	if (argc == 1) {
 		if (file)
 			return stat_f(argc, argv);
 		fprintf(stderr, _("no files are open, try 'help open'\n"));
+		exitcode = 1;
 		return 0;
 	}
 
-	while ((c = getopt(argc, argv, "FRTacdfm:nrstx")) != EOF) {
+	while ((c = getopt(argc, argv, "FLPRTacdfm:nrstx")) != EOF) {
 		switch (c) {
 		case 'F':
 			/* Ignored / deprecated now, handled automatically */
@@ -235,6 +267,7 @@ open_f(
 			mode = strtoul(optarg, &sp, 0);
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric mode -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -257,27 +290,50 @@ open_f(
 		case 'T':
 			flags |= IO_TMPFILE;
 			break;
+		case 'P':
+			flags |= IO_PATH;
+			break;
+		case 'L':
+			flags |= IO_NOFOLLOW;
+			break;
 		default:
+			exitcode = 1;
 			return command_usage(&open_cmd);
 		}
 	}
 
-	if (optind != argc - 1)
+	if (optind != argc - 1) {
+		exitcode = 1;
 		return command_usage(&open_cmd);
+	}
 
 	if ((flags & (IO_READONLY|IO_TMPFILE)) == (IO_READONLY|IO_TMPFILE)) {
 		fprintf(stderr, _("-T and -r options are incompatible\n"));
+		exitcode = 1;
+		return -1;
+	}
+
+	if ((flags & (IO_PATH|IO_NOFOLLOW)) &&
+	    (flags & ~(IO_PATH|IO_NOFOLLOW))) {
+		fprintf(stderr, _("-P and -L are incompatible with the other options\n"));
+		exitcode = 1;
 		return -1;
 	}
 
 	fd = openfile(argv[optind], &geometry, flags, mode, &fsp);
-	if (fd < 0)
+	if (fd < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (!platform_test_xfs_fd(fd))
 		flags |= IO_FOREIGN;
 
-	addfile(argv[optind], fd, &geometry, flags, &fsp);
+	if (addfile(argv[optind], fd, &geometry, flags, &fsp) != 0) {
+		exitcode = 1;
+		return 0;
+	}
+
 	return 0;
 }
 
@@ -291,6 +347,7 @@ close_f(
 
 	if (close(file->fd) < 0) {
 		perror("close");
+		exitcode = 1;
 		return 0;
 	}
 	free(file->name);
@@ -346,9 +403,12 @@ lsproj_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else {
 		if (getprojid(path, fd, &projid) == 0)
 			printf("[%u] %s\n", (unsigned int)projid, path);
+		else
+			exitcode = 1;
 		close(fd);
 	}
 	return 0;
@@ -366,27 +426,29 @@ lsproj_f(
 	while ((c = getopt(argc, argv, "DR")) != EOF) {
 		switch (c) {
 		case 'D':
-			recurse_all = 0;
 			recurse_dir = 1;
 			break;
 		case 'R':
 			recurse_all = 1;
-			recurse_dir = 0;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&lsproj_cmd);
 		}
 	}
 
-	if (argc != optind)
+	if (argc != optind) {
+		exitcode = 1;
 		return command_usage(&lsproj_cmd);
+	}
 
 	if (recurse_all || recurse_dir)
 		nftw(file->name, lsproj_callback,
 			100, FTW_PHYS | FTW_MOUNT | FTW_DEPTH);
-	else if (getprojid(file->name, file->fd, &projid) < 0)
+	else if (getprojid(file->name, file->fd, &projid) < 0) {
 		perror("getprojid");
-	else
+		exitcode = 1;
+	} else
 		printf(_("projid = %u\n"), (unsigned int)projid);
 	return 0;
 }
@@ -418,9 +480,12 @@ chproj_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else {
-		if (setprojid(path, fd, prid) < 0)
+		if (setprojid(path, fd, prid) < 0) {
 			perror("setprojid");
+			exitcode = 1;
+		}
 		close(fd);
 	}
 	return 0;
@@ -437,32 +502,43 @@ chproj_f(
 	while ((c = getopt(argc, argv, "DR")) != EOF) {
 		switch (c) {
 		case 'D':
-			recurse_all = 0;
 			recurse_dir = 1;
 			break;
 		case 'R':
 			recurse_all = 1;
-			recurse_dir = 0;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&chproj_cmd);
 		}
 	}
 
-	if (argc != optind + 1)
+	if (argc != optind + 1) {
+		exitcode = 1;
 		return command_usage(&chproj_cmd);
+	}
 
 	prid = prid_from_string(argv[optind]);
 	if (prid == -1) {
 		printf(_("invalid project ID -- %s\n"), argv[optind]);
+		exitcode = 1;
+		return 0;
+	}
+
+	if (recurse_all && recurse_dir) {
+		fprintf(stderr, _("%s: -R and -D options are mutually exclusive\n"),
+			progname);
+		exitcode = 1;
 		return 0;
 	}
 
 	if (recurse_all || recurse_dir)
 		nftw(file->name, chproj_callback,
 			100, FTW_PHYS | FTW_MOUNT | FTW_DEPTH);
-	else if (setprojid(file->name, file->fd, prid) < 0)
+	else if (setprojid(file->name, file->fd, prid) < 0) {
 		perror("setprojid");
+		exitcode = 1;
+	}
 	return 0;
 }
 
@@ -486,7 +562,7 @@ get_extsize(const char *path, int fd)
 	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: FS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
-		return 0;
+		return -1;
 	}
 	printf("[%u] %s\n", fsx.fsx_extsize, path);
 	return 0;
@@ -500,12 +576,12 @@ set_extsize(const char *path, int fd, long extsz)
 
 	if (fstat(fd, &stat) < 0) {
 		perror("fstat");
-		return 0;
+		return -1;
 	}
 	if ((xfsctl(path, fd, FS_IOC_FSGETXATTR, &fsx)) < 0) {
 		printf("%s: FS_IOC_FSGETXATTR %s: %s\n",
 			progname, path, strerror(errno));
-		return 0;
+		return -1;
 	}
 
 	if (S_ISREG(stat.st_mode)) {
@@ -514,14 +590,14 @@ set_extsize(const char *path, int fd, long extsz)
 		fsx.fsx_xflags |= FS_XFLAG_EXTSZINHERIT;
 	} else {
 		printf(_("invalid target file type - file %s\n"), path);
-		return 0;
+		return -1;
 	}
 	fsx.fsx_extsize = extsz;
 
 	if ((xfsctl(path, fd, FS_IOC_FSSETXATTR, &fsx)) < 0) {
 		printf("%s: FS_IOC_FSSETXATTR %s: %s\n",
 			progname, path, strerror(errno));
-		return 0;
+		return -1;
 	}
 
 	return 0;
@@ -542,8 +618,10 @@ get_extsize_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else {
-		get_extsize(path, fd);
+		if (get_extsize(path, fd) < 0)
+			exitcode = 1;
 		close(fd);
 	}
 	return 0;
@@ -564,8 +642,10 @@ set_extsize_callback(
 	if ((fd = open(path, O_RDONLY)) == -1) {
 		fprintf(stderr, _("%s: cannot open %s: %s\n"),
 			progname, path, strerror(errno));
+		exitcode = 1;
 	} else {
-		set_extsize(path, fd, extsize);
+		if (set_extsize(path, fd, extsize) < 0)
+			exitcode = 1;
 		close(fd);
 	}
 	return 0;
@@ -584,14 +664,13 @@ extsize_f(
 	while ((c = getopt(argc, argv, "DR")) != EOF) {
 		switch (c) {
 		case 'D':
-			recurse_all = 0;
 			recurse_dir = 1;
 			break;
 		case 'R':
 			recurse_all = 1;
-			recurse_dir = 0;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&extsize_cmd);
 		}
 	}
@@ -601,20 +680,30 @@ extsize_f(
 		if (extsize < 0) {
 			printf(_("non-numeric extsize argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 	} else {
 		extsize = -1;
 	}
 
-	if (recurse_all || recurse_dir)
+	if (recurse_all && recurse_dir) {
+		fprintf(stderr, _("%s: -R and -D options are mutually exclusive\n"),
+			progname);
+		exitcode = 1;
+		return 0;
+	}
+
+	if (recurse_all || recurse_dir) {
 		nftw(file->name, (extsize >= 0) ?
 			set_extsize_callback : get_extsize_callback,
 			100, FTW_PHYS | FTW_MOUNT | FTW_DEPTH);
-	else if (extsize >= 0)
-		set_extsize(file->name, file->fd, extsize);
-	else
-		get_extsize(file->name, file->fd);
+	} else if (extsize >= 0) {
+		if (set_extsize(file->name, file->fd, extsize) < 0)
+			exitcode = 1;
+	} else if (get_extsize(file->name, file->fd) < 0) {
+		exitcode = 1;
+	}
 	return 0;
 }
 
@@ -633,60 +722,66 @@ inode_help(void)
 "\n"));
 }
 
+#define IGROUP_NR	(1024)
 static __u64
 get_last_inode(void)
 {
-	__u64			lastip = 0;
-	__u64			lastgrp = 0;
-	__s32			ocount = 0;
-	__u64			last_ino;
-	struct xfs_inogrp	igroup[1024];
-	struct xfs_fsop_bulkreq	bulkreq;
+	struct xfs_fd		xfd = XFS_FD_INIT(file->fd);
+	struct xfs_inumbers_req	*ireq;
+	uint32_t		lastgrp = 0;
+	__u64			last_ino = 0;
+	int			ret;
 
-	bulkreq.lastip = &lastip;
-	bulkreq.ubuffer = &igroup;
-	bulkreq.icount = sizeof(igroup) / sizeof(struct xfs_inogrp);
-	bulkreq.ocount = &ocount;
+	ret = -xfrog_inumbers_alloc_req(IGROUP_NR, 0, &ireq);
+	if (ret) {
+		xfrog_perror(ret, "alloc req");
+		exitcode = 1;
+		return 0;
+	}
 
 	for (;;) {
-		if (xfsctl(file->name, file->fd, XFS_IOC_FSINUMBERS,
-				&bulkreq)) {
-			perror("XFS_IOC_FSINUMBERS");
-			return 0;
+		ret = -xfrog_inumbers(&xfd, ireq);
+		if (ret) {
+			xfrog_perror(ret, "XFS_IOC_FSINUMBERS");
+			exitcode = 1;
+			goto out;
 		}
 
 		/* Did we reach the last inode? */
-		if (ocount == 0)
+		if (ireq->hdr.ocount == 0)
 			break;
 
 		/* last inode in igroup table */
-		lastgrp = ocount;
+		lastgrp = ireq->hdr.ocount;
 	}
+
+	if (lastgrp == 0)
+		goto out;
 
 	lastgrp--;
 
 	/* The last inode number in use */
-	last_ino = igroup[lastgrp].xi_startino +
-		  libxfs_highbit64(igroup[lastgrp].xi_allocmask);
+	last_ino = ireq->inumbers[lastgrp].xi_startino +
+		  libxfs_highbit64(ireq->inumbers[lastgrp].xi_allocmask);
+out:
+	free(ireq);
 
 	return last_ino;
 }
 
 static int
 inode_f(
-	  int			argc,
-	  char			**argv)
+	int			argc,
+	char			**argv)
 {
-	__s32			count = 0;
-	__u64			result_ino = 0;
-	__u64			userino = NULLFSINO;
+	struct xfs_bulkstat	bulkstat;
+	uint64_t		result_ino = 0;
+	uint64_t		userino = NULLFSINO;
 	char			*p;
 	int			c;
 	int			verbose = 0;
 	int			ret_next = 0;
-	int			cmd = 0;
-	struct xfs_fsop_bulkreq	bulkreq;
-	struct xfs_bstat	bstat;
+	int			ret;
 
 	while ((c = getopt(argc, argv, "nv")) != EOF) {
 		switch (c) {
@@ -697,6 +792,7 @@ inode_f(
 			ret_next = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&inode_cmd);
 		}
 	}
@@ -714,12 +810,16 @@ inode_f(
 	}
 
 	/* Extra junk? */
-	if (optind < argc)
+	if (optind < argc) {
+		exitcode = 1;
 		return command_usage(&inode_cmd);
+	}
 
 	/* -n option requires an inode number */
-	if (ret_next && userino == NULLFSINO)
+	if (ret_next && userino == NULLFSINO) {
+		exitcode = 1;
 		return command_usage(&inode_cmd);
+	}
 
 	if (userino == NULLFSINO) {
 		/* We are finding last inode in use */
@@ -728,35 +828,50 @@ inode_f(
 			exitcode = 1;
 			return 0;
 		}
+	} else if (ret_next) {
+		struct xfs_fd	xfd = XFS_FD_INIT(file->fd);
+		struct xfs_bulkstat_req	*breq;
+
+		/*
+		 * The -n option means that the caller wants to know the number
+		 * of the next allocated inode, so we need to increment here.
+		 */
+		ret = -xfrog_bulkstat_alloc_req(1, userino + 1, &breq);
+		if (ret) {
+			xfrog_perror(ret, "alloc bulkstat");
+			exitcode = 1;
+			return 0;
+		}
+
+		/* get next inode */
+		ret = -xfrog_bulkstat(&xfd, breq);
+		if (ret) {
+			xfrog_perror(ret, "bulkstat");
+			free(breq);
+			exitcode = 1;
+			return 0;
+		}
+
+		/* The next inode in use, or 0 if none */
+		if (breq->hdr.ocount)
+			result_ino = breq->bulkstat[0].bs_ino;
+		else
+			result_ino = 0;
+		free(breq);
 	} else {
-		if (ret_next)	/* get next inode */
-			cmd = XFS_IOC_FSBULKSTAT;
-		else		/* get this inode */
-			cmd = XFS_IOC_FSBULKSTAT_SINGLE;
+		struct xfs_fd	xfd = XFS_FD_INIT(file->fd);
 
-		bulkreq.lastip = &userino;
-		bulkreq.icount = 1;
-		bulkreq.ubuffer = &bstat;
-		bulkreq.ocount = &count;
-
-		if (xfsctl(file->name, file->fd, cmd, &bulkreq)) {
-			if (!ret_next && errno == EINVAL) {
-				/* Not in use */
-				result_ino = 0;
-			} else {
-				perror("xfsctl");
-				exitcode = 1;
-				return 0;
-			}
-		} else if (ret_next) {
-			/* The next inode in use, or 0 if none */
-			if (*bulkreq.ocount)
-				result_ino = bstat.bs_ino;
-			else
-				result_ino = 0;
+		/* get this inode */
+		ret = -xfrog_bulkstat_single(&xfd, userino, 0, &bulkstat);
+		if (ret == EINVAL) {
+			/* Not in use */
+			result_ino = 0;
+		} else if (ret) {
+			xfrog_perror(ret, "bulkstat_single");
+			exitcode = 1;
+			return 0;
 		} else {
-			/* The inode we asked about */
-			result_ino = userino;
+			result_ino = bulkstat.bs_ino;
 		}
 	}
 
@@ -775,6 +890,48 @@ inode_f(
 	return 0;
 }
 
+static void
+chmod_help(void)
+{
+	printf(_(
+"\n"
+" Change the read/write permissions on the current file\n"
+"\n"
+" Options:\n"
+" -r -- make the file read only (0444 permissions)\n"
+" -w -- make the file read/write (0664 permissions)\n"
+"\n"));
+}
+
+static int
+chmod_f(
+	int		argc,
+	char		**argv)
+{
+	mode_t		mode = S_IRUSR | S_IRGRP | S_IROTH;
+	int		c;
+
+	while ((c = getopt(argc, argv, "rw")) != EOF) {
+		switch (c) {
+		case 'r':
+			break;
+		case 'w':
+			mode |= S_IWUSR | S_IWGRP;
+			break;
+		default:
+			return command_usage(&chmod_cmd);
+		}
+	}
+
+	if (argc != optind)
+		return command_usage(&chmod_cmd);
+
+	if (fchmod(file->fd, mode) < 0) {
+		exitcode = 1;
+		perror("fchmod");
+	}
+	return 0;
+}
 void
 open_init(void)
 {
@@ -785,7 +942,7 @@ open_init(void)
 	open_cmd.argmax = -1;
 	open_cmd.flags = CMD_NOMAP_OK | CMD_NOFILE_OK |
 			 CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
-	open_cmd.args = _("[-acdrstxT] [-m mode] [path]");
+	open_cmd.args = _("[-acdrstxRTPL] [-m mode] [path]");
 	open_cmd.oneline = _("open the file specified by path");
 	open_cmd.help = open_help;
 
@@ -811,7 +968,7 @@ open_init(void)
 	lsproj_cmd.cfunc = lsproj_f;
 	lsproj_cmd.args = _("[-D | -R]");
 	lsproj_cmd.argmin = 0;
-	lsproj_cmd.argmax = -1;
+	lsproj_cmd.argmax = 1;
 	lsproj_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	lsproj_cmd.oneline =
 		_("list project identifier set on the currently open file");
@@ -837,10 +994,21 @@ open_init(void)
 		_("Query inode number usage in the filesystem");
 	inode_cmd.help = inode_help;
 
+	chmod_cmd.name = "chmod";
+	chmod_cmd.cfunc = chmod_f;
+	chmod_cmd.args = _("-r | -w");
+	chmod_cmd.argmin = 1;
+	chmod_cmd.argmax = 1;
+	chmod_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK | CMD_FLAG_ONESHOT;
+	chmod_cmd.oneline =
+		_("change the read/write permissions on the currently open file");
+	chmod_cmd.help = chmod_help;
+
 	add_command(&open_cmd);
 	add_command(&close_cmd);
 	add_command(&chproj_cmd);
 	add_command(&lsproj_cmd);
 	add_command(&extsize_cmd);
 	add_command(&inode_cmd);
+	add_command(&chmod_cmd);
 }

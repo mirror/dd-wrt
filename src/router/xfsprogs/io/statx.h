@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #ifndef XFS_IO_STATX_H
 #define XFS_IO_STATX_H
 
@@ -31,7 +33,14 @@
 # endif
 #endif
 
+
 #ifndef STATX_TYPE
+/* Pick up kernel definitions if glibc didn't already provide them */
+#include <linux/stat.h>
+#endif
+
+#ifndef STATX_TYPE
+/* Local definitions if glibc & kernel headers didn't already provide them */
 
 /*
  * Timestamp structure for the timestamps in struct statx.
@@ -105,7 +114,7 @@ struct statx {
 	__u64	stx_ino;	/* Inode number */
 	__u64	stx_size;	/* File size */
 	__u64	stx_blocks;	/* Number of 512-byte blocks allocated */
-	__u64	__spare1[1];
+	__u64	stx_attributes_mask; /* Mask to show what's supported in stx_attributes */
 	/* 0x40 */
 	struct statx_timestamp	stx_atime;	/* Last access time */
 	struct statx_timestamp	stx_btime;	/* File creation time */

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "platform_defs.h"
@@ -21,6 +9,7 @@
 #include "input.h"
 #include "init.h"
 #include "io.h"
+#include "libfrog/fsgeom.h"
 
 static cmdinfo_t bmap_cmd;
 
@@ -43,6 +32,7 @@ bmap_help(void)
 " All the file offsets and disk blocks are in units of 512-byte blocks.\n"
 " -a -- prints the attribute fork map instead of the data fork.\n"
 " -c -- prints the copy-on-write fork map instead of the data fork.\n"
+"       This works only if the kernel was compiled in debug mode.\n"
 " -d -- suppresses a DMAPI read event, offline portions shown as holes.\n"
 " -e -- print delayed allocation extents.\n"
 " -l -- also displays the length of each extent in 512-byte blocks.\n"
@@ -54,7 +44,7 @@ bmap_help(void)
 "\n"));
 }
 
-int
+static int
 bmap_f(
 	int			argc,
 	char			**argv)
@@ -116,11 +106,11 @@ bmap_f(
 		bmv_iflags &= ~(BMV_IF_PREALLOC|BMV_IF_NO_DMAPI_READ);
 
 	if (vflag) {
-		c = xfsctl(file->name, file->fd, XFS_IOC_FSGEOMETRY_V1, &fsgeo);
-		if (c < 0) {
+		c = -xfrog_geometry(file->fd, &fsgeo);
+		if (c) {
 			fprintf(stderr,
 				_("%s: can't get geometry [\"%s\"]: %s\n"),
-				progname, file->name, strerror(errno));
+				progname, file->name, strerror(c));
 			exitcode = 1;
 			return 0;
 		}

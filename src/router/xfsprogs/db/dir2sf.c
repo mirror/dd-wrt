@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -42,8 +30,8 @@ const field_t	dir2sf_flds[] = {
 };
 
 const field_t	dir2_inou_flds[] = {
-	{ "i8", FLDT_DIR2_INO8, 0, dir2_inou_i8_count, FLD_COUNT, TYP_INODE },
-	{ "i4", FLDT_DIR2_INO4, 0, dir2_inou_i4_count, FLD_COUNT, TYP_INODE },
+	{ "i8", FLDT_DIR2_INO8, NULL, dir2_inou_i8_count, FLD_COUNT, TYP_INODE},
+	{ "i4", FLDT_DIR2_INO4, NULL, dir2_inou_i4_count, FLD_COUNT, TYP_INODE},
 	{ NULL }
 };
 
@@ -179,8 +167,8 @@ dir2_sf_entry_size(
 	sf = (struct xfs_dir2_sf_hdr *)((char *)obj + byteize(startoff));
 	e = xfs_dir2_sf_firstentry(sf);
 	for (i = 0; i < idx; i++)
-		e = M_DIROPS(mp)->sf_nextentry(sf, e);
-	return bitize((int)M_DIROPS(mp)->sf_entsize(sf, e->namelen));
+		e = libxfs_dir2_sf_nextentry(mp, sf, e);
+	return bitize((int)libxfs_dir2_sf_entsize(mp, sf, e->namelen));
 }
 
 /*ARGSUSED*/
@@ -224,7 +212,7 @@ dir2_sf_list_offset(
 	sf = (struct xfs_dir2_sf_hdr *)((char *)obj + byteize(startoff));
 	e = xfs_dir2_sf_firstentry(sf);
 	for (i = 0; i < idx; i++)
-		e = M_DIROPS(mp)->sf_nextentry(sf, e);
+		e = libxfs_dir2_sf_nextentry(mp, sf, e);
 	return bitize((int)((char *)e - (char *)sf));
 }
 
@@ -244,7 +232,7 @@ dir2sf_size(
 	sf = (struct xfs_dir2_sf_hdr *)((char *)obj + byteize(startoff));
 	e = xfs_dir2_sf_firstentry(sf);
 	for (i = 0; i < sf->count; i++)
-		e = M_DIROPS(mp)->sf_nextentry(sf, e);
+		e = libxfs_dir2_sf_nextentry(mp, sf, e);
 	return bitize((int)((char *)e - (char *)sf));
 }
 

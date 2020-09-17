@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -189,7 +177,7 @@ init(
 		case 's':
 			summaryflag = 1;
 			break;
-		case '?':
+		default:
 			return usage();
 		}
 	}
@@ -231,45 +219,38 @@ scan_ag(
 	pop_cur();
 }
 
+static int
+scan_agfl(
+	struct xfs_mount	*mp,
+	xfs_agblock_t		bno,
+	void			*priv)
+{
+	addtohist(*(xfs_agnumber_t *)priv, bno, 1);
+	return 0;
+}
+
 static void
 scan_freelist(
 	xfs_agf_t	*agf)
 {
 	xfs_agnumber_t	seqno = be32_to_cpu(agf->agf_seqno);
-	xfs_agfl_t	*agfl;
-	xfs_agblock_t	bno;
-	int		i;
-	__be32		*agfl_bno;
 
 	if (be32_to_cpu(agf->agf_flcount) == 0)
 		return;
 	push_cur();
 	set_cur(&typtab[TYP_AGFL], XFS_AG_DADDR(mp, seqno, XFS_AGFL_DADDR(mp)),
 				XFS_FSS_TO_BB(mp, 1), DB_RING_IGN, NULL);
-	agfl = iocur_top->data;
-	i = be32_to_cpu(agf->agf_flfirst);
-
-	/* open coded XFS_BUF_TO_AGFL_BNO */
-	agfl_bno = xfs_sb_version_hascrc(&mp->m_sb) ? &agfl->agfl_bno[0]
-						   : (__be32 *)agfl;
 
 	/* verify agf values before proceeding */
-	if (be32_to_cpu(agf->agf_flfirst) >= XFS_AGFL_SIZE(mp) ||
-	    be32_to_cpu(agf->agf_fllast) >= XFS_AGFL_SIZE(mp)) {
+	if (be32_to_cpu(agf->agf_flfirst) >= libxfs_agfl_size(mp) ||
+	    be32_to_cpu(agf->agf_fllast) >= libxfs_agfl_size(mp)) {
 		dbprintf(_("agf %d freelist blocks bad, skipping "
-			  "freelist scan\n"), i);
+			  "freelist scan\n"), seqno);
 		pop_cur();
 		return;
 	}
 
-	for (;;) {
-		bno = be32_to_cpu(agfl_bno[i]);
-		addtohist(seqno, bno, 1);
-		if (i == be32_to_cpu(agf->agf_fllast))
-			break;
-		if (++i == XFS_AGFL_SIZE(mp))
-			i = 0;
-	}
+	libxfs_agfl_walk(mp, agf, iocur_top->bp, scan_agfl, &seqno);
 	pop_cur();
 }
 

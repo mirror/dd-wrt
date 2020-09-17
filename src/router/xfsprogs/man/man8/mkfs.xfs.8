@@ -5,7 +5,7 @@ mkfs.xfs \- construct an XFS filesystem
 .B mkfs.xfs
 [
 .B \-b
-.I block_size
+.I block_size_options
 ] [
 .B \-m
 .I global_metadata_options
@@ -33,7 +33,7 @@ mkfs.xfs \- construct an XFS filesystem
 .I realtime_section_options
 ] [
 .B \-s
-.I sector_size
+.I sector_size_options
 ] [
 .B \-L
 .I label
@@ -115,9 +115,9 @@ When specifying parameters in units of sectors or filesystem blocks, the
 .B \-s
 option or the
 .B \-b
-option first needs to be added to the command line.
-Failure to specify the size of the units will result in illegal value errors
-when parameters are quantified in those units.
+option may be used to specify the size of the sector or block.
+If the size of the block or sector is not specified, the default sizes
+(block: 4KiB, sector: 512B) will be used.
 .PP
 Many feature options allow an optional argument of 0 or 1, to explicitly
 disable or enable the functionality.
@@ -126,27 +126,21 @@ disable or enable the functionality.
 .BI \-b " block_size_options"
 This option specifies the fundamental block size of the filesystem.
 The valid
-.I block_size_options
-are:
-.BI log= value
-or
+.I block_size_option
+is:
+.RS 1.2i
+.TP
 .BI size= value
-and only one can be supplied.
-The block size is specified either as a base two logarithm value with
-.BR log= ,
-or in bytes with
-.BR size= .
-The default value is 4096 bytes (4 KiB), the minimum is 512, and the
+The filesystem block size is specified with a
+.I value
+in bytes. The default value is 4096 bytes (4 KiB), the minimum is 512, and the
 maximum is 65536 (64 KiB).
-.IP
-To specify any options on the command line in units of filesystem blocks, this
-option must be specified first so that the filesystem block size is
-applied consistently to all options.
 .IP
 Although
 .B mkfs.xfs
 will accept any of these values and create a valid filesystem,
 XFS on Linux can only mount filesystems with pagesize or smaller blocks.
+.RE
 .TP
 .BI \-m " global_metadata_options"
 These options specify metadata format options that either apply to the entire
@@ -233,7 +227,7 @@ available for the data forks of regular files.
 .IP
 By default,
 .B mkfs.xfs
-will not create reference count btrees and therefore will not enable the
+will create reference count btrees and therefore will enable the
 reflink feature.  This feature is only available for filesystems created with
 the (default)
 .B \-m crc=1
@@ -241,6 +235,13 @@ option set. When the option
 .B \-m crc=0
 is used, the reference count btree feature is not supported and reflink is
 disabled.
+.IP
+Note: the filesystem DAX mount option (
+.B \-o dax
+) is incompatible with
+reflink-enabled XFS filesystems.  To use filesystem DAX with XFS, specify the
+.B \-m reflink=0
+option to mkfs.xfs to disable the reflink feature.
 .RE
 .TP
 .BI \-d " data_section_options"
@@ -284,7 +285,8 @@ Set the copy-on-write extent size hint on all inodes created by
 .BR mkfs.xfs "."
 The value must be provided in units of filesystem blocks.
 If the value is zero, the default value (currently 32 blocks) will be used.
-Directories will pass on this hint to newly created children.
+Directories will pass on this hint to newly created regular files and
+directories.
 .TP
 .BI name= value
 This can be used to specify the name of the special file containing
@@ -379,20 +381,33 @@ this information.
 If set, all inodes created by
 .B mkfs.xfs
 will be created with the realtime flag set.
-Directories will pass on this flag to newly created children.
+Directories will pass on this flag to newly created regular files and
+directories.
 .TP
 .BI projinherit= value
 All inodes created by
 .B mkfs.xfs
 will be assigned this project quota id.
-Directories will pass on the project id to newly created children.
+Directories will pass on the project id to newly created regular files and
+directories.
 .TP
 .BI extszinherit= value
 All inodes created by
 .B mkfs.xfs
 will have this extent size hint applied.
 The value must be provided in units of filesystem blocks.
-Directories will pass on this hint to newly created children.
+Directories will pass on this hint to newly created regular files and
+directories.
+.TP
+.BI daxinherit= value
+If set, all inodes created by
+.B mkfs.xfs
+will be created with the DAX flag set.
+Directories will pass on this flag to newly created regular files and
+directories.
+By default,
+.B mkfs.xfs
+will not enable DAX mode.
 .RE
 .TP
 .B \-f
@@ -419,15 +434,11 @@ The valid
 are:
 .RS 1.2i
 .TP
-.BI size= value " | log=" value " | perblock=" value
+.BI size= value " | perblock=" value
 The inode size is specified either as a
 .I value
 in bytes with
-.BR size= ,
-a base two logarithm
-.I value
-with
-.BR log= ,
+.BR size=
 or as the number fitting in a filesystem block with
 .BR perblock= .
 The minimum (and default)
@@ -648,15 +659,10 @@ These options specify the version and size parameters for the naming
 are:
 .RS 1.2i
 .TP
-.BI size= value " | log=" value
-The block size is specified either as a
+.BI size= value
+The directory block size is specified with a
 .I value
-in bytes with
-.BR size= ,
-or as a base two logarithm
-.I value
-.RB "with " log= .
-The block size must be a power of 2 and cannot be less than the
+in bytes.  The block size must be a power of 2 and cannot be less than the
 filesystem block size.
 The default size
 .I value
@@ -888,25 +894,24 @@ This option disables stripe size detection, enforcing a realtime device with no
 stripe geometry.
 .RE
 .TP
-.BI \-s " sector_size"
+.BI \-s " sector_size_options"
 This option specifies the fundamental sector size of the filesystem.
-The
-.I sector_size
-is specified either as a value in bytes with
+The valid
+.I sector_size_option
+is:
+.RS 1.2i
+.TP
 .BI size= value
-or as a base two logarithm value with
-.BI log= value.
-The default
+The sector size is specified with a
+.I value
+in bytes.  The default
 .I sector_size
 is 512 bytes. The minimum value for sector size is
 512; the maximum is 32768 (32 KiB). The
 .I sector_size
 must be a power of 2 size and cannot be made larger than the
 filesystem block size.
-.IP
-To specify any options on the command line in units of sectors, this
-option must be specified first so that the sector size is
-applied consistently to all options.
+.RE
 .TP
 .BI \-L " label"
 Set the filesystem

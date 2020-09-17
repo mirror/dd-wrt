@@ -1,21 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2017 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "libxfs.h"
 #include "command.h"
@@ -226,10 +212,10 @@ dir_has_rightsib(
 	struct xfs_da3_icnode_hdr	nhdr;
 
 	if (level > 0) {
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.forw != 0;
 	}
-	M_DIROPS(mp)->leaf_hdr_from_disk(&lhdr, block);
+	libxfs_dir2_leaf_hdr_from_disk(mp, &lhdr, block);
 	return lhdr.forw != 0;
 }
 
@@ -243,10 +229,10 @@ dir_level(
 	switch (((struct xfs_da_intnode *)block)->hdr.info.magic) {
 	case cpu_to_be16(XFS_DIR2_LEAF1_MAGIC):
 	case cpu_to_be16(XFS_DIR2_LEAFN_MAGIC):
-		M_DIROPS(mp)->leaf_hdr_from_disk(&lhdr, block);
+		libxfs_dir2_leaf_hdr_from_disk(mp, &lhdr, block);
 		return 0;
 	case cpu_to_be16(XFS_DA_NODE_MAGIC):
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.level;
 	default:
 		return -1;
@@ -263,10 +249,10 @@ dir3_level(
 	switch (((struct xfs_da_intnode *)block)->hdr.info.magic) {
 	case cpu_to_be16(XFS_DIR3_LEAF1_MAGIC):
 	case cpu_to_be16(XFS_DIR3_LEAFN_MAGIC):
-		M_DIROPS(mp)->leaf_hdr_from_disk(&lhdr, block);
+		libxfs_dir2_leaf_hdr_from_disk(mp, &lhdr, block);
 		return 0;
 	case cpu_to_be16(XFS_DA3_NODE_MAGIC):
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.level;
 	default:
 		return -1;
@@ -282,7 +268,7 @@ attr_has_rightsib(
 	struct xfs_da3_icnode_hdr	nhdr;
 
 	if (level > 0) {
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.forw != 0;
 	}
 	xfs_attr3_leaf_hdr_to_disk(mp->m_attr_geo, &lhdr, block);
@@ -301,7 +287,7 @@ attr_level(
 		xfs_attr3_leaf_hdr_to_disk(mp->m_attr_geo, &lhdr, block);
 		return 0;
 	case cpu_to_be16(XFS_DA_NODE_MAGIC):
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.level;
 	default:
 		return -1;
@@ -320,7 +306,7 @@ attr3_level(
 		xfs_attr3_leaf_hdr_to_disk(mp->m_attr_geo, &lhdr, block);
 		return 0;
 	case cpu_to_be16(XFS_DA3_NODE_MAGIC):
-		M_DIROPS(mp)->node_hdr_from_disk(&nhdr, block);
+		libxfs_da3_node_hdr_from_disk(mp, &nhdr, block);
 		return nhdr.level;
 	default:
 		return -1;

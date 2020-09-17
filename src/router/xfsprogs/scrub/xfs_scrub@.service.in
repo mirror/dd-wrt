@@ -1,0 +1,20 @@
+[Unit]
+Description=Online XFS Metadata Check for %I
+OnFailure=xfs_scrub_fail@%i.service
+Documentation=man:xfs_scrub(8)
+
+[Service]
+Type=oneshot
+PrivateNetwork=true
+ProtectSystem=full
+ProtectHome=read-only
+# Disable private /tmp just in case %i is a path under /tmp.
+PrivateTmp=no
+AmbientCapabilities=CAP_SYS_ADMIN CAP_FOWNER CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_SYS_RAWIO
+NoNewPrivileges=yes
+User=nobody
+IOSchedulingClass=idle
+CPUSchedulingPolicy=idle
+Environment=SERVICE_MODE=1
+ExecStart=@sbindir@/xfs_scrub @scrub_args@ %I
+SyslogIdentifier=%N

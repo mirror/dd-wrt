@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef LOGPRINT_H
 #define LOGPRINT_H
@@ -41,13 +29,13 @@ extern void print_xlog_record_line(void);
 extern void print_xlog_op_line(void);
 extern void print_stars(void);
 
-extern xfs_inode_log_format_t *
-	xfs_inode_item_format_convert(char *, uint, xfs_inode_log_format_t *);
+extern struct xfs_inode_log_format *
+	xfs_inode_item_format_convert(char *, uint, struct xfs_inode_log_format *);
 
 extern int xlog_print_trans_efi(char **ptr, uint src_len, int continued);
-extern void xlog_recover_print_efi(xlog_recover_item_t *item);
+extern void xlog_recover_print_efi(struct xlog_recover_item *item);
 extern int xlog_print_trans_efd(char **ptr, uint len);
-extern void xlog_recover_print_efd(xlog_recover_item_t *item);
+extern void xlog_recover_print_efd(struct xlog_recover_item *item);
 
 extern int xlog_print_trans_rui(char **ptr, uint src_len, int continued);
 extern void xlog_recover_print_rui(struct xlog_recover_item *item);

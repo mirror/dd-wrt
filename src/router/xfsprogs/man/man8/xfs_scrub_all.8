@@ -1,0 +1,42 @@
+.TH xfs_scrub_all 8
+.SH NAME
+xfs_scrub_all \- scrub all mounted XFS filesystems
+.SH SYNOPSIS
+.B xfs_scrub_all
+[
+.B \-hV
+]
+.SH DESCRIPTION
+.B xfs_scrub_all
+attempts to read and check all the metadata on all mounted XFS filesystems.
+The online scrub is performed via the
+.B xfs_scrub
+tool, either by running it directly or by using systemd to start it
+in a restricted fashion.
+Mounted filesystems are mapped to physical storage devices so that scrub
+operations can be run in parallel so long as no two scrubbers access
+the same device simultaneously.
+.SH OPTIONS
+.TP
+.B \-h
+Display help.
+.TP
+.B \-V
+Prints the version number and exits.
+.SH EXIT CODE
+The exit code returned by
+.B xfs_scrub_all
+is the sum of the following conditions:
+.br
+\	0\	\-\ No errors
+.br
+\	4\	\-\ File system errors left uncorrected
+.br
+\	8\	\-\ Operational error
+.br
+\	16\	\-\ Usage or syntax error
+.TP
+These are the same error codes returned by xfs_scrub.
+.br
+.SH SEE ALSO
+.BR xfs_scrub (8).

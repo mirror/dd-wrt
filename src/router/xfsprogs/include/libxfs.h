@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #ifndef __LIBXFS_H__
@@ -28,7 +16,7 @@
 #include "cache.h"
 #include "bitops.h"
 #include "kmem.h"
-#include "radix-tree.h"
+#include "libfrog/radix-tree.h"
 #include "atomic.h"
 
 #include "xfs_types.h"
@@ -43,13 +31,17 @@
 
 
 /* CRC stuff, buffer API dependent on it */
-extern uint32_t crc32_le(uint32_t crc, unsigned char const *p, size_t len);
 extern uint32_t crc32c_le(uint32_t crc, unsigned char const *p, size_t len);
-
-#define crc32(c,p,l)	crc32_le((c),(unsigned char const *)(p),(l))
 #define crc32c(c,p,l)	crc32c_le((c),(unsigned char const *)(p),(l))
 
+/* fake up kernel's iomap, (not) used in xfs_bmap.[ch] */
+struct iomap;
 #include "xfs_cksum.h"
+
+#define __round_mask(x, y) ((__typeof__(x))((y)-1))
+#define round_up(x, y) ((((x)-1) | __round_mask(x, y))+1)
+#define unlikely(x) (x)
+#define timespec64 timespec
 
 /*
  * This mirrors the kernel include for xfs_buf.h - it's implicitly included in
@@ -61,26 +53,30 @@ extern uint32_t crc32c_le(uint32_t crc, unsigned char const *p, size_t len);
 #include "xfs_sb.h"
 #include "xfs_mount.h"
 #include "xfs_defer.h"
+#include "xfs_errortag.h"
 #include "xfs_da_format.h"
 #include "xfs_da_btree.h"
+#include "xfs_inode.h"
 #include "xfs_dir2.h"
+#include "xfs_dir2_priv.h"
 #include "xfs_bmap_btree.h"
 #include "xfs_alloc_btree.h"
 #include "xfs_ialloc_btree.h"
 #include "xfs_attr_sf.h"
 #include "xfs_inode_fork.h"
 #include "xfs_inode_buf.h"
-#include "xfs_inode.h"
 #include "xfs_alloc.h"
 #include "xfs_btree.h"
 #include "xfs_btree_trace.h"
 #include "xfs_bmap.h"
 #include "xfs_trace.h"
 #include "xfs_trans.h"
+#include "xfs_ag.h"
 #include "xfs_rmap_btree.h"
 #include "xfs_rmap.h"
 #include "xfs_refcount_btree.h"
 #include "xfs_refcount.h"
+#include "xfs_btree_staging.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
@@ -95,7 +91,7 @@ extern uint32_t crc32c_le(uint32_t crc, unsigned char const *p, size_t len);
 /*
  * Argument structure for libxfs_init().
  */
-typedef struct {
+typedef struct libxfs_xinit {
 				/* input parameters */
 	char            *volname;       /* pathname of volume */
 	char            *dname;         /* pathname of data "subvolume" */
@@ -131,7 +127,6 @@ typedef struct {
 	int		bcache_flags;	/* cache init flags */
 } libxfs_init_t;
 
-#define LIBXFS_EXIT_ON_FAILURE	0x0001	/* exit the program if a call fails */
 #define LIBXFS_ISREADONLY	0x0002	/* disallow all mounted filesystems */
 #define LIBXFS_ISINACTIVE	0x0004	/* allow mounted only if mounted ro */
 #define LIBXFS_DANGEROUSLY	0x0008	/* repairing a device mounted ro    */
@@ -141,14 +136,12 @@ typedef struct {
 extern char	*progname;
 extern xfs_lsn_t libxfs_max_lsn;
 extern int	libxfs_init (libxfs_init_t *);
-extern void	libxfs_destroy (void);
+void		libxfs_destroy(struct libxfs_xinit *li);
 extern int	libxfs_device_to_fd (dev_t);
 extern dev_t	libxfs_device_open (char *, int, int, int);
 extern void	libxfs_device_close (dev_t);
 extern int	libxfs_device_alignment (void);
 extern void	libxfs_report(FILE *);
-extern void	platform_findsizes(char *path, int fd, long long *sz, int *bsz);
-extern int	platform_nproc(void);
 
 /* check or write log footer: specify device, log size in blocks & uuid */
 typedef char	*(libxfs_get_block_t)(char *, int, void *);
@@ -164,23 +157,15 @@ extern int	libxfs_log_header(char *, uuid_t *, int, int, int, xfs_lsn_t,
 
 
 /* Shared utility routines */
-extern unsigned int	libxfs_log2_roundup(unsigned int i);
 
 extern int	libxfs_alloc_file_space (struct xfs_inode *, xfs_off_t,
 				xfs_off_t, int, int);
-
-extern void	libxfs_fs_repair_cmn_err(int, struct xfs_mount *, char *, ...);
-extern void	libxfs_fs_cmn_err(int, struct xfs_mount *, char *, ...);
 
 /* XXX: this is messy and needs fixing */
 #ifndef __LIBXFS_INTERNAL_XFS_H__
 extern void cmn_err(int, char *, ...);
 enum ce { CE_DEBUG, CE_CONT, CE_NOTE, CE_WARN, CE_ALERT, CE_PANIC };
 #endif
-
-
-extern int		libxfs_nproc(void);
-extern unsigned long	libxfs_physmem(void);	/* in kilobytes */
 
 #include "xfs_ialloc.h"
 
@@ -209,28 +194,26 @@ xfs_inobt_is_sparse_disk(
 
 static inline void
 libxfs_bmbt_disk_get_all(
-	struct xfs_bmbt_rec	*rp,
+	struct xfs_bmbt_rec	*rec,
 	struct xfs_bmbt_irec	*irec)
 {
-	struct xfs_bmbt_rec_host hrec;
+	uint64_t		l0 = get_unaligned_be64(&rec->l0);
+	uint64_t		l1 = get_unaligned_be64(&rec->l1);
 
-	hrec.l0 = get_unaligned_be64(&rp->l0);
-	hrec.l1 = get_unaligned_be64(&rp->l1);
-	libxfs_bmbt_get_all(&hrec, irec);
+	irec->br_startoff = (l0 & xfs_mask64lo(64 - BMBT_EXNTFLAG_BITLEN)) >> 9;
+	irec->br_startblock = ((l0 & xfs_mask64lo(9)) << 43) | (l1 >> 21);
+	irec->br_blockcount = l1 & xfs_mask64lo(21);
+	if (l0 >> (64 - BMBT_EXNTFLAG_BITLEN))
+		irec->br_state = XFS_EXT_UNWRITTEN;
+	else
+		irec->br_state = XFS_EXT_NORM;
 }
 
 /* XXX: this is clearly a bug - a shared header needs to export this */
 /* xfs_rtalloc.c */
 int libxfs_rtfree_extent(struct xfs_trans *, xfs_rtblock_t, xfs_extlen_t);
+bool libxfs_verify_rtbno(struct xfs_mount *mp, xfs_rtblock_t rtbno);
 
-/* XXX: need parts of xfs_attr.h in userspace */
-#define LIBXFS_ATTR_ROOT	0x0002	/* use attrs in root namespace */
-#define LIBXFS_ATTR_SECURE	0x0008	/* use attrs in security namespace */
-#define LIBXFS_ATTR_CREATE	0x0010	/* create, but fail if attr exists */
-#define LIBXFS_ATTR_REPLACE	0x0020	/* set, but fail if attr not exists */
-
-int xfs_attr_remove(struct xfs_inode *dp, const unsigned char *name, int flags);
-int xfs_attr_set(struct xfs_inode *dp, const unsigned char *name,
-		 unsigned char *value, int valuelen, int flags);
+#include "xfs_attr.h"
 
 #endif	/* __LIBXFS_H__ */

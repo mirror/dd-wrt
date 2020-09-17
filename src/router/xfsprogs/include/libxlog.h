@@ -1,18 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef LIBXLOG_H
 #define LIBXLOG_H
@@ -87,7 +75,6 @@ extern libxfs_init_t	x;
 extern int xlog_is_dirty(struct xfs_mount *, struct xlog *, libxfs_init_t *,
 			 int);
 extern struct xfs_buf *xlog_get_bp(struct xlog *, int);
-extern void	xlog_put_bp(struct xfs_buf *);
 extern int	xlog_bread(struct xlog *log, xfs_daddr_t blk_no, int nbblks,
 				xfs_buf_t *bp, char **offset);
 extern int	xlog_bread_noalign(struct xlog *log, xfs_daddr_t blk_no,
@@ -100,20 +87,19 @@ extern int	xlog_find_cycle_start(struct xlog *log, xfs_buf_t *bp,
 extern int	xlog_find_tail(struct xlog *log, xfs_daddr_t *head_blk,
 				xfs_daddr_t *tail_blk);
 
-extern int	xlog_test_footer(struct xlog *log);
 extern int	xlog_recover(struct xlog *log, int readonly);
 extern void	xlog_recover_print_data(char *p, int len);
-extern void	xlog_recover_print_logitem(xlog_recover_item_t *item);
-extern void	xlog_recover_print_trans_head(xlog_recover_t *tr);
+extern void	xlog_recover_print_logitem(struct xlog_recover_item *item);
+extern void	xlog_recover_print_trans_head(struct xlog_recover *tr);
 extern int	xlog_print_find_oldest(struct xlog *log, xfs_daddr_t *last_blk);
 
 /* for transactional view */
-extern void	xlog_recover_print_trans_head(xlog_recover_t *tr);
-extern void	xlog_recover_print_trans(xlog_recover_t *trans,
+extern void	xlog_recover_print_trans_head(struct xlog_recover *tr);
+extern void	xlog_recover_print_trans(struct xlog_recover *trans,
 				struct list_head *itemq, int print);
 extern int	xlog_do_recovery_pass(struct xlog *log, xfs_daddr_t head_blk,
 				xfs_daddr_t tail_blk, int pass);
-extern int	xlog_recover_do_trans(struct xlog *log, xlog_recover_t *trans,
+extern int	xlog_recover_do_trans(struct xlog *log, struct xlog_recover *trans,
 				int pass);
 extern int	xlog_header_check_recover(xfs_mount_t *mp,
 				xlog_rec_header_t *head);

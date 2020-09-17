@@ -21,6 +21,13 @@ If you wish to check the consistency of an XFS filesystem,
 or repair a damaged or corrupt XFS filesystem,
 see
 .BR xfs_repair (8).
+.PP
+However, the system administrator can force
+.B fsck.xfs
+to run
+.BR xfs_repair (8)
+at boot time by creating a /forcefsck file or booting the system with
+"fsck.mode=force" on the kernel command line.
 .
 .SH FILES
 .IR /etc/fstab .

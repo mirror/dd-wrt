@@ -8,6 +8,9 @@ case "${1}" in
 		then
 			update-initramfs -u
 		fi
+		if [ -x /bin/systemctl ]; then
+			/bin/systemctl daemon-reload 2>&1 || true
+		fi
 		;;
 
 	abort-upgrade|abort-remove|abort-deconfigure)

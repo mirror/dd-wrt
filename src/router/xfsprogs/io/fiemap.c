@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2010 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "platform_defs.h"
@@ -49,6 +37,8 @@ fiemap_help(void)
 " -l -- also displays the length of each extent in 512-byte blocks.\n"
 " -n -- query n extents.\n"
 " -v -- Verbose information\n"
+" offset is the starting offset to map, and is optional.  If offset is\n"
+" specified, mapping length may (optionally) be specified as well."
 "\n"));
 }
 
@@ -101,6 +91,7 @@ print_verbose(
 	char			lbuf[48];
 	char			bbuf[48];
 	char			flgbuf[16];
+	int			num_printed = 0;
 
 	llast = BTOBBT(last_logical);
 	lstart = BTOBBT(extent->fe_logical);
@@ -118,14 +109,15 @@ print_verbose(
 			flg_w, _("FLAGS"));
 	}
 
-	if (lstart != llast) {
+	if (lstart > llast) {
 		print_hole(foff_w, boff_w, tot_w, cur_extent, 0, false, llast,
 			   lstart);
 		cur_extent++;
+		num_printed++;
 	}
 
 	if (cur_extent == max_extents)
-		return 1;
+		return num_printed;
 
 	snprintf(lbuf, sizeof(lbuf), "[%llu..%llu]:",
 		 (unsigned long long)lstart, lstart + len - 1ULL);
@@ -135,7 +127,9 @@ print_verbose(
 	printf("%4d: %-*s %-*s %*llu %*s\n", cur_extent, foff_w, lbuf,
 	       boff_w, bbuf, tot_w, (unsigned long long)len, flg_w, flgbuf);
 
-	return 2;
+	num_printed++;
+
+	return num_printed;
 }
 
 static int
@@ -149,29 +143,33 @@ print_plain(
 	__u64			llast;
 	__u64			block;
 	__u64			len;
+	int			num_printed = 0;
 
 	llast = BTOBBT(last_logical);
 	lstart = BTOBBT(extent->fe_logical);
 	len = BTOBBT(extent->fe_length);
 	block = BTOBBT(extent->fe_physical);
 
-	if (lstart != llast) {
+	if (lstart > llast) {
 		print_hole(0, 0, 0, cur_extent, lflag, true, llast, lstart);
 		cur_extent++;
+		num_printed++;
 	}
 
 	if (cur_extent == max_extents)
-		return 1;
+		return num_printed;
 
 	printf("\t%d: [%llu..%llu]: %llu..%llu", cur_extent,
 	       (unsigned long long)lstart, lstart + len - 1ULL,
 	       (unsigned long long)block, block + len - 1ULL);
 
+	num_printed++;
+
 	if (lflag)
 		printf(_(" %llu blocks\n"), (unsigned long long)len);
 	else
 		printf("\n");
-	return 2;
+	return num_printed;
 }
 
 /*
@@ -216,13 +214,13 @@ calc_print_format(
 	}
 }
 
-int
+static int
 fiemap_f(
 	int		argc,
 	char		**argv)
 {
 	struct fiemap	*fiemap;
-	int		last = 0;
+	int		done = 0;
 	int		lflag = 0;
 	int		vflag = 0;
 	int		fiemap_flags = FIEMAP_FLAG_SYNC;
@@ -235,8 +233,14 @@ fiemap_f(
 	int		boff_w = 16;
 	int		tot_w = 5;	/* 5 since its just one number */
 	int		flg_w = 5;
-	__u64		last_logical = 0;
+	__u64		last_logical = 0;	/* last extent offset handled */
+	off64_t		start_offset = 0;	/* mapping start */
+	off64_t		length = -1LL;		/* mapping length */
+	off64_t		range_end = -1LL;	/* mapping end*/
+	size_t		fsblocksize, fssectsize;
 	struct stat	st;
+
+	init_cvtnum(&fsblocksize, &fssectsize);
 
 	while ((c = getopt(argc, argv, "aln:v")) != EOF) {
 		switch (c) {
@@ -253,8 +257,32 @@ fiemap_f(
 			vflag++;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&fiemap_cmd);
 		}
+	}
+
+	/* Range start (optional) */
+	if (optind < argc) {
+		start_offset = cvtnum(fsblocksize, fssectsize, argv[optind]);
+		if (start_offset < 0) {
+			printf("non-numeric offset argument -- %s\n", argv[optind]);
+			exitcode = 1;
+			return 0;
+		}
+		last_logical = start_offset;
+		optind++;
+	}
+
+	/* Range length (optional if range start was specified) */
+	if (optind < argc) {
+		length = cvtnum(fsblocksize, fssectsize, argv[optind]);
+		if (length < 0) {
+			printf("non-numeric len argument -- %s\n", argv[optind]);
+			exitcode = 1;
+			return 0;
+		}
+		range_end = start_offset + length;
 	}
 
 	map_size = sizeof(struct fiemap) +
@@ -269,12 +297,11 @@ fiemap_f(
 
 	printf("%s:\n", file->name);
 
-	while (!last && (cur_extent != max_extents)) {
-
+	while (!done) {
 		memset(fiemap, 0, map_size);
 		fiemap->fm_flags = fiemap_flags;
 		fiemap->fm_start = last_logical;
-		fiemap->fm_length = -1LL;
+		fiemap->fm_length = range_end - last_logical;
 		fiemap->fm_extent_count = EXTENT_BATCH;
 
 		ret = ioctl(file->fd, FS_IOC_FIEMAP, (unsigned long)fiemap);
@@ -314,13 +341,23 @@ fiemap_f(
 			cur_extent += num_printed;
 			last_logical = extent->fe_logical + extent->fe_length;
 
+			/* Kernel has told us there are no more extents */
 			if (extent->fe_flags & FIEMAP_EXTENT_LAST) {
-				last = 1;
+				done = 1;
 				break;
 			}
 
-			if (cur_extent == max_extents)
+			/* We have exhausted the requested range */
+			if (last_logical >= range_end) {
+				done = 1;
 				break;
+			}
+
+			/* We have printed requested nr of extents */
+			if (cur_extent == max_extents) {
+				done = 1;
+				break;
+			}
 		}
 	}
 
@@ -336,9 +373,12 @@ fiemap_f(
 		return 0;
 	}
 
-	if (cur_extent && last_logical < st.st_size)
+	/* Print last hole to EOF or to end of requested range */
+	range_end = min((uint64_t)range_end, st.st_size);
+
+	if (cur_extent && last_logical < range_end)
 		print_hole(foff_w, boff_w, tot_w, cur_extent, lflag, !vflag,
-			   BTOBBT(last_logical), BTOBBT(st.st_size));
+			   BTOBBT(last_logical), BTOBBT(range_end));
 
 out:
 	free(fiemap);
@@ -353,7 +393,7 @@ fiemap_init(void)
 	fiemap_cmd.argmin = 0;
 	fiemap_cmd.argmax = -1;
 	fiemap_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
-	fiemap_cmd.args = _("[-alv] [-n nx]");
+	fiemap_cmd.args = _("[-alv] [-n nx] [offset [len]]");
 	fiemap_cmd.oneline = _("print block mapping for a file");
 	fiemap_cmd.help = fiemap_help;
 

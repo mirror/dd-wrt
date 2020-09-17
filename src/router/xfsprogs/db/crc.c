@@ -1,18 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2016 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation.
  */
 
 #include "libxfs.h"
@@ -28,6 +17,7 @@
 #include "output.h"
 #include "bit.h"
 #include "print.h"
+#include "crc.h"
 
 static int crc_f(int argc, char **argv);
 static void crc_help(void);
@@ -63,6 +53,7 @@ crc_f(
 	char		**argv)
 {
 	const struct xfs_buf_ops *stashed_ops = NULL;
+	struct xfs_buf_ops nowrite_ops;
 	extern char	*progname;
 	const field_t	*fields;
 	const ftattr_t	*fa;
@@ -137,11 +128,10 @@ crc_f(
 	}
 
 	if (invalidate) {
-		struct xfs_buf_ops nowrite_ops;
 		flist_t		*sfl;
 		int		bit_length;
 		int		parentoffset;
-		int		crc;
+		uint32_t	crc;
 
 		sfl = fl;
 		parentoffset = 0;
@@ -155,8 +145,8 @@ crc_f(
 		bit_length *= fcount(sfl->fld, iocur_top->data, parentoffset);
 		crc = getbitval(iocur_top->data, sfl->offset, bit_length,
 				BVUNSIGNED);
-		/* Off by one.. */
-		crc = cpu_to_be32(crc + 1);
+		/* Off by one, ignore endianness - we're just corrupting it. */
+		crc++;
 		setbitval(iocur_top->data, sfl->offset, bit_length, &crc);
 
 		/* Temporarily remove write verifier to write a bad CRC */
