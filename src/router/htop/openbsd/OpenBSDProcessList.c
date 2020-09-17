@@ -27,58 +27,9 @@ in the source distribution for its full text.
 #include <string.h>
 #include <unistd.h>
 
-/*{
-
-#include <kvm.h>
-
-typedef struct CPUData_ {
-   unsigned long long int totalTime;
-   unsigned long long int userTime;
-   unsigned long long int niceTime;
-   unsigned long long int sysTime;
-   unsigned long long int sysAllTime;
-   unsigned long long int spinTime;
-   unsigned long long int intrTime;
-   unsigned long long int idleTime;
-
-   unsigned long long int totalPeriod;
-   unsigned long long int userPeriod;
-   unsigned long long int nicePeriod;
-   unsigned long long int sysPeriod;
-   unsigned long long int sysAllPeriod;
-   unsigned long long int spinPeriod;
-   unsigned long long int intrPeriod;
-   unsigned long long int idlePeriod;
-} CPUData;
-
-typedef struct OpenBSDProcessList_ {
-   ProcessList super;
-   kvm_t* kd;
-
-   CPUData* cpus;
-
-} OpenBSDProcessList;
-
-}*/
-
-/*
- * avoid relying on or conflicting with MIN() and MAX() in sys/param.h
- */
-#ifndef MINIMUM
-#define MINIMUM(x, y)		((x) > (y) ? (y) : (x))
-#endif
-
-#ifndef MAXIMUM
-#define MAXIMUM(x, y)		((x) > (y) ? (x) : (y))
-#endif
-
-#ifndef CLAMP
-#define CLAMP(x, low, high)	(((x) > (high)) ? (high) : MAXIMUM(x, low))
-#endif
-
 static long fscale;
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId) {
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId) {
    int mib[] = { CTL_HW, HW_NCPU };
    int fmib[] = { CTL_KERN, KERN_FSCALE };
    int i, e;
@@ -90,7 +41,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, ui
    opl = xCalloc(1, sizeof(OpenBSDProcessList));
    pl = (ProcessList*) opl;
    size = sizeof(pl->cpuCount);
-   ProcessList_init(pl, Class(OpenBSDProcess), usersTable, pidWhiteList, userId);
+   ProcessList_init(pl, Class(OpenBSDProcess), usersTable, pidMatchList, userId);
 
    e = sysctl(mib, 2, &pl->cpuCount, &size, NULL, 0);
    if (e == -1 || pl->cpuCount < 1) {

@@ -8,7 +8,6 @@ in the source distribution for its full text.
 #include "TraceScreen.h"
 
 #include "CRT.h"
-#include "InfoScreen.h"
 #include "ProcessList.h"
 #include "ListItem.h"
 #include "IncSet.h"
@@ -27,21 +26,6 @@ in the source distribution for its full text.
 #include <sys/wait.h>
 #include <signal.h>
 
-/*{
-#include "InfoScreen.h"
-
-typedef struct TraceScreen_ {
-   InfoScreen super;
-   bool tracing;
-   int fdpair[2];
-   int child;
-   FILE* strace;
-   int fd_strace;
-   bool contLine;
-   bool follow;
-} TraceScreen;
-
-}*/
 
 static const char* const TraceScreenFunctions[] = {"Search ", "Filter ", "AutoScroll ", "Stop Tracing   ", "Done   ", NULL};
 

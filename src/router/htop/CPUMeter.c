@@ -16,34 +16,9 @@ in the source distribution for its full text.
 #include <string.h>
 #include <math.h>
 
-/*{
-#include "Meter.h"
-
-typedef enum {
-   CPU_METER_NICE = 0,
-   CPU_METER_NORMAL = 1,
-   CPU_METER_KERNEL = 2,
-   CPU_METER_IRQ = 3,
-   CPU_METER_SOFTIRQ = 4,
-   CPU_METER_STEAL = 5,
-   CPU_METER_GUEST = 6,
-   CPU_METER_IOWAIT = 7,
-   CPU_METER_FREQUENCY = 8,
-   CPU_METER_ITEMCOUNT = 9, // number of entries in this enum
-} CPUMeterValues;
-
-}*/
-
 int CPUMeter_attributes[] = {
    CPU_NICE, CPU_NORMAL, CPU_SYSTEM, CPU_IRQ, CPU_SOFTIRQ, CPU_STEAL, CPU_GUEST, CPU_IOWAIT
 };
-
-#ifndef MIN
-#define MIN(a,b) ((a)<(b)?(a):(b))
-#endif
-#ifndef MAX
-#define MAX(a,b) ((a)>(b)?(a):(b))
-#endif
 
 static void CPUMeter_init(Meter* this) {
    int cpu = this->param;
@@ -65,18 +40,12 @@ static void CPUMeter_updateValues(Meter* this, char* buffer, int size) {
    memset(this->values, 0, sizeof(double) * CPU_METER_ITEMCOUNT);
    double percent = Platform_setCPUValues(this, cpu);
    if (this->pl->settings->showCPUFrequency) {
-      /* Initial frequency is in MHz. Emit it as GHz if it's larger than 1000MHz */
       double cpuFrequency = this->values[CPU_METER_FREQUENCY];
-      char unit = 'M';
       char cpuFrequencyBuffer[16];
       if (cpuFrequency < 0) {
          xSnprintf(cpuFrequencyBuffer, sizeof(cpuFrequencyBuffer), "N/A");
       } else {
-         if (cpuFrequency > 1000) {
-            cpuFrequency /= 1000;
-            unit = 'G';
-         }
-         xSnprintf(cpuFrequencyBuffer, sizeof(cpuFrequencyBuffer), "%.3f%cHz", cpuFrequency, unit);
+         xSnprintf(cpuFrequencyBuffer, sizeof(cpuFrequencyBuffer), "%.0fMHz", cpuFrequency);
       }
       if (this->pl->settings->showCPUUsage) {
          xSnprintf(buffer, size, "%5.1f%% %s", percent, cpuFrequencyBuffer);

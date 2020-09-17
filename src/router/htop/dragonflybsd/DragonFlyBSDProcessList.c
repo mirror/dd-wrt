@@ -21,54 +21,6 @@ in the source distribution for its full text.
 #include <string.h>
 #include <sys/param.h>
 
-/*{
-
-#include <kvm.h>
-#include <sys/param.h>
-#include <osreldate.h>
-#include <sys/kinfo.h>
-#include <kinfo.h>
-#include <sys/jail.h>
-#include <sys/uio.h>
-#include <sys/resource.h>
-#include "Hashtable.h"
-#include "DragonFlyBSDProcess.h"
-
-#define JAIL_ERRMSGLEN	1024
-char jail_errmsg[JAIL_ERRMSGLEN];
-
-typedef struct CPUData_ {
-
-   double userPercent;
-   double nicePercent;
-   double systemPercent;
-   double irqPercent;
-   double idlePercent;
-   double systemAllPercent;
-
-} CPUData;
-
-typedef struct DragonFlyBSDProcessList_ {
-   ProcessList super;
-   kvm_t* kd;
-
-   unsigned long long int memWire;
-   unsigned long long int memActive;
-   unsigned long long int memInactive;
-   unsigned long long int memFree;
-
-   CPUData* cpus;
-
-   unsigned long   *cp_time_o;
-   unsigned long   *cp_time_n;
-
-   unsigned long  *cp_times_o;
-   unsigned long  *cp_times_n;
-
-   Hashtable *jails;
-} DragonFlyBSDProcessList;
-
-}*/
 
 #define _UNUSED_ __attribute__((unused))
 
@@ -89,12 +41,12 @@ static int MIB_kern_cp_time[2];
 static int MIB_kern_cp_times[2];
 static int kernelFScale;
 
-ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, uid_t userId) {
+ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidMatchList, uid_t userId) {
    size_t len;
    char errbuf[_POSIX2_LINE_MAX];
    DragonFlyBSDProcessList* dfpl = xCalloc(1, sizeof(DragonFlyBSDProcessList));
    ProcessList* pl = (ProcessList*) dfpl;
-   ProcessList_init(pl, Class(DragonFlyBSDProcess), usersTable, pidWhiteList, userId);
+   ProcessList_init(pl, Class(DragonFlyBSDProcess), usersTable, pidMatchList, userId);
 
    // physical memory in system: hw.physmem
    // physical page size: hw.pagesize
@@ -145,7 +97,7 @@ ProcessList* ProcessList_new(UsersTable* usersTable, Hashtable* pidWhiteList, ui
       sysctl(MIB_kern_cp_times, 2, dfpl->cp_times_o, &len, NULL, 0);
    }
 
-   pl->cpuCount = MAX(cpus, 1);
+   pl->cpuCount = MAXIMUM(cpus, 1);
 
    if (cpus == 1 ) {
      dfpl->cpus = xRealloc(dfpl->cpus, sizeof(CPUData));

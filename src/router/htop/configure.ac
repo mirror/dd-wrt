@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.65)
-AC_INIT([htop],[3.0.1],[htop@groups.io])
+AC_INIT([htop],[3.0.2],[htop@groups.io])
 
 AC_CONFIG_SRCDIR([htop.c])
 AC_CONFIG_AUX_DIR([.])
@@ -316,7 +316,6 @@ AM_CONDITIONAL([HTOP_SOLARIS], [test "$my_htop_platform" = solaris])
 AM_CONDITIONAL([HTOP_UNSUPPORTED], [test "$my_htop_platform" = unsupported])
 AC_SUBST(my_htop_platform)
 AC_CONFIG_FILES([Makefile htop.1])
-AC_CONFIG_FILES([scripts/MakeHeader.py], [chmod +x scripts/MakeHeader.py])
 AC_OUTPUT
 
 if test "$my_htop_platform" = "unsupported"
