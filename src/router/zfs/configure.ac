@@ -161,6 +161,8 @@ AC_CONFIG_FILES([
 	lib/libuutil/Makefile
 	lib/libzfs/Makefile
 	lib/libzfs/libzfs.pc
+	lib/libzfsbootenv/Makefile
+	lib/libzfsbootenv/libzfsbootenv.pc
 	lib/libzfs_core/Makefile
 	lib/libzfs_core/libzfs_core.pc
 	lib/libzpool/Makefile
@@ -338,6 +340,7 @@ AC_CONFIG_FILES([
 	tests/zfs-tests/tests/functional/inheritance/Makefile
 	tests/zfs-tests/tests/functional/inuse/Makefile
 	tests/zfs-tests/tests/functional/io/Makefile
+	tests/zfs-tests/tests/functional/l2arc/Makefile
 	tests/zfs-tests/tests/functional/large_files/Makefile
 	tests/zfs-tests/tests/functional/largest_pool/Makefile
 	tests/zfs-tests/tests/functional/libzfs/Makefile
@@ -354,7 +357,6 @@ AC_CONFIG_FILES([
 	tests/zfs-tests/tests/functional/nopwrite/Makefile
 	tests/zfs-tests/tests/functional/online_offline/Makefile
 	tests/zfs-tests/tests/functional/pam/Makefile
-	tests/zfs-tests/tests/functional/persist_l2arc/Makefile
 	tests/zfs-tests/tests/functional/pool_checkpoint/Makefile
 	tests/zfs-tests/tests/functional/pool_names/Makefile
 	tests/zfs-tests/tests/functional/poolversion/Makefile
