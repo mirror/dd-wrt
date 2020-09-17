@@ -27,7 +27,7 @@
 #include <syslog.h>
 #include <signal.h>
 
-int stop_process(char *name, char *desc)
+static int _stop_process(char *name, char *desc, int hard)
 {
 	if (!desc)
 		desc = name;
@@ -36,7 +36,10 @@ int stop_process(char *name, char *desc)
 
 	if (pidof(name) > 0) {
 		dd_loginfo(name, "%s successfully stopped\n", desc);
-		killall(name, SIGTERM);
+		if (hard)
+			killall(name, SIGKILL);
+		else
+			killall(name, SIGTERM);
 		int deadcounter = 20;
 		while (pidof(name) > 0 && deadcounter--) {
 			usleep(100 * 1000);
@@ -48,6 +51,16 @@ int stop_process(char *name, char *desc)
 		return 1;
 	}
 	return 0;
+}
+
+int stop_process(char *name, char *desc)
+{
+	    return _stop_process(name, desc, 0);
+}
+
+int stop_process_hard(char *name, char *desc)
+{
+	    return _stop_process(name, desc, 1);
 }
 
 void network_delay(char *service)
