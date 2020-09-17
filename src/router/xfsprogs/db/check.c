@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -53,8 +41,8 @@ typedef struct inodata {
 	struct inodata	*next;
 	nlink_t		link_set;
 	nlink_t		link_add;
-	char		isdir:1;
-	char		isreflink:1;
+	bool		isdir;
+	bool		isreflink;
 	char		security;
 	char		ilist;
 	xfs_ino_t	ino;
@@ -176,8 +164,19 @@ static const char	*typename[] = {
 	"btrmap",
 	"btrefcnt",
 	"rldata",
+	"cowdata",
 	NULL
 };
+
+/*
+ * Make sure typename has the same number of elements as there are DBM types.
+ * This function isn't called anywhere; we just use it to trip up the compiler.
+ */
+static inline void check_typename(void)
+{
+	BUILD_BUG_ON(ARRAY_SIZE(typename) != DBM_NDBM + 1);
+}
+
 static int		verbose;
 
 #define	CHECK_BLIST(b)	(blist_size && check_blist(b))
@@ -1008,7 +1007,7 @@ blocktrash_b(
 		bit_offset / NBBY, bit_offset % NBBY, modestr[mode]);
 }
 
-int
+static int
 blocktrash_f(
 	int		argc,
 	char		**argv)
@@ -1216,7 +1215,7 @@ out:
 	return 0;
 }
 
-int
+static int
 blockuse_f(
 	int		argc,
 	char		**argv)
@@ -1295,6 +1294,18 @@ check_blist(
 	return 0;
 }
 
+static inline bool
+dbmap_boundscheck(
+	xfs_agnumber_t	agno,
+	xfs_agblock_t	agbno)
+{
+	if (agno >= mp->m_sb.sb_agcount)
+		return false;
+	if (agbno >= mp->m_sb.sb_agblocks)
+		return false;
+	return true;
+}
+
 static void
 check_dbmap(
 	xfs_agnumber_t	agno,
@@ -1308,6 +1319,12 @@ check_dbmap(
 	dbm_t		d;
 
 	for (i = 0, p = &dbmap[agno][agbno]; i < len; i++, p++) {
+		if (!dbmap_boundscheck(agno, agbno + i)) {
+			dbprintf(_("block %u/%u beyond end of expected area\n"),
+				agno, agbno + i);
+			error++;
+			break;
+		}
 		d = (dbm_t)*p;
 		if (ignore_reflink && (d == DBM_UNKNOWN || d == DBM_DATA ||
 				       d == DBM_RLDATA))
@@ -1469,6 +1486,13 @@ check_range(
 	return 1;
 }
 
+static inline bool
+rdbmap_boundscheck(
+	xfs_rfsblock_t	bno)
+{
+	return bno < mp->m_sb.sb_rblocks;
+}
+
 static void
 check_rdbmap(
 	xfs_rfsblock_t	bno,
@@ -1479,6 +1503,12 @@ check_rdbmap(
 	char		*p;
 
 	for (i = 0, p = &dbmap[mp->m_sb.sb_agcount][bno]; i < len; i++, p++) {
+		if (!rdbmap_boundscheck(bno + i)) {
+			dbprintf(_("rtblock %llu beyond end of expected area\n"),
+				bno + i);
+			error++;
+			break;
+		}
 		if ((dbm_t)*p != type) {
 			if (!sflag || CHECK_BLIST(bno + i))
 				dbprintf(_("rtblock %llu expected type %s got "
@@ -1600,6 +1630,12 @@ check_set_dbmap(
 	check_dbmap(agno, agbno, len, type1, is_reflink(type2));
 	mayprint = verbose | blist_size;
 	for (i = 0, p = &dbmap[agno][agbno]; i < len; i++, p++) {
+		if (!dbmap_boundscheck(agno, agbno + i)) {
+			dbprintf(_("block %u/%u beyond end of expected area\n"),
+				agno, agbno + i);
+			error++;
+			break;
+		}
 		if (*p == DBM_RLDATA && type2 == DBM_DATA)
 			;	/* do nothing */
 		else if (*p == DBM_DATA && type2 == DBM_DATA)
@@ -1628,6 +1664,12 @@ check_set_rdbmap(
 	check_rdbmap(bno, len, type1);
 	mayprint = verbose | blist_size;
 	for (i = 0, p = &dbmap[mp->m_sb.sb_agcount][bno]; i < len; i++, p++) {
+		if (!rdbmap_boundscheck(bno + i)) {
+			dbprintf(_("rtblock %llu beyond end of expected area\n"),
+				bno + i);
+			error++;
+			break;
+		}
 		*p = (char)type2;
 		if (mayprint && (verbose || CHECK_BLIST(bno + i)))
 			dbprintf(_("setting rtblock %llu to %s\n"),
@@ -1865,7 +1907,7 @@ init(
 	inomap = xmalloc((mp->m_sb.sb_agcount + rt) * sizeof(*inomap));
 	inodata = xmalloc(mp->m_sb.sb_agcount * sizeof(*inodata));
 	inodata_hash_size =
-		(int)MAX(MIN(mp->m_sb.sb_icount /
+		(int)max(min(mp->m_sb.sb_icount /
 				(INODATA_AVG_HASH_LENGTH * mp->m_sb.sb_agcount),
 			     MAX_INODATA_HASH_SIZE),
 			 MIN_INODATA_HASH_SIZE);
@@ -2062,7 +2104,7 @@ process_block_dir_v2(
 	int		nex;
 	xfs_ino_t	parent;
 	int		v;
-	int		x;
+	int		i;
 
 	nex = blkmap_getn(blkmap, 0, mp->m_dir_geo->fsbcount, &bmp);
 	v = id->ilist || verbose;
@@ -2079,9 +2121,9 @@ process_block_dir_v2(
 		make_bbmap(&bbmap, nex, bmp);
 	set_cur(&typtab[TYP_DIR2], XFS_FSB_TO_DADDR(mp, bmp->startblock),
 		mp->m_dir_geo->fsbcount * blkbb, DB_RING_IGN, nex > 1 ? &bbmap : NULL);
-	for (x = 0; !v && x < nex; x++) {
-		for (b = bmp[x].startblock;
-		     !v && b < bmp[x].startblock + bmp[x].blockcount;
+	for (i = 0; !v && i < nex; i++) {
+		for (b = bmp[i].startblock;
+		     !v && b < bmp[i].startblock + bmp[i].blockcount;
 		     b++)
 			v = CHECK_BLIST(b);
 	}
@@ -2316,8 +2358,8 @@ process_data_dir_v2(
 		return NULLFSINO;
 	}
 	db = xfs_dir2_da_to_db(mp->m_dir_geo, dabno);
-	bf = M_DIROPS(mp)->data_bestfree_p(data);
-	ptr = (char *)M_DIROPS(mp)->data_unused_p(data);
+	bf = libxfs_dir2_data_bestfree_p(mp, data);
+	ptr = (char *)data + mp->m_dir_geo->data_entry_offset;
 	if (be32_to_cpu(block->magic) == XFS_DIR2_BLOCK_MAGIC ||
 	    be32_to_cpu(block->magic) == XFS_DIR3_BLOCK_MAGIC) {
 		btp = xfs_dir2_block_tail_p(mp->m_dir_geo, block);
@@ -2402,7 +2444,7 @@ process_data_dir_v2(
 					(int)((char *)dep - (char *)data));
 			error++;
 		}
-		tagp = M_DIROPS(mp)->data_entry_tag_p(dep);
+		tagp = libxfs_dir2_data_entry_tag_p(mp, dep);
 		if ((char *)tagp >= endptr) {
 			if (!sflag || v)
 				dbprintf(_("dir %lld block %d bad entry at %d\n"),
@@ -2416,8 +2458,8 @@ process_data_dir_v2(
 			(char *)dep - (char *)data);
 		xname.name = dep->name;
 		xname.len = dep->namelen;
-		dir_hash_add(mp->m_dirnameops->hashname(&xname), addr);
-		ptr += M_DIROPS(mp)->data_entsize(dep->namelen);
+		dir_hash_add(libxfs_dir2_hashname(mp, &xname), addr);
+		ptr += libxfs_dir2_data_entsize(mp, dep->namelen);
 		count++;
 		lastfree = 0;
 		lino = be64_to_cpu(dep->inumber);
@@ -2542,7 +2584,7 @@ process_data_dir_v2_freefind(
 	xfs_dir2_data_aoff_t	off;
 
 	off = (xfs_dir2_data_aoff_t)((char *)dup - (char *)data);
-	bf = M_DIROPS(mp)->data_bestfree_p(data);
+	bf = libxfs_dir2_data_bestfree_p(mp, data);
 	if (be16_to_cpu(dup->length) <
 			be16_to_cpu(bf[XFS_DIR2_DATA_FD_COUNT - 1].length))
 		return NULL;
@@ -2665,7 +2707,6 @@ process_inode(
 {
 	blkmap_t		*blkmap;
 	xfs_fsblock_t		bno = 0;
-	struct xfs_inode	xino;
 	inodata_t		*id = NULL;
 	xfs_ino_t		ino;
 	xfs_extnum_t		nextents = 0;
@@ -2680,9 +2721,14 @@ process_inode(
 	xfs_qcnt_t		bc = 0;
 	xfs_qcnt_t		ic = 0;
 	xfs_qcnt_t		rc = 0;
-	xfs_dqid_t		dqprid;
 	int			v = 0;
 	mode_t			mode;
+	uint16_t		diflags;
+	uint64_t		diflags2 = 0;
+	xfs_nlink_t		nlink;
+	xfs_dqid_t		uid;
+	xfs_dqid_t		gid;
+	xfs_dqid_t		prid;
 	static char		okfmts[] = {
 		0,				/* type 0 unused */
 		1 << XFS_DINODE_FMT_DEV,	/* FIFO */
@@ -2709,8 +2755,6 @@ process_inode(
 		"dev", "local", "extents", "btree", "uuid"
 	};
 
-	libxfs_inode_from_disk(&xino, dip);
-
 	ino = XFS_AGINO_TO_INO(mp, be32_to_cpu(agf->agf_seqno), agino);
 	if (!isfree) {
 		id = find_inode(ino, 1);
@@ -2725,25 +2769,38 @@ process_inode(
 		error++;
 		return;
 	}
-	if (!libxfs_dinode_good_version(mp, xino.i_d.di_version)) {
+	if (!libxfs_dinode_good_version(&mp->m_sb, dip->di_version)) {
 		if (isfree || v)
 			dbprintf(_("bad version number %#x for inode %lld\n"),
-				xino.i_d.di_version, ino);
+				dip->di_version, ino);
 		error++;
 		return;
 	}
+	if (dip->di_version == 1) {
+		nlink = be16_to_cpu(dip->di_onlink);
+		prid = 0;
+	} else {
+		nlink = be32_to_cpu(dip->di_nlink);
+		prid = (xfs_dqid_t)be16_to_cpu(dip->di_projid_hi) << 16 |
+				   be16_to_cpu(dip->di_projid_lo);
+	}
+	uid = be32_to_cpu(dip->di_uid);
+	gid = be32_to_cpu(dip->di_gid);
+	diflags = be16_to_cpu(dip->di_flags);
+	if (xfs_sb_version_has_v3inode(&mp->m_sb))
+		diflags2 = be64_to_cpu(dip->di_flags2);
 	if (isfree) {
-		if (xino.i_d.di_nblocks != 0) {
+		if (be64_to_cpu(dip->di_nblocks) != 0) {
 			if (v)
 				dbprintf(_("bad nblocks %lld for free inode "
 					 "%lld\n"),
-					xino.i_d.di_nblocks, ino);
+					be64_to_cpu(dip->di_nblocks), ino);
 			error++;
 		}
-		if (dip->di_nlink != 0) {
+		if (nlink != 0) {
 			if (v)
 				dbprintf(_("bad nlink %d for free inode %lld\n"),
-					be32_to_cpu(dip->di_nlink), ino);
+					nlink, ino);
 			error++;
 		}
 		if (dip->di_mode != 0) {
@@ -2766,25 +2823,24 @@ process_inode(
 	 */
 	mode = be16_to_cpu(dip->di_mode);
 	if ((((mode & S_IFMT) >> 12) > 15) ||
-	    (!(okfmts[(mode & S_IFMT) >> 12] & (1 << xino.i_d.di_format)))) {
+	    (!(okfmts[(mode & S_IFMT) >> 12] & (1 << dip->di_format)))) {
 		if (v)
 			dbprintf(_("bad format %d for inode %lld type %#o\n"),
-				xino.i_d.di_format, id->ino, mode & S_IFMT);
+				dip->di_format, id->ino, mode & S_IFMT);
 		error++;
 		return;
 	}
-	if ((unsigned int)XFS_DFORK_ASIZE(dip, mp) >=
-					XFS_LITINO(mp, xino.i_d.di_version))  {
+	if ((unsigned int)XFS_DFORK_ASIZE(dip, mp) >= XFS_LITINO(mp)) {
 		if (v)
 			dbprintf(_("bad fork offset %d for inode %lld\n"),
-				xino.i_d.di_forkoff, id->ino);
+				dip->di_forkoff, id->ino);
 		error++;
 		return;
 	}
-	if ((unsigned int)xino.i_d.di_aformat > XFS_DINODE_FMT_BTREE)  {
+	if ((unsigned int)dip->di_aformat > XFS_DINODE_FMT_BTREE)  {
 		if (v)
 			dbprintf(_("bad attribute format %d for inode %lld\n"),
-				xino.i_d.di_aformat, id->ino);
+				dip->di_aformat, id->ino);
 		error++;
 		return;
 	}
@@ -2792,43 +2848,43 @@ process_inode(
 		dbprintf(_("inode %lld mode %#o fmt %s "
 			 "afmt %s "
 			 "nex %d anex %d nblk %lld sz %lld%s%s%s%s%s%s%s\n"),
-			id->ino, mode, fmtnames[(int)xino.i_d.di_format],
-			fmtnames[(int)xino.i_d.di_aformat],
-			xino.i_d.di_nextents,
-			xino.i_d.di_anextents,
-			xino.i_d.di_nblocks, xino.i_d.di_size,
-			xino.i_d.di_flags & XFS_DIFLAG_REALTIME ? " rt" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_PREALLOC ? " pre" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_IMMUTABLE? " imm" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_APPEND   ? " app" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_SYNC     ? " syn" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_NOATIME  ? " noa" : "",
-			xino.i_d.di_flags & XFS_DIFLAG_NODUMP   ? " nod" : "");
+			id->ino, mode, fmtnames[(int)dip->di_format],
+			fmtnames[(int)dip->di_aformat],
+			be32_to_cpu(dip->di_nextents),
+			be16_to_cpu(dip->di_anextents),
+			be64_to_cpu(dip->di_nblocks), be64_to_cpu(dip->di_size),
+			diflags & XFS_DIFLAG_REALTIME ? " rt" : "",
+			diflags & XFS_DIFLAG_PREALLOC ? " pre" : "",
+			diflags & XFS_DIFLAG_IMMUTABLE? " imm" : "",
+			diflags & XFS_DIFLAG_APPEND   ? " app" : "",
+			diflags & XFS_DIFLAG_SYNC     ? " syn" : "",
+			diflags & XFS_DIFLAG_NOATIME  ? " noa" : "",
+			diflags & XFS_DIFLAG_NODUMP   ? " nod" : "");
 	security = 0;
 	switch (mode & S_IFMT) {
 	case S_IFDIR:
 		type = DBM_DIR;
-		if (xino.i_d.di_format == XFS_DINODE_FMT_LOCAL)
+		if (dip->di_format == XFS_DINODE_FMT_LOCAL)
 			break;
-		blkmap = blkmap_alloc(xino.i_d.di_nextents);
+		blkmap = blkmap_alloc(be32_to_cpu(dip->di_nextents));
 		break;
 	case S_IFREG:
-		if (xino.i_d.di_flags & XFS_DIFLAG_REALTIME)
+		if (diflags & XFS_DIFLAG_REALTIME)
 			type = DBM_RTDATA;
 		else if (id->ino == mp->m_sb.sb_rbmino) {
 			type = DBM_RTBITMAP;
-			blkmap = blkmap_alloc(xino.i_d.di_nextents);
+			blkmap = blkmap_alloc(be32_to_cpu(dip->di_nextents));
 			addlink_inode(id);
 		} else if (id->ino == mp->m_sb.sb_rsumino) {
 			type = DBM_RTSUM;
-			blkmap = blkmap_alloc(xino.i_d.di_nextents);
+			blkmap = blkmap_alloc(be32_to_cpu(dip->di_nextents));
 			addlink_inode(id);
 		}
 		else if (id->ino == mp->m_sb.sb_uquotino ||
 			 id->ino == mp->m_sb.sb_gquotino ||
 			 id->ino == mp->m_sb.sb_pquotino) {
 			type = DBM_QUOTA;
-			blkmap = blkmap_alloc(xino.i_d.di_nextents);
+			blkmap = blkmap_alloc(be32_to_cpu(dip->di_nextents));
 			addlink_inode(id);
 		}
 		else
@@ -2845,10 +2901,10 @@ process_inode(
 		break;
 	}
 
-	id->isreflink = !!(xino.i_d.di_flags2 & XFS_DIFLAG2_REFLINK);
-	setlink_inode(id, VFS_I(&xino)->i_nlink, type == DBM_DIR, security);
+	id->isreflink = !!(diflags2 & XFS_DIFLAG2_REFLINK);
+	setlink_inode(id, nlink, type == DBM_DIR, security);
 
-	switch (xino.i_d.di_format) {
+	switch (dip->di_format) {
 	case XFS_DINODE_FMT_LOCAL:
 		process_lclinode(id, dip, type, &totdblocks, &totiblocks,
 			&nextents, &blkmap, XFS_DATA_FORK);
@@ -2862,9 +2918,9 @@ process_inode(
 			&nextents, &blkmap, XFS_DATA_FORK);
 		break;
 	}
-	if (XFS_DFORK_Q(dip)) {
+	if (dip->di_forkoff) {
 		sbversion |= XFS_SB_VERSION_ATTRBIT;
-		switch (xino.i_d.di_aformat) {
+		switch (dip->di_aformat) {
 		case XFS_DINODE_FMT_LOCAL:
 			process_lclinode(id, dip, DBM_ATTR, &atotdblocks,
 				&atotiblocks, &anextents, NULL, XFS_ATTR_FORK);
@@ -2899,31 +2955,28 @@ process_inode(
 		default:
 			break;
 		}
-		if (ic) {
-			dqprid = xfs_get_projid(&xino.i_d);	/* dquot ID is u32 */
-			quota_add(&dqprid, &xino.i_d.di_gid, &xino.i_d.di_uid,
-				  0, bc, ic, rc);
-		}
+		if (ic)
+			quota_add(&prid, &gid, &uid, 0, bc, ic, rc);
 	}
 	totblocks = totdblocks + totiblocks + atotdblocks + atotiblocks;
-	if (totblocks != xino.i_d.di_nblocks) {
+	if (totblocks != be64_to_cpu(dip->di_nblocks)) {
 		if (v)
 			dbprintf(_("bad nblocks %lld for inode %lld, counted "
 				 "%lld\n"),
-				xino.i_d.di_nblocks, id->ino, totblocks);
+				be64_to_cpu(dip->di_nblocks), id->ino, totblocks);
 		error++;
 	}
-	if (nextents != xino.i_d.di_nextents) {
+	if (nextents != be32_to_cpu(dip->di_nextents)) {
 		if (v)
 			dbprintf(_("bad nextents %d for inode %lld, counted %d\n"),
-				xino.i_d.di_nextents, id->ino, nextents);
+				be32_to_cpu(dip->di_nextents), id->ino, nextents);
 		error++;
 	}
-	if (anextents != xino.i_d.di_anextents) {
+	if (anextents != be16_to_cpu(dip->di_anextents)) {
 		if (v)
 			dbprintf(_("bad anextents %d for inode %lld, counted "
 				 "%d\n"),
-				xino.i_d.di_anextents, id->ino, anextents);
+				be16_to_cpu(dip->di_anextents), id->ino, anextents);
 		error++;
 	}
 	if (type == DBM_DIR)
@@ -3010,7 +3063,6 @@ process_leaf_node_dir_v2(
 	int			t = 0;
 	int			v;
 	int			v2;
-	int			x;
 
 	v2 = verbose || id->ilist;
 	v = parent = 0;
@@ -3024,9 +3076,9 @@ process_leaf_node_dir_v2(
 	while ((dbno = blkmap_next_off(blkmap, dbno, &t)) != NULLFILEOFF) {
 		nex = blkmap_getn(blkmap, dbno, mp->m_dir_geo->fsbcount, &bmp);
 		ASSERT(nex > 0);
-		for (v = v2, x = 0; !v && x < nex; x++) {
-			for (b = bmp[x].startblock;
-			     !v && b < bmp[x].startblock + bmp[x].blockcount;
+		for (v = v2, i = 0; !v && i < nex; i++) {
+			for (b = bmp[i].startblock;
+			     !v && b < bmp[i].startblock + bmp[i].blockcount;
 			     b++)
 				v = CHECK_BLIST(b);
 		}
@@ -3103,7 +3155,7 @@ process_leaf_node_dir_v3_free(
 	int			used;
 
 	free = iocur_top->data;
-	maxent = M_DIROPS(mp)->free_max_bests(mp->m_dir_geo);
+	maxent = mp->m_dir_geo->free_max_bests;
 	if (be32_to_cpu(free->hdr.firstdb) != xfs_dir2_da_to_db(mp->m_dir_geo,
 					dabno - mp->m_dir_geo->freeblk) * maxent) {
 		if (!sflag || v)
@@ -3181,7 +3233,7 @@ process_leaf_node_dir_v2_free(
 		process_leaf_node_dir_v3_free(id, v, dabno, freetab);
 		return;
 	}
-	maxent = M_DIROPS(mp)->free_max_bests(mp->m_dir_geo);
+	maxent = mp->m_dir_geo->free_max_bests;
 	if (be32_to_cpu(free->hdr.firstdb) != xfs_dir2_da_to_db(mp->m_dir_geo,
 					dabno - mp->m_dir_geo->freeblk) * maxent) {
 		if (!sflag || v)
@@ -3263,8 +3315,11 @@ process_leaf_node_dir_v2_int(
 	xfs_da_intnode_t	*node;
 	int			stale;
 	struct xfs_da3_icnode_hdr nodehdr;
+	struct xfs_dir3_icleaf_hdr leafhdr;
 
 	leaf = iocur_top->data;
+	libxfs_dir2_leaf_hdr_from_disk(mp, &leafhdr, leaf);
+
 	switch (be16_to_cpu(leaf->hdr.info.magic)) {
 	case XFS_DIR3_LEAF1_MAGIC:
 	case XFS_DIR3_LEAFN_MAGIC:
@@ -3321,7 +3376,7 @@ process_leaf_node_dir_v2_int(
 	case XFS_DA_NODE_MAGIC:
 	case XFS_DA3_NODE_MAGIC:
 		node = iocur_top->data;
-		M_DIROPS(mp)->node_hdr_from_disk(&nodehdr, node);
+		libxfs_da3_node_hdr_from_disk(mp, &nodehdr, node);
 		if (nodehdr.level < 1 || nodehdr.level > XFS_DA_NODE_MAXDEPTH) {
 			if (!sflag || v)
 				dbprintf(_("bad node block level %d for dir ino "
@@ -3340,7 +3395,7 @@ process_leaf_node_dir_v2_int(
 		error++;
 		return;
 	}
-	lep = M_DIROPS(mp)->leaf_ents_p(leaf);
+	lep = leafhdr.ents;
 	for (i = stale = 0; i < xfs_dir3_leaf_ents_count(leaf); i++) {
 		if (be32_to_cpu(lep[i].address) == XFS_DIR2_NULL_DATAPTR)
 			stale++;
@@ -3625,9 +3680,10 @@ process_sf_dir_v2(
 		dbprintf(_("dir %lld entry . %lld\n"), id->ino, id->ino);
 	(*dot)++;
 	sfe = xfs_dir2_sf_firstentry(sf);
-	offset = M_DIROPS(mp)->data_first_offset;
+	offset = mp->m_dir_geo->data_first_offset;
 	for (i = sf->count - 1, i8 = 0; i >= 0; i--) {
-		if ((intptr_t)sfe + M_DIROPS(mp)->sf_entsize(sf, sfe->namelen) -
+		if ((intptr_t)sfe +
+		    libxfs_dir2_sf_entsize(mp, sf, sfe->namelen) -
 		    (intptr_t)sf > be64_to_cpu(dip->di_size)) {
 			if (!sflag)
 				dbprintf(_("dir %llu bad size in entry at %d\n"),
@@ -3636,7 +3692,7 @@ process_sf_dir_v2(
 			error++;
 			break;
 		}
-		lino = M_DIROPS(mp)->sf_get_ino(sf, sfe);
+		lino = libxfs_dir2_sf_get_ino(mp, sf, sfe);
 		if (lino > XFS_DIR2_MAX_SHORT_INUM)
 			i8++;
 		cid = find_inode(lino, 1);
@@ -3666,8 +3722,8 @@ process_sf_dir_v2(
 		}
 		offset =
 			xfs_dir2_sf_get_offset(sfe) +
-			M_DIROPS(mp)->sf_entsize(sf, sfe->namelen);
-		sfe = M_DIROPS(mp)->sf_nextentry(sf, sfe);
+			libxfs_dir2_sf_entsize(mp, sf, sfe->namelen);
+		sfe = libxfs_dir2_sf_nextentry(mp, sf, sfe);
 	}
 	if (i < 0 && (intptr_t)sfe - (intptr_t)sf !=
 					be64_to_cpu(dip->di_size)) {
@@ -3683,7 +3739,7 @@ process_sf_dir_v2(
 			dbprintf(_("dir %llu offsets too high\n"), id->ino);
 		error++;
 	}
-	lino = M_DIROPS(mp)->sf_get_parent_ino(sf);
+	lino = libxfs_dir2_sf_get_parent_ino(sf);
 	if (lino > XFS_DIR2_MAX_SHORT_INUM)
 		i8++;
 	cid = find_inode(lino, 1);
@@ -4022,16 +4078,30 @@ pop1_out:
 	pop_cur();
 }
 
+struct agfl_state {
+	xfs_agnumber_t	agno;
+	unsigned int	count;
+};
+
+static int
+scan_agfl(
+	struct xfs_mount	*mp,
+	xfs_agblock_t		bno,
+	void			*priv)
+{
+	struct agfl_state	*as = priv;
+
+	set_dbmap(as->agno, bno, 1, DBM_FREELIST, as->agno, XFS_AGFL_BLOCK(mp));
+	as->count++;
+	return 0;
+}
+
 static void
 scan_freelist(
-	xfs_agf_t	*agf)
+	xfs_agf_t		*agf)
 {
-	xfs_agnumber_t	seqno = be32_to_cpu(agf->agf_seqno);
-	xfs_agfl_t	*agfl;
-	xfs_agblock_t	bno;
-	uint		count;
-	int		i;
-	__be32		*freelist;
+	xfs_agnumber_t		seqno = be32_to_cpu(agf->agf_seqno);
+	struct agfl_state	state;
 
 	if (XFS_SB_BLOCK(mp) != XFS_AGFL_BLOCK(mp) &&
 	    XFS_AGF_BLOCK(mp) != XFS_AGFL_BLOCK(mp) &&
@@ -4044,46 +4114,36 @@ scan_freelist(
 	set_cur(&typtab[TYP_AGFL],
 		XFS_AG_DADDR(mp, seqno, XFS_AGFL_DADDR(mp)),
 		XFS_FSS_TO_BB(mp, 1), DB_RING_IGN, NULL);
-	if ((agfl = iocur_top->data) == NULL) {
+	if (iocur_top->data == NULL) {
 		dbprintf(_("can't read agfl block for ag %u\n"), seqno);
 		serious_error++;
 		pop_cur();
 		return;
 	}
-	i = be32_to_cpu(agf->agf_flfirst);
 
 	/* verify agf values before proceeding */
-	if (be32_to_cpu(agf->agf_flfirst) >= XFS_AGFL_SIZE(mp) ||
-	    be32_to_cpu(agf->agf_fllast) >= XFS_AGFL_SIZE(mp)) {
+	if (be32_to_cpu(agf->agf_flfirst) >= libxfs_agfl_size(mp) ||
+	    be32_to_cpu(agf->agf_fllast) >= libxfs_agfl_size(mp)) {
 		dbprintf(_("agf %d freelist blocks bad, skipping "
-			  "freelist scan\n"), i);
+			  "freelist scan\n"), seqno);
 		pop_cur();
 		return;
 	}
 
-	/* open coded XFS_BUF_TO_AGFL_BNO */
-	freelist = xfs_sb_version_hascrc(&((mp)->m_sb)) ? &agfl->agfl_bno[0]
-							: (__be32 *)agfl;
-	count = 0;
-	for (;;) {
-		bno = be32_to_cpu(freelist[i]);
-		set_dbmap(seqno, bno, 1, DBM_FREELIST, seqno,
-			XFS_AGFL_BLOCK(mp));
-		count++;
-		if (i == be32_to_cpu(agf->agf_fllast))
-			break;
-		if (++i == XFS_AGFL_SIZE(mp))
-			i = 0;
-	}
-	if (count != be32_to_cpu(agf->agf_flcount)) {
+	/* open coded xfs_buf_to_agfl_bno */
+	state.count = 0;
+	state.agno = seqno;
+	libxfs_agfl_walk(mp, agf, iocur_top->bp, scan_agfl, &state);
+	if (state.count != be32_to_cpu(agf->agf_flcount)) {
 		if (!sflag)
 			dbprintf(_("freeblk count %u != flcount %u in ag %u\n"),
-				count, be32_to_cpu(agf->agf_flcount),
-				seqno);
+					state.count,
+					be32_to_cpu(agf->agf_flcount),
+					seqno);
 		error++;
 	}
-	fdblocks += count;
-	agf_aggr_freeblks += count;
+	fdblocks += state.count;
+	agf_aggr_freeblks += state.count;
 	pop_cur();
 }
 
@@ -4392,12 +4452,13 @@ scanfunc_ino(
 	int			blks_per_buf;
 	int			inodes_per_buf;
 	int			ioff;
+	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
 
 	if (xfs_sb_version_hassparseinodes(&mp->m_sb))
-		blks_per_buf = xfs_icluster_size_fsb(mp);
+		blks_per_buf = igeo->blocks_per_cluster;
 	else
-		blks_per_buf = mp->m_ialloc_blks;
-	inodes_per_buf = min(blks_per_buf << mp->m_sb.sb_inopblog,
+		blks_per_buf = igeo->ialloc_blks;
+	inodes_per_buf = min(XFS_FSB_TO_INO(mp, blks_per_buf),
 			     XFS_INODES_PER_CHUNK);
 
 	if (be32_to_cpu(block->bb_magic) != XFS_IBT_MAGIC &&
@@ -4416,12 +4477,12 @@ scanfunc_ino(
 	}
 	set_dbmap(seqno, bno, 1, DBM_BTINO, seqno, bno);
 	if (level == 0) {
-		if (be16_to_cpu(block->bb_numrecs) > mp->m_inobt_mxr[0] ||
-		    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < mp->m_inobt_mnr[0])) {
+		if (be16_to_cpu(block->bb_numrecs) > igeo->inobt_mxr[0] ||
+		    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < igeo->inobt_mnr[0])) {
 			dbprintf(_("bad btree nrecs (%u, min=%u, max=%u) in "
 				 "inobt block %u/%u\n"),
-				be16_to_cpu(block->bb_numrecs), mp->m_inobt_mnr[0],
-				mp->m_inobt_mxr[0], seqno, bno);
+				be16_to_cpu(block->bb_numrecs), igeo->inobt_mnr[0],
+				igeo->inobt_mxr[0], seqno, bno);
 			serious_error++;
 			return;
 		}
@@ -4430,7 +4491,7 @@ scanfunc_ino(
 			agino = be32_to_cpu(rp[i].ir_startino);
 			agbno = XFS_AGINO_TO_AGBNO(mp, agino);
 			off = XFS_AGINO_TO_OFFSET(mp, agino);
-			end_agbno = agbno + mp->m_ialloc_blks;
+			end_agbno = agbno + igeo->ialloc_blks;
 			if (off == 0) {
 				if ((sbversion & XFS_SB_VERSION_ALIGNBIT) &&
 				    mp->m_sb.sb_inoalignmt &&
@@ -4502,16 +4563,16 @@ next_buf:
 		}
 		return;
 	}
-	if (be16_to_cpu(block->bb_numrecs) > mp->m_inobt_mxr[1] ||
-	    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < mp->m_inobt_mnr[1])) {
+	if (be16_to_cpu(block->bb_numrecs) > igeo->inobt_mxr[1] ||
+	    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < igeo->inobt_mnr[1])) {
 		dbprintf(_("bad btree nrecs (%u, min=%u, max=%u) in inobt block "
 			 "%u/%u\n"),
-			be16_to_cpu(block->bb_numrecs), mp->m_inobt_mnr[1],
-			mp->m_inobt_mxr[1], seqno, bno);
+			be16_to_cpu(block->bb_numrecs), igeo->inobt_mnr[1],
+			igeo->inobt_mxr[1], seqno, bno);
 		serious_error++;
 		return;
 	}
-	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, mp->m_inobt_mxr[1]);
+	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, igeo->inobt_mxr[1]);
 	for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++)
 		scan_sbtree(agf, be32_to_cpu(pp[i]), level, 0, scanfunc_ino, TYP_INOBT);
 }
@@ -4535,12 +4596,13 @@ scanfunc_fino(
 	int			blks_per_buf;
 	int			inodes_per_buf;
 	int			ioff;
+	struct xfs_ino_geometry	*igeo = M_IGEO(mp);
 
 	if (xfs_sb_version_hassparseinodes(&mp->m_sb))
-		blks_per_buf = xfs_icluster_size_fsb(mp);
+		blks_per_buf = igeo->blocks_per_cluster;
 	else
-		blks_per_buf = mp->m_ialloc_blks;
-	inodes_per_buf = min(blks_per_buf << mp->m_sb.sb_inopblog,
+		blks_per_buf = igeo->ialloc_blks;
+	inodes_per_buf = min(XFS_FSB_TO_INO(mp, blks_per_buf),
 			     XFS_INODES_PER_CHUNK);
 
 	if (be32_to_cpu(block->bb_magic) != XFS_FIBT_MAGIC &&
@@ -4559,12 +4621,12 @@ scanfunc_fino(
 	}
 	set_dbmap(seqno, bno, 1, DBM_BTFINO, seqno, bno);
 	if (level == 0) {
-		if (be16_to_cpu(block->bb_numrecs) > mp->m_inobt_mxr[0] ||
-		    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < mp->m_inobt_mnr[0])) {
+		if (be16_to_cpu(block->bb_numrecs) > igeo->inobt_mxr[0] ||
+		    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < igeo->inobt_mnr[0])) {
 			dbprintf(_("bad btree nrecs (%u, min=%u, max=%u) in "
 				 "finobt block %u/%u\n"),
-				be16_to_cpu(block->bb_numrecs), mp->m_inobt_mnr[0],
-				mp->m_inobt_mxr[0], seqno, bno);
+				be16_to_cpu(block->bb_numrecs), igeo->inobt_mnr[0],
+				igeo->inobt_mxr[0], seqno, bno);
 			serious_error++;
 			return;
 		}
@@ -4573,7 +4635,7 @@ scanfunc_fino(
 			agino = be32_to_cpu(rp[i].ir_startino);
 			agbno = XFS_AGINO_TO_AGBNO(mp, agino);
 			off = XFS_AGINO_TO_OFFSET(mp, agino);
-			end_agbno = agbno + mp->m_ialloc_blks;
+			end_agbno = agbno + igeo->ialloc_blks;
 			if (off == 0) {
 				if ((sbversion & XFS_SB_VERSION_ALIGNBIT) &&
 				    mp->m_sb.sb_inoalignmt &&
@@ -4589,7 +4651,7 @@ scanfunc_fino(
 					goto next_buf;
 
                                 check_set_dbmap(seqno, agbno,
-                                        (xfs_extlen_t)MAX(1,
+                                        (xfs_extlen_t)max(1,
                                                 inodes_per_buf >>
                                                 mp->m_sb.sb_inopblog),
                                         DBM_INODE, DBM_INODE, seqno, bno);
@@ -4602,16 +4664,16 @@ next_buf:
 		}
 		return;
 	}
-	if (be16_to_cpu(block->bb_numrecs) > mp->m_inobt_mxr[1] ||
-	    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < mp->m_inobt_mnr[1])) {
+	if (be16_to_cpu(block->bb_numrecs) > igeo->inobt_mxr[1] ||
+	    (isroot == 0 && be16_to_cpu(block->bb_numrecs) < igeo->inobt_mnr[1])) {
 		dbprintf(_("bad btree nrecs (%u, min=%u, max=%u) in finobt block "
 			 "%u/%u\n"),
-			be16_to_cpu(block->bb_numrecs), mp->m_inobt_mnr[1],
-			mp->m_inobt_mxr[1], seqno, bno);
+			be16_to_cpu(block->bb_numrecs), igeo->inobt_mnr[1],
+			igeo->inobt_mxr[1], seqno, bno);
 		serious_error++;
 		return;
 	}
-	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, mp->m_inobt_mxr[1]);
+	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, igeo->inobt_mxr[1]);
 	for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++)
 		scan_sbtree(agf, be32_to_cpu(pp[i]), level, 0, scanfunc_fino, TYP_FINOBT);
 }
@@ -4730,13 +4792,24 @@ scanfunc_refcnt(
 		lastblock = 0;
 		for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++) {
 			if (be32_to_cpu(rp[i].rc_refcount) == 1) {
-				dbprintf(_(
-		"leftover CoW extent (%u/%u) len %u\n"),
+				xfs_agblock_t	agbno;
+				char		*msg;
+
+				agbno = be32_to_cpu(rp[i].rc_startblock);
+				if (agbno >= XFS_REFC_COW_START) {
+					agbno -= XFS_REFC_COW_START;
+					msg = _(
+		"leftover CoW extent (%u/%u) len %u\n");
+				} else {
+					msg = _(
+		"leftover CoW extent at unexpected address (%u/%u) len %u\n");
+				}
+				dbprintf(msg,
 					seqno,
-					be32_to_cpu(rp[i].rc_startblock),
+					agbno,
 					be32_to_cpu(rp[i].rc_blockcount));
 				set_dbmap(seqno,
-					be32_to_cpu(rp[i].rc_startblock),
+					agbno,
 					be32_to_cpu(rp[i].rc_blockcount),
 					DBM_COWDATA, seqno, bno);
 			} else {

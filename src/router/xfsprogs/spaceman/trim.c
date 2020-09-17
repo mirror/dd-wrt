@@ -1,26 +1,14 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2012 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
-#include <linux/fs.h>
+#include "libfrog/fsgeom.h"
 #include "command.h"
 #include "init.h"
-#include "path.h"
+#include "libfrog/paths.h"
 #include "space.h"
 #include "input.h"
 
@@ -31,18 +19,20 @@ static cmdinfo_t trim_cmd;
  */
 static int
 trim_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	struct fstrim_range trim = {0};
-	xfs_agnumber_t	agno = 0;
-	off64_t		offset = 0;
-	ssize_t		length = 0;
-	ssize_t		minlen = 0;
-	int		aflag = 0;
-	int		fflag = 0;
-	int		ret;
-	int		c;
+	struct fstrim_range	trim = {0};
+	struct xfs_fd		*xfd = &file->xfd;
+	struct xfs_fsop_geom	*fsgeom = &xfd->fsgeom;
+	xfs_agnumber_t		agno = 0;
+	off64_t			offset = 0;
+	ssize_t			length = 0;
+	ssize_t			minlen = 0;
+	int			aflag = 0;
+	int			fflag = 0;
+	int			ret;
+	int			c;
 
 	while ((c = getopt(argc, argv, "a:fm:")) != EOF) {
 		switch (c) {
@@ -58,8 +48,8 @@ trim_f(
 			fflag = 1;
 			break;
 		case 'm':
-			minlen = cvtnum(file->geom.blocksize,
-					file->geom.sectsize, optarg);
+			minlen = cvtnum(fsgeom->blocksize, fsgeom->sectsize,
+					optarg);
 			break;
 		default:
 			return command_usage(&trim_cmd);
@@ -72,23 +62,23 @@ trim_f(
 	if (optind != argc - 2 && !(aflag || fflag))
 		return command_usage(&trim_cmd);
 	if (optind != argc) {
-		offset = cvtnum(file->geom.blocksize, file->geom.sectsize,
+		offset = cvtnum(fsgeom->blocksize, fsgeom->sectsize,
 				argv[optind]);
-		length = cvtnum(file->geom.blocksize, file->geom.sectsize,
+		length = cvtnum(fsgeom->blocksize, fsgeom->sectsize,
 				argv[optind + 1]);
 	} else if (agno) {
-		offset = (off64_t)agno * file->geom.agblocks * file->geom.blocksize;
-		length = file->geom.agblocks * file->geom.blocksize;
+		offset = cvt_agbno_to_b(xfd, agno, 0);
+		length = cvt_off_fsb_to_b(xfd, fsgeom->agblocks);
 	} else {
 		offset = 0;
-		length = file->geom.datablocks * file->geom.blocksize;
+		length = cvt_off_fsb_to_b(xfd, fsgeom->datablocks);
 	}
 
 	trim.start = offset;
 	trim.len = length;
 	trim.minlen = minlen;
 
-	ret = ioctl(file->fd, FITRIM, (unsigned long)&trim);
+	ret = ioctl(file->xfd.fd, FITRIM, (unsigned long)&trim);
 	if (ret < 0) {
 		fprintf(stderr, "%s: ioctl(FITRIM) [\"%s\"]: %s\n",
 			progname, file->name, strerror(errno));

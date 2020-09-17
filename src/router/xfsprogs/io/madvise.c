@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -46,7 +34,7 @@ madvise_help(void)
 "\n"));
 }
 
-int
+static int
 madvise_f(
 	int		argc,
 	char		**argv)
@@ -72,6 +60,7 @@ madvise_f(
 			advise = MADV_WILLNEED;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&madvise_cmd);
 		}
 	}
@@ -85,6 +74,7 @@ madvise_f(
 		if (offset < 0) {
 			printf(_("non-numeric offset argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		}
 		optind++;
@@ -92,23 +82,29 @@ madvise_f(
 		if (llength < 0) {
 			printf(_("non-numeric length argument -- %s\n"),
 				argv[optind]);
+			exitcode = 1;
 			return 0;
 		} else if (llength > (size_t)llength) {
 			printf(_("length argument too large -- %lld\n"),
 				(long long)llength);
+			exitcode = 1;
 			return 0;
 		} else
 			length = (size_t)llength;
 	} else {
+		exitcode = 1;
 		return command_usage(&madvise_cmd);
 	}
 
 	start = check_mapping_range(mapping, offset, length, 1);
-	if (!start)
+	if (!start) {
+		exitcode = 1;
 		return 0;
+	}
 
 	if (madvise(start, length, advise) < 0) {
 		perror("madvise");
+		exitcode = 1;
 		return 0;
 	}
 	return 0;

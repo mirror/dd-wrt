@@ -1,22 +1,9 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
  * Copyright (C) 2015, 2017 Red Hat, Inc.
  * Portions of statx support written by David Howells (dhowells@redhat.com)
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -25,6 +12,8 @@
 #include "io.h"
 #include "statx.h"
 #include "libxfs.h"
+#include "libfrog/logging.h"
+#include "libfrog/fsgeom.h"
 
 #include <fcntl.h>
 
@@ -90,7 +79,8 @@ dump_raw_stat(struct stat *st)
 	return 0;
 }
 
-void print_file_info(void)
+static void
+print_file_info(void)
 {
 	printf(_("fd.path = \"%s\"\n"), file->name);
 	printf(_("fd.flags = %s,%s,%s%s%s%s%s\n"),
@@ -103,7 +93,8 @@ void print_file_info(void)
 		file->flags & IO_TMPFILE ? _(",tmpfile") : "");
 }
 
-void print_xfs_info(int verbose)
+static void
+print_xfs_info(int verbose)
 {
 	struct dioattr	dio;
 	struct fsxattr	fsx, fsxa;
@@ -146,15 +137,14 @@ stat_f(
 			verbose = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&stat_cmd);
 		}
 	}
 
-	if (raw && verbose)
-		return command_usage(&stat_cmd);
-
 	if (fstat(file->fd, &st) < 0) {
 		perror("fstat");
+		exitcode = 1;
 		return 0;
 	}
 
@@ -189,10 +179,12 @@ statfs_f(
 	struct xfs_fsop_counts	fscounts;
 	struct xfs_fsop_geom	fsgeo;
 	struct statfs		st;
+	int			ret;
 
 	printf(_("fd.path = \"%s\"\n"), file->name);
 	if (platform_fstatfs(file->fd, &st) < 0) {
 		perror("fstatfs");
+		exitcode = 1;
 	} else {
 		printf(_("statfs.f_bsize = %lld\n"), (long long) st.f_bsize);
 		printf(_("statfs.f_blocks = %lld\n"), (long long) st.f_blocks);
@@ -205,8 +197,10 @@ statfs_f(
 	}
 	if (file->flags & IO_FOREIGN)
 		return 0;
-	if ((xfsctl(file->name, file->fd, XFS_IOC_FSGEOMETRY_V1, &fsgeo)) < 0) {
-		perror("XFS_IOC_FSGEOMETRY_V1");
+	ret = -xfrog_geometry(file->fd, &fsgeo);
+	if (ret) {
+		xfrog_perror(ret, "XFS_IOC_FSGEOMETRY");
+		exitcode = 1;
 	} else {
 		printf(_("geom.bsize = %u\n"), fsgeo.blocksize);
 		printf(_("geom.agcount = %u\n"), fsgeo.agcount);
@@ -223,6 +217,7 @@ statfs_f(
 	}
 	if ((xfsctl(file->name, file->fd, XFS_IOC_FSCOUNTS, &fscounts)) < 0) {
 		perror("XFS_IOC_FSCOUNTS");
+		exitcode = 1;
 	} else {
 		printf(_("counts.freedata = %llu\n"),
 			(unsigned long long) fscounts.freedata);
@@ -283,6 +278,7 @@ dump_raw_statx(struct statx *stx)
 	printf("stat.ino = %llu\n", (unsigned long long)stx->stx_ino);
 	printf("stat.size = %llu\n", (unsigned long long)stx->stx_size);
 	printf("stat.blocks = %llu\n", (unsigned long long)stx->stx_blocks);
+	printf("stat.attributes_mask = 0x%llx\n", (unsigned long long)stx->stx_attributes_mask);
 	printf("stat.atime.tv_sec = %lld\n", (long long)stx->stx_atime.tv_sec);
 	printf("stat.atime.tv_nsec = %d\n", stx->stx_atime.tv_nsec);
 	printf("stat.btime.tv_sec = %lld\n", (long long)stx->stx_btime.tv_sec);
@@ -304,7 +300,7 @@ dump_raw_statx(struct statx *stx)
  * 	- output style for flags (and all else?) (chars vs. hex?)
  * 	- output - mask out incidental flag or not?
  */
-int
+static int
 statx_f(
 	int		argc,
 	char		**argv)
@@ -327,6 +323,7 @@ statx_f(
 				if (!p || p == optarg) {
 					printf(
 				_("non-numeric mask -- %s\n"), optarg);
+					exitcode = 1;
 					return 0;
 				}
 			}
@@ -346,6 +343,7 @@ statx_f(
 			atflag |= AT_STATX_DONT_SYNC;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&statx_cmd);
 		}
 	}
@@ -356,8 +354,10 @@ statx_f(
 	memset(&stx, 0xbf, sizeof(stx));
 	if (_statx(file->fd, "", atflag | AT_EMPTY_PATH, mask, &stx) < 0) {
 		perror("statx");
+		exitcode = 1;
 		return 0;
 	}
+	exitcode = 0;
 
 	if (raw)
 		return dump_raw_statx(&stx);

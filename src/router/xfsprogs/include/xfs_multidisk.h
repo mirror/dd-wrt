@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2004-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef __XFS_MULTIDISK_H__
 #define	__XFS_MULTIDISK_H__
@@ -29,10 +17,7 @@
 #define	XFS_MIN_DATA_BLOCKS	100
 #define	XFS_MIN_INODE_PERBLOCK	2		/* min inodes per block */
 #define	XFS_DFL_IMAXIMUM_PCT	25		/* max % of space for inodes */
-#define	XFS_IFLAG_ALIGN		true		/* -i align defaults on */
 #define	XFS_MIN_REC_DIRSIZE	12		/* 4096 byte dirblocks (V2) */
-#define	XFS_DFL_DIR_VERSION	2		/* default directory version */
-#define	XFS_DFL_LOG_SIZE	1000		/* default log size, blocks */
 #define	XFS_DFL_LOG_FACTOR	5		/* default log size, factor */
 						/* with max trans reservation */
 #define XFS_MAX_INODE_SIG_BITS	32		/* most significant bits in an
@@ -57,18 +42,9 @@
 #define XFS_NOMULTIDISK_AGLOG		2	/* 4 AGs */
 #define XFS_MULTIDISK_AGCOUNT		(1 << XFS_MULTIDISK_AGLOG)
 
-extern long long cvtnum(unsigned int blksize, unsigned int sectsize,
-			const char *str);
-
 /* proto.c */
 extern char *setup_proto (char *fname);
 extern void parse_proto (xfs_mount_t *mp, struct fsxattr *fsx, char **pp);
 extern void res_failed (int err);
-
-/* maxtrres.c */
-extern int max_trans_res(unsigned long agsize, int crcs_enabled, int dirversion,
-		int sectorlog, int blocklog, int inodelog, int dirblocklog,
-		int logversion, int log_sunit, int finobt, int rmapbt,
-		int reflink, int inode_align);
 
 #endif	/* __XFS_MULTIDISK_H__ */

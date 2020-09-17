@@ -1,25 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include <stdbool.h>
 #include "command.h"
 #include "init.h"
 #include "quota.h"
+#include "libfrog/logging.h"
+#include "libfrog/fsgeom.h"
 
 static cmdinfo_t free_cmd;
 
@@ -63,7 +53,7 @@ mount_free_space_data(
 	struct xfs_fsop_geom	fsgeo;
 	struct statfs		st;
 	uint64_t		logsize, count, free;
-	int			fd;
+	int			fd, ret;
 
 	if ((fd = open(mount->fs_dir, O_RDONLY)) < 0) {
 		exitcode = 1;
@@ -79,9 +69,9 @@ mount_free_space_data(
 	}
 
 	if (!(mount->fs_flags & FS_FOREIGN)) {
-		if ((xfsctl(mount->fs_dir, fd, XFS_IOC_FSGEOMETRY_V1,
-							&fsgeo)) < 0) {
-			perror("XFS_IOC_FSGEOMETRY_V1");
+		ret = -xfrog_geometry(fd, &fsgeo);
+		if (ret) {
+			xfrog_perror(ret, "XFS_IOC_FSGEOMETRY");
 			close(fd);
 			return 0;
 		}

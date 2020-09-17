@@ -1,0 +1,130 @@
+.\" Copyright (c) 2019, Oracle.  All rights reserved.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" SPDX-License-Identifier: GPL-2.0+
+.\" %%%LICENSE_END
+.TH IOCTL-XFS-AG-GEOMETRY 2 2019-08-30 "XFS"
+.SH NAME
+ioctl_xfs_ag_geometry \- query XFS allocation group geometry information
+.SH SYNOPSIS
+.br
+.B #include <xfs/xfs_fs.h>
+.PP
+.BI "int ioctl(int " fd ", XFS_IOC_AG_GEOMETRY, struct xfs_ag_geometry *" arg );
+.SH DESCRIPTION
+This XFS ioctl retrieves the geometry information for a given allocation group.
+The geometry information is conveyed in a structure of the following form:
+.PP
+.in +4n
+.nf
+struct xfs_ag_geometry {
+	uint32_t  ag_number;
+	uint32_t  ag_length;
+	uint32_t  ag_freeblks;
+	uint32_t  ag_icount;
+	uint32_t  ag_ifree;
+	uint32_t  ag_sick;
+	uint32_t  ag_checked;
+	uint32_t  ag_flags;
+	uint64_t  ag_reserved[12];
+};
+.fi
+.in
+.TP
+.I ag_number
+The caller must set this field to the index of the allocation group that the
+caller wishes to learn about.
+.TP
+.I ag_length
+The length of the allocation group is returned in this field, in units of
+filesystem blocks.
+.TP
+.I ag_freeblks
+The number of free blocks in the allocation group is returned in this field, in
+units of filesystem blocks.
+.TP
+.I ag_icount
+The number of inode records allocated in this allocation group is returned in
+this field.
+.TP
+.I ag_ifree
+The number of unused inode records (of the space allocated) in this allocation
+group is returned in this field.
+.TP
+.I ag_flags
+The caller can set this field to change the operational behavior of the ioctl.
+Currently no flags are defined, so this field must be zero.
+.TP
+.IR ag_reserved
+All reserved fields will be set to zero on return.
+.PP
+The fields
+.IR ag_sick " and " ag_checked
+indicate the relative health of various allocation group metadata:
+.IP \[bu] 2
+If a given sick flag is set in
+.IR ag_sick ,
+then that piece of metadata has been observed to be damaged.
+The same bit will be set in
+.IR ag_checked .
+.IP \[bu]
+If a given sick flag is set in
+.I ag_checked
+and is not set in
+.IR ag_sick ,
+then that piece of metadata has been checked and is not faulty.
+.IP \[bu]
+If a given sick flag is not set in
+.IR ag_checked ,
+then no conclusion can be made.
+.PP
+The following flags apply to these fields:
+.RS 0.4i
+.TP
+.B XFS_AG_GEOM_SICK_SB
+Allocation group superblock.
+.TP
+.B XFS_AG_GEOM_SICK_AGF
+Free space header.
+.TP
+.B XFS_AG_GEOM_SICK_AGFL
+Free space reserve list.
+.TP
+.B XFS_AG_GEOM_SICK_AGI
+Inode header.
+.TP
+.BR XFS_AG_GEOM_SICK_BNOBT " or " XFS_AG_GEOM_SICK_CNTBT
+Free space btrees.
+.TP
+.BR XFS_AG_GEOM_SICK_INOBT " or " XFS_AG_GEOM_SICK_FINOBT
+Inode btrees.
+.TP
+.B XFS_AG_GEOM_SICK_RMAPBT
+Reverse mapping btree.
+.TP
+.B XFS_AG_GEOM_SICK_REFCNTBT
+Reference count btree.
+.RE
+.SH RETURN VALUE
+On error, \-1 is returned, and
+.I errno
+is set to indicate the error.
+.PP
+.SH ERRORS
+Error codes can be one of, but are not limited to, the following:
+.TP
+.B EFSBADCRC
+Metadata checksum validation failed while performing the query.
+.TP
+.B EFSCORRUPTED
+Metadata corruption was encountered while performing the query.
+.TP
+.B EINVAL
+The specified allocation group number is not valid for this filesystem.
+.TP
+.B EIO
+An I/O error was encountered while performing the query.
+.SH CONFORMING TO
+This API is specific to XFS filesystem on the Linux kernel.
+.SH SEE ALSO
+.BR ioctl (2)

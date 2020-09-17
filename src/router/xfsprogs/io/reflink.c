@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2015 Oracle, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include <sys/uio.h>
@@ -75,6 +63,7 @@ dedupe_ioctl(
 		error = ioctl(fd, XFS_IOC_FILE_EXTENT_SAME, args);
 		if (error) {
 			perror("XFS_IOC_FILE_EXTENT_SAME");
+			exitcode = 1;
 			goto done;
 		}
 		if (info->status < 0) {
@@ -129,34 +118,42 @@ dedupe_f(
 			quiet_flag = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&dedupe_cmd);
 		}
 	}
-	if (optind != argc - 4)
+	if (optind != argc - 4) {
+		exitcode = 1;
 		return command_usage(&dedupe_cmd);
+	}
 	infile = argv[optind];
 	optind++;
 	soffset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (soffset < 0) {
 		printf(_("non-numeric src offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	doffset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (doffset < 0) {
 		printf(_("non-numeric dest offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	count = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (count < 0) {
 		printf(_("non-positive length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
 	fd = openfile(infile, NULL, IO_READONLY, 0, NULL);
-	if (fd < 0)
+	if (fd < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	gettimeofday(&t1, NULL);
 	total = dedupe_ioctl(fd, soffset, doffset, count, &ops);
@@ -250,11 +247,14 @@ reflink_f(
 			quiet_flag = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&reflink_cmd);
 		}
 	}
-	if (optind != argc - 4 && optind != argc - 1)
+	if (optind != argc - 4 && optind != argc - 1) {
+		exitcode = 1;
 		return command_usage(&reflink_cmd);
+	}
 	infile = argv[optind];
 	optind++;
 	if (optind == argc)
@@ -262,29 +262,37 @@ reflink_f(
 	soffset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (soffset < 0) {
 		printf(_("non-numeric src offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	doffset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (doffset < 0) {
 		printf(_("non-numeric dest offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	count = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (count < 0) {
 		printf(_("non-positive length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
 clone_all:
 	fd = openfile(infile, NULL, IO_READONLY, 0, NULL);
-	if (fd < 0)
+	if (fd < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	gettimeofday(&t1, NULL);
 	total = reflink_ioctl(fd, soffset, doffset, count, &ops);
-	if (ops == 0 || quiet_flag)
+	if (ops == 0)
+		goto done;
+
+	if (quiet_flag)
 		goto done;
 	gettimeofday(&t2, NULL);
 	t2 = tsub(t2, t1);

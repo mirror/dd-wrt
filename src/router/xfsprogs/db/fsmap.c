@@ -1,21 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright (C) 2016 Oracle.  All Rights Reserved.
- *
  * Author: Darrick J. Wong <darrick.wong@oracle.com>
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 #include "libxfs.h"
 #include "command.h"
@@ -89,7 +75,7 @@ fsmap(
 
 		bt_cur = libxfs_rmapbt_init_cursor(mp, NULL, agbp, agno);
 		if (!bt_cur) {
-			libxfs_putbuf(agbp);
+			libxfs_buf_relse(agbp);
 			dbprintf(_("Not enough memory.\n"));
 			return;
 		}
@@ -99,21 +85,21 @@ fsmap(
 				fsmap_fn, &info);
 		if (error) {
 			libxfs_btree_del_cursor(bt_cur, XFS_BTREE_ERROR);
-			libxfs_putbuf(agbp);
+			libxfs_buf_relse(agbp);
 			dbprintf(_("Error %d while querying fsmap btree.\n"),
 				error);
 			return;
 		}
 
 		libxfs_btree_del_cursor(bt_cur, XFS_BTREE_NOERROR);
-		libxfs_putbuf(agbp);
+		libxfs_buf_relse(agbp);
 
 		if (agno == start_ag)
 			low.rm_startblock = 0;
 	}
 }
 
-int
+static int
 fsmap_f(
 	int			argc,
 	char			**argv)

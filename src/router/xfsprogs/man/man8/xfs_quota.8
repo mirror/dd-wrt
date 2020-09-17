@@ -228,8 +228,7 @@ option sends the output to
 .I file
 instead of stdout.
 .HP
-.B
-free
+.B free
 [
 .B \-bir
 ] [
@@ -305,8 +304,6 @@ limit enforcement disabled.
 .IP 4.
 Turning on quotas on the root filesystem is slightly different from
 the above.
-For IRIX XFS, refer to
-.BR quotaon (1M).
 For Linux XFS, the quota mount flags must be passed in with the
 "rootflags=" boot parameter.
 .IP 5.
@@ -400,8 +397,7 @@ option reports information without the header line. The
 .B \-t
 option performs a terse report.
 .HP
-.B
-state
+.B state
 [
 .B \-gpu
 ] [
@@ -422,8 +418,7 @@ instead of stdout. The
 .B \-a
 option reports state on all filesystems and not just the current path.
 .HP
-.B
-limit
+.B limit
 [
 .BR \-g " | " \-p " | " \-u
 ]
@@ -462,14 +457,46 @@ must be specified.
 .B \-bir
 ]
 .I value
+[
+.B -d
+|
+.I id
+|
+.I name
+]
 .br
 Allows the quota enforcement timeout (i.e. the amount of time allowed
 to pass before the soft limits are enforced as the hard limits) to
 be modified. The current timeout setting can be displayed using the
 .B state
-command. The value argument is a number of seconds, but units of
-\&'minutes', 'hours', 'days', and 'weeks' are also understood
+command.
+.br
+When setting the default timer via the
+.B \-d
+option, or for
+.B id
+0, or if no argument is given after
+.I value
+the
+.I value
+argument is a number of seconds indicating the relative amount of time after
+soft limits are exceeded, before hard limits are enforced.
+.br
+When setting any other individual timer by
+.I id
+or
+.I name,
+the
+.I value
+is the number of seconds from now, at which time the hard limits will be enforced.
+This allows extending the grace time of an individual user who has exceeded soft
+limits.
+.br
+For
+.I value,
+units of \&'minutes', 'hours', 'days', and 'weeks' are also understood
 (as are their abbreviations 'm', 'h', 'd', and 'w').
+.br
 .HP
 .B warn
 [
@@ -521,8 +548,7 @@ identified by the current path.
 Quota must not be enabled on the filesystem, else this operation will
 report an error.
 .HP
-.B
-dump
+.B dump
 [
 .BR \-g " | " \-p " | " \-u
 ] [
@@ -549,8 +575,7 @@ The file must be in the format produced by the
 .B dump
 command.
 .HP
-.B
-quot
+.B quot
 [
 .BR \-g " | " \-p " | " \-u
 ] [
@@ -603,10 +628,10 @@ and
 .B \-s
 options allow the directory tree quota mechanism to be maintained.
 .BR \-d
-allows to limit recursion level when processing project directories
+allows one to limit recursion level when processing project directories
 and
 .BR \-p
-allows to specify project paths at command line ( instead of
+allows one to specify project paths at command line ( instead of
 .I /etc/projects
 ). All options are discussed in detail below.
 .SH DIRECTORY TREE QUOTA
@@ -732,13 +757,6 @@ Mapping of numeric project identifiers to directories trees.
 .I /etc/projid
 Mapping of numeric project identifiers to project names.
 .PD
-.SH IRIX SEE ALSO
-.BR quotaon (1M),
-.BR xfs (4).
-
-.SH LINUX SEE ALSO
-.BR warnquota (8),
-.BR xfs (5).
 
 .SH SEE ALSO
 .BR df (1),
@@ -746,3 +764,5 @@ Mapping of numeric project identifiers to project names.
 .BR sync (2),
 .BR projid (5),
 .BR projects (5).
+.BR xfs (5).
+.BR warnquota (8),

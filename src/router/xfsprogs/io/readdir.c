@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2013 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
@@ -30,7 +18,7 @@
 
 static struct cmdinfo readdir_cmd;
 
-const char *d_type_str(unsigned int type)
+static const char *d_type_str(unsigned int type)
 {
 	const char *str;
 
@@ -163,18 +151,22 @@ readdir_f(
 			verbose = 1;
 			break;
 		default:
+			exitcode = 1;
 			return command_usage(&readdir_cmd);
 		}
 	}
 
 	dfd = dup(file->fd);
-	if (dfd < 0)
-		return -1;
+	if (dfd < 0) {
+		exitcode = 1;
+		return 0;
+	}
 
 	dir = fdopendir(dfd);
 	if (!dir) {
 		close(dfd);
-		return -1;
+		exitcode = 1;
+		return 0;
 	}
 
 	if (offset == -1) {

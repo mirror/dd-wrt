@@ -1,18 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2015 Red Hat, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.
  */
 
 /* Various utilities for repair of directory and attribute metadata */
@@ -22,27 +11,6 @@
 #include "err_protos.h"
 #include "bmap.h"
 #include "da_util.h"
-
-/*
- * takes a name and length (name need not be null-terminated)
- * and returns 1 if the name contains a '/' or a \0, returns 0
- * otherwise
- */
-int
-namecheck(char *name, int length)
-{
-	char *c;
-	int i;
-
-	ASSERT(length < MAXNAMELEN);
-
-	for (c = name, i = 0; i < length; i++, c++) {
-		if (*c == '/' || *c == '\0')
-			return 1;
-	}
-
-	return 0;
-}
 
 /*
  * the cursor gets passed up and down the da btree processing
@@ -96,7 +64,8 @@ da_read_buf(
 		map[i].bm_bn = XFS_FSB_TO_DADDR(mp, bmp[i].startblock);
 		map[i].bm_len = XFS_FSB_TO_BB(mp, bmp[i].blockcount);
 	}
-	bp = libxfs_readbuf_map(mp->m_dev, map, nex, 0, ops);
+	libxfs_buf_read_map(mp->m_dev, map, nex, LIBXFS_READBUF_SALVAGE,
+			&bp, ops);
 	if (map != map_array)
 		free(map);
 	return bp;
@@ -125,7 +94,6 @@ traverse_int_dablock(
 	xfs_da_intnode_t	*node;
 	bmap_ext_t		lbmp;
 	struct xfs_da_geometry	*geo;
-	struct xfs_da_node_entry *btree;
 	struct xfs_da3_icnode_hdr nodehdr;
 
 	if (whichfork == XFS_DATA_FORK) {
@@ -166,8 +134,17 @@ _("can't read %s block %u for inode %" PRIu64 "\n"),
 			goto error_out;
 		}
 
+		/* corrupt leafn/node; rebuild the dir. */
+		if (bp->b_error == -EFSBADCRC || bp->b_error == -EFSCORRUPTED) {
+			do_warn(
+_("corrupt %s tree block %u for inode %" PRIu64 "\n"),
+				FORKNAME(whichfork), bno, da_cursor->ino);
+			libxfs_buf_relse(bp);
+			goto error_out;
+		}
+
 		node = bp->b_addr;
-		M_DIROPS(mp)->node_hdr_from_disk(&nodehdr, node);
+		libxfs_da3_node_hdr_from_disk(mp, &nodehdr, node);
 
 		if (whichfork == XFS_DATA_FORK &&
 		    (nodehdr.magic == XFS_DIR2_LEAFN_MAGIC ||
@@ -178,7 +155,7 @@ _("found non-root LEAFN node in inode %" PRIu64 " bno = %u\n"),
 					da_cursor->ino, bno);
 			}
 			*rbno = 0;
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			return 1;
 		}
 
@@ -188,26 +165,16 @@ _("found non-root LEAFN node in inode %" PRIu64 " bno = %u\n"),
 _("bad %s magic number 0x%x in inode %" PRIu64 " bno = %u\n"),
 					FORKNAME(whichfork), nodehdr.magic,
 					da_cursor->ino, bno);
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			goto error_out;
 		}
 
-		/* corrupt node; rebuild the dir. */
-		if (bp->b_error == -EFSBADCRC || bp->b_error == -EFSCORRUPTED) {
-			libxfs_putbuf(bp);
-			do_warn(
-_("corrupt %s tree block %u for inode %" PRIu64 "\n"),
-				FORKNAME(whichfork), bno, da_cursor->ino);
-			goto error_out;
-		}
-
-		btree = M_DIROPS(mp)->node_tree_p(node);
 		if (nodehdr.count > geo->node_ents) {
 			do_warn(
 _("bad %s record count in inode %" PRIu64 ", count = %d, max = %d\n"),
 				FORKNAME(whichfork), da_cursor->ino,
 				nodehdr.count, geo->node_ents);
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			goto error_out;
 		}
 
@@ -220,7 +187,7 @@ _("bad %s record count in inode %" PRIu64 ", count = %d, max = %d\n"),
 				do_warn(
 _("bad header depth for directory inode %" PRIu64 "\n"),
 					da_cursor->ino);
-				libxfs_putbuf(bp);
+				libxfs_buf_relse(bp);
 				i = -1;
 				goto error_out;
 			}
@@ -231,12 +198,13 @@ _("bad header depth for directory inode %" PRIu64 "\n"),
 				do_warn(
 _("bad %s btree for inode %" PRIu64 "\n"),
 					FORKNAME(whichfork), da_cursor->ino);
-				libxfs_putbuf(bp);
+				libxfs_buf_relse(bp);
 				goto error_out;
 			}
 		}
 
-		da_cursor->level[i].hashval = be32_to_cpu(btree[0].hashval);
+		da_cursor->level[i].hashval =
+			be32_to_cpu(nodehdr.btree[0].hashval);
 		da_cursor->level[i].bp = bp;
 		da_cursor->level[i].bno = bno;
 		da_cursor->level[i].index = 0;
@@ -244,7 +212,7 @@ _("bad %s btree for inode %" PRIu64 "\n"),
 		/*
 		 * set up new bno for next level down
 		 */
-		bno = be32_to_cpu(btree[0].before);
+		bno = be32_to_cpu(nodehdr.btree[0].before);
 	} while (node != NULL && i > 1);
 
 	/*
@@ -255,7 +223,7 @@ _("bad %s btree for inode %" PRIu64 "\n"),
 
 error_out:
 	while (i > 1 && i <= da_cursor->active) {
-		libxfs_putbuf(da_cursor->level[i].bp);
+		libxfs_buf_relse(da_cursor->level[i].bp);
 		i++;
 	}
 
@@ -285,7 +253,7 @@ release_da_cursor_int(
 		}
 		ASSERT(error != 0);
 
-		libxfs_putbuf(cursor->level[level].bp);
+		libxfs_buf_relse(cursor->level[level].bp);
 		cursor->level[level].bp = NULL;
 	}
 
@@ -333,7 +301,6 @@ verify_final_da_path(
 	int			bad = 0;
 	int			entry;
 	int			this_level = p_level + 1;
-	struct xfs_da_node_entry *btree;
 	struct xfs_da3_icnode_hdr nodehdr;
 
 #ifdef XR_DIR_TRACE
@@ -347,8 +314,7 @@ verify_final_da_path(
 	 */
 	entry = cursor->level[this_level].index;
 	node = cursor->level[this_level].bp->b_addr;
-	btree = M_DIROPS(mp)->node_tree_p(node);
-	M_DIROPS(mp)->node_hdr_from_disk(&nodehdr, node);
+	libxfs_da3_node_hdr_from_disk(mp, &nodehdr, node);
 
 	/*
 	 * check internal block consistency on this level -- ensure
@@ -365,12 +331,12 @@ _("%s block used/count inconsistency - %d/%hu\n"),
 	 * hash values monotonically increasing ???
 	 */
 	if (cursor->level[this_level].hashval >=
-				be32_to_cpu(btree[entry].hashval)) {
+				be32_to_cpu(nodehdr.btree[entry].hashval)) {
 		do_warn(
 _("%s block hashvalue inconsistency, expected > %u / saw %u\n"),
 			FORKNAME(whichfork),
 			cursor->level[this_level].hashval,
-			be32_to_cpu(btree[entry].hashval));
+			be32_to_cpu(nodehdr.btree[entry].hashval));
 		bad++;
 	}
 	if (nodehdr.forw != 0) {
@@ -394,11 +360,13 @@ _("bad %s forward block pointer, expected 0, saw %u\n"),
 	/*
 	 * ok, now check descendant block number against this level
 	 */
-	if (cursor->level[p_level].bno != be32_to_cpu(btree[entry].before)) {
+	if (cursor->level[p_level].bno !=
+	    be32_to_cpu(nodehdr.btree[entry].before)) {
 #ifdef XR_DIR_TRACE
 		fprintf(stderr, "bad %s btree pointer, child bno should "
 				"be %d, block bno is %d, hashval is %u\n",
-			FORKNAME(whichfork), be16_to_cpu(btree[entry].before),
+			FORKNAME(whichfork),
+			be16_to_cpu(nodehdr.btree[entry].before),
 			cursor->level[p_level].bno,
 			cursor->level[p_level].hashval);
 		fprintf(stderr, "verify_final_da_path returns 1 (bad) #1a\n");
@@ -407,13 +375,13 @@ _("bad %s forward block pointer, expected 0, saw %u\n"),
 	}
 
 	if (cursor->level[p_level].hashval !=
-				be32_to_cpu(btree[entry].hashval)) {
+				be32_to_cpu(nodehdr.btree[entry].hashval)) {
 		if (!no_modify) {
 			do_warn(
 _("correcting bad hashval in non-leaf %s block\n"
  "\tin (level %d) in inode %" PRIu64 ".\n"),
 				FORKNAME(whichfork), this_level, cursor->ino);
-			btree[entry].hashval = cpu_to_be32(
+			nodehdr.btree[entry].hashval = cpu_to_be32(
 						cursor->level[p_level].hashval);
 			cursor->level[this_level].dirty++;
 		} else {
@@ -428,7 +396,7 @@ _("would correct bad hashval in non-leaf %s block\n"
 	 * Note: squirrel hashval away _before_ releasing the
 	 * buffer, preventing a use-after-free problem.
 	 */
-	hashval = be32_to_cpu(btree[entry].hashval);
+	hashval = be32_to_cpu(nodehdr.btree[entry].hashval);
 
 	/*
 	 * release/write buffer
@@ -436,10 +404,12 @@ _("would correct bad hashval in non-leaf %s block\n"
 	ASSERT(cursor->level[this_level].dirty == 0 ||
 		(cursor->level[this_level].dirty && !no_modify));
 
-	if (cursor->level[this_level].dirty && !no_modify)
-		libxfs_writebuf(cursor->level[this_level].bp, 0);
+	if (cursor->level[this_level].dirty && !no_modify) {
+		libxfs_buf_mark_dirty(cursor->level[this_level].bp);
+		libxfs_buf_relse(cursor->level[this_level].bp);
+	}
 	else
-		libxfs_putbuf(cursor->level[this_level].bp);
+		libxfs_buf_relse(cursor->level[this_level].bp);
 
 	cursor->level[this_level].bp = NULL;
 
@@ -518,7 +488,6 @@ verify_da_path(
 	int			nex;
 	bmap_ext_t		lbmp;
 	struct xfs_da_geometry	*geo;
-	struct xfs_da_node_entry *btree;
 	struct xfs_da3_icnode_hdr nodehdr;
 
 	if (whichfork == XFS_DATA_FORK)
@@ -526,14 +495,21 @@ verify_da_path(
 	else
 		geo = mp->m_attr_geo;
 
+	/* No buffer at this level, tree is corrupt. */
+	if (cursor->level[this_level].bp == NULL)
+		return 1;
+
 	/*
 	 * index is currently set to point to the entry that
 	 * should be processed now in this level.
 	 */
 	entry = cursor->level[this_level].index;
 	node = cursor->level[this_level].bp->b_addr;
-	btree = M_DIROPS(mp)->node_tree_p(node);
-	M_DIROPS(mp)->node_hdr_from_disk(&nodehdr, node);
+	libxfs_da3_node_hdr_from_disk(mp, &nodehdr, node);
+
+	/* No entries in this node?  Tree is corrupt. */
+	if (nodehdr.count == 0)
+		return 1;
 
 	/*
 	 * if this block is out of entries, validate this
@@ -547,7 +523,7 @@ verify_da_path(
 		 * it was set when the block was first read in.
 		 */
 		cursor->level[this_level].hashval =
-				be32_to_cpu(btree[entry - 1].hashval);
+				be32_to_cpu(nodehdr.btree[entry - 1].hashval);
 
 		/*
 		 * keep track of greatest block # -- that gets
@@ -586,10 +562,16 @@ _("can't read %s block %u for inode %" PRIu64 "\n"),
 				FORKNAME(whichfork), dabno, cursor->ino);
 			return 1;
 		}
+		if (bp->b_error == -EFSCORRUPTED || bp->b_error == -EFSBADCRC) {
+			do_warn(
+_("corrupt %s tree block %u for inode %" PRIu64 "\n"),
+				FORKNAME(whichfork), dabno, cursor->ino);
+			libxfs_buf_relse(bp);
+			return 1;
+		}
 
 		newnode = bp->b_addr;
-		btree = M_DIROPS(mp)->node_tree_p(newnode);
-		M_DIROPS(mp)->node_hdr_from_disk(&nodehdr, newnode);
+		libxfs_da3_node_hdr_from_disk(mp, &nodehdr, newnode);
 
 		/*
 		 * verify magic number and back pointer, sanity-check
@@ -628,7 +610,7 @@ _("bad level %d in %s block %u for inode %" PRIu64 "\n"),
 #ifdef XR_DIR_TRACE
 			fprintf(stderr, "verify_da_path returns 1 (bad) #4\n");
 #endif
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			return 1;
 		}
 
@@ -647,28 +629,32 @@ _("bad level %d in %s block %u for inode %" PRIu64 "\n"),
 		    cursor->level[this_level].bp->b_error == -EFSBADCRC)
 			cursor->level[this_level].dirty = 1;
 
-		if (cursor->level[this_level].dirty && !no_modify)
-			libxfs_writebuf(cursor->level[this_level].bp, 0);
+		if (cursor->level[this_level].dirty && !no_modify) {
+			libxfs_buf_mark_dirty(cursor->level[this_level].bp);
+			libxfs_buf_relse(cursor->level[this_level].bp);
+		}
 		else
-			libxfs_putbuf(cursor->level[this_level].bp);
+			libxfs_buf_relse(cursor->level[this_level].bp);
 
 		/* switch cursor to point at the new buffer we just read */
 		cursor->level[this_level].bp = bp;
 		cursor->level[this_level].dirty = 0;
 		cursor->level[this_level].bno = dabno;
 		cursor->level[this_level].hashval =
-					be32_to_cpu(btree[0].hashval);
+					be32_to_cpu(nodehdr.btree[0].hashval);
 
 		entry = cursor->level[this_level].index = 0;
 	}
 	/*
 	 * ditto for block numbers
 	 */
-	if (cursor->level[p_level].bno != be32_to_cpu(btree[entry].before)) {
+	if (cursor->level[p_level].bno !=
+	    be32_to_cpu(nodehdr.btree[entry].before)) {
 #ifdef XR_DIR_TRACE
 		fprintf(stderr, "bad %s btree pointer, child bno "
 			"should be %d, block bno is %d, hashval is %u\n",
-			FORKNAME(whichfork), be32_to_cpu(btree[entry].before),
+			FORKNAME(whichfork),
+			be32_to_cpu(nodehdr.btree[entry].before),
 			cursor->level[p_level].bno,
 			cursor->level[p_level].hashval);
 		fprintf(stderr, "verify_da_path returns 1 (bad) #1a\n");
@@ -680,13 +666,13 @@ _("bad level %d in %s block %u for inode %" PRIu64 "\n"),
 	 * block against the hashval in the current entry
 	 */
 	if (cursor->level[p_level].hashval !=
-				be32_to_cpu(btree[entry].hashval)) {
+				be32_to_cpu(nodehdr.btree[entry].hashval)) {
 		if (!no_modify) {
 			do_warn(
 _("correcting bad hashval in interior %s block\n"
   "\tin (level %d) in inode %" PRIu64 ".\n"),
 				FORKNAME(whichfork), this_level, cursor->ino);
-			btree[entry].hashval = cpu_to_be32(
+			nodehdr.btree[entry].hashval = cpu_to_be32(
 						cursor->level[p_level].hashval);
 			cursor->level[this_level].dirty++;
 		} else {

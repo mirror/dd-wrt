@@ -68,8 +68,14 @@ cscope.*
 /repair/xfs_repair
 /rtcp/xfs_rtcp
 /spaceman/xfs_spaceman
+/scrub/xfs_scrub
+/scrub/xfs_scrub@.service
+/scrub/xfs_scrub_all
+/scrub/xfs_scrub_all.cron
+/scrub/xfs_scrub_all.service
+/scrub/xfs_scrub_fail@.service
 
 # generated crc files
-/libxfs/crc32selftest
-/libxfs/crc32table.h
-/libxfs/gen_crc32table
+/libfrog/crc32selftest
+/libfrog/crc32table.h
+/libfrog/gen_crc32table

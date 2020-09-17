@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -38,7 +26,7 @@ static int	write_f(int argc, char **argv);
 static void     write_help(void);
 
 static const cmdinfo_t	write_cmd =
-	{ "write", NULL, write_f, 0, -1, 0, N_("[-c] [field or value]..."),
+	{ "write", NULL, write_f, 0, -1, 0, N_("[-c|-d] [field or value]..."),
 	  N_("write value to disk"), write_help };
 
 void
@@ -537,7 +525,7 @@ convert_arg(
 	char		*endp;
 	char		*rbuf;
 	char		*ostr;
-	__u64		*value;
+	__be64		*value;
 	__u64		val = 0;
 
 	if (bit_length <= 64)
@@ -547,7 +535,7 @@ convert_arg(
 
 	buf = xrealloc(buf, alloc_size);
 	memset(buf, 0, alloc_size);
-	value = (__u64 *)buf;
+	value = (__be64 *)buf;
 	rbuf = buf;
 
 	if (*arg == '\"') {

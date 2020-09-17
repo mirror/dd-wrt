@@ -1,24 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005-2006 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "command.h"
 #include "input.h"
-#include "path.h"
+#include "libfrog/paths.h"
 #include "parent.h"
 #include "handle.h"
 #include "jdm.h"
@@ -38,7 +26,7 @@ static char *mntpt;
  * check out a parent entry to see if the values seem valid
  */
 static void
-check_parent_entry(xfs_bstat_t *bstatp, parent_t *parent)
+check_parent_entry(struct xfs_bstat *bstatp, parent_t *parent)
 {
 	int sts;
 	char fullpath[PATH_MAX];
@@ -121,7 +109,7 @@ check_parent_entry(xfs_bstat_t *bstatp, parent_t *parent)
 
 static void
 check_parents(parent_t *parentbuf, size_t *parentbuf_size,
-	     jdm_fshandle_t *fshandlep, xfs_bstat_t *statp)
+	     jdm_fshandle_t *fshandlep, struct xfs_bstat *statp)
 {
 	int error, i;
 	__u32 count;
@@ -158,14 +146,14 @@ check_parents(parent_t *parentbuf, size_t *parentbuf_size,
 }
 
 static int
-do_bulkstat(parent_t *parentbuf, size_t *parentbuf_size, xfs_bstat_t *bstatbuf,
-	    int fsfd, jdm_fshandle_t *fshandlep)
+do_bulkstat(parent_t *parentbuf, size_t *parentbuf_size,
+	    struct xfs_bstat *bstatbuf, int fsfd, jdm_fshandle_t *fshandlep)
 {
 	__s32 buflenout;
 	__u64 lastino = 0;
-	xfs_bstat_t *p;
-	xfs_bstat_t *endp;
-	xfs_fsop_bulkreq_t bulkreq;
+	struct xfs_bstat *p;
+	struct xfs_bstat *endp;
+	struct xfs_fsop_bulkreq bulkreq;
 	struct stat mntstat;
 
 	if (stat(mntpt, &mntstat)) {
@@ -234,7 +222,7 @@ parent_check(void)
 	jdm_fshandle_t *fshandlep;
 	parent_t *parentbuf;
 	size_t parentbuf_size = PARENTBUF_SZ;
-	xfs_bstat_t *bstatbuf;
+	struct xfs_bstat *bstatbuf;
 
 	err_status = 0;
 	inodes_checked = 0;
@@ -252,7 +240,7 @@ parent_check(void)
 	}
 
 	/* allocate buffers */
-        bstatbuf = (xfs_bstat_t *)calloc(BSTATBUF_SZ, sizeof(xfs_bstat_t));
+        bstatbuf = (struct xfs_bstat *)calloc(BSTATBUF_SZ, sizeof(struct xfs_bstat));
 	parentbuf = (parent_t *)malloc(parentbuf_size);
 	if (!bstatbuf || !parentbuf) {
 		fprintf(stderr, _("unable to allocate buffers: %s\n"),
@@ -370,7 +358,7 @@ error:
 	return retval;
 }
 
-int
+static int
 parent_f(int argc, char **argv)
 {
 	int c;
@@ -387,6 +375,7 @@ parent_f(int argc, char **argv)
 	if (!fs) {
 		fprintf(stderr, _("file argument, \"%s\", is not in a mounted XFS filesystem\n"),
 			file->name);
+		exitcode = 1;
 		return 1;
 	}
 	mntpt = fs->fs_dir;

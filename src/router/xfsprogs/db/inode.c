@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -102,6 +90,7 @@ const field_t	inode_core_flds[] = {
 	  inode_core_projid_count, FLD_COUNT, TYP_NONE },
 	{ "projid_hi", FLDT_UINT16D, OI(COFF(projid_hi)),
 	  inode_core_projid_count, FLD_COUNT, TYP_NONE },
+	{ "pad", FLDT_UINT8X, OI(OFF(pad)), CI(6), FLD_ARRAY|FLD_SKIPALL, TYP_NONE },
 	{ "uid", FLDT_UINT32D, OI(COFF(uid)), C1, 0, TYP_NONE },
 	{ "gid", FLDT_UINT32D, OI(COFF(gid)), C1, 0, TYP_NONE },
 	{ "flushiter", FLDT_UINT16D, OI(COFF(flushiter)), C1, 0, TYP_NONE },
@@ -173,6 +162,7 @@ const field_t	inode_v3_flds[] = {
 	{ "lsn", FLDT_UINT64X, OI(COFF(lsn)), C1, 0, TYP_NONE },
 	{ "flags2", FLDT_UINT64X, OI(COFF(flags2)), C1, 0, TYP_NONE },
 	{ "cowextsize", FLDT_EXTLEN, OI(COFF(cowextsize)), C1, 0, TYP_NONE },
+	{ "pad2", FLDT_UINT8X, OI(OFF(pad2)), CI(12), FLD_ARRAY|FLD_SKIPALL, TYP_NONE },
 	{ "crtime", FLDT_TIMESTAMP, OI(COFF(crtime)), C1, 0, TYP_NONE },
 	{ "inumber", FLDT_INO, OI(COFF(ino)), C1, 0, TYP_NONE },
 	{ "uuid", FLDT_UUID, OI(COFF(uuid)), C1, 0, TYP_NONE },
@@ -181,6 +171,9 @@ const field_t	inode_v3_flds[] = {
 	  0, TYP_NONE },
 	{ "cowextsz", FLDT_UINT1,
 	  OI(COFF(flags2) + bitsz(uint64_t) - XFS_DIFLAG2_COWEXTSIZE_BIT-1), C1,
+	  0, TYP_NONE },
+	{ "dax", FLDT_UINT1,
+	  OI(COFF(flags2) + bitsz(uint64_t) - XFS_DIFLAG2_DAX_BIT - 1), C1,
 	  0, TYP_NONE },
 	{ NULL }
 };
@@ -234,11 +227,11 @@ fp_dinode_fmt(
 	int			array)
 {
 	int			bitpos;
-	xfs_dinode_fmt_t	f;
+	enum xfs_dinode_fmt	f;
 	int			i;
 
 	for (i = 0, bitpos = bit; i < count; i++, bitpos += size) {
-		f = (xfs_dinode_fmt_t)getbitval(obj, bitpos, size, BVUNSIGNED);
+		f = (enum xfs_dinode_fmt)getbitval(obj, bitpos, size, BVUNSIGNED);
 		if (array)
 			dbprintf("%d:", i + base);
 		if (f < 0 || f >= dinode_fmt_name_size)
@@ -261,7 +254,7 @@ inode_a_bmbt_count(
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);
 	dip = obj;
-	if (!XFS_DFORK_Q(dip))
+	if (!dip->di_forkoff)
 		return 0;
 	ASSERT((char *)XFS_DFORK_APTR(dip) - (char *)dip == byteize(startoff));
 	return dip->di_aformat == XFS_DINODE_FMT_BTREE;
@@ -277,7 +270,7 @@ inode_a_bmx_count(
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);
 	dip = obj;
-	if (!XFS_DFORK_Q(dip))
+	if (!dip->di_forkoff)
 		return 0;
 	ASSERT((char *)XFS_DFORK_APTR(dip) - (char *)dip == byteize(startoff));
 	return dip->di_aformat == XFS_DINODE_FMT_EXTENTS ?
@@ -293,7 +286,7 @@ inode_a_count(
 
 	ASSERT(startoff == 0);
 	dip = obj;
-	return XFS_DFORK_Q(dip);
+	return dip->di_forkoff;
 }
 
 static int
@@ -307,7 +300,7 @@ inode_a_offset(
 	ASSERT(startoff == 0);
 	ASSERT(idx == 0);
 	dip = obj;
-	ASSERT(XFS_DFORK_Q(dip));
+	ASSERT(dip->di_forkoff != 0);
 	return bitize((int)((char *)XFS_DFORK_APTR(dip) - (char *)dip));
 }
 
@@ -321,7 +314,7 @@ inode_a_sfattr_count(
 	ASSERT(bitoffs(startoff) == 0);
 	ASSERT(obj == iocur_top->data);
 	dip = obj;
-	if (!XFS_DFORK_Q(dip))
+	if (!dip->di_forkoff)
 		return 0;
 	ASSERT((char *)XFS_DFORK_APTR(dip) - (char *)dip == byteize(startoff));
 	return dip->di_aformat == XFS_DINODE_FMT_LOCAL;
@@ -648,6 +641,7 @@ set_cur_inode(
 	int		offset;
 	int		numblks = blkbb;
 	xfs_agblock_t	cluster_agbno;
+	struct xfs_ino_geometry *igeo = M_IGEO(mp);
 
 
 	agno = XFS_INO_TO_AGNO(mp, ino);
@@ -662,20 +656,18 @@ set_cur_inode(
 	}
 	cur_agno = agno;
 
-	if (mp->m_inode_cluster_size > mp->m_sb.sb_blocksize &&
-	    mp->m_inoalign_mask) {
+	if (igeo->inode_cluster_size > mp->m_sb.sb_blocksize &&
+	    igeo->inoalign_mask) {
 		xfs_agblock_t	chunk_agbno;
 		xfs_agblock_t	offset_agbno;
-		int		blks_per_cluster;
 
-		blks_per_cluster = mp->m_inode_cluster_size >>
-							mp->m_sb.sb_blocklog;
-		offset_agbno = agbno & mp->m_inoalign_mask;
+		offset_agbno = agbno & igeo->inoalign_mask;
 		chunk_agbno = agbno - offset_agbno;
 		cluster_agbno = chunk_agbno +
-			((offset_agbno / blks_per_cluster) * blks_per_cluster);
+			((offset_agbno / M_IGEO(mp)->blocks_per_cluster) *
+			 M_IGEO(mp)->blocks_per_cluster);
 		offset += ((agbno - cluster_agbno) * mp->m_sb.sb_inopblock);
-		numblks = XFS_FSB_TO_BB(mp, blks_per_cluster);
+		numblks = XFS_FSB_TO_BB(mp, M_IGEO(mp)->blocks_per_cluster);
 	} else
 		cluster_agbno = agbno;
 

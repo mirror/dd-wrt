@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <stdbool.h>
 #include "command.h"
@@ -142,6 +130,16 @@ state_timelimit(
 		time_to_string(timelimit, VERBOSE_FLAG | ABSOLUTE_FLAG));
 }
 
+static void
+state_warnlimit(
+	FILE		*fp,
+	uint		form,
+	uint16_t	warnlimit)
+{
+	fprintf(fp, _("%s max warnings: %u\n"),
+		form_to_string(form), warnlimit);
+}
+
 /*
  * fs_quota_stat holds a subset of fs_quota_statv; this copies
  * the smaller into the larger, leaving any not-present fields
@@ -193,6 +191,62 @@ state_stat_to_statv(
 }
 
 static void
+state_quotafile_stat(
+	FILE			*fp,
+	uint			type,
+	struct fs_path          *mount,
+	struct fs_quota_statv	*sv,
+	struct fs_quota_stat	*s,
+	uint			flags)
+{
+	bool			accounting, enforcing;
+	struct fs_qfilestatv	*qsv;
+	char			*dev = mount->fs_name;
+
+	if (xfsquotactl(XFS_GETQSTATV, dev, type, 0, (void *)sv) < 0) {
+		if (xfsquotactl(XFS_GETQSTAT, dev, type, 0, (void *)s) < 0) {
+			if (flags & VERBOSE_FLAG)
+				fprintf(fp,
+					_("%s quota are not enabled on %s\n"),
+					type_to_string(type), dev);
+			return;
+		}
+		state_stat_to_statv(s, sv);
+	}
+
+	switch(type) {
+	case XFS_USER_QUOTA:
+		qsv = &sv->qs_uquota;
+		accounting = sv->qs_flags & XFS_QUOTA_UDQ_ACCT;
+		enforcing = sv->qs_flags & XFS_QUOTA_UDQ_ENFD;
+		break;
+	case XFS_GROUP_QUOTA:
+		qsv = &sv->qs_gquota;
+		accounting = sv->qs_flags & XFS_QUOTA_GDQ_ACCT;
+		enforcing = sv->qs_flags & XFS_QUOTA_GDQ_ENFD;
+		break;
+	case XFS_PROJ_QUOTA:
+		qsv = &sv->qs_pquota;
+		accounting = sv->qs_flags & XFS_QUOTA_PDQ_ACCT;
+		enforcing = sv->qs_flags & XFS_QUOTA_PDQ_ENFD;
+		break;
+	default:
+		return;
+	}
+
+
+	state_qfilestat(fp, mount, type, qsv, accounting, enforcing);
+
+	state_timelimit(fp, XFS_BLOCK_QUOTA, sv->qs_btimelimit);
+	state_warnlimit(fp, XFS_BLOCK_QUOTA, sv->qs_bwarnlimit);
+
+	state_timelimit(fp, XFS_INODE_QUOTA, sv->qs_itimelimit);
+	state_warnlimit(fp, XFS_INODE_QUOTA, sv->qs_iwarnlimit);
+
+	state_timelimit(fp, XFS_RTBLOCK_QUOTA, sv->qs_rtbtimelimit);
+}
+
+static void
 state_quotafile_mount(
 	FILE			*fp,
 	uint			type,
@@ -201,37 +255,23 @@ state_quotafile_mount(
 {
 	struct fs_quota_stat	s;
 	struct fs_quota_statv	sv;
-	char			*dev = mount->fs_name;
 
 	sv.qs_version = FS_QSTATV_VERSION1;
 
-	if (xfsquotactl(XFS_GETQSTATV, dev, type, 0, (void *)&sv) < 0) {
-		if (xfsquotactl(XFS_GETQSTAT, dev, type, 0, (void *)&s) < 0) {
-			if (flags & VERBOSE_FLAG)
-				fprintf(fp,
-					_("%s quota are not enabled on %s\n"),
-					type_to_string(type), dev);
-			return;
-		}
-		state_stat_to_statv(&s, &sv);
+	if (type & XFS_USER_QUOTA) {
+		state_quotafile_stat(fp, XFS_USER_QUOTA, mount,
+				     &sv, &s, flags);
 	}
 
-	if (type & XFS_USER_QUOTA)
-		state_qfilestat(fp, mount, XFS_USER_QUOTA, &sv.qs_uquota,
-				sv.qs_flags & XFS_QUOTA_UDQ_ACCT,
-				sv.qs_flags & XFS_QUOTA_UDQ_ENFD);
-	if (type & XFS_GROUP_QUOTA)
-		state_qfilestat(fp, mount, XFS_GROUP_QUOTA, &sv.qs_gquota,
-				sv.qs_flags & XFS_QUOTA_GDQ_ACCT,
-				sv.qs_flags & XFS_QUOTA_GDQ_ENFD);
-	if (type & XFS_PROJ_QUOTA)
-		state_qfilestat(fp, mount, XFS_PROJ_QUOTA, &sv.qs_pquota,
-				sv.qs_flags & XFS_QUOTA_PDQ_ACCT,
-				sv.qs_flags & XFS_QUOTA_PDQ_ENFD);
+	if (type & XFS_GROUP_QUOTA) {
+		state_quotafile_stat(fp, XFS_GROUP_QUOTA, mount,
+				     &sv, &s, flags);
+	}
 
-	state_timelimit(fp, XFS_BLOCK_QUOTA, sv.qs_btimelimit);
-	state_timelimit(fp, XFS_INODE_QUOTA, sv.qs_itimelimit);
-	state_timelimit(fp, XFS_RTBLOCK_QUOTA, sv.qs_rtbtimelimit);
+	if (type & XFS_PROJ_QUOTA) {
+		state_quotafile_stat(fp, XFS_PROJ_QUOTA, mount,
+				     &sv, &s, flags);
+	}
 }
 
 static void
@@ -318,8 +358,16 @@ enable_enforcement(
 		return;
 	}
 	dir = mount->fs_name;
-	if (xfsquotactl(XFS_QUOTAON, dir, type, 0, (void *)&qflags) < 0)
-		perror("XFS_QUOTAON");
+	if (xfsquotactl(XFS_QUOTAON, dir, type, 0, (void *)&qflags) < 0) {
+		if (errno == EEXIST)
+			fprintf(stderr,
+				_("Quota enforcement already enabled.\n"));
+		else if (errno == EINVAL || errno == ENOSYS)
+			fprintf(stderr,
+				_("Can't enable enforcement when quota off.\n"));
+		else
+			perror("XFS_QUOTAON");
+	}
 	else if (flags & VERBOSE_FLAG)
 		state_quotafile_mount(stdout, type, mount, flags);
 }
@@ -340,8 +388,16 @@ disable_enforcement(
 		return;
 	}
 	dir = mount->fs_name;
-	if (xfsquotactl(XFS_QUOTAOFF, dir, type, 0, (void *)&qflags) < 0)
-		perror("XFS_QUOTAOFF");
+	if (xfsquotactl(XFS_QUOTAOFF, dir, type, 0, (void *)&qflags) < 0) {
+		if (errno == EEXIST)
+			fprintf(stderr,
+				_("Quota enforcement already disabled.\n"));
+		else if (errno == EINVAL || errno == ENOSYS)
+			fprintf(stderr,
+				_("Can't disable enforcement when quota off.\n"));
+		else
+			perror("XFS_QUOTAOFF");
+	}
 	else if (flags & VERBOSE_FLAG)
 		state_quotafile_mount(stdout, type, mount, flags);
 }
@@ -362,8 +418,12 @@ quotaoff(
 		return;
 	}
 	dir = mount->fs_name;
-	if (xfsquotactl(XFS_QUOTAOFF, dir, type, 0, (void *)&qflags) < 0)
-		perror("XFS_QUOTAOFF");
+	if (xfsquotactl(XFS_QUOTAOFF, dir, type, 0, (void *)&qflags) < 0) {
+		if (errno == EEXIST || errno == ENOSYS)
+			fprintf(stderr, _("Quota already off.\n"));
+		else
+			perror("XFS_QUOTAOFF");
+	}
 	else if (flags & VERBOSE_FLAG)
 		state_quotafile_mount(stdout, type, mount, flags);
 }

@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #include "libxfs.h"
 #include <pthread.h>
 #include <signal.h>
@@ -5,50 +7,6 @@
 #include "err_protos.h"
 #include "protos.h"
 #include "globals.h"
-
-static void *
-worker_thread(void *arg)
-{
-	work_queue_t	*wq;
-	work_item_t	*wi;
-
-	wq = (work_queue_t*)arg;
-
-	/*
-	 * Loop pulling work from the passed in work queue.
-	 * Check for notification to exit after every chunk of work.
-	 */
-	while (1) {
-		pthread_mutex_lock(&wq->lock);
-
-		/*
-		 * Wait for work.
-		 */
-		while (wq->next_item == NULL && !wq->terminate) {
-			ASSERT(wq->item_count == 0);
-			pthread_cond_wait(&wq->wakeup, &wq->lock);
-		}
-		if (wq->next_item == NULL && wq->terminate) {
-			pthread_mutex_unlock(&wq->lock);
-			break;
-		}
-
-		/*
-		 *  Dequeue work from the head of the list.
-		 */
-		ASSERT(wq->item_count > 0);
-		wi = wq->next_item;
-		wq->next_item = wi->next;
-		wq->item_count--;
-
-		pthread_mutex_unlock(&wq->lock);
-
-		(wi->function)(wi->queue, wi->agno, wi->arg);
-		free(wi);
-	}
-
-	return NULL;
-}
 
 void
 thread_init(void)
@@ -67,85 +25,42 @@ thread_init(void)
 
 void
 create_work_queue(
-	work_queue_t		*wq,
-	xfs_mount_t		*mp,
-	int			nworkers)
+	struct workqueue	*wq,
+	struct xfs_mount	*mp,
+	unsigned int		nworkers)
 {
 	int			err;
-	int			i;
 
-	memset(wq, 0, sizeof(work_queue_t));
-
-	pthread_cond_init(&wq->wakeup, NULL);
-	pthread_mutex_init(&wq->lock, NULL);
-
-	wq->mp = mp;
-	wq->thread_count = nworkers;
-	wq->threads = malloc(nworkers * sizeof(pthread_t));
-	wq->terminate = 0;
-
-	for (i = 0; i < nworkers; i++) {
-		err = pthread_create(&wq->threads[i], NULL, worker_thread, wq);
-		if (err != 0) {
-			do_error(_("cannot create worker threads, error = [%d] %s\n"),
+	err = -workqueue_create(wq, mp, nworkers);
+	if (err)
+		do_error(_("cannot create worker threads, error = [%d] %s\n"),
 				err, strerror(err));
-		}
-	}
-
 }
 
 void
 queue_work(
-	work_queue_t	*wq,
-	work_func_t	func,
-	xfs_agnumber_t	agno,
-	void		*arg)
+	struct workqueue	*wq,
+	workqueue_func_t	func,
+	xfs_agnumber_t		agno,
+	void			*arg)
 {
-	work_item_t	*wi;
+	int			err;
 
-	wi = (work_item_t *)malloc(sizeof(work_item_t));
-	if (wi == NULL)
+	err = -workqueue_add(wq, func, agno, arg);
+	if (err)
 		do_error(_("cannot allocate worker item, error = [%d] %s\n"),
-			errno, strerror(errno));
-
-	wi->function = func;
-	wi->agno = agno;
-	wi->arg = arg;
-	wi->queue = wq;
-	wi->next = NULL;
-
-	/*
-	 *  Now queue the new work structure to the work queue.
-	 */
-	pthread_mutex_lock(&wq->lock);
-	if (wq->next_item == NULL) {
-		wq->next_item = wi;
-		ASSERT(wq->item_count == 0);
-		pthread_cond_signal(&wq->wakeup);
-	} else {
-		wq->last_item->next = wi;
-	}
-	wq->last_item = wi;
-	wq->item_count++;
-	pthread_mutex_unlock(&wq->lock);
+				err, strerror(err));
 }
 
 void
 destroy_work_queue(
-	work_queue_t	*wq)
+	struct workqueue	*wq)
 {
-	int		i;
+	int			err;
 
-	pthread_mutex_lock(&wq->lock);
-	wq->terminate = 1;
-	pthread_mutex_unlock(&wq->lock);
-
-	pthread_cond_broadcast(&wq->wakeup);
-
-	for (i = 0; i < wq->thread_count; i++)
-		pthread_join(wq->threads[i], NULL);
-
-	free(wq->threads);
-	pthread_mutex_destroy(&wq->lock);
-	pthread_cond_destroy(&wq->wakeup);
+	err = -workqueue_terminate(wq);
+	if (err)
+		do_error(_("cannot terminate worker item, error = [%d] %s\n"),
+				err, strerror(err));
+	workqueue_destroy(wq);
 }

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -28,6 +16,7 @@
 #include "field.h"
 #include "inode.h"
 #include "malloc.h"
+#include <sys/xattr.h>
 
 static int		attr_set_f(int argc, char **argv);
 static int		attr_remove_f(int argc, char **argv);
@@ -35,11 +24,11 @@ static void		attrset_help(void);
 
 static const cmdinfo_t	attr_set_cmd =
 	{ "attr_set", "aset", attr_set_f, 1, -1, 0,
-	  N_("[-r|-s|-p|-u] [-n] [-R|-C] [-v n] name"),
+	  N_("[-r|-s|-u] [-n] [-R|-C] [-v n] name"),
 	  N_("set the named attribute on the current inode"), attrset_help };
 static const cmdinfo_t	attr_remove_cmd =
 	{ "attr_remove", "aremove", attr_remove_f, 1, -1, 0,
-	  N_("[-r|-s|-p|-u] [-n] name"),
+	  N_("[-r|-s|-u] [-n] name"),
 	  N_("remove the named attribute from the current inode"), attrset_help };
 
 static void
@@ -75,12 +64,12 @@ attrset_init(void)
 
 static int
 attr_set_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	xfs_inode_t	*ip = NULL;
-	char		*name, *value, *sp;
-	int		c, valuelen = 0, flags = 0;
+	struct xfs_da_args	args = { };
+	char			*sp;
+	int			c;
 
 	if (cur_typ == NULL) {
 		dbprintf(_("no current type\n"));
@@ -95,23 +84,26 @@ attr_set_f(
 		switch (c) {
 		/* namespaces */
 		case 'r':
-			flags |= LIBXFS_ATTR_ROOT;
-			flags &= ~LIBXFS_ATTR_SECURE;
+			args.attr_filter |= LIBXFS_ATTR_ROOT;
+			args.attr_filter &= ~LIBXFS_ATTR_SECURE;
 			break;
 		case 'u':
-			flags &= ~(LIBXFS_ATTR_ROOT | LIBXFS_ATTR_SECURE);
+			args.attr_filter &= ~(LIBXFS_ATTR_ROOT |
+					      LIBXFS_ATTR_SECURE);
 			break;
 		case 's':
-			flags |= LIBXFS_ATTR_SECURE;
-			flags &= ~LIBXFS_ATTR_ROOT;
+			args.attr_filter |= LIBXFS_ATTR_SECURE;
+			args.attr_filter &= ~LIBXFS_ATTR_ROOT;
 			break;
 
 		/* modifiers */
 		case 'C':
-			flags |= LIBXFS_ATTR_CREATE;
+			args.attr_flags |= XATTR_CREATE;
+			args.attr_flags &= ~XATTR_REPLACE;
 			break;
 		case 'R':
-			flags |= LIBXFS_ATTR_REPLACE;
+			args.attr_flags |= XATTR_REPLACE;
+			args.attr_flags &= ~XATTR_CREATE;
 			break;
 
 		case 'n':
@@ -120,8 +112,9 @@ attr_set_f(
 
 		/* value length */
 		case 'v':
-			valuelen = (int)strtol(optarg, &sp, 0);
-			if (*sp != '\0' || valuelen < 0 || valuelen > 64*1024) {
+			args.valuelen = strtol(optarg, &sp, 0);
+			if (*sp != '\0' ||
+			    args.valuelen < 0 || args.valuelen > 64 * 1024) {
 				dbprintf(_("bad attr_set valuelen %s\n"), optarg);
 				return 0;
 			}
@@ -138,29 +131,37 @@ attr_set_f(
 		return 0;
 	}
 
-	name = argv[optind];
-
-	if (valuelen) {
-		value = (char *)memalign(getpagesize(), valuelen);
-		if (!value) {
-			dbprintf(_("cannot allocate buffer (%d)\n"), valuelen);
-			goto out;
-		}
-		memset(value, 'v', valuelen);
-	} else {
-		value = NULL;
+	args.name = (const unsigned char *)argv[optind];
+	if (!args.name) {
+		dbprintf(_("invalid name\n"));
+		return 0;
 	}
 
-	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip)) {
+	args.namelen = strlen(argv[optind]);
+	if (args.namelen >= MAXNAMELEN) {
+		dbprintf(_("name too long\n"));
+		return 0;
+	}
+
+	if (args.valuelen) {
+		args.value = memalign(getpagesize(), args.valuelen);
+		if (!args.value) {
+			dbprintf(_("cannot allocate buffer (%d)\n"),
+				args.valuelen);
+			goto out;
+		}
+		memset(args.value, 'v', args.valuelen);
+	}
+
+	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &args.dp)) {
 		dbprintf(_("failed to iget inode %llu\n"),
 			(unsigned long long)iocur_top->ino);
 		goto out;
 	}
 
-	if (libxfs_attr_set(ip, (unsigned char *)name,
-				(unsigned char *)value, valuelen, flags)) {
+	if (libxfs_attr_set(&args)) {
 		dbprintf(_("failed to set attr %s on inode %llu\n"),
-			name, (unsigned long long)iocur_top->ino);
+			args.name, (unsigned long long)iocur_top->ino);
 		goto out;
 	}
 
@@ -169,21 +170,20 @@ attr_set_f(
 
 out:
 	mp->m_flags &= ~LIBXFS_MOUNT_COMPAT_ATTR;
-	if (ip)
-		IRELE(ip);
-	if (value)
-		free(value);
+	if (args.dp)
+		libxfs_irele(args.dp);
+	if (args.value)
+		free(args.value);
 	return 0;
 }
 
 static int
 attr_remove_f(
-	int		argc,
-	char		**argv)
+	int			argc,
+	char			**argv)
 {
-	xfs_inode_t	*ip = NULL;
-	char		*name;
-	int		c, flags = 0;
+	struct xfs_da_args	args = { };
+	int			c;
 
 	if (cur_typ == NULL) {
 		dbprintf(_("no current type\n"));
@@ -198,15 +198,16 @@ attr_remove_f(
 		switch (c) {
 		/* namespaces */
 		case 'r':
-			flags |= LIBXFS_ATTR_ROOT;
-			flags &= ~LIBXFS_ATTR_SECURE;
+			args.attr_filter |= LIBXFS_ATTR_ROOT;
+			args.attr_filter &= ~LIBXFS_ATTR_SECURE;
 			break;
 		case 'u':
-			flags &= ~(LIBXFS_ATTR_ROOT | LIBXFS_ATTR_SECURE);
+			args.attr_filter &= ~(LIBXFS_ATTR_ROOT |
+					      LIBXFS_ATTR_SECURE);
 			break;
 		case 's':
-			flags |= LIBXFS_ATTR_SECURE;
-			flags &= ~LIBXFS_ATTR_ROOT;
+			args.attr_filter |= LIBXFS_ATTR_SECURE;
+			args.attr_filter &= ~LIBXFS_ATTR_ROOT;
 			break;
 
 		case 'n':
@@ -224,17 +225,28 @@ attr_remove_f(
 		return 0;
 	}
 
-	name = argv[optind];
+	args.name = (const unsigned char *)argv[optind];
+	if (!args.name) {
+		dbprintf(_("invalid name\n"));
+		return 0;
+	}
 
-	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &ip)) {
+	args.namelen = strlen(argv[optind]);
+	if (args.namelen >= MAXNAMELEN) {
+		dbprintf(_("name too long\n"));
+		return 0;
+	}
+
+	if (libxfs_iget(mp, NULL, iocur_top->ino, 0, &args.dp)) {
 		dbprintf(_("failed to iget inode %llu\n"),
 			(unsigned long long)iocur_top->ino);
 		goto out;
 	}
 
-	if (libxfs_attr_remove(ip, (unsigned char *)name, flags)) {
+	if (libxfs_attr_set(&args)) {
 		dbprintf(_("failed to remove attr %s from inode %llu\n"),
-			name, (unsigned long long)iocur_top->ino);
+			(unsigned char *)args.name,
+			(unsigned long long)iocur_top->ino);
 		goto out;
 	}
 
@@ -243,7 +255,7 @@ attr_remove_f(
 
 out:
 	mp->m_flags &= ~LIBXFS_MOUNT_COMPAT_ATTR;
-	if (ip)
-		IRELE(ip);
+	if (args.dp)
+		libxfs_irele(args.dp);
 	return 0;
 }

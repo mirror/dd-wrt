@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -25,16 +13,13 @@
 #include "malloc.h"
 #include "init.h"
 
-#if defined(ENABLE_READLINE)
-# include <readline/history.h>
-# include <readline/readline.h>
-#elif defined(ENABLE_EDITLINE)
+#ifdef ENABLE_EDITLINE
 # include <histedit.h>
 #endif
 
-int	inputstacksize;
-FILE	**inputstack;
-FILE	*curinput;
+static int	inputstacksize;
+static FILE	**inputstack;
+static FILE	*curinput;
 
 static void	popfile(void);
 static int	source_f(int argc, char **argv);
@@ -223,26 +208,7 @@ fetchline_internal(void)
 	return rval;
 }
 
-#ifdef ENABLE_READLINE
-char *
-fetchline(void)
-{
-	char	*line;
-
-	if (inputstacksize == 1) {
-		line = readline(get_prompt());
-		if (!line)
-			dbprintf("\n");
-		else if (line && *line) {
-			add_history(line);
-			logprintf("%s", line);
-		}
-	} else {
-		line = fetchline_internal();
-	}
-	return line;
-}
-#elif defined(ENABLE_EDITLINE)
+#ifdef ENABLE_EDITLINE
 static char *el_get_prompt(EditLine *e) { return get_prompt(); }
 char *
 fetchline(void)
@@ -264,14 +230,21 @@ fetchline(void)
 	}
 
 	if (inputstacksize == 1) {
-		line = xstrdup(el_gets(el, &count));
-		if (line) {
-			if (count > 0)
-				line[count-1] = '\0';
-			if (*line) {
-				history(hist, &hevent, H_ENTER, line);
-				logprintf("%s", line);
-			}
+		const char	*cmd;
+
+		cmd = el_gets(el, &count);
+		if (!cmd)
+			return NULL;
+
+		line = xstrdup(cmd);
+		if (!line)
+			return NULL;
+
+		if (count > 0)
+			line[count-1] = '\0';
+		if (*line) {
+			history(hist, &hevent, H_ENTER, line);
+			logprintf("%s", line);
 		}
 	} else {
 		line = fetchline_internal();

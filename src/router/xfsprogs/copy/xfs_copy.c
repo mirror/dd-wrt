@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -24,40 +12,39 @@
 #include <stdarg.h>
 #include "xfs_copy.h"
 #include "libxlog.h"
+#include "libfrog/platform.h"
 
 #define	rounddown(x, y)	(((x)/(y))*(y))
 #define uuid_equal(s,d) (platform_uuid_compare((s),(d)) == 0)
 
 extern int	platform_check_ismounted(char *, char *, struct stat *, int);
 
-int		logfd;
-char 		*logfile_name;
-FILE		*logerr;
-char		LOGFILE_NAME[] = "/var/tmp/xfs_copy.log.XXXXXX";
+static char 		*logfile_name;
+static FILE		*logerr;
+static char		LOGFILE_NAME[] = "/var/tmp/xfs_copy.log.XXXXXX";
 
-char		*source_name;
-int		source_fd;
+static char		*source_name;
+static int		source_fd;
 
-unsigned int	source_blocksize;	/* source filesystem blocksize */
-unsigned int	source_sectorsize;	/* source disk sectorsize */
+static unsigned int	source_blocksize;	/* source filesystem blocksize */
+static unsigned int	source_sectorsize;	/* source disk sectorsize */
 
-xfs_agblock_t	first_agbno;
+static xfs_agblock_t	first_agbno;
 
-uint64_t	barcount[11];
+static uint64_t	barcount[11];
 
-unsigned int	num_targets;
-target_control	*target;
+static unsigned int	num_targets;
+static target_control	*target;
 
-wbuf		w_buf;
-wbuf		btree_buf;
+static wbuf		w_buf;
+static wbuf		btree_buf;
 
-pid_t		parent_pid;
-unsigned int	kids;
+static unsigned int	kids;
 
-thread_control	glob_masks;
-thread_args	*targ;
+static thread_control	glob_masks;
+static thread_args	*targ;
 
-pthread_mutex_t	mainwait;
+static pthread_mutex_t	mainwait;
 
 #define ACTIVE		1
 #define INACTIVE	2
@@ -74,7 +61,7 @@ static int	format_logs(struct xfs_mount *);
 #define PRE	0x08		/* append strerror string */
 #define LAST	0x10		/* final message we print */
 
-void
+static void
 signal_maskfunc(int addset, int newset)
 {
 	sigset_t set;
@@ -84,7 +71,7 @@ signal_maskfunc(int addset, int newset)
 	sigprocmask(newset, &set, NULL);
 }
 
-void
+static void
 do_message(int flags, int code, const char *fmt, ...)
 {
 	va_list	ap;
@@ -146,12 +133,20 @@ int xlog_recover_do_trans(struct xlog *log, struct xlog_recover *t, int p)
 	return 0;
 }
 
-void
+static void
 check_errors(void)
 {
 	int	i, first_error = 0;
 
 	for (i = 0; i < num_targets; i++)  {
+		if (target[i].state != INACTIVE) {
+			if (platform_flush_device(target[i].fd, 0)) {
+				target[i].error = errno;
+				target[i].state = INACTIVE;
+				target[i].err_type = 2;
+			}
+		}
+
 		if (target[i].state == INACTIVE)  {
 			if (first_error == 0)  {
 				first_error++;
@@ -159,10 +154,21 @@ check_errors(void)
 				_("THE FOLLOWING COPIES FAILED TO COMPLETE\n"));
 			}
 			do_log("    %s -- ", target[i].name);
-			if (target[i].err_type == 0)
+			switch (target[i].err_type) {
+			case 0:
 				do_log(_("write error"));
-			else
+				break;
+			case 1:
 				do_log(_("lseek error"));
+				break;
+			case 2:
+				do_log(_("flush error"));
+				break;
+			default:
+				do_log(_("unknown error type %d"),
+						target[i].err_type);
+				break;
+			}
 			do_log(_(" at offset %lld\n"), target[i].position);
 		}
 	}
@@ -180,7 +186,7 @@ check_errors(void)
  * don't have to worry about alignment and mins because those
  * are taken care of when the buffer's read in
  */
-int
+static int
 do_write(
 	thread_args	*args,
 	wbuf		*buf)
@@ -213,7 +219,7 @@ do_write(
 	return error;
 }
 
-void *
+static void *
 begin_reader(void *arg)
 {
 	thread_args	*args = arg;
@@ -241,7 +247,7 @@ handle_error:
 	return NULL;
 }
 
-void
+static void
 handler(int sig)
 {
 	pid_t	pid;
@@ -303,7 +309,7 @@ handler(int sig)
 	signal(SIGCHLD, handler);
 }
 
-void
+static void
 usage(void)
 {
 	fprintf(stderr,
@@ -312,7 +318,7 @@ usage(void)
 	exit(1);
 }
 
-void
+static void
 init_bar(uint64_t source_blocks)
 {
 	int	i;
@@ -321,7 +327,7 @@ init_bar(uint64_t source_blocks)
 		barcount[i] = (source_blocks/10)*i;
 }
 
-int
+static int
 bump_bar(int tenths, uint64_t numblocks)
 {
 	static char *bar[11] = {
@@ -353,7 +359,7 @@ bump_bar(int tenths, uint64_t numblocks)
 
 static xfs_off_t source_position = -1;
 
-wbuf *
+static wbuf *
 wbuf_init(wbuf *buf, int data_size, int data_align, int min_io_size, int id)
 {
 	ASSERT(data_size % BBSIZE == 0);
@@ -370,7 +376,7 @@ wbuf_init(wbuf *buf, int data_size, int data_align, int min_io_size, int id)
 	return buf;
 }
 
-void
+static void
 read_wbuf(int fd, wbuf *buf, xfs_mount_t *mp)
 {
 	int		res = 0;
@@ -425,7 +431,7 @@ read_wbuf(int fd, wbuf *buf, xfs_mount_t *mp)
 	buf->length = res;
 }
 
-void
+static void
 read_ag_header(int fd, xfs_agnumber_t agno, wbuf *buf, ag_header_t *ag,
 		xfs_mount_t *mp, int blocksize, int sectorsize)
 {
@@ -468,11 +474,11 @@ read_ag_header(int fd, xfs_agnumber_t agno, wbuf *buf, ag_header_t *ag,
 	ASSERT(be32_to_cpu(ag->xfs_agf->agf_magicnum) == XFS_AGF_MAGIC);
 	ag->xfs_agi = (xfs_agi_t *) (buf->data + diff + 2 * sectorsize);
 	ASSERT(be32_to_cpu(ag->xfs_agi->agi_magicnum) == XFS_AGI_MAGIC);
-	ag->xfs_agfl = (xfs_agfl_t *) (buf->data + diff + 3 * sectorsize);
+	ag->xfs_agfl = (struct xfs_agfl *) (buf->data + diff + 3 * sectorsize);
 }
 
 
-void
+static void
 write_wbuf(void)
 {
 	int		i;
@@ -504,7 +510,7 @@ write_wbuf(void)
 	signal_maskfunc(SIGCHLD, SIG_BLOCK);
 }
 
-void
+static void
 sb_update_uuid(
 	xfs_sb_t	*sb,		/* Original fs superblock */
 	ag_header_t	*ag_hdr,	/* AG hdr to update for this copy */
@@ -519,7 +525,7 @@ sb_update_uuid(
 	 */
 	if (xfs_sb_version_hascrc(sb) && !xfs_sb_version_hasmetauuid(sb) &&
 	    !uuid_equal(&tcarg->uuid, &sb->sb_uuid)) {
-		__be32 feat;
+		uint32_t feat;
 
 		feat = be32_to_cpu(ag_hdr->xfs_sb->sb_features_incompat);
 		feat |= XFS_SB_FEAT_INCOMPAT_META_UUID;
@@ -541,6 +547,7 @@ int
 main(int argc, char **argv)
 {
 	int		i, j;
+	int		logfd;
 	int		howfar = 0;
 	int		open_flags;
 	xfs_off_t	pos;
@@ -575,6 +582,7 @@ main(int argc, char **argv)
 	libxfs_init_t	xargs;
 	thread_args	*tcarg;
 	struct stat	statbuf;
+	int		error;
 
 	progname = basename(argv[0]);
 
@@ -596,7 +604,7 @@ main(int argc, char **argv)
 		case 'V':
 			printf(_("%s version %s\n"), progname, VERSION);
 			exit(0);
-		case '?':
+		default:
 			usage();
 		}
 	}
@@ -643,8 +651,6 @@ main(int argc, char **argv)
 		target[i].err_type = 0;
 	}
 
-	parent_pid = getpid();
-
 	/* open up source -- is it a file? */
 
 	open_flags = O_RDONLY;
@@ -677,7 +683,7 @@ main(int argc, char **argv)
 		}
 
 		wbuf_align = d.d_mem;
-		wbuf_size = MIN(d.d_maxiosz, 1 * 1024 * 1024);
+		wbuf_size = min(d.d_maxiosz, 1 * 1024 * 1024);
 		wbuf_miniosize = d.d_miniosz;
 	} else  {
 		/* set arbitrary I/O params, miniosize at least 1 disk block */
@@ -725,18 +731,29 @@ main(int argc, char **argv)
 
 	/* We don't yet know the sector size, so read maximal size */
 	libxfs_buftarg_init(&mbuf, xargs.ddev, xargs.logdev, xargs.rtdev);
-	sbp = libxfs_readbuf(mbuf.m_ddev_targp, XFS_SB_DADDR,
-			     1 << (XFS_MAX_SECTORSIZE_LOG - BBSHIFT), 0, NULL);
+	error = -libxfs_buf_read_uncached(mbuf.m_ddev_targp, XFS_SB_DADDR,
+			1 << (XFS_MAX_SECTORSIZE_LOG - BBSHIFT), 0, &sbp, NULL);
+	if (error) {
+		do_log(_("%s: couldn't read superblock, error=%d\n"),
+				progname, error);
+		exit(1);
+	}
+
 	sb = &mbuf.m_sb;
-	libxfs_sb_from_disk(sb, XFS_BUF_TO_SBP(sbp));
+	libxfs_sb_from_disk(sb, sbp->b_addr);
 
 	/* Do it again, now with proper length and verifier */
-	libxfs_putbuf(sbp);
-	libxfs_purgebuf(sbp);
-	sbp = libxfs_readbuf(mbuf.m_ddev_targp, XFS_SB_DADDR,
-			     1 << (sb->sb_sectlog - BBSHIFT),
-			     0, &xfs_sb_buf_ops);
-	libxfs_putbuf(sbp);
+	libxfs_buf_relse(sbp);
+
+	error = -libxfs_buf_read(mbuf.m_ddev_targp, XFS_SB_DADDR,
+			1 << (sb->sb_sectlog - BBSHIFT), 0, &sbp,
+			&xfs_sb_buf_ops);
+	if (error) {
+		do_log(_("%s: couldn't read superblock, error=%d\n"),
+				progname, error);
+		exit(1);
+	}
+	libxfs_buf_relse(sbp);
 
 	mp = libxfs_mount(&mbuf, sb, xargs.ddev, xargs.logdev, xargs.rtdev, 0);
 	if (mp == NULL) {
@@ -860,9 +877,9 @@ main(int argc, char **argv)
 						progname, target[i].name);
 					die_perror();
 				} else {
-					wbuf_align = MAX(wbuf_align, d.d_mem);
-					wbuf_size = MIN(d.d_maxiosz, wbuf_size);
-					wbuf_miniosize = MAX(d.d_miniosz,
+					wbuf_align = max(wbuf_align, d.d_mem);
+					wbuf_size = min(d.d_maxiosz, wbuf_size);
+					wbuf_miniosize = max(d.d_miniosz,
 								wbuf_miniosize);
 				}
 			}
@@ -900,7 +917,7 @@ main(int argc, char **argv)
 
 	wblocks = wbuf_size / BBSIZE;
 
-	if (wbuf_init(&btree_buf, MAX(source_blocksize, wbuf_miniosize),
+	if (wbuf_init(&btree_buf, max(source_blocksize, wbuf_miniosize),
 				wbuf_align, wbuf_miniosize, 1) == NULL)  {
 		do_log(_("Error initializing btree buf 1\n"));
 		die_perror();
@@ -1140,7 +1157,8 @@ main(int argc, char **argv)
 				 ((char *) btree_buf.data +
 				  pos - btree_buf.position);
 
-			ASSERT(be32_to_cpu(block->bb_magic) == XFS_ABTB_MAGIC);
+			ASSERT(be32_to_cpu(block->bb_magic) == XFS_ABTB_MAGIC ||
+			       be32_to_cpu(block->bb_magic) == XFS_ABTB_CRC_MAGIC);
 		}
 
 		/*
@@ -1214,11 +1232,12 @@ main(int argc, char **argv)
 
 	check_errors();
 	libxfs_umount(mp);
+	libxfs_destroy(&xargs);
 
 	return 0;
 }
 
-char *
+static char *
 next_log_chunk(char *p, int offset, void *private)
 {
 	wbuf	*buf = (wbuf *)private;

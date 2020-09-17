@@ -1,28 +1,33 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
 
-#define EXTERN
-#include "versions.h"
-#undef EXTERN
 #include "err_protos.h"
 #include "globals.h"
+#include "versions.h"
+
+/*
+ * filesystem feature global vars, set to 1 if the feature
+ * is on, 0 otherwise
+ */
+
+int fs_attributes;
+int fs_attributes2;
+int fs_inode_nlink;
+int fs_quotas;
+int fs_aligned_inodes;
+int fs_sb_feature_bits;
+int fs_has_extflgbit;
+
+/*
+ * inode chunk alignment, fsblocks
+ */
+
+xfs_extlen_t	fs_ino_alignment;
 
 void
 update_sb_version(xfs_mount_t *mp)
@@ -31,15 +36,11 @@ update_sb_version(xfs_mount_t *mp)
 
 	sb = &mp->m_sb;
 
-	if (fs_attributes && !xfs_sb_version_hasattr(sb))  {
-		ASSERT(fs_attributes_allowed);
+	if (fs_attributes && !xfs_sb_version_hasattr(sb))
 		xfs_sb_version_addattr(sb);
-	}
 
-	if (fs_attributes2 && !xfs_sb_version_hasattr2(sb))  {
-		ASSERT(fs_attributes2_allowed);
+	if (fs_attributes2 && !xfs_sb_version_hasattr2(sb))
 		xfs_sb_version_addattr2(sb);
-	}
 
 	/* V2 inode conversion is now always going to happen */
 	if (!(sb->sb_versionnum & XFS_SB_VERSION_NLINKBIT))
@@ -51,10 +52,8 @@ update_sb_version(xfs_mount_t *mp)
 	 * have quotas.
 	 */
 	if (fs_quotas)  {
-		if (!xfs_sb_version_hasquota(sb))  {
-			ASSERT(fs_quotas_allowed);
+		if (!xfs_sb_version_hasquota(sb))
 			xfs_sb_version_addquota(sb);
-		}
 
 		/*
 		 * protect against stray bits in the quota flag field
@@ -96,8 +95,6 @@ update_sb_version(xfs_mount_t *mp)
 int
 parse_sb_version(xfs_sb_t *sb)
 {
-	int issue_warning;
-
 	fs_attributes = 0;
 	fs_attributes2 = 0;
 	fs_inode_nlink = 1;
@@ -105,21 +102,10 @@ parse_sb_version(xfs_sb_t *sb)
 	fs_aligned_inodes = 0;
 	fs_sb_feature_bits = 0;
 	fs_ino_alignment = 0;
-	fs_has_extflgbit = 0;
+	fs_has_extflgbit = 1;
 	have_uquotino = 0;
 	have_gquotino = 0;
 	have_pquotino = 0;
-	issue_warning = 0;
-
-	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
-		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
-		return 1;
-	}
-
-	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
-		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
-		return 1;
-	}
 
 	if (sb->sb_versionnum & XFS_SB_VERSION_SHAREDBIT) {
 		do_warn(_("Shared Version bit set. Not supported. Ever.\n"));
@@ -130,22 +116,6 @@ parse_sb_version(xfs_sb_t *sb)
 	 * ok, check to make sure that the sb isn't newer
 	 * than we are
 	 */
-	if (xfs_sb_version_hasextflgbit(sb))  {
-		fs_has_extflgbit = 1;
-		if (!fs_has_extflgbit_allowed)  {
-			issue_warning = 1;
-			do_warn(
-			_("This filesystem has uninitialized extent flags.\n"));
-		}
-	}
-
-	if (issue_warning)  {
-		do_warn(
-_("This filesystem uses feature(s) not yet supported in this release.\n"
-  "Please run a more recent version of xfs_repair.\n"));
-		return(1);
-	}
-
 	if (!xfs_sb_good_version(sb))  {
 		do_warn(_("WARNING:  unknown superblock version %d\n"),
 			XFS_SB_VERSION_NUM(sb));
@@ -154,24 +124,8 @@ _("This filesystem contains features not understood by this program.\n"));
 		return(1);
 	}
 
-	if (XFS_SB_VERSION_NUM(sb) >= XFS_SB_VERSION_4)  {
-		if (!fs_sb_feature_bits_allowed)  {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed superblock-feature-bits-allowed\n"
-  "\tbut this superblock has feature bits.  The superblock\n"
-  "\twill be downgraded.  This may cause loss of filesystem meta-data\n"));
-			} else   {
-				do_warn(
-_("WARNING:  you have disallowed superblock-feature-bits-allowed\n"
-  "\tbut this superblock has feature bits.  The superblock\n"
-  "\twould be downgraded.  This might cause loss of filesystem\n"
-  "\tmeta-data.\n"));
-			}
-		} else   {
-			fs_sb_feature_bits = 1;
-		}
-	}
+	if (XFS_SB_VERSION_NUM(sb) >= XFS_SB_VERSION_4)
+		fs_sb_feature_bits = 1;
 
 	/* Look for V5 feature flags we don't know about */
 	if (XFS_SB_VERSION_NUM(sb) >= XFS_SB_VERSION_5 &&
@@ -187,41 +141,11 @@ _("Superblock has unknown compat/rocompat/incompat features (0x%x/0x%x/0x%x).\n"
 		return 1;
 	}
 
-	if (xfs_sb_version_hasattr(sb))  {
-		if (!fs_attributes_allowed)  {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed attributes but this filesystem\n"
-  "\thas attributes.  The filesystem will be downgraded and\n"
-  "\tall attributes will be removed.\n"));
-			} else  {
-				do_warn(
-_("WARNING:  you have disallowed attributes but this filesystem\n"
-  "\thas attributes.  The filesystem would be downgraded and\n"
-  "\tall attributes would be removed.\n"));
-			}
-		} else   {
-			fs_attributes = 1;
-		}
-	}
+	if (xfs_sb_version_hasattr(sb))
+		fs_attributes = 1;
 
-	if (xfs_sb_version_hasattr2(sb))  {
-		if (!fs_attributes2_allowed)  {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed attr2 attributes but this filesystem\n"
-  "\thas attributes.  The filesystem will be downgraded and\n"
-  "\tall attr2 attributes will be removed.\n"));
-			} else  {
-				do_warn(
-_("WARNING:  you have disallowed attr2 attributes but this filesystem\n"
-  "\thas attributes.  The filesystem would be downgraded and\n"
-  "\tall attr2 attributes would be removed.\n"));
-			}
-		} else   {
-			fs_attributes2 = 1;
-		}
-	}
+	if (xfs_sb_version_hasattr2(sb))
+		fs_attributes2 = 1;
 
 	if (!(sb->sb_versionnum & XFS_SB_VERSION_NLINKBIT)) {
 		if (!no_modify) {
@@ -238,52 +162,21 @@ _("WARNING: you have a V1 inode filesystem. It would be converted to a\n"
 	}
 
 	if (xfs_sb_version_hasquota(sb))  {
-		if (!fs_quotas_allowed)  {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed quotas but this filesystem\n"
-  "\thas quotas.  The filesystem will be downgraded and\n"
-  "\tall quota information will be removed.\n"));
-			} else  {
-				do_warn(
-_("WARNING:  you have disallowed quotas but this filesystem\n"
-  "\thas quotas.  The filesystem would be downgraded and\n"
-  "\tall quota information would be removed.\n"));
-			}
-		} else   {
-			fs_quotas = 1;
+		fs_quotas = 1;
 
-			if (sb->sb_uquotino != 0 &&
-					sb->sb_uquotino != NULLFSINO)
-				have_uquotino = 1;
+		if (sb->sb_uquotino != 0 && sb->sb_uquotino != NULLFSINO)
+			have_uquotino = 1;
 
-			if (sb->sb_gquotino != 0 &&
-					sb->sb_gquotino != NULLFSINO)
-				have_gquotino = 1;
+		if (sb->sb_gquotino != 0 && sb->sb_gquotino != NULLFSINO)
+			have_gquotino = 1;
 
-			if (sb->sb_pquotino != 0 &&
-					sb->sb_pquotino != NULLFSINO)
-				have_pquotino = 1;
-		}
+		if (sb->sb_pquotino != 0 && sb->sb_pquotino != NULLFSINO)
+			have_pquotino = 1;
 	}
 
 	if (xfs_sb_version_hasalign(sb))  {
-		if (fs_aligned_inodes_allowed)  {
-			fs_aligned_inodes = 1;
-			fs_ino_alignment = sb->sb_inoalignmt;
-		} else   {
-			if (!no_modify)  {
-				do_warn(
-_("WARNING:  you have disallowed aligned inodes but this filesystem\n"
-  "\thas aligned inodes.  The filesystem will be downgraded.\n"
-  "\tThis will permanently degrade the performance of this filesystem.\n"));
-			} else  {
-				do_warn(
-_("WARNING:  you have disallowed aligned inodes but this filesystem\n"
-  "\thas aligned inodes.  The filesystem would be downgraded.\n"
-  "\tThis would permanently degrade the performance of this filesystem.\n"));
-			}
-		}
+		fs_aligned_inodes = 1;
+		fs_ino_alignment = sb->sb_inoalignmt;
 	}
 
 	/*

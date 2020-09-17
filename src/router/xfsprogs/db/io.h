@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 struct typ;
@@ -38,10 +26,10 @@ typedef struct iocur {
 	const struct typ	*typ;	/* type of "data" */
 	bbmap_t			*bbmap;	/* map daddr if fragmented */
 	struct xfs_buf		*bp;	/* underlying buffer */
-	int			ino_crc_ok:1;
-	int			ino_buf:1;
-	int			dquot_buf:1;
-	int			need_crc:1;
+	bool			ino_crc_ok;
+	bool			ino_buf;
+	bool			dquot_buf;
+	bool			need_crc;
 } iocur_t;
 
 #define DB_RING_ADD 1                   /* add to ring on set_cur */
@@ -58,8 +46,7 @@ extern void	pop_cur(void);
 extern void	print_iocur(char *tag, iocur_t *ioc);
 extern void	push_cur(void);
 extern void	push_cur_and_set_type(void);
-extern int	read_buf(int64_t daddr, int count, void *bufp);
-extern void     write_cur(void);
+extern void	write_cur(void);
 extern void	set_cur(const struct typ *type, xfs_daddr_t blknum,
 			int len, int ring_add, bbmap_t *bbmap);
 extern void     ring_add(void);
@@ -71,7 +58,7 @@ extern void	xfs_verify_recalc_crc(struct xfs_buf *bp);
  * returns -1 for unchecked, 0 for bad and 1 for good
  */
 static inline int
-iocur_crc_valid()
+iocur_crc_valid(void)
 {
 	if (!iocur_top->bp)
 		return -1;

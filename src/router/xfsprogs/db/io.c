@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -108,7 +96,7 @@ pop_cur(void)
 		return;
 	}
 	if (iocur_top->bp) {
-		libxfs_putbuf(iocur_top->bp);
+		libxfs_buf_relse(iocur_top->bp);
 		iocur_top->bp = NULL;
 	}
 	if (iocur_top->bbmap) {
@@ -167,7 +155,7 @@ print_iocur(
 		ioc->dirino, ioc->typ == NULL ? _("none") : ioc->typ->name);
 }
 
-void
+static void
 print_ring(void)
 {
 	int i;
@@ -438,7 +426,7 @@ write_cur_buf(void)
 {
 	int ret;
 
-	ret = -libxfs_writebufr(iocur_top->bp);
+	ret = -libxfs_bwrite(iocur_top->bp);
 	if (ret != 0)
 		dbprintf(_("write error: %s\n"), strerror(ret));
 
@@ -454,7 +442,7 @@ write_cur_bbs(void)
 {
 	int ret;
 
-	ret = -libxfs_writebufr(iocur_top->bp);
+	ret = -libxfs_bwrite(iocur_top->bp);
 	if (ret != 0)
 		dbprintf(_("write error: %s\n"), strerror(ret));
 
@@ -528,6 +516,7 @@ set_cur(
 	xfs_ino_t	ino;
 	uint16_t	mode;
 	const struct xfs_buf_ops *ops = type ? type->bops : NULL;
+	int		error;
 
 	if (iocur_sp < 0) {
 		dbprintf(_("set_cur no stack element to set\n"));
@@ -554,24 +543,28 @@ set_cur(
 		if (!iocur_top->bbmap)
 			return;
 		memcpy(iocur_top->bbmap, bbmap, sizeof(struct bbmap));
-		bp = libxfs_readbuf_map(mp->m_ddev_targp, bbmap->b,
-					bbmap->nmaps, 0, ops);
+		error = -libxfs_buf_read_map(mp->m_ddev_targp, bbmap->b,
+				bbmap->nmaps, LIBXFS_READBUF_SALVAGE, &bp,
+				ops);
 	} else {
-		bp = libxfs_readbuf(mp->m_ddev_targp, blknum, len, 0, ops);
+		error = -libxfs_buf_read(mp->m_ddev_targp, blknum, len,
+				LIBXFS_READBUF_SALVAGE, &bp, ops);
 		iocur_top->bbmap = NULL;
 	}
 
 	/*
-	 * Keep the buffer even if the verifier says it is corrupted.
-	 * We're a diagnostic tool, after all.
+	 * Salvage mode means that we still get a buffer even if the verifier
+	 * says the metadata is corrupt.  Therefore, the only errors we should
+	 * get are for IO errors or runtime errors.
 	 */
-	if (!bp || (bp->b_error && bp->b_error != -EFSCORRUPTED &&
-				   bp->b_error != -EFSBADCRC))
+	if (error)
 		return;
 	iocur_top->buf = bp->b_addr;
 	iocur_top->bp = bp;
-	if (!ops)
+	if (!ops) {
+		bp->b_ops = NULL;
 		bp->b_flags |= LIBXFS_B_UNCHECKED;
+	}
 
 	iocur_top->bb = blknum;
 	iocur_top->blen = len;
@@ -595,48 +588,31 @@ void
 set_iocur_type(
 	const typ_t	*type)
 {
-	struct xfs_buf	*bp = iocur_top->bp;
+	int		bb_count = 1;	/* type's size in basic blocks */
 
-	/* Inodes are special; verifier checks all inodes in the chunk */
+	/*
+	 * Inodes are special; verifier checks all inodes in the chunk, the
+	 * set_cur_inode() will help that
+	 */
 	if (type->typnm == TYP_INODE) {
 		xfs_daddr_t	b = iocur_top->bb;
+		xfs_agblock_t	agbno;
+		xfs_agino_t	agino;
 		xfs_ino_t	ino;
 
-		/*
-		 * Note that this will back up to the beginning of the inode
- 		 * which contains the current disk location; daddr may change.
- 		 */
-		ino = XFS_AGINO_TO_INO(mp, xfs_daddr_to_agno(mp, b),
-			((b << BBSHIFT) >> mp->m_sb.sb_inodelog) %
-			(mp->m_sb.sb_agblocks << mp->m_sb.sb_inopblog));
+		agbno = xfs_daddr_to_agbno(mp, b);
+		agino = XFS_OFFBNO_TO_AGINO(mp, agbno,
+				iocur_top->boff / mp->m_sb.sb_inodesize);
+		ino = XFS_AGINO_TO_INO(mp, xfs_daddr_to_agno(mp, b), agino);
 		set_cur_inode(ino);
 		return;
 	}
 
 	/* adjust buffer size for types with fields & hence fsize() */
-	if (type->fields) {
-		int bb_count;	/* type's size in basic blocks */
-
+	if (type->fields)
 		bb_count = BTOBB(byteize(fsize(type->fields,
-					       iocur_top->data, 0, 0)));
-		set_cur(type, iocur_top->bb, bb_count, DB_RING_IGN, NULL);
-	}
-	iocur_top->typ = type;
-
-	/* verify the buffer if the type has one. */
-	if (!bp)
-		return;
-	if (!type->bops) {
-		bp->b_ops = NULL;
-		bp->b_flags |= LIBXFS_B_UNCHECKED;
-		return;
-	}
-	if (!(bp->b_flags & LIBXFS_B_UPTODATE))
-		return;
-	bp->b_error = 0;
-	bp->b_ops = type->bops;
-	bp->b_ops->verify_read(bp);
-	bp->b_flags &= ~LIBXFS_B_UNCHECKED;
+				       iocur_top->data, 0, 0)));
+	set_cur(type, iocur_top->bb, bb_count, DB_RING_IGN, NULL);
 }
 
 static void

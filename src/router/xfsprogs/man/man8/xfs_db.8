@@ -179,6 +179,62 @@ Set current address to the AGI block for allocation group
 .IR agno .
 If no argument is given, use the current allocation group.
 .TP
+.BI "agresv [" agno ]
+Displays the length, free block count, per-AG reservation size, and per-AG
+reservation usage for a given AG.
+If no argument is given, display information for all AGs.
+.TP
+.BI "attr_remove [\-r|\-u|\-s] [\-n] " name
+Remove the specified extended attribute from the current file.
+.RS 1.0i
+.TP 0.4i
+.B \-r
+Sets the attribute in the root namespace.
+Only one namespace option can be specified.
+.TP
+.B \-u
+Sets the attribute in the user namespace.
+Only one namespace option can be specified.
+.TP
+.B \-s
+Sets the attribute in the secure namespace.
+Only one namespace option can be specified.
+.TP
+.B \-n
+Do not enable 'noattr2' mode on V4 filesystems.
+.RE
+.TP
+.BI "attr_set [\-r|\-u|\-s] [\-n] [\-R|\-C] [\-v " namelen "] " name
+Sets an extended attribute on the current file with the given name.
+.RS 1.0i
+.TP 0.4i
+.B \-r
+Sets the attribute in the root namespace.
+Only one namespace option can be specified.
+.TP
+.B \-u
+Sets the attribute in the user namespace.
+Only one namespace option can be specified.
+.TP
+.B \-s
+Sets the attribute in the secure namespace.
+Only one namespace option can be specified.
+.TP
+.B \-n
+Do not enable 'noattr2' mode on V4 filesystems.
+.TP
+.B \-R
+Replace the attribute.
+The command will fail if the attribute does not already exist.
+.TP
+.B \-C
+Create the attribute.
+The command will fail if the attribute already exists.
+.TP
+.B \-v
+Set the attribute value to a string of this length containing the letter 'v'.
+.RE
+.TP
 .B b
 See the
 .B back
@@ -344,6 +400,45 @@ If the cursor points at an inode, dump the extended attribute block mapping btre
 .TP
 .B \-i
 Dump all keys and pointers in intermediate btree nodes, and all records in leaf btree nodes.
+.RE
+.TP
+.BI "btheight [\-b " blksz "] [\-n " recs "] [\-w " max "|\-w " min "] btree types..."
+For a given number of btree records and a btree type, report the number of
+records and blocks for each level of the btree, and the total number of blocks.
+The btree type must be given after the options.
+
+A raw btree geometry can be provided in the format
+"record_bytes:key_bytes:ptr_bytes:header_type", where header_type is one of
+"short", "long", "shortcrc", or "longcrc".
+
+The supported btree types are:
+.IR bnobt ,
+.IR cntbt ,
+.IR inobt ,
+.IR finobt ,
+.IR bmapbt ,
+.IR refcountbt ,
+and
+.IR rmapbt .
+
+Options are as follows:
+.RS 1.0i
+.TP 0.4i
+.B \-b
+is used to override the btree block size.
+The default is the filesystem block size.
+.TP
+.B \-n
+is used to specify the number of records to store.
+This argument is required.
+.TP
+.B \-w max
+shows only the best case scenario, which is when the btree blocks are
+maximally loaded.
+.TP
+.B \-w min
+shows only the worst case scenario, which is when the btree blocks are
+half full.
 .RE
 .TP
 .B check
@@ -670,6 +765,14 @@ using the hash function of the XFS directory and attribute implementation.
 .BI "help [" command ]
 Print help for one or all commands.
 .TP
+.B info
+Displays selected geometry information about the filesystem.
+The output will have the same format that
+.BR "mkfs.xfs" "(8)"
+prints when creating a filesystem or
+.BR "xfs_info" "(8)"
+prints when querying a filesystem.
+.TP
 .BI "inode [" inode# ]
 Set the current inode number. If no
 .I inode#
@@ -689,6 +792,19 @@ is given, the current filesystem label is printed.
 Start logging output to
 .IR filename ,
 stop logging, or print the current logging status.
+.TP
+.BI "logformat [\-c " cycle "] [\-s " sunit "]"
+Reformats the log to the specified log cycle and log stripe unit.
+This has the effect of clearing the log destructively.
+If the log cycle is not specified, the log is reformatted to the current cycle.
+If the log stripe unit is not specified, the stripe unit from the filesystem
+superblock is used.
+.TP
+.B logres
+Print transaction reservation size information for each transaction type.
+This makes it easier to find discrepancies in the reservation calculations
+between xfsprogs and the kernel, which will help when diagnosing minimum
+log size calculation errors.
 .TP
 .BI "metadump [\-egow] " filename
 Dumps metadata to a file. See
@@ -823,7 +939,7 @@ and
 bits respectively, and their string equivalent reported
 (but no modifications are made).
 .TP
-.BI "write [\-c] [\-d] [" "field value" "] ..."
+.BI "write [\-c|\-d] [" "field value" "] ..."
 Write a value to disk.
 Specific fields can be set in structures (struct mode),
 or a block can be set to data values (data mode),

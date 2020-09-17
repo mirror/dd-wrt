@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2007, Silicon Graphics, Inc. Barry Naujok <bnaujok@sgi.com>
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -456,29 +444,6 @@ btree_lookup_prev(
 	return value;
 }
 
-void *
-btree_uncached_lookup(
-	struct btree_root	*root,
-	unsigned long		key)
-{
-	/* cursor-less (ie. uncached) lookup */
-	int			height = root->height - 1;
-	struct btree_node	*node = root->root_node;
-	int			i;
-	int			key_found = 0;
-
-	while (height >= 0) {
-		for (i = 0; i < node->num_keys; i++)
-			if (node->keys[i] >= key) {
-				key_found = node->keys[i] == key;
-				break;
-			}
-		node = node->ptrs[i];
-		height--;
-	}
-	return key_found ? node : NULL;
-}
-
 /* Update functions */
 
 static inline void
@@ -858,7 +823,7 @@ btree_insert_shift_to_prev(
 	if (!btree_copy_cursor_prev(root, tmp_cursor, level + 1))
 		return -1;
 
-	n = MIN(*index, (BTREE_PTR_MAX - tmp_cursor[level].node->num_keys) / 2);
+	n = min(*index, (BTREE_PTR_MAX - tmp_cursor[level].node->num_keys) / 2);
 	if (!n || !btree_shift_to_prev(root, level, tmp_cursor, n))
 		return -1;
 
@@ -881,7 +846,7 @@ btree_insert_shift_to_next(
 	if (!btree_copy_cursor_next(root, tmp_cursor, level + 1))
 		return -1;
 
-	n = MIN(BTREE_KEY_MAX - *index,
+	n = min(BTREE_KEY_MAX - *index,
 		(BTREE_PTR_MAX - tmp_cursor[level].node->num_keys) / 2);
 	if (!n || !btree_shift_to_next(root, level, tmp_cursor, n))
 		return -1;

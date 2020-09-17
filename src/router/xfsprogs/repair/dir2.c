@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2002,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -96,8 +84,8 @@ process_sf_dir2_fixi8(
 	memmove(oldsfp, newsfp, oldsize);
 	newsfp->count = oldsfp->count;
 	newsfp->i8count = 0;
-	ino = M_DIROPS(mp)->sf_get_parent_ino(sfp);
-	M_DIROPS(mp)->sf_put_parent_ino(newsfp, ino);
+	ino = libxfs_dir2_sf_get_parent_ino(sfp);
+	libxfs_dir2_sf_put_parent_ino(newsfp, ino);
 	oldsfep = xfs_dir2_sf_firstentry(oldsfp);
 	newsfep = xfs_dir2_sf_firstentry(newsfp);
 	while ((int)((char *)oldsfep - (char *)oldsfp) < oldsize) {
@@ -105,10 +93,10 @@ process_sf_dir2_fixi8(
 		xfs_dir2_sf_put_offset(newsfep,
 			xfs_dir2_sf_get_offset(oldsfep));
 		memmove(newsfep->name, oldsfep->name, newsfep->namelen);
-		ino = M_DIROPS(mp)->sf_get_ino(oldsfp, oldsfep);
-		M_DIROPS(mp)->sf_put_ino(newsfp, newsfep, ino);
-		oldsfep = M_DIROPS(mp)->sf_nextentry(oldsfp, oldsfep);
-		newsfep = M_DIROPS(mp)->sf_nextentry(newsfp, newsfep);
+		ino = libxfs_dir2_sf_get_ino(mp, oldsfp, oldsfep);
+		libxfs_dir2_sf_put_ino(mp, newsfp, newsfep, ino);
+		oldsfep = libxfs_dir2_sf_nextentry(mp, oldsfp, oldsfep);
+		newsfep = libxfs_dir2_sf_nextentry(mp, newsfp, newsfep);
 	}
 	*next_sfep = newsfep;
 	free(oldsfp);
@@ -129,12 +117,12 @@ process_sf_dir2_fixoff(
 
 	sfp = (struct xfs_dir2_sf_hdr *)XFS_DFORK_DPTR(dip);
 	sfep = xfs_dir2_sf_firstentry(sfp);
-	offset = M_DIROPS(mp)->data_first_offset;
+	offset = mp->m_dir_geo->data_first_offset;
 
 	for (i = 0; i < sfp->count; i++) {
 		xfs_dir2_sf_put_offset(sfep, offset);
-		offset += M_DIROPS(mp)->data_entsize(sfep->namelen);
-		sfep = M_DIROPS(mp)->sf_nextentry(sfp, sfep);
+		offset += libxfs_dir2_data_entsize(mp, sfep->namelen);
+		sfep = libxfs_dir2_sf_nextentry(mp, sfp, sfep);
 	}
 }
 
@@ -177,13 +165,12 @@ process_sf_dir2(
 	int			tmp_elen;
 	int			tmp_len;
 	xfs_dir2_sf_entry_t	*tmp_sfep;
-	xfs_ino_t		zero = 0;
 
 	sfp = (struct xfs_dir2_sf_hdr *)XFS_DFORK_DPTR(dip);
 	max_size = XFS_DFORK_DSIZE(dip, mp);
 	num_entries = sfp->count;
 	ino_dir_size = be64_to_cpu(dip->di_size);
-	offset = M_DIROPS(mp)->data_first_offset;
+	offset = mp->m_dir_geo->data_first_offset;
 	bad_offset = *repair = 0;
 
 	ASSERT(ino_dir_size <= max_size);
@@ -191,12 +178,12 @@ process_sf_dir2(
 	/*
 	 * Initialize i8 based on size of parent inode number.
 	 */
-	i8 = (M_DIROPS(mp)->sf_get_parent_ino(sfp) > XFS_DIR2_MAX_SHORT_INUM);
+	i8 = (libxfs_dir2_sf_get_parent_ino(sfp) > XFS_DIR2_MAX_SHORT_INUM);
 
 	/*
 	 * check for bad entry count
 	 */
-	if (num_entries * M_DIROPS(mp)->sf_entsize(sfp, 1) +
+	if (num_entries * libxfs_dir2_sf_entsize(mp, sfp, 1) +
 		    xfs_dir2_sf_hdr_size(0) > max_size || num_entries == 0)
 		num_entries = 0xFF;
 
@@ -212,7 +199,7 @@ process_sf_dir2(
 		sfep = next_sfep;
 		junkit = 0;
 		bad_sfnamelen = 0;
-		lino = M_DIROPS(mp)->sf_get_ino(sfp, sfep);
+		lino = libxfs_dir2_sf_get_ino(mp, sfp, sfep);
 		/*
 		 * if entry points to self, junk it since only '.' or '..'
 		 * should do that and shortform dirs don't contain either
@@ -227,7 +214,7 @@ process_sf_dir2(
 		if (lino == ino) {
 			junkit = 1;
 			junkreason = _("current");
-		} else if (verify_inum(mp, lino)) {
+		} else if (!libxfs_verify_dir_ino(mp, lino)) {
 			junkit = 1;
 			junkreason = _("invalid");
 		} else if (lino == mp->m_sb.sb_rbmino)  {
@@ -293,7 +280,7 @@ _("entry \"%*.*s\" in shortform directory %" PRIu64 " references %s inode %" PRI
 			junkreason = _("is zero length");
 			bad_sfnamelen = 1;
 		} else if ((intptr_t) sfep - (intptr_t) sfp +
-				M_DIROPS(mp)->sf_entsize(sfp, sfep->namelen)
+				libxfs_dir2_sf_entsize(mp, sfp, sfep->namelen)
 							> ino_dir_size)  {
 			junkreason = _("extends past end of dir");
 			bad_sfnamelen = 1;
@@ -322,7 +309,7 @@ _("entry #%d %s in shortform dir %" PRIu64),
 		 * the length value is stored in a byte
 		 * so it can't be too big, it can only wrap
 		 */
-		if (namecheck((char *)&sfep->name[0], namelen))  {
+		if (!libxfs_dir2_namecheck(sfep->name, namelen)) {
 			/*
 			 * junk entry
 			 */
@@ -339,7 +326,7 @@ _("entry contains offset out of order in shortform dir %" PRIu64 "\n"),
 			bad_offset = 1;
 		}
 		offset = xfs_dir2_sf_get_offset(sfep) +
-					M_DIROPS(mp)->data_entsize(namelen);
+					libxfs_dir2_data_entsize(mp, namelen);
 
 		/*
 		 * junk the entry by copying up the rest of the
@@ -356,7 +343,7 @@ _("entry contains offset out of order in shortform dir %" PRIu64 "\n"),
 			name[namelen] = '\0';
 
 			if (!no_modify)  {
-				tmp_elen = M_DIROPS(mp)->sf_entsize(sfp,
+				tmp_elen = libxfs_dir2_sf_entsize(mp, sfp,
 								sfep->namelen);
 				be64_add_cpu(&dip->di_size, -tmp_elen);
 				ino_dir_size -= tmp_elen;
@@ -410,8 +397,8 @@ _("would have junked entry \"%s\" in directory inode %" PRIu64 "\n"),
 		next_sfep = (tmp_sfep == NULL)
 			? (xfs_dir2_sf_entry_t *) ((intptr_t) sfep
 							+ ((!bad_sfnamelen)
-				? M_DIROPS(mp)->sf_entsize(sfp, sfep->namelen)
-				: M_DIROPS(mp)->sf_entsize(sfp, namelen)))
+				? libxfs_dir2_sf_entsize(mp, sfp, sfep->namelen)
+				: libxfs_dir2_sf_entsize(mp, sfp, namelen)))
 			: tmp_sfep;
 	}
 
@@ -491,13 +478,23 @@ _("corrected entry offsets in directory %" PRIu64 "\n"),
 	/*
 	 * check parent (..) entry
 	 */
-	*parent = M_DIROPS(mp)->sf_get_parent_ino(sfp);
+	*parent = libxfs_dir2_sf_get_parent_ino(sfp);
+	/*
+	 * If this function is called during inode discovery (phase 3), it will
+	 * set a bad sf dir parent pointer to the root directory. This fixes
+	 * the directory enough to pass the inode fork verifier in phase 6 when
+	 * we try to reset the parent pointer to the correct value. There is no
+	 * need to re-check the parent pointer during phase 4.
+	 */
+	if (!ino_discovery)
+		return 0;
 
 	/*
 	 * if parent entry is bogus, null it out.  we'll fix it later .
+	 * If the validation fails for the root inode we fix it in
+	 * the next else case.
 	 */
-	if (verify_inum(mp, *parent))  {
-
+	if (!libxfs_verify_dir_ino(mp, *parent) && ino != mp->m_sb.sb_rootino) {
 		do_warn(
 _("bogus .. inode number (%" PRIu64 ") in directory inode %" PRIu64 ", "),
 				*parent, ino);
@@ -505,7 +502,7 @@ _("bogus .. inode number (%" PRIu64 ") in directory inode %" PRIu64 ", "),
 		if (!no_modify)  {
 			do_warn(_("clearing inode number\n"));
 
-			M_DIROPS(mp)->sf_put_parent_ino(sfp, zero);
+			libxfs_dir2_sf_put_parent_ino(sfp, mp->m_sb.sb_rootino);
 			*dino_dirty = 1;
 			*repair = 1;
 		} else  {
@@ -520,7 +517,7 @@ _("bogus .. inode number (%" PRIu64 ") in directory inode %" PRIu64 ", "),
 _("corrected root directory %" PRIu64 " .. entry, was %" PRIu64 ", now %" PRIu64 "\n"),
 				ino, *parent, ino);
 			*parent = ino;
-			M_DIROPS(mp)->sf_put_parent_ino(sfp, ino);
+			libxfs_dir2_sf_put_parent_ino(sfp, ino);
 			*dino_dirty = 1;
 			*repair = 1;
 		} else  {
@@ -540,7 +537,7 @@ _("bad .. entry in directory inode %" PRIu64 ", points to self, "),
 		if (!no_modify)  {
 			do_warn(_("clearing inode number\n"));
 
-			M_DIROPS(mp)->sf_put_parent_ino(sfp, zero);
+			libxfs_dir2_sf_put_parent_ino(sfp, mp->m_sb.sb_rootino);
 			*dino_dirty = 1;
 			*repair = 1;
 		} else  {
@@ -589,8 +586,8 @@ process_dir2_data(
 	xfs_ino_t		ent_ino;
 
 	d = bp->b_addr;
-	bf = M_DIROPS(mp)->data_bestfree_p(d);
-	ptr = (char *)M_DIROPS(mp)->data_entry_p(d);
+	bf = libxfs_dir2_data_bestfree_p(mp, d);
+	ptr = (char *)d + mp->m_dir_geo->data_entry_offset;
 	badbest = lastfree = freeseen = 0;
 	if (be16_to_cpu(bf[0].length) == 0) {
 		badbest |= be16_to_cpu(bf[0].offset) != 0;
@@ -635,12 +632,12 @@ process_dir2_data(
 			continue;
 		}
 		dep = (xfs_dir2_data_entry_t *)ptr;
-		if (ptr + M_DIROPS(mp)->data_entsize(dep->namelen) > endptr)
+		if (ptr + libxfs_dir2_data_entsize(mp, dep->namelen) > endptr)
 			break;
-		if (be16_to_cpu(*M_DIROPS(mp)->data_entry_tag_p(dep)) !=
+		if (be16_to_cpu(*libxfs_dir2_data_entry_tag_p(mp, dep)) !=
 		    				(char *)dep - (char *)d)
 			break;
-		ptr += M_DIROPS(mp)->data_entsize(dep->namelen);
+		ptr += libxfs_dir2_data_entsize(mp, dep->namelen);
 		lastfree = 0;
 	}
 	/*
@@ -656,7 +653,7 @@ process_dir2_data(
 			do_warn(_("\twould junk block\n"));
 		return 1;
 	}
-	ptr = (char *)M_DIROPS(mp)->data_entry_p(d);
+	ptr = (char *)d + mp->m_dir_geo->data_entry_offset;
 	/*
 	 * Process the entries now.
 	 */
@@ -684,7 +681,7 @@ process_dir2_data(
 			 * (or did it ourselves) during phase 3.
 			 */
 			clearino = 0;
-		} else if (verify_inum(mp, ent_ino)) {
+		} else if (!libxfs_verify_dir_ino(mp, ent_ino)) {
 			/*
 			 * Bad inode number.  Clear the inode number and the
 			 * entry will get removed later.  We don't trash the
@@ -791,7 +788,7 @@ _("\twould clear inode number in entry at offset %" PRIdPTR "...\n"),
 		 * during phase 4.
 		 */
 		junkit = dep->name[0] == '/';
-		nm_illegal = namecheck((char *)dep->name, dep->namelen);
+		nm_illegal = !libxfs_dir2_namecheck(dep->name, dep->namelen);
 		if (ino_discovery && nm_illegal) {
 			do_warn(
 _("entry at block %u offset %" PRIdPTR " in directory inode %" PRIu64 " has illegal name \"%*.*s\": "),
@@ -846,6 +843,23 @@ _("bad .. entry in root directory inode %" PRIu64 ", was %" PRIu64 ": "),
 						do_warn(_("would correct\n"));
 					}
 					*parent = ino;
+				}
+				/*
+				 * Make sure our parent directory doesn't point
+				 * off into space.
+				 */
+				if (!junkit &&
+				    *parent != NULLFSINO &&
+				    !libxfs_verify_ino(mp, *parent)) {
+					do_warn(
+_("bad .. entry in directory inode %" PRIu64 ", was %" PRIu64 ": "),
+						ino, *parent);
+					if (!no_modify) {
+						do_warn(_("correcting\n"));
+					} else {
+						do_warn(_("would correct\n"));
+					}
+					*parent = NULLFSINO;
 				}
 			}
 			/*
@@ -910,7 +924,7 @@ _("entry \"%*.*s\" in directory inode %" PRIu64 " points to self: "),
 		/*
 		 * Advance to the next entry.
 		 */
-		ptr += M_DIROPS(mp)->data_entsize(dep->namelen);
+		ptr += libxfs_dir2_data_entsize(mp, dep->namelen);
 	}
 	/*
 	 * Check the bestfree table.
@@ -921,8 +935,7 @@ _("bad bestfree table in block %u in directory inode %" PRIu64 ": "),
 			da_bno, ino);
 		if (!no_modify) {
 			do_warn(_("repairing table\n"));
-			libxfs_dir2_data_freescan_int(mp->m_dir_geo,
-					M_DIROPS(mp), d, &i);
+			libxfs_dir2_data_freescan(mp, d, &i);
 			*dirty = 1;
 		} else {
 			do_warn(_("would repair table\n"));
@@ -978,6 +991,13 @@ _("can't read block %u for directory inode %" PRIu64 "\n"),
 			mp->m_dir_geo->datablk, ino);
 		return 1;
 	}
+	if (bp->b_error == -EFSCORRUPTED) {
+		do_warn(
+_("corrupt directory block %u for inode %" PRIu64 "\n"),
+			mp->m_dir_geo->datablk, ino);
+		libxfs_buf_relse(bp);
+		return 1;
+	}
 	/*
 	 * Verify the block
 	 */
@@ -1005,9 +1025,10 @@ _("bad directory block magic # %#x in block %u for directory inode %" PRIu64 "\n
 		dirty = 1;
 	if (dirty && !no_modify) {
 		*repair = 1;
-		libxfs_writebuf(bp, 0);
+		libxfs_buf_mark_dirty(bp);
+		libxfs_buf_relse(bp);
 	} else
-		libxfs_putbuf(bp);
+		libxfs_buf_relse(bp);
 	return rval;
 }
 
@@ -1031,8 +1052,8 @@ process_leaf_block_dir2(
 	struct xfs_dir2_leaf_entry *ents;
 	struct xfs_dir3_icleaf_hdr leafhdr;
 
-	M_DIROPS(mp)->leaf_hdr_from_disk(&leafhdr, leaf);
-	ents = M_DIROPS(mp)->leaf_ents_p(leaf);
+	libxfs_dir2_leaf_hdr_from_disk(mp, &leafhdr, leaf);
+	ents = leafhdr.ents;
 
 	for (i = stale = 0; i < leafhdr.count; i++) {
 		if ((char *)&ents[i] >= (char *)leaf + mp->m_dir_geo->blksize) {
@@ -1116,8 +1137,15 @@ _("can't read file block %u for directory inode %" PRIu64 "\n"),
 				da_bno, ino);
 			goto error_out;
 		}
+		if (bp->b_error == -EFSCORRUPTED) {
+			do_warn(
+_("corrupt directory leafn block %u for inode %" PRIu64 "\n"),
+				da_bno, ino);
+			libxfs_buf_relse(bp);
+			goto error_out;
+		}
 		leaf = bp->b_addr;
-		M_DIROPS(mp)->leaf_hdr_from_disk(&leafhdr, leaf);
+		libxfs_dir2_leaf_hdr_from_disk(mp, &leafhdr, leaf);
 		/*
 		 * Check magic number for leaf directory btree block.
 		 */
@@ -1126,7 +1154,7 @@ _("can't read file block %u for directory inode %" PRIu64 "\n"),
 			do_warn(
 _("bad directory leaf magic # %#x for directory inode %" PRIu64 " block %u\n"),
 				leafhdr.magic, ino, da_bno);
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			goto error_out;
 		}
 		buf_dirty = 0;
@@ -1136,7 +1164,7 @@ _("bad directory leaf magic # %#x for directory inode %" PRIu64 " block %u\n"),
 		 */
 		if (process_leaf_block_dir2(mp, leaf, da_bno, ino,
 				current_hashval, &greatest_hashval)) {
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			goto error_out;
 		}
 		/*
@@ -1154,14 +1182,14 @@ _("bad directory leaf magic # %#x for directory inode %" PRIu64 " block %u\n"),
 			do_warn(
 _("bad sibling back pointer for block %u in directory inode %" PRIu64 "\n"),
 				da_bno, ino);
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 			goto error_out;
 		}
 		prev_bno = da_bno;
 		da_bno = leafhdr.forw;
 		if (da_bno != 0) {
 			if (verify_da_path(mp, da_cursor, 0, XFS_DATA_FORK)) {
-				libxfs_putbuf(bp);
+				libxfs_buf_relse(bp);
 				goto error_out;
 			}
 		}
@@ -1175,9 +1203,10 @@ _("bad sibling back pointer for block %u in directory inode %" PRIu64 "\n"),
 		ASSERT(buf_dirty == 0 || (buf_dirty && !no_modify));
 		if (buf_dirty && !no_modify) {
 			*repair = 1;
-			libxfs_writebuf(bp, 0);
+			libxfs_buf_mark_dirty(bp);
+			libxfs_buf_relse(bp);
 		} else
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 	} while (da_bno != 0);
 	if (verify_final_da_path(mp, da_cursor, 0, XFS_DATA_FORK)) {
 		/*
@@ -1236,10 +1265,21 @@ process_node_dir2(
 
 	/*
 	 * Skip directories with a root marked XFS_DIR2_LEAFN_MAGIC
+	 *
+	 * Be careful here: If any level of the da cursor was filled out then
+	 * the directory has a da btree containing an invalid before pointer to
+	 * dblock 0, and we should move on to rebuilding the directory.  If no
+	 * levels in the da cursor got filled out, then we just have a single
+	 * leafn block and we're done.
 	 */
 	if (bno == 0) {
-		release_da_cursor(mp, &da_cursor, 0);
-		return 0;
+		if (da_cursor.active > 0) {
+			err_release_da_cursor(mp, &da_cursor, 0);
+			return 1;
+		} else {
+			release_da_cursor(mp, &da_cursor, 0);
+			return 0;
+		}
 	} else {
 		/*
 		 * Now pass cursor and bno into leaf-block processing routine.
@@ -1306,6 +1346,13 @@ _("can't read block %" PRIu64 " for directory inode %" PRIu64 "\n"),
 				dbno, ino);
 			continue;
 		}
+		if (bp->b_error == -EFSCORRUPTED) {
+			do_warn(
+_("corrupt directory data block %lu for inode %" PRIu64 "\n"),
+				dbno, ino);
+			libxfs_buf_relse(bp);
+			continue;
+		}
 		data = bp->b_addr;
 		if (!(be32_to_cpu(data->magic) == XFS_DIR2_DATA_MAGIC ||
 		      be32_to_cpu(data->magic) == XFS_DIR3_DATA_MAGIC))
@@ -1323,9 +1370,10 @@ _("bad directory block magic # %#x in block %" PRIu64 " for directory inode %" P
 		}
 		if (dirty && !no_modify) {
 			*repair = 1;
-			libxfs_writebuf(bp, 0);
+			libxfs_buf_mark_dirty(bp);
+			libxfs_buf_relse(bp);
 		} else
-			libxfs_putbuf(bp);
+			libxfs_buf_relse(bp);
 	}
 	if (good == 0)
 		return 1;

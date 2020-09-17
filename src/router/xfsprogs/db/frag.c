@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2003,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -347,7 +335,7 @@ process_inode(
 	ideal = extcount_ideal;
 	if (!skipd)
 		process_fork(dip, XFS_DATA_FORK);
-	skipa = !aflag || !XFS_DFORK_Q(dip);
+	skipa = !aflag || !dip->di_forkoff;
 	if (!skipa)
 		process_fork(dip, XFS_ATTR_FORK);
 	if (vflag && (!skipd || !skipa))
@@ -478,35 +466,63 @@ scanfunc_ino(
 	int			off;
 	xfs_inobt_ptr_t		*pp;
 	xfs_inobt_rec_t		*rp;
+	xfs_agblock_t		agbno;
+	xfs_agblock_t		end_agbno;
+	struct xfs_dinode	*dip;
+	int			blks_per_buf;
+	int			inodes_per_buf;
+	int			ioff;
+	struct xfs_ino_geometry *igeo = M_IGEO(mp);
+
+	if (xfs_sb_version_hassparseinodes(&mp->m_sb))
+		blks_per_buf = igeo->blocks_per_cluster;
+	else
+		blks_per_buf = igeo->ialloc_blks;
+	inodes_per_buf = min(XFS_FSB_TO_INO(mp, blks_per_buf),
+			     XFS_INODES_PER_CHUNK);
 
 	if (level == 0) {
 		rp = XFS_INOBT_REC_ADDR(mp, block, 1);
 		for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++) {
 			agino = be32_to_cpu(rp[i].ir_startino);
-			off = XFS_INO_TO_OFFSET(mp, agino);
+			agbno = XFS_AGINO_TO_AGBNO(mp, agino);
+			off = XFS_AGINO_TO_OFFSET(mp, agino);
+			end_agbno = agbno + igeo->ialloc_blks;
+
 			push_cur();
-			set_cur(&typtab[TYP_INODE],
-				XFS_AGB_TO_DADDR(mp, seqno,
-						 XFS_AGINO_TO_AGBNO(mp, agino)),
-				XFS_FSB_TO_BB(mp, mp->m_ialloc_blks),
-				DB_RING_IGN, NULL);
-			if (iocur_top->data == NULL) {
-				dbprintf(_("can't read inode block %u/%u\n"),
-					seqno, XFS_AGINO_TO_AGBNO(mp, agino));
-				continue;
-			}
-			for (j = 0; j < XFS_INODES_PER_CHUNK; j++) {
-				if (XFS_INOBT_IS_FREE_DISK(&rp[i], j))
-					continue;
-				process_inode(agf, agino + j, (xfs_dinode_t *)
-					((char *)iocur_top->data +
-					((off + j) << mp->m_sb.sb_inodelog)));
+			ioff = 0;
+			while (agbno < end_agbno &&
+			       ioff < XFS_INODES_PER_CHUNK) {
+				if (xfs_inobt_is_sparse_disk(&rp[i], ioff))
+					goto next_buf;
+
+				set_cur(&typtab[TYP_INODE],
+					XFS_AGB_TO_DADDR(mp, seqno, agbno),
+					XFS_FSB_TO_BB(mp, blks_per_buf),
+					DB_RING_IGN, NULL);
+				if (iocur_top->data == NULL) {
+					dbprintf(_("can't read inode block %u/%u\n"),
+						 seqno, agbno);
+					goto next_buf;
+				}
+
+				for (j = 0; j < inodes_per_buf; j++) {
+					if (XFS_INOBT_IS_FREE_DISK(&rp[i], ioff + j))
+						continue;
+					dip = (xfs_dinode_t *)((char *)iocur_top->data +
+						((off + j) << mp->m_sb.sb_inodelog));
+					process_inode(agf, agino + ioff + j, dip);
+				}
+
+next_buf:
+				agbno += blks_per_buf;
+				ioff += inodes_per_buf;
 			}
 			pop_cur();
 		}
 		return;
 	}
-	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, mp->m_inobt_mxr[1]);
+	pp = XFS_INOBT_PTR_ADDR(mp, block, 1, igeo->inobt_mxr[1]);
 	for (i = 0; i < be16_to_cpu(block->bb_numrecs); i++)
 		scan_sbtree(agf, be32_to_cpu(pp[i]), level, scanfunc_ino,
 								TYP_INOBT);

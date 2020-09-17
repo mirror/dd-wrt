@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include <sys/uio.h>
@@ -39,6 +27,7 @@ pwrite_help(void)
 " The writes are performed in sequential blocks starting at offset, with the\n"
 " blocksize tunable using the -b option (default blocksize is 4096 bytes),\n"
 " unless a different write pattern is requested.\n"
+" -q   -- quiet mode, do not write anything to standard output.\n"
 " -S   -- use an alternate seed number for filling the write buffer\n"
 " -i   -- input file, source of data to write (used when writing forward)\n"
 " -d   -- open the input file for direct IO\n"
@@ -56,6 +45,7 @@ pwrite_help(void)
 #endif
 #ifdef HAVE_PWRITEV2
 " -N   -- Perform the pwritev2() with RWF_NOWAIT\n"
+" -D   -- Perform the pwritev2() with RWF_DSYNC\n"
 #endif
 "\n"));
 }
@@ -65,16 +55,15 @@ static ssize_t
 do_pwritev(
 	int		fd,
 	off64_t		offset,
-	size_t		count,
-	size_t		buffer_size,
-	int 		pwritev2_flags)
+	long long	count,
+	int		pwritev2_flags)
 {
 	int vecs = 0;
 	ssize_t oldlen = 0;
 	ssize_t bytes = 0;
 
 	/* trim the iovec if necessary */
-	if (count < buffersize) {
+	if (count < io_buffersize) {
 		size_t	len = 0;
 		while (len + iov[vecs].iov_len < count) {
 			len += iov[vecs].iov_len;
@@ -102,21 +91,21 @@ do_pwritev(
 	return bytes;
 }
 #else
-#define do_pwritev(fd, offset, count, buffer_size, pwritev2_flags) (0)
+#define do_pwritev(fd, offset, count, pwritev2_flags) (0)
 #endif
 
 static ssize_t
 do_pwrite(
 	int		fd,
 	off64_t		offset,
-	size_t		count,
+	long long	count,
 	size_t		buffer_size,
 	int		pwritev2_flags)
 {
 	if (!vectors)
-		return pwrite(fd, buffer, min(count, buffer_size), offset);
+		return pwrite(fd, io_buffer, min(count, buffer_size), offset);
 
-	return do_pwritev(fd, offset, count, buffer_size, pwritev2_flags);
+	return do_pwritev(fd, offset, count, pwritev2_flags);
 }
 
 static int
@@ -132,22 +121,22 @@ write_random(
 	int		ops = 0;
 
 	srandom(seed);
-	if ((bytes = (offset % buffersize)))
+	if ((bytes = (offset % io_buffersize)))
 		offset -= bytes;
 	offset = max(0, offset);
-	if ((bytes = (count % buffersize)))
+	if ((bytes = (count % io_buffersize)))
 		count += bytes;
-	count = max(buffersize, count);
-	range = count - buffersize;
+	count = max(io_buffersize, count);
+	range = count - io_buffersize;
 
 	*total = 0;
 	while (count > 0) {
 		if (range)
-			off = ((offset + (random() % range)) / buffersize) *
-				buffersize;
+			off = ((offset + (random() % range)) / io_buffersize) *
+				io_buffersize;
 		else
 			off = offset;
-		bytes = do_pwrite(file->fd, off, buffersize, buffersize,
+		bytes = do_pwrite(file->fd, off, io_buffersize, io_buffersize,
 				pwritev2_flags);
 		if (bytes == 0)
 			break;
@@ -157,7 +146,7 @@ write_random(
 		}
 		ops++;
 		*total += bytes;
-		if (bytes < buffersize)
+		if (bytes < io_buffersize)
 			break;
 		count -= bytes;
 	}
@@ -184,10 +173,10 @@ write_backward(
 	*count = cnt;
 
 	/* Do initial unaligned write if needed */
-	if ((bytes_requested = (off % buffersize))) {
+	if ((bytes_requested = (off % io_buffersize))) {
 		bytes_requested = min(cnt, bytes_requested);
 		off -= bytes_requested;
-		bytes = do_pwrite(file->fd, off, bytes_requested, buffersize,
+		bytes = do_pwrite(file->fd, off, bytes_requested, io_buffersize,
 				pwritev2_flags);
 		if (bytes == 0)
 			return ops;
@@ -204,9 +193,9 @@ write_backward(
 
 	/* Iterate backward through the rest of the range */
 	while (cnt > end) {
-		bytes_requested = min(cnt, buffersize);
+		bytes_requested = min(cnt, io_buffersize);
 		off -= bytes_requested;
-		bytes = do_pwrite(file->fd, off, cnt, buffersize,
+		bytes = do_pwrite(file->fd, off, cnt, io_buffersize,
 				pwritev2_flags);
 		if (bytes == 0)
 			break;
@@ -271,8 +260,10 @@ write_once(
 {
 	ssize_t bytes;
 	bytes = do_pwrite(file->fd, offset, count, count, pwritev2_flags);
-	if (bytes < 0)
+	if (bytes < 0) {
+		perror("pwrite");
 		return -1;
+	}
 	*total = bytes;
 	return 1;
 }
@@ -299,12 +290,13 @@ pwrite_f(
 	init_cvtnum(&fsblocksize, &fssectsize);
 	bsize = fsblocksize;
 
-	while ((c = getopt(argc, argv, "b:BCdf:Fi:NqRs:OS:uV:wWZ:")) != EOF) {
+	while ((c = getopt(argc, argv, "b:BCdDf:Fi:NqRs:OS:uV:wWZ:")) != EOF) {
 		switch (c) {
 		case 'b':
 			tmp = cvtnum(fsblocksize, fssectsize, optarg);
 			if (tmp < 0) {
 				printf(_("non-numeric bsize -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			bsize = tmp;
@@ -335,11 +327,15 @@ pwrite_f(
 		case 'N':
 			pwritev2_flags |= RWF_NOWAIT;
 			break;
+		case 'D':
+			pwritev2_flags |= RWF_DSYNC;
+			break;
 #endif
 		case 's':
 			skip = cvtnum(fsblocksize, fssectsize, optarg);
 			if (skip < 0) {
 				printf(_("non-numeric skip -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -347,6 +343,7 @@ pwrite_f(
 			seed = strtoul(optarg, &sp, 0);
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric seed -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -362,6 +359,7 @@ pwrite_f(
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric vector count == %s\n"),
 					optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
@@ -376,11 +374,13 @@ pwrite_f(
 			zeed = strtoul(optarg, &sp, 0);
 			if (!sp || sp == optarg) {
 				printf(_("non-numeric seed -- %s\n"), optarg);
+				exitcode = 1;
 				return 0;
 			}
 			break;
 		default:
 			/* Handle ifdef'd-out options above */
+			exitcode = 1;
 			if (c != '?')
 				printf(_("%s: command -%c not supported\n"), argv[0], c);
 			else
@@ -388,28 +388,38 @@ pwrite_f(
 			return 0;
 		}
 	}
-	if (((skip || dflag) && !infile) || (optind != argc - 2))
+	if (((skip || dflag) && !infile) || (optind != argc - 2)) {
+		exitcode = 1;
 		return command_usage(&pwrite_cmd);
-	if (infile && direction != IO_FORWARD)
+	}
+	if (infile && direction != IO_FORWARD) {
+		exitcode = 1;
 		return command_usage(&pwrite_cmd);
+	}
 	offset = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (offset < 0) {
 		printf(_("non-numeric offset argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 	optind++;
 	count = cvtnum(fsblocksize, fssectsize, argv[optind]);
 	if (count < 0) {
 		printf(_("non-numeric length argument -- %s\n"), argv[optind]);
+		exitcode = 1;
 		return 0;
 	}
 
-	if (alloc_buffer(bsize, uflag, seed) < 0)
+	if (alloc_buffer(bsize, uflag, seed) < 0) {
+		exitcode = 1;
 		return 0;
+	}
 
 	c = IO_READONLY | (dflag ? IO_DIRECT : 0);
-	if (infile && ((fd = openfile(infile, NULL, c, 0, NULL)) < 0))
+	if (infile && ((fd = openfile(infile, NULL, c, 0, NULL)) < 0)) {
+		exitcode = 1;
 		return 0;
+	}
 
 	gettimeofday(&t1, NULL);
 	switch (direction) {
@@ -432,20 +442,25 @@ pwrite_f(
 		total = 0;
 		ASSERT(0);
 	}
-	if (c < 0)
+	if (c < 0) {
+		exitcode = 1;
 		goto done;
+	}
 	if (Wflag) {
 		if (fsync(file->fd) < 0) {
 			perror("fsync");
+			exitcode = 1;
 			goto done;
 		}
 	}
 	if (wflag) {
 		if (fdatasync(file->fd) < 0) {
 			perror("fdatasync");
+			exitcode = 1;
 			goto done;
 		}
 	}
+
 	if (qflag)
 		goto done;
 	gettimeofday(&t2, NULL);
@@ -469,7 +484,7 @@ pwrite_init(void)
 	pwrite_cmd.argmax = -1;
 	pwrite_cmd.flags = CMD_NOMAP_OK | CMD_FOREIGN_OK;
 	pwrite_cmd.args =
-_("[-i infile [-dwNOW] [-s skip]] [-b bs] [-S seed] [-FBR [-Z N]] [-V N] off len");
+_("[-i infile [-qdDwNOW] [-s skip]] [-b bs] [-S seed] [-FBR [-Z N]] [-V N] off len");
 	pwrite_cmd.oneline =
 		_("writes a number of bytes at a specified offset");
 	pwrite_cmd.help = pwrite_help;

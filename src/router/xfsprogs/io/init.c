@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2003-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include <pthread.h>
@@ -26,11 +14,11 @@
 char	*progname;
 int	exitcode;
 int	expert;
-int	idlethread;
+static int	idlethread;
 size_t	pagesize;
 struct timeval stopwatch;
 
-void
+static void
 usage(void)
 {
 	fprintf(stderr,
@@ -58,6 +46,7 @@ init_commands(void)
 {
 	attr_init();
 	bmap_init();
+	bulkstat_init();
 	copy_range_init();
 	cowextsize_init();
 	encrypt_init();
@@ -72,6 +61,8 @@ init_commands(void)
 	help_init();
 	imap_init();
 	inject_init();
+	label_init();
+	log_writes_init();
 	madvise_init();
 	mincore_init();
 	mmap_init();
@@ -83,15 +74,19 @@ init_commands(void)
 	quit_init();
 	readdir_init();
 	reflink_init();
+	repair_init();
 	resblks_init();
+	scrub_init();
 	seek_init();
 	sendfile_init();
 	shutdown_init();
 	stat_init();
+	swapext_init();
 	sync_init();
 	sync_range_init();
 	truncate_init();
 	utimes_init();
+	crc32cselftest_init();
 }
 
 /*
@@ -131,7 +126,7 @@ init_check_command(
 	return 1;
 }
 
-void
+static void
 init(
 	int		argc,
 	char		**argv)
@@ -139,7 +134,7 @@ init(
 	int		c, flags = 0;
 	char		*sp;
 	mode_t		mode = 0600;
-	xfs_fsop_geom_t	geometry = { 0 };
+	struct xfs_fsop_geom geometry = { 0 };
 	struct fs_path	fsp;
 
 	progname = basename(argv[0]);
@@ -151,7 +146,7 @@ init(
 	gettimeofday(&stopwatch, NULL);
 
 	fs_table_initialise(0, NULL, 0, NULL);
-	while ((c = getopt(argc, argv, "ac:C:dFfim:p:nrRstTVx")) != EOF) {
+	while ((c = getopt(argc, argv, "ac:C:dFfiLm:p:PnrRstTVx")) != EOF) {
 		switch (c) {
 		case 'a':
 			flags |= IO_APPEND;
@@ -197,6 +192,12 @@ init(
 		case 't':
 			flags |= IO_TRUNC;
 			break;
+		case 'P':
+			flags |= IO_PATH;
+			break;
+		case 'L':
+			flags |= IO_NOFOLLOW;
+			break;
 		case 'R':
 			flags |= IO_REALTIME;
 			break;
@@ -236,15 +237,16 @@ init(
  * are not reference counted. Spawning an idle thread can help detecting file
  * struct reference leaks.
  */
-void *
+static void *
 idle_loop(void *arg)
 {
 	for (;;)
 		pause();
+	return NULL;
 }
 
-void
-start_idle_thread()
+static void
+start_idle_thread(void)
 {
 	pthread_t t;
 

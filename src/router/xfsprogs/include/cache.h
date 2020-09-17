@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2006 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #ifndef __CACHE_H__
 #define __CACHE_H__
@@ -45,7 +33,7 @@ enum {
  * For prefetch support, the top half of the range starts at
  * CACHE_PREFETCH_PRIORITY and everytime the buffer is fetched and is at or
  * above this priority level, it is reduced to below this level (refer to
- * libxfs_getbuf).
+ * libxfs_buf_get).
  *
  * If we have dirty nodes, we can't recycle them until they've been cleaned. To
  * keep these out of the reclaimable lists (as there can be lots of them) give

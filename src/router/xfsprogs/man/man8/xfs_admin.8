@@ -15,6 +15,9 @@ xfs_admin \- change parameters of an XFS filesystem
 .I uuid
 ]
 .I device
+[
+.I logdev
+]
 .br
 .B xfs_admin \-V
 .SH DESCRIPTION
@@ -31,6 +34,17 @@ A number of parameters of a mounted filesystem can be examined
 and modified using the
 .BR xfs_growfs (8)
 command.
+.PP
+The optional
+.B logdev
+parameter specifies the device special file where the filesystem's external
+log resides.
+This is required only for filesystems that use an external log.
+See the
+.B mkfs.xfs \-l
+option, and refer to
+.BR xfs (5)
+for a detailed description of the XFS log.
 .SH OPTIONS
 .TP
 .B \-e

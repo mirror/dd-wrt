@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -53,7 +41,7 @@ bmap(
 	xfs_dinode_t		*dip;
 	xfs_fileoff_t		eoffset;
 	xfs_bmbt_rec_t		*ep;
-	xfs_dinode_fmt_t	fmt;
+	enum xfs_dinode_fmt	fmt;
 	int			fsize;
 	xfs_bmbt_key_t		*kp;
 	int			n;
@@ -74,7 +62,7 @@ bmap(
 	n = 0;
 	eoffset = offset + len - 1;
 	curoffset = offset;
-	fmt = (xfs_dinode_fmt_t)XFS_DFORK_FORMAT(dip, whichfork);
+	fmt = (enum xfs_dinode_fmt)XFS_DFORK_FORMAT(dip, whichfork);
 	typ = whichfork == XFS_DATA_FORK ? TYP_BMAPBTD : TYP_BMAPBTA;
 	ASSERT(typtab[typ].typnm == typ);
 	ASSERT(fmt == XFS_DINODE_FMT_LOCAL || fmt == XFS_DINODE_FMT_EXTENTS ||

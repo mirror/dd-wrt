@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include <stdbool.h>
@@ -23,6 +11,9 @@
 #include <grp.h>
 #include "init.h"
 #include "quota.h"
+#include "libfrog/logging.h"
+#include "libfrog/fsgeom.h"
+#include "libfrog/bulkstat.h"
 
 typedef struct du {
 	struct du	*next;
@@ -79,7 +70,7 @@ quot_help(void)
 
 static void
 quot_bulkstat_add(
-	xfs_bstat_t	*p,
+	struct xfs_bulkstat	*p,
 	uint		flags)
 {
 	du_t		*dp;
@@ -103,7 +94,7 @@ quot_bulkstat_add(
 	}
 	for (i = 0; i < 3; i++) {
 		id = (i == 0) ? p->bs_uid : ((i == 1) ?
-			p->bs_gid : bstat_get_projid(p));
+			p->bs_gid : p->bs_projectid);
 		hp = &duhash[i][id % DUHASH];
 		for (dp = *hp; dp; dp = dp->next)
 			if (dp->id == id)
@@ -123,11 +114,11 @@ quot_bulkstat_add(
 		}
 		dp->blocks += size;
 
-		if (now - p->bs_atime.tv_sec > 30 * (60*60*24))
+		if (now - p->bs_atime > 30 * (60*60*24))
 			dp->blocks30 += size;
-		if (now - p->bs_atime.tv_sec > 60 * (60*60*24))
+		if (now - p->bs_atime > 60 * (60*60*24))
 			dp->blocks60 += size;
-		if (now - p->bs_atime.tv_sec > 90 * (60*60*24))
+		if (now - p->bs_atime > 90 * (60*60*24))
 			dp->blocks90 += size;
 		dp->nfiles++;
 	}
@@ -136,13 +127,11 @@ quot_bulkstat_add(
 static void
 quot_bulkstat_mount(
 	char			*fsdir,
-	uint			flags)
+	unsigned int		flags)
 {
-	xfs_fsop_bulkreq_t	bulkreq;
-	xfs_bstat_t		*buf;
-	__u64			last = 0;
-	__s32			count;
-	int			i, sts, fsfd;
+	struct xfs_fd		fsxfd = XFS_FD_INIT_EMPTY;
+	struct xfs_bulkstat_req	*breq;
+	int			i, sts, ret;
 	du_t			**dp;
 
 	/*
@@ -157,34 +146,29 @@ quot_bulkstat_mount(
 			*dp = NULL;
 	ndu[0] = ndu[1] = ndu[2] = 0;
 
-	fsfd = open(fsdir, O_RDONLY);
-	if (fsfd < 0) {
-		perror(fsdir);
+	ret = -xfd_open(&fsxfd, fsdir, O_RDONLY);
+	if (ret) {
+		xfrog_perror(ret, fsdir);
 		return;
 	}
 
-	buf = (xfs_bstat_t *)calloc(NBSTAT, sizeof(xfs_bstat_t));
-	if (!buf) {
-		perror("calloc");
-		close(fsfd);
+	ret = -xfrog_bulkstat_alloc_req(NBSTAT, 0, &breq);
+	if (ret) {
+		xfrog_perror(ret, "calloc");
+		xfd_close(&fsxfd);
 		return;
 	}
 
-	bulkreq.lastip = &last;
-	bulkreq.icount = NBSTAT;
-	bulkreq.ubuffer = buf;
-	bulkreq.ocount = &count;
-
-	while ((sts = xfsctl(fsdir, fsfd, XFS_IOC_FSBULKSTAT, &bulkreq)) == 0) {
-		if (count == 0)
+	while ((sts = -xfrog_bulkstat(&fsxfd, breq)) == 0) {
+		if (breq->hdr.ocount == 0)
 			break;
-		for (i = 0; i < count; i++)
-			quot_bulkstat_add(&buf[i], flags);
+		for (i = 0; i < breq->hdr.ocount; i++)
+			quot_bulkstat_add(&breq->bulkstat[i], flags);
 	}
 	if (sts < 0)
-		perror("XFS_IOC_FSBULKSTAT"),
-	free(buf);
-	close(fsfd);
+		xfrog_perror(sts, "XFS_IOC_FSBULKSTAT");
+	free(breq);
+	xfd_close(&fsxfd);
 }
 
 static int

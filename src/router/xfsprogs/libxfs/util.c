@@ -1,22 +1,11 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs_priv.h"
+#include "libxfs.h"
 #include "libxfs_io.h"
 #include "init.h"
 #include "xfs_fs.h"
@@ -142,37 +131,22 @@ xfs_log_calc_unit_res(
 	} else {
 		/* BB roundoff */
 		unit_bytes += 2 * BBSIZE;
-        }
+	}
 
 	return unit_bytes;
 }
 
-/*
- * Change the requested timestamp in the given inode.
- *
- * This was once shared with the kernel, but has diverged to the point
- * where it's no longer worth the hassle of maintaining common code.
- */
-void
-libxfs_trans_ichgtime(
-	struct xfs_trans	*tp,
-	struct xfs_inode	*ip,
-	int			flags)
+struct timespec64
+current_time(struct inode *inode)
 {
-	struct timespec tv;
-	struct timeval	stv;
+	struct timespec64	tv;
+	struct timeval		stv;
 
 	gettimeofday(&stv, (struct timezone *)0);
 	tv.tv_sec = stv.tv_sec;
 	tv.tv_nsec = stv.tv_usec * 1000;
-	if (flags & XFS_ICHGTIME_MOD)
-		VFS_I(ip)->i_mtime = tv;
-	if (flags & XFS_ICHGTIME_CHG)
-		VFS_I(ip)->i_ctime = tv;
-	if (flags & XFS_ICHGTIME_CREATE) {
-		ip->i_d.di_crtime.t_sec = (int32_t)tv.tv_sec;
-		ip->i_d.di_crtime.t_nsec = (int32_t)tv.tv_nsec;
-	}
+
+	return tv;
 }
 
 STATIC uint16_t
@@ -242,7 +216,7 @@ xfs_flags2diflags2(
  * This was once shared with the kernel, but has diverged to the point
  * where it's no longer worth the hassle of maintaining common code.
  */
-int
+static int
 libxfs_ialloc(
 	xfs_trans_t	*tp,
 	xfs_inode_t	*pip,
@@ -251,7 +225,6 @@ libxfs_ialloc(
 	xfs_dev_t	rdev,
 	struct cred	*cr,
 	struct fsxattr	*fsx,
-	int		okalloc,
 	xfs_buf_t	**ialloc_context,
 	xfs_inode_t	**ipp)
 {
@@ -264,7 +237,7 @@ libxfs_ialloc(
 	 * Call the space management code to pick
 	 * the on-disk inode to be allocated.
 	 */
-	error = xfs_dialloc(tp, pip ? pip->i_ino : 0, mode, okalloc,
+	error = xfs_dialloc(tp, pip ? pip->i_ino : 0, mode,
 			    ialloc_context, &ino);
 	if (error != 0)
 		return error;
@@ -274,54 +247,40 @@ libxfs_ialloc(
 	}
 	ASSERT(*ialloc_context == NULL);
 
-	error = xfs_trans_iget(tp->t_mountp, tp, ino, 0, 0, &ip);
+	error = libxfs_iget(tp->t_mountp, tp, ino, 0, &ip);
 	if (error != 0)
 		return error;
 	ASSERT(ip != NULL);
 
 	VFS_I(ip)->i_mode = mode;
 	set_nlink(VFS_I(ip), nlink);
-	ip->i_d.di_uid = cr->cr_uid;
-	ip->i_d.di_gid = cr->cr_gid;
-	xfs_set_projid(&ip->i_d, pip ? 0 : fsx->fsx_projid);
+	i_uid_write(VFS_I(ip), cr->cr_uid);
+	i_gid_write(VFS_I(ip), cr->cr_gid);
+	ip->i_d.di_projid = pip ? 0 : fsx->fsx_projid;
 	xfs_trans_ichgtime(tp, ip, XFS_ICHGTIME_CHG | XFS_ICHGTIME_MOD);
 
-	/*
-	 * We only support filesystems that understand v2 format inodes. So if
-	 * this is currently an old format inode, then change the inode version
-	 * number now.  This way we only do the conversion here rather than here
-	 * and in the flush/logging code.
-	 */
-	if (ip->i_d.di_version == 1) {
-		ip->i_d.di_version = 2;
-		/*
-		 * old link count, projid_lo/hi field, pad field
-		 * already zeroed
-		 */
-	}
-
 	if (pip && (VFS_I(pip)->i_mode & S_ISGID)) {
-		ip->i_d.di_gid = pip->i_d.di_gid;
+		VFS_I(ip)->i_gid = VFS_I(pip)->i_gid;
 		if ((VFS_I(pip)->i_mode & S_ISGID) && (mode & S_IFMT) == S_IFDIR)
 			VFS_I(ip)->i_mode |= S_ISGID;
 	}
 
 	ip->i_d.di_size = 0;
-	ip->i_d.di_nextents = 0;
+	ip->i_df.if_nextents = 0;
 	ASSERT(ip->i_d.di_nblocks == 0);
 	ip->i_d.di_extsize = pip ? 0 : fsx->fsx_extsize;
 	ip->i_d.di_dmevmask = 0;
 	ip->i_d.di_dmstate = 0;
 	ip->i_d.di_flags = pip ? 0 : xfs_flags2diflags(ip, fsx->fsx_xflags);
 
-	if (ip->i_d.di_version == 3) {
+	if (xfs_sb_version_has_v3inode(&ip->i_mount->m_sb)) {
 		ASSERT(ip->i_d.di_ino == ino);
 		ASSERT(uuid_equal(&ip->i_d.di_uuid, &mp->m_sb.sb_meta_uuid));
 		VFS_I(ip)->i_version = 1;
 		ip->i_d.di_flags2 = pip ? 0 : xfs_flags2diflags2(ip,
 				fsx->fsx_xflags);
-		ip->i_d.di_crtime.t_sec = (int32_t)VFS_I(ip)->i_mtime.tv_sec;
-		ip->i_d.di_crtime.t_nsec = (int32_t)VFS_I(ip)->i_mtime.tv_nsec;
+		ip->i_d.di_crtime.tv_sec = (int32_t)VFS_I(ip)->i_mtime.tv_sec;
+		ip->i_d.di_crtime.tv_nsec = (int32_t)VFS_I(ip)->i_mtime.tv_nsec;
 		ip->i_d.di_cowextsize = pip ? 0 : fsx->fsx_cowextsize;
 	}
 
@@ -334,9 +293,9 @@ libxfs_ialloc(
 		/* FALLTHROUGH */
 	case S_IFCHR:
 	case S_IFBLK:
-		ip->i_d.di_format = XFS_DINODE_FMT_DEV;
-		ip->i_df.if_u2.if_rdev = rdev;
+		ip->i_df.if_format = XFS_DINODE_FMT_DEV;
 		flags |= XFS_ILOG_DEV;
+		VFS_I(ip)->i_rdev = rdev;
 		break;
 	case S_IFREG:
 	case S_IFDIR:
@@ -365,97 +324,22 @@ libxfs_ialloc(
 		}
 		/* FALLTHROUGH */
 	case S_IFLNK:
-		ip->i_d.di_format = XFS_DINODE_FMT_EXTENTS;
+		ip->i_df.if_format = XFS_DINODE_FMT_EXTENTS;
 		ip->i_df.if_flags = XFS_IFEXTENTS;
-		ip->i_df.if_bytes = ip->i_df.if_real_bytes = 0;
-		ip->i_df.if_u1.if_extents = NULL;
+		ip->i_df.if_bytes = 0;
+		ip->i_df.if_u1.if_root = NULL;
 		break;
 	default:
 		ASSERT(0);
 	}
-	/* Attribute fork settings for new inode. */
-	ip->i_d.di_aformat = XFS_DINODE_FMT_EXTENTS;
-	ip->i_d.di_anextents = 0;
-
-	/*
-	 * set up the inode ops structure that the libxfs code relies on
-	 */
-	if (XFS_ISDIR(ip))
-		ip->d_ops = ip->i_mount->m_dir_inode_ops;
-	else
-		ip->d_ops = ip->i_mount->m_nondir_inode_ops;
 
 	/*
 	 * Log the new values stuffed into the inode.
 	 */
+	xfs_trans_ijoin(tp, ip, 0);
 	xfs_trans_log_inode(tp, ip, flags);
 	*ipp = ip;
 	return 0;
-}
-
-void
-libxfs_iprint(
-	xfs_inode_t		*ip)
-{
-	struct xfs_icdinode	*dip;
-	xfs_bmbt_rec_host_t	*ep;
-	xfs_extnum_t		i;
-	xfs_extnum_t		nextents;
-
-	printf("Inode %lx\n", (unsigned long)ip);
-	printf("    i_ino %llx\n", (unsigned long long)ip->i_ino);
-
-	if (ip->i_df.if_flags & XFS_IFEXTENTS)
-		printf("EXTENTS ");
-	printf("\n");
-	printf("    i_df.if_bytes %d\n", ip->i_df.if_bytes);
-	printf("    i_df.if_u1.if_extents/if_data %lx\n",
-		(unsigned long)ip->i_df.if_u1.if_extents);
-	if (ip->i_df.if_flags & XFS_IFEXTENTS) {
-		nextents = ip->i_df.if_bytes / (uint)sizeof(*ep);
-		for (ep = ip->i_df.if_u1.if_extents, i = 0; i < nextents;
-								i++, ep++) {
-			xfs_bmbt_irec_t rec;
-
-			xfs_bmbt_get_all(ep, &rec);
-			printf("\t%d: startoff %llu, startblock 0x%llx,"
-				" blockcount %llu, state %d\n",
-				i, (unsigned long long)rec.br_startoff,
-				(unsigned long long)rec.br_startblock,
-				(unsigned long long)rec.br_blockcount,
-				(int)rec.br_state);
-		}
-	}
-	printf("    i_df.if_broot %lx\n", (unsigned long)ip->i_df.if_broot);
-	printf("    i_df.if_broot_bytes %x\n", ip->i_df.if_broot_bytes);
-
-	dip = &ip->i_d;
-	printf("\nOn disk portion\n");
-	printf("    di_mode %o\n", VFS_I(ip)->i_mode);
-	printf("    di_version %x\n", (uint)dip->di_version);
-	switch (ip->i_d.di_format) {
-	case XFS_DINODE_FMT_LOCAL:
-		printf("    Inline inode\n");
-		break;
-	case XFS_DINODE_FMT_EXTENTS:
-		printf("    Extents inode\n");
-		break;
-	case XFS_DINODE_FMT_BTREE:
-		printf("    B-tree inode\n");
-		break;
-	default:
-		printf("    Other inode\n");
-		break;
-	}
-	printf("   di_nlink %x\n", VFS_I(ip)->i_nlink);
-	printf("   di_uid %d\n", dip->di_uid);
-	printf("   di_gid %d\n", dip->di_gid);
-	printf("   di_nextents %d\n", dip->di_nextents);
-	printf("   di_size %llu\n", (unsigned long long)dip->di_size);
-	printf("   di_gen %x\n", VFS_I(ip)->i_generation);
-	printf("   di_extsize %d\n", dip->di_extsize);
-	printf("   di_flags %x\n", dip->di_flags);
-	printf("   di_nblocks %llu\n", (unsigned long long)dip->di_nblocks);
 }
 
 /*
@@ -463,16 +347,16 @@ libxfs_iprint(
  * Originally based on xfs_iflush_int() from xfs_inode.c in the kernel.
  */
 int
-libxfs_iflush_int(xfs_inode_t *ip, xfs_buf_t *bp)
+libxfs_iflush_int(
+	xfs_inode_t			*ip,
+	xfs_buf_t			*bp)
 {
-	xfs_inode_log_item_t	*iip;
-	xfs_dinode_t		*dip;
-	xfs_mount_t		*mp;
+	struct xfs_inode_log_item	*iip;
+	xfs_dinode_t			*dip;
+	xfs_mount_t			*mp;
 
-	ASSERT(XFS_BUF_FSPRIVATE(bp, void *) != NULL);
-	ASSERT(ip->i_d.di_format != XFS_DINODE_FMT_BTREE ||
-		ip->i_d.di_nextents > ip->i_df.if_ext_max);
-	ASSERT(ip->i_d.di_version > 1);
+	ASSERT(ip->i_df.if_format != XFS_DINODE_FMT_BTREE ||
+		ip->i_df.if_nextents > ip->i_df.if_ext_max);
 
 	iip = ip->i_itemp;
 	mp = ip->i_mount;
@@ -482,24 +366,29 @@ libxfs_iflush_int(xfs_inode_t *ip, xfs_buf_t *bp)
 
 	ASSERT(ip->i_d.di_magic == XFS_DINODE_MAGIC);
 	if (XFS_ISREG(ip)) {
-		ASSERT( (ip->i_d.di_format == XFS_DINODE_FMT_EXTENTS) ||
-			(ip->i_d.di_format == XFS_DINODE_FMT_BTREE) );
+		ASSERT( (ip->i_df.if_format == XFS_DINODE_FMT_EXTENTS) ||
+			(ip->i_df.if_format == XFS_DINODE_FMT_BTREE) );
 	} else if (XFS_ISDIR(ip)) {
-		ASSERT( (ip->i_d.di_format == XFS_DINODE_FMT_EXTENTS) ||
-			(ip->i_d.di_format == XFS_DINODE_FMT_BTREE)   ||
-			(ip->i_d.di_format == XFS_DINODE_FMT_LOCAL) );
+		ASSERT( (ip->i_df.if_format == XFS_DINODE_FMT_EXTENTS) ||
+			(ip->i_df.if_format == XFS_DINODE_FMT_BTREE)   ||
+			(ip->i_df.if_format == XFS_DINODE_FMT_LOCAL) );
 	}
-	ASSERT(ip->i_d.di_nextents+ip->i_d.di_anextents <= ip->i_d.di_nblocks);
+	ASSERT(ip->i_df.if_nextents+ip->i_afp->if_nextents <= ip->i_d.di_nblocks);
 	ASSERT(ip->i_d.di_forkoff <= mp->m_sb.sb_inodesize);
 
 	/* bump the change count on v3 inodes */
-	if (ip->i_d.di_version == 3)
+	if (xfs_sb_version_has_v3inode(&mp->m_sb))
 		VFS_I(ip)->i_version++;
 
-	/* Check the inline directory data. */
-	if (S_ISDIR(VFS_I(ip)->i_mode) &&
-	    ip->i_d.di_format == XFS_DINODE_FMT_LOCAL &&
-	    xfs_dir2_sf_verify(ip))
+	/*
+	 * If there are inline format data / attr forks attached to this inode,
+	 * make sure they are not corrupt.
+	 */
+	if (ip->i_df.if_format == XFS_DINODE_FMT_LOCAL &&
+	    xfs_ifork_verify_local_data(ip))
+		return -EFSCORRUPTED;
+	if (ip->i_afp && ip->i_afp->if_format == XFS_DINODE_FMT_LOCAL &&
+	    xfs_ifork_verify_local_attr(ip))
 		return -EFSCORRUPTED;
 
 	/*
@@ -560,8 +449,6 @@ libxfs_alloc_file_space(
 	xfs_filblks_t	datablocks;
 	xfs_filblks_t	allocated_fsb;
 	xfs_filblks_t	allocatesize_fsb;
-	xfs_fsblock_t	firstfsb;
-	struct xfs_defer_ops free_list;
 	xfs_bmbt_irec_t *imapp;
 	xfs_bmbt_irec_t imaps[1];
 	int		reccount;
@@ -599,10 +486,8 @@ libxfs_alloc_file_space(
 		}
 		xfs_trans_ijoin(tp, ip, 0);
 
-		xfs_defer_init(&free_list, &firstfsb);
 		error = xfs_bmapi_write(tp, ip, startoffset_fsb, allocatesize_fsb,
-				xfs_bmapi_flags, &firstfsb, 0, imapp,
-				&reccount, &free_list);
+				xfs_bmapi_flags, 0, imapp, &reccount);
 
 		if (error)
 			goto error0;
@@ -610,10 +495,6 @@ libxfs_alloc_file_space(
 		/*
 		 * Complete the transaction
 		 */
-		error = xfs_defer_finish(&tp, &free_list);
-		if (error)
-			goto error0;
-
 		error = xfs_trans_commit(tp);
 		if (error)
 			break;
@@ -628,21 +509,8 @@ libxfs_alloc_file_space(
 	return error;
 
 error0:	/* Cancel bmap, cancel trans */
-	xfs_defer_cancel(&free_list);
 	xfs_trans_cancel(tp);
 	return error;
-}
-
-unsigned int
-libxfs_log2_roundup(unsigned int i)
-{
-	unsigned int	rval;
-
-	for (rval = 0; rval < NBBY * sizeof(i); rval++) {
-		if ((1 << rval) >= i)
-			break;
-	}
-	return rval;
 }
 
 /*
@@ -669,7 +537,7 @@ libxfs_inode_alloc(
 
 	ialloc_context = (xfs_buf_t *)0;
 	error = libxfs_ialloc(*tp, pip, mode, nlink, rdev, cr, fsx,
-			   1, &ialloc_context, &ip);
+			   &ialloc_context, &ip);
 	if (error) {
 		*ipp = NULL;
 		return error;
@@ -691,7 +559,7 @@ libxfs_inode_alloc(
 		}
 		xfs_trans_bjoin(*tp, ialloc_context);
 		error = libxfs_ialloc(*tp, pip, mode, nlink, rdev, cr,
-				   fsx, 1, &ialloc_context, &ip);
+				   fsx, &ialloc_context, &ip);
 		if (!ip)
 			error = -ENOSPC;
 		if (error)
@@ -700,35 +568,6 @@ libxfs_inode_alloc(
 
 	*ipp = ip;
 	return error;
-}
-
-/*
- * Userspace versions of common diagnostic routines (varargs fun).
- */
-void
-libxfs_fs_repair_cmn_err(int level, xfs_mount_t *mp, char *fmt, ...)
-{
-	va_list	ap;
-
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fprintf(stderr, "  This is a bug.\n");
-	fprintf(stderr, "%s version %s\n", progname, VERSION);
-	fprintf(stderr,
-		"Please capture the filesystem metadata with xfs_metadump and\n"
-		"report it to linux-xfs@vger.kernel.org\n");
-	va_end(ap);
-}
-
-void
-libxfs_fs_cmn_err(int level, xfs_mount_t *mp, char *fmt, ...)
-{
-	va_list	ap;
-
-	va_start(ap, fmt);
-	vfprintf(stderr, fmt, ap);
-	fputs("\n", stderr);
-	va_end(ap);
 }
 
 void
@@ -748,11 +587,49 @@ cmn_err(int level, char *fmt, ...)
  */
 void
 xfs_verifier_error(
-	struct xfs_buf		*bp)
+	struct xfs_buf		*bp,
+	int			error,
+	xfs_failaddr_t		failaddr)
 {
-	xfs_alert(NULL, "Metadata %s detected at %s block 0x%llx/0x%x",
+	xfs_buf_ioerror(bp, error);
+
+	xfs_alert(NULL, "Metadata %s detected at %p, %s block 0x%llx/0x%x",
 		  bp->b_error == -EFSBADCRC ? "CRC error" : "corruption",
+		  failaddr ? failaddr : __return_address,
 		  bp->b_ops->name, bp->b_bn, BBTOB(bp->b_length));
+}
+
+/*
+ * Warnings for inode corruption problems.  Don't bother with the stack
+ * trace unless the error level is turned up high.
+ */
+void
+xfs_inode_verifier_error(
+	struct xfs_inode	*ip,
+	int			error,
+	const char		*name,
+	void			*buf,
+	size_t			bufsz,
+	xfs_failaddr_t		failaddr)
+{
+	xfs_alert(NULL, "Metadata %s detected at %p, inode 0x%llx %s",
+		  error == -EFSBADCRC ? "CRC error" : "corruption",
+		  failaddr ? failaddr : __return_address,
+		  ip->i_ino, name);
+}
+
+/*
+ * Complain about the kinds of metadata corruption that we can't detect from a
+ * verifier, such as incorrect inter-block relationship data.  Does not set
+ * bp->b_error.
+ */
+void
+xfs_buf_corruption_error(
+	struct xfs_buf		*bp,
+	xfs_failaddr_t		fa)
+{
+	xfs_alert(NULL, "Metadata corruption detected at %p, %s block 0x%llx",
+		  fa, bp->b_ops->name, bp->b_bn);
 }
 
 /*
@@ -767,7 +644,7 @@ xfs_verifier_error(
  * repair can validate it against the state of the log.
  */
 xfs_lsn_t	libxfs_max_lsn = 0;
-pthread_mutex_t	libxfs_max_lsn_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t	libxfs_max_lsn_lock = PTHREAD_MUTEX_INITIALIZER;
 
 bool
 xfs_log_check_lsn(
@@ -795,6 +672,18 @@ xfs_log_check_lsn(
 
 	return true;
 }
+
+void
+xfs_log_item_init(
+	struct xfs_mount	*mp,
+	struct xfs_log_item	*item,
+	int			type)
+{
+	item->li_mountp = mp; 
+	item->li_type = type;
+
+	INIT_LIST_HEAD(&item->li_trans);
+}   
 
 static struct xfs_buftarg *
 xfs_find_bdev_for_inode(
@@ -827,3 +716,46 @@ libxfs_zero_extent(
 	return libxfs_device_zero(xfs_find_bdev_for_inode(ip), sector, size);
 }
 
+unsigned int
+hweight8(unsigned int w)
+{
+	unsigned int res = w - ((w >> 1) & 0x55);
+	res = (res & 0x33) + ((res >> 2) & 0x33);
+	return (res + (res >> 4)) & 0x0F;
+}
+
+unsigned int
+hweight32(unsigned int w)
+{
+	unsigned int res = w - ((w >> 1) & 0x55555555);
+	res = (res & 0x33333333) + ((res >> 2) & 0x33333333);
+	res = (res + (res >> 4)) & 0x0F0F0F0F;
+	res = res + (res >> 8);
+	return (res + (res >> 16)) & 0x000000FF;
+}
+
+unsigned int
+hweight64(__u64 w)
+{
+	return hweight32((unsigned int)w) +
+	       hweight32((unsigned int)(w >> 32));
+}
+
+/* xfs_health.c */
+
+/* Mark a per-fs metadata healed. */
+void
+xfs_fs_mark_healthy(
+	struct xfs_mount	*mp,
+	unsigned int		mask)
+{
+	ASSERT(!(mask & ~XFS_SICK_FS_PRIMARY));
+	trace_xfs_fs_mark_healthy(mp, mask);
+
+	spin_lock(&mp->m_sb_lock);
+	mp->m_fs_sick &= ~mask;
+	mp->m_fs_checked |= mask;
+	spin_unlock(&mp->m_sb_lock);
+}
+
+void xfs_ag_geom_health(struct xfs_perag *pag, struct xfs_ag_geometry *ageo) { }

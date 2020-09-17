@@ -1,4 +1,4 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2000-2004 Silicon Graphics, Inc.  All Rights Reserved.
 #
 
@@ -8,10 +8,11 @@ include $(TOPDIR)/include/builddefs
 LTCOMMAND = mkfs.xfs
 
 HFILES =
-CFILES = maxtrres.c proto.c xfs_mkfs.c
+CFILES = proto.c xfs_mkfs.c
 
-LLDLIBS += $(LIBXFS) $(LIBXCMD) $(LIBRT) $(LIBPTHREAD) $(LIBBLKID) $(LIBUUID)
-LTDEPENDENCIES += $(LIBXFS) $(LIBXCMD)
+LLDLIBS += $(LIBXFS) $(LIBXCMD) $(LIBFROG) $(LIBRT) $(LIBPTHREAD) $(LIBBLKID) \
+	$(LIBUUID)
+LTDEPENDENCIES += $(LIBXFS) $(LIBXCMD) $(LIBFROG)
 LLDFLAGS = -static-libtool-libs
 
 default: depend $(LTCOMMAND)

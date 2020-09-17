@@ -84,6 +84,41 @@ Display a summary of the free space information found.
 .PD
 .RE
 .TP
+.B info
+Displays selected geometry information about the filesystem.
+The opened file must be a mount point of a XFS filesystem.
+The output will have the same format that
+.BR "xfs_info" "(8)"
+prints when querying a filesystem.
+.TP
+.BI "health [ \-a agno] [ \-c ] [ \-f ] [ \-i inum ] [ \-q ] [ paths ]"
+Reports the health of the given group of filesystem metadata.
+.RS 1.0i
+.PD 0
+.TP 0.4i
+.B \-a agno
+Report on the health of the given allocation group.
+.TP
+.B \-c
+Scan all inodes in the filesystem and report each file's health status.
+If the
+.B \-a
+option is given, scan only the inodes in that AG.
+.TP
+.B \-f
+Report on the health of metadata that affect the entire filesystem.
+.TP
+.B \-i inum
+Report on the health of a specific inode.
+.TP
+.B \-q
+Report only unhealthy metadata.
+.TP
+.B paths
+Report on the health of the files at the given path.
+.PD
+.RE
+.TP
 .BR "help [ " command " ]"
 Display a brief description of one or all commands.
 .TP

@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2001,2005 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #include "libxfs.h"
@@ -91,18 +79,18 @@ verify_set_agf(xfs_mount_t *mp, xfs_agf_t *agf, xfs_agnumber_t i)
 	 * check first/last AGF fields.  if need be, lose the free
 	 * space in the AGFL, we'll reclaim it later.
 	 */
-	if (be32_to_cpu(agf->agf_flfirst) >= XFS_AGFL_SIZE(mp))  {
-		do_warn(_("flfirst %d in agf %d too large (max = %zu)\n"),
+	if (be32_to_cpu(agf->agf_flfirst) >= libxfs_agfl_size(mp)) {
+		do_warn(_("flfirst %d in agf %d too large (max = %u)\n"),
 			be32_to_cpu(agf->agf_flfirst),
-			i, XFS_AGFL_SIZE(mp) - 1);
+			i, libxfs_agfl_size(mp) - 1);
 		if (!no_modify)
 			agf->agf_flfirst = cpu_to_be32(0);
 	}
 
-	if (be32_to_cpu(agf->agf_fllast) >= XFS_AGFL_SIZE(mp))  {
-		do_warn(_("fllast %d in agf %d too large (max = %zu)\n"),
+	if (be32_to_cpu(agf->agf_fllast) >= libxfs_agfl_size(mp)) {
+		do_warn(_("fllast %d in agf %d too large (max = %u)\n"),
 			be32_to_cpu(agf->agf_fllast),
-			i, XFS_AGFL_SIZE(mp) - 1);
+			i, libxfs_agfl_size(mp) - 1);
 		if (!no_modify)
 			agf->agf_fllast = cpu_to_be32(0);
 	}
@@ -253,11 +241,11 @@ secondary_sb_whack(
 	struct xfs_sb	*sb,
 	xfs_agnumber_t	i)
 {
-	struct xfs_dsb	*dsb = XFS_BUF_TO_SBP(sbuf);
+	struct xfs_dsb	*dsb = sbuf->b_addr;
 	int		do_bzero = 0;
 	int		size;
 	char		*ip;
-	int		rval = 0;;
+	int		rval = 0;
 	uuid_t		tmpuuid;
 
 	rval = do_bzero = 0;
@@ -290,8 +278,8 @@ secondary_sb_whack(
 			+ sizeof(sb->sb_dirblklog);
 
 	/* Check the buffer we read from disk for garbage outside size */
-	for (ip = XFS_BUF_PTR(sbuf) + size;
-	     ip < XFS_BUF_PTR(sbuf) + mp->m_sb.sb_sectsize;
+	for (ip = (char *)sbuf->b_addr + size;
+	     ip < (char *)sbuf->b_addr + mp->m_sb.sb_sectsize;
 	     ip++)  {
 		if (*ip)  {
 			do_bzero = 1;
@@ -314,7 +302,7 @@ secondary_sb_whack(
 			memcpy(&tmpuuid, &sb->sb_meta_uuid, sizeof(uuid_t));
 			memset((void *)((intptr_t)sb + size), 0,
 				mp->m_sb.sb_sectsize - size);
-			memset(XFS_BUF_PTR(sbuf) + size, 0,
+			memset((char *)sbuf->b_addr + size, 0,
 				mp->m_sb.sb_sectsize - size);
 			/* Preserve meta_uuid so we don't fail uuid checks */
 			memcpy(&sb->sb_meta_uuid, &tmpuuid, sizeof(uuid_t));

@@ -1,3 +1,4 @@
+\." tbl
 .TH xfs 5
 .SH NAME
 xfs \- layout, mount options, and supported file attributes for the XFS filesystem
@@ -132,20 +133,6 @@ by the filesystem.
 CRC enabled filesystems always use the attr2 format, and so
 will reject the noattr2 mount option if it is set.
 .TP
-.BR barrier | nobarrier
-Note: This option has been
-.B deprecated
-as of kernel v4.10; in that version, integrity operations are
-always performed and the mount option is ignored.  These mount
-options will be removed no earlier than kernel v4.15.
-.sp
-Enables/disables the use of block layer write barriers for
-writes into the journal and for data integrity operations.
-This allows for drive level write caching to be enabled, for
-devices that support write barriers.
-.sp
-Barriers are enabled by default.
-.TP
 .BR discard | nodiscard
 Enable/disable the issuing of commands to let the block
 device reclaim space freed by the filesystem.  This is
@@ -233,7 +220,7 @@ logbsize must be an integer multiple of the log
 stripe unit configured at mkfs time.
 .sp
 The default value for version 1 logs is 32768, while the
-default value for version 2 logs is MAX(32768, log_sunit).
+default value for version 2 logs is max(32768, log_sunit).
 .TP
 .BR logdev=device " and " rtdev=device
 Use an external log (metadata journal) and/or real-time device.
@@ -308,6 +295,21 @@ namespace is on stable storage. This is useful in HA setups
 where failover must not result in clients seeing
 inconsistent namespace presentation during or after a
 failover event.
+.SH REMOVED MOUNT OPTIONS
+The following mount options have been removed from the kernel, and will
+yield mount failures if specified.  Mount options are deprecated for
+a significant period time prior to removal.
+.TS
+tab(@);
+lbl.
+Name@Removed
+----@-------
+delaylog/nodelaylog@v4.0
+ihashsize@v4.0
+irixsgid@v4.0
+osyncisdsync/osyncisosync@v4.0
+barrier/nobarrier@v4.19
+.TE
 .SH FILE ATTRIBUTES
 The XFS filesystem supports setting the following file
 attributes on Linux systems using the

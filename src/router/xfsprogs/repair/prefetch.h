@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: GPL-2.0
+
 #ifndef _XFS_REPAIR_PREFETCH_H
 #define	_XFS_REPAIR_PREFETCH_H
 
 #include <semaphore.h>
 #include "incore.h"
 
-struct work_queue;
+struct workqueue;
 
 extern int 	do_prefetch;
 
@@ -45,7 +47,7 @@ void
 do_inode_prefetch(
 	struct xfs_mount	*mp,
 	int			stride,
-	void			(*func)(struct work_queue *,
+	void			(*func)(struct workqueue *,
 					xfs_agnumber_t, void *),
 	bool			check_cache,
 	bool			dirs_only);

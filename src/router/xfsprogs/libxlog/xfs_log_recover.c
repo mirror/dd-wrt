@@ -1,19 +1,7 @@
+// SPDX-License-Identifier: GPL-2.0
 /*
  * Copyright (c) 2000-2006 Silicon Graphics, Inc.
  * All Rights Reserved.
- *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it would be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write the Free Software Foundation,
- * Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include "libxfs.h"
 #include "libxlog.h"
@@ -47,11 +35,13 @@ xlog_buf_bbcount_valid(
  * to map to a range of nbblks basic blocks at any valid (basic
  * block) offset within the log.
  */
-xfs_buf_t *
+struct xfs_buf *
 xlog_get_bp(
 	struct xlog	*log,
 	int		nbblks)
 {
+	struct xfs_buf	*bp;
+
 	if (!xlog_buf_bbcount_valid(log, nbblks)) {
 		xfs_warn(log->l_mp, "Invalid block length (0x%x) for buffer",
 			nbblks);
@@ -79,14 +69,8 @@ xlog_get_bp(
 		nbblks += log->l_sectBBsize;
 	nbblks = round_up(nbblks, log->l_sectBBsize);
 
-	return libxfs_getbufr(log->l_dev, (xfs_daddr_t)-1, nbblks);
-}
-
-void
-xlog_put_bp(
-	xfs_buf_t	*bp)
-{
-	libxfs_putbufr(bp);
+	libxfs_buf_get_uncached(log->l_dev, nbblks, 0, &bp);
+	return bp;
 }
 
 /*
@@ -131,7 +115,7 @@ xlog_bread_noalign(
 	ASSERT(BBTOB(nbblks) <= XFS_BUF_SIZE(bp));
 
 	XFS_BUF_SET_ADDR(bp, log->l_logBBstart + blk_no);
-	XFS_BUF_SET_COUNT(bp, BBTOB(nbblks));
+	bp->b_bcount = BBTOB(nbblks);
 	bp->b_error = 0;
 
 	return libxfs_readbufr(log->l_dev, XFS_BUF_ADDR(bp), bp, nbblks, 0);
@@ -171,14 +155,14 @@ xlog_bread_offset(
 	int		orig_len = bp->b_bcount;
 	int		error, error2;
 
-	error = XFS_BUF_SET_PTR(bp, offset, BBTOB(nbblks));
+	error = xfs_buf_associate_memory(bp, offset, BBTOB(nbblks));
 	if (error)
 		return error;
 
 	error = xlog_bread_noalign(log, blk_no, nbblks, bp);
 
 	/* must reset buffer pointer even on error */
-	error2 = XFS_BUF_SET_PTR(bp, orig_offset, orig_len);
+	error2 = xfs_buf_associate_memory(bp, orig_offset, orig_len);
 	if (error)
 		return error;
 	return error2;
@@ -286,7 +270,7 @@ xlog_find_verify_cycle(
 	*new_blk = -1;
 
 out:
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 	return error;
 }
 
@@ -395,7 +379,7 @@ xlog_find_verify_log_record(
 		*last_blk = i;
 
 out:
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 	return error;
 }
 
@@ -646,7 +630,7 @@ validate_head:
 			goto bp_err;
 	}
 
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 	if (head_blk == log_bbnum)
 		*return_head_blk = 0;
 	else
@@ -660,7 +644,7 @@ validate_head:
 	return 0;
 
  bp_err:
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 
 	if (error)
 		xfs_warn(log->l_mp, "failed to find log head");
@@ -757,7 +741,7 @@ xlog_find_tail(
 	}
 	if (!found) {
 		xfs_warn(log->l_mp, "%s: couldn't find sync record", __func__);
-		xlog_put_bp(bp);
+		libxfs_buf_relse(bp);
 		ASSERT(0);
 		return XFS_ERROR(EIO);
 	}
@@ -870,7 +854,7 @@ xlog_find_tail(
 		error = xlog_clear_stale_blocks(log, tail_lsn);
 
 done:
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 
 	if (error)
 		xfs_warn(log->l_mp, "failed to locate log tail");
@@ -918,7 +902,7 @@ xlog_find_zeroed(
 	first_cycle = xlog_get_cycle(offset);
 	if (first_cycle == 0) {		/* completely zeroed log */
 		*blk_no = 0;
-		xlog_put_bp(bp);
+		libxfs_buf_relse(bp);
 		return -1;
 	}
 
@@ -929,7 +913,7 @@ xlog_find_zeroed(
 
 	last_cycle = xlog_get_cycle(offset);
 	if (last_cycle != 0) {		/* log completely written to */
-		xlog_put_bp(bp);
+		libxfs_buf_relse(bp);
 		return 0;
 	} else if (first_cycle != 1) {
 		/*
@@ -986,18 +970,18 @@ xlog_find_zeroed(
 
 	*blk_no = last_blk;
 bp_err:
-	xlog_put_bp(bp);
+	libxfs_buf_relse(bp);
 	if (error)
 		return error;
 	return -1;
 }
 
-STATIC xlog_recover_t *
+STATIC struct xlog_recover *
 xlog_recover_find_tid(
 	struct hlist_head	*head,
 	xlog_tid_t		tid)
 {
-	xlog_recover_t		*trans;
+	struct xlog_recover	*trans;
 	struct hlist_node	*n;
 
 	hlist_for_each_entry(trans, n, head, r_list) {
@@ -1013,9 +997,9 @@ xlog_recover_new_tid(
 	xlog_tid_t		tid,
 	xfs_lsn_t		lsn)
 {
-	xlog_recover_t		*trans;
+	struct xlog_recover	*trans;
 
-	trans = kmem_zalloc(sizeof(xlog_recover_t), KM_SLEEP);
+	trans = kmem_zalloc(sizeof(struct xlog_recover), 0);
 	trans->r_log_tid   = tid;
 	trans->r_lsn	   = lsn;
 	INIT_LIST_HEAD(&trans->r_itemq);
@@ -1028,14 +1012,12 @@ STATIC void
 xlog_recover_add_item(
 	struct list_head	*head)
 {
-	xlog_recover_item_t	*item;
+	struct xlog_recover_item *item;
 
-	item = kmem_zalloc(sizeof(xlog_recover_item_t), KM_SLEEP);
+	item = kmem_zalloc(sizeof(struct xlog_recover_item), 0);
 	INIT_LIST_HEAD(&item->ri_list);
 	list_add_tail(&item->ri_list, head);
 }
-
-#define BLK_AVG(blk1, blk2)	((blk1+blk2) >> 1)
 
 STATIC int
 xlog_recover_add_to_cont_trans(
@@ -1044,7 +1026,7 @@ xlog_recover_add_to_cont_trans(
 	char			*dp,
 	int			len)
 {
-	xlog_recover_item_t	*item;
+	struct xlog_recover_item *item;
 	char			*ptr, *old_ptr;
 	int			old_len;
 
@@ -1057,12 +1039,13 @@ xlog_recover_add_to_cont_trans(
 		return 0;
 	}
 	/* take the tail entry */
-	item = list_entry(trans->r_itemq.prev, xlog_recover_item_t, ri_list);
+	item = list_entry(trans->r_itemq.prev, struct xlog_recover_item,
+			  ri_list);
 
 	old_ptr = item->ri_buf[item->ri_cnt-1].i_addr;
 	old_len = item->ri_buf[item->ri_cnt-1].i_len;
 
-	ptr = kmem_realloc(old_ptr, len+old_len, KM_SLEEP);
+	ptr = kmem_realloc(old_ptr, len+old_len, 0);
 	memcpy(&ptr[old_len], dp, len); /* d, s, l */
 	item->ri_buf[item->ri_cnt-1].i_len += len;
 	item->ri_buf[item->ri_cnt-1].i_addr = ptr;
@@ -1090,8 +1073,8 @@ xlog_recover_add_to_trans(
 	char			*dp,
 	int			len)
 {
-	xfs_inode_log_format_t	*in_f;			/* any will do */
-	xlog_recover_item_t	*item;
+	struct xfs_inode_log_format	*in_f;			/* any will do */
+	struct xlog_recover_item *item;
 	char			*ptr;
 
 	if (!len)
@@ -1110,18 +1093,19 @@ xlog_recover_add_to_trans(
 		return 0;
 	}
 
-	ptr = kmem_alloc(len, KM_SLEEP);
+	ptr = kmem_alloc(len, 0);
 	memcpy(ptr, dp, len);
-	in_f = (xfs_inode_log_format_t *)ptr;
+	in_f = (struct xfs_inode_log_format *)ptr;
 
 	/* take the tail entry */
-	item = list_entry(trans->r_itemq.prev, xlog_recover_item_t, ri_list);
+	item = list_entry(trans->r_itemq.prev, struct xlog_recover_item,
+			  ri_list);
 	if (item->ri_total != 0 &&
 	     item->ri_total == item->ri_cnt) {
 		/* tail item is in use, get a new one */
 		xlog_recover_add_item(&trans->r_itemq);
 		item = list_entry(trans->r_itemq.prev,
-					xlog_recover_item_t, ri_list);
+					struct xlog_recover_item, ri_list);
 	}
 
 	if (item->ri_total == 0) {		/* first region to be added */
@@ -1138,7 +1122,7 @@ xlog_recover_add_to_trans(
 		item->ri_total = in_f->ilf_size;
 		item->ri_buf =
 			kmem_zalloc(item->ri_total * sizeof(xfs_log_iovec_t),
-				    KM_SLEEP);
+				    0);
 	}
 	ASSERT(item->ri_total > item->ri_cnt);
 	/* Description region is ri_buf[0] */
@@ -1158,7 +1142,7 @@ STATIC void
 xlog_recover_free_trans(
 	struct xlog_recover	*trans)
 {
-	xlog_recover_item_t	*item, *n;
+	struct xlog_recover_item *item, *n;
 	int			i;
 
 	list_for_each_entry_safe(item, n, &trans->r_itemq, ri_list) {
@@ -1198,7 +1182,7 @@ xlog_recover_commit_trans(
 
 STATIC int
 xlog_recover_unmount_trans(
-	xlog_recover_t		*trans)
+	struct xlog_recover		*trans)
 {
 	/* Do nothing now */
 	xfs_warn(log->l_mp, "%s: Unmount LR", __func__);
@@ -1225,7 +1209,7 @@ xlog_recover_process_data(
 	char			*lp;
 	int			num_logops;
 	xlog_op_header_t	*ohead;
-	xlog_recover_t		*trans;
+	struct xlog_recover	*trans;
 	xlog_tid_t		tid;
 	int			error;
 	unsigned long		hash;
@@ -1471,7 +1455,7 @@ xlog_do_recovery_pass(
 			hblks = h_size / XLOG_HEADER_CYCLE_SIZE;
 			if (h_size % XLOG_HEADER_CYCLE_SIZE)
 				hblks++;
-			xlog_put_bp(hbp);
+			libxfs_buf_relse(hbp);
 			hbp = xlog_get_bp(log, hblks);
 		} else {
 			hblks = 1;
@@ -1487,7 +1471,7 @@ xlog_do_recovery_pass(
 		return ENOMEM;
 	dbp = xlog_get_bp(log, BTOBB(h_size));
 	if (!dbp) {
-		xlog_put_bp(hbp);
+		libxfs_buf_relse(hbp);
 		return ENOMEM;
 	}
 
@@ -1671,8 +1655,8 @@ xlog_do_recovery_pass(
 	}
 
  bread_err2:
-	xlog_put_bp(dbp);
+	libxfs_buf_relse(dbp);
  bread_err1:
-	xlog_put_bp(hbp);
+	libxfs_buf_relse(hbp);
 	return error;
 }

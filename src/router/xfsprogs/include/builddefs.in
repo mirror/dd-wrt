@@ -1,18 +1,6 @@
-#
+# SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2004-2006 Silicon Graphics, Inc.
 # All Rights Reserved.
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as
-# published by the Free Software Foundation.
-#
-# This program is distributed in the hope that it would be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write the Free Software Foundation,
-# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 # @configure_input@
 #
@@ -25,17 +13,22 @@ OPTIMIZER = @opt_build@
 MALLOCLIB = @malloc_lib@
 LOADERFLAGS = @LDFLAGS@
 LTLDFLAGS = @LDFLAGS@
-CFLAGS = @CFLAGS@ -D_FILE_OFFSET_BITS=64
+CFLAGS = @CFLAGS@ -D_FILE_OFFSET_BITS=64 -Wno-address-of-packed-member
 BUILD_CFLAGS = @BUILD_CFLAGS@ -D_FILE_OFFSET_BITS=64
+
+# make sure we don't pick up whacky LDFLAGS from the make environment and
+# only use what we calculate from the configured options above.
+LDFLAGS =
 
 LIBRT = @librt@
 LIBUUID = @libuuid@
 LIBPTHREAD = @libpthread@
 LIBTERMCAP = @libtermcap@
 LIBEDITLINE = @libeditline@
-LIBREADLINE = @libreadline@
 LIBBLKID = @libblkid@
+LIBDEVMAPPER = @libdevmapper@
 LIBXFS = $(TOPDIR)/libxfs/libxfs.la
+LIBFROG = $(TOPDIR)/libfrog/libfrog.la
 LIBXCMD = $(TOPDIR)/libxcmd/libxcmd.la
 LIBXLOG = $(TOPDIR)/libxlog/libxlog.la
 LIBHANDLE = $(TOPDIR)/libhandle/libhandle.la
@@ -45,7 +38,6 @@ PKG_USER	= @pkg_user@
 PKG_GROUP	= @pkg_group@
 PKG_RELEASE	= @pkg_release@
 PKG_VERSION	= @pkg_version@
-PKG_PLATFORM	= linux
 PKG_DISTRIBUTION= @pkg_distribution@
 
 prefix		= @prefix@
@@ -89,8 +81,8 @@ RPM_VERSION	= @rpm_version@
 ENABLE_SHARED	= @enable_shared@
 ENABLE_GETTEXT	= @enable_gettext@
 ENABLE_EDITLINE	= @enable_editline@
-ENABLE_READLINE	= @enable_readline@
 ENABLE_BLKID	= @enable_blkid@
+ENABLE_SCRUB	= @enable_scrub@
 
 HAVE_ZIPPED_MANPAGES = @have_zipped_manpages@
 
@@ -99,7 +91,6 @@ HAVE_MADVISE = @have_madvise@
 HAVE_MINCORE = @have_mincore@
 HAVE_SENDFILE = @have_sendfile@
 HAVE_GETMNTENT = @have_getmntent@
-HAVE_GETMNTINFO = @have_getmntinfo@
 HAVE_FALLOCATE = @have_fallocate@
 HAVE_FIEMAP = @have_fiemap@
 HAVE_PREADV = @have_preadv@
@@ -113,31 +104,31 @@ HAVE_FLS = @have_fls@
 HAVE_FSETXATTR = @have_fsetxattr@
 HAVE_MREMAP = @have_mremap@
 NEED_INTERNAL_FSXATTR = @need_internal_fsxattr@
+NEED_INTERNAL_FSCRYPT_ADD_KEY_ARG = @need_internal_fscrypt_add_key_arg@
 HAVE_GETFSMAP = @have_getfsmap@
 HAVE_STATFS_FLAGS = @have_statfs_flags@
+HAVE_MAP_SYNC = @have_map_sync@
+HAVE_DEVMAPPER = @have_devmapper@
+HAVE_MALLINFO = @have_mallinfo@
+HAVE_LIBATTR = @have_libattr@
+HAVE_LIBICU = @have_libicu@
+HAVE_OPENAT = @have_openat@
+HAVE_FSTATAT = @have_fstatat@
+HAVE_SG_IO = @have_sg_io@
+HAVE_HDIO_GETGEO = @have_hdio_getgeo@
+HAVE_SYSTEMD = @have_systemd@
+SYSTEMD_SYSTEM_UNIT_DIR = @systemd_system_unit_dir@
+HAVE_CROND = @have_crond@
+CROND_DIR = @crond_dir@
 
 GCCFLAGS = -funsigned-char -fno-strict-aliasing -Wall
 #	   -Wbitwise -Wno-transparent-union -Wno-old-initializer -Wno-decl
 
-ifeq ($(PKG_PLATFORM),linux)
 PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
 ifeq ($(HAVE_UMODE_T),yes)
 PCFLAGS += -DHAVE_UMODE_T
 endif
 DEPENDFLAGS = -D__linux__
-endif
-ifeq ($(PKG_PLATFORM),gnukfreebsd)
-PCFLAGS = -D_GNU_SOURCE $(GCCFLAGS)
-endif
-ifeq ($(PKG_PLATFORM),darwin)
-PCFLAGS = $(GCCFLAGS)
-DEPENDFLAGS = -D__APPLE__ -D_DARWIN_FEATURE_64_BIT_INODE
-endif
-ifeq ($(PKG_PLATFORM),freebsd)
-PLDLIBS = -L/usr/local/lib -lintl
-PCFLAGS = -I/usr/local/include $(GCCFLAGS)
-DEPENDFLAGS = -D__FreeBSD__
-endif
 ifeq ($(HAVE_FLS),yes)
 LCFLAGS+= -DHAVE_FLS
 endif
@@ -153,16 +144,35 @@ endif
 ifeq ($(NEED_INTERNAL_FSXATTR),yes)
 PCFLAGS+= -DOVERRIDE_SYSTEM_FSXATTR
 endif
+ifeq ($(NEED_INTERNAL_FSCRYPT_ADD_KEY_ARG),yes)
+PCFLAGS+= -DOVERRIDE_SYSTEM_FSCRYPT_ADD_KEY_ARG
+endif
 ifeq ($(HAVE_GETFSMAP),yes)
 PCFLAGS+= -DHAVE_GETFSMAP
 endif
+ifeq ($(HAVE_FALLOCATE),yes)
+PCFLAGS += -DHAVE_FALLOCATE
+endif
+
+LIBICU_LIBS = @libicu_LIBS@
+LIBICU_CFLAGS = @libicu_CFLAGS@
 
 SANITIZER_CFLAGS += @addrsan_cflags@ @threadsan_cflags@ @ubsan_cflags@
 SANITIZER_LDFLAGS += @addrsan_ldflags@ @threadsan_ldflags@ @ubsan_ldflags@
 
+# Use special ar/ranlib wrappers if we have lto
+HAVE_LTO = @have_lto@
+ifeq ($(HAVE_LTO),yes)
+OPTIMIZER += @lto_cflags@
+LOADERFLAGS += @lto_ldflags@
+AR = @gcc_ar@
+RANLIB = @gcc_ranlib@
+endif
+
 GCFLAGS = $(DEBUG) \
 	  -DVERSION=\"$(PKG_VERSION)\" -DLOCALEDIR=\"$(PKG_LOCALE_DIR)\"  \
-	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include -I$(TOPDIR)/libxfs
+	  -DPACKAGE=\"$(PKG_NAME)\" -I$(TOPDIR)/include -I$(TOPDIR)/libxfs \
+	  -I$(TOPDIR)
 
 ifeq ($(ENABLE_GETTEXT),yes)
 GCFLAGS += -DENABLE_GETTEXT

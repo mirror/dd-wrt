@@ -2,11 +2,16 @@
 
 export DH_VERBOSE=1
 
+ifneq (,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+    NUMJOBS = $(patsubst parallel=%,%,$(filter parallel=%,$(DEB_BUILD_OPTIONS)))
+    PMAKEFLAGS += -j$(NUMJOBS)
+endif
+
 package = xfsprogs
 develop = xfslibs-dev
 bootpkg = xfsprogs-udeb
 
-version = $(shell dpkg-parsechangelog | grep ^Version: | cut -d ' ' -f 2)
+version = $(shell dpkg-parsechangelog | grep ^Version: | cut -d ' ' -f 2 | cut -d '-' -f 1)
 target ?= $(shell dpkg-architecture -qDEB_HOST_ARCH)
 udebpkg = $(bootpkg)_$(version)_$(target).udeb
 
@@ -20,15 +25,17 @@ stdenv = @GZIP=-q; export GZIP;
 
 options = export DEBUG=-DNDEBUG DISTRIBUTION=debian \
 	  INSTALL_USER=root INSTALL_GROUP=root \
-	  LOCAL_CONFIGURE_OPTIONS="--enable-readline=yes --enable-blkid=yes --disable-ubsan --disable-addrsan --disable-threadsan" ;
+	  LOCAL_CONFIGURE_OPTIONS="--enable-editline=yes --enable-blkid=yes --disable-ubsan --disable-addrsan --disable-threadsan --enable-lto" ;
 diopts  = $(options) \
-	  export OPTIMIZER=-Os LOCAL_CONFIGURE_OPTIONS="--enable-gettext=no --disable-ubsan --disable-addrsan --disable-threadsan" ;
+	  export OPTIMIZER=-Os LOCAL_CONFIGURE_OPTIONS="--enable-gettext=no --disable-ubsan --disable-addrsan --disable-threadsan --enable-lto" ;
 checkdir = test -f debian/rules
 
-build: built
+build: build-arch build-indep
+build-arch: built
+build-indep: built
 built: dibuild config
 	@echo "== dpkg-buildpackage: build" 1>&2
-	$(MAKE) default
+	$(MAKE) $(PMAKEFLAGS) default
 	touch built
 
 config: .census
@@ -36,7 +43,7 @@ config: .census
 	@echo "== dpkg-buildpackage: configure" 1>&2
 	$(checkdir)
 	AUTOHEADER=/bin/true dh_autoreconf
-	$(options) $(MAKE) include/platform_defs.h
+	$(options) $(MAKE) $(PMAKEFLAGS) include/platform_defs.h
 	touch .census
 
 dibuild:
@@ -46,10 +53,10 @@ dibuild:
 		$(diopts) $(MAKE) include/platform_defs.h; \
 		mkdir -p include/xfs; \
 		for dir in include libxfs; do \
-			$(MAKE) -C $$dir NODEP=1 install-headers; \
+			$(MAKE) $(PMAKEFLAGS) -C $$dir NODEP=1 install-headers; \
 		done; \
-		for dir in include libxfs libxcmd mkfs; do \
-			$(MAKE) -C $$dir; \
+		for dir in include libxfs libxcmd libfrog mkfs; do \
+			$(MAKE) $(PMAKEFLAGS) $$dir; \
 		done; \
 		mv mkfs/mkfs.xfs mkfs/mkfs.xfs-$(bootpkg); \
 		$(MAKE) distclean; \
@@ -75,7 +82,11 @@ binary-arch: checkroot built
 	$(pkgdev) $(MAKE) -C . install-dev
 	$(pkgdi)  $(MAKE) -C debian install-d-i
 	$(pkgme)  $(MAKE) dist
+	install -D -m 0755 debian/local/initramfs.hook debian/xfsprogs/usr/share/initramfs-tools/hooks/xfs
 	rmdir debian/xfslibs-dev/usr/share/doc/xfsprogs
+	rm -f debian/xfslibs-dev/lib/libhandle.la
+	rm -f debian/xfslibs-dev/lib/libhandle.a
+	rm -fr debian/xfslibs-dev/usr/lib
 	dh_installdocs
 	dh_installchangelogs
 	dh_strip

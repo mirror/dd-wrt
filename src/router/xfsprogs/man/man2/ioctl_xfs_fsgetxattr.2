@@ -1,0 +1,242 @@
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" SPDX-License-Identifier: GPL-2.0+
+.\" %%%LICENSE_END
+.TH IOCTL-XFS-FSGETXATTR 2 2019-06-17 "XFS"
+.SH NAME
+ioctl_xfs_fsgetxattr \- query information for an open file
+.SH SYNOPSIS
+.br
+.B #include <linux/fs.h>
+.PP
+.BI "int ioctl(int " fd ", XFS_IOC_FSGETXATTR, struct fsxattr *" arg );
+.br
+.BI "int ioctl(int " fd ", XFS_IOC_FSGETXATTRA, struct fsxattr *" arg );
+.br
+.BI "int ioctl(int " fd ", XFS_IOC_FSSETXATTR, struct fsxattr *" arg );
+.SH DESCRIPTION
+Query or set additional attributes associated with files in various file
+systems.
+The attributes are conveyed in a structure of the form:
+.PP
+.in +4n
+.nf
+struct fsxattr {
+	__u32         fsx_xflags;
+	__u32         fsx_extsize;
+	__u32         fsx_nextents;
+	__u32         fsx_projid;
+	__u32         fsx_cowextsize;
+	unsigned char fsx_pad[8];
+};
+.fi
+.in
+.PP
+.I fsx_xflags
+are extended flags that apply to this file.
+Refer to the section
+.B XFS INODE FLAGS
+below for more information.
+
+.PP
+.I fsx_extsize
+is the preferred extent allocation size for data blocks mapped to this file,
+in units of filesystem blocks.
+If this value is zero, the filesystem will choose a default option, which
+is currently zero.
+If
+.B XFS_IOC_FSSETXATTR
+is called with
+.B XFS_XFLAG_EXTSIZE
+set in
+.I fsx_xflags
+and this field set to zero, the XFLAG will also be cleared.
+.PP
+.I fsx_nextents
+is the number of data extents in this file.
+If
+.B XFS_IOC_FSGETXATTRA
+was used, then this is the number of extended attribute extents in the file.
+.PP
+.I fsx_projid
+is the project ID of this file.
+.PP
+.I fsx_cowextsize
+is the preferred extent allocation size for copy on write operations
+targeting this file, in units of filesystem blocks.
+If this field is zero, the filesystem will choose a default option,
+which is currently 128 filesystem blocks.
+If
+.B XFS_IOC_FSSETXATTR
+is called with
+.B XFS_XFLAG_COWEXTSIZE
+set in
+.I fsx_xflags
+and this field set to zero, the XFLAG will also be cleared.
+
+.PP
+.I fsx_pad
+must be zeroed.
+
+.SH XFS INODE FLAGS
+This field can be a combination of the following:
+
+.TP
+.B XFS_XFLAG_REALTIME
+The file is a realtime file.
+This bit can only be changed on a file when it has no allocated extents.
+.TP
+.B XFS_XFLAG_PREALLOC
+The file has preallocated space.
+.TP
+.B XFS_XFLAG_IMMUTABLE
+The file is immutable - it cannot be modified, deleted or renamed,
+no link can be created to this file and no data can be written to the
+file.
+Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE
+capability can set or clear this flag.
+If this flag is set before a
+.B XFS_IOC_FSSETXATTR
+call and would not be cleared by the call, then no other attributes can be
+changed and
+.B EPERM
+will be returned.
+.TP
+.B XFS_XFLAG_APPEND
+The file is append-only - it can only be opened in append mode for
+writing.
+Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE
+capability can set or clear this flag.
+.TP
+.B XFS_XFLAG_SYNC
+All writes to the file are synchronous.
+If set on a directory and the
+.B /proc/sys/fs/xfs/inherit_sync
+tunable is set to 1, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_NOATIME
+When the file is accessed, its atime record is not modified.
+If set on a directory and the
+.B /proc/sys/fs/xfs/inherit_noatime
+tunable is set to 1, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_NODUMP
+The file should be skipped by backup utilities.
+If set on a directory and the
+.B /proc/sys/fs/xfs/inherit_nodump
+tunable is set to 1, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_RTINHERIT
+Realtime inheritance bit - new files created in the directory
+will be automatically created as realtime files.
+If set on a directory, new subdirectories created in the directory will also
+have the inheritance flag set.
+.TP
+.B XFS_XFLAG_PROJINHERIT
+Project inheritance bit - new files and directories created in
+this directory will inherit the project ID of this directory.
+If set on a directory, new subdirectories created in the directory will also
+have the inheritance flag set.
+.TP
+.B XFS_XFLAG_NOSYMLINKS
+Disallows creation of symbolic links in the directory.
+This flag can only be set on a directory.
+If set on a directory and the
+.B /proc/sys/fs/xfs/inherit_nosymlinks
+tunable is set to 1, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_EXTSIZE
+Extent size bit - if a basic extent size value is set on the file
+then the allocator will allocate in multiples of the set size for
+this file (see
+.B fsx_extsize
+below).
+The extent size can only be changed on a file when it has no allocated extents.
+.TP
+.B XFS_XFLAG_EXTSZINHERIT
+Extent size inheritance bit - new files and directories created in
+the directory will inherit the extent size value (see
+.B fsx_extsize
+below) of the parent directory.
+New subdirectories created in the directory will inherit the extent size
+inheritance bit.
+.TP
+.B XFS_XFLAG_NODEFRAG
+No defragment file bit - the file should be skipped during a defragmentation
+operation.
+If set on a directory and the
+.B /proc/sys/fs/xfs/inherit_nodefrag
+tunable is set to 1, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_FILESTREAM
+Filestream allocator bit - allows a directory to reserve an allocation group
+for exclusive use by files created within that directory.
+Files being written in other directories will not use the same allocation group
+and so files within different directories will not interleave extents on disk.
+The reservation is only active while files are being created and written into
+the directory.
+If set on a directory, new files and subdirectories created in the directory
+will also have the flag set.
+.TP
+.B XFS_XFLAG_DAX
+If the filesystem lives on directly accessible persistent memory, reads and
+writes to this file will go straight to the persistent memory, bypassing the
+page cache.
+If set on a directory, new files and subdirectories created in the directory
+will also have the flag set.
+This flag cannot be set on filesystems which have the reflink feature enabled.
+.TP
+.B XFS_XFLAG_COWEXTSIZE
+Copy on Write Extent size bit - if a CoW extent size value is set on the file,
+the allocator will allocate extents for staging a copy on write operation
+in multiples of the set size for this file (see
+.B fsx_cowextsize
+below).
+If set on a directory, new files and subdirectories created in the directory
+will have both the flag and the CoW extent size value set.
+.TP
+.B XFS_XFLAG_HASATTR
+The file has extended attributes associated with it.
+
+.SH RETURN VALUE
+On error, \-1 is returned, and
+.I errno
+is set to indicate the error.
+.PP
+.SH ERRORS
+Error codes can be one of, but are not limited to, the following:
+.TP
+.B EACCESS
+Caller does not have sufficient access to change the attributes.
+.TP
+.B EFAULT
+The kernel was not able to copy into the userspace buffer.
+.TP
+.B EFSBADCRC
+Metadata checksum validation failed while performing the query.
+.TP
+.B EFSCORRUPTED
+Metadata corruption was encountered while performing the query.
+.TP
+.B EINVAL
+One of the arguments was not valid.
+.TP
+.B EIO
+An I/O error was encountered while performing the query.
+.TP
+.B ENOMEM
+There was insufficient memory to perform the query.
+.TP
+.B EPERM
+Caller did not have permission to change the attributes.
+.SH CONFORMING TO
+This API is implemented by the ext4, xfs, btrfs, and f2fs filesystems on the
+Linux kernel.
+Not all fields may be understood by filesystems other than xfs.
+.SH SEE ALSO
+.BR ioctl (2),
+.BR ioctl_iflags (2)
