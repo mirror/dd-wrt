@@ -1151,8 +1151,30 @@ management.routing_legend="Routing";
 management.routing_srv="Routing";
 management.ipv6_legend="IPv6-Unterst&uuml;tzung";
 management.ipv6_srv="IPv6";
-management.ipv6_rad="Radvd eingeschaltet";
+management.ipv6_typ="IPv6 Type";
+management.ipv6_pf_len="Prefix L&auml;nge";
+management.ipv6_rad_enable="Radvd";
+management.ipv6_rad="Indivuelle Konfiguration";
 management.ipv6_radconf="Radvd-Konfiguration";
+management.ipv6_dns="Statischer DNS";
+management.ipv6_prefix="Zugewiesener / Routed Prefix";
+management.ipv6_addr="Router IPv6 Addresse";
+management.ipv6_dhcp6c_norelease="bei Neu-verbinden DHCP6 nicht freigeben";
+management.ipv6_dhcp6c_cust="Dhcp6c Individuell";
+management.ipv6_dhcp6c_conf="Dhcp6c Konfiguration";
+management.ipv6_dhcp6s="Dhcp6s";
+management.ipv6_dhcp6s_seq_ips="Aufeinanderfolgende IPs";
+management.ipv6_dhcp6s_hosts="Individuelle Hosts";
+management.ipv6_dhcp6s_cust="Dhcp6s Individuell";
+management.ipv6_dhcp6s_conf="Dhcp6s Konfiguration";
+management.ipv6_tun_end_ipv4="Tunnel Endpunkt IPv4 Addresse";
+management.ipv6_tun_client_addr="Tunnel Client IPv6 Addresse";
+management.ipv6_tun_upd_url="Tunnel Update URL";
+
+
+
+
+
 management.jffs_legend="JFFS2-Unterst&uuml;tzung";
 management.jffs_srv="JFFS2";
 management.jffs_clean="JFFS2 l&ouml;schen";
