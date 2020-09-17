@@ -772,7 +772,7 @@ nla_put_failure:
 	return (data.mac80211_info);
 }
 
-char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40)
+char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc)
 {
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
@@ -800,7 +800,7 @@ char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int 
 		if (!caps)
 			continue;
 		cap = nla_get_u16(caps);
-		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s", (cap & HT_CAP_INFO_LDPC_CODING_CAP ? "[LDPC]" : "")
+		asprintf(&capstring, "%s%s%s%s%s%s%s%s%s%s%s%s%s", ((cap & HT_CAP_INFO_LDPC_CODING_CAP) && ldpc ? "[LDPC]" : "")
 			 , (((cap & HT_CAP_INFO_SHORT_GI20MHZ) && shortgi) ? "[SHORT-GI-20]" : "")
 			 , (((cap & HT_CAP_INFO_SHORT_GI40MHZ) && shortgi) ? "[SHORT-GI-40]" : "")
 			 , (cap & HT_CAP_INFO_TX_STBC ? "[TX-STBC]" : "")
@@ -930,7 +930,7 @@ int has_greenfield(const char *interface)
 {
 
 	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1);
 	if (strstr(htcaps, "[GF]")) {
 		ret = 1;
 	} else {
@@ -1107,7 +1107,7 @@ int has_ac(const char *prefix)
 int has_ht(const char *prefix)
 {
 	INITVALUECACHE();
-	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(prefix, 1, 1, 1, 1);
 	if (*htcaps) {
 		ret = 1;
 	} else {
@@ -1174,7 +1174,7 @@ int has_mubeamforming(const char *interface)
 int has_shortgi(const char *interface)
 {
 	INITVALUECACHEi(interface);
-	char *htcaps = mac80211_get_caps(interface, 1, 1, 1);
+	char *htcaps = mac80211_get_caps(interface, 1, 1, 1, 1);
 	if (strstr(htcaps, "SHORT-GI")) {
 		free(htcaps);
 		RETURNVALUE(1);
