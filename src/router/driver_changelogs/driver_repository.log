@@ -1,4 +1,14 @@
 ------------------------------------------------------------------------
+r5395 | brainslayer | 2020-09-18 15:16:01 +0400 (Fri, 18 Sep 2020) | 2 lines
+
+allow bigger A-MSDU sizes in VHT, even if HT is
+ limited
+------------------------------------------------------------------------
+r5394 | brainslayer | 2020-09-18 15:14:59 +0400 (Fri, 18 Sep 2020) | 2 lines
+
+do not allow bigger VHT MPDUs than the hardware
+ supports
+------------------------------------------------------------------------
 r5393 | brainslayer | 2020-09-15 22:49:12 +0400 (Tue, 15 Sep 2020) | 1 line
 
 update mt firmwares
