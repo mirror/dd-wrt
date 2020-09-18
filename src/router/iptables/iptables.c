@@ -1407,11 +1407,11 @@ print_header(unsigned int format, const char *chain, iptc_handle_t *handle)
 	if (pol) {
 		printf(" (policy %s", pol);
 		if (!(format & FMT_NOCOUNTS)) {
-			fputc(' ', stdout);
+			printf(" ");
 			print_num(counters.pcnt, (format|FMT_NOTABLE));
-			fputs("packets, ", stdout);
+			printf("packets, ");
 			print_num(counters.bcnt, (format|FMT_NOTABLE));
-			fputs("bytes", stdout);
+			printf("bytes");
 		}
 		printf(")\n");
 	} else {
@@ -1435,9 +1435,9 @@ print_header(unsigned int format, const char *chain, iptc_handle_t *handle)
 	}
 	if (!(format & FMT_NOTARGET))
 		printf(FMT("%-9s ","%s "), "target");
-	fputs(" prot ", stdout);
+	printf(" prot ");
 	if (format & FMT_OPTIONS)
-		fputs("opt", stdout);
+		printf("opt");
 	if (format & FMT_VIA) {
 		printf(FMT(" %-6s ","%s "), "in");
 		printf(FMT("%-6s ","%s "), "out");
@@ -1511,7 +1511,7 @@ print_firewall(const struct ipt_entry *fw,
 
 	if (format & FMT_OPTIONS) {
 		if (format & FMT_NOTABLE)
-			fputs("opt ", stdout);
+			printf("opt ");
 		fputc(fw->ip.invflags & IPT_INV_FRAG ? '!' : '-', stdout);
 		fputc(flags & IPT_F_FRAG ? 'f' : '-', stdout);
 		fputc(' ', stdout);
@@ -1572,7 +1572,7 @@ print_firewall(const struct ipt_entry *fw,
 	}
 
 	if (format & FMT_NOTABLE)
-		fputs("  ", stdout);
+		printf("  ");
 
 #ifdef IPT_F_GOTO
 	if(fw->ip.flags & IPT_F_GOTO)
@@ -1780,7 +1780,7 @@ flush_entries(const ipt_chainlabel chain, int verbose,
 		return for_each_chain(flush_entries, verbose, 1, handle);
 
 	if (verbose)
-		fprintf(stdout, "Flushing chain `%s'\n", chain);
+		printf("Flushing chain `%s'\n", chain);
 	return iptc_flush_entries(chain, handle);
 }
 
@@ -1792,7 +1792,7 @@ zero_entries(const ipt_chainlabel chain, int verbose,
 		return for_each_chain(zero_entries, verbose, 1, handle);
 
 	if (verbose)
-		fprintf(stdout, "Zeroing chain `%s'\n", chain);
+		printf("Zeroing chain `%s'\n", chain);
 	return iptc_zero_entries(chain, handle);
 }
 
@@ -1804,7 +1804,7 @@ delete_chain(const ipt_chainlabel chain, int verbose,
 		return for_each_chain(delete_chain, verbose, 0, handle);
 
 	if (verbose)
-	        fprintf(stdout, "Deleting chain `%s'\n", chain);
+	        printf("Deleting chain `%s'\n", chain);
 	return iptc_delete_chain(chain, handle);
 }
 

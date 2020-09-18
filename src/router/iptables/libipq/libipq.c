@@ -369,7 +369,7 @@ void ipq_perror(const char *s)
 	if (s)
 		fputs(s, stderr);
 	else
-		fputs("ERROR", stderr);
+		fprintf(stdout, "ERROR");
 	if (ipq_errno)
 		fprintf(stderr, ": %s", ipq_errstr());
 	if (errno)

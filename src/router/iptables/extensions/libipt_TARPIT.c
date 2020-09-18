@@ -6,9 +6,9 @@
 static void
 help(void)
 {
-	fputs(
+	printf(
 "TARPIT takes no options\n"
-"\n", stdout);
+"\n");
 }
 
 static struct option opts[] = {

@@ -112,16 +112,16 @@ static void print_mode(struct ipt_connbytes_info *sinfo)
 {
 	switch (sinfo->what) {
 		case IPT_CONNBYTES_PKTS:
-			fputs("packets ", stdout);
+			printf("packets ");
 			break;
 		case IPT_CONNBYTES_BYTES:
-			fputs("bytes ", stdout);
+			printf("bytes ");
 			break;
 		case IPT_CONNBYTES_AVGPKT:
-			fputs("avgpkt ", stdout);
+			printf("avgpkt ");
 			break;
 		default:
-			fputs("unknown ", stdout);
+			printf("unknown ");
 			break;
 	}
 }
@@ -130,16 +130,16 @@ static void print_direction(struct ipt_connbytes_info *sinfo)
 {
 	switch (sinfo->direction) {
 		case IPT_CONNBYTES_DIR_ORIGINAL:
-			fputs("original ", stdout);
+			printf("original ");
 			break;
 		case IPT_CONNBYTES_DIR_REPLY:
-			fputs("reply ", stdout);
+			printf("reply ");
 			break;
 		case IPT_CONNBYTES_DIR_BOTH:
-			fputs("both ", stdout);
+			printf("both ");
 			break;
 		default:
-			fputs("unknown ", stdout);
+			printf("unknown ");
 			break;
 	}
 }
@@ -159,10 +159,10 @@ print(const struct ipt_ip *ip,
 		printf("connbytes %llu:%llu ",sinfo->count.from,
 			sinfo->count.to);
 
-	fputs("connbytes mode ", stdout);
+	printf("connbytes mode ");
 	print_mode(sinfo);
 
-	fputs("connbytes direction ", stdout);
+	printf("connbytes direction ");
 	print_direction(sinfo);
 }
 
@@ -178,10 +178,10 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 		printf("--connbytes %llu:%llu ", sinfo->count.from,
 			sinfo->count.to);
 
-	fputs("--connbytes-mode ", stdout);
+	printf("--connbytes-mode ");
 	print_mode(sinfo);
 
-	fputs("--connbytes-dir ", stdout);
+	printf("--connbytes-dir ");
 	print_direction(sinfo);
 }
 
