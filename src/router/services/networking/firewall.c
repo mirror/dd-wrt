@@ -2651,38 +2651,43 @@ static void filter_table(char *wanface, char *lanface, char *wanaddr, char *lan_
 		save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options", wanface, FLOOD_RATE);
 	save2file_A("logaccept -i %s -m state --state NEW -m limit --limit %d -j %s", wanface, FLOOD_RATE, log_drop);
 #endif
+#ifndef HAVE_MICRO
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
 		save2file_A("logaccept -m state --state NEW -j LOG --log-prefix \"ACCEPT \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+#endif
 	save2file_A("logaccept -j ACCEPT");
 	/*
 	 * logdrop chain 
 	 */
-	if (has_gateway()) {
-		if ((nvram_matchi("log_enable", 1))
-		    && (nvram_matchi("log_dropped", 1)))
-			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-		save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
-	} else {
-		if ((nvram_matchi("log_enable", 1))
-		    && (nvram_matchi("log_dropped", 1)))
-			save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+#ifndef HAVE_MICRO
+	if ((nvram_matchi("log_enable", 1))
+	    && (nvram_matchi("log_dropped", 1))) {
+		save2file_A("logdrop -m state --state NEW -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		if (has_gateway()) {
+			save2file_A("logdrop -m state --state INVALID -j LOG --log-prefix \"DROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+		}
 	}
+#endif
 	save2file_A("logdrop -j DROP");
 	/*
 	 * logreject chain 
 	 */
+#ifndef HAVE_MICRO
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_rejected", 1)))
 		save2file_A("logreject -j LOG --log-prefix \"WEBDROP \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+#endif
 	save2file_A("logreject -p tcp -j REJECT --reject-with tcp-reset");
 #ifdef FLOOD_PROTECT
 	/*
 	 * limaccept chain 
 	 */
+#ifndef HAVE_MICRO
 	if ((nvram_matchi("log_enable", 1))
 	    && (nvram_matchi("log_accepted", 1)))
 		save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %d -j LOG --log-prefix \"FLOOD \" --log-tcp-sequence --log-tcp-options --log-ip-options");
+#endif
 	save2file_A("limaccept -i %s -m state --state NEW -m limit --limit %d -j %s\n-A limaccept -j ACCEPT", wanface, FLOOD_RATE, wanface, FLOOD_RATE, log_drop);
 #endif
 	save2file("COMMIT");
