@@ -279,25 +279,25 @@ static void print_mode(const struct ipt_hashlimit_info *r, char separator)
 	if (r->cfg.mode & IPT_HASHLIMIT_HASH_SIP) {
 		if (prevmode)
 			putchar(separator);
-		fputs("srcip", stdout);
+		printf("srcip");
 		prevmode = 1;
 	}
 	if (r->cfg.mode & IPT_HASHLIMIT_HASH_SPT) {
 		if (prevmode)
 			putchar(separator);
-		fputs("srcport", stdout);
+		printf("srcport");
 		prevmode = 1;
 	}
 	if (r->cfg.mode & IPT_HASHLIMIT_HASH_DIP) {
 		if (prevmode)
 			putchar(separator);
-		fputs("dstip", stdout);
+		printf("dstip");
 		prevmode = 1;
 	}
 	if (r->cfg.mode & IPT_HASHLIMIT_HASH_DPT) {
 		if (prevmode)
 			putchar(separator);
-		fputs("dstport", stdout);
+		printf("dstport");
 	}
 	putchar(' ');
 }
@@ -310,9 +310,9 @@ print(const struct ipt_ip *ip,
 {
 	struct ipt_hashlimit_info *r = 
 		(struct ipt_hashlimit_info *)match->data;
-	fputs("limit: avg ", stdout); print_rate(r->cfg.avg);
+	printf("limit: avg "); print_rate(r->cfg.avg);
 	printf("burst %u ", r->cfg.burst);
-	fputs("mode ", stdout);
+	printf("mode ");
 	print_mode(r, '-');
 	if (r->cfg.size)
 		printf("htable-size %u ", r->cfg.size);
@@ -330,11 +330,11 @@ static void save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
 	struct ipt_hashlimit_info *r = 
 		(struct ipt_hashlimit_info *)match->data;
 
-	fputs("--hashlimit ", stdout); print_rate(r->cfg.avg);
+	printf("--hashlimit "); print_rate(r->cfg.avg);
 	if (r->cfg.burst != IPT_HASHLIMIT_BURST)
 		printf("--hashlimit-burst %u ", r->cfg.burst);
 
-	fputs("--hashlimit-mode ", stdout);
+	printf("--hashlimit-mode ");
 	print_mode(r, ',');
 	
 	printf("--hashlimit-name %s ", r->name);

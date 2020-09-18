@@ -307,7 +307,7 @@ static void final_check(unsigned int flags)
 
 static void print_protocol(char s[], int invert, int numeric)
 {
-	fputs("l7proto ", stdout);
+	printf("l7proto ");
 	if (invert) fputc('!', stdout);
 	printf("%s ", s);
 }

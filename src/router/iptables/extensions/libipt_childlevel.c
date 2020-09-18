@@ -72,7 +72,7 @@ static void final_check(unsigned int flags)
 
 static void print_protocol(int n, int invert, int numeric)
 {
-	fputs("childlevel ", stdout);
+	printf("childlevel ");
 	if (invert) fputc('!', stdout);
 	printf("%d ", n);
 }
