@@ -177,7 +177,7 @@ main(int argc, char *argv[])
 			continue;
 		else if (buffer[0] == '#') {
 			if (verbose)
-				fputs(buffer, stdout);
+				printf(buffer);
 			continue;
 		} else if ((strcmp(buffer, "COMMIT\n") == 0) && (in_table)) {
 			if (!testing) {
