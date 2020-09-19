@@ -1,7 +1,7 @@
 ifeq ($(CONFIG_NEXTMEDIA),y)
 NMAP_EXTRAFLAGS="SENTINEL_FLAGS=-DRAISENTINET3"
 endif
-nmap-configure: openssl libpcap
+nmap-configure: openssl libpcap zlib
 	cd nmap && ./configure ac_cv_libz=yes \
 		--host=$(ARCH)-linux \
 		--prefix=/usr \
@@ -22,7 +22,7 @@ nmap-configure: openssl libpcap
 		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/zlib -L$(TOP)/openssl $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
-nmap: openssl libpcap
+nmap: openssl libpcap zlib
 	cd nmap && find . -name makefile.dep -delete	
 	make -C nmap $(NMAP_EXTRAFLAGS) clean
 	make -C nmap $(NMAP_EXTRAFLAGS)
