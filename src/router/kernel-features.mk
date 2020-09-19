@@ -4,6 +4,7 @@ define kernelfeatures
 		sed -i 's/\# CONFIG_IP_SET is not set/CONFIG_IP_SET=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP_SET_HASH_IP is not set/CONFIG_IP_SET_HASH_IP=y/g' $(LINUXDIR)/.config; \
 		sed -i 's/\# CONFIG_IP_SET_HASH_NET is not set/CONFIG_IP_SET_HASH_NET=y/g' $(LINUXDIR)/.config; \
+		echo "CONFIG_NETFILTER_XT_SET=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_MAX=256" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_BITMAP_IP=y" >> $(LINUXDIR)/.config; \
 		echo "CONFIG_IP_SET_BITMAP_IPMAC=y" >> $(LINUXDIR)/.config; \
