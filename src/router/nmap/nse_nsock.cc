@@ -85,7 +85,7 @@ static nsock_pool new_pool (lua_State *L)
   nsock_pool *nspp;
 
   /* configure logging */
-  nsock_set_log_function(nmap_nsock_stderr_logger);
+  nmap_set_nsock_logger();
   nmap_adjust_loglevel(o.scriptTrace());
 
   nsock_pool_set_device(nsp, o.device);
@@ -365,6 +365,16 @@ static void callback (nsock_pool nsp, nsock_event nse, void *ud)
     trace(nse_iod(nse), nu->action, nu->direction);
     nu->action = "ERROR";
     return;
+  }
+  switch (nse_type(nse)) {
+    case NSE_TYPE_CONNECT:
+    case NSE_TYPE_CONNECT_SSL:
+      /* After a connect or reconnect event, allow the socket to be reused by a
+       * different thread. */
+      nu->thread = NULL;
+      break;
+    default:
+      break;
   }
   assert(lua_status(L) == LUA_YIELD);
   trace(nse_iod(nse), nu->action, nu->direction);

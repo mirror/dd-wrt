@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.cc 37648 2019-05-29 16:39:05Z dmiller $ */
+/* $Id$ */
 #ifdef WIN32
 #include "winfix.h"
 #endif
@@ -330,7 +330,7 @@ void NmapOps::Initialize() {
   scanflags = -1;
   defeat_rst_ratelimit = false;
   defeat_icmp_ratelimit = false;
-  resume_ip.s_addr = 0;
+  resume_ip.ss_family = AF_UNSPEC;
   osscan_limit = false;
   osscan_guess = false;
   numdecoys = 0;
@@ -398,6 +398,7 @@ void NmapOps::Initialize() {
   exclude_portlist = NULL;
   proxy_chain = NULL;
   resuming = false;
+  discovery_ignore_rst = false;
 }
 
 bool NmapOps::SCTPScan() {
@@ -565,8 +566,8 @@ administrator privileges.";
     fatal("Option --defeat-icmp-ratelimit works only with a UDP scan (-sU)");
   }
 
-  if (resume_ip.s_addr && generate_random_ips)
-    resume_ip.s_addr = 0;
+  if (resume_ip.ss_family != AF_UNSPEC && generate_random_ips)
+    resume_ip.ss_family = AF_UNSPEC;
 
   if (magic_port_set && connectscan) {
     error("WARNING: -g is incompatible with the default connect() scan (-sT).  Use a raw scan such as -sS if you want to set the source port.");
@@ -668,15 +669,9 @@ char *NmapOps::XSLStyleSheet() {
   if (nmap_fetchfile(tmpxsl, sizeof(tmpxsl), "nmap.xsl") == 1) {
     xsl_stylesheet = filename_to_url(tmpxsl);
   } else {
-#if WIN32
-    /* Use a relative URL on Windows if nmap_fetchfile failed. It won't work,
+    /* Use a relative URL if nmap_fetchfile failed. It won't work,
        but it gives a clue that there is an nmap.xsl somewhere. */
-    Strncpy(tmpxsl, "nmap.xsl", sizeof(tmpxsl));
-    xsl_stylesheet = strdup(tmpxsl);
-#else
-    Snprintf(tmpxsl, sizeof(tmpxsl), "%s/nmap.xsl", NMAPDATADIR);
-    xsl_stylesheet = filename_to_url(tmpxsl);
-#endif
+    xsl_stylesheet = strdup("nmap.xsl");
   }
 
   return xsl_stylesheet;

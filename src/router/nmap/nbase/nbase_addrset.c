@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_addrset.c 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 /* The code in this file has tests in the file ncat/tests/test-addrset.sh. Run that
    program after making any big changes. Also, please add tests for any new
@@ -477,30 +477,32 @@ static int sockaddr_to_addr(const struct sockaddr *sa, u32 *addr)
 
 static int sockaddr_to_mask (const struct sockaddr *sa, int bits, u32 *mask)
 {
-  s8 i;
-  int unmasked_bits = 0;
+  int i, k;
   if (bits >= 0) {
     if (sa->sa_family == AF_INET) {
-      unmasked_bits = 32 - bits;
+      bits += 96;
     }
 #ifdef HAVE_IPV6
     else if (sa->sa_family == AF_INET6) {
-      unmasked_bits = 128 - bits;
+      ; /* do nothing */
     }
 #endif
     else {
       return 0;
     }
   }
+  else
+    bits = 128;
+  k = bits / 32;
   for (i=0; i < 4; i++) {
-    if (unmasked_bits <= 32 * (3 - i)) {
+    if (i < k) {
       mask[i] = 0xffffffff;
     }
-    else if (unmasked_bits >= 32 * (4 - i)) {
+    else if (i > k) {
       mask[i] = 0;
     }
     else {
-      mask[i] = ~((1 << (unmasked_bits - (32 * (4 - i)))) - 1);
+      mask[i] = 0xfffffffe << (31 - bits % 32);
     }
   }
   return 1;
@@ -599,6 +601,7 @@ void addrset_print(FILE *fp, const struct addrset *set)
 {
   const struct addrset_elem *elem;
   for (elem = set->head; elem != NULL; elem = elem->next) {
+    fprintf(fp, "addrset_elem: %p\n", elem);
     addrset_elem_print(fp, elem);
   }
 }

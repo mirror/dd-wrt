@@ -132,10 +132,12 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: output.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef OUTPUT_H
 #define OUTPUT_H
+
+#include <nbase.h> // __attribute__
 
 #define LOG_NUM_FILES 4 /* # of values that actual files (they must come first */
 #define LOG_FILE_MASK 15 /* The mask for log types in the file array */
@@ -173,7 +175,6 @@
 #ifndef NOLUA
 #include "nse_main.h"
 #endif
-#include <nsock.h>
 class PortList;
 class Target;
 
@@ -264,6 +265,9 @@ void write_host_header(Target *currenths);
    machine log. */
 void write_host_status(Target *currenths);
 
+/* Writes host status info to the XML stream wrapped in a <hosthint> tag */
+void write_xml_hosthint(Target *currenths);
+
 /* Prints the formatted OS Scan output to stdout, logfiles, etc (but only
    if an OS Scan was performed */
 void printosscanoutput(Target *currenths);
@@ -308,7 +312,7 @@ void printdatafilepaths();
 
 /* nsock logging interface */
 void nmap_adjust_loglevel(bool trace);
-void nmap_nsock_stderr_logger(const struct nsock_log_rec *rec);
+void nmap_set_nsock_logger();
 
 #endif /* OUTPUT_H */
 

@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 
 #include "nmap.h"
@@ -440,7 +440,7 @@ void PortList::setServiceProbeResults(u16 portno, int protocol,
 
 
 #ifndef NOLUA
-void PortList::addScriptResult(u16 portno, int protocol, ScriptResult& sr) {
+void PortList::addScriptResult(u16 portno, int protocol, const ScriptResult& sr) {
   Port *port;
 
   port = createPort(portno, protocol);

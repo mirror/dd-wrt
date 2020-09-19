@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: netutils.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef NETUTILS_H
 #define NETUTILS_H
@@ -79,11 +79,18 @@
 #include <sys/un.h>
 #endif
 
+#if HAVE_SYS_RESOURCE_H
+#include <sys/resource.h>
+#else
+#ifndef rlim_t
+#define rlim_t int
+#endif
+#endif
 /* Maximize the number of file descriptors (including sockets) allowed for this
  * process and return that maximum value (note -- you better not actually open
  * this many -- stdin, stdout, other files opened by libraries you use, etc. all
  * count toward this limit.  Leave a little slack */
-int maximize_fdlimit(void);
+rlim_t maximize_fdlimit(void);
 
 /* Get the UNIX domain socket path or empty string if the address family != AF_UNIX. */
 const char *get_unixsock_path(const struct sockaddr_storage *addr);

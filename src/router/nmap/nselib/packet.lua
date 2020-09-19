@@ -246,7 +246,7 @@ function Packet:new(packet, packet_len, force_continue)
 
   if o.ip_v == 6 then
     while o:ipv6_is_extension_header() do
-      if not o:ipv6_ext_header_parse(force_continue) or o.ip6_data_offset >= o.packet_len then
+      if o.ip6_data_offset >= o.packet_len or not o:ipv6_ext_header_parse(force_continue) then
         stdnse.debug1("Error while parsing IPv6 extension headers.")
         return o
       end
@@ -563,13 +563,13 @@ end
 function Packet:ip_parse(force_continue)
   self.ip_offset = 0
   if    #self.buf < 20 then -- too short
-    print("too short")
+    stdnse.debug2("Packet.ip_parse: too short")
     return false
   end
   self.ip_v = (self:u8(self.ip_offset + 0) & 0xF0) >> 4
   self.ip_hl = (self:u8(self.ip_offset + 0) & 0x0F) -- header_length or data_offset
   if    self.ip_v ~= 4 then -- not ip
-    print("not v4")
+    stdnse.debug2("Packet.ip_parse: Not IPv4")
     return false
   end
   self.ip = true
@@ -626,6 +626,7 @@ function Packet:ipv6_ext_header_parse(force_continue)
   ext_hdr_len = ext_hdr_len*8 + 8
   self.ip6_data_offset = self.ip6_data_offset + ext_hdr_len
   self.ip6_nhdr = self:u8(self.ip6_data_offset)
+  return true
 end
 --- Set the payload length field.
 -- @param plen Payload length.

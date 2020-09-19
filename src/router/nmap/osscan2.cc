@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan2.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "osscan.h"
 #include "osscan2.h"
@@ -144,6 +144,7 @@
 #include <dnet.h>
 
 #include "struct_ip.h"
+#include "string_pool.h"
 
 #include <list>
 #include <math.h>
@@ -1992,11 +1993,9 @@ bool HostOsScan::processResp(HostOsScanStats *hss, struct ip *ip, unsigned int l
         /* the first reply is used to do T1 */
         processT1_7Resp(hss, ip, 0);
       }
-      if (testno < 6) {
-        /* the 1th~6th replies are used to do TOps and TWin */
-        processTOpsResp(hss, tcp, testno);
-        processTWinResp(hss, tcp, testno);
-      }
+      /* the 1st NUM_SEQ_SAMPLES replies are used to do TOps and TWin */
+      processTOpsResp(hss, tcp, testno);
+      processTWinResp(hss, tcp, testno);
 
     } else if (testno >= NUM_SEQ_SAMPLES && testno < NUM_SEQ_SAMPLES + 6) {
 
@@ -2024,7 +2023,7 @@ bool HostOsScan::processResp(HostOsScanStats *hss, struct ip *ip, unsigned int l
 
         /* Closed-port TCP IP ID sequence numbers (SEQ.CI). Uses T5, T6, and T7.
            T5 starts at NUM_SEQ_SAMPLES + 11. */
-        if (testno >= NUM_SEQ_SAMPLES + 11 && testno < NUM_SEQ_SAMPLES + 14)
+        if (testno >= NUM_SEQ_SAMPLES + 11)
           hss->ipid.tcp_closed_ipids[testno - (NUM_SEQ_SAMPLES + 11)] = ntohs(ip->ip_id);
       }
     }

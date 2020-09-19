@@ -203,7 +203,7 @@ esac
 AC_SUBST(LUA_CFLAGS)
 
 dnl Checks for header files.
-AC_CHECK_HEADERS(pwd.h termios.h sys/sockio.h stdint.h)
+AC_CHECK_HEADERS(pwd.h termios.h sys/sockio.h stdint.h sys/stat.h fcntl.h)
 AC_CHECK_HEADERS(linux/rtnetlink.h,,,[#include <netinet/in.h>])
 dnl A special check required for <net/if.h> on Darwin. See
 dnl http://www.gnu.org/software/autoconf/manual/html_node/Header-Portability.html.
@@ -674,11 +674,11 @@ AC_HELP_STRING([--without-libssh2], [Compile without libssh2]),
       AC_CHECK_LIB(ssh2, libssh2_version,
         [have_libssh2=yes
         LIBSSH2_INC=$with_libssh2/include
-        LIBSSH2_LIB=$with_libssh2/lib],,[-lm])
+        LIBSSH2_LIB=$with_libssh2/lib],
+        [LDFLAGS=$_ldflags
+        CPPFLAGS=$_cppflags],[-lm])
       ])
 
-    LDFLAGS=$_ldflags
-    CPPFLAGS=$_cppflags
   ;;
   esac]
 )
@@ -1096,79 +1096,6 @@ AC_SUBST(NCAT_INSTALL)
 AC_SUBST(NCAT_UNINSTALL)
 AC_SUBST(NCAT_CLEAN)
 AC_SUBST(NCAT_DIST_CLEAN)
-
-
-AC_ARG_WITH([nmap-update],
-  AC_HELP_STRING([--without-nmap-update], [Skip build and installation of nmap-update]), [], [with_nmap_update=check])
-
-APR_FIND_APR(, , 1, 1)
-if test "$apr_found" = "no"; then
-  with_nmap_update=no
-fi
-
-AC_ARG_WITH(subversion,
-AC_HELP_STRING([--with-subversion=DIR], [Look for libsvn1 in DIR/include and DIR/libs.]),
-[
-case "$with_subversion" in
-  yes)
-    ;;
-  no)
-    with_nmap_update=no
-    ;;
-  *)
-    CPPFLAGS="-I$with_subversion/include $CPPFLAGS"
-    LDFLAGS="-L$with_subversion/lib $LDFLAGS"
-    ;;
-  esac
-])
-
-if test "$with_nmap_update" != "no"; then
-  have_libsvn=yes
-  old_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$CPPFLAGS $($apr_config --cppflags --includes)"
-  AC_CHECK_HEADER([svn_client.h], [], [
-                   AC_CHECK_HEADER([subversion-1/svn_client.h], [], [have_libsvn=no])
-                   ])
-  CPPFLAGS="$old_CPPFLAGS"
-  if test "$have_libsvn" = "yes"; then
-    dnl Avoid appending to LIBS here by providing non-default action-if-found
-    AC_CHECK_LIB([svn_client-1], [svn_client_create_context], [have_libsvn=yes], [have_libsvn=no])
-  fi
-  if test "$have_libsvn" != "yes"; then
-    if test "$with_nmap_update" = "check"; then
-      AC_MSG_WARN([Not building nmap-update because libsvn1 was not found])
-    else
-      AC_MSG_FAILURE([--with-nmap-update requires libsvn1])
-    fi
-    with_nmap_update=no
-  else
-    with_nmap_update=yes
-  fi
-fi
-
-if test "$with_nmap_update" = "no"; then
-  trace_no_use="$trace_no_use nmap-update"
-  NMAP_UPDATE_BUILD=""
-  NMAP_UPDATE_INSTALL=""
-  NMAP_UPDATE_UNINSTALL=""
-  NMAP_UPDATE_CLEAN=""
-  NMAP_UPDATE_DIST_CLEAN=""
-else
-  trace_use="$trace_use nmap-update"
-  AC_CONFIG_SUBDIRS(nmap-update)
-  NMAP_UPDATE_BUILD="build-nmap-update"
-  NMAP_UPDATE_INSTALL="install-nmap-update"
-  NMAP_UPDATE_UNINSTALL="uninstall-nmap-update"
-  NMAP_UPDATE_CLEAN="clean-nmap-update"
-  NMAP_UPDATE_DIST_CLEAN="distclean-nmap-update"
-fi
-
-AC_SUBST(NMAP_UPDATE_BUILD)
-AC_SUBST(NMAP_UPDATE_INSTALL)
-AC_SUBST(NMAP_UPDATE_UNINSTALL)
-AC_SUBST(NMAP_UPDATE_CLEAN)
-AC_SUBST(NMAP_UPDATE_DIST_CLEAN)
-
 
 AC_OUTPUT(Makefile libnetutil/Makefile)
 

@@ -53,7 +53,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: netutils.c 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "netutils.h"
 #include "error.h"
@@ -93,46 +93,36 @@ static int netutils_debugging = 0;
  * process and return that maximum value (note -- you better not actually open
  * this many -- stdin, stdout, other files opened by libraries you use, etc. all
  * count toward this limit.  Leave a little slack */
-int maximize_fdlimit(void) {
+rlim_t maximize_fdlimit(void) {
 
 #ifndef WIN32
   struct rlimit r;
-  static int maxfds = -1;
+  static int maxfds_set = 0;
+  static rlim_t maxfds = 0;
 
-  if (maxfds > 0)
+  if (maxfds_set)
     return maxfds;
 
-#if(defined(RLIMIT_NOFILE))
+#ifndef RLIMIT_NOFILE
+ #ifdef RLIMIT_OFILE
+  #define RLIMIT_NOFILE RLIMIT_OFILE
+ #else
+  #error Neither RLIMIT_NOFILE nor RLIMIT_OFILE defined
+ #endif
+#endif
   if (!getrlimit(RLIMIT_NOFILE, &r)) {
+    maxfds = r.rlim_cur;
     r.rlim_cur = r.rlim_max;
-    if (setrlimit(RLIMIT_NOFILE, &r))
+    if (!setrlimit(RLIMIT_NOFILE, &r))
       if (netutils_debugging)
         perror("setrlimit RLIMIT_NOFILE failed");
 
     if (!getrlimit(RLIMIT_NOFILE, &r)) {
       maxfds = r.rlim_cur;
-      return maxfds;
-    } else {
-      return 0;
     }
+    maxfds_set = 1;
+    return maxfds;
   }
-#endif
-
-#if(defined(RLIMIT_OFILE) && !defined(RLIMIT_NOFILE))
-  if (!getrlimit(RLIMIT_OFILE, &r)) {
-    r.rlim_cur = r.rlim_max;
-    if (setrlimit(RLIMIT_OFILE, &r))
-      if (netutils_debugging)
-        perror("setrlimit RLIMIT_OFILE failed");
-
-    if (!getrlimit(RLIMIT_OFILE, &r)) {
-      maxfds = r.rlim_cur;
-      return maxfds;
-    } else {
-      return 0;
-    }
-  }
-#endif
 #endif /* !WIN32 */
   return 0;
 }

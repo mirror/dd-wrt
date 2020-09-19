@@ -52,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nsock_connect.c 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "nsock.h"
 #include "nsock_internal.h"
@@ -242,6 +242,7 @@ void nsock_connect_internal(struct npool *ms, struct nevent *nse, int type, int 
 #endif
 #if HAVE_SYS_UN_H
     else if (ss->ss_family == AF_UNIX) {
+      /* Nothing more to do for Unix socket */
     }
 #endif
 #if HAVE_LINUX_VM_SOCKETS_H

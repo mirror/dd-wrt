@@ -85,6 +85,8 @@ Entry { filename = "daytime.nse", categories = { "discovery", "safe", } }
 Entry { filename = "db2-das-info.nse", categories = { "discovery", "safe", "version", } }
 Entry { filename = "deluge-rpc-brute.nse", categories = { "brute", "intrusive", } }
 Entry { filename = "dhcp-discover.nse", categories = { "discovery", "safe", } }
+Entry { filename = "dicom-brute.nse", categories = { "auth", "brute", } }
+Entry { filename = "dicom-ping.nse", categories = { "auth", "default", "discovery", "safe", } }
 Entry { filename = "dict-info.nse", categories = { "discovery", "safe", } }
 Entry { filename = "distcc-cve2004-2687.nse", categories = { "exploit", "intrusive", "vuln", } }
 Entry { filename = "dns-blacklist.nse", categories = { "external", "safe", } }
@@ -574,6 +576,7 @@ Entry { filename = "ubiquiti-discovery.nse", categories = { "default", "discover
 Entry { filename = "unittest.nse", categories = { "safe", } }
 Entry { filename = "unusual-port.nse", categories = { "safe", } }
 Entry { filename = "upnp-info.nse", categories = { "default", "discovery", "safe", } }
+Entry { filename = "uptime-agent-info.nse", categories = { "default", "safe", } }
 Entry { filename = "url-snarf.nse", categories = { "safe", } }
 Entry { filename = "ventrilo-info.nse", categories = { "default", "discovery", "safe", "version", } }
 Entry { filename = "versant-info.nse", categories = { "discovery", "safe", } }

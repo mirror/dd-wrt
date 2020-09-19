@@ -1,7 +1,7 @@
 <!--
     nmap.dtd
     This is the DTD for Nmap's XML output (-oX) format.
-    $Id: nmap.dtd 35197 2015-08-21 16:35:19Z dmiller $
+    $Id$
 
     Originally written by:
     William McVey <wam@cisco.com> <wam+nmap@wamber.net>
@@ -72,7 +72,7 @@
      It represents to the topmost element of the output document.
 -->
 <!ELEMENT nmaprun      (scaninfo*, verbose, debugging,
-                        ( target | taskbegin | taskprogress | taskend |
+                        ( target | taskbegin | taskprogress | taskend | hosthint |
                             prescript | postscript | host | output)*,
                             runstats) >
 <!ATTLIST nmaprun
@@ -149,6 +149,9 @@
 			endtime		%attr_numeric;	#IMPLIED
 			comment		CDATA		#IMPLIED
 >
+
+<!-- these elements are written by scan_engine.c:ultrascan_host_pspec_update() -->
+<!ELEMENT hosthint (status,address,hostnames)* >
 
 <!-- these elements are written by output.c:write_xml_initial_hostinfo() -->
 <!ELEMENT status	EMPTY >
