@@ -1,4 +1,4 @@
-ubi-utils-configure:
+ubi-utils-configure: zlib
 	cd ubi-utils && ./autogen.sh
 	cd ubi-utils && ./configure --prefix=/usr --host=$(ARCH)-linux \
 		CC="$(CC)" \
@@ -11,7 +11,7 @@ ubi-utils-configure:
 		ZSTD_LIBS="$(LDLTO) -L$(TOP)/zstd/lib -lzstd" \
 		AR_FLAGS="cru $(LTOPLUGIN)" \
 		RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
-ubi-utils:
+ubi-utils: zlib
 	$(MAKE) -C ubi-utils
 
 ubi-utils-clean:

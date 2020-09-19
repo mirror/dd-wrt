@@ -1,8 +1,8 @@
-libtirpc-configure:
+libtirpc-configure: zlib
 	cd libtirpc && ./bootstrap
 	cd libtirpc && ./configure --enable-fast-install --with-sysroot=yes --libdir=/usr/lib --host=$(ARCH)-linux CFLAGS="$(COPTS) $(MIPS16_OPT) -fcommon -DNEED_PRINTF" LDFLAGS="-L$(TOP)/zlib" --disable-gssapi --disable-static --prefix=/usr
 
-libtirpc:
+libtirpc: zlib
 	make -C libtirpc
 
 libtirpc-clean:

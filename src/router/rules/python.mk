@@ -1,4 +1,4 @@
-python-configure: libffi-configure libffi libffi-install
+python-configure: libffi-configure libffi libffi-install zlib
 #	cd python && cp Modules/Setup Modules/Setup
 	cd python && echo "# bogus" > Modules/Setup.local 
 	cd python && ./configure  --host=$(ARCH)-linux --build=$(ARCH) --sysconfdir=/etc \
@@ -30,7 +30,7 @@ python-configure: libffi-configure libffi libffi-install
 python-clean:
 	make -C python clean
 
-python: libffi
+python: libffi zlib
 	make -C libffi install DESTDIR=$(INSTALLDIR)/libffi
 	make -C python python Parser/pgen
 	make -C python sharedmods

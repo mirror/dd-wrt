@@ -18,7 +18,7 @@ libyang-configure: zlib openssl
 	$(call CMakeClean,$(LIBYANG_PKG_BUILD_DIR))
 	$(call CMakeConfigure,$(LIBYANG_PKG_BUILD_DIR),$(LIBYANG_STAGING_DIR),$(LIBYANG_CMAKE_OPTIONS),$(LIBYANG_EXTRA_CFLAGS),$(LIBYANG_EXTRA_LDFLAGS)) 
 
-libyang:
+libyang: zlib
 	$(MAKE) -C libyang
 	-mkdir $(TOP)/libyang/src/libyang
 	-cp $(TOP)/libyang/src/libyang.h $(TOP)/libyang/src/libyang

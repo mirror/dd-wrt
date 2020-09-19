@@ -1,5 +1,5 @@
 
-libxml2:
+libxml2: zlib
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -15,7 +15,7 @@ libxml2-install:
 libxml2-clean:
 	$(MAKE) -C libxml2 clean
 
-libxml2-configure:
+libxml2-configure: zlib
 	cd libxml2 && ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" --without-python 
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DOLD_LIBC_MODE -ffunction-sections -fdata-sections -Wl,--gc-section"
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
