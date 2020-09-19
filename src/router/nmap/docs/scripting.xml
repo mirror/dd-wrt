@@ -627,7 +627,7 @@ Black Hat Briefings in 2010.</para>
      <varlistentry>
         <term>
           <indexterm><primary><option>--script</option></primary></indexterm>
-          <option>--script <replaceable>filename</replaceable>|<replaceable>category</replaceable>|<replaceable>directory</replaceable>|<replaceable>expression</replaceable><optional>,...</optional></option></term>
+          <option>--script <replaceable>filename</replaceable>|<replaceable>category</replaceable>|<replaceable>directory</replaceable>/|<replaceable>expression</replaceable><optional>,...</optional></option></term>
 
 <listitem>
 
@@ -665,17 +665,18 @@ found:
 <member><option>--datadir</option></member>
 <member><envar>$NMAPDIR</envar><indexterm><primary><envar>NMAPDIR</envar> environment variable</primary></indexterm></member>
 <member><filename>~/.nmap</filename> (not searched on Windows)<indexterm><primary sortas="nmap directory"><filename>.nmap</filename> directory</primary></indexterm></member>
+<member><filename><replaceable>APPDATA</replaceable>\nmap</filename> (only on Windows)<indexterm><primary sortas="nmap directory"><filename>.nmap</filename> directory</primary></indexterm></member>
 <member>the directory containing the <filename>nmap</filename>
 executable</member>
 <member>the directory containing the <filename>nmap</filename>
-executable, followed by <filename>../share/nmap</filename></member>
-<member><varname>NMAPDATADIR</varname><indexterm><primary><varname>NMAPDATADIR</varname></primary></indexterm></member>
+executable, followed by <filename>../share/nmap</filename> (not searched on Windows)</member>
+<member><varname>NMAPDATADIR</varname><indexterm><primary><varname>NMAPDATADIR</varname></primary></indexterm> (not searched on Windows)</member>
 <member>the current directory.</member>
 </simplelist>
 </para>
 
 <para>
-When a directory name is given, Nmap loads every file in the directory
+When a directory name ending in <literal>/</literal> is given, Nmap loads every file in the directory
 whose name ends with <filename>.nse</filename>. All other files are
 ignored and directories are not searched recursively. When a filename is
 given, it does not have to have the <filename>.nse</filename> extension;
@@ -3402,11 +3403,11 @@ end
       <para>
         For example, consider the earlier <xref
         linkend="nse-worker-example"/>.  Until all
-        the workers finish, the master thread must sleep. Note that we cannot
+        the workers finish, the controller thread must sleep. Note that we cannot
         <literal>poll</literal> for results like in a traditional operating
         system thread because NSE does not preempt Lua threads. Instead,
-        we use a condition variable that the master thread
-        <emphasis>waits</emphasis> on until awakened by a worker. The master
+        we use a condition variable that the controller thread
+        <emphasis>waits</emphasis> on until awakened by a worker. The controller
         will continually wait until all workers have terminated.
       </para>
 
@@ -3474,11 +3475,11 @@ end
       <para>
         When using condition variables, it is important to check the predicate
         before and after waiting. A predicate is a test on whether to continue
-        doing work within a worker or master thread. For worker
+        doing work within a worker or controller thread. For worker
         threads, this will at the very least include a test to see if the
-        master thread is still alive. You do not want to continue doing work
+        controller is still alive. You do not want to continue doing work
         when there's no thread to use your results. A typical test before waiting
-        may be: Check whether the master is still running; if not, then quit.
+        may be: Check whether the controller is still running; if not, then quit.
         Check if is work to be done; if not, then wait.
       </para>
 
@@ -3490,7 +3491,7 @@ end
         The usual, but not only, reason that this may happen
         is the termination of one of the threads using the condition variable. This
         is an important guarantee NSE makes that allows you to avoid deadlock
-        where a worker or master waits for a thread to wake them up that ended
+        where a worker or controller waits for a thread to wake them up that ended
         without signaling the condition variable.
       </para>
     </sect2>

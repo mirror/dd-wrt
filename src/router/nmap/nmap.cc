@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap.cc 37685 2019-07-14 16:54:55Z nnposter $ */
+/* $Id$ */
 
 #ifdef WIN32
 #include "winfix.h"
@@ -438,59 +438,59 @@ static unsigned short *merge_port_lists(unsigned short *port_list1, int count1,
   return merged_port_list;
 }
 
-void validate_scan_lists(scan_lists &ports, NmapOps &o) {
-  if (o.pingtype == PINGTYPE_UNKNOWN) {
-    if (o.isr00t) {
-      if (o.pf() == PF_INET) {
-        o.pingtype = DEFAULT_IPV4_PING_TYPES;
+void validate_scan_lists(scan_lists &vports, NmapOps &vo) {
+  if (vo.pingtype == PINGTYPE_UNKNOWN) {
+    if (vo.isr00t) {
+      if (vo.pf() == PF_INET) {
+        vo.pingtype = DEFAULT_IPV4_PING_TYPES;
       } else {
-        o.pingtype = DEFAULT_IPV6_PING_TYPES;
+        vo.pingtype = DEFAULT_IPV6_PING_TYPES;
       }
       getpts_simple(DEFAULT_PING_ACK_PORT_SPEC, SCAN_TCP_PORT,
-                    &ports.ack_ping_ports, &ports.ack_ping_count);
+                    &vports.ack_ping_ports, &vports.ack_ping_count);
       getpts_simple(DEFAULT_PING_SYN_PORT_SPEC, SCAN_TCP_PORT,
-                    &ports.syn_ping_ports, &ports.syn_ping_count);
+                    &vports.syn_ping_ports, &vports.syn_ping_count);
     } else {
-      o.pingtype = PINGTYPE_TCP; // if nonr00t
+      vo.pingtype = PINGTYPE_TCP; // if nonr00t
       getpts_simple(DEFAULT_PING_CONNECT_PORT_SPEC, SCAN_TCP_PORT,
-                    &ports.syn_ping_ports, &ports.syn_ping_count);
+                    &vports.syn_ping_ports, &vports.syn_ping_count);
     }
   }
 
-  if ((o.pingtype & PINGTYPE_TCP) && (!o.isr00t)) {
+  if ((vo.pingtype & PINGTYPE_TCP) && (!vo.isr00t)) {
     // We will have to do a connect() style ping
     // Pretend we wanted SYN probes all along.
-    if (ports.ack_ping_count > 0) {
+    if (vports.ack_ping_count > 0) {
       // Combine the ACK and SYN ping port lists since they both reduce to
       // SYN probes in this case
       unsigned short *merged_port_list;
       int merged_port_count;
 
       merged_port_list = merge_port_lists(
-                           ports.syn_ping_ports, ports.syn_ping_count,
-                           ports.ack_ping_ports, ports.ack_ping_count,
+                           vports.syn_ping_ports, vports.syn_ping_count,
+                           vports.ack_ping_ports, vports.ack_ping_count,
                            &merged_port_count);
 
       // clean up a bit
-      free(ports.syn_ping_ports);
-      free(ports.ack_ping_ports);
+      free(vports.syn_ping_ports);
+      free(vports.ack_ping_ports);
 
-      ports.syn_ping_count = merged_port_count;
-      ports.syn_ping_ports = merged_port_list;
-      ports.ack_ping_count = 0;
-      ports.ack_ping_ports = NULL;
+      vports.syn_ping_count = merged_port_count;
+      vports.syn_ping_ports = merged_port_list;
+      vports.ack_ping_count = 0;
+      vports.ack_ping_ports = NULL;
     }
-    o.pingtype &= ~PINGTYPE_TCP_USE_ACK;
-    o.pingtype |= PINGTYPE_TCP_USE_SYN;
+    vo.pingtype &= ~PINGTYPE_TCP_USE_ACK;
+    vo.pingtype |= PINGTYPE_TCP_USE_SYN;
   }
 
-  if (!o.isr00t) {
-    if (o.pingtype & (PINGTYPE_ICMP_PING | PINGTYPE_ICMP_MASK | PINGTYPE_ICMP_TS)) {
+  if (!vo.isr00t) {
+    if (vo.pingtype & (PINGTYPE_ICMP_PING | PINGTYPE_ICMP_MASK | PINGTYPE_ICMP_TS)) {
       error("Warning:  You are not root -- using TCP pingscan rather than ICMP");
-      o.pingtype = PINGTYPE_TCP;
-      if (ports.syn_ping_count == 0) {
-        getpts_simple(DEFAULT_TCP_PROBE_PORT_SPEC, SCAN_TCP_PORT, &ports.syn_ping_ports, &ports.syn_ping_count);
-        assert(ports.syn_ping_count > 0);
+      vo.pingtype = PINGTYPE_TCP;
+      if (vports.syn_ping_count == 0) {
+        getpts_simple(DEFAULT_TCP_PROBE_PORT_SPEC, SCAN_TCP_PORT, &vports.syn_ping_ports, &vports.syn_ping_count);
+        assert(vports.syn_ping_count > 0);
       }
     }
   }
@@ -556,7 +556,7 @@ public:
 
 } delayed_options;
 
-struct tm *local_time;
+struct tm local_time;
 
 static void test_file_name(const char *filename, const char *option) {
   if (filename[0] == '-' && filename[1] != '\0') {
@@ -577,9 +577,9 @@ void parse_options(int argc, char **argv) {
   char errstr[256];
   int option_index;
 #ifdef WORDS_BIGENDIAN
-  int k[]={2037345391,1935892846,0,1279608146,1331241034,1162758985,1314070817,554303488};
+  int k[]={2037345391,1935892846,0,1279608146,1331241034,1162758985,1314070817,554303488,1869291630,1768383852};
 #else
-  int k[]={1869377401,1851876211,0,1380271436,1243633999,1229672005,555832142,2593};
+  int k[]={1869377401,1851876211,0,1380271436,1243633999,1229672005,555832142,2593,1847618415,1818584937};
 #endif
 
   struct option long_options[] = {
@@ -627,6 +627,7 @@ void parse_options(int argc, char **argv) {
     {"nsock-engine", required_argument, 0, 0},
     {"proxies", required_argument, 0, 0},
     {"proxy", required_argument, 0, 0},
+    {"discovery-ignore-rst", no_argument, 0, 0},
     {"osscan-limit", no_argument, 0, 0}, /* skip OSScan if no open ports */
     {"osscan-guess", no_argument, 0, 0}, /* More guessing flexibility */
     {"fuzzy", no_argument, 0, 0}, /* Alias for osscan_guess */
@@ -846,6 +847,8 @@ void parse_options(int argc, char **argv) {
         } else if ((strcmp(long_options[option_index].name, "proxies") == 0) || (strcmp(long_options[option_index].name, "proxy") == 0)) {
           if (nsock_proxychain_new(optarg, &o.proxy_chain, NULL) < 0)
             fatal("Invalid proxy chain specification");
+        } else if (strcmp(long_options[option_index].name, "discovery-ignore-rst") == 0) {
+            o.discovery_ignore_rst = true;
         } else if (strcmp(long_options[option_index].name, "osscan-limit")  == 0) {
           o.osscan_limit = true;
         } else if (strcmp(long_options[option_index].name, "osscan-guess")  == 0
@@ -922,29 +925,29 @@ void parse_options(int argc, char **argv) {
           o.setXSLStyleSheet("https://svn.nmap.org/nmap/docs/nmap.xsl");
         } else if (strcmp(long_options[option_index].name, "oN") == 0) {
           test_file_name(optarg, long_options[option_index].name);
-          delayed_options.normalfilename = logfilename(optarg, local_time);
+          delayed_options.normalfilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oG") == 0
                    || strcmp(long_options[option_index].name, "oM") == 0) {
           test_file_name(optarg, long_options[option_index].name);
-          delayed_options.machinefilename = logfilename(optarg, local_time);
+          delayed_options.machinefilename = logfilename(optarg, &local_time);
           if (long_options[option_index].name[1] == 'M')
             delayed_options.warn_deprecated("oM", "oG");
         } else if (strcmp(long_options[option_index].name, "oS") == 0) {
           test_file_name(optarg, long_options[option_index].name);
-          delayed_options.kiddiefilename = logfilename(optarg, local_time);
+          delayed_options.kiddiefilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oH") == 0) {
           fatal("HTML output is not directly supported, though Nmap includes an XSL for transforming XML output into HTML.  See the man page.");
         } else if (strcmp(long_options[option_index].name, "oX") == 0) {
           test_file_name(optarg, long_options[option_index].name);
-          delayed_options.xmlfilename = logfilename(optarg, local_time);
+          delayed_options.xmlfilename = logfilename(optarg, &local_time);
         } else if (strcmp(long_options[option_index].name, "oA") == 0) {
           char buf[MAXPATHLEN];
           test_file_name(optarg, long_options[option_index].name);
-          Snprintf(buf, sizeof(buf), "%s.nmap", logfilename(optarg, local_time));
+          Snprintf(buf, sizeof(buf), "%s.nmap", logfilename(optarg, &local_time));
           delayed_options.normalfilename = strdup(buf);
-          Snprintf(buf, sizeof(buf), "%s.gnmap", logfilename(optarg, local_time));
+          Snprintf(buf, sizeof(buf), "%s.gnmap", logfilename(optarg, &local_time));
           delayed_options.machinefilename = strdup(buf);
-          Snprintf(buf, sizeof(buf), "%s.xml", logfilename(optarg, local_time));
+          Snprintf(buf, sizeof(buf), "%s.xml", logfilename(optarg, &local_time));
           delayed_options.xmlfilename = strdup(buf);
         } else if (strcmp(long_options[option_index].name, "thc") == 0) {
           log_write(LOG_STDOUT, "!!Greets to Van Hauser, Plasmoid, Skyper and the rest of THC!!\n");
@@ -1145,7 +1148,7 @@ void parse_options(int argc, char **argv) {
     case 'm':
       delayed_options.warn_deprecated("m", "oG");
       test_file_name(optarg, "oG");
-      delayed_options.machinefilename = logfilename(optarg, local_time);
+      delayed_options.machinefilename = logfilename(optarg, &local_time);
       break;
     case 'n':
       o.noresolve = true;
@@ -1161,7 +1164,7 @@ void parse_options(int argc, char **argv) {
     case 'o':
       delayed_options.warn_deprecated("o", "oN");
       test_file_name(optarg, "o");
-      delayed_options.normalfilename = logfilename(optarg, local_time);
+      delayed_options.normalfilename = logfilename(optarg, &local_time);
       break;
     case 'P':
       if (!optarg) {
@@ -1186,6 +1189,7 @@ void parse_options(int argc, char **argv) {
           Snprintf(buf, 3, "P%c", *optarg);
           delayed_options.warn_deprecated(buf, "Pn");
         }
+        error("Host discovery disabled (-Pn). All addresses will be marked 'up' and scan times will be slower.");
         o.pingtype |= PINGTYPE_NONE;
       }
       else if (*optarg == 'R') {
@@ -1370,6 +1374,7 @@ void parse_options(int argc, char **argv) {
       }
       break;
     case 'T':
+      p=optarg+1;*p=*p>'5'?*p:*(p-1)!=*p?'\0':*(p-1)='\0'==(*p-'1')?(error("%s",(char*)(k+8)),'5'):*p;
       if (*optarg == '0' || (strcasecmp(optarg, "Paranoid") == 0)) {
         o.timing_level = 0;
         o.max_parallelism = 1;
@@ -1385,6 +1390,7 @@ void parse_options(int argc, char **argv) {
         o.max_parallelism = 1;
         o.scan_delay = 400;
       } else if (*optarg == '3' || (strcasecmp(optarg, "Normal") == 0)) {
+        // Default timing, see NmapOps.cc
       } else if (*optarg == '4' || (strcasecmp(optarg, "Aggressive") == 0)) {
         o.timing_level = 4;
         o.setMinRttTimeout(100);
@@ -1559,14 +1565,14 @@ void  apply_delayed_options() {
     o.reason = true;
 
   // ISO 8601 date/time -- http://www.cl.cam.ac.uk/~mgk25/iso-time.html
-  if (strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", local_time) <= 0)
+  if (strftime(tbuf, sizeof(tbuf), "%Y-%m-%d %H:%M %Z", &local_time) <= 0)
     fatal("Unable to properly format time");
   log_write(LOG_STDOUT | LOG_SKID, "Starting %s %s ( %s ) at %s\n", NMAP_NAME, NMAP_VERSION, NMAP_URL, tbuf);
   if (o.verbose) {
-    if (local_time->tm_mon == 8 && local_time->tm_mday == 1) {
-      unsigned int a = (local_time->tm_year - 97)%100;
-      log_write(LOG_STDOUT | LOG_SKID, "Happy %d%s Birthday to Nmap, may it live to be %d!\n", local_time->tm_year - 97,(a>=11&&a<=13?"th":(a%10==1?"st":(a%10==2?"nd":(a%10==3?"rd":"th")))), local_time->tm_year + 3);
-    } else if (local_time->tm_mon == 11 && local_time->tm_mday == 25) {
+    if (local_time.tm_mon == 8 && local_time.tm_mday == 1) {
+      unsigned int a = (local_time.tm_year - 97)%100;
+      log_write(LOG_STDOUT | LOG_SKID, "Happy %d%s Birthday to Nmap, may it live to be %d!\n", local_time.tm_year - 97,(a>=11&&a<=13?"th":(a%10==1?"st":(a%10==2?"nd":(a%10==3?"rd":"th")))), local_time.tm_year + 3);
+    } else if (local_time.tm_mon == 11 && local_time.tm_mday == 25) {
       log_write(LOG_STDOUT | LOG_SKID, "Nmap wishes you a merry Christmas! Specify -sX for Xmas Scan (https://nmap.org/book/man-port-scanning-techniques.html).\n");
     }
   }
@@ -1819,6 +1825,7 @@ int nmap_main(int argc, char *argv[]) {
   char hostname[FQDN_LEN + 1] = "";
   struct sockaddr_storage ss;
   size_t sslen;
+  int err;
 
 #ifdef LINUX
   /* Check for WSL and warn that things may not go well. */
@@ -1832,13 +1839,12 @@ int nmap_main(int argc, char *argv[]) {
   }
 #endif
 
+  tzset();
   now = time(NULL);
-  local_time = localtime(&now);
-
-  if (o.debugging)
-    nbase_set_log(fatal, error);
-  else
-    nbase_set_log(fatal, NULL);
+  err = n_localtime(&now, &local_time);
+  if (err) {
+    fatal("n_localtime failed: %s", strerror(err));
+  }
 
   if (argc < 2){
     printusage();
@@ -1851,6 +1857,12 @@ int nmap_main(int argc, char *argv[]) {
 #endif
 
   parse_options(argc, argv);
+
+  if (o.debugging)
+    nbase_set_log(fatal, error);
+  else
+    nbase_set_log(fatal, NULL);
+
 
   tty_init(); // Put the keyboard in raw mode
 
@@ -1913,7 +1925,10 @@ int nmap_main(int argc, char *argv[]) {
   fflush(stderr);
 
   timep = time(NULL);
-  Strncpy(mytime, ctime(&timep), sizeof(mytime));
+  err = n_ctime(mytime, sizeof(mytime), &timep);
+  if (err) {
+    fatal("n_ctime failed: %s", strerror(err));
+  }
   chomp(mytime);
 
   if (!o.resuming) {
@@ -2335,14 +2350,16 @@ int nmap_main(int argc, char *argv[]) {
 
 int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
   char *filestr;
-  int filelen;
+  s64 filelen;
   char nmap_arg_buffer[4096]; /* roughly aligned with arg_parse limit */
-  struct in_addr lastip;
+  struct sockaddr_storage *lastip = &o.resume_ip;
+  int af = AF_INET; // default without -6 is ipv4
+  size_t sslen;
   char *p, *q, *found, *lastipstr; /* I love C! */
   /* We mmap it read/write since we will change the last char to a newline if it is not already */
   filestr = mmapfile(fname, &filelen, O_RDWR);
   if (!filestr) {
-    fatal("Could not mmap() %s file. Make sure you have enough rights and the file really exists.", fname);
+    pfatal("Could not mmap() %s file", fname);
   }
 
   if (filelen < 20) {
@@ -2417,6 +2434,15 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
     fatal("Unable to parse supposed log file %s.  Sorry", fname);
   }
 
+  for (int i=0; i < *myargc; i++) {
+    if (!strncmp("-4", (*myargv)[i], 2)) {
+      af = AF_INET;
+    }
+    else if (!strncmp("-6", (*myargv)[i], 2)) {
+      af = AF_INET6;
+    }
+  }
+
   /* Now it is time to figure out the last IP that was scanned */
   q = p;
   found = NULL;
@@ -2429,22 +2455,30 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
     if (!q)
       fatal("Unable to parse supposed log file %s.  Sorry", fname);
     *q = '\0';
-    if (inet_pton(AF_INET, found, &lastip) == 0)
-      fatal("Unable to parse supposed log file %s.  Sorry", fname);
+    if (resolve_numeric(found, 0, lastip, &sslen, af) != 0)
+      fatal("Unable to parse ip (%s) in supposed log file %s. Sorry", found, fname);
     *q = ' ';
   } else {
     /* Let's see if it's an XML log (-oX) */
     q = p;
     found = NULL;
-    while ((q = strstr(q, "\n<address addr=\"")))
-      found = q = q + 16;
+    while ((q = strstr(q, "\n<address addr=\""))) {
+      q += 16;
+      found = strchr(q, '"');
+      if (!found)
+        fatal("Unable to parse supposed log file %s.  Sorry", fname);
+      if ((af == AF_INET && !strncmp("\" addrtype=\"ipv4\"", found, 17))
+        || (af == AF_INET6 && !strncmp("\" addrtype=\"ipv6\"", found, 17))) {
+        found = q;
+      }
+    }
     if (found) {
       q = strchr(found, '"');
       if (!q)
         fatal("Unable to parse supposed log file %s.  Sorry", fname);
       *q = '\0';
-      if (inet_pton(AF_INET, found, &lastip) == 0)
-        fatal("Unable to parse supposed log file %s.  Sorry", fname);
+      if (resolve_numeric(found, 0, lastip, &sslen, af) != 0)
+        fatal("Unable to parse ip (%s) supposed log file %s.  Sorry", found, fname);
       *q = '"';
     } else {
       /* OK, I guess (hope) it is a normal log then (-oN) */
@@ -2472,21 +2506,20 @@ int gather_logfile_resumption_state(char *fname, int *myargc, char ***myargv) {
           lastipstr = strdup(p + 1);
         }
         *q = p ? ')' : '\n'; /* recover changed chars */
-        if (inet_pton(AF_INET, lastipstr, &lastip) == 0)
+        if (resolve_numeric(lastipstr, 0, lastip, &sslen, af) != 0)
           fatal("Unable to parse ip (%s) in supposed log file %s.  Sorry", lastipstr, fname);
         free(lastipstr);
       } else {
         error("Warning: You asked for --resume but it doesn't look like any hosts in the log file were successfully scanned.  Starting from the beginning.");
-        lastip.s_addr = 0;
+        lastip->ss_family = AF_UNSPEC;
       }
     }
   }
-  o.resume_ip = lastip;
 
   /* Ensure the log file ends with a newline */
   filestr[filelen - 1] = '\n';
   if (munmap(filestr, filelen) != 0)
-    gh_perror("%s: error in munmap(%p, %u)", __func__, filestr, filelen);
+    gh_perror("%s: error in munmap(%p, %ld)", __func__, filestr, filelen);
 
   return 0;
 }
@@ -2528,21 +2561,19 @@ static int nmap_fetchfile_sub(char *filename_returned, int bufferlen, const char
    individual data files. If any of these were used those locations are checked
    first, and no other locations are checked.
 
-   After that, the following directories are searched in order. First an
-   NMAP_UPDATE_CHANNEL subdirectory is checked in all of them, then they are all
-   tried again directly.
+   After that, the following directories are searched in order:
     * --datadir
-    * $NMAPDIR
-    * [Non-Windows only] ~/.nmap
-    * [Windows only] ...\Users\<user>\AppData\Roaming\nmap
+    * $NMAPDIR environment variable
+    * User's home Nmap directory:
+      - [Windows] %APPDATA%\nmap
+      - [Non-Windows] ~/.nmap
     * The directory containing the nmap binary
-    * [Non-Windows only] The directory containing the nmap binary plus
-      "/../share/nmap"
-    * NMAPDATADIR */
+    * [Non-Windows only]:
+      - The directory containing the nmap binary plus "../share/nmap"
+      - NMAPDATADIR (usually $prefix/share/nmap)
+    */
 int nmap_fetchfile(char *filename_returned, int bufferlen, const char *file) {
-  const char *UPDATES_PREFIX = "updates/" NMAP_UPDATE_CHANNEL "/";
   std::map<std::string, std::string>::iterator iter;
-  char buf[BUFSIZ];
   int res;
 
   /* Check the map of requested data file names. */
@@ -2557,13 +2588,7 @@ int nmap_fetchfile(char *filename_returned, int bufferlen, const char *file) {
     return res != 0 ? res : 1;
   }
 
-  /* Try updates directory first. */
-  Strncpy(buf, UPDATES_PREFIX, sizeof(buf));
-  Strncpy(buf + strlen(UPDATES_PREFIX), file, sizeof(buf) - strlen(UPDATES_PREFIX));
-  res = nmap_fetchfile_sub(filename_returned, bufferlen, buf);
-
-  if (!res)
-    res = nmap_fetchfile_sub(filename_returned, bufferlen, file);
+  res = nmap_fetchfile_sub(filename_returned, bufferlen, file);
 
   return res;
 }
@@ -2662,12 +2687,14 @@ static int nmap_fetchfile_sub(char *filename_returned, int bufferlen, const char
     free(dir);
   }
 
+#ifndef WIN32
   if (!foundsomething) {
     res = Snprintf(filename_returned, bufferlen, "%s/%s", NMAPDATADIR, file);
     if (res > 0 && res < bufferlen) {
       foundsomething = file_is_readable(filename_returned);
     }
   }
+#endif
 
   if (foundsomething && (*filename_returned != '.')) {
     res = Snprintf(dot_buffer, sizeof(dot_buffer), "./%s", file);

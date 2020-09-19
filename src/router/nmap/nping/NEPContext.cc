@@ -182,7 +182,7 @@ struct sockaddr_storage NEPContext::getAddress(){
 } /* End of getAddress() */
 
 
-int NEPContext::setAddress(struct sockaddr_storage a){
+int NEPContext::setAddress(const struct sockaddr_storage &a){
   this->clnt_addr=a;
   return OP_SUCCESS;
 } /* End of setAddress() */
@@ -617,6 +617,6 @@ bool NEPContext::isDuplicateFieldSpec(u8 test_field){
   * with clients that send multiple NEP_PACKET_SPEC messages, so only the last
   * PacketSpec is taken into account. */
 int NEPContext::resetClientFieldSpecs(){
-  this->fspecs.empty();
+  this->fspecs.clear();
   return OP_SUCCESS;
 } /* End of resetClientFieldSpecs() */

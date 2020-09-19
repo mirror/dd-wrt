@@ -127,14 +127,20 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: utils.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "nmap.h"
 #include "utils.h"
 #include "nmap_error.h"
 #include "NmapOps.h"
 
+#include <sys/types.h>
+#if HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#if HAVE_FCNTL_H
 #include <fcntl.h>
+#endif
 #include <errno.h>
 
 extern NmapOps o;
@@ -179,7 +185,7 @@ int wildtest(char *wild, char *test) {
 }
 
 /* Wrapper for nbase function hexdump. */
-void nmap_hexdump(unsigned char *cp, unsigned int length) {
+void nmap_hexdump(const unsigned char *cp, unsigned int length) {
   char *string = NULL;
 
   string = hexdump((u8*) cp, length);
@@ -215,7 +221,7 @@ void genfry(unsigned char *arr, int elem_sz, int num_elem) {
   unsigned short *sptr;
   unsigned int *iptr;
   unsigned char *tmp;
-  int bpe;
+  size_t bpe;
 
   if (sizeof(unsigned char) != 1)
     fatal("%s() requires 1 byte chars", __func__);
@@ -605,7 +611,7 @@ static int open2mmap_flags(int open_flags)
    undefined, and errno is set to something appropriate. The user is responsible
    for doing an munmap(ptr, length) when finished with it. openflags should be
    O_RDONLY or O_RDWR, or O_WRONLY. */
-char *mmapfile(char *fname, int *length, int openflags) {
+char *mmapfile(char *fname, s64 *length, int openflags) {
   struct stat st;
   int fd;
   int mmap_flags;
@@ -654,9 +660,10 @@ char *mmapfile(char *fname, int *length, int openflags) {
 
 static HANDLE gmap = NULL;
 
-char *mmapfile(char *fname, int *length, int openflags) {
+char *mmapfile(char *fname, s64 *length, int openflags) {
   HANDLE fd;
   DWORD mflags, oflags;
+  DWORD lowsize, highsize;
   char *fileptr;
 
   if (!length || !fname) {
@@ -683,11 +690,18 @@ char *mmapfile(char *fname, int *length, int openflags) {
   if (!fd)
     pfatal ("%s(%u): CreateFile()", __FILE__, __LINE__);
 
-  *length = (int) GetFileSize (fd, NULL);
+  lowsize = GetFileSize (fd, &highsize);
+  if (lowsize == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
+    pfatal("%s(%u): GetFileSize(), file '%s'", __FILE__, __LINE__, fname);
+  }
+  *length = lowsize + highsize << sizeof(DWORD);
+  if (*length < 0) {
+    fatal("%s(%u): size too large, file '%s'", __FILE__, __LINE__, fname);
+  }
 
   gmap = CreateFileMapping (fd, NULL, mflags, 0, 0, NULL);
   if (!gmap) {
-    pfatal("%s(%u): CreateFileMapping(), file '%s', length %d, mflags %08lX",
+    pfatal("%s(%u): CreateFileMapping(), file '%s', length %I64d, mflags %08lX",
            __FILE__, __LINE__, fname, *length, mflags);
   }
 
@@ -696,7 +710,7 @@ char *mmapfile(char *fname, int *length, int openflags) {
     pfatal ("%s(%u): MapViewOfFile()", __FILE__, __LINE__);
 
   if (o.debugging > 2) {
-    log_write(LOG_PLAIN, "%s(): fd %08lX, gmap %08lX, fileptr %08lX, length %d\n",
+    log_write(LOG_PLAIN, "%s(): fd %08lX, gmap %08lX, fileptr %08lX, length %I64d\n",
               __func__, (DWORD)fd, (DWORD)gmap, (DWORD)fileptr, *length);
   }
 

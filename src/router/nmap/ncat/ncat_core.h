@@ -125,7 +125,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: ncat_core.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef NCAT_CORE_H
 #define NCAT_CORE_H
@@ -223,6 +223,7 @@ struct options {
     int sslverify;
     char *ssltrustfile;
     char *sslciphers;
+    char* sslservername;
     char *sslalpn;
     int zerobyte;
 };

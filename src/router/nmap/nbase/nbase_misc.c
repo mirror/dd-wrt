@@ -128,7 +128,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nbase_misc.c 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "nbase.h"
 
@@ -177,12 +177,15 @@ int socket_errno() {
 */
 char *socket_strerror(int errnum) {
 #ifdef WIN32
-    static char buffer[128];
+    static char buffer[256];
 
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
+    if (!FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM |
         FORMAT_MESSAGE_IGNORE_INSERTS |
         FORMAT_MESSAGE_MAX_WIDTH_MASK,
-        0, errnum, 0, buffer, sizeof(buffer), NULL);
+        0, errnum, 0, buffer, sizeof(buffer), NULL))
+    {
+		Snprintf(buffer, 255, "socket error %d; FormatMessage error: %08x", errnum, GetLastError());
+    };
 
     return buffer;
 #else
@@ -292,8 +295,7 @@ int unblock_socket(int sd) {
 #ifdef WIN32
   unsigned long one = 1;
 
-  if (sd != 501) /* Hack related to WinIP Raw Socket support */
-    ioctlsocket(sd, FIONBIO, &one);
+  ioctlsocket(sd, FIONBIO, &one);
 
   return 0;
 #else
@@ -314,8 +316,7 @@ int block_socket(int sd) {
 #ifdef WIN32
   unsigned long options = 0;
 
-  if (sd != 501)
-    ioctlsocket(sd, FIONBIO, &options);
+  ioctlsocket(sd, FIONBIO, &options);
 
   return 0;
 #else

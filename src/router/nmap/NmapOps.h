@@ -128,14 +128,15 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: NmapOps.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_OPS_H
 #define NMAP_OPS_H
 
 #include "nmap.h" /* MAX_DECOYS */
 #include "scan_lists.h"
-#include "output.h"
+#include "output.h" /* LOG_NUM_FILES */
+#include <nbase.h>
 #include <nsock.h>
 #include <string>
 #include <map>
@@ -317,11 +318,11 @@ class NmapOps {
             when it changes the port's state because of ICMP response, as the latter
             might be rate-limited. Doing so we can get scan results faster. */
 
-  struct in_addr resume_ip; /* The last IP in the log file if user
+  struct sockaddr_storage resume_ip; /* The last IP in the log file if user
                                requested --restore .  Otherwise
-                               restore_ip.s_addr == 0.  Also
-                               target_struct_get will eventually set it
-                               to 0. */
+                               resume_ip.ss_family == AF_UNSPEC.  Also
+                               Target::next_target will eventually set it
+                               to AF_UNSPEC. */
 
   // Version Detection Options
   bool override_excludeports;
@@ -395,6 +396,7 @@ class NmapOps {
   char *exclude_portlist; /* exclude-ports list specified by user */
 
   nsock_proxychain proxy_chain;
+  bool discovery_ignore_rst; /* host discovery should not consider TCP RST packet responses as a live asset */
 
 #ifndef NOLUA
   bool script;
