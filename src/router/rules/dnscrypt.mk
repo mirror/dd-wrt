@@ -25,7 +25,7 @@ DNSCRYPT_CONFIGURE_ARGS+= \
 	--with-include-path="$(TOP)/openssl/include $(TOP)/libsodium/src/libsodium/include" \
 	--with-lib-path="$(TOP)/openssl , $(TOP)/gmp, $(TOP)/libsodium/src/libsodium/.libs"
 
-dnscrypt-configure: libsodium-configure
+dnscrypt-configure: libsodium-configure zlib
 	cd dnscrypt && ./autogen.sh && \
 	./configure --host=$(ARCH)-linux --prefix=/usr \
 	$(DNSCRYPT_CONFIGURE_ARGS) \
@@ -35,7 +35,7 @@ dnscrypt-configure: libsodium-configure
 	AR_FLAGS="cru $(LTOPLUGIN)" \
 	RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)"
 
-dnscrypt: libsodium
+dnscrypt: libsodium zlib
 	make -C dnscrypt/libltdl
 	make -C dnscrypt 
 

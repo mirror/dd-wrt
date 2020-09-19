@@ -14,7 +14,7 @@ miniupnpc-install:
 	rm -rf $(INSTALLDIR)/miniupnpc/usr/share
 	rm -f $(INSTALLDIR)/miniupnpc/usr/lib/*.a
 
-tor-configure: openssl xz zstd libevent
+tor-configure: openssl xz zstd libevent zlib
 	cd tor && libtoolize -ci --force 
 	cd tor && autoreconf -fi 
 	cd tor && ./configure  --prefix=/usr ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --disable-systemd --host=$(ARCH) CC="ccache $(ARCH)-linux-uclibc-gcc" \
@@ -33,7 +33,7 @@ tor-configure: openssl xz zstd libevent
 	ZSTD_CFLAGS="-I$(TOP)/zstd/lib" \
 	ZSTD_LIBS="-I$(TOP)/zstd/lib -lzstd"
 
-tor: openssl libevent
+tor: openssl libevent zlib
 	make -C tor ARFLAGS="cru $(LTOPLUGIN)"  all
 
 tor-clean:

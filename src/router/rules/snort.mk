@@ -1,4 +1,4 @@
-snort-configure: daq-configure pcre-configure daq pcre
+snort-configure: daq-configure pcre-configure daq pcre zlib
 	cd snort && autoreconf
 	export ac_cv_func_malloc_0_nonnull=yes  ; \
 	export have_inaddr_none=yes ; \
