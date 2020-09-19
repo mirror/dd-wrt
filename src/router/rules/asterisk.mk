@@ -17,7 +17,7 @@ editline-install:
 	rm -f $(INSTALLDIR)/editline/usr/lib/*.la
 
 
-asterisk-configure: util-linux-configure util-linux-install jansson editline
+asterisk-configure: util-linux-configure util-linux-install jansson editline zlib
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -83,7 +83,7 @@ asterisk-clean:
 	$(MAKE) -C asterisk clean
 #	$(MAKE) -C chan_dongle clean
 
-asterisk: jansson
+asterisk: jansson zlib
 	make -C util-linux
 	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
 	mkdir -p $(INSTALLDIR)/util-linux/usr/lib

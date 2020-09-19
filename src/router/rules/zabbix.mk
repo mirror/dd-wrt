@@ -1,5 +1,5 @@
 
-zabbix:
+zabbix: zlib
 	CC="$(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/zlib -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -26,7 +26,7 @@ endif
 zabbix-clean:
 	$(MAKE) -C zabbix clean
 
-zabbix-configure:
+zabbix-configure: zlib
 	cd zabbix && rm -rf config.{cache,status} \
 	&& libtoolize -f -c && autoreconf --force --install \
 	&& ./configure ac_cv_host=$(ARCH)-uclibc-linux --target=$(ARCH)-linux --host=$(ARCH) CC=$(ARCH)-linux-uclibc-gcc \

@@ -1,4 +1,4 @@
-libgd: libpng minidlna
+libgd: libpng minidlna zlib
 	CC="ccache $(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT)   -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/minidlna/jpeg-8 -ffunction-sections -fdata-sections -Wl,--gc-sections" \
@@ -8,7 +8,7 @@ libgd: libpng minidlna
 libgd-clean:
 	make -C libgd clean
 	
-libgd-configure: libpng
+libgd-configure: libpng zlib
 	cd libgd && autoreconf -fi && ./configure --host=$(ARCH)-linux-uclibc  \
 	--with-jpeg=$(TOP)/minidlna/jpeg-8 \
 	--without-xpm \

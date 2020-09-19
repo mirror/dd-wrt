@@ -1,4 +1,4 @@
-java-configure:
+java-configure: zlib
 	cd $(TOP)/java/classpath && ./configure \
 	--host=$(ARCH)-linux CC="$(ARCH)-linux-uclibc-gcc" \
 	CFLAGS="$(COPTS) $(MIPS16_OPT) -DNEED_PRINTF" \
@@ -47,7 +47,7 @@ java-configure:
 #	--with-jasmin-jar=$(TOP)/java/jasmin/cup.jar:$(TOP)/java/jasmin/jasmin-sable.jar \
 #	--with-junit-jar=$(TOP)/java/junit/junit4.jar
 
-java:
+java: zlib
 	make -C $(TOP)/java/classpath
 	make -C $(TOP)/java/classpath
 	make -C $(TOP)/java/jamvm GLIBJ_ZIP=$(TOP)/java/classpath/lib/glibj.zip
