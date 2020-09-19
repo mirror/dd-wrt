@@ -67,6 +67,7 @@
  */
 #define CHANNEL_OBJECT_PRIVATE
 #include "app/config/config.h"
+#include "app/config/resolve_addr.h"
 #include "core/mainloop/connection.h"
 #include "core/mainloop/mainloop.h"
 #include "core/mainloop/netstatus.h"
@@ -383,8 +384,12 @@ or_connection_new(int type, int socket_family)
 
   connection_or_set_canonical(or_conn, 0);
 
-  if (type == CONN_TYPE_EXT_OR)
+  if (type == CONN_TYPE_EXT_OR) {
+    /* If we aren't told an address for this connection, we should
+     * presume it isn't local, and should be rate-limited. */
+    TO_CONN(or_conn)->always_rate_limit_as_remote = 1;
     connection_or_set_ext_or_identifier(or_conn);
+  }
 
   return or_conn;
 }
@@ -641,7 +646,7 @@ connection_free_minimal(connection_t *conn)
     }
   }
 
-  tor_free(conn->address);
+  tor_str_wipe_and_free(conn->address);
 
   if (connection_speaks_cells(conn)) {
     or_connection_t *or_conn = TO_OR_CONN(conn);
@@ -661,7 +666,7 @@ connection_free_minimal(connection_t *conn)
     }
     or_handshake_state_free(or_conn->handshake_state);
     or_conn->handshake_state = NULL;
-    tor_free(or_conn->nickname);
+    tor_str_wipe_and_free(or_conn->nickname);
     if (or_conn->chan) {
       /* Owww, this shouldn't happen, but... */
       channel_t *base_chan = TLS_CHAN_TO_BASE(or_conn->chan);
@@ -681,8 +686,8 @@ connection_free_minimal(connection_t *conn)
   }
   if (conn->type == CONN_TYPE_AP) {
     entry_connection_t *entry_conn = TO_ENTRY_CONN(conn);
-    tor_free(entry_conn->chosen_exit_name);
-    tor_free(entry_conn->original_dest_address);
+    tor_str_wipe_and_free(entry_conn->chosen_exit_name);
+    tor_str_wipe_and_free(entry_conn->original_dest_address);
     if (entry_conn->socks_request)
       socks_request_free(entry_conn->socks_request);
     if (entry_conn->pending_optimistic_data) {
@@ -3145,6 +3150,7 @@ connection_is_rate_limited(const connection_t *conn)
   if (conn->linked)
     return 0; /* Internal connection */
   else if (! options->CountPrivateBandwidth &&
+           ! conn->always_rate_limit_as_remote &&
            (tor_addr_family(&conn->addr) == AF_UNSPEC || /* no address */
             tor_addr_family(&conn->addr) == AF_UNIX ||   /* no address */
             tor_addr_is_internal(&conn->addr, 0)))
@@ -3348,8 +3354,17 @@ record_num_bytes_transferred_impl(connection_t *conn,
       rep_hist_note_dir_bytes_written(num_written, now);
   }
 
+  /* Linked connections and internal IPs aren't counted for statistics or
+   * accounting:
+   *  - counting linked connections would double-count BEGINDIR bytes, because
+   *    they are sent as Dir bytes on the linked connection, and OR bytes on
+   *    the OR connection;
+   *  - relays and clients don't connect to internal IPs, unless specifically
+   *    configured to do so. If they are configured that way, we don't count
+   *    internal bytes.
+   */
   if (!connection_is_rate_limited(conn))
-    return; /* local IPs are free */
+    return;
 
   if (conn->type == CONN_TYPE_OR)
     rep_hist_note_or_conn_bytes(conn->global_identifier, num_read,
@@ -3805,6 +3820,12 @@ connection_buf_read_from_socket(connection_t *conn, ssize_t *max_to_read,
     at_most = connection_bucket_read_limit(conn, approx_time());
   }
 
+  /* Do not allow inbuf to grow past BUF_MAX_LEN. */
+  const ssize_t maximum = BUF_MAX_LEN - buf_datalen(conn->inbuf);
+  if (at_most > maximum) {
+    at_most = maximum;
+  }
+
   slack_in_buf = buf_slack(conn->inbuf);
  again:
   if ((size_t)at_most > slack_in_buf && slack_in_buf >= 1024) {
@@ -4189,6 +4210,7 @@ connection_handle_write_impl(connection_t *conn, int force)
     switch (result) {
       CASE_TOR_TLS_ERROR_ANY:
       case TOR_TLS_CLOSE:
+        or_conn->tls_error = result;
         log_info(LD_NET, result != TOR_TLS_CLOSE ?
                  "tls error. breaking.":"TLS connection closed on flush");
         /* Don't flush; connection is dead. */

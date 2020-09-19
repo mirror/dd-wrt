@@ -71,6 +71,9 @@ typedef struct hs_client_service_authorization_t {
   /** An onion address that is used to connect to the onion service. */
   char onion_address[HS_SERVICE_ADDR_LEN_BASE32+1];
 
+  /** An client name used to connect to the onion service. */
+  char *client_name;
+
   /* Optional flags for this client. */
   int flags;
 } hs_client_service_authorization_t;
@@ -110,6 +113,7 @@ int hs_client_send_introduce1(origin_circuit_t *intro_circ,
                               origin_circuit_t *rend_circ);
 
 void hs_client_circuit_has_opened(origin_circuit_t *circ);
+void hs_client_circuit_cleanup_on_close(const circuit_t *circ);
 void hs_client_circuit_cleanup_on_free(const circuit_t *circ);
 
 int hs_client_receive_rendezvous_acked(origin_circuit_t *circ,

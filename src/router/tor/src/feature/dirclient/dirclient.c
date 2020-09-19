@@ -21,6 +21,7 @@
 #include "feature/client/entrynodes.h"
 #include "feature/control/control_events.h"
 #include "feature/dirauth/authmode.h"
+#include "feature/dirclient/dirclient.h"
 #include "feature/dirauth/dirvote.h"
 #include "feature/dirauth/shared_random.h"
 #include "feature/dircache/dirserv.h"
@@ -43,6 +44,7 @@
 #include "feature/nodelist/routerinfo.h"
 #include "feature/nodelist/routerlist.h"
 #include "feature/nodelist/routerset.h"
+#include "feature/relay/relay_find_addr.h"
 #include "feature/relay/routermode.h"
 #include "feature/relay/selftest.h"
 #include "feature/rend/rendcache.h"
@@ -51,6 +53,7 @@
 #include "feature/rend/rendservice.h"
 #include "feature/stats/predict_ports.h"
 
+#include "lib/cc/ctassert.h"
 #include "lib/compress/compress.h"
 #include "lib/crypt_ops/crypto_format.h"
 #include "lib/crypt_ops/crypto_util.h"
@@ -1443,9 +1446,7 @@ compare_strs_(const void **a, const void **b)
 }
 
 #define CONDITIONAL_CONSENSUS_FPR_LEN 3
-#if (CONDITIONAL_CONSENSUS_FPR_LEN > DIGEST_LEN)
-#error "conditional consensus fingerprint length is larger than digest length"
-#endif
+CTASSERT(CONDITIONAL_CONSENSUS_FPR_LEN <= DIGEST_LEN);
 
 /** Return the URL we should use for a consensus download.
  *
@@ -1964,6 +1965,44 @@ dir_client_decompress_response_body(char **bodyp, size_t *bodylenp,
   return rv;
 }
 
+/**
+ * Total number of bytes downloaded of each directory purpose, when
+ * bootstrapped, and when not bootstrapped.
+ *
+ * (For example, the number of bytes downloaded of purpose p while
+ * not fully bootstrapped is total_dl[p][false].)
+ **/
+static uint64_t total_dl[DIR_PURPOSE_MAX_][2];
+
+/**
+ * Heartbeat: dump a summary of how many bytes of which purpose we've
+ * downloaded, when bootstrapping and when not bootstrapping.
+ **/
+void
+dirclient_dump_total_dls(void)
+{
+  const or_options_t *options = get_options();
+  for (int bootstrapped = 0; bootstrapped < 2; ++bootstrapped) {
+    bool first_time = true;
+    for (int i=0; i < DIR_PURPOSE_MAX_; ++i) {
+      uint64_t n = total_dl[i][bootstrapped];
+      if (n == 0)
+        continue;
+      if (options->SafeLogging_ != SAFELOG_SCRUB_NONE &&
+          purpose_needs_anonymity(i, ROUTER_PURPOSE_GENERAL, NULL))
+        continue;
+      if (first_time) {
+        log_notice(LD_NET,
+                   "While %sbootstrapping, fetched this many bytes: ",
+                   bootstrapped?"not ":"");
+        first_time = false;
+      }
+      log_notice(LD_NET, "    %"PRIu64" (%s)",
+                 n, dir_conn_purpose_to_string(i));
+    }
+  }
+}
+
 /** We are a client, and we've finished reading the server's
  * response. Parse it and act appropriately.
  *
@@ -1996,6 +2035,16 @@ connection_dir_client_reached_eof(dir_connection_t *conn)
                             conn->requested_resource);
 
   received_bytes = connection_get_inbuf_len(TO_CONN(conn));
+
+  log_debug(LD_DIR, "Downloaded %"TOR_PRIuSZ" bytes on connection of purpose "
+             "%s; bootstrap %d%%",
+             received_bytes,
+             dir_conn_purpose_to_string(conn->base_.purpose),
+             control_get_bootstrap_percent());
+  {
+    bool bootstrapped = control_get_bootstrap_percent() == 100;
+    total_dl[conn->base_.purpose][bootstrapped] += received_bytes;
+  }
 
   switch (connection_fetch_from_buf_http(TO_CONN(conn),
                               &headers, MAX_HEADERS_SIZE,
@@ -2364,7 +2413,7 @@ handle_response_fetch_status_vote(dir_connection_t *conn,
              conn->base_.port, conn->requested_resource);
     return -1;
   }
-  dirvote_add_vote(body, &msg, &st);
+  dirvote_add_vote(body, 0, &msg, &st);
   if (st > 299) {
     log_warn(LD_DIR, "Error adding retrieved vote: %s", msg);
   } else {

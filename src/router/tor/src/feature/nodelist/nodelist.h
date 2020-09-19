@@ -70,18 +70,20 @@ const char *node_get_platform(const node_t *node);
 uint32_t node_get_prim_addr_ipv4h(const node_t *node);
 void node_get_address_string(const node_t *node, char *cp, size_t len);
 long node_get_declared_uptime(const node_t *node);
-const struct ed25519_public_key_t *node_get_ed25519_id(const node_t *node);
+MOCK_DECL(const struct ed25519_public_key_t *,node_get_ed25519_id,
+          (const node_t *node));
 int node_ed25519_id_matches(const node_t *node,
                             const struct ed25519_public_key_t *id);
-int node_supports_ed25519_link_authentication(const node_t *node,
-                                              int compatible_with_us);
+MOCK_DECL(int,node_supports_ed25519_link_authentication,
+          (const node_t *node,
+           int compatible_with_us));
 int node_supports_v3_hsdir(const node_t *node);
 int node_supports_ed25519_hs_intro(const node_t *node);
 int node_supports_v3_rendezvous_point(const node_t *node);
 int node_supports_establish_intro_dos_extension(const node_t *node);
 const uint8_t *node_get_rsa_id_digest(const node_t *node);
-smartlist_t *node_get_link_specifier_smartlist(const node_t *node,
-                                               bool direct_conn);
+MOCK_DECL(smartlist_t *,node_get_link_specifier_smartlist,(const node_t *node,
+                                                           bool direct_conn));
 void link_specifier_smartlist_free_(smartlist_t *ls_list);
 #define link_specifier_smartlist_free(ls_list) \
   FREE_AND_NULL(smartlist_t, link_specifier_smartlist_free_, (ls_list))

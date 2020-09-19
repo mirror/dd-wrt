@@ -27,6 +27,7 @@
 #include "core/or/or.h"
 
 #include "app/config/config.h"
+#include "app/config/resolve_addr.h"
 #include "core/or/policies.h"
 #include "feature/control/control_events.h"
 #include "feature/dirauth/authmode.h"
@@ -357,6 +358,9 @@ trusted_dir_server_new(const char *nickname, const char *address,
     }
     if (!hostname)
       hostname = tor_dup_ip(a);
+
+    if (!hostname)
+      return NULL;
   } else {
     if (tor_lookup_hostname(address, &a)) {
       log_warn(LD_CONFIG,

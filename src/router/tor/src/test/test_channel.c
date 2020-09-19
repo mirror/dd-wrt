@@ -44,7 +44,6 @@ static int dump_statistics_mock_matches = 0;
 static int test_close_called = 0;
 static int test_chan_should_be_canonical = 0;
 static int test_chan_should_match_target = 0;
-static int test_chan_canonical_should_be_reliable = 0;
 static int test_chan_listener_close_fn_called = 0;
 static int test_chan_listener_fn_called = 0;
 
@@ -337,13 +336,9 @@ scheduler_release_channel_mock(channel_t *ch)
 }
 
 static int
-test_chan_is_canonical(channel_t *chan, int req)
+test_chan_is_canonical(channel_t *chan)
 {
   tor_assert(chan);
-
-  if (req && test_chan_canonical_should_be_reliable) {
-    return 1;
-  }
 
   if (test_chan_should_be_canonical) {
     return 1;
@@ -1326,7 +1321,7 @@ test_channel_for_extend(void *arg)
   channel_t *ret_chan = NULL;
   char digest[DIGEST_LEN];
   ed25519_public_key_t ed_id;
-  tor_addr_t addr;
+  tor_addr_t ipv4_addr, ipv6_addr;
   const char *msg;
   int launch;
   time_t now = time(NULL);
@@ -1335,6 +1330,9 @@ test_channel_for_extend(void *arg)
 
   memset(digest, 'A', sizeof(digest));
   memset(&ed_id, 'B', sizeof(ed_id));
+
+  tor_addr_make_null(&ipv4_addr, AF_INET);
+  tor_addr_make_null(&ipv6_addr, AF_INET6);
 
   chan1 = new_fake_channel();
   tt_assert(chan1);
@@ -1357,6 +1355,9 @@ test_channel_for_extend(void *arg)
   /* Make it older than chan1. */
   chan2->timestamp_created = chan1->timestamp_created - 1;
 
+  /* Say it's all canonical. */
+  test_chan_should_be_canonical = 1;
+
   /* Set channel identities and add it to the channel map. The last one to be
    * added is made the first one in the list so the lookup will always return
    * that one first. */
@@ -1366,7 +1367,8 @@ test_channel_for_extend(void *arg)
   tt_ptr_op(channel_find_by_remote_identity(digest, &ed_id), OP_EQ, chan1);
 
   /* The expected result is chan2 because it is older than chan1. */
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1374,16 +1376,18 @@ test_channel_for_extend(void *arg)
 
   /* Switch that around from previous test. */
   chan2->timestamp_created = chan1->timestamp_created + 1;
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan1);
   tt_int_op(launch, OP_EQ, 0);
   tt_str_op(msg, OP_EQ, "Connection is fine; using it.");
 
   /* Same creation time, num circuits will be used and they both have 0 so the
-   * channel 2 should be picked due to how channel_is_better() work. */
+   * channel 2 should be picked due to how channel_is_better() works. */
   chan2->timestamp_created = chan1->timestamp_created;
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan1);
   tt_int_op(launch, OP_EQ, 0);
@@ -1394,7 +1398,8 @@ test_channel_for_extend(void *arg)
 
   /* Condemned the older channel. */
   chan1->state = CHANNEL_STATE_CLOSING;
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1403,7 +1408,8 @@ test_channel_for_extend(void *arg)
 
   /* Make the older channel a client one. */
   channel_mark_client(chan1);
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1413,8 +1419,9 @@ test_channel_for_extend(void *arg)
   /* Non matching ed identity with valid digest. */
   ed25519_public_key_t dumb_ed_id;
   memset(&dumb_ed_id, 0, sizeof(dumb_ed_id));
-  ret_chan = channel_get_for_extend(digest, &dumb_ed_id, &addr, &msg,
-                                    &launch);
+  ret_chan = channel_get_for_extend(digest, &dumb_ed_id,
+                                    &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Not connected. Connecting.");
   tt_int_op(launch, OP_EQ, 1);
@@ -1423,7 +1430,8 @@ test_channel_for_extend(void *arg)
   test_chan_should_match_target = 1;
   chan1->state = CHANNEL_STATE_OPENING;
   chan2->state = CHANNEL_STATE_OPENING;
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connection in progress; waiting.");
   tt_int_op(launch, OP_EQ, 0);
@@ -1432,7 +1440,8 @@ test_channel_for_extend(void *arg)
 
   /* Mark channel 1 as bad for circuits. */
   channel_mark_bad_for_new_circs(chan1);
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(ret_chan);
   tt_ptr_op(ret_chan, OP_EQ, chan2);
   tt_int_op(launch, OP_EQ, 0);
@@ -1442,7 +1451,8 @@ test_channel_for_extend(void *arg)
   /* Mark both channels as unusable. */
   channel_mark_bad_for_new_circs(chan1);
   channel_mark_bad_for_new_circs(chan2);
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connections all too old, or too non-canonical. "
                         " Launching a new one.");
@@ -1451,9 +1461,10 @@ test_channel_for_extend(void *arg)
   chan2->is_bad_for_new_circs = 0;
 
   /* Non canonical channels. */
+  test_chan_should_be_canonical = 0;
   test_chan_should_match_target = 0;
-  test_chan_canonical_should_be_reliable = 1;
-  ret_chan = channel_get_for_extend(digest, &ed_id, &addr, &msg, &launch);
+  ret_chan = channel_get_for_extend(digest, &ed_id, &ipv4_addr, &ipv6_addr,
+                                    &msg, &launch);
   tt_assert(!ret_chan);
   tt_str_op(msg, OP_EQ, "Connections all too old, or too non-canonical. "
                         " Launching a new one.");

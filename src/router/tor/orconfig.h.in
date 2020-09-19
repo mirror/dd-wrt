@@ -3,7 +3,10 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* # for 0.4.3.6 Approximate date when this software was released. (Updated
+/* All assert failures are fatal */
+#undef ALL_BUGS_ARE_FATAL
+
+/* # for 0.4.4.5 Approximate date when this software was released. (Updated
    when the version changes.) */
 #undef APPROX_RELEASE_DATE
 
