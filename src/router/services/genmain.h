@@ -194,5 +194,6 @@ int check_arguments(int argc, char *argv[])
 		}
 	}
 	end(argv);
+	fprintf(stderr, "method %s not found\n", argv[1]);
 	return -1;
 }
