@@ -315,12 +315,18 @@ static void restart_f(char *name)
 
 static int restart_main(int argc, char **argv)
 {
+	if (argc < 2) {
+		fprintf(stderr, "missing argument!. use \"restart servicename\"\n");
+	}
 	restart(argv[1]);
 	return 0;
 }
 
 static int restart_main_f(int argc, char **argv)
 {
+	if (argc < 2) {
+		fprintf(stderr, "missing argument!. use \"restart_f servicename\"\n");
+	}
 	char *name = argv[1];
 	RELEASESTOPPED(STOP);
 	RELEASESTOPPED(START);
