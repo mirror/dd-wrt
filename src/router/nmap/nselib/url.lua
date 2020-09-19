@@ -222,8 +222,10 @@ function parse(url, default)
   authority = string.gsub(authority, ":(%d+)$",
                 function(p) parsed.port = tonumber(p); return "" end)
   if authority ~= "" then parsed.host = authority end
-  -- TODO: Allow other Unicode encodings
-  parsed.ascii_host = idna.toASCII(unicode.decode(parsed.host, unicode.utf8_dec))
+  if parsed.host then
+    -- TODO: Allow other Unicode encodings
+    parsed.ascii_host = idna.toASCII(unicode.decode(parsed.host, unicode.utf8_dec))
+  end
   local userinfo = parsed.userinfo
   if not userinfo then return parsed end
   userinfo = string.gsub(userinfo, ":([^:]*)$",
@@ -365,7 +367,7 @@ end
 -----------------------------------------------------------------------------
 function parse_query(query)
   local parsed = {}
-  local pos = 0
+  local pos = 1
 
   query = string.gsub(query, "&amp;", "&")
   query = string.gsub(query, "&lt;", "<")
@@ -381,7 +383,7 @@ function parse_query(query)
   end
 
   while true do
-    local first, last = string.find(query, "&", pos)
+    local first, last = string.find(query, "&", pos, true)
     if first then
       ginsert(string.sub(query, pos, first-1));
       pos = last+1

@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: payload.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "nmap.h"
 
@@ -144,6 +144,7 @@
 #include "payload.h"
 #include "utils.h"
 #include "nmap_error.h"
+#include "scan_lists.h"
 
 extern NmapOps o;
 
@@ -170,7 +171,7 @@ struct proto_dport {
   }
 };
 
-static std::map<struct proto_dport, struct payload> payloads;
+static std::map<struct proto_dport, std::vector<struct payload> > portPayloads;
 
 /* Newlines are significant because keyword directives (like "source") that
    follow the payload string are significant to the end of the line. */
@@ -185,48 +186,6 @@ struct token {
   char text[1024];
   size_t len;
 };
-
-/* Returns a malloc-allocated list of the ports in portlist. portlist must
-   contain one or more integers 0 <= p < 65536, separated by commas. */
-static unsigned short *parse_portlist(const char *portlist, unsigned int *count) {
-  uint32_t bitmap[65536 / 32];
-  unsigned short *result;
-  unsigned short i;
-  unsigned int p;
-
-  memset(bitmap, 0, sizeof(bitmap));
-  *count = 0;
-  for (;;) {
-    long l;
-    char *tail;
-
-    errno = 0;
-    l = strtol(portlist, &tail, 10);
-    if (portlist == tail || errno != 0 || l < 0 || l > 65535)
-      return NULL;
-    if (!(bitmap[l / 32] & (1 << (l % 32)))) {
-      bitmap[l / 32] |= (1 << (l % 32));
-      (*count)++;
-    }
-    if (*tail == '\0')
-      break;
-    else if (*tail == ',')
-      portlist = tail + 1;
-    else
-      return NULL;
-  }
-
-  result = (unsigned short *) malloc(sizeof(*result) * *count);
-  if (result == NULL)
-    return NULL;
-  i = 0;
-  for (p = 0; p < 65536 && i < *count; p++) {
-    if (bitmap[p / 32] & (1 << (p % 32)))
-      result[i++] = p;
-  }
-
-  return result;
-}
 
 static unsigned long line_no;
 
@@ -282,10 +241,8 @@ static int next_token(FILE *fp, struct token *token) {
     return TOKEN_STRING;
   } else {
     i = 0;
-    if (i + 1 >= sizeof(token->text))
-      return -1;
     token->text[i++] = c;
-    while ((c = fgetc(fp)) != EOF && (isalnum(c) || c == ',')) {
+    while ((c = fgetc(fp)) != EOF && (isalnum(c) || c == ',' || c == '-')) {
       if (i + 1 >= sizeof(token->text))
         return -1;
       token->text[i++] = c;
@@ -309,7 +266,7 @@ static int load_payloads_from_file(FILE *fp) {
   type = next_token(fp, &token);
   for (;;) {
     unsigned short *ports;
-    unsigned int count, p;
+    int count;
     std::string payload_data;
 
     while (type == TOKEN_NEWLINE)
@@ -326,7 +283,7 @@ static int load_payloads_from_file(FILE *fp) {
       fprintf(stderr, "Expected a port list at line %lu of %s.\n", line_no, PAYLOAD_FILENAME);
       return -1;
     }
-    ports = parse_portlist(token.text, &count);
+    getpts_simple(token.text, SCAN_UDP_PORT, &ports, &count);
     if (ports == NULL) {
       fprintf(stderr, "Can't parse port list \"%s\" at line %lu of %s.\n", token.text, line_no, PAYLOAD_FILENAME);
       return -1;
@@ -349,12 +306,36 @@ static int load_payloads_from_file(FILE *fp) {
         type = next_token(fp, &token);
     }
 
-    for (p = 0; p < count; p++) {
+    for (int p = 0; p < count; p++) {
+      std::map<struct proto_dport, std::vector<struct payload> >::iterator portPayloadIterator;
+      std::vector<struct payload> portPayloadVector;
+      std::vector<struct payload>::iterator portPayloadVectorIterator;
       struct proto_dport key(IPPROTO_UDP, ports[p]);
-      struct payload payload;
+      struct payload portPayload;
+      bool duplicate = false;
 
-      payload.data = payload_data;
-      payloads[key] = payload;
+      portPayloadIterator = portPayloads.find(key);
+
+      if (portPayloadIterator != portPayloads.end()) {
+        portPayloadVector = portPayloadIterator->second;
+        portPayloadVectorIterator = portPayloadVector.begin();
+
+        while (portPayloadVectorIterator != portPayloadVector.end()) {
+          if (portPayloadVectorIterator->data == payload_data) {
+            log_write(LOG_STDERR, "UDP port payload duplication found on port: %u\n", ports[p]);
+            duplicate = true;
+            break;
+          }
+
+          portPayloadVectorIterator++;
+        }
+      }
+
+      if (!duplicate) {
+        portPayload.data = payload_data;
+        portPayloadVector.push_back(portPayload);
+        portPayloads[key] = portPayloadVector;
+      }
     }
 
     free(ports);
@@ -399,15 +380,39 @@ int init_payloads(void) {
 /* Get a payload appropriate for the given UDP port. For certain selected ports
    a payload is returned, and for others a zero-length payload is returned. The
    length is returned through the length pointer. */
-const char *udp_port2payload(u16 dport, size_t *length) {
+const char *udp_port2payload(u16 dport, size_t *length, u8 tryno) {
   static const char *payload_null = "";
-  std::map<struct proto_dport, struct payload>::iterator it;
-  proto_dport pp(IPPROTO_UDP, dport);
+  std::map<struct proto_dport, std::vector<struct payload> >::iterator portPayloadIterator;
+  std::vector<struct payload> portPayloadVector;
+  std::vector<struct payload>::iterator portPayloadVectorIterator;
+  proto_dport key(IPPROTO_UDP, dport);
+  int portPayloadVectorSize;
 
-  it = payloads.find(pp);
-  if (it != payloads.end()) {
-    *length = it->second.data.size();
-    return it->second.data.data();
+  portPayloadIterator = portPayloads.find(key);
+
+  if (portPayloadIterator != portPayloads.end()) {
+    portPayloadVector = portPayloads.find(key)->second;
+    portPayloadVectorSize = portPayloadVector.size();
+
+    tryno %= portPayloadVectorSize;
+
+    if (portPayloadVectorSize > 0) {
+      portPayloadVectorIterator = portPayloadVector.begin();
+
+      while (tryno > 0 && portPayloadVectorIterator != portPayloadVector.end()) {
+        tryno--;
+        portPayloadVectorIterator++;
+      }
+
+      assert (tryno == 0);
+      assert (portPayloadVectorIterator != portPayloadVector.end());
+
+      *length = portPayloadVectorIterator->data.size();
+      return portPayloadVectorIterator->data.data();
+    } else {
+      *length = 0;
+      return payload_null;
+    }
   } else {
     *length = 0;
     return payload_null;
@@ -418,11 +423,11 @@ const char *udp_port2payload(u16 dport, size_t *length) {
    returns the global random payload. Otherwise, for certain selected ports a
    payload is returned, and for others a zero-length payload is returned. The
    length is returned through the length pointer. */
-const char *get_udp_payload(u16 dport, size_t *length) {
+const char *get_udp_payload(u16 dport, size_t *length, u8 tryno) {
   if (o.extra_payload != NULL) {
     *length = o.extra_payload_length;
     return o.extra_payload;
   } else {
-    return udp_port2payload(dport, length);
+    return udp_port2payload(dport, length, tryno);
   }
 }

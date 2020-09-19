@@ -127,7 +127,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: portlist.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef PORTLIST_H
 #define PORTLIST_H
@@ -308,7 +308,7 @@ class PortList {
   void getServiceDeductions(u16 portno, int protocol, struct serviceDeductions *sd) const;
 
 #ifndef NOLUA
-  void addScriptResult(u16 portno, int protocol, ScriptResult& sr);
+  void addScriptResult(u16 portno, int protocol, const ScriptResult& sr);
 #endif
 
   /* Cycles through the 0 or more "ignored" ports which should be

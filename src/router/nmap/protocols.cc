@@ -128,11 +128,10 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: protocols.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "protocols.h"
 #include "NmapOps.h"
-#include "services.h"
 #include "charpool.h"
 #include "nmap_error.h"
 #include "utils.h"

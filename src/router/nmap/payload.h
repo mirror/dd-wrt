@@ -127,16 +127,15 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: payload.h 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifndef PAYLOAD_H
 #define PAYLOAD_H
 
 #define PAYLOAD_FILENAME "nmap-payloads"
 
-const char *get_udp_payload(u16 dport, size_t *length);
-const char *udp_port2payload(u16 dport, size_t *length);
+const char *get_udp_payload(u16 dport, size_t *length, u8 tryno);
+const char *udp_port2payload(u16 dport, size_t *length, u8 tryno);
 int init_payloads(void);
 
 #endif /* PAYLOAD_H */
-

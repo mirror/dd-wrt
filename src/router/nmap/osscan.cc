@@ -129,99 +129,22 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: osscan.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #include "osscan.h"
 #include "NmapOps.h"
 #include "charpool.h"
 #include "FingerPrintResults.h"
 #include "nmap_error.h"
+#include "string_pool.h"
 
 #include <errno.h>
-#include <stdarg.h>
 #include <time.h>
 
 #include <algorithm>
 #include <list>
-#include <set>
 
 extern NmapOps o;
-
-/* Store a string uniquely. The first time this function is called with a
-   certain string, it allocates memory and stores a copy of the string in a
-   static pool. Thereafter it will return a pointer to the saved string instead
-   of allocating memory for an identical one. */
-const char *string_pool_insert(const char *s)
-{
-  static std::set<std::string> pool;
-  static std::pair<std::set<std::string>::iterator, bool> pair;
-
-  pair = pool.insert(s);
-
-  return pair.first->c_str();
-}
-
-const char *string_pool_substr(const char *s, const char *t)
-{
-  return string_pool_insert(std::string(s, t).c_str());
-}
-
-const char *string_pool_substr_strip(const char *s, const char *t) {
-  while (isspace((int) (unsigned char) *s))
-    s++;
-  while (t > s && isspace((int) (unsigned char) *(t - 1)))
-    t--;
-
-  return string_pool_substr(s, t);
-}
-
-/* Skip over whitespace to find the beginning of a word, then read until the
-   next whilespace character. Returns NULL if only whitespace is found. */
-static const char *string_pool_strip_word(const char *s) {
-  const char *t;
-
-  while (isspace((int) (unsigned char) *s))
-    s++;
-  t = s;
-  while (*t != '\0' && !isspace((int) (unsigned char) *t))
-    t++;
-
-  if (s == t)
-    return NULL;
-
-  return string_pool_substr(s, t);
-}
-
-/* Format a string with sprintf and insert it with string_pool_insert. */
-const char *string_pool_sprintf(const char *fmt, ...)
-{
-  const char *s;
-  char *buf;
-  int size, n;
-  va_list ap;
-
-  buf = NULL;
-  size = 32;
-  /* Loop until we allocate a string big enough for the sprintf. */
-  for (;;) {
-    buf = (char *) realloc(buf, size);
-    assert(buf != NULL);
-    va_start(ap, fmt);
-    n = Vsnprintf(buf, size, fmt, ap);
-    va_end(ap);
-    if (n < 0)
-      size = size * 2;
-    else if (n >= size)
-      size = n + 1;
-    else
-      break;
-  }
-
-  s = string_pool_insert(buf);
-  free(buf);
-
-  return s;
-}
 
 FingerPrintDB::FingerPrintDB() : MatchPoints(NULL) {
 }
@@ -250,134 +173,52 @@ void FingerPrint::sort() {
    "3B-47" or "8|A" or ">10"). Return true iff there's a match. The syntax uses
      < (less than)
      > (greater than)
-     + (non-zero)
      | (or)
      - (range)
-     & (and)
    No parentheses are allowed. */
 static bool expr_match(const char *val, const char *expr) {
-  int andexp, orexp, expchar, numtrue;
-  int testfailed;
-  char exprcpy[512];
-  char *p, *q, *q1;  /* OHHHH YEEEAAAAAHHHH!#!@#$!% */
+  const char *p, *q, *q1;  /* OHHHH YEEEAAAAAHHHH!#!@#$!% */
   char *endptr;
   unsigned int val_num, expr_num, expr_num1;
+  bool is_numeric;
 
-  numtrue = andexp = orexp = 0; testfailed = 0;
-  Strncpy(exprcpy, expr, sizeof(exprcpy));
-  p = exprcpy;
+  p = expr;
 
-  if (strchr(expr, '|')) {
-    orexp = 1; expchar = '|';
-  } else {
-    andexp = 1; expchar = '&';
-  }
-
+  val_num = strtol(val, &endptr, 16);
+  is_numeric = !*endptr;
+  // TODO: this could be a lot faster if we compiled fingerprints to a bytecode
+  // instead of re-parsing every time.
   do {
-    q = strchr(p, expchar);
-    if (q)
-      *q = '\0';
-    if (strcmp(p, "+") == 0) {
-      if (!*val) {
-        if (andexp) {
-          testfailed = 1;
-          break;
+    q = strchr(p, '|');
+    if (is_numeric && (*p == '<' || *p == '>')) {
+      expr_num = strtol(p + 1, &endptr, 16);
+      if (endptr == q || !*endptr) {
+        if ((*p == '<' && val_num < expr_num)
+            || (*p == '>' && val_num > expr_num)) {
+          return true;
         }
-      } else {
-        val_num = strtol(val, &endptr, 16);
-        if (val_num == 0 || *endptr) {
-          if (andexp) {
-            testfailed = 1;
-            break;
+      }
+    } else if (is_numeric && ((q1 = strchr(p, '-')) != NULL)) {
+      expr_num = strtol(p, &endptr, 16);
+      if (endptr == q1) {
+        expr_num1 = strtol(q1 + 1, &endptr, 16);
+        if (endptr == q || !*endptr) {
+          assert(expr_num1 > expr_num);
+          if (val_num >= expr_num && val_num <= expr_num1) {
+            return true;
           }
-        } else {
-          numtrue++;
-          if (orexp)
-            break;
         }
-      }
-    } else if (*p == '<' && isxdigit((int) (unsigned char) p[1])) {
-      if (!*val) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      }
-      expr_num = strtol(p + 1, &endptr, 16);
-      val_num = strtol(val, &endptr, 16);
-      if (val_num >= expr_num || *endptr) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      } else {
-        numtrue++;
-        if (orexp)
-          break;
-      }
-    } else if (*p == '>' && isxdigit((int) (unsigned char) p[1])) {
-      if (!*val) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      }
-      expr_num = strtol(p + 1, &endptr, 16);
-      val_num = strtol(val, &endptr, 16);
-      if (val_num <= expr_num || *endptr) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      } else {
-        numtrue++;
-        if (orexp)
-          break;
-      }
-    } else if (((q1 = strchr(p, '-')) != NULL) && isxdigit((int) (unsigned char) p[0]) && isxdigit((int) (unsigned char) q1[1])) {
-      if (!*val) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      }
-      *q1 = '\0';
-      expr_num = strtol(p, NULL, 16);
-      expr_num1 = strtol(q1 + 1, NULL, 16);
-      if (expr_num1 < expr_num && o.debugging) {
-        error("Range error in reference expr: %s", expr);
-      }
-      val_num = strtol(val, &endptr, 16);
-      if (val_num < expr_num || val_num > expr_num1 || *endptr) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      } else {
-        numtrue++;
-        if (orexp)
-          break;
       }
     } else {
-      if (strcmp(p, val)) {
-        if (andexp) {
-          testfailed = 1;
-          break;
-        }
-      } else {
-        numtrue++;
-        if (orexp)
-          break;
+      if ((q && !strncmp(p, val, q - p)) || (!q && !strcmp(p, val))) {
+        return true;
       }
     }
     if (q)
       p = q + 1;
   } while (q);
 
-  if (numtrue == 0)
-    testfailed = 1;
-
-  return !testfailed;
+  return false;
 }
 
 /* Returns true if perfect match -- if num_subtests &
@@ -674,12 +515,15 @@ void WriteSInfo(char *ostr, int ostrlen, bool isGoodFP,
                                 enum dist_calc_method distance_calculation_method,
                                 const u8 *mac, int openTcpPort,
                                 int closedTcpPort, int closedUdpPort) {
-  struct tm *ltime;
+  struct tm ltime;
+  int err;
   time_t timep;
   char dsbuf[10], otbuf[8], ctbuf[8], cubuf[8], dcbuf[8];
   char macbuf[16];
   timep = time(NULL);
-  ltime = localtime(&timep);
+  err = n_localtime(&timep, &ltime);
+  if (err)
+    error("Error in localtime: %s", strerror(err));
 
   otbuf[0] = '\0';
   if (openTcpPort != -1)
@@ -704,7 +548,7 @@ void WriteSInfo(char *ostr, int ostrlen, bool isGoodFP,
     Snprintf(macbuf, sizeof(macbuf), "%%M=%02X%02X%02X", mac[0], mac[1], mac[2]);
 
   Snprintf(ostr, ostrlen, "SCAN(V=%s%%E=%s%%D=%d/%d%%OT=%s%%CT=%s%%CU=%s%%PV=%c%s%s%%G=%c%s%%TM=%X%%P=%s)",
-                   NMAP_VERSION, engine_id, ltime->tm_mon + 1, ltime->tm_mday,
+                   NMAP_VERSION, engine_id, err ? 0 : ltime.tm_mon + 1, err ? 0 : ltime.tm_mday,
                    otbuf, ctbuf, cubuf, isipprivate(addr) ? 'Y' : 'N', dsbuf, dcbuf, isGoodFP ? 'Y' : 'N',
                    macbuf, (int) timep, NMAP_PLATFORM);
 }
@@ -1289,7 +1133,7 @@ FingerPrintDB *parse_fingerprint_reference_file(const char *dbname) {
   char filename[256];
 
   if (nmap_fetchfile(filename, sizeof(filename), dbname) != 1) {
-    fatal("OS scan requested but I cannot find %s file.  It should be in %s, ~/.nmap/ or .", dbname, NMAPDATADIR);
+    fatal("OS scan requested but I cannot find %s file.", dbname);
   }
   /* Record where this data file was found. */
   o.loaded_data_files[dbname] = filename;

@@ -52,7 +52,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: gh_heap.c 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifdef HAVE_CONFIG_H
 #include "nsock_config.h"
@@ -70,7 +70,6 @@
 
 
 static gh_hnode_t **hnode_ptr(gh_heap_t *heap, unsigned int index) {
-  assert(index >= 0);
   assert(index <= heap->count);
   return &(heap->slots[index]);
 }

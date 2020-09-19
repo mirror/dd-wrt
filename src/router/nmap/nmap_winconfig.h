@@ -130,7 +130,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: nmap_winconfig.h 37666 2019-06-21 17:32:03Z dmiller $ */
+/* $Id$ */
 
 #ifndef NMAP_WINCONFIG_H
 #define NMAP_WINCONFIG_H
@@ -138,7 +138,6 @@
    like strcpy() even if they are done safely */
 #define _CRT_SECURE_NO_DEPRECATE 1
 #define NMAP_PLATFORM "i686-pc-windows-windows"
-#define NMAPDATADIR "c:\\nmap" /* FIXME: I really need to make this dynamic */
 
 #define HAVE_OPENSSL 1
 #define HAVE_SSL_SET_TLSEXT_HOST_NAME 1

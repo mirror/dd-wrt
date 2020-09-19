@@ -129,7 +129,7 @@
  *                                                                         *
  ***************************************************************************/
 
-/* $Id: scan_engine.cc 37640 2019-05-28 21:36:04Z dmiller $ */
+/* $Id$ */
 
 #ifdef WIN32
 #include "nmap_winconfig.h"
@@ -148,6 +148,7 @@
 #include "targets.h"
 #include "utils.h"
 #include "nmap_error.h"
+#include "output.h"
 
 #include "struct_ip.h"
 
@@ -165,8 +166,10 @@ extern NmapOps o;
 extern "C" int g_has_npcap_loopback;
 #endif
 
+/* How long extra to wait before retransmitting for rate-limit detection */
+#define RLD_TIME_MS 1000
 
-const int HssPredicate::operator() (const HostScanStats *lhs, const HostScanStats *rhs) const {
+int HssPredicate::operator() (const HostScanStats *lhs, const HostScanStats *rhs) const {
   const struct sockaddr_storage *lss, *rss;
   lss = (lhs) ? lhs->target->TargetSockAddr() : ss;
   rss = (rhs) ? rhs->target->TargetSockAddr() : ss;
@@ -915,6 +918,7 @@ void UltraScanInfo::Init(std::vector<Target *> &Targets, struct scan_lists *pts,
   tcp_scan = udp_scan = sctp_scan = prot_scan = false;
   ping_scan = noresp_open_scan = ping_scan_arp = ping_scan_nd = false;
   memset((char *) &ptech, 0, sizeof(ptech));
+  perf.init();
   switch (scantype) {
   case FIN_SCAN:
   case XMAS_SCAN:
@@ -962,18 +966,20 @@ void UltraScanInfo::Init(std::vector<Target *> &Targets, struct scan_lists *pts,
   case PING_SCAN_ARP:
     ping_scan = true;
     ping_scan_arp = true;
+    /* For ARP and ND scan, we send pings more frequently. Otherwise we can't
+     * notice drops until we start sending retransmits after RLD_TIME_MS. */
+    perf.pingtime = RLD_TIME_MS * 1000 / 4;
     break;
   case PING_SCAN_ND:
     ping_scan = true;
     ping_scan_nd = true;
+    perf.pingtime = RLD_TIME_MS * 1000 / 4;
     break;
   default:
     break;
   }
 
   set_default_port_state(Targets, scantype);
-
-  perf.init();
 
   /* Keep a completed host around for a standard TCP MSL (2 min) */
   completedHostLifetime = 120000;
@@ -1275,7 +1281,12 @@ int UltraScanInfo::removeCompletedHosts() {
       }
       if (timedout)
         gstats->num_hosts_timedout++;
-      hss->target->stopTimeOutClock(&now);
+      /* We may have received an ARP response before we sent a probe, which
+       * would mean the timeout clock is not running. Avoid an assertion
+       * failure here by checking first.  */
+      if (hss->target->timeOutClockRunning()) {
+        hss->target->stopTimeOutClock(&now);
+      }
     }
   }
   return hostsRemoved;
@@ -2026,11 +2037,18 @@ static const char *readhoststate(int state) {
    Returns true if the state was changed. */
 static bool ultrascan_host_pspec_update(UltraScanInfo *USI, HostScanStats *hss,
                                         const probespec *pspec, int newstate) {
-  unsigned int oldstate = hss->target->flags;
+  int oldstate = hss->target->flags;
   /* If the host is already up, ignore any further updates. */
   if (hss->target->flags != HOST_UP) {
     assert(newstate == HOST_UP || newstate == HOST_DOWN);
     hss->target->flags = newstate;
+    /* For port scans (not -sn) where output may be delayed until more scan
+     * phases are done, emit a hosthint element during host discovery when a
+     * target is found to be up. */
+    if (oldstate != newstate && newstate == HOST_UP &&
+        !o.noportscan && USI->ping_scan) {
+      write_xml_hosthint(hss->target);
+    }
   }
   return hss->target->flags != oldstate;
 }
@@ -2463,10 +2481,10 @@ static void doAnyOutstandingRetransmits(UltraScanInfo *USI) {
           /* For rate limit detection, we delay the first time a new tryno
              is seen, as long as we are scanning at least 2 ports */
           if (probe->tryno + 1 > (int) host->rld.max_tryno_sent &&
-              USI->gstats->numprobes > 1) {
+              (USI->gstats->numprobes > 1 || USI->ping_scan_arp || USI->ping_scan_nd)) {
             host->rld.max_tryno_sent = probe->tryno + 1;
             host->rld.rld_waiting = true;
-            TIMEVAL_MSEC_ADD(host->rld.rld_waittime, USI->now, 1000);
+            TIMEVAL_MSEC_ADD(host->rld.rld_waittime, USI->now, RLD_TIME_MS);
           } else {
             host->rld.rld_waiting = false;
             retransmitProbe(USI, host, probe);

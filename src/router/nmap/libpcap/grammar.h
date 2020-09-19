@@ -161,9 +161,10 @@ extern int pcap_debug;
     HOPC = 371,
     HDPC = 372,
     HSLS = 373,
-    OR = 374,
-    AND = 375,
-    UMINUS = 376
+    LEX_ERROR = 374,
+    OR = 375,
+    AND = 376,
+    UMINUS = 377
   };
 #endif
 /* Tokens.  */
@@ -283,20 +284,20 @@ extern int pcap_debug;
 #define HOPC 371
 #define HDPC 372
 #define HSLS 373
-#define OR 374
-#define AND 375
-#define UMINUS 376
+#define LEX_ERROR 374
+#define OR 375
+#define AND 376
+#define UMINUS 377
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 
 union YYSTYPE
 {
-#line 286 "grammar.y" /* yacc.c:1909  */
+#line 291 "grammar.y" /* yacc.c:1909  */
 
 	int i;
 	bpf_u_int32 h;
-	u_char *e;
 	char *s;
 	struct stmt *stmt;
 	struct arth *a;
@@ -308,7 +309,7 @@ union YYSTYPE
 	} blk;
 	struct block *rblk;
 
-#line 312 "grammar.h" /* yacc.c:1909  */
+#line 313 "grammar.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

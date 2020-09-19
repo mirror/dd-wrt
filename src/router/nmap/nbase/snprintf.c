@@ -37,7 +37,7 @@
  * SUCH DAMAGE.
  */
 
-/* $Id: snprintf.c 37584 2019-02-19 00:24:51Z nnposter $ */
+/* $Id$ */
 
 #if HAVE_CONFIG_H
 #include "nbase_config.h"
@@ -639,7 +639,7 @@ vsnprintf (char *str, size_t sz, const char *format, va_list args)
   ret = xyzprintf (&state, format, args);
   *state.s = '\0';
   if (ret)
-    return sz;
+    return -1;
   else
     return state.s - state.str;
 }
