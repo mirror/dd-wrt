@@ -44,13 +44,15 @@
 #include "core/or/versions.h"
 #include "feature/dirauth/dirvote.h"
 #include "feature/dirauth/shared_random_state.h"
-#include "feature/dircommon/voting_schedule.h"
+#include "feature/dirauth/voting_schedule.h"
 #include "feature/hs/hs_circuit.h"
 #include "feature/hs/hs_circuitmap.h"
 #include "feature/hs/hs_client.h"
 #include "feature/hs/hs_common.h"
 #include "feature/hs/hs_config.h"
 #include "feature/hs/hs_ident.h"
+#include "feature/hs/hs_ob.h"
+#include "feature/hs/hs_cell.h"
 #include "feature/hs/hs_intropoint.h"
 #include "feature/hs/hs_service.h"
 #include "feature/nodelist/networkstatus.h"
@@ -87,6 +89,13 @@ mock_networkstatus_get_live_consensus(time_t now)
   return &mock_ns;
 }
 
+static networkstatus_t *
+mock_networkstatus_get_live_consensus_null(time_t now)
+{
+  (void) now;
+  return NULL;
+}
+
 static or_state_t *dummy_state = NULL;
 
 /* Mock function to get fake or state (used for rev counters) */
@@ -109,6 +118,9 @@ mock_circuit_mark_for_close(circuit_t *circ, int reason, int line,
   return;
 }
 
+static size_t relay_payload_len;
+static char relay_payload[RELAY_PAYLOAD_SIZE];
+
 static int
 mock_relay_send_command_from_edge(streamid_t stream_id, circuit_t *circ,
                                   uint8_t relay_command, const char *payload,
@@ -124,6 +136,24 @@ mock_relay_send_command_from_edge(streamid_t stream_id, circuit_t *circ,
   (void) cpath_layer;
   (void) filename;
   (void) lineno;
+
+  memcpy(relay_payload, payload, payload_len);
+  relay_payload_len = payload_len;
+
+  return 0;
+}
+
+static unsigned int num_intro_points = 0;
+static unsigned int
+mock_count_desc_circuit_established(const hs_service_descriptor_t *desc)
+{
+  (void) desc;
+  return num_intro_points;
+}
+
+static int
+mock_router_have_minimum_dir_info_false(void)
+{
   return 0;
 }
 
@@ -1160,7 +1190,7 @@ test_closing_intro_circs(void *arg)
 
 /** Test sending and receiving introduce2 cells */
 static void
-test_introduce2(void *arg)
+test_bad_introduce2(void *arg)
 {
   int ret;
   int flags = CIRCLAUNCH_NEED_UPTIME | CIRCLAUNCH_IS_INTERNAL;
@@ -1356,7 +1386,7 @@ test_rotate_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 14:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
 
   update_approx_time(mock_ns.valid_after+1);
   now = mock_ns.valid_after+1;
@@ -1397,7 +1427,7 @@ test_rotate_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 27 Oct 1985 02:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
 
   update_approx_time(mock_ns.valid_after+1);
   now = mock_ns.valid_after+1;
@@ -1465,7 +1495,7 @@ test_build_update_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 04:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
 
   update_approx_time(mock_ns.valid_after+1);
 
@@ -1696,7 +1726,7 @@ test_build_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 04:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
 
   /* Generate a valid number of fake auth clients when a client authorization
    * is disabled. */
@@ -1797,7 +1827,7 @@ test_upload_descriptors(void *arg)
   ret = parse_rfc1123_time("Sat, 26 Oct 1985 14:00:00 UTC",
                            &mock_ns.fresh_until);
   tt_int_op(ret, OP_EQ, 0);
-  voting_schedule_recalculate_timing(get_options(), mock_ns.valid_after);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
 
   update_approx_time(mock_ns.valid_after+1);
   now = mock_ns.valid_after+1;
@@ -2169,6 +2199,490 @@ test_export_client_circuit_id(void *arg)
   tor_free(cp2);
 }
 
+static smartlist_t *
+mock_node_get_link_specifier_smartlist(const node_t *node, bool direct_conn)
+{
+  (void) node;
+  (void) direct_conn;
+
+  smartlist_t *lspecs = smartlist_new();
+  link_specifier_t *ls_legacy = link_specifier_new();
+  smartlist_add(lspecs, ls_legacy);
+
+  return lspecs;
+}
+
+static node_t *fake_node = NULL;
+
+static const node_t *
+mock_build_state_get_exit_node(cpath_build_state_t *state)
+{
+  (void) state;
+
+  if (!fake_node) {
+    curve25519_secret_key_t seckey;
+    curve25519_secret_key_generate(&seckey, 0);
+
+    fake_node = tor_malloc_zero(sizeof(node_t));
+    fake_node->ri = tor_malloc_zero(sizeof(routerinfo_t));
+    fake_node->ri->onion_curve25519_pkey =
+      tor_malloc_zero(sizeof(curve25519_public_key_t));
+    curve25519_public_key_generate(fake_node->ri->onion_curve25519_pkey,
+                                   &seckey);
+  }
+
+  return fake_node;
+}
+
+static void
+mock_launch_rendezvous_point_circuit(const hs_service_t *service,
+                                     const hs_service_intro_point_t *ip,
+                                     const hs_cell_introduce2_data_t *data)
+{
+  (void) service;
+  (void) ip;
+  (void) data;
+  return;
+}
+
+/**
+ *  Test that INTRO2 cells are handled well by onion services in the normal
+ *  case and also when onionbalance is enabled.
+ */
+static void
+test_intro2_handling(void *arg)
+{
+  (void)arg;
+
+  MOCK(build_state_get_exit_node, mock_build_state_get_exit_node);
+  MOCK(relay_send_command_from_edge_, mock_relay_send_command_from_edge);
+  MOCK(node_get_link_specifier_smartlist,
+       mock_node_get_link_specifier_smartlist);
+  MOCK(launch_rendezvous_point_circuit, mock_launch_rendezvous_point_circuit);
+
+  memset(relay_payload, 0, sizeof(relay_payload));
+
+  int retval;
+  time_t now = 0101010101;
+  update_approx_time(now);
+
+  /** OK this is the play:
+   *
+   *  In Act I, we have a standalone onion service X (without onionbalance
+   *  enabled). We test that X can properly handle INTRO2 cells sent by a
+   *  client Alice.
+   *
+   *  In Act II, we create an onionbalance setup with frontend being Z which
+   *  includes instances X and Y. We then setup onionbalance on X and test that
+   *  Alice who addresses Z can communicate with X through INTRO2 cells.
+   *
+   *  In Act III, we test that Alice can also communicate with X
+   *  directly even tho onionbalance is enabled.
+   *
+   *  And finally in Act IV, we check various cases where the INTRO2 cell
+   *  should not go through because the subcredentials don't line up
+   *  (e.g. Alice sends INTRO2 to X using Y's subcredential).
+   */
+
+  /** Let's start with some setup! Create the instances and the frontend
+      service, create Alice, etc:  */
+
+  /* Create instance X */
+  hs_service_t x_service;
+  memset(&x_service, 0, sizeof(hs_service_t));
+  /* Disable onionbalance */
+  x_service.config.ob_master_pubkeys = NULL;
+  x_service.state.replay_cache_rend_cookie = replaycache_new(0,0);
+
+  /* Create subcredential for x: */
+  ed25519_keypair_t x_identity_keypair;
+  hs_subcredential_t x_subcred;
+  ed25519_keypair_generate(&x_identity_keypair, 0);
+  hs_helper_get_subcred_from_identity_keypair(&x_identity_keypair,
+                                              &x_subcred);
+
+  /* Create the x instance's intro point */
+  hs_service_intro_point_t *x_ip = NULL;
+  {
+    curve25519_secret_key_t seckey;
+    curve25519_public_key_t pkey;
+    curve25519_secret_key_generate(&seckey, 0);
+    curve25519_public_key_generate(&pkey, &seckey);
+
+    node_t intro_node;
+    memset(&intro_node, 0, sizeof(intro_node));
+    routerinfo_t ri;
+    memset(&ri, 0, sizeof(routerinfo_t));
+    ri.onion_curve25519_pkey = &pkey;
+    intro_node.ri = &ri;
+
+    x_ip = service_intro_point_new(&intro_node);
+  }
+
+  /* Create z frontend's subcredential */
+  ed25519_keypair_t z_identity_keypair;
+  hs_subcredential_t z_subcred;
+  ed25519_keypair_generate(&z_identity_keypair, 0);
+  hs_helper_get_subcred_from_identity_keypair(&z_identity_keypair,
+                                              &z_subcred);
+
+  /* Create y instance's subcredential */
+  ed25519_keypair_t y_identity_keypair;
+  hs_subcredential_t y_subcred;
+  ed25519_keypair_generate(&y_identity_keypair, 0);
+  hs_helper_get_subcred_from_identity_keypair(&y_identity_keypair,
+                                              &y_subcred);
+
+  /* Create Alice's intro point */
+  hs_desc_intro_point_t *alice_ip;
+  ed25519_keypair_t signing_kp;
+  ed25519_keypair_generate(&signing_kp, 0);
+  alice_ip = hs_helper_build_intro_point(&signing_kp, now, "1.2.3.4", 0,
+                                         &x_ip->auth_key_kp,
+                                         &x_ip->enc_key_kp);
+
+  /* Create Alice's intro and rend circuits */
+  origin_circuit_t *intro_circ = origin_circuit_new();
+  intro_circ->cpath = tor_malloc_zero(sizeof(crypt_path_t));
+  intro_circ->cpath->prev = intro_circ->cpath;
+  intro_circ->hs_ident = tor_malloc_zero(sizeof(*intro_circ->hs_ident));
+  origin_circuit_t rend_circ;
+  rend_circ.hs_ident = tor_malloc_zero(sizeof(*rend_circ.hs_ident));
+  curve25519_keypair_generate(&rend_circ.hs_ident->rendezvous_client_kp, 0);
+  memset(rend_circ.hs_ident->rendezvous_cookie, 'r', HS_REND_COOKIE_LEN);
+
+  /* ************************************************************ */
+
+  /* Act I:
+   *
+   * Where Alice connects to X without onionbalance in the picture */
+
+  /* Create INTRODUCE1 */
+  tt_assert(fast_mem_is_zero(relay_payload, sizeof(relay_payload)));
+  retval = hs_circ_send_introduce1(intro_circ, &rend_circ,
+                                   alice_ip, &x_subcred);
+
+  /* Check that the payload was written successfully */
+  tt_int_op(retval, OP_EQ, 0);
+  tt_assert(!fast_mem_is_zero(relay_payload, sizeof(relay_payload)));
+  tt_int_op(relay_payload_len, OP_NE, 0);
+
+  /* Handle the cell */
+  retval = hs_circ_handle_introduce2(&x_service,
+                                    intro_circ, x_ip,
+                                    &x_subcred,
+                                    (uint8_t*)relay_payload,relay_payload_len);
+  tt_int_op(retval, OP_EQ, 0);
+
+  /* ************************************************************ */
+
+  /* Act II:
+   *
+   * We now create an onionbalance setup with Z being the frontend and X and Y
+   * being the backend instances. Make sure that Alice can talk with the
+   * backend instance X even tho she thinks she is talking to the frontend Z.
+   */
+
+  /* Now configure the X instance to do onionbalance with Z as the frontend */
+  x_service.config.ob_master_pubkeys = smartlist_new();
+  smartlist_add(x_service.config.ob_master_pubkeys,
+                &z_identity_keypair.pubkey);
+
+  /* Create descriptors for x and load next descriptor with the x's
+   * subcredential so that it can accept connections for itself. */
+  x_service.desc_current = service_descriptor_new();
+  memset(x_service.desc_current->desc->subcredential.subcred, 'C',SUBCRED_LEN);
+  x_service.desc_next = service_descriptor_new();
+  memcpy(&x_service.desc_next->desc->subcredential, &x_subcred, SUBCRED_LEN);
+
+  /* Refresh OB keys */
+  hs_ob_refresh_keys(&x_service);
+
+  /* Create INTRODUCE1 from Alice to X through Z */
+  memset(relay_payload, 0, sizeof(relay_payload));
+  retval = hs_circ_send_introduce1(intro_circ, &rend_circ,
+                                   alice_ip, &z_subcred);
+
+  /* Check that the payload was written successfully */
+  tt_int_op(retval, OP_EQ, 0);
+  tt_assert(!fast_mem_is_zero(relay_payload, sizeof(relay_payload)));
+  tt_int_op(relay_payload_len, OP_NE, 0);
+
+  /* Deliver INTRODUCE1 to X even tho it carries Z's subcredential */
+  replaycache_free(x_service.state.replay_cache_rend_cookie);
+  x_service.state.replay_cache_rend_cookie = replaycache_new(0, 0);
+
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &z_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, 0);
+
+  replaycache_free(x_ip->replay_cache);
+  x_ip->replay_cache = replaycache_new(0, 0);
+
+  replaycache_free(x_service.state.replay_cache_rend_cookie);
+  x_service.state.replay_cache_rend_cookie = replaycache_new(0, 0);
+
+  /* ************************************************************ */
+
+  /* Act III:
+   *
+   * Now send a direct INTRODUCE cell from Alice to X using X's subcredential
+   * and check that it succeeds even with onionbalance enabled.
+   */
+
+  /* Refresh OB keys (just to check for memleaks) */
+  hs_ob_refresh_keys(&x_service);
+
+  /* Create INTRODUCE1 from Alice to X using X's subcred. */
+  memset(relay_payload, 0, sizeof(relay_payload));
+  retval = hs_circ_send_introduce1(intro_circ, &rend_circ,
+                                   alice_ip, &x_subcred);
+
+  /* Check that the payload was written successfully */
+  tt_int_op(retval, OP_EQ, 0);
+  tt_assert(!fast_mem_is_zero(relay_payload, sizeof(relay_payload)));
+  tt_int_op(relay_payload_len, OP_NE, 0);
+
+  /* Send INTRODUCE1 to X with X's subcredential (should succeed) */
+  replaycache_free(x_service.state.replay_cache_rend_cookie);
+  x_service.state.replay_cache_rend_cookie = replaycache_new(0, 0);
+
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &x_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, 0);
+
+  /* ************************************************************ */
+
+  /* Act IV:
+   *
+   * Test cases where the INTRO2 cell should not be able to decode.
+   */
+
+  /* Try sending the exact same INTRODUCE2 cell again and see that the intro
+   * point replay cache triggers: */
+  setup_full_capture_of_logs(LOG_WARN);
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &x_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, -1);
+  expect_log_msg_containing("with the same ENCRYPTED section");
+  teardown_capture_of_logs();
+
+  /* Now cleanup the intro point replay cache but not the service replay cache
+     and see that this one triggers this time. */
+  replaycache_free(x_ip->replay_cache);
+  x_ip->replay_cache = replaycache_new(0, 0);
+  setup_full_capture_of_logs(LOG_INFO);
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &x_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, -1);
+  expect_log_msg_containing("with same REND_COOKIE");
+  teardown_capture_of_logs();
+
+  /* Now just to make sure cleanup both replay caches and make sure that the
+     cell gets through */
+  replaycache_free(x_ip->replay_cache);
+  x_ip->replay_cache = replaycache_new(0, 0);
+  replaycache_free(x_service.state.replay_cache_rend_cookie);
+  x_service.state.replay_cache_rend_cookie = replaycache_new(0, 0);
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &x_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, 0);
+
+  /* As a final thing, create an INTRODUCE1 cell from Alice to X using Y's
+   * subcred (should fail since Y is just another instance and not the frontend
+   * service!) */
+  memset(relay_payload, 0, sizeof(relay_payload));
+  retval = hs_circ_send_introduce1(intro_circ, &rend_circ,
+                                   alice_ip, &y_subcred);
+  tt_int_op(retval, OP_EQ, 0);
+
+  /* Check that the payload was written successfully */
+  tt_assert(!fast_mem_is_zero(relay_payload, sizeof(relay_payload)));
+  tt_int_op(relay_payload_len, OP_NE, 0);
+
+  retval = hs_circ_handle_introduce2(&x_service,
+                                   intro_circ, x_ip,
+                                   &y_subcred,
+                                   (uint8_t*)relay_payload, relay_payload_len);
+  tt_int_op(retval, OP_EQ, -1);
+
+ done:
+  /* Start cleaning up X */
+  replaycache_free(x_service.state.replay_cache_rend_cookie);
+  smartlist_free(x_service.config.ob_master_pubkeys);
+  tor_free(x_service.state.ob_subcreds);
+  service_descriptor_free(x_service.desc_current);
+  service_descriptor_free(x_service.desc_next);
+  service_intro_point_free(x_ip);
+
+  /* Clean up Alice */
+  hs_desc_intro_point_free(alice_ip);
+  tor_free(rend_circ.hs_ident);
+
+  if (fake_node) {
+    tor_free(fake_node->ri->onion_curve25519_pkey);
+    tor_free(fake_node->ri);
+    tor_free(fake_node);
+  }
+
+  UNMOCK(build_state_get_exit_node);
+  UNMOCK(relay_send_command_from_edge_);
+  UNMOCK(node_get_link_specifier_smartlist);
+  UNMOCK(launch_rendezvous_point_circuit);
+}
+
+static void
+test_cannot_upload_descriptors(void *arg)
+{
+  int ret;
+  time_t now;
+  hs_service_t *service;
+
+  (void) arg;
+
+  hs_init();
+  MOCK(get_or_state,
+       get_or_state_replacement);
+  MOCK(networkstatus_get_live_consensus,
+       mock_networkstatus_get_live_consensus);
+
+  dummy_state = or_state_new();
+
+  ret = parse_rfc1123_time("Sat, 26 Oct 1985 13:00:00 UTC",
+                           &mock_ns.valid_after);
+  tt_int_op(ret, OP_EQ, 0);
+  ret = parse_rfc1123_time("Sat, 26 Oct 1985 14:00:00 UTC",
+                           &mock_ns.fresh_until);
+  tt_int_op(ret, OP_EQ, 0);
+  dirauth_sched_recalculate_timing(get_options(), mock_ns.valid_after);
+
+  update_approx_time(mock_ns.valid_after + 1);
+  now = mock_ns.valid_after + 1;
+
+  /* Create a service with no descriptor. It's added to the global map. */
+  service = hs_service_new(get_options());
+  tt_assert(service);
+  service->config.version = HS_VERSION_THREE;
+  ed25519_secret_key_generate(&service->keys.identity_sk, 0);
+  ed25519_public_key_generate(&service->keys.identity_pk,
+                              &service->keys.identity_sk);
+  /* Register service to global map. */
+  ret = register_service(get_hs_service_map(), service);
+  tt_int_op(ret, OP_EQ, 0);
+  /* But first, build our descriptor. */
+  build_all_descriptors(now);
+
+  /* 1. Testing missing intro points reason. */
+  {
+    digest256map_t *cur = service->desc_current->intro_points.map;
+    digest256map_t *tmp = digest256map_new();
+    service->desc_current->intro_points.map = tmp;
+    service->desc_current->missing_intro_points = 1;
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    digest256map_free(tmp, tor_free_);
+    service->desc_current->intro_points.map = cur;
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "Missing intro points");
+    teardown_capture_of_logs();
+    /* Reset. */
+    service->desc_current->missing_intro_points = 0;
+  }
+
+  /* 2. Testing non established intro points. */
+  {
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "Intro circuits aren't yet all established (0/3).");
+    teardown_capture_of_logs();
+  }
+
+  /* We need to pass the established circuit tests and thus from now on, we
+   * MOCK this to return 3 intro points. */
+  MOCK(count_desc_circuit_established, mock_count_desc_circuit_established);
+  num_intro_points = 3;
+
+  /* 3. Testing non established intro points. */
+  {
+    service->desc_current->next_upload_time = now + 1000;
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "Next upload time is");
+    teardown_capture_of_logs();
+    /* Reset. */
+    service->desc_current->next_upload_time = 0;
+  }
+
+  /* 4. Testing missing live consensus. */
+  {
+    MOCK(networkstatus_get_live_consensus,
+         mock_networkstatus_get_live_consensus_null);
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "No live consensus");
+    teardown_capture_of_logs();
+    /* Reset. */
+    MOCK(networkstatus_get_live_consensus,
+         mock_networkstatus_get_live_consensus);
+  }
+
+  /* 5. Test missing minimum directory information. */
+  {
+    MOCK(router_have_minimum_dir_info,
+         mock_router_have_minimum_dir_info_false);
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "Not enough directory information");
+    teardown_capture_of_logs();
+
+    /* Running it again shouldn't trigger anything due to rate limitation. */
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_no_log_entry();
+    teardown_capture_of_logs();
+    UNMOCK(router_have_minimum_dir_info);
+  }
+
+  /* Increase time and redo test (5) in order to test the rate limiting. */
+  update_approx_time(mock_ns.valid_after + 61);
+  {
+    MOCK(router_have_minimum_dir_info,
+         mock_router_have_minimum_dir_info_false);
+    setup_full_capture_of_logs(LOG_INFO);
+    run_upload_descriptor_event(now);
+    expect_log_msg_containing(
+      "Service [scrubbed] can't upload its current descriptor: "
+      "Not enough directory information");
+    teardown_capture_of_logs();
+    UNMOCK(router_have_minimum_dir_info);
+  }
+
+ done:
+  hs_free_all();
+  UNMOCK(count_desc_circuit_established);
+  UNMOCK(networkstatus_get_live_consensus);
+  UNMOCK(get_or_state);
+}
+
 struct testcase_t hs_service_tests[] = {
   { "e2e_rend_circuit_setup", test_e2e_rend_circuit_setup, TT_FORK,
     NULL, NULL },
@@ -2194,7 +2708,7 @@ struct testcase_t hs_service_tests[] = {
     NULL, NULL },
   { "rdv_circuit_opened", test_rdv_circuit_opened, TT_FORK,
     NULL, NULL },
-  { "introduce2", test_introduce2, TT_FORK,
+  { "bad_introduce2", test_bad_introduce2, TT_FORK,
     NULL, NULL },
   { "service_event", test_service_event, TT_FORK,
     NULL, NULL },
@@ -2206,12 +2720,15 @@ struct testcase_t hs_service_tests[] = {
     NULL, NULL },
   { "upload_descriptors", test_upload_descriptors, TT_FORK,
     NULL, NULL },
+  { "cannot_upload_descriptors", test_cannot_upload_descriptors, TT_FORK,
+    NULL, NULL },
   { "rendezvous1_parsing", test_rendezvous1_parsing, TT_FORK,
     NULL, NULL },
   { "authorized_client_config_equal", test_authorized_client_config_equal,
     TT_FORK, NULL, NULL },
   { "export_client_circuit_id", test_export_client_circuit_id, TT_FORK,
     NULL, NULL },
+  { "intro2_handling", test_intro2_handling, TT_FORK, NULL, NULL },
 
   END_OF_TESTCASES
 };

@@ -97,6 +97,7 @@
 #include "core/or/circuitbuild.h"
 #include "feature/client/transports.h"
 #include "feature/relay/router.h"
+#include "feature/relay/relay_find_addr.h"
 /* 31851: split the server transport code out of the client module */
 #include "feature/relay/transport_config.h"
 #include "app/config/statefile.h"
@@ -1420,8 +1421,10 @@ create_managed_proxy_environment(const managed_proxy_t *mp)
         smartlist_add_asprintf(envs, "TOR_PT_EXTENDED_SERVER_PORT=%s",
                                ext_or_addrport_tmp);
       }
-      smartlist_add_asprintf(envs, "TOR_PT_AUTH_COOKIE_FILE=%s",
-                             cookie_file_loc);
+      if (cookie_file_loc) {
+        smartlist_add_asprintf(envs, "TOR_PT_AUTH_COOKIE_FILE=%s",
+                               cookie_file_loc);
+      }
 
       tor_free(ext_or_addrport_tmp);
       tor_free(cookie_file_loc);

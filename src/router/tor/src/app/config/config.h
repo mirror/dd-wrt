@@ -42,6 +42,8 @@ const char *escaped_safe_str(const char *address);
 void init_protocol_warning_severity_level(void);
 int get_protocol_warning_severity_level(void);
 
+#define LOG_PROTOCOL_WARN (get_protocol_warning_severity_level())
+
 /** An error from options_trial_assign() or options_init_from_string(). */
 typedef enum setopt_err_t {
   SETOPT_OK = 0,
@@ -53,12 +55,6 @@ typedef enum setopt_err_t {
 setopt_err_t options_trial_assign(struct config_line_t *list, unsigned flags,
                                   char **msg);
 
-uint32_t get_last_resolved_addr(void);
-void reset_last_resolved_addr(void);
-int resolve_my_address(int warn_severity, const or_options_t *options,
-                       uint32_t *addr_out,
-                       const char **method_out, char **hostname_out);
-MOCK_DECL(int, is_local_addr, (const tor_addr_t *addr));
 void options_init(or_options_t *options);
 
 #define OPTIONS_DUMP_MINIMAL 1
@@ -298,7 +294,7 @@ STATIC int parse_dir_authority_line(const char *line,
 STATIC int parse_dir_fallback_line(const char *line, int validate_only);
 
 STATIC uint64_t compute_real_max_mem_in_queues(const uint64_t val,
-                                               int log_guess);
+                                               bool is_server);
 STATIC int open_and_add_file_log(const log_severity_list_t *severity,
                                  const char *fname,
                                  int truncate_log);

@@ -294,6 +294,19 @@ process_signal(int sig)
   }
 }
 
+#ifdef _WIN32
+/** Activate SIGINT on reciving a control signal in console */
+static BOOL WINAPI
+process_win32_console_ctrl(DWORD ctrl_type)
+{
+  /* Ignore type of the ctrl signal */
+  (void) ctrl_type;
+
+  activate_signal(SIGINT);
+  return TRUE;
+}
+#endif
+
 /**
  * Write current memory usage information to the log.
  */
@@ -414,6 +427,7 @@ dumpstats(int severity)
 
   rep_hist_dump_stats(now,severity);
   rend_service_dump_stats(severity);
+  hs_service_dump_stats(severity);
 }
 
 #ifdef _WIN32
@@ -496,6 +510,13 @@ handle_signals(void)
                       &signal_handlers[i].signal_value);
     }
   }
+
+#ifdef _WIN32
+    /* Windows lacks traditional POSIX signals but WinAPI provides a function
+     * to handle control signals like Ctrl+C in the console, we can use this to
+     * simulate the SIGINT signal */
+    if (enabled) SetConsoleCtrlHandler(process_win32_console_ctrl, TRUE);
+#endif
 }
 
 /* Cause the signal handler for signal_num to be called in the event loop. */
@@ -801,6 +822,9 @@ sandbox_init_filter(void)
 #define OPEN(name)                              \
   sandbox_cfg_allow_open_filename(&cfg, tor_strdup(name))
 
+#define OPENDIR(dir)                            \
+  sandbox_cfg_allow_opendir_dirname(&cfg, tor_strdup(dir))
+
 #define OPEN_DATADIR(name)                      \
   sandbox_cfg_allow_open_filename(&cfg, get_datadir_fname(name))
 
@@ -817,8 +841,10 @@ sandbox_init_filter(void)
     OPEN_DATADIR2(name, name2 suffix);                  \
   } while (0)
 
+// KeyDirectory is a directory, but it is only opened in check_private_dir
+// which calls open instead of opendir
 #define OPEN_KEY_DIRECTORY() \
-  sandbox_cfg_allow_open_filename(&cfg, tor_strdup(options->KeyDirectory))
+  OPEN(options->KeyDirectory)
 #define OPEN_CACHEDIR(name)                      \
   sandbox_cfg_allow_open_filename(&cfg, get_cachedir_fname(name))
 #define OPEN_CACHEDIR_SUFFIX(name, suffix) do {  \
@@ -832,6 +858,8 @@ sandbox_init_filter(void)
     OPEN_KEYDIR(name suffix);                    \
   } while (0)
 
+  // DataDirectory is a directory, but it is only opened in check_private_dir
+  // which calls open instead of opendir
   OPEN(options->DataDirectory);
   OPEN_KEY_DIRECTORY();
 
@@ -879,7 +907,11 @@ sandbox_init_filter(void)
   }
 
   SMARTLIST_FOREACH(options->FilesOpenedByIncludes, char *, f, {
-    OPEN(f);
+    if (file_status(f) == FN_DIR) {
+      OPENDIR(f);
+    } else {
+      OPEN(f);
+    }
   });
 
 #define RENAME_SUFFIX(name, suffix)        \
@@ -992,7 +1024,7 @@ sandbox_init_filter(void)
      * directory that holds it. */
     char *dirname = tor_strdup(port->unix_addr);
     if (get_parent_directory(dirname) == 0) {
-      OPEN(dirname);
+      OPENDIR(dirname);
     }
     tor_free(dirname);
     sandbox_cfg_allow_chmod_filename(&cfg, tor_strdup(port->unix_addr));

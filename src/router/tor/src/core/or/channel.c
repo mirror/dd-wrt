@@ -1,4 +1,3 @@
-
 /* * Copyright (c) 2012-2020, The Tor Project, Inc. */
 /* See LICENSE for licensing information */
 
@@ -72,6 +71,7 @@
 #include "core/or/relay.h"
 #include "core/or/scheduler.h"
 #include "feature/client/entrynodes.h"
+#include "feature/nodelist/dirlist.h"
 #include "feature/nodelist/networkstatus.h"
 #include "feature/nodelist/nodelist.h"
 #include "feature/nodelist/routerlist.h"
@@ -83,6 +83,13 @@
 #include "lib/time/compat_time.h"
 
 #include "core/or/cell_queue_st.h"
+
+/* Static function prototypes */
+
+static bool channel_matches_target_addr_for_extend(
+                                          channel_t *chan,
+                                          const tor_addr_t *target_ipv4_addr,
+                                          const tor_addr_t *target_ipv6_addr);
 
 /* Global lists of channels */
 
@@ -119,10 +126,10 @@ channel_id_eq(const channel_t *a, const channel_t *b)
   return a->global_identifier == b->global_identifier;
 }
 HT_PROTOTYPE(channel_gid_map, channel_t, gidmap_node,
-             channel_id_hash, channel_id_eq)
+             channel_id_hash, channel_id_eq);
 HT_GENERATE2(channel_gid_map, channel_t, gidmap_node,
              channel_id_hash, channel_id_eq,
-             0.6, tor_reallocarray_, tor_free_)
+             0.6, tor_reallocarray_, tor_free_);
 
 HANDLE_IMPL(channel, channel_t,)
 
@@ -160,9 +167,9 @@ channel_idmap_eq(const channel_idmap_entry_t *a,
 }
 
 HT_PROTOTYPE(channel_idmap, channel_idmap_entry_t, node, channel_idmap_hash,
-             channel_idmap_eq)
+             channel_idmap_eq);
 HT_GENERATE2(channel_idmap, channel_idmap_entry_t, node, channel_idmap_hash,
-             channel_idmap_eq, 0.5,  tor_reallocarray_, tor_free_)
+             channel_idmap_eq, 0.5,  tor_reallocarray_, tor_free_);
 
 /* Functions to maintain the digest map */
 static void channel_remove_from_digest_map(channel_t *chan);
@@ -749,6 +756,7 @@ channel_check_for_duplicates(void)
 {
   channel_idmap_entry_t **iter;
   channel_t *chan;
+  int total_dirauth_connections = 0, total_dirauths = 0;
   int total_relay_connections = 0, total_relays = 0, total_canonical = 0;
   int total_half_canonical = 0;
   int total_gt_one_connection = 0, total_gt_two_connections = 0;
@@ -756,12 +764,17 @@ channel_check_for_duplicates(void)
 
   HT_FOREACH(iter, channel_idmap, &channel_identity_map) {
     int connections_to_relay = 0;
+    const char *id_digest = (char *) (*iter)->digest;
 
     /* Only consider relay connections */
-    if (!connection_or_digest_is_known_relay((char*)(*iter)->digest))
+    if (!connection_or_digest_is_known_relay(id_digest))
       continue;
 
     total_relays++;
+
+    const bool is_dirauth = router_digest_is_trusted_dir(id_digest);
+    if (is_dirauth)
+      total_dirauths++;
 
     for (chan = TOR_LIST_FIRST(&(*iter)->channel_list); chan;
         chan = channel_next_with_rsa_identity(chan)) {
@@ -771,11 +784,12 @@ channel_check_for_duplicates(void)
 
       connections_to_relay++;
       total_relay_connections++;
+      if (is_dirauth)
+        total_dirauth_connections++;
 
-      if (chan->is_canonical(chan, 0)) total_canonical++;
+      if (chan->is_canonical(chan)) total_canonical++;
 
-      if (!chan->is_canonical_to_peer && chan->is_canonical(chan, 0)
-          && chan->is_canonical(chan, 1)) {
+      if (!chan->is_canonical_to_peer && chan->is_canonical(chan)) {
         total_half_canonical++;
       }
     }
@@ -785,11 +799,28 @@ channel_check_for_duplicates(void)
     if (connections_to_relay > 4) total_gt_four_connections++;
   }
 
-#define MIN_RELAY_CONNECTIONS_TO_WARN 5
+  /* Don't bother warning about excessive connections unless we have
+   * at least this many connections, total.
+   */
+#define MIN_RELAY_CONNECTIONS_TO_WARN 25
+  /* If the average number of connections for a regular relay is more than
+   * this, that's too high.
+   */
+#define MAX_AVG_RELAY_CONNECTIONS 1.5
+  /* If the average number of connections for a dirauth is more than
+   * this, that's too high.
+   */
+#define MAX_AVG_DIRAUTH_CONNECTIONS 4
+
+  /* How many connections total would be okay, given the number of
+   * relays and dirauths that we have connections to? */
+  const int max_tolerable_connections = (int)(
+    (total_relays-total_dirauths) * MAX_AVG_RELAY_CONNECTIONS +
+    total_dirauths * MAX_AVG_DIRAUTH_CONNECTIONS);
 
   /* If we average 1.5 or more connections per relay, something is wrong */
   if (total_relays > MIN_RELAY_CONNECTIONS_TO_WARN &&
-          total_relay_connections >= 1.5*total_relays) {
+      total_relay_connections > max_tolerable_connections) {
     log_notice(LD_OR,
         "Your relay has a very large number of connections to other relays. "
         "Is your outbound address the same as your relay address? "
@@ -2335,7 +2366,7 @@ channel_is_better(channel_t *a, channel_t *b)
   if (!a->is_canonical_to_peer && b->is_canonical_to_peer) return 0;
 
   /*
-   * Okay, if we're here they tied on canonicity, the prefer the older
+   * Okay, if we're here they tied on canonicity. Prefer the older
    * connection, so that the adversary can't create a new connection
    * and try to switch us over to it (which will leak information
    * about long-lived circuits). Additionally, switching connections
@@ -2360,19 +2391,23 @@ channel_is_better(channel_t *a, channel_t *b)
 /**
  * Get a channel to extend a circuit.
  *
- * Pick a suitable channel to extend a circuit to given the desired digest
- * the address we believe is correct for that digest; this tries to see
- * if we already have one for the requested endpoint, but if there is no good
- * channel, set *msg_out to a message describing the channel's state
- * and our next action, and set *launch_out to a boolean indicated whether
- * the caller should try to launch a new channel with channel_connect().
+ * Given the desired relay identity, pick a suitable channel to extend a
+ * circuit to the target IPv4 or IPv6 address requsted by the client. Search
+ * for an existing channel for the requested endpoint. Make sure the channel
+ * is usable for new circuits, and matches one of the target addresses.
+ *
+ * Try to return the best channel. But if there is no good channel, set
+ * *msg_out to a message describing the channel's state and our next action,
+ * and set *launch_out to a boolean indicated whether the caller should try to
+ * launch a new channel with channel_connect().
  */
-channel_t *
-channel_get_for_extend(const char *rsa_id_digest,
-                       const ed25519_public_key_t *ed_id,
-                       const tor_addr_t *target_addr,
-                       const char **msg_out,
-                       int *launch_out)
+MOCK_IMPL(channel_t *,
+channel_get_for_extend,(const char *rsa_id_digest,
+                        const ed25519_public_key_t *ed_id,
+                        const tor_addr_t *target_ipv4_addr,
+                        const tor_addr_t *target_ipv6_addr,
+                        const char **msg_out,
+                        int *launch_out))
 {
   channel_t *chan, *best = NULL;
   int n_inprogress_goodaddr = 0, n_old = 0;
@@ -2383,9 +2418,7 @@ channel_get_for_extend(const char *rsa_id_digest,
 
   chan = channel_find_by_remote_identity(rsa_id_digest, ed_id);
 
-  /* Walk the list, unrefing the old one and refing the new at each
-   * iteration.
-   */
+  /* Walk the list of channels */
   for (; chan; chan = channel_next_with_rsa_identity(chan)) {
     tor_assert(tor_memeq(chan->identity_digest,
                          rsa_id_digest, DIGEST_LEN));
@@ -2404,11 +2437,15 @@ channel_get_for_extend(const char *rsa_id_digest,
       continue;
     }
 
+    const bool matches_target =
+      channel_matches_target_addr_for_extend(chan,
+                                             target_ipv4_addr,
+                                             target_ipv6_addr);
     /* Never return a non-open connection. */
     if (!CHANNEL_IS_OPEN(chan)) {
       /* If the address matches, don't launch a new connection for this
        * circuit. */
-      if (channel_matches_target_addr_for_extend(chan, target_addr))
+      if (matches_target)
         ++n_inprogress_goodaddr;
       continue;
     }
@@ -2419,22 +2456,9 @@ channel_get_for_extend(const char *rsa_id_digest,
       continue;
     }
 
-    /* Never return a non-canonical connection using a recent link protocol
-     * if the address is not what we wanted.
-     *
-     * The channel_is_canonical_is_reliable() function asks the lower layer
-     * if we should trust channel_is_canonical().  The below is from the
-     * comments of the old circuit_or_get_for_extend() and applies when
-     * the lower-layer transport is channel_tls_t.
-     *
-     * (For old link protocols, we can't rely on is_canonical getting
-     * set properly if we're talking to the right address, since we might
-     * have an out-of-date descriptor, and we will get no NETINFO cell to
-     * tell us about the right address.)
-     */
-    if (!channel_is_canonical(chan) &&
-         channel_is_canonical_is_reliable(chan) &&
-        !channel_matches_target_addr_for_extend(chan, target_addr)) {
+    /* Only return canonical connections or connections where the address
+     * is the address we wanted. */
+    if (!channel_is_canonical(chan) && !matches_target) {
       ++n_noncanonical;
       continue;
     }
@@ -2575,16 +2599,12 @@ channel_dump_statistics, (channel_t *chan, int severity))
 
   /* Handle marks */
   tor_log(severity, LD_GENERAL,
-      " * Channel %"PRIu64 " has these marks: %s %s %s "
-      "%s %s %s",
+      " * Channel %"PRIu64 " has these marks: %s %s %s %s %s",
       (chan->global_identifier),
       channel_is_bad_for_new_circs(chan) ?
         "bad_for_new_circs" : "!bad_for_new_circs",
       channel_is_canonical(chan) ?
         "canonical" : "!canonical",
-      channel_is_canonical_is_reliable(chan) ?
-        "is_canonical_is_reliable" :
-        "!is_canonical_is_reliable",
       channel_is_client(chan) ?
         "client" : "!client",
       channel_is_local(chan) ?
@@ -2820,8 +2840,8 @@ channel_get_actual_remote_address(channel_t *chan)
  * Subsequent calls to channel_get_{actual,canonical}_remote_{address,descr}
  * may invalidate the return value from this function.
  */
-const char *
-channel_get_canonical_remote_descr(channel_t *chan)
+MOCK_IMPL(const char *,
+channel_get_canonical_remote_descr,(channel_t *chan))
 {
   tor_assert(chan);
   tor_assert(chan->get_remote_descr);
@@ -2943,22 +2963,7 @@ channel_is_canonical(channel_t *chan)
   tor_assert(chan);
   tor_assert(chan->is_canonical);
 
-  return chan->is_canonical(chan, 0);
-}
-
-/**
- * Test if the canonical flag is reliable.
- *
- * This function asks if the lower layer thinks it's safe to trust the
- * result of channel_is_canonical().
- */
-int
-channel_is_canonical_is_reliable(channel_t *chan)
-{
-  tor_assert(chan);
-  tor_assert(chan->is_canonical);
-
-  return chan->is_canonical(chan, 1);
+  return chan->is_canonical(chan);
 }
 
 /**
@@ -3297,20 +3302,33 @@ channel_matches_extend_info(channel_t *chan, extend_info_t *extend_info)
 }
 
 /**
- * Check if a channel matches a given target address; return true iff we do.
+ * Check if a channel matches the given target IPv4 or IPv6 addresses.
+ * If either address matches, return true. If neither address matches,
+ * return false.
+ *
+ * Both addresses can't be NULL.
  *
  * This function calls into the lower layer and asks if this channel thinks
- * it matches a given target address for circuit extension purposes.
+ * it matches the target addresses for circuit extension purposes.
  */
-int
+static bool
 channel_matches_target_addr_for_extend(channel_t *chan,
-                                       const tor_addr_t *target)
+                                       const tor_addr_t *target_ipv4_addr,
+                                       const tor_addr_t *target_ipv6_addr)
 {
   tor_assert(chan);
   tor_assert(chan->matches_target);
-  tor_assert(target);
 
-  return chan->matches_target(chan, target);
+  IF_BUG_ONCE(!target_ipv4_addr && !target_ipv6_addr)
+    return false;
+
+  if (target_ipv4_addr && chan->matches_target(chan, target_ipv4_addr))
+    return true;
+
+  if (target_ipv6_addr && chan->matches_target(chan, target_ipv6_addr))
+    return true;
+
+  return false;
 }
 
 /**

@@ -4,7 +4,7 @@ dnl Copyright (c) 2007-2019, The Tor Project, Inc.
 dnl See LICENSE for licensing information
 
 AC_PREREQ([2.63])
-AC_INIT([tor],[0.4.3.6])
+AC_INIT([tor],[0.4.4.5])
 AC_CONFIG_SRCDIR([src/app/main/tor_main.c])
 AC_CONFIG_MACRO_DIR([m4])
 
@@ -16,7 +16,7 @@ configure_flags="$*"
 # version number changes.  Tor uses it to make sure that it
 # only shuts down for missing "required protocols" when those protocols
 # are listed as required by a consensus after this date.
-AC_DEFINE(APPROX_RELEASE_DATE, ["2020-07-09"], # for 0.4.3.6
+AC_DEFINE(APPROX_RELEASE_DATE, ["2020-09-14"], # for 0.4.4.5
           [Approximate date when this software was released. (Updated when the version changes.)])
 
 # "foreign" means we don't follow GNU package layout standards
@@ -226,6 +226,13 @@ AC_ARG_ENABLE(fragile-hardening,
 if test "x$enable_expensive_hardening" = "xyes" || test "x$enable_fragile_hardening" = "xyes"; then
   fragile_hardening="yes"
   AC_DEFINE(DEBUG_SMARTLIST, 1, [Enable smartlist debugging])
+fi
+
+AC_ARG_ENABLE(all-bugs-are-fatal,
+   AS_HELP_STRING(--enable-all-bugs-are-fatal, [force all soft asserts in Tor codebase (tor_assert_nonfatal(), BUG(), etc.) to act as hard asserts (tor_assert() and equivalents); makes Tor fragile; only recommended for dev builds]))
+
+if test "x$enable_all_bugs_are_fatal" = "xyes"; then
+  AC_DEFINE(ALL_BUGS_ARE_FATAL, 1, [All assert failures are fatal])
 fi
 
 dnl Linker hardening options

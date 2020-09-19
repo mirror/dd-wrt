@@ -44,6 +44,7 @@
 #include "feature/nodelist/nodelist.h"
 #include "feature/nodelist/routerinfo.h"
 #include "feature/nodelist/routerlist.h"
+#include "feature/relay/relay_find_addr.h"
 #include "feature/relay/router.h"
 #include "feature/relay/routermode.h"
 #include "feature/relay/selftest.h"
@@ -136,6 +137,7 @@ getinfo_helper_misc(control_connection_t *conn, const char *question,
       return -1;
     }
     *answer = tor_dup_ip(addr);
+    tor_assert_nonfatal(*answer);
   } else if (!strcmp(question, "traffic/read")) {
     tor_asprintf(answer, "%"PRIu64, (get_bytes_read()));
   } else if (!strcmp(question, "traffic/written")) {
@@ -1331,8 +1333,22 @@ getinfo_helper_events(control_connection_t *control_conn,
       }
       routerinfo_t *r;
       extrainfo_t *e;
-      if (router_build_fresh_descriptor(&r, &e) < 0) {
-        *errmsg = "Error generating descriptor";
+      int result;
+      if ((result = router_build_fresh_descriptor(&r, &e)) < 0) {
+        switch (result) {
+          case TOR_ROUTERINFO_ERROR_NO_EXT_ADDR:
+            *errmsg = "Cannot get relay address while generating descriptor";
+            break;
+          case TOR_ROUTERINFO_ERROR_DIGEST_FAILED:
+            *errmsg = "Key digest failed";
+            break;
+          case TOR_ROUTERINFO_ERROR_CANNOT_GENERATE:
+            *errmsg = "Cannot generate router descriptor";
+            break;
+          default:
+            *errmsg = "Error generating descriptor";
+            break;
+        }
         return -1;
       }
       size_t size = r->cache_info.signed_descriptor_len + 1;
