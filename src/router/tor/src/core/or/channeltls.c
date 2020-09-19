@@ -45,8 +45,10 @@
 #include "core/or/circuitmux_ewma.h"
 #include "core/or/command.h"
 #include "app/config/config.h"
+#include "app/config/resolve_addr.h"
 #include "core/mainloop/connection.h"
 #include "core/or/connection_or.h"
+#include "feature/relay/relay_handshake.h"
 #include "feature/control/control.h"
 #include "feature/client/entrynodes.h"
 #include "trunnel/link_handshake.h"
@@ -107,7 +109,7 @@ channel_tls_get_transport_name_method(channel_t *chan, char **transport_out);
 static const char *
 channel_tls_get_remote_descr_method(channel_t *chan, int flags);
 static int channel_tls_has_queued_writes_method(channel_t *chan);
-static int channel_tls_is_canonical_method(channel_t *chan, int req);
+static int channel_tls_is_canonical_method(channel_t *chan);
 static int
 channel_tls_matches_extend_info_method(channel_t *chan,
                                        extend_info_t *extend_info);
@@ -563,10 +565,7 @@ channel_tls_get_transport_name_method(channel_t *chan, char **transport_out)
 static const char *
 channel_tls_get_remote_descr_method(channel_t *chan, int flags)
 {
-  /* IPv6 address, colon, port */
-#define MAX_DESCR_LEN (TOR_ADDR_BUF_LEN + 1 + 5)
-
-  static char buf[MAX_DESCR_LEN + 1];
+  static char buf[TOR_ADDRPORT_BUF_LEN];
   channel_tls_t *tlschan = BASE_CHAN_TO_TLS(chan);
   connection_t *conn;
   const char *answer = NULL;
@@ -579,15 +578,14 @@ channel_tls_get_remote_descr_method(channel_t *chan, int flags)
     switch (flags) {
       case 0:
         /* Canonical address with port*/
-        tor_snprintf(buf, MAX_DESCR_LEN + 1,
+        tor_snprintf(buf, TOR_ADDRPORT_BUF_LEN,
                      "%s:%u", conn->address, conn->port);
         answer = buf;
         break;
       case GRD_FLAG_ORIGINAL:
         /* Actual address with port */
         addr_str = tor_addr_to_str_dup(&(tlschan->conn->real_addr));
-        tor_snprintf(buf, MAX_DESCR_LEN + 1,
-                     "%s:%u", addr_str, conn->port);
+        tor_snprintf(buf, TOR_ADDRPORT_BUF_LEN, "%s:%u", addr_str, conn->port);
         tor_free(addr_str);
         answer = buf;
         break;
@@ -645,12 +643,11 @@ channel_tls_has_queued_writes_method(channel_t *chan)
 /**
  * Tell the upper layer if we're canonical.
  *
- * This implements the is_canonical method for channel_tls_t; if req is zero,
- * it returns whether this is a canonical channel, and if it is one it returns
- * whether that can be relied upon.
+ * This implements the is_canonical method for channel_tls_t:
+ * it returns whether this is a canonical channel.
  */
 static int
-channel_tls_is_canonical_method(channel_t *chan, int req)
+channel_tls_is_canonical_method(channel_t *chan)
 {
   int answer = 0;
   channel_tls_t *tlschan = BASE_CHAN_TO_TLS(chan);
@@ -658,24 +655,13 @@ channel_tls_is_canonical_method(channel_t *chan, int req)
   tor_assert(tlschan);
 
   if (tlschan->conn) {
-    switch (req) {
-      case 0:
-        answer = tlschan->conn->is_canonical;
-        break;
-      case 1:
-        /*
-         * Is the is_canonical bit reliable?  In protocols version 2 and up
-         * we get the canonical address from a NETINFO cell, but in older
-         * versions it might be based on an obsolete descriptor.
-         */
-        answer = (tlschan->conn->link_proto >= 2);
-        break;
-      default:
-        /* This shouldn't happen; channel.c is broken if it does */
-        tor_assert_nonfatal_unreached_once();
-    }
+    /* If this bit is set to 0, and link_proto is sufficiently old, then we
+     * can't actually _rely_ on this being a non-canonical channel.
+     * Nonetheless, we're going to believe that this is a non-canonical
+     * channel in this case, since nobody should be using these link protocols
+     * any more. */
+    answer = tlschan->conn->is_canonical;
   }
-  /* else return 0 for tlschan->conn == NULL */
 
   return answer;
 }
@@ -738,10 +724,13 @@ channel_tls_matches_target_method(channel_t *chan,
    * base_.addr is updated by connection_or_init_conn_from_address()
    * to be the address in the descriptor. It may be tempting to
    * allow either address to be allowed, but if we did so, it would
-   * enable someone who steals a relay's keys to impersonate/MITM it
+   * enable someone who steals a relay's keys to covertly impersonate/MITM it
    * from anywhere on the Internet! (Because they could make long-lived
    * TLS connections from anywhere to all relays, and wait for them to
    * be used for extends).
+   *
+   * An adversary who has stolen a relay's keys could also post a fake relay
+   * descriptor, but that attack is easier to detect.
    */
   return tor_addr_eq(&(tlschan->conn->real_addr), target);
 }
@@ -1665,7 +1654,7 @@ tor_addr_from_netinfo_addr(tor_addr_t *tor_addr,
   } else if (type == NETINFO_ADDR_TYPE_IPV6 && len == 16) {
     const uint8_t *ipv6_bytes = netinfo_addr_getconstarray_addr_ipv6(
                                   netinfo_addr);
-    tor_addr_from_ipv6_bytes(tor_addr, (const char *)ipv6_bytes);
+    tor_addr_from_ipv6_bytes(tor_addr, ipv6_bytes);
   } else {
     log_fn(LOG_PROTOCOL_WARN, LD_OR, "Cannot read address from NETINFO "
                                      "- wrong type/length.");

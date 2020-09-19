@@ -893,7 +893,7 @@ test_uniform_interval(void *arg)
  *
  *  NIST/SEMATECH e-Handbook of Statistical Methods, Section
  *  1.3.6.7.4 `Critical Values of the Chi-Square Distribution',
- *  <http://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm>,
+ *  <https://www.itl.nist.gov/div898/handbook/eda/section3/eda3674.htm>,
  *  retrieved 2018-10-28.
  */
 
@@ -1223,14 +1223,16 @@ test_stochastic_weibull_impl(double lambda, double k)
     .k = k,
   };
 
+// clang-format off
 /*
  * XXX Consider applying a Tiku-Singh test:
  *
  *    M.L. Tiku and M. Singh, `Testing the two-parameter
  *    Weibull distribution', Communications in Statistics --
  *    Theory and Methods A10(9), 1981, 907--918.
- *https://www.tandfonline.com/doi/pdf/10.1080/03610928108828082?needAccess=true
+https://www.tandfonline.com/doi/pdf/10.1080/03610928108828082?needAccess=true
  */
+// clang-format on
   return test_psi_dist_sample(&dist.base);
 }
 

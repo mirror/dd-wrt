@@ -248,10 +248,14 @@ typedef struct hs_service_config_t {
   /** Does this service export the circuit ID of its clients? */
   hs_circuit_id_protocol_t circuit_id_protocol;
 
-  /* DoS defenses. For the ESTABLISH_INTRO cell extension. */
+  /** DoS defenses. For the ESTABLISH_INTRO cell extension. */
   unsigned int has_dos_defense_enabled : 1;
   uint32_t intro_dos_rate_per_sec;
   uint32_t intro_dos_burst_per_sec;
+
+  /** If set, contains the Onion Balance master ed25519 public key (taken from
+   * an .onion addresses) that this tor instance serves as backend. */
+  smartlist_t *ob_master_pubkeys;
 } hs_service_config_t;
 
 /** Service state. */
@@ -275,6 +279,14 @@ typedef struct hs_service_state_t {
   /** When is the next time we should rotate our descriptors. This is has to be
    * done at the start time of the next SRV protocol run. */
   time_t next_rotation_time;
+
+  /* If this is an onionbalance instance, this is an array of subcredentials
+   * that should be used when decrypting an INTRO2 cell. If this is not an
+   * onionbalance instance, this is NULL.
+   * See [ONIONBALANCE] section in rend-spec-v3.txt for more details . */
+  hs_subcredential_t *ob_subcreds;
+  /* Number of OB subcredentials */
+  size_t n_ob_subcreds;
 } hs_service_state_t;
 
 /** Representation of a service running on this tor instance. */
@@ -300,9 +312,6 @@ typedef struct hs_service_t {
   hs_service_descriptor_t *desc_current;
   /** Next descriptor. */
   hs_service_descriptor_t *desc_next;
-
-  /* XXX: Credential (client auth.) #20700. */
-
 } hs_service_t;
 
 /** For the service global hash map, we define a specific type for it which
@@ -364,6 +373,8 @@ void hs_service_upload_desc_to_dir(const char *encoded_desc,
 hs_circuit_id_protocol_t
 hs_service_exports_circuit_id(const ed25519_public_key_t *pk);
 
+void hs_service_dump_stats(int severity);
+
 #ifdef HS_SERVICE_PRIVATE
 
 #ifdef TOR_UNIT_TESTS
@@ -375,6 +386,9 @@ STATIC hs_service_t *get_first_service(void);
 STATIC hs_service_intro_point_t *service_intro_point_find_by_ident(
                                          const hs_service_t *service,
                                          const hs_ident_circuit_t *ident);
+
+MOCK_DECL(STATIC unsigned int, count_desc_circuit_established,
+          (const hs_service_descriptor_t *desc));
 #endif /* defined(TOR_UNIT_TESTS) */
 
 /* Service accessors. */

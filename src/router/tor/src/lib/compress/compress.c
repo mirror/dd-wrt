@@ -694,7 +694,8 @@ subsys_compress_initialize(void)
 
 const subsys_fns_t sys_compress = {
   .name = "compress",
+  SUBSYS_DECLARE_LOCATION(),
   .supported = true,
-  .level = -70,
+  .level = -55,
   .initialize = subsys_compress_initialize,
 };

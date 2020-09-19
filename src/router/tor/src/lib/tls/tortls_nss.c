@@ -369,6 +369,8 @@ tls_log_errors(tor_tls_t *tls, int severity, int domain,
 
   (void)tls;
   PRErrorCode code = PORT_GetError();
+  if (tls)
+    tls->last_error = code;
 
   const char *addr = tls ? tls->address : NULL;
   const char *string = PORT_ErrorToString(code);
@@ -390,6 +392,17 @@ tls_log_errors(tor_tls_t *tls, int severity, int domain,
     log_fn(severity, domain, "TLS error %s%s%s: %s", name, string,
            with, addr);
   }
+}
+const char *
+tor_tls_get_last_error_msg(const tor_tls_t *tls)
+{
+  IF_BUG_ONCE(!tls) {
+    return NULL;
+  }
+  if (tls->last_error == 0) {
+    return NULL;
+  }
+  return PORT_ErrorToString((PRErrorCode)tls->last_error);
 }
 
 tor_tls_t *
@@ -415,6 +428,16 @@ tor_tls_new(tor_socket_t sock, int is_server)
   PRFileDesc *ssl = SSL_ImportFD(ctx->ctx, count);
   if (!ssl) {
     PR_Close(tcp);
+    return NULL;
+  }
+
+  /* even if though the socket is already nonblocking, we need to tell NSS
+   * about the fact, so that it knows what to do when it says EAGAIN. */
+  PRSocketOptionData data;
+  data.option = PR_SockOpt_Nonblocking;
+  data.value.non_blocking = 1;
+  if (PR_SetSocketOption(ssl, &data) != PR_SUCCESS) {
+    PR_Close(ssl);
     return NULL;
   }
 

@@ -46,7 +46,7 @@
 #include "feature/nodelist/networkstatus_voter_info_st.h"
 #include "feature/nodelist/node_st.h"
 
-DECLARE_TYPED_DIGESTMAP_FNS(dsmap_, digest_ds_map_t, download_status_t)
+DECLARE_TYPED_DIGESTMAP_FNS(dsmap, digest_ds_map_t, download_status_t)
 #define DSMAP_FOREACH(map, keyvar, valvar) \
   DIGESTMAP_FOREACH(dsmap_to_digestmap(map), keyvar, download_status_t *, \
                     valvar)
@@ -464,11 +464,13 @@ trusted_dirs_load_certs_from_string(const char *contents, int source,
           (ds->addr != cert->addr ||
            ds->dir_port != cert->dir_port)) {
         char *a = tor_dup_ip(cert->addr);
-        log_notice(LD_DIR, "Updating address for directory authority %s "
-                   "from %s:%d to %s:%d based on certificate.",
-                   ds->nickname, ds->address, (int)ds->dir_port,
-                   a, cert->dir_port);
-        tor_free(a);
+        if (a) {
+          log_notice(LD_DIR, "Updating address for directory authority %s "
+                     "from %s:%d to %s:%d based on certificate.",
+                     ds->nickname, ds->address, (int)ds->dir_port,
+                     a, cert->dir_port);
+          tor_free(a);
+        }
         ds->addr = cert->addr;
         ds->dir_port = cert->dir_port;
       }

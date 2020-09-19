@@ -2,6 +2,7 @@
 /* See LICENSE for licensing information */
 
 #define PROTOVER_PRIVATE
+#define DIRVOTE_PRIVATE
 
 #include "orconfig.h"
 #include "test/test.h"
@@ -11,6 +12,8 @@
 #include "core/or/or.h"
 #include "core/or/connection_or.h"
 #include "lib/tls/tortls.h"
+
+#include "feature/dirauth/dirvote.h"
 
 static void
 test_protover_parse(void *arg)
@@ -314,6 +317,7 @@ test_protover_all_supported(void *arg)
   tt_assert(protover_all_supported("Fribble=", &msg));
   tt_ptr_op(msg, OP_EQ, NULL);
 
+#ifndef ALL_BUGS_ARE_FATAL
   /* If we get a completely unparseable list, protover_all_supported should
    * hit a fatal assertion for BUG(entries == NULL). */
   tor_capture_bugs_(1);
@@ -325,9 +329,10 @@ test_protover_all_supported(void *arg)
   tor_capture_bugs_(1);
   tt_assert(protover_all_supported("Sleen=1-4294967295", &msg));
   tor_end_capture_bugs_();
+#endif /* !defined(ALL_BUGS_ARE_FATAL) */
 
   /* Protocol name too long */
-#ifndef HAVE_RUST // XXXXXX ?????
+#if !defined(HAVE_RUST) && !defined(ALL_BUGS_ARE_FATAL)
   tor_capture_bugs_(1);
   tt_assert(protover_all_supported(
                  "DoSaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
@@ -335,7 +340,7 @@ test_protover_all_supported(void *arg)
                  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                  "aaaaaaaaaaaa=1-65536", &msg));
   tor_end_capture_bugs_();
-#endif /* !defined(HAVE_RUST) */
+#endif /* !defined(HAVE_RUST) && !defined(ALL_BUGS_ARE_FATAL) */
 
  done:
   tor_end_capture_bugs_();
@@ -634,6 +639,43 @@ test_protover_vote_roundtrip(void *args)
   tor_free(result);
 }
 
+static void
+test_protover_vote_roundtrip_ours(void *args)
+{
+  (void) args;
+  const char *examples[] = {
+    protover_get_supported_protocols(),
+    DIRVOTE_RECOMMEND_RELAY_PROTO,
+    DIRVOTE_RECOMMEND_CLIENT_PROTO,
+    DIRVOTE_REQUIRE_RELAY_PROTO,
+    DIRVOTE_REQUIRE_CLIENT_PROTO,
+  };
+  unsigned u;
+  smartlist_t *votes = smartlist_new();
+  char *result = NULL;
+
+  for (u = 0; u < ARRAY_LENGTH(examples); ++u) {
+    tt_assert(examples[u]);
+    const char *input = examples[u];
+    const char *expected_output = examples[u];
+
+    smartlist_add(votes, (void*)input);
+    result = protover_compute_vote(votes, 1);
+    if (expected_output != NULL) {
+      tt_str_op(result, OP_EQ, expected_output);
+    } else {
+      tt_str_op(result, OP_EQ, "");
+    }
+
+    smartlist_clear(votes);
+    tor_free(result);
+  }
+
+ done:
+  smartlist_free(votes);
+  tor_free(result);
+}
+
 #define PV_TEST(name, flags)                       \
   { #name, test_protover_ ##name, (flags), NULL, NULL }
 
@@ -647,5 +689,6 @@ struct testcase_t protover_tests[] = {
   PV_TEST(supports_version, 0),
   PV_TEST(supported_protocols, 0),
   PV_TEST(vote_roundtrip, 0),
+  PV_TEST(vote_roundtrip_ours, 0),
   END_OF_TESTCASES
 };

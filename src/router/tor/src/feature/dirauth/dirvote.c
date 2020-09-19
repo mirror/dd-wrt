@@ -6,6 +6,7 @@
 #define DIRVOTE_PRIVATE
 #include "core/or/or.h"
 #include "app/config/config.h"
+#include "app/config/resolve_addr.h"
 #include "core/or/policies.h"
 #include "core/or/protover.h"
 #include "core/or/tor_version_st.h"
@@ -36,7 +37,7 @@
 #include "feature/stats/rephist.h"
 #include "feature/client/entrynodes.h" /* needed for guardfraction methods */
 #include "feature/nodelist/torcert.h"
-#include "feature/dircommon/voting_schedule.h"
+#include "feature/dirauth/voting_schedule.h"
 
 #include "feature/dirauth/dirvote.h"
 #include "feature/dirauth/authmode.h"
@@ -321,43 +322,47 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
       tor_free(digest_algo_b64_digest_bw_file);
     }
 
-    smartlist_add_asprintf(chunks,
-                 "network-status-version 3\n"
-                 "vote-status %s\n"
-                 "consensus-methods %s\n"
-                 "published %s\n"
-                 "valid-after %s\n"
-                 "fresh-until %s\n"
-                 "valid-until %s\n"
-                 "voting-delay %d %d\n"
-                 "%s%s" /* versions */
-                 "%s" /* protocols */
-                 "known-flags %s\n"
-                 "flag-thresholds %s\n"
-                 "params %s\n"
-                 "%s" /* bandwidth file headers */
-                 "%s" /* bandwidth file digest */
-                 "dir-source %s %s %s %s %d %d\n"
-                 "contact %s\n"
-                 "%s" /* shared randomness information */
-                 ,
-                 v3_ns->type == NS_TYPE_VOTE ? "vote" : "opinion",
-                 methods,
-                 published, va, fu, vu,
-                 v3_ns->vote_seconds, v3_ns->dist_seconds,
-                 client_versions_line,
-                 server_versions_line,
-                 protocols_lines,
-                 flags,
-                 flag_thresholds,
-                 params,
-                 bw_headers_line ? bw_headers_line : "",
-                 bw_file_digest ? bw_file_digest: "",
-                 voter->nickname, fingerprint, voter->address,
-                 fmt_addr32(addr), voter->dir_port, voter->or_port,
-                 voter->contact,
-                 shared_random_vote_str ?
-                           shared_random_vote_str : "");
+    const char *ip_str = fmt_addr32(addr);
+
+    if (ip_str[0]) {
+      smartlist_add_asprintf(chunks,
+                   "network-status-version 3\n"
+                   "vote-status %s\n"
+                   "consensus-methods %s\n"
+                   "published %s\n"
+                   "valid-after %s\n"
+                   "fresh-until %s\n"
+                   "valid-until %s\n"
+                   "voting-delay %d %d\n"
+                   "%s%s" /* versions */
+                   "%s" /* protocols */
+                   "known-flags %s\n"
+                   "flag-thresholds %s\n"
+                   "params %s\n"
+                   "%s" /* bandwidth file headers */
+                   "%s" /* bandwidth file digest */
+                   "dir-source %s %s %s %s %d %d\n"
+                   "contact %s\n"
+                   "%s" /* shared randomness information */
+                   ,
+                   v3_ns->type == NS_TYPE_VOTE ? "vote" : "opinion",
+                   methods,
+                   published, va, fu, vu,
+                   v3_ns->vote_seconds, v3_ns->dist_seconds,
+                   client_versions_line,
+                   server_versions_line,
+                   protocols_lines,
+                   flags,
+                   flag_thresholds,
+                   params,
+                   bw_headers_line ? bw_headers_line : "",
+                   bw_file_digest ? bw_file_digest: "",
+                   voter->nickname, fingerprint, voter->address,
+                   ip_str, voter->dir_port, voter->or_port,
+                   voter->contact,
+                   shared_random_vote_str ?
+                             shared_random_vote_str : "");
+    }
 
     tor_free(params);
     tor_free(flags);
@@ -366,6 +371,9 @@ format_networkstatus_vote(crypto_pk_t *private_signing_key,
     tor_free(shared_random_vote_str);
     tor_free(bw_headers_line);
     tor_free(bw_file_digest);
+
+    if (ip_str[0] == '\0')
+      goto err;
 
     if (!tor_digest_is_zero(voter->legacy_id_digest)) {
       char fpbuf[HEX_DIGEST_LEN+1];
@@ -886,7 +894,7 @@ dirvote_get_intermediate_param_value(const smartlist_t *param_list,
       int ok;
       value = (int32_t)
         tor_parse_long(integer_str, 10, INT32_MIN, INT32_MAX, &ok, NULL);
-      if (BUG(! ok))
+      if (BUG(!ok))
         return default_val;
       ++n_found;
     }
@@ -2853,7 +2861,7 @@ dirvote_act(const or_options_t *options, time_t now)
                "Mine is %s.",
                keys, hex_str(c->cache_info.identity_digest, DIGEST_LEN));
     tor_free(keys);
-    voting_schedule_recalculate_timing(options, now);
+    dirauth_sched_recalculate_timing(options, now);
   }
 
 #define IF_TIME_FOR_NEXT_ACTION(when_field, done_field) \
@@ -2899,7 +2907,7 @@ dirvote_act(const or_options_t *options, time_t now)
                 networkstatus_get_latest_consensus_by_flavor(FLAV_NS));
     /* XXXX We will want to try again later if we haven't got enough
      * signatures yet.  Implement this if it turns out to ever happen. */
-    voting_schedule_recalculate_timing(options, now);
+    dirauth_sched_recalculate_timing(options, now);
     return voting_schedule.voting_starts;
   } ENDIF
 
@@ -2966,7 +2974,7 @@ dirvote_perform_vote(void)
   if (!contents)
     return -1;
 
-  pending_vote = dirvote_add_vote(contents, &msg, &status);
+  pending_vote = dirvote_add_vote(contents, 0, &msg, &status);
   tor_free(contents);
   if (!pending_vote) {
     log_warn(LD_DIR, "Couldn't store my own vote! (I told myself, '%s'.)",
@@ -3122,13 +3130,45 @@ list_v3_auth_ids(void)
   return keys;
 }
 
+/* Check the voter information <b>vi</b>, and  assert that at least one
+ * signature is good. Asserts on failure. */
+static void
+assert_any_sig_good(const networkstatus_voter_info_t *vi)
+{
+  int any_sig_good = 0;
+  SMARTLIST_FOREACH(vi->sigs, document_signature_t *, sig,
+                    if (sig->good_signature)
+                      any_sig_good = 1);
+  tor_assert(any_sig_good);
+}
+
+/* Add <b>cert</b> to our list of known authority certificates. */
+static void
+add_new_cert_if_needed(const struct authority_cert_t *cert)
+{
+  tor_assert(cert);
+  if (!authority_cert_get_by_digests(cert->cache_info.identity_digest,
+                                     cert->signing_key_digest)) {
+    /* Hey, it's a new cert! */
+    trusted_dirs_load_certs_from_string(
+                               cert->cache_info.signed_descriptor_body,
+                               TRUSTED_DIRS_CERTS_SRC_FROM_VOTE, 1 /*flush*/,
+                               NULL);
+    if (!authority_cert_get_by_digests(cert->cache_info.identity_digest,
+                                       cert->signing_key_digest)) {
+      log_warn(LD_BUG, "We added a cert, but still couldn't find it.");
+    }
+  }
+}
+
 /** Called when we have received a networkstatus vote in <b>vote_body</b>.
  * Parse and validate it, and on success store it as a pending vote (which we
  * then return).  Return NULL on failure.  Sets *<b>msg_out</b> and
  * *<b>status_out</b> to an HTTP response and status code.  (V3 authority
  * only) */
 pending_vote_t *
-dirvote_add_vote(const char *vote_body, const char **msg_out, int *status_out)
+dirvote_add_vote(const char *vote_body, time_t time_posted,
+                 const char **msg_out, int *status_out)
 {
   networkstatus_t *vote;
   networkstatus_voter_info_t *vi;
@@ -3159,13 +3199,7 @@ dirvote_add_vote(const char *vote_body, const char **msg_out, int *status_out)
   }
   tor_assert(smartlist_len(vote->voters) == 1);
   vi = get_voter(vote);
-  {
-    int any_sig_good = 0;
-    SMARTLIST_FOREACH(vi->sigs, document_signature_t *, sig,
-                      if (sig->good_signature)
-                        any_sig_good = 1);
-    tor_assert(any_sig_good);
-  }
+  assert_any_sig_good(vi);
   ds = trusteddirserver_get_by_v3_auth_digest(vi->identity_digest);
   if (!ds) {
     char *keys = list_v3_auth_ids();
@@ -3178,19 +3212,7 @@ dirvote_add_vote(const char *vote_body, const char **msg_out, int *status_out)
     *msg_out = "Vote not from a recognized v3 authority";
     goto err;
   }
-  tor_assert(vote->cert);
-  if (!authority_cert_get_by_digests(vote->cert->cache_info.identity_digest,
-                                     vote->cert->signing_key_digest)) {
-    /* Hey, it's a new cert! */
-    trusted_dirs_load_certs_from_string(
-                               vote->cert->cache_info.signed_descriptor_body,
-                               TRUSTED_DIRS_CERTS_SRC_FROM_VOTE, 1 /*flush*/,
-                               NULL);
-    if (!authority_cert_get_by_digests(vote->cert->cache_info.identity_digest,
-                                       vote->cert->signing_key_digest)) {
-      log_warn(LD_BUG, "We added a cert, but still couldn't find it.");
-    }
-  }
+  add_new_cert_if_needed(vote->cert);
 
   /* Is it for the right period? */
   if (vote->valid_after != voting_schedule.interval_starts) {
@@ -3200,6 +3222,23 @@ dirvote_add_vote(const char *vote_body, const char **msg_out, int *status_out)
     log_warn(LD_DIR, "Rejecting vote from %s with valid-after time of %s; "
              "we were expecting %s", vi->address, tbuf1, tbuf2);
     *msg_out = "Bad valid-after time";
+    goto err;
+  }
+
+  /* Check if we received it, as a post, after the cutoff when we
+   * start asking other dir auths for it. If we do, the best plan
+   * is to discard it, because using it greatly increases the chances
+   * of a split vote for this round (some dir auths got it in time,
+   * some didn't). */
+  if (time_posted && time_posted > voting_schedule.fetch_missing_votes) {
+    char tbuf1[ISO_TIME_LEN+1], tbuf2[ISO_TIME_LEN+1];
+    format_iso_time(tbuf1, time_posted);
+    format_iso_time(tbuf2, voting_schedule.fetch_missing_votes);
+    log_warn(LD_DIR, "Rejecting posted vote from %s received at %s; "
+             "our cutoff for received votes is %s. Check your clock, "
+             "CPU load, and network load. Also check the authority that "
+             "posted the vote.", vi->address, tbuf1, tbuf2);
+    *msg_out = "Posted vote received too late, would be dangerous to count it";
     goto err;
   }
 
@@ -4462,6 +4501,11 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     hostname = tor_dup_ip(addr);
   }
 
+  if (!hostname) {
+    log_err(LD_BUG, "Failed to determine hostname AND duplicate address");
+    return NULL;
+  }
+
   if (d_options->VersioningAuthoritativeDirectory) {
     client_versions =
       format_recommended_version_list(d_options->RecommendedClientVersions, 0);
@@ -4613,7 +4657,7 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
     else
       last_consensus_interval = options->TestingV3AuthInitialVotingInterval;
     v3_out->valid_after =
-      voting_schedule_get_start_of_next_interval(now,
+      voting_sched_get_start_of_interval_after(now,
                                    (int)last_consensus_interval,
                                    options->TestingV3AuthVotingStartOffset);
     format_iso_time(tbuf, v3_out->valid_after);
@@ -4635,17 +4679,14 @@ dirserv_generate_networkstatus_vote_obj(crypto_pk_t *private_key,
 
   /* These are hardwired, to avoid disaster. */
   v3_out->recommended_relay_protocols =
-    tor_strdup("Cons=1-2 Desc=1-2 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 "
-               "Link=4 Microdesc=1-2 Relay=2");
+    tor_strdup(DIRVOTE_RECOMMEND_RELAY_PROTO);
   v3_out->recommended_client_protocols =
-    tor_strdup("Cons=1-2 Desc=1-2 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 "
-               "Link=4 Microdesc=1-2 Relay=2");
-  v3_out->required_client_protocols =
-    tor_strdup("Cons=1-2 Desc=1-2 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 "
-               "Link=4 Microdesc=1-2 Relay=2");
+    tor_strdup(DIRVOTE_RECOMMEND_CLIENT_PROTO);
+
   v3_out->required_relay_protocols =
-    tor_strdup("Cons=1 Desc=1 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 "
-               "Link=3-4 Microdesc=1 Relay=1-2");
+    tor_strdup(DIRVOTE_REQUIRE_RELAY_PROTO);
+  v3_out->required_client_protocols =
+    tor_strdup(DIRVOTE_REQUIRE_CLIENT_PROTO);
 
   /* We are not allowed to vote to require anything we don't have. */
   tor_assert(protover_all_supported(v3_out->required_relay_protocols, NULL));

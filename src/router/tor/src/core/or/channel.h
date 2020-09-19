@@ -350,12 +350,10 @@ struct channel_t {
   /** Check if the lower layer has queued writes */
   int (*has_queued_writes)(channel_t *);
   /**
-   * If the second param is zero, ask the lower layer if this is
-   * 'canonical', for a transport-specific definition of canonical; if
-   * it is 1, ask if the answer to the preceding query is safe to rely
-   * on.
+   * Ask the lower layer if this is 'canonical', for a transport-specific
+   * definition of canonical.
    */
-  int (*is_canonical)(channel_t *, int);
+  int (*is_canonical)(channel_t *);
   /** Check if this channel matches a specified extend_info_t */
   int (*matches_extend_info)(channel_t *, extend_info_t *);
   /** Check if this channel matches a target address when extending */
@@ -658,11 +656,13 @@ channel_t * channel_connect(const tor_addr_t *addr, uint16_t port,
                             const char *rsa_id_digest,
                             const struct ed25519_public_key_t *ed_id);
 
-channel_t * channel_get_for_extend(const char *rsa_id_digest,
+MOCK_DECL(channel_t *, channel_get_for_extend,(
+                                   const char *rsa_id_digest,
                                    const struct ed25519_public_key_t *ed_id,
-                                   const tor_addr_t *target_addr,
+                                   const tor_addr_t *target_ipv4_addr,
+                                   const tor_addr_t *target_ipv6_addr,
                                    const char **msg_out,
-                                   int *launch_out);
+                                   int *launch_out));
 
 /* Ask which of two channels is better for circuit-extension purposes */
 int channel_is_better(channel_t *a, channel_t *b);
@@ -723,12 +723,11 @@ const char * channel_get_actual_remote_descr(channel_t *chan);
 const char * channel_get_actual_remote_address(channel_t *chan);
 MOCK_DECL(int, channel_get_addr_if_possible, (channel_t *chan,
                                               tor_addr_t *addr_out));
-const char * channel_get_canonical_remote_descr(channel_t *chan);
+MOCK_DECL(const char *, channel_get_canonical_remote_descr,(channel_t *chan));
 int channel_has_queued_writes(channel_t *chan);
 int channel_is_bad_for_new_circs(channel_t *chan);
 void channel_mark_bad_for_new_circs(channel_t *chan);
 int channel_is_canonical(channel_t *chan);
-int channel_is_canonical_is_reliable(channel_t *chan);
 int channel_is_client(const channel_t *chan);
 int channel_is_local(channel_t *chan);
 int channel_is_incoming(channel_t *chan);
@@ -736,8 +735,6 @@ int channel_is_outgoing(channel_t *chan);
 void channel_mark_client(channel_t *chan);
 void channel_clear_client(channel_t *chan);
 int channel_matches_extend_info(channel_t *chan, extend_info_t *extend_info);
-int channel_matches_target_addr_for_extend(channel_t *chan,
-                                           const tor_addr_t *target);
 unsigned int channel_num_circuits(channel_t *chan);
 MOCK_DECL(void,channel_set_circid_type,(channel_t *chan,
                                         crypto_pk_t *identity_rcvd,

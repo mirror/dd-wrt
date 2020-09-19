@@ -728,7 +728,7 @@ install: function(toclevels) {
 }
 
 }
-asciidoc.install();
+asciidoc.install(2);
 /*]]>*/
 </script>
 </head>
@@ -737,6 +737,10 @@ asciidoc.install();
 <h1>
 TOR(1) Manual Page
 </h1>
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
 <h2>NAME</h2>
 <div class="sectionbody">
 <p>tor -
@@ -993,7 +997,7 @@ configuration files.  See <strong><a href="#conf-format">THE CONFIGURATION FILE 
 <td class="content">When generating a master key, you may want to use
 <strong><code>--DataDirectory</code></strong> to control where the keys and certificates
 will be stored, and <strong><code>--SigningKeyLifetime</code></strong> to control their
-lifetimes.  See the server options section to learn more about the
+lifetimes.  See <a href="#server-options">SERVER OPTIONS</a> to learn more about the
 behavior of these options.  You must have write access to the
 specified DataDirectory.</td>
 </tr></table>
@@ -1031,6 +1035,17 @@ daemon on your system.</p></div>
     of the form: "signing-cert-expiry: 2017-07-25 08:30:15 UTC"
 </p>
 </dd>
+<dt class="hdlist1">
+<a id="opt-dbg"></a> <strong>--dbg-</strong>&#8230;
+</dt>
+<dd>
+<p>
+    Tor may support other options beginning with the string "dbg". These
+    are intended for use by developers to debug and test Tor. They are
+    not supported or guaranteed to be stable, and you should probably
+    not use them.
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
@@ -1050,7 +1065,9 @@ option with the value being a path. If the path is a file, the options from the
 file will be parsed as if they were written where the %include option is. If
 the path is a folder, all files on that folder will be parsed following lexical
 order. Files starting with a dot are ignored. Files on subfolders are ignored.
-The %include option can be used recursively.</p></div>
+The %include option can be used recursively.
+New configuration files or directories cannot be added to already running Tor
+instance if <strong>Sandbox</strong> is enabled.</p></div>
 <div class="paragraph"><p>By default, an option on the command line overrides an option found in the
 configuration file, and an option in a configuration file overrides one in
 the defaults file.</p></div>
@@ -1399,7 +1416,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
 <dd>
 <p>
     If set, this option overrides the default location and file name
-    for Tor&#8217;s cookie file. (See CookieAuthentication above.)
+    for Tor&#8217;s cookie file. (See <a href="#CookieAuthentication">CookieAuthentication</a>.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -1603,7 +1620,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     <br />
     By default, the directory authorities are also FallbackDirs. Specifying a
     FallbackDir replaces Tor&#8217;s default hard-coded FallbackDirs (if any).
-    (See the <strong>DirAuthority</strong> entry for an explanation of each flag.)
+    (See <a href="#DirAuthority">DirAuthority</a> for an explanation of each flag.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2066,6 +2083,10 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     and <strong>ORPort</strong> are not allowed). Currently, if <strong>Sandbox</strong> is 1,
     <strong>ControlPort</strong> command "GETINFO address" will not work.<br />
     <br />
+    When using %include in the tor configuration files, reloading the tor
+    configuration is not supported after adding new configuration files or
+    directories.<br />
+    <br />
     (Default: 0)
 </p>
 </dd>
@@ -2087,7 +2108,7 @@ forward slash (/) in the configuration file and on the command line.</p></div>
     <strong>KIST</strong>: Kernel-Informed Socket Transport. Tor will use TCP information
     from the kernel to make informed decisions regarding how much data to send
     and when to send it. KIST also handles traffic in batches (see
-    KISTSchedRunInterval) in order to improve traffic prioritization decisions.
+    <a href="#KISTSchedRunInterval">KISTSchedRunInterval</a>) in order to improve traffic prioritization decisions.
     As implemented, KIST will only work on Linux kernel version 2.6.39 or
     higher.<br />
     <br />
@@ -2357,18 +2378,6 @@ https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt +</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="ClientAutoIPv6ORPort"></a> <strong>ClientAutoIPv6ORPort</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If this option is set to 1, Tor clients randomly prefer a node&#8217;s IPv4 or
-    IPv6 ORPort. The random preference is set every time a node is loaded
-    from a new consensus or bridge config. When this option is set to 1,
-    <strong>ClientPreferIPv6ORPort</strong> is ignored. (Default: 0) (DEPRECATED: This
-    option is unreliable if a connection isn&#8217;t reliably dual-stack.)
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="ClientBootstrapConsensusAuthorityDownloadInitialDelay"></a> <strong>ClientBootstrapConsensusAuthorityDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
@@ -2558,7 +2567,7 @@ https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt +</code></pre>
     doesn&#8217;t handle arbitrary DNS request types. Set the port to "auto" to
     have Tor pick a port for
     you. This directive can be specified multiple times to bind to multiple
-    addresses/ports. See SocksPort for an explanation of isolation
+    addresses/ports. See <a href="#SocksPort">SocksPort</a> for an explanation of isolation
     flags. (Default: 0)
 </p>
 </dd>
@@ -2589,7 +2598,7 @@ https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt +</code></pre>
 <dd>
 <p>
     If 1, Tor will only create outgoing connections to ORs running on ports
-    that your firewall allows (defaults to 80 and 443; see <strong>FirewallPorts</strong>).
+    that your firewall allows (defaults to 80 and 443; see <a href="#FirewallPorts">FirewallPorts</a>).
     This will allow you to run Tor as a client behind a firewall with
     restrictive policies, but will not allow you to run as a server behind such
     a firewall. If you prefer more fine-grained control, use
@@ -2633,7 +2642,7 @@ https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt +</code></pre>
     specified multiple times to bind to multiple addresses/ports. If multiple
     entries of this option are present in your configuration file, Tor will
     perform stream isolation between listeners by default. See
-    SOCKSPort for an explanation of isolation flags. (Default: 0)
+    <a href="#SocksPort">SocksPort</a> for an explanation of isolation flags. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -2769,7 +2778,7 @@ MapAddress does not apply to redirects in the application protocol.
     specified multiple times to bind to multiple addresses/ports.  If multiple
     entries of this option are present in your configuration file, Tor will
     perform stream isolation between listeners by default. See
-    SocksPort for an explanation of isolation flags.<br />
+    <a href="#SocksPort">SocksPort</a> for an explanation of isolation flags.<br />
     <br />
     This option is only for people who cannot use TransPort. (Default: 0)
 </p>
@@ -2914,7 +2923,7 @@ MapAddress does not apply to redirects in the application protocol.
     <br />
     The separation between <strong>ReachableORAddresses</strong> and
     <strong>ReachableDirAddresses</strong> is only interesting when you are connecting
-    through proxies (see <strong>HTTPProxy</strong> and <strong>HTTPSProxy</strong>). Most proxies limit
+    through proxies (see <a href="#HTTPProxy">HTTPProxy</a> and <a href="#HTTPSProxy">HTTPSProxy</a>). Most proxies limit
     TLS connections (which Tor uses to connect to Onion Routers) to port 443,
     and some limit HTTP GET requests (which Tor uses for fetching directory
     information) to port 80.
@@ -2941,7 +2950,7 @@ MapAddress does not apply to redirects in the application protocol.
 <p>
     When this option is enabled, Tor will make a notice-level log entry for
     each connection to the Socks port indicating whether the request used a
-    safe socks protocol or an unsafe one (see above entry on SafeSocks). This
+    safe socks protocol or an unsafe one (see <a href="#SafeSocks">SafeSocks</a>). This
     helps to determine whether an application using Tor is possibly leaking
     DNS requests. (Default: 0)
 </p>
@@ -3103,18 +3112,17 @@ MapAddress does not apply to redirects in the application protocol.
 <dd>
 <p>
         Tell exits to not connect to IPv4 addresses in response to SOCKS
-        requests on this connection. (Allowing IPv4 is the default.)
+        requests on this connection.
 </p>
 </dd>
 <dt class="hdlist1">
-<strong>NoIPv6Traffic</strong>
+<strong>IPv6Traffic</strong>
 </dt>
 <dd>
 <p>
-        Tell exits to not connect to IPv6 addresses in response to SOCKS
-        requests on this connection. This option is only relevant when SOCKS5
-        is in use, because SOCKS4 can&#8217;t handle IPv6.  (Allowing IPv6 is the
-        default.)
+        Tell exits to allow IPv6 addresses in response to SOCKS requests on
+        this connection, so long as SOCKS5 is in use.  (SOCKS4 can&#8217;t handle
+        IPv6.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3237,7 +3245,7 @@ MapAddress does not apply to redirects in the application protocol.
         When serving a hostname lookup request on this port that
         should get automapped (according to AutomapHostsOnResolve),
         if we could return either an IPv4 or an IPv6 answer, prefer
-        an IPv4 answer. (Tor prefers IPv4 by default.)
+        an IPv4 answer. (Tor prefers IPv6 by default.)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3287,10 +3295,8 @@ signature validation failed. (v3 only)</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>Client failed to introduce to the service meaning the descriptor
-was found but the service is not connected anymore to the
-introduction point. The service has likely changed its descriptor
-or is not running. (v3 only)</code></pre>
+<pre><code>All introduction attempts failed either due to a combination of
+NACK by the intro point or time out. (v3 only)</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
@@ -3298,8 +3304,8 @@ or is not running. (v3 only)</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
-<pre><code>Client failed to rendezvous with the service which means that the
-client is unable to finalize the connection. (v3 only)</code></pre>
+<pre><code>Every rendezvous circuit has timed out and thus the client is
+unable to rendezvous with the service. (v3 only)</code></pre>
 </div></div>
 <div class="literalblock">
 <div class="content">
@@ -3331,6 +3337,15 @@ were revoked. (v3 only)</code></pre>
 <pre><code>The given .onion address is invalid. In one of these cases this
 error is returned: address checksum doesn't match, ed25519 public
 key is invalid or the encoding is invalid. (v3 only)</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>X'F7' Onion Service Introduction Timed Out</code></pre>
+</div></div>
+<div class="literalblock">
+<div class="content">
+<pre><code>Similar to X'F2' code but in this case, all introduction attempts
+have failed due to a time out. (v3 only)</code></pre>
 </div></div>
 </dd>
 </dl></div>
@@ -3400,7 +3415,7 @@ key is invalid or the encoding is invalid. (v3 only)</code></pre>
     specified multiple times to bind to multiple addresses/ports. If multiple
     entries of this option are present in your configuration file, Tor will
     perform stream isolation between listeners by default.  See
-    SOCKSPort for an explanation of isolation flags.<br />
+    <a href="#SocksPort">SocksPort</a> for an explanation of isolation flags.<br />
     <br />
     TransPort requires OS support for transparent proxies, such as BSDs' pf or
     Linux&#8217;s IPTables. If you&#8217;re planning to use Tor as a transparent proxy for
@@ -3735,7 +3750,7 @@ different from other Tor clients:</p></div>
     <br />
     The ExcludeNodes option overrides this option: any node listed in both
     EntryNodes and ExcludeNodes is treated as excluded. See
-    the <strong>ExcludeNodes</strong> option for more information on how to specify nodes.
+    <a href="#ExcludeNodes">ExcludeNodes</a> for more information on how to specify nodes.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3764,7 +3779,7 @@ different from other Tor clients:</p></div>
     <br />
     Country codes are case-insensitive. The code "{??}" refers to nodes whose
     country can&#8217;t be identified. No country code, including {??}, works if
-    no GeoIPFile can be loaded. See also the GeoIPExcludeUnknown option below.
+    no GeoIPFile can be loaded. See also the <a href="#GeoIPExcludeUnknown">GeoIPExcludeUnknown</a> option below.
 </p>
 </dd>
 </dl></div>
@@ -3779,8 +3794,8 @@ different from other Tor clients:</p></div>
     node that delivers traffic for you <strong>outside</strong> the Tor network.   Note that any
     node listed in ExcludeNodes is automatically considered to be part of this
     list too.  See
-    the <strong>ExcludeNodes</strong> option for more information on how to specify
-    nodes. See also the caveats on the "ExitNodes" option below.
+    <a href="#ExcludeNodes">ExcludeNodes</a> for more information on how to specify
+    nodes. See also the caveats on the <a href="#ExitNodes">ExitNodes</a> option below.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -3791,7 +3806,7 @@ different from other Tor clients:</p></div>
     A list of identity fingerprints, country codes, and address
     patterns of nodes to use as exit node---that is, a
     node that delivers traffic for you <strong>outside</strong> the Tor network.  See
-    the <strong>ExcludeNodes</strong> option for more information on how to specify nodes.<br />
+    <a href="#ExcludeNodes">ExcludeNodes</a> for more information on how to specify nodes.<br />
     <br />
     Note that if you list too few nodes here, or if you exclude too many exit
     nodes with ExcludeExitNodes, you can degrade functionality.  For example,
@@ -3803,7 +3818,7 @@ different from other Tor clients:</p></div>
     used to connect to hidden services, those that do directory fetches,
     those used for relay reachability self-tests, and so on) that end
     at a non-exit node.  To
-    keep a node from being used entirely, see ExcludeNodes and StrictNodes.<br />
+    keep a node from being used entirely, see <a href="#ExcludeNodes">ExcludeNodes</a> and <a href="#StrictNodes">StrictNodes</a>.<br />
     <br />
     The ExcludeNodes option overrides this option: any node listed in both
     ExitNodes and ExcludeNodes is treated as excluded.<br />
@@ -3973,7 +3988,7 @@ from this set.</code></pre>
 <div class="content">
 <pre><code>The ExcludeNodes option overrides this option: any node listed in both
 MiddleNodes and ExcludeNodes is treated as excluded. See
-the **ExcludeNodes** option for more information on how to specify nodes.</code></pre>
+the &lt;&lt;ExcludeNodes,ExcludeNodes&gt;&gt; for more information on how to specify nodes.</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
@@ -3987,7 +4002,7 @@ the **ExcludeNodes** option for more information on how to specify nodes.</code>
     when a server doesn&#8217;t list the family itself (with MyFamily). This option
     can be used multiple times; each instance defines a separate family.  In
     addition to nodes, you can also list IP address and ranges and country
-    codes in {curly braces}. See the <strong>ExcludeNodes</strong> option for more
+    codes in {curly braces}. See <a href="#ExcludeNodes">ExcludeNodes</a> for more
     information on how to specify nodes.
 </p>
 </dd>
@@ -4013,7 +4028,7 @@ the **ExcludeNodes** option for more information on how to specify nodes.</code>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_server_options">SERVER OPTIONS</h2>
+<h2 id="server-options">SERVER OPTIONS</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>The following options are useful only for servers (that is, if ORPort
 is non-zero):</p></div>
@@ -4024,7 +4039,7 @@ is non-zero):</p></div>
 <dd>
 <p>
     Limits the max number of bytes sent and received within a set time period
-    using a given calculation rule (see: AccountingStart, AccountingRule).
+    using a given calculation rule (see <a href="#AccountingStart">AccountingStart</a> and <a href="#AccountingRule">AccountingRule</a>).
     Useful if you need to stay under a specific bandwidth. By default, the
     number used for calculation is the max of either the bytes sent or
     received. For example, with AccountingMax set to 1 TByte, a server
@@ -4223,7 +4238,7 @@ is non-zero):</p></div>
     may also allow connections to your own computer that are addressed to its
     public (external) IP address. See RFC 1918 and RFC 3330 for more details
     about internal and reserved IP address space. See
-    ExitPolicyRejectLocalInterfaces if you want to block every address on the
+    <a href="#ExitPolicyRejectLocalInterfaces">ExitPolicyRejectLocalInterfaces</a> if you want to block every address on the
     relay, even those that aren&#8217;t advertised in the descriptor.<br />
     <br />
     This directive can be specified multiple times so you don&#8217;t have to put it
@@ -4281,7 +4296,7 @@ accept *:*</code></pre>
     bind addresses of any port options, such as ControlPort or DNSPort, and any
     public IPv4 and IPv6 addresses on any interface on the relay. (If IPv6Exit
     is not set, all IPv6 addresses will be rejected anyway.)
-    See above entry on ExitPolicy.
+    See above entry on <a href="#ExitPolicy">ExitPolicy</a>.
     This option is off by default, because it lists all public relay IP
     addresses in the ExitPolicy, even those relay operators might prefer not
     to disclose.
@@ -4295,7 +4310,7 @@ accept *:*</code></pre>
 <p>
     Reject all private (local) networks, along with the relay&#8217;s advertised
     public IPv4 and IPv6 addresses, at the beginning of your exit policy.
-    See above entry on ExitPolicy.
+    See above entry on <a href="#ExitPolicy">ExitPolicy</a>.
     (Default: 1)
 </p>
 </dd>
@@ -4444,14 +4459,11 @@ accept *:*</code></pre>
     list itself, but it won&#8217;t hurt if it does.) Do not list any bridge relay as it would
     compromise its concealment.<br />
     <br />
-    When listing a node, it&#8217;s better to list it by fingerprint than by
-    nickname: fingerprints are more reliable.<br />
-    <br />
     If you run more than one relay, the MyFamily option on each relay
     <strong>must</strong> list all other relays, as described above.<br />
     <br />
     Note: do not use MyFamily when configuring your Tor instance as a
-    brigde.
+    bridge.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -4933,7 +4945,7 @@ types of statistics that Tor relays collect and publish:</p></div>
 <h2 id="_directory_server_options">DIRECTORY SERVER OPTIONS</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>The following options are useful only for directory servers. (Relays with
-enough bandwidth automatically become directory servers; see DirCache for
+enough bandwidth automatically become directory servers; see <a href="#DirCache">DirCache</a> for
 details.)</p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
@@ -5023,9 +5035,11 @@ If a single client address makes too many concurrent connections (this is
 <p>
 If a single client IP address (v4 or v6) makes circuits too quickly
      (default values are more than 3 per second, with an allowed burst of 90,
-     see DoSCircuitCreationRate and DoSCircuitCreationBurst) while also having
+     see <a href="#DoSCircuitCreationRate">DoSCircuitCreationRate</a> and
+     <a href="#DoSCircuitCreationBurst">DoSCircuitCreationBurst</a>) while also having
      too many connections open (default is 3, see
-     DoSCircuitCreationMinConnections), tor will refuse any new circuit (CREATE
+     <a href="#DoSCircuitCreationMinConnections">DoSCircuitCreationMinConnections</a>),
+     tor will refuse any new circuit (CREATE
      cells) for the next while (random value between 1 and 2 hours).
     <br />
 </p>
@@ -5060,10 +5074,50 @@ Denial of Service mitigation subsystem described above.</p></div>
     Enable circuit creation DoS mitigation. If set to 1 (enabled), tor will
     cache client IPs along with statistics in order to detect circuit DoS
     attacks. If an address is positively identified, tor will activate
-    defenses against the address. See the DoSCircuitCreationDefenseType option
-    for more details.  This is a client to relay detection only. "auto" means
+    defenses against the address. See <a href="#DoSCircuitCreationDefenseType">DoSCircuitCreationDefenseType</a>
+     option for more details.  This is a client to relay detection only. "auto" means
     use the consensus parameter. If not defined in the consensus, the value is 0.
     (Default: auto)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationBurst"></a> <strong>DoSCircuitCreationBurst</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed circuit creation burst per client IP address. If the circuit
+    rate and the burst are reached, a client is marked as executing a circuit
+    creation DoS. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 90.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationDefenseTimePeriod"></a> <strong>DoSCircuitCreationDefenseTimePeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    The base time period in seconds that the DoS defense is activated for. The
+    actual value is selected randomly for each activation from N+1 to 3/2 * N.
+    "0" means use the consensus parameter. If not defined in the consensus,
+    the value is 3600 seconds (1 hour).
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSCircuitCreationDefenseType"></a> <strong>DoSCircuitCreationDefenseType</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    This is the type of defense applied to a detected client address. The
+    possible values are:
+    <br />
+      1: No defense.
+    <br />
+      2: Refuse circuit creation for the DoSCircuitCreationDefenseTimePeriod period of time.
+    <br />
+    "0" means use the consensus parameter. If not defined in the consensus, the value is 2.
+    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5090,46 +5144,8 @@ Denial of Service mitigation subsystem described above.</p></div>
     (Default: 0)
 </p>
 </dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationBurst"></a> <strong>DoSCircuitCreationBurst</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The allowed circuit creation burst per client IP address. If the circuit
-    rate and the burst are reached, a client is marked as executing a circuit
-    creation DoS. "0" means use the consensus parameter. If not defined in the
-    consensus, the value is 90.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationDefenseType"></a> <strong>DoSCircuitCreationDefenseType</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    This is the type of defense applied to a detected client address. The
-    possible values are:
-    <br />
-      1: No defense.
-    <br />
-      2: Refuse circuit creation for the DoSCircuitCreationDefenseTimePeriod period of time.
-    <br />
-    "0" means use the consensus parameter. If not defined in the consensus, the value is 2.
-    (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSCircuitCreationDefenseTimePeriod"></a> <strong>DoSCircuitCreationDefenseTimePeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    The base time period in seconds that the DoS defense is activated for. The
-    actual value is selected randomly for each activation from N+1 to 3/2 * N.
-    "0" means use the consensus parameter. If not defined in the consensus,
-    the value is 3600 seconds (1 hour).
-    (Default: 0)
-</p>
-</dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="DoSConnectionEnabled"></a> <strong>DoSConnectionEnabled</strong> <strong>0</strong>|<strong>1</strong>|<strong>auto</strong>
 </dt>
@@ -5140,18 +5156,6 @@ Denial of Service mitigation subsystem described above.</p></div>
     concurrent connections made by a single IP address. "auto" means use the
     consensus parameter. If not defined in the consensus, the value is 0.
     (Default: auto)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DoSConnectionMaxConcurrentCount"></a> <strong>DoSConnectionMaxConcurrentCount</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The maximum threshold of concurrent connection from a client IP address.
-    Above this limit, a defense selected by DoSConnectionDefenseType is
-    applied. "0" means use the consensus parameter. If not defined in the
-    consensus, the value is 100.
-    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5167,6 +5171,18 @@ Denial of Service mitigation subsystem described above.</p></div>
       2: Immediately close new connections.
     <br />
     "0" means use the consensus parameter. If not defined in the consensus, the value is 2.
+    (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DoSConnectionMaxConcurrentCount"></a> <strong>DoSConnectionMaxConcurrentCount</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The maximum threshold of concurrent connection from a client IP address.
+    Above this limit, a defense selected by DoSConnectionDefenseType is
+    applied. "0" means use the consensus parameter. If not defined in the
+    consensus, the value is 100.
     (Default: 0)
 </p>
 </dd>
@@ -5205,53 +5221,8 @@ on the public Tor network.</p></div>
     to set this option.
 </p>
 </dd>
-<dt class="hdlist1">
-<a id="V3AuthoritativeDirectory"></a> <strong>V3AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    When this option is set in addition to <strong>AuthoritativeDirectory</strong>, Tor
-    generates version 3 network statuses and serves descriptors, etc as
-    described in dir-spec.txt file of <a href="https://spec.torproject.org/">torspec</a>
-    (for Tor clients and servers running at least 0.2.0.x).
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="VersioningAuthoritativeDirectory"></a> <strong>VersioningAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    When this option is set to 1, Tor adds information on which versions of
-    Tor are still believed safe for use to the published directory. Each
-    version 1 authority is automatically a versioning authority; version 2
-    authorities provide this service optionally. See <strong>RecommendedVersions</strong>,
-    <strong>RecommendedClientVersions</strong>, and <strong>RecommendedServerVersions</strong>.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="RecommendedVersions"></a> <strong>RecommendedVersions</strong> <em>STRING</em>
-</dt>
-<dd>
-<p>
-    STRING is a comma-separated list of Tor versions currently believed to be
-    safe. The list is included in each directory, and nodes which pull down the
-    directory learn whether they need to upgrade. This option can appear
-    multiple times: the values from multiple lines are spliced together. When
-    this is set then <strong>VersioningAuthoritativeDirectory</strong> should be set too.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="RecommendedClientVersions"></a> <strong>RecommendedClientVersions</strong> <em>STRING</em>
-</dt>
-<dd>
-<p>
-    STRING is a comma-separated list of Tor versions currently believed to be
-    safe for clients to use. This information is included in version 2
-    directories. If this is not set then the value of <strong>RecommendedVersions</strong>
-    is used. When this is set then <strong>VersioningAuthoritativeDirectory</strong> should
-    be set too.
-</p>
-</dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="BridgeAuthoritativeDir"></a> <strong>BridgeAuthoritativeDir</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
@@ -5262,46 +5233,17 @@ on the public Tor network.</p></div>
     networkstatus documents rather than generating its own. (Default: 0)
 </p>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
-<a id="MinUptimeHidServDirectoryV2"></a> <strong>MinUptimeHidServDirectoryV2</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
+<a id="V3AuthoritativeDirectory"></a> <strong>V3AuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
-    Minimum uptime of a relay to be accepted as a hidden service directory
-    by directory authorities. (Default: 96 hours)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="RecommendedServerVersions"></a> <strong>RecommendedServerVersions</strong> <em>STRING</em>
-</dt>
-<dd>
-<p>
-    STRING is a comma-separated list of Tor versions currently believed to be
-    safe for servers to use. This information is included in version 2
-    directories. If this is not set then the value of <strong>RecommendedVersions</strong>
-    is used. When this is set then <strong>VersioningAuthoritativeDirectory</strong> should
-    be set too.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="ConsensusParams"></a> <strong>ConsensusParams</strong> <em>STRING</em>
-</dt>
-<dd>
-<p>
-    STRING is a space-separated list of key=value pairs that Tor will include
-    in the "params" line of its networkstatus vote.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="DirAllowPrivateAddresses"></a> <strong>DirAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If set to 1, Tor will accept server descriptors with arbitrary "Address"
-    elements. Otherwise, if the address is not an IP address or is a private IP
-    address, it will reject the server descriptor. Additionally, Tor
-    will allow exit policies for private networks to fulfill Exit flag
-    requirements. (Default: 0)
+    When this option is set in addition to <strong>AuthoritativeDirectory</strong>, Tor
+    generates version 3 network statuses and serves descriptors, etc as
+    described in dir-spec.txt file of <a href="https://spec.torproject.org/">torspec</a>
+    (for Tor clients and servers running at least 0.2.0.x).
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5316,63 +5258,6 @@ on the public Tor network.</p></div>
     (The address pattern syntax here and in the options below
     is the same as for exit policies, except that you don&#8217;t need to say
     "accept" or "reject", and ports are not needed.)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirInvalid"></a> <strong>AuthDirInvalid</strong> <em>AddressPattern&#8230;</em>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. A set of address patterns for servers that
-    will never be listed as "valid" in any network status document that this
-    authority publishes.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirReject"></a> <strong>AuthDirReject</strong> <em>AddressPattern</em>&#8230;
-</dt>
-<dd>
-<p>
-    Authoritative directories only. A set of address patterns for servers that
-    will never be listed at all in any network status document that this
-    authority publishes, or accepted as an OR address in any descriptor
-    submitted for publication by this authority.
-</p>
-</dd>
-</dl></div>
-<div class="paragraph"><p><a id="AuthDirBadExitCCs"></a> <strong>AuthDirBadExitCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
-<div class="paragraph"><p><a id="AuthDirInvalidCCs"></a> <strong>AuthDirInvalidCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
-<div class="dlist"><dl>
-<dt class="hdlist1">
-<a id="AuthDirRejectCCs"></a> <strong>AuthDirRejectCCs</strong> <em>CC</em>,&#8230;
-</dt>
-<dd>
-<p>
-    Authoritative directories only. These options contain a comma-separated
-    list of country codes such that any server in one of those country codes
-    will be marked as a bad exit/invalid for use, or rejected
-    entirely.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirListBadExits"></a> <strong>AuthDirListBadExits</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. If set to 1, this directory has some
-    opinion about which nodes are unsuitable as exit nodes. (Do not set this to
-    1 unless you plan to list non-functioning exits as bad; otherwise, you are
-    effectively voting in favor of every declared exit as an exit.)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirMaxServersPerAddr"></a> <strong>AuthDirMaxServersPerAddr</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. The maximum number of servers that we will
-    list as acceptable on a single IP address. Set this to "0" for "no limit".
-    (Default: 2)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5393,134 +5278,6 @@ on the public Tor network.</p></div>
     Authoritative directories only. If non-zero, this advertised capacity
     or more is always sufficient to satisfy the bandwidth requirement
     for the Guard flag. (Default: 2 MBytes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirPinKeys"></a> <strong>AuthDirPinKeys</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. If non-zero, do not allow any relay to
-    publish a descriptor if any other relay has reserved its &lt;Ed25519,RSA&gt;
-    identity keypair. In all cases, Tor records every keypair it accepts
-    in a journal if it is new, or if it differs from the most recently
-    accepted pinning for one of the keys it contains. (Default: 1)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirSharedRandomness"></a> <strong>AuthDirSharedRandomness</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. Switch for the shared random protocol.
-    If zero, the authority won&#8217;t participate in the protocol. If non-zero
-    (default), the flag "shared-rand-participate" is added to the authority
-    vote indicating participation in the protocol. (Default: 1)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="AuthDirTestEd25519LinkKeys"></a> <strong>AuthDirTestEd25519LinkKeys</strong>  <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Authoritative directories only. If this option is set to 0, then we treat
-    relays as "Running" if their RSA key is correct when we probe them,
-    regardless of their Ed25519 key. We should only ever set this option to 0
-    if there is some major bug in Ed25519 link authentication that causes us
-    to label all the relays as not Running.  (Default: 1)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="BridgePassword"></a> <strong>BridgePassword</strong> <em>Password</em>
-</dt>
-<dd>
-<p>
-    If set, contains an HTTP authenticator that tells a bridge authority to
-    serve all requested bridge information. Used by the (only partially
-    implemented) "bridge community" design, where a community of bridge
-    relay operators all use an alternate bridge directory authority,
-    and their target user audience can periodically fetch the list of
-    available community bridges to stay up-to-date. (Default: not set)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3AuthVotingInterval"></a> <strong>V3AuthVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the server&#8217;s preferred voting
-    interval. Note that voting will <em>actually</em> happen at an interval chosen
-    by consensus from all the authorities' preferred intervals. This time
-    SHOULD divide evenly into a day. (Default: 1 hour)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3AuthVoteDelay"></a> <strong>V3AuthVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the server&#8217;s preferred delay
-    between publishing its vote and assuming it has all the votes from all the
-    other authorities. Note that the actual time used is not the server&#8217;s
-    preferred time, but the consensus of all preferences. (Default: 5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3AuthDistDelay"></a> <strong>V3AuthDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the server&#8217;s preferred  delay
-    between publishing its consensus and signature and assuming  it has all the
-    signatures from all the other authorities. Note that the actual time used
-    is not the server&#8217;s preferred time,  but the consensus of all preferences.
-    (Default: 5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3AuthNIntervalsValid"></a> <strong>V3AuthNIntervalsValid</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the number of VotingIntervals
-    for which each consensus should be valid for. Choosing high numbers
-    increases network partitioning risks; choosing low numbers increases
-    directory traffic. Note that the actual number of intervals used is not the
-    server&#8217;s preferred number, but the consensus of all preferences. Must be at
-    least 2. (Default: 3)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3BandwidthsFile"></a> <strong>V3BandwidthsFile</strong> <em>FILENAME</em>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the location of the
-    bandwidth-authority generated file storing information on relays' measured
-    bandwidth capacities. To avoid inconsistent reads, bandwidth data should
-    be written to temporary file, then renamed to the configured filename.
-    (Default: unset)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="GuardfractionFile"></a> <strong>GuardfractionFile</strong> <em>FILENAME</em>
-</dt>
-<dd>
-<p>
-    V3 authoritative directories only. Configures the location of the
-    guardfraction file which contains information about how long relays
-    have been guards. (Default: unset)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="V3AuthUseLegacyKey"></a> <strong>V3AuthUseLegacyKey</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If set, the directory authority will sign consensuses not only with its
-    own signing key, but also with a "legacy" key and certificate with a
-    different identity.  This feature is used to migrate directory authority
-    keys in the event of a compromise.  (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5563,6 +5320,153 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
+<a id="AuthDirInvalid"></a> <strong>AuthDirInvalid</strong> <em>AddressPattern&#8230;</em>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. A set of address patterns for servers that
+    will never be listed as "valid" in any network status document that this
+    authority publishes.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirListBadExits"></a> <strong>AuthDirListBadExits</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. If set to 1, this directory has some
+    opinion about which nodes are unsuitable as exit nodes. (Do not set this to
+    1 unless you plan to list non-functioning exits as bad; otherwise, you are
+    effectively voting in favor of every declared exit as an exit.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirMaxServersPerAddr"></a> <strong>AuthDirMaxServersPerAddr</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. The maximum number of servers that we will
+    list as acceptable on a single IP address. Set this to "0" for "no limit".
+    (Default: 2)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirPinKeys"></a> <strong>AuthDirPinKeys</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. If non-zero, do not allow any relay to
+    publish a descriptor if any other relay has reserved its &lt;Ed25519,RSA&gt;
+    identity keypair. In all cases, Tor records every keypair it accepts
+    in a journal if it is new, or if it differs from the most recently
+    accepted pinning for one of the keys it contains. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirReject"></a> <strong>AuthDirReject</strong> <em>AddressPattern</em>&#8230;
+</dt>
+<dd>
+<p>
+    Authoritative directories only. A set of address patterns for servers that
+    will never be listed at all in any network status document that this
+    authority publishes, or accepted as an OR address in any descriptor
+    submitted for publication by this authority.
+</p>
+</dd>
+</dl></div>
+<div class="paragraph"><p><a id="AuthDirBadExitCCs"></a> <strong>AuthDirBadExitCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
+<div class="paragraph"><p><a id="AuthDirInvalidCCs"></a> <strong>AuthDirInvalidCCs</strong> <em>CC</em>,&#8230;<br /></p></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="AuthDirRejectRequestsUnderLoad"></a> <strong>AuthDirRejectRequestsUnderLoad</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If set, the directory authority will start rejecting directory requests
+    from non relay connections by sending a 503 error code if it is under
+    bandwidth pressure (reaching the configured limit if any). Relays will
+    always tried to be answered even if this is on. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirRejectCCs"></a> <strong>AuthDirRejectCCs</strong> <em>CC</em>,&#8230;
+</dt>
+<dd>
+<p>
+    Authoritative directories only. These options contain a comma-separated
+    list of country codes such that any server in one of those country codes
+    will be marked as a bad exit/invalid for use, or rejected
+    entirely.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirSharedRandomness"></a> <strong>AuthDirSharedRandomness</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. Switch for the shared random protocol.
+    If zero, the authority won&#8217;t participate in the protocol. If non-zero
+    (default), the flag "shared-rand-participate" is added to the authority
+    vote indicating participation in the protocol. (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="AuthDirTestEd25519LinkKeys"></a> <strong>AuthDirTestEd25519LinkKeys</strong>  <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Authoritative directories only. If this option is set to 0, then we treat
+    relays as "Running" if their RSA key is correct when we probe them,
+    regardless of their Ed25519 key. We should only ever set this option to 0
+    if there is some major bug in Ed25519 link authentication that causes us
+    to label all the relays as not Running.  (Default: 1)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="BridgePassword"></a> <strong>BridgePassword</strong> <em>Password</em>
+</dt>
+<dd>
+<p>
+    If set, contains an HTTP authenticator that tells a bridge authority to
+    serve all requested bridge information. Used by the (only partially
+    implemented) "bridge community" design, where a community of bridge
+    relay operators all use an alternate bridge directory authority,
+    and their target user audience can periodically fetch the list of
+    available community bridges to stay up-to-date. (Default: not set)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="ConsensusParams"></a> <strong>ConsensusParams</strong> <em>STRING</em>
+</dt>
+<dd>
+<p>
+    STRING is a space-separated list of key=value pairs that Tor will include
+    in the "params" line of its networkstatus vote.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="DirAllowPrivateAddresses"></a> <strong>DirAllowPrivateAddresses</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If set to 1, Tor will accept server descriptors with arbitrary "Address"
+    elements. Otherwise, if the address is not an IP address or is a private IP
+    address, it will reject the server descriptor. Additionally, Tor
+    will allow exit policies for private networks to fulfill Exit flag
+    requirements. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="GuardfractionFile"></a> <strong>GuardfractionFile</strong> <em>FILENAME</em>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the location of the
+    guardfraction file which contains information about how long relays
+    have been guards. (Default: unset)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="MinMeasuredBWsForAuthToIgnoreAdvertised"></a> <strong>MinMeasuredBWsForAuthToIgnoreAdvertised</strong> <em>N</em>
 </dt>
 <dd>
@@ -5574,14 +5478,131 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="AuthDirRejectRequestsUnderLoad"></a> <strong>AuthDirRejectRequestsUnderLoad</strong> <strong>0</strong>|<strong>1</strong>
+<a id="MinUptimeHidServDirectoryV2"></a> <strong>MinUptimeHidServDirectoryV2</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
 <p>
-    If set, the directory authority will start rejecting directory requests
-    from non relay connections by sending a 503 error code if it is under
-    bandwidth pressure (reaching the configured limit if any). Relays will
-    always tried to be answered even if this is on. (Default: 1)
+    Minimum uptime of a relay to be accepted as a hidden service directory
+    by directory authorities. (Default: 96 hours)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="RecommendedClientVersions"></a> <strong>RecommendedClientVersions</strong> <em>STRING</em>
+</dt>
+<dd>
+<p>
+    STRING is a comma-separated list of Tor versions currently believed to be
+    safe for clients to use. This information is included in version 2
+    directories. If this is not set then the value of <strong>RecommendedVersions</strong>
+    is used. When this is set then <strong>VersioningAuthoritativeDirectory</strong> should
+    be set too.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="RecommendedServerVersions"></a> <strong>RecommendedServerVersions</strong> <em>STRING</em>
+</dt>
+<dd>
+<p>
+    STRING is a comma-separated list of Tor versions currently believed to be
+    safe for servers to use. This information is included in version 2
+    directories. If this is not set then the value of <strong>RecommendedVersions</strong>
+    is used. When this is set then <strong>VersioningAuthoritativeDirectory</strong> should
+    be set too.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="RecommendedVersions"></a> <strong>RecommendedVersions</strong> <em>STRING</em>
+</dt>
+<dd>
+<p>
+    STRING is a comma-separated list of Tor versions currently believed to be
+    safe. The list is included in each directory, and nodes which pull down the
+    directory learn whether they need to upgrade. This option can appear
+    multiple times: the values from multiple lines are spliced together. When
+    this is set then <strong>VersioningAuthoritativeDirectory</strong> should be set too.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3AuthDistDelay"></a> <strong>V3AuthDistDelay</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the server&#8217;s preferred  delay
+    between publishing its consensus and signature and assuming  it has all the
+    signatures from all the other authorities. Note that the actual time used
+    is not the server&#8217;s preferred time,  but the consensus of all preferences.
+    (Default: 5 minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3AuthNIntervalsValid"></a> <strong>V3AuthNIntervalsValid</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the number of VotingIntervals
+    for which each consensus should be valid for. Choosing high numbers
+    increases network partitioning risks; choosing low numbers increases
+    directory traffic. Note that the actual number of intervals used is not the
+    server&#8217;s preferred number, but the consensus of all preferences. Must be at
+    least 2. (Default: 3)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3AuthUseLegacyKey"></a> <strong>V3AuthUseLegacyKey</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If set, the directory authority will sign consensuses not only with its
+    own signing key, but also with a "legacy" key and certificate with a
+    different identity.  This feature is used to migrate directory authority
+    keys in the event of a compromise.  (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3AuthVoteDelay"></a> <strong>V3AuthVoteDelay</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the server&#8217;s preferred delay
+    between publishing its vote and assuming it has all the votes from all the
+    other authorities. Note that the actual time used is not the server&#8217;s
+    preferred time, but the consensus of all preferences. (Default: 5
+    minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3AuthVotingInterval"></a> <strong>V3AuthVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the server&#8217;s preferred voting
+    interval. Note that voting will <em>actually</em> happen at an interval chosen
+    by consensus from all the authorities' preferred intervals. This time
+    SHOULD divide evenly into a day. (Default: 1 hour)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="V3BandwidthsFile"></a> <strong>V3BandwidthsFile</strong> <em>FILENAME</em>
+</dt>
+<dd>
+<p>
+    V3 authoritative directories only. Configures the location of the
+    bandwidth-authority generated file storing information on relays' measured
+    bandwidth capacities. To avoid inconsistent reads, bandwidth data should
+    be written to temporary file, then renamed to the configured filename.
+    (Default: unset)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="VersioningAuthoritativeDirectory"></a> <strong>VersioningAuthoritativeDirectory</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    When this option is set to 1, Tor adds information on which versions of
+    Tor are still believed safe for use to the published directory. Each
+    version 1 authority is automatically a versioning authority; version 2
+    authorities provide this service optionally. See <a href="#RecommendedVersions">RecommendedVersions</a>,
+    <a href="#RecommendedClientVersions">RecommendedClientVersions</a>, and <a href="#RecommendedServerVersions">RecommendedServerVersions</a>.
 </p>
 </dd>
 </dl></div>
@@ -5597,46 +5618,14 @@ apply per service and some apply for the whole tor instance.</p></div>
 <div class="paragraph"><p><strong>PER SERVICE OPTIONS:</strong></p></div>
 <div class="dlist"><dl>
 <dt class="hdlist1">
-<a id="HiddenServiceDir"></a> <strong>HiddenServiceDir</strong> <em>DIRECTORY</em>
+<a id="HiddenServiceAllowUnknownPorts"></a> <strong>HiddenServiceAllowUnknownPorts</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
-    Store data files for a hidden service in DIRECTORY. Every hidden service
-    must have a separate directory. You may use this option  multiple times to
-    specify multiple services. If DIRECTORY does not exist, Tor will create it.
-    Please note that you cannot add new Onion Service to already running Tor
-    instance if <strong>Sandbox</strong> is enabled.
-    (Note: in current versions of Tor, if DIRECTORY is a relative path,
-    it will be relative to the current
-    working directory of Tor instance, not to its DataDirectory.  Do not
-    rely on this behavior; it is not guaranteed to remain the same in future
-    versions.)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServicePort"></a> <strong>HiddenServicePort</strong> <em>VIRTPORT</em> [<em>TARGET</em>]
-</dt>
-<dd>
-<p>
-    Configure a virtual port VIRTPORT for a hidden service. You may use this
-    option multiple times; each time applies to the service using the most
-    recent HiddenServiceDir. By default, this option maps the virtual port to
-    the same port on 127.0.0.1 over TCP. You may override the target port,
-    address, or both by specifying a target of addr, port, addr:port, or
-    <strong>unix:</strong><em>path</em>.  (You can specify an IPv6 target as [addr]:port. Unix
-    paths may be quoted, and may use standard C escapes.)
-    You may also have multiple lines with  the same VIRTPORT: when a user
-    connects to that VIRTPORT, one of the TARGETs from those lines will be
-    chosen at random. Note that address-port pairs have to be comma-separated.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServiceVersion"></a> <strong>HiddenServiceVersion</strong> <strong>2</strong>|<strong>3</strong>
-</dt>
-<dd>
-<p>
-    A list of rendezvous service descriptor versions to publish for the hidden
-    service. Currently, versions 2 and 3 are supported. (Default: 3)
+   If set to 1, then connections to unrecognized ports do not cause the
+   current hidden service to close rendezvous circuits. (Setting this to 0 is
+   not an authorization mechanism; it is instead meant to be a mild
+   inconvenience to port-scanners.) (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5655,18 +5644,75 @@ apply per service and some apply for the whole tor instance.</p></div>
     found in the hostname file. Clients need to put this authorization data in
     their configuration file using <strong>HidServAuth</strong>. This option is only for v2
     services; v3 services configure client authentication in a subdirectory of
-    HiddenServiceDir instead (see the <strong>Client Authorization</strong> section).
+    HiddenServiceDir instead (see <a href="#client-authorization">CLIENT AUTHORIZATION</a>).
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="HiddenServiceAllowUnknownPorts"></a> <strong>HiddenServiceAllowUnknownPorts</strong> <strong>0</strong>|<strong>1</strong>
+<a id="HiddenServiceDir"></a> <strong>HiddenServiceDir</strong> <em>DIRECTORY</em>
 </dt>
 <dd>
 <p>
-   If set to 1, then connections to unrecognized ports do not cause the
-   current hidden service to close rendezvous circuits. (Setting this to 0 is
-   not an authorization mechanism; it is instead meant to be a mild
-   inconvenience to port-scanners.) (Default: 0)
+    Store data files for a hidden service in DIRECTORY. Every hidden service
+    must have a separate directory. You may use this option  multiple times to
+    specify multiple services. If DIRECTORY does not exist, Tor will create it.
+    Please note that you cannot add new Onion Service to already running Tor
+    instance if <strong>Sandbox</strong> is enabled.
+    (Note: in current versions of Tor, if DIRECTORY is a relative path,
+    it will be relative to the current
+    working directory of Tor instance, not to its DataDirectory.  Do not
+    rely on this behavior; it is not guaranteed to remain the same in future
+    versions.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceDirGroupReadable"></a> <strong>HiddenServiceDirGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If this option is set to 1, allow the filesystem group to read the
+    hidden service directory and hostname file. If the option is set to 0,
+    only owner is able to read the hidden service directory. (Default: 0)
+    Has no effect on Windows.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceEnableIntroDoSDefense"></a> <strong>HiddenServiceEnableIntroDoSDefense</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    Enable DoS defense at the intropoint level. When this is enabled, the
+    rate and burst parameter (see below) will be sent to the intro point which
+    will then use them to apply rate limiting for introduction request to this
+    service.
+ <br />
+    The introduction point honors the consensus parameters except if this is
+    specifically set by the service operator using this option. The service
+    never looks at the consensus parameters in order to enable or disable this
+    defense. (Default: 0)
+</p>
+</dd>
+</dl></div>
+<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="HiddenServiceEnableIntroDoSBurstPerSec"></a> <strong>HiddenServiceEnableIntroDoSBurstPerSec</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed client introduction burst per second at the introduction
+    point. If this option is 0, it is considered infinite and thus if
+    <strong>HiddenServiceEnableIntroDoSDefense</strong> is set, it then effectively
+    disables the defenses. (Default: 200)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceEnableIntroDoSRatePerSec"></a> <strong>HiddenServiceEnableIntroDoSRatePerSec</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    The allowed client introduction rate per second at the introduction
+    point. If this option is 0, it is considered infinite and thus if
+    <strong>HiddenServiceEnableIntroDoSDefense</strong> is set, it then effectively
+    disables the defenses. (Default: 25)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -5702,6 +5748,22 @@ apply per service and some apply for the whole tor instance.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HiddenServiceOnionBalanceInstance"></a> <strong>HiddenServiceOnionBalanceInstance</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+   If set to 1, this onion service becomes an OnionBalance instance and will
+   accept client connections destined to an OnionBalance frontend. In this
+   case, Tor expects to find a file named "ob_config" inside the
+   <strong>HiddenServiceDir</strong> directory with content:
+    <br />
+      MasterOnionAddress &lt;frontend_onion_address&gt;
+    <br />
+   where &lt;frontend_onion_address&gt; is the onion address of the OnionBalance
+   frontend (e.g. wrxdvcaqpuzakbfww5sxs6r2uybczwijzfn2ezy2osaj7iox7kl7nhad.onion).
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="HiddenServiceMaxStreams"></a> <strong>HiddenServiceMaxStreams</strong> <em>N</em>
 </dt>
 <dd>
@@ -5722,6 +5784,41 @@ apply per service and some apply for the whole tor instance.</p></div>
 </p>
 </dd>
 <dt class="hdlist1">
+<a id="HiddenServiceNumIntroductionPoints"></a> <strong>HiddenServiceNumIntroductionPoints</strong> <em>NUM</em>
+</dt>
+<dd>
+<p>
+    Number of introduction points the hidden service will have. You can&#8217;t
+    have more than 10 for v2 service and 20 for v3. (Default: 3)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServicePort"></a> <strong>HiddenServicePort</strong> <em>VIRTPORT</em> [<em>TARGET</em>]
+</dt>
+<dd>
+<p>
+    Configure a virtual port VIRTPORT for a hidden service. You may use this
+    option multiple times; each time applies to the service using the most
+    recent HiddenServiceDir. By default, this option maps the virtual port to
+    the same port on 127.0.0.1 over TCP. You may override the target port,
+    address, or both by specifying a target of addr, port, addr:port, or
+    <strong>unix:</strong><em>path</em>.  (You can specify an IPv6 target as [addr]:port. Unix
+    paths may be quoted, and may use standard C escapes.)
+    You may also have multiple lines with  the same VIRTPORT: when a user
+    connects to that VIRTPORT, one of the TARGETs from those lines will be
+    chosen at random. Note that address-port pairs have to be comma-separated.
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="HiddenServiceVersion"></a> <strong>HiddenServiceVersion</strong> <strong>2</strong>|<strong>3</strong>
+</dt>
+<dd>
+<p>
+    A list of rendezvous service descriptor versions to publish for the hidden
+    service. Currently, versions 2 and 3 are supported. (Default: 3)
+</p>
+</dd>
+<dt class="hdlist1">
 <a id="RendPostPeriod"></a> <strong>RendPostPeriod</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>
 </dt>
 <dd>
@@ -5733,78 +5830,9 @@ apply per service and some apply for the whole tor instance.</p></div>
     (Default: 1 hour)
 </p>
 </dd>
-<dt class="hdlist1">
-<a id="HiddenServiceDirGroupReadable"></a> <strong>HiddenServiceDirGroupReadable</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If this option is set to 1, allow the filesystem group to read the
-    hidden service directory and hostname file. If the option is set to 0,
-    only owner is able to read the hidden service directory. (Default: 0)
-    Has no effect on Windows.
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServiceNumIntroductionPoints"></a> <strong>HiddenServiceNumIntroductionPoints</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    Number of introduction points the hidden service will have. You can&#8217;t
-    have more than 10 for v2 service and 20 for v3. (Default: 3)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServiceEnableIntroDoSDefense"></a> <strong>HiddenServiceEnableIntroDoSDefense</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    Enable DoS defense at the intropoint level. When this is enabled, the
-    rate and burst parameter (see below) will be sent to the intro point which
-    will then use them to apply rate limiting for introduction request to this
-    service.
- <br />
-    The introduction point honors the consensus parameters except if this is
-    specifically set by the service operator using this option. The service
-    never looks at the consensus parameters in order to enable or disable this
-    defense. (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServiceEnableIntroDoSRatePerSec"></a> <strong>HiddenServiceEnableIntroDoSRatePerSec</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The allowed client introduction rate per second at the introduction
-    point. If this option is 0, it is considered infinite and thus if
-    <strong>HiddenServiceEnableIntroDoSDefense</strong> is set, it then effectively
-    disables the defenses. (Default: 25)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="HiddenServiceEnableIntroDoSBurstPerSec"></a> <strong>HiddenServiceEnableIntroDoSBurstPerSec</strong> <em>NUM</em>
-</dt>
-<dd>
-<p>
-    The allowed client introduction burst per second at the introduction
-    point. If this option is 0, it is considered infinite and thus if
-    <strong>HiddenServiceEnableIntroDoSDefense</strong> is set, it then effectively
-    disables the defenses. (Default: 200)
-</p>
-</dd>
 </dl></div>
 <div class="paragraph"><p><strong>PER INSTANCE OPTIONS:</strong></p></div>
 <div class="dlist"><dl>
-<dt class="hdlist1">
-<a id="PublishHidServDescriptors"></a> <strong>PublishHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
-</dt>
-<dd>
-<p>
-    If set to 0, Tor will run any hidden services you configure, but it won&#8217;t
-    advertise them to the rendezvous directory. This option is only useful if
-    you&#8217;re using a Tor controller that handles hidserv publishing for you.
-    (Default: 1)
-</p>
-</dd>
 <dt class="hdlist1">
 <a id="HiddenServiceSingleHopMode"></a> <strong>HiddenServiceSingleHopMode</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
@@ -5836,6 +5864,8 @@ apply per service and some apply for the whole tor instance.</p></div>
     (Default: 0)
 </p>
 </dd>
+</dl></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
 <a id="HiddenServiceNonAnonymousMode"></a> <strong>HiddenServiceNonAnonymousMode</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
@@ -5849,11 +5879,22 @@ apply per service and some apply for the whole tor instance.</p></div>
     running. (Default: 0)
 </p>
 </dd>
+<dt class="hdlist1">
+<a id="PublishHidServDescriptors"></a> <strong>PublishHidServDescriptors</strong> <strong>0</strong>|<strong>1</strong>
+</dt>
+<dd>
+<p>
+    If set to 0, Tor will run any hidden services you configure, but it won&#8217;t
+    advertise them to the rendezvous directory. This option is only useful if
+    you&#8217;re using a Tor controller that handles hidserv publishing for you.
+    (Default: 1)
+</p>
+</dd>
 </dl></div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_client_authorization">Client Authorization</h2>
+<h2 id="client-authorization">CLIENT AUTHORIZATION</h2>
 <div class="sectionbody">
 <div class="paragraph"><p>(Version 3 only)</p></div>
 <div class="paragraph"><p>Service side:</p></div>
@@ -5926,12 +5967,10 @@ contents of the &lt;ClientOnionAuthDir&gt;/&lt;user&gt;.auth_private file should
 </p>
 <div class="literalblock">
 <div class="content">
-<pre><code>ServerDNSAllowBrokenConfig 1
-DirAllowPrivateAddresses 1
+<pre><code>DirAllowPrivateAddresses 1
 EnforceDistinctSubnets 0
 AssumeReachable 1
 AuthDirMaxServersPerAddr 0
-AuthDirMaxServersPerAuthAddr 0
 ClientBootstrapConsensusAuthorityDownloadInitialDelay 0
 ClientBootstrapConsensusFallbackDownloadInitialDelay 0
 ClientBootstrapConsensusAuthorityOnlyDownloadInitialDelay 0
@@ -5943,11 +5982,11 @@ ExtendAllowPrivateAddresses 1
 V3AuthVotingInterval 5 minutes
 V3AuthVoteDelay 20 seconds
 V3AuthDistDelay 20 seconds
-MinUptimeHidServDirectoryV2 0 seconds
-TestingV3AuthInitialVotingInterval 5 minutes
+TestingV3AuthInitialVotingInterval 150 seconds
 TestingV3AuthInitialVoteDelay 20 seconds
 TestingV3AuthInitialDistDelay 20 seconds
 TestingAuthDirTimeToLearnReachability 0 minutes
+MinUptimeHidServDirectoryV2 0 minutes
 TestingServerDownloadInitialDelay 0
 TestingClientDownloadInitialDelay 0
 TestingServerConsensusDownloadInitialDelay 0
@@ -5957,50 +5996,12 @@ TestingBridgeBootstrapDownloadInitialDelay 0
 TestingClientMaxIntervalWithoutRequest 5 seconds
 TestingDirConnectionMaxStall 30 seconds
 TestingEnableConnBwEvent 1
-TestingEnableCellStatsEvent 1</code></pre>
+TestingEnableCellStatsEvent 1
+RendPostPeriod 2 minutes</code></pre>
 </div></div>
 </dd>
 <dt class="hdlist1">
-<a id="TestingV3AuthInitialVotingInterval"></a> <strong>TestingV3AuthInitialVotingInterval</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    Like V3AuthVotingInterval, but for initial voting interval before the first
-    consensus has been created. Changing this requires that
-    <strong>TestingTorNetwork</strong> is set. (Default: 30 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingV3AuthInitialVoteDelay"></a> <strong>TestingV3AuthInitialVoteDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    Like V3AuthVoteDelay, but for initial voting interval before
-    the first consensus has been created. Changing this requires that
-    <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingV3AuthInitialDistDelay"></a> <strong>TestingV3AuthInitialDistDelay</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    Like V3AuthDistDelay, but for initial voting interval before
-    the first consensus has been created. Changing this requires that
-    <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingV3AuthVotingStartOffset"></a> <strong>TestingV3AuthVotingStartOffset</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
-</dt>
-<dd>
-<p>
-    Directory authorities offset voting start time by this much.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingAuthDirTimeToLearnReachability"></a> <strong>TestingAuthDirTimeToLearnReachability</strong> <em>N</em> <strong>minutes</strong>|<strong>hours</strong>
+<a id="TestingAuthDirTimeToLearnReachability"></a> <strong>TestingAuthDirTimeToLearnReachability</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
 </dt>
 <dd>
 <p>
@@ -6010,48 +6011,26 @@ TestingEnableCellStatsEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingMinFastFlagThreshold"></a> <strong>TestingMinFastFlagThreshold</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>|<strong>KBits</strong>|<strong>MBits</strong>|<strong>GBits</strong>|<strong>TBits</strong>
+<a id="TestingAuthKeyLifetime"></a> <strong>TestingAuthKeyLifetime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
 </dt>
 <dd>
 <p>
-    Minimum value for the Fast flag.  Overrides the ordinary minimum taken
-    from the consensus when TestingTorNetwork is set. (Default: 0.)
+    Overrides the default lifetime for a signing Ed25519 TLS Link authentication
+    key.
+    (Default: 2 days)
 </p>
 </dd>
+</dl></div>
+<div class="paragraph"><p><a id="TestingAuthKeySlop"></a> <strong>TestingAuthKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong><br /></p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
-<a id="TestingServerDownloadInitialDelay"></a> <strong>TestingServerDownloadInitialDelay</strong> <em>N</em>
+<a id="TestingBridgeBootstrapDownloadInitialDelay"></a> <strong>TestingBridgeBootstrapDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Initial delay in seconds for when servers should download things in general. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingClientDownloadInitialDelay"></a> <strong>TestingClientDownloadInitialDelay</strong> <em>N</em>
-</dt>
-<dd>
-<p>
-    Initial delay in seconds for when clients should download things in general. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingServerConsensusDownloadInitialDelay"></a> <strong>TestingServerConsensusDownloadInitialDelay</strong> <em>N</em>
-</dt>
-<dd>
-<p>
-    Initial delay in seconds for when servers should download consensuses. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
-</p>
-</dd>
-<dt class="hdlist1">
-<a id="TestingClientConsensusDownloadInitialDelay"></a> <strong>TestingClientConsensusDownloadInitialDelay</strong> <em>N</em>
-</dt>
-<dd>
-<p>
-    Initial delay in seconds for when clients should download consensuses. Changing this
-    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
+    Initial delay in seconds for when clients should download each bridge descriptor when they
+    have just started, or when they can not contact any of their bridges.
+    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6065,13 +6044,21 @@ TestingEnableCellStatsEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingBridgeBootstrapDownloadInitialDelay"></a> <strong>TestingBridgeBootstrapDownloadInitialDelay</strong> <em>N</em>
+<a id="TestingClientConsensusDownloadInitialDelay"></a> <strong>TestingClientConsensusDownloadInitialDelay</strong> <em>N</em>
 </dt>
 <dd>
 <p>
-    Initial delay in seconds for when clients should download each bridge descriptor when they
-    have just started, or when they can not contact any of their bridges.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
+    Initial delay in seconds for when clients should download consensuses. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingClientDownloadInitialDelay"></a> <strong>TestingClientDownloadInitialDelay</strong> <em>N</em>
+</dt>
+<dd>
+<p>
+    Initial delay in seconds for when clients should download things in general. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6086,27 +6073,17 @@ TestingEnableCellStatsEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingDirConnectionMaxStall"></a> <strong>TestingDirConnectionMaxStall</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>
-</dt>
-<dd>
-<p>
-    Let a directory connection stall this long before expiring it.
-    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default:
-    5 minutes)
-</p>
-</dd>
-<dt class="hdlist1">
 <a id="TestingDirAuthVoteExit"></a> <strong>TestingDirAuthVoteExit</strong> <em>node</em>,<em>node</em>,<em>&#8230;</em>
 </dt>
 <dd>
 <p>
     A list of identity fingerprints, country codes, and
     address patterns of nodes to vote Exit for regardless of their
-    uptime, bandwidth, or exit policy. See the <strong>ExcludeNodes</strong>
-    option for more information on how to specify nodes.<br />
+    uptime, bandwidth, or exit policy. See <a href="#ExcludeNodes">ExcludeNodes</a>
+     for more information on how to specify nodes.<br />
     <br />
     In order for this option to have any effect, <strong>TestingTorNetwork</strong>
-    has to be set. See the <strong>ExcludeNodes</strong> option for more
+    has to be set. See <a href="#ExcludeNodes">ExcludeNodes</a> for more
     information on how to specify nodes.
 </p>
 </dd>
@@ -6130,7 +6107,7 @@ TestingEnableCellStatsEvent 1</code></pre>
 <p>
     A list of identity fingerprints and country codes and
     address patterns of nodes to vote Guard for regardless of their
-    uptime and bandwidth. See the <strong>ExcludeNodes</strong> option for more
+    uptime and bandwidth. See <a href="#ExcludeNodes">ExcludeNodes</a> for more
     information on how to specify nodes.<br />
     <br />
     In order for this option to have any effect, <strong>TestingTorNetwork</strong>
@@ -6156,7 +6133,7 @@ TestingEnableCellStatsEvent 1</code></pre>
 <p>
     A list of identity fingerprints and country codes and
     address patterns of nodes to vote HSDir for regardless of their
-    uptime and DirPort. See the <strong>ExcludeNodes</strong> option for more
+    uptime and DirPort. See <a href="#ExcludeNodes">ExcludeNodes</a> for more
     information on how to specify nodes.<br />
     <br />
     In order for this option to have any effect, <strong>TestingTorNetwork</strong>
@@ -6176,13 +6153,13 @@ TestingEnableCellStatsEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingEnableConnBwEvent"></a> <strong>TestingEnableConnBwEvent</strong> <strong>0</strong>|<strong>1</strong>
+<a id="TestingDirConnectionMaxStall"></a> <strong>TestingDirConnectionMaxStall</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>
 </dt>
 <dd>
 <p>
-    If this option is set, then Tor controllers may register for CONN_BW
-    events.  Changing this requires that <strong>TestingTorNetwork</strong> is set.
-    (Default: 0)
+    Let a directory connection stall this long before expiring it.
+    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default:
+    5 minutes)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6196,13 +6173,13 @@ TestingEnableCellStatsEvent 1</code></pre>
 </p>
 </dd>
 <dt class="hdlist1">
-<a id="TestingMinExitFlagThreshold"></a> <strong>TestingMinExitFlagThreshold</strong>  <em>N</em> <strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>|<strong>KBits</strong>|<strong>MBits</strong>|<strong>GBits</strong>|<strong>TBits</strong>
+<a id="TestingEnableConnBwEvent"></a> <strong>TestingEnableConnBwEvent</strong> <strong>0</strong>|<strong>1</strong>
 </dt>
 <dd>
 <p>
-    Sets a lower-bound for assigning an exit flag when running as an
-    authority on a testing network. Overrides the usual default lower bound
-    of 4 KBytes. (Default: 0)
+    If this option is set, then Tor controllers may register for CONN_BW
+    events.  Changing this requires that <strong>TestingTorNetwork</strong> is set.
+    (Default: 0)
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6215,20 +6192,46 @@ TestingEnableCellStatsEvent 1</code></pre>
     (Default: 2 days)
 </p>
 </dd>
+</dl></div>
+<div class="paragraph"><p><a id="TestingLinkKeySlop"></a> <strong>TestingLinkKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong><br /></p></div>
+<div class="dlist"><dl>
 <dt class="hdlist1">
-<a id="TestingAuthKeyLifetime"></a> <strong>TestingAuthKeyLifetime</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>|<strong>days</strong>|<strong>weeks</strong>|<strong>months</strong>
+<a id="TestingMinExitFlagThreshold"></a> <strong>TestingMinExitFlagThreshold</strong>  <em>N</em> <strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>|<strong>KBits</strong>|<strong>MBits</strong>|<strong>GBits</strong>|<strong>TBits</strong>
 </dt>
 <dd>
 <p>
-    Overrides the default lifetime for a signing Ed25519 TLS Link authentication
-    key.
-    (Default: 2 days)
+    Sets a lower-bound for assigning an exit flag when running as an
+    authority on a testing network. Overrides the usual default lower bound
+    of 4 KBytes. (Default: 0)
 </p>
 </dd>
-</dl></div>
-<div class="paragraph"><p><a id="TestingLinkKeySlop"></a> <strong>TestingLinkKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong><br /></p></div>
-<div class="paragraph"><p><a id="TestingAuthKeySlop"></a> <strong>TestingAuthKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong><br /></p></div>
-<div class="dlist"><dl>
+<dt class="hdlist1">
+<a id="TestingMinFastFlagThreshold"></a> <strong>TestingMinFastFlagThreshold</strong> <em>N</em> <strong>bytes</strong>|<strong>KBytes</strong>|<strong>MBytes</strong>|<strong>GBytes</strong>|<strong>TBytes</strong>|<strong>KBits</strong>|<strong>MBits</strong>|<strong>GBits</strong>|<strong>TBits</strong>
+</dt>
+<dd>
+<p>
+    Minimum value for the Fast flag.  Overrides the ordinary minimum taken
+    from the consensus when TestingTorNetwork is set. (Default: 0.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingServerConsensusDownloadInitialDelay"></a> <strong>TestingServerConsensusDownloadInitialDelay</strong> <em>N</em>
+</dt>
+<dd>
+<p>
+    Initial delay in seconds for when servers should download consensuses. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingServerDownloadInitialDelay"></a> <strong>TestingServerDownloadInitialDelay</strong> <em>N</em>
+</dt>
+<dd>
+<p>
+    Initial delay in seconds for when servers should download things in general. Changing this
+    requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
+</p>
+</dd>
 <dt class="hdlist1">
 <a id="TestingSigningKeySlop"></a> <strong>TestingSigningKeySlop</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
 </dt>
@@ -6237,6 +6240,45 @@ TestingEnableCellStatsEvent 1</code></pre>
     How early before the official expiration of a an Ed25519 signing key do
     we replace it and issue a new key?
     (Default: 3 hours for link and auth; 1 day for signing.)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingV3AuthInitialDistDelay"></a> <strong>TestingV3AuthInitialDistDelay</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    Like V3AuthDistDelay, but for initial voting interval before
+    the first consensus has been created. Changing this requires that
+    <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingV3AuthInitialVoteDelay"></a> <strong>TestingV3AuthInitialVoteDelay</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    Like V3AuthVoteDelay, but for initial voting interval before
+    the first consensus has been created. Changing this requires that
+    <strong>TestingTorNetwork</strong> is set. (Default: 5 minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingV3AuthInitialVotingInterval"></a> <strong>TestingV3AuthInitialVotingInterval</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    Like V3AuthVotingInterval, but for initial voting interval before the first
+    consensus has been created. Changing this requires that
+    <strong>TestingTorNetwork</strong> is set. (Default: 30 minutes)
+</p>
+</dd>
+<dt class="hdlist1">
+<a id="TestingV3AuthVotingStartOffset"></a> <strong>TestingV3AuthVotingStartOffset</strong> <em>N</em> <strong>seconds</strong>|<strong>minutes</strong>|<strong>hours</strong>
+</dt>
+<dd>
+<p>
+    Directory authorities offset voting start time by this much.
+    Changing this requires that <strong>TestingTorNetwork</strong> is set. (Default: 0)
 </p>
 </dd>
 </dl></div>
@@ -6405,8 +6447,8 @@ section 5.4. End-users should mostly ignore them.</p></div>
     Similar to <strong>cached-descriptors</strong>, but holds optionally-downloaded
     "extra-info" documents. Relays use these documents to send inessential
     information about statistics, bandwidth history, and network health to the
-    authorities. They aren&#8217;t fetched by default. See the DownloadExtraInfo
-    option for more information.
+    authorities. They aren&#8217;t fetched by default. See <a href="#DownloadExtraInfo">DownloadExtraInfo</a>
+     for more information.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6555,7 +6597,7 @@ a short history of bandwidth usage, as produced in the server
 <dd>
 <p>
     As authority_certificate; used only when <code>V3AuthUseLegacyKey</code> is set.  See
-    documentation for V3AuthUseLegacyKey.
+    documentation for <a href="#V3AuthUseLegacyKey">V3AuthUseLegacyKey</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6564,7 +6606,7 @@ a short history of bandwidth usage, as produced in the server
 <dd>
 <p>
     As authority_signing_key: used only when <code>V3AuthUseLegacyKey</code> is set.  See
-    documentation for V3AuthUseLegacyKey.
+    documentation for <a href="#V3AuthUseLegacyKey">V3AuthUseLegacyKey</a>.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6866,7 +6908,7 @@ report them at <a href="https://trac.torproject.org/">https://trac.torproject.or
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2020-06-01 13:47:45 UTC
+ 2020-07-13 14:45:04 UTC
 </div>
 </div>
 </body>

@@ -29,19 +29,13 @@ struct circuit_guard_state_t *origin_circuit_get_guard_state(
 int circuit_handle_first_hop(origin_circuit_t *circ);
 void circuit_n_chan_done(channel_t *chan, int status,
                          int close_origin_circuits);
-int inform_testing_reachability(void);
 int circuit_timeout_want_to_count_circ(const origin_circuit_t *circ);
 int circuit_send_next_onion_skin(origin_circuit_t *circ);
 void circuit_note_clock_jumped(int64_t seconds_elapsed, bool was_idle);
-int circuit_extend(cell_t *cell, circuit_t *circ);
 struct created_cell_t;
 int circuit_finish_handshake(origin_circuit_t *circ,
                              const struct created_cell_t *created_cell);
 int circuit_truncated(origin_circuit_t *circ, int reason);
-int onionskin_answer(or_circuit_t *circ,
-                     const struct created_cell_t *created_cell,
-                     const char *keys, size_t keys_len,
-                     const uint8_t *rend_circ_nonce);
 MOCK_DECL(int, circuit_all_predicted_ports_handled, (time_t now,
                                                      int *need_uptime,
                                                      int *need_capacity));
@@ -66,7 +60,8 @@ int circuit_can_use_tap(const origin_circuit_t *circ);
 int circuit_has_usable_onion_key(const origin_circuit_t *circ);
 int extend_info_has_preferred_onion_key(const extend_info_t* ei);
 const uint8_t *build_state_get_exit_rsa_id(cpath_build_state_t *state);
-const node_t *build_state_get_exit_node(cpath_build_state_t *state);
+MOCK_DECL(const node_t *,
+          build_state_get_exit_node,(cpath_build_state_t *state));
 const char *build_state_get_exit_nickname(cpath_build_state_t *state);
 
 struct circuit_guard_state_t;
@@ -75,6 +70,20 @@ const node_t *choose_good_entry_server(uint8_t purpose,
                            cpath_build_state_t *state,
                            struct circuit_guard_state_t **guard_state_out);
 void circuit_upgrade_circuits_from_guard_wait(void);
+
+struct ed25519_public_key_t;
+
+MOCK_DECL(channel_t *,
+channel_connect_for_circuit,(const tor_addr_t *addr,
+                             uint16_t port,
+                             const char *id_digest,
+                             const struct ed25519_public_key_t *ed_id));
+
+struct create_cell_t;
+MOCK_DECL(int,
+circuit_deliver_create_cell,(circuit_t *circ,
+                             const struct create_cell_t *create_cell,
+                             int relayed));
 
 #ifdef CIRCUITBUILD_PRIVATE
 STATIC circid_t get_unique_circ_id_by_chan(channel_t *chan);

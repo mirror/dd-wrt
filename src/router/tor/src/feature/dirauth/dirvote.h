@@ -94,6 +94,7 @@ void dirvote_dirreq_get_status_vote(const char *url, smartlist_t *items,
 
 /* Storing signatures and votes functions */
 struct pending_vote_t * dirvote_add_vote(const char *vote_body,
+                                         time_t time_posted,
                                          const char **msg_out,
                                          int *status_out);
 int dirvote_add_signatures(const char *detached_signatures_body,
@@ -142,9 +143,13 @@ dirvote_dirreq_get_status_vote(const char *url, smartlist_t *items,
 }
 
 static inline struct pending_vote_t *
-dirvote_add_vote(const char *vote_body, const char **msg_out, int *status_out)
+dirvote_add_vote(const char *vote_body,
+                 time_t time_posted,
+                 const char **msg_out,
+                 int *status_out)
 {
   (void) vote_body;
+  (void) time_posted;
   /* If the dirauth module is disabled, this should NEVER be called else we
    * failed to safeguard the dirauth module. */
   tor_assert_nonfatal_unreached();
@@ -229,6 +234,36 @@ STATIC
 char *networkstatus_get_detached_signatures(smartlist_t *consensuses);
 STATIC microdesc_t *dirvote_create_microdescriptor(const routerinfo_t *ri,
                                                    int consensus_method);
+
+/** The recommended relay protocols for this authority's votes.
+ * Recommending a new protocol causes old tor versions to log a warning.
+ */
+#define DIRVOTE_RECOMMEND_RELAY_PROTO \
+  "Cons=1-2 Desc=1-2 DirCache=2 HSDir=2 HSIntro=4 HSRend=2 " \
+  "Link=5 LinkAuth=3 Microdesc=1-2 Relay=2"
+/** The recommended client protocols for this authority's votes.
+ * Recommending a new protocol causes old tor versions to log a warning.
+ */
+#define DIRVOTE_RECOMMEND_CLIENT_PROTO \
+  "Cons=1-2 Desc=1-2 DirCache=2 HSDir=2 HSIntro=4 HSRend=2 " \
+  "Link=5 LinkAuth=3 Microdesc=1-2 Relay=2"
+
+/** The required relay protocols for this authority's votes.
+ * WARNING: Requiring a new protocol causes old tor versions to shut down.
+ *          Requiring the wrong protocols can break the tor network.
+ * See Proposal 303: When and how to remove support for protocol versions.
+ */
+#define DIRVOTE_REQUIRE_RELAY_PROTO \
+  "Cons=1 Desc=1 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 " \
+  "Link=3-4 Microdesc=1 Relay=1-2"
+/** The required relay protocols for this authority's votes.
+ * WARNING: Requiring a new protocol causes old tor versions to shut down.
+ *          Requiring the wrong protocols can break the tor network.
+ * See Proposal 303: When and how to remove support for protocol versions.
+ */
+#define DIRVOTE_REQUIRE_CLIENT_PROTO \
+  "Cons=1-2 Desc=1-2 DirCache=1 HSDir=1 HSIntro=3 HSRend=1 " \
+  "Link=4 Microdesc=1-2 Relay=2"
 
 #endif /* defined(DIRVOTE_PRIVATE) */
 

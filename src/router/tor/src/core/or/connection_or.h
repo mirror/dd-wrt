@@ -22,10 +22,6 @@ or_connection_t *TO_OR_CONN(connection_t *);
 void connection_or_clear_identity(or_connection_t *conn);
 void connection_or_clear_identity_map(void);
 void clear_broken_connection_map(int disable);
-or_connection_t *connection_or_get_for_extend(const char *digest,
-                                              const tor_addr_t *target_addr,
-                                              const char **msg_out,
-                                              int *launch_out);
 
 void connection_or_block_renegotiation(or_connection_t *conn);
 int connection_or_reached_eof(or_connection_t *conn);
@@ -97,19 +93,6 @@ MOCK_DECL(void,connection_or_write_var_cell_to_buf,(const var_cell_t *cell,
                                                    or_connection_t *conn));
 int connection_or_send_versions(or_connection_t *conn, int v3_plus);
 MOCK_DECL(int,connection_or_send_netinfo,(or_connection_t *conn));
-int connection_or_send_certs_cell(or_connection_t *conn);
-int connection_or_send_auth_challenge_cell(or_connection_t *conn);
-int authchallenge_type_is_supported(uint16_t challenge_type);
-int authchallenge_type_is_better(uint16_t challenge_type_a,
-                                 uint16_t challenge_type_b);
-var_cell_t *connection_or_compute_authenticate_cell_body(
-                              or_connection_t *conn,
-                              const int authtype,
-                              crypto_pk_t *signing_key,
-                              const struct ed25519_keypair_t *ed_signing_key,
-                              int server);
-MOCK_DECL(int,connection_or_send_authenticate_cell,
-          (or_connection_t *conn, int type));
 
 int is_or_protocol_version_known(uint16_t version);
 
@@ -144,7 +127,6 @@ MOCK_DECL(STATIC void,connection_or_change_state,
 #endif /* defined(CONNECTION_OR_PRIVATE) */
 
 #ifdef TOR_UNIT_TESTS
-extern int certs_cell_ed25519_disabled_for_testing;
 extern int testing__connection_or_pretend_TLSSECRET_is_supported;
 #endif
 

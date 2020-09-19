@@ -432,6 +432,21 @@ warn_if_hs_unreachable(const edge_connection_t *conn, uint8_t reason)
   }
 }
 
+/** Given a TTL (in seconds) from a DNS response or from a relay, determine
+ * what TTL clients and relays should actually use for caching it. */
+uint32_t
+clip_dns_ttl(uint32_t ttl)
+{
+  /* This logic is a defense against "DefectTor" DNS-based traffic
+   * confirmation attacks, as in https://nymity.ch/tor-dns/tor-dns.pdf .
+   * We only give two values: a "low" value and a "high" value.
+   */
+  if (ttl < MIN_DNS_TTL)
+    return MIN_DNS_TTL;
+  else
+    return MAX_DNS_TTL;
+}
+
 /** Send a relay end cell from stream <b>conn</b> down conn's circuit, and
  * remember that we've done so.  If this is not a client connection, set the
  * relay end cell's reason for closing as <b>reason</b>.
@@ -480,7 +495,7 @@ connection_edge_end(edge_connection_t *conn, uint8_t reason)
       memcpy(payload+1, tor_addr_to_in6_addr8(&conn->base_.addr), 16);
       addrlen = 16;
     }
-    set_uint32(payload+1+addrlen, htonl(dns_clip_ttl(conn->address_ttl)));
+    set_uint32(payload+1+addrlen, htonl(clip_dns_ttl(conn->address_ttl)));
     payload_len += 4+addrlen;
   }
 
@@ -845,7 +860,7 @@ connected_cell_format_payload(uint8_t *payload_out,
     return -1;
   }
 
-  set_uint32(payload_out + connected_payload_len, htonl(dns_clip_ttl(ttl)));
+  set_uint32(payload_out + connected_payload_len, htonl(clip_dns_ttl(ttl)));
   connected_payload_len += 4;
 
   tor_assert(connected_payload_len <= MAX_CONNECTED_CELL_PAYLOAD_LEN);
@@ -1648,6 +1663,9 @@ parse_extended_hostname(char *address, hostname_type_t *type_out)
   log_warn(LD_APP, "Invalid %shostname %s; rejecting",
            is_onion ? "onion " : "",
            safe_str_client(address));
+  if (*type_out == ONION_V3_HOSTNAME) {
+      *type_out = BAD_HOSTNAME;
+  }
   return false;
 }
 
@@ -2124,7 +2142,7 @@ connection_ap_handshake_rewrite_and_attach(entry_connection_t *conn,
   if (!parse_extended_hostname(socks->address, &addresstype)) {
     control_event_client_status(LOG_WARN, "SOCKS_BAD_HOSTNAME HOSTNAME=%s",
                                 escaped(socks->address));
-    if (addresstype == ONION_V3_HOSTNAME) {
+    if (addresstype == BAD_HOSTNAME) {
       conn->socks_request->socks_extended_error_code = SOCKS5_HS_BAD_ADDRESS;
     }
     connection_mark_unattached_ap(conn, END_STREAM_REASON_TORPROTOCOL);
@@ -3444,8 +3462,9 @@ tell_controller_about_resolved_result(entry_connection_t *conn,
   expires = time(NULL) + ttl;
   if (answer_type == RESOLVED_TYPE_IPV4 && answer_len >= 4) {
     char *cp = tor_dup_ip(ntohl(get_uint32(answer)));
-    control_event_address_mapped(conn->socks_request->address,
-                                 cp, expires, NULL, 0);
+    if (cp)
+      control_event_address_mapped(conn->socks_request->address,
+                                   cp, expires, NULL, 0);
     tor_free(cp);
   } else if (answer_type == RESOLVED_TYPE_HOSTNAME && answer_len < 256) {
     char *cp = tor_strndup(answer, answer_len);
@@ -3518,7 +3537,7 @@ connection_ap_handshake_socks_resolved,(entry_connection_t *conn,
       }
     } else if (answer_type == RESOLVED_TYPE_IPV6 && answer_len == 16) {
       tor_addr_t a;
-      tor_addr_from_ipv6_bytes(&a, (char*)answer);
+      tor_addr_from_ipv6_bytes(&a, answer);
       if (! tor_addr_is_null(&a)) {
         client_dns_set_addressmap(conn,
                                   conn->socks_request->address, &a,
