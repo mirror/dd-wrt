@@ -2,7 +2,7 @@ ifeq ($(CONFIG_NEXTMEDIA),y)
 NMAP_EXTRAFLAGS="SENTINEL_FLAGS=-DRAISENTINET3"
 endif
 nmap-configure: openssl libpcap
-	cd nmap && ./configure \
+	cd nmap && ./configure ac_cv_libz=yes \
 		--host=$(ARCH)-linux \
 		--prefix=/usr \
 		--with-libdnet=included \
@@ -17,10 +17,10 @@ nmap-configure: openssl libpcap
 		--without-nmap-update \
 		--without-ndiff \
 		--without-nping \
-		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/openssl/include $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
-		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/openssl $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
+		CPPFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include -L$(TOP)/openssl $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		CXXFLAGS="-I$(TOP)/libpcap -I$(TOP)/zlib/include -I$(TOP)/openssl/include $(COPTS) $(MIPS16_OPT) -DNEED_PRINTF -ffunction-sections -fdata-sections -Wl,--gc-sections" \
+		LDFLAGS="-L$(TOP)/libpcap -L$(TOP)/zlib -L$(TOP)/openssl $(COPTS) -lssl -lcrypto" PCAP_ROOT="$(TOP)/libpcap  -ffunction-sections -fdata-sections -Wl,--gc-sections"
 
 nmap: openssl libpcap
 	cd nmap && find . -name makefile.dep -delete	
