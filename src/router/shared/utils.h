@@ -1321,14 +1321,7 @@ static inline int getmaxvaps(const char *prefix)
 }
 #endif
 
-#if defined(HAVE_SUBQUARTER) && (defined(HAVE_REGISTER) || defined(HAVE_SUPERCHANNEL))
 int registered_has_subquarter(void)
-#else
-static inline int registered_has_subquarter(void)
-{
-	return 0;
-}
-#endif
 
 extern char *get3GDeviceVendor(void);
 
