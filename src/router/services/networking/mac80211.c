@@ -288,7 +288,9 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 	}
 	if (isath10k) {
-		if (nvram_matchi(bw, 5))
+		if (nvram_matchi(bw, 2))
+			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
+		else if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
