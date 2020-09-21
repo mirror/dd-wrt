@@ -1,6 +1,6 @@
 /*
  * tinylog
- * Copyright (C) 2018-2019 Ruilin Peng (Nick) <pymumu@gmail.com>
+ * Copyright (C) 2018-2020 Ruilin Peng (Nick) <pymumu@gmail.com>
  * https://github.com/pymumu/tinylog
  */
 
@@ -298,6 +298,7 @@ public:
     Buffer LogStream(tlog_level level, const char *file, int line, const char *func, void *userptr) {
         return Buffer(new Stream, [=](Stream *st) {
             tlog_ext(level, file, line, func, userptr, "%s", st->str().c_str());
+            delete st;
         });
     }
 };
@@ -317,6 +318,7 @@ public:
     Buffer Out(tlog_log *log) {
         return Buffer(new Stream, [=](Stream *st) {
             tlog_printf(log, "%s", st->str().c_str());
+            delete st;
         });
     }
 };

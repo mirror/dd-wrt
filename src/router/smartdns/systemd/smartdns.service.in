@@ -1,5 +1,5 @@
 [Unit]
-Description=smart dns server
+Description=smartdns server
 After=network.target 
 StartLimitBurst=0
 StartLimitIntervalSec=60
@@ -12,6 +12,7 @@ ExecStart=@SBINDIR@/smartdns -p @RUNSTATEDIR@/smartdns.pid $SMART_DNS_OPTS
 KillMode=process
 Restart=always
 RestartSec=2
+TimeoutStopSec=5
 
 [Install]
 WantedBy=multi-user.target

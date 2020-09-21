@@ -498,6 +498,8 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |bind|DNS listening port number|[::]:53|Support binding multiple ports<br>`IP:PORT`: server IP, port number. <br>`[-group]`: The DNS server group used when requesting. <br>`[-no-rule-addr]`: Skip the address rule. <br>`[-no-rule-nameserver]`: Skip the Nameserver rule. <br>`[-no-rule-ipset]`: Skip the Ipset rule. <br>`[-no-rule-soa]`: Skip address SOA(#) rules.<br>`[-no-dualstack-selection]`: Disable dualstack ip selection.<br>`[-no-speed-check]`: Disable speed measurement. <br>`[-no-cache]`: stop caching |bind :53
 |bind-tcp|TCP mode DNS listening port number|[::]:53|Support binding multiple ports<br>`IP:PORT`: server IP, port number. <br>`[-group]`: The DNS server group used when requesting. <br>`[-no-rule-addr]`: Skip the address rule. <br>`[-no-rule-nameserver]`: Skip the Nameserver rule. <br>`[-no-rule-ipset]`: Skip the Ipset rule. <br>`[-no-rule-soa]`: Skip address SOA(#) rules.<br>`[-no-dualstack-selection]`: Disable dualstack ip selection.<br>`[-no-speed-check]`: Disable speed measurement. <br>`[-no-cache]`: stop caching |bind-tcp :53
 |cache-size|Domain name result cache number|512|integer|cache-size 512
+|cache-persist|enable persist cache|no|[yes\|no]|cache-persist yes
+|cache-file|cache persist file|/tmp/smartdns.cache|路径|cache-file /tmp/smartdns.cache
 |tcp-idle-time|TCP connection idle timeout|120|integer|tcp-idle-time 120
 |rr-ttl|Domain name TTL|Remote query result|number greater than 0|rr-ttl 600
 |rr-ttl-min|Domain name Minimum TTL|Remote query result|number greater than 0|rr-ttl-min 60
@@ -529,6 +531,7 @@ Note: Merlin firmware is derived from ASUS firmware and can theoretically be use
 |prefetch-domain|domain prefetch feature|no|[yes\|no]|prefetch-domain yes
 |serve-expired|Cache serve expired feature|no|[yes\|no], Attempts to serve old responses from cache with a TTL of 0 in the response without waiting for the actual resolution to finish.|serve-expired yes
 |serve-expired-ttl|Cache serve expired limite TTL|0|second，0：disable，> 0  seconds after expiration|serve-expired-ttl 0
+|serve-expired-reply-ttl|TTL value to use when replying with expired data|5|second，0：disable，> 0  seconds after expiration|serve-expired-reply-ttl 30
 |dualstack-ip-selection|Dualstack ip selection|no|[yes\|no]|dualstack-ip-selection yes
 |dualstack-ip-selection-threshold|Dualstack ip select threadhold|30ms|millisecond|dualstack-ip-selection-threshold [0-1000]
 |ca-file|certificate file|/etc/ssl/certs/ca-certificates.crt|path|ca-file /etc/ssl/certs/ca-certificates.crt
