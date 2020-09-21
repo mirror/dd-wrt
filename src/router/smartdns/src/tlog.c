@@ -1,7 +1,7 @@
 #ifdef NEED_PRINTF
 /*
  * tinylog
- * Copyright (C) 2018-2019 Nick Peng <pymumu@gmail.com>
+ * Copyright (C) 2018-2020 Nick Peng <pymumu@gmail.com>
  * https://github.com/pymumu/tinylog
  */
 #ifndef _GNU_SOURCE
@@ -1378,7 +1378,7 @@ static void *_tlog_work(void *arg)
             log = _tlog_wait_log_locked(log);
             if (log == NULL) {
                 pthread_mutex_unlock(&tlog.lock);
-                if (errno != ETIMEDOUT) {
+                if (errno != ETIMEDOUT && tlog.run) {
                     sleep(1);
                 }
                 continue;

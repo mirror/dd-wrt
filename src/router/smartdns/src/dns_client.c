@@ -106,8 +106,10 @@ struct dns_server_info {
 	int ttl_range;
 #ifdef HAVE_OPENSSL
 	SSL *ssl;
+	int ssl_write_len;
 	SSL_CTX *ssl_ctx;
 	SSL_SESSION *ssl_session;
+	pthread_mutex_t lock;
 #endif
 	char skip_check_cert;
 	dns_server_status status;
@@ -249,7 +251,70 @@ static atomic_t dns_client_sid = ATOMIC_INIT(0);
 static LIST_HEAD(pending_servers);
 static pthread_mutex_t pending_server_mutex = PTHREAD_MUTEX_INITIALIZER;
 static int dns_client_has_bootstrap_dns = 0;
+#ifdef HAVE_OPENSSL
+int _ssl_read(struct dns_server_info *server, void *buff, int num)
+{
+	int ret = 0;
+	pthread_mutex_lock(&server->lock);
+	ret = SSL_read(server->ssl, buff, num);
+	pthread_mutex_unlock(&server->lock);
+	return ret;
+}
 
+int _ssl_write(struct dns_server_info *server, const void *buff, int num)
+{
+	int ret = 0;
+	pthread_mutex_lock(&server->lock);
+	ret = SSL_write(server->ssl, buff, num);
+	pthread_mutex_unlock(&server->lock);
+	return ret;
+}
+
+int _ssl_shutdown(struct dns_server_info *server)
+{
+	int ret = 0;
+	pthread_mutex_lock(&server->lock);
+	ret = SSL_shutdown(server->ssl);
+	pthread_mutex_unlock(&server->lock);
+	return ret;
+}
+
+int _ssl_get_error(struct dns_server_info *server, int ret)
+{
+	int err = 0;
+	pthread_mutex_lock(&server->lock);
+	err = SSL_get_error(server->ssl, ret);
+	pthread_mutex_unlock(&server->lock);
+	return err;
+}
+
+int _ssl_do_handshake(struct dns_server_info *server)
+{
+	int err = 0;
+	pthread_mutex_lock(&server->lock);
+	err = SSL_do_handshake(server->ssl);
+	pthread_mutex_unlock(&server->lock);
+	return err;
+}
+
+int _ssl_session_reused(struct dns_server_info *server)
+{
+	int err = 0;
+	pthread_mutex_lock(&server->lock);
+	err = SSL_session_reused(server->ssl);
+	pthread_mutex_unlock(&server->lock);
+	return err;
+}
+
+SSL_SESSION *_ssl_get1_session(struct dns_server_info *server)
+{
+	SSL_SESSION *ret = 0;
+	pthread_mutex_lock(&server->lock);
+	ret = SSL_get1_session(server->ssl);
+	pthread_mutex_unlock(&server->lock);
+	return ret;
+}
+#endif
 const char *_dns_server_get_type_string(dns_server_type_t type)
 {
 	const char *type_str = "";
@@ -844,6 +909,9 @@ static int _dns_client_server_add(char *server_ip, char *server_host, int port, 
 	server_info->ttl = ttl;
 	server_info->ttl_range = 0;
 	server_info->skip_check_cert = skip_check_cert;
+#ifdef HAVE_OPENSSL
+	pthread_mutex_init(&server_info->lock, NULL);
+#endif
 	memcpy(&server_info->flags, flags, sizeof(server_info->flags));
 
 	/* exclude this server from default group */
@@ -869,7 +937,8 @@ static int _dns_client_server_add(char *server_ip, char *server_host, int port, 
 		}
 
 		SSL_CTX_set_options(server_info->ssl_ctx, SSL_OP_ALL | SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
-
+		SSL_CTX_set_session_cache_mode(server_info->ssl_ctx, SSL_SESS_CACHE_CLIENT);
+		SSL_CTX_sess_set_cache_size(server_info->ssl_ctx, 32);
 		if (_dns_client_set_trusted_cert(server_info->ssl_ctx) != 0) {
 			tlog(TLOG_WARN, "disable check certificate for %s.", server_info->ip);
 			server_info->skip_check_cert = 1;
@@ -923,6 +992,7 @@ errout:
 			SSL_CTX_free(server_info->ssl_ctx);
 			server_info->ssl_ctx = NULL;
 		}
+		pthread_mutex_destroy(&server_info->lock);
 #endif
 		free(server_info);
 	}
@@ -943,9 +1013,12 @@ static void _dns_client_close_socket(struct dns_server_info *server_info)
 #ifdef HAVE_OPENSSL
 	if (server_info->ssl) {
 		/* Shutdown ssl */
-		SSL_shutdown(server_info->ssl);
+		if (server_info->status == DNS_SERVER_STATUS_CONNECTED) {
+			_ssl_shutdown(server_info);
+		}
 		SSL_free(server_info->ssl);
 		server_info->ssl = NULL;
+		server_info->ssl_write_len = -1;
 	}
 #endif
 
@@ -959,6 +1032,38 @@ static void _dns_client_close_socket(struct dns_server_info *server_info)
 	time(&server_info->last_send);
 	time(&server_info->last_recv);
 	tlog(TLOG_DEBUG, "server %s closed.", server_info->ip);
+}
+
+static void _dns_client_shutdown_socket(struct dns_server_info *server_info)
+{
+	if (server_info->fd <= 0) {
+		return;
+	}
+
+	switch (server_info->type) {
+	case DNS_SERVER_UDP:
+		return;
+		break;
+	case DNS_SERVER_TCP:
+		if (server_info->fd > 0) {
+			shutdown(server_info->fd, SHUT_RDWR);
+		}
+		break;
+#ifdef HAVE_OPENSSL
+	case DNS_SERVER_TLS:
+	case DNS_SERVER_HTTPS:
+		if (server_info->ssl) {
+			/* Shutdown ssl */
+			if (server_info->status == DNS_SERVER_STATUS_CONNECTED) {
+				_ssl_shutdown(server_info);
+			}
+			shutdown(server_info->fd, SHUT_RDWR);
+		}
+		break;
+#endif
+	default:
+		break;
+	}
 }
 
 static void _dns_client_server_close(struct dns_server_info *server_info)
@@ -994,6 +1099,9 @@ static void _dns_client_server_remove_all(void)
 	{
 		list_del(&server_info->list);
 		_dns_client_server_close(server_info);
+#ifdef HAVE_OPENSSL
+		pthread_mutex_destroy(&server_info->lock);
+#endif
 		free(server_info);
 	}
 	pthread_mutex_unlock(&client.server_list_lock);
@@ -1447,7 +1555,7 @@ static int _dns_client_recv(struct dns_server_info *server_info, unsigned char *
 	}
 
 	_dns_client_query_release(query);
-	return ret;
+	return 0;
 }
 
 static int _dns_client_create_socket_udp(struct dns_server_info *server_info)
@@ -1538,6 +1646,9 @@ static int _DNS_client_create_socket_tcp(struct dns_server_info *server_info)
 		}
 	}
 
+	server_info->fd = fd;
+	server_info->status = DNS_SERVER_STATUS_CONNECTING;
+
 	memset(&event, 0, sizeof(event));
 	event.events = EPOLLIN | EPOLLOUT;
 	event.data.ptr = server_info;
@@ -1546,17 +1657,19 @@ static int _DNS_client_create_socket_tcp(struct dns_server_info *server_info)
 		return -1;
 	}
 
-	server_info->fd = fd;
-	server_info->status = DNS_SERVER_STATUS_CONNECTING;
-
 	tlog(TLOG_DEBUG, "tcp server %s connecting.\n", server_info->ip);
 
 	return 0;
 errout:
+	if (server_info->fd > 0) {
+		server_info->fd = -1;
+	}
+
+	server_info->status = DNS_SERVER_STATUS_INIT;
+
 	if (fd > 0) {
 		close(fd);
 	}
-
 	return -1;
 }
 
@@ -1632,6 +1745,11 @@ static int _DNS_client_create_socket_tls(struct dns_server_info *server_info, ch
 		SSL_set_tlsext_host_name(ssl, hostname);
 	}
 
+	server_info->fd = fd;
+	server_info->ssl = ssl;
+	server_info->ssl_write_len = -1;
+	server_info->status = DNS_SERVER_STATUS_CONNECTING;
+
 	memset(&event, 0, sizeof(event));
 	event.events = EPOLLIN | EPOLLOUT;
 	event.data.ptr = server_info;
@@ -1640,14 +1758,20 @@ static int _DNS_client_create_socket_tls(struct dns_server_info *server_info, ch
 		goto errout;
 	}
 
-	server_info->fd = fd;
-	server_info->ssl = ssl;
-	server_info->status = DNS_SERVER_STATUS_CONNECTING;
-
 	tlog(TLOG_DEBUG, "tls server %s connecting.\n", server_info->ip);
 
 	return 0;
 errout:
+	if (server_info->fd > 0) {
+		server_info->fd = -1;
+	}
+
+	if (server_info->ssl) {
+		server_info->ssl = NULL;
+	}
+
+	server_info->status = DNS_SERVER_STATUS_INIT;
+
 	if (fd > 0) {
 		close(fd);
 	}
@@ -1750,28 +1874,28 @@ static int _dns_client_process_udp(struct dns_server_info *server_info, struct e
 }
 
 #ifdef HAVE_OPENSSL
-static int _dns_client_socket_ssl_send(SSL *ssl, const void *buf, int num)
+static int _dns_client_socket_ssl_send(struct dns_server_info *server, const void *buf, int num)
 {
 	int ret = 0;
 	int ssl_ret = 0;
 	unsigned long ssl_err = 0;
 
-	if (ssl == NULL) {
+	if (server->ssl == NULL) {
 		errno = EINVAL;
 		return -1;
 	}
 
-	ret = SSL_write(ssl, buf, num);
+	ret = _ssl_write(server, buf, num);
 	if (ret > 0) {
 		return ret;
 	}
 
-	ssl_ret = SSL_get_error(ssl, ret);
+	ssl_ret = _ssl_get_error(server, ret);
 	switch (ssl_ret) {
 	case SSL_ERROR_NONE:
-	case SSL_ERROR_ZERO_RETURN:
 		return 0;
 		break;
+	case SSL_ERROR_ZERO_RETURN:
 	case SSL_ERROR_WANT_READ:
 		errno = EAGAIN;
 		ret = -1;
@@ -1784,7 +1908,8 @@ static int _dns_client_socket_ssl_send(SSL *ssl, const void *buf, int num)
 		ssl_err = ERR_get_error();
 		int ssl_reason = ERR_GET_REASON(ssl_err);
 		if (ssl_reason == SSL_R_UNINITIALIZED || ssl_reason == SSL_R_PROTOCOL_IS_SHUTDOWN ||
-			ssl_reason == SSL_R_BAD_LENGTH || ssl_reason == SSL_R_SHUTDOWN_WHILE_IN_INIT) {
+			ssl_reason == SSL_R_BAD_LENGTH || ssl_reason == SSL_R_SHUTDOWN_WHILE_IN_INIT ||
+			ssl_reason == SSL_R_BAD_WRITE_RETRY) {
 			errno = EAGAIN;
 			return -1;
 		}
@@ -1805,23 +1930,23 @@ static int _dns_client_socket_ssl_send(SSL *ssl, const void *buf, int num)
 	return ret;
 }
 
-static int _dns_client_socket_ssl_recv(SSL *ssl, void *buf, int num)
+static int _dns_client_socket_ssl_recv(struct dns_server_info *server, void *buf, int num)
 {
 	int ret = 0;
 	int ssl_ret = 0;
 	unsigned long ssl_err = 0;
 
-	if (ssl == NULL) {
+	if (server->ssl == NULL) {
 		errno = EFAULT;
 		return -1;
 	}
 
-	ret = SSL_read(ssl, buf, num);
+	ret = _ssl_read(server, buf, num);
 	if (ret >= 0) {
 		return ret;
 	}
 
-	ssl_ret = SSL_get_error(ssl, ret);
+	ssl_ret = _ssl_get_error(server, ret);
 	switch (ssl_ret) {
 	case SSL_ERROR_NONE:
 	case SSL_ERROR_ZERO_RETURN:
@@ -1847,11 +1972,15 @@ static int _dns_client_socket_ssl_recv(SSL *ssl, void *buf, int num)
 			return 0;
 		}
 
-		tlog(TLOG_ERROR, "SSL read fail error no: %s(%ld)\n", ERR_reason_error_string(ssl_err), ssl_err);
+		tlog(TLOG_ERROR, "SSL read fail error no: %s(%lx)\n", ERR_reason_error_string(ssl_err), ssl_err);
 		errno = EFAULT;
 		ret = -1;
 		break;
 	case SSL_ERROR_SYSCALL:
+		if (errno == 0) {
+			return 0;
+		}
+
 		if (errno != ECONNRESET) {
 			tlog(TLOG_INFO, "SSL syscall failed, %s ", strerror(errno));
 		}
@@ -1875,7 +2004,18 @@ static int _dns_client_socket_send(struct dns_server_info *server_info)
 		return send(server_info->fd, server_info->send_buff.data, server_info->send_buff.len, MSG_NOSIGNAL);
 #ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS || server_info->type == DNS_SERVER_HTTPS) {
-		return _dns_client_socket_ssl_send(server_info->ssl, server_info->send_buff.data, server_info->send_buff.len);
+		int write_len = server_info->send_buff.len;
+		if (server_info->ssl_write_len > 0) {
+			write_len = server_info->ssl_write_len;
+			server_info->ssl_write_len = -1;
+		}
+		int ret = _dns_client_socket_ssl_send(server_info, server_info->send_buff.data, write_len);
+		if (ret != 0) {
+			if (errno == EAGAIN) {
+				server_info->ssl_write_len = write_len;
+			}
+		}
+		return ret;
 #endif
 	} else {
 		return -1;
@@ -1891,7 +2031,7 @@ static int _dns_client_socket_recv(struct dns_server_info *server_info)
 					DNS_TCP_BUFFER - server_info->recv_buff.len, 0);
 #ifdef HAVE_OPENSSL
 	} else if (server_info->type == DNS_SERVER_TLS || server_info->type == DNS_SERVER_HTTPS) {
-		return _dns_client_socket_ssl_recv(server_info->ssl, server_info->recv_buff.data + server_info->recv_buff.len,
+		return _dns_client_socket_ssl_recv(server_info, server_info->recv_buff.data + server_info->recv_buff.len,
 										   DNS_TCP_BUFFER - server_info->recv_buff.len);
 #endif
 	} else {
@@ -2010,6 +2150,11 @@ static int _dns_client_process_tcp(struct dns_server_info *server_info, struct e
 
 			/* FOR GFW */
 			if (errno == ECONNRESET) {
+				goto errout;
+			}
+
+			if (errno == ETIMEDOUT) {
+				tlog(TLOG_INFO, "recv failed, server %s:%d, %s\n", server_info->ip, server_info->port, strerror(errno));
 				goto errout;
 			}
 
@@ -2143,11 +2288,31 @@ static int _dns_client_tls_matchName(const char *host, const char *pattern, int 
 }
 
 #ifdef HAVE_OPENSSL
+static int _dns_client_tls_get_cert_CN(X509 *cert, char *cn, int max_cn_len)
+{
+	X509_NAME *cert_name = NULL;
+
+	cert_name = X509_get_subject_name(cert);
+	if (cert_name == NULL) {
+		tlog(TLOG_ERROR, "get subject name failed.");
+		goto errout;
+	}
+
+	if (X509_NAME_get_text_by_NID(cert_name, NID_commonName, cn, max_cn_len) == -1) {
+		tlog(TLOG_ERROR, "cannot found x509 name");
+		goto errout;
+	}
+
+	return 0;
+
+errout:
+	return -1;
+}
+
 static int _dns_client_tls_verify(struct dns_server_info *server_info)
 {
 	X509 *cert = NULL;
 	X509_PUBKEY *pubkey = NULL;
-	X509_NAME *cert_name = NULL;
 	char peer_CN[256];
 	char cert_fingerprint[256];
 	int i = 0;
@@ -2162,8 +2327,10 @@ static int _dns_client_tls_verify(struct dns_server_info *server_info)
 		return -1;
 	}
 
+	pthread_mutex_lock(&server_info->lock);
 	cert = SSL_get_peer_certificate(server_info->ssl);
 	if (cert == NULL) {
+		pthread_mutex_unlock(&server_info->lock);
 		tlog(TLOG_ERROR, "get peer certificate failed.");
 		return -1;
 	}
@@ -2171,24 +2338,22 @@ static int _dns_client_tls_verify(struct dns_server_info *server_info)
 	if (server_info->skip_check_cert == 0) {
 		long res = SSL_get_verify_result(server_info->ssl);
 		if (res != X509_V_OK) {
-			tlog(TLOG_WARN, "peer server certificate verify failed.");
+			pthread_mutex_unlock(&server_info->lock);
+			peer_CN[0] = '\0';
+			_dns_client_tls_get_cert_CN(cert, peer_CN, sizeof(peer_CN));
+			tlog(TLOG_WARN, "peer server %s certificate verify failed", server_info->ip);
+			tlog(TLOG_WARN, "peer CN: %s", peer_CN);
 			goto errout;
 		}
 	}
+	pthread_mutex_unlock(&server_info->lock);
 
-	cert_name = X509_get_subject_name(cert);
-	if (cert_name == NULL) {
-		tlog(TLOG_ERROR, "get subject name failed.");
-		goto errout;
-	}
-
-	if (X509_NAME_get_text_by_NID(cert_name, NID_commonName, peer_CN, 256) == -1) {
-		tlog(TLOG_ERROR, "cannot found x509 name");
+	if (_dns_client_tls_get_cert_CN(cert, peer_CN, sizeof(peer_CN)) != 0) {
+		tlog(TLOG_ERROR, "get cert CN failed.");
 		goto errout;
 	}
 
 	tlog(TLOG_DEBUG, "peer CN: %s", peer_CN);
-
 	/* check tls host */
 	tls_host_verify = _dns_client_server_get_tls_host_verify(server_info);
 	if (tls_host_verify) {
@@ -2281,12 +2446,12 @@ static int _dns_client_process_tls(struct dns_server_info *server_info, struct e
 
 	if (server_info->status == DNS_SERVER_STATUS_CONNECTING) {
 		/* do SSL hand shake */
-		ret = SSL_do_handshake(server_info->ssl);
+		ret = _ssl_do_handshake(server_info);
 		if (ret == 0) {
 			goto errout;
 		} else if (ret < 0) {
 			memset(&fd_event, 0, sizeof(fd_event));
-			ssl_ret = SSL_get_error(server_info->ssl, ret);
+			ssl_ret = _ssl_get_error(server_info, ret);
 			if (ssl_ret == SSL_ERROR_WANT_READ) {
 				fd_event.events = EPOLLIN;
 			} else if (ssl_ret == SSL_ERROR_WANT_WRITE) {
@@ -2315,7 +2480,7 @@ static int _dns_client_process_tls(struct dns_server_info *server_info, struct e
 
 		tlog(TLOG_DEBUG, "tls server %s connected.\n", server_info->ip);
 		/* Was the stored session reused? */
-		if (SSL_session_reused(server_info->ssl)) {
+		if (_ssl_session_reused(server_info)) {
 			tlog(TLOG_DEBUG, "reused session");
 		} else {
 			tlog(TLOG_DEBUG, "new session");
@@ -2333,13 +2498,13 @@ static int _dns_client_process_tls(struct dns_server_info *server_info, struct e
 			}
 
 			/* save ssl session for next request */
-			server_info->ssl_session = SSL_get1_session(server_info->ssl);
+			server_info->ssl_session = _ssl_get1_session(server_info);
 			pthread_mutex_unlock(&client.server_list_lock);
 		}
 
 		server_info->status = DNS_SERVER_STATUS_CONNECTED;
 		memset(&fd_event, 0, sizeof(fd_event));
-		fd_event.events = EPOLLIN;
+		fd_event.events = EPOLLIN | EPOLLOUT;
 		fd_event.data.ptr = server_info;
 		if (epoll_ctl(client.epoll_fd, EPOLL_CTL_MOD, server_info->fd, &fd_event) != 0) {
 			tlog(TLOG_ERROR, "epoll ctl failed, %s", strerror(errno));
@@ -2488,13 +2653,13 @@ static int _dns_client_send_tls(struct dns_server_info *server_info, void *packe
 		return -1;
 	}
 
-	send_len = _dns_client_socket_ssl_send(server_info->ssl, inpacket, len);
+	send_len = _dns_client_socket_ssl_send(server_info, inpacket, len);
 	if (send_len <= 0) {
 		if (errno == EAGAIN || errno == EPIPE || server_info->ssl == NULL) {
 			/* save data to buffer, and retry when EPOLLOUT is available */
 			return _dns_client_send_data_to_buffer(server_info, inpacket, len);
 		} else if (server_info->ssl && errno != ENOMEM) {
-			SSL_set_shutdown(server_info->ssl, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
+			SSL_shutdown(server_info->ssl);
 		}
 		return -1;
 	} else if (send_len < len) {
@@ -2539,13 +2704,13 @@ static int _dns_client_send_https(struct dns_server_info *server_info, void *pac
 		return -1;
 	}
 
-	send_len = _dns_client_socket_ssl_send(server_info->ssl, inpacket, http_len);
+	send_len = _dns_client_socket_ssl_send(server_info, inpacket, http_len);
 	if (send_len <= 0) {
 		if (errno == EAGAIN || errno == EPIPE || server_info->ssl == NULL) {
 			/* save data to buffer, and retry when EPOLLOUT is available */
 			return _dns_client_send_data_to_buffer(server_info, inpacket, http_len);
 		} else if (server_info->ssl && errno != ENOMEM) {
-			SSL_set_shutdown(server_info->ssl, SSL_SENT_SHUTDOWN | SSL_RECEIVED_SHUTDOWN);
+			_ssl_shutdown(server_info);
 		}
 		return -1;
 	} else if (send_len < http_len) {
@@ -2563,8 +2728,8 @@ static int _dns_client_send_packet(struct dns_query_struct *query, void *packet,
 	struct dns_server_group_member *group_member = NULL;
 	struct dns_server_group_member *tmp = NULL;
 	int ret = 0;
-	int i;
 	int send_err = 0;
+	int i = 0;
 
 	query->send_tick = get_tick_count();
 
@@ -2616,21 +2781,18 @@ static int _dns_client_send_packet(struct dns_query_struct *query, void *packet,
 					tlog(TLOG_DEBUG, "send query to %s failed, %s, type: %d", server_info->ip, strerror(send_err),
 						 server_info->type);
 					_dns_client_close_socket(server_info);
-				} else if (send_err != ENOMEM) {
-					tlog(TLOG_ERROR, "send query to %s failed, %s, type: %d", server_info->ip, strerror(send_err),
-						 server_info->type);
-				} else {
-					tlog(TLOG_DEBUG, "send query to %s failed, %s, type: %d", server_info->ip, strerror(send_err),
-						 server_info->type);
-					time_t now;
-					time(&now);
-					if (now - 5 > server_info->last_recv) {
-						server_info->recv_buff.len = 0;
-						server_info->send_buff.len = 0;
-						tlog(TLOG_DEBUG, "server %s not response, retry.", server_info->ip);
-						_dns_client_close_socket(server_info);
-					}
+					atomic_dec(&query->dns_request_sent);
+					continue;
 				}
+
+				tlog(TLOG_DEBUG, "send query to %s failed, %s, type: %d", server_info->ip, strerror(send_err),
+					 server_info->type);
+				time_t now;
+				time(&now);
+				if (now - 5 > server_info->last_recv || send_err != ENOMEM) {
+					_dns_client_shutdown_socket(server_info);
+				}
+
 				atomic_dec(&query->dns_request_sent);
 				continue;
 			}
@@ -2887,7 +3049,7 @@ static void _dns_client_add_pending_servers(void)
 		if (pending->query_v4 == 0) {
 			pending->query_v4 = 1;
 			_dns_client_server_pending_get(pending);
-			if (dns_server_query(pending->host, DNS_T_A, _dns_client_pending_server_resolve, pending) != 0) {
+			if (dns_server_query(pending->host, DNS_T_A, 0, _dns_client_pending_server_resolve, pending) != 0) {
 				_dns_client_server_pending_release_lck(pending);
 			}
 		}
@@ -2895,14 +3057,13 @@ static void _dns_client_add_pending_servers(void)
 		if (pending->query_v6 == 0) {
 			pending->query_v6 = 1;
 			_dns_client_server_pending_get(pending);
-			if (dns_server_query(pending->host, DNS_T_AAAA, _dns_client_pending_server_resolve, pending) != 0) {
+			if (dns_server_query(pending->host, DNS_T_AAAA, 0, _dns_client_pending_server_resolve, pending) != 0) {
 				_dns_client_server_pending_release_lck(pending);
 			}
 		}
 
 		/* if both A, AAAA has query result, select fastest IP address */
 		if (pending->has_v4 && pending->has_v6) {
-
 			if (pending->ping_time_v4 <= pending->ping_time_v6 && pending->ipv4[0]) {
 				dnsserver_ip = pending->ipv4;
 			} else {
