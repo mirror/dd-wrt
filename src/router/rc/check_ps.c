@@ -117,11 +117,11 @@ struct mon mons[] = {
 	{ "igmprt", M_WAN, "block_multicast", "0", NULL, NULL, &check_igmprt },
 #endif
 #ifdef HAVE_TRANSMISSION
-	{ "transmission", M_WAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
+	{ "transmission", M_LAN, "transmission_enable", "1", NULL, NULL, &check_transmission },
 #endif
 #ifdef HAVE_ERC
 #ifdef HAVE_OPENVPN
-	{ "openvpn", M_WAN, "openvpncl_enable", "1", NULL, NULL, NULL },
+	{ "openvpn", M_LAN, "openvpncl_enable", "1", NULL, NULL, NULL },
 #endif
 #endif
 	{ "ddns", M_WAN, "ddns_enable", "1", NULL, NULL, &check_ddns },
