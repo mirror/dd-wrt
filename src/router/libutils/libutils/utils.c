@@ -466,6 +466,8 @@ int check_wan_link(int num)
 					set_gpio(atoi(gpio3g), 0);
 #endif
 			}
+			if (wan_link)
+			    return nvram_geti("wan_up");
 			return wan_link;
 		}
 	}
@@ -556,9 +558,12 @@ int check_wan_link(int num)
 		if (nvram_invmatch("wan_ipaddr", "0.0.0.0"))
 			wan_link = 1;
 	}
+	if (wan_link)
+	    return nvram_geti("wan_up");
 
 	return wan_link;
 }
+
 
 int wanactive(char *wanaddr)
 {
