@@ -467,7 +467,7 @@ int check_wan_link(int num)
 #endif
 			}
 			if (wan_link)
-			    return nvram_geti("wan_up");
+			    return nvram_geti("wanup");
 			return wan_link;
 		}
 	}
@@ -559,7 +559,7 @@ int check_wan_link(int num)
 			wan_link = 1;
 	}
 	if (wan_link)
-	    return nvram_geti("wan_up");
+	    return nvram_geti("wanup");
 
 	return wan_link;
 }
