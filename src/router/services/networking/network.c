@@ -4915,7 +4915,6 @@ void wan_done(char *wan_ifname)
 	stop_dhcpfwd();
 	start_dhcpfwd();
 #endif
-	nvram_seti("wanup", 1);
 #ifdef HAVE_MILKFISH
 	if (nvram_matchi("milkfish_enabled", 1)) {
 		cprintf("starting milkfish netup script\n");
@@ -5000,6 +4999,7 @@ void wan_done(char *wan_ifname)
 #endif
 	}
 	start_wan_service();
+	nvram_seti("wanup", 1);
 }
 
 void stop_wan(void)
