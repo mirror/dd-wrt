@@ -1,4 +1,8 @@
 ------------------------------------------------------------------------
+r5404 | brainslayer | 2020-09-22 22:09:54 +0400 (Tue, 22 Sep 2020) | 1 line
+
+mac80211: fix regression in sta connection monitor
+------------------------------------------------------------------------
 r5403 | brainslayer | 2020-09-22 14:59:58 +0400 (Tue, 22 Sep 2020) | 1 line
 
 move rssileds custom into startscript
