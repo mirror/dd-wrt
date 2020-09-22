@@ -172,7 +172,8 @@ SRCS+=	zfeature_common.c \
 	zfs_namecheck.c \
 	zfs_prop.c \
 	zpool_prop.c \
-	zprop_common.c
+	zprop_common.c \
+	zthr.c
 
 #zfs
 SRCS+=	abd.c \
@@ -293,7 +294,6 @@ SRCS+=	abd.c \
 	zio_inject.c \
 	zle.c \
 	zrlock.c \
-	zthr.c \
 	zvol.c
 
 #zstd
