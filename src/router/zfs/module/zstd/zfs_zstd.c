@@ -45,13 +45,13 @@
 #include <sys/zio_compress.h>
 #include <sys/spa.h>
 #include <sys/zstd/zstd.h>
+#include <sys/zthr.h>
 
 #define	ZSTD_STATIC_LINKING_ONLY
 #include "lib/zstd.h"
 #include "lib/zstd_errors.h"
 
 kstat_t *zstd_ksp = NULL;
-
 typedef struct zstd_stats {
 	kstat_named_t	zstd_stat_alloc_fail;
 	kstat_named_t	zstd_stat_alloc_fallback;
@@ -114,6 +114,8 @@ struct zstd_levelmap {
 	int16_t zstd_level;
 	enum zio_zstd_levels level;
 };
+
+static zthr_t *memory_liberator;
 
 /*
  * ZSTD memory handlers
@@ -238,7 +240,7 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 			 * Check if objects fits the size, if so we take it and
 			 * update the timestamp.
 			 */
-			if (!mem && pool->mem && size <= pool->size) {
+			if (size && !mem && pool->mem && size <= pool->size) {
 				pool->timeout = gethrestime_sec() +
 				    ZSTD_POOL_TIMEOUT;
 				mem = pool->mem;
@@ -257,7 +259,7 @@ zstd_mempool_alloc(struct zstd_pool *zstd_mempool, size_t size)
 		}
 	}
 
-	if (mem) {
+	if (!size || mem) {
 		return (mem);
 	}
 
@@ -702,6 +704,19 @@ zstd_mempool_deinit(void)
 	zstd_mempool_cctx = NULL;
 }
 
+static boolean_t
+zstd_memory_liberator_cb(void *arg, zthr_t *zthr)
+{
+	/*
+	 * calling alloc with zero size seeks
+	 * and releases orphan objects
+	 */
+	zstd_mempool_alloc(zstd_mempool_cctx, 0);
+	zstd_mempool_alloc(zstd_mempool_dctx, 0);
+	return (B_FALSE);
+}
+
+
 extern int __init
 zstd_init(void)
 {
@@ -718,12 +733,18 @@ zstd_init(void)
 		kstat_install(zstd_ksp);
 	}
 
+	/* check if objects in memory pool can be released */
+	memory_liberator = zthr_create_timer("zstd_pool_liberator",
+	    &zstd_memory_liberator_cb, NULL, NULL, SEC2NSEC(60));
+
 	return (0);
 }
 
 extern void __exit
 zstd_fini(void)
 {
+	zthr_cancel(memory_liberator);
+	zthr_destroy(memory_liberator);
 	/* Deinitialize kstat */
 	if (zstd_ksp != NULL) {
 		kstat_delete(zstd_ksp);
