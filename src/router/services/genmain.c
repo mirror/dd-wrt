@@ -89,6 +89,10 @@ int main(int argc, char *argv[])
 			i++;
 			continue;
 		}
+		if (!strcmp(syms[i], "stop_process_hard")) {
+			i++;
+			continue;
+		}
 		if (!strncmp(syms[i], "start_", 6)) {
 			char *name = syms[i] + 6;
 			int deps = sym(name, NULL, "deps");
@@ -153,6 +157,10 @@ int main(int argc, char *argv[])
 			}
 		} else if (!strncmp(syms[i], "stop_", 5)) {
 			if (!strcmp(syms[i], "stop_process")) {
+				i++;
+				continue;
+			}
+			if (!strcmp(syms[i], "stop_process_hard")) {
 				i++;
 				continue;
 			}
@@ -264,6 +272,10 @@ int main(int argc, char *argv[])
 			i++;
 			continue;
 		}
+		if (!strcmp(syms[i], "stop_process_hard")) {
+			i++;
+			continue;
+		}
 		if (!strncmp(syms[i], "stop_", 5)) {
 			fprintf(out, "HANDLE_STOP(%d,%s);\n", inlist(syms[i] + 5), syms[i] + 5);
 		}
@@ -275,6 +287,10 @@ int main(int argc, char *argv[])
 	while (syms[i]) {
 		fprintf(stdout, "process restart %s\n", syms[i]);
 		if (!strcmp(syms[i], "stop_process")) {
+			i++;
+			continue;
+		}
+		if (!strcmp(syms[i], "stop_process_hard")) {
 			i++;
 			continue;
 		}
