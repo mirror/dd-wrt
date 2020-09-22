@@ -22,6 +22,7 @@ $(MODULE)-objs += zfs_prop.o
 $(MODULE)-objs += zfs_uio.o
 $(MODULE)-objs += zpool_prop.o
 $(MODULE)-objs += zprop_common.o
+$(MODULE)-objs += zthr.o
 
 $(MODULE)-$(CONFIG_X86) += zfs_fletcher_intel.o
 $(MODULE)-$(CONFIG_X86) += zfs_fletcher_sse.o
