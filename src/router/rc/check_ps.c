@@ -332,7 +332,7 @@ static int do_mon(void)
 			printf("checking %s\n", v->name);
 
 			if (v->type == M_WAN)
-				if (!check_wan_link(0)) {
+				if (!nvram_matchi("wanup", 1)) {
 					printf("process is wan, but wan is not up\n");
 					continue;
 				}
