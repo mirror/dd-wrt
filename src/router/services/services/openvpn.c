@@ -57,23 +57,23 @@ void create_openvpnrules(FILE * fp)
 	fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
 	fprintf(fp, "cat << EOF > /tmp/openvpncl_fw.sh\n" "#!/bin/sh\n");	// write firewall rules on route up to separate script to expand env. parameters
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n"	//
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"	//
 			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n"	//
+		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT 2> /dev/null\n"	//
 			"iptables -I INPUT -i $dev -j ACCEPT\n");
 	} else {
 		if (nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
-			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n"	//
-				"iptables -D FORWARD -i $dev -j ACCEPT\n"	//
-				"iptables -D FORWARD -o $dev -j ACCEPT\n"	//
+			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT 2> /dev/null\n"	//
+				"iptables -D FORWARD -i $dev -j ACCEPT 2> /dev/null\n"	//
+				"iptables -D FORWARD -o $dev -j ACCEPT 2> /dev/null\n"	//
 				"iptables -I INPUT -i $dev -j ACCEPT\n"	//
 				"iptables -I FORWARD -i $dev -j ACCEPT\n"	//
 				"iptables -I FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_match("openvpncl_mit", "1"))
-		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
 	    && nvram_match("openvpncl_tuntap", "tap")
 	    && nvram_matchi("openvpncl_bridge", 1)) {
@@ -83,8 +83,8 @@ void create_openvpnrules(FILE * fp)
 			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
-		fprintf(fp, "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP 2> /dev/null\n" "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
+		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP 2> /dev/null\n" "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
 	fprintf(fp, "/tmp/openvpncl_fw.sh\n");
@@ -92,7 +92,8 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "cat /tmp/resolv.dnsmasq > /tmp/resolv.dnsmasq_isp\n");
 		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ print \"nameserver \" $3 }' > /tmp/resolv.dnsmasq\n");
 		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
-		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
+		//fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
+		fprintf(fp, "nvram set openvpn_get_dns=\"$(env | grep 'dhcp-option DNS' | awk '{ printf \"\%%s \",$3 }')\"\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -627,13 +628,13 @@ void start_openvpn(void)
 		fprintf(fp, "ifconfig $dev down\n");
 
 	if (nvram_matchi("openvpncl_nat", 1)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
+		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
 	if (nvram_matchi("openvpncl_sec", 0)) {
 		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n");
-	}
-	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D FORWARD -i $dev -j ACCEPT\n" "iptables -D FORWARD -o $dev -j ACCEPT\n");
+	} else {
+		if (nvram_match("openvpncl_tuntap", "tun")) 
+			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D FORWARD -i $dev -j ACCEPT\n" "iptables -D FORWARD -o $dev -j ACCEPT\n");
 	}
 	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
 		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
@@ -645,11 +646,12 @@ void start_openvpn(void)
 		fprintf(fp, "while ip rule delete from 0/0 to 0/0 table 10; do true; done\n");	//egc: added to delete ip rules
 	}
 	if (nvram_match("openvpncl_tuntap", "tun")) {
-		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && mv -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
+		fprintf(fp, "[ -f /tmp/resolv.dnsmasq_isp ] && cp -f /tmp/resolv.dnsmasq_isp /tmp/resolv.dnsmasq && nvram unset openvpn_get_dns\n");
 	}
-	if (nvram_match("openvpncl_mit", "1"))
+	if (nvram_match("openvpncl_mit", "1")) {
 		fprintf(fp, "[[ ! -z \"$ifconfig_netmask\" ]] && vpn_netmask=\"/$ifconfig_netmask\"\n");
-	fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
+		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
+	}
 /*      if (nvram_matchi("block_multicast",0) //block multicast on bridged vpns
                 && nvram_match("openvpncl_tuntap", "tap")
                 && nvram_matchi("openvpncl_bridge",1)) {
