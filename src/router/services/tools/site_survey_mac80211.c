@@ -1551,7 +1551,7 @@ void mac80211_site_survey(char *interface)
 	char macaddr[32];
 	unsigned char hwbuff[16];
 	bzero(site_survey_lists, sizeof(struct site_survey_list) * SITE_SURVEY_NUM);
-	sysprintf("iw dev %s scan", interface);
+	eval("iw", "dev", interface, "scan");
 	mac80211_scan(&unl, interface);
 	write_site_survey();
 	open_site_survey();
