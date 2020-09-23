@@ -3175,7 +3175,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	sprintf(wl_uapsd, "%s_uapsd", prefix);
 	sprintf(wl_ldpc, "%s_ldpc", prefix);
 	if (has_ldpc(prefix)) {
-		showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		if ((strcmp(netmode, "mixed") &&	//
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")))
+			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
@@ -4282,7 +4285,10 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif
 	if (has_ldpc(prefix)) {
-		showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
+		char *netmode = nvram_nget("%s_net_mode", prefix);
+		if ((strcmp(netmode, "mixed") &&	//
+		     strcmp(netmode, "ac-only") && strcmp(netmode, "acn-mixed")))
+			showRadioInv(wp, "wl_basic.ldpc", wl_ldpc);
 	}
 	if (has_uapsd(prefix)) {
 		showRadio(wp, "wl_basic.uapsd", wl_uapsd);
