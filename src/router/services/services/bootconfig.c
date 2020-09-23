@@ -82,10 +82,12 @@ void start_bootconfig(void)
 	fscanf(in, "%s", serial);
 	fclose(in);
 	FILE *out = fopen("/boot/boot/grub/menu.lst", "wb");
+	char *vga = " fbcon=nodefer vga=0x305";
 	if (!strncmp(serial, "serial", 6)) {
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
+		vga = "";
 	}
 	fprintf(out, "default 0\n");
 	if (strlen(args)) {
@@ -97,12 +99,12 @@ void start_bootconfig(void)
 	if (strlen(args)) {
 		fprintf(out, "title   DD-WRT\n");
 		fprintf(out, "root    (hd0,0)\n");
-		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 console=tty0,115200n8 reboot=bios rootdelay=5%s\n", args);
+		fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s console=tty0,115200n8 reboot=bios rootdelay=5%s\n", vga, args);
 		fprintf(out, "boot\n\n");
 	}
 	fprintf(out, "title   default\n");
 	fprintf(out, "root    (hd0,0)\n");
-	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd fbcon=nodefer vga=0x305 console=tty0,115200n8 reboot=bios rootdelay=5\n");
+	fprintf(out, "kernel  /boot/vmlinuz root=/dev/hda2 rootfstype=squashfs noinitrd%s console=tty0,115200n8 reboot=bios rootdelay=5\n", vga);
 	fprintf(out, "boot\n");
 	fprintf(out, "\n");
 	fclose(out);
