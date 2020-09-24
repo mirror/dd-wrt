@@ -216,10 +216,10 @@ void start_sysinit(void)
 
 	eval("ledtool", "10", "0");
 
-	setEthLED(14, "eth0");
-	setEthLinkLED(21, "eth0");
-	setEthLED(13, "eth1");
-	setEthLinkLED(20, "eth1");
+	setEthLED(21, "eth0");
+	setEthLinkLED(14, "eth0");
+	setEthLED(20, "eth1");
+	setEthLinkLED(13, "eth1");
 #endif				//HAVE_FMS2111
 #endif
 
