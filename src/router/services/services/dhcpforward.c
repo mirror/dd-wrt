@@ -69,17 +69,18 @@ void start_dhcpfwd(void)
 
 		char *wan_proto = nvram_safe_get("wan_proto");
 		char *wan_ifname = nvram_safe_get("wan_ifname");
-
+		char *dhcpfw_ifname = nvram_safe_get("dhcpfwd_ifname");
+		
 		if (getSTA()) {
 			wan_ifname = getSTA();	// returns eth1/eth2 for broadcom and 
 			// ath0 for atheros
 		}
-#ifdef HAVE_PPPOE
-		if (strcmp(wan_proto, "pppoe") == 0) {
-			fprintf(fp, "if	ppp0	false	true	true\n");
+		if (*dhcpfw_ifname) {
+			fprintf(fp, "if	%s	false	true	true\n", dhcpfw_ifname);
 		}
-#else
-		if (0) {
+#ifdef HAVE_PPPOE
+		else if (strcmp(wan_proto, "pppoe") == 0) {
+			fprintf(fp, "if	ppp0	false	true	true\n");
 		}
 #endif
 		else if (getWET()) {
