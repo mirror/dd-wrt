@@ -87,7 +87,7 @@ void start_bootconfig(void)
 		fprintf(out, "serial --unit=0 --speed=115200 --word=8 --parity=no --stop=1\n");
 		fprintf(out, "terminal --timeout=10 serial\n");
 		fprintf(out, "\n");
-		vga = "";
+		vga = " video=vga16fb:off";
 	}
 	fprintf(out, "default 0\n");
 	if (strlen(args)) {
