@@ -124,9 +124,10 @@ int ej_active_wireless_if_ath9k(webs_t wp, int argc, char_t ** argv, char *ifnam
 			ht = 0;
 		if (ht == 5 && vht)
 			ht = 0;
-		if (ht == 5)
+		if (ht == 5) {
 			strcpy(info, "LEGACY");
-		else
+			ht = 0;
+		} else
 			strcpy(info, vht ? "VHT" : "HT");
 		if (div == 2)
 			ht = 7;
