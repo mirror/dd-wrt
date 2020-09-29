@@ -938,7 +938,7 @@ void setupHostAP_generic_ath9k(char *prefix, FILE * fp, int isrepeater, int aoss
 		int i_ldpc = nvram_default_geti(ldpc, 1);
 		if ((!strcmp(netmode, "mixed") ||	//
 		     !strcmp(netmode, "ac-only") || !strcmp(netmode, "acn-mixed"))) {
-			i_ldpc = 0;
+			i_ldpc = 1;
 		}
 		caps = mac80211_get_caps(prefix, nvram_default_matchi(shortgi, 1, 1) ? 1 : 0, nvram_default_matchi(greenfield, 1, 0) ? 1 : 0, usebw > 20, i_ldpc);
 		if (ht) {
