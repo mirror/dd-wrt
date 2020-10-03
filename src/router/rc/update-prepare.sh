@@ -90,7 +90,7 @@ mount -t proc proc ${R}proc
 mount -t sysfs sys ${R}sys 
 cp -av /dev ${R}/
 #not nice, but works.
-for i in /tmp/services/* ; do echo `basename $i .start` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
+for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
 killall process_monitor
 killall mstpd
 killall resetbutton
