@@ -1,4 +1,24 @@
 ------------------------------------------------------------------------
+r5440 | brainslayer | 2020-10-03 18:34:58 +0400 (Sat, 03 Oct 2020) | 1 line
+
+disable wds learning
+------------------------------------------------------------------------
+r5439 | brainslayer | 2020-10-03 18:34:34 +0400 (Sat, 03 Oct 2020) | 1 line
+
+disable wds learning
+------------------------------------------------------------------------
+r5438 | brainslayer | 2020-10-03 15:31:36 +0400 (Sat, 03 Oct 2020) | 1 line
+
+allow bcast for mesh mode
+------------------------------------------------------------------------
+r5437 | brainslayer | 2020-10-03 15:29:57 +0400 (Sat, 03 Oct 2020) | 1 line
+
+allow bcast for mesh mode
+------------------------------------------------------------------------
+r5436 | brainslayer | 2020-10-03 15:29:47 +0400 (Sat, 03 Oct 2020) | 1 line
+
+auto adjust duration values to filter bogus measurements
+------------------------------------------------------------------------
 r5435 | brainslayer | 2020-10-03 15:16:07 +0400 (Sat, 03 Oct 2020) | 1 line
 
 try custom fw for qca988x for later auto ack timing support
