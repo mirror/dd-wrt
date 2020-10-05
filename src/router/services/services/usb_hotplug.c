@@ -145,7 +145,7 @@ void start_hotplug_block(void)
 		return;		//skip
 
 	char devname[64];
-	sprintf(devname, "/dev/%s", name);
+	sprintf(devname, sizeof(devname) - 1,  "/dev/%s", name);
 	optimize_block_device(slash + 1);
 	char sysdev[128];
 	sprintf(sysdev, "/sys%s/partition", devpath);

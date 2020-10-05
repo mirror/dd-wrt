@@ -218,7 +218,7 @@ void start_hotplug_block(void)
 		return;
 	if (!*devp)
 		return;
-	strncpy(part, sizeof(part) - 1, devp + 1);
+	strncpy(part, devp + 1, sizeof(part) - 1);
 	
 	optimize_block_device(devp + 1);
 
@@ -229,7 +229,7 @@ void start_hotplug_block(void)
 		usb_stopservices();
 	}
 
-	snprintf(devname, sizeof(devname) - 1, "/dev/%s", part);
+	snprintf(devname, "/dev/%s", part, sizeof(devname) - 1);
 	sysprintf("/usr/sbin/disktype %s", devname);
 	eval("hdparm", "-S", "242", devname);
 	eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
