@@ -131,7 +131,6 @@ void start_hotplug_block(void)
 		return;
 	if (!(devpath = getenv("DEVPATH")))
 		return;
-	dd_debug(DEBUG_SERVICE, "%s:%d %s\n", __func__,__LINE__, devpath);
 	char *slash = strrchr(devpath, '/');
 	//sysprintf("echo action %s devpath %s >> /tmp/hotplugs", action,
 	//        devpath);

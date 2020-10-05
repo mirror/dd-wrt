@@ -196,7 +196,7 @@ void start_hotplug_block(void)
 	char *action;
 	int i;
 	int c;
-	char part[5];
+	char part[128];
 	char devname[32];
 	if (!(devpath = getenv("DEVPATH")))
 		return;
@@ -208,11 +208,18 @@ void start_hotplug_block(void)
 	// e.g. /devices/pci0000:00/0000:00:04.1/usb1/1-1/1-1.2/1-1.2:1.0/host1/target1:0:0/1:0:0:0/block/sda/sda1
 	//sysprintf("echo hotplug_block_block action %s devpath %s >> /tmp/hotplugs", action, devpath);
 	int len;
+	if (!devpath)
+		return;
+	if (!*devpath)
+		return;	
 	len = strlen(devpath);
 	char *devp = strrchr(devpath, '/');
 	if (!devp)
 		return;
-	strcpy(part, devp + 1);
+	if (!*devp)
+		return;
+	strncpy(part, sizeof(part) - 1, devp + 1);
+	
 	optimize_block_device(devp + 1);
 
 	if (strncmp(part, "sd", 2) && strncmp(part, "mmc", 3) && strncmp(part, "hd", 2) && strncmp(part, "sr", 2) && strncmp(part, "md", 2))
@@ -222,7 +229,7 @@ void start_hotplug_block(void)
 		usb_stopservices();
 	}
 
-	sprintf(devname, "/dev/%s", part);
+	snprintf(devname, sizeof(devname) - 1, "/dev/%s", part);
 	sysprintf("/usr/sbin/disktype %s", devname);
 	eval("hdparm", "-S", "242", devname);
 	eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
