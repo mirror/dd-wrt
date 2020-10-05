@@ -156,6 +156,7 @@ int check_arguments(int argc, char *argv[])
 		}
 		return -1;
 	}
+	dd_debug(DEBUG_SERVICE, "call service for %s\n", argv[1]);
 	int i;
 	if (argc > 3 && !strcmp(argv[3], "-f"))
 		force = 1;
