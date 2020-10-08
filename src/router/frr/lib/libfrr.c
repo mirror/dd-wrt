@@ -33,6 +33,7 @@
 #include "lib_vty.h"
 #include "log_vty.h"
 #include "zclient.h"
+#include "log_int.h"
 #include "module.h"
 #include "network.h"
 #include "lib_errors.h"
@@ -382,7 +383,7 @@ static int frr_opt(int opt)
 		exit(0);
 		break;
 	case 'd':
-		di->daemon_mode = true;
+		di->daemon_mode = 1;
 		break;
 	case 'M':
 		oc = XMALLOC(MTYPE_TMP, sizeof(*oc));
@@ -466,12 +467,12 @@ static int frr_opt(int opt)
 	case 'C':
 		if (di->flags & FRR_NO_CFG_PID_DRY)
 			return 1;
-		di->dryrun = true;
+		di->dryrun = 1;
 		break;
 	case 't':
 		if (di->flags & FRR_NO_CFG_PID_DRY)
 			return 1;
-		di->terminal = true;
+		di->terminal = 1;
 		break;
 	case 'z':
 		di->zpathspace = true;
@@ -629,7 +630,6 @@ struct thread_master *frr_init(void)
 {
 	struct option_chain *oc;
 	struct frrmod_runtime *module;
-	struct zprivs_ids_t ids;
 	char moderr[256];
 	char p_instance[16] = "", p_pathspace[256] = "";
 	const char *dir;
@@ -657,10 +657,9 @@ struct thread_master *frr_init(void)
 #endif
 
 	zprivs_preinit(di->privs);
-	zprivs_get_ids(&ids);
 
-	zlog_init(di->progname, di->logname, di->instance,
-		  ids.uid_normal, ids.gid_normal);
+	openzlog(di->progname, di->logname, di->instance,
+		 LOG_CONS | LOG_NDELAY | LOG_PID, LOG_DAEMON);
 
 	command_setup_early_logging(di->early_logging, di->early_loglevel);
 
@@ -710,6 +709,7 @@ struct thread_master *frr_init(void)
 
 	vty_init(master, di->log_always);
 	lib_cmd_init();
+	log_filter_cmd_init();
 
 	frr_pthread_init();
 
@@ -717,7 +717,7 @@ struct thread_master *frr_init(void)
 	log_ref_vty_init();
 	lib_error_init();
 
-	yang_init(true);
+	yang_init();
 
 	debug_init_cli();
 
@@ -935,7 +935,6 @@ void frr_config_fork(void)
 	if (!di->pid_file)
 		di->pid_file = pidfile_default;
 	pid_output(di->pid_file);
-	zlog_tls_buffer_init();
 }
 
 static void frr_vty_serv(void)
@@ -1087,7 +1086,7 @@ void frr_run(struct thread_master *master)
 	}
 
 	/* end fixed stderr startup logging */
-	zlog_startup_end();
+	zlog_startup_stderr = false;
 
 	struct thread thread;
 	while (thread_fetch(master, &thread))
@@ -1120,8 +1119,7 @@ void frr_fini(void)
 	/* signal_init -> nothing needed */
 	thread_master_free(master);
 	master = NULL;
-	zlog_tls_buffer_fini();
-	zlog_fini();
+	closezlog();
 	/* frrmod_init -> nothing needed / hooks */
 	rcu_shutdown();
 

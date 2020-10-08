@@ -16,7 +16,7 @@ module frr-bfdd {
     prefix frr-route-types;
   }
 
-  organization "FRRouting";
+  organization "Free Range Routing";
   contact
     "FRR Users List:       <mailto:frog@lists.frrouting.org>
      FRR Development List: <mailto:dev@lists.frrouting.org>";

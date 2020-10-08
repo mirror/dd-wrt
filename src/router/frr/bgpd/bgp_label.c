@@ -132,6 +132,7 @@ int bgp_reg_for_label_callback(mpls_label_t new_label, void *labelid,
 {
 	struct bgp_path_info *pi;
 	struct bgp_node *rn;
+	char addr[PREFIX_STRLEN];
 
 	pi = labelid;
 	/* Is this path still valid? */
@@ -144,9 +145,10 @@ int bgp_reg_for_label_callback(mpls_label_t new_label, void *labelid,
 	}
 
 	rn = pi->net;
+	prefix2str(&rn->p, addr, PREFIX_STRLEN);
 
 	if (BGP_DEBUG(labelpool, LABELPOOL))
-		zlog_debug("%s: FEC %pRN label=%u, allocated=%d", __func__, rn,
+		zlog_debug("%s: FEC %s label=%u, allocated=%d", __func__, addr,
 			   new_label, allocated);
 
 	if (!allocated) {
@@ -172,8 +174,8 @@ int bgp_reg_for_label_callback(mpls_label_t new_label, void *labelid,
 	if (pi->attr->label_index != MPLS_INVALID_LABEL_INDEX) {
 		flog_err(
 			EC_BGP_LABEL,
-			"%s: FEC %pRN Rejecting allocated label %u as Label Index is %u",
-			__func__, rn, new_label, pi->attr->label_index);
+			"%s: FEC %s Rejecting allocated label %u as Label Index is %u",
+			__func__, addr, new_label, pi->attr->label_index);
 
 		bgp_register_for_label(pi->net, pi);
 
@@ -187,8 +189,8 @@ int bgp_reg_for_label_callback(mpls_label_t new_label, void *labelid,
 		}
 		/* Shouldn't happen: different label allocation */
 		flog_err(EC_BGP_LABEL,
-			 "%s: %pRN had label %u but got new assignment %u",
-			 __func__, rn, pi->attr->label, new_label);
+			 "%s: %s had label %u but got new assignment %u",
+			 __func__, addr, pi->attr->label, new_label);
 		/* continue means use new one */
 	}
 
@@ -208,14 +210,14 @@ void bgp_reg_dereg_for_label(struct bgp_node *rn, struct bgp_path_info *pi,
 {
 	bool with_label_index = false;
 	struct stream *s;
-	const struct prefix *p;
+	struct prefix *p;
 	mpls_label_t *local_label;
 	int command;
 	uint16_t flags = 0;
 	size_t flags_pos = 0;
 	char addr[PREFIX_STRLEN];
 
-	p = bgp_node_get_prefix(rn);
+	p = &(rn->p);
 	local_label = &(rn->local_label);
 	/* this prevents the loop when we're called by
 	 * bgp_reg_for_label_callback()
@@ -471,7 +473,7 @@ int bgp_nlri_parse_label(struct peer *peer, struct attr *attr,
 	if (pnt != lim) {
 		flog_err(
 			EC_BGP_UPDATE_RCV,
-			"%s [Error] Update packet error / L-U (%td data remaining after parsing)",
+			"%s [Error] Update packet error / L-U (%zu data remaining after parsing)",
 			peer->host, lim - pnt);
 		return BGP_NLRI_PARSE_ERROR_PACKET_LENGTH;
 	}

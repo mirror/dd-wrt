@@ -172,14 +172,10 @@ DEFUN (no_debug_rip_zebra,
 	return CMD_SUCCESS;
 }
 
-static int config_write_debug(struct vty *vty);
 /* Debug node. */
-static struct cmd_node debug_node = {
-	.name = "debug",
-	.node = DEBUG_NODE,
-	.prompt = "",
-	.config_write = config_write_debug,
-};
+static struct cmd_node debug_node = {DEBUG_NODE,
+				     "", /* Debug node has no interface. */
+				     1};
 
 static int config_write_debug(struct vty *vty)
 {
@@ -214,7 +210,7 @@ void rip_debug_init(void)
 	rip_debug_packet = 0;
 	rip_debug_zebra = 0;
 
-	install_node(&debug_node);
+	install_node(&debug_node, config_write_debug);
 
 	install_element(ENABLE_NODE, &show_debugging_rip_cmd);
 	install_element(ENABLE_NODE, &debug_rip_events_cmd);

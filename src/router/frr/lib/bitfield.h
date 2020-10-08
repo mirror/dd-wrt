@@ -152,8 +152,9 @@ typedef unsigned int word_t;
  */
 #define bf_free(v)                                                             \
 	do {                                                                   \
-		free((v).data);                                                \
-		(v).data = NULL;                                               \
+		if ((v).data) {                                                \
+			free((v).data);                                        \
+		}                                                              \
 	} while (0)
 
 #ifdef __cplusplus

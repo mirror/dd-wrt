@@ -53,7 +53,6 @@
 #include "if.h"
 #include "sockunion.h"
 #include "log.h"
-#include "network.h"
 
 extern int irdp_sock;
 
@@ -268,7 +267,7 @@ static void irdp_if_start(struct interface *ifp, int multicast,
 		}
 
 	srandom(seed);
-	timer = (frr_weak_random() % IRDP_DEFAULT_INTERVAL) + 1;
+	timer = (random() % IRDP_DEFAULT_INTERVAL) + 1;
 
 	irdp->AdvPrefList = list_new();
 	irdp->AdvPrefList->del = (void (*)(void *))Adv_free; /* Destructor */

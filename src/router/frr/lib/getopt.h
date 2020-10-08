@@ -111,7 +111,7 @@ struct option {
 
 #if defined(__STDC__) && __STDC__
 
-#ifdef REALLY_NEED_PLAIN_GETOPT
+#if REALLY_NEED_PLAIN_GETOPT
 
 /*
  * getopt is defined in POSIX.2.  Assume that if the system defines

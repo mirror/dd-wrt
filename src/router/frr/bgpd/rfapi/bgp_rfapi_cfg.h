@@ -24,7 +24,7 @@
 #include "lib/table.h"
 #include "lib/routemap.h"
 
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 #include "rfapi.h"
 
 struct rfapi_l2_group_cfg {

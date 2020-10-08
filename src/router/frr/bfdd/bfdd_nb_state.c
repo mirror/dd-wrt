@@ -31,34 +31,37 @@
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop
  */
-const void *
-bfdd_bfd_sessions_single_hop_get_next(struct nb_cb_get_next_args *args)
+const void *bfdd_bfd_sessions_single_hop_get_next(const void *parent_list_entry
+						  __attribute__((__unused__)),
+						  const void *list_entry)
 {
-	return bfd_session_next(args->list_entry, false);
+	return bfd_session_next(list_entry, false);
 }
 
-int bfdd_bfd_sessions_single_hop_get_keys(struct nb_cb_get_keys_args *args)
+int bfdd_bfd_sessions_single_hop_get_keys(const void *list_entry,
+					  struct yang_list_keys *keys)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 	char dstbuf[INET6_ADDRSTRLEN];
 
 	inet_ntop(bs->key.family, &bs->key.peer, dstbuf, sizeof(dstbuf));
 
-	args->keys->num = 3;
-	strlcpy(args->keys->key[0], dstbuf, sizeof(args->keys->key[0]));
-	strlcpy(args->keys->key[1], bs->key.ifname, sizeof(args->keys->key[1]));
-	strlcpy(args->keys->key[2], bs->key.vrfname,
-		sizeof(args->keys->key[2]));
+	keys->num = 3;
+	strlcpy(keys->key[0], dstbuf, sizeof(keys->key[0]));
+	strlcpy(keys->key[1], bs->key.ifname, sizeof(keys->key[1]));
+	strlcpy(keys->key[2], bs->key.vrfname, sizeof(keys->key[2]));
 
 	return NB_OK;
 }
 
 const void *
-bfdd_bfd_sessions_single_hop_lookup_entry(struct nb_cb_lookup_entry_args *args)
+bfdd_bfd_sessions_single_hop_lookup_entry(const void *parent_list_entry
+					  __attribute__((__unused__)),
+					  const struct yang_list_keys *keys)
 {
-	const char *dest_addr = args->keys->key[0];
-	const char *ifname = args->keys->key[1];
-	const char *vrf = args->keys->key[2];
+	const char *dest_addr = keys->key[0];
+	const char *ifname = keys->key[1];
+	const char *vrf = keys->key[2];
 	struct sockaddr_any psa, lsa;
 	struct bfd_key bk;
 
@@ -74,44 +77,45 @@ bfdd_bfd_sessions_single_hop_lookup_entry(struct nb_cb_lookup_entry_args *args)
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_local_discriminator_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint32(args->xpath, bs->discrs.my_discr);
+	return yang_data_new_uint32(xpath, bs->discrs.my_discr);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/local-state
  */
-struct yang_data *bfdd_bfd_sessions_single_hop_stats_local_state_get_elem(
-	struct nb_cb_get_elem_args *args)
+struct yang_data *
+bfdd_bfd_sessions_single_hop_stats_local_state_get_elem(const char *xpath,
+							const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_enum(args->xpath, bs->ses_state);
+	return yang_data_new_enum(xpath, bs->ses_state);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/local-diagnostic
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_local_diagnostic_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_enum(args->xpath, bs->local_diag);
+	return yang_data_new_enum(xpath, bs->local_diag);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/local-multiplier
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_local_multiplier_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_int8(args->xpath, bs->detect_mult);
+	return yang_data_new_int8(xpath, bs->detect_mult);
 }
 
 /*
@@ -119,47 +123,48 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_local_multiplier_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_remote_discriminator_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
 	if (bs->discrs.remote_discr == 0)
 		return NULL;
 
-	return yang_data_new_uint32(args->xpath, bs->discrs.remote_discr);
+	return yang_data_new_uint32(xpath, bs->discrs.remote_discr);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/remote-state
  */
-struct yang_data *bfdd_bfd_sessions_single_hop_stats_remote_state_get_elem(
-	struct nb_cb_get_elem_args *args)
+struct yang_data *
+bfdd_bfd_sessions_single_hop_stats_remote_state_get_elem(const char *xpath,
+							 const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_enum(args->xpath, bs->ses_state);
+	return yang_data_new_enum(xpath, bs->ses_state);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/remote-diagnostic
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_remote_diagnostic_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_enum(args->xpath, bs->remote_diag);
+	return yang_data_new_enum(xpath, bs->remote_diag);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/remote-multiplier
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_remote_multiplier_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_int8(args->xpath, bs->remote_detect_mult);
+	return yang_data_new_int8(xpath, bs->remote_detect_mult);
 }
 
 /*
@@ -168,12 +173,11 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_remote_multiplier_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_negotiated_transmission_interval_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint32(args->xpath,
-				    bs->remote_timers.desired_min_tx);
+	return yang_data_new_uint32(xpath, bs->remote_timers.desired_min_tx);
 }
 
 /*
@@ -182,21 +186,20 @@ bfdd_bfd_sessions_single_hop_stats_negotiated_transmission_interval_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_negotiated_receive_interval_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint32(args->xpath,
-				    bs->remote_timers.required_min_rx);
+	return yang_data_new_uint32(xpath, bs->remote_timers.required_min_rx);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/detection-mode
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_detection_mode_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 	int detection_mode;
 
 	/*
@@ -208,19 +211,20 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_detection_mode_get_elem(
 	 *
 	 * TODO: support demand mode.
 	 */
-	if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
+	if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
 		detection_mode = 1;
 	else
 		detection_mode = 2;
 
-	return yang_data_new_enum(args->xpath, detection_mode);
+	return yang_data_new_enum(xpath, detection_mode);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/last-down-time
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_last_down_time_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath __attribute__((__unused__)),
+	const void *list_entry __attribute__((__unused__)))
 {
 	/*
 	 * TODO: implement me.
@@ -234,7 +238,8 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_last_down_time_get_elem(
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/last-up-time
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_last_up_time_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath __attribute__((__unused__)),
+	const void *list_entry __attribute__((__unused__)))
 {
 	/*
 	 * TODO: implement me.
@@ -249,22 +254,22 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_last_up_time_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_session_down_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.session_down);
+	return yang_data_new_uint64(xpath, bs->stats.session_down);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/single-hop/stats/session-up-count
  */
 struct yang_data *bfdd_bfd_sessions_single_hop_stats_session_up_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.session_up);
+	return yang_data_new_uint64(xpath, bs->stats.session_up);
 }
 
 /*
@@ -273,11 +278,11 @@ struct yang_data *bfdd_bfd_sessions_single_hop_stats_session_up_count_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.rx_ctrl_pkt);
+	return yang_data_new_uint64(xpath, bs->stats.rx_ctrl_pkt);
 }
 
 /*
@@ -286,11 +291,11 @@ bfdd_bfd_sessions_single_hop_stats_control_packet_input_count_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.tx_ctrl_pkt);
+	return yang_data_new_uint64(xpath, bs->stats.tx_ctrl_pkt);
 }
 
 /*
@@ -299,12 +304,11 @@ bfdd_bfd_sessions_single_hop_stats_control_packet_output_count_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_negotiated_echo_transmission_interval_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint32(args->xpath,
-				    bs->remote_timers.required_min_echo);
+	return yang_data_new_uint32(xpath, bs->remote_timers.required_min_echo);
 }
 
 /*
@@ -312,11 +316,11 @@ bfdd_bfd_sessions_single_hop_stats_negotiated_echo_transmission_interval_get_ele
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_echo_packet_input_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.rx_echo_pkt);
+	return yang_data_new_uint64(xpath, bs->stats.rx_echo_pkt);
 }
 
 /*
@@ -324,47 +328,50 @@ bfdd_bfd_sessions_single_hop_stats_echo_packet_input_count_get_elem(
  */
 struct yang_data *
 bfdd_bfd_sessions_single_hop_stats_echo_packet_output_count_get_elem(
-	struct nb_cb_get_elem_args *args)
+	const char *xpath, const void *list_entry)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 
-	return yang_data_new_uint64(args->xpath, bs->stats.tx_echo_pkt);
+	return yang_data_new_uint64(xpath, bs->stats.tx_echo_pkt);
 }
 
 /*
  * XPath: /frr-bfdd:bfdd/bfd/sessions/multi-hop
  */
-const void *
-bfdd_bfd_sessions_multi_hop_get_next(struct nb_cb_get_next_args *args)
+const void *bfdd_bfd_sessions_multi_hop_get_next(const void *parent_list_entry
+						 __attribute__((__unused__)),
+						 const void *list_entry)
 {
-	return bfd_session_next(args->list_entry, true);
+	return bfd_session_next(list_entry, true);
 }
 
-int bfdd_bfd_sessions_multi_hop_get_keys(struct nb_cb_get_keys_args *args)
+int bfdd_bfd_sessions_multi_hop_get_keys(const void *list_entry,
+					 struct yang_list_keys *keys)
 {
-	const struct bfd_session *bs = args->list_entry;
+	const struct bfd_session *bs = list_entry;
 	char dstbuf[INET6_ADDRSTRLEN], srcbuf[INET6_ADDRSTRLEN];
 
 	inet_ntop(bs->key.family, &bs->key.peer, dstbuf, sizeof(dstbuf));
 	inet_ntop(bs->key.family, &bs->key.local, srcbuf, sizeof(srcbuf));
 
-	args->keys->num = 4;
-	strlcpy(args->keys->key[0], srcbuf, sizeof(args->keys->key[0]));
-	strlcpy(args->keys->key[1], dstbuf, sizeof(args->keys->key[1]));
-	strlcpy(args->keys->key[2], bs->key.ifname, sizeof(args->keys->key[2]));
-	strlcpy(args->keys->key[3], bs->key.vrfname,
-		sizeof(args->keys->key[3]));
+	keys->num = 4;
+	strlcpy(keys->key[0], srcbuf, sizeof(keys->key[0]));
+	strlcpy(keys->key[1], dstbuf, sizeof(keys->key[1]));
+	strlcpy(keys->key[2], bs->key.ifname, sizeof(keys->key[2]));
+	strlcpy(keys->key[3], bs->key.vrfname, sizeof(keys->key[3]));
 
 	return NB_OK;
 }
 
 const void *
-bfdd_bfd_sessions_multi_hop_lookup_entry(struct nb_cb_lookup_entry_args *args)
+bfdd_bfd_sessions_multi_hop_lookup_entry(const void *parent_list_entry
+					 __attribute__((__unused__)),
+					 const struct yang_list_keys *keys)
 {
-	const char *source_addr = args->keys->key[0];
-	const char *dest_addr = args->keys->key[1];
-	const char *ifname = args->keys->key[2];
-	const char *vrf = args->keys->key[3];
+	const char *source_addr = keys->key[0];
+	const char *dest_addr = keys->key[1];
+	const char *ifname = keys->key[2];
+	const char *vrf = keys->key[3];
 	struct sockaddr_any psa, lsa;
 	struct bfd_key bk;
 

@@ -122,13 +122,12 @@ static int route_notify_owner(ZAPI_CALLBACK_ARGS)
 	case ZAPI_ROUTE_FAIL_INSTALL:
 		static_nht_mark_state(&p, vrf_id, STATIC_NOT_INSTALLED);
 		zlog_warn("%s: Route %s failed to install for table: %u",
-			  __func__, buf, table_id);
+			  __PRETTY_FUNCTION__, buf, table_id);
 		break;
 	case ZAPI_ROUTE_BETTER_ADMIN_WON:
 		static_nht_mark_state(&p, vrf_id, STATIC_NOT_INSTALLED);
-		zlog_warn(
-			"%s: Route %s over-ridden by better route for table: %u",
-			__func__, buf, table_id);
+		zlog_warn("%s: Route %s over-ridden by better route for table: %u",
+			  __PRETTY_FUNCTION__, buf, table_id);
 		break;
 	case ZAPI_ROUTE_INSTALLED:
 		static_nht_mark_state(&p, vrf_id, STATIC_INSTALLED);
@@ -139,7 +138,7 @@ static int route_notify_owner(ZAPI_CALLBACK_ARGS)
 	case ZAPI_ROUTE_REMOVE_FAIL:
 		static_nht_mark_state(&p, vrf_id, STATIC_INSTALLED);
 		zlog_warn("%s: Route %s failure to remove for table: %u",
-			  __func__, buf, table_id);
+			  __PRETTY_FUNCTION__, buf, table_id);
 		break;
 	}
 
@@ -336,7 +335,8 @@ void static_zebra_nht_register(struct route_node *rn,
 	}
 
 	if (zclient_send_rnh(zclient, cmd, &p, false, si->nh_vrf_id) < 0)
-		zlog_warn("%s: Failure to send nexthop to zebra", __func__);
+		zlog_warn("%s: Failure to send nexthop to zebra",
+			  __PRETTY_FUNCTION__);
 }
 
 extern void static_zebra_route_add(struct route_node *rn,

@@ -406,11 +406,9 @@ static void zprivs_caps_init(struct zebra_privs_t *zprivs)
 
 static void zprivs_caps_terminate(void)
 {
-	/* Clear all capabilities, if we have any. */
+	/* clear all capabilities */
 	if (zprivs_state.caps)
 		cap_clear(zprivs_state.caps);
-	else
-		return;
 
 	/* and boom, capabilities are gone forever */
 	if (cap_set_proc(zprivs_state.caps)) {

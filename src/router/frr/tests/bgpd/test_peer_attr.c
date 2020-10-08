@@ -1381,12 +1381,13 @@ static void test_peer_attr(struct test *test, struct test_peer_attr *pa)
 static void bgp_startup(void)
 {
 	cmd_init(1);
-	zlog_aux_init("NONE: ", LOG_DEBUG);
+	openzlog("testbgpd", "NONE", 0, LOG_CONS | LOG_NDELAY | LOG_PID,
+		 LOG_DAEMON);
 	zprivs_preinit(&bgpd_privs);
 	zprivs_init(&bgpd_privs);
 
 	master = thread_master_create(NULL);
-	yang_init(true);
+	yang_init();
 	nb_init(master, NULL, 0);
 	bgp_master_init(master, BGP_SOCKET_SNDBUF_SIZE);
 	bgp_option_set(BGP_OPT_NO_LISTEN);
@@ -1437,6 +1438,7 @@ static void bgp_shutdown(void)
 	zprivs_terminate(&bgpd_privs);
 	thread_master_free(master);
 	master = NULL;
+	closezlog();
 }
 
 int main(void)

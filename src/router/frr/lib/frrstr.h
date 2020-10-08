@@ -22,12 +22,7 @@
 #define _FRRSTR_H_
 
 #include <sys/types.h>
-#include <sys/types.h>
-#ifdef HAVE_LIBPCREPOSIX
-#include <pcreposix.h>
-#else
 #include <regex.h>
-#endif /* HAVE_LIBPCREPOSIX */
 #include <stdbool.h>
 
 #include "vector.h"

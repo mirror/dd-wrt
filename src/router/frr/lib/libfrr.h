@@ -128,8 +128,7 @@ extern void frr_preinit(struct frr_daemon_info *daemon, int argc, char **argv);
 extern void frr_opt_add(const char *optstr, const struct option *longopts,
 			const char *helpstr);
 extern int frr_getopt(int argc, char *const argv[], int *longindex);
-
-extern __attribute__((__noreturn__)) void frr_help_exit(int status);
+extern void frr_help_exit(int status);
 
 extern struct thread_master *frr_init(void);
 extern const char *frr_get_progname(void);

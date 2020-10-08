@@ -34,7 +34,9 @@ static const char proc_net_snmp[] = "/proc/net/snmp";
 
 static void dropline(FILE *fp)
 {
-	while (getc(fp) != '\n')
+	int c;
+
+	while ((c = getc(fp)) != '\n')
 		;
 }
 
