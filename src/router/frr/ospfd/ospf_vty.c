@@ -83,8 +83,7 @@ static void area_id2str(char *buf, int length, struct in_addr *area_id,
 	if (area_id_fmt == OSPF_AREA_ID_FMT_DOTTEDQUAD)
 		inet_ntop(AF_INET, area_id, buf, length);
 	else
-		snprintf(buf, length, "%lu",
-			 (unsigned long)ntohl(area_id->s_addr));
+		sprintf(buf, "%lu", (unsigned long)ntohl(area_id->s_addr));
 }
 
 static int str2metric(const char *str, int *metric)
@@ -94,7 +93,7 @@ static int str2metric(const char *str, int *metric)
 		return 0;
 
 	*metric = strtol(str, NULL, 10);
-	if (*metric < 0 || *metric > 16777214) {
+	if (*metric < 0 && *metric > 16777214) {
 		/* vty_out (vty, "OSPF metric value is invalid\n"); */
 		return 0;
 	}
@@ -620,7 +619,8 @@ DEFUN (ospf_network_area,
 		if (IS_DEBUG_OSPF_EVENT)
 			zlog_debug(
 				"%s ospf vrf %s num of %u ip osp area x config",
-				__func__, ospf->name ? ospf->name : "NIL",
+				__PRETTY_FUNCTION__,
+				ospf->name ? ospf->name : "NIL",
 				ospf->if_ospf_cli_count);
 		return CMD_WARNING_CONFIG_FAILED;
 	}
@@ -3551,7 +3551,7 @@ static void show_ip_ospf_interface_sub(struct vty *vty, struct ospf *ospf,
 		}
 
 		/* Show DR information. */
-		if (DR(oi).s_addr == INADDR_ANY) {
+		if (DR(oi).s_addr == 0) {
 			if (!use_json)
 				vty_out(vty,
 					"  No backup designated router on this network\n");
@@ -4199,7 +4199,7 @@ static void show_ip_ospf_neighbor_sub(struct vty *vty,
 				}
 
 				if (nbr->state == NSM_Attempt
-				    && nbr->router_id.s_addr == INADDR_ANY)
+				    && nbr->router_id.s_addr == 0)
 					strlcpy(neigh_str, "neighbor",
 						sizeof(neigh_str));
 				else
@@ -4258,7 +4258,7 @@ static void show_ip_ospf_neighbor_sub(struct vty *vty,
 				ospf_nbr_state_message(nbr, msgbuf, 16);
 
 				if (nbr->state == NSM_Attempt
-				    && nbr->router_id.s_addr == INADDR_ANY)
+				    && nbr->router_id.s_addr == 0)
 					vty_out(vty, "%-15s %3d %-15s ", "-",
 						nbr->priority, msgbuf);
 				else
@@ -4908,8 +4908,7 @@ static void show_ip_ospf_neighbor_detail_sub(struct vty *vty,
 			json_neigh_array = NULL;
 		}
 
-		if (nbr->state == NSM_Attempt
-		    && nbr->router_id.s_addr == INADDR_ANY)
+		if (nbr->state == NSM_Attempt && nbr->router_id.s_addr == 0)
 			strlcpy(neigh_str, "noNbrId", sizeof(neigh_str));
 		else
 			strlcpy(neigh_str, inet_ntoa(nbr->router_id),
@@ -4927,8 +4926,7 @@ static void show_ip_ospf_neighbor_detail_sub(struct vty *vty,
 
 	} else {
 		/* Show neighbor ID. */
-		if (nbr->state == NSM_Attempt
-		    && nbr->router_id.s_addr == INADDR_ANY)
+		if (nbr->state == NSM_Attempt && nbr->router_id.s_addr == 0)
 			vty_out(vty, " Neighbor %s,", "-");
 		else
 			vty_out(vty, " Neighbor %s,",
@@ -9264,8 +9262,8 @@ static void show_ip_ospf_route_external(struct vty *vty, struct ospf *ospf,
 
 		char buf1[19];
 
-		snprintf(buf1, sizeof(buf1), "%s/%d",
-			 inet_ntoa(rn->p.u.prefix4), rn->p.prefixlen);
+		snprintf(buf1, 19, "%s/%d", inet_ntoa(rn->p.u.prefix4),
+			 rn->p.prefixlen);
 		json_route = json_object_new_object();
 		if (json) {
 			json_object_object_add(json, buf1, json_route);
@@ -9681,7 +9679,7 @@ DEFUN (show_ip_ospf_vrfs,
 		if (uj)
 			json_vrf = json_object_new_object();
 
-		if (ospf->vrf_id == VRF_DEFAULT)
+		if (ospf->vrf_id == 0)
 			name = VRF_DEFAULT_NAME;
 		else
 			name = ospf->name;
@@ -9998,7 +9996,7 @@ static int config_write_interface(struct vty *vty)
 static int config_write_network_area(struct vty *vty, struct ospf *ospf)
 {
 	struct route_node *rn;
-	char buf[INET_ADDRSTRLEN];
+	uint8_t buf[INET_ADDRSTRLEN];
 
 	/* `network area' print. */
 	for (rn = route_top(ospf->networks); rn; rn = route_next(rn))
@@ -10007,12 +10005,12 @@ static int config_write_network_area(struct vty *vty, struct ospf *ospf)
 
 			/* Create Area ID string by specified Area ID format. */
 			if (n->area_id_fmt == OSPF_AREA_ID_FMT_DOTTEDQUAD)
-				inet_ntop(AF_INET, &n->area_id, buf,
+				inet_ntop(AF_INET, &n->area_id, (char *)buf,
 					  sizeof(buf));
 			else
-				snprintf(buf, sizeof(buf), "%lu",
-					 (unsigned long int)ntohl(
-						 n->area_id.s_addr));
+				sprintf((char *)buf, "%lu",
+					(unsigned long int)ntohl(
+						n->area_id.s_addr));
 
 			/* Network print. */
 			vty_out(vty, " network %s/%d area %s\n",
@@ -10027,13 +10025,13 @@ static int config_write_ospf_area(struct vty *vty, struct ospf *ospf)
 {
 	struct listnode *node;
 	struct ospf_area *area;
-	char buf[INET_ADDRSTRLEN];
+	uint8_t buf[INET_ADDRSTRLEN];
 
 	/* Area configuration print. */
 	for (ALL_LIST_ELEMENTS_RO(ospf->areas, node, area)) {
 		struct route_node *rn1;
 
-		area_id2str(buf, sizeof(buf), &area->area_id,
+		area_id2str((char *)buf, sizeof(buf), &area->area_id,
 			    area->area_id_fmt);
 
 		if (area->auth_type != OSPF_AUTH_NULL) {
@@ -10556,21 +10554,14 @@ void ospf_vty_show_init(void)
 }
 
 
-static int config_write_interface(struct vty *vty);
 /* ospfd's interface node. */
-static struct cmd_node interface_node = {
-	.name = "interface",
-	.node = INTERFACE_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-if)# ",
-	.config_write = config_write_interface,
-};
+static struct cmd_node interface_node = {INTERFACE_NODE, "%s(config-if)# ", 1};
 
 /* Initialization of OSPF interface. */
 static void ospf_vty_if_init(void)
 {
 	/* Install interface node. */
-	install_node(&interface_node);
+	install_node(&interface_node, config_write_interface);
 	if_cmd_init();
 
 	/* "ip ospf authentication" commands. */
@@ -10676,14 +10667,7 @@ static void ospf_vty_zebra_init(void)
 #endif /* 0 */
 }
 
-static int ospf_config_write(struct vty *vty);
-static struct cmd_node ospf_node = {
-	.name = "ospf",
-	.node = OSPF_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-router)# ",
-	.config_write = ospf_config_write,
-};
+static struct cmd_node ospf_node = {OSPF_NODE, "%s(config-router)# ", 1};
 
 static void ospf_interface_clear(struct interface *ifp)
 {
@@ -10756,7 +10740,7 @@ void ospf_vty_clear_init(void)
 void ospf_vty_init(void)
 {
 	/* Install ospf top node. */
-	install_node(&ospf_node);
+	install_node(&ospf_node, ospf_config_write);
 
 	/* "router ospf" commands. */
 	install_element(CONFIG_NODE, &router_ospf_cmd);

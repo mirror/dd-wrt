@@ -86,129 +86,6 @@ union nb_resource {
 	void *ptr;
 };
 
-/*
- * Northbound callbacks parameters.
- */
-
-struct nb_cb_create_args {
-	/*
-	 * The transaction phase. Refer to the documentation comments of
-	 * nb_event for more details.
-	 */
-	enum nb_event event;
-
-	/* libyang data node that is being created. */
-	const struct lyd_node *dnode;
-
-	/*
-	 * Pointer to store resource(s) allocated during the NB_EV_PREPARE
-	 * phase. The same pointer can be used during the NB_EV_ABORT and
-	 * NB_EV_APPLY phases to either release or make use of the allocated
-	 * resource(s). It's set to NULL when the event is NB_EV_VALIDATE.
-	 */
-	union nb_resource *resource;
-};
-
-struct nb_cb_modify_args {
-	/*
-	 * The transaction phase. Refer to the documentation comments of
-	 * nb_event for more details.
-	 */
-	enum nb_event event;
-
-	/* libyang data node that is being modified. */
-	const struct lyd_node *dnode;
-
-	/*
-	 * Pointer to store resource(s) allocated during the NB_EV_PREPARE
-	 * phase. The same pointer can be used during the NB_EV_ABORT and
-	 * NB_EV_APPLY phases to either release or make use of the allocated
-	 * resource(s). It's set to NULL when the event is NB_EV_VALIDATE.
-	 */
-	union nb_resource *resource;
-};
-
-struct nb_cb_destroy_args {
-	/*
-	 * The transaction phase. Refer to the documentation comments of
-	 * nb_event for more details.
-	 */
-	enum nb_event event;
-
-	/* libyang data node that is being deleted. */
-	const struct lyd_node *dnode;
-};
-
-struct nb_cb_move_args {
-	/*
-	 * The transaction phase. Refer to the documentation comments of
-	 * nb_event for more details.
-	 */
-	enum nb_event event;
-
-	/* libyang data node that is being moved. */
-	const struct lyd_node *dnode;
-};
-
-struct nb_cb_pre_validate_args {
-	/* libyang data node associated with the 'pre_validate' callback. */
-	const struct lyd_node *dnode;
-};
-
-struct nb_cb_apply_finish_args {
-	/* libyang data node associated with the 'apply_finish' callback. */
-	const struct lyd_node *dnode;
-};
-
-struct nb_cb_get_elem_args {
-	/* YANG data path of the data we want to get. */
-	const char *xpath;
-
-	/* Pointer to list entry (might be NULL). */
-	const void *list_entry;
-};
-
-struct nb_cb_get_next_args {
-	/* Pointer to parent list entry. */
-	const void *parent_list_entry;
-
-	/* Pointer to (leaf-)list entry. */
-	const void *list_entry;
-};
-
-struct nb_cb_get_keys_args {
-	/* Pointer to list entry. */
-	const void *list_entry;
-
-	/*
-	 * Structure to be filled based on the attributes of the provided list
-	 * entry.
-	 */
-	struct yang_list_keys *keys;
-};
-
-struct nb_cb_lookup_entry_args {
-	/* Pointer to parent list entry. */
-	const void *parent_list_entry;
-
-	/* Structure containing the keys of the list entry. */
-	const struct yang_list_keys *keys;
-};
-
-struct nb_cb_rpc_args {
-	/* XPath of the YANG RPC or action. */
-	const char *xpath;
-
-	/* Read-only list of input parameters. */
-	const struct list *input;
-
-	/* List of output parameters to be populated by the callback. */
-	struct list *output;
-};
-
-/*
- * Set of configuration callbacks that can be associated to a northbound node.
- */
 struct nb_callbacks {
 	/*
 	 * Configuration callback.
@@ -220,9 +97,18 @@ struct nb_callbacks {
 	 * initialize the default values of its children (if any) from the YANG
 	 * models.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_create_args for
-	 *    details.
+	 * event
+	 *    The transaction phase. Refer to the documentation comments of
+	 *    nb_event for more details.
+	 *
+	 * dnode
+	 *    libyang data node that is being created.
+	 *
+	 * resource
+	 *    Pointer to store resource(s) allocated during the NB_EV_PREPARE
+	 *    phase. The same pointer can be used during the NB_EV_ABORT and
+	 *    NB_EV_APPLY phases to either release or make use of the allocated
+	 *    resource(s). It's set to NULL when the event is NB_EV_VALIDATE.
 	 *
 	 * Returns:
 	 *    - NB_OK on success.
@@ -231,7 +117,8 @@ struct nb_callbacks {
 	 *    - NB_ERR_INCONSISTENCY when an inconsistency was detected.
 	 *    - NB_ERR for other errors.
 	 */
-	int (*create)(struct nb_cb_create_args *args);
+	int (*create)(enum nb_event event, const struct lyd_node *dnode,
+		      union nb_resource *resource);
 
 	/*
 	 * Configuration callback.
@@ -242,9 +129,18 @@ struct nb_callbacks {
 	 * modified, the northbound treats this as if the list was deleted and a
 	 * new one created with the updated key value.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_modify_args for
-	 *    details.
+	 * event
+	 *    The transaction phase. Refer to the documentation comments of
+	 *    nb_event for more details.
+	 *
+	 * dnode
+	 *    libyang data node that is being modified
+	 *
+	 * resource
+	 *    Pointer to store resource(s) allocated during the NB_EV_PREPARE
+	 *    phase. The same pointer can be used during the NB_EV_ABORT and
+	 *    NB_EV_APPLY phases to either release or make use of the allocated
+	 *    resource(s). It's set to NULL when the event is NB_EV_VALIDATE.
 	 *
 	 * Returns:
 	 *    - NB_OK on success.
@@ -253,7 +149,8 @@ struct nb_callbacks {
 	 *    - NB_ERR_INCONSISTENCY when an inconsistency was detected.
 	 *    - NB_ERR for other errors.
 	 */
-	int (*modify)(struct nb_cb_modify_args *args);
+	int (*modify)(enum nb_event event, const struct lyd_node *dnode,
+		      union nb_resource *resource);
 
 	/*
 	 * Configuration callback.
@@ -264,9 +161,12 @@ struct nb_callbacks {
 	 * The callback is supposed to delete the entire configuration object,
 	 * including its children when they exist.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_destroy_args for
-	 *    details.
+	 * event
+	 *    The transaction phase. Refer to the documentation comments of
+	 *    nb_event for more details.
+	 *
+	 * dnode
+	 *    libyang data node that is being deleted.
 	 *
 	 * Returns:
 	 *    - NB_OK on success.
@@ -274,7 +174,7 @@ struct nb_callbacks {
 	 *    - NB_ERR_INCONSISTENCY when an inconsistency was detected.
 	 *    - NB_ERR for other errors.
 	 */
-	int (*destroy)(struct nb_cb_destroy_args *args);
+	int (*destroy)(enum nb_event event, const struct lyd_node *dnode);
 
 	/*
 	 * Configuration callback.
@@ -282,9 +182,12 @@ struct nb_callbacks {
 	 * A list entry or leaf-list entry has been moved. Only applicable when
 	 * the "ordered-by user" statement is present.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_move_args for
-	 *    details.
+	 * event
+	 *    The transaction phase. Refer to the documentation comments of
+	 *    nb_event for more details.
+	 *
+	 * dnode
+	 *    libyang data node that is being moved.
 	 *
 	 * Returns:
 	 *    - NB_OK on success.
@@ -292,7 +195,7 @@ struct nb_callbacks {
 	 *    - NB_ERR_INCONSISTENCY when an inconsistency was detected.
 	 *    - NB_ERR for other errors.
 	 */
-	int (*move)(struct nb_cb_move_args *args);
+	int (*move)(enum nb_event event, const struct lyd_node *dnode);
 
 	/*
 	 * Optional configuration callback.
@@ -302,11 +205,10 @@ struct nb_callbacks {
 	 * changes themselves. It's useful to perform more complex validations
 	 * that depend on the relationship between multiple nodes.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_pre_validate_args for
-	 *    details.
+	 * dnode
+	 *    libyang data node associated with the 'pre_validate' callback.
 	 */
-	int (*pre_validate)(struct nb_cb_pre_validate_args *args);
+	int (*pre_validate)(const struct lyd_node *dnode);
 
 	/*
 	 * Optional configuration callback.
@@ -322,11 +224,10 @@ struct nb_callbacks {
 	 * once even if multiple changes occurred within the descendants of the
 	 * data node.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_apply_finish_args for
-	 *    details.
+	 * dnode
+	 *    libyang data node associated with the 'apply_finish' callback.
 	 */
-	void (*apply_finish)(struct nb_cb_apply_finish_args *args);
+	void (*apply_finish)(const struct lyd_node *dnode);
 
 	/*
 	 * Operational data callback.
@@ -335,15 +236,18 @@ struct nb_callbacks {
 	 * leaf-list entry or inform if a typeless value (presence containers or
 	 * leafs of type empty) exists or not.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_get_elem_args for
-	 *    details.
+	 * xpath
+	 *    YANG data path of the data we want to get.
+	 *
+	 * list_entry
+	 *    Pointer to list entry (might be NULL).
 	 *
 	 * Returns:
 	 *    Pointer to newly created yang_data structure, or NULL to indicate
 	 *    the absence of data.
 	 */
-	struct yang_data *(*get_elem)(struct nb_cb_get_elem_args *args);
+	struct yang_data *(*get_elem)(const char *xpath,
+				      const void *list_entry);
 
 	/*
 	 * Operational data callback for YANG lists and leaf-lists.
@@ -352,15 +256,18 @@ struct nb_callbacks {
 	 * leaf-list. The 'list_entry' parameter will be NULL on the first
 	 * invocation.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_get_next_args for
-	 *    details.
+	 * parent_list_entry
+	 *    Pointer to parent list entry.
+	 *
+	 * list_entry
+	 *    Pointer to (leaf-)list entry.
 	 *
 	 * Returns:
 	 *    Pointer to the next entry in the (leaf-)list, or NULL to signal
 	 *    that the end of the (leaf-)list was reached.
 	 */
-	const void *(*get_next)(struct nb_cb_get_next_args *args);
+	const void *(*get_next)(const void *parent_list_entry,
+				const void *list_entry);
 
 	/*
 	 * Operational data callback for YANG lists.
@@ -369,14 +276,17 @@ struct nb_callbacks {
 	 * given list_entry. Keyless lists don't need to implement this
 	 * callback.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_get_keys_args for
-	 *    details.
+	 * list_entry
+	 *    Pointer to list entry.
+	 *
+	 * keys
+	 *    Structure to be filled based on the attributes of the provided
+	 *    list entry.
 	 *
 	 * Returns:
 	 *    NB_OK on success, NB_ERR otherwise.
 	 */
-	int (*get_keys)(struct nb_cb_get_keys_args *args);
+	int (*get_keys)(const void *list_entry, struct yang_list_keys *keys);
 
 	/*
 	 * Operational data callback for YANG lists.
@@ -385,14 +295,17 @@ struct nb_callbacks {
 	 * keys given as a parameter. Keyless lists don't need to implement this
 	 * callback.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_lookup_entry_args for
-	 *    details.
+	 * parent_list_entry
+	 *    Pointer to parent list entry.
+	 *
+	 * keys
+	 *    Structure containing the keys of the list entry.
 	 *
 	 * Returns:
 	 *    Pointer to the list entry if found, or NULL if not found.
 	 */
-	const void *(*lookup_entry)(struct nb_cb_lookup_entry_args *args);
+	const void *(*lookup_entry)(const void *parent_list_entry,
+				    const struct yang_list_keys *keys);
 
 	/*
 	 * RPC and action callback.
@@ -401,13 +314,20 @@ struct nb_callbacks {
 	 * callback should fetch all the input parameters from the 'input' list,
 	 * and add output parameters to the 'output' list if necessary.
 	 *
-	 * args
-	 *    Refer to the documentation comments of nb_cb_rpc_args for details.
+	 * xpath
+	 *    XPath of the YANG RPC or action.
+	 *
+	 * input
+	 *    Read-only list of input parameters.
+	 *
+	 * output
+	 *    List of output parameters to be populated by the callback.
 	 *
 	 * Returns:
 	 *    NB_OK on success, NB_ERR otherwise.
 	 */
-	int (*rpc)(struct nb_cb_rpc_args *args);
+	int (*rpc)(const char *xpath, const struct list *input,
+		   struct list *output);
 
 	/*
 	 * Optional callback to show the CLI command associated to the given
@@ -483,13 +403,6 @@ struct nb_node {
 /* The YANG list doesn't contain key leafs. */
 #define F_NB_NODE_KEYLESS_LIST 0x02
 
-/*
- * HACK: old gcc versions (< 5.x) have a bug that prevents C99 flexible arrays
- * from working properly on shared libraries. For those compilers, use a fixed
- * size array to work around the problem.
- */
-#define YANG_MODULE_MAX_NODES 1024
-
 struct frr_yang_module_info {
 	/* YANG module name. */
 	const char *name;
@@ -504,7 +417,7 @@ struct frr_yang_module_info {
 
 		/* Priority - lower priorities are processed first. */
 		uint32_t priority;
-	} nodes[YANG_MODULE_MAX_NODES + 1];
+	} nodes[];
 };
 
 /* Northbound error codes. */

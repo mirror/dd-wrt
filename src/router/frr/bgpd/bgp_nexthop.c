@@ -49,7 +49,7 @@ DEFINE_MTYPE_STATIC(BGPD, MARTIAN_STRING, "BGP Martian Address Intf String");
 
 char *bnc_str(struct bgp_nexthop_cache *bnc, char *buf, int size)
 {
-	prefix2str(bgp_node_get_prefix(bnc->node), buf, size);
+	prefix2str(&(bnc->node->p), buf, size);
 	return buf;
 }
 
@@ -192,10 +192,17 @@ static void show_address_entry(struct hash_bucket *bucket, void *args)
 	struct listnode *node;
 	char str[INET6_ADDRSTRLEN] = {0};
 
-	vty_out(vty, "addr: %s, count: %d : ",
-		inet_ntop(addr->p.family, &(addr->p.u.prefix),
-			  str, INET6_ADDRSTRLEN),
-		addr->ifp_name_list->count);
+	if (addr->p.family == AF_INET) {
+		vty_out(vty, "addr: %s, count: %d : ", inet_ntop(AF_INET,
+				&(addr->p.u.prefix4),
+				str, INET_ADDRSTRLEN),
+				addr->ifp_name_list->count);
+	} else if (addr->p.family == AF_INET6) {
+		vty_out(vty, "addr: %s, count: %d : ", inet_ntop(AF_INET6,
+				&(addr->p.u.prefix6),
+				str, INET6_ADDRSTRLEN),
+				addr->ifp_name_list->count);
+	}
 
 	for (ALL_LIST_ELEMENTS_RO(addr->ifp_name_list, node, name)) {
 		vty_out(vty, " %s,", name);
@@ -436,7 +443,8 @@ void bgp_connected_delete(struct bgp *bgp, struct connected *ifc)
 
 		bgp_address_del(bgp, ifc, addr);
 
-		rn = bgp_node_lookup(bgp->connected_table[AFI_IP6], &p);
+		rn = bgp_node_lookup(bgp->connected_table[AFI_IP6],
+				     (struct prefix *)&p);
 	}
 
 	if (!rn)
@@ -469,62 +477,69 @@ static void bgp_connected_cleanup(struct route_table *table,
 	}
 }
 
-bool bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type,
-		      uint8_t sub_type, struct attr *attr, struct bgp_node *rn)
+int bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type, uint8_t sub_type,
+		struct attr *attr, struct bgp_node *rn)
 {
-	uint8_t new_afi = afi == AFI_IP ? AF_INET : AF_INET6;
+	struct prefix p = {0};
+	afi_t new_afi = afi;
 	struct bgp_addr tmp_addr = {{0}}, *addr = NULL;
 	struct tip_addr tmp_tip, *tip = NULL;
-	const struct prefix *p = bgp_node_get_prefix(rn);
-	bool is_bgp_static_route =
-		((type == ZEBRA_ROUTE_BGP) && (sub_type == BGP_ROUTE_STATIC))
+
+	bool is_bgp_static_route = ((type == ZEBRA_ROUTE_BGP)
+			&& (sub_type == BGP_ROUTE_STATIC))
 			? true
 			: false;
 
 	if (!is_bgp_static_route)
-		new_afi = BGP_ATTR_NEXTHOP_AFI_IP6(attr) ? AF_INET6 : AF_INET;
+		new_afi = BGP_ATTR_NEXTHOP_AFI_IP6(attr) ? AFI_IP6 : AFI_IP;
 
-	tmp_addr.p.family = new_afi;
 	switch (new_afi) {
-	case AF_INET:
+	case AFI_IP:
+		p.family = AF_INET;
 		if (is_bgp_static_route) {
-			tmp_addr.p.u.prefix4 = p->u.prefix4;
-			tmp_addr.p.prefixlen = p->prefixlen;
+			p.u.prefix4 = rn->p.u.prefix4;
+			p.prefixlen = rn->p.prefixlen;
 		} else {
 			/* Here we need to find out which nexthop to be used*/
-			if (attr->flag & ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) {
-				tmp_addr.p.u.prefix4 = attr->nexthop;
-				tmp_addr.p.prefixlen = IPV4_MAX_BITLEN;
-			} else if ((attr->mp_nexthop_len)
-				   && ((attr->mp_nexthop_len
-					== BGP_ATTR_NHLEN_IPV4)
-				       || (attr->mp_nexthop_len
-					   == BGP_ATTR_NHLEN_VPNV4))) {
-				tmp_addr.p.u.prefix4 =
+			if (attr->flag &
+					ATTR_FLAG_BIT(BGP_ATTR_NEXT_HOP)) {
+
+				p.u.prefix4 = attr->nexthop;
+				p.prefixlen = IPV4_MAX_BITLEN;
+
+			} else if ((attr->mp_nexthop_len) &&
+					((attr->mp_nexthop_len ==
+					  BGP_ATTR_NHLEN_IPV4) ||
+					 (attr->mp_nexthop_len ==
+					  BGP_ATTR_NHLEN_VPNV4))) {
+				p.u.prefix4 =
 					attr->mp_nexthop_global_in;
-				tmp_addr.p.prefixlen = IPV4_MAX_BITLEN;
+				p.prefixlen = IPV4_MAX_BITLEN;
 			} else
-				return false;
+				return 0;
 		}
 		break;
-	case AF_INET6:
+	case AFI_IP6:
+		p.family = AF_INET6;
+
 		if (is_bgp_static_route) {
-			tmp_addr.p.u.prefix6 = p->u.prefix6;
-			tmp_addr.p.prefixlen = p->prefixlen;
+			p.u.prefix6 = rn->p.u.prefix6;
+			p.prefixlen = rn->p.prefixlen;
 		} else {
-			tmp_addr.p.u.prefix6 = attr->mp_nexthop_global;
-			tmp_addr.p.prefixlen = IPV6_MAX_BITLEN;
+			p.u.prefix6 = attr->mp_nexthop_global;
+			p.prefixlen = IPV6_MAX_BITLEN;
 		}
 		break;
 	default:
 		break;
 	}
 
+	tmp_addr.p = p;
 	addr = hash_lookup(bgp->address_hash, &tmp_addr);
 	if (addr)
-		return true;
+		return 1;
 
-	if (new_afi == AF_INET) {
+	if (new_afi == AFI_IP) {
 		memset(&tmp_tip, 0, sizeof(struct tip_addr));
 		tmp_tip.addr = attr->nexthop;
 
@@ -538,13 +553,13 @@ bool bgp_nexthop_self(struct bgp *bgp, afi_t afi, uint8_t type,
 
 		tip = hash_lookup(bgp->tip_hash, &tmp_tip);
 		if (tip)
-			return true;
+			return 1;
 	}
 
-	return false;
+	return 0;
 }
 
-bool bgp_multiaccess_check_v4(struct in_addr nexthop, struct peer *peer)
+int bgp_multiaccess_check_v4(struct in_addr nexthop, struct peer *peer)
 {
 	struct bgp_node *rn1;
 	struct bgp_node *rn2;
@@ -557,7 +572,7 @@ bool bgp_multiaccess_check_v4(struct in_addr nexthop, struct peer *peer)
 
 	rn1 = bgp_node_match(peer->bgp->connected_table[AFI_IP], &p);
 	if (!rn1)
-		return false;
+		return 0;
 
 	p.family = AF_INET;
 	p.prefixlen = IPV4_MAX_BITLEN;
@@ -566,18 +581,18 @@ bool bgp_multiaccess_check_v4(struct in_addr nexthop, struct peer *peer)
 	rn2 = bgp_node_match(peer->bgp->connected_table[AFI_IP], &p);
 	if (!rn2) {
 		bgp_unlock_node(rn1);
-		return false;
+		return 0;
 	}
 
-	ret = (rn1 == rn2);
+	ret = (rn1 == rn2) ? 1 : 0;
 
 	bgp_unlock_node(rn1);
 	bgp_unlock_node(rn2);
 
-	return ret;
+	return (ret);
 }
 
-bool bgp_multiaccess_check_v6(struct in6_addr nexthop, struct peer *peer)
+int bgp_multiaccess_check_v6(struct in6_addr nexthop, struct peer *peer)
 {
 	struct bgp_node *rn1;
 	struct bgp_node *rn2;
@@ -590,7 +605,7 @@ bool bgp_multiaccess_check_v6(struct in6_addr nexthop, struct peer *peer)
 
 	rn1 = bgp_node_match(peer->bgp->connected_table[AFI_IP6], &p);
 	if (!rn1)
-		return false;
+		return 0;
 
 	p.family = AF_INET6;
 	p.prefixlen = IPV6_MAX_BITLEN;
@@ -599,10 +614,10 @@ bool bgp_multiaccess_check_v6(struct in6_addr nexthop, struct peer *peer)
 	rn2 = bgp_node_match(peer->bgp->connected_table[AFI_IP6], &p);
 	if (!rn2) {
 		bgp_unlock_node(rn1);
-		return false;
+		return 0;
 	}
 
-	ret = (rn1 == rn2);
+	ret = (rn1 == rn2) ? 1 : 0;
 
 	bgp_unlock_node(rn1);
 	bgp_unlock_node(rn2);
@@ -610,9 +625,8 @@ bool bgp_multiaccess_check_v6(struct in6_addr nexthop, struct peer *peer)
 	return ret;
 }
 
-bool bgp_subgrp_multiaccess_check_v6(struct in6_addr nexthop,
-				     struct update_subgroup *subgrp,
-				     struct peer *exclude)
+int bgp_subgrp_multiaccess_check_v6(struct in6_addr nexthop,
+			struct update_subgroup *subgrp)
 {
 	struct bgp_node *rn1 = NULL, *rn2 = NULL;
 	struct peer_af *paf = NULL;
@@ -629,19 +643,16 @@ bool bgp_subgrp_multiaccess_check_v6(struct in6_addr nexthop,
 	bgp = SUBGRP_INST(subgrp);
 	rn1 = bgp_node_match(bgp->connected_table[AFI_IP6], &np);
 	if (!rn1)
-		return false;
+		return 0;
 
 	SUBGRP_FOREACH_PEER (subgrp, paf) {
-		/* Skip peer we're told to exclude - e.g., source of route. */
-		if (paf->peer == exclude)
-			continue;
 
 		p.u.prefix6 = paf->peer->su.sin6.sin6_addr;
 		rn2 = bgp_node_match(bgp->connected_table[AFI_IP6], &p);
 		if (rn1 == rn2) {
 			bgp_unlock_node(rn1);
 			bgp_unlock_node(rn2);
-			return true;
+			return 1;
 		}
 
 		if (rn2)
@@ -649,12 +660,11 @@ bool bgp_subgrp_multiaccess_check_v6(struct in6_addr nexthop,
 	}
 
 	bgp_unlock_node(rn1);
-	return false;
+	return 0;
 }
 
-bool bgp_subgrp_multiaccess_check_v4(struct in_addr nexthop,
-				     struct update_subgroup *subgrp,
-				     struct peer *exclude)
+int bgp_subgrp_multiaccess_check_v4(struct in_addr nexthop,
+				    struct update_subgroup *subgrp)
 {
 	struct bgp_node *rn1, *rn2;
 	struct peer_af *paf;
@@ -671,20 +681,16 @@ bool bgp_subgrp_multiaccess_check_v4(struct in_addr nexthop,
 	bgp = SUBGRP_INST(subgrp);
 	rn1 = bgp_node_match(bgp->connected_table[AFI_IP], &np);
 	if (!rn1)
-		return false;
+		return 0;
 
 	SUBGRP_FOREACH_PEER (subgrp, paf) {
-		/* Skip peer we're told to exclude - e.g., source of route. */
-		if (paf->peer == exclude)
-			continue;
-
 		p.u.prefix4 = paf->peer->su.sin.sin_addr;
 
 		rn2 = bgp_node_match(bgp->connected_table[AFI_IP], &p);
 		if (rn1 == rn2) {
 			bgp_unlock_node(rn1);
 			bgp_unlock_node(rn2);
-			return true;
+			return 1;
 		}
 
 		if (rn2)
@@ -692,7 +698,7 @@ bool bgp_subgrp_multiaccess_check_v4(struct in_addr nexthop,
 	}
 
 	bgp_unlock_node(rn1);
-	return false;
+	return 0;
 }
 
 static void bgp_show_nexthops_detail(struct vty *vty, struct bgp *bgp,
@@ -762,7 +768,6 @@ static void bgp_show_nexthops(struct vty *vty, struct bgp *bgp, int detail,
 		for (rn = bgp_table_top(table[afi]); rn;
 		     rn = bgp_route_next(rn)) {
 			struct peer *peer;
-			const struct prefix *p = bgp_node_get_prefix(rn);
 
 			bnc = bgp_node_get_bgp_nexthop_info(rn);
 			if (!bnc)
@@ -772,7 +777,8 @@ static void bgp_show_nexthops(struct vty *vty, struct bgp *bgp, int detail,
 			if (CHECK_FLAG(bnc->flags, BGP_NEXTHOP_VALID)) {
 				vty_out(vty,
 					" %s valid [IGP metric %d], #paths %d",
-					inet_ntop(p->family, &p->u.prefix, buf,
+					inet_ntop(rn->p.family,
+						  &rn->p.u.prefix, buf,
 						  sizeof(buf)),
 					bnc->metric, bnc->path_count);
 				if (peer)
@@ -786,7 +792,8 @@ static void bgp_show_nexthops(struct vty *vty, struct bgp *bgp, int detail,
 
 			} else {
 				vty_out(vty, " %s invalid",
-					inet_ntop(p->family, &p->u.prefix, buf,
+					inet_ntop(rn->p.family,
+						  &rn->p.u.prefix, buf,
 						  sizeof(buf)));
 				if (peer)
 					vty_out(vty, ", peer %s", peer->host);

@@ -28,7 +28,6 @@
 #include <zebra.h>
 
 #include "lib/jhash.h"
-#include "lib/network.h"
 
 #include "bfd.h"
 
@@ -132,7 +131,7 @@ int bfd_session_enable(struct bfd_session *bs)
 	if (bs->key.vrfname[0]) {
 		vrf = vrf_lookup_by_name(bs->key.vrfname);
 		if (vrf == NULL) {
-			zlog_err(
+			log_error(
 				"session-enable: specified VRF doesn't exists.");
 			return 0;
 		}
@@ -144,15 +143,15 @@ int bfd_session_enable(struct bfd_session *bs)
 		else
 			ifp = if_lookup_by_name_all_vrf(bs->key.ifname);
 		if (ifp == NULL) {
-			zlog_err(
-				"session-enable: specified interface doesn't exists.");
+			log_error(
+				  "session-enable: specified interface doesn't exists.");
 			return 0;
 		}
 		if (bs->key.ifname[0] && !vrf) {
 			vrf = vrf_lookup_by_id(ifp->vrf_id);
 			if (vrf == NULL) {
-				zlog_err(
-					"session-enable: specified VRF doesn't exists.");
+				log_error(
+					  "session-enable: specified VRF doesn't exists.");
 				return 0;
 			}
 		}
@@ -165,14 +164,12 @@ int bfd_session_enable(struct bfd_session *bs)
 	assert(bs->vrf);
 
 	if (bs->key.ifname[0]
-	    && CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH) == 0)
+	    && BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH) == 0)
 		bs->ifp = ifp;
 
 	/* Sanity check: don't leak open sockets. */
 	if (bs->sock != -1) {
-		if (bglobal.debug_peer_event)
-			zlog_debug("session-enable: previous socket open");
-
+		log_debug("session-enable: previous socket open");
 		close(bs->sock);
 		bs->sock = -1;
 	}
@@ -182,7 +179,7 @@ int bfd_session_enable(struct bfd_session *bs)
 	 * could use the destination port (3784) for the source
 	 * port we wouldn't need a socket per session.
 	 */
-	if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_IPV6) == 0) {
+	if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_IPV6) == 0) {
 		psock = bp_peer_socket(bs);
 		if (psock == -1)
 			return 0;
@@ -237,8 +234,8 @@ static uint32_t ptm_bfd_gen_ID(void)
 	 * random session identification numbers.
 	 */
 	do {
-		session_id = ((frr_weak_random() << 16) & 0xFFFF0000)
-			     | (frr_weak_random() & 0x0000FFFF);
+		session_id = ((random() << 16) & 0xFFFF0000)
+			     | (random() & 0x0000FFFF);
 	} while (session_id == 0 || bfd_id_lookup(session_id) != NULL);
 
 	return session_id;
@@ -259,7 +256,7 @@ void ptm_bfd_start_xmt_timer(struct bfd_session *bfd, bool is_echo)
 	 * between 75% and 90%.
 	 */
 	maxpercent = (bfd->detect_mult == 1) ? 16 : 26;
-	jitter = (xmt_TO * (75 + (frr_weak_random() % maxpercent))) / 100;
+	jitter = (xmt_TO * (75 + (random() % maxpercent))) / 100;
 	/* XXX remove that division above */
 
 	if (is_echo)
@@ -290,7 +287,7 @@ void ptm_bfd_echo_stop(struct bfd_session *bfd)
 {
 	bfd->echo_xmt_TO = 0;
 	bfd->echo_detect_TO = 0;
-	UNSET_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE);
+	BFD_UNSET_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE);
 
 	bfd_echo_xmttimer_delete(bfd);
 	bfd_echo_recvtimer_delete(bfd);
@@ -321,10 +318,9 @@ void ptm_bfd_sess_up(struct bfd_session *bfd)
 
 	if (old_state != bfd->ses_state) {
 		bfd->stats.session_up++;
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: [%s] %s -> %s",
-				   bs_to_string(bfd), state_list[old_state].str,
-				   state_list[bfd->ses_state].str);
+		log_info("state-change: [%s] %s -> %s", bs_to_string(bfd),
+			 state_list[old_state].str,
+			 state_list[bfd->ses_state].str);
 	}
 }
 
@@ -356,16 +352,15 @@ void ptm_bfd_sess_dn(struct bfd_session *bfd, uint8_t diag)
 		control_notify(bfd, PTM_BFD_DOWN);
 
 	/* Stop echo packet transmission if they are active */
-	if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
+	if (BFD_CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
 		ptm_bfd_echo_stop(bfd);
 
 	if (old_state != bfd->ses_state) {
 		bfd->stats.session_down++;
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: [%s] %s -> %s reason:%s",
-				   bs_to_string(bfd), state_list[old_state].str,
-				   state_list[bfd->ses_state].str,
-				   get_diag_str(bfd->local_diag));
+		log_info("state-change: [%s] %s -> %s reason:%s",
+			 bs_to_string(bfd), state_list[old_state].str,
+			 state_list[bfd->ses_state].str,
+			 get_diag_str(bfd->local_diag));
 	}
 }
 
@@ -408,21 +403,10 @@ struct bfd_session *ptm_bfd_sess_find(struct bfd_pkt *cp,
 	if (cp->discrs.remote_discr)
 		return bfd_find_disc(peer, ntohl(cp->discrs.remote_discr));
 
-	/*
-	 * Search for session without using discriminator.
-	 *
-	 * XXX: we can't trust `vrfid` because the VRF handling is not
-	 * properly implemented. Meanwhile we should use the interface
-	 * VRF to find out which one it belongs.
-	 */
-	ifp = if_lookup_by_index_all_vrf(ifindex);
-	if (ifp == NULL) {
-		if (vrfid != VRF_DEFAULT)
-			vrf = vrf_lookup_by_id(vrfid);
-		else
-			vrf = NULL;
-	} else
-		vrf = vrf_lookup_by_id(ifp->vrf_id);
+	/* Search for session without using discriminator. */
+	ifp = if_lookup_by_index(ifindex, vrfid);
+
+	vrf = vrf_lookup_by_id(vrfid);
 
 	gen_bfd_key(&key, peer, local, is_mhop, ifp ? ifp->name : NULL,
 		    vrf ? vrf->name : VRF_DEFAULT_NAME);
@@ -527,7 +511,8 @@ int bfd_session_update_label(struct bfd_session *bs, const char *nlabel)
 			return -1;
 		}
 
-		pl_new(nlabel, bs);
+		if (pl_new(nlabel, bs) == NULL)
+			return -1;
 
 		return 0;
 	}
@@ -552,19 +537,19 @@ static void _bfd_session_update(struct bfd_session *bs,
 {
 	if (bpc->bpc_echo) {
 		/* Check if echo mode is already active. */
-		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
+		if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
 			goto skip_echo;
 
-		SET_FLAG(bs->flags, BFD_SESS_FLAG_ECHO);
+		BFD_SET_FLAG(bs->flags, BFD_SESS_FLAG_ECHO);
 
 		/* Activate/update echo receive timeout timer. */
 		bs_echo_timer_handler(bs);
 	} else {
 		/* Check if echo mode is already disabled. */
-		if (!CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
+		if (!BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO))
 			goto skip_echo;
 
-		UNSET_FLAG(bs->flags, BFD_SESS_FLAG_ECHO);
+		BFD_UNSET_FLAG(bs->flags, BFD_SESS_FLAG_ECHO);
 		ptm_bfd_echo_stop(bs);
 	}
 
@@ -586,10 +571,10 @@ skip_echo:
 
 	if (bpc->bpc_shutdown) {
 		/* Check if already shutdown. */
-		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN))
+		if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN))
 			return;
 
-		SET_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN);
+		BFD_SET_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN);
 
 		/* Disable all events. */
 		bfd_recvtimer_delete(bs);
@@ -606,10 +591,10 @@ skip_echo:
 			ptm_bfd_snd(bs, 0);
 	} else {
 		/* Check if already working. */
-		if (!CHECK_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN))
+		if (!BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN))
 			return;
 
-		UNSET_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN);
+		BFD_UNSET_FLAG(bs->flags, BFD_SESS_FLAG_SHUTDOWN);
 
 		/* Change and notify state change. */
 		bs->ses_state = PTM_BFD_DOWN;
@@ -620,15 +605,15 @@ skip_echo:
 		bfd_xmttimer_update(bs, bs->xmt_TO);
 	}
 	if (bpc->bpc_cbit) {
-		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CBIT))
+		if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CBIT))
 			return;
 
-		SET_FLAG(bs->flags, BFD_SESS_FLAG_CBIT);
+		BFD_SET_FLAG(bs->flags, BFD_SESS_FLAG_CBIT);
 	} else {
-		if (!CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CBIT))
+		if (!BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CBIT))
 			return;
 
-		UNSET_FLAG(bs->flags, BFD_SESS_FLAG_CBIT);
+		BFD_UNSET_FLAG(bs->flags, BFD_SESS_FLAG_CBIT);
 	}
 }
 
@@ -685,6 +670,10 @@ struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc)
 
 	/* Get BFD session storage with its defaults. */
 	bfd = bfd_session_new();
+	if (bfd == NULL) {
+		log_error("session-new: allocation failed");
+		return NULL;
+	}
 
 	/*
 	 * Store interface/VRF name in case we need to delay session
@@ -703,7 +692,7 @@ struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc)
 
 	/* Copy remaining data. */
 	if (bpc->bpc_ipv4 == false)
-		SET_FLAG(bfd->flags, BFD_SESS_FLAG_IPV6);
+		BFD_SET_FLAG(bfd->flags, BFD_SESS_FLAG_IPV6);
 
 	bfd->key.family = (bpc->bpc_ipv4) ? AF_INET : AF_INET6;
 	switch (bfd->key.family) {
@@ -727,7 +716,7 @@ struct bfd_session *ptm_bfd_sess_new(struct bfd_peer_cfg *bpc)
 	}
 
 	if (bpc->bpc_mhop)
-		SET_FLAG(bfd->flags, BFD_SESS_FLAG_MH);
+		BFD_SET_FLAG(bfd->flags, BFD_SESS_FLAG_MH);
 
 	bfd->key.mhop = bpc->bpc_mhop;
 
@@ -758,8 +747,7 @@ struct bfd_session *bs_registrate(struct bfd_session *bfd)
 	if (bfd->key.ifname[0] || bfd->key.vrfname[0] || bfd->sock == -1)
 		bs_observer_add(bfd);
 
-	if (bglobal.debug_peer_event)
-		zlog_debug("session-new: %s", bs_to_string(bfd));
+	log_info("session-new: %s", bs_to_string(bfd));
 
 	control_notify_config(BCM_NOTIFY_CONFIG_ADD, bfd);
 
@@ -777,14 +765,13 @@ int ptm_bfd_sess_del(struct bfd_peer_cfg *bpc)
 
 	/* This pointer is being referenced, don't let it be deleted. */
 	if (bs->refcount > 0) {
-		zlog_err("session-delete: refcount failure: %" PRIu64
-			 " references",
-			 bs->refcount);
+		log_error("session-delete: refcount failure: %" PRIu64
+			  " references",
+			  bs->refcount);
 		return -1;
 	}
 
-	if (bglobal.debug_peer_event)
-		zlog_debug("session-delete: %s", bs_to_string(bs));
+	log_info("session-delete: %s", bs_to_string(bs));
 
 	control_notify_config(BCM_NOTIFY_CONFIG_DELETE, bs);
 
@@ -851,9 +838,7 @@ static void bs_down_handler(struct bfd_session *bs, int nstate)
 		break;
 
 	default:
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: unhandled neighbor state: %d",
-				   nstate);
+		log_debug("state-change: unhandled neighbor state: %d", nstate);
 		break;
 	}
 }
@@ -880,9 +865,7 @@ static void bs_init_handler(struct bfd_session *bs, int nstate)
 		break;
 
 	default:
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: unhandled neighbor state: %d",
-				   nstate);
+		log_debug("state-change: unhandled neighbor state: %d", nstate);
 		break;
 	}
 }
@@ -907,16 +890,16 @@ static void bs_neighbour_admin_down_handler(struct bfd_session *bfd,
 		control_notify(bfd, PTM_BFD_ADM_DOWN);
 
 	/* Stop echo packet transmission if they are active */
-	if (CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
+	if (BFD_CHECK_FLAG(bfd->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
 		ptm_bfd_echo_stop(bfd);
 
 	if (old_state != bfd->ses_state) {
 		bfd->stats.session_down++;
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: [%s] %s -> %s reason:%s",
-				   bs_to_string(bfd), state_list[old_state].str,
-				   state_list[bfd->ses_state].str,
-				   get_diag_str(bfd->local_diag));
+
+		log_info("state-change: [%s] %s -> %s reason:%s",
+			bs_to_string(bfd), state_list[old_state].str,
+			state_list[bfd->ses_state].str,
+			get_diag_str(bfd->local_diag));
 	}
 }
 
@@ -938,9 +921,7 @@ static void bs_up_handler(struct bfd_session *bs, int nstate)
 		break;
 
 	default:
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: unhandled neighbor state: %d",
-				   nstate);
+		log_debug("state-change: unhandled neighbor state: %d", nstate);
 		break;
 	}
 }
@@ -962,9 +943,8 @@ void bs_state_handler(struct bfd_session *bs, int nstate)
 		break;
 
 	default:
-		if (bglobal.debug_peer_event)
-			zlog_debug("state-change: [%s] is in invalid state: %d",
-				   bs_to_string(bs), nstate);
+		log_debug("state-change: [%s] is in invalid state: %d",
+			  bs_to_string(bs), nstate);
 		break;
 	}
 }
@@ -985,14 +965,14 @@ void bs_echo_timer_handler(struct bfd_session *bs)
 	 *     Section 3).
 	 *   - Check that we are already at the up state.
 	 */
-	if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO) == 0
-	    || CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH)
+	if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO) == 0
+	    || BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH)
 	    || bs->ses_state != PTM_BFD_UP)
 		return;
 
 	/* Remote peer asked to stop echo. */
 	if (bs->remote_timers.required_min_echo == 0) {
-		if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
+		if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO_ACTIVE))
 			ptm_bfd_echo_stop(bs);
 
 		return;
@@ -1011,7 +991,7 @@ void bs_echo_timer_handler(struct bfd_session *bs)
 	else
 		bs->echo_xmt_TO = bs->timers.required_min_echo;
 
-	if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO_ACTIVE) == 0
+	if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_ECHO_ACTIVE) == 0
 	    || old_timer != bs->echo_xmt_TO)
 		ptm_bfd_echo_start(bs);
 }
@@ -1041,19 +1021,20 @@ void bs_final_handler(struct bfd_session *bs)
 	}
 
 	/*
-	 * Calculate transmission time based on new timers.
+	 * Calculate detection time based on new timers.
 	 *
 	 * Transmission calculation:
-	 * Unless specified by exceptions at the end of Section 6.8.7, the
-	 * transmission time will be determined by the system with the
-	 * slowest rate.
+	 * We must respect the RequiredMinRxInterval from the remote
+	 * system: if our desired transmission timer is more than the
+	 * minimum receive rate, then we must lower it to at least the
+	 * minimum receive interval.
 	 *
-	 * RFC 5880, Section 6.8.7.
+	 * RFC 5880, Section 6.8.3.
 	 */
 	if (bs->timers.desired_min_tx > bs->remote_timers.required_min_rx)
-		bs->xmt_TO = bs->timers.desired_min_tx;
-	else
 		bs->xmt_TO = bs->remote_timers.required_min_rx;
+	else
+		bs->xmt_TO = bs->timers.desired_min_tx;
 
 	/* Apply new transmission timer immediately. */
 	ptm_bfd_start_xmt_timer(bs, false);
@@ -1112,13 +1093,13 @@ static const char *get_diag_str(int diag)
 	return "N/A";
 }
 
-const char *satostr(const struct sockaddr_any *sa)
+const char *satostr(struct sockaddr_any *sa)
 {
 #define INETSTR_BUFCOUNT 8
 	static char buf[INETSTR_BUFCOUNT][INET6_ADDRSTRLEN];
 	static int bufidx;
-	const struct sockaddr_in *sin = &sa->sa_sin;
-	const struct sockaddr_in6 *sin6 = &sa->sa_sin6;
+	struct sockaddr_in *sin = &sa->sa_sin;
+	struct sockaddr_in6 *sin6 = &sa->sa_sin6;
 
 	bufidx += (bufidx + 1) % INETSTR_BUFCOUNT;
 	buf[bufidx][0] = 0;
@@ -1249,7 +1230,7 @@ const char *bs_to_string(const struct bfd_session *bs)
 	static char buf[256];
 	char addr_buf[INET6_ADDRSTRLEN];
 	int pos;
-	bool is_mhop = CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH);
+	bool is_mhop = BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_MH);
 
 	pos = snprintf(buf, sizeof(buf), "mhop:%s", is_mhop ? "yes" : "no");
 	pos += snprintf(buf + pos, sizeof(buf) - pos, " peer:%s",
@@ -1439,14 +1420,12 @@ struct bfd_session *bfd_key_lookup(struct bfd_key key)
 		memset(&bs.key.local, 0, sizeof(bs.key.local));
 		bsp = hash_lookup(bfd_key_hash, &bs);
 		if (bsp) {
-			if (bglobal.debug_peer_event) {
-				char addr_buf[INET6_ADDRSTRLEN];
-				inet_ntop(bs.key.family, &key.local, addr_buf,
-					  sizeof(addr_buf));
-				zlog_debug(
-					" peer %s found, but loc-addr %s ignored",
-					peer_buf, addr_buf);
-			}
+			char addr_buf[INET6_ADDRSTRLEN];
+
+			inet_ntop(bs.key.family, &key.local, addr_buf,
+				  sizeof(addr_buf));
+			log_debug(" peer %s found, but loc-addr %s ignored",
+				  peer_buf, addr_buf);
 			return bsp;
 		}
 	}
@@ -1457,9 +1436,8 @@ struct bfd_session *bfd_key_lookup(struct bfd_key key)
 		memset(bs.key.ifname, 0, sizeof(bs.key.ifname));
 		bsp = hash_lookup(bfd_key_hash, &bs);
 		if (bsp) {
-			if (bglobal.debug_peer_event)
-				zlog_debug(" peer %s found, but ifp %s ignored",
-					   peer_buf, key.ifname);
+			log_debug(" peer %s found, but ifp %s ignored",
+				  peer_buf, key.ifname);
 			return bsp;
 		}
 	}
@@ -1469,15 +1447,14 @@ struct bfd_session *bfd_key_lookup(struct bfd_key key)
 		memset(&bs.key.local, 0, sizeof(bs.key.local));
 		bsp = hash_lookup(bfd_key_hash, &bs);
 		if (bsp) {
-			if (bglobal.debug_peer_event) {
-				char addr_buf[INET6_ADDRSTRLEN];
-				inet_ntop(bs.key.family, &bs.key.local,
-					  addr_buf, sizeof(addr_buf));
-				zlog_debug(
-					" peer %s found, but ifp %s"
-					" and loc-addr %s ignored",
-					peer_buf, key.ifname, addr_buf);
-			}
+			char addr_buf[INET6_ADDRSTRLEN];
+
+			inet_ntop(bs.key.family, &bs.key.local, addr_buf,
+				  sizeof(addr_buf));
+			log_debug(" peer %s found, but ifp %s"
+				  " and loc-addr %s ignored",
+				  peer_buf, key.ifname,
+				  addr_buf);
 			return bsp;
 		}
 	}
@@ -1495,11 +1472,8 @@ struct bfd_session *bfd_key_lookup(struct bfd_key key)
 	/* change key */
 	if (ctx.result) {
 		bsp = ctx.result;
-		if (bglobal.debug_peer_event)
-			zlog_debug(
-				" peer %s found, but ifp"
-				" and/or loc-addr params ignored",
-				peer_buf);
+		log_debug(" peer %s found, but ifp"
+			  " and/or loc-addr params ignored", peer_buf);
 	}
 	return bsp;
 }
@@ -1659,11 +1633,11 @@ static void _bfd_session_remove_manual(struct hash_bucket *hb,
 	struct bfd_session *bs = hb->data;
 
 	/* Delete only manually configured sessions. */
-	if (CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CONFIG) == 0)
+	if (BFD_CHECK_FLAG(bs->flags, BFD_SESS_FLAG_CONFIG) == 0)
 		return;
 
 	bs->refcount--;
-	UNSET_FLAG(bs->flags, BFD_SESS_FLAG_CONFIG);
+	BFD_UNSET_FLAG(bs->flags, BFD_SESS_FLAG_CONFIG);
 
 	/* Don't delete sessions still in use. */
 	if (bs->refcount != 0)
@@ -1687,17 +1661,13 @@ void bfd_sessions_remove_manual(void)
  */
 static int bfd_vrf_new(struct vrf *vrf)
 {
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF Created: %s(%u)", vrf->name, vrf->vrf_id);
-
+	log_debug("VRF Created: %s(%u)", vrf->name, vrf->vrf_id);
 	return 0;
 }
 
 static int bfd_vrf_delete(struct vrf *vrf)
 {
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF Deletion: %s(%u)", vrf->name, vrf->vrf_id);
-
+	log_debug("VRF Deletion: %s(%u)", vrf->name, vrf->vrf_id);
 	return 0;
 }
 
@@ -1705,10 +1675,7 @@ static int bfd_vrf_update(struct vrf *vrf)
 {
 	if (!vrf_is_enabled(vrf))
 		return 0;
-
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF update: %s(%u)", vrf->name, vrf->vrf_id);
-
+	log_debug("VRF update: %s(%u)", vrf->name, vrf->vrf_id);
 	/* a different name is given; update bfd list */
 	bfdd_sessions_enable_vrf(vrf);
 	return 0;
@@ -1725,10 +1692,7 @@ static int bfd_vrf_enable(struct vrf *vrf)
 		vrf->info = (void *)bvrf;
 	} else
 		bvrf = vrf->info;
-
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF enable add %s id %u", vrf->name, vrf->vrf_id);
-
+	log_debug("VRF enable add %s id %u", vrf->name, vrf->vrf_id);
 	if (vrf->vrf_id == VRF_DEFAULT ||
 	    vrf_get_backend() == VRF_BACKEND_NETNS) {
 		if (!bvrf->bg_shop)
@@ -1784,8 +1748,7 @@ static int bfd_vrf_disable(struct vrf *vrf)
 		bfdd_zclient_unregister(vrf->vrf_id);
 	}
 
-	if (bglobal.debug_zebra)
-		zlog_debug("VRF disable %s id %d", vrf->name, vrf->vrf_id);
+	log_debug("VRF disable %s id %d", vrf->name, vrf->vrf_id);
 
 	/* Disable read/write poll triggering. */
 	THREAD_OFF(bvrf->bg_ev[0]);

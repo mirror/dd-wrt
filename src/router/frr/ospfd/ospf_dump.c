@@ -82,8 +82,9 @@ const char *ospf_area_name_string(struct ospf_area *area)
 		return "-";
 
 	area_id = ntohl(area->area_id.s_addr);
-	snprintf(buf, sizeof(buf), "%d.%d.%d.%d", (area_id >> 24) & 0xff,
-		 (area_id >> 16) & 0xff, (area_id >> 8) & 0xff, area_id & 0xff);
+	snprintf(buf, OSPF_AREA_STRING_MAXLEN, "%d.%d.%d.%d",
+		 (area_id >> 24) & 0xff, (area_id >> 16) & 0xff,
+		 (area_id >> 8) & 0xff, area_id & 0xff);
 	return buf;
 }
 
@@ -99,11 +100,11 @@ const char *ospf_area_desc_string(struct ospf_area *area)
 	type = area->external_routing;
 	switch (type) {
 	case OSPF_AREA_NSSA:
-		snprintf(buf, sizeof(buf), "%s [NSSA]",
+		snprintf(buf, OSPF_AREA_DESC_STRING_MAXLEN, "%s [NSSA]",
 			 ospf_area_name_string(area));
 		break;
 	case OSPF_AREA_STUB:
-		snprintf(buf, sizeof(buf), "%s [Stub]",
+		snprintf(buf, OSPF_AREA_DESC_STRING_MAXLEN, "%s [Stub]",
 			 ospf_area_name_string(area));
 		break;
 	default:
@@ -126,7 +127,7 @@ const char *ospf_if_name_string(struct ospf_interface *oi)
 		return oi->ifp->name;
 
 	ifaddr = ntohl(oi->address->u.prefix4.s_addr);
-	snprintf(buf, sizeof(buf), "%s:%d.%d.%d.%d", oi->ifp->name,
+	snprintf(buf, OSPF_IF_STRING_MAXLEN, "%s:%d.%d.%d.%d", oi->ifp->name,
 		 (ifaddr >> 24) & 0xff, (ifaddr >> 16) & 0xff,
 		 (ifaddr >> 8) & 0xff, ifaddr & 0xff);
 	return buf;
@@ -157,12 +158,12 @@ const char *ospf_timeval_dump(struct timeval *t, char *buf, size_t size)
 #define HOUR_IN_SECONDS		(60*MINUTE_IN_SECONDS)
 #define DAY_IN_SECONDS		(24*HOUR_IN_SECONDS)
 #define WEEK_IN_SECONDS		(7*DAY_IN_SECONDS)
-	unsigned long w, d, h, m, ms, us;
+	unsigned long w, d, h, m, s, ms, us;
 
 	if (!t)
 		return "inactive";
 
-	w = d = h = m = ms = 0;
+	w = d = h = m = s = ms = us = 0;
 	memset(buf, 0, size);
 
 	us = t->tv_usec;
@@ -385,7 +386,7 @@ static void ospf_packet_db_desc_dump(struct stream *s, uint16_t length)
 	zlog_debug("  Options %d (%s)", dd->options,
 		   ospf_options_dump(dd->options));
 	zlog_debug("  Flags %d (%s)", dd->flags,
-		   ospf_dd_flags_dump(dd->flags, dd_flags, sizeof(dd_flags)));
+		   ospf_dd_flags_dump(dd->flags, dd_flags, sizeof dd_flags));
 	zlog_debug("  Sequence Number 0x%08lx",
 		   (unsigned long)ntohl(dd->dd_seqnum));
 
@@ -1639,13 +1640,9 @@ DEFUN_NOSH (show_debugging_ospf_instance,
 	return show_debugging_ospf_common(vty, ospf);
 }
 
-static int config_write_debug(struct vty *vty);
 /* Debug node. */
 static struct cmd_node debug_node = {
-	.name = "debug",
-	.node = DEBUG_NODE,
-	.prompt = "",
-	.config_write = config_write_debug,
+	DEBUG_NODE, "", 1 /* VTYSH */
 };
 
 static int config_write_debug(struct vty *vty)
@@ -1668,7 +1665,7 @@ static int config_write_debug(struct vty *vty)
 		return CMD_SUCCESS;
 
 	if (ospf->instance)
-		snprintf(str, sizeof(str), " %u", ospf->instance);
+		sprintf(str, " %u", ospf->instance);
 
 	/* debug ospf ism (status|events|timers). */
 	if (IS_CONF_DEBUG_OSPF(ism, ISM) == OSPF_DEBUG_ISM)
@@ -1786,7 +1783,7 @@ static int config_write_debug(struct vty *vty)
 /* Initialize debug commands. */
 void ospf_debug_init(void)
 {
-	install_node(&debug_node);
+	install_node(&debug_node, config_write_debug);
 
 	install_element(ENABLE_NODE, &show_debugging_ospf_cmd);
 	install_element(ENABLE_NODE, &debug_ospf_ism_cmd);

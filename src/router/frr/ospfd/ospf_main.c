@@ -40,7 +40,6 @@
 #include "zclient.h"
 #include "vrf.h"
 #include "libfrr.h"
-#include "routemap.h"
 
 #include "ospfd/ospfd.h"
 #include "ospfd/ospf_interface.h"
@@ -98,7 +97,6 @@ static void sigint(void)
 {
 	zlog_notice("Terminating on signal");
 	ospf_terminate();
-	exit(0);
 }
 
 /* SIGUSR1 handler. */
@@ -128,8 +126,6 @@ struct quagga_signal_t ospf_signals[] = {
 
 static const struct frr_yang_module_info *const ospfd_yang_modules[] = {
 	&frr_interface_info,
-	&frr_route_map_info,
-	&frr_vrf_info,
 };
 
 FRR_DAEMON_INFO(ospfd, OSPF, .vty_port = OSPF_VTY_PORT,
@@ -237,5 +233,5 @@ int main(int argc, char **argv)
 	frr_run(master);
 
 	/* Not reached. */
-	return 0;
+	return (0);
 }

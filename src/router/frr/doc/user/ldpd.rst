@@ -108,11 +108,6 @@ LDP Configuration
    The following command located under MPLS router node configures the MPLS
    router-id of the local device.
 
-.. index:: [no] ordered-control
-.. clicmd:: [no] ordered-control
-
-   Configure LDP Ordered Label Distribution Control.
-
 .. index:: [no] address-family [ipv4 | ipv6]
 .. clicmd:: [no] address-family [ipv4 | ipv6]
 

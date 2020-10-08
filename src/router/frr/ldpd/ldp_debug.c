@@ -29,14 +29,12 @@
 struct ldp_debug conf_ldp_debug;
 struct ldp_debug ldp_debug;
 
-static int	ldp_debug_config_write(struct vty *);
-
 /* Debug node. */
-struct cmd_node ldp_debug_node = {
-	.name = "debug",
-	.node = DEBUG_NODE,
-	.prompt = "",
-	.config_write = ldp_debug_config_write,
+struct cmd_node ldp_debug_node =
+{
+	DEBUG_NODE,
+	"",
+	1
 };
 
 int
@@ -144,7 +142,7 @@ ldp_vty_show_debugging(struct vty *vty)
 	return (CMD_SUCCESS);
 }
 
-static int
+int
 ldp_debug_config_write(struct vty *vty)
 {
 	int write = 0;

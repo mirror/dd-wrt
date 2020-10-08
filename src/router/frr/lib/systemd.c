@@ -114,10 +114,8 @@ void systemd_send_started(struct thread_master *m, int the_process)
 	systemd_master = m;
 
 	systemd_send_information("READY=1");
-	if (wsecs != 0) {
-		systemd_send_information("WATCHDOG=1");
+	if (wsecs != 0)
 		thread_add_timer(m, systemd_send_watchdog, m, wsecs, NULL);
-	}
 }
 
 void systemd_send_status(const char *status)

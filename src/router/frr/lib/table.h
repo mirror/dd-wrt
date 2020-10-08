@@ -331,10 +331,6 @@ static inline int route_table_iter_started(route_table_iter_t *iter)
 	return iter->state != RT_ITER_STATE_INIT;
 }
 
-#ifdef _FRR_ATTRIBUTE_PRINTFRR
-#pragma FRR printfrr_ext "%pRN"  (struct route_node *)
-#endif
-
 #ifdef __cplusplus
 }
 #endif

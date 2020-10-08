@@ -164,6 +164,7 @@ static int if_rmap_unset(struct if_rmap_ctx *ctx,
 			return 0;
 
 		XFREE(MTYPE_IF_RMAP_NAME, if_rmap->routemap[IF_RMAP_IN]);
+		if_rmap->routemap[IF_RMAP_IN] = NULL;
 	}
 
 	if (type == IF_RMAP_OUT) {
@@ -173,6 +174,7 @@ static int if_rmap_unset(struct if_rmap_ctx *ctx,
 			return 0;
 
 		XFREE(MTYPE_IF_RMAP_NAME, if_rmap->routemap[IF_RMAP_OUT]);
+		if_rmap->routemap[IF_RMAP_OUT] = NULL;
 	}
 
 	if (ctx->if_rmap_delete_hook)

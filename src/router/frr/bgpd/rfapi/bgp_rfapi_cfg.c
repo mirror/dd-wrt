@@ -47,7 +47,7 @@
 #include "bgpd/rfapi/vnc_import_bgp.h"
 #include "bgpd/rfapi/vnc_debug.h"
 
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 
 #undef BGP_VNC_DEBUG_MATCH_GROUP
 
@@ -168,7 +168,7 @@ struct rfapi_nve_group_cfg *bgp_rfapi_cfg_match_group(struct rfapi_cfg *hc,
 		agg_unlock_node(rn_un);
 	}
 
-#ifdef BGP_VNC_DEBUG_MATCH_GROUP
+#if BGP_VNC_DEBUG_MATCH_GROUP
 	{
 		char buf[PREFIX_STRLEN];
 
@@ -2965,18 +2965,10 @@ DEFUN_NOSH (exit_vnc,
 }
 
 static struct cmd_node bgp_vnc_defaults_node = {
-	.name = "bgp vnc defaults",
-	.node = BGP_VNC_DEFAULTS_NODE,
-	.parent_node = BGP_NODE,
-	.prompt = "%s(config-router-vnc-defaults)# ",
-};
+	BGP_VNC_DEFAULTS_NODE, "%s(config-router-vnc-defaults)# ", 1};
 
 static struct cmd_node bgp_vnc_nve_group_node = {
-	.name = "bgp vnc nve",
-	.node = BGP_VNC_NVE_GROUP_NODE,
-	.parent_node = BGP_NODE,
-	.prompt = "%s(config-router-vnc-nve-group)# ",
-};
+	BGP_VNC_NVE_GROUP_NODE, "%s(config-router-vnc-nve-group)# ", 1};
 
 /*-------------------------------------------------------------------------
  *			VNC nve-group
@@ -3396,11 +3388,7 @@ DEFUN_NOSH (exit_vrf_policy,
 }
 
 static struct cmd_node bgp_vrf_policy_node = {
-	.name = "bgp vrf policy",
-	.node = BGP_VRF_POLICY_NODE,
-	.parent_node = BGP_NODE,
-	.prompt = "%s(config-router-vrf-policy)# ",
-};
+	BGP_VRF_POLICY_NODE, "%s(config-router-vrf-policy)# ", 1};
 
 /*-------------------------------------------------------------------------
  *			vnc-l2-group
@@ -3636,11 +3624,7 @@ DEFUN (vnc_l2_group_rt,
 
 
 static struct cmd_node bgp_vnc_l2_group_node = {
-	.name = "bgp vnc l2",
-	.node = BGP_VNC_L2_GROUP_NODE,
-	.parent_node = BGP_NODE,
-	.prompt = "%s(config-router-vnc-l2-group)# ",
-};
+	BGP_VNC_L2_GROUP_NODE, "%s(config-router-vnc-l2-group)# ", 1};
 
 struct rfapi_l2_group_cfg *
 bgp_rfapi_get_group_by_lni_label(struct bgp *bgp, uint32_t logical_net_id,
@@ -3697,10 +3681,10 @@ bgp_rfapi_get_ecommunity_by_lni_label(struct bgp *bgp, uint32_t is_import,
 
 void bgp_rfapi_cfg_init(void)
 {
-	install_node(&bgp_vnc_defaults_node);
-	install_node(&bgp_vnc_nve_group_node);
-	install_node(&bgp_vrf_policy_node);
-	install_node(&bgp_vnc_l2_group_node);
+	install_node(&bgp_vnc_defaults_node, NULL);
+	install_node(&bgp_vnc_nve_group_node, NULL);
+	install_node(&bgp_vrf_policy_node, NULL);
+	install_node(&bgp_vnc_l2_group_node, NULL);
 	install_default(BGP_VRF_POLICY_NODE);
 	install_default(BGP_VNC_DEFAULTS_NODE);
 	install_default(BGP_VNC_NVE_GROUP_NODE);
@@ -4627,8 +4611,7 @@ void bgp_rfapi_show_summary(struct bgp *bgp, struct vty *vty)
 		(hc->rfp_cfg.download_type == RFAPI_RFP_DOWNLOAD_PARTIAL
 			 ? "(default)"
 			 : ""));
-	snprintf(tmp, sizeof(tmp), "%u seconds",
-		 hc->rfp_cfg.ftd_advertisement_interval);
+	sprintf(tmp, "%u seconds", hc->rfp_cfg.ftd_advertisement_interval);
 	vty_out(vty, "%-39s %-19s %s\n", "    Advertisement Interval:", tmp,
 		(hc->rfp_cfg.ftd_advertisement_interval
 				 == RFAPI_RFP_CFG_DEFAULT_FTD_ADVERTISEMENT_INTERVAL

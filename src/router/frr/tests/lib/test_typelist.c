@@ -35,7 +35,6 @@
 #include "monotime.h"
 #include "jhash.h"
 #include "sha256.h"
-#include "printfrr.h"
 
 #include "tests/helpers/c/prng.h"
 
@@ -91,14 +90,14 @@ static void ts_ref(const char *text)
 {
 	int64_t us;
 	us = monotime_since(&ref, NULL);
-	printfrr("%7"PRId64"us  %s\n", us, text);
+	printf("%7"PRId64"us  %s\n", us, text);
 	monotime(&ref);
 }
 static void ts_end(void)
 {
 	int64_t us;
 	us = monotime_since(&ref0, NULL);
-	printfrr("%7"PRId64"us  total\n", us);
+	printf("%7"PRId64"us  total\n", us);
 }
 
 #define TYPE LIST

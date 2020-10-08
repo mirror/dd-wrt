@@ -46,62 +46,70 @@ static struct nb_callback_info {
 		.operation = NB_OP_CREATE,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_create_args *args",
+		.arguments =
+			"enum nb_event event, const struct lyd_node *dnode, union nb_resource *resource",
 	},
 	{
 		.operation = NB_OP_MODIFY,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_modify_args *args",
+		.arguments =
+			"enum nb_event event, const struct lyd_node *dnode, union nb_resource *resource",
 	},
 	{
 		.operation = NB_OP_DESTROY,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_destroy_args *args",
+		.arguments =
+			"enum nb_event event, const struct lyd_node *dnode",
 	},
 	{
 		.operation = NB_OP_MOVE,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_move_args *args",
+		.arguments =
+			"enum nb_event event, const struct lyd_node *dnode",
 	},
 	{
 		.operation = NB_OP_APPLY_FINISH,
 		.optional = true,
 		.return_type = "void ",
 		.return_value = "",
-		.arguments = "struct nb_cb_apply_finish_args *args",
+		.arguments = "const struct lyd_node *dnode",
 	},
 	{
 		.operation = NB_OP_GET_ELEM,
 		.return_type = "struct yang_data *",
 		.return_value = "NULL",
-		.arguments = "struct nb_cb_get_elem_args *args",
+		.arguments = "const char *xpath, const void *list_entry",
 	},
 	{
 		.operation = NB_OP_GET_NEXT,
 		.return_type = "const void *",
 		.return_value = "NULL",
-		.arguments = "struct nb_cb_get_next_args *args",
+		.arguments =
+			"const void *parent_list_entry, const void *list_entry",
 	},
 	{
 		.operation = NB_OP_GET_KEYS,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_get_keys_args *args",
+		.arguments =
+			"const void *list_entry, struct yang_list_keys *keys",
 	},
 	{
 		.operation = NB_OP_LOOKUP_ENTRY,
 		.return_type = "const void *",
 		.return_value = "NULL",
-		.arguments = "struct nb_cb_lookup_entry_args *args",
+		.arguments =
+			"const void *parent_list_entry, const struct yang_list_keys *keys",
 	},
 	{
 		.operation = NB_OP_RPC,
 		.return_type = "int ",
 		.return_value = "NB_OK",
-		.arguments = "struct nb_cb_rpc_args *args",
+		.arguments =
+			"const char *xpath, const struct list *input, struct list *output",
 	},
 	{
 		/* sentinel */
@@ -350,7 +358,7 @@ int main(int argc, char *argv[])
 	if (argc != 1)
 		usage(EXIT_FAILURE);
 
-	yang_init(false);
+	yang_init();
 
 	if (search_path)
 		ly_ctx_set_searchdir(ly_native_ctx, search_path);

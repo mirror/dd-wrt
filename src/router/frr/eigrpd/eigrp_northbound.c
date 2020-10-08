@@ -74,47 +74,49 @@ static struct eigrp_interface *eigrp_interface_lookup(const struct eigrp *eigrp,
 /*
  * XPath: /frr-eigrpd:eigrpd/instance
  */
-static int eigrpd_instance_create(struct nb_cb_create_args *args)
+static int eigrpd_instance_create(enum nb_event event,
+				  const struct lyd_node *dnode,
+				  union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 	const char *vrf;
 	vrf_id_t vrfid;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* NOTHING */
 		break;
 	case NB_EV_PREPARE:
-		vrf = yang_dnode_get_string(args->dnode, "./vrf");
+		vrf = yang_dnode_get_string(dnode, "./vrf");
 		vrfid = vrf_name_to_id(vrf);
 
-		eigrp = eigrp_get(yang_dnode_get_uint16(args->dnode, "./asn"),
-				  vrfid);
-		args->resource->ptr = eigrp;
+		eigrp = eigrp_get(yang_dnode_get_uint16(dnode, "./asn"), vrfid);
+		resource->ptr = eigrp;
 		break;
 	case NB_EV_ABORT:
-		eigrp_finish_final(args->resource->ptr);
+		eigrp_finish_final(resource->ptr);
 		break;
 	case NB_EV_APPLY:
-		nb_running_set_entry(args->dnode, args->resource->ptr);
+		nb_running_set_entry(dnode, resource->ptr);
 		break;
 	}
 
 	return NB_OK;
 }
 
-static int eigrpd_instance_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_destroy(enum nb_event event,
+				   const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_unset_entry(args->dnode);
+		eigrp = nb_running_unset_entry(dnode);
 		eigrp_finish_final(eigrp);
 		break;
 	}
@@ -125,39 +127,41 @@ static int eigrpd_instance_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/router-id
  */
-static int eigrpd_instance_router_id_modify(struct nb_cb_modify_args *args)
+static int eigrpd_instance_router_id_modify(enum nb_event event,
+					    const struct lyd_node *dnode,
+					    union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		yang_dnode_get_ipv4(&eigrp->router_id_static, args->dnode,
-				    NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		yang_dnode_get_ipv4(&eigrp->router_id_static, dnode, NULL);
 		break;
 	}
 
 	return NB_OK;
 }
 
-static int eigrpd_instance_router_id_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_router_id_destroy(enum nb_event event,
+					     const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->router_id_static.s_addr = INADDR_ANY;
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->router_id_static.s_addr = 0;
 		break;
 	}
 
@@ -168,15 +172,17 @@ static int eigrpd_instance_router_id_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/passive-interface
  */
 static int
-eigrpd_instance_passive_interface_create(struct nb_cb_create_args *args)
+eigrpd_instance_passive_interface_create(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp_interface *eif;
 	struct eigrp *eigrp;
 	const char *ifname;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		eigrp = nb_running_get_entry(args->dnode, NULL, false);
+		eigrp = nb_running_get_entry(dnode, NULL, false);
 		if (eigrp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -185,7 +191,7 @@ eigrpd_instance_passive_interface_create(struct nb_cb_create_args *args)
 			break;
 		}
 
-		ifname = yang_dnode_get_string(args->dnode, NULL);
+		ifname = yang_dnode_get_string(dnode, NULL);
 		eif = eigrp_interface_lookup(eigrp, ifname);
 		if (eif == NULL)
 			return NB_ERR_INCONSISTENCY;
@@ -195,8 +201,8 @@ eigrpd_instance_passive_interface_create(struct nb_cb_create_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		ifname = yang_dnode_get_string(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		ifname = yang_dnode_get_string(dnode, NULL);
 		eif = eigrp_interface_lookup(eigrp, ifname);
 		if (eif == NULL)
 			return NB_ERR_INCONSISTENCY;
@@ -209,21 +215,22 @@ eigrpd_instance_passive_interface_create(struct nb_cb_create_args *args)
 }
 
 static int
-eigrpd_instance_passive_interface_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_passive_interface_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp_interface *eif;
 	struct eigrp *eigrp;
 	const char *ifname;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		ifname = yang_dnode_get_string(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		ifname = yang_dnode_get_string(dnode, NULL);
 		eif = eigrp_interface_lookup(eigrp, ifname);
 		if (eif == NULL)
 			break;
@@ -238,9 +245,11 @@ eigrpd_instance_passive_interface_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/active-time
  */
-static int eigrpd_instance_active_time_modify(struct nb_cb_modify_args *args)
+static int eigrpd_instance_active_time_modify(enum nb_event event,
+					      const struct lyd_node *dnode,
+					      union nb_resource *resource)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -257,37 +266,40 @@ static int eigrpd_instance_active_time_modify(struct nb_cb_modify_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/variance
  */
-static int eigrpd_instance_variance_modify(struct nb_cb_modify_args *args)
+static int eigrpd_instance_variance_modify(enum nb_event event,
+					   const struct lyd_node *dnode,
+					   union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->variance = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->variance = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
 	return NB_OK;
 }
 
-static int eigrpd_instance_variance_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_variance_destroy(enum nb_event event,
+					    const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->variance = EIGRP_VARIANCE_DEFAULT;
 		break;
 	}
@@ -298,38 +310,40 @@ static int eigrpd_instance_variance_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/maximum-paths
  */
-static int eigrpd_instance_maximum_paths_modify(struct nb_cb_modify_args *args)
+static int eigrpd_instance_maximum_paths_modify(enum nb_event event,
+						const struct lyd_node *dnode,
+						union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->max_paths = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->max_paths = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
 	return NB_OK;
 }
 
-static int
-eigrpd_instance_maximum_paths_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_maximum_paths_destroy(enum nb_event event,
+						 const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->max_paths = EIGRP_MAX_PATHS_DEFAULT;
 		break;
 	}
@@ -341,19 +355,21 @@ eigrpd_instance_maximum_paths_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K1
  */
 static int
-eigrpd_instance_metric_weights_K1_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K1_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[0] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[0] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -361,18 +377,19 @@ eigrpd_instance_metric_weights_K1_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K1_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K1_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[0] = EIGRP_K1_DEFAULT;
 		break;
 	}
@@ -384,19 +401,21 @@ eigrpd_instance_metric_weights_K1_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K2
  */
 static int
-eigrpd_instance_metric_weights_K2_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K2_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[1] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[1] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -404,18 +423,19 @@ eigrpd_instance_metric_weights_K2_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K2_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K2_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[1] = EIGRP_K2_DEFAULT;
 		break;
 	}
@@ -427,19 +447,21 @@ eigrpd_instance_metric_weights_K2_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K3
  */
 static int
-eigrpd_instance_metric_weights_K3_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K3_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[2] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[2] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -447,18 +469,19 @@ eigrpd_instance_metric_weights_K3_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K3_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K3_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[2] = EIGRP_K3_DEFAULT;
 		break;
 	}
@@ -470,19 +493,21 @@ eigrpd_instance_metric_weights_K3_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K4
  */
 static int
-eigrpd_instance_metric_weights_K4_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K4_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[3] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[3] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -490,18 +515,19 @@ eigrpd_instance_metric_weights_K4_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K4_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K4_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[3] = EIGRP_K4_DEFAULT;
 		break;
 	}
@@ -513,19 +539,21 @@ eigrpd_instance_metric_weights_K4_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K5
  */
 static int
-eigrpd_instance_metric_weights_K5_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K5_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[4] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[4] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -533,18 +561,19 @@ eigrpd_instance_metric_weights_K5_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K5_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K5_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[4] = EIGRP_K5_DEFAULT;
 		break;
 	}
@@ -556,19 +585,21 @@ eigrpd_instance_metric_weights_K5_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/metric-weights/K6
  */
 static int
-eigrpd_instance_metric_weights_K6_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_metric_weights_K6_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp->k_values[5] = yang_dnode_get_uint8(args->dnode, NULL);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		eigrp->k_values[5] = yang_dnode_get_uint8(dnode, NULL);
 		break;
 	}
 
@@ -576,18 +607,19 @@ eigrpd_instance_metric_weights_K6_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_metric_weights_K6_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_metric_weights_K6_destroy(enum nb_event event,
+					  const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp->k_values[5] = EIGRP_K6_DEFAULT;
 		break;
 	}
@@ -598,18 +630,20 @@ eigrpd_instance_metric_weights_K6_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/network
  */
-static int eigrpd_instance_network_create(struct nb_cb_create_args *args)
+static int eigrpd_instance_network_create(enum nb_event event,
+					  const struct lyd_node *dnode,
+					  union nb_resource *resource)
 {
 	struct route_node *rnode;
 	struct prefix prefix;
 	struct eigrp *eigrp;
 	int exists;
 
-	yang_dnode_get_ipv4p(&prefix, args->dnode, NULL);
+	yang_dnode_get_ipv4p(&prefix, dnode, NULL);
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		eigrp = nb_running_get_entry(args->dnode, NULL, false);
+		eigrp = nb_running_get_entry(dnode, NULL, false);
 		/* If entry doesn't exist it means the list is empty. */
 		if (eigrp == NULL)
 			break;
@@ -625,7 +659,7 @@ static int eigrpd_instance_network_create(struct nb_cb_create_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		if (eigrp_network_set(eigrp, &prefix) == 0)
 			return NB_ERR_INCONSISTENCY;
 		break;
@@ -634,18 +668,19 @@ static int eigrpd_instance_network_create(struct nb_cb_create_args *args)
 	return NB_OK;
 }
 
-static int eigrpd_instance_network_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_network_destroy(enum nb_event event,
+					   const struct lyd_node *dnode)
 {
 	struct route_node *rnode;
 	struct prefix prefix;
 	struct eigrp *eigrp;
 	int exists = 0;
 
-	yang_dnode_get_ipv4p(&prefix, args->dnode, NULL);
+	yang_dnode_get_ipv4p(&prefix, dnode, NULL);
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		eigrp = nb_running_get_entry(args->dnode, NULL, false);
+		eigrp = nb_running_get_entry(dnode, NULL, false);
 		/* If entry doesn't exist it means the list is empty. */
 		if (eigrp == NULL)
 			break;
@@ -661,7 +696,7 @@ static int eigrpd_instance_network_destroy(struct nb_cb_destroy_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
 		eigrp_network_unset(eigrp, &prefix);
 		break;
 	}
@@ -672,9 +707,11 @@ static int eigrpd_instance_network_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/neighbor
  */
-static int eigrpd_instance_neighbor_create(struct nb_cb_create_args *args)
+static int eigrpd_instance_neighbor_create(enum nb_event event,
+					   const struct lyd_node *dnode,
+					   union nb_resource *resource)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -688,9 +725,10 @@ static int eigrpd_instance_neighbor_create(struct nb_cb_create_args *args)
 	return NB_OK;
 }
 
-static int eigrpd_instance_neighbor_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_neighbor_destroy(enum nb_event event,
+					    const struct lyd_node *dnode)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -707,7 +745,9 @@ static int eigrpd_instance_neighbor_destroy(struct nb_cb_destroy_args *args)
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute
  */
-static int eigrpd_instance_redistribute_create(struct nb_cb_create_args *args)
+static int eigrpd_instance_redistribute_create(enum nb_event event,
+					       const struct lyd_node *dnode,
+					       union nb_resource *resource)
 {
 	struct eigrp_metrics metrics;
 	const char *vrfname;
@@ -715,10 +755,10 @@ static int eigrpd_instance_redistribute_create(struct nb_cb_create_args *args)
 	uint32_t proto;
 	vrf_id_t vrfid;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		proto = yang_dnode_get_enum(args->dnode, "./protocol");
-		vrfname = yang_dnode_get_string(args->dnode, "../vrf");
+		proto = yang_dnode_get_enum(dnode, "./protocol");
+		vrfname = yang_dnode_get_string(dnode, "../vrf");
 		vrfid = vrf_name_to_id(vrfname);
 		if (vrf_bitmap_check(zclient->redist[AFI_IP][proto], vrfid))
 			return NB_ERR_INCONSISTENCY;
@@ -728,9 +768,9 @@ static int eigrpd_instance_redistribute_create(struct nb_cb_create_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		proto = yang_dnode_get_enum(args->dnode, "./protocol");
-		redistribute_get_metrics(args->dnode, &metrics);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		proto = yang_dnode_get_enum(dnode, "./protocol");
+		redistribute_get_metrics(dnode, &metrics);
 		eigrp_redistribute_set(eigrp, proto, metrics);
 		break;
 	}
@@ -738,20 +778,21 @@ static int eigrpd_instance_redistribute_create(struct nb_cb_create_args *args)
 	return NB_OK;
 }
 
-static int eigrpd_instance_redistribute_destroy(struct nb_cb_destroy_args *args)
+static int eigrpd_instance_redistribute_destroy(enum nb_event event,
+						const struct lyd_node *dnode)
 {
 	struct eigrp *eigrp;
 	uint32_t proto;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		proto = yang_dnode_get_enum(args->dnode, "./protocol");
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		proto = yang_dnode_get_enum(dnode, "./protocol");
 		eigrp_redistribute_unset(eigrp, proto);
 		break;
 	}
@@ -763,9 +804,11 @@ static int eigrpd_instance_redistribute_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/route-map
  */
 static int
-eigrpd_instance_redistribute_route_map_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_redistribute_route_map_modify(enum nb_event event,
+					      const struct lyd_node *dnode,
+					      union nb_resource *resource)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -780,9 +823,10 @@ eigrpd_instance_redistribute_route_map_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-eigrpd_instance_redistribute_route_map_destroy(struct nb_cb_destroy_args *args)
+eigrpd_instance_redistribute_route_map_destroy(enum nb_event event,
+					       const struct lyd_node *dnode)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -800,22 +844,23 @@ eigrpd_instance_redistribute_route_map_destroy(struct nb_cb_destroy_args *args)
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/metrics/bandwidth
  */
 static int eigrpd_instance_redistribute_metrics_bandwidth_modify(
-	struct nb_cb_modify_args *args)
+	enum nb_event event, const struct lyd_node *dnode,
+	union nb_resource *resource)
 {
 	struct eigrp_metrics metrics;
 	struct eigrp *eigrp;
 	uint32_t proto;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		proto = yang_dnode_get_enum(args->dnode, "../../protocol");
-		redistribute_get_metrics(args->dnode, &metrics);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		proto = yang_dnode_get_enum(dnode, "../../protocol");
+		redistribute_get_metrics(dnode, &metrics);
 		eigrp_redistribute_set(eigrp, proto, metrics);
 		break;
 	}
@@ -824,22 +869,22 @@ static int eigrpd_instance_redistribute_metrics_bandwidth_modify(
 }
 
 static int eigrpd_instance_redistribute_metrics_bandwidth_destroy(
-	struct nb_cb_destroy_args *args)
+	enum nb_event event, const struct lyd_node *dnode)
 {
 	struct eigrp_metrics metrics;
 	struct eigrp *eigrp;
 	uint32_t proto;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eigrp = nb_running_get_entry(args->dnode, NULL, true);
-		proto = yang_dnode_get_enum(args->dnode, "../../protocol");
-		redistribute_get_metrics(args->dnode, &metrics);
+		eigrp = nb_running_get_entry(dnode, NULL, true);
+		proto = yang_dnode_get_enum(dnode, "../../protocol");
+		redistribute_get_metrics(dnode, &metrics);
 		eigrp_redistribute_set(eigrp, proto, metrics);
 		break;
 	}
@@ -850,74 +895,98 @@ static int eigrpd_instance_redistribute_metrics_bandwidth_destroy(
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/metrics/delay
  */
-static int eigrpd_instance_redistribute_metrics_delay_modify(
-	struct nb_cb_modify_args *args)
+static int
+eigrpd_instance_redistribute_metrics_delay_modify(enum nb_event event,
+						  const struct lyd_node *dnode,
+						  union nb_resource *resource)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_modify(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_modify(event,
+								     dnode,
+								     resource);
 }
 
-static int eigrpd_instance_redistribute_metrics_delay_destroy(
-	struct nb_cb_destroy_args *args)
+static int
+eigrpd_instance_redistribute_metrics_delay_destroy(enum nb_event event,
+						   const struct lyd_node *dnode)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(event,
+								      dnode);
 }
 
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/metrics/reliability
  */
 static int eigrpd_instance_redistribute_metrics_reliability_modify(
-	struct nb_cb_modify_args *args)
+	enum nb_event event, const struct lyd_node *dnode,
+	union nb_resource *resource)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_modify(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_modify(event,
+								     dnode,
+								     resource);
 }
 
 static int eigrpd_instance_redistribute_metrics_reliability_destroy(
-	struct nb_cb_destroy_args *args)
+	enum nb_event event, const struct lyd_node *dnode)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(event,
+								      dnode);
 }
 
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/metrics/load
  */
 static int
-eigrpd_instance_redistribute_metrics_load_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_redistribute_metrics_load_modify(enum nb_event event,
+						 const struct lyd_node *dnode,
+						 union nb_resource *resource)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_modify(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_modify(event,
+								     dnode,
+								     resource);
 }
 
-static int eigrpd_instance_redistribute_metrics_load_destroy(
-	struct nb_cb_destroy_args *args)
+static int
+eigrpd_instance_redistribute_metrics_load_destroy(enum nb_event event,
+						  const struct lyd_node *dnode)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(event,
+								      dnode);
 }
 
 /*
  * XPath: /frr-eigrpd:eigrpd/instance/redistribute/metrics/mtu
  */
 static int
-eigrpd_instance_redistribute_metrics_mtu_modify(struct nb_cb_modify_args *args)
+eigrpd_instance_redistribute_metrics_mtu_modify(enum nb_event event,
+						const struct lyd_node *dnode,
+						union nb_resource *resource)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_modify(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_modify(event,
+								     dnode,
+								     resource);
 }
 
-static int eigrpd_instance_redistribute_metrics_mtu_destroy(
-	struct nb_cb_destroy_args *args)
+static int
+eigrpd_instance_redistribute_metrics_mtu_destroy(enum nb_event event,
+						 const struct lyd_node *dnode)
 {
-	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(args);
+	return eigrpd_instance_redistribute_metrics_bandwidth_destroy(event,
+								      dnode);
 }
 
 /*
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/delay
  */
-static int lib_interface_eigrp_delay_modify(struct nb_cb_modify_args *args)
+static int lib_interface_eigrp_delay_modify(enum nb_event event,
+					    const struct lyd_node *dnode,
+					    union nb_resource *resource)
 {
 	struct eigrp_interface *ei;
 	struct interface *ifp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		ifp = nb_running_get_entry(args->dnode, NULL, false);
+		ifp = nb_running_get_entry(dnode, NULL, false);
 		if (ifp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -935,12 +1004,12 @@ static int lib_interface_eigrp_delay_modify(struct nb_cb_modify_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		ifp = nb_running_get_entry(args->dnode, NULL, true);
+		ifp = nb_running_get_entry(dnode, NULL, true);
 		ei = ifp->info;
 		if (ei == NULL)
 			return NB_ERR_INCONSISTENCY;
 
-		ei->params.delay = yang_dnode_get_uint32(args->dnode, NULL);
+		ei->params.delay = yang_dnode_get_uint32(dnode, NULL);
 		eigrp_if_reset(ifp);
 		break;
 	}
@@ -951,14 +1020,16 @@ static int lib_interface_eigrp_delay_modify(struct nb_cb_modify_args *args)
 /*
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/bandwidth
  */
-static int lib_interface_eigrp_bandwidth_modify(struct nb_cb_modify_args *args)
+static int lib_interface_eigrp_bandwidth_modify(enum nb_event event,
+						const struct lyd_node *dnode,
+						union nb_resource *resource)
 {
 	struct interface *ifp;
 	struct eigrp_interface *ei;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		ifp = nb_running_get_entry(args->dnode, NULL, false);
+		ifp = nb_running_get_entry(dnode, NULL, false);
 		if (ifp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -976,12 +1047,12 @@ static int lib_interface_eigrp_bandwidth_modify(struct nb_cb_modify_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		ifp = nb_running_get_entry(args->dnode, NULL, true);
+		ifp = nb_running_get_entry(dnode, NULL, true);
 		ei = ifp->info;
 		if (ei == NULL)
 			return NB_ERR_INCONSISTENCY;
 
-		ei->params.bandwidth = yang_dnode_get_uint32(args->dnode, NULL);
+		ei->params.bandwidth = yang_dnode_get_uint32(dnode, NULL);
 		eigrp_if_reset(ifp);
 		break;
 	}
@@ -993,14 +1064,16 @@ static int lib_interface_eigrp_bandwidth_modify(struct nb_cb_modify_args *args)
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/hello-interval
  */
 static int
-lib_interface_eigrp_hello_interval_modify(struct nb_cb_modify_args *args)
+lib_interface_eigrp_hello_interval_modify(enum nb_event event,
+					  const struct lyd_node *dnode,
+					  union nb_resource *resource)
 {
 	struct interface *ifp;
 	struct eigrp_interface *ei;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		ifp = nb_running_get_entry(args->dnode, NULL, false);
+		ifp = nb_running_get_entry(dnode, NULL, false);
 		if (ifp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -1018,12 +1091,12 @@ lib_interface_eigrp_hello_interval_modify(struct nb_cb_modify_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		ifp = nb_running_get_entry(args->dnode, NULL, true);
+		ifp = nb_running_get_entry(dnode, NULL, true);
 		ei = ifp->info;
 		if (ei == NULL)
 			return NB_ERR_INCONSISTENCY;
 
-		ei->params.v_hello = yang_dnode_get_uint16(args->dnode, NULL);
+		ei->params.v_hello = yang_dnode_get_uint16(dnode, NULL);
 		break;
 	}
 
@@ -1033,14 +1106,16 @@ lib_interface_eigrp_hello_interval_modify(struct nb_cb_modify_args *args)
 /*
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/hold-time
  */
-static int lib_interface_eigrp_hold_time_modify(struct nb_cb_modify_args *args)
+static int lib_interface_eigrp_hold_time_modify(enum nb_event event,
+						const struct lyd_node *dnode,
+						union nb_resource *resource)
 {
 	struct interface *ifp;
 	struct eigrp_interface *ei;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		ifp = nb_running_get_entry(args->dnode, NULL, false);
+		ifp = nb_running_get_entry(dnode, NULL, false);
 		if (ifp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -1058,12 +1133,12 @@ static int lib_interface_eigrp_hold_time_modify(struct nb_cb_modify_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		ifp = nb_running_get_entry(args->dnode, NULL, true);
+		ifp = nb_running_get_entry(dnode, NULL, true);
 		ei = ifp->info;
 		if (ei == NULL)
 			return NB_ERR_INCONSISTENCY;
 
-		ei->params.v_wait = yang_dnode_get_uint16(args->dnode, NULL);
+		ei->params.v_wait = yang_dnode_get_uint16(dnode, NULL);
 		break;
 	}
 
@@ -1074,9 +1149,11 @@ static int lib_interface_eigrp_hold_time_modify(struct nb_cb_modify_args *args)
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/split-horizon
  */
 static int
-lib_interface_eigrp_split_horizon_modify(struct nb_cb_modify_args *args)
+lib_interface_eigrp_split_horizon_modify(enum nb_event event,
+					 const struct lyd_node *dnode,
+					 union nb_resource *resource)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -1093,15 +1170,17 @@ lib_interface_eigrp_split_horizon_modify(struct nb_cb_modify_args *args)
 /*
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/instance
  */
-static int lib_interface_eigrp_instance_create(struct nb_cb_create_args *args)
+static int lib_interface_eigrp_instance_create(enum nb_event event,
+					       const struct lyd_node *dnode,
+					       union nb_resource *resource)
 {
 	struct eigrp_interface *eif;
 	struct interface *ifp;
 	struct eigrp *eigrp;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		ifp = nb_running_get_entry(args->dnode, NULL, false);
+		ifp = nb_running_get_entry(dnode, NULL, false);
 		if (ifp == NULL) {
 			/*
 			 * XXX: we can't verify if the interface exists
@@ -1110,7 +1189,7 @@ static int lib_interface_eigrp_instance_create(struct nb_cb_create_args *args)
 			break;
 		}
 
-		eigrp = eigrp_get(yang_dnode_get_uint16(args->dnode, "./asn"),
+		eigrp = eigrp_get(yang_dnode_get_uint16(dnode, "./asn"),
 				  ifp->vrf_id);
 		eif = eigrp_interface_lookup(eigrp, ifp->name);
 		if (eif == NULL)
@@ -1121,30 +1200,31 @@ static int lib_interface_eigrp_instance_create(struct nb_cb_create_args *args)
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		ifp = nb_running_get_entry(args->dnode, NULL, true);
-		eigrp = eigrp_get(yang_dnode_get_uint16(args->dnode, "./asn"),
+		ifp = nb_running_get_entry(dnode, NULL, true);
+		eigrp = eigrp_get(yang_dnode_get_uint16(dnode, "./asn"),
 				  ifp->vrf_id);
 		eif = eigrp_interface_lookup(eigrp, ifp->name);
 		if (eif == NULL)
 			return NB_ERR_INCONSISTENCY;
 
-		nb_running_set_entry(args->dnode, eif);
+		nb_running_set_entry(dnode, eif);
 		break;
 	}
 
 	return NB_OK;
 }
 
-static int lib_interface_eigrp_instance_destroy(struct nb_cb_destroy_args *args)
+static int lib_interface_eigrp_instance_destroy(enum nb_event event,
+						const struct lyd_node *dnode)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		nb_running_unset_entry(args->dnode);
+		nb_running_unset_entry(dnode);
 		break;
 	}
 
@@ -1156,9 +1236,10 @@ static int lib_interface_eigrp_instance_destroy(struct nb_cb_destroy_args *args)
  * /frr-interface:lib/interface/frr-eigrpd:eigrp/instance/summarize-addresses
  */
 static int lib_interface_eigrp_instance_summarize_addresses_create(
-	struct nb_cb_create_args *args)
+	enum nb_event event, const struct lyd_node *dnode,
+	union nb_resource *resource)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -1173,9 +1254,9 @@ static int lib_interface_eigrp_instance_summarize_addresses_create(
 }
 
 static int lib_interface_eigrp_instance_summarize_addresses_destroy(
-	struct nb_cb_destroy_args *args)
+	enum nb_event event, const struct lyd_node *dnode)
 {
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 		/* TODO: Not implemented. */
 		return NB_ERR_INCONSISTENCY;
@@ -1192,20 +1273,22 @@ static int lib_interface_eigrp_instance_summarize_addresses_destroy(
 /*
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/instance/authentication
  */
-static int lib_interface_eigrp_instance_authentication_modify(
-	struct nb_cb_modify_args *args)
+static int
+lib_interface_eigrp_instance_authentication_modify(enum nb_event event,
+						   const struct lyd_node *dnode,
+						   union nb_resource *resource)
 {
 	struct eigrp_interface *eif;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eif = nb_running_get_entry(args->dnode, NULL, true);
-		eif->params.auth_type = yang_dnode_get_enum(args->dnode, NULL);
+		eif = nb_running_get_entry(dnode, NULL, true);
+		eif->params.auth_type = yang_dnode_get_enum(dnode, NULL);
 		break;
 	}
 
@@ -1216,34 +1299,34 @@ static int lib_interface_eigrp_instance_authentication_modify(
  * XPath: /frr-interface:lib/interface/frr-eigrpd:eigrp/instance/keychain
  */
 static int
-lib_interface_eigrp_instance_keychain_modify(struct nb_cb_modify_args *args)
+lib_interface_eigrp_instance_keychain_modify(enum nb_event event,
+					     const struct lyd_node *dnode,
+					     union nb_resource *resource)
 {
 	struct eigrp_interface *eif;
 	struct keychain *keychain;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
-		keychain = keychain_lookup(
-			yang_dnode_get_string(args->dnode, NULL));
+		keychain = keychain_lookup(yang_dnode_get_string(dnode, NULL));
 		if (keychain == NULL)
 			return NB_ERR_INCONSISTENCY;
 		break;
 	case NB_EV_PREPARE:
-		args->resource->ptr =
-			strdup(yang_dnode_get_string(args->dnode, NULL));
-		if (args->resource->ptr == NULL)
+		resource->ptr = strdup(yang_dnode_get_string(dnode, NULL));
+		if (resource->ptr == NULL)
 			return NB_ERR_RESOURCE;
 		break;
 	case NB_EV_ABORT:
-		free(args->resource->ptr);
-		args->resource->ptr = NULL;
+		free(resource->ptr);
+		resource->ptr = NULL;
 		break;
 	case NB_EV_APPLY:
-		eif = nb_running_get_entry(args->dnode, NULL, true);
+		eif = nb_running_get_entry(dnode, NULL, true);
 		if (eif->params.auth_keychain)
 			free(eif->params.auth_keychain);
 
-		eif->params.auth_keychain = args->resource->ptr;
+		eif->params.auth_keychain = resource->ptr;
 		break;
 	}
 
@@ -1251,18 +1334,19 @@ lib_interface_eigrp_instance_keychain_modify(struct nb_cb_modify_args *args)
 }
 
 static int
-lib_interface_eigrp_instance_keychain_destroy(struct nb_cb_destroy_args *args)
+lib_interface_eigrp_instance_keychain_destroy(enum nb_event event,
+					      const struct lyd_node *dnode)
 {
 	struct eigrp_interface *eif;
 
-	switch (args->event) {
+	switch (event) {
 	case NB_EV_VALIDATE:
 	case NB_EV_PREPARE:
 	case NB_EV_ABORT:
 		/* NOTHING */
 		break;
 	case NB_EV_APPLY:
-		eif = nb_running_get_entry(args->dnode, NULL, true);
+		eif = nb_running_get_entry(dnode, NULL, true);
 		if (eif->params.auth_keychain)
 			free(eif->params.auth_keychain);
 

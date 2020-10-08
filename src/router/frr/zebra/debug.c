@@ -471,13 +471,8 @@ DEFPY (debug_zebra_nexthop,
 }
 
 /* Debug node. */
-static int config_write_debug(struct vty *vty);
-struct cmd_node debug_node = {
-	.name = "debug",
-	.node = DEBUG_NODE,
-	.prompt = "",
-	.config_write = config_write_debug,
-};
+struct cmd_node debug_node = {DEBUG_NODE, "", /* Debug node has no interface. */
+			      1};
 
 static int config_write_debug(struct vty *vty)
 {
@@ -549,10 +544,6 @@ static int config_write_debug(struct vty *vty)
 		vty_out(vty, "debug zebra vxlan\n");
 		write++;
 	}
-	if (IS_ZEBRA_DEBUG_MLAG) {
-		vty_out(vty, "debug zebra mlag\n");
-		write++;
-	}
 	if (IS_ZEBRA_DEBUG_PW) {
 		vty_out(vty, "debug zebra pseudowires\n");
 		write++;
@@ -592,7 +583,7 @@ void zebra_debug_init(void)
 	zebra_debug_nht = 0;
 	zebra_debug_nexthop = 0;
 
-	install_node(&debug_node);
+	install_node(&debug_node, config_write_debug);
 
 	install_element(VIEW_NODE, &show_debugging_zebra_cmd);
 
@@ -642,5 +633,4 @@ void zebra_debug_init(void)
 	install_element(CONFIG_NODE, &no_debug_zebra_rib_cmd);
 	install_element(CONFIG_NODE, &no_debug_zebra_fpm_cmd);
 	install_element(CONFIG_NODE, &no_debug_zebra_dplane_cmd);
-	install_element(CONFIG_NODE, &debug_zebra_mlag_cmd);
 }

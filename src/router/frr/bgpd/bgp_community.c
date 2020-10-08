@@ -92,6 +92,7 @@ void community_del_val(struct community *com, uint32_t *val)
 						    com->val, com_length(com));
 			else {
 				XFREE(MTYPE_COMMUNITY_VAL, com->val);
+				com->val = NULL;
 			}
 			return;
 		}
@@ -131,7 +132,7 @@ static int community_compare(const void *a1, const void *a2)
 	return 0;
 }
 
-bool community_include(struct community *com, uint32_t val)
+int community_include(struct community *com, uint32_t val)
 {
 	int i;
 
@@ -139,8 +140,9 @@ bool community_include(struct community *com, uint32_t val)
 
 	for (i = 0; i < com->size; i++)
 		if (memcmp(&val, com_nthval(com, i), sizeof(uint32_t)) == 0)
-			return true;
-	return false;
+			return 1;
+
+	return 0;
 }
 
 uint32_t community_val_get(struct community *com, int i)
@@ -149,7 +151,7 @@ uint32_t community_val_get(struct community *com, int i)
 	uint32_t val;
 
 	p = (uint8_t *)com->val;
-	p += (i * COMMUNITY_SIZE);
+	p += (i * 4);
 
 	memcpy(&val, p, sizeof(uint32_t));
 
@@ -517,11 +519,11 @@ struct community *community_parse(uint32_t *pnt, unsigned short length)
 	struct community *new;
 
 	/* If length is malformed return NULL. */
-	if (length % COMMUNITY_SIZE)
+	if (length % 4)
 		return NULL;
 
 	/* Make temporary community for hash look up. */
-	tmp.size = length / COMMUNITY_SIZE;
+	tmp.size = length / 4;
 	tmp.val = pnt;
 
 	new = community_uniq_sort(&tmp);
@@ -536,9 +538,8 @@ struct community *community_dup(struct community *com)
 	new = XCALLOC(MTYPE_COMMUNITY, sizeof(struct community));
 	new->size = com->size;
 	if (new->size) {
-		new->val = XMALLOC(MTYPE_COMMUNITY_VAL,
-				   com->size * COMMUNITY_SIZE);
-		memcpy(new->val, com->val, com->size * COMMUNITY_SIZE);
+		new->val = XMALLOC(MTYPE_COMMUNITY_VAL, com->size * 4);
+		memcpy(new->val, com->val, com->size * 4);
 	} else
 		new->val = NULL;
 	return new;
@@ -562,24 +563,24 @@ char *community_str(struct community *com, bool make_json)
    hash package.*/
 unsigned int community_hash_make(const struct community *com)
 {
-	uint32_t *pnt = com->val;
+	uint32_t *pnt = (uint32_t *)com->val;
 
 	return jhash2(pnt, com->size, 0x43ea96c1);
 }
 
-bool community_match(const struct community *com1, const struct community *com2)
+int community_match(const struct community *com1, const struct community *com2)
 {
 	int i = 0;
 	int j = 0;
 
 	if (com1 == NULL && com2 == NULL)
-		return true;
+		return 1;
 
 	if (com1 == NULL || com2 == NULL)
-		return false;
+		return 0;
 
 	if (com1->size < com2->size)
-		return false;
+		return 0;
 
 	/* Every community on com2 needs to be on com1 for this to match */
 	while (i < com1->size && j < com2->size) {
@@ -589,9 +590,9 @@ bool community_match(const struct community *com1, const struct community *com2)
 	}
 
 	if (j == com2->size)
-		return true;
+		return 1;
 	else
-		return false;
+		return 0;
 }
 
 /* If two aspath have same value then return 1 else return 0. This
@@ -604,8 +605,7 @@ bool community_cmp(const struct community *com1, const struct community *com2)
 		return false;
 
 	if (com1->size == com2->size)
-		if (memcmp(com1->val, com2->val, com1->size * COMMUNITY_SIZE)
-		    == 0)
+		if (memcmp(com1->val, com2->val, com1->size * 4) == 0)
 			return true;
 	return false;
 }
@@ -615,14 +615,13 @@ struct community *community_merge(struct community *com1,
 				  struct community *com2)
 {
 	if (com1->val)
-		com1->val =
-			XREALLOC(MTYPE_COMMUNITY_VAL, com1->val,
-				 (com1->size + com2->size) * COMMUNITY_SIZE);
+		com1->val = XREALLOC(MTYPE_COMMUNITY_VAL, com1->val,
+				     (com1->size + com2->size) * 4);
 	else
 		com1->val = XMALLOC(MTYPE_COMMUNITY_VAL,
-				    (com1->size + com2->size) * COMMUNITY_SIZE);
+				    (com1->size + com2->size) * 4);
 
-	memcpy(com1->val + com1->size, com2->val, com2->size * COMMUNITY_SIZE);
+	memcpy(com1->val + com1->size, com2->val, com2->size * 4);
 	com1->size += com2->size;
 
 	return com1;
@@ -912,7 +911,7 @@ static void *bgp_aggr_communty_hash_alloc(void *p)
 	return community;
 }
 
-static void bgp_aggr_community_prepare(struct hash_bucket *hb, void *arg)
+static void bgp_aggr_community_prepare(struct hash_backet *hb, void *arg)
 {
 	struct community *hb_community = hb->data;
 	struct community **aggr_community = arg;

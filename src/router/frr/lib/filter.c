@@ -145,12 +145,16 @@ static const char *filter_type_str(struct filter *filter)
 	switch (filter->type) {
 	case FILTER_PERMIT:
 		return "permit";
+		break;
 	case FILTER_DENY:
 		return "deny";
+		break;
 	case FILTER_DYNAMIC:
 		return "dynamic";
+		break;
 	default:
 		return "";
+		break;
 	}
 }
 
@@ -412,7 +416,7 @@ static int64_t filter_new_seq_get(struct access_list *access)
 	int64_t newseq;
 	struct filter *filter;
 
-	maxseq = 0;
+	maxseq = newseq = 0;
 
 	for (filter = access->head; filter; filter = filter->next) {
 		if (maxseq < filter->seq)
@@ -605,7 +609,10 @@ static int vty_access_list_remark_unset(struct vty *vty, afi_t afi,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
-	XFREE(MTYPE_TMP, access->remark);
+	if (access->remark) {
+		XFREE(MTYPE_TMP, access->remark);
+		access->remark = NULL;
+	}
 
 	if (access->head == NULL && access->tail == NULL)
 		access_list_delete(access);
@@ -2295,7 +2302,6 @@ DEFUN (ipv6_access_list_exact,
 	if (argv_find(argv, argc, "exact-match", &idx))
 		exact = 1;
 
-	assert(prefix);
 	return filter_set_zebra(vty, argv[idx_word]->arg, seq, permit_deny,
 				AFI_IP6, prefix, exact, 1);
 }
@@ -2549,8 +2555,7 @@ static int filter_show(struct vty *vty, const char *name, afi_t afi)
 				else {
 					vty_out(vty, " %s",
 						inet_ntoa(filter->addr));
-					if (filter->addr_mask.s_addr
-					    != INADDR_ANY)
+					if (filter->addr_mask.s_addr != 0)
 						vty_out(vty,
 							", wildcard bits %s",
 							inet_ntoa(
@@ -2598,8 +2603,7 @@ static int filter_show(struct vty *vty, const char *name, afi_t afi)
 				else {
 					vty_out(vty, " %s",
 						inet_ntoa(filter->addr));
-					if (filter->addr_mask.s_addr
-					    != INADDR_ANY)
+					if (filter->addr_mask.s_addr != 0)
 						vty_out(vty,
 							", wildcard bits %s",
 							inet_ntoa(
@@ -2692,7 +2696,7 @@ static void config_write_access_cisco(struct vty *vty, struct filter *mfilter)
 		vty_out(vty, " ip");
 		if (filter->addr_mask.s_addr == 0xffffffff)
 			vty_out(vty, " any");
-		else if (filter->addr_mask.s_addr == INADDR_ANY)
+		else if (filter->addr_mask.s_addr == 0)
 			vty_out(vty, " host %s", inet_ntoa(filter->addr));
 		else {
 			vty_out(vty, " %s", inet_ntoa(filter->addr));
@@ -2701,7 +2705,7 @@ static void config_write_access_cisco(struct vty *vty, struct filter *mfilter)
 
 		if (filter->mask_mask.s_addr == 0xffffffff)
 			vty_out(vty, " any");
-		else if (filter->mask_mask.s_addr == INADDR_ANY)
+		else if (filter->mask_mask.s_addr == 0)
 			vty_out(vty, " host %s", inet_ntoa(filter->mask));
 		else {
 			vty_out(vty, " %s", inet_ntoa(filter->mask));
@@ -2713,7 +2717,7 @@ static void config_write_access_cisco(struct vty *vty, struct filter *mfilter)
 			vty_out(vty, " any\n");
 		else {
 			vty_out(vty, " %s", inet_ntoa(filter->addr));
-			if (filter->addr_mask.s_addr != INADDR_ANY)
+			if (filter->addr_mask.s_addr != 0)
 				vty_out(vty, " %s",
 					inet_ntoa(filter->addr_mask));
 			vty_out(vty, "\n");
@@ -2814,13 +2818,9 @@ static int config_write_access(struct vty *vty, afi_t afi)
 	return write;
 }
 
-static int config_write_access_mac(struct vty *vty);
 static struct cmd_node access_mac_node = {
-	.name = "MAC access list",
-	.node = ACCESS_MAC_NODE,
-	.prompt = "",
-	.config_write = config_write_access_mac,
-};
+	ACCESS_MAC_NODE, "", /* Access list has no interface. */
+	1};
 
 static int config_write_access_mac(struct vty *vty)
 {
@@ -2856,7 +2856,7 @@ static void access_list_reset_mac(void)
 /* Install vty related command. */
 static void access_list_init_mac(void)
 {
-	install_node(&access_mac_node);
+	install_node(&access_mac_node, config_write_access_mac);
 
 	install_element(ENABLE_NODE, &show_mac_access_list_cmd);
 	install_element(ENABLE_NODE, &show_mac_access_list_name_cmd);
@@ -2869,13 +2869,9 @@ static void access_list_init_mac(void)
 }
 
 /* Access-list node. */
-static int config_write_access_ipv4(struct vty *vty);
-static struct cmd_node access_node = {
-	.name = "ipv4 access list",
-	.node = ACCESS_NODE,
-	.prompt = "",
-	.config_write = config_write_access_ipv4,
-};
+static struct cmd_node access_node = {ACCESS_NODE,
+				      "", /* Access list has no interface. */
+				      1};
 
 static int config_write_access_ipv4(struct vty *vty)
 {
@@ -2911,7 +2907,7 @@ static void access_list_reset_ipv4(void)
 /* Install vty related command. */
 static void access_list_init_ipv4(void)
 {
-	install_node(&access_node);
+	install_node(&access_node, config_write_access_ipv4);
 
 	install_element(ENABLE_NODE, &show_ip_access_list_cmd);
 	install_element(ENABLE_NODE, &show_ip_access_list_name_cmd);
@@ -2958,13 +2954,7 @@ static void access_list_init_ipv4(void)
 	install_element(CONFIG_NODE, &no_access_list_remark_comment_cmd);
 }
 
-static int config_write_access_ipv6(struct vty *vty);
-static struct cmd_node access_ipv6_node = {
-	.name = "ipv6 access list",
-	.node = ACCESS_IPV6_NODE,
-	.prompt = "",
-	.config_write = config_write_access_ipv6,
-};
+static struct cmd_node access_ipv6_node = {ACCESS_IPV6_NODE, "", 1};
 
 static int config_write_access_ipv6(struct vty *vty)
 {
@@ -2999,7 +2989,7 @@ static void access_list_reset_ipv6(void)
 
 static void access_list_init_ipv6(void)
 {
-	install_node(&access_ipv6_node);
+	install_node(&access_ipv6_node, config_write_access_ipv6);
 
 	install_element(ENABLE_NODE, &show_ipv6_access_list_cmd);
 	install_element(ENABLE_NODE, &show_ipv6_access_list_name_cmd);

@@ -353,8 +353,8 @@ struct msg *msg_read(int fd)
 	struct msg *msg;
 	struct apimsghdr hdr;
 	uint8_t buf[OSPF_API_MAX_MSG_SIZE];
-	ssize_t bodylen;
-	ssize_t rlen;
+	int bodylen;
+	int rlen;
 
 	/* Read message header */
 	rlen = readn(fd, (uint8_t *)&hdr, sizeof(struct apimsghdr));
@@ -378,13 +378,8 @@ struct msg *msg_read(int fd)
 
 	/* Determine body length. */
 	bodylen = ntohs(hdr.msglen);
-	if (bodylen > (ssize_t)sizeof(buf)) {
-		zlog_warn("%s: Body Length of message greater than what we can read",
-			  __func__);
-		return NULL;
-	}
-
 	if (bodylen > 0) {
+
 		/* Read message body */
 		rlen = readn(fd, buf, bodylen);
 		if (rlen < 0) {

@@ -20,7 +20,7 @@
 #ifndef _QUAGGA_BGP_VNC_DEBUG_H
 #define _QUAGGA_BGP_VNC_DEBUG_H
 
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 
 /*
  * debug state storage

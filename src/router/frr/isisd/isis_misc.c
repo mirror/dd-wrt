@@ -29,7 +29,6 @@
 #include "hash.h"
 #include "if.h"
 #include "command.h"
-#include "network.h"
 
 #include "isisd/isis_constants.h"
 #include "isisd/isis_common.h"
@@ -414,7 +413,7 @@ unsigned long isis_jitter(unsigned long timer, unsigned long jitter)
 	 * most IS-IS timers are no longer than 16 bit
 	 */
 
-	j = 1 + (int)((RANDOM_SPREAD * frr_weak_random()) / (RAND_MAX + 1.0));
+	j = 1 + (int)((RANDOM_SPREAD * random()) / (RAND_MAX + 1.0));
 
 	k = timer - (timer * (100 - jitter)) / 100;
 
@@ -538,26 +537,6 @@ void log_multiline(int priority, const char *prefix, const char *format, ...)
 		XFREE(MTYPE_TMP, p);
 }
 
-char *log_uptime(time_t uptime, char *buf, size_t nbuf)
-{
-	struct tm *tm;
-	time_t difftime = time(NULL);
-	difftime -= uptime;
-	tm = gmtime(&difftime);
-
-	if (difftime < ONE_DAY_SECOND)
-		snprintf(buf, nbuf, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min,
-			 tm->tm_sec);
-	else if (difftime < ONE_WEEK_SECOND)
-		snprintf(buf, nbuf, "%dd%02dh%02dm", tm->tm_yday, tm->tm_hour,
-			 tm->tm_min);
-	else
-		snprintf(buf, nbuf, "%02dw%dd%02dh", tm->tm_yday / 7,
-			 tm->tm_yday - ((tm->tm_yday / 7) * 7), tm->tm_hour);
-
-	return buf;
-}
-
 void vty_multiline(struct vty *vty, const char *prefix, const char *format, ...)
 {
 	char shortbuf[256];
@@ -583,12 +562,19 @@ void vty_multiline(struct vty *vty, const char *prefix, const char *format, ...)
 
 void vty_out_timestr(struct vty *vty, time_t uptime)
 {
+	struct tm *tm;
 	time_t difftime = time(NULL);
-	char buf[MONOTIME_STRLEN];
-
 	difftime -= uptime;
+	tm = gmtime(&difftime);
 
-	frrtime_to_interval(difftime, buf, sizeof(buf));
-
-	vty_out(vty, "%s ago", buf);
+	if (difftime < ONE_DAY_SECOND)
+		vty_out(vty, "%02d:%02d:%02d", tm->tm_hour, tm->tm_min,
+			tm->tm_sec);
+	else if (difftime < ONE_WEEK_SECOND)
+		vty_out(vty, "%dd%02dh%02dm", tm->tm_yday, tm->tm_hour,
+			tm->tm_min);
+	else
+		vty_out(vty, "%02dw%dd%02dh", tm->tm_yday / 7,
+			tm->tm_yday - ((tm->tm_yday / 7) * 7), tm->tm_hour);
+	vty_out(vty, " ago");
 }

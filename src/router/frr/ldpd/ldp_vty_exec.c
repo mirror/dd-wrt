@@ -193,8 +193,7 @@ show_interface_msg_json(struct imsg *imsg, struct show_params *params,
 		json_object_int_add(json_iface, "adjacencyCount",
 		    iface->adj_cnt);
 
-		snprintf(key_name, sizeof(key_name), "%s: %s", iface->name,
-			 af_name(iface->af));
+		sprintf(key_name, "%s: %s", iface->name, af_name(iface->af));
 		json_object_object_add(json, key_name, json_iface);
 		break;
 	case IMSG_CTL_END:
@@ -1329,8 +1328,7 @@ show_l2vpn_binding_msg_json(struct imsg *imsg, struct show_params *params,
 			json_object_string_add(json_pw, "remoteLabel",
 			    "unassigned");
 
-		snprintf(key_name, sizeof(key_name), "%s: %u",
-			 inet_ntoa(pw->lsr_id), pw->pwid);
+		sprintf(key_name, "%s: %u", inet_ntoa(pw->lsr_id), pw->pwid);
 		json_object_object_add(json, key_name, json_pw);
 		break;
 	case IMSG_CTL_END:

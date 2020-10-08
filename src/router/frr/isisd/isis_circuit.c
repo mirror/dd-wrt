@@ -67,6 +67,7 @@ DEFINE_HOOK(isis_if_new_hook, (struct interface *ifp), (ifp))
 /*
  * Prototypes.
  */
+int isis_interface_config_write(struct vty *);
 int isis_if_new_hook(struct interface *);
 int isis_if_delete_hook(struct interface *);
 
@@ -344,7 +345,8 @@ void isis_circuit_del_addr(struct isis_circuit *circuit,
 		} else {
 			prefix2str(connected->address, buf, sizeof(buf));
 			zlog_warn(
-				"Nonexistent ip address %s removal attempt from circuit %s",
+				"Nonexistent ip address %s removal attempt from \
+                      circuit %s",
 				buf, circuit->interface->name);
 			zlog_warn("Current ip addresses on %s:",
 				  circuit->interface->name);
@@ -392,7 +394,8 @@ void isis_circuit_del_addr(struct isis_circuit *circuit,
 		if (!found) {
 			prefix2str(connected->address, buf, sizeof(buf));
 			zlog_warn(
-				"Nonexistent ip address %s removal attempt from circuit %s",
+				"Nonexistent ip address %s removal attempt from \
+		      circuit %s",
 				buf, circuit->interface->name);
 			zlog_warn("Current ip addresses on %s:",
 				  circuit->interface->name);
@@ -963,12 +966,12 @@ void isis_circuit_print_vty(struct isis_circuit *circuit, struct vty *vty,
 	return;
 }
 
-#ifdef FABRICD
 DEFINE_HOOK(isis_circuit_config_write,
 	    (struct isis_circuit *circuit, struct vty *vty),
 	    (circuit, vty))
 
-static int isis_interface_config_write(struct vty *vty)
+#ifdef FABRICD
+int isis_interface_config_write(struct vty *vty)
 {
 	struct vrf *vrf = vrf_lookup_by_id(VRF_DEFAULT);
 	int write = 0;
@@ -1191,11 +1194,12 @@ static int isis_interface_config_write(struct vty *vty)
 	return write;
 }
 #else
-static int isis_interface_config_write(struct vty *vty)
+int isis_interface_config_write(struct vty *vty)
 {
 	struct vrf *vrf = vrf_lookup_by_id(VRF_DEFAULT);
 	int write = 0;
 	struct interface *ifp;
+	struct isis_circuit *circuit;
 	struct lyd_node *dnode;
 
 	FOR_ALL_INTERFACES (vrf, ifp) {
@@ -1208,6 +1212,10 @@ static int isis_interface_config_write(struct vty *vty)
 
 		write++;
 		nb_cli_show_dnode_cmds(vty, dnode, false);
+		circuit = circuit_scan_by_ifp(ifp);
+		if (circuit)
+			write += hook_call(isis_circuit_config_write, circuit,
+					   vty);
 	}
 	return write;
 }
@@ -1330,11 +1338,7 @@ ferr_r isis_circuit_passwd_hmac_md5_set(struct isis_circuit *circuit,
 }
 
 struct cmd_node interface_node = {
-	.name = "interface",
-	.node = INTERFACE_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-if)# ",
-	.config_write = isis_interface_config_write,
+	INTERFACE_NODE, "%s(config-if)# ", 1,
 };
 
 void isis_circuit_circ_type_set(struct isis_circuit *circuit, int circ_type)
@@ -1382,6 +1386,7 @@ int isis_if_delete_hook(struct interface *ifp)
 	if (ifp && ifp->info) {
 		circuit = ifp->info;
 		isis_csm_state_change(IF_DOWN_FROM_Z, circuit, circuit->area);
+		isis_csm_state_change(ISIS_DISABLE, circuit, circuit->area);
 	}
 
 	return 0;
@@ -1439,7 +1444,7 @@ void isis_circuit_init(void)
 	hook_register_prio(if_del, 0, isis_if_delete_hook);
 
 	/* Install interface node */
-	install_node(&interface_node);
+	install_node(&interface_node, isis_interface_config_write);
 	if_cmd_init();
 	if_zapi_callbacks(isis_ifp_create, isis_ifp_up,
 			  isis_ifp_down, isis_ifp_destroy);
