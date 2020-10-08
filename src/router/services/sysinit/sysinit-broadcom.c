@@ -1791,7 +1791,6 @@ void start_sysinit(void)
 			nvram_set("lan_ifnames", "vlan1 eth1 eth2");
 			nvram_set("wan_ifname", "vlan2");
 			struct nvram_param bcm4360ac_defaults_pci2_1[] = {
-				{ "aa2g", "0" },
 				{ "aa5g", "7" },
 				{ "aga0", "0" },
 				{ "aga1", "0" },
@@ -1800,32 +1799,18 @@ void start_sysinit(void)
 				{ "agbg1", "133" },
 				{ "agbg2", "133" },
 				{ "antswitch", "0" },
-				{ "cckbw202gpo", "0" },
-				{ "cckbw20ul2gpo", "0" },
 				{ "dot11agofdmhrbw202gpo", "0" },
 				{ "femctrl", "3" },
-				{ "papdcap2g", "0" },
-				{ "tworangetssi2g", "0" },
-				{ "pdgain2g", "4" },
 				{ "epagain2g", "0" },
-				{ "tssiposslope2g", "1" },
 				{ "gainctrlsph", "0" },
 				{ "papdcap5g", "0" },
 				{ "tworangetssi5g", "0" },
 				{ "pdgain5g", "4" },
 				{ "epagain5g", "0" },
 				{ "tssiposslope5g", "1" },
-				{ "maxp2ga0", "76" },
-				{ "maxp2ga1", "76" },
-				{ "maxp2ga2", "76" },
-				{ "mcsbw202gpo", "0" },
-				{ "mcsbw402gpo", "0" },
 				{ "measpower", "0x7f" },
 				{ "measpower1", "0x7f" },
 				{ "measpower2", "0x7f" },
-				{ "noiselvl2ga0", "31" },
-				{ "noiselvl2ga1", "31" },
-				{ "noiselvl2ga2", "31" },
 				{ "noiselvl5gha0", "31" },
 				{ "noiselvl5gha1", "31" },
 				{ "noiselvl5gha2", "31" },
@@ -1838,26 +1823,11 @@ void start_sysinit(void)
 				{ "noiselvl5gua0", "31" },
 				{ "noiselvl5gua1", "31" },
 				{ "noiselvl5gua2", "31" },
-				{ "ofdmlrbw202gpo", "0" },
-				{ "pa2ga0", "0xfe72,0x14c0,0xfac7" },
-				{ "pa2ga1", "0xfe80,0x1472,0xfabc" },
-				{ "pa2ga2", "0xfe82,0x14bf,0xfad9" },
 				{ "pcieingress_war", "15" },
 				{ "phycal_tempdelta", "255" },
 				{ "rawtempsense", "0x1ff" },
 				{ "rxchain", "7" },
-				{ "rxgainerr2g", "0xffff" },
 				{ "rxgainerr5g", "0xffff,0xffff,0xffff,0xffff" },
-				{ "rxgains2gelnagaina0", "0" },
-				{ "rxgains2gelnagaina1", "0" },
-				{ "rxgains2gelnagaina2", "0" },
-				{ "rxgains2gtrelnabypa0", "0" },
-				{ "rxgains2gtrelnabypa1", "0" },
-				{ "rxgains2gtrelnabypa2", "0" },
-				{ "rxgains2gtrisoa0", "0" },
-				{ "rxgains2gtrisoa1", "0" },
-				{ "rxgains2gtrisoa2", "0" },
-				{ "sar2g", "18" },
 				{ "sar5g", "15" },
 				{ "sromrev", "11" },
 				{ "subband5gver", "0x4" },
@@ -1886,12 +1856,14 @@ void start_sysinit(void)
 				{ "mcsbw205ghpo", "0xBB975311" },
 				{ "mcsbw405ghpo", "0xBB975311" },
 				{ "mcsbw805ghpo", "0xBB975311" },
+				{ "leddc", "0xffff" },
+				{ "xtalfreq", "40000" },
 
 				{ 0, 0 }
 			};
 			restore_set("pci/2/1", bcm4360ac_defaults_pci2_1);
 
-			struct nvram_param bcm4360ac_defaults_pci1_1[] = {
+			struct nvram_param bcm4331_defaults_pci1_1[] = {
 				{ "maxp2ga0", "0x70" },
 				{ "maxp2ga1", "0x70" },
 				{ "maxp2ga2", "0x70" },
@@ -1902,9 +1874,10 @@ void start_sysinit(void)
 				{ "mcsbw202gpo", "0xDA755555" },
 				{ "mcsbw20ul2gpo", "0xDA755555" },
 				{ "mcsbw402gpo", "0xFC965555" },
+				{ "xtalfreq", "20000" },
 				{ 0, 0 }
 			};
-			restore_set("pci/1/1", bcm4360ac_defaults_pci1_1);
+			restore_set("pci/1/1", bcm4331_defaults_pci1_1);
 
 			if (nvram_match("regulation_domain", "US"))
 				set_regulation(0, "US", "0");
