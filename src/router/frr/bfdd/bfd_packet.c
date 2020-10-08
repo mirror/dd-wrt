@@ -30,7 +30,7 @@
 #include <linux/if_packet.h>
 #endif /* BFD_LINUX */
 
-#include <netinet/if_ether.h>
+//#include <netinet/if_ether.h>
 #include <netinet/udp.h>
 
 #include "lib/sockopt.h"
