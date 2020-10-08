@@ -450,6 +450,7 @@ int nvram_restore(char *filename, int force)
 //					nvram_ver = value;
 				if (!c && !strcmp(name, "DD_BOARD")) {
 					fprintf(stdout, "backup is for board %s, board is %s\n", value, nvram_safe_get("DD_BOARD"));
+					#ifndef HAVE_X86
 					if (!nvram_match("DD_BOARD", value)) {
 						if (!force) {
 							fprintf(stderr, "incompatible backup file!\n");
@@ -459,6 +460,7 @@ int nvram_restore(char *filename, int force)
 							fprintf(stderr, "WARNING: incompatible backup file!\n");
 						}
 					}
+					#endif
 				}
 				if (c && !nvram_critical(name)) {
 					nvram_immed_set(name, value);
