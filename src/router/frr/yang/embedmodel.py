@@ -3,17 +3,10 @@
 # YANG module to C wrapper
 # written 2018 by David Lamparter, placed in Public Domain.
 
-import sys
-import os
-import string
-import re
+import sys, string, re
 
 inname = sys.argv[1]
 outname = sys.argv[2]
-
-outdir = os.path.dirname(os.path.abspath(outname))
-if not os.path.isdir(outdir):
-    os.makedirs(outdir)
 
 # these are regexes to avoid a compile-time/host dependency on yang-tools
 # or python-yang.  Cross-compiling FRR is already somewhat involved, no need

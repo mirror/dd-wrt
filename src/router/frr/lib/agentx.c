@@ -55,42 +55,28 @@ static int agentx_timeout(struct thread *t)
 static int agentx_read(struct thread *t)
 {
 	fd_set fds;
-	int flags, new_flags = 0;
+	int flags;
 	int nonblock = false;
 	struct listnode *ln = THREAD_ARG(t);
 	list_delete_node(events, ln);
 
 	/* fix for non blocking socket */
 	flags = fcntl(THREAD_FD(t), F_GETFL, 0);
-	if (-1 == flags) {
-		flog_err(EC_LIB_SYSTEM_CALL, "Failed to get FD settings fcntl: %s(%d)",
-			 strerror(errno), errno);
+	if (-1 == flags)
 		return -1;
-	}
 
 	if (flags & O_NONBLOCK)
 		nonblock = true;
 	else
-		new_flags = fcntl(THREAD_FD(t), F_SETFL, flags | O_NONBLOCK);
-
-	if (new_flags == -1)
-		flog_err(EC_LIB_SYSTEM_CALL, "Failed to set snmp fd non blocking: %s(%d)",
-			 strerror(errno), errno);
+		fcntl(THREAD_FD(t), F_SETFL, flags | O_NONBLOCK);
 
 	FD_ZERO(&fds);
 	FD_SET(THREAD_FD(t), &fds);
 	snmp_read(&fds);
 
 	/* Reset the flag */
-	if (!nonblock) {
-		new_flags = fcntl(THREAD_FD(t), F_SETFL, flags);
-
-		if (new_flags == -1)
-			flog_err(
-				EC_LIB_SYSTEM_CALL,
-				"Failed to set snmp fd back to original settings: %s(%d)",
-				strerror(errno), errno);
-	}
+	if (!nonblock)
+		fcntl(THREAD_FD(t), F_SETFL, flags);
 
 	netsnmp_check_outstanding_agent_requests();
 	agentx_events_update();
@@ -158,13 +144,9 @@ static void agentx_events_update(void)
 }
 
 /* AgentX node. */
-static int config_write_agentx(struct vty *vty);
-static struct cmd_node agentx_node = {
-	.name = "smux",
-	.node = SMUX_NODE,
-	.prompt = "",
-	.config_write = config_write_agentx,
-};
+static struct cmd_node agentx_node = {SMUX_NODE,
+				      "", /* AgentX has no interface. */
+				      1};
 
 /* Logging NetSNMP messages */
 static int agentx_log_callback(int major, int minor, void *serverarg,
@@ -250,7 +232,7 @@ void smux_init(struct thread_master *tm)
 			       agentx_log_callback, NULL);
 	init_agent(FRR_SMUX_NAME);
 
-	install_node(&agentx_node);
+	install_node(&agentx_node, config_write_agentx);
 	install_element(CONFIG_NODE, &agentx_enable_cmd);
 	install_element(CONFIG_NODE, &no_agentx_cmd);
 }
@@ -268,7 +250,7 @@ int smux_trap(struct variable *vp, size_t vp_len, const oid *ename,
 	      uint8_t sptrap)
 {
 	oid objid_snmptrap[] = {1, 3, 6, 1, 6, 3, 1, 1, 4, 1, 0};
-	size_t objid_snmptrap_len = sizeof(objid_snmptrap) / sizeof(oid);
+	size_t objid_snmptrap_len = sizeof objid_snmptrap / sizeof(oid);
 	oid notification_oid[MAX_OID_LEN];
 	size_t notification_oid_len;
 	unsigned int i;

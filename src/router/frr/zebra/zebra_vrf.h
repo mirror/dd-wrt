@@ -193,7 +193,7 @@ struct zebra_vrf {
 static inline vrf_id_t zvrf_id(struct zebra_vrf *zvrf)
 {
 	if (!zvrf || !zvrf->vrf)
-		return VRF_DEFAULT;
+		return VRF_UNKNOWN;
 	return zvrf->vrf->vrf_id;
 }
 
@@ -206,8 +206,6 @@ static inline const char *zvrf_ns_name(struct zebra_vrf *zvrf)
 
 static inline const char *zvrf_name(struct zebra_vrf *zvrf)
 {
-	if (!zvrf || !zvrf->vrf)
-		return "Unknown";
 	return zvrf->vrf->name;
 }
 

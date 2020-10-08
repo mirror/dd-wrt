@@ -1674,12 +1674,7 @@ static int nb_debug_config_write(struct vty *vty)
 }
 
 static struct debug_callbacks nb_dbg_cbs = {.debug_set_all = nb_debug_set_all};
-static struct cmd_node nb_debug_node = {
-	.name = "northbound debug",
-	.node = NORTHBOUND_DEBUG_NODE,
-	.prompt = "",
-	.config_write = nb_debug_config_write,
-};
+static struct cmd_node nb_debug_node = {NORTHBOUND_DEBUG_NODE, "", 1};
 
 void nb_cli_install_default(int node)
 {
@@ -1743,7 +1738,7 @@ void nb_cli_init(struct thread_master *tm)
 
 	debug_init(&nb_dbg_cbs);
 
-	install_node(&nb_debug_node);
+	install_node(&nb_debug_node, nb_debug_config_write);
 	install_element(ENABLE_NODE, &debug_nb_cmd);
 	install_element(CONFIG_NODE, &debug_nb_cmd);
 

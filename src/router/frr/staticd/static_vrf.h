@@ -35,5 +35,4 @@ void static_vrf_init(void);
 
 struct route_table *static_vrf_static_table(afi_t afi, safi_t safi,
 					    struct static_vrf *svrf);
-extern void static_vrf_terminate(void);
 #endif

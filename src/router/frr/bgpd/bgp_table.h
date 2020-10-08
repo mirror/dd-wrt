@@ -28,8 +28,6 @@
 #include "bgpd.h"
 #include "bgp_advertise.h"
 
-extern void bgp_delete_listnode(struct bgp_node *node);
-
 struct bgp_table {
 	/* table belongs to this instance */
 	struct bgp *bgp;
@@ -97,9 +95,7 @@ struct bgp_node {
 #define BGP_NODE_USER_CLEAR             (1 << 1)
 #define BGP_NODE_LABEL_CHANGED          (1 << 2)
 #define BGP_NODE_REGISTERED_FOR_LABEL   (1 << 3)
-#define BGP_NODE_SELECT_DEFER           (1 << 4)
-	/* list node pointer */
-	struct listnode *rt_node;
+
 	struct bgp_addpath_node_data tx_addpath;
 
 	enum bgp_path_selection_reason reason;
@@ -166,7 +162,6 @@ static inline struct bgp_node *bgp_node_parent_nolock(struct bgp_node *node)
  */
 static inline void bgp_unlock_node(struct bgp_node *node)
 {
-	bgp_delete_listnode(node);
 	route_unlock_node(bgp_node_to_rnode(node));
 }
 
@@ -217,7 +212,7 @@ static inline struct bgp_node *bgp_route_next_until(struct bgp_node *node,
  * bgp_node_get
  */
 static inline struct bgp_node *bgp_node_get(struct bgp_table *const table,
-					    const struct prefix *p)
+					    struct prefix *p)
 {
 	return bgp_node_from_rnode(route_node_get(table->route_table, p));
 }
@@ -226,7 +221,7 @@ static inline struct bgp_node *bgp_node_get(struct bgp_table *const table,
  * bgp_node_lookup
  */
 static inline struct bgp_node *
-bgp_node_lookup(const struct bgp_table *const table, const struct prefix *p)
+bgp_node_lookup(const struct bgp_table *const table, struct prefix *p)
 {
 	return bgp_node_from_rnode(route_node_lookup(table->route_table, p));
 }
@@ -243,7 +238,7 @@ static inline struct bgp_node *bgp_lock_node(struct bgp_node *node)
  * bgp_node_match
  */
 static inline struct bgp_node *bgp_node_match(const struct bgp_table *table,
-					      const struct prefix *p)
+					      struct prefix *p)
 {
 	return bgp_node_from_rnode(route_node_match(table->route_table, p));
 }
@@ -277,7 +272,7 @@ static inline unsigned long bgp_table_count(const struct bgp_table *const table)
  * bgp_table_get_next
  */
 static inline struct bgp_node *bgp_table_get_next(const struct bgp_table *table,
-						  const struct prefix *p)
+						  struct prefix *p)
 {
 	return bgp_node_from_rnode(route_table_get_next(table->route_table, p));
 }
@@ -347,8 +342,7 @@ static inline uint64_t bgp_table_version(struct bgp_table *table)
 	return table->version;
 }
 
-void bgp_table_range_lookup(const struct bgp_table *table,
-			    const struct prefix *p,
+void bgp_table_range_lookup(const struct bgp_table *table, struct prefix *p,
 			    uint8_t maxlen, struct list *matches);
 
 
@@ -442,14 +436,5 @@ static inline bool bgp_node_has_bgp_path_info_data(struct bgp_node *node)
 {
 	return !!node->info;
 }
-
-static inline const struct prefix *bgp_node_get_prefix(struct bgp_node *node)
-{
-	return &node->p;
-}
-
-#ifdef _FRR_ATTRIBUTE_PRINTFRR
-#pragma FRR printfrr_ext "%pRN"  (struct bgp_node *)
-#endif
 
 #endif /* _QUAGGA_BGP_TABLE_H */

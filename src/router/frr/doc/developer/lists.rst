@@ -1,5 +1,3 @@
-.. _lists:
-
 List implementations
 ====================
 

@@ -25,7 +25,6 @@
 #include <linux/ip.h>
 #include <linux/if_arp.h>
 #include <linux/if_tunnel.h>
-#include <linux/limits.h>
 
 #include "nhrp_protocol.h"
 #include "os.h"
@@ -128,11 +127,10 @@ static int linux_configure_arp(const char *iface, int on)
 
 static int linux_icmp_redirect_off(const char *iface)
 {
-	char fname[PATH_MAX];
+	char fname[256];
 	int fd, ret = -1;
 
-	snprintf(fname, sizeof(fname),
-		 "/proc/sys/net/ipv4/conf/%s/send_redirects", iface);
+	sprintf(fname, "/proc/sys/net/ipv4/conf/%s/send_redirects", iface);
 	fd = open(fname, O_WRONLY);
 	if (fd < 0)
 		return -1;

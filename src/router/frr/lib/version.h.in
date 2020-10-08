@@ -28,10 +28,6 @@
 #include "gitversion.h"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #ifndef GIT_SUFFIX
 #define GIT_SUFFIX ""
 #endif
@@ -57,9 +53,5 @@ extern "C" {
 	GIT_INFO "\n"
 
 pid_t pid_output (const char *);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* _ZEBRA_VERSION_H */

@@ -29,7 +29,6 @@
 #include "atomlist.h"
 #include "seqlock.h"
 #include "monotime.h"
-#include "printfrr.h"
 
 /*
  * maybe test:
@@ -289,7 +288,7 @@ static void run_tr(struct testrun *tr)
 	size_t c = 0, s = 0, n = 0;
 	struct item *item, *prev, dummy;
 
-	printfrr("[%02u] %35s %s\n", seqlock_cur(&sqlo) >> 2, "", desc);
+	printf("[%02u] %35s %s\n", seqlock_cur(&sqlo) >> 2, "", desc);
 	fflush(stdout);
 
 	if (tr->prefill != NOCLEAR)
@@ -325,7 +324,7 @@ static void run_tr(struct testrun *tr)
 		}
 		assert(c == alist_count(&ahead));
 	}
-	printfrr("\033[1A[%02u] %9"PRId64"us c=%5zu s=%5zu n=%5zu %s\n",
+	printf("\033[1A[%02u] %9"PRId64"us c=%5zu s=%5zu n=%5zu %s\n",
 		sv >> 2, delta, c, s, n, desc);
 }
 
@@ -335,9 +334,9 @@ static void dump(const char *lbl)
 	struct item *item, *safe;
 	size_t ctr = 0;
 
-	printfrr("dumping %s:\n", lbl);
+	printf("dumping %s:\n", lbl);
 	frr_each_safe(alist, &ahead, item) {
-		printfrr("%s %3zu %p %3"PRIu64" %3"PRIu64"\n", lbl, ctr++,
+		printf("%s %3zu %p %3"PRIu64" %3"PRIu64"\n", lbl, ctr++,
 				(void *)item, item->val1, item->val2);
 	}
 }
@@ -363,12 +362,12 @@ static void basic_tests(void)
 	dump("");
 	alist_del(&ahead, &itm[1]);
 	dump("");
-	printfrr("POP: %p\n", alist_pop(&ahead));
+	printf("POP: %p\n", alist_pop(&ahead));
 	dump("");
-	printfrr("POP: %p\n", alist_pop(&ahead));
-	printfrr("POP: %p\n", alist_pop(&ahead));
-	printfrr("POP: %p\n", alist_pop(&ahead));
-	printfrr("POP: %p\n", alist_pop(&ahead));
+	printf("POP: %p\n", alist_pop(&ahead));
+	printf("POP: %p\n", alist_pop(&ahead));
+	printf("POP: %p\n", alist_pop(&ahead));
+	printf("POP: %p\n", alist_pop(&ahead));
 	dump("");
 }
 #else

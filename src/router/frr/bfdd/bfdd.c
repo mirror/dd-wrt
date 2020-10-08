@@ -25,7 +25,6 @@
 #include "bfd.h"
 #include "bfdd_nb.h"
 #include "lib/version.h"
-#include "lib/command.h"
 
 
 /*
@@ -50,8 +49,8 @@ void socket_close(int *s)
 		return;
 
 	if (close(*s) != 0)
-		zlog_err("%s: close(%d): (%d) %s", __func__, *s, errno,
-			 strerror(errno));
+		log_error("%s: close(%d): (%d) %s", __func__, *s, errno,
+			  strerror(errno));
 
 	*s = -1;
 }
@@ -113,7 +112,6 @@ static struct quagga_signal_t bfd_signals[] = {
 static const struct frr_yang_module_info *const bfdd_yang_modules[] = {
 	&frr_interface_info,
 	&frr_bfdd_info,
-	&frr_vrf_info,
 };
 
 FRR_DAEMON_INFO(bfdd, BFD, .vty_port = 2617,
@@ -218,11 +216,14 @@ int main(int argc, char *argv[])
 	parse_config(conf);
 #endif
 
-	/* Initialize FRR infrastructure. */
-	master = frr_init();
+	/* Initialize logging API. */
+	log_init(1, BLOG_DEBUG, &bfdd_di);
 
 	/* Initialize control socket. */
 	control_init(ctl_path);
+
+	/* Initialize FRR infrastructure. */
+	master = frr_init();
 
 	/* Initialize BFD data structures. */
 	bfd_initialize();

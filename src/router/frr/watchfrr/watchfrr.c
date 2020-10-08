@@ -27,8 +27,6 @@
 #include "command.h"
 #include "libfrr.h"
 #include "lib_errors.h"
-#include "zlog_targets.h"
-#include "network.h"
 
 #include <getopt.h>
 #include <sys/un.h>
@@ -44,7 +42,7 @@
 #endif
 
 /* Macros to help randomize timers. */
-#define JITTER(X) ((frr_weak_random() % ((X)+1))-((X)/2))
+#define JITTER(X) ((random() % ((X)+1))-((X)/2))
 #define FUZZY(X) ((X)+JITTER((X)/20))
 
 #define DEFAULT_PERIOD		5
@@ -320,8 +318,9 @@ static pid_t run_background(char *shell_cmd)
 		}
 	default:
 		/* Parent process: we will reap the child later. */
-		zlog_info("Forked background command [pid %d]: %s", (int)child,
-			  shell_cmd);
+		flog_err_sys(EC_LIB_SYSTEM_CALL,
+			     "Forked background command [pid %d]: %s",
+			     (int)child, shell_cmd);
 		return child;
 	}
 }
@@ -560,9 +559,9 @@ static int wakeup_init(struct thread *t_wakeup)
 
 	dmn->t_wakeup = NULL;
 	if (try_connect(dmn) < 0) {
-		zlog_info(
-			"%s state -> down : initial connection attempt failed",
-			dmn->name);
+		flog_err(EC_WATCHFRR_CONNECTION,
+			 "%s state -> down : initial connection attempt failed",
+			 dmn->name);
 		dmn->state = DAEMON_DOWN;
 	}
 	phase_check();
@@ -1371,10 +1370,11 @@ int main(int argc, char **argv)
 
 	frr_config_fork();
 
+	zlog_set_level(ZLOG_DEST_MONITOR, ZLOG_DISABLED);
 	if (watchfrr_di.daemon_mode)
-		zlog_syslog_set_prio_min(MIN(gs.loglevel, LOG_DEBUG));
+		zlog_set_level(ZLOG_DEST_SYSLOG, MIN(gs.loglevel, LOG_DEBUG));
 	else
-		zlog_aux_init(NULL, MIN(gs.loglevel, LOG_DEBUG));
+		zlog_set_level(ZLOG_DEST_STDOUT, MIN(gs.loglevel, LOG_DEBUG));
 
 	frr_run(master);
 

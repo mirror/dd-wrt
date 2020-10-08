@@ -78,9 +78,7 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 
 	for (rn = bgp_table_top(bgp->rib[afi][safi]); rn;
 	     rn = bgp_route_next(rn)) {
-		const struct prefix *rn_p = bgp_node_get_prefix(rn);
-
-		if (prd && memcmp(rn_p->u.val, prd->val, 8) != 0)
+		if (prd && memcmp(rn->p.u.val, prd->val, 8) != 0)
 			continue;
 
 		table = bgp_node_get_bgp_table_info(rn);
@@ -155,12 +153,12 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 				uint16_t type;
 				struct rd_as rd_as = {0};
 				struct rd_ip rd_ip = {0};
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 				struct rd_vnc_eth rd_vnc_eth = {0};
 #endif
-				const uint8_t *pnt;
+				uint8_t *pnt;
 
-				pnt = rn_p->u.val;
+				pnt = rn->p.u.val;
 
 				/* Decode RD type. */
 				type = decode_rd_type(pnt);
@@ -171,7 +169,7 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 					decode_rd_as4(pnt + 2, &rd_as);
 				else if (type == RD_TYPE_IP)
 					decode_rd_ip(pnt + 2, &rd_ip);
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 				else if (type == RD_TYPE_VNC_ETH)
 					decode_rd_vnc_eth(pnt, &rd_vnc_eth);
 #endif
@@ -180,14 +178,12 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 
 					if (type == RD_TYPE_AS
 					    || type == RD_TYPE_AS4)
-						snprintf(rd_str, sizeof(rd_str),
-							 "%u:%d", rd_as.as,
-							 rd_as.val);
+						sprintf(rd_str, "%u:%d",
+							rd_as.as, rd_as.val);
 					else if (type == RD_TYPE_IP)
-						snprintf(rd_str, sizeof(rd_str),
-							 "%s:%d",
-							 inet_ntoa(rd_ip.ip),
-							 rd_ip.val);
+						sprintf(rd_str, "%s:%d",
+							inet_ntoa(rd_ip.ip),
+							rd_ip.val);
 					json_object_string_add(
 						json_routes,
 						"rd", rd_str);
@@ -202,7 +198,7 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 						vty_out(vty, "%s:%d",
 							inet_ntoa(rd_ip.ip),
 							rd_ip.val);
-#ifdef ENABLE_BGP_VNC
+#if ENABLE_BGP_VNC
 					else if (type == RD_TYPE_VNC_ETH)
 						vty_out(vty,
 							"%u:%02x:%02x:%02x:%02x:%02x:%02x",
@@ -225,8 +221,9 @@ int show_adj_route_vpn(struct vty *vty, struct peer *peer,
 				}
 				rd_header = 0;
 			}
-			route_vty_out_tmp(vty, bgp_node_get_prefix(rm), attr,
-					  safi, use_json, json_routes);
+			route_vty_out_tmp(vty, &rm->p, attr,
+					  safi, use_json,
+					  json_routes);
 			output_count++;
 		}
 

@@ -7,13 +7,12 @@ noinst_LIBRARIES += isisd/libisis.a
 sbin_PROGRAMS += isisd/isisd
 dist_examples_DATA += isisd/isisd.conf.sample
 vtysh_scan += \
-	isisd/isis_cli.c \
-	isisd/isis_redist.c \
-	isisd/isis_spf.c \
-	isisd/isis_te.c \
-	isisd/isis_sr.c \
-	isisd/isis_vty_fabricd.c \
-	isisd/isisd.c \
+	$(top_srcdir)/isisd/isis_cli.c \
+	$(top_srcdir)/isisd/isis_redist.c \
+	$(top_srcdir)/isisd/isis_spf.c \
+	$(top_srcdir)/isisd/isis_te.c \
+	$(top_srcdir)/isisd/isis_vty_fabricd.c \
+	$(top_srcdir)/isisd/isisd.c \
 	# end
 man8 += $(MANBUILD)/frr-isisd.8
 endif
@@ -49,7 +48,6 @@ noinst_HEADERS += \
 	isisd/isis_routemap.h \
 	isisd/isis_spf.h \
 	isisd/isis_spf_private.h \
-	isisd/isis_sr.h \
 	isisd/isis_te.h \
 	isisd/isis_tlvs.h \
 	isisd/isis_tx_queue.h \
@@ -79,7 +77,6 @@ LIBISIS_SOURCES = \
 	isisd/isis_route.c \
 	isisd/isis_routemap.c \
 	isisd/isis_spf.c \
-	isisd/isis_sr.c \
 	isisd/isis_te.c \
 	isisd/isis_tlvs.c \
 	isisd/isis_tx_queue.c \
@@ -109,9 +106,8 @@ isisd_libisis_a_SOURCES = \
 	isisd/isis_cli.c \
 	#end
 
-clippy_scan += \
-	isisd/isis_cli.c \
-	# end
+isisd/isis_cli_clippy.c: $(CLIPPY_DEPS)
+isisd/isis_cli.$(OBJEXT): isisd/isis_cli_clippy.c
 
 isisd_isisd_LDADD = isisd/libisis.a $(ISIS_LDADD_COMMON)
 isisd_isisd_SOURCES = $(ISIS_SOURCES)

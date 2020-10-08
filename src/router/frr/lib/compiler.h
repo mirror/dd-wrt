@@ -305,14 +305,7 @@ extern "C" {
 #include <inttypes.h>
 
 #ifdef _FRR_ATTRIBUTE_PRINTFRR
-#define PRINTFRR(a, b) __attribute__((frr_format("frr_printf", a, b)))
-
-#undef PRIu64
-#undef PRId64
-#undef PRIx64
-#define PRIu64 "Lu"
-#define PRId64 "Ld"
-#define PRIx64 "Lx"
+#define PRINTFRR(a, b) __attribute__((printfrr(a, b)))
 
 #else /* !_FRR_ATTRIBUTE_PRINTFRR */
 #define PRINTFRR(a, b) __attribute__((format(printf, a, b)))

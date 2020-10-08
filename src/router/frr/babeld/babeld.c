@@ -30,7 +30,6 @@ THE SOFTWARE.
 #include "filter.h"
 #include "plist.h"
 #include "lib_errors.h"
-#include "network.h"
 
 #include "babel_main.h"
 #include "babeld.h"
@@ -70,14 +69,11 @@ static time_t expiry_time;
 static time_t source_expiry_time;
 
 /* Babel node structure. */
-static int babel_config_write (struct vty *vty);
 static struct cmd_node cmd_babel_node =
 {
-    .name = "babel",
     .node   = BABEL_NODE,
-    .parent_node = CONFIG_NODE,
     .prompt = "%s(config-router)# ",
-    .config_write = babel_config_write,
+    .vtysh  = 1,
 };
 
 /* print current babel configuration on vty */
@@ -142,7 +138,7 @@ babel_create_routing_process (void)
     assert (babel_routing_process == NULL);
 
     /* Allocaste Babel instance. */
-    babel_routing_process = XCALLOC(MTYPE_BABEL, sizeof(struct babel));
+    babel_routing_process = XCALLOC (MTYPE_BABEL, sizeof (struct babel));
 
     /* Initialize timeouts */
     gettime(&babel_now);
@@ -169,6 +165,7 @@ babel_create_routing_process (void)
     return 0;
 fail:
     XFREE(MTYPE_BABEL, babel_routing_process);
+    babel_routing_process = NULL;
     return -1;
 }
 
@@ -214,7 +211,7 @@ babel_read_protocol (struct thread *thread)
 static int
 babel_init_routing_process(struct thread *thread)
 {
-    myseqno = (frr_weak_random() & 0xFFFF);
+    myseqno = (random() & 0xFFFF);
     babel_get_myid();
     babel_load_state_file();
     debugf(BABEL_DEBUG_COMMON, "My ID is : %s.", format_eui64(myid));
@@ -327,6 +324,7 @@ babel_clean_routing_process(void)
 
     distribute_list_delete(&babel_routing_process->distribute_ctx);
     XFREE(MTYPE_BABEL, babel_routing_process);
+    babel_routing_process = NULL;
 }
 
 /* Function used with timeout. */
@@ -723,7 +721,7 @@ void
 babeld_quagga_init(void)
 {
 
-    install_node(&cmd_babel_node);
+    install_node(&cmd_babel_node, &babel_config_write);
 
     install_element(CONFIG_NODE, &router_babel_cmd);
     install_element(CONFIG_NODE, &no_router_babel_cmd);

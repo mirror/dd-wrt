@@ -65,8 +65,8 @@ bgp_addpath_names(enum bgp_addpath_strat strat)
 /*
  * Returns if any peer is transmitting addpaths for a given afi/safi.
  */
-bool bgp_addpath_is_addpath_used(struct bgp_addpath_bgp_data *d, afi_t afi,
-				 safi_t safi)
+int bgp_addpath_is_addpath_used(struct bgp_addpath_bgp_data *d, afi_t afi,
+			      safi_t safi)
 {
 	return d->total_peercount[afi][safi] > 0;
 }
@@ -123,15 +123,15 @@ uint32_t bgp_addpath_id_for_peer(struct peer *peer, afi_t afi, safi_t safi,
  * Returns true if the path has an assigned addpath ID for any of the addpath
  * strategies.
  */
-bool bgp_addpath_info_has_ids(struct bgp_addpath_info_data *d)
+int bgp_addpath_info_has_ids(struct bgp_addpath_info_data *d)
 {
 	int i;
 
 	for (i = 0; i < BGP_ADDPATH_MAX; i++)
 		if (d->addpath_tx_id[i] != 0)
-			return true;
+			return 1;
 
-	return false;
+	return 0;
 }
 
 /*
@@ -152,7 +152,7 @@ void bgp_addpath_free_node_data(struct bgp_addpath_bgp_data *bd,
 /*
  * Check to see if the addpath strategy requires DMED to be configured to work.
  */
-bool bgp_addpath_dmed_required(int strategy)
+int bgp_addpath_dmed_required(int strategy)
 {
 	return strategy == BGP_ADDPATH_BEST_PER_AS;
 }
@@ -161,20 +161,21 @@ bool bgp_addpath_dmed_required(int strategy)
  * Return true if this is a path we should advertise due to a
  * configured addpath-tx knob
  */
-bool bgp_addpath_tx_path(enum bgp_addpath_strat strat, struct bgp_path_info *pi)
+int bgp_addpath_tx_path(enum bgp_addpath_strat strat,
+			    struct bgp_path_info *pi)
 {
 	switch (strat) {
 	case BGP_ADDPATH_NONE:
-		return false;
+		return 0;
 	case BGP_ADDPATH_ALL:
-		return true;
+		return 1;
 	case BGP_ADDPATH_BEST_PER_AS:
 		if (CHECK_FLAG(pi->flags, BGP_PATH_DMED_SELECTED))
-			return true;
+			return 1;
 		else
-			return false;
+			return 0;
 	default:
-		return false;
+		return 0;
 	}
 }
 
@@ -379,13 +380,11 @@ void bgp_addpath_set_peer_type(struct peer *peer, afi_t afi, safi_t safi,
 
 	if (addpath_type != BGP_ADDPATH_NONE) {
 		if (bgp_addpath_dmed_required(addpath_type)) {
-			if (!CHECK_FLAG(bgp->flags,
-					BGP_FLAG_DETERMINISTIC_MED)) {
+			if (!bgp_flag_check(bgp, BGP_FLAG_DETERMINISTIC_MED)) {
 				zlog_warn(
 					"%s: enabling bgp deterministic-med, this is required for addpath-tx-bestpath-per-AS",
 					peer->host);
-				SET_FLAG(bgp->flags,
-					 BGP_FLAG_DETERMINISTIC_MED);
+				bgp_flag_set(bgp, BGP_FLAG_DETERMINISTIC_MED);
 				bgp_recalculate_all_bestpaths(bgp);
 			}
 		}

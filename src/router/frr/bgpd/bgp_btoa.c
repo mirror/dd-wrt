@@ -68,7 +68,7 @@ enum MRT_MSG_TYPES {
 	MSG_TABLE_DUMP		  /* routing table dump */
 };
 
-static void attr_parse(struct stream *s, uint16_t len)
+static int attr_parse(struct stream *s, uint16_t len)
 {
 	unsigned int flag;
 	unsigned int type;
@@ -115,6 +115,8 @@ static void attr_parse(struct stream *s, uint16_t len)
 			break;
 		}
 	}
+
+	return 0;
 }
 
 int main(int argc, char **argv)

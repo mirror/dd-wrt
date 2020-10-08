@@ -43,11 +43,7 @@ struct nexthop_hold {
 	char *intf;
 	char *labels;
 	uint32_t weight;
-	int backup_idx; /* Index of backup nexthop, if >= 0 */
 };
-
-/* Invalid/unset value for nexthop_hold's backup_idx */
-#define NHH_BACKUP_IDX_INVALID -1
 
 struct nexthop_group_hooks {
 	void (*new)(const char *name);
@@ -147,59 +143,6 @@ struct nexthop *nexthop_exists(const struct nexthop_group *nhg,
 	return NULL;
 }
 
-/*
- * Helper that locates a nexthop in an nhg config list. Note that
- * this uses a specific matching / equality rule that's different from
- * the complete match performed by 'nexthop_same()'.
- */
-static struct nexthop *nhg_nh_find(const struct nexthop_group *nhg,
-				   const struct nexthop *nh)
-{
-	struct nexthop *nexthop;
-	int ret;
-
-	/* We compare: vrf, gateway, and interface */
-
-	for (nexthop = nhg->nexthop; nexthop; nexthop = nexthop->next) {
-
-		/* Compare vrf and type */
-		if (nexthop->vrf_id != nh->vrf_id)
-			continue;
-		if (nexthop->type != nh->type)
-			continue;
-
-		/* Compare gateway */
-		switch (nexthop->type) {
-		case NEXTHOP_TYPE_IPV4:
-		case NEXTHOP_TYPE_IPV6:
-			ret = nexthop_g_addr_cmp(nexthop->type,
-						 &nexthop->gate, &nh->gate);
-			if (ret != 0)
-				continue;
-			break;
-		case NEXTHOP_TYPE_IPV4_IFINDEX:
-		case NEXTHOP_TYPE_IPV6_IFINDEX:
-			ret = nexthop_g_addr_cmp(nexthop->type,
-						 &nexthop->gate, &nh->gate);
-			if (ret != 0)
-				continue;
-			/* Intentional Fall-Through */
-		case NEXTHOP_TYPE_IFINDEX:
-			if (nexthop->ifindex != nh->ifindex)
-				continue;
-			break;
-		case NEXTHOP_TYPE_BLACKHOLE:
-			if (nexthop->bh_type != nh->bh_type)
-				continue;
-			break;
-		}
-
-		return nexthop;
-	}
-
-	return NULL;
-}
-
 static bool
 nexthop_group_equal_common(const struct nexthop_group *nhg1,
 			   const struct nexthop_group *nhg2,
@@ -273,8 +216,7 @@ struct nexthop_group *nexthop_group_new(void)
 	return XCALLOC(MTYPE_NEXTHOP_GROUP, sizeof(struct nexthop_group));
 }
 
-void nexthop_group_copy(struct nexthop_group *to,
-			const struct nexthop_group *from)
+void nexthop_group_copy(struct nexthop_group *to, struct nexthop_group *from)
 {
 	/* Copy everything, including recursive info */
 	copy_nexthops(&to->nexthop, from->nexthop, NULL);
@@ -282,10 +224,6 @@ void nexthop_group_copy(struct nexthop_group *to,
 
 void nexthop_group_delete(struct nexthop_group **nhg)
 {
-	/* OK to call with NULL group */
-	if ((*nhg) == NULL)
-		return;
-
 	if ((*nhg)->nexthop)
 		nexthops_free((*nhg)->nexthop);
 
@@ -312,7 +250,8 @@ static void _nexthop_add_sorted(struct nexthop **head,
 {
 	struct nexthop *position, *prev;
 
-	assert(!nexthop->next);
+	/* Ensure this gets set */
+	nexthop->next = NULL;
 
 	for (position = *head, prev = NULL; position;
 	     prev = position, position = position->next) {
@@ -341,8 +280,6 @@ void nexthop_group_add_sorted(struct nexthop_group *nhg,
 			      struct nexthop *nexthop)
 {
 	struct nexthop *tail;
-
-	assert(!nexthop->next);
 
 	/* Try to just append to the end first;
 	 * trust the list is already sorted
@@ -381,25 +318,6 @@ void _nexthop_del(struct nexthop_group *nhg, struct nexthop *nh)
 
 	nh->prev = NULL;
 	nh->next = NULL;
-}
-
-/* Unlink a nexthop from the list it's on, unconditionally */
-static void nexthop_unlink(struct nexthop_group *nhg, struct nexthop *nexthop)
-{
-
-	if (nexthop->prev)
-		nexthop->prev->next = nexthop->next;
-	else {
-		assert(nhg->nexthop == nexthop);
-		assert(nexthop->prev == NULL);
-		nhg->nexthop = nexthop->next;
-	}
-
-	if (nexthop->next)
-		nexthop->next->prev = nexthop->prev;
-
-	nexthop->prev = NULL;
-	nexthop->next = NULL;
 }
 
 /*
@@ -445,6 +363,10 @@ void copy_nexthops(struct nexthop **tnh, const struct nexthop *nh,
 	for (nh1 = nh; nh1; nh1 = nh1->next) {
 		nexthop = nexthop_dup(nh1, rparent);
 		_nexthop_add(tnh, nexthop);
+
+		if (CHECK_FLAG(nh1->flags, NEXTHOP_FLAG_RECURSIVE))
+			copy_nexthops(&nexthop->resolved, nh1->resolved,
+				      nexthop);
 	}
 }
 
@@ -647,36 +569,11 @@ DEFUN_NOSH(no_nexthop_group, no_nexthop_group_cmd, "no nexthop-group NHGNAME",
 	return CMD_SUCCESS;
 }
 
-DEFPY(nexthop_group_backup, nexthop_group_backup_cmd,
-      "backup-group WORD$name",
-      "Specify a group name containing backup nexthops\n"
-      "The name of the backup group\n")
-{
-	VTY_DECLVAR_CONTEXT(nexthop_group_cmd, nhgc);
-
-	strlcpy(nhgc->backup_list_name, name, sizeof(nhgc->backup_list_name));
-
-	return CMD_SUCCESS;
-}
-
-DEFPY(no_nexthop_group_backup, no_nexthop_group_backup_cmd,
-      "no backup-group [WORD$name]",
-      NO_STR
-      "Clear group name containing backup nexthops\n"
-      "The name of the backup group\n")
-{
-	VTY_DECLVAR_CONTEXT(nexthop_group_cmd, nhgc);
-
-	nhgc->backup_list_name[0] = 0;
-
-	return CMD_SUCCESS;
-}
-
 static void nexthop_group_save_nhop(struct nexthop_group_cmd *nhgc,
 				    const char *nhvrf_name,
 				    const union sockunion *addr,
 				    const char *intf, const char *labels,
-				    const uint32_t weight, int backup_idx)
+				    const uint32_t weight)
 {
 	struct nexthop_hold *nh;
 
@@ -693,22 +590,14 @@ static void nexthop_group_save_nhop(struct nexthop_group_cmd *nhgc,
 
 	nh->weight = weight;
 
-	nh->backup_idx = backup_idx;
-
 	listnode_add_sort(nhgc->nhg_list, nh);
 }
 
-/*
- * Remove config info about a nexthop from group 'nhgc'. Note that we
- * use only a subset of the available attributes here to determine
- * a 'match'.
- * Note that this doesn't change the list of nexthops, only the config
- * information.
- */
 static void nexthop_group_unsave_nhop(struct nexthop_group_cmd *nhgc,
 				      const char *nhvrf_name,
 				      const union sockunion *addr,
-				      const char *intf)
+				      const char *intf, const char *labels,
+				      const uint32_t weight)
 {
 	struct nexthop_hold *nh;
 	struct listnode *node;
@@ -716,7 +605,9 @@ static void nexthop_group_unsave_nhop(struct nexthop_group_cmd *nhgc,
 	for (ALL_LIST_ELEMENTS_RO(nhgc->nhg_list, node, nh)) {
 		if (nhgc_cmp_helper(nhvrf_name, nh->nhvrf_name) == 0
 		    && nhgc_addr_cmp_helper(addr, nh->addr) == 0
-		    && nhgc_cmp_helper(intf, nh->intf) == 0)
+		    && nhgc_cmp_helper(intf, nh->intf) == 0
+		    && nhgc_cmp_helper(labels, nh->labels) == 0
+		    && weight == nh->weight)
 			break;
 	}
 
@@ -740,7 +631,7 @@ static bool nexthop_group_parse_nexthop(struct nexthop *nhop,
 					const union sockunion *addr,
 					const char *intf, const char *name,
 					const char *labels, int *lbl_ret,
-					uint32_t weight, int backup_idx)
+					uint32_t weight)
 {
 	int ret = 0;
 	struct vrf *vrf;
@@ -799,15 +690,6 @@ static bool nexthop_group_parse_nexthop(struct nexthop *nhop,
 
 	nhop->weight = weight;
 
-	if (backup_idx != NHH_BACKUP_IDX_INVALID) {
-		/* Validate index value */
-		if (backup_idx > NEXTHOP_BACKUP_IDX_MAX)
-			return false;
-
-		SET_FLAG(nhop->flags, NEXTHOP_FLAG_HAS_BACKUP);
-		nhop->backup_idx = backup_idx;
-	}
-
 	return true;
 }
 
@@ -819,7 +701,7 @@ static bool nexthop_group_parse_nhh(struct nexthop *nhop,
 {
 	return (nexthop_group_parse_nexthop(nhop, nhh->addr, nhh->intf,
 					    nhh->nhvrf_name, nhh->labels, NULL,
-					    nhh->weight, nhh->backup_idx));
+					    nhh->weight));
 }
 
 DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
@@ -832,7 +714,6 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 	   nexthop-vrf NAME$vrf_name \
 	   |label WORD \
            |weight (1-255) \
-           |backup-idx$bi_str (0-254)$idx \
 	}]",
       NO_STR
       "Specify one of the nexthops in this ECMP group\n"
@@ -845,23 +726,16 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
       "Specify label(s) for this nexthop\n"
       "One or more labels in the range (16-1048575) separated by '/'\n"
       "Weight to be used by the nexthop for purposes of ECMP\n"
-      "Weight value to be used\n"
-      "Backup nexthop index in another group\n"
-      "Nexthop index value\n")
+      "Weight value to be used\n")
 {
 	VTY_DECLVAR_CONTEXT(nexthop_group_cmd, nhgc);
 	struct nexthop nhop;
 	struct nexthop *nh;
 	int lbl_ret = 0;
 	bool legal;
-	int backup_idx = idx;
-	bool yes = !no;
-
-	if (bi_str == NULL)
-		backup_idx = NHH_BACKUP_IDX_INVALID;
 
 	legal = nexthop_group_parse_nexthop(&nhop, addr, intf, vrf_name, label,
-					    &lbl_ret, weight, backup_idx);
+					    &lbl_ret, weight);
 
 	if (nhop.type == NEXTHOP_TYPE_IPV6
 	    && IN6_IS_ADDR_LINKLOCAL(&nhop.gate.ipv6)) {
@@ -891,30 +765,21 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 		return CMD_WARNING_CONFIG_FAILED;
 	}
 
-	/* Look for an existing nexthop in the config. Note that the test
-	 * here tests only some attributes - it's not a complete comparison.
-	 * Note that we've got two kinds of objects to manage: 'nexthop_hold'
-	 * that represent config that may or may not be valid (yet), and
-	 * actual nexthops that have been validated and parsed.
-	 */
-	nh = nhg_nh_find(&nhgc->nhg, &nhop);
+	nh = nexthop_exists(&nhgc->nhg, &nhop);
 
-	/* Always attempt to remove old config info. */
-	nexthop_group_unsave_nhop(nhgc, vrf_name, addr, intf);
+	if (no) {
+		nexthop_group_unsave_nhop(nhgc, vrf_name, addr, intf, label,
+					  weight);
+		if (nh) {
+			_nexthop_del(&nhgc->nhg, nh);
 
-	/* Remove any existing nexthop, for delete and replace cases. */
-	if (nh) {
-		nexthop_unlink(&nhgc->nhg, nh);
+			if (nhg_hooks.del_nexthop)
+				nhg_hooks.del_nexthop(nhgc, nh);
 
-		if (nhg_hooks.del_nexthop)
-			nhg_hooks.del_nexthop(nhgc, nh);
-
-		nexthop_free(nh);
-	}
-	if (yes) {
-		/* Add/replace case: capture nexthop if valid, and capture
-		 * config info always.
-		 */
+			nexthop_free(nh);
+		}
+	} else if (!nh) {
+		/* must be adding new nexthop since !no and !nexthop_exists */
 		if (legal) {
 			nh = nexthop_new();
 
@@ -922,9 +787,8 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 			_nexthop_add(&nhgc->nhg.nexthop, nh);
 		}
 
-		/* Save config always */
 		nexthop_group_save_nhop(nhgc, vrf_name, addr, intf, label,
-					weight, backup_idx);
+					weight);
 
 		if (legal && nhg_hooks.add_nexthop)
 			nhg_hooks.add_nexthop(nhgc, nh);
@@ -933,13 +797,10 @@ DEFPY(ecmp_nexthops, ecmp_nexthops_cmd,
 	return CMD_SUCCESS;
 }
 
-static int nexthop_group_write(struct vty *vty);
 static struct cmd_node nexthop_group_node = {
-	.name = "nexthop-group",
-	.node = NH_GROUP_NODE,
-	.parent_node = CONFIG_NODE,
-	.prompt = "%s(config-nh-group)# ",
-	.config_write = nexthop_group_write,
+	NH_GROUP_NODE,
+	"%s(config-nh-group)# ",
+	1
 };
 
 void nexthop_group_write_nexthop(struct vty *vty, struct nexthop *nh)
@@ -990,9 +851,6 @@ void nexthop_group_write_nexthop(struct vty *vty, struct nexthop *nh)
 	if (nh->weight)
 		vty_out(vty, " weight %u", nh->weight);
 
-	if (CHECK_FLAG(nh->flags, NEXTHOP_FLAG_HAS_BACKUP))
-		vty_out(vty, " backup-idx %d", nh->backup_idx);
-
 	vty_out(vty, "\n");
 }
 
@@ -1018,9 +876,6 @@ static void nexthop_group_write_nexthop_internal(struct vty *vty,
 	if (nh->weight)
 		vty_out(vty, " weight %u", nh->weight);
 
-	if (nh->backup_idx != NHH_BACKUP_IDX_INVALID)
-		vty_out(vty, " backup-idx %d", nh->backup_idx);
-
 	vty_out(vty, "\n");
 }
 
@@ -1033,10 +888,6 @@ static int nexthop_group_write(struct vty *vty)
 		struct listnode *node;
 
 		vty_out(vty, "nexthop-group %s\n", nhgc->name);
-
-		if (nhgc->backup_list_name[0])
-			vty_out(vty, " backup-group %s\n",
-				nhgc->backup_list_name);
 
 		for (ALL_LIST_ELEMENTS_RO(nhgc->nhg_list, node, nh)) {
 			vty_out(vty, " ");
@@ -1213,13 +1064,11 @@ void nexthop_group_init(void (*new)(const char *name),
 
 	cmd_variable_handler_register(nhg_name_handlers);
 
-	install_node(&nexthop_group_node);
+	install_node(&nexthop_group_node, nexthop_group_write);
 	install_element(CONFIG_NODE, &nexthop_group_cmd);
 	install_element(CONFIG_NODE, &no_nexthop_group_cmd);
 
 	install_default(NH_GROUP_NODE);
-	install_element(NH_GROUP_NODE, &nexthop_group_backup_cmd);
-	install_element(NH_GROUP_NODE, &no_nexthop_group_backup_cmd);
 	install_element(NH_GROUP_NODE, &ecmp_nexthops_cmd);
 
 	memset(&nhg_hooks, 0, sizeof(nhg_hooks));

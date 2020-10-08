@@ -7,11 +7,11 @@ noinst_LIBRARIES += eigrpd/libeigrp.a
 sbin_PROGRAMS += eigrpd/eigrpd
 dist_examples_DATA += eigrpd/eigrpd.conf.sample
 vtysh_scan += \
-	eigrpd/eigrp_cli.c \
-	eigrpd/eigrp_dump.c \
-	eigrpd/eigrp_vty.c \
+	$(top_srcdir)/eigrpd/eigrp_cli.c \
+	$(top_srcdir)/eigrpd/eigrp_dump.c \
+	$(top_srcdir)/eigrpd/eigrp_vty.c \
 	# end
-#	eigrpd/eigrp_routemap.c
+#	$(top_srcdir)/eigrpd/eigrp_routemap.c
 man8 += $(MANBUILD)/frr-eigrpd.8
 endif
 
@@ -48,10 +48,11 @@ eigrpdheader_HEADERS = \
 	eigrpd/eigrpd.h \
 	# end
 
-clippy_scan += \
-	eigrpd/eigrp_cli.c \
-	eigrpd/eigrp_vty.c \
-	# end
+eigrpd/eigrp_vty_clippy.c: $(CLIPPY_DEPS)
+eigrpd/eigrp_vty.$(OBJEXT): eigrpd/eigrp_vty_clippy.c
+
+eigrpd/eigrp_cli_clippy.c: $(CLIPPY_DEPS)
+eigrpd/eigrp_cli.$(OBJEXT): eigrpd/eigrp_cli_clippy.c
 
 noinst_HEADERS += \
 	eigrpd/eigrp_const.h \

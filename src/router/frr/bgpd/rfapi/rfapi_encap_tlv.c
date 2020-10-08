@@ -248,6 +248,7 @@ struct rfapi_un_option *rfapi_encap_tlv_to_un_option(struct attr *attr)
 	}
 	if (rc) {
 		XFREE(MTYPE_RFAPI_UN_OPTION, uo);
+		uo = NULL;
 	}
 	return uo;
 }

@@ -4,7 +4,7 @@
  * Copyright (C) 2017 by Bingen Eguzkitza,
  *                       Volta Networks Inc.
  *
- * This file is part of FRRouting (FRR)
+ * This file is part of FreeRangeRouting (FRR)
  *
  * FRR is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -52,45 +52,48 @@ DEFINE_MTYPE_STATIC(LBL_MGR, LM_CHUNK, "Label Manager Chunk");
  * externally
  */
 
-DEFINE_HOOK(lm_client_connect, (struct zserv *client, vrf_id_t vrf_id),
-	    (client, vrf_id));
-DEFINE_HOOK(lm_client_disconnect, (struct zserv *client), (client));
+DEFINE_HOOK(lm_client_connect,
+	    (uint8_t proto, uint16_t instance, vrf_id_t vrf_id),
+	    (proto, instance, vrf_id));
+DEFINE_HOOK(lm_client_disconnect, (uint8_t proto, uint16_t instance),
+	    (proto, instance));
 DEFINE_HOOK(lm_get_chunk,
-	     (struct label_manager_chunk * *lmc, struct zserv *client,
-	      uint8_t keep, uint32_t size, uint32_t base, vrf_id_t vrf_id),
-	     (lmc, client, keep, size, base, vrf_id));
+	    (struct label_manager_chunk * *lmc, uint8_t proto,
+	     uint16_t instance, uint8_t keep, uint32_t size, uint32_t base,
+	     vrf_id_t vrf_id),
+	    (lmc, proto, instance, keep, size, base, vrf_id));
 DEFINE_HOOK(lm_release_chunk,
-	     (struct zserv *client, uint32_t start, uint32_t end),
-	     (client, start, end));
+	    (uint8_t proto, uint16_t instance, uint32_t start, uint32_t end),
+	    (proto, instance, start, end));
 DEFINE_HOOK(lm_cbs_inited, (), ());
 
 /* define wrappers to be called in zapi_msg.c (as hooks must be called in
  * source file where they were defined)
  */
-void lm_client_connect_call(struct zserv *client, vrf_id_t vrf_id)
+void lm_client_connect_call(uint8_t proto, uint16_t instance, vrf_id_t vrf_id)
 {
-	hook_call(lm_client_connect, client, vrf_id);
+	hook_call(lm_client_connect, proto, instance, vrf_id);
 }
-void lm_get_chunk_call(struct label_manager_chunk **lmc, struct zserv *client,
-		       uint8_t keep, uint32_t size, uint32_t base,
-		       vrf_id_t vrf_id)
+void lm_get_chunk_call(struct label_manager_chunk **lmc, uint8_t proto,
+		       uint16_t instance, uint8_t keep, uint32_t size,
+		       uint32_t base, vrf_id_t vrf_id)
 {
-	hook_call(lm_get_chunk, lmc, client, keep, size, base, vrf_id);
+	hook_call(lm_get_chunk, lmc, proto, instance, keep, size, base, vrf_id);
 }
-void lm_release_chunk_call(struct zserv *client, uint32_t start, uint32_t end)
+void lm_release_chunk_call(uint8_t proto, uint16_t instance, uint32_t start,
+			   uint32_t end)
 {
-	hook_call(lm_release_chunk, client, start, end);
+	hook_call(lm_release_chunk, proto, instance, start, end);
 }
 
 /* forward declarations of the static functions to be used for some hooks */
-static int label_manager_connect(struct zserv *client, vrf_id_t vrf_id);
-static int label_manager_disconnect(struct zserv *client);
+static int label_manager_connect(uint8_t proto, uint16_t instance,
+				 vrf_id_t vrf_id);
+static int label_manager_disconnect(uint8_t proto, uint16_t instance);
 static int label_manager_get_chunk(struct label_manager_chunk **lmc,
-				   struct zserv *client, uint8_t keep,
-				   uint32_t size, uint32_t base,
+				   uint8_t proto, uint16_t instance,
+				   uint8_t keep, uint32_t size, uint32_t base,
 				   vrf_id_t vrf_id);
-static int label_manager_release_label_chunk(struct zserv *client,
-					     uint32_t start, uint32_t end);
 
 void delete_label_chunk(void *val)
 {
@@ -107,7 +110,7 @@ void delete_label_chunk(void *val)
  * @param instance Instance, to identify the owner
  * @return Number of chunks released
  */
-int release_daemon_label_chunks(struct zserv *client)
+int release_daemon_label_chunks(uint8_t proto, unsigned short instance)
 {
 	struct listnode *node;
 	struct label_manager_chunk *lmc;
@@ -115,16 +118,13 @@ int release_daemon_label_chunks(struct zserv *client)
 	int ret;
 
 	if (IS_ZEBRA_DEBUG_PACKET)
-		zlog_debug("%s: Releasing chunks for client proto %s, instance %d, session %u",
-			   __func__, zebra_route_string(client->proto),
-			   client->instance, client->session_id);
+		zlog_debug("%s: Releasing chunks for client proto %s, instance %d",
+			   __func__, zebra_route_string(proto), instance);
 
 	for (ALL_LIST_ELEMENTS_RO(lbl_mgr.lc_list, node, lmc)) {
-		if (lmc->proto == client->proto &&
-		    lmc->instance == client->instance &&
-		    lmc->session_id == client->session_id && lmc->keep == 0) {
+		if (lmc->proto == proto && lmc->instance == instance
+		    && lmc->keep == 0) {
 			ret = release_label_chunk(lmc->proto, lmc->instance,
-						  lmc->session_id,
 						  lmc->start, lmc->end);
 			if (ret == 0)
 				count++;
@@ -139,7 +139,10 @@ int release_daemon_label_chunks(struct zserv *client)
 
 int lm_client_disconnect_cb(struct zserv *client)
 {
-	hook_call(lm_client_disconnect, client);
+	uint8_t proto = client->proto;
+	uint16_t instance = client->instance;
+
+	hook_call(lm_client_disconnect, proto, instance);
 	return 0;
 }
 
@@ -148,14 +151,14 @@ void lm_hooks_register(void)
 	hook_register(lm_client_connect, label_manager_connect);
 	hook_register(lm_client_disconnect, label_manager_disconnect);
 	hook_register(lm_get_chunk, label_manager_get_chunk);
-	hook_register(lm_release_chunk, label_manager_release_label_chunk);
+	hook_register(lm_release_chunk, release_label_chunk);
 }
 void lm_hooks_unregister(void)
 {
 	hook_unregister(lm_client_connect, label_manager_connect);
 	hook_unregister(lm_client_disconnect, label_manager_disconnect);
 	hook_unregister(lm_get_chunk, label_manager_get_chunk);
-	hook_unregister(lm_release_chunk, label_manager_release_label_chunk);
+	hook_unregister(lm_release_chunk, release_label_chunk);
 }
 
 /**
@@ -177,7 +180,6 @@ void label_manager_init(void)
 /* alloc and fill a label chunk */
 struct label_manager_chunk *create_label_chunk(uint8_t proto,
 					       unsigned short instance,
-					       uint32_t session_id,
 					       uint8_t keep, uint32_t start,
 					       uint32_t end)
 {
@@ -189,7 +191,6 @@ struct label_manager_chunk *create_label_chunk(uint8_t proto,
 	lmc->end = end;
 	lmc->proto = proto;
 	lmc->instance = instance;
-	lmc->session_id = session_id;
 	lmc->keep = keep;
 
 	return lmc;
@@ -198,8 +199,7 @@ struct label_manager_chunk *create_label_chunk(uint8_t proto,
 /* attempt to get a specific label chunk */
 static struct label_manager_chunk *
 assign_specific_label_chunk(uint8_t proto, unsigned short instance,
-			    uint32_t session_id, uint8_t keep, uint32_t size,
-			    uint32_t base)
+			    uint8_t keep, uint32_t size, uint32_t base)
 {
 	struct label_manager_chunk *lmc;
 	struct listnode *node, *next = NULL;
@@ -248,8 +248,7 @@ assign_specific_label_chunk(uint8_t proto, unsigned short instance,
 
 	/* insert chunk between existing chunks */
 	if (insert_node) {
-		lmc = create_label_chunk(proto, instance, session_id, keep,
-					 base, end);
+		lmc = create_label_chunk(proto, instance, keep, base, end);
 		listnode_add_before(lbl_mgr.lc_list, insert_node, lmc);
 		return lmc;
 	}
@@ -263,16 +262,11 @@ assign_specific_label_chunk(uint8_t proto, unsigned short instance,
 		 * included in the previous one */
 		for (node = first_node; node && (node != last_node);
 		     node = next) {
-			struct label_manager_chunk *death;
-
 			next = listnextnode(node);
-			death = listgetdata(node);
 			list_delete_node(lbl_mgr.lc_list, node);
-			delete_label_chunk(death);
 		}
 
-		lmc = create_label_chunk(proto, instance, session_id, keep,
-					 base, end);
+		lmc = create_label_chunk(proto, instance, keep, base, end);
 		if (last_node)
 			listnode_add_before(lbl_mgr.lc_list, last_node, lmc);
 		else
@@ -282,8 +276,7 @@ assign_specific_label_chunk(uint8_t proto, unsigned short instance,
 	} else {
 		/* create a new chunk past all the existing ones and link at
 		 * tail */
-		lmc = create_label_chunk(proto, instance, session_id, keep,
-					 base, end);
+		lmc = create_label_chunk(proto, instance, keep, base, end);
 		listnode_add(lbl_mgr.lc_list, lmc);
 		return lmc;
 	}
@@ -304,7 +297,6 @@ assign_specific_label_chunk(uint8_t proto, unsigned short instance,
  */
 struct label_manager_chunk *assign_label_chunk(uint8_t proto,
 					       unsigned short instance,
-					       uint32_t session_id,
 					       uint8_t keep, uint32_t size,
 					       uint32_t base)
 {
@@ -314,8 +306,8 @@ struct label_manager_chunk *assign_label_chunk(uint8_t proto,
 
 	/* handle chunks request with a specific base label */
 	if (base != MPLS_LABEL_BASE_ANY)
-		return assign_specific_label_chunk(proto, instance, session_id,
-						   keep, size, base);
+		return assign_specific_label_chunk(proto, instance, keep, size,
+						   base);
 
 	/* appease scan-build, who gets confused by the use of macros */
 	assert(lbl_mgr.lc_list);
@@ -326,7 +318,6 @@ struct label_manager_chunk *assign_label_chunk(uint8_t proto,
 		    && lmc->end - lmc->start + 1 == size) {
 			lmc->proto = proto;
 			lmc->instance = instance;
-			lmc->session_id = session_id;
 			lmc->keep = keep;
 			return lmc;
 		}
@@ -334,9 +325,8 @@ struct label_manager_chunk *assign_label_chunk(uint8_t proto,
 		 */
 		if ((lmc->start > prev_end)
 		    && (lmc->start - prev_end >= size)) {
-			lmc = create_label_chunk(proto, instance, session_id,
-						 keep, prev_end + 1,
-						 prev_end + size);
+			lmc = create_label_chunk(proto, instance, keep,
+						 prev_end + 1, prev_end + size);
 			listnode_add_before(lbl_mgr.lc_list, node, lmc);
 			return lmc;
 		}
@@ -361,28 +351,10 @@ struct label_manager_chunk *assign_label_chunk(uint8_t proto,
 	}
 
 	/* create chunk and link at tail */
-	lmc = create_label_chunk(proto, instance, session_id, keep, start_free,
+	lmc = create_label_chunk(proto, instance, keep, start_free,
 				 start_free + size - 1);
 	listnode_add(lbl_mgr.lc_list, lmc);
 	return lmc;
-}
-
-/**
- * Release label chunks from a client.
- *
- * Called on client disconnection or reconnection. It only releases chunks
- * with empty keep value.
- *
- * @param client Client zapi session
- * @param start First label of the chunk
- * @param end Last label of the chunk
- * @return 0 on success
- */
-static int label_manager_release_label_chunk(struct zserv *client,
-					     uint32_t start, uint32_t end)
-{
-	return release_label_chunk(client->proto, client->instance,
-				   client->session_id, start, end);
 }
 
 /**
@@ -394,8 +366,8 @@ static int label_manager_release_label_chunk(struct zserv *client,
  * @param end Last label of the chunk
  * @return 0 on success, -1 otherwise
  */
-int release_label_chunk(uint8_t proto, unsigned short instance,
-			uint32_t session_id, uint32_t start, uint32_t end)
+int release_label_chunk(uint8_t proto, unsigned short instance, uint32_t start,
+			uint32_t end)
 {
 	struct listnode *node;
 	struct label_manager_chunk *lmc;
@@ -410,15 +382,13 @@ int release_label_chunk(uint8_t proto, unsigned short instance,
 			continue;
 		if (lmc->end != end)
 			continue;
-		if (lmc->proto != proto || lmc->instance != instance ||
-		    lmc->session_id != session_id) {
+		if (lmc->proto != proto || lmc->instance != instance) {
 			flog_err(EC_ZEBRA_LM_DAEMON_MISMATCH,
 				 "%s: Daemon mismatch!!", __func__);
 			continue;
 		}
 		lmc->proto = NO_PROTO;
 		lmc->instance = 0;
-		lmc->session_id = 0;
 		lmc->keep = 0;
 		ret = 0;
 		break;
@@ -431,60 +401,55 @@ int release_label_chunk(uint8_t proto, unsigned short instance,
 }
 
 /* default functions to be called on hooks  */
-static int label_manager_connect(struct zserv *client, vrf_id_t vrf_id)
+static int label_manager_connect(uint8_t proto, uint16_t instance,
+				 vrf_id_t vrf_id)
 {
 	/*
 	 * Release previous labels of same protocol and instance.
 	 * This is done in case it restarted from an unexpected shutdown.
 	 */
-	release_daemon_label_chunks(client);
-	return zsend_label_manager_connect_response(client, vrf_id, 0);
+	release_daemon_label_chunks(proto, instance);
+	return lm_client_connect_response(proto, instance, vrf_id, 0);
 }
-static int label_manager_disconnect(struct zserv *client)
+static int label_manager_disconnect(uint8_t proto, uint16_t instance)
 {
-	release_daemon_label_chunks(client);
+	release_daemon_label_chunks(proto, instance);
 	return 0;
 }
 static int label_manager_get_chunk(struct label_manager_chunk **lmc,
-				   struct zserv *client, uint8_t keep,
-				   uint32_t size, uint32_t base,
+				   uint8_t proto, uint16_t instance,
+				   uint8_t keep, uint32_t size, uint32_t base,
 				   vrf_id_t vrf_id)
 {
-	*lmc = assign_label_chunk(client->proto, client->instance,
-				  client->session_id, keep, size, base);
-	return lm_get_chunk_response(*lmc, client, vrf_id);
+	*lmc = assign_label_chunk(proto, instance, keep, size, base);
+	return lm_get_chunk_response(*lmc, proto, instance, vrf_id);
 }
 
 /* Respond to a connect request */
 int lm_client_connect_response(uint8_t proto, uint16_t instance,
-			       uint32_t session_id, vrf_id_t vrf_id,
-			       uint8_t result)
+			       vrf_id_t vrf_id, uint8_t result)
 {
-	struct zserv *client = zserv_find_client_session(proto, instance,
-							 session_id);
+	struct zserv *client = zserv_find_client(proto, instance);
 	if (!client) {
-		zlog_err("%s: could not find client for daemon %s instance %u session %u",
-			 __func__, zebra_route_string(proto), instance,
-			 session_id);
+		zlog_err("%s: could not find client for daemon %s instance %u",
+			 __func__, zebra_route_string(proto), instance);
 		return 1;
 	}
 	return zsend_label_manager_connect_response(client, vrf_id, result);
 }
 
 /* Respond to a get_chunk request */
-int lm_get_chunk_response(struct label_manager_chunk *lmc, struct zserv *client,
-			  vrf_id_t vrf_id)
+int lm_get_chunk_response(struct label_manager_chunk *lmc, uint8_t proto,
+			  uint16_t instance, vrf_id_t vrf_id)
 {
-	if (!lmc)
-		flog_err(EC_ZEBRA_LM_CANNOT_ASSIGN_CHUNK,
-			 "Unable to assign Label Chunk to %s instance %u",
-			 zebra_route_string(client->proto), client->instance);
-	else if (IS_ZEBRA_DEBUG_PACKET)
-		zlog_debug("Assigned Label Chunk %u - %u to %s instance %u",
-			   lmc->start, lmc->end,
-			   zebra_route_string(client->proto), client->instance);
-
-	return zsend_assign_label_chunk_response(client, vrf_id, lmc);
+	struct zserv *client = zserv_find_client(proto, instance);
+	if (!client) {
+		zlog_err("%s: could not find client for daemon %s instance %u",
+			 __func__, zebra_route_string(proto), instance);
+		return 1;
+	}
+	return zsend_assign_label_chunk_response(client, vrf_id, proto,
+						 instance, lmc);
 }
 
 void label_manager_close(void)

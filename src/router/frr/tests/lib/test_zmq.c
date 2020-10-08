@@ -120,7 +120,7 @@ static void run_client(int syncfd)
 
 	/* write callback */
 	printf("---\n");
-	snprintf(buf, sizeof(buf), "Done receiving");
+	snprintf(buf, 32, "Done receiving");
 	printf("client send: %s\n", buf);
 	fflush(stdout);
 	send_delim(zmqsock);

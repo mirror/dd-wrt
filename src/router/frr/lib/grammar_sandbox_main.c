@@ -7,7 +7,7 @@
  * Copyright (C) 2016 Cumulus Networks, Inc.
  * Copyright (C) 2017 David Lamparter for NetDEF, Inc.
  *
- * This file is part of FRRouting (FRR).
+ * This file is part of FreeRangeRouting (FRR).
  *
  * FRR is free software; you can redistribute it and/or modify it under the
  * terms of the GNU General Public License as published by the Free Software
@@ -45,7 +45,11 @@ int main(int argc, char **argv)
 
 	master = thread_master_create(NULL);
 
-	zlog_aux_init("NONE: ", LOG_DEBUG);
+	openzlog("grammar_sandbox", "NONE", 0, LOG_CONS | LOG_NDELAY | LOG_PID,
+		 LOG_DAEMON);
+	zlog_set_level(ZLOG_DEST_SYSLOG, ZLOG_DISABLED);
+	zlog_set_level(ZLOG_DEST_STDOUT, LOG_DEBUG);
+	zlog_set_level(ZLOG_DEST_MONITOR, ZLOG_DISABLED);
 
 	/* Library inits. */
 	cmd_init(1);
@@ -54,7 +58,7 @@ int main(int argc, char **argv)
 
 	vty_init(master, true);
 	lib_cmd_init();
-	yang_init(true);
+	yang_init();
 	nb_init(master, NULL, 0);
 
 	vty_stdio(vty_do_exit);
