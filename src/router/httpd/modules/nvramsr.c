@@ -141,6 +141,8 @@ static int nv_file_in(char *url, webs_t wp, size_t len, char *boundary)
 	else
 		wp->restore_ret = 0;
 	unlink("/tmp/restore.bin");
+	eval("sync");
+	eval("umount", "/usr/local");
 	chdir("/www");
 	nvram_set("shutdown", "fast");
 	return 0;
