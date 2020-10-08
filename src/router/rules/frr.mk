@@ -58,7 +58,7 @@ frr-install:
 
 	rm -rf $(INSTALLDIR)/frr/tmp
 	rm -rf $(INSTALLDIR)/frr/usr/info
-	rm -rf $(INSTALLDIR)/frr/usr/share
+#	rm -rf $(INSTALLDIR)/frr/usr/share
 	rm -rf $(INSTALLDIR)/frr/usr/include
 	rm -rf $(INSTALLDIR)/frr/usr/etc
 	rm -rf $(INSTALLDIR)/frr/usr/man
