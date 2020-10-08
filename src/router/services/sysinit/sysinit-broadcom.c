@@ -476,7 +476,10 @@ static void restore_set(char *prefix, struct nvram_param *set)
 {
 	struct nvram_param *t;
 	for (t = set; t->name; t++) {
-		nvram_nset(t->value, "%s/%s", prefix, t->name);
+		char name[64];
+		sprintf(name, "%s/%s", prefix, t->name);
+		if (!nvram_get(name))
+			nvram_set(name, t->value);
 	}
 
 }
