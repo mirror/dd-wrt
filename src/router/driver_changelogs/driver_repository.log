@@ -1,4 +1,12 @@
 ------------------------------------------------------------------------
+r5494 | brainslayer | 2020-10-09 15:11:40 +0400 (Fri, 09 Oct 2020) | 1 line
+
+after first heuristic approach, ignore empty packets
+------------------------------------------------------------------------
+r5493 | brainslayer | 2020-10-09 12:49:46 +0400 (Fri, 09 Oct 2020) | 1 line
+
+fix reassoc with dynack
+------------------------------------------------------------------------
 r5492 | brainslayer | 2020-10-09 02:08:41 +0400 (Fri, 09 Oct 2020) | 1 line
 
 allow to disable dynack after setting
