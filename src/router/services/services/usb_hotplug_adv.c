@@ -229,7 +229,7 @@ void start_hotplug_block(void)
 		usb_stopservices();
 	}
 
-	snprintf(devname, "/dev/%s", part, sizeof(devname) - 1);
+	snprintf(devname, sizeof(devname) - 1, "/dev/%s", part);
 	sysprintf("/usr/sbin/disktype %s", devname);
 	eval("hdparm", "-S", "242", devname);
 	eval("blockdev", "--setra", nvram_safe_get("drive_ra"), devname);
