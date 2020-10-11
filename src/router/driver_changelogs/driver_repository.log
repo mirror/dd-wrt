@@ -1,4 +1,20 @@
 ------------------------------------------------------------------------
+r5498 | brainslayer | 2020-10-10 17:57:58 +0400 (Sat, 10 Oct 2020) | 1 line
+
+reduce fw resources
+------------------------------------------------------------------------
+r5497 | brainslayer | 2020-10-10 16:41:26 +0400 (Sat, 10 Oct 2020) | 1 line
+
+more indirections resolve
+------------------------------------------------------------------------
+r5496 | brainslayer | 2020-10-10 16:29:56 +0400 (Sat, 10 Oct 2020) | 1 line
+
+resolv indirection crap
+------------------------------------------------------------------------
+r5495 | brainslayer | 2020-10-10 08:51:49 +0400 (Sat, 10 Oct 2020) | 1 line
+
+add comments and reduce resource consumption
+------------------------------------------------------------------------
 r5494 | brainslayer | 2020-10-09 15:11:40 +0400 (Fri, 09 Oct 2020) | 1 line
 
 after first heuristic approach, ignore empty packets
