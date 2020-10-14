@@ -1477,12 +1477,16 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 
 void addvhtcaps(char *prefix, FILE * fp);
 
-static char *makescanlist(char *value)
+static char *makescanlist(char *prefix, char *value)
 {
 	char *clone = strdup(value);
 	int len = strlen(clone);
 	int i;
 	char *new = NULL;
+	struct wifi_channels *chan;
+	char *country;
+	country = nvram_default_get(nvram_safe_get("ath0_regdomain"), "UNITED_STATES");
+	chan = mac80211_get_channels_simple(prefix, getIsoName(country), 20, 255);
 /* format list */
 	for (i = 0; i < len; i++) {
 		if (clone[i] == ';')
@@ -1513,13 +1517,34 @@ static char *makescanlist(char *value)
 			}
 			if (end == start)
 				continue;
-			for (i = start; i < end + 5; i += 5) {
-				char *old = new;
-				if (!new)
-					asprintf(&new, "%d", i);
-				else {
-					asprintf(&new, "%s %d", old, i);
-					free(old);
+			int soffset = -1;
+			int eoffset = -1;
+			i = 0;
+			while (chan[i].freq != -1) {
+				if (chan[i].freq >= start) {
+					soffset = i;
+					break;
+				}
+				i++;
+			}
+			i = 0;
+			while (chan[i].freq != -1) {
+				if (chan[i].freq > end) {
+					eoffset = i - 1;
+					break;
+				}
+				i++;
+			}
+			if (eoffset > 0 && soffset > 0 && eoffset > soffset) {
+				for (i = soffset; i < eoffset; i++) {
+					char *old = new;
+					if (!new)
+						asprintf(&new, "%d", chan[i].freq);
+					else {
+						asprintf(&new, "%s %d", old, chan[i].freq);
+						free(old);
+					}
+
 				}
 
 			}
@@ -1678,7 +1703,7 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		sprintf(scanlist, "%s_scanlist", prefix);
 		char *sl = nvram_default_get(scanlist, "default");
 		if (strcmp(sl, "default")) {
-			char *scanlist = makescanlist(sl);
+			char *scanlist = makescanlist(prefix, sl);
 			fprintf(fp, "\tscan_freq=%s\n", scanlist);
 			free(scanlist);
 		}
