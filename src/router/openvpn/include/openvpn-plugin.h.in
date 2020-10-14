@@ -32,6 +32,12 @@
 #define __OPENVPN_X509_CERT_T_DECLARED
 typedef mbedtls_x509_crt openvpn_x509_cert_t;
 #endif
+#elif defined(ENABLE_CRYPTO_WOLFSSL)  /* ifdef ENABLE_CRYPTO_WOLFSSL */
+#include <wolfssl/ssl.h>
+#ifndef __OPENVPN_X509_CERT_T_DECLARED
+#define __OPENVPN_X509_CERT_T_DECLARED
+typedef WOLFSSL_X509 openvpn_x509_cert_t;
+#endif
 #else  /* ifdef ENABLE_CRYPTO_MBEDTLS */
 #include <openssl/x509.h>
 #ifndef __OPENVPN_X509_CERT_T_DECLARED
@@ -334,7 +340,8 @@ struct openvpn_plugin_callbacks
 typedef enum {
     SSLAPI_NONE,
     SSLAPI_OPENSSL,
-    SSLAPI_MBEDTLS
+    SSLAPI_MBEDTLS,
+    SSLAPI_WOLFSSL
 } ovpnSSLAPI;
 
 /**
