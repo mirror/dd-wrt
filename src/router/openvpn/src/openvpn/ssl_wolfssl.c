@@ -248,23 +248,24 @@ void tls_ctx_check_cert_time(const struct tls_root_ctx *ctx)
      */
 }
 
-void tls_ctx_load_dh_params(struct tls_root_ctx *ctx, const char *dh_file,
-        const char *dh_file_inline)
+void
+tls_ctx_load_dh_params(struct tls_root_ctx *ctx, const char *dh_file,
+                       bool dh_file_inline)
 {
     int dh_len, ret;
 
     ASSERT(ctx != NULL);
 
-    if (!strcmp(dh_file, INLINE_FILE_TAG) && dh_file_inline)
+    if (dh_file_inline)
     {
         /* Parameters in memory */
-        if ((dh_len = strlen(dh_file_inline)) == 0)
+        if ((dh_len = strlen(dh_file)) == 0)
         {
             msg(M_FATAL, "Empty DH parameters passed.");
         }
 
         if ((ret = wolfSSL_CTX_SetTmpDH_buffer(ctx->ctx,
-                (uint8_t*) dh_file_inline, dh_len,
+                (uint8_t*) dh_file, dh_len,
                 SSL_FILETYPE_PEM)) != SSL_SUCCESS)
         {
             msg(M_FATAL, "wolfSSL_CTX_SetTmpDH_buffer failed with Errno: %d",
@@ -314,8 +315,9 @@ void tls_ctx_load_ecdh_params(struct tls_root_ctx *ctx, const char *curve_name)
     wolfSSL_EC_KEY_free(ecdh);
 }
 
-int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
-        const char *pkcs12_file_inline, bool load_ca_file)
+int
+tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
+                    bool pkcs12_file_inline, bool load_ca_file)
 {
     int err, i, ret = 1,fd, size;
     uint32_t pkcs12_len;
@@ -332,10 +334,10 @@ int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
 
     ASSERT(ctx != NULL);
 
-    if (!strcmp(pkcs12_file, INLINE_FILE_TAG) && pkcs12_file_inline)
+    if (pkcs12_file_inline)
     {
         /* PKCS12 in memory */
-        if ((pkcs12_len = strlen(pkcs12_file_inline)) == 0)
+        if ((pkcs12_len = strlen(pkcs12_file)) == 0)
         {
             msg(M_FATAL, "Empty pkcs12 parameters passed.");
         }
@@ -348,7 +350,7 @@ int tls_ctx_load_pkcs12(struct tls_root_ctx *ctx, const char *pkcs12_file,
                     pkcs12_len);
         }
 
-        if ((err = Base64_Decode((uint8_t*) pkcs12_file_inline, pkcs12_len,
+        if ((err = Base64_Decode((uint8_t*) pkcs12_file, pkcs12_len,
                 BPTR(&buf), &pkcs12_len)) != 0)
         {
             msg(M_FATAL, "Base64_Decode failed with Errno: %d", err);
@@ -484,17 +486,18 @@ tls_ctx_use_external_private_key(struct tls_root_ctx *ctx,
     return 0;
 }
 
-void tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
-        const char *cert_file_inline)
+void
+tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
+                       bool cert_inline)
 {
     int ret;
     int cert_len;
     ASSERT(ctx != NULL);
 
-    if (!strcmp(cert_file, INLINE_FILE_TAG) && cert_file_inline)
+    if (cert_inline)
     {
         /* Certificate in memory */
-        if ((cert_len = strlen(cert_file_inline)) == 0)
+        if ((cert_len = strlen(cert_file)) == 0)
         {
             msg(M_FATAL, "Empty certificate passed.");
             return;
@@ -503,7 +506,7 @@ void tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
          * Load certificate.
          */
         if ((ret = wolfSSL_CTX_use_certificate_chain_buffer(ctx->ctx,
-                (uint8_t*) cert_file_inline, cert_len)) != SSL_SUCCESS)
+                (uint8_t*) cert_file, cert_len)) != SSL_SUCCESS)
         {
             msg(M_FATAL,
                     "wolfSSL_CTX_use_certificate_buffer failed with Errno: %d",
@@ -514,7 +517,7 @@ void tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
          * Load any additional certificates.
          */
         if ((ret = wolfSSL_CTX_load_verify_buffer(ctx->ctx,
-                (uint8_t*) cert_file_inline, cert_len,
+                (uint8_t*) cert_file, cert_len,
                 SSL_FILETYPE_PEM)) != SSL_SUCCESS)
         {
             msg(M_FATAL, "wolfSSL_CTX_load_verify_buffer failed with Errno: %d",
@@ -550,24 +553,25 @@ void tls_ctx_load_cert_file(struct tls_root_ctx *ctx, const char *cert_file,
     }
 }
 
-int tls_ctx_load_priv_file(struct tls_root_ctx *ctx, const char *priv_key_file,
-        const char *priv_key_file_inline)
+int
+tls_ctx_load_priv_file(struct tls_root_ctx *ctx, const char *priv_key_file,
+                       bool priv_key_inline)
 {
 
     int ret;
     int key_len;
     ASSERT(ctx != NULL);
 
-    if (!strcmp(priv_key_file, INLINE_FILE_TAG) && priv_key_file_inline)
+    if (priv_key_file_inline)
     {
         /* Key in memory */
-        if ((key_len = strlen(priv_key_file_inline)) == 0)
+        if ((key_len = strlen(priv_key_file)) == 0)
         {
             msg(M_FATAL, "Empty certificate passed.");
             return 1;
         }
         if ((ret = wolfSSL_CTX_use_PrivateKey_buffer(ctx->ctx,
-                (uint8_t*) priv_key_file_inline, key_len,
+                (uint8_t*) priv_key_file, key_len,
                 SSL_FILETYPE_PEM)) != SSL_SUCCESS)
         {
             msg(M_FATAL,
@@ -599,23 +603,24 @@ int tls_ctx_use_management_external_key(struct tls_root_ctx *ctx)
 }
 #endif /* ENABLE_MANAGEMENT */
 
-void tls_ctx_load_ca(struct tls_root_ctx *ctx, const char *ca_file,
-        const char *ca_file_inline, const char *ca_path, bool tls_server)
+void
+tls_ctx_load_ca(struct tls_root_ctx *ctx, const char *ca_file,
+                bool ca_inline, const char *ca_path, bool tls_server)
 {
     int ca_len, ret;
 
     ASSERT(ctx != NULL);
 
-    if (!strcmp(ca_file, INLINE_FILE_TAG) && ca_file_inline)
+    if (ca_file_inline)
     {
         /* Certificate in memory */
-        if ((ca_len = strlen(ca_file_inline)) == 0)
+        if ((ca_len = strlen(ca_file)) == 0)
         {
             msg(M_FATAL, "Empty certificate passed.");
         }
 
         if ((ret = wolfSSL_CTX_load_verify_buffer(ctx->ctx,
-                (uint8_t*) ca_file_inline, ca_len,
+                (uint8_t*) ca_file, ca_len,
                 SSL_FILETYPE_PEM)) != SSL_SUCCESS)
         {
             msg(M_FATAL, "wolfSSL_CTX_load_verify_buffer failed with Errno: %d",
