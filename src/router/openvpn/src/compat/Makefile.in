@@ -120,7 +120,7 @@ LTLIBRARIES = $(noinst_LTLIBRARIES)
 libcompat_la_LIBADD =
 am_libcompat_la_OBJECTS = compat-dirname.lo compat-basename.lo \
 	compat-gettimeofday.lo compat-daemon.lo compat-inet_ntop.lo \
-	compat-inet_pton.lo compat-lz4.lo
+	compat-inet_pton.lo compat-lz4.lo compat-strsep.lo
 libcompat_la_OBJECTS = $(am_libcompat_la_OBJECTS)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
@@ -145,7 +145,8 @@ am__depfiles_remade = ./$(DEPDIR)/compat-basename.Plo \
 	./$(DEPDIR)/compat-daemon.Plo ./$(DEPDIR)/compat-dirname.Plo \
 	./$(DEPDIR)/compat-gettimeofday.Plo \
 	./$(DEPDIR)/compat-inet_ntop.Plo \
-	./$(DEPDIR)/compat-inet_pton.Plo ./$(DEPDIR)/compat-lz4.Plo
+	./$(DEPDIR)/compat-inet_pton.Plo ./$(DEPDIR)/compat-lz4.Plo \
+	./$(DEPDIR)/compat-strsep.Plo
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
@@ -205,7 +206,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CMAKE = @CMAKE@
+CMOCKA_CFLAGS = @CMOCKA_CFLAGS@
+CMOCKA_LIBS = @CMOCKA_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -219,6 +221,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_UNITTESTS = @ENABLE_UNITTESTS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GIT = @GIT@
@@ -246,7 +249,6 @@ LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
-MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
@@ -297,6 +299,8 @@ PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
+RST2HTML = @RST2HTML@
+RST2MAN = @RST2MAN@
 SED = @SED@
 SELINUX_LIBS = @SELINUX_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -376,7 +380,10 @@ MAINTAINERCLEANFILES = \
 
 EXTRA_DIST = \
 	compat.vcxproj \
-	compat.vcxproj.filters
+	compat.vcxproj.filters \
+	PropertySheet.props \
+	Debug.props \
+	Release.props
 
 noinst_LTLIBRARIES = libcompat.la
 libcompat_la_SOURCES = \
@@ -388,6 +395,7 @@ libcompat_la_SOURCES = \
 	compat-inet_ntop.c \
 	compat-inet_pton.c \
 	compat-lz4.c compat-lz4.h \
+	compat-strsep.c \
 	compat-versionhelpers.h
 
 all: all-am
@@ -451,6 +459,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-inet_ntop.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-inet_pton.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-lz4.Plo@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/compat-strsep.Plo@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -618,6 +627,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/compat-inet_ntop.Plo
 	-rm -f ./$(DEPDIR)/compat-inet_pton.Plo
 	-rm -f ./$(DEPDIR)/compat-lz4.Plo
+	-rm -f ./$(DEPDIR)/compat-strsep.Plo
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -670,6 +680,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/compat-inet_ntop.Plo
 	-rm -f ./$(DEPDIR)/compat-inet_pton.Plo
 	-rm -f ./$(DEPDIR)/compat-lz4.Plo
+	-rm -f ./$(DEPDIR)/compat-strsep.Plo
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

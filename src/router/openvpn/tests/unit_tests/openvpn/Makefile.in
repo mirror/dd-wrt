@@ -87,9 +87,11 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2)
 @HAVE_LD_WRAP_SUPPORT_TRUE@am__append_1 = argv_testdriver buffer_testdriver
-@ENABLE_CRYPTO_TRUE@am__append_2 = packet_id_testdriver tls_crypt_testdriver
+@HAVE_LD_WRAP_SUPPORT_TRUE@am__append_2 = tls_crypt_testdriver
+TESTS = $(am__EXEEXT_3)
+check_PROGRAMS = $(am__EXEEXT_3) $(am__EXEEXT_4)
+@HAVE_SITNL_TRUE@am__append_3 = networking_testdriver
 subdir = tests/unit_tests/openvpn
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/m4/ax_emptyarray.m4 \
@@ -109,10 +111,15 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 @HAVE_LD_WRAP_SUPPORT_TRUE@am__EXEEXT_1 = argv_testdriver$(EXEEXT) \
 @HAVE_LD_WRAP_SUPPORT_TRUE@	buffer_testdriver$(EXEEXT)
-@ENABLE_CRYPTO_TRUE@am__EXEEXT_2 = packet_id_testdriver$(EXEEXT) \
-@ENABLE_CRYPTO_TRUE@	tls_crypt_testdriver$(EXEEXT)
+@HAVE_LD_WRAP_SUPPORT_TRUE@am__EXEEXT_2 =  \
+@HAVE_LD_WRAP_SUPPORT_TRUE@	tls_crypt_testdriver$(EXEEXT)
+am__EXEEXT_3 = $(am__EXEEXT_1) crypto_testdriver$(EXEEXT) \
+	packet_id_testdriver$(EXEEXT) auth_token_testdriver$(EXEEXT) \
+	ncp_testdriver$(EXEEXT) $(am__EXEEXT_2)
+@HAVE_SITNL_TRUE@am__EXEEXT_4 = networking_testdriver$(EXEEXT)
 am_argv_testdriver_OBJECTS = argv_testdriver-test_argv.$(OBJEXT) \
 	argv_testdriver-mock_msg.$(OBJEXT) \
+	argv_testdriver-mock_get_random.$(OBJEXT) \
 	argv_testdriver-platform.$(OBJEXT) \
 	argv_testdriver-buffer.$(OBJEXT) \
 	argv_testdriver-argv.$(OBJEXT)
@@ -126,10 +133,27 @@ argv_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(argv_testdriver_CFLAGS) $(CFLAGS) $(argv_testdriver_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_auth_token_testdriver_OBJECTS =  \
+	auth_token_testdriver-test_auth_token.$(OBJEXT) \
+	auth_token_testdriver-mock_msg.$(OBJEXT) \
+	auth_token_testdriver-buffer.$(OBJEXT) \
+	auth_token_testdriver-crypto.$(OBJEXT) \
+	auth_token_testdriver-crypto_mbedtls.$(OBJEXT) \
+	auth_token_testdriver-crypto_openssl.$(OBJEXT) \
+	auth_token_testdriver-otime.$(OBJEXT) \
+	auth_token_testdriver-packet_id.$(OBJEXT) \
+	auth_token_testdriver-platform.$(OBJEXT) \
+	auth_token_testdriver-base64.$(OBJEXT)
+auth_token_testdriver_OBJECTS = $(am_auth_token_testdriver_OBJECTS)
+auth_token_testdriver_LDADD = $(LDADD)
+auth_token_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(auth_token_testdriver_CFLAGS) $(CFLAGS) \
+	$(auth_token_testdriver_LDFLAGS) $(LDFLAGS) -o $@
 am_buffer_testdriver_OBJECTS =  \
 	buffer_testdriver-test_buffer.$(OBJEXT) \
 	buffer_testdriver-mock_msg.$(OBJEXT) \
-	buffer_testdriver-buffer.$(OBJEXT) \
+	buffer_testdriver-mock_get_random.$(OBJEXT) \
 	buffer_testdriver-platform.$(OBJEXT)
 buffer_testdriver_OBJECTS = $(am_buffer_testdriver_OBJECTS)
 buffer_testdriver_LDADD = $(LDADD)
@@ -137,9 +161,63 @@ buffer_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(buffer_testdriver_CFLAGS) $(CFLAGS) \
 	$(buffer_testdriver_LDFLAGS) $(LDFLAGS) -o $@
+am_crypto_testdriver_OBJECTS =  \
+	crypto_testdriver-test_crypto.$(OBJEXT) \
+	crypto_testdriver-mock_msg.$(OBJEXT) \
+	crypto_testdriver-buffer.$(OBJEXT) \
+	crypto_testdriver-crypto.$(OBJEXT) \
+	crypto_testdriver-crypto_mbedtls.$(OBJEXT) \
+	crypto_testdriver-crypto_openssl.$(OBJEXT) \
+	crypto_testdriver-otime.$(OBJEXT) \
+	crypto_testdriver-packet_id.$(OBJEXT) \
+	crypto_testdriver-platform.$(OBJEXT)
+crypto_testdriver_OBJECTS = $(am_crypto_testdriver_OBJECTS)
+crypto_testdriver_LDADD = $(LDADD)
+crypto_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(crypto_testdriver_CFLAGS) $(CFLAGS) \
+	$(crypto_testdriver_LDFLAGS) $(LDFLAGS) -o $@
+am_ncp_testdriver_OBJECTS = ncp_testdriver-test_ncp.$(OBJEXT) \
+	ncp_testdriver-mock_msg.$(OBJEXT) \
+	ncp_testdriver-buffer.$(OBJEXT) \
+	ncp_testdriver-crypto.$(OBJEXT) \
+	ncp_testdriver-crypto_mbedtls.$(OBJEXT) \
+	ncp_testdriver-crypto_openssl.$(OBJEXT) \
+	ncp_testdriver-otime.$(OBJEXT) \
+	ncp_testdriver-packet_id.$(OBJEXT) \
+	ncp_testdriver-platform.$(OBJEXT)
+ncp_testdriver_OBJECTS = $(am_ncp_testdriver_OBJECTS)
+ncp_testdriver_LDADD = $(LDADD)
+ncp_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(ncp_testdriver_CFLAGS) $(CFLAGS) $(ncp_testdriver_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am__networking_testdriver_SOURCES_DIST = test_networking.c mock_msg.c \
+	$(openvpn_srcdir)/networking_sitnl.c \
+	$(openvpn_srcdir)/buffer.c $(openvpn_srcdir)/crypto.c \
+	$(openvpn_srcdir)/crypto_mbedtls.c \
+	$(openvpn_srcdir)/crypto_openssl.c $(openvpn_srcdir)/otime.c \
+	$(openvpn_srcdir)/packet_id.c $(openvpn_srcdir)/platform.c
+@HAVE_SITNL_TRUE@am_networking_testdriver_OBJECTS = networking_testdriver-test_networking.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-mock_msg.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-networking_sitnl.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-buffer.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-crypto.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-crypto_mbedtls.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-crypto_openssl.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-otime.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-packet_id.$(OBJEXT) \
+@HAVE_SITNL_TRUE@	networking_testdriver-platform.$(OBJEXT)
+networking_testdriver_OBJECTS = $(am_networking_testdriver_OBJECTS)
+networking_testdriver_LDADD = $(LDADD)
+networking_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(networking_testdriver_CFLAGS) $(CFLAGS) \
+	$(networking_testdriver_LDFLAGS) $(LDFLAGS) -o $@
 am_packet_id_testdriver_OBJECTS =  \
 	packet_id_testdriver-test_packet_id.$(OBJEXT) \
 	packet_id_testdriver-mock_msg.$(OBJEXT) \
+	packet_id_testdriver-mock_get_random.$(OBJEXT) \
 	packet_id_testdriver-buffer.$(OBJEXT) \
 	packet_id_testdriver-otime.$(OBJEXT) \
 	packet_id_testdriver-packet_id.$(OBJEXT) \
@@ -153,13 +231,17 @@ packet_id_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 am_tls_crypt_testdriver_OBJECTS =  \
 	tls_crypt_testdriver-test_tls_crypt.$(OBJEXT) \
 	tls_crypt_testdriver-mock_msg.$(OBJEXT) \
+	tls_crypt_testdriver-argv.$(OBJEXT) \
+	tls_crypt_testdriver-base64.$(OBJEXT) \
 	tls_crypt_testdriver-buffer.$(OBJEXT) \
 	tls_crypt_testdriver-crypto.$(OBJEXT) \
 	tls_crypt_testdriver-crypto_mbedtls.$(OBJEXT) \
 	tls_crypt_testdriver-crypto_openssl.$(OBJEXT) \
+	tls_crypt_testdriver-env_set.$(OBJEXT) \
 	tls_crypt_testdriver-otime.$(OBJEXT) \
 	tls_crypt_testdriver-packet_id.$(OBJEXT) \
-	tls_crypt_testdriver-platform.$(OBJEXT)
+	tls_crypt_testdriver-platform.$(OBJEXT) \
+	tls_crypt_testdriver-run_command.$(OBJEXT)
 tls_crypt_testdriver_OBJECTS = $(am_tls_crypt_testdriver_OBJECTS)
 tls_crypt_testdriver_LDADD = $(LDADD)
 tls_crypt_testdriver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
@@ -183,27 +265,71 @@ depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/argv_testdriver-argv.Po \
 	./$(DEPDIR)/argv_testdriver-buffer.Po \
+	./$(DEPDIR)/argv_testdriver-mock_get_random.Po \
 	./$(DEPDIR)/argv_testdriver-mock_msg.Po \
 	./$(DEPDIR)/argv_testdriver-platform.Po \
 	./$(DEPDIR)/argv_testdriver-test_argv.Po \
-	./$(DEPDIR)/buffer_testdriver-buffer.Po \
+	./$(DEPDIR)/auth_token_testdriver-base64.Po \
+	./$(DEPDIR)/auth_token_testdriver-buffer.Po \
+	./$(DEPDIR)/auth_token_testdriver-crypto.Po \
+	./$(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po \
+	./$(DEPDIR)/auth_token_testdriver-crypto_openssl.Po \
+	./$(DEPDIR)/auth_token_testdriver-mock_msg.Po \
+	./$(DEPDIR)/auth_token_testdriver-otime.Po \
+	./$(DEPDIR)/auth_token_testdriver-packet_id.Po \
+	./$(DEPDIR)/auth_token_testdriver-platform.Po \
+	./$(DEPDIR)/auth_token_testdriver-test_auth_token.Po \
+	./$(DEPDIR)/buffer_testdriver-mock_get_random.Po \
 	./$(DEPDIR)/buffer_testdriver-mock_msg.Po \
 	./$(DEPDIR)/buffer_testdriver-platform.Po \
 	./$(DEPDIR)/buffer_testdriver-test_buffer.Po \
+	./$(DEPDIR)/crypto_testdriver-buffer.Po \
+	./$(DEPDIR)/crypto_testdriver-crypto.Po \
+	./$(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po \
+	./$(DEPDIR)/crypto_testdriver-crypto_openssl.Po \
+	./$(DEPDIR)/crypto_testdriver-mock_msg.Po \
+	./$(DEPDIR)/crypto_testdriver-otime.Po \
+	./$(DEPDIR)/crypto_testdriver-packet_id.Po \
+	./$(DEPDIR)/crypto_testdriver-platform.Po \
+	./$(DEPDIR)/crypto_testdriver-test_crypto.Po \
+	./$(DEPDIR)/ncp_testdriver-buffer.Po \
+	./$(DEPDIR)/ncp_testdriver-crypto.Po \
+	./$(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po \
+	./$(DEPDIR)/ncp_testdriver-crypto_openssl.Po \
+	./$(DEPDIR)/ncp_testdriver-mock_msg.Po \
+	./$(DEPDIR)/ncp_testdriver-otime.Po \
+	./$(DEPDIR)/ncp_testdriver-packet_id.Po \
+	./$(DEPDIR)/ncp_testdriver-platform.Po \
+	./$(DEPDIR)/ncp_testdriver-test_ncp.Po \
+	./$(DEPDIR)/networking_testdriver-buffer.Po \
+	./$(DEPDIR)/networking_testdriver-crypto.Po \
+	./$(DEPDIR)/networking_testdriver-crypto_mbedtls.Po \
+	./$(DEPDIR)/networking_testdriver-crypto_openssl.Po \
+	./$(DEPDIR)/networking_testdriver-mock_msg.Po \
+	./$(DEPDIR)/networking_testdriver-networking_sitnl.Po \
+	./$(DEPDIR)/networking_testdriver-otime.Po \
+	./$(DEPDIR)/networking_testdriver-packet_id.Po \
+	./$(DEPDIR)/networking_testdriver-platform.Po \
+	./$(DEPDIR)/networking_testdriver-test_networking.Po \
 	./$(DEPDIR)/packet_id_testdriver-buffer.Po \
+	./$(DEPDIR)/packet_id_testdriver-mock_get_random.Po \
 	./$(DEPDIR)/packet_id_testdriver-mock_msg.Po \
 	./$(DEPDIR)/packet_id_testdriver-otime.Po \
 	./$(DEPDIR)/packet_id_testdriver-packet_id.Po \
 	./$(DEPDIR)/packet_id_testdriver-platform.Po \
 	./$(DEPDIR)/packet_id_testdriver-test_packet_id.Po \
+	./$(DEPDIR)/tls_crypt_testdriver-argv.Po \
+	./$(DEPDIR)/tls_crypt_testdriver-base64.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-buffer.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-crypto.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-crypto_mbedtls.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-crypto_openssl.Po \
+	./$(DEPDIR)/tls_crypt_testdriver-env_set.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-mock_msg.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-otime.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-packet_id.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-platform.Po \
+	./$(DEPDIR)/tls_crypt_testdriver-run_command.Po \
 	./$(DEPDIR)/tls_crypt_testdriver-test_tls_crypt.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -224,10 +350,15 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(argv_testdriver_SOURCES) $(buffer_testdriver_SOURCES) \
+SOURCES = $(argv_testdriver_SOURCES) $(auth_token_testdriver_SOURCES) \
+	$(buffer_testdriver_SOURCES) $(crypto_testdriver_SOURCES) \
+	$(ncp_testdriver_SOURCES) $(networking_testdriver_SOURCES) \
 	$(packet_id_testdriver_SOURCES) \
 	$(tls_crypt_testdriver_SOURCES)
-DIST_SOURCES = $(argv_testdriver_SOURCES) $(buffer_testdriver_SOURCES) \
+DIST_SOURCES = $(argv_testdriver_SOURCES) \
+	$(auth_token_testdriver_SOURCES) $(buffer_testdriver_SOURCES) \
+	$(crypto_testdriver_SOURCES) $(ncp_testdriver_SOURCES) \
+	$(am__networking_testdriver_SOURCES_DIST) \
 	$(packet_id_testdriver_SOURCES) \
 	$(tls_crypt_testdriver_SOURCES)
 am__can_run_installinfo = \
@@ -290,7 +421,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CMAKE = @CMAKE@
+CMOCKA_CFLAGS = @CMOCKA_CFLAGS@
+CMOCKA_LIBS = @CMOCKA_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -304,6 +436,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_UNITTESTS = @ENABLE_UNITTESTS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GIT = @GIT@
@@ -331,7 +464,6 @@ LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
-MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
@@ -382,6 +514,8 @@ PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
+RST2HTML = @RST2HTML@
+RST2MAN = @RST2MAN@
 SED = @SED@
 SELINUX_LIBS = @SELINUX_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -457,17 +591,15 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
-TESTS = $(check_PROGRAMS)
+test_binaries = $(am__append_1) crypto_testdriver packet_id_testdriver \
+	auth_token_testdriver ncp_testdriver $(am__append_2)
 openvpn_includedir = $(top_srcdir)/include
 openvpn_srcdir = $(top_srcdir)/src/openvpn
 compat_srcdir = $(top_srcdir)/src/compat
-argv_testdriver_CFLAGS = @TEST_CFLAGS@ -I$(openvpn_srcdir) -I$(compat_srcdir) \
-	$(OPTIONAL_CRYPTO_CFLAGS)
-
-argv_testdriver_LDFLAGS = @TEST_LDFLAGS@ -L$(openvpn_srcdir) -Wl,--wrap=parse_line \
-	$(OPTIONAL_CRYPTO_LIBS)
-
+argv_testdriver_CFLAGS = @TEST_CFLAGS@ -I$(openvpn_srcdir) -I$(compat_srcdir)
+argv_testdriver_LDFLAGS = @TEST_LDFLAGS@ -L$(openvpn_srcdir) -Wl,--wrap=parse_line
 argv_testdriver_SOURCES = test_argv.c mock_msg.c mock_msg.h \
+	mock_get_random.c \
 	$(openvpn_srcdir)/platform.c \
 	$(openvpn_srcdir)/buffer.c \
 	$(openvpn_srcdir)/argv.c
@@ -475,30 +607,97 @@ argv_testdriver_SOURCES = test_argv.c mock_msg.c mock_msg.h \
 buffer_testdriver_CFLAGS = @TEST_CFLAGS@ -I$(openvpn_srcdir) -I$(compat_srcdir)
 buffer_testdriver_LDFLAGS = @TEST_LDFLAGS@ -L$(openvpn_srcdir) -Wl,--wrap=parse_line
 buffer_testdriver_SOURCES = test_buffer.c mock_msg.c mock_msg.h \
+	mock_get_random.c \
+	$(openvpn_srcdir)/platform.c
+
+crypto_testdriver_CFLAGS = @TEST_CFLAGS@ \
+	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir)
+
+crypto_testdriver_LDFLAGS = @TEST_LDFLAGS@
+crypto_testdriver_SOURCES = test_crypto.c mock_msg.c mock_msg.h \
 	$(openvpn_srcdir)/buffer.c \
+	$(openvpn_srcdir)/crypto.c \
+	$(openvpn_srcdir)/crypto_mbedtls.c \
+	$(openvpn_srcdir)/crypto_openssl.c \
+	$(openvpn_srcdir)/otime.c \
+	$(openvpn_srcdir)/packet_id.c \
 	$(openvpn_srcdir)/platform.c
 
 packet_id_testdriver_CFLAGS = @TEST_CFLAGS@ \
-	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir) \
-	$(OPTIONAL_CRYPTO_CFLAGS)
+	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir)
 
-packet_id_testdriver_LDFLAGS = @TEST_LDFLAGS@ \
-	$(OPTIONAL_CRYPTO_LIBS)
-
+packet_id_testdriver_LDFLAGS = @TEST_LDFLAGS@
 packet_id_testdriver_SOURCES = test_packet_id.c mock_msg.c mock_msg.h \
+	mock_get_random.c \
 	$(openvpn_srcdir)/buffer.c \
 	$(openvpn_srcdir)/otime.c \
 	$(openvpn_srcdir)/packet_id.c \
 	$(openvpn_srcdir)/platform.c
 
 tls_crypt_testdriver_CFLAGS = @TEST_CFLAGS@ \
+	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir)
+
+tls_crypt_testdriver_LDFLAGS = @TEST_LDFLAGS@ \
+	-Wl,--wrap=buffer_read_from_file \
+	-Wl,--wrap=buffer_write_file \
+	-Wl,--wrap=parse_line \
+	-Wl,--wrap=rand_bytes
+
+tls_crypt_testdriver_SOURCES = test_tls_crypt.c mock_msg.c mock_msg.h \
+	$(openvpn_srcdir)/argv.c \
+	$(openvpn_srcdir)/base64.c \
+	$(openvpn_srcdir)/buffer.c \
+	$(openvpn_srcdir)/crypto.c \
+	$(openvpn_srcdir)/crypto_mbedtls.c \
+	$(openvpn_srcdir)/crypto_openssl.c \
+	$(openvpn_srcdir)/env_set.c \
+	$(openvpn_srcdir)/otime.c \
+	$(openvpn_srcdir)/packet_id.c \
+	$(openvpn_srcdir)/platform.c \
+	$(openvpn_srcdir)/run_command.c
+
+@HAVE_SITNL_TRUE@networking_testdriver_CFLAGS = @TEST_CFLAGS@ \
+@HAVE_SITNL_TRUE@	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir) \
+@HAVE_SITNL_TRUE@	$(OPTIONAL_CRYPTO_CFLAGS)
+
+@HAVE_SITNL_TRUE@networking_testdriver_LDFLAGS = @TEST_LDFLAGS@ -L$(openvpn_srcdir) \
+@HAVE_SITNL_TRUE@	$(OPTIONAL_CRYPTO_LIBS)
+
+@HAVE_SITNL_TRUE@networking_testdriver_SOURCES = test_networking.c mock_msg.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/networking_sitnl.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/buffer.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/crypto.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/crypto_mbedtls.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/crypto_openssl.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/otime.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/packet_id.c \
+@HAVE_SITNL_TRUE@	$(openvpn_srcdir)/platform.c
+
+auth_token_testdriver_CFLAGS = @TEST_CFLAGS@ \
 	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir) \
 	$(OPTIONAL_CRYPTO_CFLAGS)
 
-tls_crypt_testdriver_LDFLAGS = @TEST_LDFLAGS@ \
+auth_token_testdriver_LDFLAGS = @TEST_LDFLAGS@ \
 	$(OPTIONAL_CRYPTO_LIBS)
 
-tls_crypt_testdriver_SOURCES = test_tls_crypt.c mock_msg.c mock_msg.h \
+auth_token_testdriver_SOURCES = test_auth_token.c mock_msg.c \
+	$(openvpn_srcdir)/buffer.c \
+	$(openvpn_srcdir)/crypto.c \
+	$(openvpn_srcdir)/crypto_mbedtls.c \
+	$(openvpn_srcdir)/crypto_openssl.c \
+	$(openvpn_srcdir)/otime.c \
+	$(openvpn_srcdir)/packet_id.c \
+	$(openvpn_srcdir)/platform.c \
+	$(openvpn_srcdir)/base64.c
+
+ncp_testdriver_CFLAGS = @TEST_CFLAGS@ \
+	-I$(openvpn_includedir) -I$(compat_srcdir) -I$(openvpn_srcdir) \
+	$(OPTIONAL_CRYPTO_CFLAGS)
+
+ncp_testdriver_LDFLAGS = @TEST_LDFLAGS@ \
+	$(OPTIONAL_CRYPTO_LIBS)
+
+ncp_testdriver_SOURCES = test_ncp.c mock_msg.c \
 	$(openvpn_srcdir)/buffer.c \
 	$(openvpn_srcdir)/crypto.c \
 	$(openvpn_srcdir)/crypto_mbedtls.c \
@@ -554,9 +753,25 @@ argv_testdriver$(EXEEXT): $(argv_testdriver_OBJECTS) $(argv_testdriver_DEPENDENC
 	@rm -f argv_testdriver$(EXEEXT)
 	$(AM_V_CCLD)$(argv_testdriver_LINK) $(argv_testdriver_OBJECTS) $(argv_testdriver_LDADD) $(LIBS)
 
+auth_token_testdriver$(EXEEXT): $(auth_token_testdriver_OBJECTS) $(auth_token_testdriver_DEPENDENCIES) $(EXTRA_auth_token_testdriver_DEPENDENCIES) 
+	@rm -f auth_token_testdriver$(EXEEXT)
+	$(AM_V_CCLD)$(auth_token_testdriver_LINK) $(auth_token_testdriver_OBJECTS) $(auth_token_testdriver_LDADD) $(LIBS)
+
 buffer_testdriver$(EXEEXT): $(buffer_testdriver_OBJECTS) $(buffer_testdriver_DEPENDENCIES) $(EXTRA_buffer_testdriver_DEPENDENCIES) 
 	@rm -f buffer_testdriver$(EXEEXT)
 	$(AM_V_CCLD)$(buffer_testdriver_LINK) $(buffer_testdriver_OBJECTS) $(buffer_testdriver_LDADD) $(LIBS)
+
+crypto_testdriver$(EXEEXT): $(crypto_testdriver_OBJECTS) $(crypto_testdriver_DEPENDENCIES) $(EXTRA_crypto_testdriver_DEPENDENCIES) 
+	@rm -f crypto_testdriver$(EXEEXT)
+	$(AM_V_CCLD)$(crypto_testdriver_LINK) $(crypto_testdriver_OBJECTS) $(crypto_testdriver_LDADD) $(LIBS)
+
+ncp_testdriver$(EXEEXT): $(ncp_testdriver_OBJECTS) $(ncp_testdriver_DEPENDENCIES) $(EXTRA_ncp_testdriver_DEPENDENCIES) 
+	@rm -f ncp_testdriver$(EXEEXT)
+	$(AM_V_CCLD)$(ncp_testdriver_LINK) $(ncp_testdriver_OBJECTS) $(ncp_testdriver_LDADD) $(LIBS)
+
+networking_testdriver$(EXEEXT): $(networking_testdriver_OBJECTS) $(networking_testdriver_DEPENDENCIES) $(EXTRA_networking_testdriver_DEPENDENCIES) 
+	@rm -f networking_testdriver$(EXEEXT)
+	$(AM_V_CCLD)$(networking_testdriver_LINK) $(networking_testdriver_OBJECTS) $(networking_testdriver_LDADD) $(LIBS)
 
 packet_id_testdriver$(EXEEXT): $(packet_id_testdriver_OBJECTS) $(packet_id_testdriver_DEPENDENCIES) $(EXTRA_packet_id_testdriver_DEPENDENCIES) 
 	@rm -f packet_id_testdriver$(EXEEXT)
@@ -574,27 +789,71 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-argv.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-mock_get_random.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-mock_msg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-platform.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/argv_testdriver-test_argv.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-base64.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-crypto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-crypto_openssl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-mock_msg.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-otime.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-packet_id.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-platform.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/auth_token_testdriver-test_auth_token.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_testdriver-mock_get_random.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_testdriver-mock_msg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_testdriver-platform.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/buffer_testdriver-test_buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-crypto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-crypto_openssl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-mock_msg.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-otime.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-packet_id.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-platform.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/crypto_testdriver-test_crypto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-crypto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-crypto_openssl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-mock_msg.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-otime.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-packet_id.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-platform.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ncp_testdriver-test_ncp.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-crypto.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-crypto_mbedtls.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-crypto_openssl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-mock_msg.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-networking_sitnl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-otime.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-packet_id.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-platform.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/networking_testdriver-test_networking.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-buffer.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-mock_get_random.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-mock_msg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-otime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-packet_id.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-platform.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/packet_id_testdriver-test_packet_id.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-argv.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-base64.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-buffer.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-crypto.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-crypto_mbedtls.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-crypto_openssl.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-env_set.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-mock_msg.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-otime.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-packet_id.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-platform.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-run_command.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tls_crypt_testdriver-test_tls_crypt.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -652,6 +911,20 @@ argv_testdriver-mock_msg.obj: mock_msg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -c -o argv_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
 
+argv_testdriver-mock_get_random.o: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -MT argv_testdriver-mock_get_random.o -MD -MP -MF $(DEPDIR)/argv_testdriver-mock_get_random.Tpo -c -o argv_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/argv_testdriver-mock_get_random.Tpo $(DEPDIR)/argv_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='argv_testdriver-mock_get_random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -c -o argv_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
+
+argv_testdriver-mock_get_random.obj: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -MT argv_testdriver-mock_get_random.obj -MD -MP -MF $(DEPDIR)/argv_testdriver-mock_get_random.Tpo -c -o argv_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/argv_testdriver-mock_get_random.Tpo $(DEPDIR)/argv_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='argv_testdriver-mock_get_random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -c -o argv_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
+
 argv_testdriver-platform.o: $(openvpn_srcdir)/platform.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -MT argv_testdriver-platform.o -MD -MP -MF $(DEPDIR)/argv_testdriver-platform.Tpo -c -o argv_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/argv_testdriver-platform.Tpo $(DEPDIR)/argv_testdriver-platform.Po
@@ -694,6 +967,146 @@ argv_testdriver-argv.obj: $(openvpn_srcdir)/argv.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(argv_testdriver_CFLAGS) $(CFLAGS) -c -o argv_testdriver-argv.obj `if test -f '$(openvpn_srcdir)/argv.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/argv.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/argv.c'; fi`
 
+auth_token_testdriver-test_auth_token.o: test_auth_token.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-test_auth_token.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-test_auth_token.Tpo -c -o auth_token_testdriver-test_auth_token.o `test -f 'test_auth_token.c' || echo '$(srcdir)/'`test_auth_token.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-test_auth_token.Tpo $(DEPDIR)/auth_token_testdriver-test_auth_token.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_auth_token.c' object='auth_token_testdriver-test_auth_token.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-test_auth_token.o `test -f 'test_auth_token.c' || echo '$(srcdir)/'`test_auth_token.c
+
+auth_token_testdriver-test_auth_token.obj: test_auth_token.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-test_auth_token.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-test_auth_token.Tpo -c -o auth_token_testdriver-test_auth_token.obj `if test -f 'test_auth_token.c'; then $(CYGPATH_W) 'test_auth_token.c'; else $(CYGPATH_W) '$(srcdir)/test_auth_token.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-test_auth_token.Tpo $(DEPDIR)/auth_token_testdriver-test_auth_token.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_auth_token.c' object='auth_token_testdriver-test_auth_token.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-test_auth_token.obj `if test -f 'test_auth_token.c'; then $(CYGPATH_W) 'test_auth_token.c'; else $(CYGPATH_W) '$(srcdir)/test_auth_token.c'; fi`
+
+auth_token_testdriver-mock_msg.o: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-mock_msg.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-mock_msg.Tpo -c -o auth_token_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-mock_msg.Tpo $(DEPDIR)/auth_token_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='auth_token_testdriver-mock_msg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+
+auth_token_testdriver-mock_msg.obj: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-mock_msg.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-mock_msg.Tpo -c -o auth_token_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-mock_msg.Tpo $(DEPDIR)/auth_token_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='auth_token_testdriver-mock_msg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+
+auth_token_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-buffer.Tpo -c -o auth_token_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-buffer.Tpo $(DEPDIR)/auth_token_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='auth_token_testdriver-buffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+
+auth_token_testdriver-buffer.obj: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-buffer.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-buffer.Tpo -c -o auth_token_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-buffer.Tpo $(DEPDIR)/auth_token_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='auth_token_testdriver-buffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+
+auth_token_testdriver-crypto.o: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto.Tpo -c -o auth_token_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto.Tpo $(DEPDIR)/auth_token_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='auth_token_testdriver-crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+
+auth_token_testdriver-crypto.obj: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto.Tpo -c -o auth_token_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto.Tpo $(DEPDIR)/auth_token_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='auth_token_testdriver-crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+
+auth_token_testdriver-crypto_mbedtls.o: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto_mbedtls.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Tpo -c -o auth_token_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='auth_token_testdriver-crypto_mbedtls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+
+auth_token_testdriver-crypto_mbedtls.obj: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto_mbedtls.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Tpo -c -o auth_token_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='auth_token_testdriver-crypto_mbedtls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+
+auth_token_testdriver-crypto_openssl.o: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto_openssl.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto_openssl.Tpo -c -o auth_token_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto_openssl.Tpo $(DEPDIR)/auth_token_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='auth_token_testdriver-crypto_openssl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+
+auth_token_testdriver-crypto_openssl.obj: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-crypto_openssl.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-crypto_openssl.Tpo -c -o auth_token_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-crypto_openssl.Tpo $(DEPDIR)/auth_token_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='auth_token_testdriver-crypto_openssl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+
+auth_token_testdriver-otime.o: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-otime.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-otime.Tpo -c -o auth_token_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-otime.Tpo $(DEPDIR)/auth_token_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='auth_token_testdriver-otime.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+
+auth_token_testdriver-otime.obj: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-otime.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-otime.Tpo -c -o auth_token_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-otime.Tpo $(DEPDIR)/auth_token_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='auth_token_testdriver-otime.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+
+auth_token_testdriver-packet_id.o: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-packet_id.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-packet_id.Tpo -c -o auth_token_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-packet_id.Tpo $(DEPDIR)/auth_token_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='auth_token_testdriver-packet_id.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+
+auth_token_testdriver-packet_id.obj: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-packet_id.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-packet_id.Tpo -c -o auth_token_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-packet_id.Tpo $(DEPDIR)/auth_token_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='auth_token_testdriver-packet_id.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+
+auth_token_testdriver-platform.o: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-platform.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-platform.Tpo -c -o auth_token_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-platform.Tpo $(DEPDIR)/auth_token_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='auth_token_testdriver-platform.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+
+auth_token_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-platform.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-platform.Tpo -c -o auth_token_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-platform.Tpo $(DEPDIR)/auth_token_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='auth_token_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+
+auth_token_testdriver-base64.o: $(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-base64.o -MD -MP -MF $(DEPDIR)/auth_token_testdriver-base64.Tpo -c -o auth_token_testdriver-base64.o `test -f '$(openvpn_srcdir)/base64.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-base64.Tpo $(DEPDIR)/auth_token_testdriver-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/base64.c' object='auth_token_testdriver-base64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-base64.o `test -f '$(openvpn_srcdir)/base64.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/base64.c
+
+auth_token_testdriver-base64.obj: $(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -MT auth_token_testdriver-base64.obj -MD -MP -MF $(DEPDIR)/auth_token_testdriver-base64.Tpo -c -o auth_token_testdriver-base64.obj `if test -f '$(openvpn_srcdir)/base64.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/base64.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/auth_token_testdriver-base64.Tpo $(DEPDIR)/auth_token_testdriver-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/base64.c' object='auth_token_testdriver-base64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(auth_token_testdriver_CFLAGS) $(CFLAGS) -c -o auth_token_testdriver-base64.obj `if test -f '$(openvpn_srcdir)/base64.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/base64.c'; fi`
+
 buffer_testdriver-test_buffer.o: test_buffer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-test_buffer.o -MD -MP -MF $(DEPDIR)/buffer_testdriver-test_buffer.Tpo -c -o buffer_testdriver-test_buffer.o `test -f 'test_buffer.c' || echo '$(srcdir)/'`test_buffer.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/buffer_testdriver-test_buffer.Tpo $(DEPDIR)/buffer_testdriver-test_buffer.Po
@@ -722,19 +1135,19 @@ buffer_testdriver-mock_msg.obj: mock_msg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
 
-buffer_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/buffer_testdriver-buffer.Tpo -c -o buffer_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/buffer_testdriver-buffer.Tpo $(DEPDIR)/buffer_testdriver-buffer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='buffer_testdriver-buffer.o' libtool=no @AMDEPBACKSLASH@
+buffer_testdriver-mock_get_random.o: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-mock_get_random.o -MD -MP -MF $(DEPDIR)/buffer_testdriver-mock_get_random.Tpo -c -o buffer_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/buffer_testdriver-mock_get_random.Tpo $(DEPDIR)/buffer_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='buffer_testdriver-mock_get_random.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
 
-buffer_testdriver-buffer.obj: $(openvpn_srcdir)/buffer.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-buffer.obj -MD -MP -MF $(DEPDIR)/buffer_testdriver-buffer.Tpo -c -o buffer_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/buffer_testdriver-buffer.Tpo $(DEPDIR)/buffer_testdriver-buffer.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='buffer_testdriver-buffer.obj' libtool=no @AMDEPBACKSLASH@
+buffer_testdriver-mock_get_random.obj: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-mock_get_random.obj -MD -MP -MF $(DEPDIR)/buffer_testdriver-mock_get_random.Tpo -c -o buffer_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/buffer_testdriver-mock_get_random.Tpo $(DEPDIR)/buffer_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='buffer_testdriver-mock_get_random.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
 
 buffer_testdriver-platform.o: $(openvpn_srcdir)/platform.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -MT buffer_testdriver-platform.o -MD -MP -MF $(DEPDIR)/buffer_testdriver-platform.Tpo -c -o buffer_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
@@ -749,6 +1162,398 @@ buffer_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='buffer_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(buffer_testdriver_CFLAGS) $(CFLAGS) -c -o buffer_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+
+crypto_testdriver-test_crypto.o: test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-test_crypto.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-test_crypto.Tpo -c -o crypto_testdriver-test_crypto.o `test -f 'test_crypto.c' || echo '$(srcdir)/'`test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-test_crypto.Tpo $(DEPDIR)/crypto_testdriver-test_crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_crypto.c' object='crypto_testdriver-test_crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-test_crypto.o `test -f 'test_crypto.c' || echo '$(srcdir)/'`test_crypto.c
+
+crypto_testdriver-test_crypto.obj: test_crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-test_crypto.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-test_crypto.Tpo -c -o crypto_testdriver-test_crypto.obj `if test -f 'test_crypto.c'; then $(CYGPATH_W) 'test_crypto.c'; else $(CYGPATH_W) '$(srcdir)/test_crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-test_crypto.Tpo $(DEPDIR)/crypto_testdriver-test_crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_crypto.c' object='crypto_testdriver-test_crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-test_crypto.obj `if test -f 'test_crypto.c'; then $(CYGPATH_W) 'test_crypto.c'; else $(CYGPATH_W) '$(srcdir)/test_crypto.c'; fi`
+
+crypto_testdriver-mock_msg.o: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-mock_msg.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-mock_msg.Tpo -c -o crypto_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-mock_msg.Tpo $(DEPDIR)/crypto_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='crypto_testdriver-mock_msg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+
+crypto_testdriver-mock_msg.obj: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-mock_msg.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-mock_msg.Tpo -c -o crypto_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-mock_msg.Tpo $(DEPDIR)/crypto_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='crypto_testdriver-mock_msg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+
+crypto_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-buffer.Tpo -c -o crypto_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-buffer.Tpo $(DEPDIR)/crypto_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='crypto_testdriver-buffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+
+crypto_testdriver-buffer.obj: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-buffer.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-buffer.Tpo -c -o crypto_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-buffer.Tpo $(DEPDIR)/crypto_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='crypto_testdriver-buffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+
+crypto_testdriver-crypto.o: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto.Tpo -c -o crypto_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto.Tpo $(DEPDIR)/crypto_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='crypto_testdriver-crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+
+crypto_testdriver-crypto.obj: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto.Tpo -c -o crypto_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto.Tpo $(DEPDIR)/crypto_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='crypto_testdriver-crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+
+crypto_testdriver-crypto_mbedtls.o: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto_mbedtls.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Tpo -c -o crypto_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='crypto_testdriver-crypto_mbedtls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+
+crypto_testdriver-crypto_mbedtls.obj: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto_mbedtls.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Tpo -c -o crypto_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='crypto_testdriver-crypto_mbedtls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+
+crypto_testdriver-crypto_openssl.o: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto_openssl.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto_openssl.Tpo -c -o crypto_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto_openssl.Tpo $(DEPDIR)/crypto_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='crypto_testdriver-crypto_openssl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+
+crypto_testdriver-crypto_openssl.obj: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-crypto_openssl.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-crypto_openssl.Tpo -c -o crypto_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-crypto_openssl.Tpo $(DEPDIR)/crypto_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='crypto_testdriver-crypto_openssl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+
+crypto_testdriver-otime.o: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-otime.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-otime.Tpo -c -o crypto_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-otime.Tpo $(DEPDIR)/crypto_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='crypto_testdriver-otime.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+
+crypto_testdriver-otime.obj: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-otime.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-otime.Tpo -c -o crypto_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-otime.Tpo $(DEPDIR)/crypto_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='crypto_testdriver-otime.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+
+crypto_testdriver-packet_id.o: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-packet_id.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-packet_id.Tpo -c -o crypto_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-packet_id.Tpo $(DEPDIR)/crypto_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='crypto_testdriver-packet_id.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+
+crypto_testdriver-packet_id.obj: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-packet_id.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-packet_id.Tpo -c -o crypto_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-packet_id.Tpo $(DEPDIR)/crypto_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='crypto_testdriver-packet_id.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+
+crypto_testdriver-platform.o: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-platform.o -MD -MP -MF $(DEPDIR)/crypto_testdriver-platform.Tpo -c -o crypto_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-platform.Tpo $(DEPDIR)/crypto_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='crypto_testdriver-platform.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+
+crypto_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -MT crypto_testdriver-platform.obj -MD -MP -MF $(DEPDIR)/crypto_testdriver-platform.Tpo -c -o crypto_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/crypto_testdriver-platform.Tpo $(DEPDIR)/crypto_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='crypto_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(crypto_testdriver_CFLAGS) $(CFLAGS) -c -o crypto_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+
+ncp_testdriver-test_ncp.o: test_ncp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-test_ncp.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-test_ncp.Tpo -c -o ncp_testdriver-test_ncp.o `test -f 'test_ncp.c' || echo '$(srcdir)/'`test_ncp.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-test_ncp.Tpo $(DEPDIR)/ncp_testdriver-test_ncp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_ncp.c' object='ncp_testdriver-test_ncp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-test_ncp.o `test -f 'test_ncp.c' || echo '$(srcdir)/'`test_ncp.c
+
+ncp_testdriver-test_ncp.obj: test_ncp.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-test_ncp.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-test_ncp.Tpo -c -o ncp_testdriver-test_ncp.obj `if test -f 'test_ncp.c'; then $(CYGPATH_W) 'test_ncp.c'; else $(CYGPATH_W) '$(srcdir)/test_ncp.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-test_ncp.Tpo $(DEPDIR)/ncp_testdriver-test_ncp.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_ncp.c' object='ncp_testdriver-test_ncp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-test_ncp.obj `if test -f 'test_ncp.c'; then $(CYGPATH_W) 'test_ncp.c'; else $(CYGPATH_W) '$(srcdir)/test_ncp.c'; fi`
+
+ncp_testdriver-mock_msg.o: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-mock_msg.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-mock_msg.Tpo -c -o ncp_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-mock_msg.Tpo $(DEPDIR)/ncp_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='ncp_testdriver-mock_msg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+
+ncp_testdriver-mock_msg.obj: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-mock_msg.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-mock_msg.Tpo -c -o ncp_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-mock_msg.Tpo $(DEPDIR)/ncp_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='ncp_testdriver-mock_msg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+
+ncp_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-buffer.Tpo -c -o ncp_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-buffer.Tpo $(DEPDIR)/ncp_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='ncp_testdriver-buffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+
+ncp_testdriver-buffer.obj: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-buffer.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-buffer.Tpo -c -o ncp_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-buffer.Tpo $(DEPDIR)/ncp_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='ncp_testdriver-buffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+
+ncp_testdriver-crypto.o: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto.Tpo -c -o ncp_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto.Tpo $(DEPDIR)/ncp_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='ncp_testdriver-crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+
+ncp_testdriver-crypto.obj: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto.Tpo -c -o ncp_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto.Tpo $(DEPDIR)/ncp_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='ncp_testdriver-crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+
+ncp_testdriver-crypto_mbedtls.o: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto_mbedtls.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Tpo -c -o ncp_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='ncp_testdriver-crypto_mbedtls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+
+ncp_testdriver-crypto_mbedtls.obj: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto_mbedtls.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Tpo -c -o ncp_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='ncp_testdriver-crypto_mbedtls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+
+ncp_testdriver-crypto_openssl.o: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto_openssl.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto_openssl.Tpo -c -o ncp_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto_openssl.Tpo $(DEPDIR)/ncp_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='ncp_testdriver-crypto_openssl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+
+ncp_testdriver-crypto_openssl.obj: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-crypto_openssl.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-crypto_openssl.Tpo -c -o ncp_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-crypto_openssl.Tpo $(DEPDIR)/ncp_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='ncp_testdriver-crypto_openssl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+
+ncp_testdriver-otime.o: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-otime.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-otime.Tpo -c -o ncp_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-otime.Tpo $(DEPDIR)/ncp_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='ncp_testdriver-otime.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+
+ncp_testdriver-otime.obj: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-otime.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-otime.Tpo -c -o ncp_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-otime.Tpo $(DEPDIR)/ncp_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='ncp_testdriver-otime.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+
+ncp_testdriver-packet_id.o: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-packet_id.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-packet_id.Tpo -c -o ncp_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-packet_id.Tpo $(DEPDIR)/ncp_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='ncp_testdriver-packet_id.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+
+ncp_testdriver-packet_id.obj: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-packet_id.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-packet_id.Tpo -c -o ncp_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-packet_id.Tpo $(DEPDIR)/ncp_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='ncp_testdriver-packet_id.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+
+ncp_testdriver-platform.o: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-platform.o -MD -MP -MF $(DEPDIR)/ncp_testdriver-platform.Tpo -c -o ncp_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-platform.Tpo $(DEPDIR)/ncp_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='ncp_testdriver-platform.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+
+ncp_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -MT ncp_testdriver-platform.obj -MD -MP -MF $(DEPDIR)/ncp_testdriver-platform.Tpo -c -o ncp_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ncp_testdriver-platform.Tpo $(DEPDIR)/ncp_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='ncp_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ncp_testdriver_CFLAGS) $(CFLAGS) -c -o ncp_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+
+networking_testdriver-test_networking.o: test_networking.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-test_networking.o -MD -MP -MF $(DEPDIR)/networking_testdriver-test_networking.Tpo -c -o networking_testdriver-test_networking.o `test -f 'test_networking.c' || echo '$(srcdir)/'`test_networking.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-test_networking.Tpo $(DEPDIR)/networking_testdriver-test_networking.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_networking.c' object='networking_testdriver-test_networking.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-test_networking.o `test -f 'test_networking.c' || echo '$(srcdir)/'`test_networking.c
+
+networking_testdriver-test_networking.obj: test_networking.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-test_networking.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-test_networking.Tpo -c -o networking_testdriver-test_networking.obj `if test -f 'test_networking.c'; then $(CYGPATH_W) 'test_networking.c'; else $(CYGPATH_W) '$(srcdir)/test_networking.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-test_networking.Tpo $(DEPDIR)/networking_testdriver-test_networking.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test_networking.c' object='networking_testdriver-test_networking.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-test_networking.obj `if test -f 'test_networking.c'; then $(CYGPATH_W) 'test_networking.c'; else $(CYGPATH_W) '$(srcdir)/test_networking.c'; fi`
+
+networking_testdriver-mock_msg.o: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-mock_msg.o -MD -MP -MF $(DEPDIR)/networking_testdriver-mock_msg.Tpo -c -o networking_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-mock_msg.Tpo $(DEPDIR)/networking_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='networking_testdriver-mock_msg.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-mock_msg.o `test -f 'mock_msg.c' || echo '$(srcdir)/'`mock_msg.c
+
+networking_testdriver-mock_msg.obj: mock_msg.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-mock_msg.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-mock_msg.Tpo -c -o networking_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-mock_msg.Tpo $(DEPDIR)/networking_testdriver-mock_msg.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='networking_testdriver-mock_msg.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+
+networking_testdriver-networking_sitnl.o: $(openvpn_srcdir)/networking_sitnl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-networking_sitnl.o -MD -MP -MF $(DEPDIR)/networking_testdriver-networking_sitnl.Tpo -c -o networking_testdriver-networking_sitnl.o `test -f '$(openvpn_srcdir)/networking_sitnl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/networking_sitnl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-networking_sitnl.Tpo $(DEPDIR)/networking_testdriver-networking_sitnl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/networking_sitnl.c' object='networking_testdriver-networking_sitnl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-networking_sitnl.o `test -f '$(openvpn_srcdir)/networking_sitnl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/networking_sitnl.c
+
+networking_testdriver-networking_sitnl.obj: $(openvpn_srcdir)/networking_sitnl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-networking_sitnl.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-networking_sitnl.Tpo -c -o networking_testdriver-networking_sitnl.obj `if test -f '$(openvpn_srcdir)/networking_sitnl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/networking_sitnl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/networking_sitnl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-networking_sitnl.Tpo $(DEPDIR)/networking_testdriver-networking_sitnl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/networking_sitnl.c' object='networking_testdriver-networking_sitnl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-networking_sitnl.obj `if test -f '$(openvpn_srcdir)/networking_sitnl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/networking_sitnl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/networking_sitnl.c'; fi`
+
+networking_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/networking_testdriver-buffer.Tpo -c -o networking_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-buffer.Tpo $(DEPDIR)/networking_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='networking_testdriver-buffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
+
+networking_testdriver-buffer.obj: $(openvpn_srcdir)/buffer.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-buffer.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-buffer.Tpo -c -o networking_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-buffer.Tpo $(DEPDIR)/networking_testdriver-buffer.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/buffer.c' object='networking_testdriver-buffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-buffer.obj `if test -f '$(openvpn_srcdir)/buffer.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/buffer.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/buffer.c'; fi`
+
+networking_testdriver-crypto.o: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto.o -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto.Tpo -c -o networking_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto.Tpo $(DEPDIR)/networking_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='networking_testdriver-crypto.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto.o `test -f '$(openvpn_srcdir)/crypto.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto.c
+
+networking_testdriver-crypto.obj: $(openvpn_srcdir)/crypto.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto.Tpo -c -o networking_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto.Tpo $(DEPDIR)/networking_testdriver-crypto.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto.c' object='networking_testdriver-crypto.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto.obj `if test -f '$(openvpn_srcdir)/crypto.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto.c'; fi`
+
+networking_testdriver-crypto_mbedtls.o: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto_mbedtls.o -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto_mbedtls.Tpo -c -o networking_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/networking_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='networking_testdriver-crypto_mbedtls.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto_mbedtls.o `test -f '$(openvpn_srcdir)/crypto_mbedtls.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_mbedtls.c
+
+networking_testdriver-crypto_mbedtls.obj: $(openvpn_srcdir)/crypto_mbedtls.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto_mbedtls.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto_mbedtls.Tpo -c -o networking_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto_mbedtls.Tpo $(DEPDIR)/networking_testdriver-crypto_mbedtls.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_mbedtls.c' object='networking_testdriver-crypto_mbedtls.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto_mbedtls.obj `if test -f '$(openvpn_srcdir)/crypto_mbedtls.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_mbedtls.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_mbedtls.c'; fi`
+
+networking_testdriver-crypto_openssl.o: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto_openssl.o -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto_openssl.Tpo -c -o networking_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto_openssl.Tpo $(DEPDIR)/networking_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='networking_testdriver-crypto_openssl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto_openssl.o `test -f '$(openvpn_srcdir)/crypto_openssl.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/crypto_openssl.c
+
+networking_testdriver-crypto_openssl.obj: $(openvpn_srcdir)/crypto_openssl.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-crypto_openssl.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-crypto_openssl.Tpo -c -o networking_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-crypto_openssl.Tpo $(DEPDIR)/networking_testdriver-crypto_openssl.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/crypto_openssl.c' object='networking_testdriver-crypto_openssl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
+
+networking_testdriver-otime.o: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-otime.o -MD -MP -MF $(DEPDIR)/networking_testdriver-otime.Tpo -c -o networking_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-otime.Tpo $(DEPDIR)/networking_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='networking_testdriver-otime.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
+
+networking_testdriver-otime.obj: $(openvpn_srcdir)/otime.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-otime.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-otime.Tpo -c -o networking_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-otime.Tpo $(DEPDIR)/networking_testdriver-otime.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/otime.c' object='networking_testdriver-otime.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-otime.obj `if test -f '$(openvpn_srcdir)/otime.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/otime.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/otime.c'; fi`
+
+networking_testdriver-packet_id.o: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-packet_id.o -MD -MP -MF $(DEPDIR)/networking_testdriver-packet_id.Tpo -c -o networking_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-packet_id.Tpo $(DEPDIR)/networking_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='networking_testdriver-packet_id.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-packet_id.o `test -f '$(openvpn_srcdir)/packet_id.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/packet_id.c
+
+networking_testdriver-packet_id.obj: $(openvpn_srcdir)/packet_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-packet_id.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-packet_id.Tpo -c -o networking_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-packet_id.Tpo $(DEPDIR)/networking_testdriver-packet_id.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/packet_id.c' object='networking_testdriver-packet_id.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-packet_id.obj `if test -f '$(openvpn_srcdir)/packet_id.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/packet_id.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/packet_id.c'; fi`
+
+networking_testdriver-platform.o: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-platform.o -MD -MP -MF $(DEPDIR)/networking_testdriver-platform.Tpo -c -o networking_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-platform.Tpo $(DEPDIR)/networking_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='networking_testdriver-platform.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-platform.o `test -f '$(openvpn_srcdir)/platform.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/platform.c
+
+networking_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -MT networking_testdriver-platform.obj -MD -MP -MF $(DEPDIR)/networking_testdriver-platform.Tpo -c -o networking_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/networking_testdriver-platform.Tpo $(DEPDIR)/networking_testdriver-platform.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='networking_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(networking_testdriver_CFLAGS) $(CFLAGS) -c -o networking_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
 
 packet_id_testdriver-test_packet_id.o: test_packet_id.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -MT packet_id_testdriver-test_packet_id.o -MD -MP -MF $(DEPDIR)/packet_id_testdriver-test_packet_id.Tpo -c -o packet_id_testdriver-test_packet_id.o `test -f 'test_packet_id.c' || echo '$(srcdir)/'`test_packet_id.c
@@ -777,6 +1582,20 @@ packet_id_testdriver-mock_msg.obj: mock_msg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_msg.c' object='packet_id_testdriver-mock_msg.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -c -o packet_id_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
+
+packet_id_testdriver-mock_get_random.o: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -MT packet_id_testdriver-mock_get_random.o -MD -MP -MF $(DEPDIR)/packet_id_testdriver-mock_get_random.Tpo -c -o packet_id_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/packet_id_testdriver-mock_get_random.Tpo $(DEPDIR)/packet_id_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='packet_id_testdriver-mock_get_random.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -c -o packet_id_testdriver-mock_get_random.o `test -f 'mock_get_random.c' || echo '$(srcdir)/'`mock_get_random.c
+
+packet_id_testdriver-mock_get_random.obj: mock_get_random.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -MT packet_id_testdriver-mock_get_random.obj -MD -MP -MF $(DEPDIR)/packet_id_testdriver-mock_get_random.Tpo -c -o packet_id_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/packet_id_testdriver-mock_get_random.Tpo $(DEPDIR)/packet_id_testdriver-mock_get_random.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mock_get_random.c' object='packet_id_testdriver-mock_get_random.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -c -o packet_id_testdriver-mock_get_random.obj `if test -f 'mock_get_random.c'; then $(CYGPATH_W) 'mock_get_random.c'; else $(CYGPATH_W) '$(srcdir)/mock_get_random.c'; fi`
 
 packet_id_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(packet_id_testdriver_CFLAGS) $(CFLAGS) -MT packet_id_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/packet_id_testdriver-buffer.Tpo -c -o packet_id_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
@@ -862,6 +1681,34 @@ tls_crypt_testdriver-mock_msg.obj: mock_msg.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-mock_msg.obj `if test -f 'mock_msg.c'; then $(CYGPATH_W) 'mock_msg.c'; else $(CYGPATH_W) '$(srcdir)/mock_msg.c'; fi`
 
+tls_crypt_testdriver-argv.o: $(openvpn_srcdir)/argv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-argv.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-argv.Tpo -c -o tls_crypt_testdriver-argv.o `test -f '$(openvpn_srcdir)/argv.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/argv.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-argv.Tpo $(DEPDIR)/tls_crypt_testdriver-argv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/argv.c' object='tls_crypt_testdriver-argv.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-argv.o `test -f '$(openvpn_srcdir)/argv.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/argv.c
+
+tls_crypt_testdriver-argv.obj: $(openvpn_srcdir)/argv.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-argv.obj -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-argv.Tpo -c -o tls_crypt_testdriver-argv.obj `if test -f '$(openvpn_srcdir)/argv.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/argv.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/argv.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-argv.Tpo $(DEPDIR)/tls_crypt_testdriver-argv.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/argv.c' object='tls_crypt_testdriver-argv.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-argv.obj `if test -f '$(openvpn_srcdir)/argv.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/argv.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/argv.c'; fi`
+
+tls_crypt_testdriver-base64.o: $(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-base64.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-base64.Tpo -c -o tls_crypt_testdriver-base64.o `test -f '$(openvpn_srcdir)/base64.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-base64.Tpo $(DEPDIR)/tls_crypt_testdriver-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/base64.c' object='tls_crypt_testdriver-base64.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-base64.o `test -f '$(openvpn_srcdir)/base64.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/base64.c
+
+tls_crypt_testdriver-base64.obj: $(openvpn_srcdir)/base64.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-base64.obj -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-base64.Tpo -c -o tls_crypt_testdriver-base64.obj `if test -f '$(openvpn_srcdir)/base64.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/base64.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-base64.Tpo $(DEPDIR)/tls_crypt_testdriver-base64.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/base64.c' object='tls_crypt_testdriver-base64.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-base64.obj `if test -f '$(openvpn_srcdir)/base64.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/base64.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/base64.c'; fi`
+
 tls_crypt_testdriver-buffer.o: $(openvpn_srcdir)/buffer.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-buffer.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-buffer.Tpo -c -o tls_crypt_testdriver-buffer.o `test -f '$(openvpn_srcdir)/buffer.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/buffer.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-buffer.Tpo $(DEPDIR)/tls_crypt_testdriver-buffer.Po
@@ -918,6 +1765,20 @@ tls_crypt_testdriver-crypto_openssl.obj: $(openvpn_srcdir)/crypto_openssl.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-crypto_openssl.obj `if test -f '$(openvpn_srcdir)/crypto_openssl.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/crypto_openssl.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/crypto_openssl.c'; fi`
 
+tls_crypt_testdriver-env_set.o: $(openvpn_srcdir)/env_set.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-env_set.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-env_set.Tpo -c -o tls_crypt_testdriver-env_set.o `test -f '$(openvpn_srcdir)/env_set.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/env_set.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-env_set.Tpo $(DEPDIR)/tls_crypt_testdriver-env_set.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/env_set.c' object='tls_crypt_testdriver-env_set.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-env_set.o `test -f '$(openvpn_srcdir)/env_set.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/env_set.c
+
+tls_crypt_testdriver-env_set.obj: $(openvpn_srcdir)/env_set.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-env_set.obj -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-env_set.Tpo -c -o tls_crypt_testdriver-env_set.obj `if test -f '$(openvpn_srcdir)/env_set.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/env_set.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/env_set.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-env_set.Tpo $(DEPDIR)/tls_crypt_testdriver-env_set.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/env_set.c' object='tls_crypt_testdriver-env_set.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-env_set.obj `if test -f '$(openvpn_srcdir)/env_set.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/env_set.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/env_set.c'; fi`
+
 tls_crypt_testdriver-otime.o: $(openvpn_srcdir)/otime.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-otime.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-otime.Tpo -c -o tls_crypt_testdriver-otime.o `test -f '$(openvpn_srcdir)/otime.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/otime.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-otime.Tpo $(DEPDIR)/tls_crypt_testdriver-otime.Po
@@ -959,6 +1820,20 @@ tls_crypt_testdriver-platform.obj: $(openvpn_srcdir)/platform.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/platform.c' object='tls_crypt_testdriver-platform.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-platform.obj `if test -f '$(openvpn_srcdir)/platform.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/platform.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/platform.c'; fi`
+
+tls_crypt_testdriver-run_command.o: $(openvpn_srcdir)/run_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-run_command.o -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-run_command.Tpo -c -o tls_crypt_testdriver-run_command.o `test -f '$(openvpn_srcdir)/run_command.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/run_command.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-run_command.Tpo $(DEPDIR)/tls_crypt_testdriver-run_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/run_command.c' object='tls_crypt_testdriver-run_command.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-run_command.o `test -f '$(openvpn_srcdir)/run_command.c' || echo '$(srcdir)/'`$(openvpn_srcdir)/run_command.c
+
+tls_crypt_testdriver-run_command.obj: $(openvpn_srcdir)/run_command.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -MT tls_crypt_testdriver-run_command.obj -MD -MP -MF $(DEPDIR)/tls_crypt_testdriver-run_command.Tpo -c -o tls_crypt_testdriver-run_command.obj `if test -f '$(openvpn_srcdir)/run_command.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/run_command.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/run_command.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/tls_crypt_testdriver-run_command.Tpo $(DEPDIR)/tls_crypt_testdriver-run_command.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='$(openvpn_srcdir)/run_command.c' object='tls_crypt_testdriver-run_command.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tls_crypt_testdriver_CFLAGS) $(CFLAGS) -c -o tls_crypt_testdriver-run_command.obj `if test -f '$(openvpn_srcdir)/run_command.c'; then $(CYGPATH_W) '$(openvpn_srcdir)/run_command.c'; else $(CYGPATH_W) '$(srcdir)/$(openvpn_srcdir)/run_command.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1188,27 +2063,71 @@ clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
 distclean: distclean-am
 		-rm -f ./$(DEPDIR)/argv_testdriver-argv.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/argv_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-test_argv.Po
-	-rm -f ./$(DEPDIR)/buffer_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-base64.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-test_auth_token.Po
+	-rm -f ./$(DEPDIR)/buffer_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-test_buffer.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-test_crypto.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-test_ncp.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-networking_sitnl.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-test_networking.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/packet_id_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-otime.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-packet_id.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-test_packet_id.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-argv.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-base64.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-buffer.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto_mbedtls.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-env_set.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-otime.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-packet_id.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-run_command.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-test_tls_crypt.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -1257,27 +2176,71 @@ installcheck-am:
 maintainer-clean: maintainer-clean-am
 		-rm -f ./$(DEPDIR)/argv_testdriver-argv.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/argv_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/argv_testdriver-test_argv.Po
-	-rm -f ./$(DEPDIR)/buffer_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-base64.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/auth_token_testdriver-test_auth_token.Po
+	-rm -f ./$(DEPDIR)/buffer_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/buffer_testdriver-test_buffer.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/crypto_testdriver-test_crypto.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/ncp_testdriver-test_ncp.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto_mbedtls.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-mock_msg.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-networking_sitnl.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-otime.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-packet_id.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/networking_testdriver-test_networking.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-buffer.Po
+	-rm -f ./$(DEPDIR)/packet_id_testdriver-mock_get_random.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-otime.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-packet_id.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-platform.Po
 	-rm -f ./$(DEPDIR)/packet_id_testdriver-test_packet_id.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-argv.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-base64.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-buffer.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto_mbedtls.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-crypto_openssl.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-env_set.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-mock_msg.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-otime.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-packet_id.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-platform.Po
+	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-run_command.Po
 	-rm -f ./$(DEPDIR)/tls_crypt_testdriver-test_tls_crypt.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

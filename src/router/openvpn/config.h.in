@@ -21,23 +21,14 @@
 /* Enable async push */
 #undef ENABLE_ASYNC_PUSH
 
-/* Enable client capability only */
-#undef ENABLE_CLIENT_ONLY
-
 /* Enable compression stub capability */
 #undef ENABLE_COMP_STUB
-
-/* Enable crypto library */
-#undef ENABLE_CRYPTO
 
 /* Use mbed TLS library */
 #undef ENABLE_CRYPTO_MBEDTLS
 
 /* Use OpenSSL library */
 #undef ENABLE_CRYPTO_OPENSSL
-
-/* Use wolfSSL crypto library */
-#undef ENABLE_CRYPTO_WOLFSSL
 
 /* Enable debugging support */
 #undef ENABLE_DEBUG
@@ -84,6 +75,9 @@
 /* SELinux support */
 #undef ENABLE_SELINUX
 
+/* enable sitnl support */
+#undef ENABLE_SITNL
+
 /* Enable smaller executable size */
 #undef ENABLE_SMALL
 
@@ -101,9 +95,6 @@
 
 /* Define to 1 if you have the `access' function. */
 #undef HAVE_ACCESS
-
-/* Use crypto library */
-#undef HAVE_AEAD_CIPHER_MODES
 
 /* Compiler supports anonymous unions */
 #undef HAVE_ANONYMOUS_UNION_SUPPORT
@@ -223,9 +214,6 @@
 /* Define to 1 if you have the <err.h> header file. */
 #undef HAVE_ERR_H
 
-/* Define to 1 if you have the `EVP_aes_256_gcm' function. */
-#undef HAVE_EVP_AES_256_GCM
-
 /* Define to 1 if you have the `EVP_CIPHER_CTX_reset' function. */
 #undef HAVE_EVP_CIPHER_CTX_RESET
 
@@ -250,11 +238,11 @@
 /* Define to 1 if you have the `EVP_PKEY_get0_RSA' function. */
 #undef HAVE_EVP_PKEY_GET0_RSA
 
-/* Define to 1 if you have the `EVP_PKEY_id' function. */
-#undef HAVE_EVP_PKEY_ID
-
 /* Define to 1 if you have the `execve' function. */
 #undef HAVE_EXECVE
+
+/* Crypto library supports keying material exporter */
+#undef HAVE_EXPORT_KEYING_MATERIAL
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
@@ -349,9 +337,6 @@
 /* Define to 1 if you have the `lz4' library (-llz4). */
 #undef HAVE_LIBLZ4
 
-/* Define to 1 if you have the `wolfssl' library (-lwolfssl). */
-#undef HAVE_LIBWOLFSSL
-
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -436,8 +421,14 @@
 /* OpenSSL engine support available */
 #undef HAVE_OPENSSL_ENGINE
 
+/* Define to 1 if you have the `OpenSSL_version' function. */
+#undef HAVE_OPENSSL_VERSION
+
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
+
+/* Define to 1 if you have the <poll.h> header file. */
+#undef HAVE_POLL_H
 
 /* Define to 1 if you have the `putenv' function. */
 #undef HAVE_PUTENV
@@ -557,6 +548,9 @@
 /* Define to 1 if you have the `SSL_CTX_new' function. */
 #undef HAVE_SSL_CTX_NEW
 
+/* Define to 1 if you have the `SSL_CTX_set1_groups' function. */
+#undef HAVE_SSL_CTX_SET1_GROUPS
+
 /* Define to 1 if you have the `SSL_CTX_set_security_level' function. */
 #undef HAVE_SSL_CTX_SET_SECURITY_LEVEL
 
@@ -587,6 +581,9 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
+/* Define to 1 if you have the `strsep' function. */
+#undef HAVE_STRSEP
+
 /* Define to 1 if you have the `syslog' function. */
 #undef HAVE_SYSLOG
 
@@ -616,9 +613,6 @@
 
 /* Define to 1 if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H
-
-/* Define to 1 if you have the <sys/poll.h> header file. */
-#undef HAVE_SYS_POLL_H
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H

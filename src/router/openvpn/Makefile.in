@@ -279,7 +279,8 @@ AWK = @AWK@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
-CMAKE = @CMAKE@
+CMOCKA_CFLAGS = @CMOCKA_CFLAGS@
+CMOCKA_LIBS = @CMOCKA_LIBS@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -293,6 +294,7 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+ENABLE_UNITTESTS = @ENABLE_UNITTESTS@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GIT = @GIT@
@@ -320,7 +322,6 @@ LZ4_LIBS = @LZ4_LIBS@
 LZO_CFLAGS = @LZO_CFLAGS@
 LZO_LIBS = @LZO_LIBS@
 MAKEINFO = @MAKEINFO@
-MAN2HTML = @MAN2HTML@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MBEDTLS_CFLAGS = @MBEDTLS_CFLAGS@
 MBEDTLS_LIBS = @MBEDTLS_LIBS@
@@ -371,6 +372,8 @@ PLUGIN_AUTH_PAM_LIBS = @PLUGIN_AUTH_PAM_LIBS@
 RANLIB = @RANLIB@
 RC = @RC@
 ROUTE = @ROUTE@
+RST2HTML = @RST2HTML@
+RST2MAN = @RST2MAN@
 SED = @SED@
 SELINUX_LIBS = @SELINUX_LIBS@
 SET_MAKE = @SET_MAKE@
@@ -445,10 +448,6 @@ tmpfilesdir = @tmpfilesdir@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-# This option prevents autoreconf from overriding our COPYING and
-# INSTALL targets:
-AUTOMAKE_OPTIONS = foreign 1.9
 ACLOCAL_AMFLAGS = -I m4
 MAINTAINERCLEANFILES = \
 	config.log config.status \
@@ -471,7 +470,7 @@ EXTRA_DIST = \
 @GIT_CHECKOUT_TRUE@BUILT_SOURCES = \
 @GIT_CHECKOUT_TRUE@	config-version.h
 
-SUBDIRS = build distro include src sample doc vendor tests
+SUBDIRS = build distro include src sample doc tests
 dist_doc_DATA = \
 	README \
 	README.IPv6 \
@@ -1037,7 +1036,7 @@ uninstall-am: uninstall-dist_docDATA uninstall-rootDATA
 .PRECIOUS: Makefile
 
 
-.PHONY: config-version.h
+.PHONY: config-version.h doxygen
 
 config-version.h:
 	@CONFIGURE_GIT_CHFILES="`GIT_DIR=\"$(top_srcdir)/.git\" $(GIT) diff-files --name-status -r --ignore-submodules --quiet -- || echo \"+\"`"; \
@@ -1052,6 +1051,9 @@ config-version.h:
 	else \
 		rm -f config-version.h.tmp; \
 	fi
+
+doxygen:
+	$(MAKE) -C doc/doxygen doxygen
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
