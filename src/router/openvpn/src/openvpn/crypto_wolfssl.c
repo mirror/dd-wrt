@@ -1271,7 +1271,7 @@ const cipher_kt_t *cipher_ctx_get_cipher_kt(const cipher_ctx_t *ctx)
  * Reset the cipher context to the initial settings used in cipher_ctx_init
  * and set a new IV
  */
-int cipher_ctx_reset(cipher_ctx_t *ctx, uint8_t *iv_buf)
+int cipher_ctx_reset(cipher_ctx_t *ctx, const uint8_t *iv_buf)
 {
     int ret;
     if ((ret = wolfssl_ctx_init(ctx, (uint8_t*) &ctx->key,
@@ -1820,7 +1820,7 @@ const char *md_kt_name(const md_kt_t *kt)
     }
 }
 
-int md_kt_size(const md_kt_t *kt)
+unsigned char md_kt_size(const md_kt_t *kt)
 {
     if (!kt || *kt >= OV_WC_NULL_DIGEST)
     {
