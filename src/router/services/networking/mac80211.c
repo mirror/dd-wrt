@@ -1485,7 +1485,7 @@ static char *makescanlist(char *prefix, char *value)
 	char *new = NULL;
 	struct wifi_channels *chan;
 	char *country;
-	country = nvram_default_get(nvram_safe_get("ath0_regdomain"), "UNITED_STATES");
+	country = nvram_default_get("ath0_regdomain", "UNITED_STATES");
 	chan = mac80211_get_channels_simple(prefix, getIsoName(country), 20, 255);
 /* format list */
 	for (i = 0; i < len; i++) {
@@ -1529,14 +1529,13 @@ static char *makescanlist(char *prefix, char *value)
 			}
 			i = 0;
 			while (chan[i].freq != -1) {
-				if (chan[i].freq > end) {
-					eoffset = i - 1;
-					break;
+				if (chan[i].freq <= end) {
+					eoffset = i;
 				}
 				i++;
 			}
-			if (eoffset > 0 && soffset > 0 && eoffset > soffset) {
-				for (i = soffset; i < eoffset; i++) {
+			if (eoffset > -1 && soffset > -1 && eoffset > soffset) {
+				for (i = soffset; i <= eoffset; i++) {
 					char *old = new;
 					if (!new)
 						asprintf(&new, "%d", chan[i].freq);
