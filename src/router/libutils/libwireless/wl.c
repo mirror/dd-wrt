@@ -81,7 +81,7 @@ int ieee80211_mhz2ieee(int freq)
 	if (freq == 64800)
 		return 4;
 
-	return (freq - 5000) / 5;
+	return ((freq - 5000) / 5) % 0xff;
 }
 
 #ifdef HAVE_MVEBU
