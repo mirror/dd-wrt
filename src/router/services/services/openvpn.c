@@ -60,18 +60,6 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE 2> /dev/null\n"	//
 			"iptables -I POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
-	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT 2> /dev/null\n"	//
-			"iptables -I INPUT -i $dev -j ACCEPT\n");
-	} else {
-		if (nvram_match("openvpncl_tuntap", "tun"))	//only needed with tun
-			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT 2> /dev/null\n"	//
-				"iptables -D FORWARD -i $dev -j ACCEPT 2> /dev/null\n"	//
-				"iptables -D FORWARD -o $dev -j ACCEPT 2> /dev/null\n"	//
-				"iptables -I INPUT -i $dev -j ACCEPT\n"	//
-				"iptables -I FORWARD -i $dev -j ACCEPT\n"	//
-				"iptables -I FORWARD -o $dev -j ACCEPT\n");
-	}
 	if (nvram_match("openvpncl_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP 2> /dev/null\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local$vpn_netmask -j DROP\n");
 	if (nvram_matchi("block_multicast", 0)	//block multicast on bridged vpns, when wan multicast is enabled
@@ -82,9 +70,13 @@ void create_openvpnrules(FILE * fp)
 //                      "ebtables -I OUTPUT -o tap1 --pkttype-type multicast -j DROP\n"
 			"ebtables -t nat -D POSTROUTING -o $dev --pkttype-type multicast -j DROP\n" "ebtables -t nat -I POSTROUTING -o $dev --pkttype-type multicast -j DROP\n");
 	}
-	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP 2> /dev/null\n" "iptables -I INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP 2> /dev/null\n" "iptables -I FORWARD -i $dev -m state --state NEW -j DROP\n");
+	if (nvram_matchi("openvpncl_fw", 0)) {
+		if (nvram_match("openvpncl_tuntap", "tun")) {
+			fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+				"iptables -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
+				"iptables -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
+				"iptables -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+		}
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
 	fprintf(fp, "/tmp/openvpncl_fw.sh\n");
@@ -134,7 +126,6 @@ void create_openvpnserverrules(FILE * fp)
 	if (nvram_match("openvpn_mit", "1"))
 		fprintf(fp, "iptables -t raw -D PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n" "iptables -t raw -I PREROUTING ! -i $dev -d $ifconfig_local/$ifconfig_netmask -j DROP\n");
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpnsrv_fw.sh\n");
-
 	fprintf(fp, "/tmp/openvpnsrv_fw.sh\n");
 }
 
@@ -630,15 +621,10 @@ void start_openvpn(void)
 	if (nvram_matchi("openvpncl_nat", 1)) {
 		fprintf(fp, "iptables -D POSTROUTING -t nat -o $dev -j MASQUERADE\n");
 	}
-	if (nvram_matchi("openvpncl_sec", 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n");
-	} else {
-		if (nvram_match("openvpncl_tuntap", "tun")) 
-			fprintf(fp, "iptables -D INPUT -i $dev -j ACCEPT\n" "iptables -D FORWARD -i $dev -j ACCEPT\n" "iptables -D FORWARD -o $dev -j ACCEPT\n");
-	}
-	if (nvram_default_matchi("openvpncl_fw", 1, 0)) {
-		fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j DROP\n");
-		fprintf(fp, "iptables -D FORWARD -i $dev -m state --state NEW -j DROP\n");
+	if (nvram_matchi("openvpncl_fw", 0)) {
+		if (nvram_match("openvpncl_tuntap", "tun")) {
+			fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j ACCEPT\n" "iptables -D FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+		}
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
@@ -663,7 +649,7 @@ void start_openvpn(void)
                 } */
 	fclose(fp);
 
-	eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");
+	//eval("iptables", "-I", "INPUT", "-p", nvram_match("openvpn_proto", "udp") ? "udp" : "tcp", "--dport", nvram_safe_get("openvpn_port"), "-j", "ACCEPT");  //egc can be removed
 
 	chmod("/tmp/openvpncl/route-up.sh", 0700);
 	chmod("/tmp/openvpncl/route-down.sh", 0700);
