@@ -3061,7 +3061,11 @@ options_postprocess_cipher(struct options *o)
          * to warn here as well */
         if (!o->ciphername)
         {
-            o->ciphername = "BF-CBC";
+#ifdef ENABLE_CRYPTO_WOLFSSL
+	    o->ciphername = "AES-256-CBC";
+#else
+    	    o->ciphername = "BF-CBC";
+#endif
         }
         return;
     }
@@ -3083,7 +3087,11 @@ options_postprocess_cipher(struct options *o)
 
         /* We still need to set the ciphername to BF-CBC since various other
          * parts of OpenVPN assert that the ciphername is set */
-        o->ciphername = "BF-CBC";
+#ifdef ENABLE_CRYPTO_WOLFSSL
+	    o->ciphername = "AES-256-CBC";
+#else
+    	    o->ciphername = "BF-CBC";
+#endif
     }
     else if (!o->enable_ncp_fallback
              && !tls_item_in_cipher_list(o->ciphername, o->ncp_ciphers))

@@ -40,6 +40,9 @@
 #ifdef ENABLE_CRYPTO_MBEDTLS
 #include "ssl_verify_mbedtls.h"
 #endif
+#ifdef ENABLE_CRYPTO_WOLFSSL
+#include "ssl_verify_wolfssl.h"
+#endif
 
 #include "ssl_verify_backend.h"
 
