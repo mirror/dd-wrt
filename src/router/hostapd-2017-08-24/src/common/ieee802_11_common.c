@@ -719,7 +719,7 @@ enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel)
  * @channel: Buffer for returning channel number
  * Returns: hw_mode on success, NUM_HOSTAPD_MODES on failure
  */
-enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
+enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 						   int sec_channel, int vht,
 						   u8 *op_class, u8 *channel)
 {
