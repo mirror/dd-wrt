@@ -704,9 +704,10 @@ int hostapd_config_wmm_ac(struct hostapd_wmm_ac_params wmm_ac_params[],
 enum hostapd_hw_mode ieee80211_freq_to_chan(int freq, u8 *channel)
 {
 	u8 op_class;
-
-	return ieee80211_freq_to_channel_ext(freq, 0, VHT_CHANWIDTH_USE_HT,
+	
+	enum hostapd_hw_mode ret = ieee80211_freq_to_channel_ext(freq, 0, VHT_CHANWIDTH_USE_HT,
 					     &op_class, channel);
+	return ret;
 }
 
 /**
@@ -724,14 +725,15 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 						   u8 *op_class, u8 *channel)
 {
 	u8 vht_opclass;
+	int chan;
+	int fcast = freq;
 
 	/* TODO: more operating classes */
-
 	if (sec_channel > 1 || sec_channel < -1)
 		return NUM_HOSTAPD_MODES;
 
-	if (freq >= 2412 && freq <= 2484) {
-		if ((freq - 2407) % 5)
+	if (fcast >= 2412 && fcast <= 2484) {
+		if ((fcast - 2407) % 5)
 			return NUM_HOSTAPD_MODES;
 
 		if (vht)
@@ -746,12 +748,12 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 81;
 
 
-		*channel = (freq - 2407) / 5;
+		*channel = (fcast - 2407) / 5;
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq == 2484) {
+	if (fcast == 2484) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -761,7 +763,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		return HOSTAPD_MODE_IEEE80211B;
 	}
 
-	if (freq == 2407) {
+	if (fcast == 2407) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -775,11 +777,11 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
-	if (freq < 2412) {
+	if (fcast < 2412) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
-
-		*channel = (freq - 2407) / 5 + 256;
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -789,7 +791,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 81;
 		return HOSTAPD_MODE_IEEE80211G;
 	}
-	if (freq < 2502 && freq > 2484) {
+	if (fcast < 2502 && fcast > 2484) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -803,7 +805,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq < 2512 && freq > 2484) {
+	if (fcast < 2512 && fcast > 2484) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -817,7 +819,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq > 2484 && freq < 4000 ) {
+	if (fcast > 2484 && fcast < 4000 ) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -827,11 +829,11 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 84;
 		else
 			*op_class = 81;
-		*channel = (15 + ((freq - 2512) / 20)) & 0xff;
+		*channel = (15 + ((fcast - 2512) / 20)) & 0xff;
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq > 2484 && freq < 4000) {
+	if (fcast > 2484 && fcast < 4000) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -841,12 +843,12 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 84;
 		else
 			*op_class = 81;
-		*channel = (freq - 2414) / 5;
+		*channel = (fcast - 2414) / 5;
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
-	if (freq < 2412) {
+	if (fcast < 2412) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
@@ -856,34 +858,35 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 84;
 		else
 			*op_class = 81;
-		*channel = (freq - 2407) / 5 + 256;
+		chan = (fcast - 2407) / 5 + 256;
+		*channel = (chan & 0xff);
 
 		return HOSTAPD_MODE_IEEE80211G;
 	}
 
 
 
-	if (freq >= 4940 && freq < 4990) {
-		if ((freq - 4000) % 5)
+	if (fcast >= 4940 && fcast < 4990) {
+		if ((fcast - 4000) % 5)
 			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 4940) * 2 + !!((freq % 5) == 2);
+		*channel = (fcast - 4940) * 2 + !!((fcast % 5) == 2);
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	if (freq >= 4800 && freq < 5005) {
-		if ((freq - 4000) % 5)
+	if (fcast >= 4800 && fcast < 5005) {
+		if ((fcast - 4000) % 5)
 			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 4000) / 5;
+		*channel = (fcast - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 
-	if (freq >= 4900 && freq < 5000) {
-		if ((freq - 4000) % 5)
+	if (fcast >= 4900 && fcast < 5000) {
+		if ((fcast - 4000) % 5)
 			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 4000) / 5;
+		*channel = (fcast - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
@@ -904,8 +907,8 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 	}
 
 	/* 5 GHz, channels 36..48 */
-	if (freq >= 5180 && freq <= 5240) {
-		if ((freq - 5000) % 5)
+	if (fcast >= 5180 && fcast <= 5240) {
+		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
@@ -917,14 +920,14 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 115;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 52..64 */
-	if (freq >= 5260 && freq <= 5320) {
-		if ((freq - 5000) % 5)
+	if (fcast >= 5260 && fcast <= 5320) {
+		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
@@ -936,14 +939,14 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 118;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 149..169 */
-	if (freq >= 5745 && freq <= 5845) {
-		if ((freq - 5000) % 5)
+	if (fcast >= 5745 && fcast <= 5845) {
+		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
@@ -952,19 +955,19 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 			*op_class = 126;
 		else if (sec_channel == -1)
 			*op_class = 127;
-		else if (freq <= 5805)
+		else if (fcast <= 5805)
 			*op_class = 124;
 		else
 			*op_class = 125;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 5 GHz, channels 100..140 */
-	if (freq >= 5000 && freq <= 5700) {
-		if ((freq - 5000) % 5)
+	if (fcast >= 5000 && fcast <= 5700) {
+		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
@@ -976,25 +979,25 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 		else
 			*op_class = 121;
 
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
-	if (freq >= 5000 && freq < 7000) {
-		if ((freq - 5000) % 5)
+	if (fcast >= 5000 && fcast < 7000) {
+		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
-		*channel = (freq - 5000) / 5;
+		*channel = (fcast - 5000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	/* 56.16 GHz, channel 1..4 */
-	if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 4) {
+	if (fcast >= 56160 + 2160 * 1 && fcast <= 56160 + 2160 * 4) {
 		if (sec_channel || vht)
 			return NUM_HOSTAPD_MODES;
 
-		*channel = (freq - 56160) / 2160;
+		*channel = (fcast - 56160) / 2160;
 		*op_class = 180;
 
 		return HOSTAPD_MODE_IEEE80211AD;
