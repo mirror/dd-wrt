@@ -987,7 +987,7 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(unsigned int freq,
 	if (fcast >= 5000 && fcast < 7000) {
 		if ((fcast - 5000) % 5)
 			return NUM_HOSTAPD_MODES;
-		*channel = (fcast - 5000) / 5;
+		*channel = ((fcast - 5000) / 5) & 0xff;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
