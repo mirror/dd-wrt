@@ -562,7 +562,7 @@ tls_ctx_load_priv_file(struct tls_root_ctx *ctx, const char *priv_key_file,
     int key_len;
     ASSERT(ctx != NULL);
 
-    if (priv_key_file_inline)
+    if (priv_key_inline)
     {
         /* Key in memory */
         if ((key_len = strlen(priv_key_file)) == 0)
@@ -611,7 +611,7 @@ tls_ctx_load_ca(struct tls_root_ctx *ctx, const char *ca_file,
 
     ASSERT(ctx != NULL);
 
-    if (ca_file_inline)
+    if (ca_inline)
     {
         /* Certificate in memory */
         if ((ca_len = strlen(ca_file)) == 0)
@@ -650,26 +650,28 @@ tls_ctx_load_ca(struct tls_root_ctx *ctx, const char *ca_file,
     }
 }
 
-void tls_ctx_load_extra_certs(struct tls_root_ctx *ctx,
-        const char *extra_certs_file, const char *extra_certs_file_inline)
+void
+tls_ctx_load_extra_certs(struct tls_root_ctx *ctx, const char *extra_certs_file,
+                         bool extra_certs_inline)
 {
-    tls_ctx_load_ca(ctx, extra_certs_file, extra_certs_file_inline, NULL,
+    tls_ctx_load_ca(ctx, extra_certs_file, extra_certs_inline, NULL,
     false);
 }
 
-void backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ctx,
-        const char *crl_file, const char *crl_inline)
+void
+backend_tls_ctx_reload_crl(struct tls_root_ctx *ssl_ctx, const char *crl_file,
+                           bool crl_inline)
 {
     int ret, len;
-    if (!strcmp(crl_file, INLINE_FILE_TAG) && crl_inline)
+    if (crl_inline)
     {
         /* CRL in memory */
-        if ((len = strlen(crl_inline)) == 0)
+        if ((len = strlen(crl_file)) == 0)
         {
             msg(M_FATAL, "Empty CRL passed.");
         }
         if ((ret = wolfSSL_CTX_LoadCRLBuffer(ssl_ctx->ctx,
-                (unsigned char*) crl_inline, len, SSL_FILETYPE_PEM))
+                (unsigned char*) crl_file, len, SSL_FILETYPE_PEM))
                 != SSL_SUCCESS)
         {
             msg(M_FATAL, "wolfSSL_CTX_LoadCRLBuffer failed with Errno: %d",

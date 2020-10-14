@@ -75,7 +75,7 @@ void crypto_init_lib_engine(const char *engine_name)
 {
     msg(M_INFO, "Note: wolfSSL does not have an engine");
 }
-
+#if 0
 void
 print_cipher(const cipher_kt_t *cipher)
 {
@@ -102,7 +102,22 @@ print_cipher(const cipher_kt_t *cipher)
 
     printf(")\n");
 }
+#endif
 
+int
+memcmp_constant_time(const void *a, const void *b, size_t size)
+{
+    const uint8_t *a1 = a;
+    const uint8_t *b1 = b;
+    int ret = 0;
+    size_t i;
+
+    for (i = 0; i < size; i++) {
+        ret |= *a1++ ^ *b1++;
+    }
+
+    return ret;
+}
 
 void show_available_ciphers(void)
 {
