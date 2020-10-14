@@ -78,8 +78,8 @@ CONFIGURE_ARGS_WOLFSSL += \
 
 ifeq ($(ARCHITECTURE),broadcom)
 ifneq ($(CONFIG_BCMMODERN),y)
-CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=no
-CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=no
+CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=no --enable-iproute2
+CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=no  --enable-iproute2
 else
 CONFIGURE_ARGS_OVPN += ac_cv_func_epoll_create=yes
 CONFIGURE_ARGS_WOLFSSL += ac_cv_func_epoll_create=yes
