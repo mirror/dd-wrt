@@ -3901,6 +3901,19 @@ zfs_rename_check(znode_t *szp, znode_t *sdzp, znode_t *tdzp)
 	return (error);
 }
 
+#if	__FreeBSD_version < 1300110
+static void
+cache_rename(struct vnode *fdvp, struct vnode *fvp, struct vnode *tdvp,
+    struct vnode *tvp, struct componentname *fcnp, struct componentname *tcnp)
+{
+
+	cache_purge(fvp);
+	if (tvp != NULL)
+		cache_purge(tvp);
+	cache_purge_negative(tdvp);
+}
+#endif
+
 /*
  * Move an entry from the provided source directory to the target
  * directory.  Change the entry name as indicated.
@@ -4159,10 +4172,7 @@ zfs_rename_(vnode_t *sdvp, vnode_t **svpp, struct componentname *scnp,
 			}
 		}
 		if (error == 0) {
-			cache_purge(*svpp);
-			if (*tvpp != NULL)
-				cache_purge(*tvpp);
-			cache_purge_negative(tdvp);
+			cache_rename(sdvp, *svpp, tdvp, *tvpp, scnp, tcnp);
 		}
 	}
 
@@ -4734,6 +4744,8 @@ static int
 zfs_pathconf(vnode_t *vp, int cmd, ulong_t *valp, cred_t *cr,
     caller_context_t *ct)
 {
+	znode_t *zp;
+	zfsvfs_t *zfsvfs;
 
 	switch (cmd) {
 	case _PC_LINK_MAX:
@@ -4747,11 +4759,25 @@ zfs_pathconf(vnode_t *vp, int cmd, ulong_t *valp, cred_t *cr,
 		*valp = (int)SPA_MINBLOCKSIZE;
 		return (0);
 	case _PC_ACL_EXTENDED:
+#if 0		/* POSIX ACLs are not implemented for ZFS on FreeBSD yet. */
+		zp = VTOZ(vp);
+		zfsvfs = zp->z_zfsvfs;
+		ZFS_ENTER(zfsvfs);
+		ZFS_VERIFY_ZP(zp);
+		*valp = zfsvfs->z_acl_type == ZFSACLTYPE_POSIX ? 1 : 0;
+		ZFS_EXIT(zfsvfs);
+#else
 		*valp = 0;
+#endif
 		return (0);
 
 	case _PC_ACL_NFS4:
-		*valp = 1;
+		zp = VTOZ(vp);
+		zfsvfs = zp->z_zfsvfs;
+		ZFS_ENTER(zfsvfs);
+		ZFS_VERIFY_ZP(zp);
+		*valp = zfsvfs->z_acl_type == ZFS_ACLTYPE_NFSV4 ? 1 : 0;
+		ZFS_EXIT(zfsvfs);
 		return (0);
 
 	case _PC_ACL_PATH_MAX:
