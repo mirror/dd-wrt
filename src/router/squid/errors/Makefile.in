@@ -179,8 +179,8 @@ am__can_run_installinfo = \
     *) (install-info --version) >/dev/null 2>&1;; \
   esac
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/language.list \
-	$(srcdir)/template.list
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/language.am \
+	$(srcdir)/template.am
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ADAPTATION_LIBS = @ADAPTATION_LIBS@
@@ -460,7 +460,7 @@ ERROR_TEMPLATES = \
     templates/ERR_UNSUP_REQ \
     templates/ERR_URN_RESOLVE \
     templates/ERR_WRITE_ERROR \
-    templates/ERR_ZERO_SIZE_OBJECT 
+    templates/ERR_ZERO_SIZE_OBJECT
 
 TRANSLATE_LANGUAGES = \
     af.lang \
@@ -507,14 +507,14 @@ TRANSLATE_LANGUAGES = \
     uz.lang \
     vi.lang \
     zh-hans.lang \
-    zh-hant.lang 
+    zh-hant.lang
 
 CLEANFILES = $(TRANSLATE_LANGUAGES) translate-warn
 EXTRA_DIST = \
 	$(ERROR_TEMPLATES) \
 	templates/error-details.txt \
-	language.list \
-	template.list \
+	language.am \
+	template.am \
 	aliases alias-link.sh alias-upgrade errorpage.css TRANSLATORS COPYRIGHT
 
 NOTIDY = `$(PO2HTML) --help | grep -o "\-\-notidy"`
@@ -522,7 +522,7 @@ all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .lang .po
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/template.list $(srcdir)/language.list $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/template.am $(srcdir)/language.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -542,7 +542,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(srcdir)/template.list $(srcdir)/language.list $(am__empty):
+$(srcdir)/template.am $(srcdir)/language.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh

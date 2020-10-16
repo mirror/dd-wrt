@@ -1,4 +1,4 @@
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <meta type="copyright" content="Copyright (C) 1996-2020 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -17,26 +17,33 @@ body
 </div>
 <hr>
 
-<div id="content"> <blockquote id="error">
+<div id="content">
+<blockquote id="error">
 <p>Необходимо произвести настройку вашего браузера для использования этой сети</p>
 </blockquote>
 
 <p>Эти настройки в вашем браузере:</p>
 
-<div id="firefox"> For Firefox browsers go to: <ul>
-<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Инструменты -&gt; Опции -&gt; Дополнительно -&gt; Сеть -&gt; Настойки соединения</li>
 <li>In the HTTP proxy box type the proxy name %h and port %b.</li>
 </ul>
 </div>
 
-<div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Инструменты -&gt; Настройки интернета -&gt; Соединения -&gt; Настройки LAN -&gt; Прокси</li>
 <li>In the HTTP proxy box type the proxy name %h and port %b.</li>
 </ul>
 </div>
 
-<div id="opera"> For Opera browsers go to: <ul>
-<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Инструменты -&gt; Настройки -&gt; Дополнительно -&gt; Сеть -&gt; Прокси-серверы</li>
 <li>In the HTTP proxy box type the proxy name %h and port %b.</li>
 </ul>
 </div>

@@ -167,10 +167,13 @@ CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(man1dir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_squidclient_OBJECTS = gssapi_support.$(OBJEXT) Ping.$(OBJEXT) \
-	squidclient.$(OBJEXT) stub_debug.$(OBJEXT) \
-	test_tools.$(OBJEXT) stub_libmem.$(OBJEXT) time.$(OBJEXT) \
+	squidclient.$(OBJEXT) test_tools.$(OBJEXT) time.$(OBJEXT) \
 	Transport.$(OBJEXT)
-squidclient_OBJECTS = $(am_squidclient_OBJECTS)
+am__dirstamp = $(am__leading_dot)dirstamp
+nodist_squidclient_OBJECTS = tests/stub_debug.$(OBJEXT) \
+	tests/stub_libmem.$(OBJEXT)
+squidclient_OBJECTS = $(am_squidclient_OBJECTS) \
+	$(nodist_squidclient_OBJECTS)
 squidclient_LDADD = $(LDADD)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
 am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
@@ -203,8 +206,8 @@ depcomp = $(SHELL) $(top_srcdir)/cfgaux/depcomp
 am__maybe_remake_depfiles = depfiles
 am__depfiles_remade = ./$(DEPDIR)/Ping.Po ./$(DEPDIR)/Transport.Po \
 	./$(DEPDIR)/gssapi_support.Po ./$(DEPDIR)/squidclient.Po \
-	./$(DEPDIR)/stub_debug.Po ./$(DEPDIR)/stub_libmem.Po \
-	./$(DEPDIR)/test_tools.Po ./$(DEPDIR)/time.Po
+	./$(DEPDIR)/test_tools.Po ./$(DEPDIR)/time.Po \
+	tests/$(DEPDIR)/stub_debug.Po tests/$(DEPDIR)/stub_libmem.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -242,7 +245,7 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(squidclient_SOURCES)
+SOURCES = $(squidclient_SOURCES) $(nodist_squidclient_SOURCES)
 DIST_SOURCES = $(squidclient_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
@@ -777,7 +780,8 @@ DEFAULT_ICON_DIR = $(datadir)/icons
 DEFAULT_ERROR_DIR = $(datadir)/errors
 AM_CFLAGS = $(SQUID_CFLAGS)
 AM_CXXFLAGS = $(SQUID_CXXFLAGS)
-CLEANFILES = test_tools.cc stub_debug.cc time.cc stub_libmem.cc STUB.h
+CLEANFILES = test_tools.cc tests/stub_debug.cc time.cc \
+	tests/stub_libmem.cc tests/STUB.h
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
@@ -823,13 +827,15 @@ squidclient_SOURCES = \
 	Ping.cc \
 	Ping.h \
 	squidclient.cc \
-	stub_debug.cc \
 	test_tools.cc \
-	stub_libmem.cc \
-	STUB.h \
 	time.cc \
 	Transport.cc \
 	Transport.h
+
+nodist_squidclient_SOURCES = \
+	tests/stub_debug.cc \
+	tests/stub_libmem.cc \
+	tests/STUB.h
 
 all: all-recursive
 
@@ -923,6 +929,16 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_debug.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_libmem.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 
 squidclient$(EXEEXT): $(squidclient_OBJECTS) $(squidclient_DEPENDENCIES) $(EXTRA_squidclient_DEPENDENCIES) 
 	@rm -f squidclient$(EXEEXT)
@@ -930,6 +946,7 @@ squidclient$(EXEEXT): $(squidclient_OBJECTS) $(squidclient_DEPENDENCIES) $(EXTRA
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -938,10 +955,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Transport.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gssapi_support.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/squidclient.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_debug.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_debug.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1375,6 +1392,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
@@ -1390,10 +1409,10 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/Transport.Po
 	-rm -f ./$(DEPDIR)/gssapi_support.Po
 	-rm -f ./$(DEPDIR)/squidclient.Po
-	-rm -f ./$(DEPDIR)/stub_debug.Po
-	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/test_tools.Po
 	-rm -f ./$(DEPDIR)/time.Po
+	-rm -f tests/$(DEPDIR)/stub_debug.Po
+	-rm -f tests/$(DEPDIR)/stub_libmem.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1443,10 +1462,10 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/Transport.Po
 	-rm -f ./$(DEPDIR)/gssapi_support.Po
 	-rm -f ./$(DEPDIR)/squidclient.Po
-	-rm -f ./$(DEPDIR)/stub_debug.Po
-	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/test_tools.Po
 	-rm -f ./$(DEPDIR)/time.Po
+	-rm -f tests/$(DEPDIR)/stub_debug.Po
+	-rm -f tests/$(DEPDIR)/stub_libmem.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1495,16 +1514,16 @@ $(OBJS): $(top_srcdir)/include/version.h $(top_builddir)/include/autoconf.h
 test_tools.cc: $(top_srcdir)/test-suite/test_tools.cc
 	cp $(top_srcdir)/test-suite/test_tools.cc $@
 
-stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
+tests/stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
 	cp $(top_srcdir)/src/tests/stub_debug.cc $@
 
 time.cc: $(top_srcdir)/src/time.cc
 	cp $(top_srcdir)/src/time.cc $@
 
-stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
+tests/stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc
 	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
 
-STUB.h: $(top_srcdir)/src/tests/STUB.h
+tests/STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

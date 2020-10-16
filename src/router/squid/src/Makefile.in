@@ -282,23 +282,24 @@ am__squid_SOURCES_DIST = AclRegs.cc AuthReg.cc AccessLogEntry.cc \
 	fqdncache.h fqdncache.cc FwdState.cc FwdState.h Generic.h \
 	globals.h gopher.h gopher.cc HappyConnOpener.cc \
 	HappyConnOpener.h helper.cc helper.h hier_code.h \
-	HierarchyLogEntry.h htcp.cc htcp.h http.cc http.h \
-	HttpHeaderFieldStat.h HttpHdrCc.h HttpHdrCc.cc HttpHdrRange.cc \
-	HttpHdrSc.cc HttpHdrSc.h HttpHdrScTarget.cc HttpHdrScTarget.h \
-	HttpHdrContRange.cc HttpHdrContRange.h HttpHeaderStat.h \
-	HttpHeader.h HttpHeader.cc HttpHeaderMask.h HttpHeaderRange.h \
-	HttpHeaderFieldInfo.h HttpHeaderTools.h HttpHeaderTools.cc \
-	HttpBody.h HttpBody.cc HttpControlMsg.cc HttpControlMsg.h \
-	HttpReply.cc HttpReply.h RequestFlags.h RequestFlags.cc \
-	HttpRequest.cc HttpRequest.h ICP.h icp_opcode.h icp_v2.cc \
-	icp_v3.cc Instance.h Instance.cc int.h int.cc internal.h \
-	internal.cc SquidIpc.h ipc.cc ipc_win32.cc ipcache.cc \
-	ipcache.h LeakFinder.cc LogTags.cc LogTags.h lookup_t.h \
-	main.cc MasterXaction.cc MasterXaction.h mem_node.cc \
-	mem_node.h MemBuf.cc MemObject.cc MemObject.h MessageSizes.h \
-	mime.h mime.cc mime_header.h mime_header.cc multicast.h \
-	multicast.cc neighbors.h neighbors.cc Notes.h Notes.cc \
-	Parsing.cc Parsing.h ProfStats.cc pconn.cc pconn.h \
+	HierarchyLogEntry.h htcp.cc htcp.h \
+	HttpUpgradeProtocolAccess.cc HttpUpgradeProtocolAccess.h \
+	http.cc http.h HttpHeaderFieldStat.h HttpHdrCc.h HttpHdrCc.cc \
+	HttpHdrRange.cc HttpHdrSc.cc HttpHdrSc.h HttpHdrScTarget.cc \
+	HttpHdrScTarget.h HttpHdrContRange.cc HttpHdrContRange.h \
+	HttpHeaderStat.h HttpHeader.h HttpHeader.cc HttpHeaderMask.h \
+	HttpHeaderRange.h HttpHeaderFieldInfo.h HttpHeaderTools.h \
+	HttpHeaderTools.cc HttpBody.h HttpBody.cc HttpControlMsg.cc \
+	HttpControlMsg.h HttpReply.cc HttpReply.h RequestFlags.h \
+	RequestFlags.cc HttpRequest.cc HttpRequest.h ICP.h \
+	icp_opcode.h icp_v2.cc icp_v3.cc Instance.h Instance.cc int.h \
+	int.cc internal.h internal.cc SquidIpc.h ipc.cc ipc_win32.cc \
+	ipcache.cc ipcache.h LeakFinder.cc LogTags.cc LogTags.h \
+	lookup_t.h main.cc MasterXaction.cc MasterXaction.h \
+	mem_node.cc mem_node.h MemBuf.cc MemObject.cc MemObject.h \
+	MessageSizes.h mime.h mime.cc mime_header.h mime_header.cc \
+	multicast.h multicast.cc neighbors.h neighbors.cc Notes.h \
+	Notes.cc Parsing.cc Parsing.h ProfStats.cc pconn.cc pconn.h \
 	PeerDigest.h peer_digest.cc peer_proxy_negotiate_auth.h \
 	peer_proxy_negotiate_auth.cc peer_select.cc peer_sourcehash.h \
 	peer_sourcehash.cc peer_userhash.h peer_userhash.cc \
@@ -373,29 +374,30 @@ am_squid_OBJECTS = $(am__objects_1) AccessLogEntry.$(OBJEXT) \
 	fatal.$(OBJEXT) fd.$(OBJEXT) fde.$(OBJEXT) filemap.$(OBJEXT) \
 	fqdncache.$(OBJEXT) FwdState.$(OBJEXT) gopher.$(OBJEXT) \
 	HappyConnOpener.$(OBJEXT) helper.$(OBJEXT) $(am__objects_5) \
-	http.$(OBJEXT) HttpHdrCc.$(OBJEXT) HttpHdrRange.$(OBJEXT) \
-	HttpHdrSc.$(OBJEXT) HttpHdrScTarget.$(OBJEXT) \
-	HttpHdrContRange.$(OBJEXT) HttpHeader.$(OBJEXT) \
-	HttpHeaderTools.$(OBJEXT) HttpBody.$(OBJEXT) \
-	HttpControlMsg.$(OBJEXT) HttpReply.$(OBJEXT) \
-	RequestFlags.$(OBJEXT) HttpRequest.$(OBJEXT) icp_v2.$(OBJEXT) \
-	icp_v3.$(OBJEXT) Instance.$(OBJEXT) int.$(OBJEXT) \
-	internal.$(OBJEXT) $(am__objects_6) ipcache.$(OBJEXT) \
-	$(am__objects_7) LogTags.$(OBJEXT) main.$(OBJEXT) \
-	MasterXaction.$(OBJEXT) mem_node.$(OBJEXT) MemBuf.$(OBJEXT) \
-	MemObject.$(OBJEXT) mime.$(OBJEXT) mime_header.$(OBJEXT) \
-	multicast.$(OBJEXT) neighbors.$(OBJEXT) Notes.$(OBJEXT) \
-	Parsing.$(OBJEXT) $(am__objects_8) pconn.$(OBJEXT) \
-	peer_digest.$(OBJEXT) peer_proxy_negotiate_auth.$(OBJEXT) \
-	peer_select.$(OBJEXT) peer_sourcehash.$(OBJEXT) \
-	peer_userhash.$(OBJEXT) PeerPoolMgr.$(OBJEXT) \
-	Pipeline.$(OBJEXT) redirect.$(OBJEXT) refresh.$(OBJEXT) \
-	RemovalPolicy.$(OBJEXT) ResolvedPeers.$(OBJEXT) \
-	send-announce.$(OBJEXT) SBufStatsAction.$(OBJEXT) \
-	$(am__objects_10) SquidMath.$(OBJEXT) SquidNew.$(OBJEXT) \
-	stat.$(OBJEXT) StatCounters.$(OBJEXT) StatHist.$(OBJEXT) \
-	String.$(OBJEXT) StrList.$(OBJEXT) stmem.$(OBJEXT) \
-	store.$(OBJEXT) StoreFileSystem.$(OBJEXT) store_io.$(OBJEXT) \
+	HttpUpgradeProtocolAccess.$(OBJEXT) http.$(OBJEXT) \
+	HttpHdrCc.$(OBJEXT) HttpHdrRange.$(OBJEXT) HttpHdrSc.$(OBJEXT) \
+	HttpHdrScTarget.$(OBJEXT) HttpHdrContRange.$(OBJEXT) \
+	HttpHeader.$(OBJEXT) HttpHeaderTools.$(OBJEXT) \
+	HttpBody.$(OBJEXT) HttpControlMsg.$(OBJEXT) \
+	HttpReply.$(OBJEXT) RequestFlags.$(OBJEXT) \
+	HttpRequest.$(OBJEXT) icp_v2.$(OBJEXT) icp_v3.$(OBJEXT) \
+	Instance.$(OBJEXT) int.$(OBJEXT) internal.$(OBJEXT) \
+	$(am__objects_6) ipcache.$(OBJEXT) $(am__objects_7) \
+	LogTags.$(OBJEXT) main.$(OBJEXT) MasterXaction.$(OBJEXT) \
+	mem_node.$(OBJEXT) MemBuf.$(OBJEXT) MemObject.$(OBJEXT) \
+	mime.$(OBJEXT) mime_header.$(OBJEXT) multicast.$(OBJEXT) \
+	neighbors.$(OBJEXT) Notes.$(OBJEXT) Parsing.$(OBJEXT) \
+	$(am__objects_8) pconn.$(OBJEXT) peer_digest.$(OBJEXT) \
+	peer_proxy_negotiate_auth.$(OBJEXT) peer_select.$(OBJEXT) \
+	peer_sourcehash.$(OBJEXT) peer_userhash.$(OBJEXT) \
+	PeerPoolMgr.$(OBJEXT) Pipeline.$(OBJEXT) redirect.$(OBJEXT) \
+	refresh.$(OBJEXT) RemovalPolicy.$(OBJEXT) \
+	ResolvedPeers.$(OBJEXT) send-announce.$(OBJEXT) \
+	SBufStatsAction.$(OBJEXT) $(am__objects_10) \
+	SquidMath.$(OBJEXT) SquidNew.$(OBJEXT) stat.$(OBJEXT) \
+	StatCounters.$(OBJEXT) StatHist.$(OBJEXT) String.$(OBJEXT) \
+	StrList.$(OBJEXT) stmem.$(OBJEXT) store.$(OBJEXT) \
+	StoreFileSystem.$(OBJEXT) store_io.$(OBJEXT) \
 	StoreIOState.$(OBJEXT) store_client.$(OBJEXT) \
 	store_digest.$(OBJEXT) store_key_md5.$(OBJEXT) \
 	store_log.$(OBJEXT) store_rebuild.$(OBJEXT) \
@@ -514,8 +516,8 @@ am__tests_testCacheManager_SOURCES_DIST = AccessLogEntry.cc debug.cc \
 	tests/stub_main_cc.cc tests/stub_HttpControlMsg.cc \
 	tests/stub_ipc_Forwarder.cc tests/stub_store_stats.cc \
 	tests/stub_EventLoop.cc time.cc BodyPipe.cc cache_manager.cc \
-	cache_cf.h AuthReg.h RefreshPattern.h cache_cf.cc CachePeer.cc \
-	CachePeer.h CacheDigest.h tests/stub_CacheDigest.cc carp.h \
+	cache_cf.h AuthReg.h RefreshPattern.h CachePeer.cc CachePeer.h \
+	CacheDigest.h tests/stub_CacheDigest.cc carp.h \
 	tests/stub_carp.cc cbdata.cc tests/stub_client_db.cc \
 	client_side.h client_side.cc client_side_reply.cc \
 	client_side_request.cc ClientInfo.h clientStream.cc \
@@ -565,6 +567,7 @@ am__tests_testCacheManager_SOURCES_DIST = AccessLogEntry.cc debug.cc \
 	store_swapmeta.cc store_swapout.cc StoreFileSystem.cc \
 	StoreIOState.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
 	StoreSwapLogData.cc tools.h tools.cc Transients.cc \
+	tests/stub_cache_cf.cc tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_tunnel.cc tests/stub_libstore.cc MemStore.cc \
 	unlinkd.h unlinkd.cc urn.h urn.cc wccp2.h tests/stub_wccp2.cc \
 	whois.h tests/stub_whois.cc FadingCounter.cc win32.cc \
@@ -577,12 +580,11 @@ am_tests_testCacheManager_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	tests/stub_ipc_Forwarder.$(OBJEXT) \
 	tests/stub_store_stats.$(OBJEXT) \
 	tests/stub_EventLoop.$(OBJEXT) time.$(OBJEXT) \
-	BodyPipe.$(OBJEXT) cache_manager.$(OBJEXT) cache_cf.$(OBJEXT) \
-	CachePeer.$(OBJEXT) tests/stub_CacheDigest.$(OBJEXT) \
-	tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
-	tests/stub_client_db.$(OBJEXT) client_side.$(OBJEXT) \
-	client_side_reply.$(OBJEXT) client_side_request.$(OBJEXT) \
-	clientStream.$(OBJEXT) \
+	BodyPipe.$(OBJEXT) cache_manager.$(OBJEXT) CachePeer.$(OBJEXT) \
+	tests/stub_CacheDigest.$(OBJEXT) tests/stub_carp.$(OBJEXT) \
+	cbdata.$(OBJEXT) tests/stub_client_db.$(OBJEXT) \
+	client_side.$(OBJEXT) client_side_reply.$(OBJEXT) \
+	client_side_request.$(OBJEXT) clientStream.$(OBJEXT) \
 	tests/stub_CollapsedForwarding.$(OBJEXT) \
 	ConfigOption.$(OBJEXT) ConfigParser.$(OBJEXT) \
 	CpuAffinityMap.$(OBJEXT) CpuAffinitySet.$(OBJEXT) \
@@ -623,11 +625,12 @@ am_tests_testCacheManager_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	StoreFileSystem.$(OBJEXT) StoreIOState.$(OBJEXT) \
 	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) tools.$(OBJEXT) \
-	Transients.$(OBJEXT) tests/stub_tunnel.$(OBJEXT) \
-	tests/stub_libstore.$(OBJEXT) MemStore.$(OBJEXT) \
-	$(am__objects_12) urn.$(OBJEXT) tests/stub_wccp2.$(OBJEXT) \
-	tests/stub_whois.$(OBJEXT) FadingCounter.$(OBJEXT) \
-	$(am__objects_13) wordlist.$(OBJEXT)
+	Transients.$(OBJEXT) tests/stub_cache_cf.$(OBJEXT) \
+	tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT) \
+	tests/stub_tunnel.$(OBJEXT) tests/stub_libstore.$(OBJEXT) \
+	MemStore.$(OBJEXT) $(am__objects_12) urn.$(OBJEXT) \
+	tests/stub_wccp2.$(OBJEXT) tests/stub_whois.$(OBJEXT) \
+	FadingCounter.$(OBJEXT) $(am__objects_13) wordlist.$(OBJEXT)
 nodist_tests_testCacheManager_OBJECTS = $(am__objects_17)
 tests_testCacheManager_OBJECTS = $(am_tests_testCacheManager_OBJECTS) \
 	$(nodist_tests_testCacheManager_OBJECTS)
@@ -828,36 +831,36 @@ tests_testEnumIterator_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(LDFLAGS) -o $@
 am__tests_testEvent_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	CacheDigest.h tests/stub_CacheDigest.cc cache_cf.h AuthReg.h \
-	RefreshPattern.h cache_cf.cc CachePeer.cc CachePeer.h \
-	cache_manager.cc carp.h tests/stub_carp.cc cbdata.cc \
-	tests/stub_client_db.cc client_side.h client_side.cc \
-	client_side_reply.cc client_side_request.cc ClientInfo.h \
-	clientStream.cc tests/stub_CollapsedForwarding.cc \
-	ConfigOption.cc ConfigParser.cc CpuAffinityMap.cc \
-	CpuAffinityMap.h CpuAffinitySet.cc CpuAffinitySet.h debug.cc \
-	BandwidthBucket.cc BandwidthBucket.h CommonPool.h \
-	CompositePoolNode.h delay_pools.cc DelayId.cc DelayId.h \
-	DelayIdComposite.h DelayBucket.cc DelayBucket.h DelayConfig.cc \
-	DelayConfig.h DelayPool.cc DelayPool.h DelayPools.h \
-	DelaySpec.cc DelaySpec.h DelayTagged.cc DelayTagged.h \
-	DelayUser.cc DelayUser.h DelayVector.cc DelayVector.h \
-	MessageBucket.cc MessageBucket.h MessageDelayPools.h \
-	MessageDelayPools.cc NullDelayId.h ClientDelayConfig.cc \
-	ClientDelayConfig.h fs_io.h fs_io.cc dlink.h dlink.cc \
-	dns_internal.cc errorpage.cc tests/stub_ETag.cc event.cc \
-	EventLoop.h EventLoop.cc external_acl.cc ExternalACLEntry.cc \
-	FadingCounter.cc fatal.h tests/stub_fatal.cc fd.h fd.cc fde.cc \
-	FileMap.h filemap.cc fqdncache.h fqdncache.cc FwdState.cc \
-	FwdState.h gopher.h tests/stub_gopher.cc HappyConnOpener.cc \
-	HappyConnOpener.h helper.cc hier_code.h htcp.cc htcp.h http.cc \
-	HttpBody.h HttpBody.cc tests/stub_HttpControlMsg.cc \
-	HttpHeader.h HttpHeader.cc HttpHeaderFieldInfo.h \
-	HttpHeaderTools.h HttpHeaderTools.cc HttpHeaderFieldStat.h \
-	HttpHdrCc.h HttpHdrCc.cc HttpHdrContRange.cc HttpHdrRange.cc \
-	HttpHdrSc.cc HttpHdrScTarget.cc HttpReply.cc PeerPoolMgr.h \
-	PeerPoolMgr.cc RequestFlags.h RequestFlags.cc HttpRequest.cc \
-	icp_v2.cc icp_v3.cc SquidIpc.h ipc.cc ipc_win32.cc ipcache.cc \
-	int.h int.cc internal.h internal.cc LogTags.cc \
+	RefreshPattern.h CachePeer.cc CachePeer.h cache_manager.cc \
+	carp.h tests/stub_carp.cc cbdata.cc tests/stub_client_db.cc \
+	client_side.h client_side.cc client_side_reply.cc \
+	client_side_request.cc ClientInfo.h clientStream.cc \
+	tests/stub_CollapsedForwarding.cc ConfigOption.cc \
+	ConfigParser.cc CpuAffinityMap.cc CpuAffinityMap.h \
+	CpuAffinitySet.cc CpuAffinitySet.h debug.cc BandwidthBucket.cc \
+	BandwidthBucket.h CommonPool.h CompositePoolNode.h \
+	delay_pools.cc DelayId.cc DelayId.h DelayIdComposite.h \
+	DelayBucket.cc DelayBucket.h DelayConfig.cc DelayConfig.h \
+	DelayPool.cc DelayPool.h DelayPools.h DelaySpec.cc DelaySpec.h \
+	DelayTagged.cc DelayTagged.h DelayUser.cc DelayUser.h \
+	DelayVector.cc DelayVector.h MessageBucket.cc MessageBucket.h \
+	MessageDelayPools.h MessageDelayPools.cc NullDelayId.h \
+	ClientDelayConfig.cc ClientDelayConfig.h fs_io.h fs_io.cc \
+	dlink.h dlink.cc dns_internal.cc errorpage.cc \
+	tests/stub_ETag.cc event.cc EventLoop.h EventLoop.cc \
+	external_acl.cc ExternalACLEntry.cc FadingCounter.cc fatal.h \
+	tests/stub_fatal.cc fd.h fd.cc fde.cc FileMap.h filemap.cc \
+	fqdncache.h fqdncache.cc FwdState.cc FwdState.h gopher.h \
+	tests/stub_gopher.cc HappyConnOpener.cc HappyConnOpener.h \
+	helper.cc hier_code.h htcp.cc htcp.h http.cc HttpBody.h \
+	HttpBody.cc tests/stub_HttpControlMsg.cc HttpHeader.h \
+	HttpHeader.cc HttpHeaderFieldInfo.h HttpHeaderTools.h \
+	HttpHeaderTools.cc HttpHeaderFieldStat.h HttpHdrCc.h \
+	HttpHdrCc.cc HttpHdrContRange.cc HttpHdrRange.cc HttpHdrSc.cc \
+	HttpHdrScTarget.cc HttpReply.cc PeerPoolMgr.h PeerPoolMgr.cc \
+	RequestFlags.h RequestFlags.cc HttpRequest.cc icp_v2.cc \
+	icp_v3.cc SquidIpc.h ipc.cc ipc_win32.cc ipcache.cc int.h \
+	int.cc internal.h internal.cc LogTags.cc \
 	tests/stub_libsecurity.cc MasterXaction.cc MasterXaction.h \
 	tests/stub_libmem.cc mem_node.cc MemBuf.cc MemObject.cc mime.h \
 	mime.cc mime_header.h mime_header.cc multicast.h multicast.cc \
@@ -878,7 +881,8 @@ am__tests_testEvent_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	store_rebuild.cc store_swapin.h store_swapin.cc \
 	store_swapmeta.cc store_swapout.cc StoreFileSystem.cc \
 	StoreIOState.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
-	StoreSwapLogData.cc String.cc tests/stub_libstore.cc \
+	StoreSwapLogData.cc String.cc tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc tests/stub_libstore.cc \
 	tests/CapturingStoreEntry.h tests/testEvent.cc \
 	tests/testEvent.h tests/stub_main_cc.cc \
 	tests/stub_ipc_Forwarder.cc tests/stub_libauth_acls.cc \
@@ -889,7 +893,7 @@ am__tests_testEvent_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	whois.h tests/stub_whois.cc win32.cc wordlist.h wordlist.cc
 am_tests_testEvent_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	BodyPipe.$(OBJEXT) tests/stub_CacheDigest.$(OBJEXT) \
-	cache_cf.$(OBJEXT) CachePeer.$(OBJEXT) cache_manager.$(OBJEXT) \
+	CachePeer.$(OBJEXT) cache_manager.$(OBJEXT) \
 	tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
 	tests/stub_client_db.$(OBJEXT) client_side.$(OBJEXT) \
 	client_side_reply.$(OBJEXT) client_side_request.$(OBJEXT) \
@@ -936,6 +940,8 @@ am_tests_testEvent_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	StoreFileSystem.$(OBJEXT) StoreIOState.$(OBJEXT) \
 	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) String.$(OBJEXT) \
+	tests/stub_cache_cf.$(OBJEXT) \
+	tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT) \
 	tests/stub_libstore.$(OBJEXT) tests/testEvent.$(OBJEXT) \
 	tests/stub_main_cc.$(OBJEXT) \
 	tests/stub_ipc_Forwarder.$(OBJEXT) \
@@ -972,56 +978,57 @@ tests_testEvent_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(LDFLAGS) -o $@
 am__tests_testEventLoop_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	CacheDigest.h tests/stub_CacheDigest.cc cache_manager.cc \
-	cache_cf.h AuthReg.h RefreshPattern.h cache_cf.cc CachePeer.cc \
-	CachePeer.h carp.h tests/stub_carp.cc cbdata.cc \
-	tests/stub_client_db.cc client_side.h client_side.cc \
-	client_side_reply.cc client_side_request.cc ClientInfo.h \
-	clientStream.cc tests/stub_CollapsedForwarding.cc \
-	ConfigOption.cc ConfigParser.cc CpuAffinityMap.cc \
-	CpuAffinityMap.h CpuAffinitySet.cc CpuAffinitySet.h debug.cc \
-	BandwidthBucket.cc BandwidthBucket.h CommonPool.h \
-	CompositePoolNode.h delay_pools.cc DelayId.cc DelayId.h \
-	DelayIdComposite.h DelayBucket.cc DelayBucket.h DelayConfig.cc \
-	DelayConfig.h DelayPool.cc DelayPool.h DelayPools.h \
-	DelaySpec.cc DelaySpec.h DelayTagged.cc DelayTagged.h \
-	DelayUser.cc DelayUser.h DelayVector.cc DelayVector.h \
-	MessageBucket.cc MessageBucket.h MessageDelayPools.h \
-	MessageDelayPools.cc NullDelayId.h ClientDelayConfig.cc \
-	ClientDelayConfig.h fs_io.h fs_io.cc dlink.h dlink.cc \
-	dns_internal.cc errorpage.cc tests/stub_ETag.cc EventLoop.h \
-	EventLoop.cc event.cc external_acl.cc ExternalACLEntry.cc \
-	FadingCounter.cc fatal.h tests/stub_fatal.cc fd.h fd.cc fde.cc \
-	FileMap.h filemap.cc fqdncache.h fqdncache.cc FwdState.cc \
-	FwdState.h gopher.h tests/stub_gopher.cc HappyConnOpener.cc \
-	HappyConnOpener.h helper.cc hier_code.h htcp.cc htcp.h http.cc \
-	HttpBody.h HttpBody.cc tests/stub_HttpControlMsg.cc \
-	HttpHeader.h HttpHeader.cc HttpHeaderFieldInfo.h \
-	HttpHeaderTools.h HttpHeaderTools.cc HttpHeaderFieldStat.h \
-	HttpHdrCc.h HttpHdrCc.cc HttpHdrContRange.cc HttpHdrRange.cc \
-	HttpHdrSc.cc HttpHdrScTarget.cc HttpReply.cc PeerPoolMgr.h \
-	PeerPoolMgr.cc RequestFlags.h RequestFlags.cc HttpRequest.cc \
-	icp_v2.cc icp_v3.cc SquidIpc.h ipc.cc ipc_win32.cc ipcache.cc \
-	int.h int.cc internal.h internal.cc LogTags.cc \
-	MasterXaction.cc MasterXaction.h MemBuf.cc MemObject.cc \
-	tests/stub_libmem.cc mem_node.cc mime.h mime.cc mime_header.h \
-	mime_header.cc multicast.h multicast.cc neighbors.h \
-	neighbors.cc Notes.cc Notes.h Parsing.cc pconn.cc \
-	peer_digest.cc peer_proxy_negotiate_auth.h \
-	peer_proxy_negotiate_auth.cc peer_select.cc peer_sourcehash.h \
-	peer_sourcehash.cc peer_userhash.h peer_userhash.cc \
-	Pipeline.cc Pipeline.h RemovalPolicy.cc ResolvedPeers.cc \
-	ResolvedPeers.h redirect.h tests/stub_redirect.cc refresh.h \
-	refresh.cc tests/stub_SBufDetailedStats.cc SnmpRequest.h \
-	snmp_core.h snmp_core.cc snmp_agent.h snmp_agent.cc \
-	SquidMath.h SquidMath.cc IoStats.h stat.h stat.cc \
-	StatCounters.h StatCounters.cc StatHist.h StatHist.cc stmem.cc \
-	repl_modules.h store.cc store_client.cc store_digest.h \
+	cache_cf.h AuthReg.h RefreshPattern.h CachePeer.cc CachePeer.h \
+	carp.h tests/stub_carp.cc cbdata.cc tests/stub_client_db.cc \
+	client_side.h client_side.cc client_side_reply.cc \
+	client_side_request.cc ClientInfo.h clientStream.cc \
+	tests/stub_CollapsedForwarding.cc ConfigOption.cc \
+	ConfigParser.cc CpuAffinityMap.cc CpuAffinityMap.h \
+	CpuAffinitySet.cc CpuAffinitySet.h debug.cc BandwidthBucket.cc \
+	BandwidthBucket.h CommonPool.h CompositePoolNode.h \
+	delay_pools.cc DelayId.cc DelayId.h DelayIdComposite.h \
+	DelayBucket.cc DelayBucket.h DelayConfig.cc DelayConfig.h \
+	DelayPool.cc DelayPool.h DelayPools.h DelaySpec.cc DelaySpec.h \
+	DelayTagged.cc DelayTagged.h DelayUser.cc DelayUser.h \
+	DelayVector.cc DelayVector.h MessageBucket.cc MessageBucket.h \
+	MessageDelayPools.h MessageDelayPools.cc NullDelayId.h \
+	ClientDelayConfig.cc ClientDelayConfig.h fs_io.h fs_io.cc \
+	dlink.h dlink.cc dns_internal.cc errorpage.cc \
+	tests/stub_ETag.cc EventLoop.h EventLoop.cc event.cc \
+	external_acl.cc ExternalACLEntry.cc FadingCounter.cc fatal.h \
+	tests/stub_fatal.cc fd.h fd.cc fde.cc FileMap.h filemap.cc \
+	fqdncache.h fqdncache.cc FwdState.cc FwdState.h gopher.h \
+	tests/stub_gopher.cc HappyConnOpener.cc HappyConnOpener.h \
+	helper.cc hier_code.h htcp.cc htcp.h http.cc HttpBody.h \
+	HttpBody.cc tests/stub_HttpControlMsg.cc HttpHeader.h \
+	HttpHeader.cc HttpHeaderFieldInfo.h HttpHeaderTools.h \
+	HttpHeaderTools.cc HttpHeaderFieldStat.h HttpHdrCc.h \
+	HttpHdrCc.cc HttpHdrContRange.cc HttpHdrRange.cc HttpHdrSc.cc \
+	HttpHdrScTarget.cc HttpReply.cc PeerPoolMgr.h PeerPoolMgr.cc \
+	RequestFlags.h RequestFlags.cc HttpRequest.cc icp_v2.cc \
+	icp_v3.cc SquidIpc.h ipc.cc ipc_win32.cc ipcache.cc int.h \
+	int.cc internal.h internal.cc LogTags.cc MasterXaction.cc \
+	MasterXaction.h MemBuf.cc MemObject.cc tests/stub_libmem.cc \
+	mem_node.cc mime.h mime.cc mime_header.h mime_header.cc \
+	multicast.h multicast.cc neighbors.h neighbors.cc Notes.cc \
+	Notes.h Parsing.cc pconn.cc peer_digest.cc \
+	peer_proxy_negotiate_auth.h peer_proxy_negotiate_auth.cc \
+	peer_select.cc peer_sourcehash.h peer_sourcehash.cc \
+	peer_userhash.h peer_userhash.cc Pipeline.cc Pipeline.h \
+	RemovalPolicy.cc ResolvedPeers.cc ResolvedPeers.h redirect.h \
+	tests/stub_redirect.cc refresh.h refresh.cc \
+	tests/stub_SBufDetailedStats.cc SnmpRequest.h snmp_core.h \
+	snmp_core.cc snmp_agent.h snmp_agent.cc SquidMath.h \
+	SquidMath.cc IoStats.h stat.h stat.cc StatCounters.h \
+	StatCounters.cc StatHist.h StatHist.cc stmem.cc repl_modules.h \
+	store.cc store_client.cc store_digest.h \
 	tests/stub_store_digest.cc store_io.cc store_key_md5.h \
 	store_key_md5.cc store_log.h store_log.cc store_rebuild.h \
 	store_rebuild.cc store_swapin.h store_swapin.cc \
 	store_swapmeta.cc store_swapout.cc StoreFileSystem.cc \
 	StoreIOState.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
 	StoreSwapLogData.cc String.cc StrList.h StrList.cc \
+	tests/stub_cache_cf.cc tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_libstore.cc tests/testEventLoop.cc \
 	tests/testEventLoop.h tests/stub_main_cc.cc \
 	tests/stub_ipc_Forwarder.cc tests/stub_libauth_acls.cc \
@@ -1033,7 +1040,7 @@ am__tests_testEventLoop_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	tests/stub_whois.cc win32.cc wordlist.h wordlist.cc
 am_tests_testEventLoop_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	BodyPipe.$(OBJEXT) tests/stub_CacheDigest.$(OBJEXT) \
-	cache_manager.$(OBJEXT) cache_cf.$(OBJEXT) CachePeer.$(OBJEXT) \
+	cache_manager.$(OBJEXT) CachePeer.$(OBJEXT) \
 	tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
 	tests/stub_client_db.$(OBJEXT) client_side.$(OBJEXT) \
 	client_side_reply.$(OBJEXT) client_side_request.$(OBJEXT) \
@@ -1078,6 +1085,8 @@ am_tests_testEventLoop_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	StoreFileSystem.$(OBJEXT) StoreIOState.$(OBJEXT) \
 	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) String.$(OBJEXT) StrList.$(OBJEXT) \
+	tests/stub_cache_cf.$(OBJEXT) \
+	tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT) \
 	tests/stub_libstore.$(OBJEXT) tests/testEventLoop.$(OBJEXT) \
 	tests/stub_main_cc.$(OBJEXT) \
 	tests/stub_ipc_Forwarder.$(OBJEXT) \
@@ -1190,7 +1199,7 @@ am__tests_testHttpRequest_SOURCES_DIST = AccessLogEntry.cc \
 	tests/stub_libdiskio.cc tests/stub_libeui.cc \
 	tests/stub_store_stats.cc tests/stub_EventLoop.cc time.cc \
 	BodyPipe.cc cache_manager.cc cache_cf.h AuthReg.h \
-	RefreshPattern.h cache_cf.cc debug.cc CacheDigest.h \
+	RefreshPattern.h debug.cc CacheDigest.h \
 	tests/stub_CacheDigest.cc CachePeer.cc CachePeer.h carp.h \
 	tests/stub_carp.cc cbdata.cc tests/stub_client_db.cc \
 	client_side.h client_side.cc client_side_reply.cc \
@@ -1240,7 +1249,8 @@ am__tests_testHttpRequest_SOURCES_DIST = AccessLogEntry.cc \
 	store_swapmeta.cc store_swapout.cc StoreFileSystem.cc \
 	StoreIOState.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
 	StoreSwapLogData.cc StrList.h StrList.cc event.cc tools.h \
-	tools.cc Transients.cc tests/stub_tunnel.cc \
+	tools.cc Transients.cc tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc tests/stub_tunnel.cc \
 	tests/stub_libstore.cc MemStore.cc urn.h urn.cc wccp2.h \
 	tests/stub_wccp2.cc whois.h tests/stub_whois.cc \
 	FadingCounter.cc win32.cc wordlist.h wordlist.cc
@@ -1254,9 +1264,9 @@ am_tests_testHttpRequest_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	tests/stub_libdiskio.$(OBJEXT) tests/stub_libeui.$(OBJEXT) \
 	tests/stub_store_stats.$(OBJEXT) \
 	tests/stub_EventLoop.$(OBJEXT) time.$(OBJEXT) \
-	BodyPipe.$(OBJEXT) cache_manager.$(OBJEXT) cache_cf.$(OBJEXT) \
-	debug.$(OBJEXT) tests/stub_CacheDigest.$(OBJEXT) \
-	CachePeer.$(OBJEXT) tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
+	BodyPipe.$(OBJEXT) cache_manager.$(OBJEXT) debug.$(OBJEXT) \
+	tests/stub_CacheDigest.$(OBJEXT) CachePeer.$(OBJEXT) \
+	tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
 	tests/stub_client_db.$(OBJEXT) client_side.$(OBJEXT) \
 	client_side_reply.$(OBJEXT) client_side_request.$(OBJEXT) \
 	clientStream.$(OBJEXT) \
@@ -1299,6 +1309,8 @@ am_tests_testHttpRequest_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) StrList.$(OBJEXT) event.$(OBJEXT) \
 	tools.$(OBJEXT) Transients.$(OBJEXT) \
+	tests/stub_cache_cf.$(OBJEXT) \
+	tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT) \
 	tests/stub_tunnel.$(OBJEXT) tests/stub_libstore.$(OBJEXT) \
 	MemStore.$(OBJEXT) urn.$(OBJEXT) tests/stub_wccp2.$(OBJEXT) \
 	tests/stub_whois.$(OBJEXT) FadingCounter.$(OBJEXT) \
@@ -1925,32 +1937,32 @@ tests_testYesNoNone_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CXX \
 	$(AM_CXXFLAGS) $(CXXFLAGS) $(tests_testYesNoNone_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am__tests_test_http_range_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
-	cache_cf.h AuthReg.h RefreshPattern.h cache_cf.cc CachePeer.cc \
-	CachePeer.h cache_manager.cc CacheDigest.h \
-	tests/stub_CacheDigest.cc carp.h tests/stub_carp.cc cbdata.cc \
-	tests/stub_client_db.cc client_side.h client_side.cc \
-	client_side_reply.cc client_side_request.cc ClientInfo.h \
-	clientStream.cc tests/stub_CollapsedForwarding.cc \
-	ConfigOption.cc ConfigParser.cc CpuAffinityMap.cc \
-	CpuAffinityMap.h CpuAffinitySet.cc CpuAffinitySet.h debug.cc \
-	BandwidthBucket.cc BandwidthBucket.h CommonPool.h \
-	CompositePoolNode.h delay_pools.cc DelayId.cc DelayId.h \
-	DelayIdComposite.h DelayBucket.cc DelayBucket.h DelayConfig.cc \
-	DelayConfig.h DelayPool.cc DelayPool.h DelayPools.h \
-	DelaySpec.cc DelaySpec.h DelayTagged.cc DelayTagged.h \
-	DelayUser.cc DelayUser.h DelayVector.cc DelayVector.h \
-	MessageBucket.cc MessageBucket.h MessageDelayPools.h \
-	MessageDelayPools.cc NullDelayId.h ClientDelayConfig.cc \
-	ClientDelayConfig.h fs_io.h fs_io.cc dlink.h dlink.cc \
-	dns_internal.cc errorpage.cc tests/stub_ETag.cc event.cc \
-	FadingCounter.cc fatal.h tests/stub_libauth.cc \
-	tests/stub_fatal.cc fd.h fd.cc fde.cc FileMap.h filemap.cc \
-	fqdncache.h fqdncache.cc FwdState.cc FwdState.h gopher.h \
-	tests/stub_gopher.cc HappyConnOpener.cc HappyConnOpener.h \
-	helper.cc hier_code.h htcp.cc htcp.h http.cc HttpBody.h \
-	HttpBody.cc tests/stub_HttpControlMsg.cc HttpHeaderFieldStat.h \
-	HttpHdrCc.h HttpHdrCc.cc HttpHdrContRange.cc HttpHdrRange.cc \
-	HttpHdrSc.cc HttpHdrScTarget.cc HttpHeader.h HttpHeader.cc \
+	cache_cf.h AuthReg.h RefreshPattern.h CachePeer.cc CachePeer.h \
+	cache_manager.cc CacheDigest.h tests/stub_CacheDigest.cc \
+	carp.h tests/stub_carp.cc cbdata.cc tests/stub_client_db.cc \
+	client_side.h client_side.cc client_side_reply.cc \
+	client_side_request.cc ClientInfo.h clientStream.cc \
+	tests/stub_CollapsedForwarding.cc ConfigOption.cc \
+	ConfigParser.cc CpuAffinityMap.cc CpuAffinityMap.h \
+	CpuAffinitySet.cc CpuAffinitySet.h debug.cc BandwidthBucket.cc \
+	BandwidthBucket.h CommonPool.h CompositePoolNode.h \
+	delay_pools.cc DelayId.cc DelayId.h DelayIdComposite.h \
+	DelayBucket.cc DelayBucket.h DelayConfig.cc DelayConfig.h \
+	DelayPool.cc DelayPool.h DelayPools.h DelaySpec.cc DelaySpec.h \
+	DelayTagged.cc DelayTagged.h DelayUser.cc DelayUser.h \
+	DelayVector.cc DelayVector.h MessageBucket.cc MessageBucket.h \
+	MessageDelayPools.h MessageDelayPools.cc NullDelayId.h \
+	ClientDelayConfig.cc ClientDelayConfig.h fs_io.h fs_io.cc \
+	dlink.h dlink.cc dns_internal.cc errorpage.cc \
+	tests/stub_ETag.cc event.cc FadingCounter.cc fatal.h \
+	tests/stub_libauth.cc tests/stub_fatal.cc fd.h fd.cc fde.cc \
+	FileMap.h filemap.cc fqdncache.h fqdncache.cc FwdState.cc \
+	FwdState.h gopher.h tests/stub_gopher.cc HappyConnOpener.cc \
+	HappyConnOpener.h helper.cc hier_code.h htcp.cc htcp.h http.cc \
+	HttpBody.h HttpBody.cc tests/stub_HttpControlMsg.cc \
+	HttpHeaderFieldStat.h HttpHdrCc.h HttpHdrCc.cc \
+	HttpHdrContRange.cc HttpHdrRange.cc HttpHdrSc.cc \
+	HttpHdrScTarget.cc HttpHeader.h HttpHeader.cc \
 	HttpHeaderFieldInfo.h HttpHeaderTools.h HttpHeaderTools.cc \
 	HttpReply.cc PeerPoolMgr.h PeerPoolMgr.cc RequestFlags.h \
 	RequestFlags.cc HttpRequest.cc icp_v2.cc icp_v3.cc int.h \
@@ -1977,21 +1989,21 @@ am__tests_test_http_range_SOURCES_DIST = AccessLogEntry.cc BodyPipe.cc \
 	StoreIOState.cc tests/stub_StoreMeta.cc StoreMetaUnpacker.cc \
 	StoreSwapLogData.cc String.cc StrList.h StrList.cc \
 	tests/stub_libstore.cc Transients.cc tests/test_http_range.cc \
-	tests/stub_external_acl.cc tests/stub_ipc_Forwarder.cc \
-	tests/stub_libdiskio.cc tests/stub_libeui.cc \
-	tests/stub_libsecurity.cc tests/stub_main_cc.cc \
-	tests/stub_MemStore.cc tests/stub_store_stats.cc \
-	tests/stub_EventLoop.cc time.cc tools.h tools.cc \
-	tests/stub_tunnel.cc unlinkd.h unlinkd.cc urn.h urn.cc wccp2.h \
-	tests/stub_wccp2.cc whois.h tests/stub_whois.cc win32.cc \
-	wordlist.h wordlist.cc
+	tests/stub_cache_cf.cc tests/stub_external_acl.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
+	tests/stub_ipc_Forwarder.cc tests/stub_libdiskio.cc \
+	tests/stub_libeui.cc tests/stub_libsecurity.cc \
+	tests/stub_main_cc.cc tests/stub_MemStore.cc \
+	tests/stub_store_stats.cc tests/stub_EventLoop.cc time.cc \
+	tools.h tools.cc tests/stub_tunnel.cc unlinkd.h unlinkd.cc \
+	urn.h urn.cc wccp2.h tests/stub_wccp2.cc whois.h \
+	tests/stub_whois.cc win32.cc wordlist.h wordlist.cc
 am_tests_test_http_range_OBJECTS = AccessLogEntry.$(OBJEXT) \
-	BodyPipe.$(OBJEXT) cache_cf.$(OBJEXT) CachePeer.$(OBJEXT) \
-	cache_manager.$(OBJEXT) tests/stub_CacheDigest.$(OBJEXT) \
-	tests/stub_carp.$(OBJEXT) cbdata.$(OBJEXT) \
-	tests/stub_client_db.$(OBJEXT) client_side.$(OBJEXT) \
-	client_side_reply.$(OBJEXT) client_side_request.$(OBJEXT) \
-	clientStream.$(OBJEXT) \
+	BodyPipe.$(OBJEXT) CachePeer.$(OBJEXT) cache_manager.$(OBJEXT) \
+	tests/stub_CacheDigest.$(OBJEXT) tests/stub_carp.$(OBJEXT) \
+	cbdata.$(OBJEXT) tests/stub_client_db.$(OBJEXT) \
+	client_side.$(OBJEXT) client_side_reply.$(OBJEXT) \
+	client_side_request.$(OBJEXT) clientStream.$(OBJEXT) \
 	tests/stub_CollapsedForwarding.$(OBJEXT) \
 	ConfigOption.$(OBJEXT) ConfigParser.$(OBJEXT) \
 	CpuAffinityMap.$(OBJEXT) CpuAffinitySet.$(OBJEXT) \
@@ -2032,8 +2044,9 @@ am_tests_test_http_range_OBJECTS = AccessLogEntry.$(OBJEXT) \
 	tests/stub_StoreMeta.$(OBJEXT) StoreMetaUnpacker.$(OBJEXT) \
 	StoreSwapLogData.$(OBJEXT) String.$(OBJEXT) StrList.$(OBJEXT) \
 	tests/stub_libstore.$(OBJEXT) Transients.$(OBJEXT) \
-	tests/test_http_range.$(OBJEXT) \
+	tests/test_http_range.$(OBJEXT) tests/stub_cache_cf.$(OBJEXT) \
 	tests/stub_external_acl.$(OBJEXT) \
+	tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT) \
 	tests/stub_ipc_Forwarder.$(OBJEXT) \
 	tests/stub_libdiskio.$(OBJEXT) tests/stub_libeui.$(OBJEXT) \
 	tests/stub_libsecurity.$(OBJEXT) tests/stub_main_cc.$(OBJEXT) \
@@ -2122,6 +2135,7 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	./$(DEPDIR)/HttpHdrSc.Po ./$(DEPDIR)/HttpHdrScTarget.Po \
 	./$(DEPDIR)/HttpHeader.Po ./$(DEPDIR)/HttpHeaderTools.Po \
 	./$(DEPDIR)/HttpReply.Po ./$(DEPDIR)/HttpRequest.Po \
+	./$(DEPDIR)/HttpUpgradeProtocolAccess.Po \
 	./$(DEPDIR)/Instance.Po ./$(DEPDIR)/LeakFinder.Po \
 	./$(DEPDIR)/LoadableModule.Po ./$(DEPDIR)/LoadableModules.Po \
 	./$(DEPDIR)/LogTags.Po ./$(DEPDIR)/MasterXaction.Po \
@@ -2195,6 +2209,7 @@ am__depfiles_remade = ./$(DEPDIR)/AccessLogEntry.Po \
 	tests/$(DEPDIR)/stub_HttpHeader.Po \
 	tests/$(DEPDIR)/stub_HttpReply.Po \
 	tests/$(DEPDIR)/stub_HttpRequest.Po \
+	tests/$(DEPDIR)/stub_HttpUpgradeProtocolAccess.Po \
 	tests/$(DEPDIR)/stub_MemBuf.Po \
 	tests/$(DEPDIR)/stub_MemObject.Po \
 	tests/$(DEPDIR)/stub_MemStore.Po tests/$(DEPDIR)/stub_Port.Po \
@@ -2635,7 +2650,7 @@ TEST_LOGS = $(am__test_logs2:.test.log=.log)
 TEST_LOG_DRIVER = $(SHELL) $(top_srcdir)/cfgaux/test-driver
 TEST_LOG_COMPILE = $(TEST_LOG_COMPILER) $(AM_TEST_LOG_FLAGS) \
 	$(TEST_LOG_FLAGS)
-am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/tests/Stub.list \
+am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/tests/Stub.am \
 	$(top_srcdir)/cfgaux/depcomp $(top_srcdir)/cfgaux/test-driver \
 	$(top_srcdir)/doc/manuals/Substitute.am \
 	$(top_srcdir)/src/Common.am
@@ -3086,7 +3101,8 @@ squid_SOURCES = $(ACL_REGISTRATION_SOURCES) AccessLogEntry.cc \
 	fqdncache.h fqdncache.cc FwdState.cc FwdState.h Generic.h \
 	globals.h gopher.h gopher.cc HappyConnOpener.cc \
 	HappyConnOpener.h helper.cc helper.h hier_code.h \
-	HierarchyLogEntry.h $(HTCPSOURCE) http.cc http.h \
+	HierarchyLogEntry.h $(HTCPSOURCE) HttpUpgradeProtocolAccess.cc \
+	HttpUpgradeProtocolAccess.h http.cc http.h \
 	HttpHeaderFieldStat.h HttpHdrCc.h HttpHdrCc.cc HttpHdrRange.cc \
 	HttpHdrSc.cc HttpHdrSc.h HttpHdrScTarget.cc HttpHdrScTarget.h \
 	HttpHdrContRange.cc HttpHdrContRange.h HttpHeaderStat.h \
@@ -3285,94 +3301,95 @@ LDADD = \
 	$(COMPAT_LIB) \
 	$(XTRA_LIBS)
 
-STUB_SOURCE = tests/STUB.h \
-	tests/stub_access_log.cc \
-	tests/stub_acl.cc \
-	tests/stub_cache_cf.cc \
-	tests/stub_CacheDigest.cc \
-	tests/stub_cache_manager.cc \
-	tests/stub_carp.cc \
-	tests/stub_cbdata.cc \
-	tests/stub_client_db.cc \
-	tests/stub_client_side.cc \
-	tests/stub_client_side_request.cc \
-	tests/stub_CollapsedForwarding.cc \
-	tests/stub_comm.cc \
-	tests/stub_CommIO.cc \
-	tests/stub_debug.cc \
-	tests/stub_DelayId.cc \
-	tests/stub_errorpage.cc \
-	tests/stub_ETag.cc \
-	tests/stub_event.cc \
-	tests/stub_EventLoop.cc \
-	tests/stub_external_acl.cc \
-	tests/stub_fatal.cc \
-	tests/stub_fd.cc \
-	tests/stub_gopher.cc \
-	tests/stub_helper.cc \
-	tests/stub_HelperChildConfig.cc \
-	tests/stub_http.cc \
-	tests/stub_HttpControlMsg.cc \
-	tests/stub_HttpHeader.cc \
-	tests/stub_HttpReply.cc \
-	tests/stub_HttpRequest.cc \
-	tests/stub_icp.cc \
-	tests/stub_internal.cc \
-	tests/stub_ipcache.cc \
-	tests/stub_ipc.cc \
-	tests/stub_ipc_Forwarder.cc \
-	tests/stub_ipc_TypedMsgHdr.cc \
-	tests/stub_libanyp.cc \
-	tests/stub_libauth_acls.cc \
-	tests/stub_libauth.cc \
-	tests/stub_libcomm.cc \
-	tests/stub_libdiskio.cc \
-	tests/stub_libeui.cc \
-	tests/stub_libformat.cc \
-	tests/stub_libhttp.cc \
-	tests/stub_libicmp.cc \
-	tests/stub_libip.cc \
-	tests/stub_liblog.cc \
-	tests/stub_libmem.cc \
-	tests/stub_libmgr.cc \
-	tests/stub_libsecurity.cc \
-	tests/stub_libsslsquid.cc \
-	tests/stub_libstore.cc \
-	tests/stub_main_cc.cc \
-	tests/stub_MemBuf.cc \
-	tests/stub_mem_node.cc \
-	tests/stub_MemObject.cc \
-	tests/stub_MemStore.cc \
-	tests/stub_mime.cc \
-	tests/stub_neighbors.cc \
-	tests/stub_pconn.cc \
-	tests/stub_Port.cc \
-	tests/stub_redirect.cc \
-	tests/stub_SBuf.cc \
-	tests/stub_SBufDetailedStats.cc \
-	tests/stub_stat.cc \
-	tests/stub_StatHist.cc \
-	tests/stub_stmem.cc \
-	tests/stub_store.cc \
-	tests/stub_store_client.cc \
-	tests/stub_store_digest.cc \
-	tests/stub_StoreMeta.cc \
-	tests/stub_store_rebuild.cc \
-	tests/stub_store_stats.cc \
-	tests/stub_store_swapout.cc \
-	tests/stub_SwapDir.cc \
-	tests/stub_time.cc \
-	tests/stub_tools.cc \
-	tests/stub_tunnel.cc \
-	tests/stub_UdsOp.cc \
-	tests/stub_wccp2.cc \
-	tests/stub_whois.cc \
-	tests/stub_wordlist.cc 
+STUB_SOURCE = \
+    tests/stub_access_log.cc \
+    tests/stub_acl.cc \
+    tests/stub_cache_cf.cc \
+    tests/stub_CacheDigest.cc \
+    tests/stub_cache_manager.cc \
+    tests/stub_carp.cc \
+    tests/stub_cbdata.cc \
+    tests/stub_client_db.cc \
+    tests/stub_client_side.cc \
+    tests/stub_client_side_request.cc \
+    tests/stub_CollapsedForwarding.cc \
+    tests/stub_comm.cc \
+    tests/stub_CommIO.cc \
+    tests/stub_debug.cc \
+    tests/stub_DelayId.cc \
+    tests/stub_errorpage.cc \
+    tests/stub_ETag.cc \
+    tests/stub_event.cc \
+    tests/stub_EventLoop.cc \
+    tests/stub_external_acl.cc \
+    tests/stub_fatal.cc \
+    tests/stub_fd.cc \
+    tests/stub_gopher.cc \
+    tests/stub_helper.cc \
+    tests/stub_HelperChildConfig.cc \
+    tests/stub_http.cc \
+    tests/stub_HttpControlMsg.cc \
+    tests/stub_HttpHeader.cc \
+    tests/stub_HttpReply.cc \
+    tests/stub_HttpRequest.cc \
+    tests/stub_HttpUpgradeProtocolAccess.cc \
+    tests/stub_icp.cc \
+    tests/stub_internal.cc \
+    tests/stub_ipcache.cc \
+    tests/stub_ipc.cc \
+    tests/stub_ipc_Forwarder.cc \
+    tests/stub_ipc_TypedMsgHdr.cc \
+    tests/stub_libanyp.cc \
+    tests/stub_libauth_acls.cc \
+    tests/stub_libauth.cc \
+    tests/stub_libcomm.cc \
+    tests/stub_libdiskio.cc \
+    tests/stub_libeui.cc \
+    tests/stub_libformat.cc \
+    tests/stub_libhttp.cc \
+    tests/stub_libicmp.cc \
+    tests/stub_libip.cc \
+    tests/stub_liblog.cc \
+    tests/stub_libmem.cc \
+    tests/stub_libmgr.cc \
+    tests/stub_libsecurity.cc \
+    tests/stub_libsslsquid.cc \
+    tests/stub_libstore.cc \
+    tests/stub_main_cc.cc \
+    tests/stub_MemBuf.cc \
+    tests/stub_mem_node.cc \
+    tests/stub_MemObject.cc \
+    tests/stub_MemStore.cc \
+    tests/stub_mime.cc \
+    tests/stub_neighbors.cc \
+    tests/stub_pconn.cc \
+    tests/stub_Port.cc \
+    tests/stub_redirect.cc \
+    tests/stub_SBuf.cc \
+    tests/stub_SBufDetailedStats.cc \
+    tests/stub_stat.cc \
+    tests/stub_StatHist.cc \
+    tests/stub_stmem.cc \
+    tests/stub_store.cc \
+    tests/stub_store_client.cc \
+    tests/stub_store_digest.cc \
+    tests/stub_StoreMeta.cc \
+    tests/stub_store_rebuild.cc \
+    tests/stub_store_stats.cc \
+    tests/stub_store_swapout.cc \
+    tests/stub_SwapDir.cc \
+    tests/stub_time.cc \
+    tests/stub_tools.cc \
+    tests/stub_tunnel.cc \
+    tests/stub_UdsOp.cc \
+    tests/stub_wccp2.cc \
+    tests/stub_whois.cc \
+    tests/stub_wordlist.cc
 
 EXTRA_DIST = cf_gen_defines cf.data.pre cf.data.depend cf.data.sed \
 	mk-globals-c.awk mk-string-arrays.awk repl_modules.sh \
-	$(STUB_SOURCE) mib.txt mime.conf.default squid.8.in \
-	$(am__append_12) $(am__append_14) $(am__append_16)
+	$(STUB_SOURCE) tests/STUB.h mib.txt mime.conf.default \
+	squid.8.in $(am__append_12) $(am__append_14) $(am__append_16)
 SUBSTITUTE = sed "\
 	s%@DEFAULT_ERROR_DIR@%$(DEFAULT_ERROR_DIR)%g;\
 	s%@DEFAULT_MIME_TABLE@%$(DEFAULT_MIME_TABLE)%g;\
@@ -4337,7 +4354,6 @@ tests_test_http_range_SOURCES = \
 	cache_cf.h \
 	AuthReg.h \
 	RefreshPattern.h \
-	cache_cf.cc \
 	CachePeer.cc \
 	CachePeer.h \
 	cache_manager.cc \
@@ -4495,7 +4511,9 @@ tests_test_http_range_SOURCES = \
 	tests/stub_libstore.cc \
 	Transients.cc \
 	tests/test_http_range.cc \
+	tests/stub_cache_cf.cc \
 	tests/stub_external_acl.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_ipc_Forwarder.cc \
 	tests/stub_libdiskio.cc \
 	tests/stub_libeui.cc \
@@ -4743,7 +4761,6 @@ tests_testHttpRequest_SOURCES = \
 	cache_cf.h \
 	AuthReg.h \
 	RefreshPattern.h \
-	cache_cf.cc \
 	debug.cc \
 	CacheDigest.h \
 	tests/stub_CacheDigest.cc \
@@ -4895,6 +4912,8 @@ tests_testHttpRequest_SOURCES = \
 	tools.h \
 	tools.cc \
 	Transients.cc \
+	tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_tunnel.cc \
 	tests/stub_libstore.cc \
 	MemStore.cc \
@@ -5039,7 +5058,6 @@ tests_testCacheManager_SOURCES = \
 	cache_cf.h \
 	AuthReg.h \
 	RefreshPattern.h \
-	cache_cf.cc \
 	CachePeer.cc \
 	CachePeer.h \
 	CacheDigest.h \
@@ -5193,6 +5211,8 @@ tests_testCacheManager_SOURCES = \
 	tools.h \
 	tools.cc \
 	Transients.cc \
+	tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_tunnel.cc \
 	tests/stub_libstore.cc \
 	MemStore.cc \
@@ -5344,7 +5364,6 @@ tests_testEvent_SOURCES = \
 	cache_cf.h \
 	AuthReg.h \
 	RefreshPattern.h \
-	cache_cf.cc \
 	CachePeer.cc \
 	CachePeer.h \
 	cache_manager.cc \
@@ -5501,6 +5520,8 @@ tests_testEvent_SOURCES = \
 	StoreMetaUnpacker.cc \
 	StoreSwapLogData.cc \
 	String.cc \
+	tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_libstore.cc \
 	tests/CapturingStoreEntry.h \
 	tests/testEvent.cc \
@@ -5584,7 +5605,6 @@ tests_testEventLoop_SOURCES = \
 	cache_cf.h \
 	AuthReg.h \
 	RefreshPattern.h \
-	cache_cf.cc \
 	CachePeer.cc \
 	CachePeer.h \
 	carp.h \
@@ -5739,6 +5759,8 @@ tests_testEventLoop_SOURCES = \
 	String.cc \
 	StrList.h \
 	StrList.cc \
+	tests/stub_cache_cf.cc \
+	tests/stub_HttpUpgradeProtocolAccess.cc \
 	tests/stub_libstore.cc \
 	tests/testEventLoop.cc \
 	tests/testEventLoop.h \
@@ -5818,7 +5840,7 @@ all: $(BUILT_SOURCES)
 
 .SUFFIXES:
 .SUFFIXES: .cc .lo .log .o .obj .test .test$(EXEEXT) .trs
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/src/Common.am $(srcdir)/tests/Stub.list $(top_srcdir)/doc/manuals/Substitute.am $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/src/Common.am $(srcdir)/tests/Stub.am $(top_srcdir)/doc/manuals/Substitute.am $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -5838,7 +5860,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__maybe_remake_depfiles);; \
 	esac;
-$(top_srcdir)/src/Common.am $(srcdir)/tests/Stub.list $(top_srcdir)/doc/manuals/Substitute.am $(am__empty):
+$(top_srcdir)/src/Common.am $(srcdir)/tests/Stub.am $(top_srcdir)/doc/manuals/Substitute.am $(am__empty):
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
@@ -6120,6 +6142,8 @@ tests/stub_libdiskio.$(OBJEXT): tests/$(am__dirstamp) \
 tests/stub_store_digest.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/stub_StoreMeta.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_HttpUpgradeProtocolAccess.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
 tests/stub_tunnel.$(OBJEXT): tests/$(am__dirstamp) \
 	tests/$(DEPDIR)/$(am__dirstamp)
@@ -6450,6 +6474,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HttpHeaderTools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HttpReply.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HttpRequest.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/HttpUpgradeProtocolAccess.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Instance.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LeakFinder.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LoadableModule.Po@am__quote@ # am--include-marker
@@ -6589,6 +6614,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_HttpHeader.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_HttpReply.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_HttpRequest.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_HttpUpgradeProtocolAccess.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_MemBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_MemObject.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_MemStore.Po@am__quote@ # am--include-marker
@@ -7445,6 +7471,7 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/HttpHeaderTools.Po
 	-rm -f ./$(DEPDIR)/HttpReply.Po
 	-rm -f ./$(DEPDIR)/HttpRequest.Po
+	-rm -f ./$(DEPDIR)/HttpUpgradeProtocolAccess.Po
 	-rm -f ./$(DEPDIR)/Instance.Po
 	-rm -f ./$(DEPDIR)/LeakFinder.Po
 	-rm -f ./$(DEPDIR)/LoadableModule.Po
@@ -7584,6 +7611,7 @@ distclean: distclean-recursive
 	-rm -f tests/$(DEPDIR)/stub_HttpHeader.Po
 	-rm -f tests/$(DEPDIR)/stub_HttpReply.Po
 	-rm -f tests/$(DEPDIR)/stub_HttpRequest.Po
+	-rm -f tests/$(DEPDIR)/stub_HttpUpgradeProtocolAccess.Po
 	-rm -f tests/$(DEPDIR)/stub_MemBuf.Po
 	-rm -f tests/$(DEPDIR)/stub_MemObject.Po
 	-rm -f tests/$(DEPDIR)/stub_MemStore.Po
@@ -7777,6 +7805,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/HttpHeaderTools.Po
 	-rm -f ./$(DEPDIR)/HttpReply.Po
 	-rm -f ./$(DEPDIR)/HttpRequest.Po
+	-rm -f ./$(DEPDIR)/HttpUpgradeProtocolAccess.Po
 	-rm -f ./$(DEPDIR)/Instance.Po
 	-rm -f ./$(DEPDIR)/LeakFinder.Po
 	-rm -f ./$(DEPDIR)/LoadableModule.Po
@@ -7916,6 +7945,7 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f tests/$(DEPDIR)/stub_HttpHeader.Po
 	-rm -f tests/$(DEPDIR)/stub_HttpReply.Po
 	-rm -f tests/$(DEPDIR)/stub_HttpRequest.Po
+	-rm -f tests/$(DEPDIR)/stub_HttpUpgradeProtocolAccess.Po
 	-rm -f tests/$(DEPDIR)/stub_MemBuf.Po
 	-rm -f tests/$(DEPDIR)/stub_MemObject.Po
 	-rm -f tests/$(DEPDIR)/stub_MemStore.Po

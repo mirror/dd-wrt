@@ -5,7 +5,7 @@
 ## Please see the COPYING and CONTRIBUTORS files for details.
 ##
 
-AC_INIT([Squid Web Proxy],[5.0.3],[http://bugs.squid-cache.org/],[squid])
+AC_INIT([Squid Web Proxy],[5.0.4],[http://bugs.squid-cache.org/],[squid])
 AC_PREREQ(2.61)
 AC_CONFIG_HEADERS([include/autoconf.h])
 AC_CONFIG_AUX_DIR(cfgaux)
@@ -3171,7 +3171,7 @@ else
       AC_MSG_NOTICE([skipping libmalloc check for $host])
       ;;
     *)
-      #used later. FIXME
+      # XXX: used later
       AC_CHECK_LIB(malloc, main)
       ;;
   esac
