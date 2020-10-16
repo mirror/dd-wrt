@@ -271,6 +271,7 @@ typedef struct
         uint8_t chacha20_poly1305[CHACHA20_POLY1305_AEAD_IV_SIZE];
 #endif
     } iv;
+#define HAVE_AEAD_CIPHER_MODES
 
 #ifdef HAVE_AEAD_CIPHER_MODES
 bool aead_updated;
