@@ -1,4 +1,4 @@
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <meta type="copyright" content="Copyright (C) 1996-2020 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -26,7 +26,7 @@ body
 
 <p id="sysmsg">Het systeem gaf als antwoord: <i>%E</i></p>
 
-<p>Er is een timeout opgetreden tijdens het lezen van data van het netwerk. Het netwerk of de server zijn niet beschikbaar of overbelast. Probeer het opnieuw.</p>
+<p>Er is een timeout opgetreden tijdens het lezen van data van het netwerk.  Het netwerk of de server zijn niet beschikbaar of overbelast.  Probeer het opnieuw.</p>
 
 <p>De beheerder van deze cache is <a href="mailto:%w%W">%w</a>.</p>
 <br>

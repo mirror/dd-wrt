@@ -180,10 +180,12 @@ am_libicmpcore_la_OBJECTS = Icmp.lo
 libicmpcore_la_OBJECTS = $(am_libicmpcore_la_OBJECTS)
 am_pinger_OBJECTS = IcmpPinger.$(OBJEXT) Icmp4.$(OBJEXT) \
 	Icmp6.$(OBJEXT) pinger.$(OBJEXT)
+am__dirstamp = $(am__leading_dot)dirstamp
 am__objects_1 = debug.$(OBJEXT) globals.$(OBJEXT) \
-	SquidConfig.$(OBJEXT) SquidNew.$(OBJEXT) stub_fd.$(OBJEXT) \
-	stub_HelperChildConfig.$(OBJEXT) stub_libmem.$(OBJEXT) \
-	stub_SBuf.$(OBJEXT) time.$(OBJEXT)
+	SquidConfig.$(OBJEXT) SquidNew.$(OBJEXT) \
+	tests/stub_fd.$(OBJEXT) tests/stub_HelperChildConfig.$(OBJEXT) \
+	tests/stub_libmem.$(OBJEXT) tests/stub_SBuf.$(OBJEXT) \
+	time.$(OBJEXT)
 nodist_pinger_OBJECTS = $(am__objects_1)
 pinger_OBJECTS = $(am_pinger_OBJECTS) $(nodist_pinger_OBJECTS)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
@@ -217,9 +219,9 @@ am__depfiles_remade = ./$(DEPDIR)/Icmp.Plo ./$(DEPDIR)/Icmp4.Po \
 	./$(DEPDIR)/SquidConfig.Po ./$(DEPDIR)/SquidNew.Po \
 	./$(DEPDIR)/debug.Po ./$(DEPDIR)/globals.Po \
 	./$(DEPDIR)/net_db.Plo ./$(DEPDIR)/pinger.Po \
-	./$(DEPDIR)/stub_HelperChildConfig.Po ./$(DEPDIR)/stub_SBuf.Po \
-	./$(DEPDIR)/stub_fd.Po ./$(DEPDIR)/stub_libmem.Po \
-	./$(DEPDIR)/time.Po
+	./$(DEPDIR)/time.Po tests/$(DEPDIR)/stub_HelperChildConfig.Po \
+	tests/$(DEPDIR)/stub_SBuf.Po tests/$(DEPDIR)/stub_fd.Po \
+	tests/$(DEPDIR)/stub_libmem.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -786,11 +788,11 @@ COPIED_SOURCE = \
 	globals.cc \
 	SquidConfig.cc \
 	SquidNew.cc \
-	stub_fd.cc \
-	stub_HelperChildConfig.cc \
-	stub_libmem.cc \
-	stub_SBuf.cc \
-	STUB.h \
+	tests/stub_fd.cc \
+	tests/stub_HelperChildConfig.cc \
+	tests/stub_libmem.cc \
+	tests/stub_SBuf.cc \
+	tests/STUB.h \
 	time.cc
 
 
@@ -924,6 +926,20 @@ libicmp.la: $(libicmp_la_OBJECTS) $(libicmp_la_DEPENDENCIES) $(EXTRA_libicmp_la_
 
 libicmpcore.la: $(libicmpcore_la_OBJECTS) $(libicmpcore_la_DEPENDENCIES) $(EXTRA_libicmpcore_la_DEPENDENCIES) 
 	$(AM_V_CXXLD)$(CXXLINK)  $(libicmpcore_la_OBJECTS) $(libicmpcore_la_LIBADD) $(LIBS)
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_fd.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_HelperChildConfig.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_libmem.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/stub_SBuf.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 
 pinger$(EXEEXT): $(pinger_OBJECTS) $(pinger_DEPENDENCIES) $(EXTRA_pinger_DEPENDENCIES) 
 	@rm -f pinger$(EXEEXT)
@@ -931,6 +947,7 @@ pinger$(EXEEXT): $(pinger_OBJECTS) $(pinger_DEPENDENCIES) $(EXTRA_pinger_DEPENDE
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -947,11 +964,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/globals.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/net_db.Plo@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pinger.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_HelperChildConfig.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_SBuf.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_fd.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_HelperChildConfig.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_SBuf.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_fd.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/stub_libmem.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1276,6 +1293,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/$(am__dirstamp)
 
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
@@ -1298,11 +1317,11 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/globals.Po
 	-rm -f ./$(DEPDIR)/net_db.Plo
 	-rm -f ./$(DEPDIR)/pinger.Po
-	-rm -f ./$(DEPDIR)/stub_HelperChildConfig.Po
-	-rm -f ./$(DEPDIR)/stub_SBuf.Po
-	-rm -f ./$(DEPDIR)/stub_fd.Po
-	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/time.Po
+	-rm -f tests/$(DEPDIR)/stub_HelperChildConfig.Po
+	-rm -f tests/$(DEPDIR)/stub_SBuf.Po
+	-rm -f tests/$(DEPDIR)/stub_fd.Po
+	-rm -f tests/$(DEPDIR)/stub_libmem.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1360,11 +1379,11 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/globals.Po
 	-rm -f ./$(DEPDIR)/net_db.Plo
 	-rm -f ./$(DEPDIR)/pinger.Po
-	-rm -f ./$(DEPDIR)/stub_HelperChildConfig.Po
-	-rm -f ./$(DEPDIR)/stub_SBuf.Po
-	-rm -f ./$(DEPDIR)/stub_fd.Po
-	-rm -f ./$(DEPDIR)/stub_libmem.Po
 	-rm -f ./$(DEPDIR)/time.Po
+	-rm -f tests/$(DEPDIR)/stub_HelperChildConfig.Po
+	-rm -f tests/$(DEPDIR)/stub_SBuf.Po
+	-rm -f tests/$(DEPDIR)/stub_fd.Po
+	-rm -f tests/$(DEPDIR)/stub_libmem.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1426,19 +1445,19 @@ SquidConfig.cc: $(top_srcdir)/src/SquidConfig.cc
 SquidNew.cc: $(top_srcdir)/src/SquidNew.cc
 	cp $(top_srcdir)/src/SquidNew.cc $@
 
-stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
+tests/stub_HelperChildConfig.cc: $(top_srcdir)/src/tests/stub_HelperChildConfig.cc
 	cp $(top_srcdir)/src/tests/stub_HelperChildConfig.cc $@
 
-stub_fd.cc: $(top_srcdir)/src/tests/stub_fd.cc STUB.h
+tests/stub_fd.cc: $(top_srcdir)/src/tests/stub_fd.cc
 	cp $(top_srcdir)/src/tests/stub_fd.cc $@
 
-stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
+tests/stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc
 	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
 
-stub_SBuf.cc: $(top_srcdir)/src/tests/stub_SBuf.cc STUB.h
+tests/stub_SBuf.cc: $(top_srcdir)/src/tests/stub_SBuf.cc
 	cp $(top_srcdir)/src/tests/stub_SBuf.cc $@
 
-STUB.h: $(top_srcdir)/src/tests/STUB.h
+tests/STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

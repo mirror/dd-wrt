@@ -155,3 +155,10 @@ testUriScheme::testStream()
     CPPUNIT_ASSERT_EQUAL(http_str, from_buf);
 }
 
+void
+testUriScheme::setUp()
+{
+    Mem::Init();
+    AnyP::UriScheme::Init();
+}
+

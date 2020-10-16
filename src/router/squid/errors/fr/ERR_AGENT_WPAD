@@ -1,4 +1,4 @@
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <meta type="copyright" content="Copyright (C) 1996-2020 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -17,26 +17,33 @@ body
 </div>
 <hr>
 
-<div id="content"> <blockquote id="error">
+<div id="content">
+<blockquote id="error">
 <p>Vous devez corriger la configuration de votre navigateur Web, pour qu'il soit utilisé dans ce réseau</p>
 </blockquote>
 
 <p>Comment trouver ces réglages dans votre navigateur :</p>
 
-<div id="firefox"> For Firefox browsers go to: <ul>
-<li>Tools -> Options -> Advanced -> Network -> Connection Settings</li>
+<div id="firefox">
+For Firefox browsers go to:
+<ul>
+<li>Outils -&gt; Options -&gt; Avancé -&gt; Réseau -&gt; Paramètres de Connexion</li>
 <li>Sélectionnez détection automatique dans les paramètres du proxy pour ce réseau</li>
 </ul>
 </div>
 
-<div id="microsoft"> For Internet Explorer browsers go to: <ul>
-<li>Tools -> Internet Options -> Connection -> LAN Settings ->Proxy</li>
+<div id="microsoft">
+For Internet Explorer browsers go to:
+<ul>
+<li>Outils -&gt; Options Internet -&gt; Connexion -&gt; Paramètres LAN -&gt; Proxy</li>
 <li>Sélectionnez le paramètre détection automatique</li>
 </ul>
 </div>
 
-<div id="opera"> For Opera browsers go to: <ul>
-<li>Tools -> Preferences -> Advanced -> Network -> Proxy Servers</li>
+<div id="opera">
+For Opera browsers go to:
+<ul>
+<li>Outils -&gt; Préférences -&gt; Avancé -&gt; Réseau -&gt; Serveur Proxy</li>
 <li>Utilisez la sélection automatique pour configurer le proxy</li>
 </ul>
 </div>

@@ -170,12 +170,15 @@ am_cachemgr__CGIEXT__OBJECTS = cachemgr__CGIEXT_-cachemgr.$(OBJEXT) \
 	cachemgr__CGIEXT_-CharacterSet.$(OBJEXT) \
 	cachemgr__CGIEXT_-Here.$(OBJEXT) \
 	cachemgr__CGIEXT_-MemBuf.$(OBJEXT) \
-	cachemgr__CGIEXT_-stub_cbdata.$(OBJEXT) \
-	cachemgr__CGIEXT_-stub_debug.$(OBJEXT) \
-	cachemgr__CGIEXT_-stub_libmem.$(OBJEXT) \
 	cachemgr__CGIEXT_-test_tools.$(OBJEXT) \
 	cachemgr__CGIEXT_-time.$(OBJEXT)
-cachemgr__CGIEXT__OBJECTS = $(am_cachemgr__CGIEXT__OBJECTS)
+am__dirstamp = $(am__leading_dot)dirstamp
+nodist_cachemgr__CGIEXT__OBJECTS =  \
+	tests/cachemgr__CGIEXT_-stub_cbdata.$(OBJEXT) \
+	tests/cachemgr__CGIEXT_-stub_debug.$(OBJEXT) \
+	tests/cachemgr__CGIEXT_-stub_libmem.$(OBJEXT)
+cachemgr__CGIEXT__OBJECTS = $(am_cachemgr__CGIEXT__OBJECTS) \
+	$(nodist_cachemgr__CGIEXT__OBJECTS)
 cachemgr__CGIEXT__LDADD = $(LDADD)
 @ENABLE_XPROF_STATS_TRUE@am__DEPENDENCIES_1 = $(top_builddir)/lib/profiler/libprofiler.la
 am__DEPENDENCIES_2 = $(top_builddir)/compat/libcompatsquid.la \
@@ -213,11 +216,11 @@ am__depfiles_remade = ./$(DEPDIR)/cachemgr__CGIEXT_-CharacterSet.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po \
-	./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po \
-	./$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po \
-	./$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po \
 	./$(DEPDIR)/cachemgr__CGIEXT_-test_tools.Po \
-	./$(DEPDIR)/cachemgr__CGIEXT_-time.Po
+	./$(DEPDIR)/cachemgr__CGIEXT_-time.Po \
+	tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po \
+	tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po \
+	tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
 am__mv = mv -f
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
@@ -255,7 +258,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(cachemgr__CGIEXT__SOURCES)
+SOURCES = $(cachemgr__CGIEXT__SOURCES) \
+	$(nodist_cachemgr__CGIEXT__SOURCES)
 DIST_SOURCES = $(cachemgr__CGIEXT__SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive cscopelist-recursive \
 	ctags-recursive dvi-recursive html-recursive info-recursive \
@@ -791,8 +795,8 @@ DEFAULT_ERROR_DIR = $(datadir)/errors
 AM_CFLAGS = $(SQUID_CFLAGS)
 AM_CXXFLAGS = $(SQUID_CXXFLAGS)
 CLEANFILES = test_tools.cc Here.cc CharacterSet.cc MemBuf.cc \
-	stub_debug.cc time.cc stub_cbdata.cc stub_libmem.cc STUB.h \
-	cachemgr.cgi.8
+	tests/stub_debug.cc time.cc tests/stub_cbdata.cc \
+	tests/stub_libmem.cc tests/STUB.h cachemgr.cgi.8
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/include \
 	-I$(top_srcdir)/lib -I$(top_srcdir)/src \
 	-I$(top_builddir)/include $(LIBCPPUNIT_CFLAGS) $(KRB5INCS) \
@@ -831,16 +835,19 @@ SUBSTITUTE = sed "\
 # Neither of these should be disted from here.
 TESTSOURCES = test_tools.cc
 DEFAULT_CACHEMGR_CONFIG = $(sysconfdir)/cachemgr.conf
-cachemgr__CGIEXT__SOURCES = cachemgr.cc \
+cachemgr__CGIEXT__SOURCES = \
+	cachemgr.cc \
 	CharacterSet.cc \
 	Here.cc \
 	MemBuf.cc \
-	stub_cbdata.cc \
-	stub_debug.cc \
-	stub_libmem.cc \
 	test_tools.cc \
-	STUB.h \
 	time.cc
+
+nodist_cachemgr__CGIEXT__SOURCES = \
+	tests/STUB.h \
+	tests/stub_cbdata.cc \
+	tests/stub_debug.cc \
+	tests/stub_libmem.cc
 
 cachemgr__CGIEXT__CXXFLAGS = -DDEFAULT_CACHEMGR_CONFIG=\"$(DEFAULT_CACHEMGR_CONFIG)\" $(AM_CXXFLAGS)
 all: all-recursive
@@ -935,6 +942,18 @@ clean-libexecPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+tests/$(am__dirstamp):
+	@$(MKDIR_P) tests
+	@: > tests/$(am__dirstamp)
+tests/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) tests/$(DEPDIR)
+	@: > tests/$(DEPDIR)/$(am__dirstamp)
+tests/cachemgr__CGIEXT_-stub_cbdata.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/cachemgr__CGIEXT_-stub_debug.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
+tests/cachemgr__CGIEXT_-stub_libmem.$(OBJEXT): tests/$(am__dirstamp) \
+	tests/$(DEPDIR)/$(am__dirstamp)
 
 cachemgr$(CGIEXT)$(EXEEXT): $(cachemgr__CGIEXT__OBJECTS) $(cachemgr__CGIEXT__DEPENDENCIES) $(EXTRA_cachemgr__CGIEXT__DEPENDENCIES) 
 	@rm -f cachemgr$(CGIEXT)$(EXEEXT)
@@ -942,6 +961,7 @@ cachemgr$(CGIEXT)$(EXEEXT): $(cachemgr__CGIEXT__OBJECTS) $(cachemgr__CGIEXT__DEP
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
+	-rm -f tests/*.$(OBJEXT)
 
 distclean-compile:
 	-rm -f *.tab.c
@@ -950,11 +970,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po@am__quote@ # am--include-marker
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-test_tools.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cachemgr__CGIEXT_-time.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
 	@$(MKDIR_P) $(@D)
@@ -1042,48 +1062,6 @@ cachemgr__CGIEXT_-MemBuf.obj: MemBuf.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-MemBuf.obj `if test -f 'MemBuf.cc'; then $(CYGPATH_W) 'MemBuf.cc'; else $(CYGPATH_W) '$(srcdir)/MemBuf.cc'; fi`
 
-cachemgr__CGIEXT_-stub_cbdata.o: stub_cbdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_cbdata.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo -c -o cachemgr__CGIEXT_-stub_cbdata.o `test -f 'stub_cbdata.cc' || echo '$(srcdir)/'`stub_cbdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_cbdata.cc' object='cachemgr__CGIEXT_-stub_cbdata.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_cbdata.o `test -f 'stub_cbdata.cc' || echo '$(srcdir)/'`stub_cbdata.cc
-
-cachemgr__CGIEXT_-stub_cbdata.obj: stub_cbdata.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_cbdata.obj -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo -c -o cachemgr__CGIEXT_-stub_cbdata.obj `if test -f 'stub_cbdata.cc'; then $(CYGPATH_W) 'stub_cbdata.cc'; else $(CYGPATH_W) '$(srcdir)/stub_cbdata.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_cbdata.cc' object='cachemgr__CGIEXT_-stub_cbdata.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_cbdata.obj `if test -f 'stub_cbdata.cc'; then $(CYGPATH_W) 'stub_cbdata.cc'; else $(CYGPATH_W) '$(srcdir)/stub_cbdata.cc'; fi`
-
-cachemgr__CGIEXT_-stub_debug.o: stub_debug.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_debug.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo -c -o cachemgr__CGIEXT_-stub_debug.o `test -f 'stub_debug.cc' || echo '$(srcdir)/'`stub_debug.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_debug.cc' object='cachemgr__CGIEXT_-stub_debug.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_debug.o `test -f 'stub_debug.cc' || echo '$(srcdir)/'`stub_debug.cc
-
-cachemgr__CGIEXT_-stub_debug.obj: stub_debug.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_debug.obj -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo -c -o cachemgr__CGIEXT_-stub_debug.obj `if test -f 'stub_debug.cc'; then $(CYGPATH_W) 'stub_debug.cc'; else $(CYGPATH_W) '$(srcdir)/stub_debug.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_debug.cc' object='cachemgr__CGIEXT_-stub_debug.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_debug.obj `if test -f 'stub_debug.cc'; then $(CYGPATH_W) 'stub_debug.cc'; else $(CYGPATH_W) '$(srcdir)/stub_debug.cc'; fi`
-
-cachemgr__CGIEXT_-stub_libmem.o: stub_libmem.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_libmem.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo -c -o cachemgr__CGIEXT_-stub_libmem.o `test -f 'stub_libmem.cc' || echo '$(srcdir)/'`stub_libmem.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_libmem.cc' object='cachemgr__CGIEXT_-stub_libmem.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_libmem.o `test -f 'stub_libmem.cc' || echo '$(srcdir)/'`stub_libmem.cc
-
-cachemgr__CGIEXT_-stub_libmem.obj: stub_libmem.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-stub_libmem.obj -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo -c -o cachemgr__CGIEXT_-stub_libmem.obj `if test -f 'stub_libmem.cc'; then $(CYGPATH_W) 'stub_libmem.cc'; else $(CYGPATH_W) '$(srcdir)/stub_libmem.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo $(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='stub_libmem.cc' object='cachemgr__CGIEXT_-stub_libmem.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-stub_libmem.obj `if test -f 'stub_libmem.cc'; then $(CYGPATH_W) 'stub_libmem.cc'; else $(CYGPATH_W) '$(srcdir)/stub_libmem.cc'; fi`
-
 cachemgr__CGIEXT_-test_tools.o: test_tools.cc
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT cachemgr__CGIEXT_-test_tools.o -MD -MP -MF $(DEPDIR)/cachemgr__CGIEXT_-test_tools.Tpo -c -o cachemgr__CGIEXT_-test_tools.o `test -f 'test_tools.cc' || echo '$(srcdir)/'`test_tools.cc
 @am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/cachemgr__CGIEXT_-test_tools.Tpo $(DEPDIR)/cachemgr__CGIEXT_-test_tools.Po
@@ -1111,6 +1089,48 @@ cachemgr__CGIEXT_-time.obj: time.cc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='time.cc' object='cachemgr__CGIEXT_-time.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o cachemgr__CGIEXT_-time.obj `if test -f 'time.cc'; then $(CYGPATH_W) 'time.cc'; else $(CYGPATH_W) '$(srcdir)/time.cc'; fi`
+
+tests/cachemgr__CGIEXT_-stub_cbdata.o: tests/stub_cbdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_cbdata.o -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo -c -o tests/cachemgr__CGIEXT_-stub_cbdata.o `test -f 'tests/stub_cbdata.cc' || echo '$(srcdir)/'`tests/stub_cbdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_cbdata.cc' object='tests/cachemgr__CGIEXT_-stub_cbdata.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_cbdata.o `test -f 'tests/stub_cbdata.cc' || echo '$(srcdir)/'`tests/stub_cbdata.cc
+
+tests/cachemgr__CGIEXT_-stub_cbdata.obj: tests/stub_cbdata.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_cbdata.obj -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo -c -o tests/cachemgr__CGIEXT_-stub_cbdata.obj `if test -f 'tests/stub_cbdata.cc'; then $(CYGPATH_W) 'tests/stub_cbdata.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_cbdata.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_cbdata.cc' object='tests/cachemgr__CGIEXT_-stub_cbdata.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_cbdata.obj `if test -f 'tests/stub_cbdata.cc'; then $(CYGPATH_W) 'tests/stub_cbdata.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_cbdata.cc'; fi`
+
+tests/cachemgr__CGIEXT_-stub_debug.o: tests/stub_debug.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_debug.o -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo -c -o tests/cachemgr__CGIEXT_-stub_debug.o `test -f 'tests/stub_debug.cc' || echo '$(srcdir)/'`tests/stub_debug.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_debug.cc' object='tests/cachemgr__CGIEXT_-stub_debug.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_debug.o `test -f 'tests/stub_debug.cc' || echo '$(srcdir)/'`tests/stub_debug.cc
+
+tests/cachemgr__CGIEXT_-stub_debug.obj: tests/stub_debug.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_debug.obj -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo -c -o tests/cachemgr__CGIEXT_-stub_debug.obj `if test -f 'tests/stub_debug.cc'; then $(CYGPATH_W) 'tests/stub_debug.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_debug.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_debug.cc' object='tests/cachemgr__CGIEXT_-stub_debug.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_debug.obj `if test -f 'tests/stub_debug.cc'; then $(CYGPATH_W) 'tests/stub_debug.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_debug.cc'; fi`
+
+tests/cachemgr__CGIEXT_-stub_libmem.o: tests/stub_libmem.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_libmem.o -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo -c -o tests/cachemgr__CGIEXT_-stub_libmem.o `test -f 'tests/stub_libmem.cc' || echo '$(srcdir)/'`tests/stub_libmem.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_libmem.cc' object='tests/cachemgr__CGIEXT_-stub_libmem.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_libmem.o `test -f 'tests/stub_libmem.cc' || echo '$(srcdir)/'`tests/stub_libmem.cc
+
+tests/cachemgr__CGIEXT_-stub_libmem.obj: tests/stub_libmem.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -MT tests/cachemgr__CGIEXT_-stub_libmem.obj -MD -MP -MF tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo -c -o tests/cachemgr__CGIEXT_-stub_libmem.obj `if test -f 'tests/stub_libmem.cc'; then $(CYGPATH_W) 'tests/stub_libmem.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_libmem.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Tpo tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='tests/stub_libmem.cc' object='tests/cachemgr__CGIEXT_-stub_libmem.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(cachemgr__CGIEXT__CXXFLAGS) $(CXXFLAGS) -c -o tests/cachemgr__CGIEXT_-stub_libmem.obj `if test -f 'tests/stub_libmem.cc'; then $(CYGPATH_W) 'tests/stub_libmem.cc'; else $(CYGPATH_W) '$(srcdir)/tests/stub_libmem.cc'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1514,6 +1534,8 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
+	-rm -f tests/$(DEPDIR)/$(am__dirstamp)
+	-rm -f tests/$(am__dirstamp)
 	-test -z "$(DISTCLEANFILES)" || rm -f $(DISTCLEANFILES)
 
 maintainer-clean-generic:
@@ -1529,11 +1551,11 @@ distclean: distclean-recursive
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-test_tools.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-time.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-tags
@@ -1583,11 +1605,11 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-Here.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-MemBuf.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-cachemgr.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
-	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-test_tools.Po
 	-rm -f ./$(DEPDIR)/cachemgr__CGIEXT_-time.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_cbdata.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_debug.Po
+	-rm -f tests/$(DEPDIR)/cachemgr__CGIEXT_-stub_libmem.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
@@ -1637,7 +1659,7 @@ $(OBJS): $(top_srcdir)/include/version.h $(top_builddir)/include/autoconf.h
 test_tools.cc: $(top_srcdir)/test-suite/test_tools.cc
 	cp $(top_srcdir)/test-suite/test_tools.cc $@
 
-stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
+tests/stub_debug.cc: $(top_srcdir)/src/tests/stub_debug.cc
 	cp $(top_srcdir)/src/tests/stub_debug.cc $@
 
 Here.cc: $(top_srcdir)/src/base/Here.cc
@@ -1652,13 +1674,13 @@ MemBuf.cc: $(top_srcdir)/src/MemBuf.cc
 time.cc: $(top_srcdir)/src/time.cc
 	cp $(top_srcdir)/src/time.cc $@
 
-stub_cbdata.cc: $(top_srcdir)/src/tests/stub_cbdata.cc
+tests/stub_cbdata.cc: $(top_srcdir)/src/tests/stub_cbdata.cc
 	cp $(top_srcdir)/src/tests/stub_cbdata.cc $@
 
-stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc STUB.h
+tests/stub_libmem.cc: $(top_srcdir)/src/tests/stub_libmem.cc
 	cp $(top_srcdir)/src/tests/stub_libmem.cc $@
 
-STUB.h: $(top_srcdir)/src/tests/STUB.h
+tests/STUB.h: $(top_srcdir)/src/tests/STUB.h
 	cp $(top_srcdir)/src/tests/STUB.h $@
 
 cachemgr.cgi.8: $(srcdir)/cachemgr.cgi.8.in Makefile
