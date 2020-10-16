@@ -47,6 +47,7 @@ class external_acl;
 class HeaderManglers;
 class RefreshPattern;
 class RemovalPolicySettings;
+class HttpUpgradeProtocolAccess;
 
 namespace AnyP
 {
@@ -238,7 +239,7 @@ public:
         Ip::Address snmp_incoming;
         Ip::Address snmp_outgoing;
 #endif
-        /* FIXME INET6 : this should really be a CIDR value */
+        // TODO: this should really be a CIDR value
         Ip::Address client_netmask;
     } Addrs;
     size_t tcpRcvBufsz;
@@ -474,6 +475,8 @@ public:
     HeaderWithAclList *request_header_add;
     ///reply_header_add access list
     HeaderWithAclList *reply_header_add;
+    /// http_upgrade_request_protocols
+    HttpUpgradeProtocolAccess *http_upgrade_request_protocols;
     ///note
     Notes notes;
     char *coredump_dir;

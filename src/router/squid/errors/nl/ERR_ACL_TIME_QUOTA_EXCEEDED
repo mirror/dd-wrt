@@ -1,4 +1,4 @@
-
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
 <html><head>
 <meta type="copyright" content="Copyright (C) 1996-2020 The Squid Software Foundation and contributors">
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -25,7 +25,7 @@ body
 </blockquote>
 
 <p>This proxy limits your time online with a quota. Your time budget is now empty but will be refilled when the configured time period starts again.</p>
-<p>Deze grootte-beperkingen zijn ingesteld door de beheerder van deze cache. Neem contact op met de beheerder van deze cache, wanneer U van mening bent dat deze beperking onjuist is.</p>
+<p>Deze grootte-beperkingen zijn ingesteld door de beheerder van deze cache.  Neem contact op met de beheerder van deze cache, wanneer U van mening bent dat deze beperking onjuist is.</p>
 
 <p>De beheerder van deze cache is <a href="mailto:%w%W">%w</a>.</p>
 <br>
