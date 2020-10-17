@@ -65,10 +65,6 @@
 			</select>
 		</div>
 		<div class="setting">
-			<div class="label"><% tran("service.vpn_fw"); %></div>
-			<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_fw" <% nvc("openvpncl_fw","1"); %> />
-		</div>
-		<div class="setting">
 			<div class="label"><% tran("service.vpn_upauth"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="openvpncl_upauth" <% nvc("openvpncl_upauth","1"); %> onclick="show_layer_ext(this, 'idupauth', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="openvpncl_upauth" <% nvc("openvpncl_upauth","0"); %> onclick="show_layer_ext(this, 'idupauth', false)" /><% tran("share.disable"); %>
@@ -117,14 +113,15 @@
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_nat"); %></div>
-				<input class="spaceradio" type="radio" name="openvpncl_nat" value="1" <% nvc("openvpncl_nat", "1"); %> onclick="show_layer_ext(this, 'idsec', true)" /><% tran("share.enable"); %>&nbsp;
-				<input class="spaceradio" type="radio" name="openvpncl_nat" value="0" <% nvc("openvpncl_nat", "0"); %> onclick="show_layer_ext(this, 'idsec', false)" /><% tran("share.disable"); %>
+				<!--	<input class="spaceradio" type="radio" name="openvpncl_nat" value="1" <% nvc("openvpncl_nat", "1"); %> onclick="show_layer_ext(this, 'idsec', true)" /><% tran("share.enable"); %>&nbsp;	-->
+				<!-- 	<input class="spaceradio" type="radio" name="openvpncl_nat" value="0" <% nvc("openvpncl_nat", "0"); %> onclick="show_layer_ext(this, 'idsec', false)" /><% tran("share.disable"); %>	-->
+				<input class="spaceradio" type="radio" name="openvpncl_nat" value="1" <% nvc("openvpncl_nat", "1"); %> /><% tran("share.enable"); %>&nbsp;
+				<input class="spaceradio" type="radio" name="openvpncl_nat" value="0" <% nvc("openvpncl_nat", "0"); %> /><% tran("share.disable"); %>
 			</div>
 			<div id="idsec">
 				<div class="setting">
-					<div class="label"><% tran("firewall.legend"); %></div>
-					<input class="spaceradio" type="radio" name="openvpncl_sec" value="1" <% nvc("openvpncl_sec", "1"); %> /><% tran("share.enable"); %>&nbsp;
-					<input class="spaceradio" type="radio" name="openvpncl_sec" value="0" <% nvc("openvpncl_sec", "0"); %> /><% tran("share.disable"); %>
+					<div class="label"><% tran("service.vpn_fw"); %></div>
+					<input class="spaceradio" type="checkbox" value="1" name="_openvpncl_fw" <% nvc("openvpncl_fw","1"); %> />
 				</div>
 			</div>
 			<div id="idnat">
@@ -192,17 +189,19 @@
 					var openvpncl_config = fix_cr( '<% nvg("openvpncl_config"); %>' );
 					document.getElementById("openvpncl_config").value = openvpncl_config;
 				//]]>
-			</script>
+				</script>
 			</div>
-			<div class="setting">		
-				<div class="label"><% tran("service.vpn_route"); %></div>
-				<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
-				<script type="text/javascript">
-				//<![CDATA[
-					var openvpncl_config = fix_cr( '<% nvg("openvpncl_route"); %>' );
-					document.getElementById("openvpncl_route").value = openvpncl_config;
-				//]]>
-			</script>
+			<div id="idpbr">
+				<div class="setting">		
+					<div class="label"><% tran("service.vpn_route"); %></div>
+					<textarea cols="60" rows="2" id="openvpncl_route" name="openvpncl_route"></textarea>
+					<script type="text/javascript">
+					//<![CDATA[
+						var openvpncl_config = fix_cr( '<% nvg("openvpncl_route"); %>' );
+						document.getElementById("openvpncl_route").value = openvpncl_config;
+					//]]>
+					</script>
+				</div>
 			</div>
 			<div class="setting">		
 				<div class="label"><% tran("service.vpnd_pkcs"); %></div>
