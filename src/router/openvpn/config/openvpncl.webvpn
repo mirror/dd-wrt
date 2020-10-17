@@ -42,7 +42,7 @@
 		<div class="setting">
 			<div class="label"><% tran("service.vpn_cipher"); %></div>
 			<select name="openvpncl_cipher">
-			<option value="chacha20-poly1305" <% nvram_selected("openvpn_cipher","chacha20-poly1305"); %>>ChaCha20-Poly1305</option>
+			<option value="chacha20-poly1305" <% nvram_selected("openvpncl_cipher","chacha20-poly1305"); %>>ChaCha20-Poly1305</option>
 			<option value="aes-256-gcm" <% nvram_selected("openvpncl_cipher","aes-256-gcm"); %>>AES-256 GCM</option>
 			<option value="aes-192-gcm" <% nvram_selected("openvpncl_cipher","aes-192-gcm"); %>>AES-192 GCM</option>
 			<option value="aes-128-gcm" <% nvram_selected("openvpncl_cipher","aes-128-gcm"); %>>AES-128 GCM</option>
@@ -88,8 +88,8 @@
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_tlscip"); %></div>
 				<select name="openvpncl_tlscip">
-				<option value="TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384"); %>>TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384</option>
-				<option value="TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpn_tlscip","TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384</option>
+				<option value="TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpncl_tlscip","TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384"); %>>TLS-ECDHE-ECDSA-WITH-AES-256-GCM-SHA384</option>
+				<option value="TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpncl_tlscip","TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-ECDHE-RSA-WITH-AES-256-GCM-SHA384</option>
 				<option value="TLS-DHE-RSA-WITH-AES-256-GCM-SHA384" <% nvram_selected("openvpncl_tlscip","TLS-DHE-RSA-WITH-AES-256-GCM-SHA384"); %>>TLS-DHE-RSA-WITH-AES-256-GCM-SHA384</option>
 				<option value="TLS-DHE-RSA-WITH-AES-256-CBC-SHA256" <% nvram_selected("openvpncl_tlscip","TLS-DHE-RSA-WITH-AES-256-CBC-SHA256"); %>>TLS-DHE-RSA-WITH-AES-256-CBC-SHA256</option>
 				<option value="TLS-DHE-RSA-WITH-AES-128-CBC-SHA" <% nvram_selected("openvpncl_tlscip","TLS-DHE-RSA-WITH-AES-128-CBC-SHA"); %>>TLS-DHE-RSA-WITH-AES-128-CBC-SHA</option>
