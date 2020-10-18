@@ -113,7 +113,7 @@ void free_wifi_clients(struct wifi_client_info *wci);
 static struct wifi_client_info *add_to_wifi_clients(struct wifi_client_info *list_root);
 static int mac80211_cb_survey(struct nl_msg *msg, void *data);
 
-static void __attribute__((constructor)) mac80211_init(void)
+static void __attribute__((constructor))mac80211_init(void)
 {
 	if (!bunl) {
 		int ret = unl_genl_init(&unl, "nl80211");
@@ -123,9 +123,12 @@ static void __attribute__((constructor)) mac80211_init(void)
 
 void special_mac80211_init(void)
 {
-	if (bunl)
+	if (bunl) {
 		unl_free(&unl);
-	unl_genl_init(&unl, "nl80211");
+		memset(&unl, 0, sizeof(unl));
+	}
+	if (!unl.family)
+		unl_genl_init(&unl, "nl80211");
 }
 
 static int phy_lookup_by_number(int idx)
@@ -219,7 +222,7 @@ out:
 
 static void getNoise_mac80211_internal(char *interface, struct mac80211_info *mac80211_info)
 {
-	struct nl_msg *msg;
+    	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
 
 	msg = unl_genl_msg(&unl, NL80211_CMD_GET_SURVEY, true);
@@ -233,6 +236,7 @@ nla_put_failure:
 
 struct mac80211_info *getcurrentsurvey_mac80211(const char *interface, struct mac80211_info *mac80211_info)
 {
+	mac80211_init();
 	lock();
 	struct nl_msg *msg;
 	int wdev = if_nametoindex(interface);
@@ -733,6 +737,7 @@ static int mac80211_cb_stations(struct nl_msg *msg, void *data)
 
 struct mac80211_info *mac80211_assoclist(char *interface)
 {
+	mac80211_init();
 	struct nl_msg *msg;
 	glob_t globbuf;
 	char *globstring;
@@ -774,6 +779,7 @@ nla_put_failure:
 
 char *mac80211_get_caps(const char *interface, int shortgi, int greenfield, int ht40, int ldpc)
 {
+	mac80211_init();
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
 	int rem;
@@ -826,6 +832,7 @@ nla_put_failure:
 
 char *mac80211_get_vhtcaps(const char *interface, int shortgi, int vht80, int vht160, int vht8080, int su_bf, int mu_bf)
 {
+	mac80211_init();
 	struct nl_msg *msg;
 	struct nlattr *caps, *bands, *band;
 	int rem;
@@ -993,6 +1000,7 @@ static void *cipher_worker(struct nlattr **tb, void *priv)
 
 static void *mac80211_has_worker(const char *prefix, void *(*worker)(struct nlattr ** tb, void *priv), void *priv)
 {
+	mac80211_init();
 	int phy = get_ath9k_phy_ifname(prefix);
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
@@ -1217,6 +1225,7 @@ static struct nla_policy freq_policy[NL80211_FREQUENCY_ATTR_MAX + 1] = {
 int mac80211_check_band(const char *interface, int checkband)
 {
 
+	mac80211_init();
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band, *freqlist, *freq;
@@ -1399,7 +1408,7 @@ static struct wifi_channels ghz60channels[] = {
 	{.channel = -1,.freq = -1,.max_eirp = -1,.hw_eirp = -1 },
 };
 
-struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache)
+struct wifi_channels *mac80211_get_channels(struct unl *local_unl, const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband, int nocache)
 {
 	struct nlattr *tb[NL80211_FREQUENCY_ATTR_MAX + 1];
 	struct nlattr *tb_band[NL80211_BAND_ATTR_MAX + 1];
@@ -1451,13 +1460,13 @@ struct wifi_channels *mac80211_get_channels(struct unl *unl, const char *interfa
 		return NULL;
 	}
 
-	msg = unl_genl_msg(unl, NL80211_CMD_GET_WIPHY, false);
+	msg = unl_genl_msg(local_unl, NL80211_CMD_GET_WIPHY, false);
 	NLA_PUT_U32(msg, NL80211_ATTR_WIPHY, phy);
-	if (unl_genl_request_single(unl, msg, &msg) < 0) {
+	if (unl_genl_request_single(local_unl, msg, &msg) < 0) {
 		return NULL;
 	}
 
-	bands = unl_find_attr(unl, msg, NL80211_ATTR_WIPHY_BANDS);
+	bands = unl_find_attr(local_unl, msg, NL80211_ATTR_WIPHY_BANDS);
 	if (!bands) {
 		goto out;
 	}
@@ -1722,10 +1731,10 @@ nla_put_failure:
 
 struct wifi_channels *mac80211_get_channels_simple(const char *interface, const char *country, int max_bandwidth_khz, unsigned char checkband)
 {
-	struct unl unl;
-	unl_genl_init(&unl, "nl80211");
+	struct unl local_unl;
+	unl_genl_init(&local_unl, "nl80211");
 	struct wifi_channels *chan = mac80211_get_channels(&unl, interface, country, max_bandwidth_khz, checkband, 1);
-	unl_free(&unl);
+	unl_free(&local_unl);
 	return chan;
 }
 
@@ -1916,6 +1925,7 @@ static int get_vht_mcs(__u32 capa, const __u8 *mcs)
 
 int mac80211_get_maxrate(char *interface)
 {
+	mac80211_init();
 	struct nlattr *tb[NL80211_BITRATE_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band, *ratelist, *rate;
@@ -1965,6 +1975,7 @@ nla_put_failure:
 
 int mac80211_get_maxmcs(char *interface)
 {
+	mac80211_init();
 	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band;
@@ -2006,6 +2017,7 @@ nla_put_failure:
 
 int mac80211_get_maxvhtmcs(char *interface)
 {
+	mac80211_init();
 	struct nlattr *tb[NL80211_BAND_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct nlattr *bands, *band;
@@ -2046,6 +2058,7 @@ nla_put_failure:
 
 void mac80211_set_antennas(int phy, uint32_t tx_ant, uint32_t rx_ant)
 {
+	mac80211_init();
 	struct nl_msg *msg;
 	if (tx_ant == 0 || rx_ant == 0)
 		return;
@@ -2129,6 +2142,7 @@ int has_tdma(const char *prefix)
 
 static int mac80211_get_antennas(int phy, int which, int direction)
 {
+	mac80211_init();
 	struct nlattr *tb[NL80211_ATTR_MAX + 1];
 	struct nl_msg *msg;
 	struct genlmsghdr *gnlh;
@@ -2319,6 +2333,7 @@ int mac80211_get_configured_rx_antenna(int phy)
 
 struct wifi_interface *mac80211_get_interface(char *dev)
 {
+	mac80211_init();
 	struct nlattr *tb_msg[NL80211_ATTR_MAX + 1];
 	const char *indent = "";
 	struct nl_msg *msg;
