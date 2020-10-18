@@ -2268,7 +2268,9 @@ static int tpacket_rcv(struct sk_buff *skb, struct net_device *dev,
 		macoff = netoff - maclen;
 	}
 	if (netoff > USHRT_MAX) {
+		spin_lock(&sk->sk_receive_queue.lock);
 		po->stats.stats1.tp_drops++;
+		spin_unlock(&sk->sk_receive_queue.lock);
 		goto drop_n_restore;
 	}
 	if (po->tp_version <= TPACKET_V2) {
