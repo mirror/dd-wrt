@@ -284,10 +284,12 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 	}
 }
 int airbag_init(void);
+void special_mac80211_init(void);
 
 int main(int argc, char *argv[])
 {
 	airbag_init();
+	special_mac80211_init();
 	mkdir("/tmp/snmp_cache", 0777);
 	if (argc < 2) {
 		fprintf(stderr, "invalid argument\n");
