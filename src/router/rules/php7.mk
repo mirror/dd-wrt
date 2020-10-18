@@ -139,6 +139,8 @@ PHP_CONFIGURE_ARGS= \
 	--enable-cli \
 	--enable-cgi \
 	--enable-zip \
+	--with-zip \
+	--enable-gd \
 	--with-libzip=$(TOP)/libzip/lib \
 	--enable-intl \
 	--with-icu-dir=$(TOP)/icu/target_staging \
@@ -175,7 +177,7 @@ PHP_CONFIGURE_ARGS= \
 	OPENSSL_LIBS="$(TOP)/openssl" \
 	OPENSSL_INCS="$(TOP)/openssl/include" \
 	LIBZIP_CFLAGS="-I$(TOP)/libzip/lib -I$(TOP)/libzip" \
-	LIBZIP_LIBDIR="$(TOP)/libzip/lib" \
+	LIBZIP_LIBS="-L$(TOP)/libzip/lib -lzip" \
 	PHP_OPENSSL_DIR="$(TOP)/openssl" \
 	PHP_SETUP_OPENSSL="$(TOP)/openssl" \
 	PHP_CURL="$(TOP)/curl" \
