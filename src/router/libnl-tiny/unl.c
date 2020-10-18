@@ -112,8 +112,13 @@ error_handler(struct sockaddr_nl *nla, struct nlmsgerr *err, void *arg)
 
 struct nl_msg *unl_genl_msg(struct unl *unl, int cmd, bool dump)
 {
-	struct nl_msg *msg;
+	struct nl_msg *msg = NULL;
 	int flags = 0;
+	if (!unl)
+		goto out;
+
+	if (!unl->family)
+		goto out;
 
 	msg = nlmsg_alloc();
 	if (!msg)
