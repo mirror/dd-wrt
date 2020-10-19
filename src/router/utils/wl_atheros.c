@@ -284,12 +284,15 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 	}
 }
 int airbag_init(void);
+#ifdef HAVE_ATH9K
 void special_mac80211_init(void);
-
+#endif
 int main(int argc, char *argv[])
 {
 	airbag_init();
+#ifdef HAVE_ATH9K
 	special_mac80211_init();
+#endif
 	mkdir("/tmp/snmp_cache", 0777);
 	if (argc < 2) {
 		fprintf(stderr, "invalid argument\n");
