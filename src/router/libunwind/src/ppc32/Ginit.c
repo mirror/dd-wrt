@@ -34,31 +34,26 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */
-PROTECTED unw_addr_space_t unw_local_addr_space;
+unw_addr_space_t unw_local_addr_space;
 
 #else /* !UNW_REMOTE_ONLY */
 
 static struct unw_addr_space local_addr_space;
 
-PROTECTED unw_addr_space_t unw_local_addr_space = &local_addr_space;
+unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
 static void *
 uc_addr (ucontext_t *uc, int reg)
 {
   void *addr;
-#ifdef __GLIBC__
-  mcontext_t *mc = uc->uc_mcontext.uc_regs;
-#else
-  mcontext_t *mc = &uc->uc_mcontext;
-#endif
 
   if ((unsigned) (reg - UNW_PPC32_R0) < 32)
-    addr = &mc->gregs[reg - UNW_PPC32_R0];
+    addr = &uc->uc_mcontext.uc_regs->gregs[reg - UNW_PPC32_R0];
 
   else
   if ( ((unsigned) (reg - UNW_PPC32_F0) < 32) &&
        ((unsigned) (reg - UNW_PPC32_F0) >= 0) )
-    addr = &mc->fpregs.fpregs[reg - UNW_PPC32_F0];
+    addr = &uc->uc_mcontext.uc_regs->fpregs.fpregs[reg - UNW_PPC32_F0];
 
   else
     {
@@ -81,7 +76,7 @@ uc_addr (ucontext_t *uc, int reg)
         default:
           return NULL;
         }
-      addr = &mc->gregs[gregs_idx];
+      addr = &uc->uc_mcontext.uc_regs->gregs[gregs_idx];
     }
   return addr;
 }

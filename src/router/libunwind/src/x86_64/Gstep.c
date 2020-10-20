@@ -39,7 +39,7 @@ is_plt_entry (struct dwarf_cursor *c)
   unw_accessors_t *a;
   int ret;
 
-  a = unw_get_accessors (c->as);
+  a = unw_get_accessors_int (c->as);
   if ((ret = (*a->access_mem) (c->as, c->ip, &w0, 0, c->as_arg)) < 0
       || (ret = (*a->access_mem) (c->as, c->ip + 8, &w1, 0, c->as_arg)) < 0)
     return 0;
@@ -52,7 +52,7 @@ is_plt_entry (struct dwarf_cursor *c)
   return ret;
 }
 
-PROTECTED int
+int
 unw_step (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
@@ -115,7 +115,7 @@ unw_step (unw_cursor_t *cursor)
 
       if (unw_is_signal_frame (cursor) > 0)
         {
-          ret = unw_handle_signal_frame(cursor);
+          ret = x86_64_handle_signal_frame(cursor);
           if (ret < 0)
             {
               Debug (2, "returning 0\n");

@@ -76,15 +76,15 @@ tdep_reuse_frame (struct dwarf_cursor *dw, int frame)
          ? c->frame_info.cfa_reg_offset : 0));
 }
 
-PROTECTED int
+int
 unw_is_signal_frame (unw_cursor_t *cursor)
 {
   struct cursor *c = (struct cursor *) cursor;
   return c->sigcontext_format != X86_64_SCF_NONE;
 }
 
-PROTECTED int
-unw_handle_signal_frame (unw_cursor_t *cursor)
+HIDDEN int
+x86_64_handle_signal_frame (unw_cursor_t *cursor)
 {
 #if UNW_DEBUG /* To silence compiler warnings */
   /* Should not get here because we now use kernel-provided dwarf
