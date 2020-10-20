@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data xfs_dqblk_flags_xdata[] = {
  XLAT(XFS_USER_QUOTA),
+ #define XLAT_VAL_0 ((unsigned) (XFS_USER_QUOTA))
+ #define XLAT_STR_0 STRINGIFY(XFS_USER_QUOTA)
  XLAT(XFS_PROJ_QUOTA),
+ #define XLAT_VAL_1 ((unsigned) (XFS_PROJ_QUOTA))
+ #define XLAT_STR_1 STRINGIFY(XFS_PROJ_QUOTA)
  XLAT(XFS_GROUP_QUOTA),
+ #define XLAT_VAL_2 ((unsigned) (XFS_GROUP_QUOTA))
+ #define XLAT_STR_2 STRINGIFY(XFS_GROUP_QUOTA)
 };
 static
 const struct xlat xfs_dqblk_flags[1] = { {
  .data = xfs_dqblk_flags_xdata,
  .size = ARRAY_SIZE(xfs_dqblk_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

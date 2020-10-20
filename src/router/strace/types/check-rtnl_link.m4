@@ -29,4 +29,5 @@ AC_CHECK_TYPES([struct ifla_port_vsi],
 #include <linux/rtnetlink.h>])],,[AC_INCLUDES_DEFAULT
 #include "$srcdir/netlink.h"
 #include <linux/rtnetlink.h>])
-])])
+],[],[AC_INCLUDES_DEFAULT
+#include "$srcdir/netlink.h"])])

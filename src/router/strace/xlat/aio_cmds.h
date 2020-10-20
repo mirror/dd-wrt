@@ -77,22 +77,116 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data aio_cmds_xdata[] = {
  [IOCB_CMD_PREAD] = XLAT(IOCB_CMD_PREAD),
+ #define XLAT_VAL_0 ((unsigned) (IOCB_CMD_PREAD))
+ #define XLAT_STR_0 STRINGIFY(IOCB_CMD_PREAD)
  [IOCB_CMD_PWRITE] = XLAT(IOCB_CMD_PWRITE),
+ #define XLAT_VAL_1 ((unsigned) (IOCB_CMD_PWRITE))
+ #define XLAT_STR_1 STRINGIFY(IOCB_CMD_PWRITE)
  [IOCB_CMD_FSYNC] = XLAT(IOCB_CMD_FSYNC),
+ #define XLAT_VAL_2 ((unsigned) (IOCB_CMD_FSYNC))
+ #define XLAT_STR_2 STRINGIFY(IOCB_CMD_FSYNC)
  [IOCB_CMD_FDSYNC] = XLAT(IOCB_CMD_FDSYNC),
+ #define XLAT_VAL_3 ((unsigned) (IOCB_CMD_FDSYNC))
+ #define XLAT_STR_3 STRINGIFY(IOCB_CMD_FDSYNC)
  [IOCB_CMD_PREADX] = XLAT(IOCB_CMD_PREADX),
+ #define XLAT_VAL_4 ((unsigned) (IOCB_CMD_PREADX))
+ #define XLAT_STR_4 STRINGIFY(IOCB_CMD_PREADX)
  [IOCB_CMD_POLL] = XLAT(IOCB_CMD_POLL),
+ #define XLAT_VAL_5 ((unsigned) (IOCB_CMD_POLL))
+ #define XLAT_STR_5 STRINGIFY(IOCB_CMD_POLL)
  [IOCB_CMD_NOOP] = XLAT(IOCB_CMD_NOOP),
+ #define XLAT_VAL_6 ((unsigned) (IOCB_CMD_NOOP))
+ #define XLAT_STR_6 STRINGIFY(IOCB_CMD_NOOP)
  [IOCB_CMD_PREADV] = XLAT(IOCB_CMD_PREADV),
+ #define XLAT_VAL_7 ((unsigned) (IOCB_CMD_PREADV))
+ #define XLAT_STR_7 STRINGIFY(IOCB_CMD_PREADV)
  [IOCB_CMD_PWRITEV] = XLAT(IOCB_CMD_PWRITEV),
+ #define XLAT_VAL_8 ((unsigned) (IOCB_CMD_PWRITEV))
+ #define XLAT_STR_8 STRINGIFY(IOCB_CMD_PWRITEV)
 };
 static
 const struct xlat aio_cmds[1] = { {
  .data = aio_cmds_xdata,
  .size = ARRAY_SIZE(aio_cmds_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

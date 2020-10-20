@@ -117,26 +117,54 @@ extern const struct xlat siginfo_codes[];
 
 static const struct xlat_data siginfo_codes_xdata[] = {
  XLAT(SI_USER),
+ #define XLAT_VAL_0 ((unsigned) (SI_USER))
+ #define XLAT_STR_0 STRINGIFY(SI_USER)
  XLAT(SI_KERNEL),
+ #define XLAT_VAL_1 ((unsigned) (SI_KERNEL))
+ #define XLAT_STR_1 STRINGIFY(SI_KERNEL)
  XLAT(SI_QUEUE),
+ #define XLAT_VAL_2 ((unsigned) (SI_QUEUE))
+ #define XLAT_STR_2 STRINGIFY(SI_QUEUE)
 
 #ifdef __mips__
  XLAT(SI_ASYNCIO),
+ #define XLAT_VAL_3 ((unsigned) (SI_ASYNCIO))
+ #define XLAT_STR_3 STRINGIFY(SI_ASYNCIO)
  XLAT(SI_TIMER),
+ #define XLAT_VAL_4 ((unsigned) (SI_TIMER))
+ #define XLAT_STR_4 STRINGIFY(SI_TIMER)
  XLAT(SI_MESGQ),
+ #define XLAT_VAL_5 ((unsigned) (SI_MESGQ))
+ #define XLAT_STR_5 STRINGIFY(SI_MESGQ)
 #else
  XLAT(SI_TIMER),
+ #define XLAT_VAL_6 ((unsigned) (SI_TIMER))
+ #define XLAT_STR_6 STRINGIFY(SI_TIMER)
  XLAT(SI_MESGQ),
+ #define XLAT_VAL_7 ((unsigned) (SI_MESGQ))
+ #define XLAT_STR_7 STRINGIFY(SI_MESGQ)
  XLAT(SI_ASYNCIO),
+ #define XLAT_VAL_8 ((unsigned) (SI_ASYNCIO))
+ #define XLAT_STR_8 STRINGIFY(SI_ASYNCIO)
 #endif
 
  XLAT(SI_SIGIO),
+ #define XLAT_VAL_9 ((unsigned) (SI_SIGIO))
+ #define XLAT_STR_9 STRINGIFY(SI_SIGIO)
  XLAT(SI_TKILL),
+ #define XLAT_VAL_10 ((unsigned) (SI_TKILL))
+ #define XLAT_STR_10 STRINGIFY(SI_TKILL)
  XLAT(SI_DETHREAD),
+ #define XLAT_VAL_11 ((unsigned) (SI_DETHREAD))
+ #define XLAT_STR_11 STRINGIFY(SI_DETHREAD)
  XLAT(SI_ASYNCNL),
+ #define XLAT_VAL_12 ((unsigned) (SI_ASYNCNL))
+ #define XLAT_STR_12 STRINGIFY(SI_ASYNCNL)
 
 #ifdef __sparc__
  XLAT(SI_NOINFO),
+ #define XLAT_VAL_13 ((unsigned) (SI_NOINFO))
+ #define XLAT_STR_13 STRINGIFY(SI_NOINFO)
 #endif
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
@@ -146,8 +174,124 @@ const struct xlat siginfo_codes[1] = { {
  .data = siginfo_codes_xdata,
  .size = ARRAY_SIZE(siginfo_codes_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

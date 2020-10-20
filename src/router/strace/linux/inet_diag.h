@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -44,6 +44,8 @@ struct inet_diag_req_v2 {
 enum {
 	INET_DIAG_REQ_NONE,
 	INET_DIAG_REQ_BYTECODE,
+	INET_DIAG_REQ_SK_BPF_STORAGES,
+	INET_DIAG_REQ_PROTOCOL,
 };
 
 struct inet_diag_bc_op {
@@ -66,6 +68,7 @@ enum {
 	INET_DIAG_BC_MARK_COND,
 	INET_DIAG_BC_S_EQ,
 	INET_DIAG_BC_D_EQ,
+	INET_DIAG_BC_CGROUP_COND,
 };
 
 struct inet_diag_hostcond {
@@ -116,6 +119,10 @@ enum {
 	INET_DIAG_MARK,
 	INET_DIAG_BBRINFO,
 	INET_DIAG_CLASS_ID,
+	INET_DIAG_MD5SIG,
+	INET_DIAG_ULP_INFO,
+	INET_DIAG_SK_BPF_STORAGES,
+	INET_DIAG_CGROUP_ID,
 };
 
 /* INET_DIAG_MEM */

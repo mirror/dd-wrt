@@ -1,7 +1,7 @@
 /*
  * Check bpf(BPF_OBJ_GET_INFO_BY_FD) decoding.
  *
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -86,6 +86,10 @@ print_map_create(void *attr_void, size_t size, long rc)
 	if (size > offsetof(struct BPF_MAP_CREATE_struct, btf_fd)) {
 		printf(", btf_fd=0</dev/null>"
 		       ", btf_key_type_id=0, btf_value_type_id=0");
+	}
+	if (size > offsetof(struct BPF_MAP_CREATE_struct,
+			    btf_vmlinux_value_type_id)) {
+		printf(", btf_vmlinux_value_type_id=0");
 	}
 	printf("}, %zu) = ", size);
 	if (rc >= 0)
@@ -352,6 +356,10 @@ main(int ac, char **av)
 	if (bpf_map_get_info_attr.info_len >
 	    offsetof(struct bpf_map_info_struct, ifindex))
 		printf(", ifindex=%u", map_info->ifindex);
+	if (bpf_map_get_info_attr.info_len >
+	    offsetof(struct bpf_map_info_struct, btf_vmlinux_value_type_id))
+		printf(", btf_vmlinux_value_type_id=%u",
+		       map_info->btf_vmlinux_value_type_id);
 	if (bpf_map_get_info_attr.info_len >
 	    offsetof(struct bpf_map_info_struct, netns_dev))
 		printf(", netns_dev=makedev(%#x, %#x)",

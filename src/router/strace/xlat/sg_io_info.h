@@ -31,15 +31,49 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sg_io_info_xdata[] = {
  XLAT(SG_INFO_CHECK),
+ #define XLAT_VAL_0 ((unsigned) (SG_INFO_CHECK))
+ #define XLAT_STR_0 STRINGIFY(SG_INFO_CHECK)
  XLAT(SG_INFO_DIRECT_IO),
+ #define XLAT_VAL_1 ((unsigned) (SG_INFO_DIRECT_IO))
+ #define XLAT_STR_1 STRINGIFY(SG_INFO_DIRECT_IO)
  XLAT(SG_INFO_MIXED_IO),
+ #define XLAT_VAL_2 ((unsigned) (SG_INFO_MIXED_IO))
+ #define XLAT_STR_2 STRINGIFY(SG_INFO_MIXED_IO)
 };
 const struct xlat sg_io_info[1] = { {
  .data = sg_io_info_xdata,
  .size = ARRAY_SIZE(sg_io_info_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

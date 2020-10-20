@@ -17,6 +17,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define GRND_RANDOM 2
 #endif
+#if defined(GRND_INSECURE) || (defined(HAVE_DECL_GRND_INSECURE) && HAVE_DECL_GRND_INSECURE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((GRND_INSECURE) == (4), "GRND_INSECURE != 4");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define GRND_INSECURE 4
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -28,15 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data getrandom_flags_xdata[] = {
  XLAT(GRND_NONBLOCK),
+ #define XLAT_VAL_0 ((unsigned) (GRND_NONBLOCK))
+ #define XLAT_STR_0 STRINGIFY(GRND_NONBLOCK)
  XLAT(GRND_RANDOM),
+ #define XLAT_VAL_1 ((unsigned) (GRND_RANDOM))
+ #define XLAT_STR_1 STRINGIFY(GRND_RANDOM)
+ XLAT(GRND_INSECURE),
+ #define XLAT_VAL_2 ((unsigned) (GRND_INSECURE))
+ #define XLAT_STR_2 STRINGIFY(GRND_INSECURE)
 };
 static
 const struct xlat getrandom_flags[1] = { {
  .data = getrandom_flags_xdata,
  .size = ARRAY_SIZE(getrandom_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

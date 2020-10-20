@@ -30,6 +30,7 @@ AM_LDFLAGS = $(ARCH_MFLAGS)
 
 libtests_a_SOURCES = \
 	create_nl_socket.c \
+	create_tmpfile.c \
 	errno2name.c \
 	error_msg.c \
 	fill_memory.c \
@@ -43,6 +44,8 @@ libtests_a_SOURCES = \
 	libsocketcall.c \
 	lock_file.c \
 	overflowuid.c \
+	pidns.c \
+	pidns.h \
 	pipe_maxfd.c \
 	print_quoted_string.c \
 	print_time.c \
@@ -63,6 +66,7 @@ libtests_a_SOURCES = \
 	test_ucopy.h \
 	tests.h \
 	tprintf.c \
+	xmalloc_for_tests.c \
 	# end of libtests_a_SOURCES
 libtests_a_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 check_LIBRARIES = libtests.a
@@ -84,12 +88,20 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	bpf-obj_get_info_by_fd-prog-v \
 	bpf-obj_get_info_by_fd-v \
 	bpf-success \
+	bpf-success-long-y \
 	bpf-success-v \
 	caps-abbrev \
 	check_sigblock \
 	check_sigign \
 	clone_parent \
+	clone_parent--quiet-exit \
+	clone_parent-q \
+	clone_parent-qq \
 	clone_ptrace \
+	clone_ptrace--quiet-attach \
+	clone_ptrace--quiet-exit \
+	clone_ptrace-q \
+	clone_ptrace-qq \
 	clone3-success \
 	clone3-success-Xabbrev \
 	clone3-success-Xraw \
@@ -98,16 +110,25 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	delay \
 	execve-v \
 	execveat-v \
+	fcntl--pidns-translation \
+	fcntl64--pidns-translation \
 	filter_seccomp-flag \
 	filter_seccomp-perf \
 	filter-unavailable \
 	fork-f \
+	fork--pidns-translation \
 	fsync-y \
+	get_process_reaper \
+	getpgrp--pidns-translation	\
 	getpid	\
+	getpid--pidns-translation	\
 	getppid	\
+	getsid--pidns-translation \
 	gettid \
+	gettid--pidns-translation \
 	inject-nf \
 	int_0x80 \
+	ioctl_block--pidns-translation \
 	ioctl_dm-v \
 	ioctl_evdev-success \
 	ioctl_evdev-success-Xabbrev \
@@ -117,22 +138,46 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	ioctl_evdev-success-v-Xabbrev \
 	ioctl_evdev-success-v-Xraw \
 	ioctl_evdev-success-v-Xverbose \
+	ioctl_hdio-success \
+	ioctl_hdio-success-Xabbrev \
+	ioctl_hdio-success-Xraw \
+	ioctl_hdio-success-Xverbose \
+	ioctl_hdio-success-v \
+	ioctl_hdio-success-v-Xabbrev \
+	ioctl_hdio-success-v-Xraw \
+	ioctl_hdio-success-v-Xverbose \
 	ioctl_loop-nv \
 	ioctl_loop-v \
 	ioctl_nsfs \
 	ioctl_perf-success \
 	ioctl_rtc-v \
+	ioctl_v4l2-success \
+	ioctl_v4l2-success-Xabbrev \
+	ioctl_v4l2-success-Xraw \
+	ioctl_v4l2-success-Xverbose \
+	ioctl_v4l2-success-v \
+	ioctl_v4l2-success-v-Xabbrev \
+	ioctl_v4l2-success-v-Xraw \
+	ioctl_v4l2-success-v-Xverbose \
+	ioprio--pidns-translation \
 	is_linux_mips_n64 \
+	kcmp-y--pidns-translation \
 	kill_child \
+	kill--pidns-translation \
 	ksysent \
 	list_sigaction_signum \
 	localtime \
 	looping_threads \
+	migrate_pages--pidns-translation \
 	mmsg-silent \
 	mmsg_name-v \
+	move_pages--pidns-translation \
 	msg_control-v \
 	net-accept-connect \
+	net-sockaddr--pidns-translation \
 	net-tpacket_stats-success \
+	nlattr_ifla_xdp-y \
+	netlink_audit--pidns-translation \
 	netlink_inet_diag \
 	netlink_netlink_diag \
 	netlink_unix_diag \
@@ -144,11 +189,20 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	pc \
 	perf_event_open_nonverbose \
 	perf_event_open_unabbrev \
+	pidfd_open--pidns-translation \
+	pidfd_send_signal--pidns-translation \
+	pidns-cache \
+	poll-P \
+	ppoll-P \
 	ppoll-v \
+	prlimit64--pidns-translation \
 	prctl-seccomp-filter-v \
 	prctl-seccomp-strict \
 	prctl-spec-inject \
 	print_maxfd \
+	print_ppid_tracerpid \
+	process_vm_readv--pidns-translation \
+	process_vm_writev--pidns-translation \
 	qual_fault \
 	qual_inject-error-signal \
 	qual_inject-retval \
@@ -162,7 +216,13 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	quotactl-xfs-v \
 	redirect-fds \
 	restart_syscall \
+	rt_sigqueueinfo--pidns-translation \
+	rt_tgsigqueueinfo--pidns-translation \
 	run_expect_termsig \
+	sched_xetaffinity--pidns-translation \
+	sched_xetattr--pidns-translation \
+	sched_xetparam--pidns-translation \
+	sched_xetscheduler--pidns-translation \
 	scm_rights \
 	seccomp-filter-v \
 	seccomp-strict \
@@ -170,22 +230,35 @@ check_PROGRAMS = $(PURE_EXECUTABLES) \
 	set_ptracer_any \
 	set_sigblock \
 	set_sigign \
+	setpgrp-exec \
 	signal_receive \
+	signal_receive--pidns-translation \
 	sleep \
 	stack-fcall \
 	stack-fcall-attach \
 	stack-fcall-mangled \
 	status-none-threads \
 	status-unfinished-threads \
+	so_peercred--pidns-translation \
 	syslog-success \
+	tgkill--pidns-translation \
 	threads-execve \
+	threads-execve--quiet-thread-execve \
+	threads-execve-q \
+	threads-execve-qq \
+	threads-execve-qqq \
+	tkill--pidns-translation \
 	tracer_ppid_pgid_sid \
+	trie_test \
 	unblock_reset_raise \
 	unix-pair-send-recv \
 	unix-pair-sendto-recvfrom \
 	vfork-f \
 	wait4-v \
 	waitid-v \
+	xetpgid--pidns-translation \
+	xetpriority--pidns-translation \
+	xet_robust_list--pidns-translation \
 	zeroargc \
 	# end of check_PROGRAMS
 
@@ -200,6 +273,7 @@ localtime_LDADD = $(clock_LIBS) $(LDADD)
 looping_threads_LDADD = -lpthread $(LDADD)
 lstat64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 maybe_switch_current_tcp_LDADD = -lpthread $(LDADD)
+maybe_switch_current_tcp__quiet_thread_execve_LDADD = -lpthread $(LDADD)
 mmap64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_Xabbrev_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 mmap64_Xraw_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
@@ -216,6 +290,10 @@ statfs_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 status_none_threads_LDADD = -lpthread $(LDADD)
 status_unfinished_threads_LDADD = -lpthread $(LDADD)
 threads_execve_LDADD = -lpthread $(clock_LIBS) $(LDADD)
+threads_execve__quiet_thread_execve_LDADD = -lpthread $(clock_LIBS) $(LDADD)
+threads_execve_q_LDADD = -lpthread $(clock_LIBS) $(LDADD)
+threads_execve_qq_LDADD = -lpthread $(clock_LIBS) $(LDADD)
+threads_execve_qqq_LDADD = -lpthread $(clock_LIBS) $(LDADD)
 times_LDADD = $(clock_LIBS) $(LDADD)
 truncate64_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
 uio_CPPFLAGS = $(AM_CPPFLAGS) -D_FILE_OFFSET_BITS=64
@@ -230,6 +308,11 @@ stack_fcall_mangled_SOURCES = stack-fcall-mangled.c \
 	stack-fcall-mangled-0.c stack-fcall-mangled-1.c \
 	stack-fcall-mangled-2.c stack-fcall-mangled-3.c
 
+trie_test_SOURCES = trie_test.c trie_for_tests.c
+trie_test_CPPFLAGS = $(AM_CPPFLAGS) $(CODE_COVERAGE_CPPFLAGS)
+trie_test_CFLAGS = $(AM_CFLAGS) $(CODE_COVERAGE_CFLAGS)
+trie_test_LDADD = $(LDADD) $(CODE_COVERAGE_LIBS)
+
 include gen_tests.am
 
 if ENABLE_STACKTRACE
@@ -242,6 +325,7 @@ STACKTRACE_TESTS =
 endif
 
 DECODER_TESTS = \
+	bpf-success-long-y.test \
 	bpf-success-v.test \
 	bpf-success.test \
 	brk.test \
@@ -260,13 +344,15 @@ DECODER_TESTS = \
 	execve-v.test \
 	execve.test \
 	fadvise64.test \
+	faccessat.test \
+	faccessat2.test \
 	futex.test \
 	getuid.test \
 	int_0x80.test \
 	inotify_init-y.test \
 	ioctl.test \
+	ioctl_block--pidns-translation.test \
 	ioctl_evdev-success.test \
-	ioctl_perf-success.test \
 	ipc_msgbuf.test \
 	kern_features-fault.test \
 	llseek.test \
@@ -324,7 +410,6 @@ MISC_TESTS = \
 	attach-f-p.test \
 	attach-p-cmd.test \
 	bexecve.test \
-	clone_parent.test \
 	clone_ptrace.test \
 	count-f.test \
 	count.test \
@@ -338,15 +423,19 @@ MISC_TESTS = \
 	filtering_fd-syntax.test \
 	filtering_syscall-syntax.test \
 	first_exec_failure.test \
+	fork--pidns-translation.test \
 	get_regs.test \
+	gettid--pidns-translation.test \
 	inject-nf.test \
 	interactive_block.test \
 	kill_child.test \
 	localtime.test \
 	looping_threads.test \
+	netlink_audit--pidns-translation.test \
 	opipe.test \
 	options-syntax.test \
 	pc.test \
+	pidns-cache.test \
 	printpath-umovestr-legacy.test \
 	printstrn-umoven-legacy.test \
 	qual_fault-syntax.test \
@@ -374,6 +463,8 @@ MISC_TESTS = \
 	strace-DD.test \
 	strace-DDD.test \
 	strace-E.test \
+	strace-E-override.test \
+	strace-E-unset.test \
 	strace-S.test \
 	strace-T.test \
 	strace-V.test \
@@ -422,6 +513,7 @@ EXTRA_DIST = \
 	filter_seccomp.in \
 	filter_seccomp.sh \
 	filter-unavailable.expected \
+	fork--pidns-translation.awk \
 	fstatat.c \
 	fstatx.c \
 	gen_pure_executables.sh \
@@ -430,6 +522,7 @@ EXTRA_DIST = \
 	getresugid.c \
 	init.sh \
 	init_delete_module.h \
+	ioctl-success.sh \
 	ioctl_kvm_run_common.c \
 	ipc.sh \
 	kernel_old_timespec.h \
@@ -438,7 +531,6 @@ EXTRA_DIST = \
 	lstatx.c \
 	match.awk \
 	net.expected \
-	netlink_sock_diag-v.sh \
 	nlattr_ifla.h \
 	pipe.expected \
 	print_user_desc.c \
@@ -467,11 +559,22 @@ EXTRA_DIST = \
 	sockname.c \
 	stack-fcall.h \
 	status-detached.expected \
+	strace--follow-forks-output-separately.expected \
+	strace--relative-timestamps.expected \
+	strace--relative-timestamps-s.expected \
+	strace--relative-timestamps-ms.expected \
+	strace--relative-timestamps-us.expected \
+	strace--relative-timestamps-ns.expected \
+	strace--syscall-times.expected \
+	strace--syscall-times-s.expected \
+	strace--syscall-times-ms.expected \
+	strace--syscall-times-us.expected \
+	strace--syscall-times-ns.expected \
 	strace-C.expected \
 	strace-D.expected \
-	strace-DD.expected \
 	strace-DDD.expected \
 	strace-E.expected \
+	strace-E-unset.expected \
 	strace-T.expected \
 	strace-ff.expected \
 	strace-k-demangle.expected \
@@ -484,6 +587,7 @@ EXTRA_DIST = \
 	strace.supp \
 	sun_path.expected \
 	syntax.sh \
+	trace_clock.in \
 	trace_creds.in \
 	trace_fstat.in \
 	trace_fstatfs.in \
@@ -505,6 +609,7 @@ EXTRA_DIST = \
 	unix-pair-send-recv.expected \
 	unix-pair-sendto-recvfrom.expected \
 	xchownx.c \
+	xgetdents.c \
 	xgetrlimit.c \
 	xselect.c \
 	xstatfs.c \

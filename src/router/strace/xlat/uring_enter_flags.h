@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data uring_enter_flags_xdata[] = {
  XLAT(IORING_ENTER_GETEVENTS),
+ #define XLAT_VAL_0 ((unsigned) (IORING_ENTER_GETEVENTS))
+ #define XLAT_STR_0 STRINGIFY(IORING_ENTER_GETEVENTS)
  XLAT(IORING_ENTER_SQ_WAKEUP),
+ #define XLAT_VAL_1 ((unsigned) (IORING_ENTER_SQ_WAKEUP))
+ #define XLAT_STR_1 STRINGIFY(IORING_ENTER_SQ_WAKEUP)
 };
 static
 const struct xlat uring_enter_flags[1] = { {
  .data = uring_enter_flags_xdata,
  .size = ARRAY_SIZE(uring_enter_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

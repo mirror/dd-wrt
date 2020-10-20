@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data nf_nft_compat_msg_types_xdata[] = {
  XLAT(NFNL_MSG_COMPAT_GET),
+ #define XLAT_VAL_0 ((unsigned) (NFNL_MSG_COMPAT_GET))
+ #define XLAT_STR_0 STRINGIFY(NFNL_MSG_COMPAT_GET)
 };
 static
 const struct xlat nf_nft_compat_msg_types[1] = { {
  .data = nf_nft_compat_msg_types_xdata,
  .size = ARRAY_SIZE(nf_nft_compat_msg_types_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -31,4 +31,5 @@ AC_CHECK_TYPES([struct crypto_report_rng],
 [AC_CHECK_MEMBERS([struct crypto_report_rng.seedsize],,,[AC_INCLUDES_DEFAULT
 #include <linux/cryptouser.h>])],,[AC_INCLUDES_DEFAULT
 #include <linux/cryptouser.h>])
+],[],[AC_INCLUDES_DEFAULT
 ])])

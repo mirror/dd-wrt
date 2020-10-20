@@ -28,6 +28,10 @@ const struct xlat atomic_ops[1] = { {
  .data = atomic_ops_xdata,
  .size = ARRAY_SIZE(atomic_ops_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+  ,
+ .flags_strsz = 0
+  ,
 } };
 
 # endif /* !IN_MPERS */

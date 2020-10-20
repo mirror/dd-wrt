@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -39,6 +39,7 @@
 # define str_ipc_rmid "0"
 # define str_ipc_set "0x1"
 # define str_ipc_stat "0x2"
+# define str_ipc_info "0x3"
 # define str_shm_stat "0xd"
 # define str_shm_info "0xe"
 # define str_shm_stat_any "0xf"
@@ -53,6 +54,7 @@
 # define str_ipc_rmid "0 /\\* IPC_RMID \\*/"
 # define str_ipc_set "0x1 /\\* IPC_SET \\*/"
 # define str_ipc_stat "0x2 /\\* IPC_STAT \\*/"
+# define str_ipc_info "0x3 /\\* IPC_INFO \\*/"
 # define str_shm_stat "0xd /\\* SHM_STAT \\*/"
 # define str_shm_info "0xe /\\* SHM_INFO \\*/"
 # define str_shm_stat_any "0xf /\\* SHM_STAT_ANY \\*/"
@@ -66,11 +68,27 @@
 # define str_ipc_rmid "IPC_RMID"
 # define str_ipc_set "IPC_SET"
 # define str_ipc_stat "IPC_STAT"
+# define str_ipc_info "IPC_INFO"
 # define str_shm_stat "SHM_STAT"
 # define str_shm_info "SHM_INFO"
 # define str_shm_stat_any "SHM_STAT_ANY"
 # define str_ipc_64 "IPC_64"
 # define str_bogus_cmd "0xdefaced2 /\\* SHM_\\?\\?\\? \\*/"
+#endif
+
+#undef TEST_SHMCTL_BOGUS_ADDR
+
+/*
+ * Starting with commit glibc-2.32~80, on every 32-bit architecture
+ * where 32-bit time_t support is enabled, glibc tries to retrieve
+ * the data provided in the third argument of shmctl call.
+ */
+#if GLIBC_PREREQ_GE(2, 32) && defined __TIMESIZE && __TIMESIZE != 64
+# define TEST_SHMCTL_BOGUS_ADDR 0
+#endif
+
+#ifndef TEST_SHMCTL_BOGUS_ADDR
+# define TEST_SHMCTL_BOGUS_ADDR 1
 #endif
 
 static int id = -1;
@@ -84,6 +102,89 @@ cleanup(void)
 	id = -1;
 }
 
+static void
+print_shmid_ds(const char *const str_ipc_cmd,
+	       const struct shmid_ds *const ds,
+	       const int rc)
+{
+	if (rc < 0) {
+		printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
+		       id, str_ipc_64, str_ipc_cmd, ds, sprintrc_grep(rc));
+		return;
+	}
+	printf("shmctl\\(%d, (%s\\|)?%s, \\{shm_perm=\\{uid=%u, gid=%u"
+		", mode=%#o, key=%u, cuid=%u, cgid=%u\\}, shm_segsz=%u"
+		", shm_cpid=%d, shm_lpid=%d, shm_nattch=%u, shm_atime=%u"
+		", shm_dtime=%u, shm_ctime=%u\\}\\) = %d\n",
+		id,
+		str_ipc_64,
+		str_ipc_cmd,
+		(unsigned) ds->shm_perm.uid,
+		(unsigned) ds->shm_perm.gid,
+		(unsigned) ds->shm_perm.mode,
+		(unsigned) ds->shm_perm.__key,
+		(unsigned) ds->shm_perm.cuid,
+		(unsigned) ds->shm_perm.cgid,
+		(unsigned) ds->shm_segsz,
+		(int) ds->shm_cpid,
+		(int) ds->shm_lpid,
+		(unsigned) ds->shm_nattch,
+		(unsigned) ds->shm_atime,
+		(unsigned) ds->shm_dtime,
+		(unsigned) ds->shm_ctime,
+		rc);
+}
+
+static void
+print_ipc_info(const char *const str_ipc_cmd,
+               const struct shminfo *const info,
+               const int rc)
+{
+	if (rc < 0) {
+		printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
+		       id, str_ipc_64, str_ipc_cmd, info, sprintrc_grep(rc));
+		return;
+	}
+
+	printf("shmctl\\(%d, (%s\\|)?%s, \\{shmmax=%llu, shmmin=%llu"
+	       ", shmmni=%llu, shmseg=%llu, shmall=%llu\\}\\) = %d\n",
+	       id,
+	       str_ipc_64,
+	       str_ipc_cmd,
+	       (unsigned long long) info->shmmax,
+	       (unsigned long long) info->shmmin,
+	       (unsigned long long) info->shmmni,
+	       (unsigned long long) info->shmseg,
+	       (unsigned long long) info->shmall,
+	       rc);
+}
+
+static void
+print_shm_info(const char *const str_ipc_cmd,
+              const struct shm_info *const info,
+              const int rc)
+{
+	if (rc < 0) {
+		printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
+		       id, str_ipc_64, str_ipc_cmd, info, sprintrc_grep(rc));
+		return;
+	}
+
+	printf("shmctl\\(%d, (%s\\|)?%s, \\{used_ids=%d, shm_tot=%llu"
+	       ", shm_rss=%llu, shm_swp=%llu, swap_attempts=%llu"
+	       ", swap_successes=%llu\\}\\) = %d\n",
+	       id,
+	       str_ipc_64,
+	       str_ipc_cmd,
+	       info->used_ids,
+	       (unsigned long long) info->shm_tot,
+	       (unsigned long long) info->shm_rss,
+	       (unsigned long long) info->shm_swp,
+	       (unsigned long long) info->swap_attempts,
+	       (unsigned long long) info->swap_successes,
+	       rc);
+}
+
 int
 main(void)
 {
@@ -92,7 +193,9 @@ main(void)
 	static const key_t bogus_key = (key_t) 0xeca86420fdb97531ULL;
 	static const int bogus_id = 0xdefaced1;
 	static const int bogus_cmd = 0xdefaced2;
+#if TEST_SHMCTL_BOGUS_ADDR
 	static void * const bogus_addr = (void *) -1L;
+#endif
 	static const size_t bogus_size =
 	/*
 	 * musl sets size to SIZE_MAX if size argument is greater than
@@ -109,7 +212,11 @@ main(void)
 	static const unsigned int huge_flags = 21 << SHM_HUGE_SHIFT;
 	int bogus_flags;
 	int rc;
-	struct shmid_ds ds;
+	union {
+		struct shmid_ds ds;
+		struct shminfo ipc_info;
+		struct shm_info shm_info;
+	} buf;
 
 	rc = shmget(bogus_key, bogus_size, 0);
 	printf("shmget\\(%#llx, %zu, 000\\) = %s\n",
@@ -160,45 +267,38 @@ main(void)
 	printf("shmctl\\(%d, (%s\\|)?%s, NULL\\) = %s\n",
 	       bogus_id, str_ipc_64, str_bogus_cmd, sprintrc_grep(rc));
 
+#if TEST_SHMCTL_BOGUS_ADDR
 	rc = shmctl(bogus_id, IPC_STAT, bogus_addr);
 	printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
 	       bogus_id, str_ipc_64, str_ipc_stat, bogus_addr,
 	       sprintrc_grep(rc));
+#endif
 
-	if (shmctl(id, IPC_STAT, &ds))
+	rc = shmctl(id, IPC_STAT, &buf.ds);
+	if (rc < 0)
 		perror_msg_and_skip("shmctl IPC_STAT");
-	printf("shmctl\\(%d, (%s\\|)?%s, \\{shm_perm=\\{uid=%u, gid=%u, "
-		"mode=%#o, key=%u, cuid=%u, cgid=%u\\}, shm_segsz=%u, shm_cpid=%u, "
-		"shm_lpid=%u, shm_nattch=%u, shm_atime=%u, shm_dtime=%u, "
-		"shm_ctime=%u\\}\\) = 0\n",
-		id, str_ipc_64, str_ipc_stat,
-		(unsigned) ds.shm_perm.uid, (unsigned) ds.shm_perm.gid,
-		(unsigned) ds.shm_perm.mode, (unsigned) ds.shm_perm.__key,
-		(unsigned) ds.shm_perm.cuid, (unsigned) ds.shm_perm.cgid,
-		(unsigned) ds.shm_segsz, (unsigned) ds.shm_cpid,
-		(unsigned) ds.shm_lpid, (unsigned) ds.shm_nattch,
-		(unsigned) ds.shm_atime, (unsigned) ds.shm_dtime,
-		(unsigned) ds. shm_ctime);
+	print_shmid_ds(str_ipc_stat, &buf.ds, rc);
 
-	if (shmctl(id, IPC_SET, &ds))
+	if (shmctl(id, IPC_SET, &buf.ds))
 		perror_msg_and_skip("shmctl IPC_SET");
 	printf("shmctl\\(%d, (%s\\|)?%s, \\{shm_perm=\\{uid=%u, gid=%u"
-	       ", mode=%#o\\}, ...\\}\\) = 0\n",
+	       ", mode=%#o\\}\\}\\) = 0\n",
 	       id, str_ipc_64, str_ipc_set,
-	       (unsigned) ds.shm_perm.uid, (unsigned) ds.shm_perm.gid,
-	       (unsigned) ds.shm_perm.mode);
+	       (unsigned) buf.ds.shm_perm.uid,
+	       (unsigned) buf.ds.shm_perm.gid,
+	       (unsigned) buf.ds.shm_perm.mode);
 
-	rc = shmctl(0, SHM_INFO, &ds);
-	printf("shmctl\\(0, (%s\\|)?%s, %p\\) = %s\n",
-	       str_ipc_64, str_shm_info, &ds, sprintrc_grep(rc));
+	rc = shmctl(id, IPC_INFO, &buf.ds);
+	print_ipc_info(str_ipc_info, &buf.ipc_info, rc);
 
-	rc = shmctl(id, SHM_STAT, &ds);
-	printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
-	       id, str_ipc_64, str_shm_stat, &ds, sprintrc_grep(rc));
+	rc = shmctl(id, SHM_INFO, &buf.ds);
+	print_shm_info(str_shm_info, &buf.shm_info, rc);
 
-	rc = shmctl(id, SHM_STAT_ANY, &ds);
-	printf("shmctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
-	       id, str_ipc_64, str_shm_stat_any, &ds, sprintrc_grep(rc));
+	rc = shmctl(id, SHM_STAT, &buf.ds);
+	print_shmid_ds(str_shm_stat, &buf.ds, rc);
+
+	rc = shmctl(id, SHM_STAT_ANY, &buf.ds);
+	print_shmid_ds(str_shm_stat_any, &buf.ds, rc);
 
 	return 0;
 }

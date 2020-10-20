@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -9,8 +9,6 @@
 static int
 arch_get_scno(struct tcb *tcp)
 {
-	if (upeek(tcp, REG_SYSCALL, &tcp->scno) < 0)
-		return -1;
-	tcp->scno &= 0xffff;
+	tcp->scno = sh64_regs.regs[9];
 	return 1;
 }

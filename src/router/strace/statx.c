@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -49,19 +49,19 @@ SYS_FUNC(statx)
 		if (umove_or_printaddr(tcp, tcp->u_arg[4], &stx))
 			return 0;
 
-		tprints("{stx_mask=");
-		printflags(statx_masks, stx.stx_mask, "STATX_???");
+		PRINT_FIELD_FLAGS("{", stx, stx_mask, statx_masks,
+				  "STATX_???");
 
 		if (!abbrev(tcp))
 			PRINT_FIELD_U(", ", stx, stx_blksize);
 
-		tprints(", stx_attributes=");
-		printflags(statx_attrs, stx.stx_attributes, "STATX_ATTR_???");
+		PRINT_FIELD_FLAGS(", ", stx, stx_attributes, statx_attrs,
+				  "STATX_ATTR_???");
 
 		if (!abbrev(tcp)) {
 			PRINT_FIELD_U(", ", stx, stx_nlink);
-			printuid(", stx_uid=", stx.stx_uid);
-			printuid(", stx_gid=", stx.stx_gid);
+			PRINT_FIELD_UID(", ", stx, stx_uid);
+			PRINT_FIELD_UID(", ", stx, stx_gid);
 		}
 
 		tprints(", stx_mode=");
@@ -74,11 +74,8 @@ SYS_FUNC(statx)
 
 		if (!abbrev(tcp)) {
 			PRINT_FIELD_U(", ", stx, stx_blocks);
-
-			tprints(", stx_attributes_mask=");
-			printflags(statx_attrs, stx.stx_attributes_mask,
-				   "STATX_ATTR_???");
-
+			PRINT_FIELD_FLAGS(", ", stx, stx_attributes_mask,
+					  statx_attrs, "STATX_ATTR_???");
 			PRINT_FIELD_TIME(stx_atime);
 			PRINT_FIELD_TIME(stx_btime);
 			PRINT_FIELD_TIME(stx_ctime);

@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data quota_formats_xdata[] = {
  [QFMT_VFS_OLD] = XLAT(QFMT_VFS_OLD),
+ #define XLAT_VAL_0 ((unsigned) (QFMT_VFS_OLD))
+ #define XLAT_STR_0 STRINGIFY(QFMT_VFS_OLD)
  [QFMT_VFS_V0] = XLAT(QFMT_VFS_V0),
+ #define XLAT_VAL_1 ((unsigned) (QFMT_VFS_V0))
+ #define XLAT_STR_1 STRINGIFY(QFMT_VFS_V0)
  [QFMT_OCFS2] = XLAT(QFMT_OCFS2),
+ #define XLAT_VAL_2 ((unsigned) (QFMT_OCFS2))
+ #define XLAT_STR_2 STRINGIFY(QFMT_OCFS2)
  [QFMT_VFS_V1] = XLAT(QFMT_VFS_V1),
+ #define XLAT_VAL_3 ((unsigned) (QFMT_VFS_V1))
+ #define XLAT_STR_3 STRINGIFY(QFMT_VFS_V1)
 };
 static
 const struct xlat quota_formats[1] = { {
  .data = quota_formats_xdata,
  .size = ARRAY_SIZE(quota_formats_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

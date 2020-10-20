@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -165,7 +165,8 @@ decode_nla_str(struct tcb *const tcp,
 	       const unsigned int len,
 	       const void *const opaque_data)
 {
-	printstr_ex(tcp, addr, len, QUOTE_0_TERMINATED);
+	printstr_ex(tcp, addr, len,
+		    QUOTE_OMIT_TRAILING_0 | QUOTE_EXPECT_TRAILING_0);
 
 	return true;
 }
@@ -329,6 +330,26 @@ decode_nla_ip_proto(struct tcb *const tcp,
 	};
 
 	return decode_nla_xval(tcp, addr, len, &opts);
+}
+
+bool
+decode_nla_hwaddr(struct tcb *const tcp,
+		const kernel_ulong_t addr,
+		const unsigned int len,
+		const void *const opaque_data)
+{
+	if (len > MAX_ADDR_LEN)
+		return false;
+
+	uint8_t buf[len];
+	const uintptr_t arphrd = (uintptr_t) opaque_data;
+
+	if (!umoven_or_printaddr(tcp, addr, len, buf)) {
+		print_hwaddr("", buf, len, arphrd & NLA_HWADDR_FAMILY_OFFSET
+				? arphrd & ~NLA_HWADDR_FAMILY_OFFSET : -1U);
+	}
+
+	return true;
 }
 
 bool

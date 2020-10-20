@@ -91,24 +91,138 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data perf_sw_ids_xdata[] = {
  XLAT(PERF_COUNT_SW_CPU_CLOCK),
+ #define XLAT_VAL_0 ((unsigned) (PERF_COUNT_SW_CPU_CLOCK))
+ #define XLAT_STR_0 STRINGIFY(PERF_COUNT_SW_CPU_CLOCK)
  XLAT(PERF_COUNT_SW_TASK_CLOCK),
+ #define XLAT_VAL_1 ((unsigned) (PERF_COUNT_SW_TASK_CLOCK))
+ #define XLAT_STR_1 STRINGIFY(PERF_COUNT_SW_TASK_CLOCK)
  XLAT(PERF_COUNT_SW_PAGE_FAULTS),
+ #define XLAT_VAL_2 ((unsigned) (PERF_COUNT_SW_PAGE_FAULTS))
+ #define XLAT_STR_2 STRINGIFY(PERF_COUNT_SW_PAGE_FAULTS)
  XLAT(PERF_COUNT_SW_CONTEXT_SWITCHES),
+ #define XLAT_VAL_3 ((unsigned) (PERF_COUNT_SW_CONTEXT_SWITCHES))
+ #define XLAT_STR_3 STRINGIFY(PERF_COUNT_SW_CONTEXT_SWITCHES)
  XLAT(PERF_COUNT_SW_CPU_MIGRATIONS),
+ #define XLAT_VAL_4 ((unsigned) (PERF_COUNT_SW_CPU_MIGRATIONS))
+ #define XLAT_STR_4 STRINGIFY(PERF_COUNT_SW_CPU_MIGRATIONS)
  XLAT(PERF_COUNT_SW_PAGE_FAULTS_MIN),
+ #define XLAT_VAL_5 ((unsigned) (PERF_COUNT_SW_PAGE_FAULTS_MIN))
+ #define XLAT_STR_5 STRINGIFY(PERF_COUNT_SW_PAGE_FAULTS_MIN)
  XLAT(PERF_COUNT_SW_PAGE_FAULTS_MAJ),
+ #define XLAT_VAL_6 ((unsigned) (PERF_COUNT_SW_PAGE_FAULTS_MAJ))
+ #define XLAT_STR_6 STRINGIFY(PERF_COUNT_SW_PAGE_FAULTS_MAJ)
  XLAT(PERF_COUNT_SW_ALIGNMENT_FAULTS),
+ #define XLAT_VAL_7 ((unsigned) (PERF_COUNT_SW_ALIGNMENT_FAULTS))
+ #define XLAT_STR_7 STRINGIFY(PERF_COUNT_SW_ALIGNMENT_FAULTS)
  XLAT(PERF_COUNT_SW_EMULATION_FAULTS),
+ #define XLAT_VAL_8 ((unsigned) (PERF_COUNT_SW_EMULATION_FAULTS))
+ #define XLAT_STR_8 STRINGIFY(PERF_COUNT_SW_EMULATION_FAULTS)
  XLAT(PERF_COUNT_SW_DUMMY),
+ #define XLAT_VAL_9 ((unsigned) (PERF_COUNT_SW_DUMMY))
+ #define XLAT_STR_9 STRINGIFY(PERF_COUNT_SW_DUMMY)
  XLAT(PERF_COUNT_SW_BPF_OUTPUT),
+ #define XLAT_VAL_10 ((unsigned) (PERF_COUNT_SW_BPF_OUTPUT))
+ #define XLAT_STR_10 STRINGIFY(PERF_COUNT_SW_BPF_OUTPUT)
 };
 static
 const struct xlat perf_sw_ids[1] = { {
  .data = perf_sw_ids_xdata,
  .size = ARRAY_SIZE(perf_sw_ids_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

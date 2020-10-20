@@ -37,18 +37,52 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data efd_flags_xdata[] = {
  XLAT(EFD_SEMAPHORE),
+ #define XLAT_VAL_0 ((unsigned) (EFD_SEMAPHORE))
+ #define XLAT_STR_0 STRINGIFY(EFD_SEMAPHORE)
 #if defined EFD_CLOEXEC || defined O_CLOEXEC
  XLAT(EFD_CLOEXEC),
+ #define XLAT_VAL_1 ((unsigned) (EFD_CLOEXEC))
+ #define XLAT_STR_1 STRINGIFY(EFD_CLOEXEC)
 #endif
  XLAT(EFD_NONBLOCK),
+ #define XLAT_VAL_2 ((unsigned) (EFD_NONBLOCK))
+ #define XLAT_STR_2 STRINGIFY(EFD_NONBLOCK)
 };
 static
 const struct xlat efd_flags[1] = { {
  .data = efd_flags_xdata,
  .size = ARRAY_SIZE(efd_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

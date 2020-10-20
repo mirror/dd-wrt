@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2015-2020 Dmitry V. Levin <ldv@altlinux.org>
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -27,7 +27,7 @@ int main(void)
 #endif
 
 	/* write instruction pointer length to the log */
-	assert(write(-1, NULL, 2 * sizeof(void *)) < 0);
+	assert(write(-1, (void *) 8UL, 2 * sizeof(void *)) < 0);
 
 	/* just a noticeable line in the log */
 	assert(munmap(&main, 0) < 0);

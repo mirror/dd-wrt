@@ -70,21 +70,105 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_xdp_options_xdata[] = {
  [XDP_MMAP_OFFSETS] = XLAT(XDP_MMAP_OFFSETS),
+ #define XLAT_VAL_0 ((unsigned) (XDP_MMAP_OFFSETS))
+ #define XLAT_STR_0 STRINGIFY(XDP_MMAP_OFFSETS)
  [XDP_RX_RING] = XLAT(XDP_RX_RING),
+ #define XLAT_VAL_1 ((unsigned) (XDP_RX_RING))
+ #define XLAT_STR_1 STRINGIFY(XDP_RX_RING)
  [XDP_TX_RING] = XLAT(XDP_TX_RING),
+ #define XLAT_VAL_2 ((unsigned) (XDP_TX_RING))
+ #define XLAT_STR_2 STRINGIFY(XDP_TX_RING)
  [XDP_UMEM_REG] = XLAT(XDP_UMEM_REG),
+ #define XLAT_VAL_3 ((unsigned) (XDP_UMEM_REG))
+ #define XLAT_STR_3 STRINGIFY(XDP_UMEM_REG)
  [XDP_UMEM_FILL_RING] = XLAT(XDP_UMEM_FILL_RING),
+ #define XLAT_VAL_4 ((unsigned) (XDP_UMEM_FILL_RING))
+ #define XLAT_STR_4 STRINGIFY(XDP_UMEM_FILL_RING)
  [XDP_UMEM_COMPLETION_RING] = XLAT(XDP_UMEM_COMPLETION_RING),
+ #define XLAT_VAL_5 ((unsigned) (XDP_UMEM_COMPLETION_RING))
+ #define XLAT_STR_5 STRINGIFY(XDP_UMEM_COMPLETION_RING)
  [XDP_STATISTICS] = XLAT(XDP_STATISTICS),
+ #define XLAT_VAL_6 ((unsigned) (XDP_STATISTICS))
+ #define XLAT_STR_6 STRINGIFY(XDP_STATISTICS)
  [XDP_OPTIONS] = XLAT(XDP_OPTIONS),
+ #define XLAT_VAL_7 ((unsigned) (XDP_OPTIONS))
+ #define XLAT_STR_7 STRINGIFY(XDP_OPTIONS)
 };
 static
 const struct xlat sock_xdp_options[1] = { {
  .data = sock_xdp_options_xdata,
  .size = ARRAY_SIZE(sock_xdp_options_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -2,7 +2,7 @@
  * Check decoding of waitid syscall.
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,11 +15,11 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <sys/resource.h>
+#include "kernel_rusage.h"
 #include "scno.h"
 
 static const char *
-sprint_rusage(const struct rusage *const ru)
+sprint_rusage(const kernel_rusage_t *const ru)
 {
 	static char buf[1024];
 	snprintf(buf, sizeof(buf),
@@ -103,8 +103,8 @@ sprint_siginfo(const siginfo_t *const si, const char *const status_text)
 	snprintf(buf, sizeof(buf),
 		 "{si_signo=SIGCHLD"
 		 ", si_code=%s"
-		 ", si_pid=%u"
-		 ", si_uid=%u"
+		 ", si_pid=%d"
+		 ", si_uid=%d"
 		 ", si_status=%s"
 		 ", si_utime=%llu"
 		 ", si_stime=%llu}",
@@ -128,7 +128,7 @@ do_waitid(const unsigned int idtype,
 	  const unsigned int id,
 	  const siginfo_t *const infop,
 	  const unsigned int options,
-	  const struct rusage *const rusage)
+	  const kernel_rusage_t *const rusage)
 {
 	sigset_t mask = {};
 	sigaddset(&mask, SIGCHLD);
@@ -169,7 +169,7 @@ main(void)
 
 	TAIL_ALLOC_OBJECT_CONST_PTR(siginfo_t, sinfo);
 	memset(sinfo, 0, sizeof(*sinfo));
-	TAIL_ALLOC_OBJECT_CONST_PTR(struct rusage, rusage);
+	TAIL_ALLOC_OBJECT_CONST_PTR(kernel_rusage_t, rusage);
 	if (do_waitid(P_PID, pid, sinfo, WNOHANG|WEXITED|WSTOPPED, rusage))
 		perror_msg_and_fail("waitid #2");
 	tprintf("waitid(P_PID, %d, {}, WNOHANG|WEXITED|WSTOPPED, %s) = 0\n",

@@ -2,7 +2,7 @@
  * Copyright (c) 2000 Wichert Akkerman <wakkerma@debian.org>
  * Copyright (c) 2011 Denys Vlasenko <dvlasenk@redhat.com>
  * Copyright (c) 2005-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -70,7 +70,9 @@ print_cap_header(struct tcb *const tcp, const kernel_ulong_t addr,
 	tprints("{version=");
 	printxval(cap_version, h->version,
 		  "_LINUX_CAPABILITY_VERSION_???");
-	tprintf(", pid=%d}", h->pid);
+	tprints(", pid=");
+	printpid(tcp, h->pid, PT_TGID);
+	tprints("}");
 }
 
 static void

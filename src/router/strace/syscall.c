@@ -268,9 +268,11 @@ update_personality(struct tcb *tcp, unsigned int personality)
 		return;
 	tcp->currpers = personality;
 
-	if (!qflag) {
-		error_msg("[ Process PID=%d runs in %s mode. ]",
-			  tcp->pid, personality_names[personality]);
+	if (!is_number_in_set(QUIET_PERSONALITY, quiet_set)) {
+		printleader(tcp);
+		tprintf("[ Process PID=%d runs in %s mode. ]\n",
+			tcp->pid, personality_names[personality]);
+		line_ended();
 	}
 
 	if (need_mpers_warning[personality]) {
@@ -489,8 +491,11 @@ tamper_with_syscall_entering(struct tcb *tcp, unsigned int *signo)
 
 	struct inject_opts *opts = tcb_inject_opts(tcp);
 
-	if (!opts || opts->first == 0)
+	if (!opts || opts->first == 0 || opts->last == 0)
 		return 0;
+
+	if (opts->last != INJECT_LAST_INF)
+		--opts->last;
 
 	--opts->first;
 
@@ -745,7 +750,7 @@ print_syscall_resume(struct tcb *tcp)
 	 * "strace -ff -oLOG test/threaded_execve" corner case.
 	 * It's the only case when -ff mode needs reprinting.
 	 */
-	if ((followfork < 2 && printing_tcp != tcp && !tcp->staged_output_data)
+	if ((!output_separately && printing_tcp != tcp && !tcp->staged_output_data)
 	    || (tcp->flags & TCB_REPRINT)) {
 		tcp->flags &= ~TCB_REPRINT;
 		printleader(tcp);
@@ -897,10 +902,17 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 					tprintf("= %#" PRI_klx, tcp->u_rval);
 				}
 				break;
-			case RVAL_OCTAL:
+			case RVAL_OCTAL: {
+				unsigned long long mode =
+					zero_extend_signed_to_ull(tcp->u_rval);
 				tprints("= ");
-				print_numeric_long_umask(tcp->u_rval);
+#if ANY_WORDSIZE_LESS_THAN_KERNEL_LONG
+				if (current_klongsize < sizeof(tcp->u_rval))
+					mode = (unsigned int) mode;
+#endif
+				print_numeric_ll_umode_t(mode);
 				break;
+			}
 			case RVAL_UDECIMAL:
 #if ANY_WORDSIZE_LESS_THAN_KERNEL_LONG
 				if (current_klongsize < sizeof(tcp->u_rval)) {
@@ -913,12 +925,33 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 				}
 				break;
 			case RVAL_FD:
-				if (show_fd_path) {
+				/*
+				 * printfd accepts int as fd and it makes
+				 * little sense to pass negative fds to it.
+				 */
+				if ((current_klongsize < sizeof(tcp->u_rval)) ||
+				    ((kernel_ulong_t) tcp->u_rval <= INT_MAX)) {
 					tprints("= ");
 					printfd(tcp, tcp->u_rval);
-				} else
+				} else {
 					tprintf("= %" PRI_kld, tcp->u_rval);
+				}
 				break;
+			case RVAL_TID:
+			case RVAL_SID:
+			case RVAL_TGID:
+			case RVAL_PGID: {
+				#define _(_t) [RVAL_##_t - RVAL_TID] = PT_##_t
+				static const enum pid_type types[] = {
+					_(TID), _(SID), _(TGID), _(PGID),
+				};
+				#undef _
+
+				tprints("= ");
+				printpid(tcp, tcp->u_rval,
+					 types[(sys_res & RVAL_MASK) - RVAL_TID]);
+				break;
+			}
 			default:
 				error_msg("invalid rval format");
 				break;
@@ -931,8 +964,12 @@ syscall_exiting_trace(struct tcb *tcp, struct timespec *ts, int res)
 	}
 	if (Tflag) {
 		ts_sub(ts, ts, &tcp->etime);
-		tprintf(" <%ld.%06ld>",
-			(long) ts->tv_sec, (long) ts->tv_nsec / 1000);
+		tprintf(" <%ld", (long) ts->tv_sec);
+		if (Tflag_width) {
+			tprintf(".%0*ld",
+				Tflag_width, (long) ts->tv_nsec / Tflag_scale);
+		}
+		tprints(">");
 	}
 	tprints("\n");
 	dumpio(tcp);
@@ -1332,6 +1369,7 @@ get_scno(struct tcb *tcp)
 			return rc;
 	}
 
+	tcp->true_scno = tcp->scno;
 	tcp->scno = shuffle_scno(tcp->scno);
 
 	if (scno_is_valid(tcp->scno)) {

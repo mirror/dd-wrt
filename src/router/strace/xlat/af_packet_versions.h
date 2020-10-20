@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data af_packet_versions_xdata[] = {
  [TPACKET_V1] = XLAT(TPACKET_V1),
+ #define XLAT_VAL_0 ((unsigned) (TPACKET_V1))
+ #define XLAT_STR_0 STRINGIFY(TPACKET_V1)
  [TPACKET_V2] = XLAT(TPACKET_V2),
+ #define XLAT_VAL_1 ((unsigned) (TPACKET_V2))
+ #define XLAT_STR_1 STRINGIFY(TPACKET_V2)
  [TPACKET_V3] = XLAT(TPACKET_V3),
+ #define XLAT_VAL_2 ((unsigned) (TPACKET_V3))
+ #define XLAT_STR_2 STRINGIFY(TPACKET_V3)
 };
 static
 const struct xlat af_packet_versions[1] = { {
  .data = af_packet_versions_xdata,
  .size = ARRAY_SIZE(af_packet_versions_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

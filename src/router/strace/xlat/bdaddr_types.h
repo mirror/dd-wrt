@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bdaddr_types_xdata[] = {
  [BDADDR_BREDR] = XLAT(BDADDR_BREDR),
+ #define XLAT_VAL_0 ((unsigned) (BDADDR_BREDR))
+ #define XLAT_STR_0 STRINGIFY(BDADDR_BREDR)
  [BDADDR_LE_PUBLIC] = XLAT(BDADDR_LE_PUBLIC),
+ #define XLAT_VAL_1 ((unsigned) (BDADDR_LE_PUBLIC))
+ #define XLAT_STR_1 STRINGIFY(BDADDR_LE_PUBLIC)
  [BDADDR_LE_RANDOM] = XLAT(BDADDR_LE_RANDOM),
+ #define XLAT_VAL_2 ((unsigned) (BDADDR_LE_RANDOM))
+ #define XLAT_STR_2 STRINGIFY(BDADDR_LE_RANDOM)
 };
 static
 const struct xlat bdaddr_types[1] = { {
  .data = bdaddr_types_xdata,
  .size = ARRAY_SIZE(bdaddr_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,7 +1,7 @@
 /*
  * Some simple implementation of lists similar to the one used in the kernel.
  *
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -33,7 +33,7 @@
  * to the next and the previous items in the list, respectively.  Note that
  * they do not perform additional checks for the validity of these pointers,
  * so they have to be guarded with respective list_head/list_tail checks in case
- * of lists with designated heads (where the list's head is not embedded withing
+ * of lists with designated heads (where the list's head is not embedded within
  * a list item.
  *
  * list_{insert,append,remove,remove_tail,remove_head,replace} provide some

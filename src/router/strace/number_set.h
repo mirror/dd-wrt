@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -56,10 +56,39 @@ enum status_t {
 	NUMBER_OF_STATUSES
 };
 
+enum quiet_bits {
+	/** Do not print messages on tracee attach/detach. */
+	QUIET_ATTACH,
+	/** Do not print messages on tracee exits. */
+	QUIET_EXIT,
+	/** Do not print messages about path tracing path resolution. */
+	QUIET_PATH_RESOLVE,
+	/** Do not print messages on personality change. */
+	QUIET_PERSONALITY,
+	/** Do not print messages on superseding execve. */
+	QUIET_THREAD_EXECVE,
+
+	NUM_QUIET_BITS
+};
+
+enum decode_fd_bits {
+	DECODE_FD_PATH,
+	DECODE_FD_SOCKET,
+	DECODE_FD_DEV,
+	DECODE_FD_PIDFD,
+
+	NUM_DECODE_FD_BITS
+};
+
+extern bool quiet_set_updated;
+extern bool decode_fd_set_updated;
+
 extern struct number_set *read_set;
 extern struct number_set *write_set;
 extern struct number_set *signal_set;
 extern struct number_set *status_set;
+extern struct number_set *quiet_set;
+extern struct number_set *decode_fd_set;
 extern struct number_set *trace_set;
 
 #endif /* !STRACE_NUMBER_SET_H */

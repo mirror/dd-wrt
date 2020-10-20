@@ -49,18 +49,72 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ebpf_mode_xdata[] = {
  XLAT(BPF_IMM),
+ #define XLAT_VAL_0 ((unsigned) (BPF_IMM))
+ #define XLAT_STR_0 STRINGIFY(BPF_IMM)
  XLAT(BPF_ABS),
+ #define XLAT_VAL_1 ((unsigned) (BPF_ABS))
+ #define XLAT_STR_1 STRINGIFY(BPF_ABS)
  XLAT(BPF_IND),
+ #define XLAT_VAL_2 ((unsigned) (BPF_IND))
+ #define XLAT_STR_2 STRINGIFY(BPF_IND)
  XLAT(BPF_MEM),
+ #define XLAT_VAL_3 ((unsigned) (BPF_MEM))
+ #define XLAT_STR_3 STRINGIFY(BPF_MEM)
  XLAT(BPF_XADD),
+ #define XLAT_VAL_4 ((unsigned) (BPF_XADD))
+ #define XLAT_STR_4 STRINGIFY(BPF_XADD)
 };
 static
 const struct xlat ebpf_mode[1] = { {
  .data = ebpf_mode_xdata,
  .size = ARRAY_SIZE(ebpf_mode_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data futexwakecmps_xdata[] = {
  [FUTEX_OP_CMP_EQ] = XLAT(FUTEX_OP_CMP_EQ),
+ #define XLAT_VAL_0 ((unsigned) (FUTEX_OP_CMP_EQ))
+ #define XLAT_STR_0 STRINGIFY(FUTEX_OP_CMP_EQ)
  [FUTEX_OP_CMP_NE] = XLAT(FUTEX_OP_CMP_NE),
+ #define XLAT_VAL_1 ((unsigned) (FUTEX_OP_CMP_NE))
+ #define XLAT_STR_1 STRINGIFY(FUTEX_OP_CMP_NE)
  [FUTEX_OP_CMP_LT] = XLAT(FUTEX_OP_CMP_LT),
+ #define XLAT_VAL_2 ((unsigned) (FUTEX_OP_CMP_LT))
+ #define XLAT_STR_2 STRINGIFY(FUTEX_OP_CMP_LT)
  [FUTEX_OP_CMP_LE] = XLAT(FUTEX_OP_CMP_LE),
+ #define XLAT_VAL_3 ((unsigned) (FUTEX_OP_CMP_LE))
+ #define XLAT_STR_3 STRINGIFY(FUTEX_OP_CMP_LE)
  [FUTEX_OP_CMP_GT] = XLAT(FUTEX_OP_CMP_GT),
+ #define XLAT_VAL_4 ((unsigned) (FUTEX_OP_CMP_GT))
+ #define XLAT_STR_4 STRINGIFY(FUTEX_OP_CMP_GT)
  [FUTEX_OP_CMP_GE] = XLAT(FUTEX_OP_CMP_GE),
+ #define XLAT_VAL_5 ((unsigned) (FUTEX_OP_CMP_GE))
+ #define XLAT_STR_5 STRINGIFY(FUTEX_OP_CMP_GE)
 };
 static
 const struct xlat futexwakecmps[1] = { {
  .data = futexwakecmps_xdata,
  .size = ARRAY_SIZE(futexwakecmps_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

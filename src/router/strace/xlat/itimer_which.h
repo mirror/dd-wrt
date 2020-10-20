@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data itimer_which_xdata[] = {
  [ITIMER_REAL] = XLAT(ITIMER_REAL),
+ #define XLAT_VAL_0 ((unsigned) (ITIMER_REAL))
+ #define XLAT_STR_0 STRINGIFY(ITIMER_REAL)
  [ITIMER_VIRTUAL] = XLAT(ITIMER_VIRTUAL),
+ #define XLAT_VAL_1 ((unsigned) (ITIMER_VIRTUAL))
+ #define XLAT_STR_1 STRINGIFY(ITIMER_VIRTUAL)
  [ITIMER_PROF] = XLAT(ITIMER_PROF),
+ #define XLAT_VAL_2 ((unsigned) (ITIMER_PROF))
+ #define XLAT_STR_2 STRINGIFY(ITIMER_PROF)
 };
 static
 const struct xlat itimer_which[1] = { {
  .data = itimer_which_xdata,
  .size = ARRAY_SIZE(itimer_which_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

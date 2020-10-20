@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_src_xdata[] = {
  XLAT(BPF_K),
+ #define XLAT_VAL_0 ((unsigned) (BPF_K))
+ #define XLAT_STR_0 STRINGIFY(BPF_K)
  XLAT(BPF_X),
+ #define XLAT_VAL_1 ((unsigned) (BPF_X))
+ #define XLAT_STR_1 STRINGIFY(BPF_X)
 };
 static
 const struct xlat bpf_src[1] = { {
  .data = bpf_src_xdata,
  .size = ARRAY_SIZE(bpf_src_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -15,9 +15,13 @@
 static const struct xlat_data mdb_states_xdata[] = {
 #if defined(MDB_TEMPORARY) || (defined(HAVE_DECL_MDB_TEMPORARY) && HAVE_DECL_MDB_TEMPORARY)
   XLAT(MDB_TEMPORARY),
+ #define XLAT_VAL_0 ((unsigned) (MDB_TEMPORARY))
+ #define XLAT_STR_0 STRINGIFY(MDB_TEMPORARY)
 #endif
 #if defined(MDB_PERMANENT) || (defined(HAVE_DECL_MDB_PERMANENT) && HAVE_DECL_MDB_PERMANENT)
   XLAT(MDB_PERMANENT),
+ #define XLAT_VAL_1 ((unsigned) (MDB_PERMANENT))
+ #define XLAT_STR_1 STRINGIFY(MDB_PERMANENT)
 #endif
 };
 static
@@ -25,8 +29,28 @@ const struct xlat mdb_states[1] = { {
  .data = mdb_states_xdata,
  .size = ARRAY_SIZE(mdb_states_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

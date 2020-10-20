@@ -14,13 +14,13 @@ static_assert(sizeof(struct io_sqring_offsets) <= offsetof(struct_io_sqring_offs
 #endif /* HAVE_STRUCT_IO_SQRING_OFFSETS */
 
 #ifdef HAVE_STRUCT_IO_CQRING_OFFSETS
-# ifdef HAVE_STRUCT_IO_CQRING_OFFSETS_RESV
+# ifdef HAVE_STRUCT_IO_CQRING_OFFSETS_CQES
 static_assert(sizeof(struct io_cqring_offsets) == sizeof(struct_io_cqring_offsets),
       "struct io_cqring_offsets size mismatch, please update the decoder or fix the kernel");
 # else
-static_assert(sizeof(struct io_cqring_offsets) <= offsetof(struct_io_cqring_offsets, resv),
+static_assert(sizeof(struct io_cqring_offsets) <= offsetof(struct_io_cqring_offsets, cqes),
 "struct io_cqring_offsets size mismatch, please update the decoder or fix the kernel");
-# endif /* HAVE_STRUCT_IO_CQRING_OFFSETS_RESV */
+# endif /* HAVE_STRUCT_IO_CQRING_OFFSETS_CQES */
 #endif /* HAVE_STRUCT_IO_CQRING_OFFSETS */
 
 #ifdef HAVE_STRUCT_IO_URING_PARAMS
@@ -42,3 +42,23 @@ static_assert(sizeof(struct io_uring_files_update) <= offsetof(struct_io_uring_f
 "struct io_uring_files_update size mismatch, please update the decoder or fix the kernel");
 # endif /* HAVE_STRUCT_IO_URING_FILES_UPDATE_FDS */
 #endif /* HAVE_STRUCT_IO_URING_FILES_UPDATE */
+
+#ifdef HAVE_STRUCT_IO_URING_PROBE_OP
+# ifdef HAVE_STRUCT_IO_URING_PROBE_OP_RESV2
+static_assert(sizeof(struct io_uring_probe_op) == sizeof(struct_io_uring_probe_op),
+      "struct io_uring_probe_op size mismatch, please update the decoder or fix the kernel");
+# else
+static_assert(sizeof(struct io_uring_probe_op) <= offsetof(struct_io_uring_probe_op, resv2),
+"struct io_uring_probe_op size mismatch, please update the decoder or fix the kernel");
+# endif /* HAVE_STRUCT_IO_URING_PROBE_OP_RESV2 */
+#endif /* HAVE_STRUCT_IO_URING_PROBE_OP */
+
+#ifdef HAVE_STRUCT_IO_URING_PROBE
+# ifdef HAVE_STRUCT_IO_URING_PROBE_OPS
+static_assert(sizeof(struct io_uring_probe) == sizeof(struct_io_uring_probe),
+      "struct io_uring_probe size mismatch, please update the decoder or fix the kernel");
+# else
+static_assert(sizeof(struct io_uring_probe) <= offsetof(struct_io_uring_probe, ops),
+"struct io_uring_probe size mismatch, please update the decoder or fix the kernel");
+# endif /* HAVE_STRUCT_IO_URING_PROBE_OPS */
+#endif /* HAVE_STRUCT_IO_URING_PROBE */

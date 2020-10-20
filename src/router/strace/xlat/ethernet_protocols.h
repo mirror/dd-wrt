@@ -507,6 +507,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define ETH_P_LLDP 0x88CC
 #endif
+#if defined(ETH_P_MRP) || (defined(HAVE_DECL_ETH_P_MRP) && HAVE_DECL_ETH_P_MRP)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((ETH_P_MRP) == (0x88E3), "ETH_P_MRP != 0x88E3");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define ETH_P_MRP 0x88E3
+#endif
 #if defined(ETH_P_MACSEC) || (defined(HAVE_DECL_ETH_P_MACSEC) && HAVE_DECL_ETH_P_MACSEC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((ETH_P_MACSEC) == (0x88E5), "ETH_P_MACSEC != 0x88E5");
@@ -661,105 +668,1050 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ethernet_protocols_xdata[] = {
  XLAT(ETH_P_802_3),
+ #define XLAT_VAL_0 ((unsigned) (ETH_P_802_3))
+ #define XLAT_STR_0 STRINGIFY(ETH_P_802_3)
  XLAT(ETH_P_AX25),
+ #define XLAT_VAL_1 ((unsigned) (ETH_P_AX25))
+ #define XLAT_STR_1 STRINGIFY(ETH_P_AX25)
  XLAT(ETH_P_ALL),
+ #define XLAT_VAL_2 ((unsigned) (ETH_P_ALL))
+ #define XLAT_STR_2 STRINGIFY(ETH_P_ALL)
  XLAT(ETH_P_802_2),
+ #define XLAT_VAL_3 ((unsigned) (ETH_P_802_2))
+ #define XLAT_STR_3 STRINGIFY(ETH_P_802_2)
  XLAT(ETH_P_SNAP),
+ #define XLAT_VAL_4 ((unsigned) (ETH_P_SNAP))
+ #define XLAT_STR_4 STRINGIFY(ETH_P_SNAP)
  XLAT(ETH_P_DDCMP),
+ #define XLAT_VAL_5 ((unsigned) (ETH_P_DDCMP))
+ #define XLAT_STR_5 STRINGIFY(ETH_P_DDCMP)
  XLAT(ETH_P_WAN_PPP),
+ #define XLAT_VAL_6 ((unsigned) (ETH_P_WAN_PPP))
+ #define XLAT_STR_6 STRINGIFY(ETH_P_WAN_PPP)
  XLAT(ETH_P_PPP_MP),
+ #define XLAT_VAL_7 ((unsigned) (ETH_P_PPP_MP))
+ #define XLAT_STR_7 STRINGIFY(ETH_P_PPP_MP)
  XLAT(ETH_P_LOCALTALK),
+ #define XLAT_VAL_8 ((unsigned) (ETH_P_LOCALTALK))
+ #define XLAT_STR_8 STRINGIFY(ETH_P_LOCALTALK)
  XLAT(ETH_P_CAN),
+ #define XLAT_VAL_9 ((unsigned) (ETH_P_CAN))
+ #define XLAT_STR_9 STRINGIFY(ETH_P_CAN)
  XLAT(ETH_P_CANFD),
+ #define XLAT_VAL_10 ((unsigned) (ETH_P_CANFD))
+ #define XLAT_STR_10 STRINGIFY(ETH_P_CANFD)
  XLAT(ETH_P_PPPTALK),
+ #define XLAT_VAL_11 ((unsigned) (ETH_P_PPPTALK))
+ #define XLAT_STR_11 STRINGIFY(ETH_P_PPPTALK)
  XLAT(ETH_P_TR_802_2),
+ #define XLAT_VAL_12 ((unsigned) (ETH_P_TR_802_2))
+ #define XLAT_STR_12 STRINGIFY(ETH_P_TR_802_2)
  XLAT(ETH_P_MOBITEX),
+ #define XLAT_VAL_13 ((unsigned) (ETH_P_MOBITEX))
+ #define XLAT_STR_13 STRINGIFY(ETH_P_MOBITEX)
  XLAT(ETH_P_CONTROL),
+ #define XLAT_VAL_14 ((unsigned) (ETH_P_CONTROL))
+ #define XLAT_STR_14 STRINGIFY(ETH_P_CONTROL)
  XLAT(ETH_P_IRDA),
+ #define XLAT_VAL_15 ((unsigned) (ETH_P_IRDA))
+ #define XLAT_STR_15 STRINGIFY(ETH_P_IRDA)
  XLAT(ETH_P_ECONET),
+ #define XLAT_VAL_16 ((unsigned) (ETH_P_ECONET))
+ #define XLAT_STR_16 STRINGIFY(ETH_P_ECONET)
  XLAT(ETH_P_HDLC),
+ #define XLAT_VAL_17 ((unsigned) (ETH_P_HDLC))
+ #define XLAT_STR_17 STRINGIFY(ETH_P_HDLC)
  XLAT(ETH_P_ARCNET),
+ #define XLAT_VAL_18 ((unsigned) (ETH_P_ARCNET))
+ #define XLAT_STR_18 STRINGIFY(ETH_P_ARCNET)
  XLAT(ETH_P_DSA),
+ #define XLAT_VAL_19 ((unsigned) (ETH_P_DSA))
+ #define XLAT_STR_19 STRINGIFY(ETH_P_DSA)
  XLAT(ETH_P_TRAILER),
+ #define XLAT_VAL_20 ((unsigned) (ETH_P_TRAILER))
+ #define XLAT_STR_20 STRINGIFY(ETH_P_TRAILER)
  XLAT(ETH_P_LOOP),
+ #define XLAT_VAL_21 ((unsigned) (ETH_P_LOOP))
+ #define XLAT_STR_21 STRINGIFY(ETH_P_LOOP)
  XLAT(ETH_P_PHONET),
+ #define XLAT_VAL_22 ((unsigned) (ETH_P_PHONET))
+ #define XLAT_STR_22 STRINGIFY(ETH_P_PHONET)
  XLAT(ETH_P_IEEE802154),
+ #define XLAT_VAL_23 ((unsigned) (ETH_P_IEEE802154))
+ #define XLAT_STR_23 STRINGIFY(ETH_P_IEEE802154)
  XLAT(ETH_P_CAIF),
+ #define XLAT_VAL_24 ((unsigned) (ETH_P_CAIF))
+ #define XLAT_STR_24 STRINGIFY(ETH_P_CAIF)
  XLAT(ETH_P_XDSA),
+ #define XLAT_VAL_25 ((unsigned) (ETH_P_XDSA))
+ #define XLAT_STR_25 STRINGIFY(ETH_P_XDSA)
  XLAT(ETH_P_MAP),
+ #define XLAT_VAL_26 ((unsigned) (ETH_P_MAP))
+ #define XLAT_STR_26 STRINGIFY(ETH_P_MAP)
  XLAT(ETH_P_PUP),
+ #define XLAT_VAL_27 ((unsigned) (ETH_P_PUP))
+ #define XLAT_STR_27 STRINGIFY(ETH_P_PUP)
  XLAT(ETH_P_PUPAT),
+ #define XLAT_VAL_28 ((unsigned) (ETH_P_PUPAT))
+ #define XLAT_STR_28 STRINGIFY(ETH_P_PUPAT)
  XLAT(ETH_P_802_3_MIN),
+ #define XLAT_VAL_29 ((unsigned) (ETH_P_802_3_MIN))
+ #define XLAT_STR_29 STRINGIFY(ETH_P_802_3_MIN)
  XLAT(ETH_P_IP),
+ #define XLAT_VAL_30 ((unsigned) (ETH_P_IP))
+ #define XLAT_STR_30 STRINGIFY(ETH_P_IP)
  XLAT(ETH_P_X25),
+ #define XLAT_VAL_31 ((unsigned) (ETH_P_X25))
+ #define XLAT_STR_31 STRINGIFY(ETH_P_X25)
  XLAT(ETH_P_ARP),
+ #define XLAT_VAL_32 ((unsigned) (ETH_P_ARP))
+ #define XLAT_STR_32 STRINGIFY(ETH_P_ARP)
  XLAT(ETH_P_BPQ),
+ #define XLAT_VAL_33 ((unsigned) (ETH_P_BPQ))
+ #define XLAT_STR_33 STRINGIFY(ETH_P_BPQ)
  XLAT(ETH_P_IEEEPUP),
+ #define XLAT_VAL_34 ((unsigned) (ETH_P_IEEEPUP))
+ #define XLAT_STR_34 STRINGIFY(ETH_P_IEEEPUP)
  XLAT(ETH_P_IEEEPUPAT),
+ #define XLAT_VAL_35 ((unsigned) (ETH_P_IEEEPUPAT))
+ #define XLAT_STR_35 STRINGIFY(ETH_P_IEEEPUPAT)
  XLAT(ETH_P_ERSPAN2),
+ #define XLAT_VAL_36 ((unsigned) (ETH_P_ERSPAN2))
+ #define XLAT_STR_36 STRINGIFY(ETH_P_ERSPAN2)
  XLAT(ETH_P_TSN),
+ #define XLAT_VAL_37 ((unsigned) (ETH_P_TSN))
+ #define XLAT_STR_37 STRINGIFY(ETH_P_TSN)
  XLAT(ETH_P_BATMAN),
+ #define XLAT_VAL_38 ((unsigned) (ETH_P_BATMAN))
+ #define XLAT_STR_38 STRINGIFY(ETH_P_BATMAN)
  XLAT(ETH_P_DEC),
+ #define XLAT_VAL_39 ((unsigned) (ETH_P_DEC))
+ #define XLAT_STR_39 STRINGIFY(ETH_P_DEC)
  XLAT(ETH_P_DNA_DL),
+ #define XLAT_VAL_40 ((unsigned) (ETH_P_DNA_DL))
+ #define XLAT_STR_40 STRINGIFY(ETH_P_DNA_DL)
  XLAT(ETH_P_DNA_RC),
+ #define XLAT_VAL_41 ((unsigned) (ETH_P_DNA_RC))
+ #define XLAT_STR_41 STRINGIFY(ETH_P_DNA_RC)
  XLAT(ETH_P_DNA_RT),
+ #define XLAT_VAL_42 ((unsigned) (ETH_P_DNA_RT))
+ #define XLAT_STR_42 STRINGIFY(ETH_P_DNA_RT)
  XLAT(ETH_P_LAT),
+ #define XLAT_VAL_43 ((unsigned) (ETH_P_LAT))
+ #define XLAT_STR_43 STRINGIFY(ETH_P_LAT)
  XLAT(ETH_P_DIAG),
+ #define XLAT_VAL_44 ((unsigned) (ETH_P_DIAG))
+ #define XLAT_STR_44 STRINGIFY(ETH_P_DIAG)
  XLAT(ETH_P_CUST),
+ #define XLAT_VAL_45 ((unsigned) (ETH_P_CUST))
+ #define XLAT_STR_45 STRINGIFY(ETH_P_CUST)
  XLAT(ETH_P_SCA),
+ #define XLAT_VAL_46 ((unsigned) (ETH_P_SCA))
+ #define XLAT_STR_46 STRINGIFY(ETH_P_SCA)
  XLAT(ETH_P_TEB),
+ #define XLAT_VAL_47 ((unsigned) (ETH_P_TEB))
+ #define XLAT_STR_47 STRINGIFY(ETH_P_TEB)
  XLAT(ETH_P_RARP),
+ #define XLAT_VAL_48 ((unsigned) (ETH_P_RARP))
+ #define XLAT_STR_48 STRINGIFY(ETH_P_RARP)
  XLAT(ETH_P_ATALK),
+ #define XLAT_VAL_49 ((unsigned) (ETH_P_ATALK))
+ #define XLAT_STR_49 STRINGIFY(ETH_P_ATALK)
  XLAT(ETH_P_AARP),
+ #define XLAT_VAL_50 ((unsigned) (ETH_P_AARP))
+ #define XLAT_STR_50 STRINGIFY(ETH_P_AARP)
  XLAT(ETH_P_8021Q),
+ #define XLAT_VAL_51 ((unsigned) (ETH_P_8021Q))
+ #define XLAT_STR_51 STRINGIFY(ETH_P_8021Q)
  XLAT(ETH_P_IPX),
+ #define XLAT_VAL_52 ((unsigned) (ETH_P_IPX))
+ #define XLAT_STR_52 STRINGIFY(ETH_P_IPX)
  XLAT(ETH_P_IPV6),
+ #define XLAT_VAL_53 ((unsigned) (ETH_P_IPV6))
+ #define XLAT_STR_53 STRINGIFY(ETH_P_IPV6)
  XLAT(ETH_P_PAUSE),
+ #define XLAT_VAL_54 ((unsigned) (ETH_P_PAUSE))
+ #define XLAT_STR_54 STRINGIFY(ETH_P_PAUSE)
  XLAT(ETH_P_SLOW),
+ #define XLAT_VAL_55 ((unsigned) (ETH_P_SLOW))
+ #define XLAT_STR_55 STRINGIFY(ETH_P_SLOW)
  XLAT(ETH_P_WCCP),
+ #define XLAT_VAL_56 ((unsigned) (ETH_P_WCCP))
+ #define XLAT_STR_56 STRINGIFY(ETH_P_WCCP)
  XLAT(ETH_P_MPLS_UC),
+ #define XLAT_VAL_57 ((unsigned) (ETH_P_MPLS_UC))
+ #define XLAT_STR_57 STRINGIFY(ETH_P_MPLS_UC)
  XLAT(ETH_P_MPLS_MC),
+ #define XLAT_VAL_58 ((unsigned) (ETH_P_MPLS_MC))
+ #define XLAT_STR_58 STRINGIFY(ETH_P_MPLS_MC)
  XLAT(ETH_P_ATMMPOA),
+ #define XLAT_VAL_59 ((unsigned) (ETH_P_ATMMPOA))
+ #define XLAT_STR_59 STRINGIFY(ETH_P_ATMMPOA)
  XLAT(ETH_P_PPP_DISC),
+ #define XLAT_VAL_60 ((unsigned) (ETH_P_PPP_DISC))
+ #define XLAT_STR_60 STRINGIFY(ETH_P_PPP_DISC)
  XLAT(ETH_P_PPP_SES),
+ #define XLAT_VAL_61 ((unsigned) (ETH_P_PPP_SES))
+ #define XLAT_STR_61 STRINGIFY(ETH_P_PPP_SES)
  XLAT(ETH_P_LINK_CTL),
+ #define XLAT_VAL_62 ((unsigned) (ETH_P_LINK_CTL))
+ #define XLAT_STR_62 STRINGIFY(ETH_P_LINK_CTL)
  XLAT(ETH_P_ATMFATE),
+ #define XLAT_VAL_63 ((unsigned) (ETH_P_ATMFATE))
+ #define XLAT_STR_63 STRINGIFY(ETH_P_ATMFATE)
  XLAT(ETH_P_PAE),
+ #define XLAT_VAL_64 ((unsigned) (ETH_P_PAE))
+ #define XLAT_STR_64 STRINGIFY(ETH_P_PAE)
  XLAT(ETH_P_AOE),
+ #define XLAT_VAL_65 ((unsigned) (ETH_P_AOE))
+ #define XLAT_STR_65 STRINGIFY(ETH_P_AOE)
  XLAT(ETH_P_8021AD),
+ #define XLAT_VAL_66 ((unsigned) (ETH_P_8021AD))
+ #define XLAT_STR_66 STRINGIFY(ETH_P_8021AD)
  XLAT(ETH_P_802_EX1),
+ #define XLAT_VAL_67 ((unsigned) (ETH_P_802_EX1))
+ #define XLAT_STR_67 STRINGIFY(ETH_P_802_EX1)
  XLAT(ETH_P_ERSPAN),
+ #define XLAT_VAL_68 ((unsigned) (ETH_P_ERSPAN))
+ #define XLAT_STR_68 STRINGIFY(ETH_P_ERSPAN)
  XLAT(ETH_P_PREAUTH),
+ #define XLAT_VAL_69 ((unsigned) (ETH_P_PREAUTH))
+ #define XLAT_STR_69 STRINGIFY(ETH_P_PREAUTH)
  XLAT(ETH_P_TIPC),
+ #define XLAT_VAL_70 ((unsigned) (ETH_P_TIPC))
+ #define XLAT_STR_70 STRINGIFY(ETH_P_TIPC)
  XLAT(ETH_P_LLDP),
+ #define XLAT_VAL_71 ((unsigned) (ETH_P_LLDP))
+ #define XLAT_STR_71 STRINGIFY(ETH_P_LLDP)
+ XLAT(ETH_P_MRP),
+ #define XLAT_VAL_72 ((unsigned) (ETH_P_MRP))
+ #define XLAT_STR_72 STRINGIFY(ETH_P_MRP)
  XLAT(ETH_P_MACSEC),
+ #define XLAT_VAL_73 ((unsigned) (ETH_P_MACSEC))
+ #define XLAT_STR_73 STRINGIFY(ETH_P_MACSEC)
  XLAT(ETH_P_8021AH),
+ #define XLAT_VAL_74 ((unsigned) (ETH_P_8021AH))
+ #define XLAT_STR_74 STRINGIFY(ETH_P_8021AH)
  XLAT(ETH_P_MVRP),
+ #define XLAT_VAL_75 ((unsigned) (ETH_P_MVRP))
+ #define XLAT_STR_75 STRINGIFY(ETH_P_MVRP)
  XLAT(ETH_P_1588),
+ #define XLAT_VAL_76 ((unsigned) (ETH_P_1588))
+ #define XLAT_STR_76 STRINGIFY(ETH_P_1588)
  XLAT(ETH_P_NCSI),
+ #define XLAT_VAL_77 ((unsigned) (ETH_P_NCSI))
+ #define XLAT_STR_77 STRINGIFY(ETH_P_NCSI)
  XLAT(ETH_P_PRP),
+ #define XLAT_VAL_78 ((unsigned) (ETH_P_PRP))
+ #define XLAT_STR_78 STRINGIFY(ETH_P_PRP)
  XLAT(ETH_P_FCOE),
+ #define XLAT_VAL_79 ((unsigned) (ETH_P_FCOE))
+ #define XLAT_STR_79 STRINGIFY(ETH_P_FCOE)
  XLAT(ETH_P_TDLS),
+ #define XLAT_VAL_80 ((unsigned) (ETH_P_TDLS))
+ #define XLAT_STR_80 STRINGIFY(ETH_P_TDLS)
  XLAT(ETH_P_FIP),
+ #define XLAT_VAL_81 ((unsigned) (ETH_P_FIP))
+ #define XLAT_STR_81 STRINGIFY(ETH_P_FIP)
  XLAT(ETH_P_IBOE),
+ #define XLAT_VAL_82 ((unsigned) (ETH_P_IBOE))
+ #define XLAT_STR_82 STRINGIFY(ETH_P_IBOE)
  XLAT(ETH_P_80221),
+ #define XLAT_VAL_83 ((unsigned) (ETH_P_80221))
+ #define XLAT_STR_83 STRINGIFY(ETH_P_80221)
  XLAT(ETH_P_HSR),
+ #define XLAT_VAL_84 ((unsigned) (ETH_P_HSR))
+ #define XLAT_STR_84 STRINGIFY(ETH_P_HSR)
  XLAT(ETH_P_NSH),
+ #define XLAT_VAL_85 ((unsigned) (ETH_P_NSH))
+ #define XLAT_STR_85 STRINGIFY(ETH_P_NSH)
  XLAT(ETH_P_LOOPBACK),
+ #define XLAT_VAL_86 ((unsigned) (ETH_P_LOOPBACK))
+ #define XLAT_STR_86 STRINGIFY(ETH_P_LOOPBACK)
  XLAT(ETH_P_QINQ1),
+ #define XLAT_VAL_87 ((unsigned) (ETH_P_QINQ1))
+ #define XLAT_STR_87 STRINGIFY(ETH_P_QINQ1)
  XLAT(ETH_P_QINQ2),
+ #define XLAT_VAL_88 ((unsigned) (ETH_P_QINQ2))
+ #define XLAT_STR_88 STRINGIFY(ETH_P_QINQ2)
  XLAT(ETH_P_QINQ3),
+ #define XLAT_VAL_89 ((unsigned) (ETH_P_QINQ3))
+ #define XLAT_STR_89 STRINGIFY(ETH_P_QINQ3)
  XLAT(ETH_P_EDSA),
+ #define XLAT_VAL_90 ((unsigned) (ETH_P_EDSA))
+ #define XLAT_STR_90 STRINGIFY(ETH_P_EDSA)
  XLAT(ETH_P_DSA_8021Q),
+ #define XLAT_VAL_91 ((unsigned) (ETH_P_DSA_8021Q))
+ #define XLAT_STR_91 STRINGIFY(ETH_P_DSA_8021Q)
  XLAT(ETH_P_IFE),
+ #define XLAT_VAL_92 ((unsigned) (ETH_P_IFE))
+ #define XLAT_STR_92 STRINGIFY(ETH_P_IFE)
  XLAT(ETH_P_AF_IUCV),
+ #define XLAT_VAL_93 ((unsigned) (ETH_P_AF_IUCV))
+ #define XLAT_STR_93 STRINGIFY(ETH_P_AF_IUCV)
 };
 const struct xlat ethernet_protocols[1] = { {
  .data = ethernet_protocols_xdata,
  .size = ARRAY_SIZE(ethernet_protocols_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+#  ifdef XLAT_VAL_23
+  | XLAT_VAL_23
+#  endif
+#  ifdef XLAT_VAL_24
+  | XLAT_VAL_24
+#  endif
+#  ifdef XLAT_VAL_25
+  | XLAT_VAL_25
+#  endif
+#  ifdef XLAT_VAL_26
+  | XLAT_VAL_26
+#  endif
+#  ifdef XLAT_VAL_27
+  | XLAT_VAL_27
+#  endif
+#  ifdef XLAT_VAL_28
+  | XLAT_VAL_28
+#  endif
+#  ifdef XLAT_VAL_29
+  | XLAT_VAL_29
+#  endif
+#  ifdef XLAT_VAL_30
+  | XLAT_VAL_30
+#  endif
+#  ifdef XLAT_VAL_31
+  | XLAT_VAL_31
+#  endif
+#  ifdef XLAT_VAL_32
+  | XLAT_VAL_32
+#  endif
+#  ifdef XLAT_VAL_33
+  | XLAT_VAL_33
+#  endif
+#  ifdef XLAT_VAL_34
+  | XLAT_VAL_34
+#  endif
+#  ifdef XLAT_VAL_35
+  | XLAT_VAL_35
+#  endif
+#  ifdef XLAT_VAL_36
+  | XLAT_VAL_36
+#  endif
+#  ifdef XLAT_VAL_37
+  | XLAT_VAL_37
+#  endif
+#  ifdef XLAT_VAL_38
+  | XLAT_VAL_38
+#  endif
+#  ifdef XLAT_VAL_39
+  | XLAT_VAL_39
+#  endif
+#  ifdef XLAT_VAL_40
+  | XLAT_VAL_40
+#  endif
+#  ifdef XLAT_VAL_41
+  | XLAT_VAL_41
+#  endif
+#  ifdef XLAT_VAL_42
+  | XLAT_VAL_42
+#  endif
+#  ifdef XLAT_VAL_43
+  | XLAT_VAL_43
+#  endif
+#  ifdef XLAT_VAL_44
+  | XLAT_VAL_44
+#  endif
+#  ifdef XLAT_VAL_45
+  | XLAT_VAL_45
+#  endif
+#  ifdef XLAT_VAL_46
+  | XLAT_VAL_46
+#  endif
+#  ifdef XLAT_VAL_47
+  | XLAT_VAL_47
+#  endif
+#  ifdef XLAT_VAL_48
+  | XLAT_VAL_48
+#  endif
+#  ifdef XLAT_VAL_49
+  | XLAT_VAL_49
+#  endif
+#  ifdef XLAT_VAL_50
+  | XLAT_VAL_50
+#  endif
+#  ifdef XLAT_VAL_51
+  | XLAT_VAL_51
+#  endif
+#  ifdef XLAT_VAL_52
+  | XLAT_VAL_52
+#  endif
+#  ifdef XLAT_VAL_53
+  | XLAT_VAL_53
+#  endif
+#  ifdef XLAT_VAL_54
+  | XLAT_VAL_54
+#  endif
+#  ifdef XLAT_VAL_55
+  | XLAT_VAL_55
+#  endif
+#  ifdef XLAT_VAL_56
+  | XLAT_VAL_56
+#  endif
+#  ifdef XLAT_VAL_57
+  | XLAT_VAL_57
+#  endif
+#  ifdef XLAT_VAL_58
+  | XLAT_VAL_58
+#  endif
+#  ifdef XLAT_VAL_59
+  | XLAT_VAL_59
+#  endif
+#  ifdef XLAT_VAL_60
+  | XLAT_VAL_60
+#  endif
+#  ifdef XLAT_VAL_61
+  | XLAT_VAL_61
+#  endif
+#  ifdef XLAT_VAL_62
+  | XLAT_VAL_62
+#  endif
+#  ifdef XLAT_VAL_63
+  | XLAT_VAL_63
+#  endif
+#  ifdef XLAT_VAL_64
+  | XLAT_VAL_64
+#  endif
+#  ifdef XLAT_VAL_65
+  | XLAT_VAL_65
+#  endif
+#  ifdef XLAT_VAL_66
+  | XLAT_VAL_66
+#  endif
+#  ifdef XLAT_VAL_67
+  | XLAT_VAL_67
+#  endif
+#  ifdef XLAT_VAL_68
+  | XLAT_VAL_68
+#  endif
+#  ifdef XLAT_VAL_69
+  | XLAT_VAL_69
+#  endif
+#  ifdef XLAT_VAL_70
+  | XLAT_VAL_70
+#  endif
+#  ifdef XLAT_VAL_71
+  | XLAT_VAL_71
+#  endif
+#  ifdef XLAT_VAL_72
+  | XLAT_VAL_72
+#  endif
+#  ifdef XLAT_VAL_73
+  | XLAT_VAL_73
+#  endif
+#  ifdef XLAT_VAL_74
+  | XLAT_VAL_74
+#  endif
+#  ifdef XLAT_VAL_75
+  | XLAT_VAL_75
+#  endif
+#  ifdef XLAT_VAL_76
+  | XLAT_VAL_76
+#  endif
+#  ifdef XLAT_VAL_77
+  | XLAT_VAL_77
+#  endif
+#  ifdef XLAT_VAL_78
+  | XLAT_VAL_78
+#  endif
+#  ifdef XLAT_VAL_79
+  | XLAT_VAL_79
+#  endif
+#  ifdef XLAT_VAL_80
+  | XLAT_VAL_80
+#  endif
+#  ifdef XLAT_VAL_81
+  | XLAT_VAL_81
+#  endif
+#  ifdef XLAT_VAL_82
+  | XLAT_VAL_82
+#  endif
+#  ifdef XLAT_VAL_83
+  | XLAT_VAL_83
+#  endif
+#  ifdef XLAT_VAL_84
+  | XLAT_VAL_84
+#  endif
+#  ifdef XLAT_VAL_85
+  | XLAT_VAL_85
+#  endif
+#  ifdef XLAT_VAL_86
+  | XLAT_VAL_86
+#  endif
+#  ifdef XLAT_VAL_87
+  | XLAT_VAL_87
+#  endif
+#  ifdef XLAT_VAL_88
+  | XLAT_VAL_88
+#  endif
+#  ifdef XLAT_VAL_89
+  | XLAT_VAL_89
+#  endif
+#  ifdef XLAT_VAL_90
+  | XLAT_VAL_90
+#  endif
+#  ifdef XLAT_VAL_91
+  | XLAT_VAL_91
+#  endif
+#  ifdef XLAT_VAL_92
+  | XLAT_VAL_92
+#  endif
+#  ifdef XLAT_VAL_93
+  | XLAT_VAL_93
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+#  ifdef XLAT_STR_23
+  + sizeof(XLAT_STR_23)
+#  endif
+#  ifdef XLAT_STR_24
+  + sizeof(XLAT_STR_24)
+#  endif
+#  ifdef XLAT_STR_25
+  + sizeof(XLAT_STR_25)
+#  endif
+#  ifdef XLAT_STR_26
+  + sizeof(XLAT_STR_26)
+#  endif
+#  ifdef XLAT_STR_27
+  + sizeof(XLAT_STR_27)
+#  endif
+#  ifdef XLAT_STR_28
+  + sizeof(XLAT_STR_28)
+#  endif
+#  ifdef XLAT_STR_29
+  + sizeof(XLAT_STR_29)
+#  endif
+#  ifdef XLAT_STR_30
+  + sizeof(XLAT_STR_30)
+#  endif
+#  ifdef XLAT_STR_31
+  + sizeof(XLAT_STR_31)
+#  endif
+#  ifdef XLAT_STR_32
+  + sizeof(XLAT_STR_32)
+#  endif
+#  ifdef XLAT_STR_33
+  + sizeof(XLAT_STR_33)
+#  endif
+#  ifdef XLAT_STR_34
+  + sizeof(XLAT_STR_34)
+#  endif
+#  ifdef XLAT_STR_35
+  + sizeof(XLAT_STR_35)
+#  endif
+#  ifdef XLAT_STR_36
+  + sizeof(XLAT_STR_36)
+#  endif
+#  ifdef XLAT_STR_37
+  + sizeof(XLAT_STR_37)
+#  endif
+#  ifdef XLAT_STR_38
+  + sizeof(XLAT_STR_38)
+#  endif
+#  ifdef XLAT_STR_39
+  + sizeof(XLAT_STR_39)
+#  endif
+#  ifdef XLAT_STR_40
+  + sizeof(XLAT_STR_40)
+#  endif
+#  ifdef XLAT_STR_41
+  + sizeof(XLAT_STR_41)
+#  endif
+#  ifdef XLAT_STR_42
+  + sizeof(XLAT_STR_42)
+#  endif
+#  ifdef XLAT_STR_43
+  + sizeof(XLAT_STR_43)
+#  endif
+#  ifdef XLAT_STR_44
+  + sizeof(XLAT_STR_44)
+#  endif
+#  ifdef XLAT_STR_45
+  + sizeof(XLAT_STR_45)
+#  endif
+#  ifdef XLAT_STR_46
+  + sizeof(XLAT_STR_46)
+#  endif
+#  ifdef XLAT_STR_47
+  + sizeof(XLAT_STR_47)
+#  endif
+#  ifdef XLAT_STR_48
+  + sizeof(XLAT_STR_48)
+#  endif
+#  ifdef XLAT_STR_49
+  + sizeof(XLAT_STR_49)
+#  endif
+#  ifdef XLAT_STR_50
+  + sizeof(XLAT_STR_50)
+#  endif
+#  ifdef XLAT_STR_51
+  + sizeof(XLAT_STR_51)
+#  endif
+#  ifdef XLAT_STR_52
+  + sizeof(XLAT_STR_52)
+#  endif
+#  ifdef XLAT_STR_53
+  + sizeof(XLAT_STR_53)
+#  endif
+#  ifdef XLAT_STR_54
+  + sizeof(XLAT_STR_54)
+#  endif
+#  ifdef XLAT_STR_55
+  + sizeof(XLAT_STR_55)
+#  endif
+#  ifdef XLAT_STR_56
+  + sizeof(XLAT_STR_56)
+#  endif
+#  ifdef XLAT_STR_57
+  + sizeof(XLAT_STR_57)
+#  endif
+#  ifdef XLAT_STR_58
+  + sizeof(XLAT_STR_58)
+#  endif
+#  ifdef XLAT_STR_59
+  + sizeof(XLAT_STR_59)
+#  endif
+#  ifdef XLAT_STR_60
+  + sizeof(XLAT_STR_60)
+#  endif
+#  ifdef XLAT_STR_61
+  + sizeof(XLAT_STR_61)
+#  endif
+#  ifdef XLAT_STR_62
+  + sizeof(XLAT_STR_62)
+#  endif
+#  ifdef XLAT_STR_63
+  + sizeof(XLAT_STR_63)
+#  endif
+#  ifdef XLAT_STR_64
+  + sizeof(XLAT_STR_64)
+#  endif
+#  ifdef XLAT_STR_65
+  + sizeof(XLAT_STR_65)
+#  endif
+#  ifdef XLAT_STR_66
+  + sizeof(XLAT_STR_66)
+#  endif
+#  ifdef XLAT_STR_67
+  + sizeof(XLAT_STR_67)
+#  endif
+#  ifdef XLAT_STR_68
+  + sizeof(XLAT_STR_68)
+#  endif
+#  ifdef XLAT_STR_69
+  + sizeof(XLAT_STR_69)
+#  endif
+#  ifdef XLAT_STR_70
+  + sizeof(XLAT_STR_70)
+#  endif
+#  ifdef XLAT_STR_71
+  + sizeof(XLAT_STR_71)
+#  endif
+#  ifdef XLAT_STR_72
+  + sizeof(XLAT_STR_72)
+#  endif
+#  ifdef XLAT_STR_73
+  + sizeof(XLAT_STR_73)
+#  endif
+#  ifdef XLAT_STR_74
+  + sizeof(XLAT_STR_74)
+#  endif
+#  ifdef XLAT_STR_75
+  + sizeof(XLAT_STR_75)
+#  endif
+#  ifdef XLAT_STR_76
+  + sizeof(XLAT_STR_76)
+#  endif
+#  ifdef XLAT_STR_77
+  + sizeof(XLAT_STR_77)
+#  endif
+#  ifdef XLAT_STR_78
+  + sizeof(XLAT_STR_78)
+#  endif
+#  ifdef XLAT_STR_79
+  + sizeof(XLAT_STR_79)
+#  endif
+#  ifdef XLAT_STR_80
+  + sizeof(XLAT_STR_80)
+#  endif
+#  ifdef XLAT_STR_81
+  + sizeof(XLAT_STR_81)
+#  endif
+#  ifdef XLAT_STR_82
+  + sizeof(XLAT_STR_82)
+#  endif
+#  ifdef XLAT_STR_83
+  + sizeof(XLAT_STR_83)
+#  endif
+#  ifdef XLAT_STR_84
+  + sizeof(XLAT_STR_84)
+#  endif
+#  ifdef XLAT_STR_85
+  + sizeof(XLAT_STR_85)
+#  endif
+#  ifdef XLAT_STR_86
+  + sizeof(XLAT_STR_86)
+#  endif
+#  ifdef XLAT_STR_87
+  + sizeof(XLAT_STR_87)
+#  endif
+#  ifdef XLAT_STR_88
+  + sizeof(XLAT_STR_88)
+#  endif
+#  ifdef XLAT_STR_89
+  + sizeof(XLAT_STR_89)
+#  endif
+#  ifdef XLAT_STR_90
+  + sizeof(XLAT_STR_90)
+#  endif
+#  ifdef XLAT_STR_91
+  + sizeof(XLAT_STR_91)
+#  endif
+#  ifdef XLAT_STR_92
+  + sizeof(XLAT_STR_92)
+#  endif
+#  ifdef XLAT_STR_93
+  + sizeof(XLAT_STR_93)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
+#  undef XLAT_STR_23
+#  undef XLAT_VAL_23
+#  undef XLAT_STR_24
+#  undef XLAT_VAL_24
+#  undef XLAT_STR_25
+#  undef XLAT_VAL_25
+#  undef XLAT_STR_26
+#  undef XLAT_VAL_26
+#  undef XLAT_STR_27
+#  undef XLAT_VAL_27
+#  undef XLAT_STR_28
+#  undef XLAT_VAL_28
+#  undef XLAT_STR_29
+#  undef XLAT_VAL_29
+#  undef XLAT_STR_30
+#  undef XLAT_VAL_30
+#  undef XLAT_STR_31
+#  undef XLAT_VAL_31
+#  undef XLAT_STR_32
+#  undef XLAT_VAL_32
+#  undef XLAT_STR_33
+#  undef XLAT_VAL_33
+#  undef XLAT_STR_34
+#  undef XLAT_VAL_34
+#  undef XLAT_STR_35
+#  undef XLAT_VAL_35
+#  undef XLAT_STR_36
+#  undef XLAT_VAL_36
+#  undef XLAT_STR_37
+#  undef XLAT_VAL_37
+#  undef XLAT_STR_38
+#  undef XLAT_VAL_38
+#  undef XLAT_STR_39
+#  undef XLAT_VAL_39
+#  undef XLAT_STR_40
+#  undef XLAT_VAL_40
+#  undef XLAT_STR_41
+#  undef XLAT_VAL_41
+#  undef XLAT_STR_42
+#  undef XLAT_VAL_42
+#  undef XLAT_STR_43
+#  undef XLAT_VAL_43
+#  undef XLAT_STR_44
+#  undef XLAT_VAL_44
+#  undef XLAT_STR_45
+#  undef XLAT_VAL_45
+#  undef XLAT_STR_46
+#  undef XLAT_VAL_46
+#  undef XLAT_STR_47
+#  undef XLAT_VAL_47
+#  undef XLAT_STR_48
+#  undef XLAT_VAL_48
+#  undef XLAT_STR_49
+#  undef XLAT_VAL_49
+#  undef XLAT_STR_50
+#  undef XLAT_VAL_50
+#  undef XLAT_STR_51
+#  undef XLAT_VAL_51
+#  undef XLAT_STR_52
+#  undef XLAT_VAL_52
+#  undef XLAT_STR_53
+#  undef XLAT_VAL_53
+#  undef XLAT_STR_54
+#  undef XLAT_VAL_54
+#  undef XLAT_STR_55
+#  undef XLAT_VAL_55
+#  undef XLAT_STR_56
+#  undef XLAT_VAL_56
+#  undef XLAT_STR_57
+#  undef XLAT_VAL_57
+#  undef XLAT_STR_58
+#  undef XLAT_VAL_58
+#  undef XLAT_STR_59
+#  undef XLAT_VAL_59
+#  undef XLAT_STR_60
+#  undef XLAT_VAL_60
+#  undef XLAT_STR_61
+#  undef XLAT_VAL_61
+#  undef XLAT_STR_62
+#  undef XLAT_VAL_62
+#  undef XLAT_STR_63
+#  undef XLAT_VAL_63
+#  undef XLAT_STR_64
+#  undef XLAT_VAL_64
+#  undef XLAT_STR_65
+#  undef XLAT_VAL_65
+#  undef XLAT_STR_66
+#  undef XLAT_VAL_66
+#  undef XLAT_STR_67
+#  undef XLAT_VAL_67
+#  undef XLAT_STR_68
+#  undef XLAT_VAL_68
+#  undef XLAT_STR_69
+#  undef XLAT_VAL_69
+#  undef XLAT_STR_70
+#  undef XLAT_VAL_70
+#  undef XLAT_STR_71
+#  undef XLAT_VAL_71
+#  undef XLAT_STR_72
+#  undef XLAT_VAL_72
+#  undef XLAT_STR_73
+#  undef XLAT_VAL_73
+#  undef XLAT_STR_74
+#  undef XLAT_VAL_74
+#  undef XLAT_STR_75
+#  undef XLAT_VAL_75
+#  undef XLAT_STR_76
+#  undef XLAT_VAL_76
+#  undef XLAT_STR_77
+#  undef XLAT_VAL_77
+#  undef XLAT_STR_78
+#  undef XLAT_VAL_78
+#  undef XLAT_STR_79
+#  undef XLAT_VAL_79
+#  undef XLAT_STR_80
+#  undef XLAT_VAL_80
+#  undef XLAT_STR_81
+#  undef XLAT_VAL_81
+#  undef XLAT_STR_82
+#  undef XLAT_VAL_82
+#  undef XLAT_STR_83
+#  undef XLAT_VAL_83
+#  undef XLAT_STR_84
+#  undef XLAT_VAL_84
+#  undef XLAT_STR_85
+#  undef XLAT_VAL_85
+#  undef XLAT_STR_86
+#  undef XLAT_VAL_86
+#  undef XLAT_STR_87
+#  undef XLAT_VAL_87
+#  undef XLAT_STR_88
+#  undef XLAT_VAL_88
+#  undef XLAT_STR_89
+#  undef XLAT_VAL_89
+#  undef XLAT_STR_90
+#  undef XLAT_VAL_90
+#  undef XLAT_STR_91
+#  undef XLAT_VAL_91
+#  undef XLAT_STR_92
+#  undef XLAT_VAL_92
+#  undef XLAT_STR_93
+#  undef XLAT_VAL_93
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

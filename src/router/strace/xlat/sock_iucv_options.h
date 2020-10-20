@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_iucv_options_xdata[] = {
  XLAT(SO_IPRMDATA_MSG),
+ #define XLAT_VAL_0 ((unsigned) (SO_IPRMDATA_MSG))
+ #define XLAT_STR_0 STRINGIFY(SO_IPRMDATA_MSG)
  XLAT(SO_MSGLIMIT),
+ #define XLAT_VAL_1 ((unsigned) (SO_MSGLIMIT))
+ #define XLAT_STR_1 STRINGIFY(SO_MSGLIMIT)
  XLAT(SO_MSGSIZE),
+ #define XLAT_VAL_2 ((unsigned) (SO_MSGSIZE))
+ #define XLAT_STR_2 STRINGIFY(SO_MSGSIZE)
 };
 static
 const struct xlat sock_iucv_options[1] = { {
  .data = sock_iucv_options_xdata,
  .size = ARRAY_SIZE(sock_iucv_options_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

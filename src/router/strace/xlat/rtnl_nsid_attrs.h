@@ -63,20 +63,94 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data rtnl_nsid_attrs_xdata[] = {
  XLAT(NETNSA_NSID_NOT_ASSIGNED),
+ #define XLAT_VAL_0 ((unsigned) (NETNSA_NSID_NOT_ASSIGNED))
+ #define XLAT_STR_0 STRINGIFY(NETNSA_NSID_NOT_ASSIGNED)
  XLAT(NETNSA_NONE),
+ #define XLAT_VAL_1 ((unsigned) (NETNSA_NONE))
+ #define XLAT_STR_1 STRINGIFY(NETNSA_NONE)
  XLAT(NETNSA_NSID),
+ #define XLAT_VAL_2 ((unsigned) (NETNSA_NSID))
+ #define XLAT_STR_2 STRINGIFY(NETNSA_NSID)
  XLAT(NETNSA_PID),
+ #define XLAT_VAL_3 ((unsigned) (NETNSA_PID))
+ #define XLAT_STR_3 STRINGIFY(NETNSA_PID)
  XLAT(NETNSA_FD),
+ #define XLAT_VAL_4 ((unsigned) (NETNSA_FD))
+ #define XLAT_STR_4 STRINGIFY(NETNSA_FD)
  XLAT(NETNSA_TARGET_NSID),
+ #define XLAT_VAL_5 ((unsigned) (NETNSA_TARGET_NSID))
+ #define XLAT_STR_5 STRINGIFY(NETNSA_TARGET_NSID)
  XLAT(NETNSA_CURRENT_NSID),
+ #define XLAT_VAL_6 ((unsigned) (NETNSA_CURRENT_NSID))
+ #define XLAT_STR_6 STRINGIFY(NETNSA_CURRENT_NSID)
 };
 static
 const struct xlat rtnl_nsid_attrs[1] = { {
  .data = rtnl_nsid_attrs_xdata,
  .size = ARRAY_SIZE(rtnl_nsid_attrs_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

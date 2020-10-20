@@ -10,20 +10,20 @@
  */
 
 #include "defs.h"
-#include <sys/resource.h>
 
-#include "print_fields.h"
+#include DEF_MPERS_TYPE(kernel_rusage_t)
 
-#include DEF_MPERS_TYPE(rusage_t)
-
-typedef struct rusage rusage_t;
+#include "kernel_rusage.h"
 
 #include MPERS_DEFS
+
+#include <sys/resource.h>
+#include "print_fields.h"
 
 MPERS_PRINTER_DECL(void, printrusage,
 		   struct tcb *const tcp, const kernel_ulong_t addr)
 {
-	rusage_t ru;
+	kernel_rusage_t ru;
 
 	if (umove_or_printaddr(tcp, addr, &ru))
 		return;

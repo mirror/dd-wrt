@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data caif_protocols_xdata[] = {
  [CAIFPROTO_AT] = XLAT(CAIFPROTO_AT),
+ #define XLAT_VAL_0 ((unsigned) (CAIFPROTO_AT))
+ #define XLAT_STR_0 STRINGIFY(CAIFPROTO_AT)
  [CAIFPROTO_DATAGRAM] = XLAT(CAIFPROTO_DATAGRAM),
+ #define XLAT_VAL_1 ((unsigned) (CAIFPROTO_DATAGRAM))
+ #define XLAT_STR_1 STRINGIFY(CAIFPROTO_DATAGRAM)
  [CAIFPROTO_DATAGRAM_LOOP] = XLAT(CAIFPROTO_DATAGRAM_LOOP),
+ #define XLAT_VAL_2 ((unsigned) (CAIFPROTO_DATAGRAM_LOOP))
+ #define XLAT_STR_2 STRINGIFY(CAIFPROTO_DATAGRAM_LOOP)
  [CAIFPROTO_UTIL] = XLAT(CAIFPROTO_UTIL),
+ #define XLAT_VAL_3 ((unsigned) (CAIFPROTO_UTIL))
+ #define XLAT_STR_3 STRINGIFY(CAIFPROTO_UTIL)
  [CAIFPROTO_RFM] = XLAT(CAIFPROTO_RFM),
+ #define XLAT_VAL_4 ((unsigned) (CAIFPROTO_RFM))
+ #define XLAT_STR_4 STRINGIFY(CAIFPROTO_RFM)
  [CAIFPROTO_DEBUG] = XLAT(CAIFPROTO_DEBUG),
+ #define XLAT_VAL_5 ((unsigned) (CAIFPROTO_DEBUG))
+ #define XLAT_STR_5 STRINGIFY(CAIFPROTO_DEBUG)
 };
 static
 const struct xlat caif_protocols[1] = { {
  .data = caif_protocols_xdata,
  .size = ARRAY_SIZE(caif_protocols_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

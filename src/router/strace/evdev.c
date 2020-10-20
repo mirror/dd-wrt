@@ -14,6 +14,7 @@
 
 #ifdef HAVE_LINUX_INPUT_H
 
+# include "print_fields.h"
 # include <linux/ioctl.h>
 # include "types/evdev.h"
 
@@ -75,27 +76,21 @@ abs_ioctl(struct tcb *const tcp, const unsigned int code,
 	if (umoven_or_printaddr(tcp, arg, read_sz, &absinfo))
 		return RVAL_IOCTL_DECODED;
 
-	tprintf("{value=%u"
-		", minimum=%u, ",
-		absinfo.value,
-		absinfo.minimum);
+	PRINT_FIELD_U("{", absinfo, value);
+	PRINT_FIELD_U(", ", absinfo, minimum);
 
 	if (!abbrev(tcp)) {
-		tprintf("maximum=%u"
-			", fuzz=%u"
-			", flat=%u",
-			absinfo.maximum,
-			absinfo.fuzz,
-			absinfo.flat);
-		if (sz >= res_sz) {
-			tprintf(", resolution=%u%s",
-				absinfo.resolution,
-				sz > res_sz ? ", ..." : "");
-		} else if (sz > orig_sz) {
-			tprints(", ...");
+		PRINT_FIELD_U(", ", absinfo, maximum);
+		PRINT_FIELD_U(", ", absinfo, fuzz);
+		PRINT_FIELD_U(", ", absinfo, flat);
+		if (sz > orig_sz) {
+			if (sz >= res_sz)
+				PRINT_FIELD_U(", ", absinfo, resolution);
+			if (sz != res_sz)
+				tprints(", ...");
 		}
 	} else {
-		tprints("...");
+		tprints(", ...");
 	}
 
 	tprints("}");
@@ -129,25 +124,15 @@ keycode_V2_ioctl(struct tcb *const tcp, const kernel_ulong_t arg)
 	if (umove_or_printaddr(tcp, arg, &ike))
 		return RVAL_IOCTL_DECODED;
 
-	tprintf("{flags=%" PRIu8
-		", len=%" PRIu8 ", ",
-		ike.flags,
-		ike.len);
+	PRINT_FIELD_U("{", ike, flags);
+	PRINT_FIELD_U(", ", ike, len);
 
 	if (!abbrev(tcp)) {
-		unsigned int i;
-
-		tprintf("index=%" PRIu16 ", keycode=", ike.index);
-		printxval(evdev_keycode, ike.keycode, "KEY_???");
-		tprints(", scancode=[");
-		for (i = 0; i < ARRAY_SIZE(ike.scancode); i++) {
-			if (i > 0)
-				tprints(", ");
-			tprintf("%" PRIx8, ike.scancode[i]);
-		}
-		tprints("]");
+		PRINT_FIELD_U(", ", ike, index);
+		PRINT_FIELD_XVAL(", ", ike, keycode, evdev_keycode, "KEY_???");
+		PRINT_FIELD_X_ARRAY(", ", ike, scancode);
 	} else {
-		tprints("...");
+		tprints(", ...");
 	}
 
 	tprints("}");
@@ -162,15 +147,13 @@ getid_ioctl(struct tcb *const tcp, const kernel_ulong_t arg)
 
 	struct input_id id;
 
-	if (!umove_or_printaddr(tcp, arg, &id))
-		tprintf("{ID_BUS=%" PRIu16
-			", ID_VENDOR=%" PRIu16
-			", ID_PRODUCT=%" PRIu16
-			", ID_VERSION=%" PRIu16 "}",
-			id.bustype,
-			id.vendor,
-			id.product,
-			id.version);
+	if (!umove_or_printaddr(tcp, arg, &id)) {
+		PRINT_FIELD_U("{", id, bustype);
+		PRINT_FIELD_U(", ", id, vendor);
+		PRINT_FIELD_U(", ", id, product);
+		PRINT_FIELD_U(", ", id, version);
+		tprints("}");
+	}
 
 	return RVAL_IOCTL_DECODED;
 }

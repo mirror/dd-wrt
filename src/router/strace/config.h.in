@@ -72,13 +72,53 @@
    if you don't. */
 #undef HAVE_DECL_BTRFS_COMPRESS_ZLIB
 
+/* Define to 1 if you have the declaration of `BTRFS_COMPRESS_ZSTD', and to 0
+   if you don't. */
+#undef HAVE_DECL_BTRFS_COMPRESS_ZSTD
+
+/* Define to 1 if you have the declaration of `CLOSE_RANGE_UNSHARE', and to 0
+   if you don't. */
+#undef HAVE_DECL_CLOSE_RANGE_UNSHARE
+
+/* Define to 1 if you have the declaration of `CTL_ABI', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_ABI
+
 /* Define to 1 if you have the declaration of `CTL_ARLAN', and to 0 if you
    don't. */
 #undef HAVE_DECL_CTL_ARLAN
 
+/* Define to 1 if you have the declaration of `CTL_BUS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_BUS
+
+/* Define to 1 if you have the declaration of `CTL_CPU', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_CPU
+
+/* Define to 1 if you have the declaration of `CTL_DEBUG', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_DEBUG
+
+/* Define to 1 if you have the declaration of `CTL_DEV', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_DEV
+
 /* Define to 1 if you have the declaration of `CTL_FRV', and to 0 if you
    don't. */
 #undef HAVE_DECL_CTL_FRV
+
+/* Define to 1 if you have the declaration of `CTL_FS', and to 0 if you don't.
+   */
+#undef HAVE_DECL_CTL_FS
+
+/* Define to 1 if you have the declaration of `CTL_KERN', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_KERN
+
+/* Define to 1 if you have the declaration of `CTL_NET', and to 0 if you
+   don't. */
+#undef HAVE_DECL_CTL_NET
 
 /* Define to 1 if you have the declaration of `CTL_PM', and to 0 if you don't.
    */
@@ -96,21 +136,273 @@
    don't. */
 #undef HAVE_DECL_CTL_SUNRPC
 
+/* Define to 1 if you have the declaration of `CTL_VM', and to 0 if you don't.
+   */
+#undef HAVE_DECL_CTL_VM
+
+/* Define to 1 if you have the declaration of `IFLA_ADDRESS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_ADDRESS
+
 /* Define to 1 if you have the declaration of `IFLA_AF_SPEC', and to 0 if you
    don't. */
 #undef HAVE_DECL_IFLA_AF_SPEC
+
+/* Define to 1 if you have the declaration of `IFLA_ALT_IFNAME', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_ALT_IFNAME
+
+/* Define to 1 if you have the declaration of `IFLA_BROADCAST', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_BROADCAST
+
+/* Define to 1 if you have the declaration of `IFLA_CARRIER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_CARRIER
+
+/* Define to 1 if you have the declaration of `IFLA_CARRIER_CHANGES', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_CARRIER_CHANGES
+
+/* Define to 1 if you have the declaration of `IFLA_CARRIER_DOWN_COUNT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_IFLA_CARRIER_DOWN_COUNT
+
+/* Define to 1 if you have the declaration of `IFLA_CARRIER_UP_COUNT', and to
+   0 if you don't. */
+#undef HAVE_DECL_IFLA_CARRIER_UP_COUNT
+
+/* Define to 1 if you have the declaration of `IFLA_COST', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_COST
+
+/* Define to 1 if you have the declaration of `IFLA_EVENT', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_EVENT
+
+/* Define to 1 if you have the declaration of `IFLA_EXT_MASK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_EXT_MASK
+
+/* Define to 1 if you have the declaration of `IFLA_GROUP', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_GROUP
+
+/* Define to 1 if you have the declaration of `IFLA_GSO_MAX_SEGS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_GSO_MAX_SEGS
+
+/* Define to 1 if you have the declaration of `IFLA_GSO_MAX_SIZE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_GSO_MAX_SIZE
+
+/* Define to 1 if you have the declaration of `IFLA_IFALIAS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_IFALIAS
+
+/* Define to 1 if you have the declaration of `IFLA_IFNAME', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_IFNAME
+
+/* Define to 1 if you have the declaration of `IFLA_IF_NETNSID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_IF_NETNSID
+
+/* Define to 1 if you have the declaration of `IFLA_LINK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_LINK
+
+/* Define to 1 if you have the declaration of `IFLA_LINKINFO', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_LINKINFO
+
+/* Define to 1 if you have the declaration of `IFLA_LINKMODE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_LINKMODE
+
+/* Define to 1 if you have the declaration of `IFLA_LINK_NETNSID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_LINK_NETNSID
+
+/* Define to 1 if you have the declaration of `IFLA_MAP', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_MAP
+
+/* Define to 1 if you have the declaration of `IFLA_MASTER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_MASTER
+
+/* Define to 1 if you have the declaration of `IFLA_MAX_MTU', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_MAX_MTU
+
+/* Define to 1 if you have the declaration of `IFLA_MIN_MTU', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_MIN_MTU
+
+/* Define to 1 if you have the declaration of `IFLA_MTU', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_MTU
+
+/* Define to 1 if you have the declaration of `IFLA_NET_NS_FD', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_NET_NS_FD
+
+/* Define to 1 if you have the declaration of `IFLA_NET_NS_PID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_NET_NS_PID
+
+/* Define to 1 if you have the declaration of `IFLA_NEW_IFINDEX', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_NEW_IFINDEX
+
+/* Define to 1 if you have the declaration of `IFLA_NEW_NETNSID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_NEW_NETNSID
+
+/* Define to 1 if you have the declaration of `IFLA_NUM_RX_QUEUES', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_NUM_RX_QUEUES
+
+/* Define to 1 if you have the declaration of `IFLA_NUM_TX_QUEUES', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_NUM_TX_QUEUES
+
+/* Define to 1 if you have the declaration of `IFLA_NUM_VF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_NUM_VF
+
+/* Define to 1 if you have the declaration of `IFLA_OPERSTATE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_OPERSTATE
+
+/* Define to 1 if you have the declaration of `IFLA_PAD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_PAD
+
+/* Define to 1 if you have the declaration of `IFLA_PERM_ADDRESS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_PERM_ADDRESS
+
+/* Define to 1 if you have the declaration of `IFLA_PHYS_PORT_ID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_PHYS_PORT_ID
+
+/* Define to 1 if you have the declaration of `IFLA_PHYS_PORT_NAME', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_PHYS_PORT_NAME
+
+/* Define to 1 if you have the declaration of `IFLA_PHYS_SWITCH_ID', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_PHYS_SWITCH_ID
 
 /* Define to 1 if you have the declaration of `IFLA_PORT_SELF', and to 0 if
    you don't. */
 #undef HAVE_DECL_IFLA_PORT_SELF
 
+/* Define to 1 if you have the declaration of `IFLA_PRIORITY', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_PRIORITY
+
+/* Define to 1 if you have the declaration of `IFLA_PROMISCUITY', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_PROMISCUITY
+
+/* Define to 1 if you have the declaration of `IFLA_PROP_LIST', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_PROP_LIST
+
 /* Define to 1 if you have the declaration of `IFLA_PROTINFO', and to 0 if you
    don't. */
 #undef HAVE_DECL_IFLA_PROTINFO
 
+/* Define to 1 if you have the declaration of `IFLA_PROTO_DOWN', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_PROTO_DOWN
+
+/* Define to 1 if you have the declaration of `IFLA_PROTO_DOWN_REASON', and to
+   0 if you don't. */
+#undef HAVE_DECL_IFLA_PROTO_DOWN_REASON
+
+/* Define to 1 if you have the declaration of `IFLA_QDISC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_QDISC
+
+/* Define to 1 if you have the declaration of `IFLA_STATS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_STATS
+
+/* Define to 1 if you have the declaration of `IFLA_STATS64', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_STATS64
+
+/* Define to 1 if you have the declaration of `IFLA_TXQLEN', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_TXQLEN
+
+/* Define to 1 if you have the declaration of `IFLA_UNSPEC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_UNSPEC
+
+/* Define to 1 if you have the declaration of `IFLA_VFINFO_LIST', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_VFINFO_LIST
+
+/* Define to 1 if you have the declaration of `IFLA_VF_PORTS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_VF_PORTS
+
+/* Define to 1 if you have the declaration of `IFLA_WEIGHT', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_WEIGHT
+
+/* Define to 1 if you have the declaration of `IFLA_WIRELESS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_WIRELESS
+
 /* Define to 1 if you have the declaration of `IFLA_XDP', and to 0 if you
    don't. */
 #undef HAVE_DECL_IFLA_XDP
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_ATTACHED', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_XDP_ATTACHED
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_DRV_PROG_ID', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_XDP_DRV_PROG_ID
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_EXPECTED_FD', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_XDP_EXPECTED_FD
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_FD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_IFLA_XDP_FD
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_FLAGS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_XDP_FLAGS
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_HW_PROG_ID', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_XDP_HW_PROG_ID
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_PROG_ID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_XDP_PROG_ID
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_SKB_PROG_ID', and to 0
+   if you don't. */
+#undef HAVE_DECL_IFLA_XDP_SKB_PROG_ID
+
+/* Define to 1 if you have the declaration of `IFLA_XDP_UNSPEC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_IFLA_XDP_UNSPEC
+
+/* Define to 1 if you have the declaration of `KERN_ACCT', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_ACCT
 
 /* Define to 1 if you have the declaration of `KERN_ACPI_VIDEO_FLAGS', and to
    0 if you don't. */
@@ -120,9 +412,41 @@
    if you don't. */
 #undef HAVE_DECL_KERN_BOOTLOADER_TYPE
 
+/* Define to 1 if you have the declaration of `KERN_CADPID', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_CADPID
+
 /* Define to 1 if you have the declaration of `KERN_COMPAT_LOG', and to 0 if
    you don't. */
 #undef HAVE_DECL_KERN_COMPAT_LOG
+
+/* Define to 1 if you have the declaration of `KERN_CORE_PATTERN', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_CORE_PATTERN
+
+/* Define to 1 if you have the declaration of `KERN_CORE_USES_PID', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_CORE_USES_PID
+
+/* Define to 1 if you have the declaration of `KERN_CTLALTDEL', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_CTLALTDEL
+
+/* Define to 1 if you have the declaration of `KERN_DOMAINNAME', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_DOMAINNAME
+
+/* Define to 1 if you have the declaration of `KERN_HOTPLUG', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_HOTPLUG
+
+/* Define to 1 if you have the declaration of `KERN_HPPA_PWRSW', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_HPPA_PWRSW
+
+/* Define to 1 if you have the declaration of `KERN_HPPA_UNALIGNED', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_HPPA_UNALIGNED
 
 /* Define to 1 if you have the declaration of `KERN_HZ_TIMER', and to 0 if you
    don't. */
@@ -132,9 +456,41 @@
    if you don't. */
 #undef HAVE_DECL_KERN_IA64_UNALIGNED
 
+/* Define to 1 if you have the declaration of `KERN_IEEE_EMULATION_WARNINGS',
+   and to 0 if you don't. */
+#undef HAVE_DECL_KERN_IEEE_EMULATION_WARNINGS
+
 /* Define to 1 if you have the declaration of `KERN_MAX_LOCK_DEPTH', and to 0
    if you don't. */
 #undef HAVE_DECL_KERN_MAX_LOCK_DEPTH
+
+/* Define to 1 if you have the declaration of `KERN_MAX_THREADS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_MAX_THREADS
+
+/* Define to 1 if you have the declaration of `KERN_MODPROBE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_MODPROBE
+
+/* Define to 1 if you have the declaration of `KERN_MSGMAX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_MSGMAX
+
+/* Define to 1 if you have the declaration of `KERN_MSGMNB', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_MSGMNB
+
+/* Define to 1 if you have the declaration of `KERN_MSGMNI', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_MSGMNI
+
+/* Define to 1 if you have the declaration of `KERN_MSGPOOL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_MSGPOOL
+
+/* Define to 1 if you have the declaration of `KERN_NAMETRANS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_NAMETRANS
 
 /* Define to 1 if you have the declaration of `KERN_NGROUPS_MAX', and to 0 if
    you don't. */
@@ -144,9 +500,41 @@
    you don't. */
 #undef HAVE_DECL_KERN_NMI_WATCHDOG
 
+/* Define to 1 if you have the declaration of `KERN_NODENAME', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_NODENAME
+
+/* Define to 1 if you have the declaration of `KERN_OSRELEASE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_OSRELEASE
+
+/* Define to 1 if you have the declaration of `KERN_OSREV', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_OSREV
+
+/* Define to 1 if you have the declaration of `KERN_OSTYPE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_OSTYPE
+
+/* Define to 1 if you have the declaration of `KERN_OVERFLOWGID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_OVERFLOWGID
+
+/* Define to 1 if you have the declaration of `KERN_OVERFLOWUID', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_OVERFLOWUID
+
+/* Define to 1 if you have the declaration of `KERN_PANIC', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_PANIC
+
 /* Define to 1 if you have the declaration of `KERN_PANIC_ON_NMI', and to 0 if
    you don't. */
 #undef HAVE_DECL_KERN_PANIC_ON_NMI
+
+/* Define to 1 if you have the declaration of `KERN_PANIC_ON_OOPS', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_PANIC_ON_OOPS
 
 /* Define to 1 if you have the declaration of `KERN_PANIC_ON_WARN', and to 0
    if you don't. */
@@ -156,6 +544,30 @@
    you don't. */
 #undef HAVE_DECL_KERN_PANIC_PRINT
 
+/* Define to 1 if you have the declaration of `KERN_PIDMAX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_PIDMAX
+
+/* Define to 1 if you have the declaration of `KERN_PPC_HTABRECLAIM', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_PPC_HTABRECLAIM
+
+/* Define to 1 if you have the declaration of `KERN_PPC_L2CR', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_PPC_L2CR
+
+/* Define to 1 if you have the declaration of `KERN_PPC_POWERSAVE_NAP', and to
+   0 if you don't. */
+#undef HAVE_DECL_KERN_PPC_POWERSAVE_NAP
+
+/* Define to 1 if you have the declaration of `KERN_PPC_ZEROPAGED', and to 0
+   if you don't. */
+#undef HAVE_DECL_KERN_PPC_ZEROPAGED
+
+/* Define to 1 if you have the declaration of `KERN_PRINTK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_PRINTK
+
 /* Define to 1 if you have the declaration of `KERN_PRINTK_RATELIMIT', and to
    0 if you don't. */
 #undef HAVE_DECL_KERN_PRINTK_RATELIMIT
@@ -164,29 +576,101 @@
    and to 0 if you don't. */
 #undef HAVE_DECL_KERN_PRINTK_RATELIMIT_BURST
 
+/* Define to 1 if you have the declaration of `KERN_PROF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_PROF
+
 /* Define to 1 if you have the declaration of `KERN_PTY', and to 0 if you
    don't. */
 #undef HAVE_DECL_KERN_PTY
+
+/* Define to 1 if you have the declaration of `KERN_RANDOM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_RANDOM
 
 /* Define to 1 if you have the declaration of `KERN_RANDOMIZE', and to 0 if
    you don't. */
 #undef HAVE_DECL_KERN_RANDOMIZE
 
+/* Define to 1 if you have the declaration of `KERN_REALROOTDEV', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_REALROOTDEV
+
+/* Define to 1 if you have the declaration of `KERN_RTSIGMAX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_RTSIGMAX
+
+/* Define to 1 if you have the declaration of `KERN_RTSIGNR', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_RTSIGNR
+
+/* Define to 1 if you have the declaration of `KERN_S390_USER_DEBUG_LOGGING',
+   and to 0 if you don't. */
+#undef HAVE_DECL_KERN_S390_USER_DEBUG_LOGGING
+
+/* Define to 1 if you have the declaration of `KERN_SECUREMASK', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_SECUREMASK
+
+/* Define to 1 if you have the declaration of `KERN_SEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SEM
+
 /* Define to 1 if you have the declaration of `KERN_SETUID_DUMPABLE', and to 0
    if you don't. */
 #undef HAVE_DECL_KERN_SETUID_DUMPABLE
+
+/* Define to 1 if you have the declaration of `KERN_SG_BIG_BUFF', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_SG_BIG_BUFF
+
+/* Define to 1 if you have the declaration of `KERN_SHMALL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SHMALL
+
+/* Define to 1 if you have the declaration of `KERN_SHMMAX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SHMMAX
+
+/* Define to 1 if you have the declaration of `KERN_SHMMNI', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SHMMNI
+
+/* Define to 1 if you have the declaration of `KERN_SHMPATH', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SHMPATH
+
+/* Define to 1 if you have the declaration of `KERN_SPARC_REBOOT', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_SPARC_REBOOT
 
 /* Define to 1 if you have the declaration of `KERN_SPARC_SCONS_PWROFF', and
    to 0 if you don't. */
 #undef HAVE_DECL_KERN_SPARC_SCONS_PWROFF
 
+/* Define to 1 if you have the declaration of `KERN_SPARC_STOP_A', and to 0 if
+   you don't. */
+#undef HAVE_DECL_KERN_SPARC_STOP_A
+
 /* Define to 1 if you have the declaration of `KERN_SPIN_RETRY', and to 0 if
    you don't. */
 #undef HAVE_DECL_KERN_SPIN_RETRY
 
+/* Define to 1 if you have the declaration of `KERN_SYSRQ', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_SYSRQ
+
+/* Define to 1 if you have the declaration of `KERN_TAINTED', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_TAINTED
+
 /* Define to 1 if you have the declaration of `KERN_UNKNOWN_NMI_PANIC', and to
    0 if you don't. */
 #undef HAVE_DECL_KERN_UNKNOWN_NMI_PANIC
+
+/* Define to 1 if you have the declaration of `KERN_VERSION', and to 0 if you
+   don't. */
+#undef HAVE_DECL_KERN_VERSION
 
 /* Define to 1 if you have the declaration of `LO_FLAGS_AUTOCLEAR', and to 0
    if you don't. */
@@ -208,6 +692,22 @@
    you don't. */
 #undef HAVE_DECL_LO_FLAGS_USE_AOPS
 
+/* Define to 1 if you have the declaration of `NET_802', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_802
+
+/* Define to 1 if you have the declaration of `NET_ATALK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_ATALK
+
+/* Define to 1 if you have the declaration of `NET_AX25', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_AX25
+
+/* Define to 1 if you have the declaration of `NET_BRIDGE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_BRIDGE
+
 /* Define to 1 if you have the declaration of `NET_CIPSOV4_CACHE_BUCKET_SIZE',
    and to 0 if you don't. */
 #undef HAVE_DECL_NET_CIPSOV4_CACHE_BUCKET_SIZE
@@ -223,6 +723,10 @@
 /* Define to 1 if you have the declaration of `NET_CIPSOV4_RBM_STRICTVALID',
    and to 0 if you don't. */
 #undef HAVE_DECL_NET_CIPSOV4_RBM_STRICTVALID
+
+/* Define to 1 if you have the declaration of `NET_CORE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_CORE
 
 /* Define to 1 if you have the declaration of `NET_CORE_AEVENT_ETIME', and to
    0 if you don't. */
@@ -240,13 +744,121 @@
    0 if you don't. */
 #undef HAVE_DECL_NET_CORE_DESTROY_DELAY
 
+/* Define to 1 if you have the declaration of `NET_CORE_DEV_WEIGHT', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_DEV_WEIGHT
+
+/* Define to 1 if you have the declaration of `NET_CORE_DIVERT_VERSION', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_CORE_DIVERT_VERSION
+
+/* Define to 1 if you have the declaration of `NET_CORE_FASTROUTE', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_FASTROUTE
+
+/* Define to 1 if you have the declaration of `NET_CORE_HOT_LIST_LENGTH', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_CORE_HOT_LIST_LENGTH
+
+/* Define to 1 if you have the declaration of `NET_CORE_LO_CONG', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_LO_CONG
+
+/* Define to 1 if you have the declaration of `NET_CORE_MAX_BACKLOG', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_MAX_BACKLOG
+
+/* Define to 1 if you have the declaration of `NET_CORE_MOD_CONG', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_MOD_CONG
+
+/* Define to 1 if you have the declaration of `NET_CORE_MSG_BURST', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_MSG_BURST
+
+/* Define to 1 if you have the declaration of `NET_CORE_MSG_COST', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_MSG_COST
+
+/* Define to 1 if you have the declaration of `NET_CORE_NO_CONG', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_NO_CONG
+
+/* Define to 1 if you have the declaration of `NET_CORE_NO_CONG_THRESH', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_CORE_NO_CONG_THRESH
+
+/* Define to 1 if you have the declaration of `NET_CORE_OPTMEM_MAX', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_OPTMEM_MAX
+
+/* Define to 1 if you have the declaration of `NET_CORE_RMEM_DEFAULT', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_CORE_RMEM_DEFAULT
+
+/* Define to 1 if you have the declaration of `NET_CORE_RMEM_MAX', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_RMEM_MAX
+
+/* Define to 1 if you have the declaration of `NET_CORE_SOMAXCONN', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_CORE_SOMAXCONN
+
 /* Define to 1 if you have the declaration of `NET_CORE_WARNINGS', and to 0 if
    you don't. */
 #undef HAVE_DECL_NET_CORE_WARNINGS
 
+/* Define to 1 if you have the declaration of `NET_CORE_WMEM_DEFAULT', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_CORE_WMEM_DEFAULT
+
+/* Define to 1 if you have the declaration of `NET_CORE_WMEM_MAX', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_CORE_WMEM_MAX
+
 /* Define to 1 if you have the declaration of `NET_DCCP', and to 0 if you
    don't. */
 #undef HAVE_DECL_NET_DCCP
+
+/* Define to 1 if you have the declaration of `NET_DECNET', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_DECNET
+
+/* Define to 1 if you have the declaration of `NET_ECONET', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_ECONET
+
+/* Define to 1 if you have the declaration of `NET_ETHER', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_ETHER
+
+/* Define to 1 if you have the declaration of `NET_IPV4', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPV4
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ALWAYS_DEFRAG', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ALWAYS_DEFRAG
+
+/* Define to 1 if you have the declaration of `NET_IPV4_AUTOCONFIG', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_AUTOCONFIG
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPV4_CONF
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_CONF_ACCEPT_REDIRECTS', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_ACCEPT_REDIRECTS
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_CONF_ACCEPT_SOURCE_ROUTE', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_ACCEPT_SOURCE_ROUTE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_ARPFILTER', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_ARPFILTER
 
 /* Define to 1 if you have the declaration of `NET_IPV4_CONF_ARP_ACCEPT', and
    to 0 if you don't. */
@@ -264,41 +876,417 @@
    to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_CONF_ARP_NOTIFY
 
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_BOOTP_RELAY', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_BOOTP_RELAY
+
 /* Define to 1 if you have the declaration of
    `NET_IPV4_CONF_FORCE_IGMP_VERSION', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_CONF_FORCE_IGMP_VERSION
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_FORWARDING', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_FORWARDING
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_LOG_MARTIANS',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_LOG_MARTIANS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_MC_FORWARDING',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_MC_FORWARDING
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_MEDIUM_ID', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_MEDIUM_ID
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_NOPOLICY', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_NOPOLICY
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_NOXFRM', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_NOXFRM
 
 /* Define to 1 if you have the declaration of
    `NET_IPV4_CONF_PROMOTE_SECONDARIES', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_CONF_PROMOTE_SECONDARIES
 
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_PROXY_ARP', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_PROXY_ARP
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_RP_FILTER', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_RP_FILTER
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_CONF_SECURE_REDIRECTS', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_SECURE_REDIRECTS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_SEND_REDIRECTS',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_SEND_REDIRECTS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_SHARED_MEDIA',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_SHARED_MEDIA
+
+/* Define to 1 if you have the declaration of `NET_IPV4_CONF_TAG', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_CONF_TAG
+
+/* Define to 1 if you have the declaration of `NET_IPV4_DEFAULT_TTL', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_DEFAULT_TTL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_DYNADDR', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_DYNADDR
+
+/* Define to 1 if you have the declaration of `NET_IPV4_FIB_HASH', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_FIB_HASH
+
+/* Define to 1 if you have the declaration of `NET_IPV4_FORWARD', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_FORWARD
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ICMP_DESTUNREACH_RATE', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_DESTUNREACH_RATE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_ECHOREPLY_RATE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_ECHOREPLY_RATE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_ECHO_IGNORE_ALL',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_ECHO_IGNORE_ALL
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ICMP_ECHO_IGNORE_BROADCASTS', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_ECHO_IGNORE_BROADCASTS
+
 /* Define to 1 if you have the declaration of
    `NET_IPV4_ICMP_ERRORS_USE_INBOUND_IFADDR', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_ICMP_ERRORS_USE_INBOUND_IFADDR
 
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ICMP_IGNORE_BOGUS_ERROR_RESPONSES', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_IGNORE_BOGUS_ERROR_RESPONSES
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_PARAMPROB_RATE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_PARAMPROB_RATE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_RATELIMIT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_RATELIMIT
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_RATEMASK', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_RATEMASK
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ICMP_SOURCEQUENCH_RATE', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_SOURCEQUENCH_RATE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ICMP_TIMEEXCEED_RATE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ICMP_TIMEEXCEED_RATE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_IGMP_MAX_MEMBERSHIPS',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_IGMP_MAX_MEMBERSHIPS
+
 /* Define to 1 if you have the declaration of `NET_IPV4_IGMP_MAX_MSF', and to
    0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_IGMP_MAX_MSF
+
+/* Define to 1 if you have the declaration of `NET_IPV4_INET_PEER_GC_MAXTIME',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_INET_PEER_GC_MAXTIME
+
+/* Define to 1 if you have the declaration of `NET_IPV4_INET_PEER_GC_MINTIME',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_INET_PEER_GC_MINTIME
+
+/* Define to 1 if you have the declaration of `NET_IPV4_INET_PEER_MAXTTL', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_INET_PEER_MAXTTL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_INET_PEER_MINTTL', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_INET_PEER_MINTTL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_INET_PEER_THRESHOLD',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_INET_PEER_THRESHOLD
+
+/* Define to 1 if you have the declaration of `NET_IPV4_IPFRAG_HIGH_THRESH',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_IPFRAG_HIGH_THRESH
+
+/* Define to 1 if you have the declaration of `NET_IPV4_IPFRAG_LOW_THRESH',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_IPFRAG_LOW_THRESH
 
 /* Define to 1 if you have the declaration of `NET_IPV4_IPFRAG_MAX_DIST', and
    to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_IPFRAG_MAX_DIST
 
 /* Define to 1 if you have the declaration of
+   `NET_IPV4_IPFRAG_SECRET_INTERVAL', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_IPFRAG_SECRET_INTERVAL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_IPFRAG_TIME', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_IPFRAG_TIME
+
+/* Define to 1 if you have the declaration of `NET_IPV4_IP_MASQ_DEBUG', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_IP_MASQ_DEBUG
+
+/* Define to 1 if you have the declaration of `NET_IPV4_LOCAL_PORT_RANGE', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_LOCAL_PORT_RANGE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_NEIGH', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_NEIGH
+
+/* Define to 1 if you have the declaration of `NET_IPV4_NETFILTER', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_NETFILTER
+
+/* Define to 1 if you have the declaration of `NET_IPV4_NONLOCAL_BIND', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_NONLOCAL_BIND
+
+/* Define to 1 if you have the declaration of `NET_IPV4_NO_PMTU_DISC', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_NO_PMTU_DISC
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_ERROR_BURST',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_ERROR_BURST
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_ERROR_COST', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_ERROR_COST
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_FLUSH', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_FLUSH
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_GC_ELASTICITY',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_GC_ELASTICITY
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_GC_INTERVAL',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_GC_INTERVAL
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ROUTE_GC_MIN_INTERVAL', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_GC_MIN_INTERVAL
+
+/* Define to 1 if you have the declaration of
    `NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_GC_THRESH', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_GC_THRESH
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_GC_TIMEOUT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_GC_TIMEOUT
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MAX_DELAY', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MAX_DELAY
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MAX_SIZE', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MAX_SIZE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MIN_ADVMSS', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MIN_ADVMSS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MIN_DELAY', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MIN_DELAY
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MIN_PMTU', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MIN_PMTU
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_MTU_EXPIRES',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_MTU_EXPIRES
+
+/* Define to 1 if you have the declaration of `NET_IPV4_ROUTE_REDIRECT_LOAD',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_REDIRECT_LOAD
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ROUTE_REDIRECT_NUMBER', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_REDIRECT_NUMBER
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ROUTE_REDIRECT_SILENCE', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_REDIRECT_SILENCE
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV4_ROUTE_SECRET_INTERVAL', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_ROUTE_SECRET_INTERVAL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_FIN_TIMEOUT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_FIN_TIMEOUT
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_KEEPALIVE_INTVL',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_KEEPALIVE_INTVL
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_KEEPALIVE_PROBES',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_KEEPALIVE_PROBES
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_KEEPALIVE_TIME',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_KEEPALIVE_TIME
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_MAX_KA_PROBES',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_MAX_KA_PROBES
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_RETRANS_COLLAPSE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_RETRANS_COLLAPSE
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_RETRIES1', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_RETRIES1
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_RETRIES2', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_RETRIES2
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_SACK', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_SACK
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_SYN_RETRIES', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_SYN_RETRIES
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_TIMESTAMPS', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_TIMESTAMPS
+
+/* Define to 1 if you have the declaration of `NET_IPV4_TCP_WINDOW_SCALING',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV4_TCP_WINDOW_SCALING
 
 /* Define to 1 if you have the declaration of
    `NET_IPV4_TCP_WORKAROUND_SIGNED_WINDOWS', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV4_TCP_WORKAROUND_SIGNED_WINDOWS
 
+/* Define to 1 if you have the declaration of `NET_IPV6', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPV6
+
+/* Define to 1 if you have the declaration of `NET_IPV6_BINDV6ONLY', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV6_BINDV6ONLY
+
+/* Define to 1 if you have the declaration of `NET_IPV6_CONF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPV6_CONF
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ICMP', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPV6_ICMP
+
+/* Define to 1 if you have the declaration of `NET_IPV6_IP6FRAG_HIGH_THRESH',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_IP6FRAG_HIGH_THRESH
+
+/* Define to 1 if you have the declaration of `NET_IPV6_IP6FRAG_LOW_THRESH',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_IP6FRAG_LOW_THRESH
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV6_IP6FRAG_SECRET_INTERVAL', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_IP6FRAG_SECRET_INTERVAL
+
+/* Define to 1 if you have the declaration of `NET_IPV6_IP6FRAG_TIME', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_IP6FRAG_TIME
+
 /* Define to 1 if you have the declaration of `NET_IPV6_MLD_MAX_MSF', and to 0
    if you don't. */
 #undef HAVE_DECL_NET_IPV6_MLD_MAX_MSF
 
+/* Define to 1 if you have the declaration of `NET_IPV6_NEIGH', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV6_NEIGH
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_FLUSH', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_FLUSH
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_GC_ELASTICITY',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_GC_ELASTICITY
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_GC_INTERVAL',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_GC_INTERVAL
+
+/* Define to 1 if you have the declaration of
+   `NET_IPV6_ROUTE_GC_MIN_INTERVAL', and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_GC_MIN_INTERVAL
+
 /* Define to 1 if you have the declaration of
    `NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS', and to 0 if you don't. */
 #undef HAVE_DECL_NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_GC_THRESH', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_GC_THRESH
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_GC_TIMEOUT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_GC_TIMEOUT
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_MAX_SIZE', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_MAX_SIZE
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_MIN_ADVMSS', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_MIN_ADVMSS
+
+/* Define to 1 if you have the declaration of `NET_IPV6_ROUTE_MTU_EXPIRES',
+   and to 0 if you don't. */
+#undef HAVE_DECL_NET_IPV6_ROUTE_MTU_EXPIRES
+
+/* Define to 1 if you have the declaration of `NET_IPX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_IPX
 
 /* Define to 1 if you have the declaration of `NET_IRDA', and to 0 if you
    don't. */
@@ -312,13 +1300,37 @@
    don't. */
 #undef HAVE_DECL_NET_NETFILTER
 
+/* Define to 1 if you have the declaration of `NET_NETROM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_NETROM
+
+/* Define to 1 if you have the declaration of `NET_ROSE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_ROSE
+
+/* Define to 1 if you have the declaration of `NET_SCTP', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_SCTP
+
 /* Define to 1 if you have the declaration of `NET_TCP_ABC', and to 0 if you
    don't. */
 #undef HAVE_DECL_NET_TCP_ABC
 
+/* Define to 1 if you have the declaration of `NET_TCP_ABORT_ON_OVERFLOW', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_TCP_ABORT_ON_OVERFLOW
+
+/* Define to 1 if you have the declaration of `NET_TCP_ADV_WIN_SCALE', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_TCP_ADV_WIN_SCALE
+
 /* Define to 1 if you have the declaration of `NET_TCP_ALLOWED_CONG_CONTROL',
    and to 0 if you don't. */
 #undef HAVE_DECL_NET_TCP_ALLOWED_CONG_CONTROL
+
+/* Define to 1 if you have the declaration of `NET_TCP_APP_WIN', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_TCP_APP_WIN
 
 /* Define to 1 if you have the declaration of `NET_TCP_AVAIL_CONG_CONTROL',
    and to 0 if you don't. */
@@ -344,13 +1356,49 @@
    0 if you don't. */
 #undef HAVE_DECL_NET_TCP_DMA_COPYBREAK
 
+/* Define to 1 if you have the declaration of `NET_TCP_DSACK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_DSACK
+
+/* Define to 1 if you have the declaration of `NET_TCP_ECN', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_ECN
+
+/* Define to 1 if you have the declaration of `NET_TCP_FACK', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_FACK
+
+/* Define to 1 if you have the declaration of `NET_TCP_FRTO', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_FRTO
+
 /* Define to 1 if you have the declaration of `NET_TCP_FRTO_RESPONSE', and to
    0 if you don't. */
 #undef HAVE_DECL_NET_TCP_FRTO_RESPONSE
 
+/* Define to 1 if you have the declaration of `NET_TCP_LOW_LATENCY', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_LOW_LATENCY
+
+/* Define to 1 if you have the declaration of `NET_TCP_MAX_ORPHANS', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_MAX_ORPHANS
+
 /* Define to 1 if you have the declaration of `NET_TCP_MAX_SSTHRESH', and to 0
    if you don't. */
 #undef HAVE_DECL_NET_TCP_MAX_SSTHRESH
+
+/* Define to 1 if you have the declaration of `NET_TCP_MAX_SYN_BACKLOG', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_TCP_MAX_SYN_BACKLOG
+
+/* Define to 1 if you have the declaration of `NET_TCP_MAX_TW_BUCKETS', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_TCP_MAX_TW_BUCKETS
+
+/* Define to 1 if you have the declaration of `NET_TCP_MEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_MEM
 
 /* Define to 1 if you have the declaration of `NET_TCP_MODERATE_RCVBUF', and
    to 0 if you don't. */
@@ -364,13 +1412,81 @@
    to 0 if you don't. */
 #undef HAVE_DECL_NET_TCP_NO_METRICS_SAVE
 
+/* Define to 1 if you have the declaration of `NET_TCP_ORPHAN_RETRIES', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_TCP_ORPHAN_RETRIES
+
+/* Define to 1 if you have the declaration of `NET_TCP_REORDERING', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_REORDERING
+
+/* Define to 1 if you have the declaration of `NET_TCP_RFC1337', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_TCP_RFC1337
+
+/* Define to 1 if you have the declaration of `NET_TCP_RMEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_RMEM
+
 /* Define to 1 if you have the declaration of `NET_TCP_SLOW_START_AFTER_IDLE',
    and to 0 if you don't. */
 #undef HAVE_DECL_NET_TCP_SLOW_START_AFTER_IDLE
 
+/* Define to 1 if you have the declaration of `NET_TCP_STDURG', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_TCP_STDURG
+
+/* Define to 1 if you have the declaration of `NET_TCP_SYNACK_RETRIES', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_TCP_SYNACK_RETRIES
+
+/* Define to 1 if you have the declaration of `NET_TCP_SYNCOOKIES', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_SYNCOOKIES
+
+/* Define to 1 if you have the declaration of `NET_TCP_SYN_TAILDROP', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_SYN_TAILDROP
+
 /* Define to 1 if you have the declaration of `NET_TCP_TSO_WIN_DIVISOR', and
    to 0 if you don't. */
 #undef HAVE_DECL_NET_TCP_TSO_WIN_DIVISOR
+
+/* Define to 1 if you have the declaration of `NET_TCP_TW_RECYCLE', and to 0
+   if you don't. */
+#undef HAVE_DECL_NET_TCP_TW_RECYCLE
+
+/* Define to 1 if you have the declaration of `NET_TCP_TW_REUSE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_NET_TCP_TW_REUSE
+
+/* Define to 1 if you have the declaration of `NET_TCP_WMEM', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_TCP_WMEM
+
+/* Define to 1 if you have the declaration of `NET_TR', and to 0 if you don't.
+   */
+#undef HAVE_DECL_NET_TR
+
+/* Define to 1 if you have the declaration of `NET_UNIX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_UNIX
+
+/* Define to 1 if you have the declaration of `NET_UNIX_DELETE_DELAY', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_UNIX_DELETE_DELAY
+
+/* Define to 1 if you have the declaration of `NET_UNIX_DESTROY_DELAY', and to
+   0 if you don't. */
+#undef HAVE_DECL_NET_UNIX_DESTROY_DELAY
+
+/* Define to 1 if you have the declaration of `NET_UNIX_MAX_DGRAM_QLEN', and
+   to 0 if you don't. */
+#undef HAVE_DECL_NET_UNIX_MAX_DGRAM_QLEN
+
+/* Define to 1 if you have the declaration of `NET_X25', and to 0 if you
+   don't. */
+#undef HAVE_DECL_NET_X25
 
 /* Define to 1 if you have the declaration of `PTRACE_PEEKUSER', and to 0 if
    you don't. */
@@ -384,18 +1500,6 @@
    */
 #undef HAVE_DECL_P_ALL
 
-/* Define to 1 if you have the declaration of `P_CID', and to 0 if you don't.
-   */
-#undef HAVE_DECL_P_CID
-
-/* Define to 1 if you have the declaration of `P_GID', and to 0 if you don't.
-   */
-#undef HAVE_DECL_P_GID
-
-/* Define to 1 if you have the declaration of `P_LWPID', and to 0 if you
-   don't. */
-#undef HAVE_DECL_P_LWPID
-
 /* Define to 1 if you have the declaration of `P_PGID', and to 0 if you don't.
    */
 #undef HAVE_DECL_P_PGID
@@ -404,17 +1508,9 @@
    */
 #undef HAVE_DECL_P_PID
 
-/* Define to 1 if you have the declaration of `P_PPID', and to 0 if you don't.
-   */
-#undef HAVE_DECL_P_PPID
-
-/* Define to 1 if you have the declaration of `P_SID', and to 0 if you don't.
-   */
-#undef HAVE_DECL_P_SID
-
-/* Define to 1 if you have the declaration of `P_UID', and to 0 if you don't.
-   */
-#undef HAVE_DECL_P_UID
+/* Define to 1 if you have the declaration of `P_PIDFD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_P_PIDFD
 
 /* Define to 1 if you have the declaration of `sys_errlist', and to 0 if you
    don't. */
@@ -428,17 +1524,93 @@
    don't. */
 #undef HAVE_DECL_TCA_ACT_FLAGS
 
+/* Define to 1 if you have the declaration of `TCA_ACT_HW_STATS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_HW_STATS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_INDEX', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_INDEX
+
+/* Define to 1 if you have the declaration of `TCA_ACT_KIND', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_KIND
+
+/* Define to 1 if you have the declaration of `TCA_ACT_OPTIONS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_OPTIONS
+
 /* Define to 1 if you have the declaration of `TCA_ACT_PAD', and to 0 if you
    don't. */
 #undef HAVE_DECL_TCA_ACT_PAD
+
+/* Define to 1 if you have the declaration of `TCA_ACT_STATS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_ACT_STATS
+
+/* Define to 1 if you have the declaration of `TCA_ACT_UNSPEC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_ACT_UNSPEC
+
+/* Define to 1 if you have the declaration of `TCA_ACT_USED_HW_STATS', and to
+   0 if you don't. */
+#undef HAVE_DECL_TCA_ACT_USED_HW_STATS
+
+/* Define to 1 if you have the declaration of `TCA_STAB_BASE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_STAB_BASE
 
 /* Define to 1 if you have the declaration of `TCA_STAB_DATA', and to 0 if you
    don't. */
 #undef HAVE_DECL_TCA_STAB_DATA
 
+/* Define to 1 if you have the declaration of `TCA_STAB_UNSPEC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_STAB_UNSPEC
+
+/* Define to 1 if you have the declaration of `TCA_STATS_APP', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_STATS_APP
+
+/* Define to 1 if you have the declaration of `TCA_STATS_BASIC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_STATS_BASIC
+
+/* Define to 1 if you have the declaration of `TCA_STATS_BASIC_HW', and to 0
+   if you don't. */
+#undef HAVE_DECL_TCA_STATS_BASIC_HW
+
+/* Define to 1 if you have the declaration of `TCA_STATS_PAD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_TCA_STATS_PAD
+
 /* Define to 1 if you have the declaration of `TCA_STATS_PKT64', and to 0 if
    you don't. */
 #undef HAVE_DECL_TCA_STATS_PKT64
+
+/* Define to 1 if you have the declaration of `TCA_STATS_QUEUE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_STATS_QUEUE
+
+/* Define to 1 if you have the declaration of `TCA_STATS_RATE_EST', and to 0
+   if you don't. */
+#undef HAVE_DECL_TCA_STATS_RATE_EST
+
+/* Define to 1 if you have the declaration of `TCA_STATS_RATE_EST64', and to 0
+   if you don't. */
+#undef HAVE_DECL_TCA_STATS_RATE_EST64
+
+/* Define to 1 if you have the declaration of `TCA_STATS_UNSPEC', and to 0 if
+   you don't. */
+#undef HAVE_DECL_TCA_STATS_UNSPEC
+
+/* Define to 1 if you have the declaration of `V4L2_BUF_TYPE_META_CAPTURE',
+   and to 0 if you don't. */
+#undef HAVE_DECL_V4L2_BUF_TYPE_META_CAPTURE
+
+/* Define to 1 if you have the declaration of `V4L2_BUF_TYPE_META_OUTPUT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_V4L2_BUF_TYPE_META_OUTPUT
 
 /* Define to 1 if you have the declaration of `V4L2_BUF_TYPE_SDR_CAPTURE', and
    to 0 if you don't. */
@@ -496,13 +1668,33 @@
    and to 0 if you don't. */
 #undef HAVE_DECL_V4L2_COLORSPACE_470_SYSTEM_M
 
+/* Define to 1 if you have the declaration of `V4L2_COLORSPACE_BT2020', and to
+   0 if you don't. */
+#undef HAVE_DECL_V4L2_COLORSPACE_BT2020
+
 /* Define to 1 if you have the declaration of `V4L2_COLORSPACE_BT878', and to
    0 if you don't. */
 #undef HAVE_DECL_V4L2_COLORSPACE_BT878
 
+/* Define to 1 if you have the declaration of `V4L2_COLORSPACE_DCI_P3', and to
+   0 if you don't. */
+#undef HAVE_DECL_V4L2_COLORSPACE_DCI_P3
+
+/* Define to 1 if you have the declaration of `V4L2_COLORSPACE_DEFAULT', and
+   to 0 if you don't. */
+#undef HAVE_DECL_V4L2_COLORSPACE_DEFAULT
+
 /* Define to 1 if you have the declaration of `V4L2_COLORSPACE_JPEG', and to 0
    if you don't. */
 #undef HAVE_DECL_V4L2_COLORSPACE_JPEG
+
+/* Define to 1 if you have the declaration of `V4L2_COLORSPACE_OPRGB', and to
+   0 if you don't. */
+#undef HAVE_DECL_V4L2_COLORSPACE_OPRGB
+
+/* Define to 1 if you have the declaration of `V4L2_COLORSPACE_RAW', and to 0
+   if you don't. */
+#undef HAVE_DECL_V4L2_COLORSPACE_RAW
 
 /* Define to 1 if you have the declaration of `V4L2_COLORSPACE_REC709', and to
    0 if you don't. */
@@ -612,18 +1804,6 @@
    you don't. */
 #undef HAVE_DECL_V4L2_FIELD_TOP
 
-/* Define to 1 if you have the declaration of `V4L2_FRMIVAL_TYPE_CONTINUOUS',
-   and to 0 if you don't. */
-#undef HAVE_DECL_V4L2_FRMIVAL_TYPE_CONTINUOUS
-
-/* Define to 1 if you have the declaration of `V4L2_FRMIVAL_TYPE_DISCRETE',
-   and to 0 if you don't. */
-#undef HAVE_DECL_V4L2_FRMIVAL_TYPE_DISCRETE
-
-/* Define to 1 if you have the declaration of `V4L2_FRMIVAL_TYPE_STEPWISE',
-   and to 0 if you don't. */
-#undef HAVE_DECL_V4L2_FRMIVAL_TYPE_STEPWISE
-
 /* Define to 1 if you have the declaration of `V4L2_FRMSIZE_TYPE_CONTINUOUS',
    and to 0 if you don't. */
 #undef HAVE_DECL_V4L2_FRMSIZE_TYPE_CONTINUOUS
@@ -652,22 +1832,6 @@
    if you don't. */
 #undef HAVE_DECL_V4L2_MEMORY_USERPTR
 
-/* Define to 1 if you have the declaration of `V4L2_PRIORITY_BACKGROUND', and
-   to 0 if you don't. */
-#undef HAVE_DECL_V4L2_PRIORITY_BACKGROUND
-
-/* Define to 1 if you have the declaration of `V4L2_PRIORITY_INTERACTIVE', and
-   to 0 if you don't. */
-#undef HAVE_DECL_V4L2_PRIORITY_INTERACTIVE
-
-/* Define to 1 if you have the declaration of `V4L2_PRIORITY_RECORD', and to 0
-   if you don't. */
-#undef HAVE_DECL_V4L2_PRIORITY_RECORD
-
-/* Define to 1 if you have the declaration of `V4L2_PRIORITY_UNSET', and to 0
-   if you don't. */
-#undef HAVE_DECL_V4L2_PRIORITY_UNSET
-
 /* Define to 1 if you have the declaration of `V4L2_TUNER_ANALOG_TV', and to 0
    if you don't. */
 #undef HAVE_DECL_V4L2_TUNER_ANALOG_TV
@@ -680,13 +1844,41 @@
    you don't. */
 #undef HAVE_DECL_V4L2_TUNER_RADIO
 
+/* Define to 1 if you have the declaration of `V4L2_TUNER_RF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_V4L2_TUNER_RF
+
+/* Define to 1 if you have the declaration of `V4L2_TUNER_SDR', and to 0 if
+   you don't. */
+#undef HAVE_DECL_V4L2_TUNER_SDR
+
 /* Define to 1 if you have the declaration of `VM_BLOCK_DUMP', and to 0 if you
    don't. */
 #undef HAVE_DECL_VM_BLOCK_DUMP
 
+/* Define to 1 if you have the declaration of `VM_DIRTY_BACKGROUND', and to 0
+   if you don't. */
+#undef HAVE_DECL_VM_DIRTY_BACKGROUND
+
+/* Define to 1 if you have the declaration of `VM_DIRTY_EXPIRE_CS', and to 0
+   if you don't. */
+#undef HAVE_DECL_VM_DIRTY_EXPIRE_CS
+
+/* Define to 1 if you have the declaration of `VM_DIRTY_RATIO', and to 0 if
+   you don't. */
+#undef HAVE_DECL_VM_DIRTY_RATIO
+
+/* Define to 1 if you have the declaration of `VM_DIRTY_WB_CS', and to 0 if
+   you don't. */
+#undef HAVE_DECL_VM_DIRTY_WB_CS
+
 /* Define to 1 if you have the declaration of `VM_HUGETLB_GROUP', and to 0 if
    you don't. */
 #undef HAVE_DECL_VM_HUGETLB_GROUP
+
+/* Define to 1 if you have the declaration of `VM_HUGETLB_PAGES', and to 0 if
+   you don't. */
+#undef HAVE_DECL_VM_HUGETLB_PAGES
 
 /* Define to 1 if you have the declaration of `VM_LAPTOP_MODE', and to 0 if
    you don't. */
@@ -696,9 +1888,41 @@
    if you don't. */
 #undef HAVE_DECL_VM_LEGACY_VA_LAYOUT
 
+/* Define to 1 if you have the declaration of `VM_LOWMEM_RESERVE_RATIO', and
+   to 0 if you don't. */
+#undef HAVE_DECL_VM_LOWMEM_RESERVE_RATIO
+
 /* Define to 1 if you have the declaration of `VM_MAX_MAP_COUNT', and to 0 if
    you don't. */
 #undef HAVE_DECL_VM_MAX_MAP_COUNT
+
+/* Define to 1 if you have the declaration of `VM_MIN_FREE_KBYTES', and to 0
+   if you don't. */
+#undef HAVE_DECL_VM_MIN_FREE_KBYTES
+
+/* Define to 1 if you have the declaration of `VM_NR_PDFLUSH_THREADS', and to
+   0 if you don't. */
+#undef HAVE_DECL_VM_NR_PDFLUSH_THREADS
+
+/* Define to 1 if you have the declaration of `VM_OVERCOMMIT_MEMORY', and to 0
+   if you don't. */
+#undef HAVE_DECL_VM_OVERCOMMIT_MEMORY
+
+/* Define to 1 if you have the declaration of `VM_OVERCOMMIT_RATIO', and to 0
+   if you don't. */
+#undef HAVE_DECL_VM_OVERCOMMIT_RATIO
+
+/* Define to 1 if you have the declaration of `VM_PAGEBUF', and to 0 if you
+   don't. */
+#undef HAVE_DECL_VM_PAGEBUF
+
+/* Define to 1 if you have the declaration of `VM_PAGE_CLUSTER', and to 0 if
+   you don't. */
+#undef HAVE_DECL_VM_PAGE_CLUSTER
+
+/* Define to 1 if you have the declaration of `VM_SWAPPINESS', and to 0 if you
+   don't. */
+#undef HAVE_DECL_VM_SWAPPINESS
 
 /* Define to 1 if you have the declaration of `VM_SWAP_TOKEN_TIMEOUT', and to
    0 if you don't. */
@@ -707,6 +1931,26 @@
 /* Define to 1 if you have the declaration of `VM_VFS_CACHE_PRESSURE', and to
    0 if you don't. */
 #undef HAVE_DECL_VM_VFS_CACHE_PRESSURE
+
+/* Define to 1 if you have the declaration of `XDP_ATTACHED_DRV', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XDP_ATTACHED_DRV
+
+/* Define to 1 if you have the declaration of `XDP_ATTACHED_HW', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XDP_ATTACHED_HW
+
+/* Define to 1 if you have the declaration of `XDP_ATTACHED_MULTI', and to 0
+   if you don't. */
+#undef HAVE_DECL_XDP_ATTACHED_MULTI
+
+/* Define to 1 if you have the declaration of `XDP_ATTACHED_NONE', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XDP_ATTACHED_NONE
+
+/* Define to 1 if you have the declaration of `XDP_ATTACHED_SKB', and to 0 if
+   you don't. */
+#undef HAVE_DECL_XDP_ATTACHED_SKB
 
 /* Define to 1 if you have the <demangle.h> header file. */
 #undef HAVE_DEMANGLE_H
@@ -786,6 +2030,9 @@
 /* Define to 1 if you have the <linux/btrfs.h> header file. */
 #undef HAVE_LINUX_BTRFS_H
 
+/* Define to 1 if you have the <linux/close_range.h> header file. */
+#undef HAVE_LINUX_CLOSE_RANGE_H
+
 /* Define to 1 if you have the <linux/cryptouser.h> header file. */
 #undef HAVE_LINUX_CRYPTOUSER_H
 
@@ -833,6 +2080,9 @@
 
 /* Define to 1 if you have the <linux/kvm.h> header file. */
 #undef HAVE_LINUX_KVM_H
+
+/* Define to 1 if you have the <linux/loop.h> header file. */
+#undef HAVE_LINUX_LOOP_H
 
 /* Define to 1 if you have the <linux/memfd.h> header file. */
 #undef HAVE_LINUX_MEMFD_H
@@ -909,6 +2159,9 @@
 /* Define to 1 if you have the <linux/nsfs.h> header file. */
 #undef HAVE_LINUX_NSFS_H
 
+/* Define to 1 if you have the <linux/openat2.h> header file. */
+#undef HAVE_LINUX_OPENAT2_H
+
 /* Define to 1 if you have the <linux/perf_event.h> header file. */
 #undef HAVE_LINUX_PERF_EVENT_H
 
@@ -927,11 +2180,17 @@
 /* Define to 1 if you have the <linux/securebits.h> header file. */
 #undef HAVE_LINUX_SECUREBITS_H
 
+/* Define to 1 if you have the <linux/tee.h> header file. */
+#undef HAVE_LINUX_TEE_H
+
 /* Define to 1 if you have the <linux/userfaultfd.h> header file. */
 #undef HAVE_LINUX_USERFAULTFD_H
 
 /* Define to 1 if you have the <linux/utsname.h> header file. */
 #undef HAVE_LINUX_UTSNAME_H
+
+/* Define to 1 if you have the <linux/videodev2.h> header file. */
+#undef HAVE_LINUX_VIDEODEV2_H
 
 /* Define to 1 if you have mpers_name mpers support */
 #undef HAVE_M32_MPERS
@@ -989,9 +2248,6 @@
 
 /* Define to 1 if you have the <paths.h> header file. */
 #undef HAVE_PATHS_H
-
-/* Define to 1 if you have the `prctl' function. */
-#undef HAVE_PRCTL
 
 /* Define to 1 if you have the `preadv' function. */
 #undef HAVE_PREADV
@@ -1053,12 +2309,6 @@
 /* Define to 1 if you have the `strndup' function. */
 #undef HAVE_STRNDUP
 
-/* Define to 1 if you have the <stropts.h> header file. */
-#undef HAVE_STROPTS_H
-
-/* Define to 1 if you have the `strsignal' function. */
-#undef HAVE_STRSIGNAL
-
 /* Define to 1 if the system has the type `struct blk_user_trace_setup'. */
 #undef HAVE_STRUCT_BLK_USER_TRACE_SETUP
 
@@ -1076,6 +2326,10 @@
 
 /* Define to 1 if `btf_value_type_id' is a member of `struct bpf_map_info'. */
 #undef HAVE_STRUCT_BPF_MAP_INFO_BTF_VALUE_TYPE_ID
+
+/* Define to 1 if `btf_vmlinux_value_type_id' is a member of `struct
+   bpf_map_info'. */
+#undef HAVE_STRUCT_BPF_MAP_INFO_BTF_VMLINUX_VALUE_TYPE_ID
 
 /* Define to 1 if `id' is a member of `struct bpf_map_info'. */
 #undef HAVE_STRUCT_BPF_MAP_INFO_ID
@@ -1233,16 +2487,16 @@
    */
 #undef HAVE_STRUCT_BTRFS_IOCTL_FS_INFO_ARGS_NODESIZE
 
-/* Define to 1 if `flags' is a member of `struct
+/* Define to 1 if the system has the type `struct
    btrfs_ioctl_logical_ino_args'. */
-#undef HAVE_STRUCT_BTRFS_IOCTL_LOGICAL_INO_ARGS_FLAGS
+#undef HAVE_STRUCT_BTRFS_IOCTL_LOGICAL_INO_ARGS
 
-/* Define to 1 if `buf_size' is a member of `struct
-   btrfs_ioctl_search_args_v2'. */
-#undef HAVE_STRUCT_BTRFS_IOCTL_SEARCH_ARGS_V2_BUF_SIZE
+/* Define to 1 if `inodes' is a member of `struct
+   btrfs_ioctl_logical_ino_args'. */
+#undef HAVE_STRUCT_BTRFS_IOCTL_LOGICAL_INO_ARGS_INODES
 
-/* Define to 1 if `set_tid_size' is a member of `struct clone_args'. */
-#undef HAVE_STRUCT_CLONE_ARGS_SET_TID_SIZE
+/* Define to 1 if `cgroup' is a member of `struct clone_args'. */
+#undef HAVE_STRUCT_CLONE_ARGS_CGROUP
 
 /* Define to 1 if the system has the type `struct crypto_report_aead'. */
 #undef HAVE_STRUCT_CRYPTO_REPORT_AEAD
@@ -1359,8 +2613,11 @@
 /* Define to 1 if the system has the type `struct io_cqring_offsets'. */
 #undef HAVE_STRUCT_IO_CQRING_OFFSETS
 
-/* Define to 1 if `resv' is a member of `struct io_cqring_offsets'. */
-#undef HAVE_STRUCT_IO_CQRING_OFFSETS_RESV
+/* Define to 1 if `cqes' is a member of `struct io_cqring_offsets'. */
+#undef HAVE_STRUCT_IO_CQRING_OFFSETS_CQES
+
+/* Define to 1 if `flags' is a member of `struct io_cqring_offsets'. */
+#undef HAVE_STRUCT_IO_CQRING_OFFSETS_FLAGS
 
 /* Define to 1 if the system has the type `struct io_sqring_offsets'. */
 #undef HAVE_STRUCT_IO_SQRING_OFFSETS
@@ -1389,6 +2646,18 @@
 /* Define to 1 if `wq_fd' is a member of `struct io_uring_params'. */
 #undef HAVE_STRUCT_IO_URING_PARAMS_WQ_FD
 
+/* Define to 1 if the system has the type `struct io_uring_probe'. */
+#undef HAVE_STRUCT_IO_URING_PROBE
+
+/* Define to 1 if the system has the type `struct io_uring_probe_op'. */
+#undef HAVE_STRUCT_IO_URING_PROBE_OP
+
+/* Define to 1 if `ops' is a member of `struct io_uring_probe'. */
+#undef HAVE_STRUCT_IO_URING_PROBE_OPS
+
+/* Define to 1 if `resv2' is a member of `struct io_uring_probe_op'. */
+#undef HAVE_STRUCT_IO_URING_PROBE_OP_RESV2
+
 /* Define to 1 if the system has the type `struct kcmp_epoll_slot'. */
 #undef HAVE_STRUCT_KCMP_EPOLL_SLOT
 
@@ -1414,6 +2683,12 @@
    kvm_userspace_memory_region'. */
 #undef HAVE_STRUCT_KVM_USERSPACE_MEMORY_REGION
 
+/* Define to 1 if the system has the type `struct loop_config'. */
+#undef HAVE_STRUCT_LOOP_CONFIG
+
+/* Define to 1 if `__reserved' is a member of `struct loop_config'. */
+#undef HAVE_STRUCT_LOOP_CONFIG___RESERVED
+
 /* Define to 1 if the system has the type `struct mmsghdr'. */
 #undef HAVE_STRUCT_MMSGHDR
 
@@ -1434,6 +2709,12 @@
 
 /* Define to 1 if the system has the type `struct netconfmsg'. */
 #undef HAVE_STRUCT_NETCONFMSG
+
+/* Define to 1 if the system has the type `struct open_how'. */
+#undef HAVE_STRUCT_OPEN_HOW
+
+/* Define to 1 if `resolve' is a member of `struct open_how'. */
+#undef HAVE_STRUCT_OPEN_HOW_RESOLVE
 
 /* Define to 1 if `aux_sample_size' is a member of `struct perf_event_attr'.
    */
@@ -1602,6 +2883,79 @@
 /* Define to 1 if the system has the type `struct tc_sizespec'. */
 #undef HAVE_STRUCT_TC_SIZESPEC
 
+/* Define to 1 if the system has the type `struct tee_iocl_supp_recv_arg'. */
+#undef HAVE_STRUCT_TEE_IOCL_SUPP_RECV_ARG
+
+/* Define to 1 if `params' is a member of `struct tee_iocl_supp_recv_arg'. */
+#undef HAVE_STRUCT_TEE_IOCL_SUPP_RECV_ARG_PARAMS
+
+/* Define to 1 if the system has the type `struct tee_iocl_supp_send_arg'. */
+#undef HAVE_STRUCT_TEE_IOCL_SUPP_SEND_ARG
+
+/* Define to 1 if `params' is a member of `struct tee_iocl_supp_send_arg'. */
+#undef HAVE_STRUCT_TEE_IOCL_SUPP_SEND_ARG_PARAMS
+
+/* Define to 1 if the system has the type `struct tee_ioctl_buf_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_BUF_DATA
+
+/* Define to 1 if `buf_len' is a member of `struct tee_ioctl_buf_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_BUF_DATA_BUF_LEN
+
+/* Define to 1 if the system has the type `struct tee_ioctl_cancel_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_CANCEL_ARG
+
+/* Define to 1 if `session' is a member of `struct tee_ioctl_cancel_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_CANCEL_ARG_SESSION
+
+/* Define to 1 if the system has the type `struct
+   tee_ioctl_close_session_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_CLOSE_SESSION_ARG
+
+/* Define to 1 if `session' is a member of `struct
+   tee_ioctl_close_session_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_CLOSE_SESSION_ARG_SESSION
+
+/* Define to 1 if the system has the type `struct tee_ioctl_invoke_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_INVOKE_ARG
+
+/* Define to 1 if `params' is a member of `struct tee_ioctl_invoke_arg'. */
+#undef HAVE_STRUCT_TEE_IOCTL_INVOKE_ARG_PARAMS
+
+/* Define to 1 if the system has the type `struct tee_ioctl_open_session_arg'.
+   */
+#undef HAVE_STRUCT_TEE_IOCTL_OPEN_SESSION_ARG
+
+/* Define to 1 if `params' is a member of `struct tee_ioctl_open_session_arg'.
+   */
+#undef HAVE_STRUCT_TEE_IOCTL_OPEN_SESSION_ARG_PARAMS
+
+/* Define to 1 if the system has the type `struct tee_ioctl_param'. */
+#undef HAVE_STRUCT_TEE_IOCTL_PARAM
+
+/* Define to 1 if `c' is a member of `struct tee_ioctl_param'. */
+#undef HAVE_STRUCT_TEE_IOCTL_PARAM_C
+
+/* Define to 1 if the system has the type `struct tee_ioctl_shm_alloc_data'.
+   */
+#undef HAVE_STRUCT_TEE_IOCTL_SHM_ALLOC_DATA
+
+/* Define to 1 if `id' is a member of `struct tee_ioctl_shm_alloc_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_SHM_ALLOC_DATA_ID
+
+/* Define to 1 if the system has the type `struct
+   tee_ioctl_shm_register_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_SHM_REGISTER_DATA
+
+/* Define to 1 if `id' is a member of `struct tee_ioctl_shm_register_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_SHM_REGISTER_DATA_ID
+
+/* Define to 1 if the system has the type `struct tee_ioctl_version_data'. */
+#undef HAVE_STRUCT_TEE_IOCTL_VERSION_DATA
+
+/* Define to 1 if `gen_caps' is a member of `struct tee_ioctl_version_data'.
+   */
+#undef HAVE_STRUCT_TEE_IOCTL_VERSION_DATA_GEN_CAPS
+
 /* Define to 1 if `max_beb_per1024' is a member of `struct ubi_attach_req'. */
 #undef HAVE_STRUCT_UBI_ATTACH_REQ_MAX_BEB_PER1024
 
@@ -1614,11 +2968,47 @@
 /* Define to 1 if `domainname' is a member of `struct utsname'. */
 #undef HAVE_STRUCT_UTSNAME_DOMAINNAME
 
+/* Define to 1 if the system has the type `struct v4l2_area'. */
+#undef HAVE_STRUCT_V4L2_AREA
+
+/* Define to 1 if `height' is a member of `struct v4l2_area'. */
+#undef HAVE_STRUCT_V4L2_AREA_HEIGHT
+
+/* Define to 1 if the system has the type `struct v4l2_capability'. */
+#undef HAVE_STRUCT_V4L2_CAPABILITY
+
 /* Define to 1 if `device_caps' is a member of `struct v4l2_capability'. */
 #undef HAVE_STRUCT_V4L2_CAPABILITY_DEVICE_CAPS
 
+/* Define to 1 if `reserved' is a member of `struct v4l2_capability'. */
+#undef HAVE_STRUCT_V4L2_CAPABILITY_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_clip'. */
+#undef HAVE_STRUCT_V4L2_CLIP
+
+/* Define to 1 if `next' is a member of `struct v4l2_clip'. */
+#undef HAVE_STRUCT_V4L2_CLIP_NEXT
+
+/* Define to 1 if the system has the type `struct v4l2_create_buffers'. */
+#undef HAVE_STRUCT_V4L2_CREATE_BUFFERS
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_create_buffers'. */
+#undef HAVE_STRUCT_V4L2_CREATE_BUFFERS_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_ext_controls'. */
+#undef HAVE_STRUCT_V4L2_EXT_CONTROLS
+
+/* Define to 1 if `controls' is a member of `struct v4l2_ext_controls'. */
+#undef HAVE_STRUCT_V4L2_EXT_CONTROLS_CONTROLS
+
 /* Define to 1 if `string' is a member of `struct v4l2_ext_control'. */
 #undef HAVE_STRUCT_V4L2_EXT_CONTROL_STRING
+
+/* Define to 1 if the system has the type `struct v4l2_format'. */
+#undef HAVE_STRUCT_V4L2_FORMAT
+
+/* Define to 1 if `fmt' is a member of `struct v4l2_format'. */
+#undef HAVE_STRUCT_V4L2_FORMAT_FMT
 
 /* Define to 1 if `fmt.pix_mp' is a member of `struct v4l2_format'. */
 #undef HAVE_STRUCT_V4L2_FORMAT_FMT_PIX_MP
@@ -1629,8 +3019,82 @@
 /* Define to 1 if `fmt.sliced' is a member of `struct v4l2_format'. */
 #undef HAVE_STRUCT_V4L2_FORMAT_FMT_SLICED
 
+/* Define to 1 if the system has the type `struct v4l2_frmivalenum'. */
+#undef HAVE_STRUCT_V4L2_FRMIVALENUM
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_frmivalenum'. */
+#undef HAVE_STRUCT_V4L2_FRMIVALENUM_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_frmival_stepwise'. */
+#undef HAVE_STRUCT_V4L2_FRMIVAL_STEPWISE
+
+/* Define to 1 if `step' is a member of `struct v4l2_frmival_stepwise'. */
+#undef HAVE_STRUCT_V4L2_FRMIVAL_STEPWISE_STEP
+
+/* Define to 1 if the system has the type `struct v4l2_frmsizeenum'. */
+#undef HAVE_STRUCT_V4L2_FRMSIZEENUM
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_frmsizeenum'. */
+#undef HAVE_STRUCT_V4L2_FRMSIZEENUM_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_frmsize_discrete'. */
+#undef HAVE_STRUCT_V4L2_FRMSIZE_DISCRETE
+
+/* Define to 1 if `height' is a member of `struct v4l2_frmsize_discrete'. */
+#undef HAVE_STRUCT_V4L2_FRMSIZE_DISCRETE_HEIGHT
+
+/* Define to 1 if the system has the type `struct v4l2_frmsize_stepwise'. */
+#undef HAVE_STRUCT_V4L2_FRMSIZE_STEPWISE
+
+/* Define to 1 if `step_height' is a member of `struct v4l2_frmsize_stepwise'.
+   */
+#undef HAVE_STRUCT_V4L2_FRMSIZE_STEPWISE_STEP_HEIGHT
+
+/* Define to 1 if the system has the type `struct v4l2_meta_format'. */
+#undef HAVE_STRUCT_V4L2_META_FORMAT
+
+/* Define to 1 if the system has the type `struct v4l2_pix_format'. */
+#undef HAVE_STRUCT_V4L2_PIX_FORMAT
+
+/* Define to 1 if the system has the type `struct v4l2_pix_format_mplane'. */
+#undef HAVE_STRUCT_V4L2_PIX_FORMAT_MPLANE
+
+/* Define to 1 if `xfer_func' is a member of `struct v4l2_pix_format'. */
+#undef HAVE_STRUCT_V4L2_PIX_FORMAT_XFER_FUNC
+
+/* Define to 1 if the system has the type `struct v4l2_plane_pix_format'. */
+#undef HAVE_STRUCT_V4L2_PLANE_PIX_FORMAT
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_plane_pix_format'. */
+#undef HAVE_STRUCT_V4L2_PLANE_PIX_FORMAT_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_sdr_format'. */
+#undef HAVE_STRUCT_V4L2_SDR_FORMAT
+
 /* Define to 1 if `buffersize' is a member of `struct v4l2_sdr_format'. */
 #undef HAVE_STRUCT_V4L2_SDR_FORMAT_BUFFERSIZE
+
+/* Define to 1 if the system has the type `struct v4l2_sliced_vbi_cap'. */
+#undef HAVE_STRUCT_V4L2_SLICED_VBI_CAP
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_sliced_vbi_cap'. */
+#undef HAVE_STRUCT_V4L2_SLICED_VBI_CAP_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_sliced_vbi_format'. */
+#undef HAVE_STRUCT_V4L2_SLICED_VBI_FORMAT
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_sliced_vbi_format'.
+   */
+#undef HAVE_STRUCT_V4L2_SLICED_VBI_FORMAT_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_vbi_format'. */
+#undef HAVE_STRUCT_V4L2_VBI_FORMAT
+
+/* Define to 1 if `reserved' is a member of `struct v4l2_vbi_format'. */
+#undef HAVE_STRUCT_V4L2_VBI_FORMAT_RESERVED
+
+/* Define to 1 if the system has the type `struct v4l2_window'. */
+#undef HAVE_STRUCT_V4L2_WINDOW
 
 /* Define to 1 if `global_alpha' is a member of `struct v4l2_window'. */
 #undef HAVE_STRUCT_V4L2_WINDOW_GLOBAL_ALPHA
@@ -1661,9 +3125,6 @@
 
 /* Define to 1 if you have the `sync_file_range' function. */
 #undef HAVE_SYNC_FILE_RANGE
-
-/* Define to 1 if you have the <sys/conf.h> header file. */
-#undef HAVE_SYS_CONF_H
 
 /* Define to 1 if you have the <sys/eventfd.h> header file. */
 #undef HAVE_SYS_EVENTFD_H
@@ -1707,6 +3168,30 @@
 /* Define to 1 if `attach_type' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_ATTACH_TYPE
 
+/* Define to 1 if `batch.count' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_COUNT
+
+/* Define to 1 if `batch.elem_flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_ELEM_FLAGS
+
+/* Define to 1 if `batch.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_FLAGS
+
+/* Define to 1 if `batch.in_batch' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_IN_BATCH
+
+/* Define to 1 if `batch.keys' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_KEYS
+
+/* Define to 1 if `batch.map_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_MAP_FD
+
+/* Define to 1 if `batch.out_batch' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_OUT_BATCH
+
+/* Define to 1 if `batch.values' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_BATCH_VALUES
+
 /* Define to 1 if `bpf_fd' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_BPF_FD
 
@@ -1736,6 +3221,10 @@
 
 /* Define to 1 if `btf_value_type_id' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_BTF_VALUE_TYPE_ID
+
+/* Define to 1 if `btf_vmlinux_value_type_id' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_BTF_VMLINUX_VALUE_TYPE_ID
 
 /* Define to 1 if `dummy' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_DUMMY
@@ -1796,6 +3285,33 @@
 
 /* Define to 1 if `line_info_rec_size' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_LINE_INFO_REC_SIZE
+
+/* Define to 1 if `link_create.attach_type' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_ATTACH_TYPE
+
+/* Define to 1 if `link_create.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_FLAGS
+
+/* Define to 1 if `link_create.prog_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_PROG_FD
+
+/* Define to 1 if `link_create.target_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_CREATE_TARGET_FD
+
+/* Define to 1 if `link_update.flags' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_FLAGS
+
+/* Define to 1 if `link_update.link_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_LINK_FD
+
+/* Define to 1 if `link_update.new_prog_fd' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_NEW_PROG_FD
+
+/* Define to 1 if `link_update.old_prog_fd' is a member of `union bpf_attr'.
+   */
+#undef HAVE_UNION_BPF_ATTR_LINK_UPDATE_OLD_PROG_FD
 
 /* Define to 1 if `log_buf' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_LOG_BUF
@@ -1884,6 +3400,9 @@
 /* Define to 1 if `raw_tracepoint.prog_fd' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_RAW_TRACEPOINT_PROG_FD
 
+/* Define to 1 if `replace_bpf_fd' is a member of `union bpf_attr'. */
+#undef HAVE_UNION_BPF_ATTR_REPLACE_BPF_FD
+
 /* Define to 1 if `start_id' is a member of `union bpf_attr'. */
 #undef HAVE_UNION_BPF_ATTR_START_ID
 
@@ -1966,9 +3485,6 @@
 
 /* Define to 1 if you have the <ustat.h> header file. */
 #undef HAVE_USTAT_H
-
-/* Define to 1 if you have the `utimensat' function. */
-#undef HAVE_UTIMENSAT
 
 /* Define to 1 if the system provides _Static_assert */
 #undef HAVE__STATIC_ASSERT

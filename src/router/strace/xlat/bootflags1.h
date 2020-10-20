@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bootflags1_xdata[] = {
  XLAT(LINUX_REBOOT_MAGIC1),
+ #define XLAT_VAL_0 ((unsigned) (LINUX_REBOOT_MAGIC1))
+ #define XLAT_STR_0 STRINGIFY(LINUX_REBOOT_MAGIC1)
 };
 static
 const struct xlat bootflags1[1] = { {
  .data = bootflags1_xdata,
  .size = ARRAY_SIZE(bootflags1_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

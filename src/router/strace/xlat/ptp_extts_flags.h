@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ptp_extts_flags_xdata[] = {
  XLAT(PTP_ENABLE_FEATURE),
+ #define XLAT_VAL_0 ((unsigned) (PTP_ENABLE_FEATURE))
+ #define XLAT_STR_0 STRINGIFY(PTP_ENABLE_FEATURE)
  XLAT(PTP_RISING_EDGE),
+ #define XLAT_VAL_1 ((unsigned) (PTP_RISING_EDGE))
+ #define XLAT_STR_1 STRINGIFY(PTP_RISING_EDGE)
  XLAT(PTP_FALLING_EDGE),
+ #define XLAT_VAL_2 ((unsigned) (PTP_FALLING_EDGE))
+ #define XLAT_STR_2 STRINGIFY(PTP_FALLING_EDGE)
  XLAT(PTP_STRICT_FLAGS),
+ #define XLAT_VAL_3 ((unsigned) (PTP_STRICT_FLAGS))
+ #define XLAT_STR_3 STRINGIFY(PTP_STRICT_FLAGS)
 };
 static
 const struct xlat ptp_extts_flags[1] = { {
  .data = ptp_extts_flags_xdata,
  .size = ARRAY_SIZE(ptp_extts_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

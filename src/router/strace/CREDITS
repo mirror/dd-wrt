@@ -19,6 +19,7 @@ strace-devel@lists.strace.io mailing list.
 	Alexey Gladkov <gladkov.alexey@gmail.com>
 	Alexey Neyman <stilor@att.net>
 	Ali Polatel <alip@exherbo.org>
+	Alistair Francis <alistair.francis@wdc.com>
 	Anatoly Pugachev <matorola@gmail.com>
 	Anchit Jain <anchitjain1234@gmail.com>
 	Andi Kleen <ak@linux.intel.com>
@@ -49,6 +50,7 @@ strace-devel@lists.strace.io mailing list.
 	Chris Dearman <chris.dearman@imgtec.com>
 	Chris Lamb <lamby@debian.org>
 	Chris Metcalf <cmetcalf@tilera.com>
+	Chris Packham <chris.packham@alliedtelesis.co.nz>
 	Chris Zankel <chris@zankel.net>
 	Christian Neukirchen <chneukirchen@gmail.com>
 	Christian Svensson <blue@cmd.nu>
@@ -83,6 +85,7 @@ strace-devel@lists.strace.io mailing list.
 	Eugeniy Paltsev <Eugeniy.Paltsev@synopsys.com>
 	Ezequiel Garcia <ezequiel@vanguardiasur.com.ar>
 	Fabien Siron <fabien.siron@epita.fr>
+	Fabrice Fontaine <fontaine.fabrice@gmail.com>
 	Fanda Uchytil <strace.t8xuewpmde@h4x.cz>
 	Fei Jie <feij.fnst@cn.fujitsu.com>
 	Felix Janda <felix.janda@posteo.de>
@@ -116,6 +119,7 @@ strace-devel@lists.strace.io mailing list.
 	James Hogan <james.hogan@imgtec.com>
 	James Yang <james.yang@freescale.com>
 	Jan Kratochvil <jan.kratochvil@redhat.com>
+	Jann Horn <jannh@google.com>
 	Janosch Frank <frankja@linux.ibm.com>
 	JayRJoshi <jay.r.joshi100@gmail.com>
 	Jeff Law <law@redhat.com>
@@ -137,6 +141,7 @@ strace-devel@lists.strace.io mailing list.
 	Katerina Koukiou <k.koukiou@googlemail.com>
 	Keith Owens <kaos.ocs@gmail.com>
 	Keith Thompson <kst@alsys.com>
+	Kemeng Shi <shikemeng@huawei.com>
 	Khem Raj <raj.khem@gmail.com>
 	Kirill A. Shutemov <kirill@shutemov.name>
 	Kyle McMartin <kyle@mcmartin.ca>
@@ -149,6 +154,7 @@ strace-devel@lists.strace.io mailing list.
 	Lubomir Rintel <lkundrak@v3.sk>
 	Luca Clementi <luca.clementi@gmail.com>
 	Lupe Christoph <lupe@alanya.isar.muc.de>
+	Ma Jun <majun258@linux.alibaba.com>
 	Maarten ter Huurne <maarten@treewalker.org>
 	Mark Hills <mark.hills@framestore.com>
 	Mark Wielaard <mjw@redhat.com>
@@ -158,6 +164,7 @@ strace-devel@lists.strace.io mailing list.
 	Matt Day <mday@artisoft.com>
 	Matthias Pfaller <leo@dachau.marco.de>
 	Max Filippov <jcmvbkbc@gmail.com>
+	Maxim Akhmedov <max42@yandex-team.ru>
 	Maxim Shchetynin <maxim@de.ibm.com>
 	Maxin B. John <maxin.john@enea.com>
 	Md Haris Iqbal <haris.phnx@gmail.com>
@@ -170,6 +177,7 @@ strace-devel@lists.strace.io mailing list.
 	Michal Sekletar <msekleta@redhat.com>
 	Michal Simek <monstr@monstr.eu>
 	Mike Frysinger <vapier@gentoo.org>
+	Mike Gilbert <floppym@gentoo.org>
 	Mike Stroyan <mike.stroyan@hp.com>
 	Mikulas Patocka <mpatocka@redhat.com>
 	Miroslav Lichvar <mlichvar@redhat.com>
@@ -179,6 +187,7 @@ strace-devel@lists.strace.io mailing list.
 	Nate Eldredge <nate@cartsys.com>
 	Nate Sammons <nate@users.sourceforge.net>
 	Neil Campbell <lists@thebatcave.org.uk>
+	Niklas Cathor <niklas.cathor@gmx.de>
 	Nikolay Marchuk <marchuk.nikolay.a@gmail.com>
 	Orion Poplawski <orion@cora.nwra.com>
 	Paolo Bonzini <pbonzini@redhat.com>
@@ -212,6 +221,7 @@ strace-devel@lists.strace.io mailing list.
 	Roland McGrath <roland@redhat.com>
 	Rolf Eike Beer <eb@emlix.com>
 	Romain Naour <romain.naour@smile.fr>
+	Ruinland ChuanTzu Tsai <ruinland@andestech.com>
 	Sami Farin <safari@u.safari.iki.fi>
 	Sandhya Bankar <bankarsandhya512@gmail.com>
 	Scott Tsai <scottt958@yahoo.com.tw>
@@ -227,8 +237,10 @@ strace-devel@lists.strace.io mailing list.
 	Stanislav Brabec <sbrabec@suse.cz>
 	Stefan Sørensen <stefan.sorensen@spectralink.com>
 	Steve Bennett <steveb@workware.net.au>
+	Steve Langasek <steve.langasek@ubuntu.com>
 	Steve McIntyre <steve@einval.com>
 	Steven Honeyman <stevenhoneyman@gmail.com>
+	Sven Schnelle <svens@stackframe.org>
 	Szabolcs Nagy <nsz@port70.net>
 	Thanh Ma <tma@encore.com>
 	Thiemo Seufer <ths@networkno.de>
@@ -238,6 +250,7 @@ strace-devel@lists.strace.io mailing list.
 	Tim Yamin <plasmaroo@gentoo.org>
 	Timo Lindfors <timo.lindfors@iki.fi>
 	Tom Dyas <tdyas@eden.rutgers.edu>
+	Tom Stellard <tstellar@redhat.com>
 	Tommi Rantala <ext-tommi.1.rantala@nokia.com>
 	Topi Miettinen <Topi.Miettinen@nic.fi>
 	Tuan Hoang <tmhoang@linux.ibm.com>
@@ -259,4 +272,5 @@ strace-devel@lists.strace.io mailing list.
 	Zhang Le <robert.zhangle@gmail.com>
 	Zhibin Li <haoyouab@gmail.com>
 	Zubin Mithra <zubin.mithra@gmail.com>
+	Ákos Uzonyi <uzonyi.akos@gmail.com>
 	Марк Коренберг <socketpair@gmail.com>

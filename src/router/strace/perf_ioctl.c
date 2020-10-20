@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -90,7 +90,7 @@ MPERS_PRINTER_DECL(int, perf_ioctl,
 
 	case PERF_EVENT_IOC_SET_OUTPUT:
 	case PERF_EVENT_IOC_SET_BPF:
-		tprintf(", ");
+		tprints(", ");
 		printfd(tcp, (int) arg);
 
 		return RVAL_IOCTL_DECODED;

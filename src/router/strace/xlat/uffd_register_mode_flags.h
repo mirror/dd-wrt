@@ -15,9 +15,13 @@
 static const struct xlat_data uffd_register_mode_flags_xdata[] = {
 #if defined(UFFDIO_REGISTER_MODE_MISSING) || (defined(HAVE_DECL_UFFDIO_REGISTER_MODE_MISSING) && HAVE_DECL_UFFDIO_REGISTER_MODE_MISSING)
   XLAT_TYPE(uint64_t, UFFDIO_REGISTER_MODE_MISSING),
+ #define XLAT_VAL_0 ((uint64_t) (UFFDIO_REGISTER_MODE_MISSING))
+ #define XLAT_STR_0 STRINGIFY(UFFDIO_REGISTER_MODE_MISSING)
 #endif
 #if defined(UFFDIO_REGISTER_MODE_WP) || (defined(HAVE_DECL_UFFDIO_REGISTER_MODE_WP) && HAVE_DECL_UFFDIO_REGISTER_MODE_WP)
   XLAT_TYPE(uint64_t, UFFDIO_REGISTER_MODE_WP),
+ #define XLAT_VAL_1 ((uint64_t) (UFFDIO_REGISTER_MODE_WP))
+ #define XLAT_STR_1 STRINGIFY(UFFDIO_REGISTER_MODE_WP)
 #endif
 };
 static
@@ -25,8 +29,28 @@ const struct xlat uffd_register_mode_flags[1] = { {
  .data = uffd_register_mode_flags_xdata,
  .size = ARRAY_SIZE(uffd_register_mode_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

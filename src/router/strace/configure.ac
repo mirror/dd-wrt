@@ -34,8 +34,6 @@ AC_SUBST(DEB_CHANGELOGTIME)
 AC_PROG_CC
 AC_PROG_CC_STDC
 AC_PROG_CPP
-st_WARN_CFLAGS
-AX_PROG_CC_FOR_BUILD
 AC_PROG_INSTALL
 AC_PROG_RANLIB
 
@@ -49,6 +47,9 @@ AC_DEFINE([MANPAGE_DATE], "[manpage_date]", [Date])
 AC_SUBST([MANPAGE_DATE], [manpage_date])
 
 AC_C_BIGENDIAN
+
+dnl arch-specific default for --enable-gcc-Werror
+arch_enable_Werror=yes
 
 AC_MSG_CHECKING([for supported architecture])
 arch_m32=
@@ -64,6 +65,7 @@ aarch64*)
 	;;
 alpha*)
 	arch=alpha
+	arch_enable_Werror=no
 	AC_DEFINE([ALPHA], 1, [Define for the Alpha architecture.])
 	;;
 arc*)
@@ -80,6 +82,7 @@ avr32*)
 	;;
 bfin)
 	arch=bfin
+	arch_enable_Werror=no
 	AC_DEFINE([BFIN], 1, [Define for the Blackfin architecture.])
 	;;
 csky*)
@@ -108,6 +111,7 @@ metag*)
 	;;
 microblaze*)
 	arch=microblaze
+	arch_enable_Werror=no
 	AC_DEFINE([MICROBLAZE], 1, [Define for the MicroBlaze architecture.])
 	;;
 mips*)
@@ -257,6 +261,10 @@ esac
 AC_DEFINE_UNQUOTED([ENABLE_ARM_OABI], [$enable_arm_oabi],
 		   [Define to 1 if you want OABI support on ARM EABI.])
 
+st_WARN_CFLAGS
+AX_PROG_CC_FOR_BUILD
+AM_PROG_AR
+
 AC_C_TYPEOF
 
 AC_TYPE_UID_T
@@ -277,7 +285,6 @@ AC_CHECK_FUNCS(m4_normalize([
 	if_indextoname
 	open64
 	open_memstream
-	prctl
 	preadv
 	process_vm_readv
 	pwritev
@@ -286,9 +293,7 @@ AC_CHECK_FUNCS(m4_normalize([
 	stpcpy
 	strerror
 	strndup
-	strsignal
 	sync_file_range
-	utimensat
 ]))
 
 AC_CHECK_TYPES([sig_atomic_t, struct sigcontext],,, [#include <signal.h>])
@@ -388,16 +393,29 @@ AC_CHECK_HEADERS(m4_normalize([
 	elf.h
 	gcov.h
 	iconv.h
-	inttypes.h
+	mqueue.h
+	netinet/sctp.h
+	netipx/ipx.h
+	paths.h
+	scsi/sg.h
+	sys/eventfd.h
+	sys/fanotify.h
+	sys/ipc.h
+	sys/quota.h
+	sys/signalfd.h
+	sys/xattr.h
+	ustat.h
+]))
+
+AC_CHECK_HEADERS(m4_normalize([
 	linux/bsg.h
+	linux/close_range.h
 	linux/dm-ioctl.h
 	linux/dqblk_xfs.h
 	linux/falloc.h
 	linux/fib_rules.h
 	linux/fiemap.h
 	linux/hiddev.h
-	linux/if_addr.h
-	linux/if_link.h
 	linux/ip_vs.h
 	linux/ipc.h
 	linux/kcmp.h
@@ -405,7 +423,7 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/memfd.h
 	linux/mmtimer.h
 	linux/mount.h
-	linux/neighbour.h
+	linux/mqueue.h
 	linux/netfilter/ipset/ip_set.h
 	linux/netfilter/nf_tables.h
 	linux/netfilter/nf_tables_compat.h
@@ -417,34 +435,31 @@ AC_CHECK_HEADERS(m4_normalize([
 	linux/netfilter/nfnetlink_log.h
 	linux/netfilter/nfnetlink_queue.h
 	linux/nsfs.h
+	linux/openat2.h
 	linux/perf_event.h
 	linux/quota.h
 	linux/sched.h
 	linux/seccomp.h
 	linux/securebits.h
+	linux/tee.h
 	linux/userfaultfd.h
 	linux/utsname.h
-	mqueue.h
-	netinet/sctp.h
-	netipx/ipx.h
-	paths.h
-	scsi/sg.h
-	stropts.h
-	sys/conf.h
-	sys/eventfd.h
-	sys/fanotify.h
-	sys/ipc.h
-	sys/quota.h
-	sys/signalfd.h
-	sys/xattr.h
-	ustat.h
-]))
+]),,, [AC_INCLUDES_DEFAULT
+#include <linux/types.h>
+])
+
+AC_CHECK_HEADERS(m4_normalize([
+	linux/if_addr.h
+	linux/if_link.h
+	linux/neighbour.h
+]),,, [AC_INCLUDES_DEFAULT
+#include <sys/socket.h>
+#include <linux/types.h>
+])
 
 AC_CHECK_HEADERS([asm/sigcontext.h],,, [#include <signal.h>])
 
 AC_CHECK_HEADERS([netinet/tcp.h netinet/udp.h],,, [#include <netinet/in.h>])
-
-AC_CHECK_HEADERS([linux/mqueue.h],,, [#include <linux/types.h>])
 
 AC_CHECK_HEADERS([linux/netfilter/xt_osf.h],,, [#include <linux/ip.h>
 #include <linux/tcp.h>])
@@ -468,6 +483,7 @@ AC_CHECK_HEADERS([linux/bpf.h], [
 
 AC_CHECK_HEADERS([linux/io_uring.h], [
 	AC_CHECK_MEMBERS(m4_normalize([
+		struct io_cqring_offsets.flags,
 		struct io_uring_params.features,
 		struct io_uring_params.wq_fd,
 		struct io_uring_params.resv
@@ -486,7 +502,8 @@ AC_CHECK_HEADERS([bluetooth/bluetooth.h], [
 AC_CHECK_MEMBERS(m4_normalize([
 	struct br_mdb_entry.flags,
 	struct br_mdb_entry.vid
-]),,, [#include <linux/if_bridge.h>])
+]),,, [#include <netinet/in.h>
+#include <linux/if_bridge.h>])
 
 AC_CHECK_TYPES([struct dcbmsg],,, [#include <linux/dcbnl.h>])
 AC_CHECK_TYPES([struct ifaddrlblmsg],,, [#include <linux/if_addrlabel.h>])
@@ -497,39 +514,21 @@ AC_CHECK_TYPES(m4_normalize([
 ]),,, [#include <sys/socket.h>
 #include <linux/rtnetlink.h>])
 
-AC_CHECK_DECLS(m4_normalize([
-	TCA_ACT_PAD,
-	TCA_ACT_COOKIE,
-	TCA_ACT_FLAGS
-]),,, [#include <sys/socket.h>
-#include <linux/pkt_cls.h>])
-AC_CHECK_DECLS(m4_normalize([
-	IFLA_PORT_SELF,
-	IFLA_PROTINFO,
-	IFLA_AF_SPEC,
-	IFLA_XDP
-]),,, [#include <sys/socket.h>
-#include <linux/rtnetlink.h>])
-
 AC_CHECK_TYPES(m4_normalize([
 	struct gnet_stats_basic,
 	struct gnet_stats_queue,
 	struct gnet_stats_rate_est,
 	struct gnet_stats_rate_est64
 ]),,, [#include <linux/gen_stats.h>])
-AC_CHECK_DECLS(m4_normalize([
-	TCA_STATS_PKT64
-]),,, [#include <linux/gen_stats.h>])
 
 AC_CHECK_TYPES([struct tc_sizespec],,, [#include <linux/types.h>
-#include <linux/pkt_sched.h>])
-AC_CHECK_DECLS([TCA_STAB_DATA],,, [#include <linux/types.h>
 #include <linux/pkt_sched.h>])
 
 AC_CHECK_TYPES(m4_normalize([
 	struct fib_rule_uid_range,
 	struct fib_rule_port_range
-]),,, [#include <linux/fib_rules.h>])
+]),,, [#include <sys/socket.h>
+#include <linux/fib_rules.h>])
 
 AC_CHECK_TYPES([struct statfs], [
 	AC_CHECK_MEMBERS(m4_normalize([
@@ -595,7 +594,7 @@ AC_CHECK_MEMBERS(m4_normalize([
 		struct iocb.aio_rw_flags
 		]),,, [#include <linux/aio_abi.h>])
 
-AC_CHECK_MEMBERS([struct clone_args.set_tid_size],,, [#include <linux/sched.h>])
+AC_CHECK_MEMBERS([struct clone_args.cgroup],,, [#include <linux/sched.h>])
 
 CPPFLAGS="$saved_CPPFLAGS"
 
@@ -603,16 +602,12 @@ AC_CHECK_HEADERS([linux/btrfs.h], [
 	AC_CHECK_MEMBERS(m4_normalize([
 		struct btrfs_ioctl_feature_flags.compat_flags,
 		struct btrfs_ioctl_fs_info_args.nodesize,
-		struct btrfs_ioctl_defrag_range_args.start,
-		struct btrfs_ioctl_search_args_v2.buf_size,
-		struct btrfs_ioctl_logical_ino_args.flags
+		struct btrfs_ioctl_defrag_range_args.start
 		]),,, [ #include <stdio.h>
-#include <linux/btrfs.h>])
-	AC_CHECK_DECLS(m4_normalize([BTRFS_COMPRESS_NONE, BTRFS_COMPRESS_ZLIB,
-				BTRFS_COMPRESS_LZO]),,,[ #include <stdio.h>
 #include <linux/btrfs.h>])])
 
 st_CHECK_TYPES
+st_CHECK_ENUMS
 
 AC_CHECK_DECLS([sys_errlist])
 AC_CHECK_DECLS(m4_normalize([
@@ -620,165 +615,14 @@ AC_CHECK_DECLS(m4_normalize([
 	PTRACE_POKEUSER
 ]),,, [#include <sys/ptrace.h>])
 
-AC_CHECK_DECLS(m4_normalize([
-	P_PID,
-	P_PPID,
-	P_PGID,
-	P_SID,
-	P_CID,
-	P_UID,
-	P_GID,
-	P_ALL,
-	P_LWPID
-]),,, [#include <sys/wait.h>])
-
-AC_CHECK_DECLS(m4_normalize([
-	LO_FLAGS_READ_ONLY,
-	LO_FLAGS_USE_AOPS,
-	LO_FLAGS_AUTOCLEAR,
-	LO_FLAGS_PARTSCAN,
-	LO_FLAGS_DIRECT_IO
-]),,, [#include <linux/loop.h>])
-
-AC_CHECK_DECLS(m4_normalize([
-	CTL_PROC,
-	CTL_ARLAN,
-	CTL_S390DBF,
-	CTL_SUNRPC,
-	CTL_PM,
-	CTL_FRV,
-	KERN_PRINTK_RATELIMIT,
-	KERN_PRINTK_RATELIMIT_BURST,
-	KERN_PTY,
-	KERN_NGROUPS_MAX,
-	KERN_SPARC_SCONS_PWROFF,
-	KERN_HZ_TIMER,
-	KERN_UNKNOWN_NMI_PANIC,
-	KERN_BOOTLOADER_TYPE,
-	KERN_RANDOMIZE,
-	KERN_SETUID_DUMPABLE,
-	KERN_SPIN_RETRY,
-	KERN_ACPI_VIDEO_FLAGS,
-	KERN_IA64_UNALIGNED,
-	KERN_COMPAT_LOG,
-	KERN_MAX_LOCK_DEPTH,
-	KERN_NMI_WATCHDOG,
-	KERN_PANIC_ON_NMI,
-	KERN_PANIC_ON_WARN,
-	KERN_PANIC_PRINT,
-	NET_LLC,
-	NET_NETFILTER,
-	NET_DCCP,
-	NET_IRDA,
-	NET_CORE_DESTROY_DELAY,
-	NET_CORE_BUDGET,
-	NET_CORE_AEVENT_ETIME,
-	NET_CORE_AEVENT_RSEQTH,
-	NET_CORE_WARNINGS,
-	NET_IPV4_IGMP_MAX_MSF,
-	NET_TCP_NO_METRICS_SAVE,
-	NET_TCP_DEFAULT_WIN_SCALE,
-	NET_TCP_MODERATE_RCVBUF,
-	NET_TCP_TSO_WIN_DIVISOR,
-	NET_TCP_BIC_BETA,
-	NET_IPV4_ICMP_ERRORS_USE_INBOUND_IFADDR,
-	NET_TCP_CONG_CONTROL,
-	NET_TCP_ABC,
-	NET_IPV4_IPFRAG_MAX_DIST,
-	NET_TCP_MTU_PROBING,
-	NET_TCP_BASE_MSS,
-	NET_IPV4_TCP_WORKAROUND_SIGNED_WINDOWS,
-	NET_TCP_DMA_COPYBREAK,
-	NET_TCP_SLOW_START_AFTER_IDLE,
-	NET_CIPSOV4_CACHE_ENABLE,
-	NET_CIPSOV4_CACHE_BUCKET_SIZE,
-	NET_CIPSOV4_RBM_OPTFMT,
-	NET_CIPSOV4_RBM_STRICTVALID,
-	NET_TCP_AVAIL_CONG_CONTROL,
-	NET_TCP_ALLOWED_CONG_CONTROL,
-	NET_TCP_MAX_SSTHRESH,
-	NET_TCP_FRTO_RESPONSE,
-	NET_IPV4_ROUTE_GC_MIN_INTERVAL_MS,
-	NET_IPV4_CONF_FORCE_IGMP_VERSION,
-	NET_IPV4_CONF_ARP_ANNOUNCE,
-	NET_IPV4_CONF_ARP_IGNORE,
-	NET_IPV4_CONF_PROMOTE_SECONDARIES,
-	NET_IPV4_CONF_ARP_ACCEPT,
-	NET_IPV4_CONF_ARP_NOTIFY,
-	NET_IPV6_MLD_MAX_MSF,
-	NET_IPV6_ROUTE_GC_MIN_INTERVAL_MS,
-	VM_MAX_MAP_COUNT,
-	VM_LAPTOP_MODE,
-	VM_BLOCK_DUMP,
-	VM_HUGETLB_GROUP,
-	VM_VFS_CACHE_PRESSURE,
-	VM_LEGACY_VA_LAYOUT,
-	VM_SWAP_TOKEN_TIMEOUT
-]),,,
-[#include <sys/types.h>
-#include <linux/sysctl.h>])
-
-AC_CHECK_DECLS(m4_normalize([
-	V4L2_FIELD_ANY,
-	V4L2_FIELD_NONE,
-	V4L2_FIELD_TOP,
-	V4L2_FIELD_BOTTOM,
-	V4L2_FIELD_INTERLACED,
-	V4L2_FIELD_SEQ_TB,
-	V4L2_FIELD_SEQ_BT,
-	V4L2_FIELD_ALTERNATE,
-	V4L2_FIELD_INTERLACED_TB,
-	V4L2_FIELD_INTERLACED_BT,
-	V4L2_BUF_TYPE_VIDEO_CAPTURE,
-	V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
-	V4L2_BUF_TYPE_VIDEO_OUTPUT,
-	V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE,
-	V4L2_BUF_TYPE_VIDEO_OVERLAY,
-	V4L2_BUF_TYPE_VBI_CAPTURE,
-	V4L2_BUF_TYPE_VBI_OUTPUT,
-	V4L2_BUF_TYPE_SLICED_VBI_CAPTURE,
-	V4L2_BUF_TYPE_SLICED_VBI_OUTPUT,
-	V4L2_BUF_TYPE_VIDEO_OUTPUT_OVERLAY,
-	V4L2_BUF_TYPE_SDR_CAPTURE,
-	V4L2_BUF_TYPE_SDR_OUTPUT,
-	V4L2_TUNER_RADIO,
-	V4L2_TUNER_ANALOG_TV,
-	V4L2_TUNER_DIGITAL_TV,
-	V4L2_MEMORY_MMAP,
-	V4L2_MEMORY_USERPTR,
-	V4L2_MEMORY_OVERLAY,
-	V4L2_MEMORY_DMABUF,
-	V4L2_COLORSPACE_SMPTE170M,
-	V4L2_COLORSPACE_SMPTE240M,
-	V4L2_COLORSPACE_REC709,
-	V4L2_COLORSPACE_BT878,
-	V4L2_COLORSPACE_470_SYSTEM_M,
-	V4L2_COLORSPACE_470_SYSTEM_BG,
-	V4L2_COLORSPACE_JPEG,
-	V4L2_COLORSPACE_SRGB,
-	V4L2_PRIORITY_UNSET,
-	V4L2_PRIORITY_BACKGROUND,
-	V4L2_PRIORITY_INTERACTIVE,
-	V4L2_PRIORITY_RECORD,
-	V4L2_FRMSIZE_TYPE_DISCRETE,
-	V4L2_FRMSIZE_TYPE_CONTINUOUS,
-	V4L2_FRMSIZE_TYPE_STEPWISE,
-	V4L2_FRMIVAL_TYPE_DISCRETE,
-	V4L2_FRMIVAL_TYPE_CONTINUOUS,
-	V4L2_FRMIVAL_TYPE_STEPWISE,
-	V4L2_CTRL_TYPE_INTEGER,
-	V4L2_CTRL_TYPE_BOOLEAN,
-	V4L2_CTRL_TYPE_MENU,
-	V4L2_CTRL_TYPE_BUTTON,
-	V4L2_CTRL_TYPE_INTEGER64,
-	V4L2_CTRL_TYPE_CTRL_CLASS,
-	V4L2_CTRL_TYPE_STRING,
-	V4L2_CTRL_TYPE_BITMASK,
-	V4L2_CTRL_TYPE_INTEGER_MENU,
-	V4L2_CTRL_TYPE_U8,
-	V4L2_CTRL_TYPE_U16,
-	V4L2_CTRL_TYPE_U32,
-	V4L2_CTRL_TYPE_AREA
+AC_CHECK_TYPES(m4_normalize([
+	struct v4l2_create_buffers,
+	struct v4l2_frmsizeenum,
+	struct v4l2_frmivalenum,
+	struct v4l2_meta_format,
+	struct v4l2_pix_format_mplane,
+	struct v4l2_plane_pix_format,
+	struct v4l2_sdr_format
 ]),,, [#include <sys/time.h>
 #include <linux/ioctl.h>
 #include <linux/types.h>
@@ -875,9 +719,15 @@ case "x$st_cv_have_static_assert" in
 		;;
 esac
 
-AC_CHECK_LIB([dl], [dladdr], [dl_LIBS='-ldl'], [dl_LIBS=])
-if test "x$ac_cv_lib_dl_dladdr" = xyes; then
+saved_LIBS="$LIBS"
+AC_SEARCH_LIBS([dladdr], [dl])
+LIBS="$saved_LIBS"
+dl_LIBS=""
+if test "$ac_cv_search_dladdr" != no; then
 	AC_DEFINE([HAVE_DLADDR], [1], [Define to 1 if the system provides dladdr])
+	case "$ac_cv_search_dladdr" in
+		-l*) dl_LIBS="$ac_cv_search_dladdr" ;;
+	esac
 fi
 AC_SUBST(dl_LIBS)
 
@@ -909,8 +759,6 @@ case "$ac_cv_search_mq_open" in
 	*) mq_LIBS= ;;
 esac
 AC_SUBST(mq_LIBS)
-
-AC_PATH_PROG([PERL], [perl])
 
 AC_CHECK_TOOL([READELF], [readelf])
 

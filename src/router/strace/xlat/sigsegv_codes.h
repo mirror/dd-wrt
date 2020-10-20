@@ -63,18 +63,36 @@ extern const struct xlat sigsegv_codes[];
 
 static const struct xlat_data sigsegv_codes_xdata[] = {
  XLAT(SEGV_MAPERR),
+ #define XLAT_VAL_0 ((unsigned) (SEGV_MAPERR))
+ #define XLAT_STR_0 STRINGIFY(SEGV_MAPERR)
  XLAT(SEGV_ACCERR),
+ #define XLAT_VAL_1 ((unsigned) (SEGV_ACCERR))
+ #define XLAT_STR_1 STRINGIFY(SEGV_ACCERR)
 #if defined(SEGV_STACKFLOW) || (defined(HAVE_DECL_SEGV_STACKFLOW) && HAVE_DECL_SEGV_STACKFLOW)
   XLAT(SEGV_STACKFLOW),
+ #define XLAT_VAL_2 ((unsigned) (SEGV_STACKFLOW))
+ #define XLAT_STR_2 STRINGIFY(SEGV_STACKFLOW)
 #endif
  XLAT(SEGV_BNDERR),
+ #define XLAT_VAL_3 ((unsigned) (SEGV_BNDERR))
+ #define XLAT_STR_3 STRINGIFY(SEGV_BNDERR)
 #if defined(__SEGV_PSTKOVF) || (defined(HAVE_DECL___SEGV_PSTKOVF) && HAVE_DECL___SEGV_PSTKOVF)
   XLAT(__SEGV_PSTKOVF),
+ #define XLAT_VAL_4 ((unsigned) (__SEGV_PSTKOVF))
+ #define XLAT_STR_4 STRINGIFY(__SEGV_PSTKOVF)
 #endif
  XLAT(SEGV_PKUERR),
+ #define XLAT_VAL_5 ((unsigned) (SEGV_PKUERR))
+ #define XLAT_STR_5 STRINGIFY(SEGV_PKUERR)
  XLAT(SEGV_ACCADI),
+ #define XLAT_VAL_6 ((unsigned) (SEGV_ACCADI))
+ #define XLAT_STR_6 STRINGIFY(SEGV_ACCADI)
  XLAT(SEGV_ADIDERR),
+ #define XLAT_VAL_7 ((unsigned) (SEGV_ADIDERR))
+ #define XLAT_STR_7 STRINGIFY(SEGV_ADIDERR)
  XLAT(SEGV_ADIPERR),
+ #define XLAT_VAL_8 ((unsigned) (SEGV_ADIPERR))
+ #define XLAT_STR_8 STRINGIFY(SEGV_ADIPERR)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -83,8 +101,84 @@ const struct xlat sigsegv_codes[1] = { {
  .data = sigsegv_codes_xdata,
  .size = ARRAY_SIZE(sigsegv_codes_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,7 +1,7 @@
 /*
  * s390-specific syscalls decoders.
  *
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -592,7 +592,7 @@ static void
 print_sthyi_partition(struct tcb *tcp, struct sthyi_partition *hdr,
 		      uint16_t size, bool *mt)
 {
-	size_t last_decoded = offsetofend(typeof(*hdr), infplgif);
+	size_t last_decoded = offsetofend(typeof(*hdr), infpabif);
 	int cnt_val, wcap_val, acap_val, id_val, lpar_val;
 
 	*mt = false;
@@ -662,18 +662,20 @@ print_sthyi_partition(struct tcb *tcp, struct sthyi_partition *hdr,
 		if (acap_val || hdr->infpabif)
 			PRINT_FIELD_WEIGHT(", ", *hdr, infpabif);
 
-		if (!IS_ARRAY_ZERO(hdr->infplgnm)) {
-			PRINT_FIELD_EBCDIC(", ", *hdr, infplgnm);
+		if (size >= offsetofend(struct sthyi_partition, infplgif)) {
+			if (!IS_ARRAY_ZERO(hdr->infplgnm)) {
+				PRINT_FIELD_EBCDIC(", ", *hdr, infplgnm);
 
-			PRINT_FIELD_WEIGHT(", ", *hdr, infplgcp);
-			PRINT_FIELD_WEIGHT(", ", *hdr, infplgif);
-		} else {
-			if (lpar_val)
-				PRINT_FIELD_HEX_ARRAY(", ", *hdr, infplgnm);
-			if (hdr->infplgcp)
-				PRINT_FIELD_X(", ", *hdr, infplgcp);
-			if (hdr->infplgif)
-				PRINT_FIELD_X(", ", *hdr, infplgif);
+				PRINT_FIELD_WEIGHT(", ", *hdr, infplgcp);
+				PRINT_FIELD_WEIGHT(", ", *hdr, infplgif);
+			} else {
+				if (lpar_val)
+					PRINT_FIELD_HEX_ARRAY(", ", *hdr, infplgnm);
+				if (hdr->infplgcp)
+					PRINT_FIELD_X(", ", *hdr, infplgcp);
+				if (hdr->infplgif)
+					PRINT_FIELD_X(", ", *hdr, infplgif);
+			}
 		}
 
 		if (size >= offsetofend(struct sthyi_partition, infpplnm)) {

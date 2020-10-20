@@ -3,19 +3,16 @@
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
+#include <sys/prctl.h>
 
-#ifdef HAVE_PRCTL
-# include <sys/prctl.h>
-#endif
-
-#if defined HAVE_PRCTL && defined PR_GET_NAME && defined PR_SET_NAME
+#if defined PR_GET_NAME && defined PR_SET_NAME
 
 # include <stdio.h>
 # include <string.h>
@@ -79,6 +76,6 @@ main(void)
 
 #else
 
-SKIP_MAIN_UNDEFINED("HAVE_PRCTL && PR_GET_NAME && PR_SET_NAME")
+SKIP_MAIN_UNDEFINED("PR_GET_NAME && PR_SET_NAME")
 
 #endif

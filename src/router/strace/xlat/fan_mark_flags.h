@@ -77,22 +77,116 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data fan_mark_flags_xdata[] = {
  XLAT(FAN_MARK_ADD),
+ #define XLAT_VAL_0 ((unsigned) (FAN_MARK_ADD))
+ #define XLAT_STR_0 STRINGIFY(FAN_MARK_ADD)
  XLAT(FAN_MARK_REMOVE),
+ #define XLAT_VAL_1 ((unsigned) (FAN_MARK_REMOVE))
+ #define XLAT_STR_1 STRINGIFY(FAN_MARK_REMOVE)
  XLAT(FAN_MARK_DONT_FOLLOW),
+ #define XLAT_VAL_2 ((unsigned) (FAN_MARK_DONT_FOLLOW))
+ #define XLAT_STR_2 STRINGIFY(FAN_MARK_DONT_FOLLOW)
  XLAT(FAN_MARK_ONLYDIR),
+ #define XLAT_VAL_3 ((unsigned) (FAN_MARK_ONLYDIR))
+ #define XLAT_STR_3 STRINGIFY(FAN_MARK_ONLYDIR)
  XLAT(FAN_MARK_MOUNT),
+ #define XLAT_VAL_4 ((unsigned) (FAN_MARK_MOUNT))
+ #define XLAT_STR_4 STRINGIFY(FAN_MARK_MOUNT)
  XLAT(FAN_MARK_IGNORED_MASK),
+ #define XLAT_VAL_5 ((unsigned) (FAN_MARK_IGNORED_MASK))
+ #define XLAT_STR_5 STRINGIFY(FAN_MARK_IGNORED_MASK)
  XLAT(FAN_MARK_IGNORED_SURV_MODIFY),
+ #define XLAT_VAL_6 ((unsigned) (FAN_MARK_IGNORED_SURV_MODIFY))
+ #define XLAT_STR_6 STRINGIFY(FAN_MARK_IGNORED_SURV_MODIFY)
  XLAT(FAN_MARK_FLUSH),
+ #define XLAT_VAL_7 ((unsigned) (FAN_MARK_FLUSH))
+ #define XLAT_STR_7 STRINGIFY(FAN_MARK_FLUSH)
  XLAT(FAN_MARK_FILESYSTEM),
+ #define XLAT_VAL_8 ((unsigned) (FAN_MARK_FILESYSTEM))
+ #define XLAT_STR_8 STRINGIFY(FAN_MARK_FILESYSTEM)
 };
 static
 const struct xlat fan_mark_flags[1] = { {
  .data = fan_mark_flags_xdata,
  .size = ARRAY_SIZE(fan_mark_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

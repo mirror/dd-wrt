@@ -94,24 +94,148 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data clocknames_xdata[] = {
  [CLOCK_REALTIME] = XLAT(CLOCK_REALTIME),
+ #define XLAT_VAL_0 ((unsigned) (CLOCK_REALTIME))
+ #define XLAT_STR_0 STRINGIFY(CLOCK_REALTIME)
  [CLOCK_MONOTONIC] = XLAT(CLOCK_MONOTONIC),
+ #define XLAT_VAL_1 ((unsigned) (CLOCK_MONOTONIC))
+ #define XLAT_STR_1 STRINGIFY(CLOCK_MONOTONIC)
  [CLOCK_PROCESS_CPUTIME_ID] = XLAT(CLOCK_PROCESS_CPUTIME_ID),
+ #define XLAT_VAL_2 ((unsigned) (CLOCK_PROCESS_CPUTIME_ID))
+ #define XLAT_STR_2 STRINGIFY(CLOCK_PROCESS_CPUTIME_ID)
  [CLOCK_THREAD_CPUTIME_ID] = XLAT(CLOCK_THREAD_CPUTIME_ID),
+ #define XLAT_VAL_3 ((unsigned) (CLOCK_THREAD_CPUTIME_ID))
+ #define XLAT_STR_3 STRINGIFY(CLOCK_THREAD_CPUTIME_ID)
  [CLOCK_MONOTONIC_RAW] = XLAT(CLOCK_MONOTONIC_RAW),
+ #define XLAT_VAL_4 ((unsigned) (CLOCK_MONOTONIC_RAW))
+ #define XLAT_STR_4 STRINGIFY(CLOCK_MONOTONIC_RAW)
  [CLOCK_REALTIME_COARSE] = XLAT(CLOCK_REALTIME_COARSE),
+ #define XLAT_VAL_5 ((unsigned) (CLOCK_REALTIME_COARSE))
+ #define XLAT_STR_5 STRINGIFY(CLOCK_REALTIME_COARSE)
  [CLOCK_MONOTONIC_COARSE] = XLAT(CLOCK_MONOTONIC_COARSE),
+ #define XLAT_VAL_6 ((unsigned) (CLOCK_MONOTONIC_COARSE))
+ #define XLAT_STR_6 STRINGIFY(CLOCK_MONOTONIC_COARSE)
  [CLOCK_BOOTTIME] = XLAT(CLOCK_BOOTTIME),
+ #define XLAT_VAL_7 ((unsigned) (CLOCK_BOOTTIME))
+ #define XLAT_STR_7 STRINGIFY(CLOCK_BOOTTIME)
  [CLOCK_REALTIME_ALARM] = XLAT(CLOCK_REALTIME_ALARM),
+ #define XLAT_VAL_8 ((unsigned) (CLOCK_REALTIME_ALARM))
+ #define XLAT_STR_8 STRINGIFY(CLOCK_REALTIME_ALARM)
  [CLOCK_BOOTTIME_ALARM] = XLAT(CLOCK_BOOTTIME_ALARM),
+ #define XLAT_VAL_9 ((unsigned) (CLOCK_BOOTTIME_ALARM))
+ #define XLAT_STR_9 STRINGIFY(CLOCK_BOOTTIME_ALARM)
  [CLOCK_SGI_CYCLE] = XLAT(CLOCK_SGI_CYCLE),
+ #define XLAT_VAL_10 ((unsigned) (CLOCK_SGI_CYCLE))
+ #define XLAT_STR_10 STRINGIFY(CLOCK_SGI_CYCLE)
  [CLOCK_TAI] = XLAT(CLOCK_TAI),
+ #define XLAT_VAL_11 ((unsigned) (CLOCK_TAI))
+ #define XLAT_STR_11 STRINGIFY(CLOCK_TAI)
 };
 const struct xlat clocknames[1] = { {
  .data = clocknames_xdata,
  .size = ARRAY_SIZE(clocknames_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2009, 2010 Jeff Mahoney <jeffm@suse.com>
  * Copyright (c) 2011-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2011-2018 The strace developers.
+ * Copyright (c) 2011-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -179,7 +179,7 @@ MPERS_PRINTER_DECL(int, block_ioctl, struct tcb *const tcp,
 			PRINT_FIELD_U(", ", buts, buf_nr);
 			PRINT_FIELD_U(", ", buts, start_lba);
 			PRINT_FIELD_U(", ", buts, end_lba);
-			PRINT_FIELD_U(", ", buts, pid);
+			PRINT_FIELD_TGID(", ", buts, pid, tcp);
 			return 0;
 		} else {
 			struct_blk_user_trace_setup buts;

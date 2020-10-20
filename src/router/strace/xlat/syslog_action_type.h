@@ -91,24 +91,138 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data syslog_action_type_xdata[] = {
  [SYSLOG_ACTION_CLOSE] = XLAT(SYSLOG_ACTION_CLOSE),
+ #define XLAT_VAL_0 ((unsigned) (SYSLOG_ACTION_CLOSE))
+ #define XLAT_STR_0 STRINGIFY(SYSLOG_ACTION_CLOSE)
  [SYSLOG_ACTION_OPEN] = XLAT(SYSLOG_ACTION_OPEN),
+ #define XLAT_VAL_1 ((unsigned) (SYSLOG_ACTION_OPEN))
+ #define XLAT_STR_1 STRINGIFY(SYSLOG_ACTION_OPEN)
  [SYSLOG_ACTION_READ] = XLAT(SYSLOG_ACTION_READ),
+ #define XLAT_VAL_2 ((unsigned) (SYSLOG_ACTION_READ))
+ #define XLAT_STR_2 STRINGIFY(SYSLOG_ACTION_READ)
  [SYSLOG_ACTION_READ_ALL] = XLAT(SYSLOG_ACTION_READ_ALL),
+ #define XLAT_VAL_3 ((unsigned) (SYSLOG_ACTION_READ_ALL))
+ #define XLAT_STR_3 STRINGIFY(SYSLOG_ACTION_READ_ALL)
  [SYSLOG_ACTION_READ_CLEAR] = XLAT(SYSLOG_ACTION_READ_CLEAR),
+ #define XLAT_VAL_4 ((unsigned) (SYSLOG_ACTION_READ_CLEAR))
+ #define XLAT_STR_4 STRINGIFY(SYSLOG_ACTION_READ_CLEAR)
  [SYSLOG_ACTION_CLEAR] = XLAT(SYSLOG_ACTION_CLEAR),
+ #define XLAT_VAL_5 ((unsigned) (SYSLOG_ACTION_CLEAR))
+ #define XLAT_STR_5 STRINGIFY(SYSLOG_ACTION_CLEAR)
  [SYSLOG_ACTION_CONSOLE_OFF] = XLAT(SYSLOG_ACTION_CONSOLE_OFF),
+ #define XLAT_VAL_6 ((unsigned) (SYSLOG_ACTION_CONSOLE_OFF))
+ #define XLAT_STR_6 STRINGIFY(SYSLOG_ACTION_CONSOLE_OFF)
  [SYSLOG_ACTION_CONSOLE_ON] = XLAT(SYSLOG_ACTION_CONSOLE_ON),
+ #define XLAT_VAL_7 ((unsigned) (SYSLOG_ACTION_CONSOLE_ON))
+ #define XLAT_STR_7 STRINGIFY(SYSLOG_ACTION_CONSOLE_ON)
  [SYSLOG_ACTION_CONSOLE_LEVEL] = XLAT(SYSLOG_ACTION_CONSOLE_LEVEL),
+ #define XLAT_VAL_8 ((unsigned) (SYSLOG_ACTION_CONSOLE_LEVEL))
+ #define XLAT_STR_8 STRINGIFY(SYSLOG_ACTION_CONSOLE_LEVEL)
  [SYSLOG_ACTION_SIZE_UNREAD] = XLAT(SYSLOG_ACTION_SIZE_UNREAD),
+ #define XLAT_VAL_9 ((unsigned) (SYSLOG_ACTION_SIZE_UNREAD))
+ #define XLAT_STR_9 STRINGIFY(SYSLOG_ACTION_SIZE_UNREAD)
  [SYSLOG_ACTION_SIZE_BUFFER] = XLAT(SYSLOG_ACTION_SIZE_BUFFER),
+ #define XLAT_VAL_10 ((unsigned) (SYSLOG_ACTION_SIZE_BUFFER))
+ #define XLAT_STR_10 STRINGIFY(SYSLOG_ACTION_SIZE_BUFFER)
 };
 static
 const struct xlat syslog_action_type[1] = { {
  .data = syslog_action_type_xdata,
  .size = ARRAY_SIZE(syslog_action_type_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

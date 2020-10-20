@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data quotatypes_xdata[] = {
  [USRQUOTA] = XLAT(USRQUOTA),
+ #define XLAT_VAL_0 ((unsigned) (USRQUOTA))
+ #define XLAT_STR_0 STRINGIFY(USRQUOTA)
  [GRPQUOTA] = XLAT(GRPQUOTA),
+ #define XLAT_VAL_1 ((unsigned) (GRPQUOTA))
+ #define XLAT_STR_1 STRINGIFY(GRPQUOTA)
  [PRJQUOTA] = XLAT(PRJQUOTA),
+ #define XLAT_VAL_2 ((unsigned) (PRJQUOTA))
+ #define XLAT_STR_2 STRINGIFY(PRJQUOTA)
 };
 static
 const struct xlat quotatypes[1] = { {
  .data = quotatypes_xdata,
  .size = ARRAY_SIZE(quotatypes_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

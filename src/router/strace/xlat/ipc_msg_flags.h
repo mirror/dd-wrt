@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ipc_msg_flags_xdata[] = {
  XLAT(MSG_NOERROR),
+ #define XLAT_VAL_0 ((unsigned) (MSG_NOERROR))
+ #define XLAT_STR_0 STRINGIFY(MSG_NOERROR)
  XLAT(MSG_EXCEPT),
+ #define XLAT_VAL_1 ((unsigned) (MSG_EXCEPT))
+ #define XLAT_STR_1 STRINGIFY(MSG_EXCEPT)
  XLAT(MSG_COPY),
+ #define XLAT_VAL_2 ((unsigned) (MSG_COPY))
+ #define XLAT_STR_2 STRINGIFY(MSG_COPY)
  XLAT(IPC_NOWAIT),
+ #define XLAT_VAL_3 ((unsigned) (IPC_NOWAIT))
+ #define XLAT_STR_3 STRINGIFY(IPC_NOWAIT)
 };
 static
 const struct xlat ipc_msg_flags[1] = { {
  .data = ipc_msg_flags_xdata,
  .size = ARRAY_SIZE(ipc_msg_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

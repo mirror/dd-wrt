@@ -2,6 +2,7 @@
  * Check decoding of SO_ERROR socket option.
  *
  * Copyright (c) 2018 Masatake YAMATO <yamato@redhat.com>
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -37,7 +38,7 @@ reserve_ephemeral_port(void)
 	for (in_port_t port = 49152; port < 61000; port++) {
 		/* Just bind here. No listen. */
 		addr.sin_port = htons(port);
-		if (bind(sd, &addr, sizeof(addr)) == 0)
+		if (bind(sd, (void *) &addr, sizeof(addr)) == 0)
 			return port;
 	}
 	error_msg_and_skip("no ephemeral port available for test purposes");
@@ -69,7 +70,7 @@ main(void)
 		.sin_addr.s_addr = htonl(INADDR_LOOPBACK),
 		.sin_port = htons(port),
 	};
-	if (connect(fd, &addr, sizeof(addr)) == 0)
+	if (connect(fd, (void *) &addr, sizeof(addr)) == 0)
 		error_msg_and_skip("connect unexpectedly succeeded");
 	if (errno != EINPROGRESS)
 		perror_msg_and_skip("connect failed for unexpected reason");

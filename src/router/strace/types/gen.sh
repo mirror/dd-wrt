@@ -88,10 +88,11 @@ gen_m4_check()
 		return 1
 	}
 
-	local inc_expr1 inc_expr2 includes
+	local inc_expr1 inc_expr2 includes header_includes
 	inc_expr1='s/^#[[:space:]]*include[[:space:]]\+\(<[^>]\+>\).*/#include \1/p'
 	inc_expr2='s/^#[[:space:]]*include[[:space:]]\+"\([^"]\+\)".*/#include "\$srcdir\/\1"/p'
 	includes="$(sed -n "$inc_expr1; $inc_expr2" "$input")"
+	header_includes="$(printf %s "$includes" |sed '$d')"
 
 	echo "generating $output"
 	{
@@ -112,7 +113,10 @@ gen_m4_check()
 				$includes])
 			EOF
 		done
-		echo '])])'
+		cat <<-EOF
+			],[],[AC_INCLUDES_DEFAULT
+			$header_includes])])
+		EOF
 	} > "$output"
 }
 
@@ -153,10 +157,6 @@ gen_makefile()
 		printf 'TYPES_CHECK_FILES = '
 		[ $# -eq 0 ] ||
 			printf 'types/check-%s.c ' "$@"
-		echo
-		printf 'TYPES_M4_FILES = '
-		[ $# -eq 0 ] ||
-			printf 'types/check-%s.m4 ' "$@"
 		echo
 	} >"$output"
 }

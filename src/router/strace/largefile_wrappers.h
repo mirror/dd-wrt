@@ -2,7 +2,7 @@
  * Wrappers for handling discrepancies in LF64-themed syscalls availability and
  * necessity between various architectures and kernel versions.
  *
- * Copyright (c) 2012-2019 The strace developers.
+ * Copyright (c) 2012-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -29,6 +29,7 @@
 #  else
 #   define fcntl_fd fcntl
 #  endif
+#  define fstat_fd fstat64
 #  define strace_stat_t struct stat64
 #  define stat_file stat64
 #  define struct_dirent struct dirent64
@@ -39,6 +40,7 @@
 #  define open_file open
 #  define fopen_stream fopen
 #  define fcntl_fd fcntl
+#  define fstat_fd fstat
 #  define strace_stat_t struct stat
 #  define stat_file stat
 #  define struct_dirent struct dirent

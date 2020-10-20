@@ -1,21 +1,25 @@
 /*
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <sys/ipc.h>
-#include <sys/sem.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include "scno.h"
 
-#define XLAT_MACROS_ONLY
-#include "xlat/semop_flags.h"
-#undef XLAT_MACROS_ONLY
+#if defined __NR_semtimedop || defined __NR_socketcall
+
+# include <sys/ipc.h>
+# include <sys/sem.h>
+# include <stdint.h>
+# include <stdio.h>
+# include <stdlib.h>
+# include <unistd.h>
+
+# define XLAT_MACROS_ONLY
+#  include "xlat/semop_flags.h"
+# undef XLAT_MACROS_ONLY
 
 union semun {
 	int val;
@@ -143,3 +147,9 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
+
+#else
+
+SKIP_MAIN_UNDEFINED("__NR_semtimedop || __NR_socketcall")
+
+#endif

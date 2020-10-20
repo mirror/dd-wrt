@@ -114,14 +114,14 @@ SYS_FUNC(clone)
 		 */
 		if ((flags & (CLONE_PARENT_SETTID|CLONE_PIDFD|CLONE_CHILD_SETTID
 			      |CLONE_CHILD_CLEARTID|CLONE_SETTLS)) == 0)
-			return RVAL_DECODED;
+			return RVAL_DECODED | RVAL_TID;
 	} else {
 		if (flags & (CLONE_PARENT_SETTID|CLONE_PIDFD)) {
 			kernel_ulong_t addr = tcp->u_arg[ARG_PTID];
 
 			tprints(", parent_tid=");
 			if (flags & CLONE_PARENT_SETTID)
-				printnum_int(tcp, addr, "%u");
+				printnum_pid(tcp, addr, PT_TID);
 			else
 				printnum_fd(tcp, addr);
 		}
@@ -134,88 +134,23 @@ SYS_FUNC(clone)
 			printaddr(tcp->u_arg[ARG_CTID]);
 		}
 	}
-	return 0;
+	return RVAL_TID;
 }
 
 
 struct strace_clone_args {
 	uint64_t flags;
-	uint64_t /* int * */ pidfd;
-	uint64_t /* int * */ child_tid;
-	uint64_t /* int * */ parent_tid;
-	uint64_t /* int */   exit_signal;
-	uint64_t stack;
+	uint64_t /* fd * */    pidfd;
+	uint64_t /* pid_t * */ child_tid;
+	uint64_t /* pid_t * */ parent_tid;
+	uint64_t /* int */     exit_signal;
+	uint64_t /* void * */  stack;
 	uint64_t stack_size;
-	uint64_t tls;
-	uint64_t set_tid;
+	uint64_t /* struct user_desc * / void * */ tls;
+	uint64_t /* pid_t * */ set_tid;
 	uint64_t set_tid_size;
+	uint64_t cgroup;
 };
-
-/**
- * Print a region of tracee memory only in case non-zero bytes are present
- * there.  It almost fits into printstr_ex, but it has some pretty specific
- * behaviour peculiarities (like printing of ellipsis on error) to readily
- * integrate it there.
- *
- * Since it is expected to be used for printing tail of a structure in tracee's
- * memory, it accepts a combination of start_addr/start_offs/total_len and does
- * the relevant calculations itself.
- *
- * @param prefix     A string printed in cases something is going to be printed.
- * @param start_addr Address of the beginning of a structure (whose tail
- *                   is supposedly to be printed) in tracee's memory.
- * @param start_offs Offset from the beginning of the structure where the tail
- *                   data starts.
- * @param total_len  Total size of the tracee's memory region containing
- *                   the structure and the tail data.
- *                   Caller is responsible for imposing a sensible (usually
- *                   mandated by the kernel interface, like get_pagesize())
- *                   limit here.
- * @param style      Passed to string_quote as "style" parameter.
- * @return           Returns true is anything was printed, false otherwise.
- */
-static bool
-print_nonzero_bytes(struct tcb *const tcp, const char *prefix,
-		    const kernel_ulong_t start_addr,
-		    const unsigned int start_offs,
-		    const unsigned int total_len,
-		    const unsigned int style)
-{
-	if (start_offs >= total_len)
-		return false;
-
-	const kernel_ulong_t addr = start_addr + start_offs;
-	const unsigned int len = total_len - start_offs;
-	const unsigned int size = MIN(len, max_strlen);
-
-	char *str = malloc(len);
-
-	if (!str) {
-		error_func_msg("memory exhausted when tried to allocate"
-                               " %u bytes", len);
-		tprintf("%s???", prefix);
-		return true;
-	}
-
-	bool ret = true;
-
-	if (umoven(tcp, addr, len, str)) {
-		tprintf("%s???", prefix);
-	} else if (is_filled(str, 0, len)) {
-		ret = false;
-	} else {
-		tprints(prefix);
-		tprintf("/* bytes %u..%u */ ", start_offs, total_len - 1);
-
-		print_quoted_string(str, size, style);
-
-		if (size < len)
-			tprints("...");
-	}
-
-	free(str);
-	return ret;
-}
 
 SYS_FUNC(clone3)
 {
@@ -281,6 +216,10 @@ SYS_FUNC(clone3)
 			PRINT_FIELD_U(", ", arg, set_tid_size);
 		}
 
+		if (fetch_size > offsetof(struct strace_clone_args, cgroup)
+		    && (arg.cgroup || arg.flags & CLONE_INTO_CGROUP))
+			PRINT_FIELD_U(", ", arg, cgroup);
+
 		if (size > fetch_size)
 			print_nonzero_bytes(tcp, ", ", addr, fetch_size,
 					    MIN(size, get_pagesize()),
@@ -290,7 +229,7 @@ SYS_FUNC(clone3)
 
 		if ((arg.flags & (CLONE_PIDFD | CLONE_PARENT_SETTID)) ||
 		    (size > fetch_size))
-			return 0;
+			return RVAL_TID;
 
 		goto out;
 	}
@@ -317,7 +256,7 @@ SYS_FUNC(clone3)
 
 	if (arg.flags & CLONE_PARENT_SETTID) {
 		tprintf("%sparent_tid=", pfx);
-		printnum_int(tcp, arg.parent_tid, "%d"); /* TID */
+		printnum_pid(tcp, arg.parent_tid, PT_TID);
 		pfx = ", ";
 	}
 
@@ -340,7 +279,7 @@ SYS_FUNC(clone3)
 out:
 	tprintf(", %" PRI_klu, size);
 
-	return RVAL_DECODED;
+	return RVAL_DECODED | RVAL_TID;
 }
 
 
@@ -361,5 +300,5 @@ SYS_FUNC(unshare)
 
 SYS_FUNC(fork)
 {
-	return RVAL_DECODED;
+	return RVAL_DECODED | RVAL_TGID;
 }

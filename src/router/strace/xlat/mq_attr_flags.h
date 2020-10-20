@@ -15,6 +15,8 @@ extern const struct xlat mq_attr_flags[];
 static const struct xlat_data mq_attr_flags_xdata[] = {
 #if defined(O_NONBLOCK) || (defined(HAVE_DECL_O_NONBLOCK) && HAVE_DECL_O_NONBLOCK)
   XLAT(O_NONBLOCK),
+ #define XLAT_VAL_0 ((unsigned) (O_NONBLOCK))
+ #define XLAT_STR_0 STRINGIFY(O_NONBLOCK)
 #endif
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
@@ -24,8 +26,20 @@ const struct xlat mq_attr_flags[1] = { {
  .data = mq_attr_flags_xdata,
  .size = ARRAY_SIZE(mq_attr_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

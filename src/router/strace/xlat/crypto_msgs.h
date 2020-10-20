@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data crypto_msgs_xdata[] = {
  XLAT(CRYPTO_MSG_NEWALG),
+ #define XLAT_VAL_0 ((unsigned) (CRYPTO_MSG_NEWALG))
+ #define XLAT_STR_0 STRINGIFY(CRYPTO_MSG_NEWALG)
  XLAT(CRYPTO_MSG_DELALG),
+ #define XLAT_VAL_1 ((unsigned) (CRYPTO_MSG_DELALG))
+ #define XLAT_STR_1 STRINGIFY(CRYPTO_MSG_DELALG)
  XLAT(CRYPTO_MSG_UPDATEALG),
+ #define XLAT_VAL_2 ((unsigned) (CRYPTO_MSG_UPDATEALG))
+ #define XLAT_STR_2 STRINGIFY(CRYPTO_MSG_UPDATEALG)
  XLAT(CRYPTO_MSG_GETALG),
+ #define XLAT_VAL_3 ((unsigned) (CRYPTO_MSG_GETALG))
+ #define XLAT_STR_3 STRINGIFY(CRYPTO_MSG_GETALG)
  XLAT(CRYPTO_MSG_DELRNG),
+ #define XLAT_VAL_4 ((unsigned) (CRYPTO_MSG_DELRNG))
+ #define XLAT_STR_4 STRINGIFY(CRYPTO_MSG_DELRNG)
  XLAT(CRYPTO_MSG_GETSTAT),
+ #define XLAT_VAL_5 ((unsigned) (CRYPTO_MSG_GETSTAT))
+ #define XLAT_STR_5 STRINGIFY(CRYPTO_MSG_GETSTAT)
 };
 static
 const struct xlat crypto_msgs[1] = { {
  .data = crypto_msgs_xdata,
  .size = ARRAY_SIZE(crypto_msgs_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

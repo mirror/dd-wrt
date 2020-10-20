@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data numa_node_xdata[] = {
  XLAT(NUMA_NO_NODE),
+ #define XLAT_VAL_0 ((unsigned) (NUMA_NO_NODE))
+ #define XLAT_STR_0 STRINGIFY(NUMA_NO_NODE)
 };
 static
 const struct xlat numa_node[1] = { {
  .data = numa_node_xdata,
  .size = ARRAY_SIZE(numa_node_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2019 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -100,11 +100,15 @@ main(void)
 			   printf("htons(%u)", ntohs(port)));
 
 	static const uint8_t mac[6] = "\xf8\xc2\x49\x13\x57\xbd";
-	TEST_NLATTR_OBJECT(fd, nlh0, hdrlen,
-			   init_ndmsg, print_ndmsg,
-			   NDA_LLADDR, pattern, mac,
-			   for (unsigned int i = 0; i < sizeof(mac); ++i)
-				printf("%s%02x", i ? ":" : "", mac[i]));
+	TEST_NLATTR(fd, nlh0, hdrlen, init_ndmsg, print_ndmsg,
+		    NDA_LLADDR, sizeof(mac) - 1, mac, sizeof(mac) - 1,
+		    for (unsigned int i = 0; i < sizeof(mac) - 1; ++i)
+			printf("%s%02x", i ? ":" : "", mac[i]));
+
+	TEST_NLATTR(fd, nlh0, hdrlen, init_ndmsg, print_ndmsg,
+		    NDA_LLADDR, sizeof(mac), mac, sizeof(mac),
+		    for (unsigned int i = 0; i < sizeof(mac); ++i)
+			printf("%s%02x", i ? ":" : "", mac[i]));
 
 	puts("+++ exited with 0 +++");
 	return 0;

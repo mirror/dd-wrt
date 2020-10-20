@@ -56,11 +56,23 @@ extern const struct xlat sigpoll_codes[];
 
 static const struct xlat_data sigpoll_codes_xdata[] = {
  [POLL_IN] = XLAT(POLL_IN),
+ #define XLAT_VAL_0 ((unsigned) (POLL_IN))
+ #define XLAT_STR_0 STRINGIFY(POLL_IN)
  [POLL_OUT] = XLAT(POLL_OUT),
+ #define XLAT_VAL_1 ((unsigned) (POLL_OUT))
+ #define XLAT_STR_1 STRINGIFY(POLL_OUT)
  [POLL_MSG] = XLAT(POLL_MSG),
+ #define XLAT_VAL_2 ((unsigned) (POLL_MSG))
+ #define XLAT_STR_2 STRINGIFY(POLL_MSG)
  [POLL_ERR] = XLAT(POLL_ERR),
+ #define XLAT_VAL_3 ((unsigned) (POLL_ERR))
+ #define XLAT_STR_3 STRINGIFY(POLL_ERR)
  [POLL_PRI] = XLAT(POLL_PRI),
+ #define XLAT_VAL_4 ((unsigned) (POLL_PRI))
+ #define XLAT_STR_4 STRINGIFY(POLL_PRI)
  [POLL_HUP] = XLAT(POLL_HUP),
+ #define XLAT_VAL_5 ((unsigned) (POLL_HUP))
+ #define XLAT_STR_5 STRINGIFY(POLL_HUP)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -69,8 +81,60 @@ const struct xlat sigpoll_codes[1] = { {
  .data = sigpoll_codes_xdata,
  .size = ARRAY_SIZE(sigpoll_codes_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */
