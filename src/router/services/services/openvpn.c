@@ -74,8 +74,7 @@ void create_openvpnrules(FILE * fp)
 		if (nvram_match("openvpncl_tuntap", "tun")) {
 			fprintf(fp, "iptables -D INPUT -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
 				"iptables -D FORWARD -i $dev -m state --state NEW -j ACCEPT 2> /dev/null\n"
-				"iptables -I INPUT -i $dev -m state --state NEW -j ACCEPT\n"
-				"iptables -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
+				"iptables -I INPUT -i $dev -m state --state NEW -j ACCEPT\n" "iptables -I FORWARD -i $dev -m state --state NEW -j ACCEPT\n");
 		}
 	}
 	fprintf(fp, "EOF\n" "chmod +x /tmp/openvpncl_fw.sh\n");
@@ -220,24 +219,12 @@ void start_openvpnserver(void)
 			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
 
 		//egc
-		char dcbuffer[128]="";
-		char dc1[64]="";
-		char dc2[64]="";
-		char dc3[64]="";
-		strcpy(dc1, nvram_safe_get("openvpn_dc1"));
-		strcpy(dc2, nvram_safe_get("openvpn_dc2"));
-		strcpy(dc3, nvram_safe_get("openvpn_dc3"));
-		if (dc1[0] != '\0')
-			strcat(dcbuffer, dc1);
-		if ( dcbuffer[0] != '\0' && dc2[0] != 0) 
-			strcat(dcbuffer, ":");
-		if ( dc2[0] != 0) 
-			strcat(dcbuffer, dc2);
-		if ( dcbuffer[0] != '\0' && dc3[0] != 0) 
-			strcat(dcbuffer, ":");
-		if ( dc3[0] != 0) 
-			strcat(dcbuffer, dc3);
-		if (dcbuffer[0] != '\0')
+		char dcbuffer[128] = { 0 };
+		char *dc1 = nvram_safe_get("openvpn_dc1");
+		char *dc2 = nvram_safe_get("openvpn_dc2");
+		char *dc3, nvram_safe_get("openvpn_dc3");
+		sprintf(dcbuffer, "%s%s%s%s%s", dc1, *dc2 ? ":" : "", dc2, *dc3 ? ":" : "", dc3);
+		if (dcbuffer[0])
 			fprintf(fp, "data-ciphers %s\n", dcbuffer);
 
 		fprintf(fp, "client-connect /tmp/openvpn/clcon.sh\n");
@@ -527,24 +514,13 @@ void start_openvpn(void)
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
 
 	//egc
-	char dcbuffer[128]="";
-	char dc1[64]="";
-	char dc2[64]="";
-	char dc3[64]="";
-	strcpy(dc1, nvram_safe_get("openvpncl_dc1"));
-	strcpy(dc2, nvram_safe_get("openvpncl_dc2"));
-	strcpy(dc3, nvram_safe_get("openvpncl_dc3"));
-	if (dc1[0] != '\0')
-		strcat(dcbuffer, dc1);
-	if ( dcbuffer[0] != '\0' && dc2[0] != 0) 
-		strcat(dcbuffer, ":");
-	if ( dc2[0] != 0) 
-		strcat(dcbuffer, dc2);
-	if ( dcbuffer[0] != '\0' && dc3[0] != 0) 
-		strcat(dcbuffer, ":");
-	if ( dc3[0] != 0) 
-		strcat(dcbuffer, dc3);
-	if (dcbuffer[0] != '\0')
+	char dcbuffer[128] = { 0 };
+	char *dc1 = nvram_safe_get("openvpncl_dc1");
+	char *dc2 = nvram_safe_get("openvpncl_dc2");
+	char *dc3, nvram_safe_get("openvpncl_dc3");
+	sprintf(dcbuffer, "%s%s%s%s%s", dc1, *dc2 ? ":" : "", dc2, *dc3 ? ":" : "", dc3);
+
+	if (dcbuffer[0])
 		fprintf(fp, "data-ciphers %s\n", dcbuffer);
 
 	if (nvram_matchi("openvpncl_upauth", 1))
