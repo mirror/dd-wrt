@@ -83,7 +83,7 @@ usbip-configure: util-linux libudev-configure
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.a
 	rm -f $(INSTALLDIR)/util-linux/usr/lib/libblkid.la
 	cd usbip && ./autogen.sh
-	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/libudev/src/libudev -L$(TOP)/libudev/src/libudev/.libs"
+	cd usbip && ./configure --disable-static --enable-shared --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(MIPS16_OPT) -fcommon -L$(TOP)/$(ARCH)-uclibc/install/util-linux/usr/lib  -DNEED_PRINTF -D_GNU_SOURCE -fPIC -ffunction-sections -fdata-sections -Wl,--gc-sections -Drpl_realloc=realloc -Drpl_malloc=malloc -I$(TOP)/libudev/src/libudev -L$(TOP)/libudev/src/libudev/.libs"
 
 usbip: libudev
 	make -C util-linux
