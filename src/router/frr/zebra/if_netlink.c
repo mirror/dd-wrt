@@ -30,10 +30,11 @@
  */
 #define _LINUX_IN6_H
 
-#include <netinet/if_ether.h>
+//#include <net/if_ether.h>
 #include <linux/if_bridge.h>
 #include <linux/if_link.h>
 #include <net/if_arp.h>
+//#include <net/ethernet.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 
