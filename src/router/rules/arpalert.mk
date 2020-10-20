@@ -1,5 +1,5 @@
 arpalert-configure:
-	cd arpalert && ac_cv_header_sys_sysctl_h=yes ./configure --prefix=/usr sysconfdir=/etc --localstatedir=/var --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I../libpcap -ffunction-sections -fdata-sections -Wl,--gc-sections" LDFLAGS="-L$(TOP)/libpcap -lpcap"
+	cd arpalert && ac_cv_header_sys_sysctl_h=yes ./configure --prefix=/usr sysconfdir=/etc --localstatedir=/var --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF -I../libpcap -ffunction-sections -fdata-sections -Wl,--gc-sections -fcommon" LDFLAGS="-L$(TOP)/libpcap -lpcap"
 
 arpalert: 
 	$(MAKE) -C arpalert LDFLAGS+="-L$(TOP)/libpcap"
