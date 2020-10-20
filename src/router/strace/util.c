@@ -6,7 +6,7 @@
  * Copyright (c) 1999 IBM Deutschland Entwicklung GmbH, IBM Corporation
  *                     Linux for s390 port by D.J. Barrow
  *                    <barrow_dj@mail.yahoo.com,djbarrow@de.ibm.com>
- * Copyright (c) 1999-2019 The strace developers.
+ * Copyright (c) 1999-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -24,11 +24,61 @@
 #include <sys/uio.h>
 
 #include "largefile_wrappers.h"
+#include "number_set.h"
 #include "print_utils.h"
 #include "static_assert.h"
 #include "string_to_uint.h"
 #include "xlat.h"
 #include "xstring.h"
+
+const struct xlat_data *
+find_xlat_val_ex(const struct xlat_data *items, const char *s, size_t num_items,
+		 unsigned int flags)
+{
+	for (size_t i = 0; i < num_items; i++) {
+		if (!(flags & FXL_CASE_SENSITIVE ? strcmp
+						 : strcasecmp)(items[i].str, s))
+			return items + i;
+	}
+
+	return NULL;
+}
+
+uint64_t
+find_arg_val_(const char *arg, const struct xlat_data *strs, size_t strs_size,
+	       uint64_t default_val, uint64_t not_found)
+{
+	if (!arg)
+		return default_val;
+
+	const struct xlat_data *res = find_xlat_val_ex(strs, arg, strs_size, 0);
+
+	return  res ? res->val : not_found;
+}
+
+int
+str2timescale_ex(const char *arg, int empty_dflt, int null_dflt,
+		 int *width)
+{
+	static const struct xlat_data units[] = {
+		{ 1000000000U | (0ULL << 32), "s" },
+		{ 1000000U    | (3ULL << 32), "ms" },
+		{ 1000U       | (6ULL << 32), "us" },
+		{ 1U          | (9ULL << 32), "ns" },
+	};
+
+	if (!arg)
+		return null_dflt;
+	if (!arg[0])
+		return empty_dflt;
+
+	uint64_t res = find_arg_val(arg, units, null_dflt, -1ULL);
+
+	if (width && res != -1ULL)
+		*width = res >> 32;
+
+	return res & 0xffffffff;
+}
 
 int
 ts_nz(const struct timespec *a)
@@ -77,7 +127,7 @@ ts_sub(struct timespec *tv, const struct timespec *a, const struct timespec *b)
 }
 
 void
-ts_div(struct timespec *tv, const struct timespec *a, int n)
+ts_div(struct timespec *tv, const struct timespec *a, uint64_t n)
 {
 	long long nsec = (a->tv_sec % n * 1000000000LL + a->tv_nsec + n / 2) / n;
 	tv->tv_sec = a->tv_sec / n + nsec / 1000000000;
@@ -85,7 +135,7 @@ ts_div(struct timespec *tv, const struct timespec *a, int n)
 }
 
 void
-ts_mul(struct timespec *tv, const struct timespec *a, int n)
+ts_mul(struct timespec *tv, const struct timespec *a, uint64_t n)
 {
 	long long nsec = a->tv_nsec * n;
 	tv->tv_sec = a->tv_sec * n + nsec / 1000000000;
@@ -109,22 +159,11 @@ parse_ts(const char *s, struct timespec *t)
 {
 	enum { NS_IN_S = 1000000000 };
 
-	static const struct time_unit {
-		const char *s;
-		unsigned int mul;
-	} units[] = {
-		{ "",   1000 }, /* default is microseconds */
-		{ "s",  1000000000 },
-		{ "ms", 1000000 },
-		{ "us", 1000 },
-		{ "ns", 1 },
-	};
 	static const char float_accept[] =  "eE.-+0123456789";
 	static const char int_accept[] = "+0123456789";
 
 	size_t float_len = strspn(s, float_accept);
 	size_t int_len = strspn(s, int_accept);
-	const struct time_unit *unit = NULL;
 	char *endptr = NULL;
 	double float_val = -1;
 	long long int_val = -1;
@@ -145,25 +184,18 @@ parse_ts(const char *s, struct timespec *t)
 			return -1;
 	}
 
-	for (size_t i = 0; i < ARRAY_SIZE(units); i++) {
-		if (strcmp(endptr, units[i].s))
-			continue;
-
-		unit = units + i;
-		break;
-	}
-
-	if (!unit)
+	int scale = str2timescale_sfx(endptr, NULL);
+	if (scale <= 0)
 		return -1;
 
 	if (float_len > int_len) {
-		t->tv_sec = float_val / (NS_IN_S / unit->mul);
+		t->tv_sec = float_val / (NS_IN_S / scale);
 		t->tv_nsec = ((uint64_t) ((float_val -
-					   (t->tv_sec * (NS_IN_S / unit->mul)))
-					  * unit->mul)) % NS_IN_S;
+					   (t->tv_sec * (NS_IN_S / scale)))
+					  * scale)) % NS_IN_S;
 	} else {
-		t->tv_sec = int_val / (NS_IN_S / unit->mul);
-		t->tv_nsec = (int_val % (NS_IN_S / unit->mul)) * unit->mul;
+		t->tv_sec = int_val / (NS_IN_S / scale);
+		t->tv_nsec = (int_val % (NS_IN_S / scale)) * scale;
 	}
 
 	return 0;
@@ -360,6 +392,18 @@ printnum_fd(struct tcb *const tcp, const kernel_ulong_t addr)
 	return true;
 }
 
+bool
+printnum_pid(struct tcb *const tcp, const kernel_ulong_t addr, enum pid_type type)
+{
+	int pid;
+	if (umove_or_printaddr(tcp, addr, &pid))
+		return false;
+	tprints("[");
+	printpid(tcp, pid, type);
+	tprints("]");
+	return true;
+}
+
 /**
  * Prints time to a (static internal) buffer and returns pointer to it.
  * Returns NULL if the provided time specification is not correct.
@@ -457,7 +501,7 @@ getfdproto(struct tcb *tcp, int fd)
 	if (fd < 0)
 		return SOCK_PROTO_UNKNOWN;
 
-	xsprintf(path, "/proc/%u/fd/%u", tcp->pid, fd);
+	xsprintf(path, "/proc/%u/fd/%u", get_proc_pid(tcp), fd);
 	r = getxattr(path, "system.sockprotoname", buf, bufsize - 1);
 	if (r <= 0)
 		return SOCK_PROTO_UNKNOWN;
@@ -535,21 +579,87 @@ printdev(struct tcb *tcp, int fd, const char *path)
 	return false;
 }
 
+pid_t
+pidfd_get_pid(pid_t pid_of_fd, int fd)
+{
+	int proc_pid = 0;
+	translate_pid(NULL, pid_of_fd, PT_TID, &proc_pid);
+	if (!proc_pid)
+		return -1;
+
+	char fdi_path[sizeof("/proc/%u/fdinfo/%u") + 2 * sizeof(int) * 3];
+	xsprintf(fdi_path, "/proc/%u/fdinfo/%u", proc_pid, fd);
+
+	FILE *f = fopen_stream(fdi_path, "r");
+	if (!f)
+		return -1;
+
+	static const char pid_pfx[] = "Pid:\t";
+	char *line = NULL;
+	size_t sz = 0;
+	pid_t pid = -1;
+	while (getline(&line, &sz, f) > 0) {
+		const char *pos = STR_STRIP_PREFIX(line, pid_pfx);
+		if (pos == line)
+			continue;
+
+		pid = string_to_uint_ex(pos, NULL, INT_MAX, "\n");
+		break;
+	}
+
+	free(line);
+	fclose(f);
+
+	return pid;
+}
+
+static bool
+printpidfd(pid_t pid_of_fd, int fd, const char *path)
+{
+	static const char pidfd_path[] = "anon_inode:[pidfd]";
+
+	if (strcmp(path, pidfd_path))
+		return false;
+
+	pid_t pid = pidfd_get_pid(pid_of_fd, fd);
+	if (pid <= 0)
+		return false;
+
+	tprintf("pid:%d", pid);
+	return true;
+}
+
 void
-printfd(struct tcb *tcp, int fd)
+printfd_pid(struct tcb *tcp, pid_t pid, int fd)
 {
 	char path[PATH_MAX + 1];
-	if (show_fd_path && getfdpath(tcp, fd, path, sizeof(path)) >= 0) {
-		tprintf("%d<", fd);
-		if (show_fd_path <= 1
-		    || (!printsocket(tcp, fd, path)
-		         && !printdev(tcp, fd, path))) {
-			print_quoted_string_ex(path, strlen(path),
-				QUOTE_OMIT_LEADING_TRAILING_QUOTES, "<>");
-		}
+	if (pid > 0 && !number_set_array_is_empty(decode_fd_set, 0)
+	    && getfdpath_pid(pid, fd, path, sizeof(path)) >= 0) {
+		tprintf("%d<", (int) fd);
+		if (is_number_in_set(DECODE_FD_SOCKET, decode_fd_set) &&
+		    printsocket(tcp, fd, path))
+			goto printed;
+		if (is_number_in_set(DECODE_FD_DEV, decode_fd_set) &&
+		    printdev(tcp, fd, path))
+			goto printed;
+		if (is_number_in_set(DECODE_FD_PIDFD, decode_fd_set) &&
+		    printpidfd(pid, fd, path))
+			goto printed;
+		print_quoted_string_ex(path, strlen(path),
+			QUOTE_OMIT_LEADING_TRAILING_QUOTES, "<>");
+
+printed:
 		tprints(">");
-	} else
+	} else {
 		tprintf("%d", fd);
+	}
+}
+
+void
+printfd_pid_tracee_ns(struct tcb *tcp, pid_t pid, int fd)
+{
+	int strace_pid = translate_pid(tcp, pid, PT_TGID, NULL);
+	printfd_pid(tcp, strace_pid, fd);
 }
 
 /*
@@ -912,7 +1022,7 @@ printstr_ex(struct tcb *const tcp, const kernel_ulong_t addr,
 	 */
 	ellipsis = string_quote(str, outstr, size, style, NULL)
 		   && len
-		   && ((style & QUOTE_0_TERMINATED)
+		   && ((style & (QUOTE_0_TERMINATED | QUOTE_EXPECT_TRAILING_0))
 		       || len > max_strlen);
 
 	tprints(outstr);
@@ -920,6 +1030,49 @@ printstr_ex(struct tcb *const tcp, const kernel_ulong_t addr,
 		tprints("...");
 
 	return rc;
+}
+
+bool
+print_nonzero_bytes(struct tcb *const tcp, const char *prefix,
+		    const kernel_ulong_t start_addr,
+		    const unsigned int start_offs,
+		    const unsigned int total_len,
+		    const unsigned int style)
+{
+	if (start_offs >= total_len)
+		return false;
+
+	const kernel_ulong_t addr = start_addr + start_offs;
+	const unsigned int len = total_len - start_offs;
+	const unsigned int size = MIN(len, max_strlen);
+
+	char *str = malloc(len);
+
+	if (!str) {
+		error_func_msg("memory exhausted when tried to allocate"
+                               " %u bytes", len);
+		tprintf("%s???", prefix);
+		return true;
+	}
+
+	bool ret = true;
+
+	if (umoven(tcp, addr, len, str)) {
+		tprintf("%s???", prefix);
+	} else if (is_filled(str, 0, len)) {
+		ret = false;
+	} else {
+		tprints(prefix);
+		tprintf("/* bytes %u..%u */ ", start_offs, total_len - 1);
+
+		print_quoted_string(str, size, style);
+
+		if (size < len)
+			tprints("...");
+	}
+
+	free(str);
+	return ret;
 }
 
 void
@@ -979,66 +1132,6 @@ dumpiov_upto(struct tcb *const tcp, const int len, const kernel_ulong_t addr,
 #undef iov_iov_len
 #undef iov
 }
-
-#define ILOG2_ITER_(val_, ret_, bit_)					\
-	do {								\
-		typeof(ret_) shift_ =					\
-			((val_) > ((((typeof(val_)) 1)			\
-				   << (1 << (bit_))) - 1)) << (bit_);	\
-		(val_) >>= shift_;					\
-		(ret_) |= shift_;					\
-	} while (0)
-
-/**
- * Calculate floor(log2(val)), with the exception of val == 0, for which 0
- * is returned as well.
- *
- * @param val 64-bit value to calculate integer base-2 logarithm for.
- * @return    (unsigned int) floor(log2(val)) if val > 0, 0 if val == 0.
- */
-static inline unsigned int
-ilog2_64(uint64_t val)
-{
-	unsigned int ret = 0;
-
-	ILOG2_ITER_(val, ret, 5);
-	ILOG2_ITER_(val, ret, 4);
-	ILOG2_ITER_(val, ret, 3);
-	ILOG2_ITER_(val, ret, 2);
-	ILOG2_ITER_(val, ret, 1);
-	ILOG2_ITER_(val, ret, 0);
-
-	return ret;
-}
-
-/**
- * Calculate floor(log2(val)), with the exception of val == 0, for which 0
- * is returned as well.
- *
- * @param val 32-bit value to calculate integer base-2 logarithm for.
- * @return    (unsigned int) floor(log2(val)) if val > 0, 0 if val == 0.
- */
-static inline unsigned int
-ilog2_32(uint32_t val)
-{
-	unsigned int ret = 0;
-
-	ILOG2_ITER_(val, ret, 4);
-	ILOG2_ITER_(val, ret, 3);
-	ILOG2_ITER_(val, ret, 2);
-	ILOG2_ITER_(val, ret, 1);
-	ILOG2_ITER_(val, ret, 0);
-
-	return ret;
-}
-
-#undef ILOG2_ITER_
-
-#if SIZEOF_KERNEL_LONG_T > 4
-# define ilog2_klong ilog2_64
-#else
-# define ilog2_klong ilog2_32
-#endif
 
 void
 dumpstr(struct tcb *const tcp, const kernel_ulong_t addr,
@@ -1437,7 +1530,7 @@ print_abnormal_hi(const kernel_ulong_t val)
 }
 
 int
-read_int_from_file(struct tcb *tcp, const char *const fname, int *const pvalue)
+read_int_from_file(const char *const fname, int *const pvalue)
 {
 	const int fd = open_file(fname, O_RDONLY);
 	if (fd < 0)

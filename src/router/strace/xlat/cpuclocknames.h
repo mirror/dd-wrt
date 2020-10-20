@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data cpuclocknames_xdata[] = {
  [CPUCLOCK_PROF] = XLAT(CPUCLOCK_PROF),
+ #define XLAT_VAL_0 ((unsigned) (CPUCLOCK_PROF))
+ #define XLAT_STR_0 STRINGIFY(CPUCLOCK_PROF)
  [CPUCLOCK_VIRT] = XLAT(CPUCLOCK_VIRT),
+ #define XLAT_VAL_1 ((unsigned) (CPUCLOCK_VIRT))
+ #define XLAT_STR_1 STRINGIFY(CPUCLOCK_VIRT)
  [CPUCLOCK_SCHED] = XLAT(CPUCLOCK_SCHED),
+ #define XLAT_VAL_2 ((unsigned) (CPUCLOCK_SCHED))
+ #define XLAT_STR_2 STRINGIFY(CPUCLOCK_SCHED)
 };
 static
 const struct xlat cpuclocknames[1] = { {
  .data = cpuclocknames_xdata,
  .size = ARRAY_SIZE(cpuclocknames_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

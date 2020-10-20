@@ -1,6 +1,6 @@
 Summary: Tracks and displays system calls associated with a running process
 Name: strace
-Version: 5.5
+Version: 5.9
 Release: 1%{?dist}
 # The test suite is GPLv2+, all the rest is LGPLv2.1+.
 License: LGPL-2.1+ and GPL-2.0+
@@ -39,6 +39,12 @@ BuildRequires: pkgconfig(bluez)
 %{?!buildroot:BuildRoot: %_tmppath/buildroot-%name-%version-%release}
 %define maybe_use_defattr %{?suse_version:%%defattr(-,root,root)}
 
+# Fallback definitions for make_build/make_install macros
+%{?!__make:       %global __make %_bindir/make}
+%{?!__install:    %global __install %_bindir/install}
+%{?!make_build:   %global make_build %__make %{?_smp_mflags}}
+%{?!make_install: %global make_install %__make install DESTDIR="%{?buildroot}" INSTALL="%__install -p"}
+
 %description
 The strace program intercepts and records the system calls called and
 received by a running process.  Strace can print a record of each
@@ -53,7 +59,7 @@ received by a process.
 %setup -q
 echo -n %version-%release > .tarball-version
 echo -n 2020 > .year
-echo -n 2020-02-04 > .strace.1.in.date
+echo -n 2020-09-23 > .strace.1.in.date
 
 %build
 echo 'BEGIN OF BUILD ENVIRONMENT INFORMATION'
@@ -69,10 +75,10 @@ echo 'END OF BUILD ENVIRONMENT INFORMATION'
 
 CFLAGS_FOR_BUILD="$RPM_OPT_FLAGS"; export CFLAGS_FOR_BUILD
 %configure --enable-mpers=check
-make %{?_smp_mflags}
+%make_build
 
 %install
-make DESTDIR=%{buildroot} install
+%make_install
 
 # remove unpackaged files from the buildroot
 rm -f %{buildroot}%{_bindir}/strace-graph
@@ -85,7 +91,7 @@ wait
 
 %check
 %{buildroot}%{_bindir}/strace -V
-make %{?_smp_mflags} -k check VERBOSE=1
+%make_build -k check VERBOSE=1
 echo 'BEGIN OF TEST SUITE INFORMATION'
 tail -n 99999 -- tests*/test-suite.log tests*/ksysent.gen.log
 find tests* -type f -name '*.log' -print0 |
@@ -100,8 +106,20 @@ echo 'END OF TEST SUITE INFORMATION'
 %{_mandir}/man1/*
 
 %changelog
-* Thu Feb 06 2020 strace-devel@lists.strace.io - 5.5-1
-- strace 5.5 snapshot.
+* Thu Sep 24 2020 strace-devel@lists.strace.io - 5.9-1
+- strace 5.9 snapshot.
+
+* Thu Aug 06 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.8-1
+- v5.7 -> v5.8.
+
+* Mon Jun 01 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.7-1
+- v5.6 -> v5.7.
+
+* Tue Apr 07 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.6-1
+- v5.5 -> v5.6.
+
+* Thu Feb 06 2020 Dmitry V. Levin <ldv@altlinux.org> - 5.5-1
+- v5.4 -> v5.5.
 
 * Thu Nov 28 2019 Dmitry V. Levin <ldv@altlinux.org> - 5.4-1
 - v5.3 -> v5.4.

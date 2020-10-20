@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data if_dqinfo_valid_xdata[] = {
  XLAT(IIF_BGRACE),
+ #define XLAT_VAL_0 ((unsigned) (IIF_BGRACE))
+ #define XLAT_STR_0 STRINGIFY(IIF_BGRACE)
  XLAT(IIF_IGRACE),
+ #define XLAT_VAL_1 ((unsigned) (IIF_IGRACE))
+ #define XLAT_STR_1 STRINGIFY(IIF_IGRACE)
  XLAT(IIF_FLAGS),
+ #define XLAT_VAL_2 ((unsigned) (IIF_FLAGS))
+ #define XLAT_STR_2 STRINGIFY(IIF_FLAGS)
 };
 static
 const struct xlat if_dqinfo_valid[1] = { {
  .data = if_dqinfo_valid_xdata,
  .size = ARRAY_SIZE(if_dqinfo_valid_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

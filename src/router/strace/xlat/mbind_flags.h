@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data mbind_flags_xdata[] = {
  XLAT(MPOL_MF_STRICT),
+ #define XLAT_VAL_0 ((unsigned) (MPOL_MF_STRICT))
+ #define XLAT_STR_0 STRINGIFY(MPOL_MF_STRICT)
  XLAT(MPOL_MF_MOVE),
+ #define XLAT_VAL_1 ((unsigned) (MPOL_MF_MOVE))
+ #define XLAT_STR_1 STRINGIFY(MPOL_MF_MOVE)
  XLAT(MPOL_MF_MOVE_ALL),
+ #define XLAT_VAL_2 ((unsigned) (MPOL_MF_MOVE_ALL))
+ #define XLAT_STR_2 STRINGIFY(MPOL_MF_MOVE_ALL)
 };
 static
 const struct xlat mbind_flags[1] = { {
  .data = mbind_flags_xdata,
  .size = ARRAY_SIZE(mbind_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

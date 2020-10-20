@@ -56,11 +56,23 @@ extern const struct xlat sigchld_codes[];
 
 static const struct xlat_data sigchld_codes_xdata[] = {
  [CLD_EXITED] = XLAT(CLD_EXITED),
+ #define XLAT_VAL_0 ((unsigned) (CLD_EXITED))
+ #define XLAT_STR_0 STRINGIFY(CLD_EXITED)
  [CLD_KILLED] = XLAT(CLD_KILLED),
+ #define XLAT_VAL_1 ((unsigned) (CLD_KILLED))
+ #define XLAT_STR_1 STRINGIFY(CLD_KILLED)
  [CLD_DUMPED] = XLAT(CLD_DUMPED),
+ #define XLAT_VAL_2 ((unsigned) (CLD_DUMPED))
+ #define XLAT_STR_2 STRINGIFY(CLD_DUMPED)
  [CLD_TRAPPED] = XLAT(CLD_TRAPPED),
+ #define XLAT_VAL_3 ((unsigned) (CLD_TRAPPED))
+ #define XLAT_STR_3 STRINGIFY(CLD_TRAPPED)
  [CLD_STOPPED] = XLAT(CLD_STOPPED),
+ #define XLAT_VAL_4 ((unsigned) (CLD_STOPPED))
+ #define XLAT_STR_4 STRINGIFY(CLD_STOPPED)
  [CLD_CONTINUED] = XLAT(CLD_CONTINUED),
+ #define XLAT_VAL_5 ((unsigned) (CLD_CONTINUED))
+ #define XLAT_STR_5 STRINGIFY(CLD_CONTINUED)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -69,8 +81,60 @@ const struct xlat sigchld_codes[1] = { {
  .data = sigchld_codes_xdata,
  .size = ARRAY_SIZE(sigchld_codes_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

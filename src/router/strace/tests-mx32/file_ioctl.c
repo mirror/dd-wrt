@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -11,6 +11,7 @@
 
 # include <stdio.h>
 # include <sys/ioctl.h>
+# include <linux/types.h>
 # include <linux/fiemap.h>
 # include <linux/fs.h>
 # include "xlat.h"

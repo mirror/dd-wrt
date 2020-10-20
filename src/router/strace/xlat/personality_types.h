@@ -175,36 +175,270 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data personality_types_xdata[] = {
  XLAT(PER_LINUX),
+ #define XLAT_VAL_0 ((unsigned) (PER_LINUX))
+ #define XLAT_STR_0 STRINGIFY(PER_LINUX)
  XLAT(PER_LINUX_32BIT),
+ #define XLAT_VAL_1 ((unsigned) (PER_LINUX_32BIT))
+ #define XLAT_STR_1 STRINGIFY(PER_LINUX_32BIT)
  XLAT(PER_LINUX_FDPIC),
+ #define XLAT_VAL_2 ((unsigned) (PER_LINUX_FDPIC))
+ #define XLAT_STR_2 STRINGIFY(PER_LINUX_FDPIC)
  XLAT(PER_SVR4),
+ #define XLAT_VAL_3 ((unsigned) (PER_SVR4))
+ #define XLAT_STR_3 STRINGIFY(PER_SVR4)
  XLAT(PER_SVR3),
+ #define XLAT_VAL_4 ((unsigned) (PER_SVR3))
+ #define XLAT_STR_4 STRINGIFY(PER_SVR3)
  XLAT(PER_SCOSVR3),
+ #define XLAT_VAL_5 ((unsigned) (PER_SCOSVR3))
+ #define XLAT_STR_5 STRINGIFY(PER_SCOSVR3)
  XLAT(PER_OSR5),
+ #define XLAT_VAL_6 ((unsigned) (PER_OSR5))
+ #define XLAT_STR_6 STRINGIFY(PER_OSR5)
  XLAT(PER_WYSEV386),
+ #define XLAT_VAL_7 ((unsigned) (PER_WYSEV386))
+ #define XLAT_STR_7 STRINGIFY(PER_WYSEV386)
  XLAT(PER_ISCR4),
+ #define XLAT_VAL_8 ((unsigned) (PER_ISCR4))
+ #define XLAT_STR_8 STRINGIFY(PER_ISCR4)
  XLAT(PER_BSD),
+ #define XLAT_VAL_9 ((unsigned) (PER_BSD))
+ #define XLAT_STR_9 STRINGIFY(PER_BSD)
  XLAT(PER_SUNOS),
+ #define XLAT_VAL_10 ((unsigned) (PER_SUNOS))
+ #define XLAT_STR_10 STRINGIFY(PER_SUNOS)
  XLAT(PER_XENIX),
+ #define XLAT_VAL_11 ((unsigned) (PER_XENIX))
+ #define XLAT_STR_11 STRINGIFY(PER_XENIX)
  XLAT(PER_LINUX32),
+ #define XLAT_VAL_12 ((unsigned) (PER_LINUX32))
+ #define XLAT_STR_12 STRINGIFY(PER_LINUX32)
  XLAT(PER_LINUX32_3GB),
+ #define XLAT_VAL_13 ((unsigned) (PER_LINUX32_3GB))
+ #define XLAT_STR_13 STRINGIFY(PER_LINUX32_3GB)
  XLAT(PER_IRIX32),
+ #define XLAT_VAL_14 ((unsigned) (PER_IRIX32))
+ #define XLAT_STR_14 STRINGIFY(PER_IRIX32)
  XLAT(PER_IRIXN32),
+ #define XLAT_VAL_15 ((unsigned) (PER_IRIXN32))
+ #define XLAT_STR_15 STRINGIFY(PER_IRIXN32)
  XLAT(PER_IRIX64),
+ #define XLAT_VAL_16 ((unsigned) (PER_IRIX64))
+ #define XLAT_STR_16 STRINGIFY(PER_IRIX64)
  XLAT(PER_RISCOS),
+ #define XLAT_VAL_17 ((unsigned) (PER_RISCOS))
+ #define XLAT_STR_17 STRINGIFY(PER_RISCOS)
  XLAT(PER_SOLARIS),
+ #define XLAT_VAL_18 ((unsigned) (PER_SOLARIS))
+ #define XLAT_STR_18 STRINGIFY(PER_SOLARIS)
  XLAT(PER_UW7),
+ #define XLAT_VAL_19 ((unsigned) (PER_UW7))
+ #define XLAT_STR_19 STRINGIFY(PER_UW7)
  XLAT(PER_OSF4),
+ #define XLAT_VAL_20 ((unsigned) (PER_OSF4))
+ #define XLAT_STR_20 STRINGIFY(PER_OSF4)
  XLAT(PER_HPUX),
+ #define XLAT_VAL_21 ((unsigned) (PER_HPUX))
+ #define XLAT_STR_21 STRINGIFY(PER_HPUX)
  XLAT(PER_MASK),
+ #define XLAT_VAL_22 ((unsigned) (PER_MASK))
+ #define XLAT_STR_22 STRINGIFY(PER_MASK)
 };
 static
 const struct xlat personality_types[1] = { {
  .data = personality_types_xdata,
  .size = ARRAY_SIZE(personality_types_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

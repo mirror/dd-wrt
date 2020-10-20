@@ -16,4 +16,5 @@ AC_CHECK_TYPES([struct input_mask],
 [AC_CHECK_MEMBERS([struct input_mask.codes_ptr],,,[AC_INCLUDES_DEFAULT
 #include <linux/input.h>])],,[AC_INCLUDES_DEFAULT
 #include <linux/input.h>])
+],[],[AC_INCLUDES_DEFAULT
 ])])

@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data nf_osf_msg_types_xdata[] = {
  [OSF_MSG_ADD] = XLAT(OSF_MSG_ADD),
+ #define XLAT_VAL_0 ((unsigned) (OSF_MSG_ADD))
+ #define XLAT_STR_0 STRINGIFY(OSF_MSG_ADD)
  [OSF_MSG_REMOVE] = XLAT(OSF_MSG_REMOVE),
+ #define XLAT_VAL_1 ((unsigned) (OSF_MSG_REMOVE))
+ #define XLAT_STR_1 STRINGIFY(OSF_MSG_REMOVE)
 };
 static
 const struct xlat nf_osf_msg_types[1] = { {
  .data = nf_osf_msg_types_xdata,
  .size = ARRAY_SIZE(nf_osf_msg_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -60,12 +60,24 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 static const struct xlat_data mlockall_flags_xdata[] = {
 #if defined __alpha__ || defined __powerpc__ || defined __powerpc64__ || defined __sparc__
  XLAT(MCL_CURRENT),
+ #define XLAT_VAL_0 ((unsigned) (MCL_CURRENT))
+ #define XLAT_STR_0 STRINGIFY(MCL_CURRENT)
  XLAT(MCL_FUTURE),
+ #define XLAT_VAL_1 ((unsigned) (MCL_FUTURE))
+ #define XLAT_STR_1 STRINGIFY(MCL_FUTURE)
  XLAT(MCL_ONFAULT),
+ #define XLAT_VAL_2 ((unsigned) (MCL_ONFAULT))
+ #define XLAT_STR_2 STRINGIFY(MCL_ONFAULT)
 #else
  XLAT(MCL_CURRENT),
+ #define XLAT_VAL_3 ((unsigned) (MCL_CURRENT))
+ #define XLAT_STR_3 STRINGIFY(MCL_CURRENT)
  XLAT(MCL_FUTURE),
+ #define XLAT_VAL_4 ((unsigned) (MCL_FUTURE))
+ #define XLAT_STR_4 STRINGIFY(MCL_FUTURE)
  XLAT(MCL_ONFAULT),
+ #define XLAT_VAL_5 ((unsigned) (MCL_ONFAULT))
+ #define XLAT_STR_5 STRINGIFY(MCL_ONFAULT)
 #endif
 };
 static
@@ -73,8 +85,60 @@ const struct xlat mlockall_flags[1] = { {
  .data = mlockall_flags_xdata,
  .size = ARRAY_SIZE(mlockall_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

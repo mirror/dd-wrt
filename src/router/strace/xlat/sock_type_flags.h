@@ -15,9 +15,13 @@
 static const struct xlat_data sock_type_flags_xdata[] = {
 #if defined(SOCK_CLOEXEC) || (defined(HAVE_DECL_SOCK_CLOEXEC) && HAVE_DECL_SOCK_CLOEXEC)
   XLAT(SOCK_CLOEXEC),
+ #define XLAT_VAL_0 ((unsigned) (SOCK_CLOEXEC))
+ #define XLAT_STR_0 STRINGIFY(SOCK_CLOEXEC)
 #endif
 #if defined(SOCK_NONBLOCK) || (defined(HAVE_DECL_SOCK_NONBLOCK) && HAVE_DECL_SOCK_NONBLOCK)
   XLAT(SOCK_NONBLOCK),
+ #define XLAT_VAL_1 ((unsigned) (SOCK_NONBLOCK))
+ #define XLAT_STR_1 STRINGIFY(SOCK_NONBLOCK)
 #endif
 };
 static
@@ -25,8 +29,28 @@ const struct xlat sock_type_flags[1] = { {
  .data = sock_type_flags_xdata,
  .size = ARRAY_SIZE(sock_type_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

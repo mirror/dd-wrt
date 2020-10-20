@@ -3,6 +3,7 @@
 # Check -e fault= syntax.
 #
 # Copyright (c) 2016-2018 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2017-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -72,6 +73,27 @@ for arg in chdir:42 \!chdir:42 \
 	   chdir:syscall=-42 \
 	   chdir:syscall=42 \
 	   chdir:syscall=gettid:syscall=gettid \
+	   chdir:when=. \
+	   chdir:when=.+ \
+	   chdir:when=..+ \
+	   chdir:when=+ \
+	   chdir:when=++ \
+	   chdir:when=10. \
+	   chdir:when=11.12 \
+	   chdir:when=13.14+ \
+	   chdir:when=15.. \
+	   chdir:when=16... \
+	   chdir:when=17...18 \
+	   chdir:when=.19 \
+	   chdir:when=..20 \
+	   chdir:when=..21+ \
+	   chdir:when=..22+3 \
+	   chdir:when=24..23 \
+	   chdir:when=25..26+0 \
+	   chdir:when=27..65535 \
+	   chdir:when=28..65535+ \
+	   chdir:when=65535..65535 \
+	   chdir:when=65535..65535+ \
 	   ; do
 	$STRACE -e fault="$arg" true 2> "$LOG" &&
 		fail_with "$arg"

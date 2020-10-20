@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2019 The strace developers.
+ * Copyright (c) 1999-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -17,37 +17,6 @@ SYS_FUNC(close)
 	printfd(tcp, tcp->u_arg[0]);
 
 	return RVAL_DECODED;
-}
-
-SYS_FUNC(dup)
-{
-	printfd(tcp, tcp->u_arg[0]);
-
-	return RVAL_DECODED | RVAL_FD;
-}
-
-static int
-do_dup2(struct tcb *tcp, int flags_arg)
-{
-	printfd(tcp, tcp->u_arg[0]);
-	tprints(", ");
-	printfd(tcp, tcp->u_arg[1]);
-	if (flags_arg >= 0) {
-		tprints(", ");
-		printflags(open_mode_flags, tcp->u_arg[flags_arg], "O_???");
-	}
-
-	return RVAL_DECODED | RVAL_FD;
-}
-
-SYS_FUNC(dup2)
-{
-	return do_dup2(tcp, -1);
-}
-
-SYS_FUNC(dup3)
-{
-	return do_dup2(tcp, 2);
 }
 
 static int

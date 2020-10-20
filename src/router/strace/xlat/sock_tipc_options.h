@@ -98,25 +98,149 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_tipc_options_xdata[] = {
  XLAT(TIPC_IMPORTANCE),
+ #define XLAT_VAL_0 ((unsigned) (TIPC_IMPORTANCE))
+ #define XLAT_STR_0 STRINGIFY(TIPC_IMPORTANCE)
  XLAT(TIPC_SRC_DROPPABLE),
+ #define XLAT_VAL_1 ((unsigned) (TIPC_SRC_DROPPABLE))
+ #define XLAT_STR_1 STRINGIFY(TIPC_SRC_DROPPABLE)
  XLAT(TIPC_DEST_DROPPABLE),
+ #define XLAT_VAL_2 ((unsigned) (TIPC_DEST_DROPPABLE))
+ #define XLAT_STR_2 STRINGIFY(TIPC_DEST_DROPPABLE)
  XLAT(TIPC_CONN_TIMEOUT),
+ #define XLAT_VAL_3 ((unsigned) (TIPC_CONN_TIMEOUT))
+ #define XLAT_STR_3 STRINGIFY(TIPC_CONN_TIMEOUT)
  XLAT(TIPC_NODE_RECVQ_DEPTH),
+ #define XLAT_VAL_4 ((unsigned) (TIPC_NODE_RECVQ_DEPTH))
+ #define XLAT_STR_4 STRINGIFY(TIPC_NODE_RECVQ_DEPTH)
  XLAT(TIPC_SOCK_RECVQ_DEPTH),
+ #define XLAT_VAL_5 ((unsigned) (TIPC_SOCK_RECVQ_DEPTH))
+ #define XLAT_STR_5 STRINGIFY(TIPC_SOCK_RECVQ_DEPTH)
  XLAT(TIPC_MCAST_BROADCAST),
+ #define XLAT_VAL_6 ((unsigned) (TIPC_MCAST_BROADCAST))
+ #define XLAT_STR_6 STRINGIFY(TIPC_MCAST_BROADCAST)
  XLAT(TIPC_MCAST_REPLICAST),
+ #define XLAT_VAL_7 ((unsigned) (TIPC_MCAST_REPLICAST))
+ #define XLAT_STR_7 STRINGIFY(TIPC_MCAST_REPLICAST)
  XLAT(TIPC_GROUP_JOIN),
+ #define XLAT_VAL_8 ((unsigned) (TIPC_GROUP_JOIN))
+ #define XLAT_STR_8 STRINGIFY(TIPC_GROUP_JOIN)
  XLAT(TIPC_GROUP_LEAVE),
+ #define XLAT_VAL_9 ((unsigned) (TIPC_GROUP_LEAVE))
+ #define XLAT_STR_9 STRINGIFY(TIPC_GROUP_LEAVE)
  XLAT(TIPC_SOCK_RECVQ_USED),
+ #define XLAT_VAL_10 ((unsigned) (TIPC_SOCK_RECVQ_USED))
+ #define XLAT_STR_10 STRINGIFY(TIPC_SOCK_RECVQ_USED)
  XLAT(TIPC_NODELAY),
+ #define XLAT_VAL_11 ((unsigned) (TIPC_NODELAY))
+ #define XLAT_STR_11 STRINGIFY(TIPC_NODELAY)
 };
 static
 const struct xlat sock_tipc_options[1] = { {
  .data = sock_tipc_options_xdata,
  .size = ARRAY_SIZE(sock_tipc_options_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

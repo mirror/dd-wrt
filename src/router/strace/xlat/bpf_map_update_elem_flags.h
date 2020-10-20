@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_map_update_elem_flags_xdata[] = {
  [BPF_ANY] = XLAT(BPF_ANY),
+ #define XLAT_VAL_0 ((unsigned) (BPF_ANY))
+ #define XLAT_STR_0 STRINGIFY(BPF_ANY)
  [BPF_NOEXIST] = XLAT(BPF_NOEXIST),
+ #define XLAT_VAL_1 ((unsigned) (BPF_NOEXIST))
+ #define XLAT_STR_1 STRINGIFY(BPF_NOEXIST)
  [BPF_EXIST] = XLAT(BPF_EXIST),
+ #define XLAT_VAL_2 ((unsigned) (BPF_EXIST))
+ #define XLAT_STR_2 STRINGIFY(BPF_EXIST)
  [BPF_F_LOCK] = XLAT(BPF_F_LOCK),
+ #define XLAT_VAL_3 ((unsigned) (BPF_F_LOCK))
+ #define XLAT_STR_3 STRINGIFY(BPF_F_LOCK)
 };
 static
 const struct xlat bpf_map_update_elem_flags[1] = { {
  .data = bpf_map_update_elem_flags_xdata,
  .size = ARRAY_SIZE(bpf_map_update_elem_flags_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

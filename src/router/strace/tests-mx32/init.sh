@@ -189,7 +189,7 @@ match_diff()
 # dump both files and fail with ERROR_MESSAGE.
 match_grep()
 {
-	local output patterns error pattern cnt failed=
+	local output patterns error pattern cnt failed= rc negated
 	if [ $# -eq 0 ]; then
 		output="$LOG"
 	else
@@ -211,7 +211,15 @@ match_grep()
 
 	cnt=1
 	while read -r pattern; do
-		LC_ALL=C grep -E -x -e "$pattern" < "$output" > /dev/null || {
+		negated=0
+		[ "x${pattern#!}" = "x${pattern}" ] ||
+			negated=1
+
+		rc="$negated"
+		LC_ALL=C grep -E -x -e "${pattern#!}" < "$output" > /dev/null ||
+			rc="$((!negated))"
+
+		[ 0 = "$rc" ] || {
 			test -n "$failed" || {
 				echo 'Failed patterns of expected output:'
 				failed=1
@@ -219,7 +227,8 @@ match_grep()
 			printf '#%d: %s\n' "$cnt" "$pattern"
 		}
 		cnt=$(($cnt + 1))
-	done < "$patterns"
+	done < "$patterns" ||
+		fail_ "Error reading patterns from \"$patterns\""
 	test -z "$failed" || {
 		echo 'Actual output:'
 		cat < "$output"
@@ -231,7 +240,7 @@ match_grep()
 run_strace_match_diff()
 {
 	args="$*"
-	[ -n "$args" -a -z "${args##*-e trace=*}" ] ||
+	[ -n "$args" -a \( -z "${args##*-e trace=*}" -o -z "${args##*--trace=*}" \) ] ||
 		set -- -e trace="$NAME" "$@"
 	run_prog > /dev/null
 	run_strace "$@" $args > "$EXP"
@@ -242,7 +251,7 @@ run_strace_match_diff()
 run_strace_match_grep()
 {
 	args="$*"
-	[ -n "$args" -a -z "${args##*-e trace=*}" ] ||
+	[ -n "$args" -a \( -z "${args##*-e trace=*}" -o -z "${args##*--trace=*}" \) ] ||
 		set -- -e trace="$NAME" "$@"
 	run_prog > /dev/null
 	run_strace "$@" $args > "$EXP"
@@ -281,7 +290,7 @@ require_min_nproc()
 	local min_nproc
 	min_nproc="$1"; shift
 
-	check_prog
+	check_prog nproc
 	local nproc
 	nproc="$(nproc)"
 
@@ -339,6 +348,13 @@ test_pure_prog_set()
 
 		try_run_prog "../$t" || continue
 		run_strace $prog_args "$@" "../$t" > "$expfile"
+
+		case "$STRACE_ARCH:$MIPS_ABI:$NAME" in
+			mips:o32:*creds)
+				sed -i '/^prctl(PR_GET_FP_MODE)  *= 0$/d' "$LOG"
+				;;
+		esac
+
 		match_diff "$LOG" "$expfile"
 	} < /dev/null; done
 }
@@ -369,6 +385,36 @@ test_trace_expr()
 test_prog_set()
 {
 	test_pure_prog_set "$@" < "$srcdir/$NAME.in"
+}
+
+test_pidns_run_strace()
+{
+	local parent_pid init_pid
+
+	check_prog tail
+	check_prog cut
+	check_prog grep
+
+	run_prog > /dev/null
+	run_strace --pidns-translation -f $@ $args > "$EXP"
+
+	# filter out logs made by the parent or init process of the pidns test
+	parent_pid="$(tail -n 2 $LOG | head -n 1 | cut -d' ' -f1)"
+	init_pid="$(tail -n 1 $LOG | cut -d' ' -f1)"
+	grep -E -v "^($parent_pid|$init_pid) " "$LOG" > "$OUT"
+	match_diff "$OUT" "$EXP"
+}
+
+test_pidns()
+{
+	check_prog unshare
+	unshare -Urpf true || framework_skip_ "unshare -Urpf true failed"
+
+	test_pidns_run_strace "$@"
+
+	# test PID translation when /proc is mounted from an other namespace
+	STRACE="unshare -Urpf $STRACE"
+	test_pidns_run_strace "$@"
 }
 
 check_prog cat
@@ -412,7 +458,7 @@ fi
 : "${STRACE_EXE:=$STRACE}"
 export STRACE_EXE
 
-: "${TIMEOUT_DURATION:=600}"
+: "${TIMEOUT_DURATION:=1500}"
 : "${SLEEP_A_BIT:=sleep 1}"
 
 [ -z "${VERBOSE-}" ] ||

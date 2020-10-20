@@ -2,13 +2,15 @@
 #
 # Check -T option.
 #
-# Copyright (c) 2016-2018 The strace developers.
+# Copyright (c) 2016-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 . "${srcdir=.}/init.sh"
 
+T_opt="${1:--T}"
+
 run_prog ../sleep 0
-run_strace -a24 -T -enanosleep ../sleep 1
+run_strace -a24 "${T_opt}" -enanosleep ../sleep 1
 match_grep

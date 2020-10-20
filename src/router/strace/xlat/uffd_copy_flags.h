@@ -3,6 +3,20 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(UFFDIO_COPY_MODE_DONTWAKE) || (defined(HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE) && HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((UFFDIO_COPY_MODE_DONTWAKE) == ((1ULL<<0)), "UFFDIO_COPY_MODE_DONTWAKE != (1ULL<<0)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define UFFDIO_COPY_MODE_DONTWAKE (1ULL<<0)
+#endif
+#if defined(UFFDIO_COPY_MODE_WP) || (defined(HAVE_DECL_UFFDIO_COPY_MODE_WP) && HAVE_DECL_UFFDIO_COPY_MODE_WP)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((UFFDIO_COPY_MODE_WP) == ((1ULL<<1)), "UFFDIO_COPY_MODE_WP != (1ULL<<1)");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define UFFDIO_COPY_MODE_WP (1ULL<<1)
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -13,17 +27,40 @@
 # else
 
 static const struct xlat_data uffd_copy_flags_xdata[] = {
-#if defined(UFFDIO_COPY_MODE_DONTWAKE) || (defined(HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE) && HAVE_DECL_UFFDIO_COPY_MODE_DONTWAKE)
-  XLAT_TYPE(uint64_t, UFFDIO_COPY_MODE_DONTWAKE),
-#endif
+ XLAT_TYPE(uint64_t, UFFDIO_COPY_MODE_DONTWAKE),
+ #define XLAT_VAL_0 ((uint64_t) (UFFDIO_COPY_MODE_DONTWAKE))
+ #define XLAT_STR_0 STRINGIFY(UFFDIO_COPY_MODE_DONTWAKE)
+ XLAT_TYPE(uint64_t, UFFDIO_COPY_MODE_WP),
+ #define XLAT_VAL_1 ((uint64_t) (UFFDIO_COPY_MODE_WP))
+ #define XLAT_STR_1 STRINGIFY(UFFDIO_COPY_MODE_WP)
 };
 static
 const struct xlat uffd_copy_flags[1] = { {
  .data = uffd_copy_flags_xdata,
  .size = ARRAY_SIZE(uffd_copy_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

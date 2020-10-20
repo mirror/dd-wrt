@@ -3,6 +3,13 @@
 #include "gcc_compat.h"
 #include "static_assert.h"
 
+#if defined(CLONE_NEWTIME) || (defined(HAVE_DECL_CLONE_NEWTIME) && HAVE_DECL_CLONE_NEWTIME)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((CLONE_NEWTIME) == (0x00000080), "CLONE_NEWTIME != 0x00000080");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define CLONE_NEWTIME 0x00000080
+#endif
 #if defined(CLONE_NEWNS) || (defined(HAVE_DECL_CLONE_NEWNS) && HAVE_DECL_CLONE_NEWNS)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((CLONE_NEWNS) == (0x00020000), "CLONE_NEWNS != 0x00020000");
@@ -59,20 +66,115 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data setns_types_xdata[] = {
  XLAT(0),
+ #define XLAT_VAL_0 ((unsigned) (0))
+ #define XLAT_STR_0 STRINGIFY(0)
+ XLAT(CLONE_NEWTIME),
+ #define XLAT_VAL_1 ((unsigned) (CLONE_NEWTIME))
+ #define XLAT_STR_1 STRINGIFY(CLONE_NEWTIME)
  XLAT(CLONE_NEWNS),
+ #define XLAT_VAL_2 ((unsigned) (CLONE_NEWNS))
+ #define XLAT_STR_2 STRINGIFY(CLONE_NEWNS)
  XLAT(CLONE_NEWCGROUP),
+ #define XLAT_VAL_3 ((unsigned) (CLONE_NEWCGROUP))
+ #define XLAT_STR_3 STRINGIFY(CLONE_NEWCGROUP)
  XLAT(CLONE_NEWUTS),
+ #define XLAT_VAL_4 ((unsigned) (CLONE_NEWUTS))
+ #define XLAT_STR_4 STRINGIFY(CLONE_NEWUTS)
  XLAT(CLONE_NEWIPC),
+ #define XLAT_VAL_5 ((unsigned) (CLONE_NEWIPC))
+ #define XLAT_STR_5 STRINGIFY(CLONE_NEWIPC)
  XLAT(CLONE_NEWUSER),
+ #define XLAT_VAL_6 ((unsigned) (CLONE_NEWUSER))
+ #define XLAT_STR_6 STRINGIFY(CLONE_NEWUSER)
  XLAT(CLONE_NEWPID),
+ #define XLAT_VAL_7 ((unsigned) (CLONE_NEWPID))
+ #define XLAT_STR_7 STRINGIFY(CLONE_NEWPID)
  XLAT(CLONE_NEWNET),
+ #define XLAT_VAL_8 ((unsigned) (CLONE_NEWNET))
+ #define XLAT_STR_8 STRINGIFY(CLONE_NEWNET)
 };
 const struct xlat setns_types[1] = { {
  .data = setns_types_xdata,
  .size = ARRAY_SIZE(setns_types_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

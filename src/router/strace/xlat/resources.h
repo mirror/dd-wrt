@@ -236,51 +236,365 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data resources_xdata[] = {
  [RLIMIT_CPU] = XLAT(RLIMIT_CPU),
+ #define XLAT_VAL_0 ((unsigned) (RLIMIT_CPU))
+ #define XLAT_STR_0 STRINGIFY(RLIMIT_CPU)
  [RLIMIT_FSIZE] = XLAT(RLIMIT_FSIZE),
+ #define XLAT_VAL_1 ((unsigned) (RLIMIT_FSIZE))
+ #define XLAT_STR_1 STRINGIFY(RLIMIT_FSIZE)
  [RLIMIT_DATA] = XLAT(RLIMIT_DATA),
+ #define XLAT_VAL_2 ((unsigned) (RLIMIT_DATA))
+ #define XLAT_STR_2 STRINGIFY(RLIMIT_DATA)
  [RLIMIT_STACK] = XLAT(RLIMIT_STACK),
+ #define XLAT_VAL_3 ((unsigned) (RLIMIT_STACK))
+ #define XLAT_STR_3 STRINGIFY(RLIMIT_STACK)
  [RLIMIT_CORE] = XLAT(RLIMIT_CORE),
+ #define XLAT_VAL_4 ((unsigned) (RLIMIT_CORE))
+ #define XLAT_STR_4 STRINGIFY(RLIMIT_CORE)
 
 #if defined(__alpha__)
  [RLIMIT_RSS] = XLAT(RLIMIT_RSS),
+ #define XLAT_VAL_5 ((unsigned) (RLIMIT_RSS))
+ #define XLAT_STR_5 STRINGIFY(RLIMIT_RSS)
  [RLIMIT_NOFILE] = XLAT(RLIMIT_NOFILE),
+ #define XLAT_VAL_6 ((unsigned) (RLIMIT_NOFILE))
+ #define XLAT_STR_6 STRINGIFY(RLIMIT_NOFILE)
  [RLIMIT_AS] = XLAT(RLIMIT_AS),
+ #define XLAT_VAL_7 ((unsigned) (RLIMIT_AS))
+ #define XLAT_STR_7 STRINGIFY(RLIMIT_AS)
  [RLIMIT_NPROC] = XLAT(RLIMIT_NPROC),
+ #define XLAT_VAL_8 ((unsigned) (RLIMIT_NPROC))
+ #define XLAT_STR_8 STRINGIFY(RLIMIT_NPROC)
  [RLIMIT_MEMLOCK] = XLAT(RLIMIT_MEMLOCK),
+ #define XLAT_VAL_9 ((unsigned) (RLIMIT_MEMLOCK))
+ #define XLAT_STR_9 STRINGIFY(RLIMIT_MEMLOCK)
 #elif defined(__mips__)
  [RLIMIT_NOFILE] = XLAT(RLIMIT_NOFILE),
+ #define XLAT_VAL_10 ((unsigned) (RLIMIT_NOFILE))
+ #define XLAT_STR_10 STRINGIFY(RLIMIT_NOFILE)
  [RLIMIT_AS] = XLAT(RLIMIT_AS),
+ #define XLAT_VAL_11 ((unsigned) (RLIMIT_AS))
+ #define XLAT_STR_11 STRINGIFY(RLIMIT_AS)
  [RLIMIT_RSS] = XLAT(RLIMIT_RSS),
+ #define XLAT_VAL_12 ((unsigned) (RLIMIT_RSS))
+ #define XLAT_STR_12 STRINGIFY(RLIMIT_RSS)
  [RLIMIT_NPROC] = XLAT(RLIMIT_NPROC),
+ #define XLAT_VAL_13 ((unsigned) (RLIMIT_NPROC))
+ #define XLAT_STR_13 STRINGIFY(RLIMIT_NPROC)
  [RLIMIT_MEMLOCK] = XLAT(RLIMIT_MEMLOCK),
+ #define XLAT_VAL_14 ((unsigned) (RLIMIT_MEMLOCK))
+ #define XLAT_STR_14 STRINGIFY(RLIMIT_MEMLOCK)
 #elif defined(__sparc__)
  [RLIMIT_RSS] = XLAT(RLIMIT_RSS),
+ #define XLAT_VAL_15 ((unsigned) (RLIMIT_RSS))
+ #define XLAT_STR_15 STRINGIFY(RLIMIT_RSS)
  [RLIMIT_NOFILE] = XLAT(RLIMIT_NOFILE),
+ #define XLAT_VAL_16 ((unsigned) (RLIMIT_NOFILE))
+ #define XLAT_STR_16 STRINGIFY(RLIMIT_NOFILE)
  [RLIMIT_NPROC] = XLAT(RLIMIT_NPROC),
+ #define XLAT_VAL_17 ((unsigned) (RLIMIT_NPROC))
+ #define XLAT_STR_17 STRINGIFY(RLIMIT_NPROC)
  [RLIMIT_MEMLOCK] = XLAT(RLIMIT_MEMLOCK),
+ #define XLAT_VAL_18 ((unsigned) (RLIMIT_MEMLOCK))
+ #define XLAT_STR_18 STRINGIFY(RLIMIT_MEMLOCK)
  [RLIMIT_AS] = XLAT(RLIMIT_AS),
+ #define XLAT_VAL_19 ((unsigned) (RLIMIT_AS))
+ #define XLAT_STR_19 STRINGIFY(RLIMIT_AS)
 #else
  [RLIMIT_RSS] = XLAT(RLIMIT_RSS),
+ #define XLAT_VAL_20 ((unsigned) (RLIMIT_RSS))
+ #define XLAT_STR_20 STRINGIFY(RLIMIT_RSS)
  [RLIMIT_NPROC] = XLAT(RLIMIT_NPROC),
+ #define XLAT_VAL_21 ((unsigned) (RLIMIT_NPROC))
+ #define XLAT_STR_21 STRINGIFY(RLIMIT_NPROC)
  [RLIMIT_NOFILE] = XLAT(RLIMIT_NOFILE),
+ #define XLAT_VAL_22 ((unsigned) (RLIMIT_NOFILE))
+ #define XLAT_STR_22 STRINGIFY(RLIMIT_NOFILE)
  [RLIMIT_MEMLOCK] = XLAT(RLIMIT_MEMLOCK),
+ #define XLAT_VAL_23 ((unsigned) (RLIMIT_MEMLOCK))
+ #define XLAT_STR_23 STRINGIFY(RLIMIT_MEMLOCK)
  [RLIMIT_AS] = XLAT(RLIMIT_AS),
+ #define XLAT_VAL_24 ((unsigned) (RLIMIT_AS))
+ #define XLAT_STR_24 STRINGIFY(RLIMIT_AS)
 #endif
 
  [RLIMIT_LOCKS] = XLAT(RLIMIT_LOCKS),
+ #define XLAT_VAL_25 ((unsigned) (RLIMIT_LOCKS))
+ #define XLAT_STR_25 STRINGIFY(RLIMIT_LOCKS)
  [RLIMIT_SIGPENDING] = XLAT(RLIMIT_SIGPENDING),
+ #define XLAT_VAL_26 ((unsigned) (RLIMIT_SIGPENDING))
+ #define XLAT_STR_26 STRINGIFY(RLIMIT_SIGPENDING)
  [RLIMIT_MSGQUEUE] = XLAT(RLIMIT_MSGQUEUE),
+ #define XLAT_VAL_27 ((unsigned) (RLIMIT_MSGQUEUE))
+ #define XLAT_STR_27 STRINGIFY(RLIMIT_MSGQUEUE)
  [RLIMIT_NICE] = XLAT(RLIMIT_NICE),
+ #define XLAT_VAL_28 ((unsigned) (RLIMIT_NICE))
+ #define XLAT_STR_28 STRINGIFY(RLIMIT_NICE)
  [RLIMIT_RTPRIO] = XLAT(RLIMIT_RTPRIO),
+ #define XLAT_VAL_29 ((unsigned) (RLIMIT_RTPRIO))
+ #define XLAT_STR_29 STRINGIFY(RLIMIT_RTPRIO)
  [RLIMIT_RTTIME] = XLAT(RLIMIT_RTTIME),
+ #define XLAT_VAL_30 ((unsigned) (RLIMIT_RTTIME))
+ #define XLAT_STR_30 STRINGIFY(RLIMIT_RTTIME)
 };
 static
 const struct xlat resources[1] = { {
  .data = resources_xdata,
  .size = ARRAY_SIZE(resources_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+#  ifdef XLAT_VAL_23
+  | XLAT_VAL_23
+#  endif
+#  ifdef XLAT_VAL_24
+  | XLAT_VAL_24
+#  endif
+#  ifdef XLAT_VAL_25
+  | XLAT_VAL_25
+#  endif
+#  ifdef XLAT_VAL_26
+  | XLAT_VAL_26
+#  endif
+#  ifdef XLAT_VAL_27
+  | XLAT_VAL_27
+#  endif
+#  ifdef XLAT_VAL_28
+  | XLAT_VAL_28
+#  endif
+#  ifdef XLAT_VAL_29
+  | XLAT_VAL_29
+#  endif
+#  ifdef XLAT_VAL_30
+  | XLAT_VAL_30
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+#  ifdef XLAT_STR_23
+  + sizeof(XLAT_STR_23)
+#  endif
+#  ifdef XLAT_STR_24
+  + sizeof(XLAT_STR_24)
+#  endif
+#  ifdef XLAT_STR_25
+  + sizeof(XLAT_STR_25)
+#  endif
+#  ifdef XLAT_STR_26
+  + sizeof(XLAT_STR_26)
+#  endif
+#  ifdef XLAT_STR_27
+  + sizeof(XLAT_STR_27)
+#  endif
+#  ifdef XLAT_STR_28
+  + sizeof(XLAT_STR_28)
+#  endif
+#  ifdef XLAT_STR_29
+  + sizeof(XLAT_STR_29)
+#  endif
+#  ifdef XLAT_STR_30
+  + sizeof(XLAT_STR_30)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
+#  undef XLAT_STR_23
+#  undef XLAT_VAL_23
+#  undef XLAT_STR_24
+#  undef XLAT_VAL_24
+#  undef XLAT_STR_25
+#  undef XLAT_VAL_25
+#  undef XLAT_STR_26
+#  undef XLAT_VAL_26
+#  undef XLAT_STR_27
+#  undef XLAT_VAL_27
+#  undef XLAT_STR_28
+#  undef XLAT_VAL_28
+#  undef XLAT_STR_29
+#  undef XLAT_VAL_29
+#  undef XLAT_STR_30
+#  undef XLAT_VAL_30
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

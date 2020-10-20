@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -65,11 +65,6 @@ do_call(kernel_ulong_t fd, kernel_ulong_t flags, const char *flags_str,
 
 struct strval {
 	kernel_ulong_t val;
-	const char *str;
-};
-
-struct strval64 {
-	uint64_t val;
 	const char *str;
 };
 
@@ -150,15 +145,16 @@ main(void)
 			"FAN_OPEN_PERM|"
 			"FAN_ACCESS_PERM|"
 			"FAN_OPEN_EXEC_PERM|"
+			"FAN_DIR_MODIFY|"
 			"FAN_ONDIR|"
 			"FAN_EVENT_ON_CHILD|"
-			"0xdeadfeedb7f8a000"
+			"0xdeadfeedb7f0a000"
 # endif
 # if XLAT_VERBOSE
 			" */"
 # endif
 			},
-		{ ARG_ULL_STR(0xffffffffb7f8a000)
+		{ ARG_ULL_STR(0xffffffffb7f0a000)
 # if !XLAT_RAW
 			" /* FAN_??? */"
 # endif

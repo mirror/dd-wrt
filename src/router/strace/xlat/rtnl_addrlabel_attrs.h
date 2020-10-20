@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data rtnl_addrlabel_attrs_xdata[] = {
  [IFAL_ADDRESS] = XLAT(IFAL_ADDRESS),
+ #define XLAT_VAL_0 ((unsigned) (IFAL_ADDRESS))
+ #define XLAT_STR_0 STRINGIFY(IFAL_ADDRESS)
  [IFAL_LABEL] = XLAT(IFAL_LABEL),
+ #define XLAT_VAL_1 ((unsigned) (IFAL_LABEL))
+ #define XLAT_STR_1 STRINGIFY(IFAL_LABEL)
 };
 static
 const struct xlat rtnl_addrlabel_attrs[1] = { {
  .data = rtnl_addrlabel_attrs_xdata,
  .size = ARRAY_SIZE(rtnl_addrlabel_attrs_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

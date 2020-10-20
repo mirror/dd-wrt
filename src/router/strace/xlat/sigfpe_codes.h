@@ -84,33 +84,65 @@ extern const struct xlat sigfpe_codes[];
 
 static const struct xlat_data sigfpe_codes_xdata[] = {
  XLAT(FPE_INTDIV),
+ #define XLAT_VAL_0 ((unsigned) (FPE_INTDIV))
+ #define XLAT_STR_0 STRINGIFY(FPE_INTDIV)
  XLAT(FPE_INTOVF),
+ #define XLAT_VAL_1 ((unsigned) (FPE_INTOVF))
+ #define XLAT_STR_1 STRINGIFY(FPE_INTOVF)
  XLAT(FPE_FLTDIV),
+ #define XLAT_VAL_2 ((unsigned) (FPE_FLTDIV))
+ #define XLAT_STR_2 STRINGIFY(FPE_FLTDIV)
  XLAT(FPE_FLTOVF),
+ #define XLAT_VAL_3 ((unsigned) (FPE_FLTOVF))
+ #define XLAT_STR_3 STRINGIFY(FPE_FLTOVF)
  XLAT(FPE_FLTUND),
+ #define XLAT_VAL_4 ((unsigned) (FPE_FLTUND))
+ #define XLAT_STR_4 STRINGIFY(FPE_FLTUND)
  XLAT(FPE_FLTRES),
+ #define XLAT_VAL_5 ((unsigned) (FPE_FLTRES))
+ #define XLAT_STR_5 STRINGIFY(FPE_FLTRES)
  XLAT(FPE_FLTINV),
+ #define XLAT_VAL_6 ((unsigned) (FPE_FLTINV))
+ #define XLAT_STR_6 STRINGIFY(FPE_FLTINV)
  XLAT(FPE_FLTSUB),
+ #define XLAT_VAL_7 ((unsigned) (FPE_FLTSUB))
+ #define XLAT_STR_7 STRINGIFY(FPE_FLTSUB)
 #if defined(FPE_MDAOVF) || (defined(HAVE_DECL_FPE_MDAOVF) && HAVE_DECL_FPE_MDAOVF)
   XLAT(FPE_MDAOVF),
+ #define XLAT_VAL_8 ((unsigned) (FPE_MDAOVF))
+ #define XLAT_STR_8 STRINGIFY(FPE_MDAOVF)
 #endif
 #if defined(__FPE_DECOVF) || (defined(HAVE_DECL___FPE_DECOVF) && HAVE_DECL___FPE_DECOVF)
   XLAT(__FPE_DECOVF),
+ #define XLAT_VAL_9 ((unsigned) (__FPE_DECOVF))
+ #define XLAT_STR_9 STRINGIFY(__FPE_DECOVF)
 #endif
 #if defined(__FPE_DECDIV) || (defined(HAVE_DECL___FPE_DECDIV) && HAVE_DECL___FPE_DECDIV)
   XLAT(__FPE_DECDIV),
+ #define XLAT_VAL_10 ((unsigned) (__FPE_DECDIV))
+ #define XLAT_STR_10 STRINGIFY(__FPE_DECDIV)
 #endif
 #if defined(__FPE_DECERR) || (defined(HAVE_DECL___FPE_DECERR) && HAVE_DECL___FPE_DECERR)
   XLAT(__FPE_DECERR),
+ #define XLAT_VAL_11 ((unsigned) (__FPE_DECERR))
+ #define XLAT_STR_11 STRINGIFY(__FPE_DECERR)
 #endif
 #if defined(__FPE_INVASC) || (defined(HAVE_DECL___FPE_INVASC) && HAVE_DECL___FPE_INVASC)
   XLAT(__FPE_INVASC),
+ #define XLAT_VAL_12 ((unsigned) (__FPE_INVASC))
+ #define XLAT_STR_12 STRINGIFY(__FPE_INVASC)
 #endif
 #if defined(__FPE_INVDEC) || (defined(HAVE_DECL___FPE_INVDEC) && HAVE_DECL___FPE_INVDEC)
   XLAT(__FPE_INVDEC),
+ #define XLAT_VAL_13 ((unsigned) (__FPE_INVDEC))
+ #define XLAT_STR_13 STRINGIFY(__FPE_INVDEC)
 #endif
  XLAT(FPE_FLTUNK),
+ #define XLAT_VAL_14 ((unsigned) (FPE_FLTUNK))
+ #define XLAT_STR_14 STRINGIFY(FPE_FLTUNK)
  XLAT(FPE_CONDTRAP),
+ #define XLAT_VAL_15 ((unsigned) (FPE_CONDTRAP))
+ #define XLAT_STR_15 STRINGIFY(FPE_CONDTRAP)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -119,8 +151,140 @@ const struct xlat sigfpe_codes[1] = { {
  .data = sigfpe_codes_xdata,
  .size = ARRAY_SIZE(sigfpe_codes_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

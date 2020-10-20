@@ -105,26 +105,160 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data adjtimex_modes_xdata[] = {
  XLAT(ADJ_OFFSET_SS_READ),
+ #define XLAT_VAL_0 ((unsigned) (ADJ_OFFSET_SS_READ))
+ #define XLAT_STR_0 STRINGIFY(ADJ_OFFSET_SS_READ)
  XLAT(ADJ_OFFSET_SINGLESHOT),
+ #define XLAT_VAL_1 ((unsigned) (ADJ_OFFSET_SINGLESHOT))
+ #define XLAT_STR_1 STRINGIFY(ADJ_OFFSET_SINGLESHOT)
  XLAT(ADJ_OFFSET),
+ #define XLAT_VAL_2 ((unsigned) (ADJ_OFFSET))
+ #define XLAT_STR_2 STRINGIFY(ADJ_OFFSET)
  XLAT(ADJ_FREQUENCY),
+ #define XLAT_VAL_3 ((unsigned) (ADJ_FREQUENCY))
+ #define XLAT_STR_3 STRINGIFY(ADJ_FREQUENCY)
  XLAT(ADJ_MAXERROR),
+ #define XLAT_VAL_4 ((unsigned) (ADJ_MAXERROR))
+ #define XLAT_STR_4 STRINGIFY(ADJ_MAXERROR)
  XLAT(ADJ_ESTERROR),
+ #define XLAT_VAL_5 ((unsigned) (ADJ_ESTERROR))
+ #define XLAT_STR_5 STRINGIFY(ADJ_ESTERROR)
  XLAT(ADJ_STATUS),
+ #define XLAT_VAL_6 ((unsigned) (ADJ_STATUS))
+ #define XLAT_STR_6 STRINGIFY(ADJ_STATUS)
  XLAT(ADJ_TIMECONST),
+ #define XLAT_VAL_7 ((unsigned) (ADJ_TIMECONST))
+ #define XLAT_STR_7 STRINGIFY(ADJ_TIMECONST)
  XLAT(ADJ_TAI),
+ #define XLAT_VAL_8 ((unsigned) (ADJ_TAI))
+ #define XLAT_STR_8 STRINGIFY(ADJ_TAI)
  XLAT(ADJ_SETOFFSET),
+ #define XLAT_VAL_9 ((unsigned) (ADJ_SETOFFSET))
+ #define XLAT_STR_9 STRINGIFY(ADJ_SETOFFSET)
  XLAT(ADJ_MICRO),
+ #define XLAT_VAL_10 ((unsigned) (ADJ_MICRO))
+ #define XLAT_STR_10 STRINGIFY(ADJ_MICRO)
  XLAT(ADJ_NANO),
+ #define XLAT_VAL_11 ((unsigned) (ADJ_NANO))
+ #define XLAT_STR_11 STRINGIFY(ADJ_NANO)
  XLAT(ADJ_TICK),
+ #define XLAT_VAL_12 ((unsigned) (ADJ_TICK))
+ #define XLAT_STR_12 STRINGIFY(ADJ_TICK)
 };
 static
 const struct xlat adjtimex_modes[1] = { {
  .data = adjtimex_modes_xdata,
  .size = ARRAY_SIZE(adjtimex_modes_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

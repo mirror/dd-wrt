@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data memfd_create_flags_xdata[] = {
  XLAT(MFD_CLOEXEC),
+ #define XLAT_VAL_0 ((unsigned) (MFD_CLOEXEC))
+ #define XLAT_STR_0 STRINGIFY(MFD_CLOEXEC)
  XLAT(MFD_ALLOW_SEALING),
+ #define XLAT_VAL_1 ((unsigned) (MFD_ALLOW_SEALING))
+ #define XLAT_STR_1 STRINGIFY(MFD_ALLOW_SEALING)
  XLAT(MFD_HUGETLB),
+ #define XLAT_VAL_2 ((unsigned) (MFD_HUGETLB))
+ #define XLAT_STR_2 STRINGIFY(MFD_HUGETLB)
 };
 static
 const struct xlat memfd_create_flags[1] = { {
  .data = memfd_create_flags_xdata,
  .size = ARRAY_SIZE(memfd_create_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

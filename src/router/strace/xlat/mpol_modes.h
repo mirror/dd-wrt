@@ -49,18 +49,72 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data mpol_modes_xdata[] = {
  [MPOL_DEFAULT] = XLAT(MPOL_DEFAULT),
+ #define XLAT_VAL_0 ((unsigned) (MPOL_DEFAULT))
+ #define XLAT_STR_0 STRINGIFY(MPOL_DEFAULT)
  [MPOL_PREFERRED] = XLAT(MPOL_PREFERRED),
+ #define XLAT_VAL_1 ((unsigned) (MPOL_PREFERRED))
+ #define XLAT_STR_1 STRINGIFY(MPOL_PREFERRED)
  [MPOL_BIND] = XLAT(MPOL_BIND),
+ #define XLAT_VAL_2 ((unsigned) (MPOL_BIND))
+ #define XLAT_STR_2 STRINGIFY(MPOL_BIND)
  [MPOL_INTERLEAVE] = XLAT(MPOL_INTERLEAVE),
+ #define XLAT_VAL_3 ((unsigned) (MPOL_INTERLEAVE))
+ #define XLAT_STR_3 STRINGIFY(MPOL_INTERLEAVE)
  [MPOL_LOCAL] = XLAT(MPOL_LOCAL),
+ #define XLAT_VAL_4 ((unsigned) (MPOL_LOCAL))
+ #define XLAT_STR_4 STRINGIFY(MPOL_LOCAL)
 };
 static
 const struct xlat mpol_modes[1] = { {
  .data = mpol_modes_xdata,
  .size = ARRAY_SIZE(mpol_modes_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

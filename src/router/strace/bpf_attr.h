@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2018 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -49,11 +49,12 @@ struct BPF_MAP_CREATE_struct {
 	uint32_t btf_fd;
 	uint32_t btf_key_type_id;
 	uint32_t btf_value_type_id;
+	uint32_t btf_vmlinux_value_type_id;
 };
 
 # define BPF_MAP_CREATE_struct_size \
 	sizeof(struct BPF_MAP_CREATE_struct)
-# define expected_BPF_MAP_CREATE_struct_size 60
+# define expected_BPF_MAP_CREATE_struct_size 64
 
 struct BPF_MAP_LOOKUP_ELEM_struct {
 	uint32_t map_fd;
@@ -150,11 +151,12 @@ struct BPF_PROG_ATTACH_struct {
 	uint32_t attach_bpf_fd;
 	uint32_t attach_type;
 	uint32_t attach_flags;
+	uint32_t replace_bpf_fd;
 };
 
 # define BPF_PROG_ATTACH_struct_size \
 	sizeof(struct BPF_PROG_ATTACH_struct)
-# define expected_BPF_PROG_ATTACH_struct_size 16
+# define expected_BPF_PROG_ATTACH_struct_size 20
 
 struct BPF_PROG_DETACH_struct {
 	uint32_t target_fd;
@@ -298,6 +300,7 @@ struct bpf_map_info_struct {
 	uint32_t map_flags;
 	char     name[BPF_OBJ_NAME_LEN];
 	uint32_t ifindex;
+	uint32_t btf_vmlinux_value_type_id;
 	/*
 	 * The kernel UAPI is broken by Linux commit
 	 * v4.16-rc1~123^2~109^2~5^2~4 .
@@ -357,5 +360,51 @@ struct bpf_prog_info_struct {
 # define bpf_prog_info_struct_size \
 	sizeof(struct bpf_prog_info_struct)
 # define expected_bpf_prog_info_struct_size 208
+
+struct BPF_MAP_LOOKUP_BATCH_struct /* batch */ {
+	uint64_t ATTRIBUTE_ALIGNED(8) in_batch;
+	uint64_t ATTRIBUTE_ALIGNED(8) out_batch;
+	uint64_t ATTRIBUTE_ALIGNED(8) keys;
+	uint64_t ATTRIBUTE_ALIGNED(8) values;
+	uint32_t count;
+	uint32_t map_fd;
+	uint64_t ATTRIBUTE_ALIGNED(8) elem_flags;
+	uint64_t ATTRIBUTE_ALIGNED(8) flags;
+};
+
+# define BPF_MAP_LOOKUP_BATCH_struct_size \
+	sizeof(struct BPF_MAP_LOOKUP_BATCH_struct)
+# define expected_BPF_MAP_LOOKUP_BATCH_struct_size 56
+
+# define BPF_MAP_LOOKUP_AND_DELETE_BATCH_struct BPF_MAP_LOOKUP_BATCH_struct
+# define BPF_MAP_LOOKUP_AND_DELETE_BATCH_struct_size BPF_MAP_LOOKUP_BATCH_struct_size
+
+# define BPF_MAP_UPDATE_BATCH_struct BPF_MAP_LOOKUP_BATCH_struct
+# define BPF_MAP_UPDATE_BATCH_struct_size BPF_MAP_LOOKUP_BATCH_struct_size
+
+# define BPF_MAP_DELETE_BATCH_struct BPF_MAP_LOOKUP_BATCH_struct
+# define BPF_MAP_DELETE_BATCH_struct_size BPF_MAP_LOOKUP_BATCH_struct_size
+
+struct BPF_LINK_CREATE_struct /* link_create */ {
+	uint32_t prog_fd;
+	uint32_t target_fd;
+	uint32_t attach_type;
+	uint32_t flags;
+};
+
+# define BPF_LINK_CREATE_struct_size \
+	sizeof(struct BPF_LINK_CREATE_struct)
+# define expected_BPF_LINK_CREATE_struct_size 16
+
+struct BPF_LINK_UPDATE_struct /* link_update */ {
+	uint32_t link_fd;
+	uint32_t new_prog_fd;
+	uint32_t flags;
+	uint32_t old_prog_fd;
+};
+
+# define BPF_LINK_UPDATE_struct_size \
+	sizeof(struct BPF_LINK_UPDATE_struct)
+# define expected_BPF_LINK_UPDATE_struct_size 16
 
 #endif /* !STRACE_BPF_ATTR_H */

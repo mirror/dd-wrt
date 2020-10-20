@@ -3,12 +3,13 @@
 # This file is part of caps strace test.
 #
 # Copyright (c) 2014-2018 Dmitry V. Levin <ldv@altlinux.org>
+# Copyright (c) 2016-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
 
 BEGIN {
-	cap = "(0|1<<CAP_[A-Z_]+(\\|1<<CAP_[A-Z_]+)*|1<<CAP_[A-Z_]+(\\|1<<CAP_[A-Z_]+){37}\\|0xffffffc0)"
+	cap = "(0|1<<CAP_[A-Z_]+(\\|1<<CAP_[A-Z_]+)*|1<<CAP_[A-Z_]+(\\|1<<CAP_[A-Z_]+){40}\\|0xfffffe00)"
 	s_efault = "-1 EFAULT (Bad address)"
 	r_efault = "-1 EFAULT \\(Bad address\\)"
 	r_einval = "-1 EINVAL \\(Invalid argument\\)"

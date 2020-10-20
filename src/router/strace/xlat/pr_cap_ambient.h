@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data pr_cap_ambient_xdata[] = {
  [PR_CAP_AMBIENT_IS_SET] = XLAT(PR_CAP_AMBIENT_IS_SET),
+ #define XLAT_VAL_0 ((unsigned) (PR_CAP_AMBIENT_IS_SET))
+ #define XLAT_STR_0 STRINGIFY(PR_CAP_AMBIENT_IS_SET)
  [PR_CAP_AMBIENT_RAISE] = XLAT(PR_CAP_AMBIENT_RAISE),
+ #define XLAT_VAL_1 ((unsigned) (PR_CAP_AMBIENT_RAISE))
+ #define XLAT_STR_1 STRINGIFY(PR_CAP_AMBIENT_RAISE)
  [PR_CAP_AMBIENT_LOWER] = XLAT(PR_CAP_AMBIENT_LOWER),
+ #define XLAT_VAL_2 ((unsigned) (PR_CAP_AMBIENT_LOWER))
+ #define XLAT_STR_2 STRINGIFY(PR_CAP_AMBIENT_LOWER)
  [PR_CAP_AMBIENT_CLEAR_ALL] = XLAT(PR_CAP_AMBIENT_CLEAR_ALL),
+ #define XLAT_VAL_3 ((unsigned) (PR_CAP_AMBIENT_CLEAR_ALL))
+ #define XLAT_STR_3 STRINGIFY(PR_CAP_AMBIENT_CLEAR_ALL)
 };
 static
 const struct xlat pr_cap_ambient[1] = { {
  .data = pr_cap_ambient_xdata,
  .size = ARRAY_SIZE(pr_cap_ambient_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

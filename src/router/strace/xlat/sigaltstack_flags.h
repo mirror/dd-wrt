@@ -35,8 +35,14 @@ extern const struct xlat sigaltstack_flags[];
 
 static const struct xlat_data sigaltstack_flags_xdata[] = {
  XLAT(SS_ONSTACK),
+ #define XLAT_VAL_0 ((unsigned) (SS_ONSTACK))
+ #define XLAT_STR_0 STRINGIFY(SS_ONSTACK)
  XLAT(SS_DISABLE),
+ #define XLAT_VAL_1 ((unsigned) (SS_DISABLE))
+ #define XLAT_STR_1 STRINGIFY(SS_DISABLE)
  XLAT(SS_AUTODISARM),
+ #define XLAT_VAL_2 ((unsigned) (SS_AUTODISARM))
+ #define XLAT_STR_2 STRINGIFY(SS_AUTODISARM)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -45,8 +51,36 @@ const struct xlat sigaltstack_flags[1] = { {
  .data = sigaltstack_flags_xdata,
  .size = ARRAY_SIZE(sigaltstack_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

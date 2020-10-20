@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_kcm_options_xdata[] = {
  XLAT(KCM_RECV_DISABLE),
+ #define XLAT_VAL_0 ((unsigned) (KCM_RECV_DISABLE))
+ #define XLAT_STR_0 STRINGIFY(KCM_RECV_DISABLE)
 };
 static
 const struct xlat sock_kcm_options[1] = { {
  .data = sock_kcm_options_xdata,
  .size = ARRAY_SIZE(sock_kcm_options_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

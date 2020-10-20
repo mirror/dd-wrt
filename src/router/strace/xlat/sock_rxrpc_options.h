@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_rxrpc_options_xdata[] = {
  [RXRPC_SECURITY_KEY] = XLAT(RXRPC_SECURITY_KEY),
+ #define XLAT_VAL_0 ((unsigned) (RXRPC_SECURITY_KEY))
+ #define XLAT_STR_0 STRINGIFY(RXRPC_SECURITY_KEY)
  [RXRPC_SECURITY_KEYRING] = XLAT(RXRPC_SECURITY_KEYRING),
+ #define XLAT_VAL_1 ((unsigned) (RXRPC_SECURITY_KEYRING))
+ #define XLAT_STR_1 STRINGIFY(RXRPC_SECURITY_KEYRING)
  [RXRPC_EXCLUSIVE_CONNECTION] = XLAT(RXRPC_EXCLUSIVE_CONNECTION),
+ #define XLAT_VAL_2 ((unsigned) (RXRPC_EXCLUSIVE_CONNECTION))
+ #define XLAT_STR_2 STRINGIFY(RXRPC_EXCLUSIVE_CONNECTION)
  [RXRPC_MIN_SECURITY_LEVEL] = XLAT(RXRPC_MIN_SECURITY_LEVEL),
+ #define XLAT_VAL_3 ((unsigned) (RXRPC_MIN_SECURITY_LEVEL))
+ #define XLAT_STR_3 STRINGIFY(RXRPC_MIN_SECURITY_LEVEL)
  [RXRPC_UPGRADEABLE_SERVICE] = XLAT(RXRPC_UPGRADEABLE_SERVICE),
+ #define XLAT_VAL_4 ((unsigned) (RXRPC_UPGRADEABLE_SERVICE))
+ #define XLAT_STR_4 STRINGIFY(RXRPC_UPGRADEABLE_SERVICE)
  [RXRPC_SUPPORTED_CMSG] = XLAT(RXRPC_SUPPORTED_CMSG),
+ #define XLAT_VAL_5 ((unsigned) (RXRPC_SUPPORTED_CMSG))
+ #define XLAT_STR_5 STRINGIFY(RXRPC_SUPPORTED_CMSG)
 };
 static
 const struct xlat sock_rxrpc_options[1] = { {
  .data = sock_rxrpc_options_xdata,
  .size = ARRAY_SIZE(sock_rxrpc_options_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data netlink_ack_flags_xdata[] = {
  XLAT(NLM_F_CAPPED),
+ #define XLAT_VAL_0 ((unsigned) (NLM_F_CAPPED))
+ #define XLAT_STR_0 STRINGIFY(NLM_F_CAPPED)
  XLAT(NLM_F_ACK_TLVS),
+ #define XLAT_VAL_1 ((unsigned) (NLM_F_ACK_TLVS))
+ #define XLAT_STR_1 STRINGIFY(NLM_F_ACK_TLVS)
 };
 static
 const struct xlat netlink_ack_flags[1] = { {
  .data = netlink_ack_flags_xdata,
  .size = ARRAY_SIZE(netlink_ack_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

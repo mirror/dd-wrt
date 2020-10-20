@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2002-2004 Roland McGrath <roland@redhat.com>
  * Copyright (c) 2009-2018 Dmitry V. Levin <ldv@altlinux.org>
+ * Copyright (c) 2014-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -82,7 +83,8 @@ SYS_FUNC(sched_setaffinity)
 	const int pid = tcp->u_arg[0];
 	const unsigned int len = tcp->u_arg[1];
 
-	tprintf("%d, %u, ", pid, len);
+	printpid(tcp, pid, PT_TGID);
+	tprintf(", %u, ", len);
 	print_affinitylist(tcp, tcp->u_arg[2], len);
 
 	return RVAL_DECODED;
@@ -94,7 +96,8 @@ SYS_FUNC(sched_getaffinity)
 	const unsigned int len = tcp->u_arg[1];
 
 	if (entering(tcp)) {
-		tprintf("%d, %u, ", pid, len);
+		printpid(tcp, pid, PT_TGID);
+		tprintf(", %u, ", len);
 	} else {
 		print_affinitylist(tcp, tcp->u_arg[2], tcp->u_rval);
 	}

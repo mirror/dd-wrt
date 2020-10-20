@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2012 Denys Vlasenko <vda.linux@googlemail.com>
  * Copyright (c) 2012-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2014-2018 The strace developers.
+ * Copyright (c) 2014-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -13,7 +13,8 @@ SYS_FUNC(process_vm_readv)
 {
 	if (entering(tcp)) {
 		/* arg 1: pid */
-		tprintf("%d, ", (int) tcp->u_arg[0]);
+		printpid(tcp, tcp->u_arg[0], PT_TGID);
+		tprints(", ");
 	} else {
 		kernel_ulong_t local_iovcnt = tcp->u_arg[2];
 		kernel_ulong_t remote_iovcnt = tcp->u_arg[4];
@@ -42,7 +43,8 @@ SYS_FUNC(process_vm_writev)
 	kernel_ulong_t flags = tcp->u_arg[5];
 
 	/* arg 1: pid */
-	tprintf("%d, ", (int) tcp->u_arg[0]);
+	printpid(tcp, tcp->u_arg[0], PT_TGID);
+	tprints(", ");
 	/* arg 2: local iov */
 	tprint_iov(tcp, local_iovcnt, tcp->u_arg[1], IOV_DECODE_STR);
 	/* arg 3: local iovcnt */

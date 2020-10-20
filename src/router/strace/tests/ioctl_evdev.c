@@ -2,7 +2,7 @@
  * This file is part of ioctl_evdev strace test.
  *
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -50,7 +50,7 @@ static void
 print_ffe_common(const struct ff_effect *const ffe, const char *const type_str)
 {
 	printf("ioctl(-1, %s", XLAT_STR(EVIOCSFF));
-	printf(", {type=%s, id=%" PRIu16
+	printf(", {type=%s, id=%" PRId16
 	       ", direction=%" PRIu16 ", ",
 	       sprintxlat(type_str, ffe->type, NULL),
 	       ffe->id, ffe->direction);
@@ -223,7 +223,7 @@ main(void)
 	for (i = 0; i < ARRAY_SIZE(ike->scancode); ++i) {
 		if (i > 0)
 			printf(", ");
-		printf("%" PRIx8, ike->scancode[i]);
+		printf("%#" PRIx8, ike->scancode[i]);
 	}
 	printf("]");
 #  else

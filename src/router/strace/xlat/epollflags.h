@@ -24,6 +24,8 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 static const struct xlat_data epollflags_xdata[] = {
 #if defined EPOLL_CLOEXEC || defined O_CLOEXEC
  XLAT(EPOLL_CLOEXEC),
+ #define XLAT_VAL_0 ((unsigned) (EPOLL_CLOEXEC))
+ #define XLAT_STR_0 STRINGIFY(EPOLL_CLOEXEC)
 #endif
 };
 static
@@ -31,8 +33,20 @@ const struct xlat epollflags[1] = { {
  .data = epollflags_xdata,
  .size = ARRAY_SIZE(epollflags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

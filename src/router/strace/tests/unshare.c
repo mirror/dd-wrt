@@ -2,7 +2,7 @@
  * Check decoding of unshare syscall.
  *
  * Copyright (c) 2016 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -28,12 +28,12 @@ main(void)
 		const char *str;
 	} unshare_flags[] = {
 		{ ARG_STR(0) },
-		{ 0xdeadca75,
-			"CLONE_THREAD|CLONE_FS|CLONE_SIGHAND|CLONE_SYSVSEM|"
-			"CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWNET|CLONE_NEWUSER|"
-			"CLONE_NEWCGROUP|0x80a8c075" },
+		{ 0xdeadcaf5,
+			"CLONE_NEWTIME|CLONE_FS|CLONE_SIGHAND|CLONE_THREAD"
+			"|CLONE_SYSVSEM|CLONE_NEWCGROUP|CLONE_NEWUTS"
+			"|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWNET|0x80a8c075" },
 		{ 0x2000000, "CLONE_NEWCGROUP" },
-		{ ARG_STR(0x81f8f0ff) " /* CLONE_??? */" },
+		{ ARG_STR(0x81f8f07f) " /* CLONE_??? */" },
 	};
 
 	long rc;

@@ -168,35 +168,259 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data nf_nftables_msg_types_xdata[] = {
  [NFT_MSG_NEWTABLE] = XLAT(NFT_MSG_NEWTABLE),
+ #define XLAT_VAL_0 ((unsigned) (NFT_MSG_NEWTABLE))
+ #define XLAT_STR_0 STRINGIFY(NFT_MSG_NEWTABLE)
  [NFT_MSG_GETTABLE] = XLAT(NFT_MSG_GETTABLE),
+ #define XLAT_VAL_1 ((unsigned) (NFT_MSG_GETTABLE))
+ #define XLAT_STR_1 STRINGIFY(NFT_MSG_GETTABLE)
  [NFT_MSG_DELTABLE] = XLAT(NFT_MSG_DELTABLE),
+ #define XLAT_VAL_2 ((unsigned) (NFT_MSG_DELTABLE))
+ #define XLAT_STR_2 STRINGIFY(NFT_MSG_DELTABLE)
  [NFT_MSG_NEWCHAIN] = XLAT(NFT_MSG_NEWCHAIN),
+ #define XLAT_VAL_3 ((unsigned) (NFT_MSG_NEWCHAIN))
+ #define XLAT_STR_3 STRINGIFY(NFT_MSG_NEWCHAIN)
  [NFT_MSG_GETCHAIN] = XLAT(NFT_MSG_GETCHAIN),
+ #define XLAT_VAL_4 ((unsigned) (NFT_MSG_GETCHAIN))
+ #define XLAT_STR_4 STRINGIFY(NFT_MSG_GETCHAIN)
  [NFT_MSG_DELCHAIN] = XLAT(NFT_MSG_DELCHAIN),
+ #define XLAT_VAL_5 ((unsigned) (NFT_MSG_DELCHAIN))
+ #define XLAT_STR_5 STRINGIFY(NFT_MSG_DELCHAIN)
  [NFT_MSG_NEWRULE] = XLAT(NFT_MSG_NEWRULE),
+ #define XLAT_VAL_6 ((unsigned) (NFT_MSG_NEWRULE))
+ #define XLAT_STR_6 STRINGIFY(NFT_MSG_NEWRULE)
  [NFT_MSG_GETRULE] = XLAT(NFT_MSG_GETRULE),
+ #define XLAT_VAL_7 ((unsigned) (NFT_MSG_GETRULE))
+ #define XLAT_STR_7 STRINGIFY(NFT_MSG_GETRULE)
  [NFT_MSG_DELRULE] = XLAT(NFT_MSG_DELRULE),
+ #define XLAT_VAL_8 ((unsigned) (NFT_MSG_DELRULE))
+ #define XLAT_STR_8 STRINGIFY(NFT_MSG_DELRULE)
  [NFT_MSG_NEWSET] = XLAT(NFT_MSG_NEWSET),
+ #define XLAT_VAL_9 ((unsigned) (NFT_MSG_NEWSET))
+ #define XLAT_STR_9 STRINGIFY(NFT_MSG_NEWSET)
  [NFT_MSG_GETSET] = XLAT(NFT_MSG_GETSET),
+ #define XLAT_VAL_10 ((unsigned) (NFT_MSG_GETSET))
+ #define XLAT_STR_10 STRINGIFY(NFT_MSG_GETSET)
  [NFT_MSG_DELSET] = XLAT(NFT_MSG_DELSET),
+ #define XLAT_VAL_11 ((unsigned) (NFT_MSG_DELSET))
+ #define XLAT_STR_11 STRINGIFY(NFT_MSG_DELSET)
  [NFT_MSG_NEWSETELEM] = XLAT(NFT_MSG_NEWSETELEM),
+ #define XLAT_VAL_12 ((unsigned) (NFT_MSG_NEWSETELEM))
+ #define XLAT_STR_12 STRINGIFY(NFT_MSG_NEWSETELEM)
  [NFT_MSG_GETSETELEM] = XLAT(NFT_MSG_GETSETELEM),
+ #define XLAT_VAL_13 ((unsigned) (NFT_MSG_GETSETELEM))
+ #define XLAT_STR_13 STRINGIFY(NFT_MSG_GETSETELEM)
  [NFT_MSG_DELSETELEM] = XLAT(NFT_MSG_DELSETELEM),
+ #define XLAT_VAL_14 ((unsigned) (NFT_MSG_DELSETELEM))
+ #define XLAT_STR_14 STRINGIFY(NFT_MSG_DELSETELEM)
  [NFT_MSG_NEWGEN] = XLAT(NFT_MSG_NEWGEN),
+ #define XLAT_VAL_15 ((unsigned) (NFT_MSG_NEWGEN))
+ #define XLAT_STR_15 STRINGIFY(NFT_MSG_NEWGEN)
  [NFT_MSG_GETGEN] = XLAT(NFT_MSG_GETGEN),
+ #define XLAT_VAL_16 ((unsigned) (NFT_MSG_GETGEN))
+ #define XLAT_STR_16 STRINGIFY(NFT_MSG_GETGEN)
  [NFT_MSG_TRACE] = XLAT(NFT_MSG_TRACE),
+ #define XLAT_VAL_17 ((unsigned) (NFT_MSG_TRACE))
+ #define XLAT_STR_17 STRINGIFY(NFT_MSG_TRACE)
  [NFT_MSG_NEWOBJ] = XLAT(NFT_MSG_NEWOBJ),
+ #define XLAT_VAL_18 ((unsigned) (NFT_MSG_NEWOBJ))
+ #define XLAT_STR_18 STRINGIFY(NFT_MSG_NEWOBJ)
  [NFT_MSG_GETOBJ] = XLAT(NFT_MSG_GETOBJ),
+ #define XLAT_VAL_19 ((unsigned) (NFT_MSG_GETOBJ))
+ #define XLAT_STR_19 STRINGIFY(NFT_MSG_GETOBJ)
  [NFT_MSG_DELOBJ] = XLAT(NFT_MSG_DELOBJ),
+ #define XLAT_VAL_20 ((unsigned) (NFT_MSG_DELOBJ))
+ #define XLAT_STR_20 STRINGIFY(NFT_MSG_DELOBJ)
  [NFT_MSG_GETOBJ_RESET] = XLAT(NFT_MSG_GETOBJ_RESET),
+ #define XLAT_VAL_21 ((unsigned) (NFT_MSG_GETOBJ_RESET))
+ #define XLAT_STR_21 STRINGIFY(NFT_MSG_GETOBJ_RESET)
 };
 static
 const struct xlat nf_nftables_msg_types[1] = { {
  .data = nf_nftables_msg_types_xdata,
  .size = ARRAY_SIZE(nf_nftables_msg_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

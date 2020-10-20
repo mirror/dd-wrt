@@ -112,27 +112,171 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_op_jmp_xdata[] = {
  XLAT(BPF_JA),
+ #define XLAT_VAL_0 ((unsigned) (BPF_JA))
+ #define XLAT_STR_0 STRINGIFY(BPF_JA)
  XLAT(BPF_JEQ),
+ #define XLAT_VAL_1 ((unsigned) (BPF_JEQ))
+ #define XLAT_STR_1 STRINGIFY(BPF_JEQ)
  XLAT(BPF_JGT),
+ #define XLAT_VAL_2 ((unsigned) (BPF_JGT))
+ #define XLAT_STR_2 STRINGIFY(BPF_JGT)
  XLAT(BPF_JGE),
+ #define XLAT_VAL_3 ((unsigned) (BPF_JGE))
+ #define XLAT_STR_3 STRINGIFY(BPF_JGE)
  XLAT(BPF_JSET),
+ #define XLAT_VAL_4 ((unsigned) (BPF_JSET))
+ #define XLAT_STR_4 STRINGIFY(BPF_JSET)
  XLAT(BPF_JNE),
+ #define XLAT_VAL_5 ((unsigned) (BPF_JNE))
+ #define XLAT_STR_5 STRINGIFY(BPF_JNE)
  XLAT(BPF_JSGT),
+ #define XLAT_VAL_6 ((unsigned) (BPF_JSGT))
+ #define XLAT_STR_6 STRINGIFY(BPF_JSGT)
  XLAT(BPF_JSGE),
+ #define XLAT_VAL_7 ((unsigned) (BPF_JSGE))
+ #define XLAT_STR_7 STRINGIFY(BPF_JSGE)
  XLAT(BPF_CALL),
+ #define XLAT_VAL_8 ((unsigned) (BPF_CALL))
+ #define XLAT_STR_8 STRINGIFY(BPF_CALL)
  XLAT(BPF_EXIT),
+ #define XLAT_VAL_9 ((unsigned) (BPF_EXIT))
+ #define XLAT_STR_9 STRINGIFY(BPF_EXIT)
  XLAT(BPF_JLT),
+ #define XLAT_VAL_10 ((unsigned) (BPF_JLT))
+ #define XLAT_STR_10 STRINGIFY(BPF_JLT)
  XLAT(BPF_JLE),
+ #define XLAT_VAL_11 ((unsigned) (BPF_JLE))
+ #define XLAT_STR_11 STRINGIFY(BPF_JLE)
  XLAT(BPF_JSLT),
+ #define XLAT_VAL_12 ((unsigned) (BPF_JSLT))
+ #define XLAT_STR_12 STRINGIFY(BPF_JSLT)
  XLAT(BPF_JSLE),
+ #define XLAT_VAL_13 ((unsigned) (BPF_JSLE))
+ #define XLAT_STR_13 STRINGIFY(BPF_JSLE)
 };
 static
 const struct xlat bpf_op_jmp[1] = { {
  .data = bpf_op_jmp_xdata,
  .size = ARRAY_SIZE(bpf_op_jmp_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

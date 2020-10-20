@@ -15,4 +15,5 @@ AC_CHECK_TYPES([struct rtvia],
 #include <linux/rtnetlink.h>])],,[AC_INCLUDES_DEFAULT
 #include "$srcdir/netlink.h"
 #include <linux/rtnetlink.h>])
-])])
+],[],[AC_INCLUDES_DEFAULT
+#include "$srcdir/netlink.h"])])

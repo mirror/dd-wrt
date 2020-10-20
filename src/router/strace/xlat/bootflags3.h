@@ -70,21 +70,105 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bootflags3_xdata[] = {
  XLAT(LINUX_REBOOT_CMD_RESTART),
+ #define XLAT_VAL_0 ((unsigned) (LINUX_REBOOT_CMD_RESTART))
+ #define XLAT_STR_0 STRINGIFY(LINUX_REBOOT_CMD_RESTART)
  XLAT(LINUX_REBOOT_CMD_HALT),
+ #define XLAT_VAL_1 ((unsigned) (LINUX_REBOOT_CMD_HALT))
+ #define XLAT_STR_1 STRINGIFY(LINUX_REBOOT_CMD_HALT)
  XLAT(LINUX_REBOOT_CMD_CAD_ON),
+ #define XLAT_VAL_2 ((unsigned) (LINUX_REBOOT_CMD_CAD_ON))
+ #define XLAT_STR_2 STRINGIFY(LINUX_REBOOT_CMD_CAD_ON)
  XLAT(LINUX_REBOOT_CMD_CAD_OFF),
+ #define XLAT_VAL_3 ((unsigned) (LINUX_REBOOT_CMD_CAD_OFF))
+ #define XLAT_STR_3 STRINGIFY(LINUX_REBOOT_CMD_CAD_OFF)
  XLAT(LINUX_REBOOT_CMD_POWER_OFF),
+ #define XLAT_VAL_4 ((unsigned) (LINUX_REBOOT_CMD_POWER_OFF))
+ #define XLAT_STR_4 STRINGIFY(LINUX_REBOOT_CMD_POWER_OFF)
  XLAT(LINUX_REBOOT_CMD_RESTART2),
+ #define XLAT_VAL_5 ((unsigned) (LINUX_REBOOT_CMD_RESTART2))
+ #define XLAT_STR_5 STRINGIFY(LINUX_REBOOT_CMD_RESTART2)
  XLAT(LINUX_REBOOT_CMD_SW_SUSPEND),
+ #define XLAT_VAL_6 ((unsigned) (LINUX_REBOOT_CMD_SW_SUSPEND))
+ #define XLAT_STR_6 STRINGIFY(LINUX_REBOOT_CMD_SW_SUSPEND)
  XLAT(LINUX_REBOOT_CMD_KEXEC),
+ #define XLAT_VAL_7 ((unsigned) (LINUX_REBOOT_CMD_KEXEC))
+ #define XLAT_STR_7 STRINGIFY(LINUX_REBOOT_CMD_KEXEC)
 };
 static
 const struct xlat bootflags3[1] = { {
  .data = bootflags3_xdata,
  .size = ARRAY_SIZE(bootflags3_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

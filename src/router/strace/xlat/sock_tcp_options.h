@@ -273,50 +273,424 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_tcp_options_xdata[] = {
  [TCP_NODELAY] = XLAT(TCP_NODELAY),
+ #define XLAT_VAL_0 ((unsigned) (TCP_NODELAY))
+ #define XLAT_STR_0 STRINGIFY(TCP_NODELAY)
  [TCP_MAXSEG] = XLAT(TCP_MAXSEG),
+ #define XLAT_VAL_1 ((unsigned) (TCP_MAXSEG))
+ #define XLAT_STR_1 STRINGIFY(TCP_MAXSEG)
  [TCP_CORK] = XLAT(TCP_CORK),
+ #define XLAT_VAL_2 ((unsigned) (TCP_CORK))
+ #define XLAT_STR_2 STRINGIFY(TCP_CORK)
  [TCP_KEEPIDLE] = XLAT(TCP_KEEPIDLE),
+ #define XLAT_VAL_3 ((unsigned) (TCP_KEEPIDLE))
+ #define XLAT_STR_3 STRINGIFY(TCP_KEEPIDLE)
  [TCP_KEEPINTVL] = XLAT(TCP_KEEPINTVL),
+ #define XLAT_VAL_4 ((unsigned) (TCP_KEEPINTVL))
+ #define XLAT_STR_4 STRINGIFY(TCP_KEEPINTVL)
  [TCP_KEEPCNT] = XLAT(TCP_KEEPCNT),
+ #define XLAT_VAL_5 ((unsigned) (TCP_KEEPCNT))
+ #define XLAT_STR_5 STRINGIFY(TCP_KEEPCNT)
  [TCP_SYNCNT] = XLAT(TCP_SYNCNT),
+ #define XLAT_VAL_6 ((unsigned) (TCP_SYNCNT))
+ #define XLAT_STR_6 STRINGIFY(TCP_SYNCNT)
  [TCP_LINGER2] = XLAT(TCP_LINGER2),
+ #define XLAT_VAL_7 ((unsigned) (TCP_LINGER2))
+ #define XLAT_STR_7 STRINGIFY(TCP_LINGER2)
  [TCP_DEFER_ACCEPT] = XLAT(TCP_DEFER_ACCEPT),
+ #define XLAT_VAL_8 ((unsigned) (TCP_DEFER_ACCEPT))
+ #define XLAT_STR_8 STRINGIFY(TCP_DEFER_ACCEPT)
  [TCP_WINDOW_CLAMP] = XLAT(TCP_WINDOW_CLAMP),
+ #define XLAT_VAL_9 ((unsigned) (TCP_WINDOW_CLAMP))
+ #define XLAT_STR_9 STRINGIFY(TCP_WINDOW_CLAMP)
  [TCP_INFO] = XLAT(TCP_INFO),
+ #define XLAT_VAL_10 ((unsigned) (TCP_INFO))
+ #define XLAT_STR_10 STRINGIFY(TCP_INFO)
  [TCP_QUICKACK] = XLAT(TCP_QUICKACK),
+ #define XLAT_VAL_11 ((unsigned) (TCP_QUICKACK))
+ #define XLAT_STR_11 STRINGIFY(TCP_QUICKACK)
  [TCP_CONGESTION] = XLAT(TCP_CONGESTION),
+ #define XLAT_VAL_12 ((unsigned) (TCP_CONGESTION))
+ #define XLAT_STR_12 STRINGIFY(TCP_CONGESTION)
  [TCP_MD5SIG] = XLAT(TCP_MD5SIG),
+ #define XLAT_VAL_13 ((unsigned) (TCP_MD5SIG))
+ #define XLAT_STR_13 STRINGIFY(TCP_MD5SIG)
  [TCP_COOKIE_TRANSACTIONS] = XLAT(TCP_COOKIE_TRANSACTIONS),
+ #define XLAT_VAL_14 ((unsigned) (TCP_COOKIE_TRANSACTIONS))
+ #define XLAT_STR_14 STRINGIFY(TCP_COOKIE_TRANSACTIONS)
  [TCP_THIN_LINEAR_TIMEOUTS] = XLAT(TCP_THIN_LINEAR_TIMEOUTS),
+ #define XLAT_VAL_15 ((unsigned) (TCP_THIN_LINEAR_TIMEOUTS))
+ #define XLAT_STR_15 STRINGIFY(TCP_THIN_LINEAR_TIMEOUTS)
  [TCP_THIN_DUPACK] = XLAT(TCP_THIN_DUPACK),
+ #define XLAT_VAL_16 ((unsigned) (TCP_THIN_DUPACK))
+ #define XLAT_STR_16 STRINGIFY(TCP_THIN_DUPACK)
  [TCP_USER_TIMEOUT] = XLAT(TCP_USER_TIMEOUT),
+ #define XLAT_VAL_17 ((unsigned) (TCP_USER_TIMEOUT))
+ #define XLAT_STR_17 STRINGIFY(TCP_USER_TIMEOUT)
  [TCP_REPAIR] = XLAT(TCP_REPAIR),
+ #define XLAT_VAL_18 ((unsigned) (TCP_REPAIR))
+ #define XLAT_STR_18 STRINGIFY(TCP_REPAIR)
  [TCP_REPAIR_QUEUE] = XLAT(TCP_REPAIR_QUEUE),
+ #define XLAT_VAL_19 ((unsigned) (TCP_REPAIR_QUEUE))
+ #define XLAT_STR_19 STRINGIFY(TCP_REPAIR_QUEUE)
  [TCP_QUEUE_SEQ] = XLAT(TCP_QUEUE_SEQ),
+ #define XLAT_VAL_20 ((unsigned) (TCP_QUEUE_SEQ))
+ #define XLAT_STR_20 STRINGIFY(TCP_QUEUE_SEQ)
  [TCP_REPAIR_OPTIONS] = XLAT(TCP_REPAIR_OPTIONS),
+ #define XLAT_VAL_21 ((unsigned) (TCP_REPAIR_OPTIONS))
+ #define XLAT_STR_21 STRINGIFY(TCP_REPAIR_OPTIONS)
  [TCP_FASTOPEN] = XLAT(TCP_FASTOPEN),
+ #define XLAT_VAL_22 ((unsigned) (TCP_FASTOPEN))
+ #define XLAT_STR_22 STRINGIFY(TCP_FASTOPEN)
  [TCP_TIMESTAMP] = XLAT(TCP_TIMESTAMP),
+ #define XLAT_VAL_23 ((unsigned) (TCP_TIMESTAMP))
+ #define XLAT_STR_23 STRINGIFY(TCP_TIMESTAMP)
  [TCP_NOTSENT_LOWAT] = XLAT(TCP_NOTSENT_LOWAT),
+ #define XLAT_VAL_24 ((unsigned) (TCP_NOTSENT_LOWAT))
+ #define XLAT_STR_24 STRINGIFY(TCP_NOTSENT_LOWAT)
  [TCP_CC_INFO] = XLAT(TCP_CC_INFO),
+ #define XLAT_VAL_25 ((unsigned) (TCP_CC_INFO))
+ #define XLAT_STR_25 STRINGIFY(TCP_CC_INFO)
  [TCP_SAVE_SYN] = XLAT(TCP_SAVE_SYN),
+ #define XLAT_VAL_26 ((unsigned) (TCP_SAVE_SYN))
+ #define XLAT_STR_26 STRINGIFY(TCP_SAVE_SYN)
  [TCP_SAVED_SYN] = XLAT(TCP_SAVED_SYN),
+ #define XLAT_VAL_27 ((unsigned) (TCP_SAVED_SYN))
+ #define XLAT_STR_27 STRINGIFY(TCP_SAVED_SYN)
  [TCP_REPAIR_WINDOW] = XLAT(TCP_REPAIR_WINDOW),
+ #define XLAT_VAL_28 ((unsigned) (TCP_REPAIR_WINDOW))
+ #define XLAT_STR_28 STRINGIFY(TCP_REPAIR_WINDOW)
  [TCP_FASTOPEN_CONNECT] = XLAT(TCP_FASTOPEN_CONNECT),
+ #define XLAT_VAL_29 ((unsigned) (TCP_FASTOPEN_CONNECT))
+ #define XLAT_STR_29 STRINGIFY(TCP_FASTOPEN_CONNECT)
  [TCP_ULP] = XLAT(TCP_ULP),
+ #define XLAT_VAL_30 ((unsigned) (TCP_ULP))
+ #define XLAT_STR_30 STRINGIFY(TCP_ULP)
  [TCP_MD5SIG_EXT] = XLAT(TCP_MD5SIG_EXT),
+ #define XLAT_VAL_31 ((unsigned) (TCP_MD5SIG_EXT))
+ #define XLAT_STR_31 STRINGIFY(TCP_MD5SIG_EXT)
  [TCP_FASTOPEN_KEY] = XLAT(TCP_FASTOPEN_KEY),
+ #define XLAT_VAL_32 ((unsigned) (TCP_FASTOPEN_KEY))
+ #define XLAT_STR_32 STRINGIFY(TCP_FASTOPEN_KEY)
  [TCP_FASTOPEN_NO_COOKIE] = XLAT(TCP_FASTOPEN_NO_COOKIE),
+ #define XLAT_VAL_33 ((unsigned) (TCP_FASTOPEN_NO_COOKIE))
+ #define XLAT_STR_33 STRINGIFY(TCP_FASTOPEN_NO_COOKIE)
  [TCP_ZEROCOPY_RECEIVE] = XLAT(TCP_ZEROCOPY_RECEIVE),
+ #define XLAT_VAL_34 ((unsigned) (TCP_ZEROCOPY_RECEIVE))
+ #define XLAT_STR_34 STRINGIFY(TCP_ZEROCOPY_RECEIVE)
  [TCP_INQ] = XLAT(TCP_INQ),
+ #define XLAT_VAL_35 ((unsigned) (TCP_INQ))
+ #define XLAT_STR_35 STRINGIFY(TCP_INQ)
  [TCP_TX_DELAY] = XLAT(TCP_TX_DELAY),
+ #define XLAT_VAL_36 ((unsigned) (TCP_TX_DELAY))
+ #define XLAT_STR_36 STRINGIFY(TCP_TX_DELAY)
 };
 static
 const struct xlat sock_tcp_options[1] = { {
  .data = sock_tcp_options_xdata,
  .size = ARRAY_SIZE(sock_tcp_options_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+#  ifdef XLAT_VAL_23
+  | XLAT_VAL_23
+#  endif
+#  ifdef XLAT_VAL_24
+  | XLAT_VAL_24
+#  endif
+#  ifdef XLAT_VAL_25
+  | XLAT_VAL_25
+#  endif
+#  ifdef XLAT_VAL_26
+  | XLAT_VAL_26
+#  endif
+#  ifdef XLAT_VAL_27
+  | XLAT_VAL_27
+#  endif
+#  ifdef XLAT_VAL_28
+  | XLAT_VAL_28
+#  endif
+#  ifdef XLAT_VAL_29
+  | XLAT_VAL_29
+#  endif
+#  ifdef XLAT_VAL_30
+  | XLAT_VAL_30
+#  endif
+#  ifdef XLAT_VAL_31
+  | XLAT_VAL_31
+#  endif
+#  ifdef XLAT_VAL_32
+  | XLAT_VAL_32
+#  endif
+#  ifdef XLAT_VAL_33
+  | XLAT_VAL_33
+#  endif
+#  ifdef XLAT_VAL_34
+  | XLAT_VAL_34
+#  endif
+#  ifdef XLAT_VAL_35
+  | XLAT_VAL_35
+#  endif
+#  ifdef XLAT_VAL_36
+  | XLAT_VAL_36
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+#  ifdef XLAT_STR_23
+  + sizeof(XLAT_STR_23)
+#  endif
+#  ifdef XLAT_STR_24
+  + sizeof(XLAT_STR_24)
+#  endif
+#  ifdef XLAT_STR_25
+  + sizeof(XLAT_STR_25)
+#  endif
+#  ifdef XLAT_STR_26
+  + sizeof(XLAT_STR_26)
+#  endif
+#  ifdef XLAT_STR_27
+  + sizeof(XLAT_STR_27)
+#  endif
+#  ifdef XLAT_STR_28
+  + sizeof(XLAT_STR_28)
+#  endif
+#  ifdef XLAT_STR_29
+  + sizeof(XLAT_STR_29)
+#  endif
+#  ifdef XLAT_STR_30
+  + sizeof(XLAT_STR_30)
+#  endif
+#  ifdef XLAT_STR_31
+  + sizeof(XLAT_STR_31)
+#  endif
+#  ifdef XLAT_STR_32
+  + sizeof(XLAT_STR_32)
+#  endif
+#  ifdef XLAT_STR_33
+  + sizeof(XLAT_STR_33)
+#  endif
+#  ifdef XLAT_STR_34
+  + sizeof(XLAT_STR_34)
+#  endif
+#  ifdef XLAT_STR_35
+  + sizeof(XLAT_STR_35)
+#  endif
+#  ifdef XLAT_STR_36
+  + sizeof(XLAT_STR_36)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
+#  undef XLAT_STR_23
+#  undef XLAT_VAL_23
+#  undef XLAT_STR_24
+#  undef XLAT_VAL_24
+#  undef XLAT_STR_25
+#  undef XLAT_VAL_25
+#  undef XLAT_STR_26
+#  undef XLAT_VAL_26
+#  undef XLAT_STR_27
+#  undef XLAT_VAL_27
+#  undef XLAT_STR_28
+#  undef XLAT_VAL_28
+#  undef XLAT_STR_29
+#  undef XLAT_VAL_29
+#  undef XLAT_STR_30
+#  undef XLAT_VAL_30
+#  undef XLAT_STR_31
+#  undef XLAT_VAL_31
+#  undef XLAT_STR_32
+#  undef XLAT_VAL_32
+#  undef XLAT_STR_33
+#  undef XLAT_VAL_33
+#  undef XLAT_STR_34
+#  undef XLAT_VAL_34
+#  undef XLAT_STR_35
+#  undef XLAT_VAL_35
+#  undef XLAT_STR_36
+#  undef XLAT_VAL_36
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

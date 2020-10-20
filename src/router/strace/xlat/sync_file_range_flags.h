@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sync_file_range_flags_xdata[] = {
  XLAT(SYNC_FILE_RANGE_WAIT_BEFORE),
+ #define XLAT_VAL_0 ((unsigned) (SYNC_FILE_RANGE_WAIT_BEFORE))
+ #define XLAT_STR_0 STRINGIFY(SYNC_FILE_RANGE_WAIT_BEFORE)
  XLAT(SYNC_FILE_RANGE_WRITE),
+ #define XLAT_VAL_1 ((unsigned) (SYNC_FILE_RANGE_WRITE))
+ #define XLAT_STR_1 STRINGIFY(SYNC_FILE_RANGE_WRITE)
  XLAT(SYNC_FILE_RANGE_WAIT_AFTER),
+ #define XLAT_VAL_2 ((unsigned) (SYNC_FILE_RANGE_WAIT_AFTER))
+ #define XLAT_STR_2 STRINGIFY(SYNC_FILE_RANGE_WAIT_AFTER)
 };
 static
 const struct xlat sync_file_range_flags[1] = { {
  .data = sync_file_range_flags_xdata,
  .size = ARRAY_SIZE(sync_file_range_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

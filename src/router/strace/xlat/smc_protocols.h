@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data smc_protocols_xdata[] = {
  [SMCPROTO_SMC] = XLAT(SMCPROTO_SMC),
+ #define XLAT_VAL_0 ((unsigned) (SMCPROTO_SMC))
+ #define XLAT_STR_0 STRINGIFY(SMCPROTO_SMC)
  [SMCPROTO_SMC6] = XLAT(SMCPROTO_SMC6),
+ #define XLAT_VAL_1 ((unsigned) (SMCPROTO_SMC6))
+ #define XLAT_STR_1 STRINGIFY(SMCPROTO_SMC6)
 };
 static
 const struct xlat smc_protocols[1] = { {
  .data = smc_protocols_xdata,
  .size = ARRAY_SIZE(smc_protocols_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

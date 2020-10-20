@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data mlock_flags_xdata[] = {
  XLAT(MLOCK_ONFAULT),
+ #define XLAT_VAL_0 ((unsigned) (MLOCK_ONFAULT))
+ #define XLAT_STR_0 STRINGIFY(MLOCK_ONFAULT)
 };
 static
 const struct xlat mlock_flags[1] = { {
  .data = mlock_flags_xdata,
  .size = ARRAY_SIZE(mlock_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

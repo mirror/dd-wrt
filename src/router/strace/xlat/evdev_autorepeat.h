@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data evdev_autorepeat_xdata[] = {
  [REP_DELAY] = XLAT(REP_DELAY),
+ #define XLAT_VAL_0 ((unsigned) (REP_DELAY))
+ #define XLAT_STR_0 STRINGIFY(REP_DELAY)
  [REP_PERIOD] = XLAT(REP_PERIOD),
+ #define XLAT_VAL_1 ((unsigned) (REP_PERIOD))
+ #define XLAT_STR_1 STRINGIFY(REP_PERIOD)
 };
 static
 const struct xlat evdev_autorepeat[1] = { {
  .data = evdev_autorepeat_xdata,
  .size = ARRAY_SIZE(evdev_autorepeat_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data s390_runtime_instr_commands_xdata[] = {
  [S390_RUNTIME_INSTR_START] = XLAT(S390_RUNTIME_INSTR_START),
+ #define XLAT_VAL_0 ((unsigned) (S390_RUNTIME_INSTR_START))
+ #define XLAT_STR_0 STRINGIFY(S390_RUNTIME_INSTR_START)
  [S390_RUNTIME_INSTR_STOP] = XLAT(S390_RUNTIME_INSTR_STOP),
+ #define XLAT_VAL_1 ((unsigned) (S390_RUNTIME_INSTR_STOP))
+ #define XLAT_STR_1 STRINGIFY(S390_RUNTIME_INSTR_STOP)
 };
 static
 const struct xlat s390_runtime_instr_commands[1] = { {
  .data = s390_runtime_instr_commands_xdata,
  .size = ARRAY_SIZE(s390_runtime_instr_commands_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -70,21 +70,105 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ebpf_class_xdata[] = {
  [BPF_LD] = XLAT(BPF_LD),
+ #define XLAT_VAL_0 ((unsigned) (BPF_LD))
+ #define XLAT_STR_0 STRINGIFY(BPF_LD)
  [BPF_LDX] = XLAT(BPF_LDX),
+ #define XLAT_VAL_1 ((unsigned) (BPF_LDX))
+ #define XLAT_STR_1 STRINGIFY(BPF_LDX)
  [BPF_ST] = XLAT(BPF_ST),
+ #define XLAT_VAL_2 ((unsigned) (BPF_ST))
+ #define XLAT_STR_2 STRINGIFY(BPF_ST)
  [BPF_STX] = XLAT(BPF_STX),
+ #define XLAT_VAL_3 ((unsigned) (BPF_STX))
+ #define XLAT_STR_3 STRINGIFY(BPF_STX)
  [BPF_ALU] = XLAT(BPF_ALU),
+ #define XLAT_VAL_4 ((unsigned) (BPF_ALU))
+ #define XLAT_STR_4 STRINGIFY(BPF_ALU)
  [BPF_JMP] = XLAT(BPF_JMP),
+ #define XLAT_VAL_5 ((unsigned) (BPF_JMP))
+ #define XLAT_STR_5 STRINGIFY(BPF_JMP)
  [BPF_JMP32] = XLAT(BPF_JMP32),
+ #define XLAT_VAL_6 ((unsigned) (BPF_JMP32))
+ #define XLAT_STR_6 STRINGIFY(BPF_JMP32)
  [BPF_ALU64] = XLAT(BPF_ALU64),
+ #define XLAT_VAL_7 ((unsigned) (BPF_ALU64))
+ #define XLAT_STR_7 STRINGIFY(BPF_ALU64)
 };
 static
 const struct xlat ebpf_class[1] = { {
  .data = ebpf_class_xdata,
  .size = ARRAY_SIZE(ebpf_class_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data perf_hw_cache_op_id_xdata[] = {
  XLAT(PERF_COUNT_HW_CACHE_OP_READ),
+ #define XLAT_VAL_0 ((unsigned) (PERF_COUNT_HW_CACHE_OP_READ))
+ #define XLAT_STR_0 STRINGIFY(PERF_COUNT_HW_CACHE_OP_READ)
  XLAT(PERF_COUNT_HW_CACHE_OP_WRITE),
+ #define XLAT_VAL_1 ((unsigned) (PERF_COUNT_HW_CACHE_OP_WRITE))
+ #define XLAT_STR_1 STRINGIFY(PERF_COUNT_HW_CACHE_OP_WRITE)
  XLAT(PERF_COUNT_HW_CACHE_OP_PREFETCH),
+ #define XLAT_VAL_2 ((unsigned) (PERF_COUNT_HW_CACHE_OP_PREFETCH))
+ #define XLAT_STR_2 STRINGIFY(PERF_COUNT_HW_CACHE_OP_PREFETCH)
 };
 static
 const struct xlat perf_hw_cache_op_id[1] = { {
  .data = perf_hw_cache_op_id_xdata,
  .size = ARRAY_SIZE(perf_hw_cache_op_id_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

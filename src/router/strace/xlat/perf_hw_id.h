@@ -84,23 +84,127 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data perf_hw_id_xdata[] = {
  XLAT(PERF_COUNT_HW_CPU_CYCLES),
+ #define XLAT_VAL_0 ((unsigned) (PERF_COUNT_HW_CPU_CYCLES))
+ #define XLAT_STR_0 STRINGIFY(PERF_COUNT_HW_CPU_CYCLES)
  XLAT(PERF_COUNT_HW_INSTRUCTIONS),
+ #define XLAT_VAL_1 ((unsigned) (PERF_COUNT_HW_INSTRUCTIONS))
+ #define XLAT_STR_1 STRINGIFY(PERF_COUNT_HW_INSTRUCTIONS)
  XLAT(PERF_COUNT_HW_CACHE_REFERENCES),
+ #define XLAT_VAL_2 ((unsigned) (PERF_COUNT_HW_CACHE_REFERENCES))
+ #define XLAT_STR_2 STRINGIFY(PERF_COUNT_HW_CACHE_REFERENCES)
  XLAT(PERF_COUNT_HW_CACHE_MISSES),
+ #define XLAT_VAL_3 ((unsigned) (PERF_COUNT_HW_CACHE_MISSES))
+ #define XLAT_STR_3 STRINGIFY(PERF_COUNT_HW_CACHE_MISSES)
  XLAT(PERF_COUNT_HW_BRANCH_INSTRUCTIONS),
+ #define XLAT_VAL_4 ((unsigned) (PERF_COUNT_HW_BRANCH_INSTRUCTIONS))
+ #define XLAT_STR_4 STRINGIFY(PERF_COUNT_HW_BRANCH_INSTRUCTIONS)
  XLAT(PERF_COUNT_HW_BRANCH_MISSES),
+ #define XLAT_VAL_5 ((unsigned) (PERF_COUNT_HW_BRANCH_MISSES))
+ #define XLAT_STR_5 STRINGIFY(PERF_COUNT_HW_BRANCH_MISSES)
  XLAT(PERF_COUNT_HW_BUS_CYCLES),
+ #define XLAT_VAL_6 ((unsigned) (PERF_COUNT_HW_BUS_CYCLES))
+ #define XLAT_STR_6 STRINGIFY(PERF_COUNT_HW_BUS_CYCLES)
  XLAT(PERF_COUNT_HW_STALLED_CYCLES_FRONTEND),
+ #define XLAT_VAL_7 ((unsigned) (PERF_COUNT_HW_STALLED_CYCLES_FRONTEND))
+ #define XLAT_STR_7 STRINGIFY(PERF_COUNT_HW_STALLED_CYCLES_FRONTEND)
  XLAT(PERF_COUNT_HW_STALLED_CYCLES_BACKEND),
+ #define XLAT_VAL_8 ((unsigned) (PERF_COUNT_HW_STALLED_CYCLES_BACKEND))
+ #define XLAT_STR_8 STRINGIFY(PERF_COUNT_HW_STALLED_CYCLES_BACKEND)
  XLAT(PERF_COUNT_HW_REF_CPU_CYCLES),
+ #define XLAT_VAL_9 ((unsigned) (PERF_COUNT_HW_REF_CPU_CYCLES))
+ #define XLAT_STR_9 STRINGIFY(PERF_COUNT_HW_REF_CPU_CYCLES)
 };
 static
 const struct xlat perf_hw_id[1] = { {
  .data = perf_hw_id_xdata,
  .size = ARRAY_SIZE(perf_hw_id_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ebpf_op_alu_xdata[] = {
  XLAT(BPF_MOV),
+ #define XLAT_VAL_0 ((unsigned) (BPF_MOV))
+ #define XLAT_STR_0 STRINGIFY(BPF_MOV)
  XLAT(BPF_ARSH),
+ #define XLAT_VAL_1 ((unsigned) (BPF_ARSH))
+ #define XLAT_STR_1 STRINGIFY(BPF_ARSH)
  XLAT(BPF_END),
+ #define XLAT_VAL_2 ((unsigned) (BPF_END))
+ #define XLAT_STR_2 STRINGIFY(BPF_END)
 };
 static
 const struct xlat ebpf_op_alu[1] = { {
  .data = ebpf_op_alu_xdata,
  .size = ARRAY_SIZE(ebpf_op_alu_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

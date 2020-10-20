@@ -4,7 +4,7 @@
  * Copyright (c) 1993-1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2012 Denys Vlasenko <vda.linux@googlemail.com>
- * Copyright (c) 2012-2018 The strace developers.
+ * Copyright (c) 2012-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -47,7 +47,7 @@ print_numeric_umode_t(const unsigned short mode)
 }
 
 void
-print_numeric_long_umask(const unsigned long mode)
+print_numeric_ll_umode_t(const unsigned long long mode)
 {
-	tprintf("%#03lo", mode);
+	tprintf("%#03llo", mode);
 }

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -36,22 +36,6 @@ decode_neigh_addr(struct tcb *const tcp,
 }
 
 static bool
-decode_neigh_lladdr(struct tcb *const tcp,
-		    const kernel_ulong_t addr,
-		    const unsigned int len,
-		    const void *const opaque_data)
-{
-	uint8_t maddr[6];
-
-	if (len < sizeof(maddr))
-		return false;
-	else if (!umove_or_printaddr(tcp, addr, &maddr))
-		print_mac_addr("", maddr, sizeof(maddr));
-
-	return true;
-}
-
-static bool
 decode_nda_cacheinfo(struct tcb *const tcp,
 		     const kernel_ulong_t addr,
 		     const unsigned int len,
@@ -74,7 +58,7 @@ decode_nda_cacheinfo(struct tcb *const tcp,
 
 static const nla_decoder_t ndmsg_nla_decoders[] = {
 	[NDA_DST]		= decode_neigh_addr,
-	[NDA_LLADDR]		= decode_neigh_lladdr,
+	[NDA_LLADDR]		= decode_nla_hwaddr_nofamily,
 	[NDA_CACHEINFO]		= decode_nda_cacheinfo,
 	[NDA_PROBES]		= decode_nla_u32,
 	[NDA_VLAN]		= decode_nla_u16,
@@ -85,6 +69,7 @@ static const nla_decoder_t ndmsg_nla_decoders[] = {
 	[NDA_LINK_NETNSID]	= decode_nla_u32,
 	[NDA_SRC_VNI]		= NULL,
 	[NDA_PROTOCOL]		= decode_nla_u8,
+	[NDA_NH_ID]		= decode_nla_u32,
 };
 
 DECL_NETLINK_ROUTE_DECODER(decode_ndmsg)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013-2019 The strace developers.
+ * Copyright (c) 2013-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -123,9 +123,9 @@
 [120] = { 0,	PU|NF,		SEN(getpid),			"getpid"		},
 [121] = { 4,	TP,		SEN(wait4),			"wait4"			},
 [122] = { 5,	TP,		SEN(waitid),			"waitid"		},
-[123] = { 2,	TS,		SEN(kill),			"kill"			},
-[124] = { 2,	TS,		SEN(kill),			"tkill"			},
-[125] = { 3,	TS,		SEN(tgkill),			"tgkill"		},
+[123] = { 2,	TS|TP,		SEN(kill),			"kill"			},
+[124] = { 2,	TS|TP,		SEN(tkill),			"tkill"			},
+[125] = { 3,	TS|TP,		SEN(tgkill),			"tgkill"		},
 [126] = { 1,	0,		SEN(set_tid_address),		"set_tid_address"	},
 [127] = { 0,	PU|NF,		SEN(gettid),			"gettid"		},
 [128] = { 0,	0,		SEN(setsid),			"setsid"		},
@@ -191,9 +191,9 @@
 [189] = { 2,	0,		SEN(getrlimit),			"getrlimit"		},
 [190] = { 2,	0,		SEN(getrusage),			"getrusage"		},
 [191] = { 6,	0,		SEN(futex_time32),		"futex"			},
-[192] = { 2,	0,		SEN(gettimeofday),		"gettimeofday"		},
-[193] = { 2,	0,		SEN(settimeofday),		"settimeofday"		},
-[194] = { 1,	0,		SEN(adjtimex32),		"adjtimex"		},
+[192] = { 2,	TCL,		SEN(gettimeofday),		"gettimeofday"		},
+[193] = { 2,	TCL,		SEN(settimeofday),		"settimeofday"		},
+[194] = { 1,	TCL,		SEN(adjtimex32),		"adjtimex"		},
 [195] = { 2,	0,		SEN(nanosleep_time32),		"nanosleep"		},
 [196] = { 2,	TC,		SEN(getgroups),			"getgroups"		},
 [197] = { 2,	TC,		SEN(setgroups),			"setgroups"		},
@@ -227,7 +227,7 @@
 [227] = { 4,	TS,		SEN(rt_sigprocmask),		"rt_sigprocmask"	},
 [228] = { 2,	TS,		SEN(rt_sigpending),		"rt_sigpending"		},
 [229] = { 4,	TS,		SEN(rt_sigtimedwait_time32),	"rt_sigtimedwait"	},
-[230] = { 3,	TS,		SEN(rt_sigqueueinfo),		"rt_sigqueueinfo"	},
+[230] = { 3,	TS|TP,		SEN(rt_sigqueueinfo),		"rt_sigqueueinfo"	},
 [231] = { 2,	TS,		SEN(rt_sigsuspend),		"rt_sigsuspend"		},
 [232] = { 4,	TD,		SEN(mq_open),			"mq_open"		},
 [233] = { 1,	0,		SEN(mq_unlink),			"mq_unlink"		},
@@ -241,9 +241,9 @@
 [241] = { 3,	0,		SEN(io_submit),			"io_submit"		},
 [242] = { 5,	0,		SEN(io_getevents_time32),	"io_getevents"		},
 [243] = { 3,	0,		SEN(io_cancel),			"io_cancel"		},
-[244] = { 2,	0,		SEN(clock_settime32),		"clock_settime"		},
-[245] = { 2,	0,		SEN(clock_gettime32),		"clock_gettime"		},
-[246] = { 2,	0,		SEN(clock_getres_time32),	"clock_getres"		},
+[244] = { 2,	TCL,		SEN(clock_settime32),		"clock_settime"		},
+[245] = { 2,	TCL,		SEN(clock_gettime32),		"clock_gettime"		},
+[246] = { 2,	TCL,		SEN(clock_getres_time32),	"clock_getres"		},
 [247] = { 4,	0,		SEN(clock_nanosleep_time32),	"clock_nanosleep"	},
 [248] = { 3,	0,		SEN(timer_create),		"timer_create"		},
 [249] = { 1,	0,		SEN(timer_delete),		"timer_delete"		},
@@ -263,7 +263,7 @@
 [263] = { 6,	TM,		SEN(mbind),			"mbind"			},
 [264] = { 5,	TM,		SEN(get_mempolicy),		"get_mempolicy"		},
 [265] = { 3,	TM,		SEN(set_mempolicy),		"set_mempolicy"		},
-[266] = { 1,	TP,		SEN(unshare),			"unshare"		},
+[266] = { 1,	0,		SEN(unshare),			"unshare"		},
 [267] = { 6,	TM,		SEN(move_pages),		"move_pages"		},
 [268] = { 6,	TD,		SEN(splice),			"splice"		},
 [269] = { 4,	TD,		SEN(tee),			"tee"			},
@@ -324,7 +324,7 @@
 [326] = { 6,	TD,		SEN(sync_file_range2),		"sync_file_range2"	},
 [327] = { 5,	TD,		SEN(perf_event_open),		"perf_event_open"	},
 [328] = { 4,	TP|TS,		SEN(rt_tgsigqueueinfo),		"rt_tgsigqueueinfo"	},
-[329] = { 2,	0,		SEN(clock_adjtime32),		"clock_adjtime"		},
+[329] = { 2,	TCL,		SEN(clock_adjtime32),		"clock_adjtime"		},
 [330] = { 4,	0,		SEN(prlimit64),			"prlimit64"		},
 [331] = { 5,	0,		SEN(kcmp),			"kcmp"			},
 [332] = { 3,	TD,		SEN(finit_module),		"finit_module"		},
@@ -346,7 +346,7 @@
 [348] = { 4,	TM|SI,		SEN(pkey_mprotect),		"pkey_mprotect"		},
 [349] = { 2,	0,		SEN(pkey_alloc),		"pkey_alloc"		},
 [350] = { 1,	0,		SEN(pkey_free),			"pkey_free"		},
-[351] = { 5,	TD|TF|TSTA,	SEN(statx),			"statx"			},
+[351] = { 5,	TD|TF|TFST|TSTA,SEN(statx),			"statx"			},
 [352] = { 4,	0,		SEN(rseq),			"rseq"			},
 /* [353 ... 402] - reserved to sync up with other architectures */
 #include "syscallent-common-32.h"

@@ -2,7 +2,7 @@
  * Check decoding of socket filters.
  *
  * Copyright (c) 2017 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -22,17 +22,6 @@
 #endif
 
 #define HEX_FMT "%#x"
-
-#if XLAT_RAW
-# define XLAT_FMT HEX_FMT
-# define XLAT_ARGS(a_) (a_)
-#elif XLAT_VERBOSE
-# define XLAT_FMT HEX_FMT " /* %s */"
-# define XLAT_ARGS(a_) (a_), #a_
-#else
-# define XLAT_FMT "%s"
-# define XLAT_ARGS(a_) #a_
-#endif
 
 #define PRINT_STMT(pfx, code_fmt, k_fmt, ...)	\
 	printf("%sBPF_STMT(" code_fmt ", " k_fmt ")", pfx, __VA_ARGS__)

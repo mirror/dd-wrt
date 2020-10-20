@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data rename_flags_xdata[] = {
  XLAT(RENAME_NOREPLACE),
+ #define XLAT_VAL_0 ((unsigned) (RENAME_NOREPLACE))
+ #define XLAT_STR_0 STRINGIFY(RENAME_NOREPLACE)
  XLAT(RENAME_EXCHANGE),
+ #define XLAT_VAL_1 ((unsigned) (RENAME_EXCHANGE))
+ #define XLAT_STR_1 STRINGIFY(RENAME_EXCHANGE)
  XLAT(RENAME_WHITEOUT),
+ #define XLAT_VAL_2 ((unsigned) (RENAME_WHITEOUT))
+ #define XLAT_STR_2 STRINGIFY(RENAME_WHITEOUT)
 };
 static
 const struct xlat rename_flags[1] = { {
  .data = rename_flags_xdata,
  .size = ARRAY_SIZE(rename_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

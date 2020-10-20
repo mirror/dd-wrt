@@ -98,25 +98,149 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data smc_states_xdata[] = {
  XLAT(SMC_ACTIVE),
+ #define XLAT_VAL_0 ((unsigned) (SMC_ACTIVE))
+ #define XLAT_STR_0 STRINGIFY(SMC_ACTIVE)
  XLAT(SMC_INIT),
+ #define XLAT_VAL_1 ((unsigned) (SMC_INIT))
+ #define XLAT_STR_1 STRINGIFY(SMC_INIT)
  XLAT(SMC_CLOSED),
+ #define XLAT_VAL_2 ((unsigned) (SMC_CLOSED))
+ #define XLAT_STR_2 STRINGIFY(SMC_CLOSED)
  XLAT(SMC_LISTEN),
+ #define XLAT_VAL_3 ((unsigned) (SMC_LISTEN))
+ #define XLAT_STR_3 STRINGIFY(SMC_LISTEN)
  XLAT(SMC_PEERCLOSEWAIT1),
+ #define XLAT_VAL_4 ((unsigned) (SMC_PEERCLOSEWAIT1))
+ #define XLAT_STR_4 STRINGIFY(SMC_PEERCLOSEWAIT1)
  XLAT(SMC_PEERCLOSEWAIT2),
+ #define XLAT_VAL_5 ((unsigned) (SMC_PEERCLOSEWAIT2))
+ #define XLAT_STR_5 STRINGIFY(SMC_PEERCLOSEWAIT2)
  XLAT(SMC_APPFINCLOSEWAIT),
+ #define XLAT_VAL_6 ((unsigned) (SMC_APPFINCLOSEWAIT))
+ #define XLAT_STR_6 STRINGIFY(SMC_APPFINCLOSEWAIT)
  XLAT(SMC_APPCLOSEWAIT1),
+ #define XLAT_VAL_7 ((unsigned) (SMC_APPCLOSEWAIT1))
+ #define XLAT_STR_7 STRINGIFY(SMC_APPCLOSEWAIT1)
  XLAT(SMC_APPCLOSEWAIT2),
+ #define XLAT_VAL_8 ((unsigned) (SMC_APPCLOSEWAIT2))
+ #define XLAT_STR_8 STRINGIFY(SMC_APPCLOSEWAIT2)
  XLAT(SMC_PEERFINCLOSEWAIT),
+ #define XLAT_VAL_9 ((unsigned) (SMC_PEERFINCLOSEWAIT))
+ #define XLAT_STR_9 STRINGIFY(SMC_PEERFINCLOSEWAIT)
  XLAT(SMC_PEERABORTWAIT),
+ #define XLAT_VAL_10 ((unsigned) (SMC_PEERABORTWAIT))
+ #define XLAT_STR_10 STRINGIFY(SMC_PEERABORTWAIT)
  XLAT(SMC_PROCESSABORT),
+ #define XLAT_VAL_11 ((unsigned) (SMC_PROCESSABORT))
+ #define XLAT_STR_11 STRINGIFY(SMC_PROCESSABORT)
 };
 static
 const struct xlat smc_states[1] = { {
  .data = smc_states_xdata,
  .size = ARRAY_SIZE(smc_states_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

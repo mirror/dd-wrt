@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data smc_link_group_roles_xdata[] = {
  [SMC_CLNT] = XLAT(SMC_CLNT),
+ #define XLAT_VAL_0 ((unsigned) (SMC_CLNT))
+ #define XLAT_STR_0 STRINGIFY(SMC_CLNT)
  [SMC_SERV] = XLAT(SMC_SERV),
+ #define XLAT_VAL_1 ((unsigned) (SMC_SERV))
+ #define XLAT_STR_1 STRINGIFY(SMC_SERV)
 };
 static
 const struct xlat smc_link_group_roles[1] = { {
  .data = smc_link_group_roles_xdata,
  .size = ARRAY_SIZE(smc_link_group_roles_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

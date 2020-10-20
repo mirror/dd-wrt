@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2017-2018 The strace developers.
+ * Copyright (c) 2017-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,43 +17,27 @@
 #endif
 #include <linux/rtnetlink.h>
 
+#define XLAT_MACROS_ONLY
+# include "xlat/rtnl_ifla_xdp_attrs.h"
+#undef XLAT_MACROS_ONLY
+
 #if !HAVE_DECL_IFLA_XDP
 enum { IFLA_XDP = 43 };
 #endif
-#ifndef IFLA_XDP_FD
-# define IFLA_XDP_FD 1
-#endif
 
-#ifndef IFLA_XDP_ATTACHED
-# define IFLA_XDP_ATTACHED 2
+#if !HAVE_DECL_XDP_ATTACHED_NONE
+enum { XDP_ATTACHED_NONE = 0 };
 #endif
-
-#ifndef IFLA_XDP_PROG_ID
-# define IFLA_XDP_PROG_ID 4
-#endif
-
-#ifndef IFLA_XDP_DRV_PROG_ID
-# define IFLA_XDP_DRV_PROG_ID 5
-#endif
-
-#ifndef IFLA_XDP_SKB_PROG_ID
-# define IFLA_XDP_SKB_PROG_ID 6
-#endif
-
-#ifndef IFLA_XDP_HW_PROG_ID
-# define IFLA_XDP_HW_PROG_ID 7
-#endif
-
-#ifndef XDP_ATTACHED_NONE
-# define XDP_ATTACHED_NONE 0
-#endif
-
-#ifndef XDP_ATTACHED_MULTI
-# define XDP_ATTACHED_MULTI 4
+#if !HAVE_DECL_XDP_ATTACHED_MULTI
+enum { XDP_ATTACHED_MULTI = 4 };
 #endif
 
 #define IFLA_ATTR IFLA_XDP
 #include "nlattr_ifla.h"
+
+#ifndef FD9_PATH
+# define FD9_PATH ""
+#endif
 
 int
 main(void)
@@ -117,6 +101,18 @@ main(void)
 					      print_quoted_hex, 1,
 					      printf("%u", num));
 	}
+
+	/* IFLA_XDP_EXPECTED_FD */
+	TEST_NESTED_NLATTR_OBJECT_EX(fd, nlh0, hdrlen,
+				     init_ifinfomsg, print_ifinfomsg,
+				     IFLA_XDP_EXPECTED_FD, pattern, num, 1,
+				     printf("%d", num));
+
+	int exp_fd = 9;
+	TEST_NESTED_NLATTR_OBJECT_EX(fd, nlh0, hdrlen,
+				     init_ifinfomsg, print_ifinfomsg,
+				     IFLA_XDP_EXPECTED_FD, pattern, exp_fd, 1,
+				     printf("9" FD9_PATH));
 
 	puts("+++ exited with 0 +++");
 	return 0;

@@ -2,21 +2,24 @@
  * Check decoding of clock_nanosleep and clock_gettime syscalls.
  *
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-#include <assert.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <signal.h>
-#include <time.h>
-#include <unistd.h>
-#include <sys/time.h>
 #include "scno.h"
+
+#ifdef __NR_clock_nanosleep
+
+# include <assert.h>
+# include <stdio.h>
+# include <stdint.h>
+# include <signal.h>
+# include <time.h>
+# include <unistd.h>
+# include <sys/time.h>
 
 static void
 handler(int signo)
@@ -127,3 +130,9 @@ main(void)
 	puts("+++ exited with 0 +++");
 	return 0;
 }
+
+#else
+
+SKIP_MAIN_UNDEFINED("__NR_clock_nanosleep")
+
+#endif

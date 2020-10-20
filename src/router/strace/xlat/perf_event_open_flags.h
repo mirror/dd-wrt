@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data perf_event_open_flags_xdata[] = {
  XLAT(PERF_FLAG_FD_NO_GROUP),
+ #define XLAT_VAL_0 ((unsigned) (PERF_FLAG_FD_NO_GROUP))
+ #define XLAT_STR_0 STRINGIFY(PERF_FLAG_FD_NO_GROUP)
  XLAT(PERF_FLAG_FD_OUTPUT),
+ #define XLAT_VAL_1 ((unsigned) (PERF_FLAG_FD_OUTPUT))
+ #define XLAT_STR_1 STRINGIFY(PERF_FLAG_FD_OUTPUT)
  XLAT(PERF_FLAG_PID_CGROUP),
+ #define XLAT_VAL_2 ((unsigned) (PERF_FLAG_PID_CGROUP))
+ #define XLAT_STR_2 STRINGIFY(PERF_FLAG_PID_CGROUP)
  XLAT(PERF_FLAG_FD_CLOEXEC),
+ #define XLAT_VAL_3 ((unsigned) (PERF_FLAG_FD_CLOEXEC))
+ #define XLAT_STR_3 STRINGIFY(PERF_FLAG_FD_CLOEXEC)
 };
 static
 const struct xlat perf_event_open_flags[1] = { {
  .data = perf_event_open_flags_xdata,
  .size = ARRAY_SIZE(perf_event_open_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

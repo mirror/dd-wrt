@@ -70,21 +70,105 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data membarrier_cmds_xdata[] = {
  XLAT(MEMBARRIER_CMD_QUERY),
+ #define XLAT_VAL_0 ((unsigned) (MEMBARRIER_CMD_QUERY))
+ #define XLAT_STR_0 STRINGIFY(MEMBARRIER_CMD_QUERY)
  XLAT(MEMBARRIER_CMD_GLOBAL),
+ #define XLAT_VAL_1 ((unsigned) (MEMBARRIER_CMD_GLOBAL))
+ #define XLAT_STR_1 STRINGIFY(MEMBARRIER_CMD_GLOBAL)
  XLAT(MEMBARRIER_CMD_GLOBAL_EXPEDITED),
+ #define XLAT_VAL_2 ((unsigned) (MEMBARRIER_CMD_GLOBAL_EXPEDITED))
+ #define XLAT_STR_2 STRINGIFY(MEMBARRIER_CMD_GLOBAL_EXPEDITED)
  XLAT(MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED),
+ #define XLAT_VAL_3 ((unsigned) (MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED))
+ #define XLAT_STR_3 STRINGIFY(MEMBARRIER_CMD_REGISTER_GLOBAL_EXPEDITED)
  XLAT(MEMBARRIER_CMD_PRIVATE_EXPEDITED),
+ #define XLAT_VAL_4 ((unsigned) (MEMBARRIER_CMD_PRIVATE_EXPEDITED))
+ #define XLAT_STR_4 STRINGIFY(MEMBARRIER_CMD_PRIVATE_EXPEDITED)
  XLAT(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED),
+ #define XLAT_VAL_5 ((unsigned) (MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED))
+ #define XLAT_STR_5 STRINGIFY(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED)
  XLAT(MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE),
+ #define XLAT_VAL_6 ((unsigned) (MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE))
+ #define XLAT_STR_6 STRINGIFY(MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE)
  XLAT(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE),
+ #define XLAT_VAL_7 ((unsigned) (MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE))
+ #define XLAT_STR_7 STRINGIFY(MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED_SYNC_CORE)
 };
 static
 const struct xlat membarrier_cmds[1] = { {
  .data = membarrier_cmds_xdata,
  .size = ARRAY_SIZE(membarrier_cmds_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

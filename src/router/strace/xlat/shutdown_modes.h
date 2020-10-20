@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data shutdown_modes_xdata[] = {
  [SHUT_RD] = XLAT(SHUT_RD),
+ #define XLAT_VAL_0 ((unsigned) (SHUT_RD))
+ #define XLAT_STR_0 STRINGIFY(SHUT_RD)
  [SHUT_WR] = XLAT(SHUT_WR),
+ #define XLAT_VAL_1 ((unsigned) (SHUT_WR))
+ #define XLAT_STR_1 STRINGIFY(SHUT_WR)
  [SHUT_RDWR] = XLAT(SHUT_RDWR),
+ #define XLAT_VAL_2 ((unsigned) (SHUT_RDWR))
+ #define XLAT_STR_2 STRINGIFY(SHUT_RDWR)
 };
 static
 const struct xlat shutdown_modes[1] = { {
  .data = shutdown_modes_xdata,
  .size = ARRAY_SIZE(shutdown_modes_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

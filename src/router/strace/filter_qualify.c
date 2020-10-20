@@ -18,7 +18,12 @@ struct number_set *read_set;
 struct number_set *write_set;
 struct number_set *signal_set;
 struct number_set *status_set;
+struct number_set *quiet_set;
+struct number_set *decode_fd_set;
 struct number_set *trace_set;
+
+bool quiet_set_updated = false;
+bool decode_fd_set_updated = false;
 
 static struct number_set *abbrev_set;
 static struct number_set *inject_set;
@@ -59,24 +64,47 @@ sigstr_to_uint(const char *s)
 	return -1;
 }
 
-static const char *statuses[NUMBER_OF_STATUSES] = {
-	[STATUS_SUCCESSFUL]  = "successful",
-	[STATUS_FAILED]      = "failed",
-	[STATUS_UNFINISHED]  = "unfinished",
-	[STATUS_UNAVAILABLE] = "unavailable",
-	[STATUS_DETACHED]    = "detached",
-};
-
 static int
 statusstr_to_uint(const char *str)
 {
-	unsigned int i;
+	static const struct xlat_data statuses[] = {
+		{ STATUS_SUCCESSFUL,  "successful" },
+		{ STATUS_FAILED,      "failed" },
+		{ STATUS_UNFINISHED,  "unfinished" },
+		{ STATUS_UNAVAILABLE, "unavailable" },
+		{ STATUS_DETACHED,    "detached" },
+	};
 
-	for (i = 0; i < NUMBER_OF_STATUSES; ++i)
-		if (strcasecmp(str, statuses[i]) == 0)
-			return i;
+	return (int) find_arg_val(str, statuses, -1ULL, -1ULL);
+}
 
-	return -1;
+static int
+quietstr_to_uint(const char *str)
+{
+	static const struct xlat_data quiet_strs[] = {
+		{ QUIET_ATTACH,        "attach" },
+		{ QUIET_EXIT,          "exit" },
+		{ QUIET_EXIT,          "exits" },
+		{ QUIET_PATH_RESOLVE,  "path-resolution" },
+		{ QUIET_PERSONALITY,   "personality" },
+		{ QUIET_THREAD_EXECVE, "superseded" },
+		{ QUIET_THREAD_EXECVE, "thread-execve" },
+	};
+
+	return (int) find_arg_val(str, quiet_strs, -1ULL, -1ULL);
+}
+
+static int
+decode_fd_str_to_uint(const char *str)
+{
+	static const struct xlat_data decode_fd_strs[] = {
+		{ DECODE_FD_PATH,      "path" },
+		{ DECODE_FD_SOCKET,    "socket" },
+		{ DECODE_FD_DEV,       "dev" },
+		{ DECODE_FD_PIDFD,     "pidfd" },
+	};
+
+	return (int) find_arg_val(str, decode_fd_strs, -1ULL, -1ULL);
 }
 
 static int
@@ -121,33 +149,67 @@ parse_inject_token(const char *const token, struct inject_opts *const fopts,
 
 	if ((val = STR_STRIP_PREFIX(token, "when=")) != token) {
 		/*
-		 *	== 1+1
-		 * F	== F+0
-		 * F+	== F+1
-		 * F+S
+		 *        == 1..INF+1
+		 * F      == F..INF+0
+		 * F+     == F..INF+1
+		 * F+S    == F..INF+S
+		 * F..L   == F..L+1
+		 * F..L+S
 		 */
 		char *end;
-		intval = string_to_uint_ex(val, &end, 0xffff, "+");
+		intval = string_to_uint_ex(val, &end, 0xffff, "+.");
 		if (intval < 1)
 			return false;
 
 		fopts->first = intval;
 
-		if (*end) {
+		if (end[0] == '.') {
+			if (end[1] != '.')
+				return false;
+			/*
+			 * F..L
+			 * F..L+S
+			 */
+			val = end + 2;
+			intval = string_to_uint_ex(val, &end, 0xffff, "+");
+			if (intval < fopts->first || intval == INJECT_LAST_INF)
+				return false;
+			fopts->last = intval;
+		} else {
+			/*
+			 * F   == F..INF+0
+			 * F+  == F..INF+1
+			 * F+S == F..INF+S
+			 */
+			fopts->last = INJECT_LAST_INF;
+		}
+
+		if (end[0] != '\0') {
 			val = end + 1;
-			if (*val) {
-				/* F+S */
+			if (val[0] != '\0') {
+				/*
+				 * F+S    == F..INF+S
+				 * F..L+S
+				 */
 				intval = string_to_uint_upto(val, 0xffff);
 				if (intval < 1)
 					return false;
 				fopts->step = intval;
 			} else {
-				/* F+ == F+1 */
+				/*
+				 * F+    == F..INF+1
+				 * F..L+ == F..L+1
+				 */
 				fopts->step = 1;
 			}
 		} else {
-			/* F == F+0 */
-			fopts->step = 0;
+			if (fopts->last == INJECT_LAST_INF) {
+				/* F == F..INF+0 */
+				fopts->step = 0;
+			} else {
+				/* F..L == F..L+1 */
+				fopts->step = 1;
+			}
 		}
 	} else if ((val = STR_STRIP_PREFIX(token, "syscall=")) != token) {
 		if (fopts->data.flags & INJECT_F_SYSCALL)
@@ -307,6 +369,27 @@ qualify_status(const char *const str)
 }
 
 void
+qualify_quiet(const char *const str)
+{
+	if (!quiet_set)
+		quiet_set = alloc_number_set_array(1);
+	else
+		quiet_set_updated = true;
+	qualify_tokens(str, quiet_set, quietstr_to_uint, "quiet");
+}
+
+void
+qualify_decode_fd(const char *const str)
+{
+	if (!decode_fd_set)
+		decode_fd_set = alloc_number_set_array(1);
+	else
+		decode_fd_set_updated = true;
+	qualify_tokens(str, decode_fd_set, decode_fd_str_to_uint,
+		       "decode-fds");
+}
+
+void
 qualify_trace(const char *const str)
 {
 	if (!trace_set)
@@ -345,6 +428,7 @@ qualify_inject_common(const char *const str,
 {
 	struct inject_opts opts = {
 		.first = 1,
+		.last = INJECT_LAST_INF,
 		.step = 1,
 		.data = {
 			.delay_idx = -1
@@ -454,6 +538,10 @@ static const struct qual_options {
 	{ "signals",	qualify_signals	},
 	{ "status",	qualify_status	},
 	{ "s",		qualify_signals	},
+	{ "quiet",	qualify_quiet	},
+	{ "silent",	qualify_quiet	},
+	{ "silence",	qualify_quiet	},
+	{ "q",		qualify_quiet	},
 	{ "read",	qualify_read	},
 	{ "reads",	qualify_read	},
 	{ "r",		qualify_read	},
@@ -463,6 +551,8 @@ static const struct qual_options {
 	{ "fault",	qualify_fault	},
 	{ "inject",	qualify_inject	},
 	{ "kvm",	qualify_kvm	},
+	{ "decode-fd",	qualify_decode_fd },
+	{ "decode-fds",	qualify_decode_fd },
 };
 
 void

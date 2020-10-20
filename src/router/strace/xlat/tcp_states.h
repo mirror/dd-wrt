@@ -94,24 +94,148 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data tcp_states_xdata[] = {
  [TCP_ESTABLISHED] = XLAT(TCP_ESTABLISHED),
+ #define XLAT_VAL_0 ((unsigned) (TCP_ESTABLISHED))
+ #define XLAT_STR_0 STRINGIFY(TCP_ESTABLISHED)
  [TCP_SYN_SENT] = XLAT(TCP_SYN_SENT),
+ #define XLAT_VAL_1 ((unsigned) (TCP_SYN_SENT))
+ #define XLAT_STR_1 STRINGIFY(TCP_SYN_SENT)
  [TCP_SYN_RECV] = XLAT(TCP_SYN_RECV),
+ #define XLAT_VAL_2 ((unsigned) (TCP_SYN_RECV))
+ #define XLAT_STR_2 STRINGIFY(TCP_SYN_RECV)
  [TCP_FIN_WAIT1] = XLAT(TCP_FIN_WAIT1),
+ #define XLAT_VAL_3 ((unsigned) (TCP_FIN_WAIT1))
+ #define XLAT_STR_3 STRINGIFY(TCP_FIN_WAIT1)
  [TCP_FIN_WAIT2] = XLAT(TCP_FIN_WAIT2),
+ #define XLAT_VAL_4 ((unsigned) (TCP_FIN_WAIT2))
+ #define XLAT_STR_4 STRINGIFY(TCP_FIN_WAIT2)
  [TCP_TIME_WAIT] = XLAT(TCP_TIME_WAIT),
+ #define XLAT_VAL_5 ((unsigned) (TCP_TIME_WAIT))
+ #define XLAT_STR_5 STRINGIFY(TCP_TIME_WAIT)
  [TCP_CLOSE] = XLAT(TCP_CLOSE),
+ #define XLAT_VAL_6 ((unsigned) (TCP_CLOSE))
+ #define XLAT_STR_6 STRINGIFY(TCP_CLOSE)
  [TCP_CLOSE_WAIT] = XLAT(TCP_CLOSE_WAIT),
+ #define XLAT_VAL_7 ((unsigned) (TCP_CLOSE_WAIT))
+ #define XLAT_STR_7 STRINGIFY(TCP_CLOSE_WAIT)
  [TCP_LAST_ACK] = XLAT(TCP_LAST_ACK),
+ #define XLAT_VAL_8 ((unsigned) (TCP_LAST_ACK))
+ #define XLAT_STR_8 STRINGIFY(TCP_LAST_ACK)
  [TCP_LISTEN] = XLAT(TCP_LISTEN),
+ #define XLAT_VAL_9 ((unsigned) (TCP_LISTEN))
+ #define XLAT_STR_9 STRINGIFY(TCP_LISTEN)
  [TCP_CLOSING] = XLAT(TCP_CLOSING),
+ #define XLAT_VAL_10 ((unsigned) (TCP_CLOSING))
+ #define XLAT_STR_10 STRINGIFY(TCP_CLOSING)
  [TCP_NEW_SYN_RECV] = XLAT(TCP_NEW_SYN_RECV),
+ #define XLAT_VAL_11 ((unsigned) (TCP_NEW_SYN_RECV))
+ #define XLAT_STR_11 STRINGIFY(TCP_NEW_SYN_RECV)
 };
 const struct xlat tcp_states[1] = { {
  .data = tcp_states_xdata,
  .size = ARRAY_SIZE(tcp_states_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

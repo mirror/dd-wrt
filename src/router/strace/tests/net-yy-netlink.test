@@ -6,7 +6,7 @@
 # Copyright (c) 2014 Masatake YAMATO <yamato@redhat.com>
 # Copyright (c) 2014-2016 Dmitry V. Levin <ldv@altlinux.org>
 # Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
-# Copyright (c) 2016-2018 The strace developers.
+# Copyright (c) 2016-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -15,9 +15,11 @@
 
 check_prog sed
 
+opts="${*:--yy}"
+
 run_prog ../netlink_netlink_diag
 run_prog > /dev/null
-run_strace -a22 -yy -eclose,network $args > "$EXP"
+run_strace -a22 ${opts} -eclose,network $args > "$EXP"
 
 # Filter out close() calls made by ld.so and libc.
 sed -n '/socket/,$p' < "$LOG" > "$OUT"

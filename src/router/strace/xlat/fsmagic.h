@@ -416,6 +416,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define CRAMFS_MAGIC_WEND 0x453dcd28
 #endif
+#if defined(DEVMEM_MAGIC) || (defined(HAVE_DECL_DEVMEM_MAGIC) && HAVE_DECL_DEVMEM_MAGIC)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((DEVMEM_MAGIC) == (0x454d444d), "DEVMEM_MAGIC != 0x454d444d");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define DEVMEM_MAGIC 0x454d444d
+#endif
 #if defined(GPFS_SUPER_MAGIC) || (defined(HAVE_DECL_GPFS_SUPER_MAGIC) && HAVE_DECL_GPFS_SUPER_MAGIC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
 static_assert((GPFS_SUPER_MAGIC) == (0x47504653), "GPFS_SUPER_MAGIC != 0x47504653");
@@ -499,6 +506,13 @@ static_assert((AAFS_MAGIC) == (0x5a3c69f0), "AAFS_MAGIC != 0x5a3c69f0");
 DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define AAFS_MAGIC 0x5a3c69f0
+#endif
+#if defined(ZONEFS_MAGIC) || (defined(HAVE_DECL_ZONEFS_MAGIC) && HAVE_DECL_ZONEFS_MAGIC)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((ZONEFS_MAGIC) == (0x5a4f4653), "ZONEFS_MAGIC != 0x5a4f4653");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define ZONEFS_MAGIC 0x5a4f4653
 #endif
 #if defined(PSTOREFS_MAGIC) || (defined(HAVE_DECL_PSTOREFS_MAGIC) && HAVE_DECL_PSTOREFS_MAGIC)
 DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
@@ -763,120 +777,1216 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data fsmagic_xdata[] = {
  XLAT(QNX4_SUPER_MAGIC),
+ #define XLAT_VAL_0 ((unsigned) (QNX4_SUPER_MAGIC))
+ #define XLAT_STR_0 STRINGIFY(QNX4_SUPER_MAGIC)
  XLAT(Z3FOLD_MAGIC),
+ #define XLAT_VAL_1 ((unsigned) (Z3FOLD_MAGIC))
+ #define XLAT_STR_1 STRINGIFY(Z3FOLD_MAGIC)
  XLAT(AUTOFS_SUPER_MAGIC),
+ #define XLAT_VAL_2 ((unsigned) (AUTOFS_SUPER_MAGIC))
+ #define XLAT_STR_2 STRINGIFY(AUTOFS_SUPER_MAGIC)
  XLAT(DEVFS_SUPER_MAGIC),
+ #define XLAT_VAL_3 ((unsigned) (DEVFS_SUPER_MAGIC))
+ #define XLAT_STR_3 STRINGIFY(DEVFS_SUPER_MAGIC)
  XLAT(EXT_SUPER_MAGIC),
+ #define XLAT_VAL_4 ((unsigned) (EXT_SUPER_MAGIC))
+ #define XLAT_STR_4 STRINGIFY(EXT_SUPER_MAGIC)
  XLAT(MINIX_SUPER_MAGIC),
+ #define XLAT_VAL_5 ((unsigned) (MINIX_SUPER_MAGIC))
+ #define XLAT_STR_5 STRINGIFY(MINIX_SUPER_MAGIC)
  XLAT(MINIX_SUPER_MAGIC2),
+ #define XLAT_VAL_6 ((unsigned) (MINIX_SUPER_MAGIC2))
+ #define XLAT_STR_6 STRINGIFY(MINIX_SUPER_MAGIC2)
  XLAT(DEVPTS_SUPER_MAGIC),
+ #define XLAT_VAL_7 ((unsigned) (DEVPTS_SUPER_MAGIC))
+ #define XLAT_STR_7 STRINGIFY(DEVPTS_SUPER_MAGIC)
  XLAT(MINIX2_SUPER_MAGIC),
+ #define XLAT_VAL_8 ((unsigned) (MINIX2_SUPER_MAGIC))
+ #define XLAT_STR_8 STRINGIFY(MINIX2_SUPER_MAGIC)
  XLAT(MINIX2_SUPER_MAGIC2),
+ #define XLAT_VAL_9 ((unsigned) (MINIX2_SUPER_MAGIC2))
+ #define XLAT_STR_9 STRINGIFY(MINIX2_SUPER_MAGIC2)
  XLAT(NILFS_SUPER_MAGIC),
+ #define XLAT_VAL_10 ((unsigned) (NILFS_SUPER_MAGIC))
+ #define XLAT_STR_10 STRINGIFY(NILFS_SUPER_MAGIC)
  XLAT(HFS_SUPER_MAGIC),
+ #define XLAT_VAL_11 ((unsigned) (HFS_SUPER_MAGIC))
+ #define XLAT_STR_11 STRINGIFY(HFS_SUPER_MAGIC)
  XLAT(HFSPLUS_SUPER_MAGIC),
+ #define XLAT_VAL_12 ((unsigned) (HFSPLUS_SUPER_MAGIC))
+ #define XLAT_STR_12 STRINGIFY(HFSPLUS_SUPER_MAGIC)
  XLAT(MSDOS_SUPER_MAGIC),
+ #define XLAT_VAL_13 ((unsigned) (MSDOS_SUPER_MAGIC))
+ #define XLAT_STR_13 STRINGIFY(MSDOS_SUPER_MAGIC)
  XLAT(MINIX3_SUPER_MAGIC),
+ #define XLAT_VAL_14 ((unsigned) (MINIX3_SUPER_MAGIC))
+ #define XLAT_STR_14 STRINGIFY(MINIX3_SUPER_MAGIC)
  XLAT(SMB_SUPER_MAGIC),
+ #define XLAT_VAL_15 ((unsigned) (SMB_SUPER_MAGIC))
+ #define XLAT_STR_15 STRINGIFY(SMB_SUPER_MAGIC)
  XLAT(NCP_SUPER_MAGIC),
+ #define XLAT_VAL_16 ((unsigned) (NCP_SUPER_MAGIC))
+ #define XLAT_STR_16 STRINGIFY(NCP_SUPER_MAGIC)
  XLAT(EXOFS_SUPER_MAGIC),
+ #define XLAT_VAL_17 ((unsigned) (EXOFS_SUPER_MAGIC))
+ #define XLAT_STR_17 STRINGIFY(EXOFS_SUPER_MAGIC)
  XLAT(NFS_SUPER_MAGIC),
+ #define XLAT_VAL_18 ((unsigned) (NFS_SUPER_MAGIC))
+ #define XLAT_STR_18 STRINGIFY(NFS_SUPER_MAGIC)
  XLAT(ROMFS_MAGIC),
+ #define XLAT_VAL_19 ((unsigned) (ROMFS_MAGIC))
+ #define XLAT_STR_19 STRINGIFY(ROMFS_MAGIC)
  XLAT(JFFS2_SUPER_MAGIC),
+ #define XLAT_VAL_20 ((unsigned) (JFFS2_SUPER_MAGIC))
+ #define XLAT_STR_20 STRINGIFY(JFFS2_SUPER_MAGIC)
  XLAT(ISOFS_SUPER_MAGIC),
+ #define XLAT_VAL_21 ((unsigned) (ISOFS_SUPER_MAGIC))
+ #define XLAT_STR_21 STRINGIFY(ISOFS_SUPER_MAGIC)
  XLAT(PROC_SUPER_MAGIC),
+ #define XLAT_VAL_22 ((unsigned) (PROC_SUPER_MAGIC))
+ #define XLAT_STR_22 STRINGIFY(PROC_SUPER_MAGIC)
  XLAT(OPENPROM_SUPER_MAGIC),
+ #define XLAT_VAL_23 ((unsigned) (OPENPROM_SUPER_MAGIC))
+ #define XLAT_STR_23 STRINGIFY(OPENPROM_SUPER_MAGIC)
  XLAT(USBDEVICE_SUPER_MAGIC),
+ #define XLAT_VAL_24 ((unsigned) (USBDEVICE_SUPER_MAGIC))
+ #define XLAT_STR_24 STRINGIFY(USBDEVICE_SUPER_MAGIC)
  XLAT(ADFS_SUPER_MAGIC),
+ #define XLAT_VAL_25 ((unsigned) (ADFS_SUPER_MAGIC))
+ #define XLAT_STR_25 STRINGIFY(ADFS_SUPER_MAGIC)
  XLAT(AFFS_SUPER_MAGIC),
+ #define XLAT_VAL_26 ((unsigned) (AFFS_SUPER_MAGIC))
+ #define XLAT_STR_26 STRINGIFY(AFFS_SUPER_MAGIC)
  XLAT(EXT2_OLD_SUPER_MAGIC),
+ #define XLAT_VAL_27 ((unsigned) (EXT2_OLD_SUPER_MAGIC))
+ #define XLAT_STR_27 STRINGIFY(EXT2_OLD_SUPER_MAGIC)
  XLAT(EXT2_SUPER_MAGIC),
+ #define XLAT_VAL_28 ((unsigned) (EXT2_SUPER_MAGIC))
+ #define XLAT_STR_28 STRINGIFY(EXT2_SUPER_MAGIC)
  XLAT(ECRYPTFS_SUPER_MAGIC),
+ #define XLAT_VAL_29 ((unsigned) (ECRYPTFS_SUPER_MAGIC))
+ #define XLAT_STR_29 STRINGIFY(ECRYPTFS_SUPER_MAGIC)
  XLAT(UFS_MAGIC),
+ #define XLAT_VAL_30 ((unsigned) (UFS_MAGIC))
+ #define XLAT_STR_30 STRINGIFY(UFS_MAGIC)
  XLAT(CGROUP_SUPER_MAGIC),
+ #define XLAT_VAL_31 ((unsigned) (CGROUP_SUPER_MAGIC))
+ #define XLAT_STR_31 STRINGIFY(CGROUP_SUPER_MAGIC)
  XLAT(EFS_SUPER_MAGIC),
+ #define XLAT_VAL_32 ((unsigned) (EFS_SUPER_MAGIC))
+ #define XLAT_STR_32 STRINGIFY(EFS_SUPER_MAGIC)
  XLAT(HOSTFS_SUPER_MAGIC),
+ #define XLAT_VAL_33 ((unsigned) (HOSTFS_SUPER_MAGIC))
+ #define XLAT_STR_33 STRINGIFY(HOSTFS_SUPER_MAGIC)
  XLAT(CEPH_SUPER_MAGIC),
+ #define XLAT_VAL_34 ((unsigned) (CEPH_SUPER_MAGIC))
+ #define XLAT_STR_34 STRINGIFY(CEPH_SUPER_MAGIC)
  XLAT(TMPFS_MAGIC),
+ #define XLAT_VAL_35 ((unsigned) (TMPFS_MAGIC))
+ #define XLAT_STR_35 STRINGIFY(TMPFS_MAGIC)
  XLAT(V9FS_MAGIC),
+ #define XLAT_VAL_36 ((unsigned) (V9FS_MAGIC))
+ #define XLAT_STR_36 STRINGIFY(V9FS_MAGIC)
  XLAT(GFS2_MAGIC),
+ #define XLAT_VAL_37 ((unsigned) (GFS2_MAGIC))
+ #define XLAT_STR_37 STRINGIFY(GFS2_MAGIC)
  XLAT(XIAFS_SUPER_MAGIC),
+ #define XLAT_VAL_38 ((unsigned) (XIAFS_SUPER_MAGIC))
+ #define XLAT_STR_38 STRINGIFY(XIAFS_SUPER_MAGIC)
  XLAT(XENIX_SUPER_MAGIC),
+ #define XLAT_VAL_39 ((unsigned) (XENIX_SUPER_MAGIC))
+ #define XLAT_STR_39 STRINGIFY(XENIX_SUPER_MAGIC)
  XLAT(SYSV4_SUPER_MAGIC),
+ #define XLAT_VAL_40 ((unsigned) (SYSV4_SUPER_MAGIC))
+ #define XLAT_STR_40 STRINGIFY(SYSV4_SUPER_MAGIC)
  XLAT(SYSV2_SUPER_MAGIC),
+ #define XLAT_VAL_41 ((unsigned) (SYSV2_SUPER_MAGIC))
+ #define XLAT_STR_41 STRINGIFY(SYSV2_SUPER_MAGIC)
  XLAT(COH_SUPER_MAGIC),
+ #define XLAT_VAL_42 ((unsigned) (COH_SUPER_MAGIC))
+ #define XLAT_STR_42 STRINGIFY(COH_SUPER_MAGIC)
  XLAT(SHMFS_SUPER_MAGIC),
+ #define XLAT_VAL_43 ((unsigned) (SHMFS_SUPER_MAGIC))
+ #define XLAT_STR_43 STRINGIFY(SHMFS_SUPER_MAGIC)
  XLAT(ANON_INODE_FS_MAGIC),
+ #define XLAT_VAL_44 ((unsigned) (ANON_INODE_FS_MAGIC))
+ #define XLAT_STR_44 STRINGIFY(ANON_INODE_FS_MAGIC)
  XLAT(FUTEXFS_SUPER_MAGIC),
+ #define XLAT_VAL_45 ((unsigned) (FUTEXFS_SUPER_MAGIC))
+ #define XLAT_STR_45 STRINGIFY(FUTEXFS_SUPER_MAGIC)
  XLAT(MTD_INODE_FS_MAGIC),
+ #define XLAT_VAL_46 ((unsigned) (MTD_INODE_FS_MAGIC))
+ #define XLAT_STR_46 STRINGIFY(MTD_INODE_FS_MAGIC)
  XLAT(BALLOON_KVM_MAGIC),
+ #define XLAT_VAL_47 ((unsigned) (BALLOON_KVM_MAGIC))
+ #define XLAT_STR_47 STRINGIFY(BALLOON_KVM_MAGIC)
  XLAT(UDF_SUPER_MAGIC),
+ #define XLAT_VAL_48 ((unsigned) (UDF_SUPER_MAGIC))
+ #define XLAT_STR_48 STRINGIFY(UDF_SUPER_MAGIC)
  XLAT(BFS_MAGIC),
+ #define XLAT_VAL_49 ((unsigned) (BFS_MAGIC))
+ #define XLAT_STR_49 STRINGIFY(BFS_MAGIC)
  XLAT(UBIFS_SUPER_MAGIC),
+ #define XLAT_VAL_50 ((unsigned) (UBIFS_SUPER_MAGIC))
+ #define XLAT_STR_50 STRINGIFY(UBIFS_SUPER_MAGIC)
  XLAT(CRAMFS_MAGIC),
+ #define XLAT_VAL_51 ((unsigned) (CRAMFS_MAGIC))
+ #define XLAT_STR_51 STRINGIFY(CRAMFS_MAGIC)
  XLAT(ZFS_SUPER_MAGIC),
+ #define XLAT_VAL_52 ((unsigned) (ZFS_SUPER_MAGIC))
+ #define XLAT_STR_52 STRINGIFY(ZFS_SUPER_MAGIC)
  XLAT(JFS_SUPER_MAGIC),
+ #define XLAT_VAL_53 ((unsigned) (JFS_SUPER_MAGIC))
+ #define XLAT_STR_53 STRINGIFY(JFS_SUPER_MAGIC)
  XLAT(BEFS_SUPER_MAGIC),
+ #define XLAT_VAL_54 ((unsigned) (BEFS_SUPER_MAGIC))
+ #define XLAT_STR_54 STRINGIFY(BEFS_SUPER_MAGIC)
  XLAT(BINFMTFS_MAGIC),
+ #define XLAT_VAL_55 ((unsigned) (BINFMTFS_MAGIC))
+ #define XLAT_STR_55 STRINGIFY(BINFMTFS_MAGIC)
  XLAT(SMACK_MAGIC),
+ #define XLAT_VAL_56 ((unsigned) (SMACK_MAGIC))
+ #define XLAT_STR_56 STRINGIFY(SMACK_MAGIC)
  XLAT(DMA_BUF_MAGIC),
+ #define XLAT_VAL_57 ((unsigned) (DMA_BUF_MAGIC))
+ #define XLAT_STR_57 STRINGIFY(DMA_BUF_MAGIC)
  XLAT(CRAMFS_MAGIC_WEND),
+ #define XLAT_VAL_58 ((unsigned) (CRAMFS_MAGIC_WEND))
+ #define XLAT_STR_58 STRINGIFY(CRAMFS_MAGIC_WEND)
+ XLAT(DEVMEM_MAGIC),
+ #define XLAT_VAL_59 ((unsigned) (DEVMEM_MAGIC))
+ #define XLAT_STR_59 STRINGIFY(DEVMEM_MAGIC)
  XLAT(GPFS_SUPER_MAGIC),
+ #define XLAT_VAL_60 ((unsigned) (GPFS_SUPER_MAGIC))
+ #define XLAT_STR_60 STRINGIFY(GPFS_SUPER_MAGIC)
  XLAT(PIPEFS_MAGIC),
+ #define XLAT_VAL_61 ((unsigned) (PIPEFS_MAGIC))
+ #define XLAT_STR_61 STRINGIFY(PIPEFS_MAGIC)
  XLAT(REISERFS_SUPER_MAGIC),
+ #define XLAT_VAL_62 ((unsigned) (REISERFS_SUPER_MAGIC))
+ #define XLAT_STR_62 STRINGIFY(REISERFS_SUPER_MAGIC)
  XLAT(AFS_SUPER_MAGIC),
+ #define XLAT_VAL_63 ((unsigned) (AFS_SUPER_MAGIC))
+ #define XLAT_STR_63 STRINGIFY(AFS_SUPER_MAGIC)
  XLAT(NTFS_SB_MAGIC),
+ #define XLAT_VAL_64 ((unsigned) (NTFS_SB_MAGIC))
+ #define XLAT_STR_64 STRINGIFY(NTFS_SB_MAGIC)
  XLAT(SOCKFS_MAGIC),
+ #define XLAT_VAL_65 ((unsigned) (SOCKFS_MAGIC))
+ #define XLAT_STR_65 STRINGIFY(SOCKFS_MAGIC)
  XLAT(UFS_CIGAM),
+ #define XLAT_VAL_66 ((unsigned) (UFS_CIGAM))
+ #define XLAT_STR_66 STRINGIFY(UFS_CIGAM)
  XLAT(VZFS_SUPER_MAGIC),
+ #define XLAT_VAL_67 ((unsigned) (VZFS_SUPER_MAGIC))
+ #define XLAT_STR_67 STRINGIFY(VZFS_SUPER_MAGIC)
  XLAT(STACK_END_MAGIC),
+ #define XLAT_VAL_68 ((unsigned) (STACK_END_MAGIC))
+ #define XLAT_STR_68 STRINGIFY(STACK_END_MAGIC)
  XLAT(ZSMALLOC_MAGIC),
+ #define XLAT_VAL_69 ((unsigned) (ZSMALLOC_MAGIC))
+ #define XLAT_STR_69 STRINGIFY(ZSMALLOC_MAGIC)
  XLAT(XFS_SB_MAGIC),
+ #define XLAT_VAL_70 ((unsigned) (XFS_SB_MAGIC))
+ #define XLAT_STR_70 STRINGIFY(XFS_SB_MAGIC)
  XLAT(AAFS_MAGIC),
+ #define XLAT_VAL_71 ((unsigned) (AAFS_MAGIC))
+ #define XLAT_STR_71 STRINGIFY(AAFS_MAGIC)
+ XLAT(ZONEFS_MAGIC),
+ #define XLAT_VAL_72 ((unsigned) (ZONEFS_MAGIC))
+ #define XLAT_STR_72 STRINGIFY(ZONEFS_MAGIC)
  XLAT(PSTOREFS_MAGIC),
+ #define XLAT_VAL_73 ((unsigned) (PSTOREFS_MAGIC))
+ #define XLAT_STR_73 STRINGIFY(PSTOREFS_MAGIC)
  XLAT(AUFS_SUPER_MAGIC),
+ #define XLAT_VAL_74 ((unsigned) (AUFS_SUPER_MAGIC))
+ #define XLAT_STR_74 STRINGIFY(AUFS_SUPER_MAGIC)
  XLAT(BDEVFS_MAGIC),
+ #define XLAT_VAL_75 ((unsigned) (BDEVFS_MAGIC))
+ #define XLAT_STR_75 STRINGIFY(BDEVFS_MAGIC)
  XLAT(CONFIGFS_MAGIC),
+ #define XLAT_VAL_76 ((unsigned) (CONFIGFS_MAGIC))
+ #define XLAT_STR_76 STRINGIFY(CONFIGFS_MAGIC)
  XLAT(SYSFS_MAGIC),
+ #define XLAT_VAL_77 ((unsigned) (SYSFS_MAGIC))
+ #define XLAT_STR_77 STRINGIFY(SYSFS_MAGIC)
  XLAT(CGROUP2_SUPER_MAGIC),
+ #define XLAT_VAL_78 ((unsigned) (CGROUP2_SUPER_MAGIC))
+ #define XLAT_STR_78 STRINGIFY(CGROUP2_SUPER_MAGIC)
  XLAT(DEBUGFS_MAGIC),
+ #define XLAT_VAL_79 ((unsigned) (DEBUGFS_MAGIC))
+ #define XLAT_STR_79 STRINGIFY(DEBUGFS_MAGIC)
  XLAT(DAXFS_MAGIC),
+ #define XLAT_VAL_80 ((unsigned) (DAXFS_MAGIC))
+ #define XLAT_STR_80 STRINGIFY(DAXFS_MAGIC)
  XLAT(FUSE_CTL_SUPER_MAGIC),
+ #define XLAT_VAL_81 ((unsigned) (FUSE_CTL_SUPER_MAGIC))
+ #define XLAT_STR_81 STRINGIFY(FUSE_CTL_SUPER_MAGIC)
  XLAT(FUSE_SUPER_MAGIC),
+ #define XLAT_VAL_82 ((unsigned) (FUSE_SUPER_MAGIC))
+ #define XLAT_STR_82 STRINGIFY(FUSE_SUPER_MAGIC)
  XLAT(QNX6_SUPER_MAGIC),
+ #define XLAT_VAL_83 ((unsigned) (QNX6_SUPER_MAGIC))
+ #define XLAT_STR_83 STRINGIFY(QNX6_SUPER_MAGIC)
  XLAT(AFS_FS_MAGIC),
+ #define XLAT_VAL_84 ((unsigned) (AFS_FS_MAGIC))
+ #define XLAT_STR_84 STRINGIFY(AFS_FS_MAGIC)
  XLAT(BINDERFS_SUPER_MAGIC),
+ #define XLAT_VAL_85 ((unsigned) (BINDERFS_SUPER_MAGIC))
+ #define XLAT_STR_85 STRINGIFY(BINDERFS_SUPER_MAGIC)
  XLAT(NSFS_MAGIC),
+ #define XLAT_VAL_86 ((unsigned) (NSFS_MAGIC))
+ #define XLAT_STR_86 STRINGIFY(NSFS_MAGIC)
  XLAT(SECURITYFS_MAGIC),
+ #define XLAT_VAL_87 ((unsigned) (SECURITYFS_MAGIC))
+ #define XLAT_STR_87 STRINGIFY(SECURITYFS_MAGIC)
  XLAT(SQUASHFS_MAGIC),
+ #define XLAT_VAL_88 ((unsigned) (SQUASHFS_MAGIC))
+ #define XLAT_STR_88 STRINGIFY(SQUASHFS_MAGIC)
  XLAT(BTRFS_TEST_MAGIC),
+ #define XLAT_VAL_89 ((unsigned) (BTRFS_TEST_MAGIC))
+ #define XLAT_STR_89 STRINGIFY(BTRFS_TEST_MAGIC)
  XLAT(CODA_SUPER_MAGIC),
+ #define XLAT_VAL_90 ((unsigned) (CODA_SUPER_MAGIC))
+ #define XLAT_STR_90 STRINGIFY(CODA_SUPER_MAGIC)
  XLAT(OCFS2_SUPER_MAGIC),
+ #define XLAT_VAL_91 ((unsigned) (OCFS2_SUPER_MAGIC))
+ #define XLAT_STR_91 STRINGIFY(OCFS2_SUPER_MAGIC)
  XLAT(TRACEFS_MAGIC),
+ #define XLAT_VAL_92 ((unsigned) (TRACEFS_MAGIC))
+ #define XLAT_STR_92 STRINGIFY(TRACEFS_MAGIC)
  XLAT(OVERLAYFS_SUPER_MAGIC),
+ #define XLAT_VAL_93 ((unsigned) (OVERLAYFS_SUPER_MAGIC))
+ #define XLAT_STR_93 STRINGIFY(OVERLAYFS_SUPER_MAGIC)
  XLAT(RAMFS_MAGIC),
+ #define XLAT_VAL_94 ((unsigned) (RAMFS_MAGIC))
+ #define XLAT_STR_94 STRINGIFY(RAMFS_MAGIC)
  XLAT(BTRFS_SUPER_MAGIC),
+ #define XLAT_VAL_95 ((unsigned) (BTRFS_SUPER_MAGIC))
+ #define XLAT_STR_95 STRINGIFY(BTRFS_SUPER_MAGIC)
  XLAT(HUGETLBFS_MAGIC),
+ #define XLAT_VAL_96 ((unsigned) (HUGETLBFS_MAGIC))
+ #define XLAT_STR_96 STRINGIFY(HUGETLBFS_MAGIC)
  XLAT(VXFS_SUPER_MAGIC),
+ #define XLAT_VAL_97 ((unsigned) (VXFS_SUPER_MAGIC))
+ #define XLAT_STR_97 STRINGIFY(VXFS_SUPER_MAGIC)
  XLAT(XENFS_SUPER_MAGIC),
+ #define XLAT_VAL_98 ((unsigned) (XENFS_SUPER_MAGIC))
+ #define XLAT_STR_98 STRINGIFY(XENFS_SUPER_MAGIC)
  XLAT(PPC_CMM_MAGIC),
+ #define XLAT_VAL_99 ((unsigned) (PPC_CMM_MAGIC))
+ #define XLAT_STR_99 STRINGIFY(PPC_CMM_MAGIC)
  XLAT(LOGFS_MAGIC),
+ #define XLAT_VAL_100 ((unsigned) (LOGFS_MAGIC))
+ #define XLAT_STR_100 STRINGIFY(LOGFS_MAGIC)
  XLAT(BPF_FS_MAGIC),
+ #define XLAT_VAL_101 ((unsigned) (BPF_FS_MAGIC))
+ #define XLAT_STR_101 STRINGIFY(BPF_FS_MAGIC)
  XLAT(EFIVARFS_MAGIC),
+ #define XLAT_VAL_102 ((unsigned) (EFIVARFS_MAGIC))
+ #define XLAT_STR_102 STRINGIFY(EFIVARFS_MAGIC)
  XLAT(EROFS_SUPER_MAGIC_V1),
+ #define XLAT_VAL_103 ((unsigned) (EROFS_SUPER_MAGIC_V1))
+ #define XLAT_STR_103 STRINGIFY(EROFS_SUPER_MAGIC_V1)
  XLAT(F2FS_SUPER_MAGIC),
+ #define XLAT_VAL_104 ((unsigned) (F2FS_SUPER_MAGIC))
+ #define XLAT_STR_104 STRINGIFY(F2FS_SUPER_MAGIC)
  XLAT(SELINUX_MAGIC),
+ #define XLAT_VAL_105 ((unsigned) (SELINUX_MAGIC))
+ #define XLAT_STR_105 STRINGIFY(SELINUX_MAGIC)
  XLAT(HPFS_SUPER_MAGIC),
+ #define XLAT_VAL_106 ((unsigned) (HPFS_SUPER_MAGIC))
+ #define XLAT_STR_106 STRINGIFY(HPFS_SUPER_MAGIC)
  XLAT(SMB2_MAGIC_NUMBER),
+ #define XLAT_VAL_107 ((unsigned) (SMB2_MAGIC_NUMBER))
+ #define XLAT_STR_107 STRINGIFY(SMB2_MAGIC_NUMBER)
  XLAT(CIFS_MAGIC_NUMBER),
+ #define XLAT_VAL_108 ((unsigned) (CIFS_MAGIC_NUMBER))
+ #define XLAT_STR_108 STRINGIFY(CIFS_MAGIC_NUMBER)
 };
 static
 const struct xlat fsmagic[1] = { {
  .data = fsmagic_xdata,
  .size = ARRAY_SIZE(fsmagic_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+#  ifdef XLAT_VAL_23
+  | XLAT_VAL_23
+#  endif
+#  ifdef XLAT_VAL_24
+  | XLAT_VAL_24
+#  endif
+#  ifdef XLAT_VAL_25
+  | XLAT_VAL_25
+#  endif
+#  ifdef XLAT_VAL_26
+  | XLAT_VAL_26
+#  endif
+#  ifdef XLAT_VAL_27
+  | XLAT_VAL_27
+#  endif
+#  ifdef XLAT_VAL_28
+  | XLAT_VAL_28
+#  endif
+#  ifdef XLAT_VAL_29
+  | XLAT_VAL_29
+#  endif
+#  ifdef XLAT_VAL_30
+  | XLAT_VAL_30
+#  endif
+#  ifdef XLAT_VAL_31
+  | XLAT_VAL_31
+#  endif
+#  ifdef XLAT_VAL_32
+  | XLAT_VAL_32
+#  endif
+#  ifdef XLAT_VAL_33
+  | XLAT_VAL_33
+#  endif
+#  ifdef XLAT_VAL_34
+  | XLAT_VAL_34
+#  endif
+#  ifdef XLAT_VAL_35
+  | XLAT_VAL_35
+#  endif
+#  ifdef XLAT_VAL_36
+  | XLAT_VAL_36
+#  endif
+#  ifdef XLAT_VAL_37
+  | XLAT_VAL_37
+#  endif
+#  ifdef XLAT_VAL_38
+  | XLAT_VAL_38
+#  endif
+#  ifdef XLAT_VAL_39
+  | XLAT_VAL_39
+#  endif
+#  ifdef XLAT_VAL_40
+  | XLAT_VAL_40
+#  endif
+#  ifdef XLAT_VAL_41
+  | XLAT_VAL_41
+#  endif
+#  ifdef XLAT_VAL_42
+  | XLAT_VAL_42
+#  endif
+#  ifdef XLAT_VAL_43
+  | XLAT_VAL_43
+#  endif
+#  ifdef XLAT_VAL_44
+  | XLAT_VAL_44
+#  endif
+#  ifdef XLAT_VAL_45
+  | XLAT_VAL_45
+#  endif
+#  ifdef XLAT_VAL_46
+  | XLAT_VAL_46
+#  endif
+#  ifdef XLAT_VAL_47
+  | XLAT_VAL_47
+#  endif
+#  ifdef XLAT_VAL_48
+  | XLAT_VAL_48
+#  endif
+#  ifdef XLAT_VAL_49
+  | XLAT_VAL_49
+#  endif
+#  ifdef XLAT_VAL_50
+  | XLAT_VAL_50
+#  endif
+#  ifdef XLAT_VAL_51
+  | XLAT_VAL_51
+#  endif
+#  ifdef XLAT_VAL_52
+  | XLAT_VAL_52
+#  endif
+#  ifdef XLAT_VAL_53
+  | XLAT_VAL_53
+#  endif
+#  ifdef XLAT_VAL_54
+  | XLAT_VAL_54
+#  endif
+#  ifdef XLAT_VAL_55
+  | XLAT_VAL_55
+#  endif
+#  ifdef XLAT_VAL_56
+  | XLAT_VAL_56
+#  endif
+#  ifdef XLAT_VAL_57
+  | XLAT_VAL_57
+#  endif
+#  ifdef XLAT_VAL_58
+  | XLAT_VAL_58
+#  endif
+#  ifdef XLAT_VAL_59
+  | XLAT_VAL_59
+#  endif
+#  ifdef XLAT_VAL_60
+  | XLAT_VAL_60
+#  endif
+#  ifdef XLAT_VAL_61
+  | XLAT_VAL_61
+#  endif
+#  ifdef XLAT_VAL_62
+  | XLAT_VAL_62
+#  endif
+#  ifdef XLAT_VAL_63
+  | XLAT_VAL_63
+#  endif
+#  ifdef XLAT_VAL_64
+  | XLAT_VAL_64
+#  endif
+#  ifdef XLAT_VAL_65
+  | XLAT_VAL_65
+#  endif
+#  ifdef XLAT_VAL_66
+  | XLAT_VAL_66
+#  endif
+#  ifdef XLAT_VAL_67
+  | XLAT_VAL_67
+#  endif
+#  ifdef XLAT_VAL_68
+  | XLAT_VAL_68
+#  endif
+#  ifdef XLAT_VAL_69
+  | XLAT_VAL_69
+#  endif
+#  ifdef XLAT_VAL_70
+  | XLAT_VAL_70
+#  endif
+#  ifdef XLAT_VAL_71
+  | XLAT_VAL_71
+#  endif
+#  ifdef XLAT_VAL_72
+  | XLAT_VAL_72
+#  endif
+#  ifdef XLAT_VAL_73
+  | XLAT_VAL_73
+#  endif
+#  ifdef XLAT_VAL_74
+  | XLAT_VAL_74
+#  endif
+#  ifdef XLAT_VAL_75
+  | XLAT_VAL_75
+#  endif
+#  ifdef XLAT_VAL_76
+  | XLAT_VAL_76
+#  endif
+#  ifdef XLAT_VAL_77
+  | XLAT_VAL_77
+#  endif
+#  ifdef XLAT_VAL_78
+  | XLAT_VAL_78
+#  endif
+#  ifdef XLAT_VAL_79
+  | XLAT_VAL_79
+#  endif
+#  ifdef XLAT_VAL_80
+  | XLAT_VAL_80
+#  endif
+#  ifdef XLAT_VAL_81
+  | XLAT_VAL_81
+#  endif
+#  ifdef XLAT_VAL_82
+  | XLAT_VAL_82
+#  endif
+#  ifdef XLAT_VAL_83
+  | XLAT_VAL_83
+#  endif
+#  ifdef XLAT_VAL_84
+  | XLAT_VAL_84
+#  endif
+#  ifdef XLAT_VAL_85
+  | XLAT_VAL_85
+#  endif
+#  ifdef XLAT_VAL_86
+  | XLAT_VAL_86
+#  endif
+#  ifdef XLAT_VAL_87
+  | XLAT_VAL_87
+#  endif
+#  ifdef XLAT_VAL_88
+  | XLAT_VAL_88
+#  endif
+#  ifdef XLAT_VAL_89
+  | XLAT_VAL_89
+#  endif
+#  ifdef XLAT_VAL_90
+  | XLAT_VAL_90
+#  endif
+#  ifdef XLAT_VAL_91
+  | XLAT_VAL_91
+#  endif
+#  ifdef XLAT_VAL_92
+  | XLAT_VAL_92
+#  endif
+#  ifdef XLAT_VAL_93
+  | XLAT_VAL_93
+#  endif
+#  ifdef XLAT_VAL_94
+  | XLAT_VAL_94
+#  endif
+#  ifdef XLAT_VAL_95
+  | XLAT_VAL_95
+#  endif
+#  ifdef XLAT_VAL_96
+  | XLAT_VAL_96
+#  endif
+#  ifdef XLAT_VAL_97
+  | XLAT_VAL_97
+#  endif
+#  ifdef XLAT_VAL_98
+  | XLAT_VAL_98
+#  endif
+#  ifdef XLAT_VAL_99
+  | XLAT_VAL_99
+#  endif
+#  ifdef XLAT_VAL_100
+  | XLAT_VAL_100
+#  endif
+#  ifdef XLAT_VAL_101
+  | XLAT_VAL_101
+#  endif
+#  ifdef XLAT_VAL_102
+  | XLAT_VAL_102
+#  endif
+#  ifdef XLAT_VAL_103
+  | XLAT_VAL_103
+#  endif
+#  ifdef XLAT_VAL_104
+  | XLAT_VAL_104
+#  endif
+#  ifdef XLAT_VAL_105
+  | XLAT_VAL_105
+#  endif
+#  ifdef XLAT_VAL_106
+  | XLAT_VAL_106
+#  endif
+#  ifdef XLAT_VAL_107
+  | XLAT_VAL_107
+#  endif
+#  ifdef XLAT_VAL_108
+  | XLAT_VAL_108
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+#  ifdef XLAT_STR_23
+  + sizeof(XLAT_STR_23)
+#  endif
+#  ifdef XLAT_STR_24
+  + sizeof(XLAT_STR_24)
+#  endif
+#  ifdef XLAT_STR_25
+  + sizeof(XLAT_STR_25)
+#  endif
+#  ifdef XLAT_STR_26
+  + sizeof(XLAT_STR_26)
+#  endif
+#  ifdef XLAT_STR_27
+  + sizeof(XLAT_STR_27)
+#  endif
+#  ifdef XLAT_STR_28
+  + sizeof(XLAT_STR_28)
+#  endif
+#  ifdef XLAT_STR_29
+  + sizeof(XLAT_STR_29)
+#  endif
+#  ifdef XLAT_STR_30
+  + sizeof(XLAT_STR_30)
+#  endif
+#  ifdef XLAT_STR_31
+  + sizeof(XLAT_STR_31)
+#  endif
+#  ifdef XLAT_STR_32
+  + sizeof(XLAT_STR_32)
+#  endif
+#  ifdef XLAT_STR_33
+  + sizeof(XLAT_STR_33)
+#  endif
+#  ifdef XLAT_STR_34
+  + sizeof(XLAT_STR_34)
+#  endif
+#  ifdef XLAT_STR_35
+  + sizeof(XLAT_STR_35)
+#  endif
+#  ifdef XLAT_STR_36
+  + sizeof(XLAT_STR_36)
+#  endif
+#  ifdef XLAT_STR_37
+  + sizeof(XLAT_STR_37)
+#  endif
+#  ifdef XLAT_STR_38
+  + sizeof(XLAT_STR_38)
+#  endif
+#  ifdef XLAT_STR_39
+  + sizeof(XLAT_STR_39)
+#  endif
+#  ifdef XLAT_STR_40
+  + sizeof(XLAT_STR_40)
+#  endif
+#  ifdef XLAT_STR_41
+  + sizeof(XLAT_STR_41)
+#  endif
+#  ifdef XLAT_STR_42
+  + sizeof(XLAT_STR_42)
+#  endif
+#  ifdef XLAT_STR_43
+  + sizeof(XLAT_STR_43)
+#  endif
+#  ifdef XLAT_STR_44
+  + sizeof(XLAT_STR_44)
+#  endif
+#  ifdef XLAT_STR_45
+  + sizeof(XLAT_STR_45)
+#  endif
+#  ifdef XLAT_STR_46
+  + sizeof(XLAT_STR_46)
+#  endif
+#  ifdef XLAT_STR_47
+  + sizeof(XLAT_STR_47)
+#  endif
+#  ifdef XLAT_STR_48
+  + sizeof(XLAT_STR_48)
+#  endif
+#  ifdef XLAT_STR_49
+  + sizeof(XLAT_STR_49)
+#  endif
+#  ifdef XLAT_STR_50
+  + sizeof(XLAT_STR_50)
+#  endif
+#  ifdef XLAT_STR_51
+  + sizeof(XLAT_STR_51)
+#  endif
+#  ifdef XLAT_STR_52
+  + sizeof(XLAT_STR_52)
+#  endif
+#  ifdef XLAT_STR_53
+  + sizeof(XLAT_STR_53)
+#  endif
+#  ifdef XLAT_STR_54
+  + sizeof(XLAT_STR_54)
+#  endif
+#  ifdef XLAT_STR_55
+  + sizeof(XLAT_STR_55)
+#  endif
+#  ifdef XLAT_STR_56
+  + sizeof(XLAT_STR_56)
+#  endif
+#  ifdef XLAT_STR_57
+  + sizeof(XLAT_STR_57)
+#  endif
+#  ifdef XLAT_STR_58
+  + sizeof(XLAT_STR_58)
+#  endif
+#  ifdef XLAT_STR_59
+  + sizeof(XLAT_STR_59)
+#  endif
+#  ifdef XLAT_STR_60
+  + sizeof(XLAT_STR_60)
+#  endif
+#  ifdef XLAT_STR_61
+  + sizeof(XLAT_STR_61)
+#  endif
+#  ifdef XLAT_STR_62
+  + sizeof(XLAT_STR_62)
+#  endif
+#  ifdef XLAT_STR_63
+  + sizeof(XLAT_STR_63)
+#  endif
+#  ifdef XLAT_STR_64
+  + sizeof(XLAT_STR_64)
+#  endif
+#  ifdef XLAT_STR_65
+  + sizeof(XLAT_STR_65)
+#  endif
+#  ifdef XLAT_STR_66
+  + sizeof(XLAT_STR_66)
+#  endif
+#  ifdef XLAT_STR_67
+  + sizeof(XLAT_STR_67)
+#  endif
+#  ifdef XLAT_STR_68
+  + sizeof(XLAT_STR_68)
+#  endif
+#  ifdef XLAT_STR_69
+  + sizeof(XLAT_STR_69)
+#  endif
+#  ifdef XLAT_STR_70
+  + sizeof(XLAT_STR_70)
+#  endif
+#  ifdef XLAT_STR_71
+  + sizeof(XLAT_STR_71)
+#  endif
+#  ifdef XLAT_STR_72
+  + sizeof(XLAT_STR_72)
+#  endif
+#  ifdef XLAT_STR_73
+  + sizeof(XLAT_STR_73)
+#  endif
+#  ifdef XLAT_STR_74
+  + sizeof(XLAT_STR_74)
+#  endif
+#  ifdef XLAT_STR_75
+  + sizeof(XLAT_STR_75)
+#  endif
+#  ifdef XLAT_STR_76
+  + sizeof(XLAT_STR_76)
+#  endif
+#  ifdef XLAT_STR_77
+  + sizeof(XLAT_STR_77)
+#  endif
+#  ifdef XLAT_STR_78
+  + sizeof(XLAT_STR_78)
+#  endif
+#  ifdef XLAT_STR_79
+  + sizeof(XLAT_STR_79)
+#  endif
+#  ifdef XLAT_STR_80
+  + sizeof(XLAT_STR_80)
+#  endif
+#  ifdef XLAT_STR_81
+  + sizeof(XLAT_STR_81)
+#  endif
+#  ifdef XLAT_STR_82
+  + sizeof(XLAT_STR_82)
+#  endif
+#  ifdef XLAT_STR_83
+  + sizeof(XLAT_STR_83)
+#  endif
+#  ifdef XLAT_STR_84
+  + sizeof(XLAT_STR_84)
+#  endif
+#  ifdef XLAT_STR_85
+  + sizeof(XLAT_STR_85)
+#  endif
+#  ifdef XLAT_STR_86
+  + sizeof(XLAT_STR_86)
+#  endif
+#  ifdef XLAT_STR_87
+  + sizeof(XLAT_STR_87)
+#  endif
+#  ifdef XLAT_STR_88
+  + sizeof(XLAT_STR_88)
+#  endif
+#  ifdef XLAT_STR_89
+  + sizeof(XLAT_STR_89)
+#  endif
+#  ifdef XLAT_STR_90
+  + sizeof(XLAT_STR_90)
+#  endif
+#  ifdef XLAT_STR_91
+  + sizeof(XLAT_STR_91)
+#  endif
+#  ifdef XLAT_STR_92
+  + sizeof(XLAT_STR_92)
+#  endif
+#  ifdef XLAT_STR_93
+  + sizeof(XLAT_STR_93)
+#  endif
+#  ifdef XLAT_STR_94
+  + sizeof(XLAT_STR_94)
+#  endif
+#  ifdef XLAT_STR_95
+  + sizeof(XLAT_STR_95)
+#  endif
+#  ifdef XLAT_STR_96
+  + sizeof(XLAT_STR_96)
+#  endif
+#  ifdef XLAT_STR_97
+  + sizeof(XLAT_STR_97)
+#  endif
+#  ifdef XLAT_STR_98
+  + sizeof(XLAT_STR_98)
+#  endif
+#  ifdef XLAT_STR_99
+  + sizeof(XLAT_STR_99)
+#  endif
+#  ifdef XLAT_STR_100
+  + sizeof(XLAT_STR_100)
+#  endif
+#  ifdef XLAT_STR_101
+  + sizeof(XLAT_STR_101)
+#  endif
+#  ifdef XLAT_STR_102
+  + sizeof(XLAT_STR_102)
+#  endif
+#  ifdef XLAT_STR_103
+  + sizeof(XLAT_STR_103)
+#  endif
+#  ifdef XLAT_STR_104
+  + sizeof(XLAT_STR_104)
+#  endif
+#  ifdef XLAT_STR_105
+  + sizeof(XLAT_STR_105)
+#  endif
+#  ifdef XLAT_STR_106
+  + sizeof(XLAT_STR_106)
+#  endif
+#  ifdef XLAT_STR_107
+  + sizeof(XLAT_STR_107)
+#  endif
+#  ifdef XLAT_STR_108
+  + sizeof(XLAT_STR_108)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
+#  undef XLAT_STR_23
+#  undef XLAT_VAL_23
+#  undef XLAT_STR_24
+#  undef XLAT_VAL_24
+#  undef XLAT_STR_25
+#  undef XLAT_VAL_25
+#  undef XLAT_STR_26
+#  undef XLAT_VAL_26
+#  undef XLAT_STR_27
+#  undef XLAT_VAL_27
+#  undef XLAT_STR_28
+#  undef XLAT_VAL_28
+#  undef XLAT_STR_29
+#  undef XLAT_VAL_29
+#  undef XLAT_STR_30
+#  undef XLAT_VAL_30
+#  undef XLAT_STR_31
+#  undef XLAT_VAL_31
+#  undef XLAT_STR_32
+#  undef XLAT_VAL_32
+#  undef XLAT_STR_33
+#  undef XLAT_VAL_33
+#  undef XLAT_STR_34
+#  undef XLAT_VAL_34
+#  undef XLAT_STR_35
+#  undef XLAT_VAL_35
+#  undef XLAT_STR_36
+#  undef XLAT_VAL_36
+#  undef XLAT_STR_37
+#  undef XLAT_VAL_37
+#  undef XLAT_STR_38
+#  undef XLAT_VAL_38
+#  undef XLAT_STR_39
+#  undef XLAT_VAL_39
+#  undef XLAT_STR_40
+#  undef XLAT_VAL_40
+#  undef XLAT_STR_41
+#  undef XLAT_VAL_41
+#  undef XLAT_STR_42
+#  undef XLAT_VAL_42
+#  undef XLAT_STR_43
+#  undef XLAT_VAL_43
+#  undef XLAT_STR_44
+#  undef XLAT_VAL_44
+#  undef XLAT_STR_45
+#  undef XLAT_VAL_45
+#  undef XLAT_STR_46
+#  undef XLAT_VAL_46
+#  undef XLAT_STR_47
+#  undef XLAT_VAL_47
+#  undef XLAT_STR_48
+#  undef XLAT_VAL_48
+#  undef XLAT_STR_49
+#  undef XLAT_VAL_49
+#  undef XLAT_STR_50
+#  undef XLAT_VAL_50
+#  undef XLAT_STR_51
+#  undef XLAT_VAL_51
+#  undef XLAT_STR_52
+#  undef XLAT_VAL_52
+#  undef XLAT_STR_53
+#  undef XLAT_VAL_53
+#  undef XLAT_STR_54
+#  undef XLAT_VAL_54
+#  undef XLAT_STR_55
+#  undef XLAT_VAL_55
+#  undef XLAT_STR_56
+#  undef XLAT_VAL_56
+#  undef XLAT_STR_57
+#  undef XLAT_VAL_57
+#  undef XLAT_STR_58
+#  undef XLAT_VAL_58
+#  undef XLAT_STR_59
+#  undef XLAT_VAL_59
+#  undef XLAT_STR_60
+#  undef XLAT_VAL_60
+#  undef XLAT_STR_61
+#  undef XLAT_VAL_61
+#  undef XLAT_STR_62
+#  undef XLAT_VAL_62
+#  undef XLAT_STR_63
+#  undef XLAT_VAL_63
+#  undef XLAT_STR_64
+#  undef XLAT_VAL_64
+#  undef XLAT_STR_65
+#  undef XLAT_VAL_65
+#  undef XLAT_STR_66
+#  undef XLAT_VAL_66
+#  undef XLAT_STR_67
+#  undef XLAT_VAL_67
+#  undef XLAT_STR_68
+#  undef XLAT_VAL_68
+#  undef XLAT_STR_69
+#  undef XLAT_VAL_69
+#  undef XLAT_STR_70
+#  undef XLAT_VAL_70
+#  undef XLAT_STR_71
+#  undef XLAT_VAL_71
+#  undef XLAT_STR_72
+#  undef XLAT_VAL_72
+#  undef XLAT_STR_73
+#  undef XLAT_VAL_73
+#  undef XLAT_STR_74
+#  undef XLAT_VAL_74
+#  undef XLAT_STR_75
+#  undef XLAT_VAL_75
+#  undef XLAT_STR_76
+#  undef XLAT_VAL_76
+#  undef XLAT_STR_77
+#  undef XLAT_VAL_77
+#  undef XLAT_STR_78
+#  undef XLAT_VAL_78
+#  undef XLAT_STR_79
+#  undef XLAT_VAL_79
+#  undef XLAT_STR_80
+#  undef XLAT_VAL_80
+#  undef XLAT_STR_81
+#  undef XLAT_VAL_81
+#  undef XLAT_STR_82
+#  undef XLAT_VAL_82
+#  undef XLAT_STR_83
+#  undef XLAT_VAL_83
+#  undef XLAT_STR_84
+#  undef XLAT_VAL_84
+#  undef XLAT_STR_85
+#  undef XLAT_VAL_85
+#  undef XLAT_STR_86
+#  undef XLAT_VAL_86
+#  undef XLAT_STR_87
+#  undef XLAT_VAL_87
+#  undef XLAT_STR_88
+#  undef XLAT_VAL_88
+#  undef XLAT_STR_89
+#  undef XLAT_VAL_89
+#  undef XLAT_STR_90
+#  undef XLAT_VAL_90
+#  undef XLAT_STR_91
+#  undef XLAT_VAL_91
+#  undef XLAT_STR_92
+#  undef XLAT_VAL_92
+#  undef XLAT_STR_93
+#  undef XLAT_VAL_93
+#  undef XLAT_STR_94
+#  undef XLAT_VAL_94
+#  undef XLAT_STR_95
+#  undef XLAT_VAL_95
+#  undef XLAT_STR_96
+#  undef XLAT_VAL_96
+#  undef XLAT_STR_97
+#  undef XLAT_VAL_97
+#  undef XLAT_STR_98
+#  undef XLAT_VAL_98
+#  undef XLAT_STR_99
+#  undef XLAT_VAL_99
+#  undef XLAT_STR_100
+#  undef XLAT_VAL_100
+#  undef XLAT_STR_101
+#  undef XLAT_VAL_101
+#  undef XLAT_STR_102
+#  undef XLAT_VAL_102
+#  undef XLAT_STR_103
+#  undef XLAT_VAL_103
+#  undef XLAT_STR_104
+#  undef XLAT_VAL_104
+#  undef XLAT_STR_105
+#  undef XLAT_VAL_105
+#  undef XLAT_STR_106
+#  undef XLAT_VAL_106
+#  undef XLAT_STR_107
+#  undef XLAT_VAL_107
+#  undef XLAT_STR_108
+#  undef XLAT_VAL_108
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

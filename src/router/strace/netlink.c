@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -40,9 +40,9 @@
 #include "xlat/nl_xfrm_types.h"
 #include "xlat/nlmsgerr_attrs.h"
 
-# define XLAT_MACROS_ONLY
-#  include "xlat/crypto_msgs.h"
-# undef XLAT_MACROS_ONLY
+#define XLAT_MACROS_ONLY
+# include "xlat/crypto_msgs.h"
+#undef XLAT_MACROS_ONLY
 
 /*
  * Fetch a struct nlmsghdr from the given address.
@@ -446,8 +446,9 @@ print_nlmsghdr(struct tcb *tcp,
 	decode_nlmsg_flags(nlmsghdr->nlmsg_flags,
 			   nlmsghdr->nlmsg_type, family);
 
-	tprintf(", seq=%u, pid=%u}", nlmsghdr->nlmsg_seq,
-		nlmsghdr->nlmsg_pid);
+	tprintf(", seq=%u, pid=", nlmsghdr->nlmsg_seq);
+	printpid(tcp, nlmsghdr->nlmsg_pid, PT_TGID);
+	tprints("}");
 }
 
 static bool

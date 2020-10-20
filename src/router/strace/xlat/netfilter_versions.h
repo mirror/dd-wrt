@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data netfilter_versions_xdata[] = {
  [NFNETLINK_V0] = XLAT(NFNETLINK_V0),
+ #define XLAT_VAL_0 ((unsigned) (NFNETLINK_V0))
+ #define XLAT_STR_0 STRINGIFY(NFNETLINK_V0)
  [NFNETLINK_V1] = XLAT(NFNETLINK_V1),
+ #define XLAT_VAL_1 ((unsigned) (NFNETLINK_V1))
+ #define XLAT_STR_1 STRINGIFY(NFNETLINK_V1)
 };
 static
 const struct xlat netfilter_versions[1] = { {
  .data = netfilter_versions_xdata,
  .size = ARRAY_SIZE(netfilter_versions_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */
