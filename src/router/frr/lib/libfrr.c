@@ -1058,8 +1058,8 @@ void frr_run(struct thread_master *master)
 		snprintf(instanceinfo, sizeof(instanceinfo), "instance %u ",
 			 di->instance);
 
-	zlog_notice("%s %s starting: %svty@%d%s", di->name, FRR_VERSION,
-		    instanceinfo, di->vty_port, di->startinfo);
+//	zlog_notice("%s %s starting: %svty@%d%s", di->name, FRR_VERSION,
+//		    instanceinfo, di->vty_port, di->startinfo);
 
 	if (di->terminal) {
 		nodetach_term = true;
