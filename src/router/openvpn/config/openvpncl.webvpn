@@ -65,6 +65,45 @@
 			</select>
 		</div>
 		<div class="setting">
+			<div class="label"><% tran("service.vpn_dc1"); %></div>
+			<select name="openvpncl_dc1">
+			<option value="CHACHA20-POLY1305" <% nvram_selected("openvpncl_dc1","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+			<option value="AES-256-GCM" <% nvram_selected("openvpncl_dc1","AES-256-GCM"); %>>AES-256-GCM</option>
+			<option value="AES-192-GCM" <% nvram_selected("openvpncl_dc1","AES-192-GCM"); %>>AES-192-GCM</option>
+			<option value="AES-128-GCM" <% nvram_selected("openvpncl_dc1","AES-128-GCM"); %>>AES-128-GCM</option>
+			<option value="AES-256-CBC" <% nvram_selected("openvpncl_dc1","AES-256-CBC"); %>>AES-256-CBC</option>
+			<option value="AES-192-CBC" <% nvram_selected("openvpncl_dc1","AES-192-CBC"); %>>AES-192-CBC</option>
+			<option value="AES-128-CBC" <% nvram_selected("openvpncl_dc1","AES-128-CBC"); %>>AES-128-CBC</option>
+			<option value="" <% nvram_selected("openvpncl_dc1",""); %>>Not set</option>
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpn_dc2"); %></div>
+			<select name="openvpncl_dc2">
+			<option value="CHACHA20-POLY1305" <% nvram_selected("openvpncl_dc2","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+			<option value="AES-256-GCM" <% nvram_selected("openvpncl_dc2","AES-256-GCM"); %>>AES-256-GCM</option>
+			<option value="AES-192-GCM" <% nvram_selected("openvpncl_dc2","AES-192-GCM"); %>>AES-192-GCM</option>
+			<option value="AES-128-GCM" <% nvram_selected("openvpncl_dc2","AES-128-GCM"); %>>AES-128-GCM</option>
+			<option value="AES-256-CBC" <% nvram_selected("openvpncl_dc2","AES-256-CBC"); %>>AES-256-CBC</option>
+			<option value="AES-192-CBC" <% nvram_selected("openvpncl_dc2","AES-192-CBC"); %>>AES-192-CBC</option>
+			<option value="AES-128-CBC" <% nvram_selected("openvpncl_dc2","AES-128-CBC"); %>>AES-128-CBC</option>
+			<option value="" <% nvram_selected("openvpncl_dc2",""); %>>Not set</option>
+			</select>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.vpn_dc3"); %></div>
+			<select name="openvpncl_dc3">
+			<option value="CHACHA20-POLY1305" <% nvram_selected("openvpncl_dc3","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+			<option value="AES-256-GCM" <% nvram_selected("openvpncl_dc3","AES-256-GCM"); %>>AES-256-GCM</option>
+			<option value="AES-192-GCM" <% nvram_selected("openvpncl_dc3","AES-192-GCM"); %>>AES-192-GCM</option>
+			<option value="AES-128-GCM" <% nvram_selected("openvpncl_dc3","AES-128-GCM"); %>>AES-128-GCM</option>
+			<option value="AES-256-CBC" <% nvram_selected("openvpncl_dc3","AES-256-CBC"); %>>AES-256-CBC</option>
+			<option value="AES-192-CBC" <% nvram_selected("openvpncl_dc3","AES-192-CBC"); %>>AES-192-CBC</option>
+			<option value="AES-128-CBC" <% nvram_selected("openvpncl_dc3","AES-128-CBC"); %>>AES-128-CBC</option>
+			<option value="" <% nvram_selected("openvpncl_dc3",""); %>>Not set</option>
+			</select>
+		</div>
+		<div class="setting">
 			<div class="label"><% tran("service.vpn_upauth"); %></div>
 			<input class="spaceradio" type="radio" value="1" name="openvpncl_upauth" <% nvc("openvpncl_upauth","1"); %> onclick="show_layer_ext(this, 'idupauth', true)" /><% tran("share.enable"); %>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="openvpncl_upauth" <% nvc("openvpncl_upauth","0"); %> onclick="show_layer_ext(this, 'idupauth', false)" /><% tran("share.disable"); %>
