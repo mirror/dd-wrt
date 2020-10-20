@@ -30,6 +30,7 @@ frr-configure: ncurses json-c readline libyang libcap
 		--disable-rfptest \
 		--disable-ssd \
 		--enable-shared \
+		--disable-static \
 		--disable-doc \
 		--disable-zeromq \
 		--disable-backtrace \
