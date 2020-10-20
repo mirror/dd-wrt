@@ -34,19 +34,20 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/syscall.h>
 
 #include "unwind_i.h"
 
 #ifdef UNW_REMOTE_ONLY
 
 /* unw_local_addr_space is a NULL pointer in this case.  */
-PROTECTED unw_addr_space_t unw_local_addr_space;
+unw_addr_space_t unw_local_addr_space;
 
 #else /* !UNW_REMOTE_ONLY */
 
 static struct unw_addr_space local_addr_space;
 
-PROTECTED unw_addr_space_t unw_local_addr_space = &local_addr_space;
+unw_addr_space_t unw_local_addr_space = &local_addr_space;
 
 HIDDEN unw_dyn_info_list_t _U_dyn_info_list;
 
@@ -77,9 +78,10 @@ static int mem_validate_pipe[2] = {-1, -1};
 static inline void
 open_pipe (void)
 {
-  /* ignore errors for closing invalid fd's */
-  close (mem_validate_pipe[0]);
-  close (mem_validate_pipe[1]);
+  if (mem_validate_pipe[0] != -1)
+    close (mem_validate_pipe[0]);
+  if (mem_validate_pipe[1] != -1)
+    close (mem_validate_pipe[1]);
 
   pipe2 (mem_validate_pipe, O_CLOEXEC | O_NONBLOCK);
 }
@@ -107,7 +109,8 @@ write_validate (void *addr)
 
   do
     {
-      ret = write (mem_validate_pipe[1], addr, 1);
+      /* use syscall insteadof write() so that ASAN does not complain */
+      ret = syscall (SYS_write, mem_validate_pipe[1], addr, 1);
     }
   while ( errno == EINTR );
 
@@ -129,18 +132,12 @@ static int msync_validate (void *addr, size_t len)
 static int mincore_validate (void *addr, size_t len)
 {
   unsigned char mvec[2]; /* Unaligned access may cross page boundary */
-  size_t i;
 
   /* mincore could fail with EAGAIN but we conservatively return -1
      instead of looping. */
   if (mincore (addr, len, mvec) != 0)
     {
       return -1;
-    }
-
-  for (i = 0; i < (len + PAGE_SIZE - 1) / PAGE_SIZE; i++)
-    {
-      if (!(mvec[i] & 1)) return -1;
     }
 
   return write_validate (addr);
@@ -163,7 +160,7 @@ tdep_init_mem_validate (void)
   int ret;
   while ((ret = mincore ((void*)addr, PAGE_SIZE, mvec)) == -1 &&
          errno == EAGAIN) {}
-  if (ret == 0 && (mvec[0] & 1))
+  if (ret == 0)
     {
       Debug(1, "using mincore to validate memory\n");
       mem_validate_func = mincore_validate;
@@ -178,13 +175,93 @@ tdep_init_mem_validate (void)
 
 /* Cache of already validated addresses */
 #define NLGA 4
-static unw_word_t last_good_addr[NLGA];
-static int lga_victim;
+#if defined(HAVE___THREAD) && HAVE___THREAD
+// thread-local variant
+static __thread unw_word_t last_good_addr[NLGA];
+static __thread int lga_victim;
+
+static int
+is_cached_valid_mem(unw_word_t addr)
+{
+  int i;
+  for (i = 0; i < NLGA; i++)
+    {
+      if (addr == &last_good_addr[i])
+        return 1;
+    }
+  return 0;
+}
+
+static void
+cache_valid_mem(unw_word_t addr)
+{
+  int i, victim;
+  victim = lga_victim;
+  for (i = 0; i < NLGA; i++) {
+    if (last_good_addr[victim] == 0) {
+      last_good_addr[victim] = addr;
+      return;
+    }
+    victim = (victim + 1) % NLGA;
+  }
+
+  /* All slots full. Evict the victim. */
+  last_good_addr[victim] = addr;
+  victim = (victim + 1) % NLGA;
+  lga_victim = victim;
+}
+
+#elif HAVE_ATOMIC_OPS_H
+// global, thread safe variant
+static AO_T last_good_addr[NLGA];
+static AO_T lga_victim;
+
+static int
+is_cached_valid_mem(unw_word_t addr)
+{
+  int i;
+  for (i = 0; i < NLGA; i++)
+    {
+      if (addr == AO_load(&last_good_addr[i]))
+        return 1;
+    }
+  return 0;
+}
+
+static void
+cache_valid_mem(unw_word_t addr)
+{
+  int i, victim;
+  victim = AO_load(&lga_victim);
+  for (i = 0; i < NLGA; i++) {
+    if (AO_compare_and_swap(&last_good_addr[victim], 0, addr)) {
+      return;
+    }
+    victim = (victim + 1) % NLGA;
+  }
+
+  /* All slots full. Evict the victim. */
+  AO_store(&last_good_addr[victim], addr);
+  victim = (victim + 1) % NLGA;
+  AO_store(&lga_victim, victim);
+}
+#else
+// disabled, no cache
+static int
+is_cached_valid_mem(unw_word_t addr UNUSED)
+{
+  return 0;
+}
+
+static void
+cache_valid_mem(unw_word_t addr UNUSED)
+{
+}
+#endif
 
 static int
 validate_mem (unw_word_t addr)
 {
-  int i, victim;
   size_t len;
 
   if (PAGE_START(addr + sizeof (unw_word_t) - 1) == PAGE_START(addr))
@@ -197,28 +274,13 @@ validate_mem (unw_word_t addr)
   if (addr == 0)
     return -1;
 
-  for (i = 0; i < NLGA; i++)
-    {
-      if (last_good_addr[i] && (addr == last_good_addr[i]))
-        return 0;
-    }
+  if (is_cached_valid_mem(addr))
+    return 0;
 
   if (mem_validate_func ((void *) addr, len) == -1)
     return -1;
 
-  victim = lga_victim;
-  for (i = 0; i < NLGA; i++) {
-    if (!last_good_addr[victim]) {
-      last_good_addr[victim++] = addr;
-      return 0;
-    }
-    victim = (victim + 1) % NLGA;
-  }
-
-  /* All slots full. Evict the victim. */
-  last_good_addr[victim] = addr;
-  victim = (victim + 1) % NLGA;
-  lga_victim = victim;
+  cache_valid_mem(addr);
 
   return 0;
 }
@@ -332,9 +394,6 @@ x86_64_local_addr_space_init (void)
   local_addr_space.acc.resume = x86_64_local_resume;
   local_addr_space.acc.get_proc_name = get_static_proc_name;
   unw_flush_cache (&local_addr_space, 0, 0);
-
-  memset (last_good_addr, 0, sizeof (unw_word_t) * NLGA);
-  lga_victim = 0;
 }
 
 #endif /* !UNW_REMOTE_ONLY */

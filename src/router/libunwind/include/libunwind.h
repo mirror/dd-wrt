@@ -25,12 +25,14 @@
 # include "libunwind-x86_64.h"
 #elif defined __tilegx__
 # include "libunwind-tilegx.h"
+#elif defined __s390x__
+# include "libunwind-s390x.h"
 #else
 # error "Unsupported arch"
 #endif
 
 #else /* UNW_REMOTE_ONLY */
 
-# include "libunwind-mips.h"
+# include "libunwind-x86_64.h"
 
 #endif /* UNW_REMOTE_ONLY */

@@ -102,7 +102,6 @@ check_local_unw_abi () {
     match _UL${plat}_init_local2
     match _UL${plat}_init_remote
     match _UL${plat}_is_signal_frame
-    match _UL${plat}_handle_signal_frame
     match _UL${plat}_local_addr_space
     match _UL${plat}_resume
     match _UL${plat}_set_caching_policy
@@ -177,6 +176,14 @@ check_local_unw_abi () {
 	    match _U${plat}_get_exe_image_path
             match ${plat}_lock
             ;;
+	s390x)
+	    match _U${plat}_get_elf_image
+	    match _U${plat}_get_exe_image_path
+	    match _U${plat}_is_fpreg
+	    match _UL${plat}_dwarf_search_unwind_table
+	    match _UL${plat}_dwarf_find_unwind_table
+	    match _U${plat}_setcontext
+	    ;;
 
 	*)
 	    match _U${plat}_is_fpreg
@@ -208,7 +215,6 @@ check_generic_unw_abi () {
     match _U${plat}_init_local2
     match _U${plat}_init_remote
     match _U${plat}_is_signal_frame
-    match _U${plat}_handle_signal_frame
     match _U${plat}_local_addr_space
     match _U${plat}_regname
     match _U${plat}_resume
@@ -278,6 +284,13 @@ check_generic_unw_abi () {
             match _U${plat}_local_addr_space_init
             match ${plat}_lock
             ;;
+	s390x)
+	    match _U${plat}_is_fpreg
+	    match _U${plat}_get_elf_image
+	    match _U${plat}_get_exe_image_path
+	    match _U${plat}_dwarf_search_unwind_table
+	    match _U${plat}_dwarf_find_unwind_table
+	    ;;
 	*)
 	    match _U${plat}_is_fpreg
 	    match _U${plat}_dwarf_search_unwind_table

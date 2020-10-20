@@ -260,7 +260,7 @@ dwarf_reg_state_t;
 typedef struct dwarf_stackable_reg_state
   {
     struct dwarf_stackable_reg_state *next;       /* for rs_stack */
-    dwarf_reg_only_state_t state;
+    dwarf_reg_state_t state;
   }
 dwarf_stackable_reg_state_t;
 
@@ -413,12 +413,13 @@ extern int dwarf_search_unwind_table (unw_addr_space_t as,
                                       unw_dyn_info_t *di,
                                       unw_proc_info_t *pi,
                                       int need_unwind_info, void *arg);
+
 extern int dwarf_find_unwind_table (struct elf_dyn_info *edi, unw_addr_space_t as,
                                     char *path, unw_word_t segbase, unw_word_t mapoff,
                                     unw_word_t ip);
 extern void dwarf_put_unwind_info (unw_addr_space_t as,
                                    unw_proc_info_t *pi, void *arg);
-extern int dwarf_eval_expr (struct dwarf_cursor *c, unw_word_t *addr,
+extern int dwarf_eval_expr (struct dwarf_cursor *c, unw_word_t stack_val, unw_word_t *addr,
                             unw_word_t len, unw_word_t *valp,
                             int *is_register);
 extern int
