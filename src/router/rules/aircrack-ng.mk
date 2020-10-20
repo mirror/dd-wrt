@@ -14,6 +14,7 @@ aircrack-ng-configure: pcre zlib
 	cd aircrack-ng && ./configure --host=$(ARCH)-linux \
 	--with-openssl="$(TOP)/openssl" \
         --prefix=/usr \
+        --disable-libnl \
         --libdir=/usr/lib \
 	ZLIB_CFLAGS="-I$(TOP)/zlib" \
 	ZLIB_LIBS="-L$(TOP)/zlib -lz" \
