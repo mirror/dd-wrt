@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data pr_mce_kill_xdata[] = {
  [PR_MCE_KILL_CLEAR] = XLAT(PR_MCE_KILL_CLEAR),
+ #define XLAT_VAL_0 ((unsigned) (PR_MCE_KILL_CLEAR))
+ #define XLAT_STR_0 STRINGIFY(PR_MCE_KILL_CLEAR)
  [PR_MCE_KILL_SET] = XLAT(PR_MCE_KILL_SET),
+ #define XLAT_VAL_1 ((unsigned) (PR_MCE_KILL_SET))
+ #define XLAT_STR_1 STRINGIFY(PR_MCE_KILL_SET)
 };
 static
 const struct xlat pr_mce_kill[1] = { {
  .data = pr_mce_kill_xdata,
  .size = ARRAY_SIZE(pr_mce_kill_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

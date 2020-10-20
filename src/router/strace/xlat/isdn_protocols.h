@@ -105,18 +105,44 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data isdn_protocols_xdata[] = {
  XLAT(ISDN_P_BASE),
+ #define XLAT_VAL_0 ((unsigned) (ISDN_P_BASE))
+ #define XLAT_STR_0 STRINGIFY(ISDN_P_BASE)
  XLAT(ISDN_P_TE_S0),
+ #define XLAT_VAL_1 ((unsigned) (ISDN_P_TE_S0))
+ #define XLAT_STR_1 STRINGIFY(ISDN_P_TE_S0)
  XLAT(ISDN_P_NT_S0),
+ #define XLAT_VAL_2 ((unsigned) (ISDN_P_NT_S0))
+ #define XLAT_STR_2 STRINGIFY(ISDN_P_NT_S0)
  XLAT(ISDN_P_TE_E1),
+ #define XLAT_VAL_3 ((unsigned) (ISDN_P_TE_E1))
+ #define XLAT_STR_3 STRINGIFY(ISDN_P_TE_E1)
  XLAT(ISDN_P_NT_E1),
+ #define XLAT_VAL_4 ((unsigned) (ISDN_P_NT_E1))
+ #define XLAT_STR_4 STRINGIFY(ISDN_P_NT_E1)
  XLAT(ISDN_P_LAPD_TE),
+ #define XLAT_VAL_5 ((unsigned) (ISDN_P_LAPD_TE))
+ #define XLAT_STR_5 STRINGIFY(ISDN_P_LAPD_TE)
  XLAT(ISDN_P_LAPD_NT),
+ #define XLAT_VAL_6 ((unsigned) (ISDN_P_LAPD_NT))
+ #define XLAT_STR_6 STRINGIFY(ISDN_P_LAPD_NT)
  XLAT(ISDN_P_B_RAW),
+ #define XLAT_VAL_7 ((unsigned) (ISDN_P_B_RAW))
+ #define XLAT_STR_7 STRINGIFY(ISDN_P_B_RAW)
  XLAT(ISDN_P_B_HDLC),
+ #define XLAT_VAL_8 ((unsigned) (ISDN_P_B_HDLC))
+ #define XLAT_STR_8 STRINGIFY(ISDN_P_B_HDLC)
  XLAT(ISDN_P_B_X75SLP),
+ #define XLAT_VAL_9 ((unsigned) (ISDN_P_B_X75SLP))
+ #define XLAT_STR_9 STRINGIFY(ISDN_P_B_X75SLP)
  XLAT(ISDN_P_B_L2DTMF),
+ #define XLAT_VAL_10 ((unsigned) (ISDN_P_B_L2DTMF))
+ #define XLAT_STR_10 STRINGIFY(ISDN_P_B_L2DTMF)
  XLAT(ISDN_P_B_L2DSP),
+ #define XLAT_VAL_11 ((unsigned) (ISDN_P_B_L2DSP))
+ #define XLAT_STR_11 STRINGIFY(ISDN_P_B_L2DSP)
  XLAT(ISDN_P_B_L2DSPHDLC),
+ #define XLAT_VAL_12 ((unsigned) (ISDN_P_B_L2DSPHDLC))
+ #define XLAT_STR_12 STRINGIFY(ISDN_P_B_L2DSPHDLC)
 /*
 * those two are present in include/linux/mISDNif.h but are not handled during
 * socket creation.
@@ -129,8 +155,116 @@ const struct xlat isdn_protocols[1] = { {
  .data = isdn_protocols_xdata,
  .size = ARRAY_SIZE(isdn_protocols_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

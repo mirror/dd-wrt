@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2011 Comtrol Corp.
- * Copyright (c) 2011-2019 The strace developers.
+ * Copyright (c) 2011-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <poll.h>
 
+#include "number_set.h"
 #include "syscall.h"
 #include "xstring.h"
 
@@ -75,10 +76,10 @@ storepath(const char *path, struct path_set *set)
 }
 
 /*
- * Get path associated with fd.
+ * Get path associated with fd of a process with pid.
  */
 int
-getfdpath(struct tcb *tcp, int fd, char *buf, unsigned bufsize)
+getfdpath_pid(pid_t pid, int fd, char *buf, unsigned bufsize)
 {
 	char linkpath[sizeof("/proc/%u/fd/%u") + 2 * sizeof(int)*3];
 	ssize_t n;
@@ -86,7 +87,12 @@ getfdpath(struct tcb *tcp, int fd, char *buf, unsigned bufsize)
 	if (fd < 0)
 		return -1;
 
-	xsprintf(linkpath, "/proc/%u/fd/%u", tcp->pid, fd);
+	int proc_pid = 0;
+	translate_pid(NULL, pid, PT_TID, &proc_pid);
+	if (!proc_pid)
+		return -1;
+
+	xsprintf(linkpath, "/proc/%u/fd/%u", proc_pid, fd);
 	n = readlink(linkpath, buf, bufsize - 1);
 	/*
 	 * NB: if buf is too small, readlink doesn't fail,
@@ -119,7 +125,21 @@ pathtrace_select_set(const char *path, struct path_set *set)
 		return;
 	}
 
-	error_msg("Requested path '%s' resolved into '%s'", path, rpath);
+	if (!is_number_in_set(QUIET_PATH_RESOLVE, quiet_set)) {
+		char *path_quoted = xmalloc(strlen(path) * 4 + 4);
+		char *rpath_quoted = xmalloc(strlen(rpath) * 4 + 4);
+
+		string_quote(path, path_quoted, strlen(path) + 1,
+			     QUOTE_0_TERMINATED, NULL);
+		string_quote(rpath, rpath_quoted, strlen(rpath) + 1,
+			     QUOTE_0_TERMINATED, NULL);
+
+		error_msg("Requested path %s resolved into %s",
+			  path_quoted, rpath_quoted);
+
+		free(path_quoted);
+		free(rpath_quoted);
+	}
 	storepath(rpath, set);
 }
 
@@ -178,6 +198,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	 */
 
 	switch (s->sen) {
+	case SEN_close_range:
 	case SEN_dup2:
 	case SEN_dup3:
 	case SEN_kexec_file_load:
@@ -190,6 +211,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 
 	case SEN_execveat:
 	case SEN_faccessat:
+	case SEN_faccessat2:
 	case SEN_fchmodat:
 	case SEN_fchownat:
 	case SEN_fspick:
@@ -202,6 +224,7 @@ pathtrace_match_set(struct tcb *tcp, struct path_set *set)
 	case SEN_newfstatat:
 	case SEN_open_tree:
 	case SEN_openat:
+	case SEN_openat2:
 	case SEN_readlinkat:
 	case SEN_statx:
 	case SEN_unlinkat:

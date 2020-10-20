@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data move_mount_flags_xdata[] = {
  XLAT(MOVE_MOUNT_F_SYMLINKS),
+ #define XLAT_VAL_0 ((unsigned) (MOVE_MOUNT_F_SYMLINKS))
+ #define XLAT_STR_0 STRINGIFY(MOVE_MOUNT_F_SYMLINKS)
  XLAT(MOVE_MOUNT_F_AUTOMOUNTS),
+ #define XLAT_VAL_1 ((unsigned) (MOVE_MOUNT_F_AUTOMOUNTS))
+ #define XLAT_STR_1 STRINGIFY(MOVE_MOUNT_F_AUTOMOUNTS)
  XLAT(MOVE_MOUNT_F_EMPTY_PATH),
+ #define XLAT_VAL_2 ((unsigned) (MOVE_MOUNT_F_EMPTY_PATH))
+ #define XLAT_STR_2 STRINGIFY(MOVE_MOUNT_F_EMPTY_PATH)
  XLAT(MOVE_MOUNT_T_SYMLINKS),
+ #define XLAT_VAL_3 ((unsigned) (MOVE_MOUNT_T_SYMLINKS))
+ #define XLAT_STR_3 STRINGIFY(MOVE_MOUNT_T_SYMLINKS)
  XLAT(MOVE_MOUNT_T_AUTOMOUNTS),
+ #define XLAT_VAL_4 ((unsigned) (MOVE_MOUNT_T_AUTOMOUNTS))
+ #define XLAT_STR_4 STRINGIFY(MOVE_MOUNT_T_AUTOMOUNTS)
  XLAT(MOVE_MOUNT_T_EMPTY_PATH),
+ #define XLAT_VAL_5 ((unsigned) (MOVE_MOUNT_T_EMPTY_PATH))
+ #define XLAT_STR_5 STRINGIFY(MOVE_MOUNT_T_EMPTY_PATH)
 };
 static
 const struct xlat move_mount_flags[1] = { {
  .data = move_mount_flags_xdata,
  .size = ARRAY_SIZE(move_mount_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

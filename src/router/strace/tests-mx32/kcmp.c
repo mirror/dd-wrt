@@ -2,15 +2,15 @@
  * Check decoding of kcmp syscall.
  *
  * Copyright (c) 2016-2017 Eugene Syromyatnikov <evgsyr@gmail.com>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
 #include "tests.h"
-
 #include "scno.h"
+#include "pidns.h"
 
 #ifdef __NR_kcmp
 
@@ -64,7 +64,26 @@ static const char zero_path[] = "/dev/zero";
 static void
 printpidfd(const char *prefix, pid_t pid, unsigned fd)
 {
-	printf("%s%d", prefix, fd);
+	const char *path = NULL;
+
+# if VERBOSE_FD
+	if (pid == getpid()) {
+		switch (fd)
+		{
+		case NULL_FD:
+			path = null_path;
+			break;
+		case ZERO_FD:
+			path = zero_path;
+			break;
+		}
+	}
+# endif
+
+	if (path)
+		printf("%s%d<%s>", prefix, fd, path);
+	else
+		printf("%s%d", prefix, fd);
 }
 
 /*
@@ -82,7 +101,11 @@ do_kcmp(kernel_ulong_t pid1, kernel_ulong_t pid2, kernel_ulong_t type,
 	rc = syscall(__NR_kcmp, pid1, pid2, type, idx1, idx2);
 	errstr = sprintrc(rc);
 
-	printf("kcmp(%d, %d, ", (int) pid1, (int) pid2);
+	const char *pid_str = pidns_pid2str(PT_TGID);
+	pidns_print_leader();
+	printf("kcmp(%d%s, %d%s, ",
+		(int) pid1, (int) pid1 == getpid() ? pid_str : "",
+		(int) pid2, (int) pid2 == getpid() ? pid_str : "");
 
 	if (type_str)
 		printf("%s", type_str);
@@ -127,6 +150,8 @@ do_kcmp(kernel_ulong_t pid1, kernel_ulong_t pid2, kernel_ulong_t type,
 int
 main(void)
 {
+	PIDNS_TEST_INIT;
+
 	static const kernel_ulong_t bogus_pid1 =
 		(kernel_ulong_t) 0xdeadca75face1057ULL;
 	static const kernel_ulong_t bogus_pid2 =
@@ -179,7 +204,7 @@ main(void)
 	/* KCMP_FILE is the only type which has additional args */
 	do_kcmp(3141592653U, 2718281828U, ARG_STR(KCMP_FILE), bogus_idx1,
 		bogus_idx2);
-	do_kcmp(-1, -1, ARG_STR(KCMP_FILE), NULL_FD, ZERO_FD);
+	do_kcmp(getpid(), getpid(), ARG_STR(KCMP_FILE), NULL_FD, ZERO_FD);
 
 	/* Types without additional args */
 	do_kcmp(-1, -1, ARG_STR(KCMP_VM), bogus_idx1, bogus_idx2);
@@ -198,10 +223,11 @@ main(void)
 	for (i = 0; i < ARRAY_SIZE(slot_data); i++) {
 		memcpy(slot, slot_data + i, sizeof(*slot));
 
-		do_kcmp(getpid(), getppid(), ARG_STR(KCMP_EPOLL_TFD), NULL_FD,
+		do_kcmp(getpid(), -1, ARG_STR(KCMP_EPOLL_TFD), NULL_FD,
 			(uintptr_t) slot, 1);
 	}
 
+	pidns_print_leader();
 	puts("+++ exited with 0 +++");
 
 	return 0;

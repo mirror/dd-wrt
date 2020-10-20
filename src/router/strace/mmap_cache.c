@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2013 Luca Clementi <luca.clementi@gmail.com>
- * Copyright (c) 2013-2018 The strace developers.
+ * Copyright (c) 2013-2020 The strace developers.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
@@ -84,7 +84,7 @@ mmap_cache_rebuild_if_invalid(struct tcb *tcp, const char *caller)
 		return MMAP_CACHE_REBUILD_READY;
 
 	char filename[sizeof("/proc/4294967296/maps")];
-	xsprintf(filename, "/proc/%u/maps", tcp->pid);
+	xsprintf(filename, "/proc/%u/maps", get_proc_pid(tcp));
 
 	FILE *fp = fopen_stream(filename, "r");
 	if (!fp) {

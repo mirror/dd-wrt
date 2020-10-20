@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data skf_off_xdata[] = {
  XLAT(SKF_AD_OFF),
+ #define XLAT_VAL_0 ((unsigned) (SKF_AD_OFF))
+ #define XLAT_STR_0 STRINGIFY(SKF_AD_OFF)
  XLAT(SKF_NET_OFF),
+ #define XLAT_VAL_1 ((unsigned) (SKF_NET_OFF))
+ #define XLAT_STR_1 STRINGIFY(SKF_NET_OFF)
  XLAT(SKF_LL_OFF),
+ #define XLAT_VAL_2 ((unsigned) (SKF_LL_OFF))
+ #define XLAT_STR_2 STRINGIFY(SKF_LL_OFF)
 };
 static
 const struct xlat skf_off[1] = { {
  .data = skf_off_xdata,
  .size = ARRAY_SIZE(skf_off_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

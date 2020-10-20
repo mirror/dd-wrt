@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data usagewho_xdata[] = {
  XLAT(RUSAGE_SELF),
+ #define XLAT_VAL_0 ((unsigned) (RUSAGE_SELF))
+ #define XLAT_STR_0 STRINGIFY(RUSAGE_SELF)
  XLAT(RUSAGE_CHILDREN),
+ #define XLAT_VAL_1 ((unsigned) (RUSAGE_CHILDREN))
+ #define XLAT_STR_1 STRINGIFY(RUSAGE_CHILDREN)
  XLAT(RUSAGE_BOTH),
+ #define XLAT_VAL_2 ((unsigned) (RUSAGE_BOTH))
+ #define XLAT_STR_2 STRINGIFY(RUSAGE_BOTH)
  XLAT(RUSAGE_THREAD),
+ #define XLAT_VAL_3 ((unsigned) (RUSAGE_THREAD))
+ #define XLAT_STR_3 STRINGIFY(RUSAGE_THREAD)
 };
 static
 const struct xlat usagewho[1] = { {
  .data = usagewho_xdata,
  .size = ARRAY_SIZE(usagewho_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

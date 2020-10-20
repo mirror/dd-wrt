@@ -27,13 +27,29 @@ PURE_EXECUTABLES = \
   clone3-Xabbrev \
   clone3-Xraw \
   clone3-Xverbose \
+  close_range \
+  close_range-P \
+  close_range-y \
+  close_range-yy \
   copy_file_range \
   creat \
   delete_module \
+  dev--decode-fds-dev \
+  dev--decode-fds-path \
+  dev--decode-fds-socket \
   dev-yy \
   dup \
+  dup-P \
+  dup-y \
+  dup-yy \
   dup2 \
+  dup2-P \
+  dup2-y \
+  dup2-yy \
   dup3 \
+  dup3-P \
+  dup3-y \
+  dup3-yy \
   epoll_create \
   epoll_create1 \
   epoll_ctl \
@@ -44,6 +60,13 @@ PURE_EXECUTABLES = \
   execve \
   execveat \
   faccessat \
+  faccessat-P \
+  faccessat-y \
+  faccessat-yy \
+  faccessat2 \
+  faccessat2-P \
+  faccessat2-y \
+  faccessat2-yy \
   fadvise64 \
   fadvise64_64 \
   fallocate \
@@ -92,7 +115,9 @@ PURE_EXECUTABLES = \
   getcpu \
   getcwd \
   getdents \
+  getdents-v \
   getdents64 \
+  getdents64-v \
   getegid \
   getegid32 \
   geteuid \
@@ -116,7 +141,9 @@ PURE_EXECUTABLES = \
   getsockname \
   getuid \
   getuid32 \
-  getxxid \
+  getxgid \
+  getxpid \
+  getxuid \
   group_req \
   inet-cmsg \
   init_module \
@@ -139,6 +166,14 @@ PURE_EXECUTABLES = \
   ioctl_evdev-v-Xabbrev \
   ioctl_evdev-v-Xraw \
   ioctl_evdev-v-Xverbose \
+  ioctl_hdio \
+  ioctl_hdio-Xabbrev \
+  ioctl_hdio-Xraw \
+  ioctl_hdio-Xverbose \
+  ioctl_hdio-v \
+  ioctl_hdio-v-Xabbrev \
+  ioctl_hdio-v-Xraw \
+  ioctl_hdio-v-Xverbose \
   ioctl_inotify \
   ioctl_kvm_run \
   ioctl_kvm_run-v \
@@ -154,8 +189,16 @@ PURE_EXECUTABLES = \
   ioctl_sg_io_v3 \
   ioctl_sg_io_v4 \
   ioctl_sock_gifconf \
+  ioctl_tee \
   ioctl_uffdio \
   ioctl_v4l2 \
+  ioctl_v4l2-Xabbrev \
+  ioctl_v4l2-Xraw \
+  ioctl_v4l2-Xverbose \
+  ioctl_v4l2-v \
+  ioctl_v4l2-v-Xabbrev \
+  ioctl_v4l2-v-Xraw \
+  ioctl_v4l2-v-Xverbose \
   ioctl_watchdog \
   ioperm \
   iopl \
@@ -206,6 +249,7 @@ PURE_EXECUTABLES = \
   lstat64 \
   madvise \
   maybe_switch_current_tcp \
+  maybe_switch_current_tcp--quiet-thread-execve \
   mbind \
   mbind-Xabbrev \
   mbind-Xraw \
@@ -253,6 +297,10 @@ PURE_EXECUTABLES = \
   msg_name \
   munlockall \
   nanosleep \
+  net--decode-fds-dev-netlink \
+  net--decode-fds-none-netlink \
+  net--decode-fds-path-netlink \
+  net--decode-fds-socket-netlink \
   net-icmp_filter \
   net-packet_mreq \
   net-packet_mreq-Xabbrev \
@@ -335,6 +383,16 @@ PURE_EXECUTABLES = \
   open_tree \
   open_tree-P \
   openat \
+  openat2 \
+  openat2-Xabbrev \
+  openat2-Xraw \
+  openat2-Xverbose \
+  openat2-v \
+  openat2-v-y \
+  openat2-v-y-Xabbrev \
+  openat2-v-y-Xraw \
+  openat2-v-y-Xverbose \
+  openat2-y \
   osf_utimes \
   pause \
   perf_event_open \
@@ -342,9 +400,16 @@ PURE_EXECUTABLES = \
   personality-Xabbrev \
   personality-Xraw \
   personality-Xverbose \
+  pidfd_getfd \
+  pidfd_getfd-y \
+  pidfd_getfd-yy \
   pidfd_open \
+  pidfd_open--decode-fd-path \
+  pidfd_open--decode-fd-pidfd \
+  pidfd_open--decode-fd-socket \
   pidfd_open-P \
   pidfd_open-y \
+  pidfd_open-yy \
   pidfd_send_signal \
   pipe \
   pipe2 \
@@ -352,9 +417,7 @@ PURE_EXECUTABLES = \
   pkey_free \
   pkey_mprotect \
   poll \
-  poll-P \
   ppoll \
-  ppoll-P \
   prctl-arg2-intptr \
   prctl-dumpable \
   prctl-name \
@@ -503,11 +566,21 @@ PURE_EXECUTABLES = \
   statfs64 \
   status-all \
   status-failed \
+  status-failed-long \
+  status-failed-status \
   status-none \
   status-none-f \
   status-successful \
+  status-successful-long \
+  status-successful-status \
   status-unfinished \
   statx \
+  strace--strings-in-hex \
+  strace--strings-in-hex-all \
+  strace--strings-in-hex-non-ascii \
+  strace-n \
+  strace-x \
+  strace-xx \
   swap \
   sxetmask \
   symlink \
@@ -518,12 +591,14 @@ PURE_EXECUTABLES = \
   sysinfo \
   syslog \
   tee \
+  tgkill \
   time \
   timer_create \
   timer_xettime \
   timerfd_xettime \
   times \
   times-fail \
+  tkill \
   truncate \
   truncate64 \
   ugetrlimit \
@@ -537,6 +612,7 @@ PURE_EXECUTABLES = \
   umovestr2 \
   umovestr3 \
   umovestr_cached \
+  umovestr_cached_adjacent \
   uname \
   unlink \
   unlinkat \

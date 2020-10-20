@@ -50,9 +50,10 @@ struct test_clone_args {
 	uint64_t tls;
 	uint64_t set_tid;
 	uint64_t set_tid_size;
+	uint64_t cgroup;
 };
 
-#ifdef HAVE_STRUCT_CLONE_ARGS_SET_TID_SIZE
+#ifdef HAVE_STRUCT_CLONE_ARGS_CGROUP
 typedef struct clone_args struct_clone_args;
 #else
 typedef struct test_clone_args struct_clone_args;
@@ -66,17 +67,13 @@ enum validity_flag_bits {
 	TLS_VALID_BIT,
 };
 
-#define _(x_) x_ = 1 << x_##_BIT
-
 enum validity_flags {
-	_(STRUCT_VALID),
-	_(PIDFD_VALID),
-	_(CHILD_TID_VALID),
-	_(PARENT_TID_VALID),
-	_(TLS_VALID),
+	FLAG(STRUCT_VALID),
+	FLAG(PIDFD_VALID),
+	FLAG(CHILD_TID_VALID),
+	FLAG(PARENT_TID_VALID),
+	FLAG(TLS_VALID),
 };
-
-#undef _
 
 #define MAX_SET_TID_SIZE 32
 
@@ -267,6 +264,10 @@ print_clone3(struct_clone_args *const arg, long rc, kernel_ulong_t sz,
 	    (arg->set_tid || arg->set_tid_size))
 		print_set_tid(arg->set_tid, arg->set_tid_size);
 
+	if (sz > offsetof(struct_clone_args, cgroup) &&
+	    (arg->cgroup || arg->flags & CLONE_INTO_CGROUP))
+		printf(", cgroup=%" PRIu64, (uint64_t) arg->cgroup);
+
 	printf("}");
 
 	if (rc < 0)
@@ -405,6 +406,19 @@ main(int argc, char *argv[])
 	printf(", %zu) = %s" INJ_STR, sizeof(*arg), sprintrc(rc));
 	memset(arg, 0, sizeof(*arg));
 
+	arg->cgroup = 0xfacefeedbadc0ded;
+	rc = do_clone3(arg, sizeof(*arg), ERR(0) | ERR(E2BIG));
+	print_clone3(arg, rc, sizeof(*arg), STRUCT_VALID, "0", "0");
+	printf(", %zu) = %s" INJ_STR, sizeof(*arg), sprintrc(rc));
+	memset(arg, 0, sizeof(*arg));
+
+	arg->flags = CLONE_INTO_CGROUP;
+	rc = do_clone3(arg, sizeof(*arg), ERR(0) | ERR(EINVAL) | ERR(EBADF));
+	print_clone3(arg, rc, sizeof(*arg), STRUCT_VALID,
+		     "CLONE_INTO_CGROUP", "0");
+	printf(", %zu) = %s" INJ_STR, sizeof(*arg), sprintrc(rc));
+	memset(arg, 0, sizeof(*arg));
+
 	/*
 	 * NB: the following check is purposefully fragile (it will break
 	 *     when system's struct clone_args has additional fields,
@@ -446,18 +460,20 @@ main(int argc, char *argv[])
 	       ", %zu) = %s" INJ_STR,
 	       sizeof(*arg) + 16, sprintrc(rc));
 
-	arg->flags = 0xfacefeedbeefc0de;
+	arg->flags = 0xface3eefbeefc0de;
 	arg->exit_signal = 0x1e55c0de;
 	rc = do_clone3(arg, 64, ERR(EINVAL));
 	printf("clone3({flags=%s, child_tid=NULL, exit_signal=508936414"
 	       ", stack=NULL, stack_size=0, tls=NULL}, 64) = %s" INJ_STR,
-	       XLAT_KNOWN(0xfacefeedbeefc0de, "CLONE_VFORK|CLONE_PARENT"
+	       XLAT_KNOWN(0xface3eefbeefc0de, "CLONE_VFORK|CLONE_PARENT"
 	       "|CLONE_THREAD|CLONE_NEWNS|CLONE_SYSVSEM|CLONE_SETTLS"
 	       "|CLONE_CHILD_CLEARTID|CLONE_UNTRACED|CLONE_NEWCGROUP"
 	       "|CLONE_NEWUTS|CLONE_NEWIPC|CLONE_NEWUSER|CLONE_NEWPID|CLONE_IO"
-	       "|CLONE_CLEAR_SIGHAND|0xfacefeec004000de"), sprintrc(rc));
+	       "|CLONE_NEWTIME|CLONE_CLEAR_SIGHAND|CLONE_INTO_CGROUP"
+	       "|0xface3eec0040005e"),
+	       sprintrc(rc));
 
-	arg->flags = 0xdec0deac004000ffULL;
+	arg->flags = 0xdec0deac0040007fULL;
 	arg->exit_signal = 250;
 	arg->stack = 0xface1e55beeff00dULL;
 	arg->stack_size = 0xcaffeedefacedca7ULL;
@@ -465,7 +481,7 @@ main(int argc, char *argv[])
 	printf("clone3({flags=%s, exit_signal=250"
 	       ", stack=0xface1e55beeff00d, stack_size=0xcaffeedefacedca7}, 64)"
 	       " = %s" INJ_STR,
-	       XLAT_UNKNOWN(0xdec0deac004000ff, "CLONE_???"),
+	       XLAT_UNKNOWN(0xdec0deac0040007f, "CLONE_???"),
 	       sprintrc(rc));
 
 	arg->exit_signal = SIGCHLD;

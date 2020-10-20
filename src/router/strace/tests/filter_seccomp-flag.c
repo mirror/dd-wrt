@@ -2,7 +2,7 @@
  * Check that syscall numbers do not conflict with seccomp filter flags.
  *
  * Copyright (c) 2019 Paul Chaignon <paul.chaignon@gmail.com>
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -22,12 +22,6 @@
 # undef XLAT_MACROS_ONLY
 #endif
 
-#ifdef __x86_64__
-# ifndef __X32_SYSCALL_BIT
-#  define __X32_SYSCALL_BIT     0x40000000
-# endif
-#endif
-
 /* Define these shorthand notations to simplify the syscallent files. */
 #include "sysent_shorthand_defs.h"
 
@@ -36,13 +30,13 @@ const struct_sysent sysent0[] = {
 };
 
 #if SUPPORTED_PERSONALITIES > 1
-static const struct_sysent sysent1[] = {
+const struct_sysent sysent1[] = {
 # include "syscallent1.h"
 };
 #endif
 
 #if SUPPORTED_PERSONALITIES > 2
-static const struct_sysent sysent2[] = {
+const struct_sysent sysent2[] = {
 # include "syscallent2.h"
 };
 #endif

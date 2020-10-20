@@ -34,15 +34,39 @@ static const struct xlat_data setsock_ipv6_options_xdata[] = {
 */
 
  XLAT(IP6T_SO_SET_REPLACE),
+ #define XLAT_VAL_0 ((unsigned) (IP6T_SO_SET_REPLACE))
+ #define XLAT_STR_0 STRINGIFY(IP6T_SO_SET_REPLACE)
  XLAT(IP6T_SO_SET_ADD_COUNTERS),
+ #define XLAT_VAL_1 ((unsigned) (IP6T_SO_SET_ADD_COUNTERS))
+ #define XLAT_STR_1 STRINGIFY(IP6T_SO_SET_ADD_COUNTERS)
 };
 static
 const struct xlat setsock_ipv6_options[1] = { {
  .data = setsock_ipv6_options_xdata,
  .size = ARRAY_SIZE(setsock_ipv6_options_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

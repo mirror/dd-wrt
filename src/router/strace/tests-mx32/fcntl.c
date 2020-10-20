@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -24,6 +24,7 @@ test_flock64_undecoded(const int cmd, const char *name)
 		.l_len = 0xdefaced2cafef00dULL
 	};
 	invoke_test_syscall(0, cmd, &fl);
+	pidns_print_leader();
 	printf("%s(0, %s, %p) = %s\n",
 	       TEST_SYSCALL_STR, name, &fl, errstr);
 }

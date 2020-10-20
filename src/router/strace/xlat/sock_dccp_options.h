@@ -126,29 +126,193 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_dccp_options_xdata[] = {
  XLAT(DCCP_SOCKOPT_PACKET_SIZE),
+ #define XLAT_VAL_0 ((unsigned) (DCCP_SOCKOPT_PACKET_SIZE))
+ #define XLAT_STR_0 STRINGIFY(DCCP_SOCKOPT_PACKET_SIZE)
  XLAT(DCCP_SOCKOPT_SERVICE),
+ #define XLAT_VAL_1 ((unsigned) (DCCP_SOCKOPT_SERVICE))
+ #define XLAT_STR_1 STRINGIFY(DCCP_SOCKOPT_SERVICE)
  XLAT(DCCP_SOCKOPT_CHANGE_L),
+ #define XLAT_VAL_2 ((unsigned) (DCCP_SOCKOPT_CHANGE_L))
+ #define XLAT_STR_2 STRINGIFY(DCCP_SOCKOPT_CHANGE_L)
  XLAT(DCCP_SOCKOPT_CHANGE_R),
+ #define XLAT_VAL_3 ((unsigned) (DCCP_SOCKOPT_CHANGE_R))
+ #define XLAT_STR_3 STRINGIFY(DCCP_SOCKOPT_CHANGE_R)
  XLAT(DCCP_SOCKOPT_GET_CUR_MPS),
+ #define XLAT_VAL_4 ((unsigned) (DCCP_SOCKOPT_GET_CUR_MPS))
+ #define XLAT_STR_4 STRINGIFY(DCCP_SOCKOPT_GET_CUR_MPS)
  XLAT(DCCP_SOCKOPT_SERVER_TIMEWAIT),
+ #define XLAT_VAL_5 ((unsigned) (DCCP_SOCKOPT_SERVER_TIMEWAIT))
+ #define XLAT_STR_5 STRINGIFY(DCCP_SOCKOPT_SERVER_TIMEWAIT)
  XLAT(DCCP_SOCKOPT_SEND_CSCOV),
+ #define XLAT_VAL_6 ((unsigned) (DCCP_SOCKOPT_SEND_CSCOV))
+ #define XLAT_STR_6 STRINGIFY(DCCP_SOCKOPT_SEND_CSCOV)
  XLAT(DCCP_SOCKOPT_RECV_CSCOV),
+ #define XLAT_VAL_7 ((unsigned) (DCCP_SOCKOPT_RECV_CSCOV))
+ #define XLAT_STR_7 STRINGIFY(DCCP_SOCKOPT_RECV_CSCOV)
  XLAT(DCCP_SOCKOPT_AVAILABLE_CCIDS),
+ #define XLAT_VAL_8 ((unsigned) (DCCP_SOCKOPT_AVAILABLE_CCIDS))
+ #define XLAT_STR_8 STRINGIFY(DCCP_SOCKOPT_AVAILABLE_CCIDS)
  XLAT(DCCP_SOCKOPT_CCID),
+ #define XLAT_VAL_9 ((unsigned) (DCCP_SOCKOPT_CCID))
+ #define XLAT_STR_9 STRINGIFY(DCCP_SOCKOPT_CCID)
  XLAT(DCCP_SOCKOPT_TX_CCID),
+ #define XLAT_VAL_10 ((unsigned) (DCCP_SOCKOPT_TX_CCID))
+ #define XLAT_STR_10 STRINGIFY(DCCP_SOCKOPT_TX_CCID)
  XLAT(DCCP_SOCKOPT_RX_CCID),
+ #define XLAT_VAL_11 ((unsigned) (DCCP_SOCKOPT_RX_CCID))
+ #define XLAT_STR_11 STRINGIFY(DCCP_SOCKOPT_RX_CCID)
  XLAT(DCCP_SOCKOPT_QPOLICY_ID),
+ #define XLAT_VAL_12 ((unsigned) (DCCP_SOCKOPT_QPOLICY_ID))
+ #define XLAT_STR_12 STRINGIFY(DCCP_SOCKOPT_QPOLICY_ID)
  XLAT(DCCP_SOCKOPT_QPOLICY_TXQLEN),
+ #define XLAT_VAL_13 ((unsigned) (DCCP_SOCKOPT_QPOLICY_TXQLEN))
+ #define XLAT_STR_13 STRINGIFY(DCCP_SOCKOPT_QPOLICY_TXQLEN)
  XLAT(DCCP_SOCKOPT_CCID_RX_INFO),
+ #define XLAT_VAL_14 ((unsigned) (DCCP_SOCKOPT_CCID_RX_INFO))
+ #define XLAT_STR_14 STRINGIFY(DCCP_SOCKOPT_CCID_RX_INFO)
  XLAT(DCCP_SOCKOPT_CCID_TX_INFO),
+ #define XLAT_VAL_15 ((unsigned) (DCCP_SOCKOPT_CCID_TX_INFO))
+ #define XLAT_STR_15 STRINGIFY(DCCP_SOCKOPT_CCID_TX_INFO)
 };
 static
 const struct xlat sock_dccp_options[1] = { {
  .data = sock_dccp_options_xdata,
  .size = ARRAY_SIZE(sock_dccp_options_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

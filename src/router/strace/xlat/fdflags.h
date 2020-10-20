@@ -15,6 +15,8 @@
 static const struct xlat_data fdflags_xdata[] = {
 #if defined(FD_CLOEXEC) || (defined(HAVE_DECL_FD_CLOEXEC) && HAVE_DECL_FD_CLOEXEC)
   XLAT(FD_CLOEXEC),
+ #define XLAT_VAL_0 ((unsigned) (FD_CLOEXEC))
+ #define XLAT_STR_0 STRINGIFY(FD_CLOEXEC)
 #endif
 };
 static
@@ -22,8 +24,20 @@ const struct xlat fdflags[1] = { {
  .data = fdflags_xdata,
  .size = ARRAY_SIZE(fdflags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

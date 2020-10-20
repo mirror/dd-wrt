@@ -2,7 +2,7 @@
  * Check decoding of ptrace syscall.
  *
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -127,16 +127,16 @@ test_peeksiginfo(unsigned long pid, const unsigned long bad_request)
 			printf("ptrace(PTRACE_PEEKSIGINFO, %u"
 			       ", {off=%llu, flags=0, nr=%u}"
 			       ", [{si_signo=SIGUSR1, si_code=SI_TKILL"
-			       ", si_pid=%u, si_uid=%u}"
+			       ", si_pid=%d, si_uid=%d}"
 			       ", {si_signo=SIGUSR2, si_code=SI_TKILL"
-			       ", si_pid=%u, si_uid=%u}"
+			       ", si_pid=%d, si_uid=%d}"
 			       ", {si_signo=SIGALRM, si_code=SI_TKILL"
-			       ", si_pid=%u, si_uid=%u}"
+			       ", si_pid=%d, si_uid=%d}"
 			       "]) = %s\n",
 			       (unsigned) pid, psi->off, psi->nr,
-			       (unsigned) pid, (unsigned) uid,
-			       (unsigned) pid, (unsigned) uid,
-			       (unsigned) pid, (unsigned) uid,
+			       (int) pid, (int) uid,
+			       (int) pid, (int) uid,
+			       (int) pid, (int) uid,
 			       errstr);
 		}
 

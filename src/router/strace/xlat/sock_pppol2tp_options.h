@@ -49,18 +49,72 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_pppol2tp_options_xdata[] = {
  [PPPOL2TP_SO_DEBUG] = XLAT(PPPOL2TP_SO_DEBUG),
+ #define XLAT_VAL_0 ((unsigned) (PPPOL2TP_SO_DEBUG))
+ #define XLAT_STR_0 STRINGIFY(PPPOL2TP_SO_DEBUG)
  [PPPOL2TP_SO_RECVSEQ] = XLAT(PPPOL2TP_SO_RECVSEQ),
+ #define XLAT_VAL_1 ((unsigned) (PPPOL2TP_SO_RECVSEQ))
+ #define XLAT_STR_1 STRINGIFY(PPPOL2TP_SO_RECVSEQ)
  [PPPOL2TP_SO_SENDSEQ] = XLAT(PPPOL2TP_SO_SENDSEQ),
+ #define XLAT_VAL_2 ((unsigned) (PPPOL2TP_SO_SENDSEQ))
+ #define XLAT_STR_2 STRINGIFY(PPPOL2TP_SO_SENDSEQ)
  [PPPOL2TP_SO_LNSMODE] = XLAT(PPPOL2TP_SO_LNSMODE),
+ #define XLAT_VAL_3 ((unsigned) (PPPOL2TP_SO_LNSMODE))
+ #define XLAT_STR_3 STRINGIFY(PPPOL2TP_SO_LNSMODE)
  [PPPOL2TP_SO_REORDERTO] = XLAT(PPPOL2TP_SO_REORDERTO),
+ #define XLAT_VAL_4 ((unsigned) (PPPOL2TP_SO_REORDERTO))
+ #define XLAT_STR_4 STRINGIFY(PPPOL2TP_SO_REORDERTO)
 };
 static
 const struct xlat sock_pppol2tp_options[1] = { {
  .data = sock_pppol2tp_options_xdata,
  .size = ARRAY_SIZE(sock_pppol2tp_options_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -22,14 +22,7 @@
 int
 main(void)
 {
-	static const char fname[] = "fchmod_test_file";
-
-	int fd = open(fname, O_CREAT|O_RDONLY, 0400);
-	if (fd < 0)
-		perror_msg_and_fail("open");
-
-	if (unlink(fname))
-		perror_msg_and_fail("unlink");
+	int fd = create_tmpfile(O_RDWR);
 
 	long rc = syscall(__NR_fchmod, fd, 0600);
 	printf("fchmod(%d, 0600) = %s\n", fd, sprintrc(rc));

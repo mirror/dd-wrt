@@ -1,7 +1,7 @@
 /*
  * Check printing of character/block device numbers in -yy mode.
  *
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -17,6 +17,16 @@
 #include <linux/fcntl.h>
 
 #include <sys/sysmacros.h>
+
+#ifndef PRINT_DEVNUM
+# define PRINT_DEVNUM 1
+#endif
+
+#if PRINT_DEVNUM
+# define DEV_FMT "<%s<%s %u:%u>>"
+#else
+# define DEV_FMT "<%s>"
+#endif
 
 #if defined __NR_openat && defined O_PATH
 
@@ -47,10 +57,13 @@ main(void)
 		printf("openat(AT_FDCWD, \"%s\", O_RDONLY|O_PATH) = %s",
 		       checks[i].path, sprintrc(fd));
 		if (fd >= 0)
-			printf("<%s<%s %u:%u>>",
-			       checks[i].path,
-			       checks[i].blk ? "block" : "char",
-			       checks[i].major, checks[i].minor);
+			printf(DEV_FMT,
+			       checks[i].path
+# if PRINT_DEVNUM
+			       , checks[i].blk ? "block" : "char",
+			       checks[i].major, checks[i].minor
+# endif
+			       );
 		puts("");
 
 		if (fd < 0) {
@@ -63,9 +76,13 @@ main(void)
 
 		int rc = fsync(fd);
 
-		printf("fsync(%ld<%s<%s %u:%u>>) = %s\n",
-		       fd, checks[i].path, checks[i].blk ? "block" : "char",
-		       checks[i].major, checks[i].minor, sprintrc(rc));
+		printf("fsync(%ld" DEV_FMT ") = %s\n",
+		       fd, checks[i].path,
+# if PRINT_DEVNUM
+		       checks[i].blk ? "block" : "char",
+		       checks[i].major, checks[i].minor,
+# endif
+		       sprintrc(rc));
 
 		close(fd);
 	}

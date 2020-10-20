@@ -42,9 +42,17 @@ extern const struct xlat sigev_value[];
 
 static const struct xlat_data sigev_value_xdata[] = {
  [SIGEV_SIGNAL] = XLAT(SIGEV_SIGNAL),
+ #define XLAT_VAL_0 ((unsigned) (SIGEV_SIGNAL))
+ #define XLAT_STR_0 STRINGIFY(SIGEV_SIGNAL)
  [SIGEV_NONE] = XLAT(SIGEV_NONE),
+ #define XLAT_VAL_1 ((unsigned) (SIGEV_NONE))
+ #define XLAT_STR_1 STRINGIFY(SIGEV_NONE)
  [SIGEV_THREAD] = XLAT(SIGEV_THREAD),
+ #define XLAT_VAL_2 ((unsigned) (SIGEV_THREAD))
+ #define XLAT_STR_2 STRINGIFY(SIGEV_THREAD)
  [SIGEV_THREAD_ID] = XLAT(SIGEV_THREAD_ID),
+ #define XLAT_VAL_3 ((unsigned) (SIGEV_THREAD_ID))
+ #define XLAT_STR_3 STRINGIFY(SIGEV_THREAD_ID)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -53,8 +61,44 @@ const struct xlat sigev_value[1] = { {
  .data = sigev_value_xdata,
  .size = ARRAY_SIZE(sigev_value_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

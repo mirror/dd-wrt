@@ -1,3 +1,132 @@
+Noteworthy changes in release 5.9 (2020-09-24)
+==============================================
+
+* Improvements
+  * Added -n/--syscall-number option for printing syscall numbers.
+  * Added --pidns-translation option for PID namespace translation (addresses
+    Fedora bug #1035433).
+  * Implemented decoding of close_range syscall.
+  * Implemented decoding of TEE_* ioctl commands.
+  * Implemented decoding of struct msginfo argument of IPC_INFO
+    and MSG_INFO msgctl syscall commands.
+  * Implemented decoding of struct msqid_ds argument of MSG_STAT
+    and MSG_STAT_ANY msgctl syscall commands.
+  * Implemented decoding of struct seminfo argument of IPC_INFO
+    and SEM_INFO semctl syscall commands.
+  * Implemented decoding of struct semid_ds argument of IPC_SET,
+    IPC_STAT, SEM_STAT, and SEM_STAT_ANY semctl syscall commands.
+  * Implemented decoding of struct shminfo argument of IPC_INFO
+    shmctl syscall command.
+  * Implemented decoding of struct shm_info argument of SHM_INFO
+    shmctl syscall command.
+  * Implemented decoding of struct shmid_ds argument of SHM_STAT
+    and SHM_STAT_ANY shmctl syscall commands.
+  * Updated lists of BPF_*, CAP_*, FAN_*, IFLA_*, INET_DIAG_REQ_*,
+    IORING_FEAT_*, IP_*, IPV6_*, KVM_*, NDA_*, PTP_PEROUT_*, RTPROT_*,
+    and V4L2_FMT_FLAG_* constants.
+  * Updated lists of ioctl commands from Linux 5.9.
+
+Noteworthy changes in release 5.8 (2020-08-06)
+==============================================
+
+* Changes in behaviour
+  * Modified %process class to contain system calls associated with
+    process lifecycle (creation, exec, termination):
+    kill, tkill, tgkill, pidfd_send_signal and rt_sigqueueinfo are added,
+    arch_prctl and unshare are removed.
+
+* Improvements
+  * Implemented decoding of faccessat2 syscall.
+  * Implemented decoding of LOOP_CONFIGURE ioctl command.
+  * Updated decoding of io_uring_setup syscall to match Linux 5.8.
+  * Updated lists of AUDIT_*, BPF_*, CAP_*, ETH_*, INET_DIAG_*, IORING_*,
+    KEYCTL_*, KVM_*, LOOP_*, NDA_*, RTC_*, TCA_*, STATX_*, and *_MAGIC
+    constants.
+  * Updated lists of ioctl commands from Linux 5.8.
+
+* Bug fixes
+  * Added statx syscall to %fstat trace class.
+
+Noteworthy changes in release 5.7 (2020-06-01)
+==============================================
+
+* Improvements
+  * Implemented interval specification in "when=" subexpression of syscall
+    tampering expressions.
+  * Added -e trace=%clock option for tracing syscalls reading of modifying
+    system clocks.
+  * Implemented decoding of BPF_LINK_CREATE and BPF_LINK_UPDATE bpf
+    syscall commands.
+  * Updated decoding of clone3 syscall to match Linux 5.7.
+  * Updated lists of BPF_*, BTRFS_*, CLONE_*, FAN_*, IORING_*, KVM_*,
+    LWTUNNEL_*, MREMAP_*, PERF_*, SECCOMP_*, UFFDIO_*, V4L2_*, and XDP_*
+    constants.
+  * Updated lists of ioctl commands from Linux 5.7.
+
+* Bug fixes
+  * Fixed decoding of getdents and getdents64 syscalls when they return
+    a lot of directory entries.
+  * Fixed pathtrace matching of openat2 syscall.
+  * Fixed build on systems without fork.
+
+Noteworthy changes in release 5.6 (2020-04-07)
+==============================================
+
+* Changes in behaviour
+  * Messages about unknown tracees are now subject to the strace's quietness
+    setting (-q/--quiet).
+  * If -A option is provided without -o, or -S option without -c/-C, a warning
+    about its uselessness is printed now.
+  * The usage of --seccomp-bpf without -f has no effect now.
+
+* Improvements
+  * Every short option now has a long option alias, which also has enabled
+    the following improvements:
+    * Ability to use human-readable settings for -I/--interruptible,
+      -D/--daemonize options.
+    * Ability to silence specific messages using -e quiet/--quiet qualifier
+      (an alias for the -q option), including those that couldn't be silenced
+      previously (path resolution messages and "superseded by execve").
+    * Ability to specify selected fd decoding features using
+      -e decode-fds/--decode-fds qualifier (an alias for the -y option).
+    * Ability to set precision for the absolute timestamp, relative timestamp,
+      and syscall time output (using --absolute-timestamps,
+      --relative-timestamps, and --syscall-times options, respectively).
+  * Implemented ability to select the set of displayed columns in the call
+    summary output (-U/--summary-columns option).
+  * Implemented ability to sort on any summary column.
+  * Implemented ability to show information about minimum and maximum call
+    duration in the call summary output (addresses Debian bug #240945).
+  * Implemented printing of PIDs associated with pidfds in -yy mode.
+  * Implemented PTRACE_GETREGS API support on hppa, sh, sh64, and xtensa.
+  * Improved performance of libdw-based stack traces printing by implementing
+    a symbol-to-address cache.
+  * Implemented decoding of openat2 and pidfd_getfd syscalls.
+  * Enhanced io_uring_register, prctl, sched_getattr, and sched_setattr syscall
+    decoding.
+  * Implemented decoding of BPF_MAP_LOOKUP_BATCH,
+    BPF_MAP_LOOKUP_AND_DELETE_BATCH, BPF_MAP_UPDATE_BATCH, and
+    BPF_MAP_DELETE_BATCH bpf syscall commands.
+  * Enhanced decoding of BPF_MAP_CREATE and BPF_PROG_ATTACH bpf syscall
+    commands.
+  * Enhanced decoding of RTC_VL_READ ioctl command.
+  * Enhanced decoding of IFLA_* netlink attributes.
+  * Implemented HIDIOCGRAWUNIQ() ioctl command number printing.
+  * Wired up kexec_file_load syscall on hppa.
+  * Updated lists of AUDIT_*, BPF_*, CLONE_*, GRND_*, IFLA_*, IORING_*,
+    IPPROTO_*, KEY_*, KVM_*, RTM_F_*, SCHED_*, and *_MAGIC constants.
+  * Updated lists of ioctl commands from Linux 5.6.
+
+* Bug fixes
+  * Fixed build on csky abiv1 architecture.
+  * Various minor fixes in VIDIOC_* ioctl output formatting.
+  * Fix printing of the size field for _IOC_NONE ioctl command numbers on sparc.
+
+* Portability
+  * On hppa, linux kernel >= 4.7 is required.
+    On sh and sh64, linux kernel >= 2.6.28 is required.
+    Older versions without a decent PTRACE_GETREGS support will not work.
+
 Noteworthy changes in release 5.5 (2020-02-06)
 ==============================================
 
@@ -65,7 +194,7 @@ Noteworthy changes in release 5.3 (2019-09-25)
   * Enhanced decoding of NETLINK_ROUTE protocol.
   * Implemented decoding of UNIX_DIAG_UID netlink attribute.
   * Implemented decoding of WDIOC_* ioctl commands.
-  * Enchanced syscall count statistics: overhead is now applied per-call,
+  * Enhanced syscall count statistics: overhead is now applied per-call,
     added ability for sorting on errors field.
   * Syscall delay injection and overhead values can now be supplied with
     time measure unit suffix and provided in IEEE 754 floating point format.

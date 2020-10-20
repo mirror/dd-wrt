@@ -49,18 +49,72 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_alg_options_xdata[] = {
  [ALG_SET_KEY] = XLAT(ALG_SET_KEY),
+ #define XLAT_VAL_0 ((unsigned) (ALG_SET_KEY))
+ #define XLAT_STR_0 STRINGIFY(ALG_SET_KEY)
  [ALG_SET_IV] = XLAT(ALG_SET_IV),
+ #define XLAT_VAL_1 ((unsigned) (ALG_SET_IV))
+ #define XLAT_STR_1 STRINGIFY(ALG_SET_IV)
  [ALG_SET_OP] = XLAT(ALG_SET_OP),
+ #define XLAT_VAL_2 ((unsigned) (ALG_SET_OP))
+ #define XLAT_STR_2 STRINGIFY(ALG_SET_OP)
  [ALG_SET_AEAD_ASSOCLEN] = XLAT(ALG_SET_AEAD_ASSOCLEN),
+ #define XLAT_VAL_3 ((unsigned) (ALG_SET_AEAD_ASSOCLEN))
+ #define XLAT_STR_3 STRINGIFY(ALG_SET_AEAD_ASSOCLEN)
  [ALG_SET_AEAD_AUTHSIZE] = XLAT(ALG_SET_AEAD_AUTHSIZE),
+ #define XLAT_VAL_4 ((unsigned) (ALG_SET_AEAD_AUTHSIZE))
+ #define XLAT_STR_4 STRINGIFY(ALG_SET_AEAD_AUTHSIZE)
 };
 static
 const struct xlat sock_alg_options[1] = { {
  .data = sock_alg_options_xdata,
  .size = ARRAY_SIZE(sock_alg_options_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

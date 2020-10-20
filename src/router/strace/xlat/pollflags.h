@@ -159,54 +159,248 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data pollflags_xdata[] = {
  XLAT(POLLIN),
+ #define XLAT_VAL_0 ((unsigned) (POLLIN))
+ #define XLAT_STR_0 STRINGIFY(POLLIN)
  XLAT(POLLPRI),
+ #define XLAT_VAL_1 ((unsigned) (POLLPRI))
+ #define XLAT_STR_1 STRINGIFY(POLLPRI)
  XLAT(POLLOUT),
+ #define XLAT_VAL_2 ((unsigned) (POLLOUT))
+ #define XLAT_STR_2 STRINGIFY(POLLOUT)
  XLAT(POLLERR),
+ #define XLAT_VAL_3 ((unsigned) (POLLERR))
+ #define XLAT_STR_3 STRINGIFY(POLLERR)
  XLAT(POLLHUP),
+ #define XLAT_VAL_4 ((unsigned) (POLLHUP))
+ #define XLAT_STR_4 STRINGIFY(POLLHUP)
  XLAT(POLLNVAL),
+ #define XLAT_VAL_5 ((unsigned) (POLLNVAL))
+ #define XLAT_STR_5 STRINGIFY(POLLNVAL)
  XLAT(POLLRDNORM),
+ #define XLAT_VAL_6 ((unsigned) (POLLRDNORM))
+ #define XLAT_STR_6 STRINGIFY(POLLRDNORM)
  XLAT(POLLRDBAND),
+ #define XLAT_VAL_7 ((unsigned) (POLLRDBAND))
+ #define XLAT_STR_7 STRINGIFY(POLLRDBAND)
 
 #if defined(__m68k__) || defined(__mips__) || defined(__sparc__) || defined(__xtensa__)
 
 #else
  XLAT(POLLWRNORM),
+ #define XLAT_VAL_8 ((unsigned) (POLLWRNORM))
+ #define XLAT_STR_8 STRINGIFY(POLLWRNORM)
 #endif
 
 #if defined(__m68k__) || defined(__mips__) || defined(__sparc__) || defined(__xtensa__)
  XLAT(POLLWRBAND),
+ #define XLAT_VAL_9 ((unsigned) (POLLWRBAND))
+ #define XLAT_STR_9 STRINGIFY(POLLWRBAND)
 #else
  XLAT(POLLWRBAND),
+ #define XLAT_VAL_10 ((unsigned) (POLLWRBAND))
+ #define XLAT_STR_10 STRINGIFY(POLLWRBAND)
 #endif
 
 #if defined(__sparc__)
  XLAT(POLLMSG),
+ #define XLAT_VAL_11 ((unsigned) (POLLMSG))
+ #define XLAT_STR_11 STRINGIFY(POLLMSG)
 #else
  XLAT(POLLMSG),
+ #define XLAT_VAL_12 ((unsigned) (POLLMSG))
+ #define XLAT_STR_12 STRINGIFY(POLLMSG)
 #endif
 
 #if defined(__sparc__)
  XLAT(POLLREMOVE),
+ #define XLAT_VAL_13 ((unsigned) (POLLREMOVE))
+ #define XLAT_STR_13 STRINGIFY(POLLREMOVE)
 #elif defined(__xtensa__)
  XLAT(POLLREMOVE),
+ #define XLAT_VAL_14 ((unsigned) (POLLREMOVE))
+ #define XLAT_STR_14 STRINGIFY(POLLREMOVE)
 #else
  XLAT(POLLREMOVE),
+ #define XLAT_VAL_15 ((unsigned) (POLLREMOVE))
+ #define XLAT_STR_15 STRINGIFY(POLLREMOVE)
 #endif
 
 #if defined(__sparc__)
  XLAT(POLLRDHUP),
+ #define XLAT_VAL_16 ((unsigned) (POLLRDHUP))
+ #define XLAT_STR_16 STRINGIFY(POLLRDHUP)
 #else
  XLAT(POLLRDHUP),
+ #define XLAT_VAL_17 ((unsigned) (POLLRDHUP))
+ #define XLAT_STR_17 STRINGIFY(POLLRDHUP)
 #endif
 
  XLAT(POLL_BUSY_LOOP),
+ #define XLAT_VAL_18 ((unsigned) (POLL_BUSY_LOOP))
+ #define XLAT_STR_18 STRINGIFY(POLL_BUSY_LOOP)
 };
 const struct xlat pollflags[1] = { {
  .data = pollflags_xdata,
  .size = ARRAY_SIZE(pollflags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

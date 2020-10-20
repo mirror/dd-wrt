@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data waitid_types_xdata[] = {
  [P_ALL] = XLAT(P_ALL),
+ #define XLAT_VAL_0 ((unsigned) (P_ALL))
+ #define XLAT_STR_0 STRINGIFY(P_ALL)
  [P_PID] = XLAT(P_PID),
+ #define XLAT_VAL_1 ((unsigned) (P_PID))
+ #define XLAT_STR_1 STRINGIFY(P_PID)
  [P_PGID] = XLAT(P_PGID),
+ #define XLAT_VAL_2 ((unsigned) (P_PGID))
+ #define XLAT_STR_2 STRINGIFY(P_PGID)
  [P_PIDFD] = XLAT(P_PIDFD),
+ #define XLAT_VAL_3 ((unsigned) (P_PIDFD))
+ #define XLAT_STR_3 STRINGIFY(P_PIDFD)
 };
 static
 const struct xlat waitid_types[1] = { {
  .data = waitid_types_xdata,
  .size = ARRAY_SIZE(waitid_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_size_xdata[] = {
  XLAT(BPF_W),
+ #define XLAT_VAL_0 ((unsigned) (BPF_W))
+ #define XLAT_STR_0 STRINGIFY(BPF_W)
  XLAT(BPF_H),
+ #define XLAT_VAL_1 ((unsigned) (BPF_H))
+ #define XLAT_STR_1 STRINGIFY(BPF_H)
  XLAT(BPF_B),
+ #define XLAT_VAL_2 ((unsigned) (BPF_B))
+ #define XLAT_STR_2 STRINGIFY(BPF_B)
  XLAT(BPF_DW),
+ #define XLAT_VAL_3 ((unsigned) (BPF_DW))
+ #define XLAT_STR_3 STRINGIFY(BPF_DW)
 };
 static
 const struct xlat bpf_size[1] = { {
  .data = bpf_size_xdata,
  .size = ARRAY_SIZE(bpf_size_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

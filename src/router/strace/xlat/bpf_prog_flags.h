@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_prog_flags_xdata[] = {
  XLAT(BPF_F_STRICT_ALIGNMENT),
+ #define XLAT_VAL_0 ((unsigned) (BPF_F_STRICT_ALIGNMENT))
+ #define XLAT_STR_0 STRINGIFY(BPF_F_STRICT_ALIGNMENT)
  XLAT(BPF_F_ANY_ALIGNMENT),
+ #define XLAT_VAL_1 ((unsigned) (BPF_F_ANY_ALIGNMENT))
+ #define XLAT_STR_1 STRINGIFY(BPF_F_ANY_ALIGNMENT)
  XLAT(BPF_F_TEST_RND_HI32),
+ #define XLAT_VAL_2 ((unsigned) (BPF_F_TEST_RND_HI32))
+ #define XLAT_STR_2 STRINGIFY(BPF_F_TEST_RND_HI32)
  XLAT(BPF_F_TEST_STATE_FREQ),
+ #define XLAT_VAL_3 ((unsigned) (BPF_F_TEST_STATE_FREQ))
+ #define XLAT_STR_3 STRINGIFY(BPF_F_TEST_STATE_FREQ)
 };
 static
 const struct xlat bpf_prog_flags[1] = { {
  .data = bpf_prog_flags_xdata,
  .size = ARRAY_SIZE(bpf_prog_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

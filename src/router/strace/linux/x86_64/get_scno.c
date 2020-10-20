@@ -5,7 +5,7 @@
  * Copyright (c) 2008-2013 Denys Vlasenko <vda.linux@googlemail.com>
  * Copyright (c) 2012 H.J. Lu <hongjiu.lu@intel.com>
  * Copyright (c) 2010-2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -17,10 +17,6 @@ arch_get_scno(struct tcb *tcp)
 {
 	kernel_ulong_t scno = 0;
 	unsigned int currpers;
-
-#ifndef __X32_SYSCALL_BIT
-# define __X32_SYSCALL_BIT	0x40000000
-#endif
 
 	/*
 	 * GETREGSET of NT_PRSTATUS tells us regset size,

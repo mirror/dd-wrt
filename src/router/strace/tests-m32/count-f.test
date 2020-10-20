@@ -2,7 +2,7 @@
 #
 # Check whether -c counts through forks and clones properly.
 #
-# Copyright (c) 2016-2018 The strace developers.
+# Copyright (c) 2016-2020 The strace developers.
 # All rights reserved.
 #
 # SPDX-License-Identifier: GPL-2.0-or-later
@@ -10,7 +10,7 @@
 . "${srcdir=.}/init.sh"
 
 run_prog
-run_strace -q -f -c $args
+run_strace -e silent=attach -f -c $args
 match_grep
 
 exit 0

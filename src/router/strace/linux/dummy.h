@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995 Rick Sladkey <jrs@world.std.com>
- * Copyright (c) 1995-2019 The strace developers.
+ * Copyright (c) 1995-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -53,6 +53,7 @@
 # define sys_getgid		sys_getuid
 # define sys_getgid16		sys_getuid16
 # define sys_getpeername		sys_getsockname
+# define sys_getppid		sys_getpid
 # define sys_getresgid		sys_getresuid
 # define sys_getresgid16		sys_getresuid16
 # define sys_lstat		sys_stat
@@ -87,10 +88,6 @@
 # define sys_vfork		sys_fork
 
 /* printargs does the right thing */
-# define sys_getpgrp		printargs
-# define sys_getpid		printargs
-# define sys_getppid		printargs
-# define sys_gettid		printargs
 # define sys_idle		printargs
 # define sys_munlockall		printargs
 # define sys_pause		printargs
@@ -108,10 +105,7 @@
 
 /* printargs_d does the right thing */
 # define sys_exit		printargs_d
-# define sys_getpgid		printargs_d
-# define sys_getsid		printargs_d
 # define sys_nice		printargs_d
-# define sys_setpgid		printargs_d
 # define sys_setpgrp		printargs_d
 # define sys_timer_delete	printargs_d
 # define sys_timer_getoverrun	printargs_d

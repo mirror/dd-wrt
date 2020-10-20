@@ -4,7 +4,7 @@
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-2000 Wichert Akkerman <wichert@cistron.nl>
  * Copyright (c) 2005-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2016-2019 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -69,7 +69,7 @@ print_scm_creds(struct tcb *tcp, const void *cmsg_data,
 {
 	const struct ucred *uc = cmsg_data;
 
-	PRINT_FIELD_U("{", *uc, pid);
+	PRINT_FIELD_TGID("{", *uc, pid, tcp);
 	PRINT_FIELD_UID(", ", *uc, uid);
 	PRINT_FIELD_UID(", ", *uc, gid);
 	tprints("}");
@@ -89,18 +89,37 @@ print_scm_timestamp_old(struct tcb *tcp, const void *cmsg_data,
 	print_struct_timeval_data_size(cmsg_data, data_len);
 }
 
+#ifdef current_klongsize
+# if current_klongsize == 4
+#  define PRINT_TIMESPEC_DATA_SIZE print_timespec32_data_size
+#  define PRINT_TIMESPEC_ARRAY_DATA_SIZE print_timespec32_array_data_size
+# else
+#  define PRINT_TIMESPEC_DATA_SIZE print_timespec64_data_size
+#  define PRINT_TIMESPEC_ARRAY_DATA_SIZE print_timespec64_array_data_size
+# endif
+#else
+# define PRINT_TIMESPEC_DATA_SIZE			\
+	((current_klongsize == 4) ?			\
+		print_timespec32_data_size :		\
+		print_timespec64_data_size)
+# define PRINT_TIMESPEC_ARRAY_DATA_SIZE			\
+	((current_klongsize == 4) ?			\
+		print_timespec32_array_data_size :	\
+		print_timespec64_array_data_size)
+#endif
+
 static void
 print_scm_timestampns_old(struct tcb *tcp, const void *cmsg_data,
 			  const unsigned int data_len)
 {
-	print_struct_timespec_data_size(cmsg_data, data_len);
+	PRINT_TIMESPEC_DATA_SIZE(cmsg_data, data_len);
 }
 
 static void
 print_scm_timestamping_old(struct tcb *tcp, const void *cmsg_data,
 			   const unsigned int data_len)
 {
-	print_struct_timespec_array_data_size(cmsg_data, 3, data_len);
+	PRINT_TIMESPEC_ARRAY_DATA_SIZE(cmsg_data, 3, data_len);
 }
 
 static void
@@ -197,7 +216,7 @@ print_cmsg_ip_recverr(struct tcb *tcp, const void *cmsg_data,
 	PRINT_FIELD_U(", ", *err, ee_code);
 	PRINT_FIELD_U(", ", *err, ee_info);
 	PRINT_FIELD_U(", ", *err, ee_data);
-	PRINT_FIELD_SOCKADDR(", ", *err, offender);
+	PRINT_FIELD_SOCKADDR(", ", *err, offender, tcp);
 	tprints("}");
 }
 
@@ -209,7 +228,7 @@ print_cmsg_ip_origdstaddr(struct tcb *tcp, const void *cmsg_data,
 		data_len > sizeof(struct sockaddr_storage)
 		? sizeof(struct sockaddr_storage) : data_len;
 
-	print_sockaddr(cmsg_data, addr_len);
+	print_sockaddr(tcp, cmsg_data, addr_len);
 }
 
 typedef void (* const cmsg_printer)(struct tcb *, const void *, unsigned int);
@@ -274,7 +293,7 @@ get_optmem_max(struct tcb *tcp)
 	static int optmem_max;
 
 	if (!optmem_max) {
-		if (read_int_from_file(tcp, "/proc/sys/net/core/optmem_max",
+		if (read_int_from_file("/proc/sys/net/core/optmem_max",
 				       &optmem_max) || optmem_max <= 0) {
 			optmem_max = sizeof(long long) * (2 * IOV_MAX + 512);
 		} else {

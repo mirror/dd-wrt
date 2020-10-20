@@ -35,16 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data smc_diag_mode_xdata[] = {
  [SMC_DIAG_MODE_SMCR] = XLAT(SMC_DIAG_MODE_SMCR),
+ #define XLAT_VAL_0 ((unsigned) (SMC_DIAG_MODE_SMCR))
+ #define XLAT_STR_0 STRINGIFY(SMC_DIAG_MODE_SMCR)
  [SMC_DIAG_MODE_FALLBACK_TCP] = XLAT(SMC_DIAG_MODE_FALLBACK_TCP),
+ #define XLAT_VAL_1 ((unsigned) (SMC_DIAG_MODE_FALLBACK_TCP))
+ #define XLAT_STR_1 STRINGIFY(SMC_DIAG_MODE_FALLBACK_TCP)
  [SMC_DIAG_MODE_SMCD] = XLAT(SMC_DIAG_MODE_SMCD),
+ #define XLAT_VAL_2 ((unsigned) (SMC_DIAG_MODE_SMCD))
+ #define XLAT_STR_2 STRINGIFY(SMC_DIAG_MODE_SMCD)
 };
 static
 const struct xlat smc_diag_mode[1] = { {
  .data = smc_diag_mode_xdata,
  .size = ARRAY_SIZE(smc_diag_mode_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

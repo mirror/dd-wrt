@@ -28,7 +28,11 @@ extern const struct xlat v4l2_vbi_flags[];
 
 static const struct xlat_data v4l2_vbi_flags_xdata[] = {
  XLAT(V4L2_VBI_UNSYNC),
+ #define XLAT_VAL_0 ((unsigned) (V4L2_VBI_UNSYNC))
+ #define XLAT_STR_0 STRINGIFY(V4L2_VBI_UNSYNC)
  XLAT(V4L2_VBI_INTERLACED),
+ #define XLAT_VAL_1 ((unsigned) (V4L2_VBI_INTERLACED))
+ #define XLAT_STR_1 STRINGIFY(V4L2_VBI_INTERLACED)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -37,8 +41,28 @@ const struct xlat v4l2_vbi_flags[1] = { {
  .data = v4l2_vbi_flags_xdata,
  .size = ARRAY_SIZE(v4l2_vbi_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

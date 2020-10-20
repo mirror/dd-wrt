@@ -9,6 +9,8 @@
 #ifndef STRACE_PRINT_FIELDS_H
 # define STRACE_PRINT_FIELDS_H
 
+# include "static_assert.h"
+
 /*
  * The printf-like function to use in header files
  * shared between strace and its tests.
@@ -50,10 +52,28 @@
 		      (int) sizeof((where_).field_) * 2,		\
 		      zero_extend_signed_to_ull((where_).field_))
 
+# define PRINT_FIELD_UINT_ARRAY(prefix_, where_, field_, fmt_)			\
+	do {									\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);			\
+		for (size_t i_ = 0; i_ < ARRAY_SIZE((where_).field_); ++i_)	\
+			STRACE_PRINTF("%s" fmt_, (i_ ? ", " : "["),		\
+				zero_extend_signed_to_ull((where_).field_[i_]));\
+		STRACE_PRINTF("]");						\
+	} while (0)
+
+# define PRINT_FIELD_U_ARRAY(prefix_, where_, field_)			\
+	PRINT_FIELD_UINT_ARRAY((prefix_), (where_), field_, "%llu")
+
+# define PRINT_FIELD_X_ARRAY(prefix_, where_, field_)			\
+	PRINT_FIELD_UINT_ARRAY((prefix_), (where_), field_, "%#llx")
+
+
 # define PRINT_FIELD_COOKIE(prefix_, where_, field_)			\
-	STRACE_PRINTF("%s%s=[%llu, %llu]", (prefix_), #field_,		\
-		      zero_extend_signed_to_ull((where_).field_[0]),	\
-		      zero_extend_signed_to_ull((where_).field_[1]))
+	do {								\
+		static_assert(ARRAY_SIZE((where_).field_) == 2,		\
+			      "unexpected array size");			\
+		PRINT_FIELD_U_ARRAY((prefix_), (where_), field_);	\
+	} while (0)
 
 # define PRINT_FIELD_FLAGS(prefix_, where_, field_, xlat_, dflt_)	\
 	do {								\
@@ -211,10 +231,10 @@
 		print_ifindex((where_).field_);				\
 	} while (0)
 
-# define PRINT_FIELD_SOCKADDR(prefix_, where_, field_)			\
+# define PRINT_FIELD_SOCKADDR(prefix_, where_, field_, tcp_)			\
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
-		print_sockaddr(&(where_).field_,			\
+		print_sockaddr(tcp_, &(where_).field_,			\
 			       sizeof((where_).field_));		\
 	} while (0)
 
@@ -222,6 +242,13 @@
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
 		print_dev_t((where_).field_);				\
+	} while (0)
+
+# define PRINT_FIELD_NUMERIC_UMODE_T(prefix_, where_, field_)		\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		print_numeric_ll_umode_t(				\
+			zero_extend_signed_to_ull((where_).field_));	\
 	} while (0)
 
 # define PRINT_FIELD_PTR(prefix_, where_, field_)			\
@@ -234,6 +261,30 @@
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
 		printfd((tcp_), (where_).field_);			\
+	} while (0)
+
+# define PRINT_FIELD_TID(prefix_, where_, field_, tcp_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		printpid((tcp_), (where_).field_, PT_TID);			\
+	} while (0)
+
+# define PRINT_FIELD_TGID(prefix_, where_, field_, tcp_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		printpid((tcp_), (where_).field_, PT_TGID);			\
+	} while (0)
+
+# define PRINT_FIELD_PGID(prefix_, where_, field_, tcp_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		printpid((tcp_), (where_).field_, PT_PGID);			\
+	} while (0)
+
+# define PRINT_FIELD_SID(prefix_, where_, field_, tcp_)			\
+	do {								\
+		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
+		printpid((tcp_), (where_).field_, PT_SID);			\
 	} while (0)
 
 # define PRINT_FIELD_STRN(prefix_, where_, field_, len_, tcp_)		\
@@ -275,6 +326,21 @@
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
 		print_hwaddr("", (const uint8_t *) ((where_).field_),	\
 			       (size_), (hwtype_));			\
+	} while (0)
+
+# define PRINT_FIELD_LEN(prefix_, where_, field_, 			\
+			len_, print_func_, ...)				\
+	do {								\
+		unsigned int start = offsetof(typeof(where_), field_);	\
+		unsigned int end = start + sizeof(where_.field_);	\
+		if (len_ >= end) {					\
+			print_func_(prefix_, where_, field_,		\
+					##__VA_ARGS__);			\
+		} else if (len_ > start) {				\
+			tprintf("%s%s=", prefix_, #field_);		\
+			print_quoted_string((void *)&where_.field_,	\
+					len_ - start, QUOTE_FORCE_HEX);	\
+		}							\
 	} while (0)
 
 #endif /* !STRACE_PRINT_FIELDS_H */

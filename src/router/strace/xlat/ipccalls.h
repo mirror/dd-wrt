@@ -98,25 +98,149 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data ipccalls_xdata[] = {
  XLAT(SEMOP),
+ #define XLAT_VAL_0 ((unsigned) (SEMOP))
+ #define XLAT_STR_0 STRINGIFY(SEMOP)
  XLAT(SEMGET),
+ #define XLAT_VAL_1 ((unsigned) (SEMGET))
+ #define XLAT_STR_1 STRINGIFY(SEMGET)
  XLAT(SEMCTL),
+ #define XLAT_VAL_2 ((unsigned) (SEMCTL))
+ #define XLAT_STR_2 STRINGIFY(SEMCTL)
  XLAT(SEMTIMEDOP),
+ #define XLAT_VAL_3 ((unsigned) (SEMTIMEDOP))
+ #define XLAT_STR_3 STRINGIFY(SEMTIMEDOP)
  XLAT(MSGSND),
+ #define XLAT_VAL_4 ((unsigned) (MSGSND))
+ #define XLAT_STR_4 STRINGIFY(MSGSND)
  XLAT(MSGRCV),
+ #define XLAT_VAL_5 ((unsigned) (MSGRCV))
+ #define XLAT_STR_5 STRINGIFY(MSGRCV)
  XLAT(MSGGET),
+ #define XLAT_VAL_6 ((unsigned) (MSGGET))
+ #define XLAT_STR_6 STRINGIFY(MSGGET)
  XLAT(MSGCTL),
+ #define XLAT_VAL_7 ((unsigned) (MSGCTL))
+ #define XLAT_STR_7 STRINGIFY(MSGCTL)
  XLAT(SHMAT),
+ #define XLAT_VAL_8 ((unsigned) (SHMAT))
+ #define XLAT_STR_8 STRINGIFY(SHMAT)
  XLAT(SHMDT),
+ #define XLAT_VAL_9 ((unsigned) (SHMDT))
+ #define XLAT_STR_9 STRINGIFY(SHMDT)
  XLAT(SHMGET),
+ #define XLAT_VAL_10 ((unsigned) (SHMGET))
+ #define XLAT_STR_10 STRINGIFY(SHMGET)
  XLAT(SHMCTL),
+ #define XLAT_VAL_11 ((unsigned) (SHMCTL))
+ #define XLAT_STR_11 STRINGIFY(SHMCTL)
 };
 static
 const struct xlat ipccalls[1] = { {
  .data = ipccalls_xdata,
  .size = ARRAY_SIZE(ipccalls_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

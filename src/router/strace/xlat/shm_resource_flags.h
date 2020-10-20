@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data shm_resource_flags_xdata[] = {
  XLAT(IPC_CREAT),
+ #define XLAT_VAL_0 ((unsigned) (IPC_CREAT))
+ #define XLAT_STR_0 STRINGIFY(IPC_CREAT)
  XLAT(IPC_EXCL),
+ #define XLAT_VAL_1 ((unsigned) (IPC_EXCL))
+ #define XLAT_STR_1 STRINGIFY(IPC_EXCL)
  XLAT(SHM_HUGETLB),
+ #define XLAT_VAL_2 ((unsigned) (SHM_HUGETLB))
+ #define XLAT_STR_2 STRINGIFY(SHM_HUGETLB)
  XLAT(SHM_NORESERVE),
+ #define XLAT_VAL_3 ((unsigned) (SHM_NORESERVE))
+ #define XLAT_STR_3 STRINGIFY(SHM_NORESERVE)
 };
 static
 const struct xlat shm_resource_flags[1] = { {
  .data = shm_resource_flags_xdata,
  .size = ARRAY_SIZE(shm_resource_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

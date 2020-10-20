@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
- * Copyright (c) 1996-2018 The strace developers.
+ * Copyright (c) 1996-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -44,19 +44,19 @@ print_ifreq(struct tcb *const tcp, const unsigned int code,
 	switch (code) {
 	case SIOCSIFADDR:
 	case SIOCGIFADDR:
-		PRINT_FIELD_SOCKADDR("", *ifr, ifr_addr);
+		PRINT_FIELD_SOCKADDR("", *ifr, ifr_addr, tcp);
 		break;
 	case SIOCSIFDSTADDR:
 	case SIOCGIFDSTADDR:
-		PRINT_FIELD_SOCKADDR("", *ifr, ifr_dstaddr);
+		PRINT_FIELD_SOCKADDR("", *ifr, ifr_dstaddr, tcp);
 		break;
 	case SIOCSIFBRDADDR:
 	case SIOCGIFBRDADDR:
-		PRINT_FIELD_SOCKADDR("", *ifr, ifr_broadaddr);
+		PRINT_FIELD_SOCKADDR("", *ifr, ifr_broadaddr, tcp);
 		break;
 	case SIOCSIFNETMASK:
 	case SIOCGIFNETMASK:
-		PRINT_FIELD_SOCKADDR("", *ifr, ifr_netmask);
+		PRINT_FIELD_SOCKADDR("", *ifr, ifr_netmask, tcp);
 		break;
 	case SIOCSIFHWADDR:
 	case SIOCGIFHWADDR: {
@@ -126,7 +126,7 @@ print_ifconf_ifreq(struct tcb *tcp, void *elem_buf, size_t elem_size,
 
 	tprints("{ifr_name=");
 	print_ifname(ifr->ifr_name);
-	PRINT_FIELD_SOCKADDR(", ", *ifr, ifr_addr);
+	PRINT_FIELD_SOCKADDR(", ", *ifr, ifr_addr, tcp);
 	tprints("}");
 
 	return true;

@@ -84,23 +84,127 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data watchdog_ioctl_cmds_xdata[] = {
  XLAT(WDIOC_GETSTATUS),
+ #define XLAT_VAL_0 ((unsigned) (WDIOC_GETSTATUS))
+ #define XLAT_STR_0 STRINGIFY(WDIOC_GETSTATUS)
  XLAT(WDIOC_GETBOOTSTATUS),
+ #define XLAT_VAL_1 ((unsigned) (WDIOC_GETBOOTSTATUS))
+ #define XLAT_STR_1 STRINGIFY(WDIOC_GETBOOTSTATUS)
  XLAT(WDIOC_GETTEMP),
+ #define XLAT_VAL_2 ((unsigned) (WDIOC_GETTEMP))
+ #define XLAT_STR_2 STRINGIFY(WDIOC_GETTEMP)
  XLAT(WDIOC_GETTIMEOUT),
+ #define XLAT_VAL_3 ((unsigned) (WDIOC_GETTIMEOUT))
+ #define XLAT_STR_3 STRINGIFY(WDIOC_GETTIMEOUT)
  XLAT(WDIOC_GETPRETIMEOUT),
+ #define XLAT_VAL_4 ((unsigned) (WDIOC_GETPRETIMEOUT))
+ #define XLAT_STR_4 STRINGIFY(WDIOC_GETPRETIMEOUT)
  XLAT(WDIOC_GETTIMELEFT),
+ #define XLAT_VAL_5 ((unsigned) (WDIOC_GETTIMELEFT))
+ #define XLAT_STR_5 STRINGIFY(WDIOC_GETTIMELEFT)
  XLAT(WDIOC_SETOPTIONS),
+ #define XLAT_VAL_6 ((unsigned) (WDIOC_SETOPTIONS))
+ #define XLAT_STR_6 STRINGIFY(WDIOC_SETOPTIONS)
  XLAT(WDIOC_KEEPALIVE),
+ #define XLAT_VAL_7 ((unsigned) (WDIOC_KEEPALIVE))
+ #define XLAT_STR_7 STRINGIFY(WDIOC_KEEPALIVE)
  XLAT(WDIOC_SETTIMEOUT),
+ #define XLAT_VAL_8 ((unsigned) (WDIOC_SETTIMEOUT))
+ #define XLAT_STR_8 STRINGIFY(WDIOC_SETTIMEOUT)
  XLAT(WDIOC_SETPRETIMEOUT),
+ #define XLAT_VAL_9 ((unsigned) (WDIOC_SETPRETIMEOUT))
+ #define XLAT_STR_9 STRINGIFY(WDIOC_SETPRETIMEOUT)
 };
 static
 const struct xlat watchdog_ioctl_cmds[1] = { {
  .data = watchdog_ioctl_cmds_xdata,
  .size = ARRAY_SIZE(watchdog_ioctl_cmds_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

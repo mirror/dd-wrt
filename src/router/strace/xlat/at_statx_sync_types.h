@@ -42,18 +42,62 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data at_statx_sync_types_xdata[] = {
  XLAT(AT_STATX_SYNC_AS_STAT),
+ #define XLAT_VAL_0 ((unsigned) (AT_STATX_SYNC_AS_STAT))
+ #define XLAT_STR_0 STRINGIFY(AT_STATX_SYNC_AS_STAT)
  XLAT(AT_STATX_FORCE_SYNC),
+ #define XLAT_VAL_1 ((unsigned) (AT_STATX_FORCE_SYNC))
+ #define XLAT_STR_1 STRINGIFY(AT_STATX_FORCE_SYNC)
  XLAT(AT_STATX_DONT_SYNC),
+ #define XLAT_VAL_2 ((unsigned) (AT_STATX_DONT_SYNC))
+ #define XLAT_STR_2 STRINGIFY(AT_STATX_DONT_SYNC)
 
  XLAT(AT_STATX_SYNC_TYPE),
+ #define XLAT_VAL_3 ((unsigned) (AT_STATX_SYNC_TYPE))
+ #define XLAT_STR_3 STRINGIFY(AT_STATX_SYNC_TYPE)
 };
 static
 const struct xlat at_statx_sync_types[1] = { {
  .data = at_statx_sync_types_xdata,
  .size = ARRAY_SIZE(at_statx_sync_types_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -122,6 +122,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define PERF_SAMPLE_BRANCH_TYPE_SAVE 1 << 16
 #endif
+#if defined(PERF_SAMPLE_BRANCH_HW_INDEX) || (defined(HAVE_DECL_PERF_SAMPLE_BRANCH_HW_INDEX) && HAVE_DECL_PERF_SAMPLE_BRANCH_HW_INDEX)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((PERF_SAMPLE_BRANCH_HW_INDEX) == (1 << 17), "PERF_SAMPLE_BRANCH_HW_INDEX != 1 << 17");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define PERF_SAMPLE_BRANCH_HW_INDEX 1 << 17
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -133,30 +140,215 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data perf_branch_sample_type_xdata[] = {
  XLAT(PERF_SAMPLE_BRANCH_USER),
+ #define XLAT_VAL_0 ((unsigned) (PERF_SAMPLE_BRANCH_USER))
+ #define XLAT_STR_0 STRINGIFY(PERF_SAMPLE_BRANCH_USER)
  XLAT(PERF_SAMPLE_BRANCH_KERNEL),
+ #define XLAT_VAL_1 ((unsigned) (PERF_SAMPLE_BRANCH_KERNEL))
+ #define XLAT_STR_1 STRINGIFY(PERF_SAMPLE_BRANCH_KERNEL)
  XLAT(PERF_SAMPLE_BRANCH_HV),
+ #define XLAT_VAL_2 ((unsigned) (PERF_SAMPLE_BRANCH_HV))
+ #define XLAT_STR_2 STRINGIFY(PERF_SAMPLE_BRANCH_HV)
  XLAT(PERF_SAMPLE_BRANCH_ANY),
+ #define XLAT_VAL_3 ((unsigned) (PERF_SAMPLE_BRANCH_ANY))
+ #define XLAT_STR_3 STRINGIFY(PERF_SAMPLE_BRANCH_ANY)
  XLAT(PERF_SAMPLE_BRANCH_ANY_CALL),
+ #define XLAT_VAL_4 ((unsigned) (PERF_SAMPLE_BRANCH_ANY_CALL))
+ #define XLAT_STR_4 STRINGIFY(PERF_SAMPLE_BRANCH_ANY_CALL)
  XLAT(PERF_SAMPLE_BRANCH_ANY_RETURN),
+ #define XLAT_VAL_5 ((unsigned) (PERF_SAMPLE_BRANCH_ANY_RETURN))
+ #define XLAT_STR_5 STRINGIFY(PERF_SAMPLE_BRANCH_ANY_RETURN)
  XLAT(PERF_SAMPLE_BRANCH_IND_CALL),
+ #define XLAT_VAL_6 ((unsigned) (PERF_SAMPLE_BRANCH_IND_CALL))
+ #define XLAT_STR_6 STRINGIFY(PERF_SAMPLE_BRANCH_IND_CALL)
  XLAT(PERF_SAMPLE_BRANCH_ABORT_TX),
+ #define XLAT_VAL_7 ((unsigned) (PERF_SAMPLE_BRANCH_ABORT_TX))
+ #define XLAT_STR_7 STRINGIFY(PERF_SAMPLE_BRANCH_ABORT_TX)
  XLAT(PERF_SAMPLE_BRANCH_IN_TX),
+ #define XLAT_VAL_8 ((unsigned) (PERF_SAMPLE_BRANCH_IN_TX))
+ #define XLAT_STR_8 STRINGIFY(PERF_SAMPLE_BRANCH_IN_TX)
  XLAT(PERF_SAMPLE_BRANCH_NO_TX),
+ #define XLAT_VAL_9 ((unsigned) (PERF_SAMPLE_BRANCH_NO_TX))
+ #define XLAT_STR_9 STRINGIFY(PERF_SAMPLE_BRANCH_NO_TX)
  XLAT(PERF_SAMPLE_BRANCH_COND),
+ #define XLAT_VAL_10 ((unsigned) (PERF_SAMPLE_BRANCH_COND))
+ #define XLAT_STR_10 STRINGIFY(PERF_SAMPLE_BRANCH_COND)
  XLAT(PERF_SAMPLE_BRANCH_CALL_STACK),
+ #define XLAT_VAL_11 ((unsigned) (PERF_SAMPLE_BRANCH_CALL_STACK))
+ #define XLAT_STR_11 STRINGIFY(PERF_SAMPLE_BRANCH_CALL_STACK)
  XLAT(PERF_SAMPLE_BRANCH_IND_JUMP),
+ #define XLAT_VAL_12 ((unsigned) (PERF_SAMPLE_BRANCH_IND_JUMP))
+ #define XLAT_STR_12 STRINGIFY(PERF_SAMPLE_BRANCH_IND_JUMP)
  XLAT(PERF_SAMPLE_BRANCH_CALL),
+ #define XLAT_VAL_13 ((unsigned) (PERF_SAMPLE_BRANCH_CALL))
+ #define XLAT_STR_13 STRINGIFY(PERF_SAMPLE_BRANCH_CALL)
  XLAT(PERF_SAMPLE_BRANCH_NO_FLAGS),
+ #define XLAT_VAL_14 ((unsigned) (PERF_SAMPLE_BRANCH_NO_FLAGS))
+ #define XLAT_STR_14 STRINGIFY(PERF_SAMPLE_BRANCH_NO_FLAGS)
  XLAT(PERF_SAMPLE_BRANCH_NO_CYCLES),
+ #define XLAT_VAL_15 ((unsigned) (PERF_SAMPLE_BRANCH_NO_CYCLES))
+ #define XLAT_STR_15 STRINGIFY(PERF_SAMPLE_BRANCH_NO_CYCLES)
  XLAT(PERF_SAMPLE_BRANCH_TYPE_SAVE),
+ #define XLAT_VAL_16 ((unsigned) (PERF_SAMPLE_BRANCH_TYPE_SAVE))
+ #define XLAT_STR_16 STRINGIFY(PERF_SAMPLE_BRANCH_TYPE_SAVE)
+ XLAT(PERF_SAMPLE_BRANCH_HW_INDEX),
+ #define XLAT_VAL_17 ((unsigned) (PERF_SAMPLE_BRANCH_HW_INDEX))
+ #define XLAT_STR_17 STRINGIFY(PERF_SAMPLE_BRANCH_HW_INDEX)
 };
 static
 const struct xlat perf_branch_sample_type[1] = { {
  .data = perf_branch_sample_type_xdata,
  .size = ARRAY_SIZE(perf_branch_sample_type_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

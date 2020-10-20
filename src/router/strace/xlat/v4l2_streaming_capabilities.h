@@ -21,6 +21,8 @@ extern const struct xlat v4l2_streaming_capabilities[];
 
 static const struct xlat_data v4l2_streaming_capabilities_xdata[] = {
  XLAT(V4L2_CAP_TIMEPERFRAME),
+ #define XLAT_VAL_0 ((unsigned) (V4L2_CAP_TIMEPERFRAME))
+ #define XLAT_STR_0 STRINGIFY(V4L2_CAP_TIMEPERFRAME)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -29,8 +31,20 @@ const struct xlat v4l2_streaming_capabilities[1] = { {
  .data = v4l2_streaming_capabilities_xdata,
  .size = ARRAY_SIZE(v4l2_streaming_capabilities_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

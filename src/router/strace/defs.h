@@ -240,9 +240,12 @@ struct inject_data {
 
 struct inject_opts {
 	uint16_t first;
+	uint16_t last;
 	uint16_t step;
 	struct inject_data data;
 };
+
+# define INJECT_LAST_INF	((uint16_t) -1)
 
 # define MAX_ERRNO_VALUE			4095
 
@@ -256,6 +259,7 @@ struct tcb {
 # endif
 	unsigned long u_error;	/* Error code */
 	kernel_ulong_t scno;	/* System call number */
+	kernel_ulong_t true_scno;	/* Same, but without subcall decoding and shuffling */
 	kernel_ulong_t u_arg[MAX_ARGS];	/* System call arguments */
 	kernel_long_t u_rval;	/* Return value */
 	int sys_func_rval;	/* Syscall entry parser's return value */
@@ -276,6 +280,13 @@ struct tcb {
 	struct timespec atime;	/* System time right after attach */
 	struct timespec etime;	/* Syscall entry time (CLOCK_MONOTONIC) */
 	struct timespec delay_expiration_time; /* When does the delay end */
+
+	/*
+	 * The ID of the PID namespace of this process
+	 * (inode number of /proc/<pid>/ns/pid)
+	 * (0: not initialized)
+	 */
+	unsigned int pid_ns;
 
 	struct mmap_cache_t *mmap_cache;
 
@@ -410,7 +421,11 @@ extern const struct xlat whence_codes[];
 # define RVAL_HEX	001	/* hex format */
 # define RVAL_OCTAL	002	/* octal format */
 # define RVAL_FD		010	/* file descriptor */
-# define RVAL_MASK	013	/* mask for these values */
+# define RVAL_TID	011	/* task ID */
+# define RVAL_SID	012	/* session ID */
+# define RVAL_TGID	013	/* thread group ID */
+# define RVAL_PGID	014	/* process group ID */
+# define RVAL_MASK	017	/* mask for these values */
 
 # define RVAL_STR	020	/* Print `auxstr' field after return val */
 # define RVAL_NONE	040	/* Print nothing */
@@ -424,6 +439,16 @@ extern const struct xlat whence_codes[];
 # define IOCTL_NUMBER_STOP_LOOKUP 010
 
 # define indirect_ipccall(tcp) (tcp_sysent(tcp)->sys_flags & TRACE_INDIRECT_SUBCALL)
+
+enum pid_type {
+	PT_TID,
+	PT_TGID,
+	PT_PGID,
+	PT_SID,
+
+	PT_COUNT,
+	PT_NONE = -1
+};
 
 enum sock_proto {
 	SOCK_PROTO_UNKNOWN,
@@ -462,10 +487,11 @@ typedef enum {
 } cflag_t;
 extern cflag_t cflag;
 extern bool Tflag;
+extern int Tflag_scale;
+extern int Tflag_width;
 extern bool iflag;
 extern bool count_wallclock;
-extern unsigned int qflag;
-extern unsigned int show_fd_path;
+extern unsigned int pidns_translation;
 /* are we filtering traces based on paths? */
 extern struct path_set {
 	const char **paths_selected;
@@ -473,8 +499,16 @@ extern struct path_set {
 	size_t size;
 } global_path_set;
 # define tracing_paths (global_path_set.num_selected != 0)
+enum xflag_opts {
+	HEXSTR_NONE,
+	HEXSTR_NON_ASCII,
+	HEXSTR_ALL,
+
+	NUM_HEXSTR_OPTS
+};
 extern unsigned xflag;
-extern unsigned followfork;
+extern bool followfork;
+extern bool output_separately;
 # ifdef ENABLE_STACKTRACE
 /* if this is true do the stack trace for every system call */
 extern bool stack_trace_enabled;
@@ -487,14 +521,17 @@ extern unsigned os_release;
 # undef KERNEL_VERSION
 # define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 
-extern int read_int_from_file(struct tcb *, const char *, int *);
+extern int read_int_from_file(const char *, int *);
 
 extern void set_sortby(const char *);
 extern int set_overhead(const char *);
+extern void set_count_summary_columns(const char *columns);
 
 extern bool get_instruction_pointer(struct tcb *, kernel_ulong_t *);
 extern bool get_stack_pointer(struct tcb *, kernel_ulong_t *);
 extern void print_instruction_pointer(struct tcb *);
+
+extern void print_syscall_number(struct tcb *);
 
 extern void print_syscall_resume(struct tcb *tcp);
 
@@ -676,7 +713,14 @@ pathtrace_match(struct tcb *tcp)
 	return pathtrace_match_set(tcp, &global_path_set);
 }
 
-extern int getfdpath(struct tcb *, int, char *, unsigned);
+extern int getfdpath_pid(pid_t pid, int fd, char *buf, unsigned bufsize);
+
+static inline int
+getfdpath(struct tcb *tcp, int fd, char *buf, unsigned bufsize)
+{
+	return getfdpath_pid(tcp->pid, fd, buf, bufsize);
+}
+
 extern unsigned long getfdinode(struct tcb *, int);
 extern enum sock_proto getfdproto(struct tcb *, int);
 
@@ -708,11 +752,18 @@ str_strip_prefix_len(const char *str, const char *prefix, size_t prefix_len)
 # define STR_STRIP_PREFIX(str, prefix)	\
 	str_strip_prefix_len((str), (prefix), sizeof(prefix) - 1)
 
+/** String is '\0'-terminated. */
 # define QUOTE_0_TERMINATED			0x01
+/** Do not emit leading and ending '"' characters. */
 # define QUOTE_OMIT_LEADING_TRAILING_QUOTES	0x02
+/** Do not print '\0' if it is the last character. */
 # define QUOTE_OMIT_TRAILING_0			0x08
-# define QUOTE_FORCE_HEX				0x10
-# define QUOTE_EMIT_COMMENT			0x20
+/** Print ellipsis if the last character is not '\0' */
+# define QUOTE_EXPECT_TRAILING_0		0x10
+/** Print string in hex (using '\xHH' notation). */
+# define QUOTE_FORCE_HEX			0x20
+/** Enclose the string in C comment syntax. */
+# define QUOTE_EMIT_COMMENT			0x40
 
 extern int string_quote(const char *, char *, unsigned int, unsigned int,
 			const char *escape_chars);
@@ -784,8 +835,18 @@ enum xlat_style_private_flags {
 	FLAG(PXF_DEFAULT_STR),
 };
 
-/** Print a value in accordance with xlat formatting settings. */
-extern void print_xlat_ex(uint64_t val, const char *str, enum xlat_style style);
+/**
+ * Print a value in accordance with xlat formatting settings.
+ *
+ * @param val   Value itself.
+ * @param str   String representation of the value.  Semantics may be affected
+ *              by style argument;
+ * @param style Combination of flags from enum xlat_style and PXF_* flags
+ *              from enum xlat_style_private_flags:
+ *               - PXF_DEFAULT_STR - interpret str argument as default
+ *                 (fallback) string and not as string representation of val.
+ */
+extern void print_xlat_ex(uint64_t val, const char *str, uint32_t style);
 # define print_xlat(val_) \
 	print_xlat_ex((val_), #val_, XLAT_STYLE_DEFAULT)
 # define print_xlat32(val_) \
@@ -832,7 +893,7 @@ extern void print_uuid(const unsigned char *uuid);
 
 extern void print_symbolic_mode_t(unsigned int);
 extern void print_numeric_umode_t(unsigned short);
-extern void print_numeric_long_umask(unsigned long);
+extern void print_numeric_ll_umode_t(unsigned long long);
 extern void print_dev_t(unsigned long long dev);
 extern void print_kernel_version(unsigned long version);
 extern void print_abnormal_hi(kernel_ulong_t);
@@ -939,13 +1000,36 @@ print_local_array_ex(struct tcb *tcp,
 }
 
 /** Shorthand for a shorthand for printing local arrays. */
-#define print_local_array(tcp_, start_addr_, print_func_)      \
+# define print_local_array(tcp_, start_addr_, print_func_)      \
 	print_local_array_ex((tcp_), (start_addr_), ARRAY_SIZE(start_addr_), \
 			     sizeof((start_addr_)[0]), (print_func_),        \
 			     NULL, 0, NULL, NULL)
 
 extern kernel_ulong_t *
 fetch_indirect_syscall_args(struct tcb *, kernel_ulong_t addr, unsigned int n_args);
+
+extern void pidns_init(void);
+
+/**
+ * Returns the pid of the tracee as present in /proc of the tracer (can be
+ * different from tcp->pid if /proc and the tracer process are in different PID
+ * namespaces).
+ */
+extern int get_proc_pid(struct tcb *);
+
+/**
+ * Translates a pid from tracee's namespace to our namepace.
+ *
+ * @param tcp             The tcb of the tracee
+ *                        (NULL: from_id is in strace's namespace. Useful for
+ *                         getting the proc PID of from_id)
+ * @param from_id         The id to be translated
+ * @param type            The PID type of from_id
+ * @param proc_pid_ptr    If not NULL, writes the proc PID to this location
+ * @return                The translated id, or 0 if translation fails.
+ */
+extern int translate_pid(struct tcb *, int dest_id, enum pid_type type,
+		    int *proc_pid_ptr);
 
 extern void
 dumpiov_in_msghdr(struct tcb *, kernel_ulong_t addr, kernel_ulong_t data_size);
@@ -963,6 +1047,35 @@ extern int
 printstr_ex(struct tcb *, kernel_ulong_t addr, kernel_ulong_t len,
 	    unsigned int user_style);
 
+/**
+ * Print a region of tracee memory only in case non-zero bytes are present
+ * there.  It almost fits into printstr_ex, but it has some pretty specific
+ * behaviour peculiarities (like printing of ellipsis on error) to readily
+ * integrate it there.
+ *
+ * Since it is expected to be used for printing tail of a structure in tracee's
+ * memory, it accepts a combination of start_addr/start_offs/total_len and does
+ * the relevant calculations itself.
+ *
+ * @param prefix     A string printed in cases something is going to be printed.
+ * @param start_addr Address of the beginning of a structure (whose tail
+ *                   is supposedly to be printed) in tracee's memory.
+ * @param start_offs Offset from the beginning of the structure where the tail
+ *                   data starts.
+ * @param total_len  Total size of the tracee's memory region containing
+ *                   the structure and the tail data.
+ *                   Caller is responsible for imposing a sensible (usually
+ *                   mandated by the kernel interface, like get_pagesize())
+ *                   limit here.
+ * @param style      Passed to string_quote as "style" parameter.
+ * @return           Returns true is anything was printed, false otherwise.
+ */
+extern bool print_nonzero_bytes(struct tcb *const tcp, const char *prefix,
+				const kernel_ulong_t start_addr,
+				const unsigned int start_offs,
+				const unsigned int total_len,
+				const unsigned int style);
+
 extern int
 printpathn(struct tcb *, kernel_ulong_t addr, unsigned int n);
 
@@ -971,8 +1084,38 @@ printpath(struct tcb *, kernel_ulong_t addr);
 
 # define TIMESPEC_TEXT_BUFSIZE \
 		(sizeof(long long) * 3 * 2 + sizeof("{tv_sec=-, tv_nsec=}"))
-extern void printfd(struct tcb *, int);
-extern void print_sockaddr(const void *sa, int len);
+
+/**
+ * Returns the pid associated with pidfd of the process with ID pid_of_fd
+ */
+extern pid_t pidfd_get_pid(pid_t pid_of_fd, int fd);
+/**
+ * Print file descriptor fd owned by process with ID pid (from the PID NS
+ * of the tracer).
+ */
+extern void printfd_pid(struct tcb *tcp, pid_t pid, int fd);
+
+static inline void
+printfd(struct tcb *tcp, int fd)
+{
+	printfd_pid(tcp, tcp->pid, fd);
+}
+
+/**
+ * Print file descriptor fd owned by process with ID pid (from the PID NS
+ * of the tracee).
+ */
+extern void printfd_pid_tracee_ns(struct tcb *tcp, pid_t pid, int fd);
+
+/** Prints a PID specified in the tracee's PID namespace */
+extern void printpid(struct tcb *, int pid, enum pid_type type);
+
+/**
+ * Prints pid as a TGID if positive, and PGID if negative
+ * (like the first argument of kill).
+ */
+extern void printpid_tgid_pgid(struct tcb *, int pid);
+extern void print_sockaddr(struct tcb *, const void *sa, int len);
 extern bool
 print_inet_addr(int af, const void *addr, unsigned int len, const char *var_name);
 extern bool
@@ -1050,6 +1193,8 @@ extern void qualify_verbose(const char *);
 extern void qualify_raw(const char *);
 extern void qualify_signals(const char *);
 extern void qualify_status(const char *);
+extern void qualify_quiet(const char *);
+extern void qualify_decode_fd(const char *);
 extern void qualify_read(const char *);
 extern void qualify_write(const char *);
 extern void qualify_fault(const char *);
@@ -1073,6 +1218,7 @@ DECL_IOCTL(nsfs);
 DECL_IOCTL(ptp);
 DECL_IOCTL(random);
 DECL_IOCTL(scsi);
+DECL_IOCTL(tee);
 DECL_IOCTL(term);
 DECL_IOCTL(ubi);
 DECL_IOCTL(uffdio);
@@ -1103,13 +1249,83 @@ extern void
 decode_netlink_kobject_uevent(struct tcb *, kernel_ulong_t addr,
 			      kernel_ulong_t len);
 
+enum find_xlat_flag_bits {
+	FXL_CASE_SENSITIVE_BIT,
+};
+
+enum find_xlat_flags {
+	/** Whether to use strcmp instead of strcasecmp for comparison */
+	FLAG(FXL_CASE_SENSITIVE),
+};
+
+/**
+ * Searches for a string-value pair in the provided array of pairs.
+ *
+ * @param items     Array of string-value pairs to search in.
+ * @param s         String to search for.
+ * @param num_items Item count in items array.
+ * @param flags     Bitwise-or'ed flags from enum find_xlat_flags.
+ * @return          Pointer to the first matching string-value pair inside items
+ *                  or NULL if nothing has been found.
+ */
+extern const struct xlat_data *find_xlat_val_ex(const struct xlat_data *items,
+						const char *s, size_t num_items,
+						unsigned int flags);
+# define find_xlat_val(items_, s_) \
+	find_xlat_val_ex((items_), (s_), ARRAY_SIZE(items_), 0)
+# define find_xlat_val_case(items_, s_) \
+	find_xlat_val_ex((items_), (s_), ARRAY_SIZE(items_), FXL_CASE_SENSITIVE)
+
+/**
+ * A find_xlat_val_ex wrapper for option arguments parsing.  Provides a value
+ * from strs array that matched the supplied arg string.  If arg is NULL,
+ * default_val is returned.  If nothing has matched, not_found value
+ * is returned.
+ *
+ * find_arg_val provides a wrapper for the common case of statically-defined
+ * strs arrays.
+ *
+ * @param arg         Argument string to parse
+ * @param strs        Array of string-value pairs to match arg against.
+ * @param strs_size   Element count in the strs array.
+ * @param default_val Value to return if arg is NULL.
+ * @param not_found   Value to return if arg hasn't found among strs.
+ * @return            default_val is arg is NULL, value part of the matched
+ *                    string-value pair, or not_found if nothing has matched.
+ */
+extern uint64_t find_arg_val_(const char *arg, const struct xlat_data *strs,
+			      size_t strs_size, uint64_t default_val,
+			      uint64_t not_found);
+/** A find_arg_val_ wrapper that supplies strs_size to it using ARRAY_SIZE. */
+# define find_arg_val(arg_, strs_, dflt_, not_found_) \
+	find_arg_val_((arg_), (strs_), ARRAY_SIZE(strs_), (dflt_), (not_found_))
+
+/**
+ * A find_arg_val wrapper for parsing time scale names.
+ *
+ * @param arg        String to parse
+ * @param empty_dflt Default scale for the empty arg.
+ * @param null_dflt  Default scale for the NULL arg.
+ * @param width      Width of the field required to print the second part
+ *                   with the specified precision.
+ * @return           Time scale (amount of nanoseconds) if found,
+ *                   empty_dflt if arg is empty, null_dflt if arg is NULL,
+ *                   -1 if arg doesn't match any known time scale.
+ */
+extern int str2timescale_ex(const char *arg, int empty_dflt, int null_dflt,
+			    int *width);
+/** str2timescale_ex wrapper for handling a separate argument. */
+# define str2timescale_optarg(arg_, w_) str2timescale_ex((arg_), -1, 1000, (w_))
+/** str2timescale_ex wrapper for handling a suffix in existing argument. */
+# define str2timescale_sfx(arg_, w_) str2timescale_ex((arg_), 1000, -1, (w_))
+
 extern int ts_nz(const struct timespec *);
 extern int ts_cmp(const struct timespec *, const struct timespec *);
 extern double ts_float(const struct timespec *);
 extern void ts_add(struct timespec *, const struct timespec *, const struct timespec *);
 extern void ts_sub(struct timespec *, const struct timespec *, const struct timespec *);
-extern void ts_mul(struct timespec *, const struct timespec *, int);
-extern void ts_div(struct timespec *, const struct timespec *, int);
+extern void ts_mul(struct timespec *, const struct timespec *, uint64_t);
+extern void ts_div(struct timespec *, const struct timespec *, uint64_t);
 extern const struct timespec *ts_min(const struct timespec *, const struct timespec *);
 extern const struct timespec *ts_max(const struct timespec *, const struct timespec *);
 extern int parse_ts(const char *s, struct timespec *t);
@@ -1194,11 +1410,13 @@ tprint_iov(struct tcb *tcp, kernel_ulong_t len, kernel_ulong_t addr,
 	tprint_iov_upto(tcp, len, addr, decode_iov, -1);
 }
 
-# if HAVE_ARCH_TIME32_SYSCALLS
+# if HAVE_ARCH_TIME32_SYSCALLS || HAVE_ARCH_TIMESPEC32
 extern bool print_timespec32_data_size(const void *arg, size_t size);
 extern bool print_timespec32_array_data_size(const void *arg,
 					     unsigned int nmemb,
 					     size_t size);
+# endif /* HAVE_ARCH_TIME32_SYSCALLS || HAVE_ARCH_TIMESPEC32 */
+# if HAVE_ARCH_TIME32_SYSCALLS
 extern int print_timespec32(struct tcb *, kernel_ulong_t);
 extern const char *sprint_timespec32(struct tcb *, kernel_ulong_t);
 extern int print_timespec32_utime_pair(struct tcb *, kernel_ulong_t);
@@ -1346,6 +1564,9 @@ DECL_PRINTNUM_ADDR(int64);
 
 extern bool
 printnum_fd(struct tcb *, kernel_ulong_t addr);
+
+extern bool
+printnum_pid(struct tcb *const tcp, const kernel_ulong_t addr, enum pid_type type);
 
 static inline bool
 printnum_slong(struct tcb *tcp, kernel_ulong_t addr)
@@ -1536,5 +1757,65 @@ scno_is_valid(kernel_ulong_t scno)
 # define SYS_FUNC_NAME(syscall_name) MPERS_FUNC_NAME(syscall_name)
 
 # define SYS_FUNC(syscall_name) int SYS_FUNC_NAME(sys_ ## syscall_name)(struct tcb *tcp)
+
+# define ILOG2_ITER_(val_, ret_, bit_)					\
+	do {								\
+		typeof(ret_) shift_ =					\
+			((val_) > ((((typeof(val_)) 1)			\
+				   << (1 << (bit_))) - 1)) << (bit_);	\
+		(val_) >>= shift_;					\
+		(ret_) |= shift_;					\
+	} while (0)
+
+/**
+ * Calculate floor(log2(val)), with the exception of val == 0, for which 0
+ * is returned as well.
+ *
+ * @param val 64-bit value to calculate integer base-2 logarithm for.
+ * @return    (unsigned int) floor(log2(val)) if val > 0, 0 if val == 0.
+ */
+static inline unsigned int
+ilog2_64(uint64_t val)
+{
+	unsigned int ret = 0;
+
+	ILOG2_ITER_(val, ret, 5);
+	ILOG2_ITER_(val, ret, 4);
+	ILOG2_ITER_(val, ret, 3);
+	ILOG2_ITER_(val, ret, 2);
+	ILOG2_ITER_(val, ret, 1);
+	ILOG2_ITER_(val, ret, 0);
+
+	return ret;
+}
+
+/**
+ * Calculate floor(log2(val)), with the exception of val == 0, for which 0
+ * is returned as well.
+ *
+ * @param val 32-bit value to calculate integer base-2 logarithm for.
+ * @return    (unsigned int) floor(log2(val)) if val > 0, 0 if val == 0.
+ */
+static inline unsigned int
+ilog2_32(uint32_t val)
+{
+	unsigned int ret = 0;
+
+	ILOG2_ITER_(val, ret, 4);
+	ILOG2_ITER_(val, ret, 3);
+	ILOG2_ITER_(val, ret, 2);
+	ILOG2_ITER_(val, ret, 1);
+	ILOG2_ITER_(val, ret, 0);
+
+	return ret;
+}
+
+# if SIZEOF_KERNEL_LONG_T > 4
+#  define ilog2_klong ilog2_64
+# else
+#  define ilog2_klong ilog2_32
+# endif
+
+# undef ILOG2_ITER_
 
 #endif /* !STRACE_DEFS_H */

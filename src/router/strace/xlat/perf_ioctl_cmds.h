@@ -98,17 +98,41 @@ extern const struct xlat perf_ioctl_cmds[];
 
 static const struct xlat_data perf_ioctl_cmds_xdata[] = {
  XLAT(PERF_EVENT_IOC_ENABLE),
+ #define XLAT_VAL_0 ((unsigned) (PERF_EVENT_IOC_ENABLE))
+ #define XLAT_STR_0 STRINGIFY(PERF_EVENT_IOC_ENABLE)
  XLAT(PERF_EVENT_IOC_DISABLE),
+ #define XLAT_VAL_1 ((unsigned) (PERF_EVENT_IOC_DISABLE))
+ #define XLAT_STR_1 STRINGIFY(PERF_EVENT_IOC_DISABLE)
  XLAT(PERF_EVENT_IOC_REFRESH),
+ #define XLAT_VAL_2 ((unsigned) (PERF_EVENT_IOC_REFRESH))
+ #define XLAT_STR_2 STRINGIFY(PERF_EVENT_IOC_REFRESH)
  XLAT(PERF_EVENT_IOC_RESET),
+ #define XLAT_VAL_3 ((unsigned) (PERF_EVENT_IOC_RESET))
+ #define XLAT_STR_3 STRINGIFY(PERF_EVENT_IOC_RESET)
  XLAT(PERF_EVENT_IOC_PERIOD),
+ #define XLAT_VAL_4 ((unsigned) (PERF_EVENT_IOC_PERIOD))
+ #define XLAT_STR_4 STRINGIFY(PERF_EVENT_IOC_PERIOD)
  XLAT(PERF_EVENT_IOC_SET_OUTPUT),
+ #define XLAT_VAL_5 ((unsigned) (PERF_EVENT_IOC_SET_OUTPUT))
+ #define XLAT_STR_5 STRINGIFY(PERF_EVENT_IOC_SET_OUTPUT)
  XLAT(PERF_EVENT_IOC_SET_FILTER),
+ #define XLAT_VAL_6 ((unsigned) (PERF_EVENT_IOC_SET_FILTER))
+ #define XLAT_STR_6 STRINGIFY(PERF_EVENT_IOC_SET_FILTER)
  XLAT(PERF_EVENT_IOC_ID),
+ #define XLAT_VAL_7 ((unsigned) (PERF_EVENT_IOC_ID))
+ #define XLAT_STR_7 STRINGIFY(PERF_EVENT_IOC_ID)
  XLAT(PERF_EVENT_IOC_SET_BPF),
+ #define XLAT_VAL_8 ((unsigned) (PERF_EVENT_IOC_SET_BPF))
+ #define XLAT_STR_8 STRINGIFY(PERF_EVENT_IOC_SET_BPF)
  XLAT(PERF_EVENT_IOC_PAUSE_OUTPUT),
+ #define XLAT_VAL_9 ((unsigned) (PERF_EVENT_IOC_PAUSE_OUTPUT))
+ #define XLAT_STR_9 STRINGIFY(PERF_EVENT_IOC_PAUSE_OUTPUT)
  XLAT(PERF_EVENT_IOC_QUERY_BPF),
+ #define XLAT_VAL_10 ((unsigned) (PERF_EVENT_IOC_QUERY_BPF))
+ #define XLAT_STR_10 STRINGIFY(PERF_EVENT_IOC_QUERY_BPF)
  XLAT(PERF_EVENT_IOC_MODIFY_ATTRIBUTES),
+ #define XLAT_VAL_11 ((unsigned) (PERF_EVENT_IOC_MODIFY_ATTRIBUTES))
+ #define XLAT_STR_11 STRINGIFY(PERF_EVENT_IOC_MODIFY_ATTRIBUTES)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -117,8 +141,108 @@ const struct xlat perf_ioctl_cmds[1] = { {
  .data = perf_ioctl_cmds_xdata,
  .size = ARRAY_SIZE(perf_ioctl_cmds_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

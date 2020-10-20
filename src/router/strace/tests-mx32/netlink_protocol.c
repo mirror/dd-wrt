@@ -3,7 +3,7 @@
  *
  * Copyright (c) 2014-2017 Dmitry V. Levin <ldv@altlinux.org>
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -264,7 +264,7 @@ test_nlmsgerr(const int fd)
 	printf("sendto(%d, {{len=%u, type=NLMSG_ERROR, flags=NLM_F_REQUEST"
 	       ", seq=0, pid=0}, {error=-EACCES"
 	       ", msg={len=%u, type=NLMSG_NOOP, flags=NLM_F_REQUEST|0x%x"
-	       ", seq=%u, pid=%u}}}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
+	       ", seq=%u, pid=%d}}}, %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh->nlmsg_len, err->msg.nlmsg_len, NLM_F_DUMP,
 	       err->msg.nlmsg_seq, err->msg.nlmsg_pid,
 	       nlh->nlmsg_len, sprintrc(rc));
@@ -289,7 +289,7 @@ test_nlmsgerr(const int fd)
 	printf("sendto(%d, {{len=%u, type=NLMSG_ERROR, flags=NLM_F_REQUEST"
 	       ", seq=0, pid=0}, {error=-EACCES"
 	       ", msg={{len=%u, type=NLMSG_NOOP, flags=NLM_F_REQUEST|0x%x"
-	       ", seq=%u, pid=%u}, \"\\x61\\x62\\x63\\x64\"}}}"
+	       ", seq=%u, pid=%d}, \"\\x61\\x62\\x63\\x64\"}}}"
 	       ", %u, MSG_DONTWAIT, NULL, 0) = %s\n",
 	       fd, nlh->nlmsg_len, err->msg.nlmsg_len, NLM_F_DUMP,
 	       err->msg.nlmsg_seq, err->msg.nlmsg_pid,

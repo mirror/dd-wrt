@@ -84,23 +84,127 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data statfs_flags_xdata[] = {
  XLAT(ST_VALID),
+ #define XLAT_VAL_0 ((unsigned) (ST_VALID))
+ #define XLAT_STR_0 STRINGIFY(ST_VALID)
  XLAT(ST_RDONLY),
+ #define XLAT_VAL_1 ((unsigned) (ST_RDONLY))
+ #define XLAT_STR_1 STRINGIFY(ST_RDONLY)
  XLAT(ST_NOSUID),
+ #define XLAT_VAL_2 ((unsigned) (ST_NOSUID))
+ #define XLAT_STR_2 STRINGIFY(ST_NOSUID)
  XLAT(ST_NODEV),
+ #define XLAT_VAL_3 ((unsigned) (ST_NODEV))
+ #define XLAT_STR_3 STRINGIFY(ST_NODEV)
  XLAT(ST_NOEXEC),
+ #define XLAT_VAL_4 ((unsigned) (ST_NOEXEC))
+ #define XLAT_STR_4 STRINGIFY(ST_NOEXEC)
  XLAT(ST_SYNCHRONOUS),
+ #define XLAT_VAL_5 ((unsigned) (ST_SYNCHRONOUS))
+ #define XLAT_STR_5 STRINGIFY(ST_SYNCHRONOUS)
  XLAT(ST_MANDLOCK),
+ #define XLAT_VAL_6 ((unsigned) (ST_MANDLOCK))
+ #define XLAT_STR_6 STRINGIFY(ST_MANDLOCK)
  XLAT(ST_NOATIME),
+ #define XLAT_VAL_7 ((unsigned) (ST_NOATIME))
+ #define XLAT_STR_7 STRINGIFY(ST_NOATIME)
  XLAT(ST_NODIRATIME),
+ #define XLAT_VAL_8 ((unsigned) (ST_NODIRATIME))
+ #define XLAT_STR_8 STRINGIFY(ST_NODIRATIME)
  XLAT(ST_RELATIME),
+ #define XLAT_VAL_9 ((unsigned) (ST_RELATIME))
+ #define XLAT_STR_9 STRINGIFY(ST_RELATIME)
 };
 static
 const struct xlat statfs_flags[1] = { {
  .data = statfs_flags_xdata,
  .size = ARRAY_SIZE(statfs_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -42,17 +42,61 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data nf_queue_msg_types_xdata[] = {
  [NFQNL_MSG_PACKET] = XLAT(NFQNL_MSG_PACKET),
+ #define XLAT_VAL_0 ((unsigned) (NFQNL_MSG_PACKET))
+ #define XLAT_STR_0 STRINGIFY(NFQNL_MSG_PACKET)
  [NFQNL_MSG_VERDICT] = XLAT(NFQNL_MSG_VERDICT),
+ #define XLAT_VAL_1 ((unsigned) (NFQNL_MSG_VERDICT))
+ #define XLAT_STR_1 STRINGIFY(NFQNL_MSG_VERDICT)
  [NFQNL_MSG_CONFIG] = XLAT(NFQNL_MSG_CONFIG),
+ #define XLAT_VAL_2 ((unsigned) (NFQNL_MSG_CONFIG))
+ #define XLAT_STR_2 STRINGIFY(NFQNL_MSG_CONFIG)
  [NFQNL_MSG_VERDICT_BATCH] = XLAT(NFQNL_MSG_VERDICT_BATCH),
+ #define XLAT_VAL_3 ((unsigned) (NFQNL_MSG_VERDICT_BATCH))
+ #define XLAT_STR_3 STRINGIFY(NFQNL_MSG_VERDICT_BATCH)
 };
 static
 const struct xlat nf_queue_msg_types[1] = { {
  .data = nf_queue_msg_types_xdata,
  .size = ARRAY_SIZE(nf_queue_msg_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -21,14 +21,28 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data kcm_protocols_xdata[] = {
  [KCMPROTO_CONNECTED] = XLAT(KCMPROTO_CONNECTED),
+ #define XLAT_VAL_0 ((unsigned) (KCMPROTO_CONNECTED))
+ #define XLAT_STR_0 STRINGIFY(KCMPROTO_CONNECTED)
 };
 static
 const struct xlat kcm_protocols[1] = { {
  .data = kcm_protocols_xdata,
  .size = ARRAY_SIZE(kcm_protocols_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

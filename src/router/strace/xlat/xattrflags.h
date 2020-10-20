@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data xattrflags_xdata[] = {
  XLAT(XATTR_CREATE),
+ #define XLAT_VAL_0 ((unsigned) (XATTR_CREATE))
+ #define XLAT_STR_0 STRINGIFY(XATTR_CREATE)
  XLAT(XATTR_REPLACE),
+ #define XLAT_VAL_1 ((unsigned) (XATTR_REPLACE))
+ #define XLAT_STR_1 STRINGIFY(XATTR_REPLACE)
 };
 static
 const struct xlat xattrflags[1] = { {
  .data = xattrflags_xdata,
  .size = ARRAY_SIZE(xattrflags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

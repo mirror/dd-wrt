@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -16,20 +16,10 @@ struct strace_kcmp_epoll_slot {
 	uint32_t toff;
 };
 
-static void
-printpidfd(struct tcb *tcp, pid_t pid, int fd)
-{
-	/*
-	 * XXX We want to use printfd here, but we should figure out which
-	 *     process in strace's PID NS is referred to first.
-	 */
-	tprintf("%d", fd);
-}
-
 #define PRINT_FIELD_PIDFD(prefix_, where_, field_, tcp_, pid_)		\
 	do {								\
 		STRACE_PRINTF("%s%s=", (prefix_), #field_);		\
-		printpidfd((tcp_), (pid_), (where_).field_);		\
+		printfd_pid_tracee_ns((tcp_), (pid_), (where_).field_);		\
 	} while (0)
 
 SYS_FUNC(kcmp)
@@ -40,15 +30,18 @@ SYS_FUNC(kcmp)
 	kernel_ulong_t idx1 = tcp->u_arg[3];
 	kernel_ulong_t idx2 = tcp->u_arg[4];
 
-	tprintf("%d, %d, ", pid1, pid2);
+	printpid(tcp, pid1, PT_TGID);
+	tprints(", ");
+	printpid(tcp, pid2, PT_TGID);
+	tprints(", ");
 	printxval(kcmp_types, type, "KCMP_???");
 
 	switch (type) {
 		case KCMP_FILE:
 			tprints(", ");
-			printpidfd(tcp, pid1, idx1);
+			printfd_pid_tracee_ns(tcp, pid1, idx1);
 			tprints(", ");
-			printpidfd(tcp, pid1, idx2);
+			printfd_pid_tracee_ns(tcp, pid2, idx2);
 
 			break;
 
@@ -56,7 +49,7 @@ SYS_FUNC(kcmp)
 			struct strace_kcmp_epoll_slot slot;
 
 			tprints(", ");
-			printpidfd(tcp, pid1, idx1);
+			printfd_pid_tracee_ns(tcp, pid1, idx1);
 			tprints(", ");
 
 			if (umove_or_printaddr(tcp, idx2, &slot))

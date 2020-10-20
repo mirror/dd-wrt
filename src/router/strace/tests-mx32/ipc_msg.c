@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2015 Elvira Khabirova <lineprinter0@gmail.com>
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2019 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -20,18 +20,24 @@
 # define MSG_STAT_ANY 13
 #endif
 
+#undef TEST_MSGCTL_BOGUS_ADDR
+
+/*
+ * Starting with commit glibc-2.32~83, on every 32-bit architecture
+ * where 32-bit time_t support is enabled, glibc tries to retrieve
+ * the data provided in the third argument of msgctl call.
+ */
+#if GLIBC_PREREQ_GE(2, 32) && defined __TIMESIZE && __TIMESIZE != 64
+# define TEST_MSGCTL_BOGUS_ADDR 0
+#endif
 /*
  * Before glibc-2.22-122-gbe48165, ppc64 code tried to retrieve data
  * provided in third argument of msgctl call (in case of IPC_SET cmd)
  * which led to segmentation fault.
  */
-#undef TEST_MSGCTL_BOGUS_ADDR
-#if defined __GLIBC__ && (defined POWERPC64 || defined POWERPC64LE)
-# if !(defined __GLIBC_MINOR__) \
-   || ((__GLIBC__ << 16) + __GLIBC_MINOR__ < (2 << 16) + 23)
-#  define TEST_MSGCTL_BOGUS_ADDR 0
-# endif
-#endif /* __GLIBC__ && (POWERPC64 || POWERPC64LE) */
+#if GLIBC_PREREQ_LT(2, 23) && (defined POWERPC64 || defined POWERPC64LE)
+# define TEST_MSGCTL_BOGUS_ADDR 0
+#endif
 
 #ifndef TEST_MSGCTL_BOGUS_ADDR
 # define TEST_MSGCTL_BOGUS_ADDR 1
@@ -43,6 +49,7 @@
 # define str_ipc_rmid "0"
 # define str_ipc_set "0x1"
 # define str_ipc_stat "0x2"
+# define str_ipc_info "0x3"
 # define str_msg_stat "0xb"
 # define str_msg_info "0xc"
 # define str_msg_stat_any "0xd"
@@ -55,6 +62,7 @@
 # define str_ipc_rmid "0 /\\* IPC_RMID \\*/"
 # define str_ipc_set "0x1 /\\* IPC_SET \\*/"
 # define str_ipc_stat "0x2 /\\* IPC_STAT \\*/"
+# define str_ipc_info "0x3 /\\* IPC_INFO \\*/"
 # define str_msg_stat "0xb /\\* MSG_STAT \\*/"
 # define str_msg_info "0xc /\\* MSG_INFO \\*/"
 # define str_msg_stat_any "0xd /\\* MSG_STAT_ANY \\*/"
@@ -66,6 +74,7 @@
 # define str_ipc_rmid "IPC_RMID"
 # define str_ipc_set "IPC_SET"
 # define str_ipc_stat "IPC_STAT"
+# define str_ipc_info "IPC_INFO"
 # define str_msg_stat "MSG_STAT"
 # define str_msg_info "MSG_INFO"
 # define str_msg_stat_any "MSG_STAT_ANY"
@@ -84,6 +93,68 @@ cleanup(void)
 	id = -1;
 }
 
+static void
+print_msginfo(const char *const str_ipc_cmd,
+	      const struct msginfo *const info,
+	      const int rc)
+{
+	if (rc < 0) {
+		printf("msgctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
+		       id, str_ipc_64, str_ipc_cmd, info, sprintrc_grep(rc));
+		return;
+	}
+
+	printf("msgctl\\(%d, (%s\\|)?%s, \\{msgpool=%d, msgmap=%d, msgmax=%d"
+	       ", msgmnb=%d, msgmni=%d, msgssz=%d, msgtql=%d, msgseg=%u\\}\\)"
+	       " = %d\n",
+	       id,
+	       str_ipc_64,
+	       str_ipc_cmd,
+	       info->msgpool,
+	       info->msgmap,
+	       info->msgmax,
+	       info->msgmnb,
+	       info->msgmni,
+	       info->msgssz,
+	       info->msgtql,
+	       (unsigned) info->msgseg,
+	       rc);
+}
+
+static void
+print_msqid_ds(const char *const str_ipc_cmd,
+	       const struct msqid_ds *const ds,
+	       const int rc)
+{
+	if (rc < 0) {
+		printf("msgctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
+		       id, str_ipc_64, str_ipc_cmd, ds, sprintrc_grep(rc));
+		return;
+	}
+
+	printf("msgctl\\(%d, (%s\\|)?%s, \\{msg_perm=\\{uid=%u"
+	       ", gid=%u, mode=%#o, key=%u, cuid=%u, cgid=%u\\}"
+	       ", msg_stime=%u, msg_rtime=%u, msg_ctime=%u, msg_qnum=%u"
+	       ", msg_qbytes=%u, msg_lspid=%d, msg_lrpid=%d\\}\\) = %d\n",
+	       id,
+	       str_ipc_64,
+	       str_ipc_cmd,
+	       (unsigned) ds->msg_perm.uid,
+	       (unsigned) ds->msg_perm.gid,
+	       (unsigned) ds->msg_perm.mode,
+	       (unsigned) ds->msg_perm.__key,
+	       (unsigned) ds->msg_perm.cuid,
+	       (unsigned) ds->msg_perm.cgid,
+	       (unsigned) ds->msg_stime,
+	       (unsigned) ds->msg_rtime,
+	       (unsigned) ds->msg_ctime,
+	       (unsigned) ds->msg_qnum,
+	       (unsigned) ds->msg_qbytes,
+	       (int) ds->msg_lspid,
+	       (int) ds->msg_lrpid,
+	       rc);
+}
+
 int
 main(void)
 {
@@ -98,7 +169,10 @@ main(void)
 	static const int bogus_flags = 0xface1e55 & ~IPC_CREAT;
 
 	int rc;
-	struct msqid_ds ds;
+	union {
+		struct msqid_ds ds;
+		struct msginfo info;
+	} buf;
 
 	rc = msgget(bogus_key, bogus_flags);
 	printf("msgget\\(%#llx, %s\\|%#04o\\) = %s\n",
@@ -123,39 +197,32 @@ main(void)
 	       sprintrc_grep(rc));
 #endif
 
-	if (msgctl(id, IPC_STAT, &ds))
+	rc = msgctl(id, IPC_STAT, &buf.ds);
+	if (rc < 0)
 		perror_msg_and_skip("msgctl IPC_STAT");
-	printf("msgctl\\(%d, (%s\\|)?%s, \\{msg_perm=\\{uid=%u"
-	       ", gid=%u, mode=%#o, key=%u, cuid=%u, cgid=%u\\}, msg_stime=%u"
-	       ", msg_rtime=%u, msg_ctime=%u, msg_qnum=%u, msg_qbytes=%u"
-	       ", msg_lspid=%u, msg_lrpid=%u\\}\\) = 0\n",
-	       id, str_ipc_64, str_ipc_stat,
-	       (unsigned) ds.msg_perm.uid, (unsigned) ds.msg_perm.gid,
-	       (unsigned) ds.msg_perm.mode, (unsigned) ds.msg_perm.__key,
-	       (unsigned) ds.msg_perm.cuid, (unsigned) ds.msg_perm.cgid,
-	       (unsigned) ds.msg_stime, (unsigned) ds.msg_rtime,
-	       (unsigned) ds.msg_ctime, (unsigned) ds.msg_qnum,
-	       (unsigned) ds.msg_qbytes, (unsigned) ds.msg_lspid,
-	       (unsigned) ds.msg_lrpid);
+	print_msqid_ds(str_ipc_stat, &buf.ds, rc);
 
-	if (msgctl(id, IPC_SET, &ds))
+	if (msgctl(id, IPC_SET, &buf.ds))
 		perror_msg_and_skip("msgctl IPC_SET");
 	printf("msgctl\\(%d, (%s\\|)?%s, \\{msg_perm=\\{uid=%u"
-	       ", gid=%u, mode=%#o\\}, ...\\}\\) = 0\n",
-	       id, str_ipc_64, str_ipc_set, (unsigned) ds.msg_perm.uid,
-	       (unsigned) ds.msg_perm.gid, (unsigned) ds.msg_perm.mode);
+	       ", gid=%u, mode=%#o\\}, msg_qbytes=%u\\}\\) = 0\n",
+	       id, str_ipc_64, str_ipc_set,
+	       (unsigned) buf.ds.msg_perm.uid,
+	       (unsigned) buf.ds.msg_perm.gid,
+	       (unsigned) buf.ds.msg_perm.mode,
+	       (unsigned) buf.ds.msg_qbytes);
 
-	rc = msgctl(0, MSG_INFO, &ds);
-	printf("msgctl\\(0, (%s\\|)?%s, %p\\) = %s\n",
-	       str_ipc_64, str_msg_info, &ds, sprintrc_grep(rc));
+	rc = msgctl(id, IPC_INFO, &buf.ds);
+	print_msginfo(str_ipc_info, &buf.info, rc);
 
-	rc = msgctl(id, MSG_STAT, &ds);
-	printf("msgctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
-	       id, str_ipc_64, str_msg_stat, &ds, sprintrc_grep(rc));
+	rc = msgctl(id, MSG_INFO, &buf.ds);
+	print_msginfo(str_msg_info, &buf.info, rc);
 
-	rc = msgctl(id, MSG_STAT_ANY, &ds);
-	printf("msgctl\\(%d, (%s\\|)?%s, %p\\) = %s\n",
-	       id, str_ipc_64, str_msg_stat_any, &ds, sprintrc_grep(rc));
+	rc = msgctl(id, MSG_STAT, &buf.ds);
+	print_msqid_ds(str_msg_stat, &buf.ds, rc);
+
+	rc = msgctl(id, MSG_STAT_ANY, &buf.ds);
+	print_msqid_ds(str_msg_stat_any, &buf.ds, rc);
 
 	return 0;
 }

@@ -21,6 +21,10 @@ const struct xlat btrfs_features_compat[1] = { {
  .data = btrfs_features_compat_xdata,
  .size = ARRAY_SIZE(btrfs_features_compat_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+  ,
+ .flags_strsz = 0
+  ,
 } };
 
 # endif /* !IN_MPERS */

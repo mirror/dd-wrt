@@ -70,21 +70,105 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bt_protocols_xdata[] = {
  [BTPROTO_L2CAP] = XLAT(BTPROTO_L2CAP),
+ #define XLAT_VAL_0 ((unsigned) (BTPROTO_L2CAP))
+ #define XLAT_STR_0 STRINGIFY(BTPROTO_L2CAP)
  [BTPROTO_HCI] = XLAT(BTPROTO_HCI),
+ #define XLAT_VAL_1 ((unsigned) (BTPROTO_HCI))
+ #define XLAT_STR_1 STRINGIFY(BTPROTO_HCI)
  [BTPROTO_SCO] = XLAT(BTPROTO_SCO),
+ #define XLAT_VAL_2 ((unsigned) (BTPROTO_SCO))
+ #define XLAT_STR_2 STRINGIFY(BTPROTO_SCO)
  [BTPROTO_RFCOMM] = XLAT(BTPROTO_RFCOMM),
+ #define XLAT_VAL_3 ((unsigned) (BTPROTO_RFCOMM))
+ #define XLAT_STR_3 STRINGIFY(BTPROTO_RFCOMM)
  [BTPROTO_BNEP] = XLAT(BTPROTO_BNEP),
+ #define XLAT_VAL_4 ((unsigned) (BTPROTO_BNEP))
+ #define XLAT_STR_4 STRINGIFY(BTPROTO_BNEP)
  [BTPROTO_CMTP] = XLAT(BTPROTO_CMTP),
+ #define XLAT_VAL_5 ((unsigned) (BTPROTO_CMTP))
+ #define XLAT_STR_5 STRINGIFY(BTPROTO_CMTP)
  [BTPROTO_HIDP] = XLAT(BTPROTO_HIDP),
+ #define XLAT_VAL_6 ((unsigned) (BTPROTO_HIDP))
+ #define XLAT_STR_6 STRINGIFY(BTPROTO_HIDP)
  [BTPROTO_AVDTP] = XLAT(BTPROTO_AVDTP),
+ #define XLAT_VAL_7 ((unsigned) (BTPROTO_AVDTP))
+ #define XLAT_STR_7 STRINGIFY(BTPROTO_AVDTP)
 };
 static
 const struct xlat bt_protocols[1] = { {
  .data = bt_protocols_xdata,
  .size = ARRAY_SIZE(bt_protocols_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

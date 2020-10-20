@@ -91,16 +91,38 @@ extern const struct xlat btrfs_features_incompat[];
 
 static const struct xlat_data btrfs_features_incompat_xdata[] = {
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF),
+ #define XLAT_VAL_0 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF))
+ #define XLAT_STR_0 STRINGIFY(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL),
+ #define XLAT_VAL_1 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL))
+ #define XLAT_STR_1 STRINGIFY(BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS),
+ #define XLAT_VAL_2 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS))
+ #define XLAT_STR_2 STRINGIFY(BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO),
+ #define XLAT_VAL_3 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO))
+ #define XLAT_STR_3 STRINGIFY(BTRFS_FEATURE_INCOMPAT_COMPRESS_LZO)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_COMPRESS_LZOv2),
+ #define XLAT_VAL_4 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_COMPRESS_LZOv2))
+ #define XLAT_STR_4 STRINGIFY(BTRFS_FEATURE_INCOMPAT_COMPRESS_LZOv2)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_BIG_METADATA),
+ #define XLAT_VAL_5 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_BIG_METADATA))
+ #define XLAT_STR_5 STRINGIFY(BTRFS_FEATURE_INCOMPAT_BIG_METADATA)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF),
+ #define XLAT_VAL_6 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF))
+ #define XLAT_STR_6 STRINGIFY(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_RAID56),
+ #define XLAT_VAL_7 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_RAID56))
+ #define XLAT_STR_7 STRINGIFY(BTRFS_FEATURE_INCOMPAT_RAID56)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA),
+ #define XLAT_VAL_8 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA))
+ #define XLAT_STR_8 STRINGIFY(BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_NO_HOLES),
+ #define XLAT_VAL_9 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_NO_HOLES))
+ #define XLAT_STR_9 STRINGIFY(BTRFS_FEATURE_INCOMPAT_NO_HOLES)
  XLAT_TYPE(uint64_t, BTRFS_FEATURE_INCOMPAT_METADATA_UUID),
+ #define XLAT_VAL_10 ((uint64_t) (BTRFS_FEATURE_INCOMPAT_METADATA_UUID))
+ #define XLAT_STR_10 STRINGIFY(BTRFS_FEATURE_INCOMPAT_METADATA_UUID)
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
 static
@@ -109,8 +131,100 @@ const struct xlat btrfs_features_incompat[1] = { {
  .data = btrfs_features_incompat_xdata,
  .size = ARRAY_SIZE(btrfs_features_incompat_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

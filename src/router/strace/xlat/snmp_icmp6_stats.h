@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data snmp_icmp6_stats_xdata[] = {
  [ICMP6_MIB_NUM] = XLAT(ICMP6_MIB_NUM),
+ #define XLAT_VAL_0 ((unsigned) (ICMP6_MIB_NUM))
+ #define XLAT_STR_0 STRINGIFY(ICMP6_MIB_NUM)
  [ICMP6_MIB_INMSGS] = XLAT(ICMP6_MIB_INMSGS),
+ #define XLAT_VAL_1 ((unsigned) (ICMP6_MIB_INMSGS))
+ #define XLAT_STR_1 STRINGIFY(ICMP6_MIB_INMSGS)
  [ICMP6_MIB_INERRORS] = XLAT(ICMP6_MIB_INERRORS),
+ #define XLAT_VAL_2 ((unsigned) (ICMP6_MIB_INERRORS))
+ #define XLAT_STR_2 STRINGIFY(ICMP6_MIB_INERRORS)
  [ICMP6_MIB_OUTMSGS] = XLAT(ICMP6_MIB_OUTMSGS),
+ #define XLAT_VAL_3 ((unsigned) (ICMP6_MIB_OUTMSGS))
+ #define XLAT_STR_3 STRINGIFY(ICMP6_MIB_OUTMSGS)
  [ICMP6_MIB_OUTERRORS] = XLAT(ICMP6_MIB_OUTERRORS),
+ #define XLAT_VAL_4 ((unsigned) (ICMP6_MIB_OUTERRORS))
+ #define XLAT_STR_4 STRINGIFY(ICMP6_MIB_OUTERRORS)
  [ICMP6_MIB_CSUMERRORS] = XLAT(ICMP6_MIB_CSUMERRORS),
+ #define XLAT_VAL_5 ((unsigned) (ICMP6_MIB_CSUMERRORS))
+ #define XLAT_STR_5 STRINGIFY(ICMP6_MIB_CSUMERRORS)
 };
 static
 const struct xlat snmp_icmp6_stats[1] = { {
  .data = snmp_icmp6_stats_xdata,
  .size = ARRAY_SIZE(snmp_icmp6_stats_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

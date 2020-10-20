@@ -112,27 +112,171 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_op_alu_xdata[] = {
  XLAT(BPF_ADD),
+ #define XLAT_VAL_0 ((unsigned) (BPF_ADD))
+ #define XLAT_STR_0 STRINGIFY(BPF_ADD)
  XLAT(BPF_SUB),
+ #define XLAT_VAL_1 ((unsigned) (BPF_SUB))
+ #define XLAT_STR_1 STRINGIFY(BPF_SUB)
  XLAT(BPF_MUL),
+ #define XLAT_VAL_2 ((unsigned) (BPF_MUL))
+ #define XLAT_STR_2 STRINGIFY(BPF_MUL)
  XLAT(BPF_DIV),
+ #define XLAT_VAL_3 ((unsigned) (BPF_DIV))
+ #define XLAT_STR_3 STRINGIFY(BPF_DIV)
  XLAT(BPF_OR),
+ #define XLAT_VAL_4 ((unsigned) (BPF_OR))
+ #define XLAT_STR_4 STRINGIFY(BPF_OR)
  XLAT(BPF_AND),
+ #define XLAT_VAL_5 ((unsigned) (BPF_AND))
+ #define XLAT_STR_5 STRINGIFY(BPF_AND)
  XLAT(BPF_LSH),
+ #define XLAT_VAL_6 ((unsigned) (BPF_LSH))
+ #define XLAT_STR_6 STRINGIFY(BPF_LSH)
  XLAT(BPF_RSH),
+ #define XLAT_VAL_7 ((unsigned) (BPF_RSH))
+ #define XLAT_STR_7 STRINGIFY(BPF_RSH)
  XLAT(BPF_NEG),
+ #define XLAT_VAL_8 ((unsigned) (BPF_NEG))
+ #define XLAT_STR_8 STRINGIFY(BPF_NEG)
  XLAT(BPF_MOD),
+ #define XLAT_VAL_9 ((unsigned) (BPF_MOD))
+ #define XLAT_STR_9 STRINGIFY(BPF_MOD)
  XLAT(BPF_XOR),
+ #define XLAT_VAL_10 ((unsigned) (BPF_XOR))
+ #define XLAT_STR_10 STRINGIFY(BPF_XOR)
  XLAT(BPF_MOV),
+ #define XLAT_VAL_11 ((unsigned) (BPF_MOV))
+ #define XLAT_STR_11 STRINGIFY(BPF_MOV)
  XLAT(BPF_ARSH),
+ #define XLAT_VAL_12 ((unsigned) (BPF_ARSH))
+ #define XLAT_STR_12 STRINGIFY(BPF_ARSH)
  XLAT(BPF_END),
+ #define XLAT_VAL_13 ((unsigned) (BPF_END))
+ #define XLAT_STR_13 STRINGIFY(BPF_END)
 };
 static
 const struct xlat bpf_op_alu[1] = { {
  .data = bpf_op_alu_xdata,
  .size = ARRAY_SIZE(bpf_op_alu_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

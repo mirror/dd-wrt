@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data mpol_mode_flags_xdata[] = {
  XLAT(MPOL_F_STATIC_NODES),
+ #define XLAT_VAL_0 ((unsigned) (MPOL_F_STATIC_NODES))
+ #define XLAT_STR_0 STRINGIFY(MPOL_F_STATIC_NODES)
  XLAT(MPOL_F_RELATIVE_NODES),
+ #define XLAT_VAL_1 ((unsigned) (MPOL_F_RELATIVE_NODES))
+ #define XLAT_STR_1 STRINGIFY(MPOL_F_RELATIVE_NODES)
 };
 static
 const struct xlat mpol_mode_flags[1] = { {
  .data = mpol_mode_flags_xdata,
  .size = ARRAY_SIZE(mpol_mode_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -15,4 +15,5 @@ AC_CHECK_TYPES([struct br_mdb_entry],
 #include <linux/if_bridge.h>])],,[AC_INCLUDES_DEFAULT
 #include <netinet/in.h>
 #include <linux/if_bridge.h>])
-])])
+],[],[AC_INCLUDES_DEFAULT
+#include <netinet/in.h>])])

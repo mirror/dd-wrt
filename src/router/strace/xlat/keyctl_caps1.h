@@ -17,6 +17,13 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 #else
 # define KEYCTL_CAPS1_NS_KEY_TAG 0x02
 #endif
+#if defined(KEYCTL_CAPS1_NOTIFICATIONS) || (defined(HAVE_DECL_KEYCTL_CAPS1_NOTIFICATIONS) && HAVE_DECL_KEYCTL_CAPS1_NOTIFICATIONS)
+DIAG_PUSH_IGNORE_TAUTOLOGICAL_COMPARE
+static_assert((KEYCTL_CAPS1_NOTIFICATIONS) == (0x04), "KEYCTL_CAPS1_NOTIFICATIONS != 0x04");
+DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
+#else
+# define KEYCTL_CAPS1_NOTIFICATIONS 0x04
+#endif
 
 #ifndef XLAT_MACROS_ONLY
 
@@ -28,15 +35,50 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data keyctl_caps1_xdata[] = {
  XLAT(KEYCTL_CAPS1_NS_KEYRING_NAME),
+ #define XLAT_VAL_0 ((unsigned) (KEYCTL_CAPS1_NS_KEYRING_NAME))
+ #define XLAT_STR_0 STRINGIFY(KEYCTL_CAPS1_NS_KEYRING_NAME)
  XLAT(KEYCTL_CAPS1_NS_KEY_TAG),
+ #define XLAT_VAL_1 ((unsigned) (KEYCTL_CAPS1_NS_KEY_TAG))
+ #define XLAT_STR_1 STRINGIFY(KEYCTL_CAPS1_NS_KEY_TAG)
+ XLAT(KEYCTL_CAPS1_NOTIFICATIONS),
+ #define XLAT_VAL_2 ((unsigned) (KEYCTL_CAPS1_NOTIFICATIONS))
+ #define XLAT_STR_2 STRINGIFY(KEYCTL_CAPS1_NOTIFICATIONS)
 };
 static
 const struct xlat keyctl_caps1[1] = { {
  .data = keyctl_caps1_xdata,
  .size = ARRAY_SIZE(keyctl_caps1_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

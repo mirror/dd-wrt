@@ -14,14 +14,28 @@
 
 static const struct xlat_data ubi_volume_props_xdata[] = {
  XLAT(UBI_VOL_PROP_DIRECT_WRITE),
+ #define XLAT_VAL_0 ((unsigned) (UBI_VOL_PROP_DIRECT_WRITE))
+ #define XLAT_STR_0 STRINGIFY(UBI_VOL_PROP_DIRECT_WRITE)
 };
 static
 const struct xlat ubi_volume_props[1] = { {
  .data = ubi_volume_props_xdata,
  .size = ARRAY_SIZE(ubi_volume_props_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

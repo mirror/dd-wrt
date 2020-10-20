@@ -1,7 +1,7 @@
 /*
  * Check decoding of s390_sthyi syscall.
  *
- * Copyright (c) 2018-2019 The strace developers.
+ * Copyright (c) 2018-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -113,7 +113,7 @@ ebcdic2ascii(unsigned char *ebcdic, size_t size)
 				   size, sizeof(ascii_buf));
 	if (cd == (iconv_t) -1)
 		perror_msg_and_fail("ebcdic2ascii: unable to allocate a "
-				    "conversion descriptior for converting "
+				    "conversion descriptor for converting "
 				    "EBCDIC to ASCII");
 
 	while ((ret = iconv(cd, &ebcdic_pos, &ebcdic_left,
@@ -509,7 +509,7 @@ print_sthyi(unsigned char *buf)
 	hdr_size = *(uint16_t *) (buf + 10);
 	if (hdr_size < 44)
 		error_msg_and_fail("sthyi: header section is too small "
-			           "(got %hu, 44 expected)", hdr_size);
+				   "(got %hu, >=44 expected)", hdr_size);
 
 	/* INFHFLG1 */
 	print_0x8("{/* header */ {infhflg1", buf, 0, true);
@@ -598,7 +598,7 @@ print_sthyi(unsigned char *buf)
 	hdr_size = *(uint16_t *) (buf + 14);
 	if (hdr_size < 60)
 		error_msg_and_fail("sthyi: machine section is too small "
-			           "(got %hu, 60 expected)", hdr_size);
+				   "(got %hu, >=60 expected)", hdr_size);
 
 	cur = buf + offs;
 
@@ -670,9 +670,9 @@ partition_hdr:
 		goto hv_hdr;
 
 	hdr_size = *(uint16_t *) (buf + 18);
-	if (hdr_size < 56)
+	if (hdr_size < 40)
 		error_msg_and_fail("sthyi: partition section is too small "
-			           "(got %hu, 56 expected)", hdr_size);
+				   "(got %hu, >=40 expected)", hdr_size);
 
 	cur = buf + offs;
 
@@ -741,18 +741,18 @@ partition_hdr:
 	print_weight(", infpwbif", cur, 32, pwcap_valid);
 	print_weight(", infpabif", cur, 36, pacap_valid);
 
-	if (print_ebcdic(", infplgnm", cur, 40, 8, false, false)) {
-
-		print_weight(", infplgcp", cur, 48, false);
-		print_weight(", infplgif", cur, 52, false);
-	} else {
-		if (lpar_valid) {
-			printf(", infplgnm=");
-			print_quoted_hex((char *) (cur + 40), 8);
+	if (hdr_size >= 56) {
+		if (print_ebcdic(", infplgnm", cur, 40, 8, false, false)) {
+			print_weight(", infplgcp", cur, 48, false);
+			print_weight(", infplgif", cur, 52, false);
+		} else {
+			if (lpar_valid) {
+				printf(", infplgnm=");
+				print_quoted_hex((char *) (cur + 40), 8);
+			}
+			print_x32(", infplgcp", cur, 48, false);
+			print_x32(", infplgif", cur, 52, false);
 		}
-
-		print_x32(", infplgcp", cur, 48, false);
-		print_x32(", infplgif", cur, 52, false);
 	}
 
 	if (hdr_size >= 64) {

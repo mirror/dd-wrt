@@ -472,78 +472,742 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data arp_hardware_types_xdata[] = {
  XLAT(ARPHRD_NETROM),
+ #define XLAT_VAL_0 ((unsigned) (ARPHRD_NETROM))
+ #define XLAT_STR_0 STRINGIFY(ARPHRD_NETROM)
  XLAT(ARPHRD_ETHER),
+ #define XLAT_VAL_1 ((unsigned) (ARPHRD_ETHER))
+ #define XLAT_STR_1 STRINGIFY(ARPHRD_ETHER)
  XLAT(ARPHRD_EETHER),
+ #define XLAT_VAL_2 ((unsigned) (ARPHRD_EETHER))
+ #define XLAT_STR_2 STRINGIFY(ARPHRD_EETHER)
  XLAT(ARPHRD_AX25),
+ #define XLAT_VAL_3 ((unsigned) (ARPHRD_AX25))
+ #define XLAT_STR_3 STRINGIFY(ARPHRD_AX25)
  XLAT(ARPHRD_PRONET),
+ #define XLAT_VAL_4 ((unsigned) (ARPHRD_PRONET))
+ #define XLAT_STR_4 STRINGIFY(ARPHRD_PRONET)
  XLAT(ARPHRD_CHAOS),
+ #define XLAT_VAL_5 ((unsigned) (ARPHRD_CHAOS))
+ #define XLAT_STR_5 STRINGIFY(ARPHRD_CHAOS)
  XLAT(ARPHRD_IEEE802),
+ #define XLAT_VAL_6 ((unsigned) (ARPHRD_IEEE802))
+ #define XLAT_STR_6 STRINGIFY(ARPHRD_IEEE802)
  XLAT(ARPHRD_ARCNET),
+ #define XLAT_VAL_7 ((unsigned) (ARPHRD_ARCNET))
+ #define XLAT_STR_7 STRINGIFY(ARPHRD_ARCNET)
  XLAT(ARPHRD_APPLETLK),
+ #define XLAT_VAL_8 ((unsigned) (ARPHRD_APPLETLK))
+ #define XLAT_STR_8 STRINGIFY(ARPHRD_APPLETLK)
  XLAT(ARPHRD_DLCI),
+ #define XLAT_VAL_9 ((unsigned) (ARPHRD_DLCI))
+ #define XLAT_STR_9 STRINGIFY(ARPHRD_DLCI)
  XLAT(ARPHRD_ATM),
+ #define XLAT_VAL_10 ((unsigned) (ARPHRD_ATM))
+ #define XLAT_STR_10 STRINGIFY(ARPHRD_ATM)
  XLAT(ARPHRD_METRICOM),
+ #define XLAT_VAL_11 ((unsigned) (ARPHRD_METRICOM))
+ #define XLAT_STR_11 STRINGIFY(ARPHRD_METRICOM)
  XLAT(ARPHRD_IEEE1394),
+ #define XLAT_VAL_12 ((unsigned) (ARPHRD_IEEE1394))
+ #define XLAT_STR_12 STRINGIFY(ARPHRD_IEEE1394)
  XLAT(ARPHRD_EUI64),
+ #define XLAT_VAL_13 ((unsigned) (ARPHRD_EUI64))
+ #define XLAT_STR_13 STRINGIFY(ARPHRD_EUI64)
  XLAT(ARPHRD_INFINIBAND),
+ #define XLAT_VAL_14 ((unsigned) (ARPHRD_INFINIBAND))
+ #define XLAT_STR_14 STRINGIFY(ARPHRD_INFINIBAND)
  XLAT(ARPHRD_SLIP),
+ #define XLAT_VAL_15 ((unsigned) (ARPHRD_SLIP))
+ #define XLAT_STR_15 STRINGIFY(ARPHRD_SLIP)
  XLAT(ARPHRD_CSLIP),
+ #define XLAT_VAL_16 ((unsigned) (ARPHRD_CSLIP))
+ #define XLAT_STR_16 STRINGIFY(ARPHRD_CSLIP)
  XLAT(ARPHRD_SLIP6),
+ #define XLAT_VAL_17 ((unsigned) (ARPHRD_SLIP6))
+ #define XLAT_STR_17 STRINGIFY(ARPHRD_SLIP6)
  XLAT(ARPHRD_CSLIP6),
+ #define XLAT_VAL_18 ((unsigned) (ARPHRD_CSLIP6))
+ #define XLAT_STR_18 STRINGIFY(ARPHRD_CSLIP6)
  XLAT(ARPHRD_RSRVD),
+ #define XLAT_VAL_19 ((unsigned) (ARPHRD_RSRVD))
+ #define XLAT_STR_19 STRINGIFY(ARPHRD_RSRVD)
  XLAT(ARPHRD_ADAPT),
+ #define XLAT_VAL_20 ((unsigned) (ARPHRD_ADAPT))
+ #define XLAT_STR_20 STRINGIFY(ARPHRD_ADAPT)
  XLAT(ARPHRD_ROSE),
+ #define XLAT_VAL_21 ((unsigned) (ARPHRD_ROSE))
+ #define XLAT_STR_21 STRINGIFY(ARPHRD_ROSE)
  XLAT(ARPHRD_X25),
+ #define XLAT_VAL_22 ((unsigned) (ARPHRD_X25))
+ #define XLAT_STR_22 STRINGIFY(ARPHRD_X25)
  XLAT(ARPHRD_HWX25),
+ #define XLAT_VAL_23 ((unsigned) (ARPHRD_HWX25))
+ #define XLAT_STR_23 STRINGIFY(ARPHRD_HWX25)
  XLAT(ARPHRD_CAN),
+ #define XLAT_VAL_24 ((unsigned) (ARPHRD_CAN))
+ #define XLAT_STR_24 STRINGIFY(ARPHRD_CAN)
  XLAT(ARPHRD_PPP),
+ #define XLAT_VAL_25 ((unsigned) (ARPHRD_PPP))
+ #define XLAT_STR_25 STRINGIFY(ARPHRD_PPP)
  XLAT(ARPHRD_CISCO),
+ #define XLAT_VAL_26 ((unsigned) (ARPHRD_CISCO))
+ #define XLAT_STR_26 STRINGIFY(ARPHRD_CISCO)
  XLAT(ARPHRD_LAPB),
+ #define XLAT_VAL_27 ((unsigned) (ARPHRD_LAPB))
+ #define XLAT_STR_27 STRINGIFY(ARPHRD_LAPB)
  XLAT(ARPHRD_DDCMP),
+ #define XLAT_VAL_28 ((unsigned) (ARPHRD_DDCMP))
+ #define XLAT_STR_28 STRINGIFY(ARPHRD_DDCMP)
  XLAT(ARPHRD_RAWHDLC),
+ #define XLAT_VAL_29 ((unsigned) (ARPHRD_RAWHDLC))
+ #define XLAT_STR_29 STRINGIFY(ARPHRD_RAWHDLC)
  XLAT(ARPHRD_RAWIP),
+ #define XLAT_VAL_30 ((unsigned) (ARPHRD_RAWIP))
+ #define XLAT_STR_30 STRINGIFY(ARPHRD_RAWIP)
  XLAT(ARPHRD_TUNNEL),
+ #define XLAT_VAL_31 ((unsigned) (ARPHRD_TUNNEL))
+ #define XLAT_STR_31 STRINGIFY(ARPHRD_TUNNEL)
  XLAT(ARPHRD_TUNNEL6),
+ #define XLAT_VAL_32 ((unsigned) (ARPHRD_TUNNEL6))
+ #define XLAT_STR_32 STRINGIFY(ARPHRD_TUNNEL6)
  XLAT(ARPHRD_FRAD),
+ #define XLAT_VAL_33 ((unsigned) (ARPHRD_FRAD))
+ #define XLAT_STR_33 STRINGIFY(ARPHRD_FRAD)
  XLAT(ARPHRD_SKIP),
+ #define XLAT_VAL_34 ((unsigned) (ARPHRD_SKIP))
+ #define XLAT_STR_34 STRINGIFY(ARPHRD_SKIP)
  XLAT(ARPHRD_LOOPBACK),
+ #define XLAT_VAL_35 ((unsigned) (ARPHRD_LOOPBACK))
+ #define XLAT_STR_35 STRINGIFY(ARPHRD_LOOPBACK)
  XLAT(ARPHRD_LOCALTLK),
+ #define XLAT_VAL_36 ((unsigned) (ARPHRD_LOCALTLK))
+ #define XLAT_STR_36 STRINGIFY(ARPHRD_LOCALTLK)
  XLAT(ARPHRD_FDDI),
+ #define XLAT_VAL_37 ((unsigned) (ARPHRD_FDDI))
+ #define XLAT_STR_37 STRINGIFY(ARPHRD_FDDI)
  XLAT(ARPHRD_BIF),
+ #define XLAT_VAL_38 ((unsigned) (ARPHRD_BIF))
+ #define XLAT_STR_38 STRINGIFY(ARPHRD_BIF)
  XLAT(ARPHRD_SIT),
+ #define XLAT_VAL_39 ((unsigned) (ARPHRD_SIT))
+ #define XLAT_STR_39 STRINGIFY(ARPHRD_SIT)
  XLAT(ARPHRD_IPDDP),
+ #define XLAT_VAL_40 ((unsigned) (ARPHRD_IPDDP))
+ #define XLAT_STR_40 STRINGIFY(ARPHRD_IPDDP)
  XLAT(ARPHRD_IPGRE),
+ #define XLAT_VAL_41 ((unsigned) (ARPHRD_IPGRE))
+ #define XLAT_STR_41 STRINGIFY(ARPHRD_IPGRE)
  XLAT(ARPHRD_PIMREG),
+ #define XLAT_VAL_42 ((unsigned) (ARPHRD_PIMREG))
+ #define XLAT_STR_42 STRINGIFY(ARPHRD_PIMREG)
  XLAT(ARPHRD_HIPPI),
+ #define XLAT_VAL_43 ((unsigned) (ARPHRD_HIPPI))
+ #define XLAT_STR_43 STRINGIFY(ARPHRD_HIPPI)
  XLAT(ARPHRD_ASH),
+ #define XLAT_VAL_44 ((unsigned) (ARPHRD_ASH))
+ #define XLAT_STR_44 STRINGIFY(ARPHRD_ASH)
  XLAT(ARPHRD_ECONET),
+ #define XLAT_VAL_45 ((unsigned) (ARPHRD_ECONET))
+ #define XLAT_STR_45 STRINGIFY(ARPHRD_ECONET)
  XLAT(ARPHRD_IRDA),
+ #define XLAT_VAL_46 ((unsigned) (ARPHRD_IRDA))
+ #define XLAT_STR_46 STRINGIFY(ARPHRD_IRDA)
  XLAT(ARPHRD_FCPP),
+ #define XLAT_VAL_47 ((unsigned) (ARPHRD_FCPP))
+ #define XLAT_STR_47 STRINGIFY(ARPHRD_FCPP)
  XLAT(ARPHRD_FCAL),
+ #define XLAT_VAL_48 ((unsigned) (ARPHRD_FCAL))
+ #define XLAT_STR_48 STRINGIFY(ARPHRD_FCAL)
  XLAT(ARPHRD_FCPL),
+ #define XLAT_VAL_49 ((unsigned) (ARPHRD_FCPL))
+ #define XLAT_STR_49 STRINGIFY(ARPHRD_FCPL)
  XLAT(ARPHRD_FCFABRIC),
+ #define XLAT_VAL_50 ((unsigned) (ARPHRD_FCFABRIC))
+ #define XLAT_STR_50 STRINGIFY(ARPHRD_FCFABRIC)
  XLAT(ARPHRD_IEEE802_TR),
+ #define XLAT_VAL_51 ((unsigned) (ARPHRD_IEEE802_TR))
+ #define XLAT_STR_51 STRINGIFY(ARPHRD_IEEE802_TR)
  XLAT(ARPHRD_IEEE80211),
+ #define XLAT_VAL_52 ((unsigned) (ARPHRD_IEEE80211))
+ #define XLAT_STR_52 STRINGIFY(ARPHRD_IEEE80211)
  XLAT(ARPHRD_IEEE80211_PRISM),
+ #define XLAT_VAL_53 ((unsigned) (ARPHRD_IEEE80211_PRISM))
+ #define XLAT_STR_53 STRINGIFY(ARPHRD_IEEE80211_PRISM)
  XLAT(ARPHRD_IEEE80211_RADIOTAP),
+ #define XLAT_VAL_54 ((unsigned) (ARPHRD_IEEE80211_RADIOTAP))
+ #define XLAT_STR_54 STRINGIFY(ARPHRD_IEEE80211_RADIOTAP)
  XLAT(ARPHRD_IEEE802154),
+ #define XLAT_VAL_55 ((unsigned) (ARPHRD_IEEE802154))
+ #define XLAT_STR_55 STRINGIFY(ARPHRD_IEEE802154)
  XLAT(ARPHRD_IEEE802154_MONITOR),
+ #define XLAT_VAL_56 ((unsigned) (ARPHRD_IEEE802154_MONITOR))
+ #define XLAT_STR_56 STRINGIFY(ARPHRD_IEEE802154_MONITOR)
  XLAT(ARPHRD_PHONET),
+ #define XLAT_VAL_57 ((unsigned) (ARPHRD_PHONET))
+ #define XLAT_STR_57 STRINGIFY(ARPHRD_PHONET)
  XLAT(ARPHRD_PHONET_PIPE),
+ #define XLAT_VAL_58 ((unsigned) (ARPHRD_PHONET_PIPE))
+ #define XLAT_STR_58 STRINGIFY(ARPHRD_PHONET_PIPE)
  XLAT(ARPHRD_CAIF),
+ #define XLAT_VAL_59 ((unsigned) (ARPHRD_CAIF))
+ #define XLAT_STR_59 STRINGIFY(ARPHRD_CAIF)
  XLAT(ARPHRD_IP6GRE),
+ #define XLAT_VAL_60 ((unsigned) (ARPHRD_IP6GRE))
+ #define XLAT_STR_60 STRINGIFY(ARPHRD_IP6GRE)
  XLAT(ARPHRD_NETLINK),
+ #define XLAT_VAL_61 ((unsigned) (ARPHRD_NETLINK))
+ #define XLAT_STR_61 STRINGIFY(ARPHRD_NETLINK)
  XLAT(ARPHRD_6LOWPAN),
+ #define XLAT_VAL_62 ((unsigned) (ARPHRD_6LOWPAN))
+ #define XLAT_STR_62 STRINGIFY(ARPHRD_6LOWPAN)
  XLAT(ARPHRD_VSOCKMON),
+ #define XLAT_VAL_63 ((unsigned) (ARPHRD_VSOCKMON))
+ #define XLAT_STR_63 STRINGIFY(ARPHRD_VSOCKMON)
  XLAT(ARPHRD_NONE),
+ #define XLAT_VAL_64 ((unsigned) (ARPHRD_NONE))
+ #define XLAT_STR_64 STRINGIFY(ARPHRD_NONE)
  XLAT(ARPHRD_VOID),
+ #define XLAT_VAL_65 ((unsigned) (ARPHRD_VOID))
+ #define XLAT_STR_65 STRINGIFY(ARPHRD_VOID)
 };
 const struct xlat arp_hardware_types[1] = { {
  .data = arp_hardware_types_xdata,
  .size = ARRAY_SIZE(arp_hardware_types_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+#  ifdef XLAT_VAL_10
+  | XLAT_VAL_10
+#  endif
+#  ifdef XLAT_VAL_11
+  | XLAT_VAL_11
+#  endif
+#  ifdef XLAT_VAL_12
+  | XLAT_VAL_12
+#  endif
+#  ifdef XLAT_VAL_13
+  | XLAT_VAL_13
+#  endif
+#  ifdef XLAT_VAL_14
+  | XLAT_VAL_14
+#  endif
+#  ifdef XLAT_VAL_15
+  | XLAT_VAL_15
+#  endif
+#  ifdef XLAT_VAL_16
+  | XLAT_VAL_16
+#  endif
+#  ifdef XLAT_VAL_17
+  | XLAT_VAL_17
+#  endif
+#  ifdef XLAT_VAL_18
+  | XLAT_VAL_18
+#  endif
+#  ifdef XLAT_VAL_19
+  | XLAT_VAL_19
+#  endif
+#  ifdef XLAT_VAL_20
+  | XLAT_VAL_20
+#  endif
+#  ifdef XLAT_VAL_21
+  | XLAT_VAL_21
+#  endif
+#  ifdef XLAT_VAL_22
+  | XLAT_VAL_22
+#  endif
+#  ifdef XLAT_VAL_23
+  | XLAT_VAL_23
+#  endif
+#  ifdef XLAT_VAL_24
+  | XLAT_VAL_24
+#  endif
+#  ifdef XLAT_VAL_25
+  | XLAT_VAL_25
+#  endif
+#  ifdef XLAT_VAL_26
+  | XLAT_VAL_26
+#  endif
+#  ifdef XLAT_VAL_27
+  | XLAT_VAL_27
+#  endif
+#  ifdef XLAT_VAL_28
+  | XLAT_VAL_28
+#  endif
+#  ifdef XLAT_VAL_29
+  | XLAT_VAL_29
+#  endif
+#  ifdef XLAT_VAL_30
+  | XLAT_VAL_30
+#  endif
+#  ifdef XLAT_VAL_31
+  | XLAT_VAL_31
+#  endif
+#  ifdef XLAT_VAL_32
+  | XLAT_VAL_32
+#  endif
+#  ifdef XLAT_VAL_33
+  | XLAT_VAL_33
+#  endif
+#  ifdef XLAT_VAL_34
+  | XLAT_VAL_34
+#  endif
+#  ifdef XLAT_VAL_35
+  | XLAT_VAL_35
+#  endif
+#  ifdef XLAT_VAL_36
+  | XLAT_VAL_36
+#  endif
+#  ifdef XLAT_VAL_37
+  | XLAT_VAL_37
+#  endif
+#  ifdef XLAT_VAL_38
+  | XLAT_VAL_38
+#  endif
+#  ifdef XLAT_VAL_39
+  | XLAT_VAL_39
+#  endif
+#  ifdef XLAT_VAL_40
+  | XLAT_VAL_40
+#  endif
+#  ifdef XLAT_VAL_41
+  | XLAT_VAL_41
+#  endif
+#  ifdef XLAT_VAL_42
+  | XLAT_VAL_42
+#  endif
+#  ifdef XLAT_VAL_43
+  | XLAT_VAL_43
+#  endif
+#  ifdef XLAT_VAL_44
+  | XLAT_VAL_44
+#  endif
+#  ifdef XLAT_VAL_45
+  | XLAT_VAL_45
+#  endif
+#  ifdef XLAT_VAL_46
+  | XLAT_VAL_46
+#  endif
+#  ifdef XLAT_VAL_47
+  | XLAT_VAL_47
+#  endif
+#  ifdef XLAT_VAL_48
+  | XLAT_VAL_48
+#  endif
+#  ifdef XLAT_VAL_49
+  | XLAT_VAL_49
+#  endif
+#  ifdef XLAT_VAL_50
+  | XLAT_VAL_50
+#  endif
+#  ifdef XLAT_VAL_51
+  | XLAT_VAL_51
+#  endif
+#  ifdef XLAT_VAL_52
+  | XLAT_VAL_52
+#  endif
+#  ifdef XLAT_VAL_53
+  | XLAT_VAL_53
+#  endif
+#  ifdef XLAT_VAL_54
+  | XLAT_VAL_54
+#  endif
+#  ifdef XLAT_VAL_55
+  | XLAT_VAL_55
+#  endif
+#  ifdef XLAT_VAL_56
+  | XLAT_VAL_56
+#  endif
+#  ifdef XLAT_VAL_57
+  | XLAT_VAL_57
+#  endif
+#  ifdef XLAT_VAL_58
+  | XLAT_VAL_58
+#  endif
+#  ifdef XLAT_VAL_59
+  | XLAT_VAL_59
+#  endif
+#  ifdef XLAT_VAL_60
+  | XLAT_VAL_60
+#  endif
+#  ifdef XLAT_VAL_61
+  | XLAT_VAL_61
+#  endif
+#  ifdef XLAT_VAL_62
+  | XLAT_VAL_62
+#  endif
+#  ifdef XLAT_VAL_63
+  | XLAT_VAL_63
+#  endif
+#  ifdef XLAT_VAL_64
+  | XLAT_VAL_64
+#  endif
+#  ifdef XLAT_VAL_65
+  | XLAT_VAL_65
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+#  ifdef XLAT_STR_10
+  + sizeof(XLAT_STR_10)
+#  endif
+#  ifdef XLAT_STR_11
+  + sizeof(XLAT_STR_11)
+#  endif
+#  ifdef XLAT_STR_12
+  + sizeof(XLAT_STR_12)
+#  endif
+#  ifdef XLAT_STR_13
+  + sizeof(XLAT_STR_13)
+#  endif
+#  ifdef XLAT_STR_14
+  + sizeof(XLAT_STR_14)
+#  endif
+#  ifdef XLAT_STR_15
+  + sizeof(XLAT_STR_15)
+#  endif
+#  ifdef XLAT_STR_16
+  + sizeof(XLAT_STR_16)
+#  endif
+#  ifdef XLAT_STR_17
+  + sizeof(XLAT_STR_17)
+#  endif
+#  ifdef XLAT_STR_18
+  + sizeof(XLAT_STR_18)
+#  endif
+#  ifdef XLAT_STR_19
+  + sizeof(XLAT_STR_19)
+#  endif
+#  ifdef XLAT_STR_20
+  + sizeof(XLAT_STR_20)
+#  endif
+#  ifdef XLAT_STR_21
+  + sizeof(XLAT_STR_21)
+#  endif
+#  ifdef XLAT_STR_22
+  + sizeof(XLAT_STR_22)
+#  endif
+#  ifdef XLAT_STR_23
+  + sizeof(XLAT_STR_23)
+#  endif
+#  ifdef XLAT_STR_24
+  + sizeof(XLAT_STR_24)
+#  endif
+#  ifdef XLAT_STR_25
+  + sizeof(XLAT_STR_25)
+#  endif
+#  ifdef XLAT_STR_26
+  + sizeof(XLAT_STR_26)
+#  endif
+#  ifdef XLAT_STR_27
+  + sizeof(XLAT_STR_27)
+#  endif
+#  ifdef XLAT_STR_28
+  + sizeof(XLAT_STR_28)
+#  endif
+#  ifdef XLAT_STR_29
+  + sizeof(XLAT_STR_29)
+#  endif
+#  ifdef XLAT_STR_30
+  + sizeof(XLAT_STR_30)
+#  endif
+#  ifdef XLAT_STR_31
+  + sizeof(XLAT_STR_31)
+#  endif
+#  ifdef XLAT_STR_32
+  + sizeof(XLAT_STR_32)
+#  endif
+#  ifdef XLAT_STR_33
+  + sizeof(XLAT_STR_33)
+#  endif
+#  ifdef XLAT_STR_34
+  + sizeof(XLAT_STR_34)
+#  endif
+#  ifdef XLAT_STR_35
+  + sizeof(XLAT_STR_35)
+#  endif
+#  ifdef XLAT_STR_36
+  + sizeof(XLAT_STR_36)
+#  endif
+#  ifdef XLAT_STR_37
+  + sizeof(XLAT_STR_37)
+#  endif
+#  ifdef XLAT_STR_38
+  + sizeof(XLAT_STR_38)
+#  endif
+#  ifdef XLAT_STR_39
+  + sizeof(XLAT_STR_39)
+#  endif
+#  ifdef XLAT_STR_40
+  + sizeof(XLAT_STR_40)
+#  endif
+#  ifdef XLAT_STR_41
+  + sizeof(XLAT_STR_41)
+#  endif
+#  ifdef XLAT_STR_42
+  + sizeof(XLAT_STR_42)
+#  endif
+#  ifdef XLAT_STR_43
+  + sizeof(XLAT_STR_43)
+#  endif
+#  ifdef XLAT_STR_44
+  + sizeof(XLAT_STR_44)
+#  endif
+#  ifdef XLAT_STR_45
+  + sizeof(XLAT_STR_45)
+#  endif
+#  ifdef XLAT_STR_46
+  + sizeof(XLAT_STR_46)
+#  endif
+#  ifdef XLAT_STR_47
+  + sizeof(XLAT_STR_47)
+#  endif
+#  ifdef XLAT_STR_48
+  + sizeof(XLAT_STR_48)
+#  endif
+#  ifdef XLAT_STR_49
+  + sizeof(XLAT_STR_49)
+#  endif
+#  ifdef XLAT_STR_50
+  + sizeof(XLAT_STR_50)
+#  endif
+#  ifdef XLAT_STR_51
+  + sizeof(XLAT_STR_51)
+#  endif
+#  ifdef XLAT_STR_52
+  + sizeof(XLAT_STR_52)
+#  endif
+#  ifdef XLAT_STR_53
+  + sizeof(XLAT_STR_53)
+#  endif
+#  ifdef XLAT_STR_54
+  + sizeof(XLAT_STR_54)
+#  endif
+#  ifdef XLAT_STR_55
+  + sizeof(XLAT_STR_55)
+#  endif
+#  ifdef XLAT_STR_56
+  + sizeof(XLAT_STR_56)
+#  endif
+#  ifdef XLAT_STR_57
+  + sizeof(XLAT_STR_57)
+#  endif
+#  ifdef XLAT_STR_58
+  + sizeof(XLAT_STR_58)
+#  endif
+#  ifdef XLAT_STR_59
+  + sizeof(XLAT_STR_59)
+#  endif
+#  ifdef XLAT_STR_60
+  + sizeof(XLAT_STR_60)
+#  endif
+#  ifdef XLAT_STR_61
+  + sizeof(XLAT_STR_61)
+#  endif
+#  ifdef XLAT_STR_62
+  + sizeof(XLAT_STR_62)
+#  endif
+#  ifdef XLAT_STR_63
+  + sizeof(XLAT_STR_63)
+#  endif
+#  ifdef XLAT_STR_64
+  + sizeof(XLAT_STR_64)
+#  endif
+#  ifdef XLAT_STR_65
+  + sizeof(XLAT_STR_65)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
+#  undef XLAT_STR_10
+#  undef XLAT_VAL_10
+#  undef XLAT_STR_11
+#  undef XLAT_VAL_11
+#  undef XLAT_STR_12
+#  undef XLAT_VAL_12
+#  undef XLAT_STR_13
+#  undef XLAT_VAL_13
+#  undef XLAT_STR_14
+#  undef XLAT_VAL_14
+#  undef XLAT_STR_15
+#  undef XLAT_VAL_15
+#  undef XLAT_STR_16
+#  undef XLAT_VAL_16
+#  undef XLAT_STR_17
+#  undef XLAT_VAL_17
+#  undef XLAT_STR_18
+#  undef XLAT_VAL_18
+#  undef XLAT_STR_19
+#  undef XLAT_VAL_19
+#  undef XLAT_STR_20
+#  undef XLAT_VAL_20
+#  undef XLAT_STR_21
+#  undef XLAT_VAL_21
+#  undef XLAT_STR_22
+#  undef XLAT_VAL_22
+#  undef XLAT_STR_23
+#  undef XLAT_VAL_23
+#  undef XLAT_STR_24
+#  undef XLAT_VAL_24
+#  undef XLAT_STR_25
+#  undef XLAT_VAL_25
+#  undef XLAT_STR_26
+#  undef XLAT_VAL_26
+#  undef XLAT_STR_27
+#  undef XLAT_VAL_27
+#  undef XLAT_STR_28
+#  undef XLAT_VAL_28
+#  undef XLAT_STR_29
+#  undef XLAT_VAL_29
+#  undef XLAT_STR_30
+#  undef XLAT_VAL_30
+#  undef XLAT_STR_31
+#  undef XLAT_VAL_31
+#  undef XLAT_STR_32
+#  undef XLAT_VAL_32
+#  undef XLAT_STR_33
+#  undef XLAT_VAL_33
+#  undef XLAT_STR_34
+#  undef XLAT_VAL_34
+#  undef XLAT_STR_35
+#  undef XLAT_VAL_35
+#  undef XLAT_STR_36
+#  undef XLAT_VAL_36
+#  undef XLAT_STR_37
+#  undef XLAT_VAL_37
+#  undef XLAT_STR_38
+#  undef XLAT_VAL_38
+#  undef XLAT_STR_39
+#  undef XLAT_VAL_39
+#  undef XLAT_STR_40
+#  undef XLAT_VAL_40
+#  undef XLAT_STR_41
+#  undef XLAT_VAL_41
+#  undef XLAT_STR_42
+#  undef XLAT_VAL_42
+#  undef XLAT_STR_43
+#  undef XLAT_VAL_43
+#  undef XLAT_STR_44
+#  undef XLAT_VAL_44
+#  undef XLAT_STR_45
+#  undef XLAT_VAL_45
+#  undef XLAT_STR_46
+#  undef XLAT_VAL_46
+#  undef XLAT_STR_47
+#  undef XLAT_VAL_47
+#  undef XLAT_STR_48
+#  undef XLAT_VAL_48
+#  undef XLAT_STR_49
+#  undef XLAT_VAL_49
+#  undef XLAT_STR_50
+#  undef XLAT_VAL_50
+#  undef XLAT_STR_51
+#  undef XLAT_VAL_51
+#  undef XLAT_STR_52
+#  undef XLAT_VAL_52
+#  undef XLAT_STR_53
+#  undef XLAT_VAL_53
+#  undef XLAT_STR_54
+#  undef XLAT_VAL_54
+#  undef XLAT_STR_55
+#  undef XLAT_VAL_55
+#  undef XLAT_STR_56
+#  undef XLAT_VAL_56
+#  undef XLAT_STR_57
+#  undef XLAT_VAL_57
+#  undef XLAT_STR_58
+#  undef XLAT_VAL_58
+#  undef XLAT_STR_59
+#  undef XLAT_VAL_59
+#  undef XLAT_STR_60
+#  undef XLAT_VAL_60
+#  undef XLAT_STR_61
+#  undef XLAT_VAL_61
+#  undef XLAT_STR_62
+#  undef XLAT_VAL_62
+#  undef XLAT_STR_63
+#  undef XLAT_VAL_63
+#  undef XLAT_STR_64
+#  undef XLAT_VAL_64
+#  undef XLAT_STR_65
+#  undef XLAT_VAL_65
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

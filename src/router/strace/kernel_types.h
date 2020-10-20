@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -27,13 +27,6 @@ typedef long kernel_long_t;
 typedef unsigned long kernel_ulong_t;
 
 # endif
-
-typedef struct {
-	kernel_ulong_t	d_ino;
-	kernel_ulong_t	d_off;
-	unsigned short	d_reclen;
-	char		d_name[1];
-} kernel_dirent;
 
 # if SIZEOF_KERNEL_LONG_T > SIZEOF_LONG
 #  define PRI_kl "ll"

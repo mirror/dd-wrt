@@ -26,9 +26,7 @@
 #include <dirent.h>
 #include <locale.h>
 #include <sys/utsname.h>
-#ifdef HAVE_PRCTL
-# include <sys/prctl.h>
-#endif
+#include <sys/prctl.h>
 
 #include "kill_save_errno.h"
 #include "filter_seccomp.h"
@@ -67,17 +65,28 @@ bool stack_trace_enabled;
 const unsigned int syscall_trap_sig = SIGTRAP | 0x80;
 
 cflag_t cflag = CFLAG_NONE;
-unsigned int followfork;
+bool followfork;
+bool output_separately;
 unsigned int ptrace_setoptions = PTRACE_O_TRACESYSGOOD | PTRACE_O_TRACEEXEC
 				 | PTRACE_O_TRACEEXIT;
+static struct xlat_data xflag_str[] = {
+	{ HEXSTR_NON_ASCII,	"non-ascii" },
+	{ HEXSTR_ALL,		"all" },
+};
 unsigned int xflag;
 bool debug_flag;
 bool Tflag;
+int Tflag_scale = 1000;
+int Tflag_width = 6;
 bool iflag;
+bool nflag;
 bool count_wallclock;
-unsigned int qflag;
-static unsigned int tflag;
+static int tflag_scale = 1000000000;
+static unsigned tflag_width = 0;
+static const char *tflag_format = NULL;
 static bool rflag;
+static int rflag_scale = 1000;
+static int rflag_width = 6;
 static bool print_pid_pfx;
 
 /* -I n */
@@ -102,6 +111,12 @@ enum {
 	DAEMONIZE_OPTS_GUARD__,
 	MAX_DAEMONIZE_OPTS    = DAEMONIZE_OPTS_GUARD__ - 1
 };
+static struct xlat_data daemonize_str[] = {
+	{ DAEMONIZE_GRANDCHILD,		"grandchild" },
+	{ DAEMONIZE_NEW_PGROUP,		"pgroup" },
+	{ DAEMONIZE_NEW_PGROUP,		"pgrp" },
+	{ DAEMONIZE_NEW_SESSION,	"session" },
+};
 /*
  * daemonized_tracer supports -D option.
  * With this option, strace forks twice.
@@ -119,8 +134,7 @@ static unsigned int daemonized_tracer;
 static int post_attach_sigstop = TCB_IGNORE_ONE_SIGSTOP;
 #define use_seize (post_attach_sigstop == 0)
 
-/* Show path associated with fd arguments */
-unsigned int show_fd_path;
+unsigned int pidns_translation;
 
 static bool detach_on_execve;
 
@@ -248,17 +262,17 @@ usage(void)
 
 	printf("\
 Usage: strace [-ACdffhi" K_OPT "qqrtttTvVwxxyyzZ] [-I N] [-b execve] [-e EXPR]...\n\
-              [-a COLUMN] [-o FILE] [-s STRSIZE] [-X FORMAT] [-P PATH]...\n\
-              [-p PID]... [--seccomp-bpf]\n\
+              [-a COLUMN] [-o FILE] [-s STRSIZE] [-X FORMAT] [-O OVERHEAD]\n\
+              [-S SORTBY] [-P PATH]... [-p PID]... [-U COLUMNS] [--seccomp-bpf]\n\
               { -p PID | [-DDD] [-E VAR=VAL]... [-u USERNAME] PROG [ARGS] }\n\
    or: strace -c[dfwzZ] [-I N] [-b execve] [-e EXPR]... [-O OVERHEAD]\n\
-              [-S SORTBY] [-P PATH]... [-p PID]... [--seccomp-bpf]\n\
+              [-S SORTBY] [-P PATH]... [-p PID]... [-U COLUMNS] [--seccomp-bpf]\n\
               { -p PID | [-DDD] [-E VAR=VAL]... [-u USERNAME] PROG [ARGS] }\n\
 \n\
 General:\n\
   -e EXPR        a qualifying expression: OPTION=[!]all or OPTION=[!]VAL1[,VAL2]...\n\
      options:    trace, abbrev, verbose, raw, signal, read, write, fault,\n\
-                 inject, status, kvm\n\
+                 inject, status, quiet, kvm, decode-fds\n\
 \n\
 Startup:\n\
   -E VAR=VAL, --env=VAR=VAL\n\
@@ -273,23 +287,28 @@ Startup:\n\
 Tracing:\n\
   -b execve, --detach-on=execve\n\
                  detach on execve syscall\n\
-  -D             run tracer process as a grandchild, not as a parent\n\
-  -DD            run tracer process in a separate process group\n\
-  -DDD           run tracer process in a separate session\n\
-  -f             follow forks\n\
-  -ff            follow forks with output into separate files\n\
-  -I INTERRUPTIBLE\n\
-     1:          no signals are blocked\n\
-     2:          fatal signals are blocked while decoding syscall (default)\n\
-     3:          fatal signals are always blocked (default if '-o FILE PROG')\n\
-     4:          fatal signals and SIGTSTP (^Z) are always blocked\n\
-                 (useful to make 'strace -o FILE PROG' not stop on ^Z)\n\
+  -D, --daemonize[=grandchild]\n\
+                 run tracer process as a grandchild, not as a parent\n\
+  -DD, --daemonize=pgroup\n\
+                 run tracer process in a separate process group\n\
+  -DDD, --daemonize=session\n\
+                 run tracer process in a separate session\n\
+  -f, --follow-forks\n\
+                 follow forks\n\
+  -ff, --follow-forks --output-separately\n\
+                 follow forks with output into separate files\n\
+  -I INTERRUPTIBLE, --interruptible=INTERRUPTIBLE\n\
+     1, anywhere:   no signals are blocked\n\
+     2, waiting:    fatal signals are blocked while decoding syscall (default)\n\
+     3, never:      fatal signals are always blocked (default if '-o FILE PROG')\n\
+     4, never_tstp: fatal signals and SIGTSTP (^Z) are always blocked\n\
+                    (useful to make 'strace -o FILE PROG' not stop on ^Z)\n\
 \n\
 Filtering:\n\
   -e trace=[!]{[?]SYSCALL[@64|@32|@x32]|[?]/REGEX|GROUP|all|none},\n\
   --trace=[!]{[?]SYSCALL[@64|@32|@x32]|[?]/REGEX|GROUP|all|none}\n\
                  trace only specified syscalls.\n\
-     groups:     %%creds, %%desc, %%file, %%fstat, %%fstatfs %%ipc, %%lstat,\n\
+     groups:     %%clock, %%creds, %%desc, %%file, %%fstat, %%fstatfs %%ipc, %%lstat,\n\
                  %%memory, %%net, %%process, %%pure, %%signal, %%stat, %%%%stat,\n\
                  %%statfs, %%%%statfs\n\
   -e signal=SET, --signal=SET\n\
@@ -300,8 +319,10 @@ Filtering:\n\
      statuses:   successful, failed, unfinished, unavailable, detached\n\
   -P PATH, --trace-path=PATH\n\
                  trace accesses to PATH\n\
-  -z             print only syscalls that returned without an error code\n\
-  -Z             print only syscalls that returned with an error code\n\
+  -z, --successful-only\n\
+                 print only syscalls that returned without an error code\n\
+  -Z, --failed-only\n\
+                 print only syscalls that returned with an error code\n\
 \n\
 Output format:\n\
   -a COLUMN, --columns=COLUMN\n\
@@ -316,8 +337,17 @@ Output format:\n\
                  dump the data read from the file descriptors in SET\n\
   -e write=SET, --write=SET\n\
                  dump the data written to the file descriptors in SET\n\
+  -e quiet=SET, --quiet=SET\n\
+                 suppress various informational messages\n\
+     messages:   attach, exit, path-resolution, personality, thread-execve\n\
   -e kvm=vcpu, --kvm=vcpu\n\
                  print exit reason of kvm vcpu\n\
+  -e decode-fds=SET, --decode-fds=SET\n\
+                 what kinds of file descritor information details to decode\n\
+     details:    dev (device major/minor for block/char device files)\n\
+                 path (file path),\n\
+                 pidfd (associated PID for pidfds),\n\
+                 socket (protocol-specific information for socket descriptors)\n\
   -i, --instruction-pointer\n\
                  print instruction pointer at time of syscall\n\
 "
@@ -328,39 +358,71 @@ Output format:\n\
 "
 #endif
 "\
+  -n, --syscall-number\n\
+                 print syscall number\n\
   -o FILE, --output=FILE\n\
                  send trace output to FILE instead of stderr\n\
   -A, --output-append-mode\n\
                  open the file provided in the -o option in append mode\n\
-  -q             suppress messages about attaching, detaching, etc.\n\
-  -qq            suppress messages about process exit status as well.\n\
-  -r             print relative timestamp\n\
+  --output-separately\n\
+                 output into separate files (by appending pid to file names)\n\
+  -q, --quiet=attach,personality\n\
+                 suppress messages about attaching, detaching, etc.\n\
+  -qq, --quiet=attach,personality,exit\n\
+                 suppress messages about process exit status as well.\n\
+  -qqq, --quiet=all\n\
+                 suppress all suppressible messages.\n\
+  -r, --relative-timestamps[=PRECISION]\n\
+                 print relative timestamp\n\
+     precision:  one of s, ms, us, ns; default is microseconds\n\
   -s STRSIZE, --string-limit=STRSIZE\n\
                  limit length of print strings to STRSIZE chars (default %d)\n\
-  -t             print absolute timestamp\n\
-  -tt            print absolute timestamp with usecs\n\
-  -ttt           print absolute UNIX time with usecs\n\
-  -T             print time spent in each syscall\n\
+  --absolute-timestamps=[[format:]FORMAT[,[precision:]PRECISION]]\n\
+                 set the format of absolute timestamps\n\
+     format:     none, time, or unix; default is time\n\
+     precision:  one of s, ms, us, ns; default is seconds\n\
+  -t, --absolute-timestamps[=time]\n\
+                 print absolute timestamp\n\
+  -tt, --absolute-timestamps=[time,]us\n\
+                 print absolute timestamp with usecs\n\
+  -ttt, --absolute-timestamps=unix,us\n\
+                 print absolute UNIX time with usecs\n\
+  -T, --syscall-times[=PRECISION]\n\
+                 print time spent in each syscall\n\
+     precision:  one of s, ms, us, ns; default is microseconds\n\
   -v, --no-abbrev\n\
                  verbose mode: print entities unabbreviated\n\
-  -x             print non-ascii strings in hex\n\
-  -xx            print all strings in hex\n\
-  -X FORMAT      set the FORMAT for printing of named constants and flags\n\
+  -x, --strings-in-hex=non-ascii\n\
+                 print non-ascii strings in hex\n\
+  -xx, --strings-in-hex[=all]\n\
+                 print all strings in hex\n\
+  -X FORMAT, --const-print-style=FORMAT\n\
+                 set the FORMAT for printing of named constants and flags\n\
      formats:    raw, abbrev, verbose\n\
-  -y             print paths associated with file descriptor arguments\n\
-  -yy            print protocol specific information associated with socket\n\
-                 file descriptors\n\
+  -y, --decode-fds[=path]\n\
+                 print paths associated with file descriptor arguments\n\
+  -yy, --decode-fds=all\n\
+                 print all available information associated with file\n\
+                 descriptors in addition to paths\n\
 \n\
 Statistics:\n\
   -c, --summary-only\n\
                  count time, calls, and errors for each syscall and report\n\
                  summary\n\
   -C, --summary  like -c, but also print the regular output\n\
-  -O OVERHEAD    set overhead for tracing syscalls to OVERHEAD usecs\n\
+  -O OVERHEAD[UNIT], --summary-syscall-overhead=OVERHEAD[UNIT]\n\
+                 set overhead for tracing syscalls to OVERHEAD UNITs\n\
+     units:      one of s, ms, us, ns; default is microseconds\n\
   -S SORTBY, --summary-sort-by=SORTBY\n\
-                 sort syscall counts by: time, calls, errors, name, nothing\n\
-                 (default %s)\n\
-  -w             summarise syscall latency (default is system time)\n\
+                 sort syscall counts by: time, min-time, max-time, avg-time,\n\
+                 calls, errors, name, nothing (default %s)\n\
+  -U COLUMNS, --summary-columns=COLUMNS\n\
+                 show specific columns in the summary report: comma-separated\n\
+                 list of time-percent, total-time, min-time, max-time, \n\
+                 avg-time, calls, errors, name\n\
+                 (default time-percent,total-time,avg-time,calls,errors,name)\n\
+  -w, --summary-wall-clock\n\
+                 summarise syscall latency (default is system time)\n\
 \n\
 Tampering:\n\
   -e inject=SET[:error=ERRNO|:retval=VALUE][:signal=SIG][:syscall=SYSCALL]\n\
@@ -368,10 +430,11 @@ Tampering:\n\
   --inject=SET[:error=ERRNO|:retval=VALUE][:signal=SIG][:syscall=SYSCALL]\n\
            [:delay_enter=DELAY][:delay_exit=DELAY][:when=WHEN]\n\
                  perform syscall tampering for the syscalls in SET\n\
-     delay:      milliseconds or NUMBER{s|ms|us|ns}\n\
-     when:       FIRST, FIRST+, or FIRST+STEP\n\
+     delay:      microseconds or NUMBER{s|ms|us|ns}\n\
+     when:       FIRST[..LAST][+[STEP]]\n\
   -e fault=SET[:error=ERRNO][:when=WHEN], --fault=SET[:error=ERRNO][:when=WHEN]\n\
                  synonym for -e inject with default ERRNO set to ENOSYS.\n\
+\n\
 Miscellaneous:\n\
   -d, --debug    enable debug output to stderr\n\
   -h, --help     print help message\n\
@@ -399,9 +462,14 @@ die(void)
 }
 
 static void
-error_opt_arg(int opt, const char *arg)
+error_opt_arg(int opt, const struct option *lopt, const char *arg)
 {
-	error_msg_and_help("invalid -%c argument: '%s'", opt, arg);
+	if (lopt && lopt->name) {
+		error_msg_and_help("invalid --%s argument: '%s'",
+				   lopt->name, arg);
+	} else {
+		error_msg_and_help("invalid -%c argument: '%s'", opt, arg);
+	}
 }
 
 static const char *ptrace_attach_cmd;
@@ -578,7 +646,7 @@ outf_perror(const struct tcb * const tcp)
 		return;
 
 	/* This is ugly, but we don't store separate file names */
-	if (followfork >= 2)
+	if (output_separately)
 		perror_msg("%s.%u", outfname, tcp->pid);
 	else
 		perror_msg("%s", outfname);
@@ -682,13 +750,13 @@ printleader(struct tcb *tcp)
 	/* If -ff, "previous tcb we printed" is always the same as current,
 	 * because we have per-tcb output files.
 	 */
-	if (followfork >= 2)
+	if (output_separately)
 		printing_tcp = tcp;
 
 	if (printing_tcp) {
 		set_current_tcp(printing_tcp);
 		if (!tcp->staged_output_data && printing_tcp->curcol != 0 &&
-		    (followfork < 2 || printing_tcp == tcp)) {
+		    (!output_separately || printing_tcp == tcp)) {
 			/*
 			 * case 1: we have a shared log (i.e. not -ff), and last line
 			 * wasn't finished (same or different tcb, doesn't matter).
@@ -709,28 +777,23 @@ printleader(struct tcb *tcp)
 	else if (nprocs > 1 && !outfname)
 		tprintf("[pid %5u] ", tcp->pid);
 
-	if (tflag) {
+	if (tflag_format) {
 		struct timespec ts;
 		clock_gettime(CLOCK_REALTIME, &ts);
 
-		if (tflag > 2) {
-			tprintf("%lld.%06ld ",
-				(long long) ts.tv_sec, (long) ts.tv_nsec / 1000);
-		} else {
-			time_t local = ts.tv_sec;
-			char str[MAX(sizeof("HH:MM:SS"), sizeof(ts.tv_sec) * 3)];
-			struct tm *tm = localtime(&local);
+		time_t local = ts.tv_sec;
+		char str[MAX(sizeof("HH:MM:SS"), sizeof(local) * 3)];
+		struct tm *tm = localtime(&local);
 
-			if (tm)
-				strftime(str, sizeof(str), "%T", tm);
-			else
-				xsprintf(str, "%lld", (long long) local);
-			if (tflag > 1)
-				tprintf("%s.%06ld ",
-					str, (long) ts.tv_nsec / 1000);
-			else
-				tprintf("%s ", str);
-		}
+		if (tm)
+			strftime(str, sizeof(str), tflag_format, tm);
+		else
+			xsprintf(str, "%lld", (long long) local);
+		if (tflag_width)
+			tprintf("%s.%0*ld ", str, tflag_width,
+				(long) ts.tv_nsec / tflag_scale);
+		else
+			tprintf("%s ", str);
 	}
 
 	if (rflag) {
@@ -745,11 +808,16 @@ printleader(struct tcb *tcp)
 		ts_sub(&dts, &ts, &ots);
 		ots = ts;
 
-		tprintf("%s%6ld.%06ld%s ",
-			tflag ? "(+" : "",
-			(long) dts.tv_sec, (long) dts.tv_nsec / 1000,
-			tflag ? ")" : "");
+		tprintf("%s%6ld", tflag_format ? "(+" : "", (long) dts.tv_sec);
+		if (rflag_width) {
+			tprintf(".%0*ld",
+				rflag_width, (long) dts.tv_nsec / rflag_scale);
+		}
+		tprints(tflag_format ? ") " : " ");
 	}
+
+	if (nflag)
+		print_syscall_number(tcp);
 
 	if (iflag)
 		print_instruction_pointer(tcp);
@@ -771,7 +839,7 @@ after_successful_attach(struct tcb *tcp, const unsigned int flags)
 {
 	tcp->flags |= TCB_ATTACHED | TCB_STARTUP | flags;
 	tcp->outf = shared_log; /* if not -ff mode, the same file is for all */
-	if (followfork >= 2) {
+	if (output_separately) {
 		char name[PATH_MAX];
 		xsprintf(name, "%s.%u", outfname, tcp->pid);
 		tcp->outf = strace_fopen(name);
@@ -905,7 +973,7 @@ droptcb(struct tcb *tcp)
 			strace_close_memstream(tcp, publish);
 		}
 
-		if (followfork >= 2) {
+		if (output_separately) {
 			if (tcp->curcol != 0 && publish)
 				fprintf(tcp->outf, " <detached ...>\n");
 			fclose(tcp->outf);
@@ -1080,7 +1148,8 @@ detach(struct tcb *tcp)
 	}
 
  drop:
-	if (!qflag && (tcp->flags & TCB_ATTACHED))
+	if (!is_number_in_set(QUIET_ATTACH, quiet_set)
+	    && (tcp->flags & TCB_ATTACHED))
 		error_msg("Process %u detached", tcp->pid);
 
 	droptcb(tcp);
@@ -1133,7 +1202,7 @@ attach_tcb(struct tcb *const tcp)
 	unsigned int ntid = 0, nerr = 0;
 
 	if (followfork && tcp->pid != strace_child &&
-	    xsprintf(procdir, task_path, tcp->pid) > 0 &&
+	    xsprintf(procdir, task_path, get_proc_pid(tcp)) > 0 &&
 	    (dir = opendir(procdir)) != NULL) {
 		struct_dirent *de;
 
@@ -1161,7 +1230,7 @@ attach_tcb(struct tcb *const tcp)
 		closedir(dir);
 	}
 
-	if (!qflag) {
+	if (!is_number_in_set(QUIET_ATTACH, quiet_set)) {
 		if (ntid > nerr)
 			error_msg("Process %u attached"
 				  " with %u threads",
@@ -1261,6 +1330,7 @@ struct exec_params {
 	uid_t run_euid;
 	gid_t run_egid;
 	char **argv;
+	char **env;
 	char *pathname;
 	struct sigaction child_sa;
 };
@@ -1323,7 +1393,7 @@ exec_or_die(void)
 		  seccomp_filtering ? "enabled" : "disabled");
 	if (seccomp_filtering)
 		init_seccomp_filter();
-	execv(params->pathname, params->argv);
+	execve(params->pathname, params->argv, params->env);
 	perror_msg_and_die("exec");
 }
 
@@ -1392,7 +1462,7 @@ redirect_standard_fds(void)
 }
 
 static void
-startup_child(char **argv)
+startup_child(char **argv, char **env)
 {
 	strace_stat_t statbuf;
 	const char *filename;
@@ -1465,13 +1535,14 @@ startup_child(char **argv)
 	params_for_tracee.run_euid = (statbuf.st_mode & S_ISUID) ? statbuf.st_uid : run_uid;
 	params_for_tracee.run_egid = (statbuf.st_mode & S_ISGID) ? statbuf.st_gid : run_gid;
 	params_for_tracee.argv = argv;
+	params_for_tracee.env = env;
 	/*
 	 * On NOMMU, can be safely freed only after execve in tracee.
 	 * It's hard to know when that happens, so we just leak it.
 	 */
 	params_for_tracee.pathname = NOMMU_SYSTEM ? xstrdup(pathname) : pathname;
 
-#if defined HAVE_PRCTL && defined PR_SET_PTRACER && defined PR_SET_PTRACER_ANY
+#if defined PR_SET_PTRACER && defined PR_SET_PTRACER_ANY
 	if (daemonized_tracer)
 		prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY);
 #endif
@@ -1663,6 +1734,211 @@ set_sighandler(int signo, void (*sighandler)(int), struct sigaction *oldact)
 	sigaction(signo, &sa, oldact);
 }
 
+static int
+parse_interruptible_arg(const char *arg)
+{
+	static const struct xlat_data intr_str[] = {
+		{ INTR_ANYWHERE,	"anywhere" },
+		{ INTR_ANYWHERE,	"always" },
+		{ INTR_WHILE_WAIT,	"waiting" },
+		{ INTR_NEVER,		"never" },
+		{ INTR_BLOCK_TSTP_TOO,	"never_tstp" },
+	};
+
+	const struct xlat_data *intr_arg = find_xlat_val(intr_str, arg);
+
+	return intr_arg ? (int) intr_arg->val
+			: (int) string_to_uint_upto(arg, NUM_INTR_OPTS - 1);
+}
+
+static int
+parse_ts_arg(const char *in_arg)
+{
+	static const char format_pfx[] = "format:";
+	static const char scale_pfx[] = "precision:";
+
+	enum {
+		TOKEN_FORMAT = 1 << 0,
+		TOKEN_SCALE  = 1 << 1,
+	} token_type;
+	enum {
+		FK_UNSET,
+		FK_NONE,
+		FK_TIME,
+		FK_UNIX,
+	} format_kind = FK_UNSET;
+	int precision_width;
+	int precision_scale = 0;
+	char *arg = xstrdup(in_arg);
+	char *saveptr = NULL;
+
+	for (const char *token = strtok_r(arg, ",", &saveptr);
+	     token; token = strtok_r(NULL, ",", &saveptr)) {
+		token_type = TOKEN_FORMAT | TOKEN_SCALE;
+
+		if (!strncasecmp(token, format_pfx, sizeof(format_pfx) - 1)) {
+			token += sizeof(format_pfx) - 1;
+			token_type = TOKEN_FORMAT;
+		} else if (!strncasecmp(token, scale_pfx,
+					sizeof(scale_pfx) - 1)) {
+			token += sizeof(scale_pfx) - 1;
+			token_type = TOKEN_SCALE;
+
+		}
+
+		if (token_type & TOKEN_FORMAT) {
+			if (!strcasecmp(token, "none")) {
+				format_kind = FK_NONE;
+				continue;
+			} else if (!strcasecmp(token, "time")) {
+				format_kind = FK_TIME;
+				continue;
+			} else if (!strcasecmp(token, "unix")) {
+				format_kind = FK_UNIX;
+				continue;
+			}
+		}
+
+		if (token_type & TOKEN_SCALE) {
+			precision_scale =
+				str2timescale_optarg(token, &precision_width);
+
+			if (precision_scale > 0)
+				continue;
+		}
+
+		free(arg);
+		return -1;
+	}
+
+	switch (format_kind) {
+	case FK_UNSET:
+		if (!tflag_format)
+			tflag_format = "%T";
+		break;
+	case FK_NONE:
+		tflag_format = NULL;
+		break;
+	case FK_TIME:
+		tflag_format = "%T";
+		break;
+	case FK_UNIX:
+		tflag_format = "%s";
+		break;
+	}
+
+	if (precision_scale > 0) {
+		tflag_scale = precision_scale;
+		tflag_width = precision_width;
+	}
+
+	free(arg);
+	return 0;
+}
+
+static void
+remove_from_env(char **env, size_t *env_count, const char *var)
+{
+	const size_t len = strlen(var);
+	size_t w = 0;
+
+	debug_func_msg("Removing variable \"%s\" from the command environment",
+		       var);
+
+	for (size_t r = 0; r < *env_count; ++r) {
+		if (!strncmp(env[r], var, len) &&
+		    (env[r][len] == '=' || env[r][len] == '\0')) {
+			debug_func_msg("Skipping entry %zu (\"%s\")",
+				       r, env[r]);
+			continue;
+		}
+		if (w < r) {
+			debug_func_msg("Copying entry %zu to %zu", r, w);
+			env[w] = env[r];
+		}
+		++w;
+	}
+
+	if (w < *env_count) {
+		debug_func_msg("Decreasing env count from %zu to %zu",
+			       *env_count, w);
+		*env_count = w;
+	}
+}
+
+static void
+add_to_env(char **env, size_t *env_count, char *var, const size_t len)
+{
+	size_t r;
+
+	for (r = 0; r < *env_count; ++r) {
+		if (!strncmp(env[r], var, len) &&
+		    (env[r][len] == '=' || env[r][len] == '\0'))
+			break;
+	}
+
+	if (r < *env_count) {
+		debug_func_msg("Replacing entry %zu (\"%s\")"
+			       ", key=\"%.*s\", var=\"%s\"",
+			       r, env[r], (int) len, var, var);
+	} else {
+		debug_func_msg("Adding entry %zu"
+			       ", key=\"%.*s\", var=\"%s\"",
+			       r, (int) len, var, var);
+		*env_count += 1;
+	}
+
+	env[r] = var;
+}
+
+static void
+update_env(char **env, size_t *env_count, char *var)
+{
+	char *val = strchr(var, '=');
+
+	if (val)
+		add_to_env(env, env_count, var, val - var);
+	else
+		remove_from_env(env, env_count, var);
+}
+
+static char **
+make_env(char **orig_env, char *const *env_changes, size_t env_change_count)
+{
+	if (!env_change_count)
+		return orig_env;
+
+	char **new_env;
+	size_t new_env_count = 0;
+	size_t new_env_size;
+
+	/* Determining the environment variable count.  */
+	if (orig_env) {
+		for (; orig_env[new_env_count]; ++new_env_count)
+			;
+	}
+	new_env_size = new_env_count + env_change_count;
+
+	if (new_env_size < new_env_count || new_env_size < env_change_count ||
+	    new_env_size + 1 < new_env_size)
+		error_msg_and_die("Cannot construct new environment: the sum "
+				  "of old environment variable count (%zu) and "
+				  "environment changes count (%zu) is too big",
+				  new_env_count, env_change_count);
+
+	new_env_size++;
+	new_env = xallocarray(new_env_size, sizeof(*new_env));
+	if (new_env_count)
+		memcpy(new_env, orig_env, new_env_count * sizeof(*orig_env));
+
+	for (size_t i = 0; i < env_change_count; ++i)
+		update_env(new_env, &new_env_count, env_changes[i]);
+
+	new_env[new_env_count] = NULL;
+
+	return new_env;
+}
+
 /*
  * Initialization part of main() was eating much stack (~0.5k),
  * which was unused after init.
@@ -1674,8 +1950,51 @@ set_sighandler(int signo, void (*sighandler)(int), struct sigaction *oldact)
 static void ATTRIBUTE_NOINLINE
 init(int argc, char *argv[])
 {
+	static const char qflag_qual[] = "attach,personality";
+	static const char qqflag_qual[] = "exit,attach,personality";
+	static const char qqqflag_qual[] = "all";
+	static const char yflag_qual[] = "path";
+	static const char yyflag_qual[] = "all";
+	static const char tflag_str[] = "format:time";
+	static const char ttflag_str[] = "precision:us,format:time";
+	static const char tttflag_str[] = "format:unix,precision:us";
+
 	int c, i;
 	int optF = 0, zflags = 0;
+	int lopt_idx;
+	int daemonized_tracer_long = DAEMONIZE_NONE;
+	int xflag_long = HEXSTR_NONE;
+	int qflag_short = 0;
+	int followfork_short = 0;
+	int yflag_short = 0;
+	bool tflag_long_set = false;
+	int tflag_short = 0;
+	bool columns_set = false;
+	bool sortby_set = false;
+
+	/*
+	 * We can initialise global_path_set only after tracing backend
+	 * initialisation, so we store pointers to all the paths from
+	 * command-line arguments during parsing in this array and then,
+	 * after the successful backend initialisation, iterate over it
+	 * in order to add them to global_path_set.
+	 */
+	const char **pathtrace_paths = NULL;
+	size_t pathtrace_size = 0;
+	size_t pathtrace_count = 0;
+
+	/**
+	 * Storage for environment changes requested for command.  They
+	 * are stored in a temporary array and not applied as is during
+	 * command line parsing for two reasons:
+	 *  - putenv() changes environment of the tracer as well,
+	 *    which is unacceptable.
+	 *  - Environment changes have to be applied
+	 *    in a tracing-backend-specific way.
+	 */
+	char **env_changes = NULL;
+	size_t env_change_size = 0;
+	size_t env_change_count = 0;
 
 	if (!program_invocation_name || !*program_invocation_name) {
 		static char name[] = "strace";
@@ -1687,6 +2006,8 @@ init(int argc, char *argv[])
 
 	os_release = get_os_release();
 
+	pidns_init();
+
 	shared_log = stderr;
 	set_sortby(DEFAULT_SORTBY);
 	set_personality(DEFAULT_PERSONALITY);
@@ -1697,13 +2018,21 @@ init(int argc, char *argv[])
 # error Bug in DEFAULT_QUAL_FLAGS
 #endif
 	qualify_status("all");
+	qualify_quiet("none");
+	qualify_decode_fd("none");
 	qualify_signals("all");
 
 	static const char optstring[] =
-		"+a:Ab:cCdDe:E:fFhiI:ko:O:p:P:qrs:S:tTu:vVwxX:yzZ";
+		"+a:Ab:cCdDe:E:fFhiI:kno:O:p:P:qrs:S:tTu:U:vVwxX:yzZ";
 
 	enum {
 		GETOPT_SECCOMP = 0x100,
+		GETOPT_DAEMONIZE,
+		GETOPT_HEX_STR,
+		GETOPT_FOLLOWFORKS,
+		GETOPT_OUTPUT_SEPARATELY,
+		GETOPT_TS,
+		GETOPT_PIDNS_TRANSLATION,
 
 		GETOPT_QUAL_TRACE,
 		GETOPT_QUAL_ABBREV,
@@ -1716,6 +2045,8 @@ init(int argc, char *argv[])
 		GETOPT_QUAL_FAULT,
 		GETOPT_QUAL_INJECT,
 		GETOPT_QUAL_KVM,
+		GETOPT_QUAL_QUIET,
+		GETOPT_QUAL_DECODE_FD,
 	};
 	static const struct option longopts[] = {
 		{ "columns",		required_argument, 0, 'a' },
@@ -1724,20 +2055,39 @@ init(int argc, char *argv[])
 		{ "summary-only",	no_argument,	   0, 'c' },
 		{ "summary",		no_argument,	   0, 'C' },
 		{ "debug",		no_argument,	   0, 'd' },
+		{ "daemonize",		optional_argument, 0, GETOPT_DAEMONIZE },
+		{ "daemonised",		optional_argument, 0, GETOPT_DAEMONIZE },
+		{ "daemonized",		optional_argument, 0, GETOPT_DAEMONIZE },
 		{ "env",		required_argument, 0, 'E' },
+		{ "follow-forks",	no_argument,	   0, GETOPT_FOLLOWFORKS },
+		{ "output-separately",	no_argument,	   0,
+			GETOPT_OUTPUT_SEPARATELY },
 		{ "help",		no_argument,	   0, 'h' },
 		{ "instruction-pointer", no_argument,      0, 'i' },
+		{ "interruptible",	required_argument, 0, 'I' },
 		{ "stack-traces",	no_argument,	   0, 'k' },
+		{ "syscall-number",	no_argument,	   0, 'n' },
 		{ "output",		required_argument, 0, 'o' },
+		{ "summary-syscall-overhead", required_argument, 0, 'O' },
 		{ "attach",		required_argument, 0, 'p' },
 		{ "trace-path",		required_argument, 0, 'P' },
+		{ "relative-timestamps", optional_argument, 0, 'r' },
 		{ "string-limit",	required_argument, 0, 's' },
 		{ "summary-sort-by",	required_argument, 0, 'S' },
+		{ "absolute-timestamps", optional_argument, 0, GETOPT_TS },
+		{ "timestamps",		optional_argument, 0, GETOPT_TS },
+		{ "syscall-times",	optional_argument, 0, 'T' },
 		{ "user",		required_argument, 0, 'u' },
+		{ "summary-columns",	required_argument, 0, 'U' },
 		{ "no-abbrev",		no_argument,	   0, 'v' },
 		{ "version",		no_argument,	   0, 'V' },
 		{ "summary-wall-clock", no_argument,	   0, 'w' },
+		{ "strings-in-hex",	optional_argument, 0, GETOPT_HEX_STR },
 		{ "const-print-style",	required_argument, 0, 'X' },
+		{ "pidns-translation",	no_argument      , 0, GETOPT_PIDNS_TRANSLATION },
+		{ "successful-only",	no_argument,	   0, 'z' },
+		{ "failed-only",	no_argument,	   0, 'Z' },
+		{ "failing-only",	no_argument,	   0, 'Z' },
 		{ "seccomp-bpf",	no_argument,	   0, GETOPT_SECCOMP },
 
 		{ "trace",	required_argument, 0, GETOPT_QUAL_TRACE },
@@ -1751,16 +2101,26 @@ init(int argc, char *argv[])
 		{ "fault",	required_argument, 0, GETOPT_QUAL_FAULT },
 		{ "inject",	required_argument, 0, GETOPT_QUAL_INJECT },
 		{ "kvm",	required_argument, 0, GETOPT_QUAL_KVM },
+		{ "quiet",	optional_argument, 0, GETOPT_QUAL_QUIET },
+		{ "silent",	optional_argument, 0, GETOPT_QUAL_QUIET },
+		{ "silence",	optional_argument, 0, GETOPT_QUAL_QUIET },
+		{ "decode-fds",	optional_argument, 0, GETOPT_QUAL_DECODE_FD },
 
 		{ 0, 0, 0, 0 }
 	};
 
-	while ((c = getopt_long(argc, argv, optstring, longopts, NULL)) != EOF) {
+	lopt_idx = -1;
+	while ((c = getopt_long(argc, argv, optstring, longopts, &lopt_idx)) != EOF) {
+		const struct option *lopt = lopt_idx >= 0
+			&& (unsigned) lopt_idx < ARRAY_SIZE(longopts)
+			? longopts + lopt_idx : NULL;
+		lopt_idx = -1;
+
 		switch (c) {
 		case 'a':
 			acolumn = string_to_uint(optarg);
 			if (acolumn < 0)
-				error_opt_arg(c, optarg);
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'A':
 			open_append = true;
@@ -1773,13 +2133,17 @@ init(int argc, char *argv[])
 			break;
 		case 'c':
 			if (cflag == CFLAG_BOTH) {
-				error_msg_and_help("-c and -C are mutually exclusive");
+				error_msg_and_help("-c/--summary-only and "
+						   "-C/--summary are mutually "
+						   "exclusive");
 			}
 			cflag = CFLAG_ONLY_STATS;
 			break;
 		case 'C':
 			if (cflag == CFLAG_ONLY_STATS) {
-				error_msg_and_help("-c and -C are mutually exclusive");
+				error_msg_and_help("-c/--summary-only and "
+						   "-C/--summary are mutually "
+						   "exclusive");
 			}
 			cflag = CFLAG_BOTH;
 			break;
@@ -1789,15 +2153,33 @@ init(int argc, char *argv[])
 		case 'D':
 			daemonized_tracer++;
 			break;
+		case GETOPT_DAEMONIZE:
+			daemonized_tracer_long =
+				find_arg_val(optarg, daemonize_str,
+					     DAEMONIZE_GRANDCHILD,
+					     DAEMONIZE_NONE);
+			if (daemonized_tracer_long <= DAEMONIZE_NONE)
+				error_opt_arg(c, lopt, optarg);
+			break;
 		case 'e':
 			qualify(optarg);
 			break;
 		case 'E':
-			if (putenv(optarg) < 0)
-				perror_msg_and_die("putenv");
+			if (env_change_count >= env_change_size)
+				env_changes = xgrowarray(env_changes,
+							 &env_change_size,
+							 sizeof(*env_changes));
+
+			env_changes[env_change_count++] = optarg;
 			break;
 		case 'f':
-			followfork++;
+			followfork_short++;
+			break;
+		case GETOPT_FOLLOWFORKS:
+			followfork = true;
+			break;
+		case GETOPT_OUTPUT_SEPARATELY:
+			output_separately = true;
 			break;
 		case 'F':
 			optF = 1;
@@ -1809,9 +2191,9 @@ init(int argc, char *argv[])
 			iflag = 1;
 			break;
 		case 'I':
-			opt_intr = string_to_uint_upto(optarg, NUM_INTR_OPTS - 1);
+			opt_intr = parse_interruptible_arg(optarg);
 			if (opt_intr <= 0)
-				error_opt_arg(c, optarg);
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'k':
 #ifdef ENABLE_STACKTRACE
@@ -1822,42 +2204,70 @@ init(int argc, char *argv[])
 					  "build of strace");
 #endif
 			break;
+		case 'n':
+			nflag = 1;
+			break;
 		case 'o':
 			outfname = optarg;
 			break;
 		case 'O':
 			if (set_overhead(optarg) < 0)
-				error_opt_arg(c, optarg);
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'p':
 			process_opt_p_list(optarg);
 			break;
 		case 'P':
-			pathtrace_select(optarg);
+			if (pathtrace_count >= pathtrace_size)
+				pathtrace_paths = xgrowarray(pathtrace_paths,
+					&pathtrace_size,
+					sizeof(pathtrace_paths[0]));
+
+			pathtrace_paths[pathtrace_count++] = optarg;
 			break;
 		case 'q':
-			qflag++;
+			qflag_short++;
 			break;
 		case 'r':
 			rflag = 1;
+			rflag_width = 6;
+			rflag_scale = str2timescale_optarg(optarg,
+							   &rflag_width);
+			if (rflag_scale < 0)
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 's':
 			i = string_to_uint(optarg);
 			if (i < 0 || (unsigned int) i > -1U / 4)
-				error_opt_arg(c, optarg);
+				error_opt_arg(c, lopt, optarg);
 			max_strlen = i;
 			break;
 		case 'S':
 			set_sortby(optarg);
+			sortby_set = true;
 			break;
 		case 't':
-			tflag++;
+			tflag_short++;
+			break;
+		case GETOPT_TS:
+			tflag_long_set = true;
+			if (parse_ts_arg(optarg ?: tflag_str))
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'T':
 			Tflag = 1;
+			Tflag_width = 6;
+			Tflag_scale = str2timescale_optarg(optarg,
+							   &Tflag_width);
+			if (Tflag_scale < 0)
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'u':
 			username = optarg;
+			break;
+		case 'U':
+			columns_set = true;
+			set_count_summary_columns(optarg);
 			break;
 		case 'v':
 			qualify_abbrev("none");
@@ -1872,6 +2282,12 @@ init(int argc, char *argv[])
 		case 'x':
 			xflag++;
 			break;
+		case GETOPT_HEX_STR:
+			xflag_long = find_arg_val(optarg, xflag_str,
+						  HEXSTR_ALL, HEXSTR_NONE);
+			if (xflag_long <= HEXSTR_NONE)
+				error_opt_arg(c, lopt, optarg);
+			break;
 		case 'X':
 			if (!strcmp(optarg, "raw"))
 				xlat_verbosity = XLAT_STYLE_RAW;
@@ -1880,10 +2296,13 @@ init(int argc, char *argv[])
 			else if (!strcmp(optarg, "verbose"))
 				xlat_verbosity = XLAT_STYLE_VERBOSE;
 			else
-				error_opt_arg(c, optarg);
+				error_opt_arg(c, lopt, optarg);
 			break;
 		case 'y':
-			show_fd_path++;
+			yflag_short++;
+			break;
+		case GETOPT_PIDNS_TRANSLATION:
+			pidns_translation++;
 			break;
 		case 'z':
 			clear_number_set_array(status_set, 1);
@@ -1931,6 +2350,12 @@ init(int argc, char *argv[])
 		case GETOPT_QUAL_KVM:
 			qualify_kvm(optarg);
 			break;
+		case GETOPT_QUAL_QUIET:
+			qualify_quiet(optarg ?: qflag_qual);
+			break;
+		case GETOPT_QUAL_DECODE_FD:
+			qualify_decode_fd(optarg ?: yflag_qual);
+			break;
 		default:
 			error_msg_and_help(NULL);
 			break;
@@ -1944,8 +2369,18 @@ init(int argc, char *argv[])
 		error_msg_and_help("must have PROG [ARGS] or -p PID");
 	}
 
+	if (daemonized_tracer_long) {
+		if (daemonized_tracer) {
+			error_msg_and_die("-D and --daemonize cannot"
+					  " be provided simultaneously");
+		} else {
+			daemonized_tracer = daemonized_tracer_long;
+		}
+	}
+
 	if (!argc && daemonized_tracer) {
-		error_msg_and_help("PROG [ARGS] must be specified with -D");
+		error_msg_and_help("PROG [ARGS] must be specified with "
+				   "-D/--daemonize");
 	}
 
 	if (daemonized_tracer > (unsigned int) MAX_DAEMONIZE_OPTS)
@@ -1953,10 +2388,51 @@ init(int argc, char *argv[])
 				   "count is %d",
 				   daemonized_tracer, MAX_DAEMONIZE_OPTS);
 
+	if (tflag_short) {
+		if (tflag_long_set) {
+			error_msg_and_die("-t and --absolute-timestamps cannot"
+					  " be provided simultaneously");
+		}
+
+		parse_ts_arg(tflag_short == 1 ? tflag_str :
+			     tflag_short == 2 ? ttflag_str : tttflag_str);
+	}
+
+	if (xflag_long) {
+		if (xflag) {
+			error_msg_and_die("-x and --strings-in-hex cannot"
+					  " be provided simultaneously");
+		} else {
+			xflag = xflag_long;
+		}
+	}
+
+	if (yflag_short) {
+		if (decode_fd_set_updated) {
+			error_msg_and_die("-y and --decode-fds cannot"
+					  " be provided simultaneously");
+		}
+
+		qualify_decode_fd(yflag_short == 1 ? yflag_qual : yyflag_qual);
+	}
+
 	if (seccomp_filtering && detach_on_execve) {
 		error_msg("--seccomp-bpf is not enabled because"
 			  " it is not compatible with -b");
 		seccomp_filtering = false;
+	}
+
+	if (followfork_short) {
+		if (followfork) {
+			error_msg_and_die("-f and --follow-forks cannot"
+					  " be provided simultaneously");
+		} else if (followfork_short >= 2 && output_separately) {
+			error_msg_and_die("-ff and --output-separately cannot"
+					  " be provided simultaneously");
+		} else {
+			followfork = true;
+			output_separately = followfork_short >= 2;
+		}
 	}
 
 	if (seccomp_filtering) {
@@ -1964,8 +2440,9 @@ init(int argc, char *argv[])
 			error_msg("--seccomp-bpf is not enabled for processes"
 				  " attached with -p");
 		if (!followfork) {
-			error_msg("--seccomp-bpf implies -f");
-			followfork = 1;
+			error_msg("--seccomp-bpf cannot be used without "
+				  "-f/--follow-forks, disabling");
+			seccomp_filtering = false;
 		}
 	}
 
@@ -1974,32 +2451,63 @@ init(int argc, char *argv[])
 			error_msg("deprecated option -F ignored");
 		} else {
 			error_msg("option -F is deprecated, "
-				  "please use -f instead");
-			followfork = optF;
+				  "please use -f/--follow-forks instead");
+			followfork = true;
 		}
 	}
 
-	if (followfork >= 2 && cflag) {
-		error_msg_and_help("(-c or -C) and -ff are mutually exclusive");
+	if (output_separately && cflag) {
+		error_msg_and_help("(-c/--summary-only or -C/--summary) and"
+				   " -ff/--output-separately"
+				   " are mutually exclusive");
 	}
 
 	if (count_wallclock && !cflag) {
-		error_msg_and_help("-w must be given with (-c or -C)");
+		error_msg_and_help("-w/--summary-wall-clock must be given with"
+				   " (-c/--summary-only or -C/--summary)");
+	}
+
+	if (columns_set && !cflag) {
+		error_msg_and_help("-U/--summary-columns must be given with"
+				   " (-c/--summary-only or -C/--summary)");
+	}
+
+	if (sortby_set && !cflag) {
+		error_msg("-S/--summary-sort-by has no effect without"
+			  " (-c/--summary-only or -C/--summary)");
 	}
 
 	if (cflag == CFLAG_ONLY_STATS) {
 		if (iflag)
-			error_msg("-%c has no effect with -c", 'i');
+			error_msg("-i/--instruction-pointer has no effect "
+				  "with -c/--summary-only");
 		if (stack_trace_enabled)
-			error_msg("-%c has no effect with -c", 'k');
+			error_msg("-k/--stack-traces has no effect "
+				  "with -c/--summary-only");
+		if (nflag)
+			error_msg("-n/--syscall-number has no effect "
+				  "with -c/--summary-only");
 		if (rflag)
-			error_msg("-%c has no effect with -c", 'r');
-		if (tflag)
-			error_msg("-%c has no effect with -c", 't');
+			error_msg("-r/--relative-timestamps has no effect "
+				  "with -c/--summary-only");
+		if (tflag_format)
+			error_msg("-t/--absolute-timestamps has no effect "
+				  "with -c/--summary-only");
 		if (Tflag)
-			error_msg("-%c has no effect with -c", 'T');
-		if (show_fd_path)
-			error_msg("-%c has no effect with -c", 'y');
+			error_msg("-T/--syscall-times has no effect "
+				  "with -c/--summary-only");
+		if (!number_set_array_is_empty(decode_fd_set, 0))
+			error_msg("-y/--decode-fds has no effect "
+				  "with -c/--summary-only");
+	}
+
+	if (!outfname) {
+		if (output_separately && !followfork)
+			error_msg("--output-separately has no effect "
+				  "without -o/--output");
+		if (open_append)
+			error_msg("-A/--output-append-mode has no effect "
+				  "without -o/--output");
 	}
 
 #ifndef HAVE_OPEN_MEMSTREAM
@@ -2008,8 +2516,14 @@ init(int argc, char *argv[])
 #endif
 
 	if (zflags > 1)
-		error_msg("Only the last of -z/-Z options will take effect. "
+		error_msg("Only the last of "
+			  "-z/--successful-only/-Z/--failed-only options will "
+			  "take effect. "
 			  "See status qualifier for more complex filters.");
+
+	for (size_t cnt = 0; cnt < pathtrace_count; ++cnt)
+		pathtrace_select(pathtrace_paths[cnt]);
+	free(pathtrace_paths);
 
 	acolumn_spaces = xmalloc(acolumn + 1);
 	memset(acolumn_spaces, ' ', acolumn);
@@ -2027,7 +2541,8 @@ init(int argc, char *argv[])
 		struct passwd *pent;
 
 		if (getuid() != 0 || geteuid() != 0) {
-			error_msg_and_die("You must be root to use the -u option");
+			error_msg_and_die("You must be root to use "
+					  "the -u/--username option");
 		}
 		pent = getpwnam(username);
 		if (pent == NULL) {
@@ -2075,11 +2590,12 @@ init(int argc, char *argv[])
 			 * We can't do the <outfname>.PID funny business
 			 * when using popen, so prohibit it.
 			 */
-			if (followfork >= 2)
-				error_msg_and_help("piping the output and -ff "
+			if (output_separately)
+				error_msg_and_help("piping the output and "
+						   "-ff/--output-separately "
 						   "are mutually exclusive");
 			shared_log = strace_popen(outfname + 1);
-		} else if (followfork < 2) {
+		} else if (!output_separately) {
 			shared_log = strace_fopen(outfname);
 		} else if (strlen(outfname) >= PATH_MAX - sizeof(int) * 3) {
 			errno = ENAMETOOLONG;
@@ -2087,8 +2603,7 @@ init(int argc, char *argv[])
 		}
 	} else {
 		/* -ff without -o FILE is the same as single -f */
-		if (followfork >= 2)
-			followfork = 1;
+		output_separately = false;
 	}
 
 	if (!outfname || outfname[0] == '|' || outfname[0] == '!') {
@@ -2108,11 +2623,21 @@ init(int argc, char *argv[])
 	if (outfname && argc) {
 		if (!opt_intr)
 			opt_intr = INTR_NEVER;
-		if (!qflag)
-			qflag = 1;
+		if (!qflag_short && !quiet_set_updated)
+			qflag_short = 1;
 	}
 	if (!opt_intr)
 		opt_intr = INTR_WHILE_WAIT;
+
+	if (qflag_short) {
+		if (quiet_set_updated) {
+			error_msg_and_die("-q and -e quiet/--quiet cannot"
+					  " be provided simultaneously");
+		}
+
+		qualify_quiet(qflag_short == 1 ? qflag_qual :
+			      qflag_short == 2 ? qqflag_qual : qqqflag_qual);
+	}
 
 	/*
 	 * startup_child() must be called before the signal handlers get
@@ -2121,7 +2646,19 @@ init(int argc, char *argv[])
 	 * in the startup_child() mode we kill the spawned process anyway.
 	 */
 	if (argc) {
-		startup_child(argv);
+		char **new_environ = make_env(environ, env_changes,
+					      env_change_count);
+		free(env_changes);
+
+		startup_child(argv, new_environ);
+
+		/*
+		 * On a NOMMU system, new_environ can be freed only after exec
+		 * in child, so we leak it in that case, similar to pathname
+		 * in startup_child().
+		 */
+		if (new_environ != environ && !NOMMU_SYSTEM)
+			free(new_environ);
 	}
 
 	set_sighandler(SIGTTOU, SIG_IGN, NULL);
@@ -2155,7 +2692,8 @@ init(int argc, char *argv[])
 	 * -f: yes (there can be more pids in the future); or
 	 * -p PID1,PID2: yes (there are already more than one pid)
 	 */
-	print_pid_pfx = (outfname && followfork < 2 && (followfork == 1 || nprocs > 1));
+	print_pid_pfx = outfname && !output_separately &&
+		((followfork && !output_separately) || nprocs > 1);
 }
 
 static struct tcb *
@@ -2259,18 +2797,20 @@ maybe_allocate_tcb(const int pid, int status)
 			strace_child = 0;
 			return NULL;
 		}
-		/*
-		 * This can happen if we inherited an unknown child.
-		 * Example: (sleep 1 & exec strace true)
-		 */
-		error_msg("Exit of unknown pid %u ignored", pid);
+		if (!is_number_in_set(QUIET_EXIT, quiet_set)) {
+			/*
+			 * This can happen if we inherited an unknown child.
+			 * Example: (sleep 1 & exec strace true)
+			 */
+			error_msg("Exit of unknown pid %u ignored", pid);
+		}
 		return NULL;
 	}
 	if (followfork) {
 		/* We assume it's a fork/vfork/clone child */
 		struct tcb *tcp = alloctcb(pid);
 		after_successful_attach(tcp, post_attach_sigstop);
-		if (!qflag)
+		if (!is_number_in_set(QUIET_ATTACH, quiet_set))
 			error_msg("Process %d attached", pid);
 		return tcp;
 	} else {
@@ -2282,7 +2822,8 @@ maybe_allocate_tcb(const int pid, int status)
 		 * observable stop here is the initial ptrace-stop.
 		 */
 		ptrace(PTRACE_DETACH, pid, NULL, 0L);
-		error_msg("Detached unknown pid %d", pid);
+		if (!is_number_in_set(QUIET_ATTACH, quiet_set))
+			error_msg("Detached unknown pid %d", pid);
 		return NULL;
 	}
 }
@@ -2350,9 +2891,12 @@ maybe_switch_tcbs(struct tcb *tcp, const int pid)
 	tcp = execve_thread;
 	tcp->pid = pid;
 	if (cflag != CFLAG_ONLY_STATS) {
-		printleader(tcp);
-		tprintf("+++ superseded by execve in pid %lu +++\n", old_pid);
-		line_ended();
+		if (!is_number_in_set(QUIET_THREAD_EXECVE, quiet_set)) {
+			printleader(tcp);
+			tprintf("+++ superseded by execve in pid %lu +++\n",
+				old_pid);
+			line_ended();
+		}
 		/*
 		 * Need to reopen memstream for thread
 		 * as we closed it in droptcb.
@@ -2403,7 +2947,7 @@ print_exited(struct tcb *tcp, const int pid, int status)
 	}
 
 	if (cflag != CFLAG_ONLY_STATS &&
-	    qflag < 2) {
+	    !is_number_in_set(QUIET_EXIT, quiet_set)) {
 		printleader(tcp);
 		tprintf("+++ exited with %d +++\n", WEXITSTATUS(status));
 		line_ended();
@@ -2419,7 +2963,7 @@ print_stopped(struct tcb *tcp, const siginfo_t *si, const unsigned int sig)
 		printleader(tcp);
 		if (si) {
 			tprintf("--- %s ", sprintsigname(sig));
-			printsiginfo(si);
+			printsiginfo(tcp, si);
 			tprints(" ---\n");
 		} else
 			tprintf("--- stopped by %s ---\n", sprintsigname(sig));
@@ -2466,7 +3010,7 @@ print_event_exit(struct tcb *tcp)
 		return;
 	}
 
-	if (followfork < 2 && printing_tcp && printing_tcp != tcp
+	if (!output_separately && printing_tcp && printing_tcp != tcp
 	    && printing_tcp->curcol != 0) {
 		set_current_tcp(printing_tcp);
 		tprints(" <unfinished ...>\n");

@@ -3,7 +3,7 @@
  * Copyright (c) 1993 Branko Lankester <branko@hacktic.nl>
  * Copyright (c) 1993, 1994, 1995, 1996 Rick Sladkey <jrs@world.std.com>
  * Copyright (c) 1996-1999 Wichert Akkerman <wichert@cistron.nl>
- * Copyright (c) 1999-2018 The strace developers.
+ * Copyright (c) 1999-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -483,7 +483,7 @@ printflags_ex(uint64_t flags, const char *dflt, enum xlat_style style,
 }
 
 void
-print_xlat_ex(const uint64_t val, const char *str, enum xlat_style style)
+print_xlat_ex(const uint64_t val, const char *str, uint32_t style)
 {
 	bool default_str = style & PXF_DEFAULT_STR;
 	style = get_xlat_style(style);

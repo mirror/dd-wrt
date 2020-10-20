@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015-2016 Dmitry V. Levin <ldv@altlinux.org>
- * Copyright (c) 2015-2018 The strace developers.
+ * Copyright (c) 2015-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: GPL-2.0-or-later
@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include <termios.h>
 #include <sys/ioctl.h>
+
+#include <linux/types.h>
 
 #ifdef HAVE_LINUX_MMTIMER_H
 # include <linux/mmtimer.h>

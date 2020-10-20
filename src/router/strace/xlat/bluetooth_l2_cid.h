@@ -84,23 +84,127 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bluetooth_l2_cid_xdata[] = {
  XLAT(L2CAP_CID_SIGNALING),
+ #define XLAT_VAL_0 ((unsigned) (L2CAP_CID_SIGNALING))
+ #define XLAT_STR_0 STRINGIFY(L2CAP_CID_SIGNALING)
  XLAT(L2CAP_CID_CONN_LESS),
+ #define XLAT_VAL_1 ((unsigned) (L2CAP_CID_CONN_LESS))
+ #define XLAT_STR_1 STRINGIFY(L2CAP_CID_CONN_LESS)
  XLAT(L2CAP_CID_A2MP),
+ #define XLAT_VAL_2 ((unsigned) (L2CAP_CID_A2MP))
+ #define XLAT_STR_2 STRINGIFY(L2CAP_CID_A2MP)
  XLAT(L2CAP_CID_ATT),
+ #define XLAT_VAL_3 ((unsigned) (L2CAP_CID_ATT))
+ #define XLAT_STR_3 STRINGIFY(L2CAP_CID_ATT)
  XLAT(L2CAP_CID_LE_SIGNALING),
+ #define XLAT_VAL_4 ((unsigned) (L2CAP_CID_LE_SIGNALING))
+ #define XLAT_STR_4 STRINGIFY(L2CAP_CID_LE_SIGNALING)
  XLAT(L2CAP_CID_SMP),
+ #define XLAT_VAL_5 ((unsigned) (L2CAP_CID_SMP))
+ #define XLAT_STR_5 STRINGIFY(L2CAP_CID_SMP)
  XLAT(L2CAP_CID_SMP_BREDR),
+ #define XLAT_VAL_6 ((unsigned) (L2CAP_CID_SMP_BREDR))
+ #define XLAT_STR_6 STRINGIFY(L2CAP_CID_SMP_BREDR)
  XLAT(L2CAP_CID_DYN_START),
+ #define XLAT_VAL_7 ((unsigned) (L2CAP_CID_DYN_START))
+ #define XLAT_STR_7 STRINGIFY(L2CAP_CID_DYN_START)
  XLAT(L2CAP_CID_LE_DYN_END),
+ #define XLAT_VAL_8 ((unsigned) (L2CAP_CID_LE_DYN_END))
+ #define XLAT_STR_8 STRINGIFY(L2CAP_CID_LE_DYN_END)
  XLAT(L2CAP_CID_DYN_END),
+ #define XLAT_VAL_9 ((unsigned) (L2CAP_CID_DYN_END))
+ #define XLAT_STR_9 STRINGIFY(L2CAP_CID_DYN_END)
 };
 static
 const struct xlat bluetooth_l2_cid[1] = { {
  .data = bluetooth_l2_cid_xdata,
  .size = ARRAY_SIZE(bluetooth_l2_cid_xdata),
  .type = XT_SORTED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+#  ifdef XLAT_VAL_6
+  | XLAT_VAL_6
+#  endif
+#  ifdef XLAT_VAL_7
+  | XLAT_VAL_7
+#  endif
+#  ifdef XLAT_VAL_8
+  | XLAT_VAL_8
+#  endif
+#  ifdef XLAT_VAL_9
+  | XLAT_VAL_9
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+#  ifdef XLAT_STR_6
+  + sizeof(XLAT_STR_6)
+#  endif
+#  ifdef XLAT_STR_7
+  + sizeof(XLAT_STR_7)
+#  endif
+#  ifdef XLAT_STR_8
+  + sizeof(XLAT_STR_8)
+#  endif
+#  ifdef XLAT_STR_9
+  + sizeof(XLAT_STR_9)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
+#  undef XLAT_STR_6
+#  undef XLAT_VAL_6
+#  undef XLAT_STR_7
+#  undef XLAT_VAL_7
+#  undef XLAT_STR_8
+#  undef XLAT_VAL_8
+#  undef XLAT_STR_9
+#  undef XLAT_VAL_9
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

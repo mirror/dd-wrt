@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data kexec_load_flags_xdata[] = {
  XLAT(KEXEC_ON_CRASH),
+ #define XLAT_VAL_0 ((unsigned) (KEXEC_ON_CRASH))
+ #define XLAT_STR_0 STRINGIFY(KEXEC_ON_CRASH)
  XLAT(KEXEC_PRESERVE_CONTEXT),
+ #define XLAT_VAL_1 ((unsigned) (KEXEC_PRESERVE_CONTEXT))
+ #define XLAT_STR_1 STRINGIFY(KEXEC_PRESERVE_CONTEXT)
 };
 static
 const struct xlat kexec_load_flags[1] = { {
  .data = kexec_load_flags_xdata,
  .size = ARRAY_SIZE(kexec_load_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

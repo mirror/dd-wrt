@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data sock_shutdown_flags_xdata[] = {
  XLAT(RCV_SHUTDOWN),
+ #define XLAT_VAL_0 ((unsigned) (RCV_SHUTDOWN))
+ #define XLAT_STR_0 STRINGIFY(RCV_SHUTDOWN)
  XLAT(SEND_SHUTDOWN),
+ #define XLAT_VAL_1 ((unsigned) (SEND_SHUTDOWN))
+ #define XLAT_STR_1 STRINGIFY(SEND_SHUTDOWN)
 };
 static
 const struct xlat sock_shutdown_flags[1] = { {
  .data = sock_shutdown_flags_xdata,
  .size = ARRAY_SIZE(sock_shutdown_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

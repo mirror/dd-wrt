@@ -56,19 +56,83 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data bpf_task_fd_type_xdata[] = {
  [BPF_FD_TYPE_RAW_TRACEPOINT] = XLAT(BPF_FD_TYPE_RAW_TRACEPOINT),
+ #define XLAT_VAL_0 ((unsigned) (BPF_FD_TYPE_RAW_TRACEPOINT))
+ #define XLAT_STR_0 STRINGIFY(BPF_FD_TYPE_RAW_TRACEPOINT)
  [BPF_FD_TYPE_TRACEPOINT] = XLAT(BPF_FD_TYPE_TRACEPOINT),
+ #define XLAT_VAL_1 ((unsigned) (BPF_FD_TYPE_TRACEPOINT))
+ #define XLAT_STR_1 STRINGIFY(BPF_FD_TYPE_TRACEPOINT)
  [BPF_FD_TYPE_KPROBE] = XLAT(BPF_FD_TYPE_KPROBE),
+ #define XLAT_VAL_2 ((unsigned) (BPF_FD_TYPE_KPROBE))
+ #define XLAT_STR_2 STRINGIFY(BPF_FD_TYPE_KPROBE)
  [BPF_FD_TYPE_KRETPROBE] = XLAT(BPF_FD_TYPE_KRETPROBE),
+ #define XLAT_VAL_3 ((unsigned) (BPF_FD_TYPE_KRETPROBE))
+ #define XLAT_STR_3 STRINGIFY(BPF_FD_TYPE_KRETPROBE)
  [BPF_FD_TYPE_UPROBE] = XLAT(BPF_FD_TYPE_UPROBE),
+ #define XLAT_VAL_4 ((unsigned) (BPF_FD_TYPE_UPROBE))
+ #define XLAT_STR_4 STRINGIFY(BPF_FD_TYPE_UPROBE)
  [BPF_FD_TYPE_URETPROBE] = XLAT(BPF_FD_TYPE_URETPROBE),
+ #define XLAT_VAL_5 ((unsigned) (BPF_FD_TYPE_URETPROBE))
+ #define XLAT_STR_5 STRINGIFY(BPF_FD_TYPE_URETPROBE)
 };
 static
 const struct xlat bpf_task_fd_type[1] = { {
  .data = bpf_task_fd_type_xdata,
  .size = ARRAY_SIZE(bpf_task_fd_type_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+#  ifdef XLAT_VAL_2
+  | XLAT_VAL_2
+#  endif
+#  ifdef XLAT_VAL_3
+  | XLAT_VAL_3
+#  endif
+#  ifdef XLAT_VAL_4
+  | XLAT_VAL_4
+#  endif
+#  ifdef XLAT_VAL_5
+  | XLAT_VAL_5
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+#  ifdef XLAT_STR_2
+  + sizeof(XLAT_STR_2)
+#  endif
+#  ifdef XLAT_STR_3
+  + sizeof(XLAT_STR_3)
+#  endif
+#  ifdef XLAT_STR_4
+  + sizeof(XLAT_STR_4)
+#  endif
+#  ifdef XLAT_STR_5
+  + sizeof(XLAT_STR_5)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
+#  undef XLAT_STR_2
+#  undef XLAT_VAL_2
+#  undef XLAT_STR_3
+#  undef XLAT_VAL_3
+#  undef XLAT_STR_4
+#  undef XLAT_VAL_4
+#  undef XLAT_STR_5
+#  undef XLAT_VAL_5
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

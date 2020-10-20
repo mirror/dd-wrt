@@ -20,18 +20,20 @@
 
 bool ptrace_get_syscall_info_supported;
 
+#define FAIL	do { ptrace_stop = -1U; goto done; } while (0)
+
+#ifdef HAVE_FORK
 static int
 kill_tracee(pid_t pid)
 {
 	return kill_save_errno(pid, SIGKILL);
 }
 
-#define FAIL	do { ptrace_stop = -1U; goto done; } while (0)
-
 static const unsigned int expected_none_size =
 	offsetof(struct_ptrace_syscall_info, entry);
 static const unsigned int expected_entry_size =
 	offsetofend(struct_ptrace_syscall_info, entry.args);
+#endif /* HAVE_FORK */
 static const unsigned int expected_exit_size =
 	offsetofend(struct_ptrace_syscall_info, exit.is_error);
 static const unsigned int expected_seccomp_size =
@@ -80,6 +82,12 @@ test_ptrace_get_syscall_info(void)
 		}
 	};
 	const unsigned long *exp_args;
+
+# if SIZEOF_KERNEL_LONG_T > SIZEOF_LONG
+#  define CAST (unsigned long)
+# else
+#  define CAST
+# endif
 
 	int pid = fork();
 	if (pid < 0)
@@ -196,12 +204,12 @@ test_ptrace_get_syscall_info(void)
 				    || !info.instruction_pointer
 				    || !info.stack_pointer
 				    || (info.entry.nr != exp_args[0])
-				    || (info.entry.args[0] != exp_args[1])
-				    || (info.entry.args[1] != exp_args[2])
-				    || (info.entry.args[2] != exp_args[3])
-				    || (info.entry.args[3] != exp_args[4])
-				    || (info.entry.args[4] != exp_args[5])
-				    || (info.entry.args[5] != exp_args[6])) {
+				    || (CAST info.entry.args[0] != exp_args[1])
+				    || (CAST info.entry.args[1] != exp_args[2])
+				    || (CAST info.entry.args[2] != exp_args[3])
+				    || (CAST info.entry.args[3] != exp_args[4])
+				    || (CAST info.entry.args[4] != exp_args[5])
+				    || (CAST info.entry.args[5] != exp_args[6])) {
 					debug_func_msg("#%d: entry stop"
 						       " mismatch",
 						       ptrace_stop);

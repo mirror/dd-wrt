@@ -28,15 +28,39 @@ DIAG_POP_IGNORE_TAUTOLOGICAL_COMPARE
 
 static const struct xlat_data tun_device_types_xdata[] = {
  [IFF_TUN] = XLAT(IFF_TUN),
+ #define XLAT_VAL_0 ((unsigned) (IFF_TUN))
+ #define XLAT_STR_0 STRINGIFY(IFF_TUN)
  [IFF_TAP] = XLAT(IFF_TAP),
+ #define XLAT_VAL_1 ((unsigned) (IFF_TAP))
+ #define XLAT_STR_1 STRINGIFY(IFF_TAP)
 };
 static
 const struct xlat tun_device_types[1] = { {
  .data = tun_device_types_xdata,
  .size = ARRAY_SIZE(tun_device_types_xdata),
  .type = XT_INDEXED,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+#  ifdef XLAT_VAL_1
+  | XLAT_VAL_1
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+#  ifdef XLAT_STR_1
+  + sizeof(XLAT_STR_1)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
+#  undef XLAT_STR_1
+#  undef XLAT_VAL_1
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

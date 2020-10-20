@@ -8,7 +8,7 @@ AC_CHECK_TYPES([struct io_sqring_offsets],
 #include <linux/io_uring.h>])
 
 AC_CHECK_TYPES([struct io_cqring_offsets],
-[AC_CHECK_MEMBERS([struct io_cqring_offsets.resv],,,[AC_INCLUDES_DEFAULT
+[AC_CHECK_MEMBERS([struct io_cqring_offsets.cqes],,,[AC_INCLUDES_DEFAULT
 #include <linux/io_uring.h>])],,[AC_INCLUDES_DEFAULT
 #include <linux/io_uring.h>])
 
@@ -21,4 +21,15 @@ AC_CHECK_TYPES([struct io_uring_files_update],
 [AC_CHECK_MEMBERS([struct io_uring_files_update.fds],,,[AC_INCLUDES_DEFAULT
 #include <linux/io_uring.h>])],,[AC_INCLUDES_DEFAULT
 #include <linux/io_uring.h>])
+
+AC_CHECK_TYPES([struct io_uring_probe_op],
+[AC_CHECK_MEMBERS([struct io_uring_probe_op.resv2],,,[AC_INCLUDES_DEFAULT
+#include <linux/io_uring.h>])],,[AC_INCLUDES_DEFAULT
+#include <linux/io_uring.h>])
+
+AC_CHECK_TYPES([struct io_uring_probe],
+[AC_CHECK_MEMBERS([struct io_uring_probe.ops],,,[AC_INCLUDES_DEFAULT
+#include <linux/io_uring.h>])],,[AC_INCLUDES_DEFAULT
+#include <linux/io_uring.h>])
+],[],[AC_INCLUDES_DEFAULT
 ])])

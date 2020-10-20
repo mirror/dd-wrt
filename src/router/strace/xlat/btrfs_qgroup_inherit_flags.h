@@ -15,6 +15,8 @@ extern const struct xlat btrfs_qgroup_inherit_flags[];
 static const struct xlat_data btrfs_qgroup_inherit_flags_xdata[] = {
 #if defined(BTRFS_QGROUP_INHERIT_SET_LIMITS) || (defined(HAVE_DECL_BTRFS_QGROUP_INHERIT_SET_LIMITS) && HAVE_DECL_BTRFS_QGROUP_INHERIT_SET_LIMITS)
   XLAT_TYPE(uint64_t, BTRFS_QGROUP_INHERIT_SET_LIMITS),
+ #define XLAT_VAL_0 ((uint64_t) (BTRFS_QGROUP_INHERIT_SET_LIMITS))
+ #define XLAT_STR_0 STRINGIFY(BTRFS_QGROUP_INHERIT_SET_LIMITS)
 #endif
 };
 #  if !(defined HAVE_M32_MPERS || defined HAVE_MX32_MPERS)
@@ -24,8 +26,20 @@ const struct xlat btrfs_qgroup_inherit_flags[1] = { {
  .data = btrfs_qgroup_inherit_flags_xdata,
  .size = ARRAY_SIZE(btrfs_qgroup_inherit_flags_xdata),
  .type = XT_NORMAL,
+ .flags_mask = 0
+#  ifdef XLAT_VAL_0
+  | XLAT_VAL_0
+#  endif
+  ,
+ .flags_strsz = 0
+#  ifdef XLAT_STR_0
+  + sizeof(XLAT_STR_0)
+#  endif
+  ,
 } };
 
+#  undef XLAT_STR_0
+#  undef XLAT_VAL_0
 # endif /* !IN_MPERS */
 
 #endif /* !XLAT_MACROS_ONLY */

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016 Fabien Siron <fabien.siron@epita.fr>
  * Copyright (c) 2017 JingPiao Chen <chenjingpiao@gmail.com>
- * Copyright (c) 2016-2018 The strace developers.
+ * Copyright (c) 2016-2020 The strace developers.
  * All rights reserved.
  *
  * SPDX-License-Identifier: LGPL-2.1-or-later
@@ -50,7 +50,7 @@ decode_ifa_cacheinfo(struct tcb *const tcp,
 		PRINT_FIELD_U(", ", ci, ifa_valid);
 		PRINT_FIELD_U(", ", ci, cstamp);
 		PRINT_FIELD_U(", ", ci, tstamp);
-		tprintf("}");
+		tprints("}");
 	}
 
 	return true;
