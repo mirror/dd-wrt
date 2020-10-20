@@ -398,6 +398,9 @@ configs-update:
 	svn update $(TOP)/private
 	$(TOP)/private/symlinks.sh $(TOP) $(LINUXDIR) $(ARCHITECTURE)
 
+configs-configure:
+	@true
+
 configs-clean:
 	@true
 

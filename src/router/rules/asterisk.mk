@@ -17,7 +17,7 @@ editline-install:
 	rm -f $(INSTALLDIR)/editline/usr/lib/*.la
 
 
-asterisk-configure: util-linux-configure util-linux-install jansson editline zlib
+asterisk-configure: util-linux-configure util-linux-install jansson editline zlib minidlna
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \

@@ -1,3 +1,14 @@
+ifeq ($(CONFIG_IPV6),y)
+libdnet-configure:
+	cd libdnet && ./configure \
+		--build=$(ARCH)-linux \
+		--host=$(ARCH)-linux-gnu \
+		--prefix=/usr \
+		--libdir=$(TOP)/libdnet/src/.libs/ \
+		--disable-shared \
+		--enable-static \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/iptables-new/include/libipq/" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs"
+else
 libdnet-configure:
 	cd libdnet && ./configure \
 		--build=$(ARCH)-linux \
@@ -7,7 +18,7 @@ libdnet-configure:
 		--disable-shared \
 		--enable-static \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -fPIC -DNEED_PRINTF -I$(TOP)/iptables/include/libipq/" LDFLAGS="-L$(TOP)/iptables/libipq"
-
+endif
 
 libdnet:
 	$(MAKE) -C libdnet CFLAGS="$(COPTS) -fPIC -DNEED_PRINTF"

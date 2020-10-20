@@ -1,3 +1,5 @@
+
+ifneq ($(CONFIG_IPV6),y)
 gmp-configure:
 	cd gmp && ./configure \
 		--build=$(ARCH)-linux \
@@ -6,7 +8,16 @@ gmp-configure:
 		--libdir=/usr/lib \
 		--enable-assembly \
 		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/iptables/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables/libipq"
-
+else
+gmp-configure:
+	cd gmp && ./configure \
+		--build=$(ARCH)-linux \
+		--host=$(ARCH)-linux-gnu \
+		--prefix=/usr \
+		--libdir=/usr/lib \
+		--enable-assembly \
+		CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/iptables-new/include/libipq/ -ffunction-sections -fdata-sections" LDFLAGS="-L$(TOP)/iptables-new/libipq/.libs"
+endif
 
 gmp:
 	$(MAKE) -C gmp CFLAGS="$(COPTS)"
