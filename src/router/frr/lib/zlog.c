@@ -448,6 +448,7 @@ static void vzlog_tls(struct zlog_tls *zlog_tls, int prio,
 
 void vzlog(int prio, const char *fmt, va_list ap)
 {
+	return;
 	struct zlog_tls *zlog_tls = zlog_tls_get();
 
 	if (zlog_tls)
