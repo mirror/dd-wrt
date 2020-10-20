@@ -1860,6 +1860,9 @@ service.vpnd_lzoadaptive="Adaptive";
 service.vpn_tls_btn="TLS Key choice";
 service.vpn_tls_crypt="TLS Crypt";
 service.vpn_tls_auth="TLS Auth";
+service.vpn_dc1="First Data Cipher";
+service.vpn_dc2="Second Data Cipher";
+service.vpn_dc3="Third Data Cipher";
 
 //help page
 var hservice=new Object();

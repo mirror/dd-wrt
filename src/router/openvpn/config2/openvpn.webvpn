@@ -104,7 +104,7 @@
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_cipher","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_cipher","AES-128-CBC"); %>>AES-128-CBC</option>
 				<option value="none" <% nvram_selected("openvpn_cipher","none"); %>>None</option>
-			</select>
+				</select>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_auth"); %></div>
@@ -115,7 +115,46 @@
 				<option value="md5" <% nvram_selected("openvpn_auth","md5"); %>>MD5</option>
 				<option value="md4" <% nvram_selected("openvpn_auth","md4"); %>>MD4</option>
 				<option value="none" <% nvram_selected("openvpn_auth","none"); %>>None</option>
-			</select>
+				</select>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_dc1"); %></div>
+				<select name="openvpn_dc1">	
+				<option value="CHACHA20-POLY1305" <% nvram_selected("openvpn_dc1","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+				<option value="AES-256-GCM" <% nvram_selected("openvpn_dc1","AES-256-GCM"); %>>AES-256-GCM</option>
+				<option value="AES-192-GCM" <% nvram_selected("openvpn_dc1","AES-192-GCM"); %>>AES-192-GCM</option>
+				<option value="AES-128-GCM" <% nvram_selected("openvpn_dc1","AES-128-GCM"); %>>AES-128-GCM</option>
+				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc1","AES-256-CBC"); %>>AES-256-CBC</option>
+				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc1","AES-192-CBC"); %>>AES-192-CBC</option>
+				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc1","AES-128-CBC"); %>>AES-128-CBC</option>
+				<option value="" <% nvram_selected("openvpn_dc1",""); %>>Not set</option>
+				</select>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_dc2"); %></div>
+				<select name="openvpn_dc2">	
+				<option value="CHACHA20-POLY1305" <% nvram_selected("openvpn_dc2","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+				<option value="AES-256-GCM" <% nvram_selected("openvpn_dc2","AES-256-GCM"); %>>AES-256-GCM</option>
+				<option value="AES-192-GCM" <% nvram_selected("openvpn_dc2","AES-192-GCM"); %>>AES-192-GCM</option>
+				<option value="AES-128-GCM" <% nvram_selected("openvpn_dc2","AES-128-GCM"); %>>AES-128-GCM</option>
+				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc2","AES-256-CBC"); %>>AES-256-CBC</option>
+				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc2","AES-192-CBC"); %>>AES-192-CBC</option>
+				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc2","AES-128-CBC"); %>>AES-128-CBC</option>
+				<option value="" <% nvram_selected("openvpn_dc2",""); %>>Not set</option>
+				</select>
+			</div>
+			<div class="setting">
+				<div class="label"><% tran("service.vpn_dc3"); %></div>
+				<select name="openvpn_dc3">	
+				<option value="CHACHA20-POLY1305" <% nvram_selected("openvpn_dc3","CHACHA20-POLY1305"); %>>CHACHA20-POLY1305</option>
+				<option value="AES-256-GCM" <% nvram_selected("openvpn_dc3","AES-256-GCM"); %>>AES-256-GCM</option>
+				<option value="AES-192-GCM" <% nvram_selected("openvpn_dc3","AES-192-GCM"); %>>AES-192-GCM</option>
+				<option value="AES-128-GCM" <% nvram_selected("openvpn_dc3","AES-128-GCM"); %>>AES-128-GCM</option>
+				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc3","AES-256-CBC"); %>>AES-256-CBC</option>
+				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc3","AES-192-CBC"); %>>AES-192-CBC</option>
+				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc3","AES-128-CBC"); %>>AES-128-CBC</option>
+				<option value="" <% nvram_selected("openvpn_dc3",""); %>>Not set</option>
+				</select>
 			</div>
 			<div class="setting">
 				<div class="label"><% tran("service.vpn_adv"); %></div>

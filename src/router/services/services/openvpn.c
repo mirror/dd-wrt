@@ -218,6 +218,28 @@ void start_openvpnserver(void)
 			"management-log-cache 100\n"
 			"topology subnet\n"
 			"script-security 2\n" "port %s\n" "proto %s\n" "cipher %s\n" "auth %s\n", nvram_safe_get("openvpn_port"), proto, nvram_safe_get("openvpn_cipher"), nvram_safe_get("openvpn_auth"));
+
+		//egc
+		char dcbuffer[128]="";
+		char dc1[64]="";
+		char dc2[64]="";
+		char dc3[64]="";
+		strcpy(dc1, nvram_safe_get("openvpn_dc1"));
+		strcpy(dc2, nvram_safe_get("openvpn_dc2"));
+		strcpy(dc3, nvram_safe_get("openvpn_dc3"));
+		if (dc1[0] != '\0')
+			strcat(dcbuffer, dc1);
+		if ( dcbuffer[0] != '\0' && dc2[0] != 0) 
+			strcat(dcbuffer, ":");
+		if ( dc2[0] != 0) 
+			strcat(dcbuffer, dc2);
+		if ( dcbuffer[0] != '\0' && dc3[0] != 0) 
+			strcat(dcbuffer, ":");
+		if ( dc3[0] != 0) 
+			strcat(dcbuffer, dc3);
+		if (dcbuffer[0] != '\0')
+			fprintf(fp, "data-ciphers %s\n", dcbuffer);
+
 		fprintf(fp, "client-connect /tmp/openvpn/clcon.sh\n");
 		fprintf(fp, "client-disconnect /tmp/openvpn/cldiscon.sh\n");
 		if (jffs == 1)	//  use usb/jffs for ccd if available
@@ -503,6 +525,28 @@ void start_openvpn(void)
 	fprintf(fp, "proto %s\n", proto);
 	fprintf(fp, "cipher %s\n", nvram_safe_get("openvpncl_cipher"));
 	fprintf(fp, "auth %s\n", nvram_safe_get("openvpncl_auth"));
+
+	//egc
+	char dcbuffer[128]="";
+	char dc1[64]="";
+	char dc2[64]="";
+	char dc3[64]="";
+	strcpy(dc1, nvram_safe_get("openvpncl_dc1"));
+	strcpy(dc2, nvram_safe_get("openvpncl_dc2"));
+	strcpy(dc3, nvram_safe_get("openvpncl_dc3"));
+	if (dc1[0] != '\0')
+		strcat(dcbuffer, dc1);
+	if ( dcbuffer[0] != '\0' && dc2[0] != 0) 
+		strcat(dcbuffer, ":");
+	if ( dc2[0] != 0) 
+		strcat(dcbuffer, dc2);
+	if ( dcbuffer[0] != '\0' && dc3[0] != 0) 
+		strcat(dcbuffer, ":");
+	if ( dc3[0] != 0) 
+		strcat(dcbuffer, dc3);
+	if (dcbuffer[0] != '\0')
+		fprintf(fp, "data-ciphers %s\n", dcbuffer);
+
 	if (nvram_matchi("openvpncl_upauth", 1))
 		fprintf(fp, "auth-user-pass %s\n", "/tmp/openvpncl/credentials");
 	fprintf(fp, "remote %s %s\n", nvram_safe_get("openvpncl_remoteip"), nvram_safe_get("openvpncl_remoteport"));
