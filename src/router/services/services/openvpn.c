@@ -222,7 +222,7 @@ void start_openvpnserver(void)
 		char dcbuffer[128] = { 0 };
 		char *dc1 = nvram_safe_get("openvpn_dc1");
 		char *dc2 = nvram_safe_get("openvpn_dc2");
-		char *dc3, nvram_safe_get("openvpn_dc3");
+		char *dc3 = nvram_safe_get("openvpn_dc3");
 		sprintf(dcbuffer, "%s%s%s%s%s", dc1, *dc2 ? ":" : "", dc2, *dc3 ? ":" : "", dc3);
 		if (dcbuffer[0])
 			fprintf(fp, "data-ciphers %s\n", dcbuffer);
@@ -517,7 +517,7 @@ void start_openvpn(void)
 	char dcbuffer[128] = { 0 };
 	char *dc1 = nvram_safe_get("openvpncl_dc1");
 	char *dc2 = nvram_safe_get("openvpncl_dc2");
-	char *dc3, nvram_safe_get("openvpncl_dc3");
+	char *dc3 = nvram_safe_get("openvpncl_dc3");
 	sprintf(dcbuffer, "%s%s%s%s%s", dc1, *dc2 ? ":" : "", dc2, *dc3 ? ":" : "", dc3);
 
 	if (dcbuffer[0])
