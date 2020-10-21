@@ -30,6 +30,9 @@
 #include "asterisk/sdp_srtp.h"
 /* Needed for ast_media_type */
 #include "asterisk/codec.h"
+/* Needed for pjmedia_sdp_session and pjsip_inv_session */
+#include <pjsip_ua.h>
+
 
 /* Forward declarations */
 struct ast_sip_endpoint;
@@ -59,6 +62,7 @@ enum ast_sip_session_t38state {
 
 struct ast_sip_session_sdp_handler;
 struct ast_sip_session;
+struct ast_sip_session_caps;
 struct ast_sip_session_media;
 
 typedef struct ast_frame *(*ast_sip_session_media_read_cb)(struct ast_sip_session *session, struct ast_sip_session_media *session_media);
@@ -89,14 +93,14 @@ struct ast_sip_session_media {
 	int timeout_sched_id;
 	/*! \brief Stream is on hold by remote side */
 	unsigned int remotely_held:1;
+	/*! \brief Stream is held by remote side changed during this negotiation*/
+	unsigned int remotely_held_changed:1;
 	/*! \brief Stream is on hold by local side */
 	unsigned int locally_held:1;
 	/*! \brief Does remote support rtcp_mux */
 	unsigned int remote_rtcp_mux:1;
 	/*! \brief Does remote support ice */
 	unsigned int remote_ice:1;
-	/*! \brief Stream is held by remote side changed during this negotiation*/
-	unsigned int remotely_held_changed:1;
 	/*! \brief Media type of this session media */
 	enum ast_media_type type;
 	/*! \brief The write callback when writing frames */
@@ -153,6 +157,12 @@ struct ast_sip_session_delayed_request;
 
 /*! \brief Opaque struct controlling the suspension of the session's serializer. */
 struct ast_sip_session_suspender;
+
+/*! \brief Indicates the call direction respective to Asterisk */
+enum ast_sip_session_call_direction {
+	AST_SIP_SESSION_INCOMING_CALL = 0,
+	AST_SIP_SESSION_OUTGOING_CALL,
+};
 
 /*!
  * \brief A structure describing a SIP session
@@ -219,8 +229,10 @@ struct ast_sip_session {
 	enum ast_sip_dtmf_mode dtmf;
 	/*! Initial incoming INVITE Request-URI.  NULL otherwise. */
 	pjsip_uri *request_uri;
-	/* Media statistics for negotiated RTP streams */
+	/*! Media statistics for negotiated RTP streams */
 	AST_VECTOR(, struct ast_rtp_instance_stats *) media_stats;
+	/*! The direction of the call respective to Asterisk */
+	enum ast_sip_session_call_direction call_direction;
 };
 
 typedef int (*ast_sip_session_request_creation_cb)(struct ast_sip_session *session, pjsip_tx_data *tdata);
@@ -913,5 +925,14 @@ int ast_sip_session_media_set_write_callback(struct ast_sip_session *session, st
  * \note This function is guaranteed to return non-NULL
  */
 struct ast_sip_session_media *ast_sip_session_media_get_transport(struct ast_sip_session *session, struct ast_sip_session_media *session_media);
+
+/*!
+ * \brief Get the channel or endpoint name associated with the session
+ * \since 18.0.0
+ *
+ * \param session
+ * \retval Channel name or endpoint name or "unknown"
+ */
+const char *ast_sip_session_get_name(const struct ast_sip_session *session);
 
 #endif /* _RES_PJSIP_SESSION_H */

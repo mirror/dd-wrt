@@ -388,6 +388,16 @@ int ast_vector_string_split(struct ast_vector_string *dest,
 })
 
 /*!
+ * \brief Sort a vector in-place
+ *
+ * \param vec Vector to sort
+ * \param cmp A memcmp compatible compare function
+ */
+#define AST_VECTOR_SORT(vec, cmp) ({ \
+	qsort((vec)->elems, (vec)->current, sizeof(typeof((vec)->elems[0])), cmp); \
+})
+
+/*!
  * \brief Remove an element from a vector by index.
  *
  * Note that elements in the vector may be reordered, so that the remove can
@@ -627,24 +637,28 @@ int ast_vector_string_split(struct ast_vector_string *dest,
  * \return 0 on success.
  * \return Non-zero on failure.
  */
-#define AST_VECTOR_COMPACT(vec) ({ \
-	int res = 0;								\
-	do {														\
-		if ((vec)->max > (vec)->current) {						\
-			size_t new_max = (vec)->current;				\
-			typeof((vec)->elems) new_elems = ast_realloc(		\
-				(vec)->elems,									\
-				new_max * sizeof(*new_elems));					\
-			if (new_elems || (vec)->current == 0) {				\
-				(vec)->elems = new_elems;						\
-				(vec)->max = new_max;							\
-			} else {											\
-				res = -1;										\
-				break;											\
-			}													\
-		}														\
-	} while(0);													\
-	res;														\
+#define AST_VECTOR_COMPACT(vec) ({					\
+	int res = 0;							\
+	do {								\
+		size_t new_max = (vec)->current;			\
+		if (new_max == 0) {					\
+			ast_free((vec)->elems);				\
+			(vec)->elems = NULL;				\
+			(vec)->max = 0;					\
+		} else if ((vec)->max > new_max) {			\
+			typeof((vec)->elems) new_elems = ast_realloc(	\
+				(vec)->elems,				\
+				new_max * sizeof(*new_elems));		\
+			if (new_elems) {				\
+				(vec)->elems = new_elems;		\
+				(vec)->max = new_max;			\
+			} else {					\
+				res = -1;				\
+				break;					\
+			}						\
+		}							\
+	} while(0);							\
+	res;								\
 })
 
 /*!

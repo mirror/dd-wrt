@@ -1779,10 +1779,8 @@ void ast_ari_channels_create(struct ast_variable *headers,
 	struct ast_ari_channels_create_args *args,
 	struct ast_ari_response *response)
 {
-	struct ast_assigned_ids assignedids = {
-		.uniqueid = args->channel_id,
-		.uniqueid2 = args->other_channel_id,
-	};
+	struct ast_variable *variables = NULL;
+	struct ast_assigned_ids assignedids;
 	struct ari_channel_thread_data *chan_data;
 	struct ast_channel_snapshot *snapshot;
 	pthread_t thread;
@@ -1792,6 +1790,21 @@ void ast_ari_channels_create(struct ast_variable *headers,
 	int cause;
 	struct ast_format_cap *request_cap;
 	struct ast_channel *originator;
+
+	/* Parse any query parameters out of the body parameter */
+	if (args->variables) {
+		struct ast_json *json_variables;
+
+		ast_ari_channels_create_parse_body(args->variables, args);
+		json_variables = ast_json_object_get(args->variables, "variables");
+		if (json_variables
+			&& json_to_ast_variables(response, json_variables, &variables)) {
+			return;
+		}
+	}
+
+	assignedids.uniqueid = args->channel_id;
+	assignedids.uniqueid2 = args->other_channel_id;
 
 	if (!ast_strlen_zero(args->originator) && !ast_strlen_zero(args->formats)) {
 		ast_ari_response_error(response, 400, "Bad Request",
@@ -1897,6 +1910,10 @@ void ast_ari_channels_create(struct ast_variable *headers,
 
 	if (!ast_strlen_zero(args->app)) {
 		stasis_app_subscribe_channel(args->app, chan_data->chan);
+	}
+
+	if (variables) {
+		ast_set_variables(chan_data->chan, variables);
 	}
 
 	ast_channel_cleanup(originator);
@@ -2108,6 +2125,51 @@ static void external_media_rtp_udp(struct ast_ari_channels_external_media_args *
 	ast_channel_unref(chan);
 }
 
+static void external_media_audiosocket_tcp(struct ast_ari_channels_external_media_args *args,
+	struct ast_variable *variables,
+	struct ast_ari_response *response)
+{
+	size_t endpoint_len;
+	char *endpoint;
+	struct ast_channel *chan;
+	struct varshead *vars;
+
+	endpoint_len = strlen("AudioSocket/") + strlen(args->external_host) + 1 + strlen(args->data) + 1;
+	endpoint = ast_alloca(endpoint_len);
+	/* The UUID is stored in the arbitrary data field */
+	snprintf(endpoint, endpoint_len, "AudioSocket/%s/%s", args->external_host, args->data);
+
+	chan = ari_channels_handle_originate_with_id(
+		endpoint,
+		NULL,
+		NULL,
+		0,
+		NULL,
+		args->app,
+		NULL,
+		NULL,
+		0,
+		variables,
+		args->channel_id,
+		NULL,
+		NULL,
+		args->format,
+		response);
+	ast_variables_destroy(variables);
+
+	if (!chan) {
+		return;
+	}
+
+	ast_channel_lock(chan);
+	vars = ast_channel_varshead(chan);
+	if (vars && !AST_LIST_EMPTY(vars)) {
+		ast_json_object_set(response->message, "channelvars", ast_json_channel_vars(vars));
+	}
+	ast_channel_unlock(chan);
+	ast_channel_unref(chan);
+}
+
 #include "asterisk/config.h"
 #include "asterisk/netsock2.h"
 
@@ -2168,6 +2230,8 @@ void ast_ari_channels_external_media(struct ast_variable *headers,
 
 	if (strcasecmp(args->encapsulation, "rtp") == 0 && strcasecmp(args->transport, "udp") == 0) {
 		external_media_rtp_udp(args, variables, response);
+	} else if (strcasecmp(args->encapsulation, "audiosocket") == 0 && strcasecmp(args->transport, "tcp") == 0) {
+		external_media_audiosocket_tcp(args, variables, response);
 	} else {
 		ast_ari_response_error(
 			response, 501, "Not Implemented",

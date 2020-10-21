@@ -1378,5 +1378,29 @@ DROP TYPE moh_mode_values_tmp;
 
 UPDATE alembic_version SET version_num='fbb7766f17bc' WHERE alembic_version.version_num = '3a094a18e75b';
 
+-- Running upgrade fbb7766f17bc -> 79290b511e4b
+
+ALTER TABLE ps_systems ADD COLUMN disable_rport ast_bool_values;
+
+UPDATE alembic_version SET version_num='79290b511e4b' WHERE alembic_version.version_num = 'fbb7766f17bc';
+
+-- Running upgrade 79290b511e4b -> b80485ff4dd0
+
+ALTER TABLE ps_endpoints ADD COLUMN codec_prefs_incoming_offer VARCHAR(128);
+
+ALTER TABLE ps_endpoints ADD COLUMN codec_prefs_outgoing_offer VARCHAR(128);
+
+ALTER TABLE ps_endpoints ADD COLUMN codec_prefs_incoming_answer VARCHAR(128);
+
+ALTER TABLE ps_endpoints ADD COLUMN codec_prefs_outgoing_answer VARCHAR(128);
+
+UPDATE alembic_version SET version_num='b80485ff4dd0' WHERE alembic_version.version_num = '79290b511e4b';
+
+-- Running upgrade b80485ff4dd0 -> 61797b9fced6
+
+ALTER TABLE ps_endpoints ADD COLUMN stir_shaken ast_bool_values;
+
+UPDATE alembic_version SET version_num='61797b9fced6' WHERE alembic_version.version_num = 'b80485ff4dd0';
+
 COMMIT;
 

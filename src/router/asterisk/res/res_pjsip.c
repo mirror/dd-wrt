@@ -102,6 +102,245 @@
 				<configOption name="allow">
 					<synopsis>Media Codec(s) to allow</synopsis>
 				</configOption>
+				<configOption name="codec_prefs_incoming_offer">
+					<synopsis>Codec negotiation prefs for incoming offers.</synopsis>
+					<description>
+						<para>
+							This is a string that describes how the codecs
+							specified on an incoming SDP offer (pending) are reconciled with the codecs specified
+							on an endpoint (configured) before being sent to the Asterisk core.
+							The string actually specifies 4 <literal>name:value</literal> pair parameters
+							separated by commas. Whitespace is ignored and they may be specified in any order.
+							Note that this option is reserved for future functionality.
+
+						</para>
+						<para>
+							Parameters:
+						</para>
+						<enumlist>
+							<enum name="prefer: &lt; pending | configured &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="pending"><para>The codec list from the caller. (default)</para></enum>
+									<enum name="configured"><para>The codec list from the endpoint.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="operation : &lt; intersect | only_preferred | only_nonpreferred &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="intersect"><para>Only common codecs with the preferred codecs first. (default)</para></enum>
+									<enum name="only_preferred"><para>Use only the preferred codecs.</para></enum>
+									<enum name="only_nonpreferred"><para>Use only the non-preferred codecs.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="keep : &lt; all | first &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="all"><para>After the operation, keep all codecs. (default)</para></enum>
+									<enum name="first"><para>After the operation, keep only the first codec.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="transcode : &lt; allow | prevent &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="allow"><para>Allow transcoding. (default)</para></enum>
+									<enum name="prevent"><para>Prevent transcoding.</para></enum>
+								</enumlist>
+							</enum>
+						</enumlist>
+						<para>
+						</para>
+						<example>
+							codec_prefs_incoming_offer = prefer: pending, operation: intersect, keep: all, transcode: allow
+						</example>
+						<para>
+							Prefer the codecs coming from the caller.  Use only the ones that are common.
+							keeping the order of the preferred list. Keep all codecs in the result. Allow transcoding.
+						</para>
+					</description>
+				</configOption>
+				<configOption name="codec_prefs_outgoing_offer">
+					<synopsis>Codec negotiation prefs for outgoing offers.</synopsis>
+					<description>
+						<para>
+							This is a string that describes how the codecs specified in the topology that
+							comes from the Asterisk core (pending) are reconciled with the codecs specified on an
+							endpoint (configured) when sending an SDP offer.
+							The string actually specifies 4 <literal>name:value</literal> pair parameters
+							separated by commas. Whitespace is ignored and they may be specified in any order.
+							Note that this option is reserved for future functionality.
+
+						</para>
+						<para>
+							Parameters:
+						</para>
+						<enumlist>
+							<enum name="prefer: &lt; pending | configured &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="pending"><para>The codec list from the core. (default)</para></enum>
+									<enum name="configured"><para>The codec list from the endpoint.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="operation : &lt; union | intersect | only_preferred | only_nonpreferred &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="union"><para>Merge the lists with the preferred codecs first. (default)</para></enum>
+									<enum name="intersect"><para>Only common codecs with the preferred codecs first. (default)</para></enum>
+									<enum name="only_preferred"><para>Use only the preferred codecs.</para></enum>
+									<enum name="only_nonpreferred"><para>Use only the non-preferred codecs.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="keep : &lt; all | first &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="all"><para>After the operation, keep all codecs. (default)</para></enum>
+									<enum name="first"><para>After the operation, keep only the first codec.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="transcode : &lt; allow | prevent &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="allow"><para>Allow transcoding. (default)</para></enum>
+									<enum name="prevent"><para>Prevent transcoding.</para></enum>
+								</enumlist>
+							</enum>
+						</enumlist>
+						<para>
+						</para>
+						<example>
+						codec_prefs_outgoing_offer = prefer: configured, operation: union, keep: first, transcode: prevent
+						</example>
+						<para>
+						Prefer the codecs coming from the endpoint.  Merge them with the codecs from the core
+						keeping the order of the preferred list. Keep only the first one. No transcoding allowed.
+						</para>
+					</description>
+				</configOption>
+				<configOption name="codec_prefs_incoming_answer">
+					<synopsis>Codec negotiation prefs for incoming answers.</synopsis>
+					<description>
+						<para>
+							This is a string that describes how the codecs specified in an incoming SDP answer
+							(pending) are reconciled with the codecs specified on an endpoint (configured)
+							when receiving an SDP answer.
+							The string actually specifies 4 <literal>name:value</literal> pair parameters
+							separated by commas. Whitespace is ignored and they may be specified in any order.
+							Note that this option is reserved for future functionality.
+
+						</para>
+						<para>
+							Parameters:
+						</para>
+						<enumlist>
+							<enum name="prefer: &lt; pending | configured &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="pending"><para>The codec list in the received SDP answer. (default)</para></enum>
+									<enum name="configured"><para>The codec list from the endpoint.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="operation : &lt; union | intersect | only_preferred | only_nonpreferred &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="union"><para>Merge the lists with the preferred codecs first.</para></enum>
+									<enum name="intersect"><para>Only common codecs with the preferred codecs first. (default)</para></enum>
+									<enum name="only_preferred"><para>Use only the preferred codecs.</para></enum>
+									<enum name="only_nonpreferred"><para>Use only the non-preferred codecs.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="keep : &lt; all | first &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="all"><para>After the operation, keep all codecs. (default)</para></enum>
+									<enum name="first"><para>After the operation, keep only the first codec.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="transcode : &lt; allow | prevent &gt;">
+								<para>
+								The transcode parameter is ignored when processing answers.
+								</para>
+							</enum>
+						</enumlist>
+						<para>
+						</para>
+						<example>
+						codec_prefs_incoming_answer = keep: first
+						</example>
+						<para>
+						Use the defaults but keep oinly the first codec.
+						</para>
+					</description>
+				</configOption>
+				<configOption name="codec_prefs_outgoing_answer">
+					<synopsis>Codec negotiation prefs for outgoing answers.</synopsis>
+					<description>
+						<para>
+							This is a string that describes how the codecs that come from the core (pending)
+							are reconciled with the codecs specified on an endpoint (configured)
+							when sending an SDP answer.
+							The string actually specifies 4 <literal>name:value</literal> pair parameters
+							separated by commas. Whitespace is ignored and they may be specified in any order.
+							Note that this option is reserved for future functionality.
+
+						</para>
+						<para>
+							Parameters:
+						</para>
+						<enumlist>
+							<enum name="prefer: &lt; pending | configured &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="pending"><para>The codec list that came from the core. (default)</para></enum>
+									<enum name="configured"><para>The codec list from the endpoint.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="operation : &lt; union | intersect | only_preferred | only_nonpreferred &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="union"><para>Merge the lists with the preferred codecs first.</para></enum>
+									<enum name="intersect"><para>Only common codecs with the preferred codecs first. (default)</para></enum>
+									<enum name="only_preferred"><para>Use only the preferred codecs.</para></enum>
+									<enum name="only_nonpreferred"><para>Use only the non-preferred codecs.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="keep : &lt; all | first &gt;">
+								<para>
+								</para>
+								<enumlist>
+									<enum name="all"><para>After the operation, keep all codecs. (default)</para></enum>
+									<enum name="first"><para>After the operation, keep only the first codec.</para></enum>
+								</enumlist>
+							</enum>
+							<enum name="transcode : &lt; allow | prevent &gt;">
+								<para>
+								The transcode parameter is ignored when processing answers.
+								</para>
+							</enum>
+						</enumlist>
+						<para>
+						</para>
+						<example>
+						codec_prefs_incoming_answer = keep: first
+						</example>
+						<para>
+						Use the defaults but keep oinly the first codec.
+						</para>
+					</description>
+				</configOption>
 				<configOption name="allow_overlap" default="yes">
 					<synopsis>Enable RFC3578 overlap dialing support.</synopsis>
 				</configOption>
@@ -939,7 +1178,74 @@
 					</para></description>
 				</configOption>
 				<configOption name="preferred_codec_only" default="no">
-					<synopsis>Respond to a SIP invite with the single most preferred codec rather than advertising all joint codec capabilities. This limits the other side's codec choice to exactly what we prefer.</synopsis>
+					<synopsis>Respond to a SIP invite with the single most preferred codec (DEPRECATED)</synopsis>
+					<description><para>Respond to a SIP invite with the single most preferred codec
+					rather than advertising all joint codec capabilities. This limits the other side's codec
+					choice to exactly what we prefer.</para>
+					<warning><para>This option has been deprecated in favor of
+					<literal>incoming_call_offer_pref</literal>.  Setting both options is unsupported.</para>
+					</warning>
+					</description>
+					<see-also>
+						<ref type="configOption">incoming_call_offer_pref</ref>
+					</see-also>
+				</configOption>
+				<configOption name="incoming_call_offer_pref" default="local">
+					<synopsis>Preferences for selecting codecs for an incoming call.</synopsis>
+					<description>
+						<para>Based on this setting, a joint list of preferred codecs between those
+						received in an incoming SDP offer (remote), and those specified in the
+						endpoint's "allow" parameter (local) es created and is passed to the Asterisk
+						core. </para>
+						<note><para>This list will consist of only those codecs found in both lists.</para></note>
+						<enumlist>
+							<enum name="local"><para>
+								Include all codecs in the local list that are also in the remote list
+								preserving the local order.  (default).
+							</para></enum>
+							<enum name="local_first"><para>
+								Include only the first codec in the local list that is also in the remote list.
+							</para></enum>
+							<enum name="remote"><para>
+								Include all codecs in the remote list that are also in the local list
+								preserving the remote order.
+							</para></enum>
+							<enum name="remote_first"><para>
+								Include only the first codec in the remote list that is also in the local list.
+							</para></enum>
+						</enumlist>
+					</description>
+				</configOption>
+				<configOption name="outgoing_call_offer_pref" default="remote_merge">
+					<synopsis>Preferences for selecting codecs for an outgoing call.</synopsis>
+					<description>
+						<para>Based on this setting, a joint list of preferred codecs between
+						those received from the Asterisk core (remote), and those specified in
+						the endpoint's "allow" parameter (local) is created and is used to create
+						the outgoing SDP offer.</para>
+						<enumlist>
+							<enum name="local"><para>
+								Include all codecs in the local list that are also in the remote list
+								preserving the local order.
+							</para></enum>
+							<enum name="local_merge"><para>
+								Include all codecs in the local list preserving the local order.
+							</para></enum>
+							<enum name="local_first"><para>
+								Include only the first codec in the local list.
+							</para></enum>
+							<enum name="remote"><para>
+								Include all codecs in the remote list that are also in the local list
+								preserving the remote order.
+							</para></enum>
+							<enum name="remote_merge"><para>
+                                                                Include all codecs in the local list preserving the remote order. (default)
+							</para></enum>
+							<enum name="remote_first"><para>
+								Include only the first codec in the remote list that is also in the local list.
+							</para></enum>
+						</enumlist>
+					</description>
 				</configOption>
 				<configOption name="rtp_keepalive">
 					<synopsis>Number of seconds between RTP comfort noise keepalive packets.</synopsis>
@@ -1152,6 +1458,14 @@
 						this 183 can cause loss of ringback tone.  This flag emulates
 						the behavior of chan_sip and prevents these 183 responses from
 						being forwarded.</para>
+					</description>
+				</configOption>
+				<configOption name="stir_shaken" default="no">
+					<synopsis>Enable STIR/SHAKEN support on this endpoint</synopsis>
+					<description><para>
+						Enable STIR/SHAKEN support on this endpoint. On incoming INVITEs,
+						the Identity header will be checked for validity. On outgoing
+						INVITEs, an Identity header will be added.</para>
 					</description>
 				</configOption>
 			</configObject>
@@ -1759,6 +2073,12 @@
 							this functionality.
 						</para></note>
 					</description>
+				</configOption>
+				<configOption name="disable_rport" default="no">
+					<synopsis>Disable the use of rport in outgoing requests.</synopsis>
+					<description><para>
+						Remove "rport" parameter from the outgoing requests.
+					</para></description>
 				</configOption>
 				<configOption name="type">
 					<synopsis>Must be of type 'system' UNLESS the object name is 'system'.</synopsis>
@@ -3112,6 +3432,21 @@ struct ast_sip_endpoint *ast_sip_identify_endpoint(pjsip_rx_data *rdata)
 	return endpoint;
 }
 
+char *ast_sip_rdata_get_header_value(pjsip_rx_data *rdata, const pj_str_t str)
+{
+	pjsip_generic_string_hdr *hdr;
+	pj_str_t hdr_val;
+
+	hdr = pjsip_msg_find_hdr_by_name(rdata->msg_info.msg, &str, NULL);
+	if (!hdr) {
+		return NULL;
+	}
+
+	pj_strdup_with_null(rdata->tp_info.pool, &hdr_val, &hdr->hvalue);
+
+	return hdr_val.ptr;
+}
+
 static int do_cli_dump_endpt(void *v_a)
 {
 	struct ast_cli_args *a = v_a;
@@ -3588,6 +3923,12 @@ pjsip_dialog *ast_sip_create_dialog_uac(const struct ast_sip_endpoint *endpoint,
 	pj_cstr(&target_uri, uri);
 
 	res = pjsip_dlg_create_uac(pjsip_ua_instance(), &local_uri, NULL, &remote_uri, &target_uri, &dlg);
+	if (res == PJ_SUCCESS && !(PJSIP_URI_SCHEME_IS_SIP(dlg->target) || PJSIP_URI_SCHEME_IS_SIPS(dlg->target))) {
+		/* dlg->target is a pjsip_other_uri, but it's assumed to be a
+		 * pjsip_sip_uri below. Fail fast. */
+		res = PJSIP_EINVALIDURI;
+		pjsip_dlg_terminate(dlg);
+	}
 	if (res != PJ_SUCCESS) {
 		if (res == PJSIP_EINVALIDURI) {
 			ast_log(LOG_ERROR,
@@ -3967,7 +4308,7 @@ static int create_out_of_dialog_request(const pjsip_method *method, struct ast_s
 		contact_hdr = pjsip_msg_find_hdr_by_names((*tdata)->msg, &HCONTACT, &HCONTACTSHORT, NULL);
 		if (contact_hdr) {
 			contact_uri = pjsip_uri_get_uri(contact_hdr->uri);
-			pj_strdup2(pool, &contact_uri->user, endpoint->contact_user);
+			pj_strdup2((*tdata)->pool, &contact_uri->user, endpoint->contact_user);
 		}
 	}
 
@@ -5037,6 +5378,52 @@ int ast_sip_str_to_dtmf(const char * dtmf_mode)
 	}
 
 	return result;
+}
+
+const char *ast_sip_call_codec_pref_to_str(struct ast_flags pref)
+{
+	const char *value;
+
+	if (ast_sip_call_codec_pref_test(pref, LOCAL) &&  ast_sip_call_codec_pref_test(pref, INTERSECT) && ast_sip_call_codec_pref_test(pref, ALL)) {
+		value = "local";
+	} else if (ast_sip_call_codec_pref_test(pref, LOCAL) &&  ast_sip_call_codec_pref_test(pref, UNION) && ast_sip_call_codec_pref_test(pref, ALL)) {
+		value = "local_merge";
+	} else if (ast_sip_call_codec_pref_test(pref, LOCAL) &&  ast_sip_call_codec_pref_test(pref, INTERSECT) && ast_sip_call_codec_pref_test(pref, FIRST)) {
+		value = "local_first";
+	} else if (ast_sip_call_codec_pref_test(pref, REMOTE) &&  ast_sip_call_codec_pref_test(pref, INTERSECT) && ast_sip_call_codec_pref_test(pref, ALL)) {
+		value = "remote";
+	} else if (ast_sip_call_codec_pref_test(pref, REMOTE) &&  ast_sip_call_codec_pref_test(pref, UNION) && ast_sip_call_codec_pref_test(pref, ALL)) {
+		value = "remote_merge";
+	} else if (ast_sip_call_codec_pref_test(pref, REMOTE) &&  ast_sip_call_codec_pref_test(pref, UNION) && ast_sip_call_codec_pref_test(pref, FIRST)) {
+		value = "remote_first";
+	} else {
+		value = "unknown";
+	}
+
+	return value;
+}
+
+int ast_sip_call_codec_str_to_pref(struct ast_flags *pref, const char *pref_str, int is_outgoing)
+{
+	pref->flags = 0;
+
+	if (strcmp(pref_str, "local") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_LOCAL | AST_SIP_CALL_CODEC_PREF_INTERSECT | AST_SIP_CALL_CODEC_PREF_ALL);
+	} else if (is_outgoing && strcmp(pref_str, "local_merge") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_LOCAL | AST_SIP_CALL_CODEC_PREF_UNION | AST_SIP_CALL_CODEC_PREF_ALL);
+	} else if (strcmp(pref_str, "local_first") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_LOCAL | AST_SIP_CALL_CODEC_PREF_INTERSECT | AST_SIP_CALL_CODEC_PREF_FIRST);
+	} else if (strcmp(pref_str, "remote") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_REMOTE | AST_SIP_CALL_CODEC_PREF_INTERSECT | AST_SIP_CALL_CODEC_PREF_ALL);
+	} else if (is_outgoing && strcmp(pref_str, "remote_merge") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_REMOTE | AST_SIP_CALL_CODEC_PREF_UNION | AST_SIP_CALL_CODEC_PREF_ALL);
+	} else if (strcmp(pref_str, "remote_first") == 0) {
+		ast_set_flag(pref, AST_SIP_CALL_CODEC_PREF_REMOTE | AST_SIP_CALL_CODEC_PREF_UNION | AST_SIP_CALL_CODEC_PREF_FIRST);
+	} else {
+		return -1;
+	}
+
+	return 0;
 }
 
 /*!

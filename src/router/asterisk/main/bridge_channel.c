@@ -1043,6 +1043,23 @@ int ast_bridge_channel_queue_frame(struct ast_bridge_channel *bridge_channel, st
 		return 0;
 	}
 
+	if ((fr->frametype == AST_FRAME_VOICE || fr->frametype == AST_FRAME_VIDEO ||
+		fr->frametype == AST_FRAME_TEXT || fr->frametype == AST_FRAME_IMAGE ||
+		fr->frametype == AST_FRAME_RTCP) && fr->stream_num > -1) {
+		int num = -1;
+
+		ast_bridge_channel_lock(bridge_channel);
+		if (fr->stream_num < (int)AST_VECTOR_SIZE(&bridge_channel->stream_map.to_channel)) {
+			num = AST_VECTOR_GET(&bridge_channel->stream_map.to_channel, fr->stream_num);
+		}
+		ast_bridge_channel_unlock(bridge_channel);
+
+		if (num == -1) {
+			/* We don't have a mapped stream so just discard this frame. */
+			return 0;
+		}
+	}
+
 	dup = ast_frdup(fr);
 	if (!dup) {
 		return -1;
@@ -2360,6 +2377,41 @@ static void bridge_channel_handle_control(struct ast_bridge_channel *bridge_chan
 
 /*!
  * \internal
+ * \brief Ensure text data is zero terminated before sending
+ *
+ * \param chan Channel to send text to
+ * \param f The frame containing the text data to send
+ *
+ * \return Nothing
+ */
+static void sendtext_safe(struct ast_channel *chan, const struct ast_frame *f)
+{
+	if (f->datalen) {
+		char *text = f->data.ptr;
+
+		if (text[f->datalen - 1]) {
+			/* Not zero terminated, we need to allocate */
+			text = ast_strndup(text, f->datalen);
+			if (!text) {
+				return;
+			}
+		}
+
+		ast_sendtext(chan, text);
+
+		if (text != f->data.ptr) {
+			/* Only free if we allocated */
+			ast_free(text);
+		}
+	} else {
+		/* Special case if the frame length is zero (although I
+		 * am not sure this is possible?) */
+		ast_sendtext(chan, "");
+	}
+}
+
+/*!
+ * \internal
  * \brief Handle bridge channel write frame to channel.
  * \since 12.0.0
  *
@@ -2432,7 +2484,7 @@ static void bridge_channel_handle_write(struct ast_bridge_channel *bridge_channe
 	case AST_FRAME_TEXT:
 		ast_debug(1, "Sending TEXT frame to '%s': %*.s\n",
 			ast_channel_name(bridge_channel->chan), fr->datalen, (char *)fr->data.ptr);
-		ast_sendtext(bridge_channel->chan, fr->data.ptr);
+		sendtext_safe(bridge_channel->chan, fr);
 		break;
 	case AST_FRAME_TEXT_DATA:
 		msg = (struct ast_msg_data *)fr->data.ptr;
