@@ -8,7 +8,7 @@ EXTRA_CFLAGS=-I$(TOP) -I$(STAGING_DIR)/usr/include -L$(STAGING_DIR)/usr/lib  $(M
 EXTRA_LDFLAGS=-L$(TOP)/libubox/
 
 ubus-configure: 
-	$(call CMakeConfigure,$(PKG_BUILD_DIR),$(STAGING_DIR),$(CMAKE_OPTIONS))
+	$(call CMakeConfigure,$(PKG_BUILD_DIR),$(STAGING_DIR),$(CMAKE_OPTIONS),.)
 
 ubus: json-c libubox ubus-configure
 	$(MAKE) -C ubus

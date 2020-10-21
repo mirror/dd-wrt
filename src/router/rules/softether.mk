@@ -30,7 +30,7 @@ softether-configure: zlib readline ncurses
 	cd $(TOP)/softether/host && export CC=gcc && export LD=ld && export CFLAGS=-O2 && make
 	cp $(TOP)/softether/host/tmp/hamcorebuilder /usr/local/bin
 	$(call CMakeClean,$(SOFTETHER_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(SOFTETHER_PKG_BUILD_DIR),$(SOFTETHER_STAGING_DIR),$(SOFTETHER_CMAKE_OPTIONS),$(SOFTETHER_EXTRA_CFLAGS),$(SOFTETHER_EXTRA_LDFLAGS),.) 
 
 softether: zlib ncurses
 	$(MAKE) -C softether

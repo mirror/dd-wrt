@@ -21,7 +21,7 @@ mrp-configure:
 	make -C mrp/ev
 	rm -f $(TOP)/mrp/CMakeCache.txt
 	$(call CMakeClean,$(MRP_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(MRP_PKG_BUILD_DIR),$(MRP_STAGING_DIR),$(MRP_CMAKE_OPTIONS),$(MRP_EXTRA_CFLAGS),$(MRP_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(MRP_PKG_BUILD_DIR),$(MRP_STAGING_DIR),$(MRP_CMAKE_OPTIONS),$(MRP_EXTRA_CFLAGS),$(MRP_EXTRA_LDFLAGS),.) 
 
 mrp:
 	make -C mrp/ev

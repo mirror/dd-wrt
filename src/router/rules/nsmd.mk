@@ -9,7 +9,7 @@ NSMD_EXTRA_LDFLAGS=-L$(TOP)/libubox -L$(TOP)/libnl-tiny -L$(TOP)/_staging/usr/li
 MAKE_FLAGS+=VERBOSE=1
 
 nsmd-configure: 
-	$(call CMakeConfigure,$(NSMD_PKG_BUILD_DIR),$(STAGING_DIR),$(NSMD_CMAKE_OPTIONS),$(NSMD_EXTRA_CFLAGS),$(NSMD_EXTRA_LDFLAGS))
+	$(call CMakeConfigure,$(NSMD_PKG_BUILD_DIR),$(STAGING_DIR),$(NSMD_CMAKE_OPTIONS),$(NSMD_EXTRA_CFLAGS),$(NSMD_EXTRA_LDFLAGS),.)
 
 #nsmd-configure
 nsmd: 
