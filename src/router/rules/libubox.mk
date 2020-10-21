@@ -11,7 +11,7 @@ MAKE_FLAGS+=VERBOSE=0
 
 libubox-configure: 
 	$(call CMakeClean,$(UBOX_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(UBOX_PKG_BUILD_DIR),$(UBOX_STAGING_DIR),$(UBOX_CMAKE_OPTIONS),$(UBOX_EXTRA_CFLAGS),$(UBOX_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(UBOX_PKG_BUILD_DIR),$(UBOX_STAGING_DIR),$(UBOX_CMAKE_OPTIONS),$(UBOX_EXTRA_CFLAGS),$(UBOX_EXTRA_LDFLAGS),.) 
 
 libubox: libubox-configure 
 	$(MAKE) -C libubox

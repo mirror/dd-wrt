@@ -39,7 +39,7 @@ endif
 
 zlib-configure:
 	$(call CMakeClean,$(ZLIB_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(ZLIB_PKG_BUILD_DIR),$(ZLIB_STAGING_DIR),$(ZLIB_CMAKE_OPTIONS),$(ZLIB_EXTRA_CFLAGS),$(ZLIB_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(ZLIB_PKG_BUILD_DIR),$(ZLIB_STAGING_DIR),$(ZLIB_CMAKE_OPTIONS),$(ZLIB_EXTRA_CFLAGS),$(ZLIB_EXTRA_LDFLAGS),.) 
 
 zlib:
 	$(MAKE) -C zlib
