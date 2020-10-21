@@ -17,7 +17,12 @@ editline-install:
 	rm -f $(INSTALLDIR)/editline/usr/lib/*.la
 
 
-asterisk-configure: util-linux-configure util-linux-install jansson editline zlib minidlna
+asterisk-configure: util-linux-configure jansson editline zlib minidlna
+	make -C util-linux
+	make -C util-linux install DESTDIR=$(INSTALLDIR)/util-linux
+	mkdir -p $(INSTALLDIR)/util-linux/usr/lib
+	-cp -urv $(INSTALLDIR)/util-linux/usr/tmp/* $(INSTALLDIR)/util-linux/usr/lib
+	rm -rf $(INSTALLDIR)/util-linux/usr/tmp 
 	rm -f asterisk/menuselect.makeopts && \
 	cd asterisk && ./configure --host=$(ARCH)-linux-uclibc \
 	--libdir=/usr/lib \
@@ -63,8 +68,8 @@ asterisk-configure: util-linux-configure util-linux-install jansson editline zli
 	--without-iksemel \
 	--with-uuid=$(INSTALLDIR)/util-linux/usr \
 	ac_cv_header_locale_h=yes \
-	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
-	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
+	CFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -DLOW_MEMORY -DNEED_PRINTF" \
+	CXXFLAGS="$(COPTS) $(MIPS16_OPT) -I$(TOP)/openssl/include -L$(TOP)/openssl -L$(TOP)/minidlna/lib -I$(INSTALLDIR)/util-linux/usr/include -DLOW_MEMORY -DNEED_PRINTF" \
 	CPPFLAGS="$(COPTS) $(MIPS16_OPT) -L$(TOP)/minidlna/lib -DLOW_MEMORY -DNEED_PRINTF" \
 	SQLITE3_LIB="-L$(TOP)/minidlna/lib -lsqlite3" \
 	SQLITE3_INCLUDE="-I$(TOP)/minidlna/sqlite-3.6.22 -I$(TOP)/openssl/include -L$(TOP)/openssl" \
@@ -111,7 +116,7 @@ endif
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
@@ -125,7 +130,7 @@ endif
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
 		makeopts.embed_rules
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	make -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
@@ -171,7 +176,7 @@ endif
 
 asterisk-install:
 	chmod 700 asterisk/build_tools/install_subst
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
@@ -180,7 +185,7 @@ asterisk-install:
 		OPTIMIZE="" \
 		DESTDIR=$(TOP)/$(ARCH)-uclibc/tmp/$(ARCHITECTURE)/asterisk \
 		install samples
-	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
+	-ASTCFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -I$(TOP)/ncurses/include -I$(INSTALLDIR)/util-linux/usr/include -I$(TOP)/openssl/include -I$(TOP)/minidlna/sqlite-3.6.22" \
 	ASTLDFLAGS="$(COPTS) $(MIPS16_OPT) -DLOW_MEMORY -DNEED_PRINTF -fPIC -L$(TOP)/ncurses/lib -L$(TOP)/openssl -L$(TOP)/minidlna/lib" \
 	$(MAKE) -C asterisk \
 		ASTVARLIBDIR="/usr/lib/asterisk" \
