@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-revision"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-revision_mod="urn:error-substatement4-revision">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-revision"/>
+  <prefix value="error-substatement4-revision_mod"/>
+
+  <revision date="2016-05-22">
+    <reference>
+      <test>this is an error substatement4 of revision.</test>
+    </reference>
+  </revision>
+</module>

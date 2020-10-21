@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-revision-not-unique"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-revision-not-unique_mod="urn:error-revision-not-unique">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-revision-not-unique"/>
+  <prefix value="error-revision-not-unique_mod"/>
+
+  <revisioin date="2016-05-22"/>
+  <revisioin date="2016-05-22"/>
+</module>

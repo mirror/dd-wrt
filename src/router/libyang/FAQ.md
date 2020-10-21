@@ -21,7 +21,7 @@ $ make
    or add the libyang's location to the linker paths in `/etc/ld.so.conf.d` and
    then run `ldconfig` to rebuild the linker cache.
 
-__Q: yanglint(1) does not start and, but prints the following error messages:__
+__Q: yanglint(1) does not start, but prints the following error messages:__
 ```
 ./yanglint
 libyang[0]: Invalid keyword "type" as a child to "annotation". (path: /)
@@ -46,3 +46,14 @@ $ LIBYANG_EXTENSIONS_PLUGINS_DIR=`pwd`/src/extensions ./yanglint
 $ LIBYANG_USER_TYPES_PLUGINS_DIR=`pwd`/src/user_types
 ```
    However, user types are not required for yanglint(1) to run properly.
+
+__Q: error (or similar) is printed:__
+```
+Regular expression "<exp>" is not valid ("<exp>": support for \P, \p, and \X has not been compiled).
+```
+
+__A:__ libyang uses *PCRE* library (not *PCRE2*) for regular expression parsing
+   and evaluation. This error is printed because the locally installed *PCRE*
+   library on your system is missing support for these regex atoms. It must
+   be explicitly allowed by compiling *PCRE* with `--enable-unicode-properties`
+   (more in its [README](https://www.pcre.org/original/readme.txt)).

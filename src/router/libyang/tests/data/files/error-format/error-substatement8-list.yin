@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement8-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement8-list_mod="urn:error-substatement8-list">
+  <namespace uri="urn:error-substatement8-list"/>
+  <prefix value="error-substatement8-list_mod"/>
+
+  <feature name="feat1"/>
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- add must node -->
+    <must condition="must1"/>
+    <if-feature name="feat1">
+      <text>this is an error if-feature</text>
+    </if-feature>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>

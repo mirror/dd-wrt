@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-yang-version"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-yang-version_mod="urn:error-order-yang-version">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-yang-version"/>
+  <prefix value="error-order-yang-version_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- yang-version should be placed before leaf -->
+  <yang-version value="1.1"/>
+</module>

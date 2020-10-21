@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement-reference"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement-reference_mod="urn:error-substatement-reference">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement-reference"/>
+  <prefix value="error-substatement-reference_mod"/>
+
+  <reference>
+    <test> this is an error example about reference.</test>
+  </reference>
+
+</module>

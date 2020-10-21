@@ -31,9 +31,7 @@ volatile uint8_t ly_log_level = LY_LLWRN;
 volatile uint8_t ly_log_opts = LY_LOLOG | LY_LOSTORE_LAST;
 static void (*ly_log_clb)(LY_LOG_LEVEL level, const char *msg, const char *path);
 static volatile int path_flag = 1;
-#ifndef NDEBUG
 volatile int ly_log_dbg_groups = 0;
-#endif
 
 API LY_LOG_LEVEL
 ly_verb(LY_LOG_LEVEL level)
@@ -263,6 +261,12 @@ ly_log_dbg(int group, const char *format, ...)
     case LY_LDGDIFF:
         str_group = "DIFF";
         break;
+    case LY_LDGAPI:
+        str_group = "API";
+        break;
+    case LY_LDGHASH:
+        str_group = "HASH";
+        break;
     default:
         LOGINT(NULL);
         return;
@@ -276,6 +280,7 @@ ly_log_dbg(int group, const char *format, ...)
     va_start(ap, format);
     log_vprintf(NULL, LY_LLDBG, 0, 0, NULL, dbg_format, ap);
     va_end(ap);
+    free(dbg_format);
 }
 
 #endif
@@ -285,18 +290,79 @@ lyext_log(const struct ly_ctx *ctx, LY_LOG_LEVEL level, const char *plugin, cons
 {
     va_list ap;
     char *plugin_msg;
+    int ret;
 
     if (ly_log_level < level) {
         return;
     }
 
-    if (asprintf(&plugin_msg, "%s (reported by plugin %s, %s())", format, plugin, function) == -1) {
+    if (plugin)
+        ret = asprintf(&plugin_msg, "%s (reported by plugin %s, %s())", format, plugin, function);
+    else
+        ret = asprintf(&plugin_msg, "%s", format);
+
+    if (ret == -1) {
         LOGMEM(ctx);
         return;
     }
 
     va_start(ap, format);
     log_vprintf(ctx, level, (level == LY_LLERR ? LY_EPLUGIN : 0), 0, NULL, plugin_msg, ap);
+    va_end(ap);
+
+    free(plugin_msg);
+}
+
+static enum LY_VLOG_ELEM extvelog2velog[] = {
+    LY_VLOG_NONE, /* LYEXT_VLOG_NONE */
+    LY_VLOG_XML, /* LYEXT_VLOG_XML */
+    LY_VLOG_LYS, /* LYEXT_VLOG_LYS */
+    LY_VLOG_LYD, /* LYEXT_VLOG_LYD */
+    LY_VLOG_STR, /* LYEXT_VLOG_STR */
+    LY_VLOG_PREV, /* LYEXT_VLOG_PREV */
+};
+
+API void
+lyext_vlog(const struct ly_ctx *ctx, LY_VECODE vecode, const char *plugin, const char *function,
+           LYEXT_VLOG_ELEM elem_type, const void *elem, const char *format, ...)
+{
+    enum LY_VLOG_ELEM etype = extvelog2velog[elem_type];
+    char *plugin_msg, *path = NULL;
+    va_list ap;
+    int ret;
+
+    if (path_flag && (etype != LY_VLOG_NONE)) {
+        if (etype == LY_VLOG_PREV) {
+            /* use previous path */
+            const struct ly_err_item *first = ly_err_first(ctx);
+            if (first && first->prev->path) {
+                path = strdup(first->prev->path);
+            }
+        } else {
+            /* print path */
+            if (!elem) {
+                /* top-level */
+                path = strdup("/");
+            } else {
+                ly_vlog_build_path(etype, elem, &path, 0, 0);
+            }
+        }
+    }
+
+    if (plugin)
+        ret = asprintf(&plugin_msg, "%s (reported by plugin %s, %s())", format, plugin, function);
+    else
+        ret = asprintf(&plugin_msg, "%s", format);
+
+    if (ret == -1) {
+        LOGMEM(ctx);
+        free(path);
+        return;
+    }
+
+    va_start(ap, format);
+    /* path is spent and should not be freed! */
+    log_vprintf(ctx, LY_LLERR, LY_EVALID, vecode, path, plugin_msg, ap);
     va_end(ap);
 
     free(plugin_msg);
@@ -369,7 +435,7 @@ const char *ly_errs[] = {
 /* LYE_INWHEN */       "Irresolvable when condition \"%s\".",
 /* LYE_NOMIN */        "Too few \"%s\" elements.",
 /* LYE_NOMAX */        "Too many \"%s\" elements.",
-/* LYE_NOREQINS */     "Required instance of \"%s\" does not exists.",
+/* LYE_NOREQINS */     "Required instance of \"%s\" does not exist.",
 /* LYE_NOLEAFREF */    "Leafref \"%s\" of value \"%s\" points to a non-existing leaf.",
 /* LYE_NOMANDCHOICE */ "Mandatory choice \"%s\" missing a case branch.",
 
@@ -519,11 +585,11 @@ ly_vlog_build_path_print(char **path, uint16_t *index, const char *str, uint16_t
 }
 
 int
-ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, int schema_all_prefixes, int data_no_predicates)
+ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, int schema_all_prefixes, int data_no_last_predicate)
 {
     int i, j, yang_data_extension = 0;
     struct lys_node_list *slist;
-    struct lys_node *sparent;
+    struct lys_node *sparent = NULL;
     struct lyd_node *dlist, *diter;
     const struct lys_module *top_smodule = NULL;
     const char *name, *prefix = NULL, *val_end, *val_start, *ext_name;
@@ -550,8 +616,12 @@ ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, i
                 top_smodule = lys_node_module(sparent);
             }
 
-            if (!((struct lys_node *)elem)->parent || (lys_node_module((struct lys_node *)elem) != top_smodule)
-                    || schema_all_prefixes) {
+            /* skip uses */
+            sparent = lys_parent((struct lys_node *)elem);
+            while (sparent && (sparent->nodetype == LYS_USES)) {
+                sparent = lys_parent(sparent);
+            }
+            if (!sparent || (lys_node_module((struct lys_node *)elem) != top_smodule) || schema_all_prefixes) {
                 prefix = lys_node_module((struct lys_node *)elem)->name;
             } else {
                 prefix = NULL;
@@ -609,7 +679,7 @@ ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, i
             }
 
             /* handle predicates (keys) in case of lists */
-            if (!data_no_predicates) {
+            if (!data_no_last_predicate || index) {
                 if (((struct lyd_node *)elem)->schema->nodetype == LYS_LIST) {
                     dlist = (struct lyd_node *)elem;
                     slist = (struct lys_node_list *)((struct lyd_node *)elem)->schema;

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-rpc"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-rpc_mod="urn:error-substatement4-rpc">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-rpc"/>
+  <prefix value="error-substatement4-rpc_mod"/>
+
+  <!-- this is an error substatement about rpc. -->
+  <rpc name="rpc1">
+    <grouping name="grp1">
+      <text>this is an error substatement about grouping.</text>
+    </grouping>
+  </rpc>
+</module>

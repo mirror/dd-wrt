@@ -457,6 +457,18 @@ test_rpc_output_default(void **state)
 }
 
 static void
+test_rpc_augment(void **state)
+{
+    struct state *st = (*state);
+    const char *xml = "<oper xmlns=\"urn:defaults2\">"
+                         "<c1><c2><l>hi</l></c2></c1>"
+                       "</oper>";
+
+    st->dt = lyd_parse_mem(st->ctx, xml, LYD_XML, LYD_OPT_RPC, NULL);
+    assert_ptr_not_equal(st->dt, NULL);
+}
+
+static void
 test_notif_default(void **state)
 {
     struct state *st = (*state);
@@ -675,6 +687,7 @@ int main(void)
                     cmocka_unit_test_setup_teardown(test_df4, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_rpc_input_default, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_rpc_output_default, setup_f, teardown_f),
+                    cmocka_unit_test_setup_teardown(test_rpc_augment, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_notif_default, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_val_diff, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_feature, setup_f, teardown_f),

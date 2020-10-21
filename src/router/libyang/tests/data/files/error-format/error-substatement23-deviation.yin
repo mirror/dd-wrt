@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement23-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement23-deviation_mod="urn:error-substatement23-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement23-deviation"/>
+  <prefix value="error-substatement23-deviation_mod"/>
+
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:llist1">
+    <deviate value="replace">
+      <units name="bytes"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:llist1">
+    <deviate value="delete">
+      <units name="bits"/>
+    </deviate>
+  </deviation>
+</module>

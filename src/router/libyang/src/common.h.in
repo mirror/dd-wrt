@@ -19,13 +19,12 @@
 #include <errno.h>
 #include <inttypes.h>
 
+#include "compat.h"
 #include "libyang.h"
 #include "hash_table.h"
 #include "resolve.h"
 
-#define UNUSED(x) @COMPILER_UNUSED_ATTR@
-
-#if __STDC_VERSION__ >= 201112 && !defined __UCLIBC__ && \
+#if __STDC_VERSION__ >= 201112 && \
     !defined __STDC_NO_THREADS__ && \
     !defined __NetBSD__
 # define THREAD_LOCAL _Thread_local
@@ -37,27 +36,7 @@
 # error "Cannot define THREAD_LOCAL"
 #endif
 
-#ifndef __WORDSIZE
-#  if defined __x86_64__ && !defined __ILP32__
-#   define __WORDSIZE 64
-#  else
-#   define __WORDSIZE 32
-#  endif
-#endif
-
-#ifndef __INT64_C
-#  if __WORDSIZE == 64
-#    define __INT64_C(c)  c ## L
-#    define __UINT64_C(c) c ## UL
-#  else
-#    define __INT64_C(c)  c ## LL
-#    define __UINT64_C(c) c ## ULL
-#  endif
-#endif
-
-#ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS MAP_ANON
-#endif /* !MAP_ANONYMOUS */
+#define UNUSED(x) @COMPILER_UNUSED_ATTR@
 
 #define LY_CHECK_GOTO(COND, GOTO) if (COND) {goto GOTO;}
 #define LY_CHECK_ERR_GOTO(COND, ERR, GOTO) if (COND) {ERR; goto GOTO;}
@@ -70,14 +49,6 @@
  * the public API.
  */
 #define API __attribute__((visibility("default")))
-
-#ifndef  __USE_GNU
-/*
- * If we don't have GNU extension, implement these function on your own
- */
-char *get_current_dir_name(void);
-
-#endif
 
 /* how many bytes add when enlarging buffers */
 #define LY_BUF_STEP 128
@@ -102,6 +73,7 @@ extern THREAD_LOCAL enum int_log_opts log_opt;
  */
 extern volatile uint8_t ly_log_level;
 extern volatile uint8_t ly_log_opts;
+extern volatile int ly_log_dbg_groups;
 
 void ly_log(const struct ly_ctx *ctx, LY_LOG_LEVEL level, LY_ERR no, const char *format, ...);
 
@@ -126,6 +98,8 @@ void ly_log(const struct ly_ctx *ctx, LY_LOG_LEVEL level, LY_ERR no, const char 
 void ly_log_dbg(int group, const char *format, ...);
 
 #endif
+
+#define FUN_IN LOGDBG(LY_LDGAPI, "%s", __func__);
 
 #define LOGMEM(ctx) LOGERR(ctx, LY_EMEM, "Memory allocation failed (%s()).", __func__)
 
@@ -267,10 +241,10 @@ void ly_vlog_str(const struct ly_ctx *ctx, enum LY_VLOG_ELEM elem_type, const ch
  * @param[in] elem Element to print.
  * @param[in,out] path Resulting path printed.
  * @param[in] schema_all_prefixes Whether to include prefixes for all the nodes (only for schema paths).
- * @param[in] data_no_predicates Whether to skip generating predicates for all the nodes (only for data paths).
+ * @param[in] data_no_last_predicate Whether to skip generating predicate for the last node (only for data paths).
  * @return 0 on success, -1 on error.
  */
-int ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, int schema_all_prefixes, int data_no_predicates);
+int ly_vlog_build_path(enum LY_VLOG_ELEM elem_type, const void *elem, char **path, int schema_all_prefixes, int data_no_last_predicate);
 
 /**
  * @brief Get module from a context based on its name and revision.
@@ -305,7 +279,7 @@ const struct lys_module *ly_ctx_load_sub_module(struct ly_ctx *ctx, struct lys_m
  * @param[in] accept String of characters that are searched for.
  * @param[in] s_len Backward length of \p s.
  *
- * @return Pointer to the first backward occurence of a character from
+ * @return Pointer to the first backward occurrence of a character from
  *         \p accept or \p s - \p s_len if not found.
  */
 const char *strpbrk_backwards(const char *s, const char *accept, unsigned int s_len);
@@ -435,5 +409,12 @@ int ly_strequal_(const char *s1, const char *s2);
 int64_t dec_pow(uint8_t exp);
 
 int dec64cmp(int64_t num1, uint8_t dig1, int64_t num2, uint8_t dig2);
+
+/**
+ * @brief Get number of characters in the @p str, taking multibyte characters into account.
+ * @param[in] str String to examine.
+ * @return Number of characters in (possibly) multibyte characters string.
+ */
+size_t ly_strlen_utf8(const char *str);
 
 #endif /* LY_COMMON_H_ */

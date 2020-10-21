@@ -422,6 +422,90 @@ test_validate_value(void **state)
     assert_int_equal(lyd_validate_value(node, "9.223372036854775807"), EXIT_SUCCESS); /* ok */
 }
 
+void test_xmltojson_anydata(void **state)
+{
+    struct state *st = (*state);
+    const char *yang = "module y{"
+                        "  namespace urn:y;"
+                        "  prefix y;"
+                        "  extension test {"
+                        "    argument \"test\";"
+                        "  } "
+                        "  anydata data{"
+                        "    y:test \"MY_INTERFACES\";"
+                        "  }"
+                        "}";
+    const char *xml1 =  "<data xmlns =\"urn:y\">"
+                        "  <severity >test</severity>"
+                        "</data>";
+
+    const char *xml2 = "<data xmlns =\"urn:y\">abab</data>";
+
+    const char *xml_data_tree = "<data xmlns =\"urn:y\">"
+                                "+--rw interfaces"
+                                "|  +--rw interface* [name]"
+                                "|     +--rw name                        string"
+                                "|     +--rw description?                string"
+                                "|     +--rw type                        identityref"
+                                "|     +--rw link-up-down-trap-enable?   enumeration"
+                                "</data>";
+
+    const struct lys_module *mod;
+    mod = lys_parse_mem(st->ctx, yang, LYS_IN_YANG);
+    assert_ptr_not_equal(mod, NULL);
+
+    st->dt = lyd_parse_mem(st->ctx, xml1, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->dt, NULL);
+
+    lyd_print_mem(&st->data, st->dt, LYD_JSON, LYP_WITHSIBLINGS | LYP_WD_ALL);
+    assert_ptr_not_equal(st->data, NULL);
+    free(st->data);
+    st->data = NULL;
+    lyd_free_withsiblings(st->dt);
+
+    st->dt = lyd_parse_mem(st->ctx, xml2, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->dt, NULL);
+
+    lyd_print_mem(&st->data, st->dt, LYD_JSON, LYP_WITHSIBLINGS | LYP_WD_ALL);
+    assert_ptr_not_equal(st->data, NULL);
+    free(st->data);
+    st->data = NULL;
+    lyd_free_withsiblings(st->dt);
+
+    st->dt = lyd_parse_mem(st->ctx, xml_data_tree, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->dt, NULL);
+
+    lyd_print_mem(&st->data, st->dt, LYD_JSON, LYP_WITHSIBLINGS | LYP_WD_ALL);
+    assert_ptr_not_equal(st->data, NULL);
+}
+
+void test_xmltojson_extension(void **state)
+{
+    struct state *st = (*state);
+    const char *yang = "module y {"
+                       "  namespace urn:y;"
+                       "  prefix y;"
+                       "  extension test {"
+                       "    argument \"name\";"
+                       "  }"
+                       "  container y {"
+                       "    y:test  \"test\"; "
+                       "    leaf a { type string;}"
+                       "  }"
+                       "}";
+    const char *xml = "<y xmlns =\"urn:y\">"
+                      "  <a> \\\\major</a>"
+                      "</y>";
+
+    assert_ptr_not_equal(lys_parse_mem(st->ctx, yang, LYS_IN_YANG), NULL);
+
+    st->dt = lyd_parse_mem(st->ctx, xml, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->dt, NULL);
+
+    lyd_print_mem(&st->data, st->dt, LYD_JSON, LYP_WITHSIBLINGS | LYP_WD_ALL);
+    assert_ptr_not_equal(st->data, NULL);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -431,7 +515,10 @@ int main(void)
                     cmocka_unit_test_setup_teardown(test_xmltojson_identityref2, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_xmltojson_instanceid, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_canonical, setup_f, teardown_f),
-                    cmocka_unit_test_setup_teardown(test_validate_value, setup_f, teardown_f),};
+                    cmocka_unit_test_setup_teardown(test_validate_value, setup_f, teardown_f),
+                    cmocka_unit_test_setup_teardown(test_xmltojson_anydata, setup_f, teardown_f),
+                    cmocka_unit_test_setup_teardown(test_xmltojson_extension, setup_f, teardown_f),
+    };
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

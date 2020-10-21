@@ -145,6 +145,12 @@ TEST_MODULE(void **state)
             }
 
             schema_format = LYS_IN_YIN;
+            ly_ctx_destroy(st->ctx, NULL);
+            st->ctx = ly_ctx_new(TESTS_DIR "/conformance/" TEST_DIR, 0);
+            if (!st->ctx) {
+                fprintf(stderr, "Failed to create context.\n");
+                fail();
+            }
         } else {
             /* remove the modules */
             for (j = 0; j < TEST_SCHEMA_COUNT; ++j) {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement-organization"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement-organization_mod="urn:error-substatement-organization">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement-organization"/>
+  <prefix value="error-substatement-organization_mod"/>
+
+  <organization>
+    <test> this is an error example about organization.</test>
+  </organization>
+
+</module>

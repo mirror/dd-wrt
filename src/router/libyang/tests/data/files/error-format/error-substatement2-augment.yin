@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement2-augment"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement2-augment_mod="urn:error-substatement2-augment">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement2-augment"/>
+  <prefix value="error-substatement2-augment_mod"/>
+
+  <!-- this is an error substatement about augment. -->
+  <augment target-node="aug1">
+    <when name="when1">
+      <text>this is an error substatement about when.</text>
+    </when>
+  </augment>
+</module>

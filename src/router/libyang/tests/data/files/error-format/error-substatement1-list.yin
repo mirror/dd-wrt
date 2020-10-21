@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-list_mod="urn:error-substatement1-list">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-list"/>
+  <prefix value="error-substatement1-list_mod"/>
+
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- add must node -->
+    <must condition="must1"/>
+    <!-- ordered-by value is not system -->
+    <ordered-by value="sys123"/>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>

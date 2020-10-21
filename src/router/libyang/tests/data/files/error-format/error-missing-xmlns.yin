@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-missing-xmlns"
+        xmlns:error-missing-xmlns_mod="urn:error-missing-xmlns">  
+  <!-- missing xmlns -->
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-missing-xmlns"/>
+  <prefix value="error-missing-xmlns_mod"/>
+
+</module>

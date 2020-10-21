@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-organization"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-organization_mod="urn:error-order-organization">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-organization"/>
+  <prefix value="error-order-organization_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- organiztion should be placed before leaf -->
+  <organization>
+    <text>this is an error example about description. <text/>
+  </organization>
+</module>

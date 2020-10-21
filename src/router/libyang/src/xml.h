@@ -44,7 +44,8 @@ struct ly_ctx;
  */
 typedef enum lyxml_attr_type {
     LYXML_ATTR_STD = 1,              /**< standard XML attribute */
-    LYXML_ATTR_NS = 2                /**< XML namespace definition */
+    LYXML_ATTR_NS = 2,               /**< XML namespace definition */
+    LYXML_ATTR_STD_UNRES = 3         /**< standard XML attribute with unresolved namespace, its ns attribute is actually prefix */
 } LYXML_ATTR_TYPE;
 
 /**
@@ -296,7 +297,7 @@ const char *lyxml_get_attr(const struct lyxml_elem *elem, const char *name, cons
  *
  * @param[in] elem Element where start namespace searching
  * @param[in] prefix Prefix of the namespace to search for
- * @return Namespace defintion or NULL if no such namespace exists
+ * @return Namespace definition or NULL if no such namespace exists
  */
 const struct lyxml_ns *lyxml_get_ns(const struct lyxml_elem *elem, const char *prefix);
 

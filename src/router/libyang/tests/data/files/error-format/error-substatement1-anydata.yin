@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-anydata"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-anydata_mod="urn:error-substatement1-anydata">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-anydata"/>
+  <prefix value="error-substatement1-anydata_mod"/>
+
+  <anydata name="adata1">
+    <mandatory value="false"/>
+  </anydata>
+  <!-- this is an error substatement about anydata. -->
+  <anydata name="adata2">
+    <if-feature name="if-feature1">
+      <text> this is an error substatement about if-feature.</text>
+    </if-feature>
+  </anydata>
+</module>

@@ -1,7 +1,6 @@
 <yang-library xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
     <module-set>
         <name>complete</name>
-        <checksum>7</checksum>
         <import-only-module>
             <name>ietf-yang-metadata</name>
             <revision>2016-08-05</revision>
@@ -29,9 +28,9 @@
         </import-only-module>
         <module>
             <name>ietf-yang-library</name>
-            <revision>2018-01-17</revision>
+            <revision>2019-01-04</revision>
             <namespace>urn:ietf:params:xml:ns:yang:ietf-yang-library</namespace>
         </module>
     </module-set>
-    <checksum>7</checksum>
+    <content-id>7</content-id>
 </yang-library>

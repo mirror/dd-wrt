@@ -25,7 +25,7 @@ module mod4 {
         must "ifType != 'ethernet' or " +
              "(ifType = 'ethernet' and ifMTU = 1500)" {
             description "Test description";
-            reference "Test refrence";
+            reference "Test reference";
             error-app-tag "Error 750";
             error-message "An ethernet MTU must be 1500";
             reference "Duplicated string";

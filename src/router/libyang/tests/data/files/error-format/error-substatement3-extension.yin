@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-extension"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-extension_mod="urn:error-substatement3-extension">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-extension"/>
+  <prefix value="error-substatement3-extension_mod"/>
+
+  <!-- this is an error substatement about extension. -->
+  <extension name="ext1">
+    <text>this is an error substatement about extension.</text>
+  </extension>
+</module>

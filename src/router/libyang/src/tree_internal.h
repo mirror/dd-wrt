@@ -75,6 +75,7 @@ struct lyb_state {
     int size;
     const struct lys_module **models;
     int mod_count;
+    struct ly_ctx *ctx;
 
     /* LYB printer only */
     struct {
@@ -313,14 +314,13 @@ void lys_extension_instances_free(struct ly_ctx *ctx, struct lys_ext_instance **
                                   void (*private_destructor)(const struct lys_node *node, void *priv));
 
 /**
- * @brief Add pointer to \p leafref to \p leafref_target children so that it knows there
- * are some leafrefs referring it.
+ * @brief Check that leafref and its target have allowed config combination and there are no cyclic references.
  *
  * @param[in] leafref_target Leaf that is \p leafref's target.
  * @param[in] leafref Leaf or leaflist of type #LY_TYPE_LEAFREF referring \p leafref_target.
  * @return 0 on success, -1 on error.
  */
-int lys_leaf_add_leafref_target(struct lys_node_leaf *leafref_target, struct lys_node *leafref);
+int lys_leaf_check_leafref(struct lys_node_leaf *leafref_target, struct lys_node *leafref);
 
 /**
  * @brief Free a schema when condition
@@ -402,25 +402,6 @@ void lys_free(struct lys_module *module, void (*private_destructor)(const struct
 struct lyd_node *_lyd_new(struct lyd_node *parent, const struct lys_node *schema, int dflt);
 
 /**
- * @brief Create a dummy node for XPath evaluation. After done using, it should be removed.
- *
- * The function must be used very carefully:
- * - there must not be a list node to create
- *
- * @param[in] data Any data node of the tree where the dummy node will be created
- * @param[in] parent To optimize searching in data tree (and to avoid issues with lists), caller can specify a
- *                   parent node that exists in the data tree.
- * @param[in] schema Schema node of the dummy node to create, must be of nodetype that
- * appears also in data tree.
- * @param[in] value Optional value to be set in the dummy node
- * @param[in] dflt Set dflt flag in the created data nodes
- *
- * @return The first created node needed for the dummy node in the given tree.
- */
-struct lyd_node *lyd_new_dummy(struct lyd_node *data, struct lyd_node *parent, const struct lys_node *schema,
-                               const char *value, int dflt);
-
-/**
  * @brief Find the parent node of an attribute.
  *
  * @param[in] root Root element of the data tree with the attribute.
@@ -441,6 +422,16 @@ const struct lyd_node *lyd_attr_parent(const struct lyd_node *root, struct lyd_a
  * @return EXIT_SUCCESS on success, EXIT_FAILURE on error.
  */
 int lyd_unlink_internal(struct lyd_node *node, int permanent);
+
+/**
+ * @brief Get the canonical value.
+ *
+ * @param[in] schema Leaf or leaf-list schema node of the value.
+ * @param[in] val_str String value to transform.
+ * @param[in] val_str_len String value length.
+ * @return Canonical value (must be freed), NULL on error.
+ */
+char *lyd_make_canonical(const struct lys_node *schema, const char *val_str, int val_str_len);
 
 /**
  * @brief Internal version of lyd_insert() and lyd_insert_sibling().
@@ -484,20 +475,21 @@ int lys_get_sibling(const struct lys_node *siblings, const char *mod_name, int m
  * @param[in] name Node name.
  * @param[in] nam_len Node \p name length.
  * @param[in] type ORed desired type of the node. 0 means any (data node) type.
+ * @param[in] getnext_opts lys_getnext() options to use.
  * @param[out] ret Pointer to the node of the desired type. Can be NULL.
  *
  * @return EXIT_SUCCESS on success, EXIT_FAILURE on fail.
  */
 int lys_getnext_data(const struct lys_module *mod, const struct lys_node *parent, const char *name, int nam_len,
-                     LYS_NODE type, const struct lys_node **ret);
+                     LYS_NODE type, int getnext_opts, const struct lys_node **ret);
 
 int lyd_get_unique_default(const char* unique_expr, struct lyd_node *list, const char **dflt);
 
 int lyd_build_relative_data_path(const struct lys_module *module, const struct lyd_node *node, const char *schema_id,
                                  char *buf);
 
-void lyd_free_value(lyd_val value, LY_DATA_TYPE value_type, uint8_t value_flags, struct lys_type *type, lyd_val *old_val,
-                    LY_DATA_TYPE *old_val_type, uint8_t *old_val_flags);
+void lyd_free_value(lyd_val value, LY_DATA_TYPE value_type, uint8_t value_flags, struct lys_type *type,
+                    const char *value_str, lyd_val *old_val, LY_DATA_TYPE *old_val_type, uint8_t *old_val_flags);
 
 int lyd_list_equal(struct lyd_node *node1, struct lyd_node *node2, int with_defaults);
 
@@ -540,7 +532,7 @@ void unres_data_diff_rem(struct unres_data *unres, unsigned int idx);
  * @param[in] mod_count Number of module names in \p modules.
  * @param[in] data_tree Additional data tree for validating RPC/action/notification. The tree is used to satisfy
  *                      possible references to the datastore content.
- * @param[in] act_notif In case of nested action/notification, pointer to the subroot of the action/notification. Note
+ * @param[in] act_notif In case of nested action/notification, the subtree of the action/notification. Note
  *                      that in this case the \p root points to the top level data tree node which provides the context
  *                      for the nested action/notification
  * @param[in] unres     Unresolved data list, the newly added default nodes may need to add some unresolved items

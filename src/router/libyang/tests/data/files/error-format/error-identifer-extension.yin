@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-identifer-extension"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-identifer-extension_mod="urn:error-identifer-extension">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-identifer-extension"/>
+  <prefix value="error-identifer-extension_mod"/>
+
+  <!-- error name identifier about extension -->
+  <extension name="123_ext1"/>
+</module>

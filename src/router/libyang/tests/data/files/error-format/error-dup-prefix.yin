@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-prefix"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-prefix_mod="urn:error-dup-prefix">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-namespace"/>
+  <prefix value="error-dup-prefix_mod"/>
+  <prefix value="error-dup-prefix_mod"/>
+</module>

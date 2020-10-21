@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement20-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement20-deviation_mod="urn:error-substatement20-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement20-deviation"/>
+  <prefix value="error-substatement20-deviation_mod"/>
+
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:leaf2">
+    <deviate value="replace">
+      <type name="uint8"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:llist1">
+    <deviate value="replace">
+      <type name="uint8"/>
+    </deviate>
+  </deviation>
+  <deviation target-node="/common-deviation_mod:con">
+    <deviate value="replace">
+      <!-- replacing type is forbidden -->
+      <type name="uint8"/>
+    </deviate>
+  </deviation>
+</module>

@@ -159,12 +159,12 @@ test_lydict_insert_zc(void **state)
 
     value = strdup("bubba");
     if (!value) {
-        free(value);
         fail();
     }
 
     string = lydict_insert_zc(ctx, value);
     if (!string) {
+        free(value);
         fail();
     }
 
@@ -186,6 +186,7 @@ test_lydict_remove(void **state)
     }
     value2 = strdup("new_name");
     if (!value2) {
+        free(value);
         fail();
     }
 
@@ -193,6 +194,7 @@ test_lydict_remove(void **state)
     string = lydict_insert_zc(ctx, value); /* 1st instance */
     if (!string) {
         free(value);
+        free(value2);
         fail();
     }
 

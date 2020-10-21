@@ -1,0 +1,24 @@
+module act2 {
+  yang-version 1.1;
+  namespace "urn:act2";
+  prefix a2;
+
+  import act1 {
+     prefix a1;
+  }
+
+  augment "/a1:advanced" {
+    if-feature a1:feat1;
+    when "a1:condition = 'true'";
+
+    container conditional {
+      action conditional_action {
+      }
+      leaf b_positive {
+        type int32;
+      }
+      must "b_positive >= 0";
+    }
+  }
+}
+

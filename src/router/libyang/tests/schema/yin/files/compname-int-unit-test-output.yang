@@ -11,6 +11,9 @@ module compname-int-unit-test {
 
   rpc events {
     input {
+      leaf l {
+        type empty;
+      }
     }
 
     output {

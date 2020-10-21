@@ -783,6 +783,7 @@ tree_print_subtree(struct lyout *out, const struct lys_node *node, tp_opts *opts
 {
     unsigned int depth, i, j;
     int level = 0;
+    uint16_t max_child_len;
     const struct lys_node *parent;
 
     /* learn the depth of the node */
@@ -823,7 +824,8 @@ tree_print_subtree(struct lyout *out, const struct lys_node *node, tp_opts *opts
     }
 
     /* print the node and its descendants */
-    tree_print_snode(out, level, 0, node, LYS_ANY, NULL, 2, opts);
+    max_child_len = tree_get_max_name_len(node, NULL, LYS_LEAF|LYS_LEAFLIST|LYS_ANYDATA, opts);
+    tree_print_snode(out, level, max_child_len, node, LYS_ANY, NULL, 2, opts);
 }
 
 static int

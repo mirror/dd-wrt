@@ -49,10 +49,26 @@ int
 yang_read_common(struct lys_module *module, char *value, enum yytokentype type)
 {
     int ret = 0;
+    uint8_t i;
 
     switch (type) {
     case MODULE_KEYWORD:
         module->name = lydict_insert_zc(module->ctx, value);
+
+        /* in some really invalid situations there can be a circular import and
+         * we can check it only after we have parsed the module name */
+        for (i = 0; i < module->ctx->models.parsing_sub_modules_count; ++i) {
+            if (module->ctx->models.parsing_sub_modules[i] == module) {
+                /* skip our own module */
+                continue;
+            }
+
+            if (!strcmp(module->ctx->models.parsing_sub_modules[i]->name, module->name)) {
+                LOGVAL(module->ctx, LYE_CIRC_IMPORTS, LY_VLOG_NONE, NULL, module->name);
+                ret = EXIT_FAILURE;
+                break;
+            }
+        }
         break;
     case NAMESPACE_KEYWORD:
         ret = yang_check_string(module, &module->ns, "namespace", "module", value, NULL);
@@ -516,6 +532,10 @@ yang_fill_unique(struct lys_module *module, struct lys_node_list *list, struct l
 
         /* store token into unique structure (includes converting prefix to the module name) */
         unique->expr[i] = transform_schema2json(module, value);
+        if (!unique->expr[i]) {
+            LOGVAL(module->ctx, LYE_INARG, LY_VLOG_LYS, list, value, "unique");
+            goto error;
+        }
         if (vaux) {
             *vaux = c;
         }
@@ -619,7 +639,6 @@ yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_
     struct ly_ctx *ctx = module->ctx;
     int rc, ret = -1;
     unsigned int i, j;
-    int8_t req;
     const char *name, *value, *module_name = NULL;
     LY_DATA_TYPE base = 0, base_tmp;
     struct lys_node *siter;
@@ -876,13 +895,16 @@ yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_
         }
         break;
     case LY_TYPE_LEAFREF:
+    case LY_TYPE_INST:
         if (type->base == LY_TYPE_INST) {
             if (type->info.lref.path) {
                 LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "path");
                 goto error;
             }
-            if ((req = type->info.lref.req)) {
-                type->info.inst.req = req;
+            if (type->info.lref.req) {
+                type->info.inst.req = type->info.lref.req;
+            } else if (type->der->type.der) {
+                type->info.inst.req = type->der->type.info.inst.req;
             }
         } else if (type->base == LY_TYPE_LEAFREF) {
             /* require-instance only YANG 1.1 */
@@ -891,12 +913,9 @@ yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_
                 goto error;
             }
             /* flag resolving for later use */
-            if (!tpdftype) {
-                for (siter = parent; siter && siter->nodetype != LYS_GROUPING; siter = lys_parent(siter));
-                if (siter) {
-                    /* just a flag - do not resolve */
-                    tpdftype = 1;
-                }
+            if (!tpdftype && lys_ingrouping(parent)) {
+                /* just a flag - do not resolve */
+                tpdftype = 1;
             }
 
             if (type->info.lref.path) {
@@ -904,6 +923,7 @@ yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_
                     LOGVAL(ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "path");
                     goto error;
                 }
+
                 value = type->info.lref.path;
                 /* store in the JSON format */
                 type->info.lref.path = transform_schema2json(module, value);
@@ -927,6 +947,10 @@ yang_check_type(struct lys_module *module, struct lys_node *parent, struct yang_
             } else {
                 /* copy leafref definition into the derived type */
                 type->info.lref.path = lydict_insert(ctx, type->der->type.info.lref.path, 0);
+                if (!type->info.lref.req) {
+                    /* inherit require-instance only if not overwritten */
+                    type->info.lref.req = type->der->type.info.lref.req;
+                }
                 /* and resolve the path at the place we are (if not in grouping/typedef) */
                 if (!tpdftype && unres_schema_add_node(module, unres, type, UNRES_TYPE_LEAFREF, parent) == -1) {
                     goto error;
@@ -1511,8 +1535,10 @@ yang_fill_deviate_default(struct ly_ctx *ctx, struct lys_deviate *deviate, struc
     struct lys_node_choice *choice;
     struct lys_node_leaf *leaf;
     struct lys_node_leaflist *llist;
+    enum int_log_opts prev_ilo;
     int rc, i, j;
     unsigned int u;
+    const char *orig_dflt;
 
     u = strlen(value);
     if (dev_target->nodetype == LYS_CHOICE) {
@@ -1546,11 +1572,24 @@ yang_fill_deviate_default(struct ly_ctx *ctx, struct lys_deviate *deviate, struc
     } else if (dev_target->nodetype == LYS_LEAF) {
         leaf = (struct lys_node_leaf *)dev_target;
         if (deviate->mod == LY_DEVIATE_DEL) {
-            if (!leaf->dflt || !ly_strequal(leaf->dflt, value, 1)) {
+            orig_dflt = NULL;
+            if (leaf->dflt) {
+                /* transform back into the original value */
+                ly_ilo_change(NULL, ILO_IGNORE, &prev_ilo, NULL);
+                orig_dflt = transform_json2schema(leaf->module, leaf->dflt);
+                ly_ilo_restore(NULL, prev_ilo, NULL, 0);
+                if (!orig_dflt) {
+                    orig_dflt = lydict_insert(ctx, leaf->dflt, 0);
+                }
+            }
+            if (!orig_dflt || !ly_strequal(orig_dflt, value, 1)) {
                 LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
                 LOGVAL(ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Value differs from the target being deleted.");
+                lydict_remove(ctx, orig_dflt);
                 goto error;
             }
+            lydict_remove(ctx, orig_dflt);
+
             /* remove value */
             lydict_remove(ctx, leaf->dflt);
             leaf->dflt = NULL;
@@ -1577,7 +1616,20 @@ yang_fill_deviate_default(struct ly_ctx *ctx, struct lys_deviate *deviate, struc
         if (deviate->mod == LY_DEVIATE_DEL) {
             /* find and remove the value in target list */
             for (i = 0; i < llist->dflt_size; i++) {
-                if (llist->dflt[i] && ly_strequal(llist->dflt[i], value, 1)) {
+                orig_dflt = NULL;
+                if (llist->dflt[i]) {
+                    /* transform back into the original value */
+                    ly_ilo_change(NULL, ILO_IGNORE, &prev_ilo, NULL);
+                    orig_dflt = transform_json2schema(llist->module, llist->dflt[i]);
+                    ly_ilo_restore(NULL, prev_ilo, NULL, 0);
+                    if (!orig_dflt) {
+                        orig_dflt = lydict_insert(ctx, llist->dflt[i], 0);
+                    }
+                }
+
+                if (orig_dflt && ly_strequal(orig_dflt, value, 1)) {
+                    lydict_remove(ctx, orig_dflt);
+
                     /* match, remove the value */
                     lydict_remove(llist->module->ctx, llist->dflt[i]);
                     llist->dflt[i] = NULL;
@@ -1594,6 +1646,7 @@ yang_fill_deviate_default(struct ly_ctx *ctx, struct lys_deviate *deviate, struc
                     }
                     break;
                 }
+                lydict_remove(ctx, orig_dflt);
             }
             if (i == llist->dflt_size) {
                 LOGVAL(ctx, LYE_INARG, LY_VLOG_NONE, NULL, value, "default");
@@ -2256,74 +2309,72 @@ yang_read_ext(struct lys_module *module, void *actual, char *ext_name, char *ext
 {
     struct lys_ext_instance *instance;
     LY_STMT stmt = LY_STMT_UNKNOWN;
+    LYEXT_SUBSTMT insubstmt;
+    uint8_t insubstmt_index = 0;
 
     if (backup_type != NODE) {
-        instance = yang_ext_instance(actual, backup_type, is_ext_instance);
-        if (!instance) {
-            return NULL;
-        }
         switch (actual_type) {
         case YANG_VERSION_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_VERSION;
+            insubstmt = LYEXT_SUBSTMT_VERSION;
             stmt = LY_STMT_VERSION;
             break;
         case NAMESPACE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_NAMESPACE;
+            insubstmt = LYEXT_SUBSTMT_NAMESPACE;
             stmt = LY_STMT_NAMESPACE;
             break;
         case PREFIX_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_PREFIX;
+            insubstmt = LYEXT_SUBSTMT_PREFIX;
             stmt = LY_STMT_PREFIX;
             break;
         case REVISION_DATE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_REVISIONDATE;
+            insubstmt = LYEXT_SUBSTMT_REVISIONDATE;
             stmt = LY_STMT_REVISIONDATE;
             break;
         case DESCRIPTION_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_DESCRIPTION;
+            insubstmt = LYEXT_SUBSTMT_DESCRIPTION;
             stmt = LY_STMT_DESCRIPTION;
             break;
         case REFERENCE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_REFERENCE;
+            insubstmt = LYEXT_SUBSTMT_REFERENCE;
             stmt = LY_STMT_REFERENCE;
             break;
         case CONTACT_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_CONTACT;
+            insubstmt = LYEXT_SUBSTMT_CONTACT;
             stmt = LY_STMT_CONTACT;
             break;
         case ORGANIZATION_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_ORGANIZATION;
+            insubstmt = LYEXT_SUBSTMT_ORGANIZATION;
             stmt = LY_STMT_ORGANIZATION;
             break;
         case YIN_ELEMENT_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_YINELEM;
+            insubstmt = LYEXT_SUBSTMT_YINELEM;
             stmt = LY_STMT_YINELEM;
             break;
         case STATUS_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_STATUS;
+            insubstmt = LYEXT_SUBSTMT_STATUS;
             stmt = LY_STMT_STATUS;
             break;
         case BASE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_BASE;
+            insubstmt = LYEXT_SUBSTMT_BASE;
             stmt = LY_STMT_BASE;
             if (backup_type == IDENTITY_KEYWORD) {
-                instance->insubstmt_index = ((struct lys_ident *)actual)->base_size;
+                insubstmt_index = ((struct lys_ident *)actual)->base_size;
             } else if (backup_type == TYPE_KEYWORD) {
-                instance->insubstmt_index = ((struct yang_type *)actual)->type->info.ident.count;
+                insubstmt_index = ((struct yang_type *)actual)->type->info.ident.count;
             }
             break;
         case DEFAULT_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_DEFAULT;
+            insubstmt = LYEXT_SUBSTMT_DEFAULT;
             stmt = LY_STMT_DEFAULT;
             switch (backup_type) {
             case LEAF_LIST_KEYWORD:
-                instance->insubstmt_index = ((struct lys_node_leaflist *)actual)->dflt_size;
+                insubstmt_index = ((struct lys_node_leaflist *)actual)->dflt_size;
                 break;
             case REFINE_KEYWORD:
-                instance->insubstmt_index = ((struct lys_refine *)actual)->dflt_size;
+                insubstmt_index = ((struct lys_refine *)actual)->dflt_size;
                 break;
             case ADD_KEYWORD:
-                instance->insubstmt_index = ((struct lys_deviate *)actual)->dflt_size;
+                insubstmt_index = ((struct lys_deviate *)actual)->dflt_size;
                 break;
             default:
                 /* nothing changes */
@@ -2331,80 +2382,80 @@ yang_read_ext(struct lys_module *module, void *actual, char *ext_name, char *ext
             }
             break;
         case UNITS_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_UNITS;
+            insubstmt = LYEXT_SUBSTMT_UNITS;
             stmt = LY_STMT_UNITS;
             break;
         case REQUIRE_INSTANCE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_REQINSTANCE;
+            insubstmt = LYEXT_SUBSTMT_REQINSTANCE;
             stmt = LY_STMT_REQINSTANCE;
             break;
         case PATH_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_PATH;
+            insubstmt = LYEXT_SUBSTMT_PATH;
             stmt = LY_STMT_PATH;
             break;
         case ERROR_MESSAGE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_ERRMSG;
+            insubstmt = LYEXT_SUBSTMT_ERRMSG;
             stmt = LY_STMT_ERRMSG;
             break;
         case ERROR_APP_TAG_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_ERRTAG;
+            insubstmt = LYEXT_SUBSTMT_ERRTAG;
             stmt = LY_STMT_ERRTAG;
             break;
         case MODIFIER_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_MODIFIER;
+            insubstmt = LYEXT_SUBSTMT_MODIFIER;
             stmt = LY_STMT_MODIFIER;
             break;
         case FRACTION_DIGITS_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_DIGITS;
+            insubstmt = LYEXT_SUBSTMT_DIGITS;
             stmt = LY_STMT_DIGITS;
             break;
         case VALUE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_VALUE;
+            insubstmt = LYEXT_SUBSTMT_VALUE;
             stmt = LY_STMT_VALUE;
             break;
         case POSITION_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_POSITION;
+            insubstmt = LYEXT_SUBSTMT_POSITION;
             stmt = LY_STMT_POSITION;
             break;
         case PRESENCE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_PRESENCE;
+            insubstmt = LYEXT_SUBSTMT_PRESENCE;
             stmt = LY_STMT_PRESENCE;
             break;
         case CONFIG_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_CONFIG;
+            insubstmt = LYEXT_SUBSTMT_CONFIG;
             stmt = LY_STMT_CONFIG;
             break;
         case MANDATORY_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_MANDATORY;
+            insubstmt = LYEXT_SUBSTMT_MANDATORY;
             stmt = LY_STMT_MANDATORY;
             break;
         case MIN_ELEMENTS_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_MIN;
+            insubstmt = LYEXT_SUBSTMT_MIN;
             stmt = LY_STMT_MIN;
             break;
         case MAX_ELEMENTS_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_MAX;
+            insubstmt = LYEXT_SUBSTMT_MAX;
             stmt = LY_STMT_MAX;
             break;
         case ORDERED_BY_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_ORDEREDBY;
+            insubstmt = LYEXT_SUBSTMT_ORDEREDBY;
             stmt = LY_STMT_ORDEREDBY;
             break;
         case KEY_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_KEY;
+            insubstmt = LYEXT_SUBSTMT_KEY;
             stmt = LY_STMT_KEY;
             break;
         case UNIQUE_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_UNIQUE;
+            insubstmt = LYEXT_SUBSTMT_UNIQUE;
             stmt = LY_STMT_UNIQUE;
             switch (backup_type) {
             case LIST_KEYWORD:
-                instance->insubstmt_index = ((struct lys_node_list *)actual)->unique_size;
+                insubstmt_index = ((struct lys_node_list *)actual)->unique_size;
                 break;
             case ADD_KEYWORD:
             case DELETE_KEYWORD:
             case REPLACE_KEYWORD:
-                instance->insubstmt_index = ((struct lys_deviate *)actual)->unique_size;
+                insubstmt_index = ((struct lys_deviate *)actual)->unique_size;
                 break;
             default:
                 /* nothing changes */
@@ -2415,26 +2466,31 @@ yang_read_ext(struct lys_module *module, void *actual, char *ext_name, char *ext
             LOGINT(module->ctx);
             return NULL;
         }
+
+        instance = yang_ext_instance(actual, backup_type, is_ext_instance);
     } else {
-        instance = yang_ext_instance(actual, actual_type, is_ext_instance);
-        if (!instance) {
-            return NULL;
-        }
-        instance->insubstmt = LYEXT_SUBSTMT_SELF;
         switch (actual_type) {
         case ARGUMENT_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_ARGUMENT;
+            insubstmt = LYEXT_SUBSTMT_ARGUMENT;
             stmt = LY_STMT_ARGUMENT;
             break;
         case BELONGS_TO_KEYWORD:
-            instance->insubstmt = LYEXT_SUBSTMT_BELONGSTO;
+            insubstmt = LYEXT_SUBSTMT_BELONGSTO;
             stmt = LY_STMT_BELONGSTO;
             break;
         default:
-            instance->insubstmt = LYEXT_SUBSTMT_SELF;
+            insubstmt = LYEXT_SUBSTMT_SELF;
             break;
         }
+
+        instance = yang_ext_instance(actual, actual_type, is_ext_instance);
     }
+
+    if (!instance) {
+        return NULL;
+    }
+    instance->insubstmt = insubstmt;
+    instance->insubstmt_index = insubstmt_index;
     instance->flags |= LYEXT_OPT_YANG;
     instance->def = (struct lys_ext *)ext_name;    /* hack for UNRES */
     instance->arg_value = lydict_insert_zc(module->ctx, ext_arg);
@@ -2793,20 +2849,14 @@ read_indent(const char *input, int indent, int size, int in_index, int *out_inde
         } else if (input[in_index] == '\t') {
             /* RFC 6020 6.1.3 tab character is treated as 8 space characters */
             k += 8;
-        } else  if (input[in_index] == '\\' && input[in_index + 1] == 't') {
-            /* RFC 6020 6.1.3 tab character is treated as 8 space characters */
-            k += 8;
-            ++in_index;
         } else {
             break;
         }
         ++in_index;
         if (k >= indent) {
             for (j = k - indent; j > 0; --j) {
+                ++(*out_index);
                 output[*out_index] = ' ';
-                if (j > 1) {
-                    ++(*out_index);
-                }
             }
             break;
         }
@@ -2833,26 +2883,21 @@ yang_read_string(struct ly_ctx *ctx, const char *input, char *output, int size, 
             ++space;
             break;
         case '\\':
+            space = 0;
             if (input[i + 1] == 'n') {
-                out_index -= space;
                 output[out_index] = '\n';
-                space = 0;
-                i = read_indent(input, indent, size, i + 2, &out_index, output);
             } else if (input[i + 1] == 't') {
                 output[out_index] = '\t';
-                ++i;
-                ++space;
             } else if (input[i + 1] == '\\') {
                 output[out_index] = '\\';
-                ++i;
             } else if ((i + 1) != size && input[i + 1] == '"') {
                 output[out_index] = '"';
-                ++i;
             } else {
                 /* backslash must not be followed by any other character */
                 LOGVAL(ctx, LYE_XML_INCHAR, LY_VLOG_NONE, NULL, input + i);
                 return NULL;
             }
+            ++i;
             break;
         default:
             output[out_index] = input[i];
@@ -2907,7 +2952,7 @@ yang_type_free(struct ly_ctx *ctx, struct lys_type *type)
 static void
 yang_tpdf_free(struct ly_ctx *ctx, struct lys_tpdf *tpdf, uint16_t start, uint16_t size)
 {
-    uint8_t i;
+    uint16_t i;
 
     assert(ctx);
     if (!tpdf) {
@@ -4011,17 +4056,6 @@ static int
 yang_check_rpc_action(struct lys_module *module, struct lys_node_rpc_action *rpc, struct lys_node **child,
                       int options, struct unres_schema *unres)
 {
-    struct lys_node *node;
-
-    if (rpc->nodetype == LYS_ACTION) {
-        for (node = rpc->parent; node; node = lys_parent(node)) {
-            if ((node->nodetype & (LYS_RPC | LYS_ACTION | LYS_NOTIF))
-                    || ((node->nodetype == LYS_LIST) && !((struct lys_node_list *)node)->keys)) {
-                LOGVAL(module->ctx, LYE_INPAR, LY_VLOG_LYS, rpc->parent, strnodetype(node->nodetype), "action");
-                goto error;
-            }
-        }
-    }
     if (yang_check_typedef(module, (struct lys_node *)rpc, unres)) {
         goto error;
     }
@@ -4035,6 +4069,14 @@ yang_check_rpc_action(struct lys_module *module, struct lys_node_rpc_action *rpc
         goto error;
     }
     *child = NULL;
+
+    if (!(rpc->child->flags & LYS_IMPLICIT) && !rpc->child->child) {
+        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_LYS, rpc->child, "schema-node", strnodetype(rpc->child->nodetype));
+        goto error;
+    } else if (!(rpc->child->next->flags & LYS_IMPLICIT) && !rpc->child->next->child) {
+        LOGVAL(module->ctx, LYE_MISSCHILDSTMT, LY_VLOG_LYS, rpc->child->next, "schema-node", strnodetype(rpc->child->next->nodetype));
+        goto error;
+    }
 
     return EXIT_SUCCESS;
 
@@ -4261,7 +4303,10 @@ yang_check_nodes(struct lys_module *module, struct lys_node *parent, struct lys_
         for (i = 0; i < node->ext_size; ++i) {
             if (node->ext[i]->flags & LYEXT_OPT_VALID) {
                 node->flags |= LYS_VALID_EXT;
-                break;
+                if (node->ext[i]->flags & LYEXT_OPT_VALID_SUBTREE) {
+                    node->flags |= LYS_VALID_EXT_SUBTREE;
+                    break;
+                }
             }
         }
 
@@ -4441,6 +4486,17 @@ yang_check_deviate(struct lys_module *module, struct unres_schema *unres, struct
     }
 
     if ((deviate->flags & LYS_CONFIG_MASK)) {
+        /* cannot add if it was explicitly set */
+        if ((deviate->mod == LY_DEVIATE_ADD) && (dev_target->flags & LYS_CONFIG_SET)) {
+            LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "config");
+            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Adding property that already exists.");
+            goto error;
+        } else if ((deviate->mod == LY_DEVIATE_RPL) && !(dev_target->flags & LYS_CONFIG_SET)) {
+            LOGVAL(module->ctx, LYE_INSTMT, LY_VLOG_NONE, NULL, "config");
+            LOGVAL(module->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Replacing a property that does not exist.");
+            goto error;
+        }
+
         /* add and replace are the same in this case */
         /* remove current config value of the target ... */
         dev_target->flags &= ~LYS_CONFIG_MASK;
@@ -4502,7 +4558,7 @@ yang_check_deviation(struct lys_module *module, struct unres_schema *unres, stru
     struct lys_node_leaflist *llist;
     struct lys_node_leaf *leaf;
     struct lys_node_inout *inout;
-    struct unres_schema tmp_unres;
+    struct unres_schema *tmp_unres;
     struct lys_module *mod;
 
     /* resolve target node */
@@ -4573,14 +4629,10 @@ yang_check_deviation(struct lys_module *module, struct unres_schema *unres, stru
         dev->orig_node = dev_target;
     } else {
         /* store a shallow copy of the original node */
-        memset(&tmp_unres, 0, sizeof tmp_unres);
-        dev->orig_node = lys_node_dup(dev_target->module, NULL, dev_target, &tmp_unres, 1);
-        /* just to be safe */
-        if (tmp_unres.count) {
-            LOGINT(module->ctx);
-            i = 0;
-            goto free_type_error;
-        }
+        tmp_unres = calloc(1, sizeof *tmp_unres);
+        dev->orig_node = lys_node_dup(dev_target->module, NULL, dev_target, tmp_unres, 1);
+        /* such a case is not really supported but whatever */
+        unres_schema_free(dev_target->module, &tmp_unres, 1);
     }
 
     if (yang_check_ext_instance(module, &dev->ext, dev->ext_size, dev, unres)) {
@@ -4756,7 +4808,7 @@ error:
 
 int
 yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_complex *ext, const char *arg_name,
-                         const char *parent_name, char *value, int parent_stmt, LY_STMT stmt)
+                         const char *parent_name, char **value, int parent_stmt, LY_STMT stmt)
 {
     int c;
     const char **str, ***p = NULL;
@@ -4775,7 +4827,8 @@ yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_comp
             for (c = 0; p[0][c + 1]; c++);
             str = p[1];
         }
-        str[c] = lydict_insert_zc(module->ctx, value);
+        str[c] = lydict_insert_zc(module->ctx, *value);
+        *value = NULL;
     }  else {
         str = lys_ext_complex_get_substmt(stmt, ext, &info);
         if (!str) {
@@ -4812,8 +4865,8 @@ yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_comp
             str = p[0];
         }
 
-        str[c] = lydict_insert_zc(module->ctx, value);
-        value = NULL;
+        str[c] = lydict_insert_zc(module->ctx, *value);
+        *value = NULL;
 
         if (c) {
             /* enlarge the array(s) */
@@ -4855,7 +4908,8 @@ yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_comp
     return EXIT_SUCCESS;
 
 error:
-    free(value);
+    free(*value);
+    *value = NULL;
     return EXIT_FAILURE;
 }
 

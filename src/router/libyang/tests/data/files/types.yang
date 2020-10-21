@@ -86,6 +86,12 @@ module types {
       }
     }
 
+    leaf dec-negative-zero {
+      type decimal64 {
+        fraction-digits 1;
+      }
+    }
+
     leaf dec-frac1-min {
       type decimal64 {
         fraction-digits 1;

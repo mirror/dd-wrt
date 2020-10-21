@@ -33,7 +33,7 @@
  * @{
  */
 struct lys_module *yin_read_module(struct ly_ctx *ctx, const char *data, const char *revision, int implement);
-struct lys_submodule *yin_read_submodule(struct lys_module *module, const char *data,struct unres_schema *unres);
+struct lys_submodule *yin_read_submodule(struct lys_module *module, const char *data, struct unres_schema *unres);
 
 /**@} yin */
 
@@ -97,13 +97,13 @@ struct lys_type *lyp_get_next_union_type(struct lys_type *type, struct lys_type 
 
 /* return: 0 - ret set, ok; 1 - ret not set, no log, unknown meta; -1 - ret not set, log, fatal error */
 int lyp_fill_attr(struct ly_ctx *ctx, struct lyd_node *parent, const char *module_ns, const char *module_name,
-                  const char *attr_name, const char *attr_value, struct lyxml_elem *xml, int options, struct lyd_attr **ret);
+                  const char *attr_name, const char *attr_value, struct lyxml_elem *xml, struct lyd_attr **ret);
 
 int lyp_check_edit_attr(struct ly_ctx *ctx, struct lyd_attr *attr, struct lyd_node *parent, int *editbits);
 
 struct lys_type *lyp_parse_value(struct lys_type *type, const char **value_, struct lyxml_elem *xml,
                                  struct lyd_node_leaf_list *leaf, struct lyd_attr *attr, struct lys_module *local_mod,
-                                 int store, int dflt, int trusted);
+                                 int store, int dflt);
 
 int lyp_check_length_range(struct ly_ctx *ctx, const char *expr, struct lys_type *type);
 
@@ -171,7 +171,7 @@ void lyp_ext_instance_rm(struct ly_ctx *ctx, struct lys_ext_instance ***ext, uin
  */
 int lyp_propagate_submodule(struct lys_module *module, struct lys_include *inc);
 
-/* return: -1 = error, 0 = succes, 1 = already there (if it was disabled, it is enabled first) */
+/* return: -1 = error, 0 = success, 1 = already there (if it was disabled, it is enabled first) */
 int lyp_ctx_check_module(struct lys_module *module);
 
 int lyp_ctx_add_module(struct lys_module *module);
@@ -258,19 +258,19 @@ struct lyext_plugin *ext_get_plugin(const char *name, const char *module, const 
  *
  * @param[in] mod Module of the type.
  * @param[in] type_name Type (typedef) name.
- * @param[in] value_str Value to store as a string.
+ * @param[in,out] value_str Stored string value, can be overwritten by the user store callback.
  * @param[in,out] value Filled value to be overwritten by the user store callback.
  * @return 0 on successful storing, 1 if the type is not a user type, -1 on error.
  */
-int lytype_store(const struct lys_module *mod, const char *type_name, const char *value_str, lyd_val *value);
+int lytype_store(const struct lys_module *mod, const char *type_name, const char **value_str, lyd_val *value);
 
 /**
  * @brief Free a user type stored value.
  *
- * @param[in] mod Module of the type.
- * @param[in] type_name Type (typedef) name.
+ * @param[in] type Type of the value.
  * @param[in] value Value union to free.
+ * @param[in] value_str String value of the value.
  */
-void lytype_free(const struct lys_module *mod, const char *type_name, lyd_val value);
+void lytype_free(const struct lys_type *type, lyd_val value, const char *value_str);
 
 #endif /* LY_PARSER_H_ */

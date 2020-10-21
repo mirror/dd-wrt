@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-leaflist"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-leaflist_mod="urn:error-substatement1-leaflist">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-leaflist"/>
+  <prefix value="error-substatement1-leaflist_mod"/>
+
+  <!-- this is an error substatement about leaf-list. -->
+  <leaf-list name="llist1">
+    <type name="string"/>
+    <min-elements value="  123"/>
+    <max-elements value="  unbounded"/>
+    <when condition="when1">
+      <reference>
+        <test>this is an error substatement of reference.</test>
+      </reference>
+    </when>
+  </leaf-list>
+</module>

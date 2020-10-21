@@ -1,0 +1,8 @@
+module mod7 {
+   prefix abc;
+   namespace "urn:cesnet:mod7";
+
+   yang-version 1.5;
+}
+   //yang-version only support 1 or 1.1
+

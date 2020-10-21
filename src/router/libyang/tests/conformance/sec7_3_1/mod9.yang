@@ -1,0 +1,10 @@
+module mod9{
+    prefix abc;
+    namespace "urn:cesnet:mod9";
+
+    typedef uint32 {
+        type uint32;
+        default 10;
+    }
+    // typedef name duplicates a built-in type 
+}

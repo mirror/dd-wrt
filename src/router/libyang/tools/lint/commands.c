@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <libgen.h>
 
+#include "compat.h"
 #include "commands.h"
 #include "libyang.h"
 #include "../../src/tree_schema.h"
@@ -59,7 +60,7 @@ cmd_clear_help(void)
 void
 cmd_print_help(void)
 {
-    printf("print [-f (yang | yin | tree [<tree-options>] | info [-P <info-path>] | jsons)] [-o <output-file>]"
+    printf("print [-f (yang | yin | tree[-rfc] [<tree-options>] | info [-P <info-path>] | jsons)] [-o <output-file>]"
            " <model-name>[@<revision>]\n");
     printf("\n");
     printf("\ttree-options:\t--tree-print-groupings\t(print top-level groupings in a separate section)\n");
@@ -80,8 +81,8 @@ cmd_print_help(void)
 void
 cmd_data_help(void)
 {
-    printf("data [-(-s)trict] [-t TYPE] [-d DEFAULTS] [-o <output-file>] [-f (xml | json | lyb)] [-r <running-file-name>]\n");
-    printf("     <data-file-name> [<RPC/action-data-file-name> | <yang-data name>]\n\n");
+    printf("data [-(-s)trict] [-t TYPE] [-d DEFAULTS] [-o <output-file>] [-f (xml | json | lyb)] [-F (xml | json | lyb)]\n");
+    printf("     [-r <running-file-name>] <data-file-name> [<RPC/action-data-file-name> | <yang-data name>]\n\n");
     printf("Accepted TYPEs:\n");
     printf("\tauto       - resolve data type (one of the following) automatically (as pyang does),\n");
     printf("\t             this option is applicable only in case of XML input data.\n");
@@ -99,6 +100,7 @@ cmd_data_help(void)
     printf("\tall-tagged - add missing default nodes and mark all the default nodes with the attribute.\n");
     printf("\ttrim       - remove all nodes with a default value\n");
     printf("\timplicit-tagged    - add missing nodes and mark them with the attribute\n\n");
+    printf("Option -f determines output format, option -F the input format.\n\n");
     printf("Option -r:\n");
     printf("\tOptional parameter for 'rpc', 'rpcreply' and 'notif' TYPEs, the file contains running\n");
     printf("\tconfiguration datastore data referenced from the RPC/Notification. Note that the file is\n");
@@ -519,16 +521,17 @@ detect_data_format(char *filepath)
 }
 
 static int
-parse_data(char *filepath, int *options, struct lyd_node *val_tree, const char *rpc_act_file,
+parse_data(char *filepath, LYD_FORMAT informat, int *options, struct lyd_node *val_tree, const char *rpc_act_file,
            struct lyd_node **result)
 {
-    LYD_FORMAT informat = LYD_UNKNOWN;
     struct lyxml_elem *xml = NULL;
     struct lyd_node *data = NULL, *rpc_act = NULL;
     int opts = *options;
 
-    /* detect input format according to file suffix */
-    informat = detect_data_format(filepath);
+    if (informat == LYD_UNKNOWN) {
+        /* detect input format according to file suffix */
+        informat = detect_data_format(filepath);
+    }
     if (informat == LYD_UNKNOWN) {
         fprintf(stderr, "Unable to resolve format of the input file, please add \".xml\", \".json\", or \".lyb\" suffix.\n");
         return EXIT_FAILURE;
@@ -659,12 +662,13 @@ cmd_data(const char *arg)
     char **argv = NULL, *ptr;
     const char *out_path = NULL;
     struct lyd_node *data = NULL, *val_tree = NULL;
-    LYD_FORMAT outformat = LYD_UNKNOWN;
+    LYD_FORMAT outformat = LYD_UNKNOWN, informat = LYD_UNKNOWN;
     FILE *output = stdout;
     static struct option long_options[] = {
         {"defaults", required_argument, 0, 'd'},
         {"help", no_argument, 0, 'h'},
         {"format", required_argument, 0, 'f'},
+        {"in-format", required_argument, 0, 'F'},
         {"option", required_argument, 0, 't'},
         {"output", required_argument, 0, 'o'},
         {"running", required_argument, 0, 'r'},
@@ -691,7 +695,7 @@ cmd_data(const char *arg)
     optind = 0;
     while (1) {
         option_index = 0;
-        c = getopt_long(argc, argv, "d:hf:o:st:r:", long_options, &option_index);
+        c = getopt_long(argc, argv, "d:hf:F:o:st:r:", long_options, &option_index);
         if (c == -1) {
             break;
         }
@@ -721,6 +725,18 @@ cmd_data(const char *arg)
                 outformat = LYD_LYB;
             } else {
                 fprintf(stderr, "Unknown output format \"%s\".\n", optarg);
+                goto cleanup;
+            }
+            break;
+        case 'F':
+            if (!strcmp(optarg, "xml")) {
+                informat = LYD_XML;
+            } else if (!strcmp(optarg, "json")) {
+                informat = LYD_JSON;
+            } else if (!strcmp(optarg, "lyb")) {
+                informat = LYD_LYB;
+            } else {
+                fprintf(stderr, "Unknown input format \"%s\".\n", optarg);
                 goto cleanup;
             }
             break;
@@ -791,7 +807,7 @@ cmd_data(const char *arg)
         goto cleanup;
     }
 
-    if (parse_data(argv[optind], &options, val_tree, argv[optind + 1], &data)) {
+    if (parse_data(argv[optind], informat, &options, val_tree, argv[optind + 1], &data)) {
         goto cleanup;
     }
 
@@ -834,6 +850,7 @@ cmd_xpath(const char *arg)
     char **argv = NULL, *ptr, *expr = NULL;
     unsigned int i, j;
     int options = 0;
+    LYD_FORMAT informat = LYD_UNKNOWN;
     struct lyd_node *data = NULL, *node, *val_tree = NULL;
     struct lyd_node_leaf_list *key;
     struct ly_set *set;
@@ -945,7 +962,7 @@ cmd_xpath(const char *arg)
         goto cleanup;
     }
 
-    if (parse_data(argv[optind], &options, val_tree, argv[optind + 1], &data)) {
+    if (parse_data(argv[optind], informat, &options, val_tree, argv[optind + 1], &data)) {
         goto cleanup;
     }
 

@@ -37,6 +37,12 @@
 struct ly_ctx *ctx = NULL;
 struct lyd_node *root = NULL;
 
+struct state {
+    struct ly_ctx *ctx;
+    struct lyd_node *dt1, *dt2;
+    char *mem;
+};
+
 const char *a_data_xml = "\
 <x xmlns=\"urn:a\">\n\
   <bubba>test</bubba>\n\
@@ -265,6 +271,42 @@ teardown_f(void **state)
         lyd_free_withsiblings(root);
     if (ctx)
         ly_ctx_destroy(ctx, NULL);
+
+    return 0;
+}
+
+static int
+setup_f3(void **state)
+{
+    struct state *st;
+
+    (*state) = st = calloc(1, sizeof *st);
+    if (!st) {
+        fprintf(stderr, "Memory allocation error");
+        return -1;
+    }
+
+    /* libyang context */
+    st->ctx = ly_ctx_new(TESTS_DIR"/schema/yang/ietf/", 0);
+    if (!st->ctx) {
+        fprintf(stderr, "Failed to create context.\n");
+        return -1;
+    }
+
+    return 0;
+}
+
+static int
+teardown_f3(void **state)
+{
+    struct state *st = (*state);
+
+    lyd_free_withsiblings(st->dt1);
+    lyd_free_withsiblings(st->dt2);
+    ly_ctx_destroy(st->ctx, NULL);
+    free(st->mem);
+    free(st);
+    (*state) = NULL;
 
     return 0;
 }
@@ -965,6 +1007,115 @@ test_lyd_find_instance(void **state)
     assert_string_equal("test", result->value_str);
 
     ly_set_free(set);
+}
+
+static void
+test_lyd_find_sibling(void **state)
+{
+    struct ly_ctx *ctx = (struct ly_ctx *)*state;
+    const char *yang =
+    "module test {"
+        "namespace urn:test;"
+        "prefix t;"
+        "yang-version 1.1;"
+        "container cont {"
+            "leaf l {"
+                "type string;"
+            "}"
+            "list lt {"
+                "key \"k1 k2\";"
+                "leaf k1 {"
+                    "type string;"
+                "}"
+                "leaf k2 {"
+                    "type string;"
+                "}"
+            "}"
+        "}"
+    "}";
+    const char *xml =
+    "<cont xmlns=\"urn:test\">"
+        "<lt>"
+            "<k1>a1</k1>"
+            "<k2>b1</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a2</k1>"
+            "<k2>b2</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a3</k1>"
+            "<k2>b3</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a4</k1>"
+            "<k2>b4</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a5</k1>"
+            "<k2>b5</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a6</k1>"
+            "<k2>b6</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a7</k1>"
+            "<k2>b7</k2>"
+        "</lt>"
+        "<l>val</l>"
+        "<lt>"
+            "<k1>a8</k1>"
+            "<k2>b8</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a9</k1>"
+            "<k2>b9</k2>"
+        "</lt>"
+        "<lt>"
+            "<k1>a10</k1>"
+            "<k2>b10</k2>"
+        "</lt>"
+    "</cont>";
+    struct lyd_node *data, *match;
+    struct lys_node *schema;
+    const struct lys_module *mod;
+
+    mod = lys_parse_mem(ctx, yang, LYS_IN_YANG);
+    assert_non_null(mod);
+    schema = mod->data->child;
+    assert_string_equal(schema->name, "l");
+
+    data = lyd_parse_mem(ctx, xml, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(data, NULL);
+
+    /* test */
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, NULL, &match), 0);
+    assert_non_null(match);
+    assert_ptr_equal(match->schema, schema);
+
+    schema = schema->next;
+    assert_string_equal(schema->name, "lt");
+
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, NULL, &match), -1);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "", &match), -1);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[key='val']", &match), -1);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='val]", &match), -1);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='val'][]", &match), -1);
+
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='val'][k2='']", &match), 0);
+    assert_null(match);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='a5'][k2='b5']", &match), 0);
+    assert_non_null(match);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='a10'][k2='b10']", &match), 0);
+    assert_non_null(match);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='a1'][k2='b1']", &match), 0);
+    assert_non_null(match);
+    assert_int_equal(lyd_find_sibling_val(data->child, schema, "[k1='a1'][k2='bbbbbbb1']", &match), 0);
+    assert_null(match);
+
+    /* cleanup */
+    lyd_free_withsiblings(data);
 }
 
 static void
@@ -1763,6 +1914,112 @@ test_lyd_dup_to_ctx(void **state)
     ly_ctx_destroy(new_ctx, NULL);
 }
 
+static void
+test_lyd_new_anydata(void **state)
+{
+    (void) state; /* unused */
+    struct state *st = (*state);
+    const struct lys_module *mod;
+    struct lyd_node *new_node;
+    const char *test_anydata =
+    "module test-anydata {"
+    "   namespace \"urn:test-anydata\";"
+    "   prefix ya;"
+    ""
+    "   container cont {"
+    "       anydata ntf;"
+    "   }"
+    "}";
+
+    /* test anydata*/
+    mod = lys_parse_mem(st->ctx, test_anydata, LYS_YANG);
+    assert_non_null(mod);
+
+    st->dt1 = lyd_new(NULL, mod, "cont");
+    assert_non_null(st->dt1);
+
+    new_node = lyd_new_anydata(st->dt1, NULL, "test", st->mem, LYD_ANYDATA_LYBD);
+    assert_null(new_node);
+    new_node = lyd_new_anydata(st->dt1, NULL, "ntf", st->mem, LYD_ANYDATA_LYBD);
+    assert_non_null(new_node);
+    lyd_free(new_node);
+}
+
+static void
+test_lyd_new_output_anydata(void **state)
+{
+    (void) state; /* unused */
+    struct state *st = (*state);
+    const struct lys_module *mod;
+    struct lyd_node *new_node;
+    const char *test_anydata =
+    "module test-anydata {"
+    "   namespace \"urn:test-anydata\";"
+    "   prefix ya;"
+    ""
+    "   container cont {"
+    "       anydata ntf;"
+    "   }"
+    "}";
+
+    /* test anydata*/
+    mod = lys_parse_mem(st->ctx, test_anydata, LYS_YANG);
+    assert_non_null(mod);
+
+    st->dt1 = lyd_new(NULL, mod, "cont");
+    assert_non_null(st->dt1);
+
+    new_node = lyd_new_output_anydata(st->dt1, NULL, "ntf", st->mem, LYD_ANYDATA_LYBD);
+    if (!new_node) {
+        fail();
+    }
+    lyd_free(new_node);
+}
+
+static void
+test_lyd_first_sibling(void **state)
+{
+    (void) state; /* unused */
+    struct lyd_node *new_node = NULL;
+    struct lyd_node *node = root;
+    struct lyd_node *child = NULL;
+    int rc;
+
+    new_node = lyd_first_sibling(node);
+    if(new_node!=root){
+       fail();
+    }
+
+    child = lyd_new_leaf(root, node->schema->module, "number32", "1");
+    if (!child) {
+        fail();
+    }
+
+    rc = lyd_insert(node,child);
+    if (rc) {
+        fail();
+    }
+
+    new_node = lyd_first_sibling(root);
+    if(!new_node){
+       fail();
+    }
+}
+
+static void
+test_lyd_print_path(void **state)
+{
+    (void) state; /* unused */
+
+    const char *path = TMP_TEMPLATE;
+    int rc;
+    rc = lyd_print_path(path,root,LYD_XML, 0);
+    if (rc) {
+        fail();
+    }
+}
+
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -1783,6 +2040,7 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_lyd_schema_sort, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_find_path, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_find_instance, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_lyd_find_sibling, setup_f2, teardown_f2),
         cmocka_unit_test_setup_teardown(test_lyd_validate, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_unlink, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_free, setup_f, teardown_f),
@@ -1809,6 +2067,10 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_lyd_new_output, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_dup_withsiblings, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyd_dup_to_ctx, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_lyd_new_anydata, setup_f3, teardown_f3),
+        cmocka_unit_test_setup_teardown(test_lyd_new_output_anydata, setup_f3, teardown_f3),
+        cmocka_unit_test_setup_teardown(test_lyd_first_sibling, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_lyd_print_path, setup_f, teardown_f),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -23,6 +23,7 @@
 #include <getopt.h>
 #include <unistd.h>
 
+#include "compat.h"
 #include "libyang.h"
 
 void

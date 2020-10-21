@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-deviation_mod="urn:error-substatement1-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-deviation"/>
+  <prefix value="error-substatement1-deviation_mod"/>
+
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+
+  <!-- this is an error substatement of deviation. -->
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:leaf1">
+    <description>
+      <test> this is an error example.</test>
+    </description>
+  </deviation>
+</module>

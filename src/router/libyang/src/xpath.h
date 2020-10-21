@@ -287,7 +287,7 @@ int lyxp_atomize(const char *expr, const struct lys_node *cur_snode, enum lyxp_n
 #define LYXP_SNODE_WHEN 0x10
 #define LYXP_SNODE_OUTPUT 0x20
 
-#define LYXP_SNODE_ALL 0x1C
+#define LYXP_SNODE_ALL 0x3C
 
 /**
  * @brief Works like lyxp_atomize(), but it is executed on all the when and must expressions

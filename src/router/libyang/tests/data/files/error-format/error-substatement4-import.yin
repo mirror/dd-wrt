@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-import"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-import_mod="urn:error-substatement4-import">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-import"/>
+  <prefix value="error-substatement4-import_mod"/>
+
+  <import module="all-imp">
+    <!-- invalid substatement of description -->
+    <description>
+      <test>this is an error example</test>
+    </description>
+  </import>
+</module>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-rpc"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-rpc_mod="urn:error-substatement3-rpc">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-rpc"/>
+  <prefix value="error-substatement3-rpc_mod"/>
+
+  <feature name="feat1"/>
+  <!-- this is an error substatement about rpc. -->
+  <rpc name="rpc1">
+    <if-feature name="feat1">
+      <text>this is an error substatement of if-feature.</text>
+    </if-feature>
+  </rpc>
+</module>

@@ -678,7 +678,7 @@ static void refreshMultiLine(struct linenoiseState *l) {
     rpos2 = (plen+l->pos+l->cols)/l->cols; /* current cursor relative row. */
     lndebug("rpos2 %d", rpos2);
 
-    /* Go up till we reach the expected positon. */
+    /* Go up till we reach the expected position. */
     if (rows-rpos2 > 0) {
         lndebug("go-up %d", rows-rpos2);
         snprintf(seq,64,"\x1b[%dA", rows-rpos2);
@@ -869,8 +869,7 @@ static int linenoiseEdit(int stdin_fd, int stdout_fd, char *buf, size_t buflen, 
 
     if (write(ls.ofd,prompt,ls.plen) == -1) return -1;
     while(1) {
-        char c;
-        int nread;
+        int c = 0, nread;
         char seq[3];
 
         nread = read(ls.ifd,&c,1);

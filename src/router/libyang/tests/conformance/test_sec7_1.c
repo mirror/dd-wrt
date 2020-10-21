@@ -27,8 +27,8 @@
 
 #define TEST_DIR "sec7_1"
 #define TEST_NAME test_sec7_1
-#define TEST_SCHEMA_COUNT 6
-#define TEST_SCHEMA_LOAD_FAIL 1,1,1,1,1,0
+#define TEST_SCHEMA_COUNT 8
+#define TEST_SCHEMA_LOAD_FAIL 1,1,1,1,1,0,1,1
 #define TEST_DATA_FILE_COUNT 0
 #define TEST_DATA_FILE_LOAD_FAIL 0
 
@@ -120,6 +120,12 @@ TEST_MODULE(void **state)
             }
 
             schema_format = LYS_IN_YIN;
+            ly_ctx_destroy(st->ctx, NULL);
+            st->ctx = ly_ctx_new(TESTS_DIR "/conformance/" TEST_DIR, 0);
+            if (!st->ctx) {
+                fprintf(stderr, "Failed to create context.\n");
+                fail();
+            }
         } else {
             /* remove the modules */
             for (j = 0; j < TEST_SCHEMA_COUNT; ++j) {

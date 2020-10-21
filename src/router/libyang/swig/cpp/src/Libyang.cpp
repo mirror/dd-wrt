@@ -162,7 +162,7 @@ S_Submodule Context::get_submodule2(S_Module main_module, const char *submodule)
 S_Schema_Node Context::get_node(S_Schema_Node start, const char *data_path, int output) {
     const struct lys_node *node = nullptr;
 
-    node = ly_ctx_get_node(ctx, start->node, data_path, output);
+    node = ly_ctx_get_node(ctx, start ? start->node : NULL, data_path, output);
 
     return node ? std::make_shared<Schema_Node>((struct lys_node *) node, deleter) : nullptr;
 }
@@ -263,6 +263,10 @@ S_Data_Node Context::parse_data_path(const char *path, LYD_FORMAT format, int op
 }
 S_Data_Node Context::parse_data_xml(S_Xml_Elem elem, int options) {
     struct lyd_node *new_node = nullptr;
+
+    if (!elem) {
+        throw std::invalid_argument("Elem can not be empty");
+    }
 
     new_node = lyd_parse_xml(ctx, &elem->elem, options, NULL);
     if (!new_node) {
@@ -391,24 +395,42 @@ S_Set Set::dup() {
     return std::make_shared<Set>(new_set, deleter);
 }
 int Set::add(S_Data_Node node, int options) {
+    if (!node) {
+        throw std::invalid_argument("Node can not be empty");
+    }
     return ly_set_add(set, (void *) node->node, options);
 }
 int Set::add(S_Schema_Node node, int options) {
+    if (!node) {
+        throw std::invalid_argument("Node can not be empty");
+    }
     return ly_set_add(set, (void *) node->node, options);
 }
 int Set::contains(S_Data_Node node) {
+    if (!node) {
+        return -1;
+    }
     return ly_set_contains(set, (void *) node->node);
 }
 int Set::contains(S_Schema_Node node) {
+    if (!node) {
+        return -1;
+    }
     return ly_set_contains(set, (void *) node->node);
 }
 int Set::clean() {
     return ly_set_clean(set);
 }
 int Set::rm(S_Data_Node node) {
+    if (!node) {
+        throw std::invalid_argument("Node can not be empty");
+    }
     return ly_set_rm(set, (void *) node->node);
 }
 int Set::rm(S_Schema_Node node) {
+    if (!node) {
+        throw std::invalid_argument("Node can not be empty");
+    }
     return ly_set_rm(set, (void *) node->node);
 }
 int Set::rm_index(unsigned int index) {
