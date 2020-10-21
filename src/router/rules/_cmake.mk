@@ -26,7 +26,7 @@ define CMakeConfigure
 			-DCMAKE_STRIP=: \
 			-DCMAKE_INSTALL_PREFIX=/usr \
 			$(3) \
-			. \
+			$(6) \
 	)
 endef
 

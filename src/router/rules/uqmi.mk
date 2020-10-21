@@ -12,7 +12,7 @@ UQMI_CMAKE_OPTIONS=
 
 uqmi-configure: json-c libubox
 	$(call CMakeClean,$(UQMI_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(UQMI_PKG_BUILD_DIR),$(UQMI_STAGING_DIR),$(UQMI_CMAKE_OPTIONS),$(UQMI_EXTRA_CFLAGS),$(UQMI_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(UQMI_PKG_BUILD_DIR),$(UQMI_STAGING_DIR),$(UQMI_CMAKE_OPTIONS),$(UQMI_EXTRA_CFLAGS),$(UQMI_EXTRA_LDFLAGS),.) 
 
 uqmi:
 	$(MAKE) -C uqmi

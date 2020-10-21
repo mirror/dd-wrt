@@ -19,7 +19,7 @@ LIBZIP_EXTRA_LDFLAGS=-L$(TOP)/_staging/usr/lib -L$(TOP)/zlib -L$(TOP)/openssl -l
 
 libzip-configure: zlib openssl
 	$(call CMakeClean,$(LIBZIP_PKG_BUILD_DIR))
-	$(call CMakeConfigure,$(LIBZIP_PKG_BUILD_DIR),$(LIBZIP_STAGING_DIR),$(LIBZIP_CMAKE_OPTIONS),$(LIBZIP_EXTRA_CFLAGS),$(LIBZIP_EXTRA_LDFLAGS)) 
+	$(call CMakeConfigure,$(LIBZIP_PKG_BUILD_DIR),$(LIBZIP_STAGING_DIR),$(LIBZIP_CMAKE_OPTIONS),$(LIBZIP_EXTRA_CFLAGS),$(LIBZIP_EXTRA_LDFLAGS),.) 
 
 libzip: zlib openssl
 	$(MAKE) -C libzip
