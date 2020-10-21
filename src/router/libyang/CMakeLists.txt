@@ -238,7 +238,7 @@ find_package(Threads REQUIRED)
 target_link_libraries(yang ${CMAKE_THREAD_LIBS_INIT})
 
 # find PCRE library
-unset(PCRE_LIBRARY CACHE)
+#unset(PCRE_LIBRARY CACHE)
 find_package(PCRE REQUIRED)
 include_directories(${PCRE_INCLUDE_DIRS})
 target_link_libraries(yang ${PCRE_LIBRARIES})
