@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-notification"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-notification_mod="urn:error-substatement4-notification">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-notification"/>
+  <prefix value="error-substatement4-notification_mod"/>
+
+  <!-- this is an error substatement about notification. -->
+  <notification name="notif1">
+    <must name="must1">
+      <text>this is an error substatement about notification.</text>
+    </must>
+  </notification>
+</module>

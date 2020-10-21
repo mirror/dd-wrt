@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement2-container"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement2-container_mod="urn:error-substatement2-container">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement2-container"/>
+  <prefix value="error-substatement2-container_mod"/>
+
+  <feature name="feat1"/>
+  <!-- this is an error substatement about container. -->
+  <container name="con1">
+    <if-feature name="feat1">
+      <text>this is an error substatement of if-feature.</text>
+    </if-feature>
+  </container>
+</module>

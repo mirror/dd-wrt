@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-import"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-import_mod="urn:error-order-import"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-import"/>
+  <prefix value="error-order-import_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- import should be placed before leaf -->
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+</module>

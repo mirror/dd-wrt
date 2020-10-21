@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement5-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement5-list_mod="urn:error-substatement5-list">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement5-list"/>
+  <prefix value="error-substatement5-list_mod"/>
+
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- invalid substatement -->
+    <text>this is an error substatement.</text>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>

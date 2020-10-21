@@ -1,31 +1,56 @@
 cmake_minimum_required(VERSION 2.8.12)
+
+# force out-of-source build
+if(NOT FORCE_INSRC_BUILD AND ${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
+    message(FATAL_ERROR "In-source build is not allowed. Please make a standalone build directory and run CMake from there. You may need to remove CMakeCache.txt.")
+endif()
+
 project(libyang C)
+
+# include custom Modules
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 
 include(GNUInstallDirs)
 include(CheckSymbolExists)
+include(UseCompat)
 
 set(LIBYANG_DESCRIPTION "libyang is YANG data modelling language parser and toolkit written (and providing API) in C.")
 
 # Correct RPATH usage on OS X
 set(CMAKE_MACOSX_RPATH TRUE)
 
-# set version
-set(LIBYANG_MAJOR_VERSION 0)
-set(LIBYANG_MINOR_VERSION 16)
-set(LIBYANG_MICRO_VERSION 105)
+# Version of the project
+# Generic version of not only the library. Major version is reserved for really big changes of the project,
+# minor version changes with added functionality (new tool, functionality of the tool or library, ...) and
+# micro version is changed with a set of small changes or bugfixes anywhere in the project.
+set(LIBYANG_MAJOR_VERSION 1)
+set(LIBYANG_MINOR_VERSION 0)
+set(LIBYANG_MICRO_VERSION 184)
 set(LIBYANG_VERSION ${LIBYANG_MAJOR_VERSION}.${LIBYANG_MINOR_VERSION}.${LIBYANG_MICRO_VERSION})
-set(LIBYANG_SOVERSION ${LIBYANG_MAJOR_VERSION}.${LIBYANG_MINOR_VERSION})
+
+# Version of the library
+# Major version is changed with every backward non-compatible API/ABI change in libyang, minor version changes
+# with backward compatible change and micro version is connected with any internal change of the library.
+set(LIBYANG_MAJOR_SOVERSION 1)
+set(LIBYANG_MINOR_SOVERSION 9)
+set(LIBYANG_MICRO_SOVERSION 2)
+set(LIBYANG_SOVERSION_FULL ${LIBYANG_MAJOR_SOVERSION}.${LIBYANG_MINOR_SOVERSION}.${LIBYANG_MICRO_SOVERSION})
+set(LIBYANG_SOVERSION ${LIBYANG_MAJOR_SOVERSION})
+
+# check the supported platform
+if(NOT UNIX)
+    message(FATAL_ERROR "Only *nix like systems are supported.")
+endif()
 
 # set default build type if not specified by user
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE debug)
 endif()
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_FLAGS         "${CMAKE_C_FLAGS} -Wall -Wextra")
-set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG")
+set(CMAKE_C_FLAGS         "${CMAKE_C_FLAGS} -Wall -Wextra -std=gnu99")
+set(CMAKE_C_FLAGS_RELEASE "-O2 -DNDEBUG")
 set(CMAKE_C_FLAGS_PACKAGE "-g -O2 -DNDEBUG")
-set(CMAKE_C_FLAGS_DEBUG   "-g -O0")
+set(CMAKE_C_FLAGS_DEBUG   "-g -Og")
 
 # options
 if((CMAKE_BUILD_TYPE STREQUAL debug) OR (CMAKE_BUILD_TYPE STREQUAL Package))
@@ -40,7 +65,8 @@ option(ENABLE_CALLGRIND_TESTS "Build performance tests to be run with callgrind"
 option(ENABLE_CACHE "Enable data caching for schemas and hash tables for data (time-efficient at the cost of increased space-complexity)" ON)
 option(ENABLE_LATEST_REVISIONS "Enable reusing of latest revisions of schemas" ON)
 option(ENABLE_LYD_PRIV "Add a private pointer also to struct lyd_node (data node structure), just like in struct lys_node, for arbitrary user data" OFF)
-set(PLUGINS_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libyang" CACHE STRING "Directory with libyang plugins (extensions and user types)")
+option(ENABLE_FUZZ_TARGETS "Build target programs suitable for fuzzing with AFL" OFF)
+set(PLUGINS_DIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}/libyang${LIBYANG_MAJOR_SOVERSION}" CACHE STRING "Directory with libyang plugins (extensions and user types), should include major SO version")
 
 if(ENABLE_CACHE)
     set(LY_ENABLED_CACHE 1)
@@ -63,7 +89,8 @@ elseif(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     set(COMPILER_UNUSED_ATTR "UNUSED_ ## x __attribute__((__unused__))")
     set(COMPILER_PACKED_ATTR "__attribute__((__packed__))")
 else()
-    message(WARNING "You are using an unknown compiler, it must support C11 standard \"_Generic\" statement or the \"__builtin_types_compatible_p\" built-in function.")
+    message(WARNING "You are using an unknown compiler, it must support C11 standard \"_Generic\" statement"
+        " or the \"__builtin_types_compatible_p\" built-in function.")
     set(COMPILER_UNUSED_ATTR "UNUSED_ ## x")
     set(COMPILER_PACKED_ATTR "")
 endif()
@@ -74,9 +101,6 @@ configure_file(${PROJECT_SOURCE_DIR}/src/common.h.in ${PROJECT_BINARY_DIR}/src/c
 
 set(EXTENSIONS_PLUGINS_DIR_MACRO "${PLUGINS_DIR}/extensions")
 set(USER_TYPES_PLUGINS_DIR_MACRO "${PLUGINS_DIR}/user_types")
-
-# include custom Modules
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 
 # setup bindings
 set(GEN_LANGUAGE_BINDINGS 0 CACHE BOOL "Enable language bindings generation.")
@@ -89,8 +113,6 @@ set(GEN_JAVA_BINDINGS 0 CACHE BOOL "Enable Java bindings.")
 
 find_package(FLEX)
 find_package(BISON)
-find_program(DEB_BUILDER NAMES debuild)
-find_program(RPM_BUILDER NAMES rpmbuild)
 find_program(SED_TOOL NAMES sed)
 
 if(NOT BISON_FOUND)
@@ -112,74 +134,9 @@ else()
     )
 endif()
 
-if (NOT DEFINED ENV{TRAVIS_BRANCH})
-    execute_process(COMMAND "git" "rev-parse" "--abbrev-ref" "HEAD"
-                    OUTPUT_VARIABLE GIT_BRANCH
-                    OUTPUT_STRIP_TRAILING_WHITESPACE
-                    ERROR_QUIET
-                )
-    if (NOT GIT_BRANCH)
-        set(ENV{TRAVIS_BRANCH} "master")
-    else()
-        if (GIT_BRANCH MATCHES "master|devel")
-            set(ENV{TRAVIS_BRANCH} ${GIT_BRANCH})
-        else()
-            set(ENV{TRAVIS_BRANCH} "master")
-        endif()
-    endif()
-    set(GIT_BRANCH $ENV{TRAVIS_BRANCH})
-endif()
-
-if ($ENV{TRAVIS_BRANCH} STREQUAL "master")
-    set(PACKAGE_NAME "libyang")
-    set(PACKAGE_PART_NAME "")
-    set(BRANCH "master")
-    set(BUILD_TYPE "Package")
-    set(CONFLICT_PACKAGE_NAME "libyang-experimental")
-else ()
-    set(PACKAGE_NAME "libyang-experimental")
-    set(PACKAGE_PART_NAME "-experimental")
-    set(BRANCH "devel")
-    set(BUILD_TYPE "debug")
-    set(CONFLICT_PACKAGE_NAME "libyang")
-endif()
-# change version in config files
-configure_file(${PROJECT_SOURCE_DIR}/packages/libyang.spec.in ${PROJECT_BINARY_DIR}/build-packages/libyang.spec)
-configure_file(${PROJECT_SOURCE_DIR}/packages/libyang.dsc.in ${PROJECT_BINARY_DIR}/build-packages/libyang.dsc)
-configure_file(${PROJECT_SOURCE_DIR}/packages/debian.control.in ${PROJECT_BINARY_DIR}/build-packages/debian.control @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/packages/debian.rules.in ${PROJECT_BINARY_DIR}/build-packages/debian.rules)
-
-if (NOT DEB_BUILDER)
-    message(WARNING "Missing tools (devscripts, debhelper package) for building deb package.\nYou won't be able to generate deb package from source code.\nCompiling libyang should still works fine.")
-else ()
-    # target for local build deb package
-    add_custom_target(build-deb
-                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-                      COMMAND build-packages/local-deb.sh
-    )
-    configure_file(${PROJECT_SOURCE_DIR}/packages/local-deb.sh.in ${PROJECT_BINARY_DIR}/build-packages/local-deb.sh @ONLY)
-endif()
-
-if (NOT RPM_BUILDER)
-    message(WARNING "Missing tools (rpm package) for building rpm package. \nYou won't be able to generate rpm package from source code.\nCompiling libyang should still works fine.")
-else ()
-    # target for local build rpm package
-    string(REPLACE ${PROJECT_SOURCE_DIR} "." EXCLUDE_BUILD_DIR ${PROJECT_BINARY_DIR})
-    add_custom_target(build-rpm
-                      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-                      COMMAND build-packages/local-rpm.sh
-    )
-    configure_file(${PROJECT_SOURCE_DIR}/packages/local-rpm.sh.in ${PROJECT_BINARY_DIR}/build-packages/local-rpm.sh @ONLY)
-endif()
-
 # by default build shared library
 # static build requires static libpcre library
 option(ENABLE_STATIC "Build static (.a) library" OFF)
-
-# check the supported platform
-if(NOT UNIX)
-    message(FATAL_ERROR "Only *nix like systems are supported.")
-endif()
 
 set(libsrc
     src/common.c
@@ -234,10 +191,8 @@ set(headers
     src/xml.h
     src/dict.h)
 
-check_symbol_exists(vdprintf "stdio.h;stdarg.h" HAVE_VDPRINTF)
-if(HAVE_VDPRINTF)
-    add_definitions(-DHAVE_VDPRINTF)
-endif(HAVE_VDPRINTF)
+# link compat
+use_compat()
 
 # create static libyang library
 if(ENABLE_STATIC)
@@ -246,11 +201,22 @@ if(ENABLE_STATIC)
     set(CMAKE_FIND_LIBRARY_SUFFIXES .a)
     set(CMAKE_EXE_LINK_DYNAMIC_C_FLAGS)       # remove -Wl,-Bdynamic
     set(CMAKE_EXE_LINK_DYNAMIC_CXX_FLAGS)
-    add_library(yang STATIC ${libsrc})
+    add_library(yang STATIC ${libsrc} $<TARGET_OBJECTS:compat>)
+
+    # switch off the tests
+    if(ENABLE_BUILD_TESTS)
+        message(WARNING "Tests are disabled in case of static build")
+        set(ENABLE_BUILD_TESTS OFF)
+        set(ENABLE_VALGRIND_TESTS OFF)
+    endif(ENABLE_BUILD_TESTS)
+    if(ENABLE_VALGRIND_TESTS)
+        message(WARNING "Tests are disabled in case of static build")
+        set(ENABLE_VALGRIND_TESTS OFF)
+    endif(ENABLE_VALGRIND_TESTS)
 else()
     set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
     add_library(yangobj OBJECT ${libsrc})
-    add_library(yang SHARED $<TARGET_OBJECTS:yangobj>)
+    add_library(yang SHARED $<TARGET_OBJECTS:yangobj> $<TARGET_OBJECTS:compat>)
 
     #only for tests with visible internal symbols
     add_library(yangobj_tests OBJECT ${libsrc})
@@ -259,9 +225,9 @@ else()
     target_link_libraries(yang ${CMAKE_DL_LIBS})
 
     set_target_properties(yangobj PROPERTIES COMPILE_FLAGS "-fvisibility=hidden")
-endif(ENABLE_STATIC)
+endif()
 
-set_target_properties(yang PROPERTIES VERSION ${LIBYANG_VERSION} SOVERSION ${LIBYANG_SOVERSION})
+set_target_properties(yang PROPERTIES VERSION ${LIBYANG_SOVERSION_FULL} SOVERSION ${LIBYANG_SOVERSION})
 
 # link math
 target_link_libraries(yang m)
@@ -269,14 +235,10 @@ target_link_libraries(yang m)
 # find pthreads
 set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
 find_package(Threads REQUIRED)
-if(ENABLE_STATIC)
-    target_link_libraries(yang -Wl,--whole-archive ${CMAKE_THREAD_LIBS_INIT} -Wl,--no-whole-archive)
-else()
-    target_link_libraries(yang ${CMAKE_THREAD_LIBS_INIT})
-endif(ENABLE_STATIC)
+target_link_libraries(yang ${CMAKE_THREAD_LIBS_INIT})
 
 # find PCRE library
-#unset(PCRE_LIBRARY CACHE)
+unset(PCRE_LIBRARY CACHE)
 find_package(PCRE REQUIRED)
 include_directories(${PCRE_INCLUDE_DIRS})
 target_link_libraries(yang ${PCRE_LIBRARIES})
@@ -333,7 +295,7 @@ if(ENABLE_BUILD_TESTS)
     if(CMOCKA_FOUND AND CMAKE_BUILD_TYPE MATCHES debug)
         list(APPEND EXTENSIONS_LIST "libyang_ext_test")
     endif(CMOCKA_FOUND AND CMAKE_BUILD_TYPE MATCHES debug)
-endif(ENABLE_BUILD_TESTS)
+endif()
 
 if(ENABLE_STATIC)
     set(EXTENSIONS_LIST_SIZE " 0 ")
@@ -351,8 +313,8 @@ else()
     add_subdirectory(src/extensions)
 endif(ENABLE_STATIC)
 
-# YANG user types plugins ("user_ipv4" is just an example, not installed by default)
-set(USER_TYPE_LIST "user_date_and_time")
+# YANG user types plugins
+set(USER_TYPE_LIST "user_yang_types" "user_inet_types")
 if(ENABLE_STATIC)
     set(USER_TYPE_LIST_SIZE " 0 ")
     foreach(USER_TYPE ${USER_TYPE_LIST})
@@ -367,24 +329,27 @@ if(ENABLE_STATIC)
     set(STATIC_LOADED_PLUGINS_COUNT "${ITEM}")
 else()
     add_subdirectory(src/user_types)
-endif(ENABLE_STATIC)
+endif()
 
 configure_file(${PROJECT_SOURCE_DIR}/src/plugin_config.h.in ${PROJECT_BINARY_DIR}/src/plugin_config.h)
 
 # yanglint
-add_executable(yanglint ${lintsrc})
+add_executable(yanglint ${lintsrc} $<TARGET_OBJECTS:compat>)
 target_link_libraries(yanglint yang)
 install(TARGETS yanglint DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${PROJECT_SOURCE_DIR}/tools/lint/yanglint.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 #yangre
-add_executable(yangre ${resrc})
+add_executable(yangre ${resrc} $<TARGET_OBJECTS:compat>)
 target_link_libraries(yangre yang)
 install(TARGETS yangre DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${PROJECT_SOURCE_DIR}/tools/re/yangre.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1)
 
 # yang2yin
 add_executable(yang2yin ${yang2yinsrc})
+
+# packages
+add_subdirectory(packages)
 
 # uninstall
 add_custom_target(uninstall "${CMAKE_COMMAND}" -P "${CMAKE_MODULE_PATH}/uninstall.cmake")
@@ -401,7 +366,11 @@ if(ENABLE_BUILD_TESTS)
         message(STATUS "Disabling tests because of missing CMocka")
         set(ENABLE_BUILD_TESTS NO)
     endif(CMOCKA_FOUND)
-endif(ENABLE_BUILD_TESTS)
+endif()
+
+if(ENABLE_BUILD_FUZZ_TARGETS)
+    add_subdirectory(tests/fuzz)
+endif()
 
 if(GEN_LANGUAGE_BINDINGS AND GEN_CPP_BINDINGS)
     add_subdirectory(swig)

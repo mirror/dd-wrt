@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-augment"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-augment_mod="urn:error-substatement1-augment">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-augment"/>
+  <prefix value="error-substatement1-augment_mod"/>
+
+  <container name="aug1">
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </container>
+
+  <feature name="feat1"/>
+  <augment target-node="/aug1">
+    <anydata name="anydata1"/>
+    <anyxml name="anyxml1"/>
+    <notification name="notf1"/>
+    <choice name="choic1"/>
+  </augment>
+
+  <!-- error substatement in if-feature. -->
+  <augment target-node="aug1">
+    <if-feature name="feat1">
+      <text>this is an error when substatement.</text>
+    </if-feature>
+  </augment>
+</module>

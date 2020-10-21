@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-when"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-when_mod="urn:error-substatement3-when">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-when"/>
+  <prefix value="error-substatement3-when_mod"/>
+
+  <container name="con3">
+    <when condition="when3">
+      <description>
+        <text>this is an error example of description 1.</text>
+      </description>
+      <description>
+        <text>this is an error example of description 2.</text>
+      </description>
+    </when>
+  </container>
+</module>

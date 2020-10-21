@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-contact"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-contact_mod="urn:error-dup-contact">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-contact"/>
+  <prefix value="error-dup-contact_mod"/>
+
+  <!-- dup contact -->
+  <contact>
+    <text> this is an error example1. </text>
+  </contact>
+  <contact>
+    <text> this is an error example2. </text>
+  </contact>
+</module>

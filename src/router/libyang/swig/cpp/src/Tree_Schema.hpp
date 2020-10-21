@@ -69,6 +69,8 @@ public:
     uint8_t deviated() {return module->deviated;};
     /** get disabled variable from [lys_module](@ref lys_module)*/
     uint8_t disabled() {return module->disabled;};
+    /** get implemented variable from [lys_module](@ref lys_module)*/
+    uint8_t implemented() {return module->implemented;};
     /** get rev_size variable from [lys_module](@ref lys_module)*/
     uint8_t rev_size() {return module->rev_size;};
     /** get imp_size variable from [lys_module](@ref lys_module)*/
@@ -103,8 +105,13 @@ public:
     std::string print_mem(LYS_OUTFORMAT format, int options);
     std::string print_mem(LYS_OUTFORMAT format, const char *target, int options);
 
+    int feature_enable(const char *feature);
+    int feature_disable(const char *feature);
+    int feature_state(const char *feature);
+
     friend Context;
     friend Data_Node;
+    friend Submodule;
 
 private:
     struct lys_module *module;
@@ -120,6 +127,8 @@ class Submodule
 public:
     /** wrapper for struct [lys_submodule](@ref lys_submodule), for internal use only */
     Submodule(struct lys_submodule *submodule, S_Deleter deleter);
+    /** creates a Submodule from `module` if it is a submodule */
+    Submodule(S_Module module);
     ~Submodule();
     /** get ctx variable from [lys_submodule](@ref lys_submodule)*/
     S_Context ctx() LY_NEW(submodule, ctx, Context);
@@ -468,10 +477,10 @@ public:
     uint8_t *expr() {return iffeature->expr;};
     /** get ext_size variable from [lys_iffeature](@ref lys_iffeature)*/
     uint8_t ext_size() {return iffeature->ext_size;};
-    /** get features variable from [lys_iffeature](@ref lys_iffeature)*/
-    std::vector<S_Feature> features();
     /** get ext variable from [lys_iffeature](@ref lys_iffeature)*/
     std::vector<S_Ext_Instance> ext();
+    /** wrapper for [lys_iffeature_value](@ref lys_iffeature_value)*/
+    int value();
 
 private:
     struct lys_iffeature *iffeature;
@@ -677,8 +686,6 @@ public:
         deleter(deleter)
     {};
     ~Schema_Node_Leaf();
-    /** get backlinks variable from [lys_node_leaf](@ref lys_node_leaf)*/
-    S_Set backlinks();
     /** get when variable from [lys_node_leaf](@ref lys_node_leaf)*/
     S_When when();
     /** get type variable from [lys_node_leaf](@ref lys_node_leaf)*/
@@ -721,8 +728,6 @@ public:
     uint8_t must_size() {return ((struct lys_node_leaflist *)node)->must_size;};
     /** get when variable from [lys_node_leaflist](@ref lys_node_leaflist)*/
     S_When when();
-    /** get backlinks variable from [lys_node_leaflist](@ref lys_node_leaflist)*/
-    S_Set backlinks();
     /** get must variable from [lys_node_leaflist](@ref lys_node_leaflist)*/
     std::vector<S_Restr> must();
     /** get type variable from [lys_node_leaflist](@ref lys_node_leaflist)*/

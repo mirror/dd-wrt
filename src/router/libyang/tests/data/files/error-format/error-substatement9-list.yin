@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement9-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement9-list_mod="urn:error-substatement9-list">
+  <namespace uri="urn:error-substatement9-list"/>
+  <prefix value="error-substatement9-list_mod"/>
+
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- add an error must node -->
+    <must condition="must1">
+      <text>this is an error must.</text>
+    </must>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>

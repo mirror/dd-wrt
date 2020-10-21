@@ -8,7 +8,8 @@
 
 libyang is a YANG data modelling language parser and toolkit written (and
 providing API) in C. The library is used e.g. in [libnetconf2](https://github.com/CESNET/libnetconf2),
-[Netopeer2](https://github.com/CESNET/Netopeer2) or [sysrepo](https://github.com/sysrepo/sysrepo) projects.
+[Netopeer2](https://github.com/CESNET/Netopeer2), [sysrepo](https://github.com/sysrepo/sysrepo) and
+[FRRouting](https://github.com/frrouting/frr) projects.
 
 ## Provided Features
 
@@ -20,24 +21,35 @@ providing API) in C. The library is used e.g. in [libnetconf2](https://github.co
 * Manipulation with the instance data.
 * Support for default values in the instance data ([RFC 6243](https://tools.ietf.org/html/rfc6243)).
 * Support for YANG extensions.
-* Support for YANG Metadata ([RFC 7952](https://tools.ietf.org/html/rfc6243)).
+* Support for YANG Metadata ([RFC 7952](https://tools.ietf.org/html/rfc7952)).
 * [yanglint](#yanglint) - feature-rich YANG tool.
 
 Current implementation covers YANG 1.0 ([RFC 6020](https://tools.ietf.org/html/rfc6020))
 as well as YANG 1.1 ([RFC 7950](https://tools.ietf.org/html/rfc7950)).
 
+## Branches
+
+The project uses 2 main branches `master` and `devel`. Other branches should not be cloned. In `master` there are files of the
+last official *release*. Any latest improvements and changes, which were tested at least briefly are found in `devel`. On every
+new *release*, `devel` is merged into `master`.
+
+This means that when only stable official releases are to be used, either `master` can be used or specific *releases* downloaded.
+If all the latest bugfixes should be applied, `devel` branch is the  one to be used. Note that whenever **a new issue is created**
+and it occurs on the `master` branch, the **first response will likely be** to use `devel` before any further provided support.
+
 ## Packages
 
-We are using openSUSE Build Service to automaticaly prepare binary packages for number of GNU/Linux distros. Check
-[this](https://software.opensuse.org//download.html?project=home%3Aliberouter&package=libyang) page and follow the
-instructions for your distro to install `libyang` package. The `libyang` package is built once a day from the
-master branch. If you want the latest code from the devel branch, install `libyang-experimental` package.
+We are using openSUSE Build Service to automaticaly prepare binary packages for number of GNU/Linux distros.
+The [libyang](https://software.opensuse.org//download.html?project=home%3Aliberouter&package=libyang)
+packages are always build from current `master` branch (latest release). If you are interested in any other packages
+(such as *devel* or C++ and Python bindings), you can browse
+[all packages](https://download.opensuse.org/repositories/home:/liberouter/) from our repository.
 
 ## Requirements
 
 ### Build Requirements
 
-* C compiler (gcc >= 4.9, clang >= 3.0, ...)
+* C compiler (gcc >= 4.8.4, clang >= 3.0, ...)
 * cmake >= 2.8.12
 * libpcre (devel package)
  * note, that PCRE is supposed to be compiled with unicode support (configure's options
@@ -225,6 +237,13 @@ Tests can be run by the make's `test` target:
 $ make test
 ```
 
+## Fuzzing
+
+Simple fuzzing targets, fuzzing instructions and a Dockerfile that builds the fuzz targets
+and the AFL fuzzer are available in the `tests/fuzz` directory.
+
+The `tests/fuzz` directory also contains a README file that describes the whole process in more detail.
+
 ## Bindings
 
 We provide bindings for high-level languages using [SWIG](http://www.swig.org/)
@@ -239,7 +258,14 @@ More information about the specific binding can be found in their README files.
 Currently supported bindings are:
 
 * JavaScript
- * cmake option: `JAVASCRIPT_BINDING`
- * [README](./swig/javascript/README.md)
+    - cmake option: `JAVASCRIPT_BINDING`
+    - [README](./swig/javascript/README.md)
+* Python SWIG (uses SWIG, enabled by default if `GEN_LANGUAGE_BINDINGS` is set)
+    - cmake option: `GEN_PYTHON_BINDINGS` (depends on `GEN_CPP_BINDINGS`)
+    - [README](./swig/python/README.md)
+* Python CFFI (more "pythonic" API)
+    - Hosted in a separate project: https://github.com/CESNET/libyang-python
 
+## Project Information
 
+Project is hosted on [GitHub](https://github.com/CESNET/libyang) where you can find additional information and contact developers via the project's issue tracker. If you are interested in future plans announcements, please subscribe to the [Future Plans issue](https://github.com/CESNET/libyang/issues/880).

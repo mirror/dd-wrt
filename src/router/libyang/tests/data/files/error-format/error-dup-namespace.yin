@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-namespace"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-namespace_mod="urn:error-dup-namespace">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-namespace"/>
+  <prefix value="error-dup-namespace_mod"/>
+  <namespace uri="urn:error-dup-namespace"/>
+</module>

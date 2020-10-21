@@ -468,27 +468,99 @@ Data:      container "nacm"
 
 **Print information about specific model part**
 
-Command and its output:
+Print information about a node:
 
 ```
-> print -f info -t /ietf-netconf-acm:nacm/ietf-netconf-acm:enable-nacm ietf-netconf-ac
-Leaf:      enable-nacm
+> print -f info -P /ietf-netconf-acm:nacm/denied-operations ietf-netconf-acm
+Leaf:      denied-operations
 Module:    ietf-netconf-acm
-Desc:      Enables or disables all NETCONF access control
-           enforcement.  If 'true', then enforcement
-           is enabled.  If 'false', then enforcement
-           is disabled.
+Desc:      Number of times since the server last restarted that a
+           protocol operation request was denied.
 Reference:
-Config:    read-write
+Config:    read-only
 Status:    current
-Mandatory: no
-Type:      boolean
+Mandatory: yes
+Type:      zero-based-counter32
 Units:
-Default:   true
+Default:
 If-feats:
 When:
 Must:
-NACM:      default-deny-all
+```
+Print detailed information about its type `zero-based-counter32`:
+```
+> print -f info -P type/ietf-netconf-acm:nacm/denied-operations ietf-netconf-acm
+Base type: uint32
+Range:
+Superior:  ietf-yang-types:zero-based-counter32
+```
+Print information about the typedef `zero-based-counter32` it was derived from:
+```
+> print -f info -P typedef/zero-based-counter32 ietf-yang-types
+Typedef:   zero-based-counter32
+Module:    ietf-yang-types
+Desc:      The zero-based-counter32 type represents a counter32
+           that has the defined 'initial' value zero.
+
+           A schema node of this type will be set to zero (0) on creation
+           and will thereafter increase monotonically until it reaches
+           a maximum value of 2^32-1 (4294967295 decimal), when it
+           wraps around and starts increasing again from zero.
+
+           Provided that an application discovers a new schema node
+           of this type within the minimum time to wrap, it can use the
+           'initial' value as a delta.  It is important for a management
+           station to be aware of this minimum time and the actual time
+           between polls, and to discard data if the actual time is too
+           long or there is no defined minimum time.
+
+           In the value set and its semantics, this type is equivalent
+           to the ZeroBasedCounter32 textual convention of the SMIv2.
+Reference: RFC 4502: Remote Network Monitoring Management Information
+                     Base Version 2
+Status:    current
+Base type: uint32
+Range:
+Superior:  counter32
+Units:
+Default:   0
+```
+Finally, print information about the typedef `counter32` the other typedef `zero-based-counter32` was derived from:
+```
+> print -f info -P typedef/counter32 ietf-yang-types
+Typedef:   counter32
+Module:    ietf-yang-types
+Desc:      The counter32 type represents a non-negative integer
+           that monotonically increases until it reaches a
+           maximum value of 2^32-1 (4294967295 decimal), when it
+           wraps around and starts increasing again from zero.
+
+           Counters have no defined 'initial' value, and thus, a
+           single value of a counter has (in general) no information
+           content.  Discontinuities in the monotonically increasing
+           value normally occur at re-initialization of the
+           management system, and at other times as specified in the
+           description of a schema node using this type.  If such
+           other times can occur, for example, the creation of
+           a schema node of type counter32 at times other than
+           re-initialization, then a corresponding schema node
+           should be defined, with an appropriate type, to indicate
+           the last discontinuity.
+
+           The counter32 type should not be used for configuration
+           schema nodes.  A default statement SHOULD NOT be used in
+           combination with the type counter32.
+
+           In the value set and its semantics, this type is equivalent
+           to the Counter32 type of the SMIv2.
+Reference: RFC 2578: Structure of Management Information Version 2
+                     (SMIv2)
+Status:    current
+Base type: uint32
+Range:
+Superior:  uint32
+Units:
+Default:
 ```
 
 ## Query using NETCONF data

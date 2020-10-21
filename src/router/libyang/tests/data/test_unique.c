@@ -145,60 +145,6 @@ test_un_empty(void **state)
 }
 
 static void
-test_un_nested(void **state)
-{
-    struct state *st = (*state);
-    const char *xml1 = "<un xmlns=\"urn:libyang:tests:unique\">"
-                        "<list><name>nam</name>"
-                         "<list2><name>x</name><cont><a>25</a><b>85</b></cont></list2>"
-                         "<list2><name>y</name><cont><a>25</a><b>85</b></cont></list2>"
-                        "</list>"
-                       "</un>";
-    const char *xml2 = "<un xmlns=\"urn:libyang:tests:unique\">"
-                        "<list><name>nam</name>"
-                         "<list2><name>x</name><cont><a>25</a><b>85</b></cont></list2>"
-                        "</list>"
-                        "<list><name>nama</name>"
-                         "<list2><name>y</name><cont><a>25</a><b>85</b></cont></list2>"
-                        "</list>"
-                       "</un>";
-    const char *xml3 = "<un xmlns=\"urn:libyang:tests:unique\">"
-                        "<list><name>nam</name>"
-                         "<list2><name>x</name><cont><a>25</a><b>85</b></cont></list2>"
-                         "<list2><name>y</name><cont><a>26</a><b>85</b></cont></list2>"
-                        "</list>"
-                        "<list><name>nama</name>"
-                         "<list2><name>z</name><cont><a>25</a><b>86</b></cont></list2>"
-                        "</list>"
-                        "<list><name>namb</name>"
-                         "<list2><name>a</name><cont><a>26</a><b>86</b></cont></list2>"
-                        "</list>"
-                        "<list><name>namc</name>"
-                         "<list2><name>b</name><cont><a>29</a><b>86</b></cont></list2>"
-                         "<list2><name>a</name><cont><a>25</a><b>85</b></cont></list2>"
-                        "</list>"
-                       "</un>";
-
-    st->dt = lyd_parse_mem(st->ctx, xml1, LYD_XML, LYD_OPT_CONFIG);
-    assert_ptr_equal(st->dt, NULL);
-    assert_int_equal(ly_errno, LY_EVALID);
-    assert_int_equal(ly_vecode(st->ctx), LYVE_NOUNIQ);
-    assert_string_equal(ly_errmsg(st->ctx), "Unique data leaf(s) \"cont/a cont/b\" not satisfied in \"/unique:un/list[name='nam']/list2[name='x']\" and \"/unique:un/list[name='nam']/list2[name='y']\".");
-
-    st->dt = lyd_parse_mem(st->ctx, xml2, LYD_XML, LYD_OPT_CONFIG);
-    assert_ptr_equal(st->dt, NULL);
-    assert_int_equal(ly_errno, LY_EVALID);
-    assert_int_equal(ly_vecode(st->ctx), LYVE_NOUNIQ);
-    assert_string_equal(ly_errmsg(st->ctx), "Unique data leaf(s) \"cont/a cont/b\" not satisfied in \"/unique:un/list[name='nam']/list2[name='x']\" and \"/unique:un/list[name='nama']/list2[name='y']\".");
-
-    st->dt = lyd_parse_mem(st->ctx, xml3, LYD_XML, LYD_OPT_CONFIG);
-    assert_ptr_equal(st->dt, NULL);
-    assert_int_equal(ly_errno, LY_EVALID);
-    assert_int_equal(ly_vecode(st->ctx), LYVE_NOUNIQ);
-    assert_string_equal(ly_errmsg(st->ctx), "Unique data leaf(s) \"cont/a cont/b\" not satisfied in \"/unique:un/list[name='namc']/list2[name='a']\" and \"/unique:un/list[name='nam']/list2[name='x']\".");
-}
-
-static void
 test_schema_inpath(void **state)
 {
     struct state *st = (*state);
@@ -224,7 +170,6 @@ int main(void)
                     cmocka_unit_test_setup_teardown(test_un_correct, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_un_defaults, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_un_empty, setup_f, teardown_f),
-                    cmocka_unit_test_setup_teardown(test_un_nested, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_schema_inpath, setup_f, teardown_f),
     };
 

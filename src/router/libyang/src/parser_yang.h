@@ -174,7 +174,7 @@ int yang_check_ext_instance(struct lys_module *module, struct lys_ext_instance *
                             void *parent, struct unres_schema *unres);
 
 int yang_read_extcomplex_str(struct lys_module *module, struct lys_ext_instance_complex *ext, const char *arg_name,
-                             const char *parent_name, char *value, int parent_stmt, LY_STMT stmt);
+                             const char *parent_name, char **value, int parent_stmt, LY_STMT stmt);
 
 void **yang_getplace_for_extcomplex_struct(struct lys_ext_instance_complex *ext, int *index,
                                     char *parent_name, char *node_name, LY_STMT stmt);

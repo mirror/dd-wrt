@@ -8,6 +8,7 @@
 ## Install
 
 ```
+$ cd libyang/build
 $ cmake -DGEN_LANGUAGE_BINDINGS=ON -DGEN_CPP_BINDINGS=ON -DGEN_PYTHON_BINDINGS=ON ..
 $ # for python2 bindings add -DGEN_PYTHON_VERSION=2
 $ make

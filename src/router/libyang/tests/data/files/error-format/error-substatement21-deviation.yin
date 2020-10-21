@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement21-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement21-deviation_mod="urn:error-substatement21-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement21-deviation"/>
+  <prefix value="error-substatement21-deviation_mod"/>
+
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:llist1">
+    <deviate value="add">
+      <units name="bytes"/>
+    </deviate>
+  </deviation>
+</module>

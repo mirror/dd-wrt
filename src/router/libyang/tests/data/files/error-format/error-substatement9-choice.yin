@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement9-choice"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement9-choice_mod="urn:error-substatement9-choice">  
+  <namespace uri="urn:error-substatement9-choice"/>
+  <prefix value="error-substatement9-choice_mod"/>
+
+  <choice name="choice1">
+    <choice name="choice2">
+      <text>this is an error substatement of choice.</text>
+    </choice>
+  </choice>
+</module>

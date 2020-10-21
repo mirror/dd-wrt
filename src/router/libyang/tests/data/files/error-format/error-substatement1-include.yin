@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-include"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-include_mod="urn:error-substatement1-include">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-include"/>
+  <prefix value="error-substatement1-include_mod"/>
+
+  <include module="all-imp">
+    <!-- duplicate revision -->
+    <revision-date date="2016-05-23"/>
+    <revision-date date="2016-05-22"/>
+  </include>
+</module>

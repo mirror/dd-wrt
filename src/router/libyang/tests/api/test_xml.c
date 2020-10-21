@@ -47,6 +47,56 @@ const char *a_data_xml_attr = "\
 
 const char *res_xml = "<x xmlns=\"urn:a\"><bubba>test</bubba></x>";
 
+const char *a_err_data_xml_001 = "<x xmlns=><bubba>test</bubba></x>";
+
+const char *a_err_data_xml_002 = "<x xmlns*><bubba>test</bubba></x>";
+
+const char *a_err_data_xml_003 = "\
+<!DOCTYPE>\n\
+<x xmlns=\"urn:a\">\n\
+    <bubba> test </bubba>\n\
+</x>\n";
+
+/* Create a model that has different bytes.  α:two bytes  阳:three bytes  𪐕:four bytes */
+const char *a_correct_data_xml_001 = "<α阳𪐕 xmlns=\"urn:a\"><bubba>test</bubba></α阳𪐕>";
+
+const char *a_correct_data_xml_002 = "<x xmlns=\"urn:a\"><bubba>&apos; and &quot;</bubba></x>";
+
+const char *a_correct_data_xml_003 = "\
+<x xmlns=\"urn:a\">\n\
+    <!-- this is comment -->\n\
+    <bubba>test</bubba>\n\
+</x>\n";
+
+const char *a_correct_data_xml_004 = "\
+<x xmlns=\"urn:a\">\n\
+    test\n\
+    <bubba>test</bubba>\n\
+</x>\n";
+
+const char *a_correct_data_xml_005 = "\
+<!-- this is comment -->\n\
+<x xmlns=\"urn:a\">\n\
+    <bubba>test</bubba>\n\
+</x>\n";
+
+const char *a_correct_data_xml_006 = "\
+<x xmlns=\"urn:a\">\n\
+    <![CDATA[ you and me ]]>\n\
+    <bubba>test</bubba>\n\
+</x>\n";
+
+const char *a_correct_data_xml_007 = "\
+<x xmlns=\"urn:a\">\n\
+    <?xml version=\" 1.0 \" ?>\n\
+    <bubba>test</bubba>\n\
+</x>\n";
+
+const char *a_correct_data_xml_008 = "\
+<x xmlns=\"urn:a\">\n\
+    <bubba><bubba>test</bubba>test</bubba>\n\
+</x>\n";
+
 int
 generic_init(char *yang_file, char *yang_folder)
 {
@@ -484,6 +534,64 @@ test_lyxml_free_withsiblings(void **state)
     lyxml_free_withsiblings(ctx, xml);
 }
 
+void
+test_lyxml_xmlns_wrong_format(void **state)
+{
+    (void)state;
+    struct lyxml_elem *xml = NULL;
+
+    xml = lyxml_parse_mem(ctx, a_err_data_xml_001, 0);
+    assert_ptr_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_err_data_xml_002, 0);
+    assert_ptr_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_err_data_xml_003, 0);
+    assert_ptr_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+}
+
+void
+test_lyxml_xmlns_correct_format(void **state)
+{
+    (void)state;
+    struct lyxml_elem *xml = NULL;
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_001, 0);
+    assert_string_equal("α阳𪐕", xml->name);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_002, 0);
+    assert_string_equal("' and \"", xml->child->content);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_003, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_004, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_005, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_006, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_007, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+
+    xml = lyxml_parse_mem(ctx, a_correct_data_xml_008, 0);
+    assert_ptr_not_equal(xml, NULL);
+    lyxml_free(ctx, xml);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -499,6 +607,8 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_lyxml_get_ns, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyxml_dup, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_lyxml_free_withsiblings, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_lyxml_xmlns_wrong_format, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_lyxml_xmlns_correct_format, setup_f, teardown_f),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

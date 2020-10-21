@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement5-leaflist"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement5-leaflist_mod="urn:error-substatement5-leaflist">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement5-leaflist"/>
+  <prefix value="error-substatement5-leaflist_mod"/>
+
+  <!-- this is an error substatement about leaf-list. -->
+  <leaf-list name="llist1">
+    <type name="string"/>
+    <!-- the "min-elements" statement with non-zero value is forbidden on leaf-list with the "default" statement. -->
+    <min-elements value="  123"/>
+    <default value="leaflist"/>
+  </leaf-list>
+</module>

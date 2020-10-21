@@ -1,0 +1,13 @@
+module keyless {
+  namespace urn:test:keyless;
+  prefix m;
+  yang-version 1.1;
+
+  container c {
+    leaf-list x { type string;}
+    list l {
+      config false;
+      leaf a { type string;}
+    }
+  }
+}

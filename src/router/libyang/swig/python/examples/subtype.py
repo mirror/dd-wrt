@@ -11,11 +11,11 @@ except Exception as e:
     print(e)
     sys.exit()
 
-module = ctx.load_module("iana-if-type", None)
-module = ctx.load_module("ietf-inet-types", None)
-module = ctx.load_module("ietf-yang-types", None)
-module = ctx.load_module("ietf-interfaces", None)
-module = ctx.load_module("ietf-ip", None)
+ctx.load_module("iana-if-type", None)
+ctx.load_module("ietf-inet-types", None)
+ctx.load_module("ietf-yang-types", None)
+ctx.load_module("ietf-interfaces", None)
+ctx.load_module("ietf-ip", None)
 
 node = None
 try:

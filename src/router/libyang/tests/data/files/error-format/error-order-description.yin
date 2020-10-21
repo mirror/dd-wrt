@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-description"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-description_mod="urn:error-order-description">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-description"/>
+  <prefix value="error-order-description_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- description should be placed before leaf -->
+  <description>
+    <text> this is an error example1. </text>
+  </description>
+</module>

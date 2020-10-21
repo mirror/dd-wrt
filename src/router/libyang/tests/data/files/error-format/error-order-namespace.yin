@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-namespace"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-namespace_mod="urn:error-order-namespace">
+  <yang-version value="1.1"/>
+  <prefix value="error-order-namespace_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- namespace should be placed before leaf -->
+  <namespace uri="urn:error-order-namespace"/>
+</module>

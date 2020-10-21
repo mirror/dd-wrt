@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement5-choice"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement5-choice_mod="urn:error-substatement5-choice">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement5-choice"/>
+  <prefix value="error-substatement5-choice_mod"/>
+
+  <choice name="choice1">
+    <anydata name="anydata1">
+      <text>this is an error substatement of choice.</text>
+    </anydata>
+  </choice>
+</module>

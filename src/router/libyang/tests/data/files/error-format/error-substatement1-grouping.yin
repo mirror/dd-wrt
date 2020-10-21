@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-grouping"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-grouping_mod="urn:error-substatement1-grouping">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-grouping"/>
+  <prefix value="error-substatement1-grouping_mod"/>
+
+  <!-- this is an error substatement of grouping -->
+  <grouping name="grp">
+    <action name="act1"/>
+    <notification name="ntf1">
+      <text>this is an error substatement about notification.</text>
+    </notification>
+  </grouping>
+</module>

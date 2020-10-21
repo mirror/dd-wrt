@@ -8,7 +8,7 @@ Laboratory [1], so it is necessary to install these tools first. To do so,
 you can use the automatic installer from [2]. Target must be 'abi-tracker'.
 
 Note: Some others tools are used by the LVC toolset and not all of them are
-      correctly checked, so be carefull and check warnings and error
+      correctly checked, so be careful and check warnings and error
       messages (e.g. I have been missing correct version of ctags).
 
 Then here is the 'abi.sh' to build ABI/API timeline for libyang. By default

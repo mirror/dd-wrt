@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-description"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-description_mod="urn:error-dup-description">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-description"/>
+  <prefix value="error-dup-description_mod"/>
+
+  <!-- dup description -->
+  <description>
+    <text> this is an error example1. </text>
+  </description>
+  <description>
+    <text> this is an error example2. </text>
+  </description>
+</module>

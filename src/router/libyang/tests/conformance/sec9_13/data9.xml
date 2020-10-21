@@ -2,7 +2,7 @@
     <module-set-id>10</module-set-id>
 </modules-state>
 <yang-library xmlns="urn:ietf:params:xml:ns:yang:ietf-yang-library">
-    <checksum>10</checksum>
+    <content-id>10</content-id>
 </yang-library>
 <instance xmlns="urn:cesnet:mod3">
     <llist1 xmlns:pref="urn:cesnet:mod3">/pref:ccc/pref:state[2]/pref:cont/pref:llist[.='-1']</llist1>

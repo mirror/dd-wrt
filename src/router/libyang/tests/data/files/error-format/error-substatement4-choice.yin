@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-choice"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-choice_mod="urn:error-substatement4-choice">  
+  <namespace uri="urn:error-substatement4-choice"/>
+  <prefix value="error-substatement4-choice_mod"/>
+
+  <choice name="choice1">
+    <list name="list1">
+      <text>this is an error substatement of choice.</text>
+    </list>
+  </choice>
+</module>

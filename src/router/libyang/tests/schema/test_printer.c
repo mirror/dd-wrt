@@ -45,16 +45,156 @@ teardown_ctx(void **state)
 }
 
 static void
+test_tree(void **state)
+{
+   (void)state;
+   char *str;
+   const struct lys_module *mod1, *mod2, *mod2_sub;
+   const char *model_name = "tree2_sub";
+
+   mod1 = ly_ctx_load_module(ctx, "tree1", NULL);
+   assert_ptr_not_equal(mod1, NULL);
+   mod2=ly_ctx_load_module(ctx, "tree2", NULL);
+   assert_ptr_not_equal(mod2, NULL);
+   const char temp1[] = "module: tree1\n"
+   "  +--rw cont\n"
+   "  |  +--rw leaf4?         uint8\n"
+   "  |  +--rw leaf3?         string\n"
+   "  |  +--rw tree2:list1* [key1]\n"
+   "  |     +--rw tree2:key1     -> /tree1:cont/list1/leaf2\n"
+   "  |     +--rw tree2:key2?    -> /tree2:leaf2\n"
+   "  |     +--rw (tree2:ch1)? <ca>\n"
+   "  |     |  +--:(tree2:ca)\n"
+   "  |     +--rw tree2:leaf2?   string\n"
+   "  +--rw any?    anyxml\n"
+   "\n"
+   "  rpcs:\n"
+   "    +---x rpc1\n"
+   "    |  +---- input\n"
+   "    |  |  +---w in?   string\n"
+   "    |  +---- output\n"
+   "    |     +--ro out?   int8\n"
+   "    +---x rpc2\n"
+   "\n"
+   "  notifications:\n"
+   "    +---n notif1\n"
+   "    +---n notif2\n";
+   lys_print_mem(&str, mod1, LYS_OUT_TREE, NULL, 0, 0);
+   assert_string_equal(str, temp1);
+   free(str);
+
+   const char temp2[] = "module: tree1\n"
+   "  +--rw cont\n"
+   "  |  +--rw leaf4?         uint8\n"
+   "  |  +---u group2\n"
+   "  |  +--rw tree2:list1* [key1]\n"
+   "  |     +--rw tree2:key1        -> /tree1:cont/list1/leaf2\n"
+   "  |     +--rw tree2:key2?       -> /tree2:leaf2\n"
+   "  |     +---u tree2:t1:group1\n"
+   "  +--rw any?    anyxml\n"
+   "\n"
+   "  rpcs:\n"
+   "    +---x rpc1\n"
+   "    |  +---- input\n"
+   "    |  |  +---w in?   string\n"
+   "    |  +---- output\n"
+   "    |     +--ro out?   int8\n"
+   "    +---x rpc2\n"
+   "\n"
+   "  notifications:\n"
+   "    +---n notif1\n"
+   "    +---n notif2\n"
+   "\n"
+   "  grouping group1:\n"
+   "    +---- (ch1)? <ca>\n"
+   "    |  +--:(ca)\n"
+   "    +---- leaf2?   string\n"
+   "  grouping group2:\n"
+   "    +---- leaf3?   string\n";
+   lys_print_mem(&str, mod1, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_GROUPING | LYS_OUTOPT_TREE_USES);
+   assert_string_equal(str, temp2);
+   free(str); 
+   
+   const char temp3[] = "module: tree1\n"
+   "  +--rw cont\n"
+   "  |  +--rw leaf4?         uint8\n"
+   "  |  +--rw leaf3?         string\n"
+   "  |  +--rw tree2:list1* [key1]\n"
+   "  |     +--rw tree2:key1     leafref\n"
+   "  |     +--rw tree2:key2?    leafref\n"
+   "  |     +--rw (tree2:ch1)? <ca>\n"
+   "  |     |  +--:(tree2:ca)\n"
+   "  |     +--rw tree2:leaf2?   string\n"
+   "  +--rw any?    anyxml\n"
+   "\n"
+   "  rpcs:\n"
+   "    +---x rpc1\n"
+   "    |  +---- input\n"
+   "    |  |  +---w in?   string\n"
+   "    |  +---- output\n"
+   "    |     +--ro out?   int8\n"
+   "    +---x rpc2\n"
+   "\n"
+   "  notifications:\n"
+   "    +---n notif1\n"
+   "    +---n notif2\n";
+   lys_print_mem(&str, mod1, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_NO_LEAFREF);
+   assert_string_equal(str, temp3);
+   free(str);
+   
+   const char temp4[] = "module: tree2\n"
+   "  +--rw (ch2)? <ca>\n"
+   "  |  +--:(ca)\n"
+   "  |  |  +--rw presence!\n"
+   "  |  +--:(leaf2)\n"
+   "  |  |  +--rw leaf2?   string\n"
+   "  |  +--:(cb)\n"
+   "  |     +--rw presence1!\n"
+   "  +--rw leaf1?   string <test tree>\n"
+   "  +--rw ll*      tree1:type1\n"
+   "\n"
+   "  augment /tree1:cont:\n"
+   "    +--rw list1* [key1]\n"
+   "       +--rw key1     leafref\n"
+   "       +--rw key2?    leafref\n"
+   "       +--rw (ch1)? <ca>\n"
+   "       |  +--:(ca)\n"
+   "       +--rw leaf2?   string\n";   
+   lys_print_mem(&str, mod2, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_NO_LEAFREF);
+   assert_string_equal(str, temp4);
+   free(str); 
+  
+   mod2_sub = (const struct lys_module *)ly_ctx_get_submodule(ctx, NULL, NULL, model_name, 0);
+   if (!mod2_sub) {
+       fprintf(stderr, "No submodule \"%s\" found.\n", model_name);
+   }
+   assert_ptr_not_equal(mod2_sub, NULL);
+   
+   const char temp5[] = "submodule: tree2_sub (belongs-to tree2)\n"
+   "  +--rw (ch2)? <ca>\n"
+   "  |  +--:(ca)\n"
+   "  |  |  +--rw presence!\n"
+   "  |  +--:(leaf2)\n"
+   "  |  |  +--rw leaf2?   string\n";
+   lys_print_mem(&str, mod2_sub, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_NO_LEAFREF);
+   assert_string_equal(str, temp5);
+   free(str);
+}
+
+static void
 test_tree_rfc(void **state)
 {
     (void)state;
     char *str;
-    const struct lys_module *moda, *modb;
+    const struct lys_module *moda, *modb, *mod2, *mod2_sub;
+    const char *model_name = "tree2_sub";
 
     moda = ly_ctx_load_module(ctx, "tree-a", NULL);
     assert_ptr_not_equal(moda, NULL);
     modb = ly_ctx_load_module(ctx, "tree-b", NULL);
     assert_ptr_not_equal(modb, NULL);
+    mod2 = ly_ctx_load_module(ctx, "tree2", NULL);
+    assert_ptr_not_equal(mod2, NULL);
 
     const char temp1[] = "module: tree-a\n"
     "  +--rw cont\n"
@@ -124,6 +264,43 @@ test_tree_rfc(void **state)
     lys_print_mem(&str, modb, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_RFC);
     assert_string_equal(str, temp4);
     free(str);
+
+    const char temp5[] = "module: tree2\n"
+    "  +--rw (ch2)?\n"
+    "  |  +--:(ca)\n"
+    "  |  |  +--rw presence!\n"
+    "  |  +--:(leaf2)\n"
+    "  |  |  +--rw leaf2?   string\n"
+    "  |  +--:(cb)\n"
+    "  |     +--rw presence1!\n"
+    "  +--rw leaf1?   string\n"
+    "  +--rw ll*      t1:type1\n"
+    "\n"
+    "  augment /t1:cont:\n"
+    "    +--rw list1* [key1]\n"
+    "       +--rw key1     -> /t1:cont/list1/leaf2\n"
+    "       +--rw key2?    -> /t2:leaf2\n"
+    "       +--rw (ch1)?\n"
+    "       |  +--:(ca)\n"
+    "       +--rw leaf2?   string\n";
+    lys_print_mem(&str, mod2, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_RFC);
+    assert_string_equal(str, temp5);
+    free(str);
+
+    mod2_sub = (const struct lys_module *)ly_ctx_get_submodule(ctx, NULL, NULL, model_name, 0);
+    if (!mod2_sub) {
+        fprintf(stderr, "No submodule \"%s\" found.\n", model_name);
+    }
+    assert_ptr_not_equal(mod2_sub, NULL);
+    const char temp6[] = "submodule: tree2_sub\n"
+    "  +--rw (ch2)?\n"
+    "  |  +--:(ca)\n"
+    "  |  |  +--rw presence!\n"
+    "  |  +--:(leaf2)\n"
+    "  |  |  +--rw leaf2?   string\n";
+    lys_print_mem(&str, mod2_sub, LYS_OUT_TREE, NULL, 0, LYS_OUTOPT_TREE_RFC);
+    assert_string_equal(str, temp6);
+    free(str);
 }
 
 static void
@@ -161,6 +338,17 @@ test_tree_rfc_subtree(void **state)
     "    +---n notif1\n";
     lys_print_mem(&str, moda, LYS_OUT_TREE, "/tree-a:notif1", 0, LYS_OUTOPT_TREE_RFC);
     assert_string_equal(str, temp3);
+    free(str);
+    
+    const char temp4[] = "module: tree-a\n"
+    "  +--rw cont\n"
+    "     +--rw leaf3?   uint8\n";
+    lys_print_mem(&str, moda, LYS_OUT_TREE, "/tree-a:cont/leaf3", 0, LYS_OUTOPT_TREE_RFC);
+    assert_string_equal(str, temp4);
+    free(str);
+
+    /* target node not found */
+    lys_print_mem(&str, moda, LYS_OUT_TREE, "/tree-a:unknown", 0, LYS_OUTOPT_TREE_RFC);
     free(str);
 }
 
@@ -470,6 +658,7 @@ int
 main(void)
 {
     const struct CMUnitTest cmut[] = {
+	cmocka_unit_test_setup_teardown(test_tree, setup_ctx, teardown_ctx),
         cmocka_unit_test_setup_teardown(test_tree_rfc, setup_ctx, teardown_ctx),
         cmocka_unit_test_setup_teardown(test_tree_rfc_subtree, setup_ctx, teardown_ctx),
         cmocka_unit_test_setup_teardown(test_tree_rfc_line_length, setup_ctx, teardown_ctx),

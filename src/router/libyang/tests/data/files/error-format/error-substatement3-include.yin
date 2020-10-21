@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-include"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-include_mod="urn:error-substatement3-include">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-include"/>
+  <prefix value="error-substatement3-include_mod"/>
+
+  <include module="all-imp">
+    <!-- duplicate description -->
+    <description>
+      <text>this is an error example1.</text>
+    </description>
+    <description>
+      <text>this is an error example2.</text>
+    </description>
+  </include>
+</module>

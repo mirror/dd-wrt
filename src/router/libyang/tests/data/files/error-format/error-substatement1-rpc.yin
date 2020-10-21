@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-rpc"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-rpc_mod="urn:error-substatement1-rpc">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-rpc"/>
+  <prefix value="error-substatement1-rpc_mod"/>
+
+  <rpc name="rpc1">
+    <text>this is an error substatement of rpc.</text>
+  </rpc>
+</module>

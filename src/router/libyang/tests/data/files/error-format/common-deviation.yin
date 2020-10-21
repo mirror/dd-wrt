@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="common-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:common-deviation"/>
+  <prefix value="common-deviation_mod"/>
+
+  <typedef name="tdef1">
+    <type name="string">
+      <length value="2..10 | 20..50"/>
+      <pattern value="[ab]*"/>
+    </type>
+    <units name="none"/>
+    <default value="aaa"/>
+  </typedef>
+  <typedef name="tdef2">
+    <type name="string">
+      <length value="2..15 | 20..50"/>
+      <pattern value="[ab]*"/>
+    </type>
+    <default value="abbb"/>
+  </typedef>
+
+  <container name="con">
+    <anyxml name="axml1">
+      <must condition="daytime"/>
+      <must condition="date"/>
+    </anyxml>
+    <leaf name="leaf1">    
+      <config value="true"/>
+      <type name="string"/>
+    </leaf>
+    <leaf name="leaf2">    
+      <type name="uint16"/>
+      <default value="100"/>
+    </leaf>
+    <list name="list1">    
+      <key value="leaf3"/>
+      <leaf name="leaf3">
+        <type name="string"/>
+      </leaf>
+      <leaf name="leaf4">
+        <type name="uint8"/>
+      </leaf>
+    </list>
+    <choice name="choic1">
+      <default value="leaf9b"/>
+      <leaf name="leaf9a">
+        <type name="decimal64">
+          <fraction-digits value="9"/>
+        </type>
+      </leaf>
+      <leaf name="leaf9b">
+        <type name="boolean"/>
+        <default value="false"/>
+      </leaf>
+    </choice>
+    <leaf name="leaf5">
+      <type name="string"/>
+      <mandatory value="true"/>
+    </leaf>
+    <list name="list2">
+      <key value="leaf6"/>
+      <unique tag="leaf6"/>
+      <must condition="../leaf2"/>
+      <max-elements value="1600"/>
+      <leaf name="leaf6">
+        <type name="uint16"/>
+      </leaf>
+      <leaf name="leaf7">
+        <type name="uint16"/>
+      </leaf>
+    </list>
+    <leaf-list name="llist1">
+      <type name="tdef1"/>
+      <units name="bits"/>
+      <ordered-by value="user"/>
+      <default value="abaabb"/>
+    </leaf-list>
+    <leaf-list name="llist2">
+      <type name="tdef2"/>
+      <ordered-by value="user"/>
+      <must condition="../leaf5"/>
+      <default value="ababab"/>
+    </leaf-list>
+    <leaf-list name="llist3">
+      <type name="tdef2"/>
+      <ordered-by value="user"/>
+      <must condition="../leaf5"/>
+      <default value="ababab"/>
+      <default value="aababa"/>
+      <default value="abbbab"/>
+      <default value="ababaa"/>
+    </leaf-list>
+  </container>
+</module>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-include"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-include_mod="urn:error-order-include"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-include"/>
+  <prefix value="error-order-include_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- include should be placed before leaf -->
+  <include submodule="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </include>
+</module>

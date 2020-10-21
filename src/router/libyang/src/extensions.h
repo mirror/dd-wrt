@@ -27,6 +27,21 @@ extern "C" {
  */
 
 /**
+ * @brief Extensions API version
+ */
+#define LYEXT_API_VERSION 1
+
+/**
+ * @brief Macro to store version of extension plugins API in the plugins.
+ * It is matched when the plugin is being loaded by libyang.
+ */
+#ifdef STATIC
+#define LYEXT_VERSION_CHECK
+#else
+#define LYEXT_VERSION_CHECK int lyext_api_version = LYEXT_API_VERSION;
+#endif
+
+/**
  * @brief Extension instance structure parent enumeration
  */
 typedef enum {
@@ -221,6 +236,39 @@ void lyext_log(const struct ly_ctx *ctx, LY_LOG_LEVEL level, const char *plugin,
  */
 #define LYEXT_LOG(ctx, level, plugin, str, args...)       \
     lyext_log(ctx, level, plugin, __func__, str, ##args); \
+
+/**
+ * @brief Type of object concerned by a validation error.
+ * This is used to determine how to compute the path of the element at issue.
+ */
+typedef enum {
+    LYEXT_VLOG_NONE = 0,
+    LYEXT_VLOG_XML, /**< const struct ::lyxml_elem* */
+    LYEXT_VLOG_LYS, /**< const struct ::lys_node* */
+    LYEXT_VLOG_LYD, /**< const struct ::lyd_node* */
+    LYEXT_VLOG_STR, /**< const char* */
+    LYEXT_VLOG_PREV, /**< Use the same path as the previous validation error */
+} LYEXT_VLOG_ELEM;
+
+/**
+ * @brief Validation logging function for extension plugins, use #LYEXT_VLOG macro instead!
+ */
+void lyext_vlog(const struct ly_ctx *ctx, LY_VECODE vecode, const char *plugin, const char *function,
+                LYEXT_VLOG_ELEM elem_type, const void *elem, const char *format, ...);
+
+/**
+ * @brief Validation logging macro for extension plugins
+ *
+ * @param[in] ctx Context to store the error in.
+ * @param[in] vecode #LY_VECODE validation error code.
+ * @param[in] plugin Plugin name.
+ * @param[in] elem_type #LYEXT_VLOG_ELEM what to expect in \p elem.
+ * @param[in] elem The element at issue.
+ * @param[in] str Format string as in case of printf function.
+ * @param[in] args Parameters to expand in format string.
+ */
+#define LYEXT_VLOG(ctx, vecode, plugin, elem_type, elem, str, args...)    \
+    lyext_vlog(ctx, vecode, plugin, __func__, elem_type, elem, str, ##args)
 
 /**
  * @brief Free iffeature structure. In API only for plugins that want to handle if-feature statements similarly

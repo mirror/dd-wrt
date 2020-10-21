@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-reference"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-reference_mod="urn:error-order-reference">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-reference"/>
+  <prefix value="error-order-reference_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- reference should be placed before leaf -->
+  <reference>
+    <text>this is an error example about reference.</text>
+  </reference>
+</module>

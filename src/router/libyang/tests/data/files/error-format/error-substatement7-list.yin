@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement7-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement7-list_mod="urn:error-substatement7-list">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement7-list"/>
+  <prefix value="error-substatement7-list_mod"/>
+
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- min-elements is bigger than max-elements. -->
+    <min-elements value="100"/>
+    <max-elements value="50"/>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>
