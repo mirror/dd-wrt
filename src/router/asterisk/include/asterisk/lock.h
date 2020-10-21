@@ -66,7 +66,7 @@
 #define AST_PTHREADT_NULL (pthread_t) -1
 #define AST_PTHREADT_STOP (pthread_t) -2
 
-#if (defined(SOLARIS) || defined(BSD) || !defined(HAVE_PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP))
+#if (defined(SOLARIS) || defined(BSD))
 #define AST_MUTEX_INIT_W_CONSTRUCTORS
 #endif /* SOLARIS || BSD */
 
