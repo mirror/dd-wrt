@@ -107,6 +107,7 @@ endif
 endif
 endif
 endif
+	rm -f asterisk/.lastclean
 	-make -C asterisk \
 		include/asterisk/version.h \
 		include/asterisk/buildopts.h defaults.h \
