@@ -49,6 +49,19 @@
 /* Needed for ast_sip_for_each_channel_snapshot struct */
 #include "asterisk/stasis_channels.h"
 #include "asterisk/stasis_endpoints.h"
+#include "asterisk/stream.h"
+
+#define PJSIP_MINVERSION(m,n,p) (((m << 24) | (n << 16) | (p << 8)) >= PJ_VERSION_NUM)
+
+#ifndef PJSIP_EXPIRES_NOT_SPECIFIED
+/*
+ * Added in pjproject 2.10.0. However define here if someone compiles against a
+ * version of pjproject < 2.10.0.
+ *
+ * Usually defined in pjsip/include/pjsip/sip_msg.h (included as part of <pjsip.h>)
+ */
+#define PJSIP_EXPIRES_NOT_SPECIFIED	((pj_uint32_t)-1)
+#endif
 
 /* Forward declarations of PJSIP stuff */
 struct pjsip_rx_data;
@@ -510,6 +523,42 @@ enum ast_sip_session_redirect {
 };
 
 /*!
+ * \brief Incoming/Outgoing call offer/answer joint codec preference.
+ *
+ * The default is INTERSECT ALL LOCAL.
+ */
+enum ast_sip_call_codec_pref {
+	/*! Two bits for merge */
+	/*! Intersection of local and remote */
+	AST_SIP_CALL_CODEC_PREF_INTERSECT =	1 << 0,
+	/*! Union of local and remote */
+	AST_SIP_CALL_CODEC_PREF_UNION =		1 << 1,
+
+	/*! Two bits for filter */
+	/*! No filter */
+	AST_SIP_CALL_CODEC_PREF_ALL =	 	1 << 2,
+	/*! Only the first */
+	AST_SIP_CALL_CODEC_PREF_FIRST = 	1 << 3,
+
+	/*! Two bits for preference and sort   */
+	/*! Prefer, and order by local values */
+	AST_SIP_CALL_CODEC_PREF_LOCAL = 	1 << 4,
+	/*! Prefer, and order by remote values */
+	AST_SIP_CALL_CODEC_PREF_REMOTE = 	1 << 5,
+};
+
+/*!
+ * \brief Returns true if the preference is set in the parameter
+ * \since 18.0.0
+ *
+ * \param param A ast_flags struct with one or more of enum ast_sip_call_codec_pref set
+ * \param codec_pref The last component of one of the enum values
+ * \retval 1 if the enum value is set
+ * \retval 0 if not
+ */
+#define ast_sip_call_codec_pref_test(__param, __codec_pref) (!!(ast_test_flag( &__param, AST_SIP_CALL_CODEC_PREF_ ## __codec_pref )))
+
+/*!
  * \brief Session timers options
  */
 struct ast_sip_timer_options {
@@ -750,6 +799,18 @@ struct ast_sip_endpoint_media_configuration {
 	unsigned int bundle;
 	/*! Enable webrtc settings and defaults */
 	unsigned int webrtc;
+	/*! Codec preference for an incoming offer */
+	struct ast_flags incoming_call_offer_pref;
+	/*! Codec preference for an outgoing offer */
+	struct ast_flags outgoing_call_offer_pref;
+	/*! Codec negotiation prefs for incoming offers */
+	struct ast_stream_codec_negotiation_prefs codec_prefs_incoming_offer;
+	/*! Codec negotiation prefs for outgoing offers */
+	struct ast_stream_codec_negotiation_prefs codec_prefs_outgoing_offer;
+	/*! Codec negotiation prefs for incoming answers */
+	struct ast_stream_codec_negotiation_prefs codec_prefs_incoming_answer;
+	/*! Codec negotiation prefs for outgoing answers */
+	struct ast_stream_codec_negotiation_prefs codec_prefs_outgoing_answer;
 };
 
 /*!
@@ -847,6 +908,8 @@ struct ast_sip_endpoint {
 	unsigned int suppress_q850_reason_headers;
 	/*! Ignore 183 if no SDP is present */
 	unsigned int ignore_183_without_sdp;
+	/*! Enable STIR/SHAKEN support on this endpoint */
+	unsigned int stir_shaken;
 };
 
 /*! URI parameter for symmetric transport */
@@ -2179,6 +2242,19 @@ int ast_sip_create_request_with_auth(const struct ast_sip_auth_vector *auths, pj
 struct ast_sip_endpoint *ast_sip_identify_endpoint(pjsip_rx_data *rdata);
 
 /*!
+ * \brief Get a specific header value from rdata
+ *
+ * \note The returned value does not need to be freed since it's from the rdata pool
+ *
+ * \param rdata The rdata
+ * \param str The header to find
+ *
+ * \retval NULL on failure
+ * \retval The header value on success
+ */
+char *ast_sip_rdata_get_header_value(pjsip_rx_data *rdata, const pj_str_t str);
+
+/*!
  * \brief Set the outbound proxy for an outbound SIP message
  *
  * \param tdata The message to set the outbound proxy on
@@ -3201,6 +3277,31 @@ int ast_sip_dtmf_to_str(const enum ast_sip_dtmf_mode dtmf,
  *
  */
 int ast_sip_str_to_dtmf(const char *dtmf_mode);
+
+/*!
+ * \brief Convert the call codec preference flags to a string
+ * \since 18.0.0
+ *
+ * \param pref the call codec preference setting
+ *
+ * \returns a constant string with either the setting value or 'unknown'
+ * \note Don't try to free the string!
+ *
+ */
+const char *ast_sip_call_codec_pref_to_str(struct ast_flags pref);
+
+/*!
+ * \brief Convert a call codec preference string to preference flags
+ * \since 18.0.0
+ *
+ * \param pref A pointer to an ast_flags structure to receive the preference flags
+ * \param pref_str The call codec preference setting string
+ * \param is_outgoing Is for outgoing calls?
+ *
+ * \retval 0 The string was parsed successfully
+ * \retval -1 The string option was invalid
+ */
+int ast_sip_call_codec_str_to_pref(struct ast_flags *pref, const char *pref_str, int is_outgoing);
 
 /*!
  * \brief Transport shutdown monitor callback.

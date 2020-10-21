@@ -246,38 +246,6 @@
 			<ref type="application">VoiceMail</ref>
 		</see-also>
 	</application>
-	<application name="MailboxExists" language="en_US">
-		<synopsis>
-			Check to see if Voicemail mailbox exists.
-		</synopsis>
-		<syntax>
-			<parameter name="mailbox" required="true" argsep="@">
-				<argument name="mailbox" required="true" />
-				<argument name="context" />
-			</parameter>
-			<parameter name="options">
-				<para>None options.</para>
-			</parameter>
-		</syntax>
-		<description>
-			<note><para>DEPRECATED. Use VM_INFO(mailbox[@context],exists) instead.</para></note>
-			<para>Check to see if the specified <replaceable>mailbox</replaceable> exists. If no voicemail
-			<replaceable>context</replaceable> is specified, the <literal>default</literal> context
-			will be used.</para>
-			<para>This application will set the following channel variable upon completion:</para>
-			<variablelist>
-				<variable name="VMBOXEXISTSSTATUS">
-					<para>This will contain the status of the execution of the MailboxExists application.
-					Possible values include:</para>
-					<value name="SUCCESS" />
-					<value name="FAILED" />
-				</variable>
-			</variablelist>
-		</description>
-		<see-also>
-			<ref type="function">VM_INFO</ref>
-		</see-also>
-	</application>
 	<application name="VMAuthenticate" language="en_US">
 		<synopsis>
 			Authenticate with Voicemail passwords.
@@ -349,24 +317,6 @@
 			argument to this application. If no context is provided, <literal>default</literal> is assumed.</para>
 		</description>
 	</application>
-	<function name="MAILBOX_EXISTS" language="en_US">
-		<synopsis>
-			Tell if a mailbox is configured.
-		</synopsis>
-		<syntax argsep="@">
-			<parameter name="mailbox" required="true" />
-			<parameter name="context" />
-		</syntax>
-		<description>
-			<note><para>DEPRECATED. Use VM_INFO(mailbox[@context],exists) instead.</para></note>
-			<para>Returns a boolean of whether the corresponding <replaceable>mailbox</replaceable> exists.
-			If <replaceable>context</replaceable> is not specified, defaults to the <literal>default</literal>
-			context.</para>
-		</description>
-		<see-also>
-			<ref type="function">VM_INFO</ref>
-		</see-also>
-	</function>
 	<function name="VM_INFO" language="en_US">
 		<synopsis>
 			Returns the selected attribute from a mailbox.
@@ -934,13 +884,12 @@ static char userscontext[AST_MAX_EXTENSION] = "default";
 static char *addesc = "Comedian Mail";
 
 /* Leave a message */
-static char *app = "VoiceMail";
+static char *voicemail_app = "VoiceMail";
 
 /* Check mail, control, etc */
-static char *app2 = "VoiceMailMain";
+static char *voicemailmain_app = "VoiceMailMain";
 
-static char *app3 = "MailboxExists";
-static char *app4 = "VMAuthenticate";
+static char *vmauthenticate_app = "VMAuthenticate";
 
 static char *playmsg_app = "VoiceMailPlayMsg";
 
@@ -1166,10 +1115,12 @@ static int inprocess_cmp_fn(void *obj, void *arg, int flags)
 
 static int inprocess_count(const char *context, const char *mailbox, int delta)
 {
-	struct inprocess *i, *arg = ast_alloca(sizeof(*arg) + strlen(context) + strlen(mailbox) + 2);
-	arg->context = arg->mailbox + strlen(mailbox) + 1;
-	strcpy(arg->mailbox, mailbox); /* SAFE */
-	strcpy(arg->context, context); /* SAFE */
+	int context_len = strlen(context) + 1;
+	int mailbox_len = strlen(mailbox) + 1;
+	struct inprocess *i, *arg = ast_alloca(sizeof(*arg) + context_len + mailbox_len);
+	arg->context = arg->mailbox + mailbox_len;
+	ast_copy_string(arg->mailbox, mailbox, mailbox_len); /* SAFE */
+	ast_copy_string(arg->context, context, context_len); /* SAFE */
 	ao2_lock(inprocess_container);
 	if ((i = ao2_find(inprocess_container, arg, 0))) {
 		int ret = ast_atomic_fetchadd_int(&i->count, delta);
@@ -1180,13 +1131,13 @@ static int inprocess_count(const char *context, const char *mailbox, int delta)
 	if (delta < 0) {
 		ast_log(LOG_WARNING, "BUG: ref count decrement on non-existing object???\n");
 	}
-	if (!(i = ao2_alloc(sizeof(*i) + strlen(context) + strlen(mailbox) + 2, NULL))) {
+	if (!(i = ao2_alloc(sizeof(*i) + context_len + mailbox_len, NULL))) {
 		ao2_unlock(inprocess_container);
 		return 0;
 	}
-	i->context = i->mailbox + strlen(mailbox) + 1;
-	strcpy(i->mailbox, mailbox); /* SAFE */
-	strcpy(i->context, context); /* SAFE */
+	i->context = i->mailbox + mailbox_len;
+	ast_copy_string(i->mailbox, mailbox, mailbox_len); /* SAFE */
+	ast_copy_string(i->context, context, context_len); /* SAFE */
 	i->count = delta;
 	ao2_link(inprocess_container, i);
 	ao2_unlock(inprocess_container);
@@ -6625,8 +6576,6 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 {
 #ifdef IMAP_STORAGE
 	int newmsgs, oldmsgs;
-#else
-	char urgdir[PATH_MAX];
 #endif
 	char txtfile[PATH_MAX];
 	char tmptxtfile[PATH_MAX];
@@ -7045,6 +6994,14 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 		}
 		res = play_record_review(chan, NULL, tmptxtfile, vmu->maxsecs, fmt, 1, vmu, &duration, &sound_duration, NULL, options->record_gain, vms, flag, msg_id, 0);
 
+		/* At this point, either we were instructed to make the message Urgent
+		   by arguments to VoiceMail or during the review process by the person
+		   leaving the message. So we update the directory where we want this
+		   message to go. */
+		if (!strcmp(flag, "Urgent")) {
+			create_dirpath(dir, sizeof(dir), vmu->context, ext, "Urgent");
+		}
+
 		if (txt) {
 			fprintf(txt, "flag=%s\n", flag);
 			if (sound_duration < vmu->minsecs) {
@@ -7125,25 +7082,7 @@ static int leave_voicemail(struct ast_channel *chan, char *ext, struct leave_vm_
 							free_user(recip);
 						}
 					}
-#ifndef IMAP_STORAGE
-					if (!ast_strlen_zero(flag) && !strcmp(flag, "Urgent")) { /* If this is an Urgent message */
-						/* Move the message from INBOX to Urgent folder if this is urgent! */
-						char sfn[PATH_MAX];
-						char dfn[PATH_MAX];
-						int x;
-						/* It's easier just to try to make it than to check for its existence */
-						create_dirpath(urgdir, sizeof(urgdir), vmu->context, ext, "Urgent");
-						x = last_message_index(vmu, urgdir) + 1;
-						make_file(sfn, sizeof(sfn), dir, msgnum);
-						make_file(dfn, sizeof(dfn), urgdir, x);
-						ast_debug(5, "Created an Urgent message, moving file from %s to %s.\n", sfn, dfn);
-						RENAME(dir, msgnum, vmu->mailbox, vmu->context, urgdir, x, sfn, dfn);
-						/* Notification must happen for this new message in Urgent folder, not INBOX */
-						ast_copy_string(fn, dfn, sizeof(fn));
-						pbx_builtin_setvar_helper(chan, "VM_MESSAGEFILE", fn);
-						msgnum = x;
-					}
-#endif
+
 					/* Notification needs to happen after the copy, though. */
 					if (ast_fileexists(fn, NULL, NULL)) {
 #ifdef IMAP_STORAGE
@@ -12694,78 +12633,6 @@ AST_TEST_DEFINE(test_voicemail_vmuser)
 }
 #endif
 
-static int vm_box_exists(struct ast_channel *chan, const char *data)
-{
-	struct ast_vm_user svm, *vmu;
-	char *context, *box;
-	AST_DECLARE_APP_ARGS(args,
-		AST_APP_ARG(mbox);
-		AST_APP_ARG(options);
-	);
-	static int dep_warning = 0;
-
-	if (ast_strlen_zero(data)) {
-		ast_log(AST_LOG_ERROR, "MailboxExists requires an argument: (vmbox[@context][|options])\n");
-		return -1;
-	}
-
-	if (!dep_warning) {
-		dep_warning = 1;
-		ast_log(AST_LOG_WARNING, "MailboxExists is deprecated.  Please use ${VM_INFO(%s,exists)} instead.\n", data);
-	}
-
-	box = ast_strdupa(data);
-
-	AST_STANDARD_APP_ARGS(args, box);
-
-	if (args.options) {
-	}
-
-	if ((context = strchr(args.mbox, '@'))) {
-		*context = '\0';
-		context++;
-	}
-
-	memset(&svm, 0, sizeof(svm));
-	vmu = find_user(&svm, context, args.mbox);
-	if (vmu) {
-		pbx_builtin_setvar_helper(chan, "VMBOXEXISTSSTATUS", "SUCCESS");
-		free_user(vmu);
-	} else
-		pbx_builtin_setvar_helper(chan, "VMBOXEXISTSSTATUS", "FAILED");
-
-	return 0;
-}
-
-static int acf_mailbox_exists(struct ast_channel *chan, const char *cmd, char *args, char *buf, size_t len)
-{
-	struct ast_vm_user svm, *vmu;
-	AST_DECLARE_APP_ARGS(arg,
-		AST_APP_ARG(mbox);
-		AST_APP_ARG(context);
-	);
-	static int dep_warning = 0;
-
-	AST_NONSTANDARD_APP_ARGS(arg, args, '@');
-
-	if (ast_strlen_zero(arg.mbox)) {
-		ast_log(LOG_ERROR, "MAILBOX_EXISTS requires an argument (<mailbox>[@<context>])\n");
-		return -1;
-	}
-
-	if (!dep_warning) {
-		dep_warning = 1;
-		ast_log(AST_LOG_WARNING, "MAILBOX_EXISTS is deprecated.  Please use ${VM_INFO(%s,exists)} instead.\n", args);
-	}
-
-	memset(&svm, 0, sizeof(svm));
-	vmu = find_user(&svm, ast_strlen_zero(arg.context) ? "default" : arg.context, arg.mbox);
-	ast_copy_string(buf, vmu ? "1" : "0", len);
-	free_user(vmu);
-
-	return 0;
-}
-
 static int acf_vm_info(struct ast_channel *chan, const char *cmd, char *args, char *buf, size_t len)
 {
 	struct ast_vm_user svm;
@@ -12846,11 +12713,6 @@ static int acf_vm_info(struct ast_channel *chan, const char *cmd, char *args, ch
 
 	return 0;
 }
-
-static struct ast_custom_function mailbox_exists_acf = {
-	.name = "MAILBOX_EXISTS",
-	.read = acf_mailbox_exists,
-};
 
 static struct ast_custom_function vm_info_acf = {
 	.name = "VM_INFO",
@@ -13692,8 +13554,8 @@ static struct alias_mailbox_mapping *alias_mailbox_mapping_create(const char *al
 	}
 	mapping->alias = mapping->buf;
 	mapping->mailbox = mapping->buf + from_len;
-	strcpy(mapping->alias, alias); /* Safe */
-	strcpy(mapping->mailbox, mailbox); /* Safe */
+	ast_copy_string(mapping->alias, alias, from_len); /* Safe */
+	ast_copy_string(mapping->mailbox, mailbox, to_len); /* Safe */
 
 	return mapping;
 }
@@ -14662,6 +14524,12 @@ exit_vmsayname_test:
 	return res ? AST_TEST_FAIL : AST_TEST_PASS;
 }
 
+struct test_files {
+	char dir[256];
+	char file[256];
+	char txtfile[256];
+};
+
 AST_TEST_DEFINE(test_voicemail_msgcount)
 {
 	int i, j, res = AST_TEST_PASS, syserr;
@@ -14671,11 +14539,8 @@ AST_TEST_DEFINE(test_voicemail_msgcount)
 #ifdef IMAP_STORAGE
 	struct ast_channel *chan = NULL;
 #endif
-	struct {
-		char dir[256];
-		char file[256];
-		char txtfile[256];
-	} tmp[3];
+	/* Using ast_alloca instead of just declaring tmp as an array is a workaround for a GCC 10 issue with -Wrestrict */
+	struct test_files *tmp = ast_alloca(sizeof(struct test_files) * 3);
 	char syscmd[256];
 	const char origweasels[] = "tt-weasels";
 	const char testcontext[] = "test";
@@ -15143,13 +15008,11 @@ static int unload_module(void)
 {
 	int res;
 
-	res = ast_unregister_application(app);
-	res |= ast_unregister_application(app2);
-	res |= ast_unregister_application(app3);
-	res |= ast_unregister_application(app4);
+	res = ast_unregister_application(voicemail_app);
+	res |= ast_unregister_application(voicemailmain_app);
+	res |= ast_unregister_application(vmauthenticate_app);
 	res |= ast_unregister_application(playmsg_app);
 	res |= ast_unregister_application(sayname_app);
-	res |= ast_custom_function_unregister(&mailbox_exists_acf);
 	res |= ast_custom_function_unregister(&vm_info_acf);
 	res |= ast_manager_unregister("VoicemailUsersList");
 	res |= ast_manager_unregister("VoicemailUserStatus");
@@ -15272,13 +15135,11 @@ static int load_module(void)
 		return AST_MODULE_LOAD_DECLINE;
 	}
 
-	res = ast_register_application_xml(app, vm_exec);
-	res |= ast_register_application_xml(app2, vm_execmain);
-	res |= ast_register_application_xml(app3, vm_box_exists);
-	res |= ast_register_application_xml(app4, vmauthenticate);
+	res = ast_register_application_xml(voicemail_app, vm_exec);
+	res |= ast_register_application_xml(voicemailmain_app, vm_execmain);
+	res |= ast_register_application_xml(vmauthenticate_app, vmauthenticate);
 	res |= ast_register_application_xml(playmsg_app, vm_playmsgexec);
 	res |= ast_register_application_xml(sayname_app, vmsayname_exec);
-	res |= ast_custom_function_register(&mailbox_exists_acf);
 	res |= ast_custom_function_register(&vm_info_acf);
 	res |= ast_manager_register_xml("VoicemailUsersList", EVENT_FLAG_CALL | EVENT_FLAG_REPORTING, manager_list_voicemail_users);
 	res |= ast_manager_register_xml("VoicemailUserStatus", EVENT_FLAG_CALL | EVENT_FLAG_REPORTING, manager_status_voicemail_user);

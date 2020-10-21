@@ -202,7 +202,7 @@ static FILE *qlog;
 
 static char *levels[NUMLOGLEVELS] = {
 	"DEBUG",
-	"---EVENT---",		/* no longer used */
+	"TRACE",
 	"NOTICE",
 	"WARNING",
 	"ERROR",
@@ -423,6 +423,56 @@ static struct logformatter logformatter_default = {
 	.format_log = format_log_default,
 };
 
+static int format_log_plain(struct logchannel *chan, struct logmsg *msg, char *buf, size_t size)
+{
+	char call_identifier_str[13];
+	char linestr[32];
+	int has_file = !ast_strlen_zero(msg->file);
+	int has_line = (msg->line > 0);
+	int has_func = !ast_strlen_zero(msg->function);
+
+	if (msg->callid) {
+		snprintf(call_identifier_str, sizeof(call_identifier_str), "[C-%08x]", msg->callid);
+	} else {
+		call_identifier_str[0] = '\0';
+	}
+
+	switch (chan->type) {
+	case LOGTYPE_SYSLOG:
+		snprintf(buf, size, "%s[%d]%s: %s:%d in %s: %s",
+		     levels[msg->level], msg->lwp, call_identifier_str, msg->file,
+		     msg->line, msg->function, msg->message);
+		term_strip(buf, buf, size);
+		break;
+	case LOGTYPE_FILE:
+	case LOGTYPE_CONSOLE:
+		/* Turn the numerical line number into a string */
+		snprintf(linestr, sizeof(linestr), "%d", msg->line);
+		/* Build string to print out */
+		snprintf(buf, size, "[%s] %s[%d]%s: %s%s%s%s%s%s%s",
+			msg->date,
+			msg->level_name,
+			msg->lwp,
+			call_identifier_str,
+			has_file ? msg->file : "",
+			has_file ? ":" : "",
+			has_line ? linestr : "",
+			has_line ? " " : "",
+			has_func ? msg->function : "",
+			has_func ? ": " : "",
+			msg->message);
+		term_strip(buf, buf, size);
+		break;
+	}
+
+	return 0;
+}
+
+static struct logformatter logformatter_plain = {
+	.name = "plain",
+	.format_log = format_log_plain,
+};
+
 static void make_components(struct logchannel *chan)
 {
 	char *w;
@@ -449,6 +499,8 @@ static void make_components(struct logchannel *chan)
 				memcpy(&chan->formatter, &logformatter_json, sizeof(chan->formatter));
 			} else if (!strcasecmp(formatter_name, "default")) {
 				memcpy(&chan->formatter, &logformatter_default, sizeof(chan->formatter));
+			} else if (!strcasecmp(formatter_name, "plain")) {
+				memcpy(&chan->formatter, &logformatter_plain, sizeof(chan->formatter));
 			} else {
 				fprintf(stderr, "Logger Warning: Unknown formatter definition %s for %s in logger.conf; using 'default'\n",
 					formatter_name, chan->filename);
@@ -1216,9 +1268,9 @@ static char *handle_logger_set_level(struct ast_cli_entry *e, int cmd, struct as
 
 	switch (cmd) {
 	case CLI_INIT:
-		e->command = "logger set level {DEBUG|NOTICE|WARNING|ERROR|VERBOSE|DTMF} {on|off}";
+		e->command = "logger set level {DEBUG|TRACE|NOTICE|WARNING|ERROR|VERBOSE|DTMF} {on|off}";
 		e->usage =
-			"Usage: logger set level {DEBUG|NOTICE|WARNING|ERROR|VERBOSE|DTMF} {on|off}\n"
+			"Usage: logger set level {DEBUG|TRACE|NOTICE|WARNING|ERROR|VERBOSE|DTMF} {on|off}\n"
 			"       Set a specific log level to enabled/disabled for this console.\n";
 		return NULL;
 	case CLI_GENERATE:
@@ -2280,6 +2332,98 @@ static void update_logchannels(void)
 
 	AST_RWLIST_UNLOCK(&logchannels);
 }
+
+
+#ifdef AST_DEVMODE
+
+AST_THREADSTORAGE_RAW(trace_indent);
+#define LOTS_O_SPACES "                                                                                            "
+
+unsigned long _ast_trace_get_indent(void)
+{
+	return (unsigned long)ast_threadstorage_get_ptr(&trace_indent);
+}
+
+void _ast_trace_set_indent(unsigned long indent)
+{
+	ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+}
+
+unsigned long _ast_trace_inc_indent(void)
+{
+	unsigned long indent = (unsigned long)ast_threadstorage_get_ptr(&trace_indent);
+	indent++;
+	ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+
+	return indent;
+}
+
+unsigned long _ast_trace_dec_indent(void)
+{
+	unsigned long indent = (unsigned long)ast_threadstorage_get_ptr(&trace_indent);
+	indent--;
+	ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+
+	return indent;
+}
+
+void __ast_trace(const char *file, int line, const char *func, enum ast_trace_indent_type indent_type,
+	unsigned long new_indent, const char* format, ...)
+{
+	va_list ap;
+	unsigned long indent = (unsigned long)ast_threadstorage_get_ptr(&trace_indent);
+	struct ast_str *fmt = ast_str_create(128);
+	const char *direction = "";
+
+	if (!fmt) {
+		return;
+	}
+
+	if (indent_type == AST_TRACE_INDENT_PROVIDED) {
+		indent = new_indent;
+		ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+	} else if (indent_type == AST_TRACE_INDENT_INC_BEFORE) {
+		indent++;
+		ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+	} else if (indent_type == AST_TRACE_INDENT_DEC_BEFORE) {
+		indent--;
+		ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+	}
+
+	switch(indent_type) {
+	case AST_TRACE_INDENT_NONE:
+	case AST_TRACE_INDENT_SAME:
+		direction = "";
+		break;
+	case AST_TRACE_INDENT_INC_BEFORE:
+	case AST_TRACE_INDENT_INC_AFTER:
+	case AST_TRACE_INDENT_PROVIDED:
+		direction = "--> ";
+		break;
+	case AST_TRACE_INDENT_DEC_BEFORE:
+	case AST_TRACE_INDENT_DEC_AFTER:
+		direction = "<-- ";
+		break;
+	}
+
+	ast_str_set(&fmt, 0, "%2d %-.*s%s%s:%d %s: %s", (int)indent, (indent_type == AST_TRACE_INDENT_NONE ? 0 : (int)(indent * 4)),
+		LOTS_O_SPACES, direction, file, line, func, S_OR(ast_skip_blanks(format), "\n"));
+
+	if (indent_type == AST_TRACE_INDENT_INC_AFTER || indent_type == AST_TRACE_INDENT_PROVIDED) {
+		indent++;
+		ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+	}
+	if (indent_type == AST_TRACE_INDENT_DEC_AFTER) {
+		indent--;
+		ast_threadstorage_set_ptr(&trace_indent, (void*)indent);
+	}
+
+	va_start(ap, format);
+	ast_log_full(__LOG_TRACE, -1, NULL, 0, NULL, 0, ast_str_buffer(fmt), ap);
+	va_end(ap);
+	ast_free(fmt);
+}
+#endif
 
 int ast_logger_register_level(const char *name)
 {

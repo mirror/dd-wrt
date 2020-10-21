@@ -1673,6 +1673,7 @@ int ast_bridge_join(struct ast_bridge *bridge,
 {
 	struct ast_bridge_channel *bridge_channel;
 	int res = 0;
+	SCOPE_TRACE(1, "%s Bridge: %s\n", ast_channel_name(chan), bridge->uniqueid);
 
 	bridge_channel = bridge_channel_internal_alloc(bridge);
 	if (flags & AST_BRIDGE_JOIN_PASS_REFERENCE) {
@@ -1921,6 +1922,7 @@ int ast_bridge_impart(struct ast_bridge *bridge,
 		.done = 0,
 	};
 	int res;
+	SCOPE_TRACE(1, "%s Bridge: %s\n", ast_channel_name(chan), bridge->uniqueid);
 
 	ast_mutex_init(&cond.lock);
 	ast_cond_init(&cond.cond, NULL);
@@ -1942,6 +1944,7 @@ int ast_bridge_depart(struct ast_channel *chan)
 {
 	struct ast_bridge_channel *bridge_channel;
 	int departable;
+	SCOPE_TRACE(1, "%s\n", ast_channel_name(chan));
 
 	ast_channel_lock(chan);
 	bridge_channel = ast_channel_internal_bridge_channel(chan);
@@ -5086,9 +5089,8 @@ static char *handle_bridge_show_all(struct ast_cli_entry *e, int cmd, struct ast
 		struct ast_bridge_snapshot *snapshot = ast_bridge_get_snapshot(bridge);
 		char print_time[32];
 
-		ast_format_duration_hh_mm_ss(ast_tvnow().tv_sec - snapshot->creationtime.tv_sec, print_time, sizeof(print_time));
-
 		if (snapshot) {
+			ast_format_duration_hh_mm_ss(ast_tvnow().tv_sec - snapshot->creationtime.tv_sec, print_time, sizeof(print_time));
 			ast_cli(a->fd, FORMAT_ROW,
 				snapshot->uniqueid,
 				snapshot->num_channels,
@@ -5161,6 +5163,7 @@ static char *handle_bridge_show_specific(struct ast_cli_entry *e, int cmd, struc
 	ast_cli(a->fd, "Subclass: %s\n", snapshot->subclass);
 	ast_cli(a->fd, "Creator: %s\n", snapshot->creator);
 	ast_cli(a->fd, "Name: %s\n", snapshot->name);
+	ast_cli(a->fd, "Video-Mode: %s\n", ast_bridge_video_mode_to_string(snapshot->video_mode));
 	ast_cli(a->fd, "Video-Source-Id: %s\n", snapshot->video_source_id);
 	ast_cli(a->fd, "Num-Channels: %u\n", snapshot->num_channels);
 	ast_cli(a->fd, "Num-Active: %u\n", snapshot->num_active);

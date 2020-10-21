@@ -240,6 +240,19 @@ int ast_base64encode_full(char *dst, const unsigned char *src, int srclen, int m
 int ast_base64encode(char *dst, const unsigned char *src, int srclen, int max);
 
 /*!
+ * \brief Same as ast_base64encode, but does hte math for you and returns
+ * an encoded string
+ *
+ * \note The returned string will need to be freed later
+ *
+ * \param src The source buffer
+ *
+ * \retval NULL on failure
+ * \retval Encoded string on success
+ */
+char *ast_base64encode_string(const char *src);
+
+/*!
  * \brief Decode data from base64
  * \param dst the destination buffer
  * \param src the source buffer
@@ -249,6 +262,19 @@ int ast_base64encode(char *dst, const unsigned char *src, int srclen, int max);
  *            this parameter should be sizeof(dst) - 1.
  */
 int ast_base64decode(unsigned char *dst, const char *src, int max);
+
+/*!
+ * \brief Same as ast_base64decode, but does the math for you and returns
+ * a decoded string
+ *
+ * \note The returned string will need to be freed later and IS NULL terminated
+ *
+ * \param src The source buffer
+ *
+ * \retval NULL on failure
+ * \retval Decoded string on success
+ */
+char *ast_base64decode_string(const char *src);
 
 #define AST_URI_ALPHANUM     (1 << 0)
 #define AST_URI_MARK         (1 << 1)

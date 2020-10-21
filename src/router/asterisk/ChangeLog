@@ -1,12 +1,1930 @@
-2020-04-30 14:28 +0000  Asterisk Development Team <asteriskteam@digium.com>
+2020-10-19 18:31 +0000  Asterisk Development Team <asteriskteam@digium.com>
 
-	* asterisk 17.4.0 Released.
+	* asterisk 18.0.0 Released.
 
-2020-04-28 19:20 +0000  Asterisk Development Team <asteriskteam@digium.com>
+2020-10-13 16:24 +0000  Asterisk Development Team <asteriskteam@digium.com>
 
-	* asterisk 17.4.0-rc2 Released.
+	* asterisk 18.0.0-rc2 Released.
 
-2020-04-26 05:56 +0000 [f44bd5c806]  Guido Falsi <madpilot@FreeBSD.org>
+2020-10-06 10:32 +0000 [5cc4a391b3]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip: Adjust outgoing offer call pref.
+
+	  This changes the outgoing offer call preference
+	  default option to match the behavior of previous
+	  versions of Asterisk.
+
+	  The additional advanced codec negotiation options
+	  have also been removed from the sample configuration
+	  and marked as reserved for future functionality in
+	  XML documentation.
+
+	  The codec preference options have also been fixed to
+	  enforce local codec configuration.
+
+	  ASTERISK-29109
+
+	  Change-Id: Iad19347bd5f3d89900c15ecddfebf5e20950a1c2
+
+2020-09-09 15:43 +0000  Asterisk Development Team <asteriskteam@digium.com>
+
+	* asterisk 18.0.0-rc1 Released.
+
+2020-09-09 09:08 +0000 [f589985840]  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Update CHANGES and UPGRADE.txt for 18.0.0
+2020-09-01 08:43 +0000 [5a49757e40]  Patrick Verzele <patrick@verzele.be>
+
+	* res_pjsip_session: Deferred re-INVITE without SDP send a=sendrecv instead of a=sendonly
+
+	  Building on ASTERISK-25854. When the device requests hold by sending SDP with attribute recvonly, asterisk places the session in sendonly mode. When the device later requests to resume the call by using a re-INVITE excluding SDP, asterisk needs to change the sendonly mode to sendrecv again.
+
+	  Change-Id: I60341ce3d87f95869f3bc6dc358bd3e8286477a6
+
+2020-08-28 16:31 +0000 [ec03909831]  Kevin Harwell <kharwell@digium.com>
+
+	* conversions: Add string to signed integer conversion functions
+
+	  Change-Id: Id603b0b03b78eb84c7fca030a08b343c0d5973f9
+
+2020-08-26 04:58 +0000 [c83e4821e5]  Kfir Itzhak <mastertheknife@gmail.com>
+
+	* app_queue: Fix leave-empty not recording a call as abandoned
+
+	  This fixes a bug introduced mistakenly in ASTERISK-25665:
+	  If leave-empty is enabled, a call may sometimes be removed from
+	  a queue without recording it as abandoned.
+	  This causes Asterisk to not generate an abandon event for that
+	  call, and for the queue abandoned counter to be incorrect.
+
+	  ASTERISK-29043 #close
+
+	  Change-Id: I1a71b81df78adff59af587f1d8483cf57df430c7
+
+2020-08-28 09:34 +0000 [e32815dddb]  George Joseph <gjoseph@digium.com>
+
+	* ast_coredumper: Fix issues with naming
+
+	  If you run ast_coredumper --tarball-coredumps in the same directory
+	  as the actual coredump, tar can fail because the link to the
+	  actual coredump becomes recursive.  The resulting tarball will
+	  have everything _except_ the coredump (which is usually what
+	  you need)
+
+	  There's also an issue that the directory name in the tarball
+	  is the same as the coredump so if you extract the tarball the
+	  directory it creates will overwrite the coredump.
+
+	  So:
+
+	   * Made the link to the coredump use the absolute path to the
+	     file instead of a relative one.  This prevents the recursive
+	     link and allows tar to add the coredump.
+
+	   * The tarballed directory is now named <coredump>.output instead
+	     of just <coredump> so if you expand the tarball it won't
+	     overwrite the coredump.
+
+	  Change-Id: I8b3eeb26e09a577c702ff966924bb0a2f9a759ea
+
+2020-08-28 04:29 +0000 [4f0766dcda]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* parking: Copy parker UUID as well.
+
+	  When fixing issues uncovered by GCC10 a copy of the parker UUID
+	  was removed accidentally. This change restores it so that the
+	  subscription has the data it needs.
+
+	  ASTERISK-29042
+
+	  Change-Id: I7d396a14ea648bd26d3c363dd78e78bd386b544a
+
+2020-08-26 10:43 +0000 [9ed1b1452d]  Alexander Traud <pabstraud@compuserve.com>
+
+	* sip_nat_settings: Update script for latest Linux.
+
+	  With the latest Linux, 'ifconfig' is not installed on default anymore.
+	  Furthermore, the output of the current net-tools 'ifconfig' changed.
+	  Therefore, parsing failed. This update uses 'ip addr show' instead.
+	  Finally, the service for the external IP changed.
+
+	  Change-Id: I9b1a7c3f457e3553b50a3e9a55524e40d70245a0
+
+2020-08-26 10:19 +0000 [217449a1e5]  Alexander Traud <pabstraud@compuserve.com>
+
+	* samples: Fix keep_alive_interval default in pjsip.conf.
+
+	  Since ASTERISK_27978 the default is not off but 90 seconds. That change
+	  happened because ASTERISK_27347 disabled the keep-alives in the bundled
+	  PJProject and Asterisk should behave the same as before.
+
+	  Change-Id: Ie63dc558ade6a5a2b969c30a4bd492d63730dc46
+
+2020-08-24 16:26 +0000 [31fbfc5e95]  Kevin Harwell <kharwell@digium.com>
+
+	* chan_pjsip: disallow PJSIP_SEND_SESSION_REFRESH pre-answer execution
+
+	  This patch makes it so if the PJSIP_SEND_SESSION_REFRESH dialplan function
+	  is called on a channel prior to answering a warning is issued and the
+	  function returns unsuccessful.
+
+	  ASTERISK-28878 #close
+
+	  Change-Id: I053f767d10cf3b2b898fa9e3e7c35ff07e23c9bb
+
+2020-08-27 05:31 +0000 [6d50d152d8]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* pbx: Fix hints deadlock between reload and ExtensionState.
+
+	  When the ExtensionState AMI action is executed on a pattern matched
+	  hint it can end up adding a new hint if one does not already exist.
+	  This results in a locking order of contexts -> hints -> contexts.
+
+	  If at the same time a reload is occurring and adding its own hint
+	  it will have a locking order of hints -> contexts.
+
+	  This results in a deadlock as one thread wants a lock on contexts
+	  that the other has, and the other thread wants a lock on hints
+	  that the other has.
+
+	  This change enforces a hints -> contexts locking order by explicitly
+	  locking hints in the places where a hint is added when queried for.
+	  This matches the order seen through normal adding of hints.
+
+	  ASTERISK-29046
+
+	  Change-Id: I49f027f4aab5d2d50855ae937bcf5e2fd8bfc504
+
+2020-08-14 11:13 +0000 [5a8cacb93d]  George Joseph <gjoseph@digium.com>
+
+	* logger.c: Added a new log formatter called "plain"
+
+	  Added a new log formatter called "plain" that always prints
+	  file, function and line number if available (even for verbose
+	  messages) and never prints color control characters.  It also
+	  doesn't apply any special formatting for verbose messages.
+	  Most suitable for file output but can be used for other channels
+	  as well.
+
+	  You use it in logger.conf like so:
+	  debug => [plain]debug
+	  console => [plain]error,warning,debug,notice,pjsip_history
+	  messages => [plain]warning,error,verbose
+
+	  Change-Id: I4fdfe4089f66ce2f9cb29f3005522090dbb5243d
+
+2020-08-21 16:53 +0000 [0319e0b07f]  Nickolay Shmyrev <nshmyrev@alphacephei.com>
+
+	* res_speech: Bump reference on format object
+
+	  Properly bump reference on format object to avoid memory corruption on double free
+
+	  ASTERISK-29040 #close
+
+	  Change-Id: Ic5a7faabfe2ef965ddb024186e1de7ca4542e2a3
+
+2020-07-22 03:45 +0000 [addd295cda]  Torrey Searle <tsearle@voxbone.com>
+
+	* res_pjsip_diversion: handle 181
+
+	  Adapt the response handler so it also called when 181 is received.
+	  In the case 181 is received, also generate the 181 response.
+
+	  ASTERISK-29001 #close
+
+	  Change-Id: I73cfee46a8ca85371280ebdb38674f8fde7510df
+
+2020-08-21 00:09 +0000 [36dd15c659]  Evandro César Arruda <ecarruda@gmail.com>
+
+	* app_queue: Member lastpause time reseting
+
+	  This fixes the reseting members lastpause problem when realtime members is being used,
+	  the function rt_handle_member_record was forcing the reset members lastpause because it
+	  does not exist in realtime
+
+	  ASTERISK-29034 #close
+
+	  Change-Id: Ic9107e4456732a1f78412a32adb2ef87f5da40b5
+
+2020-08-21 09:17 +0000 [b575868000]  Sean Bright <sean.bright@gmail.com>
+
+	* app_voicemail: Process urgent messages with mailcmd
+
+	  Rather than putting messages into INBOX and then moving them to Urgent
+	  later, put them directly in to the Urgent folder. This prevents
+	  mailcmd from being skipped.
+
+	  ASTERISK-27273 #close
+
+	  Change-Id: I49934e093290d308506ab8d45a40ef705c5ae4f5
+
+2020-08-18 04:36 +0000 [3c074038fe]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip_session: Don't aggressively terminate on failed re-INVITE.
+
+	  Per the RFC when an outgoing re-INVITE is done we should
+	  only terminate the dialog if a 481 or 408 is received.
+
+	  ASTERISK-29033
+
+	  Change-Id: I6c3ff513aa41005d02de0396ba820083e9b18503
+
+2020-08-19 12:29 +0000 [5ec7099312]  Sean Bright <sean.bright@gmail.com>
+
+	* bridge_channel: Ensure text messages are zero terminated
+
+	  T.140 data in RTP is not zero terminated, so when we are queuing a text
+	  frame on a bridge we need to ensure that we are passing a zero
+	  terminated string.
+
+	  ASTERISK-28974 #close
+
+	  Change-Id: Ic10057387ce30b2094613ea67e3ae8c5c431dda3
+
+2020-08-07 09:31 +0000 [5dfeeba623]  Sean Bright <sean.bright@gmail.com>
+
+	* res_musiconhold.c: Use ast_file_read_dir to scan MoH directory
+
+	  Two changes of note in this patch:
+
+	  * Use ast_file_read_dir instead of opendir/readdir/closedir
+
+	  * If the files list should be sorted, do that at the end rather than as
+	    we go which improves performance for large lists
+
+	  Change-Id: Ic7e9c913c0f85754c99c74c9cf6dd3514b1b941f
+
+2020-08-19 07:37 +0000 [c4c72d55a2]  George Joseph <gjoseph@digium.com>
+
+	* scope_trace: Added debug messages and added additional macros
+
+	  The SCOPE_ENTER and SCOPE_EXIT* macros now print debug messages
+	  at the same level as the scope level.  This allows the same
+	  messages to be printed to the debug log when AST_DEVMODE
+	  isn't enabled.
+
+	  Also added a few variants of the SCOPE_EXIT macros that will
+	  also call ast_log instead of ast_debug to make it easier to
+	  use scope tracing and still print error messages.
+
+	  Change-Id: I7fe55f7ec28069919a0fc0b11a82235ce904cc21
+
+2020-08-20 08:32 +0000 [d26ab7f8f9]  George Joseph <gjoseph@digium.com>
+
+	* stream.c:  Added 2 more debugging utils and added pos to stream string
+
+	   * Added ast_stream_to_stra and ast_stream_topology_to_stra() macros
+	     which are shortcuts for
+	        ast_str_tmp(256, ast_stream_to_str(stream, &STR_TMP))
+
+	   * Added the stream position to the string representation of the
+	     stream.
+
+	   * Fixed some formatting in ast_stream_to_str().
+
+	  Change-Id: Idaf4cb0affa46d4dce58a73a111f35435331cc4b
+
+2020-02-18 06:30 +0000 [9058d9e591]  Dennis Buteyn <dennis.buteyn@xorcom.com>
+
+	* chan_sip: Clear ToHost property on peer when changing to dynamic host
+
+	  The ToHost parameter was not cleared when a peer's host value was
+	  changed to dynamic. This causes invites to be sent to the original host.
+
+	  ASTERISK-29011 #close
+
+	  Change-Id: I9678d512741f71baca8f131a65b7523020b07d5c
+
+2020-07-20 14:39 +0000 [6faf76308d]  George Joseph <gjoseph@digium.com>
+
+	* ACN: Changes specific to the core
+
+	  Allow passing a topology from the called channel back to the
+	  calling channel.
+
+	   * Added a new function ast_queue_answer() that accepts a stream
+	     topology and queues an ANSWER CONTROL frame with it as the
+	     data.  This allows the called channel to indicate its resolved
+	     topology.
+
+	   * Added a new virtual function to the channel tech structure
+	     answer_with_stream_topology() that allows the calling channel
+	     to receive the called channel's topology.  Added
+	     ast_raw_answer_with_stream_topology() that invokes that virtual
+	     function.
+
+	   * Modified app_dial.c and features.c to grab the topology from the
+	     ANSWER frame queued by the answering channel and send it to
+	     the calling channel with ast_raw_answer_with_stream_topology().
+
+	   * Modified frame.c to automatically cleanup the reference
+	     to the topology on ANSWER frames.
+
+	  Added a few debugging messages to stream.c.
+
+	  Change-Id: I0115d2ed68d6bae0f87e85abcf16c771bdaf992c
+
+2020-08-06 12:51 +0000 [543f936147]  cmaj <chris@penguinpbx.com>
+
+	* Makefile: Fix certified version numbers
+
+	  Adds sed before awk to produce reasonable ASTERISKVERSIONNUM
+	  on certified versions of Asterisk eg. 16.8-cert3 is 160803
+	  instead of the previous 00800.
+
+	  ASTERISK-29021 #close
+
+	  Change-Id: Icf241df0ff6db09011b8c936a317a84b0b634e16
+
+2020-08-06 11:41 +0000 [57554c2834]  Sean Bright <sean.bright@gmail.com>
+
+	* res_musiconhold.c: Prevent crash with realtime MoH
+
+	  The MoH class internal file vector is potentially being manipulated by
+	  multiple threads at the same time without sufficient locking. Switch to
+	  a reference counted list and operate on copies where necessary.
+
+	  ASTERISK-28927 #close
+
+	  Change-Id: I479c5dcf88db670956e8cac177b5826c986b0217
+
+2020-08-06 13:10 +0000 [a3d87f78ed]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip: Fix codec preference defaults.
+
+	  When reading in a codec preference configuration option
+	  the value would be set on the respective option before
+	  applying any default adjustments, resulting in the
+	  configuration not being as expected.
+
+	  This was exposed by the REST API push configuration as
+	  it used the configuration returned by Asterisk to then do
+	  a modification. In the case of codec preferences one of
+	  the options had a transcode value of "unspecified" when the
+	  defaults should have ensured it would be "allow" instead.
+
+	  This also renames the options in other places that were
+	  missed.
+
+	  Change-Id: I4ad42e74fdf181be2e17bc75901c62591d403964
+
+2020-08-04 10:51 +0000 [da8a617dc9]  Sean Bright <sean.bright@gmail.com>
+
+	* vector.h: Fix implementation of AST_VECTOR_COMPACT() for empty vectors
+
+	  The assumed behavior of realloc() - that it was effectively a free() if
+	  its second argument was 0 - is Linux specific behavior and is not
+	  guaranteed by either POSIX or the C specification.
+
+	  Instead, if we want to resize a vector to 0, do it explicitly.
+
+	  Change-Id: Ife31d4b510ebab41cb5477fdc7ea4e3138ca8b4f
+
+2020-06-30 10:40 +0000 [6482ab5bea]  Michael Neuhauser <mike@firmix.at>
+
+	* pjproject: clone sdp to protect against (nat) modifications
+
+	  PJSIP, UDP transport with external_media_address and session timers
+	  enabled. Connected to SIP server that is not in local net. Asterisk
+	  initiated the connection and is refreshing the session after 150s
+	  (timeout 300s). The 2nd refresh-INVITE triggered by the pjsip timer has
+	  a malformed IP address in its SDP (garbage string). This only happens
+	  when the SDP is modified by the nat-code to replace the local IP address
+	  with the configured external_media_address.
+	  Analysis: the code to modify the SDP (in
+	  res_pjsip_session.c:session_outgoing_nat_hook() and also (redundantly?)
+	  in res_pjsip_sdp_rtp.c:change_outgoing_sdp_stream_media_address()) uses
+	  the tdata->pool to allocate the replacement string. But the same
+	  pjmedia_sdp_stream that was modified for the 1st refresh-INVITE is also
+	  used for the 2nd refresh-INVITE (because it is stored in pjmedia's
+	  pjmedia_sdp_neg structure). The problem is, that at that moment, the
+	  tdata->pool that holds the stringified external_media_address from the
+	  1. refresh-INVITE has long been reused for something else.
+	  Fix by Sauw Ming of pjproject (see
+	  https://github.com/pjsip/pjproject/pull/2476): the local, potentially
+	  modified pjmedia_sdp_stream is cloned in
+	  pjproject/source/pjsip/src/pjmedia/sip_neg.c:process_answer() and the
+	  clone is stored, thereby detaching from the tdata->pool (which is only
+	  released *after* process_answer())
+
+	  ASTERISK-28973
+	  Reported-by: Michael Neuhauser
+
+	  Change-Id: I272ac22436076596e06aa51b9fa23fd1c7734a0e
+
+2020-08-04 14:36 +0000 [769a9611e7]  Ben Ford <bford@digium.com>
+
+	* utils.c: NULL terminate ast_base64decode_string.
+
+	  With the addition of STIR/SHAKEN, the function ast_base64decode_string
+	  was added for convenience since there is a lot of converting done during
+	  the STIR/SHAKEN process. This function returned the decoded string for
+	  you, but did not NULL terminate it, causing some issues (specifically
+	  with MALLOC_DEBUG). Now, the returned string is NULL terminated, and the
+	  documentation has been updated to reflect this.
+
+	  Change-Id: Icdd7d05b323b0c47ff6ed43492937a03641bdcf5
+
+2020-07-21 09:17 +0000 [802aa97fa0]  George Joseph <gjoseph@digium.com>
+
+	* ACN: Configuration renaming for pjsip endpoint
+
+	  This change renames the codec preference endpoint options.
+	  incoming_offer_codec_prefs becomes codec_prefs_incoming_offer
+	  to keep the options together when showing an endpoint.
+
+	  Change-Id: I6202965b4723777f22a83afcbbafcdafb1d11c8d
+
+2020-07-20 13:05 +0000 [de23cb4002]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Fix memory allocation error in curl.c
+
+	  Fixed a memory allocation that was not passing in the correct size for
+	  the struct in curl.c.
+
+	  Change-Id: I5fb92fbbe84b075fa6aefa2423786df80e114c3a
+	  (cherry picked from commit deaa3742dc998e38369d34bfc308d84e9036dcba)
+
+2020-07-23 14:47 +0000 [71446b68fc]  George Joseph <gjoseph@digium.com>
+
+	* res_pjsip_session: Ensure reused streams have correct bundle group
+
+	  When a bundled stream is removed, its bundle_group is reset to -1.
+	  If that stream is later reused, the bundle parameters on session
+	  media need to be reset correctly it could mistakenly be rebundled
+	  with a stream that was removed and never reused.  Since the removed
+	  stream has no rtp instance, a crash will result.
+
+	  Change-Id: Ie2b792220f9291587ab5f9fd123145559dba96d7
+
+2020-07-22 04:41 +0000 [99eafe5771]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip_registrar: Don't specify an expiration for static contacts.
+
+	  Statically configured contacts on an AOR don't have an expiration
+	  time so when adding them to the resulting 200 OK if an endpoint
+	  registers ensure they are marked as such.
+
+	  ASTERISK-28995
+
+	  Change-Id: I9f0e45eb2ccdedc9a0df5358634a19ccab0ad596
+
+2020-07-13 15:06 +0000 [d9ae902f52]  Sean Bright <sean.bright@gmail.com>
+
+	* utf8.c: Add UTF-8 validation and utility functions
+
+	  There are various places in Asterisk - specifically in regards to
+	  database integration - where having some kind of UTF-8 validation would
+	  be beneficial. This patch adds:
+
+	  * Functions to validate that a given string contains only valid UTF-8
+	    sequences.
+
+	  * A function to copy a string (similar to ast_copy_string) stopping when
+	    an invalid UTF-8 sequence is encountered.
+
+	  * A UTF-8 validator that allows for progressive validation.
+
+	  All of this is based on the excellent UTF-8 decoder by Björn Höhrmann.
+	  More information is available here:
+
+	      https://bjoern.hoehrmann.de/utf-8/decoder/dfa/
+
+	  The API was written in such a way that should allow us to replace the
+	  implementation later should we determine that we need something more
+	  comprehensive.
+
+	  Change-Id: I3555d787a79e7c780a7800cd26e0b5056368abf9
+
+2020-07-10 18:14 +0000 [2e32b56bdb]  sungtae kim <sungtae@messagebird.com>
+
+	* stasis_bridge.c: Fixed wrong video_mode shown
+
+	  Currently, if the bridge has created by the ARI, the video_mode
+	  parameter was
+	  not shown in the BridgeCreated event correctly.
+
+	  Fixed it and added video_mode shown in the 'bridge show <bridge id>'
+	  cli.
+
+	  ASTERISK-28987
+
+	  Change-Id: I8c205126724e34c2bdab9380f523eb62478e4295
+
+2020-07-20 13:17 +0000 [9022f35f09]  Sean Bright <sean.bright@gmail.com>
+
+	* vector.h: Add AST_VECTOR_SORT()
+
+	  Allows a vector to be sorted in-place, rather than only during
+	  insertion.
+
+	  Change-Id: I22cba9ddf556a7e44dacc53c4431bd81dd2fa780
+
+2020-07-16 08:41 +0000 [a678dafac8]  George Joseph <gjoseph@digium.com>
+
+	* CI: Force publishAsteriskDocs to use python2
+
+	  Change-Id: I7d951e75ad2d472fa096647dfb55670b11105e23
+
+2020-07-22 12:57 +0000 [af70bbb13a]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* websocket / pjsip: Increase maximum packet size.
+
+	  When dealing with a lot of video streams on WebRTC
+	  the resulting SDPs can grow to be quite large. This
+	  effectively doubles the maximum size to allow more
+	  streams to exist.
+
+	  The res_http_websocket module has also been changed
+	  to use a buffer on the session for reading in packets
+	  to ensure that the stack space usage is not excessive.
+
+	  Change-Id: I31d4351d70c8e2c11564807a7528b984f3fbdd01
+
+2020-07-13 15:42 +0000 [7a43bedd72]  Sean Bright <sean.bright@gmail.com>
+
+	* acl.c: Coerce a NULL pointer into the empty string
+
+	  If an ACL is misconfigured in the realtime database (for instance, the
+	  "rule" is blank) and Asterisk attempts to read the ACL, Asterisk will
+	  crash.
+
+	  ASTERISK-28978 #close
+
+	  Change-Id: Ic1536c4df856231bfd2da00128f7822224d77610
+
+2020-07-13 04:41 +0000 [8d15f72721]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* pjsip: Include timer patch to prevent cancelling timer 0.
+
+	  I noticed this while looking at another issue and brought
+	  it up with Teluu. It was possible for an uninitialized timer
+	  to be cancelled, resulting in the invalid timer id of 0
+	  being placed into the timer heap causing issues.
+
+	  This change is a backport from the pjproject repository
+	  preventing this from happening.
+
+	  Change-Id: I1ba318b1f153a6dd7458846396e2867282b428e7
+
+2020-07-15 09:14 +0000 [3330764213]  George Joseph <gjoseph@digium.com>
+
+	* Update .gitreview defaultbranch to 18
+
+	  Change-Id: Ib2c42fc2d46563e2fbadbd5513cb029b4042791e
+
+2020-07-15 08:59 +0000 [1f5e6805bf]  Asterisk Development Team <asteriskteam@digium.com>
+
+	* Update CHANGES and UPGRADE.txt for 18.0.0
+2020-07-02 17:19 +0000 [e4d24f5137]  Nickolay Shmyrev <nshmyrev@alphacephei.com>
+
+	* res_http_websocket: Avoid reading past end of string
+
+	  We read beyond the end of the buffer when copying the string out of the
+	  buffer when we used ast_copy_string() because the original string was
+	  not null terminated. Instead switch to ast_strndup() which does not
+	  exhibit the same behavior.
+
+	  ASTERISK-28975 #close
+
+	  Change-Id: Ib4a75cffeb1eb8cf01136ef30306bd623e531a2a
+
+2020-06-24 11:49 +0000 [5fbed5af24]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Add stir_shaken option and general improvements.
+
+	  Added a new configuration option for PJSIP endpoints - stir_shaken. If
+	  set to yes, then STIR/SHAKEN support will be added to inbound and
+	  outbound INVITEs. The default is no. Alembic has been updated to include
+	  this option.
+
+	  Previously the dialplan function was not trimming the whitespace from
+	  the parameters it recieved. Now it does.
+
+	  Also added a conditional that, when TEST_FRAMEWORK is enabled, the
+	  timestamp in the identity header will be overlooked. This is just for
+	  testing, since the testsuite will rely on a SIPp scenario with a preset
+	  identity header to trigger the MISMATCH result.
+
+	  Change-Id: I43d67f1489b8c1c5729ed3ca8d71e35ddf438df1
+
+2020-07-09 09:56 +0000 [e88beedd08]  George Joseph <gjoseph@digium.com>
+
+	* res_pjsip_session: Fix segv in session_on_rx_response
+
+	  session_on_rx_response wasn't checking for a NULL dialog before
+	  attempting to get the invite session from it.
+
+	  Change-Id: Id13534375966cc2eb7f2b55717c9813c63c10065
+
+2020-06-23 02:34 +0000 [312c23b0e1]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* app_queue: (Breaking change) shared_lastcall and autofill default to no
+
+	  If your queues.conf had _no_ [general] section, they would default to
+	  'yes'. Now, they always default to 'no'.
+
+	  (Actually, commit ed615afb7e0d630a58feba569c657eadc6ddc0a9 already
+	  partially fixed it for shared_lastcall.)
+
+	  ASTERISK-28951
+
+	  Change-Id: Ic39d8a0202906bc454194368bbfbae62990fe5f6
+
+2020-07-06 14:23 +0000 [9bd1d686a1]  George Joseph <gjoseph@digium.com>
+
+	* ACN: Add tracing to existing code
+
+	  Prior to making any modifications to the pjsip infrastructure
+	  for ACN, I've added the tracing functions to the existing code.
+	  This should make the final commit easier to review, but we can also
+	  now run a "before and after" trace.
+
+	  No functional changes were made with this commit.
+
+	  Change-Id: Ia83a1a2687ccb96f2bc8a2a3928a5214c4be775c
+
+2020-07-06 09:56 +0000 [2d22e34206]  George Joseph <gjoseph@digium.com>
+
+	* ACN: res_pjsip endpoint options
+
+	  This commit adds the endpoint options required to control
+	  Advanced Codec Negotiation.
+
+	  incoming_offer_codec_prefs
+	  outgoing_offer_codec_prefs
+	  incoming_answer_codec_prefs
+	  outgoing_answer_codec_prefs
+
+	  The documentation may need tweaking and some additional edits
+	  added, especially for the "answer" prefs.  That'll be handled
+	  when things finalize.
+
+	  This commit is safe to merge as it doens't alter any existing
+	  functionality nor does it alter the previous codec negotiation
+	  work which may now be obsolete.
+
+	  Change-Id: I920ba925d7dd36430dfd2ebd9d82d23f123d0e11
+
+2020-06-23 18:27 +0000 [81b5e4a73f]  sungtae kim <pchero21@gmail.com>
+
+	* res_pjsip.c: Added disable_rport option for pjsip.conf
+
+	  Currently when the pjsip making an outgoing request, it keep adding the
+	  rport parameter in a request message as a default.
+
+	  This causes unexpected rport handle at the other end.
+
+	  Added option for disable this behaviour in the pjsip.conf.
+
+	  This is a system option, but working as a gloabl option.
+
+	  ASTERISK-28959
+
+	  Change-Id: I9596675e52a742774738b5aad5d1fec32f477abc
+
+2020-07-06 10:57 +0000 [d093e44b1e]  George Joseph <gjoseph@digium.com>
+
+	* frame.c:  Make debugging easier
+
+	   * ast_frame_subclass2str() and ast_frame_type2str() now return
+	     a pointer to the buffer that was passed in instead of void.
+	     This makes it easier to use these functions inline in
+	     printf-style debugging statements.
+
+	   * Added many missing control frame entries in
+	     ast_frame_subclass2str.
+
+	  Change-Id: Ifd0d6578e758cd644c96d17a5383ff2128c572fc
+
+2020-07-05 18:51 +0000 [955b7b4fdb]  George Joseph <gjoseph@digium.com>
+
+	* Scope Trace: Make it easier to trace through synchronous tasks
+
+	  Tracing through synchronous tasks was a little troublesome because
+	  the new thread's stack counter reset to 0.  This change allows
+	  a synchronous task to set its trace level to be the same as the
+	  thread that pushed the task.  For now, the task's level has to be
+	  passed in the task's data structure but a future enhancement to the
+	  taskprocessor subsystem could automatically set the trace level
+	  of the servant to be that of the caller.
+
+	  This doesn't really make sense for async tasks because you never
+	  know when they're going to run anyway.
+
+	  Change-Id: Ib8049c0b815063a45d8c7b0cb4e30b7b87b1d825
+
+2020-06-22 12:16 +0000 [7163efd934]  Nickolay Shmyrev <nshmyrev@alphacephei.com>
+
+	* res_http_websocket.c: Continue reading after ping/pong
+
+	  Do not return error if the client received ping frame
+	  while looking for a string and just wait for another frame.
+
+	  ASTERISK-28958 #close
+
+	  Change-Id: I4d06b4827bd71e56cbaafc011ffdcef9f0332922
+
+2020-06-30 11:08 +0000 [4eba6b9eb2]  Kevin Harwell <kharwell@digium.com>
+
+	* PJSIP_MEDIA_OFFER: override configuration on refresh
+
+	  When using the PSJIP_MEDIA_OFFER dialplan function it was not
+	  overriding an endpoint's configured codecs on refresh unless
+	  they had a shared codec between the two.
+
+	  This patch makes it so whatever is set using PJSIP_MEDIA_OFFER
+	  is used when creating the SDP for a refresh no matter what.
+
+	  ASTERISK-28878 #close
+
+	  Change-Id: I0f7dc86fd0fb607c308e6f98ede303c54d1eacb6
+
+2020-06-10 17:02 +0000 [cfed0ea033]  Kevin Harwell <kharwell@digium.com>
+
+	* manager - Add Content-Type parameter to the SendText action
+
+	  This patch allows a user of AMI to now specify the type of message
+	  content contained within by setting the 'Content-Type' parameter.
+
+	  Note, the AMI version has been bumped for this change.
+
+	  ASTERISK-28945 #close
+
+	  Change-Id: Ibb5315702532c6b954e1498beddc8855fabdf4bb
+
+2020-06-26 11:14 +0000 [8d1064eaaf]  George Joseph <gjoseph@digium.com>
+
+	* Streams:  Add features for Advanced Codec Negotiation
+
+	  The Streams API becomes the home for the core ACN capabilities.
+	  These include...
+
+	   * Parsing and formatting of codec negotation preferences.
+	   * Resolving pending streams and topologies with those configured
+	     using configured preferences.
+	   * Utility functions for creating string representations of
+	     streams, topologies, and negotiation preferences.
+
+	  For codec negotiation preferences:
+	   * Added ast_stream_codec_prefs_parse() which takes a string
+	     representation of codec negotiation preferences, which
+	     may come from a pjsip endpoint for example, and populates
+	     a ast_stream_codec_negotiation_prefs structure.
+	   * Added ast_stream_codec_prefs_to_str() which does the reverse.
+	   * Added many functions to parse individual parameter name
+	     and value strings to their respectrive enum values, and the
+	     reverse.
+
+	  For streams:
+	   * Added ast_stream_create_resolved() which takes a "live" stream
+	     and resolves it with a configured stream and the negotiation
+	     preferences to create a new stream.
+	   * Added ast_stream_to_str() which create a string representation
+	     of a stream suitable for debug or display purposes.
+
+	  For topology:
+	   * Added ast_stream_topology_create_resolved() which takes a "live"
+	     topology and resolves it, stream by stream, with a configured
+	     topology stream and the negotiation preferences to create a new
+	     topology.
+	   * Added ast_stream_topology_to_str() which create a string
+	     representation of a topology suitable for debug or display
+	     purposes.
+	   * Renamed ast_format_caps_from_topology() to
+	     ast_stream_topology_get_formats() to be more consistent with
+	     the existing ast_stream_get_formats().
+
+	  Additional changes:
+	   * A new function ast_format_cap_append_names() appends the results
+	     to the ast_str buffer instead of replacing buffer contents.
+
+	  Change-Id: I2df77dedd0c72c52deb6e329effe057a8e06cd56
+
+2020-06-30 08:56 +0000 [7440fd0397]  George Joseph <gjoseph@digium.com>
+
+	* Scope Trace:  Add some new tracing macros and an ast_str helper
+
+	  Created new SCOPE_ functions that don't depend on RAII_VAR.  Besides
+	  generating less code, the use of the explicit SCOPE_EXIT macros
+	  capture the line number where the scope exited.  The RAII_VAR
+	  versions can't do that.
+
+	   * SCOPE_ENTER(level, ...): Like SCOPE_TRACE but doesn't use
+	     RAII_VAR and therefore needs needs one of...
+
+	   * SCOPE_EXIT(...): Decrements the trace stack counter and optionally
+	     prints a message.
+
+	   * SCOPE_EXIT_EXPR(__expr, ...): Decrements the trace stack counter,
+	     optionally prints a message, then executes the expression.
+	     SCOPE_EXIT_EXPR(break, "My while got broken\n");
+
+	   * SCOPE_EXIT_RTN(, ...): Decrements the trace stack counter,
+	     optionally prints a message, then returns without a value.
+	     SCOPE_EXIT_RTN("Bye\n");
+
+	   * SCOPE_EXIT_RTN_VALUE(__return_value, ...): Decrements the trace
+	     stack counter, optionally prints a message, then returns the value
+	     specified.
+	     SCOPE_EXIT_RTN_VALUE(rc, "Returning with RC: %d\n", rc);
+
+	  Create an ast_str helper ast_str_tmp() that allocates a temporary
+	  ast_str that can be passed to a function that needs it, then frees
+	  it.  This makes using the above macros easier.  Example:
+
+	     SCOPE_ENTER(1, Format Caps 1: %s  Format Caps 2: %s\n",
+	         ast_str_tmp(32, ast_format_cap_get_names(cap1, &STR_TMP),
+	         ast_str_tmp(32, ast_format_cap_get_names(cap2, &STR_TMP));
+
+	  The calls to ast_str_tmp create an ast_str of the specified initial
+	  length which can be referenced as STR_TMP.  It then calls the
+	  expression, which must return a char *, ast_strdupa's it, frees
+	  STR_TMP, then returns the ast_strdupa'd string.  That string is
+	  freed when the function returns.
+
+	  Change-Id: I44059b20d55a889aa91440d2f8a590865998be51
+
+2020-06-26 05:18 +0000 [4f86118bd8]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip: Apply AOR outbound proxy to static contacts.
+
+	  The outbound proxy for an AOR was not being applied to
+	  any statically configured Contacts. This resulted in the
+	  OPTIONS requests being sent to the wrong target.
+
+	  This change sets the outbound proxy on statically configured
+	  contacts once the AOR configuration is done being
+	  applied.
+
+	  ASTERISK-28965
+
+	  Change-Id: Ia60f3e93ea63f819c5a46bc8b54be2e588dfa9e0
+
+2020-06-24 05:25 +0000 [9b5042433b]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* menuselect: Resolve infinite loop in dependency scenario.
+
+	  Given a scenario where a module has a dependency on both
+	  an external library and a module if the external library was
+	  available and the module was not an infinite loop would
+	  occur. This happened due to the code changing the dependecy
+	  status to no failure on each dependency checking loop
+	  iteration, resulting in the code thinking that it had
+	  gone from no failure to failure each time triggering another
+	  dependency check.
+
+	  This change makes it so that the old dependency status is
+	  preserved throughout the dependency checking allowing it to
+	  determine that after the first iteration the dependency
+	  status does not transition from no failure to failure.
+
+	  ASTERISK-28930
+
+	  Change-Id: Iea06d45d9fd6d8bfd068882a0bb7e23a53ec3e84
+
+2020-06-22 04:08 +0000 [a423f935c9]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+
+	* chan_sip: chan_sip does not process 400 response to an INVITE.
+
+	  chan_sip handle_response() function, for a 400 response to an INVITE,
+	  calls handle_response_invite() and does not generate ACK.
+	  handle_response_invite() does not recognize 400 response and has no
+	  default response processing for unexpected responses, thus it does not
+	  generate ACK either.
+	  The ACK on response repetition comes from handle_response() mechanism
+	  "We must re-send ACKs to re-transmitted final responses".
+
+	  According to code history, 400 response specific processing was
+	  introduced with commit
+	  "channels/chan_sip: Add improved support for 4xx error codes"
+	  This commit added support for :
+	  - 400/414/493 in handle_response_subscribe() handle_response_register()
+	    and handle_response().
+	  - 414/493 only in handle_response_invite().
+
+	  This fix adds 400 response support in handle_response_invite().
+
+	  ASTERISK-28957
+
+	  Change-Id: Ic71a087e5398dfc7273946b9ec6f9a36960218ad
+
+2020-06-22 15:27 +0000 [8b925fbda3]  Kevin Harwell <kharwell@digium.com>
+
+	* chan_pjsip: don't use PJSIP_SC_NULL as it only exists pjproject 2.8+
+
+	  A patch made a reference to the PJSIP_SC_NULL enumeration value, which
+	  was added to pjproject 2.8 and above thus making it so Asterisk would
+	  fail to compile with prior versions of pjproject.
+
+	  This patch removes the reference, and instead initializes the value
+	  to '0'.
+
+	  ASTERISK-28886 #close
+
+	  Change-Id: I68491c80da1a0154b2286c9458440141c98db9d7
+
+2020-06-03 05:05 +0000 [0c1c386634]  Università di Bologna - CESIA VoIP <cesia.voip@unibo.it>
+
+	* res_corosync: Fix crash in huge distributed environment.
+
+	  1) Fix memory-leaks
+	     Added code to release ast_events extracted from corosync and stasis messages
+
+	  2) Clean stasis cache when a member of the corosync cluster leaves the group
+	     Added code to remove from the stasis cache of the members remained on the
+	     group all the messages with the EID of the left member.
+	     If the device states of the left member remain in the stasis cache of other
+	     members, they will not be updated anymore and high priority cached values,
+	     like BUSY, will take precedence over current device states.
+
+	  3) Stop corosync event propagation when node is not joined to the group
+	     Updated dispatch_thread_handler code to detect when asterisk is not joined
+	     to the corosync group and added some condition in publish_event_to_corosync
+	     code to send corosync messages only when joined.
+	     When a node is not joined its corosync daemon can't send messages:
+	     the cpg_mcast_joined function append new messages to the FIFO buffer until
+	     it's full and then it blocks indefinitely.
+	     In this scenario if the stasis_message_cb callback, registered by
+	     res_corosync to handle stasis messages, try to send a corosync messages,
+	     the thread of the stasis thread-pool will be blocked until the node join
+	     the corosync cluster.
+
+	  ASTERISK-28888
+	  Reported by: Università di Bologna - CESIA VoIP
+
+	  Change-Id: Ie8e99bc23f141a73c13ae6fb1948d148d4de17f2
+
+2020-06-13 11:29 +0000 [9445dac43b]  Moises Silva <moises.silva@gmail.com>
+
+	* res_http_websocket: Add payload masking to the websocket client
+
+	  ASTERISK-28949
+
+	  Change-Id: Id465030f2b1997b83d408933fdbabe01827469ca
+
+2020-06-18 03:49 +0000 [00a52b4752]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* app_stream_echo: Fix state of added streams.
+
+	  When stream support was added to Asterisk the stream state
+	  was used inconsistently, resulting in odd behavior. This
+	  was then standardized to be the state of a stream from the
+	  perspective of Asterisk.
+
+	  This change updates the StreamEcho dialplan application
+	  to use the correct state, send only, since we are only
+	  sending to the endpoint and not expecting them to send us
+	  multiple video streams.
+
+	  ASTERISK-28954
+
+	  Change-Id: I35bfd533ef1184ffe62586b22bbd253c82872a56
+
+2020-06-18 05:14 +0000 [d88e230037]  Guido Falsi <madpilot@FreeBSD.org>
+
+	* chan_dadhi: Fix setvar in dahdi channels
+
+	  The change to how setvar works for various channels performed in
+	  ASTERISK~23756 missed some required change in the dahdi channel,
+	  where the variables are actually set while reading configuration.
+	  This change should fix the issue.
+
+	  ASTERISK-28955
+
+	  Change-Id: Ibfeb7f8cbdd735346dc4028de6a265f24f9df274
+
+2020-06-17 03:58 +0000 [ee8ea9275f]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip_session: Preserve label on incoming re-INVITE.
+
+	  When a re-INVITE is received we create a new set of
+	  streams that are then swapped in as the active streams.
+	  We did not preserve the SDP label from the previous
+	  streams, resulting in the label getting lost.
+
+	  This change ensures that if an SDP label is present
+	  on the previous stream then it is set on the new stream.
+
+	  ASTERISK-28953
+
+	  Change-Id: I9dd63b88b562fe96ce5c791a3dae5bcaca258445
+
+2020-06-10 04:35 +0000 [a143c3a7b7]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_sorcery_memory_cache: Disallow per-object expire with full backend.
+
+	  The AMI action and CLI command did not take into account the properties
+	  of full backend caching. This resulted in an expired object remaining
+	  removed until a full backend update occurred, instead of having the
+	  object updated when needed.
+
+	  This change makes it so that the AMI action and CLI command for object
+	  expire will now fail instead of putting the cache into an undesired
+	  state. If full backend caching is enabled then only operations
+	  which act on the entire cache are available.
+
+	  ASTERISK-28942
+
+	  Change-Id: Id662d888f177ab566c8e802ad583083b742d21f4
+
+2020-06-02 09:04 +0000 [1274117102]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Add outbound INVITE support.
+
+	  Integrated STIR/SHAKEN support with outgoing INVITEs. When an INVITE is
+	  sent, the caller ID will be checked to see if there is a certificate
+	  that corresponds to it. If so, that information will be retrieved and an
+	  Identity header will be added to the SIP message. The format is:
+
+	  header.payload.signature;info=<public_key_url>alg=ES256;ppt=shaken
+
+	  Header, payload, and signature are all BASE64 encoded. The public key
+	  URL is retrieved from the certificate. Currently the algorithm and ppt
+	  are ES256 and shaken, respectively. This message is signed and can be
+	  used for verification on the receiving end.
+
+	  Two new configuration options have been added to the certificate object:
+	  attestation and origid. The attestation is required and must be A, B, or
+	  C. origid is the origination identifier.
+
+	  A new utility function has been added as well that takes a string,
+	  allocates space, BASE64 encodes it, then returns it, eliminating the
+	  need to calculate the size yourself.
+
+	  Change-Id: I1f84d6a5839cb2ed152ef4255b380cfc2de662b4
+
+2020-06-15 06:53 +0000 [db012e8cc6]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* app_queue: Remove stale code in try_calling
+
+	  Because ring_entry() is not called, outgoing->chan is not touched here
+	  either.
+
+	  ASTERISK-28950
+	  ASTERISK-28644
+
+	  Change-Id: I564613715dfaf45af868251eb75a451f512af90f
+
+2020-06-15 07:09 +0000 [f1cfd54976]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* res_pjsip: Include <pjsip_ua.h> instead of internal "pjsua-lib/pjsua.h"
+
+	  Change-Id: I24b5453df412232cf7f9a171ea4a34b35ad3ae78
+
+2020-06-16 08:18 +0000 [0fb6738314]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* app_queue: Read latest wrapuptime instead of (possibly stale) copy
+
+	  Before this changeset, it was possible that a queue member (agent) was
+	  called even though they just got out of a call, and wrapuptime seconds
+	  hadn't passed yet.
+
+	  This could happen if a member ended a call _between_ a new call attempt
+	  and asterisk trying that particular member for a new call.
+
+	  In that case, Asterisk would check the hangup time of the
+	  call-before-the-last-call instead of the hangup time of the-last-call.
+
+	  ASTERISK-28952
+
+	  Change-Id: Ie0cab8f0e8d639c01cba633d4968ba19873d80b3
+
+2020-05-15 16:08 +0000 [415b55af5a]  Kevin Harwell <kharwell@digium.com>
+
+	* pjproject: Upgrade bundled version to pjproject 2.10
+
+	  This patch makes the usual necessary changes when upgrading to a new
+	  version pjproject. For instance, version number bump, patches removed
+	  from third-party, new *.md5 file added, etc..
+
+	  This patch also includes a change to the Asterisk pjproject Makefile to
+	  explicitly create the 'source/pjsip-apps/lib' directory. This directory
+	  is no longer there by default so needs to be added so the Asterisk
+	  malloc debug can be built.
+
+	  This patch also includes some minor changes to Asterisk that were a result
+	  of the upgrade. Specifically, there was a backward incompatibility change
+	  made in 2.10 that modified the "expires header" variable field from a
+	  signed to an unsigned value. This potentially effects comparison. Namely,
+	  those check for a value less than zero. This patch modified a few locations
+	  in the Asterisk code that may have been affected.
+
+	  Lastly, this patch adds a new macro PJSIP_MINVERSION that can be used to
+	  check a minimum version of pjproject at compile time.
+
+	  ASTERISK-28899 #close
+
+	  Change-Id: Iec8821c6cbbc08c369d0e3cd2f14e691b41d0c81
+
+2020-06-03 11:47 +0000 [de2813cf23]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* core_unreal / core_local: Add multistream and re-negotiation.
+
+	  When requesting a Local channel the requested stream topology
+	  or a converted stream topology will now be placed onto the
+	  resulting channels.
+
+	  Frames written in on streams will now also preserve the stream
+	  identifier as they are queued on the opposite channel.
+
+	  Finally when a stream topology change is requested it is
+	  immediately accepted and reflected on both channels. Each
+	  channel also receives a queued frame to indicate that the
+	  topology has changed.
+
+	  ASTERISK-28938
+
+	  Change-Id: I4e9d94da5230d4bd046dc755651493fce1d87186
+
+2020-06-12 05:16 +0000 [bbe0f2230d]  sungtae kim <sungtae@messagebird.com>
+
+	* res_ari: Fix create channel request channelId parameter parsing
+
+	  If channelId parameters were passed in the body, the Asterisk doesn't parsing it correctly.
+
+	  Fixed it to parse the channelId, other_channel_id parameter correclty.
+
+	  ASTERISK-28948
+
+	  Change-Id: I59b49161a94869169ee19c1ffab5afcef7026157
+
+2020-06-08 06:27 +0000 [c84d962eae]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_rtp_asterisk: Don't assume setting retrans props means to enable.
+
+	  The "value" passed in when setting an RTP property determines
+	  whether it should be enabled or disabled. The RTP send and
+	  receive retrans props did not examine this to know if the
+	  buffers should be enabled. They assumed they always should be.
+
+	  This change makes it so that the "value" passed in is
+	  respected.
+
+	  ASTERISK-28939
+
+	  Change-Id: I9244cdbdc5fd065c7f6b02cbfa572bc55c7123dc
+
+2020-06-10 12:11 +0000 [8ad06394c4]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* bridge_softmix: Add additional old states for adding new source.
+
+	  There are three states that an old stream can be in to allow
+	  becoming a source stream in a new stream:
+
+	  1. Removed
+	  2. Inactive
+	  3. Sendonly
+
+	  This change adds the two missing ones, inactive and sendonly,
+	  so if a stream transitions from those to a state where they are
+	  providing video to Asterisk we properly re-negotiate the other
+	  participants.
+
+	  ASTERISK-28944
+
+	  Change-Id: Id8256b9b254b403411586284bbaedbf50452de01
+
+2020-06-03 11:23 +0000 [41f3a7da4d]  George Joseph <gjoseph@digium.com>
+
+	* res_fax: Don't start a gateway if either channel is hung up
+
+	  When fax_gateway_framehook is called and a gateway hasn't already
+	  been started, the framehook gets the t38 state for both the current
+	  channel and the peer.  That call trickles down to the channel
+	  driver which determines the state.  If either channel is hung up
+	  (or in the process of being hung up), the channel driver's tech_pvt
+	  is going to be NULL which, in the case of chan_pjsip, will cause a
+	  segfault.
+
+	  * Added a hangup check for both the channel and peer channel
+	    before starting a fax gateway.
+
+	  * Added a check for NULL tech_pvt to chan_pjsip_queryoption
+	    so we don't attempt to reference a tech_pvt that's already
+	    gone.
+
+	  ASTERISK-28923
+	  Reported by: Yury Kirsanov
+
+	  Change-Id: I4e10e63b667bbb68c1c8623f977488f5d807897c
+
+2020-06-07 19:02 +0000 [b9f42a717e]  George Joseph <gjoseph@digium.com>
+
+	* app_confbridge: Plug ref leak of bridge channel with send_events
+
+	  When send_events is enabled for a user, we were leaking a reference
+	  to the bridge channel in confbridge_manager.c:send_message().  This
+	  also caused the bridge snapshot to not be destroyed.
+
+	  Change-Id: I87a7ae9175e3cd29f6d6a8750e0ec5427bd98e97
+
+2020-06-01 18:25 +0000 [3d1bf3c537]  Kevin Harwell <kharwell@digium.com>
+
+	* Compiler fixes for gcc 10
+
+	  This patch fixes a few compile warnings/errors that now occur when using gcc
+	  10+.
+
+	  Also, the Makefile.rules check to turn off partial inlining in gcc versions
+	  greater or equal to 8.2.1 had a bug where it only it only checked against
+	  versions with at least 3 numbers (ex: 8.2.1 vs 10). This patch now ensures
+	  any version above the specified version is correctly compared.
+
+	  Change-Id: I54718496eb0c3ce5bd6d427cd279a29e8d2825f9
+
+2020-06-08 14:34 +0000 [559fa0e89c]  Ben Ford <bford@digium.com>
+
+	* cli.c: Fix compiler error.
+
+	  Added default variable value to fix a compiler error.
+
+	  Change-Id: I7b592adbb1274dc5464dea1c5e5de0685c928553
+
+2020-06-09 06:57 +0000 [fa7c69f40f]  sungtae kim <sungtae@messagebird.com>
+
+	* res_ari: Fix create request body parameter parsing.
+
+	  If parameters were passed in the body as JSON to the
+	  create route they were not being parsed before checking
+	  to ensure that required fields were set.
+
+	  This change moves the parsing so it occurs before
+	  checking.
+
+	  ASTERISK-28940
+
+	  Change-Id: I898b4c3c7ae1cde19a6840e59f498822701cf5cf
+
+2020-06-05 04:30 +0000 [e74dde5100]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* pjsip: Prevent invalid memory access when attempting to contact a non-sip URI
+
+	  You cannot cast a pjsip_uri to a pjsip_sip_uri using pjsip_uri_get_uri,
+	  without checking that it's a PJSIP_URI_SCHEME_IS_SIP(S).
+
+	  ASTERISK-28936
+
+	  Change-Id: I9f572b3677e4730458e9402719e580f8681afe2a
+
+2020-05-19 14:46 +0000 [3927f79cb5]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Add inbound INVITE support.
+
+	  Integrated STIR/SHAKEN support with incoming INVITES. Upon receiving an
+	  INVITE, the Identity header is retrieved, parsing the message to verify
+	  the signature. If any of the parsing fails,
+	  AST_STIR_SHAKEN_VERIFY_NOT_PRESENT will be added to the channel for this
+	  caller ID. If verification itself fails,
+	  AST_STIR_SHAKEN_VERIFY_SIGNATURE_FAILED will be added. If anything in
+	  the payload does not line up with the SIP signaling,
+	  AST_STIR_SHAKEN_VERIFY_MISMATCH will be added. If all of the above steps
+	  pass, then AST_STIR_SHAKEN_VERIFY_PASSED will be added, completing the
+	  verification process.
+
+	  A new config option has been added to the general section for
+	  stir_shaken.conf. "signature_timeout" is the amount of time a signature
+	  will be considered valid. If an INVITE is received and the amount of
+	  time between when it was received and when it was signed is greater than
+	  signature_timeout, verification will fail.
+
+	  Some changes were also made to signing and verification. There was an
+	  error where the whole JSON string was being signed rather than the
+	  header combined with the payload. This has been changed to sign the
+	  correct thing. Verification has been changed to do this as well, and the
+	  unit tests have been updated to reflect these changes.
+
+	  A couple of utility functions have also been added. One decodes a BASE64
+	  string and returns the decoded string, doing all the length calculations
+	  for you. The other retrieves a string value from a header in a rdata
+	  object.
+
+	  Change-Id: I855f857be3d1c63b64812ac35d9ce0534085b913
+
+2020-06-05 04:45 +0000 [1fcb6b1b21]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* bridge_channel: Don't queue unmapped frames.
+
+	  If a frame is written to a channel in a bridge we
+	  would normally queue this frame up and the channel
+	  thread would then act upon it. If this frame had no
+	  stream mapping on the channel it would then be
+	  discarded.
+
+	  This change adds a check before the queueing occurs
+	  to determine if a mapping exists. If it does not
+	  exist then the frame is not even queued at all. This
+	  stops a frame duplication from happening and from
+	  the channel thread having to wake up and deal with
+	  it.
+
+	  Change-Id: I17189b9b1dec45fc7e4490e8081d444a25a00bda
+
+2020-05-27 03:47 +0000 [d2500c6273]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_fax: Don't consume frames given to fax gateway on write.
+
+	  In a particular fax gateway scenario whereby it would
+	  have to translate using the read translation path on a
+	  channel the frame being translated would be consumed.
+	  When the frame is in the write path it is not permitted
+	  to free the frame as the caller expects it to continue
+	  to exist.
+
+	  This change makes it so that the frame is only consumed
+	  on the read path where it is acceptable to free it.
+
+	  ASTERISK-28900
+
+	  Change-Id: I011c321288a1b056d92b37c85e229f4a28ee737d
+
+2020-06-02 06:24 +0000 [0a4dffe6f8]  Alexander Traud <pabstraud@compuserve.com>
+
+	* pjproject_bundled: Honor --without-pjproject.
+
+	  The previous change missed that 'make' uses 'PJPROJECT_BUNDLED' anyway.
+
+	  ASTERISK-28929
+
+	  Change-Id: I7ef0e78a06ea391b59d95b99d46bbed3fec4fed9
+
+2020-06-04 01:50 +0000 [e8c6e9ae5d]  Pirmin Walthert <infos@nappsoft.ch>
+
+	* res_pjsip_logger: use the correct pointer when logging tx_messages to pcap
+
+	  When writing tx messages to pcap files, Asterisk is using the wrong
+	  pointer resulting in lots of wasted space. This patch fixes it to use
+	  the correct pointer.
+
+	  ASTERISK-28932 #close
+
+	  Change-Id: I5b8253dd59a083a2ca2c81f232f1d14d33c6fd23
+
+2020-05-28 20:03 +0000 [25ae412f75]  sungtae kim <pchero21@gmail.com>
+
+	* bridge.c: Fixed null pointer exception
+
+	  If the bridge show all command could not get the bridge snapshot, it causes null pointer exception.
+	  Fixed it to check the snapshot is null.
+
+	  ASTERISK-28920
+
+	  Change-Id: I3521fc1b832bfc69644d0833f2c78177e1e51f58
+
+2020-05-14 13:24 +0000 [ca3c22c5f1]  George Joseph <gjoseph@digium.com>
+
+	* Scope Tracing:  A new facility for tracing scope enter/exit
+
+	  What's wrong with ast_debug?
+
+	    ast_debug is fine for general purpose debug output but it's not
+	    really geared for scope tracing since it doesn't present its
+	    output in a way that makes capturing and analyzing flow through
+	    Asterisk easy.
+
+	  How is scope tracing better?
+
+	    Scope tracing uses the same "cleanup" attribute that RAII_VAR
+	    uses to print messages to a separate "trace" log level.  Even
+	    better, the messages are indented and unindented based on a
+	    thread-local call depth counter.  When output to a separate log
+	    file, the output is uncluttered and easy to follow.
+
+	    Here's an example of the output. The leading timestamps and
+	    thread ids are removed and the output cut off at 68 columns for
+	    commit message restrictions but you get the idea.
+
+	  --> res_pjsip_session.c:3680 handle_incoming PJSIP/1173-00000001
+	  	--> res_pjsip_session.c:3661 handle_incoming_response PJSIP/1173
+	  		--> res_pjsip_session.c:3669 handle_incoming_response PJSIP/
+	  			--> chan_pjsip.c:3265 chan_pjsip_incoming_response_after
+	  				--> chan_pjsip.c:3194 chan_pjsip_incoming_response P
+	  					    chan_pjsip.c:3245 chan_pjsip_incoming_respon
+	  				<-- chan_pjsip.c:3194 chan_pjsip_incoming_response P
+	  			<-- chan_pjsip.c:3265 chan_pjsip_incoming_response_after
+	  		<-- res_pjsip_session.c:3669 handle_incoming_response PJSIP/
+	  	<-- res_pjsip_session.c:3661 handle_incoming_response PJSIP/1173
+	  <-- res_pjsip_session.c:3680 handle_incoming PJSIP/1173-00000001
+
+	    The messages with the "-->" or "<--" were produced by including
+	    the following at the top of each function:
+
+	    SCOPE_TRACE(1, "%s\n", ast_sip_session_get_name(session));
+
+	    Scope isn't limited to functions any more than RAII_VAR is.  You
+	    can also see entry and exit from "if", "for", "while", etc blocks.
+
+	    There is also an ast_trace() macro that doesn't track entry or
+	    exit but simply outputs a message to the trace log using the
+	    current indent level.  The deepest message in the sample
+	    (chan_pjsip.c:3245) was used to indicate which "case" in a
+	    "select" was executed.
+
+	  How do you use it?
+
+	    More documentation is available in logger.h but here's an overview:
+
+	    * Configure with --enable-dev-mode.  Like debug, scope tracing
+	      is #ifdef'd out if devmode isn't enabled.
+
+	    * Add a SCOPE_TRACE() call to the top of your function.
+
+	    * Set a logger channel in logger.conf to output the "trace" level.
+
+	    * Use the CLI (or cli.conf) to set a trace level similar to setting
+	      debug level... CLI> core set trace 2 res_pjsip.so
+
+	  Summary Of Changes:
+
+	    * Added LOG_TRACE logger level.  Actually it occupies the slot
+	      formerly occupied by the now defunct "event" level.
+
+	    * Added core asterisk option "trace" similar to debug.  Includes
+	  	ability to specify global trace level in asterisk.conf and CLI
+	  	commands to turn on/off and set levels.  Levels can be set
+	  	globally (probably not a good idea), or by module/source file.
+
+	    * Updated sample asterisk.conf and logger.conf.  Tracing is
+	      disabled by default in both.
+
+	    * Added __ast_trace() to logger.c which keeps track of the indent
+	      level using TLS. It's #ifdef'd out if devmode isn't enabled.
+
+	    * Added ast_trace() and SCOPE_TRACE() macros to logger.h.
+	      These are all #ifdef'd out if devmode isn't enabled.
+
+	  Why not use gcc's -finstrument-functions capability?
+
+	    gcc's facility doesn't allow access to local data and doesn't
+	    operate on non-function scopes.
+
+	  Known Issues:
+
+	    The only know issue is that we currently don't know the line
+	    number where the scope exited.  It's reported as the same place
+	    the scope was entered.  There's probably a way to get around it
+	    but it might involve looking at the stack and doing an 'addr2line'
+	    to get the line number.  Kind of like ast_backtrace() does.
+	    Not sure if it's worth it.
+
+	  Change-Id: Ic5ebb859883f9c10a08c5630802de33500cad027
+
+2020-05-29 04:28 +0000 [c16937cdbe]  Pirmin Walthert <infos@nappsoft.ch>
+
+	* res_pjsip_logger.c: correct the return value checks when writing to pcap
+	  files
+
+	  fwrite() does return the number of elements written and not the
+	  number of bytes. However asterisk is currently comparing the return
+	  value to the size of the written element what means that asterisk logs
+	  five WARNING messages on every packet written to the pcap file.
+
+	  This patch changes the code to check for the correct value, which will
+	  always be 1.
+
+	  ASTERISK-28921 #close
+
+	  Change-Id: I2455032d9cb4c5a500692923f9e2a22e68b08fc2
+
+2020-05-27 09:35 +0000 [9c2871edf4]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip: Use correct pool for storing the contact_user value.
+
+	  When replacing the user portion of the Contact URI the code
+	  was using the ephemeral pool instead of the tdata pool. This
+	  could cause the Contact user value to become invalid after a
+	  period of time.
+
+	  The code will now use the tdata pool which persists for the
+	  lifetime of the message instead.
+
+	  ASTERISK-28794
+
+	  Change-Id: I31e7b958e397cbdaeedd0ebb70bcf8dd2ed3c4d5
+
+2020-05-13 07:06 +0000 [1399f8b4fe]  Pirmin Walthert <infos@nappsoft.ch>
+
+	* res_pjsip_nat.c: remove x-ast-orig-host from request URI and To header
+
+	  While asterisk is filtering out the x-ast-orig-host parameter from the
+	  contact on response messages, it is not filtering it out from the
+	  request URI and the to header on SIP requests (for example INVITE).
+
+	  ASTERISK-28884 #close
+
+	  Change-Id: Id032b33098a1befea9b243ca994184baecccc59e
+
+2020-05-18 09:05 +0000 [afa2c9a868]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* bridge: Don't try to match audio formats.
+
+	  When bridging channels we were trying to match the audio
+	  formats of both sides in combination with the configured
+	  formats. While this is allowed in SDP in practice this
+	  causes extra reinvites and problems. This change ensures
+	  that audio streams use the formats of the first existing
+	  active audio stream. It is only when other stream types
+	  (like video) exist that this will result in re-negotiation
+	  occurring for those streams only.
+
+	  ASTERISK-28871
+
+	  Change-Id: I22f5a3e7db29e00c165e74d05d10856f6086fe47
+
+2020-05-19 07:55 +0000 [ec7890d7c6]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_sorcery_config: Always reload configuration on errors.
+
+	  When a configuration file in Asterisk is loaded
+	  information about it is stored such that on a
+	  reload it is not reloaded if nothing has changed.
+	  This can be problematic when an error exists in
+	  a configuration file in PJSIP since the error
+	  will be output at start and not subsequently on
+	  reload if the file is unchanged.
+
+	  This change makes it so that if an error is
+	  encountered when res_sorcery_config is loading
+	  a configuration file a reload will always read
+	  in the configuration file, allowing the error
+	  to be seen easier.
+
+	  Change-Id: If2e05a017570f1f5f4f49120da09601e9ecdf9ed
+
+2020-05-18 10:10 +0000 [4de0e50c32]  Alexander Traud <pabstraud@compuserve.com>
+
+	* res_srtp: Set all possible flags while selecting the Crypto Suite.
+
+	  The flags of a previous selection could have been set within the
+	  object 'srtp', for example, when the previous selection returned
+	  failure after setting just 'some' flags. Now, not to clutter the
+	  code, all possible flags are cleared first, and then the selected
+	  flags are set as before.
+
+	  ASTERISK-28903
+
+	  Change-Id: I1b9d7aade7d5120244ce7e3a8865518cbd6e0eee
+
+2020-05-19 04:18 +0000 [e8c8d69d47]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* bridge_softmix: Always remove audio from mixed frame.
+
+	  When receiving audio from a channel we determine if it
+	  is talking or silence based on a threshold value. If
+	  this threshold is met we always mix the audio into the
+	  conference bridge. If this threshold is not met we also
+	  mix the audio into the conference bridge UNLESS the
+	  drop silence option is enabled.
+
+	  The code that removed the audio from the mixed frame
+	  assumed that it was always not present if it did not
+	  meet the threshold to be considered talking. This is
+	  incorrect. If it has been stated that the audio was
+	  mixed into the mixed frame then it has been mixed into
+	  the mixed frame. By not removing audio that was
+	  considered non-talking it was possible for a channel
+	  to receive a slight echo of audio of itself at times.
+
+	  This change ensures that the audio is always removed
+	  from the mixed frame going back to the channel so it
+	  no longer receives the slight echo.
+
+	  ASTERISK-28898
+
+	  Change-Id: I7b1b582cc1bcdb318ecc60c9d2e3d87ae31d55cb
+
+2020-05-13 16:37 +0000 [f506cc4896]  Ben Ford <bford@digium.com>
+
+	*  res_stir_shaken: Add unit tests for signing and verification.
+
+	  Added two unit tests, one for signing and another for verifying.
+	  stir_shaken_sign checks to make sure that all the required parameters
+	  are passed in and then signs the actual payload. If a signature is
+	  produced and a payload returned as a result, the test passes.
+	  stir_shaken_verify takes the signature from a signed payload to verify.
+	  This unit test also verifies that all the required information is passed
+	  in, and then attempts to verify the signature. If verification is
+	  successful and a payload is returned, the test passes.
+
+	  Change-Id: I9fa43380f861ccf710cd0f6b6c102a517c86ea13
+
+2020-04-30 17:57 +0000 [a7aaee70c6]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_pjsip_logger: Expand functionality to improve logging.
+
+	  The PJSIP packet logger now has the following CLI commands:
+
+	  pjsip set logger pcap <filename>
+
+	  When used this will create a pcap file containing the incoming
+	  and outgoing SIP packets, in unencrypted form.
+
+	  pjsip set logger verbose <on / off>
+
+	  This allows you to toggle logging to verbose on and off.
+
+	  pjsip set logger host <IP/subnet mask> add
+
+	  This allows you to add an additional IP address or subnet
+	  mask to logging, allowing you to log multiple instead of
+	  just a single IP address or all traffic.
+
+	  The normal "pjsip set logger host" CLI command has also been
+	  expanded to allow subnet masks as well.
+
+	  ASTERISK-28895
+
+	  Change-Id: If5859161a72b0d7dd2d1f92d45bed88e0cd07d0e
+
+2020-05-13 13:32 +0000 [fef97a9a72]  Nicholas John Koch <koch@njk-it.de>
+
+	* res_musiconhold: Added check for dot character in path of playlist entries to avoid warnings
+
+	  A warning was triggered that there may be a problem regarding file
+	  extension (which is correct and should not be set anyway). The warning
+	  also appeared if there was dot within the path itself.
+
+	  E.g.
+	  [sales-queue-hold]
+	  mode=playlist
+	  entry=/var/www/domain.tld/moh/funky_music
+
+	  The music played correctly but you get a warning message.
+
+	  Now there will be a check if the position of a potential dot character
+	  is after the last position of a slash character. This dot charachter
+	  will be treated as a extension naming. Dots within the path then ignored.
+
+	  ASTERISK-28892
+	  Reported-By: Nicholas John Koch
+
+	  Change-Id: I2ec35a613413affbf5fcc01c8c181eba24865b9e
+
+2020-05-18 11:31 +0000 [c8c94b6cf1]  sungtae kim <sungtae@messagebird.com>
+
+	* res_rtp_asterisk.c: Fixed memory leak
+
+	  Added freeifaddrs() for memory releasing.
+
+	  ASTERISK-28904
+
+	  Change-Id: I109403866e85a30659351946903a679de9727a8f
+
+2020-05-12 18:15 +0000 [15cbff9d54]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* ari: Allow variables to be set on channel create.
+
+	  This change adds the same variable functionality that
+	  is available for originating a channel to the create
+	  call. Now when creating a channel you can specify
+	  dialplan variables to set instead of having to do another
+	  API call.
+
+	  ASTERISK-28896
+
+	  Change-Id: If13997ba818136d7c070585504fc4164378aa992
+
+2020-05-10 05:01 +0000 [c8dec423d2]  Peter Sokolov (License #7070)
+
+	* pjsip_resolver.c: Ensure AAAA dns requests are made.
+
+	  1. Modify sip_resolve and sip_resolve_callback to request AAAA lookups
+	     when an IPV6 transport type has been requested.
+
+	  2. Rename all occurrences of pjsip_transport_get_type_name to
+	     pjsip_transport_get_type_desc. This ensures that the log/debug info
+	     shows whether the transport is IPv6 or IPv4.
+
+	  3. Do not add the constant PJSIP_TRANSPORT_IPV6 to existing transport
+	     types. This results in invalid values. Use a bitwise or instead.
+
+	  ASTERISK-26780
+	  Patches:
+	      pjsip_resolver.c uploaded by Peter Sokolov (License #7070)
+
+	  Change-Id: I8b1e298f8efa682d0a7644113258fe76d9889c58
+
+2020-05-04 16:11 +0000 [e29df34de0]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Added dialplan function and API call.
+
+	  Adds the "STIR_SHAKEN" dialplan function and an API call to add a
+	  STIR_SHAKEN verification result to a channel. This information will be
+	  held in a datastore on the channel that can later be queried through the
+	  "STIR_SHAKEN" dialplan funtion to get information on STIR_SHAKEN results
+	  including identity, attestation, and verify_result. Here are some
+	  examples:
+
+	  STIR_SHAKEN(count)
+	  STIR_SHAKEN(0, identity)
+	  STIR_SHAKEN(1, attestation)
+	  STIR_SHAKEN(2, verify_result)
+
+	  Getting the count can be used to iterate through the results and pull
+	  information by specifying the index and the field you want to retrieve.
+
+	  Change-Id: Ice6d52a3a7d6e4607c9c35b28a1f7c25f5284a82
+
+2020-05-08 06:11 +0000 [801d570f6e]  Guido Falsi <madpilot@FreeBSD.org>
+
+	* pjproject: Fix race condition when building with parallel make
+
+	  Pjproject makefiles miss some dependencies which can cause race
+	  conditions when building with parallel make processes. This patch
+	  adds such dependencies correctly.
+
+	  ASTERISK-28879 #close
+	  Reported-by: Dmitry Wagin <dmitry.wagin@ya.ru>
+
+	  Change-Id: Ie1b0dc365dafe4a84c5248097fe8d73804043c22
+
+2020-05-09 02:46 +0000 [4a072c4890]  Roger James <roger@beardandsandals.co.uk>
+
+	* res_pjsip_history.c: Fix to stop SIGSEGV when IPv6 addresses are encountered.
+
+	  Changed source and destination address fields in struct
+	  pjsip_history_entry so that they are long enough to hold an IPv6
+	  address.
+
+	  ASTERISK-28854
+
+	  Change-Id: Id65bb9aa961e9ecbcb500815e18170f774e34d3e
+
+2020-04-01 08:38 +0000 [f9ea75d117]  Alexander Traud <pabstraud@compuserve.com>
+
+	* tcptls: Fix notice when TLS is enabled but not supported.
+
+	  ASTERISK-28797
+
+	  Change-Id: Iab364a2c2519fd9d11d1c28293fda43d61b64c28
+
+2020-04-04 04:28 +0000 [527e4f6542]  Alexander Traud <pabstraud@compuserve.com>
+
+	* app_osplookup: Avoid a format truncation.
+
+	  Ensure that output buffers for the osp_convert_inout
+	  function have sufficient space for additional data
+	  such as brackets and ports.
+
+	  ASTERISK-28804
+
+	  Change-Id: Ie54c8241ff0cc653910539c2db00ff2a4869750b
+
+2020-04-14 11:02 +0000 [6b2d945174]  Pirmin Walthert <infos@nappsoft.ch>
+
+	* app.c: make sure that no non-async-signal-safe syscalls are used after
+	  fork before exec
+
+	  Posix does only allow async-signal-safe syscalls after fork before exec.
+	  As asterisk ignores this, functions like TrySystem or System sometimes
+	  end up in a deadlocked child process. The patch prevents the use of
+	  non-async-signal-safe syscalls.
+
+	  ASTERISK-28776
+
+	  Change-Id: Idc76365c0592ee3f3b3bd72a4f48f7a098978e8e
+
+2020-05-04 11:31 +0000 [7fbfbe7da0]  George Joseph <gjoseph@digium.com>
+
+	* streams: Fix one memory leak and one formats ref issue
+
+	  ast_stream_topology_create_from_format_cap() was setting the
+	  stream->formats directly but not freeing the default formats.  This
+	  causes a memory leak.
+
+	  * ast_stream_topology_create_from_format_cap() now calls
+	    ast_stream_set_formats() which properly cleans up the existing
+	    stream formats.
+
+	  When cloning a stream, the source stream's format caps _pointer_ is
+	  copied to the new stream and it's reference count bumped.  If
+	  either stream is set to "removed", this will cause _both_ streams
+	  to have their format caps cleared.
+
+	  * ast_stream_clone() now creates a new format caps object and copies
+	    the formats from the source stream instead of just copying the
+	    pointer.
+
+	  ASTERISK-28870
+
+	  Change-Id: If697d81c3658eb7baeea6dab413b13423938fb53
+
+2020-04-08 18:41 +0000 [f217fcdc62]  Nathan Bruning <nathan@iperity.com>
+
+	* app_queue: track masquerades in app_queue to avoid leaked stasis subscriptions
+
+	  Add a new "masquarade" channel event, and use it in app_queue to track unique id's.
+
+	  Testcase is submitted as https://gerrit.asterisk.org/c/testsuite/+/14210
+
+	  ASTERISK-28829 #close
+	  ASTERISK-25844 #close
+
+	  Change-Id: Ifc5f9f9fd70903f3c6e49738d3bc632b085d2df6
+
+2020-05-04 03:29 +0000 [44e5dd288b]  Jaco Kroon <jaco@uls.co.za>
+
+	* Remove #include <sys/cdefs.h>
+
+	  These are not provided by standards, and as a result causes failure to
+	  compile on musl.
+
+	  https://wiki.musl-libc.org/faq.html#Q:-When-compiling-something-against-musl,-I-get-error-messages-about-%3Ccode%3Esys/cdefs.h%3C/code%3E
+
+	  Change-Id: I6a357cefd106c72cfecafd898638f6b5692c2e05
+
+2020-05-03 05:30 +0000 [c831f03273]  Guido Falsi <madpilot@FreeBSD.org>
+
+	* pjproject: Remove bashism from configure.m4 script
+
+	  The configure.m4 script for pjproject contains some += syntax, which
+	  is specific to bash, replacing it with string substitutions makes
+	  the script compatible with traditional Bourne shells.
+
+	  ASTERISK-28866 #close
+	  Reported-by: Christoph Moench-Tegeder <cmt@FreeBSD.org>
+
+	  Change-Id: I382a78160e028044598b7da83ec7e1ff42b91c05
+
+2020-05-01 07:29 +0000 [1cfd30bd8a]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* res_stir_shaken: Use ast_asprintf for creating file path.
+
+	  Change-Id: Ice5d92ecea2f1101c80487484f48ef98be2f1824
+
+2020-04-15 13:15 +0000 [9acf840f7c]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Implemented signature verification.
+
+	  There are a lot of moving parts in this patch, but the focus of it is on
+	  the verification of the signature using a public key located at the
+	  public key URL provided in the JSON payload. First, we check the
+	  database to see if we have already downloaded the key. If so, check to
+	  see if it has expired. If it has, redownload from the URL. If we don't
+	  have an entry in the database, just go ahead and download the public
+	  key. The expiration is tested each time we download the file. After
+	  that, read the public key from the file and use it to verify the
+	  signature. All sanity checking is done when the payload is first
+	  received, so the verification is complete once this point is reached.
+
+	  The XML has also been added since a new config option was added to
+	  general (curl_timeout). The maximum amount of time to wait for a
+	  download can be configured through this option, with a low value by
+	  default.
+
+	  Change-Id: I3ba4c63880493bf8c7d17a9cfca1af0e934d1a1c
+
+2020-04-30 10:56 +0000 [7baf2c4bf1]  George Joseph <gjoseph@digium.com>
+
+	* app_voicemail: Add workaround for a gcc 10 issue with -Wrestrict
+
+	  The gcc 10 -Wrestrict option was causing "overlap" errors when
+	  snprintf was copying one char[256] structure member to another
+	  char[256] member in the same structure.
+
+	  Using ast_alloca instead of declaring the structure inline
+	  solves the issue.
+
+	  Here's a link to the "enhancement":
+	  https://gcc.gnu.org/legacy-ml/gcc-patches/2019-10/msg00570.html
+
+	  We may follow up with a gcc bug report.
+
+	  Change-Id: Ie0099adcb0a9727bd9aa99e024dd912a67eaf534
+
+2020-04-28 10:31 +0000 [3078a00a6d]  Joshua C. Colp <jcolp@sangoma.com>
+
+	* pjsip: Increase maximum ICE candidate count.
+
+	  In practice it has been seen that some users come
+	  close to our maximum ICE candidate count of 32.
+	  In case people have gone over this increases the
+	  count to 64, giving ample room.
+
+	  ASTERISK-28859
+
+	  Change-Id: I35cd68948ec0ada86c14eb53092cdaf8b62996cf
+
+2020-04-27 10:28 +0000 [29070b61f7]  Alexander Traud <pabstraud@compuserve.com>
+
+	* core_local: Local calls are always secure.
+
+	  In a Dialplan, the channel drivers 'chan_sip' and 'chan_iax2' support
+	  the channel items 'secure_bridge_media' and 'secure_bridge_signaling'.
+	  That way, a channel can be forced to use encryption even if not
+	  specified in its configuration.
+
+	  However, when the Local Proxy kicks in, for example, in case of a
+	  forwarding (SIP status 302), Local Proxy stated it does not know those
+	  items. Consequently, such a call could not be proxied how clever your
+	  Dialplan was. Because local calls within Asterisk are always secure,
+	  Local Proxy accepts such a request now.
+
+	  ASTERISK-22920
+
+	  Change-Id: I4c143bb70f686790953cc04c5a4b810bbb03636c
+
+2020-04-26 05:56 +0000 [e4366308e1]  Guido Falsi <madpilot@FreeBSD.org>
 
 	* res_rtp_asterisk: Protect access to nochecksums with #ifdef
 
@@ -16,7 +1934,7 @@
 
 	  Change-Id: I381718893b80599ab8635f2b594a10c1000d595e
 
-2020-04-26 06:08 +0000 [2a7a252ba1]  Guido Falsi <madpilot@FreeBSD.org>
+2020-04-26 06:08 +0000 [97494d8984]  Guido Falsi <madpilot@FreeBSD.org>
 
 	* core/dns: Add system include required on FreeBSD
 
@@ -26,14 +1944,33 @@
 
 	  Change-Id: I6997daf3956e6eb70ab6cb358628d162fad80079
 
-2020-04-23 16:37 +0000  Asterisk Development Team <asteriskteam@digium.com>
+2020-04-17 02:39 +0000 [3303defd3f]  Peter Turczak <peter@turczak.de>
 
-	* asterisk 17.4.0-rc1 Released.
+	* chan_mobile: Add smoother to make SIP/RTP endpoints happy.
 
-2020-04-23 11:04 +0000 [3907b81397]  Asterisk Development Team <asteriskteam@digium.com>
+	  In contrast to RFC 3551, section 4.2, several SIP/RTP clients misbehave
+	  severly (up to crashing). This patch adds another smoother for the audio
+	  received via bt. Therefore the audio frames sent to the core will be
+	  CHANNEL_FRAME_SIZE.
 
-	* Update CHANGES and UPGRADE.txt for 17.4.0
-2020-04-21 04:52 +0000 [fe11bc7a2a]  Joshua C. Colp <jcolp@sangoma.com>
+	  ASTERISK-28832 #close
+
+	  Change-Id: Ic5f9e2f35868ae59cc9356afbd1388b779a1267f
+
+2020-04-22 12:38 +0000 [26b8c99963]  Alexander Traud <pabstraud@compuserve.com>
+
+	* app_fax: SpanDSP headers do not use ast_malloc; ignore that.
+
+	  Since Asterisk 14, app_fax did not compile at all because Asterisk
+	  requires that not malloc but ast_malloc is used everywhere. However,
+	  the system headers of SpanDSP use malloc. Because we cannot (and do
+	  not need to) change system headers, let us ignore this.
+
+	  ASTERISK-28848
+
+	  Change-Id: I31f7a6b92a07032c5cef1c16b8901b107fe35546
+
+2020-04-21 04:52 +0000 [1c5e68580a]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* stream: Enforce formats immutability and ensure formats exist.
 
@@ -52,7 +1989,7 @@
 
 	  Change-Id: I32f29715330db4ff48edd6f1f359090458a9bfbe
 
-2020-04-21 10:40 +0000 [9a90ab3722]  sungtae kim <sungtae@messagebird.com>
+2020-04-21 10:40 +0000 [9ad3d2829c]  sungtae kim <sungtae@messagebird.com>
 
 	* res_ari_channels: Fixed endpoint 80 characters limit
 
@@ -62,7 +1999,7 @@
 
 	  Change-Id: I91b5f6708a1200363f3267b847dd6a0915222c25
 
-2020-04-20 10:18 +0000 [e7b6736ba3]  Joshua C. Colp <jcolp@sangoma.com>
+2020-04-20 10:18 +0000 [e56f4de7e6]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* fax: Fix crashes in PJSIP re-negotiation scenarios.
 
@@ -87,7 +2024,7 @@
 
 	  Change-Id: I8ed5924b53be9fe06a385c58817e5584b0f25cc2
 
-2020-04-15 15:13 +0000 [139cd912af]  Daniel Heckl <daniel.heckl@gmail.com>
+2020-04-15 15:13 +0000 [9f117ac9ef]  Daniel Heckl <daniel.heckl@gmail.com>
 
 	* res_pjsip: Fixed format of IPv6 addresses for external media addresses
 
@@ -95,7 +2032,7 @@
 
 	  Change-Id: I66289afd164c5cdd6c5caa39e79d629a467e7a26
 
-2020-04-20 13:11 +0000 [2fc7780a3a]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-20 13:11 +0000 [52f07176b6]  Alexander Traud <pabstraud@compuserve.com>
 
 	* chan_sip: externhost/externaddr with non-default TCP/TLS ports.
 
@@ -107,7 +2044,7 @@
 
 	  Change-Id: I2b7432a9bf3b09dc8515297ff955636db7a6224c
 
-2020-04-17 05:41 +0000 [6d4ddc3151]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-17 05:41 +0000 [abf4d74384]  Alexander Traud <pabstraud@compuserve.com>
 
 	* cdr_odbc: Sync load- and build-time deps.
 
@@ -118,18 +2055,7 @@
 
 	  Change-Id: I55dc05ce19552d0415c9045021b42bd82ef44e52
 
-2020-04-17 04:47 +0000 [71c70dfbfb]  Alexander Traud <pabstraud@compuserve.com>
-
-	* res_pjsip: Sync load- and build-time deps.
-
-	  MODULEINFO is checked while buidling/linking the module.
-	  AST_MODULE_INFO is checked while loading/running the module.
-
-	  ASTERISK-28838
-
-	  Change-Id: I4bb868532ca217fec1351885d99eb55c21b58042
-
-2020-04-16 08:15 +0000 [21f0759b2c]  Joshua C. Colp <jcolp@sangoma.com>
+2020-04-16 08:15 +0000 [6cfc6ff53c]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* confbridge: Add support for disabling text messaging.
 
@@ -144,7 +2070,7 @@
 
 	  Change-Id: I30b5d9ae6f4803881d1ed9300590d405e392bc13
 
-2020-04-17 04:18 +0000 [c4c259c3af]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-17 04:18 +0000 [191f136260]  Alexander Traud <pabstraud@compuserve.com>
 
 	* res_pjsip_refer: Add build-time dependency.
 
@@ -152,7 +2078,7 @@
 
 	  Change-Id: Ic693c3f464e35ec0db242afdb0a1415806af4e25
 
-2020-04-17 05:17 +0000 [9fc5654e5a]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-17 05:17 +0000 [5c2b8fdeca]  Alexander Traud <pabstraud@compuserve.com>
 
 	* app_getcpeid: Add build-time dependency.
 
@@ -160,7 +2086,18 @@
 
 	  Change-Id: I68b78e7e4718be82507247433127ce3992a5ba96
 
-2020-04-17 06:51 +0000 [2cd2852f57]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-17 04:47 +0000 [008f46bf1e]  Alexander Traud <pabstraud@compuserve.com>
+
+	* res_pjsip: Sync load- and build-time deps.
+
+	  MODULEINFO is checked while buidling/linking the module.
+	  AST_MODULE_INFO is checked while loading/running the module.
+
+	  ASTERISK-28838
+
+	  Change-Id: I4bb868532ca217fec1351885d99eb55c21b58042
+
+2020-04-17 06:51 +0000 [e2affa3b0a]  Alexander Traud <pabstraud@compuserve.com>
 
 	* curl: Add build-time dependency.
 
@@ -168,7 +2105,7 @@
 
 	  Change-Id: I34724e799e1ffaf723eb2c358abe8934dbadcd52
 
-2020-04-17 04:55 +0000 [12dda5d867]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-17 04:55 +0000 [f1135b453b]  Alexander Traud <pabstraud@compuserve.com>
 
 	* res_pjsip: Add build-time dependency.
 
@@ -176,7 +2113,7 @@
 
 	  Change-Id: Icb08304744ae3f34dce6ccb76f94379b8382a074
 
-2020-04-15 13:01 +0000 [fccfa256a3]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-15 13:01 +0000 [966acc6251]  Alexander Traud <pabstraud@compuserve.com>
 
 	* pjproject_bundled: Honor --without-pjproject.
 
@@ -184,7 +2121,7 @@
 
 	  Change-Id: Id057324912a3cfe6f50af372675626bb515907d9
 
-2020-04-14 10:48 +0000 [7ed8078bdb]  Pirmin Walthert <infos@nappsoft.ch>
+2020-04-14 10:48 +0000 [d50fd0acc0]  Pirmin Walthert <infos@nappsoft.ch>
 
 	* res_rtp_asterisk: Resolve loop when receive buffer is flushed
 
@@ -199,7 +2136,7 @@
 
 	  Change-Id: Idaa376101bc1ac880047c49feb6faee773e718b3
 
-2020-04-15 07:16 +0000 [3a5bdc68b2]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-15 07:16 +0000 [a107e85b2e]  Alexander Traud <pabstraud@compuserve.com>
 
 	* install_prereq: Add libcap for high bits in DiffServ/ToS.
 
@@ -207,7 +2144,7 @@
 
 	  Change-Id: I27d2c109180bd857b6757fd532de48eddb78aee6
 
-2020-04-15 01:20 +0000 [3b4be152d5]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-15 01:20 +0000 [4d0ab620be]  Alexander Traud <pabstraud@compuserve.com>
 
 	* chan_sip: DiffServ/ToS not only on UDP but also on TCP and TLS sockets.
 
@@ -216,13 +2153,13 @@
 
 	  Change-Id: I6e72ecb874200dec7a3865c7babaf5ac0d3101de
 
-2020-04-15 06:09 +0000 [39f5be81a3]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-15 06:09 +0000 [4ef5ba58f5]  Alexander Traud <pabstraud@compuserve.com>
 
 	* BuildSystem: Only if found LibPRI, check its optional parts.
 
 	  Change-Id: If8445f899ee4ce0c606c484943d4ce0c8e43b5da
 
-2020-04-14 10:31 +0000 [26dec66598]  Pirmin Walthert <infos@nappsoft.ch>
+2020-04-14 10:31 +0000 [ca032d1e2e]  Pirmin Walthert <infos@nappsoft.ch>
 
 	* res_rtp_asterisk: Free payload when error on insertion to data buffer
 
@@ -238,13 +2175,13 @@
 
 	  Change-Id: Ie6c49495d1c921d5f997651c7d0f79646f095cf1
 
-2020-04-14 06:26 +0000 [77e2afe8cc]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-14 06:26 +0000 [ef580f96e7]  Alexander Traud <pabstraud@compuserve.com>
 
 	* BuildSystem: Only if found external PJProject, check its optional parts.
 
 	  Change-Id: I11d5693d25c166c99d8cebffc16184d58f6362de
 
-2020-04-08 05:29 +0000 [7544e6d095]  Bernard Merindol <bernard.merindol@telnowedge.com>
+2020-04-08 05:29 +0000 [7db03e12a7]  Bernard Merindol <bernard.merindol@telnowedge.com>
 
 	* res_rtp_asterisk.c: Check for first DTMF having timestamp set to 0
 
@@ -255,7 +2192,19 @@
 
 	  Change-Id: I3196803a062dd2daee4938c9a778c3810cb7e504
 
-2020-04-07 07:05 +0000 [c23f899254]  Jean Aunis <jean.aunis@prescom.fr>
+2020-04-13 11:47 +0000 [611529fa52]  Alexander Traud <pabstraud@compuserve.com>
+
+	* res_stir_shaken: Do not build without OpenSSL.
+
+	  Change-Id: Idba5151a3079f9dcc0076d635422c5df5845114f
+
+2020-04-13 11:38 +0000 [27de0c9700]  Alexander Traud <pabstraud@compuserve.com>
+
+	* res_audiosocket: Avoid Sometimes-uninitialized Warning with Clang.
+
+	  Change-Id: I40c014c2cb88e943cf6f1b99a08c7c885e855b3a
+
+2020-04-07 07:05 +0000 [de66713fd5]  Jean Aunis <jean.aunis@prescom.fr>
 
 	* func_volume: Accept decimal number as argument
 
@@ -265,7 +2214,7 @@
 
 	  Change-Id: I5b42b890ec4e1f6b0b3400cb44ff16522b021c8c
 
-2019-12-03 12:35 +0000 [7a568549ee]  Jaco Kroon <jaco@uls.co.za>
+2019-12-03 12:35 +0000 [2b80e5f5da]  Jaco Kroon <jaco@uls.co.za>
 
 	* res_rtp_asterisk: iterate all local addresses looking to populate ICE.
 
@@ -283,7 +2232,7 @@
 	  Change-Id: I109eaffc3e2b432f00bf958e3caa0f38cacb4edb
 	  Signed-off-by: Jaco Kroon <jaco@uls.co.za>
 
-2020-04-10 08:13 +0000 [84495aae4c]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-10 08:13 +0000 [3431949a52]  Alexander Traud <pabstraud@compuserve.com>
 
 	* pjproject_bundled: Repair ./configure --with-ssl without ARG.
 
@@ -293,13 +2242,13 @@
 
 	  Change-Id: Ifb6b85c559d116739af00bc48d1f547caa85efac
 
-2020-04-11 14:03 +0000 [c3d49c304b]  Jaco Kroon <jaco@uls.co.za>
+2020-04-11 14:03 +0000 [1cf569ba2b]  Jaco Kroon <jaco@uls.co.za>
 
 	* res_pjsip: document legal dtls_verify endpoint options.
 
 	  Change-Id: I7fa7c5c8a7ddb0bd525982f58bff3264ebbd9a1b
 
-2020-04-12 09:53 +0000 [8bbc6605c9]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-12 09:53 +0000 [610e058189]  Alexander Traud <pabstraud@compuserve.com>
 
 	* BuildSystem: Search for Python/C API when possibly needed only.
 
@@ -331,7 +2280,7 @@
 
 	  Change-Id: Id46d357e18869f64dcc217b8fdba821b63eeb876
 
-2020-04-01 11:52 +0000 [223da4dfa1]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-01 11:52 +0000 [da9554d925]  Alexander Traud <pabstraud@compuserve.com>
 
 	* chan_sip: TCP/TLS client without server.
 
@@ -343,19 +2292,19 @@
 
 	  Change-Id: I387ca5cb6a65f1eb675a29c5e41df8ec6c242ab2
 
-2020-04-13 11:27 +0000 [44f921bb13]  Alexander Traud <pabstraud@compuserve.com>
-
-	* res_rtp_asterisk: Build without PJProject.
-
-	  Change-Id: Ifc5059cd867e77b9c92ed9f4b895a9a91200d3ec
-
-2020-04-13 12:05 +0000 [e832fb6f1c]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-13 12:05 +0000 [52ecbbd014]  Alexander Traud <pabstraud@compuserve.com>
 
 	* _pjsua: Build even with Clang.
 
 	  Change-Id: Iebf7687613aa0295ea3c82256460b337f1595be2
 
-2020-04-08 14:33 +0000 [d38839067b]  Kevin Harwell <kharwell@digium.com>
+2020-04-13 11:27 +0000 [ee1c7f465b]  Alexander Traud <pabstraud@compuserve.com>
+
+	* res_rtp_asterisk: Build without PJProject.
+
+	  Change-Id: Ifc5059cd867e77b9c92ed9f4b895a9a91200d3ec
+
+2020-04-08 14:33 +0000 [fa3c8f94e0]  Kevin Harwell <kharwell@digium.com>
 
 	* chan_pjsip: digit_begin - constant DTMF tone if RTP is not setup yet
 
@@ -377,7 +2326,7 @@
 
 	  Change-Id: I0dbea9fff444a2595fb18c64b89653e90d2f6eb5
 
-2020-04-09 08:25 +0000 [1f7c32f397]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-09 08:25 +0000 [7febd22304]  Alexander Traud <pabstraud@compuserve.com>
 
 	* bridge_softmix_binaural: Show state in menuselect.
 
@@ -385,7 +2334,7 @@
 
 	  Change-Id: Iba7ee7bc7936d7a156171c8fc0f1670e864e7600
 
-2020-04-07 12:44 +0000 [5aeb31e790]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-07 12:44 +0000 [7cdb493a1e]  Alexander Traud <pabstraud@compuserve.com>
 
 	* BuildSystem: Remove doc/tex and doc/pdf leftovers.
 
@@ -395,7 +2344,7 @@
 
 	  Change-Id: I77daab80cfabb56d51c3ea6b1d14bd9b9fbc577c
 
-2020-04-09 07:05 +0000 [dda530002a]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-09 07:05 +0000 [7a04947abd]  Alexander Traud <pabstraud@compuserve.com>
 
 	* BuildSystem: Allow space in path.
 
@@ -403,7 +2352,7 @@
 
 	  Change-Id: Ib7f246896457d9e3b14d7f5199136d6545ce0b6f
 
-2020-04-06 08:00 +0000 [c971769db5]  Alexander Traud <pabstraud@compuserve.com>
+2020-04-06 08:00 +0000 [1ef1b1b0c2]  Alexander Traud <pabstraud@compuserve.com>
 
 	* res_rtp_asterisk: Avoid absolute value on unsigned subtraction.
 
@@ -411,7 +2360,7 @@
 
 	  Change-Id: I269731715347c8e5ef7db1b6ffd3f8d15fc04be4
 
-2020-03-31 15:14 +0000 [a29fd59340]  Sebastien Duthil <sduthil@wazo.community>
+2020-03-31 15:14 +0000 [d40e343710]  Sebastien Duthil <sduthil@wazo.community>
 
 	* func_channel: allow reading 4 fields from dialplan
 
@@ -426,7 +2375,23 @@
 
 	  Change-Id: Ieacaac629490f8710fdacc9de80ed5916c5f6ee2
 
-2020-04-06 09:29 +0000 [f56e4e73af]  Sean Bright <sean.bright@gmail.com>
+2020-04-03 12:25 +0000 [b38f664250]  Alexander Traud <pabstraud@compuserve.com>
+
+	* chan_unistim: Avoid tautological warnings with clang.
+
+	  ASTERISK-28803
+
+	  Change-Id: I15449621b68d0ad4d57b7c337c1167adb15135af
+
+2020-04-06 06:56 +0000 [bb28ed0d1b]  Alexander Traud <pabstraud@compuserve.com>
+
+	* test_stasis: Avoid always true warning with clang.
+
+	  ASTERISK-28808
+
+	  Change-Id: I5e76831373532d7b8065d024e66cd1fb75dedd80
+
+2020-04-06 09:29 +0000 [60925c68e8]  Sean Bright <sean.bright@gmail.com>
 
 	* Revert "res_config_odbc: Preserve empty strings returned by the database"
 
@@ -437,23 +2402,7 @@
 
 	  Change-Id: I410c395a0168acbdaf89e616e3cb5e1312d190cb
 
-2020-04-06 06:56 +0000 [a14690fc00]  Alexander Traud <pabstraud@compuserve.com>
-
-	* test_stasis: Avoid always true warning with clang.
-
-	  ASTERISK-28808
-
-	  Change-Id: I5e76831373532d7b8065d024e66cd1fb75dedd80
-
-2020-04-03 12:25 +0000 [45a4cb163c]  Alexander Traud <pabstraud@compuserve.com>
-
-	* chan_unistim: Avoid tautological warnings with clang.
-
-	  ASTERISK-28803
-
-	  Change-Id: I15449621b68d0ad4d57b7c337c1167adb15135af
-
-2020-04-01 04:00 +0000 [a5119e9600]  Jaco Kroon <jaco@uls.co.za>
+2020-04-01 04:00 +0000 [c5f3836bcc]  Jaco Kroon <jaco@uls.co.za>
 
 	* main/backtrace: binutils-2.34 fix.
 
@@ -462,7 +2411,7 @@
 
 	  Change-Id: Id06853375954a200f03f9a1b9c97fe0b10d31fbf
 
-2020-03-26 17:42 +0000 [79b453b579]  Jason Hord <jhord@fluentstream.com> (license 6978)
+2020-03-26 17:42 +0000 [d845464c76]  Jason Hord <jhord@fluentstream.com> (license 6978)
 
 	* res_pjsip: Don't set endpoint to unavailable in all cases.
 
@@ -479,7 +2428,72 @@
 
 	  Change-Id: I3ee00023be2393113cd4e056599f23f3499ef164
 
-2020-03-31 12:52 +0000 [a03cb75523]  Kevin Harwell <kharwell@digium.com>
+2020-03-25 12:51 +0000 [7ba6d43083]  George Joseph <gjoseph@digium.com>
+
+	* test_res_pjsip_session_caps:  Create unit test
+
+	  This unit test runs through combinations of...
+	  	* Local codecs
+	  	* Remote Codecs
+	  	* Codec Preference
+	  	* Incoming/Outgoing
+
+	  A few new APIs were created to make it easier to test
+	  the functionality but didn't result in any actual
+	  functional change.
+
+	  ASTERISK_28777
+
+	  Change-Id: Ic8957c43e7ceeab0e9272af60ea53f056164f164
+
+2020-03-13 14:40 +0000 [2ee455958e]  George Joseph <gjoseph@digium.com>
+
+	* codec_negotiation: Implement outgoing_call_offer_pref
+
+	  Based on this new endpoint setting, a joint list of preferred codecs
+	  between those received from the Asterisk core (remote), and those
+	  specified in the endpoint's "allow" parameter (local) is created and
+	  is used to create the outgoing SDP offer.
+
+	  * Add outgoing_call_offer_pref to pjsip_configuration (endpoint)
+
+	  * Add "call_direction" to res_pjsip_session.
+
+	  * Update pjsip_session_caps.c to make the functions more generic
+	    so they could be used for both incoming and outgoing.
+
+	  * Update ast_sip_session_create_outgoing to create the
+	    pending_media_state->topology with the results of
+	    ast_sip_session_create_joint_call_stream().
+
+	  * The endpoint "preferred_codec_only" option now automatically sets
+	    AST_SIP_CALL_CODEC_PREF_FIRST in incoming_call_offer_pref.
+
+	  * A helper function ast_stream_get_format_count() was added to
+	    streams to return the current count of formats.
+
+	  ASTERISK-28777
+
+	  Change-Id: Id4ec0b4a906c2ae5885bf947f101c59059935437
+
+2020-03-26 13:34 +0000 [57a457c26c]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Implemented signing of JSON payload.
+
+	  This change provides functions that take in a JSON payload, verify that
+	  the contents contain all the mandatory fields and required values (if
+	  any), and signs the payload with the private key. Four fields are added
+	  to the payload: x5u, attest, iat, and origid. As of now, these are just
+	  placeholder values that will be set to actual values once the logic is
+	  implemented for what to do when an actual payload is received, but the
+	  functions to add these values have all been implemented and are ready to
+	  use. Upon successful signing and the addition of those four values, a
+	  ast_stir_shaken_payload is returned, containing other useful information
+	  such as the algorithm and signature.
+
+	  Change-Id: I74fa41c0640ab2a64a1a80110155bd7062f13393
+
+2020-03-31 12:52 +0000 [3c345ec56d]  Kevin Harwell <kharwell@digium.com>
 
 	* channel: write to a stream on multi-frame writes
 
@@ -498,7 +2512,7 @@
 
 	  Change-Id: I868faea0b73a07ed5a32c2b05bb9cf4b586f739d
 
-2020-03-24 06:43 +0000 [96923ec871]  Alexander Traud <pabstraud@compuserve.com>
+2020-03-24 06:43 +0000 [fc07eeaba1]  Alexander Traud <pabstraud@compuserve.com>
 
 	* test_utils: Avoid incorrect error message on load.
 
@@ -508,7 +2522,17 @@
 
 	  Change-Id: Ie007e84296bcf2bd4237f19d68ba5f932b84cd02
 
-2020-03-26 17:18 +0000 [41c1e0b45d]  sungtae kim <sungtae@messagebird.com>
+2020-03-23 12:25 +0000 [cd8cbf7384]  Alexander Traud <pabstraud@compuserve.com>
+
+	* func_aes: Avoid incorrect error message on load.
+
+	  In case of no OpenSSL headers, the module func_aes was built but did not load.
+
+	  ASTERISK-28788
+
+	  Change-Id: I0b99b8468cbeb3b0eab23069cbd64062ef885ffc
+
+2020-03-26 17:18 +0000 [dbddb6725d]  sungtae kim <sungtae@messagebird.com>
 
 	* dial.c: Removed dial string 80 character limitation
 
@@ -523,17 +2547,7 @@
 
 	  Change-Id: I72c8f0319a4b47e8180817a66a7e9bde063cb330
 
-2020-03-23 12:25 +0000 [bdc0aaca9d]  Alexander Traud <pabstraud@compuserve.com>
-
-	* func_aes: Avoid incorrect error message on load.
-
-	  In case of no OpenSSL headers, the module func_aes was built but did not load.
-
-	  ASTERISK-28788
-
-	  Change-Id: I0b99b8468cbeb3b0eab23069cbd64062ef885ffc
-
-2020-03-19 04:34 +0000 [46be4668e3]  Torrey Searle <torrey@voxbone.com>
+2020-03-19 04:34 +0000 [e12244153a]  Torrey Searle <torrey@voxbone.com>
 
 	* res_pjsip_session: implement processing of Content-Disposition
 
@@ -544,7 +2558,7 @@
 
 	  Change-Id: Iad969df75936730254b95c1a8bc3b48497070bb4
 
-2020-03-18 08:49 +0000 [1b01a6abfd]  Jaco Kroon <jaco@uls.co.za>
+2020-03-18 08:49 +0000 [d32e559e8a]  Jaco Kroon <jaco@uls.co.za>
 
 	* acl: implement a centralized ACL output mechanism for HAs and ACLs.
 
@@ -556,20 +2570,20 @@
 
 	  Change-Id: I0ec9876a90dddd379c80ec078d48e3ee6991eb0f
 
-2020-03-26 08:49 +0000 [5e24379cf2]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-26 08:49 +0000 [1b6c58896f]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* chan_sip: Send 403 when ACL fails.
 
 	  Change-Id: I0910c79196f2b7c7e5ad6f1db95e83800ac737a2
 
-2020-03-26 11:42 +0000 [26c75683bf]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-26 11:42 +0000 [3ed80fc57b]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* CHANGES: Change md file extension to txt.
 
 	  Change-Id: I168e2d3a65d444fb0961bd228257441fe718f6a7
 	  (cherry picked from commit c9cd68126152bae26d42f5b9ce8811ddf1eda4d8)
 
-2020-03-23 05:49 +0000 [e181cbde63]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-23 05:49 +0000 [21e9051461]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_session: Apply intention behind requested formats.
 
@@ -591,7 +2605,7 @@
 
 	  Change-Id: Ia54c0c63e94aca176169b9bae4bb8a8380ea245f
 
-2020-03-25 04:38 +0000 [4b2729e89d]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-25 04:38 +0000 [96e8d411e1]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_rtp_asterisk: Ensure sufficient space for worst case NACK.
 
@@ -599,17 +2613,7 @@
 
 	  Change-Id: I10df52f98b19ed62575f25dab36e82d136dccd99
 
-2020-03-20 09:12 +0000 [ba47752d0d]  Jaco Kroon <jaco@uls.co.za>
-
-	* netsock2: compile fixes.
-
-	  This fixes ast_addressfamily_to_sockaddrsize to reference the
-	  provided argument, and ast_sockaddr_from_sockaddr to not use the name of
-	  a structure as argument.
-
-	  Change-Id: Ibf5db469c47c3b4214edf8456326086174e8edd7
-
-2020-03-17 15:54 +0000 [9255a17410]  Kevin Harwell <kharwell@digium.com>
+2020-03-17 15:54 +0000 [26713dc88b]  Kevin Harwell <kharwell@digium.com>
 
 	* ast_coredumper: add Asterisk information dump
 
@@ -628,7 +2632,35 @@
 
 	  Change-Id: I54f35c19ab69b8f8dc78cc933c3fb7c99cef346b
 
-2020-03-18 04:21 +0000 [836203a3fd]  Jaco Kroon <jaco@uls.co.za>
+2020-03-20 09:12 +0000 [6f731f153b]  Jaco Kroon <jaco@uls.co.za>
+
+	* netsock2: compile fixes.
+
+	  This fixes ast_addressfamily_to_sockaddrsize to reference the
+	  provided argument, and ast_sockaddr_from_sockaddr to not use the name of
+	  a structure as argument.
+
+	  Change-Id: Ibf5db469c47c3b4214edf8456326086174e8edd7
+
+2020-03-23 15:00 +0000 [211bb8a79c]  Ben Ford <bford@digium.com>
+
+	* res_stir_shaken: Initial commit and reading private key.
+
+	  This commit sets up some of the initial framework for the module and
+	  adds a way to read the private key from the specified file, which will
+	  then be appended to the certificate object. This works fine for now, but
+	  eventually some other structure will likely need to be used to store all
+	  this information. Similarly, the caller_id_number is specified on the
+	  certificate config object, but in the end we will want that information
+	  to be tied to the certificate itself and read it from there.
+
+	  A method has been added that will retrieve the private key associated
+	  with the caller_id_number passed in. Tab completion for certificates and
+	  stores has also been added.
+
+	  Change-Id: Ic4bc1416fab5d6afe15a8e2d32f7ddd4e023295f
+
+2020-03-18 04:21 +0000 [4f92dcd66b]  Jaco Kroon <jaco@uls.co.za>
 
 	* dahdiras: Only set plugin dahdi.so to pppd if we're running as root.
 
@@ -638,7 +2670,7 @@
 
 	  Change-Id: I6d01ad0a10e9fea477876d0941c3f38aac357e91
 
-2020-03-18 04:38 +0000 [122ef44584]  Jaco Kroon <jaco@uls.co.za>
+2020-03-18 04:38 +0000 [40e93b0240]  Jaco Kroon <jaco@uls.co.za>
 
 	* dundi:  fix NULL dereference.
 
@@ -651,7 +2683,7 @@
 
 	  Change-Id: I5214ebb6491e2bd14f90c7d3ce229da86888f739
 
-2020-03-19 13:34 +0000 [6c4e181b2f]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-19 13:34 +0000 [34750d2068]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_sdp_rtp: Only do hold/unhold on default audio stream.
 
@@ -663,7 +2695,7 @@
 
 	  Change-Id: I7a1f10f07822c4aee1f98a38b9628849b578afe4
 
-2020-02-14 02:45 +0000 [b58dfbc68a]  Sungtae Kim <sungtae@messagebird.com>
+2020-02-14 02:45 +0000 [8147f43756]  Sungtae Kim <sungtae@messagebird.com>
 
 	* res_pjsip_session: Fixed wrong session termination
 
@@ -681,7 +2713,7 @@
 
 	  Change-Id: Ifa864e0e125b1a7ed2f3abd4164187e1dddc56da
 
-2020-03-18 04:49 +0000 [6706af0d5b]  Jaco Kroon <jaco@uls.co.za>
+2020-03-18 04:49 +0000 [a699e016dd]  Jaco Kroon <jaco@uls.co.za>
 
 	* build: enable building with uClibc
 
@@ -692,7 +2724,7 @@
 
 	  Change-Id: I46d8845e30200205e80580680bf060aa3012ba54
 
-2020-03-18 04:43 +0000 [9c911b0f9b]  Jaco Kroon <jaco@uls.co.za>
+2020-03-18 04:43 +0000 [f824cd6a13]  Jaco Kroon <jaco@uls.co.za>
 
 	* build: search from newest to oldest for gmime.
 
@@ -701,7 +2733,7 @@
 
 	  Change-Id: Idf7be613230232eb1d573d93c4a5a8297f4ecd2d
 
-2020-03-19 08:48 +0000 [f0d6189032]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-19 08:48 +0000 [9620ecbf80]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_session: Don't restrict non-audio default streams to sendrecv.
 
@@ -717,7 +2749,7 @@
 
 	  Change-Id: I139740f38cea7f7d92a876ec2631ef50681f6625
 
-2020-03-06 10:50 +0000 [580e260ff8]  Michael Neuhauser <mike@firmix.at>
+2020-03-06 10:50 +0000 [5562fb2ea0]  Michael Neuhauser <mike@firmix.at>
 
 	* chan_psip, res_pjsip_sdp_rtp: ignore rtptimeout if direct-media is active
 
@@ -731,7 +2763,7 @@
 
 	  Change-Id: I8b62012be7685849e8fb2b1c5dd39d35313ca2d1
 
-2019-11-27 07:54 +0000 [c7c52b8e7a]  Jaco Kroon <jaco@uls.co.za>
+2019-11-27 07:54 +0000 [82c3939c38]  Jaco Kroon <jaco@uls.co.za>
 
 	* res_rtp_asterisk: implement ACL mechanism for ICE and STUN addresses.
 
@@ -748,7 +2780,7 @@
 	  Change-Id: Id57a8df51fcfd3bd85ea67c489c85c6c3ecd7b30
 	  Signed-off-by: Jaco Kroon <jaco@uls.co.za>
 
-2020-03-16 05:11 +0000 [af414ef015]  Jaco Kroon <jaco@uls.co.za>
+2020-03-16 05:11 +0000 [2ad64e97c0]  Jaco Kroon <jaco@uls.co.za>
 
 	* Update main/backtrace.c to deal with changes in binutils 2.34.
 
@@ -773,7 +2805,7 @@
 
 	  Change-Id: I3efe0f8e8f3e338d16fcbc2b26a505367b6e172f
 
-2020-03-15 09:07 +0000 [83981ad783]  Sean Bright <sean.bright@gmail.com>
+2020-03-15 09:07 +0000 [c4e0983742]  Sean Bright <sean.bright@gmail.com>
 
 	* func_odbc.conf.sample: Clarify sample documentation
 
@@ -781,7 +2813,7 @@
 
 	  Change-Id: I06cb9b467b0fd06c8af2a5aee049f872c09cc4b6
 
-2020-03-13 13:43 +0000 [31c6a20862]  Sean Bright <sean.bright@gmail.com>
+2020-03-13 13:43 +0000 [49cf84578e]  Sean Bright <sean.bright@gmail.com>
 
 	* chan_vpb: Fix 'catching polymorphic type ... by value' error
 
@@ -792,13 +2824,13 @@
 
 	  Change-Id: Ic87bc357d72427d77626735c83200fd278a7a649
 
-2020-03-09 19:07 +0000 [7a38d5f4e2]  Sean Bright <sean.bright@gmail.com>
+2020-03-09 19:07 +0000 [d68f940f6e]  Sean Bright <sean.bright@gmail.com>
 
 	* dns_txt: Add TXT record parsing support
 
 	  Change-Id: Ie0eca23b8e6f4c7d9846b6013d79099314d90ef5
 
-2020-03-12 09:22 +0000 [aa9e4f395b]  Joshua C. Colp <jcolp@sangoma.com>
+2020-03-12 09:22 +0000 [98d10d0a16]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* audiohook: Don't allow audiohooks to attach to hung up channels.
 
@@ -820,7 +2852,7 @@
 
 	  Change-Id: I8044c06daa06f0f16607788c596f55623be26f58
 
-2020-03-04 15:45 +0000 [24f32eb138]  George Joseph <gjoseph@digium.com>
+2020-03-04 15:45 +0000 [00a7e4b51d]  George Joseph <gjoseph@digium.com>
 
 	* CI: Create generic jenkinsfile
 
@@ -835,7 +2867,7 @@
 
 	  Change-Id: Id9d22a778a1916b666e0e700af2b9f1bacda0852
 
-2020-03-06 10:13 +0000 [b8a67fc15d]  Torrey Searle <torrey@voxbone.com>
+2020-03-06 10:13 +0000 [a1dba820cf]  Torrey Searle <torrey@voxbone.com>
 
 	* res_rtp_asterisk: Send correct sender SSRC when p2p bridge in use
 
@@ -848,7 +2880,7 @@
 
 	  Change-Id: I39f923bde28ebb4f0fddc926b92494aed294a478
 
-2020-03-05 03:08 +0000 [1c6314627d]  Torrey Searle <torrey@voxbone.com>
+2020-03-05 03:08 +0000 [14ba1806f3]  Torrey Searle <torrey@voxbone.com>
 
 	* res_pjsip_sdp_rtp: Don't wait for ICE if not negotiated
 
@@ -861,7 +2893,7 @@
 
 	  Change-Id: I17c137546dc9ecfb9583c24dcf4c2ced8bbd7a27
 
-2020-02-25 18:30 +0000 [8645a294ca]  Paulo Vicentini <paulo.vicentini@gmail.com>
+2020-02-25 18:30 +0000 [ed2a7e3eaf]  Paulo Vicentini <paulo.vicentini@gmail.com>
 
 	* chan_pjsip: Check audio frame when remote SSRC changes.
 
@@ -880,7 +2912,7 @@
 
 	  Change-Id: I6d854cc523f343e299a615636fc65bdbd5f809ec
 
-2020-03-06 14:59 +0000 [7eec090030]  Sean Bright <sean.bright@gmail.com>
+2020-03-06 14:59 +0000 [517224ce85]  Sean Bright <sean.bright@gmail.com>
 
 	* enum.c: Add support for regular expression flag in NAPTR record
 
@@ -900,7 +2932,7 @@
 
 	  Change-Id: I33943a5b3e7539c6dca3a5079982ee15a08186f0
 
-2020-03-06 06:10 +0000 [ff48a6cd56]  Jared Smith <jsmith@fedoraproject.org>
+2020-03-06 06:10 +0000 [0a7fe3097f]  Jared Smith <jsmith@fedoraproject.org>
 
 	* indications.conf.sample: Add indication tones for Indonesia
 
@@ -910,7 +2942,7 @@
 
 	  Change-Id: I48e2285f1e5bb29b3335f762006f66c423d0fcb8
 
-2020-03-03 08:42 +0000 [6857ba98d5]  Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+2020-03-03 08:42 +0000 [e089779908]  Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
 
 	* res_rtp_asterisk: Add 'rtp show settings' cli command
 
@@ -928,7 +2960,7 @@
 
 	  Change-Id: Ibe5450898e2c3e1ed68c10993aa1ac6bf09b821f
 
-2020-03-04 16:53 +0000 [2c26705a9b]  Sean Bright <sean.bright@gmail.com>
+2020-03-04 16:53 +0000 [ab63f0cd0f]  Sean Bright <sean.bright@gmail.com>
 
 	* enum.c: Make ast_get_txt() actually do something.
 
@@ -944,14 +2976,7 @@
 
 	  Change-Id: I1b19aea711488cb1ecd63843cddce05010e39376
 
-2020-03-05 17:48 +0000  Asterisk Development Team <asteriskteam@digium.com>
-
-	* asterisk 17.3.0-rc1 Released.
-
-2020-03-05 11:23 +0000 [1d3256c5e4]  Asterisk Development Team <asteriskteam@digium.com>
-
-	* Update CHANGES and UPGRADE.txt for 17.3.0
-2020-03-03 10:57 +0000 [88393db74d]  lvl <digium@lvlconsultancy.nl>
+2020-03-03 10:57 +0000 [d1a2ff0aaf]  lvl <digium@lvlconsultancy.nl>
 
 	* res_pjsip_refer: ensure refer progress is still sent after Proceeding()
 
@@ -959,28 +2984,29 @@
 
 	  Change-Id: I5ce2210062f9325db762edbf6e46075079bb2cd1
 
-2020-01-12 05:37 +0000 [61f943d405]  Sebastian Kemper <sebastian_ml@gmx.net>
+2020-02-24 12:47 +0000 [06dada3f01]  Kevin Harwell <kharwell@digium.com>
 
-	* check_expr2: fix cross-compile/hardening issues
+	* codec negotiation: add incoming_call_offer_prefs option
 
-	  When building check_expr2 with ASLR PIE hardening enabled the linker
-	  fails. This is resolved by adding the regular compiler flags when
-	  building the object files from ast_expr2f.c and ast_expr2.c.
+	  Add a new option, incoming_call_offer_pref, to res_pjsip endpoints that
+	  specifies the preferred order of codecs after receiving an offer.
 
-	  Note: The STANDALONE define is removed because it is already defined in
-	  _ASTCFLAGS. YY_NO_INPUT is defined so that the compile survives
-	  '--enable-dev-mode'.
+	  This patch does the following:
 
-	  Also, a Makefile variable "CROSS_COMPILING" is added so that the
-	  build system doesn't try to run check_expr2 when cross-compiling,
-	  because that will fail the build as will.
+	    Adds a new enumeration, ast_sip_call_codec_pref, used by the the new
+	  configuration option that's added to the endpoint media structure.
 
-	  ASTERISK-28685 #close
+	    Adds a new ast_sip_session_caps structure that's set for each session media
+	  object.
 
-	  Signed-off-by: Sebastian Kemper <sebastian_ml@gmx.net>
-	  Change-Id: If435b7db9f9ad8266245bda51c81c220f9658915
+	    Creates a new file, res_pjsip_session_caps that "implements" the new
+	  structure and option, and is compiled into the res_pjsip_session library.
 
-2020-02-20 11:33 +0000 [029c3e49d4]  Joshua C. Colp <jcolp@sangoma.com>
+	  ASTERISK-28756 #close
+
+	  Change-Id: I35e7a2a0c236cfb6bd9cdf89539f57a1ffefc76f
+
+2020-02-20 11:33 +0000 [87fda066ea]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_rtp_asterisk: Improve video performance in certain networks.
 
@@ -1013,7 +3039,7 @@
 
 	  Change-Id: I97633dfa8a09a7889cef815b2be369f3f0314b41
 
-2020-02-28 12:54 +0000 [c47dbf1fbe]  Kevin Harwell <kharwell@digium.com>
+2020-02-28 12:55 +0000 [a715cf5aaa]  Kevin Harwell <kharwell@digium.com>
 
 	* message & stasis/messaging: make text message variables work in ARI
 
@@ -1028,15 +3054,32 @@
 	  This aligns more with how the ARI sendMessage handles variables, and other
 	  places in ARI.
 
-	  That being the case, and since this is technically an API breaking change (no
-	  one should really be affected since things never really worked) the ARI version
-	  was updated to reflect that.
-
 	  ASTERISK-28755 #close
 
 	  Change-Id: Ia6051c01a53b30cf7edef84c27df4ed4479b8b6f
 
-2020-02-24 09:00 +0000 [1c8c560f39]  Torrey Searle <torrey@voxbone.com>
+2020-01-12 05:37 +0000 [b7fbb9c41f]  Sebastian Kemper <sebastian_ml@gmx.net>
+
+	* check_expr2: fix cross-compile/hardening issues
+
+	  When building check_expr2 with ASLR PIE hardening enabled the linker
+	  fails. This is resolved by adding the regular compiler flags when
+	  building the object files from ast_expr2f.c and ast_expr2.c.
+
+	  Note: The STANDALONE define is removed because it is already defined in
+	  _ASTCFLAGS. YY_NO_INPUT is defined so that the compile survives
+	  '--enable-dev-mode'.
+
+	  Also, a Makefile variable "CROSS_COMPILING" is added so that the
+	  build system doesn't try to run check_expr2 when cross-compiling,
+	  because that will fail the build as will.
+
+	  ASTERISK-28685 #close
+
+	  Signed-off-by: Sebastian Kemper <sebastian_ml@gmx.net>
+	  Change-Id: If435b7db9f9ad8266245bda51c81c220f9658915
+
+2020-02-24 09:00 +0000 [77c9ba8e63]  Torrey Searle <torrey@voxbone.com>
 
 	* res/res_pjsip_sdp_rtp: Fix MOH transitions
 
@@ -1048,22 +3091,13 @@
 
 	  Change-Id: I7026032a807e9c95081cb8f060400b05deb4836f
 
-2020-02-24 08:39 +0000 [a3f5a80a59]  Walter Doekes <walter+github@wjd.nu>
-
-	* say: Remove unused "plural" option from main/say
-
-	  There are exceptions for plural objects, but they are detected using the
-	  supplied NUMBER, not using an extra option.
-
-	  Change-Id: I95d1d1b2796b1aba92048a2dbae8a3856ed8a113
-
-2020-02-25 03:51 +0000 [b455d57f7d]  Walter Doekes <walter+asterisk@wjd.nu>
+2020-02-25 03:51 +0000 [680e6b9774]  Walter Doekes <walter+asterisk@wjd.nu>
 
 	* app_queue: Refactor odd placement of if's around say_position
 
 	  Change-Id: Icba97905e331812f129e5966e91a59b104c7a748
 
-2020-02-24 12:44 +0000 [d77a89cb9e]  Kevin Harwell <kharwell@digium.com>
+2020-02-24 12:44 +0000 [1e1651b4f4]  Kevin Harwell <kharwell@digium.com>
 
 	* format_cap: make function parameters 'const'
 
@@ -1072,7 +3106,16 @@
 
 	  Change-Id: Ife753fb16a962d842a6b44f45363a61a66bfdb2e
 
-2020-02-20 06:52 +0000 [77d4923307]  Jaco Kroon <jaco@uls.co.za>
+2020-02-24 08:39 +0000 [0b5c6fddf1]  Walter Doekes <walter+github@wjd.nu>
+
+	* say: Remove unused "plural" option from main/say
+
+	  There are exceptions for plural objects, but they are detected using the
+	  supplied NUMBER, not using an extra option.
+
+	  Change-Id: I95d1d1b2796b1aba92048a2dbae8a3856ed8a113
+
+2020-02-20 06:52 +0000 [5cd7230f3c]  Jaco Kroon <jaco@uls.co.za>
 
 	* addons/res_config_mysql: silense warnings about printf format errors.
 
@@ -1089,7 +3132,7 @@
 
 	  Change-Id: I2af4d419a37c1a7eeee750cf9ae4a9a2b3a37fd3
 
-2020-02-18 07:10 +0000 [bc3c095e9f]  Joshua C. Colp <jcolp@sangoma.com>
+2020-02-18 07:10 +0000 [d6712790cd]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* pjsip: Update ACLs on named ACL changes.
 
@@ -1104,7 +3147,7 @@
 
 	  Change-Id: Ib8fee9bd9dd490db635132c479127a4114c1ca0b
 
-2020-02-19 13:20 +0000 [9ef514ae98]  Sean Bright <sean.bright@gmail.com>
+2020-02-19 13:20 +0000 [7f2d56fc8c]  Sean Bright <sean.bright@gmail.com>
 
 	* tcptls.c: Log more informative OpenSSL errors
 
@@ -1115,7 +3158,7 @@
 
 	  Change-Id: Ib63cd0df20275586e68ac4c2ddad222ed7bd9c0a
 
-2020-02-19 08:38 +0000 [cf26ce5d4f]  Sean Bright <sean.bright@gmail.com>
+2020-02-19 08:38 +0000 [de6919f339]  Sean Bright <sean.bright@gmail.com>
 
 	* ast_tls_cert: Allow private key size to be set on command line
 
@@ -1125,7 +3168,7 @@
 
 	  Change-Id: I435cea18bdd58824ed2b55259575c7ec7133842a
 
-2020-02-13 13:39 +0000 [5f36196384]  George Joseph <gjoseph@digium.com>
+2020-02-13 13:39 +0000 [78b01f41ae]  George Joseph <gjoseph@digium.com>
 
 	* res_pjsip_outbound_registration: Fix SRV failover on timeout
 
@@ -1173,7 +3216,7 @@
 
 	  Change-Id: I199b8274392d17661dd3ce3b4d69a3968368fa06
 
-2020-01-04 18:11 +0000 [957681e08b]  Joshua C. Colp <jcolp@sangoma.com>
+2020-01-04 18:11 +0000 [5a5be92b79]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* bridging: Add better support for adding/removing streams.
 
@@ -1205,7 +3248,7 @@
 
 	  Change-Id: I93f41fb41b85646bef71408111c17ccea30cb0c5
 
-2020-01-23 13:17 +0000 [7a921cfe8c]  Ben Ford <bford@digium.com>
+2020-01-23 13:17 +0000 [168637cc0c]  Ben Ford <bford@digium.com>
 
 	* RTP/ICE: Send on first valid pair.
 
@@ -1225,7 +3268,22 @@
 
 	  Change-Id: Ia7b68c34f06d2a1d91c5ed51627b66fd0363d867
 
-2020-02-17 08:05 +0000 [5f28ecc7af]  Sean Bright <sean.bright@gmail.com>
+2020-02-18 08:33 +0000 [8dcdce42a9]  Sean Bright <sean.bright@gmail.com>
+
+	* app_mixmonitor: Turn on synchronization by default
+
+	  The optional synchronization behavior created in
+	  64906c4c9ba63e18f2c71310fdbf14450dac7b62 is now the default for
+	  MixMonitor.
+
+	  * Add a new flag 'n' that allows for this behavior to be turned off
+
+	  * Add a notice when the 'S' option is used indicating that it is no
+	    longer necessary
+
+	  Change-Id: I158987c475cda4e1ff1256dd0daccdd99df568b4
+
+2020-02-17 08:05 +0000 [ddfb60ac2c]  Sean Bright <sean.bright@gmail.com>
 
 	* app_mixmonitor: Set MIXMONITOR_FILENAME to correct value when wav49 is used
 
@@ -1246,7 +3304,7 @@
 
 	  Change-Id: I384691ce624eb55c80a125b9ca206d2d691c574c
 
-2020-02-12 10:05 +0000 [fb7cff4103]  Torrey Searle <torrey@voxbone.com>
+2020-02-12 10:05 +0000 [bf4340f0ec]  Torrey Searle <torrey@voxbone.com>
 
 	* res_pjsip_sdp_rtp: implement hold state handling on moh_passthrough
 
@@ -1258,13 +3316,13 @@
 
 	  Change-Id: Iaaad9fbc033cb14803d433b8a4071bc337047761
 
-2020-02-15 08:01 +0000 [5a0218a960]  Joshua C. Colp <jcolp@sangoma.com>
+2020-02-15 08:01 +0000 [0f6ee98c3f]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* stasis: Use format specifier for size_t.
 
 	  Change-Id: Ic9b4afcc5398e7f46314419fc3c90433d818e35c
 
-2020-02-13 15:08 +0000 [08d8035599]  Kevin Harwell <kharwell@digium.com>
+2020-02-13 15:08 +0000 [3865b3fd6a]  Kevin Harwell <kharwell@digium.com>
 
 	* res_rtp_asterisk: bad audio (static) due to incomplete dtls/srtp setup
 
@@ -1297,7 +3355,7 @@
 
 	  Change-Id: I34c9e6bad5a39b087164646e2836e3e48fe6892f
 
-2020-02-11 07:46 +0000 [d1a96fa9ba]  Sean Bright <sean.bright@gmail.com>
+2020-02-11 07:46 +0000 [aeff1f2c53]  Sean Bright <sean.bright@gmail.com>
 
 	* res_musiconhold: Avoid spurious warning when 'format' is the empty string
 
@@ -1313,7 +3371,7 @@
 
 	  Change-Id: I9a271d721e1a0973e80ebe7d75b46a0d8fa0e5a5
 
-2020-02-10 15:40 +0000 [4b897f6fe4]  Sean Bright <sean.bright@gmail.com>
+2020-02-10 15:40 +0000 [1e037ebb97]  Sean Bright <sean.bright@gmail.com>
 
 	* func_odbc: Prevent snprintf() truncation warning
 
@@ -1322,7 +3380,7 @@
 
 	  Change-Id: Ib45c54daaea8e0d571cb470cab1daaae2edba968
 
-2020-02-10 05:04 +0000 [3a8da5ece7]  Joshua C. Colp <jcolp@sangoma.com>
+2020-02-10 05:04 +0000 [ac155decae]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_session: Fix off-nominal session refreshes.
 
@@ -1360,7 +3418,7 @@
 
 	  Change-Id: Ied640280133871f77d3f332be62265e754605088
 
-2020-02-07 13:44 +0000 [4d6346dc26]  George Joseph <gjoseph@digium.com>
+2020-02-07 13:44 +0000 [a72caa041f]  George Joseph <gjoseph@digium.com>
 
 	* doc: Fix CHANGES entries to have .txt suffix and update READMEs
 
@@ -1371,7 +3429,7 @@
 	  Change-Id: I490306aa2cc24d6f014738e9ebbc78592efe0f05
 	  (cherry picked from commit 7416703f04f12eb583a3427a3f64d06951c18c6e)
 
-2020-01-16 09:50 +0000 [eb33b0fb0b]  Sean Bright <sean.bright@gmail.com>
+2020-01-16 09:50 +0000 [9d9bde76a9]  Sean Bright <sean.bright@gmail.com>
 
 	* pjproject_bundled: Allow brackets in via parameters
 
@@ -1380,7 +3438,7 @@
 
 	  Change-Id: Ib2803640905a77b65d0cee2d0ed2c7b310d470ac
 
-2020-02-05 02:26 +0000 [cf87d63775]  Sylvain Afchain <safchain@gmail.com>
+2020-02-05 02:26 +0000 [0c02d0a450]  Sylvain Afchain <safchain@gmail.com>
 
 	* install_prereq: Install aptitude non-interactively
 
@@ -1391,36 +3449,8 @@
 	  ASTERISK-28726 #close
 
 	  Change-Id: I271ee00d230513a6f044810351a32d83b2181133
-	  (cherry picked from commit 0c02d0a4500cbd4f657c26eb609928c110ebccb9)
 
-2020-01-31 06:58 +0000 [a5ec14970d]  Walter Doekes <walter+asterisk@wjd.nu>
-
-	* chan_sip: Return 503 if we're out of RTP ports
-
-	  If you're for some reason out of RTP ports, chan_sip would previously
-	  responde to an INVITE with a 403, which will fail the call.
-
-	  Now, it returns a 503, allowing the device/proxy to retry the call on a
-	  different machine.
-
-	  ASTERISK-28718
-
-	  Change-Id: I968dcf6c1e30ecddcce397dcda36db727c83ca90
-
-2020-01-28 02:34 +0000 [d19dec53b5]  Walter Doekes <walter+asterisk@wjd.nu>
-
-	* chan_sip: Clarify in sample docs how directmediapermit/-acl should be used
-
-	  It said "restrict [...] which peers should be able to pass [audio]
-	  to each other".
-
-	  However, these settings are not global (for which you would expect
-	  signaling IPs to be checked). These settings are available per peer
-	  only, and the IPs being checked, are the RTP IPs.
-
-	  Change-Id: I2a6c6cd7c2f5f30d1df4844e3e0308a077021660
-
-2020-02-04 08:18 +0000 [325e3f8111]  Joshua C. Colp <jcolp@sangoma.com>
+2020-02-04 08:18 +0000 [1b53d329ac]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_rtp_asterisk: Don't produce transport-cc if no packets.
 
@@ -1431,7 +3461,7 @@
 
 	  Change-Id: Iabe7b358704da446fc3b0596b847bff8b8a0da6a
 
-2020-02-03 10:24 +0000 [54cd865946]  George Joseph <gjoseph@digium.com>
+2020-02-03 10:24 +0000 [b76ab5e5c9]  George Joseph <gjoseph@digium.com>
 
 	* message.c: Add option to suppress the Message channel AMI and ARI events
 
@@ -1456,7 +3486,21 @@
 
 	  Change-Id: Ia2e3516d43f4e0df994fc6598565d6bba2d7018b
 
-2020-01-29 08:57 +0000 [646789106f]  Sean Bright <sean.bright@gmail.com>
+2020-01-31 06:58 +0000 [43620cbf6c]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* chan_sip: Return 503 if we're out of RTP ports
+
+	  If you're for some reason out of RTP ports, chan_sip would previously
+	  responde to an INVITE with a 403, which will fail the call.
+
+	  Now, it returns a 503, allowing the device/proxy to retry the call on a
+	  different machine.
+
+	  ASTERISK-28718
+
+	  Change-Id: I968dcf6c1e30ecddcce397dcda36db727c83ca90
+
+2020-01-29 08:57 +0000 [eb9252ea27]  Sean Bright <sean.bright@gmail.com>
 
 	* res_config_odbc: Preserve empty strings returned by the database
 
@@ -1482,7 +3526,7 @@
 
 	  Change-Id: I673ed8c31ad037aa224e80c78c7a1dc4e4a4e3de
 
-2020-01-28 13:23 +0000 [8b8c1dd07f]  Sean Bright <sean.bright@gmail.com>
+2020-01-28 13:23 +0000 [31dc904380]  Sean Bright <sean.bright@gmail.com>
 
 	* res_stasis_playback: Prevent media_index from going out of bounds
 
@@ -1498,7 +3542,7 @@
 
 	  Change-Id: Ib53f7f156097e0607eb5871d9d78d246ed274928
 
-2020-01-28 09:18 +0000 [35c9332edf]  Joshua C. Colp <jcolp@sangoma.com>
+2020-01-28 09:18 +0000 [a1f0c833ab]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_pubsub: Increment persistence data ref when recreating.
 
@@ -1511,7 +3555,7 @@
 
 	  Change-Id: I706abd49ea182ea367a4ac3feca2706460ae9f4a
 
-2020-01-27 19:58 +0000 [ef5702cef1]  Sean Bright <sean.bright@gmail.com>
+2020-01-27 19:58 +0000 [03d24ca4c1]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_messaging: Allow Content-Type to be overridden
 
@@ -1520,7 +3564,20 @@
 
 	  Change-Id: I6549e90932016349bc72b0f053432dc25286f4fb
 
-2020-01-27 12:01 +0000 [737bd8365e]  Kevin Harwell <kharwell@digium.com>
+2020-01-28 02:34 +0000 [113d05e504]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* chan_sip: Clarify in sample docs how directmediapermit/-acl should be used
+
+	  It said "restrict [...] which peers should be able to pass [audio]
+	  to each other".
+
+	  However, these settings are not global (for which you would expect
+	  signaling IPs to be checked). These settings are available per peer
+	  only, and the IPs being checked, are the RTP IPs.
+
+	  Change-Id: I2a6c6cd7c2f5f30d1df4844e3e0308a077021660
+
+2020-01-27 12:01 +0000 [cce2b0da95]  Kevin Harwell <kharwell@digium.com>
 
 	* stasis/app: don't lock an app before a call to send
 
@@ -1537,7 +3594,7 @@
 
 	  Change-Id: I6767c6d0933c7db1b984018966eefca4c0638a27
 
-2020-01-27 11:44 +0000 [7031c3b7bd]  Kevin Harwell <kharwell@digium.com>
+2020-01-27 11:44 +0000 [4206830a52]  Kevin Harwell <kharwell@digium.com>
 
 	* res_stasis: trigger cleanup after update
 
@@ -1554,7 +3611,7 @@
 
 	  Change-Id: I8f2c0b17e33bb8128441567b97fd4c7bf74a327b
 
-2020-01-27 08:03 +0000 [69cf67d8c6]  Sean Bright <sean.bright@gmail.com>
+2020-01-27 08:03 +0000 [b1ca2c5d71]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_messaging: Ensure MESSAGE_SEND_STATUS is set properly
 
@@ -1566,7 +3623,7 @@
 
 	  Change-Id: I22b954398821d2caf4c6fe58f0607c8cfa378059
 
-2020-01-13 04:13 +0000 [be6eec7b25]  Walter Doekes <walter+asterisk@wjd.nu>
+2020-01-13 04:13 +0000 [711a3fed56]  Walter Doekes <walter+asterisk@wjd.nu>
 
 	* chan_sip: Always process updated SDP on media source change
 
@@ -1590,7 +3647,7 @@
 
 	  Change-Id: I88fdbc5aeb777b583e7738c084254c482a7776ee
 
-2020-01-23 09:06 +0000 [ace97a3786]  Sean Bright <sean.bright@gmail.com>
+2020-01-23 09:06 +0000 [313189aae2]  Sean Bright <sean.bright@gmail.com>
 
 	* chan_pjsip: Ignore RTP that we haven't negotiated
 
@@ -1608,14 +3665,7 @@
 
 	  Change-Id: Icc3b85cee1772026cee5dc1b68459bf9431c14a3
 
-2020-01-23 17:04 +0000  Asterisk Development Team <asteriskteam@digium.com>
-
-	* asterisk 17.2.0-rc1 Released.
-
-2020-01-23 10:15 +0000 [a0f44b1052]  Asterisk Development Team <asteriskteam@digium.com>
-
-	* Update CHANGES and UPGRADE.txt for 17.2.0
-2020-01-22 12:56 +0000 [f34a4d5a77]  George Joseph <gjoseph@digium.com>
+2020-01-22 12:56 +0000 [6818c3d1d2]  George Joseph <gjoseph@digium.com>
 
 	* cdr.c: Set event time on party b when leaving a parking bridge
 
@@ -1639,7 +3689,7 @@
 
 	  Change-Id: I790720f1e7326f9b8ce8293028743b0ef0fb2cca
 
-2020-01-22 09:39 +0000 [1e79bf44fc]  Sean Bright <sean.bright@gmail.com>
+2020-01-22 09:39 +0000 [0dce6f746b]  Sean Bright <sean.bright@gmail.com>
 
 	* http: Add ability to disable /httpstatus URI
 
@@ -1664,7 +3714,7 @@
 
 	  Change-Id: I647510f796473793b1d3ce1beb32659813be69e1
 
-2020-01-18 15:54 +0000 [1c5116f842]  Andrew Siplas <andrew@asiplas.net>
+2020-01-18 15:54 +0000 [5bd7281442]  Andrew Siplas <andrew@asiplas.net>
 
 	* chan_dahdi: Change 999999 to INT_MAX to better reflect "no timeout"
 
@@ -1675,7 +3725,16 @@
 
 	  Change-Id: I4ea015986e061374385dba247b272f7aac60bf11
 
-2020-01-20 13:53 +0000 [687890f734]  Sean Bright <sean.bright@gmail.com>
+2020-01-20 11:18 +0000 [c376e9f8a8]  Sean Bright <sean.bright@gmail.com>
+
+	* res_statsd: Document that res_statsd does nothing on its own
+
+	  ASTERISK-24484 #close
+	  Reported by: Dan Jenkins
+
+	  Change-Id: I05f298904511d6739aefb1486b6fcbee27efa9ec
+
+2020-01-20 13:53 +0000 [dfad69ce7c]  Sean Bright <sean.bright@gmail.com>
 
 	* translate.c: Fix silk 24kHz truncation in 'core show translation'
 
@@ -1687,28 +3746,25 @@
 
 	  Change-Id: Ie1a551a8a484e07b45c8699cc0c90f1061029510
 
-2020-01-20 15:26 +0000 [d33cd39260]  Sean Bright <sean.bright@gmail.com>
+2020-01-20 15:26 +0000 [262221f4d9]  Sean Bright <sean.bright@gmail.com>
 
 	* func_odbc.conf.sample: Add example lookup
 
 	  Change-Id: Ia05aab1f579597963d2ea23920d2210cfcb97c84
 
-2020-01-20 11:18 +0000 [deed0f5706]  Sean Bright <sean.bright@gmail.com>
+2020-01-16 15:29 +0000 [f09cf4da44]  Sean Bright <sean.bright@gmail.com>
 
-	* res_statsd: Document that res_statsd does nothing on its own
+	* app_voicemail: Remove MessageExists and MESSAGE_EXISTS()
 
-	  ASTERISK-24484 #close
-	  Reported by: Dan Jenkins
+	  * The MailboxExists dialplan application was deprecated on 2006-09-26
+	    in Asterisk 1.6.0 (commit ec83b111831fe865753f5b1c382ab73750685e50)
 
-	  Change-Id: I05f298904511d6739aefb1486b6fcbee27efa9ec
+	  * The MAILBOX_EXISTS dialplan function was deprecated on 2011-12-06 in
+	    Asterisk 11.0.0 (commit fd64bb66f94f1a7bb47e17319512b14e522353ec)
 
-2016-09-30 21:56 +0000 [7b32763190]  Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+	  Change-Id: I71cfc9d7b9217a37b802f4cc6ef2d57900b7398f
 
-	* queue_log: Add alembic script for generate db table for queue_log
-
-	  Change-Id: I35b928a6251f9da9a1742b2cd14c63a00c3d0f0c
-
-2020-01-16 13:47 +0000 [cb6f106d76]  Sean Bright <sean.bright@gmail.com>
+2020-01-16 13:47 +0000 [5cbf47714a]  Sean Bright <sean.bright@gmail.com>
 
 	* app_voicemail, say: Fix various leading whitespace problems
 
@@ -1724,7 +3780,7 @@
 
 	  Change-Id: I72c725f5930084673749bd7c9cc426a987f08e87
 
-2020-01-16 07:32 +0000 [9ff062f994]  Sean Bright <sean.bright@gmail.com>
+2020-01-16 07:32 +0000 [50d02d6194]  Sean Bright <sean.bright@gmail.com>
 
 	* pbx.c: Include filesystem cache in free memory calculation
 
@@ -1733,7 +3789,7 @@
 
 	  Change-Id: Ief098bb6eb77378daeace8f97ba30701c8de55b8
 
-2020-01-16 09:09 +0000 [7c137ebbd4]  Sean Bright <sean.bright@gmail.com>
+2020-01-16 09:09 +0000 [f309b86e36]  Sean Bright <sean.bright@gmail.com>
 
 	* chan_sip.c: Stop handling continuation lines after reading headers
 
@@ -1747,7 +3803,7 @@
 
 	  Change-Id: Idec8fa58545cd3fd898cbe0075d76c223f8d33df
 
-2020-01-15 14:29 +0000 [d1cd27ba1f]  Sean Bright <sean.bright@gmail.com>
+2020-01-15 14:29 +0000 [ba8ccb9132]  Sean Bright <sean.bright@gmail.com>
 
 	* app_voicemail: Prevent crash when saving message with realtime voicemail
 
@@ -1759,7 +3815,7 @@
 
 	  Change-Id: I756c5dd0299c77f4274368f7c99eb0464367466c
 
-2020-01-14 16:20 +0000 [b60dfac98e]  Sean Bright <sean.bright@gmail.com>
+2020-01-14 16:20 +0000 [9be89d9913]  Sean Bright <sean.bright@gmail.com>
 
 	* app_voicemail: Set globals to default values when voicemail.conf missing
 
@@ -1779,22 +3835,7 @@
 
 	  Change-Id: Id907d280f310f12e542ca527e6a025432b9fb409
 
-2020-01-11 07:29 +0000 [62e5fa400e]  Sean Bright <sean.bright@gmail.com>
-
-	* app_queue: Deprecate the QueueMemberPause.Reason field
-
-	  The QueueMemberPause AMI event includes two fields that return the
-	  reason a member was paused.
-
-	  * In release branches, deprecate Reason in favor of PausedReason.
-	  * In master, remove the Reason field entirely.
-
-	  ASTERISK-28349 #close
-	  Reported by: Niksa Baldun
-
-	  Change-Id: I01da58f2b0ab927baeee754870f62b51b7b3d296
-
-2020-01-13 16:37 +0000 [3779e76b68]  Sean Bright <sean.bright@gmail.com>
+2020-01-13 16:37 +0000 [094e87b0dc]  Sean Bright <sean.bright@gmail.com>
 
 	* res_realtime: Fix 'realtime update2' argument handling
 
@@ -1821,7 +3862,29 @@
 
 	  Change-Id: Idda63a5dc50d5f9bcb34c27ea3238d90f733b2cd
 
-2020-01-10 13:30 +0000 [a810025782]  Sean Bright <sean.bright@gmail.com>
+2019-07-17 19:47 +0000 [163efbd724]  Seán C McCord <ulexus@gmail.com>
+
+	* feat: AudioSocket channel, application, and ARI support.
+
+	  This commit adds support for
+	  [AudioSocket](
+	  https://wiki.asterisk.org/wiki/display/AST/AudioSocket),
+	  a very simple bidirectional audio streaming protocol. There are both
+	  channel and application interfaces.
+
+	  A description of the protocol can be found on the above referenced
+	  GitHub page.  A short talk about the reasons and implementation can be
+	  found on [YouTube](https://www.youtube.com/watch?v=tjduXbZZEgI), from
+	  CommCon 2019.
+
+	  ARI support has also been added via the existing "externalMedia" ARI
+	  functionality. The UUID is specified using the arbitrary "data" field.
+
+	  ASTERISK-28484 #close
+
+	  Change-Id: Ie866e6c4fa13178ec76f2a6971ad3590a3a588b5
+
+2020-01-10 13:30 +0000 [0c2bf1664c]  Sean Bright <sean.bright@gmail.com>
 
 	* func_curl: Add 'followlocation' option to CURLOPT()
 
@@ -1833,7 +3896,22 @@
 
 	  Change-Id: I96a4ab0142f2fb7d2e96ff976f6cf7b2982c761a
 
-2020-01-10 15:13 +0000 [28275609b3]  Sean Bright <sean.bright@gmail.com>
+2020-01-11 07:29 +0000 [9522390a69]  Sean Bright <sean.bright@gmail.com>
+
+	* app_queue: Deprecate the QueueMemberPause.Reason field
+
+	  The QueueMemberPause AMI event includes two fields that return the
+	  reason a member was paused.
+
+	  * In release branches, deprecate Reason in favor of PausedReason.
+	  * In master, remove the Reason field entirely.
+
+	  ASTERISK-28349 #close
+	  Reported by: Niksa Baldun
+
+	  Change-Id: I01da58f2b0ab927baeee754870f62b51b7b3d296
+
+2020-01-10 15:13 +0000 [29d867ed67]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_endpoint_identifier_ip: Document support for hostnames
 
@@ -1842,7 +3920,7 @@
 
 	  Change-Id: I7cdfc6026821636acc2465094b7fcde8471a3824
 
-2020-01-10 14:43 +0000 [6898c8e0da]  Sean Bright <sean.bright@gmail.com>
+2020-01-10 14:43 +0000 [90af050fa4]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_notify: Only allow a single Event header to be added to a NOTIFY
 
@@ -1851,7 +3929,7 @@
 
 	  Change-Id: Iad158e908e34675ad98f74d09c5e73024e50c257
 
-2019-12-03 12:27 +0000 [0a9e5febd5]  Jaco Kroon <jaco@uls.co.za>
+2019-12-03 12:27 +0000 [3bc8b36537]  Jaco Kroon <jaco@uls.co.za>
 
 	* netsock2: ast_addressfamily_to_sockaddrsize and ast_sockaddr_from_sockaddr.
 
@@ -1863,7 +3941,7 @@
 	  Change-Id: Iee604e96e9096c79b477d6e5ff310cf0b06dae86
 	  Signed-off-by: Jaco Kroon <jaco@uls.co.za>
 
-2020-01-09 04:37 +0000 [1675ab3ce2]  Corey Farrell <git@cfware.com>
+2020-01-09 04:37 +0000 [2f8b20b949]  Corey Farrell <git@cfware.com>
 
 	* app_record: Do not hang up if beep audio is missing
 
@@ -1875,7 +3953,7 @@
 
 	  Change-Id: If5aed21226a173117ed17589f44826dd1ba6576e
 
-2020-01-08 13:54 +0000 [21d8d2426d]  Kevin Harwell <kharwell@digium.com>
+2020-01-08 13:54 +0000 [00a7432156]  Kevin Harwell <kharwell@digium.com>
 
 	* app_agent_pool: Update XML docs for AgentLogin
 
@@ -1885,7 +3963,7 @@
 
 	  Change-Id: I3f788b47dce3292e311f8a9856938d59a0bd0661
 
-2020-01-08 12:11 +0000 [40bfd895a9]  George Joseph <gjoseph@digium.com>
+2020-01-08 12:11 +0000 [d5f3ec92d0]  George Joseph <gjoseph@digium.com>
 
 	* CI: Update buildAsterisk.sh to do a "make full"
 
@@ -1904,7 +3982,7 @@
 
 	  Change-Id: I4a22635d6eef99eacecc0efb69e28360eebdb86c
 
-2020-01-06 09:02 +0000 [e17ba921f3]  Joshua C. Colp <jcolp@sangoma.com>
+2020-01-06 09:02 +0000 [4e7adbd8f4]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_pubsub: Add ability to persist generator state information.
 
@@ -1927,7 +4005,7 @@
 
 	  Change-Id: I5fda56c624fd13c17b3c48e0319b77079e9e27de
 
-2019-12-24 09:16 +0000 [eac6eb663d]  Sean Bright <sean.bright@gmail.com>
+2019-12-24 09:16 +0000 [312abaa1fe]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_endpoint_identifier_ip.c: Add port matching support
 
@@ -1947,7 +4025,7 @@
 
 	  Change-Id: I256d5bd5d478b95f526e2f80ace31b690eebba92
 
-2019-12-30 11:04 +0000 [015cdc9f64]  George Joseph <gjoseph@digium.com>
+2019-12-30 11:04 +0000 [ee7d72eb72]  George Joseph <gjoseph@digium.com>
 
 	* sig_pri:  Fix deadlock caused by sig_pri_queue_hangup
 
@@ -1975,7 +4053,7 @@
 
 	  Change-Id: Id74aaa5d4e3746063dbe9deed188eb65193cb9c9
 
-2019-12-30 13:13 +0000 [62a8750d2d]  Richard Mudgett <rmudgett@digium.com>
+2019-12-30 13:13 +0000 [fe3cce816c]  Richard Mudgett <rmudgett@digium.com>
 
 	* app_chanisavail.c: Simplify dialplan using ChanIsAvail.
 
@@ -1992,7 +4070,7 @@
 
 	  Change-Id: I9e4b67e2cbf26b2417c2d03485b8568e898931d3
 
-2020-01-02 14:25 +0000 [e0449939ec]  George Joseph <gjoseph@digium.com>
+2020-01-02 14:25 +0000 [1c9ddad4db]  George Joseph <gjoseph@digium.com>
 
 	* stasis.c:  Use correct topic name in stasis_topic_pool_delete_topic
 
@@ -2026,7 +4104,20 @@
 
 	  Change-Id: I4396aa69dd83e4ab84c5b91b39293cfdbcf483e6
 
-2019-12-29 22:38 +0000 [b3d0b0c484]  Richard Mudgett <rmudgett@digium.com>
+2019-12-30 15:05 +0000 [19069f7db7]  Richard Mudgett <rmudgett@digium.com>
+
+	* app_bridgeaddchan.c: Make BridgeAdd be more like Bridge
+
+	  * Made BridgeAdd not hangup the call if there is a problem.
+	  * Reduced message level from warning to verbose for normal exception
+	  cases.
+	  * Added a loop safety check to BridgeAdd.
+	  * Made BridgeAdd set BRIDGERESULT with the status when dialplan is
+	  resumed.
+
+	  Change-Id: I374d39b8a3edcc794eeb5c6b9f31a01424cdc426
+
+2019-12-29 22:38 +0000 [abcb4ab321]  Richard Mudgett <rmudgett@digium.com>
 
 	* app_dial.c: Simplify dialplan using Dial.
 
@@ -2043,7 +4134,7 @@
 
 	  Change-Id: I6edc731aff451f8bdfaee5498078dd18c3a11ab9
 
-2019-12-29 20:41 +0000 [f7c6a7df9f]  Richard Mudgett <rmudgett@digium.com>
+2019-12-29 20:41 +0000 [d86a6ac5ce]  Richard Mudgett <rmudgett@digium.com>
 
 	* app_page.c: Simplify dialplan using Page.
 
@@ -2062,7 +4153,7 @@
 
 	  Change-Id: I95b64a6d6800cd1a25279c88889314ae60fc21e3
 
-2019-12-29 18:36 +0000 [919da21690]  Richard Mudgett <rmudgett@digium.com>
+2019-12-29 18:36 +0000 [0376f2bba9]  Richard Mudgett <rmudgett@digium.com>
 
 	* features.c: Make Bridge application tolerate unspecified channel.
 
@@ -2084,13 +4175,13 @@
 
 	  Change-Id: I44349a8dc3912397f28852777de04f19e7bb9c73
 
-2019-12-29 17:48 +0000 [a82fc35606]  Richard Mudgett <rmudgett@digium.com>
+2019-12-29 17:48 +0000 [0d1f3d9bf3]  Richard Mudgett <rmudgett@digium.com>
 
 	* app_chanspy.c: Reduce log message level from notice to verbose.
 
 	  Change-Id: Ica5f38ccd8cdc077aef14d0c50425e0b29ac7e0a
 
-2019-12-29 17:31 +0000 [4dfa19eb27]  Richard Mudgett <rmudgett@digium.com>
+2019-12-29 17:31 +0000 [a457947198]  Richard Mudgett <rmudgett@digium.com>
 
 	* app_softhangup.c: Reduce unnecessary warning to verbose message.
 
@@ -2098,7 +4189,7 @@
 
 	  Change-Id: I167b90daf4c7d75dd4b7ef94849f6cef05aa43a7
 
-2020-01-05 10:00 +0000 [a0d1197ab3]  Sean Bright <sean.bright@gmail.com>
+2020-01-05 10:00 +0000 [b40dd11afe]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_config_wizard: Fix change detection for wizard settings
 
@@ -2111,7 +4202,7 @@
 
 	  Change-Id: I7b3256983ddfaa2138d3de92a444a53b5193a4e1
 
-2020-01-03 10:20 +0000 [7038c8676e]  Sean Bright <sean.bright@gmail.com>
+2020-01-03 10:20 +0000 [7d94bdde9d]  Sean Bright <sean.bright@gmail.com>
 
 	* res_agi: Improve GET FULL VARIABLE documentation
 
@@ -2120,7 +4211,7 @@
 
 	  Change-Id: I591afdec669622bfa19243aabec31b579652c92f
 
-2019-11-26 13:24 +0000 [f344356290]  Sean Bright <sean.bright@gmail.com>
+2019-11-26 13:24 +0000 [87110c1bdf]  Sean Bright <sean.bright@gmail.com>
 
 	* websocket: Consider pending SSL data when waiting for socket input
 
@@ -2133,40 +4224,19 @@
 
 	  Change-Id: I95fcb3e2004700d5cf8e5ee04943f0115b15e10d
 
-2019-12-17 18:20 +0000 [c4cd2fa7b9]  snuffy <snuffy22@gmail.com>
+2019-11-22 08:32 +0000 [034ac357ad]  Jean Aunis <jean.aunis@prescom.fr>
 
-	* contrib/valgrind: Fix use of frame-level suppression
+	* ARI: Ability to inhibit COLP frames when adding channels to a bridge
 
-	  Fix use of frame-level wildcard usage in suppression file.
+	  This patch adds a new flag "inhibitConnectedLineUpdates" to the 'addChannel'
+	  operation in the Bridges REST API. When set, this flag avoids generating COLP
+	  frames when the specified channels enter the bridge.
 
-	  ASTERISK-27243 #close
-	  Reported-by: Richard Kenner
+	  ASTERISK-28629
 
-	  Change-Id: I1c0c64c5f305d2c9aa124e11f1f64a2eec52dc51
+	  Change-Id: Ib995d4f0c6106279aa448b34b042b68f0f2ca5dc
 
-2019-08-28 05:07 +0000 [6d2eced3d3]  Boris P. Korzun <drtr0jan@yandex.ru>
-
-	* func_odbc:  acf_odbc_read() and cli_odbc_read() unicode support
-
-	  Added ast_odbc_ast_str_SQLGetData() considers SQL_DESC_OCTET_LENGTH
-	  column attribute for correct allocating the buffer.
-
-	  ASTERISK-28497 #close
-
-	  Change-Id: I50e86c8a277996f13d4a4b9b318ece0d60b279bf
-
-2019-12-03 05:58 +0000 [811c7bdabe]  Jean Aunis <jean.aunis@prescom.fr>
-
-	* chan_sip: voice frames are no longer transmitted after emitting a COLP
-
-	  The SIP transaction state was reset when emitting an UPDATE or a re-INVITE
-	  related to a COLP, preventing RTP packets to be emitted.
-
-	  ASTERISK-28647
-
-	  Change-Id: Ie7a30fa7a97f711e7ba6cc17f221a0993d48bd8b
-
-2019-12-27 17:29 +0000 [843d601e2c]  Sean Bright <sean.bright@gmail.com>
+2019-12-27 17:29 +0000 [fc99ac8c9a]  Sean Bright <sean.bright@gmail.com>
 
 	* db: Initialize condition primitive before use
 
@@ -2175,7 +4245,7 @@
 
 	  Change-Id: Id4a4e025b637bc4ac7d90557fcb71d56598892ab
 
-2019-12-18 09:13 +0000 [8c8989f205]  Sean Bright <sean.bright@gmail.com>
+2019-12-18 09:13 +0000 [40b5cf8f52]  Sean Bright <sean.bright@gmail.com>
 
 	* config.c: Skip UTF-8 BOMs if present when reading config files
 
@@ -2183,7 +4253,7 @@
 
 	  Change-Id: I4767ed365c98f3e1587b7653321048a31d8a53b2
 
-2019-11-21 12:48 +0000 [45f7f9bb85]  Kevin Reeves <kevin@phoneburner.com>
+2019-11-21 12:48 +0000 [c626ccec12]  Kevin Reeves <kevin@phoneburner.com>
 
 	* main/file.c: Limit media cache usage to remote files.
 
@@ -2204,7 +4274,18 @@
 
 	  Change-Id: If91137493732d9034dafa381c081c69274a7dcc9
 
-2019-12-17 07:38 +0000 [69c9b74836]  Pascal Cadotte Michaud <pcm@wazo.io>
+2019-12-17 18:20 +0000 [095c204fe0]  snuffy <snuffy22@gmail.com>
+
+	* contrib/valgrind: Fix use of frame-level suppression
+
+	  Fix use of frame-level wildcard usage in suppression file.
+
+	  ASTERISK-27243 #close
+	  Reported-by: Richard Kenner
+
+	  Change-Id: I1c0c64c5f305d2c9aa124e11f1f64a2eec52dc51
+
+2019-12-17 07:38 +0000 [e494d5fd76]  Pascal Cadotte Michaud <pcm@wazo.io>
 
 	* sip_to_pjsip.py: Fix trustrpid typo
 
@@ -2212,7 +4293,7 @@
 
 	  Change-Id: I6c28b1002fd7075ae0ed36f026f8c1855c9418a6
 
-2019-11-27 11:34 +0000 [a0e31cc14e]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+2019-11-27 11:34 +0000 [a83625b366]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
 
 	* app_chanisavail/cdr: ChanIsAvail sometimes fails to deactivate CDR.
 
@@ -2225,7 +4306,7 @@
 
 	  Change-Id: I1cbe09e8d2169c0962c1195133ff260d291f2074
 
-2019-12-16 06:35 +0000 [5a80c36d62]  Joshua C. Colp <jcolp@sangoma.com>
+2019-12-16 06:35 +0000 [ed394ce5b1]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* configure: Add check for MySQL client bool and my_bool type usage.
 
@@ -2237,7 +4318,7 @@
 
 	  Change-Id: Id2225b3785115de074c50c123ff1a68005b4a9c7
 
-2019-12-11 18:03 +0000 [41fdcf7a65]  Joshua C. Colp <jcolp@sangoma.com>
+2019-12-11 18:03 +0000 [89b7144fbd]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* confbridge: Add support for specifying maximum sample rate.
 
@@ -2253,7 +4334,7 @@
 
 	  Change-Id: Idff80896ccfb8a58a816e4ce9ac4ebde785963ee
 
-2019-12-16 05:23 +0000 [c9147a759e]  Joshua C. Colp <jcolp@sangoma.com>
+2019-12-16 05:23 +0000 [a603d7d324]  Joshua C. Colp <jcolp@sangoma.com>
 
 	* res_pjsip_session: Set stream state on created streams for incoming SDP.
 
@@ -2272,7 +4353,7 @@
 
 	  Change-Id: Ic5ae5a86437d3e686ac5afd91d133cc916198355
 
-2019-12-13 13:46 +0000 [68724425e4]  Kevin Harwell <kharwell@digium.com>
+2019-12-13 13:46 +0000 [b6f5607359]  Kevin Harwell <kharwell@digium.com>
 
 	* res_fax: wrap v21 detected Asterisk initiated negotiation with config option
 
@@ -2299,7 +4380,7 @@
 
 	  Change-Id: I5deb875f3485e20bc75119ec743090655d864a1a
 
-2019-12-04 02:35 +0000 [6041fc8b9c]  Jaco Kroon <jaco@uls.co.za>
+2019-12-04 02:35 +0000 [32160cb456]  Jaco Kroon <jaco@uls.co.za>
 
 	* ACL: ast_apply_acl_nolog - identical to ast_apply_acl but without logging.
 
@@ -2310,7 +4391,7 @@
 	  Change-Id: I256169229d945ca7c1bbf228fc492d91df345843
 	  Signed-off-by: Jaco Kroon <jaco@uls.co.za>
 
-2019-12-11 10:52 +0000 [39aff53cff]  Pascal Cadotte Michaud <pcm@wazo.io>
+2019-12-11 10:52 +0000 [bf4dd3d837]  Pascal Cadotte Michaud <pcm@wazo.io>
 
 	* PJSIP_CONTACT: add missing argument documentation
 
@@ -2327,7 +4408,23 @@
 
 	  Change-Id: Ia71743ee7ec813f40297b0ddefeee7909db63b6d
 
-2019-12-04 15:01 +0000 [86822722b6]  George Joseph <gjoseph@digium.com>
+2019-12-11 07:01 +0000 [d0b198b330]  Joshua Colp <jcolp@digium.com>
+
+	* Revert "PJSIP_CONTACT: add missing argument documentation"
+
+	  This reverts commit 7e3015d77913accad9b1dcd200ceec30e52bf445.
+
+	  Reason for revert: Regression in XML validation.
+
+	  validity error : Content model of enumlist is not determinist:
+	  (configOptionToEnum | (configOptionToEnum , enum+) | enum+)
+
+	  As we are preparing to do releases and this is not critical
+	  I am reverting this for now until resolved.
+
+	  Change-Id: I30c2295f9d7f0a0475674ee77071a7ebabf5b83f
+
+2019-12-04 15:01 +0000 [39c920ac78]  George Joseph <gjoseph@digium.com>
 
 	* res_rtp_asterisk:  Add frame list cleanups to ast_rtp_read
 
@@ -2347,7 +4444,7 @@
 
 	  Change-Id: Ia1d7075857ebd26b47183c44b1aebb0d8f985f7a
 
-2019-12-04 08:35 +0000 [32ce8fa046]  Jaco Kroon <jaco@uls.co.za>
+2019-12-04 08:35 +0000 [365d007eb6]  Jaco Kroon <jaco@uls.co.za>
 
 	* chan_sip:  in case of tcp/tls, be less annoying about tx errors.
 
@@ -2364,7 +4461,7 @@
 	  Change-Id: I46eb82924beeff9dfd86fa6c7eb87d2651b950f2
 	  Signed-off-by: Jaco Kroon <jaco@uls.co.za>
 
-2019-08-25 21:20 +0000 [fd14d7302f]  George Joseph <gjoseph@digium.com>
+2019-08-25 21:20 +0000 [cbc1136704]  George Joseph <gjoseph@digium.com>
 
 	* res_pjsip_nat: Restore original contact for REGISTER responses
 
@@ -2405,30 +4502,7 @@
 
 	  Change-Id: Idc263ad2d2d7bd8faa047e5804d96a5fe1cd282e
 
-2019-12-12 11:29 +0000  Asterisk Development Team <asteriskteam@digium.com>
-
-	* asterisk 17.1.0-rc1 Released.
-
-2019-12-12 05:04 +0000 [08a6e8c553]  Asterisk Development Team <asteriskteam@digium.com>
-
-	* Update CHANGES and UPGRADE.txt for 17.1.0
-2019-12-11 07:01 +0000 [6a89784b78]  Joshua Colp <jcolp@digium.com>
-
-	* Revert "PJSIP_CONTACT: add missing argument documentation"
-
-	  This reverts commit 450173a0ae3aace0bbdcbfbcd336c5069747b0d1.
-
-	  Reason for revert: Regression in XML validation.
-
-	  validity error : Content model of enumlist is not determinist:
-	  (configOptionToEnum | (configOptionToEnum , enum+) | enum+)
-
-	  As we are preparing to do releases and this is not critical
-	  I am reverting this for now until resolved.
-
-	  Change-Id: I47a6714bb555b35a371861d434daf5b97c0cdcbd
-
-2019-12-04 15:26 +0000 [4e057eb9d2]  Sean Bright <sean.bright@gmail.com>
+2019-12-04 15:26 +0000 [b1be06df8d]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_registrar.c: Prevent potential double free if AOR is not found
 
@@ -2445,7 +4519,7 @@
 
 	  Change-Id: Ic9d01624e717a020be0b0aee31f0814e7f1ffbe2
 
-2019-12-04 15:12 +0000 [f26e5bacc0]  Sean Bright <sean.bright@gmail.com>
+2019-12-04 15:12 +0000 [0183e2bc67]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_registrar.c: Prevent possible buffer overflow with domain aliases
 
@@ -2458,15 +4532,18 @@
 
 	  Change-Id: I81c38724d18deab8c6573153e2b99dbb6e2f33d9
 
-2019-12-04 03:33 +0000 [e1eb5e8dc2]  Walter Doekes <walter+asterisk@wjd.nu>
+2019-12-03 05:58 +0000 [9c9296c635]  Jean Aunis <jean.aunis@prescom.fr>
 
-	* app_queue: Fix old confusing comment about when the members are called
+	* chan_sip: voice frames are no longer transmitted after emitting a COLP
 
-	  ASTERISK-28644
+	  The SIP transaction state was reset when emitting an UPDATE or a re-INVITE
+	  related to a COLP, preventing RTP packets to be emitted.
 
-	  Change-Id: I2771a931d00a8fc2b9f9a4d1a33ea8f1ad24e06b
+	  ASTERISK-28647
 
-2019-11-27 12:11 +0000 [3e73893e53]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+	  Change-Id: Ie7a30fa7a97f711e7ba6cc17f221a0993d48bd8b
+
+2019-11-27 12:11 +0000 [7624cbb155]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
 
 	* chan_sip+native_bridge_rtp: no directmedia for ptime other than default ptime.
 
@@ -2480,7 +4557,15 @@
 
 	  Change-Id: I99257502788653c2816fc991cac7946453082466
 
-2019-12-03 15:42 +0000 [4d56adf8fb]  Sean Bright <sean.bright@gmail.com>
+2019-12-04 03:33 +0000 [0e750cdd10]  Walter Doekes <walter+asterisk@wjd.nu>
+
+	* app_queue: Fix old confusing comment about when the members are called
+
+	  ASTERISK-28644
+
+	  Change-Id: I2771a931d00a8fc2b9f9a4d1a33ea8f1ad24e06b
+
+2019-12-03 15:42 +0000 [6ee1f1f507]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_session.c: Prevent use-after-free with TEST_FRAMEWORK enabled
 
@@ -2492,7 +4577,7 @@
 
 	  Change-Id: I404b952608aa606e0babd3c4108346721fb726b3
 
-2019-11-22 10:39 +0000 [88150323a2]  Thomas Arimont (license 5525)
+2019-11-22 10:39 +0000 [fd823225a6]  Thomas Arimont (license 5525)
 
 	* channel.c: Resolve issue with receiving SIP INFO packets for DTMF
 
@@ -2518,13 +4603,13 @@
 
 	  Change-Id: I309bf61dd065c9978c8e48f5b9a936ab47de64c2
 
-2019-12-02 06:48 +0000 [5b15a1c639]  George Joseph <gjoseph@digium.com>
+2019-12-02 06:48 +0000 [366da90f74]  George Joseph <gjoseph@digium.com>
 
 	* CI: Turn off shallow cloning altogether
 
 	  Change-Id: I73ed4aef33a92f20080128aafc34e19fd4457196
 
-2019-11-25 06:55 +0000 [41d58a4ce2]  Joshua Colp <jcolp@digium.com>
+2019-11-25 06:55 +0000 [811ae88da4]  Joshua Colp <jcolp@digium.com>
 
 	* parking: Fall back to parker channel name even if it matches parkee.
 
@@ -2532,7 +4617,7 @@
 
 	  Change-Id: Ia74d084799fbb9bee3403e30d2391aacd46243cc
 
-2019-11-22 15:31 +0000 [cc59e21409]  Sean Bright <sean.bright@gmail.com>
+2019-11-22 15:31 +0000 [91c3b5b09d]  Sean Bright <sean.bright@gmail.com>
 
 	* media_cache.c: Various CLI improvements
 
@@ -2546,7 +4631,13 @@
 
 	  Change-Id: Iedb0a2c3541e49561bc231dca2dcc0ebd8612902
 
-2019-11-15 11:34 +0000 [4ac0299bfb]  Salah Ahmed <txrubel@gmail.com>
+2016-09-30 21:56 +0000 [48161dfc71]  Rodrigo Ramírez Norambuena <a@rodrigoramirez.com>
+
+	* queue_log: Add alembic script for generate db table for queue_log
+
+	  Change-Id: I35b928a6251f9da9a1742b2cd14c63a00c3d0f0c
+
+2019-11-15 11:34 +0000 [330ffa2bce]  Salah Ahmed <txrubel@gmail.com>
 
 	* res_pjsip_t38: T.38 error correction mode selection at 200 ok received
 
@@ -2567,7 +4658,7 @@
 
 	  Change-Id: I343c62253ea4c8b7ee17abbfb377a4d484a14b19
 
-2019-10-21 14:55 +0000 [665a94cb76]  Ben Ford <bford@digium.com>
+2019-10-21 14:55 +0000 [4a1cadeadb]  Ben Ford <bford@digium.com>
 
 	* chan_sip.c: Prevent address change on unauthenticated SIP request.
 
@@ -2585,7 +4676,7 @@
 
 	  Change-Id: I581c5ed1da60ca89f590bd70872de2b660de02df
 
-2019-10-24 12:41 +0000 [6b1ba58967]  George Joseph <gjoseph@digium.com>
+2019-10-24 12:41 +0000 [7e3a6e158f]  George Joseph <gjoseph@digium.com>
 
 	* manager.c:  Prevent the Originate action from running the Originate app
 
@@ -2606,7 +4697,7 @@
 
 	  Change-Id: Ic4c9dedc34c426f03c8c14fce334a71386d8a5fa
 
-2019-11-21 07:24 +0000 [450173a0ae]  Pascal Cadotte Michaud <pcm@wazo.io>
+2019-11-21 07:24 +0000 [7e3015d779]  Pascal Cadotte Michaud <pcm@wazo.io>
 
 	* PJSIP_CONTACT: add missing argument documentation
 
@@ -2615,7 +4706,7 @@
 	  ASTERISK-28626
 	  Change-Id: I8419e4c8203e411b87d93dc395acdbcf7526dedf
 
-2019-11-20 12:56 +0000 [8c99930375]  Kevin Harwell <kharwell@digium.com>
+2019-11-20 12:56 +0000 [d5d41409e2]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_outbound_registration: add support for SRV failover
 
@@ -2623,22 +4714,23 @@
 
 	  Change-Id: I8da7c300dd985ab7b10dbd5194aff2f737808561
 
-2019-11-19 12:11 +0000 [2a92e6b576]  George Joseph <gjoseph@digium.com>
+2019-11-19 12:11 +0000 [2a6a2800e7]  George Joseph <gjoseph@digium.com>
 
 	* CI: Fix missing script block in jenkinsfiles
 
 	  Change-Id: I9f44a3d5085ea7880fad1a3883a4820907e29ea3
 	  (cherry picked from commit 95213b01d2d5e72e38b40c30fa5d0c8cf4b37b16)
 
-2019-11-19 11:40 +0000 [f0d1ce50af]  George Joseph <gjoseph@digium.com>
+2019-11-19 11:40 +0000 [4abb54b2e4]  George Joseph <gjoseph@digium.com>
 
 	* CI: Fix missing script block in jenkinsfiles
 
 	  Change-Id: Ib4b6e4887695f230ea7a5b0c879b29fc5a13be4f
 	  (cherry picked from commit d60f23ecbdb748b188da424c92335152941c7673)
 	  (cherry picked from commit ce8a23fdf966dc6824678f3cb722753db06baa7a)
+	  (cherry picked from commit f0d1ce50afd25a1269e680b90c8bb612bd543565)
 
-2019-11-19 08:51 +0000 [46dceab33f]  George Joseph <gjoseph@digium.com>
+2019-11-19 08:51 +0000 [e8e1314fcb]  George Joseph <gjoseph@digium.com>
 
 	* CI: Increase clone depth and do better cleanup
 
@@ -2656,7 +4748,7 @@
 
 	  Change-Id: I0d7366e87cea714e5dbc9488caf718802fce75ca
 
-2019-11-19 09:31 +0000 [76ef36fafc]  Sean Bright <sean.bright@gmail.com>
+2019-11-19 09:31 +0000 [a5fa0d662e]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_registrar: Fix uninitlized variable warning
 
@@ -2666,7 +4758,7 @@
 
 	  Change-Id: I44413b49ea1205aa25538142161deb73883c79e8
 
-2019-11-05 12:16 +0000 [e23b2856d0]  Michael Cargile <mikec@vicidial.com>
+2019-11-05 12:16 +0000 [5bda460300]  Michael Cargile <mikec@vicidial.com>
 
 	* app_amd: Fixed timeout issue
 
@@ -2682,7 +4774,7 @@
 
 	  Change-Id: I642a21b02d389b17e40ccd5357754b034c3daa42
 
-2019-11-07 11:54 +0000 [d3dd4c5459]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+2019-11-07 11:54 +0000 [a68299f508]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
 
 	* chan_dahdi: PRI span status may stay "Down, Active" after a short alarm
 
@@ -2700,7 +4792,7 @@
 
 	  Change-Id: Ibe27df4971fd4c82cc6850020bce4a8b2692c996
 
-2019-11-07 11:05 +0000 [6345a00228]  lvl <digium@lvlconsultancy.nl>
+2019-11-07 11:05 +0000 [772b59034f]  lvl <digium@lvlconsultancy.nl>
 
 	* app_senddtmf: Add receive mode to AMI Action PlayDTMF
 
@@ -2708,7 +4800,7 @@
 
 	  Change-Id: I183501297ae1dc294ae56b34acac9b0343eb2664
 
-2019-11-07 10:56 +0000 [649733612d]  Alexei Gradinari <alex2grad@gmail.com>
+2019-11-07 10:56 +0000 [f2d5ed54ea]  Alexei Gradinari <alex2grad@gmail.com>
 
 	* serializer: set high/low alert levels on whole pool
 
@@ -2717,7 +4809,7 @@
 
 	  Change-Id: I5decbb43160954fb9a512f04302637fc666b6f5d
 
-2019-11-14 04:19 +0000 [0c486e7edf]  Joshua Colp <jcolp@digium.com>
+2019-11-14 04:19 +0000 [02129ad4d0]  Joshua Colp <jcolp@digium.com>
 
 	* res_rtp_asterisk: Always return provided DTLS packet length.
 
@@ -2731,7 +4823,7 @@
 
 	  Change-Id: Id42455b15c9dc4eb987c8c023ece6fbf3c22a449
 
-2019-11-13 14:25 +0000 [92bb381d5d]  Sean Bright <sean.bright@gmail.com>
+2019-11-13 14:25 +0000 [bf7c808604]  Sean Bright <sean.bright@gmail.com>
 
 	* func_env: Prevent FILE() from reading garbage at end-of-file
 
@@ -2745,7 +4837,7 @@
 
 	  Change-Id: I50dd4fcf416fb3c83150040a1a79a59d9eb1ae01
 
-2019-11-13 17:24 +0000 [8b4610acfe]  Kevin Harwell <kharwell@digium.com>
+2019-11-13 17:24 +0000 [e77cb32583]  Kevin Harwell <kharwell@digium.com>
 
 	* bridge_softmix: clear hold when joining a softmix bridge
 
@@ -2761,7 +4853,7 @@
 
 	  Change-Id: I66ccd4efc80f5b4c3dd68186b379eb442916392b
 
-2019-10-23 12:36 +0000 [8bc6fa0fbd]  Kevin Harwell <kharwell@digium.com>
+2019-10-23 12:36 +0000 [bdd785d31c]  Kevin Harwell <kharwell@digium.com>
 
 	* various files - fix some alerts raised by lgtm code analysis
 
@@ -2783,7 +4875,7 @@
 
 	  Change-Id: Id4a881686605d26c94ab5409bc70fcc21efacc25
 
-2019-11-07 11:54 +0000 [d579ec9cdf]  Martin Tomec <tomec.martin@gmail.com>
+2019-11-07 11:54 +0000 [d257a0898e]  Martin Tomec <tomec.martin@gmail.com>
 
 	* func_curl.c: Support custom http headers
 
@@ -2799,7 +4891,7 @@
 
 	  Change-Id: I4dd68c3f4e25362ef941d73a3861f58348dcfbf9
 
-2019-11-15 04:46 +0000 [de433cdcaf]  Joshua Colp <jcolp@digium.com>
+2019-11-15 04:46 +0000 [807a70b7ae]  Joshua Colp <jcolp@digium.com>
 
 	* parking: Fix case where we can't get the parker.
 
@@ -2807,7 +4899,30 @@
 
 	  Change-Id: Iabe31ae38d01604284fcc5c2438d44e29a32ea4d
 
-2019-11-12 05:00 +0000 [d638d9c6c6]  Joshua Colp <jcolp@digium.com>
+2019-11-06 05:47 +0000 [990a91b44a]  George Joseph <gjoseph@digium.com>
+
+	* stasis: Don't hold app_registry and session locks unnecessarily
+
+	  resource_events:stasis_app_message_handler() was locking the session,
+	  then attempting to determine if the app had debug enabled which
+	  locked the app_registry container.  res_stasis:__stasis_app_register
+	  was locking the app_registry container then calling app_update
+	  which caused app_handler (which locks the session) to run.
+	  The result was a deadlock.
+
+	  * Updated resource_events:stasis_app_message_handler() to determine
+	    if debug was set (which locks the app_registry) before obtaining the
+	    session lock.
+
+	  * Updated res_stasis:__stasis_app_register to release the app_registry
+	    container lock before calling app_update (which locks the sesison).
+
+	  ASTERISK-28423
+	  Reported by Ross Beer
+
+	  Change-Id: I58c69d08cb372852a63933608e4d6c3e456247b4
+
+2019-11-12 05:00 +0000 [e924c5107c]  Joshua Colp <jcolp@digium.com>
 
 	* parking: Use channel snapshot instead of channel.
 
@@ -2824,7 +4939,7 @@
 
 	  Change-Id: I68ceb1d62c7378addcd286e21be08a660a7cecf2
 
-2019-11-12 12:36 +0000 [ea3daa94c8]  Kevin Harwell <kharwell@digium.com>
+2019-11-12 12:36 +0000 [0e3b397812]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_session: initialize pending's topology to endpoint's
 
@@ -2861,30 +4976,17 @@
 
 	  Change-Id: I6ba3a6a75f64824a1b963044c37acbe951c389c7
 
-2019-11-06 05:47 +0000 [7202624b3b]  George Joseph <gjoseph@digium.com>
+2019-11-08 09:20 +0000 [8a1f30af04]  Corey Farrell <git@cfware.com>
 
-	* stasis: Don't hold app_registry and session locks unnecessarily
+	* core: Improve MALLOC_DEBUG for frames.
 
-	  resource_events:stasis_app_message_handler() was locking the session,
-	  then attempting to determine if the app had debug enabled which
-	  locked the app_registry container.  res_stasis:__stasis_app_register
-	  was locking the app_registry container then calling app_update
-	  which caused app_handler (which locks the session) to run.
-	  The result was a deadlock.
+	  * Pass caller information to frame allocation functions.
+	  * Disable caching as it interfers with MALLOC_DEBUG reporting.
+	  * Stop using ast_calloc_cache.
 
-	  * Updated resource_events:stasis_app_message_handler() to determine
-	    if debug was set (which locks the app_registry) before obtaining the
-	    session lock.
+	  Change-Id: Id343cd80a3db941d2daefde2a060750fea8cd260
 
-	  * Updated res_stasis:__stasis_app_register to release the app_registry
-	    container lock before calling app_update (which locks the sesison).
-
-	  ASTERISK-28423
-	  Reported by Ross Beer
-
-	  Change-Id: I58c69d08cb372852a63933608e4d6c3e456247b4
-
-2019-10-29 08:23 +0000 [36b28c98dd]  George Joseph <gjoseph@digium.com>
+2019-10-29 08:23 +0000 [a47cb71bb1]  George Joseph <gjoseph@digium.com>
 
 	* Build:  Fix compile issues with seldom used modules
 
@@ -2898,7 +5000,7 @@
 
 	  Change-Id: Ib40e513ae55b5114be035cdc929abb6a8ce2d06d
 
-2019-10-25 06:46 +0000 [eea2d499f4]  Joshua Colp <jcolp@digium.com>
+2019-10-25 06:46 +0000 [e73eba85c1]  Joshua Colp <jcolp@digium.com>
 
 	* res_pjsip_outbound_registration: Extend documentation for "max_retries".
 
@@ -2909,7 +5011,7 @@
 
 	  Change-Id: I1e30daae9dd6c49ce18744164214d3def505acbf
 
-2019-10-24 09:15 +0000 [b3792e1288]  Sean Bright <sean.bright@gmail.com>
+2019-10-24 09:15 +0000 [16e668c7dd]  Sean Bright <sean.bright@gmail.com>
 
 	* res_calendar: Resolve memory leak on calendar destruction
 
@@ -2920,7 +5022,7 @@
 
 	  Change-Id: I8a6834da27000a6807d89cb7a157b2a88fcb5e61
 
-2019-10-24 05:21 +0000 [e37d546109]  Joshua Colp <jcolp@digium.com>
+2019-10-24 05:21 +0000 [360936ead5]  Joshua Colp <jcolp@digium.com>
 
 	* res_ari_events: Add module reference when a WebSocket is open.
 
@@ -2933,7 +5035,7 @@
 
 	  Change-Id: I85c71ab112f99875b586419a34c08c8b34c14c5c
 
-2019-10-18 13:47 +0000 [b3c56c7fa5]  Sean Bright <sean.bright@gmail.com>
+2019-10-18 13:47 +0000 [a4222614c4]  Sean Bright <sean.bright@gmail.com>
 
 	* utils.h: Set lower bound for thread stack size to PTHREAD_STACK_MIN
 
@@ -2941,7 +5043,7 @@
 
 	  Change-Id: I51abce00c04d0a06550bda5205580705185b9c1c
 
-2019-10-18 06:36 +0000 [2d665091a3]  George Joseph <gjoseph@digium.com>
+2019-10-18 06:36 +0000 [d71d0f9489]  George Joseph <gjoseph@digium.com>
 
 	* ExternalMedia:  Change return object from ExternalMedia to Channel
 
@@ -2963,7 +5065,7 @@
 
 	  Change-Id: If280094debd35102cf21e0a31a5e0846fec14af9
 
-2019-10-18 04:22 +0000 [40acd7d198]  Salah Ahmed <sahmed@voxbone.com>
+2019-10-18 04:22 +0000 [ddb0091da5]  Salah Ahmed <sahmed@voxbone.com>
 
 	* Crash during "pjsip show channelstats" execution
 
@@ -2978,7 +5080,7 @@
 
 	  Change-Id: I3e05980dd4694577be6d39be2c21a5736bae3c6f
 
-2019-10-17 05:50 +0000 [b8ae799ca9]  Joshua Colp <jcolp@digium.com>
+2019-10-17 05:50 +0000 [6e907ae5d4]  Joshua Colp <jcolp@digium.com>
 
 	* res_rtp_asterisk: Remove a log message that slipped in.
 
@@ -2987,7 +5089,7 @@
 
 	  Change-Id: I3dfc2e776e70b3196aeed5688372ea80c0214b59
 
-2019-10-16 16:06 +0000 [4bc1c170cd]  Sean Bright <sean.bright@gmail.com>
+2019-10-16 16:06 +0000 [0dc7e29dd8]  Sean Bright <sean.bright@gmail.com>
 
 	* README-SERIOUSLY.bestpractices.md: Speling correetions.
 
@@ -2995,7 +5097,7 @@
 
 	  Change-Id: I43dc4e8bd9dc685b17695b215a5360314074734f
 
-2019-09-26 19:24 +0000 [aa0973f868]  cmaj <chris@penguinpbx.com>
+2019-09-26 19:24 +0000 [2d67dbfef5]  cmaj <chris@penguinpbx.com>
 
 	* app_voicemail.c: Support multiple file formats for forwarded messages.
 
@@ -3010,7 +5112,7 @@
 
 	  Change-Id: I7321e7f7e7c58adbf41dd4fd7191c887b9b2eafd
 
-2019-10-14 06:19 +0000 [ba688e6891]  Joshua Colp <jcolp@digium.com>
+2019-10-14 06:19 +0000 [a60d2e905c]  Joshua Colp <jcolp@digium.com>
 
 	* test_res_rtp: Enable FIR and REMB nominal tests.
 
@@ -3022,7 +5124,7 @@
 
 	  Change-Id: Ibfee526ad780eefcce5dd787f53785382210024a
 
-2019-10-08 13:40 +0000 [79cc8ae3b8]  Christoph Moench-Tegeder <cmt@burggraben.net>
+2019-10-08 13:40 +0000 [52ade18420]  Christoph Moench-Tegeder <cmt@burggraben.net>
 
 	* cdr_pgsql cel_pgsql res_config_pgsql: compatibility with PostgreSQL 12
 
@@ -3041,7 +5143,7 @@
 
 	  Change-Id: I834cb3addf1937e19e87ede140bdd16cea531ebe
 
-2019-10-10 15:30 +0000 [45c0d99185]  Kevin Harwell <kharwell@digium.com>
+2019-10-10 15:30 +0000 [5dae803eea]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_mwi: potential double unref, and potential unwanted double link
 
@@ -3057,7 +5159,7 @@
 
 	  Change-Id: I9ccfdb5ea788bc0c3618db183aae235e53c12763
 
-2019-10-09 16:00 +0000 [c84135d2a3]  Chris Savinovich <csavinovich@digium.com>
+2019-10-09 16:00 +0000 [b27a5183da]  Chris Savinovich <csavinovich@digium.com>
 
 	* test_taskprocessor.c: Fix test failure on Ubuntu
 
@@ -3066,7 +5168,7 @@
 
 	  Change-Id: I2994d8aab9307a8c2c7330584f287a27144a580c
 
-2019-10-09 09:32 +0000 [2652bda3a0]  George Joseph <gjoseph@digium.com>
+2019-10-09 09:32 +0000 [5d9f9f4871]  George Joseph <gjoseph@digium.com>
 
 	* pjproject_bundled:  Replace earlier reverts with official fixes.
 
@@ -3082,7 +5184,7 @@
 
 	  Change-Id: I06f8507bea553d1a01b0b8874197d35b9d47ec4c
 
-2019-10-09 15:17 +0000 [ae761c7473]  Joshua Colp (license 5000)
+2019-10-09 15:17 +0000 [bf6f27388d]  Joshua Colp (license 5000)
 
 	* pbx: deadlock when outgoing dialed channel hangs up too quickly
 
@@ -3112,7 +5214,7 @@
 
 	  Change-Id: I51b42b92dde8f2215b69bb509e28667ee3a3853a
 
-2019-10-07 14:02 +0000 [b903994987]  Sean Bright <sean.bright@gmail.com>
+2019-10-07 14:02 +0000 [7362647e2f]  Sean Bright <sean.bright@gmail.com>
 
 	* Revert "app_voicemail: Cleanup stale lock files on module load"
 
@@ -3126,7 +5228,7 @@
 
 	  Change-Id: I3ff4ca983d8e753fe2971f3439bd154705693c41
 
-2019-10-01 06:29 +0000 [71f86e78b6]  lvl <digium@lvlconsultancy.nl>
+2019-10-01 06:29 +0000 [c03f50c1c8]  lvl <digium@lvlconsultancy.nl>
 
 	* chan_pjsip: Prevent segfault when running PlayDTMF on hungup channel
 
@@ -3134,7 +5236,7 @@
 
 	  Change-Id: Ib3baadc89b9f0477a6f25a63861433812368c5ea
 
-2019-10-02 12:18 +0000 [996fc40e2b]  Kevin Harwell <kharwell@digium.com>
+2019-10-02 12:56 +0000 [12dbeb69b0]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_mwi: use an ao2_global object for mwi containers
 
@@ -3147,7 +5249,7 @@
 
 	  Change-Id: I8f812286dc19a34916acacd71ce2ec26e1042047
 
-2019-10-02 12:17 +0000 [37ec88c4c8]  Kevin Harwell <kharwell@digium.com>
+2019-10-02 12:55 +0000 [c0efe19cec]  Kevin Harwell <kharwell@digium.com>
 
 	* serializer: move/add asterisk serializer pool functionality
 
@@ -3162,7 +5264,7 @@
 
 	  Change-Id: Ib1e906144b90ffd4d5ed9826f0b719ca9c6d2971
 
-2019-10-02 12:18 +0000 [299ba78b09]  Kevin Harwell <kharwell@digium.com>
+2019-10-02 12:56 +0000 [2970a13fb8]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip/res_pjsip_mwi: use centralized serializer pools
 
@@ -3177,7 +5279,7 @@
 
 	  Change-Id: I959b0805ad024585bbb6276593118be34fbf6e1d
 
-2019-10-04 15:31 +0000 [1dc3451a34]  Sean Bright <sean.bright@gmail.com>
+2019-10-04 15:31 +0000 [51850a79ef]  Sean Bright <sean.bright@gmail.com>
 
 	* cdr_mysql: Don't clean up on unload unless we can unregister from CDRs
 
@@ -3185,20 +5287,7 @@
 
 	  Change-Id: I6daa4e5128e9406d04d3aed670c3bae98d38d40c
 
-2019-09-20 09:08 +0000 [25fbe79793]  Corey Farrell <git@cfware.com>
-
-	* stasis_state: Create internal stasis_state_proxy object.
-
-	  This improves the way which stasis_state reference counting works.
-	  Since manager->states holds onto the proxy object instead of the real
-	  object this allows stasis_state objects to be freed when appropriate
-	  without use of a special state_remove function.  Additionally each
-	  distinct eid associated with the state holds a reference to the state to
-	  prevent early release and potentially allow easier debug of leaks.
-
-	  Change-Id: I400e0db4b9afa3d5cb4ac7dad60907897e73f9a9
-
-2019-10-01 09:01 +0000 [57fa604571]  Joshua Colp <jcolp@digium.com>
+2019-10-01 09:01 +0000 [729b286d59]  Joshua Colp <jcolp@digium.com>
 
 	* stasis: Pass bumped topic_all reference to proxy_dtor.
 
@@ -3211,7 +5300,7 @@
 
 	  Change-Id: I9a8cd8977f3c3a6aa00783f8336d2cfb9c2820f1
 
-2019-09-19 03:56 +0000 [55b760d762]  Torrey Searle <torrey@voxbone.com>
+2019-09-19 03:56 +0000 [b43cdc7f1e]  Torrey Searle <torrey@voxbone.com>
 
 	* channel/chan_pjsip: add dialplan function for music on hold
 
@@ -3222,7 +5311,7 @@
 
 	  Change-Id: Iebe905b2ad6dbaa87ab330267147180b05a3c3a8
 
-2019-09-24 14:18 +0000 [4b47d4774d]  Alexei Gradinari <alex2grad@gmail.com>
+2019-09-24 14:18 +0000 [068ed2c626]  Alexei Gradinari <alex2grad@gmail.com>
 
 	* res_pjsip_pubsub: add endpoint to some warning
 
@@ -3234,7 +5323,7 @@
 
 	  Change-Id: Ia2811ec226d8a12659b4f9d4d224b48289650827
 
-2019-09-27 09:54 +0000 [6527eb8213]  Sean Bright <sean.bright@gmail.com>
+2019-09-27 09:54 +0000 [377d7bdab6]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_transport_websocket: Don't put brackets around local_name if IPv6
 
@@ -3242,7 +5331,7 @@
 
 	  Change-Id: I8e62c444d107674c298f472e3545661de8a80dce
 
-2015-03-27 17:34 +0000 [d223419bcd]  Jonathan Rose <jrose@digium.com>
+2015-03-27 17:34 +0000 [ba64d68273]  Jonathan Rose <jrose@digium.com>
 
 	* basic-pbx: Bring forward queue configuration from 13
 
@@ -3250,7 +5339,7 @@
 
 	  Change-Id: I34a841d73c429ca8d944481f8dccb756ee231c9c
 
-2019-09-25 11:01 +0000 [8d0edf2b37]  Sean Bright <sean.bright@gmail.com>
+2019-09-25 11:01 +0000 [702019fc80]  Sean Bright <sean.bright@gmail.com>
 
 	* pbx: Prevent Realtime switch crash on invalid priority
 
@@ -3267,7 +5356,7 @@
 
 	  Change-Id: Ifbbc5e71440afd80efd441f7a9d72e8b10b6f47d
 
-2019-09-24 15:44 +0000 [8269fcbf03]  Ben Ford <bford@digium.com>
+2019-09-24 15:44 +0000 [4c3655ecfd]  Ben Ford <bford@digium.com>
 
 	* taskprocessor.c: Added "like" support to 'core show taskprocessors'
 
@@ -3278,10 +5367,7 @@
 
 	  Change-Id: I021e740201e9ba487204b5451e46feb0e3222464
 
-2019-09-25 12:21 +0000 [37139e16a5]  Asterisk Development Team <asteriskteam@digium.com>
-
-	* Update CHANGES and UPGRADE.txt for 17.0.0-rc2
-2019-09-18 06:56 +0000 [7550a82fe0]  Sean Bright <sean.bright@gmail.com>
+2019-09-18 06:56 +0000 [966488ab52]  Sean Bright <sean.bright@gmail.com>
 
 	* res_musiconhold: Add new 'playlist' mode
 
@@ -3291,7 +5377,7 @@
 
 	  Change-Id: I9f43b80b43880980b18b2bee26ec09429d0b92fa
 
-2019-09-24 17:43 +0000 [51cf060c6c]  Sean Bright <sean.bright@gmail.com>
+2019-09-24 17:43 +0000 [982a5025b3]  Sean Bright <sean.bright@gmail.com>
 
 	* res_pjsip_registrar: Validate Contact URI before adding to responses
 
@@ -3302,7 +5388,20 @@
 
 	  Change-Id: Id2b643e58b975bc560aab1c111e6669d54db9102
 
-2019-09-24 11:21 +0000 [175a7ccac7]  Kevin Harwell <kharwell@digium.com>
+2019-09-20 09:08 +0000 [f7045cefd9]  Corey Farrell <git@cfware.com>
+
+	* stasis_state: Create internal stasis_state_proxy object.
+
+	  This improves the way which stasis_state reference counting works.
+	  Since manager->states holds onto the proxy object instead of the real
+	  object this allows stasis_state objects to be freed when appropriate
+	  without use of a special state_remove function.  Additionally each
+	  distinct eid associated with the state holds a reference to the state to
+	  prevent early release and potentially allow easier debug of leaks.
+
+	  Change-Id: I400e0db4b9afa3d5cb4ac7dad60907897e73f9a9
+
+2019-09-24 11:21 +0000 [67ba62f4e6]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_pubsub: change warning to debug
 
@@ -3316,20 +5415,7 @@
 
 	  Change-Id: I841ec42f65559f3135e037df0e55f89b6447a467
 
-2019-09-22 21:04 +0000 [5bedd4a9b4]  Corey Farrell <git@cfware.com>
-
-	* core: Fix ABI mismatch of ao2_global_obj.
-
-	  astobj2.c declares DEBUG_THREADS_LOOSE_ABI to avoid overhead of debug
-	  threads tracking information in the internal structures of astobj2.
-	  Unfortunately this means that ao2_global_obj contains the statically
-	  allocated debug threads tracking fields which are used by initialization
-	  and cleanup but main/astobj2.c believed those fields and associated
-	  space did not exist.
-
-	  Change-Id: Icef41ad97d88a8c1d1515e034ec8133cab3b1527
-
-2019-09-24 09:40 +0000 [f181dfc065]  Ben Ford <bford@digium.com>
+2019-09-24 09:40 +0000 [4de1e6d0e6]  Ben Ford <bford@digium.com>
 
 	* taskprocessor.c: Add CLI commands to reset taskprocessor stats.
 
@@ -3341,7 +5427,7 @@
 
 	  Change-Id: Iaf17fc4ae29396ab0c6ac92408fc7bdc2f12362d
 
-2019-09-19 09:50 +0000 [7c0435f854]  George Joseph <gjoseph@digium.com>
+2019-09-19 09:50 +0000 [cc83e76aa5]  George Joseph <gjoseph@digium.com>
 
 	* pjproject_bundled:  Revert pjproject 2.9 commits causing leaks
 
@@ -3381,7 +5467,7 @@
 
 	  Change-Id: I8ae7233c3ac4ec29a3b991f738e655dabcaba9f1
 
-2019-09-22 16:59 +0000 [ec712cfab2]  Corey Farrell <git@cfware.com>
+2019-09-22 16:59 +0000 [725e991faf]  Corey Farrell <git@cfware.com>
 
 	* core: Add AO2_ALLOC_OPT_NO_REF_DEBUG option.
 
@@ -3393,7 +5479,7 @@
 
 	  Change-Id: I3c17d867d901d53f9fcd512bef4d52e342637b54
 
-2019-09-23 11:01 +0000 [f821e81071]  Kevin Harwell <kharwell@digium.com>
+2019-09-23 11:01 +0000 [a4caaef64c]  Kevin Harwell <kharwell@digium.com>
 
 	* res_sorcery_memory_cache: stale item update leak
 
@@ -3405,7 +5491,7 @@
 
 	  Change-Id: I9d8173d3a0416a242f4eba92fa0853279c500ec7
 
-2019-09-23 07:09 +0000 [b1c5753b78]  George Joseph <gjoseph@digium.com>
+2019-09-23 07:09 +0000 [e82f2f6e82]  George Joseph <gjoseph@digium.com>
 
 	* astmm.c:  Display backtrace with memory show allocations
 
@@ -3420,7 +5506,20 @@
 
 	  Change-Id: Ic657afc1fc6ec7205e16eb36a97a611d235a2b4f
 
-2019-09-20 08:29 +0000 [af0ccbc45e]  Corey Farrell <git@cfware.com>
+2019-09-22 21:04 +0000 [a4142c8437]  Corey Farrell <git@cfware.com>
+
+	* core: Fix ABI mismatch of ao2_global_obj.
+
+	  astobj2.c declares DEBUG_THREADS_LOOSE_ABI to avoid overhead of debug
+	  threads tracking information in the internal structures of astobj2.
+	  Unfortunately this means that ao2_global_obj contains the statically
+	  allocated debug threads tracking fields which are used by initialization
+	  and cleanup but main/astobj2.c believed those fields and associated
+	  space did not exist.
+
+	  Change-Id: Icef41ad97d88a8c1d1515e034ec8133cab3b1527
+
+2019-09-20 08:29 +0000 [ca608d2575]  Corey Farrell <git@cfware.com>
 
 	* stasis: refcounter.py can incorrectly report skewed objects.
 
@@ -3430,7 +5529,7 @@
 
 	  Change-Id: I3d0031d03c8356e4808f00cdf2d5428712575883
 
-2019-09-19 17:32 +0000 [fd7fc3d7a5]  Corey Farrell <git@cfware.com>
+2019-09-19 17:32 +0000 [3dfbc05c53]  Corey Farrell <git@cfware.com>
 
 	* stasis: Fix leaks
 
@@ -3440,13 +5539,13 @@
 
 	  Change-Id: I51101bf7d07b8dc8ce8fc46b6cb31fbbd213fbc7
 
-2019-09-19 10:53 +0000 [78f329dad9]  Corey Farrell <git@cfware.com>
+2019-09-19 10:53 +0000 [863fe2225f]  Corey Farrell <git@cfware.com>
 
 	* app_voicemail: Fix module unload leak.
 
 	  Change-Id: Ib9a06565b9a178822d3bbb67eccf51432e12d84a
 
-2019-09-06 08:18 +0000 [926053d7bd]  Joshua Colp <jcolp@digium.com>
+2019-09-06 08:18 +0000 [7298a785ad]  Joshua Colp <jcolp@digium.com>
 
 	* func_jitterbuffer: Add audio/video sync support.
 
@@ -3464,7 +5563,7 @@
 
 	  Change-Id: I3fd75160426465e6d46bb2e198c07b9d314a4492
 
-2019-08-22 07:44 +0000 [d7a3e4f5cf]  Florian Floimair <f.floimair@commend.com>
+2019-08-22 07:44 +0000 [c18983207d]  Florian Floimair <f.floimair@commend.com>
 
 	* core: Add H.265/HEVC passthrough support
 
@@ -3478,7 +5577,19 @@
 
 	  Change-Id: I26d262cc4110b4f7e99348a3ddc53bad0d2cd1f2
 
-2019-09-15 14:35 +0000 [4d1baa3ae8]  Joshua Colp <jcolp@digium.com>
+2019-09-14 10:05 +0000 [4072e219f7]  Guido Falsi <madpilot@FreeBSD.org>
+
+	* chan_dahdi: Fix build with clang/llvm
+
+	  On FreeBSD using the clang/llvm compiler build fails to build due
+	  to the switch statement argument being a non integer type expression.
+	  Switch to an if/else if/else construct to sidestep the issue.
+
+	  ASTERISK-28536 #close
+
+	  Change-Id: Idf4a82cc1e94580a2d017fe9e351c226f23e20c8
+
+2019-09-15 14:35 +0000 [c358da472e]  Joshua Colp <jcolp@digium.com>
 
 	* chan_pjsip: Relock correct channel during "fax" redirect.
 
@@ -3494,19 +5605,18 @@
 
 	  Change-Id: I2b2e60d07e74383ae7e90d752c036c4b02d6b3a3
 
-2019-09-14 10:05 +0000 [5ff2f7a016]  Guido Falsi <madpilot@FreeBSD.org>
+2019-08-28 05:07 +0000 [8979921da9]  Boris P. Korzun <drtr0jan@yandex.ru>
 
-	* chan_dahdi: Fix build with clang/llvm
+	* func_odbc:  acf_odbc_read() and cli_odbc_read() unicode support
 
-	  On FreeBSD using the clang/llvm compiler build fails to build due
-	  to the switch statement argument being a non integer type expression.
-	  Switch to an if/else if/else construct to sidestep the issue.
+	  Added ast_odbc_ast_str_SQLGetData() considers SQL_DESC_OCTET_LENGTH
+	  column attribute for correct allocating the buffer.
 
-	  ASTERISK-28536 #close
+	  ASTERISK-28497 #close
 
-	  Change-Id: Idf4a82cc1e94580a2d017fe9e351c226f23e20c8
+	  Change-Id: I50e86c8a277996f13d4a4b9b318ece0d60b279bf
 
-2019-09-03 12:20 +0000 [1d960195c2]  Ben Ford <bford@digium.com>
+2019-09-03 12:20 +0000 [723b695ce5]  Ben Ford <bford@digium.com>
 
 	* res_rtp_asterisk.c: Send RTCP as compound packets.
 
@@ -3520,7 +5630,7 @@
 
 	  Change-Id: Ieb140e9c22568a251a564cd953dd22cd33244605
 
-2019-09-11 15:58 +0000 [2fa296e7d4]  Michael Goryainov
+2019-09-11 15:58 +0000 [32ce6e9a06]  Michael Goryainov
 
 	* channels: Allow updating variable value
 
@@ -3536,7 +5646,7 @@
 
 	  Change-Id: Ie1897a96c82b8945e752733612ee963686f32839
 
-2019-08-27 17:44 +0000 [9e26136ee6]  sungtae kim <pchero21@gmail.com>
+2019-08-27 17:44 +0000 [cf364cd007]  sungtae kim <pchero21@gmail.com>
 
 	* res_musiconhold: Added unregister realtime moh class
 
@@ -3550,7 +5660,7 @@
 
 	  Change-Id: Ibc4c6834592257c4bb90601ee299682d15befbce
 
-2019-08-28 14:25 +0000 [5dad4f4ea1]  Ben Ford <bford@digium.com>
+2019-08-28 14:25 +0000 [0e56643d9f]  Ben Ford <bford@digium.com>
 
 	* res_rtp: Add unit tests for RTCP stats.
 
@@ -3569,7 +5679,7 @@
 
 	  Change-Id: I56107c7411003a247589bbb6086d25c54719901b
 
-2019-09-05 11:09 +0000 [50997de887]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+2019-09-05 11:09 +0000 [2d0eee5418]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
 
 	* ChanIsAvail() generates a CDR when unanswered=yes in cdr.conf.
 
@@ -3584,7 +5694,7 @@
 
 	  Change-Id: I7b0555c6909c7d322e452dde97c9ea5b111552d1
 
-2019-09-05 10:52 +0000 [9e67c92502]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
+2019-09-05 10:52 +0000 [41b67f150e]  Frederic LE FOLL <frederic.lefoll@c-s.fr>
 
 	* chan_dahdi: set CHANNEL(hangupsource) when a PRI channel hangs up
 
@@ -3610,7 +5720,7 @@
 
 	  Change-Id: I0f588a4bcf15ccd0648fd69830d1b801c3f21b7c
 
-2019-08-05 06:59 +0000 [44068cc6bf]  George Joseph <gjoseph@digium.com>
+2019-08-05 06:59 +0000 [2ae1a22e0e]  George Joseph <gjoseph@digium.com>
 
 	* ARI: External Media
 
@@ -3625,7 +5735,7 @@
 
 	  Change-Id: I9618899198880b4c650354581b50c0401b58bc46
 
-2019-09-10 07:32 +0000 [c060ef7dee]  George Joseph <gjoseph@digium.com>
+2019-09-10 07:32 +0000 [5fb9b23105]  George Joseph <gjoseph@digium.com>
 
 	* chan_sip:  Update links referenced in deprecation notice
 
@@ -3640,7 +5750,7 @@
 
 	  Change-Id: If2da5d5243e2d4a6f193b15691d23e7e5a7c57a9
 
-2019-09-08 10:38 +0000 [75d6418d8e]  Sean Bright <sean.bright@gmail.com>
+2019-09-08 10:38 +0000 [e4289b9e56]  Sean Bright <sean.bright@gmail.com>
 
 	* codec_resample: Ensure OUTSIDE_SPEEX is defined when necessary
 
@@ -3648,7 +5758,7 @@
 
 	  Change-Id: If0d58598ce14aad3c786a1c0127b5f7b200b737d
 
-2019-08-26 07:53 +0000 [61c01df560]  Joshua Colp <jcolp@digium.com>
+2019-08-26 07:53 +0000 [1e9714a050]  Joshua Colp <jcolp@digium.com>
 
 	* AST-2019-005 - translate: Don't assume all frames will have a src.
 
@@ -3666,7 +5776,7 @@
 
 	  Change-Id: I024d10dd98207eb8a6b35b59880bcdf1090538f8
 
-2019-08-20 15:05 +0000 [9d4f1e8ebe]  Alexei Gradinari <alex2grad@gmail.com> (license 5691)
+2019-08-20 15:05 +0000 [18f5f5fc99]  Alexei Gradinari <alex2grad@gmail.com> (license 5691)
 
 	* AST-2019-004 - res_pjsip_t38.c: Add NULL checks before using session media
 
@@ -3683,7 +5793,7 @@
 
 	  Change-Id: I168f45f4da29cfe739acf87e597baa2aae7aa572
 
-2019-09-04 16:19 +0000 [7d99710fa6]  Chris-Savinovich <csavinovich@digium.com>
+2019-09-04 16:19 +0000 [ed757cc7bb]  Chris-Savinovich <csavinovich@digium.com>
 
 	* test_utils.c: Skip test adsi_loaded_test if module not loaded.
 
@@ -3696,7 +5806,7 @@
 
 	  Change-Id: I52be64c8f6af222e15148a856d1f10cb113e1e94
 
-2019-08-27 06:10 +0000 [056ddf76ce]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
+2019-08-27 06:10 +0000 [3863ab9af9]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
 
 	* chan_unistim: Fix clang warning: variable sized type not at end of a struct
 
@@ -3709,7 +5819,7 @@
 
 	  Change-Id: Ic1fd34c2c2bcc951da65bf62e3f7a8adff8351b1
 
-2019-08-23 17:03 +0000 [a36fb473fe]  Kevin Harwell <kharwell@digium.com>
+2019-08-23 17:03 +0000 [172e183b9d]  Kevin Harwell <kharwell@digium.com>
 
 	* res_pjsip_mwi: add better handling of solicited vs unsolicited subscriptions
 
@@ -3742,7 +5852,7 @@
 
 	  Change-Id: Iec2ec12d9431097e97ed5f37119963aee41af7b1
 
-2019-08-27 00:49 +0000 [95b3c9839d]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
+2019-08-27 00:49 +0000 [1d06a1efb3]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
 
 	* chan_unistim: Fix code, causing all incoming DTMF sent back to asterisk
 
@@ -3754,7 +5864,7 @@
 
 	  Change-Id: I5795db468df552f0c89c7576b6b3858b26c4eab4
 
-2019-08-16 06:01 +0000 [e7f1f7eefd]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
+2019-08-16 06:01 +0000 [649003821e]  Igor Goncharovsky <igor.goncharovsky@gmail.com>
 
 	* chan_unistim: Fix RTP port byte order for big-endian arch
 
@@ -3765,7 +5875,7 @@
 	  Reported-by: Andrey Ionov
 	  Change-Id: I9a9ca7f26e31a67bbbceff12923baa10dfb8a3be
 
-2019-08-23 15:14 +0000 [34ab9964f5]  Sean Bright <sean.bright@gmail.com>
+2019-08-23 15:14 +0000 [b096389660]  Sean Bright <sean.bright@gmail.com>
 
 	* codec_resample: Upgrade speex_resample to fix up-sampling bug
 
@@ -3773,13 +5883,13 @@
 
 	  Change-Id: Idd07bf341e89ac999c7f5701d9b72b8a9cb11e82
 
-2019-08-22 13:19 +0000 [a0b0c7540c]  Alexei Gradinari <alex2grad@gmail.com>
+2019-08-22 13:19 +0000 [3ef52b0b17]  Alexei Gradinari <alex2grad@gmail.com>
 
 	* Fix misname 'res_external_mwi' to 'res_mwi_external' in comments.
 
 	  Change-Id: Ic784be8500e5cb75dcb34bae9f03cfd93b6b34fb
 
-2019-08-21 13:29 +0000 [581ffdf6a9]  George Joseph <gjoseph@digium.com>
+2019-08-21 13:29 +0000 [19045db392]  George Joseph <gjoseph@digium.com>
 
 	* chan_rtp:  Accept hostname as well as ip address as destination
 
@@ -3791,7 +5901,7 @@
 
 	  Change-Id: Ie6f95b983a8792bf0dacc64c7953a41032dba677
 
-2019-08-21 12:03 +0000 [b3d9f6ef6c]  George Joseph <gjoseph@digium.com>
+2019-08-21 12:03 +0000 [9e015713cc]  George Joseph <gjoseph@digium.com>
 
 	* dns_core:  Create new API ast_dns_resolve_ipv6_and_ipv4
 
@@ -3807,7 +5917,7 @@
 
 	  Change-Id: I194b0b0e73da94b35cc35263a868ffac3a8d0a95
 
-2019-08-21 10:58 +0000 [a1d38e19a2]  Dan Cropp <dan@amtelco.com>
+2019-08-21 10:58 +0000 [0844d6b127]  Dan Cropp <dan@amtelco.com>
 
 	* pjproject: Configurable setting for cnonce to include hyphens or not
 
@@ -3823,19 +5933,7 @@
 
 	  Change-Id: Ibdfcf845d4f8c0a14df09fd983b11f2d72c5f470
 
-2019-07-30 12:08 +0000 [3a246c2a69]  Stas Kobzar <stas@modulis.ca>
-
-	* res_pjsip: Channel variable SIPFROMDOMAIN
-
-	  In chan_sip, there was variable SIPFROMDOMAIN that allows to set
-	  From header URI domain per channel. This patch introduces res_pjsip
-	  variable SIPFROMDOMAIN for backward compatibility with chan_sip.
-
-	  ASTERISK-28489
-
-	  Change-Id: I715133e43172ce2a1e82093538dc39f9e99e5f2e
-
-2019-08-20 13:04 +0000 [f6ab42df26]  George Joseph <gjoseph@digium.com>
+2019-08-20 13:04 +0000 [8da4e28a81]  George Joseph <gjoseph@digium.com>
 
 	* res_ari.c:  Prefer exact handler match over wildcard
 
@@ -3867,7 +5965,7 @@
 
 	  Change-Id: I574aa3cbe4249c92c30f74b9b40e750e9002f925
 
-2019-08-09 15:53 +0000 [e123d1ccc5]  Sean Bright <sean.bright@gmail.com>
+2019-08-09 15:53 +0000 [64906c4c9b]  Sean Bright <sean.bright@gmail.com>
 
 	* audiohook.c: Substitute silence for unavailable audio frames
 
@@ -3895,7 +5993,19 @@
 
 	  Change-Id: Ibf5ed73a811087727bd561a89a59f4447b4ee20e
 
-2019-08-14 14:52 +0000 [052ab9d966]  Alexei Gradinari <alex2grad@gmail.com>
+2019-07-30 12:08 +0000 [c7270dca81]  Stas Kobzar <stas@modulis.ca>
+
+	* res_pjsip: Channel variable SIPFROMDOMAIN
+
+	  In chan_sip, there was variable SIPFROMDOMAIN that allows to set
+	  From header URI domain per channel. This patch introduces res_pjsip
+	  variable SIPFROMDOMAIN for backward compatibility with chan_sip.
+
+	  ASTERISK-28489
+
+	  Change-Id: I715133e43172ce2a1e82093538dc39f9e99e5f2e
+
+2019-08-14 14:52 +0000 [15624d9a7a]  Alexei Gradinari <alex2grad@gmail.com>
 
 	* app_voicemail/IMAP: check mailstream not NULL in leave_voicemail
 
@@ -3908,7 +6018,7 @@
 
 	  Change-Id: Ib66c57c1f1ba97774e447b36349198e2626a8d7c
 
-2019-08-09 05:51 +0000 [a5f05eed70]  Sean Bright <sean.bright@gmail.com>
+2019-08-09 05:51 +0000 [e40f248fac]  Sean Bright <sean.bright@gmail.com>
 
 	* menuselect: Fix curses build on Gentoo Linux
 
@@ -3919,14 +6029,14 @@
 
 	  Change-Id: I6c2ad5b95f422c263d078b5c0e84c111807dffc6
 
-2019-08-08 12:10 +0000 [5489ad5574]  George Joseph <gjoseph@digium.com>
+2019-08-08 12:10 +0000 [446bac733d]  George Joseph <gjoseph@digium.com>
 
 	* CI: Escape backslashes in printenv/sort/tr
 
 	  Change-Id: I52be64c8f6af2bbe15148a856d1f10cb113e1e94
 	  (cherry picked from commit c6558e09af3ac15b31377de735cc96d8df0275a7)
 
-2019-08-07 17:54 +0000 [5daa9bbaee]  Kevin Harwell <kharwell@digium.com>
+2019-08-07 17:54 +0000 [b805e1237d]  Kevin Harwell <kharwell@digium.com>
 
 	* srtp: Fix possible race condition, and add NULL checks
 
@@ -3965,7 +6075,7 @@
 
 	  Change-Id: I240e11cbb1e9ea8083d59d50db069891228fe5cc
 
-2019-08-08 07:12 +0000 [aa44e723c5]  George Joseph <gjoseph@digium.com>
+2019-08-08 07:12 +0000 [be6130607d]  George Joseph <gjoseph@digium.com>
 
 	* CI:  Add "throttle" label and "skip_gate" capability
 
@@ -3981,7 +6091,7 @@
 
 	  Change-Id: I4c0b1085acec4805f2ca207eebac50aad81f27e2
 
-2019-08-05 07:23 +0000 [108b1abbd9]  Joshua Colp <jcolp@digium.com>
+2019-08-05 07:23 +0000 [261646c1c4]  Joshua Colp <jcolp@digium.com>
 
 	* cdr / cel: Use event time at event creation instead of processing.
 
@@ -3997,7 +6107,7 @@
 
 	  Change-Id: I6829227e67aefa318efe5e183a94d4a1b4e8500a
 
-2019-08-06 10:40 +0000 [8652140794]  George Joseph <gjoseph@digium.com>
+2019-08-06 10:40 +0000 [c01dd2a41a]  George Joseph <gjoseph@digium.com>
 
 	* CI:  Make node labels job-specific
 
@@ -4020,7 +6130,7 @@
 
 	  Change-Id: I2032bf6afbcec5c341d9b852214c0c812d3d6db5
 
-2019-08-06 08:20 +0000 [87f8ca2812]  Sean Bright <sean.bright@gmail.com>
+2019-08-06 08:20 +0000 [9d07d5a6d6]  Sean Bright <sean.bright@gmail.com>
 
 	* app_voicemail: Remove extra menuselect build options
 
@@ -4031,7 +6141,7 @@
 
 	  Change-Id: Idfa4c9c8349726074318a9e6b68d24c374521005
 
-2019-08-01 16:22 +0000 [a305f2fdcb]  Kevin Harwell <kharwell@digium.com>
+2019-08-01 16:22 +0000 [3656c42cb0]  Kevin Harwell <kharwell@digium.com>
 
 	* various modules: json integer overflow
 
@@ -4049,13 +6159,13 @@
 
 	  Change-Id: Ied530780d83e6f1772adba0e28d8938ef30c49a1
 
-2019-07-29 10:15 +0000 [1976db6ffd]  Sean Bright <sean.bright@gmail.com>
+2019-07-29 10:15 +0000 [1f8ae708a0]  Sean Bright <sean.bright@gmail.com>
 
 	* res_musiconhold: Use a vector instead of custom array allocation
 
 	  Change-Id: Ic476a56608b1820ca93dcf68d10cd76fc0b94141
 
-2019-08-01 05:07 +0000 [20459d4cac]  Joshua Colp <jcolp@digium.com>
+2019-08-01 05:07 +0000 [86452c9fa4]  Joshua Colp <jcolp@digium.com>
 
 	* res_pjsip: Fix multiple of the same contact in "pjsip show contacts".
 
@@ -4068,7 +6178,7 @@
 
 	  Change-Id: I805185cfcec03340f57d2b9e6cc43c49401812df
 
-2019-07-17 07:35 +0000 [44af3e9018]  Torrey Searle <torrey@voxbone.com>
+2019-07-17 07:35 +0000 [084901d548]  Torrey Searle <torrey@voxbone.com>
 
 	* main/udptl.c: correctly handle udptl sequence wrap around
 
@@ -4079,7 +6189,7 @@
 
 	  Change-Id: I33caeb2bf13c574a1ebb81714b58907091d64234
 
-2019-07-24 15:12 +0000 [c748187bbf]  Sean Bright <sean.bright@gmail.com>
+2019-07-24 15:12 +0000 [5f66fb5139]  Sean Bright <sean.bright@gmail.com>
 
 	* manager: Send fewer packets
 
@@ -4095,25 +6205,22 @@
 
 	  Change-Id: I50128b0769060ca5272dbbb5e60242d131eaddf9
 
-2019-07-29 11:46 +0000 [f1e0c9d1b8]  Asterisk Development Team <asteriskteam@digium.com>
+2019-07-29 11:38 +0000 [5e6e1175d5]  Asterisk Development Team <asteriskteam@digium.com>
 
 	* Update CHANGES and UPGRADE.txt for 17.0.0
-2019-07-29 11:10 +0000 [4f2ad5a55d]  George Joseph <gjoseph@digium.com>
+2019-07-26 13:03 +0000 [8d10028b98]  George Joseph <gjoseph@digium.com>
 
-	* doc:  Add "master-only" flag back to the CHANGES and UPGRADE files
+	* Update master for Asterisk 18
 
-	  In order to run the documentation scripts the flags needs to be
-	  added back to the staging files.
+	  Change-Id: I8b8ed97001446fab0c14d7c89391ee572fb29dd6
 
-	  Change-Id: Ia10a153c50c970cfa1e85815208dfaddb3f2ccd4
-
-2019-07-29 10:04 +0000 [a66ccb90ac]  Sean Bright <sean.bright@gmail.com>
+2019-07-29 10:04 +0000 [7ce9ee7f2e]  Sean Bright <sean.bright@gmail.com>
 
 	* res_musiconhold: Use ast_pipe_nonblock() wrapper
 
 	  Change-Id: Ib0a4b41e5ececbe633079e2d8c2b66c031d2d1f2
 
-2019-07-29 08:31 +0000 [e821a637a8]  George Joseph <gjoseph@digium.com>
+2019-07-29 08:31 +0000 [8e44d823c1]  George Joseph <gjoseph@digium.com>
 
 	* loader.c:  Fix possible SEGV when a module fails to register
 

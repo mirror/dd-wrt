@@ -107,7 +107,10 @@ enum ast_frame_type {
 	AST_FRAME_NULL,
 	/*! Inter Asterisk Exchange private frame type */
 	AST_FRAME_IAX,
-	/*! Text messages */
+	/*! Text messages. The character data may not be zero-terminated, so
+	 * care should be taken when passing it to functions that expect a
+	 * zero-terminated string. The frame's datalen member should be used
+	 * as it indicates the actual number of bytes available. */
 	AST_FRAME_TEXT,
 	/*! Image Frames */
 	AST_FRAME_IMAGE,
@@ -147,8 +150,12 @@ enum {
 struct ast_frame_subclass {
 	/*! A frame specific code */
 	int integer;
-	/*! The asterisk media format */
-	struct ast_format *format;
+	union {
+		/*! The asterisk media format */
+		struct ast_format *format;
+		/*! The asterisk stream topology */
+		struct ast_stream_topology *topology;
+	};
 	/*! For video formats, an indication that a frame ended */
 	unsigned int frame_ending;
 };
@@ -335,9 +342,16 @@ enum ast_control_frame_type {
 	AST_CONTROL_RECORD_MUTE = 1103,	/*!< Indicated to a channel in record to mute/unmute (i.e. write silence) recording */
 };
 
+/*!
+ * \brief Actions to indicate to, and be handled on channel read
+ *
+ * The subtype to specify for an AST_CONTROL_READ_ACTION frame. These
+ * frames are then to be enacted on within a channel's read thread.
+ */
 enum ast_frame_read_action {
 	AST_FRAME_READ_ACTION_CONNECTED_LINE_MACRO,
 	AST_FRAME_READ_ACTION_SEND_TEXT,
+	AST_FRAME_READ_ACTION_SEND_TEXT_DATA,
 };
 
 struct ast_control_read_action_payload {
@@ -560,14 +574,16 @@ void ast_frame_dtor(struct ast_frame *frame);
  * should be the last operation you do with that frame before freeing
  * it (or exiting the block, if the frame is on the stack.)
  */
-struct ast_frame *ast_frisolate(struct ast_frame *fr);
+#define ast_frisolate(fr) __ast_frisolate(fr, __FILE__, __LINE__, __PRETTY_FUNCTION__)
+struct ast_frame *__ast_frisolate(struct ast_frame *fr, const char *file, int line, const char *func);
 
 /*! \brief Copies a frame
  * \param fr frame to copy
  * Duplicates a frame -- should only rarely be used, typically frisolate is good enough
  * \return Returns a frame on success, NULL on error
  */
-struct ast_frame *ast_frdup(const struct ast_frame *fr);
+#define ast_frdup(fr) __ast_frdup(fr, __FILE__, __LINE__, __PRETTY_FUNCTION__)
+struct ast_frame *__ast_frdup(const struct ast_frame *fr, const char *file, int line, const char *func);
 
 void ast_swapcopy_samples(void *dst, const void *src, int samples);
 
@@ -626,9 +642,10 @@ int ast_frame_clear(struct ast_frame *frame);
  * \param slen Length of subclass buffer
  * \param moreinfo Buffer to fill with additional information
  * \param mlen Length of moreinfo buffer
+ * \return Pointer to subclass
  * \since 11
  */
-void ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, char *moreinfo, size_t mlen);
+char *ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, char *moreinfo, size_t mlen);
 
 /*!
  * \brief Copy the discription of a frame type into the provided string
@@ -636,9 +653,10 @@ void ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, ch
  * \param frame_type The frame type to be described
  * \param ftype Buffer to fill with frame type description
  * \param len Length of subclass buffer
+ * \return Pointer to ftype
  * \since 11
  */
-void ast_frame_type2str(enum ast_frame_type frame_type, char *ftype, size_t len);
+char *ast_frame_type2str(enum ast_frame_type frame_type, char *ftype, size_t len);
 
 #if defined(__cplusplus) || defined(c_plusplus)
 }
