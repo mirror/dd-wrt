@@ -39,4 +39,4 @@ libyang-install:
 	rm -rf $(INSTALLDIR)/libyang/usr/bin
 
 libyang-clean:
-	if [ -e "$(LIBYANG_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libyang clean ; fi
+	if [ -e "$(LIBYANG_PKG_BUILD_DIR)/Makefile" ]; then $(MAKE) -C libyang/build clean ; fi
