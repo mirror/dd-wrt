@@ -21,10 +21,14 @@ libyang-configure: zlib openssl
 	$(call CMakeConfigure,$(LIBYANG_PKG_BUILD_DIR),$(LIBYANG_STAGING_DIR),$(LIBYANG_CMAKE_OPTIONS),$(LIBYANG_EXTRA_CFLAGS),$(LIBYANG_EXTRA_LDFLAGS),..) 
 
 libyang: zlib
-	$(MAKE) -C libyang
-	-mkdir $(TOP)/libyang/src/libyang
-	-cp $(TOP)/libyang/src/libyang.h $(TOP)/libyang/src/libyang
-	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/src/libyang
+	$(MAKE) -C libyang/build
+	-mkdir -p $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/build/src/libyang.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/tree_schema.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/tree_data.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/xml.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/dict.h $(TOP)/libyang/build/libyang
+	-cp $(TOP)/libyang/src/user_types.h $(TOP)/libyang/build/libyang
 
 libyang-install:
 	rm -rf $(INSTALLDIR)/libyang
