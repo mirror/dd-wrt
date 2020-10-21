@@ -59,7 +59,6 @@ _UCD_access_reg (unw_addr_space_t as,
     goto badreg;
 #else
 #if defined(UNW_TARGET_MIPS)
-#include "user.h"
   static const uint8_t remap_regs[] =
     {
       [UNW_MIPS_R0]  = EF_REG0,

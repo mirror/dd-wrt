@@ -8239,7 +8239,7 @@ func_mode_link ()
 	  *)
 	    if test no = "$installed"; then
 	      func_append notinst_deplibs " $lib"
-	      need_relink=yes
+	      need_relink=no
 	    fi
 	    ;;
 	  esac

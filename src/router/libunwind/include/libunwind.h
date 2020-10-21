@@ -33,6 +33,6 @@
 
 #else /* UNW_REMOTE_ONLY */
 
-# include "libunwind-x86_64.h"
+# include "libunwind-mips.h"
 
 #endif /* UNW_REMOTE_ONLY */

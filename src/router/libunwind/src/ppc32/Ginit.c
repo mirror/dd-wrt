@@ -46,14 +46,19 @@ static void *
 uc_addr (ucontext_t *uc, int reg)
 {
   void *addr;
+#ifdef __GLIBC__
+  mcontext_t *mc = uc->uc_mcontext.uc_regs;
+#else
+  mcontext_t *mc = &uc->uc_mcontext;
+#endif
 
   if ((unsigned) (reg - UNW_PPC32_R0) < 32)
-    addr = &uc->uc_mcontext.uc_regs->gregs[reg - UNW_PPC32_R0];
+    addr = &mc->gregs[reg - UNW_PPC32_R0];
 
   else
   if ( ((unsigned) (reg - UNW_PPC32_F0) < 32) &&
        ((unsigned) (reg - UNW_PPC32_F0) >= 0) )
-    addr = &uc->uc_mcontext.uc_regs->fpregs.fpregs[reg - UNW_PPC32_F0];
+    addr = &mc->fpregs.fpregs[reg - UNW_PPC32_F0];
 
   else
     {
@@ -76,7 +81,7 @@ uc_addr (ucontext_t *uc, int reg)
         default:
           return NULL;
         }
-      addr = &uc->uc_mcontext.uc_regs->gregs[gregs_idx];
+      addr = &mc->gregs[gregs_idx];
     }
   return addr;
 }
