@@ -45,7 +45,11 @@
 
 #include <math.h>
 
-#if !defined(LOW_MEMORY)
+#if (defined(LOW_MEMORY) || defined(MALLOC_DEBUG)) && !defined(NO_FRAME_CACHE)
+#define NO_FRAME_CACHE
+#endif
+
+#if !defined(NO_FRAME_CACHE)
 static void frame_cache_cleanup(void *data);
 
 /*! \brief A per-thread cache of frame headers */
@@ -74,11 +78,11 @@ struct ast_frame_cache {
 
 struct ast_frame ast_null_frame = { AST_FRAME_NULL, };
 
-static struct ast_frame *ast_frame_header_new(void)
+static struct ast_frame *ast_frame_header_new(const char *file, int line, const char *func)
 {
 	struct ast_frame *f;
 
-#if !defined(LOW_MEMORY)
+#if !defined(NO_FRAME_CACHE)
 	struct ast_frame_cache *frames;
 
 	if ((frames = ast_threadstorage_get(&frame_cache, sizeof(*frames)))) {
@@ -91,19 +95,18 @@ static struct ast_frame *ast_frame_header_new(void)
 			return f;
 		}
 	}
-	if (!(f = ast_calloc_cache(1, sizeof(*f))))
-		return NULL;
-#else
-	if (!(f = ast_calloc(1, sizeof(*f))))
-		return NULL;
 #endif
+
+	if (!(f = __ast_calloc(1, sizeof(*f), file, line, func))) {
+		return NULL;
+	}
 
 	f->mallocd_hdr_len = sizeof(*f);
 
 	return f;
 }
 
-#if !defined(LOW_MEMORY)
+#if !defined(NO_FRAME_CACHE)
 static void frame_cache_cleanup(void *data)
 {
 	struct ast_frame_cache *frames = data;
@@ -121,7 +124,7 @@ static void __frame_free(struct ast_frame *fr, int cache)
 	if (!fr->mallocd)
 		return;
 
-#if !defined(LOW_MEMORY)
+#if !defined(NO_FRAME_CACHE)
 	if (fr->mallocd == AST_MALLOCD_HDR
 		&& cache
 		&& ast_opt_cache_media_frames) {
@@ -135,6 +138,8 @@ static void __frame_free(struct ast_frame *fr, int cache)
 				|| fr->frametype == AST_FRAME_VIDEO
 				|| fr->frametype == AST_FRAME_IMAGE) {
 				ao2_cleanup(fr->subclass.format);
+			} else if (fr->frametype == AST_FRAME_CONTROL && fr->subclass.integer == AST_CONTROL_ANSWER) {
+				ao2_cleanup(fr->subclass.topology);
 			}
 
 			AST_LIST_INSERT_HEAD(&frames->list, fr, frame_list);
@@ -157,6 +162,8 @@ static void __frame_free(struct ast_frame *fr, int cache)
 			|| fr->frametype == AST_FRAME_VIDEO
 			|| fr->frametype == AST_FRAME_IMAGE) {
 			ao2_cleanup(fr->subclass.format);
+		} else if (fr->frametype == AST_FRAME_CONTROL && fr->subclass.integer == AST_CONTROL_ANSWER) {
+			ao2_cleanup(fr->subclass.topology);
 		}
 
 		ast_free(fr);
@@ -187,7 +194,7 @@ void ast_frame_dtor(struct ast_frame *f)
  * (header, src, data).
  * On return all components are malloc'ed
  */
-struct ast_frame *ast_frisolate(struct ast_frame *fr)
+struct ast_frame *__ast_frisolate(struct ast_frame *fr, const char *file, int line, const char *func)
 {
 	struct ast_frame *out;
 	void *newdata;
@@ -196,7 +203,7 @@ struct ast_frame *ast_frisolate(struct ast_frame *fr)
 	   since it is more efficient
 	*/
 	if (fr->mallocd == 0) {
-		return ast_frdup(fr);
+		return __ast_frdup(fr, file, line, func);
 	}
 
 	/* if everything is already malloc'd, we are done */
@@ -207,7 +214,7 @@ struct ast_frame *ast_frisolate(struct ast_frame *fr)
 
 	if (!(fr->mallocd & AST_MALLOCD_HDR)) {
 		/* Allocate a new header if needed */
-		if (!(out = ast_frame_header_new())) {
+		if (!(out = ast_frame_header_new(file, line, func))) {
 			return NULL;
 		}
 		out->frametype = fr->frametype;
@@ -215,6 +222,8 @@ struct ast_frame *ast_frisolate(struct ast_frame *fr)
 		if ((fr->frametype == AST_FRAME_VOICE) || (fr->frametype == AST_FRAME_VIDEO) ||
 			(fr->frametype == AST_FRAME_IMAGE)) {
 			ao2_bump(out->subclass.format);
+		} else if (fr->frametype == AST_FRAME_VOICE && fr->subclass.integer == AST_CONTROL_ANSWER) {
+			ao2_bump(out->subclass.topology);
 		}
 		out->datalen = fr->datalen;
 		out->samples = fr->samples;
@@ -293,13 +302,13 @@ struct ast_frame *ast_frisolate(struct ast_frame *fr)
 	return out;
 }
 
-struct ast_frame *ast_frdup(const struct ast_frame *f)
+struct ast_frame *__ast_frdup(const struct ast_frame *f, const char *file, int line, const char *func)
 {
 	struct ast_frame *out = NULL;
 	int len, srclen = 0;
 	void *buf = NULL;
 
-#if !defined(LOW_MEMORY)
+#if !defined(NO_FRAME_CACHE)
 	struct ast_frame_cache *frames;
 #endif
 
@@ -315,7 +324,7 @@ struct ast_frame *ast_frdup(const struct ast_frame *f)
 	if (srclen > 0)
 		len += srclen + 1;
 
-#if !defined(LOW_MEMORY)
+#if !defined(NO_FRAME_CACHE)
 	if ((frames = ast_threadstorage_get(&frame_cache, sizeof(*frames)))) {
 		AST_LIST_TRAVERSE_SAFE_BEGIN(&frames->list, out, frame_list) {
 			if (out->mallocd_hdr_len >= len) {
@@ -334,7 +343,7 @@ struct ast_frame *ast_frdup(const struct ast_frame *f)
 #endif
 
 	if (!buf) {
-		if (!(buf = ast_calloc_cache(1, len)))
+		if (!(buf = __ast_calloc(1, len, file, line, func)))
 			return NULL;
 		out = buf;
 		out->mallocd_hdr_len = len;
@@ -345,7 +354,10 @@ struct ast_frame *ast_frdup(const struct ast_frame *f)
 	if ((f->frametype == AST_FRAME_VOICE) || (f->frametype == AST_FRAME_VIDEO) ||
 		(f->frametype == AST_FRAME_IMAGE)) {
 		ao2_bump(out->subclass.format);
+	} else if (f->frametype == AST_FRAME_CONTROL && f->subclass.integer == AST_CONTROL_ANSWER) {
+		ao2_bump(out->subclass.topology);
 	}
+
 	out->datalen = f->datalen;
 	out->samples = f->samples;
 	out->delivery = f->delivery;
@@ -391,7 +403,7 @@ void ast_swapcopy_samples(void *dst, const void *src, int samples)
 		dst_s[i] = (src_s[i]<<8) | (src_s[i]>>8);
 }
 
-void ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, char *moreinfo, size_t mlen)
+char *ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, char *moreinfo, size_t mlen)
 {
 	switch(f->frametype) {
 	case AST_FRAME_DTMF_BEGIN:
@@ -474,6 +486,85 @@ void ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, ch
 			snprintf(subclass, slen, "T38_Parameters/%s", message);
 			break;
 		}
+
+		case AST_CONTROL_STREAM_STOP:
+			ast_copy_string(subclass, "Stop stream", slen);
+			break;
+		case AST_CONTROL_STREAM_SUSPEND:
+			ast_copy_string(subclass, "Suspend stream", slen);
+			break;
+		case AST_CONTROL_STREAM_RESTART:
+			ast_copy_string(subclass, "Restart stream", slen);
+			break;
+		case AST_CONTROL_STREAM_REVERSE:
+			ast_copy_string(subclass, "Reverse stream", slen);
+			break;
+		case AST_CONTROL_STREAM_FORWARD:
+			ast_copy_string(subclass, "Forward stream", slen);
+			break;
+		case AST_CONTROL_RECORD_CANCEL:
+			ast_copy_string(subclass, "Cancel stream", slen);
+			break;
+		case AST_CONTROL_RECORD_STOP:
+			ast_copy_string(subclass, "Record stop", slen);
+			break;
+		case AST_CONTROL_RECORD_SUSPEND:
+			ast_copy_string(subclass, "Record suspend", slen);
+			break;
+		case AST_CONTROL_RECORD_MUTE:
+			ast_copy_string(subclass, "Record mute", slen);
+			break;
+		case AST_CONTROL_SRCUPDATE:
+			ast_copy_string(subclass, "Media source update", slen);
+			break;
+		case AST_CONTROL_TRANSFER:
+			ast_copy_string(subclass, "Transfer", slen);
+			break;
+		case AST_CONTROL_CONNECTED_LINE:
+			ast_copy_string(subclass, "Connected line update", slen);
+			break;
+		case AST_CONTROL_REDIRECTING:
+			ast_copy_string(subclass, "Redirect", slen);
+			break;
+		case AST_CONTROL_CC:
+			ast_copy_string(subclass, "CC", slen);
+			break;
+		case AST_CONTROL_SRCCHANGE:
+			ast_copy_string(subclass, "Media SSRC change", slen);
+			break;
+		case AST_CONTROL_READ_ACTION:
+			ast_copy_string(subclass, "Read action", slen);
+			break;
+		case AST_CONTROL_AOC:
+			ast_copy_string(subclass, "AOC", slen);
+			break;
+		case AST_CONTROL_END_OF_Q:
+			ast_copy_string(subclass, "Endof Q", slen);
+			break;
+		case AST_CONTROL_INCOMPLETE:
+			ast_copy_string(subclass, "Incomplete", slen);
+			break;
+		case AST_CONTROL_MCID:
+			ast_copy_string(subclass, "MCID", slen);
+			break;
+		case AST_CONTROL_UPDATE_RTP_PEER:
+			ast_copy_string(subclass, "Update RTP peer", slen);
+			break;
+		case AST_CONTROL_PVT_CAUSE_CODE:
+			ast_copy_string(subclass, "Private Cause Code", slen);
+			break;
+		case AST_CONTROL_MASQUERADE_NOTIFY:
+			ast_copy_string(subclass, "Masquerade notify", slen);
+			break;
+		case AST_CONTROL_STREAM_TOPOLOGY_REQUEST_CHANGE:
+			ast_copy_string(subclass, "Stream topology request change", slen);
+			break;
+		case AST_CONTROL_STREAM_TOPOLOGY_CHANGED:
+			ast_copy_string(subclass, "Stream topology changed", slen);
+			break;
+		case AST_CONTROL_STREAM_TOPOLOGY_SOURCE_CHANGED:
+			ast_copy_string(subclass, "Stream topology source changed", slen);
+			break;
 		case -1:
 			ast_copy_string(subclass, "Stop generators", slen);
 			break;
@@ -564,9 +655,11 @@ void ast_frame_subclass2str(struct ast_frame *f, char *subclass, size_t slen, ch
 		ast_copy_string(subclass, "Unknown Subclass", slen);
 		break;
 	}
+
+	return subclass;
 }
 
-void ast_frame_type2str(enum ast_frame_type frame_type, char *ftype, size_t len)
+char *ast_frame_type2str(enum ast_frame_type frame_type, char *ftype, size_t len)
 {
 	switch (frame_type) {
 	case AST_FRAME_DTMF_BEGIN:
@@ -621,6 +714,8 @@ void ast_frame_type2str(enum ast_frame_type frame_type, char *ftype, size_t len)
 		snprintf(ftype, len, "Unknown Frametype '%u'", frame_type);
 		break;
 	}
+
+	return ftype;
 }
 
 /*! Dump a frame for debugging purposes */

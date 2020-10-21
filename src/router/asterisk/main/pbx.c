@@ -3148,10 +3148,15 @@ static int internal_extension_state_extended(struct ast_channel *c, const char *
 	}
 
 	if (e->exten[0] == '_') {
-		/* Create this hint on-the-fly */
+		/* Create this hint on-the-fly, we explicitly lock hints here to ensure the
+		 * same locking order as if this were done through configuration file - that is
+		 * hints is locked first and then (if needed) contexts is locked
+		 */
+		ao2_lock(hints);
 		ast_add_extension(e->parent->name, 0, exten, e->priority, e->label,
 			e->matchcid ? e->cidmatch : NULL, e->app, ast_strdup(e->data), ast_free_ptr,
 			e->registrar);
+		ao2_unlock(hints);
 		if (!(e = ast_hint_extension(c, context, exten))) {
 			/* Improbable, but not impossible */
 			return -1;
@@ -3228,9 +3233,11 @@ int ast_hint_presence_state(struct ast_channel *c, const char *context, const ch
 
 	if (e->exten[0] == '_') {
 		/* Create this hint on-the-fly */
+		ao2_lock(hints);
 		ast_add_extension(e->parent->name, 0, exten, e->priority, e->label,
 			e->matchcid ? e->cidmatch : NULL, e->app, ast_strdup(e->data), ast_free_ptr,
 			e->registrar);
+		ao2_unlock(hints);
 		if (!(e = ast_hint_extension(c, context, exten))) {
 			/* Improbable, but not impossible */
 			return -1;
@@ -3766,9 +3773,11 @@ static int extension_state_add_destroy(const char *context, const char *exten,
 	 * individual extension, because the pattern will no longer match first.
 	 */
 	if (e->exten[0] == '_') {
+		ao2_lock(hints);
 		ast_add_extension(e->parent->name, 0, exten, e->priority, e->label,
 			e->matchcid ? e->cidmatch : NULL, e->app, ast_strdup(e->data), ast_free_ptr,
 			e->registrar);
+		ao2_unlock(hints);
 		e = ast_hint_extension(NULL, context, exten);
 		if (!e || e->exten[0] == '_') {
 			return -1;
@@ -6519,6 +6528,8 @@ void ast_merge_contexts_and_delete(struct ast_context **extcontexts, struct ast_
 	i = ao2_iterator_init(hints, AO2_ITERATOR_DONTLOCK);
 	for (; (hint = ao2_iterator_next(&i)); ao2_ref(hint, -1)) {
 		if (ao2_container_count(hint->callbacks)) {
+			size_t exten_len;
+
 			ao2_lock(hint);
 			if (!hint->exten) {
 				/* The extension has already been destroyed. (Should never happen here) */
@@ -6526,7 +6537,8 @@ void ast_merge_contexts_and_delete(struct ast_context **extcontexts, struct ast_
 				continue;
 			}
 
-			length = strlen(hint->exten->exten) + strlen(hint->exten->parent->name) + 2
+			exten_len = strlen(hint->exten->exten) + 1;
+			length = exten_len + strlen(hint->exten->parent->name) + 1
 				+ sizeof(*saved_hint);
 			if (!(saved_hint = ast_calloc(1, length))) {
 				ao2_unlock(hint);
@@ -6546,7 +6558,7 @@ void ast_merge_contexts_and_delete(struct ast_context **extcontexts, struct ast_
 			saved_hint->context = saved_hint->data;
 			strcpy(saved_hint->data, hint->exten->parent->name);
 			saved_hint->exten = saved_hint->data + strlen(saved_hint->context) + 1;
-			strcpy(saved_hint->exten, hint->exten->exten);
+			ast_copy_string(saved_hint->exten, hint->exten->exten, exten_len);
 			if (hint->last_presence_subtype) {
 				saved_hint->last_presence_subtype = ast_strdup(hint->last_presence_subtype);
 			}

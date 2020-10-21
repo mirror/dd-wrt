@@ -242,6 +242,7 @@ int daemon(int, int);  /* defined in libresolv of all places */
 #include "asterisk/media_cache.h"
 #include "asterisk/astdb.h"
 #include "asterisk/options.h"
+#include "asterisk/utf8.h"
 
 #include "../defaults.h"
 
@@ -388,6 +389,10 @@ static int multi_thread_safe;
 
 static char randompool[256];
 
+#ifdef HAVE_CAP
+static cap_t child_cap;
+#endif
+
 static int sig_alert_pipe[2] = { -1, -1 };
 static struct {
 	 unsigned int need_reload:1;
@@ -485,6 +490,7 @@ static char *handle_show_settings(struct ast_cli_entry *e, int cmd, struct ast_c
 	ast_cli(a->fd, "  Root console verbosity:      %d\n", option_verbose);
 	ast_cli(a->fd, "  Current console verbosity:   %d\n", ast_verb_console_get());
 	ast_cli(a->fd, "  Debug level:                 %d\n", option_debug);
+	ast_cli(a->fd, "  Trace level:                 %d\n", option_trace);
 	ast_cli(a->fd, "  Maximum load average:        %lf\n", ast_option_maxload);
 #if defined(HAVE_SYSINFO)
 	ast_cli(a->fd, "  Minimum free memory:         %ld MB\n", option_minmemfree);
@@ -1099,13 +1105,7 @@ static pid_t safe_exec_prep(int dualfork)
 
 	if (pid == 0) {
 #ifdef HAVE_CAP
-		cap_t cap = cap_from_text("cap_net_admin-eip");
-
-		if (cap_set_proc(cap)) {
-			/* Careful with order! Logging cannot happen after we close FDs */
-			ast_log(LOG_WARNING, "Unable to remove capabilities.\n");
-		}
-		cap_free(cap);
+		cap_set_proc(child_cap);
 #endif
 #ifdef HAVE_WORKING_FORK
 		if (ast_opt_high_priority) {
@@ -1804,10 +1804,8 @@ int ast_set_priority(int pri)
 	if (pri) {
 		sched.sched_priority = 10;
 		if (sched_setscheduler(0, SCHED_RR, &sched)) {
-			ast_log(LOG_WARNING, "Unable to set high priority\n");
 			return -1;
-		} else
-			ast_verb(1, "Set to realtime thread\n");
+		}
 	} else {
 		sched.sched_priority = 0;
 		/* According to the manpage, these parameters can never fail. */
@@ -3920,8 +3918,14 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
+#ifdef HAVE_CAP
+	child_cap = cap_from_text("cap_net_admin-eip");
+#endif
 	/* Not a remote console? Start the daemon. */
 	asterisk_daemon(isroot, runuser, rungroup);
+#ifdef HAS_CAP
+	cap_free(child_cap);
+#endif
 	return 0;
 }
 
@@ -4065,6 +4069,7 @@ static void asterisk_daemon(int isroot, const char *runuser, const char *rungrou
 	check_init(ast_json_init(), "libjansson");
 	ast_ulaw_init();
 	ast_alaw_init();
+	ast_utf8_init();
 	tdd_init();
 	callerid_init();
 	ast_builtins_init();

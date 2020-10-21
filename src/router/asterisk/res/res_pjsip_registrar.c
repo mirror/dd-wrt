@@ -81,12 +81,12 @@ static int pj_max_hostname = PJ_MAX_HOSTNAME;
 static int pjsip_max_url_size = PJSIP_MAX_URL_SIZE;
 
 /*! \brief Internal function which returns the expiration time for a contact */
-static int registrar_get_expiration(const struct ast_sip_aor *aor, const pjsip_contact_hdr *contact, const pjsip_rx_data *rdata)
+static unsigned int registrar_get_expiration(const struct ast_sip_aor *aor, const pjsip_contact_hdr *contact, const pjsip_rx_data *rdata)
 {
 	pjsip_expires_hdr *expires;
-	int expiration = aor->default_expiration;
+	unsigned int expiration = aor->default_expiration;
 
-	if (contact && contact->expires != -1) {
+	if (contact && contact->expires != PJSIP_EXPIRES_NOT_SPECIFIED) {
 		/* Expiration was provided with the contact itself */
 		expiration = contact->expires;
 	} else if ((expires = pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_EXPIRES, NULL))) {
@@ -148,7 +148,7 @@ static int registrar_validate_contacts(const pjsip_rx_data *rdata, pj_pool_t *po
 	};
 
 	for (; (contact = (pjsip_contact_hdr *) pjsip_msg_find_hdr(rdata->msg_info.msg, PJSIP_H_CONTACT, contact->next)); pj_pool_reset(pool)) {
-		int expiration = registrar_get_expiration(aor, contact, rdata);
+		unsigned int expiration = registrar_get_expiration(aor, contact, rdata);
 		struct ast_sip_contact *existing;
 		char contact_uri[pjsip_max_url_size];
 
@@ -233,7 +233,11 @@ static int registrar_add_contact(void *obj, void *arg, int flags)
 	if (parsed && (PJSIP_URI_SCHEME_IS_SIP(parsed) || PJSIP_URI_SCHEME_IS_SIPS(parsed))) {
 		pjsip_contact_hdr *hdr = pjsip_contact_hdr_create(tdata->pool);
 		hdr->uri = parsed;
-		hdr->expires = ast_tvdiff_ms(contact->expiration_time, ast_tvnow()) / 1000;
+		if (!ast_tvzero(contact->expiration_time)) {
+			hdr->expires = ast_tvdiff_ms(contact->expiration_time, ast_tvnow()) / 1000;
+		} else {
+			hdr->expires = PJSIP_EXPIRES_NOT_SPECIFIED;
+		}
 		pjsip_msg_add_hdr(tdata->msg, (pjsip_hdr *) hdr);
 	} else {
 		ast_log(LOG_WARNING, "Skipping invalid Contact URI \"%.*s\" for AOR %s\n",
@@ -422,12 +426,13 @@ static int registrar_contact_delete(enum contact_delete_type type, pjsip_transpo
 	aor_size = aor_name ? strlen(aor_name) : 0;
 	if (contact->prune_on_boot && type != CONTACT_DELETE_SHUTDOWN && aor_size) {
 		const char *contact_name = ast_sorcery_object_get_id(contact);
+		size_t contact_name_len = strlen(contact_name) + 1;
 		struct contact_transport_monitor *monitor = ast_alloca(
-			sizeof(*monitor) + 2 + aor_size + strlen(contact_name));
+			sizeof(*monitor) + 1 + aor_size + contact_name_len);
 
 		strcpy(monitor->aor_name, aor_name); /* Safe */
 		monitor->contact_name = monitor->aor_name + aor_size + 1;
-		strcpy(monitor->contact_name, contact_name); /* Safe */
+		ast_copy_string(monitor->contact_name, contact_name, contact_name_len); /* Safe */
 
 		if (transport) {
 			ast_sip_transport_monitor_unregister(transport,
@@ -774,6 +779,7 @@ static void register_aor_core(pjsip_rx_data *rdata,
 			}
 
 			if (prune_on_boot) {
+				size_t contact_name_len;
 				const char *contact_name;
 				struct contact_transport_monitor *monitor;
 
@@ -782,12 +788,13 @@ static void register_aor_core(pjsip_rx_data *rdata,
 				 * the contact won't be valid anymore if that happens.
 				 */
 				contact_name = ast_sorcery_object_get_id(contact);
-				monitor = ao2_alloc(sizeof(*monitor) + 2 + strlen(aor_name)
-					+ strlen(contact_name), NULL);
+				contact_name_len = strlen(contact_name) + 1;
+				monitor = ao2_alloc(sizeof(*monitor) + 1 + strlen(aor_name)
+					+ contact_name_len, NULL);
 				if (monitor) {
 					strcpy(monitor->aor_name, aor_name);/* Safe */
 					monitor->contact_name = monitor->aor_name + strlen(aor_name) + 1;
-					strcpy(monitor->contact_name, contact_name);/* Safe */
+					ast_copy_string(monitor->contact_name, contact_name, contact_name_len);/* Safe */
 
 					ast_sip_transport_monitor_register_replace(rdata->tp_info.transport,
 						register_contact_transport_shutdown_cb, monitor, contact_transport_monitor_matcher);

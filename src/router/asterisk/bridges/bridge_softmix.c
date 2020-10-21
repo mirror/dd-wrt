@@ -207,9 +207,8 @@ static void softmix_process_write_audio(struct softmix_translate_helper *trans_h
 	struct softmix_translate_helper_entry *entry = NULL;
 	int i;
 
-	/* If we provided audio that was not determined to be silence,
-	 * then take it out while in slinear format. */
-	if (sc->have_audio && sc->talking && !sc->binaural) {
+	/* If we provided any audio then take it out while in slinear format. */
+	if (sc->have_audio && !sc->binaural) {
 		for (i = 0; i < sc->write_frame.samples; i++) {
 			ast_slinear_saturated_subtract(&sc->final_buf[i], &sc->our_buf[i]);
 		}
@@ -224,7 +223,7 @@ static void softmix_process_write_audio(struct softmix_translate_helper *trans_h
 		/* do not do any special write translate optimization if we had to make
 		 * a special mix for them to remove their own audio. */
 		return;
-	} else if (sc->have_audio && sc->talking && sc->binaural > 0) {
+	} else if (sc->have_audio && sc->binaural > 0) {
 		/*
 		 * Binaural audio requires special saturated substract since we have two
 		 * audio signals per channel now.
@@ -2294,7 +2293,8 @@ static void softmix_bridge_stream_sources_update(struct ast_bridge *bridge, stru
 				ast_stream_get_state(new_stream) != AST_STREAM_STATE_SENDRECV && ast_stream_get_state(new_stream) != AST_STREAM_STATE_RECVONLY) {
 			/* If a stream renegotiates and is removed then we remove it */
 			removed_streams[removed_streams_count++] = index;
-		} else if (ast_stream_get_state(old_stream) == AST_STREAM_STATE_REMOVED &&
+		} else if ((ast_stream_get_state(old_stream) == AST_STREAM_STATE_REMOVED || ast_stream_get_state(old_stream) == AST_STREAM_STATE_INACTIVE ||
+				ast_stream_get_state(old_stream) == AST_STREAM_STATE_SENDONLY) &&
 				ast_stream_get_state(new_stream) != AST_STREAM_STATE_INACTIVE && ast_stream_get_state(new_stream) != AST_STREAM_STATE_SENDONLY &&
 				ast_stream_get_state(new_stream) != AST_STREAM_STATE_REMOVED) {
 			/* If a stream renegotiates and is added then we add it */

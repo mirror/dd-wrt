@@ -56,6 +56,7 @@
 
 #include "asterisk/res_pjsip.h"
 #include "asterisk/res_pjsip_session.h"
+#include "asterisk/res_pjsip_session_caps.h"
 
 /*! \brief Scheduler for RTCP purposes */
 static struct ast_sched_context *sched;
@@ -323,6 +324,7 @@ static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp
 	char fmt_param[256];
 	enum ast_rtp_options options = session->endpoint->media.g726_non_standard ?
 		AST_RTP_OPT_G726_NONSTANDARD : 0;
+	SCOPE_ENTER(1, "%s\n", ast_sip_session_get_name(session));
 
 	ast_rtp_codecs_payloads_initialize(codecs);
 
@@ -394,6 +396,86 @@ static void get_codecs(struct ast_sip_session *session, const struct pjmedia_sdp
 			ast_rtp_codecs_set_framing(codecs, framing);
 		}
 	}
+
+	SCOPE_EXIT_RTN();
+}
+
+static int apply_cap_to_bundled(struct ast_sip_session_media *session_media,
+	struct ast_sip_session_media *session_media_transport,
+	struct ast_stream *asterisk_stream, struct ast_format_cap *joint)
+{
+	if (!joint) {
+		return -1;
+	}
+
+	ast_stream_set_formats(asterisk_stream, joint);
+
+	/* If this is a bundled stream then apply the payloads to RTP instance acting as transport to prevent conflicts */
+	if (session_media_transport != session_media && session_media->bundled) {
+		int index;
+
+		for (index = 0; index < ast_format_cap_count(joint); ++index) {
+			struct ast_format *format = ast_format_cap_get_format(joint, index);
+			int rtp_code;
+
+			/* Ensure this payload is in the bundle group transport codecs, this purposely doesn't check the return value for
+			 * things as the format is guaranteed to have a payload already.
+			 */
+			rtp_code = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(session_media->rtp), 1, format, 0);
+			ast_rtp_codecs_payload_set_rx(ast_rtp_instance_get_codecs(session_media_transport->rtp), rtp_code, format);
+
+			ao2_ref(format, -1);
+		}
+	}
+
+	return 0;
+}
+
+static struct ast_format_cap *set_incoming_call_offer_cap(
+	struct ast_sip_session *session, struct ast_sip_session_media *session_media,
+	const struct pjmedia_sdp_media *stream)
+{
+	struct ast_format_cap *incoming_call_offer_cap;
+	struct ast_format_cap *remote;
+	struct ast_rtp_codecs codecs = AST_RTP_CODECS_NULL_INIT;
+	int fmts = 0;
+	SCOPE_ENTER(1, "%s\n", ast_sip_session_get_name(session));
+
+
+	remote = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT);
+	if (!remote) {
+		ast_log(LOG_ERROR, "Failed to allocate %s incoming remote capabilities\n",
+				ast_codec_media_type2str(session_media->type));
+		SCOPE_EXIT_RTN_VALUE(NULL, "Couldn't allocate caps\n");
+	}
+
+	/* Get the peer's capabilities*/
+	get_codecs(session, stream, &codecs, session_media);
+	ast_rtp_codecs_payload_formats(&codecs, remote, &fmts);
+
+	incoming_call_offer_cap = ast_sip_session_create_joint_call_cap(
+		session, session_media->type, remote);
+
+	ao2_ref(remote, -1);
+
+	if (!incoming_call_offer_cap || ast_format_cap_empty(incoming_call_offer_cap)) {
+		ao2_cleanup(incoming_call_offer_cap);
+		ast_rtp_codecs_payloads_destroy(&codecs);
+		SCOPE_EXIT_RTN_VALUE(NULL, "No incoming call offer caps\n");
+	}
+
+	/*
+	 * Setup rx payload type mapping to prefer the mapping
+	 * from the peer that the RFC says we SHOULD use.
+	 */
+	ast_rtp_codecs_payloads_xover(&codecs, &codecs, NULL);
+
+	ast_rtp_codecs_payloads_copy(&codecs,
+		ast_rtp_instance_get_codecs(session_media->rtp), session_media->rtp);
+
+	ast_rtp_codecs_payloads_destroy(&codecs);
+
+	SCOPE_EXIT_RTN_VALUE(incoming_call_offer_cap);
 }
 
 static int set_caps(struct ast_sip_session *session,
@@ -411,13 +493,15 @@ static int set_caps(struct ast_sip_session *session,
 	int direct_media_enabled = !ast_sockaddr_isnull(&session_media->direct_media_addr) &&
 		ast_format_cap_count(session->direct_media_cap);
 	int dsp_features = 0;
+	SCOPE_ENTER(1, "%s %s\n", ast_sip_session_get_name(session), is_offer ? "OFFER" : "ANSWER");
 
 	if (!(caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT)) ||
 	    !(peer = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT)) ||
 	    !(joint = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		ast_log(LOG_ERROR, "Failed to allocate %s capabilities\n",
 			ast_codec_media_type2str(session_media->type));
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Couldn't create %s capabilities\n",
+			ast_codec_media_type2str(session_media->type));
 	}
 
 	/* get the endpoint capabilities */
@@ -442,7 +526,10 @@ static int set_caps(struct ast_sip_session *session,
 			ast_codec_media_type2str(session_media->type),
 			ast_format_cap_get_names(caps, &usbuf),
 			ast_format_cap_get_names(peer, &thembuf));
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "No joint capabilities for '%s' media stream between our configuration(%s) and incoming SDP(%s)\n",
+			ast_codec_media_type2str(session_media->type),
+			ast_format_cap_get_names(caps, &usbuf),
+			ast_format_cap_get_names(peer, &thembuf));
 	}
 
 	if (is_offer) {
@@ -455,25 +542,7 @@ static int set_caps(struct ast_sip_session *session,
 	ast_rtp_codecs_payloads_copy(&codecs, ast_rtp_instance_get_codecs(session_media->rtp),
 		session_media->rtp);
 
-	ast_stream_set_formats(asterisk_stream, joint);
-
-	/* If this is a bundled stream then apply the payloads to RTP instance acting as transport to prevent conflicts */
-	if (session_media_transport != session_media && session_media->bundled) {
-		int index;
-
-		for (index = 0; index < ast_format_cap_count(joint); ++index) {
-			struct ast_format *format = ast_format_cap_get_format(joint, index);
-			int rtp_code;
-
-			/* Ensure this payload is in the bundle group transport codecs, this purposely doesn't check the return value for
-			 * things as the format is guaranteed to have a payload already.
-			 */
-			rtp_code = ast_rtp_codecs_payload_code(ast_rtp_instance_get_codecs(session_media->rtp), 1, format, 0);
-			ast_rtp_codecs_payload_set_rx(ast_rtp_instance_get_codecs(session_media_transport->rtp), rtp_code, format);
-
-			ao2_ref(format, -1);
-		}
-	}
+	apply_cap_to_bundled(session_media, session_media_transport, asterisk_stream, joint);
 
 	if (session->channel && ast_sip_session_is_pending_stream_default(session, asterisk_stream)) {
 		ast_channel_lock(session->channel);
@@ -535,7 +604,7 @@ static int set_caps(struct ast_sip_session *session,
 	}
 
 	ast_rtp_codecs_payloads_destroy(&codecs);
-	return 0;
+	SCOPE_EXIT_RTN_VALUE(0);
 }
 
 static pjmedia_sdp_attr* generate_rtpmap_attr(struct ast_sip_session *session, pjmedia_sdp_media *media, pj_pool_t *pool,
@@ -1355,13 +1424,15 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session,
 	struct ast_sip_session_media *session_media_transport;
 	enum ast_media_type media_type = session_media->type;
 	enum ast_sip_session_media_encryption encryption = AST_SIP_MEDIA_ENCRYPT_NONE;
+	struct ast_format_cap *joint;
 	int res;
+	SCOPE_ENTER(1, "%s\n", ast_sip_session_get_name(session));
 
 	/* If no type formats have been configured reject this stream */
 	if (!ast_format_cap_has_type(session->endpoint->media.codecs, media_type)) {
 		ast_debug(3, "Endpoint has no codecs for media type '%s', declining stream\n",
 			ast_codec_media_type2str(session_media->type));
-		return 0;
+		SCOPE_EXIT_RTN_VALUE(0, "Endpoint has no codecs\n");
 	}
 
 	/* Ensure incoming transport is compatible with the endpoint's configuration */
@@ -1369,7 +1440,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session,
 		encryption = check_endpoint_media_transport(session->endpoint, stream);
 
 		if (encryption == AST_SIP_MEDIA_TRANSPORT_INVALID) {
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Incompatible transport\n");
 		}
 	}
 
@@ -1378,12 +1449,12 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session,
 	/* Ensure that the address provided is valid */
 	if (ast_sockaddr_resolve(&addrs, host, PARSE_PORT_FORBID, AST_AF_UNSPEC) <= 0) {
 		/* The provided host was actually invalid so we error out this negotiation */
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Invalid host\n");
 	}
 
 	/* Using the connection information create an appropriate RTP instance */
 	if (!session_media->rtp && create_rtp(session, session_media, sdp)) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Couldn't create rtp\n");
 	}
 
 	process_ssrc_attributes(session, session_media, stream);
@@ -1405,7 +1476,7 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session,
 				 * but was not this session must fail. This must also fail if crypto was
 				 * required in the offer but could not be set up.
 				 */
-				return -1;
+				SCOPE_EXIT_RTN_VALUE(-1, "Incompatible crypto\n");
 			}
 			/* There is no encryption, sad. */
 			session_media->encryption = AST_SIP_MEDIA_ENCRYPT_NONE;
@@ -1446,11 +1517,14 @@ static int negotiate_incoming_sdp_stream(struct ast_sip_session *session,
 		}
 	}
 
-	if (set_caps(session, session_media, session_media_transport, stream, 1, asterisk_stream)) {
-		return 0;
+	joint = set_incoming_call_offer_cap(session, session_media, stream);
+	res = apply_cap_to_bundled(session_media, session_media_transport, asterisk_stream, joint);
+	ao2_cleanup(joint);
+	if (res != 0) {
+		SCOPE_EXIT_RTN_VALUE(0, "Something failed\n");
 	}
 
-	return 1;
+	SCOPE_EXIT_RTN_VALUE(1);
 }
 
 static int add_crypto_to_stream(struct ast_sip_session *session,
@@ -1603,13 +1677,14 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 	enum ast_media_type media_type = session_media->type;
 	struct ast_sip_session_media *session_media_transport;
 	pj_sockaddr ip;
-
 	int direct_media_enabled = !ast_sockaddr_isnull(&session_media->direct_media_addr) &&
 		ast_format_cap_count(session->direct_media_cap);
+	SCOPE_ENTER(1, "%s Type: %s %s\n", ast_sip_session_get_name(session),
+		ast_codec_media_type2str(media_type), ast_str_tmp(128, ast_stream_to_str(stream, &STR_TMP)));
 
 	media = pj_pool_zalloc(pool, sizeof(struct pjmedia_sdp_media));
 	if (!media) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Pool alloc failure\n");
 	}
 	pj_strdup2(pool, &media->desc.media, ast_codec_media_type2str(session_media->type));
 
@@ -1639,11 +1714,11 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 		sdp->media[sdp->media_count++] = media;
 		ast_stream_set_state(stream, AST_STREAM_STATE_REMOVED);
 
-		return 1;
+		SCOPE_EXIT_RTN_VALUE(1, "Stream removed or no formats\n");
 	}
 
 	if (!session_media->rtp && create_rtp(session, session_media, sdp)) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Couldn't create rtp\n");
 	}
 
 	/* If this stream has not been bundled already it is new and we need to ensure there is no SSRC conflict */
@@ -1675,7 +1750,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 		 * set up according to the configuration. This ends up changing the media transport.
 		 */
 		if (add_crypto_to_stream(session, session_media, pool, media)) {
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Couldn't add crypto\n");
 		}
 
 		if (pj_strlen(&session_media->transport)) {
@@ -1692,7 +1767,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 
 		media->conn = pj_pool_zalloc(pool, sizeof(struct pjmedia_sdp_conn));
 		if (!media->conn) {
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Pool alloc failure\n");
 		}
 
 		/* Add connection level details */
@@ -1707,7 +1782,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 		if (ast_strlen_zero(hostip)) {
 			ast_log(LOG_ERROR, "No local host IP available for stream %s\n",
 				ast_codec_media_type2str(session_media->type));
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "No local host ip\n");
 		}
 
 		media->conn->net_type = STR_IN;
@@ -1735,7 +1810,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 		media->desc.port = bundle_group_stream->desc.port;
 
 		if (add_crypto_to_stream(session, session_media_transport, pool, media)) {
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Couldn't add crypto\n");
 		}
 
 		add_ice_to_stream(session, session_media_transport, pool, media, 0);
@@ -1746,7 +1821,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 	if (!(caps = ast_format_cap_alloc(AST_FORMAT_CAP_FLAG_DEFAULT))) {
 		ast_log(LOG_ERROR, "Failed to allocate %s capabilities\n",
 			ast_codec_media_type2str(session_media->type));
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Couldn't create caps\n");
 	}
 
 	if (direct_media_enabled) {
@@ -1833,7 +1908,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 
 	/* If no formats were actually added to the media stream don't add it to the SDP */
 	if (!media->desc.fmt_count) {
-		return 1;
+		SCOPE_EXIT_RTN_VALUE(1, "No formats added to stream\n");
 	}
 
 	/* If ptime is set add it as an attribute */
@@ -1889,7 +1964,7 @@ static int create_outgoing_sdp_stream(struct ast_sip_session *session, struct as
 	/* Add the media stream to the SDP */
 	sdp->media[sdp->media_count++] = media;
 
-	return 1;
+	SCOPE_EXIT_RTN_VALUE(1, "RC: 1\n");
 }
 
 static struct ast_frame *media_session_rtp_read_callback(struct ast_sip_session *session, struct ast_sip_session_media *session_media)
@@ -1947,20 +2022,22 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 	char host[NI_MAXHOST];
 	int res;
 	struct ast_sip_session_media *session_media_transport;
+	SCOPE_ENTER(1, "%s Stream: %s\n", ast_sip_session_get_name(session),
+		ast_str_tmp(128, ast_stream_to_str(asterisk_stream, &STR_TMP)));
 
 	if (!session->channel) {
-		return 1;
+		SCOPE_EXIT_RTN_VALUE(1, "No channel\n");
 	}
 
 	/* Ensure incoming transport is compatible with the endpoint's configuration */
 	if (!session->endpoint->media.rtp.use_received_transport &&
 		check_endpoint_media_transport(session->endpoint, remote_stream) == AST_SIP_MEDIA_TRANSPORT_INVALID) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Incompatible transport\n");
 	}
 
 	/* Create an RTP instance if need be */
 	if (!session_media->rtp && create_rtp(session, session_media, local)) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "Couldn't create rtp\n");
 	}
 
 	process_ssrc_attributes(session, session_media, remote_stream);
@@ -1979,11 +2056,11 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 			/* If optimistic encryption is disabled and crypto should have been enabled but was not
 			 * this session must fail.
 			 */
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Incompatible crypto\n");
 		}
 
 		if (!remote_stream->conn && !remote->conn) {
-			return 1;
+			SCOPE_EXIT_RTN_VALUE(1, "No connection info\n");
 		}
 
 		ast_copy_pj_str(host, remote_stream->conn ? &remote_stream->conn->addr : &remote->conn->addr, sizeof(host));
@@ -1991,7 +2068,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 		/* Ensure that the address provided is valid */
 		if (ast_sockaddr_resolve(&addrs, host, PARSE_PORT_FORBID, AST_AF_UNSPEC) <= 0) {
 			/* The provided host was actually invalid so we error out this negotiation */
-			return -1;
+			SCOPE_EXIT_RTN_VALUE(-1, "Host invalid\n");
 		}
 
 		/* Apply connection information to the RTP instance */
@@ -2016,7 +2093,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 	}
 
 	if (set_caps(session, session_media, session_media_transport, remote_stream, 0, asterisk_stream)) {
-		return -1;
+		SCOPE_EXIT_RTN_VALUE(-1, "set_caps failed\n");
 	}
 
 	/* Set the channel uniqueid on the RTP instance now that it is becoming active */
@@ -2034,7 +2111,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 			&& (session->inv_session->state == PJSIP_INV_STATE_CONFIRMED)) {
 			ast_queue_control(session->channel, AST_CONTROL_UPDATE_RTP_PEER);
 		}
-		return 1;
+		SCOPE_EXIT_RTN_VALUE(1, "moh\n");
 	}
 
 	if (session_media->remotely_held_changed) {
@@ -2092,7 +2169,7 @@ static int apply_negotiated_sdp_stream(struct ast_sip_session *session,
 			session_media, 1);
 	}
 
-	return 1;
+	SCOPE_EXIT_RTN_VALUE(1, "Handled\n");
 }
 
 /*! \brief Function which updates the media stream with external media address, if applicable */

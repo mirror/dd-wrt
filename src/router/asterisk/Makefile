@@ -249,7 +249,7 @@ else
 endif
 ifneq ($(AWK),)
   ifneq ($(wildcard .version),)
-    ASTERISKVERSIONNUM:=$(shell $(AWK) -F. '{printf "%01d%02d%02d", $$1, $$2, $$3}' .version)
+    ASTERISKVERSIONNUM:=$(shell $(SED) -e 's/^certified\///' -e 's/-cert/./' .version | $(AWK) -F. '{printf "%01d%02d%02d", $$1, $$2, $$3}')
   endif
 endif
 
@@ -565,7 +565,7 @@ INSTALLDIRS="$(ASTLIBDIR)" "$(ASTMODDIR)" "$(ASTSBINDIR)" "$(ASTETCDIR)" "$(ASTV
 	"$(ASTDATADIR)/firmware/iax" "$(ASTDATADIR)/images" "$(ASTDATADIR)/keys" \
 	"$(ASTDATADIR)/phoneprov" "$(ASTDATADIR)/rest-api" "$(ASTDATADIR)/static-http" \
 	"$(ASTDATADIR)/sounds" "$(ASTDATADIR)/moh" "$(ASTMANDIR)/man8" "$(AGI_DIR)" "$(ASTDBDIR)" \
-	"$(ASTDATADIR)/third-party"
+	"$(ASTDATADIR)/third-party" "${ASTDATADIR}/keys/stir_shaken"
 
 installdirs:
 	@for i in $(INSTALLDIRS); do \
