@@ -46,9 +46,10 @@
 extern "C" {
 #endif
 
-#define LY_VERSION_MAJOR @LIBYANG_MAJOR_VERSION@ /**< libyang major version number */
-#define LY_VERSION_MINOR @LIBYANG_MINOR_VERSION@ /**< libyang minor version number */
-#define LY_VERSION_MICRO @LIBYANG_MICRO_VERSION@ /**< libyang micro version number */
+#define LY_VERSION_MAJOR @LIBYANG_MAJOR_SOVERSION@ /**< libyang major version number */
+#define LY_VERSION_MINOR @LIBYANG_MINOR_SOVERSION@ /**< libyang minor version number */
+#define LY_VERSION_MICRO @LIBYANG_MICRO_SOVERSION@ /**< libyang micro version number */
+#define LY_VERSION "@LIBYANG_SOVERSION_FULL@" /**< libyang version string */
 
 /**
  * @mainpage About
@@ -364,6 +365,9 @@ extern "C" {
  *
  * The plugins list can be cleaned by ly_clean_plugins(). However, since various contexts (respectively their
  * schemas) can link to the plugins, the cleanup is successful only when there is no remaining context.
+ *
+ * For both plugin types, when a specific plugin is being loaded, libyang checks for the API version the plugin was compiled with.
+ * From the plugin side, this is done using `LYEXT_VERSION_CHECK` or `LYTYPE_VERSION_CHECK` which must be defined in the plugin code.
  *
  * @section extensions Extensions
  *
@@ -1442,7 +1446,7 @@ const struct lys_module *ly_ctx_get_module_older(const struct ly_ctx *ctx, const
  * @param[in] revision Optional revision date of the module. If not specified, it is
  * assumed that there is only one model revision in the searchpath (the first matching file
  * is parsed).
- * @return Pointer to the data model structure, NULL if not found or some error occured.
+ * @return Pointer to the data model structure, NULL if not found or some error occurred.
  */
 const struct lys_module *ly_ctx_load_module(struct ly_ctx *ctx, const char *name, const char *revision);
 
@@ -1586,7 +1590,7 @@ const struct lys_submodule *ly_ctx_get_submodule2(const struct lys_module *main_
  * @param[in] output Search operation output instead input.
  * @return Resolved schema node or NULL.
  */
-const struct lys_node *ly_ctx_get_node(struct ly_ctx *ctx, const struct lys_node *start, const char *data_path, int output);
+const struct lys_node *ly_ctx_get_node(const struct ly_ctx *ctx, const struct lys_node *start, const char *data_path, int output);
 
 /**
  * @brief Get schema node according to the given schema path (see @ref howtoxpath).
@@ -1911,6 +1915,8 @@ int ly_log_options(int opts);
 #define LY_LDGYIN   0x04 /**< YIN parser messages. */
 #define LY_LDGXPATH 0x08 /**< XPath parsing end evaluation. */
 #define LY_LDGDIFF  0x10 /**< Diff processing and creation. */
+#define LY_LDGAPI   0x20 /**< API tracing. */
+#define LY_LDGHASH  0x40 /**< Hash table modifications. */
 
 /**
  * @}

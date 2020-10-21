@@ -1,0 +1,20 @@
+module mod5 {
+  prefix abc;
+  namespace "urn:cesnet:mod5";
+   
+  /* LF should trim whitespace and repace TAB with 8 space in succeeding line header*/
+  description "a	
+		b";
+
+  /* LF should not trim whitespace before escaped whitespace immediately followed by LF*/
+  contact      "a  	\t
+ 	\tb";
+
+  /* LF should not trim escaped whitespace*/
+  reference   "a\t
+\tb";
+
+  /* escaped LF should not trim whitespace or escaped whitespace*/
+  organization "a\t  	\n  	\tb"; 
+}
+

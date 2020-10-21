@@ -1,0 +1,7 @@
+submodule sub7 {
+
+    belongs-to mod3 {
+        prefix aaa;
+    }
+}
+//not the main submodule

@@ -1,72 +1,115 @@
-Name: @PACKAGE_NAME@
+name: @PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 Version: @LIBYANG_VERSION@
 Release: 0
 Summary: Libyang library
 Url: https://github.com/CESNET/libyang
-Source: %{url}/archive/@BRANCH@.tar.gz
-Source1: libyang.rpmlintrc
+Source: %{url}/archive/master.tar.gz
+Source1: @PACKAGE@.rpmlintrc
 License: BSD-3-Clause
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
+
+%if 0%{?scientificlinux_version} == 700 || ( 0%{?rhel} && 0%{?rhel} < 7 )
+    %define with_lang_bind 0
+%else
+    %define with_lang_bind 1
+%endif
+
+%if ( 0%{?rhel} && 0%{?rhel} < 7 )
+    %define with_ly_cache 0
+%else
+    %define with_ly_cache 1
+%endif
 
 Requires:  pcre
 BuildRequires:  cmake
 BuildRequires:  doxygen
 BuildRequires:  pcre-devel
-BuildRequires:  valgrind
-BuildRequires:  libcmocka-devel
 BuildRequires:  gcc
-BuildRequires:  gcc-c++
-BuildRequires:  swig >= 3.0.12
+BuildRequires:  libcmocka-devel
 
-%if 0%{?suse_version} + 0%{?fedora} > 0
-BuildRequires:  python3-devel
+%if %{with_lang_bind}
+BuildRequires:  gcc-c++
+%if 0%{?rhel} == 7
+BuildRequires:  swig3 >= 3.0.12
 %else
-BuildRequires:  python34-devel
+BuildRequires:  swig >= 3.0.12
 %endif
 
-Conflicts: @CONFLICT_PACKAGE_NAME@ = @LIBYANG_MAJOR_VERSION@.@LIBYANG_MINOR_VERSION@
+%if 0%{?suse_version} + 0%{?fedora} + 0%{?centos_version} > 0
+BuildRequires:  python3-devel
+%else
+BuildRequires:  python36-devel
+%endif
 
-%package devel
+%endif
+
+%package -n @PACKAGE@-devel
 Summary:    Headers of libyang library
 Requires:   %{name} = %{version}-%{release}
 Requires:   pcre-devel
 
-%package -n libyang-cpp@PACKAGE_PART_NAME@
+%package -n @TOOLS_PACKAGE@
+Summary:    Helper Tools
+Requires:   %{name} = %{version}-%{release}
+
+%if %{with_lang_bind}
+%package -n @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 Summary:    Bindings to c++ language
 Requires:   %{name} = %{version}-%{release}
 
-%package -n libyang-cpp@PACKAGE_PART_NAME@-devel
+%package -n @CPP_PACKAGE@-devel
 Summary:    Headers of bindings to c++ language
-Requires:   libyang-cpp@PACKAGE_PART_NAME@ = %{version}-%{release}
+Requires:   @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@ = %{version}-%{release}
 Requires:   pcre-devel
 
-%package -n python3-yang@PACKAGE_PART_NAME@
+%package -n @PYTHON_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 Summary:    Binding to python
-Requires:   libyang-cpp@PACKAGE_PART_NAME@ = %{version}-%{release}
+Requires:   @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@ = %{version}-%{release}
 Requires:   %{name} = %{version}-%{release}
 
-%description -n libyang-cpp@PACKAGE_PART_NAME@
+%description -n @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 Bindings of libyang library to C++ language.
 
-%description -n libyang-cpp@PACKAGE_PART_NAME@-devel
+%description -n @CPP_PACKAGE@-devel
 Headers of bindings to c++ language.
 
-%description -n python3-yang@PACKAGE_PART_NAME@
+%description -n @PYTHON_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 Bindings of libyang library to python language.
+%endif
 
-%description devel
+%description -n @PACKAGE@-devel
 Headers of libyang library.
 
+%description -n @TOOLS_PACKAGE@
+Helper Tools and examples for libyang library.
+
 %description
-Libyang is YANG data modelling language parser and toolkit written (and providing API) in C.
+@LIBYANG_DESCRIPTION@
 
 %prep
-%setup -n libyang-@BRANCH@
+%setup -n @PACKAGE@-master
 mkdir build
 
 %build
 cd build
-cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr -D CMAKE_BUILD_TYPE:String="@BUILD_TYPE@" -DGEN_LANGUAGE_BINDINGS=ON ..
+%if %{with_lang_bind}
+    %define cmake_lang_bind "-DGEN_LANGUAGE_BINDINGS=ON"
+%else
+    %define cmake_lang_bind "-DGEN_LANGUAGE_BINDINGS=OFF"
+%endif
+%if %{with_ly_cache}
+    %define cmake_ly_cache "-DENABLE_CACHE=ON"
+%else
+    %define cmake_ly_cache "-DENABLE_CACHE=OFF"
+%endif
+
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+   -DCMAKE_BUILD_TYPE:String="Package" \
+   -DENABLE_LYD_PRIV=ON \
+   -DGEN_JAVA_BINDINGS=OFF \
+   -DGEN_JAVASCRIPT_BINDINGS=OFF \
+   %{cmake_lang_bind} \
+   %{cmake_ly_cache} ..
 make
 
 %check
@@ -78,41 +121,50 @@ cd build
 make DESTDIR=%{buildroot} install
 
 %post -p /sbin/ldconfig
-%post -n libyang-cpp@PACKAGE_PART_NAME@ -p /sbin/ldconfig
+%if %{with_lang_bind}
+%post -n @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@ -p /sbin/ldconfig
+%endif
 
 %postun -p /sbin/ldconfig
-%postun -n libyang-cpp@PACKAGE_PART_NAME@ -p /sbin/ldconfig
+%if %{with_lang_bind}
+%postun -n @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@ -p /sbin/ldconfig
+%endif
 
 %files
 %defattr(-,root,root)
-%{_bindir}/yanglint
-%{_bindir}/yangre
-%{_datadir}/man/man1/yanglint.1.gz
-%{_datadir}/man/man1/yangre.1.gz
 %{_libdir}/libyang.so.*
-%{_libdir}/libyang/*
-%dir %{_libdir}/libyang/
+%{_libdir}/libyang@LIBYANG_MAJOR_SOVERSION@/*
+%dir %{_libdir}/libyang@LIBYANG_MAJOR_SOVERSION@/
 
-%files devel
+%files -n @PACKAGE@-devel
 %defattr(-,root,root)
 %{_libdir}/libyang.so
 %{_libdir}/pkgconfig/libyang.pc
 %{_includedir}/libyang/*.h
 %dir %{_includedir}/libyang/
 
-%files -n libyang-cpp@PACKAGE_PART_NAME@
+%files -n @TOOLS_PACKAGE@
+%{_bindir}/yanglint
+%{_bindir}/yangre
+%{_datadir}/man/man1/yanglint.1.gz
+%{_datadir}/man/man1/yangre.1.gz
+
+%if %{with_lang_bind}
+%files -n @CPP_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 %defattr(-,root,root)
 %{_libdir}/libyang-cpp.so.*
 
-%files -n libyang-cpp@PACKAGE_PART_NAME@-devel
+%files -n @CPP_PACKAGE@-devel
 %defattr(-,root,root)
 %{_libdir}/libyang-cpp.so
 %{_includedir}/libyang/*.hpp
 %{_libdir}/pkgconfig/libyang-cpp.pc
 %dir %{_includedir}/libyang/
 
-%files -n python3-yang@PACKAGE_PART_NAME@
+%files -n @PYTHON_PACKAGE@@LIBYANG_MAJOR_SOVERSION@
 %defattr(-,root,root)
 %{_libdir}/python*
+
+%endif
 
 %changelog

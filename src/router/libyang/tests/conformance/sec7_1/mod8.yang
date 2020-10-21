@@ -1,0 +1,12 @@
+module mod8 {
+  yang-version "1";
+  namespace "urn:cesnet:mod8";
+  prefix mmm;
+
+  import mod_1 {
+    prefix m;
+    revision-date "2019-09-19";
+  }
+  //revision-date time not found
+}
+

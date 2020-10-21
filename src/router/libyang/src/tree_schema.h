@@ -15,14 +15,6 @@
 #ifndef LY_TREE_SCHEMA_H_
 #define LY_TREE_SCHEMA_H_
 
-#ifdef __APPLE__
-  #include <machine/endian.h>
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
-  #include <sys/endian.h>
-#else
-  #include <endian.h>
-#endif
-
 #include <limits.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -419,6 +411,10 @@ typedef enum {
 #define LYEXT_OPT_CONTENT    0x04    /**< content of lys_ext_instance_complex is copied from source (not dup, just memcpy). */
 /** @endcond */
 #define LYEXT_OPT_VALID      0x08    /**< needed to call calback for validation */
+#define LYEXT_OPT_VALID_SUBTREE 0x10 /**< The plugin needs to do validation on nodes in the subtree of the extended node
+                                          (i.e. not only the extended node nor its direct children). valid_data callback
+                                          will be called when any descendant node in the subtree of the extended node is
+                                          modified. */
 #define LYEXT_OPT_PLUGIN1    0x0100  /**< reserved flag for plugin-specific use */
 #define LYEXT_OPT_PLUGIN2    0x0200  /**< reserved flag for plugin-specific use */
 #define LYEXT_OPT_PLUGIN3    0x0400  /**< reserved flag for plugin-specific use */
@@ -1177,6 +1173,8 @@ struct lys_iffeature {
 #define LYS_NOTAPPLIED   0x01        /**< flag for the not applied augments to allow keeping the resolved target */
 #define LYS_YINELEM      0x01        /**< yin-element true for extension's argument */
 #define LYS_VALID_EXT    0x2000      /**< flag marking nodes that need to be validated using an extension validation function */
+#define LYS_VALID_EXT_SUBTREE 0x4000 /**< flag marking nodes that need to be validated using an extension
+                                          validation function when one of their children nodes is modified */
 
 /**
  * @}
@@ -1362,9 +1360,7 @@ struct lys_node_leaf {
 
     LYS_NODE nodetype;               /**< type of the node (mandatory) - #LYS_LEAF */
     struct lys_node *parent;         /**< pointer to the parent node, NULL in case of a top level node */
-    struct ly_set *backlinks;        /**< replacement for ::lys_node's child member, it is NULL except the leaf/leaflist
-                                          is target of a leafref. In that case the set stores ::lys_node leafref objects
-                                          with path referencing the current ::lys_node_leaf */
+    void *child;                     /**< dummy attribute as a replacement for ::lys_node's child member */
     struct lys_node *next;           /**< pointer to the next sibling node (NULL if there is no one) */
     struct lys_node *prev;           /**< pointer to the previous sibling node \note Note that this pointer is
                                           never NULL. If there is no sibling node, pointer points to the node
@@ -2168,7 +2164,8 @@ int lys_search_localfile(const char * const *searchpaths, int cwd, const char *n
 const char **lys_features_list(const struct lys_module *module, uint8_t **states);
 
 /**
- * @brief Enable specified feature in the module
+ * @brief Enable specified feature in the module. In case its if-feature evaluates
+ * to false, return an error.
  *
  * By default, when the module is loaded by libyang parser, all features are disabled.
  *
@@ -2179,7 +2176,8 @@ const char **lys_features_list(const struct lys_module *module, uint8_t **states
 int lys_features_enable(const struct lys_module *module, const char *feature);
 
 /**
- * @brief Disable specified feature in the module
+ * @brief Disable specified feature in the module. If it causes some dependant features
+ * to be disabled, they are also set to disabled.
  *
  * By default, when the module is loaded by libyang parser, all features are disabled.
  *
@@ -2190,7 +2188,29 @@ int lys_features_enable(const struct lys_module *module, const char *feature);
 int lys_features_disable(const struct lys_module *module, const char *feature);
 
 /**
- * @brief Get the current status of the specified feature in the module.
+ * @brief Enable specified feature in the module disregarding its if-features.
+ *
+ * @param[in] module Module where the feature will be enabled.
+ * @param[in] feature Name of the feature to enable. To enable all features at once, use asterisk character.
+ * @return 0 on success, 1 when the feature is not defined in the specified module
+ */
+int lys_features_enable_force(const struct lys_module *module, const char *feature);
+
+/**
+ * @brief Disable specified feature in the module disregarding dependant features.
+ *
+ * By default, when the module is loaded by libyang parser, all features are disabled.
+ *
+ * @param[in] module Module where the feature will be disabled.
+ * @param[in] feature Name of the feature to disable. To disable all features at once, use asterisk character.
+ * @return 0 on success, 1 when the feature is not defined in the specified module
+ */
+int lys_features_disable_force(const struct lys_module *module, const char *feature);
+
+/**
+ * @brief Get the current status of the specified feature in the module. Even if the
+ * feature is enabled but some of its if-features evaluate to false, it is reported
+ * as disabled.
  *
  * @param[in] module Module where the feature is defined.
  * @param[in] feature Name of the feature to inspect.
@@ -2213,6 +2233,14 @@ int lys_features_state(const struct lys_module *module, const char *feature);
  * - pointer to the node with the unsatisfied (disabling) if-feature expression.
  */
 const struct lys_node *lys_is_disabled(const struct lys_node *node, int recursive);
+
+/**
+ * @brief Learn how the if-feature statement currently evaluates.
+ *
+ * @param[in] iff if-feature statement to evaluate.
+ * @return If the statement evaluates to true, 1 is returned. 0 is returned when the statement evaluates to false.
+ */
+int lys_iffeature_value(const struct lys_iffeature *iff);
 
 /**
  * @brief Check if the schema leaf node is used as a key for a list.
@@ -2294,7 +2322,9 @@ enum lyxp_node_type {
     /* XML elements */
     LYXP_NODE_ELEM,             /* XML element (most common) */
     LYXP_NODE_TEXT,             /* XML text element (extremely specific use, unlikely to be ever needed) */
-    LYXP_NODE_ATTR              /* XML attribute (in YANG cannot happen, do not use for the context node) */
+    LYXP_NODE_ATTR,             /* XML attribute (in YANG cannot happen, do not use for the context node) */
+
+    LYXP_NODE_NONE              /* invalid node type, do not use */
 };
 
 /**
@@ -2352,6 +2382,21 @@ char *lys_path(const struct lys_node *node, int options);
  * with free().
  */
 char *lys_data_path(const struct lys_node *node);
+
+/**
+ * @brief Build the data path pattern of a schema node.
+ *
+ * For example, when @p node is a leaf in a list with key1 and key2, in a container and `'%s'` is set as
+ * @p placeholder, the result would be `/model:container/list[key1='%s'][key2='%s']/leaf`. That can
+ * be used as `printf(3)` format string, for example.
+ *
+ * @param[in] node Schema node to be processed.
+ * @param[in] placeholder Placeholder to insert in the returned path when
+ *                        list key values are encountered.
+ * @return NULL on error, on success the buffer for the resulting path is
+ *         allocated and caller is supposed to free it with free().
+ */
+char *lys_data_path_pattern(const struct lys_node *node, const char *placeholder);
 
 /**
  * @brief Return parent node in the schema tree.

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement7-choice"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement7-choice_mod="urn:error-substatement7-choice">  
+  <namespace uri="urn:error-substatement7-choice"/>
+  <prefix value="error-substatement7-choice_mod"/>
+
+  <choice name="choice1">
+    <mandatory value="faltrue"/>
+  </choice>
+</module>

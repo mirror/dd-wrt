@@ -21,6 +21,11 @@
 #include <stdlib.h>
 #include "../extensions.h"
 
+/**
+ * @brief Storage for ID used to check plugin API version compatibility.
+ */
+LYEXT_VERSION_CHECK
+
 int check_node(struct lys_node *node);
 
 /**

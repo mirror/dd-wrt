@@ -1,0 +1,61 @@
+module user-types {
+    namespace "urn:user-types";
+    prefix ut;
+
+    import ietf-yang-types {
+        prefix yang;
+    }
+
+    import ietf-inet-types {
+        prefix inet;
+    }
+
+
+    leaf yang1 {
+        type yang:date-and-time;
+    }
+
+    leaf yang2 {
+        type yang:phys-address;
+    }
+
+    leaf yang3 {
+        type yang:mac-address;
+    }
+
+    leaf yang4 {
+        type yang:hex-string;
+    }
+
+    leaf yang5 {
+        type yang:uuid;
+    }
+
+    leaf inet1 {
+        type inet:ip-address;
+    }
+
+    leaf inet2 {
+        type inet:ipv6-address;
+    }
+
+    leaf inet3 {
+        type inet:ip-address-no-zone;
+    }
+
+    leaf inet4 {
+        type inet:ipv6-address-no-zone;
+    }
+
+    leaf inet5 {
+        type inet:ip-prefix;
+    }
+
+    leaf inet6 {
+        type inet:ipv4-prefix;
+    }
+
+    leaf inet7 {
+        type inet:ipv6-prefix;
+    }
+}

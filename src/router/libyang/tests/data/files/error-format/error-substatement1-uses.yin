@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-uses"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-uses_mod="urn:error-substatement1-uses">
+  <namespace uri="urn:error-substatement1-uses"/>
+  <prefix value="error-substatement1-uses_mod"/>
+
+  <grouping name="group1">
+    <leaf name="leaf1">
+      <type name="int8"/>
+    </leaf>
+    <leaf name="leaf2">
+      <type name="int8"/>
+    </leaf>
+  </grouping>
+
+  <uses name="group1">
+    <!-- invalid substatement of when in uses -->
+    <when condition="leaf1">
+      <text>this is an error substatement of uses.</text>
+    </when>
+  </uses>
+</module>

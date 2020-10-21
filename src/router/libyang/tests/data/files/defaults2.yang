@@ -2,6 +2,14 @@ module defaults2 {
     namespace "urn:defaults2";
     prefix d;
 
+    augment /d:oper/d:input/d:ch {
+      container c1 {
+        container c2 {
+          leaf l {type string;}
+        }
+      }
+    }
+
     list l1 {
         key "k";
         leaf k {
@@ -22,5 +30,11 @@ module defaults2 {
         type string;
         when "/l1[k='when-true']";
         default "I exist!";
+    }
+
+    rpc oper {
+      input {
+        choice ch;
+      }
     }
 }

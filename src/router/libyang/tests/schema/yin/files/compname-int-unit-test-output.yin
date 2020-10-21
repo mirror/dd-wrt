@@ -14,6 +14,9 @@
   </revision>
   <rpc name="events">
     <input>
+      <leaf name="l">
+        <type name="empty"/>
+      </leaf>
     </input>
     <output>
       <leaf-list name="info">

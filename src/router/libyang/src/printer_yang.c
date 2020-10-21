@@ -1896,6 +1896,7 @@ yang_print_extension_instances(struct lyout *out, int level, const struct lys_mo
     unsigned int u, x;
     struct lys_module *mod;
     const char *prefix = NULL, *str;
+    char *ext_name;
     int content, content2, i, j, c;
     struct lyext_substmt *info;
     uint16_t *flags;
@@ -1978,14 +1979,18 @@ yang_print_extension_instances(struct lyout *out, int level, const struct lys_mo
             }
         }
 
-        content = 0;
-        ly_print(out, "%*s%s:%s", LEVEL, INDENT, prefix, ext[u]->def->name);
         /* extension - generic part */
         if (ext[u]->arg_value) {
-            ly_print(out, " \"%s\"", ext[u]->arg_value);
+            ext_name = malloc(strlen(prefix) + 1 + strlen(ext[u]->def->name) + 1);
+            sprintf(ext_name, "%s:%s", prefix, ext[u]->def->name);
+            yang_print_text(out, level, ext_name, ext[u]->arg_value, 1, 0);
+            free(ext_name);
+        } else {
+            ly_print(out, "%*s%s:%s", LEVEL, INDENT, prefix, ext[u]->def->name);
         }
 
         /* extensions in extension instance */
+        content = 0;
         if (ext[u]->ext_size) {
             yang_print_open(out, &content);
             yang_print_extension_instances(out, level + 1, module, LYEXT_SUBSTMT_SELF, 0,

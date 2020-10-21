@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-contact"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-contact_mod="urn:error-order-contact">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-contact"/>
+  <prefix value="error-order-contact_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- contact should be placed before leaf -->
+  <contact>
+    <text> this is an error example1. </text>
+  </contact>
+</module>

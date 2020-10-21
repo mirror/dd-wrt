@@ -122,6 +122,12 @@ TEST_IDENTITYREF(void **state)
             }
 
             schema_format = LYS_IN_YIN;
+            ly_ctx_destroy(st->ctx, NULL);
+            st->ctx = ly_ctx_new(TESTS_DIR "/conformance/" TEST_DIR, 0);
+            if (!st->ctx) {
+                fprintf(stderr, "Failed to create context.\n");
+                fail();
+            }
         } else {
             /* remove the modules */
             for (j = 0; j < TEST_SCHEMA_COUNT; ++j) {
@@ -135,8 +141,8 @@ TEST_IDENTITYREF(void **state)
 }
 
 /* in data6.xml we have value defined in mod.yang which is just imported in previous test and
- * the data are not valid. Here, mod.yang is loaded as import by mod-dflt.yang, but since it
- * uses identity value from mod.yang as its default, the mod.yang is change to be implemented.
+ * the data are not valid. Here, mod.yang is loaded as import by mod-dflt.yang and then explicitly
+ * changed to implemented.
  */
 static void
 TEST_IDENTITYREF2(void **state)
@@ -156,9 +162,12 @@ TEST_IDENTITYREF2(void **state)
     mod = lys_parse_path(st->ctx, TESTS_DIR "/conformance/" TEST_DIR "/mod-dflt-invalid.yang", LYS_IN_YANG);
     assert_ptr_equal(mod, NULL);
 
-    /* mod is set to be implemented */
     mod = lys_parse_path(st->ctx, TESTS_DIR "/conformance/" TEST_DIR "/mod-dflt.yang", LYS_IN_YANG);
     assert_ptr_not_equal(mod, NULL);
+
+    /* set mod to be implemented */
+    mod = ly_ctx_get_module(st->ctx, "mod", NULL, 0);
+    assert_int_equal(lys_set_implemented(mod), 0);
 
     /* mod is implemented so the identityref value is valid here */
     st->node = lyd_parse_path(st->ctx, TESTS_DIR "/conformance/" TEST_DIR "/data6.xml", LYD_XML, LYD_OPT_CONFIG);

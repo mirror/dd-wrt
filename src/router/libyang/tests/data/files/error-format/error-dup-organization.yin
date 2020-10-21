@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-organization"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-organization_mod="urn:error-dup-organization">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-organization"/>
+  <prefix value="error-dup-organization_mod"/>
+
+  <!-- dup organiztion -->
+  <organization>
+    <text> this is an error example1. </text>
+  </organization>
+  <organization>
+    <text> this is an error example2. </text>
+  </organization>
+</module>

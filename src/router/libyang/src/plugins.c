@@ -52,12 +52,16 @@ static uint32_t plugin_refs;
 API const char * const *
 ly_get_loaded_plugins(void)
 {
+    FUN_IN;
+
     return (const char * const *)loaded_plugins;
 }
 
 API int
 ly_clean_plugins(void)
 {
+    FUN_IN;
+
     unsigned int u;
     int ret = EXIT_SUCCESS;
 
@@ -140,6 +144,7 @@ lytype_load_plugin(void *dlhandler, const char *file_name)
 {
     struct lytype_plugin_list *plugin;
     char *str;
+    int *version;
 
 #ifdef STATIC
     return 0;
@@ -152,12 +157,20 @@ lytype_load_plugin(void *dlhandler, const char *file_name)
         LOGERR(NULL, LY_ESYS, "Processing \"%s\" user type plugin failed, missing plugin list object (%s).", file_name, str);
         return 1;
     }
+    version = dlsym(dlhandler, "lytype_api_version");
+    if (dlerror() || *version != LYTYPE_API_VERSION) {
+        LOGWRN(NULL, "Processing \"%s\" user type plugin failed, wrong API version - %d expected, %d found.",
+               file_name, LYTYPE_API_VERSION, version ? *version : 0);
+        return 1;
+    }
     return ly_register_types(plugin, file_name);
 }
 
 API int
 ly_register_types(struct lytype_plugin_list *plugin, const char *log_name)
 {
+    FUN_IN;
+
     struct lytype_plugin_list *p;
     uint32_t u, v;
 
@@ -196,6 +209,7 @@ lyext_load_plugin(void *dlhandler, const char *file_name)
 {
     struct lyext_plugin_list *plugin;
     char *str;
+    int *version;
 
 #ifdef STATIC
     return 0;
@@ -208,12 +222,20 @@ lyext_load_plugin(void *dlhandler, const char *file_name)
         LOGERR(NULL, LY_ESYS, "Processing \"%s\" extension plugin failed, missing plugin list object (%s).", file_name, str);
         return 1;
     }
+    version = dlsym(dlhandler, "lyext_api_version");
+    if (dlerror() || *version != LYEXT_API_VERSION) {
+        LOGWRN(NULL, "Processing \"%s\" extension plugin failed, wrong API version - %d expected, %d found.",
+               file_name, LYEXT_API_VERSION, version ? *version : 0);
+        return 1;
+    }
     return ly_register_exts(plugin, file_name);
 }
 
 API int
 ly_register_exts(struct lyext_plugin_list *plugin, const char *log_name)
 {
+    FUN_IN;
+
     struct lyext_plugin_list *p;
     struct lyext_plugin_complex *pluginc;
     uint32_t u, v;
@@ -364,6 +386,8 @@ ly_load_plugins_dir(DIR *dir, const char *dir_path, int ext_or_type)
 API void
 ly_load_plugins(void)
 {
+    FUN_IN;
+
     DIR* dir;
     const char *pluginsdir;
 
@@ -448,6 +472,8 @@ ext_get_plugin(const char *name, const char *module, const char *revision)
 API int
 lys_ext_instance_presence(struct lys_ext *def, struct lys_ext_instance **ext, uint8_t ext_size)
 {
+    FUN_IN;
+
     uint8_t index;
 
     if (!def || (ext_size && !ext)) {
@@ -478,6 +504,8 @@ lys_ext_instance_presence(struct lys_ext *def, struct lys_ext_instance **ext, ui
 API void *
 lys_ext_complex_get_substmt(LY_STMT stmt, struct lys_ext_instance_complex *ext, struct lyext_substmt **info)
 {
+    FUN_IN;
+
     int i;
 
     if (!ext || !ext->def || !ext->def->plugin || ext->def->plugin->type != LYEXT_COMPLEX) {
@@ -574,7 +602,7 @@ lytype_find(const char *module, const char *revision, const char *type_name)
 }
 
 int
-lytype_store(const struct lys_module *mod, const char *type_name, const char *value_str, lyd_val *value)
+lytype_store(const struct lys_module *mod, const char *type_name, const char **value_str, lyd_val *value)
 {
     struct lytype_plugin_list *p;
     char *err_msg = NULL;
@@ -583,9 +611,9 @@ lytype_store(const struct lys_module *mod, const char *type_name, const char *va
 
     p = lytype_find(mod->name, mod->rev_size ? mod->rev[0].date : NULL, type_name);
     if (p) {
-        if (p->store_clb(type_name, value_str, value, &err_msg)) {
+        if (p->store_clb(mod->ctx, type_name, value_str, value, &err_msg)) {
             if (!err_msg) {
-                if (asprintf(&err_msg, "Failed to store value \"%s\" of user type \"%s\".", value_str, type_name) == -1) {
+                if (asprintf(&err_msg, "Failed to store value \"%s\" of user type \"%s\".", *value_str, type_name) == -1) {
                     LOGMEM(mod->ctx);
                     return -1;
                 }
@@ -603,11 +631,46 @@ lytype_store(const struct lys_module *mod, const char *type_name, const char *va
 }
 
 void
-lytype_free(const struct lys_module *mod, const char *type_name, lyd_val value)
+lytype_free(const struct lys_type *type, lyd_val value, const char *value_str)
 {
     struct lytype_plugin_list *p;
+    struct lys_node_leaf sleaf;
+    struct lyd_node_leaf_list leaf;
+    struct lys_module *mod;
 
-    p = lytype_find(mod->name, mod->rev_size ? mod->rev[0].date : NULL, type_name);
+    memset(&sleaf, 0, sizeof sleaf);
+    memset(&leaf, 0, sizeof leaf);
+
+    while (type->base == LY_TYPE_LEAFREF) {
+        type = &type->info.lref.target->type;
+    }
+    if (type->base == LY_TYPE_UNION) {
+        /* create a fake schema node */
+        sleaf.module = type->parent->module;
+        sleaf.name = "fake-leaf";
+        sleaf.type = *type;
+        sleaf.nodetype = LYS_LEAF;
+
+        /* and a fake data node */
+        leaf.schema = (struct lys_node *)&sleaf;
+        leaf.value = value;
+        leaf.value_str = value_str;
+
+        /* find the original type */
+        type = lyd_leaf_type(&leaf);
+        if (!type) {
+            LOGINT(sleaf.module->ctx);
+            return;
+        }
+    }
+
+    mod = type->der->module;
+    if (!mod) {
+        LOGINT(type->parent->module->ctx);
+        return;
+    }
+
+    p = lytype_find(mod->name, mod->rev_size ? mod->rev[0].date : NULL, type->der->name);
     if (!p) {
         LOGINT(mod->ctx);
         return;

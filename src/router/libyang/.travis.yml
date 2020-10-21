@@ -1,17 +1,38 @@
 language: c
 
+cache:
+  pip: true
+
 matrix:
   include:
-    - os: linux
-      dist: trusty
+    - arch: amd64
+      os: linux
+      dist: bionic
       sudo: required
       compiler: clang
-    - os: linux
-      dist: trusty
+      env: TRAVIS_ARCH="amd64"
+    - arch: amd64
+      os: linux
+      dist: bionic
       sudo: required
       compiler: gcc
-    - os: osx
+      env: TRAVIS_ARCH="amd64" DEPLOY_BUILD=TRUE
+    - arch: arm64
+      os: linux
+      dist: bionic
+      sudo: required
       compiler: gcc
+      env: TRAVIS_ARCH="arm64"
+    - arch: amd64
+      os: linux
+      dist: bionic
+      sudo: required
+      compiler: gcc
+      env: TRAVIS_ARCH="amd64" ENABLE_STATIC=ON
+    - arch: amd64
+      os: osx
+      compiler: gcc
+      env: TRAVIS_ARCH="amd64"
   allow_failures:
     - os: osx
 
@@ -20,22 +41,54 @@ branches:
     - master
     - devel
 
+addons:
+  apt:
+    packages:
+    - abi-dumper
+    - abi-compliance-checker
+    - pkg-config
+    - w3m
+    - curl
+    - valgrind
+    - libcmocka-dev
+    - libpcre3-dev
+    - python3-dev
+    - python3-cffi
+    - python3-setuptools
+    - python3-pip
+    - swig
+    update: true
+  homebrew:
+    packages:
+    - curl
+    - cmocka
+    update: true
+
 before_install:
-  - eval "${MATRIX_EVAL}"
-  - git clone git://git.cryptomilk.org/projects/cmocka.git
-  - cd cmocka && mkdir build && cd build
-  - cmake .. && make -j2 && sudo make install
-  - cd ../..
-  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew update; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then sudo apt-get update -qq; sudo apt-get install -y valgrind osc; sudo dpkg -i ./swig/swig3.0_3.0.12-1.2_amd64.deb; sudo dpkg -i ./swig/swig_3.0.12-1_amd64.deb; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CC" = "gcc-7" ]; then pip install --user codecov; export CFLAGS="-coverage"; fi
+  - if [ "$DEPLOY_BUILD" = "TRUE" ]; then sudo snap install universal-ctags; fi
+  - if [ "$DEPLOY_BUILD" = "TRUE" ]; then pip3 install --user codecov==2.0.22; export CFLAGS="-coverage"; fi
 
 script:
   - mkdir build && cd build
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cmake -DENABLE_VALGRIND_TESTS=OFF ..; fi
-  - if [ "$TRAVIS_OS_NAME" = "linux" ]; then cmake -DGEN_LANGUAGE_BINDINGS=ON ..; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$TRAVIS_ARCH" = "amd64" ]; then cmake -DGEN_LANGUAGE_BINDINGS=ON -DENABLE_STATIC=${ENABLE_STATIC:-OFF} ..; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" ] && [ "$TRAVIS_ARCH" = "arm64" ]; then cmake -DGEN_LANGUAGE_BINDINGS=ON -DENABLE_VALGRIND_TESTS=OFF ..; fi
   - make -j2 && ctest --output-on-failure
   - cd -
+  - if [ "$DEPLOY_BUILD" = "TRUE" ]; then ./tools/abi-check.sh; fi
 
-after_success:
-  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CC" = "gcc-7" ]; then codecov; ./packages/create-package.sh; fi
+deploy:
+  - provider: script
+    script: bash <(curl -s https://codecov.io/bash)
+    skip_cleanup: true
+    verbose: true
+    on:
+      branch: master
+      condition: $DEPLOY_BUILD = TRUE
+  - provider: script
+    script: ./packages/create-package.sh
+    skip_cleanup: true
+    verbose: true
+    on:
+      branch: master
+      condition: $DEPLOY_BUILD = TRUE

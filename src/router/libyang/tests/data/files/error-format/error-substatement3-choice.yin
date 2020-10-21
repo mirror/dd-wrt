@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-choice"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-choice_mod="urn:error-substatement3-choice">  
+  <namespace uri="urn:error-substatement3-choice"/>
+  <prefix value="error-substatement3-choice_mod"/>
+
+  <choice name="choice1">
+    <leaf-list name="llist1">
+      <text>this is an error substatement of choice.</text>
+    </leaf-list>
+  </choice>
+</module>

@@ -28,18 +28,36 @@ extern "C" {
  */
 
 /**
+ * @brief User types API version
+ */
+#define LYTYPE_API_VERSION 1
+
+/**
+ * @brief Macro to store version of user type plugins API in the plugins.
+ * It is matched when the plugin is being loaded by libyang.
+ */
+#ifdef STATIC
+#define LYTYPE_VERSION_CHECK
+#else
+#define LYTYPE_VERSION_CHECK int lytype_api_version = LYTYPE_API_VERSION;
+#endif
+
+
+/**
  * @brief Callback for storing user type values.
  *
  * This callback should overwrite the value stored in \p value using some custom encoding. Be careful,
  * if the type is #LY_TYPE_BITS, the bits must be freed before overwritting the union value.
  *
+ * @param[in] ctx libyang ctx to enable correct manipulation with values that are in the dictionary.
  * @param[in] type_name Name of the type being stored.
- * @param[in] value_str String value to be stored.
+ * @param[in,out] value_str String value to be stored.
  * @param[in,out] value Value union for the value to be stored in (already is but in the standard way).
  * @param[out] err_msg Can be filled on error. If not, a generic error message will be printed.
- * @return 0 on success, non-zero if an error occured and the value could not be stored for any reason.
+ * @return 0 on success, non-zero if an error occurred and the value could not be stored for any reason.
  */
-typedef int (*lytype_store_clb)(const char *type_name, const char *value_str, lyd_val *value, char **err_msg);
+typedef int (*lytype_store_clb)(struct ly_ctx *ctx, const char *type_name, const char **value_str, lyd_val *value,
+                                char **err_msg);
 
 struct lytype_plugin_list {
     const char *module;          /**< Name of the module where the type is defined. */

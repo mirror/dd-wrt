@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement5-include"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement5-include_mod="urn:error-substatement5-include">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement5-include"/>
+  <prefix value="error-substatement5-include_mod"/>
+
+  <include module="all-imp">
+    <!-- invalid substatement of reference. -->
+    <reference>
+      <test>this is an error example.</test>
+    </reference>
+  </include>
+</module>

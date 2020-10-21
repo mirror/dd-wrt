@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-dup-reference"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-dup-reference_mod="urn:error-dup-reference">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-dup-reference"/>
+  <prefix value="error-dup-reference_mod"/>
+
+  <!-- dup reference -->
+  <reference>
+    <text> this is an error example1. </text>
+  </reference>
+  <reference>
+    <text> this is an error example2. </text>
+  </reference>
+</module>

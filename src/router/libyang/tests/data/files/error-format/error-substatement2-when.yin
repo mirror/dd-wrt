@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement2-when"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement2-when_mod="urn:error-substatement2-when">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement2-when"/>
+  <prefix value="error-substatement2-when_mod"/>
+
+  <container name="con1">
+    <when condition="when1">
+      <reference>
+        <test>this is an error example of reference.</test>
+      </reference>
+    </when>
+  </container>
+</module>

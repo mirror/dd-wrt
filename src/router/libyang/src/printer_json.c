@@ -71,6 +71,8 @@ json_print_attrs(struct lyout *out, int level, const struct lyd_node *node, cons
     size_t len;
     char *p;
 
+    LY_PRINT_SET;
+
     if (wdmod) {
         ly_print(out, "%*s\"%s:default\":\"true\"", LEVEL, INDENT, wdmod->name);
         ly_print(out, "%s%s", node->attr ? "," : "", (level ? "\n" : ""));
@@ -127,14 +129,14 @@ json_print_attrs(struct lyout *out, int level, const struct lyd_node *node, cons
 
         default:
             /* error */
-            ly_print(out, "\"(!error!)\"");
+            LOGINT(node->schema->module->ctx);
             return EXIT_FAILURE;
         }
 
         ly_print(out, "%s%s", attr->next ? "," : "", (level ? "\n" : ""));
     }
 
-    return EXIT_SUCCESS;
+    LY_PRINT_RET(node->schema->module->ctx);
 }
 
 static int
@@ -146,6 +148,8 @@ json_print_leaf(struct lyout *out, int level, const struct lyd_node *node, int o
     const struct lys_module *wdmod = NULL;
     LY_DATA_TYPE datatype;
     size_t len;
+
+    LY_PRINT_SET;
 
     if ((node->dflt && (options & (LYP_WD_ALL_TAG | LYP_WD_IMPL_TAG))) ||
             (!node->dflt && (options & LYP_WD_ALL_TAG) && lyd_wd_default(leaf))) {
@@ -212,7 +216,6 @@ contentprint:
             type = lyd_leaf_type((struct lyd_node_leaf_list *)leaf);
             if (!type) {
                 /* error */
-                ly_print(out, "\"(!error!)\"");
                 return EXIT_FAILURE;
             }
             datatype = type->base;
@@ -227,7 +230,7 @@ contentprint:
 
     default:
         /* error */
-        ly_print(out, "\"(!error!)\"");
+        LOGINT(node->schema->module->ctx);
         return EXIT_FAILURE;
     }
 
@@ -246,13 +249,15 @@ contentprint:
         ly_print(out, "%*s}", LEVEL, INDENT);
     }
 
-    return EXIT_SUCCESS;
+    LY_PRINT_RET(node->schema->module->ctx);
 }
 
 static int
 json_print_container(struct lyout *out, int level, const struct lyd_node *node, int toplevel, int options)
 {
     const char *schema;
+
+    LY_PRINT_SET;
 
     if (toplevel || !node->parent || nscmp(node, node->parent)) {
         /* print "namespace" */
@@ -282,7 +287,7 @@ json_print_container(struct lyout *out, int level, const struct lyd_node *node, 
     }
     ly_print(out, "%*s}", LEVEL, INDENT);
 
-    return EXIT_SUCCESS;
+    LY_PRINT_RET(node->schema->module->ctx);
 }
 
 static int
@@ -291,6 +296,8 @@ json_print_leaf_list(struct lyout *out, int level, const struct lyd_node *node, 
     const char *schema = NULL;
     const struct lyd_node *list = node;
     int flag_empty = 0, flag_attrs = 0;
+
+    LY_PRINT_SET;
 
     if (is_list && !list->child) {
         /* empty, e.g. in case of filter */
@@ -307,7 +314,7 @@ json_print_leaf_list(struct lyout *out, int level, const struct lyd_node *node, 
 
     if (flag_empty) {
         ly_print(out, "%snull", (level ? " " : ""));
-        return EXIT_SUCCESS;
+        goto finish;
     }
     ly_print(out, "%s[%s", (level ? " " : ""), (level ? "\n" : ""));
 
@@ -407,7 +414,8 @@ json_print_leaf_list(struct lyout *out, int level, const struct lyd_node *node, 
         ly_print(out, "%s%*s]", (level ? "\n" : ""), LEVEL, INDENT);
     }
 
-    return EXIT_SUCCESS;
+finish:
+    LY_PRINT_RET(node->schema->module->ctx);
 }
 
 static int
@@ -417,6 +425,8 @@ json_print_anydataxml(struct lyout *out, int level, const struct lyd_node *node,
     int is_object = 0;
     char *buf;
     const char *schema = NULL;
+
+    LY_PRINT_SET;
 
     if (toplevel || !node->parent || nscmp(node, node->parent)) {
         /* print "namespace" */
@@ -476,8 +486,8 @@ json_print_anydataxml(struct lyout *out, int level, const struct lyd_node *node,
     case LYD_ANYDATA_LYBD:
     case LYD_ANYDATA_LYB:
         /* other formats are not supported */
-        json_print_string(out, "(error)");
-        break;
+        LOGINT(node->schema->module->ctx);
+        return EXIT_FAILURE;
     }
 
     /* print attributes as sibling leaf */
@@ -502,85 +512,93 @@ json_print_anydataxml(struct lyout *out, int level, const struct lyd_node *node,
         ly_print(out, "%*s}", LEVEL, INDENT);
     }
 
-    return EXIT_SUCCESS;
+    LY_PRINT_RET(node->schema->module->ctx);
 }
 
 static int
 json_print_nodes(struct lyout *out, int level, const struct lyd_node *root, int withsiblings, int toplevel, int options)
 {
-    int ret = EXIT_SUCCESS,comma_flag = 0;
+    int comma_flag = 0;
     const struct lyd_node *node, *iter;
 
-    LY_TREE_FOR(root, node) {
-        if (!lyd_wd_toprint(node, options)) {
-            /* wd says do not print */
-            continue;
-        }
+    LY_PRINT_SET;
 
-        switch (node->schema->nodetype) {
-        case LYS_RPC:
-        case LYS_ACTION:
-        case LYS_NOTIF:
-        case LYS_CONTAINER:
-            if (comma_flag) {
-                /* print the previous comma */
-                ly_print(out, ",%s", (level ? "\n" : ""));
-            }
-            ret = json_print_container(out, level, node, toplevel, options);
-            break;
-        case LYS_LEAF:
-            if (comma_flag) {
-                /* print the previous comma */
-                ly_print(out, ",%s", (level ? "\n" : ""));
-            }
-            ret = json_print_leaf(out, level, node, 0, toplevel, options);
-            break;
-        case LYS_LEAFLIST:
-        case LYS_LIST:
-            /* is it already printed? (root node is not) */
-            for (iter = node->prev; iter->next && node != root; iter = iter->prev) {
-                if (iter == node) {
-                    continue;
-                }
-                if (iter->schema == node->schema) {
-                    /* the list has alread some previous instance and therefore it is already printed */
-                    break;
-                }
-            }
-            if (!iter->next || node == root) {
+    LY_TREE_FOR(root, node) {
+        if (lyd_node_should_print(node, options)) {
+            /* wd says to print */
+            switch (node->schema->nodetype) {
+            case LYS_RPC:
+            case LYS_ACTION:
+            case LYS_NOTIF:
+            case LYS_CONTAINER:
                 if (comma_flag) {
                     /* print the previous comma */
                     ly_print(out, ",%s", (level ? "\n" : ""));
                 }
+                if (json_print_container(out, level, node, toplevel, options)) {
+                    return EXIT_FAILURE;
+                }
+                break;
+            case LYS_LEAF:
+                if (comma_flag) {
+                    /* print the previous comma */
+                    ly_print(out, ",%s", (level ? "\n" : ""));
+                }
+                if (json_print_leaf(out, level, node, 0, toplevel, options)) {
+                    return EXIT_FAILURE;
+                }
+                break;
+            case LYS_LEAFLIST:
+            case LYS_LIST:
+                /* is it already printed? (root node is not) */
+                for (iter = node->prev; iter->next && node != root; iter = iter->prev) {
+                    if (iter == node) {
+                        continue;
+                    }
+                    if (iter->schema == node->schema) {
+                        /* the list has alread some previous instance and therefore it is already printed */
+                        break;
+                    }
+                }
+                if (!iter->next || node == root) {
+                    if (comma_flag) {
+                        /* print the previous comma */
+                        ly_print(out, ",%s", (level ? "\n" : ""));
+                    }
 
-                /* print the list/leaflist */
-                ret = json_print_leaf_list(out, level, node, node->schema->nodetype == LYS_LIST ? 1 : 0, toplevel, options);
+                    /* print the list/leaflist */
+                    if (json_print_leaf_list(out, level, node, node->schema->nodetype == LYS_LIST ? 1 : 0, toplevel, options)) {
+                        return EXIT_FAILURE;
+                    }
+                }
+                break;
+            case LYS_ANYXML:
+            case LYS_ANYDATA:
+                if (comma_flag) {
+                    /* print the previous comma */
+                    ly_print(out, ",%s", (level ? "\n" : ""));
+                }
+                if (json_print_anydataxml(out, level, node, toplevel, options)) {
+                    return EXIT_FAILURE;
+                }
+                break;
+            default:
+                LOGINT(node->schema->module->ctx);
+                return EXIT_FAILURE;
             }
-            break;
-        case LYS_ANYXML:
-        case LYS_ANYDATA:
-            if (comma_flag) {
-                /* print the previous comma */
-                ly_print(out, ",%s", (level ? "\n" : ""));
-            }
-            ret = json_print_anydataxml(out, level, node, toplevel, options);
-            break;
-        default:
-            LOGINT(node->schema->module->ctx);
-            ret = EXIT_FAILURE;
-            break;
+
+            comma_flag = 1;
         }
 
         if (!withsiblings) {
             break;
         }
-        comma_flag = 1;
     }
     if (root && level) {
         ly_print(out, "\n");
     }
 
-    return ret;
+    LY_PRINT_RET(root ? root->schema->module->ctx : NULL);
 }
 
 int
@@ -588,6 +606,8 @@ json_print_data(struct lyout *out, const struct lyd_node *root, int options)
 {
     const struct lyd_node *node, *next;
     int level = 0, action_input = 0;
+
+    LY_PRINT_SET;
 
     if (options & LYP_FORMAT) {
         ++level;
@@ -642,5 +662,5 @@ json_print_data(struct lyout *out, const struct lyd_node *root, int options)
     ly_print(out, "}%s", (level ? "\n" : ""));
 
     ly_print_flush(out);
-    return EXIT_SUCCESS;
+    LY_PRINT_RET(NULL);
 }

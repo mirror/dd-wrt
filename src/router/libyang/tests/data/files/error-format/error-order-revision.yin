@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-order-revision"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-order-revision_mod="urn:error-order-revision">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-order-revision"/>
+  <prefix value="error-order-revision_mod"/>
+
+  <leaf name="leaf1">
+    <type name="string"/>
+  </leaf>
+  <!-- revision should be placed before leaf -->
+  <revision date="2016-05-23"/>
+</module>

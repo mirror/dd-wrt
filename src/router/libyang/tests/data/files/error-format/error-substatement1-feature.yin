@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-feature"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-feature_mod="urn:error-substatement1-feature"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement1-feature"/>
+  <prefix value="error-substatement1-feature_mod"/>
+
+  <!-- this is an error substatement of feature -->
+  <feature name="feat1">
+    <text>this is an error example.</text>
+  </feature>
+</module>

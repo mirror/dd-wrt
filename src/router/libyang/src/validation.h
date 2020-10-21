@@ -34,7 +34,7 @@
  * @param[out] unres Structure to store unresolved items into. Cannot be NULL.
  * @return 0 on success, non-zero on error.
  */
-int lyv_data_context(const struct lyd_node *node, int options, struct unres_data *unres);
+int lyv_data_context(struct lyd_node *node, int options, struct unres_data *unres);
 
 /**
  * @brief Validate if the node's content is valid in the context it is placed.

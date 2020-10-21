@@ -49,10 +49,10 @@ lyv_keys(const struct lyd_node *list)
 }
 
 int
-lyv_data_context(const struct lyd_node *node, int options, struct unres_data *unres)
+lyv_data_context(struct lyd_node *node, int options, struct unres_data *unres)
 {
     const struct lys_node *siter = NULL;
-    struct lys_node *sparent;
+    struct lys_node *sparent, *op;
     struct lyd_node_leaf_list *leaf = (struct lyd_node_leaf_list *)node;
     struct ly_ctx *ctx = node->schema->module->ctx;
 
@@ -65,7 +65,11 @@ lyv_data_context(const struct lyd_node *node, int options, struct unres_data *un
         return 1;
     }
 
-    if (!(options & (LYD_OPT_NOTIF_FILTER | LYD_OPT_EDIT | LYD_OPT_GET | LYD_OPT_GETCONFIG))) {
+    /* find (nested) operation node */
+    for (op = node->schema; op && !(op->nodetype & (LYS_NOTIF | LYS_INPUT | LYS_OUTPUT)); op = lys_parent(op));
+
+    if (!(options & (LYD_OPT_NOTIF_FILTER | LYD_OPT_EDIT | LYD_OPT_GET | LYD_OPT_GETCONFIG))
+            && (!(options & (LYD_OPT_RPC | LYD_OPT_RPCREPLY | LYD_OPT_NOTIF)) || op)) {
         if (node->schema->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
             /* if union with leafref/intsid, leafref itself (invalid) or instance-identifier, store the node for later resolving */
             if ((((struct lys_node_leaf *)leaf->schema)->type.base == LY_TYPE_UNION)
@@ -73,12 +77,10 @@ lyv_data_context(const struct lyd_node *node, int options, struct unres_data *un
                 if (unres_data_add(unres, (struct lyd_node *)node, UNRES_UNION)) {
                     return 1;
                 }
-            } else if ((((struct lys_node_leaf *)leaf->schema)->type.base == LY_TYPE_LEAFREF)
-                    && ((leaf->validity & LYD_VAL_LEAFREF) || (leaf->value_flags & LY_VALUE_UNRES))) {
+            } else if (((struct lys_node_leaf *)leaf->schema)->type.base == LY_TYPE_LEAFREF) {
                 /* always retry validation on unres leafrefs, if again not possible, the correct flags should
                  * be set and the leafref will be kept unresolved */
                 leaf->value_flags &= ~LY_VALUE_UNRES;
-                leaf->validity |= LYD_VAL_LEAFREF;
 
                 if (unres_data_add(unres, (struct lyd_node *)node, UNRES_LEAFREF)) {
                     return 1;
@@ -92,13 +94,12 @@ lyv_data_context(const struct lyd_node *node, int options, struct unres_data *un
 
         /* check all relevant when conditions */
         if (node->when_status & LYD_WHEN) {
-            if (unres_data_add(unres, (struct lyd_node *)node, UNRES_WHEN)) {
+            if (options & LYD_OPT_TRUSTED) {
+                node->when_status |= LYD_WHEN_TRUE;
+            } else if (unres_data_add(unres, (struct lyd_node *)node, UNRES_WHEN)) {
                 return 1;
             }
         }
-    } else if (node->schema->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
-        /* just remove the flag if it was set */
-        leaf->validity &= ~LYD_VAL_LEAFREF;
     }
 
     /* check for (non-)presence of status data in edit-config data */
@@ -108,7 +109,8 @@ lyv_data_context(const struct lyd_node *node, int options, struct unres_data *un
     }
 
     /* check elements order in case of RPC's input and output */
-    if (!(options & (LYD_OPT_TRUSTED | LYD_OPT_NOTIF_FILTER)) && (node->validity & LYD_VAL_MAND) && lyp_is_rpc_action(node->schema)) {
+    if (!(options & (LYD_OPT_TRUSTED | LYD_OPT_NOTIF_FILTER)) && (options & (LYD_OPT_RPC | LYD_OPT_RPCREPLY))
+            && (node->validity & LYD_VAL_MAND) && op) {
         if ((node->prev != node) && node->prev->next) {
             /* find schema data parent */
             for (sparent = lys_parent(node->schema);
@@ -689,6 +691,18 @@ lyv_data_content(struct lyd_node *node, int options, struct unres_data *unres)
     schema = node->schema; /* shortcut */
     ctx = schema->module->ctx;
 
+    if (!(node->schema->nodetype & (LYS_NOTIF | LYS_RPC | LYS_ACTION))) {
+        for (diter = node->parent; diter; diter = diter->parent) {
+            if (diter->schema->nodetype & (LYS_NOTIF | LYS_RPC | LYS_ACTION)) {
+                break;
+            }
+        }
+        if (!diter && (options & (LYD_OPT_RPC | LYD_OPT_RPCREPLY | LYD_OPT_NOTIF))) {
+            /* validating parent of a nested notification/action, skip most checks */
+            options |= LYD_OPT_TRUSTED;
+        }
+    }
+
     if (node->validity & LYD_VAL_MAND) {
         if (!(options & (LYD_OPT_TRUSTED | LYD_OPT_NOTIF_FILTER))) {
             /* check presence and correct order of all keys in case of list */
@@ -884,7 +898,7 @@ lyv_multicases(struct lyd_node *node, struct lys_node *schemanode, struct lyd_no
         schemanode = node->schema;
     }
 
-    sparent = lys_parent(schemanode);
+    for (sparent = lys_parent(schemanode); sparent && (sparent->nodetype == LYS_USES); sparent = lys_parent(sparent));
     if (!sparent || !(sparent->nodetype & (LYS_CHOICE | LYS_CASE))) {
         /* node is not under any choice */
         return 0;
@@ -909,7 +923,7 @@ autodelete:
             continue;
         }
 
-        sparent = lys_parent(iter->schema);
+        for (sparent = lys_parent(iter->schema); sparent && (sparent->nodetype == LYS_USES); sparent = lys_parent(sparent));
         if (sparent && ((sparent->nodetype == LYS_CHOICE && sparent == schoice) /* another implicit case */
                 || (sparent->nodetype == LYS_CASE && sparent != scase && lys_parent(sparent) == schoice)) /* another case */
                 ) {

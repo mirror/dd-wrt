@@ -33,12 +33,12 @@
 #include "parser_yang_lex.h"
 #include "parser.h"
 
-#define YANG_ADDELEM(current_ptr, size)                                                  \
-    if ((size) == LY_ARRAY_MAX(size)) {                                                    \
-         LOGERR(trg->ctx, LY_EINT, "Reached limit (%"PRIu64") for storing typedefs.", LY_ARRAY_MAX(trg->tpdf_size));\
+#define YANG_ADDELEM(current_ptr, size, array_name)                                      \
+    if ((size) == LY_ARRAY_MAX(size)) {                                                  \
+         LOGERR(trg->ctx, LY_EINT, "Reached limit (%"PRIu64") for storing %s.", LY_ARRAY_MAX(size), array_name); \
          free(s);                                                                        \
          YYABORT;                                                                        \
-    } else if (!((size) % LY_YANG_ARRAY_SIZE)) {                                           \
+    } else if (!((size) % LY_YANG_ARRAY_SIZE)) {                                         \
         void *tmp;                                                                       \
                                                                                          \
         tmp = realloc((current_ptr), (sizeof *(current_ptr)) * ((size) + LY_YANG_ARRAY_SIZE)); \
@@ -47,17 +47,17 @@
             free(s);                                                                     \
             YYABORT;                                                                     \
         }                                                                                \
-        memset(tmp + (sizeof *(current_ptr)) * (size), 0, (sizeof *(current_ptr)) * LY_YANG_ARRAY_SIZE); \
-        (current_ptr) = tmp;                                                               \
+        memset((char *)tmp + (sizeof *(current_ptr)) * (size), 0, (sizeof *(current_ptr)) * LY_YANG_ARRAY_SIZE); \
+        (current_ptr) = tmp;                                                             \
     }                                                                                    \
-    actual = &(current_ptr)[(size)++];                                                       \
+    actual = &(current_ptr)[(size)++];                                                   \
 
 void yyerror(YYLTYPE *yylloc, void *scanner, struct yang_parameter *param, ...);
 /* pointer on the current parsed element 'actual' */
 %}
 
 %union {
-  int32_t i;
+  int64_t i;
   uint32_t uint;
   char *str;
   char **p_str;
@@ -396,7 +396,9 @@ module_arg_str: identifier_arg_str { if (param->submodule) {
                                        YYABORT;
                                      }
                                      trg = param->module;
-                                     yang_read_common(trg,s,MODULE_KEYWORD);
+                                     if (yang_read_common(trg,s,MODULE_KEYWORD)) {
+                                       YYABORT;
+                                     }
                                      s = NULL;
                                      actual_type = MODULE_KEYWORD;
                                    }
@@ -445,7 +447,9 @@ submodule_arg_str: identifier_arg_str { if (!param->submodule) {
                                           YYABORT;
                                         }
                                         trg = (struct lys_module *)param->submodule;
-                                        yang_read_common(trg,s,MODULE_KEYWORD);
+                                        if (yang_read_common(trg,s,MODULE_KEYWORD)) {
+                                          YYABORT;
+                                        }
                                         s = NULL;
                                         actual_type = SUBMODULE_KEYWORD;
                                       }
@@ -506,7 +510,7 @@ import_stmt: IMPORT_KEYWORD sep import_arg_str
                    actual = NULL;
                  }
 
-import_arg_str: identifier_arg_str { YANG_ADDELEM(trg->imp, trg->imp_size);
+import_arg_str: identifier_arg_str { YANG_ADDELEM(trg->imp, trg->imp_size, "imports");
                                      /* HACK for unres */
                                      ((struct lys_import *)actual)->module = (struct lys_module *)s;
                                      s = NULL;
@@ -553,7 +557,7 @@ import_opt_stmt: @EMPTYDIR@ { $$ = 0; }
                                           $$ = 1;
                                         }
 
-include_arg_str: identifier_arg_str { YANG_ADDELEM(trg->inc, trg->inc_size);
+include_arg_str: identifier_arg_str { YANG_ADDELEM(trg->inc, trg->inc_size, "includes");
                                      /* HACK for unres */
                                      ((struct lys_include *)actual)->submodule = (struct lys_submodule *)s;
                                      s = NULL;
@@ -613,7 +617,7 @@ revision_date_stmt: REVISION_DATE_KEYWORD sep revision_date_arg stmtend
 
 belongs_to_arg_str: identifier_arg_str { $$ = actual_type;
                                          if (is_ext_instance) {
-                                           if (yang_read_extcomplex_str(trg, ext_instance, "belongs-to", ext_name, s,
+                                           if (yang_read_extcomplex_str(trg, ext_instance, "belongs-to", ext_name, &s,
                                                                         0, LY_STMT_BELONGSTO)) {
                                              YYABORT;
                                            }
@@ -638,7 +642,7 @@ belongs_to_stmt: BELONGS_TO_KEYWORD sep belongs_to_arg_str
                  '{' stmtsep
                      prefix_stmt
                  '}' { if (is_ext_instance) {
-                         if (yang_read_extcomplex_str(trg, ext_instance, "prefix", "belongs-to", s,
+                         if (yang_read_extcomplex_str(trg, ext_instance, "prefix", "belongs-to", &s,
                                                       LY_STMT_BELONGSTO, LY_STMT_PREFIX)) {
                            YYABORT;
                          }
@@ -719,7 +723,7 @@ revision_stmts: revision_stmts_opt { if (trg->rev_size) {
 revision_arg_stmt: date_arg_str { $$.token = actual_type;
                                   $$.actual = actual;
                                   if (!is_ext_instance) {
-                                    YANG_ADDELEM(trg->rev, trg->rev_size);
+                                    YANG_ADDELEM(trg->rev, trg->rev_size, "revisions");
                                   }
                                   memcpy(((struct lys_revision *)actual)->date, s, LY_REV_SIZE);
                                   free(s);
@@ -863,7 +867,7 @@ body_stmt: extension_stmt
 
 extension_arg_str: identifier_arg_str { $$.token = actual_type;
                                         $$.actual = actual;
-                                        YANG_ADDELEM(trg->extensions, trg->extensions_size);
+                                        YANG_ADDELEM(trg->extensions, trg->extensions_size, "extensions");
                                         trg->extensions_size--;
                                         ((struct lys_ext *)actual)->name = lydict_insert_zc(param->module->ctx, s);
                                         ((struct lys_ext *)actual)->module = trg;
@@ -909,7 +913,7 @@ extension_opt_stmt: @EMPTYDIR@
 
 argument_str: identifier_arg_str { $$ = actual_type;
                                    if (is_ext_instance) {
-                                     if (yang_read_extcomplex_str(trg, ext_instance, "argument", ext_name, s,
+                                     if (yang_read_extcomplex_str(trg, ext_instance, "argument", ext_name, &s,
                                                                   0, LY_STMT_ARGUMENT)) {
                                        YYABORT;
                                      }
@@ -1007,7 +1011,7 @@ feature_arg_str: identifier_arg_str { /* check uniqueness of feature's names */
                                       }
                                       $$.token = actual_type;
                                       $$.actual = actual;
-                                      YANG_ADDELEM(trg->features, trg->features_size);
+                                      YANG_ADDELEM(trg->features, trg->features_size, "features");
                                       ((struct lys_feature *)actual)->name = lydict_insert_zc(trg->ctx, s);
                                       ((struct lys_feature *)actual)->module = trg;
                                       s = NULL;
@@ -1059,7 +1063,7 @@ if_feature_arg: string { $$.token = actual_type;
                          switch (actual_type) {
                          case FEATURE_KEYWORD:
                            YANG_ADDELEM(((struct lys_feature *)actual)->iffeature,
-                                        ((struct lys_feature *)actual)->iffeature_size);
+                                        ((struct lys_feature *)actual)->iffeature_size, "if-features");
                            break;
                          case IDENTITY_KEYWORD:
                            if (trg->version < 2) {
@@ -1068,7 +1072,7 @@ if_feature_arg: string { $$.token = actual_type;
                              YYABORT;
                            }
                            YANG_ADDELEM(((struct lys_ident *)actual)->iffeature,
-                                        ((struct lys_ident *)actual)->iffeature_size);
+                                        ((struct lys_ident *)actual)->iffeature_size, "if-features");
                            break;
                          case ENUM_KEYWORD:
                            if (trg->version < 2) {
@@ -1077,7 +1081,7 @@ if_feature_arg: string { $$.token = actual_type;
                              YYABORT;
                            }
                            YANG_ADDELEM(((struct lys_type_enum *)actual)->iffeature,
-                                        ((struct lys_type_enum *)actual)->iffeature_size);
+                                        ((struct lys_type_enum *)actual)->iffeature_size, "if-features");
                            break;
                          case BIT_KEYWORD:
                            if (trg->version < 2) {
@@ -1086,7 +1090,7 @@ if_feature_arg: string { $$.token = actual_type;
                              YYABORT;
                            }
                            YANG_ADDELEM(((struct lys_type_bit *)actual)->iffeature,
-                                        ((struct lys_type_bit *)actual)->iffeature_size);
+                                        ((struct lys_type_bit *)actual)->iffeature_size, "if-features");
                            break;
                          case REFINE_KEYWORD:
                            if (trg->version < 2) {
@@ -1095,7 +1099,7 @@ if_feature_arg: string { $$.token = actual_type;
                              YYABORT;
                            }
                            YANG_ADDELEM(((struct lys_refine *)actual)->iffeature,
-                                        ((struct lys_refine *)actual)->iffeature_size);
+                                        ((struct lys_refine *)actual)->iffeature_size, "if-features");
                            break;
                          case EXTENSION_INSTANCE:
                            /* nothing change */
@@ -1103,7 +1107,7 @@ if_feature_arg: string { $$.token = actual_type;
                          default:
                            /* lys_node_* */
                            YANG_ADDELEM(((struct lys_node *)actual)->iffeature,
-                                        ((struct lys_node *)actual)->iffeature_size);
+                                        ((struct lys_node *)actual)->iffeature_size, "if-features");
                            break;
                          }
                          ((struct lys_iffeature *)actual)->features = (struct lys_feature **)s;
@@ -1129,7 +1133,7 @@ identity_arg_str: identifier_arg_str { const char *tmp;
                                        }
                                        $$.token = actual_type;
                                        $$.actual = actual;
-                                       YANG_ADDELEM(trg->ident, trg->ident_size);
+                                       YANG_ADDELEM(trg->ident, trg->ident_size, "identities");
                                        ((struct lys_ident *)actual)->name = tmp;
                                        ((struct lys_ident *)actual)->module = trg;
                                        actual_type = IDENTITY_KEYWORD;
@@ -1176,7 +1180,7 @@ identity_opt_stmt: @EMPTYDIR@
                                    }
                                    identity = actual;
                                    YANG_ADDELEM(((struct lys_ident *)actual)->base,
-                                                ((struct lys_ident *)actual)->base_size);
+                                                ((struct lys_ident *)actual)->base_size, "bases");
                                    *((struct lys_ident **)actual) = (struct lys_ident *)s;
                                    s = NULL;
                                    actual = identity;
@@ -1215,33 +1219,33 @@ typedef_arg_str: identifier_arg_str { tpdf_parent = (actual_type == EXTENSION_IN
                                       switch (actual_type) {
                                       case MODULE_KEYWORD:
                                       case SUBMODULE_KEYWORD:
-                                        YANG_ADDELEM(trg->tpdf, trg->tpdf_size);
+                                        YANG_ADDELEM(trg->tpdf, trg->tpdf_size, "typedefs");
                                         break;
                                       case GROUPING_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_grp *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_grp *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_grp *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case CONTAINER_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_container *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_container *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_container *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case LIST_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_list *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_list *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_list *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case RPC_KEYWORD:
                                       case ACTION_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_rpc_action *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_rpc_action *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_rpc_action *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case INPUT_KEYWORD:
                                       case OUTPUT_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_inout *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_inout *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_inout *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case NOTIFICATION_KEYWORD:
                                         YANG_ADDELEM(((struct lys_node_notif *)tpdf_parent)->tpdf,
-                                                     ((struct lys_node_notif *)tpdf_parent)->tpdf_size);
+                                                     ((struct lys_node_notif *)tpdf_parent)->tpdf_size, "typedefs");
                                         break;
                                       case EXTENSION_INSTANCE:
                                         /* typedef is already allocated */
@@ -1390,7 +1394,7 @@ some_restrictions: @EMPTYDIR@
                                    ((struct yang_type *)actual)->base = LY_TYPE_IDENT;
                                    yang_type = actual;
                                    YANG_ADDELEM(((struct yang_type *)actual)->type->info.ident.ref,
-                                                ((struct yang_type *)actual)->type->info.ident.count);
+                                                ((struct yang_type *)actual)->type->info.ident.count, "identity refs");
                                    *((struct lys_ident **)actual) = (struct lys_ident *)s;
                                    actual = yang_type;
                                    s = NULL;
@@ -1422,7 +1426,7 @@ union_spec: @EMPTYDIR@ { struct yang_type *stype = (struct yang_type *)actual;
                            LOGVAL(trg->ctx, LYE_INCHILDSTMT, LY_VLOG_NONE, NULL, "type", "derived type");
                            YYABORT;
                          }
-                         YANG_ADDELEM(stype->type->info.uni.types, stype->type->info.uni.count)
+                         YANG_ADDELEM(stype->type->info.uni.types, stype->type->info.uni.count, "union types")
                          actual_type = UNION_KEYWORD;
                        }
 
@@ -1516,7 +1520,10 @@ pattern_stmt: PATTERN_KEYWORD pattern_sep pattern_arg_str pattern_end  {struct l
                                                                         if ($2.token != EXTENSION_INSTANCE &&
                                                                             !(data_node && data_node->nodetype != LYS_GROUPING && lys_ingrouping(data_node))) {
                                                                           unsigned int c = 2 * (((struct yang_type *)$2.actual)->type->info.str.pat_count - 1);
-                                                                          YANG_ADDELEM(((struct yang_type *)$2.actual)->type->info.str.patterns_pcre, c);
+                                                                          YANG_ADDELEM(((struct yang_type *)$2.actual)->type->info.str.patterns_pcre, c, "patterns");
+                                                                          ++c;
+                                                                          YANG_ADDELEM(((struct yang_type *)$2.actual)->type->info.str.patterns_pcre, c, "patterns");
+                                                                          actual = &(((struct yang_type *)$2.actual)->type->info.str.patterns_pcre)[2 * (((struct yang_type *)$2.actual)->type->info.str.pat_count - 1)];
                                                                         }
 #endif
                                                                         if (yang_read_pattern(trg->ctx, pattern, actual, $3, $4)) {
@@ -1534,7 +1541,7 @@ pattern_arg_str: string { if (actual_type != EXTENSION_INSTANCE) {
                             }
                             ((struct yang_type *)actual)->base = LY_TYPE_STRING;
                             YANG_ADDELEM(((struct yang_type *)actual)->type->info.str.patterns,
-                                         ((struct yang_type *)actual)->type->info.str.pat_count);
+                                         ((struct yang_type *)actual)->type->info.str.pat_count, "patterns");
                           }
                           $$ = s;
                           s = NULL;
@@ -1619,7 +1626,7 @@ enum_stmt: ENUM_KEYWORD sep enum_arg_str enum_end
 
 enum_arg_str: string { $$.token = actual_type;
                        $$.actual = yang_type = actual;
-                       YANG_ADDELEM(((struct yang_type *)actual)->type->info.enums.enm, ((struct yang_type *)actual)->type->info.enums.count);
+                       YANG_ADDELEM(((struct yang_type *)actual)->type->info.enums.enm, ((struct yang_type *)actual)->type->info.enums.count, "enums");
                        if (yang_read_enum(trg->ctx, yang_type, actual, s)) {
                          YYABORT;
                        }
@@ -1763,7 +1770,7 @@ bit_stmt: BIT_KEYWORD sep bit_arg_str bit_end
 bit_arg_str: identifier_arg_str { $$.token = actual_type;
                                   $$.actual = yang_type = actual;
                                   YANG_ADDELEM(((struct yang_type *)actual)->type->info.bits.bit,
-                                               ((struct yang_type *)actual)->type->info.bits.count);
+                                               ((struct yang_type *)actual)->type->info.bits.count, "bits");
                                   if (yang_read_bit(trg->ctx, yang_type, actual, s)) {
                                     YYABORT;
                                   }
@@ -2185,7 +2192,7 @@ leaf_list_opt_stmt: @EMPTYDIR@ { $$.node.ptr_leaflist = actual;
                                          YYABORT;
                                        }
                                        YANG_ADDELEM($1.node.ptr_leaflist->dflt,
-                                                    $1.node.ptr_leaflist->dflt_size);
+                                                    $1.node.ptr_leaflist->dflt_size, "defaults");
                                        (*(const char **)actual) = lydict_insert_zc(param->module->ctx, s);
                                        s = NULL;
                                        actual = $1.node.ptr_leaflist;
@@ -2327,7 +2334,7 @@ list_opt_stmt: @EMPTYDIR@ { $$.node.ptr_list = actual;
                               $$ = $1;
                               s = NULL;
                             }
-  |  list_opt_stmt unique_stmt { YANG_ADDELEM($1.node.ptr_list->unique, $1.node.ptr_list->unique_size);
+  |  list_opt_stmt unique_stmt { YANG_ADDELEM($1.node.ptr_list->unique, $1.node.ptr_list->unique_size, "uniques");
                                  ((struct lys_unique *)actual)->expr = (const char **)s;
                                  $$ = $1;
                                  s = NULL;
@@ -2732,7 +2739,7 @@ refine_args_str: descendant_schema_nodeid optsep
 refine_arg_str: refine_args_str { $$.token = actual_type;
                                   $$.actual = actual;
                                   YANG_ADDELEM(((struct lys_node_uses *)actual)->refine,
-                                               ((struct lys_node_uses *)actual)->refine_size);
+                                               ((struct lys_node_uses *)actual)->refine_size, "refines");
                                   ((struct lys_refine *)actual)->target_name = transform_schema2json(trg, s);
                                   free(s);
                                   s = NULL;
@@ -2786,23 +2793,23 @@ refine_body_opt_stmts: @EMPTYDIR@ { $$.refine = actual;
   |  refine_body_opt_stmts must_stmt stmtsep { actual = $1.refine;
                                                actual_type = REFINE_KEYWORD;
                                                if ($1.refine->target_type) {
-                                                 if ($1.refine->target_type & (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYXML)) {
-                                                   $1.refine->target_type &= (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYXML);
+                                                 if ($1.refine->target_type & (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA)) {
+                                                   $1.refine->target_type &= (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA);
                                                  } else {
                                                    LOGVAL(trg->ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "must", "refine");
                                                    LOGVAL(trg->ctx, LYE_SPEC, LY_VLOG_NONE, NULL, "Invalid refine target nodetype for the substatements.");
                                                    YYABORT;
                                                  }
                                                } else {
-                                                 $1.refine->target_type = LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYXML;
+                                                 $1.refine->target_type = LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA;
                                                }
                                              }
   |  refine_body_opt_stmts if_feature_stmt
-     stmtsep { /* leaf, leaf-list, list, container or anyxml */
+     stmtsep { /* leaf, leaf-list, list, container, choice, case, anydata or anyxml */
                /* check possibility of statements combination */
                if ($1.refine->target_type) {
-                 if ($1.refine->target_type & (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA)) {
-                   $1.refine->target_type &= (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA);
+                 if ($1.refine->target_type & (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_CHOICE | LYS_CASE | LYS_ANYDATA)) {
+                   $1.refine->target_type &= (LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_CHOICE | LYS_CASE | LYS_ANYDATA);
                  } else {
                    free(s);
                    LOGVAL(trg->ctx, LYE_MISSCHILDSTMT, LY_VLOG_NONE, NULL, "if-feature", "refine");
@@ -2810,7 +2817,7 @@ refine_body_opt_stmts: @EMPTYDIR@ { $$.refine = actual;
                    YYABORT;
                  }
                } else {
-                 $1.refine->target_type = LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_ANYDATA;
+                 $1.refine->target_type = LYS_LEAF | LYS_LIST | LYS_LEAFLIST | LYS_CONTAINER | LYS_CHOICE | LYS_CASE | LYS_ANYDATA;
                }
              }
   |  refine_body_opt_stmts presence_stmt { if ($1.refine->target_type) {
@@ -2880,7 +2887,7 @@ refine_body_opt_stmts: @EMPTYDIR@ { $$.refine = actual;
                                                   YYABORT;
                                               }
                                           }
-                                          YANG_ADDELEM($1.refine->dflt, $1.refine->dflt_size);
+                                          YANG_ADDELEM($1.refine->dflt, $1.refine->dflt_size, "defaults");
                                           *((const char **)actual) = lydict_insert_zc(trg->ctx, s);
                                           actual = $1.refine;
                                           s = NULL;
@@ -2906,8 +2913,8 @@ refine_body_opt_stmts: @EMPTYDIR@ { $$.refine = actual;
                                          $$ = $1;
                                        }
   |  refine_body_opt_stmts mandatory_stmt { if ($1.refine->target_type) {
-                                              if ($1.refine->target_type & (LYS_LEAF | LYS_CHOICE | LYS_ANYXML)) {
-                                                $1.refine->target_type &= (LYS_LEAF | LYS_CHOICE | LYS_ANYXML);
+                                              if ($1.refine->target_type & (LYS_LEAF | LYS_CHOICE | LYS_ANYDATA)) {
+                                                $1.refine->target_type &= (LYS_LEAF | LYS_CHOICE | LYS_ANYDATA);
                                                 if ($1.refine->flags & LYS_MAND_MASK) {
                                                   LOGVAL(trg->ctx, LYE_TOOMANY, LY_VLOG_NONE, NULL, "mandatory", "refine");
                                                   YYABORT;
@@ -2919,7 +2926,7 @@ refine_body_opt_stmts: @EMPTYDIR@ { $$.refine = actual;
                                                 YYABORT;
                                               }
                                             } else {
-                                              $1.refine->target_type = LYS_LEAF | LYS_CHOICE | LYS_ANYXML;
+                                              $1.refine->target_type = LYS_LEAF | LYS_CHOICE | LYS_ANYDATA;
                                               $1.refine->flags |= $2;
                                             }
                                             $$ = $1;
@@ -2987,7 +2994,7 @@ uses_augment_arg: uses_augment_arg_str { void *parent;
                                          $$.actual = actual;
                                          parent = actual;
                                          YANG_ADDELEM(((struct lys_node_uses *)actual)->augment,
-                                                      ((struct lys_node_uses *)actual)->augment_size);
+                                                      ((struct lys_node_uses *)actual)->augment_size, "augments");
                                          if (yang_read_augment(trg, parent, actual, s)) {
                                            YYABORT;
                                          }
@@ -3010,7 +3017,7 @@ augment_arg_str: absolute_schema_nodeids optsep
 
 augment_arg: augment_arg_str { $$.token = actual_type;
                                $$.actual = actual;
-                               YANG_ADDELEM(trg->augment, trg->augment_size);
+                               YANG_ADDELEM(trg->augment, trg->augment_size, "augments");
                                if (yang_read_augment(trg, NULL, actual, s)) {
                                  YYABORT;
                                }
@@ -3259,6 +3266,7 @@ notification_arg_str: identifier_arg_str { $$.token = actual_type;
                                              YYABORT;
                                            }
                                            data_node = actual;
+                                           s = NULL;
                                            actual_type = NOTIFICATION_KEYWORD;
                                          }
 
@@ -3327,7 +3335,7 @@ notification_opt_stmt: @EMPTYDIR@ { $$.notif = actual; }
 
 deviation_arg: deviation_arg_str { $$.token = actual_type;
                                    $$.actual = actual;
-                                   YANG_ADDELEM(trg->deviation, trg->deviation_size);
+                                   YANG_ADDELEM(trg->deviation, trg->deviation_size, "deviations");
                                    ((struct lys_deviation *)actual)->target_name = transform_schema2json(trg, s);
                                    free(s);
                                    if (!((struct lys_deviation *)actual)->target_name) {
@@ -3453,13 +3461,13 @@ deviate_add_opt_stmt: @EMPTYDIR@ { $$ = actual; }
                                        $$ = $1;
                                      }
   |  deviate_add_opt_stmt must_stmt stmtsep
-  |  deviate_add_opt_stmt unique_stmt { YANG_ADDELEM($1->unique, $1->unique_size);
+  |  deviate_add_opt_stmt unique_stmt { YANG_ADDELEM($1->unique, $1->unique_size, "uniques");
                                         ((struct lys_unique *)actual)->expr = (const char **)s;
                                         s = NULL;
                                         actual = $1;
                                         $$= $1;
                                       }
-  |  deviate_add_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size);
+  |  deviate_add_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size, "defaults");
                                          *((const char **)actual) = lydict_insert_zc(trg->ctx, s);
                                          s = NULL;
                                          actual = $1;
@@ -3550,13 +3558,13 @@ deviate_delete_opt_stmt: @EMPTYDIR@ { $$ = actual; }
                                           $$ = $1;
                                         }
   |  deviate_delete_opt_stmt must_stmt stmtsep
-  |  deviate_delete_opt_stmt unique_stmt { YANG_ADDELEM($1->unique, $1->unique_size);
+  |  deviate_delete_opt_stmt unique_stmt { YANG_ADDELEM($1->unique, $1->unique_size, "uniques");
                                            ((struct lys_unique *)actual)->expr = (const char **)s;
                                            s = NULL;
                                            actual = $1;
                                            $$ = $1;
                                          }
-  |  deviate_delete_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size);
+  |  deviate_delete_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size, "defaults");
                                             *((const char **)actual) = lydict_insert_zc(trg->ctx, s);
                                             s = NULL;
                                             actual = $1;
@@ -3599,7 +3607,7 @@ deviate_replace_opt_stmt: @EMPTYDIR@ { $$ = actual; }
                                            s = NULL;
                                            $$ = $1;
                                          }
-  |  deviate_replace_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size);
+  |  deviate_replace_opt_stmt default_stmt { YANG_ADDELEM($1->dflt, $1->dflt_size, "defaults");
                                              *((const char **)actual) = lydict_insert_zc(trg->ctx, s);
                                              s = NULL;
                                              actual = $1;
@@ -3800,33 +3808,33 @@ must_agr_str: string { $$.token = actual_type;
                        switch (actual_type) {
                        case CONTAINER_KEYWORD:
                          YANG_ADDELEM(((struct lys_node_container *)actual)->must,
-                                     ((struct lys_node_container *)actual)->must_size);
+                                     ((struct lys_node_container *)actual)->must_size, "musts");
                          break;
                        case ANYDATA_KEYWORD:
                        case ANYXML_KEYWORD:
                          YANG_ADDELEM(((struct lys_node_anydata *)actual)->must,
-                                     ((struct lys_node_anydata *)actual)->must_size);
+                                     ((struct lys_node_anydata *)actual)->must_size, "musts");
                          break;
                        case LEAF_KEYWORD:
                          YANG_ADDELEM(((struct lys_node_leaf *)actual)->must,
-                                     ((struct lys_node_leaf *)actual)->must_size);
+                                     ((struct lys_node_leaf *)actual)->must_size, "musts");
                          break;
                        case LEAF_LIST_KEYWORD:
                          YANG_ADDELEM(((struct lys_node_leaflist *)actual)->must,
-                                     ((struct lys_node_leaflist *)actual)->must_size);
+                                     ((struct lys_node_leaflist *)actual)->must_size, "musts");
                          break;
                        case LIST_KEYWORD:
                          YANG_ADDELEM(((struct lys_node_list *)actual)->must,
-                                     ((struct lys_node_list *)actual)->must_size);
+                                     ((struct lys_node_list *)actual)->must_size, "musts");
                          break;
                        case REFINE_KEYWORD:
                          YANG_ADDELEM(((struct lys_refine *)actual)->must,
-                                     ((struct lys_refine *)actual)->must_size);
+                                     ((struct lys_refine *)actual)->must_size, "musts");
                          break;
                        case ADD_KEYWORD:
                        case DELETE_KEYWORD:
                          YANG_ADDELEM(((struct lys_deviate *)actual)->must,
-                                      ((struct lys_deviate *)actual)->must_size);
+                                      ((struct lys_deviate *)actual)->must_size, "musts");
                          break;
                        case NOTIFICATION_KEYWORD:
                          if (trg->version < 2) {
@@ -3835,7 +3843,7 @@ must_agr_str: string { $$.token = actual_type;
                            YYABORT;
                          }
                          YANG_ADDELEM(((struct lys_node_notif *)actual)->must,
-                                     ((struct lys_node_notif *)actual)->must_size);
+                                     ((struct lys_node_notif *)actual)->must_size, "musts");
                          break;
                        case INPUT_KEYWORD:
                        case OUTPUT_KEYWORD:
@@ -3845,7 +3853,7 @@ must_agr_str: string { $$.token = actual_type;
                            YYABORT;
                          }
                          YANG_ADDELEM(((struct lys_node_inout *)actual)->must,
-                                     ((struct lys_node_inout *)actual)->must_size);
+                                     ((struct lys_node_inout *)actual)->must_size, "musts");
                          break;
                        case EXTENSION_INSTANCE:
                          /* must is already allocated */
@@ -4542,77 +4550,77 @@ ext_substatements: @EMPTYDIR@ { actual_type = EXTENSION_INSTANCE;
                                 $$ = 0;
                               }
   |  ext_substatements belongs_to_stmt stmtsep
-  |  ext_substatements prefix_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "prefix", ext_name, s,
+  |  ext_substatements prefix_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "prefix", ext_name, &s,
                                                                   0, LY_STMT_PREFIX)) {
                                        YYABORT;
                                      }
                                    }
-  |  ext_substatements description_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "description", ext_name, s,
+  |  ext_substatements description_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "description", ext_name, &s,
                                                                        0, LY_STMT_DESCRIPTION)) {
                                             YYABORT;
                                           }
                                         }
-  |  ext_substatements reference_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "reference", ext_name, s,
+  |  ext_substatements reference_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "reference", ext_name, &s,
                                                                      0, LY_STMT_REFERENCE)) {
                                           YYABORT;
                                         }
                                       }
-  |  ext_substatements units_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "units", ext_name, s,
+  |  ext_substatements units_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "units", ext_name, &s,
                                                                      0, LY_STMT_UNITS)) {
                                       YYABORT;
                                     }
                                   }
-  |  ext_substatements base_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "base", ext_name, s,
+  |  ext_substatements base_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "base", ext_name, &s,
                                                                 0, LY_STMT_BASE)) {
                                      YYABORT;
                                    }
                                  }
-  |  ext_substatements contact_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "contact", ext_name, s,
+  |  ext_substatements contact_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "contact", ext_name, &s,
                                                                      0, LY_STMT_CONTACT)) {
                                         YYABORT;
                                       }
                                     }
-  |  ext_substatements default_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "default", ext_name, s,
+  |  ext_substatements default_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "default", ext_name, &s,
                                                                      0, LY_STMT_DEFAULT)) {
                                         YYABORT;
                                       }
                                     }
-  |  ext_substatements error_message_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "error-message", ext_name, s,
+  |  ext_substatements error_message_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "error-message", ext_name, &s,
                                                                          0, LY_STMT_ERRMSG)) {
                                               YYABORT;
                                             }
                                           }
-  |  ext_substatements error_app_tag_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "error-app-tag", ext_name, s,
+  |  ext_substatements error_app_tag_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "error-app-tag", ext_name, &s,
                                                                          0, LY_STMT_ERRTAG)) {
                                               YYABORT;
                                             }
                                           }
-  |  ext_substatements key_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "key", ext_name, s,
+  |  ext_substatements key_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "key", ext_name, &s,
                                                                0, LY_STMT_KEY)) {
                                     YYABORT;
                                   }
                                 }
-  |  ext_substatements namespace_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "namespace", ext_name, s,
+  |  ext_substatements namespace_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "namespace", ext_name, &s,
                                                                      0, LY_STMT_NAMESPACE)) {
                                           YYABORT;
                                         }
                                       }
-  |  ext_substatements organization_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "organization", ext_name, s,
+  |  ext_substatements organization_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "organization", ext_name, &s,
                                                                         0, LY_STMT_ORGANIZATION)) {
                                              YYABORT;
                                            }
                                          }
-  |  ext_substatements path_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "path", ext_name, s,
+  |  ext_substatements path_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "path", ext_name, &s,
                                                                 0, LY_STMT_PATH)) {
                                      YYABORT;
                                    }
                                  }
-  |  ext_substatements presence_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "presence", ext_name, s,
+  |  ext_substatements presence_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "presence", ext_name, &s,
                                                                     0, LY_STMT_PRESENCE)) {
                                          YYABORT;
                                        }
                                      }
-  |  ext_substatements revision_date_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "revision-date", ext_name, s,
+  |  ext_substatements revision_date_stmt { if (yang_read_extcomplex_str(trg, ext_instance, "revision-date", ext_name, &s,
                                                                          0, LY_STMT_REVISIONDATE)) {
                                               YYABORT;
                                             }
@@ -4833,6 +4841,7 @@ void
 yyerror(YYLTYPE *yylloc, void *scanner, struct yang_parameter *param, ...)
 {
   free(*param->value);
+  *param->value = NULL;
   if (yylloc->first_line != -1) {
     if (*param->data_node && (*param->data_node) == (*param->actual_node)) {
       LOGVAL(param->module->ctx, LYE_INSTMT, LY_VLOG_LYS, *param->data_node, yyget_text(scanner));

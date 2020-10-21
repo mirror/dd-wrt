@@ -1,0 +1,12 @@
+module mod1 {
+    prefix abc;
+    namespace "urn:cesnet:mod1";
+
+    yang-version 1.1;
+    
+    action act {
+        reference "test reference";
+        description "test description";    
+    }
+    // action not in container or node
+}

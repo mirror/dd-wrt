@@ -68,7 +68,7 @@ lyjson_parse_text(struct ly_ctx *ctx, const char *data, unsigned int *len)
     int32_t value;
 
     for (*len = o = 0; data[*len] && data[*len] != '"'; o++) {
-        if (o > BUFSIZE - 3) {
+        if (o > BUFSIZE - 4) {
             /* add buffer into the result */
             if (result) {
                 size = size + o;
@@ -490,11 +490,20 @@ repeat:
         }
         leaf->value_str = lydict_insert(ctx, &data[len], r);
         len += r;
-    } else if (!strncmp(&data[len], "[null]", 6)) {
-        /* empty */
+    } else if (data[len] == '[') {
+        /* empty '[' WSP 'null' WSP ']' */
+        for (r = len + 1; isspace(data[r]); ++r);
+        if (strncmp(&data[r], "null", 4)) {
+            goto inval;
+        }
+        for (r += 4; isspace(data[r]); ++r);
+        if (data[r] != ']') {
+            goto inval;
+        }
         leaf->value_str = lydict_insert(ctx, "", 0);
-        len += 6;
+        len = r + 1;
     } else {
+inval:
         /* error */
         LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, leaf, "JSON data (unexpected value)");
         return 0;
@@ -502,8 +511,7 @@ repeat:
 
     /* the value is here converted to a JSON format if needed in case of LY_TYPE_IDENT and LY_TYPE_INST or to a
      * canonical form of the value */
-    if (!lyp_parse_value(&((struct lys_node_leaf *)leaf->schema)->type, &leaf->value_str, NULL, leaf, NULL, NULL,
-                         1, 0, options & LYD_OPT_TRUSTED)) {
+    if (!lyp_parse_value(&((struct lys_node_leaf *)leaf->schema)->type, &leaf->value_str, NULL, leaf, NULL, NULL, 1, 0)) {
         return 0;
     }
 
@@ -637,7 +645,7 @@ repeat:
     len += r + 1;
     len += skip_ws(&data[len]);
 
-    ret = lyp_fill_attr(parent_module->ctx, NULL, NULL, prefix, name, value, NULL, options, &attr_new);
+    ret = lyp_fill_attr(parent_module->ctx, NULL, NULL, prefix, name, value, NULL, &attr_new);
     if (ret == -1) {
         free(value);
         goto error;
@@ -764,6 +772,83 @@ error:
     return -1;
 }
 
+/**
+ * @brief Skip subtree (find its end in the input data) of the current JSON item.
+ * @param[in] ctx libyang context for logging
+ * @param[in] parent parent node for logging
+ * @param[in] data input data (pointing to the beginning, @p len is used to go to the current position).
+ * @param[in, out] len Current position in the @p data, will be updated to the end of the element's subtree in the @p data
+ * @retun 0 on success
+ * @return -1 on error.
+ */
+static int
+json_skip_unknown(struct ly_ctx *ctx, struct lyd_node *parent, const char *data, unsigned int *len)
+{
+    int qstr = 0;
+    int objects = 0;
+    int arrays = 0;
+
+    while (data[*len]) {
+        switch (data[*len]) {
+        case '\"':
+            if (qstr) {
+                if (data[(*len) - 1] != '\\')  {
+                    qstr = 0;
+                }
+            } else if (data[(*len) - 1] != '\\') {
+                qstr = 1;
+            } else {
+                LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, parent, "JSON data (missing quotation mark for a string data) ");
+                return -1;
+            }
+            break;
+        case '[':
+            if (!qstr) {
+                arrays++;
+            }
+            break;
+        case '{':
+            if (!qstr) {
+                objects++;
+            }
+            break;
+        case ']':
+            if (!qstr) {
+                arrays--;
+            }
+            break;
+        case '}':
+            if (!qstr) {
+                objects--;
+            }
+            break;
+        case ',':
+            if (!qstr && !objects && !arrays) {
+                /* do not eat the comma character */
+                return 0;
+            }
+        }
+
+        if (objects < 0) {
+            if (arrays) {
+                LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, parent, "JSON data (missing end-array)");
+                return -1;
+            }
+            return 0;
+        }
+        if (arrays < 0) {
+            if (objects) {
+                LOGVAL(ctx, LYE_XML_INVAL, LY_VLOG_LYD, parent, "JSON data (missing end-object)");
+                return -1;
+            }
+            return 0;
+        }
+        (*len)++;
+    }
+
+    return 0;
+}
+
 static unsigned int
 json_parse_data(struct ly_ctx *ctx, const char *data, const struct lys_node *schema_parent, struct lyd_node **parent,
                 struct lyd_node *first_sibling, struct lyd_node *prev, struct attr_cont **attrs, int options,
@@ -791,6 +876,10 @@ json_parse_data(struct ly_ctx *ctx, const char *data, const struct lys_node *sch
     len++;
 
     str = lyjson_parse_text(ctx, &data[len], &r);
+    if (!str) {
+        goto error;
+    }
+
     if (!r) {
         goto error;
     } else if (data[len + r] != '"') {
@@ -934,8 +1023,16 @@ json_parse_data(struct ly_ctx *ctx, const char *data, const struct lys_node *sch
 
     module = lys_node_module(schema);
     if (!module || !module->implemented || module->disabled) {
-        LOGVAL(ctx, LYE_INELEM, (*parent ? LY_VLOG_LYD : LY_VLOG_NONE), (*parent), name);
-        goto error;
+        if (options & LYD_OPT_STRICT) {
+            LOGVAL(ctx, LYE_INELEM, (*parent ? LY_VLOG_LYD : LY_VLOG_NONE), (*parent), name);
+            goto error;
+        } else {
+            if (json_skip_unknown(ctx, *parent, data, &len)) {
+                goto error;
+            }
+            free(str);
+            return len;
+        }
     }
 
     if (str[0] == '@') {
@@ -1436,7 +1533,7 @@ lyd_parse_json(struct ly_ctx *ctx, const char *data, int options, const struct l
         result = reply_top;
     }
 
-    if (!result) {
+    if (!result && (options & LYD_OPT_STRICT)) {
         LOGERR(ctx, LY_EVALID, "Model for the data to be linked with not found.");
         goto error;
     }

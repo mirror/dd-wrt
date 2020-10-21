@@ -27,6 +27,7 @@ struct state {
     const struct lys_module *mod2;
     const struct lys_module *mod3;
     struct lyd_node *dt;
+    struct lyd_node *act;
     char *xml;
 };
 
@@ -72,6 +73,7 @@ teardown_f(void **state)
     struct state *st = (*state);
 
     lyd_free_withsiblings(st->dt);
+    lyd_free_withsiblings(st->act);
     ly_ctx_destroy(st->ctx, NULL);
     free(st->xml);
     free(st);
@@ -271,6 +273,38 @@ test_augment_choice(void **state)
     assert_non_null(st->dt);
 }
 
+static void
+test_action(void **state)
+{
+    struct state *st = (struct state *)*state;
+    const char act[] =
+        "<advanced xmlns=\"urn:act1\">"
+            "<conditional xmlns=\"urn:act2\">"
+                "<conditional_action/>"
+            "</conditional>"
+        "</advanced>";
+    const char data[] =
+        "<advanced xmlns=\"urn:act1\">"
+            "<condition>true</condition>"
+            "<conditional xmlns=\"urn:act2\">"
+                "<b_positive>25</b_positive>"
+            "</conditional>"
+        "</advanced>";
+
+    /* schema */
+    st->mod2 = lys_parse_path(st->ctx, TESTS_DIR"/data/files/act1.yang", LYS_IN_YANG);
+    assert_ptr_not_equal(st->mod2, NULL);
+    assert_int_equal(lys_features_enable(st->mod2, "feat1"), 0);
+    st->mod3 = lys_parse_path(st->ctx, TESTS_DIR"/data/files/act2.yang", LYS_IN_YANG);
+    assert_ptr_not_equal(st->mod3, NULL);
+
+    st->dt = lyd_parse_mem(st->ctx, data, LYD_XML, LYD_OPT_CONFIG);
+    assert_non_null(st->dt);
+
+    st->act = lyd_parse_mem(st->ctx, act, LYD_XML, LYD_OPT_RPC, st->dt);
+    assert_non_null(st->act);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -281,6 +315,7 @@ int main(void)
                     cmocka_unit_test_setup_teardown(test_insert_noautodel, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_value_prefix, setup_f, teardown_f),
                     cmocka_unit_test_setup_teardown(test_augment_choice, setup_f, teardown_f),
+                    cmocka_unit_test_setup_teardown(test_action, setup_f, teardown_f),
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

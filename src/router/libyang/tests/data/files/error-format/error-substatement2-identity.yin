@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement2-identity"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement2-identity_mod="urn:error-substatement2-identity">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement2-identity"/>
+  <prefix value="error-substatement2-identity_mod"/>
+
+  <feature name="feat1"/>
+  <!-- this is an error substatement of identity -->
+  <identity name="ident1">
+    <if-feature name="feat1">
+      <text>this is an error substatement about if-feature..</text>
+    </if-feature>
+  </identity>
+</module>

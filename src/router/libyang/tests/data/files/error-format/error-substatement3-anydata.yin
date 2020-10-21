@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-anydata"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-anydata_mod="urn:error-substatement3-anydata">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-anydata"/>
+  <prefix value="error-substatement3-anydata_mod"/>
+
+  <!-- this is an error substatement about anydata. -->
+  <anydata name="adata1">
+    <when condition="con1">
+      <text>this is an error substatement about condition.</text>
+    </when>
+  </anydata>
+</module>

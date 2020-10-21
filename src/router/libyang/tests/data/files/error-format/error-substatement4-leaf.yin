@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-leaf"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-leaf_mod="urn:error-substatement4-leaf">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-leaf"/>
+  <prefix value="error-substatement4-leaf_mod"/>
+
+  <feature name="feat1"/>
+  <!-- this is an error substatement about leaf. -->
+  <leaf name="leaf1">
+    <type name="string"/>
+    <if-feature name="feat1">
+      <text>this is an error substatement of if-feature.</text>
+    </if-feature>
+  </leaf>
+</module>

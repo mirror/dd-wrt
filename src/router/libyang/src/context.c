@@ -41,9 +41,9 @@ extern unsigned int ext_plugins_ref;
 #define YANG_PATH "../models/yang@2017-02-20.h"
 #define IETF_INET_TYPES_PATH "../models/ietf-inet-types@2013-07-15.h"
 #define IETF_YANG_TYPES_PATH "../models/ietf-yang-types@2013-07-15.h"
-#define IETF_DATASTORES "../models/ietf-datastores@2017-08-17.h"
-#define IETF_YANG_LIB_PATH "../models/ietf-yang-library@2018-01-17.h"
-#define IETF_YANG_LIB_REV "2018-01-17"
+#define IETF_DATASTORES "../models/ietf-datastores@2018-02-14.h"
+#define IETF_YANG_LIB_PATH "../models/ietf-yang-library@2019-01-04.h"
+#define IETF_YANG_LIB_REV "2019-01-04"
 
 #include IETF_YANG_METADATA_PATH
 #include YANG_PATH
@@ -65,13 +65,15 @@ static struct internal_modules_s {
     {"ietf-inet-types", "2013-07-15", (const char*)ietf_inet_types_2013_07_15_yin, 0, LYS_IN_YIN},
     {"ietf-yang-types", "2013-07-15", (const char*)ietf_yang_types_2013_07_15_yin, 0, LYS_IN_YIN},
     /* ietf-datastores and ietf-yang-library must be right here at the end of the list! */
-    {"ietf-datastores", "2017-08-17", (const char*)ietf_datastores_2017_08_17_yin, 0, LYS_IN_YIN},
-    {"ietf-yang-library", IETF_YANG_LIB_REV, (const char*)ietf_yang_library_2018_01_17_yin, 1, LYS_IN_YIN}
+    {"ietf-datastores", "2018-02-14", (const char*)ietf_datastores_2018_02_14_yin, 0, LYS_IN_YIN},
+    {"ietf-yang-library", IETF_YANG_LIB_REV, (const char*)ietf_yang_library_2019_01_04_yin, 1, LYS_IN_YIN}
 };
 
 API unsigned int
 ly_ctx_internal_modules_count(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     if (!ctx) {
         return 0;
     }
@@ -81,9 +83,10 @@ ly_ctx_internal_modules_count(struct ly_ctx *ctx)
 API struct ly_ctx *
 ly_ctx_new(const char *search_dir, int options)
 {
+    FUN_IN;
+
     struct ly_ctx *ctx = NULL;
     struct lys_module *module;
-    char *cwd = NULL;
     char *search_dir_list;
     char *sep, *dir;
     int rc = EXIT_SUCCESS;
@@ -99,7 +102,10 @@ ly_ctx_new(const char *search_dir, int options)
     ly_load_plugins();
 
     /* initialize thread-specific key */
-    while ((i = pthread_key_create(&ctx->errlist_key, ly_err_free)) == EAGAIN);
+    if (pthread_key_create(&ctx->errlist_key, ly_err_free) != 0) {
+        LOGERR(NULL, LY_ESYS, "pthread_key_create() in ly_ctx_new() failed");
+        goto error;
+    }
 
     /* models list */
     ctx->models.list = calloc(16, sizeof *ctx->models.list);
@@ -140,13 +146,10 @@ ly_ctx_new(const char *search_dir, int options)
         module->implemented = internal_modules[i].implemented;
     }
 
-    /* cleanup */
-    free(cwd);
-
     return ctx;
 
 error:
-    free(cwd);
+    /* cleanup */
     ly_ctx_destroy(ctx, NULL);
     return NULL;
 }
@@ -220,6 +223,7 @@ ly_ctx_new_yl_common(const char *search_dir, const char *input, LYD_FORMAT forma
     struct lyd_node *yltree = NULL;
     struct ly_ctx *ctx = NULL;
     struct ly_set *set = NULL;
+    int err = 0;
 
     /* create empty (with internal modules including ietf-yang-library) context */
     ctx = ly_ctx_new(search_dir, options);
@@ -259,7 +263,7 @@ ly_ctx_new_yl_common(const char *search_dir, const char *input, LYD_FORMAT forma
                 } else if (!strcmp(node->schema->name, "revision")) {
                     revision = ((struct lyd_node_leaf_list*)node)->value_str;
                 } else if (!strcmp(node->schema->name, "feature")) {
-                    ly_set_add(&features, node->child, LY_SET_OPT_USEASLIST);
+                    ly_set_add(&features, node, LY_SET_OPT_USEASLIST);
                 }
             }
 
@@ -280,8 +284,7 @@ ly_ctx_new_yl_common(const char *search_dir, const char *input, LYD_FORMAT forma
     if (0) {
         /* skip context destroy in case of success */
 error:
-        ly_ctx_destroy(ctx, NULL);
-        ctx = NULL;
+        err = 1;
     }
 
     /* cleanup */
@@ -292,6 +295,10 @@ error:
     if (set) {
         ly_set_free(set);
     }
+    if (err) {
+        ly_ctx_destroy(ctx, NULL);
+        ctx = NULL;
+    }
 
     return ctx;
 }
@@ -299,12 +306,16 @@ error:
 API struct ly_ctx *
 ly_ctx_new_ylpath(const char *search_dir, const char *path, LYD_FORMAT format, int options)
 {
+    FUN_IN;
+
     return ly_ctx_new_yl_common(search_dir, path, format, options, lyd_parse_path);
 }
 
 API struct ly_ctx *
 ly_ctx_new_ylmem(const char *search_dir, const char *data, LYD_FORMAT format, int options)
 {
+    FUN_IN;
+
     return ly_ctx_new_yl_common(search_dir, data, format, options, lyd_parse_mem);
 }
 
@@ -331,72 +342,96 @@ ly_ctx_unset_option(struct ly_ctx *ctx, int options)
 API void
 ly_ctx_set_disable_searchdirs(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_set_option(ctx, LY_CTX_DISABLE_SEARCHDIRS);
 }
 
 API void
 ly_ctx_unset_disable_searchdirs(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_unset_option(ctx, LY_CTX_DISABLE_SEARCHDIRS);
 }
 
 API void
 ly_ctx_set_disable_searchdir_cwd(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_set_option(ctx, LY_CTX_DISABLE_SEARCHDIR_CWD);
 }
 
 API void
 ly_ctx_unset_disable_searchdir_cwd(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_unset_option(ctx, LY_CTX_DISABLE_SEARCHDIR_CWD);
 }
 
 API void
 ly_ctx_set_prefer_searchdirs(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_set_option(ctx, LY_CTX_PREFER_SEARCHDIRS);
 }
 
 API void
 ly_ctx_unset_prefer_searchdirs(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_unset_option(ctx, LY_CTX_PREFER_SEARCHDIRS);
 }
 
 API void
 ly_ctx_set_allimplemented(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_set_option(ctx, LY_CTX_ALLIMPLEMENTED);
 }
 
 API void
 ly_ctx_unset_allimplemented(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_unset_option(ctx, LY_CTX_ALLIMPLEMENTED);
 }
 
 API void
 ly_ctx_set_trusted(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_set_option(ctx, LY_CTX_TRUSTED);
 }
 
 API void
 ly_ctx_unset_trusted(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     ly_ctx_unset_option(ctx, LY_CTX_TRUSTED);
 }
 
 API int
 ly_ctx_get_options(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     return ctx->models.flags;
 }
 
 API int
 ly_ctx_set_searchdir(struct ly_ctx *ctx, const char *search_dir)
 {
+    FUN_IN;
+
     char *new_dir = NULL;
     int index = 0;
     void *r;
@@ -451,6 +486,8 @@ cleanup:
 API const char * const *
 ly_ctx_get_searchdirs(const struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     if (!ctx) {
         LOGARG;
         return NULL;
@@ -461,6 +498,8 @@ ly_ctx_get_searchdirs(const struct ly_ctx *ctx)
 API void
 ly_ctx_unset_searchdirs(struct ly_ctx *ctx, int index)
 {
+    FUN_IN;
+
     int i;
 
     if (!ctx->models.search_paths) {
@@ -485,6 +524,8 @@ ly_ctx_unset_searchdirs(struct ly_ctx *ctx, int index)
 API void
 ly_ctx_destroy(struct ly_ctx *ctx, void (*private_destructor)(const struct lys_node *node, void *priv))
 {
+    FUN_IN;
+
     int i;
 
     if (!ctx) {
@@ -522,6 +563,8 @@ ly_ctx_destroy(struct ly_ctx *ctx, void (*private_destructor)(const struct lys_n
 API const struct lys_submodule *
 ly_ctx_get_submodule2(const struct lys_module *main_module, const char *submodule)
 {
+    FUN_IN;
+
     const struct lys_submodule *result;
     int i;
 
@@ -550,6 +593,8 @@ API const struct lys_submodule *
 ly_ctx_get_submodule(const struct ly_ctx *ctx, const char *module, const char *revision, const char *submodule,
                      const char *sub_revision)
 {
+    FUN_IN;
+
     const struct lys_module *mainmod;
     const struct lys_submodule *ret = NULL, *submod;
     uint32_t idx = 0;
@@ -667,12 +712,16 @@ ly_ctx_get_module_by(const struct ly_ctx *ctx, const char *key, size_t key_len, 
 API const struct lys_module *
 ly_ctx_get_module_by_ns(const struct ly_ctx *ctx, const char *ns, const char *revision, int implemented)
 {
+    FUN_IN;
+
     return ly_ctx_get_module_by(ctx, ns, 0, offsetof(struct lys_module, ns), revision, 0, implemented);
 }
 
 API const struct lys_module *
 ly_ctx_get_module(const struct ly_ctx *ctx, const char *name, const char *revision, int implemented)
 {
+    FUN_IN;
+
     return ly_ctx_get_module_by(ctx, name, 0, offsetof(struct lys_module, name), revision, 0, implemented);
 }
 
@@ -685,6 +734,8 @@ ly_ctx_nget_module(const struct ly_ctx *ctx, const char *name, size_t name_len, 
 API const struct lys_module *
 ly_ctx_get_module_older(const struct ly_ctx *ctx, const struct lys_module *module)
 {
+    FUN_IN;
+
     int i;
     const struct lys_module *result = NULL, *iter;
 
@@ -727,6 +778,8 @@ ly_ctx_get_module_older(const struct ly_ctx *ctx, const struct lys_module *modul
 API void
 ly_ctx_set_module_imp_clb(struct ly_ctx *ctx, ly_module_imp_clb clb, void *user_data)
 {
+    FUN_IN;
+
     if (!ctx) {
         LOGARG;
         return;
@@ -739,6 +792,8 @@ ly_ctx_set_module_imp_clb(struct ly_ctx *ctx, ly_module_imp_clb clb, void *user_
 API ly_module_imp_clb
 ly_ctx_get_module_imp_clb(const struct ly_ctx *ctx, void **user_data)
 {
+    FUN_IN;
+
     if (!ctx) {
         LOGARG;
         return NULL;
@@ -753,6 +808,8 @@ ly_ctx_get_module_imp_clb(const struct ly_ctx *ctx, void **user_data)
 API void
 ly_ctx_set_module_data_clb(struct ly_ctx *ctx, ly_module_data_clb clb, void *user_data)
 {
+    FUN_IN;
+
     if (!ctx) {
         LOGARG;
         return;
@@ -765,6 +822,8 @@ ly_ctx_set_module_data_clb(struct ly_ctx *ctx, ly_module_data_clb clb, void *use
 API ly_module_data_clb
 ly_ctx_get_module_data_clb(const struct ly_ctx *ctx, void **user_data)
 {
+    FUN_IN;
+
     if (!ctx) {
         LOGARG;
         return NULL;
@@ -781,6 +840,8 @@ ly_ctx_get_module_data_clb(const struct ly_ctx *ctx, void **user_data)
 API void
 ly_ctx_set_priv_dup_clb(struct ly_ctx *ctx, void *(*priv_dup_clb)(const void *priv))
 {
+    FUN_IN;
+
     ctx->priv_dup_clb = priv_dup_clb;
 }
 
@@ -939,25 +1000,26 @@ const struct lys_module *
 ly_ctx_load_sub_module(struct ly_ctx *ctx, struct lys_module *module, const char *name, const char *revision,
                        int implement, struct unres_schema *unres)
 {
-    struct lys_module *mod = NULL;
+    struct lys_module *mod = NULL, *latest_mod = NULL;
     int i;
 
     if (!module) {
-        /* exception for internal modules */
-        for (i = 0; i < ctx->internal_module_count; i++) {
-            if (ly_strequal(name, internal_modules[i].name, 0)) {
-                if (!revision || ly_strequal(revision, internal_modules[i].revision, 0)) {
-                    /* return internal module */
-                    return (struct lys_module *)ly_ctx_get_module(ctx, name, revision, 0);
-                }
-            }
-        }
         /* try to get the schema from the context (with or without revision),
          * include the disabled modules in the search to avoid their duplication,
          * they are enabled by the subsequent call to lys_set_implemented() */
-        for (i = ctx->internal_module_count, mod = NULL; i < ctx->models.used; i++) {
+        for (i = 0, mod = NULL; i < ctx->models.used; i++) {
             mod = ctx->models.list[i]; /* shortcut */
             if (ly_strequal(name, mod->name, 0)) {
+                /* first remember latest module if no other is found */
+                if (!latest_mod) {
+                    latest_mod = mod;
+                } else {
+                    if (mod->rev_size && latest_mod->rev_size && (strcmp(mod->rev[0].date, latest_mod->rev[0].date) > 0)) {
+                        /* newer revision */
+                        latest_mod = mod;
+                    }
+                }
+
                 if (revision && mod->rev_size && !strcmp(revision, mod->rev[0].date)) {
                     /* the specific revision was already loaded */
                     break;
@@ -1005,6 +1067,18 @@ search_file:
         }
     }
 
+    if (mod && !revision && latest_mod && mod->rev_size && latest_mod->rev_size
+                && (strcmp(mod->rev[0].date, latest_mod->rev[0].date) < 0)) {
+        /* the found module has older revision as the one already in context and we are looking for the latest one, free it */
+        lys_free(mod, NULL, 1, 1);
+        mod = NULL;
+    }
+
+    if (!mod && latest_mod) {
+        /* consider the latest mod found as the latest available */
+        mod = latest_mod;
+    }
+
 #ifdef LY_ENABLED_LATEST_REVISIONS
     if (!revision && mod) {
         /* module is the latest revision found */
@@ -1018,6 +1092,8 @@ search_file:
 API const struct lys_module *
 ly_ctx_load_module(struct ly_ctx *ctx, const char *name, const char *revision)
 {
+    FUN_IN;
+
     if (!ctx || !name) {
         LOGARG;
         return NULL;
@@ -1036,8 +1112,6 @@ ctx_modules_undo_backlinks(struct ly_ctx *ctx, struct ly_set *mods)
     uint8_t j;
     unsigned int u, v;
     struct lys_module *mod;
-    struct lys_node *elem, *next;
-    struct lys_node_leaf *leaf;
 
     /* maintain backlinks (start with internal ietf-yang-library which have leafs as possible targets of leafrefs */
     for (o = ctx->internal_module_count - 1; o < ctx->models.used; o++) {
@@ -1080,54 +1154,6 @@ ctx_modules_undo_backlinks(struct ly_ctx *ctx, struct ly_set *mods)
                 mod->ident[u].der = NULL;
             }
         }
-
-        /* 3) leafrefs */
-        for (elem = next = mod->data; elem; elem = next) {
-            if (elem->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
-                leaf = (struct lys_node_leaf *)elem; /* shortcut */
-                if (leaf->backlinks) {
-                    if (!mods) {
-                        /* remove all backlinks */
-                        ly_set_free(leaf->backlinks);
-                        leaf->backlinks = NULL;
-                    } else {
-                        for (v = 0; v < leaf->backlinks->number; v++) {
-                            if (ly_set_contains(mods, leaf->backlinks->set.s[v]->module) != -1) {
-                                /* derived identity is in module to remove */
-                                ly_set_rm_index(leaf->backlinks, v);
-                                v--;
-                            }
-                        }
-                        if (!leaf->backlinks->number) {
-                            /* all backlinks removed */
-                            ly_set_free(leaf->backlinks);
-                            leaf->backlinks = NULL;
-                        }
-                    }
-                }
-            }
-
-            /* select next element to process */
-            next = elem->child;
-            /* child exception for leafs, leaflists, anyxml and groupings */
-            if (elem->nodetype & (LYS_LEAF | LYS_LEAFLIST | LYS_ANYDATA | LYS_GROUPING)) {
-                next = NULL;
-            }
-            if (!next) {
-                /* no children,  try siblings */
-                next = elem->next;
-            }
-            while (!next) {
-                /* parent is already processed, go to its sibling */
-                elem = lys_parent(elem);
-                if (!elem) {
-                    /* we are done, no next element to process */
-                    break;
-                }
-                /* no siblings, go back through parents */
-                next = elem->next;
-            }
-        }
     }
 }
 
@@ -1136,8 +1162,6 @@ ctx_modules_redo_backlinks(struct ly_set *mods)
 {
     unsigned int i, j, k, s;
     struct lys_module *mod;
-    struct lys_node *next, *elem;
-    struct lys_type *type;
     struct lys_feature *feat;
 
     for (i = 0; i < mods->number; ++i) {
@@ -1165,49 +1189,6 @@ ctx_modules_redo_backlinks(struct ly_set *mods)
                 }
             }
         }
-
-        /* leafrefs */
-        LY_TREE_DFS_BEGIN(mod->data, next, elem) {
-            if (elem->nodetype == LYS_GROUPING) {
-                goto next_sibling;
-            }
-
-            if (elem->nodetype & (LYS_LEAF | LYS_LEAFLIST)) {
-                type = &((struct lys_node_leaf *)elem)->type; /* shortcut */
-                if (type->base == LY_TYPE_LEAFREF) {
-                    lys_leaf_add_leafref_target(type->info.lref.target, elem);
-                }
-            }
-
-            /* select element for the next run - children first */
-            next = elem->child;
-
-            /* child exception for leafs, leaflists and anyxml without children */
-            if (elem->nodetype & (LYS_LEAF | LYS_LEAFLIST | LYS_ANYDATA)) {
-                next = NULL;
-            }
-            if (!next) {
-next_sibling:
-                /* no children */
-                if (elem == mod->data) {
-                    /* we are done, (START) has no children */
-                    break;
-                }
-                /* try siblings */
-                next = elem->next;
-            }
-            while (!next) {
-                /* parent is already processed, go to its sibling */
-                elem = lys_parent(elem);
-
-                /* no siblings, go back through parents */
-                if (lys_parent(elem) == lys_parent(mod->data)) {
-                    /* we are done, no next element to process */
-                    break;
-                }
-                next = elem->next;
-            }
-        }
     }
 
     return 0;
@@ -1216,6 +1197,8 @@ next_sibling:
 API int
 lys_set_disabled(const struct lys_module *module)
 {
+    FUN_IN;
+
     struct ly_ctx *ctx; /* shortcut */
     struct lys_module *mod;
     struct ly_set *mods;
@@ -1361,6 +1344,8 @@ lys_set_enabled_(struct ly_set *mods, struct lys_module *mod)
 API int
 lys_set_enabled(const struct lys_module *module)
 {
+    FUN_IN;
+
     struct ly_ctx *ctx; /* shortcut */
     struct lys_module *mod;
     struct ly_set *mods, *disabled;
@@ -1442,7 +1427,7 @@ checkdependency:
         ly_set_add(disabled, mod, 0);
     }
 
-    /* maintain backlinks (start with internal ietf-yang-library which have leafs as possible targets of leafrefs */
+    /* maintain backlinks */
     ctx_modules_redo_backlinks(mods);
 
     /* re-apply the deviations and augments */
@@ -1466,6 +1451,8 @@ API int
 ly_ctx_remove_module(const struct lys_module *module,
                      void (*private_destructor)(const struct lys_node *node, void *priv))
 {
+    FUN_IN;
+
     struct ly_ctx *ctx; /* shortcut */
     struct lys_module *mod = NULL;
     struct ly_set *mods;
@@ -1592,6 +1579,8 @@ imported:
 API void
 ly_ctx_clean(struct ly_ctx *ctx, void (*private_destructor)(const struct lys_node *node, void *priv))
 {
+    FUN_IN;
+
     if (!ctx) {
         return;
     }
@@ -1614,6 +1603,8 @@ ly_ctx_clean(struct ly_ctx *ctx, void (*private_destructor)(const struct lys_nod
 API const struct lys_module *
 ly_ctx_get_module_iter(const struct ly_ctx *ctx, uint32_t *idx)
 {
+    FUN_IN;
+
     if (!ctx || !idx) {
         LOGARG;
         return NULL;
@@ -1631,6 +1622,8 @@ ly_ctx_get_module_iter(const struct ly_ctx *ctx, uint32_t *idx)
 API const struct lys_module *
 ly_ctx_get_disabled_module_iter(const struct ly_ctx *ctx, uint32_t *idx)
 {
+    FUN_IN;
+
     if (!ctx || !idx) {
         LOGARG;
         return NULL;
@@ -1646,10 +1639,9 @@ ly_ctx_get_disabled_module_iter(const struct ly_ctx *ctx, uint32_t *idx)
 }
 
 static int
-ylib_feature(struct lyd_node *parent, struct lys_module *cur_mod, int bis)
+ylib_feature(struct lyd_node *parent, struct lys_module *cur_mod)
 {
     int i, j;
-    struct lyd_node *list;
 
     /* module features */
     for (i = 0; i < cur_mod->features_size; ++i) {
@@ -1657,11 +1649,7 @@ ylib_feature(struct lyd_node *parent, struct lys_module *cur_mod, int bis)
             continue;
         }
 
-        if (bis) {
-            if (!(list = lyd_new(parent, NULL, "feature")) || !lyd_new_leaf(list, NULL, "name", cur_mod->features[i].name)) {
-                return EXIT_FAILURE;
-            }
-        } else if (!lyd_new_leaf(parent, NULL, "feature", cur_mod->features[i].name)) {
+        if (!lyd_new_leaf(parent, NULL, "feature", cur_mod->features[i].name)) {
             return EXIT_FAILURE;
         }
     }
@@ -1673,12 +1661,7 @@ ylib_feature(struct lyd_node *parent, struct lys_module *cur_mod, int bis)
                 continue;
             }
 
-            if (bis) {
-                if (!(list = lyd_new(parent, NULL, "feature"))
-                        || !lyd_new_leaf(list, NULL, "name", cur_mod->inc[i].submodule->features[j].name)) {
-                    return EXIT_FAILURE;
-                }
-            } else if (!lyd_new_leaf(parent, NULL, "feature", cur_mod->inc[i].submodule->features[j].name)) {
+            if (!lyd_new_leaf(parent, NULL, "feature", cur_mod->inc[i].submodule->features[j].name)) {
                 return EXIT_FAILURE;
             }
         }
@@ -1704,16 +1687,15 @@ ylib_deviation(struct lyd_node *parent, struct lys_module *cur_mod, int bis)
             for (j = 0; j < mod->deviation_size; ++j) {
                 ptr = strstr(mod->deviation[j].target_name, cur_mod->name);
                 if (ptr && ptr[strlen(cur_mod->name)] == ':') {
-                    cont = lyd_new(parent, NULL, "deviation");
-                    if (!cont) {
-                        return EXIT_FAILURE;
-                    }
-
                     if (bis) {
-                        if (!lyd_new_leaf(cont, NULL, "module", mod->name)) {
+                        if (!lyd_new_leaf(parent, NULL, "deviation", mod->name)) {
                             return EXIT_FAILURE;
                         }
                     } else {
+                        cont = lyd_new(parent, NULL, "deviation");
+                        if (!cont) {
+                            return EXIT_FAILURE;
+                        }
                         if (!lyd_new_leaf(cont, NULL, "name", mod->name)) {
                             return EXIT_FAILURE;
                         }
@@ -1770,12 +1752,16 @@ ylib_submodules(struct lyd_node *parent, struct lys_module *cur_mod, int bis)
 API uint16_t
 ly_ctx_get_module_set_id(const struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     return ctx->models.module_set_id;
 }
 
 API struct lyd_node *
 ly_ctx_info(struct ly_ctx *ctx)
 {
+    FUN_IN;
+
     int i, bis = 0;
     char id[8];
     char *str;
@@ -1792,7 +1778,7 @@ ly_ctx_info(struct ly_ctx *ctx)
         LOGERR(ctx, LY_EINVAL, "ietf-yang-library is not implemented.");
         return NULL;
     }
-    if (mod->rev && !strcmp(mod->rev[0].date, "2016-04-09")) {
+    if (mod->rev && !strcmp(mod->rev[0].date, "2016-06-21")) {
         bis = 0;
     } else if (mod->rev && !strcmp(mod->rev[0].date, IETF_YANG_LIB_REV)) {
         bis = 1;
@@ -1807,16 +1793,15 @@ ly_ctx_info(struct ly_ctx *ctx)
     }
 
     if (bis) {
-        if (!(root_bis = lyd_new(NULL, mod, "yang-library")) || !(set_bis = lyd_new(root_bis, NULL, "module-set"))) {
+        if (!(root_bis = lyd_new(NULL, mod, "yang-library"))) {
+            goto error;
+        }
+
+        if (!(set_bis = lyd_new(root_bis, NULL, "module-set"))) {
             goto error;
         }
 
         if (!lyd_new_leaf(set_bis, NULL, "name", "complete")) {
-            goto error;
-        }
-
-        sprintf(id, "%u", ctx->models.module_set_id);
-        if (!lyd_new_leaf(set_bis, NULL, "checksum", id)) {
             goto error;
         }
     }
@@ -1859,7 +1844,7 @@ ly_ctx_info(struct ly_ctx *ctx)
             goto error;
         }
         /* feature leaf-list */
-        if (ylib_feature(cont, ctx->models.list[i], 0)) {
+        if (ylib_feature(cont, ctx->models.list[i])) {
             goto error;
         }
         /* deviation list */
@@ -1919,7 +1904,7 @@ ly_ctx_info(struct ly_ctx *ctx)
             }
             if (ctx->models.list[i]->implemented) {
                 /* feature list */
-                if (ylib_feature(cont, ctx->models.list[i], 1)) {
+                if (ylib_feature(cont, ctx->models.list[i])) {
                     goto error;
                 }
                 /* deviation */
@@ -1930,12 +1915,29 @@ ly_ctx_info(struct ly_ctx *ctx)
         }
     }
 
+    /* IDs */
     sprintf(id, "%u", ctx->models.module_set_id);
     if (!lyd_new_leaf(root, NULL, "module-set-id", id)) {
         goto error;
     }
-    if (bis && !lyd_new_leaf(root_bis, NULL, "checksum", id)) {
-        goto error;
+    if (bis) {
+        /* create one complete schema */
+        if (!(cont = lyd_new(root_bis, NULL, "schema"))) {
+            goto error;
+        }
+
+        if (!lyd_new_leaf(cont, NULL, "name", "complete")) {
+            goto error;
+        }
+
+        if (!lyd_new_leaf(cont, NULL, "module-set", "complete")) {
+            goto error;
+        }
+
+        /* content-id */
+        if (!lyd_new_leaf(root_bis, NULL, "content-id", id)) {
+            goto error;
+        }
     }
 
     if (root_bis) {
@@ -1959,8 +1961,10 @@ error:
 }
 
 API const struct lys_node *
-ly_ctx_get_node(struct ly_ctx *ctx, const struct lys_node *start, const char *nodeid, int output)
+ly_ctx_get_node(const struct ly_ctx *ctx, const struct lys_node *start, const char *nodeid, int output)
 {
+    FUN_IN;
+
     const struct lys_node *node;
 
     if ((!ctx && !start) || !nodeid || ((nodeid[0] != '/') && !start)) {
@@ -1981,6 +1985,8 @@ ly_ctx_get_node(struct ly_ctx *ctx, const struct lys_node *start, const char *no
 API struct ly_set *
 ly_ctx_find_path(struct ly_ctx *ctx, const char *path)
 {
+    FUN_IN;
+
     struct ly_set *resultset = NULL;
 
     if (!ctx || !path) {

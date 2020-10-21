@@ -19,6 +19,8 @@
 #include "microtest.h"
 #include "../tests/config.h"
 
+#include <cstdio>
+
 const char *lys_module_a = \
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>           \
 <module name=\"a\"                                    \
@@ -353,17 +355,19 @@ TEST(test_ly_ctx_parse_module_fd_invalid)
 {
     const char *yang_folder = TESTS_DIR "/api/files";
     const char *yin_file = TESTS_DIR "/api/files/a.yin";
+    FILE *f;
 
     try {
         auto ctx = std::make_shared<libyang::Context>(yang_folder);
         ASSERT_NOTNULL(ctx);
 
-        FILE *f = fopen(yin_file, "r");
+        f = fopen(yin_file, "r");
         auto fd = fileno(f);
         auto module = ctx->parse_module_fd(fd, LYS_IN_YANG);
         throw std::runtime_error("exception not thrown");
     } catch( const std::exception& e ) {
         ASSERT_STREQ("Module parsing failed.", e.what());
+        fclose(f);
         return;
     }
 }
@@ -558,6 +562,44 @@ TEST(test_ly_schema_child_instatiables)
         ASSERT_EQ(3, child_list->size());
 
     } catch( const std::exception& e ) {
+        mt::printFailed(e.what(), stdout);
+        throw;
+    }
+}
+
+TEST(test_iffeature)
+{
+    const char *yang_folder = TESTS_DIR "/api/files";
+
+    try {
+        auto ctx = std::make_shared<libyang::Context>(yang_folder);
+        ASSERT_NOTNULL(ctx);
+        auto module = ctx->parse_module_mem(lys_module_b, LYS_IN_YANG);
+        ASSERT_NOTNULL(module);
+
+        ASSERT_EQ(module->feature_enable("foo"), 0);
+
+        auto cont = ctx->get_node(nullptr, "/b:x");
+        ASSERT_NOTNULL(cont);
+
+        auto snode = cont->child();
+        ASSERT_NOTNULL(snode);
+        ASSERT_STREQ(snode->name(), "bar-leaf");
+
+        auto iffeatures = snode->iffeature();
+        ASSERT_EQ(iffeatures.size(), 1);
+
+        ASSERT_EQ(iffeatures[0]->value(), 0);
+
+        snode = snode->next()->next();
+        ASSERT_NOTNULL(snode);
+        ASSERT_STREQ(snode->name(), "baz");
+
+        iffeatures = snode->iffeature();
+        ASSERT_EQ(iffeatures.size(), 1);
+
+        ASSERT_EQ(iffeatures[0]->value(), 1);
+    } catch (const std::exception& e) {
         mt::printFailed(e.what(), stdout);
         throw;
     }

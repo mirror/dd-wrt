@@ -83,23 +83,12 @@ ly_print(struct lyout *out, const char *format, ...)
     int count = 0;
     char *msg = NULL, *aux;
     va_list ap;
-#ifndef HAVE_VDPRINTF
-    FILE *stream;
-#endif
 
     va_start(ap, format);
 
     switch (out->type) {
     case LYOUT_FD:
-#ifdef HAVE_VDPRINTF
         count = vdprintf(out->method.fd, format, ap);
-#else
-        stream = fdopen(dup(out->method.fd), "a+");
-        if (stream) {
-            count = vfprintf(stream, format, ap);
-            fclose(stream);
-        }
-#endif
         break;
     case LYOUT_STREAM:
         count = vfprintf(out->method.f, format, ap);
@@ -127,6 +116,15 @@ ly_print(struct lyout *out, const char *format, ...)
     case LYOUT_CALLBACK:
         count = vasprintf(&msg, format, ap);
         count = out->method.clb.f(out->method.clb.arg, msg, count);
+        if (count >= 0) {
+            /*
+             * Depending on what the callback function does, errno might
+             * contain non-zero values that are not real "errors" (EAGAIN or
+             * EINTR). Reset errno if the callback returns a zero or positive
+             * value.
+             */
+            errno = 0;
+        }
         free(msg);
         break;
     }
@@ -832,7 +830,7 @@ lyd_print_clb(ssize_t (*writeclb)(void *arg, const void *buf, size_t count), voi
     return r;
 }
 
-int
+static int
 lyd_wd_toprint(const struct lyd_node *node, int options)
 {
     const struct lyd_node *subroot, *next, *elem;
@@ -924,9 +922,11 @@ trim_dfs_nextsibling:
         /* LYP_WD_EXPLICIT
          * - print only if it contains status data in its subtree */
         LY_TREE_DFS_BEGIN(node, next, elem) {
-            if (elem->schema->flags & LYS_CONFIG_R) {
-                flag = 1;
-                break;
+            if ((elem->schema->nodetype != LYS_CONTAINER) || ((struct lys_node_container *)elem->schema)->presence) {
+                if (elem->schema->flags & LYS_CONFIG_R) {
+                    flag = 1;
+                    break;
+                }
             }
             LY_TREE_DFS_END(node, next, elem)
         }
@@ -945,6 +945,55 @@ trim_dfs_nextsibling:
         if (!flag) {
             return 0;
         }
+    }
+
+    return 1;
+}
+
+API int
+lyd_node_should_print(const struct lyd_node *node, int options)
+{
+    struct lys_node *scase, *sparent;
+    struct lyd_node *first;
+
+    if (!lyd_wd_toprint(node, options)) {
+        /* wd says do not print, but make exception for direct descendants of case nodes without other printable nodes */
+        for (sparent = lys_parent(node->schema); sparent && (sparent->nodetype == LYS_USES); sparent = lys_parent(sparent));
+        if (!sparent || (sparent->nodetype != LYS_CASE)) {
+            /* parent not a case */
+            return 0;
+        }
+        scase = sparent;
+
+        for (sparent = lys_parent(scase); sparent && (sparent->nodetype == LYS_USES); sparent = lys_parent(sparent));
+        if (!sparent || (sparent->nodetype != LYS_CHOICE)) {
+            /* weird */
+            LOGINT(lyd_node_module(node)->ctx);
+            return 0;
+        }
+        if (((struct lys_node_choice *)sparent)->dflt == scase) {
+            /* this is a default case, respect the previous original toprint flag */
+            return 0;
+        }
+
+        /* try to find a sibling that will be printed */
+        for (first = node->prev; first->prev->next; first = first->prev);
+        LY_TREE_FOR(first, first) {
+            if (first == node) {
+                /* skip this node */
+                continue;
+            }
+
+            /* find schema parent, whether it is the same case */
+            for (sparent = lys_parent(first->schema); sparent && (sparent->nodetype == LYS_USES); sparent = lys_parent(sparent));
+            if ((sparent == scase) && lyd_wd_toprint(first, options)) {
+                /* this other node will be printed, we do not have to print the current one */
+                return 0;
+            }
+        }
+
+        /* there is no case child that will be printed, print this node */
+        return 1;
     }
 
     return 1;

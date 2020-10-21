@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement3-leaf"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement3-leaf_mod="urn:error-substatement3-leaf">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement3-leaf"/>
+  <prefix value="error-substatement3-leaf_mod"/>
+
+  <!-- this is an error substatement about leaf. -->
+  <leaf name="leaf1">
+    <type name="string"/>
+    <must condition="must1">
+      <text>this is an error substatement of must.</text>
+    </must>
+  </leaf>
+</module>

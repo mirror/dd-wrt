@@ -18,6 +18,7 @@
 #include <setjmp.h>
 #include <stdarg.h>
 #include <cmocka.h>
+#include <inttypes.h>
 
 #include "tests/config.h"
 #include "libyang.h"
@@ -111,7 +112,7 @@ check_data_tree(struct lyd_node *root1, struct lyd_node *root2)
                 break;
             default:
                 if ((attr1->value.uint64 != attr2->value.uint64) && !(attr1->value_flags & LY_VALUE_USER)) {
-                    fprintf(stderr, "\"%s\": attr value mismatch (\"%lu\" and \"%lu\").\n", elem1->schema->name, attr1->value.uint64, attr2->value.uint64);
+                    fprintf(stderr, "\"%s\": attr value mismatch (\"%" PRIu64 "\" and \"%" PRIu64 "\").\n", elem1->schema->name, attr1->value.uint64, attr2->value.uint64);
                     fail();
                 }
                 break;
@@ -196,7 +197,7 @@ check_data_tree(struct lyd_node *root1, struct lyd_node *root2)
                 break;
             default:
                 if ((leaf1->value.uint64 != leaf2->value.uint64) && !(leaf1->value_flags & LY_VALUE_USER)) {
-                    fprintf(stderr, "\"%s\": value mismatch (\"%lu\" and \"%lu\").\n", elem1->schema->name, leaf1->value.uint64, leaf2->value.uint64);
+                    fprintf(stderr, "\"%s\": value mismatch (\"%" PRIu64 "\" and \"%" PRIu64 "\").\n", elem1->schema->name, leaf1->value.uint64, leaf2->value.uint64);
                     fail();
                 }
                 break;

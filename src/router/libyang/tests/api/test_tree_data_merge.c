@@ -380,6 +380,85 @@ test_merge5(void **state)
 }
 
 static void
+test_merge6(void **state)
+{
+    struct state *st = (*state);
+    const char *sch =
+    "module merge {"
+        "namespace \"http://test/merge\";"
+        "prefix merge;"
+
+        "container inner1 {"
+            "list b-list1 {"
+                "key p1;"
+                "leaf p1 {"
+                    "type uint8;"
+                "}"
+                "leaf p2 {"
+                    "type string;"
+                "}"
+                "container inner2 {"
+                    "leaf p3 {"
+                        "type boolean;"
+                        "default false;"
+                    "}"
+                    "leaf p4 {"
+                        "type string;"
+                    "}"
+                "}"
+            "}"
+        "}"
+    "}";
+
+
+    const char *trg =
+    "<inner1 xmlns=\"http://test/merge\">"
+        "<b-list1>"
+            "<p1>1</p1>"
+            "<p2>a</p2>"
+            "<inner2>"
+                "<p4>val</p4>"
+            "</inner2>"
+        "</b-list1>"
+    "</inner1>";
+    const char *src =
+    "<inner1 xmlns=\"http://test/merge\">"
+        "<b-list1>"
+            "<p1>1</p1>"
+            "<p2>b</p2>"
+        "</b-list1>"
+    "</inner1>";
+    const char *result =
+    "<inner1 xmlns=\"http://test/merge\">"
+        "<b-list1>"
+            "<p1>1</p1>"
+            "<p2>b</p2>"
+            "<inner2>"
+                "<p4>val</p4>"
+            "</inner2>"
+        "</b-list1>"
+    "</inner1>";
+    char *printed = NULL;
+
+    assert_ptr_not_equal(lys_parse_mem(st->ctx1, sch, LYS_IN_YANG), NULL);
+
+    st->source = lyd_parse_mem(st->ctx1, src, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->source, NULL);
+
+    st->target = lyd_parse_mem(st->ctx1, trg, LYD_XML, LYD_OPT_CONFIG);
+    assert_ptr_not_equal(st->target, NULL);
+
+    /* merge them */
+    assert_int_equal(lyd_merge(st->target, st->source, LYD_OPT_EXPLICIT), 0);
+    assert_int_equal(lyd_validate(&st->target, LYD_OPT_CONFIG, NULL), 0);
+
+    /* check the result */
+    lyd_print_mem(&printed, st->target, LYD_XML, LYP_WITHSIBLINGS);
+    assert_string_equal(printed, result);
+    free(printed);
+}
+
+static void
 test_merge_dflt1(void **state)
 {
     struct state *st = (*state);
@@ -653,7 +732,6 @@ test_merge_leafrefs(void **state)
     free(prt);
 }
 
-
 int
 main(void)
 {
@@ -663,6 +741,7 @@ main(void)
                     cmocka_unit_test_setup_teardown(test_merge3, setup_dflt, teardown_dflt),
                     cmocka_unit_test_setup_teardown(test_merge4, setup_dflt, teardown_dflt),
                     cmocka_unit_test_setup_teardown(test_merge5, setup_dflt, teardown_dflt),
+                    cmocka_unit_test_setup_teardown(test_merge6, setup_dflt, teardown_dflt),
                     cmocka_unit_test_setup_teardown(test_merge_dflt1, setup_dflt, teardown_dflt),
                     cmocka_unit_test_setup_teardown(test_merge_dflt2, setup_dflt, teardown_dflt),
                     cmocka_unit_test_setup_teardown(test_merge_to_trgctx1, setup_mctx, teardown_mctx),

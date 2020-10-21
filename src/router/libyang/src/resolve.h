@@ -181,7 +181,7 @@ int resolve_choice_default_schema_nodeid(const char *nodeid, const struct lys_no
 int resolve_absolute_schema_nodeid(const char *nodeid, const struct lys_module *module, int ret_nodetype,
                                    const struct lys_node **ret);
 
-const struct lys_node *resolve_json_nodeid(const char *nodeid, struct ly_ctx *ctx, const struct lys_node *start, int output);
+const struct lys_node *resolve_json_nodeid(const char *nodeid, const struct ly_ctx *ctx, const struct lys_node *start, int output);
 
 struct lyd_node *resolve_partial_json_data_nodeid(const char *nodeid, const char *llist_value, struct lyd_node *start,
                                                   int options, int *parsed);
@@ -232,6 +232,19 @@ int unres_schema_dup(struct lys_module *mod, struct unres_schema *unres, void *i
 int unres_schema_find(struct unres_schema *unres, int start_on_backwards, void *item, enum UNRES_ITEM type);
 
 void unres_schema_free(struct lys_module *module, struct unres_schema **unres, int all);
+
+/**
+ * @brief Resolve instance-identifier in JSON data format. Logs directly.
+ *
+ * @param[in] data Data node where the path is used
+ * @param[in] path Instance-identifier node value.
+ * @param[in,out] ret Resolved instance or NULL.
+ *
+ * @return 0 on success (even if unresolved and \p ret is NULL), -1 on error.
+ */
+int resolve_instid(struct lyd_node *data, const char *path, int req_inst, struct lyd_node **ret);
+
+int resolve_leafref(struct lyd_node_leaf_list *leaf, const char *path, int req_inst, struct lyd_node **ret);
 
 int resolve_union(struct lyd_node_leaf_list *leaf, struct lys_type *type, int store, int ignore_fail,
                   struct lys_type **resolved_type);

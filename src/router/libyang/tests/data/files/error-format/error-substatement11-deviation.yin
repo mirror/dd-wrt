@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement11-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement11-deviation_mod="urn:error-substatement11-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement11-deviation"/>
+  <prefix value="error-substatement11-deviation_mod"/>
+
+  <import module="common-deviation">
+    <prefix value="common-deviation_mod"/>
+  </import>
+
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:list1">
+    <deviate value="add">
+      <!-- unexpected mandatory substatement in default list. -->
+      <mandatory value="true"/>
+    </deviate>
+  </deviation>
+</module>

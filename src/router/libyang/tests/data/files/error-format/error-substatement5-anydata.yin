@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement5-anydata"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement5-anydata_mod="urn:error-substatement5-anydata">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement5-anydata"/>
+  <prefix value="error-substatement5-anydata_mod"/>
+
+  <feature name="feat1"/>
+  <!-- this is an error substatement about anydata. -->
+  <anydata name="adata2">
+    <if-feature name="feat1">
+      <text> this is an error substatement about if-feature.</text>
+    </if-feature>
+  </anydata>
+</module>

@@ -63,7 +63,7 @@ a single input schema \fIFILE\fP is allowed. In case of data input \fIFILE\fPs,
 input is merged and printed into a single \fIOUTFILE\fP.
 .TP
 .BR "\-F \fIFEATURES\fP\fR,\fP \-\^\-features=\fIFEATURES\fP"
-Specifies the list of enabled features in the format 
+Specifies the list of enabled features in the format
 \fIMODULE\fP:[\fIFEATURE\fP,...]. In case of processing multiple modules, the
 option can be used repeatedly. To disable all the features, use an empty list
 specified for the particular module.
@@ -90,10 +90,10 @@ Specify data tree type in the input data \fIFILE\fPs. The \fITYPE\fP is one of t
                      The first input data \fIFILE\fP is expected as '\fBrpc\fP' \fITYPE\fP, the second \fIFILE\fP is expected as reply to the previous RPC.
  \[bu] \fBnotif\fP           - Notification instance (content of the <notification> element without <eventTime>.
 .TP
-.BR "\-r \fIFILE\fP\fR,\fP \-\^\-running=\fIFILE\fP]
-Optional parameter for '\fBrpc\fP' and '\fBnotif\fP' \fITYPE\fPs, the \fIFILE\fP contains running configuration datastore data referenced from the
-RPC/Notification. The same data apply to all input data \fIFILE\fPs. Note that the file is validated as '\fBdata\fP' \fITYPE\fP.
-Special value '\fB!\fP' can be used as \fIFILE\fP argument to ignore the external references.
+.BR "\-O \fIFILE\fP\fR,\fP \-\^\-operational=\fIFILE\fP]
+Optional parameter for '\fBrpc\fP' and '\fBnotif\fP' \fITYPE\fPs, the \fIFILE\fP contains running configuration datastore and
+state data referenced from the RPC/Notification. The same data apply to all input data \fIFILE\fPs. Note that the file
+is validated as '\fBdata\fP' \fITYPE\fP. Special value '\fB!\fP' can be used as \fIFILE\fP argument to ignore the external references.
 .TP
 .BR "\-y \fIYANGLIB_PATH\fP"
 Specify path to a yang-library data file (XML or JSON) describing the initial context.
@@ -109,7 +109,7 @@ In case of schemas, the content can be converted into the '\fByang\fP', '\fByin\
 and '\fBtree\fP' formats. As input, only YANG and YIN files are
 accepted. Note, that the corresponding file extension is required.
 .TP
-.I Data\ \ \ 
+.I Data\ \ \
 In case of YANG modeled data, the content can be converted between '\fBxml\fP'
 and '\fBjson\fP' formats. Remember that the corresponding file extension of the
 input file is required.

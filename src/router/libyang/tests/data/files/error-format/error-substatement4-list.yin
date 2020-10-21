@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-list"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-list_mod="urn:error-substatement4-list">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-list"/>
+  <prefix value="error-substatement4-list_mod"/>
+
+  <list name="list1">
+    <key value="leaf1"/>
+    <!-- invalid substatement of when -->
+    <when condition="when1">
+      <text>this is an error substatement about when.</text>
+    </when>
+    <leaf name="leaf1">
+      <type name="string"/>
+    </leaf>
+  </list>
+</module>

@@ -2,7 +2,7 @@
 
 First of all, thanks for thinking about contribution to libyang! Not all of us
 are C guru, but believe that helping us with docs, tests, helping other users to
-solve their issues / answer ther questions or even letting us to know via
+solve their issues / answer their questions or even letting us to know via
 [issue tracker](https://github.com/CESNET/libyang/issues) that something
 can be done in a better or just different way is really appreciated.
 

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement1-action"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement1-action_mod="urn:error-substatement1-action">
+  <yang-version value="1"/>
+  <namespace uri="urn:error-substatement1-action"/>
+  <prefix value="error-substatement1-action_mod"/>
+
+  <!-- yang-version can't be 1 in augment. -->
+  <augment target-node="aug1">
+    <action name="act1"/>
+  </augment>
+</module>

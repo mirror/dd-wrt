@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement2-uses"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement2-uses_mod="urn:error-substatement2-uses">
+  <namespace uri="urn:error-substatement2-uses"/>
+  <prefix value="error-substatement2-uses_mod"/>
+
+  <grouping name="group1">
+    <leaf name="leaf1">
+      <type name="int8"/>
+    </leaf>
+    <leaf name="leaf2">
+      <type name="int8"/>
+    </leaf>
+  </grouping>
+
+  <uses name="group1">
+    <!-- invalid substatement of uses -->
+    <text>this is an error substatement of uses.</text>
+  </uses>
+</module>

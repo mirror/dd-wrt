@@ -154,8 +154,6 @@ struct lyd_attr {
                                       except ::lys_node_leaflist, it means checking that data node for duplicities.
                                       Additionally, it can be set on truly any node type and then status references
                                       are checked for this node if flag #LYD_OPT_OBSOLETE is used. */
-#define LYD_VAL_LEAFREF  0x08    /**< Node is a leafref, which needs to be resolved (it is invalid, new possible
-                                      resolvent, or something similar) */
 #define LYD_VAL_INUSE    0x80    /**< Internal flag for note about various processing on data, should be used only
                                       internally and removed before libyang returns the node to the caller */
 /**
@@ -259,6 +257,17 @@ struct lyd_node_leaf_list {
 /* 0x80 is reserved for internal use */
 
 /**
+ * @brief Anydata value union
+ */
+typedef union {
+    const char *str;             /**< string value, in case of printing as XML, characters like '<' or '&' are escaped */
+    char *mem;                   /**< raw memory (used for LYB format) */
+    struct lyxml_elem *xml;      /**< xml tree */
+    struct lyd_node *tree;       /**< libyang data tree, does not change the root's parent, so it is not possible
+                                      to get from the data tree into the anydata/anyxml */
+} lyd_anydata_value;
+
+/**
  * @brief Structure for data nodes defined as #LYS_ANYDATA or #LYS_ANYXML.
  *
  * Extension for ::lyd_node structure - replaces the ::lyd_node#child member by new #value member. The first five
@@ -294,13 +303,7 @@ struct lyd_node_anydata {
 
     /* anyxml's specific members */
     LYD_ANYDATA_VALUETYPE value_type;/**< type of the stored anydata value */
-    union {
-        const char *str;             /**< string value, in case of printing as XML, characters like '<' or '&' are escaped */
-        char *mem;                   /**< raw memory (used for LYB format) */
-        struct lyxml_elem *xml;      /**< xml tree */
-        struct lyd_node *tree;       /**< libyang data tree, does not change the root's parent, so it is not possible
-                                          to get from the data tree into the anydata/anyxml */
-    } value;
+    lyd_anydata_value value;/**< stored anydata value */
 };
 
 /**
@@ -336,8 +339,10 @@ typedef enum {
                                     its children. */
     LYD_DIFF_MOVEDAFTER2     /**< similar to LYD_DIFF_MOVEDAFTER1, but this time the moved item is in the second tree.
                                   This type is always used in combination with (as a successor of) #LYD_DIFF_CREATED
-                                  as an instruction to move the newly created node to a specific position. Note, that
-                                  due to applicability to the second tree, the meaning of lyd_difflist:first and
+                                  as an instruction to move the newly created node to a specific position. If it is not
+                                  present, it means that even the parent of the user-ordered instances did not exist
+                                  (or was empty) so it is safe to just create the instances in the same order. Note,
+                                  that due to applicability to the second tree, the meaning of lyd_difflist:first and
                                   lyd_difflist:second is inverse in comparison to #LYD_DIFF_MOVEDAFTER1. The
                                   lyd_difflist::second points to the (previously) created node in the second tree and
                                   the lyd_difflist::first points to the predecessor node in the second tree. If the
@@ -495,9 +500,13 @@ char *lyd_path(const struct lyd_node *node);
                                      - leafrefs and instance-identifier resolution is allowed to fail
                                      - must and when evaluation skipped
                                      - status data are not allowed */
-#define LYD_OPT_RPC        0x10 /**< Data represents RPC or action input parameters. */
+#define LYD_OPT_RPC        0x10 /**< Data represents RPC or action input parameters. In case of an action, **only**
+                                     the parent nodes are expected ([RFC ref](https://tools.ietf.org/html/rfc7950#section-7.15.2)).
+                                     For validation an additional data tree with the references should be provided. */
 #define LYD_OPT_RPCREPLY   0x20 /**< Data represents RPC or action output parameters (maps to NETCONF <rpc-reply> data). */
-#define LYD_OPT_NOTIF      0x40 /**< Data represents an event notification data. */
+#define LYD_OPT_NOTIF      0x40 /**< Data represents an event notification data. In case of a nested notification, **only**
+                                     the parent nodes are expected ([RFC ref](https://tools.ietf.org/html/rfc7950#section-7.16.2)).
+                                     For validation an additional data tree with the references should be provided. */
 #define LYD_OPT_NOTIF_FILTER 0x80 /**< Data represents a filtered event notification data.
                                        Validation modification:
                                        - the only requirement is that the data tree matches the schema tree */
@@ -527,6 +536,7 @@ char *lyd_path(const struct lyd_node *node);
                                               preserved and option is ignored. */
 #define LYD_OPT_VAL_DIFF 0x40000 /**< Flag only for validation, store all the data node changes performed by the validation
                                       in a diff structure. */
+#define LYD_OPT_LYB_MOD_UPDATE 0x80000 /**< Allow to parse data using an updated revision of a module, relevant only for LYB format. */
 #define LYD_OPT_DATA_TEMPLATE 0x1000000 /**< Data represents YANG data template. */
 
 /**@} parseroptions */
@@ -542,7 +552,7 @@ char *lyd_path(const struct lyd_node *node);
  * @param[in] ctx Context to connect with the data tree being built here.
  * @param[in] data Serialized data in the specified format.
  * @param[in] format Format of the input data to be parsed.
- * @param[in] options Parser options, see @ref parseroptions. \p format LYD_LYB uses #LYD_OPT_TRUSTED implicitly.
+ * @param[in] options Parser options, see @ref parseroptions.
  * @param[in] ... Variable arguments depend on \p options. If they include:
  *                - #LYD_OPT_DATA:
  *                - #LYD_OPT_CONFIG:
@@ -552,15 +562,17 @@ char *lyd_path(const struct lyd_node *node);
  *                  - no variable arguments expected.
  *                - #LYD_OPT_RPC:
  *                - #LYD_OPT_NOTIF:
- *                  - struct lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    **in the action/nested notification subtree** that require some nodes outside their subtree.
+ *                    It is assumed that **all parents** of the action/nested notification exist as required
+ *                    ([RFC ref](https://tools.ietf.org/html/rfc8342#section-6.2)).
  *                - #LYD_OPT_RPCREPLY:
- *                  - const struct ::lyd_node *rpc_act - pointer to the whole RPC or action operation data
- *                    tree (the request) of the reply.
- *                  - const struct ::lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - const struct ::lyd_node *rpc_act - pointer to the whole RPC or (top-level) action operation
+ *                    data tree (the request) of the reply.
+ *                  - const struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    that require some nodes outside their subtree.
  * @return Pointer to the built data tree or NULL in case of empty \p data. To free the returned structure,
  *         use lyd_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case of error,
  *         #ly_errno contains appropriate error code (see #LY_ERR).
@@ -580,7 +592,7 @@ struct lyd_node *lyd_parse_mem(struct ly_ctx *ctx, const char *data, LYD_FORMAT 
  * @param[in] ctx Context to connect with the data tree being built here.
  * @param[in] fd The standard file descriptor of the file containing the data tree in the specified format.
  * @param[in] format Format of the input data to be parsed.
- * @param[in] options Parser options, see @ref parseroptions. \p format LYD_LYB uses #LYD_OPT_TRUSTED implicitly.
+ * @param[in] options Parser options, see @ref parseroptions.
  * @param[in] ... Variable arguments depend on \p options. If they include:
  *                - #LYD_OPT_DATA:
  *                - #LYD_OPT_CONFIG:
@@ -590,15 +602,17 @@ struct lyd_node *lyd_parse_mem(struct ly_ctx *ctx, const char *data, LYD_FORMAT 
  *                  - no variable arguments expected.
  *                - #LYD_OPT_RPC:
  *                - #LYD_OPT_NOTIF:
- *                  - struct lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    **in the action/nested notification subtree** that require some nodes outside their subtree.
+ *                    It is assumed that **all parents** of the action/nested notification exist as required
+ *                    ([RFC ref](https://tools.ietf.org/html/rfc8342#section-6.2)).
  *                - #LYD_OPT_RPCREPLY:
  *                  - const struct ::lyd_node *rpc_act - pointer to the whole RPC or action operation data
  *                    tree (the request) of the reply.
- *                  - const struct ::lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - const struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    that require some nodes outside their subtree.
  * @return Pointer to the built data tree or NULL in case of empty file. To free the returned structure,
  *         use lyd_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case of error,
  *         #ly_errno contains appropriate error code (see #LY_ERR).
@@ -616,7 +630,7 @@ struct lyd_node *lyd_parse_fd(struct ly_ctx *ctx, int fd, LYD_FORMAT format, int
  * @param[in] ctx Context to connect with the data tree being built here.
  * @param[in] path Path to the file containing the data tree in the specified format.
  * @param[in] format Format of the input data to be parsed.
- * @param[in] options Parser options, see @ref parseroptions. \p format LYD_LYB uses #LYD_OPT_TRUSTED implicitly.
+ * @param[in] options Parser options, see @ref parseroptions.
  * @param[in] ... Variable arguments depend on \p options. If they include:
  *                - #LYD_OPT_DATA:
  *                - #LYD_OPT_CONFIG:
@@ -626,15 +640,17 @@ struct lyd_node *lyd_parse_fd(struct ly_ctx *ctx, int fd, LYD_FORMAT format, int
  *                  - no variable arguments expected.
  *                - #LYD_OPT_RPC:
  *                - #LYD_OPT_NOTIF:
- *                  - struct lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    **in the action/nested notification subtree** that require some nodes outside their subtree.
+ *                    It is assumed that **all parents** of the action/nested notification exist as required
+ *                    ([RFC ref](https://tools.ietf.org/html/rfc8342#section-6.2)).
  *                - #LYD_OPT_RPCREPLY:
  *                  - const struct ::lyd_node *rpc_act - pointer to the whole RPC or action operation data
  *                    tree (the request) of the reply.
- *                  - const struct ::lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - const struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    that require some nodes outside their subtree.
  * @return Pointer to the built data tree or NULL in case of empty file. To free the returned structure,
  *         use lyd_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case of error,
  *         #ly_errno contains appropriate error code (see #LY_ERR).
@@ -672,15 +688,17 @@ struct lyd_node *lyd_parse_path(struct ly_ctx *ctx, const char *path, LYD_FORMAT
  *                  - no variable arguments expected.
  *                - #LYD_OPT_RPC:
  *                - #LYD_OPT_NOTIF:
- *                  - struct lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    **in the action/nested notification subtree** that require some nodes outside their subtree.
+ *                    It is assumed that **all parents** of the action/nested notification exist as required
+ *                    ([RFC ref](https://tools.ietf.org/html/rfc8342#section-6.2)).
  *                - #LYD_OPT_RPCREPLY:
  *                  - const struct ::lyd_node *rpc_act - pointer to the whole RPC or action operation data
  *                    tree (the request) of the reply.
- *                  - const struct ::lyd_node *data_tree - additional data tree that will be used
- *                    when checking any "when" or "must" conditions in the parsed tree that require
- *                    some nodes outside their subtree. It must be a list of top-level elements!
+ *                  - const struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    that require some nodes outside their subtree.
  * @return Pointer to the built data tree or NULL in case of empty \p root. To free the returned structure,
  *         use lyd_free(). In these cases, the function sets #ly_errno to LY_SUCCESS. In case of error,
  *         #ly_errno contains appropriate error code (see #LY_ERR).
@@ -729,7 +747,7 @@ struct lyd_node *lyd_new_leaf(struct lyd_node *parent, const struct lys_module *
  * or #LY_TYPE_IDENT, JSON node-id format is expected (nodes are prefixed with module names, not XML namespaces).
  * @return 0 if the leaf was changed successfully (either its value changed or at least its default flag was cleared),
  *         <0 on error,
- *         1 if the (canonical) value matched the original one and no value neither default flag change occured.
+ *         1 if the (canonical) value matched the original one and no value neither default flag change occurred.
  */
 int lyd_change_leaf(struct lyd_node_leaf_list *leaf, const char *val_str);
 
@@ -872,7 +890,7 @@ struct lyd_node *lyd_new_yangdata(const struct lys_module *module, const char *n
  * NULL if #LYD_PATH_OPT_UPDATE was used and the full path exists or the leaf original value matches \p value,
  * NULL and ly_errno is set on error.
  */
-struct lyd_node *lyd_new_path(struct lyd_node *data_tree, struct ly_ctx *ctx, const char *path, void *value,
+struct lyd_node *lyd_new_path(struct lyd_node *data_tree, const struct ly_ctx *ctx, const char *path, void *value,
                               LYD_ANYDATA_VALUETYPE value_type, int options);
 
 /**
@@ -900,6 +918,12 @@ unsigned int lyd_list_pos(const struct lyd_node *node);
 #define LYD_DUP_OPT_NO_ATTR      0x02 /**< Do not duplicate attributes of any node. */
 #define LYD_DUP_OPT_WITH_PARENTS 0x04 /**< If a nested node is being duplicated, duplicate also all the parents.
                                            Keys are also duplicated for lists. Return value does not change! */
+#define LYD_DUP_OPT_WITH_KEYS    0x08 /**< If a lits key is being duplicated non-recursively, duplicate its keys.
+                                           Ignored if used with #LYD_DUP_OPT_RECURSIVE. Return value does not change! */
+#define LYD_DUP_OPT_WITH_WHEN    0x10 /**< Also copy any when evaluation state flags. This is useful in case the copied
+                                           nodes are actually still part of the same datastore meaning no dependency data
+                                           could have changed. Otherwise nothing is assumed about the copied node when
+                                           state and it is evaluated from scratch during validation. */
 
 /** @} dupoptions */
 
@@ -962,7 +986,7 @@ struct lyd_node *lyd_dup_to_ctx(const struct lyd_node *node, int options, struct
  * @param[in] options Bitmask of the following option flags:
  * - #LYD_OPT_DESTRUCT - spend \p source in the function, otherwise \p source is left untouched,
  * - #LYD_OPT_NOSIBLINGS - merge only the \p source subtree (ignore siblings), otherwise merge
- * \p source and all its succeeding siblings (preceeding ones are still ignored!),
+ * \p source and all its succeeding siblings (preceding ones are still ignored!),
  * - #LYD_OPT_EXPLICIT - when merging an explicitly set node and a default node, always put
  * the explicit node into \p target, otherwise the node which is in \p source is used.
  * @return 0 on success, nonzero in case of an error.
@@ -1132,6 +1156,57 @@ struct ly_set *lyd_find_path(const struct lyd_node *ctx_node, const char *path);
 struct ly_set *lyd_find_instance(const struct lyd_node *data, const struct lys_node *schema);
 
 /**
+ * @brief Search in the given siblings for the target instance. If cache is enabled and the siblings
+ * are NOT top-level nodes, this function finds the node in a constant time!
+ *
+ * @param[in] siblings Siblings to search in including preceding and succeeding nodes.
+ * @param[in] target Target node to find. Lists must have all the keys.
+ * Invalid argument - key-less list or state (config false) leaf-list, use ::lyd_find_sibling_set instead.
+ * @param[out] match Found data node, NULL if not found.
+ * @return 0 on success (even on not found), -1 on error.
+ */
+int lyd_find_sibling(const struct lyd_node *siblings, const struct lyd_node *target, struct lyd_node **match);
+
+/**
+ * @brief Search in the given siblings for all target instances. If cache is enabled and the siblings
+ * are NOT top-level nodes, this function finds the node(s) in a constant time!
+ *
+ * @param[in] siblings Siblings to search in including preceding and succeeding nodes.
+ * @param[in] target Target node to find. Lists must have all the keys. Key-less lists are compared based on
+ * all its descendants (both direct and indirect).
+ * @param[out] set Found nodes in a set, can be empty.
+ * @return 0 on success (even on no nodes found), -1 on error.
+ * If an error occurs, NULL is returned.
+ */
+int lyd_find_sibling_set(const struct lyd_node *siblings, const struct lyd_node *target, struct ly_set **set);
+
+/**
+ * @brief Search in the given siblings for the schema instance. If cache is enabled and the siblings
+ * are NOT top-level nodes, this function finds the node in a constant time!
+ *
+ * @param[in] siblings Siblings to search in including preceding and succeeding nodes.
+ * @param[in] schema Schema node of the data node to find.
+ * Invalid argument - key-less list or state (config false) leaf-list, use ::lyd_find_sibling_set instead.
+ * @param[in] key_or_value Expected value depends on the type of \p schema:
+ *              LYS_CONTAINER:
+ *              LYS_LEAF:
+ *              LYS_ANYXML:
+ *              LYS_ANYDATA:
+ *              LYS_NOTIF:
+ *              LYS_RPC:
+ *              LYS_ACTION:
+ *                  NULL should be always set, will be ignored.
+ *              LYS_LEAFLIST:
+ *                  Searched instance value.
+ *              LYS_LIST:
+ *                  Searched instance all ordered key values in the form of "[key1='val1'][key2='val2']...".
+ * @param[out] match Found data node, NULL if not found.
+ * @return 0 on success (even on not found), -1 on error.
+ */
+int lyd_find_sibling_val(const struct lyd_node *siblings, const struct lys_node *schema, const char *key_or_value,
+                         struct lyd_node **match);
+
+/**
  * @brief Get the first sibling of the given node.
  *
  * @param[in] node Node which first sibling is going to be the result.
@@ -1152,14 +1227,15 @@ struct lyd_node *lyd_first_sibling(struct lyd_node *node);
  *                - #LYD_OPT_GETCONFIG:
  *                - #LYD_OPT_EDIT:
  *                  - struct ly_ctx *ctx - context to use when \p node is NULL (for checking an empty tree),
- *                                         otherwise can be NULL.
+ *                    otherwise can be NULL.
  *                - #LYD_OPT_RPC:
  *                - #LYD_OPT_RPCREPLY:
  *                - #LYD_OPT_NOTIF:
- *                  - struct ::lyd_node *data_tree - additional data tree that will be used when checking
- *                                                   any "when" or "must" conditions in the \p node tree
- *                                                   that require some nodes outside their subtree. If set,
- *                                                   it must be a list of top-level elements!
+ *                  - struct ::lyd_node *data_tree - additional **validated** top-level siblings of a data tree that
+ *                    will be used when checking any references ("when", "must" conditions, leafrefs, ...)
+ *                    **in the operation subtree** that require some nodes outside their subtree.
+ *                    It is assumed that **all parents** of the action/nested notification exist as required
+ *                    ([RFC ref](https://tools.ietf.org/html/rfc8342#section-6.2)).
  * @param[in] ... Used only if options include #LYD_OPT_VAL_DIFF. In that case a (struct lyd_difflist **)
  *                is expected into which all data node changes performed by the validation will be stored.
  *                Needs to be properly freed. Meaning of diff type is following:
@@ -1221,6 +1297,24 @@ void lyd_free_val_diff(struct lyd_difflist *diff);
 int lyd_validate_value(struct lys_node *node, const char *value);
 
 /**
+ * @brief Check restrictions applicable to the particular leaf/leaf-list on the given string value and optionally
+ * return its final type.
+ *
+ * Validates the value only using the types' restrictions. Do not check the rest of restrictions dependent on the
+ * data tree (must, when statements or uniqueness of the leaf-list item).
+ *
+ * The format of the data must follow rules for the lexical representation of the specific YANG type. Note
+ * that if there are some extensions of the lexical representation for the YANG module (default value), they are
+ * not supported by this function - it strictly follows rules for the lexical representations in data trees.
+ *
+ * @param[in] node Schema node of the leaf or leaf-list eventually holding the \p value.
+ * @param[in] value Value to be checked (NULL is checked as empty string).
+ * @param[out] type Optional resolved value type, useful mainly for unions.
+ * @return EXIT_SUCCESS if the \p value conforms to the restrictions, EXIT_FAILURE otherwise.
+ */
+int lyd_value_type(struct lys_node *node, const char *value, struct lys_type **type);
+
+/**
  * @brief Get know if the node contain (despite implicit or explicit) default value.
  *
  * @param[in] node The leaf or leaf-list to check. Note, that leaf-list is marked as default only when the complete
@@ -1228,6 +1322,15 @@ int lyd_validate_value(struct lys_node *node, const char *value);
  * @return 1 if the node contains the default value, 0 otherwise.
  */
 int lyd_wd_default(struct lyd_node_leaf_list *node);
+
+/**
+ * @brief Learn if a node is supposed to be printed based on the options.
+ *
+ * @param[in] node Data node to examine.
+ * @param[in] options [printer flags](@ref printerflags). With-defaults flags and ::LYP_KEEPEMPTYCONT are relevant.
+ * @return non-zero if should be printed, 0 if not.
+ */
+int lyd_node_should_print(const struct lyd_node *node, int options);
 
 /**
  * @brief Unlink the specified data subtree. All referenced namespaces are copied.

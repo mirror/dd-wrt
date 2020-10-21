@@ -22,6 +22,11 @@
 #include "../extensions.h"
 
 /**
+ * @brief Storage for ID used to check plugin API version compatibility.
+ */
+LYEXT_VERSION_CHECK
+
+/**
  * @brief Callback to check that the annotation can be instantiated inside the provided node
  *
  * @param[in] parent The parent of the instantiated extension.

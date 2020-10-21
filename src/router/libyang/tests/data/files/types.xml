@@ -8,6 +8,7 @@
     <boolean-false>false</boolean-false>
 
     <dec-zero>0.0</dec-zero>
+    <dec-negative-zero>-0.1</dec-negative-zero>
     <dec-frac1-min>-922337203685477580.8</dec-frac1-min>
     <dec-frac1-max>922337203685477580.7</dec-frac1-max>
     <dec-frac2-min>-92233720368547758.08</dec-frac2-min>

@@ -269,6 +269,90 @@ test_collisions(void **state)
     }
 }
 
+static void
+test_invalid_move(void **state)
+{
+    int i, a[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8 };
+    struct ht_rec *rec;
+
+    (void)state;
+
+    assert_int_equal(lyht_insert(ht, &a[0], 0, NULL), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[1], 1, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[2], 2, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[3], 3, NULL), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[4], 0, NULL), 0);
+
+    assert_int_equal(lyht_remove(ht, &a[1], 1), 0);
+    assert_int_equal(lyht_remove(ht, &a[2], 2), 0);
+    assert_int_equal(lyht_remove(ht, &a[3], 3), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[5], 5, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[6], 6, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[7], 7, NULL), 0);
+
+    /* these are the invalid values */
+    for (i = 1; i < 4; ++i) {
+        rec = lyht_get_rec(ht->recs, ht->rec_size, i);
+        assert_int_equal(rec->hits, -1);
+    }
+
+    /* if all the values were being moved correctly, this succeeds */
+    assert_int_equal(lyht_insert(ht, &a[8], 0, NULL), 0);
+
+    rec = lyht_get_rec(ht->recs, ht->rec_size, 0);
+    assert_int_equal(rec->hits, 3);
+    rec = lyht_get_rec(ht->recs, ht->rec_size, 1);
+    assert_int_equal(rec->hits, 1);
+    rec = lyht_get_rec(ht->recs, ht->rec_size, 2);
+    assert_int_equal(rec->hits, 1);
+}
+
+static void
+test_invalid_move2(void **state)
+{
+    int i, a[30];
+
+    (void)state;
+
+    for (i = 0; i < 30; i++) {
+        a[i] = i;
+    }
+
+    assert_int_equal(lyht_insert(ht, &a[6], 6, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[7], 7, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[0], 0, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[1], 1, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[8 + 6], 6, NULL), 0);
+
+    assert_int_equal(lyht_remove(ht, &a[7], 7), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[2 * 8 + 6], 6, NULL), 0);
+
+    assert_int_equal(lyht_remove(ht, &a[0], 0), 0);
+    assert_int_equal(lyht_remove(ht, &a[1], 1), 0);
+    assert_int_equal(lyht_remove(ht, &a[8 + 6], 6), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[4], 4, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[5], 5, NULL), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[8 + 3], 3, NULL), 0);
+
+    assert_int_equal(lyht_remove(ht, &a[2 * 8 + 6], 6), 0);
+    assert_int_equal(lyht_remove(ht, &a[4], 4), 0);
+    assert_int_equal(lyht_remove(ht, &a[5], 5), 0);
+    assert_int_equal(lyht_remove(ht, &a[6], 6), 0);
+
+    assert_int_equal(lyht_insert(ht, &a[0], 0, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[1], 1, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[2], 2, NULL), 0);
+    assert_int_equal(lyht_insert(ht, &a[3], 3, NULL), 0);
+
+    assert_int_equal(lyht_find(ht, &a[8 + 3], 3, NULL), 0);
+}
+
 int main(void)
 {
     const struct CMUnitTest tests[] = {
@@ -276,7 +360,11 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_half_full, setup_f, teardown_f),
         cmocka_unit_test_setup_teardown(test_resize, setup_f_resize, teardown_f),
         cmocka_unit_test_setup_teardown(test_collisions, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_invalid_move, setup_f, teardown_f),
+        cmocka_unit_test_setup_teardown(test_invalid_move2, setup_f, teardown_f),
     };
 
+    //ly_verb(LY_LLDBG);
+    //ly_verb_dbg(LY_LDGHASH);
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

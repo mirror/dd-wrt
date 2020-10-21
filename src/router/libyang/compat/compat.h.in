@@ -1,0 +1,94 @@
+/**
+ * @file compat.h
+ * @author Michal Vasko <mvasko@cesnet.cz>
+ * @brief compatibility functions header
+ *
+ * Copyright (c) 2020 CESNET, z.s.p.o.
+ *
+ * This source code is licensed under BSD 3-Clause License (the "License").
+ * You may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://opensource.org/licenses/BSD-3-Clause
+ */
+
+#ifndef _COMPAT_H_
+#define _COMPAT_H_
+
+#include <sys/types.h>
+#include <stdarg.h>
+#include <stdio.h>
+
+#ifndef __WORDSIZE
+#  if defined __x86_64__ && !defined __ILP32__
+#   define __WORDSIZE 64
+#  else
+#   define __WORDSIZE 32
+#  endif
+#endif
+
+#ifndef __INT64_C
+#  if __WORDSIZE == 64
+#    define __INT64_C(c)  c ## L
+#    define __UINT64_C(c) c ## UL
+#  else
+#    define __INT64_C(c)  c ## LL
+#    define __UINT64_C(c) c ## ULL
+#  endif
+#endif
+
+#cmakedefine HAVE_VDPRINTF
+#cmakedefine HAVE_ASPRINTF
+#cmakedefine HAVE_VASPRINTF
+#cmakedefine HAVE_STRNDUP
+#cmakedefine HAVE_GETLINE
+#cmakedefine HAVE_GET_CURRENT_DIR_NAME
+
+#define bswap64(val) \
+    ( (((val) >> 56) & 0x00000000000000FF) | (((val) >> 40) & 0x000000000000FF00) | \
+    (((val) >> 24) & 0x0000000000FF0000) | (((val) >>  8) & 0x00000000FF000000) | \
+    (((val) <<  8) & 0x000000FF00000000) | (((val) << 24) & 0x0000FF0000000000) | \
+    (((val) << 40) & 0x00FF000000000000) | (((val) << 56) & 0xFF00000000000000) )
+
+#undef le64toh
+#undef htole64
+
+#cmakedefine IS_BIG_ENDIAN
+
+#ifdef IS_BIG_ENDIAN
+# define le64toh(x) bswap64(x)
+# define htole64(x) bswap64(x)
+#else
+# define le64toh(x) (x)
+# define htole64(x) (x)
+#endif
+
+#ifndef MAP_ANONYMOUS
+#define MAP_ANONYMOUS MAP_ANON
+#endif /* !MAP_ANONYMOUS */
+
+#ifndef HAVE_VDPRINTF
+int vdprintf(int fd, const char *format, va_list ap);
+#endif
+
+#ifndef HAVE_ASPRINTF
+int asprintf(char **strp, const char *fmt, ...);
+#endif
+
+#ifndef HAVE_VASPRINTF
+int vasprintf(char **strp, const char *fmt, va_list ap);
+#endif
+
+#ifndef HAVE_STRNDUP
+char *strndup(const char *s, size_t n);
+#endif
+
+#ifndef HAVE_GETLINE
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
+#endif
+
+#ifndef HAVE_GET_CURRENT_DIR_NAME
+char *get_current_dir_name(void);
+#endif
+
+#endif /* _COMPAT_H_ */

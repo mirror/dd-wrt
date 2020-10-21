@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement4-deviation"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement4-deviation_mod="urn:error-substatement4-deviation"
+        xmlns:common-deviation_mod="urn:common-deviation">
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement4-deviation"/>
+  <prefix value="error-substatement4-deviation_mod"/>
+
+  <!-- this is an error substatement of deviation, missing target_name.-->
+  <deviation target-node="/common-deviation_mod:con/common-deviation_mod:leaf1">
+    <deviate value="not-supported"/>
+  </deviation>
+</module>

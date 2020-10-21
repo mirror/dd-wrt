@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module name="error-substatement-description"
+        xmlns="urn:ietf:params:xml:ns:yang:yin:1"
+        xmlns:error-substatement-description_mod="urn:error-substatement-description">  
+  <yang-version value="1.1"/>
+  <namespace uri="urn:error-substatement-description"/>
+  <prefix value="error-substatement-description_mod"/>
+
+  <description>
+    <test> this is an error example about description.</test>
+  </description>
+
+</module>
