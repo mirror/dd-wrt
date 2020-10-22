@@ -81,11 +81,13 @@ void start_sysinit(void)
 		unlink("/etc/nvram/nvram.db");
 		unlink("/etc/nvram/offsets.db");
 	}
+	sprintf(dev, "/dev/%s", disk);
+	eval("hdparm", "-W", "0", dev);
+
 	//recover nvram if available
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
 	if (in == NULL) {
 		fprintf(stderr, "recover broken nvram\n");
-		sprintf(dev, "/dev/%s", disk);
 		int size = nvram_size();
 		in = fopen(dev, "rb");
 		fseeko(in, 0, SEEK_END);
@@ -103,6 +105,8 @@ void start_sysinit(void)
 				eval("sync");
 				eval("mount", "-o", "remount,ro", "/usr/local");
 				eval("mount", "-o", "remount,ro", "/");
+				eval("hdparm", "-f", dev);
+				eval("hdparm", "-F", dev);
 				sleep(5);
 				writeproc("/proc/sysrq-trigger", "b");
 			}
