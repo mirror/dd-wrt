@@ -73,7 +73,7 @@ done
 for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat /bin/ps /bin/cp /bin/login /bin/mv /sbin/reboot \
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd \
 	/sbin/mtd \
-	/sbin/rc /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
+	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
 	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so 
 	
 do
@@ -106,6 +106,13 @@ killall wdswatchdog.sh
 killall schedulerb.sh
 killall proxywatchdog.sh
 nvram set shutdown=fast
+# disable write cache
+hdparm -W 0 ${MTDPART}
+# flush buffer cache
+hdparm -f ${MTDPART}
+# flush drive cache
+hdparm -F ${MTDPART}
+
 if [ -f /tmp/${UPDATEFILE} ]
 then
 	mv /tmp/${UPDATEFILE} ${R}/tmp/
