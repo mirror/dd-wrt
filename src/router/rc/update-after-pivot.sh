@@ -38,6 +38,12 @@ then
 else
 	write ${FIFO} ${MTDPART}
 fi
+# flush buffer cache
+hdparm -f ${MTDPART}
+busybox hdparm -f ${MTDPART}
+# flush drive cache
+hdparm -F ${MTDPART}
+busybox hdparm -F ${MTDPART}
 busybox sync
 busybox sync
 busybox sync
