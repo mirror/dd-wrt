@@ -47,6 +47,12 @@ busybox hdparm -F ${MTDPART}
 busybox sync
 busybox sync
 busybox sync
+# flush buffer cache
+hdparm -f ${MTDPART}
+busybox hdparm -f ${MTDPART}
+# flush drive cache
+hdparm -F ${MTDPART}
+busybox hdparm -F ${MTDPART}
 if [ x$3 = x1 ]
 then
 	busybox reboot
