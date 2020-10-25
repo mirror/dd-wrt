@@ -80,11 +80,11 @@ int main(int argc, char *argv[])
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "start %d end %d active %X type %X\n", p[i].start, p[i].start + p[i].length -1, p[i].active, p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, p[i].start, p[i].start + p[i].length -1, p[i].active, p[i].type);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "start %d end %d active %X type %X\n", old_p[i].start, old_p[i].start + old_p[i].length -1, old_p[i].active, old_p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, old_p[i].start, old_p[i].start + old_p[i].length -1, old_p[i].active, old_p[i].type);
 	}
 	struct pte *nvram = &p[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
