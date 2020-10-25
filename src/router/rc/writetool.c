@@ -69,7 +69,6 @@ int main(int argc, char *argv[])
 {
 	FILE *in = fopen(argv[1], "rb");
 	FILE *out = fopen(argv[2], "r+b");
-	FILE *temp = fopen("temp", "wb");
 	fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 	fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 // read old mbr
@@ -79,11 +78,13 @@ int main(int argc, char *argv[])
 	fread(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, in);
 
 	int i;
+	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "start %d\n", p[i].start);
-		fprintf(stderr, "end %d\n", p[i].start + p[i].length);
-		fprintf(stderr, "active %X\n", p[i].active);
-		fprintf(stderr, "type %X\n", p[i].type);
+		fprintf(stderr, "start %d end %d active %X type %X\n", p[i].start, p[i].start + p[i].length -1, p[i].active, p[i].type);
+	}
+	fprintf(stderr, "new layout\n");
+	for (i = 0; i < 4; i++) {
+		fprintf(stderr, "start %d end %d active %X type %X\n", old_p[i].start, old_p[i].start + old_p[i].length -1, old_p[i].active, old_p[i].type);
 	}
 	struct pte *nvram = &p[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
@@ -96,8 +97,6 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "write nvram from mew offset %d\n", old_p[2].start * 512);
 			fseek(out, old_p[2].start * 512, SEEK_SET);
 			fwrite(mem, len, 1, out);
-			fwrite(mem, len, 1, temp);
-			fclose(temp);
 		}
 	}
 	fseek(in, 0, SEEK_END);

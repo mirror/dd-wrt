@@ -1082,7 +1082,7 @@ vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 	@echo "[CC] $@"
 	@$(CC) $(CFLAGS) -c -o $@ $<
 
-all: rc init resetbutton wland et
+all: rc init resetbutton wland et writetool
 
 clean:
 	rm -f *.o rc init resetbutton wland et
@@ -1116,7 +1116,6 @@ ifeq ($(CONFIG_OCTEON),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_X86),y)
-	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -o writetool writetool.c
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
 	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
 	install ldd.sh $(INSTALLDIR)/usr/sbin
@@ -1261,6 +1260,10 @@ resetbutton: resetbutton.o
 init:
 	@echo "[LD] init"
 	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -L$(TOP)/libutils -L$(TOP)/nvram -I$(LINUXDIR) -L$(INSTALLDIR)/nvram/usr/lib -o init init.c -lnvram -lshutils 
+
+writetool:
+	@echo "[LD] writetool"
+	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -o writetool writetool.c
 
 et:
 ifeq ($(CONFIG_NORTHSTAR),y)
