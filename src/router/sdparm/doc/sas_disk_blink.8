@@ -1,0 +1,44 @@
+.TH SAS_DISK_BLINK "8" "February 2016" "sdparm\-1.11" SDPARM
+.SH NAME
+sas_disk_blink \- blink the LED on a SAS disk
+.SH SYNOPSIS
+.B sas_disk_blink
+[\fI\-\-help\fR] [\fI\-\-set NUM\fR] [\fI\-\-verbose\fR]
+\fIDEVICE\fR 
+.SH DESCRIPTION
+.\" Add any additional description here
+.PP
+This bash shell script attempts to blink the LED on the SAS disk
+referred to by \fIDEVICE\fR. By default the LED will blink for
+30 seconds. This is meant to help identify which disk corresponds
+to a given \fIDEVICE\fR.
+.PP
+The script use the sdparm utility and manipulates the "Ready LED
+Meaning" (RLM) field in the Protocol specific port mode page in order
+to blink the LED.
+.SH OPTIONS
+Arguments to long options are mandatory for short options as well.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+print out the usage message then exit.
+.TP
+\fB\-s\fR, \fB\-\-set\fR \fINUM\fR
+when \fINUM\fR is 0 then the RLM field is cleared. When \fINUM\fR is 1 then
+the RLM field is set. When \fINUM\fR > 1 then the SAS disk LED is made
+to blink for \fINUM\fR seconds. If this option is not given then the SAS
+disk LED is made to blink for 30 seconds.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+increase level or verbosity.
+.SH EXIT STATUS
+The exit status of this script is 0 when it is successful. Otherwise the exit
+status is that of the last sdparm utility called. See the sdparm(8) man page.
+.SH AUTHORS
+Written by D. Gilbert
+.SH COPYRIGHT
+Copyright \(co 2013\-2016 Douglas Gilbert
+.br
+This software is distributed under a FreeBSD license. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.B sdparm (sdparm)

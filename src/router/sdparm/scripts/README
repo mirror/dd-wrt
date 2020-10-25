@@ -1,0 +1,17 @@
+                      README for sdparm/scripts
+                      =========================
+Introduction
+============
+This directory contains bash shell scripts. Currently there is only one.
+It assumes the sdparm executable is on the PATH of the user.
+
+Details
+=======
+Each script supplies more information, typically by supplying a '-h'
+or '--help' option. The script source often contains explanatory
+information. Following is a usage summary with a one line description:
+   sas_disk_blink [-h] [-s <n>] <device>
+	- blink LED on <device> using RLM (Ready LED Meaning) bit
+
+Douglas Gilbert
+11th August 2009
