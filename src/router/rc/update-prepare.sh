@@ -88,6 +88,8 @@ cp /usr/sbin/update-after-pivot.sh $R/bin
 cat /etc/passwd >$R/etc/passwd
 mount -t proc proc ${R}proc 
 mount -t sysfs sys ${R}sys 
+mount -o remount,ro /usr/local
+umount /usr/local
 cp -av /dev ${R}/
 #not nice, but works.
 for i in /tmp/services/* ; do echo `basename $i .0` ; done | grep -v "httpd" | while read service ; do stopservice $service ; done
