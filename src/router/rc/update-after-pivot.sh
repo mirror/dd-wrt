@@ -26,15 +26,15 @@ then
 	echo "relocate nvram"
 	writetool ${FIFO} ${MTDPART} 
 	echo "write first time"
-	dd if=${FIFO} of=${MTDPART} bs=65536
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
 	busybox sync
 	echo "write second time"
-	dd if=${FIFO} of=${MTDPART} bs=65536
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
 	busybox sync
 	echo "write third time"
-	dd if=${FIFO} of=${MTDPART} bs=65536
+	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
 	busybox sync
 else
