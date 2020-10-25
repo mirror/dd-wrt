@@ -80,11 +80,11 @@ int main(int argc, char *argv[])
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, p[i].start, p[i].start + p[i].length -1, p[i].active, p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, p[i].start, p[i].start + p[i].length - 1, p[i].active, p[i].type);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, old_p[i].start, old_p[i].start + old_p[i].length -1, old_p[i].active, old_p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, old_p[i].start, old_p[i].start + old_p[i].length - 1, old_p[i].active, old_p[i].type);
 	}
 	struct pte *nvram = &p[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
@@ -105,15 +105,15 @@ int main(int argc, char *argv[])
 	fseek(out, 0, SEEK_SET);
 	char *buf = malloc(65536);
 	int count = len / 65536;
+	fprintf(stderr, "write image len = %d\n", len);
 	for (i = 0; i < count; i++) {
-	fprintf(stderr, "write image %d\n", i*65536);
 		fread(buf, 65536, 1, in);
 		fwrite(buf, 65536, 1, out);
 	}
 	fread(buf, len % 65536, 1, in);
 	fwrite(buf, len % 65536, 1, out);
 	free(buf);
-	if (mem && old_p[2].start>0) {
+	if (mem && old_p[2].start > 0) {
 		fseek(out, old_p[2].start * 512, SEEK_SET);
 		fwrite(mem, len, 1, out);
 	}
