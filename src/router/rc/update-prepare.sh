@@ -74,7 +74,7 @@ for i in /bin/busybox /bin/sh /bin/mount /bin/umount /bin/sync /bin/ls /bin/cat 
 		/sbin/pivot_root /usr/sbin/chroot /bin/dd \
 	/sbin/mtd \
 	/sbin/rc /sbin/hdparm /sbin/event /sbin/startservice /sbin/stopservice /sbin/write /sbin/ledtool \
-	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so 
+	/usr/sbin/httpd /sbin/service /usr/lib/validate.so /usr/lib/visuals.so /usr/sbin/writetool
 	
 do
 	cp -a $i $R/$i
@@ -114,6 +114,8 @@ hdparm -W 0 ${MTDPART}
 hdparm -f ${MTDPART}
 # flush drive cache
 hdparm -F ${MTDPART}
+sdparm -s WCE -S ${MTDPART}
+sdparm -c WCE -S ${MTDPART}
 
 if [ -f /tmp/${UPDATEFILE} ]
 then
