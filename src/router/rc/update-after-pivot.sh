@@ -55,6 +55,9 @@ busybox hdparm -f ${MTDPART}
 # flush drive cache
 hdparm -F ${MTDPART}
 busybox hdparm -F ${MTDPART}
+echo 1 > /proc/sys/vm/drop_caches
+echo 2 > /proc/sys/vm/drop_caches
+echo 3 > /proc/sys/vm/drop_caches
 if [ x$3 = x1 ]
 then
 	busybox reboot
