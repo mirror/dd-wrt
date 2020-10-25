@@ -105,8 +105,8 @@ int main(int argc, char *argv[])
 	fseek(out, 0, SEEK_SET);
 	char *buf = malloc(65536);
 	int count = len / 65536;
-
 	for (i = 0; i < count; i++) {
+	fprintf(stderr, "write image %d\n", i*65536);
 		fread(buf, 65536, 1, in);
 		fwrite(buf, 65536, 1, out);
 	}
