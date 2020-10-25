@@ -1116,9 +1116,11 @@ ifeq ($(CONFIG_OCTEON),y)
 	install ldd.sh $(INSTALLDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_X86),y)
+	@$(CC) $(CFLAGS) $(LTO) $(LDLTO) $(INITCFLAGS) -o writetool writetool.c
 	install update-prepare.sh $(INSTALLDIR)/usr/sbin	
 	install update-after-pivot.sh $(INSTALLDIR)/usr/sbin	
 	install ldd.sh $(INSTALLDIR)/usr/sbin
+	install writetool $(INSTALLDIR)/usr/sbin
 endif
 ifneq ($(CONFIG_TW6600),y)
 ifeq ($(CONFIG_DIST),"micro")
