@@ -1,0 +1,378 @@
+The version number is hardcoded into sdparm.c (in a C string);
+the rpm spec file: sdparm.spec ; the debian/changelog file;
+and the configure.ac file (in the AC_INIT item).
+
+ChangeLog for sdparm-1.11 [20200303] [svn: r334]
+  - Allow ZBC mode pages to use existing SBC mpages
+    as permitted by zbc2r04 chapter 6.4.1 table 70
+  - add --out_mask=OM option for mode page control
+    bitmask (current, changeable, default and/or saveable)
+  - add --examine option to iterate over mode+vpd pages
+  - add Out of band management control mpage (spl5r01)
+  - expand SAS configure port mode page [0x19,0x2] with
+    configure port mode fields (spl5r07)
+  - accept additional tansport acronyms (e.g. ib for srp)
+  - power condition mpage: rename fields IDLE->IDLE_A;
+    STANDBY->STANDBY_Z; ICT->IACT and SCT->SZCT
+  - device configuration extension mpage: expand PEWS
+    field with added PE_UN (PEWS units) field (ssc5r05)
+  - add Zoned block device control mpage (zbc2r04a)
+  - --defaults option can be used twice: reverts all
+    pages to their defaults (new in spc5r11, RTD bit)
+  - vpd: decode TransportIDs in SCSI port page
+    - --all option used twice lists all VPD pages
+    - decode SCSI Feature sets page (spc5r16)
+    - extended inquiry data, sync with spc5r09 + sbc4r11
+    - 3 party copy page improvements including
+      Copy group identifier
+    - block limits and block limit extension VPD pages:
+      add extra info about corner cases
+    - add maximum inquiry|mode_page change logs fields
+      to extended inquiry vpd page (spc5r17)
+    - fully implement Device constituents VPD page
+  - command=capacity with --long force read capacity(16)
+    with full reporting of response
+  - --wscan option: expand bus type to include NVMe
+  - mode page output with -HHH suitable for --inhex=
+  - add flexible geometery page (obsolete) sbc2r00
+  - point svn:externals to rev 843 of sg3_utils [v 1.45]
+  - convert many two valued 'int's to bool
+  - shellcheck corrections on scripts
+  - upgrade automake to version 1.15 (U16.04)
+  - rework configure.ac and src/Makefile.am
+  - add --enable-debug to ./configure
+  - update BSD license from 3 to 2 clause aka FreeBSD
+    license (without reference to FreeBSD project)
+  - debian: bump compat file contents from 7 to 10
+
+ChangeLog for sdparm-1.10 [20160222] [svn: r279]
+  - add --inhex=FN option for decoding without device present,
+    FN is interpreted as response to mode sense(10) command
+  - add --raw option to interpret FN as binary (def: ASCII hex)
+  - add --pdt=PDT option for use with --inhex=FN
+  - --quiet used twice hides changeable, default + saved
+  - add IO advice hints grouping mode page (sbc4r06, 8)
+  - add Unit serial number VPD page specific sanity check
+  - add NO_PI_CHK to Supported block lengths and protection
+    types VPD page
+  - add Background operation control mpage (sbc4r07)
+  - Read-write error recovery mpage: add Misaligned writes
+    reporting field (MWR)
+  - sync tape mpages with ssc5r02
+  - add Block limits extension VPD page
+  - add Device constituents VPD page
+  - add LB protection VPD page (ssc5r02a)
+  - LB provisioning VPD page: expand LBPRZ, add Minimum and
+    Threshold percentage fields
+  - device identification VPD page: add decoding for locally
+    assigned UUIDs (spc5r08)
+  - the --inhex=FN option together with --inquiry decodes
+    FN as a single VPD page
+  - improve lto5 and lto6 vendor mpage support
+  - sync to spc5r08 and sbc4r10
+  - add SAS G5 (22.5 Gbps) settings (spl4r06)
+  - point svn:externals to rev 663 of sg3_utils
+  - upgrade automake to version 1.15 (U15.10)
+  - autogen.sh: upgrade to buildconf 20091223 version
+
+ChangeLog for sdparm-1.09 [20141226] [svn: r257]
+  - decode Third Party Copy VPD page
+  - Supported block lengths and protection types (sbc4r01) +
+    Block device characteristics extension VPD pages added
+  - zoned block device characterics VPD page added (zbc-r01c)
+  - fix manufacturer-assigned serial number VPD page length
+  - device id VPD: T10 vendor identification designator clean up
+  - block device characteristics VPD: add ZONED (sbc4r04)
+  - SAS/SPL disconnect-reconnect mpage: expand
+  - SAS protocol specific port mpage: add MAXR field (spl4r01)
+  - standard inquiry response (sinq): add LU_CONG
+  - change ibm vendor code to lto5 and lto6
+  - point svn:externals to rev 620 of sg3_utils
+  - upgrade automake to version 1.14.1
+  - configure: add --disable-libsgutils so build bypasses that
+    library if present
+  - win32: some --wscan and compile fixes
+
+ChangeLog for sdparm-1.08 [20130606] [svn: r215]
+  - device id VPD: add protocol specific port identifier
+  - control extension mpage: add max sense data length
+  - power condition mpage: FIDCPC->CCF_IDLE,
+    FSBCPC->CCF_STAND, FSTCPC->CCF_STOPP (spc4r34+)
+  - caching mpage: add SYNC_PROG field (sbc3r33)
+  - block device characteristics VPD page additions sbc3r34
+  - extended inquiry vpd page: add max supported sense data
+    length
+  - protocol-specific port information VPD page for SAS SSP,
+    persistent connection (spl3r2), power disable (spl3r3)
+  - allow --readonly with --set= and --clear=
+  - add placeholder for third party copy VPD page
+  - supply more information if a UA occurs
+  - add Makefile so scripts/sas_disk_blink installed
+  - scripts/scsi_ch_swp: new, uses sdparm and blockdev
+  - ./configure options:
+    - change --enable-no-linux-bsg to --disable-linuxbsg
+    - add --disable-scsistrings to reduce utility size
+      with non-libsgutils build
+  - point svn:externals to rev 498 of sg3_utils
+    - report sdat_ovfl bit (if set) in sense data
+    - sg_pt_linux: expand DID_ (host_byte) codes
+      - cope with a transport error plus sense data
+      - prefer major() over MAJOR() macro
+    - win32: fixes for cygwin version 1.7.17 headers
+
+ChangeLog for sdparm-1.07 [20120121] [svn: r188]
+  - LB provisioning + Block limits VPD pages to sbc3r27
+  - Enhanced phy control page: optical mode enabled (spl-r07)
+  - Phy control and discover page: sync to spl2r02
+  - sync with spc4r31+32 (handle status good with sense)
+  - extended inquiry VPD: add POA_SUP, HRA_SUP and VSA_SUP
+  - application tag mode page subcode 0xf0->0x2 (sbc3r28)
+  - add 'sinq' pseudo VPD page for standard inquiry response
+  - add power consumption mode and VPD pages (spc4r33)
+  - point out some mode page numbers are vendor specific
+
+ChangeLog for sdparm-1.06 [20101031] [svn: r166]
+  - allow upper and lower case in field, (mode and vpd) page,
+    vendor, transport or command matching
+  - control mode page: add ATMPE and RWWP fields (spc4r27)
+  - extended inquiry vpd page: add extended self test
+    completion minutes field (spc4r27)
+  - power control mode page: PM_BG_PRECEDENCE field (spc4r24)
+    - FIDCPC, FSBCPC, FSTCPC fields (spc4r25)
+  - sbc3r25 renames 'thin' provisioning' to 'logical block
+    provisioning'; changes mode+vpd page and field names
+    - add Application tag mode page
+    - add SITPUA bit to logical block provisioning mode page
+  - fix '-eal' problem with vendor pages
+  - point svn:externals to rev 334 of sg3_utils
+
+ChangeLog for sdparm-1.05 [20100413] [svn: r149]
+  - add '--readonly' option especially for '-C start' and
+    '-C stop' on ATA disks.
+  - Control mode page updates (spc4r23)
+  - add Control data protection mode page (ssc4r01)
+  - block device characteristics VPD page: decode form factor
+  - extended inquiry VPD page: activate_microcode+r_sup (spc4r23)
+  - Automation device serial number and Data transfer device
+    element address VPD pages (ssc4r01)
+  - add SBC Referrals VPD page (sbc3r22)
+  - expand SBC Thin provisioning VPD page (sbc3r22)
+  - expand SBC Block limits VPD page (sbc3r22)
+  - SAS-2.1 specification split, upper layers placed in SPL
+    - add enable_slumber and enable_partial fields to
+      Enhanced phy control mode page
+  - add AM_MAINTAINER_MODE to configure.ac to lessen build issues
+  - build infrastructure change to use libsgutils2 if available
+
+ChangeLog for sdparm-1.04 [20090920] [svn: r129]
+  - add SAT ATA Power condition mode page (sat2r06)
+  - add SBC Thin provisioning mode page (sbc3r20)
+  - add SBC Thin provisioning VPD page (sbc3r20)
+  - sync with spc4r21
+  - add Power condition, update extended inquiry VPD pages
+  - smc3: add Device capabilities + Extended device
+    capabilities + Transport geometry parameters mode pages
+  - prepare for Thin provisioning VPD and mode pages
+  - expand block limits VPD page
+  - update Power condition mode page
+  - rename SAS-2 phy mode page to Enhanced phy control (SAS)
+  - add ADC mode (sub)page place holders
+  - print mode page descriptors in full in more contexts
+  - add linux bsg support
+  - scripts/sas_disk_blink: moved here from sg3_utils package
+  - rework the '-w' option (win32) per sg_scan in sg3_utils
+  - change SDPARM_* constants to SG_LIB_*
+  - remove sdparm.html, refer to its url in sdparm.8
+  - sdparm.spec: correction to configure call
+
+ChangeLog for sdparm-1.03 [20080623] [svn: r96]
+  - allow more than one DEVICE argument on command line
+  - add speed[=val] and profile commands for MMC
+  - update Extended Inquiry VPD page to spc4r15
+  - 'di' VPD page: decode "NAA Locally assigned"
+  - SAS protocol-specific port mpage (subpage=0)
+    - add CAWT (sas2r13) and RTOL (sas2r14)
+  - change 'long long' to int64_t to stress only require
+    64 bit integers (similar change to uint64_t)
+  - cleanup to use sg_cmds_mmc and PDT_* defines
+  - define SDPARM_MINGW when configure detects it
+  - sync with debian unstable files: debian/rules+changelog
+
+ChangeLog for sdparm-1.02 [20071008] [svn: r59]
+  - support mode page descriptors with
+    <acronym_name>[.<descriptor_num] syntax
+    - "2_<acronym>" type entries replaced by new syntax
+    - support medium partition mpage (SSC) with partitions
+      as descriptors
+  - append relative target port identifier to SAS target
+    port address with '-iq' option
+  - add solaris port
+  - place vendor specific data in sdparm_data_vendor.c
+  - in the absence of an explicit transport or vendor,
+    and if no match on mode page name or field, then try
+    SAS transport
+  - add block device characteristics VPD page
+  - add protocol-specific logical unit information VPD
+    page (SAS)
+  - use new sg_lib sg_get_num_nomult()
+  - place source in subversion repository
+    - use svn:externals property to point to sg3_utils'
+      include/ and lib/ directories
+    - move some files around (e.g. sdparm.8 to doc/)
+
+ChangeLog for sdparm-1.01 [20070405]
+  - add element address assignment mode page (smc)
+  - improve error handling in lk 2.4 series mapping to
+    sg devices
+  - add configure.ac rule for mingw (Windows)
+    - include <inttypes.h> to use PRIx64 instead of %llx
+  - add LUICLR bit to extended inquiry VPD page
+  - correct some headers for C++ inclusion
+    - fix some C code to compile under C++
+  - fix bug when unusual transport or vendor given
+  - add a Fujitsu vendor mode page
+  - add "initial priority" to control extension mpage
+  - add "disconnect-reconnect" mpage to generic list;
+    there are still transport specific versions
+  - extend block limits VPD page (sbc3r09)
+  - sync with sg3_utils-1.24 pass-through code
+
+ChangeLog for sdparm-1.00 [20061016]
+  - update Background control mode subpage (SBC-3)
+    - fix EN_BMS and EN_PS swap
+  - add 'extra' information to Caching mode page (SBC-3)
+  - substitute sg_cmds_basic.[hc] for sg_cmds.[hc]
+  - add '--vendor=<vn>' ('-M <vn>') option for vendor specific
+    mode pages (start with Seagate, Hitachi and Maxtor)
+  - fix '--save' so has no effect without '--set' or '--clear'
+  - win32 port based on SCSI Pass Through (SPT) interface
+    - add '--wscan' option in win32 port to scan for available
+      device names
+  - re-arrange some exits status values to be that same as
+    those used by sg3_utils-1.22
+
+ChangeLog for sdparm-0.99 [20060708]
+  - add old power condition page for disks only (0xd)
+  - zero whole device specific parameter field for disks (not
+    just the DPOFUA bit).
+  - revert REQUEST SENSE prior to mode page access change
+    added in sdparm-0.98 (libata doesn't support REQUEST SENSE)
+  - expand exit status values to be more expressive (and the
+    same as those used by the sg3_utils-1.21 package)
+  - warn if value to change a mode page field exceeds the
+    field size
+  - sync with spc4r05a
+  - for ATA information VPD page, decode IDENTIFY response strings
+  - add mode page acronym to first line when '--long' given
+
+ChangeLog for sdparm-0.98 [20060518]
+  - add decode for Medium configuration mode page, "mco" (ssc)
+  - sync with SPC-4 rev 04
+  - fix trailing "h" parsing (e.g. "-p 19h,1")
+  - fix vpd 0x83 designator code 8 name
+    - clean vpd 0x83 output format
+  - fix tape vpd page 0xb0 and 0xb2 mix-up
+  - fix unit serial number vpd length
+  - add di_asis to output device identification designators
+    in the order they appear in the VPD page
+  - when doing mode page work, start with a REQUEST SENSE
+    to flush out any Unit Attention pending
+  - fix '--quiet' option which was consuming next argument
+
+ChangeLog for sdparm-0.97 [20060127]
+  - add decode for SAT pATA control mode subpage
+  - add decode for Medium partition mode page (ssc)
+  - add decode for Device configuration extension mode subpage (ssc)
+  - add decode for Software interface identification VPD page
+  - rename 'timeout and protect' mode page acronym to "tp" (mmc)
+  - clear DPOFUA bit for disks in mode select parameters
+  - make '-q' trim output of '-p di' and its components:
+    di_lu, di_port and di_target
+  - allow 'h' suffix as hex indicator (still accept '0x' prefix)
+  - rework sg_lib.[hc] and sg_cmds.[hc] to be less linux specific,
+    add sg_pt.h and sg_pt_linux.c
+  - add logic for FreeBSD port (via sg_pt_freebsd.c)
+  - add logic for Tru64 port (via sg_pt_osf1.c)
+
+ChangeLog for sdparm-0.96 [20051119]
+  - add di_lu, di_port and di_target variants of di VPD
+  - re-factor sdparm.c: add sdparm_access.c + sdparm_vpd.c +
+    sdparm_cmd.c
+  - add CORR_D_SUP to Extended INQUIRY VPD page
+  - for ATA information VPD page, '-HHH' output is
+    suitable for "hdparm --Istdin" to decode
+  - add <cmd>s; 'capacity', 'sense" and 'sync' for READ CAPACITY,
+    REQUEST SENSE and SYNCHRONIZE CACHE respectively
+  - 'ready' command gives progress indication if available
+  - add '--quiet' option to suppress output of INQUIRY strings
+  - add decode for Control extension mode page
+  - add decode for SAS SSP shared port mode subpage
+  - change '-ll' to add explanation of some complex mode page
+    attribute values (e.g. MRIE in Informational exceptions mp)
+  - decode disk specific parameters (wp+dpofua) when '-l' given
+    for full mode page
+
+ChangeLog for sdparm-0.95 [20050920]
+  - add debian directory (for builds)
+  - add decode for extended inquiry data VPD page
+  - add decode for management network addresses VPD page
+  - add decode for mode page policy VPD page
+  - add decode for ATA information VPD page
+  - add decode for Block limits VPD page
+  - fix DRA and LBCSS bits in caching mode page
+  - sync with SPC-4 rev 02
+  - add EBACKERR in Informational exceptions mode page
+  - add some defensive code into SCSI INQUIRY response processing
+  - about 10 fixes to mode page items as a result of chk_sdparm_data
+    <see notes.txt file for more information>
+  - when changing mode pages, check modification position does not
+    exceed actual page length
+  - process '-p' option last since it depends on '-t' and '-i'
+    - output available arguments when '-p' or '-t' arguments
+      don't match
+  - fix command line problem with '--dbd', '--defaults' and
+    '--dummy'
+
+ChangeLog for sdparm-0.94 [20050728]
+  - add CD/DVD (MM) capabilities and mechanical status mode page
+  - add Background medium scan (SBC-3) mode subpage
+  - add '--command=<cmd>' option with these <cmd>s:
+      ready, start, stop, load, eject and unlock
+  - add decoding for SCSI Ports VPD page
+  - updated to automake version 1.9.5
+  - copy of sdparm.html placed in doc directory
+
+ChangeLog for sdparm-0.93 [20050602]
+  - add '--dbd' option for those pesky RBC devices
+  - add '--transport=' option for transport (protocol) specific
+    mode pages.
+  - add transport (protocol) specific mode pages for fcp, spi,
+    srp and sas
+  - refactor sdparm.c adding the sdparm_data.c file
+  - [Changeable:   def:  saved:  ] -> [cha:   def:  sav:  ]
+  - increase maximum num_bits from 32 to 64
+  - more sanity checks (e.g. only set/get fields up to mode
+    page length); '--flexible' can override in some cases
+
+ChangeLog for sdparm-0.92 [20050520]
+  - add data compression and device configuration mode pages (ssc3)
+  - add timeout + protect plus write parameters mode pages (mmc5)
+  - add XOR control mode page (sbc2)
+  - add SES Management mode page (ses2)
+  - discriminate mode pages based on device's peripheral device type
+  - disallow set/clear acronyms whose pdt doesn't match current device
+  - with option "-ll" decode more of INQUIRY standard response
+  - improve error checking when getting non-existent fields
+  - use double fetch technique when fetching mode pages
+  - add RBC device parameters mode page (rbc)
+  - add '--flexible' option for mode sense 6/10 response mixup
+  - '--inquiry --all' now outputs supported VPD pages page
+
+ChangeLog for sdparm-0.91 [20050506]
+  - if lk 2.4 detected, map primary SCSI node to sg node for ease of use
+  - add support for '--inquiry' (VPD pages, defaults to device
+    identification)
+  - decode format and rigid disk mode pages (sbc2) (obsolete but common)
+
+ChangeLog for sdparm-0.90 [20050418]
+  - initial version

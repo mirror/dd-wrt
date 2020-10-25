@@ -1,0 +1,270 @@
+Introduction
+------------
+sdparm is a utility for listing and potentially changing SCSI disk
+parameters. More generally it can be used on any device that uses a SCSI
+command set. Apart form SCSI disks, examples of devices that use SCSI command
+sets are ATAPI CD/DVD drives, SCSI and ATAPI tape drives and SCSI enclosures.
+
+This utility was originally written for Linux. It has been ported to FreeBSD,
+Solaris, Tru64, and Windows.
+
+Relationship to sg3_utils
+-------------------------
+Starting with sdparm version 1.02 this package shares code with sg3_utils
+(start with sg3_utils version 1.25). With the subversion revision control
+system this is done by having sdparm's "include/" and "lib/" subdirectories
+pointing to the correspondingly named directories in the sg3_utils package
+using the "svn:externals" property. These two "external" directories include
+more files than sdparm uses. The excess files include "lib/Makefile.am" and
+"lib/Makefile.in". The "Makefile.am" in sdparm's "src/" directory does the
+main part of the build. When the tarball is generated for this utility,
+various files are "exported" out of the subversion repository and
+"svn:externals" redirection is no longer visible (but the unused files are
+visible).
+
+The sdparm executable may or may not be built depending on the libsgutils
+(shared) library. Currently the ./configure rules are looking for a library
+called libsgutils2.a or libsgutils2.so . In Debian those libraries are found
+only in the libsgutils2-dev package, not the libsgutils2 package. If one of
+those libraries is detected then sdparm will be built depending on libsgutils
+(check 'ldd sdparm'). If neither of those libraries is detected at build time,
+then the sdparm executable built will compile and link the relevant code from
+its "include/" and "lib/" subdirectories.
+
+Documentation
+-------------
+The utility outputs a usage message when the "--help" (or '-h' or '-?') option
+is given. Many syntax errors also result in the usage message being printed.
+There is also a man page which is in section 8 (administration and privileged
+commands). It can be accessed with "man sdparm" once this package is
+installed. Prior to installation the man page can be viewed from this
+package's main directory with "man doc/sdparm.8".
+
+There is a web page about this utility at http://sg.danny.cz/sg/sdparm.html .
+
+Build infrastructure
+--------------------
+This package uses the automake and autoconf tools. The generating files
+(scripts) are configure.ac, Makefile.am, src/Makefile.am and autogen.sh .
+The autogen.sh script only needs to be executed if one of the other generating
+files in the above list is changed.
+
+There is a rpm "spec" file in the main directory: sdparm.spec . There are
+Debian build files in the "debian" directory and a script called
+build_debian.sh in the main directory. If build_debian.sh fails due to
+compatibility level. Amongst other things debian builds are sensitive to
+the value in the debian/compat file. If it contains "7" then it works on
+lenny and gives warning on squeeze (but fails on the earlier etch).
+
+The ./configure script supports these extra options:
+  - '--disable-libsgutils' stops the build using the libsgutils library
+    if it is found. Instead the copy of those files found under the
+    include and lib directories is used.
+  - '--disable-linuxbsg' drops Linux bsg driver support. This is only
+    for testing and should no longer be necessary.
+  - '--disable-scsistrings' excludes the asc/ascq and command name strings
+    (defined by SCSI/T10) in an attempt to reduce the size of executables.
+
+At the request of some Linux distributions, this package will attempt to
+use the libsgutils library (name varies between distributions) at build time.
+If that library is old then the link at the end of build can fail. One way
+to sidestep that problem is by using './configure --disable-libsgutils'.
+Another way is to remove the "dev" version of the libsgutils library package
+(e.g. 'libsgutils2-dev' on a Debian based distribution).
+
+License
+-------
+This utility is covered by a FreeBSD license. The intention of the author
+is that both open source and commercial entities can re-use this code.
+Naturally credit and improvement/bug feedback are encouraged. The part
+of this code that others may be able to re-use is the information in
+the tables in sdparm_data.c , sg_lib.c and sg_lib_data.c . This is
+information garnered from SCSI drafts and standards at http://www.t10.org
+(plus some information from the ATA drafts and standards at
+http://www.t13.org ). Vendor specific mode page information is found in the
+sdparm_data_vendor.c file and is derived from vendor product manuals.
+
+Notes
+-----
+Generic information about building this package (i.e. './configure ; make;
+make install') can be found in the INSTALL file. The contents of the COPYING
+file is a FreeBSD license (rather than the GPL v2 found in the usual
+template).
+
+Linux port
+----------
+The utility can be used on any device that supports the SG_IO ioctl. In
+the Linux 2.4 series that is only the scsi generic (i.e. /dev/sg* )
+device nodes. In the Linux 2.6 series the supported device nodes has
+expanded to all other SCSI device nodes (e.g. /dev/sd* and /dev/sr*)
+plus block devices such as /dev/hdc when the associated device is a
+DVD drive. The man page and sg.danny.cz/sg/sdparm.html web page
+examples use Linux device node names.
+
+FreeBSD port
+------------
+Virtually all of sdparm's features work with FreeBSD. SCSI commands are
+routed through the CAM pass through interface. The author tested sdparm
+with FreeBSD version 5.3 and found SCSI disks worked with the "da" device
+(e.g. 'sdparm  /dev/da0'). SCSI tape drives can be accessed via the "sa"
+device via /dev nodes starting with "esa", "nsa" and "sa". To access cd/dvd
+drives, the kernel needs to be build with the "atapicam" device after which
+access is via the "cd" device. Other SCSI devices are "ses" (for enclosure
+services), "ch" (media changer (for tapes)), and "pr" for processor device
+type (e.g. SAF-TE devices). All these device may also be accessed via
+the "pass" device. To see the mapping between the "pass" device name and
+the corresponding higher level device node try "camcontrol devlist".
+
+The traditional './configure ; make ; make install' sequence from the
+top level of the unpacked tarball will work on FreeBSD. But the man pages
+will be placed under the /usr/local/share/man directory which unfortunately
+is not on the standard manpath. One solution is to add this path by
+creating a file with a name like local_share.conf in the
+/usr/local/etc/man.d/ directory and placing this line in it:
+    MANPATH /usr/local/share/man
+
+FreeBSD 9.0 has a "ports" entry for sdparm under the
+/usr/ports/sysutils directory. It points to version 1.06 of sdparm.
+It could be used as a template to point to more recent versions.
+
+sdparm can be built into a Debian package for kFreeBSD using the
+./build_debian.sh script in the top level directory. This has been tested
+with Debian 6.0 release.
+
+Solaris port
+------------
+The uscsi pass-through mechanism is used and is only available on SCSI
+devices. There seems to be no corresponding ATA pass through and recent
+SATA disks do not seem to have a SAT layer in front of them (within
+Solaris). If SAT is present (perhaps externally or within a HBA) then that
+would allow SATA disks to accept SCSI commands including the SCSI ATA PASS
+THROUGH commands.
+
+SCSI device names below the '/dev' directory have a form like: c5t4d3s2
+where the number following "c" is the controller (HBA) number, the number
+following "t" is the target number (from the SCSI parallel interface days)
+and the number following "d" is the LUN. Following the "s" is the slice
+number which is related to a partition and by convention "s2" is the whole
+disk.
+
+OpenSolaris also has a c5t4d3p2 form where the number following the "p" is
+the partition number apart from "p0" which is the whole disk. So a whole
+disk may be referred to as either:
+  - c5t4d3
+  - c5t4d3s2
+  - c5t4d3p0
+
+And these device names are duplicated in the /dev/dsk and /dev/rdsk
+directories. The former is the block device name and the latter is for "raw"
+(or char device) access which is what sdparm needs. So in openSolaris
+something of the form:
+   sdparm /dev/rdsk/c5t4d3p0
+should work. If it doesn't add a '-vvv' option. If that is attempted
+on the /dev/dsk/c5t4d3p0 variant an inappropriate ioctl for device
+error will result.
+
+The device names within the /dev directory are typically symbolic
+links to much longer topological names in the /device directory.
+
+In Solaris cd/dvd/bd players seem to be treated as disks and so are
+found in the /dev/rdsk directory. Tape drives appear in the /dev/rmt
+directory.
+
+There is also a sgen (SCSI generic) driver which by default does not
+attach to any device. See the /kernel/drv/sgen.conf file to control
+what is attached. Any attached device will have a device name of
+the form /dev/scsi/c5t4d3 .
+
+Listing available SCSI devices in Solaris seems to be a challenge.
+"Use the 'format' command" advice works but seems a very dangerous
+way to list devices. [It does prompt again before doing any damage.]
+'devfsadm -Cv' cleans out the clutter in the /dev/rdsk directory,
+only leaving what is "live". The "cfgadm -v" command looks promising.
+
+
+Tru64 (osf) port
+----------------
+Any feedback on this platform welcome.
+
+
+Win32 port
+----------
+This port supports Windows NT, 2000, 2003++, XP, Vista and Windows 7
+(i.e. not 95, 98, ME or earlier). It uses the Microsoft SCSI Pass Through
+"Direct" (SPTD) rather than ASPI32 which requires a dll from Adaptec.
+
+The source can be built in a cygwin environment and can run in a cygwin
+bash shell. It can also run in a DOS shell if the cygwin1.dll is put in an
+appropriate place.
+Alternatively the source can be built with the MinGW compiler using its
+MSYS shell. This removes the dependence on the cygwin1.dll file.
+
+The device naming schemes attempt to follow what DOS does, with a few short
+cuts. If volume "D:" is an ATAPI DVD drive then the actual file opened
+is "\\.\D:". All device nodes of interest to sdparm have a leading "\\.\"
+so if the user doesn't supply it, sdparm will. Thus 'sdparm d:' should work.
+Note that volume names map to Windows partitions so there can be multiple
+volume names per disk. SCSI devices (or those that use a SCSI command set)
+can also be accessed via their "class" driver. These have names
+like "PhysicalDrive<n>", "CDROM<n>" and "TAPE<n>" where <n> is a number
+starting at 0. Since "PhysicalDrive" is tedious to type, a shortened
+form "PD" is accepted.  So if "PD3" is a SCSI disk (or a SATA disk behind
+a SAT layer) then 'sdparm pd3' should work.
+
+Finally there is a lower level "SCSI<n>:" interface that addresses a SCSI
+adapter. The device needs further sub-addressing in the form of a bus
+number (also called a PathId), a target identifier and a lun (logical
+unit number). sdparm uses this notation: "SCSI<n>:<bus>,<target>,<lun>".
+The trailing ",<lun>" may be omitted in which case a lun of 0 is assumed.
+Once a device has been "claimed" by an upper level "class" driver the
+OS will not allow it to be accessed via the "SCSI<n>:" interface. Hence
+this is only needed for special devices (e.g. with processor or SES
+peripheral device type) that are not claimed by the class drivers.
+
+The '--wscan' (or '-w') option has been added to show the mapping between
+a class driver device name and its associated volume name(s). Here are some
+examples:
+ $ sdparm -w
+PD0     [C]     FUJITSU   MHY2160BH         0000
+PD1     [DF]    WD        2500BEV External  1.05  WD-WXE90
+CDROM0  [E]     MATSHITA DVD/CDRW UJDA775  CB03
+
+Now request bus types as well.
+
+ $ sdparm -ww
+PD0     [C]     <Ata  >  FUJITSU   MHY2160BH         0000
+PD1     [DF]    <Usb  >  WD        2500BEV External  1.05  WD-WXE90
+CDROM0  [E]     <Atapi>  MATSHITA DVD/CDRW UJDA775  CB03
+
+Now request a SCSI adapter scan as well.
+ $ sdparm -www
+PD0     [C]     <Ata  >  FUJITSU   MHY2160BH         0000
+PD1     [DF]    <Usb  >  WD        2500BEV External  1.05  WD-WXE90
+CDROM0  [E]     <Atapi>  MATSHITA DVD/CDRW UJDA775  CB03
+
+SCSI0:0,0,0   claimed=1 pdt=0h  FUJITSU   MHY2160BH         0000
+SCSI1:0,0,0   claimed=1 pdt=5h  MATSHITA  DVD/CDRW UJDA775  CB03
+
+And finally here is a more interesting example showing disks with no
+Windows (2000) volumes, a tape drive and a weird unclaimed SCSI
+pseudo device with BCC (Bridge Controller Commands) peripheral device
+type.
+ $ sdparm -www
+PD0     [C]     <Ata  >  ST380011A  8.01
+PD1             <Scsi >  SEAGATE   ST373455SS        2189
+PD2             <Scsi >  ATA       ST3160812AS       D
+PD3             <Scsi >  SEAGATE   ST336754SS        0003
+CDROM0  [F]     <Atapi>  HL-DT-ST DVDRAM GSA-4163B  A103
+TAPE0           <Scsi >  SONY      SDT-7000          0192
+
+SCSI0:0,0,0   claimed=1 pdt=0h dubious  ST380011  A                 8.01
+SCSI1:0,0,0   claimed=1 pdt=5h          HL-DT-ST  DVDRAM GSA-4163B  A103
+SCSI2:0,6,0   claimed=1 pdt=1h          SONY      SDT-7000          0192
+SCSI5:0,17,0  claimed=1 pdt=0h          SEAGATE   ST373455SS        2189
+SCSI5:0,19,0  claimed=1 pdt=0h          ATA       ST3160812AS       D
+SCSI5:0,21,0  claimed=1 pdt=0h          SEAGATE   ST336754SS        0003
+SCSI5:0,112,0 claimed=0 pdt=10h         LSI       PSEUDO DEVICE     2.34
+
+
+Douglas Gilbert
+5th November 2017

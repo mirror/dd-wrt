@@ -1,0 +1,16 @@
+Source: sdparm
+Section: admin
+Priority: optional
+Maintainer: Tomas Fasth <tomfa@debian.org>
+Build-Depends: cdbs (>= 0.4.15), debhelper (>= 4.0.0), autotools-dev
+Standards-Version: 3.9.1
+
+Package: sdparm
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Output and modify SCSI device parameters
+ The sdparm utility outputs and in some cases modifies SCSI device
+ parameters. Apart from SCSI disks, such devices include CD/DVD
+ drives (irrespective of transport), tape drives and SCSI enclosures.
+ Accesses mode and VPD pages. Can also send some media management
+ commands (e.g. to start and stop a hard disk).
