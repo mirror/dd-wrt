@@ -24,7 +24,7 @@ cd /tmp
 if [ x$4 = x1 ]
 then
 	echo "relocate nvram"
-	writetool ${FIFO} ${MTDPART} 
+	/usr/sbin/writetool ${FIFO} ${MTDPART} 
 	echo "write first time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
