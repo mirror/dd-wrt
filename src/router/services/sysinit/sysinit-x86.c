@@ -83,6 +83,8 @@ void start_sysinit(void)
 	}
 	sprintf(dev, "/dev/%s", disk);
 	eval("hdparm", "-W", "0", dev);
+	eval("sdparm", "-s", "WCE", "-S", dev);
+	eval("sdparm", "-c", "WCE", "-S", dev);
 
 	//recover nvram if available
 	in = fopen("/usr/local/nvram/nvram.bin", "rb");
