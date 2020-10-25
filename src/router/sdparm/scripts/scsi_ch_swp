@@ -1,0 +1,140 @@
+#!/bin/bash
+# scsi_ch_swp
+#
+# Script to change the Software Read Protect (SWP) state of a disk in Linux.
+# When '-s <n>' (or '--set <n>') is not given then read SWP state.
+#
+# Uses sdparm and blockdev utilities.
+#
+# Douglas Gilbert 20160224
+
+
+rdonly="--readonly"
+swp="-1"
+verbose=""
+bdverbose=""
+
+usage()
+{
+    echo "Usage: scsi_ch_swp [-h] [-s 0|1] [-v] [-w] <blk_device>"
+    echo "  where:"
+    echo "    -h, --help           print usage message"
+    echo "    -s 0|1, --set 0|1    where:"
+    echo "                           0  - clear SWP and set RW mode"
+    echo "                           1  - set SWP and set RO mode"
+    echo "                                (default: read SWP and get RO flag)"
+    echo "    -v, --verbose        more verbose, show commands invoked"
+    echo "    -w, --wr             access <blk_device> read-write when '-s 0'"
+    echo "                         (default: access read-only in this case)"
+    echo ""
+    echo "Access the Software Write Protect (SWP) bit in the SCSI control"
+    echo "mode page and if changed adjust the Linux block device (e.g."
+    echo "/dev/sdc) settings accordingly. If supported, when the SWP bit"
+    echo "is set (1) the device is read-only; when clear (0) the device"
+    echo "is read-write (i.e. its contents can be read and changed)."
+    echo "When no options given it reads SWP and gets blockdev's RO flag."
+}
+
+opt="$1"
+while test ! -z "$opt" -a -z "${opt##-*}"; do
+    opt=${opt#-}
+    case "$opt" in
+        h|-help) usage ; exit 0 ;;
+        s|-set) shift ; let swp="$1" ;;
+        v|-verbose) verbose="-v" ;;
+        w|-wr) rdonly="" ;;
+        vv) verbose="-vv" ;;
+        vvv) verbose="-vvv" ;;
+        *) echo "Unknown option: -$opt " ; exit 1 ;;
+    esac
+    shift
+    opt="$1"
+done
+
+if [ $# -lt 1 ] ; then
+    echo "Need at least a <blk_device> argument."
+    echo ""
+    usage
+    exit 1
+fi 
+
+if [ ${verbose} ] ; then
+    bdverbose="-v"
+fi
+
+if ( which sdparm >/dev/null 2>&1 ) ; then
+    true
+else
+    echo "sdparm not found"
+    sdparm ${rdonly} ${verbose}
+fi
+
+if ( which blockdev >/dev/null 2>&1 ) ; then
+    true
+else
+    echo "blockdev not found"
+    blockdev
+fi
+
+if [ "$swp" -lt 0 ] ; then
+    if [ ${verbose} ] ; then
+        echo sdparm --quiet ${rdonly} ${verbose} --get=SWP=1 "$1"
+    fi
+    sdparm --quiet ${rdonly} ${verbose} --get=SWP=1 "$1"
+    if [ ${bdverbose} ] ; then
+        echo "blockdev --getro ${bdverbose} $1"
+    fi
+    echo -n "blockdev's RO flag: "
+    blockdev --getro ${bdverbose} "$1"
+elif [ "$swp" = "0" ] ; then
+    if [ ${verbose} ] ; then
+        echo sdparm --quiet ${rdonly} ${verbose} --clear=SWP "$1"
+    fi
+    sdparm --quiet ${rdonly} ${verbose} --clear=SWP "$1"
+    res=$?
+    if [ $res -ne 0 ] ; then
+        exit $res
+    fi
+    if [ ${bdverbose} ] ; then
+        echo blockdev --setrw ${bdverbose} "$1"
+    fi
+    blockdev --setrw ${bdverbose} "$1"
+    # res=$?
+    # if [ $res -ne 0 ] ; then
+        # exit $res
+    # fi
+    ## There is still some uncertainity whether calling blockdev --rereadpt
+    ## is needed or defeats this operation. Feedback please.
+    # # Need to re-read partition table before --setro takes effect
+    # if [ ${bdverbose} ] ; then
+        # echo blockdev --rereadpt ${bdverbose} $1
+    # fi
+    # blockdev --rereadpt ${bdverbose} $1
+elif [ "$swp" = "1" ] ; then
+    if [ ${verbose} ] ; then
+        echo sdparm --quiet ${verbose} --set=SWP "$1"
+    fi
+    sdparm --quiet ${verbose} --set=SWP "$1"
+    res=$?
+    if [ $res -ne 0 ] ; then
+        exit $res
+    fi
+    if [ ${bdverbose} ] ; then
+        echo blockdev --setro ${bdverbose} "$1"
+    fi
+    blockdev --setro ${bdverbose} "$1"
+    # res=$?
+    # if [ $res -ne 0 ] ; then
+        # exit $res
+    # fi
+    ## There is still some uncertainity whether calling blockdev --rereadpt
+    ## is needed or defeats this operation. Feedback please.
+    # # Need to re-read partition table before --setrw takes effect
+    # if [ ${bdverbose} ] ; then
+        # echo blockdev --rereadpt ${bdverbose} $1
+    # fi
+    # blockdev --rereadpt ${bdverbose} $1
+else
+    echo "option --set ${swp} is invalid"
+    exit 1
+fi

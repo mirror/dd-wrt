@@ -1,0 +1,66 @@
+.TH SCSI_CH_SWP "8" "May 2013" "sdparm\-1.08" SDPARM
+.SH NAME
+scsi_ch_swp \- change SCSI Software WRITE Protect and block device settings
+.SH SYNOPSIS
+.B scsi_ch_swp
+[\fI\-\-help\fR] [\fI\-\-set 0|1\fR] [\fI\-\-verbose\fR] [\fI\-\-wr\fR]
+\fIBLK_DEVICE\fR 
+.SH DESCRIPTION
+.\" Add any additional description here
+.PP
+This bash shell script attempts to read or change the Software Write
+Protect (SWP) bit in the SCSI Control mode page using the sdparm utility.
+If that change is successful then it uses the blockdev utility to change
+\fIBLK_DEVICE\fR's read\-write or read\-only setting in sympathy. This
+script is only available in Linux since the blockdev utility is Linux
+specific.
+.PP
+If changing the SWP bit is supported, setting the SWP bit makes
+\fIBLK_DEVICE\fR read\-only at the device (disk) itself. Clearing the SWP
+bit makes \fIBLK_DEVICE\fR read\-write which is usually the default
+setting at device (disk) power up.
+.PP
+If no options are given then the current state of the SWP bit is printed
+out (using sdparm) together with blockdev's RO bit. If they are both 1
+then \fIBLK_DEVICE\fR is in read\-only mode; if they are both 0 then
+\fIBLK_DEVICE\fR is in read\-write mode.
+.SH OPTIONS
+Arguments to long options are mandatory for short options as well.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+print out the usage message then exit.
+.TP
+\fB\-s\fR, \fB\-\-set\fR \fI0|1\fR
+when 0 is given then the SWP bit in the Control mode page is cleared (i.e.
+set that bit to 0) using sdparm; and blockdev is used to set \fIBLK_DEVICE\fR
+to read\-write mode. When 1 is given then the SWP bit in the Control mode page
+is set using sdparm; and blockdev is used to set \fIBLK_DEVICE\fR to
+read\-only mode. The default (i.e. when this option is not given) is to read
+the state of the SWP bit and \fIBLK_DEVICE\fR's read\-only mode and print
+those values out.
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+increase level or verbosity.
+.TP
+\fB\-w\fR, \fB\-\-wr\fR
+when the \fIBLK_DEVICE\fR is in read\-only mode, Linux will not typically
+allow \fIBLK_DEVICE\fR to be opened read\-write by sdparm, so the default
+action of this script is to use the sdparm \fI\-\-readonly\fR option when
+\fI\-\-set 0\fR has been invoked. It is possible that \fIBLK_DEVICE\fR could
+be a generic device (e.g. /dev/sg3) which has a different interpretation of
+the read\-only open flag and may fail. For such rare cases the \fI\-\-wr\fR
+option makes sdparm open \fIBLK_DEVICE\fR read\-write when \fI\-\-set 0\fR
+is invoked. 
+.SH EXIT STATUS
+The exit status of this script is 0 when it is successful. Otherwise the exit
+status is that of the sdparm or the blockdev utility, whichever is called
+last. See the sdparm(8) man page.
+.SH AUTHORS
+Written by D. Gilbert
+.SH COPYRIGHT
+Copyright \(co 2013 Douglas Gilbert
+.br
+This software is distributed under a FreeBSD license. There is NO
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+.SH "SEE ALSO"
+.B sdparm(sdparm), blockdev(8)

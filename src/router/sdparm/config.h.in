@@ -1,0 +1,124 @@
+/* config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define to 1 if you have the <byteswap.h> header file. */
+#undef HAVE_BYTESWAP_H
+
+/* Define to 1 if you have the `getopt_long' function. */
+#undef HAVE_GETOPT_LONG
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <linux/bsg.h> header file. */
+#undef HAVE_LINUX_BSG_H
+
+/* Define to 1 if you have the <linux/kdev_t.h> header file. */
+#undef HAVE_LINUX_KDEV_T_H
+
+/* Define to 1 if you have the <linux/nvme_ioctl.h> header file. */
+#undef HAVE_LINUX_NVME_IOCTL_H
+
+/* Define to 1 if you have the <linux/types.h> header file. */
+#undef HAVE_LINUX_TYPES_H
+
+/* Define to 1 if you have the `lseek64' function. */
+#undef HAVE_LSEEK64
+
+/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Found NVMe */
+#undef HAVE_NVME
+
+/* Define to 1 if you have the `posix_fadvise' function. */
+#undef HAVE_POSIX_FADVISE
+
+/* Define to 1 if you have the `posix_memalign' function. */
+#undef HAVE_POSIX_MEMALIGN
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define to 1 if you have the `sysconf' function. */
+#undef HAVE_SYSCONF
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* use generic little-endian/big-endian instead */
+#undef IGNORE_FAST_LEBE
+
+/* option ignored */
+#undef IGNORE_LINUX_BSG
+
+/* compile out NVMe support */
+#undef IGNORE_NVME
+
+/* Name of package */
+#undef PACKAGE
+
+/* Define to the address where bug reports for this package should be sent. */
+#undef PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#undef PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#undef PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
+/* Define to the version of this package. */
+#undef PACKAGE_VERSION
+
+/* sdparm on android */
+#undef SG_LIB_ANDROID
+
+/* sdparm Build Host */
+#undef SG_LIB_BUILD_HOST
+
+/* sdparm on FreeBSD */
+#undef SG_LIB_FREEBSD
+
+/* sdparm on linux */
+#undef SG_LIB_LINUX
+
+/* also MinGW environment */
+#undef SG_LIB_MINGW
+
+/* sdparm on Tru64 UNIX */
+#undef SG_LIB_OSF1
+
+/* sdparm on Solaris */
+#undef SG_LIB_SOLARIS
+
+/* sdparm on Win32 */
+#undef SG_LIB_WIN32
+
+/* full SCSI sense strings */
+#undef SG_SCSI_STRINGS
+
+/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Version number of package */
+#undef VERSION
