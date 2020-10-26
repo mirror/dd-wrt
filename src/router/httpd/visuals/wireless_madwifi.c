@@ -367,7 +367,23 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "N/A");
 		return;
 	}
-	if (is_mac80211(ifname) || is_mvebu(ifname)) {
+	if (is_ath10k(ifname)) {
+		char ifn[32];
+		strcpy(ifn, ifname);
+		char *c = strchr(ifn, '.');
+		if (c)
+			c[0] = 0;
+
+		int phy = mac80211_get_phyidx_by_vifname(ifn);
+		char str[64];
+		sprintf(str, "/sys/kernel/debug/ieee80211/phy%d/ath10k/cur_ack", phy);
+		FILE *fp = fopen(str, "rb");
+		int rawack;
+		fscanf(fp, "%d", &rawack);
+		fclose(fp);
+		ack = rawack - 20;	// hw delay
+		distance = (300 * ack) / 2;
+	} else if (is_mac80211(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
 		ack = coverage * 3;
 		/* See handle_distance() for an explanation where the '450' comes from */
