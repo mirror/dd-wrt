@@ -228,7 +228,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Danmarkshavn", "GMT0" }
 	,
-	{ "America/Dawson", "PST8PDT,M3.2.0,M11.1.0" }
+	{ "America/Dawson", "MST7" }
 	,
 	{ "America/Dawson_Creek", "MST7" }
 	,
@@ -374,6 +374,8 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/North_Dakota/New_Salem", "CST6CDT,M3.2.0,M11.1.0" }
 	,
+	{ "America/Nuuk", "<-03>3<-02>,M3.5.0/-2,M10.5.0/-1" }
+	,
 	{ "America/Ojinaga", "MST7MDT,M3.2.0,M11.1.0" }
 	,
 	{ "America/Panama", "EST5" }
@@ -456,7 +458,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Virgin", "AST4" }
 	,
-	{ "America/Whitehorse", "PST8PDT,M3.2.0,M11.1.0" }
+	{ "America/Whitehorse", "MST7" }
 	,
 	{ "America/Winnipeg", "CST6CDT,M3.2.0,M11.1.0" }
 	,
@@ -464,13 +466,13 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "America/Yellowknife", "MST7MDT,M3.2.0,M11.1.0" }
 	,
-	{ "Antarctica/Casey", "<+08>-8" }
+	{ "Antarctica/Casey", "<+11>-11" }
 	,
 	{ "Antarctica/Davis", "<+07>-7" }
 	,
 	{ "Antarctica/DumontDUrville", "<+10>-10" }
 	,
-	{ "Antarctica/Macquarie", "<+11>-11" }
+	{ "Antarctica/Macquarie", "AEST-10AEDT,M10.1.0,M4.1.0/3" }
 	,
 	{ "Antarctica/Mawson", "<+05>-5" }
 	,
@@ -552,11 +554,11 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Asia/Famagusta", "EET-2EEST,M3.5.0/3,M10.5.0/4" }
 	,
-	{ "Asia/Gaza", "EET-2EEST,M3.5.5/0,M10.5.6/1" }
+	{ "Asia/Gaza", "EET-2EEST,M3.4.4/48,M10.4.4/49" }
 	,
 	{ "Asia/Harbin", "CST-8" }
 	,
-	{ "Asia/Hebron", "EET-2EEST,M3.5.5/0,M10.5.6/1" }
+	{ "Asia/Hebron", "EET-2EEST,M3.4.4/48,M10.4.4/49" }
 	,
 	{ "Asia/Ho_Chi_Minh", "<+07>-7" }
 	,
@@ -784,7 +786,7 @@ TIMEZONE_TO_TZSTRING allTimezones[] = {
 	,
 	{ "Canada/Saskatchewan", "CST6" }
 	,
-	{ "Canada/Yukon", "PST8PDT,M3.2.0,M11.1.0" }
+	{ "Canada/Yukon", "MST7" }
 	,
 	{ "Chile/Continental", "<-04>4<-03>,M9.1.6/24,M4.1.6/24" }
 	,
