@@ -65,6 +65,45 @@ static void to_chs(long sect, unsigned char chs[3])
 	return;
 }
 
+static void copy(FILE * out, size_t inoff, size_t outoff, int len)
+{
+	size_t i;
+	char *mem = malloc(65536);
+	fprintf(stderr, "\n");
+	if (inoff >= outoff) {
+		for (i = 0; i < (len / 65536); i++) {
+			fprintf(stderr, "copy from %d to %d\r", inoff + (i * 65536), outoff + (i * 65536));
+			fseek(out, inoff + (i * 65536), SEEK_SET);
+			fread(mem, 65536, 1, out);
+			fseek(out, outoff + (i * 65536), SEEK_SET);
+			fwrite(mem, 65536, 1, out);
+		}
+		if (len % 65536) {
+			fseek(out, inoff + (i * 65536), SEEK_SET);
+			fread(mem, len % 65536, 1, out);
+			fseek(out, outoff + (i * 65536), SEEK_SET);
+			fwrite(mem, len % 65536, 1, out);
+		}
+	} else {
+		for (i = 0; i < (len / 65536); i++) {
+			size_t o = (len - 1) - (i * 65536);
+			fprintf(stderr, "copy from %d to %d\r", inoff + o, outoff + o);
+			fseek(out, inoff + o, SEEK_SET);
+			fread(mem, 65536, 1, out);
+			fseek(out, outoff + o, SEEK_SET);
+			fwrite(mem, 65536, 1, out);
+		}
+		if (len % 65536) {
+			fseek(out, inoff, SEEK_SET);
+			fread(mem, len % 65536, 1, out);
+			fseek(out, outoff, SEEK_SET);
+			fwrite(mem, len % 65536, 1, out);
+		}
+	}
+	fprintf(stderr, "\n");
+	free(mem);
+}
+
 int main(int argc, char *argv[])
 {
 	FILE *in = fopen(argv[1], "rb");
@@ -91,13 +130,8 @@ int main(int argc, char *argv[])
 	uint32_t len = nvram->length * 512;
 	char *mem = NULL;
 	if (len) {
-		fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512);
-		mem = malloc(len);
-		if (fread(mem, len, 1, out) == 1) {
-			fprintf(stderr, "write nvram from mew offset %d\n", old_p[2].start * 512);
-			fseek(out, old_p[2].start * 512, SEEK_SET);
-			fwrite(mem, len, 1, out);
-		}
+		fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512, len);
+		copy(out, nvram->start * 512, old_p[2].start * 512, len);
 	}
 	fseek(in, 0, SEEK_END);
 	len = ftell(in);
@@ -113,9 +147,8 @@ int main(int argc, char *argv[])
 	fread(buf, len % 65536, 1, in);
 	fwrite(buf, len % 65536, 1, out);
 	free(buf);
-	if (mem && old_p[2].start > 0) {
-		fseek(out, old_p[2].start * 512, SEEK_SET);
-		fwrite(mem, len, 1, out);
+	if (old_p[2].start > 0) {
+		copy(out, nvram->start * 512, old_p[2].start * 512, len);
 	}
 	fclose(out);
 	fclose(in);
