@@ -85,7 +85,7 @@ static void copy(FILE * out, size_t inoff, size_t outoff, int len)
 			fwrite(mem, len % 65536, 1, out);
 		}
 	} else {
-		for (i = 0; i < (len / 65536); i++) {
+		for (i = 1; i < ((len / 65536) + 1); i++) {
 			size_t o = (len - 1) - (i * 65536);
 			fprintf(stderr, "copy from %d to %d\r", inoff + o, outoff + o);
 			fseek(out, inoff + o, SEEK_SET);
