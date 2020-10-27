@@ -36,9 +36,8 @@ all-prog-detect:
 user :: all-prog-detect
 
 install-prog-detect: all-prog-detect
-	$(MKDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(PROGDETECTMAN8DIR)
+	$(MKDIR) $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -m 755 $(PROGDETECTSBININSTALL) $(DESTDIR)$(SBINDIR)
-	$(INSTALL) -m 644 $(PROGDETECTMAN8FILES) $(DESTDIR)$(PROGDETECTMAN8DIR)
 user_install :: install-prog-detect
 
 user_uninstall::
