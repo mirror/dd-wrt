@@ -367,12 +367,12 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		websWrite(wp, "N/A");
 		return;
 	}
-	if (is_ath10k(ifname)) {
-		char ifn[32];
-		strcpy(ifn, ifname);
-		char *c = strchr(ifn, '.');
-		if (c)
-			c[0] = 0;
+	char ifn[32];
+	strcpy(ifn, ifname);
+	char *c = strchr(ifn, '.');
+	if (c)
+		c[0] = 0;
+	if (is_ath10k(ifname) && nvram_nmatch("0", "%s_distance", ifn)) {
 
 		int phy = mac80211_get_phyidx_by_vifname(ifn);
 		char str[64];
