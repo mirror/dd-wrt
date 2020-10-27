@@ -1,0 +1,154 @@
+OVERVIEW OF THE LM-SENSORS PACKAGE
+==================================
+
+The lm-sensors package, version 3, provides user-space support for the
+hardware monitoring drivers in Linux 2.6.5 and later. For older kernel
+versions, you have to use lm-sensors version 2.
+
+The directories within this package:
+
+* doc
+  Documentation.
+* etc
+  A sample configuration file for libsensors, and a script to convert
+  lm-sensors version 2 configuration files to work with version 3.
+* lib
+  The user-space sensors support library code (libsensors).
+* prog
+  Several supporting programs. The most important ones are:
+  - sensors-detect: A stand-alone program for detecting installed
+    hardware and recommending specific modules to load.
+  - sensors: A console tool to report sensor readings and set new
+    sensor limits.
+  - sensord: A daemon to watch sensor values and log problems. It
+    includes RRD support.
+* configs
+  This directory contains sample configurations of various boards,
+  contributed by users of lm-sensors.
+
+  All configuration files should now be imported from the old
+  www.lm-sensors.org website, however additional information about
+  the origin of the configuration files can be found on the old site:
+  http://web.archive.org/web/20150901092438/http://www.lm-sensors.org:80/wiki/Configurations
+
+  Please contribute back a configuration of your board so other users with
+  the same hardware won't need to recreate it again and again.
+
+INSTALLING LM-SENSORS
+---------------------
+
+See the INSTALL file.
+
+
+HARDWARE SUPPORT
+----------------
+
+To find out what hardware you have, just run 'sensors-detect' as root.
+
+Most modern mainboards incorporate some form of hardware monitoring chips.
+These chips read things like chip temperatures, fan rotation speeds and
+voltage levels. There are quite a few different chips which can be used by
+mainboard builders for approximately the same results.
+
+Laptops, on the other hand, rarely expose any hardware monitoring
+chip. They often have some BIOS and/or ACPI magic to get the CPU
+temperature value, but that's about it. For such laptops, the lm-sensors
+package is of no use (sensors-detect will not find anything), and you have
+to use acpi instead.
+
+This package doesn't contain chip-specific knowledge. It will support all
+the hardware monitoring chips your kernel has drivers for. In other words,
+if you find out that you have unsupported hardware (e.g. sensors-detect
+told you so) then it means that you need a more recent kernel, or you
+even need to wait for a new kernel driver to be written. Updating the
+lm-sensors package itself will not help.
+
+
+LIBSENSORS
+----------
+
+The kernel drivers communicate their information through the /sys
+interface. Because every motherboard is different, the drivers always
+advert the measurements at their pins. This means that the values they
+report are not always immediately relevant to you. They have to be
+labelled properly, and sometimes they must be scaled to correspond to
+real-world values.
+
+libsensors is a (shared or static) library of access functions. It
+offers a simple-to-use interface for applications to access the sensor
+chip readings and configure them as you like. It has a configuration
+file where you can put all the motherboard-specific labels and
+conversion rules. That way, all applications do not need to duplicate
+the effort and can simply link with libsensors and work out of the box.
+
+
+APPLICATIONS
+------------
+
+This package contains an example console program that reports all current
+sensors values. This program is called 'sensors'. You can use it as a
+reference implementation for more intricate programs. It also contains a
+daemon watching for sensor values, logging alarms and feeding an RRD
+database with the sensor measurements.
+
+This package does not contain a nice graphical monitor. See
+http://sensors-applet.sourceforge.net/
+https://01.org/powertop/
+https://wpitchoune.net/psensor/
+https://amanusk.github.io/s-tui/
+for such programs.
+
+
+TROUBLESHOOTING
+---------------
+
+lm-sensors is blamed for all kinds of problems on a regular basis.
+While it is always possible that lm-sensors does in fact have a problem,
+almost everytime the problem will be elsewhere. The most likely culprit
+for a problem is one of the kernel drivers prividing data to lm-sensors
+or, rather, the sensors command (and libsensors). If you encounter problems,
+the following tests are recommended.
+
+- Check enabled sensors with the 'sensors' command. Observe and, if there
+  are errors, write down your test steps and report.
+- If any problems are observed while running the 'sensors' command, disable
+  (unload) kernel drivers one after another. After unloading a driver, run
+  the 'sensors' command again and observe if the error is gone. If it is,
+  you found the problematic driver. Record your tests and report to the driver
+  maintainer.
+- If problems are observed while using libsensors from another application,
+  the same procedure applies (though it is recommended to perform the test
+  with the sensors command first). Again, after identifying the offending
+  driver, record and report your results to the driver maintainer.
+- If this does not help, try to run ptrace on the sensors command and/or
+  the application using libsensors. If you find any anormalies, record
+  your results and report.
+
+
+OTHER INFORMATION
+-----------------
+
+The lm_sensors website can be found at
+https://hwmon.wiki.kernel.org/lm_sensors
+
+The developers of this package can be reached using
+* a mailing list lm-sensors <at> vger <dot> kernel <dot> org
+  (you can get information on how to subscribe, unsubscribe, and the list
+  of archives at http://vger.kernel.org/vger-lists.html#lm-sensors;
+  you do not need to be subscribed to post to the list)
+* GitHub (see https://github.com/lm-sensors/lm-sensors)
+
+Do not hesitate to contact us if you have questions, suggestions, problems,
+want to contribute, or just want to report it works for you. But please try to
+read the documentation before you ask any questions! It's all under doc/.
+
+The latest version of this package can always be found at:
+https://github.com/lm-sensors/lm-sensors.
+
+LICENSE
+-------
+
+The library (libsensors) is released under the GNU Lesser General Public
+License (LGPL), as included in the file COPYING.LGPL. The rest of this
+package may be distributed according to the GNU General Public License
+(GPL), as included in the file COPYING.
