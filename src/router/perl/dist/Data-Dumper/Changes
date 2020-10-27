@@ -1,0 +1,453 @@
+=head1 NAME
+
+Changes - public release history for Data::Dumper
+
+=head1 DESCRIPTION
+
+=over 8
+
+=item 2.173
+
+perl #133624: Reinstate support for 5.8.8 and older.
+
+=item 2.172
+
+Prepare recent changes for CPAN release
+
+=item 2.171 (Apr 21 2018)
+
+Restore deparsing support in the XS dumper, on Perl 5.18 and earlier
+
+Test fixes on older Perl versions (notably, skip tests for Unicode glob
+names on Perl 5.14 and earlier, which had incomplete support for Unicode
+in globs)
+
+=item 2.170 (Jan 10 2018)
+
+Fix bug when dumping globs with quoting (which now happens for
+all Unicode glob names)
+
+Internal change: use strlcpy(), for safety
+
+=item 2.169 (Dec 12 2017)
+
+Behavior change: $dumper->Useqq(undef) is now treated as setting the
+"useqq" option, not getting it (and similarly for other options)
+[perl #113090]
+
+=item 2.168 (Dec  1, 2017)
+
+perl #119831: Quote glob names better; notably, Unicode globs are
+now handled correctly
+
+=item 2.167_02  (Aug  4 2017)
+
+Attempt to work around XS deparse issues on old perls.
+According to the few old perls at my disposure, this now repairs,
+for example 5.18, but 5.8.9 still barfs. My debugging hasn't
+really come up with much since all changes other than the deparse
+change look benign to me.
+Can someone who uses ancient perls please step up and take a look?
+--Steffen
+
+=item 2.167_01  (Jul 31 2017)
+
+CPAN dev release with the accumulated changes from core perl.
+
+=item 2.166 (Nov 29 2016)
+
+Reduce memory usage by not importing from Carp
+Reduce memory usage by removing unused overload require.
+
+=item 2.165 (Nov 20 2016)
+
+Remove impediment to compiling under C++11.
+
+=item 2.164 (Nov 12 2016)
+
+The XS implementation now handles the C<Deparse> option, so using it no
+longer forces use of the pure-Perl version.
+
+=item 2.161 (Jul 11 2016)
+
+Perl 5.12 fix/workaround until fixed PPPort release.
+
+Pre-5.12 fixes for test dependency.
+
+=item 2.160 (Jul 3 2016)
+
+Now handles huge inputs on 64bit perls.
+
+Add Trailingcomma option. This is as suggested in RT#126813.
+
+Significant refactoring of XS implementation.
+
+Pure Perl implementation fixes in corner cases ("\n" dumped raw").
+
+=item 2.154 (Sep 18 2014)
+
+Most notably, this release fixes CVE-2014-4330:
+
+  Don't recurse infinitely in Data::Dumper
+
+  Add a configuration variable/option to limit recursion when dumping
+  deep data structures.
+  [...]
+  This patch addresses CVE-2014-4330.  This bug was found and
+  reported by: LSE Leading Security Experts GmbH employee Markus
+  Vervier.
+
+On top of that, there are several minor big fixes and improvements,
+see "git log" if the core perl distribution for details.
+
+=item 2.151 (Mar 7 2014)
+
+A "useqq" implementation for the XS version of Data::Dumper.
+
+Better compatibility wrt. hash key quoting between PP and XS
+versions of Data::Dumper.
+
+EBCDIC fixes.
+
+64bit safety fixes (for very large arrays).
+
+Build fixes for threaded perls.
+
+clang warning fixes.
+
+Warning fixes in tests on older perls.
+
+Typo fixes in documentation.
+
+=item 2.145 (Mar 15 2013)
+
+Test refactoring and fixing wide and far.
+
+Various old-perl compat fixes.
+
+=item 2.143 (Feb 26 2013)
+
+Address vstring related test failures on 5.8: Skip tests for
+obscure case.
+
+Major improvements to test coverage and significant refactoring.
+
+Make Data::Dumper XS ignore Freezer return value. Fixes RT #116364.
+
+Change call of isALNUM to equivalent but more clearly named isWORDCHAR
+
+=item 2.139 (Dec 12 2012)
+
+Supply an explicit dynamic_config => 0 in META
+
+Properly list BUILD_REQUIRES prereqs (P5-RT#116028)
+
+Some optimizations. Removed useless "register" declarations.
+
+=item 2.136 (Oct 04 2012)
+
+Promote to stable release.
+
+Drop some "register" declarations.
+
+=item 2.135_07 (Aug 06 2012)
+
+Use the new utf8 to code point functions - fixing a potential
+reading buffer overrun.
+
+Data::Dumper: Sparseseen option to avoid building much of the seen
+hash: This has been measured to, in some cases, provide a 50% speed-up
+
+Dumper.xs: Avoid scan_vstring on 5.17.3 and up
+
+Avoid a warning from clang when compiling Data::Dumper
+
+Fix DD's dumping of qr|\/|
+
+Data::Dumper's Perl implementation was not working with overloaded
+blessed globs, which it thought were strings.
+
+Allow Data::Dumper to load on miniperl
+
+=item 2.135_02 (Dec 29 2011)
+
+Makes DD dump *{''} properly.
+
+[perl #101162] DD support for vstrings:
+Support for vstrings to Data::Dumper, in both Perl and XS
+implementations.
+
+=item 2.135_01 (Dec 19 2011)
+
+Make Data::Dumper UTF8- and null-clean with GVs.
+
+In Dumper.xs, use sv_newmortal() instead of sv_mortalcopy(&PL_sv_undef)
+for efficiency.
+
+Suppress compiler warning
+
+Keep verbatim pod in Data::Dumper within 80 cols
+
+=item 2.131 (May 27 2011)
+
+Essentially the same as version 2.130_02, but a production release.
+
+=item 2.130_03 (May 20 2011)
+
+Essentially the same as version 2.130_02, but a CPAN release
+for the eventual 2.131.
+
+=item 2.130_02
+
+This was only shipped with the perl core, never released to CPAN.
+
+Convert overload.t to Test::More
+
+Fix some spelling errors
+
+Fix some compiler warnings
+
+Fix an out of bounds write in Data-Dumper with malformed utf8 input
+
+=item 2.130 (Nov 20 2010)
+
+C<Dumpxs> can now handle malformed UTF-8.
+
+=item 2.129 (Oct 20 2010)
+
+C<Dumpxs> no longer crashes with globs returned by C<*$io_ref>
+[perl #72332].
+
+=item 2.128 (Sep 10 2010)
+
+Promote previous release to stable version with the correct version.
+
+=item 2.127 (Sep 10 2010)
+
+Promote previous release to stable version.
+
+=item 2.126_01 (Sep  6 2010)
+
+Port core perl changes e3ec2293dc, fe642606b19.
+Fixes core perl RT #74170 (handle the stack changing in the
+custom sort functions) and adds a test.
+
+=item 2.126 (Apr 15 2010)
+
+Fix Data::Dumper's Fix Terse(1) + Indent(2):
+perl-RT #73604: When $Data::Dumper::Terse is true, the indentation is thrown
+off. It appears to be acting as if the $VAR1 = is still there.
+
+=item 2.125 (Aug  8 2009)
+
+CPAN distribution fixes (meta information for META.yml).
+
+=item 2.124 (Jun 13 2009)
+
+Add three missing test files.
+
+=item 2.123 (Jun 11 2009)
+
+Re-add the INSTALLDIRS => 'perl' directive to Makefile.PL
+of the CPAN release.
+
+=item 2.122 (Jun  9 2009)
+
+Promote previous developer release to stable release.
+
+=item 2.121_20 (Jun  6 2009)
+
+A host of bug fixes and improvements that have
+accumulated in the perl core
+
+Updated backport to 5.6.1 by Steffen Mueller <smueller@cpan.org>.
+
+=item 2.121 (Aug 24 2003)
+
+Backport to 5.6.1 by Ilya Martynov <ilya@martynov.org>.
+
+=item 2.11  (unreleased)
+
+C<0> is now dumped as such, not as C<'0'>.
+
+qr// objects are now dumped correctly (provided a post-5.005_58)
+overload.pm exists).
+
+Implemented $Data::Dumper::Maxdepth, which was on the Todo list.
+Thanks to John Nolan <jpnolan@Op.Net>.
+
+=item 2.101 (30 Apr 1999)
+
+Minor release to sync with version in 5.005_03.  Fixes dump of
+dummy coderefs.
+
+=item 2.10  (31 Oct 1998)
+
+Bugfixes for dumping related undef values, globs, and better double
+quoting: three patches suggested by Gisle Aas <gisle@aas.no>.
+
+Escaping of single quotes in the XS version could get tripped up
+by the presence of nulls in the string.  Fix suggested by
+Slaven Rezic <eserte@cs.tu-berlin.de>.
+
+Rather large scale reworking of the logic in how seen values
+are stashed. Anonymous scalars that may be encountered while
+traversing the structure are properly tracked, in case they become
+used in data dumped in a later pass.  There used to be a problem
+with the previous logic that prevented such structures from being
+dumped correctly.
+
+Various additions to the testsuite.
+
+=item 2.09  (9 July 1998)
+
+Implement $Data::Dumper::Bless, suggested by Mark Daku <daku@nortel.ca>.
+
+=item 2.081  (15 January 1998)
+
+Minor release to fix Makefile.PL not accepting MakeMaker args.
+
+=item 2.08  (7 December 1997)
+
+Glob dumps don't output superflous 'undef' anymore.
+
+Fixes from Gisle Aas <gisle@aas.no> to make Dumper() work with
+overloaded strings in recent perls, and his new testsuite.
+
+require 5.004.
+
+A separate flag to always quote hash keys (on by default).
+
+Recreating known CODE refs is now better supported.
+
+Changed flawed constant SCALAR bless workaround.
+
+=item 2.07  (7 December 1996)
+
+Dumpxs output is now exactly the same as Dump.  It still doesn't
+honor C<Useqq> though.
+
+Regression tests test for identical output and C<eval>-ability.
+
+Bug in *GLOB{THING} output fixed.
+
+Other small enhancements.
+
+=item 2.06  (2 December 1996)
+
+Bugfix that was serious enough for new release--the bug cripples
+MLDBM.  Problem was "Attempt to modify readonly value..." failures
+that stemmed for a misguided SvPV_force() instead of a SvPV().)
+
+=item 2.05  (2 December 1996)
+
+Fixed the type mismatch that was causing Dumpxs test to fail
+on 64-bit platforms.
+
+GLOB elements are dumped now when C<Purity> is set (using the
+*GLOB{THING} syntax).
+
+The C<Freezer> option can be set to a method name to call
+before probing objects for dumping.  Some applications: objects with
+external data, can re-bless themselves into a transitional package;
+Objects the maintain ephemeral state (like open files) can put
+additional information in the object to facilitate persistence.
+
+The corresponding C<Toaster> option, if set, specifies
+the method call that will revive the frozen object.
+
+The C<Deepcopy> flag has been added to do just that.
+
+Dumper does more aggressive cataloging of SCALARs encountered
+within ARRAY/HASH structures. Thanks to Norman Gaywood 
+<norm@godel.une.edu.au> for reporting the problem.
+
+Objects that C<overload> the '""' operator are now handled
+properly by the C<Dump> method.
+
+Significant additions to the testsuite.
+
+More documentation.
+
+=item 2.04beta  (28 August 1996)
+
+Made dump of glob names respect C<Useqq> setting.
+
+[@$%] are now escaped now when in double quotes.
+
+=item 2.03beta  (26 August 1996)
+
+Fixed Dumpxs.  It was appending trailing nulls to globnames.
+(reported by Randal Schwartz <merlyn@teleport.com>).
+
+Calling the C<Indent()> method on a dumper object now correctly
+resets the internal separator (reported by Curt Tilmes
+<curt@ltpmail.gsfc.nasa.gov>).
+
+New C<Terse> option to suppress the 'C<VARI<n> = >' prefix 
+introduced.  If the option is set, they are output only when
+absolutely essential.
+
+The C<Useqq> flag is supported (but not by the XSUB version
+yet).
+
+Embedded nulls in keys are now handled properly by Dumpxs.
+
+Dumper.xs now use various integer types in perl.h (should
+make it compile without noises on 64 bit platforms, although
+I haven't been able to test this).
+
+All the dump methods now return a list of strings in a list
+context.
+
+
+=item 2.02beta  (13 April 1996)
+
+Non portable sprintf usage in XS code fixed (thanks to 
+Ulrich Pfeifer <pfeifer@charly.informatik.uni-dortmund.de>).
+
+
+=item 2.01beta  (10 April 1996)
+
+Minor bugfix (single digit numbers were always getting quoted).
+
+
+=item 2.00beta  (9 April 1996)
+
+C<Dumpxs> is now the exact XSUB equivalent of C<Dump>.  The XS version
+is 4-5 times faster.
+
+C<require 5.002>.
+
+MLDBM example removed (as its own module, it has a separate CPAN 
+reality now).
+
+Fixed bugs in handling keys with wierd characters.  Perl can be
+tripped up in its implicit quoting of the word before '=>'.  The
+fix: C<Data::Dumper::Purity>, when set, always triggers quotes
+around hash keys.
+
+Andreas Koenig <k@anna.in-berlin.de> pointed out that handling octals
+is busted.  His patch added.
+
+Dead code removed, other minor documentation fixes.
+
+
+=item 1.23      (3 Dec 1995)
+
+MLDBM example added.
+
+Several folks pointed out that quoting of ticks and backslashes 
+in strings is missing. Added.
+
+Ian Phillipps <ian@pipex.net> pointed out that numerics may lose 
+precision without quotes.  Fixed.
+
+
+=item 1.21     (20 Nov 1995)
+
+Last stable version I can remember.
+
+=back
+
+=cut
