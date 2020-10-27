@@ -1,0 +1,28 @@
+CHECKLIST FOR NEW RELEASES
+==========================
+
+Release steps:
+- Check out lm-sensors
+- Update if necessary, the version number of libsensors
+  (edit lib/Module.mk and change LIBMAINVER and/or LIBMINORVER)
+  Remember: update main number when interface changes, minor if new
+  functionality is added, and patch if only bugs are fixed.
+- Update the CHANGES file (set version and release date)
+- Update doc/developers/lm_sensors.lsm (Version, Entered-date and Primary-site)
+- Update doc/libsensors-API.txt and SENSORS_API_VERSION in lib/sensors.h
+- grep for LM_VERSION and update values of the constants
+- Commit
+- Tag the release using git:
+  git tag V3-x-x
+  git push origin V3-x-x
+
+After release, remember to:
+- Update the Download page on https://hwmon.wiki.kernel.org/download - use
+  a URL in the following format:
+  https://github.com/lm-sensors/lm-sensors/archive/V3-x-x/lm-sensors-3-x-x.tar.gz
+- Add a news item to https://hwmon.wiki.kernel.org/lm_sensors
+- Announce on the lm-sensors mailing list
+- grep for LM_VERSION and add "+git" to the values of the constants
+- Commit
+- Send lm_sensors.lsm to the LSM by mailing it to lsm@qqx.org with the
+  subject `add' (no quotes)
