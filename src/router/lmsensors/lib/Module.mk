@@ -118,7 +118,7 @@ user :: all-lib
 # Note that some ld.so's put /usr/lib and /lib first, others put them last,
 # so we can't make any assumptions.
 install-lib: all-lib
-	$(MKDIR) $(DESTDIR)$(LIBDIR) $(DESTDIR)$(LIBINCLUDEDIR) $(DESTDIR)$(LIBMAN3DIR) $(DESTDIR)$(LIBMAN5DIR)
+	$(MKDIR) $(DESTDIR)$(LIBDIR)
 	@if [ -z "$(DESTDIR)" -a ! -e "$(LIBDIR)/$(LIBSHSONAME)" ] ; then \
 	     echo '******************************************************************************' ; \
 	     echo 'Warning: This is the first installation of the $(LIBSHSONAME)*' ; \
@@ -150,10 +150,10 @@ endif
 		  echo '         Add it and run /sbin/ldconfig for the userspace tools to work.' ; \
 		  echo '******************************************************************************' ) ; \
 	fi
-	$(INSTALL) -m 644 $(LIBHEADERFILES) $(DESTDIR)$(LIBINCLUDEDIR)
-	$(INSTALL) -m 644 $(LIBMAN3FILES) $(DESTDIR)$(LIBMAN3DIR)
-	$(INSTALL) -m 644 $(LIBMAN5FILES) $(DESTDIR)$(LIBMAN5DIR)
-	$(LN) sensors.conf.5 $(DESTDIR)$(LIBMAN5DIR)/sensors3.conf.5
+#	$(INSTALL) -m 644 $(LIBHEADERFILES) $(DESTDIR)$(LIBINCLUDEDIR)
+#	$(INSTALL) -m 644 $(LIBMAN3FILES) $(DESTDIR)$(LIBMAN3DIR)
+#	$(INSTALL) -m 644 $(LIBMAN5FILES) $(DESTDIR)$(LIBMAN5DIR)
+#	$(LN) sensors.conf.5 $(DESTDIR)$(LIBMAN5DIR)/sensors3.conf.5
 
 
 user_install :: install-lib

@@ -46,9 +46,9 @@ all-prog-sensors: $(PROGSENSORSTARGETS)
 user :: all-prog-sensors
 
 install-prog-sensors: all-prog-sensors
-	$(MKDIR) $(DESTDIR)$(BINDIR) $(DESTDIR)$(PROGSENSORSMAN1DIR)
+	$(MKDIR) $(DESTDIR)$(BINDIR)
 	$(INSTALL) -m 755 $(PROGSENSORSTARGETS) $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 644 $(PROGSENSORSMAN1FILES) $(DESTDIR)$(PROGSENSORSMAN1DIR)
+#	$(INSTALL) -m 644 $(PROGSENSORSMAN1FILES) $(DESTDIR)$(PROGSENSORSMAN1DIR)
 user_install :: install-prog-sensors
 
 user_uninstall::

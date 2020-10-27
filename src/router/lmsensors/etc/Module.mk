@@ -32,8 +32,6 @@ install-etc:
 	     -a ! -e $(DESTDIR)$(ETCDIR)/modprobe.d/lm_sensors.conf ] ; then \
 	  $(MV) $(DESTDIR)$(ETCDIR)/modprobe.d/lm_sensors $(DESTDIR)$(ETCDIR)/modprobe.d/lm_sensors.conf ; \
 	fi
-	$(MKDIR) $(DESTDIR)$(MANDIR)/man8
-	$(INSTALL) -m 644 $(ETC_DIR)/sensors-conf-convert.8 $(DESTDIR)$(MANDIR)/man8
 
 user_install :: install-etc
 

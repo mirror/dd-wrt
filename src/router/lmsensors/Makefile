@@ -39,13 +39,13 @@ DEBUG := 0
 
 # If you want to install at some other place then at from which you will run
 # everything, set DESTDIR to the extra prefix.
-DESTDIR :=
+DESTDIR := $(INSTALLDIR)
 
 # This is the prefix that will be used for almost all directories below.
-PREFIX := /usr/local
+PREFIX := /usr
 
 # Your C compiler
-CC := gcc
+#CC := gcc
 
 # This is the directory where sensors3.conf will be installed, if no other
 # configuration file is found
@@ -83,11 +83,11 @@ ARCH := $(firstword $(subst -, ,$(shell $(CC) -dumpmachine)))
 #PROG_EXTRA := sensord
 
 # Build and install static library
-BUILD_STATIC_LIB := 1
+#BUILD_STATIC_LIB :=
 
 # Set these to add preprocessor or compiler flags, or use
 # environment variables
-# CFLAGS :=
+CFLAGS := $(COPTS) -DNEED_PRINTF
 # CPPFLAGS :=
 
 ##################################################

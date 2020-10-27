@@ -49,9 +49,8 @@ $(MODULE_DIR)/isaset: $(MODULE_DIR)/isaset.ro $(MODULE_DIR)/util.ro
 	$(CC) $(EXLDFLAGS) -o $@ $^
 
 install-prog-dump: all-prog-dump
-	$(MKDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(PROGDUMPMAN8DIR)
+	$(MKDIR) $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -m 755 $(PROGDUMPBININSTALL) $(DESTDIR)$(SBINDIR)
-	$(INSTALL) -m 644 $(PROGDUMPMAN8FILES) $(DESTDIR)$(PROGDUMPMAN8DIR)
 user_install :: install-prog-dump
 
 user_uninstall::
