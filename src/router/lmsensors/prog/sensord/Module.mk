@@ -48,9 +48,8 @@ all-prog-sensord: $(PROGSENSORDTARGETS)
 user :: all-prog-sensord
 
 install-prog-sensord: all-prog-sensord
-	$(MKDIR) $(DESTDIR)$(SBINDIR) $(DESTDIR)$(PROGSENSORDMAN8DIR)
+	$(MKDIR) $(DESTDIR)$(SBINDIR)
 	$(INSTALL) -m 755 $(PROGSENSORDTARGETS) $(DESTDIR)$(SBINDIR)
-	$(INSTALL) -m 644 $(PROGSENSORDMAN8FILES) $(DESTDIR)$(PROGSENSORDMAN8DIR)
 user_install :: install-prog-sensord
 
 user_uninstall::
