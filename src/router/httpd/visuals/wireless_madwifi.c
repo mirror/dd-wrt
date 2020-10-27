@@ -381,7 +381,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		int rawack;
 		fscanf(fp, "%d", &rawack);
 		fclose(fp);
-		int hwdelay = 21;
+		int hwdelay = 20;
 		if (nvram_nmatch("10", "%s_channelbw"))
 			hwdelay *= 2;
 		if (nvram_nmatch("5", "%s_channelbw"))
@@ -393,7 +393,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		if (hwdelay >= rawack)
 			ack = rawack - hwdelay;	// hw delay
 		else
-			ack = rawack - 21;	//fallback
+			ack = rawack - 20;	//fallback
 		distance = (300 * ack) / 2;
 	} else if (is_mac80211(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
