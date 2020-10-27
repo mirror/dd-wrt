@@ -382,11 +382,11 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		fscanf(fp, "%d", &rawack);
 		fclose(fp);
 		int hwdelay = 20;
-		if (nvram_nmatch("10", "%s_channelbw"))
+		if (nvram_nmatch("10", "%s_channelbw", ifn))
 			hwdelay *= 2;
-		if (nvram_nmatch("5", "%s_channelbw"))
+		if (nvram_nmatch("5", "%s_channelbw", ifn))
 			hwdelay *= 4;
-		if (nvram_nmatch("2", "%s_channelbw"))
+		if (nvram_nmatch("2", "%s_channelbw", ifn))
 			hwdelay *= 8;
 		// fw contains a internal tolerance value which is added, we consider it for accurate measurement
 		hwdelay += 3;
