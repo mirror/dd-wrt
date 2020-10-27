@@ -181,7 +181,7 @@ static inline void superio_exit(int ioreg)
 static bool update_vbat;
 
 /* Not all BIOSes properly configure the PWM registers */
-static bool fix_pwm_polarity;
+static bool fix_pwm_polarity = 1;
 
 /* Many IT87 constants specified below */
 
@@ -3176,9 +3176,6 @@ MODULE_AUTHOR("Chris Gauthron, Jean Delvare <jdelvare@suse.de>");
 MODULE_DESCRIPTION("IT8705F/IT871xF/IT872xF hardware monitoring driver");
 module_param(update_vbat, bool, 0);
 MODULE_PARM_DESC(update_vbat, "Update vbat if set else return powerup value");
-module_param(fix_pwm_polarity, bool, 0);
-MODULE_PARM_DESC(fix_pwm_polarity,
-		 "Force PWM polarity to active high (DANGEROUS)");
 MODULE_LICENSE("GPL");
 
 module_init(sm_it87_init);
