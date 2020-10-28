@@ -1,0 +1,119 @@
+=encoding utf8
+
+=head1 NAME
+
+release_schedule - Perl 5 release schedule
+
+=head1 STABLE RELEASE SCHEDULE
+
+This schedule lists the projected or historical development and
+release schedules for the next, current and previous stable versions
+of Perl.  Dates with two or more question marks will only be releases if
+deemed necessary by the Pumpking.
+
+=head2 Perl 5.30
+
+Code freezes (which happen in the 5.29.X series)
+
+  2019-02-20  5.29.8          Contentious changes freeze
+  2019-03-20  5.29.9          User-visible changes to correctly
+                              functioning programs freeze
+  2019-04-20  5.29.10         Full code freeze
+  2019-05-20  5.30.0          Stable release!
+
+=head2 Perl 5.28
+
+  2018-05-20  5.28.0 ✓        Sawyer X
+
+=head2 Perl 5.26
+
+  2017-05-30  5.26.0 ✓        Sawyer X
+  2017-09-22  5.26.1 ✓        Steve Hay
+  2018-04-14  5.26.2 ✓        Steve Hay
+
+=head2 Perl 5.24
+
+  2016-05-09  5.24.0 ✓        Ricardo Signes
+  2017-01-14  5.24.1 ✓        Steve Hay
+  2017-07-15  5.24.2 ✓        Steve Hay
+  2017-09-22  5.24.3 ✓        Steve Hay
+  2018-04-14  5.24.4 ✓        Steve Hay
+
+=head2 Perl 5.22
+
+  2015-06-01  5.22.0 ✓        Ricardo Signes
+  2015-12-13  5.22.1 ✓        Steve Hay
+  2016-04-29  5.22.2 ✓        Steve Hay
+  2017-01-14  5.22.3 ✓        Steve Hay
+  2017-07-15  5.22.4 ✓        Steve Hay
+
+=head1 DEVELOPMENT RELEASE SCHEDULE
+
+This schedule lists the release engineers for at least the next
+four months of releases of bleadperl. If there are fewer than
+four months listed as you make a release, it's important
+that you extend the schedule AND B<identify the next release engineer>.
+
+Before adding a release engineer, you B<must> contact them and they
+B<must> consent to ship the release.
+
+When shipping a release, you should include the schedule for (at least)
+the next four releases. If a stable version of Perl is released,
+you should reset the version numbers to the next blead series.
+
+=head2 Perl 5.29
+
+  2018-06-26  5.29.0 ✓        Sawyer X
+  2018-07-20  5.29.1 ✓        Steve Hay
+  2018-08-20  5.29.2 ✓        Chris BinGOs Williams
+  2018-09-20  5.29.3 ✓        John Anderson (genehack)
+  2018-10-20  5.29.4 ✓        Aaron Crane
+  2018-11-20  5.29.5          Karen Etheridge (ether)
+  2018-12-20  5.29.6          Abigail
+  2019-01-20  5.29.7          Abigail
+  2019-02-20  5.29.8
+  2019-03-20  5.29.9
+  2019-04-20  5.29.10
+
+(RC0 for 5.30.0 will be released once we think that all the blockers have been
+addressed.  This typically means some time in April or May.)
+
+=head1 VICTIMS
+
+The following porters have all consented to do at least
+one release of bleadperl.  If you can't do a release
+and can't find a substitute amongst this list, mail p5p.
+
+(Please do not add any names to this list without prior
+consent of the Pumpking.)
+
+  Abigail <abigail@abigail.be>
+  Aristotle Pagaltzis <pagaltzis@gmx.de>
+  Ask Bjørn Hansen <ask@perl.org>
+  Chris Williams <bingos@cpan.org>
+  Dave Cross <dave@perlhacks.com>
+  Dave Rolsky <autarch@urth.org>
+  David Golden <dagolden@cpan.org>
+  Florian Ragwitz <rafl@debian.org>
+  Jesse Luehrs <doy@cpan.org>
+  Jesse Vincent <jesse@cpan.org>
+  Leon Brocard <acme@astray.com>
+  Matt Trout <mst@shadowcat.co.uk>
+  Matthew Horsfall <wolfsage@gmail.com>
+  Max Maischein <corion@cpan.org>
+  Peter Martini <petercmartini@gmail.com>
+  Philippe Bruhat <book@cpan.org>
+  Ricardo Signes <rjbs@cpan.org>
+  Stevan Little <stevan@cpan.org>
+  Steve Hay <steve.m.hay@googlemail.com>
+  Tatsuhiko Miyagawa <miyagawa@bulknews.net>
+  Tony Cook <tony@develop-help.com>
+  Yves Orton <demerphq@gmail.com>
+  Zefram <zefram@fysh.org>
+  Ævar Arnfjörð Bjarmason <avar@cpan.org>
+
+=head1 AUTHOR
+
+Jesse Vincent <jesse@cpan.org>
+
+=cut
