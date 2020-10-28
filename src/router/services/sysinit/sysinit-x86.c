@@ -119,7 +119,6 @@ void start_sysinit(void)
 	}
 	if (!insmod("da9052_wdt")) {
 	} else if (!insmod("da9062_wdt")) {
-	} else if (!insmod("iTCO_vendor_support")) {
 	} else if (!insmod("it8712f_wdt")) {
 	} else if (!insmod("max63xx_wdt")) {
 	} else if (!insmod("scx200_wdt")) {
@@ -128,13 +127,14 @@ void start_sysinit(void)
 	} else if (!insmod("da9055_wdt")) {
 	} else if (!insmod("da9063_wdt")) {
 	} else if (!insmod("iTCO_wdt")) {
+	} else if (!insmod("iTCO_vendor_support")) {
 	} else if (!insmod("it87_wdt")) {
 	} else if (!insmod("max77620_wdt")) {
 	} else if (!insmod("w83627hf_wdt")) {
 	} else if (!insmod("w83977f_wdt")) {
 	} else
 		insmod("softdog");
-		
+
 	if (!nvram_matchi("disable_watchdog", 1)) {
 	} else
 		eval("watchdog");	// system watchdog
@@ -167,61 +167,143 @@ void start_sysinit(void)
 	insmod("input-polldev");
 	insmod("hwmon-vid");
 
-	insmod("abituguru");
-	insmod("abituguru3");
-	insmod("ad7314");
-	insmod("ad7418");
-	insmod("adm1021");
-	insmod("adm1025");
-	insmod("adm1026");
-	insmod("adm1029");
-	insmod("adm1031");
-	insmod("adm9240");
-	insmod("applesmc");
-	insmod("asb100");
-	insmod("atxp1");
-	insmod("coretemp");
-	insmod("dme1737");
-	insmod("ds1621");
-	insmod("f71805f");
-	insmod("fam15h_power");
-	insmod("gl518sm");
-	insmod("gl520sm");
-	insmod("it87");
-	insmod("k10temp");
-	insmod("k8temp");
-	insmod("lm63");
-	insmod("lm75");
-	insmod("lm77");
-	insmod("lm78");
-	insmod("lm80");
-	insmod("lm83");
-	insmod("lm85");
-	insmod("lm87");
-	insmod("lm90");
-	insmod("lm92");
-	insmod("lm93");
-	insmod("max1619");
-	insmod("max1668");
-	insmod("max6650");
-	insmod("pc87360");
-	insmod("pc87427");
-	insmod("pcf8591");
-	insmod("sis5595");
-	insmod("smsc47b397");
-	insmod("smsc47m1");
-	insmod("smsc47m192");
-	insmod("thmc50");
-	insmod("via686a");
-	insmod("vt1211");
-	insmod("vt8231");
-	insmod("w83627ehf");
-	insmod("w83627hf");
-	insmod("w83781d");
-	insmod("w83791d");
-	insmod("w83792d");
-	insmod("w83793");
-	insmod("w83l785ts");
+	modprobe("abituguru");
+	modprobe("abituguru3");
+	modprobe("ad7314");
+	modprobe("ad7414");
+	modprobe("ad7418");
+	modprobe("adc128d818");
+	modprobe("adcxx");
+	modprobe("adm1021");
+	modprobe("adm1025");
+	modprobe("adm1026");
+	modprobe("adm1029");
+	modprobe("adm1031");
+	modprobe("adm9240");
+	modprobe("ads1015");
+	modprobe("ads7828");
+	modprobe("ads7871");
+	modprobe("adt7310");
+	modprobe("adt7410");
+	modprobe("adt7411");
+	modprobe("adt7462");
+	modprobe("adt7470");
+	modprobe("adt7475");
+	modprobe("adt7x10");
+	modprobe("amc6821");
+	modprobe("applesmc");
+	modprobe("asb100");
+	modprobe("asc7621");
+	modprobe("atxp1");
+	modprobe("coretemp");
+	modprobe("da9052-hwmon");
+	modprobe("da9055-hwmon");
+	modprobe("dme1737");
+	modprobe("ds1621");
+	modprobe("ds620");
+	modprobe("emc1403");
+	modprobe("emc2103");
+	modprobe("emc6w201");
+	modprobe("f71805f");
+	modprobe("f71882fg");
+	modprobe("f75375s");
+	modprobe("fam15h_power");
+	modprobe("fschmd");
+	modprobe("ftsteutates");
+	modprobe("g760a");
+	modprobe("g761");
+	modprobe("g762");
+	modprobe("gl518sm");
+	modprobe("gl520sm");
+	modprobe("gpio-fan");
+	modprobe("hih6130");
+	modprobe("hwmon-vid");
+	modprobe("i5500_temp");
+	modprobe("i5k_amb");
+	modprobe("ina209");
+	modprobe("ina2xx");
+	modprobe("ina3221");
+	modprobe("it87");
+	modprobe("jc42");
+	modprobe("k10temp");
+	modprobe("k8temp");
+	modprobe("lineage-pem");
+	modprobe("lm63");
+	modprobe("lm70");
+	modprobe("lm73");
+	modprobe("lm75");
+	modprobe("lm77");
+	modprobe("lm78");
+	modprobe("lm80");
+	modprobe("lm83");
+	modprobe("lm85");
+	modprobe("lm87");
+	modprobe("lm90");
+	modprobe("lm92");
+	modprobe("lm93");
+	modprobe("lm95234");
+	modprobe("lm95241");
+	modprobe("lm95245");
+	modprobe("ltc2945");
+	modprobe("ltc2990");
+	modprobe("ltc4151");
+	modprobe("ltc4215");
+	modprobe("ltc4222");
+	modprobe("ltc4245");
+	modprobe("ltc4260");
+	modprobe("ltc4261");
+	modprobe("max1111");
+	modprobe("max16065");
+	modprobe("max1619");
+	modprobe("max1668");
+	modprobe("max197");
+	modprobe("max31722");
+	modprobe("max31790");
+	modprobe("max6639");
+	modprobe("max6642");
+	modprobe("max6650");
+	modprobe("max6697");
+	modprobe("mcp3021");
+	modprobe("nct6683");
+	modprobe("nct6775");
+	modprobe("nct7802");
+	modprobe("nct7904");
+	modprobe("ntc_thermistor");
+	modprobe("pc87360");
+	modprobe("pc87427");
+	modprobe("pcf8591");
+	modprobe("powr1220");
+	modprobe("sch5627");
+	modprobe("sch5636");
+	modprobe("sch56xx-common");
+	modprobe("sht15");
+	modprobe("sht21");
+	modprobe("sht3x");
+	modprobe("shtc1");
+	modprobe("sis5595");
+	modprobe("smm665");
+	modprobe("smsc47b397");
+	modprobe("smsc47m1");
+	modprobe("smsc47m192");
+	modprobe("tc74");
+	modprobe("thmc50");
+	modprobe("tmp102");
+	modprobe("tmp103");
+	modprobe("tmp401");
+	modprobe("tmp421");
+	modprobe("via-cputemp");
+	modprobe("via686a");
+	modprobe("vt1211");
+	modprobe("vt8231");
+	modprobe("w83627ehf");
+	modprobe("w83627hf");
+	modprobe("w83781d");
+	modprobe("w83791d");
+	modprobe("w83792d");
+	modprobe("w83793");
+	modprobe("w83795");
+	modprobe("w83l785ts");
+	modprobe("w83l786ng");
 
 	detect_ethernet_devices();
 	eval("ifconfig", "eth0", "0.0.0.0", "up");
