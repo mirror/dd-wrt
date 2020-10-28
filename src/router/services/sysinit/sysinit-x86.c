@@ -117,8 +117,26 @@ void start_sysinit(void)
 	} else {
 		fclose(in);
 	}
-
-	if (!nvram_matchi("disable_watchdog", 1))
+	if (!insmod("da9052_wdt")) {
+	} else if (!insmod("da9062_wdt")) {
+	} else if (!insmod("iTCO_vendor_support")) {
+	} else if (!insmod("it8712f_wdt")) {
+	} else if (!insmod("max63xx_wdt")) {
+	} else if (!insmod("scx200_wdt")) {
+	} else if (!insmod("via_wdt")) {
+	} else if (!insmod("w83877f_wdt")) {
+	} else if (!insmod("da9055_wdt")) {
+	} else if (!insmod("da9063_wdt")) {
+	} else if (!insmod("iTCO_wdt")) {
+	} else if (!insmod("it87_wdt")) {
+	} else if (!insmod("max77620_wdt")) {
+	} else if (!insmod("w83627hf_wdt")) {
+	} else if (!insmod("w83977f_wdt")) {
+	} else
+		insmod("softdog");
+		
+	if (!nvram_matchi("disable_watchdog", 1)) {
+	} else
 		eval("watchdog");	// system watchdog
 #ifdef HAVE_ERC
 	if (isregistered_real() && nvram_matchi("ree_resetme", 1)) {
