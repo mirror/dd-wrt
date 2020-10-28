@@ -1422,7 +1422,7 @@ __setup("acpi_no_auto_serialize", acpi_no_auto_serialize_setup);
 #define ENFORCE_RESOURCES_LAX    1
 #define ENFORCE_RESOURCES_NO     0
 
-static unsigned int acpi_enforce_resources = ENFORCE_RESOURCES_STRICT;
+static unsigned int acpi_enforce_resources = ENFORCE_RESOURCES_LAX;
 
 static int __init acpi_enforce_resources_setup(char *str)
 {
