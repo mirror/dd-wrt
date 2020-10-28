@@ -275,6 +275,13 @@ int ksmbd_smb1_check_message(struct ksmbd_work *work)
 		if (command == SMB_COM_WRITE_ANDX)
 			return 0;
 
+		if (len > clc_len) {
+			ksmbd_debug(SMB,
+				"cli req too long, len %d not %d. cmd:%x\n",
+				len, clc_len, command);
+			return 0;
+		}
+
 		ksmbd_err("cli req too short, len %d not %d. cmd:%x\n",
 			len, clc_len, command);
 

@@ -140,6 +140,8 @@ script:
  - sudo ./check generic/028
  - sudo ./check generic/029
  - sudo ./check generic/030
+ - sudo ./check generic/032
+ - sudo ./check generic/033
  - sudo ./check generic/036
  - sudo ./check generic/037
  - sed -e s/3000000/30000/ tests/generic/069 > tests/generic/069.new
@@ -151,15 +153,16 @@ script:
  - sed -e s/numloops=10/numloops=2/ -e s/numfiles=5/numfiles=2/ -e s/numchildren=3/numchildren=2/ tests/generic/074 > tests/generic/074.new
  - mv tests/generic/074.new tests/generic/074
  - sudo ./check generic/074
- - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/075 > tests/generic/075.new
- - mv tests/generic/075.new tests/generic/075
+# - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/075 > tests/generic/075.new
+# - mv tests/generic/075.new tests/generic/075
 # - sudo ./check generic/075
  - sudo ./check generic/080
  - sudo ./check generic/084
- - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091 > tests/generic/091.new
- - mv tests/generic/091.new tests/generic/091
- - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091.out > tests/generic/091.out.new
- - mv tests/generic/091.out.new tests/generic/091.out
+ - sudo ./check generic/086
+# - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091 > tests/generic/091.new
+# - mv tests/generic/091.new tests/generic/091
+# - sed -e "s/-N 10000/-N 900/" -e "s/-l 500000/-l 5000/" tests/generic/091.out > tests/generic/091.out.new
+# - mv tests/generic/091.out.new tests/generic/091.out
 # - sudo ./check generic/091
  - sudo ./check generic/095
  - sudo ./check generic/098
@@ -167,8 +170,8 @@ script:
  - mv tests/generic/100.new tests/generic/100
  - sudo ./check generic/100
  - sudo ./check generic/109
- - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/112 > tests/generic/112.new
- - mv tests/generic/112.new tests/generic/112
+# - sed -e "s/expr 10/expr 5/" -e "s/numops1=1000/numops1=100/" -e "s/numops2=10000/numops2=1000/" tests/generic/112 > tests/generic/112.new
+# - mv tests/generic/112.new tests/generic/112
 # - sudo ./check generic/112
  - sudo ./check generic/113
 # - time_wait sudo ./check generic/117 (timeover > 10m)
@@ -179,15 +182,18 @@ script:
  - mv tests/generic/129.new tests/generic/129
  - sudo ./check generic/129
  - sudo ./check generic/130
+ - sudo ./check generic/132
  - sudo ./check generic/133
  - sudo ./check generic/135
  - sudo ./check generic/141
  - sudo ./check generic/169
  - sudo ./check generic/198
  - sudo ./check generic/207
+ - sudo ./check generic/208
  - sudo ./check generic/210
  - sudo ./check generic/211
  - sudo ./check generic/212
+ - sudo ./check generic/214
  - sudo ./check generic/215
  - sudo ./check generic/221
  - sudo ./check generic/239
@@ -197,30 +203,45 @@ script:
  - sudo ./check generic/248
  - sudo ./check generic/249
  - sudo ./check generic/257
+ - sudo ./check generic/258
 # - sudo ./check generic/263 #fail, It may be ksmbd issue
- - sudo ./check generic/285 #fail, It may be cifs client issue on 4.15 kernel
+# - sudo ./check generic/285 #fail, It may be cifs client issue on 4.15 kernel
  - sed -e "s/<< 20/<< 10/g" tests/generic/286 > tests/generic/286.new
  - mv tests/generic/286.new tests/generic/286
  - sudo ./check generic/286
  - sudo ./check generic/308
  - sudo ./check generic/309
+ - sudo ./check generic/310
+ - sudo ./check generic/313
  - sudo ./check generic/315
 # - sudo ./check generic/323
- - sudo ./check generic/337
+ - sudo ./check generic/337 #check
  - sudo ./check generic/340
+ - sudo ./check generic/344
  - sudo ./check generic/345
+ - sudo ./check generic/346
+ - sudo ./check generic/349
+ - sudo ./check generic/350
  - sudo ./check generic/354
  - sudo ./check generic/360
+ - sudo ./check generic/377
+ - sudo ./check generic/391
  - sudo ./check generic/393
  - sudo ./check generic/394
  - sudo ./check generic/406
  - sudo ./check generic/412
+ - sudo ./check generic/420
+ - sudo ./check generic/422
+ - sudo ./check generic/432
+ - sudo ./check generic/433
  - sudo ./check generic/436
  - sudo ./check generic/437
 # - travis_wait sudo ./check generic/438 (timeover > 10m)
  - sudo ./check generic/445
  - sudo ./check generic/448
  - sudo ./check generic/451
+# - sudo ./check generic/452 (timeover > 10m)
+ - sudo ./check generic/454
  - sudo ./check generic/460
  - sed -e s/BLOCK_SZ=65536/BLOCK_SZ=8192/ -e s/PROC_CNT=16/PROC_CNT=4/ tests/generic/464 > tests/generic/464.new
  - mv tests/generic/464.new tests/generic/464
@@ -228,8 +249,10 @@ script:
  - sudo ./check generic/465
 # - sudo ./check generic/469
 # - time_wait sudo ./check generic/476 (timeover > 10m)
- - sudo ./check generic/490 #fail, It may be cifs client issue on 5.0 kernel
+# - sudo ./check generic/490 #fail, It may be cifs client issue on 5.0 kernel
  - sudo ./check generic/504
+ - sudo ./check generic/524
+ - sudo ./check generic/533
 #
 #
 #

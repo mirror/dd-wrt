@@ -11,6 +11,7 @@
 #include <linux/sched.h>
 #include <linux/version.h>
 
+#include "glob.h"
 #include "crypto_ctx.h"
 #include "buffer_pool.h"
 
@@ -62,10 +63,15 @@ static struct crypto_aead *alloc_aead(int id)
 		if (IS_ERR(tfm))
 		    printk(KERN_ERR "cannot alloc aead ccm(aes)\n");
 		break;
+	default:
+		ksmbd_err("Does not support encrypt ahead(id : %d)\n", id);
+		return NULL;
 	}
 
-	if (IS_ERR(tfm))
+	if (IS_ERR(tfm)) {
+		ksmbd_err("Failed to alloc encrypt aead : %ld\n", PTR_ERR(tfm));
 		return NULL;
+	}
 
 	return tfm;
 }
