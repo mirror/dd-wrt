@@ -1218,7 +1218,7 @@ int _domod(char *module, char *loader)
 			}
 		}
 		ret |= _evalpid((char *const[]) {
-				"loader", target, NULL
+				loader, target, NULL
 				}, ">/dev/null", 0, NULL);
 	}
 	return ret;
