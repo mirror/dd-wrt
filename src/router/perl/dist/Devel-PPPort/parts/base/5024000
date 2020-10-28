@@ -1,4 +1,0 @@
-5.024000
-mem_log_alloc                  # F added by devel/scanprov
-mem_log_free                   # F added by devel/scanprov
-mem_log_realloc                # F added by devel/scanprov
