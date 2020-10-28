@@ -335,7 +335,7 @@ if [ -f "$1" ]
 then
 	LoadConfig $1
 else
-	LoadConfig /etc/fancontrol
+	LoadConfig /tmp/etc/fancontrol
 fi
 
 # Detect path to sensors
