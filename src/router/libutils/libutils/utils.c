@@ -1227,12 +1227,12 @@ int _domod(char *module, char *loader)
 
 int insmod(char *module)
 {
-	return _domod(module, "insmod");{
+	return _domod(module, "insmod");
 }
 
 int modprobe(char *module)
 {
-	return _domod(module, "modprobe");{
+	return _domod(module, "modprobe");
 }
 
 void rmmod(char *module)
