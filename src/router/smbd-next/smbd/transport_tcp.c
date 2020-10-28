@@ -488,7 +488,11 @@ static int create_socket(struct interface *iface)
 	ret = sock_setsockopt(ksmbd_socket,
 			      SOL_SOCKET,
 			      SO_BINDTODEVICE,
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
 			      (char __user *)iface->name,
+#else
+			      KERNEL_SOCKPTR(iface->name),
+#endif
 			      strlen(iface->name));
 #endif
 	if (ret != -ENODEV && ret < 0) {
