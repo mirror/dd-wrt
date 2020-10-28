@@ -1364,6 +1364,7 @@ int isListed(char *listname, char *value);
 void addList(char *listname, char *value);
 int searchfor(FILE * fp, char *str, int scansize);
 int insmod(char *module);
+int modprobe(char *module);
 void rmmod(char *module);
 
 int writeint(char *path, int a);

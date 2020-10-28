@@ -1193,7 +1193,7 @@ int is_ap8x(void)
 }
 #endif
 
-int insmod(char *module)
+int _domod(char *module, char *loader)
 {
 	char word[256];
 	char check[256];
@@ -1218,10 +1218,21 @@ int insmod(char *module)
 			}
 		}
 		ret |= _evalpid((char *const[]) {
-				"insmod", target, NULL
+				"loader", target, NULL
 				}, ">/dev/null", 0, NULL);
 	}
 	return ret;
+}
+
+
+int insmod(char *module)
+{
+	return _domod(module, "insmod");{
+}
+
+int modprobe(char *module)
+{
+	return _domod(module, "modprobe");{
 }
 
 void rmmod(char *module)
