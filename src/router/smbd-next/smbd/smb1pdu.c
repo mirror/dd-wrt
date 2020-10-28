@@ -159,7 +159,6 @@ int smb_allocate_rsp_buf(struct ksmbd_work *work)
 {
 	struct smb_hdr *hdr = (struct smb_hdr *)REQUEST_BUF(work);
 	unsigned char cmd = hdr->Command;
-	size_t small_sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 	size_t large_sz = work->conn->vals->max_read_size + MAX_CIFS_HDR_SIZE;
 	size_t sz = MAX_CIFS_SMALL_BUFFER_SIZE;
 
@@ -257,7 +256,8 @@ int smb_check_user_session(struct ksmbd_work *work)
 	unsigned int cmd = conn->ops->get_cmd_val(work);
 
 	work->sess = NULL;
-	if (cmd == SMB_COM_NEGOTIATE || cmd == SMB_COM_SESSION_SETUP_ANDX)
+	if (cmd == SMB_COM_NEGOTIATE || cmd == SMB_COM_SESSION_SETUP_ANDX ||
+		cmd == SMB_COM_ECHO)
 		return 0;
 
 	if (!ksmbd_conn_good(work))
@@ -879,8 +879,11 @@ int smb_handle_negotiate(struct ksmbd_work *work)
 		cpu_to_le32((time & 0xFFFFFFFF00000000) >> 32);
 	neg_rsp->ServerTimeZone = 0;
 
-	/* TODO: need to set spnego enable through smb.conf parameter */
-	conn->use_spnego = true;
+	if (((struct smb_hdr *)REQUEST_BUF(work))->Flags2 & SMBFLG2_EXT_SEC)
+		conn->use_spnego = true;
+
+	ksmbd_debug(SMB, "spnego is %s\n", conn->use_spnego ? "on" : "off");
+
 	if (conn->use_spnego == false) {
 		neg_rsp->EncryptionKeyLength = CIFS_CRYPTO_KEY_SIZE;
 		neg_rsp->ByteCount = cpu_to_le16(CIFS_CRYPTO_KEY_SIZE);
@@ -5955,6 +5958,8 @@ static int find_first(struct ksmbd_work *work)
 	int header_size;
 	unsigned int flags = LOOKUP_FOLLOW;
 
+	memset(&d_info, 0, sizeof(struct ksmbd_dir_info));
+
 	if (ksmbd_override_fsids(work)) {
 		rsp->hdr.Status.CifsError = STATUS_NO_MEMORY;
 		printk(KERN_ERR "Out of memory in %s:%d\n", __func__,__LINE__);
@@ -6030,7 +6035,6 @@ static int find_first(struct ksmbd_work *work)
 	if (params_count % 4)
 		data_alignment_offset = 4 - params_count % 4;
 
-	memset(&d_info, 0, sizeof(struct ksmbd_dir_info));
 	d_info.smb1_name = kmalloc(NAME_MAX + 1, GFP_KERNEL);
 	if (!d_info.smb1_name)
 		goto err_out;
@@ -6245,6 +6249,8 @@ static int find_next(struct ksmbd_work *work)
 	char *pathname = NULL;
 	int header_size;
 
+	memset(&d_info, 0, sizeof(struct ksmbd_dir_info));
+
 	req_params = (struct smb_com_trans2_fnext_req_params *)
 		(REQUEST_BUF(work) + le16_to_cpu(req->ParameterOffset) + 4);
 	sid = req_params->SearchHandle;
@@ -6290,7 +6296,6 @@ static int find_next(struct ksmbd_work *work)
 	if (params_count % 4)
 		data_alignment_offset = 4 - params_count % 4;
 
-	memset(&d_info, 0, sizeof(struct ksmbd_dir_info));
 	d_info.smb1_name = kmalloc(NAME_MAX + 1, GFP_KERNEL);
 	if (!d_info.smb1_name)
 		goto err_out;
@@ -6442,7 +6447,6 @@ err_out:
 		rsp->hdr.Status.CifsError =
 			STATUS_UNEXPECTED_IO_ERROR;
 
-	ksmbd_fd_put(work, dir_fp);
 	kfree(d_info.smb1_name);
 	kfree(pathname);
 	return 0;
@@ -7156,17 +7160,17 @@ static int smb_fileinfo_rename(struct ksmbd_work *work)
 	char *newname;
 	int rc = 0;
 
+	req = (struct smb_com_trans2_sfi_req *)REQUEST_BUF(work);
+	rsp = (struct smb_com_trans2_sfi_rsp *)RESPONSE_BUF(work);
+	info =  (struct set_file_rename *)
+		(((char *) &req->hdr.Protocol) + le16_to_cpu(req->DataOffset));
+
 	if (!test_tree_conn_flag(work->tcon, KSMBD_TREE_CONN_FLAG_WRITABLE)) {
 		ksmbd_debug(SMB,
 			"returning as user does not have permission to write\n");
 		rsp->hdr.Status.CifsError = STATUS_ACCESS_DENIED;
 		return -EACCES;
 	}
-
-	req = (struct smb_com_trans2_sfi_req *)REQUEST_BUF(work);
-	rsp = (struct smb_com_trans2_sfi_rsp *)RESPONSE_BUF(work);
-	info =  (struct set_file_rename *)
-		(((char *) &req->hdr.Protocol) + le16_to_cpu(req->DataOffset));
 
 	fp = ksmbd_lookup_fd_fast(work, req->Fid);
 	if (!fp) {
