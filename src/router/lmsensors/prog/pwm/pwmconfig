@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # pwmconfig
 # Tests the pwm outputs of sensors and configures fancontrol

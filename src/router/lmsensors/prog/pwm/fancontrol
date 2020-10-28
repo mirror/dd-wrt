@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Simple script implementing a temperature dependent fan speed control
 # Supported Linux kernel versions: 2.6.5 and later
