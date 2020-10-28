@@ -1,3 +1,0 @@
-5.031002
-G_RETHROW                      # E
-Perl_my_mkostemp_cloexec       # F added by devel/scanprov
