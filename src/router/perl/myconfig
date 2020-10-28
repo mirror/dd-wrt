@@ -1,0 +1,74 @@
+#!/bin/sh
+
+# This script is designed to provide a handy summary of the configuration
+# information being used to build perl. This is especially useful if you
+# are requesting help online or via email.
+
+# Note that the text lines /^Summary of/ .. /^\s*$/ are copied into Config.pm.
+cat <<'!NO!SUBS!'
+Summary of my perl5 (revision 5 version 28 subversion 1) configuration:
+   
+  Platform:
+    osname=linux
+    osvers=3.18.19
+    archname=i486-linux-musl
+    uname='Linux OpenWrt 3.18.19 #1 SMP Thu Jan 1 12:00:00 CEST 2015 i486 GNU/Linux'
+    config_args='-der -Dusethreads'
+    hint=recommended
+    useposix=true
+    d_sigaction=define
+    useithreads=define
+    usemultiplicity=define
+    use64bitint=undef
+    use64bitall=undef
+    uselongdouble=undef
+    usemymalloc=n
+    default_inc_excludes_dot=define
+    bincompat5005=undef
+  Compiler:
+    cc='i486-openwrt-linux-musl-gcc'
+    ccflags ='-D_REENTRANT -D_GNU_SOURCE -fwrapv -fno-strict-aliasing -pipe -fstack-protector-strong -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Os -pipe -march=pentium-mmx -fno-caller-saves -fno-plt -fhonour-copts -Wno-error=unused-but-set-variable -Wno-error=unused-result -I/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/usr/include -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/usr/include -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/include/fortify -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/include'
+    optimize='-O2'
+    cppflags='-D_REENTRANT -D_GNU_SOURCE -Os -pipe -march=pentium-mmx -fno-caller-saves -fno-plt -fhonour-copts -Wno-error=unused-but-set-variable -Wno-error=unused-result -I/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/usr/include -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/usr/include -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/include/fortify -I/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/include'
+    ccversion=''
+    gccversion='10.2.0'
+    gccosandvers=''
+    intsize=4
+    longsize=4
+    ptrsize=4
+    doublesize=8
+    byteorder=1234
+    doublekind=3
+    d_longlong=define
+    longlongsize=8
+    d_longdbl=define
+    longdblsize=8
+    longdblkind=3
+    ivtype='long'
+    ivsize=4
+    nvtype='double'
+    nvsize=8
+    Off_t='off_t'
+    lseeksize=8
+    alignbytes=8
+    prototype=define
+  Linker and Libraries:
+    ld='i486-openwrt-linux-musl-gcc'
+    ldflags ='-L/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/usr/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/usr/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/lib'
+    libpth=/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/lib /home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/usr/lib
+    libs=-lpthread -lgdbm -ldb -ldl -lm -lcrypt -lutil -lc
+    perllibs=-lpthread -ldl -lm -lcrypt -lutil -lc
+    libc=
+    so=so
+    useshrplib=true
+    libperl=libperl.so
+    gnulibc_version=''
+  Dynamic Linking:
+    dlsrc=dl_dlopen.xs
+    dlext=so
+    d_dlsymun=undef
+    ccdlflags='-fPIC -rdynamic -Wl,-rpath,/usr/lib/perl5/5.28/CORE'
+    cccdlflags='-fPIC'
+    lddlflags='-shared -L/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/usr/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/target-i386_pentium-mmx_musl/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/usr/lib -L/home/xfs/openwrt/lede/openwrt/staging_dir/toolchain-i386_pentium-mmx_gcc-10.2.0_musl/lib'
+
+!NO!SUBS!
