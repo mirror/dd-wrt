@@ -612,7 +612,7 @@ function AskPath()
 	read FCCONFIG
 	if [ "$FCCONFIG" = "" ]
 	then
-		FCCONFIG="/etc/fancontrol"
+		FCCONFIG="/tmp/etc/fancontrol"
 	fi
 }
 
