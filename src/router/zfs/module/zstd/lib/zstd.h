@@ -2109,6 +2109,7 @@ ZSTDLIB_API size_t ZSTD_insertBlock    (ZSTD_DCtx* dctx, const void* blockStart,
 
 
 #endif   /* ZSTD_H_ZSTD_STATIC_LINKING_ONLY */
+
 #if defined (__cplusplus)
 }
 #endif
