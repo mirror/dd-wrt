@@ -303,11 +303,17 @@ static inline unsigned int ip_dst_mtu_maybe_forward(const struct dst_entry *dst,
 						    bool forwarding)
 {
 	struct net *net = dev_net(dst->dev);
+	unsigned int mtu;
 
 	if (net->ipv4.sysctl_ip_fwd_use_pmtu ||
 	    dst_metric_locked(dst, RTAX_MTU) ||
 	    !forwarding)
 		return dst_mtu(dst);
+
+	/* 'forwarding = true' case should always honour route mtu */
+	mtu = dst_metric_raw(dst, RTAX_MTU);
+	if (mtu)
+		return mtu;
 
 	return min(dst->dev->mtu, IP_MAX_MTU);
 }
