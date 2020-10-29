@@ -4974,10 +4974,10 @@ command line or configuration file.</p>
 <dt><code>route_ipv6_{parm}_{n}</code></dt>
 <dd><p class="first">A set of variables which define each IPv6 route to be added, and are
 set prior to <strong>--up</strong> script execution.</p>
-<p><tt class="docutils literal">parm</tt> will be one of <code>network</code> or <code>gateway</code>
-(<code>netmask</code> is contained as <code>/nnn</code> in the
-<tt class="docutils literal">route_ipv6_network_{n}</tt>, unlike IPv4 where it is passed in a
-separate environment variable).</p>
+<p><tt class="docutils literal">parm</tt> will be one of <code>network</code>, <code>gateway</code> or
+<code>metric</code>. <tt class="docutils literal">route_ipv6_network_{n}</tt> contains <code>netmask</code>
+as <code>/nnn</code>, unlike IPv4 where it is passed in a separate environment
+variable.</p>
 <p><tt class="docutils literal">n</tt> is the OpenVPN route number, starting from 1.</p>
 <p class="last">If the network or gateway are resolvable DNS names, their IP address
 translations will be recorded rather than their names as denoted on the
