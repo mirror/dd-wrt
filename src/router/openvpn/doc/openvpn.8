@@ -5694,10 +5694,10 @@ command line or configuration file.
 A set of variables which define each IPv6 route to be added, and are
 set prior to \fB\-\-up\fP script execution.
 .sp
-\fBparm\fP will be one of \fBnetwork\fP or \fBgateway\fP
-(\fBnetmask\fP is contained as \fB/nnn\fP in the
-\fBroute_ipv6_network_{n}\fP, unlike IPv4 where it is passed in a
-separate environment variable).
+\fBparm\fP will be one of \fBnetwork\fP, \fBgateway\fP or
+\fBmetric\fP\&. \fBroute_ipv6_network_{n}\fP contains \fBnetmask\fP
+as \fB/nnn\fP, unlike IPv4 where it is passed in a separate environment
+variable.
 .sp
 \fBn\fP is the OpenVPN route number, starting from 1.
 .sp
