@@ -12,16 +12,15 @@ part1d="$3"
 part2s="$4"
 part2f="$5"
 part3s="$6"
-part4s=1
 head=16
 sect=63
-cyl=$(( ($part1s + $part2s + $part3s + $part4s) * 1024 * 1024 / ($head * $sect * 512)))
+cyl=$(( ($part1s + $part2s + $part3s) * 1024 * 1024 / ($head * $sect * 512)))
 
 #dd if=/dev/zero of="$file" bs=1M count=$(($part1s + $part2s - 1))  2>/dev/null || exit
 # create partition table
 rm -f $file
 which ptgen
-set `ptgen -o "$file" -h $head -s $sect -p ${part1s}m -p ${part2s}m -p ${part3s}m -p ${part4s}m`
+set `ptgen -o "$file" -h $head -s $sect -p ${part1s}m -p ${part2s}m -p ${part3s}m`
 
 KERNELOFFSET="$(($1 / 512))"
 KERNELSIZE="$(($2 / 512))"
