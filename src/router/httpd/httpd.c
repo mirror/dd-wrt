@@ -1559,26 +1559,38 @@ int main(int argc, char **argv)
 
 	/* Build our SSL context */
 	if (SSL_ENABLED() && do_ssl) {
+		char *cert = nvram_safe_get("https_cert");
+		char *key = nvram_safe_get("https_key");
+		char *certfile = NULL;
+		char *keyfile = NULL;
+		if (*cert) {
+			certfile = "/tmp/https_cert";
+			writenvram("https_cert", certfile);
+		}
+		if (*key) {
+			keyfile = "/tmp/https_key";
+			writenvram("https_key", keyfile);
+		}
+		if (!certfile)
+			certfile = nvram_safe_get("https_cert_file");
+		if (!*certfile)
+			certfile = CERT_FILE;
+		if (!keyfile)
+			keyfile = nvram_safe_get("https_key_file");
+		if (!*keyfile)
+			keyfile = KEY_FILE;
 #ifdef HAVE_OPENSSL
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
 		ctx = SSL_CTX_new(SSLv23_server_method());
-#ifdef HAVE_CUSTOMSSLCERT
-		if (SSL_CTX_use_certificate_file(ctx, nvram_safe_get("https_cert_file"), SSL_FILETYPE_PEM)
-#else
-		if (SSL_CTX_use_certificate_file(ctx, CERT_FILE, SSL_FILETYPE_PEM)
-#endif
+		if (SSL_CTX_use_certificate_file(ctx, certfile, SSL_FILETYPE_PEM)
 		    == 0) {
 			cprintf("Can't read %s\n", CERT_FILE);
 			ERR_print_errors_fp(stderr);
 			exit(1);
 
 		}
-#ifdef HAVE_CUSTOMSSLCERT
-		if (SSL_CTX_use_PrivateKey_file(ctx, nvram_safe_get("https_key_file"), SSL_FILETYPE_PEM)
-#else
-		if (SSL_CTX_use_PrivateKey_file(ctx, KEY_FILE, SSL_FILETYPE_PEM)
-#endif
+		if (SSL_CTX_use_PrivateKey_file(ctx, keyfile, SSL_FILETYPE_PEM)
 		    == 0) {
 			cprintf("Can't read %s\n", KEY_FILE);
 			ERR_print_errors_fp(stderr);
@@ -1599,12 +1611,12 @@ int main(int argc, char **argv)
 		bzero(&ssl, sizeof(ssl));
 		bzero(&srvcert, sizeof(x509_crt));
 		x509_crt_init(&srvcert);
-		ret = x509_crt_parse_file(&srvcert, CERT_FILE);
+		ret = x509_crt_parse_file(&srvcert, certfile);
 		if (ret != 0) {
 			printf("x509_read_crtfile failed\n");
 			exit(0);
 		}
-		ret = pk_parse_keyfile(&rsa, KEY_FILE, NULL);
+		ret = pk_parse_keyfile(&rsa, keyfile, NULL);
 		if (ret != 0) {
 			printf("x509_read_keyfile failed\n");
 			exit(0);
@@ -1613,18 +1625,9 @@ int main(int argc, char **argv)
 
 #ifdef HAVE_MATRIXSSL
 		matrixssl_init();
-#ifdef HAVE_CUSTOMSSLCERT
-		if (f_exists(nvram_safe_get("https_cert_file")) && f_exists(nvram_safe_get("https_key_file"))) {
-			if (0 != matrixSslReadKeys(&keys, nvram_safe_get("https_cert_file"), nvram_safe_get("https_key_file"), NULL, NULL)) {
-				fprintf(stderr, "Error reading or parsing %s / %s.\n", nvram_safe_get("https_cert_file"), nvram_safe_get("https_key_file"));
-			}
-		} else
-#endif
-		{
-			if (0 != matrixSslReadKeys(&keys, CERT_FILE, KEY_FILE, NULL, NULL)) {
-				fprintf(stderr, "Error reading or parsing %s.\n", KEY_FILE);
-				exit(0);
-			}
+		if (0 != matrixSslReadKeys(&keys, certfile, keyfile, NULL, NULL)) {
+			fprintf(stderr, "Error reading or parsing %s.\n", KEY_FILE);
+			exit(0);
 		}
 #endif
 	}
