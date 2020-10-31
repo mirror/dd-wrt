@@ -28,7 +28,8 @@ ROOTFSOFFSET="$(($3 / 512))"
 ROOTFSSIZE="$(($4 / 512))"
 BLOCKS="$((($KERNELSIZE / 2) - 1))"
 
-[ $# == 8 ] || {
+[ $# == 6 ] || {
+	echo $#
 	echo "gen_image.sh: wrong/old ptgen version ABORT"
 	exit 1
 }
