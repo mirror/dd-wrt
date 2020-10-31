@@ -150,6 +150,7 @@ FILE *debout;
 #define KEY_FILE "/etc/key.pem"
 #endif
 
+
 #ifdef HAVE_POLARSSL
 static int my_ciphers[] = {
 	TLS_DHE_RSA_WITH_AES_128_CBC_SHA,
@@ -1559,6 +1560,7 @@ int main(int argc, char **argv)
 
 	/* Build our SSL context */
 	if (SSL_ENABLED() && do_ssl) {
+#if defined(HAVE_OPENSSL) || defined(HAVE_MATRIXSSL) || defined(HAVE_POLARSSL)
 		char *cert = nvram_safe_get("https_cert");
 		char *key = nvram_safe_get("https_key");
 		char *certfile = NULL;
@@ -1579,6 +1581,7 @@ int main(int argc, char **argv)
 			keyfile = nvram_safe_get("https_key_file");
 		if (!*keyfile)
 			keyfile = KEY_FILE;
+#endif
 #ifdef HAVE_OPENSSL
 		SSLeay_add_ssl_algorithms();
 		SSL_load_error_strings();
