@@ -127,6 +127,7 @@
 				<option value="AES-256-CBC" <% nvram_selected("openvpn_dc1","AES-256-CBC"); %>>AES-256-CBC</option>
 				<option value="AES-192-CBC" <% nvram_selected("openvpn_dc1","AES-192-CBC"); %>>AES-192-CBC</option>
 				<option value="AES-128-CBC" <% nvram_selected("openvpn_dc1","AES-128-CBC"); %>>AES-128-CBC</option>
+				<option value="none" <% nvram_selected("openvpn_dc1","none"); %>>None</option>
 				<option value="" <% nvram_selected("openvpn_dc1",""); %>>Not set</option>
 				</select>
 			</div>
@@ -226,6 +227,11 @@
 					<input class="spaceradio" type="radio" name="openvpn_mssfix" value="1" <% nvc("openvpn_mssfix", "1"); %> /><% tran("share.enable"); %>&nbsp;
 					<input class="spaceradio" type="radio" name="openvpn_mssfix" value="0" <% nvc("openvpn_mssfix", "0"); %> /><% tran("share.disable"); %>
 				</div>
+				<div class="setting">
+					<div class="label"><% tran("service.vpnd_dh"); %></div>
+					<input class="spaceradio" type="radio" name="openvpn_dh_btn" value="1" <% nvc("openvpn_dh_btn", "1"); %> onclick="show_layer_ext(this, 'iddhpem', false)" /><% tran("share.enable"); %>&nbsp;
+					<input class="spaceradio" type="radio" name="openvpn_dh_btn" value="0" <% nvc("openvpn_dh_btn", "0"); %> onclick="show_layer_ext(this, 'iddhpem', true)" /><% tran("share.disable"); %>
+				</div>
 				<div class="setting">		
 					<div class="label"><% tran("service.vpnd_ccddef"); %></div>
 					<textarea cols="60" rows="2" id="openvpn_ccddef" name="openvpn_ccddef"> </textarea>
@@ -310,15 +316,17 @@
 			//]]>
 			</script>
 		</div>
-		<div class="setting">		
-			<div class="label"><% tran("service.vpnd_dhpem"); %></div>
-			<textarea cols="60" rows="2" id="openvpn_dh" name="openvpn_dh"> </textarea>
-			<script type="text/javascript">
-			//<![CDATA[		
-				var openvpn_dh = fix_cr( '<% nvg("openvpn_dh"); %>' );
-				document.getElementById("openvpn_dh").value = openvpn_dh;
-			//]]>
-			</script>
+		<div id="iddhpem">
+			<div class="setting">		
+				<div class="label"><% tran("service.vpnd_dhpem"); %></div>
+				<textarea cols="60" rows="2" id="openvpn_dh" name="openvpn_dh"> </textarea>
+				<script type="text/javascript">
+				//<![CDATA[		
+					var openvpn_dh = fix_cr( '<% nvg("openvpn_dh"); %>' );
+					document.getElementById("openvpn_dh").value = openvpn_dh;
+				//]]>
+				</script>
+			</div>
 		</div>
 		<div class="setting">		
 			<div class="label"><% tran("service.vpnd_config"); %></div>

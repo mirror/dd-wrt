@@ -74,6 +74,7 @@
 			<option value="AES-256-CBC" <% nvram_selected("openvpncl_dc1","AES-256-CBC"); %>>AES-256-CBC</option>
 			<option value="AES-192-CBC" <% nvram_selected("openvpncl_dc1","AES-192-CBC"); %>>AES-192-CBC</option>
 			<option value="AES-128-CBC" <% nvram_selected("openvpncl_dc1","AES-128-CBC"); %>>AES-128-CBC</option>
+			<option value="none" <% nvram_selected("openvpncl_dc1","none"); %>>None</option>
 			<option value="" <% nvram_selected("openvpncl_dc1",""); %>>Not set</option>
 			</select>
 		</div>
