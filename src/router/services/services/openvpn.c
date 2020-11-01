@@ -198,7 +198,7 @@ void start_openvpnserver(void)
 		fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		fprintf(fp, "pkcs12 /tmp/openvpn/cert.p12\n");
 	} else {
-		if (nvram_invmatch("openvpn_dh", ""))
+		if (nvram_invmatch("openvpn_dh", "") && nvram_matchi("openvpn_dh_btn", 0)) //egc use ECDH instead of PEM key
 			fprintf(fp, "dh /tmp/openvpn/dh.pem\n");
 		if (nvram_invmatch("openvpn_ca", ""))
 			fprintf(fp, "ca /tmp/openvpn/ca.crt\n");
@@ -291,6 +291,10 @@ void start_openvpnserver(void)
 				fprintf(fp, "tls-crypt /tmp/openvpn/ta.key\n");	//egc: tls_btn 1 is tls-crypt
 			else
 				fprintf(fp, "tls-auth /tmp/openvpn/ta.key 0\n");
+		}
+		//egc use ECDH instead of PEM key
+		if (nvram_matchi("openvpn_dh_btn", 1)) {
+			fprintf(fp, "dh none\n" "ecdh-curve secp384r1\n");
 		}
 		//egc: add route-up and down to .conf
 		fprintf(fp, "route-up /tmp/openvpn/route-up.sh\n");

@@ -3113,7 +3113,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpncl_fragment", "" },
 	{ "openvpncl_certtype", "0" },
 	{ "openvpncl_tuntap", "tun" },
-	{ "openvpncl_nat", "0" },
+	{ "openvpncl_nat", "1" },
 	{ "openvpncl_config", "" },
 	{ "openvpncl_tlsauth", "" },
 	{ "openvpncl_cipher", "aes-128-gcm" },
@@ -3177,6 +3177,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "openvpn_dc1", "AES-128-GCM" },
 	{ "openvpn_dc2", "AES-256-GCM" },
 	{ "openvpn_dc3", "AES-128-CBC" },
+	{ "openvpn_dh_btn", "0" },
 #endif
 #ifdef HAVE_KODATA
 	{ "newhttp_username", "bJ/GddyoJuiU2" },
