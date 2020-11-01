@@ -1576,7 +1576,7 @@ service.vpnd_startip="Pool Start-IP";
 service.vpnd_endip="Pool End-IP";
 service.vpnd_cl2cl="Klient zu Klient Verbindung erlaubt";
 service.vpnd_switch="Konfiguriere als";
-service.vpnd_dupcn="Erlaube doppelte Klienten";
+service.vpnd_dupcn="Erlaube doppelte Clients";
 service.vpnd_proxy="DHCP-Proxy Modus";
 service.vpnd_clcon="Client Verbindungsskript";
 service.vpnd_ccddef="CCD-Dir DEFAULT file";
@@ -1592,7 +1592,7 @@ service.vpn_mtu="TUN-MTU-Einstellungen";
 service.vpn_mss="TCP-MSS";
 service.vpn_compress="Nutze Kompression";
 service.vpn_tunnel="Tunnel-Protokoll";
-service.vpn_cl2cl="Erlaube Verbindung zwischen Klienten";
+service.vpn_cl2cl="Erlaube Verbindung zwischen Clients";
 service.vpn_tunnel="Tunnelprotokoll";
 service.vpn_tuntap="Tunnel-Typ";
 service.vpn_srvcert="&Ouml;ffentliches CA-Zertifikat";
@@ -1617,8 +1617,8 @@ service.vpn_dc1="Zweite Data Cipher";
 service.vpn_dc1="Dritte Data Cipher";
 
 //help container
-hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze der Form 0.0.0.0/0 erzwingen das Verwenden der Standartgateways an den Klienten. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
-hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an Klienten weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br />Ordner f&uuml;r Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
+hstatus_vpn.right1="Regelbasiertes Routing:<br /><i>IP/Netze in der Form 0.0.0.0/0 erzwingen das Verwenden das Standartgateways durch den Client. Eine Zeile pro IP/Netz!<br /><i>IP Adresse/Netzmaske:</i><br />Muss bei der Verwendung eines DHCP-Proxy angegeben werden, wenn das lokale TAP Ger&auml;t nicht &uuml;berbr&uuml;ckt ist.</i>";
+hstatus_vpn.right2="Zus&auml;tzliche Einstellungen:<br /><i>Folgender Eintrag erlaubt Routen an den Client weiterzugeben: \'push \"route IP mask gateway\"\'. Analog kann mit \'push \"dhcp-option DNS (or WINS) IP\"\' DNS/WINS Server weitergegeben werden.</i><br />Ordner f&uuml;r Klientenverbindungen:<br /><i>Falls USB oder JFFS als /jffs eingeh&auml;ngt sind, werden Skripote aus /jffs/etc/openvpn/ccd/ ausgef&uuml;hrt.</i>";
 hstatus_vpn.right3="Allgemein:<br /><i>Drei Methoden zur Authentifizierung sind verf&uuml;gbar: pkcs12 (+dh auf Server), statisch und Standardzertifikate. MSS darf nur auf einer Seite der Verbindung aktiviert werden, Fragmentierung jedoch auf beiden.</i>";
 
 //vnc.repeater
@@ -1692,7 +1692,7 @@ service.milkfish_username="Milkfish Benutzername";
 service.milkfish_password="Milkfish Kennwort";
 service.milkfish_audit="Milkfish Kontrolle";
 service.milkfish_siptrace="SIP Verfolgen";
-service.milkfish_subscribers="Lokale Teilnehmer";
+service.milkfish_subscribers="Lokale Clients";
 service.milkfish_aliases="Lokale Aliase";
 service.milkfish_dynsip="Dynamisches SIP";
 service.milkfish_status="SIP Status";
@@ -1715,7 +1715,7 @@ service.hmilkfish_right6="Der Anrufer ruft Sie unter dieser Domain zur&uuml;ck (
 service.hmilkfish_right8="Dies ist der Milkfish Community Benutzername - Die Registrierung weist ihnen yourname.homesip.net automatisch zu";
 service.hmilkfish_right10="Dies ist das Milkfish Community Forum Kennwort";
 service.hmilkfish_right12="Schaltet die einfache SIP Verfolgung auf ihren Router an oder ab";
-service.hmilkfish_right14="Lokale SIP Teilnehmer sind lokal verwaltete SIP Accounts";
+service.hmilkfish_right14="Lokale SIP Clients sind lokal verwaltete SIP Accounts";
 service.hmilkfish_right16="Lokale SIP Aliase sind SIP Weiterleitungen, &auml;hnlich zu Email Weiterleitungen. Man kann sie z.B. benutzen um alphanumerische Nutzer accounts and Numerische weiterzuleiten oder umgekehrt";
 service.hmilkfish_right18="Schaltet den dynamischen SIP (for example Homesip.net) Dienst an oder aus - Benutzername und Kennwort m&uuml;ssen angegeben werden";
 service.hmilkfish_right20="Noch nicht implementiert. Bitte leer lassen.";
@@ -2300,7 +2300,7 @@ wl_wimax.upstream="Upstream Frequenz";
 wl_wimax.width="Kanal Breite";
 wl_wimax.duplex="Duplex Modus";
 wl_wimax.mode="Betriebsmodus";
-wl_wimax.mac="Teilnehmer MAC Adress";
+wl_wimax.mac="Client MAC Adress";
 
 // ** Gpio.asp **//
 
