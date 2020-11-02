@@ -252,7 +252,10 @@ obj-$(CONFIG_RSTP) += rstp
 obj-$(CONFIG_OPENLLDP) += openlldp
 obj-$(CONFIG_WGETS) += wgets
 obj-$(CONFIG_USB) += usb disktype
-obj-$(CONFIG_USB_ADVANCED) += sdparm hdparm
+obj-$(CONFIG_USB_ADVANCED) += hdparm
+ifeq ($(CONFIG_X86),y)
+obj-$(CONFIG_USB_ADVANCED) += sdparm
+endif
 obj-$(CONFIG_ASTERISK) += editline zlib ncurses util-linux jansson asterisk
 obj-$(CONFIG_ZAPTEL) += zaptel
 obj-$(CONFIG_WAVESAT) += wavesat
