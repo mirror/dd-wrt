@@ -428,6 +428,14 @@ void configure_single_ath9k(int count)
 			// setup and join does wpa_supplicant
 			isadhoc = 1;
 		} else {
+			
+			char *freq = nvram_nget("%s_channel", dev);
+			eval("ifconfig", dev, "up");
+			const char *htmode = gethtmode(dev);
+			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
+				eval("iw","dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode); 
+			else
+				eval("iw","dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq); 
 			cprintf("handle ibss join");
 		}
 		// still TBD ;-)
@@ -479,7 +487,10 @@ void configure_single_ath9k(int count)
 		    && nvram_invmatch(clonename, "")) {
 			set_hwaddr(dev, nvram_safe_get(clonename));
 		}
-		setupSupplicant_ath9k(dev, NULL, isadhoc);
+		char akm[16];
+		sprintf(akm, "%s_akm", dev);
+		if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+			setupSupplicant_ath9k(dev, NULL, isadhoc);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
