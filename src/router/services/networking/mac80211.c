@@ -488,10 +488,10 @@ void configure_single_ath9k(int count)
 		    && nvram_invmatch(clonename, "")) {
 			set_hwaddr(dev, nvram_safe_get(clonename));
 		}
-		char akm[16];
-		sprintf(akm, "%s_akm", dev);
-		if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
-			setupSupplicant_ath9k(dev, NULL, isadhoc);
+//              char akm[16];
+//              sprintf(akm, "%s_akm", dev);
+//              if (strcmp(apm, "infra") || nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3"))
+		setupSupplicant_ath9k(dev, NULL, isadhoc);
 	}
 	char *vifs = nvram_safe_get(wifivifs);
 	int countvaps = 1;
@@ -1861,8 +1861,12 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		}
 		sprintf(fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
 		FILE *fp = fopen(fstr, "wb");
-		if (!ismesh)
-			fprintf(fp, "ap_scan=1\n");
+		if (!ismesh) {
+			if (isadhoc)
+				fprintf(fp, "ap_scan=2\n");
+			else if (!ismesh)
+				fprintf(fp, "ap_scan=1\n");
+		}
 		char *netmode = nvram_nget("%s_net_mode", prefix);
 		char *channelbw = nvram_nget("%s_channelbw", prefix);
 		fprintf(fp, "network={\n");
@@ -1888,11 +1892,14 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #ifdef HAVE_UNIWIP
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
-		if (ismesh) {
+		if (ismesh || isadhoc) {
 			char ht[5];
 			char sb[32];
 			char bw[32];
-			fprintf(fp, "\tmode=5\n");
+			if (ismesh)
+				fprintf(fp, "\tmode=5\n");
+			else
+				fprintf(fp, "\tmode=1\n");
 			sprintf(nfreq, "%s_channel", prefix);
 			sprintf(nfreq2, "%s_channel2", prefix);
 			freq = atoi(nvram_default_get(nfreq, "0"));
@@ -1931,6 +1938,21 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			}
 		} else
 			fprintf(fp, "\tscan_ssid=1\n");
+
+		if (isadhoc) {
+			sprintf(cellidtemp, "%s_cellid", prefix);
+			cellid = nvram_safe_get(cellidtemp);
+			if (*cellid) {
+				fprintf(fp, "\tbssid=%s\n", cellid);
+			}
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+			else {
+				memset(cellidssid, 0, 5);
+				strncpy(cellidssid, ssidoverride, 5);
+				fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
+			}
+#endif
+		}
 		fprintf(fp, "\tkey_mgmt=NONE\n");
 		if (nvram_match(akm, "wep")) {
 			int cnt = 0;
