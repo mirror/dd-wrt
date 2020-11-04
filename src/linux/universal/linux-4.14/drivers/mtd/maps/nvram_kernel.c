@@ -275,6 +275,7 @@ int nvram_commit(void)
 	}
 	offset = nvram_mtd->size - esize;
 	alternate = 0;
+	printk(KERN_INFO "counts %d\n", counts);
 	for (cnt = 0; cnt < 256; cnt++) {
 		if (bad[cnt])
 		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
@@ -283,6 +284,7 @@ int nvram_commit(void)
 				if (bad[cnt + i])
 					goto next;
 			}
+			printk(KERN_INFO "alternate option\n", cnt * esize);
 			alternate = cnt * esize;
 		}
 	      next:;
