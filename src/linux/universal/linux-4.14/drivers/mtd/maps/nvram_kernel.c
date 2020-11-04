@@ -61,6 +61,7 @@ int _nvram_read(char *buf)
 	struct nvram_header *header = (struct nvram_header *)buf;
 	if (nvram_mtd) {
 		if (nvram_off == -1) {
+			nvram_off = nvram_mtd->size - NVRAM_SPACE;
 			for (i = 0; i < nvram_mtd->size; i += NVRAM_SPACE) {
 				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
 				if (header->magic == NVRAM_MAGIC) {
