@@ -422,10 +422,11 @@ void configure_single_ath9k(int count)
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
 		eval("iw", wif, "interface", "add", dev, "type", "ibss");
-		if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
-			// setup and join does wpa_supplicant
-			isadhoc = 1;
-		} else {
+		isadhoc = 1;
+//              if (nvhas(akm, "psk") || nvhas(akm, "psk2") || nvhas(akm, "psk3")) {
+//                      // setup and join does wpa_supplicant
+//              } else 
+		{
 
 			char *freq = nvram_nget("%s_channel", dev);
 			eval("ifconfig", dev, "up");
@@ -1567,6 +1568,72 @@ static char *makescanlist(char *prefix, char *value)
 	return new;
 }
 
+static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, int isadhoc, int ismesh)
+{
+	char nfreq[16];
+	char nfreq2[16];
+	char ht[5];
+	char sb[32];
+	char bw[32];
+	int freq;
+	if (ismesh)
+		fprintf(fp, "\tmode=5\n");
+	else
+		fprintf(fp, "\tmode=1\n");
+	// autochannel 
+	sprintf(nfreq, "%s_channel", prefix);
+	sprintf(nfreq2, "%s_channel2", prefix);
+	freq = atoi(nvram_default_get(nfreq, "0"));
+	fprintf(fp, "\tfixed_freq=1\n");
+	fprintf(fp, "\tfrequency=%d\n", freq);
+	sprintf(bw, "%s_channelbw", prefix);
+	sprintf(ht, "20");
+	int iht, channeloffset;
+	if (nvram_default_matchi(bw, 20, 20)) {
+		sprintf(ht, "20");
+	} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
+		const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
+		sprintf(ht, cht + 2);
+		fprintf(fp, "\tht40=1\n");
+	}
+	if (!is_ath5k(prefix))
+		// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
+		fprintf(fp, "\thtmode=HT%s\n", ht);
+
+	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
+		fprintf(fp, "\tht40=1\n");
+		fprintf(fp, "\tvht=1\n");
+	}
+	if (nvram_match(bw, "80")) {
+		fprintf(fp, "\tmax_oper_chwidth=1\n");
+		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+	}
+	if (nvram_match(bw, "80+80")) {
+		fprintf(fp, "\tmax_oper_chwidth=3\n");
+		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+		fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
+	}
+	if (nvram_match(bw, "160")) {
+		fprintf(fp, "\tmax_oper_chwidth=2\n");
+		fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
+	}
+	if (isadhoc) {
+		char *cellid = nvram_nget("%s_cellid", prefix);
+		if (*cellid) {
+			fprintf(fp, "\tbssid=%s\n", cellid);
+		}
+#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
+		else {
+			char cellidssid[5];
+			memset(cellidssid, 0, 5);
+			strncpy(cellidssid, ssidoverride, 5);
+			fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
+		}
+#endif
+	}
+
+}
+
 void eap_sta_key_mgmt(FILE * fp, char *prefix);
 void eap_sta_config(FILE * fp, char *prefix, char *ssidoverride, int addvht);
 
@@ -1578,13 +1645,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 #endif
 	char akm[16];
 	int i;
-	int freq = 0;
-	int freq2 = 0;
-	char nfreq[16];
-	char nfreq2[16];
-	char *cellid;
-	char cellidtemp[32];
-	char cellidssid[5];
 	char mcr[32];
 	char ft[16];
 	char mfp[16];
@@ -1651,66 +1711,9 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 			ssidoverride = nvram_nget("%s_ssid", prefix);
 		fprintf(fp, "\tssid=\"%s\"\n", ssidoverride);
 		if (isadhoc || ismesh) {
-			char ht[5];
-			char sb[32];
-			char bw[32];
-			if (ismesh)
-				fprintf(fp, "\tmode=5\n");
-			else
-				fprintf(fp, "\tmode=1\n");
-			// autochannel 
-			sprintf(nfreq, "%s_channel", prefix);
-			sprintf(nfreq2, "%s_channel2", prefix);
-			freq = atoi(nvram_default_get(nfreq, "0"));
-			fprintf(fp, "\tfixed_freq=1\n");
-			fprintf(fp, "\tfrequency=%d\n", freq);
-			sprintf(bw, "%s_channelbw", prefix);
-			sprintf(ht, "20");
-			int iht, channeloffset;
-			if (nvram_default_matchi(bw, 20, 20)) {
-				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
-				sprintf(ht, cht + 2);
-				fprintf(fp, "\tht40=1\n");
-			}
-			if (!is_ath5k(prefix))
-				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
-				fprintf(fp, "\thtmode=HT%s\n", ht);
-
-			if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-				fprintf(fp, "\tht40=1\n");
-				fprintf(fp, "\tvht=1\n");
-			}
-			if (nvram_match(bw, "80")) {
-				fprintf(fp, "\tmax_oper_chwidth=1\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-			}
-			if (nvram_match(bw, "80+80")) {
-				fprintf(fp, "\tmax_oper_chwidth=3\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
-			}
-			if (nvram_match(bw, "160")) {
-				fprintf(fp, "\tmax_oper_chwidth=2\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-			}
-
-			if (isadhoc) {
-				sprintf(cellidtemp, "%s_cellid", prefix);
-				cellid = nvram_safe_get(cellidtemp);
-				if (*cellid) {
-					fprintf(fp, "\tbssid=%s\n", cellid);
-				}
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-				else {
-					memset(cellidssid, 0, 5);
-					strncpy(cellidssid, ssidoverride, 5);
-					fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
-				}
-#endif
-			}
-		}
+			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
+		} else
+			fprintf(fp, "\tscan_ssid=1\n");
 
 		char scanlist[32];
 		sprintf(scanlist, "%s_scanlist", prefix);
@@ -1724,7 +1727,6 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
 		// fprintf (fp, "\tmode=0\n");
-		fprintf(fp, "\tscan_ssid=1\n");
 		fprintf(fp, "\tkey_mgmt=");
 		if (ispsk2 || ispsk)
 			fprintf(fp, "WPA-PSK ");
@@ -1895,66 +1897,10 @@ void setupSupplicant_ath9k(char *prefix, char *ssidoverride, int isadhoc)
 		fprintf(fp, "\tbgscan=\"simple:30:-45:300\"\n");
 #endif
 		if (ismesh || isadhoc) {
-			char ht[5];
-			char sb[32];
-			char bw[32];
-			if (ismesh)
-				fprintf(fp, "\tmode=5\n");
-			else
-				fprintf(fp, "\tmode=1\n");
-			sprintf(nfreq, "%s_channel", prefix);
-			sprintf(nfreq2, "%s_channel2", prefix);
-			freq = atoi(nvram_default_get(nfreq, "0"));
-			fprintf(fp, "\tfixed_freq=1\n");
-			fprintf(fp, "\tfrequency=%d\n", freq);
-			sprintf(bw, "%s_channelbw", prefix);
-			sprintf(ht, "20");
-			int iht, channeloffset;
-			if (nvram_default_matchi(bw, 20, 20)) {
-				sprintf(ht, "20");
-			} else if (nvram_match(bw, "40") || nvram_match(bw, "2040") || nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-				const char *cht = get_channeloffset(prefix, &iht, &channeloffset);
-				sprintf(ht, cht + 2);
-				fprintf(fp, "\tht40=1\n");
-			}
-			if (!is_ath5k(prefix))
-				// fprintf(fp, "ibss_ht_mode=HT%s\n",ht);
-				fprintf(fp, "\thtmode=HT%s\n", ht);
-
-			if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-				fprintf(fp, "\tht40=1\n");
-				fprintf(fp, "\tvht=1\n");
-			}
-			if (nvram_match(bw, "80")) {
-				fprintf(fp, "\tmax_oper_chwidth=1\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-			}
-			if (nvram_match(bw, "80+80")) {
-				fprintf(fp, "\tmax_oper_chwidth=3\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-				fprintf(fp, "\tvht_center_freq2=%d\n", nvram_geti(nfreq2));	// todo
-			}
-			if (nvram_match(bw, "160")) {
-				fprintf(fp, "\tmax_oper_chwidth=2\n");
-				fprintf(fp, "\tvht_center_freq1=%d\n", freq + (channeloffset * 5));
-			}
+			supplicant_common_mesh(fp, prefix, ssidoverride, isadhoc, ismesh);
 		} else
 			fprintf(fp, "\tscan_ssid=1\n");
 
-		if (isadhoc) {
-			sprintf(cellidtemp, "%s_cellid", prefix);
-			cellid = nvram_safe_get(cellidtemp);
-			if (*cellid) {
-				fprintf(fp, "\tbssid=%s\n", cellid);
-			}
-#if defined(HAVE_MAKSAT) || defined(HAVE_TMK) || defined(HAVE_BKM)
-			else {
-				memset(cellidssid, 0, 5);
-				strncpy(cellidssid, ssidoverride, 5);
-				fprintf(fp, "\tbssid=02:%02x:%02x:%02x:%02x:%02x\n", cellidssid[0], cellidssid[1], cellidssid[2], cellidssid[3], cellidssid[4]);
-			}
-#endif
-		}
 		fprintf(fp, "\tkey_mgmt=NONE\n");
 		if (nvram_match(akm, "wep")) {
 			int cnt = 0;
