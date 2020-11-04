@@ -430,6 +430,8 @@ void configure_single_ath9k(int count)
 			char *freq = nvram_nget("%s_channel", dev);
 			eval("ifconfig", dev, "up");
 			const char *htmode = gethtmode(dev);
+			int iht, channeloffset;
+			get_channeloffset(dev, &iht, &channeloffset);
 			char farg[32];
 			//todo 80+80 center2_freq
 			char *farg2 = "5775";
