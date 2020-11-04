@@ -101,13 +101,13 @@ static const char *gethtmode(char *prefix)
 				ht = "HT40-";
 			break;
 		case 80:
-			ht = "80";
+			ht = "80MHz";
 			break;
 		case 8080:
-			ht = "80+80";
+			ht = "80+80MHz";
 			break;
 		case 160:
-			ht = "160";
+			ht = "160MHz";
 			break;
 		case 20:
 		case 10:
@@ -286,8 +286,7 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 40 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath5k/bwmode", wif);
-	}
-	else if (isath10k) {
+	} else if (isath10k) {
 		if (nvram_matchi(bw, 2))
 			sysprintf("echo 2 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else if (nvram_matchi(bw, 5))
@@ -296,8 +295,7 @@ void configure_single_ath9k(int count)
 			sysprintf("echo 10 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
 		else
 			sysprintf("echo 20 > /sys/kernel/debug/ieee80211/%s/ath10k/chanbw", wif);
-	}
-	else if (ismt7615) {
+	} else if (ismt7615) {
 		if (nvram_matchi(bw, 5))
 			sysprintf("echo 5 > /sys/kernel/debug/ieee80211/%s/mt76/chanbw", wif);
 		else if (nvram_matchi(bw, 10))
@@ -428,19 +426,22 @@ void configure_single_ath9k(int count)
 			// setup and join does wpa_supplicant
 			isadhoc = 1;
 		} else {
-			
+
 			char *freq = nvram_nget("%s_channel", dev);
 			eval("ifconfig", dev, "up");
 			const char *htmode = gethtmode(dev);
+			char farg[32];
+			//todo 80+80 center2_freq
+			char *farg2 = "5775";
+			sprintf(farg, "%d", atoi(freq) + (channeloffset * 5));
 			if (!strcmp(htmode, "NOHT") || !strncmp(htmode, "HT", 2))
-				eval("iw","dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode); 
+				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode);
+			else if (!strcmp(htmode, "80+80"))
+				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg, farg2);
 			else
-				eval("iw","dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq); 
+				eval("iw", "dev", dev, "ibss", "join", nvram_nget("%s_ssid", dev), freq, htmode, farg);
 			cprintf("handle ibss join");
 		}
-		// still TBD ;-)
-		// ifconfig ath0 up
-		// iw dev ath0 ibss join AdHocNetworkName 2412
 	}
 
 	char macaddr[32];
