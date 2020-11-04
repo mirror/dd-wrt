@@ -240,7 +240,7 @@ int nvram_commit(void)
 		goto done;
 	/* Erase sector blocks */
 	init_waitqueue_head(&wait_q);
-	memset(bad, 0, sizeof(bad));
+	memset(&bad[0], 0, 256 * sizeof(int));
 	esize = nvram_mtd->erasesize;
 	counts = (NVRAM_SPACE / esize);
 	if (!counts)
@@ -276,12 +276,14 @@ int nvram_commit(void)
 	offset = nvram_mtd->size - esize;
 	alternate = 0;
 	for (cnt = 0; cnt < 256; cnt++) {
+		if (bad[cnt])
+		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
 		if (!bad[cnt]) {
 			for (i = 0; i < counts; i++) {
 				if (bad[cnt + i])
 					goto next;
 			}
-			alternate = cnt * nvram_mtd->size;
+			alternate = cnt * esize;
 		}
 	      next:;
 		if (bad[cnt] == offset) {
