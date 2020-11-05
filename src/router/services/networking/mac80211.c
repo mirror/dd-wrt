@@ -1459,6 +1459,22 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 		fprintf(fp, "airtime_bss_limit=%d\n", nvram_default_geti(at_limit, 0));
 	}
 #endif
+
+	char rts[32];
+
+	sprintf(rts, "%s_protmode", prefix);
+	nvram_default_get(rts, "None");
+
+	sprintf(rts, "%s_rts", prefix);
+	nvram_default_get(rts, "0");
+
+	sprintf(rts, "%s_rtsvalue", prefix);
+	nvram_default_get(rts, "500");
+
+	if (nvram_nmatch("1", "%s_rts", prefix)) {
+		fprintf(fp, "rts_threshold=%s\n", nvram_nget("%s_rtsvalue", ));
+	} 
+
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
