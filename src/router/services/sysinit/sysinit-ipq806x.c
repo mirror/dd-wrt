@@ -522,11 +522,6 @@ void start_sysinit(void)
 		writestr("/sys/class/i2c-dev/i2c-2/device/new_device", "antairagpio 0x60");
 		eval("hwclock", "-s", "-u");
 		eval("ledtool", "20", "0");
-		nvram_set("ath0_ssid", "Antaira-2");
-		nvram_set("ath0_txpwrdbm", "30");
-		nvram_set("ath1_ssid", "Antaira-5");
-		nvram_set("ath1_txpwrdbm", "30");
-		nvram_commit();
 #endif	/*HAVE_ANTAIRA */
 		eval("swconfig", "dev", "switch0", "vlan", "1", "set", "ports", "0 1 2 3 4");
 		eval("swconfig", "dev", "switch0", "vlan", "2", "set", "ports", "0t 5");

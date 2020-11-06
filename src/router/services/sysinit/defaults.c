@@ -1155,7 +1155,7 @@ struct nvram_param srouter_defaults[] = {
 	{ "ath0.1_tkip", "1" },	/* ath0 encryption type */
 	{ "ath0.1_ssid", "LabStation Guest" },	/* Service set ID (network name) */
 #else
-#if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL)
+#if !defined(HAVE_BUFFALO) && !defined(HAVE_AXTEL) && !defined(HAVE_ANTAIRA)
 	{ "wl0_ssid", "dd-wrt" },	/* Service set ID (network name) */
 	{ "ath0_ssid", "dd-wrt" },	/* Service set ID (network name) */
 #endif
@@ -1761,8 +1761,15 @@ struct nvram_param srouter_defaults[] = {
 #elif  HAVE_TMK
 	{ "router_name", "KMT-WAS" },
 #elif  HAVE_ANTAIRA
+#ifdef HAVE_HABANERO
+	{ "ath0_ssid", "Antaira-2" },
+	{ "ath0_txpwrdbm", "30" },
+	{ "ath1_ssid", "Antaira-5" },
+	{ "ath1_txpwrdbm", "30" },
+#else
 	{ "ath0_ssid", "Antaira" },
 	{ "ath1_ssid", "Antaira" },
+#endif
 	{ "ath2_ssid", "Antaira" },
 	{ "router_style", "red" },
 	{ "router_name", "Antaira" },
@@ -2182,13 +2189,22 @@ struct nvram_param srouter_defaults[] = {
 #elif HAVE_WZR450HP2
 	{ "ath0_txpwrdbm", "30" },
 #else
-
+#ifdef HAVE_ANTAIRA
+#ifdef HAVE_HABANERO
+	{ "ath0_txpwrdbm", "30" },
+	{ "ath1_txpwrdbm", "30" },
+#else
+	{ "ath0_txpwrdbm", "20" },
+	{ "ath1_txpwrdbm", "20" },
+#endif
+#else
 	{ "ath0_txpwrdbm", "20" },
 	{ "ath1_txpwrdbm", "20" },
 	{ "ath2_txpwrdbm", "20" },
 	{ "ath3_txpwrdbm", "20" },
 	{ "ath4_txpwrdbm", "20" },
 	{ "ath5_txpwrdbm", "20" },
+#endif
 #endif
 #else
 #ifdef HAVE_POWERNOC
