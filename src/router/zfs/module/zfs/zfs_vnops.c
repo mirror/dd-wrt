@@ -52,6 +52,8 @@
 #include <sys/policy.h>
 #include <sys/zfs_vnops.h>
 #include <sys/zfs_quota.h>
+#include <sys/zfs_vfsops.h>
+#include <sys/zfs_znode.h>
 
 
 static ulong_t zfs_fsync_sync_cnt = 4;
@@ -72,6 +74,96 @@ zfs_fsync(znode_t *zp, int syncflag, cred_t *cr)
 	tsd_set(zfs_fsyncer_key, NULL);
 
 	return (0);
+}
+
+
+#if defined(SEEK_HOLE) && defined(SEEK_DATA)
+/*
+ * Lseek support for finding holes (cmd == SEEK_HOLE) and
+ * data (cmd == SEEK_DATA). "off" is an in/out parameter.
+ */
+static int
+zfs_holey_common(znode_t *zp, ulong_t cmd, loff_t *off)
+{
+	uint64_t noff = (uint64_t)*off; /* new offset */
+	uint64_t file_sz;
+	int error;
+	boolean_t hole;
+
+	file_sz = zp->z_size;
+	if (noff >= file_sz)  {
+		return (SET_ERROR(ENXIO));
+	}
+
+	if (cmd == F_SEEK_HOLE)
+		hole = B_TRUE;
+	else
+		hole = B_FALSE;
+
+	error = dmu_offset_next(ZTOZSB(zp)->z_os, zp->z_id, hole, &noff);
+
+	if (error == ESRCH)
+		return (SET_ERROR(ENXIO));
+
+	/* file was dirty, so fall back to using generic logic */
+	if (error == EBUSY) {
+		if (hole)
+			*off = file_sz;
+
+		return (0);
+	}
+
+	/*
+	 * We could find a hole that begins after the logical end-of-file,
+	 * because dmu_offset_next() only works on whole blocks.  If the
+	 * EOF falls mid-block, then indicate that the "virtual hole"
+	 * at the end of the file begins at the logical EOF, rather than
+	 * at the end of the last block.
+	 */
+	if (noff > file_sz) {
+		ASSERT(hole);
+		noff = file_sz;
+	}
+
+	if (noff < *off)
+		return (error);
+	*off = noff;
+	return (error);
+}
+
+int
+zfs_holey(znode_t *zp, ulong_t cmd, loff_t *off)
+{
+	zfsvfs_t *zfsvfs = ZTOZSB(zp);
+	int error;
+
+	ZFS_ENTER(zfsvfs);
+	ZFS_VERIFY_ZP(zp);
+
+	error = zfs_holey_common(zp, cmd, off);
+
+	ZFS_EXIT(zfsvfs);
+	return (error);
+}
+#endif /* SEEK_HOLE && SEEK_DATA */
+
+/*ARGSUSED*/
+int
+zfs_access(znode_t *zp, int mode, int flag, cred_t *cr)
+{
+	zfsvfs_t *zfsvfs = ZTOZSB(zp);
+	int error;
+
+	ZFS_ENTER(zfsvfs);
+	ZFS_VERIFY_ZP(zp);
+
+	if (flag & V_ACE_MASK)
+		error = zfs_zaccess(zp, mode, flag, B_FALSE, cr);
+	else
+		error = zfs_zaccess_rwx(zp, mode, flag, cr);
+
+	ZFS_EXIT(zfsvfs);
+	return (error);
 }
 
 static unsigned long zfs_vnops_read_chunk_size = 1024 * 1024; /* Tunable */
@@ -627,7 +719,166 @@ zfs_setsecattr(znode_t *zp, vsecattr_t *vsecp, int flag, cred_t *cr)
 	return (error);
 }
 
+#ifdef ZFS_DEBUG
+static int zil_fault_io = 0;
+#endif
+
+static void zfs_get_done(zgd_t *zgd, int error);
+
+/*
+ * Get data to generate a TX_WRITE intent log record.
+ */
+int
+zfs_get_data(void *arg, lr_write_t *lr, char *buf, struct lwb *lwb, zio_t *zio)
+{
+	zfsvfs_t *zfsvfs = arg;
+	objset_t *os = zfsvfs->z_os;
+	znode_t *zp;
+	uint64_t object = lr->lr_foid;
+	uint64_t offset = lr->lr_offset;
+	uint64_t size = lr->lr_length;
+	dmu_buf_t *db;
+	zgd_t *zgd;
+	int error = 0;
+
+	ASSERT3P(lwb, !=, NULL);
+	ASSERT3P(zio, !=, NULL);
+	ASSERT3U(size, !=, 0);
+
+	/*
+	 * Nothing to do if the file has been removed
+	 */
+	if (zfs_zget(zfsvfs, object, &zp) != 0)
+		return (SET_ERROR(ENOENT));
+	if (zp->z_unlinked) {
+		/*
+		 * Release the vnode asynchronously as we currently have the
+		 * txg stopped from syncing.
+		 */
+		zfs_zrele_async(zp);
+		return (SET_ERROR(ENOENT));
+	}
+
+	zgd = (zgd_t *)kmem_zalloc(sizeof (zgd_t), KM_SLEEP);
+	zgd->zgd_lwb = lwb;
+	zgd->zgd_private = zp;
+
+	/*
+	 * Write records come in two flavors: immediate and indirect.
+	 * For small writes it's cheaper to store the data with the
+	 * log record (immediate); for large writes it's cheaper to
+	 * sync the data and get a pointer to it (indirect) so that
+	 * we don't have to write the data twice.
+	 */
+	if (buf != NULL) { /* immediate write */
+		zgd->zgd_lr = zfs_rangelock_enter(&zp->z_rangelock,
+		    offset, size, RL_READER);
+		/* test for truncation needs to be done while range locked */
+		if (offset >= zp->z_size) {
+			error = SET_ERROR(ENOENT);
+		} else {
+			error = dmu_read(os, object, offset, size, buf,
+			    DMU_READ_NO_PREFETCH);
+		}
+		ASSERT(error == 0 || error == ENOENT);
+	} else { /* indirect write */
+		/*
+		 * Have to lock the whole block to ensure when it's
+		 * written out and its checksum is being calculated
+		 * that no one can change the data. We need to re-check
+		 * blocksize after we get the lock in case it's changed!
+		 */
+		for (;;) {
+			uint64_t blkoff;
+			size = zp->z_blksz;
+			blkoff = ISP2(size) ? P2PHASE(offset, size) : offset;
+			offset -= blkoff;
+			zgd->zgd_lr = zfs_rangelock_enter(&zp->z_rangelock,
+			    offset, size, RL_READER);
+			if (zp->z_blksz == size)
+				break;
+			offset += blkoff;
+			zfs_rangelock_exit(zgd->zgd_lr);
+		}
+		/* test for truncation needs to be done while range locked */
+		if (lr->lr_offset >= zp->z_size)
+			error = SET_ERROR(ENOENT);
+#ifdef ZFS_DEBUG
+		if (zil_fault_io) {
+			error = SET_ERROR(EIO);
+			zil_fault_io = 0;
+		}
+#endif
+		if (error == 0)
+			error = dmu_buf_hold(os, object, offset, zgd, &db,
+			    DMU_READ_NO_PREFETCH);
+
+		if (error == 0) {
+			blkptr_t *bp = &lr->lr_blkptr;
+
+			zgd->zgd_db = db;
+			zgd->zgd_bp = bp;
+
+			ASSERT(db->db_offset == offset);
+			ASSERT(db->db_size == size);
+
+			error = dmu_sync(zio, lr->lr_common.lrc_txg,
+			    zfs_get_done, zgd);
+			ASSERT(error || lr->lr_length <= size);
+
+			/*
+			 * On success, we need to wait for the write I/O
+			 * initiated by dmu_sync() to complete before we can
+			 * release this dbuf.  We will finish everything up
+			 * in the zfs_get_done() callback.
+			 */
+			if (error == 0)
+				return (0);
+
+			if (error == EALREADY) {
+				lr->lr_common.lrc_txtype = TX_WRITE2;
+				/*
+				 * TX_WRITE2 relies on the data previously
+				 * written by the TX_WRITE that caused
+				 * EALREADY.  We zero out the BP because
+				 * it is the old, currently-on-disk BP.
+				 */
+				zgd->zgd_bp = NULL;
+				BP_ZERO(bp);
+				error = 0;
+			}
+		}
+	}
+
+	zfs_get_done(zgd, error);
+
+	return (error);
+}
+
+
+/* ARGSUSED */
+static void
+zfs_get_done(zgd_t *zgd, int error)
+{
+	znode_t *zp = zgd->zgd_private;
+
+	if (zgd->zgd_db)
+		dmu_buf_rele(zgd->zgd_db, zgd);
+
+	zfs_rangelock_exit(zgd->zgd_lr);
+
+	/*
+	 * Release the vnode asynchronously as we currently have the
+	 * txg stopped from syncing.
+	 */
+	zfs_zrele_async(zp);
+
+	kmem_free(zgd, sizeof (zgd_t));
+}
+
+EXPORT_SYMBOL(zfs_access);
 EXPORT_SYMBOL(zfs_fsync);
+EXPORT_SYMBOL(zfs_holey);
 EXPORT_SYMBOL(zfs_read);
 EXPORT_SYMBOL(zfs_write);
 EXPORT_SYMBOL(zfs_getsecattr);

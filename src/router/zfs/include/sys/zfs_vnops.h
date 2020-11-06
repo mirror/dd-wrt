@@ -29,11 +29,27 @@
 extern int zfs_fsync(znode_t *, int, cred_t *);
 extern int zfs_read(znode_t *, uio_t *, int, cred_t *);
 extern int zfs_write(znode_t *, uio_t *, int, cred_t *);
-extern int zfs_getsecattr(znode_t *zp, vsecattr_t *vsecp, int flag, cred_t *cr);
-extern int zfs_setsecattr(znode_t *zp, vsecattr_t *vsecp, int flag, cred_t *cr);
+extern int zfs_holey(znode_t *, ulong_t, loff_t *);
+extern int zfs_access(znode_t *, int, int, cred_t *);
+
+extern int zfs_getsecattr(znode_t *, vsecattr_t *, int, cred_t *);
+extern int zfs_setsecattr(znode_t *, vsecattr_t *, int, cred_t *);
 
 extern int mappedread(znode_t *, int, uio_t *);
 extern int mappedread_sf(znode_t *, int, uio_t *);
 extern void update_pages(znode_t *, int64_t, int, objset_t *, uint64_t);
+
+/*
+ * Platform code that asynchronously drops zp's inode / vnode_t.
+ *
+ * Asynchronous dropping ensures that the caller will never drop the
+ * last reference on an inode / vnode_t in the current context.
+ * Doing so while holding open a tx could result in a deadlock if
+ * the platform calls into filesystem again in the implementation
+ * of inode / vnode_t dropping (e.g. call from iput_final()).
+ */
+extern void zfs_zrele_async(znode_t *zp);
+
+extern zil_get_data_t zfs_get_data;
 
 #endif
