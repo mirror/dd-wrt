@@ -174,6 +174,8 @@ static void sr_config_cgi(unsigned char method, struct mime_handler *handler, ch
 
 static void do_file_attach(struct mime_handler *handler, char *path, webs_t stream, char *attachment);
 
+#define getRouterName() nvram_exists(NVROUTER_ALT)?nvram_safe_get(NVROUTER_ALT):nvram_safe_get(NVROUTER)
+
 static void nv_file_out(unsigned char method, struct mime_handler *handler, char *path, webs_t wp)
 {
 
@@ -184,11 +186,7 @@ static void nv_file_out(unsigned char method, struct mime_handler *handler, char
 #endif
 	char *name = nvram_safe_get("router_name");
 	char fname[128];
-#if defined(HAVE_ONNET) || defined(HAVE_ANTAIRA)
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get(NVROUTER_ALT));
-#else
-	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", nvram_safe_get("DD_BOARD"));
-#endif
+	snprintf(fname, sizeof(fname), "nvrambak_r%s%s%s_%s.bin", SVN_REVISION, *name ? "_" : "", *name ? name : "", getRouterName());
 	nvram_backup("/tmp/nvrambak.bin");
 
 #ifdef HAVE_ANTAIRA
