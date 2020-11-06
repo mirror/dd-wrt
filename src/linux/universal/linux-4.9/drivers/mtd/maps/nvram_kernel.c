@@ -65,6 +65,7 @@ int _nvram_read(char *buf)
 			for (i = 0; i < nvram_mtd->size; i += NVRAM_SPACE) {
 				mtd_read(nvram_mtd, i, NVRAM_SPACE, &len, buf);
 				if (header->magic == NVRAM_MAGIC) {
+					printk(KERN_INFO "found nvram at %X\n", i);
 					nvram_off = i;
 					break;
 				}
@@ -188,8 +189,9 @@ int nvram_commit(void)
 	char *buf;
 	size_t erasesize, len;
 	u_int32_t alternate;
-	unsigned int i;
+	int i;
 	int ret, counts, esize;
+	int errorfound=0;
 	struct nvram_header *header;
 	unsigned long flags;
 	u_int32_t offset, cnt = 0;
@@ -216,8 +218,10 @@ int nvram_commit(void)
 	}
 
 	mutex_lock(&nvram_sem);
-
-	if ((i = erasesize - NVRAM_SPACE) > 0) {
+	if (nvram_off != -1 && nvram_off != (nvram_mtd->size - NVRAM_SPACE)) {	
+		offset = nvram_off;
+		header = (struct nvram_header *)buf;
+	} else if ((i = erasesize - NVRAM_SPACE) > 0) {
 		offset = nvram_mtd->size - erasesize;
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
@@ -231,6 +235,7 @@ int nvram_commit(void)
 		offset = nvram_mtd->size - NVRAM_SPACE;
 		header = (struct nvram_header *)buf;
 	}
+	
 
 	/* Regenerate NVRAM */
 	spin_lock_irqsave(&nvram_lock, flags);
@@ -240,11 +245,12 @@ int nvram_commit(void)
 		goto done;
 	/* Erase sector blocks */
 	init_waitqueue_head(&wait_q);
-	memset(&bad[0], 0, 256 * sizeof(int));
+	memset(&bad[0], -1, 256 * sizeof(int));
 	esize = nvram_mtd->erasesize;
 	counts = (NVRAM_SPACE / esize);
 	if (!counts)
 		counts = 1;
+	fullerase:;
 	for (; offset < nvram_mtd->size - NVRAM_SPACE + header->len; offset += nvram_mtd->erasesize) {
 		erase.mtd = nvram_mtd;
 		erase.addr = offset;
@@ -266,6 +272,12 @@ int nvram_commit(void)
 					bad[cnt + i] = offset;
 			}
 			cnt++;
+			if (!errorfound) {
+				errorfound=1;
+				cnt=0;
+				offset=0;
+				goto fullerase;
+			}
 			continue;
 		}
 		cnt++;
@@ -273,18 +285,21 @@ int nvram_commit(void)
 		schedule();
 		remove_wait_queue(&wait_q, &wait);
 	}
-	offset = nvram_mtd->size - esize;
+	if (nvram_off != -1)
+		offset = nvram_off;
+	else 
+		offset = nvram_mtd->size - esize;
 	alternate = 0;
-	printk(KERN_INFO "counts %d\n", counts);
+//	printk(KERN_INFO "counts %d\n", counts);
 	for (cnt = 0; cnt < 256; cnt++) {
-		if (bad[cnt])
-		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
-		if (!bad[cnt]) {
+		if (bad[cnt]!=-1)
+//		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
+		if (bad[cnt] == -1) {
 			for (i = 0; i < counts; i++) {
-				if (bad[cnt + i])
+				if (bad[cnt + i] != -1)
 					goto next;
 			}
-			printk(KERN_INFO "alternate option\n", cnt * esize);
+//			printk(KERN_INFO "alternate option %X\n", cnt * esize);
 			alternate = cnt * esize;
 		}
 	      next:;
@@ -294,11 +309,12 @@ int nvram_commit(void)
 			break;
 		}
 	}
+//	printk("nvram_commit: final offset = %X\n", offset);
 	/* Write partition up to end of data area */
-	if (nvram_mtd->erasesize > NVRAM_SPACE)
+	if (esize > NVRAM_SPACE)
 		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, NVRAM_SPACE);
 	else
-		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, nvram_mtd->erasesize);
+		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, esize);
 	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
 		printk("nvram_commit: write error\n");
