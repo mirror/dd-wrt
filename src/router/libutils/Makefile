@@ -283,6 +283,13 @@ ifeq ($(CONFIG_CARAMBOLA),y)
     CFLAGS += -DHAVE_FMS2111
   endif
 endif
+ifeq ($(CONFIG_ANTAIRA),y)
+    CFLAGS += -DHAVE_ANTAIRA
+endif
+ifeq ($(CONFIG_ANTAIRA_MINI),y)
+    CFLAGS += -DHAVE_ANTAIRA_MINI
+endif
+
 ifeq ($(CONFIG_NEXTMEDIA),y)
   CFLAGS += -DHAVE_NEXTMEDIA
 endif
