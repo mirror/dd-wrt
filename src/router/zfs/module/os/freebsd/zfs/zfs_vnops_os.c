@@ -29,6 +29,7 @@
 /* Portions Copyright 2007 Jeremy Teo */
 /* Portions Copyright 2010 Robert Milkowski */
 
+
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
@@ -270,69 +271,13 @@ zfs_close(vnode_t *vp, int flag, int count, offset_t offset, cred_t *cr)
 	return (0);
 }
 
-/*
- * Lseek support for finding holes (cmd == _FIO_SEEK_HOLE) and
- * data (cmd == _FIO_SEEK_DATA). "off" is an in/out parameter.
- */
-static int
-zfs_holey(vnode_t *vp, ulong_t cmd, offset_t *off)
-{
-	znode_t	*zp = VTOZ(vp);
-	uint64_t noff = (uint64_t)*off; /* new offset */
-	uint64_t file_sz;
-	int error;
-	boolean_t hole;
-
-	file_sz = zp->z_size;
-	if (noff >= file_sz)  {
-		return (SET_ERROR(ENXIO));
-	}
-
-	if (cmd == _FIO_SEEK_HOLE)
-		hole = B_TRUE;
-	else
-		hole = B_FALSE;
-
-	error = dmu_offset_next(zp->z_zfsvfs->z_os, zp->z_id, hole, &noff);
-
-	if (error == ESRCH)
-		return (SET_ERROR(ENXIO));
-
-	/* file was dirty, so fall back to using generic logic */
-	if (error == EBUSY) {
-		if (hole)
-			*off = file_sz;
-
-		return (0);
-	}
-
-	/*
-	 * We could find a hole that begins after the logical end-of-file,
-	 * because dmu_offset_next() only works on whole blocks.  If the
-	 * EOF falls mid-block, then indicate that the "virtual hole"
-	 * at the end of the file begins at the logical EOF, rather than
-	 * at the end of the last block.
-	 */
-	if (noff > file_sz) {
-		ASSERT(hole);
-		noff = file_sz;
-	}
-
-	if (noff < *off)
-		return (error);
-	*off = noff;
-	return (error);
-}
-
 /* ARGSUSED */
 static int
 zfs_ioctl(vnode_t *vp, ulong_t com, intptr_t data, int flag, cred_t *cred,
     int *rvalp)
 {
-	offset_t off;
+	loff_t off;
 	int error;
-	zfsvfs_t *zfsvfs;
-	znode_t *zp;
 
 	switch (com) {
 	case _FIOFFS:
@@ -350,18 +295,12 @@ zfs_ioctl(vnode_t *vp, ulong_t com, intptr_t data, int flag, cred_t *cred,
 		return (0);
 	}
 
-	case _FIO_SEEK_DATA:
-	case _FIO_SEEK_HOLE:
+	case F_SEEK_DATA:
+	case F_SEEK_HOLE:
 	{
 		off = *(offset_t *)data;
-		zp = VTOZ(vp);
-		zfsvfs = zp->z_zfsvfs;
-		ZFS_ENTER(zfsvfs);
-		ZFS_VERIFY_ZP(zp);
-
 		/* offset parameter is in/out */
-		error = zfs_holey(vp, com, &off);
-		ZFS_EXIT(zfsvfs);
+		error = zfs_holey(VTOZ(vp), com, &off);
 		if (error)
 			return (error);
 		*(offset_t *)data = off;
@@ -731,184 +670,13 @@ zfs_write_simple(znode_t *zp, const void *data, size_t len,
 	return (error);
 }
 
-static void
-zfs_get_done(zgd_t *zgd, int error)
+void
+zfs_zrele_async(znode_t *zp)
 {
-	znode_t *zp = zgd->zgd_private;
-	objset_t *os = zp->z_zfsvfs->z_os;
+	vnode_t *vp = ZTOV(zp);
+	objset_t *os = ITOZSB(vp)->z_os;
 
-	if (zgd->zgd_db)
-		dmu_buf_rele(zgd->zgd_db, zgd);
-
-	zfs_rangelock_exit(zgd->zgd_lr);
-
-	/*
-	 * Release the vnode asynchronously as we currently have the
-	 * txg stopped from syncing.
-	 */
-	VN_RELE_ASYNC(ZTOV(zp), dsl_pool_zrele_taskq(dmu_objset_pool(os)));
-
-	kmem_free(zgd, sizeof (zgd_t));
-}
-
-#ifdef ZFS_DEBUG
-static int zil_fault_io = 0;
-#endif
-
-/*
- * Get data to generate a TX_WRITE intent log record.
- */
-int
-zfs_get_data(void *arg, lr_write_t *lr, char *buf, struct lwb *lwb, zio_t *zio)
-{
-	zfsvfs_t *zfsvfs = arg;
-	objset_t *os = zfsvfs->z_os;
-	znode_t *zp;
-	uint64_t object = lr->lr_foid;
-	uint64_t offset = lr->lr_offset;
-	uint64_t size = lr->lr_length;
-	dmu_buf_t *db;
-	zgd_t *zgd;
-	int error = 0;
-
-	ASSERT3P(lwb, !=, NULL);
-	ASSERT3P(zio, !=, NULL);
-	ASSERT3U(size, !=, 0);
-
-	/*
-	 * Nothing to do if the file has been removed
-	 */
-	if (zfs_zget(zfsvfs, object, &zp) != 0)
-		return (SET_ERROR(ENOENT));
-	if (zp->z_unlinked) {
-		/*
-		 * Release the vnode asynchronously as we currently have the
-		 * txg stopped from syncing.
-		 */
-		VN_RELE_ASYNC(ZTOV(zp),
-		    dsl_pool_zrele_taskq(dmu_objset_pool(os)));
-		return (SET_ERROR(ENOENT));
-	}
-
-	zgd = (zgd_t *)kmem_zalloc(sizeof (zgd_t), KM_SLEEP);
-	zgd->zgd_lwb = lwb;
-	zgd->zgd_private = zp;
-
-	/*
-	 * Write records come in two flavors: immediate and indirect.
-	 * For small writes it's cheaper to store the data with the
-	 * log record (immediate); for large writes it's cheaper to
-	 * sync the data and get a pointer to it (indirect) so that
-	 * we don't have to write the data twice.
-	 */
-	if (buf != NULL) { /* immediate write */
-		zgd->zgd_lr = zfs_rangelock_enter(&zp->z_rangelock, offset,
-		    size, RL_READER);
-		/* test for truncation needs to be done while range locked */
-		if (offset >= zp->z_size) {
-			error = SET_ERROR(ENOENT);
-		} else {
-			error = dmu_read(os, object, offset, size, buf,
-			    DMU_READ_NO_PREFETCH);
-		}
-		ASSERT(error == 0 || error == ENOENT);
-	} else { /* indirect write */
-		/*
-		 * Have to lock the whole block to ensure when it's
-		 * written out and its checksum is being calculated
-		 * that no one can change the data. We need to re-check
-		 * blocksize after we get the lock in case it's changed!
-		 */
-		for (;;) {
-			uint64_t blkoff;
-			size = zp->z_blksz;
-			blkoff = ISP2(size) ? P2PHASE(offset, size) : offset;
-			offset -= blkoff;
-			zgd->zgd_lr = zfs_rangelock_enter(&zp->z_rangelock,
-			    offset, size, RL_READER);
-			if (zp->z_blksz == size)
-				break;
-			offset += blkoff;
-			zfs_rangelock_exit(zgd->zgd_lr);
-		}
-		/* test for truncation needs to be done while range locked */
-		if (lr->lr_offset >= zp->z_size)
-			error = SET_ERROR(ENOENT);
-#ifdef ZFS_DEBUG
-		if (zil_fault_io) {
-			error = SET_ERROR(EIO);
-			zil_fault_io = 0;
-		}
-#endif
-		if (error == 0)
-			error = dmu_buf_hold(os, object, offset, zgd, &db,
-			    DMU_READ_NO_PREFETCH);
-
-		if (error == 0) {
-			blkptr_t *bp = &lr->lr_blkptr;
-
-			zgd->zgd_db = db;
-			zgd->zgd_bp = bp;
-
-			ASSERT(db->db_offset == offset);
-			ASSERT(db->db_size == size);
-
-			error = dmu_sync(zio, lr->lr_common.lrc_txg,
-			    zfs_get_done, zgd);
-			ASSERT(error || lr->lr_length <= size);
-
-			/*
-			 * On success, we need to wait for the write I/O
-			 * initiated by dmu_sync() to complete before we can
-			 * release this dbuf.  We will finish everything up
-			 * in the zfs_get_done() callback.
-			 */
-			if (error == 0)
-				return (0);
-
-			if (error == EALREADY) {
-				lr->lr_common.lrc_txtype = TX_WRITE2;
-				/*
-				 * TX_WRITE2 relies on the data previously
-				 * written by the TX_WRITE that caused
-				 * EALREADY.  We zero out the BP because
-				 * it is the old, currently-on-disk BP,
-				 * so there's no need to zio_flush() its
-				 * vdevs (flushing would needlesly hurt
-				 * performance, and doesn't work on
-				 * indirect vdevs).
-				 */
-				zgd->zgd_bp = NULL;
-				BP_ZERO(bp);
-				error = 0;
-			}
-		}
-	}
-
-	zfs_get_done(zgd, error);
-
-	return (error);
-}
-
-/*ARGSUSED*/
-static int
-zfs_access(vnode_t *vp, int mode, int flag, cred_t *cr,
-    caller_context_t *ct)
-{
-	znode_t *zp = VTOZ(vp);
-	zfsvfs_t *zfsvfs = zp->z_zfsvfs;
-	int error;
-
-	ZFS_ENTER(zfsvfs);
-	ZFS_VERIFY_ZP(zp);
-
-	if (flag & V_ACE_MASK)
-		error = zfs_zaccess(zp, mode, flag, B_FALSE, cr);
-	else
-		error = zfs_zaccess_rwx(zp, mode, flag, cr);
-
-	ZFS_EXIT(zfsvfs);
-	return (error);
+	VN_RELE_ASYNC(vp, dsl_pool_zrele_taskq(dmu_objset_pool(os)));
 }
 
 static int
@@ -4727,7 +4495,7 @@ zfs_freebsd_access(struct vop_access_args *ap)
 	 */
 	accmode = ap->a_accmode & (VREAD|VWRITE|VEXEC|VAPPEND);
 	if (accmode != 0)
-		error = zfs_access(ap->a_vp, accmode, 0, ap->a_cred, NULL);
+		error = zfs_access(zp, accmode, 0, ap->a_cred);
 
 	/*
 	 * VADMIN has to be handled by vaccess().
