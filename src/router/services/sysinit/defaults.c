@@ -1763,9 +1763,7 @@ struct nvram_param srouter_defaults[] = {
 #elif  HAVE_ANTAIRA
 #ifdef HAVE_HABANERO
 	{ "ath0_ssid", "Antaira-2" },
-	{ "ath0_txpwrdbm", "30" },
 	{ "ath1_ssid", "Antaira-5" },
-	{ "ath1_txpwrdbm", "30" },
 #else
 	{ "ath0_ssid", "Antaira" },
 	{ "ath1_ssid", "Antaira" },
