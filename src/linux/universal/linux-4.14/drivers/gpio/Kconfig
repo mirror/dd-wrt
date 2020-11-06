@@ -1164,6 +1164,11 @@ config GPIO_WM8994
 	  Say yes here to access the GPIO signals of WM8994 audio hub
 	  CODECs from Wolfson Microelectronics.
 
+config GPIO_ANTAIRA
+	tristate "Antaira i2c GPIO"
+	help
+	  Driver that maps i2c bits to gpios
+
 endmenu
 
 menu "PCI GPIO expanders"
