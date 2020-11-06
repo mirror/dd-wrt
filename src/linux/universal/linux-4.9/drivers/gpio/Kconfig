@@ -1081,7 +1081,6 @@ config GPIO_WM8994
 
 config GPIO_ANTAIRA
 	tristate "Antaira i2c GPIO"
-	select GPIO_ANTAIRA
 	help
 	  Driver that maps i2c bits to gpios
 
