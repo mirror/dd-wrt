@@ -1,4 +1,4 @@
-TODO.sctp $Id$ -*-text-*-
+TODO.sctp $Id: sctp.txt 23073 2011-05-03 23:01:10Z daniel $ -*-text-*-
 
 o Further investigate SCTP functionality, as some people reported
   problems (see this thread:
