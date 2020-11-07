@@ -381,7 +381,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		int rawack;
 		fscanf(fp, "%d", &rawack);
 		fclose(fp);
-		int hwdelay = 20;
+		int hwdelay = 19;
 		if (nvram_nmatch("10", "%s_channelbw", ifn))
 			hwdelay *= 2;
 		if (nvram_nmatch("5", "%s_channelbw", ifn))
