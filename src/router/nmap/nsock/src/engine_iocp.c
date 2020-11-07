@@ -3,7 +3,7 @@
  *                                                                         *
  ***********************IMPORTANT NSOCK LICENSE TERMS***********************
  *                                                                         *
- * The nsock parallel socket event library is (C) 1999-2019 Insecure.Com   *
+ * The nsock parallel socket event library is (C) 1999-2020 Insecure.Com   *
  * LLC This library is free software; you may redistribute and/or          *
  * modify it under the terms of the GNU General Public License as          *
  * published by the Free Software Foundation; Version 2.  This guarantees  *
@@ -153,6 +153,7 @@ struct extended_overlapped {
 
 /* --- INTERNAL PROTOTYPES --- */
 static void iterate_through_event_lists(struct npool *nsp);
+static void iterate_through_pcap_events(struct npool *nsp);
 static void terminate_overlapped_event(struct npool *nsp, struct nevent *nse);
 static void initiate_overlapped_event(struct npool *nsp, struct nevent *nse);
 static int get_overlapped_result(struct npool *nsp, int fd, const void *buffer, size_t count);
@@ -328,22 +329,26 @@ int iocp_loop(struct npool *nsp, int msec_timeout) {
   * If there is anything read, just leave this loop. */
   if (pcap_read_on_nonselect(nsp)) {
     /* okay, something was read. */
+    gettimeofday(&nsock_tod, NULL);
+    iterate_through_pcap_events(nsp);
   }
   else
 #endif
 #endif
-  /* It is mandatory these values are reset before calling GetQueuedCompletionStatusEx */
-  iinfo->entries_removed = 0;
-  memset(iinfo->eov_list, 0, iinfo->capacity * sizeof(OVERLAPPED_ENTRY));
-  bRet = GetQueuedCompletionStatusEx(iinfo->iocp, iinfo->eov_list, iinfo->capacity, &iinfo->entries_removed, combined_msecs, FALSE);
+  {
+    /* It is mandatory these values are reset before calling GetQueuedCompletionStatusEx */
+    iinfo->entries_removed = 0;
+    memset(iinfo->eov_list, 0, iinfo->capacity * sizeof(OVERLAPPED_ENTRY));
+    bRet = GetQueuedCompletionStatusEx(iinfo->iocp, iinfo->eov_list, iinfo->capacity, &iinfo->entries_removed, combined_msecs, FALSE);
 
-  gettimeofday(&nsock_tod, NULL); /* Due to iocp delay */
-  if (!bRet) {
-    sock_err = socket_errno();
-    if (!iinfo->eov && sock_err != WAIT_TIMEOUT) {
-      nsock_log_error("nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
-      nsp->errnum = sock_err;
-      return -1;
+    gettimeofday(&nsock_tod, NULL); /* Due to iocp delay */
+    if (!bRet) {
+      sock_err = socket_errno();
+      if (!iinfo->eov && sock_err != WAIT_TIMEOUT) {
+        nsock_log_error("nsock_loop error %d: %s", sock_err, socket_strerror(sock_err));
+        nsp->errnum = sock_err;
+        return -1;
+      }
     }
   }
 
@@ -354,6 +359,32 @@ int iocp_loop(struct npool *nsp, int msec_timeout) {
 
 
 /* ---- INTERNAL FUNCTIONS ---- */
+
+#if HAVE_PCAP
+/* Iterate through pcap events separately, since these are not tracked in iocp_engine_info */
+void iterate_through_pcap_events(struct npool *nsp) {
+  gh_lnode_t *current, *next, *last;
+
+  last = gh_list_last_elem(&nsp->active_iods);
+
+  for (current = gh_list_first_elem(&nsp->active_iods);
+       current != NULL && gh_lnode_prev(current) != last;
+       current = next) {
+    struct niod *nsi = container_of(current, struct niod, nodeq);
+
+    if (nsi->pcap && nsi->state != NSIOD_STATE_DELETED && nsi->events_pending)
+    {
+      process_iod_events(nsp, nsi, EV_READ);
+    }
+
+    next = gh_lnode_next(current);
+    if (nsi->state == NSIOD_STATE_DELETED) {
+      gh_list_remove(&nsp->active_iods, current);
+      gh_list_prepend(&nsp->free_iods, current);
+    }
+  }
+}
+#endif
 
 /* Iterate through all the event lists (such as connect_events, read_events,
 * timer_events, etc) and take action for those that have completed (due to
@@ -586,7 +617,9 @@ static void call_read_overlapped(struct nevent *nse) {
   if (err) {
     err = socket_errno();
     if (errcode_is_failure(err)) {
-      eov->err = err;
+      // WSARecvFrom with overlapped I/O may generate ERROR_PORT_UNREACHABLE on ICMP error.
+      // We'll translate that so Nsock-using software doesn't have to know about it.
+      eov->err = (err == ERROR_PORT_UNREACHABLE ? ECONNREFUSED : err);
       /* Send the error to the main loop to be picked up by the appropriate handler */
       BOOL bRet = PostQueuedCompletionStatus(iinfo->iocp, -1, (ULONG_PTR)nse->iod, (LPOVERLAPPED)eov);
       if (!bRet)
