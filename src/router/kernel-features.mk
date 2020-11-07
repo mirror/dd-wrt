@@ -33,6 +33,8 @@ define kernelfeatures
 	fi
 	if [ "$(CONFIG_ANTAIRA)" = "y" ]; then \
 		sed -i 's/\# CONFIG_GPIO_ANTAIRA is not set/CONFIG_GPIO_ANTAIRA=m/g' $(LINUXDIR)/.config; \
+	else \
+		echo "# CONFIG_GPIO_ANTAIRA is not set" >> $(LINUXDIR)/.config; \
 	fi
 	if [ "$(CONFIG_WIREGUARD)" = "y" ]; then \
 		sed -i 's/\# CONFIG_NET_FOU is not set/CONFIG_NET_FOU=m/g' $(LINUXDIR)/.config; \
