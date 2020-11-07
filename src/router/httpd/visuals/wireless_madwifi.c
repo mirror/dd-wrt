@@ -390,10 +390,10 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 			hwdelay *= 8;
 		// fw contains a internal tolerance value which is added, we consider it for accurate measurement
 		hwdelay += 3;
-		if (hwdelay >= rawack)
+		if (hwdelay < rawack)
 			ack = rawack - hwdelay;	// hw delay
 		else
-			ack = rawack - 20;	//fallback
+			ack = rawack - 21;	//fallback
 		distance = (300 * ack) / 2;
 	} else if (is_mac80211(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
