@@ -731,11 +731,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 		return NUM_HOSTAPD_MODES;
 
 	if (freq >= 2412 && freq <= 2484) {
-		if ((freq - 2407) % 5)
-			return NUM_HOSTAPD_MODES;
-
-		if (vht)
-			return NUM_HOSTAPD_MODES;
 
 		/* 2.407 GHz, channels 1..13 */
 		if (sec_channel == 1)
@@ -752,8 +747,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq == 2484) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		*op_class = 82; /* channel 14 */
 		*channel = 14;
@@ -762,8 +755,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq == 2407) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -777,8 +768,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq < 2502 && freq > 2484) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -791,8 +780,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq < 2512 && freq > 2484) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -805,8 +792,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq > 2484 && freq < 4000 ) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -819,8 +804,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq > 2484 && freq < 4000) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -834,8 +817,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq < 2412) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		if (sec_channel == 1)
 			*op_class = 83;
@@ -851,16 +832,12 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 
 	if (freq >= 4940 && freq < 4990) {
-		if ((freq - 4000) % 5)
-			return NUM_HOSTAPD_MODES;
 		*channel = (freq - 4940) * 2 + !!((freq % 5) == 2);
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
 	}
 
 	if (freq >= 4800 && freq < 5005) {
-		if ((freq - 4000) % 5)
-			return NUM_HOSTAPD_MODES;
 		*channel = (freq - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
@@ -868,8 +845,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 
 	if (freq >= 4900 && freq < 5000) {
-		if ((freq - 4000) % 5)
-			return NUM_HOSTAPD_MODES;
 		*channel = (freq - 4000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
@@ -892,8 +867,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 	/* 5 GHz, channels 36..48 */
 	if (freq >= 5180 && freq <= 5240) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -911,8 +884,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 	/* 5 GHz, channels 52..64 */
 	if (freq >= 5260 && freq <= 5320) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -930,8 +901,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 	/* 5 GHz, channels 149..169 */
 	if (freq >= 5745 && freq <= 5845) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -951,8 +920,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 	/* 5 GHz, channels 100..140 */
 	if (freq >= 5000 && freq <= 5700) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
 
 		if (vht_opclass)
 			*op_class = vht_opclass;
@@ -969,8 +936,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 	}
 
 	if (freq >= 5000 && freq < 7000) {
-		if ((freq - 5000) % 5)
-			return NUM_HOSTAPD_MODES;
 		*channel = (freq - 5000) / 5;
 		*op_class = 0; /* TODO */
 		return HOSTAPD_MODE_IEEE80211A;
@@ -978,8 +943,6 @@ enum hostapd_hw_mode ieee80211_freq_to_channel_ext(int freq,
 
 	/* 56.16 GHz, channel 1..4 */
 	if (freq >= 56160 + 2160 * 1 && freq <= 56160 + 2160 * 4) {
-		if (sec_channel || vht)
-			return NUM_HOSTAPD_MODES;
 
 		*channel = (freq - 56160) / 2160;
 		*op_class = 180;
