@@ -1298,7 +1298,7 @@ static void portgrp_chain(int seq, int urlenable, char *iflist, char *target)
 	}
 }
 
-char *fw_get_filter_services(void)
+static char *fw_get_filter_services(void)
 {
 
 	l7filters *filters = filters_list;
@@ -1792,7 +1792,7 @@ int filter_main(int argc, char *argv[])
  *                      1 : in time and anytime
  *                      2 : in time
  */
-int if_tod_intime(int seq)
+static int if_tod_intime(int seq)
 {
 	char *todvalue;
 	int sched = 0, allday = 0;
@@ -1854,6 +1854,10 @@ int filtersync_main(int argc, char *argv[])
 	struct tm *bt;		/* Broken time */
 	int seq;
 	int ret;
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		stop_sfe();
+#endif
 	/*
 	 * Get local calendar time 
 	 */
@@ -1871,6 +1875,10 @@ int filtersync_main(int argc, char *argv[])
 			update_filter(0, seq);
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		start_sfe();
+#endif
 	return 0;
 }
 
@@ -2214,7 +2222,7 @@ static void filter_input(char *wanface, char *lanface, char *wanaddr, int remote
 	save2file_A_input("-j %s", log_drop);
 }
 
-void filter_output(char *wanface)
+static void filter_output(char *wanface)
 {
 	/*
 	 * Sveasoft mod - default for br1/separate subnet WDS type 
@@ -2812,6 +2820,10 @@ void start_firewall(void)
 	int remotetelnet = 0;
 	int remotemanage = 0;
 	lock();
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		start_sfe();
+#endif
 #ifdef HAVE_REGISTER
 #ifndef HAVE_ERC
 	if (isregistered_real())
@@ -3072,6 +3084,10 @@ void start_firewall(void)
 		start_pppoeserver();
 	}
 #endif
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		start_sfe();
+#endif
 	unlock();
 	cprintf("ready");
 	cprintf("done\n");
@@ -3097,6 +3113,10 @@ void stop_firewall(void)
 #if !defined(HAVE_MADWIFI) && !defined(HAVE_RT2880)
 	diag_led(DMZ, STOP_LED);
 #endif
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		stop_sfe();
+#endif
 	char num[32];
 	int i;
 	eval("iptables", "-F");
@@ -3118,6 +3138,10 @@ void stop_firewall(void)
 	cprintf("done\n");
 #ifdef HAVE_IPV6
 	stop_firewall6();
+#endif
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1"))
+		start_sfe();
 #endif
 	unlock();
 	return;
