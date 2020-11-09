@@ -292,7 +292,7 @@ int nvram_commit(void)
 	alternate = 0;
 //	printk(KERN_INFO "counts %d\n", counts);
 	for (cnt = 0; cnt < 256; cnt++) {
-		if (bad[cnt]!=-1)
+//		if (bad[cnt]!=-1)
 //		    printk(KERN_INFO "bad table idx %d: %X\n", cnt, bad[cnt]); 
 		if (bad[cnt] == -1) {
 			for (i = 0; i < counts; i++) {
