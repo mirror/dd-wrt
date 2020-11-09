@@ -2189,8 +2189,8 @@ struct nvram_param srouter_defaults[] = {
 #else
 #ifdef HAVE_ANTAIRA
 #ifdef HAVE_HABANERO
-	{ "ath0_txpwrdbm", "30" },
-	{ "ath1_txpwrdbm", "30" },
+	{ "ath0_txpwrdbm", "25" },
+	{ "ath1_txpwrdbm", "25" },
 #else
 	{ "ath0_txpwrdbm", "20" },
 	{ "ath1_txpwrdbm", "20" },
