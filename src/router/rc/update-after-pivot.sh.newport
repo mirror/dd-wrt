@@ -26,24 +26,24 @@ then
 	echo "write first time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	busybox sync
+	sync
 	echo "write second time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	busybox sync
+	sync
 	echo "write third time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 seek=16 skip=16
 	echo "sync"
-	busybox sync
+	sync
 else
 	write ${FIFO} ${MTDPART}
 fi
-busybox sync
-busybox sync
-busybox sync
+sync
+sync
+sync
 if [ x$3 = x1 ]
 then
-	busybox reboot
+	reboot
 	sleep 20
 	echo b > /proc/sysrq-trigger
 fi
