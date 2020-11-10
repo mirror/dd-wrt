@@ -28,15 +28,15 @@ then
 	echo "write first time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
-	busybox sync
+	sync
 	echo "write second time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
-	busybox sync
+	sync
 	echo "write third time"
 	dd if=${FIFO} of=${MTDPART} bs=65536 conv=fsync
 	echo "sync"
-	busybox sync
+	sync
 else
 	write ${FIFO} ${MTDPART}
 fi
@@ -46,9 +46,9 @@ busybox hdparm -f ${MTDPART}
 # flush drive cache
 hdparm -F ${MTDPART}
 busybox hdparm -F ${MTDPART}
-busybox sync
-busybox sync
-busybox sync
+sync
+sync
+sync
 # flush buffer cache
 hdparm -f ${MTDPART}
 busybox hdparm -f ${MTDPART}
@@ -61,7 +61,7 @@ echo 3 > /proc/sys/vm/drop_caches
 if [ x$3 = x1 ]
 then
 	sleep 10
-	busybox reboot
+	reboot
 	sleep 20
 	echo b > /proc/sysrq-trigger
 fi
