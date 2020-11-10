@@ -117,7 +117,6 @@ export STRIP := $(CROSS_COMPILE)strip
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS := $(COPTS)
-#export LTOFIXUP := -fno-fat-lto-objects -fno-devirtualize
 
 #
 # Install and target directories
@@ -237,7 +236,7 @@ endif
 	rm -f $(LINUXDIR)/vmlinux
 	$(MAKE) -j 4 -C $(LINUXDIR) zImage dtbs EXTRA_LDSFLAGS="-I$(LINUXDIR) -include symtab.h" CROSS_COMPILE="ccache $(ARCH)-linux-uclibc-"
 
-include common-nolto.mk
+include common.mk
 
 install package: clean_target $(filter-out lib.$(ARCH)-install,$(obj-install)) $(LINUXDIR)/.config
         # Install binaries into target directory
@@ -342,7 +341,7 @@ endif
 	cp tools/ubinize.cfg $(ARCH)-uclibc
 	cd $(ARCH)-uclibc && ubinize -m 2048 -p 128KiB -s 2048 -o root.ubi ubinize.cfg && cd ..
 	dd if=$(ARCH)-uclibc/root.ubi of=$(ARCH)-uclibc/root-aligned.ubi bs=128k conv=sync
-	./tools/trx_n -m 200000000 -o $(ARCH)-uclibc/webflash-ventana.trx $(ARCH)-uclibc/root-aligned.ubi
+	./tools/trx_n -m 300000000 -o $(ARCH)-uclibc/webflash-ventana.trx $(ARCH)-uclibc/root-aligned.ubi
 	
 #	$(LINUXDIR)/scripts/squashfs/mksquashfs-lzma $(ARCH)-uclibc/target $(ARCH)-uclibc/root.fs -noappend -root-owned -le
 #	mkfs.jffs2 --pad --big-endian --squash -e 0x20000 -o $(ARCH)-uclibc/dd-wrt.jffs2 -d $(ARCH)-uclibc/target
