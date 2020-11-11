@@ -7,7 +7,7 @@ Wants=network-online.target
 EnvironmentFile=/etc/sysconfig/radvd
 ExecStart=/usr/sbin/radvd $OPTIONS
 Type=forking
-PIDFile=/var/run/radvd/radvd.pid
+PIDFile=/run/radvd/radvd.pid
 ExecReload=/bin/kill -HUP $MAINPID
 
 [Install]

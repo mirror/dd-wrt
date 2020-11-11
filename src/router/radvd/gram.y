@@ -947,10 +947,10 @@ static void cleanup(void)
 
 struct Interface * readin_config(char const *path)
 {
+	IfaceList = 0;
 	FILE * in = fopen(path, "r");
 	if (in) {
 		filename = path;
-		IfaceList = 0;
 		num_lines = 1;
 		iface = 0;
 

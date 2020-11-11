@@ -134,7 +134,7 @@ ABRO (Authoritative Border Router Option) definitions are of the form:
 .BR IgnoreIfMissing " " on | off
 
 A flag indicating whether or not the interface is ignored
-if it does not exist at start-up.  By default, radvd exits.
+if it does not exist at start-up. 
 
 This is useful for dynamic interfaces which are not active when radvd
 starts or which are dynamically disabled and re-enabled during the time

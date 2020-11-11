@@ -259,6 +259,20 @@ START_TEST(test_rand_between)
 }
 END_TEST
 
+START_TEST(test_cfg_removal_with_sighup)
+{
+  struct Interface *tmpIface = NULL;
+
+  tmpIface = readin_config("test/test1.conf");
+  ck_assert(tmpIface);
+
+  free_ifaces(tmpIface);
+
+  tmpIface = readin_config("test/file_that_should_not_exists.conf");
+  ck_assert(!tmpIface);
+}
+END_TEST
+
 Suite *util_suite(void)
 {
 	TCase *tc_safe_buffer = tcase_create("safe_buffer");
@@ -288,6 +302,7 @@ Suite *util_suite(void)
 
 	TCase *tc_misc = tcase_create("misc");
 	tcase_add_test(tc_misc, test_rand_between);
+	tcase_add_test(tc_misc, test_cfg_removal_with_sighup);
 
 	Suite *s = suite_create("util");
 	suite_add_tcase(s, tc_safe_buffer);
