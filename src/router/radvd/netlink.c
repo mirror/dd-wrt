@@ -15,6 +15,7 @@
 
 #include "netlink.h"
 #include "config.h"
+#include "includes.h"
 #include "log.h"
 #include "radvd.h"
 
@@ -22,7 +23,7 @@
 #include <errno.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <net/if.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

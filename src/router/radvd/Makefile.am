@@ -45,6 +45,11 @@ AM_CFLAGS = \
 	$(ENABLE_WARNINGS) \
 	$(DISABLE_WARNINGS)
 
+if HAVE_STACK_PROTECTOR
+AM_CFLAGS += \
+	-fstack-protector
+endif
+
 ### CPP is C PreProcessor ###
 
 AM_YFLAGS = -d
