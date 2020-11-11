@@ -158,7 +158,7 @@ static void update_iface_times(struct Interface *iface)
 
 	struct AdvPrefix *prefix = iface->AdvPrefixList;
 	while (prefix) {
-		if ((!prefix->DecrementLifetimesFlag || prefix->curr_preferredlft > 0)) {
+		if (!prefix->DecrementLifetimesFlag || prefix->curr_preferredlft > 0) {
 			if (!(iface->state_info.cease_adv && prefix->DeprecatePrefixFlag)) {
 				if (prefix->DecrementLifetimesFlag) {
 
@@ -289,7 +289,12 @@ static struct safe_buffer_list *add_auto_prefixes(struct safe_buffer_list *sbl, 
 
 		if (strncmp(ifa->ifa_name, ifname, IFNAMSIZ))
 			continue;
-
+		
+		if (ifa->ifa_addr == NULL) {
+			flog(LOG_WARNING, "ifa_addr == NULL for dev %s !? Ignoring in add_auto_prefixes", ifname);
+			continue;
+                }
+		
 		if (ifa->ifa_addr->sa_family != AF_INET6)
 			continue;
 
@@ -328,7 +333,7 @@ static struct safe_buffer_list *add_ra_options_prefix(struct safe_buffer_list *s
 						      struct in6_addr const *dest)
 {
 	while (prefix) {
-		if ((!prefix->DecrementLifetimesFlag || prefix->curr_preferredlft > 0)) {
+		if (!prefix->DecrementLifetimesFlag || prefix->curr_preferredlft > 0) {
 			struct in6_addr zero = {};
 			if (prefix->if6to4[0] || prefix->if6[0] || 0 == memcmp(&prefix->Prefix, &zero, sizeof(zero))) {
 				if (prefix->if6to4[0]) {
@@ -784,16 +789,6 @@ static int send_ra(int sock, struct Interface *iface, struct in6_addr const *des
 			}
 			*/
 			cur = cur->next;
-		}
-
-		if (option_count == 0 && total_seen_options > 0) {
-			// If option_count == 0 and total_seen_options==0 we make sure to
-			// send ONE RA out, so that clients get the RA header fields.
-		} else if (option_count == 0 && total_seen_options > 0) {
-			// None of the RA options are scheduled for this window.
-			dlog(LOG_DEBUG, 5,
-			     "No RA options scheduled in this pass, staying quiet; already sent at least one RA packet");
-			break;
 		}
 
 		// RA built, now send it.
