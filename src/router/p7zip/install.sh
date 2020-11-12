@@ -131,58 +131,6 @@ else
   fi
 fi
 
-mkdir -p "${DEST_DIR}${DEST_MAN}/man1"
-if [ -d DOC ]
-then
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7z.1"
-   sed -e s?"{DEST_SHARE_DOC}"?"${DEST_SHARE_DOC}/DOC"?g man1/7z.1 > "${DEST_DIR}${DEST_MAN}/man1/7z.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7z.1"
-
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7za.1"
-   sed -e s?"{DEST_SHARE_DOC}"?"${DEST_SHARE_DOC}/DOC"?g man1/7za.1 > "${DEST_DIR}${DEST_MAN}/man1/7za.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7za.1"
-
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-   sed -e s?"{DEST_SHARE_DOC}"?"${DEST_SHARE_DOC}/DOC"?g man1/7zr.1 > "${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-else
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7z.1"
-   grep -v "{DEST_SHARE_DOC}" man1/7z.1 > "${DEST_DIR}${DEST_MAN}/man1/7z.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7z.1"
-
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7za.1"
-   grep -v "{DEST_SHARE_DOC}" man1/7za.1 > "${DEST_DIR}${DEST_MAN}/man1/7za.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7za.1"
-
-   echo "- installing ${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-   grep -v "{DEST_SHARE_DOC}" man1/7zr.1 > "${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-   chmod 644 "${DEST_DIR}${DEST_MAN}/man1/7zr.1"
-fi
-
-if [ -f README ]
-then
-  echo "- installing ${DEST_DIR}${DEST_SHARE_DOC}/README"
-  mkdir -p  "${DEST_DIR}${DEST_SHARE_DOC}"
-  cp README "${DEST_DIR}${DEST_SHARE_DOC}/README"
-  chmod 644 "${DEST_DIR}${DEST_SHARE_DOC}/README"
-fi
-
-if [ -f ChangeLog ]
-then
-  echo "- installing ${DEST_DIR}${DEST_SHARE_DOC}/ChangeLog"
-  mkdir -p     "${DEST_DIR}${DEST_SHARE_DOC}"
-  cp ChangeLog "${DEST_DIR}${DEST_SHARE_DOC}/ChangeLog"
-  chmod 644    "${DEST_DIR}${DEST_SHARE_DOC}/ChangeLog"
-fi
-
-if [ -d DOC ]
-then
-  echo "- installing HTML help in ${DEST_DIR}${DEST_SHARE_DOC}/DOC"
-  mkdir -p "${DEST_DIR}${DEST_SHARE_DOC}"
-  cp -r DOC "${DEST_DIR}${DEST_SHARE_DOC}/DOC"
-  find "${DEST_DIR}${DEST_SHARE_DOC}/DOC" -type d -exec chmod 755 {} \;
-  find "${DEST_DIR}${DEST_SHARE_DOC}/DOC" -type f -exec chmod 644 {} \;
-fi
 
 use_lang="n"
 
