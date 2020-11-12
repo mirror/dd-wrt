@@ -8,7 +8,7 @@
 namespace NWindows {
 namespace NError {
 
-UString MyFormatMessage(DWORD errorCode);
+UString MyFormatMessage(HRESULT errorCode);
 
 }}
 
