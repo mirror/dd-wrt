@@ -3,7 +3,7 @@
 #
 include $(TOP)/.config
 
-OPTFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO) -fno-strict-aliasing -s
+OPTFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO) -fno-strict-aliasing -DNEED_PRINTF
 
 ALLFLAGS=${OPTFLAGS} -pipe \
     	-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE \
