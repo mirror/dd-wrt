@@ -223,6 +223,7 @@ int nvram_commit(void)
 		header = (struct nvram_header *)buf;
 	} else if ((i = erasesize - NVRAM_SPACE) > 0) {
 		offset = nvram_mtd->size - erasesize;
+		nvram_off = nvram_mtd->size - erasesize;
 		len = 0;
 		ret = mtd_read(nvram_mtd, offset, i, &len, buf);
 		if (ret || len != i) {
@@ -232,6 +233,7 @@ int nvram_commit(void)
 		}
 		header = (struct nvram_header *)(buf + i);
 	} else {
+		nvram_off = nvram_mtd->size - erasesize;
 		offset = nvram_mtd->size - NVRAM_SPACE;
 		header = (struct nvram_header *)buf;
 	}
@@ -285,10 +287,7 @@ int nvram_commit(void)
 		schedule();
 		remove_wait_queue(&wait_q, &wait);
 	}
-	if (nvram_off != -1)
-		offset = nvram_off;
-	else 
-		offset = nvram_mtd->size - esize;
+	offset = nvram_off;
 	alternate = 0;
 //	printk(KERN_INFO "counts %d\n", counts);
 	for (cnt = 0; cnt < 256; cnt++) {
@@ -317,7 +316,8 @@ int nvram_commit(void)
 		i = erasesize - NVRAM_SPACE + ROUNDUP(header->len, esize);
 	ret = mtd_write(nvram_mtd, offset, i, &len, buf);
 	if (ret || len != i) {
-		printk("nvram_commit: write error\n");
+	
+		printk("nvram_commit: write error (offset %d, size %d)\n", offset, i);
 		ret = -EIO;
 		goto done;
 	}
