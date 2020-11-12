@@ -23,10 +23,12 @@ OBJ_CRC32=$(OBJ_CRC32_C)
 ifeq ($(PLATFORM),x86_64)
 ASM=yasm -f elf -m amd64 -Dx64
 OBJ_AES=AesOpt.o
+OBJ_CRC32=$(OBJ_CRC32_x86_64)
 ALLFLAGS+=-D_7ZIP_ASM
 endif
 ifeq ($(PLATFORM),i386)
 ASM=yasm -f elf
 OBJ_AES=AesOpt.o
+OBJ_CRC32=$(OBJ_CRC32_x86)
 ALLFLAGS+=-D_7ZIP_ASM
 endif
