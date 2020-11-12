@@ -85,6 +85,8 @@ void create_openvpnrules(FILE * fp)
 		fprintf(fp, "cat /tmp/resolv.dnsmasq_isp >> /tmp/resolv.dnsmasq\n");
 		//fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{ system(\"nvram set openvpn_get_dns=\"$3) }'\n");
 		fprintf(fp, "nvram set openvpn_get_dns=\"$(env | grep 'dhcp-option DNS' | awk '{ printf \"\%%s \",$3 }')\"\n");
+		//egc route only pushed DNS servers and not client set DNS servers
+		fprintf(fp, "env | grep 'dhcp-option DNS' | awk '{print $NF}' | while read vpn_dns; do grep -q \"^dhcp-option DNS $vpn_dns\" /tmp/openvpncl/openvpn.conf || ip route add $vpn_dns via $route_vpn_gateway dev $dev 2> /dev/null; done\n");
 	}
 	if (*(nvram_safe_get("openvpncl_route"))) {	//policy based routing
 		write_nvram("/tmp/openvpncl/policy_ips", "openvpncl_route");
