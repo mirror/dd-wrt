@@ -367,6 +367,7 @@ obj-$(CONFIG_MRP) += mrp
 obj-$(CONFIG_HTOP) += ncurses libnl htop
 obj-$(CONFIG_IPSET) += libmnl ipset
 obj-$(CONFIG_OCTEON) += lmsensors
+obj-$(CONFIG_P7ZIP) += p7zip
 
 
 obj-y+=configs

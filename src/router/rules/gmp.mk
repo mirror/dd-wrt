@@ -1,6 +1,7 @@
 
 ifneq ($(CONFIG_IPV6),y)
 gmp-configure:
+	cd gmp && autoreconf --force --install --symlink
 	cd gmp && ./configure \
 		--build=$(ARCH)-linux \
 		--host=$(ARCH)-linux-gnu \
