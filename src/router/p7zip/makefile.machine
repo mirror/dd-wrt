@@ -1,6 +1,7 @@
 #
 # makefile for Linux (x86, PPC, alpha ...)
 #
+include $(TOP)/.config
 
 OPTFLAGS=$(COPTS) $(MIPS16_OPT) $(LTO) -fno-strict-aliasing -s
 
@@ -19,5 +20,13 @@ LOCAL_LIBS=$(LDLTO) $(OPTFLAGS) -lpthread
 LOCAL_LIBS_DLL=$(LOCAL_LIBS) -ldl
 
 OBJ_CRC32=$(OBJ_CRC32_C)
-OBJ_AES=
-
+ifeq ($(PLATFORM),x86_64)
+ASM=yasm -f elf -m amd64 -Dx64
+OBJ_AES=AesOpt.o
+ALLFLAGS+=-D_7ZIP_ASM
+endif
+ifeq ($(PLATFORM),i386)
+ASM=yasm -f elf -m amd64 -Dx64
+OBJ_AES=AesOpt.o
+ALLFLAGS+=-D_7ZIP_ASM
+endif
