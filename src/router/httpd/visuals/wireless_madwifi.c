@@ -381,25 +381,34 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		int rawack;
 		fscanf(fp, "%d", &rawack);
 		fclose(fp);
-		int hwdelay = 19;
+		int slt = 9;
+		int hwdelay = 0;
+		int div = 1;
 		if (nvram_nmatch("10", "%s_channelbw", ifn)) {
-			hwdelay *= 2;
-			hwdelay += 16;
+			slt = 13;
+			div = 2;
+			hwdelay = 16;
 		}
 		if (nvram_nmatch("5", "%s_channelbw", ifn)) {
-			hwdelay *= 4;
-			hwdelay += 32;
+			slt = 21;
+			div = 4;
+			hwdelay = 32;
 		}
 		if (nvram_nmatch("2", "%s_channelbw", ifn)) {
-			hwdelay *= 8;
-			hwdelay += 64;
+			slt = 35;
+			div = 8;
+			hwdelay = 64;
 		}
 		// fw contains a internal tolerance value which is added, we consider it for accurate measurement
-		hwdelay += 3;
-		if (hwdelay < rawack)
+		hwdelay += (slt * 2) + 3;
+		if (hwdelay < rawack) {
 			ack = rawack - hwdelay;	// hw delay
-		else
+			ack /=div;
+			if (!ack)
+			    ack=1;
+		} else {
 			ack = rawack - 21;	//fallback
+		}
 		distance = (300 * ack) / 2;
 	} else if (is_mac80211(ifname) || is_mvebu(ifname)) {
 		int coverage = mac80211_get_coverageclass(ifname);
