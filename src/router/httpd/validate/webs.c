@@ -2546,6 +2546,7 @@ void add_vifs_single(char *prefix, int device)
 	char *n = (char *)safe_malloc(strlen(vifs) + 16);
 	char v[80];
 	char v2[80];
+	char v3[20];
 #ifdef HAVE_GUESTPORT
 	char guestport[16];
 	sprintf(guestport, "guestport_%s", prefix);
@@ -2554,8 +2555,10 @@ void add_vifs_single(char *prefix, int device)
 #ifdef HAVE_MADWIFI
 	// char *cou[] = { "a", "b", "c", "d", "e", "f" };
 	sprintf(v, "ath%d.%d", device, count + 1);
+	snprintf(v3, sizeof(v3), "ath%d_ssid", device);
 #else
 	sprintf(v, "wl%d.%d", device, count + 1);
+	snprintf(v3, sizeof(v3), "wl%d_ssid", device);
 #endif
 	if (!*(vifs))
 		sprintf(n, "%s", v);
@@ -2600,7 +2603,9 @@ void add_vifs_single(char *prefix, int device)
 #elif defined(HAVE_HOBBIT)
 	nvram_set(v2, "hobb-it_vap");
 #elif defined(HAVE_ANTAIRA)
-	nvram_set(v2, "antaira_vap");
+	char nsid[60];
+	snprintf(nsid, sizeof(nsid), "%s_vap", nvram_safe_get(v3));	
+	nvram_set(v2, nsid);
 #else
 	nvram_set(v2, "dd-wrt_vap");
 #endif
