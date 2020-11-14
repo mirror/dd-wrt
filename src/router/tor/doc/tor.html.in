@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
 <head>
 <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
-<meta name="generator" content="AsciiDoc 8.6.10" />
+<meta name="generator" content="AsciiDoc 9.0.2" />
 <title>TOR(1)</title>
 <style type="text/css">
 /* Shared CSS for AsciiDoc xhtml11 and html5 backends */
@@ -436,7 +436,7 @@ thead, p.table.header {
 p.table {
   margin-top: 0;
 }
-/* Because the table frame attribute is overriden by CSS in most browsers. */
+/* Because the table frame attribute is overridden by CSS in most browsers. */
 div.tableblock > table[frame="void"] {
   border-style: none;
 }
@@ -5441,7 +5441,8 @@ AuthDirHasIPv6Connectivity 1.)</code></pre>
 <dd>
 <p>
     STRING is a space-separated list of key=value pairs that Tor will include
-    in the "params" line of its networkstatus vote.
+    in the "params" line of its networkstatus vote. This directive can be
+    specified multiple times so you don&#8217;t have to put it all on one line.
 </p>
 </dd>
 <dt class="hdlist1">
@@ -6908,7 +6909,7 @@ report them at <a href="https://trac.torproject.org/">https://trac.torproject.or
 <div id="footer">
 <div id="footer-text">
 Last updated
- 2020-07-13 14:45:04 UTC
+ 2020-10-26 20:39:31 UTC
 </div>
 </div>
 </body>
