@@ -2,12 +2,12 @@
 .\"     Title: tor
 .\"    Author: [see the "AUTHORS" section]
 .\" Generator: DocBook XSL Stylesheets vsnapshot <http://docbook.sf.net/>
-.\"      Date: 07/27/2020
+.\"      Date: 11/09/2020
 .\"    Manual: Tor Manual
 .\"    Source: Tor
 .\"  Language: English
 .\"
-.TH "TOR" "1" "07/27/2020" "Tor" "Tor Manual"
+.TH "TOR" "1" "11/09/2020" "Tor" "Tor Manual"
 .\" -----------------------------------------------------------------
 .\" * Define some portability stuff
 .\" -----------------------------------------------------------------
@@ -2907,7 +2907,7 @@ If set, contains an HTTP authenticator that tells a bridge authority to serve al
 .PP
 \fBConsensusParams\fR \fISTRING\fR
 .RS 4
-STRING is a space\-separated list of key=value pairs that Tor will include in the "params" line of its networkstatus vote\&.
+STRING is a space\-separated list of key=value pairs that Tor will include in the "params" line of its networkstatus vote\&. This directive can be specified multiple times so you don\(cqt have to put it all on one line\&.
 .RE
 .PP
 \fBDirAllowPrivateAddresses\fR \fB0\fR|\fB1\fR
