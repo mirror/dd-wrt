@@ -291,7 +291,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
 			if (narrow == 5 || narrow == 10 || narrow == 2)
 				s = narrow;
-			fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
+			//fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
 			int hasac = 0;
 			if (site_survey_lists[i].extcap & 4)
 				hasac = 1;
