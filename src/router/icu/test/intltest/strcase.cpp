@@ -53,6 +53,7 @@ public:
     void TestTitleOptions();
     void TestFullCaseFoldingIterator();
     void TestGreekUpper();
+    void TestArmenian();
     void TestLongUpper();
     void TestMalformedUTF8();
     void TestBufferOverflow();
@@ -67,6 +68,8 @@ public:
     void TestLongUnicodeString();
     void TestBug13127();
     void TestInPlaceTitle();
+    void TestCaseMapEditsIteratorDocs();
+    void TestCaseMapGreekExtended();
 
 private:
     void assertGreekUpper(const char16_t *s, const char16_t *expected);
@@ -95,6 +98,7 @@ StringCaseTest::runIndexedTest(int32_t index, UBool exec, const char *&name, cha
 #endif
     TESTCASE_AUTO(TestFullCaseFoldingIterator);
     TESTCASE_AUTO(TestGreekUpper);
+    TESTCASE_AUTO(TestArmenian);
     TESTCASE_AUTO(TestLongUpper);
     TESTCASE_AUTO(TestMalformedUTF8);
     TESTCASE_AUTO(TestBufferOverflow);
@@ -111,6 +115,8 @@ StringCaseTest::runIndexedTest(int32_t index, UBool exec, const char *&name, cha
     TESTCASE_AUTO(TestBug13127);
     TESTCASE_AUTO(TestInPlaceTitle);
 #endif
+    TESTCASE_AUTO(TestCaseMapEditsIteratorDocs);
+    TESTCASE_AUTO(TestCaseMapGreekExtended);
     TESTCASE_AUTO_END;
 }
 
@@ -743,7 +749,7 @@ StringCaseTest::assertGreekUpper(const char16_t *s, const char16_t *expected) {
     msg = UnicodeString("ucasemap_utf8ToUpper/Greek(\"") + s16 + "\")";
     char dest8[1000];
     length = ucasemap_utf8ToUpper(csm.getAlias(), dest8, UPRV_LENGTHOF(dest8),
-                                  s8.data(), s8.length(), &errorCode);
+                                  s8.data(), static_cast<int32_t>(s8.length()), &errorCode);
     assertSuccess("ucasemap_utf8ToUpper", errorCode);
     StringPiece result8(dest8, length);
     UnicodeString result16From8 = UnicodeString::fromUTF8(result8);
@@ -761,7 +767,7 @@ StringCaseTest::assertGreekUpper(const char16_t *s, const char16_t *expected) {
         memset(dest8b, 0x5A, UPRV_LENGTHOF(dest8b));
         UErrorCode errorCode = U_ZERO_ERROR;
         length = ucasemap_utf8ToUpper(csm.getAlias(), dest8b, cap,
-                                      s8.data(), s8.length(), &errorCode);
+                                      s8.data(), static_cast<int32_t>(s8.length()), &errorCode);
         assertEquals(msg + cap, expected8Length, length);
         UErrorCode expectedErrorCode;
         if (cap < expected8Length) {
@@ -808,6 +814,26 @@ StringCaseTest::TestGreekUpper() {
     // http://multilingualtypesetting.co.uk/blog/greek-typesetting-tips/
     assertGreekUpper(u"ρωμέικα", u"ΡΩΜΕΪΚΑ");
     assertGreekUpper(u"ή.", u"Ή.");
+}
+
+void StringCaseTest::TestArmenian() {
+    Locale hy("hy");  // Eastern Armenian
+    Locale hyw("hyw");  // Western Armenian
+    Locale root = Locale::getRoot();
+    // See ICU-13416:
+    // և ligature ech-yiwn
+    // uppercases to ԵՒ=ech+yiwn by default and in Western Armenian,
+    // but to ԵՎ=ech+vew in Eastern Armenian.
+    UnicodeString s(u"և Երևանի");
+
+    assertEquals("upper root", u"ԵՒ ԵՐԵՒԱՆԻ", UnicodeString(s).toUpper(root));
+    assertEquals("upper hy", u"ԵՎ ԵՐԵՎԱՆԻ", UnicodeString(s).toUpper(hy));
+    assertEquals("upper hyw", u"ԵՒ ԵՐԵՒԱՆԻ", UnicodeString(s).toUpper(hyw));
+#if !UCONFIG_NO_BREAK_ITERATION
+    assertEquals("title root", u"Եւ Երևանի", UnicodeString(s).toTitle(nullptr, root));
+    assertEquals("title hy", u"Եվ Երևանի", UnicodeString(s).toTitle(nullptr, hy));
+    assertEquals("title hyw", u"Եւ Երևանի", UnicodeString(s).toTitle(nullptr, hyw));
+#endif
 }
 
 void
@@ -906,7 +932,7 @@ void StringCaseTest::TestBufferOverflow() {
     std::string data_utf8;
     data.toUTF8String(data_utf8);
 #if !UCONFIG_NO_BREAK_ITERATION
-    result = ucasemap_utf8ToTitle(csm.getAlias(), NULL, 0, data_utf8.c_str(), data_utf8.length(), errorCode);
+    result = ucasemap_utf8ToTitle(csm.getAlias(), NULL, 0, data_utf8.c_str(), static_cast<int32_t>(data_utf8.length()), errorCode);
     if (errorCode.get() != U_BUFFER_OVERFLOW_ERROR || result != (int32_t)data_utf8.length()) {
         errln("%s:%d ucasemap_toTitle(\"hello world\") failed: "
               "expected (U_BUFFER_OVERFLOW_ERROR, %d), got (%s, %d)",
@@ -1005,7 +1031,7 @@ void StringCaseTest::TestCopyMoveEdits() {
 
     // std::move trouble on these platforms.
     // See https://ssl.icu-project.org/trac/ticket/13393
-#if !UPRV_INCOMPLETE_CPP11_SUPPORT && !(U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390)
+#if !(U_PLATFORM == U_PF_AIX || U_PLATFORM == U_PF_OS390)
     // move constructor empties object with heap array
     Edits d(std::move(a));
     assertEquals("d: move-constructed many edits, length delta", 250, d.lengthDelta());
@@ -1310,7 +1336,8 @@ void StringCaseTest::TestCaseMapUTF8WithEdits() {
     Edits edits;
 
     int32_t length = CaseMap::utf8ToLower("tr", U_OMIT_UNCHANGED_TEXT,
-                                          u8"IstanBul", 8, dest, UPRV_LENGTHOF(dest), &edits, errorCode);
+                                          reinterpret_cast<const char*>(u8"IstanBul"), 8,
+                                          dest, UPRV_LENGTHOF(dest), &edits, errorCode);
     assertEquals(u"toLower(IstanBul)", UnicodeString(u"ıb"),
                  UnicodeString::fromUTF8(StringPiece(dest, length)));
     static const EditChange lowerExpectedChanges[] = {
@@ -1326,7 +1353,8 @@ void StringCaseTest::TestCaseMapUTF8WithEdits() {
 
     edits.reset();
     length = CaseMap::utf8ToUpper("el", U_OMIT_UNCHANGED_TEXT,
-                                  u8"Πατάτα", 6 * 2, dest, UPRV_LENGTHOF(dest), &edits, errorCode);
+                                  reinterpret_cast<const char*>(u8"Πατάτα"), 6 * 2,
+                                  dest, UPRV_LENGTHOF(dest), &edits, errorCode);
     assertEquals(u"toUpper(Πατάτα)", UnicodeString(u"ΑΤΑΤΑ"),
                  UnicodeString::fromUTF8(StringPiece(dest, length)));
     static const EditChange upperExpectedChanges[] = {
@@ -1348,7 +1376,7 @@ void StringCaseTest::TestCaseMapUTF8WithEdits() {
                                   U_OMIT_UNCHANGED_TEXT |
                                   U_TITLECASE_NO_BREAK_ADJUSTMENT |
                                   U_TITLECASE_NO_LOWERCASE,
-                                  nullptr, u8"IjssEL IglOo", 12,
+                                  nullptr, reinterpret_cast<const char*>(u8"IjssEL IglOo"), 12,
                                   dest, UPRV_LENGTHOF(dest), &edits, errorCode);
     assertEquals(u"toTitle(IjssEL IglOo)", UnicodeString(u"J"),
                  UnicodeString::fromUTF8(StringPiece(dest, length)));
@@ -1366,7 +1394,8 @@ void StringCaseTest::TestCaseMapUTF8WithEdits() {
     // No explicit nor automatic edits.reset(). Edits should be appended.
     length = CaseMap::utf8Fold(U_OMIT_UNCHANGED_TEXT | U_EDITS_NO_RESET |
                                    U_FOLD_CASE_EXCLUDE_SPECIAL_I,
-                               u8"IßtanBul", 1 + 2 + 6, dest, UPRV_LENGTHOF(dest), &edits, errorCode);
+                               reinterpret_cast<const char*>(u8"IßtanBul"), 1 + 2 + 6,
+                               dest, UPRV_LENGTHOF(dest), &edits, errorCode);
     assertEquals(u"foldCase(IßtanBul)", UnicodeString(u"ıssb"),
                  UnicodeString::fromUTF8(StringPiece(dest, length)));
     static const EditChange foldExpectedChanges[] = {
@@ -1533,3 +1562,167 @@ void StringCaseTest::TestInPlaceTitle() {
     assertEquals("u_strToTitle(in-place)", expected, s);
 }
 #endif
+
+void StringCaseTest::TestCaseMapEditsIteratorDocs() {
+    IcuTestErrorCode status(*this, "TestCaseMapEditsIteratorDocs");
+    const char16_t* input = u"abcßDeF";
+    int32_t inputLength = u_strlen(input);
+    // output: "abcssdef"
+
+    char16_t output[10];
+    Edits edits;
+    CaseMap::fold(0, input, -1, output, 10, &edits, status);
+
+    static const char16_t* fineIteratorExpected[] = {
+            u"{ src[0..3] ≡ dest[0..3] (no-change) }",
+            u"{ src[3..4] ⇝ dest[3..5], repl[0..2] }",
+            u"{ src[4..5] ⇝ dest[5..6], repl[2..3] }",
+            u"{ src[5..6] ≡ dest[6..7] (no-change) }",
+            u"{ src[6..7] ⇝ dest[7..8], repl[3..4] }",
+    };
+    static const char16_t* fineChangesIteratorExpected[] = {
+            u"{ src[3..4] ⇝ dest[3..5], repl[0..2] }",
+            u"{ src[4..5] ⇝ dest[5..6], repl[2..3] }",
+            u"{ src[6..7] ⇝ dest[7..8], repl[3..4] }",
+    };
+    static const char16_t* coarseIteratorExpected[] = {
+            u"{ src[0..3] ≡ dest[0..3] (no-change) }",
+            u"{ src[3..5] ⇝ dest[3..6], repl[0..3] }",
+            u"{ src[5..6] ≡ dest[6..7] (no-change) }",
+            u"{ src[6..7] ⇝ dest[7..8], repl[3..4] }",
+    };
+    static const char16_t* coarseChangesIteratorExpected[] = {
+            u"{ src[3..5] ⇝ dest[3..6], repl[0..3] }",
+            u"{ src[6..7] ⇝ dest[7..8], repl[3..4] }",
+    };
+
+    // Expected destination indices when source index is queried
+    static int32_t expectedDestFineEditIndices[] = {0, 0, 0, 3, 5, 6, 7};
+    static int32_t expectedDestCoarseEditIndices[] = {0, 0, 0, 3, 3, 6, 7};
+    static int32_t expectedDestFineStringIndices[] = {0, 1, 2, 3, 5, 6, 7};
+    static int32_t expectedDestCoarseStringIndices[] = {0, 1, 2, 3, 6, 6, 7};
+
+    // Expected source indices when destination index is queried
+    static int32_t expectedSrcFineEditIndices[] = { 0, 0, 0, 3, 3, 4, 5, 6 };
+    static int32_t expectedSrcCoarseEditIndices[] = { 0, 0, 0, 3, 3, 3, 5, 6 };
+    static int32_t expectedSrcFineStringIndices[] = { 0, 1, 2, 3, 4, 4, 5, 6 };
+    static int32_t expectedSrcCoarseStringIndices[] = { 0, 1, 2, 3, 5, 5, 5, 6 };
+
+    // Demonstrate the iterator next() method:
+    Edits::Iterator fineIterator = edits.getFineIterator();
+    int i = 0;
+    UnicodeString toString;
+    while (fineIterator.next(status)) {
+        UnicodeString expected = fineIteratorExpected[i++];
+        assertEquals(UnicodeString(u"Iteration #") + i,
+                expected,
+                fineIterator.toString(toString.remove()));
+    }
+    Edits::Iterator fineChangesIterator = edits.getFineChangesIterator();
+    i = 0;
+    while (fineChangesIterator.next(status)) {
+        UnicodeString expected = fineChangesIteratorExpected[i++];
+        assertEquals(UnicodeString(u"Iteration #") + i,
+                expected,
+                fineChangesIterator.toString(toString.remove()));
+    }
+    Edits::Iterator coarseIterator = edits.getCoarseIterator();
+    i = 0;
+    while (coarseIterator.next(status)) {
+        UnicodeString expected = coarseIteratorExpected[i++];
+        assertEquals(UnicodeString(u"Iteration #") + i,
+                expected,
+                coarseIterator.toString(toString.remove()));
+    }
+    Edits::Iterator coarseChangesIterator = edits.getCoarseChangesIterator();
+    i = 0;
+    while (coarseChangesIterator.next(status)) {
+        UnicodeString expected = coarseChangesIteratorExpected[i++];
+        assertEquals(UnicodeString(u"Iteration #") + i,
+                expected,
+                coarseChangesIterator.toString(toString.remove()));
+    }
+
+    // Demonstrate the iterator indexing methods:
+    // fineIterator should have the same behavior as fineChangesIterator, and
+    // coarseIterator should have the same behavior as coarseChangesIterator.
+    for (int32_t srcIndex=0; srcIndex<inputLength; srcIndex++) {
+        fineIterator.findSourceIndex(srcIndex, status);
+        fineChangesIterator.findSourceIndex(srcIndex, status);
+        coarseIterator.findSourceIndex(srcIndex, status);
+        coarseChangesIterator.findSourceIndex(srcIndex, status);
+
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestFineEditIndices[srcIndex],
+                fineIterator.destinationIndex());
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestFineEditIndices[srcIndex],
+                fineChangesIterator.destinationIndex());
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestCoarseEditIndices[srcIndex],
+                coarseIterator.destinationIndex());
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestCoarseEditIndices[srcIndex],
+                coarseChangesIterator.destinationIndex());
+
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestFineStringIndices[srcIndex],
+                fineIterator.destinationIndexFromSourceIndex(srcIndex, status));
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestFineStringIndices[srcIndex],
+                fineChangesIterator.destinationIndexFromSourceIndex(srcIndex, status));
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestCoarseStringIndices[srcIndex],
+                coarseIterator.destinationIndexFromSourceIndex(srcIndex, status));
+        assertEquals(UnicodeString("Source index: ") + srcIndex,
+                expectedDestCoarseStringIndices[srcIndex],
+                coarseChangesIterator.destinationIndexFromSourceIndex(srcIndex, status));
+    }
+    for (int32_t destIndex=0; destIndex<inputLength; destIndex++) {
+        fineIterator.findDestinationIndex(destIndex, status);
+        fineChangesIterator.findDestinationIndex(destIndex, status);
+        coarseIterator.findDestinationIndex(destIndex, status);
+        coarseChangesIterator.findDestinationIndex(destIndex, status);
+
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcFineEditIndices[destIndex],
+                fineIterator.sourceIndex());
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcFineEditIndices[destIndex],
+                fineChangesIterator.sourceIndex());
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcCoarseEditIndices[destIndex],
+                coarseIterator.sourceIndex());
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcCoarseEditIndices[destIndex],
+                coarseChangesIterator.sourceIndex());
+
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcFineStringIndices[destIndex],
+                fineIterator.sourceIndexFromDestinationIndex(destIndex, status));
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcFineStringIndices[destIndex],
+                fineChangesIterator.sourceIndexFromDestinationIndex(destIndex, status));
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcCoarseStringIndices[destIndex],
+                coarseIterator.sourceIndexFromDestinationIndex(destIndex, status));
+        assertEquals(UnicodeString("Destination index: ") + destIndex,
+                expectedSrcCoarseStringIndices[destIndex],
+                coarseChangesIterator.sourceIndexFromDestinationIndex(destIndex, status));
+    }
+}
+
+void StringCaseTest::TestCaseMapGreekExtended() {
+    // Ticket 13851
+    UnicodeString s(u"\u1F80\u1F88\u1FFC");
+    UnicodeString result(s);
+    result.toLower(Locale::getRoot());
+    assertEquals(u"lower", u"\u1F80\u1F80\u1FF3", result);
+#if !UCONFIG_NO_BREAK_ITERATION
+    result = s;
+    result.toTitle(nullptr, Locale::getRoot());
+    assertEquals(u"title", u"\u1F88\u1F80\u1FF3", result);
+#endif
+}
+
+//#endif

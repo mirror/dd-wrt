@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_TYPES_H__
 #define __NUMBER_TYPES_H__
 
@@ -15,14 +15,18 @@
 #include "unicode/utf16.h"
 #include "uassert.h"
 #include "unicode/platform.h"
+#include "unicode/uniset.h"
+#include "standardplural.h"
+#include "formatted_string_builder.h"
 
 U_NAMESPACE_BEGIN
 namespace number {
 namespace impl {
 
-// Typedef several enums for brevity and for easier comparison to Java.
+// For convenience and historical reasons, import the Field typedef to the namespace.
+typedef FormattedStringBuilder::Field Field;
 
-typedef UNumberFormatFields Field;
+// Typedef several enums for brevity and for easier comparison to Java.
 
 typedef UNumberFormatRoundingMode RoundingMode;
 
@@ -39,15 +43,12 @@ static constexpr RoundingMode kDefaultMode = RoundingMode::UNUM_FOUND_HALFEVEN;
 // ICU4J Equivalent: Padder.FALLBACK_PADDING_STRING
 static constexpr char16_t kFallbackPaddingString[] = u" ";
 
-// ICU4J Equivalent: NumberFormatterImpl.DEFAULT_CURRENCY
-static constexpr char16_t kDefaultCurrency[] = u"XXX";
-
 // Forward declarations:
 
 class Modifier;
 class MutablePatternModifier;
 class DecimalQuantity;
-class NumberStringBuilder;
+class ModifierStore;
 struct MicroProps;
 
 
@@ -87,34 +88,17 @@ enum AffixPatternType {
 };
 
 enum CompactType {
-    TYPE_DECIMAL,
-    TYPE_CURRENCY
+    TYPE_DECIMAL, TYPE_CURRENCY
 };
 
-
-// TODO: Should this be moved somewhere else, maybe where other ICU classes can use it?
-// Exported as U_I18N_API because it is a base class for other exported types
-class U_I18N_API CharSequence {
-public:
-    virtual ~CharSequence() = default;
-
-    virtual int32_t length() const = 0;
-
-    virtual char16_t charAt(int32_t index) const = 0;
-
-    virtual UChar32 codePointAt(int32_t index) const {
-        // Default implementation; can be overridden with a more efficient version
-        char16_t leading = charAt(index);
-        if (U16_IS_LEAD(leading) && length() > index + 1) {
-            char16_t trailing = charAt(index + 1);
-            return U16_GET_SUPPLEMENTARY(leading, trailing);
-        } else {
-            return leading;
-        }
-    }
-
-    virtual UnicodeString toUnicodeString() const = 0;
+enum Signum {
+    SIGNUM_NEG = 0,
+    SIGNUM_NEG_ZERO = 1,
+    SIGNUM_POS_ZERO = 2,
+    SIGNUM_POS = 3,
+    SIGNUM_COUNT = 4,
 };
+
 
 class U_I18N_API AffixPatternProvider {
   public:
@@ -123,11 +107,19 @@ class U_I18N_API AffixPatternProvider {
     static const int32_t AFFIX_NEGATIVE_SUBPATTERN = 0x200;
     static const int32_t AFFIX_PADDING = 0x400;
 
-    virtual ~AffixPatternProvider() = default;
+    // Convenience compound flags
+    static const int32_t AFFIX_POS_PREFIX = AFFIX_PREFIX;
+    static const int32_t AFFIX_POS_SUFFIX = 0;
+    static const int32_t AFFIX_NEG_PREFIX = AFFIX_PREFIX | AFFIX_NEGATIVE_SUBPATTERN;
+    static const int32_t AFFIX_NEG_SUFFIX = AFFIX_NEGATIVE_SUBPATTERN;
+
+    virtual ~AffixPatternProvider();
 
     virtual char16_t charAt(int flags, int i) const = 0;
 
     virtual int length(int flags) const = 0;
+
+    virtual UnicodeString getString(int flags) const = 0;
 
     virtual bool hasCurrencySign() const = 0;
 
@@ -137,7 +129,7 @@ class U_I18N_API AffixPatternProvider {
 
     virtual bool negativeHasMinusSign() const = 0;
 
-    virtual bool containsSymbolType(AffixPatternType, UErrorCode &) const = 0;
+    virtual bool containsSymbolType(AffixPatternType, UErrorCode&) const = 0;
 
     /**
      * True if the pattern has a number placeholder like "0" or "#,##0.00"; false if the pattern does not
@@ -147,19 +139,20 @@ class U_I18N_API AffixPatternProvider {
     virtual bool hasBody() const = 0;
 };
 
+
 /**
  * A Modifier is an object that can be passed through the formatting pipeline until it is finally applied to the string
  * builder. A Modifier usually contains a prefix and a suffix that are applied, but it could contain something else,
  * like a {@link com.ibm.icu.text.SimpleFormatter} pattern.
  *
- * A Modifier is usually immutable, except in cases such as {@link MurkyModifier}, which are mutable for performance
+ * A Modifier is usually immutable, except in cases such as {@link MutablePatternModifier}, which are mutable for performance
  * reasons.
  *
  * Exported as U_I18N_API because it is a base class for other exported types
  */
 class U_I18N_API Modifier {
   public:
-    virtual ~Modifier() = default;
+    virtual ~Modifier();
 
     /**
      * Apply this Modifier to the string builder.
@@ -173,8 +166,8 @@ class U_I18N_API Modifier {
      *            formatted.
      * @return The number of characters (UTF-16 code units) that were added to the string builder.
      */
-    virtual int32_t
-    apply(NumberStringBuilder &output, int leftIndex, int rightIndex, UErrorCode &status) const = 0;
+    virtual int32_t apply(FormattedStringBuilder& output, int leftIndex, int rightIndex,
+                          UErrorCode& status) const = 0;
 
     /**
      * Gets the length of the prefix. This information can be used in combination with {@link #apply} to extract the
@@ -182,12 +175,12 @@ class U_I18N_API Modifier {
      *
      * @return The number of characters (UTF-16 code units) in the prefix.
      */
-    virtual int32_t getPrefixLength(UErrorCode& status) const = 0;
+    virtual int32_t getPrefixLength() const = 0;
 
     /**
      * Returns the number of code points in the modifier, prefix plus suffix.
      */
-    virtual int32_t getCodePointCount(UErrorCode &status) const = 0;
+    virtual int32_t getCodePointCount() const = 0;
 
     /**
      * Whether this modifier is strong. If a modifier is strong, it should always be applied immediately and not allowed
@@ -197,22 +190,72 @@ class U_I18N_API Modifier {
      * @return Whether the modifier is strong.
      */
     virtual bool isStrong() const = 0;
+
+    /**
+     * Whether the modifier contains at least one occurrence of the given field.
+     */
+    virtual bool containsField(Field field) const = 0;
+
+    /**
+     * A fill-in for getParameters(). obj will always be set; if non-null, the other
+     * two fields are also safe to read.
+     */
+    struct U_I18N_API Parameters {
+        const ModifierStore* obj = nullptr;
+        Signum signum;
+        StandardPlural::Form plural;
+
+        Parameters();
+        Parameters(const ModifierStore* _obj, Signum _signum, StandardPlural::Form _plural);
+    };
+
+    /**
+     * Gets a set of "parameters" for this Modifier.
+     *
+     * TODO: Make this return a `const Parameters*` more like Java?
+     */
+    virtual void getParameters(Parameters& output) const = 0;
+
+    /**
+     * Returns whether this Modifier is *semantically equivalent* to the other Modifier;
+     * in many cases, this is the same as equal, but parameters should be ignored.
+     */
+    virtual bool semanticallyEquivalent(const Modifier& other) const = 0;
 };
+
+
+/**
+ * This is *not* a modifier; rather, it is an object that can return modifiers
+ * based on given parameters.
+ *
+ * Exported as U_I18N_API because it is a base class for other exported types.
+ */
+class U_I18N_API ModifierStore {
+  public:
+    virtual ~ModifierStore();
+
+    /**
+     * Returns a Modifier with the given parameters (best-effort).
+     */
+    virtual const Modifier* getModifier(Signum signum, StandardPlural::Form plural) const = 0;
+};
+
 
 /**
  * This interface is used when all number formatting settings, including the locale, are known, except for the quantity
  * itself. The {@link #processQuantity} method performs the final step in the number processing pipeline: it uses the
  * quantity to generate a finalized {@link MicroProps}, which can be used to render the number to output.
  *
- * <p>
  * In other words, this interface is used for the parts of number processing that are <em>quantity-dependent</em>.
  *
- * <p>
  * In order to allow for multiple different objects to all mutate the same MicroProps, a "chain" of MicroPropsGenerators
  * are linked together, and each one is responsible for manipulating a certain quantity-dependent part of the
  * MicroProps. At the tail of the linked list is a base instance of {@link MicroProps} with properties that are not
  * quantity-dependent. Each element in the linked list calls {@link #processQuantity} on its "parent", then does its
  * work, and then returns the result.
+ *
+ * This chain of MicroPropsGenerators is typically constructed by NumberFormatterImpl::macrosToMicroGenerator() when
+ * constructing a NumberFormatter.
  *
  * Exported as U_I18N_API because it is a base class for other exported types
  *
@@ -222,15 +265,15 @@ class U_I18N_API MicroPropsGenerator {
     virtual ~MicroPropsGenerator() = default;
 
     /**
-     * Considers the given {@link DecimalQuantity}, optionally mutates it, and returns a {@link MicroProps}.
+     * Considers the given {@link DecimalQuantity}, optionally mutates it, and
+     * populates a {@link MicroProps} instance.
      *
-     * @param quantity
-     *            The quantity for consideration and optional mutation.
-     * @param micros
-     *            The MicroProps instance to populate.
-     * @return A MicroProps instance resolved for the quantity.
+     * @param quantity The quantity for consideration and optional mutation.
+     * @param micros The MicroProps instance to populate. It will be modified as
+     *   needed for the given quantity.
      */
-    virtual void processQuantity(DecimalQuantity& quantity, MicroProps& micros, UErrorCode& status) const = 0;
+    virtual void processQuantity(DecimalQuantity& quantity, MicroProps& micros,
+                                 UErrorCode& status) const = 0;
 };
 
 /**
@@ -238,7 +281,7 @@ class U_I18N_API MicroPropsGenerator {
  */
 class MultiplierProducer {
   public:
-    virtual ~MultiplierProducer() = default;
+    virtual ~MultiplierProducer();
 
     /**
      * Maps a magnitude to a multiplier in powers of ten. For example, in compact notation in English, a magnitude of 5
@@ -255,24 +298,31 @@ class MultiplierProducer {
 template<typename T>
 class U_I18N_API NullableValue {
   public:
-    NullableValue() : fNull(true) {}
+    NullableValue()
+            : fNull(true) {}
 
-    NullableValue(const NullableValue<T> &other) = default;
+    NullableValue(const NullableValue<T>& other) = default;
 
-    explicit NullableValue(const T &other) {
+    explicit NullableValue(const T& other) {
         fValue = other;
         fNull = false;
     }
 
-    NullableValue<T> &operator=(const NullableValue<T> &other) = default;
+    NullableValue<T>& operator=(const NullableValue<T>& other) {
+        fNull = other.fNull;
+        if (!fNull) {
+            fValue = other.fValue;
+        }
+        return *this;
+    }
 
-    NullableValue<T> &operator=(const T &other) {
+    NullableValue<T>& operator=(const T& other) {
         fValue = other;
         fNull = false;
         return *this;
     }
 
-    bool operator==(const NullableValue &other) const {
+    bool operator==(const NullableValue& other) const {
         // "fValue == other.fValue" returns UBool, not bool (causes compiler warnings)
         return fNull ? other.fNull : (other.fNull ? false : static_cast<bool>(fValue == other.fValue));
     }
@@ -286,17 +336,26 @@ class U_I18N_API NullableValue {
         return fNull;
     }
 
-    T get(UErrorCode &status) const {
+    T get(UErrorCode& status) const {
         if (fNull) {
             status = U_UNDEFINED_VARIABLE;
         }
         return fValue;
     }
 
+    T getNoError() const {
+        return fValue;
+    }
+
+    T getOrDefault(T defaultValue) const {
+        return fNull ? defaultValue : fValue;
+    }
+
   private:
     bool fNull;
     T fValue;
 };
+
 
 } // namespace impl
 } // namespace number

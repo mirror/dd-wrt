@@ -72,6 +72,7 @@ void TimeZoneTest::runIndexedTest( int32_t index, UBool exec, const char* &name,
     TESTCASE_AUTO(TestGetRegion);
     TESTCASE_AUTO(TestGetAvailableIDsNew);
     TESTCASE_AUTO(TestGetUnknown);
+    TESTCASE_AUTO(TestGetGMT);
     TESTCASE_AUTO(TestGetWindowsID);
     TESTCASE_AUTO(TestGetIDForWindowsID);
     TESTCASE_AUTO_END;
@@ -422,7 +423,7 @@ TimeZoneTest::TestGetAvailableIDs913()
 #endif
 
     UnicodeString str;
-    UnicodeString *buf = new UnicodeString("TimeZone::createEnumeration() = { ");
+    UnicodeString buf(u"TimeZone::createEnumeration() = { ");
     int32_t s_length;
     StringEnumeration* s = TimeZone::createEnumeration();
     if (s == NULL) {
@@ -431,11 +432,11 @@ TimeZoneTest::TestGetAvailableIDs913()
     }
     s_length = s->count(ec);
     for (i = 0; i < s_length;++i) {
-        if (i > 0) *buf += ", ";
+        if (i > 0) buf += ", ";
         if ((i & 1) == 0) {
-            *buf += *s->snext(ec);
+            buf += *s->snext(ec);
         } else {
-            *buf += UnicodeString(s->next(NULL, ec), "");
+            buf += UnicodeString(s->next(NULL, ec), "");
         }
 
         if((i % 5) == 4) {
@@ -449,8 +450,8 @@ TimeZoneTest::TestGetAvailableIDs913()
             }
         }
     }
-    *buf += " };";
-    logln(*buf);
+    buf += " };";
+    logln(buf);
 
     /* Confirm that the following zones can be retrieved: The first
      * zone, the last zone, and one in-between.  This tests the binary
@@ -477,31 +478,31 @@ TimeZoneTest::TestGetAvailableIDs913()
     }
     delete s;
 
-    buf->truncate(0);
-    *buf += "TimeZone::createEnumeration(GMT+01:00) = { ";
+    buf.truncate(0);
+    buf += "TimeZone::createEnumeration(GMT+01:00) = { ";
 
     s = TimeZone::createEnumeration(1 * U_MILLIS_PER_HOUR);
     s_length = s->count(ec);
     for (i = 0; i < s_length;++i) {
-        if (i > 0) *buf += ", ";
-        *buf += *s->snext(ec);
+        if (i > 0) buf += ", ";
+        buf += *s->snext(ec);
     }
     delete s;
-    *buf += " };";
-    logln(*buf);
+    buf += " };";
+    logln(buf);
 
 
-    buf->truncate(0);
-    *buf += "TimeZone::createEnumeration(US) = { ";
+    buf.truncate(0);
+    buf += "TimeZone::createEnumeration(US) = { ";
 
     s = TimeZone::createEnumeration("US");
     s_length = s->count(ec);
     for (i = 0; i < s_length;++i) {
-        if (i > 0) *buf += ", ";
-        *buf += *s->snext(ec);
+        if (i > 0) buf += ", ";
+        buf += *s->snext(ec);
     }
-    *buf += " };";
-    logln(*buf);
+    buf += " };";
+    logln(buf);
 
     TimeZone *tz = TimeZone::createTimeZone("PST");
     if (tz != 0) logln("getTimeZone(PST) = " + tz->getID(str));
@@ -521,7 +522,6 @@ TimeZoneTest::TestGetAvailableIDs913()
         errln("FAIL: getTimeZone(NON_EXISTENT) = " + temp);
     delete tz;
 
-    delete buf;
     delete s;
 }
 
@@ -537,7 +537,7 @@ TimeZoneTest::TestGetAvailableIDsNew()
     const UnicodeString *id1, *id2;
     UnicodeString canonicalID;
     UBool isSystemID;
-    char region[4];
+    char region[4] = {0};
     int32_t zoneCount;
 
     any = canonical = canonicalLoc = any_US = canonical_US = canonicalLoc_US = any_W5 = any_CA_W5 = any_US_E14 = NULL;
@@ -860,7 +860,9 @@ void TimeZoneTest::TestShortZoneIDs()
         {"PRT", -240, FALSE}, // ICU Link - America/Puerto_Rico
         {"CNT", -210, TRUE},  // ICU Link - America/St_Johns
         {"AGT", -180, FALSE}, // ICU Link - America/Argentina/Buenos_Aires
-        {"BET", -180, TRUE},  // ICU Link - America/Sao_Paulo
+        // Per https://mm.icann.org/pipermail/tz-announce/2019-July/000056.html
+        //      Brazil has canceled DST and will stay on standard time indefinitely.
+        {"BET", -180, FALSE},  // ICU Link - America/Sao_Paulo
         {"GMT", 0, FALSE},    // Olson etcetera Link - Etc/GMT
         {"UTC", 0, FALSE},    // Olson etcetera 0
         {"ECT", 60, TRUE},    // ICU Link - Europe/Paris
@@ -2251,8 +2253,11 @@ static struct   {
        
       {"America/Sao_Paulo",  "en", FALSE, TimeZone::SHORT, "GMT-3"/*"BRT"*/},
       {"America/Sao_Paulo",  "en", FALSE, TimeZone::LONG,  "Brasilia Standard Time"},
-      {"America/Sao_Paulo",  "en", TRUE,  TimeZone::SHORT, "GMT-2"/*"BRST"*/},
-      {"America/Sao_Paulo",  "en", TRUE,  TimeZone::LONG,  "Brasilia Summer Time"},
+
+      // Per https://mm.icann.org/pipermail/tz-announce/2019-July/000056.html
+      //      Brazil has canceled DST and will stay on standard time indefinitely.
+      // {"America/Sao_Paulo",  "en", TRUE,  TimeZone::SHORT, "GMT-2"/*"BRST"*/},
+      // {"America/Sao_Paulo",  "en", TRUE,  TimeZone::LONG,  "Brasilia Summer Time"},
        
       // No Summer Time, but had it before 1983.
       {"Pacific/Honolulu",   "en", FALSE, TimeZone::SHORT, "HST"},
@@ -2418,6 +2423,15 @@ void TimeZoneTest::TestGetUnknown() {
     assertEquals("getUnknown() wrong ID", expectedID, unknown.getID(id));
     assertTrue("getUnknown() wrong offset", 0 == unknown.getRawOffset());
     assertFalse("getUnknown() uses DST", unknown.useDaylightTime());
+}
+
+void TimeZoneTest::TestGetGMT() {
+    const TimeZone *gmt = TimeZone::getGMT();
+    UnicodeString expectedID = UNICODE_STRING_SIMPLE("GMT");
+    UnicodeString id;
+    assertEquals("getGMT() wrong ID", expectedID, gmt->getID(id));
+    assertTrue("getGMT() wrong offset", 0 == gmt->getRawOffset());
+    assertFalse("getGMT() uses DST", gmt->useDaylightTime());
 }
 
 void TimeZoneTest::TestGetWindowsID(void) {

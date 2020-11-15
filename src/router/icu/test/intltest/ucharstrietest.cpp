@@ -71,6 +71,7 @@ public:
     void checkFirst(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
     void checkNext(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
     void checkNextWithState(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
+    void checkNextWithState64(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
     void checkNextString(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
     void checkIterator(UCharsTrie &trie, const StringAndValue data[], int32_t dataLength);
     void checkIterator(UCharsTrie::Iterator &iter, const StringAndValue data[], int32_t dataLength);
@@ -559,7 +560,7 @@ void UCharsTrieTest::TestIteratorFromBranch() {
     trie->next(u_n);
     IcuTestErrorCode errorCode(*this, "TestIteratorFromBranch()");
     UCharsTrie::Iterator iter(*trie, 0, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
         return;
     }
     // Expected data: Same as in buildMonthsTrie(), except only the suffixes
@@ -610,7 +611,7 @@ void UCharsTrieTest::TestIteratorFromLinearMatch() {
     trie->next(u_a);
     IcuTestErrorCode errorCode(*this, "TestIteratorFromLinearMatch()");
     UCharsTrie::Iterator iter(*trie, 0, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
         return;
     }
     // Expected data: Same as in buildMonthsTrie(), except only the suffixes
@@ -632,7 +633,7 @@ void UCharsTrieTest::TestTruncatingIteratorFromRoot() {
     }
     IcuTestErrorCode errorCode(*this, "TestTruncatingIteratorFromRoot()");
     UCharsTrie::Iterator iter(*trie, 4, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
         return;
     }
     // Expected data: Same as in buildMonthsTrie(), except only the first 4 characters
@@ -687,7 +688,7 @@ void UCharsTrieTest::TestTruncatingIteratorFromLinearMatchShort() {
     IcuTestErrorCode errorCode(*this, "TestTruncatingIteratorFromLinearMatchShort()");
     // Truncate within the linear-match node.
     UCharsTrie::Iterator iter(*trie, 2, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
         return;
     }
     static const StringAndValue expected[]={
@@ -716,7 +717,7 @@ void UCharsTrieTest::TestTruncatingIteratorFromLinearMatchLong() {
     IcuTestErrorCode errorCode(*this, "TestTruncatingIteratorFromLinearMatchLong()");
     // Truncate after the linear-match node.
     UCharsTrie::Iterator iter(*trie, 3, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trie) constructor")) {
         return;
     }
     static const StringAndValue expected[]={
@@ -762,6 +763,7 @@ void UCharsTrieTest::checkData(const StringAndValue data[], int32_t dataLength, 
     checkFirst(*trie, data, dataLength);
     checkNext(*trie, data, dataLength);
     checkNextWithState(*trie, data, dataLength);
+    checkNextWithState64(*trie, data, dataLength);
     checkNextString(*trie, data, dataLength);
     checkIterator(*trie, data, dataLength);
 }
@@ -792,7 +794,7 @@ UCharsTrie *UCharsTrieTest::buildTrie(const StringAndValue data[], int32_t dataL
     UnicodeString trieUChars;
     builder_->buildUnicodeString(buildOption, trieUChars, errorCode);
     LocalPointer<UCharsTrie> trie(builder_->build(buildOption, errorCode));
-    if(!errorCode.logIfFailureAndReset("add()/build()")) {
+    if(!errorCode.errIfFailureAndReset("add()/build()")) {
         builder_->add("zzz", 999, errorCode);
         if(errorCode.reset()!=U_NO_WRITE_PERMISSION) {
             errln("builder.build().add(zzz) did not set U_NO_WRITE_PERMISSION");
@@ -987,6 +989,61 @@ void UCharsTrieTest::checkNextWithState(UCharsTrie &trie,
     }
 }
 
+void UCharsTrieTest::checkNextWithState64(UCharsTrie &trie,
+                                          const StringAndValue data[], int32_t dataLength) {
+    assertTrue("trie(initial state).getState64()!=0", trie.getState64() != 0);
+    for(int32_t i=0; i<dataLength; ++i) {
+        UnicodeString expectedString=UnicodeString(data[i].s, -1, US_INV).unescape();
+        int32_t stringLength=expectedString.length();
+        int32_t partialLength = stringLength / 3;
+        for(int32_t j=0; j<partialLength; ++j) {
+            if(!USTRINGTRIE_MATCHES(trie.next(expectedString[j]))) {
+                errln("trie.next()=USTRINGTRIE_NO_MATCH for a prefix of %s", data[i].s);
+                return;
+            }
+        }
+        uint64_t state = trie.getState64();
+        assertTrue("trie.getState64()!=0", state != 0);
+        UStringTrieResult resultAtState=trie.current();
+        UStringTrieResult result;
+        int32_t valueAtState=-99;
+        if(USTRINGTRIE_HAS_VALUE(resultAtState)) {
+            valueAtState=trie.getValue();
+        }
+        result=trie.next(0);  // mismatch
+        if(result!=USTRINGTRIE_NO_MATCH || result!=trie.current()) {
+            errln("trie.next(0) matched after part of %s", data[i].s);
+        }
+        if( resultAtState!=trie.resetToState64(state).current() ||
+            (USTRINGTRIE_HAS_VALUE(resultAtState) && valueAtState!=trie.getValue())
+        ) {
+            errln("trie.next(part of %s) changes current()/getValue() after "
+                  "getState64/next(0)/resetToState64",
+                  data[i].s);
+        } else if(!USTRINGTRIE_HAS_VALUE(
+                      result=trie.next(expectedString.getTerminatedBuffer()+partialLength,
+                                       stringLength-partialLength)) ||
+                  result!=trie.current()) {
+            errln("trie.next(rest of %s) does not seem to contain %s after "
+                  "getState64/next(0)/resetToState64",
+                  data[i].s, data[i].s);
+        } else if(!USTRINGTRIE_HAS_VALUE(
+                      result=trie.resetToState64(state).
+                                  next(expectedString.getTerminatedBuffer()+partialLength,
+                                       stringLength-partialLength)) ||
+                  result!=trie.current()) {
+            errln("trie does not seem to contain %s after getState64/next(rest)/resetToState64",
+                  data[i].s);
+        } else if(trie.getValue()!=data[i].value) {
+            errln("trie value for %s is %ld=0x%lx instead of expected %ld=0x%lx",
+                  data[i].s,
+                  (long)trie.getValue(), (long)trie.getValue(),
+                  (long)data[i].value, (long)data[i].value);
+        }
+        trie.reset();
+    }
+}
+
 // next(string) is also tested in other functions,
 // but here we try to go partway through the string, and then beyond it.
 void UCharsTrieTest::checkNextString(UCharsTrie &trie,
@@ -1011,7 +1068,7 @@ void UCharsTrieTest::checkIterator(UCharsTrie &trie,
                                    const StringAndValue data[], int32_t dataLength) {
     IcuTestErrorCode errorCode(*this, "checkIterator()");
     UCharsTrie::Iterator iter(trie, 0, errorCode);
-    if(errorCode.logIfFailureAndReset("UCharsTrie::Iterator(trieUChars) constructor")) {
+    if(errorCode.errIfFailureAndReset("UCharsTrie::Iterator(trieUChars) constructor")) {
         return;
     }
     checkIterator(iter, data, dataLength);
@@ -1026,7 +1083,7 @@ void UCharsTrieTest::checkIterator(UCharsTrie::Iterator &iter,
             break;
         }
         UBool hasNext=iter.next(errorCode);
-        if(errorCode.logIfFailureAndReset("trie iterator next() for item %d: %s", (int)i, data[i].s)) {
+        if(errorCode.errIfFailureAndReset("trie iterator next() for item %d: %s", (int)i, data[i].s)) {
             break;
         }
         if(!hasNext) {
@@ -1052,7 +1109,7 @@ void UCharsTrieTest::checkIterator(UCharsTrie::Iterator &iter,
         errln("trie iterator hasNext()=TRUE after all items");
     }
     UBool hasNext=iter.next(errorCode);
-    errorCode.logIfFailureAndReset("trie iterator next() after all items");
+    errorCode.errIfFailureAndReset("trie iterator next() after all items");
     if(hasNext) {
         errln("trie iterator next()=TRUE after all items");
     }

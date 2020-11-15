@@ -26,6 +26,9 @@
 #include "toolutil.h"
 #include "uinvchar.h"
 #include <stdio.h>
+#if U_PLATFORM_USES_ONLY_WIN32_API 
+#include "wintz.h"
+#endif
 
 /* See the comments on U_SIGNED_RIGHT_SHIFT_IS_ARITHMETIC. */
 static void TestSignedRightShiftIsArithmetic(void) {
@@ -33,7 +36,7 @@ static void TestSignedRightShiftIsArithmetic(void) {
     int32_t m=-1;
     int32_t x4=x>>4;
     int32_t m1=m>>1;
-    UBool signedRightShiftIsArithmetic= x4==0xffff5fff && m1==-1;
+    UBool signedRightShiftIsArithmetic= (x4==(int32_t)0xffff5fff && m1==-1);
     if(signedRightShiftIsArithmetic==U_SIGNED_RIGHT_SHIFT_IS_ARITHMETIC) {
         log_info("signed right shift is Arithmetic Shift Right: %d\n",
                  signedRightShiftIsArithmetic);
@@ -128,6 +131,20 @@ static void TestPUtilAPI(void){
         log_err("ERROR: uprv_isInfinite failed.\n");
     }
 
+    log_verbose("Testing the APIs uprv_add32_overflow and uprv_mul32_overflow\n");
+    int32_t overflow_result;
+    doAssert(FALSE, uprv_add32_overflow(INT32_MAX - 2, 1, &overflow_result), "should not overflow");
+    doAssert(INT32_MAX - 1, overflow_result, "should equal INT32_MAX - 1");
+    doAssert(FALSE, uprv_add32_overflow(INT32_MAX - 2, 2, &overflow_result), "should not overflow");
+    doAssert(INT32_MAX, overflow_result, "should equal exactly INT32_MAX");
+    doAssert(TRUE, uprv_add32_overflow(INT32_MAX - 2, 3, &overflow_result), "should overflow");
+    doAssert(FALSE, uprv_mul32_overflow(INT32_MAX / 5, 4, &overflow_result), "should not overflow");
+    doAssert(INT32_MAX / 5 * 4, overflow_result, "should equal INT32_MAX / 5 * 4");
+    doAssert(TRUE, uprv_mul32_overflow(INT32_MAX / 5, 6, &overflow_result), "should overflow");
+    // Test on negative numbers:
+    doAssert(FALSE, uprv_add32_overflow(-3, -2, &overflow_result), "should not overflow");
+    doAssert(-5, overflow_result, "should equal -5");
+
 #if 0
     log_verbose("Testing the API uprv_digitsAfterDecimal()....\n");
     doAssert(uprv_digitsAfterDecimal(value1), 3, "uprv_digitsAfterDecimal() failed.");
@@ -200,8 +217,19 @@ static void TestPUtilAPI(void){
             log_info("Note: t_timezone offset of %ld (for %s : %s) is not a multiple of 30min.", tzoffset, uprv_tzname(0), uprv_tzname(1));
         }
         /*tzoffset=uprv_getUTCtime();*/
-
     }
+
+#if U_PLATFORM_USES_ONLY_WIN32_API 
+    log_verbose("Testing uprv_detectWindowsTimeZone() ....\n");
+    {
+        const char* timezone = uprv_detectWindowsTimeZone();
+        if (timezone == NULL) {
+            log_err("ERROR: uprv_detectWindowsTimeZone failed (returned NULL).\n");
+        } else {
+            log_verbose("Detected TimeZone = %s\n", timezone);
+        }   
+    }
+#endif
 }
 
 static void TestVersion(void)

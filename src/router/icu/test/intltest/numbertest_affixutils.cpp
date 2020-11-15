@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 
 #include "putilimp.h"
 #include "unicode/dcfmtsym.h"
@@ -18,7 +18,7 @@ class DefaultSymbolProvider : public SymbolProvider {
   public:
     DefaultSymbolProvider(UErrorCode &status) : fSymbols(Locale("ar_SA"), status) {}
 
-    virtual UnicodeString getSymbol(AffixPatternType type) const U_OVERRIDE {
+    UnicodeString getSymbol(AffixPatternType type) const U_OVERRIDE {
         switch (type) {
             case TYPE_MINUS_SIGN:
                 return u"−";
@@ -42,8 +42,7 @@ class DefaultSymbolProvider : public SymbolProvider {
             case TYPE_CURRENCY_OVERFLOW:
                 return u"\uFFFD";
             default:
-                U_ASSERT(false);
-                return {}; // silence compiler warnings
+                UPRV_UNREACHABLE;
         }
     }
 };
@@ -77,7 +76,7 @@ void AffixUtilsTest::testEscape() {
     for (auto &cas : cases) {
         UnicodeString input(cas[0]);
         UnicodeString expected(cas[1]);
-        UnicodeString result = AffixUtils::escape(UnicodeStringCharSequence(input));
+        UnicodeString result = AffixUtils::escape(input);
         assertEquals(input, expected, result);
     }
 }
@@ -130,16 +129,16 @@ void AffixUtilsTest::testUnescape() {
         UnicodeString input(cas.input);
         UnicodeString output(cas.output);
 
-        assertEquals(input, cas.currency, AffixUtils::hasCurrencySymbols(UnicodeStringCharSequence(input), status));
+        assertEquals(input, cas.currency, AffixUtils::hasCurrencySymbols(input, status));
         assertSuccess("Spot 1", status);
-        assertEquals(input, cas.expectedLength, AffixUtils::estimateLength(UnicodeStringCharSequence(input), status));
+        assertEquals(input, cas.expectedLength, AffixUtils::estimateLength(input, status));
         assertSuccess("Spot 2", status);
 
         UnicodeString actual = unescapeWithDefaults(defaultProvider, input, status);
         assertSuccess("Spot 3", status);
         assertEquals(input, output, actual);
 
-        int32_t ulength = AffixUtils::unescapedCodePointCount(UnicodeStringCharSequence(input), defaultProvider, status);
+        int32_t ulength = AffixUtils::unescapedCodePointCount(input, defaultProvider, status);
         assertSuccess("Spot 4", status);
         assertEquals(input, output.countChar32(), ulength);
     }
@@ -165,10 +164,10 @@ void AffixUtilsTest::testContainsReplaceType() {
         UnicodeString output(cas.output);
 
         assertEquals(
-                input, hasMinusSign, AffixUtils::containsType(UnicodeStringCharSequence(input), TYPE_MINUS_SIGN, status));
+                input, hasMinusSign, AffixUtils::containsType(input, TYPE_MINUS_SIGN, status));
         assertSuccess("Spot 1", status);
         assertEquals(
-                input, output, AffixUtils::replaceType(UnicodeStringCharSequence(input), TYPE_MINUS_SIGN, u'+', status));
+                input, output, AffixUtils::replaceType(input, TYPE_MINUS_SIGN, u'+', status));
         assertSuccess("Spot 2", status);
     }
 }
@@ -185,11 +184,11 @@ void AffixUtilsTest::testInvalid() {
         UnicodeString str(strPtr);
 
         status = U_ZERO_ERROR;
-        AffixUtils::hasCurrencySymbols(UnicodeStringCharSequence(str), status);
+        AffixUtils::hasCurrencySymbols(str, status);
         assertEquals("Should set error code spot 1", status, U_ILLEGAL_ARGUMENT_ERROR);
 
         status = U_ZERO_ERROR;
-        AffixUtils::estimateLength(UnicodeStringCharSequence(str), status);
+        AffixUtils::estimateLength(str, status);
         assertEquals("Should set error code spot 2", status, U_ILLEGAL_ARGUMENT_ERROR);
 
         status = U_ZERO_ERROR;
@@ -218,29 +217,30 @@ void AffixUtilsTest::testUnescapeWithSymbolProvider() {
     NumericSymbolProvider provider;
 
     UErrorCode status = U_ZERO_ERROR;
-    NumberStringBuilder sb;
-    for (auto cas : cases) {
+    FormattedStringBuilder sb;
+    for (auto& cas : cases) {
         UnicodeString input(cas[0]);
         UnicodeString expected(cas[1]);
         sb.clear();
-        AffixUtils::unescape(UnicodeStringCharSequence(input), sb, 0, provider, status);
+        AffixUtils::unescape(input, sb, 0, provider, kUndefinedField, status);
         assertSuccess("Spot 1", status);
         assertEquals(input, expected, sb.toUnicodeString());
+        assertEquals(input, expected, sb.toTempUnicodeString());
     }
 
     // Test insertion position
     sb.clear();
-    sb.append(u"abcdefg", UNUM_FIELD_COUNT, status);
+    sb.append(u"abcdefg", kUndefinedField, status);
     assertSuccess("Spot 2", status);
-    AffixUtils::unescape(UnicodeStringCharSequence(UnicodeString(u"-+%")), sb, 4, provider, status);
+    AffixUtils::unescape(u"-+%", sb, 4, provider, kUndefinedField, status);
     assertSuccess("Spot 3", status);
     assertEquals(u"Symbol provider into middle", u"abcd123efg", sb.toUnicodeString());
 }
 
 UnicodeString AffixUtilsTest::unescapeWithDefaults(const SymbolProvider &defaultProvider,
                                                           UnicodeString input, UErrorCode &status) {
-    NumberStringBuilder nsb;
-    int32_t length = AffixUtils::unescape(UnicodeStringCharSequence(input), nsb, 0, defaultProvider, status);
+    FormattedStringBuilder nsb;
+    int32_t length = AffixUtils::unescape(input, nsb, 0, defaultProvider, kUndefinedField, status);
     assertEquals("Return value of unescape", nsb.length(), length);
     return nsb.toUnicodeString();
 }

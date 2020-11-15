@@ -44,7 +44,8 @@ caltztst.o canittst.o citrtest.o colldata.o convtest.o currcoll.o collationtest.
 fldset.o dadrfmt.o dadrcal.o dcfmapts.o decoll.o dtfmapts.o dtfmrgts.o dtfmtrtts.o dtfmttst.o	\
 dtptngts.o encoll.o escoll.o ficoll.o frcoll.o g7coll.o intltest.o	\
 itercoll.o itformat.o itmajor.o itutil.o jacoll.o lcukocol.o	\
-loctest.o miscdtfm.o mnkytst.o msfmrgts.o nmfmapts.o nmfmtrt.o		\
+loctest.o localebuildertest.o localematchertest.o \
+miscdtfm.o mnkytst.o msfmrgts.o nmfmapts.o nmfmtrt.o		\
 numfmtst.o numrgts.o  plurults.o plurfmts.o pptest.o regcoll.o restest.o restsnew.o \
 sdtfmtts.o svccoll.o tchcfmt.o	selfmts.o \
 tfsmalls.o tmsgfmt.o trcoll.o tscoll.o tsdate.o tsdcfmsy.o tsdtfmsy.o	\
@@ -61,10 +62,14 @@ windttst.o winnmtst.o winutil.o csdetest.o tzrulets.o tzoffloc.o tzfmttst.o ssea
 tufmtts.o itspoof.o simplethread.o bidiconf.o locnmtst.o dcfmtest.o alphaindextst.o listformattertest.o genderinfotest.o compactdecimalformattest.o regiontst.o \
 reldatefmttest.o simpleformattertest.o measfmttest.o numfmtspectest.o unifiedcachetest.o quantityformattertest.o \
 scientificnumberformattertest.o datadrivennumberformattestsuite.o \
-numberformattesttuple.o numberformat2test.o pluralmaptest.o \
+numberformattesttuple.o pluralmaptest.o \
 numbertest_affixutils.o numbertest_api.o numbertest_decimalquantity.o \
 numbertest_modifiers.o numbertest_patternmodifier.o numbertest_patternstring.o \
-numbertest_stringbuilder.o numbertest_doubleconversion.o
+string_segment_test.o \
+numbertest_parse.o numbertest_doubleconversion.o numbertest_skeletons.o \
+static_unisets_test.o numfmtdatadriventest.o numbertest_range.o erarulestest.o \
+formattedvaluetest.o formatted_string_builder_test.o numbertest_permutation.o \
+units_data_test.o units_router_test.o units_test.o
 
 DEPS = $(OBJECTS:.o=.d)
 

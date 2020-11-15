@@ -121,9 +121,15 @@ public:
     void TestSelectOrdinal();
     void TestDecimals();
     void TestArgIsPrefixOfAnother();
+    void TestMessageFormatNumberSkeleton();
+    void TestMessageFormatDateSkeleton();
+    void TestMessageFormatTimeSkeleton();
 
 private:
     UnicodeString GetPatternAndSkipSyntax(const MessagePattern& pattern);
+    void doTheRealDateTimeSkeletonTesting(UDate testDate,
+        const char16_t* messagePattern, const char* localeName, const char16_t* expected,
+        IcuTestErrorCode& status);
 };
 
 #endif /* #if !UCONFIG_NO_FORMATTING */

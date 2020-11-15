@@ -35,7 +35,7 @@
  * the macros below do not attempt to assemble such pairs.
  */
 
-#define L8_NEXT(s, i, length, c) { \
+#define L8_NEXT(s, i, length, c) UPRV_BLOCK_MACRO_BEGIN { \
     (c)=(uint8_t)(s)[(i)++]; \
     if((c)>=0x80) { \
         if(U8_IS_LEAD(c)) { \
@@ -44,9 +44,9 @@
             (c)=U_SENTINEL; \
         } \
     } \
-}
+} UPRV_BLOCK_MACRO_END
 
-#define L8_PREV(s, start, i, c) { \
+#define L8_PREV(s, start, i, c) UPRV_BLOCK_MACRO_BEGIN { \
     (c)=(uint8_t)(s)[--(i)]; \
     if((c)>=0x80) { \
         if((c)<=0xbf) { \
@@ -55,7 +55,7 @@
             (c)=U_SENTINEL; \
         } \
     } \
-}
+} UPRV_BLOCK_MACRO_END
 
 /* -------------------------------------------------------------------------- */
 
@@ -758,10 +758,12 @@ static void TestFwdBack() {
 }
 
 /**
-* Ticket #13636 - Visual Studio 2017 has problems optimizing this function.
-* As a workaround, we will turn off optimization just for this function on VS2017 and above.
-*/
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+ * Ticket #13636 - The optimizer in Visual Studio 2017 has problems optimizing this function.
+ * As a work-around, optimization is disabled for this function on VS2017.
+ * This work-around should be removed once the following versions of Visual Studio are no
+ * longer supported: All versions of VS2017, and versions of VS2019 below 16.4.
+ */
+#if defined(_MSC_VER) && (_MSC_VER > 1900) && (_MSC_VER < 1924)
 #pragma optimize( "", off )
 #endif
 
@@ -850,10 +852,8 @@ static void TestFwdBackUnsafe() {
     }
 }
 
-/**
-* Ticket #13636 - Turn optimization back on.
-*/
-#if defined(_MSC_VER) && (_MSC_VER > 1900)
+// Ticket #13636 - Turn optimization back on.
+#if defined(_MSC_VER) && (_MSC_VER > 1900) && (_MSC_VER < 1924)
 #pragma optimize( "", on )
 #endif
 
@@ -884,13 +884,13 @@ static void TestSetChar() {
         }
 #if !U_HIDE_OBSOLETE_UTF_OLD_H
         setOffset=offset;
-        UTF8_SET_CHAR_LIMIT_SAFE(input,0, setOffset, sizeof(input));
+        UTF8_SET_CHAR_LIMIT_SAFE(input,0, setOffset, (int32_t)sizeof(input));
         if(setOffset != limit_safe[i]){
             log_err("ERROR: UTF8_SET_CHAR_LIMIT_SAFE failed for offset=%ld. Expected:%ld Got:%ld\n", offset, limit_safe[i], setOffset);
         }
 #endif
         setOffset=offset;
-        U8_SET_CP_LIMIT(input,0, setOffset, sizeof(input));
+        U8_SET_CP_LIMIT(input,0, setOffset, (int32_t)sizeof(input));
         if(setOffset != limit_safe[i]){
             log_err("ERROR: U8_SET_CP_LIMIT failed for offset=%ld. Expected:%ld Got:%ld\n", offset, limit_safe[i], setOffset);
         }

@@ -16,13 +16,14 @@
 *   created by: George Rhoten
 */
 
+#include "unicode/utypes.h"
 #include "mutex.h"
 #include "ucln.h"
 #include "ucln_io.h"
 #include "uassert.h"
 
 #ifndef U_IO_IMPLEMENTATION
-#error U_IO_IMPLEMENTATION not set - must be set for all ICU source files in io/ - see http://userguide.icu-project.org/howtouseicu
+#error U_IO_IMPLEMENTATION not set - must be set for all ICU source files in io/ - see https://unicode-org.github.io/icu/userguide/howtouseicu
 #endif
 
 
@@ -68,4 +69,3 @@ void ucln_io_registerCleanup(ECleanupIOType type,
     ucln_registerAutomaticCleanup();
 #endif
 }
-

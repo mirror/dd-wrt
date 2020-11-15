@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_COMPACT_H__
 #define __NUMBER_COMPACT_H__
 
@@ -56,10 +56,16 @@ struct CompactModInfo {
 
 class CompactHandler : public MicroPropsGenerator, public UMemory {
   public:
-    CompactHandler(CompactStyle compactStyle, const Locale &locale, const char *nsName,
-                   CompactType compactType, const PluralRules *rules,
-                   MutablePatternModifier *buildReference, const MicroPropsGenerator *parent,
-                   UErrorCode &status);
+    CompactHandler(
+            CompactStyle compactStyle,
+            const Locale &locale,
+            const char *nsName,
+            CompactType compactType,
+            const PluralRules *rules,
+            MutablePatternModifier *buildReference,
+            bool safe,
+            const MicroPropsGenerator *parent,
+            UErrorCode &status);
 
     ~CompactHandler() U_OVERRIDE;
 
@@ -74,6 +80,7 @@ class CompactHandler : public MicroPropsGenerator, public UMemory {
     int32_t precomputedModsLength = 0;
     CompactData data;
     ParsedPatternInfo unsafePatternInfo;
+    MutablePatternModifier* unsafePatternModifier;
     UBool safe;
 
     /** Used by the safe code path */

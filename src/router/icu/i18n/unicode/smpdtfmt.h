@@ -28,6 +28,8 @@
 
 #include "unicode/utypes.h"
 
+#if U_SHOW_CPLUSPLUS_API
+
 /**
  * \file
  * \brief C++ API: Format and parse dates in a language-independent manner.
@@ -49,6 +51,11 @@ class FieldPositionHandler;
 class TimeZoneFormat;
 class SharedNumberFormat;
 class SimpleDateFormatMutableNFs;
+class DateIntervalFormat;
+
+namespace number {
+class LocalizedNumberFormatter;
+}
 
 /**
  *
@@ -74,7 +81,7 @@ class SimpleDateFormatMutableNFs;
  * the date and time formatting algorithm and pattern letters defined by
  * <a href="http://www.unicode.org/reports/tr35/tr35-dates.html#Date_Field_Symbol_Table">UTS#35
  * Unicode Locale Data Markup Language (LDML)</a> and further documented for ICU in the
- * <a href="https://sites.google.com/site/icuprojectuserguide/formatparse/datetime?pli=1#TOC-Date-Field-Symbol-Table">ICU
+ * <a href="https://unicode-org.github.io/icu/userguide/format_parse/datetime/#date-field-symbol-table">ICU
  * User Guide</a>. The following pattern letters are currently available (note that the actual
  * values depend on CLDR and may change from the examples shown here):</p>
  *
@@ -860,7 +867,7 @@ public:
      * @return    A copy of the object.
      * @stable ICU 2.0
      */
-    virtual Format* clone(void) const;
+    virtual SimpleDateFormat* clone() const;
 
     /**
      * Return true if the given Format objects are semantically equal. Objects
@@ -1143,7 +1150,7 @@ public:
      * Overrides base class method and
      * This method clears per field NumberFormat instances
      * previously set by {@see adoptNumberFormat(const UnicodeString&, NumberFormat*, UErrorCode)}
-     * @param adoptNF the NumbeferFormat used
+     * @param formatToAdopt the NumbeferFormat used
      * @stable ICU 54
      */
     void adoptNumberFormat(NumberFormat *formatToAdopt);
@@ -1158,7 +1165,7 @@ public:
      * Per field NumberFormat can also be cleared in {@see DateFormat::setNumberFormat(const NumberFormat& newNumberFormat)}
      *
      * @param fields  the fields to override(like y)
-     * @param adoptNF the NumbeferFormat used
+     * @param formatToAdopt the NumbeferFormat used
      * @param status  Receives a status code, which will be U_ZERO_ERROR
      *                if the operation succeeds.
      * @stable ICU 54
@@ -1176,11 +1183,11 @@ public:
     /**
      * This is for ICU internal use only. Please do not use.
      * Check whether the 'field' is smaller than all the fields covered in
-     * pattern, return TRUE if it is. The sequence of calendar field,
+     * pattern, return true if it is. The sequence of calendar field,
      * from large to small is: ERA, YEAR, MONTH, DATE, AM_PM, HOUR, MINUTE,...
      * @param field    the calendar field need to check against
-     * @return         TRUE if the 'field' is smaller than all the fields
-     *                 covered in pattern. FALSE otherwise.
+     * @return         true if the 'field' is smaller than all the fields
+     *                 covered in pattern. false otherwise.
      * @internal ICU 4.0
      */
     UBool isFieldUnitIgnored(UCalendarDateFields field) const;
@@ -1189,12 +1196,12 @@ public:
     /**
      * This is for ICU internal use only. Please do not use.
      * Check whether the 'field' is smaller than all the fields covered in
-     * pattern, return TRUE if it is. The sequence of calendar field,
+     * pattern, return true if it is. The sequence of calendar field,
      * from large to small is: ERA, YEAR, MONTH, DATE, AM_PM, HOUR, MINUTE,...
      * @param pattern  the pattern to check against
      * @param field    the calendar field need to check against
-     * @return         TRUE if the 'field' is smaller than all the fields
-     *                 covered in pattern. FALSE otherwise.
+     * @return         true if the 'field' is smaller than all the fields
+     *                 covered in pattern. false otherwise.
      * @internal ICU 4.0
      */
     static UBool isFieldUnitIgnored(const UnicodeString& pattern,
@@ -1213,6 +1220,7 @@ public:
 
 private:
     friend class DateFormat;
+    friend class DateIntervalFormat;
 
     void initializeDefaultCentury(void);
 
@@ -1266,9 +1274,9 @@ private:
                    int32_t count,
                    UDisplayContext capitalizationContext,
                    int32_t fieldNum,
+                   char16_t fieldToOutput,
                    FieldPositionHandler& handler,
                    Calendar& cal,
-                   SimpleDateFormatMutableNFs &mutableNFs,
                    UErrorCode& status) const; // in case of illegal argument
 
     /**
@@ -1284,7 +1292,7 @@ private:
      * @param minDigits Minimum number of digits the result should have
      * @param maxDigits Maximum number of digits the result should have
      */
-    void zeroPaddingNumber(NumberFormat *currentNumberFormat,
+    void zeroPaddingNumber(const NumberFormat *currentNumberFormat,
                            UnicodeString &appendTo,
                            int32_t value,
                            int32_t minDigits,
@@ -1297,12 +1305,12 @@ private:
     static UBool isNumeric(char16_t formatChar, int32_t count);
 
     /**
-     * Returns TRUE if the patternOffset is at the start of a numeric field.
+     * Returns true if the patternOffset is at the start of a numeric field.
      */
     static UBool isAtNumericField(const UnicodeString &pattern, int32_t patternOffset);
 
     /**
-     * Returns TRUE if the patternOffset is right after a non-numeric field.
+     * Returns true if the patternOffset is right after a non-numeric field.
      */
     static UBool isAfterNonNumericField(const UnicodeString &pattern, int32_t patternOffset);
 
@@ -1382,11 +1390,11 @@ private:
      * @param text the text being parsed
      * @param textOffset the starting offset into the text. On output
      *                   will be set to the offset of the character after the match
-     * @param whitespaceLenient <code>TRUE</code> if whitespace parse is lenient, <code>FALSE</code> otherwise.
-     * @param partialMatchLenient <code>TRUE</code> if partial match parse is lenient, <code>FALSE</code> otherwise.
-     * @param oldLeniency <code>TRUE</code> if old leniency control is lenient, <code>FALSE</code> otherwise.
+     * @param whitespaceLenient <code>true</code> if whitespace parse is lenient, <code>false</code> otherwise.
+     * @param partialMatchLenient <code>true</code> if partial match parse is lenient, <code>false</code> otherwise.
+     * @param oldLeniency <code>true</code> if old leniency control is lenient, <code>false</code> otherwise.
      *
-     * @return <code>TRUE</code> if the literal text could be matched, <code>FALSE</code> otherwise.
+     * @return <code>true</code> if the literal text could be matched, <code>false</code> otherwise.
      */
     static UBool matchLiterals(const UnicodeString &pattern, int32_t &patternOffset,
                                const UnicodeString &text, int32_t &textOffset,
@@ -1414,21 +1422,21 @@ private:
      */
     int32_t subParse(const UnicodeString& text, int32_t& start, char16_t ch, int32_t count,
                      UBool obeyCount, UBool allowNegative, UBool ambiguousYear[], int32_t& saveHebrewMonth, Calendar& cal,
-                     int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType, SimpleDateFormatMutableNFs &mutableNFs,
+                     int32_t patLoc, MessageFormat * numericLeapMonthFormatter, UTimeZoneFormatTimeType *tzTimeType,
                      int32_t *dayPeriod=NULL) const;
 
     void parseInt(const UnicodeString& text,
                   Formattable& number,
                   ParsePosition& pos,
                   UBool allowNegative,
-                  NumberFormat *fmt) const;
+                  const NumberFormat *fmt) const;
 
     void parseInt(const UnicodeString& text,
                   Formattable& number,
                   int32_t maxDigits,
                   ParsePosition& pos,
                   UBool allowNegative,
-                  NumberFormat *fmt) const;
+                  const NumberFormat *fmt) const;
 
     int32_t checkIntSuffix(const UnicodeString& text, int32_t start,
                            int32_t patLoc, UBool isNegative) const;
@@ -1496,6 +1504,16 @@ private:
     int32_t skipUWhiteSpace(const UnicodeString& text, int32_t pos) const;
 
     /**
+     * Initialize LocalizedNumberFormatter instances used for speedup.
+     */
+    void initFastNumberFormatters(UErrorCode& status);
+
+    /**
+     * Delete the LocalizedNumberFormatter instances used for speedup.
+     */
+    void freeFastNumberFormatters();
+
+    /**
      * Initialize NumberFormat instances used for numbering system overrides.
      */
     void initNumberFormatters(const Locale &locale,UErrorCode &status);
@@ -1518,7 +1536,7 @@ private:
     /**
      * Lazy TimeZoneFormat instantiation, semantically const
      */
-    TimeZoneFormat *tzFormat() const;
+    TimeZoneFormat *tzFormat(UErrorCode &status) const;
 
     const NumberFormat* getNumberFormatByIndex(UDateFormatField index) const;
 
@@ -1584,6 +1602,7 @@ private:
 
     UBool                fHasMinute;
     UBool                fHasSecond;
+    UBool                fHasHanYearChar; // pattern contains the Han year character \u5E74
 
     /**
      * Sets fHasMinutes and fHasSeconds.
@@ -1611,9 +1630,23 @@ private:
      */
     const SharedNumberFormat    **fSharedNumberFormatters;
 
+    enum NumberFormatterKey {
+        SMPDTFMT_NF_1x10,
+        SMPDTFMT_NF_2x10,
+        SMPDTFMT_NF_3x10,
+        SMPDTFMT_NF_4x10,
+        SMPDTFMT_NF_2x2,
+        SMPDTFMT_NF_COUNT
+    };
+
+    /**
+     * Number formatters pre-allocated for fast performance on the most common integer lengths.
+     */
+    const number::LocalizedNumberFormatter* fFastNumberFormatters[SMPDTFMT_NF_COUNT] = {};
+
     UBool fHaveDefaultCentury;
 
-    BreakIterator* fCapitalizationBrkIter;
+    const BreakIterator* fCapitalizationBrkIter;
 };
 
 inline UDate
@@ -1625,6 +1658,8 @@ SimpleDateFormat::get2DigitYearStart(UErrorCode& /*status*/) const
 U_NAMESPACE_END
 
 #endif /* #if !UCONFIG_NO_FORMATTING */
+
+#endif /* U_SHOW_CPLUSPLUS_API */
 
 #endif // _SMPDTFMT
 //eof

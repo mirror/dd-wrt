@@ -31,6 +31,7 @@
 
 #include "unicode/localpointer.h"
 #include "unicode/regex.h"
+#include "unicode/stringpiece.h"
 #include "unicode/uchar.h"
 #include "unicode/ucnv.h"
 #include "unicode/uniset.h"
@@ -104,6 +105,8 @@ void RegexTest::runIndexedTest( int32_t index, UBool exec, const char* &name, ch
     TESTCASE_AUTO(TestBug12884);
     TESTCASE_AUTO(TestBug13631);
     TESTCASE_AUTO(TestBug13632);
+    TESTCASE_AUTO(TestBug20359);
+    TESTCASE_AUTO(TestBug20863);
     TESTCASE_AUTO_END;
 }
 
@@ -176,29 +179,56 @@ const char* RegexTest::extractToAssertBuf(const UnicodeString& message) {
   return ASSERT_BUF;
 }
 
-#define REGEX_VERBOSE_TEXT(text) {char buf[200];utextToPrintable(buf,UPRV_LENGTHOF(buf),text);logln("%s:%d: UText %s=\"%s\"", __FILE__, __LINE__, #text, buf);}
+#define REGEX_VERBOSE_TEXT(text) UPRV_BLOCK_MACRO_BEGIN { \
+    char buf[200]; \
+    utextToPrintable(buf,UPRV_LENGTHOF(buf),text); \
+    logln("%s:%d: UText %s=\"%s\"", __FILE__, __LINE__, #text, buf); \
+} UPRV_BLOCK_MACRO_END
 
-#define REGEX_CHECK_STATUS {if (U_FAILURE(status)) {dataerrln("%s:%d: RegexTest failure.  status=%s", \
-                                                              __FILE__, __LINE__, u_errorName(status)); return;}}
+#define REGEX_CHECK_STATUS UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        dataerrln("%s:%d: RegexTest failure.  status=%s", \
+                  __FILE__, __LINE__, u_errorName(status)); \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define REGEX_ASSERT(expr) {if ((expr)==FALSE) {errln("%s:%d: RegexTest failure: REGEX_ASSERT(%s) failed \n", __FILE__, __LINE__, #expr);};}
+#define REGEX_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("%s:%d: RegexTest failure: REGEX_ASSERT(%s) failed \n", __FILE__, __LINE__, #expr); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define REGEX_ASSERT_FAIL(expr, errcode) {UErrorCode status=U_ZERO_ERROR; (expr);\
-if (status!=errcode) {dataerrln("RegexTest failure at line %d.  Expected status=%s, got %s", \
-    __LINE__, u_errorName(errcode), u_errorName(status));};}
+#define REGEX_ASSERT_FAIL(expr, errcode) UPRV_BLOCK_MACRO_BEGIN { \
+    UErrorCode status=U_ZERO_ERROR; \
+    (expr); \
+    if (status!=errcode) { \
+        dataerrln("RegexTest failure at line %d.  Expected status=%s, got %s", \
+                  __LINE__, u_errorName(errcode), u_errorName(status)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define REGEX_CHECK_STATUS_L(line) {if (U_FAILURE(status)) {errln( \
-    "RegexTest failure at line %d, from %d.  status=%d\n",__LINE__, (line), status); }}
+#define REGEX_CHECK_STATUS_L(line) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        errln("RegexTest failure at line %d, from %d.  status=%d\n",__LINE__, (line), status); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define REGEX_ASSERT_L(expr, line) {if ((expr)==FALSE) { \
-    errln("RegexTest failure at line %d, from %d.", __LINE__, (line)); return;}}
+#define REGEX_ASSERT_L(expr, line) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("RegexTest failure at line %d, from %d.", __LINE__, (line)); \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 // expected: const char * , restricted to invariant characters.
 // actual: const UnicodeString &
-#define REGEX_ASSERT_UNISTR(expected, actual) { \
+#define REGEX_ASSERT_UNISTR(expected, actual) UPRV_BLOCK_MACRO_BEGIN { \
     if (UnicodeString(expected, -1, US_INV) != (actual)) { \
         errln("%s:%d: RegexTest failure: REGEX_ASSERT_UNISTR(%s, %s) failed \n",  \
-                __FILE__, __LINE__, expected, extractToAssertBuf(actual));};}
+              __FILE__, __LINE__, expected, extractToAssertBuf(actual)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 
 static UBool testUTextEqual(UText *uta, UText *utb) {
@@ -328,7 +358,10 @@ static UText* regextst_openUTF8FromInvariant(UText *ut, const char *inv, int64_t
 //
 //---------------------------------------------------------------------------
 
-#define REGEX_TESTLM(pat, text, looking, match) {doRegexLMTest(pat, text, looking, match, __LINE__);doRegexLMTestUTF8(pat, text, looking, match, __LINE__);}
+#define REGEX_TESTLM(pat, text, looking, match) UPRV_BLOCK_MACRO_BEGIN { \
+    doRegexLMTest(pat, text, looking, match, __LINE__); \
+    doRegexLMTestUTF8(pat, text, looking, match, __LINE__); \
+} UPRV_BLOCK_MACRO_END
 
 UBool RegexTest::doRegexLMTest(const char *pat, const char *text, UBool looking, UBool match, int32_t line) {
     const UnicodeString pattern(pat, -1, US_INV);
@@ -480,7 +513,7 @@ UBool RegexTest::doRegexLMTestUTF8(const char *pat, const char *text, UBool look
 //          REGEX_ERR("pattern",   expected error line, column, expected status);
 //
 //---------------------------------------------------------------------------
-#define REGEX_ERR(pat, line, col, status) regex_err(pat, line, col, status, __LINE__);
+#define REGEX_ERR(pat, line, col, status) regex_err(pat, line, col, status, __LINE__)
 
 void RegexTest::regex_err(const char *pat, int32_t errLine, int32_t errCol,
                           UErrorCode expectedStatus, int32_t line) {
@@ -1821,8 +1854,8 @@ void RegexTest::API_Match_UTF8() {
         REGEX_VERBOSE_TEXT(&input2);
         utext_openUChars(&empty, NULL, 0, &status);
 
-        int32_t input1Len = strlen("abcdef this is a test"); /* TODO: why not nativelen (input1) ? */
-        int32_t input2Len = strlen("not abc");
+        int32_t input1Len = static_cast<int32_t>(strlen("abcdef this is a test")); /* TODO: why not nativelen (input1) ? */
+        int32_t input2Len = static_cast<int32_t>(strlen("not abc"));
 
 
         //
@@ -3468,11 +3501,15 @@ void RegexTest::regex_find(const UnicodeString &pattern,
     //    positions.
     //
     parsePat = RegexPattern::compile("<(/?)(r|[0-9]+)>", 0, pe, status);
-    REGEX_CHECK_STATUS_L(line);
+    if (!assertSuccess(WHERE, status) ) {
+        goto cleanupAndReturn;
+    }
 
     unEscapedInput = inputString.unescape();
     parseMatcher = parsePat->matcher(unEscapedInput, status);
-    REGEX_CHECK_STATUS_L(line);
+    if (!assertSuccess(WHERE, status) ) {
+        goto cleanupAndReturn;
+    }
     while(parseMatcher->find()) {
         parseMatcher->appendReplacement(deTaggedInput, "", status);
         REGEX_CHECK_STATUS;
@@ -3494,11 +3531,16 @@ void RegexTest::regex_find(const UnicodeString &pattern,
         }
     }
     parseMatcher->appendTail(deTaggedInput);
-    REGEX_ASSERT_L(groupStarts.size() == groupEnds.size(), line);
+
+    if (groupStarts.size() != groupEnds.size()) {
+        errln("Error at line %d: mismatched <n> group tags in expected results.", line);
+        failed = true;
+        goto cleanupAndReturn;
+    }
     if ((regionStart>=0 || regionEnd>=0) && (regionStart<0 || regionStart>regionEnd)) {
-      errln("mismatched <r> tags");
-      failed = TRUE;
-      goto cleanupAndReturn;
+        errln("mismatched <r> tags");
+        failed = TRUE;
+        goto cleanupAndReturn;
     }
 
     //
@@ -3861,7 +3903,7 @@ UChar *RegexTest::ReadAndConvertFile(const char *fileName, int32_t &ulen,
     fileSize = ftell(f);
     fileBuf = new char[fileSize];
     fseek(f, 0, SEEK_SET);
-    amt_read = fread(fileBuf, 1, fileSize, f);
+    amt_read = static_cast<int32_t>(fread(fileBuf, 1, fileSize, f));
     if (amt_read != fileSize || fileSize <= 0) {
         errln("Error reading test data file.");
         goto cleanUpAndReturn;
@@ -3927,7 +3969,7 @@ cleanUpAndReturn:
         delete []retPtr;
         retPtr = 0;
         ulen   = 0;
-    };
+    }
     return retPtr;
 }
 
@@ -4166,6 +4208,8 @@ void RegexTest::PerlTests() {
         if (expected != found) {
             errln("line %d: Expected %smatch, got %smatch",
                 lineNum, expected?"":"no ", found?"":"no " );
+            delete testMat;
+            delete testPat;
             continue;
         }
 
@@ -4561,6 +4605,8 @@ void RegexTest::PerlTestsUTF8() {
         if (expected != found) {
             errln("line %d: Expected %smatch, got %smatch",
                 lineNum, expected?"":"no ", found?"":"no " );
+            delete testMat;
+            delete testPat;
             continue;
         }
 
@@ -4754,7 +4800,7 @@ struct callBackContext {
     int32_t          maxCalls;
     int32_t          numCalls;
     int32_t          lastSteps;
-    void reset(int32_t max) {maxCalls=max; numCalls=0; lastSteps=0;};
+    void reset(int32_t max) {maxCalls=max; numCalls=0; lastSteps=0;}
 };
 
 U_CDECL_BEGIN
@@ -4857,7 +4903,7 @@ struct progressCallBackContext {
     int64_t          lastIndex;
     int32_t          maxCalls;
     int32_t          numCalls;
-    void reset(int32_t max) {maxCalls=max; numCalls=0;lastIndex=0;};
+    void reset(int32_t max) {maxCalls=max; numCalls=0;lastIndex=0;}
 };
 
 // call-back function for find().
@@ -5667,7 +5713,7 @@ void RegexTest::TestCase11049(const char *pattern, const char *data, UBool expec
     //   Size of the original char * data (invariant charset) will be <= than the equivalent UTF-8
     //   because string.unescape() will only shrink it.
     char * utf8Buffer = new char[uprv_strlen(data)+1];
-    u_strToUTF8(utf8Buffer, uprv_strlen(data)+1, NULL, dataString.getBuffer(), dataString.length(), &status);
+    u_strToUTF8(utf8Buffer, static_cast<int32_t>(uprv_strlen(data)+1), NULL, dataString.getBuffer(), dataString.length(), &status);
     REGEX_CHECK_STATUS;
     ut = utext_openUTF8(ut, utf8Buffer, -1, &status);
     REGEX_CHECK_STATUS;
@@ -5793,11 +5839,11 @@ void RegexTest::TestBug12884() {
     REGEX_ASSERT(status == U_REGEX_TIME_OUT);
 
     // UText, wrapping non-UTF-16 text, also takes a different execution path.
-    const char *text8 = u8"¿Qué es Unicode?  Unicode proporciona un número único para cada"
+    StringPiece text8(u8"¿Qué es Unicode?  Unicode proporciona un número único para cada"
                           "carácter, sin importar la plataforma, sin importar el programa,"
-                          "sin importar el idioma.";
+                          "sin importar el idioma.");
     status = U_ZERO_ERROR;
-    LocalUTextPointer ut(utext_openUTF8(NULL, text8, -1, &status));
+    LocalUTextPointer ut(utext_openUTF8(NULL, text8.data(), text8.length(), &status));
     REGEX_CHECK_STATUS;
     m.reset(ut.getAlias());
     m.find(status);
@@ -5850,5 +5896,122 @@ void RegexTest::TestBug13632() {
     assertEquals("", U_REGEX_INVALID_CAPTURE_GROUP_NAME, status);
     uregex_close(re);
 }
+
+void RegexTest::TestBug20359() {
+    // The bug was stack overflow while parsing a pattern with a huge number of adjacent \Q\E
+    // pairs. (Enter and exit pattern literal quote mode). Logic was correct.
+    // Changed implementation to loop instead of recursing.
+
+    UnicodeString pattern;
+    for (int i=0; i<50000; ++i) {
+        pattern += u"\\Q\\E";
+    }
+    pattern += u"x";
+
+    UErrorCode status = U_ZERO_ERROR;
+    LocalURegularExpressionPointer re(uregex_open(pattern.getBuffer(), pattern.length(),
+                                       0, nullptr, &status));
+    assertSuccess(WHERE, status);
+
+    // We have passed the point where the bug crashed. The following is a small sanity
+    // check that the pattern works, that all the \Q\E\Q\E... didn't cause other problems.
+
+    uregex_setText(re.getAlias(), u"abcxyz", -1, &status);
+    assertSuccess(WHERE, status);
+    assertTrue(WHERE, uregex_find(re.getAlias(), 0, &status));
+    assertEquals(WHERE, 3, uregex_start(re.getAlias(), 0, &status));
+    assertSuccess(WHERE, status);
+}
+
+
+void RegexTest::TestBug20863() {
+    // Test that patterns with a large number of named capture groups work correctly.
+    //
+    // The ticket was not for a bug per se, but to reduce memory usage by using lazy
+    // construction of the map from capture names to numbers, and decreasing the
+    // default size of the map.
+
+    constexpr int GROUP_COUNT = 2000;
+    std::vector<UnicodeString> groupNames;
+    for (int32_t i=0; i<GROUP_COUNT; ++i) {
+        UnicodeString name;
+        name.append(u"name");
+        name.append(Int64ToUnicodeString(i));
+        groupNames.push_back(name);
+    }
+
+    UnicodeString patternString;
+    for (UnicodeString name: groupNames) {
+        patternString.append(u"(?<");
+        patternString.append(name);
+        patternString.append(u">.)");
+    }
+
+    UErrorCode status = U_ZERO_ERROR;
+    UParseError pe;
+    LocalPointer<RegexPattern> pattern(RegexPattern::compile(patternString, pe, status), status);
+    if (!assertSuccess(WHERE, status)) {
+        return;
+    }
+
+    for (int32_t i=0; i<GROUP_COUNT; ++i) {
+        int32_t group = pattern->groupNumberFromName(groupNames[i], status);
+        if (!assertSuccess(WHERE, status)) {
+            return;
+        }
+        assertEquals(WHERE, i+1, group);
+        // Note: group 0 is the overall match; group 1 is the first separate capture group.
+    }
+
+    // Verify that assignment of patterns with various combinations of named capture work.
+    // Lazy creation of the internal named capture map changed the implementation logic here.
+    {
+        LocalPointer<RegexPattern> pat1(RegexPattern::compile(u"abc", pe, status), status);
+        LocalPointer<RegexPattern> pat2(RegexPattern::compile(u"a(?<name>b)c", pe, status), status);
+        assertSuccess(WHERE, status);
+        assertFalse(WHERE, *pat1 == *pat2);
+        *pat1 = *pat2;
+        assertTrue(WHERE, *pat1 == *pat2);
+        assertEquals(WHERE, 1, pat1->groupNumberFromName(u"name", status));
+        assertEquals(WHERE, 1, pat2->groupNumberFromName(u"name", status));
+        assertSuccess(WHERE, status);
+    }
+
+    {
+        LocalPointer<RegexPattern> pat1(RegexPattern::compile(u"abc", pe, status), status);
+        LocalPointer<RegexPattern> pat2(RegexPattern::compile(u"a(?<name>b)c", pe, status), status);
+        assertSuccess(WHERE, status);
+        assertFalse(WHERE, *pat1 == *pat2);
+        *pat2 = *pat1;
+        assertTrue(WHERE, *pat1 == *pat2);
+        assertEquals(WHERE, 0, pat1->groupNumberFromName(u"name", status));
+        assertEquals(WHERE, U_REGEX_INVALID_CAPTURE_GROUP_NAME, status);
+        status = U_ZERO_ERROR;
+        assertEquals(WHERE, 0, pat2->groupNumberFromName(u"name", status));
+        assertEquals(WHERE, U_REGEX_INVALID_CAPTURE_GROUP_NAME, status);
+        status = U_ZERO_ERROR;
+    }
+
+    {
+        LocalPointer<RegexPattern> pat1(RegexPattern::compile(u"a(?<name1>b)c", pe, status), status);
+        LocalPointer<RegexPattern> pat2(RegexPattern::compile(u"a(?<name2>b)c", pe, status), status);
+        assertSuccess(WHERE, status);
+        assertFalse(WHERE, *pat1 == *pat2);
+        *pat2 = *pat1;
+        assertTrue(WHERE, *pat1 == *pat2);
+        assertEquals(WHERE, 1, pat1->groupNumberFromName(u"name1", status));
+        assertSuccess(WHERE, status);
+        assertEquals(WHERE, 1, pat2->groupNumberFromName(u"name1", status));
+        assertSuccess(WHERE, status);
+        assertEquals(WHERE, 0, pat1->groupNumberFromName(u"name2", status));
+        assertEquals(WHERE, U_REGEX_INVALID_CAPTURE_GROUP_NAME, status);
+        status = U_ZERO_ERROR;
+        assertEquals(WHERE, 0, pat2->groupNumberFromName(u"name2", status));
+        assertEquals(WHERE, U_REGEX_INVALID_CAPTURE_GROUP_NAME, status);
+        status = U_ZERO_ERROR;
+    }
+
+}
+
 
 #endif  /* !UCONFIG_NO_REGULAR_EXPRESSIONS  */

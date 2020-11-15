@@ -442,7 +442,7 @@ TestCaseFolding(void) {
 
     /* test simple case folding */
     p=simple;
-    for(i=0; i<sizeof(simple)/12; p+=3, ++i) {
+    for(i=0; i<(int32_t)sizeof(simple)/12; p+=3, ++i) {
         if(u_foldCase(p[0], U_FOLD_CASE_DEFAULT)!=p[1]) {
             log_err("error: u_foldCase(0x%04lx, default)=0x%04lx instead of 0x%04lx\n",
                     p[0], u_foldCase(p[0], U_FOLD_CASE_DEFAULT), p[1]);
@@ -748,9 +748,12 @@ TestUCaseMap(void) {
     /* overly long locale IDs may get truncated to their language code to avoid unnecessary allocation */
     ucasemap_setLocale(csm, "I-kLInGOn-the-quick-brown-fox-jumps-over-the-lazy-dog", &errorCode);
     locale=ucasemap_getLocale(csm);
-    if(0!=strncmp(locale, "i-klingon", 9)) {
+    // "I-kLInGOn-the-quick-brown-fox-jumps-over-the-lazy-dog" is canonicalized
+    // into "tlh-the-quick-brown-fox-jumps-over-the-lazy-dog"
+    // and "the" will be treated as an extlang which replaces "tlh".
+    if(0!=strncmp(locale, "the", 3)) {
         log_err("ucasemap_getLocale(ucasemap_setLocale(\"I-kLInGOn-the-quick-br...\"))==%s\n"
-                "    does not start with \"i-klingon\"\n", locale);
+                "    does not start with \"the\"\n", locale);
     }
 
     errorCode=U_ZERO_ERROR;
@@ -913,6 +916,7 @@ TestUCaseMapToTitle(void) {
     ucasemap_setOptions(csm, U_TITLECASE_NO_BREAK_ADJUSTMENT, &errorCode);
     if(U_FAILURE(errorCode)) {
         log_err_status(errorCode, "error: ucasemap_setOptions(U_TITLECASE_NO_BREAK_ADJUSTMENT) failed - %s\n", u_errorName(errorCode));
+        ucasemap_close(csm);
         return;
     }
 
@@ -948,6 +952,7 @@ TestUCaseMapToTitle(void) {
     ucasemap_setOptions(csm, U_TITLECASE_NO_LOWERCASE, &errorCode);
     if(U_FAILURE(errorCode)) {
         log_err("error: ucasemap_setOptions(U_TITLECASE_NO_LOWERCASE) failed - %s\n", u_errorName(errorCode));
+        ucasemap_close(csm);
         return;
     }
 

@@ -512,17 +512,18 @@ void TransliteratorAPITest::TestKeyboardTransliterator1(){
     logln("Testing transliterate(Replaceable, int32_t, UChar, UErrorCode)");
     for(i=10; i<UPRV_LENGTHOF(Data); i=i+2){
         UnicodeString log;
-         if (Data[i+0] != "") {
-           log = s + " + " + Data[i+0] + " -> ";
-           UChar c=Data[i+0].charAt(0);
-           t->transliterate(s, index, c, status);
-           if(U_FAILURE(status))
+        if (Data[i+0] != "") {
+            log = s + " + " + Data[i+0] + " -> ";
+            UChar c=Data[i+0].charAt(0);
+            t->transliterate(s, index, c, status);
+            if(U_FAILURE(status)) {
                errln("FAIL: " + t->getID()+ ".transliterate(Replaceable, int32_t[], UChar, UErrorCode)-->" + (UnicodeString)u_errorName(status));
                continue;
-         }else {
+            }
+        } else {
            log = s + " => ";
            t->finishTransliteration(s, index);
-         }
+        }
         // Show the start index '{' and the cursor '|'
         displayOutput(s, Data[i+1], log, index); 
     }
@@ -711,7 +712,7 @@ int gTestFilter3ClassID = 0;
  */
 class TestFilter1 : public UnicodeFilter {
     UClassID getDynamicClassID()const { return &gTestFilter1ClassID; }
-    virtual UnicodeFunctor* clone() const {
+    virtual TestFilter1* clone() const {
         return new TestFilter1(*this);
     }
     virtual UBool contains(UChar32 c) const {
@@ -732,7 +733,7 @@ class TestFilter1 : public UnicodeFilter {
 };
 class TestFilter2 : public UnicodeFilter {
     UClassID getDynamicClassID()const { return &gTestFilter2ClassID; }
-    virtual UnicodeFunctor* clone() const {
+    virtual TestFilter2* clone() const {
         return new TestFilter2(*this);
     }
     virtual UBool contains(UChar32 c) const {
@@ -753,7 +754,7 @@ class TestFilter2 : public UnicodeFilter {
 };
 class TestFilter3 : public UnicodeFilter {
     UClassID getDynamicClassID()const { return &gTestFilter3ClassID; }
-    virtual UnicodeFunctor* clone() const {
+    virtual TestFilter3* clone() const {
         return new TestFilter3(*this);
     }
     virtual UBool contains(UChar32 c) const {
@@ -914,8 +915,12 @@ void TransliteratorAPITest::doTest(const UnicodeString& message, const UnicodeSt
 //                    transliterator, just to verify that they don't fail in some
 //                    destructive way.
 //
-#define CEASSERT(a) {if (!(a)) { \
-errln("FAIL at line %d from line %d: %s", __LINE__, line, #a);  return; }}
+#define CEASSERT(a) UPRV_BLOCK_MACRO_BEGIN { \
+    if (!(a)) { \
+        errln("FAIL at line %d from line %d: %s", __LINE__, line, #a); \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 void TransliteratorAPITest::callEverything(const Transliterator *tr, int line) {
     Transliterator *clonedTR = tr->clone();
@@ -969,7 +974,7 @@ class MyUnicodeFunctorTestClass : public UnicodeFunctor {
 public:
     virtual UnicodeFunctor* clone() const {return NULL;}
     static UClassID getStaticClassID(void) {return (UClassID)&MyUnicodeFunctorTestClassID;}
-    virtual UClassID getDynamicClassID(void) const {return getStaticClassID();};
+    virtual UClassID getDynamicClassID(void) const {return getStaticClassID();}
     virtual void setData(const TransliterationRuleData*) {}
 };
 

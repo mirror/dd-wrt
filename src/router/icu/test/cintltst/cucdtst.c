@@ -61,6 +61,8 @@ static void TestPropertyNames(void);
 static void TestPropertyValues(void);
 static void TestConsistency(void);
 static void TestCaseFolding(void);
+static void TestBinaryCharacterPropertiesAPI(void);
+static void TestIntCharacterPropertiesAPI(void);
 
 /* internal methods used */
 static int32_t MakeProp(char* str);
@@ -196,6 +198,10 @@ void addUnicodeTest(TestNode** root)
     addTest(root, &TestPropertyValues, "tsutil/cucdtst/TestPropertyValues");
     addTest(root, &TestConsistency, "tsutil/cucdtst/TestConsistency");
     addTest(root, &TestCaseFolding, "tsutil/cucdtst/TestCaseFolding");
+    addTest(root, &TestBinaryCharacterPropertiesAPI,
+            "tsutil/cucdtst/TestBinaryCharacterPropertiesAPI");
+    addTest(root, &TestIntCharacterPropertiesAPI,
+            "tsutil/cucdtst/TestIntCharacterPropertiesAPI");
 }
 
 /*==================================================== */
@@ -957,6 +963,7 @@ unicodeDataLineFn(void *context,
                   char *fields[][2], int32_t fieldCount,
                   UErrorCode *pErrorCode)
 {
+    (void)fieldCount; // suppress compiler warnings about unused variable
     char buffer[100];
     const char *d;
     char *end;
@@ -1016,7 +1023,7 @@ unicodeDataLineFn(void *context,
     /* get BiDi category, field 4 */
     *fields[4][1]=0;
     i=MakeDir(fields[4][0]);
-    if(i!=u_charDirection(c) || i!=u_getIntPropertyValue(c, UCHAR_BIDI_CLASS)) {
+    if(i!=(int32_t)u_charDirection(c) || i!=u_getIntPropertyValue(c, UCHAR_BIDI_CLASS)) {
         log_err("error: u_charDirection(U+%04lx)==%u instead of %u (%s)\n", c, u_charDirection(c), MakeDir(fields[4][0]), fields[4][0]);
     }
 
@@ -1211,6 +1218,8 @@ enumTypeRange(const void *context, UChar32 start, UChar32 limit, UCharCategory t
 
 static UBool U_CALLCONV
 enumDefaultsRange(const void *context, UChar32 start, UChar32 limit, UCharCategory type) {
+    (void)context; // suppress compiler warnings about unused variable
+
     /* default Bidi classes for unassigned code points, from the DerivedBidiClass.txt header */
     static const int32_t defaultBidi[][2]={ /* { limit, class } */
         { 0x0590, U_LEFT_TO_RIGHT },
@@ -1227,9 +1236,19 @@ enumDefaultsRange(const void *context, UChar32 start, UChar32 limit, UCharCatego
         { 0xFE00, U_RIGHT_TO_LEFT_ARABIC },
         { 0xFE70, U_LEFT_TO_RIGHT },
         { 0xFF00, U_RIGHT_TO_LEFT_ARABIC },
+
         { 0x10800, U_LEFT_TO_RIGHT },
+        { 0x10D00, U_RIGHT_TO_LEFT },  // Unicode 11 changes U+10D00..U+10D3F from R to AL.
+        { 0x10D40, U_RIGHT_TO_LEFT_ARABIC },
+        { 0x10F30, U_RIGHT_TO_LEFT },  // Unicode 11 changes U+10F30..U+10F6F from R to AL.
+        { 0x10F70, U_RIGHT_TO_LEFT_ARABIC },
         { 0x11000, U_RIGHT_TO_LEFT },
+
         { 0x1E800, U_LEFT_TO_RIGHT },  /* new default-R range in Unicode 5.2: U+1E800 - U+1EFFF */
+        { 0x1EC70, U_RIGHT_TO_LEFT },  // Unicode 11 changes U+1EC70..U+1ECBF from R to AL.
+        { 0x1ECC0, U_RIGHT_TO_LEFT_ARABIC },
+        { 0x1ED00, U_RIGHT_TO_LEFT },  // Unicode 12 changes U+1ED00..U+1ED4F from R to AL.
+        { 0x1ED50, U_RIGHT_TO_LEFT_ARABIC },
         { 0x1EE00, U_RIGHT_TO_LEFT },
         { 0x1EF00, U_RIGHT_TO_LEFT_ARABIC },  /* Unicode 6.1 changes U+1EE00..U+1EEFF from R to AL */
         { 0x1F000, U_RIGHT_TO_LEFT },
@@ -1276,7 +1295,7 @@ enumDefaultsRange(const void *context, UChar32 start, UChar32 limit, UCharCatego
                     }
 
                     if( u_charDirection(c)!=shouldBeDir ||
-                        u_getIntPropertyValue(c, UCHAR_BIDI_CLASS)!=shouldBeDir
+                        (UCharDirection)u_getIntPropertyValue(c, UCHAR_BIDI_CLASS)!=shouldBeDir
                     ) {
                         log_err("error: u_charDirection(unassigned/PUA U+%04lx)=%s should be %s\n",
                             c, dirStrings[u_charDirection(c)], dirStrings[shouldBeDir]);
@@ -1635,28 +1654,28 @@ static const struct {
     uint32_t code;
     const char *name, *oldName, *extName, *alias;
 } names[]={
-    {0x0061, "LATIN SMALL LETTER A", "", "LATIN SMALL LETTER A"},
+    {0x0061, "LATIN SMALL LETTER A", "", "LATIN SMALL LETTER A", NULL},
     {0x01a2, "LATIN CAPITAL LETTER OI", "",
              "LATIN CAPITAL LETTER OI",
              "LATIN CAPITAL LETTER GHA"},
     {0x0284, "LATIN SMALL LETTER DOTLESS J WITH STROKE AND HOOK", "",
-             "LATIN SMALL LETTER DOTLESS J WITH STROKE AND HOOK" },
+             "LATIN SMALL LETTER DOTLESS J WITH STROKE AND HOOK", NULL},
     {0x0fd0, "TIBETAN MARK BSKA- SHOG GI MGO RGYAN", "",
              "TIBETAN MARK BSKA- SHOG GI MGO RGYAN",
              "TIBETAN MARK BKA- SHOG GI MGO RGYAN"},
-    {0x3401, "CJK UNIFIED IDEOGRAPH-3401", "", "CJK UNIFIED IDEOGRAPH-3401" },
-    {0x7fed, "CJK UNIFIED IDEOGRAPH-7FED", "", "CJK UNIFIED IDEOGRAPH-7FED" },
-    {0xac00, "HANGUL SYLLABLE GA", "", "HANGUL SYLLABLE GA" },
-    {0xd7a3, "HANGUL SYLLABLE HIH", "", "HANGUL SYLLABLE HIH" },
-    {0xd800, "", "", "<lead surrogate-D800>" },
-    {0xdc00, "", "", "<trail surrogate-DC00>" },
-    {0xff08, "FULLWIDTH LEFT PARENTHESIS", "", "FULLWIDTH LEFT PARENTHESIS" },
-    {0xffe5, "FULLWIDTH YEN SIGN", "", "FULLWIDTH YEN SIGN" },
-    {0xffff, "", "", "<noncharacter-FFFF>" },
+    {0x3401, "CJK UNIFIED IDEOGRAPH-3401", "", "CJK UNIFIED IDEOGRAPH-3401", NULL},
+    {0x7fed, "CJK UNIFIED IDEOGRAPH-7FED", "", "CJK UNIFIED IDEOGRAPH-7FED", NULL},
+    {0xac00, "HANGUL SYLLABLE GA", "", "HANGUL SYLLABLE GA", NULL},
+    {0xd7a3, "HANGUL SYLLABLE HIH", "", "HANGUL SYLLABLE HIH", NULL},
+    {0xd800, "", "", "<lead surrogate-D800>", NULL},
+    {0xdc00, "", "", "<trail surrogate-DC00>", NULL},
+    {0xff08, "FULLWIDTH LEFT PARENTHESIS", "", "FULLWIDTH LEFT PARENTHESIS", NULL},
+    {0xffe5, "FULLWIDTH YEN SIGN", "", "FULLWIDTH YEN SIGN", NULL},
+    {0xffff, "", "", "<noncharacter-FFFF>", NULL},
     {0x1d0c5, "BYZANTINE MUSICAL SYMBOL FHTORA SKLIRON CHROMA VASIS", "",
               "BYZANTINE MUSICAL SYMBOL FHTORA SKLIRON CHROMA VASIS",
               "BYZANTINE MUSICAL SYMBOL FTHORA SKLIRON CHROMA VASIS"},
-    {0x23456, "CJK UNIFIED IDEOGRAPH-23456", "", "CJK UNIFIED IDEOGRAPH-23456" }
+    {0x23456, "CJK UNIFIED IDEOGRAPH-23456", "", "CJK UNIFIED IDEOGRAPH-23456", NULL}
 };
 
 static UBool
@@ -1892,7 +1911,8 @@ TestCharNames() {
                 uset_add,
                 uset_addRange,
                 uset_addString,
-                NULL /* don't need remove() */
+                NULL, /* don't need remove() */
+                NULL  /* don't need removeRange() */
             };
             sa.set=set;
             uprv_getCharNameCharacters(&sa);
@@ -1989,29 +2009,62 @@ TestCharNames() {
 static void
 TestUCharFromNameUnderflow() {
     // Ticket #10889: Underflow crash when there is no dash.
+    const char *name="<NO BREAK SPACE>";
     UErrorCode errorCode=U_ZERO_ERROR;
-    UChar32 c=u_charFromName(U_EXTENDED_CHAR_NAME, "<NO BREAK SPACE>", &errorCode);
+    UChar32 c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
     if(U_SUCCESS(errorCode)) {
-        log_err("u_charFromName(<NO BREAK SPACE>) = U+%04x but should fail - %s\n", c, u_errorName(errorCode));
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
     }
 
     // Test related edge cases.
+    name="<-00a0>";
     errorCode=U_ZERO_ERROR;
-    c=u_charFromName(U_EXTENDED_CHAR_NAME, "<-00a0>", &errorCode);
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
     if(U_SUCCESS(errorCode)) {
-        log_err("u_charFromName(<-00a0>) = U+%04x but should fail - %s\n", c, u_errorName(errorCode));
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
     }
 
     errorCode=U_ZERO_ERROR;
-    c=u_charFromName(U_EXTENDED_CHAR_NAME, "<control->", &errorCode);
+    name="<control->";
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
     if(U_SUCCESS(errorCode)) {
-        log_err("u_charFromName(<control->) = U+%04x but should fail - %s\n", c, u_errorName(errorCode));
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
     }
 
     errorCode=U_ZERO_ERROR;
-    c=u_charFromName(U_EXTENDED_CHAR_NAME, "<control-111111>", &errorCode);
+    name="<control-111111>";
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
     if(U_SUCCESS(errorCode)) {
-        log_err("u_charFromName(<control-111111>) = U+%04x but should fail - %s\n", c, u_errorName(errorCode));
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
+    }
+
+    // ICU-20292: integer overflow
+    errorCode=U_ZERO_ERROR;
+    name="<noncharacter-10010FFFF>";
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
+    if(U_SUCCESS(errorCode)) {
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
+    }
+
+    errorCode=U_ZERO_ERROR;
+    name="<noncharacter-00010FFFF>";  // too many digits even if only leading 0s
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
+    if(U_SUCCESS(errorCode)) {
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
+    }
+
+    errorCode=U_ZERO_ERROR;
+    name="<noncharacter-fFFf>>";
+    c=u_charFromName(U_EXTENDED_CHAR_NAME, name, &errorCode);
+    if(U_SUCCESS(errorCode)) {
+        log_err("u_charFromName(%s) = U+%04x but should fail - %s\n",
+                name, c, u_errorName(errorCode));
     }
 }
 
@@ -2515,7 +2568,7 @@ TestAdditionalProperties() {
         { 0x155A, UCHAR_BLOCK, UBLOCK_UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS },
         { 0x1717, UCHAR_BLOCK, UBLOCK_TAGALOG },
         { 0x1900, UCHAR_BLOCK, UBLOCK_LIMBU },
-        { 0x1CBF, UCHAR_BLOCK, UBLOCK_NO_BLOCK },
+        { 0x0870, UCHAR_BLOCK, UBLOCK_NO_BLOCK },
         { 0x3040, UCHAR_BLOCK, UBLOCK_HIRAGANA },
         { 0x1D0FF, UCHAR_BLOCK, UBLOCK_BYZANTINE_MUSICAL_SYMBOLS },
         { 0x50000, UCHAR_BLOCK, UBLOCK_NO_BLOCK },
@@ -2591,7 +2644,7 @@ TestAdditionalProperties() {
 
         /* UCHAR_NUMERIC_TYPE tested in TestNumericProperties() */
 
-        /* UCHAR_SCRIPT tested in TestUScriptCodeAPI() */
+        /* UCHAR_SCRIPT tested in cucdapi.c TestUScriptCodeAPI() */
 
         { 0x10ff, UCHAR_HANGUL_SYLLABLE_TYPE, 0 },
         { 0x1100, UCHAR_HANGUL_SYLLABLE_TYPE, U_HST_LEADING_JAMO },
@@ -3369,6 +3422,8 @@ static void U_CALLCONV
 caseFoldingLineFn(void *context,
                   char *fields[][2], int32_t fieldCount,
                   UErrorCode *pErrorCode) {
+    (void)fieldCount; // suppress compiler warnings about unused variable
+
     CaseFoldingData *pData=(CaseFoldingData *)context;
     char *end;
     UChar full[32];
@@ -3476,7 +3531,7 @@ caseFoldingLineFn(void *context,
 
 static void
 TestCaseFolding() {
-    CaseFoldingData data={ NULL };
+    CaseFoldingData data={ NULL, 0, 0, {0}, 0, 0 };
     char *fields[3][2];
     UErrorCode errorCode;
 
@@ -3513,4 +3568,42 @@ TestCaseFolding() {
     }
 
     uset_close(data.notSeen);
+}
+
+static void TestBinaryCharacterPropertiesAPI() {
+    // API test only. See intltest/ucdtest.cpp for functional test.
+    UErrorCode errorCode = U_ZERO_ERROR;
+    const USet *set = u_getBinaryPropertySet(-1, &errorCode);
+    if (U_SUCCESS(errorCode)) {
+        log_err("u_getBinaryPropertySet(-1) did not fail\n");
+    }
+    errorCode = U_ZERO_ERROR;
+    set = u_getBinaryPropertySet(UCHAR_BINARY_LIMIT, &errorCode);
+    if (U_SUCCESS(errorCode)) {
+        log_err("u_getBinaryPropertySet(UCHAR_BINARY_LIMIT) did not fail\n");
+    }
+    errorCode = U_ZERO_ERROR;
+    set = u_getBinaryPropertySet(UCHAR_WHITE_SPACE, &errorCode);
+    if (!uset_contains(set, 0x20) || uset_contains(set, 0x61)) {
+        log_err("u_getBinaryPropertySet(UCHAR_WHITE_SPACE) wrong contents\n");
+    }
+}
+
+static void TestIntCharacterPropertiesAPI() {
+    // API test only. See intltest/ucdtest.cpp for functional test.
+    UErrorCode errorCode = U_ZERO_ERROR;
+    const UCPMap *map = u_getIntPropertyMap(UCHAR_INT_START - 1, &errorCode);
+    if (U_SUCCESS(errorCode)) {
+        log_err("u_getIntPropertyMap(UCHAR_INT_START - 1) did not fail\n");
+    }
+    errorCode = U_ZERO_ERROR;
+    map = u_getIntPropertyMap(UCHAR_INT_LIMIT, &errorCode);
+    if (U_SUCCESS(errorCode)) {
+        log_err("u_getIntPropertyMap(UCHAR_INT_LIMIT) did not fail\n");
+    }
+    errorCode = U_ZERO_ERROR;
+    map = u_getIntPropertyMap(UCHAR_GENERAL_CATEGORY, &errorCode);
+    if (ucpmap_get(map, 0x20) != U_SPACE_SEPARATOR || ucpmap_get(map, 0x23456) != U_OTHER_LETTER) {
+        log_err("u_getIntPropertyMap(UCHAR_GENERAL_CATEGORY) wrong contents\n");
+    }
 }

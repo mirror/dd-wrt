@@ -3,13 +3,14 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 
 #include <cstdlib>
 #include "number_scientific.h"
 #include "number_utils.h"
-#include "number_stringbuilder.h"
+#include "formatted_string_builder.h"
 #include "unicode/unum.h"
+#include "number_microprops.h"
 
 using namespace icu;
 using namespace icu::number;
@@ -35,7 +36,7 @@ void ScientificModifier::set(int32_t exponent, const ScientificHandler *handler)
     fHandler = handler;
 }
 
-int32_t ScientificModifier::apply(NumberStringBuilder &output, int32_t /*leftIndex*/, int32_t rightIndex,
+int32_t ScientificModifier::apply(FormattedStringBuilder &output, int32_t /*leftIndex*/, int32_t rightIndex,
                                   UErrorCode &status) const {
     // FIXME: Localized exponent separator location.
     int i = rightIndex;
@@ -43,49 +44,73 @@ int32_t ScientificModifier::apply(NumberStringBuilder &output, int32_t /*leftInd
     i += output.insert(
             i,
             fHandler->fSymbols->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kExponentialSymbol),
-            UNUM_EXPONENT_SYMBOL_FIELD,
+            {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SYMBOL_FIELD},
             status);
     if (fExponent < 0 && fHandler->fSettings.fExponentSignDisplay != UNUM_SIGN_NEVER) {
         i += output.insert(
                 i,
                 fHandler->fSymbols
                         ->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kMinusSignSymbol),
-                UNUM_EXPONENT_SIGN_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SIGN_FIELD},
                 status);
     } else if (fExponent >= 0 && fHandler->fSettings.fExponentSignDisplay == UNUM_SIGN_ALWAYS) {
         i += output.insert(
                 i,
                 fHandler->fSymbols
                         ->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kPlusSignSymbol),
-                UNUM_EXPONENT_SIGN_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_SIGN_FIELD},
                 status);
     }
     // Append the exponent digits (using a simple inline algorithm)
     int32_t disp = std::abs(fExponent);
     for (int j = 0; j < fHandler->fSettings.fMinExponentDigits || disp > 0; j++, disp /= 10) {
         auto d = static_cast<int8_t>(disp % 10);
-        const UnicodeString &digitString = getDigitFromSymbols(d, *fHandler->fSymbols);
-        i += output.insert(i - j, digitString, UNUM_EXPONENT_FIELD, status);
+        i += utils::insertDigitFromSymbols(
+                output,
+                i - j,
+                d,
+                *fHandler->fSymbols,
+                {UFIELD_CATEGORY_NUMBER, UNUM_EXPONENT_FIELD},
+                status);
     }
     return i - rightIndex;
 }
 
-int32_t ScientificModifier::getPrefixLength(UErrorCode &status) const {
-    (void)status;
+int32_t ScientificModifier::getPrefixLength() const {
     // TODO: Localized exponent separator location.
     return 0;
 }
 
-int32_t ScientificModifier::getCodePointCount(UErrorCode &status) const {
-    (void)status;
-    // This method is not used for strong modifiers.
-    U_ASSERT(false);
-    return 0;
+int32_t ScientificModifier::getCodePointCount() const {
+    // NOTE: This method is only called one place, NumberRangeFormatterImpl.
+    // The call site only cares about != 0 and != 1.
+    // Return a very large value so that if this method is used elsewhere, we should notice.
+    return 999;
 }
 
 bool ScientificModifier::isStrong() const {
     // Scientific is always strong
     return true;
+}
+
+bool ScientificModifier::containsField(Field field) const {
+    (void)field;
+    // This method is not used for inner modifiers.
+    UPRV_UNREACHABLE;
+}
+
+void ScientificModifier::getParameters(Parameters& output) const {
+    // Not part of any plural sets
+    output.obj = nullptr;
+}
+
+bool ScientificModifier::semanticallyEquivalent(const Modifier& other) const {
+    auto* _other = dynamic_cast<const ScientificModifier*>(&other);
+    if (_other == nullptr) {
+        return false;
+    }
+    // TODO: Check for locale symbols and settings as well? Could be less efficient.
+    return fExponent == _other->fExponent;
 }
 
 // Note: Visual Studio does not compile this function without full name space. Why?
@@ -98,25 +123,39 @@ void ScientificHandler::processQuantity(DecimalQuantity &quantity, MicroProps &m
     fParent->processQuantity(quantity, micros, status);
     if (U_FAILURE(status)) { return; }
 
+    // Do not apply scientific notation to special doubles
+    if (quantity.isInfinite() || quantity.isNaN()) {
+        micros.modInner = &micros.helpers.emptyStrongModifier;
+        return;
+    }
+
     // Treat zero as if it had magnitude 0
     int32_t exponent;
-    if (quantity.isZero()) {
-        if (fSettings.fRequireMinInt && micros.rounding.fType == Rounder::RND_SIGNIFICANT) {
+    if (quantity.isZeroish()) {
+        if (fSettings.fRequireMinInt && micros.rounder.isSignificantDigits()) {
             // Show "00.000E0" on pattern "00.000E0"
-            micros.rounding.apply(quantity, fSettings.fEngineeringInterval, status);
+            micros.rounder.apply(quantity, fSettings.fEngineeringInterval, status);
             exponent = 0;
         } else {
-            micros.rounding.apply(quantity, status);
+            micros.rounder.apply(quantity, status);
             exponent = 0;
         }
     } else {
-        exponent = -micros.rounding.chooseMultiplierAndApply(quantity, *this, status);
+        exponent = -micros.rounder.chooseMultiplierAndApply(quantity, *this, status);
     }
 
     // Use MicroProps's helper ScientificModifier and save it as the modInner.
     ScientificModifier &mod = micros.helpers.scientificModifier;
     mod.set(exponent, this);
     micros.modInner = &mod;
+
+    // Change the exponent only after we select appropriate plural form
+    // for formatting purposes so that we preserve expected formatted
+    // string behavior.
+    quantity.adjustExponent(exponent);
+
+    // We already performed rounding. Do not perform it again.
+    micros.rounder = RoundingImpl::passThrough();
 }
 
 int32_t ScientificHandler::getMultiplier(int32_t magnitude) const {

@@ -179,9 +179,9 @@ int  main(int argc, char **argv) {
         copyright = U_COPYRIGHT_STRING;
     }
 
-    UBool quiet = FALSE;
+    UBool quiet = false;
     if (options[9].doesOccur) {
-      quiet = TRUE;
+      quiet = true;
     }
 
 #if UCONFIG_NO_REGULAR_EXPRESSIONS || UCONFIG_NO_NORMALIZATION || UCONFIG_NO_FILE_IO
@@ -236,7 +236,7 @@ int  main(int argc, char **argv) {
         fprintf(stderr, "gencfu: uspoof_openFromSource error \"%s\"  at file %s, line %d, column %d\n",
                 u_errorName(status), confFileName, (int)parseError.line, (int)parseError.offset);
         exit(status);
-    };
+    }
 
 
     //
@@ -319,7 +319,7 @@ int  main(int argc, char **argv) {
         return NULL;
     }
 
-    long t = fread(result, 1, fileSize, file);
+    long t = static_cast<long>(fread(result, 1, fileSize, file));
     if (t != fileSize)  {
         delete [] result;
         fclose(file);

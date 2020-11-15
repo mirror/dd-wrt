@@ -6,7 +6,15 @@
  * others. All Rights Reserved.
  ********************************************************************/
 
+#include <algorithm>
+#include <functional>
+#include <iterator>
+#include <set>
+#include <utility>
+
 #include "loctest.h"
+#include "unicode/localebuilder.h"
+#include "unicode/localpointer.h"
 #include "unicode/decimfmt.h"
 #include "unicode/ucurr.h"
 #include "unicode/smpdtfmt.h"
@@ -14,14 +22,18 @@
 #include "unicode/dtfmtsym.h"
 #include "unicode/brkiter.h"
 #include "unicode/coll.h"
+#include "unicode/ustring.h"
+#include "unicode/std_string.h"
 #include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
 #include <stdio.h>
 #include <string.h>
 #include "putilimp.h"
-#include "unicode/ustring.h"
 #include "hash.h"
+#include "locmap.h"
+#include "uparse.h"
+#include "ulocimp.h"
 
 static const char* const rawData[33][8] = {
 
@@ -42,7 +54,7 @@ static const char* const rawData[33][8] = {
         // LCID
         {   "409", "40c", "403", "408", "814", "10",     "0",   "804"  },
 
-        // display langage (English)
+        // display language (English)
         {   "English",  "French",   "Catalan", "Greek",    "Norwegian",    "Italian",  "xx",   "Chinese" },
         // display script (English)
         {   "",     "",     "",     "",     "",   "",     "",   "Simplified Han" },
@@ -55,7 +67,7 @@ static const char* const rawData[33][8] = {
         // (part of Euro support).
         {   "English (United States)", "French (France)", "Catalan (Spain)", "Greek (Greece)", "Norwegian (Norway, NY)", "Italian", "xx (YY)", "Chinese (Simplified, China)" },
 
-        // display langage (French)
+        // display language (French)
         {   "anglais",  "fran\\u00E7ais",   "catalan", "grec",    "norv\\u00E9gien",    "italien", "xx", "chinois" },
         // display script (French)
         {   "",     "",     "",     "",     "",     "",     "",   "sinogrammes simplifi\\u00E9s" },
@@ -79,7 +91,7 @@ static const char* const rawData[33][8] = {
         /* display name (Catalan) */
         {   "angl\\u00E8s (Estats Units)", "franc\\u00E8s (Fran\\u00E7a)", "catal\\u00E0 (Espanya)", "grec (Gr\\u00E8cia)", "noruec (Noruega, NY)", "itali\\u00E0", "", "xin\\u00E8s (simplificat, Xina)" },
 
-        // display langage (Greek)[actual values listed below]
+        // display language (Greek)[actual values listed below]
         {   "\\u0391\\u03b3\\u03b3\\u03bb\\u03b9\\u03ba\\u03ac",
             "\\u0393\\u03b1\\u03bb\\u03bb\\u03b9\\u03ba\\u03ac",
             "\\u039a\\u03b1\\u03c4\\u03b1\\u03bb\\u03b1\\u03bd\\u03b9\\u03ba\\u03ac",
@@ -114,7 +126,7 @@ static const char* const rawData[33][8] = {
             "\\u039A\\u03B9\\u03BD\\u03B5\\u03B6\\u03B9\\u03BA\\u03AC (\\u0391\\u03c0\\u03bb\\u03bf\\u03c0\\u03bf\\u03b9\\u03b7\\u03bc\\u03ad\\u03bd\\u03bf, \\u039A\\u03AF\\u03BD\\u03B1)"
         },
 
-        // display langage (<root>)
+        // display language (<root>)
         {   "English",  "French",   "Catalan", "Greek",    "Norwegian",    "Italian",  "xx", "" },
         // display script (<root>)
         {   "",     "",     "",     "",     "",   "",     "", ""},
@@ -138,13 +150,12 @@ static const char* const rawData[33][8] = {
    the macro is ugly but makes the tests pretty.
 */
 
-#define test_assert(test) \
-    { \
-        if(!(test)) \
-            errln("FAIL: " #test " was not true. In " __FILE__ " on line %d", __LINE__ ); \
-        else \
-            logln("PASS: asserted " #test); \
-    }
+#define test_assert(test) UPRV_BLOCK_MACRO_BEGIN { \
+    if(!(test)) \
+        errln("FAIL: " #test " was not true. In " __FILE__ " on line %d", __LINE__ ); \
+    else \
+        logln("PASS: asserted " #test); \
+} UPRV_BLOCK_MACRO_END
 
 /*
  Usage:
@@ -156,16 +167,17 @@ static const char* const rawData[33][8] = {
    the macro is ugly but makes the tests pretty.
 */
 
-#define test_assert_print(test,print) \
-    { \
-        if(!(test)) \
-            errln("FAIL: " #test " was not true. " + UnicodeString(print) ); \
-        else \
-            logln("PASS: asserted " #test "-> " + UnicodeString(print)); \
-    }
+#define test_assert_print(test,print) UPRV_BLOCK_MACRO_BEGIN { \
+    if(!(test)) \
+        errln("FAIL: " #test " was not true. " + UnicodeString(print) ); \
+    else \
+        logln("PASS: asserted " #test "-> " + UnicodeString(print)); \
+} UPRV_BLOCK_MACRO_END
 
 
-#define test_dumpLocale(l) { logln(#l " = " + UnicodeString(l.getName(), "")); }
+#define test_dumpLocale(l) UPRV_BLOCK_MACRO_BEGIN { \
+    logln(#l " = " + UnicodeString(l.getName(), "")); \
+} UPRV_BLOCK_MACRO_END
 
 LocaleTest::LocaleTest()
 : dataTable(NULL)
@@ -213,14 +225,27 @@ void LocaleTest::runIndexedTest( int32_t index, UBool exec, const char* &name, c
     TESTCASE_AUTO(Test4147317);
     TESTCASE_AUTO(Test4147552);
     TESTCASE_AUTO(TestVariantParsing);
+    TESTCASE_AUTO(Test20639_DeprecatesISO3Language);
 #if !UCONFIG_NO_FORMATTING
     TESTCASE_AUTO(Test4105828);
 #endif
     TESTCASE_AUTO(TestSetIsBogus);
     TESTCASE_AUTO(TestParallelAPIValues);
+    TESTCASE_AUTO(TestAddLikelySubtags);
+    TESTCASE_AUTO(TestMinimizeSubtags);
+    TESTCASE_AUTO(TestAddLikelyAndMinimizeSubtags);
     TESTCASE_AUTO(TestKeywordVariants);
+    TESTCASE_AUTO(TestCreateUnicodeKeywords);
     TESTCASE_AUTO(TestKeywordVariantParsing);
+    TESTCASE_AUTO(TestCreateKeywordSet);
+    TESTCASE_AUTO(TestCreateKeywordSetEmpty);
+    TESTCASE_AUTO(TestCreateUnicodeKeywordSet);
+    TESTCASE_AUTO(TestCreateUnicodeKeywordSetEmpty);
+    TESTCASE_AUTO(TestGetKeywordValueStdString);
+    TESTCASE_AUTO(TestGetUnicodeKeywordValueStdString);
     TESTCASE_AUTO(TestSetKeywordValue);
+    TESTCASE_AUTO(TestSetKeywordValueStringPiece);
+    TESTCASE_AUTO(TestSetUnicodeKeywordValueStringPiece);
     TESTCASE_AUTO(TestGetBaseName);
 #if !UCONFIG_NO_FILE_IO
     TESTCASE_AUTO(TestGetLocale);
@@ -231,6 +256,31 @@ void LocaleTest::runIndexedTest( int32_t index, UBool exec, const char* &name, c
     TESTCASE_AUTO(TestGetVariantWithKeywords);
     TESTCASE_AUTO(TestIsRightToLeft);
     TESTCASE_AUTO(TestBug13277);
+    TESTCASE_AUTO(TestBug13554);
+    TESTCASE_AUTO(TestBug20410);
+    TESTCASE_AUTO(TestBug20900);
+    TESTCASE_AUTO(TestLocaleCanonicalizationFromFile);
+    TESTCASE_AUTO(TestKnownCanonicalizedListCorrect);
+    TESTCASE_AUTO(TestConstructorAcceptsBCP47);
+    TESTCASE_AUTO(TestForLanguageTag);
+    TESTCASE_AUTO(TestToLanguageTag);
+    TESTCASE_AUTO(TestToLanguageTagOmitTrue);
+    TESTCASE_AUTO(TestMoveAssign);
+    TESTCASE_AUTO(TestMoveCtor);
+    TESTCASE_AUTO(TestBug20407iVariantPreferredValue);
+    TESTCASE_AUTO(TestBug13417VeryLongLanguageTag);
+    TESTCASE_AUTO(TestBug11053UnderlineTimeZone);
+    TESTCASE_AUTO(TestUnd);
+    TESTCASE_AUTO(TestUndScript);
+    TESTCASE_AUTO(TestUndRegion);
+    TESTCASE_AUTO(TestUndCAPI);
+    TESTCASE_AUTO(TestRangeIterator);
+    TESTCASE_AUTO(TestPointerConvertingIterator);
+    TESTCASE_AUTO(TestTagConvertingIterator);
+    TESTCASE_AUTO(TestCapturingTagConvertingIterator);
+    TESTCASE_AUTO(TestSetUnicodeKeywordValueInLongLocale);
+    TESTCASE_AUTO(TestSetUnicodeKeywordValueNullInLongLocale);
+    TESTCASE_AUTO(TestCanonicalize);
     TESTCASE_AUTO_END;
 }
 
@@ -867,8 +917,8 @@ LocaleTest::TestGetLangsAndCountries()
       ;
 
     /* TODO: Change this test to be more like the cloctst version? */
-    if (testCount != 595)
-        errln("Expected getISOLanguages() to return 595 languages; it returned %d", testCount);
+    if (testCount != 597)
+        errln("Expected getISOLanguages() to return 597 languages; it returned %d", testCount);
     else {
         for (i = 0; i < 15; i++) {
             int32_t j;
@@ -1036,29 +1086,29 @@ LocaleTest::TestAtypicalLocales()
                                      "Russian (Mexico)",
                                      "English (France)",
                                      "Spanish (Germany)",
-                                     "Croatia",
-                                     "Sweden",
-                                     "Dominican Republic",
-                                     "Belgium" };
+                                     "Unknown language (Croatia)",
+                                     "Unknown language (Sweden)",
+                                     "Unknown language (Dominican Republic)",
+                                     "Unknown language (Belgium)" };
     UnicodeString frenchDisplayNames []= { "allemand (Canada)",
-                                    "japonais (Afrique du Sud)",
-                                    "russe (Mexique)",
+                                     "japonais (Afrique du Sud)",
+                                     "russe (Mexique)",
                                      "anglais (France)",
                                      "espagnol (Allemagne)",
-                                    "Croatie",
-                                    CharsToUnicodeString("Su\\u00E8de"),
-                                    CharsToUnicodeString("R\\u00E9publique dominicaine"),
-                                    "Belgique" };
+                                     u"langue indéterminée (Croatie)",
+                                     u"langue indéterminée (Suède)",
+                                     u"langue indéterminée (République dominicaine)",
+                                     u"langue indéterminée (Belgique)" };
     UnicodeString spanishDisplayNames [] = {
-                                     CharsToUnicodeString("alem\\u00E1n (Canad\\u00E1)"),
-                                     CharsToUnicodeString("japon\\u00E9s (Sud\\u00E1frica)"),
-                                     CharsToUnicodeString("ruso (M\\u00E9xico)"),
-                                     CharsToUnicodeString("ingl\\u00E9s (Francia)"),
-                                     CharsToUnicodeString("espa\\u00F1ol (Alemania)"),
-                                     "Croacia",
-                                     "Suecia",
-                                     CharsToUnicodeString("Rep\\u00FAblica Dominicana"),
-                                     CharsToUnicodeString("B\\u00E9lgica") };
+                                     u"alemán (Canadá)",
+                                     u"japonés (Sudáfrica)",
+                                     u"ruso (México)",
+                                     u"inglés (Francia)",
+                                     u"español (Alemania)",
+                                     "lengua desconocida (Croacia)",
+                                     "lengua desconocida (Suecia)",
+                                     u"lengua desconocida (República Dominicana)",
+                                     u"lengua desconocida (Bélgica)" };
     // De-Anglicizing root required the change from
     // English display names to ISO Codes - ram 2003/09/26
     UnicodeString invDisplayNames [] = { "German (Canada)",
@@ -1066,10 +1116,10 @@ LocaleTest::TestAtypicalLocales()
                                      "Russian (Mexico)",
                                      "English (France)",
                                      "Spanish (Germany)",
-                                     "Croatia",
-                                     "Sweden",
-                                     "Dominican Republic",
-                                     "Belgium" };
+                                     "Unknown language (Croatia)",
+                                     "Unknown language (Sweden)",
+                                     "Unknown language (Dominican Republic)",
+                                     "Unknown language (Belgium)" };
 
     int32_t i;
     UErrorCode status = U_ZERO_ERROR;
@@ -1134,7 +1184,7 @@ LocaleTest::TestThaiCurrencyFormat()
     UErrorCode status = U_ZERO_ERROR;
     DecimalFormat *thaiCurrency = (DecimalFormat*)NumberFormat::createCurrencyInstance(
                     Locale("th", "TH"), status);
-    UnicodeString posPrefix("THB", 3, US_INV);  // per cldrbug 7618
+    UnicodeString posPrefix(u"\u0E3F");
     UnicodeString temp;
 
     if(U_FAILURE(status) || !thaiCurrency)
@@ -1143,7 +1193,7 @@ LocaleTest::TestThaiCurrencyFormat()
         return;
     }
     if (thaiCurrency->getPositivePrefix(temp) != posPrefix)
-        errln("Thai currency prefix wrong: expected THB, got \"" +
+        errln("Thai currency prefix wrong: expected Baht sign, got \"" +
                         thaiCurrency->getPositivePrefix(temp) + "\"");
     if (thaiCurrency->getPositiveSuffix(temp) != "")
         errln("Thai currency suffix wrong: expected \"\", got \"" +
@@ -1176,8 +1226,8 @@ LocaleTest::TestEuroSupport()
                             "el_GR",
                             "en_BE",
                             "en_IE",
-                            "en_GB_EURO",
-                            "en_US_EURO",
+                            "en_GB@currency=EUR",
+                            "en_US@currency=EUR",
                             "es_ES",
                             "eu_ES",
                             "fi_FI",
@@ -1236,20 +1286,15 @@ LocaleTest::TestEuroSupport()
     if (dollarStr != resultStr) {
         errcheckln(status, "Fail: en_US didn't return USD - %s", u_errorName(status));
     }
-    ucurr_forLocale("en_US_EURO", tmp, 4, &status);
+    ucurr_forLocale("en_US@currency=EUR", tmp, 4, &status);
     resultStr.setTo(tmp);
     if (euroStr != resultStr) {
-        errcheckln(status, "Fail: en_US_EURO didn't return EUR - %s", u_errorName(status));
+        errcheckln(status, "Fail: en_US@currency=EUR didn't return EUR - %s", u_errorName(status));
     }
-    ucurr_forLocale("en_GB_EURO", tmp, 4, &status);
+    ucurr_forLocale("en_GB@currency=EUR", tmp, 4, &status);
     resultStr.setTo(tmp);
     if (euroStr != resultStr) {
-        errcheckln(status, "Fail: en_GB_EURO didn't return EUR - %s", u_errorName(status));
-    }
-    ucurr_forLocale("en_US_PREEURO", tmp, 4, &status);
-    resultStr.setTo(tmp);
-    if (dollarStr != resultStr) {
-        errcheckln(status, "Fail: en_US_PREEURO didn't fallback to en_US - %s", u_errorName(status));
+        errcheckln(status, "Fail: en_GB@currency=EUR didn't return EUR - %s", u_errorName(status));
     }
     ucurr_forLocale("en_US_Q", tmp, 4, &status);
     resultStr.setTo(tmp);
@@ -1548,6 +1593,27 @@ LocaleTest::TestVariantParsing()
     }
 }
 
+void LocaleTest::Test20639_DeprecatesISO3Language() {
+    IcuTestErrorCode status(*this, "Test20639_DeprecatesISO3Language");
+
+    const struct TestCase {
+        const char* localeName;
+        const char* expectedISO3Language;
+    } cases[] = {
+        {"nb", "nob"},
+        {"no", "nor"}, // why not nob?
+        {"he", "heb"},
+        {"iw", "heb"},
+        {"ro", "ron"},
+        {"mo", "mol"},
+    };
+    for (auto& cas : cases) {
+        Locale loc(cas.localeName);
+        const char* actual = loc.getISO3Language();
+        assertEquals(cas.localeName, cas.expectedISO3Language, actual);
+    }
+}
+
 #if !UCONFIG_NO_FORMATTING
 
 /**
@@ -1592,6 +1658,2194 @@ LocaleTest::TestSetIsBogus() {
     l = "en_US"; // This should reset bogus
     if(l.isBogus() != FALSE) {
         errln("After resetting bogus, didn't return FALSE");
+    }
+}
+
+
+void
+LocaleTest::TestAddLikelySubtags() {
+    IcuTestErrorCode status(*this, "TestAddLikelySubtags()");
+
+    static const Locale min("sv");
+    static const Locale max("sv_Latn_SE");
+
+    Locale result(min);
+    result.addLikelySubtags(status);
+    status.errIfFailureAndReset("\"%s\"", min.getName());
+    assertEquals("addLikelySubtags", max.getName(), result.getName());
+}
+
+
+void
+LocaleTest::TestMinimizeSubtags() {
+    IcuTestErrorCode status(*this, "TestMinimizeSubtags()");
+
+    static const Locale max("zh_Hant_TW");
+    static const Locale min("zh_TW");
+
+    Locale result(max);
+    result.minimizeSubtags(status);
+    status.errIfFailureAndReset("\"%s\"", max.getName());
+    assertEquals("minimizeSubtags", min.getName(), result.getName());
+}
+
+
+void
+LocaleTest::TestAddLikelyAndMinimizeSubtags() {
+    IcuTestErrorCode status(*this, "TestAddLikelyAndMinimizeSubtags()");
+
+    static const struct {
+        const char* const from;
+        const char* const add;
+        const char* const remove;
+    } full_data[] = {
+        {
+            "und_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Zzzz_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Latn_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Moon_AQ",
+            "_Moon_AQ",
+            "_Moon_AQ"
+        }, {
+            "aa",
+            "aa_Latn_ET",
+            "aa"
+        }, {
+            "af",
+            "af_Latn_ZA",
+            "af"
+        }, {
+            "ak",
+            "ak_Latn_GH",
+            "ak"
+        }, {
+            "am",
+            "am_Ethi_ET",
+            "am"
+        }, {
+            "ar",
+            "ar_Arab_EG",
+            "ar"
+        }, {
+            "as",
+            "as_Beng_IN",
+            "as"
+        }, {
+            "az",
+            "az_Latn_AZ",
+            "az"
+        }, {
+            "be",
+            "be_Cyrl_BY",
+            "be"
+        }, {
+            "bg",
+            "bg_Cyrl_BG",
+            "bg"
+        }, {
+            "bn",
+            "bn_Beng_BD",
+            "bn"
+        }, {
+            "bo",
+            "bo_Tibt_CN",
+            "bo"
+        }, {
+            "bs",
+            "bs_Latn_BA",
+            "bs"
+        }, {
+            "ca",
+            "ca_Latn_ES",
+            "ca"
+        }, {
+            "ch",
+            "ch_Latn_GU",
+            "ch"
+        }, {
+            "chk",
+            "chk_Latn_FM",
+            "chk"
+        }, {
+            "cs",
+            "cs_Latn_CZ",
+            "cs"
+        }, {
+            "cy",
+            "cy_Latn_GB",
+            "cy"
+        }, {
+            "da",
+            "da_Latn_DK",
+            "da"
+        }, {
+            "de",
+            "de_Latn_DE",
+            "de"
+        }, {
+            "dv",
+            "dv_Thaa_MV",
+            "dv"
+        }, {
+            "dz",
+            "dz_Tibt_BT",
+            "dz"
+        }, {
+            "ee",
+            "ee_Latn_GH",
+            "ee"
+        }, {
+            "el",
+            "el_Grek_GR",
+            "el"
+        }, {
+            "en",
+            "en_Latn_US",
+            "en"
+        }, {
+            "es",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "et",
+            "et_Latn_EE",
+            "et"
+        }, {
+            "eu",
+            "eu_Latn_ES",
+            "eu"
+        }, {
+            "fa",
+            "fa_Arab_IR",
+            "fa"
+        }, {
+            "fi",
+            "fi_Latn_FI",
+            "fi"
+        }, {
+            "fil",
+            "fil_Latn_PH",
+            "fil"
+        }, {
+            "fj",
+            "fj_Latn_FJ",
+            "fj"
+        }, {
+            "fo",
+            "fo_Latn_FO",
+            "fo"
+        }, {
+            "fr",
+            "fr_Latn_FR",
+            "fr"
+        }, {
+            "fur",
+            "fur_Latn_IT",
+            "fur"
+        }, {
+            "ga",
+            "ga_Latn_IE",
+            "ga"
+        }, {
+            "gaa",
+            "gaa_Latn_GH",
+            "gaa"
+        }, {
+            "gl",
+            "gl_Latn_ES",
+            "gl"
+        }, {
+            "gn",
+            "gn_Latn_PY",
+            "gn"
+        }, {
+            "gu",
+            "gu_Gujr_IN",
+            "gu"
+        }, {
+            "ha",
+            "ha_Latn_NG",
+            "ha"
+        }, {
+            "haw",
+            "haw_Latn_US",
+            "haw"
+        }, {
+            "he",
+            "he_Hebr_IL",
+            "he"
+        }, {
+            "hi",
+            "hi_Deva_IN",
+            "hi"
+        }, {
+            "hr",
+            "hr_Latn_HR",
+            "hr"
+        }, {
+            "ht",
+            "ht_Latn_HT",
+            "ht"
+        }, {
+            "hu",
+            "hu_Latn_HU",
+            "hu"
+        }, {
+            "hy",
+            "hy_Armn_AM",
+            "hy"
+        }, {
+            "id",
+            "id_Latn_ID",
+            "id"
+        }, {
+            "ig",
+            "ig_Latn_NG",
+            "ig"
+        }, {
+            "ii",
+            "ii_Yiii_CN",
+            "ii"
+        }, {
+            "is",
+            "is_Latn_IS",
+            "is"
+        }, {
+            "it",
+            "it_Latn_IT",
+            "it"
+        }, {
+            "ja",
+            "ja_Jpan_JP",
+            "ja"
+        }, {
+            "ka",
+            "ka_Geor_GE",
+            "ka"
+        }, {
+            "kaj",
+            "kaj_Latn_NG",
+            "kaj"
+        }, {
+            "kam",
+            "kam_Latn_KE",
+            "kam"
+        }, {
+            "kk",
+            "kk_Cyrl_KZ",
+            "kk"
+        }, {
+            "kl",
+            "kl_Latn_GL",
+            "kl"
+        }, {
+            "km",
+            "km_Khmr_KH",
+            "km"
+        }, {
+            "kn",
+            "kn_Knda_IN",
+            "kn"
+        }, {
+            "ko",
+            "ko_Kore_KR",
+            "ko"
+        }, {
+            "kok",
+            "kok_Deva_IN",
+            "kok"
+        }, {
+            "kpe",
+            "kpe_Latn_LR",
+            "kpe"
+        }, {
+            "ku",
+            "ku_Latn_TR",
+            "ku"
+        }, {
+            "ky",
+            "ky_Cyrl_KG",
+            "ky"
+        }, {
+            "la",
+            "la_Latn_VA",
+            "la"
+        }, {
+            "ln",
+            "ln_Latn_CD",
+            "ln"
+        }, {
+            "lo",
+            "lo_Laoo_LA",
+            "lo"
+        }, {
+            "lt",
+            "lt_Latn_LT",
+            "lt"
+        }, {
+            "lv",
+            "lv_Latn_LV",
+            "lv"
+        }, {
+            "mg",
+            "mg_Latn_MG",
+            "mg"
+        }, {
+            "mh",
+            "mh_Latn_MH",
+            "mh"
+        }, {
+            "mk",
+            "mk_Cyrl_MK",
+            "mk"
+        }, {
+            "ml",
+            "ml_Mlym_IN",
+            "ml"
+        }, {
+            "mn",
+            "mn_Cyrl_MN",
+            "mn"
+        }, {
+            "mr",
+            "mr_Deva_IN",
+            "mr"
+        }, {
+            "ms",
+            "ms_Latn_MY",
+            "ms"
+        }, {
+            "mt",
+            "mt_Latn_MT",
+            "mt"
+        }, {
+            "my",
+            "my_Mymr_MM",
+            "my"
+        }, {
+            "na",
+            "na_Latn_NR",
+            "na"
+        }, {
+            "ne",
+            "ne_Deva_NP",
+            "ne"
+        }, {
+            "niu",
+            "niu_Latn_NU",
+            "niu"
+        }, {
+            "nl",
+            "nl_Latn_NL",
+            "nl"
+        }, {
+            "nn",
+            "nn_Latn_NO",
+            "nn"
+        }, {
+            "nr",
+            "nr_Latn_ZA",
+            "nr"
+        }, {
+            "nso",
+            "nso_Latn_ZA",
+            "nso"
+        }, {
+            "om",
+            "om_Latn_ET",
+            "om"
+        }, {
+            "or",
+            "or_Orya_IN",
+            "or"
+        }, {
+            "pa",
+            "pa_Guru_IN",
+            "pa"
+        }, {
+            "pa_Arab",
+            "pa_Arab_PK",
+            "pa_PK"
+        }, {
+            "pa_PK",
+            "pa_Arab_PK",
+            "pa_PK"
+        }, {
+            "pap",
+            "pap_Latn_AW",
+            "pap"
+        }, {
+            "pau",
+            "pau_Latn_PW",
+            "pau"
+        }, {
+            "pl",
+            "pl_Latn_PL",
+            "pl"
+        }, {
+            "ps",
+            "ps_Arab_AF",
+            "ps"
+        }, {
+            "pt",
+            "pt_Latn_BR",
+            "pt"
+        }, {
+            "rn",
+            "rn_Latn_BI",
+            "rn"
+        }, {
+            "ro",
+            "ro_Latn_RO",
+            "ro"
+        }, {
+            "ru",
+            "ru_Cyrl_RU",
+            "ru"
+        }, {
+            "rw",
+            "rw_Latn_RW",
+            "rw"
+        }, {
+            "sa",
+            "sa_Deva_IN",
+            "sa"
+        }, {
+            "se",
+            "se_Latn_NO",
+            "se"
+        }, {
+            "sg",
+            "sg_Latn_CF",
+            "sg"
+        }, {
+            "si",
+            "si_Sinh_LK",
+            "si"
+        }, {
+            "sid",
+            "sid_Latn_ET",
+            "sid"
+        }, {
+            "sk",
+            "sk_Latn_SK",
+            "sk"
+        }, {
+            "sl",
+            "sl_Latn_SI",
+            "sl"
+        }, {
+            "sm",
+            "sm_Latn_WS",
+            "sm"
+        }, {
+            "so",
+            "so_Latn_SO",
+            "so"
+        }, {
+            "sq",
+            "sq_Latn_AL",
+            "sq"
+        }, {
+            "sr",
+            "sr_Cyrl_RS",
+            "sr"
+        }, {
+            "ss",
+            "ss_Latn_ZA",
+            "ss"
+        }, {
+            "st",
+            "st_Latn_ZA",
+            "st"
+        }, {
+            "sv",
+            "sv_Latn_SE",
+            "sv"
+        }, {
+            "sw",
+            "sw_Latn_TZ",
+            "sw"
+        }, {
+            "ta",
+            "ta_Taml_IN",
+            "ta"
+        }, {
+            "te",
+            "te_Telu_IN",
+            "te"
+        }, {
+            "tet",
+            "tet_Latn_TL",
+            "tet"
+        }, {
+            "tg",
+            "tg_Cyrl_TJ",
+            "tg"
+        }, {
+            "th",
+            "th_Thai_TH",
+            "th"
+        }, {
+            "ti",
+            "ti_Ethi_ET",
+            "ti"
+        }, {
+            "tig",
+            "tig_Ethi_ER",
+            "tig"
+        }, {
+            "tk",
+            "tk_Latn_TM",
+            "tk"
+        }, {
+            "tkl",
+            "tkl_Latn_TK",
+            "tkl"
+        }, {
+            "tn",
+            "tn_Latn_ZA",
+            "tn"
+        }, {
+            "to",
+            "to_Latn_TO",
+            "to"
+        }, {
+            "tpi",
+            "tpi_Latn_PG",
+            "tpi"
+        }, {
+            "tr",
+            "tr_Latn_TR",
+            "tr"
+        }, {
+            "ts",
+            "ts_Latn_ZA",
+            "ts"
+        }, {
+            "tt",
+            "tt_Cyrl_RU",
+            "tt"
+        }, {
+            "tvl",
+            "tvl_Latn_TV",
+            "tvl"
+        }, {
+            "ty",
+            "ty_Latn_PF",
+            "ty"
+        }, {
+            "uk",
+            "uk_Cyrl_UA",
+            "uk"
+        }, {
+            "und",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_AD",
+            "ca_Latn_AD",
+            "ca_AD"
+        }, {
+            "und_AE",
+            "ar_Arab_AE",
+            "ar_AE"
+        }, {
+            "und_AF",
+            "fa_Arab_AF",
+            "fa_AF"
+        }, {
+            "und_AL",
+            "sq_Latn_AL",
+            "sq"
+        }, {
+            "und_AM",
+            "hy_Armn_AM",
+            "hy"
+        }, {
+            "und_AO",
+            "pt_Latn_AO",
+            "pt_AO"
+        }, {
+            "und_AR",
+            "es_Latn_AR",
+            "es_AR"
+        }, {
+            "und_AS",
+            "sm_Latn_AS",
+            "sm_AS"
+        }, {
+            "und_AT",
+            "de_Latn_AT",
+            "de_AT"
+        }, {
+            "und_AW",
+            "nl_Latn_AW",
+            "nl_AW"
+        }, {
+            "und_AX",
+            "sv_Latn_AX",
+            "sv_AX"
+        }, {
+            "und_AZ",
+            "az_Latn_AZ",
+            "az"
+        }, {
+            "und_Arab",
+            "ar_Arab_EG",
+            "ar"
+        }, {
+            "und_Arab_IN",
+            "ur_Arab_IN",
+            "ur_IN"
+        }, {
+            "und_Arab_PK",
+            "ur_Arab_PK",
+            "ur"
+        }, {
+            "und_Arab_SN",
+            "ar_Arab_SN",
+            "ar_SN"
+        }, {
+            "und_Armn",
+            "hy_Armn_AM",
+            "hy"
+        }, {
+            "und_BA",
+            "bs_Latn_BA",
+            "bs"
+        }, {
+            "und_BD",
+            "bn_Beng_BD",
+            "bn"
+        }, {
+            "und_BE",
+            "nl_Latn_BE",
+            "nl_BE"
+        }, {
+            "und_BF",
+            "fr_Latn_BF",
+            "fr_BF"
+        }, {
+            "und_BG",
+            "bg_Cyrl_BG",
+            "bg"
+        }, {
+            "und_BH",
+            "ar_Arab_BH",
+            "ar_BH"
+        }, {
+            "und_BI",
+            "rn_Latn_BI",
+            "rn"
+        }, {
+            "und_BJ",
+            "fr_Latn_BJ",
+            "fr_BJ"
+        }, {
+            "und_BN",
+            "ms_Latn_BN",
+            "ms_BN"
+        }, {
+            "und_BO",
+            "es_Latn_BO",
+            "es_BO"
+        }, {
+            "und_BR",
+            "pt_Latn_BR",
+            "pt"
+        }, {
+            "und_BT",
+            "dz_Tibt_BT",
+            "dz"
+        }, {
+            "und_BY",
+            "be_Cyrl_BY",
+            "be"
+        }, {
+            "und_Beng",
+            "bn_Beng_BD",
+            "bn"
+        }, {
+            "und_Beng_IN",
+            "bn_Beng_IN",
+            "bn_IN"
+        }, {
+            "und_CD",
+            "sw_Latn_CD",
+            "sw_CD"
+        }, {
+            "und_CF",
+            "fr_Latn_CF",
+            "fr_CF"
+        }, {
+            "und_CG",
+            "fr_Latn_CG",
+            "fr_CG"
+        }, {
+            "und_CH",
+            "de_Latn_CH",
+            "de_CH"
+        }, {
+            "und_CI",
+            "fr_Latn_CI",
+            "fr_CI"
+        }, {
+            "und_CL",
+            "es_Latn_CL",
+            "es_CL"
+        }, {
+            "und_CM",
+            "fr_Latn_CM",
+            "fr_CM"
+        }, {
+            "und_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_CO",
+            "es_Latn_CO",
+            "es_CO"
+        }, {
+            "und_CR",
+            "es_Latn_CR",
+            "es_CR"
+        }, {
+            "und_CU",
+            "es_Latn_CU",
+            "es_CU"
+        }, {
+            "und_CV",
+            "pt_Latn_CV",
+            "pt_CV"
+        }, {
+            "und_CY",
+            "el_Grek_CY",
+            "el_CY"
+        }, {
+            "und_CZ",
+            "cs_Latn_CZ",
+            "cs"
+        }, {
+            "und_Cyrl",
+            "ru_Cyrl_RU",
+            "ru"
+        }, {
+            "und_Cyrl_KZ",
+            "ru_Cyrl_KZ",
+            "ru_KZ"
+        }, {
+            "und_DE",
+            "de_Latn_DE",
+            "de"
+        }, {
+            "und_DJ",
+            "aa_Latn_DJ",
+            "aa_DJ"
+        }, {
+            "und_DK",
+            "da_Latn_DK",
+            "da"
+        }, {
+            "und_DO",
+            "es_Latn_DO",
+            "es_DO"
+        }, {
+            "und_DZ",
+            "ar_Arab_DZ",
+            "ar_DZ"
+        }, {
+            "und_Deva",
+            "hi_Deva_IN",
+            "hi"
+        }, {
+            "und_EC",
+            "es_Latn_EC",
+            "es_EC"
+        }, {
+            "und_EE",
+            "et_Latn_EE",
+            "et"
+        }, {
+            "und_EG",
+            "ar_Arab_EG",
+            "ar"
+        }, {
+            "und_EH",
+            "ar_Arab_EH",
+            "ar_EH"
+        }, {
+            "und_ER",
+            "ti_Ethi_ER",
+            "ti_ER"
+        }, {
+            "und_ES",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "und_ET",
+            "am_Ethi_ET",
+            "am"
+        }, {
+            "und_Ethi",
+            "am_Ethi_ET",
+            "am"
+        }, {
+            "und_Ethi_ER",
+            "am_Ethi_ER",
+            "am_ER"
+        }, {
+            "und_FI",
+            "fi_Latn_FI",
+            "fi"
+        }, {
+            "und_FM",
+            "en_Latn_FM",
+            "en_FM"
+        }, {
+            "und_FO",
+            "fo_Latn_FO",
+            "fo"
+        }, {
+            "und_FR",
+            "fr_Latn_FR",
+            "fr"
+        }, {
+            "und_GA",
+            "fr_Latn_GA",
+            "fr_GA"
+        }, {
+            "und_GE",
+            "ka_Geor_GE",
+            "ka"
+        }, {
+            "und_GF",
+            "fr_Latn_GF",
+            "fr_GF"
+        }, {
+            "und_GL",
+            "kl_Latn_GL",
+            "kl"
+        }, {
+            "und_GN",
+            "fr_Latn_GN",
+            "fr_GN"
+        }, {
+            "und_GP",
+            "fr_Latn_GP",
+            "fr_GP"
+        }, {
+            "und_GQ",
+            "es_Latn_GQ",
+            "es_GQ"
+        }, {
+            "und_GR",
+            "el_Grek_GR",
+            "el"
+        }, {
+            "und_GT",
+            "es_Latn_GT",
+            "es_GT"
+        }, {
+            "und_GU",
+            "en_Latn_GU",
+            "en_GU"
+        }, {
+            "und_GW",
+            "pt_Latn_GW",
+            "pt_GW"
+        }, {
+            "und_Geor",
+            "ka_Geor_GE",
+            "ka"
+        }, {
+            "und_Grek",
+            "el_Grek_GR",
+            "el"
+        }, {
+            "und_Gujr",
+            "gu_Gujr_IN",
+            "gu"
+        }, {
+            "und_Guru",
+            "pa_Guru_IN",
+            "pa"
+        }, {
+            "und_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "und_HN",
+            "es_Latn_HN",
+            "es_HN"
+        }, {
+            "und_HR",
+            "hr_Latn_HR",
+            "hr"
+        }, {
+            "und_HT",
+            "ht_Latn_HT",
+            "ht"
+        }, {
+            "und_HU",
+            "hu_Latn_HU",
+            "hu"
+        }, {
+            "und_Hani",
+            "zh_Hani_CN",
+            "zh_Hani"
+        }, {
+            "und_Hans",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_Hant",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Hebr",
+            "he_Hebr_IL",
+            "he"
+        }, {
+            "und_ID",
+            "id_Latn_ID",
+            "id"
+        }, {
+            "und_IL",
+            "he_Hebr_IL",
+            "he"
+        }, {
+            "und_IN",
+            "hi_Deva_IN",
+            "hi"
+        }, {
+            "und_IQ",
+            "ar_Arab_IQ",
+            "ar_IQ"
+        }, {
+            "und_IR",
+            "fa_Arab_IR",
+            "fa"
+        }, {
+            "und_IS",
+            "is_Latn_IS",
+            "is"
+        }, {
+            "und_IT",
+            "it_Latn_IT",
+            "it"
+        }, {
+            "und_JO",
+            "ar_Arab_JO",
+            "ar_JO"
+        }, {
+            "und_JP",
+            "ja_Jpan_JP",
+            "ja"
+        }, {
+            "und_Jpan",
+            "ja_Jpan_JP",
+            "ja"
+        }, {
+            "und_KG",
+            "ky_Cyrl_KG",
+            "ky"
+        }, {
+            "und_KH",
+            "km_Khmr_KH",
+            "km"
+        }, {
+            "und_KM",
+            "ar_Arab_KM",
+            "ar_KM"
+        }, {
+            "und_KP",
+            "ko_Kore_KP",
+            "ko_KP"
+        }, {
+            "und_KR",
+            "ko_Kore_KR",
+            "ko"
+        }, {
+            "und_KW",
+            "ar_Arab_KW",
+            "ar_KW"
+        }, {
+            "und_KZ",
+            "ru_Cyrl_KZ",
+            "ru_KZ"
+        }, {
+            "und_Khmr",
+            "km_Khmr_KH",
+            "km"
+        }, {
+            "und_Knda",
+            "kn_Knda_IN",
+            "kn"
+        }, {
+            "und_Kore",
+            "ko_Kore_KR",
+            "ko"
+        }, {
+            "und_LA",
+            "lo_Laoo_LA",
+            "lo"
+        }, {
+            "und_LB",
+            "ar_Arab_LB",
+            "ar_LB"
+        }, {
+            "und_LI",
+            "de_Latn_LI",
+            "de_LI"
+        }, {
+            "und_LK",
+            "si_Sinh_LK",
+            "si"
+        }, {
+            "und_LS",
+            "st_Latn_LS",
+            "st_LS"
+        }, {
+            "und_LT",
+            "lt_Latn_LT",
+            "lt"
+        }, {
+            "und_LU",
+            "fr_Latn_LU",
+            "fr_LU"
+        }, {
+            "und_LV",
+            "lv_Latn_LV",
+            "lv"
+        }, {
+            "und_LY",
+            "ar_Arab_LY",
+            "ar_LY"
+        }, {
+            "und_Laoo",
+            "lo_Laoo_LA",
+            "lo"
+        }, {
+            "und_Latn_ES",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "und_Latn_ET",
+            "en_Latn_ET",
+            "en_ET"
+        }, {
+            "und_Latn_GB",
+            "en_Latn_GB",
+            "en_GB"
+        }, {
+            "und_Latn_GH",
+            "ak_Latn_GH",
+            "ak"
+        }, {
+            "und_Latn_ID",
+            "id_Latn_ID",
+            "id"
+        }, {
+            "und_Latn_IT",
+            "it_Latn_IT",
+            "it"
+        }, {
+            "und_Latn_NG",
+            "en_Latn_NG",
+            "en_NG"
+        }, {
+            "und_Latn_TR",
+            "tr_Latn_TR",
+            "tr"
+        }, {
+            "und_Latn_ZA",
+            "en_Latn_ZA",
+            "en_ZA"
+        }, {
+            "und_MA",
+            "ar_Arab_MA",
+            "ar_MA"
+        }, {
+            "und_MC",
+            "fr_Latn_MC",
+            "fr_MC"
+        }, {
+            "und_MD",
+            "ro_Latn_MD",
+            "ro_MD"
+        }, {
+            "und_ME",
+            "sr_Latn_ME",
+            "sr_ME"
+        }, {
+            "und_MG",
+            "mg_Latn_MG",
+            "mg"
+        }, {
+            "und_MK",
+            "mk_Cyrl_MK",
+            "mk"
+        }, {
+            "und_ML",
+            "bm_Latn_ML",
+            "bm"
+        }, {
+            "und_MM",
+            "my_Mymr_MM",
+            "my"
+        }, {
+            "und_MN",
+            "mn_Cyrl_MN",
+            "mn"
+        }, {
+            "und_MO",
+            "zh_Hant_MO",
+            "zh_MO"
+        }, {
+            "und_MQ",
+            "fr_Latn_MQ",
+            "fr_MQ"
+        }, {
+            "und_MR",
+            "ar_Arab_MR",
+            "ar_MR"
+        }, {
+            "und_MT",
+            "mt_Latn_MT",
+            "mt"
+        }, {
+            "und_MV",
+            "dv_Thaa_MV",
+            "dv"
+        }, {
+            "und_MX",
+            "es_Latn_MX",
+            "es_MX"
+        }, {
+            "und_MY",
+            "ms_Latn_MY",
+            "ms"
+        }, {
+            "und_MZ",
+            "pt_Latn_MZ",
+            "pt_MZ"
+        }, {
+            "und_Mlym",
+            "ml_Mlym_IN",
+            "ml"
+        }, {
+            "und_Mymr",
+            "my_Mymr_MM",
+            "my"
+        }, {
+            "und_NC",
+            "fr_Latn_NC",
+            "fr_NC"
+        }, {
+            "und_NE",
+            "ha_Latn_NE",
+            "ha_NE"
+        }, {
+            "und_NG",
+            "en_Latn_NG",
+            "en_NG"
+        }, {
+            "und_NI",
+            "es_Latn_NI",
+            "es_NI"
+        }, {
+            "und_NL",
+            "nl_Latn_NL",
+            "nl"
+        }, {
+            "und_NO",
+            "nb_Latn_NO",
+            "nb"
+        }, {
+            "und_NP",
+            "ne_Deva_NP",
+            "ne"
+        }, {
+            "und_NR",
+            "en_Latn_NR",
+            "en_NR"
+        }, {
+            "und_OM",
+            "ar_Arab_OM",
+            "ar_OM"
+        }, {
+            "und_Orya",
+            "or_Orya_IN",
+            "or"
+        }, {
+            "und_PA",
+            "es_Latn_PA",
+            "es_PA"
+        }, {
+            "und_PE",
+            "es_Latn_PE",
+            "es_PE"
+        }, {
+            "und_PF",
+            "fr_Latn_PF",
+            "fr_PF"
+        }, {
+            "und_PG",
+            "tpi_Latn_PG",
+            "tpi"
+        }, {
+            "und_PH",
+            "fil_Latn_PH",
+            "fil"
+        }, {
+            "und_PL",
+            "pl_Latn_PL",
+            "pl"
+        }, {
+            "und_PM",
+            "fr_Latn_PM",
+            "fr_PM"
+        }, {
+            "und_PR",
+            "es_Latn_PR",
+            "es_PR"
+        }, {
+            "und_PS",
+            "ar_Arab_PS",
+            "ar_PS"
+        }, {
+            "und_PT",
+            "pt_Latn_PT",
+            "pt_PT"
+        }, {
+            "und_PW",
+            "pau_Latn_PW",
+            "pau"
+        }, {
+            "und_PY",
+            "gn_Latn_PY",
+            "gn"
+        }, {
+            "und_QA",
+            "ar_Arab_QA",
+            "ar_QA"
+        }, {
+            "und_RE",
+            "fr_Latn_RE",
+            "fr_RE"
+        }, {
+            "und_RO",
+            "ro_Latn_RO",
+            "ro"
+        }, {
+            "und_RS",
+            "sr_Cyrl_RS",
+            "sr"
+        }, {
+            "und_RU",
+            "ru_Cyrl_RU",
+            "ru"
+        }, {
+            "und_RW",
+            "rw_Latn_RW",
+            "rw"
+        }, {
+            "und_SA",
+            "ar_Arab_SA",
+            "ar_SA"
+        }, {
+            "und_SD",
+            "ar_Arab_SD",
+            "ar_SD"
+        }, {
+            "und_SE",
+            "sv_Latn_SE",
+            "sv"
+        }, {
+            "und_SG",
+            "en_Latn_SG",
+            "en_SG"
+        }, {
+            "und_SI",
+            "sl_Latn_SI",
+            "sl"
+        }, {
+            "und_SJ",
+            "nb_Latn_SJ",
+            "nb_SJ"
+        }, {
+            "und_SK",
+            "sk_Latn_SK",
+            "sk"
+        }, {
+            "und_SM",
+            "it_Latn_SM",
+            "it_SM"
+        }, {
+            "und_SN",
+            "fr_Latn_SN",
+            "fr_SN"
+        }, {
+            "und_SO",
+            "so_Latn_SO",
+            "so"
+        }, {
+            "und_SR",
+            "nl_Latn_SR",
+            "nl_SR"
+        }, {
+            "und_ST",
+            "pt_Latn_ST",
+            "pt_ST"
+        }, {
+            "und_SV",
+            "es_Latn_SV",
+            "es_SV"
+        }, {
+            "und_SY",
+            "ar_Arab_SY",
+            "ar_SY"
+        }, {
+            "und_Sinh",
+            "si_Sinh_LK",
+            "si"
+        }, {
+            "und_Syrc",
+            "syr_Syrc_IQ",
+            "syr"
+        }, {
+            "und_TD",
+            "fr_Latn_TD",
+            "fr_TD"
+        }, {
+            "und_TG",
+            "fr_Latn_TG",
+            "fr_TG"
+        }, {
+            "und_TH",
+            "th_Thai_TH",
+            "th"
+        }, {
+            "und_TJ",
+            "tg_Cyrl_TJ",
+            "tg"
+        }, {
+            "und_TK",
+            "tkl_Latn_TK",
+            "tkl"
+        }, {
+            "und_TL",
+            "pt_Latn_TL",
+            "pt_TL"
+        }, {
+            "und_TM",
+            "tk_Latn_TM",
+            "tk"
+        }, {
+            "und_TN",
+            "ar_Arab_TN",
+            "ar_TN"
+        }, {
+            "und_TO",
+            "to_Latn_TO",
+            "to"
+        }, {
+            "und_TR",
+            "tr_Latn_TR",
+            "tr"
+        }, {
+            "und_TV",
+            "tvl_Latn_TV",
+            "tvl"
+        }, {
+            "und_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Taml",
+            "ta_Taml_IN",
+            "ta"
+        }, {
+            "und_Telu",
+            "te_Telu_IN",
+            "te"
+        }, {
+            "und_Thaa",
+            "dv_Thaa_MV",
+            "dv"
+        }, {
+            "und_Thai",
+            "th_Thai_TH",
+            "th"
+        }, {
+            "und_Tibt",
+            "bo_Tibt_CN",
+            "bo"
+        }, {
+            "und_UA",
+            "uk_Cyrl_UA",
+            "uk"
+        }, {
+            "und_UY",
+            "es_Latn_UY",
+            "es_UY"
+        }, {
+            "und_UZ",
+            "uz_Latn_UZ",
+            "uz"
+        }, {
+            "und_VA",
+            "it_Latn_VA",
+            "it_VA"
+        }, {
+            "und_VE",
+            "es_Latn_VE",
+            "es_VE"
+        }, {
+            "und_VN",
+            "vi_Latn_VN",
+            "vi"
+        }, {
+            "und_VU",
+            "bi_Latn_VU",
+            "bi"
+        }, {
+            "und_WF",
+            "fr_Latn_WF",
+            "fr_WF"
+        }, {
+            "und_WS",
+            "sm_Latn_WS",
+            "sm"
+        }, {
+            "und_YE",
+            "ar_Arab_YE",
+            "ar_YE"
+        }, {
+            "und_YT",
+            "fr_Latn_YT",
+            "fr_YT"
+        }, {
+            "und_Yiii",
+            "ii_Yiii_CN",
+            "ii"
+        }, {
+            "ur",
+            "ur_Arab_PK",
+            "ur"
+        }, {
+            "uz",
+            "uz_Latn_UZ",
+            "uz"
+        }, {
+            "uz_AF",
+            "uz_Arab_AF",
+            "uz_AF"
+        }, {
+            "uz_Arab",
+            "uz_Arab_AF",
+            "uz_AF"
+        }, {
+            "ve",
+            "ve_Latn_ZA",
+            "ve"
+        }, {
+            "vi",
+            "vi_Latn_VN",
+            "vi"
+        }, {
+            "wal",
+            "wal_Ethi_ET",
+            "wal"
+        }, {
+            "wo",
+            "wo_Latn_SN",
+            "wo"
+        }, {
+            "wo_SN",
+            "wo_Latn_SN",
+            "wo"
+        }, {
+            "xh",
+            "xh_Latn_ZA",
+            "xh"
+        }, {
+            "yo",
+            "yo_Latn_NG",
+            "yo"
+        }, {
+            "zh",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "zh_Hani",
+            "zh_Hani_CN",
+            "zh_Hani"
+        }, {
+            "zh_Hant",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_MO",
+            "zh_Hant_MO",
+            "zh_MO"
+        }, {
+            "zh_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zu",
+            "zu_Latn_ZA",
+            "zu"
+        }, {
+            "und",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_ZZ",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "und_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Zzzz",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_Zzzz_ZZ",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_Zzzz_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_Zzzz_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Zzzz_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "und_Zzzz_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Latn",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_Latn_ZZ",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_Latn_CN",
+            "za_Latn_CN",
+            "za"
+        }, {
+            "und_Latn_TW",
+            "trv_Latn_TW",
+            "trv"
+        }, {
+            "und_Latn_HK",
+            "zh_Latn_HK",
+            "zh_Latn_HK"
+        }, {
+            "und_Latn_AQ",
+            "_Latn_AQ",
+            "_AQ"
+        }, {
+            "und_Hans",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_Hans_ZZ",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_Hans_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "und_Hans_TW",
+            "zh_Hans_TW",
+            "zh_Hans_TW"
+        }, {
+            "und_Hans_HK",
+            "zh_Hans_HK",
+            "zh_Hans_HK"
+        }, {
+            "und_Hans_AQ",
+            "zh_Hans_AQ",
+            "zh_AQ"
+        }, {
+            "und_Hant",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Hant_ZZ",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Hant_CN",
+            "zh_Hant_CN",
+            "zh_Hant_CN"
+        }, {
+            "und_Hant_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "und_Hant_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "und_Hant_AQ",
+            "zh_Hant_AQ",
+            "zh_Hant_AQ"
+        }, {
+            "und_Moon",
+            "en_Moon_US",
+            "en_Moon"
+        }, {
+            "und_Moon_ZZ",
+            "en_Moon_US",
+            "en_Moon"
+        }, {
+            "und_Moon_CN",
+            "zh_Moon_CN",
+            "zh_Moon"
+        }, {
+            "und_Moon_TW",
+            "zh_Moon_TW",
+            "zh_Moon_TW"
+        }, {
+            "und_Moon_HK",
+            "zh_Moon_HK",
+            "zh_Moon_HK"
+        }, {
+            "und_Moon_AQ",
+            "_Moon_AQ",
+            "_Moon_AQ"
+        }, {
+            "es",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_ZZ",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_CN",
+            "es_Latn_CN",
+            "es_CN"
+        }, {
+            "es_TW",
+            "es_Latn_TW",
+            "es_TW"
+        }, {
+            "es_HK",
+            "es_Latn_HK",
+            "es_HK"
+        }, {
+            "es_AQ",
+            "es_Latn_AQ",
+            "es_AQ"
+        }, {
+            "es_Zzzz",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_Zzzz_ZZ",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_Zzzz_CN",
+            "es_Latn_CN",
+            "es_CN"
+        }, {
+            "es_Zzzz_TW",
+            "es_Latn_TW",
+            "es_TW"
+        }, {
+            "es_Zzzz_HK",
+            "es_Latn_HK",
+            "es_HK"
+        }, {
+            "es_Zzzz_AQ",
+            "es_Latn_AQ",
+            "es_AQ"
+        }, {
+            "es_Latn",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_Latn_ZZ",
+            "es_Latn_ES",
+            "es"
+        }, {
+            "es_Latn_CN",
+            "es_Latn_CN",
+            "es_CN"
+        }, {
+            "es_Latn_TW",
+            "es_Latn_TW",
+            "es_TW"
+        }, {
+            "es_Latn_HK",
+            "es_Latn_HK",
+            "es_HK"
+        }, {
+            "es_Latn_AQ",
+            "es_Latn_AQ",
+            "es_AQ"
+        }, {
+            "es_Hans",
+            "es_Hans_ES",
+            "es_Hans"
+        }, {
+            "es_Hans_ZZ",
+            "es_Hans_ES",
+            "es_Hans"
+        }, {
+            "es_Hans_CN",
+            "es_Hans_CN",
+            "es_Hans_CN"
+        }, {
+            "es_Hans_TW",
+            "es_Hans_TW",
+            "es_Hans_TW"
+        }, {
+            "es_Hans_HK",
+            "es_Hans_HK",
+            "es_Hans_HK"
+        }, {
+            "es_Hans_AQ",
+            "es_Hans_AQ",
+            "es_Hans_AQ"
+        }, {
+            "es_Hant",
+            "es_Hant_ES",
+            "es_Hant"
+        }, {
+            "es_Hant_ZZ",
+            "es_Hant_ES",
+            "es_Hant"
+        }, {
+            "es_Hant_CN",
+            "es_Hant_CN",
+            "es_Hant_CN"
+        }, {
+            "es_Hant_TW",
+            "es_Hant_TW",
+            "es_Hant_TW"
+        }, {
+            "es_Hant_HK",
+            "es_Hant_HK",
+            "es_Hant_HK"
+        }, {
+            "es_Hant_AQ",
+            "es_Hant_AQ",
+            "es_Hant_AQ"
+        }, {
+            "es_Moon",
+            "es_Moon_ES",
+            "es_Moon"
+        }, {
+            "es_Moon_ZZ",
+            "es_Moon_ES",
+            "es_Moon"
+        }, {
+            "es_Moon_CN",
+            "es_Moon_CN",
+            "es_Moon_CN"
+        }, {
+            "es_Moon_TW",
+            "es_Moon_TW",
+            "es_Moon_TW"
+        }, {
+            "es_Moon_HK",
+            "es_Moon_HK",
+            "es_Moon_HK"
+        }, {
+            "es_Moon_AQ",
+            "es_Moon_AQ",
+            "es_Moon_AQ"
+        }, {
+            "zh",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_ZZ",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "zh_AQ",
+            "zh_Hans_AQ",
+            "zh_AQ"
+        }, {
+            "zh_Zzzz",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_Zzzz_ZZ",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_Zzzz_CN",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_Zzzz_TW",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_Zzzz_HK",
+            "zh_Hant_HK",
+            "zh_HK"
+        }, {
+            "zh_Zzzz_AQ",
+            "zh_Hans_AQ",
+            "zh_AQ"
+        }, {
+            "zh_Latn",
+            "zh_Latn_CN",
+            "zh_Latn"
+        }, {
+            "zh_Latn_ZZ",
+            "zh_Latn_CN",
+            "zh_Latn"
+        }, {
+            "zh_Latn_CN",
+            "zh_Latn_CN",
+            "zh_Latn"
+        }, {
+            "zh_Latn_TW",
+            "zh_Latn_TW",
+            "zh_Latn_TW"
+        }, {
+            "zh_Latn_HK",
+            "zh_Latn_HK",
+            "zh_Latn_HK"
+        }, {
+            "zh_Latn_AQ",
+            "zh_Latn_AQ",
+            "zh_Latn_AQ"
+        }, {
+            "zh_Hans",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_Hans_ZZ",
+            "zh_Hans_CN",
+            "zh"
+        }, {
+            "zh_Hans_TW",
+            "zh_Hans_TW",
+            "zh_Hans_TW"
+        }, {
+            "zh_Hans_HK",
+            "zh_Hans_HK",
+            "zh_Hans_HK"
+        }, {
+            "zh_Hans_AQ",
+            "zh_Hans_AQ",
+            "zh_AQ"
+        }, {
+            "zh_Hant",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_Hant_ZZ",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_Hant_CN",
+            "zh_Hant_CN",
+            "zh_Hant_CN"
+        }, {
+            "zh_Hant_AQ",
+            "zh_Hant_AQ",
+            "zh_Hant_AQ"
+        }, {
+            "zh_Moon",
+            "zh_Moon_CN",
+            "zh_Moon"
+        }, {
+            "zh_Moon_ZZ",
+            "zh_Moon_CN",
+            "zh_Moon"
+        }, {
+            "zh_Moon_CN",
+            "zh_Moon_CN",
+            "zh_Moon"
+        }, {
+            "zh_Moon_TW",
+            "zh_Moon_TW",
+            "zh_Moon_TW"
+        }, {
+            "zh_Moon_HK",
+            "zh_Moon_HK",
+            "zh_Moon_HK"
+        }, {
+            "zh_Moon_AQ",
+            "zh_Moon_AQ",
+            "zh_Moon_AQ"
+        }, {
+            "art",
+            "",
+            ""
+        }, {
+            "art_ZZ",
+            "",
+            ""
+        }, {
+            "art_CN",
+            "",
+            ""
+        }, {
+            "art_TW",
+            "",
+            ""
+        }, {
+            "art_HK",
+            "",
+            ""
+        }, {
+            "art_AQ",
+            "",
+            ""
+        }, {
+            "art_Zzzz",
+            "",
+            ""
+        }, {
+            "art_Zzzz_ZZ",
+            "",
+            ""
+        }, {
+            "art_Zzzz_CN",
+            "",
+            ""
+        }, {
+            "art_Zzzz_TW",
+            "",
+            ""
+        }, {
+            "art_Zzzz_HK",
+            "",
+            ""
+        }, {
+            "art_Zzzz_AQ",
+            "",
+            ""
+        }, {
+            "art_Latn",
+            "",
+            ""
+        }, {
+            "art_Latn_ZZ",
+            "",
+            ""
+        }, {
+            "art_Latn_CN",
+            "",
+            ""
+        }, {
+            "art_Latn_TW",
+            "",
+            ""
+        }, {
+            "art_Latn_HK",
+            "",
+            ""
+        }, {
+            "art_Latn_AQ",
+            "",
+            ""
+        }, {
+            "art_Hans",
+            "",
+            ""
+        }, {
+            "art_Hans_ZZ",
+            "",
+            ""
+        }, {
+            "art_Hans_CN",
+            "",
+            ""
+        }, {
+            "art_Hans_TW",
+            "",
+            ""
+        }, {
+            "art_Hans_HK",
+            "",
+            ""
+        }, {
+            "art_Hans_AQ",
+            "",
+            ""
+        }, {
+            "art_Hant",
+            "",
+            ""
+        }, {
+            "art_Hant_ZZ",
+            "",
+            ""
+        }, {
+            "art_Hant_CN",
+            "",
+            ""
+        }, {
+            "art_Hant_TW",
+            "",
+            ""
+        }, {
+            "art_Hant_HK",
+            "",
+            ""
+        }, {
+            "art_Hant_AQ",
+            "",
+            ""
+        }, {
+            "art_Moon",
+            "",
+            ""
+        }, {
+            "art_Moon_ZZ",
+            "",
+            ""
+        }, {
+            "art_Moon_CN",
+            "",
+            ""
+        }, {
+            "art_Moon_TW",
+            "",
+            ""
+        }, {
+            "art_Moon_HK",
+            "",
+            ""
+        }, {
+            "art_Moon_AQ",
+            "",
+            ""
+        }, {
+            "aae_Latn_IT",
+            "aae_Latn_IT",
+            "aae_Latn_IT"
+        }, {
+            "aae_Thai_CO",
+            "aae_Thai_CO",
+            "aae_Thai_CO"
+        }, {
+            "und_CW",
+            "pap_Latn_CW",
+            "pap_CW"
+        }, {
+            "zh_Hant",
+            "zh_Hant_TW",
+            "zh_TW"
+        }, {
+            "zh_Hani",
+            "zh_Hani_CN",
+            "zh_Hani"
+        }, {
+            "und",
+            "en_Latn_US",
+            "en"
+        }, {
+            "und_Thai",
+            "th_Thai_TH",
+            "th"
+        }, {
+            "und_419",
+            "es_Latn_419",
+            "es_419"
+        }, {
+            "und_150",
+            "ru_Cyrl_RU",
+            "ru"
+        }, {
+            "und_AT",
+            "de_Latn_AT",
+            "de_AT"
+        }, {
+            "und_US",
+            "en_Latn_US",
+            "en"
+        }
+    };
+
+    for (const auto& item : full_data) {
+        const char* const org = item.from;
+        const char* const exp = item.add;
+        Locale res(org);
+        res.addLikelySubtags(status);
+        status.errIfFailureAndReset("\"%s\"", org);
+        if (exp[0]) {
+            assertEquals("addLikelySubtags", exp, res.getName());
+        } else {
+            assertEquals("addLikelySubtags", org, res.getName());
+        }
+    }
+
+    for (const auto& item : full_data) {
+        const char* const org = item.from;
+        const char* const exp = item.remove;
+        Locale res(org);
+        res.minimizeSubtags(status);
+        status.errIfFailureAndReset("\"%s\"", org);
+        if (exp[0]) {
+            assertEquals("minimizeSubtags", exp, res.getName());
+        } else {
+            assertEquals("minimizeSubtags", org, res.getName());
+        }
     }
 }
 
@@ -1703,6 +3957,63 @@ LocaleTest::TestKeywordVariants(void) {
 
 }
 
+
+void
+LocaleTest::TestCreateUnicodeKeywords(void) {
+    IcuTestErrorCode status(*this, "TestCreateUnicodeKeywords()");
+
+    static const Locale l("de@calendar=buddhist;collation=phonebook");
+
+    LocalPointer<StringEnumeration> keys(l.createUnicodeKeywords(status));
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+
+    const char* key;
+    int32_t resultLength;
+
+    key = keys->next(&resultLength, status);
+    status.errIfFailureAndReset("key #1");
+    assertEquals("resultLength", 2, resultLength);
+    assertTrue("key != nullptr", key != nullptr);
+    if (key != nullptr) {
+        assertEquals("calendar", "ca", key);
+    }
+
+    key = keys->next(&resultLength, status);
+    status.errIfFailureAndReset("key #2");
+    assertEquals("resultLength", 2, resultLength);
+    assertTrue("key != nullptr", key != nullptr);
+    if (key != nullptr) {
+        assertEquals("collation", "co", key);
+    }
+
+    key = keys->next(&resultLength, status);
+    status.errIfFailureAndReset("end of keys");
+    assertEquals("resultLength", 0, resultLength);
+    assertTrue("key == nullptr", key == nullptr);
+
+    const UnicodeString* skey;
+    keys->reset(status);  // KeywordEnumeration::reset() never touches status.
+
+    skey = keys->snext(status);
+    status.errIfFailureAndReset("skey #1");
+    assertTrue("skey != nullptr", skey != nullptr);
+    if (skey != nullptr) {
+        assertEquals("calendar", "ca", *skey);
+    }
+
+    skey = keys->snext(status);
+    status.errIfFailureAndReset("skey #2");
+    assertTrue("skey != nullptr", skey != nullptr);
+    if (skey != nullptr) {
+        assertEquals("collation", "co", *skey);
+    }
+
+    skey = keys->snext(status);
+    status.errIfFailureAndReset("end of keys");
+    assertTrue("skey == nullptr", skey == nullptr);
+}
+
+
 void
 LocaleTest::TestKeywordVariantParsing(void) {
     static const struct {
@@ -1732,6 +4043,104 @@ LocaleTest::TestKeywordVariantParsing(void) {
                 testCases[i].expectedValue, testCases[i].localeID, testCases[i].keyword, buffer);
         }
     }
+}
+
+void
+LocaleTest::TestCreateKeywordSet(void) {
+    IcuTestErrorCode status(*this, "TestCreateKeywordSet()");
+
+    static const Locale l("de@calendar=buddhist;collation=phonebook");
+
+    std::set<std::string> result;
+    l.getKeywords<std::string>(
+            std::insert_iterator<decltype(result)>(result, result.begin()),
+            status);
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+
+    assertEquals("set::size()", 2, static_cast<int32_t>(result.size()));
+    assertTrue("set::find(\"calendar\")",
+               result.find("calendar") != result.end());
+    assertTrue("set::find(\"collation\")",
+               result.find("collation") != result.end());
+}
+
+void
+LocaleTest::TestCreateKeywordSetEmpty(void) {
+    IcuTestErrorCode status(*this, "TestCreateKeywordSetEmpty()");
+
+    static const Locale l("de");
+
+    std::set<std::string> result;
+    l.getKeywords<std::string>(
+            std::insert_iterator<decltype(result)>(result, result.begin()),
+            status);
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+
+    assertEquals("set::size()", 0, static_cast<int32_t>(result.size()));
+}
+
+void
+LocaleTest::TestCreateUnicodeKeywordSet(void) {
+    IcuTestErrorCode status(*this, "TestCreateUnicodeKeywordSet()");
+
+    static const Locale l("de@calendar=buddhist;collation=phonebook");
+
+    std::set<std::string> result;
+    l.getUnicodeKeywords<std::string>(
+            std::insert_iterator<decltype(result)>(result, result.begin()),
+            status);
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+
+    assertEquals("set::size()", 2, static_cast<int32_t>(result.size()));
+    assertTrue("set::find(\"ca\")",
+               result.find("ca") != result.end());
+    assertTrue("set::find(\"co\")",
+               result.find("co") != result.end());
+}
+
+void
+LocaleTest::TestCreateUnicodeKeywordSetEmpty(void) {
+    IcuTestErrorCode status(*this, "TestCreateUnicodeKeywordSetEmpty()");
+
+    static const Locale l("de");
+
+    std::set<std::string> result;
+    l.getUnicodeKeywords<std::string>(
+            std::insert_iterator<decltype(result)>(result, result.begin()),
+            status);
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+
+    assertEquals("set::size()", 0, static_cast<int32_t>(result.size()));
+}
+
+void
+LocaleTest::TestGetKeywordValueStdString(void) {
+    IcuTestErrorCode status(*this, "TestGetKeywordValueStdString()");
+
+    static const char tag[] = "fa-u-nu-latn";
+    static const char keyword[] = "numbers";
+    static const char expected[] = "latn";
+
+    Locale l = Locale::forLanguageTag(tag, status);
+    status.errIfFailureAndReset("\"%s\"", tag);
+
+    std::string result = l.getKeywordValue<std::string>(keyword, status);
+    status.errIfFailureAndReset("\"%s\"", keyword);
+    assertEquals(keyword, expected, result.c_str());
+}
+
+void
+LocaleTest::TestGetUnicodeKeywordValueStdString(void) {
+    IcuTestErrorCode status(*this, "TestGetUnicodeKeywordValueStdString()");
+
+    static const char keyword[] = "co";
+    static const char expected[] = "phonebk";
+
+    static const Locale l("de@calendar=buddhist;collation=phonebook");
+
+    std::string result = l.getUnicodeKeywordValue<std::string>(keyword, status);
+    status.errIfFailureAndReset("\"%s\"", keyword);
+    assertEquals(keyword, expected, result.c_str());
 }
 
 void
@@ -1767,6 +4176,53 @@ LocaleTest::TestSetKeywordValue(void) {
                 testCases[i].value, testCases[i].keyword, buffer);
         }
     }
+}
+
+void
+LocaleTest::TestSetKeywordValueStringPiece(void) {
+    IcuTestErrorCode status(*this, "TestSetKeywordValueStringPiece()");
+    Locale l(Locale::getGerman());
+
+    l.setKeywordValue(StringPiece("collation"), StringPiece("phonebook"), status);
+    l.setKeywordValue(StringPiece("calendarxxx", 8), StringPiece("buddhistxxx", 8), status);
+
+    static const char expected[] = "de@calendar=buddhist;collation=phonebook";
+    assertEquals("", expected, l.getName());
+}
+
+void
+LocaleTest::TestSetUnicodeKeywordValueStringPiece(void) {
+    IcuTestErrorCode status(*this, "TestSetUnicodeKeywordValueStringPiece()");
+    Locale l(Locale::getGerman());
+
+    l.setUnicodeKeywordValue(StringPiece("co"), StringPiece("phonebk"), status);
+    status.errIfFailureAndReset();
+
+    l.setUnicodeKeywordValue(StringPiece("caxxx", 2), StringPiece("buddhistxxx", 8), status);
+    status.errIfFailureAndReset();
+
+    static const char expected[] = "de@calendar=buddhist;collation=phonebook";
+    assertEquals("", expected, l.getName());
+
+    l.setUnicodeKeywordValue("cu", nullptr, status);
+    status.errIfFailureAndReset();
+    assertEquals("", expected, l.getName());
+
+    l.setUnicodeKeywordValue("!!", nullptr, status);
+    assertEquals("status", U_ILLEGAL_ARGUMENT_ERROR, status.reset());
+    assertEquals("", expected, l.getName());
+
+    l.setUnicodeKeywordValue("co", "!!", status);
+    assertEquals("status", U_ILLEGAL_ARGUMENT_ERROR, status.reset());
+    assertEquals("", expected, l.getName());
+
+    l.setUnicodeKeywordValue("co", nullptr, status);
+    status.errIfFailureAndReset();
+
+    l.setUnicodeKeywordValue("ca", "", status);
+    status.errIfFailureAndReset();
+
+    assertEquals("", Locale::getGerman().getName(), l.getName());
 }
 
 void
@@ -1817,8 +4273,8 @@ static UBool _loccmp(const char* string, const char* prefix) {
             plen = (int32_t)strlen(prefix);
     int32_t c = uprv_strncmp(string, prefix, plen);
     /* 'root' is "less than" everything */
-    if (uprv_strcmp(prefix, "root") == 0) {
-        return (uprv_strcmp(string, "root") == 0) ? 0 : 1;
+    if (prefix[0] == '\0') {
+        return string[0] != '\0';
     }
     if (c) return -1; /* mismatch */
     if (slen == plen) return 0;
@@ -2125,7 +4581,7 @@ void LocaleTest::checkRegisteredCollators(const char *expectExtra) {
     int32_t count1=0,count2=0;
     Hashtable oldHash(status);
     Hashtable newHash(status);
-    TEST_ASSERT_STATUS(status);
+    assertSuccess(WHERE, status);
 
     UnicodeString expectStr(expectExtra?expectExtra:"n/a", "");
 
@@ -2253,61 +4709,23 @@ void LocaleTest::TestCanonicalization(void)
         const char *getNameID;   /* expected getName() result */
         const char *canonicalID; /* expected canonicalize() result */
     } testCases[] = {
-        { "", "", "en_US_POSIX" },
-        { "C", "c", "en_US_POSIX" },
-        { "POSIX", "posix", "en_US_POSIX" },
-        { "ca_ES_PREEURO-with-extra-stuff-that really doesn't make any sense-unless-you're trying to increase code coverage",
-          "ca_ES_PREEURO_WITH_EXTRA_STUFF_THAT REALLY DOESN'T MAKE ANY SENSE_UNLESS_YOU'RE TRYING TO INCREASE CODE COVERAGE",
-          "ca_ES_PREEURO_WITH_EXTRA_STUFF_THAT REALLY DOESN'T MAKE ANY SENSE_UNLESS_YOU'RE TRYING TO INCREASE CODE COVERAGE"},
-        { "ca_ES_PREEURO", "ca_ES_PREEURO", "ca_ES@currency=ESP" },
-        { "de_AT_PREEURO", "de_AT_PREEURO", "de_AT@currency=ATS" },
-        { "de_DE_PREEURO", "de_DE_PREEURO", "de_DE@currency=DEM" },
-        { "de_LU_PREEURO", "de_LU_PREEURO", "de_LU@currency=LUF" },
-        { "el_GR_PREEURO", "el_GR_PREEURO", "el_GR@currency=GRD" },
-        { "en_BE_PREEURO", "en_BE_PREEURO", "en_BE@currency=BEF" },
-        { "en_IE_PREEURO", "en_IE_PREEURO", "en_IE@currency=IEP" },
-        { "es_ES_PREEURO", "es_ES_PREEURO", "es_ES@currency=ESP" },
-        { "eu_ES_PREEURO", "eu_ES_PREEURO", "eu_ES@currency=ESP" },
-        { "fi_FI_PREEURO", "fi_FI_PREEURO", "fi_FI@currency=FIM" },
-        { "fr_BE_PREEURO", "fr_BE_PREEURO", "fr_BE@currency=BEF" },
-        { "fr_FR_PREEURO", "fr_FR_PREEURO", "fr_FR@currency=FRF" },
-        { "fr_LU_PREEURO", "fr_LU_PREEURO", "fr_LU@currency=LUF" },
-        { "ga_IE_PREEURO", "ga_IE_PREEURO", "ga_IE@currency=IEP" },
-        { "gl_ES_PREEURO", "gl_ES_PREEURO", "gl_ES@currency=ESP" },
-        { "it_IT_PREEURO", "it_IT_PREEURO", "it_IT@currency=ITL" },
-        { "nl_BE_PREEURO", "nl_BE_PREEURO", "nl_BE@currency=BEF" },
-        { "nl_NL_PREEURO", "nl_NL_PREEURO", "nl_NL@currency=NLG" },
-        { "pt_PT_PREEURO", "pt_PT_PREEURO", "pt_PT@currency=PTE" },
-        { "de__PHONEBOOK", "de__PHONEBOOK", "de@collation=phonebook" },
-        { "en_GB_EURO", "en_GB_EURO", "en_GB@currency=EUR" },
-        { "en_GB@EURO", "en_GB@EURO", "en_GB@currency=EUR" }, /* POSIX ID */
-        { "es__TRADITIONAL", "es__TRADITIONAL", "es@collation=traditional" },
-        { "hi__DIRECT", "hi__DIRECT", "hi@collation=direct" },
-        { "ja_JP_TRADITIONAL", "ja_JP_TRADITIONAL", "ja_JP@calendar=japanese" },
-        { "th_TH_TRADITIONAL", "th_TH_TRADITIONAL", "th_TH@calendar=buddhist" },
-        { "zh_TW_STROKE", "zh_TW_STROKE", "zh_TW@collation=stroke" },
-        { "zh__PINYIN", "zh__PINYIN", "zh@collation=pinyin" },
+        { "ca_ES-with-extra-stuff-that really doesn't make any sense-unless-you're trying to increase code coverage",
+          "ca_ES_WITH_EXTRA_STUFF_THAT REALLY DOESN'T MAKE ANY SENSE_UNLESS_YOU'RE TRYING TO INCREASE CODE COVERAGE",
+          "ca_ES_EXTRA_STUFF_THAT REALLY DOESN'T MAKE ANY SENSE_UNLESS_WITH_YOU'RE TRYING TO INCREASE CODE COVERAGE"},
         { "zh@collation=pinyin", "zh@collation=pinyin", "zh@collation=pinyin" },
         { "zh_CN@collation=pinyin", "zh_CN@collation=pinyin", "zh_CN@collation=pinyin" },
         { "zh_CN_CA@collation=pinyin", "zh_CN_CA@collation=pinyin", "zh_CN_CA@collation=pinyin" },
         { "en_US_POSIX", "en_US_POSIX", "en_US_POSIX" }, 
         { "hy_AM_REVISED", "hy_AM_REVISED", "hy_AM_REVISED" }, 
-        { "no_NO_NY", "no_NO_NY", "no_NO_NY" /* not: "nn_NO" [alan ICU3.0] */ },
-        { "no@ny", "no@ny", "no__NY" /* not: "nn" [alan ICU3.0] */ }, /* POSIX ID */
-        { "no-no.utf32@B", "no_NO.utf32@B", "no_NO_B" /* not: "nb_NO_B" [alan ICU3.0] */ }, /* POSIX ID */
-        { "qz-qz@Euro", "qz_QZ@Euro", "qz_QZ@currency=EUR" }, /* qz-qz uses private use iso codes */
+        { "no_NO_NY", "no_NO_NY", "nb_NO_NY" /* not: "nn_NO" [alan ICU3.0] */ },
+        { "no@ny", "no@ny", "nb__NY" /* not: "nn" [alan ICU3.0] */ }, /* POSIX ID */
+        { "no-no.utf32@B", "no_NO.utf32@B", "nb_NO_B" /* not: "nb_NO_B" [alan ICU3.0] */ }, /* POSIX ID */
+        { "qz-qz@Euro", "qz_QZ@Euro", "qz_QZ_EURO" }, /* qz-qz uses private use iso codes */
         // NOTE: uloc_getName() works on en-BOONT, but Locale() parser considers it BOGUS
         // TODO: unify this behavior
         { "en-BOONT", "en__BOONT", "en__BOONT" }, /* registered name */
         { "de-1901", "de__1901", "de__1901" }, /* registered name */
         { "de-1906", "de__1906", "de__1906" }, /* registered name */
-        { "sr-SP-Cyrl", "sr_SP_CYRL", "sr_Cyrl_RS" }, /* .NET name */
-        { "sr-SP-Latn", "sr_SP_LATN", "sr_Latn_RS" }, /* .NET name */
-        { "sr_YU_CYRILLIC", "sr_YU_CYRILLIC", "sr_Cyrl_RS" }, /* Linux name */
-        { "uz-UZ-Cyrl", "uz_UZ_CYRL", "uz_Cyrl_UZ" }, /* .NET name */
-        { "uz-UZ-Latn", "uz_UZ_LATN", "uz_Latn_UZ" }, /* .NET name */
-        { "zh-CHS", "zh_CHS", "zh_Hans" }, /* .NET name */
-        { "zh-CHT", "zh_CHT", "zh_Hant" }, /* .NET name This may change back to zh_Hant */
 
         /* posix behavior that used to be performed by getName */
         { "mr.utf8", "mr.utf8", "mr" },
@@ -2315,26 +4733,72 @@ void LocaleTest::TestCanonicalization(void)
         { "x-piglatin_ML.MBE", "x-piglatin_ML.MBE", "x-piglatin_ML" },
         { "i-cherokee_US.utf7", "i-cherokee_US.utf7", "i-cherokee_US" },
         { "x-filfli_MT_FILFLA.gb-18030", "x-filfli_MT_FILFLA.gb-18030", "x-filfli_MT_FILFLA" },
-        { "no-no-ny.utf8@B", "no_NO_NY.utf8@B", "no_NO_NY_B" /* not: "nn_NO" [alan ICU3.0] */ }, /* @ ignored unless variant is empty */
+        { "no-no-ny.utf8@B", "no_NO_NY.utf8@B", "nb_NO_B_NY" /* not: "nn_NO" [alan ICU3.0] */ }, /* @ ignored unless variant is empty */
 
         /* fleshing out canonicalization */
         /* trim space and sort keywords, ';' is separator so not present at end in canonical form */
-        { "en_Hant_IL_VALLEY_GIRL@ currency = EUR; calendar = Japanese ;", "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR", "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR" },
+        { "en_Hant_IL_VALLEY_GIRL@ currency = EUR; calendar = Japanese ;",
+          "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR",
+          "en_Hant_IL_GIRL_VALLEY@calendar=Japanese;currency=EUR" },
         /* already-canonical ids are not changed */
-        { "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR", "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR", "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR" },
-        /* PRE_EURO and EURO conversions don't affect other keywords */
-        { "es_ES_PREEURO@CALendar=Japanese", "es_ES_PREEURO@calendar=Japanese", "es_ES@calendar=Japanese;currency=ESP" },
-        { "es_ES_EURO@SHOUT=zipeedeedoodah", "es_ES_EURO@shout=zipeedeedoodah", "es_ES@currency=EUR;shout=zipeedeedoodah" },
-        /* currency keyword overrides PRE_EURO and EURO currency */
-        { "es_ES_PREEURO@currency=EUR", "es_ES_PREEURO@currency=EUR", "es_ES@currency=EUR" },
-        { "es_ES_EURO@currency=ESP", "es_ES_EURO@currency=ESP", "es_ES@currency=ESP" },
+        { "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR",
+          "en_Hant_IL_VALLEY_GIRL@calendar=Japanese;currency=EUR",
+          "en_Hant_IL_GIRL_VALLEY@calendar=Japanese;currency=EUR" },
         /* norwegian is just too weird, if we handle things in their full generality */
-        { "no-Hant-GB_NY@currency=$$$", "no_Hant_GB_NY@currency=$$$", "no_Hant_GB_NY@currency=$$$" /* not: "nn_Hant_GB@currency=$$$" [alan ICU3.0] */ },
+        { "no-Hant-GB_NY@currency=$$$", "no_Hant_GB_NY@currency=$$$", "nb_Hant_GB_NY@currency=$$$" /* not: "nn_Hant_GB@currency=$$$" [alan ICU3.0] */ },
 
         /* test cases reflecting internal resource bundle usage */
         { "root@kw=foo", "root@kw=foo", "root@kw=foo" },
         { "@calendar=gregorian", "@calendar=gregorian", "@calendar=gregorian" },
-        { "ja_JP@calendar=Japanese", "ja_JP@calendar=Japanese", "ja_JP@calendar=Japanese" }
+        { "ja_JP@calendar=Japanese", "ja_JP@calendar=Japanese", "ja_JP@calendar=Japanese" },
+
+        // Before ICU 64, ICU locale canonicalization had some additional mappings.
+        // They were removed for ICU-20187 "drop support for long-obsolete locale ID variants".
+        // The following now use standard canonicalization.
+        { "", "", "" },
+        { "C", "c", "c" },
+        { "POSIX", "posix", "posix" },
+        { "ca_ES_PREEURO", "ca_ES_PREEURO", "ca_ES_PREEURO" },
+        { "de_AT_PREEURO", "de_AT_PREEURO", "de_AT_PREEURO" },
+        { "de_DE_PREEURO", "de_DE_PREEURO", "de_DE_PREEURO" },
+        { "de_LU_PREEURO", "de_LU_PREEURO", "de_LU_PREEURO" },
+        { "el_GR_PREEURO", "el_GR_PREEURO", "el_GR_PREEURO" },
+        { "en_BE_PREEURO", "en_BE_PREEURO", "en_BE_PREEURO" },
+        { "en_IE_PREEURO", "en_IE_PREEURO", "en_IE_PREEURO" },
+        { "es_ES_PREEURO", "es_ES_PREEURO", "es_ES_PREEURO" },
+        { "eu_ES_PREEURO", "eu_ES_PREEURO", "eu_ES_PREEURO" },
+        { "fi_FI_PREEURO", "fi_FI_PREEURO", "fi_FI_PREEURO" },
+        { "fr_BE_PREEURO", "fr_BE_PREEURO", "fr_BE_PREEURO" },
+        { "fr_FR_PREEURO", "fr_FR_PREEURO", "fr_FR_PREEURO" },
+        { "fr_LU_PREEURO", "fr_LU_PREEURO", "fr_LU_PREEURO" },
+        { "ga_IE_PREEURO", "ga_IE_PREEURO", "ga_IE_PREEURO" },
+        { "gl_ES_PREEURO", "gl_ES_PREEURO", "gl_ES_PREEURO" },
+        { "it_IT_PREEURO", "it_IT_PREEURO", "it_IT_PREEURO" },
+        { "nl_BE_PREEURO", "nl_BE_PREEURO", "nl_BE_PREEURO" },
+        { "nl_NL_PREEURO", "nl_NL_PREEURO", "nl_NL_PREEURO" },
+        { "pt_PT_PREEURO", "pt_PT_PREEURO", "pt_PT_PREEURO" },
+        { "de__PHONEBOOK", "de__PHONEBOOK", "de__PHONEBOOK" },
+        { "en_GB_EURO", "en_GB_EURO", "en_GB_EURO" },
+        { "en_GB@EURO", "en_GB@EURO", "en_GB_EURO" }, /* POSIX ID */
+        { "es__TRADITIONAL", "es__TRADITIONAL", "es__TRADITIONAL" },
+        { "hi__DIRECT", "hi__DIRECT", "hi__DIRECT" },
+        { "ja_JP_TRADITIONAL", "ja_JP_TRADITIONAL", "ja_JP_TRADITIONAL" },
+        { "th_TH_TRADITIONAL", "th_TH_TRADITIONAL", "th_TH_TRADITIONAL" },
+        { "zh_TW_STROKE", "zh_TW_STROKE", "zh_TW_STROKE" },
+        { "zh__PINYIN", "zh__PINYIN", "zh__PINYIN" },
+        { "sr-SP-Cyrl", "sr_SP_CYRL", "sr_SP_CYRL" }, /* .NET name */
+        { "sr-SP-Latn", "sr_SP_LATN", "sr_SP_LATN" }, /* .NET name */
+        { "sr_YU_CYRILLIC", "sr_YU_CYRILLIC", "sr_RS_CYRILLIC" }, /* Linux name */
+        { "uz-UZ-Cyrl", "uz_UZ_CYRL", "uz_UZ_CYRL" }, /* .NET name */
+        { "uz-UZ-Latn", "uz_UZ_LATN", "uz_UZ_LATN" }, /* .NET name */
+        { "zh-CHS", "zh_CHS", "zh_CHS" }, /* .NET name */
+        { "zh-CHT", "zh_CHT", "zh_CHT" }, /* .NET name This may change back to zh_Hant */
+        /* PRE_EURO and EURO conversions don't affect other keywords */
+        { "es_ES_PREEURO@CALendar=Japanese", "es_ES_PREEURO@calendar=Japanese", "es_ES_PREEURO@calendar=Japanese" },
+        { "es_ES_EURO@SHOUT=zipeedeedoodah", "es_ES_EURO@shout=zipeedeedoodah", "es_ES_EURO@shout=zipeedeedoodah" },
+        /* currency keyword overrides PRE_EURO and EURO currency */
+        { "es_ES_PREEURO@currency=EUR", "es_ES_PREEURO@currency=EUR", "es_ES_PREEURO@currency=EUR" },
+        { "es_ES_EURO@currency=ESP", "es_ES_EURO@currency=ESP", "es_ES_EURO@currency=ESP" },
     };
     
     static const char* label[] = { "createFromName", "createCanonical", "Locale" };
@@ -2357,12 +4821,103 @@ void LocaleTest::TestCanonicalization(void)
     }
 }
 
+void LocaleTest::TestCanonicalize(void)
+{
+    static const struct {
+        const char *localeID;    /* input */
+        const char *canonicalID; /* expected canonicalize() result */
+    } testCases[] = {
+        // language _ variant -> language
+        { "no-BOKMAL", "nb" },
+        // also test with script, country and extensions
+        { "no-Cyrl-ID-BOKMAL-u-ca-japanese", "nb-Cyrl-ID-u-ca-japanese" },
+        { "no-Cyrl-ID-1901-BOKMAL-xsistemo-u-ca-japanese", "nb-Cyrl-ID-1901-xsistemo-u-ca-japanese" },
+        { "no-Cyrl-ID-1901-BOKMAL-u-ca-japanese", "nb-Cyrl-ID-1901-u-ca-japanese" },
+        { "no-Cyrl-ID-BOKMAL-xsistemo-u-ca-japanese", "nb-Cyrl-ID-xsistemo-u-ca-japanese" },
+        { "no-NYNORSK", "nn" },
+        { "no-Cyrl-ID-NYNORSK-u-ca-japanese", "nn-Cyrl-ID-u-ca-japanese" },
+        { "aa-SAAHO", "ssy" },
+        // also test with script, country and extensions
+        { "aa-Deva-IN-SAAHO-u-ca-japanese", "ssy-Deva-IN-u-ca-japanese" },
+
+        // language -> language
+        { "aam", "aas" },
+        // also test with script, country, variants and extensions
+        { "aam-Cyrl-ID-3456-u-ca-japanese", "aas-Cyrl-ID-3456-u-ca-japanese" },
+
+        // language -> language _ Script
+        { "sh", "sr-Latn" },
+        // also test with script
+        { "sh-Cyrl", "sr-Cyrl" },
+        // also test with country, variants and extensions
+        { "sh-ID-3456-u-ca-roc", "sr-Latn-ID-3456-u-ca-roc" },
+
+        // language -> language _ country
+        { "prs", "fa-AF" },
+        // also test with country
+        { "prs-RU", "fa-RU" },
+        // also test with script, variants and extensions
+        { "prs-Cyrl-1009-u-ca-roc", "fa-Cyrl-AF-1009-u-ca-roc" },
+
+        { "pa-IN", "pa-IN" },
+        // also test with script
+        { "pa-Latn-IN", "pa-Latn-IN" },
+        // also test with variants and extensions
+        { "pa-IN-5678-u-ca-hindi", "pa-IN-5678-u-ca-hindi" },
+
+        { "ky-Cyrl-KG", "ky-Cyrl-KG" },
+        // also test with variants and extensions
+        { "ky-Cyrl-KG-3456-u-ca-roc", "ky-Cyrl-KG-3456-u-ca-roc" },
+
+        // Test replacement of scriptAlias
+        { "en-Qaai", "en-Zinh" },
+
+        // Test replacement of territoryAlias
+        // 554 has one replacement
+        { "en-554", "en-NZ" },
+        { "en-554-u-nu-arab", "en-NZ-u-nu-arab" },
+        // 172 has multiple replacements
+        // also test with variants
+        { "ru-172-1234", "ru-RU-1234" },
+        // also test with extensions
+        { "ru-172-1234-u-nu-latn", "ru-RU-1234-u-nu-latn" },
+        // also test with scripts
+        { "uz-172", "uz-UZ" },
+        { "uz-Cyrl-172", "uz-Cyrl-UZ" },
+        { "uz-Bopo-172", "uz-Bopo-UZ" },
+        // also test with variants and scripts
+        { "uz-Cyrl-172-5678-u-nu-latn", "uz-Cyrl-UZ-5678-u-nu-latn" },
+        // a language not used in this region
+        { "fr-172", "fr-RU" },
+
+        // variant
+        { "ja-Latn-hepburn-heploc", "ja-Latn-alalc97"},
+
+        { "aaa-Fooo-SU", "aaa-Fooo-RU"},
+    };
+    int32_t i;
+    for (i=0; i < UPRV_LENGTHOF(testCases); i++) {
+        UErrorCode status = U_ZERO_ERROR;
+        std::string otag = testCases[i].localeID;
+        Locale loc = Locale::forLanguageTag(otag.c_str(), status);
+        loc.canonicalize(status);
+        std::string tag = loc.toLanguageTag<std::string>(status);
+        if (tag != testCases[i].canonicalID) {
+            errcheckln(status, "FAIL: %s should be canonicalized to %s but got %s - %s",
+                       otag.c_str(),
+                       testCases[i].canonicalID,
+                       tag.c_str(),
+                       u_errorName(status));
+        }
+    }
+}
+
 void LocaleTest::TestCurrencyByDate(void)
 {
 #if !UCONFIG_NO_FORMATTING
     UErrorCode status = U_ZERO_ERROR;
     UDate date = uprv_getUTCtime();
-	UChar TMP[4];
+	UChar TMP[4] = {0, 0, 0, 0};
 	int32_t index = 0;
 	int32_t resLen = 0;
     UnicodeString tempStr, resultStr;
@@ -2663,10 +5218,6 @@ void LocaleTest::TestCurrencyByDate(void)
     if (u_strcmp(USD, TMP) != 0) {
         errcheckln(status, "Fail: en_US didn't return USD - %s", u_errorName(status));
     }
-    ucurr_forLocaleAndDate("en_US_PREEURO", date, 1, TMP, 4, &status);
-    if (u_strcmp(USD, TMP) != 0) {
-        errcheckln(status, "Fail: en_US_PREEURO didn't fallback to en_US - %s", u_errorName(status));
-    }
     ucurr_forLocaleAndDate("en_US_Q", date, 1, TMP, 4, &status);
     if (u_strcmp(USD, TMP) != 0) {
         errcheckln(status, "Fail: en_US_Q didn't fallback to en_US - %s", u_errorName(status));
@@ -2732,3 +5283,1086 @@ void LocaleTest::TestBug13277() {
     }
 }
 
+// TestBug13554 Check for read past end of array in getPosixID().
+//              The bug shows as an Address Sanitizer failure.
+
+void LocaleTest::TestBug13554() {
+    UErrorCode status = U_ZERO_ERROR;
+    const int BUFFER_SIZE = 100;
+    char  posixID[BUFFER_SIZE];
+
+    for (uint32_t hostid = 0; hostid < 0x500; ++hostid) {
+        status = U_ZERO_ERROR;
+        uprv_convertToPosix(hostid, posixID, BUFFER_SIZE, &status);
+    }
+}
+
+void LocaleTest::TestBug20410() {
+    IcuTestErrorCode status(*this, "TestBug20410()");
+
+    static const char tag1[] = "art-lojban-x-0";
+    static const Locale expected1("jbo@x=0");
+    Locale result1 = Locale::forLanguageTag(tag1, status);
+    status.errIfFailureAndReset("\"%s\"", tag1);
+    assertEquals(tag1, expected1.getName(), result1.getName());
+
+    static const char tag2[] = "zh-xiang-u-nu-thai-x-0";
+    static const Locale expected2("hsn@numbers=thai;x=0");
+    Locale result2 = Locale::forLanguageTag(tag2, status);
+    status.errIfFailureAndReset("\"%s\"", tag2);
+    assertEquals(tag2, expected2.getName(), result2.getName());
+
+    static const char locid3[] = "art__lojban@x=0";
+    Locale result3 = Locale::createCanonical(locid3);
+    static const Locale expected3("jbo@x=0");
+    assertEquals(locid3, expected3.getName(), result3.getName());
+
+    static const char locid4[] = "art-lojban-x-0";
+    Locale result4 = Locale::createCanonical(locid4);
+    static const Locale expected4("jbo@x=0");
+    assertEquals(locid4, expected4.getName(), result4.getName());
+}
+
+void LocaleTest::TestBug20900() {
+    static const struct {
+        const char *localeID;    /* input */
+        const char *canonicalID; /* expected canonicalize() result */
+    } testCases[] = {
+        { "art-lojban", "jbo" },
+        { "zh-guoyu", "zh" },
+        { "zh-hakka", "hak" },
+        { "zh-xiang", "hsn" },
+        { "zh-min-nan", "nan" },
+        { "zh-gan", "gan" },
+        { "zh-wuu", "wuu" },
+        { "zh-yue", "yue" },
+    };
+
+    IcuTestErrorCode status(*this, "TestBug20900");
+    for (int32_t i=0; i < UPRV_LENGTHOF(testCases); i++) {
+        Locale loc = Locale::createCanonical(testCases[i].localeID);
+        std::string result = loc.toLanguageTag<std::string>(status);
+        const char* tag = loc.isBogus() ? "BOGUS" : result.c_str();
+        status.errIfFailureAndReset("FAIL: createCanonical(%s).toLanguageTag() expected \"%s\"",
+                    testCases[i].localeID, tag);
+        assertEquals("createCanonical", testCases[i].canonicalID, tag);
+    }
+}
+
+U_DEFINE_LOCAL_OPEN_POINTER(LocalStdioFilePointer, FILE, fclose);
+void LocaleTest::TestLocaleCanonicalizationFromFile()
+{
+    IcuTestErrorCode status(*this, "TestLocaleCanonicalizationFromFile");
+    const char *sourceTestDataPath=getSourceTestData(status);
+    if(status.errIfFailureAndReset("unable to find the source/test/testdata "
+                                      "folder (getSourceTestData())")) {
+        return;
+    }
+    char testPath[400];
+    char line[256];
+    strcpy(testPath, sourceTestDataPath);
+    strcat(testPath, "localeCanonicalization.txt");
+    LocalStdioFilePointer testFile(fopen(testPath, "r"));
+    if(testFile.isNull()) {
+        errln("unable to open %s", testPath);
+        return;
+    }
+    // Format:
+    // <source locale identifier>	;	<expected canonicalized locale identifier>
+    while (fgets(line, (int)sizeof(line), testFile.getAlias())!=NULL) {
+        if (line[0] == '#') {
+            // ignore any lines start with #
+            continue;
+        }
+        char *semi = strchr(line, ';');
+        if (semi == nullptr) {
+            // ignore any lines without ;
+            continue;
+        }
+        *semi = '\0'; // null terminiate on the spot of semi
+        const char* from = u_skipWhitespace((const char*)line);
+        u_rtrim((char*)from);
+        const char* to = u_skipWhitespace((const char*)semi + 1);
+        u_rtrim((char*)to);
+        std::string expect(to);
+        // Change the _ to -
+        std::transform(expect.begin(), expect.end(), expect.begin(),
+                       [](unsigned char c){ return c == '_' ? '-' : c; });
+
+        Locale loc = Locale::createCanonical(from);
+        std::string result = loc.toLanguageTag<std::string>(status);
+        const char* tag = loc.isBogus() ? "BOGUS" : result.c_str();
+        status.errIfFailureAndReset(
+            "FAIL: createCanonical(%s).toLanguageTag() expected \"%s\" locale is %s",
+            from, tag, loc.getName());
+        std::string msg("createCanonical(");
+        msg += from;
+        msg += ") locale = ";
+        msg += loc.getName();
+        assertEquals(msg.c_str(), expect.c_str(), tag);
+    }
+}
+
+void LocaleTest::TestKnownCanonicalizedListCorrect()
+{
+    IcuTestErrorCode status(*this, "TestKnownCanonicalizedListCorrect");
+    int32_t numOfKnownCanonicalized;
+    const char* const* knownCanonicalized =
+        ulocimp_getKnownCanonicalizedLocaleForTest(&numOfKnownCanonicalized);
+    for (int32_t i = 0; i < numOfKnownCanonicalized; i++) {
+        std::string msg("Known Canonicalized Locale is not canonicalized: ");
+        assertTrue((msg + knownCanonicalized[i]).c_str(),
+                   ulocimp_isCanonicalizedLocaleForTest(knownCanonicalized[i]));
+    }
+}
+
+void LocaleTest::TestConstructorAcceptsBCP47() {
+    IcuTestErrorCode status(*this, "TestConstructorAcceptsBCP47");
+
+    Locale loc1("ar-EG-u-nu-latn");
+    Locale loc2("ar-EG@numbers=latn");
+    Locale loc3("ar-EG");
+    std::string val;
+
+    // Check getKeywordValue "numbers"
+    val = loc1.getKeywordValue<std::string>("numbers", status);
+    assertEquals("BCP47 syntax has ICU keyword value", "latn", val.c_str());
+
+    val = loc2.getKeywordValue<std::string>("numbers", status);
+    assertEquals("ICU syntax has ICU keyword value", "latn", val.c_str());
+
+    val = loc3.getKeywordValue<std::string>("numbers", status);
+    assertEquals("Default, ICU keyword", "", val.c_str());
+
+    // Check getUnicodeKeywordValue "nu"
+    val = loc1.getUnicodeKeywordValue<std::string>("nu", status);
+    assertEquals("BCP47 syntax has short unicode keyword value", "latn", val.c_str());
+
+    val = loc2.getUnicodeKeywordValue<std::string>("nu", status);
+    assertEquals("ICU syntax has short unicode keyword value", "latn", val.c_str());
+
+    val = loc3.getUnicodeKeywordValue<std::string>("nu", status);
+    status.expectErrorAndReset(U_ILLEGAL_ARGUMENT_ERROR, "Default, short unicode keyword");
+
+    // Check getUnicodeKeywordValue "numbers"
+    val = loc1.getUnicodeKeywordValue<std::string>("numbers", status);
+    assertEquals("BCP47 syntax has long unicode keyword value", "latn", val.c_str());
+
+    val = loc2.getUnicodeKeywordValue<std::string>("numbers", status);
+    assertEquals("ICU syntax has long unicode keyword value", "latn", val.c_str());
+
+    val = loc3.getUnicodeKeywordValue<std::string>("numbers", status);
+    status.expectErrorAndReset(U_ILLEGAL_ARGUMENT_ERROR, "Default, long unicode keyword");
+}
+
+void LocaleTest::TestForLanguageTag() {
+    IcuTestErrorCode status(*this, "TestForLanguageTag()");
+
+    static const char tag_en[] = "en-US";
+    static const char tag_oed[] = "en-GB-oed";
+    static const char tag_af[] = "af-t-ar-i0-handwrit-u-ca-coptic-x-foo";
+    static const char tag_ill[] = "!";
+    static const char tag_no_nul[] = { 'e', 'n', '-', 'G', 'B' };
+    static const char tag_ext[] = "en-GB-1-abc-efg-a-xyz";
+    static const char tag_var[] = "sl-rozaj-biske-1994";
+
+    static const Locale loc_en("en_US");
+    static const Locale loc_oed("en_GB_OXENDICT");
+    static const Locale loc_af("af@calendar=coptic;t=ar-i0-handwrit;x=foo");
+    static const Locale loc_null("");
+    static const Locale loc_gb("en_GB");
+    static const Locale loc_ext("en_GB@1=abc-efg;a=xyz");
+    static const Locale loc_var("sl__1994_BISKE_ROZAJ");
+
+    Locale result_en = Locale::forLanguageTag(tag_en, status);
+    status.errIfFailureAndReset("\"%s\"", tag_en);
+    assertEquals(tag_en, loc_en.getName(), result_en.getName());
+
+    Locale result_oed = Locale::forLanguageTag(tag_oed, status);
+    status.errIfFailureAndReset("\"%s\"", tag_oed);
+    assertEquals(tag_oed, loc_oed.getName(), result_oed.getName());
+
+    Locale result_af = Locale::forLanguageTag(tag_af, status);
+    status.errIfFailureAndReset("\"%s\"", tag_af);
+    assertEquals(tag_af, loc_af.getName(), result_af.getName());
+
+    Locale result_var = Locale::forLanguageTag(tag_var, status);
+    status.errIfFailureAndReset("\"%s\"", tag_var);
+    assertEquals(tag_var, loc_var.getName(), result_var.getName());
+
+    Locale result_ill = Locale::forLanguageTag(tag_ill, status);
+    assertEquals(tag_ill, U_ILLEGAL_ARGUMENT_ERROR, status.reset());
+    assertTrue(result_ill.getName(), result_ill.isBogus());
+
+    Locale result_null = Locale::forLanguageTag(nullptr, status);
+    status.errIfFailureAndReset("nullptr");
+    assertEquals("nullptr", loc_null.getName(), result_null.getName());
+
+    StringPiece sp_substr(tag_oed, 5);  // "en-GB", no NUL.
+    Locale result_substr = Locale::forLanguageTag(sp_substr, status);
+    status.errIfFailureAndReset("\"%.*s\"", sp_substr.size(), sp_substr.data());
+    assertEquals(CharString(sp_substr, status).data(),
+            loc_gb.getName(), result_substr.getName());
+
+    StringPiece sp_no_nul(tag_no_nul, sizeof tag_no_nul);  // "en-GB", no NUL.
+    Locale result_no_nul = Locale::forLanguageTag(sp_no_nul, status);
+    status.errIfFailureAndReset("\"%.*s\"", sp_no_nul.size(), sp_no_nul.data());
+    assertEquals(CharString(sp_no_nul, status).data(),
+            loc_gb.getName(), result_no_nul.getName());
+
+    Locale result_ext = Locale::forLanguageTag(tag_ext, status);
+    status.errIfFailureAndReset("\"%s\"", tag_ext);
+    assertEquals(tag_ext, loc_ext.getName(), result_ext.getName());
+}
+
+void LocaleTest::TestToLanguageTag() {
+    IcuTestErrorCode status(*this, "TestToLanguageTag()");
+
+    static const Locale loc_c("en_US_POSIX");
+    static const Locale loc_en("en_US");
+    static const Locale loc_af("af@calendar=coptic;t=ar-i0-handwrit;x=foo");
+    static const Locale loc_ext("en@0=abc;a=xyz");
+    static const Locale loc_empty("");
+    static const Locale loc_ill("!");
+    static const Locale loc_variant("sl__ROZAJ_BISKE_1994");
+
+    static const char tag_c[] = "en-US-u-va-posix";
+    static const char tag_en[] = "en-US";
+    static const char tag_af[] = "af-t-ar-i0-handwrit-u-ca-coptic-x-foo";
+    static const char tag_ext[] = "en-0-abc-a-xyz";
+    static const char tag_und[] = "und";
+    static const char tag_variant[] = "sl-1994-biske-rozaj";
+
+    std::string result;
+    StringByteSink<std::string> sink(&result);
+    loc_c.toLanguageTag(sink, status);
+    status.errIfFailureAndReset("\"%s\"", loc_c.getName());
+    assertEquals(loc_c.getName(), tag_c, result.c_str());
+
+    std::string result_c = loc_c.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_c.getName());
+    assertEquals(loc_c.getName(), tag_c, result_c.c_str());
+
+    std::string result_en = loc_en.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_en.getName());
+    assertEquals(loc_en.getName(), tag_en, result_en.c_str());
+
+    std::string result_af = loc_af.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_af.getName());
+    assertEquals(loc_af.getName(), tag_af, result_af.c_str());
+
+    std::string result_ext = loc_ext.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_ext.getName());
+    assertEquals(loc_ext.getName(), tag_ext, result_ext.c_str());
+
+    std::string result_empty = loc_empty.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_empty.getName());
+    assertEquals(loc_empty.getName(), tag_und, result_empty.c_str());
+
+    std::string result_ill = loc_ill.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_ill.getName());
+    assertEquals(loc_ill.getName(), tag_und, result_ill.c_str());
+
+    std::string result_variant = loc_variant.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", loc_variant.getName());
+    assertEquals(loc_variant.getName(), tag_variant, result_variant.c_str());
+
+    Locale loc_bogus;
+    loc_bogus.setToBogus();
+    std::string result_bogus = loc_bogus.toLanguageTag<std::string>(status);
+    assertEquals("bogus", U_ILLEGAL_ARGUMENT_ERROR, status.reset());
+    assertTrue(result_bogus.c_str(), result_bogus.empty());
+}
+
+/* ICU-20310 */
+void LocaleTest::TestToLanguageTagOmitTrue() {
+    IcuTestErrorCode status(*this, "TestToLanguageTagOmitTrue()");
+    assertEquals("en-u-kn should drop true",
+                 "en-u-kn", Locale("en-u-kn-true").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+    assertEquals("en-u-kn should drop true",
+                 "en-u-kn", Locale("en-u-kn").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    assertEquals("de-u-co should drop true",
+                 "de-u-co", Locale("de-u-co").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+    assertEquals("de-u-co should drop true",
+                 "de-u-co", Locale("de-u-co-yes").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+    assertEquals("de@collation=yes should drop true",
+                 "de-u-co", Locale("de@collation=yes").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    assertEquals("cmn-Hans-CN-t-ca-u-ca-x-t-u should drop true",
+                 "cmn-Hans-CN-t-ca-u-ca-x-t-u",
+                 Locale("cmn-hans-cn-u-ca-t-ca-x-t-u").toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+}
+
+void LocaleTest::TestMoveAssign() {
+    // ULOC_FULLNAME_CAPACITY == 157 (uloc.h)
+    Locale l1("de@collation=phonebook;x="
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbzz");
+
+    Locale l2;
+    {
+        Locale l3(l1);
+        assertTrue("l1 == l3", l1 == l3);
+        l2 = std::move(l3);
+        assertTrue("l1 == l2", l1 == l2);
+        assertTrue("l2 != l3", l2.getName() != l3.getName());
+    }
+
+    // This should remain true also after l3 has been destructed.
+    assertTrue("l1 == l2, again", l1 == l2);
+
+    Locale l4("de@collation=phonebook");
+
+    Locale l5;
+    {
+        Locale l6(l4);
+        assertTrue("l4 == l6", l4 == l6);
+        l5 = std::move(l6);
+        assertTrue("l4 == l5", l4 == l5);
+        assertTrue("l5 != l6", l5.getName() != l6.getName());
+    }
+
+    // This should remain true also after l6 has been destructed.
+    assertTrue("l4 == l5, again", l4 == l5);
+
+    Locale l7("vo_Cyrl_AQ_EURO");
+
+    Locale l8;
+    {
+        Locale l9(l7);
+        assertTrue("l7 == l9", l7 == l9);
+        l8 = std::move(l9);
+        assertTrue("l7 == l8", l7 == l8);
+        assertTrue("l8 != l9", l8.getName() != l9.getName());
+    }
+
+    // This should remain true also after l9 has been destructed.
+    assertTrue("l7 == l8, again", l7 == l8);
+
+    assertEquals("language", l7.getLanguage(), l8.getLanguage());
+    assertEquals("script", l7.getScript(), l8.getScript());
+    assertEquals("country", l7.getCountry(), l8.getCountry());
+    assertEquals("variant", l7.getVariant(), l8.getVariant());
+    assertEquals("bogus", l7.isBogus(), l8.isBogus());
+}
+
+void LocaleTest::TestMoveCtor() {
+    // ULOC_FULLNAME_CAPACITY == 157 (uloc.h)
+    Locale l1("de@collation=phonebook;x="
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbcccccdddddeeeeefffffggggghhhhh"
+              "aaaaabbbbbzz");
+
+    Locale l3(l1);
+    assertTrue("l1 == l3", l1 == l3);
+    Locale l2(std::move(l3));
+    assertTrue("l1 == l2", l1 == l2);
+    assertTrue("l2 != l3", l2.getName() != l3.getName());
+
+    Locale l4("de@collation=phonebook");
+
+    Locale l6(l4);
+    assertTrue("l4 == l6", l4 == l6);
+    Locale l5(std::move(l6));
+    assertTrue("l4 == l5", l4 == l5);
+    assertTrue("l5 != l6", l5.getName() != l6.getName());
+
+    Locale l7("vo_Cyrl_AQ_EURO");
+
+    Locale l9(l7);
+    assertTrue("l7 == l9", l7 == l9);
+    Locale l8(std::move(l9));
+    assertTrue("l7 == l8", l7 == l8);
+    assertTrue("l8 != l9", l8.getName() != l9.getName());
+
+    assertEquals("language", l7.getLanguage(), l8.getLanguage());
+    assertEquals("script", l7.getScript(), l8.getScript());
+    assertEquals("country", l7.getCountry(), l8.getCountry());
+    assertEquals("variant", l7.getVariant(), l8.getVariant());
+    assertEquals("bogus", l7.isBogus(), l8.isBogus());
+}
+
+void LocaleTest::TestBug20407iVariantPreferredValue() {
+    IcuTestErrorCode status(*this, "TestBug20407iVariantPreferredValue()");
+
+    Locale l = Locale::forLanguageTag("hy-arevela", status);
+    status.errIfFailureAndReset("hy-arevela fail");
+    assertTrue("!l.isBogus()", !l.isBogus());
+
+    std::string result = l.toLanguageTag<std::string>(status);
+    assertEquals(l.getName(), "hy", result.c_str());
+
+    l = Locale::forLanguageTag("hy-arevmda", status);
+    status.errIfFailureAndReset("hy-arevmda");
+    assertTrue("!l.isBogus()", !l.isBogus());
+
+    result = l.toLanguageTag<std::string>(status);
+    assertEquals(l.getName(), "hyw", result.c_str());
+}
+
+void LocaleTest::TestBug13417VeryLongLanguageTag() {
+    IcuTestErrorCode status(*this, "TestBug13417VeryLongLanguageTag()");
+
+    static const char tag[] =
+        "zh-x"
+        "-foo-bar-baz-foo-bar-baz-foo-bar-baz-foo-bar-baz"
+        "-foo-bar-baz-foo-bar-baz-foo-bar-baz-foo-bar-baz"
+        "-foo-bar-baz-foo-bar-baz-foo-bar-baz-foo-bar-baz"
+        "-foo-bar-baz-fxx"
+    ;
+
+    Locale l = Locale::forLanguageTag(tag, status);
+    status.errIfFailureAndReset("\"%s\"", tag);
+    assertTrue("!l.isBogus()", !l.isBogus());
+
+    std::string result = l.toLanguageTag<std::string>(status);
+    status.errIfFailureAndReset("\"%s\"", l.getName());
+    assertEquals("equals", tag, result.c_str());
+}
+
+void LocaleTest::TestBug11053UnderlineTimeZone() {
+    static const char* const tz_in_ext[] = {
+        "etadd",
+        "tzdar",
+        "eheai",
+        "sttms",
+        "arirj",
+        "arrgl",
+        "aruaq",
+        "arluq",
+        "mxpvr",
+        "brbvb",
+        "arbue",
+        "caycb",
+        "brcgr",
+        "cayzs",
+        "crsjo",
+        "caydq",
+        "svsal",
+        "cafne",
+        "caglb",
+        "cagoo",
+        "tcgdt",
+        "ustel",
+        "bolpb",
+        "uslax",
+        "sxphi",
+        "mxmex",
+        "usnyc",
+        "usxul",
+        "usndcnt",
+        "usndnsl",
+        "ttpos",
+        "brpvh",
+        "prsju",
+        "clpuq",
+        "caffs",
+        "cayek",
+        "brrbr",
+        "mxstis",
+        "dosdq",
+        "brsao",
+        "gpsbh",
+        "casjf",
+        "knbas",
+        "lccas",
+        "vistt",
+        "vcsvd",
+        "cayyn",
+        "cathu",
+        "hkhkg",
+        "mykul",
+        "khpnh",
+        "cvrai",
+        "gsgrv",
+        "shshn",
+        "aubhq",
+        "auldh",
+        "imdgs",
+        "smsai",
+        "asppg",
+        "pgpom",
+    };
+    static const char* const tzname_with_underline[] = {
+        "America/Buenos_Aires",
+        "America/Coral_Harbour",
+        "America/Los_Angeles",
+        "America/Mexico_City",
+        "America/New_York",
+        "America/Rio_Branco",
+        "America/Sao_Paulo",
+        "America/St_Johns",
+        "America/St_Thomas",
+        "Australia/Broken_Hill",
+        "Australia/Lord_Howe",
+        "Pacific/Pago_Pago",
+    };
+    std::string locale_str;
+    for (int32_t i = 0; i < UPRV_LENGTHOF(tz_in_ext); i++) {
+        locale_str = "en-u-tz-";
+        locale_str += tz_in_ext[i];
+        Locale l(locale_str.c_str());
+        assertTrue((locale_str + " !l.isBogus()").c_str(), !l.isBogus());
+    }
+    for (int32_t i = 0; i < UPRV_LENGTHOF(tzname_with_underline); i++) {
+        locale_str = "en@timezone=";
+        locale_str +=  tzname_with_underline[i];
+        Locale l(locale_str.c_str());
+        assertTrue((locale_str + " !l.isBogus()").c_str(), !l.isBogus());
+    }
+    locale_str = "en_US@timezone=America/Coral_Harbour";
+    Locale l2(locale_str.c_str());
+    assertTrue((locale_str + " !l2.isBogus()").c_str(), !l2.isBogus());
+    locale_str = "en_Latn@timezone=America/New_York";
+    Locale l3(locale_str.c_str());
+    assertTrue((locale_str + " !l3.isBogus()").c_str(), !l3.isBogus());
+    locale_str = "en_Latn_US@timezone=Australia/Broken_Hill";
+    Locale l4(locale_str.c_str());
+    assertTrue((locale_str + " !l4.isBogus()").c_str(), !l4.isBogus());
+    locale_str = "en-u-tz-ciabj";
+    Locale l5(locale_str.c_str());
+    assertTrue((locale_str + " !l5.isBogus()").c_str(), !l5.isBogus());
+    locale_str = "en-US-u-tz-asppg";
+    Locale l6(locale_str.c_str());
+    assertTrue((locale_str + " !l6.isBogus()").c_str(), !l6.isBogus());
+    locale_str = "fil-Latn-u-tz-cvrai";
+    Locale l7(locale_str.c_str());
+    assertTrue((locale_str + " !l7.isBogus()").c_str(), !l7.isBogus());
+    locale_str = "fil-Latn-PH-u-tz-gsgrv";
+    Locale l8(locale_str.c_str());
+    assertTrue((locale_str + " !l8.isBogus()").c_str(), !l8.isBogus());
+}
+
+void LocaleTest::TestUnd() {
+    IcuTestErrorCode status(*this, "TestUnd()");
+
+    static const char empty[] = "";
+    static const char root[] = "root";
+    static const char und[] = "und";
+
+    Locale empty_ctor(empty);
+    Locale empty_tag = Locale::forLanguageTag(empty, status);
+    status.errIfFailureAndReset("\"%s\"", empty);
+
+    Locale root_ctor(root);
+    Locale root_tag = Locale::forLanguageTag(root, status);
+    Locale root_build = LocaleBuilder().setLanguageTag(root).build(status);
+    status.errIfFailureAndReset("\"%s\"", root);
+
+    Locale und_ctor(und);
+    Locale und_tag = Locale::forLanguageTag(und, status);
+    Locale und_build = LocaleBuilder().setLanguageTag(und).build(status);
+    status.errIfFailureAndReset("\"%s\"", und);
+
+    assertEquals("getName()", empty, empty_ctor.getName());
+    assertEquals("getName()", empty, root_ctor.getName());
+    assertEquals("getName()", empty, und_ctor.getName());
+
+    assertEquals("getName()", empty, empty_tag.getName());
+    assertEquals("getName()", empty, root_tag.getName());
+    assertEquals("getName()", empty, und_tag.getName());
+
+    assertEquals("getName()", empty, root_build.getName());
+    assertEquals("getName()", empty, und_build.getName());
+
+    assertEquals("toLanguageTag()", und, empty_ctor.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", und, root_ctor.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", und, und_ctor.toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    assertEquals("toLanguageTag()", und, empty_tag.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", und, root_tag.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", und, und_tag.toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    assertEquals("toLanguageTag()", und, root_build.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", und, und_build.toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    assertTrue("empty_ctor == empty_tag", empty_ctor == empty_tag);
+
+    assertTrue("root_ctor == root_tag", root_ctor == root_tag);
+    assertTrue("root_ctor == root_build", root_ctor == root_build);
+    assertTrue("root_tag == root_build", root_tag == root_build);
+
+    assertTrue("und_ctor == und_tag", und_ctor == und_tag);
+    assertTrue("und_ctor == und_build", und_ctor == und_build);
+    assertTrue("und_tag == und_build", und_tag == und_build);
+
+    assertTrue("empty_ctor == root_ctor", empty_ctor == root_ctor);
+    assertTrue("empty_ctor == und_ctor", empty_ctor == und_ctor);
+    assertTrue("root_ctor == und_ctor", root_ctor == und_ctor);
+
+    assertTrue("empty_tag == root_tag", empty_tag == root_tag);
+    assertTrue("empty_tag == und_tag", empty_tag == und_tag);
+    assertTrue("root_tag == und_tag", root_tag == und_tag);
+
+    assertTrue("root_build == und_build", root_build == und_build);
+
+    static const Locale& displayLocale = Locale::getEnglish();
+    static const UnicodeString displayName("Unknown language");
+    UnicodeString tmp;
+
+    assertEquals("getDisplayName()", displayName, empty_ctor.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, root_ctor.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, und_ctor.getDisplayName(displayLocale, tmp));
+
+    assertEquals("getDisplayName()", displayName, empty_tag.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, root_tag.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, und_tag.getDisplayName(displayLocale, tmp));
+
+    assertEquals("getDisplayName()", displayName, root_build.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, und_build.getDisplayName(displayLocale, tmp));
+}
+
+void LocaleTest::TestUndScript() {
+    IcuTestErrorCode status(*this, "TestUndScript()");
+
+    static const char id[] = "_Cyrl";
+    static const char tag[] = "und-Cyrl";
+    static const char script[] = "Cyrl";
+
+    Locale locale_ctor(id);
+    Locale locale_legacy(tag);
+    Locale locale_tag = Locale::forLanguageTag(tag, status);
+    Locale locale_build = LocaleBuilder().setScript(script).build(status);
+    status.errIfFailureAndReset("\"%s\"", tag);
+
+    assertEquals("getName()", id, locale_ctor.getName());
+    assertEquals("getName()", id, locale_legacy.getName());
+    assertEquals("getName()", id, locale_tag.getName());
+    assertEquals("getName()", id, locale_build.getName());
+
+    assertEquals("toLanguageTag()", tag, locale_ctor.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_legacy.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_tag.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_build.toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    static const Locale& displayLocale = Locale::getEnglish();
+    static const UnicodeString displayName("Unknown language (Cyrillic)");
+    UnicodeString tmp;
+
+    assertEquals("getDisplayName()", displayName, locale_ctor.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_legacy.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_tag.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_build.getDisplayName(displayLocale, tmp));
+}
+
+void LocaleTest::TestUndRegion() {
+    IcuTestErrorCode status(*this, "TestUndRegion()");
+
+    static const char id[] = "_AQ";
+    static const char tag[] = "und-AQ";
+    static const char region[] = "AQ";
+
+    Locale locale_ctor(id);
+    Locale locale_legacy(tag);
+    Locale locale_tag = Locale::forLanguageTag(tag, status);
+    Locale locale_build = LocaleBuilder().setRegion(region).build(status);
+    status.errIfFailureAndReset("\"%s\"", tag);
+
+    assertEquals("getName()", id, locale_ctor.getName());
+    assertEquals("getName()", id, locale_legacy.getName());
+    assertEquals("getName()", id, locale_tag.getName());
+    assertEquals("getName()", id, locale_build.getName());
+
+    assertEquals("toLanguageTag()", tag, locale_ctor.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_legacy.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_tag.toLanguageTag<std::string>(status).c_str());
+    assertEquals("toLanguageTag()", tag, locale_build.toLanguageTag<std::string>(status).c_str());
+    status.errIfFailureAndReset();
+
+    static const Locale& displayLocale = Locale::getEnglish();
+    static const UnicodeString displayName("Unknown language (Antarctica)");
+    UnicodeString tmp;
+
+    assertEquals("getDisplayName()", displayName, locale_ctor.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_legacy.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_tag.getDisplayName(displayLocale, tmp));
+    assertEquals("getDisplayName()", displayName, locale_build.getDisplayName(displayLocale, tmp));
+}
+
+void LocaleTest::TestUndCAPI() {
+    IcuTestErrorCode status(*this, "TestUndCAPI()");
+
+    static const char empty[] = "";
+    static const char root[] = "root";
+    static const char und[] = "und";
+
+    static const char empty_script[] = "_Cyrl";
+    static const char empty_region[] = "_AQ";
+
+    static const char und_script[] = "und_Cyrl";
+    static const char und_region[] = "und_AQ";
+
+    char tmp[ULOC_FULLNAME_CAPACITY];
+    int32_t reslen;
+
+    // uloc_getName()
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(empty, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(root, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", root);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(und, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(empty_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty_script, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(empty_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty_region, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(und_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty_script, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getName(und_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getName()", empty_region, tmp);
+
+    // uloc_getBaseName()
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(empty, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(root, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", root);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(und, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(empty_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty_script, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(empty_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty_region, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(und_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty_script, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getBaseName(und_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getBaseName()", empty_region, tmp);
+
+    // uloc_getParent()
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(empty, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(root, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", root);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(und, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(empty_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(empty_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(und_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getParent(und_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getParent()", empty, tmp);
+
+    // uloc_getLanguage()
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(empty, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(root, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", root);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(und, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(empty_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(empty_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", empty_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(und_script, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_script);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+
+    uprv_memset(tmp, '!', sizeof tmp);
+    reslen = uloc_getLanguage(und_region, tmp, sizeof tmp, status);
+    status.errIfFailureAndReset("\"%s\"", und_region);
+    assertTrue("reslen >= 0", reslen >= 0);
+    assertEquals("uloc_getLanguage()", empty, tmp);
+}
+
+#define ARRAY_RANGE(array) (array), ((array) + UPRV_LENGTHOF(array))
+
+void LocaleTest::TestRangeIterator() {
+    IcuTestErrorCode status(*this, "TestRangeIterator");
+    Locale locales[] = { "fr", "en_GB", "en" };
+    Locale::RangeIterator<Locale *> iter(ARRAY_RANGE(locales));
+
+    assertTrue("0.hasNext()", iter.hasNext());
+    const Locale &l0 = iter.next();
+    assertEquals("0.next()", "fr", l0.getName());
+    assertTrue("&0.next()", &l0 == &locales[0]);
+
+    assertTrue("1.hasNext()", iter.hasNext());
+    const Locale &l1 = iter.next();
+    assertEquals("1.next()", "en_GB", l1.getName());
+    assertTrue("&1.next()", &l1 == &locales[1]);
+
+    assertTrue("2.hasNext()", iter.hasNext());
+    const Locale &l2 = iter.next();
+    assertEquals("2.next()", "en", l2.getName());
+    assertTrue("&2.next()", &l2 == &locales[2]);
+
+    assertFalse("3.hasNext()", iter.hasNext());
+}
+
+void LocaleTest::TestPointerConvertingIterator() {
+    IcuTestErrorCode status(*this, "TestPointerConvertingIterator");
+    Locale locales[] = { "fr", "en_GB", "en" };
+    Locale *pointers[] = { locales, locales + 1, locales + 2 };
+    // Lambda with explicit reference return type to prevent copy-constructing a temporary
+    // which would be destructed right away.
+    Locale::ConvertingIterator<Locale **, std::function<const Locale &(const Locale *)>> iter(
+        ARRAY_RANGE(pointers), [](const Locale *p) -> const Locale & { return *p; });
+
+    assertTrue("0.hasNext()", iter.hasNext());
+    const Locale &l0 = iter.next();
+    assertEquals("0.next()", "fr", l0.getName());
+    assertTrue("&0.next()", &l0 == pointers[0]);
+
+    assertTrue("1.hasNext()", iter.hasNext());
+    const Locale &l1 = iter.next();
+    assertEquals("1.next()", "en_GB", l1.getName());
+    assertTrue("&1.next()", &l1 == pointers[1]);
+
+    assertTrue("2.hasNext()", iter.hasNext());
+    const Locale &l2 = iter.next();
+    assertEquals("2.next()", "en", l2.getName());
+    assertTrue("&2.next()", &l2 == pointers[2]);
+
+    assertFalse("3.hasNext()", iter.hasNext());
+}
+
+namespace {
+
+class LocaleFromTag {
+public:
+    LocaleFromTag() : locale(Locale::getRoot()) {}
+    const Locale &operator()(const char *tag) { return locale = Locale(tag); }
+
+private:
+    // Store the locale in the converter, rather than return a reference to a temporary,
+    // or a value which could go out of scope with the caller's reference to it.
+    Locale locale;
+};
+
+}  // namespace
+
+void LocaleTest::TestTagConvertingIterator() {
+    IcuTestErrorCode status(*this, "TestTagConvertingIterator");
+    const char *tags[] = { "fr", "en_GB", "en" };
+    LocaleFromTag converter;
+    Locale::ConvertingIterator<const char **, LocaleFromTag> iter(ARRAY_RANGE(tags), converter);
+
+    assertTrue("0.hasNext()", iter.hasNext());
+    const Locale &l0 = iter.next();
+    assertEquals("0.next()", "fr", l0.getName());
+
+    assertTrue("1.hasNext()", iter.hasNext());
+    const Locale &l1 = iter.next();
+    assertEquals("1.next()", "en_GB", l1.getName());
+
+    assertTrue("2.hasNext()", iter.hasNext());
+    const Locale &l2 = iter.next();
+    assertEquals("2.next()", "en", l2.getName());
+
+    assertFalse("3.hasNext()", iter.hasNext());
+}
+
+void LocaleTest::TestCapturingTagConvertingIterator() {
+    IcuTestErrorCode status(*this, "TestCapturingTagConvertingIterator");
+    const char *tags[] = { "fr", "en_GB", "en" };
+    // Store the converted locale in a locale variable,
+    // rather than return a reference to a temporary,
+    // or a value which could go out of scope with the caller's reference to it.
+    Locale locale;
+    // Lambda with explicit reference return type to prevent copy-constructing a temporary
+    // which would be destructed right away.
+    Locale::ConvertingIterator<const char **, std::function<const Locale &(const char *)>> iter(
+        ARRAY_RANGE(tags), [&](const char *tag) -> const Locale & { return locale = Locale(tag); });
+
+    assertTrue("0.hasNext()", iter.hasNext());
+    const Locale &l0 = iter.next();
+    assertEquals("0.next()", "fr", l0.getName());
+
+    assertTrue("1.hasNext()", iter.hasNext());
+    const Locale &l1 = iter.next();
+    assertEquals("1.next()", "en_GB", l1.getName());
+
+    assertTrue("2.hasNext()", iter.hasNext());
+    const Locale &l2 = iter.next();
+    assertEquals("2.next()", "en", l2.getName());
+
+    assertFalse("3.hasNext()", iter.hasNext());
+}
+
+void LocaleTest::TestSetUnicodeKeywordValueInLongLocale() {
+    IcuTestErrorCode status(*this, "TestSetUnicodeKeywordValueInLongLocale");
+    const char* value = "efghijkl";
+    icu::Locale l("de");
+    char keyword[3];
+    CharString expected("de-u", status);
+    keyword[2] = '\0';
+    for (char i = 'a'; i < 's'; i++) {
+        keyword[0] = keyword[1] = i;
+        expected.append("-", status);
+        expected.append(keyword, status);
+        expected.append("-", status);
+        expected.append(value, status);
+        l.setUnicodeKeywordValue(keyword, value, status);
+        if (status.errIfFailureAndReset(
+            "setUnicodeKeywordValue(\"%s\", \"%s\") fail while locale is \"%s\"",
+            keyword, value, l.getName())) {
+            return;
+        }
+        std::string tag = l.toLanguageTag<std::string>(status);
+        if (status.errIfFailureAndReset(
+            "toLanguageTag fail on \"%s\"", l.getName())) {
+            return;
+        }
+        if (tag != expected.data()) {
+            errln("Expected to get \"%s\" bug got \"%s\"", tag.c_str(),
+                  expected.data());
+            return;
+        }
+    }
+}
+
+void LocaleTest::TestSetUnicodeKeywordValueNullInLongLocale() {
+    IcuTestErrorCode status(*this, "TestSetUnicodeKeywordValueNullInLongLocale");
+    const char *exts[] = {"cf", "cu", "em", "kk", "kr", "ks", "kv", "lb", "lw",
+      "ms", "nu", "rg", "sd", "ss", "tz"};
+    for (int32_t i = 0; i < UPRV_LENGTHOF(exts); i++) {
+        CharString tag("de-u", status);
+        for (int32_t j = 0; j <= i; j++) {
+            tag.append("-", status).append(exts[j], status);
+        }
+        if (status.errIfFailureAndReset(
+                "Cannot create tag \"%s\"", tag.data())) {
+            continue;
+        }
+        Locale l = Locale::forLanguageTag(tag.data(), status);
+        if (status.errIfFailureAndReset(
+                "Locale::forLanguageTag(\"%s\") failed", tag.data())) {
+            continue;
+        }
+        for (int32_t j = 0; j <= i; j++) {
+            l.setUnicodeKeywordValue(exts[j], nullptr, status);
+            if (status.errIfFailureAndReset(
+                    "Locale(\"%s\").setUnicodeKeywordValue(\"%s\", nullptr) failed",
+                    tag.data(), exts[j])) {
+                 continue;
+            }
+        }
+        if (strcmp("de", l.getName()) != 0) {
+            errln("setUnicodeKeywordValue should remove all extensions from "
+                  "\"%s\" and only have \"de\", but is \"%s\" instead.",
+                  tag.data(), l.getName());
+        }
+    }
+}

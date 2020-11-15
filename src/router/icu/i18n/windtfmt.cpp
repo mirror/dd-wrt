@@ -213,7 +213,7 @@ Win32DateFormat &Win32DateFormat::operator=(const Win32DateFormat &other)
     return *this;
 }
 
-Format *Win32DateFormat::clone(void) const
+Win32DateFormat *Win32DateFormat::clone() const
 {
     return new Win32DateFormat(*this);
 }
@@ -385,7 +385,8 @@ UnicodeString Win32DateFormat::setTimeZoneInfo(TIME_ZONE_INFORMATION *tzi, const
             for (int z = 0; z < ec; z += 1) {
                 UnicodeString equiv = TimeZone::getEquivalentID(icuid, z);
 
-                if (found = uprv_getWindowsTimeZoneInfo(tzi, equiv.getBuffer(), equiv.length())) {
+                found = uprv_getWindowsTimeZoneInfo(tzi, equiv.getBuffer(), equiv.length());
+                if (found) {
                     break;
                 }
             }
