@@ -1464,7 +1464,7 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data)
 	};
 	site_survey_lists[sscount].channel |= 0x1000;	//20 or 40
 	site_survey_lists[sscount].extcap |= 0x2;	// ht
-	if (offset[data[1] & 0x3])
+	if ([data[1] & 0x3)
 		site_survey_lists[sscount].extcap |= 0x8;	// sec channel available
 
 	printf("\n");
