@@ -218,22 +218,25 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			//0x100 = 80 mhz
 			//0x200 = 8080 or 160 mhz
 			int speed = site_survey_lists[i].rate_count;
+			int div = 1;
 			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
-			if (narrow == 5 || narrow == 10 || narrow == 2)
-				speed = narrow;
+			if (narrow == 5 || narrow == 10)
+				div = 20 / narrow;
+			if (narrow == 2)
+				div = 8;
 			switch (cbw) {
 			case 0x0:
 				if (site_survey_lists[i].extcap & 8)
-					speed = getrate(speed, 40);
+					speed = getrate(speed, 40 / div);
 				else
-					speed = getrate(speed, 20);
+					speed = getrate(speed, 20 / div);
 				break;
 			case 0x100:
-				speed = getrate(speed, 80);
+				speed = getrate(speed, 80 / div);
 				break;
 			case 0x200:
 			case 0x300:
-				speed = getrate(speed, 160);
+				speed = getrate(speed, 160 / div);
 				break;
 			default:
 				speed = speed * 10;
