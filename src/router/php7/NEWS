@@ -1,5 +1,110 @@
 PHP                                                                        NEWS
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+29 Oct 2020, PHP 7.4.12
+
+- Core:
+  . Fixed bug #80061 (Copying large files may have suboptimal performance).
+    (cmb)
+  . Fixed bug #79423 (copy command is limited to size of file it can copy).
+    (cmb)
+  . Fixed bug #80126 (Covariant return types failing compilation). (Nikita)
+  . Fixed bug #80186 (Segfault when iterating over FFI object). (Nikita)
+
+- Calendar:
+  . Fixed bug #80185 (jdtounix() fails after 2037). (cmb)
+
+- IMAP:
+  . Fixed bug #80213 (imap_mail_compose() segfaults on certain $bodies). (cmb)
+  . Fixed bug #80215 (imap_mail_compose() may modify by-val parameters). (cmb)
+  . Fixed bug #80220 (imap_mail_compose() may leak memory). (cmb)
+  . Fixed bug #80223 (imap_mail_compose() leaks envelope on malformed bodies).
+    (cmb)
+  . Fixed bug #80216 (imap_mail_compose() does not validate types/encodings).
+    (cmb)
+  . Fixed bug #80226 (imap_sort() leaks sortpgm memory). (cmb)
+
+- MySQLnd:
+  . Fixed bug #80115 (mysqlnd.debug doesn't recognize absolute paths with
+    slashes). (cmb)
+  . Fixed bug #80107 (mysqli_query() fails for ~16 MB long query when
+    compression is enabled). (Nikita)
+
+- ODBC:
+  . Fixed bug #78470 (odbc_specialcolumns() no longer accepts $nullable). (cmb)
+  . Fixed bug #80147 (BINARY strings may not be properly zero-terminated).
+    (cmb)
+  . Fixed bug #80150 (Failure to fetch error message). (cmb)
+  . Fixed bug #80152 (odbc_execute() moves internal pointer of $params). (cmb)
+  . Fixed bug #46050 (odbc_next_result corrupts prepared resource). (cmb)
+
+- OPcache:
+  . Fixed bug #80083 (Optimizer pass 6 removes variables used for ibm_db2 data
+    binding). (Nikita)
+  . Fixed bug #80194 (Assertion failure during block assembly of unreachable
+    free with leading nop). (Nikita)
+
+- PCRE:
+  . Updated to PCRE 10.35. (cmb)
+  . Fixed bug #80118 (Erroneous whitespace match with JIT only). (cmb)
+
+- PDO_ODBC:
+  . Fixed bug #67465 (NULL Pointer dereference in odbc_handle_preparer). (cmb)
+
+- Standard:
+  . Fixed bug #80114 (parse_url does not accept URLs with port 0). (cmb, twosee)
+  . Fixed bug #76943 (Inconsistent stream_wrapper_restore() errors). (cmb)
+  . Fixed bug #76735 (Incorrect message in fopen on invalid mode). (cmb)
+
+- Tidy:
+  . Fixed bug #77040 (tidyNode::isHtml() is completely broken). (cmb)
+
+01 Oct 2020, PHP 7.4.11
+
+- Core:
+  . Fixed bug #79979 (passing value to by-ref param via CUFA crashes). (cmb,
+    Nikita)
+  . Fixed bug #80037 (Typed property must not be accessed before initialization
+    when __get() declared). (Nikita)
+  . Fixed bug #80048 (Bug #69100 has not been fixed for Windows). (cmb)
+  . Fixed bug #80049 (Memleak when coercing integers to string via variadic
+    argument). (Nikita)
+  . Fixed bug #79699 (PHP parses encoded cookie names so malicious `__Host-` 
+    cookies can be sent). (CVE-2020-7070) (Stas)
+
+- Calendar:
+  . Fixed bug #80007 (Potential type confusion in unixtojd() parameter parsing).
+    (Andy Postnikov)
+
+- COM:
+  . Fixed bug #64130 (COM obj parameters passed by reference are not updated).
+    (cmb)
+
+- OPcache:
+  . Fixed bug #80002 (calc free space for new interned string is wrong).
+    (t-matsuno)
+  . Fixed bug #80046 (FREE for SWITCH_STRING optimized away). (Nikita)
+  . Fixed bug #79825 (opcache.file_cache causes SIGSEGV when custom opcode
+    handlers changed). (SammyK)
+
+- OpenSSL:
+  . Fixed bug #79601 (Wrong ciphertext/tag in AES-CCM encryption for a 12 
+    bytes IV). (CVE-2020-7069) (Jakub Zelenka)
+
+- PDO:
+  . Fixed bug #80027 (Terrible performance using $query->fetch on queries with
+    many bind parameters). (Matteo)
+
+- SOAP:
+  . Fixed bug #47021 (SoapClient stumbles over WSDL delivered with
+    "Transfer-Encoding: chunked"). (Matteo)
+
+- Standard:
+  . Fixed bug #79986 (str_ireplace bug with diacritics characters). (cmb)
+  . Fixed bug #80077 (getmxrr test bug). (Rainer Jung)
+  . Fixed bug #72941 (Modifying bucket->data by-ref has no effect any longer).
+    (cmb)
+  . Fixed bug #80067 (Omitting the port in bindto setting errors). (cmb)
+
 03 Sep 2020, PHP 7.4.10
 
 - Core:

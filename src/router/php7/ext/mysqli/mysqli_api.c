@@ -614,7 +614,7 @@ PHP_FUNCTION(mysqli_change_user)
 	size_t			user_len, password_len, dbname_len;
 	zend_ulong		rc;
 #if !defined(MYSQLI_USE_MYSQLND) && defined(HAVE_MYSQLI_SET_CHARSET)
-	const		CHARSET_INFO * old_charset;
+	MY_CHARSET_INFO old_charset;
 #endif
 
 	if (zend_parse_method_parameters(ZEND_NUM_ARGS(), getThis(), "Osss!", &mysql_link, mysqli_link_class_entry, &user, &user_len, &password, &password_len, &dbname, &dbname_len) == FAILURE) {
@@ -623,7 +623,7 @@ PHP_FUNCTION(mysqli_change_user)
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
 #if !defined(MYSQLI_USE_MYSQLND) && defined(HAVE_MYSQLI_SET_CHARSET)
-	old_charset = mysql->mysql->charset;
+	mysql_get_character_set_info(mysql->mysql, &old_charset);
 #endif
 
 #if defined(MYSQLI_USE_MYSQLND)
@@ -643,7 +643,7 @@ PHP_FUNCTION(mysqli_change_user)
 		  5.0 doesn't support it. Support added in 5.1.23 by fixing the following bug :
 		  Bug #30472 libmysql doesn't reset charset, insert_id after succ. mysql_change_user() call
 		*/
-		rc = mysql_set_character_set(mysql->mysql, old_charset->csname);
+		rc = mysql_set_character_set(mysql->mysql, old_charset.csname);
 	}
 #endif
 
@@ -1701,10 +1701,12 @@ static int mysqli_options_get_option_zval_type(int option)
 #endif /* MySQL 4.1.0 */
 		case MYSQL_OPT_READ_TIMEOUT:
 		case MYSQL_OPT_WRITE_TIMEOUT:
+#ifdef MYSQL_OPT_GUESS_CONNECTION /* removed in MySQL-8.0 */
 		case MYSQL_OPT_GUESS_CONNECTION:
 		case MYSQL_OPT_USE_EMBEDDED_CONNECTION:
 		case MYSQL_OPT_USE_REMOTE_CONNECTION:
 		case MYSQL_SECURE_AUTH:
+#endif
 #ifdef MYSQL_OPT_RECONNECT
 		case MYSQL_OPT_RECONNECT:
 #endif /* MySQL 5.0.13 */
@@ -1714,16 +1716,13 @@ static int mysqli_options_get_option_zval_type(int option)
 #ifdef MYSQL_OPT_COMPRESS
 		case MYSQL_OPT_COMPRESS:
 #endif /* mysqlnd @ PHP 5.3.2 */
-#ifdef MYSQL_OPT_SSL_VERIFY_SERVER_CERT
-	REGISTER_LONG_CONSTANT("MYSQLI_OPT_SSL_VERIFY_SERVER_CERT", MYSQL_OPT_SSL_VERIFY_SERVER_CERT, CONST_CS | CONST_PERSISTENT);
-#endif /* MySQL 5.1.1., mysqlnd @ PHP 5.3.3 */
 #if (MYSQL_VERSION_ID >= 50611 && defined(CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS)) || defined(MYSQLI_USE_MYSQLND)
 		case MYSQL_OPT_CAN_HANDLE_EXPIRED_PASSWORDS:
 #endif
 			return IS_LONG;
 
 #ifdef MYSQL_SHARED_MEMORY_BASE_NAME
-                case MYSQL_SHARED_MEMORY_BASE_NAME:
+		case MYSQL_SHARED_MEMORY_BASE_NAME:
 #endif /* MySQL 4.1.0 */
 #ifdef MYSQL_SET_CLIENT_IP
 		case MYSQL_SET_CLIENT_IP:
@@ -1942,6 +1941,11 @@ PHP_FUNCTION(mysqli_real_query)
 }
 /* }}} */
 
+#if defined(MYSQLI_USE_MYSQLND) || MYSQL_VERSION_ID < 50707 || defined(MARIADB_BASE_VERSION)
+# define mysql_real_escape_string_quote(mysql, to, from, length, quote) \
+	mysql_real_escape_string(mysql, to, from, length)
+#endif
+
 /* {{{ proto string mysqli_real_escape_string(object link, string escapestr)
    Escapes special characters in a string for use in a SQL statement, taking into account the current charset of the connection */
 PHP_FUNCTION(mysqli_real_escape_string) {
@@ -1957,7 +1961,7 @@ PHP_FUNCTION(mysqli_real_escape_string) {
 	MYSQLI_FETCH_RESOURCE_CONN(mysql, mysql_link, MYSQLI_STATUS_VALID);
 
 	newstr = zend_string_alloc(2 * escapestr_len, 0);
-	ZSTR_LEN(newstr) = mysql_real_escape_string(mysql->mysql, ZSTR_VAL(newstr), escapestr, escapestr_len);
+	ZSTR_LEN(newstr) = mysql_real_escape_string_quote(mysql->mysql, ZSTR_VAL(newstr), escapestr, escapestr_len, '\'');
 	newstr = zend_string_truncate(newstr, ZSTR_LEN(newstr), 0);
 
 	RETURN_NEW_STR(newstr);
