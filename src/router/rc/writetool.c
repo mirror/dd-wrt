@@ -134,17 +134,17 @@ int main(int argc, char *argv[])
 	char *mem = NULL;
 	if (len) {
 		if (nvram->start == old_p[2].start) {
-		if (nvram.length > old_p[2].length) {
-			// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
-			memcpy(&old_p[2], &nvram, sizeof(struct pte));
-			fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
-			fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
-			fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, in);
-			fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, out);
-		}
-		}else{
-		fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512, len);
-		copy(out, nvram->start * 512, old_p[2].start * 512, len);
+			if (nvram.length > old_p[2].length) {
+				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
+				memcpy(&old_p[2], &nvram, sizeof(struct pte));
+				fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
+				fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
+				fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, in);
+				fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, out);
+			}
+		} else {
+			fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512, len);
+			copy(out, nvram->start * 512, old_p[2].start * 512, len);
 		}
 	}
 	fseek(in, 0, SEEK_END);
