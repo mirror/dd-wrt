@@ -29,22 +29,37 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define TEST_ASSERT_SUCCESS(status) {if (U_FAILURE(status)) { \
-    errcheckln(status, "Failure at file %s, line %d, error = %s", __FILE__, __LINE__, u_errorName(status));}}
+#define TEST_ASSERT_SUCCESS(status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        errcheckln(status, "Failure at file %s, line %d, error = %s", __FILE__, __LINE__, u_errorName(status)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT(expr) {if ((expr)==FALSE) { \
-    errln("Test Failure at file %s, line %d: \"%s\" is false.", __FILE__, __LINE__, #expr);};}
+#define TEST_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("Test Failure at file %s, line %d: \"%s\" is false.", __FILE__, __LINE__, #expr); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT_MSG(expr, msg) {if ((expr)==FALSE) { \
-    dataerrln("Test Failure at file %s, line %d, %s: \"%s\" is false.", __FILE__, __LINE__, msg, #expr);};}
+#define TEST_ASSERT_MSG(expr, msg) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        dataerrln("Test Failure at file %s, line %d, %s: \"%s\" is false.", __FILE__, __LINE__, msg, #expr); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT_EQ(a, b) { if ((a) != (b)) { \
-    errln("Test Failure at file %s, line %d: \"%s\" (%d) != \"%s\" (%d)", \
-             __FILE__, __LINE__, #a, (a), #b, (b)); }}
+#define TEST_ASSERT_EQ(a, b) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((a) != (b)) { \
+        errln("Test Failure at file %s, line %d: \"%s\" (%d) != \"%s\" (%d)", \
+              __FILE__, __LINE__, #a, (a), #b, (b)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT_NE(a, b) { if ((a) == (b)) { \
-    errln("Test Failure at file %s, line %d: \"%s\" (%d) == \"%s\" (%d)", \
-             __FILE__, __LINE__, #a, (a), #b, (b)); }}
+#define TEST_ASSERT_NE(a, b) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((a) == (b)) { \
+        errln("Test Failure at file %s, line %d: \"%s\" (%d) == \"%s\" (%d)", \
+              __FILE__, __LINE__, #a, (a), #b, (b)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 /*
  *   TEST_SETUP and TEST_TEARDOWN
@@ -52,7 +67,7 @@
  *         Put arbitrary test code between SETUP and TEARDOWN.
  *         "sc" is the ready-to-go  SpoofChecker for use in the tests.
  */
-#define TEST_SETUP {  \
+#define TEST_SETUP UPRV_BLOCK_MACRO_BEGIN { \
     UErrorCode status = U_ZERO_ERROR; \
     USpoofChecker *sc;     \
     sc = uspoof_open(&status);  \
@@ -67,7 +82,7 @@
     TEST_ASSERT_SUCCESS(status);  \
     uspoof_closeCheckResult(checkResult); \
     uspoof_close(sc);  \
-}
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -90,6 +105,9 @@ void IntlTestSpoof::runIndexedTest( int32_t index, UBool exec, const char* &name
     TESTCASE_AUTO(testBug12153);
     TESTCASE_AUTO(testBug12825);
     TESTCASE_AUTO(testBug12815);
+    TESTCASE_AUTO(testBug13314_MixedNumbers);
+    TESTCASE_AUTO(testBug13328_MixedCombiningMarks);
+    TESTCASE_AUTO(testCombiningDot);
     TESTCASE_AUTO_END;
 }
 
@@ -125,9 +143,9 @@ void IntlTestSpoof::testSpoofAPI() {
 }
 
 
-#define CHECK_SKELETON(type, input, expected) { \
+#define CHECK_SKELETON(type, input, expected) UPRV_BLOCK_MACRO_BEGIN { \
     checkSkeleton(sc, type, input, expected, __LINE__); \
-    }
+} UPRV_BLOCK_MACRO_END
 
 
 // testSkeleton.   Spot check a number of confusable skeleton substitutions from the 
@@ -338,7 +356,7 @@ void IntlTestSpoof::testConfData() {
     int32_t  fileSize = ftell(f.getAlias());
     LocalArray<char> fileBuf(new char[fileSize]);
     fseek(f.getAlias(), 0, SEEK_SET);
-    int32_t amt_read = fread(fileBuf.getAlias(), 1, fileSize, f.getAlias());
+    int32_t amt_read = static_cast<int32_t>(fread(fileBuf.getAlias(), 1, fileSize, f.getAlias()));
     TEST_ASSERT_EQ(amt_read, fileSize);
     TEST_ASSERT(fileSize>0);
     if (amt_read != fileSize || fileSize <=0) {
@@ -406,6 +424,13 @@ void IntlTestSpoof::testConfData() {
 
 
 void IntlTestSpoof::testScriptSet() {
+    // ScriptSet::SCRIPT_LIMIT is hardcoded.
+    // Increase it by multiples of 32 if there are too many script codes.
+    TEST_ASSERT(USCRIPT_CODE_LIMIT <= ScriptSet::SCRIPT_LIMIT);
+    // USCRIPT_CODE_LIMIT should include all script codes,
+    // but theoretically the data may define more.
+    TEST_ASSERT(u_getIntPropertyMaxValue(UCHAR_SCRIPT) < ScriptSet::SCRIPT_LIMIT);
+
     ScriptSet s1;
     ScriptSet s2;
     UErrorCode status = U_ZERO_ERROR;
@@ -421,15 +446,16 @@ void IntlTestSpoof::testScriptSet() {
     s1.reset(USCRIPT_ARABIC, status);
     TEST_ASSERT(s1 == s2);
 
+    static constexpr UScriptCode LAST_SCRIPT_CODE = (UScriptCode)(USCRIPT_CODE_LIMIT - 1);
     status = U_ZERO_ERROR;
     s1.setAll();
     TEST_ASSERT(s1.test(USCRIPT_COMMON, status));
     TEST_ASSERT(s1.test(USCRIPT_ETHIOPIC, status));
-    TEST_ASSERT(s1.test(USCRIPT_CODE_LIMIT, status));
+    TEST_ASSERT(s1.test(LAST_SCRIPT_CODE, status));
     s1.resetAll();
     TEST_ASSERT(!s1.test(USCRIPT_COMMON, status));
     TEST_ASSERT(!s1.test(USCRIPT_ETHIOPIC, status));
-    TEST_ASSERT(!s1.test(USCRIPT_CODE_LIMIT, status));
+    TEST_ASSERT(!s1.test(LAST_SCRIPT_CODE, status));
 
     status = U_ZERO_ERROR;
     s1.set(USCRIPT_TAKRI, status);
@@ -636,7 +662,7 @@ void IntlTestSpoof::testMixedNumbers() {
             TEST_ASSERT_MSG((expectedSet.size() > 1) == mixedNumberFailure, msgBuf);
             const UnicodeSet* actualSet = UnicodeSet::fromUSet(uspoof_getCheckResultNumerics(checkResult, &status));
             TEST_ASSERT_MSG(expectedSet == *actualSet, msgBuf);
-        TEST_TEARDOWN
+        TEST_TEARDOWN;
     }
 }
 
@@ -645,7 +671,7 @@ void IntlTestSpoof::testMixedNumbers() {
 void IntlTestSpoof::testBug12153() {
     UErrorCode status = U_ZERO_ERROR;
     LocalUSpoofCheckerPointer sc(uspoof_open(&status));
-    TEST_ASSERT_SUCCESS(status);
+    if (!assertSuccess("", status, true, __FILE__, __LINE__)) { return; }
     int32_t checks = uspoof_getChecks(sc.getAlias(), &status);
     TEST_ASSERT((checks & USPOOF_RESTRICTION_LEVEL) != 0);
     checks &= ~USPOOF_RESTRICTION_LEVEL;
@@ -680,6 +706,73 @@ void IntlTestSpoof::testBug12815() {
     UnicodeString result;
     uspoof_getSkeletonUnicodeString(sc.getAlias(), 0, UnicodeString("hello world"), result, &status);
     TEST_ASSERT_SUCCESS(status);
+}
+
+void IntlTestSpoof::testBug13314_MixedNumbers() {
+    UErrorCode status = U_ZERO_ERROR;
+    LocalUSpoofCheckerPointer sc(uspoof_open(&status));
+    if (!assertSuccess("", status, true, __FILE__, __LINE__)) { return; }
+    uspoof_setChecks(sc.getAlias(), USPOOF_ALL_CHECKS, &status);
+    TEST_ASSERT_SUCCESS(status);
+    int32_t failedChecks = uspoof_areConfusableUnicodeString(sc.getAlias(), u"列", u"列", &status);
+    TEST_ASSERT_SUCCESS(status);
+    assertEquals("The CJK strings should be confusable", USPOOF_SINGLE_SCRIPT_CONFUSABLE, failedChecks);
+    failedChecks = uspoof_check2UnicodeString(sc.getAlias(), u"3Ȝ", nullptr, &status);
+    TEST_ASSERT_SUCCESS(status);
+    assertEquals("The '33' string does not fail spoof", 0, failedChecks);
+}
+
+void IntlTestSpoof::testBug13328_MixedCombiningMarks() {
+    UErrorCode status = U_ZERO_ERROR;
+    LocalUSpoofCheckerPointer sc(uspoof_open(&status));
+    if (!assertSuccess("", status, true, __FILE__, __LINE__)) { return; }
+    int32_t failedChecks = uspoof_check2UnicodeString(sc.getAlias(), u"\u0061\u0F84", nullptr, &status);
+    TEST_ASSERT_SUCCESS(status);
+    assertEquals(
+            "The mismatched combining marks string fails spoof",
+            USPOOF_RESTRICTION_LEVEL,
+            failedChecks);
+}
+
+void IntlTestSpoof::testCombiningDot() {
+    UErrorCode status = U_ZERO_ERROR;
+    LocalUSpoofCheckerPointer sc(uspoof_open(&status));
+    if (!assertSuccess("", status, true, __FILE__, __LINE__)) { return; }
+    uspoof_setChecks(sc.getAlias(), USPOOF_HIDDEN_OVERLAY, &status);
+    TEST_ASSERT_SUCCESS(status);
+
+    static const struct TestCase {
+        bool shouldFail;
+        const char16_t* input;
+    } cases[] = {
+            {false, u"i"},
+            {false, u"j"},
+            {false, u"l"},
+            {true, u"i\u0307"},
+            {true, u"j\u0307"},
+            {true, u"l\u0307"},
+            {true, u"ı\u0307"},
+            {true, u"ȷ\u0307"},
+            {true, u"𝚤\u0307"},
+            {true, u"𝑗\u0307"},
+            {false, u"m\u0307"},
+            {true, u"1\u0307"},
+            {true, u"ĳ\u0307"},
+            {true, u"i\u0307\u0307"},
+            {true, u"abci\u0307def"},
+            {false, u"i\u0301\u0307"}, // U+0301 has combining class ABOVE (230)
+            {true, u"i\u0320\u0307"}, // U+0320 has combining class BELOW
+            {true, u"i\u0320\u0321\u0307"}, // U+0321 also has combining class BELOW
+            {false, u"i\u0320\u0301\u0307"},
+            {false, u"iz\u0307"},
+    };
+
+    for (auto& cas : cases) {
+        int32_t failedChecks = uspoof_check2(sc.getAlias(), cas.input, -1, nullptr, &status);
+        TEST_ASSERT_SUCCESS(status);
+        int32_t expected = cas.shouldFail ? USPOOF_HIDDEN_OVERLAY : 0;
+        assertEquals(cas.input, expected, failedChecks);
+    }
 }
 
 #endif /* !UCONFIG_NO_REGULAR_EXPRESSIONS && !UCONFIG_NO_NORMALIZATION && !UCONFIG_NO_FILE_IO */

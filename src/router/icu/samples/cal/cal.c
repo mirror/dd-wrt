@@ -1,7 +1,7 @@
 /*
 ***********************************************************************
 * © 2016 and later: Unicode, Inc. and others.
-* License & terms of use: http://www.unicode.org/copyright.html#License
+* License & terms of use: http://www.unicode.org/copyright.html
 ***********************************************************************
 **********************************************************************
 * Copyright (C) 1998-2012, International Business Machines Corporation
@@ -697,7 +697,7 @@ print_year(UCalendar *c,
                 if(left_current == 0) {
                     break;
                 }
-            };
+            }
             
             /* If the current day isn't 0, indent to make up for missing
             days at the end of the month */
@@ -745,7 +745,7 @@ print_year(UCalendar *c,
                     break;
                 }
                 
-            };
+            }
             
             /* Output a newline */
             putc('\n', stdout);

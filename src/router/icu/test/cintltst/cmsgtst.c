@@ -189,6 +189,7 @@ static void MessageFormatTest( void )
 
         if(U_FAILURE(ec)){
             log_data_err("umsg_open() failed for testCasePattens[0]. -> %s (Are you missing data?)\n", u_errorName(ec));
+            umsg_close(formatter);
             return;
         }
         for(i = 0;i<cnt_testCases; i++){
@@ -205,6 +206,7 @@ static void MessageFormatTest( void )
             umsg_applyPattern(formatter,testCasePatterns[i],patternLength,&parseError,&ec);
             if(U_FAILURE(ec)){
                 log_err("umsg_applyPattern() failed for testCasePattens[%d].\n",i);
+                umsg_close(formatter);
                 return;
             }
             /* pre-flight */
@@ -216,6 +218,7 @@ static void MessageFormatTest( void )
                 if(U_FAILURE(ec)){
                       log_err("ERROR: failure in message format on testcase %d:  %s\n", i, u_errorName(status) );
                       free(result);
+                      umsg_close(formatter);
                       return;
                 }
             
@@ -375,13 +378,13 @@ static void TestSampleMessageFormat(void)
 static void TestNewFormatAndParseAPI(void)
 {
 
-    UChar *result, tzID[4], str[25];
+    UChar *result = NULL, tzID[4], str[25];
     UChar pattern[100];
     UChar expected[100];
     int32_t resultLengthOut, resultlength;
     UCalendar *cal;
     UDate d1,d;
-    UDateFormat *def1;
+    UDateFormat *def1 = NULL;
     UErrorCode status = U_ZERO_ERROR;
     int32_t value = 0;
     UChar ret[30];
@@ -398,13 +401,13 @@ static void TestNewFormatAndParseAPI(void)
     cal=ucal_open(tzID, u_strlen(tzID), "en_US", UCAL_TRADITIONAL, &status);
     if(U_FAILURE(status)){
         log_data_err("error in ucal_open caldef : %s - (Are you missing data?)\n", myErrorName(status) );
-        return;
+        goto cleanup;
     }
     ucal_setDateTime(cal, 1999, UCAL_MARCH, 18, 0, 0, 0, &status);
     d1=ucal_getMillis(cal, &status);
     if(U_FAILURE(status)){
-            log_err("Error: failure in get millis: %s\n", myErrorName(status) );
-            return;
+        log_err("Error: failure in get millis: %s\n", myErrorName(status) );
+        goto cleanup;
     }
     
     log_verbose("\nTesting with pattern test#4");
@@ -414,7 +417,7 @@ static void TestNewFormatAndParseAPI(void)
     fmt = umsg_open(pattern,u_strlen(pattern),"en_US",&parseError,&status);
     if(U_FAILURE(status)){
         log_data_err("error in umsg_open  : %s (Are you missing data?)\n", u_errorName(status) );
-        return;
+        goto cleanup;
     }
     result=(UChar*)malloc(sizeof(UChar) * resultlength);
     
@@ -463,6 +466,7 @@ static void TestNewFormatAndParseAPI(void)
                 austrdup(myDateFormat(def1,d)), austrdup(myDateFormat(def1,d1)) );
         }
     }
+cleanup:
     umsg_close(fmt);
     udat_close(def1);
     ucal_close(cal);
@@ -483,7 +487,7 @@ static void TestSampleFormatAndParseWithError(void)
     int32_t resultLengthOut, resultlength;
     UCalendar *cal;
     UDate d1,d;
-    UDateFormat *def1;
+    UDateFormat *def1 = NULL;
     UErrorCode status = U_ZERO_ERROR;
     int32_t value = 0;
     UChar ret[30];
@@ -523,6 +527,7 @@ static void TestSampleFormatAndParseWithError(void)
     }
     if(U_FAILURE(status)){
         log_data_err("ERROR: failure in message format test#4: %s (Are you missing data?)\n", myErrorName(status));
+        goto cleanup;
     }
     else if(u_strcmp(result, expected)==0)
         log_verbose("PASS: MessagFormat successful on test#4\n");
@@ -535,14 +540,17 @@ static void TestSampleFormatAndParseWithError(void)
     /*try to parse this and check*/
     log_verbose("\nTesting the parse Message test#5\n");
 
-    u_parseMessageWithError("en_US", pattern, u_strlen(pattern), result, u_strlen(result), &parseError,&status, &d, ret, &value);
-    if(U_FAILURE(status)){
-        log_data_err("ERROR: error in parsing: test#5: %s (Are you missing data?)\n", myErrorName(status));
+    if (U_SUCCESS(status)) {
+        u_parseMessageWithError("en_US", pattern, u_strlen(pattern), result, u_strlen(result), 
+                                &parseError,&status, &d, ret, &value);
+        if(U_FAILURE(status)){
+            log_data_err("ERROR: error in parsing: test#5: %s (Are you missing data?)\n", myErrorName(status));
+        }
+        else if(value!=7 && u_strcmp(str,ret)!=0)
+            log_err("FAIL: Error in parseMessage on test#5 \n");
+        else
+            log_verbose("PASS: parseMessage successful on test#5\n");
     }
-    else if(value!=7 && u_strcmp(str,ret)!=0)
-        log_err("FAIL: Error in parseMessage on test#5 \n");
-    else
-        log_verbose("PASS: parseMessage successful on test#5\n");
         
     def1 = udat_open(UDAT_DEFAULT,UDAT_DEFAULT ,NULL, NULL, 0, NULL,0,&status);
     if(U_FAILURE(status))
@@ -557,6 +565,7 @@ static void TestSampleFormatAndParseWithError(void)
                 austrdup(myDateFormat(def1,d)), austrdup(myDateFormat(def1,d1)) );
         }
     }
+cleanup:
     udat_close(def1);
     ucal_close(cal);
 
@@ -593,11 +602,12 @@ static void TestSampleFormatAndParse(void)
     cal=ucal_open(tzID, u_strlen(tzID), "en_US", UCAL_TRADITIONAL, &status);
     if(U_FAILURE(status)){
         log_data_err("error in ucal_open caldef : %s - (Are you missing data?)\n", myErrorName(status) );
+        return;
     }
     ucal_setDateTime(cal, 1999, UCAL_MARCH, 18, 0, 0, 0, &status);
     d1=ucal_getMillis(cal, &status);
     if(U_FAILURE(status)){
-            log_data_err("Error: failure in get millis: %s - (Are you missing data?)\n", myErrorName(status) );
+        log_data_err("Error: failure in get millis: %s - (Are you missing data?)\n", myErrorName(status) );
     }
     
     log_verbose("\nTesting with pattern test#4");
@@ -616,6 +626,7 @@ static void TestSampleFormatAndParse(void)
     }
     if(U_FAILURE(status)){
         log_data_err("ERROR: failure in message format test#4: %s (Are you missing data?)\n", myErrorName(status));
+        return;
     }
     else if(u_strcmp(result, expected)==0)
         log_verbose("PASS: MessagFormat successful on test#4\n");
@@ -628,14 +639,16 @@ static void TestSampleFormatAndParse(void)
     /*try to parse this and check*/
     log_verbose("\nTesting the parse Message test#5\n");
 
-    u_parseMessage("en_US", pattern, u_strlen(pattern), result, u_strlen(result), &status, &d, ret, &value);
-    if(U_FAILURE(status)){
-        log_data_err("ERROR: error in parsing: test#5: %s (Are you missing data?)\n", myErrorName(status));
+    if (U_SUCCESS(status)) {
+        u_parseMessage("en_US", pattern, u_strlen(pattern), result, u_strlen(result), &status, &d, ret, &value);
+        if(U_FAILURE(status)){
+            log_data_err("ERROR: error in parsing: test#5: %s (Are you missing data?)\n", myErrorName(status));
+        }
+        else if(value!=7 && u_strcmp(str,ret)!=0)
+            log_err("FAIL: Error in parseMessage on test#5 \n");
+        else
+            log_verbose("PASS: parseMessage successful on test#5\n");
     }
-    else if(value!=7 && u_strcmp(str,ret)!=0)
-        log_err("FAIL: Error in parseMessage on test#5 \n");
-    else
-        log_verbose("PASS: parseMessage successful on test#5\n");
         
     def1 = udat_open(UDAT_DEFAULT,UDAT_DEFAULT ,NULL, NULL, 0, NULL,0,&status);
     if(U_FAILURE(status))
@@ -1119,7 +1132,7 @@ static void MessageLength(void)
     }
 }
 
-static void TestMessageWithUnusedArgNumber() {
+static void TestMessageWithUnusedArgNumber(void) {
     UErrorCode errorCode = U_ZERO_ERROR;
     U_STRING_DECL(pattern, "abc {1} def", 11);
     UChar x[2] = { 0x78, 0 };  // "x"

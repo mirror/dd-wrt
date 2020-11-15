@@ -201,15 +201,15 @@ void IntlTestDecimalFormatSymbols::testSymbols(/* char *par */)
     DecimalFormatSymbols sym(Locale::getUS(), status);
 
     UnicodeString customDecSeperator("S");
-    Verify(34.5, (UnicodeString)"00.00", sym, (UnicodeString)"34.50");
+    Verify(34.5, u"00.00", sym, u"34.50");
     sym.setSymbol(DecimalFormatSymbols::kDecimalSeparatorSymbol, customDecSeperator);
-    Verify(34.5, (UnicodeString)"00.00", sym, (UnicodeString)"34S50");
-    sym.setSymbol(DecimalFormatSymbols::kPercentSymbol, (UnicodeString)"P");
-    Verify(34.5, (UnicodeString)"00 %", sym, (UnicodeString)"3450 P");
-    sym.setSymbol(DecimalFormatSymbols::kCurrencySymbol, (UnicodeString)"D");
-    Verify(34.5, CharsToUnicodeString("\\u00a4##.##"), sym, (UnicodeString)"D34.5");
-    sym.setSymbol(DecimalFormatSymbols::kGroupingSeparatorSymbol, (UnicodeString)"|");
-    Verify(3456.5, (UnicodeString)"0,000.##", sym, (UnicodeString)"3|456S5");
+    Verify(34.5, u"00.00", sym, u"34S50");
+    sym.setSymbol(DecimalFormatSymbols::kPercentSymbol, u"P");
+    Verify(34.5, u"00 %", sym, u"3450 P");
+    sym.setSymbol(DecimalFormatSymbols::kCurrencySymbol, u"D");
+    Verify(34.5, u"\u00a4##.##", sym, u"D\u00a034.50");
+    sym.setSymbol(DecimalFormatSymbols::kGroupingSeparatorSymbol, u"|");
+    Verify(3456.5, u"0,000.##", sym, u"3|456S5");
 
 }
 
@@ -217,11 +217,11 @@ void IntlTestDecimalFormatSymbols::testLastResortData() {
     IcuTestErrorCode errorCode(*this, "testLastResortData");
     LocalPointer<DecimalFormatSymbols> lastResort(
         DecimalFormatSymbols::createWithLastResortData(errorCode));
-    if(errorCode.logIfFailureAndReset("DecimalFormatSymbols::createWithLastResortData() failed")) {
+    if(errorCode.errIfFailureAndReset("DecimalFormatSymbols::createWithLastResortData() failed")) {
         return;
     }
     DecimalFormatSymbols root(Locale::getRoot(), errorCode);
-    if(errorCode.logDataIfFailureAndReset("DecimalFormatSymbols(root) failed")) {
+    if(errorCode.errDataIfFailureAndReset("DecimalFormatSymbols(root) failed")) {
         return;
     }
     // Note: It is not necessary that the last resort data matches the root locale,
@@ -354,38 +354,39 @@ void IntlTestDecimalFormatSymbols::testNumberingSystem() {
         const char16_t* expected1; // Expected number format string
         const char16_t* expected2; // Expected pattern separator
     };
-    static const testcase cases[9] = {
-            {"en", "latn", u"1,234.56", u";"},
-            {"en", "arab", u"١٬٢٣٤٫٥٦", u"؛"},
-            {"en", "mathsanb", u"𝟭,𝟮𝟯𝟰.𝟱𝟲", u";"},
-            {"en", "mymr", u"၁,၂၃၄.၅၆", u";"},
-            {"my", "latn", u"1,234.56", u";"},
-            {"my", "arab", u"١٬٢٣٤٫٥٦", u"؛"},
-            {"my", "mathsanb", u"𝟭,𝟮𝟯𝟰.𝟱𝟲", u";"},
-            {"my", "mymr", u"၁,၂၃၄.၅၆", u"၊"},
-            {"en@numbers=thai", "mymr", u"၁,၂၃၄.၅၆", u";"}, // conflicting numbering system
+    static const testcase cases[] = {
+            {"en", "latn", u"1,234.56", u"%"},
+            {"en", "arab", u"١٬٢٣٤٫٥٦", u"٪\u061C"},
+            {"en", "mathsanb", u"𝟭,𝟮𝟯𝟰.𝟱𝟲", u"%"},
+            {"en", "mymr", u"၁,၂၃၄.၅၆", u"%"},
+            {"my", "latn", u"1,234.56", u"%"},
+            {"my", "arab", u"١٬٢٣٤٫٥٦", u"٪\u061C"},
+            {"my", "mathsanb", u"𝟭,𝟮𝟯𝟰.𝟱𝟲", u"%"},
+            {"my", "mymr", u"၁,၂၃၄.၅၆", u"%"},
+            {"ar", "latn", u"1,234.56", u"\u200E%\u200E"},
+            {"ar", "arab", u"١٬٢٣٤٫٥٦", u"٪\u061C"},
+            {"en@numbers=thai", "mymr", u"၁,၂၃၄.၅၆", u"%"}, // conflicting numbering system
     };
 
     for (int i=0; i<8; i++) {
         testcase cas = cases[i];
         Locale loc(cas.locid);
         LocalPointer<NumberingSystem> ns(NumberingSystem::createInstanceByName(cas.nsname, errorCode));
-        if (errorCode.logDataIfFailureAndReset("NumberingSystem failed")) {
+        if (errorCode.errDataIfFailureAndReset("NumberingSystem failed")) {
             return;
         }
         UnicodeString expected1(cas.expected1);
         UnicodeString expected2(cas.expected2);
         DecimalFormatSymbols dfs(loc, *ns, errorCode);
-        if (errorCode.logDataIfFailureAndReset("DecimalFormatSymbols failed")) {
+        if (errorCode.errDataIfFailureAndReset("DecimalFormatSymbols failed")) {
             return;
         }
         Verify(1234.56, "#,##0.##", dfs, expected1);
-        // The pattern separator is something that differs by numbering system in my@numbers=mymr.
-        UnicodeString actual2 = dfs.getSymbol(DecimalFormatSymbols::kPatternSeparatorSymbol);
-        if (expected2 != actual2) {
-            errln((UnicodeString)"ERROR: DecimalFormatSymbols returned pattern separator " + actual2
-                + " but we expected " + expected2);
-        }
+        // The percent sign differs by numbering system.
+        UnicodeString actual2 = dfs.getSymbol(DecimalFormatSymbols::kPercentSymbol);
+        assertEquals((UnicodeString) "Percent sign with " + cas.locid + " and " + cas.nsname,
+            expected2,
+            actual2);
     }
 }
 

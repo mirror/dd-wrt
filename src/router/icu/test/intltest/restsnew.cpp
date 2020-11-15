@@ -7,16 +7,49 @@
 
 #include "unicode/utypes.h"
 
+#include "charstr.h"
 #include "cmemory.h"
 #include "cstring.h"
 #include "unicode/unistr.h"
 #include "unicode/resbund.h"
+#include "unicode/brkiter.h"
+#include "unicode/utrace.h"
+#include "unicode/ucurr.h"
+#include "uresimp.h"
 #include "restsnew.h"
 
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <limits.h>
+#include <vector>
+#include <string>
+
+//***************************************************************************************
+
+void NewResourceBundleTest::runIndexedTest( int32_t index, UBool exec, const char* &name, char* /*par*/ )
+{
+    if (exec) logln("TestSuite ResourceBundleTest: ");
+    TESTCASE_AUTO_BEGIN;
+
+#if !UCONFIG_NO_FILE_IO && !UCONFIG_NO_LEGACY_CONVERSION
+    TESTCASE_AUTO(TestResourceBundles);
+    TESTCASE_AUTO(TestConstruction);
+    TESTCASE_AUTO(TestIteration);
+    TESTCASE_AUTO(TestOtherAPI);
+    TESTCASE_AUTO(TestNewTypes);
+#endif
+
+    TESTCASE_AUTO(TestGetByFallback);
+    TESTCASE_AUTO(TestFilter);
+    TESTCASE_AUTO(TestIntervalAliasFallbacks);
+
+#if U_ENABLE_TRACING
+    TESTCASE_AUTO(TestTrace);
+#endif
+
+    TESTCASE_AUTO_END;
+}
 
 //***************************************************************************************
 
@@ -36,11 +69,39 @@ enum E_Where
 
 //***************************************************************************************
 
-#define CONFIRM_EQ(actual,expected) if ((expected)==(actual)) { record_pass(); } else { record_fail(); errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of " + (expected)); }
-#define CONFIRM_GE(actual,expected) if ((actual)>=(expected)) { record_pass(); } else { record_fail(); errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x >= " + (expected)); }
-#define CONFIRM_NE(actual,expected) if ((expected)!=(actual)) { record_pass(); } else { record_fail(); errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x != " + (expected)); }
+#define CONFIRM_EQ(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)==(actual)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of " + (expected)); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_GE(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((actual)>=(expected)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x >= " + (expected)); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_NE(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)!=(actual)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        errln(action + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x != " + (expected)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define CONFIRM_UErrorCode(actual,expected) if ((expected)==(actual)) { record_pass(); } else { record_fail(); errln(action + (UnicodeString)" returned " + (UnicodeString)u_errorName(actual) + (UnicodeString)" instead of " + (UnicodeString)u_errorName(expected)); }
+#define CONFIRM_UErrorCode(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)==(actual)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        errln(action + (UnicodeString)" returned " + (UnicodeString)u_errorName(actual) + (UnicodeString)" instead of " + (UnicodeString)u_errorName(expected)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 //***************************************************************************************
 
@@ -177,25 +238,6 @@ NewResourceBundleTest::~NewResourceBundleTest()
             delete param[idx].locale;
             param[idx].locale = NULL;
         }
-    }
-}
-
-void NewResourceBundleTest::runIndexedTest( int32_t index, UBool exec, const char* &name, char* /*par*/ )
-{
-    if (exec) logln("TestSuite ResourceBundleTest: ");
-    switch (index) {
-#if !UCONFIG_NO_FILE_IO && !UCONFIG_NO_LEGACY_CONVERSION
-    case 0: name = "TestResourceBundles"; if (exec) TestResourceBundles(); break;
-    case 1: name = "TestConstruction"; if (exec) TestConstruction(); break;
-    case 2: name = "TestIteration"; if (exec) TestIteration(); break;
-    case 3: name = "TestOtherAPI";  if(exec) TestOtherAPI(); break;
-    case 4: name = "TestNewTypes";  if(exec) TestNewTypes(); break;
-#else
-    case 0: case 1: case 2: case 3: case 4: name = "skip"; break;
-#endif
-
-    case 5: name = "TestGetByFallback";  if(exec) TestGetByFallback(); break;
-        default: name = ""; break; //needed to end loop
     }
 }
 
@@ -493,26 +535,28 @@ NewResourceBundleTest::TestOtherAPI(){
         errln("copy construction failed\n");
     }
 
-    ResourceBundle defaultSub = defaultresource.get((int32_t)0, err);
-    ResourceBundle defSubCopy(defaultSub);
-    if(strcmp(defSubCopy.getName(), defaultSub.getName() ) !=0  ||
-        strcmp(defSubCopy.getLocale().getName(), defaultSub.getLocale().getName() ) !=0  ){
-        errln("copy construction for subresource failed\n");
+    {
+        LocalPointer<ResourceBundle> p(defaultresource.clone());
+        if(p.getAlias() == &defaultresource || !equalRB(*p, defaultresource)) {
+            errln("ResourceBundle.clone() failed");
+        }
     }
 
-    ResourceBundle *p;
-
-    p = defaultresource.clone();
-    if(p == &defaultresource || !equalRB(*p, defaultresource)) {
-        errln("ResourceBundle.clone() failed");
+    // The following tests involving defaultSub may no longer be exercised if
+    // defaultresource is for a locale like en_US with an empty resource bundle.
+    // (Before ICU-21028 such a bundle would have contained at least a Version string.)
+    if(defaultresource.getSize() != 0) {
+        ResourceBundle defaultSub = defaultresource.get((int32_t)0, err);
+        ResourceBundle defSubCopy(defaultSub);
+        if(strcmp(defSubCopy.getName(), defaultSub.getName()) != 0 ||
+                strcmp(defSubCopy.getLocale().getName(), defaultSub.getLocale().getName() ) != 0) {
+            errln("copy construction for subresource failed\n");
+        }
+        LocalPointer<ResourceBundle> p(defaultSub.clone());
+        if(p.getAlias() == &defaultSub || !equalRB(*p, defaultSub)) {
+            errln("2nd ResourceBundle.clone() failed");
+        }
     }
-    delete p;
-
-    p = defaultSub.clone();
-    if(p == &defaultSub || !equalRB(*p, defaultSub)) {
-        errln("2nd ResourceBundle.clone() failed");
-    }
-    delete p;
 
     UVersionInfo ver;
     copyRes.getVersion(ver);
@@ -1198,5 +1242,313 @@ NewResourceBundleTest::TestGetByFallback() {
     status = U_ZERO_ERROR;
 
 }
+
+
+#define REQUIRE_SUCCESS(status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (status.errIfFailureAndReset("line %d", __LINE__)) { \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
+
+#define REQUIRE_ERROR(expected, status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (!status.expectErrorAndReset(expected, "line %d", __LINE__)) { \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
+
+/**
+ * Tests the --filterDir option in genrb.
+ *
+ * Input resource text file: test/testdata/filtertest.txt
+ * Input filter rule file: test/testdata/filters/filtertest.txt
+ *
+ * The resource bundle should contain no keys matched by the filter
+ * and should contain all other keys.
+ */
+void NewResourceBundleTest::TestFilter() {
+    IcuTestErrorCode status(*this, "TestFilter");
+
+    ResourceBundle rb(loadTestData(status), "filtertest", status);
+    REQUIRE_SUCCESS(status);
+    assertEquals("rb", rb.getType(), URES_TABLE);
+
+    ResourceBundle alabama = rb.get("alabama", status);
+    REQUIRE_SUCCESS(status);
+    assertEquals("alabama", alabama.getType(), URES_TABLE);
+
+    {
+        ResourceBundle alaska = alabama.get("alaska", status);
+        REQUIRE_SUCCESS(status);
+        assertEquals("alaska", alaska.getType(), URES_TABLE);
+
+        {
+            ResourceBundle arizona = alaska.get("arizona", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("arizona", arizona.getType(), URES_STRING);
+            assertEquals("arizona", u"arkansas", arizona.getString(status));
+            REQUIRE_SUCCESS(status);
+
+            // Filter: california should not be included
+            ResourceBundle california = alaska.get("california", status);
+            REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+        }
+
+        // Filter: connecticut should not be included
+        ResourceBundle connecticut = alabama.get("connecticut", status);
+        REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+    }
+
+    ResourceBundle fornia = rb.get("fornia", status);
+    REQUIRE_SUCCESS(status);
+    assertEquals("fornia", fornia.getType(), URES_TABLE);
+
+    {
+        // Filter: hawaii should not be included based on parent inheritance
+        ResourceBundle hawaii = fornia.get("hawaii", status);
+        REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+
+        // Filter: illinois should not be included based on direct rule
+        ResourceBundle illinois = fornia.get("illinois", status);
+        REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+    }
+
+    ResourceBundle mississippi = rb.get("mississippi", status);
+    REQUIRE_SUCCESS(status);
+    assertEquals("mississippi", mississippi.getType(), URES_TABLE);
+
+    {
+        ResourceBundle louisiana = mississippi.get("louisiana", status);
+        REQUIRE_SUCCESS(status);
+        assertEquals("louisiana", louisiana.getType(), URES_TABLE);
+
+        {
+            ResourceBundle maine = louisiana.get("maine", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("maine", maine.getType(), URES_STRING);
+            assertEquals("maine", u"maryland", maine.getString(status));
+            REQUIRE_SUCCESS(status);
+
+            ResourceBundle iowa = louisiana.get("iowa", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("iowa", iowa.getType(), URES_STRING);
+            assertEquals("iowa", u"kansas", iowa.getString(status));
+            REQUIRE_SUCCESS(status);
+
+            // Filter: missouri should not be included
+            ResourceBundle missouri = louisiana.get("missouri", status);
+            REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+        }
+
+        ResourceBundle michigan = mississippi.get("michigan", status);
+        REQUIRE_SUCCESS(status);
+        assertEquals("michigan", michigan.getType(), URES_TABLE);
+
+        {
+            ResourceBundle maine = michigan.get("maine", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("maine", maine.getType(), URES_STRING);
+            assertEquals("maine", u"minnesota", maine.getString(status));
+            REQUIRE_SUCCESS(status);
+
+            // Filter: iowa should not be included
+            ResourceBundle iowa = michigan.get("iowa", status);
+            REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+
+            ResourceBundle missouri = michigan.get("missouri", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("missouri", missouri.getType(), URES_STRING);
+            assertEquals("missouri", u"nebraska", missouri.getString(status));
+            REQUIRE_SUCCESS(status);
+        }
+
+        ResourceBundle nevada = mississippi.get("nevada", status);
+        REQUIRE_SUCCESS(status);
+        assertEquals("nevada", nevada.getType(), URES_TABLE);
+
+        {
+            ResourceBundle maine = nevada.get("maine", status);
+            REQUIRE_SUCCESS(status);
+            assertEquals("maine", maine.getType(), URES_STRING);
+            assertEquals("maine", u"new-hampshire", maine.getString(status));
+            REQUIRE_SUCCESS(status);
+
+            // Filter: iowa should not be included
+            ResourceBundle iowa = nevada.get("iowa", status);
+            REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+
+            // Filter: missouri should not be included
+            ResourceBundle missouri = nevada.get("missouri", status);
+            REQUIRE_ERROR(U_MISSING_RESOURCE_ERROR, status);
+        }
+    }
+
+    // Filter: northCarolina should be included based on direct rule,
+    // and so should its child, northDakota
+    ResourceBundle northCarolina = rb.get("northCarolina", status);
+    REQUIRE_SUCCESS(status);
+    assertEquals("northCarolina", northCarolina.getType(), URES_TABLE);
+
+    {
+        ResourceBundle northDakota = northCarolina.get("northDakota", status);
+        REQUIRE_SUCCESS(status);
+        assertEquals("northDakota", northDakota.getType(), URES_STRING);
+        assertEquals("northDakota", u"west-virginia", northDakota.getString(status));
+        REQUIRE_SUCCESS(status);
+    }
+}
+
+/*
+ * The following test for ICU-20706 has infinite loops on certain inputs for
+ * locales and calendars.  In order to unblock the build (ICU-21055), those
+ * specific values are temporarily removed.
+ * The issue of the infinite loops and its blocking dependencies were captured
+ * in ICU-21080.
+ */
+
+void NewResourceBundleTest::TestIntervalAliasFallbacks() {
+    const char* locales[] = {
+        // Thee will not cause infinity loop
+        "en",
+        "ja",
+
+        // These will cause infinity loop
+#if 0
+        "fr_CA",
+        "en_150",
+        "es_419",
+        "id",
+        "in",
+        "pl",
+        "pt_PT",
+        "sr_ME",
+        "zh_Hant",
+        "zh_Hant_TW",
+        "zh_TW",
+#endif
+    };
+    const char* calendars[] = {
+        // These won't cause infinity loop
+        "gregorian",
+        "chinese",
+
+        // These will cause infinity loop
+#if 0
+        "islamic",
+        "islamic-civil",
+        "islamic-tbla",
+        "islamic-umalqura",
+        "ethiopic-amete-alem",
+        "islamic-rgsa",
+        "japanese",
+        "roc",
+#endif
+    };
+
+    for (int lidx = 0; lidx < UPRV_LENGTHOF(locales); lidx++) {
+        UErrorCode status = U_ZERO_ERROR;
+        UResourceBundle *rb = ures_open(NULL, locales[lidx], &status);
+        if (U_FAILURE(status)) {
+            errln("Cannot open bundle for locale %s", locales[lidx]);
+            break;
+        }
+        for (int cidx = 0; cidx < UPRV_LENGTHOF(calendars); cidx++) {
+            CharString key;
+            key.append("calendar/", status);
+            key.append(calendars[cidx], status);
+            key.append("/intervalFormats/fallback", status);
+            if (! logKnownIssue("20400")) {
+                int32_t resStrLen = 0;
+                ures_getStringByKeyWithFallback(rb, key.data(), &resStrLen, &status);
+            }
+            if (U_FAILURE(status)) {
+                errln("Cannot ures_getStringByKeyWithFallback('%s') on locale %s",
+                      key.data(), locales[lidx]);
+                break;
+            }
+        }
+        ures_close(rb);
+    }
+}
+
+#if U_ENABLE_TRACING
+
+static std::vector<std::string> gResourcePathsTraced;
+static std::vector<std::string> gDataFilesTraced;
+static std::vector<std::string> gBundlesTraced;
+
+static void U_CALLCONV traceData(
+        const void*,
+        int32_t fnNumber,
+        int32_t,
+        const char *,
+        va_list args) {
+
+    // NOTE: Whether this test is run in isolation affects whether or not
+    // *.res files are opened. For stability, ignore *.res file opens.
+
+    if (fnNumber == UTRACE_UDATA_RESOURCE) {
+        va_arg(args, const char*); // type
+        va_arg(args, const char*); // file
+        const char* resourcePath = va_arg(args, const char*);
+        gResourcePathsTraced.push_back(resourcePath);
+    } else if (fnNumber == UTRACE_UDATA_BUNDLE) {
+        const char* filePath = va_arg(args, const char*);
+        gBundlesTraced.push_back(filePath);
+    } else if (fnNumber == UTRACE_UDATA_DATA_FILE) {
+        const char* filePath = va_arg(args, const char*);
+        gDataFilesTraced.push_back(filePath);
+    } else if (fnNumber == UTRACE_UDATA_RES_FILE) {
+        // ignore
+    }
+}
+
+void NewResourceBundleTest::TestTrace() {
+    IcuTestErrorCode status(*this, "TestTrace");
+
+    assertEquals("Start position stability coverage", 0x3000, UTRACE_UDATA_START);
+
+    const void* context;
+    utrace_setFunctions(context, nullptr, nullptr, traceData);
+    utrace_setLevel(UTRACE_VERBOSE);
+
+    {
+        LocalPointer<BreakIterator> brkitr(BreakIterator::createWordInstance("zh-CN", status));
+
+        assertEquals("Should touch expected resource paths",
+            { "/boundaries", "/boundaries/word", "/boundaries/word" },
+            gResourcePathsTraced);
+        assertEquals("Should touch expected resource bundles",
+            { U_ICUDATA_NAME "-brkitr/zh.res" },
+            gBundlesTraced);
+        assertEquals("Should touch expected data files",
+            { U_ICUDATA_NAME "-brkitr/word.brk" },
+            gDataFilesTraced);
+        gResourcePathsTraced.clear();
+        gDataFilesTraced.clear();
+        gBundlesTraced.clear();
+    }
+
+    {
+        ucurr_getDefaultFractionDigits(u"USD", status);
+
+        assertEquals("Should touch expected resource paths",
+            { "/CurrencyMeta", "/CurrencyMeta/DEFAULT", "/CurrencyMeta/DEFAULT" },
+            gResourcePathsTraced);
+        assertEquals("Should touch expected resource bundles",
+            { U_ICUDATA_NAME "-curr/supplementalData.res" },
+            gBundlesTraced);
+        assertEquals("Should touch expected data files",
+            { },
+            gDataFilesTraced);
+        gResourcePathsTraced.clear();
+        gDataFilesTraced.clear();
+        gBundlesTraced.clear();
+    }
+
+    utrace_setFunctions(context, nullptr, nullptr, nullptr);
+}
+
+#endif
+
 //eof
 

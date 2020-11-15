@@ -25,23 +25,33 @@
 
 #define mkcstr(U) u_austrcpy(calloc(8, u_strlen(U) + 1), U)
 
-#define TEST_CHECK_STATUS { \
+#define TEST_CHECK_STATUS UPRV_BLOCK_MACRO_BEGIN { \
     if (U_FAILURE(status)) { \
         if (status == U_MISSING_RESOURCE_ERROR) { \
             dataerrln("%s:%d: Test failure.  status=%s", __FILE__, __LINE__, u_errorName(status)); \
         } else { \
             errln("%s:%d: Test failure.  status=%s", __FILE__, __LINE__, u_errorName(status)); \
-        } return;}}
+        } \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_CHECK_STATUS_LOCALE(testlocale) { \
+#define TEST_CHECK_STATUS_LOCALE(testlocale) UPRV_BLOCK_MACRO_BEGIN { \
     if (U_FAILURE(status)) { \
         if (status == U_MISSING_RESOURCE_ERROR) { \
             dataerrln("%s:%d: Test failure, locale %s.  status=%s", __FILE__, __LINE__, testlocale, u_errorName(status)); \
         } else { \
             errln("%s:%d: Test failure, locale %s.  status=%s", __FILE__, __LINE__, testlocale, u_errorName(status)); \
-        } return;}}
+        } \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT(expr) {if ((expr)==FALSE) {errln("%s:%d: Test failure \n", __FILE__, __LINE__);};}
+#define TEST_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("%s:%d: Test failure \n", __FILE__, __LINE__); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 // *****************************************************************************
 // class CalendarTest
@@ -336,6 +346,13 @@ void CalendarTest::runIndexedTest( int32_t index, UBool exec, const char* &name,
             TestChineseCalendarMapping();
           }
           break;
+        case 37:
+          name = "TestTimeZoneInLocale";
+          if(exec) {
+            logln("TestTimeZoneInLocale---"); logln("");
+            TestTimeZoneInLocale();
+          }
+          break;
         default: name = ""; break;
     }
 }
@@ -344,7 +361,7 @@ void CalendarTest::runIndexedTest( int32_t index, UBool exec, const char* &name,
 
 UnicodeString CalendarTest::fieldName(UCalendarDateFields f) {
     switch (f) {
-#define FIELD_NAME_STR(x) case x: return (#x+5)
+#define FIELD_NAME_STR(x) case x: return (#x)+5
       FIELD_NAME_STR( UCAL_ERA );
       FIELD_NAME_STR( UCAL_YEAR );
       FIELD_NAME_STR( UCAL_MONTH );
@@ -740,7 +757,7 @@ CalendarTest::TestClonesUnique908()
     UErrorCode status = U_ZERO_ERROR;
     Calendar *c = Calendar::createInstance(status);
     if (failure(status, "Calendar::createInstance", TRUE)) return;
-    Calendar *d = (Calendar*) c->clone();
+    Calendar *d = c->clone();
     c->set(UCAL_MILLISECOND, 123);
     d->set(UCAL_MILLISECOND, 456);
     if (c->get(UCAL_MILLISECOND, status) != 123 ||
@@ -1110,7 +1127,11 @@ CalendarTest::TestAddRollExtensive()
         status = U_ZERO_ERROR;
         for (i = 0; i < limit; i++) {
             temp->add(e, 1, status);
-            if (U_FAILURE(status)) { limit = i; status = U_ZERO_ERROR; }
+            if (U_FAILURE(status)) {
+                limit = i;
+                status = U_ZERO_ERROR;
+                break;      // Suppress compile warning. Shouldn't be necessary, but it is.
+            }
         }
         for (i = 0; i < limit; i++) {
             temp->add(e, -1, status);
@@ -1718,7 +1739,7 @@ void
 CalendarTest::marchByDelta(Calendar* cal, int32_t delta)
 {
     UErrorCode status = U_ZERO_ERROR;
-    Calendar *cur = (Calendar*) cal->clone();
+    Calendar *cur = cal->clone();
     int32_t initialDOW = cur->get(UCAL_DAY_OF_WEEK, status);
     if (U_FAILURE(status)) { errln("Calendar::get failed"); return; }
     int32_t DOW, newDOW = initialDOW;
@@ -1743,11 +1764,12 @@ CalendarTest::marchByDelta(Calendar* cal, int32_t delta)
     delete cur;
 }
 
-#define CHECK(status, msg) \
+#define CHECK(status, msg) UPRV_BLOCK_MACRO_BEGIN { \
     if (U_FAILURE(status)) { \
         errcheckln(status, msg); \
         return; \
-    }
+    } \
+} UPRV_BLOCK_MACRO_END
 
 void CalendarTest::TestWOY(void) {
     /*
@@ -2169,7 +2191,7 @@ int32_t CalendarTest::testLocaleCount()
   if(gLocaleCount < 0) {
     int32_t i;
     for(i=0;testLocaleID(i) != NULL;i++) {
-      ;
+      // do nothing
     }
     gLocaleCount = i;
   }
@@ -2312,7 +2334,7 @@ void CalendarTest::TestTimeStamp() {
     Calendar *cal;
 
     // Create a new Gregorian Calendar.
-    cal = Calendar::createInstance("en_US@calender=gregorian", status);
+    cal = Calendar::createInstance("en_US@calendar=gregorian", status);
     if (U_FAILURE(status)) {
         dataerrln("Error creating Gregorian calendar.");
         return;
@@ -2790,6 +2812,51 @@ void CalendarTest::TestCloneLocale(void) {
     errln("Error: cloned locale %s != original locale %s, status %s\n", l0.getName(), l.getName(), u_errorName(status));
   }
   TEST_CHECK_STATUS;
+}
+
+void CalendarTest::TestTimeZoneInLocale(void) {
+    const char *tests[][3]  = {
+        { "en-u-tz-usden",                     "America/Denver",             "gregorian" },
+        { "es-u-tz-usden",                     "America/Denver",             "gregorian" },
+        { "ms-u-tz-mykul",                     "Asia/Kuala_Lumpur",          "gregorian" },
+        { "zh-u-tz-mykul",                     "Asia/Kuala_Lumpur",          "gregorian" },
+        { "fr-u-ca-buddhist-tz-phmnl",         "Asia/Manila",                "buddhist" },
+        { "th-u-ca-chinese-tz-gblon",          "Europe/London",              "chinese" },
+        { "de-u-ca-coptic-tz-ciabj",           "Africa/Abidjan",             "coptic" },
+        { "ja-u-ca-dangi-tz-hkhkg",            "Asia/Hong_Kong",             "dangi" },
+        { "da-u-ca-ethioaa-tz-ruunera",        "Asia/Ust-Nera",              "ethiopic-amete-alem" },
+        { "ko-u-ca-ethiopic-tz-cvrai",         "Atlantic/Cape_Verde",        "ethiopic" },
+        { "fil-u-ca-gregory-tz-aubne",         "Australia/Brisbane",         "gregorian" },
+        { "fa-u-ca-hebrew-tz-brrbr",           "America/Rio_Branco",         "hebrew" },
+        { "gr-u-ca-indian-tz-lccas",           "America/St_Lucia",           "indian" },
+        { "or-u-ca-islamic-tz-cayyn",          "America/Swift_Current",      "islamic" },
+        { "my-u-ca-islamic-umalqura-tz-kzala", "Asia/Almaty",                "islamic-umalqura" },
+        { "lo-u-ca-islamic-tbla-tz-bmbda",     "Atlantic/Bermuda",           "islamic-tbla" },
+        { "km-u-ca-islamic-civil-tz-aqplm",    "Antarctica/Palmer",          "islamic-civil" },
+        { "kk-u-ca-islamic-rgsa-tz-usanc",     "America/Anchorage",          "islamic" },
+        { "ar-u-ca-iso8601-tz-bjptn",          "Africa/Porto-Novo",          "gregorian" },
+        { "he-u-ca-japanese-tz-tzdar",         "Africa/Dar_es_Salaam",       "japanese" },
+        { "bs-u-ca-persian-tz-etadd",          "Africa/Addis_Ababa",         "persian" },
+        { "it-u-ca-roc-tz-aruaq",              "America/Argentina/San_Juan", "roc" },
+    };
+
+    for (int32_t i = 0; i < UPRV_LENGTHOF(tests); ++i) {
+        UErrorCode status = U_ZERO_ERROR;
+        const char **testLine = tests[i];
+        Locale locale(testLine[0]);
+        UnicodeString expected(testLine[1], -1, US_INV);
+        UnicodeString actual;
+
+        LocalPointer<Calendar> calendar(
+                Calendar::createInstance(locale, status));
+        if (failure(status, "Calendar::createInstance", TRUE)) continue;
+
+        assertEquals("TimeZone from Calendar::createInstance",
+                     expected, calendar->getTimeZone().getID(actual));
+
+        assertEquals("Calendar Type from Calendar::createInstance",
+                     testLine[2], calendar->getType());
+    }
 }
 
 void CalendarTest::setAndTestCalendar(Calendar* cal, int32_t initMonth, int32_t initDay, int32_t initYear, UErrorCode& status) {

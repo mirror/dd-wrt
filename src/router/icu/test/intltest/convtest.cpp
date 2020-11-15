@@ -77,6 +77,7 @@ ConversionTest::runIndexedTest(int32_t index, UBool exec, const char *&name, cha
     TESTCASE_AUTO(TestGetUnicodeSet2);
     TESTCASE_AUTO(TestDefaultIgnorableCallback);
     TESTCASE_AUTO(TestUTF8ToUTF8Overflow);
+    TESTCASE_AUTO(TestUTF8ToUTF8Streaming);
     TESTCASE_AUTO_END;
 }
 
@@ -606,12 +607,7 @@ ConversionTest::TestGetUnicodeSet2() {
                 // First try to see if we have different sets because ucnv_getUnicodeSet()
                 // added strings: The above conversion method does not tell us what strings might be convertible.
                 // Remove strings from the set and compare again.
-                // Unfortunately, there are no good, direct set methods for finding out whether there are strings
-                // in the set, nor for enumerating or removing just them.
-                // Intersect all code points with the set. The intersection will not contain strings.
-                UnicodeSet temp(0, 0x10ffff);
-                temp.retainAll(set);
-                set=temp;
+                set.removeAllStrings();
             }
             if(set!=expected) {
                 UnicodeSet diffSet;
@@ -656,26 +652,26 @@ ConversionTest::TestDefaultIgnorableCallback() {
     const char *pattern_ignorable = "[:Default_Ignorable_Code_Point:]";
     const char *pattern_not_ignorable = "[:^Default_Ignorable_Code_Point:]";
 
-    UnicodeSet *set_ignorable = new UnicodeSet(pattern_ignorable, status);
+    LocalPointer<UnicodeSet> set_ignorable(new UnicodeSet(pattern_ignorable, status));
     if (U_FAILURE(status)) {
         dataerrln("Unable to create Unicodeset: %s - %s\n", pattern_ignorable, u_errorName(status));
         return;
     }
 
-    UnicodeSet *set_not_ignorable = new UnicodeSet(pattern_not_ignorable, status);
+    LocalPointer<UnicodeSet> set_not_ignorable(new UnicodeSet(pattern_not_ignorable, status));
     if (U_FAILURE(status)) {
         dataerrln("Unable to create Unicodeset: %s - %s\n", pattern_not_ignorable, u_errorName(status));
         return;
     }
 
-    UConverter *cnv = cnv_open(cnv_name, status);
+    LocalUConverterPointer cnv(cnv_open(cnv_name, status));
     if (U_FAILURE(status)) {
         dataerrln("Unable to open converter: %s - %s\n", cnv_name, u_errorName(status));
         return;
     }
 
     // set callback for the converter 
-    ucnv_setFromUCallBack(cnv, UCNV_FROM_U_CALLBACK_SUBSTITUTE, NULL, NULL, NULL, &status);
+    ucnv_setFromUCallBack(cnv.getAlias(), UCNV_FROM_U_CALLBACK_SUBSTITUTE, NULL, NULL, NULL, &status);
 
     UChar32 input[1];
     char output[10];
@@ -689,7 +685,7 @@ ConversionTest::TestDefaultIgnorableCallback() {
 
         input[0] = set_ignorable->charAt(i);
 
-        outputLength = ucnv_fromUChars(cnv, output, 10, UnicodeString::fromUTF32(input, 1).getTerminatedBuffer(), -1, &status);
+        outputLength = ucnv_fromUChars(cnv.getAlias(), output, 10, UnicodeString::fromUTF32(input, 1).getTerminatedBuffer(), -1, &status);
         if (U_FAILURE(status) || outputLength != 0) {
             errln("Ignorable code point: U+%04X not skipped as expected - %s", input[0], u_errorName(status));
         }
@@ -707,15 +703,11 @@ ConversionTest::TestDefaultIgnorableCallback() {
             continue;
         }
 
-        outputLength = ucnv_fromUChars(cnv, output, 10, UnicodeString::fromUTF32(input, 1).getTerminatedBuffer(), -1, &status);
+        outputLength = ucnv_fromUChars(cnv.getAlias(), output, 10, UnicodeString::fromUTF32(input, 1).getTerminatedBuffer(), -1, &status);
         if (U_FAILURE(status) || outputLength <= 0) {
             errln("Non-ignorable code point: U+%04X skipped unexpectedly - %s", input[0], u_errorName(status));
         }
     }
-    
-    ucnv_close(cnv);
-    delete set_not_ignorable;
-    delete set_ignorable;
 }
 
 void
@@ -837,6 +829,65 @@ ConversionTest::TestUTF8ToUTF8Overflow() {
     if (errorLength == 1) {
         assertEquals("illFormed trail byte errorBytes", 0x93, (int32_t)(uint8_t)errorBytes[0]);
     }
+}
+
+void
+ConversionTest::TestUTF8ToUTF8Streaming() {
+    IcuTestErrorCode errorCode(*this, "TestUTF8ToUTF8Streaming");
+    LocalUConverterPointer cnv1(ucnv_open("UTF-8", errorCode));
+    LocalUConverterPointer cnv2(ucnv_open("UTF-8", errorCode));
+
+    // UTF8 encoded cyrillic part of 'Lorem ipsum'
+    static const char* text =
+        "\xd0\xb5\xd1\x82\x20\xd1\x81\xd1\x86\xd0\xb0\xd0\xb5\xd0\xb2\xd0"
+        "\xbe\xd0\xbb\xd0\xb0\x20\xd1\x81\xd0\xb0\xd0\xb4\xd0\xb8\xd0\xbf"
+        "\xd1\x81\xd1\x86\xd0\xb8\xd0\xbd\xd0\xb3\x20\xd0\xb0\xd1\x86\xd1"
+        "\x86\xd0\xbe\xd0\xbc\xd0\xbc\xd0\xbe\xd0\xb4\xd0\xb0\xd1\x80\xd0"
+        "\xb5\x20\xd1\x85\xd0\xb0\xd1\x81";
+
+    int32_t chunk1 = 25; // partial lead at the end: 0xd0
+    int32_t chunk2 = 47; // partial tail at the beginning: 0xb0
+
+    char result[128];
+
+    int32_t sourceLen = (int32_t)strlen(text);
+    const char* source = text;
+    const char* sourceLimit = text + chunk1;
+
+    int32_t targetLen = sizeof(result);
+    char* target = result;
+    const char* targetLimit = result + targetLen;
+
+    UChar buffer16[20];
+    UChar* pivotSource = buffer16;
+    UChar* pivotTarget = buffer16;
+    const UChar* pivotLimit = buffer16 + UPRV_LENGTHOF(buffer16);
+
+    int32_t length;
+    ucnv_convertEx(cnv2.getAlias(), cnv1.getAlias(),
+        &target, result + targetLen, &source, sourceLimit,
+        buffer16, &pivotSource, &pivotTarget, pivotLimit,
+        FALSE, FALSE, errorCode);
+
+    length = (int32_t)(target - result);
+    targetLen -= length;
+    assertEquals("First chunk -1 doesn't match converted length", chunk1 - 1, length);
+
+    source = text + chunk1;
+    sourceLimit = source + chunk2;
+
+    // Convert the rest and flush.
+    ucnv_convertEx(cnv2.getAlias(), cnv1.getAlias(),
+        &target, targetLimit, &source, sourceLimit,
+        buffer16, &pivotSource, &pivotTarget, pivotLimit,
+        FALSE, TRUE, errorCode);
+
+    length = (int32_t)(target - result - length);
+    targetLen -= length;
+    assertEquals("Second chunk + 2 doesn't  match converted length", chunk2 + 1, length);
+
+    assertEquals("Full text length match", sourceLen, sizeof(result) - targetLen);
+    assertSuccess("UTF-8->UTF-8", errorCode);
 }
 
 // open testdata or ICU data converter ------------------------------------- ***
@@ -1194,9 +1245,13 @@ ConversionTest::ToUnicodeCase(ConversionCase &cc, UConverterToUCallback callback
             cc.offsets=NULL;
         }
         else {
-            memset(resultOffsets, -1, UPRV_LENGTHOF(resultOffsets));
+            for (int32_t i = 0; i < UPRV_LENGTHOF(resultOffsets); i++) {
+                resultOffsets[i] = -1;
+            }
         }
-        memset(result, -1, UPRV_LENGTHOF(result));
+        for (int32_t i = 0; i < UPRV_LENGTHOF(result); i++) {
+            result[i] = -1;
+        }
         errorCode.reset();
         resultLength=stepToUnicode(cc, cnv.getAlias(),
                                 result, UPRV_LENGTHOF(result),
@@ -1624,8 +1679,12 @@ ConversionTest::FromUnicodeCase(ConversionCase &cc, UConverterFromUCallback call
     ok=TRUE;
     for(i=0; i<UPRV_LENGTHOF(steps) && ok; ++i) {
         step=steps[i].step;
-        memset(resultOffsets, -1, UPRV_LENGTHOF(resultOffsets));
-        memset(result, -1, UPRV_LENGTHOF(result));
+        for (int32_t i = 0; i < UPRV_LENGTHOF(resultOffsets); i++) {
+            resultOffsets[i] = -1;
+        }
+        for (int32_t i = 0; i < UPRV_LENGTHOF(result); i++) {
+            result[i] = -1;
+        }
         errorCode=U_ZERO_ERROR;
         resultLength=stepFromUnicode(cc, cnv,
                                 result, UPRV_LENGTHOF(result),

@@ -11,7 +11,7 @@ set ICU_ARCH=%1
 set ICU_DBRL=%2
 
 if "%1" == "" (
-echo Usage: %0 "x86 or x64"  "Debug or Release"
+echo Usage: %0 "x86 or x64 or ARM or ARM64"  "Debug or Release"
 exit /b 1
 )
 
@@ -25,9 +25,13 @@ set ICU_OPATH=%PATH%
 set ICU_ICUDIR="%~dp0"\..\..
 
 if "%ICU_ARCH%" == "x64" (
-set ICU_BINDIR=%~dp0\..\..\bin64
+    set ICU_BINDIR=%~dp0\..\..\bin64
+) else if "%ICU_ARCH%" == "ARM64" (
+    set ICU_BINDIR=%~dp0\..\..\binARM64
+) else if "%ICU_ARCH%" == "ARM" (
+    set ICU_BINDIR=%~dp0\..\..\binARM
 ) else (
-set ICU_BINDIR=%~dp0\..\..\bin
+    set ICU_BINDIR=%~dp0\..\..\bin
 )
 
 set PATH=%ICU_BINDIR%;%PATH%
@@ -52,7 +56,7 @@ set ICUFAILCNT=0
 @echo ==== %THT% =========================================================================
 %ICUINFO_CMD% %ICUINFO_OPTS%
 
-@IF NOT ERRORLEVEL 1 GOTO OK_%THT%
+@IF %ERRORLEVEL% EQU 0 GOTO OK_%THT%
 @set ICUFAILED=%ICUFAILED% %THT%
 @set ICUFAILCNT=1
 :OK_icuinfo
@@ -63,7 +67,7 @@ set ICUFAILCNT=0
 @cd %ICU_ICUDIR%\source\test\intltest
 %INTLTEST_CMD% %INTLTEST_OPTS%
 
-@IF NOT ERRORLEVEL 1 GOTO OK_%THT%
+@IF %ERRORLEVEL% EQU 0 GOTO OK_%THT%
 @set ICUFAILED=%ICUFAILED% %THT%
 @set ICUFAILCNT=1
 :OK_intltest
@@ -74,7 +78,7 @@ set ICUFAILCNT=0
 @cd %ICU_ICUDIR%\source\test\iotest
 %IOTEST_CMD% %IOTEST_OPTS%
 
-@IF NOT ERRORLEVEL 1 GOTO OK_%THT%
+@IF %ERRORLEVEL% EQU 0 GOTO OK_%THT%
 @set ICUFAILED=%ICUFAILED% %THT%
 @set ICUFAILCNT=1
 :OK_IOTEST
@@ -85,7 +89,7 @@ set ICUFAILCNT=0
 @cd %ICU_ICUDIR%\source\test\cintltst
 %CINTLTST_CMD% %CINTLTST_OPTS%
 
-@IF NOT ERRORLEVEL 1 GOTO OK_%THT%
+@IF %ERRORLEVEL% EQU 0 GOTO OK_%THT%
 @set ICUFAILED=%ICUFAILED% %THT%
 @set ICUFAILCNT=1
 :OK_cintltst
@@ -97,7 +101,7 @@ set ICUFAILCNT=0
 @REM  @cd %ICU_ICUDIR%\source\test\letest
 @REM  %LETST_CMD% %LETEST_OPTS%
 
-@REM  @IF NOT ERRORLEVEL 1 GOTO OK_%THT%
+@REM  @IF %ERRORLEVEL% EQU 0 GOTO OK_%THT%
 @REM  @set ICUFAILED=%ICUFAILED% %THT%
 @REM  @set ICUFAILCNT=1
 @REM  :OK_letest

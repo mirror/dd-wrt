@@ -36,7 +36,7 @@ public:
 
     }
 
-    virtual ~SCharacterIterator(){};
+    virtual ~SCharacterIterator(){}
 
                                 
     void setText(const UnicodeString& newText){
@@ -57,7 +57,7 @@ public:
         return TRUE;
     }
 
-    virtual CharacterIterator* clone(void) const {
+    virtual SCharacterIterator* clone(void) const {
         return NULL;
     }
     virtual int32_t hashCode(void) const{
@@ -65,19 +65,19 @@ public:
     }
     virtual UChar nextPostInc(void){ return text.charAt(pos++);}
     virtual UChar32 next32PostInc(void){return text.char32At(pos++);}
-    virtual UBool hasNext() { return TRUE;};
-    virtual UChar first(){return DONE;};
-    virtual UChar32 first32(){return DONE;};
-    virtual UChar last(){return DONE;};
-    virtual UChar32 last32(){return DONE;};
-    virtual UChar setIndex(int32_t /*pos*/){return DONE;};
-    virtual UChar32 setIndex32(int32_t /*pos*/){return DONE;};
-    virtual UChar current() const{return DONE;};
-    virtual UChar32 current32() const{return DONE;};
-    virtual UChar next(){return DONE;};
-    virtual UChar32 next32(){return DONE;};
-    virtual UChar previous(){return DONE;};
-    virtual UChar32 previous32(){return DONE;};
+    virtual UBool hasNext() { return TRUE;}
+    virtual UChar first(){return DONE;}
+    virtual UChar32 first32(){return DONE;}
+    virtual UChar last(){return DONE;}
+    virtual UChar32 last32(){return DONE;}
+    virtual UChar setIndex(int32_t /*pos*/){return DONE;}
+    virtual UChar32 setIndex32(int32_t /*pos*/){return DONE;}
+    virtual UChar current() const{return DONE;}
+    virtual UChar32 current32() const{return DONE;}
+    virtual UChar next(){return DONE;}
+    virtual UChar32 next32(){return DONE;}
+    virtual UChar previous(){return DONE;}
+    virtual UChar32 previous32(){return DONE;}
     virtual int32_t move(int32_t delta,CharacterIterator::EOrigin origin){    
         switch(origin) {
         case kStart:
@@ -100,7 +100,7 @@ public:
         }
 
         return pos;
-    };
+    }
     virtual int32_t move32(int32_t delta, CharacterIterator::EOrigin origin){    
         switch(origin) {
         case kStart:
@@ -127,8 +127,8 @@ public:
         }
 
         return pos;
-    };
-    virtual UBool hasPrevious() {return TRUE;};
+    }
+    virtual UBool hasPrevious() {return TRUE;}
 
   SCharacterIterator&  operator=(const SCharacterIterator&    that){
      text = that.text;
@@ -198,7 +198,7 @@ void CharIterTest::TestConstructionAndEquality() {
     UnicodeString  testText2("Don't bother using this string.");
     UnicodeString result1, result2, result3;
 
-    CharacterIterator* test1 = new StringCharacterIterator(testText);
+    StringCharacterIterator* test1 = new StringCharacterIterator(testText);
     CharacterIterator* test1b= new StringCharacterIterator(testText, -1);
     CharacterIterator* test1c= new StringCharacterIterator(testText, 100);
     CharacterIterator* test1d= new StringCharacterIterator(testText, -2, 100, 5);
@@ -257,7 +257,7 @@ void CharIterTest::TestConstructionAndEquality() {
    
     StringCharacterIterator* testChar1=new StringCharacterIterator(testText);
     StringCharacterIterator* testChar2=new StringCharacterIterator(testText2);
-    StringCharacterIterator* testChar3=(StringCharacterIterator*)test1->clone();
+    StringCharacterIterator* testChar3=test1->clone();
 
     testChar1->getText(result1);
     testChar2->getText(result2);
@@ -292,7 +292,7 @@ void CharIterTest::TestConstructionAndEqualityUChariter() {
     UCharCharacterIterator* test2 = new UCharCharacterIterator(testText, u_strlen(testText), 5);
     UCharCharacterIterator* test3 = new UCharCharacterIterator(testText, u_strlen(testText), 2, 20, 5);
     UCharCharacterIterator* test4 = new UCharCharacterIterator(testText2, u_strlen(testText2));
-    UCharCharacterIterator* test5 = (UCharCharacterIterator*)test1->clone();
+    UCharCharacterIterator* test5 = test1->clone();
     UCharCharacterIterator* test6 = new UCharCharacterIterator(*test1);
 
     // j785: length=-1 will use u_strlen()

@@ -33,6 +33,7 @@
 #include "cmemory.h"
 #include "transrt.h"
 #include "testutil.h"
+#include "uassert.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -1033,11 +1034,14 @@ void TransliteratorRoundTripTest::TestHangul() {
 }
 
 
-#define ASSERT_SUCCESS(status) {if (U_FAILURE(status)) { \
-     errcheckln(status, "error at file %s, line %d, status = %s", __FILE__, __LINE__, \
-         u_errorName(status)); \
-         return;}}
-    
+#define ASSERT_SUCCESS(status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        errcheckln(status, "error at file %s, line %d, status = %s", __FILE__, __LINE__, \
+                   u_errorName(status)); \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
+
 
 static void writeStringInU8(FILE *out, const UnicodeString &s) {
     int i;
@@ -1047,6 +1051,8 @@ static void writeStringInU8(FILE *out, const UnicodeString &s) {
         UBool    isError = FALSE;
         int32_t  destIdx = 0;
         U8_APPEND(bufForOneChar, destIdx, (int32_t)sizeof(bufForOneChar), c, isError);
+        U_ASSERT(!isError);
+        (void)isError;
         fwrite(bufForOneChar, 1, destIdx, out);
     }
 }
@@ -1057,7 +1063,10 @@ static void writeStringInU8(FILE *out, const UnicodeString &s) {
 void TransliteratorRoundTripTest::TestHan() {
     UErrorCode  status = U_ZERO_ERROR;
     LocalULocaleDataPointer uld(ulocdata_open("zh",&status));
-    LocalUSetPointer USetExemplars(ulocdata_getExemplarSet(uld.getAlias(), uset_openEmpty(), 0, ULOCDATA_ES_STANDARD, &status));
+    LocalUSetPointer USetExemplars(uset_openEmpty());
+    assertTrue("", USetExemplars.isValid(), false, false, __FILE__, __LINE__);
+    if (! USetExemplars.isValid()) return;
+    ulocdata_getExemplarSet(uld.getAlias(), USetExemplars.getAlias(), 0, ULOCDATA_ES_STANDARD, &status);
     ASSERT_SUCCESS(status);
 
     UnicodeString source;
@@ -1279,7 +1288,7 @@ class LegalIndic :public Legal{
 public:
     LegalIndic();
     virtual UBool is(const UnicodeString& sourceString) const;
-    virtual ~LegalIndic() {};
+    virtual ~LegalIndic() {}
 };
 UBool LegalIndic::is(const UnicodeString& sourceString) const{
     int cp=sourceString.charAt(0);

@@ -19,10 +19,14 @@
 #ifndef __LISTFORMATTERTEST_H__
 #define __LISTFORMATTERTEST_H__
 
+#include "unicode/fpositer.h"
 #include "unicode/listformatter.h"
 #include "intltest.h"
+#include "itformat.h"
 
-class ListFormatterTest : public IntlTest {
+#if !UCONFIG_NO_FORMATTING
+
+class ListFormatterTest : public IntlTestWithFieldPosition {
   public:
     ListFormatterTest();
     virtual ~ListFormatterTest() {}
@@ -41,23 +45,74 @@ class ListFormatterTest : public IntlTest {
     void TestZulu();
     void TestOutOfOrderPatterns();
     void Test9946();
+    void TestFieldPositionIteratorWith1Item();
+    void TestFieldPositionIteratorWith2Items();
+    void TestFieldPositionIteratorWith3Items();
+    void TestFieldPositionIteratorWith2ItemsPatternShift();
+    void TestFieldPositionIteratorWith3ItemsPatternShift();
+    void TestFormattedValue();
+    void TestDifferentStyles();
+    void TestBadStylesFail();
+    void TestCreateStyled();
+    void TestContextual();
 
   private:
-    void CheckFormatting(const ListFormatter* formatter, UnicodeString data[], int32_t data_size, const UnicodeString& expected_result);
+    void CheckFormatting(
+        const ListFormatter* formatter,
+        UnicodeString data[],
+        int32_t data_size,
+        const UnicodeString& expected_result,
+        const char* testName);
+    void ExpectPositions(
+        const FormattedList& iter,
+        int32_t *values,
+        int32_t tupleCount,
+        UErrorCode& status);
+    void RunTestFieldPositionIteratorWithNItems(
+        UnicodeString *data,
+        int32_t n,
+        int32_t *values,
+        int32_t tupleCount,
+        const char16_t *expectedFormatted,
+        const char* testName);
+    void RunTestFieldPositionIteratorWithNItemsPatternShift(
+        UnicodeString *data,
+        int32_t n,
+        int32_t *values,
+        int32_t tupleCount,
+        const char16_t *expectedFormatted,
+        const char* testName);
+    void RunTestFieldPositionIteratorWithFormatter(
+        ListFormatter* formatter,
+        UnicodeString *data,
+        int32_t n,
+        int32_t *values,
+        int32_t tupleCount,
+        const char16_t *expectedFormatted,
+        const char* testName);
     void CheckFourCases(
         const char* locale_string,
         UnicodeString one,
         UnicodeString two,
         UnicodeString three,
         UnicodeString four,
-        UnicodeString results[4]);
+        UnicodeString results[4],
+        const char* testName);
     UBool RecordFourCases(
         const Locale& locale,
         UnicodeString one,
         UnicodeString two,
         UnicodeString three,
         UnicodeString four,
-        UnicodeString results[4]);
+        UnicodeString results[4],
+        const char* testName);
+    void DoTheRealListStyleTesting(
+        Locale locale,
+        UnicodeString items[],
+        int32_t itemCount,
+        const char* style,
+        const char* expected,
+        IcuTestErrorCode status);
 
   private:
     // Reused test data.
@@ -67,5 +122,7 @@ class ListFormatterTest : public IntlTest {
     const UnicodeString three;
     const UnicodeString four;
 };
+
+#endif /* #if !UCONFIG_NO_FORMATTING */
 
 #endif

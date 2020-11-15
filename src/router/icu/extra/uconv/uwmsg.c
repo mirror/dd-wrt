@@ -24,6 +24,7 @@
 #include "cmemory.h"
 #include "cstring.h"
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -68,7 +69,7 @@ uprint(const UChar *s,
         /* perform the conversion */
         ucnv_fromUnicode(converter, &myTarget,  myTarget + arraySize,
             &mySource, mySourceEnd, NULL,
-            TRUE, status);
+            true, status);
 
         /* Write the converted data to the FILE* */
         fwrite(buf, sizeof(char), myTarget - buf, f);
@@ -156,6 +157,7 @@ U_CFUNC int u_wmsg(FILE *fp, const char *tag, ... )
         uprint(msg,msgLen, fp, &err);
     }
 #else
+    (void)gNoFormatting;  // suppress -Wunused-variable
     va_start(ap, tag);
 
     resultLength = u_vformatMessage(uloc_getDefault(), msg, msgLen, result, resultLength, ap, &err);

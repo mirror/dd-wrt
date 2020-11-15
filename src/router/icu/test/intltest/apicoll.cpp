@@ -228,13 +228,13 @@ CollationAPITest::TestProperty(/* char* par */)
 void CollationAPITest::TestKeywordValues() {
     IcuTestErrorCode errorCode(*this, "TestKeywordValues");
     LocalPointer<Collator> col(Collator::createInstance(Locale::getEnglish(), errorCode));
-    if (errorCode.logIfFailureAndReset("English Collator creation failed")) {
+    if (errorCode.errIfFailureAndReset("English Collator creation failed")) {
         return;
     }
 
     LocalPointer<StringEnumeration> kwEnum(
         col->getKeywordValuesForLocale("collation", Locale::getEnglish(), TRUE, errorCode));
-    if (errorCode.logIfFailureAndReset("Get Keyword Values for English Collator failed")) {
+    if (errorCode.errIfFailureAndReset("Get Keyword Values for English Collator failed")) {
         return;
     }
     assertTrue("expect at least one collation tailoring for English", kwEnum->count(errorCode) > 0);
@@ -1238,7 +1238,7 @@ void CollationAPITest::TestSortKey()
 void CollationAPITest::TestSortKeyOverflow() {
     IcuTestErrorCode errorCode(*this, "TestSortKeyOverflow()");
     LocalPointer<Collator> col(Collator::createInstance(Locale::getEnglish(), errorCode));
-    if (errorCode.logDataIfFailureAndReset("Collator::createInstance(English) failed")) {
+    if (errorCode.errDataIfFailureAndReset("Collator::createInstance(English) failed")) {
         return;
     }
     col->setAttribute(UCOL_STRENGTH, UCOL_PRIMARY, errorCode);
@@ -2000,7 +2000,7 @@ void CollationAPITest::TestUClassID()
 class TestCollator  : public Collator
 {
 public:
-    virtual Collator* clone(void) const;
+    virtual TestCollator* clone() const;
 
     using Collator::compare;
 
@@ -2048,9 +2048,9 @@ public:
     virtual UBool operator==(const Collator& other) const;
     // Collator::operator!= calls !Collator::operator== which works for all subclasses.
     virtual void setLocales(const Locale& requestedLocale, const Locale& validLocale, const Locale& actualLocale);
-    TestCollator() : Collator() {};
+    TestCollator() : Collator() {}
     TestCollator(UCollationStrength collationStrength, 
-           UNormalizationMode decompositionMode) : Collator(collationStrength, decompositionMode) {};
+           UNormalizationMode decompositionMode) : Collator(collationStrength, decompositionMode) {}
 };
 
 inline UBool TestCollator::operator==(const Collator& other) const {
@@ -2065,7 +2065,7 @@ inline UBool TestCollator::operator==(const Collator& other) const {
     //    (compare this vs. o's subclass fields)
 }
 
-Collator* TestCollator::clone() const
+TestCollator* TestCollator::clone() const
 {
     return new TestCollator();
 }
@@ -2345,7 +2345,7 @@ void CollationAPITest::TestClone() {
     dump("c1", c1, status);
     
     logln("\ninit c2");
-    RuleBasedCollator* c2 = (RuleBasedCollator*)c1->clone();
+    RuleBasedCollator* c2 = c1->clone();
     val = c2->getAttribute(UCOL_CASE_FIRST, status);
     if(val == UCOL_LOWER_FIRST){
         c2->setAttribute(UCOL_CASE_FIRST, UCOL_UPPER_FIRST, status);
@@ -2371,7 +2371,7 @@ void CollationAPITest::TestCloneBinary() {
     IcuTestErrorCode errorCode(*this, "TestCloneBinary");
     LocalPointer<Collator> root(Collator::createInstance(Locale::getRoot(), errorCode));
     LocalPointer<Collator> coll(Collator::createInstance("de@collation=phonebook", errorCode));
-    if(errorCode.logDataIfFailureAndReset("Collator::createInstance(de@collation=phonebook)")) {
+    if(errorCode.errDataIfFailureAndReset("Collator::createInstance(de@collation=phonebook)")) {
         return;
     }
     RuleBasedCollator *rbRoot = dynamic_cast<RuleBasedCollator *>(root.getAlias());
@@ -2386,13 +2386,13 @@ void CollationAPITest::TestCloneBinary() {
     assertEquals("rbc/primary: u-umlaut==ue", (int32_t)UCOL_EQUAL, rbc->compare(uUmlaut, ue, errorCode));
     uint8_t bin[25000];
     int32_t binLength = rbc->cloneBinary(bin, UPRV_LENGTHOF(bin), errorCode);
-    if(errorCode.logDataIfFailureAndReset("rbc->cloneBinary()")) {
+    if(errorCode.errDataIfFailureAndReset("rbc->cloneBinary()")) {
         return;
     }
     logln("rbc->cloneBinary() -> %d bytes", (int)binLength);
 
     RuleBasedCollator rbc2(bin, binLength, rbRoot, errorCode);
-    if(errorCode.logDataIfFailureAndReset("RuleBasedCollator(rbc binary)")) {
+    if(errorCode.errDataIfFailureAndReset("RuleBasedCollator(rbc binary)")) {
         return;
     }
     assertEquals("rbc2.strength==primary", (int32_t)UCOL_PRIMARY, rbc2.getAttribute(UCOL_STRENGTH, errorCode));
@@ -2404,7 +2404,7 @@ void CollationAPITest::TestCloneBinary() {
     assertTrue("rbc binary==rbc2 binary", binLength == bin2Length && memcmp(bin, bin2, binLength) == 0);
 
     RuleBasedCollator rbc3(bin, -1, rbRoot, errorCode);
-    if(errorCode.logDataIfFailureAndReset("RuleBasedCollator(rbc binary, length<0)")) {
+    if(errorCode.errDataIfFailureAndReset("RuleBasedCollator(rbc binary, length<0)")) {
         return;
     }
     assertEquals("rbc3.strength==primary", (int32_t)UCOL_PRIMARY, rbc3.getAttribute(UCOL_STRENGTH, errorCode));
@@ -2424,7 +2424,7 @@ void CollationAPITest::TestIterNumeric() {
     // and on the implementation code.
     IcuTestErrorCode errorCode(*this, "TestIterNumeric");
     RuleBasedCollator coll(UnicodeString("[reorder Hang Hani]"), errorCode);
-    if(errorCode.logDataIfFailureAndReset("RuleBasedCollator constructor")) {
+    if(errorCode.errDataIfFailureAndReset("RuleBasedCollator constructor")) {
         return;
     }
     coll.setAttribute(UCOL_NUMERIC_COLLATION, UCOL_ON, errorCode);
@@ -2512,7 +2512,7 @@ void CollationAPITest::TestGapTooSmall() {
     {
         RuleBasedCollator coll(u"&[before 1]\uFDD1€<*\u4E00-\u9FFF", errorCode);
         assertTrue("tailored Han before currency", coll.compare(u"\u4E00", u"$", errorCode) < 0);
-        errorCode.logIfFailureAndReset(
+        errorCode.errIfFailureAndReset(
             "unexpected exception for tailoring many characters at the end of symbols");
     }
 }

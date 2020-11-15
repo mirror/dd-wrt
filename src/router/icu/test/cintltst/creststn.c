@@ -62,7 +62,7 @@ randul()
     }
     /* Assume rand has at least 12 bits of precision */
     
-    for (i=0; i<sizeof(l); ++i)
+    for (i=0; i<(int32_t)sizeof(l); ++i)
         ((char*)&l)[i] = (char)((rand() & 0x0FF0) >> 4);
     return l;
 }
@@ -132,10 +132,38 @@ enum E_Where
 typedef enum E_Where E_Where;
 /*****************************************************************************/
 
-#define CONFIRM_EQ(actual,expected) if (u_strcmp(expected,actual)==0){ record_pass(); } else { record_fail(); log_err("%s  returned  %s  instead of %s\n", action, austrdup(actual), austrdup(expected)); }
-#define CONFIRM_INT_EQ(actual,expected) if ((expected)==(actual)) { record_pass(); } else { record_fail(); log_err("%s returned %d instead of %d\n",  action, actual, expected); }
-#define CONFIRM_INT_GE(actual,expected) if ((actual)>=(expected)) { record_pass(); } else { record_fail(); log_err("%s returned %d instead of x >= %d\n",  action, actual, expected); }
-#define CONFIRM_INT_NE(actual,expected) if ((expected)!=(actual)) { record_pass(); } else { record_fail(); log_err("%s returned %d instead of x != %d\n",  action, actual, expected); }
+#define CONFIRM_EQ(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if (u_strcmp(expected,actual)==0) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        log_err("%s  returned  %s  instead of %s\n", action, austrdup(actual), austrdup(expected)); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_INT_EQ(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)==(actual)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        log_err("%s returned %d instead of %d\n",  action, actual, expected); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_INT_GE(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((actual)>=(expected)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        log_err("%s returned %d instead of x >= %d\n",  action, actual, expected); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_INT_NE(actual,expected) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)!=(actual)) { \
+        record_pass(); \
+    } else { \
+        record_fail(); \
+        log_err("%s returned %d instead of x != %d\n",  action, actual, expected); \
+    } \
+} UPRV_BLOCK_MACRO_END
 /*#define CONFIRM_ErrorCode(actual,expected) if ((expected)==(actual)) { record_pass(); } else { record_fail();  log_err("%s returned  %s  instead of %s\n", action, myErrorName(actual), myErrorName(expected)); } */
 static void 
 CONFIRM_ErrorCode(UErrorCode actual,UErrorCode expected) 
@@ -1178,12 +1206,20 @@ static void TestErrorConditions(){
         log_err("ERROR: ures_openU() is supposed to fail path =%s with status != U_ZERO_ERROR\n", austrdup(utestdatapath));
         ures_close(teRes);
     }
-    /*Test ures_openFillIn with UResourceBundle = NULL*/
+    /*Test ures_openFillIn fails when input UResourceBundle parameter is NULL*/
     log_verbose("Testing ures_openFillIn with UResourceBundle = NULL.....\n");
     status=U_ZERO_ERROR;
     ures_openFillIn(NULL, testdatapath, "te", &status);
     if(status != U_ILLEGAL_ARGUMENT_ERROR){
         log_err("ERROR: ures_openFillIn with UResourceBundle= NULL should fail.  Expected U_ILLEGAL_ARGUMENT_ERROR, Got: %s\n",
+                        myErrorName(status));
+    }
+    /*Test ures_openDirectFillIn fails when input UResourceBundle parameter is NULL*/
+    log_verbose("Testing ures_openDirectFillIn with UResourceBundle = NULL.....\n");
+    status=U_ZERO_ERROR;
+    ures_openDirectFillIn(NULL, testdatapath, "te", &status);
+    if(status != U_ILLEGAL_ARGUMENT_ERROR){
+        log_err("ERROR: ures_openDirectFillIn with UResourceBundle= NULL should fail.  Expected U_ILLEGAL_ARGUMENT_ERROR, Got: %s\n",
                         myErrorName(status));
     }
     /*Test ures_getLocale() with status != U_ZERO_ERROR*/
@@ -1473,6 +1509,15 @@ static void TestGetVersionColl(){
 
 static void TestResourceBundles()
 {
+    // The test expectation only works if the default locale is not one of the
+    // locale bundle in the testdata which have those info. Therefore, we skip
+    // the test if the default locale is te, sh, mc, or them with subtags.
+    if (    uprv_strncmp(uloc_getDefault(), "te", 2) == 0 ||
+            uprv_strncmp(uloc_getDefault(), "sh", 2) == 0 ||
+            uprv_strncmp(uloc_getDefault(), "mc", 2) == 0) {
+        return;
+    }
+
     UErrorCode status = U_ZERO_ERROR;
     loadTestData(&status);
     if(U_FAILURE(status)) {
@@ -1496,6 +1541,15 @@ static void TestResourceBundles()
 
 static void TestConstruction1()
 {
+    // The test expectation only works if the default locale is not one of the
+    // locale bundle in the testdata which have those info. Therefore, we skip
+    // the test if the default locale is te, sh, mc, or them with subtags.
+    if (    uprv_strncmp(uloc_getDefault(), "te", 2) == 0 ||
+            uprv_strncmp(uloc_getDefault(), "sh", 2) == 0 ||
+            uprv_strncmp(uloc_getDefault(), "mc", 2) == 0) {
+        return;
+    }
+
     UResourceBundle *test1 = 0, *test2 = 0,*empty = 0;
     const UChar *result1, *result2;
     UErrorCode status= U_ZERO_ERROR;
@@ -2126,13 +2180,13 @@ static void TestFallback()
         UErrorCode err =U_ZERO_ERROR;
         UResourceBundle* myResB = ures_open(NULL,"no_NO_NY",&err);
         UResourceBundle* resLocID = ures_getByKey(myResB, "Version", NULL, &err);
-        UResourceBundle* tResB;
-        UResourceBundle* zoneResource;
         const UChar* version = NULL;
-        static const UChar versionStr[] = { 0x0032, 0x002E, 0x0031, 0x002E, 0x0033, 0x0038, 0x002E, 0x0036, 0x0039, 0x0000}; // 2.1.38.69 in nn_NO
+        static const UChar versionStr[] = u"38"; // 38 in nn_NO or in a parent bundle/root
 
-        if(err != U_ZERO_ERROR){
-            log_data_err("Expected U_ZERO_ERROR when trying to test no_NO_NY aliased to nn_NO for Version err=%s\n",u_errorName(err));
+        if(U_FAILURE(err)) {
+            log_data_err("Expected success when trying to test no_NO_NY aliased to nn_NO for Version "
+                         "err=%s\n",
+                         u_errorName(err));
             return;
         }
         version = tres_getString(resLocID, -1, NULL, &resultLen, &err);
@@ -2141,11 +2195,12 @@ static void TestFallback()
             char g[100];
             u_austrcpy(x, versionStr);
             u_austrcpy(g, version);
-            log_data_err("ures_getString(resLocID, &resultLen, &err) returned an unexpected version value. Expected '%s', but got '%s'\n",
-                    x, g);
+            log_data_err("ures_getString(resLocID, &resultLen, &err) returned an unexpected "
+                         "version value. Expected '%s', but got '%s'\n",
+                         x, g);
         }
-        zoneResource = ures_open(U_ICUDATA_ZONE, "no_NO_NY", &err);
-        tResB = ures_getByKey(zoneResource, "zoneStrings", NULL, &err);
+        UResourceBundle* zoneResource = ures_open(U_ICUDATA_ZONE, "no_NO_NY", &err);
+        UResourceBundle* tResB = ures_getByKey(zoneResource, "zoneStrings", NULL, &err);
         if(err != U_USING_FALLBACK_WARNING){
             log_err("Expected U_USING_FALLBACK_ERROR when trying to test no_NO_NY aliased with nn_NO_NY for zoneStrings err=%s\n",u_errorName(err));
         }
@@ -2624,29 +2679,30 @@ static void TestGetFunctionalEquivalent(void) {
 #if !UCONFIG_NO_COLLATION
     static const char * const collCases[] = {
         /*   avail   locale          equiv   */
+        /* note: in ICU 64, empty locales are shown as available for collation */
         "f",    "sv_US_CALIFORNIA",               "sv",
         "f",    "zh_TW@collation=stroke",         "zh@collation=stroke", /* alias of zh_Hant_TW */
-        "f",    "zh_Hant_TW@collation=stroke",    "zh@collation=stroke",
+        "t",    "zh_Hant_TW@collation=stroke",    "zh@collation=stroke",
         "f",    "sv_CN@collation=pinyin",         "sv",
         "t",    "zh@collation=pinyin",            "zh",
         "f",    "zh_CN@collation=pinyin",         "zh", /* alias of zh_Hans_CN */
-        "f",    "zh_Hans_CN@collation=pinyin",    "zh",
+        "t",    "zh_Hans_CN@collation=pinyin",    "zh",
         "f",    "zh_HK@collation=pinyin",         "zh", /* alias of zh_Hant_HK */
-        "f",    "zh_Hant_HK@collation=pinyin",    "zh",
+        "t",    "zh_Hant_HK@collation=pinyin",    "zh",
         "f",    "zh_HK@collation=stroke",         "zh@collation=stroke", /* alias of zh_Hant_HK */
-        "f",    "zh_Hant_HK@collation=stroke",    "zh@collation=stroke",
+        "t",    "zh_Hant_HK@collation=stroke",    "zh@collation=stroke",
         "f",    "zh_HK",                          "zh@collation=stroke", /* alias of zh_Hant_HK */
-        "f",    "zh_Hant_HK",                     "zh@collation=stroke",
+        "t",    "zh_Hant_HK",                     "zh@collation=stroke",
         "f",    "zh_MO",                          "zh@collation=stroke", /* alias of zh_Hant_MO */
-        "f",    "zh_Hant_MO",                     "zh@collation=stroke",
+        "t",    "zh_Hant_MO",                     "zh@collation=stroke",
         "f",    "zh_TW_STROKE",                   "zh@collation=stroke",
         "f",    "zh_TW_STROKE@collation=pinyin",  "zh",
         "f",    "sv_CN@calendar=japanese",        "sv",
         "t",    "sv@calendar=japanese",           "sv",
         "f",    "zh_TW@collation=pinyin",         "zh", /* alias of zh_Hant_TW */
-        "f",    "zh_Hant_TW@collation=pinyin",    "zh",
+        "t",    "zh_Hant_TW@collation=pinyin",    "zh",
         "f",    "zh_CN@collation=stroke",         "zh@collation=stroke", /* alias of zh_Hans_CN */
-        "f",    "zh_Hans_CN@collation=stroke",    "zh@collation=stroke",
+        "t",    "zh_Hans_CN@collation=stroke",    "zh@collation=stroke",
         "t",    "de@collation=phonebook",         "de@collation=phonebook",
         "t",    "hi@collation=standard",          "hi",
         "f",    "hi_AU@collation=standard;currency=CHF;calendar=buddhist",    "hi",
@@ -2794,7 +2850,7 @@ static void TestCLDRStyleAliases(void) {
       /* instead of sprintf(resource, "a%i", i); */
       a = ures_getByKeyWithFallback(alias, resource, a, &status);
       result = tres_getString(a, -1, NULL, &len, &status);
-      u_charsToUChars(expects[i], expected, strlen(expects[i])+1);
+      u_charsToUChars(expects[i], expected, (int32_t)strlen(expects[i])+1);
       if(U_FAILURE(status) || !result || u_strcmp(result, expected)) {
         log_err("CLDR style aliases failed resource with name \"%s\" resource, exp %s, got %S (%s)\n", resource, expects[i], result, myErrorName(status)); 
         status = U_ZERO_ERROR;
@@ -2937,7 +2993,7 @@ tres_getString(const UResourceBundle *resB,
         }
 
         /* verify NUL-termination */
-        if((p8 != buffer8 || length8 < sizeof(buffer8)) && s8[length8] != 0) {
+        if((p8 != buffer8 || length8 < (int32_t)sizeof(buffer8)) && s8[length8] != 0) {
             log_err("ures_getUTF8String(%p, %ld, '%s') did not NUL-terminate\n",
                     resB, (long)idx, key);
         }

@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 #ifndef __NUMBER_SCIENTIFIC_H__
 #define __NUMBER_SCIENTIFIC_H__
 
@@ -21,14 +21,20 @@ class U_I18N_API ScientificModifier : public UMemory, public Modifier {
 
     void set(int32_t exponent, const ScientificHandler *handler);
 
-    int32_t apply(NumberStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
+    int32_t apply(FormattedStringBuilder &output, int32_t leftIndex, int32_t rightIndex,
                   UErrorCode &status) const U_OVERRIDE;
 
-    int32_t getPrefixLength(UErrorCode &status) const U_OVERRIDE;
+    int32_t getPrefixLength() const U_OVERRIDE;
 
-    int32_t getCodePointCount(UErrorCode &status) const U_OVERRIDE;
+    int32_t getCodePointCount() const U_OVERRIDE;
 
     bool isStrong() const U_OVERRIDE;
+
+    bool containsField(Field field) const U_OVERRIDE;
+
+    void getParameters(Parameters& output) const U_OVERRIDE;
+
+    bool semanticallyEquivalent(const Modifier& other) const U_OVERRIDE;
 
   private:
     int32_t fExponent;
