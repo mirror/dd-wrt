@@ -1854,10 +1854,7 @@ int filtersync_main(int argc, char *argv[])
 	struct tm *bt;		/* Broken time */
 	int seq;
 	int ret;
-#ifdef HAVE_SFE
-	if (nvram_match("sfe", "1"))
-		stop_sfe();
-#endif
+	int changed = 0;
 	/*
 	 * Get local calendar time 
 	 */
@@ -1870,13 +1867,21 @@ int filtersync_main(int argc, char *argv[])
 	now_wday = bt->tm_wday;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		if (if_tod_intime(seq) > 0)
+		    changed = 1;
+	}
+#ifdef HAVE_SFE
+	if (nvram_match("sfe", "1") && changed)
+		stop_sfe();
+#endif
+	for (seq = 1; seq <= NR_RULES; seq++) {
+		if (if_tod_intime(seq) > 0)
 			update_filter(1, seq);
 		else
 			update_filter(0, seq);
 		DEBUG("seq=%d, ret=%d\n", seq, ret);
 	}
 #ifdef HAVE_SFE
-	if (nvram_match("sfe", "1"))
+	if (nvram_match("sfe", "1") && changed)
 		start_sfe();
 #endif
 	return 0;
