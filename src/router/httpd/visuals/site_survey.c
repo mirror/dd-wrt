@@ -41,6 +41,12 @@
 int getrate(int rate, int bw)
 {
 	int result = rate * 10;
+	if (bw == 4)
+	    bw = 5;
+	if (bw == 8)
+	    bw = 10;
+	if (bw == 16)
+	    bw = 20;
 	switch (rate) {
 	case 150:
 		if (bw == 2)
@@ -218,25 +224,23 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			//0x100 = 80 mhz
 			//0x200 = 8080 or 160 mhz
 			int speed = site_survey_lists[i].rate_count;
-			int div = 1;
+			int s = 20;
 			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
-			if (narrow == 5 || narrow == 10)
-				div = 20 / narrow;
-			if (narrow == 2)
-				div = 8;
+			if (narrow == 5 || narrow == 10 || narrow == 2)
+				s = narrow;
 			switch (cbw) {
 			case 0x0:
 				if (site_survey_lists[i].extcap & 8)
-					speed = getrate(speed, 40 / div);
+					speed = getrate(speed, s * 2);
 				else
-					speed = getrate(speed, 20 / div);
+					speed = getrate(speed, s);
 				break;
 			case 0x100:
-				speed = getrate(speed, 80 / div);
+				speed = getrate(speed, s * 4);
 				break;
 			case 0x200:
 			case 0x300:
-				speed = getrate(speed, 160 / div);
+				speed = getrate(speed, s * 8);
 				break;
 			default:
 				speed = speed * 10;
