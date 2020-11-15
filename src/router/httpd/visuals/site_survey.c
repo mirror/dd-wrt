@@ -38,15 +38,15 @@
 
 #include <wlutils.h>
 
-int getrate(int rate, int bw)
+int getrate(int rate, int bw, int ac)
 {
 	int result = rate * 10;
 	if (bw == 4)
-	    bw = 5;
+		bw = 5;
 	if (bw == 8)
-	    bw = 10;
+		bw = 10;
 	if (bw == 16)
-	    bw = 20;
+		bw = 20;
 	switch (rate) {
 	case 150:
 		if (bw == 2)
@@ -57,60 +57,123 @@ int getrate(int rate, int bw)
 			result = 867 / 2;
 		if (bw == 20)
 			result = 867;
-		if (bw == 40)
-			result = 2000;
-		if (bw == 80)
-			result = 4333;
-		if (bw == 160)
-			result = 8667;
+		if (ac) {
+			if (bw == 40)
+				result = 2000;
+			if (bw == 80)
+				result = 4333;
+			if (bw == 160)
+				result = 8667;
+		} else {
+			if (bw == 40)
+				result = 1500;
+			if (bw == 80)
+				result = 3250;
+			if (bw == 160)
+				result = 650;
+		}
 		break;
 	case 300:
-		if (bw == 2)
-			result = 1733 / 8;
-		if (bw == 5)
-			result = 1733 / 4;
-		if (bw == 10)
-			result = 1733 / 2;
-		if (bw == 20)
-			result = 1733;
-		if (bw == 40)
-			result = 4000;
-		if (bw == 80)
-			result = 8667;
-		if (bw == 160)
-			result = 17333;
+		if (ac) {
+			if (bw == 2)
+				result = 1733 / 8;
+			if (bw == 5)
+				result = 1733 / 4;
+			if (bw == 10)
+				result = 1733 / 2;
+			if (bw == 20)
+				result = 1733;
+			if (bw == 40)
+				result = 4000;
+			if (bw == 80)
+				result = 8667;
+			if (bw == 160)
+				result = 17333;
+		} else {
+			if (bw == 2)
+				result = 1444 / 8;
+			if (bw == 5)
+				result = 1444 / 4;
+			if (bw == 10)
+				result = 1444 / 2;
+			if (bw == 20)
+				result = 1444;
+			if (bw == 40)
+				result = 3000;
+			if (bw == 80)
+				result = 6500;
+			if (bw == 160)
+				result = 13000;
+
+		}
 		break;
 	case 450:
-		if (bw == 2)
-			result = 2889 / 8;
-		if (bw == 5)
-			result = 2889 / 4;
-		if (bw == 10)
-			result = 2889 / 2;
-		if (bw == 20)
-			result = 2889;
-		if (bw == 40)
-			result = 6000;
-		if (bw == 80)
-			result = 13000;
-		if (bw == 160)
-			result = 23400;	// this rate is not specified
+		if (ac) {
+			if (bw == 2)
+				result = 2889 / 8;
+			if (bw == 5)
+				result = 2889 / 4;
+			if (bw == 10)
+				result = 2889 / 2;
+			if (bw == 20)
+				result = 2889;
+			if (bw == 40)
+				result = 6000;
+			if (bw == 80)
+				result = 13000;
+			if (bw == 160)
+				result = 23400;	// this rate is not specified
+		} else {
+			if (bw == 2)
+				result = 2167 / 8;
+			if (bw == 5)
+				result = 2167 / 4;
+			if (bw == 10)
+				result = 2167 / 2;
+			if (bw == 20)
+				result = 2167;
+			if (bw == 40)
+				result = 4500;
+			if (bw == 80)
+				result = 9750;
+			if (bw == 160)
+				result = 19500;	// this rate is not specified
+
+		}
 		break;
 	case 600:
-		if (bw == 2)
-			result = 3467 / 8;
-		if (bw == 5)
-			result = 3467 / 4;
-		if (bw == 10)
-			result = 3467 / 2;
-		if (bw == 20)
-			result = 3467;
-		if (bw == 40)
-			result = 8000;
-		if (bw == 80)
-			result = 17333;
-		if (bw == 160)
-			result = 34667;
+		if (ac) {
+			if (bw == 2)
+				result = 3467 / 8;
+			if (bw == 5)
+				result = 3467 / 4;
+			if (bw == 10)
+				result = 3467 / 2;
+			if (bw == 20)
+				result = 3467;
+			if (bw == 40)
+				result = 8000;
+			if (bw == 80)
+				result = 17333;
+			if (bw == 160)
+				result = 34667;
+		} else {
+			if (bw == 2)
+				result = 2889 / 8;
+			if (bw == 5)
+				result = 2889 / 4;
+			if (bw == 10)
+				result = 2889 / 2;
+			if (bw == 20)
+				result = 2889;
+			if (bw == 40)
+				result = 6000;
+			if (bw == 80)
+				result = 13000;
+			if (bw == 160)
+				result = 16000;
+
+		}
 		break;
 	}
 	return result;
@@ -228,19 +291,23 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
 			if (narrow == 5 || narrow == 10 || narrow == 2)
 				s = narrow;
+			fprintf(stderr, "%d %d %d\n", s, speed, site_survey_lists[i].extcap);
+			int hasac = 0;
+			if (site_survey_lists[i].extcap & 4)
+				hasac = 1;
 			switch (cbw) {
 			case 0x0:
 				if (site_survey_lists[i].extcap & 8)
-					speed = getrate(speed, s * 2);
+					speed = getrate(speed, s * 2, hasac);
 				else
-					speed = getrate(speed, s);
+					speed = getrate(speed, s, hasac);
 				break;
 			case 0x100:
-				speed = getrate(speed, s * 4);
+				speed = getrate(speed, s * 4, hasac);
 				break;
 			case 0x200:
 			case 0x300:
-				speed = getrate(speed, s * 8);
+				speed = getrate(speed, s * 8, hasac);
 				break;
 			default:
 				speed = speed * 10;
@@ -300,7 +367,7 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 				speed = 1080;
 				break;
 			default:
-				speed = getrate(rc, 20);
+				speed = getrate(rc, 20, 0);
 			}
 			rates = strbuf;
 
