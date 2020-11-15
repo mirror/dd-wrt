@@ -2072,6 +2072,7 @@ send_array:
 				arg_num = 1;
 				param = ZEND_CALL_ARG(EX(call), 1);
 				ZEND_HASH_FOREACH_VAL(ht, arg) {
+					zend_bool must_wrap = 0;
 					if (skip > 0) {
 						skip--;
 						continue;
@@ -2083,6 +2084,7 @@ send_array:
 								/* By-value send is not allowed -- emit a warning,
 								 * but still perform the call. */
 								zend_param_must_be_ref(EX(call)->func, arg_num);
+								must_wrap = 1;
 							}
 						}
 					} else {
@@ -2092,7 +2094,12 @@ send_array:
 							arg = Z_REFVAL_P(arg);
 						}
 					}
-					ZVAL_COPY(param, arg);
+					if (EXPECTED(!must_wrap)) {
+						ZVAL_COPY(param, arg);
+					} else {
+						Z_TRY_ADDREF_P(arg);
+						ZVAL_NEW_REF(param, arg);
+					}
 					ZEND_CALL_NUM_ARGS(EX(call))++;
 					arg_num++;
 					param++;
@@ -2104,12 +2111,14 @@ send_array:
 			arg_num = 1;
 			param = ZEND_CALL_ARG(EX(call), 1);
 			ZEND_HASH_FOREACH_VAL(ht, arg) {
+				zend_bool must_wrap = 0;
 				if (ARG_SHOULD_BE_SENT_BY_REF(EX(call)->func, arg_num)) {
 					if (UNEXPECTED(!Z_ISREF_P(arg))) {
 						if (!ARG_MAY_BE_SENT_BY_REF(EX(call)->func, arg_num)) {
 							/* By-value send is not allowed -- emit a warning,
 							 * but still perform the call. */
 							zend_param_must_be_ref(EX(call)->func, arg_num);
+							must_wrap = 1;
 						}
 					}
 				} else {
@@ -2119,7 +2128,12 @@ send_array:
 						arg = Z_REFVAL_P(arg);
 					}
 				}
-				ZVAL_COPY(param, arg);
+				if (EXPECTED(!must_wrap)) {
+					ZVAL_COPY(param, arg);
+				} else {
+					Z_TRY_ADDREF_P(arg);
+					ZVAL_NEW_REF(param, arg);
+				}
 				ZEND_CALL_NUM_ARGS(EX(call))++;
 				arg_num++;
 				param++;
@@ -3178,6 +3192,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_RECV_VARIADIC_SPEC_UNUSED_HAND
 		ZEND_HASH_FILL_PACKED(Z_ARRVAL_P(params)) {
 			param = EX_VAR_NUM(EX(func)->op_array.last_var + EX(func)->op_array.T);
 			if (UNEXPECTED((EX(func)->op_array.fn_flags & ZEND_ACC_HAS_TYPE_HINTS) != 0)) {
+				ZEND_ADD_CALL_FLAG(execute_data, ZEND_CALL_FREE_EXTRA_ARGS);
 				do {
 					zend_verify_variadic_arg_type(EX(func), arg_num, param, NULL, CACHE_ADDR(opline->op2.num));
 					if (Z_OPT_REFCOUNTED_P(param)) Z_ADDREF_P(param);
@@ -4125,11 +4140,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_CONST_HANDLER(
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_CONST != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
-			result = EX_VAR(opline->result.var);
-			ZVAL_COPY_VALUE(result, array_ptr);
-			if (IS_CONST != IS_TMP_VAR) {
-				Z_ADDREF_P(array_ptr);
-			}
+			HashTable *properties;
 			if (Z_OBJ_P(array_ptr)->properties
 			 && UNEXPECTED(GC_REFCOUNT(Z_OBJ_P(array_ptr)->properties) > 1)) {
 				if (EXPECTED(!(GC_FLAGS(Z_OBJ_P(array_ptr)->properties) & IS_ARRAY_IMMUTABLE))) {
@@ -4137,7 +4148,21 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_CONST_HANDLER(
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			result = EX_VAR(opline->result.var);
+			ZVAL_COPY_VALUE(result, array_ptr);
+			if (IS_CONST != IS_TMP_VAR) {
+				Z_ADDREF_P(array_ptr);
+			}
+
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(result) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(result) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -4203,6 +4228,7 @@ static ZEND_VM_COLD ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_CONST != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
+			HashTable *properties;
 			if (IS_CONST == IS_VAR || IS_CONST == IS_CV) {
 				if (array_ptr == array_ref) {
 					ZVAL_NEW_REF(array_ref, array_ref);
@@ -4221,7 +4247,15 @@ static ZEND_VM_COLD ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(EX_VAR(opline->result.var)) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -4469,6 +4503,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_YIELD_FROM_SPEC_CONST_HANDLER(
 		}
 	} else {
 		zend_throw_error(NULL, "Can use \"yield from\" only with arrays and Traversables");
+
 		UNDEF_RESULT();
 		HANDLE_EXCEPTION();
 	}
@@ -18176,11 +18211,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_TMP_HANDLER(ZE
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_TMP_VAR != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
-			result = EX_VAR(opline->result.var);
-			ZVAL_COPY_VALUE(result, array_ptr);
-			if (IS_TMP_VAR != IS_TMP_VAR) {
-				Z_ADDREF_P(array_ptr);
-			}
+			HashTable *properties;
 			if (Z_OBJ_P(array_ptr)->properties
 			 && UNEXPECTED(GC_REFCOUNT(Z_OBJ_P(array_ptr)->properties) > 1)) {
 				if (EXPECTED(!(GC_FLAGS(Z_OBJ_P(array_ptr)->properties) & IS_ARRAY_IMMUTABLE))) {
@@ -18188,7 +18219,21 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_TMP_HANDLER(ZE
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			result = EX_VAR(opline->result.var);
+			ZVAL_COPY_VALUE(result, array_ptr);
+			if (IS_TMP_VAR != IS_TMP_VAR) {
+				Z_ADDREF_P(array_ptr);
+			}
+
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(result) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(result) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -18255,6 +18300,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_TMP_HANDLER(Z
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_TMP_VAR != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
+			HashTable *properties;
 			if (IS_TMP_VAR == IS_VAR || IS_TMP_VAR == IS_CV) {
 				if (array_ptr == array_ref) {
 					ZVAL_NEW_REF(array_ref, array_ref);
@@ -18273,7 +18319,15 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_TMP_HANDLER(Z
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(EX_VAR(opline->result.var)) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -18525,6 +18579,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_YIELD_FROM_SPEC_TMP_HANDLER(ZE
 		}
 	} else {
 		zend_throw_error(NULL, "Can use \"yield from\" only with arrays and Traversables");
+		zval_ptr_dtor_nogc(free_op1);
 		UNDEF_RESULT();
 		HANDLE_EXCEPTION();
 	}
@@ -21265,11 +21320,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_VAR_HANDLER(ZE
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_VAR != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
-			result = EX_VAR(opline->result.var);
-			ZVAL_COPY_VALUE(result, array_ptr);
-			if (IS_VAR != IS_TMP_VAR) {
-				Z_ADDREF_P(array_ptr);
-			}
+			HashTable *properties;
 			if (Z_OBJ_P(array_ptr)->properties
 			 && UNEXPECTED(GC_REFCOUNT(Z_OBJ_P(array_ptr)->properties) > 1)) {
 				if (EXPECTED(!(GC_FLAGS(Z_OBJ_P(array_ptr)->properties) & IS_ARRAY_IMMUTABLE))) {
@@ -21277,8 +21328,21 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_VAR_HANDLER(ZE
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
 
+			properties = Z_OBJPROP_P(array_ptr);
+			result = EX_VAR(opline->result.var);
+			ZVAL_COPY_VALUE(result, array_ptr);
+			if (IS_VAR != IS_TMP_VAR) {
+				Z_ADDREF_P(array_ptr);
+			}
+
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(result) = (uint32_t) -1;
+				zval_ptr_dtor_nogc(free_op1);
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(result) = zend_hash_iterator_add(properties, 0);
 			zval_ptr_dtor_nogc(free_op1);
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -21345,6 +21409,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_VAR_HANDLER(Z
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_VAR != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
+			HashTable *properties;
 			if (IS_VAR == IS_VAR || IS_VAR == IS_CV) {
 				if (array_ptr == array_ref) {
 					ZVAL_NEW_REF(array_ref, array_ref);
@@ -21363,8 +21428,15 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_VAR_HANDLER(Z
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
 
+			properties = Z_OBJPROP_P(array_ptr);
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(EX_VAR(opline->result.var)) = (uint32_t) -1;
+				if (UNEXPECTED(free_op1)) {zval_ptr_dtor_nogc(free_op1);};
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(properties, 0);
 			if (UNEXPECTED(free_op1)) {zval_ptr_dtor_nogc(free_op1);};
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -21940,6 +22012,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_YIELD_FROM_SPEC_VAR_HANDLER(ZE
 		}
 	} else {
 		zend_throw_error(NULL, "Can use \"yield from\" only with arrays and Traversables");
+		zval_ptr_dtor_nogc(free_op1);
 		UNDEF_RESULT();
 		HANDLE_EXCEPTION();
 	}
@@ -37774,11 +37847,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_CV_HANDLER(ZEN
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_CV != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
-			result = EX_VAR(opline->result.var);
-			ZVAL_COPY_VALUE(result, array_ptr);
-			if (IS_CV != IS_TMP_VAR) {
-				Z_ADDREF_P(array_ptr);
-			}
+			HashTable *properties;
 			if (Z_OBJ_P(array_ptr)->properties
 			 && UNEXPECTED(GC_REFCOUNT(Z_OBJ_P(array_ptr)->properties) > 1)) {
 				if (EXPECTED(!(GC_FLAGS(Z_OBJ_P(array_ptr)->properties) & IS_ARRAY_IMMUTABLE))) {
@@ -37786,7 +37855,21 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_R_SPEC_CV_HANDLER(ZEN
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			result = EX_VAR(opline->result.var);
+			ZVAL_COPY_VALUE(result, array_ptr);
+			if (IS_CV != IS_TMP_VAR) {
+				Z_ADDREF_P(array_ptr);
+			}
+
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(result) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(result) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -37852,6 +37935,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_CV_HANDLER(ZE
 		ZEND_VM_NEXT_OPCODE();
 	} else if (IS_CV != IS_CONST && EXPECTED(Z_TYPE_P(array_ptr) == IS_OBJECT)) {
 		if (!Z_OBJCE_P(array_ptr)->get_iterator) {
+			HashTable *properties;
 			if (IS_CV == IS_VAR || IS_CV == IS_CV) {
 				if (array_ptr == array_ref) {
 					ZVAL_NEW_REF(array_ref, array_ref);
@@ -37870,7 +37954,15 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_FE_RESET_RW_SPEC_CV_HANDLER(ZE
 				}
 				Z_OBJ_P(array_ptr)->properties = zend_array_dup(Z_OBJ_P(array_ptr)->properties);
 			}
-			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(Z_OBJPROP_P(array_ptr), 0);
+
+			properties = Z_OBJPROP_P(array_ptr);
+			if (zend_hash_num_elements(properties) == 0) {
+				Z_FE_ITER_P(EX_VAR(opline->result.var)) = (uint32_t) -1;
+
+				ZEND_VM_JMP(OP_JMP_ADDR(opline, opline->op2));
+			}
+
+			Z_FE_ITER_P(EX_VAR(opline->result.var)) = zend_hash_iterator_add(properties, 0);
 
 			ZEND_VM_NEXT_OPCODE_CHECK_EXCEPTION();
 		} else {
@@ -38109,6 +38201,7 @@ static ZEND_OPCODE_HANDLER_RET ZEND_FASTCALL ZEND_YIELD_FROM_SPEC_CV_HANDLER(ZEN
 		}
 	} else {
 		zend_throw_error(NULL, "Can use \"yield from\" only with arrays and Traversables");
+
 		UNDEF_RESULT();
 		HANDLE_EXCEPTION();
 	}

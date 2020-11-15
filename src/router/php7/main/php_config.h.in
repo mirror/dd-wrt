@@ -1578,6 +1578,9 @@
 /* have sqlite3_errstr function */
 #undef HAVE_SQLITE3_ERRSTR
 
+/* have sqlite3_expanded_sql function */
+#undef HAVE_SQLITE3_EXPANDED_SQL
+
 /* */
 #undef HAVE_SQLTYPES_H
 
