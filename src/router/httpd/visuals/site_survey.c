@@ -43,32 +43,64 @@ int getrate(int rate, int bw)
 	int result = rate * 10;
 	switch (rate) {
 	case 150:
+		if (bw == 2)
+			result = 867 / 8;
+		if (bw == 5)
+			result = 867 / 4;
+		if (bw == 10)
+			result = 867 / 2;
 		if (bw == 20)
-			result = 722;
+			result = 867;
+		if (bw == 40)
+			result = 2000;
 		if (bw == 80)
 			result = 4333;
 		if (bw == 160)
 			result = 8667;
 		break;
 	case 300:
+		if (bw == 2)
+			result = 1733 / 8;
+		if (bw == 5)
+			result = 1733 / 4;
+		if (bw == 10)
+			result = 1733 / 2;
 		if (bw == 20)
-			result = 1444;
+			result = 1733;
+		if (bw == 40)
+			result = 4000;
 		if (bw == 80)
 			result = 8667;
 		if (bw == 160)
 			result = 17333;
 		break;
 	case 450:
+		if (bw == 2)
+			result = 2889 / 8;
+		if (bw == 5)
+			result = 2889 / 4;
+		if (bw == 10)
+			result = 2889 / 2;
 		if (bw == 20)
-			result = 2167;
+			result = 2889;
+		if (bw == 40)
+			result = 6000;
 		if (bw == 80)
 			result = 13000;
 		if (bw == 160)
 			result = 23400;	// this rate is not specified
 		break;
 	case 600:
+		if (bw == 2)
+			result = 3467 / 8;
+		if (bw == 5)
+			result = 3467 / 4;
+		if (bw == 10)
+			result = 3467 / 2;
 		if (bw == 20)
-			result = 2889;
+			result = 3467;
+		if (bw == 40)
+			result = 8000;
 		if (bw == 80)
 			result = 17333;
 		if (bw == 160)
@@ -182,16 +214,23 @@ void ej_dump_site_survey(webs_t wp, int argc, char_t ** argv)
 
 		if (site_survey_lists[i].channel & 0x1000) {
 			int cbw = site_survey_lists[i].channel & 0x300;
-			//0x000 = 80 mhz
-			//0x100 = 8080 mhz
-			//0x200 = 160 mhz
+			//0x000 = 20/40 mhz
+			//0x100 = 80 mhz
+			//0x200 = 8080 or 160 mhz
 			int speed = site_survey_lists[i].rate_count;
-
+			int narrow = atoi(nvram_nget("%s_channelbw", nvram_safe_get("wifi_display")));
+			if (narrow == 5 || narrow == 10 || narrow == 2)
+				speed = narrow;
 			switch (cbw) {
-			case 0:
-				speed = getrate(speed, 80);
+			case 0x0:
+				if (site_survey_lists[i].extcap & 8)
+					speed = getrate(speed, 40);
+				else
+					speed = getrate(speed, 20);
 				break;
 			case 0x100:
+				speed = getrate(speed, 80);
+				break;
 			case 0x200:
 			case 0x300:
 				speed = getrate(speed, 160);

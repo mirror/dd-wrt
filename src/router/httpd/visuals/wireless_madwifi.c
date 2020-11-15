@@ -403,9 +403,9 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		hwdelay += (slt * 2) + 3;
 		if (hwdelay < rawack) {
 			ack = rawack - hwdelay;	// hw delay
-			ack /=div;
+			ack /= div;
 			if (!ack)
-			    ack=1;
+				ack = 1;
 		} else {
 			ack = rawack - 21;	//fallback
 		}
