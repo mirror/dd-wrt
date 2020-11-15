@@ -295,6 +295,9 @@ static void print_mcs_index(const __u8 *mcs)
 
 static void print_ht_mcs(const __u8 *mcs)
 {
+
+	site_survey_lists[sscount].extcap |= 0x2;	// ht
+
 	/* As defined in 7.3.2.57.4 Supported MCS Set field */
 	unsigned int tx_max_num_spatial_streams, max_rx_supp_data_rate;
 	bool tx_mcs_set_defined, tx_mcs_set_equal, tx_unequal_modulation;
@@ -1222,6 +1225,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 {
 	__u16 tmp;
 	int i;
+	site_survey_lists[sscount].extcap |= 0x4;	// vht
 
 	printf("\t\tVHT Capabilities (0x%.8x):\n", capa);
 
@@ -1249,7 +1253,6 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 	switch ((capa >> 2) & 3) {
 	case 0:
 		printf("neither 160 nor 80+80\n");
-		site_survey_lists[sscount].channel |= 0x1000;
 		if (capa & BIT(5)) {
 			fillENC("VHT80SGI");
 		} else {
@@ -1338,6 +1341,7 @@ void print_vht_info(__u32 capa, const __u8 *mcs)
 
 static void print_vht_capa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
+	site_survey_lists[sscount].extcap |= 0x4;	// vht
 	printf("\n");
 	print_vht_info(data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24), data + 4);
 }
@@ -1350,7 +1354,13 @@ static void print_vht_oper(const uint8_t type, uint8_t len, const uint8_t * data
 		[3] = "80+80 MHz",
 		[2] = "160 MHz",
 	};
+	site_survey_lists[sscount].channel |= 0x1000;	//20 or 40
+	if (data[0] == 1)
+		site_survey_lists[sscount].channel |= 0x100;	//80
+	if (data[0] == 3 || data[0] == 2)
+		site_survey_lists[sscount].channel |= 0x200;	//80+80 or 160
 
+	site_survey_lists[sscount].extcap |= 0x4;	// vht
 	printf("\n");
 	printf("\t\t * channel width: %d (%s)\n", data[0], data[0] < ARRAY_SIZE(chandwidths) ? chandwidths[data[0]] : "unknown");
 	printf("\t\t * center freq segment 1: %d\n", data[1]);
@@ -1365,6 +1375,7 @@ static void print_ht_capability(__u16 cap)
 		if (_cond) \
 			printf("\t\t\t" _str "\n"); \
 	} while (0)
+	site_survey_lists[sscount].extcap |= 0x2;	// vht
 
 	printf("\t\tCapabilities: 0x%02x\n", cap);
 
@@ -1425,6 +1436,7 @@ static void print_ht_capability(__u16 cap)
 
 static void print_ht_capa(const uint8_t type, uint8_t len, const uint8_t * data)
 {
+	site_survey_lists[sscount].extcap |= 0x2;	// vht
 	printf("\n");
 	print_ht_capability(data[0] | (data[1] << 8));
 	print_ampdu_length(data[2] & 3);
@@ -1450,6 +1462,10 @@ static void print_ht_op(const uint8_t type, uint8_t len, const uint8_t * data)
 		"20 MHz",
 		"any",
 	};
+	site_survey_lists[sscount].channel |= 0x1000;	//20 or 40
+	site_survey_lists[sscount].extcap |= 0x2;	// ht
+	if (offset[data[1] & 0x3])
+		site_survey_lists[sscount].extcap |= 0x8;	// sec channel available
 
 	printf("\n");
 	printf("\t\t * primary channel: %d\n", data[0]);
