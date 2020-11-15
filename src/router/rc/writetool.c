@@ -114,37 +114,37 @@ int main(int argc, char *argv[])
 	fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 	fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 // read old mbr
-	struct pte p[4];
-	struct pte old_p[4];
-	fread(&p, sizeof(struct pte), MBR_ENTRY_MAX, out);
-	fread(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, in);
+	struct pte presentlayout[4];
+	struct pte newlayout[4];
+	fread(&presentlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
+	fread(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, in);
 
 	int i;
 	fprintf(stderr, "old layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, p[i].start, p[i].start + p[i].length - 1, p[i].active, p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, presentlayout[i].start, presentlayout[i].start + presentlayout[i].length - 1, presentlayout[i].active, presentlayout[i].type);
 	}
 	fprintf(stderr, "new layout\n");
 	for (i = 0; i < 4; i++) {
-		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, old_p[i].start, old_p[i].start + old_p[i].length - 1, old_p[i].active, old_p[i].type);
+		fprintf(stderr, "p[%d]: start %d end %d active %X type %X\n", i, newlayout[i].start, newlayout[i].start + newlayout[i].length - 1, newlayout[i].active, newlayout[i].type);
 	}
-	struct pte *nvram = &p[2];
+	struct pte *nvram = &presentlayout[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
 	uint32_t len = nvram->length * 512;
 	char *mem = NULL;
 	if (len) {
-		if (nvram->start == old_p[2].start) {
-			if (nvram.length > old_p[2].length) {
+		if (nvram->start == newlayout[2].start) {
+			if (nvram.length > newlayout[2].length) {
 				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
-				memcpy(&old_p[2], &nvram, sizeof(struct pte));
+				memcpy(&newlayout[2], &nvram, sizeof(struct pte));
 				fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
 				fseek(in, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
-				fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, in);
-				fwrite(&old_p, sizeof(struct pte), MBR_ENTRY_MAX, out);
+				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, in);
+				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
 			}
 		} else {
 			fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512, len);
-			copy(out, nvram->start * 512, old_p[2].start * 512, len);
+			copy(out, nvram->start * 512, newlayout[2].start * 512, len);
 		}
 	}
 	fseek(in, 0, SEEK_END);
@@ -161,8 +161,8 @@ int main(int argc, char *argv[])
 	fread(buf, len % 65536, 1, in);
 	fwrite(buf, len % 65536, 1, out);
 	free(buf);
-	if (old_p[2].start > 0) {
-		copy(out, nvram->start * 512, old_p[2].start * 512, len);
+	if (newlayout[2].start > 0) {
+		copy(out, nvram->start * 512, newlayout[2].start * 512, len);
 	}
 	fclose(out);
 	fclose(in);
