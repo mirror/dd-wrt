@@ -72,7 +72,7 @@ static void copy(FILE * out, size_t inoff, size_t outoff, int len)
 	fprintf(stderr, "\n");
 	if (inoff >= outoff) {
 		for (i = 0; i < (len / 65536); i++) {
-			fprintf(stderr, "copy from %d to %d\r", inoff + (i * 65536), outoff + (i * 65536));
+			fprintf(stderr, "copy from %zu to %zu\r", inoff + (i * 65536), outoff + (i * 65536));
 			fseek(out, inoff + (i * 65536), SEEK_SET);
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + (i * 65536), SEEK_SET);
@@ -87,7 +87,7 @@ static void copy(FILE * out, size_t inoff, size_t outoff, int len)
 	} else {
 		long o = len - 65536;
 		for (i = 0; i < (len / 65536); i++) {
-			fprintf(stderr, "copy from %d to %d\r", inoff + o, outoff + o);
+			fprintf(stderr, "copy from %lu to %lu\r", inoff + o, outoff + o);
 			fseek(out, inoff + o, SEEK_SET);
 			fread(mem, 65536, 1, out);
 			fseek(out, outoff + o, SEEK_SET);
@@ -131,10 +131,9 @@ int main(int argc, char *argv[])
 	struct pte *nvram = &presentlayout[2];
 	fseek(out, nvram->start * 512, SEEK_SET);
 	uint32_t len = nvram->length * 512;
-	char *mem = NULL;
 	if (len) {
 		if (nvram->start == newlayout[2].start) {
-			if (nvram.length > newlayout[2].length) {
+			if (nvram->length > newlayout[2].length) {
 				// if old nvram partition size is bigger than the new partition to be written, we keep the old partition entry as is
 				memcpy(&newlayout[2], &nvram, sizeof(struct pte));
 				fseek(out, MBR_PARTITION_ENTRY_OFFSET, SEEK_SET);
@@ -143,7 +142,7 @@ int main(int argc, char *argv[])
 				fwrite(&newlayout, sizeof(struct pte), MBR_ENTRY_MAX, out);
 			}
 		} else {
-			fprintf(stderr, "read nvram from old offset %d\n", nvram->start * 512, len);
+			fprintf(stderr, "read nvram from old offset %d with len %d\n", nvram->start * 512, len);
 			copy(out, nvram->start * 512, newlayout[2].start * 512, len);
 		}
 	}
