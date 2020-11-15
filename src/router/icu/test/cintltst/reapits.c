@@ -33,11 +33,17 @@
 #include "cintltst.h"
 #include "cmemory.h"
 
-#define TEST_ASSERT_SUCCESS(status) {if (U_FAILURE(status)) { \
-log_data_err("Failure at file %s:%d - error = %s (Are you missing data?)\n", __FILE__, __LINE__, u_errorName(status));}}
+#define TEST_ASSERT_SUCCESS(status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        log_data_err("Failure at file %s:%d - error = %s (Are you missing data?)\n", __FILE__, __LINE__, u_errorName(status)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT(expr) {if ((expr)==FALSE) { \
-log_err("Test Failure at file %s:%d - ASSERT(%s) failed.\n", __FILE__, __LINE__, #expr);}}
+#define TEST_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        log_err("Test Failure at file %s:%d - ASSERT(%s) failed.\n", __FILE__, __LINE__, #expr); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 /*
  *   TEST_SETUP and TEST_TEARDOWN
@@ -50,23 +56,25 @@ log_err("Test Failure at file %s:%d - ASSERT(%s) failed.\n", __FILE__, __LINE__,
  *         Put arbitrary test code between SETUP and TEARDOWN.
  *         're" is the compiled, ready-to-go  regular expression.
  */
-#define TEST_SETUP(pattern, testString, flags) {  \
+#define TEST_SETUP(pattern, testString, flags) UPRV_BLOCK_MACRO_BEGIN { \
     UChar   *srcString = NULL;  \
     status = U_ZERO_ERROR; \
     re = uregex_openC(pattern, flags, NULL, &status);  \
     TEST_ASSERT_SUCCESS(status);   \
-    srcString = (UChar *)malloc((strlen(testString)+2)*sizeof(UChar)); \
-    u_uastrncpy(srcString, testString,  strlen(testString)+1); \
+    int32_t testStringLen = (int32_t)strlen(testString); \
+    srcString = (UChar *)malloc( (testStringLen + 2) * sizeof(UChar) ); \
+    u_uastrncpy(srcString, testString, testStringLen + 1); \
     uregex_setText(re, srcString, -1, &status); \
     TEST_ASSERT_SUCCESS(status);  \
-    if (U_SUCCESS(status)) {
-    
+    if (U_SUCCESS(status)) { \
+        UPRV_BLOCK_MACRO_BEGIN {} UPRV_BLOCK_MACRO_END
+
 #define TEST_TEARDOWN  \
     }  \
     TEST_ASSERT_SUCCESS(status);  \
     uregex_close(re);  \
     free(srcString);   \
-    }
+} UPRV_BLOCK_MACRO_END
 
 
 /**
@@ -690,7 +698,7 @@ static void TestRegexCAPI(void) {
         
         
         /* SetRegion(), getRegion() do something  */
-        TEST_SETUP(".*", "0123456789ABCDEF", 0)
+        TEST_SETUP(".*", "0123456789ABCDEF", 0);
         UChar resultString[40];
         TEST_ASSERT(uregex_regionStart(re, &status) == 0);
         TEST_ASSERT(uregex_regionEnd(re, &status) == 16);
@@ -698,7 +706,7 @@ static void TestRegexCAPI(void) {
         TEST_ASSERT(uregex_regionStart(re, &status) == 3);
         TEST_ASSERT(uregex_regionEnd(re, &status) == 6);
         TEST_ASSERT(uregex_findNext(re, &status));
-        TEST_ASSERT(uregex_group(re, 0, resultString, UPRV_LENGTHOF(resultString), &status) == 3)
+        TEST_ASSERT(uregex_group(re, 0, resultString, UPRV_LENGTHOF(resultString), &status) == 3);
         TEST_ASSERT_STRING("345", resultString, TRUE);
         TEST_TEARDOWN;
         
@@ -849,7 +857,7 @@ static void TestRegexCAPI(void) {
         status = U_ZERO_ERROR;
         uregex_setText(re, text1, -1, &status);
         memset(buf, -1, sizeof(buf));
-        resultSz = uregex_replaceFirst(re, replText, -1, buf, strlen("Replace <aa> x1x x...x."), &status);
+        resultSz = uregex_replaceFirst(re, replText, -1, buf, (int32_t)strlen("Replace <aa> x1x x...x."), &status);
         TEST_ASSERT(status == U_STRING_NOT_TERMINATED_WARNING);
         TEST_ASSERT_STRING("Replace <aa> x1x x...x.", buf, FALSE);
         TEST_ASSERT(resultSz == (int32_t)strlen("Replace xaax x1x x...x."));
@@ -860,7 +868,7 @@ static void TestRegexCAPI(void) {
          */
         status = U_ZERO_ERROR;
         memset(buf, -1, sizeof(buf));
-        resultSz = uregex_replaceFirst(re, replText, -1, buf, strlen("Replace <aa> x1x x...x."), &status);
+        resultSz = uregex_replaceFirst(re, replText, -1, buf, (int32_t)strlen("Replace <aa> x1x x...x."), &status);
         TEST_ASSERT(status == U_STRING_NOT_TERMINATED_WARNING);
         TEST_ASSERT_STRING("Replace <aa> x1x x...x.", buf, FALSE);
         TEST_ASSERT(resultSz == (int32_t)strlen("Replace xaax x1x x...x."));
@@ -875,7 +883,7 @@ static void TestRegexCAPI(void) {
         /* Buffer too small by one */
         status = U_ZERO_ERROR;
         memset(buf, -1, sizeof(buf));
-        resultSz = uregex_replaceFirst(re, replText, -1, buf, strlen("Replace <aa> x1x x...x.")-1, &status);
+        resultSz = uregex_replaceFirst(re, replText, -1, buf, (int32_t)strlen("Replace <aa> x1x x...x.")-1, &status);
         TEST_ASSERT(status == U_BUFFER_OVERFLOW_ERROR);
         TEST_ASSERT_STRING("Replace <aa> x1x x...x", buf, FALSE);
         TEST_ASSERT(resultSz == (int32_t)strlen("Replace xaax x1x x...x."));
@@ -906,8 +914,8 @@ static void TestRegexCAPI(void) {
         u_uastrncpy(text2, "No match here.",  UPRV_LENGTHOF(text2));
         u_uastrncpy(replText, "<$1>", UPRV_LENGTHOF(replText));
         u_uastrncpy(replText2, "<<$1>>", UPRV_LENGTHOF(replText2));
-        expectedResultSize = strlen(expectedResult);
-        expectedResultSize2 = strlen(expectedResult2);
+        expectedResultSize = (int32_t)strlen(expectedResult);
+        expectedResultSize2 = (int32_t)strlen(expectedResult2);
 
         status = U_ZERO_ERROR;
         re = uregex_openC(pattern, 0, NULL, &status);
@@ -943,7 +951,7 @@ static void TestRegexCAPI(void) {
          */
         status = U_ZERO_ERROR;
         memset(buf, -1, sizeof(buf));
-        resultSize = uregex_replaceAll(re, replText, -1, buf, strlen("Replace xaax x1x x...x."), &status);
+        resultSize = uregex_replaceAll(re, replText, -1, buf, (int32_t)strlen("Replace xaax x1x x...x."), &status);
         TEST_ASSERT(status == U_STRING_NOT_TERMINATED_WARNING);
         TEST_ASSERT_STRING("Replace <aa> <1> <...>.", buf, FALSE);
         TEST_ASSERT(resultSize == (int32_t)strlen("Replace <aa> <1> <...>."));
@@ -1190,7 +1198,7 @@ static void TestRegexCAPI(void) {
                 TEST_ASSERT_STRING("tag-b",   fields[3], TRUE);
                 TEST_ASSERT_STRING("  third", fields[4], TRUE);
                 TEST_ASSERT(fields[5] == NULL);
-                spaceNeeded = strlen("first .tag-a. second.tag-b.  third.");  /* "." at NUL positions */
+                spaceNeeded = (int32_t)strlen("first .tag-a. second.tag-b.  third.");  /* "." at NUL positions */
                 TEST_ASSERT(spaceNeeded == requiredCapacity);
             }
         }
@@ -1209,7 +1217,7 @@ static void TestRegexCAPI(void) {
             TEST_ASSERT_STRING(" second<tag-b>  third", fields[1], TRUE);
             TEST_ASSERT(!memcmp(&fields[2],&minus1,sizeof(UChar*)));
 
-            spaceNeeded = strlen("first . second<tag-b>  third.");  /* "." at NUL positions */
+            spaceNeeded = (int32_t)strlen("first . second<tag-b>  third.");  /* "." at NUL positions */
             TEST_ASSERT(spaceNeeded == requiredCapacity);
         }
 
@@ -1228,7 +1236,7 @@ static void TestRegexCAPI(void) {
             TEST_ASSERT_STRING(" second<tag-b>  third", fields[2], TRUE);
             TEST_ASSERT(!memcmp(&fields[3],&minus1,sizeof(UChar*)));
 
-            spaceNeeded = strlen("first .tag-a. second<tag-b>  third.");  /* "." at NUL positions */
+            spaceNeeded = (int32_t)strlen("first .tag-a. second<tag-b>  third.");  /* "." at NUL positions */
             TEST_ASSERT(spaceNeeded == requiredCapacity);
         }
 
@@ -1249,13 +1257,13 @@ static void TestRegexCAPI(void) {
             TEST_ASSERT_STRING("  third", fields[4], TRUE);
             TEST_ASSERT(!memcmp(&fields[5],&minus1,sizeof(UChar*)));
 
-            spaceNeeded = strlen("first .tag-a. second.tag-b.  third.");  /* "." at NUL positions */
+            spaceNeeded = (int32_t)strlen("first .tag-a. second.tag-b.  third.");  /* "." at NUL positions */
             TEST_ASSERT(spaceNeeded == requiredCapacity);
         }
 
         /* Split, end of text is a field delimiter.   */
         status = U_ZERO_ERROR;
-        sz = strlen("first <tag-a> second<tag-b>");
+        sz = (int32_t)strlen("first <tag-a> second<tag-b>");
         uregex_setText(re, textToSplit, sz, &status);
         TEST_ASSERT_SUCCESS(status);
 
@@ -1277,7 +1285,7 @@ static void TestRegexCAPI(void) {
                 TEST_ASSERT(fields[5] == NULL);
                 TEST_ASSERT(fields[8] == NULL);
                 TEST_ASSERT(!memcmp(&fields[9],&minus1,sizeof(UChar*)));
-                spaceNeeded = strlen("first .tag-a. second.tag-b..");  /* "." at NUL positions */
+                spaceNeeded = (int32_t)strlen("first .tag-a. second.tag-b..");  /* "." at NUL positions */
                 TEST_ASSERT(spaceNeeded == requiredCapacity);
             }
         }
@@ -1321,7 +1329,7 @@ static void TestRegexCAPI(void) {
       *       to be invoked.  The nested '+' operators give exponential time
       *       behavior with increasing string length.
       */
-     TEST_SETUP("((.)+\\2)+x", "aaaaaaaaaaaaaaaaaaab", 0)
+     TEST_SETUP("((.)+\\2)+x", "aaaaaaaaaaaaaaaaaaab", 0);
      callBackContext cbInfo = {4, 0, 0};
      const void     *pContext   = &cbInfo;
      URegexMatchCallback    *returnedFn = &TestCallbackFn;
@@ -2142,7 +2150,7 @@ static void TestUTextAPI(void) {
 
         /* Split, end of text is a field delimiter.   */
         status = U_ZERO_ERROR;
-        uregex_setText(re, textToSplit, strlen("first <tag-a> second<tag-b>"), &status);
+        uregex_setText(re, textToSplit, (int32_t)strlen("first <tag-a> second<tag-b>"), &status);
         TEST_ASSERT_SUCCESS(status);
 
         /* The TEST_ASSERT_SUCCESS call above should change too... */
@@ -2252,10 +2260,16 @@ static void TestBug8421(void) {
 }
 
 static UBool U_CALLCONV FindCallback(const void* context , int64_t matchIndex) {
+    // suppress compiler warnings about unused variables
+    (void)context;
+    (void)matchIndex;
     return FALSE;
 }
 
 static UBool U_CALLCONV MatchCallback(const void *context, int32_t steps) {
+    // suppress compiler warnings about unused variables
+    (void)context;
+    (void)steps;
     return FALSE;
 }
 

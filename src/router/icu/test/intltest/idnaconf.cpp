@@ -12,12 +12,13 @@
  *   created by: Raymond Yang
  */
 
-#if !UCONFIG_NO_IDNA 
+#include "unicode/utypes.h"
+
+#if !UCONFIG_NO_IDNA
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "unicode/utypes.h"
 #include "unicode/ucnv.h"
 #include "unicode/ustring.h"
 #include "unicode/uidna.h"
@@ -73,7 +74,7 @@ UBool IdnaConfTest::ReadAndConvertFile(){
     }
 
     const char* name = "idna_conf.txt";     // test data file
-    int t = strlen(path) + strlen(name) + 1;
+    int t = static_cast<int>(strlen(path) + strlen(name) + 1);
     char* absolute_name = new char[t];
     strcpy(absolute_name, path);
     strcat(absolute_name, name);
@@ -108,14 +109,14 @@ UBool IdnaConfTest::ReadAndConvertFile(){
                                 NULL,           //  dest,
                                 0,              //  destCapacity,
                                 source,
-                                source_len,
+                                static_cast<int32_t>(source_len),
                                 &status);
     if (status == U_BUFFER_OVERFLOW_ERROR) {
         // Buffer Overflow is expected from the preflight operation.
         status = U_ZERO_ERROR;
         UChar * dest = NULL;
         dest = new UChar[ dest_len + 1];
-        ucnv_toUChars(conv, dest, dest_len + 1, source, source_len, &status);
+        ucnv_toUChars(conv, dest, dest_len + 1, source, static_cast<int32_t>(source_len), &status);
         // Do not know the "if possible" behavior of ucnv_toUChars()
         // Do it by ourself.
         dest[dest_len] = 0; 
@@ -172,7 +173,7 @@ UBool IdnaConfTest::ReadOneLine(UnicodeString& buf){
                 curOffset += 1 + t;  // BACKSLAH and NewlineMark
                 continue;
             }
-        };
+        }
         buf.append(c);
         curOffset++;
     }

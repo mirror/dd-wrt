@@ -17,6 +17,8 @@
 
 #if !UCONFIG_NO_BREAK_ITERATION
 
+#include <memory>
+
 #include "intltest.h"
 #include "unicode/brkiter.h"
 #include "unicode/rbbi.h"
@@ -77,9 +79,31 @@ public:
     void TestBug12677();
     void TestTableRedundancies();
     void TestBug13447();
+    void TestReverse();
+    void TestReverse(std::unique_ptr<RuleBasedBreakIterator>bi);
+    void TestBug13692();
+    void TestDebugRules();
 
     void TestDebug();
     void TestProperties();
+    void Test8BitsTrieWith8BitStateTable();
+    void Test8BitsTrieWith16BitStateTable();
+    void Test16BitsTrieWith8BitStateTable();
+    void Test16BitsTrieWith16BitStateTable();
+    void TestTable_8_16_Bits();
+    void TestBug13590();
+
+#if U_ENABLE_TRACING
+    void TestTraceCreateCharacter();
+    void TestTraceCreateWord();
+    void TestTraceCreateSentence();
+    void TestTraceCreateTitle();
+    void TestTraceCreateLine();
+    void TestTraceCreateLineNormal();
+    void TestTraceCreateLineStrict();
+    void TestTraceCreateLineLoose();
+    void TestTraceCreateBreakEngine();
+#endif
 
 /***********************/
 private:
@@ -114,6 +138,14 @@ private:
 
     // Test parameters, from the test framework and test invocation.
     const char* fTestParams;
+
+    // Helper functions to test different trie bit sizes and state table bit sizes.
+    void testTrieStateTable(int32_t numChar, bool expectedTrieWidthIn8Bits, bool expectedStateRowIn8Bits);
+
+#if U_ENABLE_TRACING
+    void assertTestTraceResult(int32_t fnNumber, const char* expectedData);
+#endif
+
 };
 
 #endif /* #if !UCONFIG_NO_BREAK_ITERATION */

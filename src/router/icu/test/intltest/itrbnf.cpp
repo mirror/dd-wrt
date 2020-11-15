@@ -76,6 +76,7 @@ void IntlTestRBNF::runIndexedTest(int32_t index, UBool exec, const char* &name, 
         TESTCASE(24, TestLargeNumbers);
         TESTCASE(25, TestCompactDecimalFormatStyle);
         TESTCASE(26, TestParseFailure);
+        TESTCASE(27, TestMinMaxIntegerDigitsIgnored);
 #else
         TESTCASE(0, TestRBNFDisabled);
 #endif
@@ -165,7 +166,7 @@ IntlTestRBNF::TestAPI() {
   // test clone
   {
     logln("Testing Clone");
-    RuleBasedNumberFormat* rbnfClone = (RuleBasedNumberFormat *)formatter->clone();
+    RuleBasedNumberFormat* rbnfClone = formatter->clone();
     if(rbnfClone != NULL) {
       if(!(*rbnfClone == *formatter)) {
         errln("Clone should be semantically equivalent to the original!");
@@ -1888,16 +1889,19 @@ IntlTestRBNF::TestAllLocales()
             UErrorCode status = U_ZERO_ERROR;
             RuleBasedNumberFormat* f = new RuleBasedNumberFormat((URBNFRuleSetTag)j, *loc, status);
 
-            if (status == U_USING_DEFAULT_WARNING || status == U_USING_FALLBACK_WARNING) {
-                // Skip it.
-                delete f;
-                break;
-            }
             if (U_FAILURE(status)) {
                 errln(UnicodeString(loc->getName()) + names[j]
                     + "ERROR could not instantiate -> " + u_errorName(status));
                 continue;
             }
+
+            Locale actualLocale = f->getLocale(ULOC_ACTUAL_LOCALE, status);
+            if (actualLocale != *loc) {
+                // Skip the redundancy
+                delete f;
+                break;
+            }
+
 #if !UCONFIG_NO_COLLATION
             for (unsigned int numidx = 0; numidx < UPRV_LENGTHOF(numbers); numidx++) {
                 double n = numbers[numidx];
@@ -1935,28 +1939,26 @@ IntlTestRBNF::TestAllLocales()
                             + UnicodeString(" -> ") + str + UnicodeString(" -> ") + num.getDouble());
                     }
                 }
-                if (!quick && !logKnownIssue("9503") ) {
-                    // lenient parse
-                    status = U_ZERO_ERROR;
-                    f->setLenient(TRUE);
-                    f->parse(str, num, status);
-                    if (U_FAILURE(status)) {
+                // lenient parse
+                status = U_ZERO_ERROR;
+                f->setLenient(TRUE);
+                f->parse(str, num, status);
+                if (U_FAILURE(status)) {
+                    errln(UnicodeString(loc->getName()) + names[j]
+                        + "ERROR could not parse(lenient) '" + str + "' -> " + u_errorName(status));
+                }
+                // We only check the spellout. The behavior is undefined for numbers < 1 and fractional numbers.
+                if (j == 0) {
+                    if (num.getType() == Formattable::kLong && num.getLong() != n) {
                         errln(UnicodeString(loc->getName()) + names[j]
-                            + "ERROR could not parse(lenient) '" + str + "' -> " + u_errorName(status));
+                            + UnicodeString("ERROR could not roundtrip ") + n
+                            + UnicodeString(" -> ") + str + UnicodeString(" -> ") + num.getLong());
                     }
-                    // We only check the spellout. The behavior is undefined for numbers < 1 and fractional numbers.
-                    if (j == 0) {
-                        if (num.getType() == Formattable::kLong && num.getLong() != n) {
-                            errln(UnicodeString(loc->getName()) + names[j]
-                                + UnicodeString("ERROR could not roundtrip ") + n
-                                + UnicodeString(" -> ") + str + UnicodeString(" -> ") + num.getLong());
-                        }
-                        else if (num.getType() == Formattable::kDouble && (int64_t)(num.getDouble() * 1000) != (int64_t)(n*1000)) {
-                            // The epsilon difference is too high.
-                            errln(UnicodeString(loc->getName()) + names[j]
-                                + UnicodeString("ERROR could not roundtrip ") + n
-                                + UnicodeString(" -> ") + str + UnicodeString(" -> ") + num.getDouble());
-                        }
+                    else if (num.getType() == Formattable::kDouble && (int64_t)(num.getDouble() * 1000) != (int64_t)(n*1000)) {
+                        // The epsilon difference is too high.
+                        errln(UnicodeString(loc->getName()) + names[j]
+                            + UnicodeString("ERROR could not roundtrip ") + n
+                            + UnicodeString(" -> ") + str + UnicodeString(" -> ") + num.getDouble());
                     }
                 }
             }
@@ -2290,13 +2292,32 @@ void IntlTestRBNF::TestParseFailure() {
     static const UChar* testData[] = {
         u"・・・・・・・・・・・・・・・・・・・・・・・・"
     };
-    for (int i = 0; i < UPRV_LENGTHOF(testData); ++i) {
-        UnicodeString spelledNumberString(testData[i]);
-        Formattable actualNumber;
-        rbnf.parse(spelledNumberString, actualNumber, status);
-        if (status != U_INVALID_FORMAT_ERROR) { // I would have expected U_PARSE_ERROR, but NumberFormat::parse gives U_INVALID_FORMAT_ERROR
-            errln("FAIL: string should be unparseable index=%d %s", i, u_errorName(status));
+    if (assertSuccess("", status, true, __FILE__, __LINE__)) {
+        for (int i = 0; i < UPRV_LENGTHOF(testData); ++i) {
+            UnicodeString spelledNumberString(testData[i]);
+            Formattable actualNumber;
+            rbnf.parse(spelledNumberString, actualNumber, status);
+            if (status != U_INVALID_FORMAT_ERROR) { // I would have expected U_PARSE_ERROR, but NumberFormat::parse gives U_INVALID_FORMAT_ERROR
+                errln("FAIL: string should be unparseable index=%d %s", i, u_errorName(status));
+            }
         }
+    }
+}
+
+void IntlTestRBNF::TestMinMaxIntegerDigitsIgnored() {
+    IcuTestErrorCode status(*this, "TestMinMaxIntegerDigitsIgnored");
+
+    // NOTE: SimpleDateFormat has an optimization that depends on the fact that min/max integer digits
+    // do not affect RBNF (see SimpleDateFormat#zeroPaddingNumber).
+    RuleBasedNumberFormat rbnf(URBNF_SPELLOUT, "en", status);
+    if (status.isSuccess()) {
+        rbnf.setMinimumIntegerDigits(2);
+        rbnf.setMaximumIntegerDigits(3);
+        UnicodeString result;
+        rbnf.format(3, result.remove(), status);
+        assertEquals("Min integer digits are ignored", u"three", result);
+        rbnf.format(1012, result.remove(), status);
+        assertEquals("Max integer digits are ignored", u"one thousand twelve", result);
     }
 }
 

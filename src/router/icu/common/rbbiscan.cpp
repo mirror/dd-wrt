@@ -372,7 +372,7 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
         //  (forward, reverse, safe_forward, safe_reverse)
         //  OR this rule into the appropriate group of them.
         //
-        RBBINode **destRules = (fReverseRule? &fRB->fReverseTree : fRB->fDefaultTree);
+        RBBINode **destRules = (fReverseRule? &fRB->fSafeRevTree : fRB->fDefaultTree);
 
         if (*destRules != NULL) {
             // This is not the first rule encounted.
@@ -380,7 +380,7 @@ UBool RBBIRuleScanner::doParseActions(int32_t action)
             // with the current rule expression (on the Node Stack)
             //  with the resulting OR expression going to *destRules
             //
-            RBBINode  *thisRule    = fNodeStack[fNodeStackPtr];
+                       thisRule    = fNodeStack[fNodeStackPtr];
             RBBINode  *prevRules   = *destRules;
             RBBINode  *orNode      = pushNewNode(RBBINode::opOr);
             if (U_FAILURE(*fRB->fStatus)) {
@@ -829,16 +829,14 @@ static const UChar      chRParen    = 0x29;
 UnicodeString RBBIRuleScanner::stripRules(const UnicodeString &rules) {
     UnicodeString strippedRules;
     int32_t rulesLength = rules.length();
-    bool skippingSpaces = false;
 
     for (int32_t idx=0; idx<rulesLength; idx = rules.moveIndex32(idx, 1)) {
         UChar32 cp = rules.char32At(idx);
         bool whiteSpace = u_hasBinaryProperty(cp, UCHAR_PATTERN_WHITE_SPACE);
-        if (skippingSpaces && whiteSpace) {
+        if (whiteSpace) {
             continue;
         }
         strippedRules.append(cp);
-        skippingSpaces = whiteSpace;
     }
     return strippedRules;
 }
@@ -1123,22 +1121,6 @@ void RBBIRuleScanner::parse() {
     }
 
     //
-    // If there were NO user specified reverse rules, set up the equivalent of ".*;"
-    //
-    if (fRB->fReverseTree == NULL) {
-        fRB->fReverseTree  = pushNewNode(RBBINode::opStar);
-        RBBINode  *operand = pushNewNode(RBBINode::setRef);
-        if (U_FAILURE(*fRB->fStatus)) {
-            return;
-        }
-        findSetFor(UnicodeString(TRUE, kAny, 3), operand);
-        fRB->fReverseTree->fLeftChild = operand;
-        operand->fParent              = fRB->fReverseTree;
-        fNodeStackPtr -= 2;
-    }
-
-
-    //
     // Parsing of the input RBBI rules is complete.
     // We now have a parse tree for the rule expressions
     // and a list of all UnicodeSets that are referenced.
@@ -1288,6 +1270,10 @@ void RBBIRuleScanner::scanSet() {
         findSetFor(n->fText, n, uset);
     }
 
+}
+
+int32_t RBBIRuleScanner::numRules() {
+    return fRuleNum;
 }
 
 U_NAMESPACE_END

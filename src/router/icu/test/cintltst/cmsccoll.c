@@ -588,11 +588,13 @@ static void TestComposeDecompose(void) {
     coll = ucol_open("", &status);
     if (U_FAILURE(status)) {
         log_data_err("Error opening collator -> %s (Are you missing data?)\n", u_errorName(status));
+        uset_close(charsToTest);
         return;
     }
     charsToTestSize = uset_size(charsToTest);
     if (charsToTestSize <= 0) {
         log_err("Set was zero. Missing data?\n");
+        uset_close(charsToTest);
         return;
     }
     t = (tester **)malloc(charsToTestSize * sizeof(tester *));
@@ -1454,14 +1456,14 @@ static void TestContraction(void) {
             UCollationElements *iter2 = ucol_openElements(coll,
                                                          &(testdata[i][j]),
                                                          1, &status);
-            uint32_t ce;
+            int32_t ce;
             if (U_FAILURE(status)) {
                 log_err("Collation iterator creation failed\n");
                 return;
             }
             ce = ucol_next(iter2, &status);
             while (ce != UCOL_NULLORDER) {
-                if ((uint32_t)ucol_next(iter1, &status) != ce) {
+                if (ucol_next(iter1, &status) != ce) {
                     log_err("Collation elements in contraction split does not match\n");
                     return;
                 }
@@ -1819,7 +1821,7 @@ static void TestVariableTopSetting(void) {
   }
 }
 
-static void TestMaxVariable() {
+static void TestMaxVariable(void) {
   UErrorCode status = U_ZERO_ERROR;
   UColReorderCode oldMax, max;
   UCollator *coll;
@@ -3210,7 +3212,7 @@ static void TestSeparateTrees(void) {
     }
 
     /*
-U_DRAFT int32_t U_EXPORT2
+U_CAPI int32_t U_EXPORT2
 ucol_getFunctionalEquivalent(char* result, int32_t resultCapacity,
                              const char* locale, UBool* isAvailable,
                              UErrorCode* status);
@@ -4102,11 +4104,11 @@ static void TestCroatianSortKey(void) {
         return;
     }
 
-    uiter_setString(&iter, text, length);
+    uiter_setString(&iter, text, (int32_t)length);
 
     actualSortKeyLen = ucol_nextSortKeyPart(
         ucol, &iter, (uint32_t*)uStateInfo,
-        textSortKey, lenSortKey, &status
+        textSortKey, (int32_t)lenSortKey, &status
         );
 
     if (actualSortKeyLen == lenSortKey) {

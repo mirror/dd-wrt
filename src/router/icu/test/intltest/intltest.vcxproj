@@ -1,155 +1,72 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- The following import will include the 'default' configuration options for VS projects. -->
-  <Import Project="..\..\allinone\Build.Windows.ProjectConfiguration.props" />
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{73632960-B3A6-464D-83A3-4B43365F19B8}</ProjectGuid>
     <RootNamespace>intltest</RootNamespace>
   </PropertyGroup>
-  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseOfMfc>false</UseOfMfc>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <!-- The following import will include the 'default' configuration options for VS projects. -->
+  <Import Project="..\..\allinone\Build.Windows.ProjectConfiguration.props" />
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x86\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\x86\Debug\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\x64\Debug\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x86\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\x86\Release\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\x64\Release\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\x64\Release\</IntDir>
-    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <OutDir>.\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>.\$(Platform)\$(Configuration)\</IntDir>
+    <!-- The ICU projects use "Win32" to mean "x86", so we need to special case it. -->
+    <OutDir Condition="'$(Platform)'=='Win32'">.\x86\$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Platform)'=='Win32'">.\x86\$(Configuration)\</IntDir>
+    <!-- Disable Incremental Linking for Release builds as it prevents Link-time Code Generation -->
+    <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
+    <LinkIncremental Condition="'$(Configuration)'=='Release'">false</LinkIncremental>
   </PropertyGroup>
   <!-- Options that are common to *all* project configurations -->
   <ItemDefinitionGroup>
+    <Midl>
+      <TypeLibraryName>$(OutDir)\intltest.tlb</TypeLibraryName>
+    </Midl>
     <ClCompile>
       <AdditionalIncludeDirectories>..\..\..\include;..\..\common;..\..\i18n;..\..\tools\toolutil;..\..\tools\ctestfw;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>U_ATTRIBUTE_DEPRECATED=;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
       <WarningLevel>Level3</WarningLevel>
+      <CompileAs>Default</CompileAs>
+      <PrecompiledHeaderOutputFile>$(OutDir)/intltest.pch</PrecompiledHeaderOutputFile>
+      <AssemblerListingLocation>$(OutDir)/</AssemblerListingLocation>
+      <ObjectFileName>$(OutDir)/</ObjectFileName>
+      <ProgramDataBaseFileName>$(OutDir)/intltest.pdb</ProgramDataBaseFileName>
     </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <OutputFile>$(OutDir)/intltest.exe</OutputFile>
+      <AdditionalLibraryDirectories>..\..\..\$(IcuLibOutputDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <Midl>
-      <TypeLibraryName>.\x86\Debug/intltest.tlb</TypeLibraryName>
-    </Midl>
+  <!-- Options that are common to all 'Debug' project configurations -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
     <ClCompile>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\x86\Debug/intltest.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\x86\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\x86\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\x86\Debug/</ProgramDataBaseFileName>
       <BrowseInformation>true</BrowseInformation>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
-      <OutputFile>.\x86\Debug/intltest.exe</OutputFile>
       <AdditionalDependencies>icuucd.lib;icuind.lib;icutud.lib;icutestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <ProgramDatabaseFile>.\x86\Debug/intltest.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <FixedBaseAddress>false</FixedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <Midl>
-      <TypeLibraryName>.\x64\Debug/intltest.tlb</TypeLibraryName>
-    </Midl>
+  <!-- Options that are common to all 'Release' project configurations -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
     <ClCompile>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\x64\Debug/intltest.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\x64\Debug/</AssemblerListingLocation>
-      <ObjectFileName>.\x64\Debug/</ObjectFileName>
-      <ProgramDataBaseFileName>.\x64\Debug/</ProgramDataBaseFileName>
-      <BrowseInformation>true</BrowseInformation>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <CompileAs>Default</CompileAs>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
     </ClCompile>
     <Link>
-      <OutputFile>.\x64\Debug/intltest.exe</OutputFile>
-      <AdditionalDependencies>icuucd.lib;icuind.lib;icutud.lib;icutestd.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64\Debug/intltest.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <FixedBaseAddress>false</FixedBaseAddress>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Midl>
-      <TypeLibraryName>.\x86\Release/intltest.tlb</TypeLibraryName>
-    </Midl>
-    <ClCompile>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\x86\Release/intltest.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\x86\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\x86\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\x86\Release/</ProgramDataBaseFileName>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Link>
-      <OutputFile>.\x86\Release/intltest.exe</OutputFile>
       <AdditionalDependencies>icuuc.lib;icuin.lib;icutu.lib;icutest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x86\Release/intltest.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
-      <RandomizedBaseAddress>false</RandomizedBaseAddress>
-      <DataExecutionPrevention>
-      </DataExecutionPrevention>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <Midl>
-      <TypeLibraryName>.\x64\Release/intltest.tlb</TypeLibraryName>
-    </Midl>
-    <ClCompile>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <PrecompiledHeaderOutputFile>.\x64\Release/intltest.pch</PrecompiledHeaderOutputFile>
-      <AssemblerListingLocation>.\x64\Release/</AssemblerListingLocation>
-      <ObjectFileName>.\x64\Release/</ObjectFileName>
-      <ProgramDataBaseFileName>.\x64\Release/</ProgramDataBaseFileName>
-      <CompileAs>Default</CompileAs>
-    </ClCompile>
-    <Link>
-      <OutputFile>.\x64\Release/intltest.exe</OutputFile>
-      <AdditionalDependencies>icuuc.lib;icuin.lib;icutu.lib;icutest.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\..\..\lib64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ProgramDatabaseFile>.\x64\Release/intltest.pdb</ProgramDatabaseFile>
-      <SubSystem>Console</SubSystem>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -160,6 +77,7 @@
     <ClCompile Include="colldata.cpp">
       <DisableLanguageExtensions>false</DisableLanguageExtensions>
     </ClCompile>
+    <ClCompile Include="erarulestest.cpp" />
     <ClCompile Include="numfmtspectest.cpp" />
     <ClCompile Include="regiontst.cpp" />
     <ClCompile Include="ucharstrietest.cpp" />
@@ -232,6 +150,7 @@
     </ClCompile>
     <ClCompile Include="dtptngts.cpp" />
     <ClCompile Include="fldset.cpp" />
+    <ClCompile Include="formatted_string_builder_test.cpp" />
     <ClCompile Include="genderinfotest.cpp" />
     <ClCompile Include="incaltst.cpp" />
     <ClCompile Include="itformat.cpp" />
@@ -248,13 +167,17 @@
     <ClCompile Include="numbertest_affixutils.cpp" />
     <ClCompile Include="numbertest_api.cpp" />
     <ClCompile Include="numbertest_decimalquantity.cpp" />
-    <ClCompile Include="numbertest_doubleconversion.cpp" />
     <ClCompile Include="numbertest_modifiers.cpp" />
     <ClCompile Include="numbertest_patternmodifier.cpp" />
     <ClCompile Include="numbertest_patternstring.cpp" />
-    <ClCompile Include="numbertest_stringbuilder.cpp" />
-    <ClCompile Include="numberformat2test.cpp" />
+    <ClCompile Include="string_segment_test.cpp" />
+    <ClCompile Include="numbertest_parse.cpp" />
+    <ClCompile Include="numbertest_doubleconversion.cpp" />
+    <ClCompile Include="numbertest_skeletons.cpp" />
+    <ClCompile Include="numbertest_range.cpp" />
+    <ClCompile Include="numbertest_permutation.cpp" />
     <ClCompile Include="numfmtst.cpp" />
+    <ClCompile Include="numfmtdatadriventest.cpp" />
     <ClCompile Include="numrgts.cpp" />
     <ClCompile Include="pluralmaptest.cpp" />
     <ClCompile Include="plurfmts.cpp" />
@@ -267,8 +190,9 @@
     <ClCompile Include="scientificnumberformattertest.cpp" />
     <ClCompile Include="sdtfmtts.cpp" />
     <ClCompile Include="selfmts.cpp" />
-    <ClCompile Include="tchcfmt.cpp" />
     <ClCompile Include="simpleformattertest.cpp" />
+    <ClCompile Include="static_unisets_test.cpp" />
+    <ClCompile Include="tchcfmt.cpp" />
     <ClCompile Include="tfsmalls.cpp" />
     <ClCompile Include="tmsgfmt.cpp" />
     <ClCompile Include="tsdate.cpp" />
@@ -358,9 +282,16 @@
     <ClCompile Include="csdetest.cpp" />
     <ClCompile Include="bidiconf.cpp" />
     <ClCompile Include="listformattertest.cpp" />
+    <ClCompile Include="formattedvaluetest.cpp" />
+    <ClCompile Include="localebuildertest.cpp" />
+    <ClCompile Include="localematchertest.cpp" />
+    <ClCompile Include="units_data_test.cpp" />
+    <ClCompile Include="units_router_test.cpp" />
+    <ClCompile Include="units_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="colldata.h" />
+    <ClInclude Include="erarulestest.h" />
     <ClInclude Include="itrbbi.h" />
     <ClInclude Include="rbbiapts.h" />
     <ClInclude Include="rbbitst.h" />
@@ -487,6 +418,7 @@
     <ClInclude Include="convtest.h" />
     <ClInclude Include="csdetest.h" />
     <ClInclude Include="listformattertest.h" />
+    <ClInclude Include="localebuildertest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -37,11 +37,35 @@ enum E_Where
 
 //***************************************************************************************
 
-#define CONFIRM_EQ(actual, expected, myAction) if ((expected)==(actual)) { record_pass(myAction); } else { record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of " + (expected) + "\n");}
-#define CONFIRM_GE(actual, expected, myAction) if ((actual)>=(expected)) { record_pass(myAction); } else { record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x >= " + (expected) + "\n");}
-#define CONFIRM_NE(actual, expected, myAction) if ((expected)!=(actual)) { record_pass(myAction); } else { record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x != " + (expected) + "\n");}
+#define CONFIRM_EQ(actual, expected, myAction) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)==(actual)) { \
+        record_pass(myAction); \
+    } else { \
+        record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of " + (expected) + "\n"); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_GE(actual, expected, myAction) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((actual)>=(expected)) { \
+        record_pass(myAction); \
+    } else { \
+        record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x >= " + (expected) + "\n"); \
+    } \
+} UPRV_BLOCK_MACRO_END
+#define CONFIRM_NE(actual, expected, myAction) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)!=(actual)) { \
+        record_pass(myAction); \
+    } else { \
+        record_fail(myAction + (UnicodeString)" returned " + (actual) + (UnicodeString)" instead of x != " + (expected) + "\n"); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define CONFIRM_UErrorCode(actual, expected, myAction) if ((expected)==(actual)) { record_pass(myAction); } else { record_fail(myAction + (UnicodeString)" returned " + u_errorName(actual) + " instead of " + u_errorName(expected) + "\n"); }
+#define CONFIRM_UErrorCode(actual, expected, myAction) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expected)==(actual)) { \
+        record_pass(myAction); \
+    } else { \
+        record_fail(myAction + (UnicodeString)" returned " + u_errorName(actual) + " instead of " + u_errorName(expected) + "\n"); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 //***************************************************************************************
 
@@ -581,8 +605,8 @@ ResourceBundleTest::TestGetLocaleByType(void)
     } test[] = {
         { "te_IN_BLAH", "string_only_in_te_IN", "te_IN", "te_IN" },
         { "te_IN_BLAH", "string_only_in_te", "te_IN", "te" },
-        { "te_IN_BLAH", "string_only_in_Root", "te_IN", "root" },
-        { "te_IN_BLAH_01234567890_01234567890_01234567890_01234567890_01234567890_01234567890", "array_2d_only_in_Root", "te_IN", "root" },
+        { "te_IN_BLAH", "string_only_in_Root", "te_IN", "" },
+        { "te_IN_BLAH_01234567890_01234567890_01234567890_01234567890_01234567890_01234567890", "array_2d_only_in_Root", "te_IN", "" },
         { "te_IN_BLAH@currency=euro", "array_2d_only_in_te_IN", "te_IN", "te_IN" },
         { "te_IN_BLAH@calendar=thai;collation=phonebook", "array_2d_only_in_te", "te_IN", "te" }
     };

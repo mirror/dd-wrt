@@ -38,6 +38,14 @@ public:
 
     void TestGetByFallback(void);
 
+    void TestFilter(void);
+
+    void TestIntervalAliasFallbacks(void);
+
+#if U_ENABLE_TRACING
+    void TestTrace(void);
+#endif
+
 private:
     /**
      * The assignment operator has no real implementation.

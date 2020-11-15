@@ -7,13 +7,16 @@
 
 #include "unicode/ustring.h"
 #include "unicode/uchar.h"
+#include "unicode/ucpmap.h"
 #include "unicode/uniset.h"
 #include "unicode/putil.h"
 #include "unicode/uscript.h"
+#include "unicode/uset.h"
 #include "cstring.h"
 #include "hash.h"
 #include "patternprops.h"
 #include "normalizer2impl.h"
+#include "testutil.h"
 #include "uparse.h"
 #include "ucdtest.h"
 
@@ -62,8 +65,15 @@ void UnicodeTest::runIndexedTest( int32_t index, UBool exec, const char* &name, 
     TESTCASE_AUTO(TestScriptMetadata);
     TESTCASE_AUTO(TestBidiPairedBracketType);
     TESTCASE_AUTO(TestEmojiProperties);
+    TESTCASE_AUTO(TestIndicPositionalCategory);
+    TESTCASE_AUTO(TestIndicSyllabicCategory);
+    TESTCASE_AUTO(TestVerticalOrientation);
     TESTCASE_AUTO(TestDefaultScriptExtensions);
     TESTCASE_AUTO(TestInvalidCodePointFolding);
+#if !UCONFIG_NO_NORMALIZATION
+    TESTCASE_AUTO(TestBinaryCharacterProperties);
+    TESTCASE_AUTO(TestIntCharacterProperties);
+#endif
     TESTCASE_AUTO_END;
 }
 
@@ -531,6 +541,52 @@ void UnicodeTest::TestEmojiProperties() {
                u_hasBinaryProperty(0x1F64B, UCHAR_EMOJI_MODIFIER_BASE));
     assertTrue("asterisk is Emoji_Component",
                u_hasBinaryProperty(0x2A, UCHAR_EMOJI_COMPONENT));
+    assertTrue("copyright is Extended_Pictographic",
+               u_hasBinaryProperty(0xA9, UCHAR_EXTENDED_PICTOGRAPHIC));
+}
+
+void UnicodeTest::TestIndicPositionalCategory() {
+    IcuTestErrorCode errorCode(*this, "TestIndicPositionalCategory()");
+    UnicodeSet na(u"[:InPC=NA:]", errorCode);
+    assertTrue("mostly NA", 1000000 <= na.size() && na.size() <= UCHAR_MAX_VALUE - 500);
+    UnicodeSet vol(u"[:InPC=Visual_Order_Left:]", errorCode);
+    assertTrue("some Visual_Order_Left", 19 <= vol.size() && vol.size() <= 100);
+    assertEquals("U+08FF: NA", U_INPC_NA,
+                 u_getIntPropertyValue(0x08FF, UCHAR_INDIC_POSITIONAL_CATEGORY));
+    assertEquals("U+0900: Top", U_INPC_TOP,
+                 u_getIntPropertyValue(0x0900, UCHAR_INDIC_POSITIONAL_CATEGORY));
+    assertEquals("U+10A06: Overstruck", U_INPC_OVERSTRUCK,
+                 u_getIntPropertyValue(0x10A06, UCHAR_INDIC_POSITIONAL_CATEGORY));
+}
+
+void UnicodeTest::TestIndicSyllabicCategory() {
+    IcuTestErrorCode errorCode(*this, "TestIndicSyllabicCategory()");
+    UnicodeSet other(u"[:InSC=Other:]", errorCode);
+    assertTrue("mostly Other", 1000000 <= other.size() && other.size() <= UCHAR_MAX_VALUE - 500);
+    UnicodeSet ava(u"[:InSC=Avagraha:]", errorCode);
+    assertTrue("some Avagraha", 16 <= ava.size() && ava.size() <= 100);
+    assertEquals("U+08FF: Other", U_INSC_OTHER,
+                 u_getIntPropertyValue(0x08FF, UCHAR_INDIC_SYLLABIC_CATEGORY));
+    assertEquals("U+0900: Bindu", U_INSC_BINDU,
+                 u_getIntPropertyValue(0x0900, UCHAR_INDIC_SYLLABIC_CATEGORY));
+    assertEquals("U+11065: Brahmi_Joining_Number", U_INSC_BRAHMI_JOINING_NUMBER,
+                 u_getIntPropertyValue(0x11065, UCHAR_INDIC_SYLLABIC_CATEGORY));
+}
+
+void UnicodeTest::TestVerticalOrientation() {
+    IcuTestErrorCode errorCode(*this, "TestVerticalOrientation()");
+    UnicodeSet r(u"[:vo=R:]", errorCode);
+    assertTrue("mostly R", 0xc0000 <= r.size() && r.size() <= 0xd0000);
+    UnicodeSet u(u"[:vo=U:]", errorCode);
+    assertTrue("much U", 0x40000 <= u.size() && u.size() <= 0x50000);
+    UnicodeSet tu(u"[:vo=Tu:]", errorCode);
+    assertTrue("some Tu", 147 <= tu.size() && tu.size() <= 300);
+    assertEquals("U+0E01: Rotated", U_VO_ROTATED,
+                 u_getIntPropertyValue(0x0E01, UCHAR_VERTICAL_ORIENTATION));
+    assertEquals("U+3008: Transformed_Rotated", U_VO_TRANSFORMED_ROTATED,
+                 u_getIntPropertyValue(0x3008, UCHAR_VERTICAL_ORIENTATION));
+    assertEquals("U+33333: Upright", U_VO_UPRIGHT,
+                 u_getIntPropertyValue(0x33333, UCHAR_VERTICAL_ORIENTATION));
 }
 
 void UnicodeTest::TestDefaultScriptExtensions() {
@@ -565,4 +621,78 @@ void UnicodeTest::TestInvalidCodePointFolding(void) {
         assertEquals("Invalid code points should be echoed back",
                 cp, u_foldCase(cp, U_FOLD_CASE_EXCLUDE_SPECIAL_I));
     }
+}
+
+void UnicodeTest::TestBinaryCharacterProperties() {
+#if !UCONFIG_NO_NORMALIZATION
+    IcuTestErrorCode errorCode(*this, "TestBinaryCharacterProperties()");
+    // Spot-check getBinaryPropertySet() vs. hasBinaryProperty().
+    for (int32_t prop = 0; prop < UCHAR_BINARY_LIMIT; ++prop) {
+        const USet *uset = u_getBinaryPropertySet((UProperty)prop, errorCode);
+        if (errorCode.errIfFailureAndReset("u_getBinaryPropertySet(%d)", (int)prop)) {
+            continue;
+        }
+        const UnicodeSet &set = *UnicodeSet::fromUSet(uset);
+        int32_t size = set.size();
+        if (size == 0) {
+            assertFalse(UnicodeString("!hasBinaryProperty(U+0020, ") + prop + u")",
+                u_hasBinaryProperty(0x20, (UProperty)prop));
+            assertFalse(UnicodeString("!hasBinaryProperty(U+0061, ") + prop + u")",
+                u_hasBinaryProperty(0x61, (UProperty)prop));
+            assertFalse(UnicodeString("!hasBinaryProperty(U+4E00, ") + prop + u")",
+                u_hasBinaryProperty(0x4e00, (UProperty)prop));
+        } else {
+            UChar32 c = set.charAt(0);
+            if (c > 0) {
+                assertFalse(
+                    UnicodeString("!hasBinaryProperty(") + TestUtility::hex(c - 1) +
+                        u", " + prop + u")",
+                    u_hasBinaryProperty(c - 1, (UProperty)prop));
+            }
+            assertTrue(
+                UnicodeString("hasBinaryProperty(") + TestUtility::hex(c) +
+                    u", " + prop + u")",
+                u_hasBinaryProperty(c, (UProperty)prop));
+            c = set.charAt(size - 1);
+            assertTrue(
+                UnicodeString("hasBinaryProperty(") + TestUtility::hex(c) +
+                    u", " + prop + u")",
+                u_hasBinaryProperty(c, (UProperty)prop));
+            if (c < 0x10ffff) {
+                assertFalse(
+                    UnicodeString("!hasBinaryProperty(") + TestUtility::hex(c + 1) +
+                        u", " + prop + u")",
+                    u_hasBinaryProperty(c + 1, (UProperty)prop));
+            }
+        }
+    }
+#endif
+}
+
+void UnicodeTest::TestIntCharacterProperties() {
+#if !UCONFIG_NO_NORMALIZATION
+    IcuTestErrorCode errorCode(*this, "TestIntCharacterProperties()");
+    // Spot-check getIntPropertyMap() vs. getIntPropertyValue().
+    for (int32_t prop = UCHAR_INT_START; prop < UCHAR_INT_LIMIT; ++prop) {
+        const UCPMap *map = u_getIntPropertyMap((UProperty)prop, errorCode);
+        if (errorCode.errIfFailureAndReset("u_getIntPropertyMap(%d)", (int)prop)) {
+            continue;
+        }
+        uint32_t value;
+        UChar32 end = ucpmap_getRange(map, 0, UCPMAP_RANGE_NORMAL, 0, nullptr, nullptr, &value);
+        assertTrue("int property first range", end >= 0);
+        UChar32 c = end / 2;
+        assertEquals(UnicodeString("int property first range value at ") + TestUtility::hex(c),
+            u_getIntPropertyValue(c, (UProperty)prop), value);
+        end = ucpmap_getRange(map, 0x5000, UCPMAP_RANGE_NORMAL, 0, nullptr, nullptr, &value);
+        assertTrue("int property later range", end >= 0);
+        assertEquals(UnicodeString("int property later range value at ") + TestUtility::hex(end),
+            u_getIntPropertyValue(end, (UProperty)prop), value);
+        // ucpmap_get() API coverage
+        // TODO: move to cucdtst.c
+        assertEquals(
+            "int property upcmap_get(U+0061)",
+            u_getIntPropertyValue(0x61, (UProperty)prop), ucpmap_get(map, 0x61));
+    }
+#endif
 }

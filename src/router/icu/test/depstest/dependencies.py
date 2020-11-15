@@ -1,4 +1,4 @@
-#! /usr/bin/python
+#! /usr/bin/python -B
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2016 and later: Unicode, Inc. and others.
@@ -71,7 +71,7 @@ def _RemoveComment(line):
 
 def _ReadLine(f):
   while True:
-    line = _RemoveComment(f.next())
+    line = _RemoveComment(next(f))
     if line: return line
 
 def _ReadFiles(deps_file, item, library_name):
@@ -147,7 +147,7 @@ def Load():
     line = None
     current_type = None
     while True:
-      while not line: line = _RemoveComment(deps_file.next())
+      while not line: line = _RemoveComment(next(deps_file))
 
       if line.startswith("library: "):
         current_type = "library"

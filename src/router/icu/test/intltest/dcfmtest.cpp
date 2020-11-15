@@ -79,21 +79,41 @@ void DecimalFormatTest::runIndexedTest( int32_t index, UBool exec, const char* &
 //   Error Checking / Reporting macros used in all of the tests.
 //
 //---------------------------------------------------------------------------
-#define DF_CHECK_STATUS {if (U_FAILURE(status)) \
-    {dataerrln("DecimalFormatTest failure at line %d.  status=%s", \
-    __LINE__, u_errorName(status)); return 0;}}
+#define DF_CHECK_STATUS UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        dataerrln("DecimalFormatTest failure at line %d.  status=%s", \
+                  __LINE__, u_errorName(status)); \
+        return 0; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define DF_ASSERT(expr) {if ((expr)==FALSE) {errln("DecimalFormatTest failure at line %d.\n", __LINE__);};}
+#define DF_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("DecimalFormatTest failure at line %d.\n", __LINE__); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define DF_ASSERT_FAIL(expr, errcode) {UErrorCode status=U_ZERO_ERROR; (expr);\
-if (status!=errcode) {dataerrln("DecimalFormatTest failure at line %d.  Expected status=%s, got %s", \
-    __LINE__, u_errorName(errcode), u_errorName(status));};}
+#define DF_ASSERT_FAIL(expr, errcode) UPRV_BLOCK_MACRO_BEGIN { \
+    UErrorCode status=U_ZERO_ERROR; \
+    (expr); \
+    if (status!=errcode) { \
+        dataerrln("DecimalFormatTest failure at line %d.  Expected status=%s, got %s", \
+                  __LINE__, u_errorName(errcode), u_errorName(status)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define DF_CHECK_STATUS_L(line) {if (U_FAILURE(status)) {errln( \
-    "DecimalFormatTest failure at line %d, from %d.  status=%d\n",__LINE__, (line), status); }}
+#define DF_CHECK_STATUS_L(line) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        errln("DecimalFormatTest failure at line %d, from %d.  status=%d\n",__LINE__, (line), status); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define DF_ASSERT_L(expr, line) {if ((expr)==FALSE) { \
-    errln("DecimalFormatTest failure at line %d, from %d.", __LINE__, (line)); return;}}
+#define DF_ASSERT_L(expr, line) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        errln("DecimalFormatTest failure at line %d, from %d.", __LINE__, (line)); \
+        return; \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 
 
@@ -106,7 +126,7 @@ if (status!=errcode) {dataerrln("DecimalFormatTest failure at line %d.  Expected
 class InvariantStringPiece: public StringPiece {
   public:
     InvariantStringPiece(const UnicodeString &s);
-    ~InvariantStringPiece() {};
+    ~InvariantStringPiece() {}
   private:
     MaybeStackArray<char, 20>  buf;
 };
@@ -130,7 +150,7 @@ InvariantStringPiece::InvariantStringPiece(const UnicodeString &s) {
 class UnicodeStringPiece: public StringPiece {
   public:
     UnicodeStringPiece(const UnicodeString &s);
-    ~UnicodeStringPiece() {};
+    ~UnicodeStringPiece() {}
   private:
     MaybeStackArray<char, 20>  buf;
 };
@@ -454,8 +474,9 @@ void DecimalFormatTest::execFormatTest(int32_t lineNum,
     }
     
     if (result != expected) {
-        errln("[%s] file dcfmtest.txt, line %d: expected \"%s\", got \"%s\"",
-            typeStr, lineNum, UnicodeStringPiece(expected).data(), UnicodeStringPiece(result).data());
+        errln("[%s] file dcfmtest.txt, line %d: expected \"%s\", got \"%s\", %s",
+            typeStr, lineNum, UnicodeStringPiece(expected).data(), UnicodeStringPiece(result).data(),
+            u_errorName(status));
     }
 }
 
@@ -500,7 +521,7 @@ UChar *DecimalFormatTest::ReadAndConvertFile(const char *fileName, int32_t &ulen
     fileSize = ftell(f);
     fileBuf = new char[fileSize];
     fseek(f, 0, SEEK_SET);
-    amtRead = fread(fileBuf, 1, fileSize, f);
+    amtRead = static_cast<int32_t>(fread(fileBuf, 1, fileSize, f));
     if (amtRead != fileSize || fileSize <= 0) {
         errln("Error reading test data file.");
         goto cleanUpAndReturn;
@@ -545,7 +566,7 @@ cleanUpAndReturn:
         errln("ICU Error \"%s\"\n", u_errorName(status));
         delete retPtr;
         retPtr = NULL;
-    };
+    }
     return retPtr;
 }
 

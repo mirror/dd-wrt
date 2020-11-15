@@ -262,7 +262,7 @@ int  main(int argc, char **argv) {
     if (status != U_BUFFER_OVERFLOW_ERROR) {
         fprintf(stderr, "ucnv_toUChars: ICU Error \"%s\"\n", u_errorName(status));
         exit(status);
-    };
+    }
 
     status = U_ZERO_ERROR;
     UChar *ruleSourceU = new UChar[destCap+1];
@@ -275,14 +275,14 @@ int  main(int argc, char **argv) {
     if (U_FAILURE(status)) {
         fprintf(stderr, "ucnv_toUChars: ICU Error \"%s\"\n", u_errorName(status));
         exit(status);
-    };
+    }
     ucnv_close(conv);
 
 
     //
     //  Put the source rules into a UnicodeString
     //
-    UnicodeString ruleSourceS(FALSE, ruleSourceU, destCap);
+    UnicodeString ruleSourceS(false, ruleSourceU, destCap);
 
     //
     //  Create the break iterator from the rules
@@ -296,7 +296,7 @@ int  main(int argc, char **argv) {
         fprintf(stderr, "createRuleBasedBreakIterator: ICU Error \"%s\"  at line %d, column %d\n",
                 u_errorName(status), (int)parseError.line, (int)parseError.offset);
         exit(status);
-    };
+    }
 
 
     //

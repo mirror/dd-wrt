@@ -15,6 +15,8 @@ include $(top_builddir)/icudefs.mk
 ## Build directory information
 subdir = test
 
+@FUZZER_TRUE@FUZZER=fuzzer
+
 @ICUIO_TRUE@IOTEST = iotest
 
 # the letest directory depends on layoutex.
@@ -32,7 +34,7 @@ STATUS_FULL = $(shell pwd)/$(STATUS_TMP)
 ## Files to remove for 'make clean'
 CLEANFILES = *~ $(STATUS_TMP)
 
-SUBDIRS = $(TESTDATA) intltest $(IOTEST) cintltst $(LETEST)
+SUBDIRS = $(TESTDATA) intltest $(IOTEST) cintltst $(LETEST) $(FUZZER)
 
 ## List of phony targets
 .PHONY : everything all all-local all-recursive install install-local		\
@@ -88,7 +90,7 @@ xcheck-recursive check-recursive check-exhaustive-recursive:
 	@$(MKINSTALLDIRS) $(STATUS_TMP)
 	@mystatus=$(STATUS_FULL)/status.$$$$.deleteme ; \
 	$(RMV) "$$mystatus".* ; \
-	@goods=; \
+	goods=; \
 	bads=; \
 	target=`echo $@ | sed s/-recursive//`; \
 	list='$(SUBDIRS)'; for subdir in $$list; do \
@@ -137,8 +139,10 @@ $(STATUS_FULL)/status.$(STATUS_NUM).deleteme.%: pcheck_setup
 
 # print out status
 pcheck: $(STATUS_FILES)
-	@goods= ; \
-	bads= ; \
+	@goods=; \
+	bads=; \
+	echo "----------------------------------------"; \
+	echo $SUBDIRS \
 	echo "----------------------------------------"; \
 	for subdir in $(SUBDIRS); do \
 	  if [ -s "$(MYSTATUS_R).$$subdir" ]; then \

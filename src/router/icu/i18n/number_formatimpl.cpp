@@ -3,7 +3,7 @@
 
 #include "unicode/utypes.h"
 
-#if !UCONFIG_NO_FORMATTING && !UPRV_INCOMPLETE_CPP11_SUPPORT
+#if !UCONFIG_NO_FORMATTING
 
 #include "cstring.h"
 #include "unicode/ures.h"
@@ -24,129 +24,29 @@ using namespace icu;
 using namespace icu::number;
 using namespace icu::number::impl;
 
-namespace {
 
-// NOTE: In Java, the method to get a pattern from the resource bundle exists in NumberFormat.
-// In C++, we have to implement that logic here.
-// TODO: Make Java and C++ consistent?
-
-enum CldrPatternStyle {
-    CLDR_PATTERN_STYLE_DECIMAL,
-    CLDR_PATTERN_STYLE_CURRENCY,
-    CLDR_PATTERN_STYLE_ACCOUNTING,
-    CLDR_PATTERN_STYLE_PERCENT
-    // TODO: Consider scientific format.
-};
-
-const char16_t *
-doGetPattern(UResourceBundle *res, const char *nsName, const char *patternKey, UErrorCode &publicStatus,
-             UErrorCode &localStatus) {
-    // Construct the path into the resource bundle
-    CharString key;
-    key.append("NumberElements/", publicStatus);
-    key.append(nsName, publicStatus);
-    key.append("/patterns/", publicStatus);
-    key.append(patternKey, publicStatus);
-    if (U_FAILURE(publicStatus)) {
-        return u"";
-    }
-    return ures_getStringByKeyWithFallback(res, key.data(), nullptr, &localStatus);
+NumberFormatterImpl::NumberFormatterImpl(const MacroProps& macros, UErrorCode& status)
+    : NumberFormatterImpl(macros, true, status) {
 }
 
-const char16_t *getPatternForStyle(const Locale &locale, const char *nsName, CldrPatternStyle style,
-                                   UErrorCode &status) {
-    const char *patternKey;
-    switch (style) {
-        case CLDR_PATTERN_STYLE_DECIMAL:
-            patternKey = "decimalFormat";
-            break;
-        case CLDR_PATTERN_STYLE_CURRENCY:
-            patternKey = "currencyFormat";
-            break;
-        case CLDR_PATTERN_STYLE_ACCOUNTING:
-            patternKey = "accountingFormat";
-            break;
-        case CLDR_PATTERN_STYLE_PERCENT:
-        default:
-            patternKey = "percentFormat";
-            break;
-    }
-    LocalUResourceBundlePointer res(ures_open(nullptr, locale.getName(), &status));
-    if (U_FAILURE(status)) { return u""; }
-
-    // Attempt to get the pattern with the native numbering system.
-    UErrorCode localStatus = U_ZERO_ERROR;
-    const char16_t *pattern;
-    pattern = doGetPattern(res.getAlias(), nsName, patternKey, status, localStatus);
-    if (U_FAILURE(status)) { return u""; }
-
-    // Fall back to latn if native numbering system does not have the right pattern
-    if (U_FAILURE(localStatus) && uprv_strcmp("latn", nsName) != 0) {
-        localStatus = U_ZERO_ERROR;
-        pattern = doGetPattern(res.getAlias(), "latn", patternKey, status, localStatus);
-        if (U_FAILURE(status)) { return u""; }
-    }
-
-    return pattern;
-}
-
-struct CurrencyFormatInfoResult {
-    bool exists;
-    const char16_t* pattern;
-    const char16_t* decimalSeparator;
-    const char16_t* groupingSeparator;
-};
-CurrencyFormatInfoResult getCurrencyFormatInfo(const Locale& locale, const char* isoCode, UErrorCode& status) {
-    // TODO: Load this data in a centralized location like ICU4J?
-    // TODO: Parts of this same data are loaded in dcfmtsym.cpp; should clean up.
-    CurrencyFormatInfoResult result = { false, nullptr, nullptr, nullptr };
-    if (U_FAILURE(status)) return result;
-    CharString key;
-    key.append("Currencies/", status);
-    key.append(isoCode, status);
-    UErrorCode localStatus = status;
-    LocalUResourceBundlePointer bundle(ures_open(U_ICUDATA_CURR, locale.getName(), &localStatus));
-    ures_getByKeyWithFallback(bundle.getAlias(), key.data(), bundle.getAlias(), &localStatus);
-    if (U_SUCCESS(localStatus) && ures_getSize(bundle.getAlias())>2) { // the length is 3 if more data is present
-        ures_getByIndex(bundle.getAlias(), 2, bundle.getAlias(), &localStatus);
-        int32_t dummy;
-        result.exists = true;
-        result.pattern = ures_getStringByIndex(bundle.getAlias(), 0, &dummy, &localStatus);
-        result.decimalSeparator = ures_getStringByIndex(bundle.getAlias(), 1, &dummy, &localStatus);
-        result.groupingSeparator = ures_getStringByIndex(bundle.getAlias(), 2, &dummy, &localStatus);
-        status = localStatus;
-    } else if (localStatus != U_MISSING_RESOURCE_ERROR) {
-        status = localStatus;
-    }
-    return result;
-}
-
-inline bool unitIsCurrency(const MeasureUnit &unit) {
-    return uprv_strcmp("currency", unit.getType()) == 0;
-}
-
-inline bool unitIsNoUnit(const MeasureUnit &unit) {
-    return uprv_strcmp("none", unit.getType()) == 0;
-}
-
-inline bool unitIsPercent(const MeasureUnit &unit) {
-    return uprv_strcmp("percent", unit.getSubtype()) == 0;
-}
-
-inline bool unitIsPermille(const MeasureUnit &unit) {
-    return uprv_strcmp("permille", unit.getSubtype()) == 0;
-}
-
-}  // namespace
-
-NumberFormatterImpl *NumberFormatterImpl::fromMacros(const MacroProps &macros, UErrorCode &status) {
-    return new NumberFormatterImpl(macros, true, status);
-}
-
-void NumberFormatterImpl::applyStatic(const MacroProps &macros, DecimalQuantity &inValue,
-                                      NumberStringBuilder &outString, UErrorCode &status) {
+int32_t NumberFormatterImpl::formatStatic(const MacroProps &macros, UFormattedNumberData *results,
+                                          UErrorCode &status) {
+    DecimalQuantity &inValue = results->quantity;
+    FormattedStringBuilder &outString = results->getStringRef();
     NumberFormatterImpl impl(macros, false, status);
-    impl.applyUnsafe(inValue, outString, status);
+    MicroProps& micros = impl.preProcessUnsafe(inValue, status);
+    if (U_FAILURE(status)) { return 0; }
+    int32_t length = writeNumber(micros, inValue, outString, 0, status);
+    length += writeAffixes(micros, outString, 0, length, status);
+    results->outputUnit = std::move(micros.outputUnit);
+    return length;
+}
+
+int32_t NumberFormatterImpl::getPrefixSuffixStatic(const MacroProps& macros, Signum signum,
+                                                   StandardPlural::Form plural,
+                                                   FormattedStringBuilder& outString, UErrorCode& status) {
+    NumberFormatterImpl impl(macros, false, status);
+    return impl.getPrefixSuffixUnsafe(signum, plural, outString, status);
 }
 
 // NOTE: C++ SPECIFIC DIFFERENCE FROM JAVA:
@@ -154,32 +54,74 @@ void NumberFormatterImpl::applyStatic(const MacroProps &macros, DecimalQuantity 
 // The "unsafe" method simply re-uses fMicros, eliminating the extra copy operation.
 // See MicroProps::processQuantity() for details.
 
-void NumberFormatterImpl::apply(DecimalQuantity &inValue, NumberStringBuilder &outString,
-                                UErrorCode &status) const {
-    if (U_FAILURE(status)) { return; }
+int32_t NumberFormatterImpl::format(UFormattedNumberData *results, UErrorCode &status) const {
+    DecimalQuantity &inValue = results->quantity;
+    FormattedStringBuilder &outString = results->getStringRef();
     MicroProps micros;
-    fMicroPropsGenerator->processQuantity(inValue, micros, status);
-    if (U_FAILURE(status)) { return; }
-    microsToString(micros, inValue, outString, status);
+    preProcess(inValue, micros, status);
+    if (U_FAILURE(status)) { return 0; }
+    int32_t length = writeNumber(micros, inValue, outString, 0, status);
+    length += writeAffixes(micros, outString, 0, length, status);
+    results->outputUnit = std::move(micros.outputUnit);
+    return length;
 }
 
-void NumberFormatterImpl::applyUnsafe(DecimalQuantity &inValue, NumberStringBuilder &outString,
-                                      UErrorCode &status) {
+void NumberFormatterImpl::preProcess(DecimalQuantity& inValue, MicroProps& microsOut,
+                                     UErrorCode& status) const {
     if (U_FAILURE(status)) { return; }
+    if (fMicroPropsGenerator == nullptr) {
+        status = U_INTERNAL_PROGRAM_ERROR;
+        return;
+    }
+    fMicroPropsGenerator->processQuantity(inValue, microsOut, status);
+    microsOut.integerWidth.apply(inValue, status);
+}
+
+MicroProps& NumberFormatterImpl::preProcessUnsafe(DecimalQuantity& inValue, UErrorCode& status) {
+    if (U_FAILURE(status)) {
+        return fMicros; // must always return a value
+    }
+    if (fMicroPropsGenerator == nullptr) {
+        status = U_INTERNAL_PROGRAM_ERROR;
+        return fMicros; // must always return a value
+    }
     fMicroPropsGenerator->processQuantity(inValue, fMicros, status);
-    if (U_FAILURE(status)) { return; }
-    microsToString(fMicros, inValue, outString, status);
+    fMicros.integerWidth.apply(inValue, status);
+    return fMicros;
 }
 
-NumberFormatterImpl::NumberFormatterImpl(const MacroProps &macros, bool safe, UErrorCode &status) {
+int32_t NumberFormatterImpl::getPrefixSuffix(Signum signum, StandardPlural::Form plural,
+                                             FormattedStringBuilder& outString, UErrorCode& status) const {
+    if (U_FAILURE(status)) { return 0; }
+    // #13453: DecimalFormat wants the affixes from the pattern only (modMiddle, aka pattern modifier).
+    // Safe path: use fImmutablePatternModifier.
+    const Modifier* modifier = fImmutablePatternModifier->getModifier(signum, plural);
+    modifier->apply(outString, 0, 0, status);
+    if (U_FAILURE(status)) { return 0; }
+    return modifier->getPrefixLength();
+}
+
+int32_t NumberFormatterImpl::getPrefixSuffixUnsafe(Signum signum, StandardPlural::Form plural,
+                                                   FormattedStringBuilder& outString, UErrorCode& status) {
+    if (U_FAILURE(status)) { return 0; }
+    // #13453: DecimalFormat wants the affixes from the pattern only (modMiddle, aka pattern modifier).
+    // Unsafe path: use fPatternModifier.
+    fPatternModifier->setNumberProperties(signum, plural);
+    fPatternModifier->apply(outString, 0, 0, status);
+    if (U_FAILURE(status)) { return 0; }
+    return fPatternModifier->getPrefixLength();
+}
+
+NumberFormatterImpl::NumberFormatterImpl(const MacroProps& macros, bool safe, UErrorCode& status) {
     fMicroPropsGenerator = macrosToMicroGenerator(macros, safe, status);
 }
 
 //////////
 
-const MicroPropsGenerator *
-NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe, UErrorCode &status) {
-    const MicroPropsGenerator *chain = &fMicros;
+const MicroPropsGenerator*
+NumberFormatterImpl::macrosToMicroGenerator(const MacroProps& macros, bool safe, UErrorCode& status) {
+    if (U_FAILURE(status)) { return nullptr; }
+    const MicroPropsGenerator* chain = &fMicros;
 
     // Check that macros is error-free before continuing.
     if (macros.copyErrorTo(status)) {
@@ -189,15 +131,15 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
     // TODO: Accept currency symbols from DecimalFormatSymbols?
 
     // Pre-compute a few values for efficiency.
-    bool isCurrency = unitIsCurrency(macros.unit);
-    bool isNoUnit = unitIsNoUnit(macros.unit);
-    bool isPercent = isNoUnit && unitIsPercent(macros.unit);
-    bool isPermille = isNoUnit && unitIsPermille(macros.unit);
-    bool isCldrUnit = !isCurrency && !isNoUnit;
-    bool isAccounting = macros.sign == UNUM_SIGN_ACCOUNTING
-            || macros.sign == UNUM_SIGN_ACCOUNTING_ALWAYS
-            || macros.sign == UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO;
-    CurrencyUnit currency(kDefaultCurrency, status);
+    bool isCurrency = utils::unitIsCurrency(macros.unit);
+    bool isBaseUnit = utils::unitIsBaseUnit(macros.unit);
+    bool isPercent = utils::unitIsPercent(macros.unit);
+    bool isPermille = utils::unitIsPermille(macros.unit);
+    bool isCompactNotation = macros.notation.fType == Notation::NTN_COMPACT;
+    bool isAccounting =
+            macros.sign == UNUM_SIGN_ACCOUNTING || macros.sign == UNUM_SIGN_ACCOUNTING_ALWAYS ||
+            macros.sign == UNUM_SIGN_ACCOUNTING_EXCEPT_ZERO;
+    CurrencyUnit currency(u"", status);
     if (isCurrency) {
         currency = CurrencyUnit(macros.unit, status); // Restore CurrencyUnit from MeasureUnit
     }
@@ -205,10 +147,24 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
     if (macros.unitWidth != UNUM_UNIT_WIDTH_COUNT) {
         unitWidth = macros.unitWidth;
     }
+    // Use CLDR unit data for all MeasureUnits (not currency and not
+    // no-unit), except use the dedicated percent pattern for percent and
+    // permille. However, use the CLDR unit data for percent/permille if a
+    // long name was requested OR if compact notation is being used, since
+    // compact notation overrides the middle modifier (micros.modMiddle)
+    // normally used for the percent pattern.
+    bool isCldrUnit = !isCurrency
+        && !isBaseUnit
+        && (unitWidth == UNUM_UNIT_WIDTH_FULL_NAME
+            || !(isPercent || isPermille)
+            || isCompactNotation
+        );
+    bool isMixedUnit = isCldrUnit && (uprv_strcmp(macros.unit.getType(), "") == 0) &&
+                       macros.unit.getComplexity(status) == UMEASURE_UNIT_MIXED;
 
     // Select the numbering system.
     LocalPointer<const NumberingSystem> nsLocal;
-    const NumberingSystem *ns;
+    const NumberingSystem* ns;
     if (macros.symbols.isNumberingSystem()) {
         ns = macros.symbols.getNumberingSystem();
     } else {
@@ -217,41 +173,40 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
         // Give ownership to the function scope.
         nsLocal.adoptInstead(ns);
     }
-    const char *nsName = U_SUCCESS(status) ? ns->getName() : "latn";
+    const char* nsName = U_SUCCESS(status) ? ns->getName() : "latn";
+    uprv_strncpy(fMicros.nsName, nsName, 8);
+    fMicros.nsName[8] = 0; // guarantee NUL-terminated
 
     // Resolve the symbols. Do this here because currency may need to customize them.
     if (macros.symbols.isDecimalFormatSymbols()) {
         fMicros.symbols = macros.symbols.getDecimalFormatSymbols();
     } else {
-        fMicros.symbols = new DecimalFormatSymbols(macros.locale, *ns, status);
-        // Give ownership to the NumberFormatterImpl.
-        fSymbols.adoptInstead(fMicros.symbols);
+        LocalPointer<DecimalFormatSymbols> newSymbols(
+            new DecimalFormatSymbols(macros.locale, *ns, status), status);
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
+        if (isCurrency) {
+            newSymbols->setCurrency(currency.getISOCurrency(), status);
+            if (U_FAILURE(status)) {
+                return nullptr;
+            }
+        }
+        fMicros.symbols = newSymbols.getAlias();
+        fSymbols.adoptInstead(newSymbols.orphan());
     }
 
     // Load and parse the pattern string. It is used for grouping sizes and affixes only.
     // If we are formatting currency, check for a currency-specific pattern.
     const char16_t* pattern = nullptr;
-    if (isCurrency) {
-        CurrencyFormatInfoResult info = getCurrencyFormatInfo(macros.locale, currency.getSubtype(), status);
-        if (info.exists) {
-            pattern = info.pattern;
-            // It's clunky to clone an object here, but this code is not frequently executed.
-            DecimalFormatSymbols* symbols = new DecimalFormatSymbols(*fMicros.symbols);
-            fMicros.symbols = symbols;
-            fSymbols.adoptInstead(symbols);
-            symbols->setSymbol(
-                DecimalFormatSymbols::ENumberFormatSymbol::kMonetarySeparatorSymbol,
-                UnicodeString(info.decimalSeparator),
-                FALSE);
-            symbols->setSymbol(
-                DecimalFormatSymbols::ENumberFormatSymbol::kMonetaryGroupingSeparatorSymbol,
-                UnicodeString(info.groupingSeparator),
-                FALSE);
-        }
+    if (isCurrency && fMicros.symbols->getCurrencyPattern() != nullptr) {
+        pattern = fMicros.symbols->getCurrencyPattern();
     }
     if (pattern == nullptr) {
         CldrPatternStyle patternStyle;
-        if (isPercent || isPermille) {
+        if (isCldrUnit) {
+            patternStyle = CLDR_PATTERN_STYLE_DECIMAL;
+        } else if (isPercent || isPermille) {
             patternStyle = CLDR_PATTERN_STYLE_PERCENT;
         } else if (!isCurrency || unitWidth == UNUM_UNIT_WIDTH_FULL_NAME) {
             patternStyle = CLDR_PATTERN_STYLE_DECIMAL;
@@ -262,32 +217,78 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
         } else {
             patternStyle = CLDR_PATTERN_STYLE_CURRENCY;
         }
-        pattern = getPatternForStyle(macros.locale, nsName, patternStyle, status);
+        pattern = utils::getPatternForStyle(macros.locale, nsName, patternStyle, status);
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
     }
     auto patternInfo = new ParsedPatternInfo();
+    if (patternInfo == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
     fPatternInfo.adoptInstead(patternInfo);
     PatternParser::parseToPatternInfo(UnicodeString(pattern), *patternInfo, status);
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
 
     /////////////////////////////////////////////////////////////////////////////////////
     /// START POPULATING THE DEFAULT MICROPROPS AND BUILDING THE MICROPROPS GENERATOR ///
     /////////////////////////////////////////////////////////////////////////////////////
 
-    // Rounding strategy
-    if (!macros.rounder.isBogus()) {
-        fMicros.rounding = macros.rounder;
-    } else if (macros.notation.fType == Notation::NTN_COMPACT) {
-        fMicros.rounding = Rounder::integer().withMinDigits(2);
-    } else if (isCurrency) {
-        fMicros.rounding = Rounder::currency(UCURR_USAGE_STANDARD);
-    } else {
-        fMicros.rounding = Rounder::maxFraction(6);
+    // Unit Preferences and Conversions as our first step
+    if (macros.usage.isSet()) {
+        if (!isCldrUnit) {
+            // We only support "usage" when the input unit is specified, and is
+            // a CLDR Unit.
+            status = U_ILLEGAL_ARGUMENT_ERROR;
+            return nullptr;
+        }
+        auto usagePrefsHandler =
+            new UsagePrefsHandler(macros.locale, macros.unit, macros.usage.fUsage, chain, status);
+        fUsagePrefsHandler.adoptInsteadAndCheckErrorCode(usagePrefsHandler, status);
+        chain = fUsagePrefsHandler.getAlias();
+    } else if (isMixedUnit) {
+        MeasureUnitImpl temp;
+        const MeasureUnitImpl &outputUnit = MeasureUnitImpl::forMeasureUnit(macros.unit, temp, status);
+        auto unitConversionHandler =
+            new UnitConversionHandler(outputUnit.units[0]->build(status), macros.unit, chain, status);
+        fUnitConversionHandler.adoptInsteadAndCheckErrorCode(unitConversionHandler, status);
+        chain = fUnitConversionHandler.getAlias();
     }
-    fMicros.rounding.setLocaleData(currency, status);
+
+    // Multiplier
+    if (macros.scale.isValid()) {
+        fMicros.helpers.multiplier.setAndChain(macros.scale, chain);
+        chain = &fMicros.helpers.multiplier;
+    }
+
+    // Rounding strategy
+    Precision precision;
+    if (!macros.precision.isBogus()) {
+        precision = macros.precision;
+    } else if (isCompactNotation) {
+        precision = Precision::integer().withMinDigits(2);
+    } else if (isCurrency) {
+        precision = Precision::currency(UCURR_USAGE_STANDARD);
+    } else if (macros.usage.isSet()) {
+        // Bogus Precision - it will get set in the UsagePrefsHandler instead
+        precision = Precision();
+    } else {
+        precision = Precision::maxFraction(6);
+    }
+    UNumberFormatRoundingMode roundingMode;
+    roundingMode = macros.roundingMode;
+    fMicros.rounder = {precision, roundingMode, currency, status};
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
 
     // Grouping strategy
     if (!macros.grouper.isBogus()) {
         fMicros.grouping = macros.grouper;
-    } else if (macros.notation.fType == Notation::NTN_COMPACT) {
+    } else if (isCompactNotation) {
         // Compact notation uses minGrouping by default since ICU 59
         fMicros.grouping = Grouper::forStrategy(UNUM_GROUPING_MIN2);
     } else {
@@ -306,7 +307,7 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
     if (!macros.integerWidth.isBogus()) {
         fMicros.integerWidth = macros.integerWidth;
     } else {
-        fMicros.integerWidth = IntegerWidth::zeroFillTo(1);
+        fMicros.integerWidth = IntegerWidth::standard();
     }
 
     // Sign display
@@ -328,7 +329,12 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
 
     // Inner modifier (scientific notation)
     if (macros.notation.fType == Notation::NTN_SCIENTIFIC) {
-        fScientificHandler.adoptInstead(new ScientificHandler(&macros.notation, fMicros.symbols, chain));
+        auto newScientificHandler = new ScientificHandler(&macros.notation, fMicros.symbols, chain);
+        if (newScientificHandler == nullptr) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+            return nullptr;
+        }
+        fScientificHandler.adoptInstead(newScientificHandler);
         chain = fScientificHandler.getAlias();
     } else {
         // No inner modifier required
@@ -337,79 +343,116 @@ NumberFormatterImpl::macrosToMicroGenerator(const MacroProps &macros, bool safe,
 
     // Middle modifier (patterns, positive/negative, currency symbols, percent)
     auto patternModifier = new MutablePatternModifier(false);
+    if (patternModifier == nullptr) {
+        status = U_MEMORY_ALLOCATION_ERROR;
+        return nullptr;
+    }
     fPatternModifier.adoptInstead(patternModifier);
-    patternModifier->setPatternInfo(fPatternInfo.getAlias());
+    patternModifier->setPatternInfo(
+            macros.affixProvider != nullptr ? macros.affixProvider
+                                            : static_cast<const AffixPatternProvider*>(fPatternInfo.getAlias()),
+            kUndefinedField);
     patternModifier->setPatternAttributes(fMicros.sign, isPermille);
     if (patternModifier->needsPlurals()) {
         patternModifier->setSymbols(
                 fMicros.symbols,
                 currency,
                 unitWidth,
-                resolvePluralRules(macros.rules, macros.locale, status));
+                resolvePluralRules(macros.rules, macros.locale, status),
+                status);
     } else {
-        patternModifier->setSymbols(fMicros.symbols, currency, unitWidth, nullptr);
+        patternModifier->setSymbols(fMicros.symbols, currency, unitWidth, nullptr, status);
     }
     if (safe) {
-        fImmutablePatternModifier.adoptInstead(patternModifier->createImmutableAndChain(chain, status));
+        fImmutablePatternModifier.adoptInsteadAndCheckErrorCode(patternModifier->createImmutable(status),
+                                                                status);
+    }
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    // Outer modifier (CLDR units and currency long names)
+    if (isCldrUnit) {
+        if (macros.usage.isSet()) {
+            fLongNameMultiplexer.adoptInsteadAndCheckErrorCode(
+                LongNameMultiplexer::forMeasureUnits(
+                    macros.locale, *fUsagePrefsHandler->getOutputUnits(), unitWidth,
+                    resolvePluralRules(macros.rules, macros.locale, status), chain, status),
+                status);
+            chain = fLongNameMultiplexer.getAlias();
+        } else if (isMixedUnit) {
+            fMixedUnitLongNameHandler.adoptInsteadAndCheckErrorCode(new MixedUnitLongNameHandler(),
+                                                                    status);
+            MixedUnitLongNameHandler::forMeasureUnit(
+                macros.locale, macros.unit, unitWidth,
+                resolvePluralRules(macros.rules, macros.locale, status), chain,
+                fMixedUnitLongNameHandler.getAlias(), status);
+            chain = fMixedUnitLongNameHandler.getAlias();
+        } else {
+            fLongNameHandler.adoptInsteadAndCheckErrorCode(new LongNameHandler(), status);
+            LongNameHandler::forMeasureUnit(macros.locale, macros.unit, macros.perUnit, unitWidth,
+                                            resolvePluralRules(macros.rules, macros.locale, status),
+                                            chain, fLongNameHandler.getAlias(), status);
+            chain = fLongNameHandler.getAlias();
+        }
+    } else if (isCurrency && unitWidth == UNUM_UNIT_WIDTH_FULL_NAME) {
+        fLongNameHandler.adoptInsteadAndCheckErrorCode(
+            LongNameHandler::forCurrencyLongNames(
+                macros.locale, currency, resolvePluralRules(macros.rules, macros.locale, status), chain,
+                status),
+            status);
+        chain = fLongNameHandler.getAlias();
+    } else {
+        // No outer modifier required
+        fMicros.modOuter = &fMicros.helpers.emptyWeakModifier;
+    }
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    // Compact notation
+    if (isCompactNotation) {
+        CompactType compactType = (isCurrency && unitWidth != UNUM_UNIT_WIDTH_FULL_NAME)
+                                  ? CompactType::TYPE_CURRENCY : CompactType::TYPE_DECIMAL;
+        auto newCompactHandler = new CompactHandler(
+            macros.notation.fUnion.compactStyle,
+            macros.locale,
+            nsName,
+            compactType,
+            resolvePluralRules(macros.rules, macros.locale, status),
+            patternModifier,
+            safe,
+            chain,
+            status);
+        if (U_FAILURE(status)) {
+            return nullptr;
+        }
+        if (newCompactHandler == nullptr) {
+            status = U_MEMORY_ALLOCATION_ERROR;
+            return nullptr;
+        }
+        fCompactHandler.adoptInstead(newCompactHandler);
+        chain = fCompactHandler.getAlias();
+    }
+    if (U_FAILURE(status)) {
+        return nullptr;
+    }
+
+    // Always add the pattern modifier as the last element of the chain.
+    if (safe) {
+        fImmutablePatternModifier->addToChain(chain);
         chain = fImmutablePatternModifier.getAlias();
     } else {
         patternModifier->addToChain(chain);
         chain = patternModifier;
     }
 
-    // Outer modifier (CLDR units and currency long names)
-    if (isCldrUnit) {
-        fLongNameHandler.adoptInstead(
-                new LongNameHandler(
-                        LongNameHandler::forMeasureUnit(
-                                macros.locale,
-                                macros.unit,
-                                macros.perUnit,
-                                unitWidth,
-                                resolvePluralRules(macros.rules, macros.locale, status),
-                                chain,
-                                status)));
-        chain = fLongNameHandler.getAlias();
-    } else if (isCurrency && unitWidth == UNUM_UNIT_WIDTH_FULL_NAME) {
-        fLongNameHandler.adoptInstead(
-                new LongNameHandler(
-                        LongNameHandler::forCurrencyLongNames(
-                                macros.locale,
-                                currency,
-                                resolvePluralRules(macros.rules, macros.locale, status),
-                                chain,
-                                status)));
-        chain = fLongNameHandler.getAlias();
-    } else {
-        // No outer modifier required
-        fMicros.modOuter = &fMicros.helpers.emptyWeakModifier;
-    }
-
-    // Compact notation
-    // NOTE: Compact notation can (but might not) override the middle modifier and rounding.
-    // It therefore needs to go at the end of the chain.
-    if (macros.notation.fType == Notation::NTN_COMPACT) {
-        CompactType compactType = (isCurrency && unitWidth != UNUM_UNIT_WIDTH_FULL_NAME)
-                                  ? CompactType::TYPE_CURRENCY : CompactType::TYPE_DECIMAL;
-        fCompactHandler.adoptInstead(
-                new CompactHandler(
-                        macros.notation.fUnion.compactStyle,
-                        macros.locale,
-                        nsName,
-                        compactType,
-                        resolvePluralRules(macros.rules, macros.locale, status),
-                        safe ? patternModifier : nullptr,
-                        chain,
-                        status));
-        chain = fCompactHandler.getAlias();
-    }
-
     return chain;
 }
 
-const PluralRules *
-NumberFormatterImpl::resolvePluralRules(const PluralRules *rulesPtr, const Locale &locale,
-                                        UErrorCode &status) {
+const PluralRules*
+NumberFormatterImpl::resolvePluralRules(const PluralRules* rulesPtr, const Locale& locale,
+                                        UErrorCode& status) {
     if (rulesPtr != nullptr) {
         return rulesPtr;
     }
@@ -420,100 +463,121 @@ NumberFormatterImpl::resolvePluralRules(const PluralRules *rulesPtr, const Local
     return fRules.getAlias();
 }
 
-int32_t NumberFormatterImpl::microsToString(const MicroProps &micros, DecimalQuantity &quantity,
-                                            NumberStringBuilder &string, UErrorCode &status) {
-    micros.rounding.apply(quantity, status);
-    micros.integerWidth.apply(quantity, status);
-    int32_t length = writeNumber(micros, quantity, string, status);
-    // NOTE: When range formatting is added, these modifiers can bubble up.
-    // For now, apply them all here at once.
+int32_t NumberFormatterImpl::writeAffixes(const MicroProps& micros, FormattedStringBuilder& string,
+                                          int32_t start, int32_t end, UErrorCode& status) {
+    U_ASSERT(micros.modOuter != nullptr);
     // Always apply the inner modifier (which is "strong").
-    length += micros.modInner->apply(string, 0, length, status);
+    int32_t length = micros.modInner->apply(string, start, end, status);
     if (micros.padding.isValid()) {
         length += micros.padding
-                .padAndApply(*micros.modMiddle, *micros.modOuter, string, 0, length, status);
+                .padAndApply(*micros.modMiddle, *micros.modOuter, string, start, length + end, status);
     } else {
-        length += micros.modMiddle->apply(string, 0, length, status);
-        length += micros.modOuter->apply(string, 0, length, status);
+        length += micros.modMiddle->apply(string, start, length + end, status);
+        length += micros.modOuter->apply(string, start, length + end, status);
     }
     return length;
 }
 
-int32_t NumberFormatterImpl::writeNumber(const MicroProps &micros, DecimalQuantity &quantity,
-                                         NumberStringBuilder &string, UErrorCode &status) {
+int32_t NumberFormatterImpl::writeNumber(const MicroProps& micros, DecimalQuantity& quantity,
+                                         FormattedStringBuilder& string, int32_t index,
+                                         UErrorCode& status) {
     int32_t length = 0;
     if (quantity.isInfinite()) {
         length += string.insert(
-                length,
+                length + index,
                 micros.symbols->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kInfinitySymbol),
-                UNUM_INTEGER_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_INTEGER_FIELD},
                 status);
 
     } else if (quantity.isNaN()) {
         length += string.insert(
-                length,
+                length + index,
                 micros.symbols->getSymbol(DecimalFormatSymbols::ENumberFormatSymbol::kNaNSymbol),
-                UNUM_INTEGER_FIELD,
+                {UFIELD_CATEGORY_NUMBER, UNUM_INTEGER_FIELD},
                 status);
 
     } else {
         // Add the integer digits
-        length += writeIntegerDigits(micros, quantity, string, status);
+        length += writeIntegerDigits(micros, quantity, string, length + index, status);
 
         // Add the decimal point
         if (quantity.getLowerDisplayMagnitude() < 0 || micros.decimal == UNUM_DECIMAL_SEPARATOR_ALWAYS) {
             length += string.insert(
-                    length,
+                    length + index,
                     micros.useCurrency ? micros.symbols->getSymbol(
                             DecimalFormatSymbols::ENumberFormatSymbol::kMonetarySeparatorSymbol) : micros
                             .symbols
                             ->getSymbol(
                                     DecimalFormatSymbols::ENumberFormatSymbol::kDecimalSeparatorSymbol),
-                    UNUM_DECIMAL_SEPARATOR_FIELD,
+                    {UFIELD_CATEGORY_NUMBER, UNUM_DECIMAL_SEPARATOR_FIELD},
                     status);
         }
 
         // Add the fraction digits
-        length += writeFractionDigits(micros, quantity, string, status);
+        length += writeFractionDigits(micros, quantity, string, length + index, status);
+
+        if (length == 0) {
+            // Force output of the digit for value 0
+            length += utils::insertDigitFromSymbols(
+                    string,
+                    index,
+                    0,
+                    *micros.symbols,
+                    {UFIELD_CATEGORY_NUMBER, UNUM_INTEGER_FIELD},
+                    status);
+        }
     }
 
     return length;
 }
 
-int32_t NumberFormatterImpl::writeIntegerDigits(const MicroProps &micros, DecimalQuantity &quantity,
-                                                NumberStringBuilder &string, UErrorCode &status) {
+int32_t NumberFormatterImpl::writeIntegerDigits(const MicroProps& micros, DecimalQuantity& quantity,
+                                                FormattedStringBuilder& string, int32_t index,
+                                                UErrorCode& status) {
     int length = 0;
     int integerCount = quantity.getUpperDisplayMagnitude() + 1;
     for (int i = 0; i < integerCount; i++) {
         // Add grouping separator
         if (micros.grouping.groupAtPosition(i, quantity)) {
             length += string.insert(
-                    0,
+                    index,
                     micros.useCurrency ? micros.symbols->getSymbol(
                             DecimalFormatSymbols::ENumberFormatSymbol::kMonetaryGroupingSeparatorSymbol)
                                        : micros.symbols->getSymbol(
                             DecimalFormatSymbols::ENumberFormatSymbol::kGroupingSeparatorSymbol),
-                    UNUM_GROUPING_SEPARATOR_FIELD,
+                    {UFIELD_CATEGORY_NUMBER, UNUM_GROUPING_SEPARATOR_FIELD},
                     status);
         }
 
         // Get and append the next digit value
         int8_t nextDigit = quantity.getDigit(i);
-        length += string.insert(
-                0, getDigitFromSymbols(nextDigit, *micros.symbols), UNUM_INTEGER_FIELD, status);
+        length += utils::insertDigitFromSymbols(
+                string,
+                index,
+                nextDigit,
+                *micros.symbols,
+                {UFIELD_CATEGORY_NUMBER,
+                UNUM_INTEGER_FIELD},
+                status);
     }
     return length;
 }
 
-int32_t NumberFormatterImpl::writeFractionDigits(const MicroProps &micros, DecimalQuantity &quantity,
-                                                 NumberStringBuilder &string, UErrorCode &status) {
+int32_t NumberFormatterImpl::writeFractionDigits(const MicroProps& micros, DecimalQuantity& quantity,
+                                                 FormattedStringBuilder& string, int32_t index,
+                                                 UErrorCode& status) {
     int length = 0;
     int fractionCount = -quantity.getLowerDisplayMagnitude();
     for (int i = 0; i < fractionCount; i++) {
         // Get and append the next digit value
         int8_t nextDigit = quantity.getDigit(-i - 1);
-        length += string.append(
-                getDigitFromSymbols(nextDigit, *micros.symbols), UNUM_FRACTION_FIELD, status);
+        length += utils::insertDigitFromSymbols(
+                string,
+                length + index,
+                nextDigit,
+                *micros.symbols,
+                {UFIELD_CATEGORY_NUMBER, UNUM_FRACTION_FIELD},
+                status);
     }
     return length;
 }

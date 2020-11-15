@@ -15,11 +15,12 @@
 #if !UCONFIG_NO_FORMATTING
 
 #include "intltest.h"
+#include "itformat.h"
 
 /**
  * Test basic functionality of various API functions
  **/
-class DateIntervalFormatTest: public IntlTest {
+class DateIntervalFormatTest: public IntlTestWithFieldPosition {
     void runIndexedTest( int32_t index, UBool exec, const char* &name, char* par = NULL );
 
 public:
@@ -33,10 +34,23 @@ public:
      */
     void testFormat();
 
+    
+    /**
+     * Test handling of hour and day period metacharacters
+     */
+    void testHourMetacharacters();
+
+    void testFormatMillisecond();
+
     /**
      * Test formatting using user defined DateIntervalInfo
      */
     void testFormatUserDII();
+
+    /*
+     * Test format using UDisplayContext
+     */
+    void testContext();
 
     /**
      * Test for no unwanted side effects when setting
@@ -62,6 +76,11 @@ public:
     void threadFunc11669(int32_t threadNum);
 
     void testTicket12065();
+
+    void testFormattedDateInterval();
+    void testCreateInstanceForAllLocales();
+
+    void testTicket20707();
 
 private:
     /**

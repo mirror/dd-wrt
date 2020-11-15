@@ -323,7 +323,7 @@ u_scanf_skip_leading_ws(UFILE   *input,
     UBool isNotEOF;
 
     /* skip all leading ws in the input */
-    while( (isNotEOF = ufile_getch(input, &c)) && (c == pad || u_isWhitespace(c)) )
+    while( ((isNotEOF = ufile_getch(input, &c)) == TRUE) && (c == pad || u_isWhitespace(c)) )
     {
         count++;
     }
@@ -357,7 +357,7 @@ u_scanf_skip_leading_positive_sign(UFILE   *input,
 
         if (U_SUCCESS(localStatus)) {
             /* skip all leading ws in the input */
-            while( (isNotEOF = ufile_getch(input, &c)) && (count < symbolLen && c == plusSymbol[count]) )
+            while( ((isNotEOF = ufile_getch(input, &c)) == TRUE) && (count < symbolLen && c == plusSymbol[count]) )
             {
                 count++;
             }
@@ -695,9 +695,10 @@ u_scanf_integer_handler(UFILE       *input,
 
     int32_t         len;
     void            *num        = (void*) (args[0].ptrValue);
-    UNumberFormat   *format;
+    UNumberFormat   *format, *localFormat;
     int32_t         parsePos    = 0;
     int32_t         skipped;
+    int32_t         parseIntOnly = 0;
     UErrorCode      status      = U_ZERO_ERROR;
     int64_t         result;
 
@@ -722,11 +723,20 @@ u_scanf_integer_handler(UFILE       *input,
     if(format == 0)
         return 0;
 
+    /* for integer types, do not attempt to parse fractions */
+    localFormat = unum_clone(format, &status);
+    if(U_FAILURE(status))
+        return 0;
+
+    if(info->fSpec == 'd' || info->fSpec == 'i' || info->fSpec == 'u')
+        parseIntOnly = 1;
+    unum_setAttribute(localFormat, UNUM_PARSE_INT_ONLY, parseIntOnly);
+
     /* Skip the positive prefix. ICU normally can't handle this due to strict parsing. */
-    skipped += u_scanf_skip_leading_positive_sign(input, format, &status);
+    skipped += u_scanf_skip_leading_positive_sign(input, localFormat, &status);
 
     /* parse the number */
-    result = unum_parseInt64(format, input->str.fPos, len, &parsePos, &status);
+    result = unum_parseInt64(localFormat, input->str.fPos, len, &parsePos, &status);
 
     /* mask off any necessary bits */
     if (!info->fSkipArg) {
@@ -740,6 +750,9 @@ u_scanf_integer_handler(UFILE       *input,
 
     /* update the input's position to reflect consumed data */
     input->str.fPos += parsePos;
+
+    /* cleanup cloned formatter */
+    unum_close(localFormat);
 
     /* we converted 1 arg */
     *argConverted = !info->fSkipArg;
@@ -855,7 +868,7 @@ u_scanf_string_handler(UFILE        *input,
         return -1;
 
     while( (info->fWidth == -1 || count < info->fWidth) 
-        && (isNotEOF = ufile_getch(input, &c))
+        && ((isNotEOF = ufile_getch(input, &c)) == TRUE)
         && (!info->fIsString || (c != info->fPadChar && !u_isWhitespace(c))))
     {
 
@@ -946,7 +959,7 @@ u_scanf_ustring_handler(UFILE       *input,
     count = 0;
 
     while( (info->fWidth == -1 || count < info->fWidth)
-        && (isNotEOF = ufile_getch(input, &c))
+        && ((isNotEOF = ufile_getch(input, &c)) == TRUE)
         && (!info->fIsString || (c != info->fPadChar && !u_isWhitespace(c))))
     {
 
@@ -1249,7 +1262,7 @@ u_scanf_scanset_handler(UFILE       *input,
 
         /* grab characters one at a time and make sure they are in the scanset */
         while(chLeft > 0) {
-            if ((isNotEOF = ufile_getch32(input, &c)) && uset_contains(scanset, c)) {
+            if ( ((isNotEOF = ufile_getch32(input, &c)) == TRUE) && uset_contains(scanset, c) ) {
                 readCharacter = TRUE;
                 if (!info->fSkipArg) {
                     int32_t idx = 0;

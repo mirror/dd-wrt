@@ -35,11 +35,17 @@
 #include "cbiapts.h"
 #include "cmemory.h"
 
-#define TEST_ASSERT_SUCCESS(status) {if (U_FAILURE(status)) { \
-log_data_err("Failure at file %s, line %d, error = %s (Are you missing data?)\n", __FILE__, __LINE__, u_errorName(status));}}
+#define TEST_ASSERT_SUCCESS(status) UPRV_BLOCK_MACRO_BEGIN { \
+    if (U_FAILURE(status)) { \
+        log_data_err("Failure at file %s, line %d, error = %s (Are you missing data?)\n", __FILE__, __LINE__, u_errorName(status)); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
-#define TEST_ASSERT(expr) {if ((expr)==FALSE) { \
-log_data_err("Test Failure at file %s, line %d (Are you missing data?)\n", __FILE__, __LINE__);}}
+#define TEST_ASSERT(expr) UPRV_BLOCK_MACRO_BEGIN { \
+    if ((expr)==FALSE) { \
+        log_data_err("Test Failure at file %s, line %d (Are you missing data?)\n", __FILE__, __LINE__); \
+    } \
+} UPRV_BLOCK_MACRO_END
 
 #if !UCONFIG_NO_FILE_IO
 static void TestBreakIteratorSafeClone(void);
@@ -99,7 +105,7 @@ static UChar* toUChar(const char *src, void **freeHook) {
     UErrorCode status = U_ZERO_ERROR;
     if (src == NULL) {
         return NULL;
-    };
+    }
 
     cnv = ucnv_open(NULL, &status);
     if(U_FAILURE(status) || cnv == NULL) {
@@ -308,14 +314,14 @@ static void TestBreakIteratorCAPI()
 
 
     log_verbose("\nTesting the functions for sentence\n");
-    ubrk_first(sentence);
+    pos = ubrk_first(sentence);
     pos = ubrk_current(sentence);
     log_verbose("Current(sentence) = %d\n", (int32_t)pos);
        pos = ubrk_last(sentence);
     if(pos!=49)
         log_err("error ubrk_last for sentence did not return 49\n");
     log_verbose("Last (sentence) = %d\n", (int32_t)pos);
-    ubrk_first(sentence);
+    pos = ubrk_first(sentence);
     to = ubrk_following( sentence, 0 );
     if (to == 0) log_err("ubrk_following returned 0\n");
     to = ubrk_preceding( sentence, to );
@@ -532,7 +538,7 @@ static UBreakIterator * testOpenRules(char *rules) {
     if (U_FAILURE(status)) {
         log_data_err("FAIL: ubrk_openRules: ICU Error \"%s\" (Are you missing data?)\n", u_errorName(status));
         bi = 0;
-    };
+    }
     freeToUCharStrings(&strCleanUp);
     return bi;
 
@@ -566,7 +572,7 @@ static void TestBreakIteratorRules() {
     ubrk_setText(bi,  uData, -1, &status);
 
     pos = ubrk_first(bi);
-    for (i=0; i<sizeof(breaks); i++) {
+    for (i=0; i<(int)sizeof(breaks); i++) {
         if (pos == i && breaks[i] != '*') {
             log_err("FAIL: unexpected break at position %d found\n", pos);
             break;
@@ -730,12 +736,15 @@ static void TestBreakIteratorUText(void) {
     bi = ubrk_open(UBRK_WORD, "en_US", NULL, 0, &status);
     if (U_FAILURE(status)) {
         log_err_status(status, "Failure at file %s, line %d, error = %s\n", __FILE__, __LINE__, u_errorName(status));
+        utext_close(ut);
         return;
     }
 
     ubrk_setUText(bi, ut, &status);
     if (U_FAILURE(status)) {
         log_err("Failure at file %s, line %d, error = %s\n", __FILE__, __LINE__, u_errorName(status));
+        ubrk_close(bi);
+        utext_close(ut);
         return;
     }
 
@@ -784,15 +793,18 @@ static const int32_t heTestOffs_heFwd[] = {  1,  5,  7,  9, 12, 14,     19,     
 /*static const int32_t heTestOffs_enRev[] = { 22, 19, 17, 14, 12,  9,  7,  5,  1,  0 };*/
 static const int32_t heTestOffs_heRev[] = {     19,     14, 12,  9,  7,  5,  1,  0 };
 
-/* Finnish line break tailoring, for cldrbug 3029 */
+/* Finnish line break tailoring, for cldrbug 3029.
+ * As of ICU 63, Finnish tailoring moved to root, Finnish and English should be the same. */
 static const UChar fiTest[] = { /* 00 */ 0x0020, 0x002D, 0x0031, 0x0032, 0x0020,
                                 /* 05 */ 0x0061, 0x002D, 0x006B, 0x0020,
                                 /* 09 */ 0x0061, 0x0300, 0x2010, 0x006B, 0x0020,
                                 /* 14 */ 0x0061, 0x0020, 0x002D, 0x006B, 0x0020,
                                 /* 19 */ 0x0061, 0x0300, 0x0020, 0x2010, 0x006B, 0x0020, 0 };
-static const int32_t fiTestOffs_enFwd[] =  {  1,  5,  7,  9, 12, 14, 16, 17, 19, 22, 23, 25 };
+//static const int32_t fiTestOffs_enFwd[] =  {  1,  5,  7,  9, 12, 14, 16, 17, 19, 22, 23, 25 };
+static const int32_t fiTestOffs_enFwd[] =  {  1,  5,  7,  9, 12, 14, 16,     19, 22,     25 };
 static const int32_t fiTestOffs_fiFwd[] =  {  1,  5,  7,  9, 12, 14, 16,     19, 22,     25 };
-static const int32_t fiTestOffs_enRev[] =  { 23, 22, 19, 17, 16, 14, 12,  9,  7,  5,  1,  0 };
+//static const int32_t fiTestOffs_enRev[] =  { 23, 22, 19, 17, 16, 14, 12,  9,  7,  5,  1,  0 };
+static const int32_t fiTestOffs_enRev[] =  {     22, 19,     16, 14, 12,  9,  7,  5,  1,  0 };
 static const int32_t fiTestOffs_fiRev[] =  {     22, 19,     16, 14, 12,  9,  7,  5,  1,  0 };
 
 /* Khmer dictionary-based work break, for ICU ticket #8329 */
@@ -1028,7 +1040,7 @@ static const TestBISuppressionsItem testBISuppressionsItems[] = {
     { "de",             testSentenceSuppressionsDe, testSentFwdOffsetsDe,     testSentRevOffsetsDe     },
     { "es@ss=standard", testSentenceSuppressionsEs, testSentSuppFwdOffsetsEs, testSentSuppRevOffsetsEs },
     { "es",             testSentenceSuppressionsEs, testSentFwdOffsetsEs,     testSentRevOffsetsEs     },
-    { NULL, NULL, NULL }
+    { NULL, NULL, NULL, NULL }
 };
 
 static void TestBreakIteratorSuppressions(void) {
