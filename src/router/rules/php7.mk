@@ -17,13 +17,13 @@ icu-configure:
 	--prefix=$(TOP)/icu/staging
 	make -C icu
 	make -C icu install
-	mkdir -p $(TOP)/icu/staging/share/icu/61.1/lib/
-	mkdir -p $(TOP)/icu/staging/share/icu/61.1/bin/
-	mkdir -p $(TOP)/icu/staging/share/icu/61.1/config/
-	cp -fpR  $(TOP)/icu/config/icucross.* $(TOP)/icu/staging/share/icu/61.1/config/
-	cp -fpR  $(TOP)/icu/bin/icupkg $(TOP)/icu/staging/share/icu/61.1/bin/
-	cp -fpR  $(TOP)/icu/bin/pkgdata $(TOP)/icu/staging/share/icu/61.1/bin/
-	cp -fpR  $(TOP)/icu/lib/*.so* $(TOP)/icu/staging/share/icu/61.1/lib/
+	mkdir -p $(TOP)/icu/staging/share/icu/68.1/lib/
+	mkdir -p $(TOP)/icu/staging/share/icu/68.1/bin/
+	mkdir -p $(TOP)/icu/staging/share/icu/68.1/config/
+	cp -fpR  $(TOP)/icu/config/icucross.* $(TOP)/icu/staging/share/icu/68.1/config/
+	cp -fpR  $(TOP)/icu/bin/icupkg $(TOP)/icu/staging/share/icu/68.1/bin/
+	cp -fpR  $(TOP)/icu/bin/pkgdata $(TOP)/icu/staging/share/icu/68.1/bin/
+	cp -fpR  $(TOP)/icu/lib/*.so* $(TOP)/icu/staging/share/icu/68.1/lib/
 
 	make -C icu clean
 	rm -f icu/config.cache
@@ -47,7 +47,7 @@ icu-configure:
 	--disable-tests \
 	--libdir=$(TOP)/icu/target_staging/lib \
 	--disable-samples \
-	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
+	--with-cross-build="$(TOP)/icu/staging/share/icu/68.1" \
 	--prefix=$(TOP)/icu/target_staging
 	make -C icu install
 
@@ -72,7 +72,7 @@ icu-configure:
 #	--disable-tools \
 #	--disable-tests \
 #	--disable-samples \
-#	--with-cross-build="$(TOP)/icu/staging/share/icu/61.1" \
+#	--with-cross-build="$(TOP)/icu/staging/share/icu/68.1" \
 #	--prefix=/usr
 
 icu:
