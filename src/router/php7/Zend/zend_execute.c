@@ -1512,6 +1512,7 @@ static zend_never_inline ZEND_COLD void zend_wrong_string_offset(EXECUTE_DATA_D)
 					msg = "Cannot create references to/from string offsets";
 					break;
 				}
+				opline++;
 			}
 			break;
 		EMPTY_SWITCH_DEFAULT_CASE();
@@ -2870,6 +2871,10 @@ static zend_always_inline void zend_fetch_property_address(zval *result, zval *c
 			if (UNEXPECTED(Z_ISREF_P(ptr) && Z_REFCOUNT_P(ptr) == 1)) {
 				ZVAL_UNREF(ptr);
 			}
+			return;
+		}
+		if (UNEXPECTED(EG(exception))) {
+			ZVAL_ERROR(result);
 			return;
 		}
 	} else if (UNEXPECTED(Z_ISERROR_P(ptr))) {
