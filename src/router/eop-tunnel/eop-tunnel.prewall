@@ -47,7 +47,7 @@ do
 			rm /tmp/wireguard/oet${i}_private
 			
 			## egc add code to regenerate public key from private key if private key is set manually
-			$nv set oet${i}_public=$($nv get oet${i}_private|wg pubkey)
+			$nv set oet${i}_public="$($nv get oet${i}_private|wg pubkey)"
 			
 			peers=$((`$nv get oet${i}_peers` - 1))
 			$nv set oet${i}_bridged=0
