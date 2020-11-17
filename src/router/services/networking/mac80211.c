@@ -450,8 +450,13 @@ void configure_single_ath9k(int count)
 	char macaddr[32];
 	// interface is created at this point, so that should work
 #if defined(HAVE_MVEBU) || defined(HAVE_IPQ806X)
-	getWirelessMac(macaddr, count);
-	set_hwaddr(dev, macaddr);
+	int board = getRouterBrand();
+	if (board == ROUTER_ASROCK_G10) {
+		getMacAddr(dev, macaddr);
+	} else {
+		getWirelessMac(macaddr, count);
+		set_hwaddr(dev, macaddr);
+	}
 #else
 	getMacAddr(dev, macaddr);
 #endif
@@ -1474,7 +1479,6 @@ void setupHostAP_ath9k(char *maininterface, int isfirst, int vapid, int aoss)
 	if (nvram_nmatch("1", "%s_rts", ifname)) {
 		fprintf(fp, "rts_threshold=%s\n", nvram_nget("%s_rtsvalue", ifname));
 	}
-
 #ifdef HAVE_HOTSPOT20
 	setupHS20(fp, ifname);
 #endif
