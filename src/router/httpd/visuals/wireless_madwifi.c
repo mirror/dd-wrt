@@ -385,25 +385,22 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		int hwdelay = 0;
 		int div = 1;
 		if (nvram_nmatch("10", "%s_channelbw", ifn)) {
-			slt = 13;
+			slt = 9 * 2;
 			div = 2;
-			hwdelay = 16;
 		}
 		if (nvram_nmatch("5", "%s_channelbw", ifn)) {
-			slt = 21;
+			slt = 9 * 4;
 			div = 4;
-			hwdelay = 32;
 		}
 		if (nvram_nmatch("2", "%s_channelbw", ifn)) {
-			slt = 35;
+			slt = 9 * 8;
 			div = 8;
-			hwdelay = 64;
 		}
 		// fw contains a internal tolerance value which is added, we consider it for accurate measurement
-		hwdelay += (slt * 2) + 3;
+		hwdelay += (slt * 2) + (3 * div);
 		if (hwdelay < rawack) {
 			ack = rawack - hwdelay;	// hw delay
-			ack /= div;
+			ack /= div; // check if this devision is required for wave-2
 			if (!ack)
 				ack = 1;
 		} else {
