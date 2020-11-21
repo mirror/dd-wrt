@@ -3069,6 +3069,7 @@ static struct wifidevices wdevices[] = {
 	{ "Atheros AR231X WiSOC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.0" },
 	{ "Atheros AR231X WiSOC", CHANNELSURVEY5K | CHWIDTH_5_10_MHZ | CHWIDTH_25_MHZ, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "ar231x-wmac.1" },
 	{ "Qualcomm Atheros IPQ4019 802.11ac", CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a000000.wifi" },
+	{ "Qualcomm Atheros IPQ4019 802.11ac", CHANNELSURVEY | CHWIDTH_5_10_MHZ | QBOOST | TDMA | BEACONVAP100, PCI_ANY, PCI_ANY, PCI_ANY, PCI_ANY, "soc/a800000.wifi" },
 };
 
 char *getWifiDeviceName(const char *prefix, int *flags)
