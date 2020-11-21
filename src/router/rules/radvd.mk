@@ -1,4 +1,4 @@
-radvd-configure: nvram libutils
+radvd-configure:  wireless-tools nvram libutils
 	cd radvd && ./autogen.sh
 	cd radvd/libdaemon && ./configure --disable-nls --disable-shared --enable-static --disable-lynx --prefix=/usr --host=$(ARCH)-linux CC="$(CC)" CFLAGS="$(COPTS) $(LTO) -ffunction-sections -fdata-sections -Wl,--gc-sections" AR_FLAGS="cru $(LTOPLUGIN)" RANLIB="$(ARCH)-linux-ranlib $(LTOPLUGIN)" ac_cv_func_setpgrp_void=yes ; make
 	-cd radvd && aclocal && autoconf && automake -a && cd .. 
