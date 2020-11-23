@@ -202,8 +202,8 @@ ALT_FTR_SECTION_END_IFSET(CPU_FTR_HVMODE)
 data_access_pSeries:
 	HMT_MEDIUM_PPR_DISCARD
 	SET_SCRATCH0(r13)
-	EXCEPTION_PROLOG_PSERIES(PACA_EXGEN, data_access_common, EXC_STD,
-				 KVMTEST, 0x300)
+	EXCEPTION_PROLOG_0(PACA_EXGEN)
+	b data_access_pSeries_ool
 
 	. = 0x380
 	.globl data_access_slb_pSeries
@@ -211,31 +211,15 @@ data_access_slb_pSeries:
 	HMT_MEDIUM_PPR_DISCARD
 	SET_SCRATCH0(r13)
 	EXCEPTION_PROLOG_0(PACA_EXSLB)
-	EXCEPTION_PROLOG_1(PACA_EXSLB, KVMTEST, 0x380)
-	std	r3,PACA_EXSLB+EX_R3(r13)
-	mfspr	r3,SPRN_DAR
-#ifdef __DISABLED__
-	/* Keep that around for when we re-implement dynamic VSIDs */
-	cmpdi	r3,0
-	bge	slb_miss_user_pseries
-#endif /* __DISABLED__ */
-	mfspr	r12,SPRN_SRR1
-#ifndef CONFIG_RELOCATABLE
-	b	slb_miss_realmode
-#else
-	/*
-	 * We can't just use a direct branch to slb_miss_realmode
-	 * because the distance from here to there depends on where
-	 * the kernel ends up being put.
-	 */
-	mfctr	r11
-	ld	r10,PACAKBASE(r13)
-	LOAD_HANDLER(r10, slb_miss_realmode)
-	mtctr	r10
-	bctr
-#endif
+	b data_access_slb_pSeries_ool
 
-	STD_EXCEPTION_PSERIES(0x400, 0x400, instruction_access)
+	. = 0x400
+	.globl instruction_access_pSeries
+instruction_access_pSeries:
+	HMT_MEDIUM_PPR_DISCARD
+	SET_SCRATCH0(r13)
+	EXCEPTION_PROLOG_0(PACA_EXGEN)
+	b instruction_access_pSeries_ool
 
 	. = 0x480
 	.globl instruction_access_slb_pSeries
@@ -243,24 +227,7 @@ instruction_access_slb_pSeries:
 	HMT_MEDIUM_PPR_DISCARD
 	SET_SCRATCH0(r13)
 	EXCEPTION_PROLOG_0(PACA_EXSLB)
-	EXCEPTION_PROLOG_1(PACA_EXSLB, KVMTEST_PR, 0x480)
-	std	r3,PACA_EXSLB+EX_R3(r13)
-	mfspr	r3,SPRN_SRR0		/* SRR0 is faulting address */
-#ifdef __DISABLED__
-	/* Keep that around for when we re-implement dynamic VSIDs */
-	cmpdi	r3,0
-	bge	slb_miss_user_pseries
-#endif /* __DISABLED__ */
-	mfspr	r12,SPRN_SRR1
-#ifndef CONFIG_RELOCATABLE
-	b	slb_miss_realmode
-#else
-	mfctr	r11
-	ld	r10,PACAKBASE(r13)
-	LOAD_HANDLER(r10, slb_miss_realmode)
-	mtctr	r10
-	bctr
-#endif
+	b instruction_access_slb_pSeries_ool
 
 	/* We open code these as we can't have a ". = x" (even with
 	 * x = "." within a feature section
@@ -291,13 +258,19 @@ hardware_interrupt_hv:
 	KVM_HANDLER_PR(PACA_EXGEN, EXC_STD, 0x800)
 
 	. = 0x900
-	.globl decrementer_pSeries
-decrementer_pSeries:
+	.globl decrementer_trampoline
+decrementer_trampoline:
 	SET_SCRATCH0(r13)
 	EXCEPTION_PROLOG_0(PACA_EXGEN)
 	b	decrementer_ool
 
-	STD_EXCEPTION_HV(0x980, 0x982, hdecrementer)
+	. = 0x980
+	.globl hdecrementer_trampoline
+hdecrementer_trampoline:
+	HMT_MEDIUM_PPR_DISCARD;
+	SET_SCRATCH0(r13);
+	EXCEPTION_PROLOG_0(PACA_EXGEN)
+	b hdecrementer_hv
 
 	MASKABLE_EXCEPTION_PSERIES(0xa00, 0xa00, doorbell_super)
 	KVM_HANDLER_PR(PACA_EXGEN, EXC_STD, 0xa00)
@@ -545,6 +518,64 @@ machine_check_pSeries_0:
 	KVM_HANDLER_PR(PACA_EXGEN, EXC_STD, 0x900)
 	KVM_HANDLER(PACA_EXGEN, EXC_HV, 0x982)
 
+/* moved from 0x300 */
+	.globl data_access_pSeries_ool
+data_access_pSeries_ool:
+	EXCEPTION_PROLOG_1(PACA_EXGEN, KVMTEST, 0x300)
+	EXCEPTION_PROLOG_PSERIES_1(data_access_common, EXC_STD)
+
+	.globl data_access_slb_pSeries_ool
+data_access_slb_pSeries_ool:
+	EXCEPTION_PROLOG_1(PACA_EXSLB, KVMTEST, 0x380)
+	std	r3,PACA_EXSLB+EX_R3(r13)
+	mfspr	r3,SPRN_DAR
+#ifdef __DISABLED__
+	/* Keep that around for when we re-implement dynamic VSIDs */
+	cmpdi	r3,0
+	bge	slb_miss_user_pseries
+#endif /* __DISABLED__ */
+	mfspr	r12,SPRN_SRR1
+#ifndef CONFIG_RELOCATABLE
+	b	slb_miss_realmode
+#else
+	/*
+	 * We can't just use a direct branch to slb_miss_realmode
+	 * because the distance from here to there depends on where
+	 * the kernel ends up being put.
+	 */
+	mfctr	r11
+	ld	r10,PACAKBASE(r13)
+	LOAD_HANDLER(r10, slb_miss_realmode)
+	mtctr	r10
+	bctr
+#endif
+
+	.globl instruction_access_pSeries_ool
+instruction_access_pSeries_ool:
+	EXCEPTION_PROLOG_1(PACA_EXGEN, KVMTEST_PR, 0x400)
+	EXCEPTION_PROLOG_PSERIES_1(instruction_access_common, EXC_STD)
+
+	.globl instruction_access_slb_pSeries_ool
+instruction_access_slb_pSeries_ool:
+	EXCEPTION_PROLOG_1(PACA_EXSLB, KVMTEST_PR, 0x480)
+	std	r3,PACA_EXSLB+EX_R3(r13)
+	mfspr	r3,SPRN_SRR0		/* SRR0 is faulting address */
+#ifdef __DISABLED__
+	/* Keep that around for when we re-implement dynamic VSIDs */
+	cmpdi	r3,0
+	bge	slb_miss_user_pseries
+#endif /* __DISABLED__ */
+	mfspr	r12,SPRN_SRR1
+#ifndef CONFIG_RELOCATABLE
+	b	slb_miss_realmode
+#else
+	mfctr	r11
+	ld	r10,PACAKBASE(r13)
+	LOAD_HANDLER(r10, slb_miss_realmode)
+	mtctr	r10
+	bctr
+#endif
+
 #ifdef CONFIG_PPC_DENORMALISATION
 denorm_assist:
 BEGIN_FTR_SECTION
@@ -612,6 +643,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_CFAR)
 	.align	7
 	/* moved from 0xe00 */
 	MASKABLE_EXCEPTION_OOL(0x900, decrementer)
+	STD_EXCEPTION_HV_OOL(0x982, hdecrementer)
 	STD_EXCEPTION_HV_OOL(0xe02, h_data_storage)
 	KVM_HANDLER_SKIP(PACA_EXGEN, EXC_HV, 0xe02)
 	STD_EXCEPTION_HV_OOL(0xe22, h_instr_storage)
@@ -894,7 +926,15 @@ hardware_interrupt_relon_hv:
 	STD_RELON_EXCEPTION_PSERIES(0x4600, 0x600, alignment)
 	STD_RELON_EXCEPTION_PSERIES(0x4700, 0x700, program_check)
 	STD_RELON_EXCEPTION_PSERIES(0x4800, 0x800, fp_unavailable)
-	MASKABLE_RELON_EXCEPTION_PSERIES(0x4900, 0x900, decrementer)
+
+	. = 0x4900
+	.globl decrementer_relon_trampoline
+decrementer_relon_trampoline:
+	HMT_MEDIUM_PPR_DISCARD
+	SET_SCRATCH0(r13)
+	EXCEPTION_PROLOG_0(PACA_EXGEN)
+	b decrementer_relon_pSeries
+
 	STD_RELON_EXCEPTION_HV(0x4980, 0x982, hdecrementer)
 	MASKABLE_RELON_EXCEPTION_PSERIES(0x4a00, 0xa00, doorbell_super)
 	STD_RELON_EXCEPTION_PSERIES(0x4b00, 0xb00, trap_0b)
@@ -1244,6 +1284,8 @@ END_FTR_SECTION_IFSET(CPU_FTR_VSX)
 __end_handlers:
 
 	/* Equivalents to the above handlers for relocation-on interrupt vectors */
+	MASKABLE_RELON_EXCEPTION_PSERIES_OOL(0x900, decrementer)
+
 	STD_RELON_EXCEPTION_HV_OOL(0xe40, emulation_assist)
 	MASKABLE_RELON_EXCEPTION_HV_OOL(0xe80, h_doorbell)
 
@@ -1588,14 +1630,9 @@ stf_barrier_fallback:
 	.endr
 	blr
 
-	.globl rfi_flush_fallback
-rfi_flush_fallback:
-	SET_SCRATCH0(r13);
-	GET_PACA(r13);
-	std	r9,PACA_EXRFI+EX_R9(r13)
-	std	r10,PACA_EXRFI+EX_R10(r13)
-	std	r11,PACA_EXRFI+EX_R11(r13)
-	mfctr	r9
+
+/* Clobbers r10, r11, ctr */
+.macro L1D_DISPLACEMENT_FLUSH
 	ld	r10,PACA_RFI_FLUSH_FALLBACK_AREA(r13)
 	ld	r11,PACA_L1D_FLUSH_SIZE(r13)
 	srdi	r11,r11,(7 + 3) /* 128 byte lines, unrolled 8x */
@@ -1621,7 +1658,18 @@ rfi_flush_fallback:
 	ld	r11,(0x80 + 8)*7(r10)
 	addi	r10,r10,0x80*8
 	bdnz	1b
+.endm
 
+
+	.globl rfi_flush_fallback
+rfi_flush_fallback:
+	SET_SCRATCH0(r13);
+	GET_PACA(r13);
+	std	r9,PACA_EXRFI+EX_R9(r13)
+	std	r10,PACA_EXRFI+EX_R10(r13)
+	std	r11,PACA_EXRFI+EX_R11(r13)
+	mfctr	r9
+	L1D_DISPLACEMENT_FLUSH
 	mtctr	r9
 	ld	r9,PACA_EXRFI+EX_R9(r13)
 	ld	r10,PACA_EXRFI+EX_R10(r13)
@@ -1637,38 +1685,27 @@ hrfi_flush_fallback:
 	std	r10,PACA_EXRFI+EX_R10(r13)
 	std	r11,PACA_EXRFI+EX_R11(r13)
 	mfctr	r9
-	ld	r10,PACA_RFI_FLUSH_FALLBACK_AREA(r13)
-	ld	r11,PACA_L1D_FLUSH_SIZE(r13)
-	srdi	r11,r11,(7 + 3) /* 128 byte lines, unrolled 8x */
-	mtctr	r11
-	DCBT_STOP_ALL_STREAM_IDS(r11) /* Stop prefetch streams */
-
-	/* order ld/st prior to dcbt stop all streams with flushing */
-	sync
-
-	/*
-	 * The load adresses are at staggered offsets within cachelines,
-	 * which suits some pipelines better (on others it should not
-	 * hurt).
-	 */
-1:
-	ld	r11,(0x80 + 8)*0(r10)
-	ld	r11,(0x80 + 8)*1(r10)
-	ld	r11,(0x80 + 8)*2(r10)
-	ld	r11,(0x80 + 8)*3(r10)
-	ld	r11,(0x80 + 8)*4(r10)
-	ld	r11,(0x80 + 8)*5(r10)
-	ld	r11,(0x80 + 8)*6(r10)
-	ld	r11,(0x80 + 8)*7(r10)
-	addi	r10,r10,0x80*8
-	bdnz	1b
-
+	L1D_DISPLACEMENT_FLUSH
 	mtctr	r9
 	ld	r9,PACA_EXRFI+EX_R9(r13)
 	ld	r10,PACA_EXRFI+EX_R10(r13)
 	ld	r11,PACA_EXRFI+EX_R11(r13)
 	GET_SCRATCH0(r13);
 	hrfid
+
+	.globl entry_flush_fallback
+entry_flush_fallback:
+	std	r9,PACA_EXRFI+EX_R9(r13)
+	std	r10,PACA_EXRFI+EX_R10(r13)
+	std	r11,PACA_EXRFI+EX_R11(r13)
+	mfctr	r9
+	L1D_DISPLACEMENT_FLUSH
+	mtctr	r9
+	ld	r9,PACA_EXRFI+EX_R9(r13)
+	ld	r10,PACA_EXRFI+EX_R10(r13)
+	ld	r11,PACA_EXRFI+EX_R11(r13)
+	blr
+
 
 /*
  * Hash table stuff
@@ -1829,3 +1866,12 @@ END_FTR_SECTION_IFSET(CPU_FTR_CFAR)
 1:	addi	r3,r1,STACK_FRAME_OVERHEAD
 	bl	kernel_bad_stack
 	b	1b
+
+_KPROBE(do_uaccess_flush)
+	UACCESS_FLUSH_FIXUP_SECTION
+	nop
+	nop
+	nop
+	blr
+	L1D_DISPLACEMENT_FLUSH
+	blr
