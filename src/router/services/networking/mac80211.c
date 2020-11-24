@@ -1592,13 +1592,16 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 {
 	char nfreq[16];
 	char nfreq2[16];
+	char fwd[32];
 	char ht[5];
 	char sb[32];
 	char bw[32];
 	int freq;
-	if (ismesh)
+	if (ismesh) {
 		fprintf(fp, "\tmode=5\n");
-	else
+		sprintf(fwd, "%s_mesh_fwding", prefix);
+		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1"));
+	} else
 		fprintf(fp, "\tmode=1\n");
 	// autochannel 
 	sprintf(nfreq, "%s_channel", prefix);
