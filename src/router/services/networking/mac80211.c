@@ -1600,7 +1600,7 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 	if (ismesh) {
 		fprintf(fp, "\tmode=5\n");
 		sprintf(fwd, "%s_mesh_fwding", prefix);
-		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1"));
+		fprintf(fp, "\tmesh_fwding=%d\n", atoi(nvram_default_get(fwd, "1")));
 	} else
 		fprintf(fp, "\tmode=1\n");
 	// autochannel 
