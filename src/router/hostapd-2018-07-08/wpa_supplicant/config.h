@@ -18,6 +18,7 @@
 #define DEFAULT_USER_MPM 1
 #define DEFAULT_MAX_PEER_LINKS 99
 #define DEFAULT_MESH_MAX_INACTIVITY 300
+#define DEFAULT_MESH_FWDING 1
 /*
  * The default dot11RSNASAERetransPeriod is defined as 40 ms in the standard,
  * but use 1000 ms in practice to avoid issues on low power CPUs.
@@ -1324,6 +1325,14 @@ struct wpa_config {
 	 * By default: 300 seconds.
 	 */
 	int mesh_max_inactivity;
+
+	/**
+	 * mesh_fwding - Mesh network layer-2 forwarding
+	 *
+	 * This controls whether to enable layer-2 forwarding.
+	 * By default: 1: enabled
+	 */
+	int mesh_fwding;
 
 	/**
 	 * dot11RSNASAERetransPeriod - Timeout to retransmit SAE Auth frame
