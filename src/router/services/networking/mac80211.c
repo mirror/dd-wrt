@@ -1621,7 +1621,6 @@ static void supplicant_common_mesh(FILE * fp, char *prefix, char *ssidoverride, 
 		fprintf(fp, "\thtmode=HT%s\n", ht);
 
 	if (nvram_match(bw, "80") || nvram_match(bw, "80+80") || nvram_match(bw, "160")) {
-		fprintf(fp, "\tht40=1\n");
 		fprintf(fp, "\tvht=1\n");
 	}
 	if (nvram_match(bw, "80")) {
