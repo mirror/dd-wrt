@@ -2979,6 +2979,7 @@ wl_basic.airtime_dynamic="Dynamic Mode";
 wl_basic.airtime_limit="Limit Mode";
 wl_basic.airtime_weight="Airtime Weight";
 wl_basic.airtime_dolimit="Airtime Limit";
+wl_basic.mesh_fwding="Mesh Layer 2 Forwarding";
 
 //help container
 var hwl_basic=new Object();
