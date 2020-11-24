@@ -400,7 +400,7 @@ void ej_update_acktiming(webs_t wp, int argc, char_t ** argv)
 		hwdelay += (slt * 2) + (3 * div);
 		if (hwdelay < rawack) {
 			ack = rawack - hwdelay;	// hw delay
-			ack /= div; // check if this devision is required for wave-2
+			ack /= div;	// check if this devision is required for wave-2
 			if (!ack)
 				ack = 1;
 		} else {
