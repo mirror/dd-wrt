@@ -51,6 +51,7 @@ struct mesh_conf {
 	int dot11MeshRetryTimeout; /* msec */
 	int dot11MeshConfirmTimeout; /* msec */
 	int dot11MeshHoldingTimeout; /* msec */
+	int mesh_fwding;
 };
 
 #define MAX_STA_COUNT 2007
@@ -666,6 +667,7 @@ struct hostapd_bss_config {
 
 #define MESH_ENABLED BIT(0)
 	int mesh;
+	int mesh_fwding;
 
 	u8 radio_measurements[RRM_CAPABILITIES_IE_LEN];
 

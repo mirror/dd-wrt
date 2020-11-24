@@ -2464,6 +2464,7 @@ static const struct parse_data ssid_fields[] = {
 #ifdef CONFIG_MESH
 	{ INT_RANGE(mode, 0, 5) },
 	{ INT_RANGE(no_auto_peer, 0, 1) },
+	{ INT_RANGE(mesh_fwding, 0, 1) },
 	{ INT_RANGE(mesh_rssi_threshold, -255, 1) },
 #else /* CONFIG_MESH */
 	{ INT_RANGE(mode, 0, 4) },
@@ -3030,6 +3031,7 @@ void wpa_config_set_network_defaults(struct wpa_ssid *ssid)
 	ssid->dot11MeshRetryTimeout = DEFAULT_MESH_RETRY_TIMEOUT;
 	ssid->dot11MeshConfirmTimeout = DEFAULT_MESH_CONFIRM_TIMEOUT;
 	ssid->dot11MeshHoldingTimeout = DEFAULT_MESH_HOLDING_TIMEOUT;
+	ssid->mesh_fwding = DEFAULT_MESH_FWDING;
 	ssid->mesh_rssi_threshold = DEFAULT_MESH_RSSI_THRESHOLD;
 #endif /* CONFIG_MESH */
 #ifdef CONFIG_HT_OVERRIDES
@@ -4250,6 +4252,7 @@ struct wpa_config * wpa_config_alloc_empty(const char *ctrl_interface,
 	config->user_mpm = DEFAULT_USER_MPM;
 	config->max_peer_links = DEFAULT_MAX_PEER_LINKS;
 	config->mesh_max_inactivity = DEFAULT_MESH_MAX_INACTIVITY;
+	config->mesh_fwding = DEFAULT_MESH_FWDING;
 	config->dot11RSNASAERetransPeriod =
 		DEFAULT_DOT11_RSNA_SAE_RETRANS_PERIOD;
 	config->fast_reauth = DEFAULT_FAST_REAUTH;
@@ -4887,6 +4890,7 @@ static const struct global_parse_data global_fields[] = {
 	{ INT(user_mpm), 0 },
 	{ INT_RANGE(max_peer_links, 0, 255), 0 },
 	{ INT(mesh_max_inactivity), 0 },
+	{ INT_RANGE(mesh_fwding, 0, 1), 0 },
 	{ INT(dot11RSNASAERetransPeriod), 0 },
 #endif /* CONFIG_MESH */
 	{ INT(disable_scan_offload), 0 },
