@@ -2534,6 +2534,7 @@ wl_basic.airtime_dynamic="Dynamischer Modus";
 wl_basic.airtime_limit="Limit Modus";
 wl_basic.airtime_weight="Airtime Wichtung";
 wl_basic.airtime_dolimit="Airtime Limitiere";
+wl_basic.mesh_fwding="Mesh Layer 2 Weiterleitung";
 
 
 //help container
