@@ -4213,6 +4213,15 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 #endif				// ! HAVE MAKSAT
 
+	if (has_mesh(prefix)) {
+		if (nvram_nmatch("mesh", "%s_mode", prefix)
+		    ) {
+			char wl_fwd[32];
+			sprintf(wl_fwd, "%s_mesh_fwding", prefix);
+			showRadio(wp, "wl_basic.mesh_fwding", wl_fwd);
+		}
+	}
+
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
