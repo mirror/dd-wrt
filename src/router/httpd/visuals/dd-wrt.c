@@ -1277,7 +1277,7 @@ static void showOption(webs_t wp, char *propname, char *nvname)
 }
 #endif
 
-void showRadioNoDef(webs_t wp, char *propname, int val)
+void showRadioNoDef(webs_t wp, char *propname, char *nvname, int val)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
@@ -1288,12 +1288,12 @@ void showRadioNoDef(webs_t wp, char *propname, int val)
 
 #define showRadioDefaultOn(wp, propname, nvname) \
 	do { \
-	showRadioNoDef(wp,propname,nvram_default_geti(nvname,1)); \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,1)); \
 	} while(0)
 
 #define showRadioDefaultOff(wp, propname, nvname) \
 	do { \
-	showRadioNoDef(wp,propname,nvram_default_geti(nvname,0)); \
+	showRadioNoDef(wp,propname,nvname, nvram_default_geti(nvname,0)); \
 	} while(0)
 
 void showRadio(webs_t wp, char *propname, char *nvname)
@@ -4220,7 +4220,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			do { \
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
-			showRadioNoDef(wp, "wl_basic." name, nvram_default_geti(mparam, def)); \
+			showRadioNoDef(wp, "wl_basic." name, mparam, nvram_default_geti(mparam, def)); \
 			} while(0)
 
 			mesh_radio("mesh_fwding", 1);
