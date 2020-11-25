@@ -176,7 +176,6 @@ void save_wifi(webs_t wp)
 	}
 }
 
-
 void dhcp_release(webs_t wp)
 {
 
@@ -209,8 +208,8 @@ static void validate_filter_tod(webs_t wp)
 	char buf[256] = "";
 	char tod_buf[20];
 	struct variable filter_tod_variables[] = {
-	      { argv:ARGV("20") },
-	      { argv:ARGV("0", "1", "2") },
+	      {argv:ARGV("20")},
+	      {argv:ARGV("0", "1", "2")},
 
 	}, *which;
 
@@ -313,9 +312,9 @@ void save_policy(webs_t wp)
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
-	      { argv:ARGV("1", "20") },
-	      { argv:ARGV("0", "1", "2") },
-	      { argv:ARGV("deny", "allow") },
+	      {argv:ARGV("1", "20")},
+	      {argv:ARGV("0", "1", "2")},
+	      {argv:ARGV("deny", "allow")},
 
 	}, *which;
 	char filter_buf[] = "filter_ruleXXX";
@@ -1460,8 +1459,7 @@ void qos_add_svc(webs_t wp)
 		nvram_set("wshaper_enable", var);
 
 	char protocol[100] = { 0 }, ports[100] = {
-		0
-	};
+	0};
 	char *add_svc = websGetVar(wp, "add_svc", NULL);
 	char *svqos_svcs = nvram_safe_get("svqos_svcs");
 	char *new_svcs;
@@ -2604,7 +2602,7 @@ void add_vifs_single(char *prefix, int device)
 	nvram_set(v2, "hobb-it_vap");
 #elif defined(HAVE_ANTAIRA)
 	char nsid[60];
-	snprintf(nsid, sizeof(nsid), "%s_vap", nvram_safe_get(v3));	
+	snprintf(nsid, sizeof(nsid), "%s_vap", nvram_safe_get(v3));
 	nvram_set(v2, nsid);
 #else
 	nvram_set(v2, "dd-wrt_vap");
@@ -2804,7 +2802,11 @@ static char *vapsettings[] = {
 	"wds8_hwaddr", "wds8_if", "wds8_ipaddr", "wds8_netmask", "wds8_ospf", "wds9", "wds9_desc", "wds9_enable", "wds9_hwaddr", "wds9_if", "wds9_ipaddr", "wds9_netmask", "wds9_ospf", "web_filter", "wep", "wep_bit",
 	"wep_buf", "wme", "wme_ap_be", "wme_ap_bk", "wme_ap_vi", "wme_ap_vo", "wme_apsd", "wme_no_ack", "wme_sta_be", "wme_sta_bk", "wme_sta_vi", "wme_sta_vo", "wme_txp_be", "wme_txp_bk", "wme_txp_vi", "wme_txp_vo",
 	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr", "at_policy",
-	"at_weight", "at_limit", "mesh_fwding"
+	"at_weight", "at_limit", "mesh_fwding", "mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links", "mesh_max_retries", "mesh_ttl", "mesh_element_ttl",
+	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
+	    "mesh_hwmp_net_diameter_traversal_time",
+	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
+	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout"
 };
 
 static void movevap(char *prefix, int source, int target, int bonly)
@@ -4288,10 +4290,38 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "diversity", prefix);
 	copytonv_prefix(wp, "preamble", prefix);
 #ifdef HAVE_ATH9K
+	if (has_mesh(prefix)) {
+		copytonv_prefix(wp, "mesh_retry_timeout");
+		copytonv_prefix(wp, "mesh_confirm_timeout");
+		copytonv_prefix(wp, "mesh_holding_timeout");
+		copytonv_prefix(wp, "mesh_max_peer_links");
+		copytonv_prefix(wp, "mesh_max_retries");
+		copytonv_prefix(wp, "mesh_ttl");
+		copytonv_prefix(wp, "mesh_element_ttl");
+		copytonv_prefix(wp, "mesh_auto_open_plinks");
+		copytonv_prefix(wp, "mesh_hwmp_max_preq_retries");
+		copytonv_prefix(wp, "mesh_path_refresh_time");
+		copytonv_prefix(wp, "mesh_min_discovery_timeout");
+		copytonv_prefix(wp, "mesh_hwmp_active_path_timeout");
+		copytonv_prefix(wp, "mesh_hwmp_preq_min_interval");
+		copytonv_prefix(wp, "mesh_hwmp_net_diameter_traversal_time");
+		copytonv_prefix(wp, "mesh_hwmp_rootmode");
+		copytonv_prefix(wp, "mesh_hwmp_rann_interval");
+		copytonv_prefix(wp, "mesh_gate_announcements");
+		copytonv_prefix(wp, "mesh_fwding");
+		copytonv_prefix(wp, "mesh_sync_offset_max_neighor");
+		copytonv_prefix(wp, "mesh_rssi_threshold");
+		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout");
+		copytonv_prefix(wp, "mesh_hwmp_root_interval");
+		copytonv_prefix(wp, "mesh_hwmp_confirmation_interval");
+		copytonv_prefix(wp, "mesh_power_mode");
+		copytonv_prefix(wp, "mesh_awake_window");
+		copytonv_prefix(wp, "mesh_plink_timeout");
+	}
+
 	copytonv_prefix(wp, "uapsd", prefix);
 	copytonv_prefix(wp, "ldpc", prefix);
 	copytonv_prefix(wp, "smps", prefix);
-	copytonv_prefix(wp, "mesh_fwding", prefix);
 	copytonv_prefix(wp, "shortgi", prefix);
 	copytonv_prefix(wp, "connect", prefix);
 	copytonv_prefix(wp, "stay", prefix);
@@ -4592,14 +4622,13 @@ void wireless_save(webs_t wp)
 			if (intval < 100)
 				nvram_nset("100", "ath%d_bcn", i);
 		}
-
 #endif
 	}
 
 #ifdef HAVE_ERC
 	struct variable filter_variables[] = {
-	      { argv:ARGV("1", "0") },
-	      { argv:ARGV("1", "0") },
+	      {argv:ARGV("1", "0")},
+	      {argv:ARGV("1", "0")},
 	}, *which;
 
 	char *rd_off, *rd_boot_off;

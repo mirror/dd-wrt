@@ -4214,14 +4214,59 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif				// ! HAVE MAKSAT
 
 	if (has_mesh(prefix)) {
-		if (nvram_nmatch("mesh", "%s_mode", prefix)
-		    ) {
-			char wl_fwd[32];
-			sprintf(wl_fwd, "%s_mesh_fwding", prefix);
-			showRadio(wp, "wl_basic.mesh_fwding", wl_fwd);
+		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
+#define mesh_num(name, len, default) \
+			{ \
+			char mparam[32]; \
+			sprintf(mparam, "%s_%s", prefix, name); \
+			nvram_default_geti(mparam, default) \
+			show_inputlabel(wp, "wl_basic." name, name, len, "num", len); \
+			}
+#define mesh_radio(name, default) \
+			char mparam[32]; \
+			sprintf(mparam, "%s_%s", prefix, name); \
+			nvram_default_geti(mparam, default) \
+			showRadio(wp, "wl_basic." name, mparam);
+
+			mesh_radio("mesh_fwding", 1);
+			mesh_num("mesh_retry_timeout", 4, 100);
+			mesh_num("mesh_confirm_timeout", 4, 100);
+			mesh_num("mesh_holding_timeout", 4, 100);
+			mesh_num("mesh_max_peer_links", 4, 256);
+			mesh_num("mesh_max_retries", 4, 3);
+			mesh_num("mesh_ttl", 4, 31);
+			mesh_num("mesh_element_ttl", 4, 31);
+			mesh_radio("mesh_auto_open_plinks", 1);
+			mesh_num("mesh_hwmp_max_preq_reties", 4, 4);
+			mesh_num("mesh_path_refresh_time", 6, 1000);
+			mesh_num("mesh_min_discovery_timeout", 4, 100);
+			mesh_num("mesh_hwmp_active_path_timeout", 6, 5000);
+			mesh_num("mesh_hwmp_preq_min_interval", 4, 10);
+			mesh_num("mesh_hwmp_net_diameter_traversal_time", 6, 50);
+			{
+				char mparam[32];
+				sprintf(mparam, "%s_mesh_hwmp_rootmode", prefix);
+				char *names[] =
+				    { "\" + wl_basic.mesh_no_root + \"", "\" + wl_basic.mesh_preq_no_prep + \"", "\" + wl_basic.mesh_preq_with_prep + \"", "\" + wl_basic.mesh_rann + \"",
+				"\" + wl_basic.preq_with_prep + \"" };
+				showOptionsNames(wp, "wl_basic.mesh_hwmp_rootmode", mparam, "0 2 3 4", names, nvram_default_get(mparam, "0"));
+			}
+			mesh_num("mesh_hwmp_rann_interval", 6, 5000);
+			mesh_radio("mesh_gate_announcements", 0);
+			mesh_num("mesh_sync_offset_max_neighor", 4, 10);
+			mesh_num("mesh_rssi_threshold", 4, 0);
+			mesh_num("mesh_hwmp_active_path_to_root_timeout", 6, 6000);
+			mesh_num("mesh_hwmp_confirmation_interval", 6, 5000);
+			{
+				char mparam[32];
+				sprintf(mparam, "%s_mesh_power_mode", prefix);
+				char *names[] = { "\" + wl_basic.mesh_power_mode + \"", "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"", "\" + wl_basic.mesh_light + \"" };
+				showOptionsNames(wp, "wl_basic.mesh_power_mode", mparam, "active light deep", names, nvram_default_get(mparam, "active"));
+			}
+			mesh_num("mesh_awake_window", 6, 10);
+			mesh_num("mesh_plink_timeout", 6, 0);
 		}
 	}
-
 #ifndef HAVE_NOCOUNTRYSEL
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
@@ -4784,10 +4829,10 @@ static void show_cryptovar(webs_t wp, char *prefix, char *name, char *var, int s
 typedef struct pair {
 	char *name;
 	char *nvname;
-	int (*valid)(const char *prefix);
-	int (*valid2)(const char *prefix);
-	int (*valid3)(const char *prefix);
-	int (*forcecrypto)(const char *prefix);
+	int (*valid) (const char *prefix);
+	int (*valid2) (const char *prefix);
+	int (*valid3) (const char *prefix);
+	int (*forcecrypto) (const char *prefix);
 };
 
 static int alwaystrue(const char *prefix)
@@ -4939,41 +4984,41 @@ static int owe_possible(const char *prefix)
 void show_authtable(webs_t wp, char *prefix, int show80211x)
 {
 	struct pair s_cryptopair[] = {
-		{ "wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue },
-		{ "wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue },
-		{ "wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3 },
+		{"wpa.ccmp", "ccmp", noad, wpaauth, alwaystrue},
+		{"wpa.ccmp_256", "ccmp-256", has_ccmp_256, wpaauth, alwaystrue},
+		{"wpa.tkip", "tkip", noad, wpaauth, no_suiteb_no_wpa3},
 //              { "wpa.gcmp_128", "gcmp", has_ad, wpaauth, alwaystrue },
-		{ "wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb },
-		{ "wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192 },
+		{"wpa.gcmp_128", "gcmp", has_gcmp_128, wpaauth, alwaystrue, suiteb},
+		{"wpa.gcmp_256", "gcmp-256", has_gcmp_256, wpaauth, alwaystrue, suiteb192},
 	};
 
 	struct pair s_authpair_wpa[] = {
-		{ "wpa.psk", "psk", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh },
-		{ "wpa.psk2_sha256", "psk2-sha256", wpa3_support, is_mac80211, nomesh },
-		{ "wpa.psk3", "psk3", wpa3_support, is_mac80211, alwaystrue },
-		{ "wpa.wpa", "wpa", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh },
-		{ "wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh },
-		{ "wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh },
-		{ "wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh },
-		{ "wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible }
+		{"wpa.psk", "psk", alwaystrue, alwaystrue, nomesh},
+		{"wpa.psk2", "psk2", alwaystrue, alwaystrue, nomesh},
+		{"wpa.psk2_sha256", "psk2-sha256", wpa3_support, is_mac80211, nomesh},
+		{"wpa.psk3", "psk3", wpa3_support, is_mac80211, alwaystrue},
+		{"wpa.wpa", "wpa", aponly, alwaystrue, nomesh},
+		{"wpa.wpa2", "wpa2", aponly, alwaystrue, nomesh},
+		{"wpa.wpa2_sha256", "wpa2-sha256", aponly_wpa3, is_mac80211, nomesh},
+		{"wpa.wpa3", "wpa3", aponly_wpa3, is_mac80211, nomesh},
+		{"wpa.wpa3_128", "wpa3-128", aponly_wpa3_gcmp128, has_gmac_128, nomesh},
+		{"wpa.wpa3_192", "wpa3-192", aponly_wpa3_gcmp256, has_gmac_256, nomesh},
+		{"wpa.owe", "owe", aponly_wpa3, is_mac80211, owe_possible}
 	};
 	struct pair s_authpair_80211x[] = {
-		{ "wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.wpa2_sha256", "wpa2-sha256", wpa3_support, alwaystrue, alwaystrue },
-		{ "wpa.wpa3", "wpa3", wpa3_support, is_mac80211, alwaystrue },
-		{ "wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue },
-		{ "wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue },
-		{ "wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue }
+		{"wpa.wpa", "wpa", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.wpa2", "wpa2", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.wpa2_sha256", "wpa2-sha256", wpa3_support, alwaystrue, alwaystrue},
+		{"wpa.wpa3", "wpa3", wpa3_support, is_mac80211, alwaystrue},
+		{"wpa.wpa3_128", "wpa3-128", wpa3_gcmp128, has_gmac_128, alwaystrue},
+		{"wpa.wpa3_192", "wpa3-192", wpa3_gcmp256, has_gmac_256, alwaystrue},
+		{"wpa.wep_8021x", "802.1x", alwaystrue, alwaystrue, alwaystrue}
 	};
 	struct pair s_authmethod[] = {
-		{ "wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.tls", "tls", alwaystrue, alwaystrue, alwaystrue },
-		{ "wpa.ttls", "ttls", alwaystrue, alwaystrue, alwaystrue },
+		{"wpa.peap", "peap", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.leap", "leap", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.tls", "tls", alwaystrue, alwaystrue, alwaystrue},
+		{"wpa.ttls", "ttls", alwaystrue, alwaystrue, alwaystrue},
 	};
 	struct pair *cryptopair;
 	struct pair *authpair_wpa;
@@ -6097,8 +6142,7 @@ void ej_get_wdsp2p(webs_t wp, int argc, char_t ** argv)
 	int index = -1, ip[4] = {
 		0, 0, 0, 0
 	}, netmask[4] = {
-		0, 0, 0, 0
-	};
+	0, 0, 0, 0};
 	char nvramvar[32] = {
 		0
 	};
