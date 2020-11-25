@@ -4215,6 +4215,8 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 	if (has_mesh(prefix)) {
 		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
+		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
+
 #define mesh_num(name, len, default) \
 			{ \
 			char mparam[64]; \
@@ -4267,6 +4269,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			}
 			mesh_num("mesh_awake_window", 6, 10);
 			mesh_num("mesh_plink_timeout", 6, 0);
+			websWrite(wp, "</fieldset>\n");
 		}
 	}
 #ifndef HAVE_NOCOUNTRYSEL
