@@ -190,7 +190,6 @@ static int wpas_mesh_init_rsn(struct wpa_supplicant *wpa_s)
 	return !wpa_s->mesh_rsn ? -1 : 0;
 }
 
-
 static int wpas_mesh_complete(struct wpa_supplicant *wpa_s)
 {
 	struct hostapd_iface *ifmsh = wpa_s->ifmsh;
@@ -235,8 +234,15 @@ static int wpas_mesh_complete(struct wpa_supplicant *wpa_s)
 
 	if (!ret)
 		wpa_supplicant_set_state(wpa_s, WPA_COMPLETED);
-
+	system("service mesh_params main");
 	return ret;
+}
+
+
+static void wpas_mesh_complete_cb(void *arg)
+{
+	struct wpa_supplicant *wpa_s = arg;
+	wpas_mesh_complete(wpa_s);
 }
 
 
@@ -263,6 +269,7 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 	if (!ifmsh)
 		return -ENOMEM;
 
+	ifmsh->owner = wpa_s;
 	ifmsh->drv_flags = wpa_s->drv_flags;
 	ifmsh->num_bss = 1;
 	ifmsh->bss = os_calloc(wpa_s->ifmsh->num_bss,
@@ -280,6 +287,8 @@ static int wpa_supplicant_mesh_init(struct wpa_supplicant *wpa_s,
 	bss->drv_priv = wpa_s->drv_priv;
 	bss->iface = ifmsh;
 	bss->mesh_sta_free_cb = mesh_mpm_free_sta;
+	bss->setup_complete_cb = wpas_mesh_complete_cb;
+	bss->setup_complete_cb_ctx = wpa_s;
 	frequency = ssid->frequency;
 	if (frequency != freq->freq &&
 	    frequency == freq->freq + freq->sec_channel_offset * 20) {
@@ -525,7 +534,6 @@ int wpa_supplicant_join_mesh(struct wpa_supplicant *wpa_s,
 		goto out;
 	}
 
-	ret = wpas_mesh_complete(wpa_s);
 out:
 	return ret;
 }
