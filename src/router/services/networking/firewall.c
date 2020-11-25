@@ -1867,7 +1867,7 @@ int filtersync_main(int argc, char *argv[])
 	now_wday = bt->tm_wday;
 	for (seq = 1; seq <= NR_RULES; seq++) {
 		if (if_tod_intime(seq) > 0)
-		    changed = 1;
+			changed = 1;
 	}
 #ifdef HAVE_SFE
 	if (nvram_match("sfe", "1") && changed)
