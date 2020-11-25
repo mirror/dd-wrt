@@ -213,8 +213,8 @@ void set_mesh_params(char *dev)
 
 #define mesh_param(name, default) \
 			{ \
-			char mparam[32]; \
-			sprintf(mparam, "%s_%s", prefix, name); \
+			char mparam[64]; \
+			sprintf(mparam, "%s_%s", dev, name); \
 			eval("iw", "dev", dev, "set" , "mesh_param", nvram_default_get(mparam, default)); \
 			}
 

@@ -4217,16 +4217,18 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
 #define mesh_num(name, len, default) \
 			{ \
-			char mparam[32]; \
+			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
 			nvram_default_geti(mparam, default); \
 			show_inputlabel(wp, "wl_basic." name, name, len, "num", len); \
 			}
 #define mesh_radio(name, default) \
-			char mparam[32]; \
+			{ \
+			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
 			nvram_default_geti(mparam, default); \
-			showRadio(wp, "wl_basic." name, mparam);
+			showRadio(wp, "wl_basic." name, mparam); \
+			}
 
 			mesh_radio("mesh_fwding", 1);
 			mesh_num("mesh_retry_timeout", 4, 100);
