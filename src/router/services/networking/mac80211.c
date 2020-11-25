@@ -211,11 +211,11 @@ void deconfigure_single_ath9k(int count)
 void set_mesh_params(char *dev)
 {
 
-#define mesh_param(name, default) \
+#define mesh_param(name, def) \
 			{ \
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", dev, name); \
-			eval("iw", "dev", dev, "set" , "mesh_param", nvram_default_get(mparam, default)); \
+			eval("iw", "dev", dev, "set" , "mesh_param", nvram_default_get(mparam, def)); \
 			}
 
 	mesh_param("mesh_fwding", "1");
