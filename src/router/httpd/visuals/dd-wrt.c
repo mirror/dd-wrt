@@ -4222,7 +4222,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
 			nvram_default_geti(mparam, default); \
-			show_inputlabel(wp, "wl_basic." name, name, len, "num", len); \
+			show_inputlabel(wp, "wl_basic." name, mparam, len, "num", len); \
 			}
 #define mesh_radio(name, default) \
 			{ \
