@@ -222,7 +222,7 @@ void set_mesh_params(char *dev)
 	mesh_param("mesh_retry_timeout", "100");
 	mesh_param("mesh_confirm_timeout", "100");
 	mesh_param("mesh_holding_timeout", "100");
-	mesh_param("mesh_max_peer_links", "256");
+	mesh_param("mesh_max_peer_links", "255");
 	mesh_param("mesh_max_retries", "3");
 	mesh_param("mesh_ttl", "31");
 	mesh_param("mesh_element_ttl", "31");
@@ -243,6 +243,27 @@ void set_mesh_params(char *dev)
 	mesh_param("mesh_power_mode", "active");
 	mesh_param("mesh_awake_window", "10");
 	mesh_param("mesh_plink_timeout", "0");
+}
+
+void mesh_params_main(int argc, char *argv[])
+{
+	int c = getdevicecount();
+	char dev[32];
+	char var[32], *next;
+	int i;
+	for (i = 0; i < c; i++) {
+		sprintf(dev, "ath%d", i);
+		if (nvram_nmatch("mesh", "%s_mode", dev))
+			set_mesh_params(dev);
+		char vifs[32];
+		sprintf(vifs, "ath%d_vifs", i);
+		char *vaps = nvram_safe_get(vifs);
+		foreach(var, vaps, next) {
+			if (nvram_nmatch("mesh", "%s_mode", var))
+				set_mesh_params(var);
+		}
+
+	}
 }
 
 void configure_single_ath9k(int count)
@@ -455,7 +476,6 @@ void configure_single_ath9k(int count)
 		}
 
 		strcpy(primary, dev);
-		set_mesh_params(dev);
 	} else {
 		char akm[16];
 		sprintf(akm, "%s_akm", dev);
@@ -568,7 +588,6 @@ void configure_single_ath9k(int count)
 					sysprintf("iw %s interface add %s type mp", wif, var);
 				else
 					sysprintf("iw %s interface add %s type mp mesh_id %s", wif, var, nvram_nget("%s_ssid", var));
-				set_mesh_params(var);
 				setupSupplicant_ath9k(var, NULL, 0);
 			}
 			sprintf(compr, "%s_fc_th", var);
@@ -2102,6 +2121,7 @@ void ath9k_start_supplicant(int count, char *prefix)
 				} else {
 					eval("wpa_supplicant", "-P", pid, background, "-Dnl80211", subinterface, "-c", fstr);
 				}
+
 			}
 		}
 	}
@@ -2157,7 +2177,6 @@ void ath9k_start_supplicant(int count, char *prefix)
 					nvram_set("sfe", "0");
 					eval("wpa_supplicant", background, "-Dnl80211", subinterface, "-c", fstr);
 				}
-
 			}
 
 			if (strcmp(m2, "sta")) {
