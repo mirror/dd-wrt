@@ -4243,7 +4243,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			mesh_num("mesh_retry_timeout", 4, 100);
 			mesh_num("mesh_confirm_timeout", 4, 100);
 			mesh_num("mesh_holding_timeout", 4, 100);
-			mesh_num("mesh_max_peer_links", 4, 256);
+			mesh_num("mesh_max_peer_links", 4, 255);
 			mesh_num("mesh_max_retries", 4, 3);
 			mesh_num("mesh_ttl", 4, 31);
 			mesh_num("mesh_element_ttl", 4, 31);
