@@ -4292,32 +4292,32 @@ static void save_prefix(webs_t wp, char *prefix)
 	copytonv_prefix(wp, "preamble", prefix);
 #ifdef HAVE_ATH9K
 	if (has_mesh(prefix)) {
-		copytonv_prefix(wp, "mesh_retry_timeout");
-		copytonv_prefix(wp, "mesh_confirm_timeout");
-		copytonv_prefix(wp, "mesh_holding_timeout");
-		copytonv_prefix(wp, "mesh_max_peer_links");
-		copytonv_prefix(wp, "mesh_max_retries");
-		copytonv_prefix(wp, "mesh_ttl");
-		copytonv_prefix(wp, "mesh_element_ttl");
-		copytonv_prefix(wp, "mesh_auto_open_plinks");
-		copytonv_prefix(wp, "mesh_hwmp_max_preq_retries");
-		copytonv_prefix(wp, "mesh_path_refresh_time");
-		copytonv_prefix(wp, "mesh_min_discovery_timeout");
-		copytonv_prefix(wp, "mesh_hwmp_active_path_timeout");
-		copytonv_prefix(wp, "mesh_hwmp_preq_min_interval");
-		copytonv_prefix(wp, "mesh_hwmp_net_diameter_traversal_time");
-		copytonv_prefix(wp, "mesh_hwmp_rootmode");
-		copytonv_prefix(wp, "mesh_hwmp_rann_interval");
-		copytonv_prefix(wp, "mesh_gate_announcements");
-		copytonv_prefix(wp, "mesh_fwding");
-		copytonv_prefix(wp, "mesh_sync_offset_max_neighor");
-		copytonv_prefix(wp, "mesh_rssi_threshold");
-		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout");
-		copytonv_prefix(wp, "mesh_hwmp_root_interval");
-		copytonv_prefix(wp, "mesh_hwmp_confirmation_interval");
-		copytonv_prefix(wp, "mesh_power_mode");
-		copytonv_prefix(wp, "mesh_awake_window");
-		copytonv_prefix(wp, "mesh_plink_timeout");
+		copytonv_prefix(wp, "mesh_retry_timeout", prefix);
+		copytonv_prefix(wp, "mesh_confirm_timeout", prefix);
+		copytonv_prefix(wp, "mesh_holding_timeout", prefix);
+		copytonv_prefix(wp, "mesh_max_peer_links", prefix);
+		copytonv_prefix(wp, "mesh_max_retries", prefix);
+		copytonv_prefix(wp, "mesh_ttl", prefix);
+		copytonv_prefix(wp, "mesh_element_ttl", prefix);
+		copytonv_prefix(wp, "mesh_auto_open_plinks", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_max_preq_retries", prefix);
+		copytonv_prefix(wp, "mesh_path_refresh_time", prefix);
+		copytonv_prefix(wp, "mesh_min_discovery_timeout", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_active_path_timeout", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_preq_min_interval", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_net_diameter_traversal_time", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_rootmode", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_rann_interval", prefix);
+		copytonv_prefix(wp, "mesh_gate_announcements", prefix);
+		copytonv_prefix(wp, "mesh_fwding", prefix);
+		copytonv_prefix(wp, "mesh_sync_offset_max_neighor", prefix);
+		copytonv_prefix(wp, "mesh_rssi_threshold", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_active_path_to_root_timeout", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_root_interval", prefix);
+		copytonv_prefix(wp, "mesh_hwmp_confirmation_interval", prefix);
+		copytonv_prefix(wp, "mesh_power_mode", prefix);
+		copytonv_prefix(wp, "mesh_awake_window", prefix);
+		copytonv_prefix(wp, "mesh_plink_timeout", prefix);
 	}
 
 	copytonv_prefix(wp, "uapsd", prefix);
