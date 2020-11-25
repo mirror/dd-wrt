@@ -260,7 +260,7 @@ static int bound(void)
 		expires(atoi(value));
 	}
 	if (!changed) {
-	//	dd_loginfo("udhcpc", "dhcp lease info hasn't changed, do nothing\n");
+		//      dd_loginfo("udhcpc", "dhcp lease info hasn't changed, do nothing\n");
 		return 0;
 	}
 	stop_firewall();

@@ -330,7 +330,7 @@ static int notify_nas(char *type, char *ifname, char *action);
 void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leasetime, int nodeconfig)
 {
 	char temp[12];
-	
+
 	pid_t pid;
 
 	char *wan_hostname = nvram_safe_get("wan_hostname");
@@ -459,7 +459,7 @@ void run_dhcpc(char *wan_ifname, char *pidfile, char *script, int fork, int leas
 			dhcp_argv[i++] = wan_hostname;
 		}
 	}
-	
+
 #ifndef HAVE_MICRO
 	if (nvram_match("wan_priority", "1") && isvlan(wan_ifname)) {
 		eval("vconfig", "set_egress_map", wan_ifname, "0", "6");
