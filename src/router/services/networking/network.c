@@ -5282,6 +5282,7 @@ static void set_frame_compression(char *prefix, char *interface)
 }
 
 #endif
+void set_mesh_params(char *interface);
 
 void start_hotplug_net(void)
 {
