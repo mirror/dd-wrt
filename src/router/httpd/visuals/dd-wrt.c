@@ -4219,13 +4219,13 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			{ \
 			char mparam[32]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
-			nvram_default_geti(mparam, default) \
+			nvram_default_geti(mparam, default); \
 			show_inputlabel(wp, "wl_basic." name, name, len, "num", len); \
 			}
 #define mesh_radio(name, default) \
 			char mparam[32]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
-			nvram_default_geti(mparam, default) \
+			nvram_default_geti(mparam, default); \
 			showRadio(wp, "wl_basic." name, mparam);
 
 			mesh_radio("mesh_fwding", 1);
