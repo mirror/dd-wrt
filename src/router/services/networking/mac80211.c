@@ -215,7 +215,7 @@ void set_mesh_params(char *dev)
 			{ \
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", dev, name); \
-			eval("iw", "dev", dev, "set" , "mesh_param", nvram_default_get(mparam, def)); \
+			eval("iw", "dev", dev, "set" , "mesh_param", name, nvram_default_get(mparam, def)); \
 			}
 
 	mesh_param("mesh_fwding", "1");
@@ -227,7 +227,7 @@ void set_mesh_params(char *dev)
 	mesh_param("mesh_ttl", "31");
 	mesh_param("mesh_element_ttl", "31");
 	mesh_param("mesh_auto_open_plinks", "1");
-	mesh_param("mesh_hwmp_max_preq_reties", "4");
+	mesh_param("mesh_hwmp_max_preq_retries", "4");
 	mesh_param("mesh_path_refresh_time", "1000");
 	mesh_param("mesh_min_discovery_timeout", "100");
 	mesh_param("mesh_hwmp_active_path_timeout", "5000");
