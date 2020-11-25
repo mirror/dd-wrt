@@ -1276,43 +1276,35 @@ static void showOption(webs_t wp, char *propname, char *nvname)
 
 }
 #endif
-void showRadio(webs_t wp, char *propname, char *nvname)
-{
-	websWrite(wp, "<div class=\"setting\">\n");
-	show_caption(wp, "label", propname, NULL);
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_matchi(nvname, 1, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_matchi(nvname, 0, 0) ? "checked=\"checked\"" : "");
-	websWrite(wp, "</div>\n");
-}
 
-void showRadioInv(webs_t wp, char *propname, char *nvname)
+void showRadioNoDef(webs_t wp, char *propname, int val)
 {
 	websWrite(wp, "<div class=\"setting\">\n");
 	show_caption(wp, "label", propname, NULL);
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_matchi(nvname, 0, 1) ? "checked=\"checked\"" : "");
-	websWrite(wp,
-		  "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n",
-		  nvname, nvram_default_matchi(nvname, 1, 1) ? "checked=\"checked\"" : "");
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n", nvname, val ? "checked=\"checked\"" : "");
+	websWrite(wp, "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>&nbsp;\n", nvname, !val ? "checked=\"checked\"" : "");
 	websWrite(wp, "</div>\n");
 }
 
 #define showRadioDefaultOn(wp, propname, nvname) \
 	do { \
-	nvram_default_get(nvname,"1"); \
-	showRadio(wp,propname,nvname); \
+	showRadioNoDef(wp,propname,nvram_default_geti(nvname,1)); \
 	} while(0)
 
 #define showRadioDefaultOff(wp, propname, nvname) \
 	do { \
-	nvram_default_get(nvname,"0"); \
-	showRadio(wp,propname,nvname); \
+	showRadioNoDef(wp,propname,nvram_default_geti(nvname,0)); \
 	} while(0)
+
+void showRadio(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOff(wp, propname, nvname);
+}
+
+void showRadioInv(webs_t wp, char *propname, char *nvname)
+{
+	showRadioDefaultOn(wp, propname, nvname);
+}
 
 #ifdef HAVE_MADWIFI
 void showAutoOption(webs_t wp, char *propname, char *nvname, int nodisable)
@@ -4215,40 +4207,26 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 
 	if (has_mesh(prefix)) {
 		if (nvram_nmatch("mesh", "%s_mode", prefix)) {
-		websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
+			websWrite(wp, "<fieldset><legend><script type=\"text/javascript\">Capture(wl_basic.mesh_settings)</script></legend>");
 
-#define mesh_num(name, len, default) \
-			{ \
+#define mesh_num(name, len, def) \
+			do { \
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
-			nvram_default_geti(mparam, default); \
+			nvram_default_geti(mparam, def); \
 			show_inputlabel(wp, "wl_basic." name, mparam, len, "num", len); \
-			}
-#define mesh_radio(name, default) \
-			{ \
+			} while(0)
+#define mesh_radio(name, def) \
+			do { \
 			char mparam[64]; \
 			sprintf(mparam, "%s_%s", prefix, name); \
-			nvram_default_geti(mparam, default); \
-			showRadio(wp, "wl_basic." name, mparam); \
-			}
+			showRadioNoDef(wp, "wl_basic." name, nvram_default_geti(mparam, def)); \
+			} while(0)
 
 			mesh_radio("mesh_fwding", 1);
-			mesh_num("mesh_retry_timeout", 4, 100);
-			mesh_num("mesh_confirm_timeout", 4, 100);
-			mesh_num("mesh_holding_timeout", 4, 100);
-			mesh_num("mesh_max_peer_links", 4, 256);
-			mesh_num("mesh_max_retries", 4, 3);
-			mesh_num("mesh_ttl", 4, 31);
-			mesh_num("mesh_element_ttl", 4, 31);
-			mesh_radio("mesh_auto_open_plinks", 1);
-			mesh_num("mesh_hwmp_max_preq_reties", 4, 4);
-			mesh_num("mesh_path_refresh_time", 6, 1000);
-			mesh_num("mesh_min_discovery_timeout", 4, 100);
-			mesh_num("mesh_hwmp_active_path_timeout", 6, 5000);
-			mesh_num("mesh_hwmp_preq_min_interval", 4, 10);
-			mesh_num("mesh_hwmp_net_diameter_traversal_time", 6, 50);
+			mesh_radio("mesh_gate_announcements", 0);
 			{
-				char mparam[32];
+				char mparam[64];
 				sprintf(mparam, "%s_mesh_hwmp_rootmode", prefix);
 				char *names[] = { "\" + wl_basic.mesh_no_root + \"", "\" + wl_basic.mesh_preq_no_prep + \"", "\" + wl_basic.mesh_preq_with_prep + \"", "\" + wl_basic.mesh_rann + \"",
 					"\" + wl_basic.preq_with_prep + \""
@@ -4256,13 +4234,26 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 				showOptionsNames(wp, "wl_basic.mesh_hwmp_rootmode", mparam, "0 2 3 4", names, nvram_default_get(mparam, "0"));
 			}
 			mesh_num("mesh_hwmp_rann_interval", 6, 5000);
-			mesh_radio("mesh_gate_announcements", 0);
-			mesh_num("mesh_sync_offset_max_neighor", 4, 10);
-			mesh_num("mesh_rssi_threshold", 4, 0);
+			mesh_num("mesh_hwmp_max_preq_retries", 4, 4);
+			mesh_num("mesh_hwmp_active_path_timeout", 6, 5000);
+			mesh_num("mesh_hwmp_preq_min_interval", 4, 10);
+			mesh_num("mesh_hwmp_net_diameter_traversal_time", 6, 50);
 			mesh_num("mesh_hwmp_active_path_to_root_timeout", 6, 6000);
 			mesh_num("mesh_hwmp_confirmation_interval", 6, 5000);
+			mesh_num("mesh_retry_timeout", 4, 100);
+			mesh_num("mesh_confirm_timeout", 4, 100);
+			mesh_num("mesh_holding_timeout", 4, 100);
+			mesh_num("mesh_max_peer_links", 4, 256);
+			mesh_num("mesh_max_retries", 4, 3);
+			mesh_num("mesh_ttl", 4, 31);
+			mesh_num("mesh_element_ttl", 4, 31);
+			mesh_num("mesh_path_refresh_time", 6, 1000);
+			mesh_num("mesh_min_discovery_timeout", 4, 100);
+			mesh_radio("mesh_auto_open_plinks", 1);
+			mesh_num("mesh_sync_offset_max_neighor", 4, 10);
+			mesh_num("mesh_rssi_threshold", 4, 0);
 			{
-				char mparam[32];
+				char mparam[64];
 				sprintf(mparam, "%s_mesh_power_mode", prefix);
 				char *names[] = { "\" + wl_basic.mesh_power_mode + \"", "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"", "\" + wl_basic.mesh_light + \"" };
 				showOptionsNames(wp, "wl_basic.mesh_power_mode", mparam, "active light deep", names, nvram_default_get(mparam, "active"));
