@@ -208,8 +208,8 @@ static void validate_filter_tod(webs_t wp)
 	char buf[256] = "";
 	char tod_buf[20];
 	struct variable filter_tod_variables[] = {
-	      {argv:ARGV("20")},
-	      {argv:ARGV("0", "1", "2")},
+	      { argv:ARGV("20") },
+	      { argv:ARGV("0", "1", "2") },
 
 	}, *which;
 
@@ -312,9 +312,9 @@ void save_policy(webs_t wp)
 	char buf[256] = "";
 	char *value = websGetVar(wp, "action", "");
 	struct variable filter_variables[] = {
-	      {argv:ARGV("1", "20")},
-	      {argv:ARGV("0", "1", "2")},
-	      {argv:ARGV("deny", "allow")},
+	      { argv:ARGV("1", "20") },
+	      { argv:ARGV("0", "1", "2") },
+	      { argv:ARGV("deny", "allow") },
 
 	}, *which;
 	char filter_buf[] = "filter_ruleXXX";
@@ -1459,7 +1459,8 @@ void qos_add_svc(webs_t wp)
 		nvram_set("wshaper_enable", var);
 
 	char protocol[100] = { 0 }, ports[100] = {
-	0};
+		0
+	};
 	char *add_svc = websGetVar(wp, "add_svc", NULL);
 	char *svqos_svcs = nvram_safe_get("svqos_svcs");
 	char *new_svcs;
@@ -2804,7 +2805,7 @@ static char *vapsettings[] = {
 	"wmf_bss_enable", "wmf_igmpq_filter", "wmf_mdata_sendup", "wmf_ucast_upnp", "wmf_ucigmp_query", "wmm", "wpa", "wpa2", "wpa2-sha256", "wpa3", "wpa3-128", "wpa3-192", "wpa_gtk_rekey", "wpa_psk", "xr", "at_policy",
 	"at_weight", "at_limit", "mesh_fwding", "mesh_retry_timeout", "mesh_confirm_timeout", "mesh_holding_timeout", "mesh_max_peer_links", "mesh_max_retries", "mesh_ttl", "mesh_element_ttl",
 	"mesh_auto_open_plinks", "mesh_hwmp_max_preq_retries", "mesh_path_refresh_time", "mesh_min_discovery_timeout", "mesh_hwmp_active_path_timeout", "mesh_hwmp_preq_min_interval",
-	    "mesh_hwmp_net_diameter_traversal_time",
+	"mesh_hwmp_net_diameter_traversal_time",
 	"mesh_hwmp_rootmode", "mesh_hwmp_rann_interval", "mesh_gate_announcements", "mesh_sync_offset_max_neighor", "mesh_rssi_threshold", "mesh_hwmp_active_path_to_root_timeout", "mesh_hwmp_root_interval",
 	"mesh_hwmp_confirmation_interval", "mesh_power_mode", "mesh_awake_window", "mesh_plink_timeout"
 };
@@ -4627,8 +4628,8 @@ void wireless_save(webs_t wp)
 
 #ifdef HAVE_ERC
 	struct variable filter_variables[] = {
-	      {argv:ARGV("1", "0")},
-	      {argv:ARGV("1", "0")},
+	      { argv:ARGV("1", "0") },
+	      { argv:ARGV("1", "0") },
 	}, *which;
 
 	char *rd_off, *rd_boot_off;
