@@ -2997,7 +2997,7 @@ wl_basic.mesh_hwmp_net_diameter_traversal_time="Mesh HWMP Net Diameter Traversal
 wl_basic.mesh_hwmp_rootmode="Mesh HWMP Rootmode";
 wl_basic.mesh_hwmp_rann_interval="Mesh HWMP Rann Interval";
 wl_basic.mesh_gate_announcements)"Mesh Gate Announcements";
-wl_basic.mesh_sync_offset_max_neighor="Mesh Sync Offset Max Neighor";
+wl_basic.mesh_sync_offset_max_neighor="Mesh Sync Offset Max Neighbor";
 wl_basic.mesh_rssi_threshold="Mesh Rssi Threshold";
 wl_basic.mesh_hwmp_active_path_to_root_timeout="Mesh HWMP Active Path To Root Timeout";
 wl_basic.mesh_hwmp_root_interval="Mesh HWMP Root Interval";
