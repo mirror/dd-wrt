@@ -4255,7 +4255,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 			{
 				char mparam[64];
 				sprintf(mparam, "%s_mesh_power_mode", prefix);
-				char *names[] = { "\" + wl_basic.mesh_power_mode + \"", "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"", "\" + wl_basic.mesh_light + \"" };
+				char *names[] = { "\" + wl_basic.mesh_active + \"", "\" + wl_basic.mesh_deep + \"", "\" + wl_basic.mesh_light + \"" };
 				showOptionsNames(wp, "wl_basic.mesh_power_mode", mparam, "active light deep", names, nvram_default_get(mparam, "active"));
 			}
 			mesh_num("mesh_awake_window", 6, 10);
