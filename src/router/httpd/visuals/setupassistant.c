@@ -305,7 +305,7 @@ void ej_sas_show_wireless(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, "wlan%d", i);
 		ej_sas_show_wireless_single(wp, buf);
 		sas_show_security_single(wp, argc, argv, buf);
 	}
@@ -786,10 +786,10 @@ void sas_show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 	}
 #ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "ath1"))
+	if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 			if (has_2ghz(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
@@ -797,17 +797,17 @@ void sas_show_netmode(webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
 	if (has_2ghz(prefix)) {
 #ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(prefix, "ath1"))
+			if (!strcmp(prefix, "wlan1"))
 #endif
 				websWrite(wp, "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(prefix, "ath1"))
+			if (!strcmp(prefix, "wlan1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 				websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
@@ -815,7 +815,7 @@ void sas_show_netmode(webs_t wp, char *prefix)
 	}
 #else
 #ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "ath1"))
+	if (!strcmp(prefix, "wlan1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 		if (has_2ghz(prefix)) {
@@ -849,10 +849,10 @@ void sas_show_netmode(webs_t wp, char *prefix)
 	}
 #else
 #if HAVE_WHRAG108
-	if (!strcmp(prefix, "ath0"))
+	if (!strcmp(prefix, "wlan0"))
 #endif
 #ifdef HAVE_TW6600
-		if (!strcmp(prefix, "ath0"))
+		if (!strcmp(prefix, "wlan0"))
 #endif
 			if (has_5ghz(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n", nvram_selmatch(wp, wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
@@ -1328,7 +1328,7 @@ void ej_sas_init_80211x_layers(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char buf[16];
 
-		sprintf(buf, "ath%d", i);
+		sprintf(buf, "wlan%d", i);
 		if (nvram_selnmatch(wp, "8021X", "%s_security_mode", buf))
 			sas_init_80211x_layers(wp, buf);
 	}

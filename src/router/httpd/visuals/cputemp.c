@@ -142,8 +142,8 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	show_temp(wp, 1, 1, "CPU %d.%d &#176;C");
 	cpufound = 1;
 #elif defined(HAVE_IPQ806X)
-	char *wifiname0 = getWifiDeviceName("ath0", NULL);
-	char *wifiname1 = getWifiDeviceName("ath1", NULL);
+	char *wifiname0 = getWifiDeviceName("wlan0", NULL);
+	char *wifiname1 = getWifiDeviceName("wlan1", NULL);
 //      if ((wifiname0 && !strcmp(wifiname0, "QCA99X0 802.11ac")) || (wifiname1 && !strcmp(wifiname1, "QCA99X0 802.11ac"))) {
 //              disable_wifitemp = 1;
 //      }
@@ -349,7 +349,7 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 	if (!disable_wifitemp) {
 		int c = getdevicecount();
 		for (i = 0; i < c; i++) {
-			if (nvram_nmatch("disabled", "ath%d_net_mode", i)) {
+			if (nvram_nmatch("disabled", "wlan%d_net_mode", i)) {
 				continue;
 			}
 			char path[64];
@@ -370,9 +370,9 @@ void ej_get_cputemp(webs_t wp, int argc, char_t ** argv)
 				}
 				int temperature = temp / 1000;
 				if (temperature < 0 || temperature > 200)
-					websWrite(wp, "ath%d %s", i, live_translate(wp, "status_router.notavail"));
+					websWrite(wp, "wlan%d %s", i, live_translate(wp, "status_router.notavail"));
 				else
-					websWrite(wp, "ath%d %d &#176;C", i, temp / 1000);
+					websWrite(wp, "wlan%d %d &#176;C", i, temp / 1000);
 				cpufound = 1;
 			}
 		}

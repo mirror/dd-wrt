@@ -2804,7 +2804,7 @@ void do_vsp_page(unsigned char method, struct mime_handler *handler, char *url, 
 {
 /*
 #ifdef HAVE_MADWIFI
-	char *ifname = "ath0";
+	char *ifname = "wlan0";
 #else
 	char *ifname = "wl0";
 #endif

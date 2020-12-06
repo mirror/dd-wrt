@@ -2140,7 +2140,7 @@ void start_lan(void)
 				continue;
 #ifdef HAVE_EAD
 #if defined(HAVE_RT2880) || defined(HAVE_MADWIFI) || defined(HAVE_RT61)
-			if (strncmp(name, "ath", 3) && strncmp(name, "ra", 2))
+			if (strncmp(name, "wlan", 3) && strncmp(name, "ra", 2))
 #else
 			if (wl_probe(name))
 #endif
@@ -2160,7 +2160,7 @@ void start_lan(void)
 				continue;
 #if defined(HAVE_MADWIFI) && !defined(HAVE_RB500) && !defined(HAVE_XSCALE) && !defined(HAVE_LAGUNA) && !defined(HAVE_VENTANA) && !defined(HAVE_NEWPORT) && !defined(HAVE_MAGICBOX) && !defined(HAVE_RB600) && !defined(HAVE_FONERA) && !defined(HAVE_WHRAG108) && !defined(HAVE_X86) && !defined(HAVE_LS2) && !defined(HAVE_LS5) && !defined(HAVE_CA8) && !defined(HAVE_TW6600) && !defined(HAVE_PB42) && !defined(HAVE_LSX) && !defined(HAVE_DANUBE) && !defined(HAVE_STORM) && !defined(HAVE_OPENRISC) && !defined(HAVE_ADM5120) && !defined(HAVE_RT2880) && !defined(HAVE_SOLO51) && !defined(HAVE_EROUTER) && !defined(HAVE_IPQ806X) && !defined(HAVE_R9000)
 			if (!strcmp(name, "eth2")) {
-				strcpy(realname, "ath0");
+				strcpy(realname, "wlan0");
 			} else
 #endif
 				strcpy(realname, name);
@@ -2175,7 +2175,7 @@ void start_lan(void)
 			}
 			// set proper mtu
 
-			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
+			if (strncmp(realname, "wlan", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "down");	//fixup for some ethernet drivers
 			}
 			eval("ifconfig", realname, "mtu", getMTU(realname));
@@ -2183,7 +2183,7 @@ void start_lan(void)
 			if (!nvram_nmatch("", "%s_hwaddr", realname))
 				set_hwaddr(realname, nvram_nget("%s_hwaddr", realname));
 
-			if (strncmp(realname, "ath", 3) != 0) {	// this is not an ethernet driver
+			if (strncmp(realname, "wlan", 3) != 0) {	// this is not an ethernet driver
 				eval("ifconfig", realname, "up");	//fixup for some ethernet drivers
 			}
 
@@ -2451,10 +2451,10 @@ void start_lan(void)
 	eval("ifconfig", lan_ifname, "promisc");
 #if defined(HAVE_FONERA) || defined(HAVE_CA8) && !defined(HAVE_MR3202A)
 	if (getRouterBrand() != ROUTER_BOARD_FONERA2200 && getRouterBrand() != ROUTER_BOARD_CA8PRO && getRouterBrand() != ROUTER_BOARD_RCAA01)
-		if (nvram_match("ath0_mode", "sta")
-		    || nvram_match("ath0_mode", "wdssta")
-		    || nvram_match("ath0_mode", "wdssta_mtik")
-		    || nvram_match("ath0_mode", "wet")
+		if (nvram_match("wlan0_mode", "sta")
+		    || nvram_match("wlan0_mode", "wdssta")
+		    || nvram_match("wlan0_mode", "wdssta_mtik")
+		    || nvram_match("wlan0_mode", "wet")
 		    || CANBRIDGE())
 #endif
 			eval("ifconfig", "eth0:0", "down");
@@ -2518,9 +2518,9 @@ void start_lan(void)
 		char br1ipaddr[32];
 		char br1netmask[32];
 
-		sprintf(br1enable, "ath%d_br1_enable", c);
-		sprintf(br1ipaddr, "ath%d_br1_ipaddr", c);
-		sprintf(br1netmask, "ath%d_br1_netmask", c);
+		sprintf(br1enable, "wlan%d_br1_enable", c);
+		sprintf(br1ipaddr, "wlan%d_br1_ipaddr", c);
+		sprintf(br1netmask, "wlan%d_br1_netmask", c);
 #else
 		char br1enable[32];
 		char br1ipaddr[32];
@@ -2586,9 +2586,9 @@ void start_lan(void)
 #ifdef HAVE_MADWIFI
 			char br1enable[32];
 
-			sprintf(wdsvarname, "ath%d_wds%d_enable", c, s);
-			sprintf(wdsdevname, "ath%d_wds%d_if", c, s);
-			sprintf(br1enable, "ath%d_br1_enable", c);
+			sprintf(wdsvarname, "wlan%d_wds%d_enable", c, s);
+			sprintf(wdsdevname, "wlan%d_wds%d_if", c, s);
+			sprintf(br1enable, "wlan%d_br1_enable", c);
 			if (!nvram_exists(wdsvarname))
 				nvram_seti(wdsvarname, 0);
 #else
@@ -2611,8 +2611,8 @@ void start_lan(void)
 				char *wdsnm;
 				char wdsbc[32] = { 0 };
 #ifdef HAVE_MADWIFI
-				wdsip = nvram_nget("ath%d_wds%d_ipaddr", c, s);
-				wdsnm = nvram_nget("ath%d_wds%d_netmask", c, s);
+				wdsip = nvram_nget("wlan%d_wds%d_ipaddr", c, s);
+				wdsnm = nvram_nget("wlan%d_wds%d_netmask", c, s);
 #else
 				wdsip = nvram_nget("wl%d_wds%d_ipaddr", c, s);
 				wdsnm = nvram_nget("wl%d_wds%d_netmask", c, s);
@@ -5324,7 +5324,7 @@ void start_hotplug_net(void)
 	}
 #ifdef HAVE_MADWIFI
 	// sysprintf("echo \"Hotplug %s=%s\" > /dev/console\n",action,interface);
-	if (strncmp(interface, "ath", 3))
+	if (strncmp(interface, "wlan", 3))
 		return;
 
 	// try to parse

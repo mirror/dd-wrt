@@ -516,9 +516,9 @@ static void buffalo_defaults(int force)
 #define getUEnv(name) nvram_get(name)
 static void buffalo_defaults(int force)
 {
-	if (!nvram_exists("ath0_akm") || force) {
-		nvram_set("ath0_akm", "disabled");
-		nvram_set("ath1_akm", "disabled");
+	if (!nvram_exists("wlan0_akm") || force) {
+		nvram_set("wlan0_akm", "disabled");
+		nvram_set("wlan1_akm", "disabled");
 
 		FILE *fp;
 		char script[32] = "/tmp/fdefaults.sh";
@@ -603,8 +603,8 @@ static void buffalo_defaults(int force)
 	if (pincode && !nvram_exists("pincode")) {
 		nvram_set("pincode", pincode);
 	}
-	if (!nvram_exists("ath0_akm") || force) {
-		nvram_set("ath0_akm", "disabled");
+	if (!nvram_exists("wlan0_akm") || force) {
+		nvram_set("wlan0_akm", "disabled");
 		char *region = getUEnv("region");
 		if (!region || (strcmp(region, "AP") && strcmp(region, "TW")
 				&& strcmp(region, "RU")
@@ -619,20 +619,20 @@ static void buffalo_defaults(int force)
 					if (!mode)
 						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 					if (!mode) {
-						nvram_set("ath0_akm", "disabled");
-						nvram_set("ath0_security_mode", "disabled");
+						nvram_set("wlan0_akm", "disabled");
+						nvram_set("wlan0_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("ath0_akm", "psk psk2");
-							nvram_set("ath0_psk", "1");
-							nvram_set("ath0_psk2", "1");
-							nvram_set("ath0_security_mode", "psk");
+							nvram_set("wlan0_akm", "psk psk2");
+							nvram_set("wlan0_psk", "1");
+							nvram_set("wlan0_psk2", "1");
+							nvram_set("wlan0_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("ath0_akm", "psk psk2");
-							nvram_set("ath0_psk", "1");
-							nvram_set("ath0_psk2", "1");
-							nvram_set("ath0_security_mode", "psk");
+							nvram_set("wlan0_akm", "psk psk2");
+							nvram_set("wlan0_psk", "1");
+							nvram_set("wlan0_psk2", "1");
+							nvram_set("wlan0_security_mode", "psk");
 						}
 					}
 				} else if (mode_ex && !strcmp(mode_ex, "wpa2-psk")) {
@@ -640,18 +640,18 @@ static void buffalo_defaults(int force)
 					if (!mode)
 						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 					if (!mode) {
-						nvram_set("ath0_akm", "disabled");
-						nvram_set("ath0_security_mode", "disabled");
+						nvram_set("wlan0_akm", "disabled");
+						nvram_set("wlan0_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("ath0_akm", "psk2");
-							nvram_set("ath0_psk2", "1");
-							nvram_set("ath0_security_mode", "psk");
+							nvram_set("wlan0_akm", "psk2");
+							nvram_set("wlan0_psk2", "1");
+							nvram_set("wlan0_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("ath0_akm", "psk2");
-							nvram_set("ath0_psk2", "1");
-							nvram_set("ath0_security_mode", "psk");
+							nvram_set("wlan0_akm", "psk2");
+							nvram_set("wlan0_psk2", "1");
+							nvram_set("wlan0_security_mode", "psk");
 						}
 					}
 				} else {
@@ -659,11 +659,11 @@ static void buffalo_defaults(int force)
 					if (!mode)
 						mode = getUEnv("DEF-p_wireless_ath00_11bg-authmode");
 					if (mode) {
-						nvram_set("ath0_akm", mode);
-						nvram_set("ath0_security_mode", mode);
+						nvram_set("wlan0_akm", mode);
+						nvram_set("wlan0_security_mode", mode);
 					} else {
-						nvram_set("ath0_akm", "disabled");
-						nvram_set("ath0_security_mode", "disabled");
+						nvram_set("wlan0_akm", "disabled");
+						nvram_set("wlan0_security_mode", "disabled");
 					}
 				}
 
@@ -671,12 +671,12 @@ static void buffalo_defaults(int force)
 				if (!crypto)
 					crypto = getUEnv("DEF-p_wireless_ath00_11bg-crypto");
 				if (crypto)
-					nvram_set("ath0_crypto", crypto);
+					nvram_set("wlan0_crypto", crypto);
 				char *wpapsk = getUEnv("DEF-p_wireless_ath0_11bg-wpapsk");
 				if (!wpapsk)
 					wpapsk = getUEnv("DEF-p_wireless_ath00_11bg-wpapsk");
 				if (wpapsk)
-					nvram_set("ath0_wpa_psk", wpapsk);
+					nvram_set("wlan0_wpa_psk", wpapsk);
 			}
 #ifdef HAVE_WZRHPAG300NH
 			{
@@ -688,20 +688,20 @@ static void buffalo_defaults(int force)
 					if (!mode)
 						mode = getUEnv("DEF-p_wireless_ath10_11a-authmode");
 					if (!mode) {
-						nvram_set("ath1_akm", "disabled");
-						nvram_set("ath1_security_mode", "disabled");
+						nvram_set("wlan1_akm", "disabled");
+						nvram_set("wlan1_security_mode", "disabled");
 					} else {
 						if (!strcmp(mode, "psk")) {
-							nvram_set("ath1_akm", "psk psk2");
-							nvram_set("ath1_psk", "1");
-							nvram_set("ath1_psk2", "1");
-							nvram_set("ath1_security_mode", "psk");
+							nvram_set("wlan1_akm", "psk psk2");
+							nvram_set("wlan1_psk", "1");
+							nvram_set("wlan1_psk2", "1");
+							nvram_set("wlan1_security_mode", "psk");
 						}
 						if (!strcmp(mode, "psk2")) {
-							nvram_set("ath1_akm", "psk psk2");
-							nvram_set("ath1_psk", "1");
-							nvram_set("ath1_psk2", "1");
-							nvram_set("ath1_security_mode", "psk");
+							nvram_set("wlan1_akm", "psk psk2");
+							nvram_set("wlan1_psk", "1");
+							nvram_set("wlan1_psk2", "1");
+							nvram_set("wlan1_security_mode", "psk");
 						}
 					}
 				} else {
@@ -709,11 +709,11 @@ static void buffalo_defaults(int force)
 					if (!mode)
 						mode = getUEnv("DEF-p_wireless_ath10_11a-authmode");
 					if (mode) {
-						nvram_set("ath1_akm", mode);
-						nvram_set("ath1_security_mode", mode);
+						nvram_set("wlan1_akm", mode);
+						nvram_set("wlan1_security_mode", mode);
 					} else {
-						nvram_set("ath1_akm", "disabled");
-						nvram_set("ath1_security_mode", "disabled");
+						nvram_set("wlan1_akm", "disabled");
+						nvram_set("wlan1_security_mode", "disabled");
 					}
 				}
 
@@ -721,21 +721,21 @@ static void buffalo_defaults(int force)
 				if (!crypto)
 					crypto = getUEnv("DEF-p_wireless_ath10_11a-crypto");
 				if (crypto)
-					nvram_set("ath1_crypto", crypto);
+					nvram_set("wlan1_crypto", crypto);
 				char *wpapsk = getUEnv("DEF-p_wireless_ath1_11a-wpapsk");
 				if (!wpapsk)
 					wpapsk = getUEnv("DEF-p_wireless_ath10_11a-wpapsk");
 				if (wpapsk)
-					nvram_set("ath1_wpa_psk", wpapsk);
+					nvram_set("wlan1_wpa_psk", wpapsk);
 			}
 		}
 		char eabuf[32];
 		unsigned char edata[6];
 		get_hwaddr("eth0", edata);
 		sprintf(eabuf, "Buffalo-G-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-		nvram_set("ath0_ssid", eabuf);
+		nvram_set("wlan0_ssid", eabuf);
 		sprintf(eabuf, "Buffalo-A-%02X%02X", edata[4] & 0xff, edata[5] & 0xff);
-		nvram_set("ath1_ssid", eabuf);
+		nvram_set("wlan1_ssid", eabuf);
 
 #else
 		}
@@ -751,7 +751,7 @@ static void buffalo_defaults(int force)
 #else
 		sprintf(eabuf, "%02X%02X%02X%02X%02X%02X", edata[0] & 0xff, edata[1] & 0xff, edata[2] & 0xff, edata[3] & 0xff, edata[4] & 0xff, edata[5] & 0xff);
 #endif
-		nvram_set("ath0_ssid", eabuf);
+		nvram_set("wlan0_ssid", eabuf);
 #endif
 
 		region = getUEnv("region");
@@ -759,49 +759,49 @@ static void buffalo_defaults(int force)
 			region = "US";
 		}
 		if (!strcmp(region, "US")) {
-			nvram_set("ath0_regdomain", "UNITED_STATES");
+			nvram_set("wlan0_regdomain", "UNITED_STATES");
 		} else if (!strcmp(region, "EU")) {
-			nvram_set("ath0_regdomain", "GERMANY");
+			nvram_set("wlan0_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
-			nvram_set("ath0_regdomain", "JAPAN");
+			nvram_set("wlan0_regdomain", "JAPAN");
 #ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath0_regdomain", "SINGAPORE");
+			nvram_set("wlan0_regdomain", "SINGAPORE");
 #else
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath0_regdomain", "SINGAPORE");
+			nvram_set("wlan0_regdomain", "SINGAPORE");
 #endif
 		} else if (!strcmp(region, "RU")) {
-			nvram_set("ath0_regdomain", "RUSSIA");
+			nvram_set("wlan0_regdomain", "RUSSIA");
 		} else if (!strcmp(region, "TW")) {
-			nvram_set("ath0_regdomain", "TAIWAN");
+			nvram_set("wlan0_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "CH")) {
-			nvram_set("ath0_regdomain", "CHINA");
+			nvram_set("wlan0_regdomain", "CHINA");
 		} else if (!strcmp(region, "KR")) {
-			nvram_set("ath0_regdomain", "KOREA_REPUBLIC");
+			nvram_set("wlan0_regdomain", "KOREA_REPUBLIC");
 		}
 #ifdef HAVE_WZRHPAG300NH
 		if (!strcmp(region, "US")) {
-			nvram_set("ath1_regdomain", "UNITED_STATES");
+			nvram_set("wlan1_regdomain", "UNITED_STATES");
 		} else if (!strcmp(region, "EU")) {
-			nvram_set("ath1_regdomain", "GERMANY");
+			nvram_set("wlan1_regdomain", "GERMANY");
 		} else if (!strcmp(region, "JP")) {
-			nvram_set("ath1_regdomain", "JAPAN");
+			nvram_set("wlan1_regdomain", "JAPAN");
 		} else if (!strcmp(region, "RU")) {
-			nvram_set("ath1_regdomain", "RUSSIA");
+			nvram_set("wlan1_regdomain", "RUSSIA");
 #ifdef HAVE_BUFFALO_SA
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath1_regdomain", "SINGAPORE");
+			nvram_set("wlan1_regdomain", "SINGAPORE");
 #else
 		} else if (!strcmp(region, "AP")) {
-			nvram_set("ath1_regdomain", "SINGAPORE");
+			nvram_set("wlan1_regdomain", "SINGAPORE");
 #endif
 		} else if (!strcmp(region, "TW")) {
-			nvram_set("ath1_regdomain", "TAIWAN");
+			nvram_set("wlan1_regdomain", "TAIWAN");
 		} else if (!strcmp(region, "CH")) {
-			nvram_set("ath1_regdomain", "CHINA");
+			nvram_set("wlan1_regdomain", "CHINA");
 		} else if (!strcmp(region, "KR")) {
-			nvram_set("ath1_regdomain", "KOREA_REPUBLIC");
+			nvram_set("wlan1_regdomain", "KOREA_REPUBLIC");
 		}
 #endif
 		if (!strcmp(region, "AP") || !strcmp(region, "CH")
@@ -1925,7 +1925,7 @@ void start_restore_defaults(void)
 #elif HAVE_LS5
 	struct nvram_param generic[] = {
 		{ "lan_ifname", "br0" },
-		{ "lan_ifnames", "ath0" },
+		{ "lan_ifnames", "wlan0" },
 		{ "wan_ifname", "eth0" },
 		{ "wan_ifname2", "eth0" },
 		{ "wan_ifnames", "eth0" },
@@ -1955,7 +1955,7 @@ void start_restore_defaults(void)
 #elif HAVE_TW6600
 	struct nvram_param generic[] = {
 		{ "lan_ifname", "br0" },
-		{ "lan_ifnames", "ath0 ath1" },
+		{ "lan_ifnames", "wlan0 ath1" },
 		{ "wan_ifname2", "eth0" },
 		{ "wan_ifname", "eth0" },
 		{ "wan_ifnames", "eth0" },
@@ -1975,7 +1975,7 @@ void start_restore_defaults(void)
 #elif HAVE_CA8
 	struct nvram_param generic[] = {
 		{ "lan_ifname", "br0" },
-		{ "lan_ifnames", "ath0" },
+		{ "lan_ifnames", "wlan0" },
 		{ "wan_ifname", "eth0" },
 		{ "wan_ifname2", "eth0" },
 		{ "wan_ifnames", "eth0" },
@@ -2459,10 +2459,10 @@ void start_restore_defaults(void)
 #elif HAVE_ONNET
 #ifdef HAVE_ONNET_STATION
 		nvram_set("lan_ipaddr", "192.168.1.2");
-		nvram_set("ath0_mode", "wdssta");
+		nvram_set("wlan0_mode", "wdssta");
 #else
 		nvram_set("lan_ipaddr", "192.168.1.1");
-		nvram_set("ath0_mode", "wdsap");
+		nvram_set("wlan0_mode", "wdsap");
 #endif
 		nvram_set("lan_proto", "static");
 #else
@@ -3030,20 +3030,20 @@ void start_restore_defaults(void)
 	char *dis = getUEnv("rndis");
 	if (dis) {
 		if (!strcmp(dis, "1")) {
-			nvram_default_get("ath0_rxantenna", "7");
-			nvram_default_get("ath0_txantenna", "7");
-			char *ssid = nvram_safe_get("ath0_ssid");
+			nvram_default_get("wlan0_rxantenna", "7");
+			nvram_default_get("wlan0_txantenna", "7");
+			char *ssid = nvram_safe_get("wlan0_ssid");
 			if (!strcmp(ssid, "dd-wrt"))
-				nvram_set("ath0_ssid", "Antaira");
+				nvram_set("wlan0_ssid", "Antaira");
 		} else {
-			nvram_default_get("ath0_rxantenna", "3");
-			nvram_default_get("ath0_txantenna", "3");
-			nvram_default_get("ath1_rxantenna", "7");
-			nvram_default_get("ath1_txantenna", "7");
-			char *ssid = nvram_safe_get("ath0_ssid");
+			nvram_default_get("wlan0_rxantenna", "3");
+			nvram_default_get("wlan0_txantenna", "3");
+			nvram_default_get("wlan1_rxantenna", "7");
+			nvram_default_get("wlan1_txantenna", "7");
+			char *ssid = nvram_safe_get("wlan0_ssid");
 			if (!strcmp(ssid, "dd-wrt")) {
-				nvram_set("ath0_ssid", "Antaira_N");
-				nvram_set("ath1_ssid", "Antaira");
+				nvram_set("wlan0_ssid", "Antaira_N");
+				nvram_set("wlan1_ssid", "Antaira");
 			}
 		}
 	} else

@@ -1202,9 +1202,9 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 
 	if (count < 1)
 		return;
-	getIfList(eths, "ath0.sta");
+	getIfList(eths, "wlan0.sta");
 
-	if (count == 1 && *(nvram_safe_get("ath0_vifs")) == 0 && *(eths) == 0)
+	if (count == 1 && *(nvram_safe_get("wlan0_vifs")) == 0 && *(eths) == 0)
 		return;
 
 	websWrite(wp, "<div class=\"setting\">\n");
@@ -1228,7 +1228,7 @@ void ej_show_wifiselect(webs_t wp, int argc, char_t ** argv)
 		}
 
 		char ifname[32];
-		sprintf(ifname, "ath%d.sta", i);
+		sprintf(ifname, "wlan%d.sta", i);
 		bzero(eths, 256);
 		getIfList(eths, ifname);
 		foreach(var, eths, next) {
@@ -1567,7 +1567,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 //wl_basic.vht80p80chan="Wireless Channel 2 (80+80)";
 		show_caption(wp, "label", "wl_basic.label4", NULL);
 		if (is_mac80211(prefix))
-			websWrite(wp, "<select name=\"%s\" rel=\"ath9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
+			websWrite(wp, "<select name=\"%s\" rel=\"wlan9k\" onfocus=\"check_action(this,0)\" onchange=\"setChannelProperties(this);\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 		else
 			websWrite(wp, "<select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n//<![CDATA[\n", wl_channel);
 #ifdef HAVE_MADWIFI
@@ -1582,7 +1582,7 @@ static void show_channel(webs_t wp, char *dev, char *prefix, int type)
 			char *country;
 			int checkband = 255;
 #ifdef HAVE_ATH9K
-			sprintf(regdomain, "%s_regdomain", "ath0");
+			sprintf(regdomain, "%s_regdomain", "wlan0");
 #else
 			sprintf(regdomain, "%s_regdomain", prefix);
 #endif
@@ -2034,10 +2034,10 @@ static void show_netmode(webs_t wp, char *prefix)
 		websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
 	}
 #ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "ath1"))
+	if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 
 			if (has_2ghz(prefix)) {
@@ -2047,17 +2047,17 @@ static void show_netmode(webs_t wp, char *prefix)
 	if (has_2ghz(prefix)) {
 
 #ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(prefix, "ath1"))
+			if (!strcmp(prefix, "wlan1"))
 #endif
 				websWrite(wp, "document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");\n", nvram_match(wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_WHRAG108
-		if (!strcmp(prefix, "ath1"))
+		if (!strcmp(prefix, "wlan1"))
 #endif
 #ifdef HAVE_TW6600
-			if (!strcmp(prefix, "ath1"))
+			if (!strcmp(prefix, "wlan1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 				websWrite(wp, "document.write(\"<option value=\\\"bg-mixed\\\" %s>\" + wl_basic.bg + \"</option>\");\n", nvram_match(wl_net_mode, "bg-mixed") ? "selected=\\\"selected\\\"" : "");
@@ -2065,7 +2065,7 @@ static void show_netmode(webs_t wp, char *prefix)
 	}
 #else
 #ifdef HAVE_WHRAG108
-	if (!strcmp(prefix, "ath1"))
+	if (!strcmp(prefix, "wlan1"))
 #endif
 #if !defined(HAVE_LS5) || defined(HAVE_EOC5610)
 
@@ -2103,10 +2103,10 @@ static void show_netmode(webs_t wp, char *prefix)
 	}
 #else
 #if HAVE_WHRAG108
-	if (!strcmp(prefix, "ath0"))
+	if (!strcmp(prefix, "wlan0"))
 #endif
 #ifdef HAVE_TW6600
-		if (!strcmp(prefix, "ath0"))
+		if (!strcmp(prefix, "wlan0"))
 #endif
 			if (has_5ghz(prefix)) {
 				websWrite(wp, "document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");\n", nvram_match(wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
@@ -2267,7 +2267,7 @@ static void showbridgesettings(webs_t wp, char *var, int mcast, int dual)
 	strcpy(vvar, var);
 	rep(vvar, '.', 'X');
 	int iswds = 0;
-	if (!strncmp(var, "ath", 3) && strstr(var, ".sta"))
+	if (!strncmp(var, "wlan", 3) && strstr(var, ".sta"))
 		iswds = 1;
 	if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 		char unicast[32];
@@ -2997,7 +2997,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
 #ifdef HAVE_ATH9K
-		if (!strcmp(prefix, "ath0"))
+		if (!strcmp(prefix, "wlan0"))
 #endif
 		{
 			sprintf(wl_regdomain, "%s_regdomain", prefix);
@@ -3075,19 +3075,19 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #endif
 
 #ifdef HAVE_MADWIFI
-	// if (!strcmp (prefix, "ath0"))
+	// if (!strcmp (prefix, "wlan0"))
 #endif
 	{
 		// #ifdef HAVE_MADWIFI
-		// if (!strcmp (prefix, "ath0")) //show client only on first
+		// if (!strcmp (prefix, "wlan0")) //show client only on first
 		// interface
 		// #endif
 		{
 #ifdef HAVE_MADWIFI
-			// if (!strcmp (prefix, "ath0")) //show client only on first
+			// if (!strcmp (prefix, "wlan0")) //show client only on first
 			// interface
-			// if (nvram_match ("ath0_mode", "wdsap")
-			// || nvram_match ("ath0_mode", "wdssta"))
+			// if (nvram_match ("wlan0_mode", "wdsap")
+			// || nvram_match ("wlan0_mode", "wdssta"))
 			// showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
 #ifdef HAVE_REGISTER
@@ -3408,7 +3408,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		int maxtx = 7;
 #ifdef HAVE_ATH9K
 		int prefixcount;
-		sscanf(prefix, "ath%d", &prefixcount);
+		sscanf(prefix, "wlan%d", &prefixcount);
 		int phy_idx = get_ath9k_phy_idx(prefixcount);
 		maxrx = mac80211_get_avail_rx_antenna(phy_idx);
 		maxtx = mac80211_get_avail_tx_antenna(phy_idx);
@@ -3772,19 +3772,19 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #else
 // BUFFALO Basic
 #ifdef HAVE_MADWIFI
-	// if (!strcmp (prefix, "ath0"))
+	// if (!strcmp (prefix, "wlan0"))
 #endif
 	{
 		// #ifdef HAVE_MADWIFI
-		// if (!strcmp (prefix, "ath0")) //show client only on first
+		// if (!strcmp (prefix, "wlan0")) //show client only on first
 		// interface
 		// #endif
 		{
 #ifdef HAVE_MADWIFI
-			// if (!strcmp (prefix, "ath0")) //show client only on first
+			// if (!strcmp (prefix, "wlan0")) //show client only on first
 			// interface
-			// if (nvram_match ("ath0_mode", "wdsap")
-			// || nvram_match ("ath0_mode", "wdssta"))
+			// if (nvram_match ("wlan0_mode", "wdsap")
+			// || nvram_match ("wlan0_mode", "wdssta"))
 			// showOption (wp, "wl_basic.wifi_bonding", "wifi_bonding");
 #endif
 
@@ -4267,7 +4267,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 	if (!nvram_matchi("nocountrysel", 1)) {
 		char wl_regdomain[16];
 #ifdef HAVE_ATH9K
-		if (!strcmp(prefix, "ath0"))
+		if (!strcmp(prefix, "wlan0"))
 #endif
 		{
 			sprintf(wl_regdomain, "%s_regdomain", prefix);
@@ -4466,7 +4466,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 		int maxrx = 7;
 		int maxtx = 7;
 		int prefixcount;
-		sscanf(prefix, "ath%d", &prefixcount);
+		sscanf(prefix, "wlan%d", &prefixcount);
 		int phy_idx = get_ath9k_phy_idx(prefixcount);
 		maxrx = mac80211_get_avail_rx_antenna(phy_idx);
 		maxtx = mac80211_get_avail_tx_antenna(phy_idx);
@@ -4647,7 +4647,7 @@ void ej_show_wireless_single(webs_t wp, char *prefix)
 #ifdef HAVE_ATH9K
 	int inst;
 	char radio_timer[32];
-	sscanf(prefix, "ath%d", &inst);
+	sscanf(prefix, "wlan%d", &inst);
 	sprintf(radio_timer, "radio%d_timer_enable", inst);
 	websWrite(wp, "<fieldset>\n");
 	show_caption_legend(wp, "wl_basic.legend2");

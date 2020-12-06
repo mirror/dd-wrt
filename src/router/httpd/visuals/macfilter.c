@@ -98,7 +98,7 @@ void ej_list_mac_layers(webs_t wp, int argc, char_t ** argv)
 		char macmode[32];
 		char id[32];
 
-		sprintf(devs, "ath%d", i);
+		sprintf(devs, "wlan%d", i);
 		sprintf(macmode, "%s_macmode1", devs);
 		sprintf(id, "idmac%s", devs);
 		rep(id, '.', 'X');
@@ -140,7 +140,7 @@ void ej_show_macfilter(webs_t wp, int argc, char_t ** argv)
 	int i;
 
 	for (i = 0; i < c; i++) {
-		sprintf(devs, "ath%d", i);
+		sprintf(devs, "wlan%d", i);
 		show_macfilter_if(wp, devs);
 		char vif[32];
 

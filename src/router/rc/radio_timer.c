@@ -114,11 +114,11 @@ static int radio_timer_main(int argc, char **argv)
 						start_service_force(off);
 #ifdef HAVE_MADWIFI
 						char dev[32];
-						sprintf(dev, "ath%d", i);
+						sprintf(dev, "wlan%d", i);
 						eval("ifconfig", dev, "down");
 						char *next;
 						char var[80];
-						char *vifs = nvram_nget("ath%d_vifs", i);
+						char *vifs = nvram_nget("wlan%d_vifs", i);
 						foreach(var, vifs, next) {
 							eval("ifconfig", var, "down");
 						}

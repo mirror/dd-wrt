@@ -57,9 +57,9 @@ static void watchdog(void)
 				oldstate2 = -1;
 			}
 #ifdef HAVE_MADWIFI
-			radiostate0 = get_radiostate("ath0");
+			radiostate0 = get_radiostate("wlan0");
 			if (cnt == 2)
-				radiostate1 = get_radiostate("ath1");
+				radiostate1 = get_radiostate("wlan1");
 #else
 			wl_ioctl(get_wl_instance_name(0), WLC_GET_RADIO, &radiostate0, sizeof(int));
 #ifndef HAVE_QTN
@@ -176,7 +176,7 @@ static void watchdog(void)
 			fclose(tempfp);
 		}
 		int dummy;
-		if (!nvram_match("ath2_net_mode", "disabled")) {
+		if (!nvram_match("wlan2_net_mode", "disabled")) {
 			FILE *check = fopen("/sys/kernel/debug/ieee80211/phy2/wil6210/temp", "rb");
 			if (check) {
 				fclose(check);

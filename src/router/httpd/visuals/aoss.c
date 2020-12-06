@@ -90,29 +90,29 @@ void ej_ifaoss_possible(webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_WZRHPAG300NH
 	if (!strcmp(argv[0], "yes")) {
-		if (!strcmp(nvram_selget(wp, "ath0_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "ath0_mode"), "wdsap")
-		    || !strcmp(nvram_selget(wp, "ath1_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "ath1_mode"), "wdsap")) {
+		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
+		    || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")
+		    || !strcmp(nvram_selget(wp, "wlan1_mode"), "ap")
+		    || !strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	} else if (!strcmp(argv[0], "no")) {
-		if (strcmp(nvram_selget(wp, "ath0_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "ath0_mode"), "wdsap")
-		    && strcmp(nvram_selget(wp, "ath1_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "ath1_mode"), "wdsap")) {
+		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
+		    && strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")
+		    && strcmp(nvram_selget(wp, "wlan1_mode"), "ap")
+		    && strcmp(nvram_selget(wp, "wlan1_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	}
 #else
 	if (!strcmp(argv[0], "yes")) {
-		if (!strcmp(nvram_selget(wp, "ath0_mode"), "ap")
-		    || !strcmp(nvram_selget(wp, "ath0_mode"), "wdsap")) {
+		if (!strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
+		    || !strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	} else if (!strcmp(argv[0], "no")) {
-		if (strcmp(nvram_selget(wp, "ath0_mode"), "ap")
-		    && strcmp(nvram_selget(wp, "ath0_mode"), "wdsap")) {
+		if (strcmp(nvram_selget(wp, "wlan0_mode"), "ap")
+		    && strcmp(nvram_selget(wp, "wlan0_mode"), "wdsap")) {
 			websWrite(wp, "%s", argv[1]);
 		}
 	}

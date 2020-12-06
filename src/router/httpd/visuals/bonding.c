@@ -67,12 +67,12 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 	for (i = 0; i < c; i++) {
 		char ath[32];
 
-		sprintf(ath, "ath%d_bridged", i);
+		sprintf(ath, "wlan%d_bridged", i);
 		if (nvram_default_matchi(ath, 0, 1)) {
 			sprintf(bufferif, "%s ath%d", bufferif, i);
 			char vifs[32];
 
-			sprintf(vifs, "ath%d_vifs", i);
+			sprintf(vifs, "wlan%d_vifs", i);
 			strcat(bufferif, " ");
 			strcat(bufferif, nvram_safe_get(vifs));
 		}

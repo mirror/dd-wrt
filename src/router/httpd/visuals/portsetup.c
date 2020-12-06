@@ -99,7 +99,7 @@ void ej_portsetup(webs_t wp, int argc, char_t ** argv)
 		// qlen end
 		if (!isb) {
 			int iswds = 0;
-			if (!strncmp(var, "ath", 3) && strstr(var, ".sta"))
+			if (!strncmp(var, "wlan", 3) && strstr(var, ".sta"))
 				iswds = 1;
 			if (!iswds && has_multicast_to_unicast(var) && !nvram_nmatch("0", "%s_bridged", var)) {
 				char unicast[32];
