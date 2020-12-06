@@ -1015,7 +1015,7 @@ int get_distance_madwifi(char *iface)
 	int ifcount, distance = 0;
 
 	strcpy(path, iface);
-	sscanf(path, "ath%d", &ifcount);
+	sscanf(path, "wlan%d", &ifcount);
 	sprintf(path, "/proc/sys/dev/wifi%d/distance", ifcount);
 	FILE *in = fopen(path, "rb");
 
@@ -1154,7 +1154,7 @@ void ddxrWlStatTable_madwifi()
 	DEBUGMSGTL(("ddwrt:madwifi", "ddxrWlStatTable_madwifi\n"));
 
 	for (i = 0; i < count; i++) {
-		sprintf(var, "ath%d", i);
+		sprintf(var, "wlan%d", i);
 		vap = 0;
 		DEBUGMSGTL(("ddwrt:madwifi", "main interface %d %d\n", i, vap));
 		//  printf("<option value=\"%s\" %s >%s</option>\n", var, nvram_match("wifi_display", var) ? "selected=\"selected\"" : "", var);
@@ -1247,7 +1247,7 @@ void ddxrWlStatTable_madwifi()
 		sprintf(temp, "%s_distance", var);
 		set_ddxrWlStatconfigack(entry, (int)atoi(nvram_safe_get(temp)));
 
-		if (nvram_match("ath_regulatory", "0")) {
+		if (nvram_match("wlan_regulatory", "0")) {
 			set_ddxrWlStatRegulatory(entry, "SUPERCHANNEL");
 		} else {
 			sprintf(temp, "%s_regdomain", var);
@@ -1255,7 +1255,7 @@ void ddxrWlStatTable_madwifi()
 		}
 
 		mainentry = entry;
-		char *names = nvram_nget("ath%d_vifs", i);
+		char *names = nvram_nget("wlan%d_vifs", i);
 
 		foreach(var, names, next) {
 			vapindex = var[strlen(var) - 1];
@@ -1387,7 +1387,7 @@ void ddWlRtabTable_madwifi()
 	count = getdevicecount();
 	DEBUGMSGTL(("ddwrt:init ", "deviceount %d\n", count));
 	for (i = 0; i < count; i++) {
-		sprintf(var, "ath%d", i);
+		sprintf(var, "wlan%d", i);
 		vap = 0;
 		DEBUGMSGTL(("ddwrt:madwifiassoc", "ASSOC interace %d %d\n", i, vap));
 		sprintf(temp, "%s_channelbw", var);
@@ -1403,7 +1403,7 @@ void ddWlRtabTable_madwifi()
 #endif
 			ddWlRtabTable_madwifi_assoc(var, 0, turbo, i, vap, 0, 0);
 #endif
-		char *names = nvram_nget("ath%d_vifs", i);
+		char *names = nvram_nget("wlan%d_vifs", i);
 
 		foreach(var, names, next) {
 			vapindex = var[strlen(var) - 1];
@@ -1438,10 +1438,10 @@ void ddWlRtabTable_madwifi()
 			char *hwaddr;
 			char var[80];
 
-			sprintf(wdsvarname, "ath%d_wds%d_enable", i, s);
-			sprintf(wdsdevname, "ath%d_wds%d_if", i, s);
-			sprintf(wdsmacname, "ath%d_wds%d_hwaddr", i, s);
-			sprintf(temp, "ath%d_channelbw", i);
+			sprintf(wdsvarname, "wlan%d_wds%d_enable", i, s);
+			sprintf(wdsdevname, "wlan%d_wds%d_if", i, s);
+			sprintf(wdsmacname, "wlan%d_wds%d_hwaddr", i, s);
+			sprintf(temp, "wlan%d_channelbw", i);
 			if (nvram_match(temp, "40"))
 				turbo = 2;
 			else
@@ -1538,7 +1538,7 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 		set_ddxrWlRtabMinorInterface(entry, (int)cvap);
 		if (is_wds) {
 			// take the hwaddr of the main interface
-			sprintf(temp, "ath%d_hwaddr", ciface);
+			sprintf(temp, "wlan%d_hwaddr", ciface);
 		} else {
 			sprintf(temp, "%s_hwaddr", ifname);
 		}
@@ -1596,7 +1596,7 @@ void ddWlRtabTable_madwifi_assoc(char *ifname, int cnt, int turbo, int ciface, i
 			}
 		}
 		if (is_wds) {
-			sprintf(temp, "ath%d_wds%d_desc", ciface, wdscnt);
+			sprintf(temp, "wlan%d_wds%d_desc", ciface, wdscnt);
 			set_ddxrWlRtabAntennaname(entry, nvram_safe_get(temp));
 		}
 
@@ -1670,7 +1670,7 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 		set_ddxrWlRtabMinorInterface(entry, (int)cvap);
 		if (is_wds) {
 			// take the hwaddr of the main interface
-			sprintf(temp, "ath%d_hwaddr", ciface);
+			sprintf(temp, "wlan%d_hwaddr", ciface);
 		} else {
 			sprintf(temp, "%s_hwaddr", ifname);
 		}
@@ -1731,7 +1731,7 @@ void ddWlRtabTable_mac80211_assoc(char *ifname, int cnt, int ciface, int cvap, i
 			}
 		}
 		if (is_wds) {
-			sprintf(temp, "ath%d_wds%d_desc", ciface, wdscnt);
+			sprintf(temp, "wlan%d_wds%d_desc", ciface, wdscnt);
 			set_ddxrWlRtabAntennaname(entry, nvram_safe_get(temp));
 		}
 	}
