@@ -30,7 +30,7 @@
 #endif
 
 #ifdef HAVE_MADWIFI
-#define WIFINAME "ath"
+#define WIFINAME "wlan"
 #else
 #define WIFINAME "wl"
 #endif
