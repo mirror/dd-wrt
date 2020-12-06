@@ -1608,7 +1608,7 @@ static struct menucontext *init_menu(webs_t wp)
 		sprintf(check, "wlan%d", a);
 		if (has_ad(check))
 			continue;
-		sprintf(&m->menu[MENU_WIRELESS][count + 8][0], "Wireless_WDS-ath%d.asp", a);
+		sprintf(&m->menu[MENU_WIRELESS][count + 8][0], "Wireless_WDS-wlan%d.asp", a);
 		if (ifcount == 1)
 			sprintf(&m->menuname[MENU_WIRELESS][count + 9][0], "wirelessWds");
 		else

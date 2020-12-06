@@ -69,7 +69,7 @@ void ej_show_bondings(webs_t wp, int argc, char_t ** argv)
 
 		sprintf(ath, "wlan%d_bridged", i);
 		if (nvram_default_matchi(ath, 0, 1)) {
-			sprintf(bufferif, "%s ath%d", bufferif, i);
+			sprintf(bufferif, "%s wlan%d", bufferif, i);
 			char vifs[32];
 
 			sprintf(vifs, "wlan%d_vifs", i);
