@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <ctype.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
@@ -3648,6 +3649,7 @@ void start_nvram(void)
 		nvram_seti("nvram_ver", 5);
 		nvram_seti("block_multicast", 1);
 #ifdef HAVE_MADWIFI
+		char *buf;
 		int NVRAMSPACE = nvram_size();
 		if (!(buf = safe_malloc(NVRAMSPACE)))
 			return errno;
@@ -3655,9 +3657,10 @@ void start_nvram(void)
 		/*
 		 * Get NVRAM variables 
 		 */
+		char *s;
 		nvram_getall(buf, NVRAMSPACE);
 		for (s = buf; *s; s++) {
-			if (!strncmp(s, "ath") && isdigit(s[3])) {
+			if (!strncmp(s, "ath", 3) && isdigit(s[3])) {
 				char *name = s;
 				char *value = strchr(s, '=');
 				value[0] = 0;
@@ -3666,7 +3669,7 @@ void start_nvram(void)
 				sprintf(newname, "wlan%s", name + 3);
 				char *next;
 				char entry[128];
-				char newvalue = malloc((strlen(value) * 2) + 1);
+				char *newvalue = malloc((strlen(value) * 2) + 1);
 				int first = 1;
 				foreach(entry, value, next) {
 					if (!strncmp(entry, "ath", 3) && isdigit(entry[3])) {
@@ -3683,7 +3686,7 @@ void start_nvram(void)
 					}
 					first = 0;
 				}
-				nvram_set(newname, newvalue)
+				nvram_set(newname, newvalue);
 				    free(newvalue);
 			}
 		}
