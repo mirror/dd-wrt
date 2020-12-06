@@ -260,7 +260,7 @@ static void evaluate(char *keyname, char *ifdecl, char *macstr)
 		int c = 0;
 		for (c = 0; c < ifcount; c++) {
 			char interface[32];
-			sprintf(interface, "ath%d", c);
+			sprintf(interface, "wlan%d", c);
 			if (!m || matchmac(interface, interface, rmac, &wc)) {
 				int r = fnp(interface, interface, rmac, &wc);
 				if (m && r)
