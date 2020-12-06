@@ -200,11 +200,11 @@ void delete_ath9k_devices(char *physical_iface)
 void deconfigure_single_ath9k(int count)
 {
 	int idx = get_ath9k_phy_idx(count);
-	fprintf(stderr, "wlan9k deconfigure_single: phy%d ath%d\n", idx, count);
+	fprintf(stderr, "wlan9k deconfigure_single: phy%d wlan%d\n", idx, count);
 	char wif[10];
 	sprintf(wif, "phy%d", idx);
-	sysprintf("rm -f /tmp/ath%d_hostapd.conf", idx);
-	sysprintf("rm -f /tmp/ath%d_wpa_supplicant.conf", idx);
+	sysprintf("rm -f /tmp/wlan%d_hostapd.conf", idx);
+	sysprintf("rm -f /tmp/wlan%d_wpa_supplicant.conf", idx);
 	delete_ath9k_devices(wif);
 }
 
@@ -313,7 +313,7 @@ void configure_single_ath9k(int count)
 		vapcount = 0;
 	sprintf(wif, "phy%d", phy_idx);
 	sprintf(wifivifs, "wlan%d_vifs", count);
-	fprintf(stderr, "wlan9k configure_single: phy%d ath%d\n", phy_idx, count);
+	fprintf(stderr, "wlan9k configure_single: phy%d wlan%d\n", phy_idx, count);
 	sprintf(channel, "wlan%d_channel", count);
 	sprintf(sens, "wlan%d_distance", count);
 	sprintf(diversity, "wlan%d_diversity", count);
