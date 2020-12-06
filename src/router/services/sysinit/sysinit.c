@@ -3652,7 +3652,7 @@ void start_nvram(void)
 		char *buf;
 		int NVRAMSPACE = nvram_size();
 		if (!(buf = safe_malloc(NVRAMSPACE)))
-			return errno;
+			return;
 
 		/*
 		 * Get NVRAM variables 
@@ -3664,11 +3664,11 @@ void start_nvram(void)
 			char *value = strchr(s, '=');
 			value[0] = 0;
 			value++;
-			char *newname = malloc((strlen(name)*2) + 1);
+			char *newname = malloc((strlen(name) * 2) + 1);
 			strcpy(newname, name);
 			int found = 0;
 			if (!strncmp(s, "ath", 3) && isdigit(s[3])) {
-				sprintf(newname, "wlan%s", name + 3);
+				sprintf(newname, "wlan%s", &name[3]);
 				found = 1;
 			}
 			char *next;
@@ -3697,6 +3697,121 @@ void start_nvram(void)
 			free(newname);
 		}
 		free(buf);
+
+		char word[256];
+		char *next, *wordlist;
+		wordlist = nvram_safe_get("bridgesif");
+		char *newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		*newwordlist = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(tag, word, 0);
+			GETENTRYBYIDX(port, word, 1);
+			GETENTRYBYIDX(prio, word, 2);
+			GETENTRYBYIDX(hairpin, word, 3);
+			GETENTRYBYIDX(stp, word, 4);
+			GETENTRYBYIDX(pathcost, word, 5);
+			char newname[64];
+			strcpy(newname, tag);
+			if (!strncmp(tag, "ath", 3))
+				sprintf(newname, "wlan%s", &tag[3]);
+			if (*newwordlist)
+				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s", newwordlist, newname, port, prio, hairpin, stp, pathcost);
+			else
+				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s", newname, port, prio, hairpin, stp, pathcost);
+		}
+		nvram_set("bridgesif", newwordlist);
+		free(newwordlist);
+		wordlist = nvram_safe_get("vlan_tags");
+		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		*newwordlist = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(ifname, word, 0);
+			GETENTRYBYIDX(tag, word, 1);
+			GETENTRYBYIDX(prio, word, 2);
+			char newname[64];
+			strcpy(newname, tag);
+			if (!strncmp(ifname, "ath", 3))
+				sprintf(newname, "wlan%s", &tag[3]);
+			if (*newwordlist)
+				sprintf(newwordlist, "%s %s>%s>%s", newwordlist, newname, tag, prio);
+			else
+				sprintf(newwordlist, "%s>%s>%s", newname, tag, prio);
+		}
+		nvram_set("vlan_tags", newwordlist);
+		free(newwordlist);
+		wordlist = nvram_safe_get("static_routes");
+		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		*newwordlist = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(ipaddr, word, 0);
+			GETENTRYBYIDX(netmask, word, 1);
+			GETENTRYBYIDX(gateway, word, 2);
+			GETENTRYBYIDX(metric, word, 3);
+			GETENTRYBYIDX(ifname, word, 4);
+			char newname[64];
+			strcpy(newname, ifname);
+			if (!strncmp(ifname, "ath", 3))
+				sprintf(newname, "wlan%s", &ifname[3]);
+			if (*newwordlist)
+				sprintf(newwordlist, "%s %s:%s:%s:%s:%s:", newwordlist, ipaddr, netmask, gateway, metric, newname);
+			else
+				sprintf(newwordlist, "%s:%s:%s:%s:%s:", ipaddr, netmask, gateway, metric, newname);
+		}
+		nvram_set("static_routes", newwordlist);
+		free(newwordlist);
+
+		wordlist = nvram_safe_get("mdhcpd");
+		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		*newwordlist = 0;
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(ifname, word, 0);
+			GETENTRYBYIDX(status, word, 1);
+			GETENTRYBYIDX(start, word, 2);
+			GETENTRYBYIDX(count, word, 3);
+			GETENTRYBYIDX(leasetime, word, 4);
+			char newname[64];
+			strcpy(newname, ifname);
+			if (!strncmp(ifname, "ath", 3))
+				sprintf(newname, "wlan%s", &ifname[3]);
+			if (*newwordlist)
+				sprintf(newwordlist, "%s %s>%s>%s>%s>%s", newwordlist, newname, status, start, count, leasetime);
+			else
+				sprintf(newwordlist, "%s>%s>%s>%s>%s", newname, status, start, count, leasetime);
+		}
+		nvram_set("mdhcpd", newwordlist);
+		free(newwordlist);
+
+		wordlist = nvram_safe_get("olsrd_interfaces");
+		newwordlist = malloc(strlen(wordlist) * 2 + 1);
+		*newwordlist = 0;
+
+		foreach(word, wordlist, next) {
+			GETENTRYBYIDX(interface, word, 0);
+			GETENTRYBYIDX(hellointerval, word, 1);
+			GETENTRYBYIDX(hellovaliditytime, word, 2);
+			GETENTRYBYIDX(tcinterval, word, 3);
+			GETENTRYBYIDX(tcvaliditytime, word, 4);
+			GETENTRYBYIDX(midinterval, word, 5);
+			GETENTRYBYIDX(midvaliditytime, word, 6);
+			GETENTRYBYIDX(hnainterval, word, 7);
+			GETENTRYBYIDX(hnavaliditytime, word, 8);
+			GETENTRYBYIDX(linkqualitymult, word, 9);
+			char newname[64];
+			strcpy(newname, interface);
+			if (!strncmp(interface, "ath", 3))
+				sprintf(newname, "wlan%s", &interface[3]);
+
+			if (*newwordlist)
+				sprintf(newwordlist, "%s %s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newwordlist, newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval,
+					hnavaliditytime, linkqualitymult);
+			else
+				sprintf(newwordlist, "%s>%s>%s>%s>%s>%s>%s>%s>%s>%s", newname, hellointerval, hellovaliditytime, tcinterval, tcvaliditytime, midinterval, midvaliditytime, hnainterval, hnavaliditytime,
+					linkqualitymult);
+		}
+
+		nvram_set("olsrd_interfaces", newwordlist);
+		free(newwordlist);
+
 		nvram_commit();
 #endif
 	}
